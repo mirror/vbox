@@ -55,6 +55,9 @@
 /** NT status code - operation not implemented. */
 #define NTSTATUS_NOT_IMPLEMENTED                    UINT32_C(0xc0000002)
 
+/** Offset where the KD version block pointer is stored in the KPCR.
+ * From: https://www.geoffchappell.com/studies/windows/km/ntoskrnl/structs/kprcb/amd64.htm */
+#define KD_KPCR_VERSION_BLOCK_ADDR_OFF              0x34
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -522,6 +525,15 @@ AssertCompileSize(KDPACKETMANIPULATE_GETVERSION64, 40);
 typedef KDPACKETMANIPULATE_GETVERSION64 *PKDPACKETMANIPULATE_GETVERSION64;
 /** Pointer to a const 64bit get version manipulate payload. */
 typedef const KDPACKETMANIPULATE_GETVERSION64 *PCKDPACKETMANIPULATE_GETVERSION64;
+
+
+/** @name Get version flags.
+ * @{ */
+/** Flag whether this is a multi processor kernel. */
+#define KD_PACKET_MANIPULATE64_GET_VERSION_F_MP     RT_BIT_32(0)
+/** Flag whether the pointer is 64bit. */
+#define KD_PACKET_MANIPULATE64_GET_VERSION_F_PTR64  RT_BIT_32(2)
+/** @} */
 
 
 /**
@@ -1887,52 +1899,40 @@ static int dbgcKdCtxPktManipulate64GetVersion(PKDCTX pThis, PCKDPACKETMANIPULATE
     Resp.Hdr.idCpu       = pPktManip->Hdr.idCpu;
     Resp.Hdr.u32NtStatus = NTSTATUS_SUCCESS;
 
-#if 0
     /* Build our own response in case there is no Windows interface available. */
+    uint32_t NtBuildNumber = 0x0f2800; /* Used when there is no NT interface available, which probably breaks symbol loading. */
+    bool f32Bit = false;
     if (pThis->pIfWinNt)
     {
-        RTGCUINTPTR GCPtrKpcr = 0;
-
-        int rc = pThis->pIfWinNt->pfnQueryKpcrForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, Resp.Hdr.idCpu,
-                                                      &GCPtrKpcr, NULL /*pKpcrb*/);
+        int rc = pThis->pIfWinNt->pfnQueryVersion(pThis->pIfWinNt, pThis->Dbgc.pUVM,
+                                                  NULL /*puVersMajor*/, NULL /*puVersMinor*/,
+                                                  &NtBuildNumber, &f32Bit);
         if (RT_SUCCESS(rc))
-        {
-            DBGFADDRESS AddrKdVersionBlock;
-            DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &AddrKdVersionBlock, GCPtrKpcr + 0x108);
-            rc = DBGFR3MemRead(pThis->Dbgc.pUVM, Resp.Hdr.idCpu, &AddrKdVersionBlock, &Resp.u.GetVersion, sizeof(Resp.u.GetVersion));
-        }
-    }
-    else
-#endif
-    {
-        /* Fill in the request specific part, the static parts are from an amd64 Windows 10 guest. */
-        Resp.u.GetVersion.u16VersMaj        = 0x0f;
-        Resp.u.GetVersion.u16VersMin        = 0x2800;
-        Resp.u.GetVersion.u8VersProtocol    = 0x6; /** From a Windows 10 guest. */
-        Resp.u.GetVersion.u8VersKdSecondary = 0x2; /** From a Windows 10 guest. */
-        Resp.u.GetVersion.fFlags            = 0x5; /** 64bit pointer. */
-        Resp.u.GetVersion.u16MachineType    = IMAGE_FILE_MACHINE_AMD64;
-        Resp.u.GetVersion.u8MaxPktType      = KD_PACKET_HDR_SUB_TYPE_MAX;
-        Resp.u.GetVersion.u8MaxStateChange  = KD_PACKET_STATE_CHANGE_MAX - KD_PACKET_STATE_CHANGE_MIN;
-        Resp.u.GetVersion.u8MaxManipulate   = KD_PACKET_MANIPULATE_REQ_CLEAR_ALL_INTERNAL_BKPT - KD_PACKET_MANIPULATE_REQ_MIN;
-        Resp.u.GetVersion.u64PtrDebuggerDataList = 0 ;//0xfffff800deadc0de;
+            rc = pThis->pIfWinNt->pfnQueryKernelPtrs(pThis->pIfWinNt, pThis->Dbgc.pUVM, &Resp.u.GetVersion.u64PtrKernBase,
+                                                     &Resp.u.GetVersion.u64PtrPsLoadedModuleList);
     }
 
-    /* Try to fill in the rest using the OS digger interface if available. */
-    int rc = VINF_SUCCESS;
-    if (pThis->pIfWinNt)
-        rc = pThis->pIfWinNt->pfnQueryKernelPtrs(pThis->pIfWinNt, pThis->Dbgc.pUVM, &Resp.u.GetVersion.u64PtrKernBase,
-                                                 &Resp.u.GetVersion.u64PtrPsLoadedModuleList);
+    /* Fill in the request specific part. */
+    Resp.u.GetVersion.u16VersMaj             = NtBuildNumber >> 16;
+    Resp.u.GetVersion.u16VersMin             = NtBuildNumber & UINT32_C(0xffff);
+    Resp.u.GetVersion.u8VersProtocol         = 0x6; /* From a Windows 10 guest. */
+    Resp.u.GetVersion.u8VersKdSecondary      = 0x2; /* From a Windows 10 guest. */
+    Resp.u.GetVersion.fFlags                 = KD_PACKET_MANIPULATE64_GET_VERSION_F_MP;
+    Resp.u.GetVersion.u8MaxPktType           = KD_PACKET_HDR_SUB_TYPE_MAX;
+    Resp.u.GetVersion.u8MaxStateChange       = KD_PACKET_STATE_CHANGE_MAX - KD_PACKET_STATE_CHANGE_MIN;
+    Resp.u.GetVersion.u8MaxManipulate        = KD_PACKET_MANIPULATE_REQ_MAX - KD_PACKET_MANIPULATE_REQ_MIN;
+    Resp.u.GetVersion.u64PtrDebuggerDataList = 0;
+
+    if (f32Bit)
+        Resp.u.GetVersion.u16MachineType = IMAGE_FILE_MACHINE_I386;
     else
     {
-        /** @todo */
+        Resp.u.GetVersion.u16MachineType = IMAGE_FILE_MACHINE_AMD64;
+        Resp.u.GetVersion.fFlags |= KD_PACKET_MANIPULATE64_GET_VERSION_F_PTR64;
     }
 
-    if (RT_SUCCESS(rc))
-        rc = dbgcKdCtxPktSend(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
-                              &Resp, sizeof(Resp), true /*fAck*/);
-
-    return rc;
+    return dbgcKdCtxPktSend(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
+                            &Resp, sizeof(Resp), true /*fAck*/);
 }
 
 
