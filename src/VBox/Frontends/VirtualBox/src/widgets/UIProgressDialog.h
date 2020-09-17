@@ -198,22 +198,38 @@ public:
     /** Constructs progress handler passing @a pParent to the base-class.
       * @param  comProgress   Brings the progress reference. */
     UIProgress(CProgress &comProgress, QObject *pParent = 0);
+    /** Destructs progress handler. */
+    virtual ~UIProgress() /* override */;
 
-    /** Executes the progress-handler within its loop with passed @a iRefreshInterval. */
-    void run(int iRefreshInterval);
+    /** Executes the progress-handler within its loop. */
+    void run();
+
+private slots:
+
+    /** Handles percentage changed event for progress with @a uProgressId to @a iPercent. */
+    void sltHandleProgressPercentageChange(const QUuid &uProgressId, const int iPercent);
+    /** Handles task completed event for progress with @a uProgressId. */
+    void sltHandleProgressTaskComplete(const QUuid &uProgressId);
 
 private:
 
-    /** Handles timer @a pEvent. */
-    virtual void timerEvent(QTimerEvent *pEvent) /* override */;
+    /** Prepares all. */
+    void prepare();
+    /** Prepares event handler. */
+    void prepareEventHandler();
+    /** Cleanups event handler. */
+    void cleanupEventHandler();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Holds the progress reference. */
     CProgress &m_comProgress;
 
-    /** Holds the amount of operations. */
-    const ulong  m_cOperations;
+    /** Holds the progress event handler instance. */
+    UIProgressEventHandler *m_pEventHandler;
+
     /** Holds whether the progress has ended. */
-    bool         m_fEnded;
+    bool  m_fEnded;
 
     /** Holds the personal event-loop instance. */
     QPointer<QEventLoop>  m_pEventLoop;

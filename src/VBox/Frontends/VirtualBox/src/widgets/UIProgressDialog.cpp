@@ -550,72 +550,76 @@ void UIProgressDialog::handleTimerEvent()
 UIProgress::UIProgress(CProgress &comProgress, QObject *pParent /* = 0 */)
     : QObject(pParent)
     , m_comProgress(comProgress)
-    , m_cOperations(m_comProgress.GetOperationCount())
+    , m_pEventHandler(0)
     , m_fEnded(false)
 {
+    prepare();
 }
 
-void UIProgress::run(int iRefreshInterval)
+UIProgress::~UIProgress()
 {
-    /* Make sure the CProgress still valid: */
-    if (!m_comProgress.isOk())
-        return;
-
-    /* Start the refresh timer: */
-    int id = startTimer(iRefreshInterval);
-
-    /* Create a local event-loop: */
-    {
-        QEventLoop eventLoop;
-        m_pEventLoop = &eventLoop;
-
-        /* Guard ourself for the case
-         * we destroyed ourself in our event-loop: */
-        QPointer<UIProgress> guard = this;
-
-        /* Start the blocking event-loop: */
-        eventLoop.exec();
-
-        /* Are we still valid? */
-        if (guard.isNull())
-            return;
-
-        m_pEventLoop = 0;
-    }
-
-    /* Kill the refresh timer: */
-    killTimer(id);
+    cleanup();
 }
 
-void UIProgress::timerEvent(QTimerEvent *)
+void UIProgress::run()
 {
-    /* Make sure the UIProgress still 'running': */
-    if (m_fEnded)
-        return;
-
-    /* If progress had failed or finished: */
+    /* Make sure progress hasn't aborted/finished already: */
     if (!m_comProgress.isOk() || m_comProgress.GetCompleted())
-    {
-        /* Notify listeners about the operation progress error: */
-        if (!m_comProgress.isOk() || m_comProgress.GetResultCode() != 0)
-            emit sigProgressError(UIErrorString::formatErrorInfo(m_comProgress));
-
-        /* Exit from the event-loop if there is any: */
-        if (m_pEventLoop)
-            m_pEventLoop->exit();
-
-        /* Mark UIProgress as 'ended': */
-        m_fEnded = true;
-
-        /* Return early: */
         return;
-    }
 
-    /* If CProgress was not yet canceled: */
-    if (!m_comProgress.GetCanceled())
-    {
-        /* Notify listeners about the operation progress update: */
-        emit sigProgressChange(m_cOperations, m_comProgress.GetOperationDescription(),
-                               m_comProgress.GetOperation() + 1, m_comProgress.GetPercent());
-    }
+    /* We are creating a locally-scoped event-loop object,
+     * but holding a pointer to it for a control needs: */
+    QEventLoop eventLoop;
+    m_pEventLoop = &eventLoop;
+
+    /* Guard ourself for the case
+     * we self-destroyed in our event-loop: */
+    QPointer<UIProgress> guard = this;
+
+    /* Start the blocking event-loop: */
+    eventLoop.exec();
+
+    /* Event-loop object unblocked,
+     * Are we still valid? */
+    if (guard.isNull())
+        return;
+
+    /* Cleanup the pointer finally: */
+    m_pEventLoop = 0;
+}
+
+void UIProgress::sltHandleProgressPercentageChange(const QUuid &, const int iPercent)
+{
+    emit sigProgressChange(m_comProgress.GetOperationCount(),
+                           m_comProgress.GetOperationDescription(),
+                           m_comProgress.GetOperation(),
+                           iPercent);
+}
+
+void UIProgress::sltHandleProgressTaskComplete(const QUuid &)
+{
+    /* Notify listeners about the operation progress error: */
+    if (!m_comProgress.isOk() || m_comProgress.GetResultCode() != 0)
+        emit sigProgressError(UIErrorString::formatErrorInfo(m_comProgress));
+
+    /* Exit from the event-loop if there is any: */
+    if (m_pEventLoop)
+        m_pEventLoop->exit();
+}
+
+void UIProgress::prepare()
+{
+    /* Create CProgress event handler: */
+    m_pEventHandler = new UIProgressEventHandler(this, m_comProgress);
+    connect(m_pEventHandler, &UIProgressEventHandler::sigProgressPercentageChange,
+            this, &UIProgress::sltHandleProgressPercentageChange);
+    connect(m_pEventHandler, &UIProgressEventHandler::sigProgressTaskComplete,
+            this, &UIProgress::sltHandleProgressTaskComplete);
+}
+
+void UIProgress::cleanup()
+{
+    /* Destroy CProgress event handler: */
+    delete m_pEventHandler;
+    m_pEventHandler = 0;
 }

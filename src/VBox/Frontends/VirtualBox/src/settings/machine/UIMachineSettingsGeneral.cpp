@@ -1152,25 +1152,28 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                         fSuccess = comMedium.isOk();
                     }
 
-                    /* Create encryption update progress dialog: */
-                    QPointer<UIProgress> pDlg;
+                    /* Create encryption update progress object: */
+                    QPointer<UIProgress> pObject;
                     if (fSuccess)
                     {
-                        pDlg = new UIProgress(comProgress);
-                        connect(pDlg.data(), &UIProgress::sigProgressChange,
-                                this, &UIMachineSettingsGeneral::sigOperationProgressChange,
-                                Qt::QueuedConnection);
-                        connect(pDlg.data(), &UIProgress::sigProgressError,
-                            this, &UIMachineSettingsGeneral::sigOperationProgressError,
-                                Qt::BlockingQueuedConnection);
-                        pDlg->run(350);
-                        if (pDlg)
-                            delete pDlg;
-                        else
+                        pObject = new UIProgress(comProgress);
+                        if (pObject)
                         {
-                            // Premature application shutdown,
-                            // exit immediately:
-                            return true;
+                            connect(pObject.data(), &UIProgress::sigProgressChange,
+                                    this, &UIMachineSettingsGeneral::sigOperationProgressChange,
+                                    Qt::QueuedConnection);
+                            connect(pObject.data(), &UIProgress::sigProgressError,
+                                    this, &UIMachineSettingsGeneral::sigOperationProgressError,
+                                    Qt::BlockingQueuedConnection);
+                            pObject->run();
+                            if (pObject)
+                                delete pObject;
+                            else
+                            {
+                                // Premature application shutdown,
+                                // exit immediately:
+                                return true;
+                            }
                         }
                     }
 
