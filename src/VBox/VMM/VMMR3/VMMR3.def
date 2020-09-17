@@ -121,6 +121,7 @@ EXPORTS
     DBGFR3RegNmQuery
     DBGFR3RegNmQueryAll
     DBGFR3RegNmQueryAllCount
+    DBGFR3RegNmSetBatch
     DBGFR3OSDeregister
     DBGFR3OSRegister
     DBGFR3OSQueryInterface

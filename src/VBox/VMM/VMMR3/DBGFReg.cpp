@@ -2241,6 +2241,53 @@ VMMR3DECL(int) DBGFR3RegNmSet(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, P
 
 
 /**
+ * Set a given set of registers.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_INVALID_VM_HANDLE
+ * @retval  VERR_INVALID_CPU_ID
+ * @retval  VERR_DBGF_REGISTER_NOT_FOUND
+ * @retval  VERR_DBGF_UNSUPPORTED_CAST
+ * @retval  VINF_DBGF_TRUNCATED_REGISTER
+ * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
+ *
+ * @param   pUVM                The user mode VM handle.
+ * @param   idDefCpu            The virtual CPU ID for the default CPU register
+ *                              set.  Can be OR'ed with DBGFREG_HYPER_VMCPUID.
+ * @param   pszReg              The register to query.
+ * @param   pValue              The value to set
+ * @param   enmType             How to interpret the value in @a pValue.
+ *
+ * @todo This is a _very_ lazy implementation by a lazy developer, some semantics
+  *      need to be figured out before the real implementation especially how and
+  *      when errors and informational status codes like VINF_DBGF_TRUNCATED_REGISTER
+  *      should be returned (think of an error right in the middle of the batch, should we
+  *      save the state and roll back?).
+ */
+VMMR3DECL(int) DBGFR3RegNmSetBatch(PUVM pUVM, VMCPUID idDefCpu, PCDBGFREGENTRYNM paRegs, size_t cRegs)
+{
+    /*
+     * Validate input.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn((idDefCpu & ~DBGFREG_HYPER_VMCPUID) < pUVM->cCpus || idDefCpu == VMCPUID_ANY, VERR_INVALID_CPU_ID);
+    AssertPtrReturn(paRegs, VERR_INVALID_PARAMETER);
+    AssertReturn(cRegs > 0, VERR_INVALID_PARAMETER);
+
+    for (uint32_t i = 0; i < cRegs; i++)
+    {
+        int rc = DBGFR3RegNmSet(pUVM, idDefCpu, paRegs[i].pszName, &paRegs[i].Val, paRegs[i].enmType);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Internal worker for DBGFR3RegFormatValue, cbBuf is sufficent.
  *
  * @copydoc DBGFR3RegFormatValueEx
