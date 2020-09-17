@@ -2102,6 +2102,8 @@ static int dbgcKdCtxPktManipulate64SetContext(PKDCTX pThis, PCKDPACKETMANIPULATE
     RespHdr.idCpu       = pPktManip->Hdr.idCpu;
     RespHdr.u32NtStatus = NTSTATUS_SUCCESS;
 
+    /** @todo What do these flags mean? Can't be the context state to set because the valid one is
+     * in NTCONTEXT64::fContext (observed with WinDbg). */
     SetContext.u32CtxFlags = pPktManip->u.SetContext.u32CtxFlags;
 
     aRespSegs[0].pvSeg = &RespHdr;
@@ -2109,7 +2111,7 @@ static int dbgcKdCtxPktManipulate64SetContext(PKDCTX pThis, PCKDPACKETMANIPULATE
     aRespSegs[1].pvSeg = &SetContext;
     aRespSegs[1].cbSeg = sizeof(SetContext);
 
-    int rc = dbgcKdCtxSetNtCtx64(pThis, pPktManip->Hdr.idCpu, pNtCtx, SetContext.u32CtxFlags);
+    int rc = dbgcKdCtxSetNtCtx64(pThis, pPktManip->Hdr.idCpu, pNtCtx, pNtCtx->fContext);
     if (RT_FAILURE(rc))
         RespHdr.u32NtStatus = NTSTATUS_UNSUCCESSFUL; /** @todo Convert to an appropriate NT status code. */
 
