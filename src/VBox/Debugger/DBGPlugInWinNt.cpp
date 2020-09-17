@@ -139,7 +139,8 @@ typedef struct NTKUSERSHAREDDATA
     uint32_t        CryptoExponent;
     uint32_t        TimeZoneId;
     uint32_t        LargePageMinimum;
-    uint32_t        Reserved2[7];
+    uint32_t        Reserved2[6];
+    uint32_t        NtBuildNumber;
     uint32_t        NtProductType;
     uint8_t         ProductTypeIsValid;
     uint8_t         abPadding[3];
@@ -214,6 +215,8 @@ typedef struct DBGDIGGERWINNT
     uint32_t            NtMajorVersion;
     /** NTKUSERSHAREDDATA::NtMinorVersion */
     uint32_t            NtMinorVersion;
+    /** NTKUSERSHAREDDATA::NtBuildNumber */
+    uint32_t            NtBuildNumber;
 
     /** The address of the ntoskrnl.exe image. */
     DBGFADDRESS         KernelAddr;
@@ -509,13 +512,20 @@ static const char *dbgDiggerWintNtFilenameToModuleName(const char *pszFilename, 
  * @interface_method_impl{DBGFOSIWINNT,pfnQueryVersion}
  */
 static DECLCALLBACK(int) dbgDiggerWinNtIWinNt_QueryVersion(struct DBGFOSIWINNT *pThis, PUVM pUVM,
-                                                           uint32_t *puVersMajor, uint32_t *puVersMinor)
+                                                           uint32_t *puVersMajor, uint32_t *puVersMinor,
+                                                           uint32_t *puBuildNumber, bool *pf32Bit)
 {
     RT_NOREF(pUVM);
     PDBGDIGGERWINNT pData = RT_FROM_MEMBER(pThis, DBGDIGGERWINNT, IWinNt);
 
-    *puVersMajor = pData->NtMajorVersion;
-    *puVersMinor = pData->NtMinorVersion;
+    if (puVersMajor)
+        *puVersMajor = pData->NtMajorVersion;
+    if (puVersMinor)
+        *puVersMinor = pData->NtMinorVersion;
+    if (puBuildNumber)
+        *puBuildNumber = pData->NtBuildNumber;
+    if (pf32Bit)
+        *pf32Bit = pData->f32Bit;
     return VINF_SUCCESS;
 }
 
@@ -748,8 +758,8 @@ static DECLCALLBACK(int)  dbgDiggerWinNtQueryVersion(PUVM pUVM, void *pvData, ch
         case kNtProductType_Server:     pszNtProductType = "-Server";       break;
         default:                        pszNtProductType = "";              break;
     }
-    RTStrPrintf(pszVersion, cchVersion, "%u.%u-%s%s", pThis->NtMajorVersion, pThis->NtMinorVersion,
-                pThis->f32Bit ? "x86" : "AMD64", pszNtProductType);
+    RTStrPrintf(pszVersion, cchVersion, "%u.%u-%s%s (BuildNumber %u)", pThis->NtMajorVersion, pThis->NtMinorVersion,
+                pThis->f32Bit ? "x86" : "AMD64", pszNtProductType, pThis->NtBuildNumber);
     return VINF_SUCCESS;
 }
 
@@ -845,12 +855,14 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, void *pvData)
                               : kNtProductType_Invalid;
         pThis->NtMajorVersion = u.UserSharedData.NtMajorVersion;
         pThis->NtMinorVersion = u.UserSharedData.NtMinorVersion;
+        pThis->NtBuildNumber  = u.UserSharedData.NtBuildNumber;
     }
     else if (pThis->fNt31)
     {
         pThis->NtProductType  = kNtProductType_WinNt;
         pThis->NtMajorVersion = 3;
         pThis->NtMinorVersion = 1;
+        pThis->NtBuildNumber  = 0;
     }
     else
     {

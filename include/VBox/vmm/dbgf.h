@@ -2378,11 +2378,14 @@ typedef struct DBGFOSIWINNT
      * @returns VBox status code.
      * @param   pThis                           Pointer to the interface structure.
      * @param   pUVM                            The user mode VM handle.
-     * @param   puVersMajor                     Where to store the major version part.
-     * @param   puVersMinor                     Where to store the minor version part.
+     * @param   puVersMajor                     Where to store the major version part, optional.
+     * @param   puVersMinor                     Where to store the minor version part, optional.
+     * @param   puBuildNumber                   Where to store the build number, optional.
+     * @param   pf32Bit                         Where to store the flag whether this is a 32bit Windows NT, optional.
      */
     DECLCALLBACKMEMBER(int, pfnQueryVersion,(struct DBGFOSIWINNT *pThis, PUVM pUVM,
-                                             uint32_t *puVersMajor, uint32_t *puVersMinor));
+                                             uint32_t *puVersMajor, uint32_t *puVersMinor,
+                                             uint32_t *puBuildNumber, bool *pf32Bit));
 
     /**
      * Queries some base kernel pointers.

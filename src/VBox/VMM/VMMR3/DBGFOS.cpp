@@ -537,15 +537,17 @@ static DECLCALLBACK(int) dbgfR3OSEmtIDmesg_QueryKernelLog(PDBGFOSIDMESG pThis, P
 /**
  * @interface_method_impl{DBGFOSIWINNT,pfnQueryVersion, Generic EMT wrapper.}
  */
-static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryVersion(PDBGFOSIWINNT pThis, PUVM pUVM, uint32_t *puVersMajor, uint32_t *puVersMinor)
+static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryVersion(PDBGFOSIWINNT pThis, PUVM pUVM, uint32_t *puVersMajor, uint32_t *puVersMinor,
+                                                        uint32_t *puBuildNumber, bool *pf32Bit)
 {
     PDBGFOSEMTWRAPPER pWrapper = RT_FROM_MEMBER(pThis, DBGFOSEMTWRAPPER, uWrapper.WinNt);
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pUVM == pWrapper->pUVM, VERR_INVALID_VM_HANDLE);
 
     return VMR3ReqPriorityCallWaitU(pWrapper->pUVM, 0 /*idDstCpu*/,
-                                   (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryVersion, 4,
-                                    pWrapper->uDigger.pWinNt, pUVM, puVersMajor, puVersMinor);
+                                   (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryVersion, 6,
+                                    pWrapper->uDigger.pWinNt, pUVM, puVersMajor, puVersMinor,
+                                    puBuildNumber, pf32Bit);
 }
 
 
