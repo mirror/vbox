@@ -49,10 +49,19 @@
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** SetThreadDescription */
+typedef HRESULT (WINAPI *PFNSETTHREADDESCRIPTION)(HANDLE hThread, WCHAR *pwszName); /* Since W10 1607 */
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** The TLS index allocated for storing the RTTHREADINT pointer. */
 static DWORD g_dwSelfTLS = TLS_OUT_OF_INDEXES;
+/** Pointer to SetThreadDescription (KERNEL32.DLL) if available. */
+static PFNSETTHREADDESCRIPTION g_pfnSetThreadDescription = NULL;
 
 
 /*********************************************************************************************************************************
@@ -60,6 +69,7 @@ static DWORD g_dwSelfTLS = TLS_OUT_OF_INDEXES;
 *********************************************************************************************************************************/
 static unsigned __stdcall rtThreadNativeMain(void *pvArgs) RT_NOTHROW_PROTO;
 static void rtThreadWinTellDebuggerThreadName(uint32_t idThread, const char *pszName);
+DECLINLINE(void) rtThreadWinSetThreadName(PRTTHREADINT pThread, DWORD idThread);
 
 
 DECLHIDDEN(int) rtThreadNativeInit(void)
@@ -67,6 +77,8 @@ DECLHIDDEN(int) rtThreadNativeInit(void)
     g_dwSelfTLS = TlsAlloc();
     if (g_dwSelfTLS == TLS_OUT_OF_INDEXES)
         return VERR_NO_TLS_FOR_SELF;
+
+    g_pfnSetThreadDescription = (PFNSETTHREADDESCRIPTION)GetProcAddress(g_hModKernel32, "SetThreadDescription");
     return VINF_SUCCESS;
 }
 
@@ -109,8 +121,7 @@ DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
     if (!TlsSetValue(g_dwSelfTLS, pThread))
         return VERR_FAILED_TO_SET_SELF_TLS;
-    if (IsDebuggerPresent())
-        rtThreadWinTellDebuggerThreadName(GetCurrentThreadId(), pThread->szName);
+    rtThreadWinSetThreadName(pThread, GetCurrentThreadId());
     return VINF_SUCCESS;
 }
 
@@ -148,6 +159,31 @@ static void rtThreadWinTellDebuggerThreadName(uint32_t idThread, const char *psz
     __except(EXCEPTION_CONTINUE_EXECUTION)
     {
 
+    }
+}
+
+
+/**
+ * Sets the thread name as best as we can.
+ */
+DECLINLINE(void) rtThreadWinSetThreadName(PRTTHREADINT pThread, DWORD idThread)
+{
+    if (IsDebuggerPresent())
+        rtThreadWinTellDebuggerThreadName(idThread, &pThread->szName[0]);
+
+    /* The SetThreadDescription API introduced in windows 10 1607 / server 2016
+       allows setting the thread name while the debugger isn't attached.  Works
+       with WinDbgX, VisualStudio 2017 v15.6+, and presumeably some recent windbg
+       version. */
+    if (g_pfnSetThreadDescription)
+    {
+        /* The name should be ASCII, so we just need to expand 'char' to 'WCHAR'. */
+        WCHAR wszName[RTTHREAD_NAME_LEN];
+        for (size_t i = 0; i < RTTHREAD_NAME_LEN; i++)
+            wszName[i] = pThread->szName[i];
+
+        HRESULT hrc = g_pfnSetThreadDescription(GetCurrentThread(), wszName);
+        Assert(SUCCEEDED(hrc)); RT_NOREF(hrc);
     }
 }
 
@@ -249,8 +285,7 @@ static unsigned __stdcall rtThreadNativeMain(void *pvArgs) RT_NOTHROW_DEF
 
     if (!TlsSetValue(g_dwSelfTLS, pThread))
         AssertReleaseMsgFailed(("failed to set self TLS. lasterr=%d thread '%s'\n", GetLastError(), pThread->szName));
-    if (IsDebuggerPresent())
-        rtThreadWinTellDebuggerThreadName(dwThreadId, &pThread->szName[0]);
+    rtThreadWinSetThreadName(pThread, dwThreadId);
 
     int rc = rtThreadMain(pThread, dwThreadId, &pThread->szName[0]);
 
