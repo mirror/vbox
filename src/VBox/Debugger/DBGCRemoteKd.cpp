@@ -59,6 +59,7 @@
  * From: https://www.geoffchappell.com/studies/windows/km/ntoskrnl/structs/kprcb/amd64.htm */
 #define KD_KPCR_VERSION_BLOCK_ADDR_OFF              0x34
 
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -248,7 +249,7 @@ typedef const NTCONTEXT64 *PCNTCONTEXT64;
 
 
 /**
- * [GI]DT descriptor.
+ * 64bit [GI]DT descriptor.
  */
 typedef struct NTKCONTEXTDESC64
 {
@@ -260,9 +261,9 @@ typedef struct NTKCONTEXTDESC64
     uint64_t                    u64PtrBase;
 } NTKCONTEXTDESC64;
 AssertCompileSize(NTKCONTEXTDESC64, 2 * 8);
-/** Pointer to an amd64 NT context. */
+/** Pointer to a 64bit [GI]DT descriptor. */
 typedef NTKCONTEXTDESC64 *PNTKCONTEXTDESC64;
-/** Pointer to a const amd64 NT context. */
+/** Pointer to a const 64bit [GI]DT descriptor. */
 typedef const NTKCONTEXTDESC64 *PCNTKCONTEXTDESC64;
 
 
@@ -332,6 +333,152 @@ AssertCompileMemberOffset(NTKCONTEXT64, Ctx, 224);
 typedef NTKCONTEXT64 *PNTKCONTEXT64;
 /** Pointer to a const amd64 NT context. */
 typedef const NTKCONTEXT64 *PCNTKCONTEXT64;
+
+
+/**
+ * 32bit context FPU save area.
+ */
+typedef struct NTCONTEXT32_FPU_SAVE_AREA
+{
+    uint32_t                    u32CtrlWord;
+    uint32_t                    u32StatusWord;
+    uint32_t                    u32TagWord;
+    uint32_t                    u32ErrorOff;
+    uint32_t                    u32ErrorSel;
+    uint32_t                    u32DataOff;
+    uint32_t                    u32DataSel;
+    uint8_t                     abRegArea[80];
+    uint32_t                    u32Cr0Npx;
+} NTCONTEXT32_FPU_SAVE_AREA;
+/** Pointer to an 32bit context FPU save area. */
+typedef NTCONTEXT32_FPU_SAVE_AREA *PNTCONTEXT32_FPU_SAVE_AREA;
+/** Pointer to a const 32bit context FPU save area. */
+typedef const NTCONTEXT32_FPU_SAVE_AREA *PCNTCONTEXT32_FPU_SAVE_AREA;
+
+
+/**
+ * i386 NT context structure.
+ */
+typedef struct NTCONTEXT32
+{
+    /** Context flags indicating the valid bits, see NTCONTEXT_F_XXX. */
+    uint32_t                    fContext;
+    /** DR0 register. */
+    uint32_t                    u32RegDr0;
+    /** DR1 register. */
+    uint32_t                    u32RegDr1;
+    /** DR2 register. */
+    uint32_t                    u32RegDr2;
+    /** DR3 register. */
+    uint32_t                    u32RegDr3;
+    /** DR6 register. */
+    uint32_t                    u32RegDr6;
+    /** DR7 register. */
+    uint32_t                    u32RegDr7;
+    /** Floating point save area. */
+    NTCONTEXT32_FPU_SAVE_AREA   FloatSave;
+    /** GS segment. */
+    uint32_t                    u32SegGs;
+    /** FS segment. */
+    uint32_t                    u32SegFs;
+    /** ES segment. */
+    uint32_t                    u32SegEs;
+    /** DS segment. */
+    uint32_t                    u32SegDs;
+    /** EDI register. */
+    uint32_t                    u32RegEdi;
+    /** ESI register. */
+    uint32_t                    u32RegEsi;
+    /** EBX register. */
+    uint32_t                    u32RegEbx;
+    /** EDX register. */
+    uint32_t                    u32RegEdx;
+    /** ECX register. */
+    uint32_t                    u32RegEcx;
+    /** EAX register. */
+    uint32_t                    u32RegEax;
+    /** EBP register. */
+    uint32_t                    u32RegEbp;
+    /** EIP register. */
+    uint32_t                    u32RegEip;
+    /** CS segment. */
+    uint32_t                    u32SegCs;
+    /** EFLAGS register. */
+    uint32_t                    u32RegEflags;
+    /** ESP register. */
+    uint32_t                    u32RegEsp;
+    /** SS segment. */
+    uint32_t                    u32SegSs;
+    /** @todo Extended registers */
+    uint8_t                     abRegsExtended[512];
+} NTCONTEXT32;
+AssertCompileSize(NTCONTEXT32, 716);
+/** Pointer to an i386 NT context. */
+typedef NTCONTEXT32 *PNTCONTEXT32;
+/** Pointer to a const i386 NT context. */
+typedef const NTCONTEXT32 *PCNTCONTEXT32;
+
+
+/**
+ * 32bit [GI]DT descriptor.
+ */
+typedef struct NTKCONTEXTDESC32
+{
+    /** Alignment. */
+    uint16_t                    u16Alignment;
+    /** Limit. */
+    uint16_t                    u16Limit;
+    /** Base address. */
+    uint32_t                    u32PtrBase;
+} NTKCONTEXTDESC32;
+AssertCompileSize(NTKCONTEXTDESC32, 2 * 4);
+/** Pointer to an 32bit [GI]DT descriptor. */
+typedef NTKCONTEXTDESC32 *PNTKCONTEXTDESC32;
+/** Pointer to a const 32bit [GI]DT descriptor. */
+typedef const NTKCONTEXTDESC32 *PCNTKCONTEXTDESC32;
+
+
+/**
+ * 32bit Kernel context as queried by KD_PACKET_MANIPULATE_REQ_READ_CTRL_SPACE
+ */
+typedef struct NTKCONTEXT32
+{
+    /** CR0 register. */
+    uint32_t                    u32RegCr0;
+    /** CR2 register. */
+    uint32_t                    u32RegCr2;
+    /** CR3 register. */
+    uint32_t                    u32RegCr3;
+    /** CR4 register. */
+    uint32_t                    u32RegCr4;
+    /** DR0 register. */
+    uint32_t                    u32RegDr0;
+    /** DR1 register. */
+    uint32_t                    u32RegDr1;
+    /** DR2 register. */
+    uint32_t                    u32RegDr2;
+    /** DR3 register. */
+    uint32_t                    u32RegDr3;
+    /** DR6 register. */
+    uint32_t                    u32RegDr6;
+    /** DR7 register. */
+    uint32_t                    u32RegDr7;
+    /** GDTR. */
+    NTKCONTEXTDESC32            Gdtr;
+    /** IDTR. */
+    NTKCONTEXTDESC32            Idtr;
+    /** TR register. */
+    uint16_t                    u16RegTr;
+    /** LDTR register. */
+    uint16_t                    u16RegLdtr;
+    /** Padding. */
+    uint8_t                     abPad[24];
+} NTKCONTEXT32;
+AssertCompileSize(NTKCONTEXT32, 84);
+/** Pointer to an i386 NT context. */
+typedef NTKCONTEXT32 *PNTKCONTEXT32;
+/** Pointer to a const i386 NT context. */
+typedef const NTKCONTEXT32 *PCNTKCONTEXT32;
 
 
 /** x86 context. */
@@ -904,6 +1051,8 @@ typedef struct KDCTX
 
     /** Pointer to the OS digger WinNt interface if a matching guest was detected. */
     PDBGFOSIWINNT               pIfWinNt;
+    /** Flag whether the detected guest is 32bit (false if 64bit). */
+    bool                        f32Bit;
 } KDCTX;
 /** Pointer to the KD context data. */
 typedef KDCTX *PKDCTX;
@@ -911,6 +1060,12 @@ typedef KDCTX *PKDCTX;
 typedef const KDCTX *PCKDCTX;
 /** Pointer to a KD context data pointer. */
 typedef PKDCTX *PPKDCTX;
+
+
+/** Creates a possibly sign extended guest context pointer which is required for 32bit targets. */
+#define KD_PTR_CREATE(a_pThis, a_GCPtr) ((a_pThis)->f32Bit && ((a_GCPtr) & RT_BIT_32(31)) ? (a_GCPtr) | UINT64_C(0xffffffff00000000) : (a_GCPtr))
+/** Returns the value of a possibly sign extended guest context pointer received for 32bit targets. */
+#define KD_PTR_GET(a_pThis, a_GCPtr) ((a_pThis)->f32Bit ? (a_GCPtr) & ~UINT64_C(0xffffffff00000000) : (a_GCPtr))
 
 
 /*********************************************************************************************************************************
@@ -1252,6 +1407,97 @@ static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCt
 }
 
 
+/**
+ * Fills in the given 32bit NT context structure with the requested values.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   idCpu               The CPU to query the context for.
+ * @param   pNtCtx              The NT context structure to fill in.
+ * @param   fCtxFlags           Combination of NTCONTEXT_F_XXX determining what to fill in.
+ */
+static int dbgcKdCtxQueryNtCtx32(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT32 pNtCtx, uint32_t fCtxFlags)
+{
+    RT_BZERO(pNtCtx, sizeof(*pNtCtx));
+
+    pNtCtx->fContext = NTCONTEXT_F_X86;
+
+    int rc = VINF_SUCCESS;
+    if (fCtxFlags & NTCONTEXT_F_CONTROL)
+    {
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_CS, &pNtCtx->u32SegCs);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_SS, &pNtCtx->u32SegSs);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EIP, &pNtCtx->u32RegEip);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_ESP, &pNtCtx->u32RegEsp);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EBP, &pNtCtx->u32RegEbp);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EFLAGS, &pNtCtx->u32RegEflags);
+        if (RT_SUCCESS(rc))
+            pNtCtx->fContext |= NTCONTEXT_F_CONTROL;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && fCtxFlags & NTCONTEXT_F_INTEGER)
+    {
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EAX, &pNtCtx->u32RegEax);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_ECX, &pNtCtx->u32RegEcx);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EDX, &pNtCtx->u32RegEdx);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EBX, &pNtCtx->u32RegEbx);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_ESI, &pNtCtx->u32RegEsi);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_EDI, &pNtCtx->u32RegEdi);
+        if (RT_SUCCESS(rc))
+            pNtCtx->fContext |= NTCONTEXT_F_INTEGER;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && fCtxFlags & NTCONTEXT_F_SEGMENTS)
+    {
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DS, &pNtCtx->u32SegDs);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_ES, &pNtCtx->u32SegEs);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_FS, &pNtCtx->u32SegFs);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_GS, &pNtCtx->u32SegGs);
+        if (RT_SUCCESS(rc))
+            pNtCtx->fContext |= NTCONTEXT_F_SEGMENTS;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && fCtxFlags & NTCONTEXT_F_FLOATING_POINT)
+    {
+        /** @todo. */
+    }
+
+    if (   RT_SUCCESS(rc)
+        && fCtxFlags & NTCONTEXT_F_DEBUG)
+    {
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR0, &pNtCtx->u32RegDr0);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR1, &pNtCtx->u32RegDr1);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR3, &pNtCtx->u32RegDr3);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR6, &pNtCtx->u32RegDr6);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR7, &pNtCtx->u32RegDr7);
+        if (RT_SUCCESS(rc))
+            pNtCtx->fContext |= NTCONTEXT_F_DEBUG;
+    }
+
+    return rc;
+}
+
+
 #define KD_REG_INIT(a_pszName, a_enmType, a_ValMember, a_Val) \
     do \
     { \
@@ -1410,6 +1656,55 @@ static int dbgcKdCtxQueryNtKCtx64(PKDCTX pThis, VMCPUID idCpu, PNTKCONTEXT64 pKN
 
     if (RT_SUCCESS(rc))
         rc = dbgcKdCtxQueryNtCtx64(pThis, idCpu, &pKNtCtx->Ctx, fCtxFlags);
+
+    return rc;
+}
+
+
+/**
+ * Fills in the given 32bit NT kernel context structure with the requested values.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   idCpu               The CPU to query the context for.
+ * @param   pKNtCtx             The NT context structure to fill in.
+ */
+static int dbgcKdCtxQueryNtKCtx32(PKDCTX pThis, VMCPUID idCpu, PNTKCONTEXT32 pKNtCtx)
+{
+    RT_BZERO(pKNtCtx, sizeof(*pKNtCtx));
+
+    int rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_CR0, &pKNtCtx->u32RegCr0);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_CR2, &pKNtCtx->u32RegCr2);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_CR3, &pKNtCtx->u32RegCr3);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_CR4, &pKNtCtx->u32RegCr4);
+
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR0, &pKNtCtx->u32RegDr0);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR1, &pKNtCtx->u32RegDr1);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR2, &pKNtCtx->u32RegDr2);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR3, &pKNtCtx->u32RegDr3);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR6, &pKNtCtx->u32RegDr6);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR7, &pKNtCtx->u32RegDr7);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_GDTR_LIMIT, &pKNtCtx->Gdtr.u16Limit);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_GDTR_BASE, &pKNtCtx->Gdtr.u32PtrBase);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_IDTR_LIMIT, &pKNtCtx->Idtr.u16Limit);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_IDTR_BASE, &pKNtCtx->Idtr.u32PtrBase);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_TR, &pKNtCtx->u16RegTr);
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_LDTR, &pKNtCtx->u16RegLdtr);
 
     return rc;
 }
@@ -1801,79 +2096,67 @@ static int dbgcKdCtxStateChangeSend(PKDCTX pThis, DBGFEVENTTYPE enmType)
 
     /* Select the record to send based on the CPU mode. */
     int rc = VINF_SUCCESS;
-    CPUMMODE enmMode = DBGCCmdHlpGetCpuMode(&pThis->Dbgc.CmdHlp);
-    switch (enmMode)
+    KDPACKETSTATECHANGE64 StateChange64;
+    RT_ZERO(StateChange64);
+
+    StateChange64.u32StateNew = KD_PACKET_STATE_CHANGE_EXCEPTION;
+    StateChange64.u16CpuLvl   = 0x6; /** @todo Figure this one out. */
+    StateChange64.idCpu       = pThis->Dbgc.idCpu;
+    StateChange64.cCpus       = (uint16_t)DBGFR3CpuGetCount(pThis->Dbgc.pUVM);
+    rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_RIP, &StateChange64.u64RipThread);
+    if (RT_SUCCESS(rc))
     {
-        case CPUMMODE_PROTECTED:
+        DBGFADDRESS AddrRip;
+        DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &AddrRip, StateChange64.u64RipThread);
+
+        StateChange64.u64RipThread = KD_PTR_CREATE(pThis, StateChange64.u64RipThread);
+
+        /** @todo Properly fill in the exception record. */
+        switch (enmType)
         {
-            break;
+            case DBGFEVENT_HALT_DONE:
+            case DBGFEVENT_BREAKPOINT:
+            case DBGFEVENT_BREAKPOINT_IO:
+            case DBGFEVENT_BREAKPOINT_MMIO:
+            case DBGFEVENT_BREAKPOINT_HYPER:
+                StateChange64.u.Exception.ExcpRec.u32ExcpCode = KD_PACKET_EXCP_CODE_BKPT;
+                break;
+            case DBGFEVENT_STEPPED:
+            case DBGFEVENT_STEPPED_HYPER:
+                StateChange64.u.Exception.ExcpRec.u32ExcpCode = KD_PACKET_EXCP_CODE_SINGLE_STEP;
+                break;
+            default:
+                AssertMsgFailed(("Invalid DBGF event type for state change %d!\n", enmType));
         }
-        case CPUMMODE_LONG:
+
+        StateChange64.u.Exception.ExcpRec.cExcpParms = 3;
+        StateChange64.u.Exception.u32FirstChance     = 0x1;
+
+        /** @todo Properly fill in the control report. */
+        rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_DR6, &StateChange64.uCtrlReport.Amd64.u64RegDr6);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_DR7, &StateChange64.uCtrlReport.Amd64.u64RegDr7);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_RFLAGS, &StateChange64.uCtrlReport.Amd64.u32RegEflags);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_CS, &StateChange64.uCtrlReport.Amd64.u16SegCs);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_DS, &StateChange64.uCtrlReport.Amd64.u16SegDs);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_ES, &StateChange64.uCtrlReport.Amd64.u16SegEs);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_FS, &StateChange64.uCtrlReport.Amd64.u16SegFs);
+
+        /* Read instruction bytes. */
+        StateChange64.uCtrlReport.Amd64.cbInsnStream = sizeof(StateChange64.uCtrlReport.Amd64.abInsn);
+        rc = DBGFR3MemRead(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, &AddrRip,
+                           &StateChange64.uCtrlReport.Amd64.abInsn[0], StateChange64.uCtrlReport.Amd64.cbInsnStream);
+        if (RT_SUCCESS(rc))
         {
-            KDPACKETSTATECHANGE64 StateChange64;
-            RT_ZERO(StateChange64);
-
-            StateChange64.u32StateNew = KD_PACKET_STATE_CHANGE_EXCEPTION;
-            StateChange64.u16CpuLvl   = 0x6; /** @todo Figure this one out. */
-            StateChange64.idCpu       = pThis->Dbgc.idCpu;
-            StateChange64.cCpus       = (uint16_t)DBGFR3CpuGetCount(pThis->Dbgc.pUVM);
-            rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_RIP, &StateChange64.u64RipThread);
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Properly fill in the exception record. */
-                switch (enmType)
-                {
-                    case DBGFEVENT_HALT_DONE:
-                    case DBGFEVENT_BREAKPOINT:
-                    case DBGFEVENT_BREAKPOINT_IO:
-                    case DBGFEVENT_BREAKPOINT_MMIO:
-                    case DBGFEVENT_BREAKPOINT_HYPER:
-                        StateChange64.u.Exception.ExcpRec.u32ExcpCode = KD_PACKET_EXCP_CODE_BKPT;
-                        break;
-                    case DBGFEVENT_STEPPED:
-                    case DBGFEVENT_STEPPED_HYPER:
-                        StateChange64.u.Exception.ExcpRec.u32ExcpCode = KD_PACKET_EXCP_CODE_SINGLE_STEP;
-                        break;
-                    default:
-                        AssertMsgFailed(("Invalid DBGF event type for state change %d!\n", enmType));
-                }
-
-                StateChange64.u.Exception.ExcpRec.cExcpParms = 3;
-                StateChange64.u.Exception.u32FirstChance     = 0x1;
-
-                /** @todo Properly fill in the control report. */
-                rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_DR6, &StateChange64.uCtrlReport.Amd64.u64RegDr6);
-                if (RT_SUCCESS(rc))
-                    rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_DR7, &StateChange64.uCtrlReport.Amd64.u64RegDr7);
-                if (RT_SUCCESS(rc))
-                    rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_RFLAGS, &StateChange64.uCtrlReport.Amd64.u32RegEflags);
-                if (RT_SUCCESS(rc))
-                    rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_CS, &StateChange64.uCtrlReport.Amd64.u16SegCs);
-                if (RT_SUCCESS(rc))
-                    rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_DS, &StateChange64.uCtrlReport.Amd64.u16SegDs);
-                if (RT_SUCCESS(rc))
-                    rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_ES, &StateChange64.uCtrlReport.Amd64.u16SegEs);
-                if (RT_SUCCESS(rc))
-                    rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGFREG_FS, &StateChange64.uCtrlReport.Amd64.u16SegFs);
-
-                /* Read instruction bytes. */
-                StateChange64.uCtrlReport.Amd64.cbInsnStream = sizeof(StateChange64.uCtrlReport.Amd64.abInsn);
-                DBGFADDRESS AddrRip;
-                DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &AddrRip, StateChange64.u64RipThread);
-                rc = DBGFR3MemRead(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, &AddrRip,
-                                   &StateChange64.uCtrlReport.Amd64.abInsn[0], StateChange64.uCtrlReport.Amd64.cbInsnStream);
-                if (RT_SUCCESS(rc))
-                {
-                    pThis->idPktNext = KD_PACKET_HDR_ID_INITIAL;
-                    rc = dbgcKdCtxPktSend(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_CHANGE64,
-                                          &StateChange64, sizeof(StateChange64), false /*fAck*/);
-                }
-            }
-            break;
+            pThis->idPktNext = KD_PACKET_HDR_ID_INITIAL;
+            rc = dbgcKdCtxPktSend(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_CHANGE64,
+                                  &StateChange64, sizeof(StateChange64), false /*fAck*/);
         }
-        case CPUMMODE_REAL:
-        default:
-            return DBGCCmdHlpPrintf(&pThis->Dbgc.CmdHlp, "error: Invalid CPU mode %d.\n", enmMode);
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -1916,7 +2199,7 @@ static int dbgcKdCtxPktManipulate64GetVersion(PKDCTX pThis, PCKDPACKETMANIPULATE
     Resp.u.GetVersion.u16VersMaj             = NtBuildNumber >> 16;
     Resp.u.GetVersion.u16VersMin             = NtBuildNumber & UINT32_C(0xffff);
     Resp.u.GetVersion.u8VersProtocol         = 0x6; /* From a Windows 10 guest. */
-    Resp.u.GetVersion.u8VersKdSecondary      = 0x2; /* From a Windows 10 guest. */
+    Resp.u.GetVersion.u8VersKdSecondary      = pThis->f32Bit ? 0 : 0x2; /* amd64 has a versioned context (0 and 1 are obsolete). */
     Resp.u.GetVersion.fFlags                 = KD_PACKET_MANIPULATE64_GET_VERSION_F_MP;
     Resp.u.GetVersion.u8MaxPktType           = KD_PACKET_HDR_SUB_TYPE_MAX;
     Resp.u.GetVersion.u8MaxStateChange       = KD_PACKET_STATE_CHANGE_MAX - KD_PACKET_STATE_CHANGE_MIN;
@@ -1924,7 +2207,11 @@ static int dbgcKdCtxPktManipulate64GetVersion(PKDCTX pThis, PCKDPACKETMANIPULATE
     Resp.u.GetVersion.u64PtrDebuggerDataList = 0;
 
     if (f32Bit)
-        Resp.u.GetVersion.u16MachineType = IMAGE_FILE_MACHINE_I386;
+    {
+        Resp.u.GetVersion.u16MachineType           = IMAGE_FILE_MACHINE_I386;
+        Resp.u.GetVersion.u64PtrKernBase           = KD_PTR_CREATE(pThis, Resp.u.GetVersion.u64PtrKernBase);
+        Resp.u.GetVersion.u64PtrPsLoadedModuleList = KD_PTR_CREATE(pThis, Resp.u.GetVersion.u64PtrPsLoadedModuleList);
+    }
     else
     {
         Resp.u.GetVersion.u16MachineType = IMAGE_FILE_MACHINE_AMD64;
@@ -1953,9 +2240,9 @@ static int dbgcKdCtxPktManipulate64ReadMem(PKDCTX pThis, PCKDPACKETMANIPULATE64 
     DBGFADDRESS AddrRead;
     uint32_t cbRead = RT_MIN(sizeof(abMem), pPktManip->u.XferMem.cbXferReq);
     if (pPktManip->Hdr.idReq == KD_PACKET_MANIPULATE_REQ_READ_VIRT_MEM)
-        DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &AddrRead, pPktManip->u.XferMem.u64PtrTarget);
+        DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &AddrRead, KD_PTR_GET(pThis, pPktManip->u.XferMem.u64PtrTarget));
     else
-        DBGFR3AddrFromPhys(pThis->Dbgc.pUVM, &AddrRead, pPktManip->u.XferMem.u64PtrTarget);
+        DBGFR3AddrFromPhys(pThis->Dbgc.pUVM, &AddrRead, KD_PTR_GET(pThis, pPktManip->u.XferMem.u64PtrTarget));
 
     RTSGSEG aRespSegs[3];
     uint32_t cSegs = 2; /* Gets incremented when read is successful. */
@@ -2005,9 +2292,9 @@ static int dbgcKdCtxPktManipulate64WriteMem(PKDCTX pThis, PCKDPACKETMANIPULATE64
     const void *pv = &pThis->abBody[sizeof(*pPktManip)]; /* Data comes directly after the manipulate state body. */
     uint32_t cbWrite = RT_MIN(sizeof(pThis->abBody) - sizeof(*pPktManip), pPktManip->u.XferMem.cbXferReq);
     if (pPktManip->Hdr.idReq == KD_PACKET_MANIPULATE_REQ_WRITE_VIRT_MEM)
-        DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &AddrWrite, pPktManip->u.XferMem.u64PtrTarget);
+        DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &AddrWrite, KD_PTR_GET(pThis, pPktManip->u.XferMem.u64PtrTarget));
     else
-        DBGFR3AddrFromPhys(pThis->Dbgc.pUVM, &AddrWrite, pPktManip->u.XferMem.u64PtrTarget);
+        DBGFR3AddrFromPhys(pThis->Dbgc.pUVM, &AddrWrite, KD_PTR_GET(pThis, pPktManip->u.XferMem.u64PtrTarget));
 
     RTSGSEG aRespSegs[2];
     uint32_t cSegs = 2;
@@ -2152,63 +2439,76 @@ static int dbgcKdCtxPktManipulate64ReadCtrlSpace(PKDCTX pThis, PCKDPACKETMANIPUL
     aRespSegs[1].cbSeg = sizeof(XferCtrlSpace64);
 
     int rc = VINF_SUCCESS;
-    switch (pPktManip->u.XferCtrlSpace.u64IdXfer)
+    if (pThis->f32Bit)
     {
-        case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KPCR:
+        if (pPktManip->u.XferCtrlSpace.u64IdXfer == sizeof(NTCONTEXT32))
         {
-            if (pThis->pIfWinNt)
-            {
-                RTGCUINTPTR GCPtrKpcr = 0;
-
-                rc = pThis->pIfWinNt->pfnQueryKpcrForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, RespHdr.idCpu,
-                                                          &GCPtrKpcr, NULL /*pKpcrb*/);
-                if (RT_SUCCESS(rc))
-                    memcpy(&abResp[0], &GCPtrKpcr, sizeof(GCPtrKpcr));
-            }
-
-            cbData = sizeof(RTGCUINTPTR);
-            break;
-        }
-        case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KPCRB:
-        {
-            if (pThis->pIfWinNt)
-            {
-                RTGCUINTPTR GCPtrKpcrb = 0;
-
-                rc = pThis->pIfWinNt->pfnQueryKpcrForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, RespHdr.idCpu,
-                                                          NULL /*pKpcr*/, &GCPtrKpcrb);
-                if (RT_SUCCESS(rc))
-                    memcpy(&abResp[0], &GCPtrKpcrb, sizeof(GCPtrKpcrb));
-            }
-
-            cbData = sizeof(RTGCUINTPTR);
-            break;
-        }
-        case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KCTX:
-        {
-            rc = dbgcKdCtxQueryNtKCtx64(pThis, RespHdr.idCpu, (PNTKCONTEXT64)&abResp[0], NTCONTEXT64_F_FULL);
+            /* Queries the kernel context. */
+            rc = dbgcKdCtxQueryNtKCtx32(pThis, RespHdr.idCpu, (PNTKCONTEXT32)&abResp[0]);
             if (RT_SUCCESS(rc))
-                cbData = sizeof(NTKCONTEXT64);
-            break;
+                cbData = sizeof(NTKCONTEXT32);
         }
-        case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KTHRD:
+    }
+    else
+    {
+        switch (pPktManip->u.XferCtrlSpace.u64IdXfer)
         {
-            if (pThis->pIfWinNt)
+            case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KPCR:
             {
-                RTGCUINTPTR GCPtrCurThrd = 0;
+                if (pThis->pIfWinNt)
+                {
+                    RTGCUINTPTR GCPtrKpcr = 0;
 
-                rc = pThis->pIfWinNt->pfnQueryCurThrdForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, RespHdr.idCpu,
-                                                             &GCPtrCurThrd);
-                if (RT_SUCCESS(rc))
-                    memcpy(&abResp[0], &GCPtrCurThrd, sizeof(GCPtrCurThrd));
+                    rc = pThis->pIfWinNt->pfnQueryKpcrForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, RespHdr.idCpu,
+                                                              &GCPtrKpcr, NULL /*pKpcrb*/);
+                    if (RT_SUCCESS(rc))
+                        memcpy(&abResp[0], &GCPtrKpcr, sizeof(GCPtrKpcr));
+                }
+
+                cbData = sizeof(RTGCUINTPTR);
+                break;
             }
+            case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KPCRB:
+            {
+                if (pThis->pIfWinNt)
+                {
+                    RTGCUINTPTR GCPtrKpcrb = 0;
 
-            cbData = sizeof(RTGCUINTPTR);
-            break;
+                    rc = pThis->pIfWinNt->pfnQueryKpcrForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, RespHdr.idCpu,
+                                                              NULL /*pKpcr*/, &GCPtrKpcrb);
+                    if (RT_SUCCESS(rc))
+                        memcpy(&abResp[0], &GCPtrKpcrb, sizeof(GCPtrKpcrb));
+                }
+
+                cbData = sizeof(RTGCUINTPTR);
+                break;
+            }
+            case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KCTX:
+            {
+                rc = dbgcKdCtxQueryNtKCtx64(pThis, RespHdr.idCpu, (PNTKCONTEXT64)&abResp[0], NTCONTEXT64_F_FULL);
+                if (RT_SUCCESS(rc))
+                    cbData = sizeof(NTKCONTEXT64);
+                break;
+            }
+            case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KTHRD:
+            {
+                if (pThis->pIfWinNt)
+                {
+                    RTGCUINTPTR GCPtrCurThrd = 0;
+
+                    rc = pThis->pIfWinNt->pfnQueryCurThrdForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, RespHdr.idCpu,
+                                                                 &GCPtrCurThrd);
+                    if (RT_SUCCESS(rc))
+                        memcpy(&abResp[0], &GCPtrCurThrd, sizeof(GCPtrCurThrd));
+                }
+
+                cbData = sizeof(RTGCUINTPTR);
+                break;
+            }
+            default:
+                rc = VERR_NOT_SUPPORTED;
+                break;
         }
-        default:
-            rc = VERR_NOT_SUPPORTED;
-            break;
     }
 
     if (   RT_SUCCESS(rc)
@@ -2370,8 +2670,12 @@ static int dbgcKdCtxPktManipulate64GetContextEx(PKDCTX pThis, PCKDPACKETMANIPULA
 {
     KDPACKETMANIPULATEHDR RespHdr;
     KDPACKETMANIPULATE_CONTEXTEX ContextEx;
-    NTCONTEXT64 NtCtx;
-    RT_ZERO(RespHdr); RT_ZERO(ContextEx);
+    union
+    {
+        NTCONTEXT64 v64;
+        NTCONTEXT32 v32;
+    } NtCtx;
+    RT_ZERO(RespHdr); RT_ZERO(ContextEx); RT_ZERO(NtCtx);
 
     RTSGSEG aRespSegs[3];
     uint32_t cSegs = 2;
@@ -2389,12 +2693,17 @@ static int dbgcKdCtxPktManipulate64GetContextEx(PKDCTX pThis, PCKDPACKETMANIPULA
     aRespSegs[1].pvSeg = &ContextEx;
     aRespSegs[1].cbSeg = sizeof(ContextEx);
 
-    int rc = dbgcKdCtxQueryNtCtx64(pThis, pPktManip->Hdr.idCpu, &NtCtx, NTCONTEXT64_F_FULL);
+    int rc = VINF_SUCCESS;
+    size_t cbCtx = pThis->f32Bit ? sizeof(NtCtx.v32) : sizeof(NtCtx.v64);
+    if (pThis->f32Bit)
+        dbgcKdCtxQueryNtCtx32(pThis, pPktManip->Hdr.idCpu, &NtCtx.v32, NTCONTEXT32_F_FULL);
+    else
+        dbgcKdCtxQueryNtCtx64(pThis, pPktManip->Hdr.idCpu, &NtCtx.v64, NTCONTEXT64_F_FULL);
     if (   RT_SUCCESS(rc)
-        && pPktManip->u.ContextEx.offStart < sizeof(NtCtx))
+        && pPktManip->u.ContextEx.offStart < cbCtx)
     {
         RespHdr.u32NtStatus = NTSTATUS_SUCCESS;
-        ContextEx.cbXfered = RT_MIN(sizeof(NtCtx) - ContextEx.offStart, ContextEx.cbXfer);
+        ContextEx.cbXfered = RT_MIN(cbCtx - ContextEx.offStart, ContextEx.cbXfer);
 
         aRespSegs[2].pvSeg = (uint8_t *)&NtCtx + ContextEx.offStart;
         aRespSegs[2].cbSeg = ContextEx.cbXfered;
@@ -2543,25 +2852,8 @@ static int dbgcKdCtxPktProcess(PKDCTX pThis)
                 }
                 case KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE:
                 {
-                    CPUMMODE enmMode = DBGCCmdHlpGetCpuMode(&pThis->Dbgc.CmdHlp);
-                    switch (enmMode)
-                    {
-                        case CPUMMODE_PROTECTED:
-                        {
-                            rc = VERR_NOT_IMPLEMENTED;
-                            break;
-                        }
-                        case CPUMMODE_LONG:
-                        {
-                            pThis->idPktNext = pThis->PktHdr.Fields.idPacket ^ 0x1;
-                            rc = dbgcKdCtxPktManipulate64Process(pThis);
-                            break;
-                        }
-                        case CPUMMODE_REAL:
-                        default:
-                            rc = VERR_NOT_SUPPORTED;
-                            break;
-                    }
+                    pThis->idPktNext = pThis->PktHdr.Fields.idPacket ^ 0x1;
+                    rc = dbgcKdCtxPktManipulate64Process(pThis);
                     break;
                 }
                 case KD_PACKET_HDR_SUB_TYPE_ACKNOWLEDGE:
@@ -3097,6 +3389,7 @@ static int dbgcKdCtxCreate(PPKDCTX ppKdCtx, PDBGCBACK pBack, unsigned fFlags)
     pThis->fBreakinRecv = false;
     pThis->idPktNext    = KD_PACKET_HDR_ID_INITIAL;
     pThis->pIfWinNt     = NULL;
+    pThis->f32Bit       = false;
     dbgcKdCtxPktRecvReset(pThis);
 
     *ppKdCtx = pThis;
@@ -3183,6 +3476,28 @@ DECLHIDDEN(int) dbgcKdStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
             {
                 LogRel(("DBGC/Kd: Unable to detect any guest operating system type, rc=%Rrc\n", rc));
                 rc = VINF_SUCCESS; /* Try to continue nevertheless. */
+            }
+
+            if (pThis->pIfWinNt)
+            {
+                rc = pThis->pIfWinNt->pfnQueryVersion(pThis->pIfWinNt, pThis->Dbgc.pUVM,
+                                                      NULL /*puVersMajor*/, NULL /*puVersMinor*/,
+                                                      NULL /*puBuildNumber*/, &pThis->f32Bit);
+                AssertRC(rc);
+            }
+            else
+            {
+                /*
+                 * Try to detect bitness based on the current CPU mode which might fool us (32bit process running
+                 * inside of 64bit host).
+                 */
+                CPUMMODE enmMode = DBGCCmdHlpGetCpuMode(&pThis->Dbgc.CmdHlp);
+                if (enmMode == CPUMMODE_PROTECTED)
+                    pThis->f32Bit = true;
+                else if (enmMode == CPUMMODE_LONG)
+                    pThis->f32Bit = false;
+                else
+                    LogRel(("DBGC/Kd: Heh, trying to debug real mode code with WinDbg are we? Good luck with that...\n"));
             }
         }
         else
