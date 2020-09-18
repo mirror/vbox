@@ -864,7 +864,7 @@ static DECLCALLBACK(uint64_t) rtDvmFmtMbrVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
 
     uint64_t fFlags = DVMVOLUME_F_CONTIGUOUS;
-    if (pVol->pEntry->bType & 0x80)
+    if (pVol->pEntry->fFlags & 0x80)
         fFlags |= DVMVOLUME_FLAGS_BOOTABLE | DVMVOLUME_FLAGS_ACTIVE;
 
     return fFlags;
