@@ -447,7 +447,7 @@ static void vbox_hw_fini(struct vbox_private *vbox)
 	pci_iounmap(vbox->dev->pdev, vbox->guest_heap);
 }
 
-#if RTLNX_VER_MAX(4,19,0) && !RTLNX_RHEL_MAJ_PREREQ(8,3)
+#if RTLNX_VER_MAX(4,19,0)
 int vbox_driver_load(struct drm_device *dev, unsigned long flags)
 #else
 int vbox_driver_load(struct drm_device *dev)
@@ -621,7 +621,7 @@ void vbox_gem_free_object(struct drm_gem_object *obj)
 
 static inline u64 vbox_bo_mmap_offset(struct vbox_bo *bo)
 {
-#if RTLNX_VER_MIN(5,4,0) || RTLNX_RHEL_MIN(8,3)
+#if RTLNX_VER_MIN(5,4,0)
         return drm_vma_node_offset_addr(&bo->bo.base.vma_node);
 #elif RTLNX_VER_MAX(3,12,0) && !RTLNX_RHEL_MAJ_PREREQ(7,0)
 	return bo->bo.addr_space_offset;
