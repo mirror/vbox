@@ -178,6 +178,32 @@ typedef NTHDRS *PNTHDRS;
 /** Pointer to const NT image header union. */
 typedef NTHDRS const *PCNTHDRS;
 
+
+/**
+ * NT KD version block.
+ */
+typedef struct NTKDVERSIONBLOCK
+{
+    uint16_t        MajorVersion;
+    uint16_t        MinorVersion;
+    uint8_t         ProtocolVersion;
+    uint8_t         KdSecondaryVersion;
+    uint16_t        Flags;
+    uint16_t        MachineType;
+    uint8_t         MaxPacketType;
+    uint8_t         MaxStateChange;
+    uint8_t         MaxManipulate;
+    uint8_t         Simulation;
+    uint16_t        Unused;
+    uint64_t        KernBase;
+    uint64_t        PsLoadedModuleList;
+    uint64_t        DebuggerDataList;
+} NTKDVERSIONBLOCK;
+/** Pointer to an NT KD version block. */
+typedef NTKDVERSIONBLOCK *PNTKDVERSIONBLOCK;
+/** Pointer to a const NT KD version block. */
+typedef const NTKDVERSIONBLOCK *PCNTKDVERSIONBLOCK;
+
 /** @} */
 
 
@@ -317,35 +343,124 @@ static const RTUTF16 g_wszKernelNames[][WINNT_KERNEL_BASE_NAME_LEN + 1] =
  */
 static void dbgDiggerWinNtResolveKpcr(PDBGDIGGERWINNT pThis, PUVM pUVM)
 {
-    if (pThis->f32Bit)
-    { /** @todo */ }
-    else
+    /*
+     * Getting at the KPCR and KPCRB is explained here:
+     *     https://www.geoffchappell.com/studies/windows/km/ntoskrnl/structs/kpcr.htm
+     * Together with the available offsets from:
+     *     https://github.com/tpn/winsdk-10/blob/master/Include/10.0.16299.0/shared/ksamd64.inc#L883
+     * we can verify that the found addresses are valid by cross checking that the GDTR and self reference
+     * match what we expect.
+     */
+    VMCPUID cCpus = DBGFR3CpuGetCount(pUVM);
+    pThis->paKpcrAddr = (PDBGFADDRESS)RTMemAllocZ(cCpus * 2 * sizeof(DBGFADDRESS));
+    if (RT_LIKELY(pThis->paKpcrAddr))
     {
-        /*
-         * Getting at the KPCR and KPCRB is explained here:
-         *     https://www.geoffchappell.com/studies/windows/km/ntoskrnl/structs/kprcb/amd64.htm
-         * Together with the available offsets from:
-         *     https://github.com/tpn/winsdk-10/blob/master/Include/10.0.16299.0/shared/ksamd64.inc#L883
-         * we can verify that the found addresses are valid by cross checking that the GDTR and self reference
-         * match what we expect.
-         */
-        VMCPUID cCpus = DBGFR3CpuGetCount(pUVM);
-        pThis->paKpcrAddr = (PDBGFADDRESS)RTMemAllocZ(cCpus * 2 * sizeof(DBGFADDRESS));
-        if (RT_LIKELY(pThis->paKpcrAddr))
+        pThis->paKpcrbAddr = &pThis->paKpcrAddr[cCpus];
+
+        /* Work each CPU, unexpected values in each CPU make the whole thing fail to play safe. */
+        int rc = VINF_SUCCESS;
+        for (VMCPUID idCpu = 0; (idCpu < cCpus) && RT_SUCCESS(rc); idCpu++)
         {
-            pThis->paKpcrbAddr = &pThis->paKpcrAddr[cCpus];
+            PDBGFADDRESS pKpcrAddr = &pThis->paKpcrAddr[idCpu];
+            PDBGFADDRESS pKpcrbAddr = &pThis->paKpcrbAddr[idCpu];
 
-            /* Work each CPU, unexpected values in each CPU make the whole thing fail to play safe. */
-            int rc = VINF_SUCCESS;
-            for (VMCPUID idCpu = 0; (idCpu < cCpus) && RT_SUCCESS(rc); idCpu++)
+            if (pThis->f32Bit)
             {
-                PDBGFADDRESS pKpcrAddr = &pThis->paKpcrAddr[idCpu];
-                PDBGFADDRESS pKpcrbAddr = &pThis->paKpcrbAddr[idCpu];
+                /* Read FS base */
+                uint32_t GCPtrKpcrBase = 0;
 
+                rc = DBGFR3RegCpuQueryU32(pUVM, idCpu, DBGFREG_FS_BASE, &GCPtrKpcrBase);
+                if (   RT_SUCCESS(rc)
+                    && WINNT_VALID_ADDRESS(pThis, GCPtrKpcrBase))
+                {
+                    /*
+                     * Read the start of the KPCR (@todo Probably move this to a global header)
+                     * and verify its content.
+                     */
+                    struct
+                    {
+                        uint8_t     abOoi[28]; /* Out of interest */
+                        uint32_t    GCPtrSelf;
+                        uint32_t    GCPtrCurrentPrcb;
+                        uint32_t    u32Irql;
+                        uint32_t    u32Iir;
+                        uint32_t    u32IirActive;
+                        uint32_t    u32Idr;
+                        uint32_t    GCPtrKdVersionBlock;
+                        uint32_t    GCPtrIdt;
+                        uint32_t    GCPtrGdt;
+                        uint32_t    GCPtrTss;
+                    } Kpcr;
+
+                    LogFlow(("DigWinNt/KPCR[%u]: GS Base %RGv\n", idCpu, GCPtrKpcrBase));
+                    DBGFR3AddrFromFlat(pUVM, pKpcrAddr, GCPtrKpcrBase);
+
+                    rc = DBGFR3MemRead(pUVM, idCpu, pKpcrAddr, &Kpcr, sizeof(Kpcr));
+                    if (RT_SUCCESS(rc))
+                    {
+                        uint32_t GCPtrGdt = 0;
+                        uint32_t GCPtrIdt = 0;
+
+                        rc = DBGFR3RegCpuQueryU32(pUVM, idCpu, DBGFREG_GDTR_BASE, &GCPtrGdt);
+                        if (RT_SUCCESS(rc))
+                            rc = DBGFR3RegCpuQueryU32(pUVM, idCpu, DBGFREG_IDTR_BASE, &GCPtrIdt);
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (   Kpcr.GCPtrGdt == GCPtrGdt
+                                && Kpcr.GCPtrIdt == GCPtrIdt
+                                && Kpcr.GCPtrSelf == pKpcrAddr->FlatPtr)
+                            {
+                                DBGFR3AddrFromFlat(pUVM, pKpcrbAddr, Kpcr.GCPtrCurrentPrcb);
+                                LogRel(("DigWinNt/KPCR[%u]: KPCR=%RGv KPCRB=%RGv\n", idCpu, pKpcrAddr->FlatPtr, pKpcrbAddr->FlatPtr));
+
+                                /*
+                                 * Try to extract the NT build number from the KD version block if it exists,
+                                 * the shared user data might have set it to 0.
+                                 *
+                                 * @todo We can use this method to get at the kern base and loaded module list if the other detection
+                                 *       method fails (seen with Windows 10 x86).
+                                 * @todo On 32bit Windows the debugger data list is also always accessible this way contrary to
+                                 *       the amd64 version where it is only available with "/debug on" set.
+                                 */
+                                if (!pThis->NtBuildNumber)
+                                {
+                                    NTKDVERSIONBLOCK KdVersBlock;
+                                    DBGFADDRESS AddrKdVersBlock;
+
+                                    DBGFR3AddrFromFlat(pUVM, &AddrKdVersBlock, Kpcr.GCPtrKdVersionBlock);
+                                    rc = DBGFR3MemRead(pUVM, idCpu, &AddrKdVersBlock, &KdVersBlock, sizeof(KdVersBlock));
+                                    if (RT_SUCCESS(rc))
+                                        pThis->NtBuildNumber = KdVersBlock.MinorVersion;
+                                }
+                            }
+                            else
+                                LogRel(("DigWinNt/KPCR[%u]: KPCR validation error GDT=(%RGv vs %RGv) KPCR=(%RGv vs %RGv)\n", idCpu,
+                                        Kpcr.GCPtrGdt, GCPtrGdt, Kpcr.GCPtrSelf, pKpcrAddr->FlatPtr));
+                        }
+                        else
+                            LogRel(("DigWinNt/KPCR[%u]: Getting GDT or IDT base register failed with %Rrc\n", idCpu, rc));
+                    }
+                }
+                else
+                    LogRel(("DigWinNt/KPCR[%u]: Getting FS base register failed with %Rrc (%RGv)\n", idCpu, rc, GCPtrKpcrBase));
+            }
+            else
+            {
                 /* Read GS base which points to the base of the KPCR for each CPU. */
                 RTGCUINTPTR GCPtrTmp = 0;
                 rc = DBGFR3RegCpuQueryU64(pUVM, idCpu, DBGFREG_GS_BASE, &GCPtrTmp);
-                if (RT_SUCCESS(rc))
+                if (   RT_SUCCESS(rc)
+                    && !WINNT_VALID_ADDRESS(pThis, GCPtrTmp))
+                {
+                    /*
+                     * Could be a user address when we stopped the VM right in usermode,
+                     * read the GS kernel base MSR instead.
+                     */
+                    rc = DBGFR3RegCpuQueryU64(pUVM, idCpu, DBGFREG_MSR_K8_KERNEL_GS_BASE, &GCPtrTmp);
+                }
+
+                if (   RT_SUCCESS(rc)
+                    && WINNT_VALID_ADDRESS(pThis, GCPtrTmp))
                 {
                     LogFlow(("DigWinNt/KPCR[%u]: GS Base %RGv\n", idCpu, GCPtrTmp));
                     DBGFR3AddrFromFlat(pUVM, pKpcrAddr, GCPtrTmp);
@@ -377,7 +492,7 @@ static void dbgDiggerWinNtResolveKpcr(PDBGDIGGERWINNT pThis, PUVM pUVM)
                                 LogRel(("DigWinNt/KPCR[%u]: KPCR=%RGv KPCRB=%RGv\n", idCpu, pKpcrAddr->FlatPtr, pKpcrbAddr->FlatPtr));
                             }
                             else
-                                LogRel(("DigWinNt/KPCR[%u]: KPCR validation error GDT=(%RGv vs %RGv) KPCRB=(%RGv vs %RGv)\n", idCpu,
+                                LogRel(("DigWinNt/KPCR[%u]: KPCR validation error GDT=(%RGv vs %RGv) KPCR=(%RGv vs %RGv)\n", idCpu,
                                         Kpcr.GCPtrGdt, GCPtrTmp, Kpcr.GCPtrSelf, pKpcrAddr->FlatPtr));
                         }
                         else
@@ -389,18 +504,18 @@ static void dbgDiggerWinNtResolveKpcr(PDBGDIGGERWINNT pThis, PUVM pUVM)
                 else
                     LogRel(("DigWinNt/KPCR[%u]: Getting GS base register failed with %Rrc\n", idCpu, rc));
             }
-
-            if (RT_FAILURE(rc))
-            {
-                LogRel(("DigWinNt/KPCR: Failed to detmine KPCR and KPCRB rc=%Rrc\n", rc));
-                RTMemFree(pThis->paKpcrAddr);
-                pThis->paKpcrAddr  = NULL;
-                pThis->paKpcrbAddr = NULL;
-            }
         }
-        else
-            LogRel(("DigWinNt/KPCR: Failed to allocate %u entries for the KPCR/KPCRB addresses\n", cCpus * 2));
+
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("DigWinNt/KPCR: Failed to detmine KPCR and KPCRB rc=%Rrc\n", rc));
+            RTMemFree(pThis->paKpcrAddr);
+            pThis->paKpcrAddr  = NULL;
+            pThis->paKpcrbAddr = NULL;
+        }
     }
+    else
+        LogRel(("DigWinNt/KPCR: Failed to allocate %u entries for the KPCR/KPCRB addresses\n", cCpus * 2));
 }
 
 
