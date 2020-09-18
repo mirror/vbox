@@ -144,7 +144,6 @@ DECLHIDDEN(void) rtThreadNativeInformDebugger(PRTTHREADINT pThread)
  */
 static void rtThreadWinTellDebuggerThreadName(uint32_t idThread, const char *pszName)
 {
-    /// @todo check out SetThreadDescription from W10-1607
     struct
     {
         uint32_t    uType;
