@@ -2648,7 +2648,7 @@ static int dbgcKdCtxPktManipulate64WriteBkpt(PKDCTX pThis, PCKDPACKETMANIPULATE6
     WriteBkpt64.u64PtrBkpt = pPktManip->u.WriteBkpt.u64PtrBkpt;
 
     DBGFADDRESS BpAddr;
-    DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &BpAddr, KD_PTR_GET(pPktManip->u.WriteBkpt.u64PtrBkpt));
+    DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &BpAddr, KD_PTR_GET(pThis, pPktManip->u.WriteBkpt.u64PtrBkpt));
     int rc = DBGFR3BpSetInt3(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, &BpAddr,
                              1 /*iHitTrigger*/, UINT64_MAX /*iHitDisable*/, &WriteBkpt64.u32HndBkpt);
     if (RT_FAILURE(rc))
