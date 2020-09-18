@@ -151,9 +151,9 @@
 #define S64_MIN         ((s64)(-S64_MAX - 1))
 #endif
 
-#if RTLNX_VER_MAX(5,5,0)
+#if RTLNX_VER_MAX(5,5,0) && RTLNX_RHEL_MAX(8,3)
 # include <drm/drmP.h>
-#else /* >= 5.5.0 */
+#else /* >= 5.5.0 || RHEL >= 8.3 */
 # include <drm/drm_file.h>
 # include <drm/drm_drv.h>
 # include <drm/drm_device.h>
@@ -298,7 +298,7 @@ struct vbox_private {
 #undef CURSOR_PIXEL_COUNT
 #undef CURSOR_DATA_SIZE
 
-#if RTLNX_VER_MAX(4,19,0)
+#if RTLNX_VER_MAX(4,19,0) && RTLNX_RHEL_MAX(8,3)
 int vbox_driver_load(struct drm_device *dev, unsigned long flags);
 #else
 int vbox_driver_load(struct drm_device *dev);
