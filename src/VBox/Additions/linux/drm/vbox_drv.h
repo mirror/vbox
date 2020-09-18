@@ -151,7 +151,7 @@
 #define S64_MIN         ((s64)(-S64_MAX - 1))
 #endif
 
-#if RTLNX_VER_MAX(5,5,0) && RTLNX_RHEL_MAX(8,3)
+#if RTLNX_VER_MAX(5,5,0) && !RTLNX_RHEL_MAJ_PREREQ(8,3)
 # include <drm/drmP.h>
 #else /* >= 5.5.0 || RHEL >= 8.3 */
 # include <drm/drm_file.h>

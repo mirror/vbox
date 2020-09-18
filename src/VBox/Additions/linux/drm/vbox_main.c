@@ -447,7 +447,7 @@ static void vbox_hw_fini(struct vbox_private *vbox)
 	pci_iounmap(vbox->dev->pdev, vbox->guest_heap);
 }
 
-#if RTLNX_VER_MAX(4,19,0) && RTLNX_RHEL_MAX(8,3)
+#if RTLNX_VER_MAX(4,19,0) && !RTLNX_RHEL_MAJ_PREREQ(8,3)
 int vbox_driver_load(struct drm_device *dev, unsigned long flags)
 #else
 int vbox_driver_load(struct drm_device *dev)
