@@ -36,6 +36,7 @@
 #include <iprt/asm.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
+#include <iprt/string.h>
 #include <iprt/time.h>
 #include "r0drv/mp-r0drv.h"
 #include "symdb.h"
@@ -121,6 +122,13 @@ static struct
 RTCPUID                                 g_aidRtMpNtByCpuSetIdx[RTCPUSET_MAX_CPUS];
 /** The handle of the rtR0NtMpProcessorChangeCallback registration. */
 static PVOID                            g_pvMpCpuChangeCallback = NULL;
+/** Size of the KAFFINITY_EX structure.
+ * This increased from 20 to 32 bitmap words in the 2020 H2 windows 10 release
+ * (i.e. 1280 to 2048 CPUs).  We expect this to increase in the future. */
+static size_t                           g_cbRtMpNtKaffinityEx = RT_UOFFSETOF(KAFFINITY_EX, Bitmap)
+                                                              + RT_SIZEOFMEMB(KAFFINITY_EX, Bitmap[0]) * 256;
+/** The size value of the KAFFINITY_EX structure. */
+static uint16_t                         g_cRtMpNtKaffinityExEntries = 256;
 
 
 /*********************************************************************************************************************************
@@ -597,10 +605,28 @@ DECLHIDDEN(int) rtR0MpNtInit(RTNTSDBOSVER const *pOsVerInfo)
         && g_pfnrtKeAddProcessorAffinityEx
         && g_pfnrtKeGetProcessorIndexFromNumber)
     {
-        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalRequestIpiW7Plus;
-        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingHalRequestIpiW7Plus\n");
+        /* Determine the real size of the KAFFINITY_EX structure. */
+        union
+        {
+            KAFFINITY_EX Struct;
+            uint8_t      ab[_4K + 8]; /* This should suffice for determining the real size. */
+        } u;
+        RT_ZERO(u);
+        size_t const cMaxEntries = (sizeof(u) - RT_UOFFSETOF(KAFFINITY_EX, Bitmap[0])) / sizeof(u.Struct.Bitmap[0]);
+        g_pfnrtKeInitializeAffinityEx(&u.Struct);
+        if (u.Struct.Size > 1 && u.Struct.Size <= cMaxEntries)
+        {
+            g_cRtMpNtKaffinityExEntries = u.Struct.Size;
+            g_cbRtMpNtKaffinityEx       = u.Struct.Size * sizeof(u.Struct.Bitmap[0]) + RT_UOFFSETOF(KAFFINITY_EX, Bitmap[0]);
+            g_pfnrtMpPokeCpuWorker      = rtMpPokeCpuUsingHalRequestIpiW7Plus;
+            DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingHalRequestIpiW7Plus\n");
+            return VINF_SUCCESS;
+        }
+        DbgPrint("IPRT: RTMpPoke can't use rtMpPokeCpuUsingHalRequestIpiW7Plus! u.Struct.Size=%u\n", u.Struct.Size);
+        AssertReleaseMsg(u.Struct.Size <= cMaxEntries, ("%#x\n", u.Struct.Size)); /* stack is toast if larger (32768 CPUs). */
     }
-    else if (pOsVerInfo->uMajorVer >= 6 && g_pfnrtKeIpiGenericCall)
+
+    if (pOsVerInfo->uMajorVer >= 6 && g_pfnrtKeIpiGenericCall)
     {
         DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingBroadcastIpi\n");
         g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingBroadcastIpi;
@@ -1860,11 +1886,12 @@ int rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu)
 int rtMpPokeCpuUsingHalRequestIpiW7Plus(RTCPUID idCpu)
 {
     /* idCpu is an HAL processor index, so we can use it directly. */
-    KAFFINITY_EX Target;
-    g_pfnrtKeInitializeAffinityEx(&Target);
-    g_pfnrtKeAddProcessorAffinityEx(&Target, idCpu);
+    PKAFFINITY_EX pTarget = (PKAFFINITY_EX)alloca(g_cbRtMpNtKaffinityEx);
+    pTarget->Size = g_cRtMpNtKaffinityExEntries; /* (just in case KeInitializeAffinityEx starts using it) */
+    g_pfnrtKeInitializeAffinityEx(pTarget);
+    g_pfnrtKeAddProcessorAffinityEx(pTarget, idCpu);
 
-    g_pfnrtHalRequestIpiW7Plus(0, &Target);
+    g_pfnrtHalRequestIpiW7Plus(0, pTarget);
     return VINF_SUCCESS;
 }
 
