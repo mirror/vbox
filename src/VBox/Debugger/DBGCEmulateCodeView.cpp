@@ -3148,7 +3148,7 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
         cArgs = 1;
         paArgs = &Var;
         Var.enmType = DBGCVAR_TYPE_NUMBER;
-        Var.u.u64Number = 0;
+        Var.u.u64Number = fGdt ? 0 : 4;
         Var.enmRangeType = DBGCVAR_RANGE_ELEMENTS;
         Var.u64Range = 1024;
     }
