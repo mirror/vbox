@@ -597,8 +597,8 @@ DECLHIDDEN(int) rtR0MpNtInit(RTNTSDBOSVER const *pOsVerInfo)
         && g_pfnrtKeAddProcessorAffinityEx
         && g_pfnrtKeGetProcessorIndexFromNumber)
     {
-        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingHalReqestIpiW7Plus\n");
-        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalReqestIpiW7Plus;
+        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalRequestIpiW7Plus;
+        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingHalRequestIpiW7Plus\n");
     }
     else if (pOsVerInfo->uMajorVer >= 6 && g_pfnrtKeIpiGenericCall)
     {
@@ -1771,8 +1771,8 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
         if (rcNt == STATUS_TIMEOUT)
         {
             if (   !pArgs->fExecuting
-                && (   g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiW7Plus
-                    || g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiPreW7))
+                && (   g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalRequestIpiW7Plus
+                    || g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalRequestIpiPreW7))
                 RTMpPokeCpu(idCpu);
 
             Timeout.QuadPart = -1280000; /* 128ms */
@@ -1857,7 +1857,7 @@ int rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu)
  * @returns VINF_SUCCESS
  * @param   idCpu           The CPU identifier.
  */
-int rtMpPokeCpuUsingHalReqestIpiW7Plus(RTCPUID idCpu)
+int rtMpPokeCpuUsingHalRequestIpiW7Plus(RTCPUID idCpu)
 {
     /* idCpu is an HAL processor index, so we can use it directly. */
     KAFFINITY_EX Target;
@@ -1876,7 +1876,7 @@ int rtMpPokeCpuUsingHalReqestIpiW7Plus(RTCPUID idCpu)
  * @returns VINF_SUCCESS
  * @param   idCpu           The CPU identifier.
  */
-int rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu)
+int rtMpPokeCpuUsingHalRequestIpiPreW7(RTCPUID idCpu)
 {
     __debugbreak(); /** @todo this code needs testing!!  */
     KAFFINITY Target = 1;
@@ -1885,11 +1885,13 @@ int rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu)
     return VINF_SUCCESS;
 }
 
+
 int rtMpPokeCpuUsingFailureNotSupported(RTCPUID idCpu)
 {
     NOREF(idCpu);
     return VERR_NOT_SUPPORTED;
 }
+
 
 int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
 {
@@ -1940,7 +1942,7 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
         return !RTMpIsCpuPossible(idCpu)
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
-    /* Calls rtMpPokeCpuUsingDpc, rtMpPokeCpuUsingHalReqestIpiW7Plus or rtMpPokeCpuUsingBroadcastIpi. */
+    /* Calls rtMpPokeCpuUsingDpc, rtMpPokeCpuUsingHalRequestIpiW7Plus or rtMpPokeCpuUsingBroadcastIpi. */
     return g_pfnrtMpPokeCpuWorker(idCpu);
 }
 
