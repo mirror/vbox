@@ -2254,8 +2254,8 @@ static int dbgcKdCtxDebugIoStrSend(PKDCTX pThis, VMCPUID idCpu, const char *pach
  * @returns VBox status code.
  * @param   pThis               The KD context data.
  * @param   idCpu               The CPU ID generating this packet.
- * @param   pachChars           The prompt to send (ASCII).
- * @param   cbChars             Number of characters to send for the prompt.
+ * @param   pachPrompt          The prompt to send (ASCII).
+ * @param   cbPrompt            Number of characters to send for the prompt.
  * @param   cbResponseMax       Maximum size for the response.
  */
 static int dbgcKdCtxDebugIoGetStrSend(PKDCTX pThis, VMCPUID idCpu, const char *pachPrompt, size_t cbPrompt,
