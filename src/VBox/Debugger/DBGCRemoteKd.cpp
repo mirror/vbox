@@ -634,6 +634,44 @@ typedef const KDPACKETSTATECHANGE64 *PCKDPACKETSTATECHANGE64;
 
 
 /**
+ * Debug I/O payload.
+ */
+typedef struct KDPACKETDEBUGIO
+{
+    /** Debug I/O payload type (KD_PACKET_DEBUG_IO_STRING). */
+    uint32_t                    u32Type;
+    /** The processor level. */
+    uint16_t                    u16CpuLvl;
+    /** The processor ID generating this packet. */
+    uint16_t                    idCpu;
+    /** Type dependent data. */
+    union
+    {
+        /** Debug string sent. */
+        struct
+        {
+            /* Length of the string following in bytes. */
+            uint32_t            cbStr;
+            /** Some padding it looks like. */
+            uint32_t            u32Pad;
+        } Str;
+    } u;
+} KDPACKETDEBUGIO;
+AssertCompileSize(KDPACKETDEBUGIO, 16);
+/** Pointer to a Debug I/O payload. */
+typedef KDPACKETDEBUGIO *PKDPACKETDEBUGIO;
+/** Pointer to a const Debug I/O payload. */
+typedef const KDPACKETDEBUGIO *PCKDPACKETDEBUGIO;
+
+
+/** @name Debug I/O types.
+ * @{ */
+/** Debug string output (usually DbgPrint() and friends). */
+#define KD_PACKET_DEBUG_IO_STRING                   UINT32_C(0x00003230)
+/** @} */
+
+
+/**
  * 64bit get version manipulate payload.
  */
 typedef struct KDPACKETMANIPULATE_GETVERSION64
@@ -2084,11 +2122,46 @@ static void dbgcKdCtxPktRecvReset(PKDCTX pThis)
 
 
 /**
+ * Sends a Debug I/O string packet.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context data.
+ * @param   idCpu               The CPU ID generating this packet.
+ * @param   pachChars           The characters to send (ASCII).
+ * @param   cbChars             Number of characters to send.
+ */
+static int dbgcKdCtxDebugIoStrSend(PKDCTX pThis, VMCPUID idCpu, const char *pachChars, size_t cbChars)
+{
+    KDPACKETDEBUGIO DebugIo;
+    RT_ZERO(DebugIo);
+
+    /* Fix your damn log strings if this exceeds 4GB... */
+    if (cbChars != (uint32_t)cbChars)
+        return VERR_BUFFER_OVERFLOW;
+
+    DebugIo.u32Type     = KD_PACKET_DEBUG_IO_STRING;
+    DebugIo.u16CpuLvl   = 0x6;
+    DebugIo.idCpu       = (uint16_t)idCpu;
+    DebugIo.u.Str.cbStr = (uint32_t)cbChars;
+
+    RTSGSEG aRespSegs[2];
+
+    aRespSegs[0].pvSeg = &DebugIo;
+    aRespSegs[0].cbSeg = sizeof(DebugIo);
+    aRespSegs[1].pvSeg = (void *)pachChars;
+    aRespSegs[1].cbSeg = cbChars;
+
+    return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_DEBUG_IO,
+                              &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
+}
+
+
+/**
  * Sends a state change event packet.
  *
  * @returns VBox status code.
- * @param   pThis   The KD context data.
- * @param   enmType The event type.
+ * @param   pThis               The KD context data.
+ * @param   enmType             The event type.
  */
 static int dbgcKdCtxStateChangeSend(PKDCTX pThis, DBGFEVENTTYPE enmType)
 {
@@ -2362,6 +2435,8 @@ static int dbgcKdCtxPktManipulate64Continue2(PKDCTX pThis, PCKDPACKETMANIPULATE6
     }
     else if (DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
         rc = DBGFR3Resume(pThis->Dbgc.pUVM, VMCPUID_ALL);
+
+    pThis->Dbgc.CmdHlp.pfnPrintf(&pThis->Dbgc.CmdHlp, NULL, "TestTestTest\n");
 
     return rc;
 }
@@ -3037,10 +3112,12 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
     /*
      * Process the event.
      */
-    //PDBGC pDbgc = &pThis->Dbgc;
+    PDBGC pDbgc = &pThis->Dbgc;
     pThis->Dbgc.pszScratch = &pThis->Dbgc.achInput[0];
     pThis->Dbgc.iArg       = 0;
     int rc = VINF_SUCCESS;
+    VMCPUID idCpuOld = pDbgc->idCpu;
+    pDbgc->idCpu = pEvent->idCpu;
     switch (pEvent->enmType)
     {
         /*
@@ -3055,7 +3132,6 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
         /*
          * The second part is events which can occur at any time.
          */
-#if 0
         case DBGFEVENT_FATAL_ERROR:
         {
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbf event: Fatal error! (%s)\n",
@@ -3064,12 +3140,47 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
                 rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
             break;
         }
-#endif
 
         case DBGFEVENT_BREAKPOINT:
         case DBGFEVENT_BREAKPOINT_IO:
         case DBGFEVENT_BREAKPOINT_MMIO:
         case DBGFEVENT_BREAKPOINT_HYPER:
+        {
+            rc = dbgcBpExec(pDbgc, pEvent->u.Bp.iBp);
+            switch (rc)
+            {
+                case VERR_DBGC_BP_NOT_FOUND:
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Unknown breakpoint %u! (%s)\n",
+                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                    break;
+
+                case VINF_DBGC_BP_NO_COMMAND:
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Breakpoint %u! (%s)\n",
+                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                    break;
+
+                case VINF_BUFFER_OVERFLOW:
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Breakpoint %u! Command too long to execute! (%s)\n",
+                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                    break;
+
+                default:
+                    break;
+            }
+            if (RT_SUCCESS(rc) && DBGFR3IsHalted(pDbgc->pUVM, VMCPUID_ALL))
+            {
+                rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
+
+                /* Set the resume flag to ignore the breakpoint when resuming execution. */
+                if (   RT_SUCCESS(rc)
+                    && pEvent->enmType == DBGFEVENT_BREAKPOINT)
+                    rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r eflags.rf = 1");
+            }
+
+            rc = dbgcKdCtxStateChangeSend(pThis, pEvent->enmType);
+            break;
+        }
+
         case DBGFEVENT_STEPPED:
         case DBGFEVENT_STEPPED_HYPER:
         {
@@ -3077,7 +3188,6 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
             break;
         }
 
-#if 0
         case DBGFEVENT_ASSERTION_HYPER:
         {
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
@@ -3120,7 +3230,6 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf/dbgc error: Invalid command event!\n");
             break;
         }
-#endif
 
         case DBGFEVENT_POWERING_OFF:
         {
@@ -3130,7 +3239,6 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
             break;
         }
 
-#if 0
         default:
         {
             /*
@@ -3189,13 +3297,9 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
                 rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf/dbgc error: Unknown event %d!\n", pEvent->enmType);
             break;
         }
-#else
-        default:
-            rc = VERR_NOT_IMPLEMENTED;
-            break;
-#endif
     }
 
+    pDbgc->idCpu = idCpuOld;
     return rc;
 }
 
@@ -3229,6 +3333,17 @@ static int dbgcKdCtxRecvTimeout(PKDCTX pThis)
 
     LogFlowFunc(("rc=%Rrc\n", rc));
     return rc;
+}
+
+
+/**
+ * @copydoc DBGC::pfnOutput
+ */
+static DECLCALLBACK(int) dbgcKdOutput(void *pvUser, const char *pachChars, size_t cbChars)
+{
+    PKDCTX pThis = (PKDCTX)pvUser;
+
+    return dbgcKdCtxDebugIoStrSend(pThis, pThis->Dbgc.idCpu, pachChars, cbChars);
 }
 
 
@@ -3338,7 +3453,7 @@ static int dbgcKdCtxCreate(PPKDCTX ppKdCtx, PDBGCBACK pBack, unsigned fFlags)
      * in DBGCConsole.cpp. Try to keep both functions in sync.
      */
     pThis->Dbgc.pBack            = pBack;
-    /*pThis->Dbgc.pfnOutput        = dbgcOutputGdb;*/
+    pThis->Dbgc.pfnOutput        = dbgcKdOutput;
     pThis->Dbgc.pvOutputUser     = pThis;
     pThis->Dbgc.pVM              = NULL;
     pThis->Dbgc.pUVM             = NULL;
