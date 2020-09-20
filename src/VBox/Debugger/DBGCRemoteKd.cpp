@@ -650,11 +650,19 @@ typedef struct KDPACKETDEBUGIO
         /** Debug string sent. */
         struct
         {
-            /* Length of the string following in bytes. */
+            /** Length of the string following in bytes. */
             uint32_t            cbStr;
             /** Some padding it looks like. */
             uint32_t            u32Pad;
         } Str;
+        /** Debug prompt. */
+        struct
+        {
+            /** Length of prompt. */
+            uint32_t            cbPrompt;
+            /** Size of the string returned on success. */
+            uint32_t            cbReturn;
+        } Prompt;
     } u;
 } KDPACKETDEBUGIO;
 AssertCompileSize(KDPACKETDEBUGIO, 16);
@@ -668,6 +676,8 @@ typedef const KDPACKETDEBUGIO *PCKDPACKETDEBUGIO;
  * @{ */
 /** Debug string output (usually DbgPrint() and friends). */
 #define KD_PACKET_DEBUG_IO_STRING                   UINT32_C(0x00003230)
+/** Get debug string (DbgPrompt()). */
+#define KD_PACKET_DEBUG_IO_GET_STRING               UINT32_C(0x00003231)
 /** @} */
 
 
@@ -1069,6 +1079,12 @@ typedef const KDPACKETMANIPULATE64 *PCKDPACKETMANIPULATE64;
 #define KD_PACKET_MANIPULATE_REQ_WRITE_IO_SPACE_EX          UINT32_C(0x00003145)
 /** Get version request. */
 #define KD_PACKET_MANIPULATE_REQ_GET_VERSION                UINT32_C(0x00003146)
+/** Write breakpoint extended request. */
+#define KD_PACKET_MANIPULATE_REQ_WRITE_BKPT_EX              UINT32_C(0x00003147)
+/** Restore breakpoint extended request. */
+#define KD_PACKET_MANIPULATE_REQ_RESTORE_BKPT_EX            UINT32_C(0x00003148)
+/** Cause a bugcheck request. */
+#define KD_PACKET_MANIPULATE_REQ_CAUSE_BUGCHECK             UINT32_C(0x00003149)
 /** @todo */
 /** Clear all internal breakpoints request. */
 #define KD_PACKET_MANIPULATE_REQ_CLEAR_ALL_INTERNAL_BKPT    UINT32_C(0x0000315a)
@@ -1139,6 +1155,8 @@ typedef struct KDCTX
     uint8_t                     bTrailer;
     /** Flag whether a breakin packet was received since the last time it was reset. */
     bool                        fBreakinRecv;
+    /** Flag whether we entered the native VBox hypervisor through a bugcheck request. */
+    bool                        fInVBoxDbg;
 
     /** Pointer to the OS digger WinNt interface if a matching guest was detected. */
     PDBGFOSIWINNT               pIfWinNt;
@@ -1228,6 +1246,8 @@ static const char *dbgcKdPktDumpManipulateReqToStr(uint32_t idReq)
         case KD_PACKET_MANIPULATE_REQ_GET_VERSION:              return "GetVersion";
         case KD_PACKET_MANIPULATE_REQ_CLEAR_ALL_INTERNAL_BKPT:  return "ClrAllIntBkpt";
         case KD_PACKET_MANIPULATE_REQ_GET_CONTEXT_EX:           return "GetContextEx";
+        case KD_PACKET_MANIPULATE_REQ_QUERY_MEMORY:             return "QueryMemory";
+        case KD_PACKET_MANIPULATE_REQ_CAUSE_BUGCHECK:           return "CauseBugCheck";
         default:                                                break;
     }
 
@@ -2219,8 +2239,55 @@ static int dbgcKdCtxDebugIoStrSend(PKDCTX pThis, VMCPUID idCpu, const char *pach
     aRespSegs[1].pvSeg = (void *)pachChars;
     aRespSegs[1].cbSeg = cbChars;
 
-    return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_DEBUG_IO,
-                              &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
+    int rc = dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_DEBUG_IO,
+                                &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
+    if (RT_SUCCESS(rc))
+        pThis->idPktNext ^= 0x1;
+
+    return rc;
+}
+
+
+/**
+ * Queries some user input from the remotes end.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context data.
+ * @param   idCpu               The CPU ID generating this packet.
+ * @param   pachChars           The prompt to send (ASCII).
+ * @param   cbChars             Number of characters to send for the prompt.
+ * @param   cbResponseMax       Maximum size for the response.
+ */
+static int dbgcKdCtxDebugIoGetStrSend(PKDCTX pThis, VMCPUID idCpu, const char *pachPrompt, size_t cbPrompt,
+                                      size_t cbResponseMax)
+{
+    KDPACKETDEBUGIO DebugIo;
+    RT_ZERO(DebugIo);
+
+    /* Fix your damn log strings if this exceeds 4GB... */
+    if (   cbPrompt != (uint32_t)cbPrompt
+        || cbResponseMax != (uint32_t)cbResponseMax)
+        return VERR_BUFFER_OVERFLOW;
+
+    DebugIo.u32Type           = KD_PACKET_DEBUG_IO_GET_STRING;
+    DebugIo.u16CpuLvl         = 0x6;
+    DebugIo.idCpu             = (uint16_t)idCpu;
+    DebugIo.u.Prompt.cbPrompt = (uint32_t)cbPrompt;
+    DebugIo.u.Prompt.cbReturn = (uint32_t)cbResponseMax;
+
+    RTSGSEG aRespSegs[2];
+
+    aRespSegs[0].pvSeg = &DebugIo;
+    aRespSegs[0].cbSeg = sizeof(DebugIo);
+    aRespSegs[1].pvSeg = (void *)pachPrompt;
+    aRespSegs[1].cbSeg = cbPrompt;
+
+    int rc = dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_DEBUG_IO,
+                                &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
+    if (RT_SUCCESS(rc))
+        pThis->idPktNext ^= 0x1;
+
+    return rc;
 }
 
 
@@ -2753,8 +2820,12 @@ static int dbgcKdCtxPktManipulate64RestoreBkpt(PKDCTX pThis, PCKDPACKETMANIPULAT
     aRespSegs[1].cbSeg = sizeof(RestoreBkpt64);
 
     int rc = DBGFR3BpClear(pThis->Dbgc.pUVM, pPktManip->u.RestoreBkpt.u32HndBkpt);
-    if (   RT_FAILURE(rc)
-        && rc != VERR_DBGF_BP_NOT_FOUND)
+    if (RT_SUCCESS(rc))
+    {
+        rc = dbgcBpDelete(&pThis->Dbgc, pPktManip->u.RestoreBkpt.u32HndBkpt);
+        AssertRC(rc);
+    }
+    else if (rc != VERR_DBGF_BP_NOT_FOUND)
         RespHdr.u32NtStatus = NTSTATUS_UNSUCCESSFUL;
 
     return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
@@ -2792,7 +2863,13 @@ static int dbgcKdCtxPktManipulate64WriteBkpt(PKDCTX pThis, PCKDPACKETMANIPULATE6
     DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &BpAddr, KD_PTR_GET(pThis, pPktManip->u.WriteBkpt.u64PtrBkpt));
     int rc = DBGFR3BpSetInt3(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, &BpAddr,
                              1 /*iHitTrigger*/, UINT64_MAX /*iHitDisable*/, &WriteBkpt64.u32HndBkpt);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        rc = dbgcBpAdd(&pThis->Dbgc, WriteBkpt64.u32HndBkpt, NULL /*pszCmd*/);
+        if (RT_FAILURE(rc))
+            DBGFR3BpClear(pThis->Dbgc.pUVM, WriteBkpt64.u32HndBkpt);
+    }
+    else
         RespHdr.u32NtStatus = NTSTATUS_UNSUCCESSFUL;
 
     return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
@@ -2893,6 +2970,25 @@ static int dbgcKdCtxPktManipulate64QueryMemory(PKDCTX pThis, PCKDPACKETMANIPULAT
 
 
 /**
+ * Processes a cause bugcheck 64 request.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pPktManip           The manipulate packet request.
+ *
+ * @note We abuse this request to initiate a native VBox debugger command prompt from the remote end
+  *      (There is monitor/Rcmd equivalent like with GDB unfortunately).
+ */
+static int dbgcKdCtxPktManipulate64CauseBugCheck(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
+{
+    RT_NOREF(pPktManip);
+    pThis->fInVBoxDbg = true;
+    return dbgcKdCtxDebugIoGetStrSend(pThis, pThis->Dbgc.idCpu, "VBoxDbg>", sizeof("VBoxDbg>") - 1,
+                                      512 /*cbResponseMax*/);
+}
+
+
+/**
  * Processes a manipulate packet.
  *
  * @returns VBox status code.
@@ -2970,6 +3066,11 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
             rc = dbgcKdCtxPktManipulate64QueryMemory(pThis, pPktManip);
             break;
         }
+        case KD_PACKET_MANIPULATE_REQ_CAUSE_BUGCHECK:
+        {
+            rc = dbgcKdCtxPktManipulate64CauseBugCheck(pThis, pPktManip);
+            break;
+        }
         default:
             KDPACKETMANIPULATEHDR RespHdr;
             RT_ZERO(RespHdr);
@@ -3043,6 +3144,46 @@ static int dbgcKdCtxPktProcess(PKDCTX pThis)
                 {
                     /* Don't do anything. */
                     rc = VINF_SUCCESS;
+                    break;
+                }
+                case KD_PACKET_HDR_SUB_TYPE_DEBUG_IO:
+                {
+                    if (pThis->fInVBoxDbg)
+                    {
+                        pThis->idPktNext = pThis->PktHdr.Fields.idPacket ^ 0x1;
+                        /* Get the string and execute it. */
+                        PCKDPACKETDEBUGIO pPktDbgIo = (PCKDPACKETDEBUGIO)&pThis->abBody[0];
+                        if (   pPktDbgIo->u32Type == KD_PACKET_DEBUG_IO_GET_STRING
+                            && pPktDbgIo->u.Prompt.cbReturn <= sizeof(pThis->abBody) - sizeof(*pPktDbgIo) - 1)
+                        {
+                            if (pPktDbgIo->u.Prompt.cbReturn)
+                            {
+                                /* Terminate return value. */
+                                pThis->abBody[sizeof(*pPktDbgIo) + pPktDbgIo->u.Prompt.cbReturn] = '\0';
+
+                                const char *pszCmd = (const char *)&pThis->abBody[sizeof(*pPktDbgIo)];
+                                /* Filter out 'exit' which is handled here directly and exits the debug loop. */
+                                if (!strcmp(pszCmd, "exit"))
+                                    pThis->fInVBoxDbg = false;
+                                else
+                                {
+                                    rc = pThis->Dbgc.CmdHlp.pfnExec(&pThis->Dbgc.CmdHlp, pszCmd);
+                                    if (RT_SUCCESS(rc))
+                                        rc = dbgcKdCtxDebugIoGetStrSend(pThis, pThis->Dbgc.idCpu, "VBoxDbg>", sizeof("VBoxDbg>") - 1,
+                                                                        512 /*cbResponseMax*/);
+                                    else
+                                        LogRel(("DBGC/Kd: Executing command \"%s\" failed with rc=%Rrc\n", pszCmd, rc));
+                                }
+                            }
+                            else
+                                rc = dbgcKdCtxDebugIoGetStrSend(pThis, pThis->Dbgc.idCpu, "VBoxDbg>", sizeof("VBoxDbg>") - 1,
+                                                                512 /*cbResponseMax*/);
+                        }
+                        else
+                            LogRel(("DBGC/Kd: Received invalid DEBUG_IO packet from remote end, ignoring\n"));
+                    }
+                    else
+                        LogRel(("DBGC/Kd: Received out of band DEBUG_IO packet from remote end, ignoring\n"));
                     break;
                 }
                 default:
@@ -3609,6 +3750,7 @@ static int dbgcKdCtxCreate(PPKDCTX ppKdCtx, PDBGCBACK pBack, unsigned fFlags)
     dbgcEvalInit();
 
     pThis->fBreakinRecv = false;
+    pThis->fInVBoxDbg   = false;
     pThis->idPktNext    = KD_PACKET_HDR_ID_INITIAL;
     pThis->pIfWinNt     = NULL;
     pThis->f32Bit       = false;
