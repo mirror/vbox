@@ -893,7 +893,7 @@ typedef struct HMCPU
     bool                        fLoadSaveGuestXcr0;
     /** Whether \#UD needs to be intercepted (required by certain GIM providers). */
     bool                        fGIMTrapXcptUD;
-    /** Whether \#GP needs to be intercept for mesa driver workaround. */
+    /** Whether \#GP needs to be intercepted for mesa driver workaround. */
     bool                        fTrapXcptGpForLovelyMesaDrv;
     /** Whether we're executing a single instruction. */
     bool                        fSingleInstruction;
@@ -1014,7 +1014,12 @@ typedef struct HMCPU
             /** Whether VTPR with V_INTR_MASKING set is in effect, indicating
              *  we should check if the VTPR changed on every VM-exit. */
             bool                        fSyncVTpr;
-            uint8_t                     au8Alignment0[7];
+            /** Whether to emulate long mode support for sysenter/sysexit like intel CPUs
+             *  does.   This means intercepting \#UD to emulate the instructions in
+             *  long-mode and to intercept reads and writes to the SYSENTER MSRs in order to
+             *  preserve the upper 32 bits written to them (AMD will ignore and discard). */
+            bool                        fEmulateLongModeSysEnterExit;
+            uint8_t                     au8Alignment0[6];
 
             /** Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
             uint64_t                    u64HostTscAux;

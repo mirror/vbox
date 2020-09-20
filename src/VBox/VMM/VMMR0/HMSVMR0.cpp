@@ -989,7 +989,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
 #endif
 
     /* Apply the exceptions intercepts needed by the GIM provider. */
-    if (pVCpu0->hm.s.fGIMTrapXcptUD)
+    if (pVCpu0->hm.s.fGIMTrapXcptUD || pVCpu0->hm.s.svm.fEmulateLongModeSysEnterExit)
         pVmcbCtrl0->u32InterceptXcpt |= RT_BIT(X86_XCPT_UD);
 
     /* The mesa 3d driver hack needs #GP. */
@@ -1103,9 +1103,18 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
     hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_K8_FS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
     hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_K8_GS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
     hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_K8_KERNEL_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-    hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_CS,  SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-    hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-    hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    if (!pVCpu0->hm.s.svm.fEmulateLongModeSysEnterExit)
+    {
+        hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_CS,  SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    }
+    else
+    {
+        hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_CS,  SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
+    }
     pVmcbCtrl0->u64MSRPMPhysAddr = pVCpu0->hm.s.svm.HCPhysMsrBitmap;
 
     /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
@@ -2101,7 +2110,7 @@ static void hmR0SvmExportGuestXcptIntercepts(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_SVM_XCPT_INTERCEPTS)
     {
         /* Trap #UD for GIM provider (e.g. for hypercalls). */
-        if (pVCpu->hm.s.fGIMTrapXcptUD)
+        if (pVCpu->hm.s.fGIMTrapXcptUD || pVCpu->hm.s.svm.fEmulateLongModeSysEnterExit)
             hmR0SvmSetXcptIntercept(pVmcb, X86_XCPT_UD);
         else
             hmR0SvmClearXcptIntercept(pVCpu, pVmcb, X86_XCPT_UD);
@@ -2742,7 +2751,8 @@ static void hmR0SvmImportGuestState(PVMCPUCC pVCpu, uint64_t fWhat)
             pCtx->msrSFMASK = pVmcbGuest->u64SFMASK;
         }
 
-        if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
+        if (   (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
+            && !pVCpu->hm.s.svm.fEmulateLongModeSysEnterExit /* Intercepted. AMD-V would clear the high 32 bits of EIP & ESP. */)
         {
             pCtx->SysEnter.cs  = pVmcbGuest->u64SysEnterCS;
             pCtx->SysEnter.eip = pVmcbGuest->u64SysEnterEIP;
@@ -7247,36 +7257,91 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
     Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid);  NOREF(pVmcb);
 
-    int rc = VERR_SVM_UNEXPECTED_XCPT_EXIT;
+    /** @todo if we accumulate more optional stuff here, we ought to combine the
+     *        reading of opcode bytes to avoid doing more than once.  */
+
+    VBOXSTRICTRC rcStrict = VERR_SVM_UNEXPECTED_XCPT_EXIT;
     if (pVCpu->hm.s.fGIMTrapXcptUD)
     {
         HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
         uint8_t cbInstr = 0;
-        VBOXSTRICTRC rcStrict = GIMXcptUD(pVCpu, &pVCpu->cpum.GstCtx, NULL /* pDis */, &cbInstr);
+        rcStrict = GIMXcptUD(pVCpu, &pVCpu->cpum.GstCtx, NULL /* pDis */, &cbInstr);
         if (rcStrict == VINF_SUCCESS)
         {
             /* #UD #VMEXIT does not have valid NRIP information, manually advance RIP. See @bugref{7270#c170}. */
             hmR0SvmAdvanceRip(pVCpu, cbInstr);
-            rc = VINF_SUCCESS;
-            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+            rcStrict = VINF_SUCCESS;
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
         }
         else if (rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
-            rc = VINF_SUCCESS;
+            rcStrict = VINF_SUCCESS;
         else if (rcStrict == VINF_GIM_R3_HYPERCALL)
-            rc = VINF_GIM_R3_HYPERCALL;
+            rcStrict = VINF_GIM_R3_HYPERCALL;
         else
+        {
             Assert(RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)));
+            rcStrict = VERR_SVM_UNEXPECTED_XCPT_EXIT;
+        }
+    }
+
+    if (pVCpu->hm.s.svm.fEmulateLongModeSysEnterExit)
+    {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_SS | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS
+                                        | CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER);
+        if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx))
+        {
+            /* Ideally, IEM should just handle all these special #UD situations, but
+               we don't quite trust things to behave optimially when doing that.  So,
+               for now we'll restrict ourselves to a handful of possible sysenter and
+               sysexit encodings that we filter right here. */
+            uint8_t abInstr[SVM_CTRL_GUEST_INSTR_BYTES_MAX];
+            uint8_t cbInstr = pVmcb->ctrl.cbInstrFetched;
+            uint32_t const uCpl = CPUMGetGuestCPL(pVCpu);
+            uint8_t const cbMin = uCpl != 0 ? 2 : 1 + 2;
+            RTGCPTR const GCPtrInstr = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
+            if (cbInstr < cbMin || cbInstr > SVM_CTRL_GUEST_INSTR_BYTES_MAX)
+            {
+                cbInstr = cbMin;
+                int rc2 = PGMPhysSimpleReadGCPtr(pVCpu, abInstr, GCPtrInstr, cbInstr);
+                AssertRCStmt(rc2, cbInstr = 0);
+            }
+            else
+                memcpy(abInstr, pVmcb->ctrl.abInstr, cbInstr); /* unlikely */
+            if (   cbInstr == 0 /* read error */
+                || (cbInstr >= 2 && abInstr[0] == 0x0f && abInstr[1] == 0x34) /* sysenter */
+                || (   uCpl == 0
+                    && (   (   cbInstr >= 2 && abInstr[0] == 0x0f && abInstr[1] == 0x35) /* sysexit */
+                        || (   cbInstr >= 3 && abInstr[1] == 0x0f && abInstr[2] == 0x35  /* rex.w sysexit */
+                            && (abInstr[0] & (X86_OP_REX_W | 0xf0)) == X86_OP_REX_W))))
+            {
+                HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK
+                                                | CPUMCTX_EXTRN_SREG_MASK /* without ES+DS+GS the app will #GP later - go figure */);
+                Log6(("hmR0SvmExitXcptUD: sysenter/sysexit: %.*Rhxs at %#llx CPL=%u\n", cbInstr, abInstr, GCPtrInstr, uCpl));
+                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, abInstr, cbInstr);
+                Log6(("hmR0SvmExitXcptUD: sysenter/sysexit: rcStrict=%Rrc %04x:%08RX64 %08RX64 %04x:%08RX64\n",
+                     VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags.u,
+                     pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp));
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK); /** @todo Lazy bird. */
+                if (rcStrict == VINF_IEM_RAISED_XCPT)
+                    rcStrict = VINF_SUCCESS;
+                return VBOXSTRICTRC_TODO(rcStrict);
+            }
+            Log6(("hmR0SvmExitXcptUD: not sysenter/sysexit: %.*Rhxs at %#llx CPL=%u\n", cbInstr, abInstr, GCPtrInstr, uCpl));
+        }
+        else
+            Log6(("hmR0SvmExitXcptUD: not in long mode at %04x:%llx\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     }
 
     /* If the GIM #UD exception handler didn't succeed for some reason or wasn't needed, raise #UD. */
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(rcStrict))
     {
         hmR0SvmSetPendingXcptUD(pVCpu);
-        rc = VINF_SUCCESS;
+        rcStrict = VINF_SUCCESS;
     }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 

@@ -4229,6 +4229,209 @@ IEM_CIMPL_DEF_0(iemCImpl_sysret)
 
 
 /**
+ * Implements SYSENTER (Intel, 32-bit AMD).
+ */
+IEM_CIMPL_DEF_0(iemCImpl_sysenter)
+{
+    RT_NOREF(cbInstr);
+
+    /*
+     * Check preconditions.
+     *
+     * Note that CPUs described in the documentation may load a few odd values
+     * into CS and SS than we allow here.  This has yet to be checked on real
+     * hardware.
+     */
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSysEnter)
+    {
+        Log(("sysenter: not supported -=> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+    if (!(pVCpu->cpum.GstCtx.cr0 & X86_CR0_PE))
+    {
+        Log(("sysenter: Protected or long mode is required -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+    bool fIsLongMode = CPUMIsGuestInLongModeEx(IEM_GET_CTX(pVCpu));
+    if (IEM_IS_GUEST_CPU_AMD(pVCpu) && !fIsLongMode)
+    {
+        Log(("sysenter: Only available in protected mode on AMD -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SYSENTER_MSRS);
+    uint16_t uNewCs = pVCpu->cpum.GstCtx.SysEnter.cs;
+    if ((uNewCs & X86_SEL_MASK_OFF_RPL) == 0)
+    {
+        Log(("sysenter: SYSENTER_CS = %#x -> #GP(0)\n", uNewCs));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /* This test isn't in the docs, it's just a safeguard against missing
+       canonical checks when writing the registers. */
+    if (RT_LIKELY(   !fIsLongMode
+                  || (   IEM_IS_CANONICAL(pVCpu->cpum.GstCtx.SysEnter.eip)
+                      && IEM_IS_CANONICAL(pVCpu->cpum.GstCtx.SysEnter.esp))))
+    { /* likely */ }
+    else
+    {
+        Log(("sysenter: SYSENTER_EIP = %#RX64 or/and SYSENTER_ESP = %#RX64 not canonical -> #GP(0)\n",
+             pVCpu->cpum.GstCtx.SysEnter.eip, pVCpu->cpum.GstCtx.SysEnter.esp));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+
+/** @todo Test: Sysenter from ring-0, ring-1 and ring-2.  */
+
+    /*
+     * Update registers and commit.
+     */
+    if (fIsLongMode)
+    {
+        Log(("sysenter: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64\n", pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip,
+             pVCpu->cpum.GstCtx.rflags.u, uNewCs & X86_SEL_MASK_OFF_RPL, pVCpu->cpum.GstCtx.SysEnter.eip));
+        pVCpu->cpum.GstCtx.rip          = pVCpu->cpum.GstCtx.SysEnter.eip;
+        pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.SysEnter.esp;
+        pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_L | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
+                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC;
+    }
+    else
+    {
+        Log(("sysenter: %04x:%08RX32 [efl=%#llx] -> %04x:%08RX32\n", pVCpu->cpum.GstCtx.cs, (uint32_t)pVCpu->cpum.GstCtx.rip,
+             pVCpu->cpum.GstCtx.rflags.u, uNewCs & X86_SEL_MASK_OFF_RPL, (uint32_t)pVCpu->cpum.GstCtx.SysEnter.eip));
+        pVCpu->cpum.GstCtx.rip          = (uint32_t)pVCpu->cpum.GstCtx.SysEnter.eip;
+        pVCpu->cpum.GstCtx.rsp          = (uint32_t)pVCpu->cpum.GstCtx.SysEnter.esp;
+        pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
+                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC;
+    }
+    pVCpu->cpum.GstCtx.cs.Sel           = uNewCs & X86_SEL_MASK_OFF_RPL;
+    pVCpu->cpum.GstCtx.cs.ValidSel      = uNewCs & X86_SEL_MASK_OFF_RPL;
+    pVCpu->cpum.GstCtx.cs.u64Base       = 0;
+    pVCpu->cpum.GstCtx.cs.u32Limit      = UINT32_MAX;
+    pVCpu->cpum.GstCtx.cs.fFlags        = CPUMSELREG_FLAGS_VALID;
+
+    pVCpu->cpum.GstCtx.ss.Sel           = uNewCs & X86_SEL_MASK_OFF_RPL + 8;
+    pVCpu->cpum.GstCtx.ss.ValidSel      = uNewCs & X86_SEL_MASK_OFF_RPL + 8;
+    pVCpu->cpum.GstCtx.ss.u64Base       = 0;
+    pVCpu->cpum.GstCtx.ss.u32Limit      = UINT32_MAX;
+    pVCpu->cpum.GstCtx.ss.Attr.u        = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
+                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_RW_ACC;
+    pVCpu->cpum.GstCtx.ss.fFlags        = CPUMSELREG_FLAGS_VALID;
+
+    pVCpu->cpum.GstCtx.rflags.Bits.u1IF = 0;
+    pVCpu->cpum.GstCtx.rflags.Bits.u1VM = 0;
+    pVCpu->cpum.GstCtx.rflags.Bits.u1RF = 0;
+
+    pVCpu->iem.s.uCpl                   = 0;
+
+    /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
+    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements SYSEXIT (Intel, 32-bit AMD).
+ *
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
+{
+    RT_NOREF(cbInstr);
+
+    /*
+     * Check preconditions.
+     *
+     * Note that CPUs described in the documentation may load a few odd values
+     * into CS and SS than we allow here.  This has yet to be checked on real
+     * hardware.
+     */
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSysEnter)
+    {
+        Log(("sysexit: not supported -=> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+    if (!(pVCpu->cpum.GstCtx.cr0 & X86_CR0_PE))
+    {
+        Log(("sysexit: Protected or long mode is required -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+    bool fIsLongMode = CPUMIsGuestInLongModeEx(IEM_GET_CTX(pVCpu));
+    if (IEM_IS_GUEST_CPU_AMD(pVCpu) && !fIsLongMode)
+    {
+        Log(("sysexit: Only available in protected mode on AMD -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+    if (pVCpu->iem.s.uCpl != 0)
+    {
+        Log(("sysexit: CPL(=%u) != 0 -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SYSENTER_MSRS);
+    uint16_t uNewCs = pVCpu->cpum.GstCtx.SysEnter.cs;
+    if ((uNewCs & X86_SEL_MASK_OFF_RPL) == 0)
+    {
+        Log(("sysexit: SYSENTER_CS = %#x -> #GP(0)\n", uNewCs));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /*
+     * Update registers and commit.
+     */
+    if (enmEffOpSize == IEMMODE_64BIT)
+    {
+        Log(("sysexit: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64\n", pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip,
+             pVCpu->cpum.GstCtx.rflags.u, (uNewCs | 3) + 32, pVCpu->cpum.GstCtx.rcx));
+        pVCpu->cpum.GstCtx.rip          = pVCpu->cpum.GstCtx.rdx;
+        pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.rcx;
+        pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_L | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
+                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC | (3 << X86DESCATTR_DPL_SHIFT);
+        pVCpu->cpum.GstCtx.cs.Sel       = (uNewCs | 3) + 32;
+        pVCpu->cpum.GstCtx.cs.ValidSel  = (uNewCs | 3) + 32;
+        pVCpu->cpum.GstCtx.ss.Sel       = (uNewCs | 3) + 40;
+        pVCpu->cpum.GstCtx.ss.ValidSel  = (uNewCs | 3) + 40;
+    }
+    else
+    {
+        Log(("sysexit: %04x:%08RX64 [efl=%#llx] -> %04x:%08RX32\n", pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip,
+             pVCpu->cpum.GstCtx.rflags.u, (uNewCs | 3) + 16, (uint32_t)pVCpu->cpum.GstCtx.edx));
+        pVCpu->cpum.GstCtx.rip          = pVCpu->cpum.GstCtx.edx;
+        pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.ecx;
+        pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
+                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC | (3 << X86DESCATTR_DPL_SHIFT);
+        pVCpu->cpum.GstCtx.cs.Sel       = (uNewCs | 3) + 16;
+        pVCpu->cpum.GstCtx.cs.ValidSel  = (uNewCs | 3) + 16;
+        pVCpu->cpum.GstCtx.ss.Sel       = (uNewCs | 3) + 24;
+        pVCpu->cpum.GstCtx.ss.ValidSel  = (uNewCs | 3) + 24;
+    }
+    pVCpu->cpum.GstCtx.cs.u64Base       = 0;
+    pVCpu->cpum.GstCtx.cs.u32Limit      = UINT32_MAX;
+    pVCpu->cpum.GstCtx.cs.fFlags        = CPUMSELREG_FLAGS_VALID;
+
+    pVCpu->cpum.GstCtx.ss.u64Base       = 0;
+    pVCpu->cpum.GstCtx.ss.u32Limit      = UINT32_MAX;
+    pVCpu->cpum.GstCtx.ss.Attr.u        = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
+                                        | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_RW_ACC | (3 << X86DESCATTR_DPL_SHIFT);
+    pVCpu->cpum.GstCtx.ss.fFlags        = CPUMSELREG_FLAGS_VALID;
+    pVCpu->cpum.GstCtx.rflags.Bits.u1RF = 0;
+
+    pVCpu->iem.s.uCpl                   = 3;
+
+    /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
+    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Common worker for 'pop SReg', 'mov SReg, GReg' and 'lXs GReg, reg/mem'.
  *
  * @param   iSegReg     The segment register number (valid).

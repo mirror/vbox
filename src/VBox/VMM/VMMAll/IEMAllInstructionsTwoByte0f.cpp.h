@@ -2610,9 +2610,21 @@ FNIEMOP_DEF(iemOp_rdpmc)
 
 
 /** Opcode 0x0f 0x34. */
-FNIEMOP_STUB(iemOp_sysenter);
+FNIEMOP_DEF(iemOp_sysenter)
+{
+    IEMOP_MNEMONIC0(FIXED, SYSENTER, sysenter, DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_sysenter);
+}
+
 /** Opcode 0x0f 0x35. */
-FNIEMOP_STUB(iemOp_sysexit);
+FNIEMOP_DEF(iemOp_sysexit)
+{
+    IEMOP_MNEMONIC0(FIXED, SYSEXIT, sysexit, DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_sysexit, pVCpu->iem.s.enmEffOpSize);
+}
+
 /** Opcode 0x0f 0x37. */
 FNIEMOP_STUB(iemOp_getsec);
 
