@@ -912,6 +912,53 @@ typedef const KDPACKETMANIPULATE_SETCONTEXT *PCKDPACKETMANIPULATE_SETCONTEXT;
 
 
 /**
+ * Query memory properties payload.
+ */
+typedef struct KDPACKETMANIPULATE_QUERYMEMORY
+{
+    /** The address to query the properties for. */
+    uint64_t                    u64GCPtr;
+    /** Reserved. */
+    uint64_t                    u64Rsvd;
+    /** Address space type on return. */
+    uint32_t                    u32AddrSpace;
+    /** Protection flags. */
+    uint32_t                    u32Flags;
+    /** Blows up the request to the required size. */
+    uint8_t                     abPad[16];
+} KDPACKETMANIPULATE_QUERYMEMORY;
+AssertCompileSize(KDPACKETMANIPULATE_QUERYMEMORY, 40);
+/** Pointer to a query memory properties payload. */
+typedef KDPACKETMANIPULATE_QUERYMEMORY *PKDPACKETMANIPULATE_QUERYMEMORY;
+/** Pointer to a const query memory properties payload. */
+typedef const KDPACKETMANIPULATE_QUERYMEMORY *PCKDPACKETMANIPULATE_QUERYMEMORY;
+
+
+/** @name Query memory address space identifiers.
+ * @{ */
+/** Process memory space. */
+#define KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_SPACE_PROCESS  UINT32_C(0)
+/** Session memory space. */
+#define KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_SPACE_SESSION  UINT32_C(1)
+/** Kernel memory space. */
+#define KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_KERNEL_SESSION UINT32_C(2)
+/** @} */
+
+
+/** @name Query memory address protection flags.
+ * @{ */
+/** Readable. */
+#define KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_F_READ         RT_BIT_32(0)
+/** Writable. */
+#define KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_F_WRITE        RT_BIT_32(1)
+/** Executable. */
+#define KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_F_EXEC         RT_BIT_32(2)
+/** Fixed address. */
+#define KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_F_FIXED        RT_BIT_32(3)
+/** @} */
+
+
+/**
  * Manipulate request packet header (Same for 32bit and 64bit).
  */
 typedef struct KDPACKETMANIPULATEHDR
@@ -962,6 +1009,8 @@ typedef struct KDPACKETMANIPULATE64
         KDPACKETMANIPULATE_WRITEBKPT64     WriteBkpt;
         /** Context extended. */
         KDPACKETMANIPULATE_CONTEXTEX       ContextEx;
+        /** Query memory. */
+        KDPACKETMANIPULATE_QUERYMEMORY     QueryMemory;
     } u;
 } KDPACKETMANIPULATE64;
 AssertCompileSize(KDPACKETMANIPULATE64, 16 + 40);
@@ -1023,6 +1072,10 @@ typedef const KDPACKETMANIPULATE64 *PCKDPACKETMANIPULATE64;
 /** @todo */
 /** Clear all internal breakpoints request. */
 #define KD_PACKET_MANIPULATE_REQ_CLEAR_ALL_INTERNAL_BKPT    UINT32_C(0x0000315a)
+/** Fill memory. */
+#define KD_PACKET_MANIPULATE_REQ_FILL_MEMORY                UINT32_C(0x0000315b)
+/** Query memory properties. */
+#define KD_PACKET_MANIPULATE_REQ_QUERY_MEMORY               UINT32_C(0x0000315c)
 /** @todo */
 /** Get context extended request. */
 #define KD_PACKET_MANIPULATE_REQ_GET_CONTEXT_EX             UINT32_C(0x0000315f)
@@ -1293,6 +1346,21 @@ static void dbgcKdPktDumpManipulate(PRTSGBUF pSgBuf)
                 }
                 else
                     Log3(("        Payload to small, expected %u, got %zu\n", sizeof(GetContextEx), cbCopied));
+                break;
+            }
+            case KD_PACKET_MANIPULATE_REQ_QUERY_MEMORY:
+            {
+                KDPACKETMANIPULATE_QUERYMEMORY QueryMemory;
+                cbCopied = RTSgBufCopyToBuf(pSgBuf, &QueryMemory, sizeof(QueryMemory));
+                if (cbCopied == sizeof(QueryMemory))
+                {
+                    Log3(("        u64GCPtr:     %RX64\n"
+                          "        u32AddrSpace: %RX32\n"
+                          "        u32Flags:     %RX32\n",
+                          QueryMemory.u64GCPtr, QueryMemory.u32AddrSpace, QueryMemory.u32Flags));
+                }
+                else
+                    Log3(("        Payload to small, expected %u, got %zu\n", sizeof(QueryMemory), cbCopied));
                 break;
             }
             default:
@@ -2436,8 +2504,6 @@ static int dbgcKdCtxPktManipulate64Continue2(PKDCTX pThis, PCKDPACKETMANIPULATE6
     else if (DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
         rc = DBGFR3Resume(pThis->Dbgc.pUVM, VMCPUID_ALL);
 
-    pThis->Dbgc.CmdHlp.pfnPrintf(&pThis->Dbgc.CmdHlp, NULL, "TestTestTest\n");
-
     return rc;
 }
 
@@ -2791,6 +2857,42 @@ static int dbgcKdCtxPktManipulate64GetContextEx(PKDCTX pThis, PCKDPACKETMANIPULA
 
 
 /**
+ * Processes a query memory 64 request.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pPktManip           The manipulate packet request.
+ */
+static int dbgcKdCtxPktManipulate64QueryMemory(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
+{
+    KDPACKETMANIPULATEHDR RespHdr;
+    KDPACKETMANIPULATE_QUERYMEMORY QueryMemory;
+    RT_ZERO(RespHdr); RT_ZERO(QueryMemory);
+
+    RTSGSEG aRespSegs[2];
+    RespHdr.idReq       = KD_PACKET_MANIPULATE_REQ_QUERY_MEMORY;
+    RespHdr.u16CpuLvl   = pPktManip->Hdr.u16CpuLvl;
+    RespHdr.idCpu       = pPktManip->Hdr.idCpu;
+    RespHdr.u32NtStatus = NTSTATUS_SUCCESS;
+
+    /** @todo Need DBGF API to query protection and privilege level from guest page tables. */
+    QueryMemory.u64GCPtr     = pPktManip->u.QueryMemory.u64GCPtr;
+    QueryMemory.u32AddrSpace = KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_KERNEL_SESSION;
+    QueryMemory.u32Flags     =   KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_F_READ
+                               | KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_F_WRITE
+                               | KD_PACKET_MANIPULATE64_QUERY_MEMORY_ADDR_F_EXEC;
+
+    aRespSegs[0].pvSeg = &RespHdr;
+    aRespSegs[0].cbSeg = sizeof(RespHdr);
+    aRespSegs[1].pvSeg = &QueryMemory;
+    aRespSegs[1].cbSeg = sizeof(QueryMemory);
+
+    return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
+                              &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
+}
+
+
+/**
  * Processes a manipulate packet.
  *
  * @returns VBox status code.
@@ -2861,6 +2963,11 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
         case KD_PACKET_MANIPULATE_REQ_GET_CONTEXT_EX:
         {
             rc = dbgcKdCtxPktManipulate64GetContextEx(pThis, pPktManip);
+            break;
+        }
+        case KD_PACKET_MANIPULATE_REQ_QUERY_MEMORY:
+        {
+            rc = dbgcKdCtxPktManipulate64QueryMemory(pThis, pPktManip);
             break;
         }
         default:
