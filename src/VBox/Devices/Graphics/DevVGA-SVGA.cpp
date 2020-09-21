@@ -3169,6 +3169,16 @@ static void vmsvgaR3InstallNewCursor(PVGASTATECC pThisCC, PVMSVGAR3STATE pSVGASt
 }
 
 
+/** @def VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK
+ * Check that the 3D command has at least a_cbMin of payload bytes after the
+ * header.  Will break out of the switch if it doesn't.
+ */
+# define VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(a_cbMin) \
+     if (1) { \
+          AssertMsgBreak(cbCmd >= (a_cbMin), ("size=%#x a_cbMin=%#zx\n", cbCmd, (size_t)(a_cbMin))); \
+          RT_UNTRUSTED_VALIDATED_FENCE(); \
+     } else do {} while (0)
+
 /** SVGA_3D_CMD_* handler.
  *
  * @param   pThis       The shared VGA/VMSVGA state.
@@ -3181,16 +3191,6 @@ static int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t c
 {
     int rc = VINF_SUCCESS;
     PVMSVGAR3STATE  pSVGAState = pThisCC->svga.pSvgaR3State;
-
-/** @def VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK
- * Check that the 3D command has at least a_cbMin of payload bytes after the
- * header.  Will break out of the switch if it doesn't.
- */
-# define VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(a_cbMin) \
-     if (1) { \
-          AssertMsgBreak(cbCmd >= (a_cbMin), ("size=%#x a_cbMin=%#zx\n", cbCmd, (size_t)(a_cbMin))); \
-          RT_UNTRUSTED_VALIDATED_FENCE(); \
-     } else do {} while (0)
 
      switch (cmdId)
      {
