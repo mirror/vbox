@@ -587,6 +587,36 @@ void UIProgress::exec()
     m_pEventLoopExec = 0;
 }
 
+void UIProgress::cancel()
+{
+    /* Make sure progress hasn't aborted/finished already: */
+    if (!m_comProgress.isOk() || m_comProgress.GetCompleted())
+        return;
+
+    /* Cancel progress first of all: */
+    m_comProgress.Cancel();
+
+    /* We are creating a locally-scoped event-loop object,
+     * but holding a pointer to it for a control needs: */
+    QEventLoop eventLoop;
+    m_pEventLoopCancel = &eventLoop;
+
+    /* Guard ourself for the case
+     * we self-destroyed in our event-loop: */
+    QPointer<UIProgress> guard = this;
+
+    /* Start the blocking event-loop: */
+    eventLoop.exec();
+
+    /* Event-loop object unblocked,
+     * Are we still valid? */
+    if (guard.isNull())
+        return;
+
+    /* Cleanup the pointer finally: */
+    m_pEventLoopCancel = 0;
+}
+
 void UIProgress::sltHandleProgressPercentageChange(const QUuid &, const int iPercent)
 {
     emit sigProgressChange(m_comProgress.GetOperationCount(),
@@ -604,6 +634,11 @@ void UIProgress::sltHandleProgressTaskComplete(const QUuid &)
     /* Exit from the exec event-loop if there is any: */
     if (m_pEventLoopExec)
         m_pEventLoopExec->exit();
+    /* Exit from the cancel event-loop if there is any: */
+    if (m_pEventLoopCancel)
+        m_pEventLoopCancel->exit();
+
+    emit sigProgressComplete();
 }
 
 void UIProgress::prepare()
