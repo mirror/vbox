@@ -300,8 +300,8 @@ typedef struct VMSVGAState
     uint32_t                    u32PitchLock;
     /** Current GMR id. (SVGA_REG_GMR_ID) */
     uint32_t                    u32CurrentGMRId;
-    /** Register caps. */
-    uint32_t                    u32RegCaps;
+    /** SVGA device capabilities. */
+    uint32_t                    u32DeviceCaps;
     uint32_t                    Padding0; /* Used to be I/O port base address. */
     /** Port io index register. */
     uint32_t                    u32IndexReg;
@@ -366,6 +366,13 @@ typedef struct VMSVGAState
      * Putting this at the end since it's big it probably not . */
     uint32_t                    au32ScratchRegion[VMSVGA_SCRATCH_SIZE];
 
+    /** Array of SVGA3D_DEVCAP values, which are accessed via SVGA_REG_DEV_CAP. */
+    uint32_t                    au32DevCaps[SVGA3D_DEVCAP_MAX];
+    /** Index written to the SVGA_REG_DEV_CAP register. */
+    uint32_t                    u32DevCapIndex;
+    uint32_t                    u32RegCommandLow;
+    uint32_t                    u32RegCommandHigh;
+
     STAMCOUNTER                 StatRegBitsPerPixelWr;
     STAMCOUNTER                 StatRegBusyWr;
     STAMCOUNTER                 StatRegCursorXWr;
@@ -397,6 +404,11 @@ typedef struct VMSVGAState
     STAMCOUNTER                 StatRegTracesWr;
     STAMCOUNTER                 StatRegUnknownWr;
     STAMCOUNTER                 StatRegWidthWr;
+    STAMCOUNTER                 StatRegCommandLowWr;
+    STAMCOUNTER                 StatRegCommandHighWr;
+    STAMCOUNTER                 StatRegDevCapWr;
+    STAMCOUNTER                 StatRegCmdPrependLowWr;
+    STAMCOUNTER                 StatRegCmdPrependHighWr;
 
     STAMCOUNTER                 StatRegBitsPerPixelRd;
     STAMCOUNTER                 StatRegBlueMaskRd;
@@ -450,6 +462,16 @@ typedef struct VMSVGAState
     STAMCOUNTER                 StatRegVramSizeRd;
     STAMCOUNTER                 StatRegWidthRd;
     STAMCOUNTER                 StatRegWriteOnlyRd;
+    STAMCOUNTER                 StatRegCommandLowRd;
+    STAMCOUNTER                 StatRegCommandHighRd;
+    STAMCOUNTER                 StatRegMaxPrimBBMemRd;
+    STAMCOUNTER                 StatRegGBMemSizeRd;
+    STAMCOUNTER                 StatRegDevCapRd;
+    STAMCOUNTER                 StatRegCmdPrependLowRd;
+    STAMCOUNTER                 StatRegCmdPrependHighRd;
+    STAMCOUNTER                 StatRegScrnTgtMaxWidthRd;
+    STAMCOUNTER                 StatRegScrnTgtMaxHeightRd;
+    STAMCOUNTER                 StatRegMobMaxSizeRd;
 } VMSVGAState, VMSVGASTATE;
 
 
