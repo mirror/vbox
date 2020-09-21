@@ -581,7 +581,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/manager/UIErrorPane.h \
 	src/manager/UITaskCloudGetSettingsForm.h \
 	src/manager/UITaskCloudListMachines.h \
-	src/manager/UITaskCloudRefreshMachineInfo.h \
 	src/manager/UIToolPaneGlobal.h \
 	src/manager/UIToolPaneMachine.h \
 	src/manager/UIVirtualBoxManager.h \
@@ -1055,7 +1054,6 @@ VirtualBox_SOURCES = \
 	src/manager/UIErrorPane.cpp \
 	src/manager/UITaskCloudGetSettingsForm.cpp \
 	src/manager/UITaskCloudListMachines.cpp \
-	src/manager/UITaskCloudRefreshMachineInfo.cpp \
 	src/manager/UIToolPaneGlobal.cpp \
 	src/manager/UIToolPaneMachine.cpp \
 	src/manager/UIVirtualBoxManager.cpp \
