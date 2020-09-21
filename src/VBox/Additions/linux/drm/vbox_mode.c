@@ -398,13 +398,13 @@ static struct drm_encoder *drm_encoder_find(struct drm_device *dev, u32 id)
 static struct drm_encoder *vbox_best_single_encoder(struct drm_connector
 						    *connector)
 {
-#if RTLNX_VER_MIN(5,5,0)
+#if RTLNX_VER_MIN(5,5,0) || RTLNX_RHEL_MIN(8,3)
         struct drm_encoder *encoder;
 
         /* There is only one encoder per connector */
         drm_connector_for_each_possible_encoder(connector, encoder)
             return encoder;
-#else /* < 5.5 */
+#else /* < 5.5 || RHEL < 8.3 */
 	int enc_id = connector->encoder_ids[0];
 
 	/* pick the encoder ids */
@@ -414,7 +414,7 @@ static struct drm_encoder *vbox_best_single_encoder(struct drm_connector
 # else
 		return drm_encoder_find(connector->dev, enc_id);
 # endif
-#endif /* < 5.5 */
+#endif /* < 5.5 || RHEL < 8.3 */
 	return NULL;
 }
 
