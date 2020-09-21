@@ -55,6 +55,7 @@
  * In accordance with the AMD spec.
  * @{
  */
+#define IOMMU_MMIO_OFF_QWORD_TABLE_0_START          IOMMU_MMIO_OFF_DEV_TAB_BAR
 #define IOMMU_MMIO_OFF_DEV_TAB_BAR                  0x00
 #define IOMMU_MMIO_OFF_CMD_BUF_BAR                  0x08
 #define IOMMU_MMIO_OFF_EVT_LOG_BAR                  0x10
@@ -104,7 +105,9 @@
 #define IOMMU_MMIO_OFF_XT_GEN_INTR_CTRL             0x170
 #define IOMMU_MMIO_OFF_XT_PPR_INTR_CTRL             0x178
 #define IOMMU_MMIO_OFF_XT_GALOG_INT_CTRL            0x180
+#define IOMMU_MMIO_OFF_QWORD_TABLE_0_END            (IOMMU_MMIO_OFF_XT_GALOG_INT_CTRL + 8)
 
+#define IOMMU_MMIO_OFF_QWORD_TABLE_1_START          IOMMU_MMIO_OFF_MARC_APER_BAR_0
 #define IOMMU_MMIO_OFF_MARC_APER_BAR_0              0x200
 #define IOMMU_MMIO_OFF_MARC_APER_RELOC_0            0x208
 #define IOMMU_MMIO_OFF_MARC_APER_LEN_0              0x210
@@ -117,13 +120,15 @@
 #define IOMMU_MMIO_OFF_MARC_APER_BAR_3              0x248
 #define IOMMU_MMIO_OFF_MARC_APER_RELOC_3            0x250
 #define IOMMU_MMIO_OFF_MARC_APER_LEN_3              0x258
+#define IOMMU_MMIO_OFF_QWORD_TABLE_1_END            (IOMMU_MMIO_OFF_MARC_APER_LEN_3 + 8)
 
+#define IOMMU_MMIO_OFF_QWORD_TABLE_2_START          IOMMU_MMIO_OFF_RSVD_REG
 #define IOMMU_MMIO_OFF_RSVD_REG                     0x1ff8
 
-#define IOMMU_MMIO_CMD_BUF_HEAD_PTR                 0x2000
-#define IOMMU_MMIO_CMD_BUF_TAIL_PTR                 0x2008
-#define IOMMU_MMIO_EVT_LOG_HEAD_PTR                 0x2010
-#define IOMMU_MMIO_EVT_LOG_TAIL_PTR                 0x2018
+#define IOMMU_MMIO_OFF_CMD_BUF_HEAD_PTR             0x2000
+#define IOMMU_MMIO_OFF_CMD_BUF_TAIL_PTR             0x2008
+#define IOMMU_MMIO_OFF_EVT_LOG_HEAD_PTR             0x2010
+#define IOMMU_MMIO_OFF_EVT_LOG_TAIL_PTR             0x2018
 
 #define IOMMU_MMIO_OFF_STATUS                       0x2020
 
@@ -142,6 +147,7 @@
 #define IOMMU_MMIO_OFF_PPR_LOG_AUTO_RESP            0x2080
 #define IOMMU_MMIO_OFF_PPR_LOG_OVERFLOW_EARLY       0x2088
 #define IOMMU_MMIO_OFF_PPR_LOG_B_OVERFLOW_EARLY     0x2090
+#define IOMMU_MMIO_OFF_QWORD_TABLE_2_END            (IOMMU_MMIO_OFF_PPR_LOG_B_OVERFLOW_EARLY + 8)
 /** @} */
 
 /**
@@ -697,7 +703,7 @@ typedef union
     struct
     {
         uint32_t    u32Operand1Lo;          /**< Bits 31:0   - Operand 1 (Lo). */
-        uint32_t    u32Operand1Hi : 28;     /**< Bits 59:32  - Operand 1 (Hi). */
+        uint32_t    u28Operand1Hi : 28;     /**< Bits 59:32  - Operand 1 (Hi). */
         uint32_t    u4Opcode : 4;           /**< Bits 63:60  - Op Code. */
         uint64_t    u64Operand2;            /**< Bits 127:64 - Operand 2. */
     } n;
@@ -883,7 +889,7 @@ typedef union
     struct
     {
         uint32_t    u32Operand1Lo;          /**< Bits 31:0   - Operand 1 (Lo). */
-        uint32_t    u32Operand1Hi : 28;     /**< Bits 59:32  - Operand 1 (Hi). */
+        uint32_t    u28Operand1Hi : 28;     /**< Bits 59:32  - Operand 1 (Hi). */
         uint32_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
         uint32_t    u32Operand2Lo;          /**< Bits 95:64  - Operand 2 (Lo). */
         uint32_t    u32Operand2Hi;          /**< Bits 127:96 - Operand 2 (Hi). */
