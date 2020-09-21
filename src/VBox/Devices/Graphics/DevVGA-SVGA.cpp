@@ -7805,11 +7805,14 @@ static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
                               | SVGA_CAP_ALPHA_CURSOR;
 
     /* VGPU10 capabilities. */
-//    pThis->svga.u32DeviceCaps |= SVGA_CAP_COMMAND_BUFFERS /* Enable register based command buffer submission. */
-//                              |  SVGA_CAP_CMD_BUFFERS_2   /* Support for SVGA_REG_CMD_PREPEND_LOW/HIGH */
-//                              |  SVGA_CAP_GBOBJECTS       /* Enable guest-backed objects and surfaces. */
-//                              |  SVGA_CAP_CMD_BUFFERS_3   /* AKA SVGA_CAP_DX. Enable support for DX commands, and command buffers in a mob. */
-//                              ;
+    if (pThis->fVMSVGA10)
+    {
+        pThis->svga.u32DeviceCaps |= SVGA_CAP_COMMAND_BUFFERS /* Enable register based command buffer submission. */
+//                                  |  SVGA_CAP_CMD_BUFFERS_2   /* Support for SVGA_REG_CMD_PREPEND_LOW/HIGH */
+//                                  |  SVGA_CAP_GBOBJECTS       /* Enable guest-backed objects and surfaces. */
+//                                  |  SVGA_CAP_CMD_BUFFERS_3   /* AKA SVGA_CAP_DX. Enable support for DX commands, and command buffers in a mob. */
+                                  ;
+    }
 
 # ifdef VBOX_WITH_VMSVGA3D
     pThis->svga.u32DeviceCaps |= SVGA_CAP_3D;
