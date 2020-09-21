@@ -292,6 +292,7 @@ static int vgsvcCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCpuCore,
         if (RT_SUCCESS(rc))
         {
             RTStrFree(pszPath);
+            pszPath = NULL;
 
             /* Search for CPU */
             while (!fFound)
@@ -348,6 +349,7 @@ static int vgsvcCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCpuCore,
                         {
                             /* Get the next directory. */
                             RTStrFree(pszPathCurr);
+                            pszPathCurr = NULL;
                             VGSvcVerbose(3, "CPU doesn't match, next directory\n");
                         }
                     }
@@ -384,13 +386,20 @@ static int vgsvcCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCpuCore,
                 }
                 else
                 {
-                    /* Go back one level and try to get the next entry. */
-                    Assert(iLvlCurr > 0);
-
                     RTDirClose(pAcpiCpuPathLvl->hDir);
                     RTStrFree(pAcpiCpuPathLvl->pszPath);
                     pAcpiCpuPathLvl->hDir = NIL_RTDIR;
                     pAcpiCpuPathLvl->pszPath = NULL;
+
+                    /*
+                     * If we reached the end we didn't find the matching path
+                     * meaning the CPU is already offline.
+                     */
+                    if (!iLvlCurr)
+                    {
+                        rc = VERR_NOT_FOUND;
+                        break;
+                    }
 
                     iLvlCurr--;
                     pAcpiCpuPathLvl = &g_aAcpiCpuPath[iLvlCurr];
@@ -435,7 +444,7 @@ static void vgsvcCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t idCpuPac
     /*
      * The topology directory (containing the physical and core id properties)
      * is not available until the CPU is online. So we just iterate over all directories
-     * and enable every CPU which is not online already.
+     * and enable the first CPU which is not online already.
      * Because the directory might not be available immediately we try a few times.
      *
      */
@@ -452,45 +461,50 @@ static void vgsvcCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t idCpuPac
             RTDIRENTRY DirFolderContent;
             while (RT_SUCCESS(RTDirRead(hDirDevices, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
             {
-                /** @todo r-bird: This code is bringing all CPUs online; the idCpuCore and
-                 *        idCpuPackage parameters are unused!
-                 *        aeichner: These files are not available at this point unfortunately. (see comment above)
-                 *        bird: Yes, but isn't that easily dealt with by doing:
-                 *              if (matching_topology() || !have_topology_directory())
-                 *                  bring_cpu_online()
-                 *              That could save you the cpu0 and cpuidle checks to.
-                 */
-                /*
-                 * Check if this is a CPU object.
-                 * cpu0 is excluded because it is not possible to change the state
-                 * of the first CPU on Linux (it doesn't even have an online file)
-                 * and cpuidle is no CPU device. Prevents error messages later.
-                 */
-                if(   !strncmp(DirFolderContent.szName, "cpu", 3)
-                    && strncmp(DirFolderContent.szName, "cpu0", 4)
-                    && strncmp(DirFolderContent.szName, "cpuidle", 7))
+                /* Check if this is a CPU object which can be brought online. */
+                if (RTLinuxSysFsExists("%s/%s/online", SYSFS_CPU_PATH, DirFolderContent.szName))
                 {
-                    /* Get the sysdev */
-                    RTFILE hFileCpuOnline = NIL_RTFILE;
-
-                    rc = RTFileOpenF(&hFileCpuOnline, RTFILE_O_WRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
-                                     "%s/%s/online", SYSFS_CPU_PATH, DirFolderContent.szName);
-                    if (RT_SUCCESS(rc))
+                    /* Check the status of the CPU by reading the online flag. */
+                    int64_t i64Status = 0;
+                    rc = RTLinuxSysFsReadIntFile(10 /*uBase*/, &i64Status, "%s/%s/online", SYSFS_CPU_PATH, DirFolderContent.szName);
+                    if (   RT_SUCCESS(rc)
+                        && i64Status == 0)
                     {
-                        /* Write a 1 to online the CPU */
-                        rc = RTFileWrite(hFileCpuOnline, "1", 1, NULL);
-                        RTFileClose(hFileCpuOnline);
+                        /* CPU is offline, turn it on. */
+                        rc = RTLinuxSysFsWriteU8File(10 /*uBase*/, 1, "%s/%s/online", SYSFS_CPU_PATH, DirFolderContent.szName);
                         if (RT_SUCCESS(rc))
                         {
                             VGSvcVerbose(1, "CpuHotPlug: CPU %u/%u was brought online\n", idCpuPackage, idCpuCore);
                             fCpuOnline = true;
                             break;
                         }
-                        /* Error means CPU not present or online already  */
                     }
-                    else
+                    else if (RT_FAILURE(rc))
                         VGSvcError("CpuHotPlug: Failed to open '%s/%s/online' rc=%Rrc\n",
                                    SYSFS_CPU_PATH, DirFolderContent.szName, rc);
+                    else
+                    {
+                        /*
+                         * Check whether the topology matches what we got (which means someone raced us and brought the CPU
+                         * online already).
+                         */
+                        int64_t i64Core    = 0;
+                        int64_t i64Package = 0;
+
+                        int rc2 = RTLinuxSysFsReadIntFile(10, &i64Core, "%s/%s/topology/core_id",
+                                                          SYSFS_CPU_PATH, DirFolderContent.szName);
+                        if (RT_SUCCESS(rc2))
+                            rc2 = RTLinuxSysFsReadIntFile(10, &i64Package, "%s/%s/topology/physical_package_id",
+                                                          SYSFS_CPU_PATH, DirFolderContent.szName);
+                        if (   RT_SUCCESS(rc2)
+                            && idCpuPackage == i64Package
+                            && idCpuCore == i64Core)
+                        {
+                            VGSvcVerbose(1, "CpuHotPlug: '%s' is already online\n", DirFolderContent.szName);
+                            fCpuOnline = true;
+                            break;
+                        }
+                    }
                 }
             }
             RTDirClose(hDirDevices);
@@ -500,7 +514,7 @@ static void vgsvcCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t idCpuPac
 
         /* Sleep a bit */
         if (!fCpuOnline)
-            RTThreadSleep(10);
+            RTThreadSleep(100);
 
     } while (   !fCpuOnline
              && cTries-- > 0);
@@ -540,6 +554,8 @@ static void vgsvcCpuHotPlugHandleUnplugEvent(uint32_t idCpuCore, uint32_t idCpuP
             VGSvcError("CpuHotPlug: Failed to open '%s/eject' rc=%Rrc\n", pszCpuDevicePath, rc);
         RTStrFree(pszCpuDevicePath);
     }
+    else if (rc == VERR_NOT_FOUND)
+        VGSvcVerbose(1, "CpuHotPlug: CPU %u/%u was aleady ejected by someone else!\n", idCpuPackage, idCpuCore);
     else
         VGSvcError("CpuHotPlug: Failed to get CPU device path rc=%Rrc\n", rc);
 #else
