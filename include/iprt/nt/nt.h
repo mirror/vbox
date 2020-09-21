@@ -606,8 +606,11 @@ typedef struct _KAFFINITY_EX
     uint16_t                Size;
     /** Reserved / aligmment padding. */
     uint32_t                Reserved;
-    /** Bitmap where one bit corresponds to a CPU. */
-    uintptr_t               Bitmap[20];
+    /** Bitmap where one bit corresponds to a CPU.
+     * @note Started at 20 entries.  W10 20H2 increased it to 32.  Must be
+     *       probed by passing a big buffer to KeInitializeAffinityEx and check
+     *       the Size afterwards. */
+    uintptr_t               Bitmap[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
 } KAFFINITY_EX;
 typedef KAFFINITY_EX *PKAFFINITY_EX;
 typedef KAFFINITY_EX const *PCKAFFINITY_EX;
