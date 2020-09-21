@@ -380,6 +380,8 @@ static int vgsvcCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCpuCore,
 
                         /* Open the directory */
                         rc = RTDirOpenFiltered(&pAcpiCpuPathLvl->hDir, pszPathDir, RTDIRFILTER_WINNT, 0 /*fFlags*/);
+                        RTStrFree(pszPathDir);
+                        pszPathDir = NULL;
                         if (RT_FAILURE(rc))
                             break;
                     }
