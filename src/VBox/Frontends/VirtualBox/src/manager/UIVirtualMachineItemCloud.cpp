@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QPointer>
 #include <QTimer>
 
 /* GUI includes: */
@@ -39,6 +40,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(UIFakeCloudVirtualMachineIt
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(enmState)
     , m_pTask(0)
+    , m_pEventLoop(0)
 {
     recache();
 }
@@ -49,6 +51,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comClo
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_NotApplicable)
     , m_pTask(0)
+    , m_pEventLoop(0)
 {
     recache();
 }
@@ -72,6 +75,36 @@ void UIVirtualMachineItemCloud::setFakeCloudItemErrorMessage(const QString &strE
 void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed)
 {
     QTimer::singleShot(fDelayed ? 10000 : 0, this, SLOT(sltCreateGetCloudInstanceInfoTask()));
+}
+
+void UIVirtualMachineItemCloud::waitForAsyncInfoUpdateFinished()
+{
+    /* Make sure task is really created: */
+    if (!m_pTask)
+        return;
+
+    /* Cancel the task: */
+    m_pTask->cancel();
+
+    /* We are creating a locally-scoped event-loop object,
+     * but holding a pointer to it for a control needs: */
+    QEventLoop eventLoop;
+    m_pEventLoop = &eventLoop;
+
+    /* Guard ourself for the case
+     * we self-destroyed in our event-loop: */
+    QPointer<UIVirtualMachineItemCloud> guard = this;
+
+    /* Start the blocking event-loop: */
+    eventLoop.exec();
+
+    /* Event-loop object unblocked,
+     * Are we still valid? */
+    if (guard.isNull())
+        return;
+
+    /* Cleanup the pointer finally: */
+    m_pEventLoop = 0;
 }
 
 void UIVirtualMachineItemCloud::recache()
@@ -300,6 +333,10 @@ void UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone(UITask *pTa
     /* Recache: */
     recache();
 
-    /* Notify listeners finally: */
-    emit sigStateChange();
+    /* Exit from the event-loop if there is any: */
+    if (m_pEventLoop)
+        m_pEventLoop->exit();
+    /* Notify listeners otherwise: */
+    else
+        emit sigStateChange();
 }

@@ -30,6 +30,7 @@
 
 /* Forward declarations: */
 class UITask;
+class UITaskCloudRefreshMachineInfo;
 
 /** UIVirtualMachineItem sub-class used as cloud Virtual Machine item interface. */
 class UIVirtualMachineItemCloud : public UIVirtualMachineItem
@@ -73,6 +74,10 @@ public:
 
         /** Updates cloud VM info async way, @a fDelayed if requested or instant otherwise. */
         void updateInfoAsync(bool fDelayed);
+        /** Makes sure async info update is finished.
+          * @note  This method creates own event-loop to avoid blocking calling thread event processing,
+          *        so it's safe to call it from the GUI thread, ofc the method itself will be blocked. */
+        void waitForAsyncInfoUpdateFinished();
     /** @} */
 
     /** @name Update stuff.
@@ -141,7 +146,9 @@ private:
         QString                             m_strFakeCloudItemErrorMessage;
 
         /** Holds the info acquire task instance. */
-        UITask *m_pTask;
+        UITaskCloudRefreshMachineInfo *m_pTask;
+        /** Holds the task waiting loop instance. */
+        QEventLoop                    *m_pEventLoop;
     /** @} */
 };
 
