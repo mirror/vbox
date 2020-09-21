@@ -1137,6 +1137,28 @@ void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderName, c
     }
 }
 
+void UIChooserModel::sltHandleCloudProviderUninstall(const QUuid &uId)
+{
+    /* Search for selected cloud machine items: */
+    foreach (UIVirtualMachineItem *pItem, selectedMachineItems())
+    {
+        /* Skip unrelated nodes: */
+        AssertPtrReturnVoid(pItem);
+        UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+        if (!pCloudItem)
+            continue;
+
+        /* Wait for cloud machine refresh task to complete: */
+        pCloudItem->waitForAsyncInfoUpdateFinished();
+    }
+
+    /* Call to base-class: */
+    UIChooserAbstractModel::sltHandleCloudProviderUninstall(uId);
+
+    /* Notify about selection invalidated: */
+    emit sigSelectionInvalidated();
+}
+
 void UIChooserModel::sltReloadMachine(const QUuid &uId)
 {
     /* Call to base-class: */

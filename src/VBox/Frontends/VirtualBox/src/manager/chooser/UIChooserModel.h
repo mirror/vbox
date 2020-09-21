@@ -267,6 +267,8 @@ protected slots:
           * @param  strProfileName   Brings profile name. */
         virtual void sltCloudMachineRegistered(const QString &strProviderName, const QString &strProfileName,
                                                const QUuid &uId, const bool fRegistered);
+        /** Handles event about cloud provider with @a uId being uninstalled. */
+        virtual void sltHandleCloudProviderUninstall(const QUuid &uId);
     /** @} */
 
     /** @name Children stuff.
