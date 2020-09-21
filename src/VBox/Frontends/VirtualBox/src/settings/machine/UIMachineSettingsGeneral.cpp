@@ -1165,7 +1165,7 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                             connect(pObject.data(), &UIProgress::sigProgressError,
                                     this, &UIMachineSettingsGeneral::sigOperationProgressError,
                                     Qt::BlockingQueuedConnection);
-                            pObject->run();
+                            pObject->exec();
                             if (pObject)
                                 delete pObject;
                             else

@@ -560,7 +560,7 @@ UIProgress::~UIProgress()
     cleanup();
 }
 
-void UIProgress::run()
+void UIProgress::exec()
 {
     /* Make sure progress hasn't aborted/finished already: */
     if (!m_comProgress.isOk() || m_comProgress.GetCompleted())
@@ -569,7 +569,7 @@ void UIProgress::run()
     /* We are creating a locally-scoped event-loop object,
      * but holding a pointer to it for a control needs: */
     QEventLoop eventLoop;
-    m_pEventLoop = &eventLoop;
+    m_pEventLoopExec = &eventLoop;
 
     /* Guard ourself for the case
      * we self-destroyed in our event-loop: */
@@ -584,7 +584,7 @@ void UIProgress::run()
         return;
 
     /* Cleanup the pointer finally: */
-    m_pEventLoop = 0;
+    m_pEventLoopExec = 0;
 }
 
 void UIProgress::sltHandleProgressPercentageChange(const QUuid &, const int iPercent)
@@ -601,9 +601,9 @@ void UIProgress::sltHandleProgressTaskComplete(const QUuid &)
     if (!m_comProgress.isOk() || m_comProgress.GetResultCode() != 0)
         emit sigProgressError(UIErrorString::formatErrorInfo(m_comProgress));
 
-    /* Exit from the event-loop if there is any: */
-    if (m_pEventLoop)
-        m_pEventLoop->exit();
+    /* Exit from the exec event-loop if there is any: */
+    if (m_pEventLoopExec)
+        m_pEventLoopExec->exit();
 }
 
 void UIProgress::prepare()

@@ -51,7 +51,7 @@ void UITaskCloudRefreshMachineInfo::run()
     {
         /* Show "Refresh cloud machine information" progress: */
         QPointer<UIProgress> pObject = new UIProgress(m_comCloudMachineRefreshProgress, this);
-        pObject->run();
+        pObject->exec();
         if (pObject)
             delete pObject;
         else
