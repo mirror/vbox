@@ -297,7 +297,7 @@ void UIVirtualMachineItemCloud::sltRefreshCloudMachineInfo()
         /* Prepare 'Refresh' progress handler: */
         m_pProgressHandler = new UIProgress(m_comProgress, this);
         if (m_pProgressHandler)
-            connect(m_pProgressHandler, &UIProgress::sigProgressComplete,
+            connect(m_pProgressHandler.data(), &UIProgress::sigProgressComplete,
                     this, &UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone);
     }
 }
