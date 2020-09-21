@@ -477,59 +477,6 @@ bool UICloudNetworkingStuff::cloudMachineConsoleConnectionFingerprint(const CClo
     return false;
 }
 
-bool UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine comCloudMachine,
-                                                     QWidget *pParent /* = 0 */)
-{
-    /* Acquire machine name first: */
-    QString strMachineName;
-    if (!cloudMachineName(comCloudMachine, strMachineName))
-        return false;
-
-    /* Now execute Refresh async method: */
-    CProgress comProgress = comCloudMachine.Refresh();
-    if (!comCloudMachine.isOk())
-    {
-        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
-        return false;
-    }
-
-    /* Show "Refresh cloud machine information" progress: */
-    msgCenter().showModalProgressDialog(comProgress,
-                                        strMachineName,
-                                        ":/progress_reading_appliance_90px.png", pParent, 0);
-    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-    {
-        msgCenter().cannotAcquireCloudMachineParameter(comProgress, pParent);
-        return false;
-    }
-
-    /* Return result: */
-    return true;
-}
-
-bool UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine comCloudMachine,
-                                                     QString &strErrorMessage)
-{
-    /* Execute Refresh async method: */
-    CProgress comProgress = comCloudMachine.Refresh();
-    if (!comCloudMachine.isOk())
-    {
-        strErrorMessage = UIErrorString::formatErrorInfo(comCloudMachine);
-        return false;
-    }
-
-    /* Show "Refresh cloud machine information" progress: */
-    comProgress.WaitForCompletion(-1);
-    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-    {
-        strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-        return false;
-    }
-
-    /* Return result: */
-    return true;
-}
-
 bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine comCloudMachine,
                                                       CForm &comResult,
                                                       QWidget *pParent /* = 0 */)

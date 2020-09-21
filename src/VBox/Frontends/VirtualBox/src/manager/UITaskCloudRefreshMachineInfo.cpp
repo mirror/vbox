@@ -17,6 +17,8 @@
 
 /* GUI includes: */
 #include "UICloudNetworkingStuff.h"
+#include "UIErrorString.h"
+#include "UIProgressDialog.h"
 #include "UITaskCloudRefreshMachineInfo.h"
 
 
@@ -37,6 +39,27 @@ QString UITaskCloudRefreshMachineInfo::errorInfo() const
 void UITaskCloudRefreshMachineInfo::run()
 {
     m_mutex.lock();
-    refreshCloudMachineInfo(m_comCloudMachine, m_strErrorInfo);
+
+    /* Execute Refresh async method: */
+    m_comCloudMachineRefreshProgress = m_comCloudMachine.Refresh();
+    if (m_comCloudMachine.isOk())
+    {
+        /* Show "Refresh cloud machine information" progress: */
+        QPointer<UIProgress> pObject = new UIProgress(m_comCloudMachineRefreshProgress, this);
+        pObject->run();
+        if (pObject)
+            delete pObject;
+        else
+        {
+            // Premature application shutdown,
+            // exit immediately:
+            return;
+        }
+        if (!m_comCloudMachineRefreshProgress.isOk() || m_comCloudMachineRefreshProgress.GetResultCode() != 0)
+            m_strErrorInfo = UIErrorString::formatErrorInfo(m_comCloudMachineRefreshProgress);
+    }
+    else
+        m_strErrorInfo = UIErrorString::formatErrorInfo(m_comCloudMachine);
+
     m_mutex.unlock();
 }
