@@ -45,6 +45,9 @@ public:
       * @param  comCloudMachine  Brings the cloud VM wrapper. */
     UITaskCloudRefreshMachineInfo(const CCloudMachine &comCloudMachine);
 
+    /** Cancels the task. */
+    void cancel();
+
     /** Returns error info. */
     QString errorInfo() const;
 

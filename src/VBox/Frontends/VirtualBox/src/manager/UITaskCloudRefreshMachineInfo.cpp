@@ -28,6 +28,11 @@ UITaskCloudRefreshMachineInfo::UITaskCloudRefreshMachineInfo(const CCloudMachine
 {
 }
 
+void UITaskCloudRefreshMachineInfo::cancel()
+{
+    m_comCloudMachineRefreshProgress.Cancel();
+}
+
 QString UITaskCloudRefreshMachineInfo::errorInfo() const
 {
     m_mutex.lock();
