@@ -551,7 +551,6 @@ UIProgress::UIProgress(CProgress &comProgress, QObject *pParent /* = 0 */)
     : QObject(pParent)
     , m_comProgress(comProgress)
     , m_pEventHandler(0)
-    , m_fEnded(false)
 {
     prepare();
 }
