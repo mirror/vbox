@@ -3169,6 +3169,7 @@ static void vmsvgaR3InstallNewCursor(PVGASTATECC pThisCC, PVMSVGAR3STATE pSVGASt
 }
 
 
+# ifdef VBOX_WITH_VMSVGA3D
 /** @def VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK
  * Check that the 3D command has at least a_cbMin of payload bytes after the
  * header.  Will break out of the switch if it doesn't.
@@ -3615,9 +3616,10 @@ static int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t c
          break;
      }
 
-# undef VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK
      return rc;
 }
+# undef VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK
+# endif // VBOX_WITH_VMSVGA3D
 
 
 /*
