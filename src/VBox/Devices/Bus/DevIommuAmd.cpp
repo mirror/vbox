@@ -391,8 +391,7 @@ typedef struct IOMMUREGACC
 {
     const char   *pszName;
     VBOXSTRICTRC (*pfnRead)(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t *pu64Value);
-    VBOXSTRICTRC (*pfnWrite)(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t  u64Value);
-    uint8_t      cb;
+    VBOXSTRICTRC (*pfnWrite)(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t u64Value);
 } IOMMUREGACC;
 /** Pointer to an IOMMU register access. */
 typedef IOMMUREGACC *PIOMMUREGACC;
@@ -760,62 +759,50 @@ static VBOXSTRICTRC iommuAmdDevSpecificStatus_r(PPDMDEVINS pDevIns, PIOMMU pThis
 
 
 /**
- * Reads the MSI Vector Register 0 (32-bit) or the MSI Vector Register 1 (32-bit).
+ * Reads the MSI Vector Register 0 (32-bit) and the MSI Vector Register 1 (32-bit).
  */
 static VBOXSTRICTRC iommuAmdDevMsiVector_r(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t *pu64Value)
 {
     RT_NOREF(pDevIns, offReg);
-    if (offReg == IOMMU_MMIO_OFF_MSI_VECTOR_0)
-        *pu64Value = pThis->MiscInfo.au32[0];
-    else
-    {
-        AssertMsg(offReg == IOMMU_MMIO_OFF_MSI_VECTOR_1, ("%#x\n", offReg));
-        *pu64Value = pThis->MiscInfo.au32[1];
-    }
+    uint32_t const uLo = pThis->MiscInfo.au32[0];
+    uint32_t const uHi = pThis->MiscInfo.au32[1];
+    *pu64Value = RT_MAKE_U64(uLo, uHi);
     return VINF_SUCCESS;
 }
 
 
 #ifdef IOMMU_NEW_REGISTER_ACCESS
 /**
- * Reads the MSI Capability Header Register (32-bit) or the MSI Address (Lo)
+ * Reads the MSI Capability Header Register (32-bit) and the MSI Address (Lo)
  * Register (32-bit).
  */
-static VBOXSTRICTRC iommuAmdMsiCapHdrOrAddrLo_r(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t *pu64Value)
+static VBOXSTRICTRC iommuAmdMsiCapHdrAndAddrLo_r(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t *pu64Value)
 {
-    RT_NOREF(pThis);
+    RT_NOREF(pThis, offReg);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-    if (offReg == IOMMU_MMIO_OFF_MSI_CAP_HDR)
-        *pu64Value = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
-    else
-    {
-        AssertMsg(offReg == IOMMU_MMIO_OFF_MSI_ADDR_LO, ("%#x\n", offReg));
-        *pu64Value = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO);
-    }
+    uint32_t const uLo = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
+    uint32_t const uHi = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO);
+    *pu64Value = RT_MAKE_U64(uLo, uHi);
     return VINF_SUCCESS;
 }
 
 
 /**
- * Reads the MSI Address (Hi) Register (32-bit) or the MSI data register (32-bit).
+ * Reads the MSI Address (Hi) Register (32-bit) and the MSI data register (32-bit).
  */
-static VBOXSTRICTRC iommuAmdMsiAddrHiOrData_r(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t *pu64Value)
+static VBOXSTRICTRC iommuAmdMsiAddrHiAndData_r(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t *pu64Value)
 {
-    RT_NOREF(pThis);
+    RT_NOREF(pThis, offReg);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-
-    if (offReg == IOMMU_MMIO_OFF_MSI_ADDR_HI)
-        *pu64Value = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI);
-    else
-    {
-        AssertMsg(offReg == IOMMU_MMIO_OFF_MSI_DATA, ("%#x\n", offReg));
-        *pu64Value = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA);
-    }
+    uint32_t const uLo = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI);
+    uint32_t const uHi = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA);
+    *pu64Value = RT_MAKE_U64(uLo, uHi);
     return VINF_SUCCESS;
 }
 #endif
+
 
 /**
  * Reads the Command Buffer Head Pointer Register.
@@ -1223,28 +1210,46 @@ static VBOXSTRICTRC iommuAmdMsiData_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t
 }
 #else
 /**
+ * Writes the MSI Vector Register 0 (32-bit) and the MSI Vector Register 1 (32-bit).
+ */
+static VBOXSTRICTRC iommuAmdDevMsiVector_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, offReg);
+
+    /* MSI Vector Register 0 is read-only. */
+    /* MSI Vector Register 1. */
+    uint32_t const uReg = u64Value >> 32;
+    pThis->MiscInfo.au32[1] = uReg & IOMMU_MSI_VECTOR_1_VALID_MASK;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Writes the MSI Capability Header Register (32-bit) or the MSI Address (Lo)
  * Register (32-bit).
  */
-static VBOXSTRICTRC iommuAmdMsiCapHdrOrAddrLo_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t u64Value)
+static VBOXSTRICTRC iommuAmdMsiCapHdrAndAddrLo_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t u64Value)
 {
-    RT_NOREF(pThis);
+    RT_NOREF(pThis, offReg);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-    if (offReg == IOMMU_MMIO_OFF_MSI_CAP_HDR)
+
+    /* MSI capability header. */
     {
-        /* MsiMultMessEn not supported, so only MsiEn is the writable bit. */
+        uint32_t const uReg = u64Value;
         MSI_CAP_HDR_T MsiCapHdr;
         MsiCapHdr.u32           = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
-        MsiCapHdr.n.u1MsiEnable = RT_BOOL(u64Value & IOMMU_MSI_CAP_HDR_MSI_EN_MASK);
+        MsiCapHdr.n.u1MsiEnable = RT_BOOL(uReg & IOMMU_MSI_CAP_HDR_MSI_EN_MASK);
         PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR, MsiCapHdr.u32);
     }
-    else
+
+    /* MSI Address Lo. */
     {
-        AssertMsg(offReg == IOMMU_MMIO_OFF_MSI_ADDR_LO, ("%#x\n", offReg));
-        uint32_t const uMsiAddrLo = u64Value & VBOX_MSI_ADDR_VALID_MASK;
+        uint32_t const uReg = u64Value >> 32;
+        uint32_t const uMsiAddrLo = uReg & VBOX_MSI_ADDR_VALID_MASK;
         PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO, uMsiAddrLo);
     }
+
     return VINF_SUCCESS;
 }
 
@@ -1252,19 +1257,25 @@ static VBOXSTRICTRC iommuAmdMsiCapHdrOrAddrLo_w(PPDMDEVINS pDevIns, PIOMMU pThis
 /**
  * Writes the MSI Address (Hi) Register (32-bit) or the MSI data register (32-bit).
  */
-static VBOXSTRICTRC iommuAmdMsiAddrHiOrData_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t u64Value)
+static VBOXSTRICTRC iommuAmdMsiAddrHiAndData_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t offReg, uint64_t u64Value)
 {
-    RT_NOREF(pThis);
+    RT_NOREF(pThis, offReg);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-    if (offReg == IOMMU_MMIO_OFF_MSI_ADDR_HI)
-        PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI, u64Value);
-    else
+
+    /* MSI Address Hi. */
     {
-        AssertMsg(offReg == IOMMU_MMIO_OFF_MSI_DATA, ("%#x\n", offReg));
-        uint32_t const uMsiData = u64Value & VBOX_MSI_DATA_VALID_MASK;
+        uint32_t const uReg = u64Value;
+        PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI, uReg);
+    }
+
+    /* MSI Data. */
+    {
+        uint32_t const uReg = u64Value >> 32;
+        uint32_t const uMsiData = uReg & VBOX_MSI_DATA_VALID_MASK;
         PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA, uMsiData);
     }
+
     return VINF_SUCCESS;
 }
 #endif
@@ -1456,62 +1467,62 @@ static VBOXSTRICTRC iommuAmdStatus_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t 
  */
 static const IOMMUREGACC g_aRegAccess0[] =
 {
-    /* MMIO off.   Register name                           Read function                Write function               Reg. size */
-    { /* 0x00  */  "DEV_TAB_BAR",                          iommuAmdDevTabBar_r,         iommuAmdDevTabBar_w,         8 },
-    { /* 0x08  */  "CMD_BUF_BAR",                          iommuAmdCmdBufBar_r,         iommuAmdCmdBufBar_w,         8 },
-    { /* 0x10  */  "EVT_LOG_BAR",                          iommuAmdEvtLogBar_r,         iommuAmdEvtLogBar_w,         8 },
-    { /* 0x18  */  "CTRL",                                 iommuAmdCtrl_r,              iommuAmdCtrl_w,              8 },
-    { /* 0x20  */  "EXCL_BAR",                             iommuAmdExclRangeBar_r,      iommuAmdExclRangeBar_w,      8 },
-    { /* 0x28  */  "EXCL_RANGE_LIMIT",                     iommuAmdExclRangeLimit_r,    iommuAmdExclRangeLimit_w,    8 },
-    { /* 0x30  */  "EXT_FEAT",                             iommuAmdExtFeat_r,           NULL,                        8 },
-    { /* 0x38  */  "PPR_LOG_BAR",                          iommuAmdPprLogBar_r,         NULL,                        8 },
-    { /* 0x40  */  "HW_EVT_HI",                            iommuAmdHwEvtHi_r,           iommuAmdHwEvtHi_w,           8 },
-    { /* 0x48  */  "HW_EVT_LO",                            iommuAmdHwEvtLo_r,           iommuAmdHwEvtLo_w,           8 },
-    { /* 0x50  */  "HW_EVT_STATUS",                        iommuAmdHwEvtStatus_r,       iommuAmdHwEvtStatus_w,       8 },
-    { /* 0x58  */  NULL,                                   NULL,                        NULL,                        0 },
+    /* MMIO off.   Register name                           Read function                 Write function */
+    { /* 0x00  */  "DEV_TAB_BAR",                          iommuAmdDevTabBar_r,          iommuAmdDevTabBar_w           },
+    { /* 0x08  */  "CMD_BUF_BAR",                          iommuAmdCmdBufBar_r,          iommuAmdCmdBufBar_w           },
+    { /* 0x10  */  "EVT_LOG_BAR",                          iommuAmdEvtLogBar_r,          iommuAmdEvtLogBar_w           },
+    { /* 0x18  */  "CTRL",                                 iommuAmdCtrl_r,               iommuAmdCtrl_w                },
+    { /* 0x20  */  "EXCL_BAR",                             iommuAmdExclRangeBar_r,       iommuAmdExclRangeBar_w        },
+    { /* 0x28  */  "EXCL_RANGE_LIMIT",                     iommuAmdExclRangeLimit_r,     iommuAmdExclRangeLimit_w      },
+    { /* 0x30  */  "EXT_FEAT",                             iommuAmdExtFeat_r,            NULL                          },
+    { /* 0x38  */  "PPR_LOG_BAR",                          iommuAmdPprLogBar_r,          NULL                          },
+    { /* 0x40  */  "HW_EVT_HI",                            iommuAmdHwEvtHi_r,            iommuAmdHwEvtHi_w             },
+    { /* 0x48  */  "HW_EVT_LO",                            iommuAmdHwEvtLo_r,            iommuAmdHwEvtLo_w             },
+    { /* 0x50  */  "HW_EVT_STATUS",                        iommuAmdHwEvtStatus_r,        iommuAmdHwEvtStatus_w         },
+    { /* 0x58  */  NULL,                                   NULL,                         NULL                          },
 
-    { /* 0x60  */  "SMI_FLT_0",                            NULL,                        NULL,                        8 },
-    { /* 0x68  */  "SMI_FLT_1",                            NULL,                        NULL,                        8 },
-    { /* 0x70  */  "SMI_FLT_2",                            NULL,                        NULL,                        8 },
-    { /* 0x78  */  "SMI_FLT_3",                            NULL,                        NULL,                        8 },
-    { /* 0x80  */  "SMI_FLT_4",                            NULL,                        NULL,                        8 },
-    { /* 0x88  */  "SMI_FLT_5",                            NULL,                        NULL,                        8 },
-    { /* 0x90  */  "SMI_FLT_6",                            NULL,                        NULL,                        8 },
-    { /* 0x98  */  "SMI_FLT_7",                            NULL,                        NULL,                        8 },
-    { /* 0xa0  */  "SMI_FLT_8",                            NULL,                        NULL,                        8 },
-    { /* 0xa8  */  "SMI_FLT_9",                            NULL,                        NULL,                        8 },
-    { /* 0xb0  */  "SMI_FLT_10",                           NULL,                        NULL,                        8 },
-    { /* 0xb8  */  "SMI_FLT_11",                           NULL,                        NULL,                        8 },
-    { /* 0xc0  */  "SMI_FLT_12",                           NULL,                        NULL,                        8 },
-    { /* 0xc8  */  "SMI_FLT_13",                           NULL,                        NULL,                        8 },
-    { /* 0xd0  */  "SMI_FLT_14",                           NULL,                        NULL,                        8 },
-    { /* 0xd8  */  "SMI_FLT_15",                           NULL,                        NULL,                        8 },
+    { /* 0x60  */  "SMI_FLT_0",                            NULL,                         NULL                          },
+    { /* 0x68  */  "SMI_FLT_1",                            NULL,                         NULL                          },
+    { /* 0x70  */  "SMI_FLT_2",                            NULL,                         NULL                          },
+    { /* 0x78  */  "SMI_FLT_3",                            NULL,                         NULL                          },
+    { /* 0x80  */  "SMI_FLT_4",                            NULL,                         NULL                          },
+    { /* 0x88  */  "SMI_FLT_5",                            NULL,                         NULL                          },
+    { /* 0x90  */  "SMI_FLT_6",                            NULL,                         NULL                          },
+    { /* 0x98  */  "SMI_FLT_7",                            NULL,                         NULL                          },
+    { /* 0xa0  */  "SMI_FLT_8",                            NULL,                         NULL                          },
+    { /* 0xa8  */  "SMI_FLT_9",                            NULL,                         NULL                          },
+    { /* 0xb0  */  "SMI_FLT_10",                           NULL,                         NULL                          },
+    { /* 0xb8  */  "SMI_FLT_11",                           NULL,                         NULL                          },
+    { /* 0xc0  */  "SMI_FLT_12",                           NULL,                         NULL                          },
+    { /* 0xc8  */  "SMI_FLT_13",                           NULL,                         NULL                          },
+    { /* 0xd0  */  "SMI_FLT_14",                           NULL,                         NULL                          },
+    { /* 0xd8  */  "SMI_FLT_15",                           NULL,                         NULL                          },
 
-    { /* 0xe0  */  "GALOG_BAR",                            iommuAmdGALogBar_r,          NULL,                        8 },
-    { /* 0xe8  */  "GALOG_TAIL_ADDR",                      NULL,                        NULL,                        8 },
-    { /* 0xf0  */  "PPR_LOG_B_BAR",                        iommuAmdPprLogBBaseAddr_r,   NULL,                        8 },
-    { /* 0xf8  */  "PPR_EVT_B_BAR",                        iommuAmdEvtLogBBaseAddr_r,   NULL,                        8 },
+    { /* 0xe0  */  "GALOG_BAR",                            iommuAmdGALogBar_r,           NULL                          },
+    { /* 0xe8  */  "GALOG_TAIL_ADDR",                      NULL,                         NULL                          },
+    { /* 0xf0  */  "PPR_LOG_B_BAR",                        iommuAmdPprLogBBaseAddr_r,    NULL                          },
+    { /* 0xf8  */  "PPR_EVT_B_BAR",                        iommuAmdEvtLogBBaseAddr_r,    NULL                          },
 
-    { /* 0x100 */  "DEV_TAB_SEG_1",                        iommuAmdDevTabSegBar_r,      iommuAmdDevTabSegBar_w,      8 },
-    { /* 0x108 */  "DEV_TAB_SEG_2",                        iommuAmdDevTabSegBar_r,      iommuAmdDevTabSegBar_w,      8 },
-    { /* 0x110 */  "DEV_TAB_SEG_3",                        iommuAmdDevTabSegBar_r,      iommuAmdDevTabSegBar_w,      8 },
-    { /* 0x118 */  "DEV_TAB_SEG_4",                        iommuAmdDevTabSegBar_r,      iommuAmdDevTabSegBar_w,      8 },
-    { /* 0x120 */  "DEV_TAB_SEG_5",                        iommuAmdDevTabSegBar_r,      iommuAmdDevTabSegBar_w,      8 },
-    { /* 0x128 */  "DEV_TAB_SEG_6",                        iommuAmdDevTabSegBar_r,      iommuAmdDevTabSegBar_w,      8 },
-    { /* 0x130 */  "DEV_TAB_SEG_7",                        iommuAmdDevTabSegBar_r,      iommuAmdDevTabSegBar_w,      8 },
+    { /* 0x100 */  "DEV_TAB_SEG_1",                        iommuAmdDevTabSegBar_r,       iommuAmdDevTabSegBar_w        },
+    { /* 0x108 */  "DEV_TAB_SEG_2",                        iommuAmdDevTabSegBar_r,       iommuAmdDevTabSegBar_w        },
+    { /* 0x110 */  "DEV_TAB_SEG_3",                        iommuAmdDevTabSegBar_r,       iommuAmdDevTabSegBar_w        },
+    { /* 0x118 */  "DEV_TAB_SEG_4",                        iommuAmdDevTabSegBar_r,       iommuAmdDevTabSegBar_w        },
+    { /* 0x120 */  "DEV_TAB_SEG_5",                        iommuAmdDevTabSegBar_r,       iommuAmdDevTabSegBar_w        },
+    { /* 0x128 */  "DEV_TAB_SEG_6",                        iommuAmdDevTabSegBar_r,       iommuAmdDevTabSegBar_w        },
+    { /* 0x130 */  "DEV_TAB_SEG_7",                        iommuAmdDevTabSegBar_r,       iommuAmdDevTabSegBar_w        },
 
-    { /* 0x138 */  "DEV_SPECIFIC_FEAT",                    iommuAmdDevSpecificFeat_r,   NULL,                        8 },
-    { /* 0x140 */  "DEV_SPECIFIC_CTRL",                    iommuAmdDevSpecificCtrl_r,   NULL,                        8 },
-    { /* 0x148 */  "DEV_SPECIFIC_STATUS",                  iommuAmdDevSpecificStatus_r, NULL,                        8 },
+    { /* 0x138 */  "DEV_SPECIFIC_FEAT",                    iommuAmdDevSpecificFeat_r,    NULL                          },
+    { /* 0x140 */  "DEV_SPECIFIC_CTRL",                    iommuAmdDevSpecificCtrl_r,    NULL                          },
+    { /* 0x148 */  "DEV_SPECIFIC_STATUS",                  iommuAmdDevSpecificStatus_r,  NULL                          },
 
-    { /* 0x150 */  "MSI_VECTOR_0 or MSI_VECTOR_1",         iommuAmdDevMsiVector_r,      NULL,                        4 },
-    { /* 0x158 */  "MSI_CAP_HDR or MSI_ADDR_LO",           iommuAmdMsiCapHdrOrAddrLo_r, iommuAmdMsiCapHdrOrAddrLo_w, 4 },
-    { /* 0x160 */  "MSI_ADDR_HI or MSI_DATA",              iommuAmdMsiAddrHiOrData_r,   iommuAmdMsiAddrHiOrData_w,   4 },
-    { /* 0x168 */  "MSI_MAPPING_CAP_HDR or PERF_OPT_CTRL", NULL,                        NULL,                        4 },
+    { /* 0x150 */  "MSI_VECTOR_0 or MSI_VECTOR_1",         iommuAmdDevMsiVector_r,       iommuAmdDevMsiVector_w        },
+    { /* 0x158 */  "MSI_CAP_HDR or MSI_ADDR_LO",           iommuAmdMsiCapHdrAndAddrLo_r, iommuAmdMsiCapHdrAndAddrLo_w  },
+    { /* 0x160 */  "MSI_ADDR_HI or MSI_DATA",              iommuAmdMsiAddrHiAndData_r,   iommuAmdMsiAddrHiAndData_w    },
+    { /* 0x168 */  "MSI_MAPPING_CAP_HDR or PERF_OPT_CTRL", NULL,                         NULL                          },
 
-    { /* 0x170 */  "XT_GEN_INTR_CTRL",                     NULL,                        NULL,                        8 },
-    { /* 0x178 */  "XT_PPR_INTR_CTRL",                     NULL,                        NULL,                        8 },
-    { /* 0x180 */  "XT_GALOG_INT_CTRL",                    NULL,                        NULL,                        8 },
+    { /* 0x170 */  "XT_GEN_INTR_CTRL",                     NULL,                         NULL                          },
+    { /* 0x178 */  "XT_PPR_INTR_CTRL",                     NULL,                         NULL                          },
+    { /* 0x180 */  "XT_GALOG_INT_CTRL",                    NULL,                         NULL                          },
 };
 AssertCompile(RT_ELEMENTS(g_aRegAccess0) == (IOMMU_MMIO_OFF_QWORD_TABLE_0_END - IOMMU_MMIO_OFF_QWORD_TABLE_0_START) / 8);
 
@@ -1521,19 +1532,19 @@ AssertCompile(RT_ELEMENTS(g_aRegAccess0) == (IOMMU_MMIO_OFF_QWORD_TABLE_0_END - 
  */
 static const IOMMUREGACC g_aRegAccess1[] =
 {
-    /* MMIO offset    Register name      Read function    Write function    Register size. */
-    { /* 0x200 */  "MARC_APER_BAR_0",    NULL,            NULL,             8 },
-    { /* 0x208 */  "MARC_APER_RELOC_0",  NULL,            NULL,             8 },
-    { /* 0x210 */  "MARC_APER_LEN_0",    NULL,            NULL,             8 },
-    { /* 0x218 */  "MARC_APER_BAR_1",    NULL,            NULL,             8 },
-    { /* 0x220 */  "MARC_APER_RELOC_1",  NULL,            NULL,             8 },
-    { /* 0x228 */  "MARC_APER_LEN_1",    NULL,            NULL,             8 },
-    { /* 0x230 */  "MARC_APER_BAR_2",    NULL,            NULL,             8 },
-    { /* 0x238 */  "MARC_APER_RELOC_2",  NULL,            NULL,             8 },
-    { /* 0x240 */  "MARC_APER_LEN_2",    NULL,            NULL,             8 },
-    { /* 0x248 */  "MARC_APER_BAR_3",    NULL,            NULL,             8 },
-    { /* 0x250 */  "MARC_APER_RELOC_3",  NULL,            NULL,             8 },
-    { /* 0x258 */  "MARC_APER_LEN_3",    NULL,            NULL,             8 }
+    /* MMIO offset   Register name         Read function   Write function */
+    { /* 0x200 */    "MARC_APER_BAR_0",    NULL,           NULL },
+    { /* 0x208 */    "MARC_APER_RELOC_0",  NULL,           NULL },
+    { /* 0x210 */    "MARC_APER_LEN_0",    NULL,           NULL },
+    { /* 0x218 */    "MARC_APER_BAR_1",    NULL,           NULL },
+    { /* 0x220 */    "MARC_APER_RELOC_1",  NULL,           NULL },
+    { /* 0x228 */    "MARC_APER_LEN_1",    NULL,           NULL },
+    { /* 0x230 */    "MARC_APER_BAR_2",    NULL,           NULL },
+    { /* 0x238 */    "MARC_APER_RELOC_2",  NULL,           NULL },
+    { /* 0x240 */    "MARC_APER_LEN_2",    NULL,           NULL },
+    { /* 0x248 */    "MARC_APER_BAR_3",    NULL,           NULL },
+    { /* 0x250 */    "MARC_APER_RELOC_3",  NULL,           NULL },
+    { /* 0x258 */    "MARC_APER_LEN_3",    NULL,           NULL }
 };
 AssertCompile(RT_ELEMENTS(g_aRegAccess1) == (IOMMU_MMIO_OFF_QWORD_TABLE_1_END - IOMMU_MMIO_OFF_QWORD_TABLE_1_START) / 8);
 
@@ -1543,35 +1554,35 @@ AssertCompile(RT_ELEMENTS(g_aRegAccess1) == (IOMMU_MMIO_OFF_QWORD_TABLE_1_END - 
  */
 static const IOMMUREGACC g_aRegAccess2[] =
 {
-    /* MMIO offset    Register name               Read Function             Write function           Register size (bytes) */
-    { /* 0x1ff8 */    "RSVD_REG",                 NULL,                     NULL,                    8 },
+    /* MMIO offset    Register name               Read Function             Write function */
+    { /* 0x1ff8 */    "RSVD_REG",                 NULL,                     NULL                    },
 
-    { /* 0x2000 */    "CMD_BUF_HEAD_PTR",         iommuAmdCmdBufHeadPtr_r,  iommuAmdCmdBufHeadPtr_w, 8 },
-    { /* 0x2008 */    "CMD_BUF_TAIL_PTR",         iommuAmdCmdBufTailPtr_r , iommuAmdCmdBufTailPtr_w, 8 },
-    { /* 0x2010 */    "EVT_LOG_HEAD_PTR",         iommuAmdEvtLogHeadPtr_r,  iommuAmdEvtLogHeadPtr_w, 8 },
-    { /* 0x2018 */    "EVT_LOG_TAIL_PTR",         iommuAmdEvtLogTailPtr_r,  iommuAmdEvtLogTailPtr_w, 8 },
+    { /* 0x2000 */    "CMD_BUF_HEAD_PTR",         iommuAmdCmdBufHeadPtr_r,  iommuAmdCmdBufHeadPtr_w },
+    { /* 0x2008 */    "CMD_BUF_TAIL_PTR",         iommuAmdCmdBufTailPtr_r , iommuAmdCmdBufTailPtr_w },
+    { /* 0x2010 */    "EVT_LOG_HEAD_PTR",         iommuAmdEvtLogHeadPtr_r,  iommuAmdEvtLogHeadPtr_w },
+    { /* 0x2018 */    "EVT_LOG_TAIL_PTR",         iommuAmdEvtLogTailPtr_r,  iommuAmdEvtLogTailPtr_w },
 
-    { /* 0x2020 */    "STATUS",                   iommuAmdStatus_r,         iommuAmdStatus_w,        8 },
-    { /* 0x2028 */    NULL,                       NULL,                     NULL,                    0 },
+    { /* 0x2020 */    "STATUS",                   iommuAmdStatus_r,         iommuAmdStatus_w        },
+    { /* 0x2028 */    NULL,                       NULL,                     NULL                    },
 
-    { /* 0x2030 */    "PPR_LOG_HEAD_PTR",         NULL,                     NULL,                    8 },
-    { /* 0x2038 */    "PPR_LOG_TAIL_PTR",         NULL,                     NULL,                    8 },
+    { /* 0x2030 */    "PPR_LOG_HEAD_PTR",         NULL,                     NULL                    },
+    { /* 0x2038 */    "PPR_LOG_TAIL_PTR",         NULL,                     NULL                    },
 
-    { /* 0x2040 */    "GALOG_HEAD_PTR",           NULL,                     NULL,                    8 },
-    { /* 0x2048 */    "GALOG_TAIL_PTR",           NULL,                     NULL,                    8 },
+    { /* 0x2040 */    "GALOG_HEAD_PTR",           NULL,                     NULL                    },
+    { /* 0x2048 */    "GALOG_TAIL_PTR",           NULL,                     NULL                    },
 
-    { /* 0x2050 */    "PPR_LOG_B_HEAD_PTR",       NULL,                     NULL,                    8 },
-    { /* 0x2058 */    "PPR_LOG_B_TAIL_PTR",       NULL,                     NULL,                    8 },
+    { /* 0x2050 */    "PPR_LOG_B_HEAD_PTR",       NULL,                     NULL                    },
+    { /* 0x2058 */    "PPR_LOG_B_TAIL_PTR",       NULL,                     NULL                    },
 
-    { /* 0x2060 */    NULL,                       NULL,                     NULL,                    0 },
-    { /* 0x2068 */    NULL,                       NULL,                     NULL,                    0 },
+    { /* 0x2060 */    NULL,                       NULL,                     NULL                    },
+    { /* 0x2068 */    NULL,                       NULL,                     NULL                    },
 
-    { /* 0x2070 */    "EVT_LOG_B_HEAD_PTR",       NULL,                     NULL,                    8 },
-    { /* 0x2078 */    "EVT_LOG_B_TAIL_PTR",       NULL,                     NULL,                    8 },
+    { /* 0x2070 */    "EVT_LOG_B_HEAD_PTR",       NULL,                     NULL                    },
+    { /* 0x2078 */    "EVT_LOG_B_TAIL_PTR",       NULL,                     NULL                    },
 
-    { /* 0x2080 */    "PPR_LOG_AUTO_RESP",        NULL,                     NULL,                    8 },
-    { /* 0x2088 */    "PPR_LOG_OVERFLOW_EARLY",   NULL,                     NULL,                    8 },
-    { /* 0x2090 */    "PPR_LOG_B_OVERFLOW_EARLY", NULL,                     NULL,                    8 }
+    { /* 0x2080 */    "PPR_LOG_AUTO_RESP",        NULL,                     NULL                    },
+    { /* 0x2088 */    "PPR_LOG_OVERFLOW_EARLY",   NULL,                     NULL                    },
+    { /* 0x2090 */    "PPR_LOG_B_OVERFLOW_EARLY", NULL,                     NULL                    }
 };
 AssertCompile(RT_ELEMENTS(g_aRegAccess2) == (IOMMU_MMIO_OFF_QWORD_TABLE_2_END - IOMMU_MMIO_OFF_QWORD_TABLE_2_START) / 8);
 
@@ -1758,7 +1769,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
     { /* likely */ }
     else
     {
-        LogFunc(("Writing unknown register %u (%#x) with %#RX64 -> Ignored\n", off, off, uValue));
+        LogFunc(("Writing unknown register %#x with %#RX64 -> Ignored\n", off, uValue));
         return VINF_SUCCESS;
     }
 
@@ -1772,23 +1783,26 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
     }
 
     /*
-     * If the write access is aligned and matches the register size, dispatch right away.
-     * This handles all aligned, 32-bit writes as well as aligned 64-bit writes.
+     * If the write access is 64-bits and aligned on a 64-bit boundary, dispatch right away.
+     * This handles writes to 64-bit registers as well as aligned, 64-bit writes to two
+     * consecutive 32-bit registers.
      */
-    if (   cb == pReg->cb
-        && !(off & (cb - 1)))
-        return pReg->pfnWrite(pDevIns, pThis, off, uValue);
+    if (cb == 8)
+    {
+        if (!(off & 7))
+            return pReg->pfnWrite(pDevIns, pThis, off, uValue);
 
-    /*
-     * A 32-bit write for a 64-bit register.
-     * We shouldn't get sizes other than 32 bits here as we've specified so with IOM.
-     */
+        LogFunc(("Misaligned access while writing register at off=%#x (cb=%u) with %#RX64 -> Ignored\n", off, cb, uValue));
+        return VINF_SUCCESS;
+    }
+
+    /* We shouldn't get sizes other than 32 bits here as we've specified so with IOM. */
     Assert(cb == 4);
     if (!(off & 7))
     {
         /*
-         * Lower 32 bits of the register is being written.
-         * Merge with higher 32 bits (after reading the full value from the register).
+         * Lower 32 bits of a 64-bit register or a 32-bit register is being written.
+         * Merge with higher 32 bits (after reading the full 64-bits) and perform a 64-bit write.
          */
         uint64_t u64Read;
         if (pReg->pfnRead)
@@ -1808,12 +1822,12 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
     }
 
     /*
-     * Higher 32 bits of the register is being written.
-     * Merge with lower 32 bits (after reading the full value from the register).
+     * Higher 32 bits of a 64-bit register or a 32-bit register at a 32-bit boundary is being written.
+     * Merge with lower 32 bits (after reading the full 64-bits) and perform a 64-bit write.
      */
     Assert(!(off & 3));
     Assert(off & 7);
-    Assert(off > 4);
+    Assert(off >= 4);
     uint64_t u64Read;
     if (pReg->pfnRead)
     {
@@ -1862,6 +1876,7 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
 
     Log5Func(("off=%#x\n", off));
 
+#ifndef IOMMU_NEW_REGISTER_ACCESS
     /** @todo IOMMU: fine-grained locking? */
     uint64_t uReg;
     switch (off)
@@ -2006,6 +2021,50 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
 
     *puResult = uReg;
     return VINF_SUCCESS;
+#else
+    PCIOMMUREGACC pReg = iommuAmdGetRegAccessForOffset(off);
+    if (pReg)
+    { /* likely */ }
+    else
+    {
+        LogFunc(("Reading unknown register %#x -> Ignored\n", off));
+        return VINF_IOM_MMIO_UNUSED_FF;
+    }
+
+    /* If a read handler doesn't exist, it's reserved or unknown register. */
+    if (pReg->pfnRead)
+    { /* likely */ }
+    else
+    {
+        LogFunc(("Reading reserved or unknown register off=%#x -> returning 0s\n", off));
+        return VINF_IOM_MMIO_UNUSED_00;
+    }
+
+    /*
+     * If the read access is aligned on a 64-bit boundary, read the full 64-bits and return.
+     * The caller takes care of truncating upper 32 bits for 32-bit reads.
+     */
+    if (!(off & 7))
+        return pReg->pfnRead(pDevIns, pThis, off, puResult);
+
+    /*
+     * High 32 bits of a 64-bit register or a 32-bit register at a non 64-bit boundary is being read.
+     * Read full 64 bits at the previous 64-bit boundary but return only the high 32 bits.
+     */
+    Assert(!(off & 3));
+    Assert(off & 7);
+    Assert(off >= 4);
+    VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off - 4, puResult);
+    if (RT_SUCCESS(rcStrict))
+        *puResult >>= 32;
+    else
+    {
+        *puResult = 0;
+        LogFunc(("Reading off %#x during split read failed! rc=%Rrc\n -> Ignored", off, VBOXSTRICTRC_VAL(rcStrict)));
+    }
+
+    return rcStrict;
+#endif
 }
 
 
