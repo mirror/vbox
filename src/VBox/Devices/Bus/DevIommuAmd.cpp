@@ -1574,6 +1574,43 @@ static const IOMMUREGACC g_aRegAccess2[] =
     { /* 0x2090 */    "PPR_LOG_B_OVERFLOW_EARLY", NULL,                     NULL,                    8 }
 };
 AssertCompile(RT_ELEMENTS(g_aRegAccess2) == (IOMMU_MMIO_OFF_QWORD_TABLE_2_END - IOMMU_MMIO_OFF_QWORD_TABLE_2_START) / 8);
+
+
+/**
+ * Gets the register access structure given its MMIO offset.
+ *
+ * @returns The register access structure, or NULL if the offset is invalid.
+ * @param   off     The MMIO offset of the register being accessed.
+ */
+static PCIOMMUREGACC iommuAmdGetRegAccessForOffset(uint32_t off)
+{
+    /* Figure out which table the register belongs to and validate its index. */
+    PCIOMMUREGACC pReg;
+    if (off < IOMMU_MMIO_OFF_QWORD_TABLE_0_END)
+    {
+        uint32_t const idxReg = off >> 3;
+        Assert(idxReg < RT_ELEMENTS(g_aRegAccess0));
+        pReg = &g_aRegAccess0[idxReg];
+    }
+    else if (   off <  IOMMU_MMIO_OFF_QWORD_TABLE_1_END
+             && off >= IOMMU_MMIO_OFF_QWORD_TABLE_1_START)
+    {
+        uint32_t const idxReg = (off - IOMMU_MMIO_OFF_QWORD_TABLE_1_START) >> 3;
+        Assert(idxReg < RT_ELEMENTS(g_aRegAccess1));
+        pReg = &g_aRegAccess1[idxReg];
+    }
+    else if (   off <  IOMMU_MMIO_OFF_QWORD_TABLE_2_END
+             && off >= IOMMU_MMIO_OFF_QWORD_TABLE_2_START)
+    {
+        uint32_t const idxReg = (off - IOMMU_MMIO_OFF_QWORD_TABLE_2_START) >> 3;
+        Assert(idxReg < RT_ELEMENTS(g_aRegAccess2));
+        pReg = &g_aRegAccess2[idxReg];
+    }
+    else
+        return NULL;
+
+    return pReg;
+}
 #endif
 
 
@@ -1716,89 +1753,47 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         }
     }
 #else
-    /*
-     * Figure out which table the register belongs to and validate its index.
-     */
-    PCIOMMUREGACC pReg;
-    if (off < IOMMU_MMIO_OFF_QWORD_TABLE_0_END)
-    {
-        uint32_t const idxReg = off >> 3;
-        Assert(idxReg < RT_ELEMENTS(g_aRegAccess0));
-        pReg = &g_aRegAccess0[idxReg];
-    }
-    else if (   off <  IOMMU_MMIO_OFF_QWORD_TABLE_1_END
-             && off >= IOMMU_MMIO_OFF_QWORD_TABLE_1_START)
-    {
-        uint32_t const idxReg = (off - IOMMU_MMIO_OFF_QWORD_TABLE_1_START) >> 3;
-        Assert(idxReg < RT_ELEMENTS(g_aRegAccess1));
-        pReg = &g_aRegAccess1[idxReg];
-    }
-    else if (   off <  IOMMU_MMIO_OFF_QWORD_TABLE_2_END
-             && off >= IOMMU_MMIO_OFF_QWORD_TABLE_2_START)
-    {
-        uint32_t const idxReg = (off - IOMMU_MMIO_OFF_QWORD_TABLE_2_START) >> 3;
-        Assert(idxReg < RT_ELEMENTS(g_aRegAccess2));
-        pReg = &g_aRegAccess2[idxReg];
-    }
+    PCIOMMUREGACC pReg = iommuAmdGetRegAccessForOffset(off);
+    if (pReg)
+    { /* likely */ }
     else
     {
         LogFunc(("Writing unknown register %u (%#x) with %#RX64 -> Ignored\n", off, off, uValue));
         return VINF_SUCCESS;
     }
 
-    /*
-     * Ensure the register is writable and proceed.
-     * If a write handler doesn't exist, it's either a reserved or read-only register.
-     */
+    /* If a write handler doesn't exist, it's either a reserved or read-only register. */
     if (pReg->pfnWrite)
+    { /* likely */ }
+    else
+    {
+        LogFunc(("Writing reserved or read-only register off=%#x (cb=%u) with %#RX64 -> Ignored\n", off, cb, uValue));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * If the write access is aligned and matches the register size, dispatch right away.
+     * This handles all aligned, 32-bit writes as well as aligned 64-bit writes.
+     */
+    if (   cb == pReg->cb
+        && !(off & (cb - 1)))
+        return pReg->pfnWrite(pDevIns, pThis, off, uValue);
+
+    /*
+     * A 32-bit write for a 64-bit register.
+     * We shouldn't get sizes other than 32 bits here as we've specified so with IOM.
+     */
+    Assert(cb == 4);
+    if (!(off & 7))
     {
         /*
-         * If the write access is aligned and matches the register size, dispatch right away.
-         * This handles all aligned, 32-bit writes as well as aligned 64-bit writes.
+         * Lower 32 bits of the register is being written.
+         * Merge with higher 32 bits (after reading the full value from the register).
          */
-        if (   cb == pReg->cb
-            && !(off & (cb - 1)))
-            return pReg->pfnWrite(pDevIns, pThis, off, uValue);
-
-        /*
-         * A 32-bit write for a 64-bit register.
-         * We shouldn't get sizes other than 32 bits here as we've specified so with IOM.
-         */
-        Assert(cb == 4);
-        if (!(off & 7))
-        {
-            /*
-             * Lower 32 bits of the register is being written.
-             * Merge with higher 32 bits (after reading the full value from the register).
-             */
-            uint64_t u64Read;
-            if (pReg->pfnRead)
-            {
-                VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off, &u64Read);
-                if (RT_FAILURE(rcStrict))
-                {
-                    LogFunc(("Reading off %#x during split write failed! rc=%Rrc\n -> Ignored", off, VBOXSTRICTRC_VAL(rcStrict)));
-                    return rcStrict;
-                }
-            }
-            else
-                u64Read = 0;
-
-            uValue = (u64Read & UINT64_C(0xffffffff00000000)) | uValue;
-            return pReg->pfnWrite(pDevIns, pThis, off, uValue);
-        }
-
-        /*
-         * Higher 32 bits of the register is being written.
-         * Merge with lower 32 bits (after reading the full value from the register).
-         */
-        Assert(!(off & 3));
-        Assert(off & 7);
-        Assert(off > 4);
         uint64_t u64Read;
         if (pReg->pfnRead)
         {
-            VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off - 4, &u64Read);
+            VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off, &u64Read);
             if (RT_FAILURE(rcStrict))
             {
                 LogFunc(("Reading off %#x during split write failed! rc=%Rrc\n -> Ignored", off, VBOXSTRICTRC_VAL(rcStrict)));
@@ -1808,13 +1803,32 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         else
             u64Read = 0;
 
-        uValue = (uValue << 32) | (u64Read & UINT64_C(0xffffffff));
-        return pReg->pfnWrite(pDevIns, pThis, off - 4, uValue);
+        uValue = (u64Read & UINT64_C(0xffffffff00000000)) | uValue;
+        return pReg->pfnWrite(pDevIns, pThis, off, uValue);
+    }
+
+    /*
+     * Higher 32 bits of the register is being written.
+     * Merge with lower 32 bits (after reading the full value from the register).
+     */
+    Assert(!(off & 3));
+    Assert(off & 7);
+    Assert(off > 4);
+    uint64_t u64Read;
+    if (pReg->pfnRead)
+    {
+        VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off - 4, &u64Read);
+        if (RT_FAILURE(rcStrict))
+        {
+            LogFunc(("Reading off %#x during split write failed! rc=%Rrc\n -> Ignored", off, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
     }
     else
-        LogFunc(("Writing reserved or read-only register off=%#x (cb=%u) with %#RX64 -> Ignored\n", off, cb, uValue));
+        u64Read = 0;
 
-    return VINF_SUCCESS;
+    uValue = (uValue << 32) | (u64Read & UINT64_C(0xffffffff));
+    return pReg->pfnWrite(pDevIns, pThis, off - 4, uValue);
 #endif
 }
 
