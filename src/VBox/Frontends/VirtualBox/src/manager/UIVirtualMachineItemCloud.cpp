@@ -39,8 +39,9 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(UIFakeCloudVirtualMachineIt
     : UIVirtualMachineItem(UIVirtualMachineItemType_CloudFake)
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(enmState)
+    , m_pTimer(0)
 {
-    recache();
+    prepare();
 }
 
 UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comCloudMachine)
@@ -48,8 +49,9 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comClo
     , m_comCloudMachine(comCloudMachine)
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_NotApplicable)
+    , m_pTimer(0)
 {
-    recache();
+    prepare();
 }
 
 UIVirtualMachineItemCloud::~UIVirtualMachineItemCloud()
@@ -70,7 +72,13 @@ void UIVirtualMachineItemCloud::setFakeCloudItemErrorMessage(const QString &strE
 
 void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed)
 {
-    QTimer::singleShot(fDelayed ? 10000 : 0, this, SLOT(sltRefreshCloudMachineInfo()));
+    /* Ignore refresh request if timer or progress is already running: */
+    if (m_pTimer->isActive() || m_pProgressHandler)
+        return;
+
+    /* Schedule refresh request in a 10 or 0 seconds: */
+    m_pTimer->setInterval(fDelayed ? 10000 : 0);
+    m_pTimer->start();
 }
 
 void UIVirtualMachineItemCloud::waitForAsyncInfoUpdateFinished()
@@ -304,20 +312,43 @@ void UIVirtualMachineItemCloud::sltRefreshCloudMachineInfo()
 
 void UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone()
 {
+    /* Was the progress canceled? */
+    const bool fCanceled = m_comProgress.GetCanceled();
+
     /* If not canceled => check progress result: */
-    if (   !m_comProgress.GetCanceled()
-        && (!m_comProgress.isOk() || m_comProgress.GetResultCode() != 0))
-            msgCenter().cannotAcquireCloudMachineParameter(m_comProgress);
+    if (!fCanceled && (!m_comProgress.isOk() || m_comProgress.GetResultCode() != 0))
+        msgCenter().cannotAcquireCloudMachineParameter(m_comProgress);
 
     /* Recache: */
     recache();
 
-    /* If not canceled => notify listeners: */
-    if (!m_comProgress.GetCanceled())
-        emit sigStateChange();
-
     /* Cleanup the handler and the progress: */
     delete m_pProgressHandler;
-    m_pProgressHandler = 0;
     m_comProgress = CProgress();
+
+    /* If not canceled => notify listeners: */
+    if (!fCanceled)
+        emit sigStateChange();
+}
+
+void UIVirtualMachineItemCloud::prepare()
+{
+    /* Prepare timer: */
+    m_pTimer = new QTimer(this);
+    if (m_pTimer)
+    {
+        m_pTimer->setSingleShot(true);
+        connect(m_pTimer, &QTimer::timeout,
+                this, &UIVirtualMachineItemCloud::sltRefreshCloudMachineInfo);
+    }
+
+    /* Recache finally: */
+    recache();
+}
+
+void UIVirtualMachineItemCloud::cleanup()
+{
+    /* Cleanup timer: */
+    delete m_pTimer;
+    m_pTimer = 0;
 }
