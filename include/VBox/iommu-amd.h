@@ -1641,6 +1641,9 @@ typedef union
 AssertCompileSize(MSI_MISC_INFO_T, 8);
 /** MSI Vector Register 0 and 1 (MMIO). */
 typedef MSI_MISC_INFO_T       MSI_VECTOR_T;
+/** Mask of valid bits in MSI Vector Register 1 (or high dword of MSI Misc.
+ *  info). */
+#define IOMMU_MSI_VECTOR_1_VALID_MASK       UINT32_C(0x1f)
 
 /**
  * MSI Capability Header Register (PCI + MMIO).
