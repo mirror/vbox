@@ -1436,7 +1436,6 @@ check_opengl()
   if [ "$OS" = "darwin" ]; then
     test_header "OpenGL support"
     echo "enabled"
-    cnf_append "VBOX_WITH_CROGL"     "1"
   else
     check_xmu
     check_mesa
@@ -2767,7 +2766,8 @@ fi
 
 # emit disable directives corresponding to any --disable-xxx options.
 if [ $WITH_OPENGL -eq 0 ]; then
-  cnf_append "VBOX_WITH_CROGL" ""
+  cnf_append "VBOX_WITH_VMSVGA3D" ""
+  cnf_append "VBOX_WITH_3D_ACCELERATION" ""
   cnf_append "VBOX_WITH_VIDEOHWACCEL" ""
   cnf_append "VBOX_GUI_USE_QGL" ""
 fi
