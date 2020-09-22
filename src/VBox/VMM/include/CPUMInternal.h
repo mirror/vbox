@@ -341,7 +341,8 @@ typedef struct CPUM
      */
     uint32_t                fHostUseFlags;
 
-    /** CR4 mask */
+    /** CR4 mask
+     * @todo obsolete? */
     struct
     {
         uint32_t            AndMask; /**< @todo Move these to the per-CPU structure and fix the switchers. Saves a register! */
