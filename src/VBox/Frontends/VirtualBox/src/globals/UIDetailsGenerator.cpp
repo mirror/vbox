@@ -165,55 +165,59 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CCloudMachine 
 
             /* Acquire label: */
             const QString strLabel = comIteratedValue.GetLabel();
-
-            /* Handle possible value types: */
-            QString strValue;
-            switch (comIteratedValue.GetType())
-            {
-                case KFormValueType_Boolean:
-                {
-                    CBooleanFormValue comValue(comIteratedValue);
-                    const bool fBool = comValue.GetSelected();
-                    strValue = fBool ? QApplication::translate("UIDetails", "Enabled", "details (cloud value)")
-                                     : QApplication::translate("UIDetails", "Disabled", "details (cloud value)");
-                    break;
-                }
-                case KFormValueType_String:
-                {
-                    CStringFormValue comValue(comIteratedValue);
-                    strValue = comValue.GetString();
-                    break;
-                }
-                case KFormValueType_Choice:
-                {
-                    AssertMsgFailed(("Aren't we decided to convert all choices to strings?\n"));
-                    CChoiceFormValue comValue(comIteratedValue);
-                    const QVector<QString> possibleValues = comValue.GetValues();
-                    const int iCurrentIndex = comValue.GetSelectedIndex();
-                    strValue = possibleValues.value(iCurrentIndex);
-                    break;
-                }
-                case KFormValueType_RangedInteger:
-                {
-                    CRangedIntegerFormValue comValue(comIteratedValue);
-                    strValue = QString("%1 %2")
-                                   .arg(comValue.GetInteger())
-                                   .arg(QApplication::translate("UICommon", comValue.GetSuffix().toUtf8().constData()));
-                    break;
-                }
-                default:
-                    break;
-            }
+            /* Generate value: */
+            const QString strValue = generateFormValueInformation(comIteratedValue);
 
             /* Generate table string: */
-            if (comIteratedValue.GetEnabled())
-                table << UITextTableLine(strLabel, QString("<a href=#%1,%2>%3</a>").arg(strAnchorType, strLabel, strValue));
-            else
-                table << UITextTableLine(strLabel, strValue);
+            table << UITextTableLine(strLabel, QString("<a href=#%1,%2>%3</a>").arg(strAnchorType, strLabel, strValue));
         }
     }
 
     return table;
+}
+
+QString UIDetailsGenerator::generateFormValueInformation(const CFormValue &comFormValue)
+{
+    /* Handle possible form value types: */
+    QString strResult;
+    switch (comFormValue.GetType())
+    {
+        case KFormValueType_Boolean:
+        {
+            CBooleanFormValue comValue(comFormValue);
+            const bool fBool = comValue.GetSelected();
+            strResult = fBool ? QApplication::translate("UIDetails", "Enabled", "details (cloud value)")
+                              : QApplication::translate("UIDetails", "Disabled", "details (cloud value)");
+            break;
+        }
+        case KFormValueType_String:
+        {
+            CStringFormValue comValue(comFormValue);
+            strResult = comValue.GetString();
+            break;
+        }
+        case KFormValueType_Choice:
+        {
+            AssertMsgFailed(("Aren't we decided to convert all choices to strings?\n"));
+            CChoiceFormValue comValue(comFormValue);
+            const QVector<QString> possibleValues = comValue.GetValues();
+            const int iCurrentIndex = comValue.GetSelectedIndex();
+            strResult = possibleValues.value(iCurrentIndex);
+            break;
+        }
+        case KFormValueType_RangedInteger:
+        {
+            CRangedIntegerFormValue comValue(comFormValue);
+            strResult = QString("%1 %2")
+                            .arg(comValue.GetInteger())
+                            .arg(QApplication::translate("UICommon", comValue.GetSuffix().toUtf8().constData()));
+            break;
+        }
+        default:
+            break;
+    }
+    /* Return result: */
+    return strResult;
 }
 
 UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMachine,
