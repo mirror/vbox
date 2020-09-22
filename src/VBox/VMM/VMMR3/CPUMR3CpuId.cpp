@@ -2786,6 +2786,15 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     }
     Assert(pCpum->GuestFeatures.enmCpuVendor != CPUMCPUVENDOR_INVALID);
 
+    /* The CPUID entries we start with here isn't necessarily the ones of the host, so we
+       must consult HostFeatures when processing CPUMISAEXTCFG variables. */
+    PCCPUMFEATURES pHstFeat = &pCpum->HostFeatures;
+#define PASSTHRU_FEATURE(enmConfig, fHostFeature, fConst) \
+    ((enmConfig) && ((enmConfig) == CPUMISAEXTCFG_ENABLED_ALWAYS || (fHostFeature)) ? (fConst) : 0)
+#define PASSTHRU_FEATURE_EX(enmConfig, fHostFeature, fAndExpr, fConst) \
+    ((enmConfig) && ((enmConfig) == CPUMISAEXTCFG_ENABLED_ALWAYS || (fHostFeature)) && (fAndExpr) ? (fConst) : 0)
+#define PASSTHRU_FEATURE_TODO(enmConfig, fConst) ((enmConfig) ? (fConst) : 0)
+
     /* Cpuid 1:
      * EAX: CPU model, family and stepping.
      *
@@ -2834,12 +2843,11 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            //| RT_BIT_32(30)               - not defined
                            //| X86_CPUID_FEATURE_EDX_PBE   - no pending break enabled.
                            ;
-    pStdFeatureLeaf->uEcx &= 0
-                           | X86_CPUID_FEATURE_ECX_SSE3
-                           | (pConfig->enmPClMul ? X86_CPUID_FEATURE_ECX_PCLMUL : 0)
+    pStdFeatureLeaf->uEcx &= X86_CPUID_FEATURE_ECX_SSE3
+                           | PASSTHRU_FEATURE_TODO(pConfig->enmPClMul, X86_CPUID_FEATURE_ECX_PCLMUL)
                            //| X86_CPUID_FEATURE_ECX_DTES64 - not implemented yet.
                            /* Can't properly emulate monitor & mwait with guest SMP; force the guest to use hlt for idling VCPUs. */
-                           | ((pConfig->enmMonitor && pVM->cCpus == 1) ? X86_CPUID_FEATURE_ECX_MONITOR : 0)
+                           | PASSTHRU_FEATURE_EX(pConfig->enmMonitor, pHstFeat->fMonitorMWait, pVM->cCpus == 1, X86_CPUID_FEATURE_ECX_MONITOR)
                            //| X86_CPUID_FEATURE_ECX_CPLDS - no CPL qualified debug store.
                            | (pConfig->fNestedHWVirt ? X86_CPUID_FEATURE_ECX_VMX : 0)
                            //| X86_CPUID_FEATURE_ECX_SMX   - not virtualized yet.
@@ -2848,24 +2856,24 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            | X86_CPUID_FEATURE_ECX_SSSE3
                            //| X86_CPUID_FEATURE_ECX_CNTXID - no L1 context id (MSR++).
                            //| X86_CPUID_FEATURE_ECX_FMA   - not implemented yet.
-                           | (pConfig->enmCmpXchg16b ? X86_CPUID_FEATURE_ECX_CX16 : 0)
+                           | PASSTHRU_FEATURE(pConfig->enmCmpXchg16b, pHstFeat->fMovCmpXchg16b, X86_CPUID_FEATURE_ECX_CX16)
                            /* ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
                            //| X86_CPUID_FEATURE_ECX_TPRUPDATE
                            //| X86_CPUID_FEATURE_ECX_PDCM  - not implemented yet.
-                           | (pConfig->enmPcid ? X86_CPUID_FEATURE_ECX_PCID : 0)
+                           | PASSTHRU_FEATURE(pConfig->enmPcid, pHstFeat->fPcid, X86_CPUID_FEATURE_ECX_PCID)
                            //| X86_CPUID_FEATURE_ECX_DCA   - not implemented yet.
-                           | (pConfig->enmSse41 ? X86_CPUID_FEATURE_ECX_SSE4_1 : 0)
-                           | (pConfig->enmSse42 ? X86_CPUID_FEATURE_ECX_SSE4_2 : 0)
+                           | PASSTHRU_FEATURE(pConfig->enmSse41, pHstFeat->fSse41, X86_CPUID_FEATURE_ECX_SSE4_1)
+                           | PASSTHRU_FEATURE(pConfig->enmSse42, pHstFeat->fSse42, X86_CPUID_FEATURE_ECX_SSE4_2)
                            //| X86_CPUID_FEATURE_ECX_X2APIC - turned on later by the device if enabled.
-                           | (pConfig->enmMovBe ? X86_CPUID_FEATURE_ECX_MOVBE : 0)
-                           | (pConfig->enmPopCnt ? X86_CPUID_FEATURE_ECX_POPCNT : 0)
+                           | PASSTHRU_FEATURE_TODO(pConfig->enmMovBe, X86_CPUID_FEATURE_ECX_MOVBE)
+                           | PASSTHRU_FEATURE_TODO(pConfig->enmPopCnt, X86_CPUID_FEATURE_ECX_POPCNT)
                            //| X86_CPUID_FEATURE_ECX_TSCDEADL - not implemented yet.
-                           | (pConfig->enmAesNi ? X86_CPUID_FEATURE_ECX_AES : 0)
-                           | (pConfig->enmXSave ? X86_CPUID_FEATURE_ECX_XSAVE : 0 )
+                           | PASSTHRU_FEATURE_TODO(pConfig->enmAesNi, X86_CPUID_FEATURE_ECX_AES)
+                           | PASSTHRU_FEATURE(pConfig->enmXSave, pHstFeat->fXSaveRstor, X86_CPUID_FEATURE_ECX_XSAVE)
                            //| X86_CPUID_FEATURE_ECX_OSXSAVE - mirrors CR4.OSXSAVE state, set dynamically.
-                           | (pConfig->enmAvx ? X86_CPUID_FEATURE_ECX_AVX : 0)
+                           | PASSTHRU_FEATURE(pConfig->enmAvx, pHstFeat->fAvx, X86_CPUID_FEATURE_ECX_AVX)
                            //| X86_CPUID_FEATURE_ECX_F16C  - not implemented yet.
-                           | (pConfig->enmRdRand ? X86_CPUID_FEATURE_ECX_RDRAND : 0)
+                           | PASSTHRU_FEATURE_TODO(pConfig->enmRdRand, X86_CPUID_FEATURE_ECX_RDRAND)
                            //| X86_CPUID_FEATURE_ECX_HVP   - Set explicitly later.
                            ;
 
@@ -3045,7 +3053,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| RT_BIT_32(19)                    - reserved
                                //| X86_CPUID_EXT_FEATURE_EDX_NX     - enabled later by PGM
                                //| RT_BIT_32(21)                    - reserved
-                               | (pConfig->enmAmdExtMmx ? X86_CPUID_AMD_FEATURE_EDX_AXMMX : 0)
+                               | PASSTHRU_FEATURE(pConfig->enmAmdExtMmx, pHstFeat->fAmdMmxExts, X86_CPUID_AMD_FEATURE_EDX_AXMMX)
                                | X86_CPUID_AMD_FEATURE_EDX_MMX
                                | X86_CPUID_AMD_FEATURE_EDX_FXSR
                                | X86_CPUID_AMD_FEATURE_EDX_FFXSR
@@ -3062,10 +3070,10 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
                                /* Note: This could prevent teleporting from AMD to Intel CPUs! */
                                | X86_CPUID_AMD_FEATURE_ECX_CR8L         /* expose lock mov cr0 = mov cr8 hack for guests that can use this feature to access the TPR. */
-                               | (pConfig->enmAbm       ? X86_CPUID_AMD_FEATURE_ECX_ABM : 0)
-                               | (pConfig->enmSse4A     ? X86_CPUID_AMD_FEATURE_ECX_SSE4A : 0)
-                               | (pConfig->enmMisAlnSse ? X86_CPUID_AMD_FEATURE_ECX_MISALNSSE : 0)
-                               | (pConfig->enm3dNowPrf  ? X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF : 0)
+                               | PASSTHRU_FEATURE_TODO(pConfig->enmAbm,        X86_CPUID_AMD_FEATURE_ECX_ABM)
+                               | PASSTHRU_FEATURE_TODO(pConfig->enmSse4A,     X86_CPUID_AMD_FEATURE_ECX_SSE4A)
+                               | PASSTHRU_FEATURE_TODO(pConfig->enmMisAlnSse, X86_CPUID_AMD_FEATURE_ECX_MISALNSSE)
+                               | PASSTHRU_FEATURE(pConfig->enm3dNowPrf, pHstFeat->f3DNowPrefetch, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF)
                                //| X86_CPUID_AMD_FEATURE_ECX_OSVW
                                //| X86_CPUID_AMD_FEATURE_ECX_IBS
                                //| X86_CPUID_AMD_FEATURE_ECX_XOP
@@ -3285,17 +3293,17 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
             {
                 pCurLeaf->uEax  = 0;    /* Max ECX input is 0. */
                 pCurLeaf->uEbx &= 0
-                               | (pConfig->enmFsGsBase ? X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE : 0)
+                               | PASSTHRU_FEATURE(pConfig->enmFsGsBase, pHstFeat->fFsGsBase, X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE)
                                //| X86_CPUID_STEXT_FEATURE_EBX_TSC_ADJUST        RT_BIT(1)
                                //| X86_CPUID_STEXT_FEATURE_EBX_SGX               RT_BIT(2)
                                //| X86_CPUID_STEXT_FEATURE_EBX_BMI1              RT_BIT(3)
                                //| X86_CPUID_STEXT_FEATURE_EBX_HLE               RT_BIT(4)
-                               | (pConfig->enmAvx2 ? X86_CPUID_STEXT_FEATURE_EBX_AVX2 : 0)
+                               | PASSTHRU_FEATURE(pConfig->enmAvx2, pHstFeat->fAvx2, X86_CPUID_STEXT_FEATURE_EBX_AVX2)
                                | X86_CPUID_STEXT_FEATURE_EBX_FDP_EXCPTN_ONLY
                                //| X86_CPUID_STEXT_FEATURE_EBX_SMEP              RT_BIT(7)
                                //| X86_CPUID_STEXT_FEATURE_EBX_BMI2              RT_BIT(8)
                                //| X86_CPUID_STEXT_FEATURE_EBX_ERMS              RT_BIT(9)
-                               | (pConfig->enmInvpcid ? X86_CPUID_STEXT_FEATURE_EBX_INVPCID : 0)
+                               | PASSTHRU_FEATURE(pConfig->enmInvpcid, pHstFeat->fInvpcid, X86_CPUID_STEXT_FEATURE_EBX_INVPCID)
                                //| X86_CPUID_STEXT_FEATURE_EBX_RTM               RT_BIT(11)
                                //| X86_CPUID_STEXT_FEATURE_EBX_PQM               RT_BIT(12)
                                | X86_CPUID_STEXT_FEATURE_EBX_DEPR_FPU_CS_DS
@@ -3303,12 +3311,12 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| X86_CPUID_STEXT_FEATURE_EBX_PQE               RT_BIT(15)
                                //| X86_CPUID_STEXT_FEATURE_EBX_AVX512F           RT_BIT(16)
                                //| RT_BIT(17) - reserved
-                               | (pConfig->enmRdSeed ? X86_CPUID_STEXT_FEATURE_EBX_RDSEED : 0)
+                               | PASSTHRU_FEATURE_TODO(pConfig->enmRdSeed, X86_CPUID_STEXT_FEATURE_EBX_RDSEED)
                                //| X86_CPUID_STEXT_FEATURE_EBX_ADX               RT_BIT(19)
                                //| X86_CPUID_STEXT_FEATURE_EBX_SMAP              RT_BIT(20)
                                //| RT_BIT(21) - reserved
                                //| RT_BIT(22) - reserved
-                               | (pConfig->enmCLFlushOpt ? X86_CPUID_STEXT_FEATURE_EBX_CLFLUSHOPT : 0)
+                               | PASSTHRU_FEATURE(pConfig->enmCLFlushOpt, pHstFeat->fClFlushOpt, X86_CPUID_STEXT_FEATURE_EBX_CLFLUSHOPT)
                                //| RT_BIT(24) - reserved
                                //| X86_CPUID_STEXT_FEATURE_EBX_INTEL_PT          RT_BIT(25)
                                //| X86_CPUID_STEXT_FEATURE_EBX_AVX512PF          RT_BIT(26)
@@ -3322,11 +3330,11 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| X86_CPUID_STEXT_FEATURE_ECX_PREFETCHWT1 - we do not do vector functions yet.
                                ;
                 pCurLeaf->uEdx &= 0
-                               | (pConfig->enmMdsClear ? X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR : 0)
+                               | PASSTHRU_FEATURE(pConfig->enmMdsClear,   pHstFeat->fMdsClear, X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR)
                                //| X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB         RT_BIT(26)
                                //| X86_CPUID_STEXT_FEATURE_EDX_STIBP             RT_BIT(27)
-                               | (pConfig->enmFlushCmdMsr ? X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD : 0)
-                               | (pConfig->enmArchCapMsr ? X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP : 0)
+                               | PASSTHRU_FEATURE(pConfig->enmFlushCmdMsr, pHstFeat->fFlushCmd, X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD)
+                               | PASSTHRU_FEATURE(pConfig->enmArchCapMsr,  pHstFeat->fArchCap,  X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP)
                                ;
 
                 /* Mask out INVPCID unless FSGSBASE is exposed due to a bug in Windows 10 SMP guests, see @bugref{9089#c15}. */
