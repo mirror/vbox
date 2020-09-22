@@ -222,8 +222,12 @@ private slots:
         /** Handles toggle finish. */
         void sltElementToggleFinish(bool fToggled);
 
-        /** Handles children anchor clicks. */
+        /** Handles child anchor clicks. */
         void sltHandleAnchorClicked(const QString &strAnchor);
+        /** Handles child copy request. */
+        void sltHandleCopyRequest();
+        /** Handles child edit request. */
+        void sltHandleEditRequest();
     /** @} */
 
     /** @name Layout stuff.
