@@ -29,15 +29,24 @@
 #import <AVFoundation/AVMediaFormat.h>
 #import <Foundation/NSException.h>
 
+
 #if MAC_OS_X_VERSION_MIN_REQUIRED < 101400
-/**
- * Starting macOS 10.14 we need to request permissions in order to use any audio input device
- * but as we build against an older SDK where this is not available we have to duplicate
- * AVAuthorizationStatus and do everything dynmically during runtime, sigh...
- */
+
+/* HACK ALERT! It's there in the 10.13 SDK, but only for iOS 7.0+. Deploying CPP trickery to shut up warnings/errors. */
+# if MAC_OS_X_VERSION_MIN_REQUIRED >= 101300
+#  define AVAuthorizationStatus                 OurAVAuthorizationStatus
+#  define AVAuthorizationStatusNotDetermined    OurAVAuthorizationStatusNotDetermined
+#  define AVAuthorizationStatusRestricted       OurAVAuthorizationStatusRestricted
+#  define AVAuthorizationStatusDenied           OurAVAuthorizationStatusDenied
+#  define AVAuthorizationStatusAuthorized       OurAVAuthorizationStatusAuthorized
+# endif
 
 /**
  * The authorization status enum.
+ *
+ * Starting macOS 10.14 we need to request permissions in order to use any audio input device
+ * but as we build against an older SDK where this is not available we have to duplicate
+ * AVAuthorizationStatus and do everything dynmically during runtime, sigh...
  */
 typedef enum AVAuthorizationStatus: NSInteger
 {
