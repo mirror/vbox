@@ -95,8 +95,9 @@ typedef struct SUPHARDENEDPOSIXHOOK
     /** The intercepting wrapper doing additional checks. */
     PFNRT                    pfnHook;
     /** Where to store the pointer to the code into patch memory
-     * which resumes the original call. */
-    PFNRT                   *ppfnRealResume;
+     * which resumes the original call.
+     * @note uintptr_t instead of PFNRT is for Clang 11. */
+    uintptr_t               *ppfnRealResume;
     /** Pointer to the resolver method used on Solaris. */
     PFNSUPHARDENEDSYMRESOLVE pfnResolve;
 } SUPHARDENEDPOSIXHOOK;
@@ -155,10 +156,10 @@ static uint32_t g_offExecMemory = 0;
  */
 static SUPHARDENEDPOSIXHOOK const g_aHooks[] =
 {
-    /* pszSymbol,       pfnHook,                                     ppfnRealResume,   pfnResolve */
-    { "dlopen",  (PFNRT)supR3HardenedPosixMonitor_Dlopen,  (PFNRT *)&g_pfnDlopenReal,  supR3HardenedPosixMonitorDlopenResolve  },
+    /* pszSymbol,       pfnHook,                                         ppfnRealResume,   pfnResolve */
+    { "dlopen",  (PFNRT)supR3HardenedPosixMonitor_Dlopen,  (uintptr_t *)&g_pfnDlopenReal,  supR3HardenedPosixMonitorDlopenResolve  },
 #ifdef SUP_HARDENED_WITH_DLMOPEN
-    { "dlmopen", (PFNRT)supR3HardenedPosixMonitor_Dlmopen, (PFNRT *)&g_pfnDlmopenReal, supR3HardenedPosixMonitorDlmopenResolve }
+    { "dlmopen", (PFNRT)supR3HardenedPosixMonitor_Dlmopen, (uintptr_t *)&g_pfnDlmopenReal, supR3HardenedPosixMonitorDlmopenResolve }
 #endif
 };
 
@@ -314,7 +315,7 @@ static uint8_t *supR3HardenedMainPosixExecMemAlloc(size_t cb, void *pvHint, bool
  *                              (somewhere in patch memory).
  * @param   pfnResolve          The resolver to call before trying to query the start address.
  */
-static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, PFNRT *ppfnReal,
+static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, uintptr_t /*PFNRT*/ *ppfnReal,
                                          PFNSUPHARDENEDSYMRESOLVE pfnResolve)
 {
     void *pfnTarget = supR3HardenedMainPosixGetStartBySymbol(pszSymbol, pfnResolve);
@@ -398,7 +399,7 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
     }
 
     /* Assemble the code for resuming the call.*/
-    *ppfnReal = (PFNRT)(uintptr_t)pbPatchMem;
+    *ppfnReal = (uintptr_t)pbPatchMem;
 
     /* Go through the instructions to patch and fixup any rip relative mov instructions. */
     uint32_t offInsn = 0;
@@ -531,7 +532,7 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
         return VERR_NO_MEMORY;
 
     /* Assemble the code for resuming the call.*/
-    *ppfnReal = (PFNRT)(uintptr_t)pbPatchMem;
+    *ppfnReal = (uintptr_t)pbPatchMem;
 
     /* Go through the instructions to patch and fixup any relative call instructions. */
     uint32_t offInsn = 0;
