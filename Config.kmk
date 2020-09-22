@@ -2444,8 +2444,8 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
   if defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL)
    TOOL_GCC4MACHO_PREFIX := $(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin/$(TOOL_GCC4MACHO_PREFIX)
    TOOL_GXX4MACHO_PREFIX := $(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin/$(TOOL_GXX4MACHO_PREFIX)
-   TOOL_GCC4MACHO_SUFFIX := $(TOOL_GCC4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
-   TOOL_GXX4MACHO_SUFFIX := $(TOOL_GXX4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
+   TOOL_GCC4MACHO_SUFFIX := $(TOOL_GCC4MACHO_SUFFIX) -isysroot "$(VBOX_PATH_MACOSX_SDK)"
+   TOOL_GXX4MACHO_SUFFIX := $(TOOL_GXX4MACHO_SUFFIX) -isysroot "$(VBOX_PATH_MACOSX_SDK)"
    ifndef SVN  # must expand first so we won't be using old svn.
     SVN := $(firstword $(which svn) svn)
    endif
@@ -2483,11 +2483,11 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
  else
   VBOX_DARWIN_DEF_SDK_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT)0 \
                                      MAC_OS_X_VERSION_MAX_ALLOWED=$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT)0
-  VBOX_DARWIN_DEF_SDK_CFLAGS      := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
-  VBOX_DARWIN_DEF_SDK_CXXFLAGS    := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
-  VBOX_DARWIN_DEF_SDK_OBJCFLAGS   := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
-  VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
-  VBOX_DARWIN_DEF_SDK_LDFLAGS      = -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK) \
+  VBOX_DARWIN_DEF_SDK_CFLAGS      := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot "$(VBOX_PATH_MACOSX_SDK)"
+  VBOX_DARWIN_DEF_SDK_CXXFLAGS    := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot "$(VBOX_PATH_MACOSX_SDK)"
+  VBOX_DARWIN_DEF_SDK_OBJCFLAGS   := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot "$(VBOX_PATH_MACOSX_SDK)"
+  VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot "$(VBOX_PATH_MACOSX_SDK)"
+  VBOX_DARWIN_DEF_SDK_LDFLAGS      = -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -Wl,-syslibroot,"$(VBOX_PATH_MACOSX_SDK)" \
   	$(VBOX_DARWIN_CLASSIC_LINKER) $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
  endif
 
@@ -2497,11 +2497,11 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4) # classic linker detection is bust otherwise
   VBOX_PATH_MACOSX_SDK_10_4            ?= $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX10.4u.sdk
   VBOX_DARWIN_DEF_SDK_10_4_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1040 MAC_OS_X_VERSION_MAX_ALLOWED=1040
-  VBOX_DARWIN_DEF_SDK_10_4_CFLAGS      := -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK_10_4)
-  VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS    := -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK_10_4)
-  VBOX_DARWIN_DEF_SDK_10_4_OBJCFLAGS   := -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK_10_4)
-  VBOX_DARWIN_DEF_SDK_10_4_OBJCXXFLAGS := -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK_10_4)
-  VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS     := -mmacosx-version-min=10.4 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_4) $(VBOX_DARWIN_CLASSIC_LINKER)
+  VBOX_DARWIN_DEF_SDK_10_4_CFLAGS      := -mmacosx-version-min=10.4 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_4)"
+  VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS    := -mmacosx-version-min=10.4 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_4)"
+  VBOX_DARWIN_DEF_SDK_10_4_OBJCFLAGS   := -mmacosx-version-min=10.4 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_4)"
+  VBOX_DARWIN_DEF_SDK_10_4_OBJCXXFLAGS := -mmacosx-version-min=10.4 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_4)"
+  VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS     := -mmacosx-version-min=10.4 -Wl,-syslibroot,"$(VBOX_PATH_MACOSX_SDK_10_4)" $(VBOX_DARWIN_CLASSIC_LINKER)
  else
   VBOX_PATH_MACOSX_SDK_10_4          = $(error VBox: $(if $(target),$(target): ,)Using 10.4 SDK)
   VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.4 SDK)
@@ -2511,11 +2511,11 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5)
   VBOX_PATH_MACOSX_SDK_10_5            ?= $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX10.5.sdk
   VBOX_DARWIN_DEF_SDK_10_5_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1050 MAC_OS_X_VERSION_MAX_ALLOWED=1050
-  VBOX_DARWIN_DEF_SDK_10_5_CFLAGS      := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
-  VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS    := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
-  VBOX_DARWIN_DEF_SDK_10_5_OBJCFLAGS   := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
-  VBOX_DARWIN_DEF_SDK_10_5_OBJCXXFLAGS := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
-  VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS     := -mmacosx-version-min=10.5 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_5) $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
+  VBOX_DARWIN_DEF_SDK_10_5_CFLAGS      := -mmacosx-version-min=10.5 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_5)"
+  VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS    := -mmacosx-version-min=10.5 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_5)"
+  VBOX_DARWIN_DEF_SDK_10_5_OBJCFLAGS   := -mmacosx-version-min=10.5 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_5)"
+  VBOX_DARWIN_DEF_SDK_10_5_OBJCXXFLAGS := -mmacosx-version-min=10.5 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_5)"
+  VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS     := -mmacosx-version-min=10.5 -Wl,-syslibroot,"$(VBOX_PATH_MACOSX_SDK_10_5)" $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
  else
   VBOX_PATH_MACOSX_SDK_10_5          = $(error VBox: $(if $(target),$(target): ,)Using 10.5 SDK)
   VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.5 SDK)
@@ -2525,11 +2525,11 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6)
   VBOX_PATH_MACOSX_SDK_10_6            ?= $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX10.6.sdk
   VBOX_DARWIN_DEF_SDK_10_6_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1060 MAC_OS_X_VERSION_MAX_ALLOWED=1060
-  VBOX_DARWIN_DEF_SDK_10_6_CFLAGS      := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
-  VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS    := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
-  VBOX_DARWIN_DEF_SDK_10_6_OBJCFLAGS   := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
-  VBOX_DARWIN_DEF_SDK_10_6_OBJCXXFLAGS := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
-  VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS     := -mmacosx-version-min=10.6 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_6)
+  VBOX_DARWIN_DEF_SDK_10_6_CFLAGS      := -mmacosx-version-min=10.6 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_6)"
+  VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS    := -mmacosx-version-min=10.6 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_6)"
+  VBOX_DARWIN_DEF_SDK_10_6_OBJCFLAGS   := -mmacosx-version-min=10.6 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_6)"
+  VBOX_DARWIN_DEF_SDK_10_6_OBJCXXFLAGS := -mmacosx-version-min=10.6 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_6)"
+  VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS     := -mmacosx-version-min=10.6 -Wl,-syslibroot,"$(VBOX_PATH_MACOSX_SDK_10_6)"
  else
   VBOX_PATH_MACOSX_SDK_10_6          = $(error VBox: $(if $(target),$(target): ,)Using 10.6 SDK)
   VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.6 SDK)
@@ -2545,11 +2545,11 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
    endif
   endif
   VBOX_DARWIN_DEF_SDK_10_7_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1070 MAC_OS_X_VERSION_MAX_ALLOWED=1070
-  VBOX_DARWIN_DEF_SDK_10_7_CFLAGS      := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
-  VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS    := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
-  VBOX_DARWIN_DEF_SDK_10_7_OBJCFLAGS   := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
-  VBOX_DARWIN_DEF_SDK_10_7_OBJCXXFLAGS := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
-  VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS     := -mmacosx-version-min=10.7 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_7)
+  VBOX_DARWIN_DEF_SDK_10_7_CFLAGS      := -mmacosx-version-min=10.7 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_7)"
+  VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS    := -mmacosx-version-min=10.7 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_7)"
+  VBOX_DARWIN_DEF_SDK_10_7_OBJCFLAGS   := -mmacosx-version-min=10.7 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_7)"
+  VBOX_DARWIN_DEF_SDK_10_7_OBJCXXFLAGS := -mmacosx-version-min=10.7 -isysroot "$(VBOX_PATH_MACOSX_SDK_10_7)"
+  VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS     := -mmacosx-version-min=10.7 -Wl,-syslibroot,"$(VBOX_PATH_MACOSX_SDK_10_7)"
  else
   VBOX_PATH_MACOSX_SDK_10_7          = $(error VBox: $(if $(target),$(target): ,)Using 10.7 SDK)
   VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.7 SDK)
