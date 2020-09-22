@@ -1192,6 +1192,7 @@ void UIDetailsElement::popupVisualStateTypeEditor(const QString &strValue)
     }
 }
 
+#ifndef VBOX_WS_MAC
 void UIDetailsElement::popupMenuBarEditor(const QString &strValue)
 {
     /* Parse whether we have it enabled, true if unable to parse: */
@@ -1218,11 +1219,10 @@ void UIDetailsElement::popupMenuBarEditor(const QString &strValue)
         && (   (fEnabled && pTriggeredAction == pActionDisable)
             || (!fEnabled && pTriggeredAction == pActionEnable)))
     {
-#ifndef VBOX_WS_MAC
         gEDataManager->setMenuBarEnabled(!fEnabled, machine().GetId());
-#endif
     }
 }
+#endif
 
 void UIDetailsElement::popupStatusBarEditor(const QString &strValue)
 {
@@ -1254,6 +1254,7 @@ void UIDetailsElement::popupStatusBarEditor(const QString &strValue)
     }
 }
 
+#ifndef VBOX_WS_MAC
 void UIDetailsElement::popupMiniToolbarEditor(const QString &strValue)
 {
     /* Parse whether we have it enabled: */
@@ -1297,6 +1298,7 @@ void UIDetailsElement::popupMiniToolbarEditor(const QString &strValue)
         }
     }
 }
+#endif
 
 void UIDetailsElement::popupCloudEditor(const QString &strValue)
 {
