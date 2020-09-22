@@ -1746,29 +1746,35 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         return VINF_SUCCESS;
     }
 
+    /*
+     * Ensure the register is writable and proceed.
+     * If a write handler doesn't exist, it's either a reserved or read-only register.
+     */
     if (pReg->pfnWrite)
     {
         /*
          * If the write access is aligned and matches the register size, dispatch right away.
-         * This handles all aligned, 32-bit writes as well.
+         * This handles all aligned, 32-bit writes as well as aligned 64-bit writes.
          */
         if (   cb == pReg->cb
             && !(off & (cb - 1)))
             return pReg->pfnWrite(pDevIns, pThis, off, uValue);
 
         /*
-         * A 32-bit access for a 64-bit register.
-         * This is writing a 64-bit register since we took care of 32-bit writes above.
-         * We shouldn't get smaller sizes because we've specified so with IOM.
+         * A 32-bit write for a 64-bit register.
+         * We shouldn't get sizes other than 32 bits here as we've specified so with IOM.
          */
         Assert(cb == 4);
         if (!(off & 7))
         {
-            /* Lower 32-bits are being written. Merge with higher bits of the register. */
-            uint64_t uHi;
+            /*
+             * Lower 32 bits of the register is being written.
+             * Merge with higher 32 bits (after reading the full value from the register).
+             */
+            uint64_t u64Read;
             if (pReg->pfnRead)
             {
-                VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off, &uHi);
+                VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off, &u64Read);
                 if (RT_FAILURE(rcStrict))
                 {
                     LogFunc(("Reading off %#x during split write failed! rc=%Rrc\n -> Ignored", off, VBOXSTRICTRC_VAL(rcStrict)));
@@ -1776,21 +1782,23 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
                 }
             }
             else
-                uHi = 0;
-            uHi &= UINT64_C(0xffffffff00000000);
-            uValue |= uHi;
+                u64Read = 0;
 
-            /* Perform the full, 64-bit write. */
+            uValue = (u64Read & UINT64_C(0xffffffff00000000)) | uValue;
             return pReg->pfnWrite(pDevIns, pThis, off, uValue);
         }
 
-        /* Higher 32-bits are being written. Merge with lower bits of the register. */
+        /*
+         * Higher 32 bits of the register is being written.
+         * Merge with lower 32 bits (after reading the full value from the register).
+         */
         Assert(!(off & 3));
+        Assert(off & 7);
         Assert(off > 4);
-        uint64_t uLo;
+        uint64_t u64Read;
         if (pReg->pfnRead)
         {
-            VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off - 4, &uLo);
+            VBOXSTRICTRC rcStrict = pReg->pfnRead(pDevIns, pThis, off - 4, &u64Read);
             if (RT_FAILURE(rcStrict))
             {
                 LogFunc(("Reading off %#x during split write failed! rc=%Rrc\n -> Ignored", off, VBOXSTRICTRC_VAL(rcStrict)));
@@ -1798,17 +1806,13 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
             }
         }
         else
-            uLo = 0;
+            u64Read = 0;
 
-        uLo &= UINT64_C(0x00000000ffffffff);
-        uValue <<= 32;
-        uValue |= uLo;
-
-        /* Perform the full, 64-bit write. */
+        uValue = (uValue << 32) | (u64Read & UINT64_C(0xffffffff));
         return pReg->pfnWrite(pDevIns, pThis, off - 4, uValue);
     }
     else
-        LogFunc(("Writing unknown register %u (%#x) with %#RX64 (cb=%u) -> Ignored\n", off,  off, uValue, cb));
+        LogFunc(("Writing reserved or read-only register off=%#x (cb=%u) with %#RX64 -> Ignored\n", off, cb, uValue));
 
     return VINF_SUCCESS;
 #endif
