@@ -1603,6 +1603,7 @@ ifndef VBOX_GCC_TOOL
  else ifeq ($(KBUILD_TARGET),darwin)
   ifdef VBOX_WITH_EVEN_NEWER_XCODE
    VBOX_GCC_TOOL := CLANGXXMACHO
+   DARWINCMN_TOOLCHAIN_DIRS_IGNORE_DEVTOOLS = 1# Use the system toolchains, not anything from tools/darwin.*.
   else ifdef VBOX_WITH_NEW_XCODE
    VBOX_GCC_TOOL := VBoxXcode62
   else
