@@ -2540,10 +2540,10 @@ static void dbgcKdCtxMsgSend(PKDCTX pThis, bool fWarning, const char *pszMsg)
     aRespSegs[4].pvSeg = (void *)"\r\n";
     aRespSegs[4].cbSeg = 2;
 
-    DebugIo.u.Str.cbStr =   aRespSegs[1].cbSeg
-                          + aRespSegs[2].cbSeg
-                          + aRespSegs[3].cbSeg
-                          + aRespSegs[4].cbSeg;
+    DebugIo.u.Str.cbStr = (uint32_t)(  aRespSegs[1].cbSeg
+                                     + aRespSegs[2].cbSeg
+                                     + aRespSegs[3].cbSeg
+                                     + aRespSegs[4].cbSeg);
 
     int rc = dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_DEBUG_IO,
                                 &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
@@ -3385,6 +3385,9 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
         case KD_PACKET_MANIPULATE_REQ_REBOOT:
         {
             rc = VMR3Reset(pThis->Dbgc.pUVM); /* Doesn't expect an answer here. */
+            if (   RT_SUCCESS(rc)
+                && DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
+                rc = DBGFR3Resume(pThis->Dbgc.pUVM, VMCPUID_ALL);
             break;
         }
         default:
