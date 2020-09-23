@@ -307,9 +307,12 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
                 /* If profile is Ok finally: */
                 if (comCloudProfile.isOk())
                 {
+                    /* Acquire cloud profile manager restrictions: */
+                    const QStringList restrictions = gEDataManager->cloudProfileManagerRestrictions();
+
                     /* Update profile in the tree: */
                     UIDataCloudProfile data;
-                    loadCloudProfile(comCloudProfile, *pProviderItem, data);
+                    loadCloudProfile(comCloudProfile, restrictions, *pProviderItem, data);
                     updateItemForCloudProfile(data, true, pProfileItem);
 
                     /* Make sure current-item fetched: */
@@ -394,9 +397,12 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
                     msgCenter().cannotFindCloudProfile(comCloudProvider, strProfileName, this);
                 else
                 {
+                    /* Acquire cloud profile manager restrictions: */
+                    const QStringList restrictions = gEDataManager->cloudProfileManagerRestrictions();
+
                     /* Add profile to the tree: */
                     UIDataCloudProfile data;
-                    loadCloudProfile(comCloudProfile, *pProviderItem, data);
+                    loadCloudProfile(comCloudProfile, restrictions, *pProviderItem, data);
                     createItemForCloudProfile(pProviderItem, data, true);
 
                     /* Save profile changes: */
@@ -822,9 +828,7 @@ void UICloudProfileManagerWidget::loadCloudStuff()
 
         /* Load provider data: */
         UIDataCloudProvider providerData;
-        loadCloudProvider(comCloudProvider, providerData);
-        const QString strProviderPath = QString("/%1").arg(providerData.m_strShortName);
-        providerData.m_fRestricted = restrictions.contains(strProviderPath);
+        loadCloudProvider(comCloudProvider, restrictions, providerData);
         createItemForCloudProvider(providerData, false);
 
         /* Make sure provider item is properly inserted: */
@@ -839,9 +843,7 @@ void UICloudProfileManagerWidget::loadCloudStuff()
 
             /* Load profile data: */
             UIDataCloudProfile profileData;
-            loadCloudProfile(comCloudProfile, providerData, profileData);
-            const QString strProfilePath = QString("/%1/%2").arg(providerData.m_strShortName).arg(profileData.m_strName);
-            profileData.m_fRestricted = restrictions.contains(strProfilePath);
+            loadCloudProfile(comCloudProfile, restrictions, providerData, profileData);
             createItemForCloudProfile(pItem, profileData, false);
         }
 
@@ -855,6 +857,7 @@ void UICloudProfileManagerWidget::loadCloudStuff()
 }
 
 void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comProvider,
+                                                    const QStringList &restrictions,
                                                     UIDataCloudProvider &providerData)
 {
     /* Gather provider settings: */
@@ -864,6 +867,8 @@ void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comPro
         providerData.m_strShortName = comProvider.GetShortName();
     if (comProvider.isOk())
         providerData.m_strName = comProvider.GetName();
+    const QString strProviderPath = QString("/%1").arg(providerData.m_strShortName);
+    providerData.m_fRestricted = restrictions.contains(strProviderPath);
     foreach (const QString &strSupportedPropertyName, comProvider.GetSupportedPropertyNames())
         providerData.m_propertyDescriptions[strSupportedPropertyName] = comProvider.GetPropertyDescription(strSupportedPropertyName);
 
@@ -873,6 +878,7 @@ void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comPro
 }
 
 void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfile,
+                                                   const QStringList &restrictions,
                                                    const UIDataCloudProvider &providerData,
                                                    UIDataCloudProfile &profileData)
 {
@@ -882,6 +888,8 @@ void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfi
     /* Gather profile settings: */
     if (comProfile.isOk())
         profileData.m_strName = comProfile.GetName();
+    const QString strProfilePath = QString("/%1/%2").arg(providerData.m_strShortName).arg(profileData.m_strName);
+    profileData.m_fRestricted = restrictions.contains(strProfilePath);
 
     if (comProfile.isOk())
     {

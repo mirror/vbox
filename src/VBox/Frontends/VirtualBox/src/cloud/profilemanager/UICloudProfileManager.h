@@ -152,11 +152,15 @@ private:
       * @{ */
         /** Loads cloud stuff. */
         void loadCloudStuff();
-        /** Loads cloud @a comProvider data to passed @a providerData container. */
+        /** Loads cloud @a comProvider data to passed @a providerData container,
+          * using @a restrictions as hint. */
         void loadCloudProvider(const CCloudProvider &comProvider,
+                               const QStringList &restrictions,
                                UIDataCloudProvider &providerData);
-        /** Loads cloud @a comProfile data to passed @a profileData container, using @a providerData as hint. */
+        /** Loads cloud @a comProfile data to passed @a profileData container,
+          * using @a restrictions & @a providerData as hint. */
         void loadCloudProfile(const CCloudProfile &comProfile,
+                              const QStringList &restrictions,
                               const UIDataCloudProvider &providerData,
                               UIDataCloudProfile &profileData);
     /** @} */
