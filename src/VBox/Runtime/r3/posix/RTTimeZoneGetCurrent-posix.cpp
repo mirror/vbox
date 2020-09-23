@@ -75,25 +75,29 @@ static int rtIsValidTimeZoneFile(const char *pszTimeZone)
     if (pszTimeZone == NULL || *pszTimeZone == '\0' || *pszTimeZone == '/')
         return VERR_INVALID_PARAMETER;
 
-    /* construct full pathname of the time zone file */
-    char szTZPath[RTPATH_MAX];
-    int rc = RTPathJoin(szTZPath, sizeof(szTZPath), TZDIR, pszTimeZone);
+    int rc = RTStrValidateEncoding(pszTimeZone);
     if (RT_SUCCESS(rc))
     {
-        /* open the time zone file and check that it begins with the correct magic number */
-        RTFILE hFile = NIL_RTFILE;
-        rc = RTFileOpen(&hFile, szTZPath, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+        /* construct full pathname of the time zone file */
+        char szTZPath[RTPATH_MAX];
+        rc = RTPathJoin(szTZPath, sizeof(szTZPath), TZDIR, pszTimeZone);
         if (RT_SUCCESS(rc))
         {
-            char achTZBuf[sizeof(TZ_MAGIC)];
-            rc = RTFileRead(hFile, achTZBuf, sizeof(achTZBuf), NULL);
-            RTFileClose(hFile);
+            /* open the time zone file and check that it begins with the correct magic number */
+            RTFILE hFile = NIL_RTFILE;
+            rc = RTFileOpen(&hFile, szTZPath, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
             if (RT_SUCCESS(rc))
             {
-                if (memcmp(achTZBuf, RT_STR_TUPLE(TZ_MAGIC)) == 0)
-                    rc = VINF_SUCCESS;
-                else
-                    rc = VERR_INVALID_MAGIC;
+                char achTZBuf[sizeof(TZ_MAGIC)];
+                rc = RTFileRead(hFile, achTZBuf, sizeof(achTZBuf), NULL);
+                RTFileClose(hFile);
+                if (RT_SUCCESS(rc))
+                {
+                    if (memcmp(achTZBuf, RT_STR_TUPLE(TZ_MAGIC)) == 0)
+                        rc = VINF_SUCCESS;
+                    else
+                        rc = VERR_INVALID_MAGIC;
+                }
             }
         }
     }
@@ -194,7 +198,6 @@ RTDECL(int) RTTimeZoneGetCurrent(char *pszName, size_t cbName)
                 const char *pszTimeZone = RTStrStrip(szBuf);
 
                 rc = rtIsValidTimeZoneFile(pszTimeZone);
-                /** @todo UTF-8 encoding. */
                 if (RT_SUCCESS(rc))
                     return RTStrCopy(pszName, cbName, pszTimeZone);
             }
@@ -223,7 +226,6 @@ RTDECL(int) RTTimeZoneGetCurrent(char *pszName, size_t cbName)
                     if (RT_SUCCESS(rc))
                     {
                         RTStrmClose(pStrm);
-                        /** @todo UTF-8 encoding. */
                         return RTStrCopy(pszName, cbName, pszTimeZone);
                     }
                 }
