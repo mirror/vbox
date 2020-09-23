@@ -27174,6 +27174,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="text" type="wstring" dir="in"/>
       <param name="progress" type="IProgress" dir="return"/>
     </method>
+
+    <attribute name="clipboardString" type="wstring" readonly="yes">
+      <desc>
+        Intnded for cases when a read-only string value is used to
+        display information and different string is to be used when
+        copying to the clipboard.
+      </desc>
+    </attribute>
   </interface>
 
   <interface name="IChoiceFormValue" extends="IFormValue"
