@@ -796,7 +796,7 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                         /** @todo r=andy Add data overflow handling. */
                         vboxClipboardSvcWinGetData(VBOX_SHCL_FMT_HTML, lp, GlobalSize(hClip),
                                                    pvData, cbData, pcbActual);
-#ifdef VBOX_STRICT
+#ifdef LOG_ENABLED
                         LogFlowFunc(("Raw HTML clipboard data from host:"));
                         ShClDbgDumpHtml((char *)pvData, cbData);
 #endif

@@ -973,71 +973,56 @@ int ShClBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest, size_t 
 }
 
 #ifdef LOG_ENABLED
+
 int ShClDbgDumpHtml(const char *pcszSrc, size_t cbSrc)
 {
-    size_t cchIgnored = 0;
-    int rc = RTStrNLenEx(pcszSrc, cbSrc, &cchIgnored);
-    if (RT_SUCCESS(rc))
+    int rc = VINF_SUCCESS;
+    char *pszBuf = (char *)RTMemTmpAllocZ(cbSrc + 1);
+    if (pszBuf)
     {
-        char *pszBuf = (char *)RTMemAllocZ(cbSrc + 1);
-        if (pszBuf)
-        {
-            rc = RTStrCopy(pszBuf, cbSrc + 1, (const char *)pcszSrc);
-            if (RT_SUCCESS(rc))
-            {
-                for (size_t i = 0; i < cbSrc; ++i)
-                    if (pszBuf[i] == '\n' || pszBuf[i] == '\r')
-                        pszBuf[i] = ' ';
-            }
-            else
-                LogFunc(("Error in copying string\n"));
-            LogFunc(("Removed \\r\\n: %s\n", pszBuf));
-            RTMemFree(pszBuf);
-        }
-        else
-            rc = VERR_NO_MEMORY;
+        memcpy(pszBuf, pcszSrc, cbSrc);
+        pszBuf[cbSrc] = '\0';
+        for (size_t off = 0; off < cbSrc; ++off)
+            if (pszBuf[off] == '\n' || pszBuf[off] == '\r')
+                pszBuf[off] = ' ';
+        LogFunc(("Removed \\r\\n: %s\n", pszBuf));
+        RTMemTmpFree(pszBuf);
     }
-
+    else
+        rc = VERR_NO_MEMORY;
     return rc;
 }
 
 void ShClDbgDumpData(const void *pv, size_t cb, SHCLFORMAT uFormat)
 {
-    if (uFormat & VBOX_SHCL_FMT_UNICODETEXT)
+    if (LogIsEnabled())
     {
-        LogFunc(("VBOX_SHCL_FMT_UNICODETEXT:\n"));
-        if (pv && cb)
-            LogFunc(("%ls\n", pv));
-        else
-            LogFunc(("%p %zu\n", pv, cb));
-    }
-    else if (uFormat & VBOX_SHCL_FMT_BITMAP)
-        LogFunc(("VBOX_SHCL_FMT_BITMAP\n"));
-    else if (uFormat & VBOX_SHCL_FMT_HTML)
-    {
-        LogFunc(("VBOX_SHCL_FMT_HTML:\n"));
-        if (pv && cb)
+        if (uFormat & VBOX_SHCL_FMT_UNICODETEXT)
         {
-            LogFunc(("%s\n", pv));
-
-            //size_t cb = RTStrNLen(pv, );
-            char *pszBuf = (char *)RTMemAllocZ(cb + 1);
-            RTStrCopy(pszBuf, cb + 1, (const char *)pv);
-            for (size_t off = 0; off < cb; ++off)
+            LogFunc(("VBOX_SHCL_FMT_UNICODETEXT:\n"));
+            if (pv && cb)
+                LogFunc(("%ls\n", pv));
+            else
+                LogFunc(("%p %zu\n", pv, cb));
+        }
+        else if (uFormat & VBOX_SHCL_FMT_BITMAP)
+            LogFunc(("VBOX_SHCL_FMT_BITMAP\n"));
+        else if (uFormat & VBOX_SHCL_FMT_HTML)
+        {
+            LogFunc(("VBOX_SHCL_FMT_HTML:\n"));
+            if (pv && cb)
             {
-                if (pszBuf[off] == '\n' || pszBuf[off] == '\r')
-                    pszBuf[off] = ' ';
+                LogFunc(("%s\n", pv));
+                ShClDbgDumpHtml((const char *)pv, cb);
             }
-
-            LogFunc(("%s\n", pszBuf));
-            RTMemFree(pszBuf);
+            else
+                LogFunc(("%p %zu\n", pv, cb));
         }
         else
-            LogFunc(("%p %zu\n", pv, cb));
+            LogFunc(("Invalid format %02X\n", uFormat));
     }
-    else
-        LogFunc(("Invalid format %02X\n", uFormat));
 }
+
 #endif /* LOG_ENABLED */
 
 /**
