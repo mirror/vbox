@@ -1123,6 +1123,32 @@ typedef enum KDRECVSTATE
 
 
 /**
+ * KD emulated hardware breakpoint.
+ */
+typedef struct KDCTXHWBP
+{
+    /** The DBGF breakpoint handle if active, UINT32_MAX if not active. */
+    uint32_t                    iDbgfBp;
+    /** The linear address of the breakpoint if active. */
+    RTGCPTR                     GCPtrBp;
+    /** Access type of the breakpoint, see X86_DR7_RW_*. */
+    uint8_t                     fAcc;
+    /** Length flags of the breakpoint. */
+    uint8_t                     fLen;
+    /** Flag whether it is a local breakpoint. */
+    bool                        fLocal;
+    /** Flag whether it is a global breakpoint. */
+    bool                        fGlobal;
+    /** Flag whether the breakpoint has triggered since the last time of the reset. */
+    bool                        fTriggered;
+} KDCTXHWBP;
+/** Pointer to an emulated hardware breakpoint. */
+typedef KDCTXHWBP *PKDCTXHWBP;
+/** Pointer to a const emulated hardware breakpoint. */
+typedef const KDCTXHWBP *PCKDCTXHWBP;
+
+
+/**
  * KD context data.
  */
 typedef struct KDCTX
@@ -1158,6 +1184,11 @@ typedef struct KDCTX
     /** Flag whether we entered the native VBox hypervisor through a bugcheck request. */
     bool                        fInVBoxDbg;
 
+    /** Emulated hardware breakpoint handling. */
+    KDCTXHWBP                   aHwBp[4];
+    /** Flag whether a single step completed since last time this was cleared. */
+    bool                        fSingleStepped;
+
     /** Pointer to the OS digger WinNt interface if a matching guest was detected. */
     PDBGFOSIWINNT               pIfWinNt;
     /** Flag whether the detected guest is 32bit (false if 64bit). */
@@ -1180,6 +1211,8 @@ typedef PKDCTX *PPKDCTX;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+
+static void dbgcKdCtxMsgSend(PKDCTX pThis, bool fWarning, const char *pszMsg);
 
 
 #ifdef LOG_ENABLED
@@ -1422,6 +1455,227 @@ static void dbgcKdPktDump(PCKDPACKETHDR pPktHdr, PCRTSGSEG paSegs, uint32_t cSeg
 
 
 /**
+ * Resets the emulated hardware breakpoint state to a state similar after a reboot.
+ *
+ * @returns nothing.
+ * @param   pThis               The KD context.
+ */
+static void dbgcKdCtxHwBpReset(PKDCTX pThis)
+{
+    pThis->fSingleStepped = false;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aHwBp); i++)
+    {
+        PKDCTXHWBP pBp = &pThis->aHwBp[i];
+
+        if (pBp->iDbgfBp != UINT32_MAX)
+        {
+            int rc = DBGFR3BpClear(pThis->Dbgc.pUVM, pBp->iDbgfBp);
+            AssertRC(rc);
+        }
+
+        pBp->iDbgfBp    = UINT32_MAX;
+        pBp->GCPtrBp    = 0;
+        pBp->fAcc       = 0;
+        pBp->fLen       = 0;
+        pBp->fLocal     = false;
+        pBp->fGlobal    = false;
+        pBp->fTriggered = false;
+    }
+}
+
+
+/**
+ * Updates the given breakpoint with the given properties.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pBp                 The breakpoint to update.
+ * @param   fAcc                Access mode.
+ * @param   fLen                Access length.
+ * @param   fGlobal             Global breakpoint.
+ * @param   fLocal              Local breakpoint.
+ * @param   GCPtrBp             Linear address of the breakpoint.
+ */
+static int dbgcKdCtxHwBpUpdate(PKDCTX pThis, PKDCTXHWBP pBp, uint8_t fAcc, uint8_t fLen,
+                               bool fGlobal, bool fLocal, RTGCPTR GCPtrBp)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Did anything actually change?. */
+    if (   pBp->fAcc != fAcc
+        || pBp->fLen != fLen
+        || pBp->fGlobal != fGlobal
+        || pBp->fLocal != fLocal
+        || pBp->GCPtrBp != GCPtrBp)
+    {
+        /* Clear the old breakpoint. */
+        if (pBp->iDbgfBp != UINT32_MAX)
+        {
+            rc = DBGFR3BpClear(pThis->Dbgc.pUVM, pBp->iDbgfBp);
+            AssertRC(rc);
+            pBp->iDbgfBp = UINT32_MAX;
+        }
+
+        pBp->fAcc    = fAcc;
+        pBp->fLen    = fLen;
+        pBp->fGlobal = fGlobal;
+        pBp->fLocal  = fLocal;
+        pBp->GCPtrBp = GCPtrBp;
+        if (pBp->fGlobal || pBp->fLocal)
+        {
+            DBGFADDRESS AddrBp;
+            DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &AddrBp, GCPtrBp);
+
+            uint8_t cb = 0;
+            switch (pBp->fLen)
+            {
+                case X86_DR7_LEN_BYTE:
+                    cb = 1;
+                    break;
+                case X86_DR7_LEN_WORD:
+                    cb = 2;
+                    break;
+                case X86_DR7_LEN_DWORD:
+                    cb = 4;
+                    break;
+                case X86_DR7_LEN_QWORD:
+                    cb = 8;
+                    break;
+                default:
+                    AssertFailed();
+                    return VERR_NET_PROTOCOL_ERROR;
+            }
+
+            rc = DBGFR3BpSetReg(pThis->Dbgc.pUVM, &AddrBp, 0 /*iHitTrigger*/, UINT64_MAX /*iHitDisable*/,
+                                pBp->fAcc, cb, &pBp->iDbgfBp);
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Updates emulated hardware breakpoints based on the written DR7 value.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   uDr7                The DR7 value which is written.
+ */
+static int dbgcKdCtxHwBpDr7Update(PKDCTX pThis, uint32_t uDr7)
+{
+    int rc = VINF_SUCCESS;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aHwBp); i++)
+    {
+        PKDCTXHWBP pBp = &pThis->aHwBp[i];
+        uint8_t fAcc = X86_DR7_GET_RW(uDr7, i);
+        uint8_t fLen = X86_DR7_GET_LEN(uDr7, i);
+        bool fGlobal = (uDr7 & RT_BIT_32(1 + i * 2)) ? true : false;
+        bool fLocal = (uDr7 & RT_BIT_32(i * 2)) ? true : false;
+
+        int rc2 = dbgcKdCtxHwBpUpdate(pThis, pBp, fAcc, fLen, fGlobal, fLocal, pThis->aHwBp[i].GCPtrBp);
+        if (   RT_FAILURE(rc2)
+            && RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Updates the linear guest pointer for the given hardware breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pBp                 The breakpoint to update.
+ * @param   GCPtrBp             The linear breakpoint address.
+ */
+DECLINLINE(int) dbgcKdCtxHwBpGCPtrUpdate(PKDCTX pThis, PKDCTXHWBP pBp, RTGCPTR GCPtrBp)
+{
+    return dbgcKdCtxHwBpUpdate(pThis, pBp, pBp->fAcc, pBp->fLen, pBp->fGlobal, pBp->fLocal, GCPtrBp);
+}
+
+
+/**
+ * Calculates the DR7 value based on the emulated hardware breakpoint state and returns it.
+ *
+ * @returns The emulated DR7 value.
+ * @param   pThis               The KD context.
+ */
+static uint32_t dbgcKdCtxHwBpDr7Get(PKDCTX pThis)
+{
+    uint32_t uDr7 = 0;
+
+    uDr7 |= X86_DR7_RW(0, pThis->aHwBp[0].fAcc);
+    uDr7 |= X86_DR7_RW(1, pThis->aHwBp[1].fAcc);
+    uDr7 |= X86_DR7_RW(2, pThis->aHwBp[2].fAcc);
+    uDr7 |= X86_DR7_RW(3, pThis->aHwBp[3].fAcc);
+
+    uDr7 |= X86_DR7_LEN(0, pThis->aHwBp[0].fLen);
+    uDr7 |= X86_DR7_LEN(1, pThis->aHwBp[1].fLen);
+    uDr7 |= X86_DR7_LEN(2, pThis->aHwBp[2].fLen);
+    uDr7 |= X86_DR7_LEN(3, pThis->aHwBp[3].fLen);
+
+    uDr7 |= pThis->aHwBp[0].fGlobal ? X86_DR7_G(0) : 0;
+    uDr7 |= pThis->aHwBp[1].fGlobal ? X86_DR7_G(1) : 0;
+    uDr7 |= pThis->aHwBp[2].fGlobal ? X86_DR7_G(2) : 0;
+    uDr7 |= pThis->aHwBp[3].fGlobal ? X86_DR7_G(3) : 0;
+
+    uDr7 |= pThis->aHwBp[0].fLocal ? X86_DR7_L(0) : 0;
+    uDr7 |= pThis->aHwBp[1].fLocal ? X86_DR7_L(1) : 0;
+    uDr7 |= pThis->aHwBp[2].fLocal ? X86_DR7_L(2) : 0;
+    uDr7 |= pThis->aHwBp[3].fLocal ? X86_DR7_L(3) : 0;
+
+    return uDr7;
+}
+
+
+/**
+ * Updates emulated hardware breakpoints based on the written DR6 value.
+ *
+ * @returns nothing.
+ * @param   pThis               The KD context.
+ * @param   uDr6                The DR7 value which is written.
+ */
+static void dbgcKdCtxHwBpDr6Update(PKDCTX pThis, uint32_t uDr6)
+{
+    pThis->aHwBp[0].fTriggered = (uDr6 & X86_DR6_B0) ? true : false;
+    pThis->aHwBp[1].fTriggered = (uDr6 & X86_DR6_B1) ? true : false;
+    pThis->aHwBp[2].fTriggered = (uDr6 & X86_DR6_B2) ? true : false;
+    pThis->aHwBp[3].fTriggered = (uDr6 & X86_DR6_B3) ? true : false;
+    pThis->fSingleStepped = (uDr6 & X86_DR6_BS) ? true : false;
+}
+
+
+/**
+ * Calculates the DR6 value based on the emulated hardware breakpoint state and returns it.
+ *
+ * @returns The emulated DR6 value.
+ * @param   pThis               The KD context.
+ */
+static uint32_t dbgcKdCtxHwBpDr6Get(PKDCTX pThis)
+{
+    uint32_t uDr6 = 0;
+
+    if (pThis->aHwBp[0].fTriggered)
+        uDr6 |= X86_DR6_B0;
+    if (pThis->aHwBp[1].fTriggered)
+        uDr6 |= X86_DR6_B1;
+    if (pThis->aHwBp[2].fTriggered)
+        uDr6 |= X86_DR6_B2;
+    if (pThis->aHwBp[3].fTriggered)
+        uDr6 |= X86_DR6_B3;
+    if (pThis->fSingleStepped)
+        uDr6 |= X86_DR6_BS;
+
+    return uDr6;
+}
+
+
+/**
  * Wrapper for the I/O interface write callback.
  *
  * @returns Status code.
@@ -1526,7 +1780,7 @@ static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_DEBUG)
     {
-        /** @todo. */
+        /** @todo */
     }
 
     return rc;
@@ -1708,9 +1962,7 @@ static int dbgcKdCtxSetNtCtx64(PKDCTX pThis, VMCPUID idCpu, PCNTCONTEXT64 pNtCtx
     }
 
     if (fCtxFlags & NTCONTEXT_F_DEBUG)
-    {
-        /** @todo. */
-    }
+        dbgcKdCtxMsgSend(pThis, true /*fWarning*/, "Setting local DR registers does not work!");
 
     return DBGFR3RegNmSetBatch(pThis->Dbgc.pUVM, idCpu, &aRegsSet[0], idxReg);
 }
@@ -1739,18 +1991,6 @@ static int dbgcKdCtxQueryNtKCtx64(PKDCTX pThis, VMCPUID idCpu, PNTKCONTEXT64 pKN
     if (RT_SUCCESS(rc))
         rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_CR8, &pKNtCtx->u64RegCr8);
     if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR0, &pKNtCtx->u64RegDr0);
-    if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR1, &pKNtCtx->u64RegDr1);
-    if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR2, &pKNtCtx->u64RegDr2);
-    if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR3, &pKNtCtx->u64RegDr3);
-    if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR6, &pKNtCtx->u64RegDr6);
-    if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR7, &pKNtCtx->u64RegDr7);
-    if (RT_SUCCESS(rc))
         rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_GDTR_LIMIT, &pKNtCtx->Gdtr.u16Limit);
     if (RT_SUCCESS(rc))
         rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_GDTR_BASE, &pKNtCtx->Gdtr.u64PtrBase);
@@ -1764,7 +2004,6 @@ static int dbgcKdCtxQueryNtKCtx64(PKDCTX pThis, VMCPUID idCpu, PNTKCONTEXT64 pKN
         rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_LDTR, &pKNtCtx->u16RegLdtr);
     if (RT_SUCCESS(rc))
         rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_MXCSR, &pKNtCtx->u32RegMxCsr);
-    /** @todo Debug control and stuff. */
 
     if (RT_SUCCESS(rc))
         rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_MSR_K8_GS_BASE, &pKNtCtx->u64MsrGsBase);
@@ -1779,6 +2018,14 @@ static int dbgcKdCtxQueryNtKCtx64(PKDCTX pThis, VMCPUID idCpu, PNTKCONTEXT64 pKN
     if (RT_SUCCESS(rc))
         rc = DBGFR3RegCpuQueryU64(pThis->Dbgc.pUVM, idCpu, DBGFREG_MSR_K8_SF_MASK, &pKNtCtx->u64MsrSfMask);
     /** @todo XCR0 */
+
+    /* Get the emulated DR register state. */
+    pKNtCtx->u64RegDr0 = pThis->aHwBp[0].GCPtrBp;
+    pKNtCtx->u64RegDr1 = pThis->aHwBp[1].GCPtrBp;
+    pKNtCtx->u64RegDr2 = pThis->aHwBp[2].GCPtrBp;
+    pKNtCtx->u64RegDr3 = pThis->aHwBp[3].GCPtrBp;
+    pKNtCtx->u64RegDr6 = dbgcKdCtxHwBpDr6Get(pThis);
+    pKNtCtx->u64RegDr7 = dbgcKdCtxHwBpDr7Get(pThis);
 
     if (RT_SUCCESS(rc))
         rc = dbgcKdCtxQueryNtCtx64(pThis, idCpu, &pKNtCtx->Ctx, fCtxFlags);
@@ -1808,18 +2055,6 @@ static int dbgcKdCtxQueryNtKCtx32(PKDCTX pThis, VMCPUID idCpu, PNTKCONTEXT32 pKN
         rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_CR4, &pKNtCtx->u32RegCr4);
 
     if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR0, &pKNtCtx->u32RegDr0);
-    if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR1, &pKNtCtx->u32RegDr1);
-    if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR2, &pKNtCtx->u32RegDr2);
-    if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR3, &pKNtCtx->u32RegDr3);
-    if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR6, &pKNtCtx->u32RegDr6);
-    if (RT_SUCCESS(rc))
-        rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_DR7, &pKNtCtx->u32RegDr7);
-    if (RT_SUCCESS(rc))
         rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_GDTR_LIMIT, &pKNtCtx->Gdtr.u16Limit);
     if (RT_SUCCESS(rc))
         rc = DBGFR3RegCpuQueryU32(pThis->Dbgc.pUVM, idCpu, DBGFREG_GDTR_BASE, &pKNtCtx->Gdtr.u32PtrBase);
@@ -1831,6 +2066,14 @@ static int dbgcKdCtxQueryNtKCtx32(PKDCTX pThis, VMCPUID idCpu, PNTKCONTEXT32 pKN
         rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_TR, &pKNtCtx->u16RegTr);
     if (RT_SUCCESS(rc))
         rc = DBGFR3RegCpuQueryU16(pThis->Dbgc.pUVM, idCpu, DBGFREG_LDTR, &pKNtCtx->u16RegLdtr);
+
+    /* Get the emulated DR register state. */
+    pKNtCtx->u32RegDr0 = (uint32_t)pThis->aHwBp[0].GCPtrBp;
+    pKNtCtx->u32RegDr1 = (uint32_t)pThis->aHwBp[1].GCPtrBp;
+    pKNtCtx->u32RegDr2 = (uint32_t)pThis->aHwBp[2].GCPtrBp;
+    pKNtCtx->u32RegDr3 = (uint32_t)pThis->aHwBp[3].GCPtrBp;
+    pKNtCtx->u32RegDr6 = dbgcKdCtxHwBpDr6Get(pThis);
+    pKNtCtx->u32RegDr7 = dbgcKdCtxHwBpDr7Get(pThis);
 
     return rc;
 }
@@ -1857,12 +2100,6 @@ static int dbgcKdCtxSetNtKCtx64(PKDCTX pThis, VMCPUID idCpu, PCNTKCONTEXT64 pKNt
     KD_REG_INIT_U64("cr3", pKNtCtx->u64RegCr3);
     KD_REG_INIT_U64("cr4", pKNtCtx->u64RegCr4);
     KD_REG_INIT_U64("cr8", pKNtCtx->u64RegCr8);
-    KD_REG_INIT_U64("dr0", pKNtCtx->u64RegDr0);
-    KD_REG_INIT_U64("dr1", pKNtCtx->u64RegDr1);
-    KD_REG_INIT_U64("dr2", pKNtCtx->u64RegDr2);
-    KD_REG_INIT_U64("dr3", pKNtCtx->u64RegDr3);
-    KD_REG_INIT_U64("dr6", pKNtCtx->u64RegDr6);
-    KD_REG_INIT_U64("dr7", pKNtCtx->u64RegDr7);
 
     KD_REG_INIT_DTR("gdtr", pKNtCtx->Gdtr.u64PtrBase, pKNtCtx->Gdtr.u16Limit);
     KD_REG_INIT_DTR("idtr", pKNtCtx->Idtr.u64PtrBase, pKNtCtx->Idtr.u16Limit);
@@ -1884,6 +2121,21 @@ static int dbgcKdCtxSetNtKCtx64(PKDCTX pThis, VMCPUID idCpu, PCNTKCONTEXT64 pKNt
     if (   RT_SUCCESS(rc)
         && cbSet > RT_UOFFSETOF(NTKCONTEXT64, Ctx)) /** @todo Probably wrong. */
         rc = dbgcKdCtxSetNtCtx64(pThis, idCpu, &pKNtCtx->Ctx, pKNtCtx->Ctx.fContext);
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Update emulated hardware breakpoint state. */
+        dbgcKdCtxHwBpDr6Update(pThis, (uint32_t)pKNtCtx->u64RegDr6);
+        rc = dbgcKdCtxHwBpDr7Update(pThis, (uint32_t)pKNtCtx->u64RegDr7);
+        if (RT_SUCCESS(rc))
+            rc = dbgcKdCtxHwBpGCPtrUpdate(pThis, &pThis->aHwBp[0], pKNtCtx->u64RegDr0);
+        if (RT_SUCCESS(rc))
+            rc = dbgcKdCtxHwBpGCPtrUpdate(pThis, &pThis->aHwBp[1], pKNtCtx->u64RegDr1);
+        if (RT_SUCCESS(rc))
+            rc = dbgcKdCtxHwBpGCPtrUpdate(pThis, &pThis->aHwBp[2], pKNtCtx->u64RegDr2);
+        if (RT_SUCCESS(rc))
+            rc = dbgcKdCtxHwBpGCPtrUpdate(pThis, &pThis->aHwBp[3], pKNtCtx->u64RegDr3);
+    }
 
     return rc;
 }
@@ -2249,6 +2501,58 @@ static int dbgcKdCtxDebugIoStrSend(PKDCTX pThis, VMCPUID idCpu, const char *pach
 
 
 /**
+ * Sends a message to the remotes end.
+ *
+ * @returns nothing.
+ * @param   pThis               The KD context data.
+ * @param   fWarning            Flag whether this is a warning or an informational message.
+ * @param   pszMsg              The message to send.
+ */
+static void dbgcKdCtxMsgSend(PKDCTX pThis, bool fWarning, const char *pszMsg)
+{
+    size_t cchMsg = strlen(pszMsg);
+
+    KDPACKETDEBUGIO DebugIo;
+    RT_ZERO(DebugIo);
+
+    DebugIo.u32Type     = KD_PACKET_DEBUG_IO_STRING;
+    DebugIo.u16CpuLvl   = 0x6;
+    DebugIo.idCpu       = 0;
+
+    RTSGSEG aRespSegs[5];
+
+    aRespSegs[0].pvSeg = &DebugIo;
+    aRespSegs[0].cbSeg = sizeof(DebugIo);
+    aRespSegs[1].pvSeg = (void *)"VBoxDbg ";
+    aRespSegs[1].cbSeg = sizeof("VBoxDbg ") - 1;
+    if (fWarning)
+    {
+        aRespSegs[2].pvSeg = (void *)"WARNING ";
+        aRespSegs[2].cbSeg = sizeof("WARNING ") - 1;
+    }
+    else
+    {
+        aRespSegs[2].pvSeg = (void *)"INFO ";
+        aRespSegs[2].cbSeg = sizeof("INFO ") - 1;
+    }
+    aRespSegs[3].pvSeg = (void *)pszMsg;
+    aRespSegs[3].cbSeg = cchMsg;
+    aRespSegs[4].pvSeg = (void *)"\r\n";
+    aRespSegs[4].cbSeg = 2;
+
+    DebugIo.u.Str.cbStr =   aRespSegs[1].cbSeg
+                          + aRespSegs[2].cbSeg
+                          + aRespSegs[3].cbSeg
+                          + aRespSegs[4].cbSeg;
+
+    int rc = dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_DEBUG_IO,
+                                &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
+    if (RT_SUCCESS(rc))
+        pThis->idPktNext ^= 0x1;
+}
+
+
+/**
  * Queries some user input from the remotes end.
  *
  * @returns VBox status code.
@@ -2331,6 +2635,7 @@ static int dbgcKdCtxStateChangeSend(PKDCTX pThis, DBGFEVENTTYPE enmType)
                 break;
             case DBGFEVENT_STEPPED:
             case DBGFEVENT_STEPPED_HYPER:
+                pThis->fSingleStepped = true; /* For emulation of DR6. */
                 StateChange64.u.Exception.ExcpRec.u32ExcpCode = KD_PACKET_EXCP_CODE_SINGLE_STEP;
                 break;
             default:
@@ -2559,6 +2864,12 @@ static int dbgcKdCtxPktManipulate64Continue(PKDCTX pThis, PCKDPACKETMANIPULATE64
 static int dbgcKdCtxPktManipulate64Continue2(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
 {
     int rc = VINF_SUCCESS;
+
+    /* Update DR7. */
+    if (pThis->f32Bit)
+        rc = dbgcKdCtxHwBpDr7Update(pThis, pPktManip->u.Continue2.u.x86.u32RegDr7);
+    else
+        rc = dbgcKdCtxHwBpDr7Update(pThis, (uint32_t)pPktManip->u.Continue2.u.amd64.u64RegDr7);
 
     /* Resume if not single stepping, the single step will get a state change when the VM stepped. */
     if (pPktManip->u.Continue2.fTrace)
@@ -3071,6 +3382,11 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
             rc = dbgcKdCtxPktManipulate64CauseBugCheck(pThis, pPktManip);
             break;
         }
+        case KD_PACKET_MANIPULATE_REQ_REBOOT:
+        {
+            rc = VMR3Reset(pThis->Dbgc.pUVM); /* Doesn't expect an answer here. */
+            break;
+        }
         default:
             KDPACKETMANIPULATEHDR RespHdr;
             RT_ZERO(RespHdr);
@@ -3085,6 +3401,57 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
     }
 
     return rc;
+}
+
+
+/**
+ * Tries to detect the guest OS running in the VM looking specifically for the Windows NT kind.
+ *
+ * @returns Nothing.
+ * @param   pThis               The KD context.
+ */
+static void dbgcKdCtxDetectGstOs(PKDCTX pThis)
+{
+    pThis->pIfWinNt = NULL;
+
+    /* Try detecting a Windows NT guest. */
+    char szName[64];
+    int rc = DBGFR3OSDetect(pThis->Dbgc.pUVM, szName, sizeof(szName));
+    if (RT_SUCCESS(rc))
+    {
+        pThis->pIfWinNt = (PDBGFOSIWINNT)DBGFR3OSQueryInterface(pThis->Dbgc.pUVM, DBGFOSINTERFACE_WINNT);
+        if (pThis->pIfWinNt)
+            LogRel(("DBGC/Kd: Detected Windows NT guest OS (%s)\n", &szName[0]));
+        else
+            LogRel(("DBGC/Kd: Detected guest OS is not of the Windows NT kind (%s)\n", &szName[0]));
+    }
+    else
+    {
+        LogRel(("DBGC/Kd: Unable to detect any guest operating system type, rc=%Rrc\n", rc));
+        rc = VINF_SUCCESS; /* Try to continue nevertheless. */
+    }
+
+    if (pThis->pIfWinNt)
+    {
+        rc = pThis->pIfWinNt->pfnQueryVersion(pThis->pIfWinNt, pThis->Dbgc.pUVM,
+                                              NULL /*puVersMajor*/, NULL /*puVersMinor*/,
+                                              NULL /*puBuildNumber*/, &pThis->f32Bit);
+        AssertRC(rc);
+    }
+    else
+    {
+        /*
+         * Try to detect bitness based on the current CPU mode which might fool us (32bit process running
+         * inside of 64bit host).
+         */
+        CPUMMODE enmMode = DBGCCmdHlpGetCpuMode(&pThis->Dbgc.CmdHlp);
+        if (enmMode == CPUMMODE_PROTECTED)
+            pThis->f32Bit = true;
+        else if (enmMode == CPUMMODE_LONG)
+            pThis->f32Bit = false;
+        else
+            LogRel(("DBGC/Kd: Heh, trying to debug real mode code with WinDbg are we? Good luck with that...\n"));
+    }
 }
 
 
@@ -3122,6 +3489,8 @@ static int dbgcKdCtxPktProcess(PKDCTX pThis)
             {
                 case KD_PACKET_HDR_SUB_TYPE_RESET:
                 {
+                    dbgcKdCtxDetectGstOs(pThis);
+
                     pThis->idPktNext = 0;
                     rc = dbgcKdCtxPktSendReset(pThis);
                     if (RT_SUCCESS(rc))
@@ -3425,6 +3794,16 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
                     rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r eflags.rf = 1");
             }
 
+            /* Figure out the breakpoint and set the triggered flag for emulation of DR6. */
+            for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aHwBp); i++)
+            {
+                if (pThis->aHwBp[i].iDbgfBp == pEvent->u.Bp.iBp)
+                {
+                    pThis->aHwBp[i].fTriggered = true;
+                    break;
+                }
+            }
+
             rc = dbgcKdCtxStateChangeSend(pThis, pEvent->enmType);
             break;
         }
@@ -3432,6 +3811,7 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
         case DBGFEVENT_STEPPED:
         case DBGFEVENT_STEPPED_HYPER:
         {
+            pThis->fSingleStepped = true; /* For emulation of DR6. */
             rc = dbgcKdCtxStateChangeSend(pThis, pEvent->enmType);
             break;
         }
@@ -3756,6 +4136,14 @@ static int dbgcKdCtxCreate(PPKDCTX ppKdCtx, PDBGCBACK pBack, unsigned fFlags)
     pThis->f32Bit       = false;
     dbgcKdCtxPktRecvReset(pThis);
 
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aHwBp); i++)
+    {
+        PKDCTXHWBP pBp = &pThis->aHwBp[i];
+        pBp->iDbgfBp = UINT32_MAX;
+    }
+
+    dbgcKdCtxHwBpReset(pThis);
+
     *ppKdCtx = pThis;
     return VINF_SUCCESS;
 }
@@ -3824,45 +4212,6 @@ DECLHIDDEN(int) dbgcKdStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
             pThis->Dbgc.pVM   = pVM;
             pThis->Dbgc.pUVM  = pUVM;
             pThis->Dbgc.idCpu = 0;
-
-            /* Try detecting a Windows NT guest. */
-            char szName[64];
-            rc = DBGFR3OSDetect(pUVM, szName, sizeof(szName));
-            if (RT_SUCCESS(rc))
-            {
-                pThis->pIfWinNt = (PDBGFOSIWINNT)DBGFR3OSQueryInterface(pUVM, DBGFOSINTERFACE_WINNT);
-                if (pThis->pIfWinNt)
-                    LogRel(("DBGC/Kd: Detected Windows NT guest OS (%s)\n", &szName[0]));
-                else
-                    LogRel(("DBGC/Kd: Detected guest OS is not of the Windows NT kind (%s)\n", &szName[0]));
-            }
-            else
-            {
-                LogRel(("DBGC/Kd: Unable to detect any guest operating system type, rc=%Rrc\n", rc));
-                rc = VINF_SUCCESS; /* Try to continue nevertheless. */
-            }
-
-            if (pThis->pIfWinNt)
-            {
-                rc = pThis->pIfWinNt->pfnQueryVersion(pThis->pIfWinNt, pThis->Dbgc.pUVM,
-                                                      NULL /*puVersMajor*/, NULL /*puVersMinor*/,
-                                                      NULL /*puBuildNumber*/, &pThis->f32Bit);
-                AssertRC(rc);
-            }
-            else
-            {
-                /*
-                 * Try to detect bitness based on the current CPU mode which might fool us (32bit process running
-                 * inside of 64bit host).
-                 */
-                CPUMMODE enmMode = DBGCCmdHlpGetCpuMode(&pThis->Dbgc.CmdHlp);
-                if (enmMode == CPUMMODE_PROTECTED)
-                    pThis->f32Bit = true;
-                else if (enmMode == CPUMMODE_LONG)
-                    pThis->f32Bit = false;
-                else
-                    LogRel(("DBGC/Kd: Heh, trying to debug real mode code with WinDbg are we? Good luck with that...\n"));
-            }
         }
         else
             rc = pThis->Dbgc.CmdHlp.pfnVBoxError(&pThis->Dbgc.CmdHlp, rc, "When trying to attach to VM %p\n", pThis->Dbgc.pVM);
