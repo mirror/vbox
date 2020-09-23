@@ -50,10 +50,14 @@
 
 /** NT status code - Success. */
 #define NTSTATUS_SUCCESS                            0
+/** NT status code - buffer overflow. */
+#define NTSTATUS_BUFFER_OVERFLOW                    UINT32_C(0x80000005)
 /** NT status code - operation unsuccesful. */
 #define NTSTATUS_UNSUCCESSFUL                       UINT32_C(0xc0000001)
 /** NT status code - operation not implemented. */
 #define NTSTATUS_NOT_IMPLEMENTED                    UINT32_C(0xc0000002)
+/** NT status code - Object not found. */
+#define NTSTATUS_NOT_FOUND                          UINT32_C(0xc0000225)
 
 /** Offset where the KD version block pointer is stored in the KPCR.
  * From: https://www.geoffchappell.com/studies/windows/km/ntoskrnl/structs/kprcb/amd64.htm */
@@ -969,6 +973,27 @@ typedef const KDPACKETMANIPULATE_QUERYMEMORY *PCKDPACKETMANIPULATE_QUERYMEMORY;
 
 
 /**
+ * Search memory payload.
+ */
+typedef struct KDPACKETMANIPULATE_SEARCHMEMORY
+{
+    /** The address to start searching at on input, found address on output. */
+    uint64_t                    u64GCPtr;
+    /** Number of bytes to search. */
+    uint64_t                    cbSearch;
+    /** Length of the pattern to search for following the payload. */
+    uint32_t                    cbPattern;
+    /** Padding to the required size. */
+    uint32_t                    au32Pad[5];
+} KDPACKETMANIPULATE_SEARCHMEMORY;
+AssertCompileSize(KDPACKETMANIPULATE_SEARCHMEMORY, 40);
+/** Pointer to a search memory properties payload. */
+typedef KDPACKETMANIPULATE_SEARCHMEMORY *PKDPACKETMANIPULATE_SEARCHMEMORY;
+/** Pointer to a const search memory properties payload. */
+typedef const KDPACKETMANIPULATE_SEARCHMEMORY *PCKDPACKETMANIPULATE_SEARCHMEMORY;
+
+
+/**
  * Manipulate request packet header (Same for 32bit and 64bit).
  */
 typedef struct KDPACKETMANIPULATEHDR
@@ -1021,6 +1046,8 @@ typedef struct KDPACKETMANIPULATE64
         KDPACKETMANIPULATE_CONTEXTEX       ContextEx;
         /** Query memory. */
         KDPACKETMANIPULATE_QUERYMEMORY     QueryMemory;
+        /** Search memory. */
+        KDPACKETMANIPULATE_SEARCHMEMORY    SearchMemory;
     } u;
 } KDPACKETMANIPULATE64;
 AssertCompileSize(KDPACKETMANIPULATE64, 16 + 40);
@@ -1085,6 +1112,9 @@ typedef const KDPACKETMANIPULATE64 *PCKDPACKETMANIPULATE64;
 #define KD_PACKET_MANIPULATE_REQ_RESTORE_BKPT_EX            UINT32_C(0x00003148)
 /** Cause a bugcheck request. */
 #define KD_PACKET_MANIPULATE_REQ_CAUSE_BUGCHECK             UINT32_C(0x00003149)
+/** @todo */
+/** Search memory for a pattern request. */
+#define KD_PACKET_MANIPULATE_REQ_SEARCH_MEMORY              UINT32_C(0x00003156)
 /** @todo */
 /** Clear all internal breakpoints request. */
 #define KD_PACKET_MANIPULATE_REQ_CLEAR_ALL_INTERNAL_BKPT    UINT32_C(0x0000315a)
@@ -1281,6 +1311,7 @@ static const char *dbgcKdPktDumpManipulateReqToStr(uint32_t idReq)
         case KD_PACKET_MANIPULATE_REQ_GET_CONTEXT_EX:           return "GetContextEx";
         case KD_PACKET_MANIPULATE_REQ_QUERY_MEMORY:             return "QueryMemory";
         case KD_PACKET_MANIPULATE_REQ_CAUSE_BUGCHECK:           return "CauseBugCheck";
+        case KD_PACKET_MANIPULATE_REQ_SEARCH_MEMORY:            return "SearchMemory";
         default:                                                break;
     }
 
@@ -1414,6 +1445,21 @@ static void dbgcKdPktDumpManipulate(PRTSGBUF pSgBuf)
                 }
                 else
                     Log3(("        Payload to small, expected %u, got %zu\n", sizeof(QueryMemory), cbCopied));
+                break;
+            }
+            case KD_PACKET_MANIPULATE_REQ_SEARCH_MEMORY:
+            {
+                KDPACKETMANIPULATE_SEARCHMEMORY SearchMemory;
+                cbCopied = RTSgBufCopyToBuf(pSgBuf, &SearchMemory, sizeof(SearchMemory));
+                if (cbCopied == sizeof(SearchMemory))
+                {
+                    Log3(("        u64GCPtr:     %RX64\n"
+                          "        cbSearch:     %RX64\n"
+                          "        cbPattern:    %RX32\n",
+                          SearchMemory.u64GCPtr, SearchMemory.cbSearch, SearchMemory.cbPattern));
+                }
+                else
+                    Log3(("        Payload to small, expected %u, got %zu\n", sizeof(SearchMemory), cbCopied));
                 break;
             }
             default:
@@ -3281,6 +3327,63 @@ static int dbgcKdCtxPktManipulate64QueryMemory(PKDCTX pThis, PCKDPACKETMANIPULAT
 
 
 /**
+ * Processes a search memory 64 request.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pPktManip           The manipulate packet request.
+ */
+static int dbgcKdCtxPktManipulate64SearchMemory(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
+{
+    KDPACKETMANIPULATEHDR RespHdr;
+    KDPACKETMANIPULATE_SEARCHMEMORY SearchMemory;
+    RT_ZERO(RespHdr); RT_ZERO(SearchMemory);
+
+    RTSGSEG aRespSegs[2];
+    RespHdr.idReq       = KD_PACKET_MANIPULATE_REQ_SEARCH_MEMORY;
+    RespHdr.u16CpuLvl   = pPktManip->Hdr.u16CpuLvl;
+    RespHdr.idCpu       = pPktManip->Hdr.idCpu;
+    RespHdr.u32NtStatus = NTSTATUS_SUCCESS;
+
+    SearchMemory.u64GCPtr  = pPktManip->u.SearchMemory.u64GCPtr;
+    SearchMemory.cbSearch  = pPktManip->u.SearchMemory.cbSearch;
+    SearchMemory.cbPattern = pPktManip->u.SearchMemory.cbPattern;
+
+    /* Validate the pattern length and start searching. */
+    if (pPktManip->u.SearchMemory.cbPattern < sizeof(pThis->abBody) - sizeof(*pPktManip))
+    {
+        DBGFADDRESS StartAddress;
+        DBGFADDRESS HitAddress;
+        VMCPUID idCpu = pPktManip->Hdr.idCpu;
+        DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &StartAddress, pPktManip->u.SearchMemory.u64GCPtr);
+
+        /** @todo WindDbg sends CPU ID 32 sometimes, maybe that means continue search on last used CPU?. */
+        if (idCpu >= DBGFR3CpuGetCount(pThis->Dbgc.pUVM))
+            idCpu = pThis->Dbgc.idCpu;
+
+        int rc = DBGFR3MemScan(pThis->Dbgc.pUVM, idCpu, &StartAddress, pPktManip->u.SearchMemory.cbSearch, 1,
+                               &pThis->abBody[sizeof(*pPktManip)], pPktManip->u.SearchMemory.cbPattern, &HitAddress);
+        if (RT_SUCCESS(rc))
+            SearchMemory.u64GCPtr = HitAddress.FlatPtr;
+        else if (rc == VERR_DBGF_MEM_NOT_FOUND)
+            RespHdr.u32NtStatus = NTSTATUS_NOT_FOUND;
+        else
+            RespHdr.u32NtStatus = NTSTATUS_UNSUCCESSFUL;
+    }
+    else
+        RespHdr.u32NtStatus = NTSTATUS_BUFFER_OVERFLOW;
+
+    aRespSegs[0].pvSeg = &RespHdr;
+    aRespSegs[0].cbSeg = sizeof(RespHdr);
+    aRespSegs[1].pvSeg = &SearchMemory;
+    aRespSegs[1].cbSeg = sizeof(SearchMemory);
+
+    return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
+                              &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
+}
+
+
+/**
  * Processes a cause bugcheck 64 request.
  *
  * @returns VBox status code.
@@ -3375,6 +3478,11 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
         case KD_PACKET_MANIPULATE_REQ_QUERY_MEMORY:
         {
             rc = dbgcKdCtxPktManipulate64QueryMemory(pThis, pPktManip);
+            break;
+        }
+        case KD_PACKET_MANIPULATE_REQ_SEARCH_MEMORY:
+        {
+            rc = dbgcKdCtxPktManipulate64SearchMemory(pThis, pPktManip);
             break;
         }
         case KD_PACKET_MANIPULATE_REQ_CAUSE_BUGCHECK:
