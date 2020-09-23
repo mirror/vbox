@@ -65,33 +65,13 @@ HRESULT HostDrive::initFromPathAndModel(const com::Utf8Str &drivePath, const com
     m.model = driveModel;
     m.partitions.clear();
 
-    const char *pszDrivePath = drivePath.c_str();
-
-#ifdef RT_OS_DARWIN
-    /*
-     * Ensure the path specified for the drive in raw mode, i.e. drive name begins with 'r'
-     * Otherwise, the RTFileOpen will always return the error about 'busy resource'
-     */
-    /** @todo r=bird: Shouldn't we make iokit.cpp just return the /dev/rdiskX*
-     *        paths instead then? */
-    com::Utf8Str strAdjustedDrivePath;
-    const char *pszDriveName = RTPathFilename(pszDrivePath);
-    if (pszDriveName && *pszDriveName != 'r')
-    {
-        strAdjustedDrivePath = drivePath.substr(0, (size_t)(pszDriveName - pszDrivePath));
-        strAdjustedDrivePath.append('r');
-        strAdjustedDrivePath.append(pszDriveName);
-        pszDrivePath = strAdjustedDrivePath.c_str();
-    }
-#endif
-
     /*
      * Try open the drive so we can extract futher details,
      * like the size, sector size and partitions.
      */
     HRESULT hrc = E_FAIL;
     RTFILE hRawFile = NIL_RTFILE;
-    int vrc = RTFileOpen(&hRawFile, pszDrivePath, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    int vrc = RTFileOpen(&hRawFile, drivePath.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(vrc))
     {
         vrc = RTFileQuerySize(hRawFile, &m.cbDisk);
@@ -191,7 +171,19 @@ HRESULT HostDrive::initFromPathAndModel(const com::Utf8Str &drivePath, const com
         RTFileClose(hRawFile);
     }
     else
-        hrc = Global::vboxStatusCodeToCOM(vrc);
+    {
+        /*
+         * We don't use the Global::vboxStatusCodeToCOM(vrc) here
+         * because RTFileOpen can return some error which causes
+         * the assertion and breaks original idea of returning
+         * the object in the limited state.
+         */
+        if (   vrc == VERR_RESOURCE_BUSY
+            || vrc == VERR_ACCESS_DENIED)
+            hrc = E_ACCESSDENIED;
+        else
+            hrc = VBOX_E_IPRT_ERROR;
+    }
 
     /* Confirm a successful initialization */
     if (SUCCEEDED(hrc))
