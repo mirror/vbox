@@ -808,12 +808,12 @@ class VisualCPPState
          ' Check that it's a supported version
          checkClExe = True
          if InStr(1, strVer, "16.") = 1 then
-            m_strVersion = "VCC110"
+            m_strVersion = "VCC100"
          elseif InStr(1, strVer, "17.") = 1 then
-            m_strVersion = "VCC111"
+            m_strVersion = "VCC110"
             LogPrint "The Visual C++ compiler ('" & strClExe & "') version isn't really supported, but may work: " & strVer
          elseif InStr(1, strVer, "18.") = 1 then
-            m_strVersion = "VCC112"
+            m_strVersion = "VCC120"
             LogPrint "The Visual C++ compiler ('" & strClExe & "') version isn't really supported, but may work: " & strVer
          elseif InStr(1, strVer, "19.0") = 1 then
             m_strVersion = "VCC140"
