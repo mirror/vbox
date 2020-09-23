@@ -29,7 +29,7 @@
 #include "UISettingsSelector.h"
 #include "UIIconPool.h"
 #include "UISettingsPage.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 
 /** QAccessibleWidget extension used as an accessibility interface for UISettingsSelectorToolBar buttons. */
@@ -502,7 +502,7 @@ UISettingsSelectorToolBar::UISettingsSelectorToolBar(QWidget *pParent /* = 0 */)
     QAccessible::installFactory(UIAccessibilityInterfaceForUISettingsSelectorToolBarButton::pFactory);
 
     /* Prepare the toolbar: */
-    m_pToolBar = new UIToolBar(pParent);
+    m_pToolBar = new QIToolBar(pParent);
     m_pToolBar->setUseTextLabels(true);
     m_pToolBar->setIconSize(QSize(32, 32));
 #ifdef VBOX_WS_MAC

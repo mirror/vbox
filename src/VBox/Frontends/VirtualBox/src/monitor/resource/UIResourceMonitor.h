@@ -37,7 +37,7 @@ class QTableView;
 class QTreeWidgetItem;
 class QIDialogButtonBox;
 class UIActionPool;
-class UIToolBar;
+class QIToolBar;
 class UIResourceMonitorProxyModel;
 class UIResourceMonitorModel;
 class UIVMResourceMonitorHostStats;
@@ -65,7 +65,7 @@ public:
     void setIsCurrentTool(bool fIsCurrentTool);
 
 #ifdef VBOX_WS_MAC
-    UIToolBar *toolbar() const { return m_pToolBar; }
+    QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
 protected:
@@ -115,7 +115,7 @@ private:
 
     /** @name Misc members.
       * @{ */
-        UIToolBar *m_pToolBar;
+        QIToolBar *m_pToolBar;
         UIVMResourceMonitorTableView       *m_pTableView;
         UIResourceMonitorProxyModel        *m_pProxyModel;
         UIResourceMonitorModel             *m_pModel;

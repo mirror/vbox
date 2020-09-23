@@ -29,7 +29,7 @@
 #include "UIFileManagerGuestTable.h"
 #include "UIMessageCenter.h"
 #include "UIPathOperations.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 /* COM includes: */
 #include "CFsObjInfo.h"

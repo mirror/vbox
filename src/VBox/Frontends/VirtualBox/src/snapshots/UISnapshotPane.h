@@ -38,7 +38,7 @@ class UIActionPool;
 class UISnapshotDetailsWidget;
 class UISnapshotItem;
 class UISnapshotTree;
-class UIToolBar;
+class QIToolBar;
 
 
 /** Snapshot age format. */
@@ -239,7 +239,7 @@ private:
     /** @name Widget variables.
       * @{ */
         /** Holds the toolbar instance. */
-        UIToolBar *m_pToolBar;
+        QIToolBar *m_pToolBar;
 
         /** Holds the snapshot tree instance. */
         UISnapshotTree *m_pSnapshotTree;

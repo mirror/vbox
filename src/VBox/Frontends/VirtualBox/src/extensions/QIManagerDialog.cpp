@@ -27,7 +27,7 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #ifdef VBOX_WS_MAC
-# include "UIToolBar.h"
+# include "QIToolBar.h"
 # include "UIWindowMenuManager.h"
 #endif
 

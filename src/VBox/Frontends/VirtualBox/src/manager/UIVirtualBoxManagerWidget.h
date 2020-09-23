@@ -36,7 +36,7 @@ class QISplitter;
 class UIActionPool;
 class UIChooser;
 class UITabBar;
-class UIToolBar;
+class QIToolBar;
 class UITools;
 class UIVirtualBoxManager;
 class UIVirtualMachineItem;
@@ -300,7 +300,7 @@ private:
     QISplitter *m_pSplitter;
 
     /** Holds the main toolbar instance. */
-    UIToolBar *m_pToolBar;
+    QIToolBar *m_pToolBar;
 
     /** Holds the Chooser-pane instance. */
     UIChooser          *m_pPaneChooser;

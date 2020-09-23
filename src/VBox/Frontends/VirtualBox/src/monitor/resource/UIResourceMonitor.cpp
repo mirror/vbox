@@ -40,7 +40,7 @@
 #include "UIPerformanceMonitor.h"
 #include "UIResourceMonitor.h"
 #include "UIMessageCenter.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
 
 #ifdef VBOX_WS_MAC
@@ -1446,7 +1446,7 @@ void UIResourceMonitorWidget::prepareActions()
 void UIResourceMonitorWidget::prepareToolBar()
 {
     /* Create toolbar: */
-    m_pToolBar = new UIToolBar(parentWidget());
+    m_pToolBar = new QIToolBar(parentWidget());
     AssertPtrReturnVoid(m_pToolBar);
     {
         /* Configure toolbar: */

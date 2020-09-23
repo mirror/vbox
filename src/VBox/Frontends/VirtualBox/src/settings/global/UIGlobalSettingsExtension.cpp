@@ -31,7 +31,7 @@
 #include "UIGlobalSettingsExtension.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 /* COM includes: */
 #include "CExtPack.h"
@@ -485,7 +485,7 @@ void UIGlobalSettingsExtension::prepareTreeWidget()
 void UIGlobalSettingsExtension::prepareToolbar()
 {
     /* Prepare toolbar: */
-    m_pToolbar = new UIToolBar(this);
+    m_pToolbar = new QIToolBar(this);
     if (m_pToolbar)
     {
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);

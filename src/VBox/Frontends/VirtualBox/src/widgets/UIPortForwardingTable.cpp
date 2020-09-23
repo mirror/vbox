@@ -33,7 +33,7 @@
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIPortForwardingTable.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 /* Other VBox includes: */
 #include <iprt/cidr.h>
@@ -1091,7 +1091,7 @@ void UIPortForwardingTable::prepareTableDelegates()
 void UIPortForwardingTable::prepareToolbar()
 {
     /* Create toolbar: */
-    m_pToolBar = new UIToolBar;
+    m_pToolBar = new QIToolBar;
     if (m_pToolBar)
     {
         /* Determine icon metric: */

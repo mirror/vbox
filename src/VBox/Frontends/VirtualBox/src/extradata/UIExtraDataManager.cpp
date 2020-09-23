@@ -58,7 +58,7 @@
 # include "QIWithRestorableGeometry.h"
 # include "VBoxUtils.h"
 # include "UIIconPool.h"
-# include "UIToolBar.h"
+# include "QIToolBar.h"
 # include "UIVirtualBoxEventHandler.h"
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
@@ -654,7 +654,7 @@ private:
       * @{ */
         QVBoxLayout *m_pMainLayout;
         /** Data pane: Tool-bar. */
-        UIToolBar *m_pToolBar;
+        QIToolBar *m_pToolBar;
         /** Splitter. */
         QISplitter *m_pSplitter;
     /** @} */
@@ -1475,7 +1475,7 @@ void UIExtraDataManagerWindow::prepareCentralWidget()
 void UIExtraDataManagerWindow::prepareToolBar()
 {
     /* Create tool-bar: */
-    m_pToolBar = new UIToolBar(this);
+    m_pToolBar = new QIToolBar(this);
     AssertPtrReturnVoid(m_pToolBar);
     {
         /* Configure tool-bar: */

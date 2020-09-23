@@ -25,7 +25,7 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -519,7 +519,7 @@ void UIBootOrderEditor::prepare()
             }
 
             /* Create tool-bar: */
-            m_pToolbar = new UIToolBar(this);
+            m_pToolbar = new QIToolBar(this);
             if (m_pToolbar)
             {
                 m_pToolbar->setIconSize(QSize(16, 16));

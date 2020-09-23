@@ -40,7 +40,7 @@ class UIMedium;
 class UIMediumDetailsWidget;
 class UIMediumItem;
 class UIMediumSearchWidget;
-class UIToolBar;
+class QIToolBar;
 
 
 /** Functor interface allowing to check if passed UIMediumItem is suitable. */
@@ -119,7 +119,7 @@ public:
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
-    UIToolBar *toolbar() const { return m_pToolBar; }
+    QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
     /** Defines @a pProgressBar reference. */
@@ -363,7 +363,7 @@ private:
     /** @name Toolbar and menu variables.
       * @{ */
         /** Holds the toolbar widget instance. */
-        UIToolBar *m_pToolBar;
+        QIToolBar *m_pToolBar;
     /** @} */
 
     /** @name Progress-bar variables.

@@ -34,7 +34,7 @@
 #include "UIFileManagerGuestTable.h"
 #include "UIFileManagerHostTable.h"
 #include "UIGuestControlInterface.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UICommon.h"
 
 /* COM includes: */
@@ -298,7 +298,7 @@ void UIFileManager::prepareObjects()
 
 void UIFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
 {
-    m_pVerticalToolBar = new UIToolBar;
+    m_pVerticalToolBar = new QIToolBar;
     if (!m_pVerticalToolBar)
         return;
 
@@ -358,7 +358,7 @@ void UIFileManager::prepareConnections()
 void UIFileManager::prepareToolBar()
 {
     /* Create toolbar: */
-    m_pToolBar = new UIToolBar(parentWidget());
+    m_pToolBar = new QIToolBar(parentWidget());
     if (m_pToolBar)
     {
         /* Configure toolbar: */

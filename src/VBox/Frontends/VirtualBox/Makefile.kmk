@@ -779,6 +779,7 @@ UICommon_QT_MOCHDRS = \
 	src/extensions/QIStyledItemDelegate.h \
 	src/extensions/QITableView.h \
 	src/extensions/QITabWidget.h \
+	src/extensions/QIToolBar.h \
 	src/extensions/QIToolButton.h \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
@@ -893,7 +894,6 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UISearchLineEdit.h \
-	src/widgets/UIToolBar.h \
 	src/widgets/UIWarningPane.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
@@ -1281,6 +1281,7 @@ UICommon_SOURCES = \
 	src/extensions/QIStyledItemDelegate.cpp \
 	src/extensions/QITableView.cpp \
 	src/extensions/QITabWidget.cpp \
+	src/extensions/QIToolBar.cpp \
 	src/extensions/QIToolButton.cpp \
 	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
@@ -1413,7 +1414,6 @@ UICommon_SOURCES = \
 	src/widgets/UISlidingToolBar.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
-	src/widgets/UIToolBar.cpp \
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \

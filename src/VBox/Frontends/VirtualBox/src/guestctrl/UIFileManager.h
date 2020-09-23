@@ -51,7 +51,7 @@ class UIFileManagerSessionPanel;
 class UIFileManagerOptionsPanel;
 class UIFileManagerGuestTable;
 class UIFileManagerHostTable;
-class UIToolBar;
+class QIToolBar;
 
 /** A Utility class to manage file  manager options. */
 class UIFileManagerOptions
@@ -96,7 +96,7 @@ public:
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
-    UIToolBar *toolbar() const { return m_pToolBar; }
+    QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
 protected:
@@ -168,8 +168,8 @@ private:
     CGuestSession             m_comGuestSession;
     QVBoxLayout              *m_pMainLayout;
     QSplitter                *m_pVerticalSplitter;
-    UIToolBar                *m_pToolBar;
-    UIToolBar                *m_pVerticalToolBar;
+    QIToolBar                *m_pToolBar;
+    QIToolBar                *m_pVerticalToolBar;
 
     UIFileManagerGuestTable         *m_pGuestFileTable;
     UIFileManagerHostTable   *m_pHostFileTable;

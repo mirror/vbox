@@ -37,7 +37,7 @@ class QITreeWidget;
 class UIActionPool;
 class UIHostNetworkDetailsWidget;
 class UIItemHostNetwork;
-class UIToolBar;
+class QIToolBar;
 struct UIDataHostNetwork;
 
 
@@ -67,7 +67,7 @@ public:
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
-    UIToolBar *toolbar() const { return m_pToolBar; }
+    QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
 protected:
@@ -170,7 +170,7 @@ private:
     /** @name Toolbar and menu variables.
       * @{ */
         /** Holds the toolbar instance. */
-        UIToolBar *m_pToolBar;
+        QIToolBar *m_pToolBar;
     /** @} */
 
     /** @name Splitter variables.

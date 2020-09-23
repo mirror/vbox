@@ -36,7 +36,7 @@
 #include "UIMachineSettingsUSB.h"
 #include "UIMachineSettingsUSBFilterDetails.h"
 #include "UIErrorString.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UICommon.h"
 
 /* COM includes: */
@@ -960,7 +960,7 @@ void UIMachineSettingsUSB::prepareFiltersTreeWidget()
 void UIMachineSettingsUSB::prepareFiltersToolbar()
 {
     /* Prepare USB filters toolbar: */
-    m_pToolbarFilters = new UIToolBar(m_pWidgetUSBSettings);
+    m_pToolbarFilters = new QIToolBar(m_pWidgetUSBSettings);
     if (m_pToolbarFilters)
     {
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);

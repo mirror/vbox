@@ -29,7 +29,7 @@
 #include "UIGuestControlInterface.h"
 #include "UIGuestControlTreeItem.h"
 #include "UIGuestProcessControlWidget.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UIIconPool.h"
 #include "UIVMInformationDialog.h"
 #include "UICommon.h"
@@ -480,7 +480,7 @@ void UIGuestProcessControlWidget::prepareListener()
 void UIGuestProcessControlWidget::prepareToolBar()
 {
     /* Create toolbar: */
-    m_pToolBar = new UIToolBar(parentWidget());
+    m_pToolBar = new QIToolBar(parentWidget());
     if (m_pToolBar)
     {
         /* Configure toolbar: */

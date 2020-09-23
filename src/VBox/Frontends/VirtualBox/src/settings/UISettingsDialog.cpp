@@ -37,7 +37,7 @@
 #include "UISettingsPage.h"
 #include "UISettingsSelector.h"
 #include "UISettingsSerializer.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UIWarningPane.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils.h"
@@ -611,7 +611,7 @@ void UISettingsDialog::prepare()
         if (m_pSelector)
         {
             /* Configure tool-bar: */
-            static_cast<UIToolBar*>(m_pSelector->widget())->enableMacToolbar();
+            static_cast<QIToolBar*>(m_pSelector->widget())->enableMacToolbar();
 
             /* Add tool-bar into page: */
             addToolBar(qobject_cast<QToolBar*>(m_pSelector->widget()));

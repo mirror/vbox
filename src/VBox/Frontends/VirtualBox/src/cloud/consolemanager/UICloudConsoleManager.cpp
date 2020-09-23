@@ -35,7 +35,7 @@
 #include "UICloudConsoleDetailsWidget.h"
 #include "UICloudConsoleManager.h"
 #include "UIMessageCenter.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 
 /** Tree-widget item types. */
@@ -822,7 +822,7 @@ void UICloudConsoleManagerWidget::prepareWidgets()
 void UICloudConsoleManagerWidget::prepareToolBar()
 {
     /* Create toolbar: */
-    m_pToolBar = new UIToolBar(parentWidget());
+    m_pToolBar = new QIToolBar(parentWidget());
     if (m_pToolBar)
     {
         /* Configure toolbar: */

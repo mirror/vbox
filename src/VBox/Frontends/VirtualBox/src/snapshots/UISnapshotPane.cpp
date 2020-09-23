@@ -41,7 +41,7 @@
 #include "UISnapshotDetailsWidget.h"
 #include "UISnapshotPane.h"
 #include "UITakeSnapshotDialog.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIWizardCloneVM.h"
 
@@ -1276,7 +1276,7 @@ void UISnapshotPane::prepareWidgets()
 void UISnapshotPane::prepareToolbar()
 {
     /* Create snapshot toolbar: */
-    m_pToolBar = new UIToolBar(this);
+    m_pToolBar = new QIToolBar(this);
     if (m_pToolBar)
     {
         /* Configure toolbar: */

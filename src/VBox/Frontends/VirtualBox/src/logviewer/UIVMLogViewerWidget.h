@@ -41,7 +41,7 @@ class QPlainTextEdit;
 class QVBoxLayout;
 class UIActionPool;
 class UIDialogPanel;
-class UIToolBar;
+class QIToolBar;
 class UIVMLogPage;
 class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerFilterPanel;
@@ -79,7 +79,7 @@ public:
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
-    UIToolBar *toolbar() const { return m_pToolBar; }
+    QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
     /** Defines the @a comMachine whose logs to show. */
@@ -223,7 +223,7 @@ private:
 
     /** @name Toolbar and menu variables.
       * @{ */
-        UIToolBar *m_pToolBar;
+        QIToolBar *m_pToolBar;
     /** @} */
 
     /** @name Toolbar and menu variables. Cache these to restore them after refresh.

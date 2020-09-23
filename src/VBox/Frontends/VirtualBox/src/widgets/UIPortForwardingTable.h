@@ -38,7 +38,7 @@ class QHBoxLayout;
 class QIDialogButtonBox;
 class QITableView;
 class UIPortForwardingModel;
-class UIToolBar;
+class QIToolBar;
 
 
 /** QString subclass used to distinguish name data from simple QString. */
@@ -277,7 +277,7 @@ private:
     /** Holds the table-view instance. */
     QITableView *m_pTableView;
     /** Holds the tool-bar instance. */
-    UIToolBar   *m_pToolBar;
+    QIToolBar   *m_pToolBar;
 
     /** Holds the table-model instance. */
     UIPortForwardingModel *m_pTableModel;

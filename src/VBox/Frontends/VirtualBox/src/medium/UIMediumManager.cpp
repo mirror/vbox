@@ -39,7 +39,7 @@
 #include "UIMediumSearchWidget.h"
 #include "UIWizardCloneVD.h"
 #include "UIMessageCenter.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -795,7 +795,7 @@ void UIMediumManagerWidget::prepareWidgets()
 void UIMediumManagerWidget::prepareToolBar()
 {
     /* Create toolbar: */
-    m_pToolBar = new UIToolBar(parentWidget());
+    m_pToolBar = new QIToolBar(parentWidget());
     AssertPtrReturnVoid(m_pToolBar);
     {
         /* Configure toolbar: */

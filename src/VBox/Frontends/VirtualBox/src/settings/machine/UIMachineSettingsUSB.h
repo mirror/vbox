@@ -33,7 +33,7 @@ class QTreeWidgetItem;
 class QILabelSeparator;
 class QITreeWidget;
 class VBoxUSBMenu;
-class UIToolBar;
+class QIToolBar;
 struct UIDataSettingsMachineUSB;
 struct UIDataSettingsMachineUSBFilter;
 typedef UISettingsCache<UIDataSettingsMachineUSBFilter> UISettingsCacheMachineUSBFilter;
@@ -173,7 +173,7 @@ private:
         /** Holds the USB filters tree-widget instance. */
         QITreeWidget     *m_pTreeWidgetFilters;
         /** Holds the USB filters toolbar instance. */
-        UIToolBar        *m_pToolbarFilters;
+        QIToolBar        *m_pToolbarFilters;
         /** Holds the New action instance. */
         QAction          *m_pActionNew;
         /** Holds the Add action instance. */

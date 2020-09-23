@@ -31,7 +31,7 @@
 #include "UIActionPool.h"
 #include "UICommon.h"
 #include "UIPerformanceMonitor.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
@@ -1071,7 +1071,7 @@ void UIPerformanceMonitor::prepareMetrics()
 void UIPerformanceMonitor::prepareToolBar()
 {
     /* Create toolbar: */
-    m_pToolBar = new UIToolBar(parentWidget());
+    m_pToolBar = new QIToolBar(parentWidget());
     AssertPtrReturnVoid(m_pToolBar);
     {
         /* Configure toolbar: */

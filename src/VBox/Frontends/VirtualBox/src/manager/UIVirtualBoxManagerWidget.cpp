@@ -30,7 +30,7 @@
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UITabBar.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
@@ -541,7 +541,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                     pLayoutRight->setContentsMargins(0, 0, 0, 0);
 
                     /* Create Main toolbar: */
-                    m_pToolBar = new UIToolBar;
+                    m_pToolBar = new QIToolBar;
                     if (m_pToolBar)
                     {
                         /* Configure toolbar: */
@@ -656,9 +656,9 @@ void UIVirtualBoxManagerWidget::prepareConnections()
             this, &UIVirtualBoxManagerWidget::sltHandleStateChange);
 
     /* Tool-bar connections: */
-    connect(m_pToolBar, &UIToolBar::customContextMenuRequested,
+    connect(m_pToolBar, &QIToolBar::customContextMenuRequested,
             this, &UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest);
-    connect(m_pToolBar, &UIToolBar::sigResized,
+    connect(m_pToolBar, &QIToolBar::sigResized,
             this, &UIVirtualBoxManagerWidget::sltHandleToolBarResize);
 
     /* Chooser-pane connections: */
@@ -888,13 +888,13 @@ void UIVirtualBoxManagerWidget::updateToolbar()
     // Actually Qt should do that itself but by some unknown reason it sometimes
     // forget to update toolbar after changing its actions on Cocoa platform.
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_New), &UIAction::changed,
-            m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+            m_pToolBar, static_cast<void(QIToolBar::*)(void)>(&QIToolBar::update));
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings), &UIAction::changed,
-            m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+            m_pToolBar, static_cast<void(QIToolBar::*)(void)>(&QIToolBar::update));
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard), &UIAction::changed,
-            m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+            m_pToolBar, static_cast<void(QIToolBar::*)(void)>(&QIToolBar::update));
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow), &UIAction::changed,
-            m_pToolBar, static_cast<void(UIToolBar::*)(void)>(&UIToolBar::update));
+            m_pToolBar, static_cast<void(QIToolBar::*)(void)>(&QIToolBar::update));
 
     // WORKAROUND:
     // There is a bug in Qt Cocoa which result in showing a "more arrow" when
@@ -922,9 +922,9 @@ void UIVirtualBoxManagerWidget::saveSettings()
 void UIVirtualBoxManagerWidget::cleanupConnections()
 {
     /* Tool-bar connections: */
-    disconnect(m_pToolBar, &UIToolBar::customContextMenuRequested,
+    disconnect(m_pToolBar, &QIToolBar::customContextMenuRequested,
                this, &UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest);
-    disconnect(m_pToolBar, &UIToolBar::sigResized,
+    disconnect(m_pToolBar, &QIToolBar::sigResized,
                this, &UIVirtualBoxManagerWidget::sltHandleToolBarResize);
 
     /* Chooser-pane connections: */

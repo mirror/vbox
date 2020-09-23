@@ -30,7 +30,7 @@
 #include "UIGlobalSettingsNetworkDetailsNAT.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 /* COM includes: */
 #include "CDHCPServer.h"
@@ -550,7 +550,7 @@ void UIGlobalSettingsNetwork::prepareNATNetworkTreeWidget()
 void UIGlobalSettingsNetwork::prepareNATNetworkToolbar()
 {
     /* Prepare NAT network toolbar: */
-    m_pToolbarNATNetwork = new UIToolBar(this);
+    m_pToolbarNATNetwork = new QIToolBar(this);
     if (m_pToolbarNATNetwork)
     {
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);

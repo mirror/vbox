@@ -37,7 +37,7 @@ class QITreeWidget;
 class UISelectorActionItem;
 class UISelectorItem;
 class UISettingsPage;
-class UIToolBar;
+class QIToolBar;
 
 
 /** QObject subclass providing settings dialog
@@ -275,7 +275,7 @@ private:
     UISelectorActionItem *findActionItemByTabWidget(QTabWidget *pTabWidget, int iIndex) const;
 
     /** Holds the toolbar instance. */
-    UIToolBar *m_pToolBar;
+    QIToolBar *m_pToolBar;
     /** Holds the action group instance. */
     QActionGroup *m_pActionGroup;
 };

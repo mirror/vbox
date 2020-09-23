@@ -38,7 +38,7 @@
 #include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UIMediumItem.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -372,7 +372,7 @@ void UIMediumSelector::prepareWidgets()
 
     m_pMainMenu = menuBar()->addMenu(tr("Medium"));
 
-    m_pToolBar = new UIToolBar;
+    m_pToolBar = new QIToolBar;
     if (m_pToolBar)
     {
         /* Configure toolbar: */

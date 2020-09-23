@@ -29,7 +29,7 @@
 #include "UIIconPool.h"
 #include "UIMachineSettingsSF.h"
 #include "UIMachineSettingsSFDetails.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "VBoxUtils.h"
 
 
@@ -753,7 +753,7 @@ void UIMachineSettingsSF::prepareTreeWidget()
 void UIMachineSettingsSF::prepareToolbar()
 {
     /* Prepare shared folders toolbar: */
-    m_pToolbar = new UIToolBar(this);
+    m_pToolbar = new QIToolBar(this);
     if (m_pToolbar)
     {
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);

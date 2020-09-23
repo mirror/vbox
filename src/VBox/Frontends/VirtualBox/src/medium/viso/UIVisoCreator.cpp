@@ -26,7 +26,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UIVisoHostBrowser.h"
 #include "UIVisoCreator.h"
 #include "UIVisoConfigurationPanel.h"
@@ -269,7 +269,7 @@ void UIVisoCreator::prepareWidgets()
     if (m_pActionOptions)
         m_pMainMenu->addAction(m_pActionOptions);
 
-    m_pToolBar = new UIToolBar;
+    m_pToolBar = new QIToolBar;
     if (m_pToolBar)
     {
         /* Configure toolbar: */
@@ -544,7 +544,7 @@ void UIVisoCreator::manageEscapeShortCut()
 
 void UIVisoCreator::prepareVerticalToolBar()
 {
-    m_pVerticalToolBar = new UIToolBar;
+    m_pVerticalToolBar = new QIToolBar;
     if (!m_pVerticalToolBar)
         return;
 

@@ -37,7 +37,7 @@
 #include "UIIconPool.h"
 #include "UIMachineWindow.h"
 #include "UIMenuBarEditorWindow.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 /* Forward declarations: */
 class QAccessibleInterface;
@@ -989,7 +989,7 @@ void UIMenuBarEditorWidget::prepare()
         m_pMainLayout->setContentsMargins(iLeft, iTop, iRight, iBottom);
         m_pMainLayout->setSpacing(0);
         /* Create tool-bar: */
-        m_pToolBar = new UIToolBar;
+        m_pToolBar = new QIToolBar;
         AssertPtrReturnVoid(m_pToolBar);
         {
             /* Prepare menus: */

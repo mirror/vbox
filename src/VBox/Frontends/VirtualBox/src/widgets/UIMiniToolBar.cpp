@@ -44,9 +44,9 @@
 #endif
 
 
-/** UIToolBar reimplementation
+/** QIToolBar reimplementation
   * providing UIMiniToolBar with mini-toolbar. */
-class UIMiniToolBarPrivate : public UIToolBar
+class UIMiniToolBarPrivate : public QIToolBar
 {
     Q_OBJECT;
 

@@ -42,7 +42,7 @@ class QIToolButton;
 class QITreeView;
 class StorageModel;
 class UIMediumIDHolder;
-class UIToolBar;
+class QIToolBar;
 struct UIDataSettingsMachineStorage;
 struct UIDataSettingsMachineStorageController;
 struct UIDataSettingsMachineStorageAttachment;
@@ -312,7 +312,7 @@ private:
         /** Holds the toolbar layout instance. */
         QHBoxLayout                            *m_pLayoutToolbar;
         /** Holds the toolbar instance. */
-        UIToolBar                              *m_pToolbar;
+        QIToolBar                              *m_pToolbar;
         /** Holds the 'Add Controller' action instance. */
         QAction                                *m_pActionAddController;
         /** Holds the 'Remove Controller' action instance. */

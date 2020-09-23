@@ -37,7 +37,7 @@ class QPushButton;
 class QIDialogButtonBox;
 class QIManagerDialog;
 #ifdef VBOX_WS_MAC
-class UIToolBar;
+class QIToolBar;
 #endif
 
 
@@ -132,7 +132,7 @@ protected:
         void setWidgetMenu(QMenu *pWidgetMenu) { m_pWidgetMenu = pWidgetMenu; }
 #ifdef VBOX_WS_MAC
         /** Defines the @a pWidgetToolbar instance. */
-        void setWidgetToolbar(UIToolBar *pWidgetToolbar) { m_pWidgetToolbar = pWidgetToolbar; }
+        void setWidgetToolbar(QIToolBar *pWidgetToolbar) { m_pWidgetToolbar = pWidgetToolbar; }
 #endif
 
         /** Returns the widget. */
@@ -192,7 +192,7 @@ private:
         QMenu     *m_pWidgetMenu;
 #ifdef VBOX_WS_MAC
         /** Holds the widget toolbar instance. */
-        UIToolBar *m_pWidgetToolbar;
+        QIToolBar *m_pWidgetToolbar;
 #endif
     /** @} */
 

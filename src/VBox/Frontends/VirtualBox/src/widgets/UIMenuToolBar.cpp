@@ -26,15 +26,15 @@
 
 /* GUI includes: */
 #include "UIMenuToolBar.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
 
 
-/** UIToolBar extension
+/** QIToolBar extension
   * holding single drop-down menu of actions. */
-class UIMenuToolBarPrivate : public UIToolBar
+class UIMenuToolBarPrivate : public QIToolBar
 {
     Q_OBJECT;
 
@@ -89,7 +89,7 @@ private:
 *********************************************************************************************************************************/
 
 UIMenuToolBarPrivate::UIMenuToolBarPrivate(QWidget *pParent /* = 0 */)
-    : UIToolBar(pParent)
+    : QIToolBar(pParent)
     , m_fPolished(false)
     , m_pMarginLeft(0)
     , m_pMarginRight(0)
@@ -208,7 +208,7 @@ void UIMenuToolBarPrivate::setMenuAction(QAction *pAction)
 void UIMenuToolBarPrivate::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
-    UIToolBar::showEvent(pEvent);
+    QIToolBar::showEvent(pEvent);
 
     /* Make sure we should polish dialog: */
     if (m_fPolished)
@@ -230,7 +230,7 @@ void UIMenuToolBarPrivate::polishEvent(QShowEvent * /* pEvent */)
 void UIMenuToolBarPrivate::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
-    UIToolBar::resizeEvent(pEvent);
+    QIToolBar::resizeEvent(pEvent);
 
     /* Rebuild shape: */
     rebuildShape();
@@ -257,7 +257,7 @@ void UIMenuToolBarPrivate::paintEvent(QPaintEvent * /* pEvent */)
 
 
 /*********************************************************************************************************************************
-*   Class UIToolBarMenu implementation.                                                                                          *
+*   Class UIMenuToolBar implementation.                                                                                          *
 *********************************************************************************************************************************/
 
 UIMenuToolBar::UIMenuToolBar(QWidget *pParent /* = 0 */)

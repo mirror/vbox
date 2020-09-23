@@ -40,7 +40,7 @@
 #include "UIFileManager.h"
 #include "UIIconPool.h"
 #include "UIPathOperations.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 /* COM includes: */
 #include "CFsObjInfo.h"
@@ -734,7 +734,7 @@ void UIFileManagerTable::prepareObjects()
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(m_pMainLayout);
 
-    m_pToolBar = new UIToolBar;
+    m_pToolBar = new QIToolBar;
     if (m_pToolBar)
         m_pMainLayout->addWidget(m_pToolBar, 0, 0, 1, 7);
 

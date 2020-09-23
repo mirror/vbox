@@ -27,7 +27,7 @@
 #include "UICustomFileSystemModel.h"
 #include "UIFileManagerHostTable.h"
 #include "UIPathOperations.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 
 /*********************************************************************************************************************************

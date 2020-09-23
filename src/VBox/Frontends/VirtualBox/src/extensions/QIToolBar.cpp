@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIToolBar class implementation.
+ * VBox Qt GUI - QIToolBar class implementation.
  */
 
 /*
@@ -24,13 +24,13 @@
 #endif
 
 /* GUI includes: */
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils.h"
 #endif
 
 
-UIToolBar::UIToolBar(QWidget *pParent /* = 0 */)
+QIToolBar::QIToolBar(QWidget *pParent /* = 0 */)
     : QToolBar(pParent)
     , m_pMainWindow(qobject_cast<QMainWindow*>(pParent))
 #ifdef VBOX_WS_MAC
@@ -41,7 +41,7 @@ UIToolBar::UIToolBar(QWidget *pParent /* = 0 */)
     prepare();
 }
 
-void UIToolBar::setUseTextLabels(bool fEnable)
+void QIToolBar::setUseTextLabels(bool fEnable)
 {
     /* Determine tool-button style on the basis of passed flag: */
     Qt::ToolButtonStyle tbs = fEnable ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly;
@@ -54,25 +54,25 @@ void UIToolBar::setUseTextLabels(bool fEnable)
 }
 
 #ifdef VBOX_WS_MAC
-void UIToolBar::enableMacToolbar()
+void QIToolBar::enableMacToolbar()
 {
     /* Depending on parent, enable unified title/tool-bar: */
     if (m_pMainWindow)
         m_pMainWindow->setUnifiedTitleAndToolBarOnMac(true);
 }
 
-void UIToolBar::emulateMacToolbar()
+void QIToolBar::emulateMacToolbar()
 {
     /* Remember request, to be used in paintEvent: */
     m_fEmulateUnifiedToolbar = true;
 }
 
-void UIToolBar::setShowToolBarButton(bool fShow)
+void QIToolBar::setShowToolBarButton(bool fShow)
 {
     ::darwinSetShowsToolbarButton(this, fShow);
 }
 
-void UIToolBar::updateLayout()
+void QIToolBar::updateLayout()
 {
     // WORKAROUND:
     // There is a bug in Qt Cocoa which result in showing a "more arrow" when
@@ -88,7 +88,7 @@ void UIToolBar::updateLayout()
 }
 #endif /* VBOX_WS_MAC */
 
-void UIToolBar::resizeEvent(QResizeEvent *pEvent)
+void QIToolBar::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
     QToolBar::resizeEvent(pEvent);
@@ -98,7 +98,7 @@ void UIToolBar::resizeEvent(QResizeEvent *pEvent)
 }
 
 #ifdef VBOX_WS_MAC
-void UIToolBar::paintEvent(QPaintEvent *pEvent)
+void QIToolBar::paintEvent(QPaintEvent *pEvent)
 {
     /* Call to base-class: */
     QToolBar::paintEvent(pEvent);
@@ -122,7 +122,7 @@ void UIToolBar::paintEvent(QPaintEvent *pEvent)
 }
 #endif /* VBOX_WS_MAC */
 
-void UIToolBar::prepare()
+void QIToolBar::prepare()
 {
     /* Configure tool-bar: */
     setFloatable(false);

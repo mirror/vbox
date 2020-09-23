@@ -30,7 +30,7 @@ class QILabelSeparator;
 class QITreeWidget;
 class QTreeWidgetItem;
 class UIItemNetworkNAT;
-class UIToolBar;
+class QIToolBar;
 struct UIDataSettingsGlobalNetwork;
 struct UIDataSettingsGlobalNetworkNAT;
 typedef UISettingsCache<UIDataPortForwardingRule> UISettingsCachePortForwardingRule;
@@ -138,7 +138,7 @@ private:
         /** Holds the NAT networt tree-widget instance. */
         QITreeWidget     *m_pTreeWidgetNATNetwork;
         /** Holds the NAT networt toolbar instance. */
-        UIToolBar        *m_pToolbarNATNetwork;
+        QIToolBar        *m_pToolbarNATNetwork;
         /** Holds the 'add NAT network' action instance. */
         QAction          *m_pActionAdd;
         /** Holds the 'remove NAT network' action instance. */

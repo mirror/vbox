@@ -28,7 +28,7 @@
 class UIMenuToolBarPrivate;
 
 
-/** QWidget wrapper for UIToolBar extension
+/** QWidget wrapper for QIToolBar extension
   * holding single drop-down menu of actions. */
 class UIMenuToolBar : public QWidget
 {

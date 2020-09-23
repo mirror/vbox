@@ -43,7 +43,7 @@
 #include "UIVMLogViewerFilterPanel.h"
 #include "UIVMLogViewerSearchPanel.h"
 #include "UIVMLogViewerOptionsPanel.h"
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 #include "UICommon.h"
 
 /* COM includes: */
@@ -570,7 +570,7 @@ void UIVMLogViewerWidget::prepareWidgets()
 void UIVMLogViewerWidget::prepareToolBar()
 {
     /* Create toolbar: */
-    m_pToolBar = new UIToolBar(parentWidget());
+    m_pToolBar = new QIToolBar(parentWidget());
     if (m_pToolBar)
     {
         /* Configure toolbar: */

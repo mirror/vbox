@@ -33,7 +33,7 @@
 
 /* Forward declarations: */
 class QLabel;
-class UIToolBar;
+class QIToolBar;
 class UIBootListWidget;
 class CMachine;
 
@@ -129,7 +129,7 @@ private:
     /** Holds the table instance. */
     UIBootListWidget *m_pTable;
     /** Holds the toolbar instance. */
-    UIToolBar        *m_pToolbar;
+    QIToolBar        *m_pToolbar;
     /** Holds the move up action. */
     QAction          *m_pMoveUp;
     /** Holds the move down action. */

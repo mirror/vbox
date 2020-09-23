@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIToolBar.h"
+#include "QIToolBar.h"
 
 /* Forward declarations: */
 class QMenu;

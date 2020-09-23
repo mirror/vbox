@@ -43,7 +43,7 @@ class QWidget;
 class QIToolButton;
 class UIAction;
 class UIActionPool;
-class UIToolBar;
+class QIToolBar;
 class UIMachineWindow;
 
 
@@ -223,7 +223,7 @@ private:
         /** Holds the main-layout instance. */
         QHBoxLayout             *m_pMainLayout;
         /** Holds the tool-bar instance. */
-        UIToolBar               *m_pToolBar;
+        QIToolBar               *m_pToolBar;
         /** Holds the close-button instance. */
         QIToolButton            *m_pButtonClose;
 #ifndef VBOX_WS_MAC
