@@ -1112,6 +1112,8 @@ typedef const KDPACKETMANIPULATE64 *PCKDPACKETMANIPULATE64;
 #define KD_PACKET_MANIPULATE_REQ_RESTORE_BKPT_EX            UINT32_C(0x00003148)
 /** Cause a bugcheck request. */
 #define KD_PACKET_MANIPULATE_REQ_CAUSE_BUGCHECK             UINT32_C(0x00003149)
+/** Cause a bugcheck request. */
+#define KD_PACKET_MANIPULATE_REQ_SWITCH_PROCESSOR           UINT32_C(0x00003150)
 /** @todo */
 /** Search memory for a pattern request. */
 #define KD_PACKET_MANIPULATE_REQ_SEARCH_MEMORY              UINT32_C(0x00003156)
@@ -1311,6 +1313,7 @@ static const char *dbgcKdPktDumpManipulateReqToStr(uint32_t idReq)
         case KD_PACKET_MANIPULATE_REQ_GET_CONTEXT_EX:           return "GetContextEx";
         case KD_PACKET_MANIPULATE_REQ_QUERY_MEMORY:             return "QueryMemory";
         case KD_PACKET_MANIPULATE_REQ_CAUSE_BUGCHECK:           return "CauseBugCheck";
+        case KD_PACKET_MANIPULATE_REQ_SWITCH_PROCESSOR:         return "SwitchProcessor";
         case KD_PACKET_MANIPULATE_REQ_SEARCH_MEMORY:            return "SearchMemory";
         default:                                                break;
     }
@@ -1462,6 +1465,7 @@ static void dbgcKdPktDumpManipulate(PRTSGBUF pSgBuf)
                     Log3(("        Payload to small, expected %u, got %zu\n", sizeof(SearchMemory), cbCopied));
                 break;
             }
+            case KD_PACKET_MANIPULATE_REQ_SWITCH_PROCESSOR:
             default:
                 break;
         }
@@ -3403,6 +3407,39 @@ static int dbgcKdCtxPktManipulate64CauseBugCheck(PKDCTX pThis, PCKDPACKETMANIPUL
 
 
 /**
+ * Processes a switch processor request.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pPktManip           The manipulate packet request.
+ */
+static int dbgcKdCtxPktManipulate64SwitchProcessor(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
+{
+    int rc = VINF_SUCCESS;
+
+    if (RT_UNLIKELY(pPktManip->Hdr.idCpu >= DBGFR3CpuGetCount(pThis->Dbgc.pUVM)))
+    {
+        KDPACKETMANIPULATEHDR RespHdr;
+        RT_ZERO(RespHdr);
+
+        RespHdr.idReq       = KD_PACKET_MANIPULATE_REQ_SWITCH_PROCESSOR;
+        RespHdr.u16CpuLvl   = pPktManip->Hdr.u16CpuLvl;
+        RespHdr.idCpu       = pPktManip->Hdr.idCpu;
+        RespHdr.u32NtStatus = NTSTATUS_UNSUCCESSFUL; /** @todo Test this path. */
+        rc = dbgcKdCtxPktSend(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
+                              &RespHdr, sizeof(RespHdr), true /*fAck*/);
+    }
+    else
+    {
+        pThis->Dbgc.idCpu = pPktManip->Hdr.idCpu;
+        rc = dbgcKdCtxStateChangeSend(pThis, DBGFEVENT_HALT_DONE);
+    }
+
+    return rc;
+}
+
+
+/**
  * Processes a manipulate packet.
  *
  * @returns VBox status code.
@@ -3488,6 +3525,11 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
         case KD_PACKET_MANIPULATE_REQ_CAUSE_BUGCHECK:
         {
             rc = dbgcKdCtxPktManipulate64CauseBugCheck(pThis, pPktManip);
+            break;
+        }
+        case KD_PACKET_MANIPULATE_REQ_SWITCH_PROCESSOR:
+        {
+            rc = dbgcKdCtxPktManipulate64SwitchProcessor(pThis, pPktManip);
             break;
         }
         case KD_PACKET_MANIPULATE_REQ_REBOOT:
