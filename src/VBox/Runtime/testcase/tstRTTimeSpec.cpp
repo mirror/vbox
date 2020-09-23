@@ -706,6 +706,13 @@ int main()
     RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, "Thu, 00006 Sep 2018 04:09:08 GMT"));
     RTTESTI_CHECK_FROM(RTTimeFromRfc2822(&T2, " 00006 Sep 2018 04:09:08 GMT "));
 
+    /*
+     * Check that RTTimeZoneGetCurrent works (not really timespec, but whatever).
+     */
+    RTTestSub(hTest, "RTTimeZoneGetCurrent");
+    szValue[0] = '\0';
+    RTTESTI_CHECK_RC(RTTimeZoneGetCurrent(szValue, sizeof(szValue)), VINF_SUCCESS);
+    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "TimeZone: %s", szValue);
 
     /*
      * Summary

@@ -41,18 +41,22 @@
 #include <iprt/symlink.h>
 #include <iprt/stream.h>
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
- #define TZDIR                   "/usr/share/zoneinfo"
- #define TZ_MAGIC                "TZif"
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+# include <tzfile.h>
 #else
- #include <tzfile.h>
+# define TZDIR                   "/usr/share/zoneinfo"
+# define TZ_MAGIC                "TZif"
 #endif
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define PATH_LOCALTIME           "/etc/localtime"
 #if defined(RT_OS_FREEBSD)
- #define PATH_TIMEZONE           "/var/db/zoneinfo"
+# define PATH_TIMEZONE           "/var/db/zoneinfo"
 #else
- #define PATH_TIMEZONE           "/etc/timezone"
+# define PATH_TIMEZONE           "/etc/timezone"
 #endif
 #define PATH_SYSCONFIG_CLOCK     "/etc/sysconfig/clock"
 
@@ -68,38 +72,30 @@
  */
 static int rtIsValidTimeZoneFile(const char *pszTimeZone)
 {
-    int rc;
-
     if (pszTimeZone == NULL || *pszTimeZone == '\0' || *pszTimeZone == '/')
         return VERR_INVALID_PARAMETER;
 
-    /* POSIX allows $TZ to begin with a colon (:) so we allow for that here */
-    if (*pszTimeZone == ':')
-        pszTimeZone++;
-
     /* construct full pathname of the time zone file */
     char szTZPath[RTPATH_MAX];
-    ssize_t cchStr = RTStrPrintf2(szTZPath, sizeof(szTZPath), "%s/%s", TZDIR, pszTimeZone);
-    if (cchStr <= 0)
-        return VERR_BUFFER_OVERFLOW;
-
-    /* open the time zone file and check that it begins with the correct magic number */
-    RTFILE hFile = NIL_RTFILE;
-    rc = RTFileOpen(&hFile, szTZPath, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    int rc = RTPathJoin(szTZPath, sizeof(szTZPath), TZDIR, pszTimeZone);
     if (RT_SUCCESS(rc))
     {
-        char achTZBuf[sizeof(TZ_MAGIC)];
-
-        rc = RTFileRead(hFile, achTZBuf, sizeof(achTZBuf), NULL);
+        /* open the time zone file and check that it begins with the correct magic number */
+        RTFILE hFile = NIL_RTFILE;
+        rc = RTFileOpen(&hFile, szTZPath, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
         if (RT_SUCCESS(rc))
         {
-            if (RTStrNCmp(achTZBuf, RT_STR_TUPLE(TZ_MAGIC)))
+            char achTZBuf[sizeof(TZ_MAGIC)];
+            rc = RTFileRead(hFile, achTZBuf, sizeof(achTZBuf), NULL);
+            RTFileClose(hFile);
+            if (RT_SUCCESS(rc))
             {
-                (void) RTFileClose(hFile);
-                return VERR_INVALID_MAGIC;
+                if (memcmp(achTZBuf, RT_STR_TUPLE(TZ_MAGIC)) == 0)
+                    rc = VINF_SUCCESS;
+                else
+                    rc = VERR_INVALID_MAGIC;
             }
         }
-        (void) RTFileClose(hFile);
     }
 
     return rc;
@@ -125,6 +121,10 @@ RTDECL(int) RTTimeZoneGetCurrent(char *pszName, size_t cbName)
          * the validation check here so that if it is invalid then we fall back
          * to the other mechanisms to return the system's current time zone.
          */
+        if (*pszName == ':') /* POSIX allows $TZ to begin with a colon (:) so we allow for that here */
+            memmove(pszName, pszName + 1, strlen(pszName));
+        /** @todo this isn't perfect for absolute paths... Should probably try treat
+         *        it like /etc/localtime. */
         rc = rtIsValidTimeZoneFile(pszName);
         if (RT_SUCCESS(rc))
             return rc;
@@ -143,32 +143,30 @@ RTDECL(int) RTTimeZoneGetCurrent(char *pszName, size_t cbName)
      * looking for a match we instead fallback to other popular mechanisms of
      * specifying the system-wide time zone for the sake of simplicity.
      */
+    char szBuf[RTPATH_MAX];
     const char *pszPath = PATH_LOCALTIME;
     if (RTSymlinkExists(pszPath))
     {
-        char szLinkPath[RTPATH_MAX];
-
-        rc = RTSymlinkRead(pszPath, szLinkPath, sizeof(szLinkPath), 0);
+        /* the contents of the symink may contain '..' or other links */
+        char szLinkPathReal[RTPATH_MAX];
+        rc = RTPathReal(pszPath, szLinkPathReal, sizeof(szLinkPathReal));
         if (RT_SUCCESS(rc))
         {
-            char szLinkPathReal[RTPATH_MAX];
-
-            /* the contents of the symink may contain '..' or other links */
-            rc = RTPathReal(szLinkPath, szLinkPathReal, sizeof(szLinkPathReal));
+            rc = RTPathReal(TZDIR, szBuf, sizeof(szBuf));
+            AssertRC(rc);
             if (RT_SUCCESS(rc))
             {
-                char szTZDirPathReal[RTPATH_MAX];
-
-                rc = RTPathReal(TZDIR, szTZDirPathReal, sizeof(szTZDirPathReal));
-                if (RT_SUCCESS(rc)) {
+                Assert(RTPathStartsWith(szLinkPathReal, szBuf));
+                if (RTPathStartsWith(szLinkPathReal, szBuf))
+                {
                     /* <tzfile.h>:TZDIR doesn't include a trailing slash */
-                    rc = rtIsValidTimeZoneFile(szLinkPathReal + strlen(szTZDirPathReal) + 1);
+                    const char *pszTimeZone = &szLinkPathReal[strlen(szBuf) + 1];
+                    rc = rtIsValidTimeZoneFile(pszTimeZone);
                     if (RT_SUCCESS(rc))
-                        return RTStrCopy(pszName, cbName, szLinkPathReal + strlen(szTZDirPathReal) + 1);
+                        return RTStrCopy(pszName, cbName, pszTimeZone);
                 }
             }
         }
-        return rc;
     }
 
     /*
@@ -184,27 +182,23 @@ RTDECL(int) RTTimeZoneGetCurrent(char *pszName, size_t cbName)
         rc = RTFileOpen(&hFile, PATH_TIMEZONE, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
         if (RT_SUCCESS(rc))
         {
-            char achBuf[_1K];
             size_t cbRead = 0;
-
-            rc = RTFileRead(hFile, achBuf, sizeof(achBuf), &cbRead);
+            rc = RTFileRead(hFile, szBuf, sizeof(szBuf), &cbRead);
+            RTFileClose(hFile);
             if (RT_SUCCESS(rc) && cbRead > 0)
             {
-                size_t offNewLine = RTStrOffCharOrTerm(achBuf, '\n');
-                /* in case no newline or terminating NULL is found */
-                offNewLine = RT_MIN(offNewLine, sizeof(achBuf) - 1);
-                achBuf[offNewLine] = '\0';
+                /* Get the first line and strip it. */
+                szBuf[RT_MIN(sizeof(szBuf) - 1, cbRead)] = '\0';
+                size_t const offNewLine = RTStrOffCharOrTerm(szBuf, '\n');
+                szBuf[offNewLine] = '\0';
+                const char *pszTimeZone = RTStrStrip(szBuf);
 
-                rc = rtIsValidTimeZoneFile(achBuf);
+                rc = rtIsValidTimeZoneFile(pszTimeZone);
+                /** @todo UTF-8 encoding. */
                 if (RT_SUCCESS(rc))
-                {
-                    (void) RTFileClose(hFile);
-                    return RTStrCopy(pszName, cbName, achBuf);
-                }
+                    return RTStrCopy(pszName, cbName, pszTimeZone);
             }
-            (void) RTFileClose(hFile);
         }
-        return rc;
     }
 
     /*
@@ -216,27 +210,26 @@ RTDECL(int) RTTimeZoneGetCurrent(char *pszName, size_t cbName)
     if (RTFileExists(pszPath))
     {
         PRTSTREAM pStrm;
-
         rc = RTStrmOpen(pszPath, "r", &pStrm);
         if (RT_SUCCESS(rc))
         {
-            char szLine[_1K];
-
-            while (RT_SUCCESS(rc = RTStrmGetLine(pStrm, szLine, sizeof(szLine))))
+            while (RT_SUCCESS(rc = RTStrmGetLine(pStrm, szBuf, sizeof(szBuf))))
             {
-                if (RTStrNCmp(szLine, RT_STR_TUPLE("ZONE=")))
-                    continue;
-
-                rc = rtIsValidTimeZoneFile(szLine + strlen("ZONE="));
-                if (RT_SUCCESS(rc))
+                static char const s_szVarEq[] = "ZONE=";
+                if (memcmp(szBuf, RT_STR_TUPLE(s_szVarEq)) == 0)
                 {
-                    RTStrmClose(pStrm);
-                    return RTStrCopy(pszName, cbName, szLine + strlen("ZONE="));
+                    const char *pszTimeZone = &szBuf[sizeof(s_szVarEq) - 1];
+                    rc = rtIsValidTimeZoneFile(pszTimeZone);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTStrmClose(pStrm);
+                        /** @todo UTF-8 encoding. */
+                        return RTStrCopy(pszName, cbName, pszTimeZone);
+                    }
                 }
             }
             RTStrmClose(pStrm);
         }
-        return rc;
     }
 
     return rc;
