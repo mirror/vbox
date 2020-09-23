@@ -72,6 +72,10 @@ public:
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
+    /** Check for changes committed.
+      * @returns Whether changes were resolved (accepted or discarded) or still a problem otherwise. */
+    bool makeSureChangesResolved();
+
 protected:
 
     /** @name Event-handling stuff.
@@ -271,6 +275,12 @@ private:
       * @{ */
         /** Returns the widget. */
         virtual UICloudProfileManagerWidget *widget() /* override */;
+    /** @} */
+
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles close @a pEvent. */
+        virtual void closeEvent(QCloseEvent *pEvent) /* override */;
     /** @} */
 
     /** @name Action related variables.

@@ -23,6 +23,7 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "QIInputDialog.h"
+#include "QIMessageBox.h"
 #include "QITreeWidget.h"
 #include "UICommon.h"
 #include "UIActionPoolManager.h"
@@ -183,6 +184,44 @@ void UICloudProfileManagerWidget::retranslateUi()
     m_pTreeWidget->setHeaderLabels(   QStringList()
                                    << tr("Source")
                                    << tr("List VMs"));
+}
+
+bool UICloudProfileManagerWidget::makeSureChangesResolved()
+{
+    /* Check if currently selected item is of profile type: */
+    QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
+    UIItemCloudProfile *pProfileItem = qobject_cast<UIItemCloudProfile*>(pItem);
+    if (!pProfileItem)
+        return true;
+
+    /* Get item data: */
+    UIDataCloudProfile oldData = *pProfileItem;
+    UIDataCloudProfile newData = m_pDetailsWidget->data();
+
+    /* Check if data has changed: */
+    if (newData == oldData)
+        return true;
+
+    /* Ask whether user wants to Accept/Reset changes or still not sure: */
+    const int iResult = msgCenter().confirmCloudProfileManagerClosing(window());
+    switch (iResult)
+    {
+        case AlertButton_Choice1:
+        {
+            sltApplyCloudProfileDetailsChanges();
+            return true;
+        }
+        case AlertButton_Choice2:
+        {
+            sltResetCloudProfileDetailsChanges();
+            return true;
+        }
+        default:
+            break;
+    }
+
+    /* False by default: */
+    return false;
 }
 
 void UICloudProfileManagerWidget::sltResetCloudProfileDetailsChanges()
@@ -1069,6 +1108,21 @@ void UICloudProfileManager::finalize()
 UICloudProfileManagerWidget *UICloudProfileManager::widget()
 {
     return qobject_cast<UICloudProfileManagerWidget*>(QIManagerDialog::widget());
+}
+
+void UICloudProfileManager::closeEvent(QCloseEvent *pEvent)
+{
+    /* Make sure all changes resolved: */
+    if (widget()->makeSureChangesResolved())
+    {
+        /* Call to base class: */
+        QIWithRetranslateUI<QIManagerDialog>::closeEvent(pEvent);
+    }
+    else
+    {
+        /* Just ignore the event otherwise: */
+        pEvent->ignore();
+    }
 }
 
 

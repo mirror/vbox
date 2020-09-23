@@ -415,6 +415,7 @@ public:
     void cannotAssignFormValue(const CChoiceFormValue &comValue, QWidget *pParent = 0) const;
     void cannotAssignFormValue(const CRangedIntegerFormValue &comValue, QWidget *pParent = 0) const;
     void cannotAssignFormValue(const CProgress &comProgress, QWidget *pParent = 0) const;
+    int confirmCloudProfileManagerClosing(QWidget *pParent = 0) const;
 
     /* API: Cloud Console Manager warnings: */
     bool confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent = 0) const;

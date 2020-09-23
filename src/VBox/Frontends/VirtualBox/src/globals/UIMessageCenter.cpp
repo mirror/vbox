@@ -2021,6 +2021,21 @@ void UIMessageCenter::cannotAssignFormValue(const CProgress &comProgress, QWidge
           UIErrorString::formatErrorInfo(comProgress));
 }
 
+int UIMessageCenter::confirmCloudProfileManagerClosing(QWidget *pParent /* = 0 */) const
+{
+    return question(pParent, MessageType_Question,
+                    tr("<p>Do you want to close the Cloud Profile Manager?</p>"
+                       "<p>There seems to be an unsaved changes. "
+                       "You can choose to <b>Accept</b> or <b>Reject</b> them automatically "
+                       "or cancel to keep the dialog opened.</p>"),
+                    0 /* auto-confirm id */,
+                    AlertButton_Choice1,
+                    AlertButton_Choice2,
+                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+                    tr("Accept", "cloud profile manager changes"),
+                    tr("Reject", "cloud profile manager changes"));
+}
+
 bool UIMessageCenter::confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
 {
     return questionBinary(pParent, MessageType_Question,
