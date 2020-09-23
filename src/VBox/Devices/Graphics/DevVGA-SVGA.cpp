@@ -642,7 +642,6 @@ void vmsvgaR3ResetScreens(PVGASTATE pThis, PVGASTATECC pThisCC)
 #define SVGA_CASE_ID2STR(idx) case idx: return #idx
 
 #if defined(LOG_ENABLED) || defined(VBOX_STRICT)
-
 /**
  * Index register string name lookup
  *
@@ -728,8 +727,9 @@ static const char *vmsvgaIndexToString(PVGASTATE pThis, uint32_t idxReg)
             return "UNKNOWN";
     }
 }
+#endif /* LOG_ENABLED || VBOX_STRICT */
 
-# ifdef IN_RING3
+#if defined(IN_RING3) && defined(LOG_ENABLED)
 /**
  * FIFO command name lookup
  *
@@ -958,9 +958,8 @@ static const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
         default: return "UNKNOWN";
     }
 }
-# endif /* IN_RING3 */
+#endif /* IN_RING3 && LOG_ENABLED */
 
-#endif /* LOG_ENABLED || VBOX_STRICT*/
 #ifdef IN_RING3
 
 /**
