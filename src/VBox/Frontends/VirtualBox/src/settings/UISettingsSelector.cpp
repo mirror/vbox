@@ -32,8 +32,8 @@
 #include "UIToolBar.h"
 
 
-/** QAccessibleWidget extension used as an accessibility interface for UIToolBar buttons. */
-class UIAccessibilityInterfaceForUIToolBarButton : public QAccessibleWidget
+/** QAccessibleWidget extension used as an accessibility interface for UISettingsSelectorToolBar buttons. */
+class UIAccessibilityInterfaceForUISettingsSelectorToolBarButton : public QAccessibleWidget
 {
 public:
 
@@ -44,14 +44,14 @@ public:
         if (   pObject
             && strClassname == QLatin1String("QToolButton")
             && pObject->property("Belongs to") == "UISettingsSelectorToolBar")
-            return new UIAccessibilityInterfaceForUIToolBarButton(qobject_cast<QWidget*>(pObject));
+            return new UIAccessibilityInterfaceForUISettingsSelectorToolBarButton(qobject_cast<QWidget*>(pObject));
 
         /* Null by default: */
         return 0;
     }
 
     /** Constructs an accessibility interface passing @a pWidget to the base-class. */
-    UIAccessibilityInterfaceForUIToolBarButton(QWidget *pWidget)
+    UIAccessibilityInterfaceForUISettingsSelectorToolBarButton(QWidget *pWidget)
         : QAccessibleWidget(pWidget, QAccessible::Button)
     {}
 
@@ -499,7 +499,7 @@ UISettingsSelectorToolBar::UISettingsSelectorToolBar(QWidget *pParent /* = 0 */)
     , m_pActionGroup(0)
 {
     /* Install tool-bar button accessibility interface factory: */
-    QAccessible::installFactory(UIAccessibilityInterfaceForUIToolBarButton::pFactory);
+    QAccessible::installFactory(UIAccessibilityInterfaceForUISettingsSelectorToolBarButton::pFactory);
 
     /* Prepare the toolbar: */
     m_pToolBar = new UIToolBar(pParent);
