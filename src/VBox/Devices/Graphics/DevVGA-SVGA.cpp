@@ -3180,7 +3180,13 @@ static void vmsvgaR3InstallNewCursor(PVGASTATECC pThisCC, PVMSVGAR3STATE pSVGASt
           RT_UNTRUSTED_VALIDATED_FENCE(); \
      } else do {} while (0)
 
+#  define VMSVGA_3D_CMD_NOTIMPL() \
+     if (1) { \
+          AssertMsgFailed(("Not implemented %d %s\n", cmdId, vmsvgaR3FifoCmdToString(cmdId))); \
+     } else do {} while (0)
+
 /** SVGA_3D_CMD_* handler.
+ * This function parses the command and calls the corresponding command handler.
  *
  * @param   pThis       The shared VGA/VMSVGA state.
  * @param   pThisCC     The VGA/VMSVGA state for the current context.
@@ -3603,6 +3609,482 @@ static int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t c
         /* context id + surface id? */
         STAM_REL_COUNTER_INC(&pSvgaR3State->StatR3Cmd3dDeactivateSurface);
         break;
+
+    /*
+     *
+     * VPGU10: SVGA_CAP_GBOBJECTS+ commands.
+     *
+     */
+    case SVGA_3D_CMD_SCREEN_DMA:
+    {
+        SVGA3dCmdScreenDMA *pCmd = (SVGA3dCmdScreenDMA *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DEAD1:
+    case SVGA_3D_CMD_DEAD2:
+    {
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_LOGICOPS_BITBLT:
+    {
+        SVGA3dCmdLogicOpsBitBlt *pCmd = (SVGA3dCmdLogicOpsBitBlt *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_LOGICOPS_TRANSBLT:
+    {
+        SVGA3dCmdLogicOpsTransBlt *pCmd = (SVGA3dCmdLogicOpsTransBlt *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_LOGICOPS_STRETCHBLT:
+    {
+        SVGA3dCmdLogicOpsStretchBlt *pCmd = (SVGA3dCmdLogicOpsStretchBlt *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_LOGICOPS_COLORFILL:
+    {
+        SVGA3dCmdLogicOpsColorFill *pCmd = (SVGA3dCmdLogicOpsColorFill *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_LOGICOPS_ALPHABLEND:
+    {
+        SVGA3dCmdLogicOpsAlphaBlend *pCmd = (SVGA3dCmdLogicOpsAlphaBlend *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_LOGICOPS_CLEARTYPEBLEND:
+    {
+        SVGA3dCmdLogicOpsClearTypeBlend *pCmd = (SVGA3dCmdLogicOpsClearTypeBlend *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_SET_OTABLE_BASE:
+    {
+        SVGA3dCmdSetOTableBase *pCmd = (SVGA3dCmdSetOTableBase *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_READBACK_OTABLE:
+    {
+        SVGA3dCmdReadbackOTable *pCmd = (SVGA3dCmdReadbackOTable *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DEFINE_GB_MOB:
+    {
+        SVGA3dCmdDefineGBMob *pCmd = (SVGA3dCmdDefineGBMob *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DESTROY_GB_MOB:
+    {
+        SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DEAD3:
+    {
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_UPDATE_GB_MOB_MAPPING:
+    {
+        SVGA3dCmdUpdateGBMobMapping *pCmd = (SVGA3dCmdUpdateGBMobMapping *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DEFINE_GB_SURFACE:
+    {
+        SVGA3dCmdDefineGBSurface *pCmd = (SVGA3dCmdDefineGBSurface *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DESTROY_GB_SURFACE:
+    {
+        SVGA3dCmdDestroyGBSurface *pCmd = (SVGA3dCmdDestroyGBSurface *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_BIND_GB_SURFACE:
+    {
+        SVGA3dCmdBindGBSurface *pCmd = (SVGA3dCmdBindGBSurface *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_COND_BIND_GB_SURFACE:
+    {
+        SVGA3dCmdCondBindGBSurface *pCmd = (SVGA3dCmdCondBindGBSurface *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_UPDATE_GB_IMAGE:
+    {
+        SVGA3dCmdUpdateGBImage *pCmd = (SVGA3dCmdUpdateGBImage *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_UPDATE_GB_SURFACE:
+    {
+        SVGA3dCmdUpdateGBSurface *pCmd = (SVGA3dCmdUpdateGBSurface *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_READBACK_GB_IMAGE:
+    {
+        SVGA3dCmdReadbackGBImage *pCmd = (SVGA3dCmdReadbackGBImage *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_READBACK_GB_SURFACE:
+    {
+        SVGA3dCmdReadbackGBSurface *pCmd = (SVGA3dCmdReadbackGBSurface *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_INVALIDATE_GB_IMAGE:
+    {
+        SVGA3dCmdInvalidateGBImage *pCmd = (SVGA3dCmdInvalidateGBImage *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_INVALIDATE_GB_SURFACE:
+    {
+        SVGA3dCmdInvalidateGBSurface *pCmd = (SVGA3dCmdInvalidateGBSurface *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DEFINE_GB_CONTEXT:
+    {
+        SVGA3dCmdDefineGBContext *pCmd = (SVGA3dCmdDefineGBContext *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DESTROY_GB_CONTEXT:
+    {
+        SVGA3dCmdDestroyGBContext *pCmd = (SVGA3dCmdDestroyGBContext *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_BIND_GB_CONTEXT:
+    {
+        SVGA3dCmdBindGBContext *pCmd = (SVGA3dCmdBindGBContext *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_READBACK_GB_CONTEXT:
+    {
+        SVGA3dCmdReadbackGBContext *pCmd = (SVGA3dCmdReadbackGBContext *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_INVALIDATE_GB_CONTEXT:
+    {
+        SVGA3dCmdInvalidateGBContext *pCmd = (SVGA3dCmdInvalidateGBContext *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DEFINE_GB_SHADER:
+    {
+        SVGA3dCmdDefineGBShader *pCmd = (SVGA3dCmdDefineGBShader *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DESTROY_GB_SHADER:
+    {
+        SVGA3dCmdDestroyGBShader *pCmd = (SVGA3dCmdDestroyGBShader *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_BIND_GB_SHADER:
+    {
+        SVGA3dCmdBindGBShader *pCmd = (SVGA3dCmdBindGBShader *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_SET_OTABLE_BASE64:
+    {
+        SVGA3dCmdSetOTableBase64 *pCmd = (SVGA3dCmdSetOTableBase64 *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_BEGIN_GB_QUERY:
+    {
+        SVGA3dCmdBeginGBQuery *pCmd = (SVGA3dCmdBeginGBQuery *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_END_GB_QUERY:
+    {
+        SVGA3dCmdEndGBQuery *pCmd = (SVGA3dCmdEndGBQuery *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_WAIT_FOR_GB_QUERY:
+    {
+        SVGA3dCmdWaitForGBQuery *pCmd = (SVGA3dCmdWaitForGBQuery *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_NOP:
+    {
+        /* Apparently there is nothing to do. */
+        break;
+    }
+
+    case SVGA_3D_CMD_ENABLE_GART:
+    {
+        SVGA3dCmdEnableGart *pCmd = (SVGA3dCmdEnableGart *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DISABLE_GART:
+    {
+        /* No corresponding SVGA3dCmd structure. */
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_MAP_MOB_INTO_GART:
+    {
+        SVGA3dCmdMapMobIntoGart *pCmd = (SVGA3dCmdMapMobIntoGart *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_UNMAP_GART_RANGE:
+    {
+        SVGA3dCmdUnmapGartRange *pCmd = (SVGA3dCmdUnmapGartRange *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DEFINE_GB_SCREENTARGET:
+    {
+        SVGA3dCmdDefineGBScreenTarget *pCmd = (SVGA3dCmdDefineGBScreenTarget *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DESTROY_GB_SCREENTARGET:
+    {
+        SVGA3dCmdDestroyGBScreenTarget *pCmd = (SVGA3dCmdDestroyGBScreenTarget *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_BIND_GB_SCREENTARGET:
+    {
+        SVGA3dCmdBindGBScreenTarget *pCmd = (SVGA3dCmdBindGBScreenTarget *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_UPDATE_GB_SCREENTARGET:
+    {
+        SVGA3dCmdUpdateGBScreenTarget *pCmd = (SVGA3dCmdUpdateGBScreenTarget *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_READBACK_GB_IMAGE_PARTIAL:
+    {
+        SVGA3dCmdReadbackGBImagePartial *pCmd = (SVGA3dCmdReadbackGBImagePartial *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_INVALIDATE_GB_IMAGE_PARTIAL:
+    {
+        SVGA3dCmdInvalidateGBImagePartial *pCmd = (SVGA3dCmdInvalidateGBImagePartial *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_SET_GB_SHADERCONSTS_INLINE:
+    {
+        SVGA3dCmdSetGBShaderConstInline *pCmd = (SVGA3dCmdSetGBShaderConstInline *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_GB_SCREEN_DMA:
+    {
+        SVGA3dCmdGBScreenDMA *pCmd = (SVGA3dCmdGBScreenDMA *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_BIND_GB_SURFACE_WITH_PITCH:
+    {
+        SVGA3dCmdBindGBSurfaceWithPitch *pCmd = (SVGA3dCmdBindGBSurfaceWithPitch *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_GB_MOB_FENCE:
+    {
+        SVGA3dCmdGBMobFence *pCmd = (SVGA3dCmdGBMobFence *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DEFINE_GB_SURFACE_V2:
+    {
+        /// @todo SVGA3dCmdDefineGBSurface_v2 is not defined in Mesa 17 header. Mesa 20 has it.
+        //SVGA3dCmdDefineGBSurface_v2 *pCmd = (SVGA3dCmdDefineGBSurface_v2 *)pvCmd;
+        //VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DEFINE_GB_MOB64:
+    {
+        SVGA3dCmdDefineGBMob64 *pCmd = (SVGA3dCmdDefineGBMob64 *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_REDEFINE_GB_MOB64:
+    {
+        SVGA3dCmdRedefineGBMob64 *pCmd = (SVGA3dCmdRedefineGBMob64 *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_NOP_ERROR:
+    {
+        /* Apparently there is nothing to do. */
+        break;
+    }
+
+    case SVGA_3D_CMD_SET_VERTEX_STREAMS:
+    {
+        SVGA3dCmdSetVertexStreams *pCmd = (SVGA3dCmdSetVertexStreams *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_SET_VERTEX_DECLS:
+    {
+        SVGA3dCmdSetVertexDecls *pCmd = (SVGA3dCmdSetVertexDecls *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_SET_VERTEX_DIVISORS:
+    {
+        SVGA3dCmdSetVertexDivisors *pCmd = (SVGA3dCmdSetVertexDivisors *)pvCmd;
+        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DRAW:
+    {
+        /* No corresponding SVGA3dCmd structure. */
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
+
+    case SVGA_3D_CMD_DRAW_INDEXED:
+    {
+        /* No corresponding SVGA3dCmd structure. */
+        VMSVGA_3D_CMD_NOTIMPL();
+        break;
+    }
 
     default:
         STAM_REL_COUNTER_INC(&pSvgaR3State->StatFifoUnkCmds);

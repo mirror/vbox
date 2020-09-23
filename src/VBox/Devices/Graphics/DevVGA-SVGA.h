@@ -53,11 +53,13 @@
 # pragma GCC diagnostic ignored "-Wpedantic"
 #endif
 /* VMSVGA headers from SVGA Gallium driver. */
+#pragma pack(1) /* VMSVGA structures are '__packed'. */
 #include <svga3d_caps.h>
 #include <svga3d_reg.h>
 #include <svga3d_shaderdefs.h>
 #include <svga_escape.h>
 #include <svga_overlay.h>
+#pragma pack()
 #if RT_GNUC_PREREQ(4, 6)
 # pragma GCC diagnostic pop
 #endif
