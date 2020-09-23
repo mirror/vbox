@@ -117,7 +117,7 @@ void UIFileManagerDialog::loadSettings()
     restoreGeometry(geo);
 }
 
-void UIFileManagerDialog::saveSettings() const
+void UIFileManagerDialog::saveSettings()
 {
     /* Save geometry to extradata: */
     const QRect geo = currentGeometry();

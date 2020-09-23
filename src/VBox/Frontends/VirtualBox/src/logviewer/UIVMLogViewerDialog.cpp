@@ -135,7 +135,7 @@ void UIVMLogViewerDialog::loadSettings()
     restoreGeometry(geo);
 }
 
-void UIVMLogViewerDialog::saveSettings() const
+void UIVMLogViewerDialog::saveSettings()
 {
     /* Save geometry to extradata: */
     const QRect geo = currentGeometry();

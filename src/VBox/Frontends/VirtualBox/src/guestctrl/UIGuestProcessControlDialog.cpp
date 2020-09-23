@@ -118,7 +118,7 @@ void UIGuestProcessControlDialog::loadSettings()
     restoreGeometry(geo);
 }
 
-void UIGuestProcessControlDialog::saveSettings() const
+void UIGuestProcessControlDialog::saveSettings()
 {
     /* Save geometry to extradata: */
     const QRect geo = currentGeometry();

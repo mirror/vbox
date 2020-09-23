@@ -103,48 +103,25 @@ protected:
       * @param  pCenterWidget  Brings the widget reference to center according to. */
     QIManagerDialog(QWidget *pCenterWidget);
 
-    /** @name Prepare/cleanup cascade.
+    /** @name Virtual prepare/cleanup cascade.
       * @{ */
-        /** Prepares all.
-          * @note Normally you don't need to reimplement it. */
-        void prepare();
         /** Configures all.
           * @note Injected into prepare(), reimplement to configure all there. */
         virtual void configure() {}
-        /** Prepares central-widget.
-          * @note Injected into prepare(), normally you don't need to reimplement it. */
-        void prepareCentralWidget();
         /** Configures central-widget.
           * @note Injected into prepareCentralWidget(), reimplement to configure central-widget there. */
         virtual void configureCentralWidget() {}
-        /** Prepares button-box.
-          * @note Injected into prepareCentralWidget(), normally you don't need to reimplement it. */
-        void prepareButtonBox();
         /** Configures button-box.
           * @note Injected into prepareButtonBox(), reimplement to configure button-box there. */
         virtual void configureButtonBox() {}
-        /** Prepares menu-bar.
-          * @note Injected into prepare(), normally you don't need to reimplement it. */
-        void prepareMenuBar();
-#ifdef VBOX_WS_MAC
-        /** Prepares toolbar.
-          * @note Injected into prepare(), normally you don't need to reimplement it. */
-        void prepareToolBar();
-#endif
         /** Performs final preparations.
           * @note Injected into prepare(), reimplement to postprocess all there. */
         virtual void finalize() {}
-        /** Loads dialog setting such as geometry from extradata. */
+        /** Loads dialog setting from extradata. */
         virtual void loadSettings() {}
 
         /** Saves dialog setting into extradata. */
-        virtual void saveSettings() const {}
-        /** Cleanup menu-bar.
-          * @note Injected into cleanup(), normally you don't need to reimplement it. */
-        void cleanupMenuBar();
-        /** Cleanups all.
-          * @note Normally you don't need to reimplement it. */
-        void cleanup();
+        virtual void saveSettings() {}
     /** @} */
 
     /** @name Widget stuff.
@@ -171,10 +148,31 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles close @a pEvent. */
-        void closeEvent(QCloseEvent *pEvent);
+        virtual void closeEvent(QCloseEvent *pEvent) /* override */;
     /** @} */
 
 private:
+
+    /** @name Private prepare/cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares central-widget. */
+        void prepareCentralWidget();
+        /** Prepares button-box. */
+        void prepareButtonBox();
+        /** Prepares menu-bar. */
+        void prepareMenuBar();
+#ifdef VBOX_WS_MAC
+        /** Prepares toolbar. */
+        void prepareToolBar();
+#endif
+
+        /** Cleanup menu-bar. */
+        void cleanupMenuBar();
+        /** Cleanups all. */
+        void cleanup();
+    /** @} */
 
     /** @name General stuff.
       * @{ */

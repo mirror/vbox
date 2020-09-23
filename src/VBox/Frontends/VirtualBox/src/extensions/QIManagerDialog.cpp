@@ -66,6 +66,18 @@ QIManagerDialog::QIManagerDialog(QWidget *pCenterWidget)
 {
 }
 
+void QIManagerDialog::closeEvent(QCloseEvent *pEvent)
+{
+    /* Ignore the event itself: */
+    pEvent->ignore();
+    /* But tell the listener to close us (once): */
+    if (!m_fCloseEmitted)
+    {
+        m_fCloseEmitted = true;
+        emit sigClose();
+    }
+}
+
 void QIManagerDialog::prepare()
 {
     /* Tell the application we are not that important: */
@@ -217,16 +229,4 @@ void QIManagerDialog::cleanup()
     saveSettings();
     /* Cleanup menu-bar: */
     cleanupMenuBar();
-}
-
-void QIManagerDialog::closeEvent(QCloseEvent *pEvent)
-{
-    /* Ignore the event itself: */
-    pEvent->ignore();
-    /* But tell the listener to close us (once): */
-    if (!m_fCloseEmitted)
-    {
-        m_fCloseEmitted = true;
-        emit sigClose();
-    }
 }
