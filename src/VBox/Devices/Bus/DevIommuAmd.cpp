@@ -316,6 +316,11 @@ typedef struct IOMMU
     STAMCOUNTER             StatMsiRemapR3;             /**< Number of MSI remap requests in R3. */
     STAMCOUNTER             StatMsiRemapRZ;             /**< Number of MSI remap requests in RZ. */
 
+    STAMCOUNTER             StatMemReadR3;              /**< Number of memory read translation requests in R3. */
+    STAMCOUNTER             StatMemReadRZ;              /**< Number of memory read translation requests in RZ. */
+    STAMCOUNTER             StatMemWriteR3;             /**< Number of memory write translation requests in R3. */
+    STAMCOUNTER             StatMemWriteRZ;             /**< Number of memory write translation requests in RZ. */
+
     STAMCOUNTER             StatCmd;                    /**< Number of commands processed. */
     STAMCOUNTER             StatCmdCompWait;            /**< Number of Completion Wait commands processed. */
     STAMCOUNTER             StatCmdInvDte;              /**< Number of Invalidate DTE commands processed. */
@@ -2031,7 +2036,7 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
         return VINF_IOM_MMIO_UNUSED_FF;
     }
 
-    /* If a read handler doesn't exist, it's reserved or unknown register. */
+    /* If a read handler doesn't exist, it's a reserved or unknown register. */
     if (pReg->pfnRead)
     { /* likely */ }
     else
@@ -2988,7 +2993,7 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
         }
 
         /* If the IOVA is subject to address exclusion, addresses are forwarded without translation. */
-        if (   !pThis->ExclRangeBaseAddr.n.u1ExclEnable
+        if (   !pThis->ExclRangeBaseAddr.n.u1ExclEnable         /** @todo lock or make atomic read? */
             || !iommuAmdIsDvaInExclRange(pThis, &Dte, uIova))
         { /* likely */ }
         else
@@ -3068,12 +3073,14 @@ static DECLCALLBACK(int) iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDev
     Assert(cbRead > 0);
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    LogFlowFunc(("uDevId=%#x uIova=%#RX64 cbRead=%u\n", uDevId, uIova, cbRead));
 
     /* Addresses are forwarded without translation when the IOMMU is disabled. */
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
     if (Ctrl.n.u1IommuEn)
     {
+        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
+        LogFlowFunc(("uDevId=%#x uIova=%#RX64 cbRead=%u\n", uDevId, uIova, cbRead));
+
         /** @todo IOMMU: IOTLB cache lookup. */
 
         /* Lookup the IOVA from the device table. */
@@ -3106,12 +3113,14 @@ static DECLCALLBACK(int) iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDe
     Assert(cbWrite > 0);
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    LogFlowFunc(("uDevId=%#x uIova=%#RX64 cbWrite=%u\n", uDevId, uIova, cbWrite));
 
     /* Addresses are forwarded without translation when the IOMMU is disabled. */
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
     if (Ctrl.n.u1IommuEn)
     {
+        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
+        LogFlowFunc(("uDevId=%#x uIova=%#RX64 cbWrite=%u\n", uDevId, uIova, cbWrite));
+
         /** @todo IOMMU: IOTLB cache lookup. */
 
         /* Lookup the IOVA from the device table. */
@@ -4892,7 +4901,11 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * Mapping of the region is done when software configures it via PCI config space.
      */
     rc = PDMDevHlpMmioCreate(pDevIns, IOMMU_MMIO_REGION_SIZE, pPciDev, 0 /* iPciRegion */, iommuAmdMmioWrite, iommuAmdMmioRead,
-                             NULL /* pvUser */, IOMMMIO_FLAGS_READ_DWORD_QWORD | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
+                             NULL /* pvUser */,
+                               IOMMMIO_FLAGS_READ_DWORD_QWORD
+                             | IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING
+                             | IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_READ
+                             | IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_WRITE,
                              "AMD-IOMMU", &pThis->hMmio);
     AssertLogRelRCReturn(rc, rc);
 
@@ -4918,14 +4931,20 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Statistics.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR3,  STAMTYPE_COUNTER, "R3/MmioReadR3",  STAMUNIT_OCCURENCES, "Number of MMIO reads in R3");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadRZ,  STAMTYPE_COUNTER, "RZ/MmioReadRZ",  STAMUNIT_OCCURENCES, "Number of MMIO reads in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR3,  STAMTYPE_COUNTER, "R3/MmioRead",  STAMUNIT_OCCURENCES, "Number of MMIO reads in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadRZ,  STAMTYPE_COUNTER, "RZ/MmioRead",  STAMUNIT_OCCURENCES, "Number of MMIO reads in RZ.");
 
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR3, STAMTYPE_COUNTER, "R3/MmioWriteR3", STAMUNIT_OCCURENCES, "Number of MMIO writes in R3.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRZ, STAMTYPE_COUNTER, "RZ/MmioWriteRZ", STAMUNIT_OCCURENCES, "Number of MMIO writes in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR3, STAMTYPE_COUNTER, "R3/MmioWrite", STAMUNIT_OCCURENCES, "Number of MMIO writes in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRZ, STAMTYPE_COUNTER, "RZ/MmioWrite", STAMUNIT_OCCURENCES, "Number of MMIO writes in RZ.");
 
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapR3, STAMTYPE_COUNTER, "R3/MsiRemapR3", STAMUNIT_OCCURENCES, "Number of interrupt remap requests in R3.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapRZ, STAMTYPE_COUNTER, "RZ/MsiRemapRZ", STAMUNIT_OCCURENCES, "Number of interrupt remap requests in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapR3, STAMTYPE_COUNTER, "R3/MsiRemap", STAMUNIT_OCCURENCES, "Number of interrupt remap requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapRZ, STAMTYPE_COUNTER, "RZ/MsiRemap", STAMUNIT_OCCURENCES, "Number of interrupt remap requests in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemReadR3,  STAMTYPE_COUNTER, "R3/MemRead",  STAMUNIT_OCCURENCES, "Number of memory read translation requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemReadRZ,  STAMTYPE_COUNTER, "RZ/MemRead",  STAMUNIT_OCCURENCES, "Number of memory read translation requests in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemWriteR3,  STAMTYPE_COUNTER, "R3/MemWrite",  STAMUNIT_OCCURENCES, "Number of memory write translation requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemWriteRZ,  STAMTYPE_COUNTER, "RZ/MemWrite",  STAMUNIT_OCCURENCES, "Number of memory write translation requests in RZ.");
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmd, STAMTYPE_COUNTER, "R3/Commands", STAMUNIT_OCCURENCES, "Number of commands processed (total).");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdCompWait, STAMTYPE_COUNTER, "R3/Commands/CompWait", STAMUNIT_OCCURENCES, "Number of Completion Wait commands processed.");
