@@ -121,6 +121,7 @@ PROGRAMS += \
 	tstTestPipes \
 	tstTestThreads \
 	tstTestXPIDLString \
+	tstTestXPTCInvoke \
 	tstTestDeque \
 	tstTestAutoPtr \
 	tstTestMinStringAPI \
@@ -1263,6 +1264,8 @@ tstTestThreads_TEMPLATE        = XPCOMTSTEXE
 tstTestThreads_SOURCES         = xpcom/tests/TestThreads.cpp
 tstTestXPIDLString_TEMPLATE    = XPCOMTSTEXE
 tstTestXPIDLString_SOURCES     = xpcom/tests/TestXPIDLString.cpp
+tstTestXPTCInvoke_TEMPLATE     = XPCOMTSTEXE
+tstTestXPTCInvoke_SOURCES      = xpcom/reflect/xptcall/tests/TestXPTCInvoke.cpp
 tstTestDeque_TEMPLATE          = XPCOMTSTEXE
 tstTestDeque_SOURCES           = xpcom/tests/TestDeque.cpp
 tstTestAutoPtr_TEMPLATE        = XPCOMTSTEXE
