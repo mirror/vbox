@@ -77,6 +77,7 @@ public:
     bool           i_isRtcUsingUtc() const;
     bool           i_isGuestOs64Bit() const;
     VBOXOSTYPE     i_getGuestOsType() const;
+    Utf8Str const &i_getDetectedOSVersion();
 
 
 private:

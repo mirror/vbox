@@ -94,6 +94,26 @@ protected:
      *                              in case someone want to sanity check anything.
      */
     virtual HRESULT getConditional(const char *pachPlaceholder, size_t cchPlaceholder, bool *pfOutputting);
+
+
+    /**
+     * Get the result of a conditional for special version of guest OS.
+     *
+     * @returns COM status code.
+     * @param   pachPlaceholder     The placholder string.  Not zero terminated.
+     * @param   cchPlaceholder      The length of the placeholder.
+     * @param   cchContent          The length of placeholder content.
+     * @param   pcchCorrect         The length of part which must be excluded from the final content of
+     *                              the placeholder.
+     * @param   pfOutputting        Where to return the result of the conditional.
+     *                              This holds the current outputting state on input
+     *                              in case someone want to sanity check anything.
+     */
+    virtual HRESULT getGuestOSConditional(const char *pachPlaceholder,
+                                          size_t cchPlaceholder,
+                                          size_t cchContent,
+                                          size_t *pcchCorrect,
+                                          bool *pfOutputting);
 };
 
 #if 0 /* convert when we fix SUSE */
