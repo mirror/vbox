@@ -3438,14 +3438,13 @@ static DECLCALLBACK(int) iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDe
     Assert(pMsiOut);
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap));
-
-    LogFlowFunc(("uDevId=%#x\n", uDevId));
 
     /* Interrupts are forwarded with remapping when the IOMMU is disabled. */
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
     if (Ctrl.n.u1IommuEn)
     {
+        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap));
+        LogFlowFunc(("uDevId=%#x\n", uDevId));
         /** @todo Cache? */
 
         return iommuAmdLookupIntrTable(pDevIns, uDevId, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
