@@ -469,7 +469,7 @@ PR_IMPLEMENT(void *) PR_Malloc(PRUint32 size)
     if (!_pr_initialized) _PR_ImplicitInitialization();
 
 #ifdef VBOX_USE_IPRT_IN_NSPR
-    return use_zone_allocator ? pr_ZoneMalloc(size) : RTMemAlloc(size);
+    return use_zone_allocator ? pr_ZoneMalloc(size) : RTMemAlloc(RT_MAX(size, 1));
 #else
     return use_zone_allocator ? pr_ZoneMalloc(size) : malloc(size);
 #endif
@@ -481,7 +481,7 @@ PR_IMPLEMENT(void *) PR_Calloc(PRUint32 nelem, PRUint32 elsize)
 
     return use_zone_allocator ?
 #ifdef VBOX_USE_IPRT_IN_NSPR
-        pr_ZoneCalloc(nelem, elsize) : RTMemAllocZ(nelem * (size_t)elsize);
+        pr_ZoneCalloc(nelem, elsize) : RTMemAllocZ(RT_MAX(nelem * (size_t)elsize, 1));
 #else
         pr_ZoneCalloc(nelem, elsize) : calloc(nelem, elsize);
 #endif
@@ -526,7 +526,7 @@ PR_IMPLEMENT(void *) PR_Malloc(PRUint32 size)
     return PR_MD_malloc( (size_t) size);
 #else
 # ifdef VBOX_USE_IPRT_IN_NSPR
-    return RTMemAlloc(size);
+    return RTMemAlloc(RT_MAX(size, 1));
 # else
     return malloc(size);
 # endif
@@ -540,7 +540,7 @@ PR_IMPLEMENT(void *) PR_Calloc(PRUint32 nelem, PRUint32 elsize)
 
 #else
 # ifdef VBOX_USE_IPRT_IN_NSPR
-    return RTMemAllocZ(nelem * (size_t)elsize);
+    return RTMemAllocZ(RT_MAX(nelem * (size_t)elsize, 1));
 # else
     return calloc(nelem, elsize);
 # endif
