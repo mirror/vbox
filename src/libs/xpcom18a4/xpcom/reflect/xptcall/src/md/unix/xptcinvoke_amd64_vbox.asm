@@ -78,7 +78,6 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         mov     rbp, rsp
         push    rbx
         push    r12
-        push    r13
 
         ;
         ; Move essential input parameters into non-parameter registers.
@@ -127,14 +126,11 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         fast_case .fast_2, .fast_1, 1, rdx
         fast_case .fast_1, .fast_0, 0, rsi
 .fast_0:
-        and     rsp, 0ffffffffffffffe0h ; Align the stack on 32 bytes.
         xor     eax, eax
-.make_just_call:
-        call    r11
+        call    r11                     ; note! stack is aligned here.
 
-.return:
+.fast_return:
         lea     rsp, [rbp - 8*3]
-        pop     r13
         pop     r12
         pop     rbx
         leave
@@ -152,6 +148,9 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
  %endif
 .slow:
 %endif
+        ; One more push.
+        push    r13
+
         ;
         ; Check that there aren't unreasonably many parameters
         ; (we could do ~255, but 64 is more reasonable number).
@@ -164,7 +163,7 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         ;
         lea     edx, [r12d * 8]
         sub     rsp, rdx
-        and     rsp, 0ffffffffffffffe0h ; 32 byte aligned stack.
+        and     rsp, byte 0ffffffffffffffe0h ; 32 byte aligned stack.
         mov     r10, rsp                ; r10 = next stack parameter.
 
         ;
@@ -375,10 +374,6 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         ;
         ; Call the method and return.
         ;
-%ifdef WITH_OPTIMIZATION
-        movzx   eax, ah                 ; AL = number of parameters in XMM registers (variadict only, but easy to do).
-        jmp     .make_just_call
-%else
 .make_call:
         movzx   eax, ah                 ; AL = number of parameters in XMM registers (variadict only, but easy to do).
 .make_just_call:
@@ -391,7 +386,6 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         pop     rbx
         leave
         ret
-%endif
 
 .too_many_parameters:
         mov     eax, DISP_E_BADPARAMCOUNT
