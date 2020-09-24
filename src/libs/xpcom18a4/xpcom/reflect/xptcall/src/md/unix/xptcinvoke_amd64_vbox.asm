@@ -56,6 +56,11 @@ endstruc
 ;; Error code we use if there are too many parameters.
 %define DISP_E_BADPARAMCOUNT    0x8002000e
 
+;; Effect name mangling.
+%ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+ %define XPTC_InvokeByIndex VBoxNsxpXPTC_InvokeByIndex
+%endif
+
 
 ;;
 ;
@@ -66,7 +71,7 @@ endstruc
 ; @param    cParams     Number of parameters in addition to pThat.          register:edx
 ; @param    paParams    Array of parameter values and info.                 register:rcx
 ;
-BEGINPROC_EXPORTED VBoxNsxpXPTC_InvokeByIndex
+BEGINPROC_EXPORTED XPTC_InvokeByIndex
         push    rbp
         mov     rbp, rsp
         push    rbx
@@ -318,4 +323,4 @@ BEGINPROC_EXPORTED VBoxNsxpXPTC_InvokeByIndex
 .too_many_parameters:
         mov     eax, DISP_E_BADPARAMCOUNT
         jmp     .return
-ENDPROC            VBoxNsxpXPTC_InvokeByIndex
+ENDPROC            XPTC_InvokeByIndex
