@@ -38,7 +38,7 @@ namespace UIDetailsGenerator
 
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationGeneral(CCloudMachine &comCloudMachine,
                                                                        const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions);
-    SHARED_LIBRARY_STUFF QString generateFormValueInformation(const CFormValue &comFormValue);
+    SHARED_LIBRARY_STUFF QString generateFormValueInformation(const CFormValue &comFormValue, bool fFull = false);
 
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationSystem(CMachine &comMachine,
                                                                       const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions);
