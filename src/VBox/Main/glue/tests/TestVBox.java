@@ -16,7 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-import org.virtualbox_5_0.*;
+import org.virtualbox_6_2.*;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
