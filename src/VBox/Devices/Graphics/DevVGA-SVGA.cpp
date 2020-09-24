@@ -129,16 +129,11 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
-#define VMSVGA_USE_EMT_HALT_CODE
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/version.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/vmm/pgm.h>
-#ifdef VMSVGA_USE_EMT_HALT_CODE
-# include <VBox/vmm/vmapi.h>
-# include <VBox/vmm/vmcpuset.h>
-#endif
 #include <VBox/sup.h>
 
 #include <iprt/assert.h>
@@ -160,8 +155,8 @@
 /* should go BEFORE any other DevVGA include to make all DevVGA.h config defines be visible */
 #include "DevVGA.h"
 
-#include "DevVGA-SVGA.h"
 #ifdef IN_RING3
+/* Should be included after DevVGA.h/DevVGA-SVGA.h to pick all defines. */
 #include "DevVGA-SVGA-internal.h"
 #endif
 #ifdef VBOX_WITH_VMSVGA3D

@@ -24,10 +24,16 @@
 # error "VBOX_WITH_VMSVGA is not defined"
 #endif
 
+#define VMSVGA_USE_EMT_HALT_CODE
+
 #include <VBox/pci.h>
 #include <VBox/vmm/pdmifs.h>
 #include <VBox/vmm/pdmthread.h>
 #include <VBox/vmm/stam.h>
+#ifdef VMSVGA_USE_EMT_HALT_CODE
+# include <VBox/vmm/vmapi.h>
+# include <VBox/vmm/vmcpuset.h>
+#endif
 
 /*
  * PCI device IDs.

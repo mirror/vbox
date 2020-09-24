@@ -30,6 +30,7 @@
 /* should go BEFORE any other DevVGA include to make all DevVGA.h config defines be visible */
 #include "DevVGA.h"
 
+/* Should be included after DevVGA.h/DevVGA-SVGA.h to pick all defines. */
 #include "DevVGA-SVGA-internal.h"
 #ifdef VBOX_WITH_VMSVGA3D
 # include "DevVGA-SVGA3d.h"
