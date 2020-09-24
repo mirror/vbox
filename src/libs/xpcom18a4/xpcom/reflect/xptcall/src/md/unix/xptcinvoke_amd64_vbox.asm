@@ -62,6 +62,8 @@ endstruc
 %endif
 
 
+BEGINCODE
+
 ;;
 ;
 ; @cproto nsresult XPTC_InvokeByIndex(nsISupports *pThat, PRUint32 idxMethod, PRUint32 cParams, nsXPTCVariant *paParams)
