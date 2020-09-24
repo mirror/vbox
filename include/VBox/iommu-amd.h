@@ -1412,7 +1412,7 @@ typedef union
         uint32_t    u1InvAllSup : 1;              /**< Bit  6     - IASup: Invalidate-All Support. */
         uint32_t    u1GstVirtApicSup : 1;         /**< Bit  7     - GASup: Guest Virtual-APIC Support. */
         uint32_t    u1HwErrorSup : 1;             /**< Bit  8     - HESup: Hardware Error registers Support. */
-        uint32_t    u1PerfCounterSup : 1;         /**< Bit  8     - PCSup: Performance Counter Support. */
+        uint32_t    u1PerfCounterSup : 1;         /**< Bit  9     - PCSup: Performance Counter Support. */
         uint32_t    u2HostAddrTranslateSize : 2;  /**< Bits 11:10 - HATS: Host Address Translation Size. */
         uint32_t    u2GstAddrTranslateSize : 2;   /**< Bits 13:12 - GATS: Guest Address Translation Size. */
         uint32_t    u2GstCr3RootTblLevel : 2;     /**< Bits 15:14 - GLXSup: Guest CR3 Root Table Level (Max) Size Support. */
@@ -2496,6 +2496,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_EXT_FEAT_BF_, UINT64_C(0), UINT64_MAX,
  * IVHD (I/O Virtualization Hardware Definition) Type 10h.
  * In accordance with the AMD spec.
  */
+#pragma pack(1)
 typedef struct ACPIIVHDTYPE10
 {
     uint8_t         u8Type;                 /**< Type: Must be 0x10. */
@@ -2509,6 +2510,7 @@ typedef struct ACPIIVHDTYPE10
     uint32_t        u32Features;            /**< IOMMU feature reporting. */
     /* IVHD device entry block follows. */
 } ACPIIVHDTYPE10;
+#pragma pack()
 AssertCompileSize(ACPIIVHDTYPE10, 24);
 AssertCompileMemberOffset(ACPIIVHDTYPE10, u8Type,               0);
 AssertCompileMemberOffset(ACPIIVHDTYPE10, u8Flags,              1);
@@ -2563,6 +2565,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(ACPI_IOMMU_ATTR_BF_, UINT32_C(0), UINT32_MAX,
  * AMD IOMMU: IVHD (I/O Virtualization Hardware Definition) Type 11h.
  * In accordance with the AMD spec.
  */
+#pragma pack(1)
 typedef struct ACPIIVHDTYPE11
 {
     uint8_t         u8Type;                 /**< Type: Must be 0x11. */
@@ -2578,6 +2581,7 @@ typedef struct ACPIIVHDTYPE11
     uint64_t        u64Rsvd0;               /**< Reserved for future. */
     /* IVHD device entry block follows. */
 } ACPIIVHDTYPE11;
+#pragma pack()
 AssertCompileSize(ACPIIVHDTYPE11, 40);
 AssertCompileMemberOffset(ACPIIVHDTYPE11, u8Type,               0);
 AssertCompileMemberOffset(ACPIIVHDTYPE11, u8Flags,              1);
