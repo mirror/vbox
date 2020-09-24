@@ -100,30 +100,26 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         ; Switch on count, using fall-thought-to-smaller-value logic, default
         ; case goes to generic (slow) code path.
         ;
-        cmp     r12d, 1
-        je      .fast_1
-        cmp     r12d, 2
-        je      .fast_2
-        cmp     r12d, 3
-        je      .fast_3
-        cmp     r12d, 4
-        je      .fast_4
-        cmp     r12d, 0
-        je      .fast_0
-        cmp     r12d, 5
-        je      .fast_5
-        jmp     .slow
-        times 0x17 int3  ; manually align the 'ret' instruction on the last cacheline byte and fast_1 on the first.
+        dec     edx                     ; we can still use edx for the parameter count here as a throwaway.
+        jz      .fast_1
+        dec     edx
+        jz      .fast_2
+        dec     edx
+        jz      .fast_3
+        dec     edx
+        jz      .fast_4
+        dec     edx
+        jnz     .slow_or_zero
 %macro fast_case 4
 %1:
-        test    byte [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.flags], PTR_IS_DATA
+        mov     eax, [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.type] ; ASSUMES 'type' and 'flags' are adjacent byte fields.
+        test    ah, PTR_IS_DATA
         mov     %4,  [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.ptr]
         jnz     %2
+        sub     al, T_FLOAT
+        sub     al, 2
+        je      .fast_bailout
         mov     %4,  [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.val]
-        cmp     byte [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.flags], T_FLOAT
-        je      .fast_bailout
-        cmp     byte [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.flags], T_DOUBLE
-        je      .fast_bailout
 %endmacro
         fast_case .fast_5, .fast_4, 4, r9
         fast_case .fast_4, .fast_3, 3, r8
@@ -144,8 +140,16 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         leave
         ret
 
+.slow_or_zero:
+        cmp     r12d, 0
+        je      .fast_0
+ %if 0
+        jmp     .slow
 .fast_bailout:
-;        int3
+        int3
+ %else
+.fast_bailout:
+ %endif
 .slow:
 %endif
         ;
