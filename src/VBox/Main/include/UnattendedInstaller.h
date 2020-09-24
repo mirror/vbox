@@ -489,25 +489,25 @@ public:
 
 
 /**
- * RHEL 6 and 7 installer.
+ * RHEL 6 installer.
  *
  * This serves as a base for the kickstart based installers.
  */
-class UnattendedRhel6And7Installer : public UnattendedLinuxInstaller
+class UnattendedRhel6Installer : public UnattendedLinuxInstaller
 {
 public:
-    UnattendedRhel6And7Installer(Unattended *pParent,
-                                 const char *pszMainScriptTemplateName = "redhat67_ks.cfg",
-                                 const char *pszPostScriptTemplateName = "redhat_postinstall.sh",
-                                 const char *pszMainScriptFilename     = "ks.cfg")
-          : UnattendedLinuxInstaller(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
+    UnattendedRhel6Installer(Unattended *pParent,
+                             const char *pszMainScriptTemplateName = "redhat67_ks.cfg",
+                             const char *pszPostScriptTemplateName = "redhat_postinstall.sh",
+                             const char *pszMainScriptFilename     = "ks.cfg")
+        : UnattendedLinuxInstaller(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
     {
         Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded());
         Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO());
         mStrDefaultExtraInstallKernelParameters.assign(" ks=cdrom:/").append(pszMainScriptFilename).append(' ');
         mArrStrRemoveInstallKernelParameters.append("rd.live.check"); /* Disables the checkisomd5 step. Required for VISO. */
     }
-    ~UnattendedRhel6And7Installer() {}
+    ~UnattendedRhel6Installer() {}
 
     bool isAuxiliaryIsoIsVISO()             { return true; }
     bool isOriginalIsoNeeded() const        { return false; }
@@ -517,65 +517,146 @@ protected:
                                      RTVFS hVfsOrgIso, bool fOverwrite);
 };
 
-
 /**
- * RHEL 5 installer (same as RHEL 6 & 7, except for the kickstart template).
+ * RHEL 7 installer (same as RHEL 6).
  */
-class UnattendedRhel5Installer : public UnattendedRhel6And7Installer
+class UnattendedRhel7Installer : public UnattendedRhel6Installer
 {
 public:
-    UnattendedRhel5Installer(Unattended *pParent) : UnattendedRhel6And7Installer(pParent, "rhel5_ks.cfg") {}
+    UnattendedRhel7Installer(Unattended *pParent)
+        : UnattendedRhel6Installer(pParent)
+    { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
+
+    UnattendedRhel7Installer(Unattended *pParent,
+                             const char *pszMainScriptTemplateName,
+                             const char *pszPostScriptTemplateName,
+                             const char *pszMainScriptFilename)
+        : UnattendedRhel6Installer(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
+    { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
+    ~UnattendedRhel7Installer() {}
+};
+
+
+/**
+ * RHEL 8 installer (same as RHEL 7).
+ */
+class UnattendedRhel8Installer : public UnattendedRhel7Installer
+{
+public:
+    UnattendedRhel8Installer(Unattended *pParent)
+        : UnattendedRhel7Installer(pParent)
+    { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
+
+    UnattendedRhel8Installer(Unattended *pParent,
+                             const char *pszMainScriptTemplateName,
+                             const char *pszPostScriptTemplateName,
+                             const char *pszMainScriptFilename)
+        : UnattendedRhel7Installer(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
+    { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
+    ~UnattendedRhel8Installer() {}
+};
+
+
+/**
+ * RHEL 5 installer (same as RHEL 6, except for the kickstart template).
+ */
+class UnattendedRhel5Installer : public UnattendedRhel6Installer
+{
+public:
+    UnattendedRhel5Installer(Unattended *pParent) : UnattendedRhel6Installer(pParent, "rhel5_ks.cfg") {}
     ~UnattendedRhel5Installer() {}
 };
 
 
 /**
- * RHEL 4 installer (same as RHEL 6 & 7, except for the kickstart template).
+ * RHEL 4 installer (same as RHEL 6, except for the kickstart template).
  */
-class UnattendedRhel4Installer : public UnattendedRhel6And7Installer
+class UnattendedRhel4Installer : public UnattendedRhel6Installer
 {
 public:
-    UnattendedRhel4Installer(Unattended *pParent) : UnattendedRhel6And7Installer(pParent, "rhel4_ks.cfg") {}
+    UnattendedRhel4Installer(Unattended *pParent) : UnattendedRhel6Installer(pParent, "rhel4_ks.cfg") {}
     ~UnattendedRhel4Installer() {}
 };
 
 
 /**
- * RHEL 3 installer (same as RHEL 6 & 7, except for the kickstart template).
+ * RHEL 3 installer (same as RHEL 6, except for the kickstart template).
  */
-class UnattendedRhel3Installer : public UnattendedRhel6And7Installer
+class UnattendedRhel3Installer : public UnattendedRhel6Installer
 {
 public:
-    UnattendedRhel3Installer(Unattended *pParent) : UnattendedRhel6And7Installer(pParent, "rhel3_ks.cfg") {}
+    UnattendedRhel3Installer(Unattended *pParent) : UnattendedRhel6Installer(pParent, "rhel3_ks.cfg") {}
     ~UnattendedRhel3Installer() {}
 };
 
 
 /**
- * Fedora installer (same as RHEL 6 & 7, except for the template).
+ * Fedora installer (same as RHEL 6, except for the template).
  */
-class UnattendedFedoraInstaller : public UnattendedRhel6And7Installer
+class UnattendedFedoraInstaller : public UnattendedRhel6Installer
 {
 public:
     UnattendedFedoraInstaller(Unattended *pParent)
-        : UnattendedRhel6And7Installer(pParent, "fedora_ks.cfg")
+        : UnattendedRhel6Installer(pParent, "fedora_ks.cfg")
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
     ~UnattendedFedoraInstaller() {}
 };
 
 
 /**
- * Oracle Linux installer (same as RHEL 6 & 7, except for the template).
+ * Oracle Linux 6 installer.
  */
-class UnattendedOracleLinuxInstaller : public UnattendedRhel6And7Installer
+class UnattendedOracleLinux6Installer : public UnattendedRhel6Installer
 {
 public:
-    UnattendedOracleLinuxInstaller(Unattended *pParent)
-        : UnattendedRhel6And7Installer(pParent, "ol_ks.cfg")
+    UnattendedOracleLinux6Installer(Unattended *pParent,
+                                    const char *pszMainScriptTemplateName = "ol_ks.cfg",
+                                    const char *pszPostScriptTemplateName = "ol_postinstall.sh",
+                                    const char *pszMainScriptFilename = "ks.cfg")
+        : UnattendedRhel6Installer(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
-    ~UnattendedOracleLinuxInstaller() {}
+    ~UnattendedOracleLinux6Installer() {}
 };
 
+
+/**
+ * Oracle Linux 7 installer.
+ */
+class UnattendedOracleLinux7Installer : public UnattendedOracleLinux6Installer
+{
+public:
+    UnattendedOracleLinux7Installer(Unattended *pParent)
+        : UnattendedOracleLinux6Installer(pParent)
+    { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
+
+    UnattendedOracleLinux7Installer(Unattended *pParent,
+                                    const char *pszMainScriptTemplateName,
+                                    const char *pszPostScriptTemplateName,
+                                    const char *pszMainScriptFilename)
+        : UnattendedOracleLinux6Installer(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
+    { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
+    ~UnattendedOracleLinux7Installer() {}
+};
+
+
+/**
+ * Oracle Linux 8 installer.
+ */
+class UnattendedOracleLinux8Installer : public UnattendedOracleLinux7Installer
+{
+public:
+    UnattendedOracleLinux8Installer(Unattended *pParent)
+        : UnattendedOracleLinux7Installer(pParent)
+    { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
+
+    UnattendedOracleLinux8Installer(Unattended *pParent,
+                                    const char *pszMainScriptTemplateName,
+                                    const char *pszPostScriptTemplateName,
+                                    const char *pszMainScriptFilename)
+        : UnattendedOracleLinux7Installer(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
+    { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
+    ~UnattendedOracleLinux8Installer() {}
+};
 
 #if 0 /* fixme */
 /**
