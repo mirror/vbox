@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QHelpCollectionProject version="1.0">
+    <assistant>
+        <title>Virtual Box</title>
+        <!-- <applicationIcon>images/handbook.png</applicationIcon> -->
+        <cacheDirectory>QtProject/vbox</cacheDirectory>
+        <startPage>qthelp://org.virtualbox/manual/UserManual.html</startPage>
+        <aboutMenuText>
+            <text>VirtualBox</text>
+        </aboutMenuText>
+        <!-- <aboutDialog> -->
+        <!--     <file>about.txt</file> -->
+        <!--     <icon>images/icon.png</icon> -->
+        <!-- </aboutDialog> -->
+        <enableDocumentationManager>false</enableDocumentationManager>
+        <enableAddressBar>true</enableAddressBar>
+        <enableFilterFunctionality>false</enableFilterFunctionality>
+    </assistant>
+    <docFiles>
+        <generate>
+            <file>
+                <input>manual.qhp</input>
+                <output>manual.qch</output>
+            </file>
+        </generate>
+        <register>
+            <file>manual.qch</file>
+        </register>
+    </docFiles>
+</QHelpCollectionProject>
