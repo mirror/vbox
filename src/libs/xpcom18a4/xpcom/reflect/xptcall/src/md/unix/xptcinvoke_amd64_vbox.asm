@@ -117,7 +117,7 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         jnz     %2
         sub     al, T_FLOAT
         sub     al, 2
-        je      .fast_bailout
+        jl      .fast_bailout
         mov     %4,  [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.val]
 %endmacro
         fast_case .fast_5, .fast_4, 4, r9
@@ -190,7 +190,7 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         ; First test for pointers using 'flags' then work 'type' for the rest.
         test    byte [rbx + nsXPTCVariant.flags], PTR_IS_DATA
         jnz     .is_ptr
-        cmp     dword [rbx + nsXPTCVariant.type], T_FLOAT
+        cmp     byte [rbx + nsXPTCVariant.type], T_FLOAT
         jge     .maybe_in_fpreg
 
         ;
@@ -265,7 +265,7 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         ;
 .maybe_in_fpreg:
         je      .float_in_fpreg
-        cmp     dword [rbx + nsXPTCVariant.type], T_DOUBLE
+        cmp     byte [rbx + nsXPTCVariant.type], T_DOUBLE
         jne     .in_greg
 
 .double_in_fpreg:
