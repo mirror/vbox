@@ -81,39 +81,100 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         push    r13
 
         ;
-        ; Check that there aren't unreasonably many parameters
-        ; (we could do ~255, but 64 is more reasonable number).
+        ; Move essential input parameters into non-parameter registers.
         ;
-        cmp     edx, 64
-        je      .too_many_parameters
+        mov     rbx, rcx                ; rbx = first / current parameter
+        mov     r12d, edx               ; r12 = parameter count / left
 
-        ;
-        ; Look up the method address in the vtable and store it in r11.
-        ;
+        ; Look up the method address in the vtable and store it in r11 (freeing up rsi).
         mov     r11, [rdi]              ; r11 = vtable
         mov     esi, esi                ; zero extend vtable index.
         mov     r11, [r11 + rsi * 8]    ; r11 = method to call.
 
+%define WITH_OPTIMIZATION
+%ifdef WITH_OPTIMIZATION
+        ;
+        ; If there are 5 or fewer parameters and they are all suitable for GREGs,
+        ; we can try optimize the processing here.
+        ;
+        ; Switch on count, using fall-thought-to-smaller-value logic, default
+        ; case goes to generic (slow) code path.
+        ;
+        cmp     r12d, 1
+        je      .fast_1
+        cmp     r12d, 2
+        je      .fast_2
+        cmp     r12d, 3
+        je      .fast_3
+        cmp     r12d, 4
+        je      .fast_4
+        cmp     r12d, 0
+        je      .fast_0
+        cmp     r12d, 5
+        je      .fast_5
+        jmp     .slow
+        times 0x17 int3  ; manually align the 'ret' instruction on the last cacheline byte and fast_1 on the first.
+%macro fast_case 4
+%1:
+        test    byte [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.flags], PTR_IS_DATA
+        mov     %4,  [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.ptr]
+        jnz     %2
+        mov     %4,  [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.val]
+        cmp     byte [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.flags], T_FLOAT
+        je      .fast_bailout
+        cmp     byte [rbx + nsXPTCVariant_size * %3 + nsXPTCVariant.flags], T_DOUBLE
+        je      .fast_bailout
+%endmacro
+        fast_case .fast_5, .fast_4, 4, r9
+        fast_case .fast_4, .fast_2, 3, r8
+        fast_case .fast_3, .fast_2, 2, rcx
+        fast_case .fast_2, .fast_1, 1, rdx
+        fast_case .fast_1, .fast_0, 0, rsi
+.fast_0:
+        and     rsp, 0ffffffffffffffe0h ; Align the stack on 32 bytes.
+        xor     eax, eax
+.make_just_call:
+        call    r11
+
+.return:
+        lea     rsp, [rbp - 8*3]
+        pop     r13
+        pop     r12
+        pop     rbx
+        leave
+        ret
+
+.fast_bailout:
+;        int3
+.slow:
+%endif
+        ;
+        ; Check that there aren't unreasonably many parameters
+        ; (we could do ~255, but 64 is more reasonable number).
+        ;
+        cmp     r12d, 64
+        je      .too_many_parameters
+
         ;
         ; For simplicity reserve stack space for all parameters and point r10 at it.
         ;
-        mov     r12d, edx               ; r12d = parameter count / left
-        lea     edx, [edx * 8]
+        lea     edx, [r12d * 8]
         sub     rsp, rdx
-        and     rsp, 0ffffffffffffffe0h ; 32 byte align stack.
+        and     rsp, 0ffffffffffffffe0h ; 32 byte aligned stack.
         mov     r10, rsp                ; r10 = next stack parameter.
 
         ;
         ; Set up parameter pointer and register distribution counts.
         ;
-        mov     rbx, rcx                ; rbx = current parameter
         mov     eax, 1                  ; al = greg count, ah = fpreg count.
 
         ;
         ; Anything to do here?
         ;
+%ifndef WITH_OPTIMIZATION
         test    r12d,r12d
         jz      .make_call
+%endif
         jmp     .param_loop
 
         ;
@@ -164,7 +225,7 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         ;
         ; Pointers are loaded from the 'ptr' rather than the 'val' member.
         ;
-        ALIGNCODE(16)
+        ALIGNCODE(64)
 .is_ptr:
         inc     al
         cmp     al, 1+1
@@ -310,8 +371,13 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         ;
         ; Call the method and return.
         ;
+%ifdef WITH_OPTIMIZATION
+        movzx   eax, ah                 ; AL = number of parameters in XMM registers (variadict only, but easy to do).
+        jmp     .make_just_call
+%else
 .make_call:
         movzx   eax, ah                 ; AL = number of parameters in XMM registers (variadict only, but easy to do).
+.make_just_call:
         call    r11
 
 .return:
@@ -321,6 +387,7 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         pop     rbx
         leave
         ret
+%endif
 
 .too_many_parameters:
         mov     eax, DISP_E_BADPARAMCOUNT
