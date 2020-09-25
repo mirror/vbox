@@ -195,6 +195,9 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
 
  VBOX_ACCESSIBILITY_XML_FILES = \
  	Accessibility.xml
+ 
+ VBOX_QHCP_FILES = \
+	manual.qhcp
 
  # Wildcard the images path for every supported language
  $(foreach f,$(VBOX_MANUAL_LANGUAGES), \
@@ -247,6 +250,7 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
         $(addprefix HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(lang))) \
         html-single/UserManual.xhtml \
         html-single/manual.qhp \
+        html-single/manual.qhcp \
         $(addprefix HTMLHelp/,    index.html go01.html) \
         $(addprefix html-chunks/, index.html go01.html) \
         $(foreach n,01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 \
@@ -817,6 +821,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp
+html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
 
@@ -892,6 +897,14 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp: \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp \
 		$(VBOX_PATH_MANUAL_SRC)/xhtml-qhelp.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml
+
+################Copy qhcp file from the source directory###############################
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp: 
+	$(call MSG_L1,Copying manual.qhcp file)
+	$(QUIET)$(INSTALL_STAGING) -m0664 -- $(addprefix $(VBOX_PATH_MANUAL_SRC)/, $(VBOX_QHCP_FILES)) $@
+	
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhc: 
+
 
 # Handy aliases.
 validate-manpages:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_REFENTRY_FILES))
