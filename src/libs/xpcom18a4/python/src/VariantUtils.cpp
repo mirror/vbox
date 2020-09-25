@@ -1227,7 +1227,7 @@ PRBool PyXPCOM_InterfaceVariantHelper::Init(PyObject *obParams)
 	// Init the other arrays.
 	m_var_array = new nsXPTCVariant[m_num_array];
 	if (!m_var_array) goto done;
-	memset(m_var_array, 0, m_num_array * sizeof(m_var_array[0]));
+	/*memset(m_var_array, 0, m_num_array * sizeof(m_var_array[0])); - VBox not needed */
 
 	m_buffer_array = new void *[m_num_array];
 	if (!m_buffer_array) goto done;

@@ -142,6 +142,13 @@ struct nsXPTCVariant : public nsXPTCMiniVariant
         VAL_IS_CSTR    = 0x40  // val.p holds a pointer to cstring needing cleanup        
     };
 
+    /* VBox: Added to prevent -Wclass-memaccess warnings (nsXPTType has a constructor) in python/src/VariantUtils.cpp */
+    nsXPTCVariant() : ptr(NULL), flags(0)
+    {
+        val.p = NULL;
+        type.flags = 0; /* stupid nsXPTType constructor only do random bytes (documented) */
+    }
+
     void ClearFlags()         {flags = 0;}
     void SetPtrIsData()       {flags |= PTR_IS_DATA;}
     void SetValIsAllocated()  {flags |= VAL_IS_ALLOCD;}
