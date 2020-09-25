@@ -4590,22 +4590,26 @@ HRESULT Machine::getMedium(const com::Utf8Str &aName,
 
 HRESULT Machine::getSerialPort(ULONG aSlot, ComPtr<ISerialPort> &aPort)
 {
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    mSerialPorts[aSlot].queryInterfaceTo(aPort.asOutParam());
-
-    return S_OK;
+    if (aSlot < RT_ELEMENTS(mSerialPorts))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        mSerialPorts[aSlot].queryInterfaceTo(aPort.asOutParam());
+        return S_OK;
+    }
+    return setError(E_INVALIDARG, tr("Serial port slot %RU32 is out of bounds (max %zu)"), aSlot, RT_ELEMENTS(mSerialPorts));
 }
 
 HRESULT Machine::getParallelPort(ULONG aSlot, ComPtr<IParallelPort> &aPort)
 {
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    mParallelPorts[aSlot].queryInterfaceTo(aPort.asOutParam());
-
-    return S_OK;
+    if (aSlot < RT_ELEMENTS(mParallelPorts))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        mParallelPorts[aSlot].queryInterfaceTo(aPort.asOutParam());
+        return S_OK;
+    }
+    return setError(E_INVALIDARG, tr("Parallel port slot %RU32 is out of bounds (max %zu)"), aSlot, RT_ELEMENTS(mParallelPorts));
 }
+
 
 HRESULT Machine::getNetworkAdapter(ULONG aSlot, ComPtr<INetworkAdapter> &aAdapter)
 {
