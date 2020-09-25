@@ -181,7 +181,7 @@ typedef struct RTDBGKRNLINFOINT
     uintptr_t           uTextSegLinkAddr;
     /** Size of the text segment. */
     uintptr_t           cbTextSeg;
-    /** Offset between link address and actual load address. */
+    /** Offset between link address and actual load address of the text segment. */
     uintptr_t           offLoad;
     /** The minimum OS version (A.B.C; A is 16 bits, B & C each 8 bits). */
     uint32_t            uMinOsVer;
@@ -211,8 +211,12 @@ typedef struct RTDBGKRNLINFOINT
     uint32_t            cSections;
     /** Section pointer table (points into the load commands). */
     MY_SEGMENT_COMMAND const *apSegments[MACHO_MAX_SECT / 2];
+    /** Load displacement table for each segment. */
+    uintptr_t          aoffLoadSegments[MACHO_MAX_SECT / 2];
     /** Section pointer table (points into the load commands). */
     MY_SECTION const   *apSections[MACHO_MAX_SECT];
+    /** Mapping table to quickly get to a segment from MY_NLIST::n_sect. */
+    uint8_t            auSections2Segment[MACHO_MAX_SECT];
     /** @} */
 
     /** Buffer space. */
@@ -248,14 +252,14 @@ static void rtR0DbgKrnlDarwinLoadDone(RTDBGKRNLINFOINT *pThis)
 
 
 /**
- * Looks up a kernel symbol.
+ * Looks up a kernel symbol record.
  *
- * @returns The symbol address on success, 0 on failure.
+ * @returns Pointer to the symbol record or NULL if not found.
  * @param   pThis               The internal scratch data.
  * @param   pszSymbol           The symbol to resolve.  Automatically prefixed
  *                              with an underscore.
  */
-static uintptr_t rtR0DbgKrnlDarwinLookup(RTDBGKRNLINFOINT *pThis, const char *pszSymbol)
+static MY_NLIST const *rtR0DbgKrnlDarwinLookupSym(RTDBGKRNLINFOINT *pThis, const char *pszSymbol)
 {
     uint32_t const  cSyms = pThis->cSyms;
     MY_NLIST const *pSym = pThis->paSyms;
@@ -270,12 +274,34 @@ static uintptr_t rtR0DbgKrnlDarwinLookup(RTDBGKRNLINFOINT *pThis, const char *ps
         const char *pszTabName= &pThis->pachStrTab[(uint32_t)pSym->n_un.n_strx];
         if (   *pszTabName == '_'
             && strcmp(pszTabName + 1, pszSymbol) == 0)
-            return pSym->n_value + pThis->offLoad;
+            return pSym;
     }
 #else
     /** @todo binary search. */
-
 #endif
+
+    return NULL;
+}
+
+
+/**
+ * Looks up a kernel symbol.
+ *
+ * @returns The symbol address on success, 0 on failure.
+ * @param   pThis               The internal scratch data.
+ * @param   pszSymbol           The symbol to resolve.  Automatically prefixed
+ *                              with an underscore.
+ */
+static uintptr_t rtR0DbgKrnlDarwinLookup(RTDBGKRNLINFOINT *pThis, const char *pszSymbol)
+{
+    MY_NLIST const *pSym = rtR0DbgKrnlDarwinLookupSym(pThis, pszSymbol);
+    if (pSym)
+    {
+        uint8_t idxSeg = pThis->auSections2Segment[pSym->n_sect];
+        if (pThis->aoffLoadSegments[idxSeg] != UINTPTR_MAX)
+            return pSym->n_value + pThis->aoffLoadSegments[idxSeg];
+    }
+
     return 0;
 }
 
@@ -750,6 +776,7 @@ static int rtR0DbgKrnlDarwinParseCommands(RTDBGKRNLINFOINT *pThis)
                     /* Add to the section table. */
                     if (pThis->cSections >= RT_ELEMENTS(pThis->apSections))
                         RETURN_VERR_BAD_EXE_FORMAT;
+                    pThis->auSections2Segment[pThis->cSections] = pThis->cSegments;
                     pThis->apSections[pThis->cSections++] = &paSects[i];
                 }
 
@@ -797,6 +824,7 @@ static int rtR0DbgKrnlDarwinParseCommands(RTDBGKRNLINFOINT *pThis)
             case LC_VERSION_MIN_TVOS:
             case LC_VERSION_MIN_WATCHOS:
             case LC_NOTE:
+            case LC_SEGMENT_SPLIT_INFO:
                 break;
 
             case LC_BUILD_VERSION:
@@ -833,7 +861,6 @@ static int rtR0DbgKrnlDarwinParseCommands(RTDBGKRNLINFOINT *pThis)
             case LC_PREPAGE:
             case LC_TWOLEVEL_HINTS:
             case LC_PREBIND_CKSUM:
-            case LC_SEGMENT_SPLIT_INFO:
             case LC_ENCRYPTION_INFO:
                 RETURN_VERR_LDR_UNEXPECTED;
 
@@ -1110,6 +1137,9 @@ static int rtR0DbgKrnlDarwinOpen(PRTDBGKRNLINFO phKrnlInfo, const char *pszKerne
         return VERR_NO_MEMORY;
     pThis->hFile = NIL_RTFILE;
 
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aoffLoadSegments); i++)
+        pThis->aoffLoadSegments[i] = UINTPTR_MAX;
+
     int rc = RTFileOpen(&pThis->hFile, pszKernelFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
         rc = rtR0DbgKrnlDarwinLoadFileHeaders(pThis);
@@ -1122,10 +1152,33 @@ static int rtR0DbgKrnlDarwinOpen(PRTDBGKRNLINFO phKrnlInfo, const char *pszKerne
 #ifdef IN_RING0
         /*
          * Determine the load displacement (10.8 kernels are PIE).
+         *
+         * Starting with 11.0 (BigSur) all segments can have different load displacements
+         * so determine the displacements from known symbols.
          */
-        uintptr_t uLinkAddr = rtR0DbgKrnlDarwinLookup(pThis, "kernel_map");
-        if (uLinkAddr != 0)
-            pThis->offLoad = (uintptr_t)&kernel_map - uLinkAddr;
+        /* __TEXT */
+        MY_NLIST const *pSym = rtR0DbgKrnlDarwinLookupSym(pThis, "vm_map_unwire");
+        if (pSym)
+        {
+            uint8_t idxSeg = pThis->auSections2Segment[pSym->n_sect];
+            pThis->aoffLoadSegments[idxSeg] = (uintptr_t)&vm_map_unwire - pSym->n_value;
+        }
+
+        /* __HIB */
+        pSym = rtR0DbgKrnlDarwinLookupSym(pThis, "kernel_map");
+        if (pSym)
+        {
+            uint8_t idxSeg = pThis->auSections2Segment[pSym->n_sect];
+            pThis->aoffLoadSegments[idxSeg] = (uintptr_t)&kernel_map - pSym->n_value;
+        }
+
+        /* __DATA */
+        pSym = rtR0DbgKrnlDarwinLookupSym(pThis, "gIOServicePlane");
+        if (pSym)
+        {
+            uint8_t idxSeg = pThis->auSections2Segment[pSym->n_sect];
+            pThis->aoffLoadSegments[idxSeg] = (uintptr_t)&gIOServicePlane - pSym->n_value;
+        }
 #endif
         rc = rtR0DbgKrnlDarwinCheckStandardSymbols(pThis, pszKernelFile);
     }
@@ -1203,6 +1256,9 @@ static int rtR0DbgKrnlDarwinOpenInMemory(PRTDBGKRNLINFO phKrnlInfo)
         return VERR_NO_MEMORY;
     pThis->hFile    = NIL_RTFILE;
     pThis->fIsInMem = true;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aoffLoadSegments); i++)
+        pThis->aoffLoadSegments[i] = UINTPTR_MAX;
 
     /*
      * Figure the search range based on a symbol that is supposed to be in

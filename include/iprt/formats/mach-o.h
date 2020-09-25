@@ -260,7 +260,8 @@ AssertCompileSize(mach_header_64_t, 0x20);
 #define MH_DEAD_STRIPPABLE_DYLIB    UINT32_C(0x00400000)
 #define MH_HAS_TLV_DESCRIPTORS      UINT32_C(0x00800000)
 #define MH_NO_HEAP_EXECUTION        UINT32_C(0x01000000)
-#define MH_VALID_FLAGS              UINT32_C(0x01ffffff)
+#define MH_UNKNOWN                  UINT32_C(0x80000000)
+#define MH_VALID_FLAGS              UINT32_C(0x81ffffff)
 
 
 typedef struct load_command
