@@ -309,6 +309,20 @@ DECLINLINE(PRTMEMBLOCK) rtmemBlockDelayRemove(void)
     return pBlock;
 }
 
+
+/**
+ * Dumps the freed blocks.
+ * This is something which you should call from gdb.
+ */
+extern "C" void RTMemDumpFreed(void);
+void RTMemDumpFreed(void)
+{
+    fprintf(stderr, "address  size(alg)     caller\n");
+    for (PRTMEMBLOCK pCur = g_pBlocksDelayHead; pCur; pCur = (PRTMEMBLOCK)pCur->Core.pRight)
+        RTMemDumpOne(&pCur->Core, NULL);
+
+}
+
 # endif  /* RTALLOC_EFENCE_FREE_DELAYED */
 
 #endif /* RTALLOC_EFENCE_TRACE */

@@ -1498,6 +1498,7 @@
 # define RTMemContAlloc                                 RT_MANGLER(RTMemContAlloc) /* r0drv */
 # define RTMemContFree                                  RT_MANGLER(RTMemContFree) /* r0drv */
 # define RTMemDump                                      RT_MANGLER(RTMemDump)
+# define RTMemDumpFreed                                 RT_MANGLER(RTMemDumpFreed)
 # define RTMemDupExTag                                  RT_MANGLER(RTMemDupExTag)
 # define RTMemDupTag                                    RT_MANGLER(RTMemDupTag)
 # define RTMemEfAlloc                                   RT_MANGLER(RTMemEfAlloc)
