@@ -898,7 +898,8 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml
 
 ################Copy qhcp file from the source directory###############################
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp: | $$(dir $$@)
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp: \
+	$$(dir $$@)
 	$(call MSG_L1,Copying manual.qhcp file)
 	$(QUIET)$(INSTALL_STAGING) -m0664 -- $(addprefix $(VBOX_PATH_MANUAL_SRC)/, $(VBOX_QHCP_FILES)) $@
 
