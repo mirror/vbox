@@ -822,6 +822,7 @@ html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp
+html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhc
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
 
@@ -903,7 +904,9 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp:
 	$(call MSG_L1,Copying manual.qhcp file)
 	$(QUIET)$(INSTALL_STAGING) -m0664 -- $(addprefix $(VBOX_PATH_MANUAL_SRC)/, $(VBOX_QHCP_FILES)) $@
 	
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhc: 
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhc: \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp
+	qcollectiongenerator $<
 
 
 # Handy aliases.
