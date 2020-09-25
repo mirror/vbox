@@ -371,7 +371,8 @@ typedef struct ACPISTATE
     bool                fUseMcfg;
     /** if the 64-bit prefetchable memory window is shown to the guest */
     bool                fPciPref64Enabled;
-    bool                afAlignment1;
+    /** If the IOMMU device should be enabled */
+    bool                fUseIommu;
     /** Primary NIC PCI address. */
     uint32_t            u32NicPciAddress;
     /** HD Audio PCI address. */
@@ -3451,7 +3452,7 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
         iHpet = cAddr++;        /* HPET */
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    if (pThis->u32IommuAmdPciAddress)
+    if (pThis->fUseIommu)
         iIommuAmd = cAddr++;    /* IOMMU (AMD) */
 #endif
 
@@ -3530,7 +3531,7 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
         GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLHPET), 16);
     }
 #ifdef VBOX_WITH_IOMMU_AMD
-    if (pThis->u32IommuAmdPciAddress)
+    if (pThis->fUseIommu)
     {
         GCPhysIommuAmd = GCPhysCur;
         GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLIOMMU), 16);
@@ -3609,7 +3610,7 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
         aGCPhysXsdt[iHpet] = GCPhysHpet + addend;
     }
 #ifdef VBOX_WITH_IOMMU_AMD
-    if (pThis->u32IommuAmdPciAddress)
+    if (pThis->fUseIommu)
     {
         acpiR3SetupIommuAmd(pDevIns, pThis, GCPhysIommuAmd + addend);
         aGCPhysRsdt[iIommuAmd] = GCPhysIommuAmd + addend;
@@ -4131,23 +4132,36 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Parallel1IoPortBase\""));
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /* Query IOMMU AMD address (IOMA). */
-    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IommuAmdPciAddress", &pThis->u32IommuAmdPciAddress, 0);
+    /* Query whether an IOMMU AMD is enabled. */
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IommuAmdEnabled", &pThis->fUseIommu, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuAmdAddress\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuEnabled\""));
 
-    /* Query southbridge I/O APIC address (required when an AMD IOMMU is configured). */
-    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "SbIoApicPciAddress", &pThis->u32SbIoApicPciAddress, 0);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"SbIoApicAddress\""));
-
-    /* Warn if the SB IOAPIC is not at the required address if an AMD IOMMU is configured. */
-    if (   pThis->u32IommuAmdPciAddress
-        && pThis->u32SbIoApicPciAddress != RT_MAKE_U32(VBOX_PCI_FN_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC))
+    if (pThis->fUseIommu)
     {
-        /** @todo Maybe make this a VM startup failure later. */
-        LogRel(("ACPI: Warning! Southbridge I/O APIC not at %#x:%#x:%#x when an AMD IOMMU is present.\n",
-                VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC));
+        /* Query IOMMU AMD address (IOMA). */
+        rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IommuAmdPciAddress", &pThis->u32IommuAmdPciAddress, 0);
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuAmdAddress\""));
+
+        /* Query southbridge I/O APIC address (required when an AMD IOMMU is configured). */
+        rc = pHlp->pfnCFGMQueryU32Def(pCfg, "SbIoApicPciAddress", &pThis->u32SbIoApicPciAddress, 0);
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"SbIoApicAddress\""));
+
+        /* Warn if the IOMMU Address is at the PCI host-bridge address. */
+        /** @todo We should eventually not assign the IOMMU at this address, see
+         *        @bugref{9654#c53}. */
+        if (!pThis->u32IommuAmdPciAddress)
+            LogRel(("ACPI: Warning! AMD IOMMU assigned the PCI host bridge address.\n"));
+
+        /* Warn if the SB IOAPIC is not at the required address if an AMD IOMMU is configured. */
+        if (pThis->u32SbIoApicPciAddress != RT_MAKE_U32(VBOX_PCI_FN_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC))
+        {
+            /** @todo Maybe make this a VM startup failure later. */
+            LogRel(("ACPI: Warning! Southbridge I/O APIC not at %#x:%#x:%#x when an AMD IOMMU is present.\n",
+                    VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC));
+        }
     }
 #endif
 
