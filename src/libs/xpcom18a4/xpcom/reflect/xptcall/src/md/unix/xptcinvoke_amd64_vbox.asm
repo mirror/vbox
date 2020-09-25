@@ -130,7 +130,7 @@ BEGINPROC_EXPORTED XPTC_InvokeByIndex
         call    r11                     ; note! stack is aligned here.
 
 .fast_return:
-        lea     rsp, [rbp - 8*3]
+        lea     rsp, [rbp - 8*2]
         pop     r12
         pop     rbx
         leave
