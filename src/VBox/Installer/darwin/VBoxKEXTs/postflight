@@ -77,10 +77,14 @@ if kextstat -lb org.virtualbox.kext.VBoxDrv 2>&1 | grep -q org.virtualbox.kext.V
 fi
 
 #
-# Load the extension, exit on first error.
+# Load the extension, exit on first error except on BigSur onwards as an error
+# is expected there and the user has to reboot.
 #
+MACOS_VERS=$(sw_vers -productVersion)
 sync
-set -e
+if [[ ${MACOS_VERS} != 11.0* ]]; then
+    set -e
+fi
 kextload    '/Library/Application Support/VirtualBox/VBoxDrv.kext'
 kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxUSB.kext'
 kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxNetFlt.kext'
