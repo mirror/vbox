@@ -4,7 +4,7 @@
         <title>Virtual Box</title>
         <!-- <applicationIcon>images/handbook.png</applicationIcon> -->
         <cacheDirectory>QtProject/vbox</cacheDirectory>
-        <startPage>qthelp://org.virtualbox/manual/UserManual.html</startPage>
+        <startPage>qthelp://org.virtualbox/manual/UserManual.xhtml</startPage>
         <aboutMenuText>
             <text>VirtualBox</text>
         </aboutMenuText>

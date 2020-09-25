@@ -38,7 +38,7 @@
           <!-- <xsl:apply-templates select="//xhtml:div[@class='toc']//xhtml:span[@class='chapter']"/> -->
           <!-- ====================single html input file========================== -->
           <xsl:element name="file">
-            <xsl:text>UserManual.html</xsl:text>
+            <xsl:text>UserManual.xhtml</xsl:text>
           </xsl:element>
           <xsl:value-of select="$newline" />
           <!-- ===================================================================== -->
