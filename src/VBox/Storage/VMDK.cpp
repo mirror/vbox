@@ -6294,7 +6294,7 @@ static char *vmdkStrReplace(const char *pszWhere, const char *pszWhat,
         return NULL;
     }
     size_t cbFinal = strlen(pszWhere) + 1 + strlen(pszByWhat) - strlen(pszWhat);
-    char *pszNewStr = (char *)RTMemAlloc(cbFinal);
+    char *pszNewStr = RTStrAlloc(cbFinal);
     if (pszNewStr)
     {
         char *pszTmp = pszNewStr;
