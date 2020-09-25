@@ -865,6 +865,7 @@ class TestDriver(base.TestDriver):                                              
         self.oVBoxSvcProcess    = None;
         self.sVBoxSvcPidFile    = None;
         self.fVBoxSvcInDebugger = False;
+        self.fVBoxSvcWaitForDebugger = False;
         self.sVBoxValidationKit     = None;
         self.sVBoxValidationKitIso  = None;
         self.sVBoxBootSectors   = None;
@@ -1175,6 +1176,14 @@ class TestDriver(base.TestDriver):                                              
             #
             if self.oVBoxSvcProcess is not None:
                 self.oVBoxSvcProcess.enableCrashReporting('crash/report/svc', 'crash/dump/svc');
+
+            #
+            # Wait for debugger to attach.
+            #
+            if self.oVBoxSvcProcess is not None and self.fVBoxSvcWaitForDebugger:
+                reporter.log('Press any key after attaching to VBoxSVC (pid %s) with a debugger...'
+                             % (self.oVBoxSvcProcess.getPid(),));
+                sys.stdin.read(1);
 
         #
         # Fudge and pid file.
@@ -1696,6 +1705,12 @@ class TestDriver(base.TestDriver):                                              
         reporter.log('  --vbox-use-svc-defaults');
         reporter.log('      Use default locations and files for VBoxSVC.  This is useful');
         reporter.log('      for automatically configuring the test VMs for debugging.');
+        reporter.log('  --vbox-log');
+        reporter.log('      The VBox logger group settings for everyone.');
+        reporter.log('  --vbox-log-flags');
+        reporter.log('      The VBox logger flags settings for everyone.');
+        reporter.log('  --vbox-log-dest');
+        reporter.log('      The VBox logger destination settings for everyone.');
         reporter.log('  --vbox-self-log');
         reporter.log('      The VBox logger group settings for the testdriver.');
         reporter.log('  --vbox-self-log-flags');
@@ -1714,14 +1729,10 @@ class TestDriver(base.TestDriver):                                              
         reporter.log('      The VBoxSVC logger flag settings.');
         reporter.log('  --vbox-svc-log-dest');
         reporter.log('      The VBoxSVC logger destination settings.');
-        reporter.log('  --vbox-log');
-        reporter.log('      The VBox logger group settings for everyone.');
-        reporter.log('  --vbox-log-flags');
-        reporter.log('      The VBox logger flags settings for everyone.');
-        reporter.log('  --vbox-log-dest');
-        reporter.log('      The VBox logger destination settings for everyone.');
         reporter.log('  --vbox-svc-debug');
-        reporter.log('      Start VBoxSVC in a debugger');
+        reporter.log('      Start VBoxSVC in a debugger.');
+        reporter.log('  --vbox-svc-wait-debug');
+        reporter.log('      Start VBoxSVC and wait for debugger to attach to it.');
         reporter.log('  --vbox-always-upload-logs');
         reporter.log('      Whether to always upload log files, or only do so on failure.');
         reporter.log('  --vbox-always-upload-screenshots');
@@ -1827,6 +1838,8 @@ class TestDriver(base.TestDriver):                                              
             self.sLogSvcDest      = asArgs[iArg];
         elif asArgs[iArg] == '--vbox-svc-debug':
             self.fVBoxSvcInDebugger = True;
+        elif asArgs[iArg] == '--vbox-svc-wait-debug':
+            self.fVBoxSvcWaitForDebugger = True;
         elif asArgs[iArg] == '--vbox-always-upload-logs':
             self.fAlwaysUploadLogs = True;
         elif asArgs[iArg] == '--vbox-always-upload-screenshots':
