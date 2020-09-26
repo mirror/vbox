@@ -51,16 +51,8 @@ static NTSTATUS svgaHwInit(VBOXWDDM_EXT_VMSVGA *pSvga)
         pSvga->u32MemorySize = 512*1024*1024;
     }
 
-    if (pSvga->u32Caps & SVGA_CAP_GBOBJECTS)
-    {
-        /** @todo Support when the host device implements this. */
-        RT_BREAKPOINT();
-    }
-    else
-    {
-        pSvga->u32MaxTextureWidth = 8192;
-        pSvga->u32MaxTextureHeight = 8192;
-    }
+    pSvga->u32MaxTextureWidth = 8192;
+    pSvga->u32MaxTextureHeight = 8192;
 
     /* 1 + floor(log2(max(u32MaxTextureWidth, u32MaxTextureHeight))):
      * In Direct3D the next mipmap level size is floor(prev_size / 2), for example 5 -> 2 -> 1
@@ -211,15 +203,6 @@ NTSTATUS SvgaQueryInfo(PVBOXWDDM_EXT_VMSVGA pSvga,
 
     /* Beginning of FIFO. */
     memcpy(pSvgaInfo->au32Fifo, (void *)&pSvga->pu32FIFO[0], sizeof(pSvgaInfo->au32Fifo));
-
-    if (pSvgaInfo->au32Regs[SVGA_REG_CAPABILITIES] & SVGA_CAP_GBOBJECTS)
-    {
-        for (i = 0; i < RT_ELEMENTS(pSvgaInfo->au32Caps); ++i)
-        {
-            SVGARegWrite(pSvga, SVGA_REG_DEV_CAP, i);
-            pSvgaInfo->au32Caps[i] = SVGARegRead(pSvga, SVGA_REG_DEV_CAP);
-        }
-    }
 
     return STATUS_SUCCESS;
 }

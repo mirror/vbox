@@ -106,7 +106,6 @@ vmw_drm_gb_surface_from_handle(struct svga_winsys_screen *sws,
                                SVGA3dSurfaceFormat *format)
 {
     RT_NOREF3(sws, whandle, format);
-    ASMBreakpoint();
     return 0;
 }
 
@@ -116,7 +115,6 @@ vmw_drm_surface_from_handle(struct svga_winsys_screen *sws,
 			    SVGA3dSurfaceFormat *format)
 {
     RT_NOREF3(sws, whandle, format);
-    ASMBreakpoint();
     return 0;
 }
 

@@ -33,11 +33,6 @@
 #include <svga_reg.h>
 #include <svga3d_reg.h>
 
-#ifndef SVGA_CAP_GBOBJECTS
-#define SVGA_CAP_GBOBJECTS 0x08000000
-#define SVGA_REG_DEV_CAP 52
-#endif
-
 #define SVGA_SYNC_GENERIC         1
 #define SVGA_SYNC_FIFOFULL        2
 
