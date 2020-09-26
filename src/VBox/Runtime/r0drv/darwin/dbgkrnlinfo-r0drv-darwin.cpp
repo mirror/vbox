@@ -313,6 +313,62 @@ extern "C" void OSlibkernInit(void);
 extern "C" void kdp_set_interface(void);
 
 
+/*
+ * Determine the load displacement (10.8 kernels are PIE).
+ *
+ * Starting with 11.0 (BigSur) all segments can have different load displacements
+ * so determine the displacements from known symbols.
+ *
+ * @returns IPRT status code
+ * @param   pThis               The internal scratch data.
+ */
+static int rtR0DbgKrnlDarwinInitLoadDisplacements(RTDBGKRNLINFOINT *pThis)
+{
+    static struct
+    {
+        const char *pszName;
+        uintptr_t   uAddr;
+    } const s_aStandardSyms[] =
+    {
+#ifdef IN_RING0
+# define KNOWN_ENTRY(a_Sym)  { #a_Sym, (uintptr_t)&a_Sym }
+#else
+# define KNOWN_ENTRY(a_Sym)  { #a_Sym, 0 }
+#endif
+        KNOWN_ENTRY(vm_map_unwire),   /* __TEXT */
+        KNOWN_ENTRY(kernel_map),      /* __HIB */
+        KNOWN_ENTRY(gIOServicePlane)  /* __DATA */
+#undef KNOWN_ENTRY
+    };
+
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aStandardSyms); i++)
+    {
+        MY_NLIST const *pSym = rtR0DbgKrnlDarwinLookupSym(pThis, s_aStandardSyms[i].pszName);
+        if (RT_UNLIKELY(!pSym))
+            return VERR_INTERNAL_ERROR_2;
+
+        uint8_t idxSeg = pThis->auSections2Segment[pSym->n_sect];
+#ifdef IN_RING0
+        /*
+         * The segment should either not have the load displacement determined or it should
+         * be the same for all symbols in the same segment.
+         */
+        if (   pThis->aoffLoadSegments[idxSeg] != UINTPTR_MAX
+            && pThis->aoffLoadSegments[idxSeg] != s_aStandardSyms[i].uAddr - pSym->n_value)
+            return VERR_INTERNAL_ERROR_2;
+
+        pThis->aoffLoadSegments[idxSeg] = s_aStandardSyms[i].uAddr - pSym->n_value;
+#elif defined(IN_RING3)
+        pThis->aoffLoadSegments[idxSeg] = 0;
+#else
+# error "Either IN_RING0 or IN_RING3 msut be defined"
+#endif
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Check the symbol table against symbols we known symbols.
  *
@@ -443,6 +499,7 @@ static int rtR0DbgKrnlDarwinCheckStandardSymbols(RTDBGKRNLINFOINT *pThis, const 
         KNOWN_ENTRY(PE_kputc),
         KNOWN_ENTRY(kernel_map),
         KNOWN_ENTRY(kernel_pmap),
+#undef KNOWN_ENTRY
     };
 
     for (unsigned i = 0; i < RT_ELEMENTS(s_aStandardCandles); i++)
@@ -1149,38 +1206,9 @@ static int rtR0DbgKrnlDarwinOpen(PRTDBGKRNLINFO phKrnlInfo, const char *pszKerne
         rc = rtR0DbgKrnlDarwinLoadSymTab(pThis, pszKernelFile);
     if (RT_SUCCESS(rc))
     {
-#ifdef IN_RING0
-        /*
-         * Determine the load displacement (10.8 kernels are PIE).
-         *
-         * Starting with 11.0 (BigSur) all segments can have different load displacements
-         * so determine the displacements from known symbols.
-         */
-        /* __TEXT */
-        MY_NLIST const *pSym = rtR0DbgKrnlDarwinLookupSym(pThis, "vm_map_unwire");
-        if (pSym)
-        {
-            uint8_t idxSeg = pThis->auSections2Segment[pSym->n_sect];
-            pThis->aoffLoadSegments[idxSeg] = (uintptr_t)&vm_map_unwire - pSym->n_value;
-        }
-
-        /* __HIB */
-        pSym = rtR0DbgKrnlDarwinLookupSym(pThis, "kernel_map");
-        if (pSym)
-        {
-            uint8_t idxSeg = pThis->auSections2Segment[pSym->n_sect];
-            pThis->aoffLoadSegments[idxSeg] = (uintptr_t)&kernel_map - pSym->n_value;
-        }
-
-        /* __DATA */
-        pSym = rtR0DbgKrnlDarwinLookupSym(pThis, "gIOServicePlane");
-        if (pSym)
-        {
-            uint8_t idxSeg = pThis->auSections2Segment[pSym->n_sect];
-            pThis->aoffLoadSegments[idxSeg] = (uintptr_t)&gIOServicePlane - pSym->n_value;
-        }
-#endif
-        rc = rtR0DbgKrnlDarwinCheckStandardSymbols(pThis, pszKernelFile);
+        rc = rtR0DbgKrnlDarwinInitLoadDisplacements(pThis);
+        if (RT_SUCCESS(rc))
+            rc = rtR0DbgKrnlDarwinCheckStandardSymbols(pThis, pszKernelFile);
     }
 
     rtR0DbgKrnlDarwinLoadDone(pThis);
@@ -1353,13 +1381,17 @@ static int rtR0DbgKrnlDarwinOpenInMemory(PRTDBGKRNLINFO phKrnlInfo)
                                 rc = rtR0DbgKrnlDarwinParseSymTab(pThis, "in-memory");
                                 if (RT_SUCCESS(rc))
                                 {
-                                    /*
-                                     * Finally check the standard candles.
-                                     */
-                                    rc = rtR0DbgKrnlDarwinCheckStandardSymbols(pThis, "in-memory");
-                                    rtR0DbgKrnlDarwinLoadDone(pThis);
+                                    rc = rtR0DbgKrnlDarwinInitLoadDisplacements(pThis);
                                     if (RT_SUCCESS(rc))
-                                        return rtR0DbgKrnlDarwinSuccess(phKrnlInfo, pThis, "in-memory");
+                                    {
+                                        /*
+                                         * Finally check the standard candles.
+                                         */
+                                        rc = rtR0DbgKrnlDarwinCheckStandardSymbols(pThis, "in-memory");
+                                        rtR0DbgKrnlDarwinLoadDone(pThis);
+                                        if (RT_SUCCESS(rc))
+                                            return rtR0DbgKrnlDarwinSuccess(phKrnlInfo, pThis, "in-memory");
+                                    }
                                 }
                             }
                         }
