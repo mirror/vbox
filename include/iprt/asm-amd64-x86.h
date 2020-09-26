@@ -1389,7 +1389,7 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
  * @returns the APIC ID.
  */
 #if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 16 /*?*/
-RT_ASM_DECL_PRAGMA_WATCOM(uint8_t) ASMGetApicIdExt0B(void);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMGetApicIdExt0B(void);
 #else
 DECLINLINE(uint32_t) ASMGetApicIdExt0B(void)
 {
