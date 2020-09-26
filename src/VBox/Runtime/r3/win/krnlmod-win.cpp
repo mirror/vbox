@@ -307,7 +307,7 @@ RTDECL(int) RTKrnlModLoadByName(const char *pszName)
 
 RTDECL(int) RTKrnlModLoadByPath(const char *pszPath)
 {
-    AssertPtrReturn(pszName, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
 
     return VERR_NOT_SUPPORTED;
 }
