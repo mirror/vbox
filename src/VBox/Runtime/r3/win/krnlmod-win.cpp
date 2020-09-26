@@ -295,3 +295,27 @@ RTDECL(int) RTKrnlModInfoQueryRefModInfo(RTKRNLMODINFO hKrnlModInfo, uint32_t id
     RT_NOREF3(hKrnlModInfo, idx, phKrnlModInfoRef);
     return VERR_NOT_SUPPORTED;
 }
+
+
+RTDECL(int) RTKrnlModLoadByName(const char *pszName)
+{
+    AssertPtrReturn(pszName, VERR_INVALID_PARAMETER);
+
+    return VERR_NOT_SUPPORTED;
+}
+
+
+RTDECL(int) RTKrnlModLoadByPath(const char *pszPath)
+{
+    AssertPtrReturn(pszName, VERR_INVALID_PARAMETER);
+
+    return VERR_NOT_SUPPORTED;
+}
+
+
+RTDECL(int) RTKrnlModUnloadByName(const char *pszName)
+{
+    AssertPtrReturn(pszName, VERR_INVALID_PARAMETER);
+
+    return VERR_NOT_SUPPORTED;
+}
