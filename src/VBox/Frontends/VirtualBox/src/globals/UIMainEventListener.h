@@ -25,6 +25,7 @@
 #include <QList>
 #include <QObject>
 #include <QRect>
+#include <QSet>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
@@ -70,6 +71,12 @@ class SHARED_LIBRARY_STUFF UIMainEventListener : public QObject
     Q_OBJECT;
 
 signals:
+
+    /** @name General signals
+      * @{ */
+        /** Notifies about listening has finished. */
+        void sigListeningFinished();
+    /** @} */
 
     /** @name VirtualBoxClient related signals
       * @{ */
@@ -209,10 +216,12 @@ public:
     void uninit() {}
 
     /** Registers event source for passive event listener by creating a listening thread.
-      * @param  comSource    Brings event source we are creating listening thread for.
-      * @param  comListener  Brings event listener we are creating listening thread for. */
+      * @param  comSource         Brings event source we are creating listening thread for.
+      * @param  comListener       Brings event listener we are creating listening thread for.
+      * @param  escapeEventTypes  Brings a set of escape event types which commands listener to finish. */
     void registerSource(const CEventSource &comSource,
-                        const CEventListener &comListener);
+                        const CEventListener &comListener,
+                        const QSet<KVBoxEventType> &escapeEventTypes = QSet<KVBoxEventType>());
     /** Unregisters event sources. */
     void unregisterSources();
 
@@ -221,6 +230,11 @@ public:
 
     /** Holds the list of threads handling passive event listening. */
     QList<UIMainEventListeningThread*> m_threads;
+
+private slots:
+
+    /** Handles thread finished signal. */
+    void sltHandleThreadFinished();
 };
 
 /** Wraps the IListener interface around our implementation class. */
