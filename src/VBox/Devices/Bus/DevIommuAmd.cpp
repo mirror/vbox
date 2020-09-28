@@ -476,6 +476,7 @@ static uint32_t iommuAmdGetEvtLogEntryCount(PIOMMU pThis)
 }
 
 
+#if 0
 /**
  * Gets the number of (unconsumed) commands in the command buffer.
  *
@@ -492,6 +493,7 @@ static uint32_t iommuAmdGetCmdBufEntryCount(PIOMMU pThis)
     uint32_t const cMaxCmds = iommuAmdGetBufMaxEntries(pThis->CmdBufBaseAddr.n.u4Len);
     return cMaxCmds - idxHead + idxTail;
 }
+#endif
 
 
 DECL_FORCE_INLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
@@ -2091,7 +2093,7 @@ static void iommuAmdRaiseMsiInterrupt(PPDMDEVINS pDevIns)
     }
 }
 
-
+#if 0
 /**
  * Clears the MSI interrupt for the IOMMU device.
  *
@@ -2105,7 +2107,7 @@ static void iommuAmdClearMsiInterrupt(PPDMDEVINS pDevIns)
     if (iommuAmdIsMsiEnabled(pDevIns))
         PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
 }
-
+#endif
 
 /**
  * Writes an entry to the event log in memory.
@@ -2255,6 +2257,7 @@ static void iommuAmdRaisePageTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, 
 }
 
 
+#ifdef IN_RING3
 /**
  * Initializes a COMMAND_HARDWARE_ERROR event.
  *
@@ -2294,6 +2297,7 @@ static void iommuAmdRaiseCmdHwErrorEvent(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T 
 
     LogFunc(("Raised COMMAND_HARDWARE_ERROR. GCPhysCmd=%#RGp u2Type=%u\n", pEvtCmdHwErr->n.u64Addr, pEvtCmdHwErr->n.u2Type));
 }
+#endif /* IN_RING3 */
 
 
 /**
@@ -2347,7 +2351,7 @@ static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, P
              pEvtDevTabHwErr->n.u64Addr, enmOp, pEvtDevTabHwErr->n.u2Type));
 }
 
-
+#ifdef IN_RING3
 /**
  * Initializes an ILLEGAL_COMMAND_ERROR event.
  *
@@ -2385,6 +2389,7 @@ static void iommuAmdRaiseIllegalCmdEvent(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_E
 
     LogFunc(("Raised ILLEGAL_COMMAND_ERROR. Addr=%#RGp\n", pEvtIllegalCmd->n.u64Addr));
 }
+#endif  /* IN_RING3 */
 
 
 /**
