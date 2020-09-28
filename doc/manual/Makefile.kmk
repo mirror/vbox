@@ -173,8 +173,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   INSTALLS += VBox-docs-accessibility-html
  endif
 
- INSTALLS += VBox-docs-qhelp_collection_project
- 
  ifdef VBOX_ONLY_DOCS
   PACKING += $(PATH_STAGE_BIN)/VBoxDocumentation.zip
  endif
@@ -360,10 +358,6 @@ VBox-docs-accessibility_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/Accessibilit
 VBox-docs-accessibility-html_INST = $(INST_BIN)
 VBox-docs-accessibility-html_MODE = a+r,u+w
 VBox-docs-accessibility-html_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/Accessibility.html
-
-VBox-docs-qhelp_collection_project_INST = $(INST_BIN)
-VBox-docs-qhelp_collection_project_MODE = a+r,u+w
-VBox-docs-qhelp_collection_project_SOURCES = $(addprefix $(VBOX_PATH_MANUAL_SRC)/, $(VBOX_QHCP_FILES))
 
 if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
 
@@ -824,8 +818,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
 
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
-#qhelp:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp
-qhelp:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, $(VBOX_MANUAL_PNG_FILES_en_US))
+qhelp:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhc
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
 
@@ -905,17 +898,20 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp: \
 ################Copy qhcp file from the source directory###############################
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp: \
 	$$(dir $$@)
-	$(call MSG_L1,Copying manual.qhcp file)
 	$(QUIET)$(INSTALL_STAGING) -m0664 -- $(addprefix $(VBOX_PATH_MANUAL_SRC)/, $(VBOX_QHCP_FILES)) $@
 
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhc: \
 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp \
-	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp \
+	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, $(VBOX_MANUAL_PNG_FILES_en_US))
 	qcollectiongenerator $<
 
+$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, images): 
+	mkdir -p $@
+	
 $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, $(VBOX_MANUAL_PNG_FILES_en_US)):  \
 	$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/, $(VBOX_MANUAL_PNG_FILES_en_US))  \
-	$$(dir $$@) 
+	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, images)
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $< $@
 
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qch: \
