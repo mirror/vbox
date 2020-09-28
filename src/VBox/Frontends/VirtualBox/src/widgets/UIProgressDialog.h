@@ -220,10 +220,6 @@ private:
 
     /** Prepares all. */
     void prepare();
-    /** Prepares event handler. */
-    void prepareEventHandler();
-    /** Cleanups event handler. */
-    void cleanupEventHandler();
     /** Cleanups all. */
     void cleanup();
 
