@@ -7515,10 +7515,6 @@ TEMPLATE_NewVBoxGuestR3Exe_LIBS     = \
 ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_NewVBoxGuestR3Exe_LIBS += contract
 endif
-# Use PIE and RELRO for the GA executables to support ASLR in the guest
-TEMPLATE_NewVBoxGuestR3Exe_CXXFLAGS.linux	+= -fPIE
-TEMPLATE_NewVBoxGuestR3Exe_CFLAGS.linux		+= -fPIE
-TEMPLATE_NewVBoxGuestR3Exe_LDFLAGS.linux	+= -pie -fPIE -Wl,-z,relro,-z,now,-z,noexecstack
 
 #
 # Template for building normal R3 programs for the guest additions, strict.
