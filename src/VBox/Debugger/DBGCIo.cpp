@@ -408,6 +408,8 @@ static int dbgcIoSvcInitWorker(PUVM pUVM, PDBGCIOSVC pIoSvc, PCDBGCIOPROVREG pIo
  *
  * @returns VBox status code.
  * @param   pUVM                The user mode VM handle.
+ * @param   pIoSvc              The I/O service instance to initialize.
+ * @param   pCfg                The config for the instance.
  */
 static int dbgcIoSvcInit(PUVM pUVM, PDBGCIOSVC pIoSvc, PCFGMNODE pCfg)
 {

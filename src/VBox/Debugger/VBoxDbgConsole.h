@@ -316,7 +316,7 @@ protected:
     static DECLCALLBACK(int) backWrite(PCDBGCIO pIo, const void *pvBuf, size_t cbBuf, size_t *pcbWritten);
 
     /**
-     * @copydoc DBGCIO::PfnSetReady
+     * @copydoc DBGCIO::pfnSetReady
      */
     static DECLCALLBACK(void) backSetReady(PCDBGCIO pIo, bool fReady);
 

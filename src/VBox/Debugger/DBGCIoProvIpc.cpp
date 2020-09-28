@@ -129,7 +129,7 @@ static DECLCALLBACK(void) dbgcIoProvIpcIoSetReady(PCDBGCIO pIo, bool fReady)
 
 
 /**
- * @interface_method_impl{DBGCIOPROV,pfnCreate}
+ * @interface_method_impl{DBGCIOPROVREG,pfnCreate}
  */
 static DECLCALLBACK(int) dbgcIoProvIpcCreate(PDBGCIOPROV phDbgcIoProv, PCFGMNODE pCfg)
 {
@@ -161,7 +161,7 @@ static DECLCALLBACK(int) dbgcIoProvIpcCreate(PDBGCIOPROV phDbgcIoProv, PCFGMNODE
 
 
 /**
- * @interface_method_impl{DBGCIOPROV,pfnDestroy}
+ * @interface_method_impl{DBGCIOPROVREG,pfnDestroy}
  */
 static DECLCALLBACK(void) dbgcIoProvIpcDestroy(DBGCIOPROV hDbgcIoProv)
 {
@@ -171,7 +171,7 @@ static DECLCALLBACK(void) dbgcIoProvIpcDestroy(DBGCIOPROV hDbgcIoProv)
 
 
 /**
- * @interface_method_impl{DBGCIOPROV,pfnWaitForConnect}
+ * @interface_method_impl{DBGCIOPROVREG,pfnWaitForConnect}
  */
 static DECLCALLBACK(int) dbgcIoProvIpcWaitForConnect(DBGCIOPROV hDbgcIoProv, RTMSINTERVAL cMsTimeout, PCDBGCIO *ppDbgcIo)
 {
@@ -203,7 +203,7 @@ static DECLCALLBACK(int) dbgcIoProvIpcWaitForConnect(DBGCIOPROV hDbgcIoProv, RTM
 
 
 /**
- * @interface_method_impl{DBGCIOPROV,pfnWaitInterrupt}
+ * @interface_method_impl{DBGCIOPROVREG,pfnWaitInterrupt}
  */
 static DECLCALLBACK(int) dbgcIoProvIpcWaitInterrupt(DBGCIOPROV hDbgcIoProv)
 {

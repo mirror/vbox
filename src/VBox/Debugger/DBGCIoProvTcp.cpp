@@ -129,7 +129,7 @@ static DECLCALLBACK(void) dbgcIoProvTcpIoSetReady(PCDBGCIO pIo, bool fReady)
 
 
 /**
- * @interface_method_impl{DBGCIOPROV,pfnCreate}
+ * @interface_method_impl{DBGCIOPROVREG,pfnCreate}
  */
 static DECLCALLBACK(int) dbgcIoProvTcpCreate(PDBGCIOPROV phDbgcIoProv, PCFGMNODE pCfg)
 {
@@ -172,7 +172,7 @@ static DECLCALLBACK(int) dbgcIoProvTcpCreate(PDBGCIOPROV phDbgcIoProv, PCFGMNODE
 
 
 /**
- * @interface_method_impl{DBGCIOPROV,pfnDestroy}
+ * @interface_method_impl{DBGCIOPROVREG,pfnDestroy}
  */
 static DECLCALLBACK(void) dbgcIoProvTcpDestroy(DBGCIOPROV hDbgcIoProv)
 {
@@ -182,7 +182,7 @@ static DECLCALLBACK(void) dbgcIoProvTcpDestroy(DBGCIOPROV hDbgcIoProv)
 
 
 /**
- * @interface_method_impl{DBGCIOPROV,pfnWaitForConnect}
+ * @interface_method_impl{DBGCIOPROVREG,pfnWaitForConnect}
  */
 static DECLCALLBACK(int) dbgcIoProvTcpWaitForConnect(DBGCIOPROV hDbgcIoProv, RTMSINTERVAL cMsTimeout, PCDBGCIO *ppDbgcIo)
 {
