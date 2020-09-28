@@ -152,13 +152,13 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  ifdef VBOX_WITH_DOCS_QHELP
   INSTALLS += VBox-docs-usermanual-qhc
   INSTALLS += VBox-docs-usermanual-qch
-  VBOX_PATH_BIN_QHELP = $(PATH_STAGE_BIN)/UserManual.qch 
-  VBOX_PATH_BIN_QHELP += $(PATH_STAGE_BIN)/UserManual.qhc 
+  VBOX_PATH_BIN_QHELP = $(PATH_STAGE_BIN)/UserManual.qch
+  VBOX_PATH_BIN_QHELP += $(PATH_STAGE_BIN)/UserManual.qhc
  else  # Do not build chm.
   VBOX_PATH_BIN_QHELP =
  endif
 
-  
+
  ifndef VBOX_ONLY_SDK
   VBOX_MANUAL_PACK += \
   		$(PATH_STAGE_BIN)/UserManual.pdf \
@@ -166,7 +166,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$(VBOX_PATH_BIN_CHM) \
   		$(VBOX_PATH_BIN_QHELP)
   INSTALLS += VBox-docs-usermanual
-  
+
   ifdef VBOX_WITH_DOCS_TRANSLATIONS
    INSTALLS += VBox-docs-usermanual-l10n
    VBOX_MANUAL_PACK += \
@@ -927,9 +927,9 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhc: \
 	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, $(VBOX_MANUAL_PNG_FILES_en_US))
 	qcollectiongenerator $<
 
-$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, images): 
+$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, images):
 	mkdir -p $@
-	
+
 $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, $(VBOX_MANUAL_PNG_FILES_en_US)):  \
 	$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/, $(VBOX_MANUAL_PNG_FILES_en_US))  \
 	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, images)
