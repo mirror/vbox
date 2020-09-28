@@ -203,6 +203,9 @@ private:
     void i_unregisterMetrics(PerformanceCollector *aCollector);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
+#ifdef RT_OS_WINDOWS
+    HRESULT i_getFixedDrivesFromGlobalNamespace(std::list<std::pair<com::Utf8Str, com::Utf8Str> > &aDriveList) RT_NOEXCEPT;
+#endif
     HRESULT i_getDrivesPathsList(std::list<std::pair<com::Utf8Str, com::Utf8Str> > &aDriveList) RT_NOEXCEPT;
 
     struct Data;        // opaque data structure, defined in HostImpl.cpp

@@ -129,7 +129,6 @@ typedef SOLARISFIXEDDISK *PSOLARISFIXEDDISK;
 # include <guiddef.h>
 # include <devguid.h>
 # include <iprt/win/objbase.h>
-//# include <iprt/win/setupapi.h>
 # include <iprt/win/shlobj.h>
 # include <cfgmgr32.h>
 # include <tchar.h>
@@ -156,6 +155,10 @@ typedef SOLARISFIXEDDISK *PSOLARISFIXEDDISK;
 # include <iprt/path.h>
 #endif
 #include <iprt/time.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/dir.h>
+# include <iprt/vfs.h>
+#endif
 
 #ifdef VBOX_WITH_HOSTNETIF_API
 # include "netif.h"
@@ -3882,108 +3885,128 @@ void Host::i_generateMACAddress(Utf8Str &mac)
                      guid.raw()->au8[0], guid.raw()->au8[1], guid.raw()->au8[2]);
 }
 
+#ifdef RT_OS_WINDOWS
+HRESULT Host::i_getFixedDrivesFromGlobalNamespace(std::list<std::pair<com::Utf8Str, com::Utf8Str> > &aDriveList) RT_NOEXCEPT
+{
+    RTERRINFOSTATIC  ErrInfo;
+    uint32_t         offError;
+    RTVFSDIR         hVfsDir;
+    int rc = RTVfsChainOpenDir("\\\\:iprtnt:\\GLOBAL??", 0 /*fFlags*/, &hVfsDir, &offError, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_FAILURE(rc))
+        return setError(E_FAIL, tr("Failed to open NT\\GLOBAL?? (error %Rrc)"), rc);
+
+    /*
+     * Scan whole directory and find any 'PhysicalDiskX' entries. Next, combine with '\\.\'
+     * to obtain the harddisk dev path.
+     */
+    size_t          cbDirEntryAlloced = sizeof(RTDIRENTRYEX);
+    PRTDIRENTRYEX   pDirEntry         = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntryAlloced);
+    if (!pDirEntry)
+    {
+        RTVfsDirRelease(hVfsDir);
+        return setError(E_OUTOFMEMORY, "Out of memory! (direntry buffer)");
+    }
+
+    HRESULT hrc = S_OK;
+    for (;;)
+    {
+        size_t cbDirEntry = cbDirEntryAlloced;
+        rc = RTVfsDirReadEx(hVfsDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING);
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_BUFFER_OVERFLOW)
+            {
+                RTMemTmpFree(pDirEntry);
+                cbDirEntryAlloced = RT_ALIGN_Z(RT_MIN(cbDirEntry, cbDirEntryAlloced) + 64, 64);
+                pDirEntry  = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntryAlloced);
+                if (pDirEntry)
+                    continue;
+                hrc = setError(E_OUTOFMEMORY, "Out of memory! (direntry buffer)");
+            }
+            else if (rc != VERR_NO_MORE_FILES)
+                hrc = setError(VBOX_E_IPRT_ERROR, "RTVfsDirReadEx failed: %Rrc", rc);
+            break;
+        }
+        if (RTStrStartsWith(pDirEntry->szName, "PhysicalDrive"))
+        {
+            char szPhysicalDrive[64];
+            RTStrPrintf(szPhysicalDrive, sizeof(szPhysicalDrive), "\\\\.\\%s", pDirEntry->szName);
+
+            RTFILE hRawFile = NIL_RTFILE;
+            int vrc = RTFileOpen(&hRawFile, szPhysicalDrive, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+            if (RT_FAILURE(vrc))
+            {
+                try
+                {
+                    aDriveList.push_back(std::pair<com::Utf8Str, com::Utf8Str>(szPhysicalDrive, "Unknown (Access denied)"));
+                }
+                catch (std::bad_alloc &)
+                {
+                    hrc = setError(E_OUTOFMEMORY, "Out of memory");
+                    break;
+                }
+                continue;
+            }
+
+            DWORD   cbBytesReturned = 0;
+            uint8_t abBuffer[1024];
+            RT_ZERO(abBuffer);
+
+            STORAGE_PROPERTY_QUERY query;
+            RT_ZERO(query);
+            query.PropertyId = StorageDeviceProperty;
+            query.QueryType  = PropertyStandardQuery;
+
+            BOOL fRc = DeviceIoControl((HANDLE)RTFileToNative(hRawFile),
+                                       IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query),
+                                       abBuffer, sizeof(abBuffer), &cbBytesReturned, NULL);
+            RTFileClose(hRawFile);
+            char szModel[1024];
+            if (fRc)
+            {
+                PSTORAGE_DEVICE_DESCRIPTOR pDevDescriptor = (PSTORAGE_DEVICE_DESCRIPTOR)abBuffer;
+                char *pszProduct = pDevDescriptor->ProductIdOffset ? (char *)&abBuffer[pDevDescriptor->ProductIdOffset] : NULL;
+                if (pszProduct)
+                {
+                    RTStrPurgeEncoding(pszProduct);
+                    if (*pszProduct != '\0')
+                    {
+                        char *pszVendor = pDevDescriptor->VendorIdOffset  ? (char *)&abBuffer[pDevDescriptor->VendorIdOffset] : NULL;
+                        if (pszVendor)
+                            RTStrPurgeEncoding(pszVendor);
+                        if (pszVendor && *pszVendor)
+                            RTStrPrintf(szModel, sizeof(szModel), "%s %s", pszVendor, pszProduct);
+                        else
+                            RTStrCopy(szModel, sizeof(szModel), pszProduct);
+                    }
+                }
+            }
+            try
+            {
+                aDriveList.push_back(std::pair<com::Utf8Str, com::Utf8Str>(szPhysicalDrive, szModel));
+            }
+            catch (std::bad_alloc &)
+            {
+                hrc = setError(E_OUTOFMEMORY, "Out of memory");
+                break;
+            }
+        }
+    }
+    if (FAILED(hrc))
+        aDriveList.clear();
+    RTMemTmpFree(pDirEntry);
+    RTVfsDirRelease(hVfsDir);
+    return hrc;
+}
+#endif
+
 /**
  * @throws nothing
  */
 HRESULT Host::i_getDrivesPathsList(std::list<std::pair<com::Utf8Str, com::Utf8Str> > &aDriveList) RT_NOEXCEPT
 {
 #ifdef RT_OS_WINDOWS
-    /** @todo r=bird: This approach is seriously flawed. The "Count" value refers to
-     * the registry entries next to it and as little if anything to do with
-     * PhysicalDriveX numbering.  The registry entries doesn't immediately give
-     * you the PhysicalDrive address either.
-     *
-     * One option would be to enumerate the \Device or \GLOBAL?? directories looking
-     * for Harddisk* directories and PhysicalDrive* symlinks respectively.  This can
-     * be explored using
-     *  - "out\win.amd64\debug\bin\tools\RTLs.exe -la \\:iprtnt:\Device"
-     *  - "out\win.amd64\debug\bin\tools\RTLs.exe -la \\:iprtnt:\GLOBAL??"
-     *  - WinObj from sysinternals.
-     *
-     * "wmic diskdrive list" somehow gets the info too.   There is more here:
-     * https://stackoverflow.com/questions/327718/how-to-list-physical-disks
-     *
-     * A third option would be to just be to go significantly higher than what
-     * "Count" indicates, to span gaps and stuff.
-     *
-     *
-     * How to create gaps in the PhysicalDriveX numbers:
-     *      1. Insert 2 USB sticks to you box.
-     *      2. Remove the first USB stick you inserted.
-     *      3. You've got a gap: RTLs -la \\:iprtnt:\GLOBAL?? | grep PhysicalDrive
-     */
-    HKEY hKeyEnum = (HKEY)INVALID_HANDLE_VALUE;
-    LONG lRc = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
-                             L"SYSTEM\\CurrentControlSet\\Services\\Disk\\Enum",
-                             0,
-                             KEY_READ | KEY_QUERY_VALUE,
-                             &hKeyEnum);
-    if (lRc != ERROR_SUCCESS)
-        return setError(E_FAIL, tr("Failed to open key Disk\\Enum (error %u/%#x)"), lRc, lRc);
-
-    DWORD cCount = 0;
-    DWORD cBufSize = sizeof(cCount);
-    lRc = RegQueryValueExW(hKeyEnum, L"Count", NULL, NULL, (PBYTE)&cCount, &cBufSize);
-    RegCloseKey(hKeyEnum);
-    if (lRc != ERROR_SUCCESS)
-        return setError(E_FAIL, tr("Failed to get physical drives count (error %u/%#x)"), lRc, lRc);
-
-    for (uint32_t i = 0; i < cCount; ++i)
-    {
-        char szPhysicalDrive[64];
-        RTStrPrintf(szPhysicalDrive, sizeof(szPhysicalDrive), "\\\\.\\PhysicalDrive%d", i);
-
-        /** @todo r=bird: Why RTFILE_O_DENY_WRITE? */
-        RTFILE hRawFile = NIL_RTFILE;
-        int vrc = RTFileOpen(&hRawFile, szPhysicalDrive, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-        if (RT_FAILURE(vrc))
-            continue; /** @todo r=bird: you might not be able to open all disks... */
-
-        DWORD   cbBytesReturned = 0;
-        uint8_t abBuffer[1024];
-        RT_ZERO(abBuffer);
-
-        STORAGE_PROPERTY_QUERY query;
-        RT_ZERO(query);
-        query.PropertyId = StorageDeviceProperty;
-        query.QueryType  = PropertyStandardQuery;
-
-        BOOL fRc = DeviceIoControl((HANDLE)RTFileToNative(hRawFile),
-                                   IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query),
-                                   abBuffer, sizeof(abBuffer), &cbBytesReturned, NULL);
-        RTFileClose(hRawFile);
-        char szModel[1024];
-        if (fRc)
-        {
-            PSTORAGE_DEVICE_DESCRIPTOR pDevDescriptor = (PSTORAGE_DEVICE_DESCRIPTOR)abBuffer;
-            char *pszProduct = pDevDescriptor->ProductIdOffset ? (char *)&abBuffer[pDevDescriptor->ProductIdOffset] : NULL;
-            if (pszProduct)
-            {
-                RTStrPurgeEncoding(pszProduct);
-                if (*pszProduct != '\0')
-                {
-                    char *pszVendor = pDevDescriptor->VendorIdOffset  ? (char *)&abBuffer[pDevDescriptor->VendorIdOffset] : NULL;
-                    if (pszVendor)
-                        RTStrPurgeEncoding(pszVendor);
-                    if (pszVendor && *pszVendor)
-                        RTStrPrintf(szModel, sizeof(szModel), "%s %s", pszVendor, pszProduct);
-                    else
-                        RTStrCopy(szModel, sizeof(szModel), pszProduct);
-                }
-            }
-        }
-        try
-        {
-            aDriveList.push_back(std::pair<com::Utf8Str, com::Utf8Str>(szPhysicalDrive, szModel));
-        }
-        catch (std::bad_alloc &)
-        {
-            aDriveList.clear();
-            return E_OUTOFMEMORY;
-        }
-    }
-
-    return S_OK;
+    return i_getFixedDrivesFromGlobalNamespace(aDriveList);
 
 #elif defined(RT_OS_DARWIN)
     /*
