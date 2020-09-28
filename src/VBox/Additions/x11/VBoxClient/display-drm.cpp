@@ -161,8 +161,8 @@ AssertCompileSize(struct DRMVMWUPDATELAYOUT, 16);
 static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects,
                          unsigned cHeads)
 {
-    uid_t guid = getuid();
-    if (setreuid(0, 0) == -1)
+    uid_t curuid = getuid();
+    if (setreuid(0, 0) != 0)
         perror("setreuid failed during drm ioctl.");
     int rc;
     struct DRMVMWUPDATELAYOUT ioctlLayout;
@@ -175,7 +175,8 @@ static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects
                      &ioctlLayout, sizeof(ioctlLayout), NULL);
     if (RT_FAILURE(rc) && rc != VERR_INVALID_PARAMETER)
         VBClLogFatalError("Failure updating layout, rc=%Rrc\n", rc);
-    setreuid(guid, 0);
+    if (setreuid(curuid, 0) != 0)
+        perror("reset of setreuid failed after drm ioctl.");
 }
 
 int main(int argc, char *argv[])
