@@ -208,8 +208,11 @@ public:
     /** Deinitialization routine. */
     void uninit() {}
 
-    /** Registers event @a source for passive event @a listener. */
-    void registerSource(const CEventSource &comSource, const CEventListener &comListener);
+    /** Registers event source for passive event listener by creating a listening thread.
+      * @param  comSource    Brings event source we are creating listening thread for.
+      * @param  comListener  Brings event listener we are creating listening thread for. */
+    void registerSource(const CEventSource &comSource,
+                        const CEventListener &comListener);
     /** Unregisters event sources. */
     void unregisterSources();
 

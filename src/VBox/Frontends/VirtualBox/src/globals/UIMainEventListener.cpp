@@ -79,10 +79,13 @@ class UIMainEventListeningThread : public QThread
 
 public:
 
-    /** Constructs Main events listener thread redirecting events from @a comSource to @a comListener. */
-    UIMainEventListeningThread(const CEventSource &comSource, const CEventListener &comListener);
+    /** Constructs Main events listener thread redirecting events from @a comSource to @a comListener.
+      * @param  comSource    Brings event source we are creating this thread for.
+      * @param  comListener  Brings event listener we are creating this thread for. */
+    UIMainEventListeningThread(const CEventSource &comSource,
+                               const CEventListener &comListener);
     /** Destructs Main events listener thread. */
-    ~UIMainEventListeningThread();
+    virtual ~UIMainEventListeningThread() /* override */;
 
 protected:
 
@@ -97,9 +100,9 @@ protected:
 private:
 
     /** Holds the Main event source reference. */
-    CEventSource m_comSource;
+    CEventSource          m_comSource;
     /** Holds the Main event listener reference. */
-    CEventListener m_comListener;
+    CEventListener        m_comListener;
 
     /** Holds the mutex instance which protects thread access. */
     mutable QMutex m_mutex;
@@ -112,7 +115,8 @@ private:
 *   Class UIMainEventListeningThread implementation.                                                                             *
 *********************************************************************************************************************************/
 
-UIMainEventListeningThread::UIMainEventListeningThread(const CEventSource &comSource, const CEventListener &comListener)
+UIMainEventListeningThread::UIMainEventListeningThread(const CEventSource &comSource,
+                                                       const CEventListener &comListener)
     : m_comSource(comSource)
     , m_comListener(comListener)
     , m_fShutdown(false)
@@ -200,16 +204,21 @@ UIMainEventListener::UIMainEventListener()
     qRegisterMetaType<CGuestSession>("CGuestSession");
 }
 
-void UIMainEventListener::registerSource(const CEventSource &comSource, const CEventListener &comListener)
+void UIMainEventListener::registerSource(const CEventSource &comSource,
+                                         const CEventListener &comListener)
 {
     /* Make sure source and listener are valid: */
     AssertReturnVoid(!comSource.isNull());
     AssertReturnVoid(!comListener.isNull());
 
     /* Create thread for passed source: */
-    m_threads << new UIMainEventListeningThread(comSource, comListener);
-    /* And start it: */
-    m_threads.last()->start();
+    UIMainEventListeningThread *pThread = new UIMainEventListeningThread(comSource, comListener);
+    if (pThread)
+    {
+        /* Register & start it: */
+        m_threads << pThread;
+        pThread->start();
+    }
 }
 
 void UIMainEventListener::unregisterSources()
