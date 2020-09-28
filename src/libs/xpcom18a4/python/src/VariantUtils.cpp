@@ -83,7 +83,7 @@ PyUnicode_AsPRUnichar(PyObject *obj, PRUnichar **dest_out, PRUint32 *size_out)
 {
 	PRUint32 size;
 	PyObject *s;
-	void *src;
+	const void *src;
 	PRUnichar *dest;
 
 	s = PyUnicode_AsUTF16String(obj);
@@ -96,13 +96,12 @@ PyUnicode_AsPRUnichar(PyObject *obj, PRUnichar **dest_out, PRUint32 *size_out)
 	size = (PyString_GET_SIZE(s) - 2) / sizeof(PRUnichar);
 	src = PyString_AS_STRING(s) + 2;
 #else
-    if (!PyBytes_Check(s))
-    {
-        PyErr_SetString(PyExc_TypeError, "internal error in PyXPCOM, parameter must be a bytes object");
-        return -1;
-    }
-    size = (PyBytes_GET_SIZE(s) - 2) / sizeof(PRUnichar);
-    src = PyBytes_AS_STRING(s) + 2;
+	if (!PyBytes_Check(s)) {
+		PyErr_SetString(PyExc_TypeError, "internal error in PyXPCOM, parameter must be a bytes object");
+		return -1;
+	}
+	size = (PyBytes_GET_SIZE(s) - 2) / sizeof(PRUnichar);
+	src = PyBytes_AS_STRING(s) + 2;
 #endif
 	dest = (PRUnichar *)nsMemory::Alloc(sizeof(PRUnichar) * (size + 1));
 	if (!dest) {
@@ -186,12 +185,12 @@ PRBool PyObject_AsNSString( PyObject *val, nsAString &aStr)
 	if (ok && (val_use = PyUnicode_FromObject(val))==NULL)
 		ok = PR_FALSE;
 #else
-    if (!PyUnicode_Check(val)) {
-        PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
-        ok = PR_FALSE;
-    }
-    val_use = val;
-    Py_INCREF(val_use);
+	if (!PyUnicode_Check(val)) {
+		PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
+		ok = PR_FALSE;
+	}
+	val_use = val;
+	Py_INCREF(val_use);
 #endif
 	if (ok) {
 		if (PyUnicode_GET_SIZE(val_use) == 0) {
@@ -816,20 +815,24 @@ nsresult PyObject_AsVariant( PyObject *ob, nsIVariant **aRet)
 			nr = v->SetAsDouble(PyFloat_AsDouble(ob));
 			break;
 		case nsIDataType::VTYPE_STRING_SIZE_IS:
+		{
 #if PY_MAJOR_VERSION <= 2
 			nr = v->SetAsStringWithSize(PyString_Size(ob), PyString_AsString(ob));
 #else
-            Py_ssize_t cb;
-            const char *psz;
-            psz = PyUnicode_AsUTF8AndSize(ob, &cb);
+			Py_ssize_t cb = 0;
+			const char *psz = PyUnicode_AsUTF8AndSize(ob, &cb);
 			nr = v->SetAsStringWithSize(cb, psz);
 #endif
 			break;
+		}
 		case nsIDataType::VTYPE_WSTRING_SIZE_IS:
+#if PY_VERSION_HEX >= 0x03030000
+			if (PyUnicode_GetLength(ob) == 0) {
+#else
 			if (PyUnicode_GetSize(ob) == 0) {
+#endif
 				nr = v->SetAsWStringWithSize(0, (PRUnichar*)NULL);
-			}
-			else {
+			} else {
 				PRUint32 nch;
 				PRUnichar *p;
 				if (PyUnicode_AsPRUnichar(ob, &p, &nch) < 0) {
