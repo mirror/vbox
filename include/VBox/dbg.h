@@ -1114,9 +1114,9 @@ typedef struct DBGCIO
      * Destroys the given I/O instance.
      *
      * @returns nothing.
-     * @param   pDbgcIo     Pointer to the I/O structure supplied by the I/O provider.
+     * @param   pIo         Pointer to the I/O structure supplied by the I/O provider.
      */
-    DECLCALLBACKMEMBER(void, pfnDestroy, (PCDBGCIO pDbgcIo));
+    DECLCALLBACKMEMBER(void, pfnDestroy, (PCDBGCIO pIo));
 
     /**
      * Wait for input available for reading.
@@ -1124,17 +1124,17 @@ typedef struct DBGCIO
      * @returns Flag whether there is input ready upon return.
      * @retval  true if there is input ready.
      * @retval  false if there not input ready.
-     * @param   pDbgcIo     Pointer to the I/O structure supplied by
+     * @param   pIo         Pointer to the I/O structure supplied by
      *                      the I/O provider. The backend can use this to find it's instance data.
      * @param   cMillies    Number of milliseconds to wait on input data.
      */
-    DECLCALLBACKMEMBER(bool, pfnInput, (PCDBGCIO pDbgcIo, uint32_t cMillies));
+    DECLCALLBACKMEMBER(bool, pfnInput, (PCDBGCIO pIo, uint32_t cMillies));
 
     /**
      * Read input.
      *
      * @returns VBox status code.
-     * @param   pDbgcIo     Pointer to the I/O structure supplied by
+     * @param   pIo         Pointer to the I/O structure supplied by
      *                      the I/O provider. The backend can use this to find it's instance data.
      * @param   pvBuf       Where to put the bytes we read.
      * @param   cbBuf       Maximum nymber of bytes to read.
@@ -1142,30 +1142,30 @@ typedef struct DBGCIO
      *                      If NULL the entire buffer must be filled for a
      *                      successful return.
      */
-    DECLCALLBACKMEMBER(int, pfnRead, (PCDBGCIO pDbgcIo, void *pvBuf, size_t cbBuf, size_t *pcbRead));
+    DECLCALLBACKMEMBER(int, pfnRead, (PCDBGCIO pIo, void *pvBuf, size_t cbBuf, size_t *pcbRead));
 
     /**
      * Write (output).
      *
      * @returns VBox status code.
-     * @param   pDbgcIo     Pointer to the I/O structure supplied by
+     * @param   pIo         Pointer to the I/O structure supplied by
      *                      the I/O provider. The backend can use this to find it's instance data.
      * @param   pvBuf       What to write.
      * @param   cbBuf       Number of bytes to write.
      * @param   pcbWritten  Where to store the number of bytes actually written.
      *                      If NULL the entire buffer must be successfully written.
      */
-    DECLCALLBACKMEMBER(int, pfnWrite, (PCDBGCIO pDbgcIo, const void *pvBuf, size_t cbBuf, size_t *pcbWritten));
+    DECLCALLBACKMEMBER(int, pfnWrite, (PCDBGCIO pIo, const void *pvBuf, size_t cbBuf, size_t *pcbWritten));
 
     /**
      * Ready / busy notification.
      *
      * @returns nothing.
-     * @param   pDbgcIo     Pointer to the I/O structure supplied by
+     * @param   pIo         Pointer to the I/O structure supplied by
      *                      the I/O provider. The backend can use this to find it's instance data.
      * @param   fReady      Whether it's ready (true) or busy (false).
      */
-    DECLCALLBACKMEMBER(void, pfnSetReady, (PCDBGCIO pDbgcIo, bool fReady));
+    DECLCALLBACKMEMBER(void, pfnSetReady, (PCDBGCIO pIo, bool fReady));
 
 } DBGCIO;
 /** Pointer to an I/O callback table. */
