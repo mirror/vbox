@@ -3973,6 +3973,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "|Parallel1IoPortBase"
                                   "|Parallel0Irq"
                                   "|Parallel1Irq"
+                                  "|IommuAmdEnabled"
                                   "|IommuAmdPciAddress"
                                   "|SbIoApicPciAddress"
                                   , "");
