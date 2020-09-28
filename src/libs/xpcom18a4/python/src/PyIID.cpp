@@ -67,6 +67,7 @@ PYXPCOM_EXPORT PyObject *PyXPCOMMethod_IID(PyObject *self, PyObject *args)
 			int size = (*pb->bf_getreadbuffer)(obBuf, 0, &buf);
 #else
 		if (PyObject_CheckBuffer(obBuf)) {
+# ifndef Py_LIMITED_API
 			Py_buffer view;
 			if (PyObject_GetBuffer(obBuf, &view, PyBUF_CONTIG_RO) != 0) {
 				PyErr_Format(PyExc_ValueError, "Could not get contiguous buffer from object");
@@ -74,9 +75,17 @@ PYXPCOM_EXPORT PyObject *PyXPCOMMethod_IID(PyObject *self, PyObject *args)
 			}
 			Py_ssize_t size = view.len;
 			const void *buf = view.buf;
+# else  /* Py_LIMITED_API - the buffer API is non-existant, from what I can tell */
+			const void *buf = NULL;
+			Py_ssize_t size = 0;
+			if (PyObject_AsReadBuffer(obBuf, &buf, &size) != 0) {
+				PyErr_Format(PyExc_ValueError, "Could not get read-only buffer from object");
+				return NULL;
+			}
+# endif /* Py_LIMITED_API */
 #endif
 			if (size != sizeof(nsIID) || buf==NULL) {
-#if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3 && !defined(Py_LIMITED_API)
 				PyBuffer_Release(&view);
 #endif
 #ifdef VBOX
@@ -98,7 +107,7 @@ PYXPCOM_EXPORT PyObject *PyXPCOMMethod_IID(PyObject *self, PyObject *args)
 				iid.m3[i] = *((PRUint8 const *)ptr);
 				ptr += sizeof(PRUint8);
 			}
-#if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3 && !defined(Py_LIMITED_API)
 			PyBuffer_Release(&view);
 #endif
 			return new Py_nsIID(iid);
@@ -134,7 +143,11 @@ Py_nsIID::IIDFromPyObject(PyObject *ob, nsIID *pRet) {
 			PyXPCOM_BuildPyException(NS_ERROR_ILLEGAL_VALUE);
 			return PR_FALSE;
 		}
+#ifndef Py_LIMITED_API
 	} else if (ob->ob_type == &type) {
+#else
+	} else if (ob->ob_type == Py_nsIID::GetTypeObject()) {
+#endif
 		iid = ((Py_nsIID *)ob)->m_iid;
 	} else if (PyObject_HasAttrString(ob, "__class__")) {
 		// Get the _iidobj_ attribute
@@ -143,7 +156,11 @@ Py_nsIID::IIDFromPyObject(PyObject *ob, nsIID *pRet) {
 			PyErr_SetString(PyExc_TypeError, "Only instances with _iidobj_ attributes can be used as IID objects");
 			return PR_FALSE;
 		}
+#ifndef Py_LIMITED_API
 		if (use_ob->ob_type != &type) {
+#else
+		if (use_ob->ob_type != Py_nsIID::GetTypeObject()) {
+#endif
 			Py_DECREF(use_ob);
 			PyErr_SetString(PyExc_TypeError, "instance _iidobj_ attributes must be raw IID object");
 			return PR_FALSE;
@@ -151,7 +168,7 @@ Py_nsIID::IIDFromPyObject(PyObject *ob, nsIID *pRet) {
 		iid = ((Py_nsIID *)use_ob)->m_iid;
 		Py_DECREF(use_ob);
 	} else {
-		PyErr_Format(PyExc_TypeError, "Objects of type '%s' can not be converted to an IID", ob->ob_type->tp_name);
+		PyErr_Format(PyExc_TypeError, "Objects of type '%s' can not be converted to an IID", PyXPCOM_ObTypeName(ob));
 		ok = PR_FALSE;
 	}
 	if (ok) *pRet = iid;
@@ -163,6 +180,7 @@ Py_nsIID::IIDFromPyObject(PyObject *ob, nsIID *pRet) {
 // <nl>All pythoncom functions that return a CLSID/IID will return one of these
 // objects.  However, in almost all cases, functions that expect a CLSID/IID
 // as a param will accept either a string object, or a native Py_nsIID object.
+#ifndef Py_LIMITED_API
 PyTypeObject Py_nsIID::type =
 {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -201,10 +219,52 @@ PyTypeObject Py_nsIID::type =
 	0,                                              /* tp_getset */
 	0,                                              /* tp_base */
 };
+#else  /* Py_LIMITED_API */
+NS_EXPORT_STATIC_MEMBER_(PyTypeObject *) Py_nsIID::s_pType = NULL;
+
+PyTypeObject *Py_nsIID::GetTypeObject(void)
+{
+	PyTypeObject *pTypeObj = Py_nsIID::s_pType;
+	if (pTypeObj)
+		return pTypeObj;
+
+	PyType_Slot aTypeSlots[] = {
+		{ Py_tp_base, 		&PyType_Type },
+		{ Py_tp_dealloc,	(void *)(uintptr_t)&Py_nsIID::PyTypeMethod_dealloc },
+		{ Py_tp_getattr,	(void *)(uintptr_t)&Py_nsIID::PyTypeMethod_getattr },
+		{ Py_tp_repr,   	(void *)(uintptr_t)&Py_nsIID::PyTypeMethod_repr },
+		{ Py_tp_hash,   	(void *)(uintptr_t)&Py_nsIID::PyTypeMethod_hash },
+		{ Py_tp_str,    	(void *)(uintptr_t)&Py_nsIID::PyTypeMethod_str },
+		{ Py_tp_richcompare,    (void *)(uintptr_t)&Py_nsIID::PyTypeMethod_richcompare },
+		{ 0, NULL } /* terminator */
+	};
+	PyType_Spec TypeSpec = {
+		/* .name: */ 		"IID",
+		/* .basicsize: */       sizeof(Py_nsIID),
+		/* .itemsize: */	0,
+		/* .flags: */   	0,
+		/* .slots: */		aTypeSlots,
+	};
+
+	PyObject *exc_typ = NULL, *exc_val = NULL, *exc_tb = NULL;
+	PyErr_Fetch(&exc_typ, &exc_val, &exc_tb); /* goes south in PyType_Ready if we don't clear exceptions first. */
+
+	pTypeObj = (PyTypeObject *)PyType_FromSpec(&TypeSpec);
+	assert(pTypeObj);
+
+        PyErr_Restore(exc_typ, exc_val, exc_tb);
+	Py_nsIID::s_pType = pTypeObj;
+	return pTypeObj;
+}
+#endif /* Py_LIMITED_API */
 
 Py_nsIID::Py_nsIID(const nsIID &riid)
 {
+#ifndef Py_LIMITED_API
 	ob_type = &type;
+#else
+	ob_type = GetTypeObject();
+#endif
 	_Py_NewReference(this);
 	m_iid = riid;
 }

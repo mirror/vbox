@@ -165,6 +165,101 @@ extern PYXPCOM_EXPORT nsIID Py_nsIID_NULL;
 
 class Py_nsISupports;
 
+
+/** @name VBox limited API hacks:
+ * @{  */
+#ifndef Py_LIMITED_API
+
+# define PyXPCOM_ObTypeName(obj) (Py_TYPE(obj)->tp_name)
+
+#else /* Py_LIMITED_API */
+
+const char *PyXPCOMGetObTypeName(PyTypeObject *pTypeObj);
+# define PyXPCOM_ObTypeName(obj) PyXPCOMGetObTypeName(Py_TYPE(obj))
+
+/** @todo shouldn't be using PyUnicode_AsUTF8 from cpython/unicodeobject.h! */
+# undef PyUnicode_AsUTF8
+extern "C" PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *);
+
+/** @todo shouldn't be using PyUnicode_AsUTF8AndSize from cpython/unicodeobject.h! */
+# undef PyUnicode_AsUTF8AndSize
+extern "C" PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(PyObject *, Py_ssize_t *);
+
+DECLINLINE(int) PyRun_SimpleString(const char *pszCode)
+{
+    /* Get the main mode dictionary: */
+    PyObject *pMainMod = PyImport_AddModule("__main__");
+    if (pMainMod) {
+	PyObject *pMainModDict = PyModule_GetDict(pMainMod);
+
+	/* Compile and run the code. */
+	PyObject *pCodeObject = Py_CompileString(pszCode, "PyXPCOM", Py_file_input);
+	if (pCodeObject) {
+	    PyObject *pResult = PyEval_EvalCode(pCodeObject, pMainModDict, pMainModDict);
+	    Py_DECREF(pCodeObject);
+	    if (pResult) {
+		Py_DECREF(pResult);
+		return 0;
+	    }
+	    PyErr_Print();
+	}
+    }
+    return -1;
+}
+
+DECLINLINE(PyObject *) PyTuple_GET_ITEM(PyObject *pTuple, Py_ssize_t idx)
+{
+    return PyTuple_GetItem(pTuple, idx);
+}
+
+DECLINLINE(int) PyTuple_SET_ITEM(PyObject *pTuple, Py_ssize_t idx, PyObject *pItem)
+{
+    int rc = PyTuple_SetItem(pTuple, idx, pItem); /* Steals pItem ref, just like PyTuple_SET_ITEM. */
+    Assert(rc == 0);
+    return rc;
+}
+
+DECLINLINE(int) PyList_SET_ITEM(PyObject *pList, Py_ssize_t idx, PyObject *pItem)
+{
+    int rc = PyList_SetItem(pList, idx, pItem); /* Steals pItem ref, just like PyList_SET_ITEM. */
+    Assert(rc == 0);
+    return rc;
+}
+
+DECLINLINE(Py_ssize_t) PyBytes_GET_SIZE(PyObject *pBytes)
+{
+    return PyBytes_Size(pBytes);
+}
+
+DECLINLINE(const char *) PyBytes_AS_STRING(PyObject *pBytes)
+{
+    return PyBytes_AsString(pBytes);
+}
+
+DECLINLINE(Py_ssize_t) PyUnicode_GET_SIZE(PyObject *pUnicode)
+{
+    /* Note! Currently only used for testing for zero or 1 codepoints, so we don't
+       really need to deal with the different way these two treats surrogate pairs. */
+# if Py_LIMITED_API >= 0x03030000
+    return PyUnicode_GetLength(pUnicode);
+# else
+    return PyUnicode_GetSize(pUnicode);
+# endif
+}
+
+# define PyObject_CheckBuffer(pAllegedBuffer) PyObject_CheckReadBuffer(pAllegedBuffer)
+
+# include <iprt/asm.h>
+DECLINLINE(Py_hash_t) _Py_HashPointer(void *p)
+{
+    Py_hash_t uHash = (Py_hash_t)RT_CONCAT(ASMRotateRightU,ARCH_BITS)((uintptr_t)p, 4);
+    return uHash != -1 ? uHash : -2;
+}
+
+#endif /* Py_LIMITED_API */
+/** @} */
+
+
 /*************************************************************************
 **************************************************************************
 
@@ -263,7 +358,11 @@ typedef Py_nsISupports* (* PyXPCOM_I_CTOR)(nsISupports *, const nsIID &);
 // class PyXPCOM_TypeObject
 // Base class for (most of) the type objects.
 
+#ifndef Py_LIMITED_API
 class PYXPCOM_EXPORT PyXPCOM_TypeObject : public PyTypeObject {
+#else
+class PYXPCOM_EXPORT PyXPCOM_TypeObject : public PyObject {
+#endif
 public:
 	PyXPCOM_TypeObject(
 		const char *name,
@@ -290,6 +389,9 @@ public:
 	static Py_hash_t Py_hash(PyObject *self);
 #else
 	static long Py_hash(PyObject *self);
+#endif
+#ifdef Py_LIMITED_API
+        PyTypeObject *m_pTypeObj; /**< The python type object we wrap. */
 #endif
 };
 
@@ -320,6 +422,12 @@ public:
 	static nsISupports *GetI(PyObject *self, nsIID *ret_iid = NULL);
 	nsCOMPtr<nsISupports> m_obj;
 	nsIID m_iid;
+#ifdef Py_LIMITED_API
+        /** Because PyXPCOM_TypeObject cannot inherit from PyTypeObject in
+         * Py_LIMITED_API mode, we cannot use ob_type to get to the method list.
+         * Instead of we store it here. */
+        PyXPCOM_TypeObject *m_pMyTypeObj;
+#endif
 
 	// Given an nsISupports and an Interface ID, create and return an object
 	// Does not QI the object - the caller must ensure the nsISupports object
@@ -369,7 +477,11 @@ public:
 	static NS_EXPORT_STATIC_MEMBER_(PyMethodDef) methods[];
 	static PyObject *mapIIDToType;
 	static void SafeRelease(Py_nsISupports *ob);
+#ifndef Py_LIMITED_API
 	static void RegisterInterface( const nsIID &iid, PyTypeObject *t);
+#else
+	static void RegisterInterface( const nsIID &iid, PyXPCOM_TypeObject *t);
+#endif
 	static void InitType();
 #ifdef VBOX_DEBUG_LIFETIMES
 	static void dumpList(void);
@@ -392,7 +504,11 @@ protected:
 	// PyObjectFromInterface()
 	Py_nsISupports(nsISupports *p,
 		            const nsIID &iid,
+#ifndef Py_LIMITED_API
 			    PyTypeObject *type);
+#else
+			    PyXPCOM_TypeObject *type);
+#endif
 
 	// Make a default wrapper for an ISupports (which is an
 	// xpcom.client.Component instance)
@@ -424,7 +540,11 @@ public:
 	PRBool
 	IsEqual(PyObject *ob) {
 		return ob &&
+#ifndef Py_LIMITED_API
 		       ob->ob_type== &type &&
+#else
+		       ob->ob_type == s_pType &&
+#endif
 		       m_iid.Equals(((Py_nsIID *)ob)->m_iid);
 	}
 
@@ -453,7 +573,12 @@ public:
 #endif
 	static PyObject *PyTypeMethod_str(PyObject *self);
 	static void PyTypeMethod_dealloc(PyObject *self);
+#ifndef Py_LIMITED_API
 	static NS_EXPORT_STATIC_MEMBER_(PyTypeObject) type;
+#else
+	static NS_EXPORT_STATIC_MEMBER_(PyTypeObject *) s_pType;
+        static PyTypeObject *GetTypeObject(void);
+#endif
 	static NS_EXPORT_STATIC_MEMBER_(PyMethodDef) methods[];
 };
 
@@ -756,7 +881,11 @@ public:
 		state = PyGILState_Ensure();
 		// See "pending calls" comment below.  We reach into the Python
 		// implementation to see if we are the first call on the stack.
+# ifndef Py_LIMITED_API
 		if (PyThreadState_Get()->gilstate_counter==1) {
+# else
+		if (state == PyGILState_UNLOCKED) {
+# endif
 			PyXPCOM_MakePendingCalls();
 		}
 	}

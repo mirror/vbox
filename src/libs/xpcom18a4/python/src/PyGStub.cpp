@@ -159,7 +159,7 @@ done:
 		} else {
 			// The exception handler succeeded, but returned other than
 			// int or None.
-			PyXPCOM_LogError("The _CallMethodException_ handler returned object of type '%s' - None or an integer expected\n", err_result->ob_type->tp_name);
+			PyXPCOM_LogError("The _CallMethodException_ handler returned object of type '%s' - None or an integer expected\n", PyXPCOM_ObTypeName(err_result));
 		}
 		Py_XDECREF(err_result);
 		PyErr_Restore(exc_typ, exc_val, exc_tb);

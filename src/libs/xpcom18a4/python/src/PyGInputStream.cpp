@@ -103,20 +103,36 @@ PyG_nsIInputStream::Read(char * buf, PRUint32 count, PRUint32 *_retval)
 	const char *methodName = "read";
 	nsresult nr = InvokeNativeViaPolicy(methodName, &ret, "i", count);
 	if (NS_SUCCEEDED(nr)) {
-#ifndef VBOX /* unsafe cast on 64-bit hosts. */
+#if 0 /* VBox: new buffer protocol (though I could use it for Py_LIMITED_API and ditch the warning, but cpython specific) */
+		Py_buffer py_view;
+		if (PyObject_GetBuffer(ret, &py_view, PyBUF_SIMPLE) == 0) {
+			if (py_view.len <= count) {
+				count = py_view.len;
+			} else {
+				PyXPCOM_LogWarning("nsIInputStream::read() was asked for %d bytes, but the string returned is %d bytes - truncating!\n", count, py_size);
+			}
+			memcpy(buf, py_view.py_buf, count);
+			PyBuffer_Release(&py_view);
+			*_retval = count;
+		} else {
+			PyErr_Format(PyExc_TypeError, "nsIInputStream::read() method must return a buffer object - not a '%s' object", PyXPCOM_ObTypeName(ret));
+			nr = HandleNativeGatewayError(methodName);
+		}
+#else  /* Old protocol: */
+# ifndef VBOX /* unsafe cast on 64-bit hosts. */
 		PRUint32 py_size;
 		const void *py_buf;
 		if (PyObject_AsReadBuffer(ret, &py_buf, (Py_ssize_t*)&py_size)!=0) {
-#else  /* VBOX */
+# else  /* VBOX */
 		const void *py_buf;
-# if PY_VERSION_HEX >= 0x02050000 || defined(PY_SSIZE_T_MIN)
+#  if PY_VERSION_HEX >= 0x02050000 || defined(PY_SSIZE_T_MIN)
                 Py_ssize_t py_size;
-# else
+#  else
                 int py_size;
-# endif /* VBOX */
+#  endif
 		if (PyObject_AsReadBuffer(ret, &py_buf, &py_size)!=0) {
-#endif /* VBOX */
-			PyErr_Format(PyExc_TypeError, "nsIInputStream::read() method must return a buffer object - not a '%s' object", ret->ob_type->tp_name);
+# endif /* VBOX */
+			PyErr_Format(PyExc_TypeError, "nsIInputStream::read() method must return a buffer object - not a '%s' object", PyXPCOM_ObTypeName(ret));
 			nr = HandleNativeGatewayError(methodName);
 		} else {
 			if (py_size > count) {
@@ -126,6 +142,7 @@ PyG_nsIInputStream::Read(char * buf, PRUint32 count, PRUint32 *_retval)
 			memcpy(buf, py_buf, py_size);
 			*_retval = py_size;
 		}
+#endif
 	}
 	return nr;
 }

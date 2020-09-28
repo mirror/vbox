@@ -278,6 +278,8 @@ VBoxPython3_2m_x86_LIBS       = $(VBOX_PYTHON32M_LIB_X86)
  endif
 endif
 
+ ifndef VBOX_WITH_ONLY_PYTHON_LIMITED_API
+
 ifdef VBOX_PYTHON33_INC
 #
 # Python 3.3 version
@@ -581,6 +583,35 @@ endif
   endif
  endif
 endif
+
+ endif # !VBOX_WITH_ONLY_PYTHON_LIMITED_API
+
+ ifndef VBOX_WITHOUT_PYTHON_LIMITED_API
+#
+# If there is python 3.3 or later present, we can build a generic
+# 3.x extension.  Since 3.3 and 3.4 are rather old, we will pick
+# those headers last.
+#
+# Note! No library dependencies are needed here (at least that's
+#       how the xxlimited.so demo extension is done on linux and darwin).
+# Note! The 'm' ABI suffix was discontinued in 3.8.
+# TODO: ASSUMING that we don't need a different headers for pymalloc
+#       ('m' builds < 3.8) and CRT malloc.
+#
+VBOX_PYTHON_LIMITED_API_VER := $(firstword $(foreach ver, 35 36 38 39 310   34 33 \
+,$(if-expr defined(VBOX_PYTHON$(ver)_INC),$(ver),)$(if-expr defined(VBOX_PYTHON$(ver)m_INC),$(ver)m,)))
+  ifneq ($(VBOX_PYTHON_LIMITED_API_VER),)
+DLLS += VBoxPython3
+VBoxPython3_EXTENDS      = VBoxPythonBase
+VBoxPython3_DEFS         = $(filter-out VBOX_PYXPCOM_VERSIONED,$(VBoxPythonBase_DEFS)) Py_LIMITED_API=0x03030000
+VBoxPython3_INCS         = $(VBoxPythonBase_INCS) $(VBOX_PYTHON$(VBOX_PYTHON_LIMITED_API_VER)_INC)
+
+DLLS += VBoxPython3m
+VBoxPython3m_EXTENDS     = VBoxPythonBase_m
+VBoxPython3m_DEFS        = $(filter-out VBOX_PYXPCOM_VERSIONED,$(VBoxPythonBase_m_DEFS)) Py_LIMITED_API=0x03030000
+VBoxPython3m_INCS        = $(VBoxPythonBase_m_INCS) $(VBOX_PYTHON$(VBOX_PYTHON_LIMITED_API_VER)_INC)
+  endif
+ endif # VBOX_WITH_PYTHON_LIMITED_API
 
 endif # VBOX_ONLY_SDK
 

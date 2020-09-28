@@ -128,9 +128,18 @@ _PyXPCOM_GetInterfaceCount(void)
 	return cInterfaces;
 }
 
+#ifndef Py_LIMITED_API
 Py_nsISupports::Py_nsISupports(nsISupports *punk, const nsIID &iid, PyTypeObject *this_type)
+#else
+Py_nsISupports::Py_nsISupports(nsISupports *punk, const nsIID &iid, PyXPCOM_TypeObject *this_type)
+#endif
 {
+#ifndef Py_LIMITED_API
 	ob_type = this_type;
+#else
+	ob_type = this_type->m_pTypeObj;
+	m_pMyTypeObj = this_type;
+#endif
 	m_obj = punk;
 	m_iid = iid;
 	// refcnt of object managed by caller.
@@ -216,17 +225,23 @@ Py_nsISupports::getattr(const char *name)
 		if (val) nsMemory::Free(val);
 		return ret;
 	}
+#ifndef Py_LIMITED_API
 	PyXPCOM_TypeObject *this_type = (PyXPCOM_TypeObject *)ob_type;
+#else
+	PyXPCOM_TypeObject *this_type = m_pMyTypeObj;
+#endif
 #if PY_MAJOR_VERSION <= 2
 	return Py_FindMethodInChain(&this_type->chain, this, (char *)name);
 #else
 	PyMethodChain *chain = &this_type->chain;
 	if (name[0] == '_' && name[1] == '_') {
+# ifndef Py_LIMITED_API /** @todo ? */
 	    if (!strcmp(name, "__doc__")) {
 		const char *doc = ob_type->tp_doc;
 		if (doc)
 		    return PyUnicode_FromString(doc);
 	    }
+# endif
 	}
 	while (chain) {
 		PyMethodDef *ml = chain->methods;
@@ -246,9 +261,9 @@ Py_nsISupports::setattr(const char *name, PyObject *v)
 {
 	char buf[128];
 #ifdef VBOX
-	snprintf(buf, sizeof(buf), "%s has read-only attributes", ob_type->tp_name );
+	snprintf(buf, sizeof(buf), "%s has read-only attributes", PyXPCOM_ObTypeName(this) );
 #else
-	sprintf(buf, "%s has read-only attributes", ob_type->tp_name );
+	sprintf(buf, "%s has read-only attributes", PyXPCOM_ObTypeName(this) );
 #endif
 	PyErr_SetString(PyExc_TypeError, buf);
 	return -1;
@@ -271,7 +286,7 @@ Py_nsISupports::InterfaceFromPyISupports(PyObject *ob,
 	PRBool rc = PR_FALSE;
 	if ( !Check(ob) )
 	{
-		PyErr_Format(PyExc_TypeError, "Objects of type '%s' can not be used as COM objects", ob->ob_type->tp_name);
+		PyErr_Format(PyExc_TypeError, "Objects of type '%s' can not be used as COM objects", PyXPCOM_ObTypeName(ob));
 		goto done;
 	}
 	nsIID already_iid;
@@ -389,7 +404,11 @@ Py_nsISupports::InterfaceFromPyObject(PyObject *ob,
 
 // Interface conversions
 /*static*/void
+#ifndef Py_LIMITED_API
 Py_nsISupports::RegisterInterface( const nsIID &iid, PyTypeObject *t)
+#else
+Py_nsISupports::RegisterInterface( const nsIID &iid, PyXPCOM_TypeObject *t)
+#endif
 {
 	if (mapIIDToType==NULL)
 		mapIIDToType = PyDict_New();
@@ -425,7 +444,11 @@ Py_nsISupports::PyObjectFromInterface(nsISupports *pis,
 #endif
 	}
 
+#ifndef Py_LIMITED_API
 	PyTypeObject *createType = NULL;
+#else
+	PyXPCOM_TypeObject *createType = NULL;
+#endif
 	// If the IID is for nsISupports, dont bother with
 	// a map lookup as we know the type!
 	if (!riid.Equals(NS_GET_IID(nsISupports))) {
@@ -434,11 +457,16 @@ Py_nsISupports::PyObjectFromInterface(nsISupports *pis,
 		if (!obiid) return NULL;
 
 		if (mapIIDToType != NULL)
+#ifndef Py_LIMITED_API
 			createType = (PyTypeObject *)PyDict_GetItem(mapIIDToType, obiid);
+#else
+			createType = (PyXPCOM_TypeObject *)PyDict_GetItem(mapIIDToType, obiid);
+#endif
 		Py_DECREF(obiid);
 	}
 	if (createType==NULL)
 		createType = Py_nsISupports::type;
+#ifndef Py_LIMITED_API
 	// Check it is indeed one of our types.
 	if (!PyXPCOM_TypeObject::IsType(createType)) {
 		PyErr_SetString(PyExc_RuntimeError, "The type map is invalid");
@@ -446,6 +474,9 @@ Py_nsISupports::PyObjectFromInterface(nsISupports *pis,
 	}
 	// we can now safely cast the thing to a PyComTypeObject and use it
 	PyXPCOM_TypeObject *myCreateType = (PyXPCOM_TypeObject *)createType;
+#else  /* Since the mapIIDToType is only updated by us, there should be no need for the above. */
+	PyXPCOM_TypeObject * const myCreateType = createType;
+#endif
 	if (myCreateType->ctor==NULL) {
 		PyErr_SetString(PyExc_TypeError, "The type does not declare a PyCom constructor");
 		return NULL;

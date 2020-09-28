@@ -153,7 +153,7 @@ PyG_Base::PyG_Base(PyObject *instance, const nsIID &iid)
 	PyXPCOM_DLLAddRef();
 
 #ifdef DEBUG_FULL
-	LogF("PyGatewayBase: created %s", m_pPyObject ? m_pPyObject->ob_type->tp_name : "<NULL>");
+	LogF("PyGatewayBase: created %s", m_pPyObject ? PyXPCOM_ObTypeName(m_pPyObject) : "<NULL>");
 #endif
 }
 
@@ -399,7 +399,7 @@ PyG_Base::QueryInterface(REFNSIID iid, void** ppv)
 				// Dump this message and any Python exception before
 				// reporting the fact that QI failed - this error
 				// may provide clues!
-				PyXPCOM_LogError("The _QueryInterface_ method returned an object of type '%s', but an interface was expected\n", result->ob_type->tp_name);
+				PyXPCOM_LogError("The _QueryInterface_ method returned an object of type '%s', but an interface was expected\n", PyXPCOM_ObTypeName(result));
 				// supports remains false
 			}
 			Py_DECREF(result);
@@ -511,7 +511,7 @@ nsresult PyG_Base::HandleNativeGatewayError(const char *szMethodName)
 		} else {
 			// The exception handler succeeded, but returned other than
 			// int or None.
-			PyXPCOM_LogError("The _CallMethodException_ handler returned object of type '%s' - None or an integer expected\n", err_result->ob_type->tp_name);
+			PyXPCOM_LogError("The _CallMethodException_ handler returned object of type '%s' - None or an integer expected\n", PyXPCOM_ObTypeName(err_result));
 		}
 		Py_XDECREF(err_result);
 		PyErr_Restore(exc_typ, exc_val, exc_tb);

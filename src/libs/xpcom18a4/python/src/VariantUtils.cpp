@@ -497,7 +497,11 @@ PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence
 					BREAK_FALSE;
 				NS_ABORT_IF_FALSE(PyUnicode_Check(val_use), "PyUnicode_FromObject didnt return a Unicode object!");
 				// Lossy!
+#ifndef Py_LIMITED_API
 				FILL_SIMPLE_POINTER( PRUnichar, *PyUnicode_AS_UNICODE(val_use) );
+#else
+				FILL_SIMPLE_POINTER( PRUnichar, PyUnicode_ReadChar(val_use, 0) );
+#endif
 				break;
 
 			  case nsXPTType::T_IID: {
@@ -832,11 +836,12 @@ nsresult PyObject_AsVariant( PyObject *ob, nsIVariant **aRet)
 			if (PyUnicode_GetSize(ob) == 0) {
 #endif
 				nr = v->SetAsWStringWithSize(0, (PRUnichar*)NULL);
-			} else {
+			}
+			else {
 				PRUint32 nch;
 				PRUnichar *p;
 				if (PyUnicode_AsPRUnichar(ob, &p, &nch) < 0) {
-					PyXPCOM_LogWarning("Failed to convert object to unicode", ob->ob_type->tp_name);
+					PyXPCOM_LogWarning("Failed to convert object to unicode", PyXPCOM_ObTypeName(ob));
 					nr = NS_ERROR_UNEXPECTED;
 					break;
 				}
@@ -893,11 +898,11 @@ nsresult PyObject_AsVariant( PyObject *ob, nsIVariant **aRet)
 			nr = v->SetAsEmptyArray();
 			break;
 		case (PRUint16)-1:
-			PyXPCOM_LogWarning("Objects of type '%s' can not be converted to an nsIVariant", ob->ob_type->tp_name);
+			PyXPCOM_LogWarning("Objects of type '%s' can not be converted to an nsIVariant", PyXPCOM_ObTypeName(ob));
 			nr = NS_ERROR_UNEXPECTED;
 		default:
 			NS_ABORT_IF_FALSE(0, "BestVariantTypeForPyObject() returned a variant type not handled here!");
-			PyXPCOM_LogWarning("Objects of type '%s' can not be converted to an nsIVariant", ob->ob_type->tp_name);
+			PyXPCOM_LogWarning("Objects of type '%s' can not be converted to an nsIVariant", PyXPCOM_ObTypeName(ob));
 			nr = NS_ERROR_UNEXPECTED;
 	}
 	if (NS_FAILED(nr))
@@ -1423,7 +1428,11 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 				BREAK_FALSE;
 			}
 
+# ifndef Py_LIMITED_API
 			ns_v.val.c = *PyUnicode_AS_UNICODE(val_use);
+# else
+			ns_v.val.c = PyUnicode_ReadChar(val_use, 0);
+# endif
 #endif
 			break;
 			}
@@ -1449,7 +1458,11 @@ PRBool PyXPCOM_InterfaceVariantHelper::FillInVariant(const PythonTypeDescriptor 
 				BREAK_FALSE;
 			}
 			// Lossy!
+#ifndef Py_LIMITED_API
 			ns_v.val.wc = *PyUnicode_AS_UNICODE(val_use);
+#else
+			ns_v.val.wc = PyUnicode_ReadChar(val_use, 0);
+#endif
 			break;
 			}
 	//          case nsXPTType::T_VOID:              /* fall through */
@@ -2567,7 +2580,11 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 			PyErr_SetString(PyExc_TypeError, "This parameter must be a unicode object");
 			BREAK_FALSE;
 		}
+# ifndef Py_LIMITED_API
 		FILL_SIMPLE_POINTER( char, *PyUnicode_AS_UNICODE(val) );
+# else
+		FILL_SIMPLE_POINTER( char, PyUnicode_ReadChar(val, 0) );
+# endif
 #endif
 		break;
 
@@ -2587,7 +2604,11 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 			BREAK_FALSE;
 		NS_ABORT_IF_FALSE(PyUnicode_Check(val_use), "PyUnicode_FromObject didnt return a Unicode object!");
 		// Lossy!
+#ifndef Py_LIMITED_API
 		FILL_SIMPLE_POINTER( PRUnichar, *PyUnicode_AS_UNICODE(val_use) );
+#else
+		FILL_SIMPLE_POINTER( PRUnichar, PyUnicode_ReadChar(val_use, 0) );
+#endif
 		break;
 
 //	  case nsXPTType::T_VOID:
@@ -2930,7 +2951,7 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 		PRUint32 element_size = GetArrayElementSize(array_type);
 		if (val != Py_None) {
 			if (!PySequence_Check(val)) {
-				PyErr_Format(PyExc_TypeError, "Object for xpcom array must be a sequence, not type '%s'", val->ob_type->tp_name);
+				PyErr_Format(PyExc_TypeError, "Object for xpcom array must be a sequence, not type '%s'", PyXPCOM_ObTypeName(val));
 				BREAK_FALSE;
 			}
 			sequence_size = PySequence_Length(val);
