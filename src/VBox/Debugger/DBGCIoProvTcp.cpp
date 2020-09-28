@@ -214,7 +214,7 @@ static DECLCALLBACK(int) dbgcIoProvTcpWaitForConnect(DBGCIOPROV hDbgcIoProv, RTM
 
 
 /**
- * @interface_method_impl{DBGCIOPROV,pfnWaitInterrupt}
+ * @interface_method_impl{DBGCIOPROVREG,pfnWaitInterrupt}
  */
 static DECLCALLBACK(int) dbgcIoProvTcpWaitInterrupt(DBGCIOPROV hDbgcIoProv)
 {
