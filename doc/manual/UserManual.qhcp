@@ -19,12 +19,12 @@
     <docFiles>
         <generate>
             <file>
-                <input>manual.qhp</input>
-                <output>manual.qch</output>
+                <input>UserManual.qhp</input>
+                <output>UserManual.qch</output>
             </file>
         </generate>
         <register>
-            <file>manual.qch</file>
+            <file>UserManual.qch</file>
         </register>
     </docFiles>
 </QHelpCollectionProject>

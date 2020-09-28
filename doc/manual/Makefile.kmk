@@ -155,7 +155,11 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$(VBOX_PATH_BIN_HTML) \
   		$(VBOX_PATH_BIN_CHM)
   INSTALLS += VBox-docs-usermanual
-
+  
+  INSTALLS += VBox-docs-usermanual-qhc
+  INSTALLS += VBox-docs-usermanual-qch
+  
+  
   ifdef VBOX_WITH_DOCS_TRANSLATIONS
    INSTALLS += VBox-docs-usermanual-l10n
    VBOX_MANUAL_PACK += \
@@ -197,7 +201,7 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
  	Accessibility.xml
 
  VBOX_QHCP_FILES = \
-	manual.qhcp
+	UserManual.qhcp
 
  # Wildcard the images path for every supported language
  $(foreach f,$(VBOX_MANUAL_LANGUAGES), \
@@ -249,8 +253,10 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
         $(notdir $(VBOX_MANUAL_TEX_UNICODE_FILES)) \
         $(addprefix HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(lang))) \
         html-single/UserManual.xhtml \
-        html-single/manual.qhp \
-        html-single/manual.qhcp \
+        html-single/UserManual.qhp \
+        html-single/UserManual.qhcp \
+        html-single/UserManual.qhc \
+        html-single/UserManual.qch \
         $(addprefix HTMLHelp/,    index.html go01.html) \
         $(addprefix html-chunks/, index.html go01.html) \
         $(foreach n,01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 \
@@ -309,6 +315,14 @@ endif # if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX
 VBox-docs-usermanual_INST = $(INST_BIN)
 VBox-docs-usermanual_MODE = a+r,u+w
 VBox-docs-usermanual_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf
+
+VBox-docs-usermanual-qhc_INST = $(INST_BIN)
+VBox-docs-usermanual-qhc_MODE = a+r,u+w
+VBox-docs-usermanual-qhc_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhc
+
+VBox-docs-usermanual-qch_INST = $(INST_BIN)
+VBox-docs-usermanual-qch_MODE = a+r,u+w
+VBox-docs-usermanual-qch_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qch
 
 #
 # target for installing translated UserManual_*.pdf
@@ -818,7 +832,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
 
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
-qhelp:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhc
+qhelp:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhc
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
 
@@ -884,25 +898,25 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTR
 , $(evalcall2 def_vbox_refentry_to_manpage,$(lang),$(file))))
 
 ################Generate qHelp's qhp file out of UserManual.xhtml###############################
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp: \
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhp: \
 		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatemanual.run,) \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) \
 		$(VBOX_XML_ENTITIES) | $$(dir $$@) \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml
 	$(call MSG_TOOL,xsltproc $(notdir $(firstword $(filter %.xsl,$^))),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) \
-		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp \
+		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhp \
 		$(VBOX_PATH_MANUAL_SRC)/xhtml-qhelp.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml
 
 ################Copy qhcp file from the source directory###############################
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp: \
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhcp: \
 	$$(dir $$@)
 	$(QUIET)$(INSTALL_STAGING) -m0664 -- $(addprefix $(VBOX_PATH_MANUAL_SRC)/, $(VBOX_QHCP_FILES)) $@
 
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhc: \
-	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhcp \
-	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhp \
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhc: \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhcp \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhp \
 	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, $(VBOX_MANUAL_PNG_FILES_en_US))
 	qcollectiongenerator $<
 
@@ -914,8 +928,8 @@ $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, $(VBOX_MANUAL_PNG_FI
 	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, images)
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $< $@
 
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qch: \
-	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/manual.qhc
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qch: \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhc
 
 # Handy aliases.
 validate-manpages:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_REFENTRY_FILES))
