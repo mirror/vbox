@@ -649,6 +649,8 @@ void UIProgress::prepare()
             this, &UIProgress::sltHandleProgressPercentageChange);
     connect(m_pEventHandler, &UIProgressEventHandler::sigProgressTaskComplete,
             this, &UIProgress::sltHandleProgressTaskComplete);
+    connect(m_pEventHandler, &UIProgressEventHandler::sigHandlingFinished,
+            this, &UIProgress::sigProgressEventHandlingFinished);
 }
 
 void UIProgress::cleanup()

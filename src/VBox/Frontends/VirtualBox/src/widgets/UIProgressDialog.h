@@ -196,6 +196,9 @@ signals:
     /** Notifies listeners about wrapped CProgress complete. */
     void sigProgressComplete();
 
+    /** Notifies listeners about CProgress event handling finished. */
+    void sigProgressEventHandlingFinished();
+
 public:
 
     /** Constructs progress handler passing @a pParent to the base-class.
