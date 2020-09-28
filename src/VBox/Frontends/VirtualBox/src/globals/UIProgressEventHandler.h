@@ -42,6 +42,8 @@ signals:
     void sigProgressPercentageChange(const QUuid &uProgressId, const int iPercent);
     /** Notifies about task complete for progress with @a uProgressId. */
     void sigProgressTaskComplete(const QUuid &uProgressId);
+    /** Notifies about handling has finished. */
+    void sigHandlingFinished();
 
 public:
 
