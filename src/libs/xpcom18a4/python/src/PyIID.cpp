@@ -76,7 +76,9 @@ PYXPCOM_EXPORT PyObject *PyXPCOMMethod_IID(PyObject *self, PyObject *args)
 			const void *buf = view.buf;
 #endif
 			if (size != sizeof(nsIID) || buf==NULL) {
+#if PY_MAJOR_VERSION >= 3
 				PyBuffer_Release(&view);
+#endif
 #ifdef VBOX
 				PyErr_Format(PyExc_ValueError, "A buffer object to be converted to an IID must be exactly %d bytes long", (int)sizeof(nsIID));
 #else
