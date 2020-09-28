@@ -3026,15 +3026,17 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
                 /* Store the translated base address before continuing to check permissions for any more pages. */
                 if (cbRemaining == cbAccess)
                 {
-                    RTGCPHYS const offSpa = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
+                    uint64_t const offMask = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
+                    uint64_t const offSpa  = uIova & offMask;
                     *pGCPhysSpa = WalkResult.GCPhysSpa | offSpa;
                 }
 
+                /* If the access exceeds the page size, check permissions for the subsequent page. */
                 uint64_t const cbPhysPage = UINT64_C(1) << WalkResult.cShift;
                 if (cbRemaining > cbPhysPage - offIova)
                 {
                     cbRemaining -= (cbPhysPage - offIova);
-                    uBaseIova   += cbPhysPage;
+                    uBaseIova   += cbPhysPage;      /** @todo r=ramshankar: Should we mask the offset based on page size here? */
                     offIova      = 0;
                 }
                 else
@@ -3084,12 +3086,17 @@ static DECLCALLBACK(int) iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDev
     if (Ctrl.n.u1IommuEn)
     {
         STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
-        LogFlowFunc(("uDevId=%#x uIova=%#RX64 cbRead=%u\n", uDevId, uIova, cbRead));
+        LogFunc(("uDevId=%#x uIova=%#RX64 cbRead=%u\n", uDevId, uIova, cbRead));
 
         /** @todo IOMMU: IOTLB cache lookup. */
 
         /* Lookup the IOVA from the device table. */
-        return iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbRead, IOMMU_IO_PERM_READ, IOMMUOP_MEM_READ, pGCPhysSpa);
+        int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbRead, IOMMU_IO_PERM_READ, IOMMUOP_MEM_READ, pGCPhysSpa);
+        if (RT_SUCCESS(rc))
+            LogFlowFunc(("uDevId=%#x uIova=%#RX64 cRead=%u pGCPhysSpa=%#RGp\n", uDevId, uIova, cbRead, *pGCPhysSpa));
+        else
+            LogFunc(("Failed! uDevId=%#x uIova=%#RX64 cbWrite=%u rc=%Rrc\n", uDevId, uIova, cbRead, rc));
+        return rc;
     }
 
     *pGCPhysSpa = uIova;
@@ -3124,12 +3131,16 @@ static DECLCALLBACK(int) iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDe
     if (Ctrl.n.u1IommuEn)
     {
         STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
-        LogFlowFunc(("uDevId=%#x uIova=%#RX64 cbWrite=%u\n", uDevId, uIova, cbWrite));
 
         /** @todo IOMMU: IOTLB cache lookup. */
 
         /* Lookup the IOVA from the device table. */
-        return iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbWrite, IOMMU_IO_PERM_WRITE, IOMMUOP_MEM_WRITE, pGCPhysSpa);
+        int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbWrite, IOMMU_IO_PERM_WRITE, IOMMUOP_MEM_WRITE, pGCPhysSpa);
+        if (RT_SUCCESS(rc))
+            LogFlowFunc(("uDevId=%#x uIova=%#RX64 cbWrite=%u pGCPhysSpa=%#RGp\n", uDevId, uIova, cbWrite, *pGCPhysSpa));
+        else
+            LogFunc(("Failed! uDevId=%#x uIova=%#RX64 cbWrite=%u rc=%Rrc\n", uDevId, uIova, cbWrite, rc));
+        return rc;
     }
 
     *pGCPhysSpa = uIova;
