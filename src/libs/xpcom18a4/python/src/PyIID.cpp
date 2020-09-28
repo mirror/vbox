@@ -67,41 +67,37 @@ PYXPCOM_EXPORT PyObject *PyXPCOMMethod_IID(PyObject *self, PyObject *args)
 			int size = (*pb->bf_getreadbuffer)(obBuf, 0, &buf);
 #else
 		if (PyObject_CheckBuffer(obBuf)) {
-			void *buf = NULL;
-            Py_buffer view;
-            if (PyObject_GetBuffer(obBuf, &view, PyBUF_CONTIG_RO) != 0)
-            {
-                PyErr_Format(PyExc_ValueError, "Could not get contiguous buffer from object");
-                return NULL;
-            }
-            Py_ssize_t size = view.len;
-            buf = view.buf;
+			Py_buffer view;
+			if (PyObject_GetBuffer(obBuf, &view, PyBUF_CONTIG_RO) != 0) {
+				PyErr_Format(PyExc_ValueError, "Could not get contiguous buffer from object");
+				return NULL;
+			}
+			Py_ssize_t size = view.len;
+			const void *buf = view.buf;
 #endif
 			if (size != sizeof(nsIID) || buf==NULL) {
-#if PY_MAJOR_VERSION >= 3
-                PyBuffer_Release(&view);
-#endif
+				PyBuffer_Release(&view);
 #ifdef VBOX
-                PyErr_Format(PyExc_ValueError, "A buffer object to be converted to an IID must be exactly %d bytes long", (int)sizeof(nsIID));
+				PyErr_Format(PyExc_ValueError, "A buffer object to be converted to an IID must be exactly %d bytes long", (int)sizeof(nsIID));
 #else
 				PyErr_Format(PyExc_ValueError, "A buffer object to be converted to an IID must be exactly %d bytes long", sizeof(nsIID));
 #endif
 				return NULL;
 			}
 			nsIID iid;
-			unsigned char *ptr = (unsigned char *)buf;
+			unsigned char const *ptr = (unsigned char const *)buf;
 			iid.m0 = XPT_SWAB32(*((PRUint32 *)ptr));
-			ptr = ((unsigned char *)buf) + offsetof(nsIID, m1);
+			ptr = ((unsigned char const *)buf) + offsetof(nsIID, m1);
 			iid.m1 = XPT_SWAB16(*((PRUint16 *)ptr));
-			ptr = ((unsigned char *)buf) + offsetof(nsIID, m2);
+			ptr = ((unsigned char const *)buf) + offsetof(nsIID, m2);
 			iid.m2 = XPT_SWAB16(*((PRUint16 *)ptr));
-			ptr = ((unsigned char *)buf) + offsetof(nsIID, m3);
+			ptr = ((unsigned char const *)buf) + offsetof(nsIID, m3);
 			for (int i=0;i<8;i++) {
-				iid.m3[i] = *((PRUint8 *)ptr);
+				iid.m3[i] = *((PRUint8 const *)ptr);
 				ptr += sizeof(PRUint8);
 			}
 #if PY_MAJOR_VERSION >= 3
-            PyBuffer_Release(&view);
+			PyBuffer_Release(&view);
 #endif
 			return new Py_nsIID(iid);
 		}
