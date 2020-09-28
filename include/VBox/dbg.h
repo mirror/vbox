@@ -1102,91 +1102,82 @@ typedef struct DBGCFUNC
 } DBGCFUNC;
 
 
-
-/** Pointer to a DBGC backend. */
-typedef struct DBGCBACK *PDBGCBACK;
-
-/**
- * Checks if there is input.
- *
- * @returns true if there is input ready.
- * @returns false if there not input ready.
- * @param   pBack       Pointer to the backend structure supplied by
- *                      the backend. The backend can use this to find
- *                      it's instance data.
- * @param   cMillies    Number of milliseconds to wait on input data.
- */
-typedef DECLCALLBACKTYPE(bool, FNDBGCBACKINPUT,(PDBGCBACK pBack, uint32_t cMillies));
-/** Pointer to a FNDBGCBACKINPUT() callback. */
-typedef FNDBGCBACKINPUT *PFNDBGCBACKINPUT;
+/** Pointer to a const I/O callback table. */
+typedef const struct DBGCIO *PCDBGCIO;
 
 /**
- * Read input.
- *
- * @returns VBox status code.
- * @param   pBack       Pointer to the backend structure supplied by
- *                      the backend. The backend can use this to find
- *                      it's instance data.
- * @param   pvBuf       Where to put the bytes we read.
- * @param   cbBuf       Maximum nymber of bytes to read.
- * @param   pcbRead     Where to store the number of bytes actually read.
- *                      If NULL the entire buffer must be filled for a
- *                      successful return.
+ * I/O callback table.
  */
-typedef DECLCALLBACKTYPE(int, FNDBGCBACKREAD,(PDBGCBACK pBack, void *pvBuf, size_t cbBuf, size_t *pcbRead));
-/** Pointer to a FNDBGCBACKREAD() callback. */
-typedef FNDBGCBACKREAD *PFNDBGCBACKREAD;
-
-/**
- * Write (output).
- *
- * @returns VBox status code.
- * @param   pBack       Pointer to the backend structure supplied by
- *                      the backend. The backend can use this to find
- *                      it's instance data.
- * @param   pvBuf       What to write.
- * @param   cbBuf       Number of bytes to write.
- * @param   pcbWritten  Where to store the number of bytes actually written.
- *                      If NULL the entire buffer must be successfully written.
- */
-typedef DECLCALLBACKTYPE(int, FNDBGCBACKWRITE,(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size_t *pcbWritten));
-/** Pointer to a FNDBGCBACKWRITE() callback. */
-typedef FNDBGCBACKWRITE *PFNDBGCBACKWRITE;
-
-/**
- * Ready / busy notification.
- *
- * @param   pBack       Pointer to the backend structure supplied by
- *                      the backend. The backend can use this to find
- *                      it's instance data.
- * @param   fReady      Whether it's ready (true) or busy (false).
- */
-typedef DECLCALLBACKTYPE(void, FNDBGCBACKSETREADY,(PDBGCBACK pBack, bool fReady));
-/** Pointer to a FNDBGCBACKSETREADY() callback. */
-typedef FNDBGCBACKSETREADY *PFNDBGCBACKSETREADY;
-
-
-/**
- * The communication backend provides the console with a number of callbacks
- * which can be used
- */
-typedef struct DBGCBACK
+typedef struct DBGCIO
 {
-    /** Check for input. */
-    PFNDBGCBACKINPUT    pfnInput;
-    /** Read input. */
-    PFNDBGCBACKREAD     pfnRead;
-    /** Write output. */
-    PFNDBGCBACKWRITE    pfnWrite;
-    /** Ready / busy notification. */
-    PFNDBGCBACKSETREADY pfnSetReady;
-} DBGCBACK;
+    /**
+     * Destroys the given I/O instance.
+     *
+     * @returns nothing.
+     * @param   pDbgcIo     Pointer to the I/O structure supplied by the I/O provider.
+     */
+    DECLCALLBACKMEMBER(void, pfnDestroy, (PCDBGCIO pDbgcIo));
 
-DBGDECL(int)    DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags);
+    /**
+     * Wait for input available for reading.
+     *
+     * @returns Flag whether there is input ready upon return.
+     * @retval  true if there is input ready.
+     * @retval  false if there not input ready.
+     * @param   pDbgcIo     Pointer to the I/O structure supplied by
+     *                      the I/O provider. The backend can use this to find it's instance data.
+     * @param   cMillies    Number of milliseconds to wait on input data.
+     */
+    DECLCALLBACKMEMBER(bool, pfnInput, (PCDBGCIO pDbgcIo, uint32_t cMillies));
+
+    /**
+     * Read input.
+     *
+     * @returns VBox status code.
+     * @param   pDbgcIo     Pointer to the I/O structure supplied by
+     *                      the I/O provider. The backend can use this to find it's instance data.
+     * @param   pvBuf       Where to put the bytes we read.
+     * @param   cbBuf       Maximum nymber of bytes to read.
+     * @param   pcbRead     Where to store the number of bytes actually read.
+     *                      If NULL the entire buffer must be filled for a
+     *                      successful return.
+     */
+    DECLCALLBACKMEMBER(int, pfnRead, (PCDBGCIO pDbgcIo, void *pvBuf, size_t cbBuf, size_t *pcbRead));
+
+    /**
+     * Write (output).
+     *
+     * @returns VBox status code.
+     * @param   pDbgcIo     Pointer to the I/O structure supplied by
+     *                      the I/O provider. The backend can use this to find it's instance data.
+     * @param   pvBuf       What to write.
+     * @param   cbBuf       Number of bytes to write.
+     * @param   pcbWritten  Where to store the number of bytes actually written.
+     *                      If NULL the entire buffer must be successfully written.
+     */
+    DECLCALLBACKMEMBER(int, pfnWrite, (PCDBGCIO pDbgcIo, const void *pvBuf, size_t cbBuf, size_t *pcbWritten));
+
+    /**
+     * Ready / busy notification.
+     *
+     * @returns nothing.
+     * @param   pDbgcIo     Pointer to the I/O structure supplied by
+     *                      the I/O provider. The backend can use this to find it's instance data.
+     * @param   fReady      Whether it's ready (true) or busy (false).
+     */
+    DECLCALLBACKMEMBER(void, pfnSetReady, (PCDBGCIO pDbgcIo, bool fReady));
+
+} DBGCIO;
+/** Pointer to an I/O callback table. */
+typedef DBGCIO *PDBGCIO;
+
+
+DBGDECL(int)    DBGCCreate(PUVM pUVM, PCDBGCIO pIo, unsigned fFlags);
 DBGDECL(int)    DBGCRegisterCommands(PCDBGCCMD paCommands, unsigned cCommands);
 DBGDECL(int)    DBGCDeregisterCommands(PCDBGCCMD paCommands, unsigned cCommands);
-DBGDECL(int)    DBGCTcpCreate(PUVM pUVM, void **ppvUser);
-DBGDECL(int)    DBGCTcpTerminate(PUVM pUVM, void *pvData);
+
+DBGDECL(int)    DBGCIoCreate(PUVM pUVM, void **ppvData);
+DBGDECL(int)    DBGCIoTerminate(PUVM pUVM, void *pvData);
 
 /** @} */
 

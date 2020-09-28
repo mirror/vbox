@@ -288,7 +288,7 @@ protected:
      * @param   pBack       Pointer to VBoxDbgConsole::m_Back.
      * @param   cMillies    Number of milliseconds to wait on input data.
      */
-    static DECLCALLBACK(bool) backInput(PDBGCBACK pBack, uint32_t cMillies);
+    static DECLCALLBACK(bool) backInput(PCDBGCIO pIo, uint32_t cMillies);
 
     /**
      * Read input.
@@ -301,7 +301,7 @@ protected:
      *                      If NULL the entire buffer must be filled for a
      *                      successful return.
      */
-    static DECLCALLBACK(int) backRead(PDBGCBACK pBack, void *pvBuf, size_t cbBuf, size_t *pcbRead);
+    static DECLCALLBACK(int) backRead(PCDBGCIO pIo, void *pvBuf, size_t cbBuf, size_t *pcbRead);
 
     /**
      * Write (output).
@@ -313,12 +313,12 @@ protected:
      * @param   pcbWritten  Where to store the number of bytes actually written.
      *                      If NULL the entire buffer must be successfully written.
      */
-    static DECLCALLBACK(int) backWrite(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size_t *pcbWritten);
+    static DECLCALLBACK(int) backWrite(PCDBGCIO pIo, const void *pvBuf, size_t cbBuf, size_t *pcbWritten);
 
     /**
-     * @copydoc FNDBGCBACKSETREADY
+     * @copydoc DBGCIO::PfnSetReady
      */
-    static DECLCALLBACK(void) backSetReady(PDBGCBACK pBack, bool fReady);
+    static DECLCALLBACK(void) backSetReady(PCDBGCIO pIo, bool fReady);
 
     /**
      * The Debugger Console Thread
@@ -387,10 +387,10 @@ protected:
     bool volatile m_fThreadTerminated;
 
     /** The debug console backend structure.
-     * Use VBOXDBGCONSOLE_FROM_DBGCBACK to convert the DBGCBACK pointer to a object pointer. */
+     * Use VBOXDBGCONSOLE_FROM_DBGCIO to convert the DBGCIO pointer to a object pointer. */
     struct VBoxDbgConsoleBack
     {
-        DBGCBACK Core;
+        DBGCIO Core;
         VBoxDbgConsole *pSelf;
     } m_Back;
 
@@ -398,7 +398,7 @@ protected:
      * Converts a pointer to VBoxDbgConsole::m_Back to VBoxDbgConsole pointer.
      * @todo find a better way because offsetof is undefined on objects and g++ gets very noisy because of that.
      */
-#   define VBOXDBGCONSOLE_FROM_DBGCBACK(pBack) ( ((struct VBoxDbgConsoleBack *)(pBack))->pSelf )
+#   define VBOXDBGCONSOLE_FROM_DBGCIO(pIo) ( ((struct VBoxDbgConsoleBack *)(pBack))->pSelf )
 
     /** Change focus to the input field. */
     QAction *m_pFocusToInput;

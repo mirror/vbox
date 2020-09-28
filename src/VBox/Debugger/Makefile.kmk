@@ -50,7 +50,9 @@ Debugger_SOURCES   = \
 	DBGCOps.cpp \
 	DBGCGdbRemoteStub.cpp \
 	DBGCRemoteKd.cpp \
-	DBGCTcp.cpp \
+	DBGCIo.cpp \
+	DBGCIoProvTcp.cpp \
+	DBGCIoProvIpc.cpp \
 	DBGCScreenAscii.cpp
 
 #

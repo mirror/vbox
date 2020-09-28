@@ -113,8 +113,8 @@ typedef struct DBGC
     DBGCCMDHLP          CmdHlp;
     /** Wrappers for DBGF output. */
     DBGFINFOHLP         DbgfOutputHlp;
-    /** Pointer to backend callback structure. */
-    PDBGCBACK           pBack;
+    /** Pointer to I/O callback structure. */
+    PCDBGCIO            pIo;
 
     /**
      * Output a bunch of characters.
@@ -593,7 +593,7 @@ DECLHIDDEN(int)  dbgcScreenAsciiDrawString(DBGCSCREEN hScreen, uint32_t uX, uint
                                            DBGCSCREENCOLOR enmColor);
 
 /* For tstDBGCParser: */
-int     dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags);
+int     dbgcCreate(PDBGC *ppDbgc, PCDBGCIO pIo, unsigned fFlags);
 int     dbgcRun(PDBGC pDbgc);
 int     dbgcProcessInput(PDBGC pDbgc, bool fNoExecute);
 void    dbgcDestroy(PDBGC pDbgc);
@@ -601,8 +601,8 @@ void    dbgcDestroy(PDBGC pDbgc);
 DECLHIDDEN(const char *) dbgcGetEventCtx(DBGFEVENTCTX enmCtx);
 DECLHIDDEN(PCDBGCSXEVT) dbgcEventLookup(DBGFEVENTTYPE enmType);
 
-DECLHIDDEN(int) dbgcGdbStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags);
-DECLHIDDEN(int) dbgcKdStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags);
+DECL_HIDDEN_CALLBACK(int) dbgcGdbStubRunloop(PUVM pUVM, PCDBGCIO pIo, unsigned fFlags);
+DECL_HIDDEN_CALLBACK(int) dbgcKdStubRunloop(PUVM pUVM, PCDBGCIO pIo, unsigned fFlags);
 
 
 /*******************************************************************************

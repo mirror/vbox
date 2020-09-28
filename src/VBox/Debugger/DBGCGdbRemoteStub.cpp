@@ -400,7 +400,7 @@ DECLINLINE(char) dbgcGdbStubCtxHexToChr(uint8_t uHex)
  */
 DECLINLINE(int) dbgcGdbStubCtxWrite(PGDBSTUBCTX pThis, const void *pvPkt, size_t cbPkt)
 {
-    return pThis->Dbgc.pBack->pfnWrite(pThis->Dbgc.pBack, pvPkt, cbPkt, NULL /*pcbWritten*/);
+    return pThis->Dbgc.pIo->pfnWrite(pThis->Dbgc.pIo, pvPkt, cbPkt, NULL /*pcbWritten*/);
 }
 
 
@@ -2327,7 +2327,7 @@ static int dbgcGdbStubCtxRecv(PGDBSTUBCTX pThis)
     if (RT_SUCCESS(rc))
     {
         size_t cbThisRead = 32;
-        rc = pThis->Dbgc.pBack->pfnRead(pThis->Dbgc.pBack, &pThis->pbPktBuf[pThis->offPktBuf], cbThisRead, &cbThisRead);
+        rc = pThis->Dbgc.pIo->pfnRead(pThis->Dbgc.pIo, &pThis->pbPktBuf[pThis->offPktBuf], cbThisRead, &cbThisRead);
         if (RT_SUCCESS(rc))
             rc = dbgcGdbStubCtxPktBufProcess(pThis, cbThisRead);
     }
@@ -2469,7 +2469,7 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
         case DBGFEVENT_POWERING_OFF:
         {
             pThis->Dbgc.fReady = false;
-            pThis->Dbgc.pBack->pfnSetReady(pThis->Dbgc.pBack, false);
+            pThis->Dbgc.pIo->pfnSetReady(pThis->Dbgc.pIo, false);
             rc = VERR_GENERAL_FAILURE;
             break;
         }
@@ -2567,7 +2567,7 @@ int dbgcGdbStubRun(PGDBSTUBCTX pThis)
      * We're ready for commands now.
      */
     pThis->Dbgc.fReady = true;
-    pThis->Dbgc.pBack->pfnSetReady(pThis->Dbgc.pBack, true);
+    pThis->Dbgc.pIo->pfnSetReady(pThis->Dbgc.pIo, true);
 
     /*
      * Main Debugger Loop.
@@ -2602,7 +2602,7 @@ int dbgcGdbStubRun(PGDBSTUBCTX pThis)
             /*
              * Check for input.
              */
-            if (pThis->Dbgc.pBack->pfnInput(pThis->Dbgc.pBack, 0))
+            if (pThis->Dbgc.pIo->pfnInput(pThis->Dbgc.pIo, 0))
             {
                 rc = dbgcGdbStubCtxRecv(pThis);
                 if (RT_FAILURE(rc))
@@ -2614,7 +2614,7 @@ int dbgcGdbStubRun(PGDBSTUBCTX pThis)
             /*
              * Wait for input.
              */
-            if (pThis->Dbgc.pBack->pfnInput(pThis->Dbgc.pBack, 1000))
+            if (pThis->Dbgc.pIo->pfnInput(pThis->Dbgc.pIo, 1000))
             {
                 rc = dbgcGdbStubCtxRecv(pThis);
                 if (RT_FAILURE(rc))
@@ -2674,15 +2674,15 @@ static DECLCALLBACK(int) dbgcOutputGdb(void *pvUser, const char *pachChars, size
  *
  * @returns VBox status code.
  * @param   ppGdbStubCtx            Where to store the pointer to the GDB stub context instance on success.
- * @param   pBack                   The backend to use for I/O.
+ * @param   pIo                     Pointer to the I/O callback table.
  * @param   fFlags                  Flags controlling the behavior.
  */
-static int dbgcGdbStubCtxCreate(PPGDBSTUBCTX ppGdbStubCtx, PDBGCBACK pBack, unsigned fFlags)
+static int dbgcGdbStubCtxCreate(PPGDBSTUBCTX ppGdbStubCtx, PCDBGCIO pIo, unsigned fFlags)
 {
     /*
      * Validate input.
      */
-    AssertPtrReturn(pBack, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIo, VERR_INVALID_POINTER);
     AssertMsgReturn(!fFlags, ("%#x", fFlags), VERR_INVALID_PARAMETER);
 
     /*
@@ -2697,7 +2697,7 @@ static int dbgcGdbStubCtxCreate(PPGDBSTUBCTX ppGdbStubCtx, PDBGCBACK pBack, unsi
      * This is compied from the native debug console (will be used for monitor commands)
      * in DBGCConsole.cpp. Try to keep both functions in sync.
      */
-    pThis->Dbgc.pBack            = pBack;
+    pThis->Dbgc.pIo              = pIo;
     pThis->Dbgc.pfnOutput        = dbgcOutputGdb;
     pThis->Dbgc.pvOutputUser     = pThis;
     pThis->Dbgc.pVM              = NULL;
@@ -2790,7 +2790,7 @@ static void dbgcGdbStubDestroy(PGDBSTUBCTX pThis)
 }
 
 
-DECLHIDDEN(int) dbgcGdbStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
+DECL_HIDDEN_CALLBACK(int) dbgcGdbStubRunloop(PUVM pUVM, PCDBGCIO pIo, unsigned fFlags)
 {
     /*
      * Validate input.
@@ -2807,7 +2807,7 @@ DECLHIDDEN(int) dbgcGdbStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
      * Allocate and initialize instance data
      */
     PGDBSTUBCTX pThis;
-    int rc = dbgcGdbStubCtxCreate(&pThis, pBack, fFlags);
+    int rc = dbgcGdbStubCtxCreate(&pThis, pIo, fFlags);
     if (RT_FAILURE(rc))
         return rc;
     if (!HMR3IsEnabled(pUVM) && !NEMR3IsEnabled(pUVM))

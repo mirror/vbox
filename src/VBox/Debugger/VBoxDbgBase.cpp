@@ -95,12 +95,12 @@ VBoxDbgBase::stamEnum(const QString &rPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
 
 
 int
-VBoxDbgBase::dbgcCreate(PDBGCBACK pBack, unsigned fFlags)
+VBoxDbgBase::dbgcCreate(PCDBGCIO pIo, unsigned fFlags)
 {
     PUVM pUVM = m_pUVM;
     if (    pUVM
         &&  VMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
-        return DBGCCreate(pUVM, pBack, fFlags);
+        return DBGCCreate(pUVM, pIo, fFlags);
     return VERR_INVALID_HANDLE;
 }
 

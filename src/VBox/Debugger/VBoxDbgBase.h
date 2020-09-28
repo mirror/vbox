@@ -86,7 +86,7 @@ public:
     /**
      * Wrapper for DBGCCreate().
      */
-    int dbgcCreate(PDBGCBACK pBack, unsigned fFlags);
+    int dbgcCreate(PCDBGCIO pIo, unsigned fFlags);
     /** @} */
 
 

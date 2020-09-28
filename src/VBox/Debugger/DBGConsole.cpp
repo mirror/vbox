@@ -409,10 +409,10 @@ static int dbgcInputOverflow(PDBGC pDbgc)
      * Eat input till no more or there is a '\n'.
      * When finding a '\n' we'll continue normal processing.
      */
-    while (pDbgc->pBack->pfnInput(pDbgc->pBack, 0))
+    while (pDbgc->pIo->pfnInput(pDbgc->pIo, 0))
     {
         size_t cbRead;
-        int rc = pDbgc->pBack->pfnRead(pDbgc->pBack, &pDbgc->achInput[0], sizeof(pDbgc->achInput) - 1, &cbRead);
+        int rc = pDbgc->pIo->pfnRead(pDbgc->pIo, &pDbgc->achInput[0], sizeof(pDbgc->achInput) - 1, &cbRead);
         if (RT_FAILURE(rc))
             return rc;
         char *psz = (char *)memchr(&pDbgc->achInput[0], '\n', cbRead);
@@ -468,7 +468,7 @@ static int dbgcInputRead(PDBGC pDbgc)
          */
         char    achRead[128];
         size_t  cbRead;
-        rc = pDbgc->pBack->pfnRead(pDbgc->pBack, &achRead[0], RT_MIN(cbLeft, sizeof(achRead)), &cbRead);
+        rc = pDbgc->pIo->pfnRead(pDbgc->pIo, &achRead[0], RT_MIN(cbLeft, sizeof(achRead)), &cbRead);
         if (RT_FAILURE(rc))
             return rc;
         char *psz = &achRead[0];
@@ -526,7 +526,7 @@ static int dbgcInputRead(PDBGC pDbgc)
 
         /* Terminate it to make it easier to read in the debugger. */
         pDbgc->achInput[pDbgc->iWrite] = '\0';
-    } while (pDbgc->pBack->pfnInput(pDbgc->pBack, 0));
+    } while (pDbgc->pIo->pfnInput(pDbgc->pIo, 0));
 
     return rc;
 }
@@ -553,7 +553,7 @@ int dbgcProcessInput(PDBGC pDbgc, bool fNoExecute)
      */
     if (pDbgc->cInputLines)
     {
-        pDbgc->pBack->pfnSetReady(pDbgc->pBack, false);
+        pDbgc->pIo->pfnSetReady(pDbgc->pIo, false);
         pDbgc->fReady = false;
         rc = dbgcProcessCommands(pDbgc, fNoExecute);
         if (RT_SUCCESS(rc) && rc != VWRN_DBGC_CMD_PENDING)
@@ -566,7 +566,7 @@ int dbgcProcessInput(PDBGC pDbgc, bool fNoExecute)
 
         if (    RT_SUCCESS(rc)
             &&  pDbgc->fReady)
-            pDbgc->pBack->pfnSetReady(pDbgc->pBack, true);
+            pDbgc->pIo->pfnSetReady(pDbgc->pIo, true);
     }
     /*
      * else - we have incomplete line, so leave it in the buffer and
@@ -809,7 +809,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
         case DBGFEVENT_POWERING_OFF:
         {
             pDbgc->fReady = false;
-            pDbgc->pBack->pfnSetReady(pDbgc->pBack, false);
+            pDbgc->pIo->pfnSetReady(pDbgc->pIo, false);
             pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\nVM is powering off!\n");
             fPrintPrompt = false;
             rc = VERR_GENERAL_FAILURE;
@@ -889,7 +889,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
         pDbgc->fReady = true;
         if (RT_SUCCESS(rc))
-            pDbgc->pBack->pfnSetReady(pDbgc->pBack, true);
+            pDbgc->pIo->pfnSetReady(pDbgc->pIo, true);
         pDbgc->cMultiStepsLeft = 0;
     }
 
@@ -934,7 +934,7 @@ int dbgcRun(PDBGC pDbgc)
      * We're ready for commands now.
      */
     pDbgc->fReady = true;
-    pDbgc->pBack->pfnSetReady(pDbgc->pBack, true);
+    pDbgc->pIo->pfnSetReady(pDbgc->pIo, true);
 
     /*
      * Main Debugger Loop.
@@ -969,7 +969,7 @@ int dbgcRun(PDBGC pDbgc)
             /*
              * Check for input.
              */
-            if (pDbgc->pBack->pfnInput(pDbgc->pBack, 0))
+            if (pDbgc->pIo->pfnInput(pDbgc->pIo, 0))
             {
                 rc = dbgcProcessInput(pDbgc, false /* fNoExecute */);
                 if (RT_FAILURE(rc))
@@ -981,7 +981,7 @@ int dbgcRun(PDBGC pDbgc)
             /*
              * Wait for input. If Logging is enabled we'll only wait very briefly.
              */
-            if (pDbgc->pBack->pfnInput(pDbgc->pBack, pDbgc->fLog ? 1 : 1000))
+            if (pDbgc->pIo->pfnInput(pDbgc->pIo, pDbgc->fLog ? 1 : 1000))
             {
                 rc = dbgcProcessInput(pDbgc, false /* fNoExecute */);
                 if (RT_FAILURE(rc))
@@ -1051,9 +1051,8 @@ static int dbgcReadConfig(PDBGC pDbgc, PUVM pUVM)
                                   "Enabled|"
                                   "HistoryFile|"
                                   "LocalInitScript|"
-                                  "GlobalInitScript|"
-                                  "StubType",
-                                  "", "DBGC", 0);
+                                  "GlobalInitScript|",
+                                  "*", "DBGC", 0);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1112,7 +1111,7 @@ static int dbgcReadConfig(PDBGC pDbgc, PUVM pUVM)
 static DECLCALLBACK(int) dbgcOutputNative(void *pvUser, const char *pachChars, size_t cbChars)
 {
     PDBGC pDbgc = (PDBGC)pvUser;
-    return pDbgc->pBack->pfnWrite(pDbgc->pBack, pachChars, cbChars, NULL /*pcbWritten*/);
+    return pDbgc->pIo->pfnWrite(pDbgc->pIo, pachChars, cbChars, NULL /*pcbWritten*/);
 }
 
 
@@ -1121,15 +1120,15 @@ static DECLCALLBACK(int) dbgcOutputNative(void *pvUser, const char *pachChars, s
  *
  * @returns VBox status code.
  * @param   ppDbgc      Where to store the pointer to the instance data.
- * @param   pBack       Pointer to the backend.
+ * @param   pIo         Pointer to the I/O callback table.
  * @param   fFlags      The flags.
  */
-int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
+int dbgcCreate(PDBGC *ppDbgc, PCDBGCIO pIo, unsigned fFlags)
 {
     /*
      * Validate input.
      */
-    AssertPtrReturn(pBack, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIo, VERR_INVALID_POINTER);
     AssertMsgReturn(!fFlags, ("%#x", fFlags), VERR_INVALID_PARAMETER);
 
     /*
@@ -1140,7 +1139,7 @@ int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
         return VERR_NO_MEMORY;
 
     dbgcInitCmdHlp(pDbgc);
-    pDbgc->pBack            = pBack;
+    pDbgc->pIo              = pIo;
     pDbgc->pfnOutput        = dbgcOutputNative;
     pDbgc->pvOutputUser     = pDbgc;
     pDbgc->pVM              = NULL;
@@ -1235,13 +1234,13 @@ void dbgcDestroy(PDBGC pDbgc)
  * @returns The VBox status code causing the console termination.
  *
  * @param   pUVM        The user mode VM handle.
- * @param   pBack       Pointer to the backend structure. This must contain
+ * @param   pIo         Pointer to the I/O callback structure. This must contain
  *                      a full set of function pointers to service the console.
  * @param   fFlags      Reserved, must be zero.
  * @remarks A forced termination of the console is easiest done by forcing the
  *          callbacks to return fatal failures.
  */
-DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
+DBGDECL(int) DBGCCreate(PUVM pUVM, PCDBGCIO pIo, unsigned fFlags)
 {
     /*
      * Validate input.
@@ -1258,7 +1257,7 @@ DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
      * Allocate and initialize instance data
      */
     PDBGC pDbgc;
-    int rc = dbgcCreate(&pDbgc, pBack, fFlags);
+    int rc = dbgcCreate(&pDbgc, pIo, fFlags);
     if (RT_FAILURE(rc))
         return rc;
     if (!HMR3IsEnabled(pUVM) && !NEMR3IsEnabled(pUVM))

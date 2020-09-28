@@ -739,9 +739,9 @@ VBoxDbgConsole::unlock()
  * @param   cMillies    Number of milliseconds to wait on input data.
  */
 /*static*/ DECLCALLBACK(bool)
-VBoxDbgConsole::backInput(PDBGCBACK pBack, uint32_t cMillies)
+VBoxDbgConsole::backInput(PCDBGCIO pBack, uint32_t cMillies)
 {
-    VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCBACK(pBack);
+    VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCIO(pBack);
     pThis->lock();
 
     bool fRc = true;
@@ -774,9 +774,9 @@ VBoxDbgConsole::backInput(PDBGCBACK pBack, uint32_t cMillies)
  *                      successful return.
  */
 /*static*/ DECLCALLBACK(int)
-VBoxDbgConsole::backRead(PDBGCBACK pBack, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+VBoxDbgConsole::backRead(PCDBGCIO pBack, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
-    VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCBACK(pBack);
+    VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCIO(pBack);
     Assert(pcbRead); /** @todo implement this bit */
     if (pcbRead)
         *pcbRead = 0;
@@ -816,9 +816,9 @@ VBoxDbgConsole::backRead(PDBGCBACK pBack, void *pvBuf, size_t cbBuf, size_t *pcb
  *                      If NULL the entire buffer must be successfully written.
  */
 /*static*/ DECLCALLBACK(int)
-VBoxDbgConsole::backWrite(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
+VBoxDbgConsole::backWrite(PCDBGCIO pBack, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
 {
-    VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCBACK(pBack);
+    VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCIO(pBack);
     int rc = VINF_SUCCESS;
 
     pThis->lock();
@@ -863,9 +863,9 @@ VBoxDbgConsole::backWrite(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size
 
 
 /*static*/ DECLCALLBACK(void)
-VBoxDbgConsole::backSetReady(PDBGCBACK pBack, bool fReady)
+VBoxDbgConsole::backSetReady(PCDBGCIO pBack, bool fReady)
 {
-    VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCBACK(pBack);
+    VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCIO(pBack);
     if (fReady)
         QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(VBoxDbgConsoleEvent::kInputEnable));
 }

@@ -649,7 +649,7 @@ static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCT
                              * with debugger support.
                              */
                             void *pvUser = NULL;
-                            rc = DBGCTcpCreate(pUVM, &pvUser);
+                            rc = DBGCIoCreate(pUVM, &pvUser);
                             if (    RT_SUCCESS(rc)
                                 ||  rc == VERR_NET_ADDRESS_IN_USE)
                             {
@@ -668,7 +668,7 @@ static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCT
                                     return VINF_SUCCESS;
                                 }
 #ifdef VBOX_WITH_DEBUGGER
-                                DBGCTcpTerminate(pUVM, pUVM->vm.s.pvDBGC);
+                                DBGCIoTerminate(pUVM, pUVM->vm.s.pvDBGC);
                                 pUVM->vm.s.pvDBGC = NULL;
                             }
 #endif
@@ -2196,7 +2196,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         int rc = TMR3Term(pVM);
         AssertRC(rc);
 #ifdef VBOX_WITH_DEBUGGER
-        rc = DBGCTcpTerminate(pUVM, pUVM->vm.s.pvDBGC);
+        rc = DBGCIoTerminate(pUVM, pUVM->vm.s.pvDBGC);
         pUVM->vm.s.pvDBGC = NULL;
 #endif
         AssertRC(rc);

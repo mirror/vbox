@@ -1735,7 +1735,7 @@ static uint32_t dbgcKdCtxHwBpDr6Get(PKDCTX pThis)
  */
 DECLINLINE(int) dbgcKdCtxWrite(PKDCTX pThis, const void *pvPkt, size_t cbPkt)
 {
-    return pThis->Dbgc.pBack->pfnWrite(pThis->Dbgc.pBack, pvPkt, cbPkt, NULL /*pcbWritten*/);
+    return pThis->Dbgc.pIo->pfnWrite(pThis->Dbgc.pIo, pvPkt, cbPkt, NULL /*pcbWritten*/);
 }
 
 
@@ -2292,10 +2292,10 @@ static int dbgcKdCtxPktWaitForAck(PKDCTX pThis, RTMSINTERVAL msWait, bool *pfRes
     while (   msWait
            && RT_SUCCESS(rc))
     {
-        if (pThis->Dbgc.pBack->pfnInput(pThis->Dbgc.pBack, msWait))
+        if (pThis->Dbgc.pIo->pfnInput(pThis->Dbgc.pIo, msWait))
         {
             size_t cbRead = 0;
-            rc = pThis->Dbgc.pBack->pfnRead(pThis->Dbgc.pBack, pbCur, 1, &cbRead);
+            rc = pThis->Dbgc.pIo->pfnRead(pThis->Dbgc.pIo, pbCur, 1, &cbRead);
             if (   RT_SUCCESS(rc)
                 && cbRead == 1)
             {
@@ -2327,10 +2327,10 @@ static int dbgcKdCtxPktWaitForAck(PKDCTX pThis, RTMSINTERVAL msWait, bool *pfRes
                && RT_SUCCESS(rc)
                && cbLeft)
         {
-            if (pThis->Dbgc.pBack->pfnInput(pThis->Dbgc.pBack, msWait))
+            if (pThis->Dbgc.pIo->pfnInput(pThis->Dbgc.pIo, msWait))
             {
                 size_t cbRead = 0;
-                rc = pThis->Dbgc.pBack->pfnRead(pThis->Dbgc.pBack, pbCur, cbLeft, &cbRead);
+                rc = pThis->Dbgc.pIo->pfnRead(pThis->Dbgc.pIo, pbCur, cbLeft, &cbRead);
                 if (RT_SUCCESS(rc))
                 {
                     uint64_t tsSpanMs = RTTimeMilliTS() - tsStartMs;
@@ -3854,7 +3854,7 @@ static int dbgcKdCtxRecv(PKDCTX pThis)
     if (pThis->cbRecvLeft)
     {
         size_t cbRead = 0;
-        rc = pThis->Dbgc.pBack->pfnRead(pThis->Dbgc.pBack, pThis->pbRecv, pThis->cbRecvLeft, &cbRead);
+        rc = pThis->Dbgc.pIo->pfnRead(pThis->Dbgc.pIo, pThis->pbRecv, pThis->cbRecvLeft, &cbRead);
         if (RT_SUCCESS(rc))
         {
             pThis->tsRecvLast  = RTTimeMilliTS();
@@ -4015,7 +4015,7 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
         case DBGFEVENT_POWERING_OFF:
         {
             pThis->Dbgc.fReady = false;
-            pThis->Dbgc.pBack->pfnSetReady(pThis->Dbgc.pBack, false);
+            pThis->Dbgc.pIo->pfnSetReady(pThis->Dbgc.pIo, false);
             rc = VERR_GENERAL_FAILURE;
             break;
         }
@@ -4140,7 +4140,7 @@ int dbgcKdRun(PKDCTX pThis)
      * We're ready for commands now.
      */
     pThis->Dbgc.fReady = true;
-    pThis->Dbgc.pBack->pfnSetReady(pThis->Dbgc.pBack, true);
+    pThis->Dbgc.pIo->pfnSetReady(pThis->Dbgc.pIo, true);
 
     /*
      * Main Debugger Loop.
@@ -4175,7 +4175,7 @@ int dbgcKdRun(PKDCTX pThis)
             /*
              * Check for input.
              */
-            if (pThis->Dbgc.pBack->pfnInput(pThis->Dbgc.pBack, 0))
+            if (pThis->Dbgc.pIo->pfnInput(pThis->Dbgc.pIo, 0))
             {
                 rc = dbgcKdCtxRecv(pThis);
                 if (RT_FAILURE(rc))
@@ -4187,7 +4187,7 @@ int dbgcKdRun(PKDCTX pThis)
             /*
              * Wait for input.
              */
-            if (pThis->Dbgc.pBack->pfnInput(pThis->Dbgc.pBack, 1000))
+            if (pThis->Dbgc.pIo->pfnInput(pThis->Dbgc.pIo, 1000))
             {
                 rc = dbgcKdCtxRecv(pThis);
                 if (RT_FAILURE(rc))
@@ -4210,15 +4210,15 @@ int dbgcKdRun(PKDCTX pThis)
  *
  * @returns VBox status code.
  * @param   ppKdCtx                 Where to store the pointer to the KD stub context instance on success.
- * @param   pBack                   The backend to use for I/O.
+ * @param   pIo                     Pointer to the I/O callback table.
  * @param   fFlags                  Flags controlling the behavior.
  */
-static int dbgcKdCtxCreate(PPKDCTX ppKdCtx, PDBGCBACK pBack, unsigned fFlags)
+static int dbgcKdCtxCreate(PPKDCTX ppKdCtx, PCDBGCIO pIo, unsigned fFlags)
 {
     /*
      * Validate input.
      */
-    AssertPtrReturn(pBack, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIo, VERR_INVALID_POINTER);
     AssertMsgReturn(!fFlags, ("%#x", fFlags), VERR_INVALID_PARAMETER);
 
     /*
@@ -4233,7 +4233,7 @@ static int dbgcKdCtxCreate(PPKDCTX ppKdCtx, PDBGCBACK pBack, unsigned fFlags)
      * This is compied from the native debug console (will be used for monitor commands)
      * in DBGCConsole.cpp. Try to keep both functions in sync.
      */
-    pThis->Dbgc.pBack            = pBack;
+    pThis->Dbgc.pIo              = pIo;
     pThis->Dbgc.pfnOutput        = dbgcKdOutput;
     pThis->Dbgc.pvOutputUser     = pThis;
     pThis->Dbgc.pVM              = NULL;
@@ -4331,7 +4331,7 @@ static void dbgcKdCtxDestroy(PKDCTX pThis)
 }
 
 
-DECLHIDDEN(int) dbgcKdStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
+DECL_HIDDEN_CALLBACK(int) dbgcKdStubRunloop(PUVM pUVM, PCDBGCIO pIo, unsigned fFlags)
 {
     /*
      * Validate input.
@@ -4348,7 +4348,7 @@ DECLHIDDEN(int) dbgcKdStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
      * Allocate and initialize instance data
      */
     PKDCTX pThis;
-    int rc = dbgcKdCtxCreate(&pThis, pBack, fFlags);
+    int rc = dbgcKdCtxCreate(&pThis, pIo, fFlags);
     if (RT_FAILURE(rc))
         return rc;
     if (!HMR3IsEnabled(pUVM) && !NEMR3IsEnabled(pUVM))
