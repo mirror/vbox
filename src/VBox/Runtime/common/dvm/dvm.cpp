@@ -777,7 +777,7 @@ RTDECL(uint32_t) RTDvmVolumeGetIndex(RTDVMVOLUME hVol, RTDVMVOLIDX enmIndex)
    || defined(RT_OS_SOLARIS) \
    || defined(RT_OS_DARWIN) \
    || defined(RT_OS_OS2) /*whatever*/
-/** @todo verify darwin, solaris and freebsd matches the linux algo. Check the linux index matching actual linux. */
+/* Darwing and freebsd matches the linux algo. Solaris matches linux algo partially, at least, in the part we use. */
         enmIndex = RTDVMVOLIDX_LINUX;
 #else
 # error "PORTME"
