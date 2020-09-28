@@ -149,16 +149,23 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_PATH_BIN_CHM =
  endif
 
+ ifdef VBOX_WITH_DOCS_QHELP
+  INSTALLS += VBox-docs-usermanual-qhc
+  INSTALLS += VBox-docs-usermanual-qch
+  VBOX_PATH_BIN_QHELP = $(PATH_STAGE_BIN)/UserManual.qch 
+  VBOX_PATH_BIN_QHELP += $(PATH_STAGE_BIN)/UserManual.qhc 
+ else  # Do not build chm.
+  VBOX_PATH_BIN_QHELP =
+ endif
+
+  
  ifndef VBOX_ONLY_SDK
   VBOX_MANUAL_PACK += \
   		$(PATH_STAGE_BIN)/UserManual.pdf \
   		$(VBOX_PATH_BIN_HTML) \
-  		$(VBOX_PATH_BIN_CHM)
+  		$(VBOX_PATH_BIN_CHM) \
+  		$(VBOX_PATH_BIN_QHELP)
   INSTALLS += VBox-docs-usermanual
-  
-  INSTALLS += VBox-docs-usermanual-qhc
-  INSTALLS += VBox-docs-usermanual-qch
-  
   
   ifdef VBOX_WITH_DOCS_TRANSLATIONS
    INSTALLS += VBox-docs-usermanual-l10n
