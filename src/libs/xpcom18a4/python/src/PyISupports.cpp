@@ -220,32 +220,24 @@ Py_nsISupports::getattr(const char *name)
 #if PY_MAJOR_VERSION <= 2
 	return Py_FindMethodInChain(&this_type->chain, this, (char *)name);
 #else
-    PyMethodChain *chain = &this_type->chain;
-    if (name[0] == '_' && name[1] == '_')
-    {
-        if (!strcmp(name, "__doc__"))
-        {
-            const char *doc = ob_type->tp_doc;
-            if (doc)
-#if PY_MAJOR_VERSION <= 2
-                return PyString_FromString(doc);
-#else
-                return PyUnicode_FromString(doc);
-#endif
-        }
-    }
-    while (chain)
-    {
-        PyMethodDef *ml = chain->methods;
-        for (; ml->ml_name; ml++)
-        {
-            if (!strcmp(name, ml->ml_name))
-                return PyCFunction_New(ml, this);
-        }
-        chain = chain->link;
-    }
-    PyErr_SetString(PyExc_AttributeError, name);
-    return NULL;
+	PyMethodChain *chain = &this_type->chain;
+	if (name[0] == '_' && name[1] == '_') {
+	    if (!strcmp(name, "__doc__")) {
+		const char *doc = ob_type->tp_doc;
+		if (doc)
+		    return PyUnicode_FromString(doc);
+	    }
+	}
+	while (chain) {
+		PyMethodDef *ml = chain->methods;
+		for (; ml->ml_name; ml++) {
+			if (!strcmp(name, ml->ml_name))
+			    return PyCFunction_New(ml, this);
+		}
+		chain = chain->link;
+	}
+	PyErr_SetString(PyExc_AttributeError, name);
+	return NULL;
 #endif
 }
 
