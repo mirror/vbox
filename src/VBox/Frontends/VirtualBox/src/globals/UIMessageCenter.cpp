@@ -29,6 +29,7 @@
 #include "QIMessageBox.h"
 #include "UICommon.h"
 #include "UIConverter.h"
+#include "UIHelpBrowserDialog.h"
 #include "UIMessageCenter.h"
 #include "UIProgressDialog.h"
 #include "UIErrorString.h"
@@ -3201,7 +3202,7 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
     AssertRC(rc);
     QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
 # else /* #if !defined(VBOX_OSE) && defined(VBOX_WITH_KCHMVIEWER) */
-    uiCommon().openURL("file://" + strLocation);
+    showHelpBrowser(strLocation);
 # endif /* #if defined(VBOX_OSE) || !defined(VBOX_WITH_KCHMVIEWER) */
 #elif defined (VBOX_WS_MAC)
     uiCommon().openURL("file://" + strLocation);
@@ -3389,4 +3390,34 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
 
     /* Return result-code: */
     return iResultCode;
+}
+
+void UIMessageCenter::showHelpBrowser(const QString strHelpFileLocation, QWidget *pParent /* = 0 */)
+{
+    Q_UNUSED(strHelpFileLocation);
+    QWidget *pDialogParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
+    AssertReturnVoid(pDialogParent);
+
+
+    QIManagerDialog *pHelpBrowserDialog;
+    UIHelpBrowserDialogFactory dialogFactory;
+
+    dialogFactory.prepare(pHelpBrowserDialog);
+    AssertReturnVoid(pHelpBrowserDialog);
+
+    connect(pHelpBrowserDialog, &QIManagerDialog::sigClose,
+            this, &UIMessageCenter::sltCloseHelpBrowser);
+
+    pHelpBrowserDialog->show();
+    pHelpBrowserDialog->setWindowState(pHelpBrowserDialog->windowState() & ~Qt::WindowMinimized);
+    pHelpBrowserDialog->activateWindow();
+}
+
+void UIMessageCenter::sltCloseHelpBrowser()
+{
+    QIManagerDialog *pDialog = qobject_cast<QIManagerDialog*>(sender());
+    if (!pDialog)
+        return;
+
+    UIHelpBrowserDialogFactory().cleanup(pDialog);
 }

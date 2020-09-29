@@ -264,6 +264,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/extensions/graphics \
 	./src/extradata \
 	./src/globals \
+	./src/helpbrowser \
 	./src/hostnetwork \
 	./src/logviewer \
 	./src/medium \
@@ -809,6 +810,8 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UIVirtualBoxEventHandler.h \
 	src/globals/UIVirtualBoxClientEventHandler.h \
 	src/globals/VBoxUtils.h \
+	src/helpbrowser/UIHelpBrowserDialog.h \
+	src/helpbrowser/UIHelpBrowserWidget.h \
 	src/logviewer/UIVMLogPage.h \
 	src/logviewer/UIVMLogViewerBookmarksPanel.h \
 	src/logviewer/UIVMLogViewerDialog.h \
@@ -1324,6 +1327,8 @@ UICommon_SOURCES = \
 	src/globals/UIVersion.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/globals/UIVirtualBoxClientEventHandler.cpp \
+	src/helpbrowser/UIHelpBrowserDialog.cpp \
+	src/helpbrowser/UIHelpBrowserWidget.cpp \
 	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
 	src/logviewer/UIVMLogViewerDialog.cpp \
