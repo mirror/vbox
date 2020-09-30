@@ -29,99 +29,83 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/string.h>
-#include <iprt/stream.h>
-#include <iprt/errcore.h>
-#include <iprt/initterm.h>
+#include <iprt/test.h>
 
 
 int main()
 {
-    int cErrors = 0;
+    RTTEST hTest;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTStrSimplePattern", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
 
-#define CHECK_EXPR(expr) \
-    do { bool const f = !!(expr); if (RT_UNLIKELY(!f)) { RTPrintf("tstStrSimplePattern(%d): %s!\n", __LINE__, #expr); cErrors++; } } while (0)
-#define CHECK_EXPR_MSG(expr, msg) \
-    do { \
-        bool const f = !!(expr); \
-        if (RT_UNLIKELY(!f)) { \
-            RTPrintf("tstStrSimplePattern(%d): %s!\n", __LINE__, #expr); \
-            RTPrintf("tstStrSimplePattern: "); \
-            RTPrintf msg; \
-            ++cErrors; \
-        } \
-    } while (0)
+    RTTESTI_CHECK(RTStrSimplePatternMatch("*", ""));
+    RTTESTI_CHECK(RTStrSimplePatternMatch("*", "asdfasdflkjasdlfkj"));
+    RTTESTI_CHECK(RTStrSimplePatternMatch("*?*?*?*?*", "asdfasdflkjasdlfkj"));
+    RTTESTI_CHECK(RTStrSimplePatternMatch("asdf??df", "asdfasdf"));
+    RTTESTI_CHECK(!RTStrSimplePatternMatch("asdf??dq", "asdfasdf"));
+    RTTESTI_CHECK(RTStrSimplePatternMatch("asdf*df", "asdfasdf"));
+    RTTESTI_CHECK(!RTStrSimplePatternMatch("asdf*dq", "asdfasdf"));
+    RTTESTI_CHECK(RTStrSimplePatternMatch("a*", "asdfasdf"));
+    RTTESTI_CHECK(RTStrSimplePatternMatch("a*f", "asdfasdf"));
+    RTTESTI_CHECK(!RTStrSimplePatternMatch("a*q", "asdfasdf"));
+    RTTESTI_CHECK(!RTStrSimplePatternMatch("a*q?", "asdfasdf"));
+    RTTESTI_CHECK(RTStrSimplePatternMatch("?*df", "asdfasdf"));
 
-    CHECK_EXPR(RTStrSimplePatternMatch("*", ""));
-    CHECK_EXPR(RTStrSimplePatternMatch("*", "asdfasdflkjasdlfkj"));
-    CHECK_EXPR(RTStrSimplePatternMatch("*?*?*?*?*", "asdfasdflkjasdlfkj"));
-    CHECK_EXPR(RTStrSimplePatternMatch("asdf??df", "asdfasdf"));
-    CHECK_EXPR(!RTStrSimplePatternMatch("asdf??dq", "asdfasdf"));
-    CHECK_EXPR(RTStrSimplePatternMatch("asdf*df", "asdfasdf"));
-    CHECK_EXPR(!RTStrSimplePatternMatch("asdf*dq", "asdfasdf"));
-    CHECK_EXPR(RTStrSimplePatternMatch("a*", "asdfasdf"));
-    CHECK_EXPR(RTStrSimplePatternMatch("a*f", "asdfasdf"));
-    CHECK_EXPR(!RTStrSimplePatternMatch("a*q", "asdfasdf"));
-    CHECK_EXPR(!RTStrSimplePatternMatch("a*q?", "asdfasdf"));
-    CHECK_EXPR(RTStrSimplePatternMatch("?*df", "asdfasdf"));
-
-    CHECK_EXPR(RTStrSimplePatternNMatch("*", 1, "", 0));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*", ~(size_t)0, "", 0));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*", ~(size_t)0, "", ~(size_t)0));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*", 1, "asdfasdflkjasdlfkj", ~(size_t)0));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*", ~(size_t)0, "asdfasdflkjasdlfkj", ~(size_t)0));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*", 1, "asdfasdflkjasdlfkj", 3));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*", 2, "asdfasdflkjasdlfkj", 10));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*", 15, "asdfasdflkjasdlfkj", 10));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*?*?*?*?*", 1, "asdfasdflkjasdlfkj", 128));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*?*?*?*?*", 5, "asdfasdflkjasdlfkj", 0));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*?*?*?*?*", 5, "asdfasdflkjasdlfkj", ~(size_t)0));
-    CHECK_EXPR(RTStrSimplePatternNMatch("*?*?*?*?*", ~(size_t)0, "asdfasdflkjasdlfkj", ~(size_t)0));
-    CHECK_EXPR(RTStrSimplePatternNMatch("asdf??df", 8, "asdfasdf", 8));
-    CHECK_EXPR(RTStrSimplePatternNMatch("asdf??df", ~(size_t)0, "asdfasdf", 8));
-    CHECK_EXPR(RTStrSimplePatternNMatch("asdf??df", ~(size_t)0, "asdfasdf", ~(size_t)0));
-    CHECK_EXPR(RTStrSimplePatternNMatch("asdf??df", 7, "asdfasdf", 7));
-    CHECK_EXPR(!RTStrSimplePatternNMatch("asdf??df", 7, "asdfasdf", 8));
-    CHECK_EXPR(!RTStrSimplePatternNMatch("asdf??dq", 8, "asdfasdf", 8));
-    CHECK_EXPR(RTStrSimplePatternNMatch("asdf??dq", 7, "asdfasdf", 7));
-    CHECK_EXPR(RTStrSimplePatternNMatch("asdf*df", 8, "asdfasdf", 8));
-    CHECK_EXPR(!RTStrSimplePatternNMatch("asdf*dq", 8, "asdfasdf", 8));
-    CHECK_EXPR(RTStrSimplePatternNMatch("a*", 10, "asdfasdf", 8));
-    CHECK_EXPR(RTStrSimplePatternNMatch("a*f", 3, "asdfasdf", ~(size_t)0));
-    CHECK_EXPR(!RTStrSimplePatternNMatch("a*q", 3, "asdfasdf", ~(size_t)0));
-    CHECK_EXPR(!RTStrSimplePatternNMatch("a*q?", 4, "asdfasdf", 9));
-    CHECK_EXPR(RTStrSimplePatternNMatch("?*df", 4, "asdfasdf", 8));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*", 1, "", 0));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*", ~(size_t)0, "", 0));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*", ~(size_t)0, "", ~(size_t)0));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*", 1, "asdfasdflkjasdlfkj", ~(size_t)0));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*", ~(size_t)0, "asdfasdflkjasdlfkj", ~(size_t)0));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*", 1, "asdfasdflkjasdlfkj", 3));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*", 2, "asdfasdflkjasdlfkj", 10));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*", 15, "asdfasdflkjasdlfkj", 10));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*?*?*?*?*", 1, "asdfasdflkjasdlfkj", 128));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*?*?*?*?*", 5, "asdfasdflkjasdlfkj", 0));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*?*?*?*?*", 5, "asdfasdflkjasdlfkj", ~(size_t)0));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("*?*?*?*?*", ~(size_t)0, "asdfasdflkjasdlfkj", ~(size_t)0));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("asdf??df", 8, "asdfasdf", 8));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("asdf??df", ~(size_t)0, "asdfasdf", 8));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("asdf??df", ~(size_t)0, "asdfasdf", ~(size_t)0));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("asdf??df", 7, "asdfasdf", 7));
+    RTTESTI_CHECK(!RTStrSimplePatternNMatch("asdf??df", 7, "asdfasdf", 8));
+    RTTESTI_CHECK(!RTStrSimplePatternNMatch("asdf??dq", 8, "asdfasdf", 8));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("asdf??dq", 7, "asdfasdf", 7));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("asdf*df", 8, "asdfasdf", 8));
+    RTTESTI_CHECK(!RTStrSimplePatternNMatch("asdf*dq", 8, "asdfasdf", 8));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("a*", 10, "asdfasdf", 8));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("a*f", 3, "asdfasdf", ~(size_t)0));
+    RTTESTI_CHECK(!RTStrSimplePatternNMatch("a*q", 3, "asdfasdf", ~(size_t)0));
+    RTTESTI_CHECK(!RTStrSimplePatternNMatch("a*q?", 4, "asdfasdf", 9));
+    RTTESTI_CHECK(RTStrSimplePatternNMatch("?*df", 4, "asdfasdf", 8));
 
     size_t offPattern;
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("asdq|a*f|a??t", ~(size_t)0, "asdf", 4, NULL));
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("asdq|a*f|a??t", ~(size_t)0, "asdf", 4, &offPattern));
-    CHECK_EXPR(offPattern == 5);
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("asdq|a??t|a??f", ~(size_t)0, "asdf", 4, NULL));
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("asdq|a??t|a??f", ~(size_t)0, "asdf", 4, &offPattern));
-    CHECK_EXPR(offPattern == 10);
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("a*f|a??t|a??f", ~(size_t)0, "asdf", 4, NULL));
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("a*f|a??t|a??f", ~(size_t)0, "asdf", 4, &offPattern));
-    CHECK_EXPR(offPattern == 0);
-    CHECK_EXPR(!RTStrSimplePatternMultiMatch("asdq|a??y|a??x", ~(size_t)0, "asdf", 4, NULL));
-    CHECK_EXPR(!RTStrSimplePatternMultiMatch("asdq|a??y|a??x", ~(size_t)0, "asdf", 4, &offPattern));
-    CHECK_EXPR(offPattern == ~(size_t)0);
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 9, "asdf", 4, NULL));
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 8, "asdf", 4, NULL));
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 7, "asdf", 4, NULL));
-    CHECK_EXPR(!RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 6, "asdf", 4, NULL));
-    CHECK_EXPR(!RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 5, "asdf", 4, NULL));
-    CHECK_EXPR(!RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 4, "asdf", 4, NULL));
-    CHECK_EXPR(!RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 3, "asdf", 4, NULL));
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("asdf", 4, "asdf", 4, NULL));
-    CHECK_EXPR(RTStrSimplePatternMultiMatch("asdf|", 5, "asdf", 4, NULL));
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("asdq|a*f|a??t", ~(size_t)0, "asdf", 4, NULL));
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("asdq|a*f|a??t", ~(size_t)0, "asdf", 4, &offPattern));
+    RTTESTI_CHECK(offPattern == 5);
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("asdq|a??t|a??f", ~(size_t)0, "asdf", 4, NULL));
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("asdq|a??t|a??f", ~(size_t)0, "asdf", 4, &offPattern));
+    RTTESTI_CHECK(offPattern == 10);
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("a*f|a??t|a??f", ~(size_t)0, "asdf", 4, NULL));
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("a*f|a??t|a??f", ~(size_t)0, "asdf", 4, &offPattern));
+    RTTESTI_CHECK(offPattern == 0);
+    RTTESTI_CHECK(!RTStrSimplePatternMultiMatch("asdq|a??y|a??x", ~(size_t)0, "asdf", 4, NULL));
+    RTTESTI_CHECK(!RTStrSimplePatternMultiMatch("asdq|a??y|a??x", ~(size_t)0, "asdf", 4, &offPattern));
+    RTTESTI_CHECK(offPattern == ~(size_t)0);
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 9, "asdf", 4, NULL));
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 8, "asdf", 4, NULL));
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 7, "asdf", 4, NULL));
+    RTTESTI_CHECK(!RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 6, "asdf", 4, NULL));
+    RTTESTI_CHECK(!RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 5, "asdf", 4, NULL));
+    RTTESTI_CHECK(!RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 4, "asdf", 4, NULL));
+    RTTESTI_CHECK(!RTStrSimplePatternMultiMatch("asdq|a*f|a??t", 3, "asdf", 4, NULL));
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("asdf", 4, "asdf", 4, NULL));
+    RTTESTI_CHECK(RTStrSimplePatternMultiMatch("asdf|", 5, "asdf", 4, NULL));
 
 
     /*
      * Summary.
      */
-    if (!cErrors)
-        RTPrintf("tstStrToNum: SUCCESS\n");
-    else
-        RTPrintf("tstStrToNum: FAILURE - %d errors\n", cErrors);
-    return !!cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
 
