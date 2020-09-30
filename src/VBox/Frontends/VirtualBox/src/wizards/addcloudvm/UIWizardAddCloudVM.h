@@ -49,13 +49,16 @@ public:
     };
 
     /** Constructs Add Cloud VM wizard passing @a pParent & @a enmMode to the base-class.
-      * @param  comClient  Brings the Cloud Client object wrapper to work with. */
+      * @param  strFullGroupName  Brings full group name (/provider/profile) to add VM to. */
     UIWizardAddCloudVM(QWidget *pParent,
-                       const CCloudClient &comClient = CCloudClient(),
+                       const QString &strFullGroupName = QString(),
                        WizardMode enmMode = WizardMode_Auto);
 
     /** Prepares all. */
     virtual void prepare() /* override */;
+
+    /** Returns full group name. */
+    QString fullGroupName() const { return m_strFullGroupName; }
 
     /** Defines Cloud @a comClient object wrapper. */
     void setClient(const CCloudClient &comClient) { m_comClient = comClient; }
@@ -71,6 +74,9 @@ protected:
     virtual void retranslateUi() /* override */;
 
 private:
+
+    /** Holds the full group name (/provider/profile) to add VM to. */
+    QString  m_strFullGroupName;
 
     /** Holds the Cloud Client object wrapper. */
     CCloudClient  m_comClient;

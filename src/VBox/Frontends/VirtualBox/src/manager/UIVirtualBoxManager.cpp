@@ -807,7 +807,7 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
     {
         /* Use the "safe way" to open stack of Mac OS X Sheets: */
         QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent);
+        UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent, m_pWidget->fullGroupName());
         windowManager().registerNewParent(pWizard, pWizardParent);
         pWizard->prepare();
 
@@ -843,7 +843,7 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog()
     {
         /* Use the "safe way" to open stack of Mac OS X Sheets: */
         QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardAddCloudVM pWizard = new UIWizardAddCloudVM(pWizardParent);
+        UISafePointerWizardAddCloudVM pWizard = new UIWizardAddCloudVM(pWizardParent, m_pWidget->fullGroupName());
         windowManager().registerNewParent(pWizard, pWizardParent);
         pWizard->prepare();
 

@@ -27,10 +27,10 @@
 
 
 UIWizardAddCloudVM::UIWizardAddCloudVM(QWidget *pParent,
-                                       const CCloudClient &comClient /* = CCloudClient() */,
+                                       const QString &strFullGroupName /* = QString() */,
                                        WizardMode enmMode /* = WizardMode_Auto */)
     : UIWizard(pParent, WizardType_AddCloudVM, enmMode)
-    , m_comClient(comClient)
+    , m_strFullGroupName(strFullGroupName)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */

@@ -32,10 +32,12 @@
 
 
 UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent,
+                                       const QString &strFullGroupName /* = QString() */,
                                        const CCloudClient &comClient /* = CCloudClient() */,
                                        const CVirtualSystemDescription &comDescription /* = CVirtualSystemDescription() */,
                                        WizardMode enmMode /* = WizardMode_Auto */)
     : UIWizard(pParent, WizardType_NewCloudVM, enmMode)
+    , m_strFullGroupName(strFullGroupName)
     , m_comClient(comClient)
     , m_comVSD(comDescription)
     , m_fFullWizard(m_comClient.isNull() || m_comVSD.isNull())

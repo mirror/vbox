@@ -51,9 +51,11 @@ public:
     };
 
     /** Constructs New Cloud VM wizard passing @a pParent to the base-class.
-      * @param  comClient       Brings the Cloud Client object to work with.
-      * @param  comDescription  Brings the Virtual System Description object to use. */
+      * @param  strFullGroupName  Brings full group name (/provider/profile) to create VM in.
+      * @param  comClient         Brings the Cloud Client object to work with.
+      * @param  comDescription    Brings the Virtual System Description object to use. */
     UIWizardNewCloudVM(QWidget *pParent,
+                       const QString &strFullGroupName = QString(),
                        const CCloudClient &comClient = CCloudClient(),
                        const CVirtualSystemDescription &comDescription = CVirtualSystemDescription(),
                        WizardMode enmMode = WizardMode_Auto);
@@ -63,6 +65,9 @@ public:
 
     /** Sets whether the final step is @a fPrevented. */
     void setFinalStepPrevented(bool fPrevented) { m_fFinalStepPrevented = fPrevented; }
+
+    /** Returns full group name. */
+    QString fullGroupName() const { return m_strFullGroupName; }
 
     /** Defines Cloud @a comClient object. */
     void setClient(const CCloudClient &comClient) { m_comClient = comClient; }
@@ -101,6 +106,8 @@ private slots:
 
 private:
 
+    /** Holds the full group name (/provider/profile) to add VM to. */
+    QString                        m_strFullGroupName;
     /** Holds the Cloud Client object reference. */
     CCloudClient                   m_comClient;
     /** Holds the Virtual System Description object reference. */

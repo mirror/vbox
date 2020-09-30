@@ -115,6 +115,16 @@ void UIWizardAddCloudVMPage1::populateAccounts()
     QString strOldData;
     if (m_pAccountComboBox->currentIndex() != -1)
         strOldData = m_pAccountComboBox->itemData(m_pAccountComboBox->currentIndex(), AccountData_ProfileName).toString();
+    else
+    {
+        /* Try to fetch "old" account name from wizard full group name: */
+        UIWizardAddCloudVM *pWizard = qobject_cast<UIWizardAddCloudVM*>(wizardImp());
+        AssertPtrReturnVoid(pWizard);
+        const QString strFullGroupName = pWizard->fullGroupName();
+        const QString strProfileName = strFullGroupName.section('/', 2, 2);
+        if (!strProfileName.isEmpty())
+            strOldData = strProfileName;
+    }
 
     /* Clear combo initially: */
     m_pAccountComboBox->clear();

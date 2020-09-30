@@ -330,7 +330,7 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
                     CCloudClient comClient = field("client").value<CCloudClient>();
                     CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
                     /* Create and run wizard as modal dialog, but prevent final step: */
-                    pNewCloudVMWizard = new UIWizardNewCloudVM(this, comClient, comDescription, mode());
+                    pNewCloudVMWizard = new UIWizardNewCloudVM(this, QString() /** @todo pass proper full group name! */, comClient, comDescription, mode());
                     pNewCloudVMWizard->setFinalStepPrevented(true);
                     pNewCloudVMWizard->prepare();
                     iWizardResult = pNewCloudVMWizard->exec();
@@ -391,7 +391,7 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
                     CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
                     /* Create and run short wizard mode as modal dialog: */
                     QWidget *pWizardParent = windowManager().realParentWindow(this);
-                    pNewCloudVMWizard = new UIWizardNewCloudVM(pWizardParent, comClient, comDescription, mode());
+                    pNewCloudVMWizard = new UIWizardNewCloudVM(pWizardParent, QString() /** @todo pass proper full group name! */, comClient, comDescription, mode());
                     windowManager().registerNewParent(pNewCloudVMWizard, pWizardParent);
                     pNewCloudVMWizard->prepare();
                     iWizardResult = pNewCloudVMWizard->exec();
