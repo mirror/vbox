@@ -597,7 +597,7 @@ private:
                        const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                        const QString &strAutoConfirmId) const;
 
-    void showHelpBrowser(const QString strHelpFileLocation, QWidget *pParent = 0);
+    void showHelpBrowser(const QString strHelpFilePath, QWidget *pParent = 0);
 
     /** Holds the list of shown warnings. */
     mutable QStringList m_warnings;
