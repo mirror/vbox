@@ -146,6 +146,23 @@ static void testUtf16Printf(RTTEST hTest)
 
 
 
+static void testAllocPrintf(RTTEST hTest)
+{
+    RTTestSub(hTest, "RTStrAPrintf");
+    char *psz = (char *)~0;
+    int cch3 = RTStrAPrintf(&psz, "Hey there! %s%s", "This is a test", "!");
+    if (cch3 < 0)
+        RTTestIFailed("RTStrAPrintf failed, cch3=%d\n", cch3);
+    else if (strcmp(psz, "Hey there! This is a test!"))
+        RTTestIFailed("RTStrAPrintf failed\n"
+                      "got   : '%s'\n"
+                      "wanted: 'Hey there! This is a test!'\n",
+                      psz);
+    else if ((int)strlen(psz) != cch3)
+        RTTestIFailed("RTStrAPrintf failed, cch3 == %d expected %u\n", cch3, strlen(psz));
+    RTStrFree(psz);
+}
+
 
 /*
  * This next portion used to all be in main() but gcc cannot handle
@@ -833,6 +850,18 @@ static void testHumanReadableNumbers(RTTEST hTest, char *pszBuf)
     CHECKSTR("     6.7MB42"); /* rounded, unlike the binary variant.*/
 }
 
+static void testX86RegisterFormatter(RTTEST hTest, char *pszBuf)
+{
+
+    RTTestSub(hTest, "x86 register format types (%RAx86[*])");
+    CHECK42("%RAx86[cr0]",  UINT64_C(0x80000011), "80000011{PE,ET,PG}");
+    CHECK42("%RAx86[cr0]",  UINT64_C(0x80000001), "80000001{PE,PG}");
+    CHECK42("%RAx86[cr0]",  UINT64_C(0x00000001), "00000001{PE}");
+    CHECK42("%RAx86[cr0]",  UINT64_C(0x80000000), "80000000{PG}");
+    CHECK42("%RAx86[cr4]",  UINT64_C(0x80000001), "80000001{VME,unkn=80000000}");
+    CHECK42("%#RAx86[cr4]", UINT64_C(0x80000001), "0x80000001{VME,unkn=0x80000000}");
+}
+
 static void testCustomTypes(RTTEST hTest, char *pszBuf)
 {
     RTTestSub(hTest, "Custom format types (%R[*])");
@@ -916,19 +945,7 @@ int main()
     /*
      * allocation
      */
-    RTTestSub(hTest, "RTStrAPrintf");
-    char *psz = (char *)~0;
-    int cch3 = RTStrAPrintf(&psz, "Hey there! %s%s", "This is a test", "!");
-    if (cch3 < 0)
-        RTTestIFailed("RTStrAPrintf failed, cch3=%d\n", cch3);
-    else if (strcmp(psz, "Hey there! This is a test!"))
-        RTTestIFailed("RTStrAPrintf failed\n"
-                      "got   : '%s'\n"
-                      "wanted: 'Hey there! This is a test!'\n",
-                      psz);
-    else if ((int)strlen(psz) != cch3)
-        RTTestIFailed("RTStrAPrintf failed, cch3 == %d expected %u\n", cch3, strlen(psz));
-    RTStrFree(psz);
+    testAllocPrintf(hTest);
 
     /*
      * Test the waters.
@@ -969,13 +986,7 @@ int main()
     /*
      * x86 register formatting.
      */
-    RTTestSub(hTest, "x86 register format types (%RAx86[*])");
-    CHECK42("%RAx86[cr0]", UINT64_C(0x80000011),    "80000011{PE,ET,PG}");
-    CHECK42("%RAx86[cr0]", UINT64_C(0x80000001),    "80000001{PE,PG}");
-    CHECK42("%RAx86[cr0]", UINT64_C(0x00000001),    "00000001{PE}");
-    CHECK42("%RAx86[cr0]", UINT64_C(0x80000000),    "80000000{PG}");
-    CHECK42("%RAx86[cr4]", UINT64_C(0x80000001),    "80000001{VME,unkn=80000000}");
-    CHECK42("%#RAx86[cr4]", UINT64_C(0x80000001),    "0x80000001{VME,unkn=0x80000000}");
+    testX86RegisterFormatter(hTest, pszBuf);
 
     /*
      * Custom types.
