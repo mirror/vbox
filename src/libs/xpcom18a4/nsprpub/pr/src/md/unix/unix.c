@@ -60,6 +60,10 @@
 #include <sys/statvfs.h>
 #endif
 
+#ifdef VBOX
+# include <iprt/mem.h>
+#endif
+
 /*
  * Make sure _PRSockLen_t is 32-bit, because we will cast a PRUint32* or
  * PRInt32* pointer to a _PRSockLen_t* pointer.
@@ -2875,6 +2879,10 @@ void _PR_UnixInit(void)
     PR_ASSERT(NULL != _pr_rename_lock);
     _pr_Xfe_mon = PR_NewMonitor();
     PR_ASSERT(NULL != _pr_Xfe_mon);
+#ifdef VBOX
+    RTMEM_MAY_LEAK(_pr_rename_lock);
+    RTMEM_MAY_LEAK(_pr_Xfe_mon);
+#endif
 
     _PR_InitIOV();  /* one last hack */
 }
