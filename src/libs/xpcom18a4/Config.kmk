@@ -50,8 +50,6 @@ ifndef VBOX_GCC_Wno-delete-non-virtual-dtor
 endif
 TEMPLATE_XPCOM_CXXFLAGS.x86        = -m32
 TEMPLATE_XPCOM_CXXFLAGS.amd64      = -m64
-TEMPLATE_XPCOM_CXXFLAGS.release    = -O
-TEMPLATE_XPCOM_CXXFLAGS.profile    = -O
 TEMPLATE_XPCOM_CXXFLAGS.darwin     = -fpascal-strings -fshort-wchar -fno-common -fno-rtti $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
 TEMPLATE_XPCOM_CXXFLAGS.freebsd    = -pthread
 TEMPLATE_XPCOM_CXXFLAGS.linux      = -pthread
@@ -60,8 +58,6 @@ TEMPLATE_XPCOM_CFLAGS              = -g -pipe -Wall -Wno-unused -Wno-parentheses
 	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_SANITIZER_FLAGS) $(VBOX_GCC_OPT) $(VBOX_GCC_FP)
 TEMPLATE_XPCOM_CFLAGS.x86          = -m32
 TEMPLATE_XPCOM_CFLAGS.amd64        = -m64
-TEMPLATE_XPCOM_CFLAGS.release      = -O
-TEMPLATE_XPCOM_CFLAGS.profile      = -O
 TEMPLATE_XPCOM_CFLAGS.freebsd      = -pthread
 TEMPLATE_XPCOM_CFLAGS.linux        = -pthread -ansi
 TEMPLATE_XPCOM_CFLAGS.solaris      = -fno-omit-frame-pointer # for now anyway.
