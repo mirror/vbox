@@ -509,8 +509,8 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             m_pOptionsLayout->setContentsMargins(0, 0, 0, 0);
             m_pOptionsLayout->setColumnStretch(0, 0);
             m_pOptionsLayout->setColumnStretch(1, 1);
-            m_pOptionsLayout->setRowStretch(2, 0);
-            m_pOptionsLayout->setRowStretch(3, 1);
+            m_pOptionsLayout->setRowStretch(1, 0);
+            m_pOptionsLayout->setRowStretch(2, 1);
 
             /* Create profile label: */
             m_pProfileLabel = new QLabel(this);

@@ -60,7 +60,7 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
                 if (m_pCloudContainerLayout)
                 {
                     m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
-                    m_pCloudContainerLayout->setRowStretch(3, 1);
+                    m_pCloudContainerLayout->setRowStretch(1, 1);
 
                     /* Create sub-layout: */
                     QHBoxLayout *pSubLayout = new QHBoxLayout;

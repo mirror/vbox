@@ -76,7 +76,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                         if (m_pLocalContainerLayout)
                         {
                             m_pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
-                            m_pLocalContainerLayout->setRowStretch(2, 1);
+                            m_pLocalContainerLayout->setRowStretch(1, 1);
 
                             /* Create file-path selector: */
                             m_pFileSelector = new UIEmptyFilePathSelector(pLocalContainer);
@@ -105,7 +105,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                         if (m_pCloudContainerLayout)
                         {
                             m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
-                            m_pCloudContainerLayout->setRowStretch(3, 1);
+                            m_pCloudContainerLayout->setRowStretch(1, 1);
 
                             /* Create sub-layout: */
                             QHBoxLayout *pSubLayout = new QHBoxLayout;

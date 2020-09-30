@@ -457,6 +457,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
         m_pSourceLayout = new QGridLayout;
         if (m_pSourceLayout)
         {
+            m_pSourceLayout->setContentsMargins(0, 0, 0, 0);
             m_pSourceLayout->setColumnStretch(0, 0);
             m_pSourceLayout->setColumnStretch(1, 1);
 
@@ -477,16 +478,16 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                 m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 1);
             }
 
-            /* Create description label: */
-            m_pLabelDescription = new QIRichTextLabel(this);
-            if (m_pLabelDescription)
-            {
-                /* Add into layout: */
-                m_pSourceLayout->addWidget(m_pLabelDescription, 1, 0, 1, 2);
-            }
-
             /* Add into layout: */
             pMainLayout->addLayout(m_pSourceLayout);
+        }
+
+        /* Create description label: */
+        m_pLabelDescription = new QIRichTextLabel(this);
+        if (m_pLabelDescription)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLabelDescription);
         }
 
         /* Create stacked layout: */
@@ -504,7 +505,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     m_pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
                     m_pLocalContainerLayout->setColumnStretch(0, 0);
                     m_pLocalContainerLayout->setColumnStretch(1, 1);
-                    m_pLocalContainerLayout->setRowStretch(2, 1);
+                    m_pLocalContainerLayout->setRowStretch(1, 1);
 
                     /* Create file label: */
                     m_pFileLabel = new QLabel;
@@ -544,8 +545,8 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
                     m_pCloudContainerLayout->setColumnStretch(0, 0);
                     m_pCloudContainerLayout->setColumnStretch(1, 1);
-                    m_pCloudContainerLayout->setRowStretch(2, 0);
-                    m_pCloudContainerLayout->setRowStretch(3, 1);
+                    m_pCloudContainerLayout->setRowStretch(1, 0);
+                    m_pCloudContainerLayout->setRowStretch(2, 1);
 
                     /* Create profile label: */
                     m_pProfileLabel = new QLabel;
@@ -621,9 +622,6 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
             /* Add into layout: */
             pMainLayout->addLayout(m_pStackedLayout);
         }
-
-        /* Add vertical stretch finally: */
-        pMainLayout->addStretch();
     }
 
     /* Populate sources: */

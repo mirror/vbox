@@ -763,6 +763,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
 #endif
                     m_pSettingsLayout2->setColumnStretch(0, 0);
                     m_pSettingsLayout2->setColumnStretch(1, 1);
+                    m_pSettingsLayout2->setRowStretch(4, 1);
 
                     /* Create profile label: */
                     m_pProfileLabel = new QLabel;

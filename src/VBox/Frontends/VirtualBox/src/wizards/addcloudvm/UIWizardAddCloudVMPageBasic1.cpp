@@ -356,6 +356,7 @@ UIWizardAddCloudVMPageBasic1::UIWizardAddCloudVMPageBasic1()
         m_pSourceLayout = new QGridLayout;
         if (m_pSourceLayout)
         {
+            m_pSourceLayout->setContentsMargins(0, 0, 0, 0);
             m_pSourceLayout->setColumnStretch(0, 0);
             m_pSourceLayout->setColumnStretch(1, 1);
 
@@ -376,16 +377,16 @@ UIWizardAddCloudVMPageBasic1::UIWizardAddCloudVMPageBasic1()
                 m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 1);
             }
 
-            /* Create description label: */
-            m_pLabelDescription = new QIRichTextLabel(this);
-            if (m_pLabelDescription)
-            {
-                /* Add into layout: */
-                m_pSourceLayout->addWidget(m_pLabelDescription, 1, 0, 1, 2);
-            }
-
             /* Add into layout: */
             pMainLayout->addLayout(m_pSourceLayout);
+        }
+
+        /* Create description label: */
+        m_pLabelDescription = new QIRichTextLabel(this);
+        if (m_pLabelDescription)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLabelDescription);
         }
 
         /* Create cloud container layout: */
@@ -395,8 +396,8 @@ UIWizardAddCloudVMPageBasic1::UIWizardAddCloudVMPageBasic1()
             m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
             m_pCloudContainerLayout->setColumnStretch(0, 0);
             m_pCloudContainerLayout->setColumnStretch(1, 1);
-            m_pCloudContainerLayout->setRowStretch(2, 0);
-            m_pCloudContainerLayout->setRowStretch(3, 1);
+            m_pCloudContainerLayout->setRowStretch(1, 0);
+            m_pCloudContainerLayout->setRowStretch(2, 1);
 
             /* Create profile label: */
             m_pProfileLabel = new QLabel(this);
