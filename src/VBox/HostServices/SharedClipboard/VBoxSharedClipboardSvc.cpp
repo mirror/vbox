@@ -631,14 +631,18 @@ void shClSvcClientDestroy(PSHCLCLIENT pClient)
 
     shClSvcClientStateDestroy(&pClient->State);
 
+    PSHCLCLIENTLEGACYCID pCidIter, pCidIterNext;
+    RTListForEachSafe(&pClient->Legacy.lstCID, pCidIter, pCidIterNext, SHCLCLIENTLEGACYCID, Node)
+    {
+        RTMemFree(pCidIter);
+    }
+
     int rc2 = RTCritSectDelete(&pClient->CritSect);
     AssertRC(rc2);
 
     ClipboardClientMap::iterator itClient = g_mapClients.find(pClient->State.uClientID);
     if (itClient != g_mapClients.end())
-    {
         g_mapClients.erase(itClient);
-    }
     else
         AssertFailed();
 
