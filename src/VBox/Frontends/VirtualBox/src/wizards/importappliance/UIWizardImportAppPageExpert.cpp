@@ -137,26 +137,6 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                                 m_pCloudContainerLayout->addLayout(pSubLayout, 0, 0);
                             }
 
-                            /* Create profile property table: */
-                            m_pAccountPropertyTable = new QTableWidget(pCloudContainer);
-                            if (m_pAccountPropertyTable)
-                            {
-                                const QFontMetrics fm(m_pAccountPropertyTable->font());
-                                const int iFontWidth = fm.width('x');
-                                const int iTotalWidth = 50 * iFontWidth;
-                                const int iFontHeight = fm.height();
-                                const int iTotalHeight = 4 * iFontHeight;
-                                m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-//                                m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                                m_pAccountPropertyTable->setAlternatingRowColors(true);
-                                m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
-                                m_pAccountPropertyTable->verticalHeader()->setVisible(false);
-                                m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-
-                                /* Add into layout: */
-                                m_pCloudContainerLayout->addWidget(m_pAccountPropertyTable, 1, 0);
-                            }
-
                             /* Create profile instances table: */
                             m_pAccountInstanceList = new QListWidget(pCloudContainer);
                             if (m_pAccountInstanceList)
@@ -171,7 +151,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                                 m_pAccountInstanceList->setAlternatingRowColors(true);
 
                                 /* Add into layout: */
-                                m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 2, 0);
+                                m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 1, 0);
                             }
                         }
 
@@ -251,8 +231,8 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     populateSources();
     /* Populate accounts: */
     populateAccounts();
-    /* Populate account properties: */
-    populateAccountProperties();
+    /* Populate account: */
+    populateAccount();
     /* Populate account instances: */
     populateAccountInstances();
     /* Populate form properties: */
@@ -286,26 +266,6 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     registerField("applianceWidget", this, "applianceWidget");
 }
 
-bool UIWizardImportAppPageExpert::event(QEvent *pEvent)
-{
-    /* Handle known event types: */
-    switch (pEvent->type())
-    {
-        case QEvent::Show:
-        case QEvent::Resize:
-        {
-            /* Adjust profile property table: */
-            adjustAccountPropertyTable();
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return UIWizardPage::event(pEvent);
-}
-
 void UIWizardImportAppPageExpert::retranslateUi()
 {
     /* Translate appliance container: */
@@ -336,7 +296,6 @@ void UIWizardImportAppPageExpert::retranslateUi()
 
     /* Update tool-tips: */
     updateSourceComboToolTip();
-    updateAccountPropertyTableToolTips();
 }
 
 void UIWizardImportAppPageExpert::initializePage()
@@ -432,7 +391,7 @@ void UIWizardImportAppPageExpert::sltHandleSourceChange()
     /* Refresh required settings: */
     updatePageAppearance();
     populateAccounts();
-    populateAccountProperties();
+    populateAccount();
     populateAccountInstances();
     populateFormProperties();
     refreshFormPropertiesTable();
@@ -455,7 +414,7 @@ void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
 void UIWizardImportAppPageExpert::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
-    populateAccountProperties();
+    populateAccount();
     populateAccountInstances();
     populateFormProperties();
     refreshFormPropertiesTable();

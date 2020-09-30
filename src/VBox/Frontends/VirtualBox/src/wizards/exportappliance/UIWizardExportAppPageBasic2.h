@@ -102,8 +102,8 @@ protected:
     void populateMACAddressPolicies();
     /** Populates accounts. */
     void populateAccounts();
-    /** Populates account properties. */
-    void populateAccountProperties();
+    /** Populates account. */
+    void populateAccount();
     /** Populates form properties. */
     void populateFormProperties();
 
@@ -125,10 +125,6 @@ protected:
     void updateFormatComboToolTip();
     /** Updates MAC address export policy combo tool-tips. */
     void updateMACAddressExportPolicyComboToolTip();
-    /** Updates account property table tool-tips. */
-    void updateAccountPropertyTableToolTips();
-    /** Adjusts account property table. */
-    void adjustAccountPropertyTable();
 
     /** Defines @a strFormat. */
     void setFormat(const QString &strFormat);
@@ -240,8 +236,6 @@ protected:
     QComboBox    *m_pAccountComboBox;
     /** Holds the account management tool-button instance. */
     QIToolButton *m_pAccountToolButton;
-    /** Holds the account property table instance. */
-    QTableWidget *m_pAccountPropertyTable;
 
     /** Holds the machine label instance. */
     QLabel       *m_pMachineLabel;
@@ -277,9 +271,6 @@ public:
     UIWizardExportAppPageBasic2(bool fExportToOCIByDefault);
 
 protected:
-
-    /** Handle any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) /* override */;
 
     /** Allows access wizard from base part. */
     UIWizard *wizardImp() const { return UIWizardPage::wizard(); }

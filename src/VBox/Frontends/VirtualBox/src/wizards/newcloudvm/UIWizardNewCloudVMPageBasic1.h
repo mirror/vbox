@@ -69,8 +69,8 @@ protected:
     void populateLocations();
     /** Populates accounts. */
     void populateAccounts();
-    /** Populates account properties. */
-    void populateAccountProperties();
+    /** Populates account. */
+    void populateAccount();
     /** Populates source images. */
     void populateSourceImages();
     /** Populates form properties. */
@@ -78,10 +78,6 @@ protected:
 
     /** Updates location combo tool-tips. */
     void updateLocationComboToolTip();
-    /** Updates account property table tool-tips. */
-    void updateAccountPropertyTableToolTips();
-    /** Adjusts account property table. */
-    void adjustAccountPropertyTable();
 
     /** Defines @a strLocation. */
     void setLocation(const QString &strLocation);
@@ -131,8 +127,6 @@ protected:
     QIComboBox   *m_pAccountComboBox;
     /** Holds the account management tool-button instance. */
     QIToolButton *m_pAccountToolButton;
-    /** Holds the account property table instance. */
-    QTableWidget *m_pAccountPropertyTable;
     /** Holds the source image label instance. */
     QLabel       *m_pSourceImageLabel;
     /** Holds the source tab-bar instance. */
@@ -157,9 +151,6 @@ protected:
 
     /** Allows access wizard from base part. */
     virtual UIWizard *wizardImp() const /* override */ { return UIWizardPage::wizard(); }
-
-    /** Handle any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) /* override */;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;

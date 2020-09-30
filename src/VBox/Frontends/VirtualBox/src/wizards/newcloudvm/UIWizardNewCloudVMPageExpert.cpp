@@ -94,26 +94,6 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                     /* Add into layout: */
                     pLocationLayout->addLayout(pAccountLayout);
                 }
-
-                /* Create account property table: */
-                m_pAccountPropertyTable = new QTableWidget(m_pCntLocation);
-                if (m_pAccountPropertyTable)
-                {
-                    const QFontMetrics fm(m_pAccountPropertyTable->font());
-                    const int iFontWidth = fm.width('x');
-                    const int iTotalWidth = 50 * iFontWidth;
-                    const int iFontHeight = fm.height();
-                    const int iTotalHeight = 4 * iFontHeight;
-                    m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                    //m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                    m_pAccountPropertyTable->setAlternatingRowColors(true);
-                    m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
-                    m_pAccountPropertyTable->verticalHeader()->setVisible(false);
-                    m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-
-                    /* Add into layout: */
-                    pLocationLayout->addWidget(m_pAccountPropertyTable);
-                }
             }
 
             /* Add into layout: */
@@ -216,26 +196,6 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
     registerField("profileName", this, "profileName");
 }
 
-bool UIWizardNewCloudVMPageExpert::event(QEvent *pEvent)
-{
-    /* Handle known event types: */
-    switch (pEvent->type())
-    {
-        case QEvent::Show:
-        case QEvent::Resize:
-        {
-            /* Adjust profile property table: */
-            adjustAccountPropertyTable();
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return UIWizardPage::event(pEvent);
-}
-
 void UIWizardNewCloudVMPageExpert::retranslateUi()
 {
     /* Translate location container: */
@@ -261,7 +221,6 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
 
     /* Update tool-tips: */
     updateLocationComboToolTip();
-    updateAccountPropertyTableToolTips();
 }
 
 void UIWizardNewCloudVMPageExpert::initializePage()
@@ -352,7 +311,7 @@ void UIWizardNewCloudVMPageExpert::sltHandleLocationChange()
 
     /* Refresh required settings: */
     populateAccounts();
-    populateAccountProperties();
+    populateAccount();
     populateSourceImages();
     populateFormProperties();
     refreshFormPropertiesTable();
@@ -362,7 +321,7 @@ void UIWizardNewCloudVMPageExpert::sltHandleLocationChange()
 void UIWizardNewCloudVMPageExpert::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
-    populateAccountProperties();
+    populateAccount();
     populateSourceImages();
     populateFormProperties();
     refreshFormPropertiesTable();

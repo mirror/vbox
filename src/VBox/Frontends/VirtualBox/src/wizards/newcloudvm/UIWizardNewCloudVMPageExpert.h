@@ -47,9 +47,6 @@ protected:
     /** Allows access wizard from base part. */
     virtual UIWizard *wizardImp() const /* override */ { return UIWizardPage::wizard(); }
 
-    /** Handle any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) /* override */;
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 

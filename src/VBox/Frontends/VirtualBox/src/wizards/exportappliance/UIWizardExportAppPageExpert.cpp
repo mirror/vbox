@@ -350,25 +350,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 /* Add into layout: */
                                 m_pSettingsLayout2->addLayout(pSubLayout, 0, 1);
                             }
-                            /* Create account property table: */
-                            m_pAccountPropertyTable = new QTableWidget;
-                            if (m_pAccountPropertyTable)
-                            {
-                                const QFontMetrics fm(m_pAccountPropertyTable->font());
-                                const int iFontWidth = fm.width('x');
-                                const int iTotalWidth = 50 * iFontWidth;
-                                const int iFontHeight = fm.height();
-                                const int iTotalHeight = 8 * iFontHeight;
-                                m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                                m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                                m_pAccountPropertyTable->setAlternatingRowColors(true);
-                                m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
-                                m_pAccountPropertyTable->verticalHeader()->setVisible(false);
-                                m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-
-                                /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pAccountPropertyTable, 1, 1);
-                            }
 
                             /* Create account label: */
                             m_pMachineLabel = new QLabel;
@@ -377,28 +358,28 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 m_pMachineLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
                                 /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pMachineLabel, 2, 0);
+                                m_pSettingsLayout2->addWidget(m_pMachineLabel, 1, 0);
                             }
                             /* Create Export Then Ask button: */
                             m_pRadioExportThenAsk = new QRadioButton;
                             if (m_pRadioExportThenAsk)
                             {
                                 /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pRadioExportThenAsk, 2, 1);
+                                m_pSettingsLayout2->addWidget(m_pRadioExportThenAsk, 1, 1);
                             }
                             /* Create Ask Then Export button: */
                             m_pRadioAskThenExport = new QRadioButton;
                             if (m_pRadioAskThenExport)
                             {
                                 /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pRadioAskThenExport, 3, 1);
+                                m_pSettingsLayout2->addWidget(m_pRadioAskThenExport, 2, 1);
                             }
                             /* Create Do Not Ask button: */
                             m_pRadioDoNotAsk = new QRadioButton;
                             if (m_pRadioDoNotAsk)
                             {
                                 /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pRadioDoNotAsk, 4, 1);
+                                m_pSettingsLayout2->addWidget(m_pRadioDoNotAsk, 3, 1);
                             }
                         }
 
@@ -458,26 +439,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("vsdExportForm", this, "vsdExportForm");
     registerField("cloudExportMode", this, "cloudExportMode");
     registerField("applianceWidget", this, "applianceWidget");
-}
-
-bool UIWizardExportAppPageExpert::event(QEvent *pEvent)
-{
-    /* Handle known event types: */
-    switch (pEvent->type())
-    {
-        case QEvent::Show:
-        case QEvent::Resize:
-        {
-            /* Adjust profile property table: */
-            adjustAccountPropertyTable();
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return UIWizardPage::event(pEvent);
 }
 
 void UIWizardExportAppPageExpert::retranslateUi()
@@ -701,7 +662,7 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     refreshManifestCheckBoxAccess();
     refreshIncludeISOsCheckBoxAccess();
     populateAccounts();
-    populateAccountProperties();
+    populateAccount();
     populateFormProperties();
 
     /* Check whether there was cloud target selected: */
@@ -734,7 +695,7 @@ void UIWizardExportAppPageExpert::sltHandleMACAddressExportPolicyComboChange()
 void UIWizardExportAppPageExpert::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
-    populateAccountProperties();
+    populateAccount();
     populateFormProperties();
 
     /* Check whether there was cloud target selected: */

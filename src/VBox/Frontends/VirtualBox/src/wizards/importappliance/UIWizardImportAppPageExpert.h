@@ -53,9 +53,6 @@ protected:
     /** Allows to access 'field()' from base part. */
     virtual QVariant fieldImp(const QString &strFieldName) const /* override */ { return UIWizardPage::field(strFieldName); }
 
-    /** Handle any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) /* override */;
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 

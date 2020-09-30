@@ -91,26 +91,6 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
                         m_pCloudContainerLayout->addLayout(pSubLayout, 0, 0);
                     }
 
-                    /* Create profile property table: */
-                    m_pAccountPropertyTable = new QTableWidget(m_pCntSource);
-                    if (m_pAccountPropertyTable)
-                    {
-                        const QFontMetrics fm(m_pAccountPropertyTable->font());
-                        const int iFontWidth = fm.width('x');
-                        const int iTotalWidth = 50 * iFontWidth;
-                        const int iFontHeight = fm.height();
-                        const int iTotalHeight = 4 * iFontHeight;
-                        m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                        //m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                        m_pAccountPropertyTable->setAlternatingRowColors(true);
-                        m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
-                        m_pAccountPropertyTable->verticalHeader()->setVisible(false);
-                        m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-
-                        /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountPropertyTable, 1, 0);
-                    }
-
                     /* Create profile instances table: */
                     m_pAccountInstanceList = new QListWidget(m_pCntSource);
                     if (m_pAccountInstanceList)
@@ -126,7 +106,7 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
                         m_pAccountInstanceList->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
                         /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 2, 0);
+                        m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 1, 0);
                     }
 
                     /* Add into layout: */
@@ -158,26 +138,6 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
     registerField("instanceIds", this, "instanceIds");
 }
 
-bool UIWizardAddCloudVMPageExpert::event(QEvent *pEvent)
-{
-    /* Handle known event types: */
-    switch (pEvent->type())
-    {
-        case QEvent::Show:
-        case QEvent::Resize:
-        {
-            /* Adjust profile property table: */
-            adjustAccountPropertyTable();
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return UIWizardPage::event(pEvent);
-}
-
 void UIWizardAddCloudVMPageExpert::retranslateUi()
 {
     /* Translate source container: */
@@ -193,7 +153,6 @@ void UIWizardAddCloudVMPageExpert::retranslateUi()
 
     /* Update tool-tips: */
     updateSourceComboToolTip();
-    updateAccountPropertyTableToolTips();
 }
 
 void UIWizardAddCloudVMPageExpert::initializePage()
@@ -254,7 +213,7 @@ void UIWizardAddCloudVMPageExpert::sltHandleSourceChange()
 
     /* Refresh required settings: */
     populateAccounts();
-    populateAccountProperties();
+    populateAccount();
     populateAccountInstances();
     emit completeChanged();
 }
@@ -262,7 +221,7 @@ void UIWizardAddCloudVMPageExpert::sltHandleSourceChange()
 void UIWizardAddCloudVMPageExpert::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
-    populateAccountProperties();
+    populateAccount();
     populateAccountInstances();
     emit completeChanged();
 }
