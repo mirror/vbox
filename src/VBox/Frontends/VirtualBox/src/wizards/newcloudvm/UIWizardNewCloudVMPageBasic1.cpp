@@ -235,16 +235,16 @@ void UIWizardNewCloudVMPage1::populateSourceImages()
             {
                 case 0:
                 {
-                    /* Ask for cloud boot-volumes, currently we are interested in Source boot-volumes only: */
-                    comProgress = comCloudClient.ListSourceBootVolumes(comNames, comIDs);
-                    break;
-                }
-                case 1:
-                {
                     /* Ask for cloud images, currently we are interested in Available images only: */
                     const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
                                                                      << KCloudImageState_Available;
                     comProgress = comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
+                    break;
+                }
+                case 1:
+                {
+                    /* Ask for cloud boot-volumes, currently we are interested in Source boot-volumes only: */
+                    comProgress = comCloudClient.ListSourceBootVolumes(comNames, comIDs);
                     break;
                 }
                 default:
@@ -344,14 +344,14 @@ void UIWizardNewCloudVMPage1::populateFormProperties()
             {
                 case 0:
                 {
-                    /* Add boot-volume id to virtual system description: */
-                    comVSD.AddDescription(KVirtualSystemDescriptionType_CloudBootVolumeId, imageId(), QString());
+                    /* Add image id to virtual system description: */
+                    comVSD.AddDescription(KVirtualSystemDescriptionType_CloudImageId, imageId(), QString());
                     break;
                 }
                 case 1:
                 {
-                    /* Add image id to virtual system description: */
-                    comVSD.AddDescription(KVirtualSystemDescriptionType_CloudImageId, imageId(), QString());
+                    /* Add boot-volume id to virtual system description: */
+                    comVSD.AddDescription(KVirtualSystemDescriptionType_CloudBootVolumeId, imageId(), QString());
                     break;
                 }
                 default:
@@ -652,8 +652,8 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
     m_pSourceImageLabel->setText(UIWizardNewCloudVM::tr("&Source:"));
 
     /* Translate source tab-bar: */
-    m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Boot Volumes"));
-    m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Images"));
+    m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Images"));
+    m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Boot Volumes"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
