@@ -1167,6 +1167,7 @@ int main()
     if (RT_SUCCESS(rc))
     {
         pDbgc->pVM = (PVM)pDbgc;
+        pDbgc->pUVM = (PUVM)pDbgc;
         rc = dbgcProcessInput(pDbgc, true /* fNoExecute */);
         tstCompleteOutput();
         if (RT_SUCCESS(rc))
