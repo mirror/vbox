@@ -149,10 +149,9 @@ static void testGetHostMsgOld(void)
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
     RTTESTI_CHECK_RC_OK(rc);
 
-    rc = shClSvcClientInit(&g_Client, 1 /* clientId */);
-    RTTESTI_CHECK_RC_OK(rc);
 
     RTTestISub("Testing one format, waiting guest call.");
+    RT_ZERO(g_Client);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_IPE_UNINITIALIZED_STATUS;
@@ -169,6 +168,7 @@ static void testGetHostMsgOld(void)
     table.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
 
     RTTestISub("Testing one format, no waiting guest calls.");
+    RT_ZERO(g_Client);
     table.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
     testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
@@ -184,6 +184,7 @@ static void testGetHostMsgOld(void)
     table.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
 
     RTTestISub("Testing two formats, waiting guest call.");
+    RT_ZERO(g_Client);
     table.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
@@ -205,6 +206,7 @@ static void testGetHostMsgOld(void)
     table.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
 
     RTTestISub("Testing two formats, no waiting guest calls.");
+    RT_ZERO(g_Client);
     table.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
     testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
