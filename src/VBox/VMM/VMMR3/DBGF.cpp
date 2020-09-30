@@ -212,6 +212,18 @@ VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
 
 
 /**
+ * This is for tstCFGM and others to avoid trigger leak detection.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The cross context VM structure.
+ */
+VMMR3DECL(void) DBGFR3TermUVM(PUVM pUVM)
+{
+    dbgfR3InfoTerm(pUVM);
+}
+
+
+/**
  * Called when the VM is powered off to detach debuggers.
  *
  * @param   pVM     The cross context VM structure.

@@ -570,6 +570,7 @@ typedef const DBGFEVENT *PCDBGFEVENT;
 
 VMMR3_INT_DECL(int)     DBGFR3Init(PVM pVM);
 VMMR3_INT_DECL(int)     DBGFR3Term(PVM pVM);
+VMMR3DECL(void)         DBGFR3TermUVM(PUVM pUVM);
 VMMR3_INT_DECL(void)    DBGFR3PowerOff(PVM pVM);
 VMMR3_INT_DECL(void)    DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 

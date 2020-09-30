@@ -414,6 +414,7 @@ DBGDECL(int)    DBGCRegisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
      */
     int rc = 0;
     pCur = (PDBGCEXTCMDS)RTMemAlloc(sizeof(*pCur));
+    RTMEM_MAY_LEAK(pCur);
     if (pCur)
     {
         pCur->cCmds  = cCommands;
