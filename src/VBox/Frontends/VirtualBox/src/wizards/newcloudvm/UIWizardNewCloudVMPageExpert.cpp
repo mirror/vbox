@@ -66,33 +66,33 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                     pLocationLayout->addWidget(m_pLocationComboBox);
                 }
 
-                /* Create account layout: */
-                QHBoxLayout *pAccountLayout = new QHBoxLayout;
-                if (pAccountLayout)
+                /* Create profile layout: */
+                QHBoxLayout *pProfileLayout = new QHBoxLayout;
+                if (pProfileLayout)
                 {
-                    pAccountLayout->setContentsMargins(0, 0, 0, 0);
-                    pAccountLayout->setSpacing(1);
+                    pProfileLayout->setContentsMargins(0, 0, 0, 0);
+                    pProfileLayout->setSpacing(1);
 
-                    /* Create account combo-box: */
-                    m_pAccountComboBox = new QIComboBox(m_pCntLocation);
-                    if (m_pAccountComboBox)
+                    /* Create profile combo-box: */
+                    m_pProfileComboBox = new QIComboBox(m_pCntLocation);
+                    if (m_pProfileComboBox)
                     {
                         /* Add into layout: */
-                        pAccountLayout->addWidget(m_pAccountComboBox);
+                        pProfileLayout->addWidget(m_pProfileComboBox);
                     }
-                    /* Create account tool-button: */
-                    m_pAccountToolButton = new QIToolButton(m_pCntLocation);
-                    if (m_pAccountToolButton)
+                    /* Create profile tool-button: */
+                    m_pProfileToolButton = new QIToolButton(m_pCntLocation);
+                    if (m_pProfileToolButton)
                     {
-                        m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                        m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                           ":/cloud_profile_manager_disabled_16px.png"));
 
                         /* Add into layout: */
-                        pAccountLayout->addWidget(m_pAccountToolButton);
+                        pProfileLayout->addWidget(m_pProfileToolButton);
                     }
 
                     /* Add into layout: */
-                    pLocationLayout->addLayout(pAccountLayout);
+                    pLocationLayout->addLayout(pProfileLayout);
                 }
             }
 
@@ -184,10 +184,10 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                 this, &UIWizardNewCloudVMPageExpert::sltHandleLocationChange);
     connect(m_pLocationComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
             this, &UIWizardNewCloudVMPageExpert::sltHandleLocationChange);
-    connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardNewCloudVMPageExpert::sltHandleAccountComboChange);
-    connect(m_pAccountToolButton, &QIToolButton::clicked,
-            this, &UIWizardNewCloudVMPageExpert::sltHandleAccountButtonClick);
+    connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            this, &UIWizardNewCloudVMPageExpert::sltHandleProfileComboChange);
+    connect(m_pProfileToolButton, &QIToolButton::clicked,
+            this, &UIWizardNewCloudVMPageExpert::sltHandleProfileButtonClick);
     connect(m_pSourceImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange);
 
@@ -310,25 +310,25 @@ void UIWizardNewCloudVMPageExpert::sltHandleLocationChange()
     m_pSourceImageList->setFocus();
 
     /* Refresh required settings: */
-    populateAccounts();
-    populateAccount();
+    populateProfiles();
+    populateProfile();
     populateSourceImages();
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();
 }
 
-void UIWizardNewCloudVMPageExpert::sltHandleAccountComboChange()
+void UIWizardNewCloudVMPageExpert::sltHandleProfileComboChange()
 {
     /* Refresh required settings: */
-    populateAccount();
+    populateProfile();
     populateSourceImages();
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();
 }
 
-void UIWizardNewCloudVMPageExpert::sltHandleAccountButtonClick()
+void UIWizardNewCloudVMPageExpert::sltHandleProfileButtonClick()
 {
     /* Open Cloud Profile Manager: */
     if (gpManager)

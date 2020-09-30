@@ -64,9 +64,9 @@ UIWizardExportAppPage2::UIWizardExportAppPage2(bool fExportToOCIByDefault)
     , m_pAdditionalLabel(0)
     , m_pManifestCheckbox(0)
     , m_pIncludeISOsCheckbox(0)
-    , m_pAccountLabel(0)
-    , m_pAccountComboBox(0)
-    , m_pAccountToolButton(0)
+    , m_pProfileLabel(0)
+    , m_pProfileComboBox(0)
+    , m_pProfileToolButton(0)
 {
 }
 
@@ -162,18 +162,18 @@ void UIWizardExportAppPage2::populateMACAddressPolicies()
         setMACAddressExportPolicy(MACAddressExportPolicy_KeepAllMACs);
 }
 
-void UIWizardExportAppPage2::populateAccounts()
+void UIWizardExportAppPage2::populateProfiles()
 {
     /* Block signals while updating: */
-    m_pAccountComboBox->blockSignals(true);
+    m_pProfileComboBox->blockSignals(true);
 
     /* Remember current item data to be able to restore it: */
     QString strOldData;
-    if (m_pAccountComboBox->currentIndex() != -1)
-        strOldData = m_pAccountComboBox->itemData(m_pAccountComboBox->currentIndex(), AccountData_ProfileName).toString();
+    if (m_pProfileComboBox->currentIndex() != -1)
+        strOldData = m_pProfileComboBox->itemData(m_pProfileComboBox->currentIndex(), ProfileData_Name).toString();
 
     /* Clear combo initially: */
-    m_pAccountComboBox->clear();
+    m_pProfileComboBox->clear();
     /* Clear Cloud Provider: */
     m_comCloudProvider = CCloudProvider();
 
@@ -202,8 +202,8 @@ void UIWizardExportAppPage2::populateAccounts()
                         continue;
 
                     /* Compose item, fill it's data: */
-                    m_pAccountComboBox->addItem(strProfileName);
-                    m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, AccountData_ProfileName);
+                    m_pProfileComboBox->addItem(strProfileName);
+                    m_pProfileComboBox->setItemData(m_pProfileComboBox->count() - 1, strProfileName, ProfileData_Name);
                 }
             }
         }
@@ -212,19 +212,19 @@ void UIWizardExportAppPage2::populateAccounts()
         int iNewIndex = -1;
         if (   iNewIndex == -1
             && !strOldData.isNull())
-            iNewIndex = m_pAccountComboBox->findData(strOldData, AccountData_ProfileName);
+            iNewIndex = m_pProfileComboBox->findData(strOldData, ProfileData_Name);
         if (   iNewIndex == -1
-            && m_pAccountComboBox->count() > 0)
+            && m_pProfileComboBox->count() > 0)
             iNewIndex = 0;
         if (iNewIndex != -1)
-            m_pAccountComboBox->setCurrentIndex(iNewIndex);
+            m_pProfileComboBox->setCurrentIndex(iNewIndex);
     }
 
     /* Unblock signals after update: */
-    m_pAccountComboBox->blockSignals(false);
+    m_pProfileComboBox->blockSignals(false);
 }
 
-void UIWizardExportAppPage2::populateAccount()
+void UIWizardExportAppPage2::populateProfile()
 {
     /* Clear Cloud Profile: */
     m_comCloudProfile = CCloudProfile();
@@ -546,8 +546,8 @@ QString UIWizardExportAppPage2::providerShortName() const
 
 QString UIWizardExportAppPage2::profileName() const
 {
-    const int iIndex = m_pAccountComboBox->currentIndex();
-    return m_pAccountComboBox->itemData(iIndex, AccountData_ProfileName).toString();
+    const int iIndex = m_pProfileComboBox->currentIndex();
+    return m_pProfileComboBox->itemData(iIndex, ProfileData_Name).toString();
 }
 
 CAppliance UIWizardExportAppPage2::appliance() const
@@ -764,14 +764,14 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                     m_pSettingsLayout2->setColumnStretch(0, 0);
                     m_pSettingsLayout2->setColumnStretch(1, 1);
 
-                    /* Create account label: */
-                    m_pAccountLabel = new QLabel;
-                    if (m_pAccountLabel)
+                    /* Create profile label: */
+                    m_pProfileLabel = new QLabel;
+                    if (m_pProfileLabel)
                     {
-                        m_pAccountLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                        m_pProfileLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
                         /* Add into layout: */
-                        m_pSettingsLayout2->addWidget(m_pAccountLabel, 0, 0);
+                        m_pSettingsLayout2->addWidget(m_pProfileLabel, 0, 0);
                     }
                     /* Create sub-layout: */
                     QHBoxLayout *pSubLayout = new QHBoxLayout;
@@ -780,31 +780,31 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                         pSubLayout->setContentsMargins(0, 0, 0, 0);
                         pSubLayout->setSpacing(1);
 
-                        /* Create account combo-box: */
-                        m_pAccountComboBox = new QComboBox;
-                        if (m_pAccountComboBox)
+                        /* Create profile combo-box: */
+                        m_pProfileComboBox = new QComboBox;
+                        if (m_pProfileComboBox)
                         {
-                            m_pAccountLabel->setBuddy(m_pAccountComboBox);
+                            m_pProfileLabel->setBuddy(m_pProfileComboBox);
 
                             /* Add into layout: */
-                            pSubLayout->addWidget(m_pAccountComboBox);
+                            pSubLayout->addWidget(m_pProfileComboBox);
                         }
-                        /* Create account tool-button: */
-                        m_pAccountToolButton = new QIToolButton;
-                        if (m_pAccountToolButton)
+                        /* Create profile tool-button: */
+                        m_pProfileToolButton = new QIToolButton;
+                        if (m_pProfileToolButton)
                         {
-                            m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                            m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                               ":/cloud_profile_manager_disabled_16px.png"));
 
                             /* Add into layout: */
-                            pSubLayout->addWidget(m_pAccountToolButton);
+                            pSubLayout->addWidget(m_pProfileToolButton);
                         }
 
                         /* Add into layout: */
                         m_pSettingsLayout2->addLayout(pSubLayout, 0, 1);
                     }
 
-                    /* Create account label: */
+                    /* Create profile label: */
                     m_pMachineLabel = new QLabel;
                     if (m_pMachineLabel)
                     {
@@ -849,10 +849,10 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     populateFormats();
     /* Populate MAC address policies: */
     populateMACAddressPolicies();
-    /* Populate accounts: */
-    populateAccounts();
-    /* Populate account: */
-    populateAccount();
+    /* Populate profiles: */
+    populateProfiles();
+    /* Populate profile: */
+    populateProfile();
 
     /* Setup connections: */
     if (gpManager)
@@ -864,10 +864,10 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
             this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
     connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic2::sltHandleMACAddressExportPolicyComboChange);
-    connect(m_pAccountComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIWizardExportAppPageBasic2::sltHandleAccountComboChange);
-    connect(m_pAccountToolButton, &QIToolButton::clicked,
-            this, &UIWizardExportAppPageBasic2::sltHandleAccountButtonClick);
+    connect(m_pProfileComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardExportAppPageBasic2::sltHandleProfileComboChange);
+    connect(m_pProfileToolButton, &QIToolButton::clicked,
+            this, &UIWizardExportAppPageBasic2::sltHandleProfileButtonClick);
 
     /* Register fields: */
     registerField("format", this, "format");
@@ -962,8 +962,8 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files in exported VM archive."));
     m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("&Include ISO image files"));
 
-    /* Translate Account label: */
-    m_pAccountLabel->setText(UIWizardExportApp::tr("&Account:"));
+    /* Translate Profile label: */
+    m_pProfileLabel->setText(UIWizardExportApp::tr("&Profile:"));
 
     /* Translate option label: */
     m_pMachineLabel->setText(UIWizardExportApp::tr("Machine Creation:"));
@@ -977,7 +977,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     labels << m_pFileSelectorLabel;
     labels << m_pMACComboBoxLabel;
     labels << m_pAdditionalLabel;
-    labels << m_pAccountLabel;
+    labels << m_pProfileLabel;
     labels << m_pMachineLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
@@ -1060,10 +1060,10 @@ void UIWizardExportAppPageBasic2::updatePageAppearance()
     if (isFormatCloudOne())
     {
         m_pLabelSettings->setText(UIWizardExportApp::
-                                  tr("<p>Please choose one of cloud service accounts you have registered to export virtual "
+                                  tr("<p>Please choose one of cloud service profiles you have registered to export virtual "
                                      "machines to. It will be used to establish network connection required to upload your "
                                      "virtual machine files to a remote cloud facility.</p>"));
-        m_pAccountComboBox->setFocus();
+        m_pProfileComboBox->setFocus();
     }
     else
     {
@@ -1085,8 +1085,8 @@ void UIWizardExportAppPageBasic2::sltHandleFormatComboChange()
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
     refreshIncludeISOsCheckBoxAccess();
-    populateAccounts();
-    populateAccount();
+    populateProfiles();
+    populateProfile();
     emit completeChanged();
 }
 
@@ -1106,13 +1106,13 @@ void UIWizardExportAppPageBasic2::sltHandleMACAddressExportPolicyComboChange()
     updateMACAddressExportPolicyComboToolTip();
 }
 
-void UIWizardExportAppPageBasic2::sltHandleAccountComboChange()
+void UIWizardExportAppPageBasic2::sltHandleProfileComboChange()
 {
     /* Refresh required settings: */
-    populateAccount();
+    populateProfile();
 }
 
-void UIWizardExportAppPageBasic2::sltHandleAccountButtonClick()
+void UIWizardExportAppPageBasic2::sltHandleProfileButtonClick()
 {
     /* Open Cloud Profile Manager: */
     if (gpManager)

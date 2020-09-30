@@ -76,10 +76,10 @@ private slots:
     /** Handles file-path change. */
     void sltFilePathChangeHandler();
 
-    /** Handles change in account combo-box. */
-    void sltHandleAccountComboChange();
-    /** Handles account tool-button click. */
-    void sltHandleAccountButtonClick();
+    /** Handles change in profile combo-box. */
+    void sltHandleProfileComboChange();
+    /** Handles profile tool-button click. */
+    void sltHandleProfileButtonClick();
 
     /** Handles change in instance list. */
     void sltHandleInstanceListChange();

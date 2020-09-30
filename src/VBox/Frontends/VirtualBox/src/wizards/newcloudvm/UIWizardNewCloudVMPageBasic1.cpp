@@ -47,9 +47,9 @@ UIWizardNewCloudVMPage1::UIWizardNewCloudVMPage1()
     : m_fPolished(false)
     , m_pLocationLabel(0)
     , m_pLocationComboBox(0)
-    , m_pAccountLabel(0)
-    , m_pAccountComboBox(0)
-    , m_pAccountToolButton(0)
+    , m_pProfileLabel(0)
+    , m_pProfileComboBox(0)
+    , m_pProfileToolButton(0)
     , m_pSourceImageLabel(0)
     , m_pSourceTabBar(0)
     , m_pSourceImageList(0)
@@ -107,18 +107,18 @@ void UIWizardNewCloudVMPage1::populateLocations()
         setLocation("OCI");
 }
 
-void UIWizardNewCloudVMPage1::populateAccounts()
+void UIWizardNewCloudVMPage1::populateProfiles()
 {
     /* Block signals while updating: */
-    m_pAccountComboBox->blockSignals(true);
+    m_pProfileComboBox->blockSignals(true);
 
     /* Remember current item data to be able to restore it: */
     QString strOldData;
-    if (m_pAccountComboBox->currentIndex() != -1)
-        strOldData = m_pAccountComboBox->itemData(m_pAccountComboBox->currentIndex(), AccountData_ProfileName).toString();
+    if (m_pProfileComboBox->currentIndex() != -1)
+        strOldData = m_pProfileComboBox->itemData(m_pProfileComboBox->currentIndex(), ProfileData_Name).toString();
     else
     {
-        /* Try to fetch "old" account name from wizard full group name: */
+        /* Try to fetch "old" profile name from wizard full group name: */
         UIWizardNewCloudVM *pWizard = qobject_cast<UIWizardNewCloudVM*>(wizardImp());
         AssertPtrReturnVoid(pWizard);
         const QString strFullGroupName = pWizard->fullGroupName();
@@ -128,7 +128,7 @@ void UIWizardNewCloudVMPage1::populateAccounts()
     }
 
     /* Clear combo initially: */
-    m_pAccountComboBox->clear();
+    m_pProfileComboBox->clear();
     /* Clear Cloud Provider: */
     m_comCloudProvider = CCloudProvider();
 
@@ -162,29 +162,29 @@ void UIWizardNewCloudVMPage1::populateAccounts()
                     continue;
 
                 /* Compose item, fill it's data: */
-                m_pAccountComboBox->addItem(strProfileName);
-                m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, AccountData_ProfileName);
+                m_pProfileComboBox->addItem(strProfileName);
+                m_pProfileComboBox->setItemData(m_pProfileComboBox->count() - 1, strProfileName, ProfileData_Name);
             }
 
             /* Set previous/default item if possible: */
             int iNewIndex = -1;
             if (   iNewIndex == -1
                 && !strOldData.isNull())
-                iNewIndex = m_pAccountComboBox->findData(strOldData, AccountData_ProfileName);
+                iNewIndex = m_pProfileComboBox->findData(strOldData, ProfileData_Name);
             if (   iNewIndex == -1
-                && m_pAccountComboBox->count() > 0)
+                && m_pProfileComboBox->count() > 0)
                 iNewIndex = 0;
             if (iNewIndex != -1)
-                m_pAccountComboBox->setCurrentIndex(iNewIndex);
+                m_pProfileComboBox->setCurrentIndex(iNewIndex);
         }
         while (0);
     }
 
     /* Unblock signals after update: */
-    m_pAccountComboBox->blockSignals(false);
+    m_pProfileComboBox->blockSignals(false);
 }
 
-void UIWizardNewCloudVMPage1::populateAccount()
+void UIWizardNewCloudVMPage1::populateProfile()
 {
     /* Clear Cloud Profile: */
     m_comCloudProfile = CCloudProfile();
@@ -402,8 +402,8 @@ QUuid UIWizardNewCloudVMPage1::locationId() const
 
 QString UIWizardNewCloudVMPage1::profileName() const
 {
-    const int iIndex = m_pAccountComboBox->currentIndex();
-    return m_pAccountComboBox->itemData(iIndex, AccountData_ProfileName).toString();
+    const int iIndex = m_pProfileComboBox->currentIndex();
+    return m_pProfileComboBox->itemData(iIndex, ProfileData_Name).toString();
 }
 
 QString UIWizardNewCloudVMPage1::imageId() const
@@ -512,42 +512,42 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             m_pOptionsLayout->setRowStretch(2, 0);
             m_pOptionsLayout->setRowStretch(3, 1);
 
-            /* Create account label: */
-            m_pAccountLabel = new QLabel(this);
-            if (m_pAccountLabel)
+            /* Create profile label: */
+            m_pProfileLabel = new QLabel(this);
+            if (m_pProfileLabel)
             {
                 /* Add into layout: */
-                m_pOptionsLayout->addWidget(m_pAccountLabel, 0, 0, Qt::AlignRight);
+                m_pOptionsLayout->addWidget(m_pProfileLabel, 0, 0, Qt::AlignRight);
             }
-            /* Create account layout: */
-            QHBoxLayout *pAccountLayout = new QHBoxLayout;
-            if (pAccountLayout)
+            /* Create profile layout: */
+            QHBoxLayout *pProfileLayout = new QHBoxLayout;
+            if (pProfileLayout)
             {
-                pAccountLayout->setContentsMargins(0, 0, 0, 0);
-                pAccountLayout->setSpacing(1);
+                pProfileLayout->setContentsMargins(0, 0, 0, 0);
+                pProfileLayout->setSpacing(1);
 
-                /* Create account combo-box: */
-                m_pAccountComboBox = new QIComboBox(this);
-                if (m_pAccountComboBox)
+                /* Create profile combo-box: */
+                m_pProfileComboBox = new QIComboBox(this);
+                if (m_pProfileComboBox)
                 {
-                    m_pAccountLabel->setBuddy(m_pAccountComboBox);
+                    m_pProfileLabel->setBuddy(m_pProfileComboBox);
 
                     /* Add into layout: */
-                    pAccountLayout->addWidget(m_pAccountComboBox);
+                    pProfileLayout->addWidget(m_pProfileComboBox);
                 }
-                /* Create account tool-button: */
-                m_pAccountToolButton = new QIToolButton(this);
-                if (m_pAccountToolButton)
+                /* Create profile tool-button: */
+                m_pProfileToolButton = new QIToolButton(this);
+                if (m_pProfileToolButton)
                 {
-                    m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                    m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                       ":/cloud_profile_manager_disabled_16px.png"));
 
                     /* Add into layout: */
-                    pAccountLayout->addWidget(m_pAccountToolButton);
+                    pProfileLayout->addWidget(m_pProfileToolButton);
                 }
 
                 /* Add into layout: */
-                m_pOptionsLayout->addLayout(pAccountLayout, 0, 1);
+                m_pOptionsLayout->addLayout(pProfileLayout, 0, 1);
             }
 
             /* Create source image label: */
@@ -610,10 +610,10 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 this, &UIWizardNewCloudVMPageBasic1::sltHandleLocationChange);
     connect(m_pLocationComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
             this, &UIWizardNewCloudVMPageBasic1::sltHandleLocationChange);
-    connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountComboChange);
-    connect(m_pAccountToolButton, &QIToolButton::clicked,
-            this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountButtonClick);
+    connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            this, &UIWizardNewCloudVMPageBasic1::sltHandleProfileComboChange);
+    connect(m_pProfileToolButton, &QIToolButton::clicked,
+            this, &UIWizardNewCloudVMPageBasic1::sltHandleProfileButtonClick);
     connect(m_pSourceImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageBasic1::completeChanged);
 
@@ -642,13 +642,13 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
     }
 
     /* Translate description label: */
-    m_pLabelDescription->setText(UIWizardNewCloudVM::tr("<p>Please choose one of cloud service accounts you have registered to "
+    m_pLabelDescription->setText(UIWizardNewCloudVM::tr("<p>Please choose one of cloud service profiles you have registered to "
                                                         "create virtual machine for.  Existing images list will be "
                                                         "updated.  To continue, select one of images to create virtual "
                                                         "machine on the basis of it.</p>"));
 
     /* Translate cloud stuff: */
-    m_pAccountLabel->setText(UIWizardNewCloudVM::tr("&Account:"));
+    m_pProfileLabel->setText(UIWizardNewCloudVM::tr("&Profile:"));
     m_pSourceImageLabel->setText(UIWizardNewCloudVM::tr("&Source:"));
 
     /* Translate source tab-bar: */
@@ -658,7 +658,7 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
     /* Adjust label widths: */
     QList<QWidget*> labels;
     labels << m_pLocationLabel;
-    labels << m_pAccountLabel;
+    labels << m_pProfileLabel;
     labels << m_pSourceImageLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
@@ -723,21 +723,21 @@ void UIWizardNewCloudVMPageBasic1::sltHandleLocationChange()
     m_pSourceImageList->setFocus();
 
     /* Refresh required settings: */
-    populateAccounts();
-    populateAccount();
+    populateProfiles();
+    populateProfile();
     populateSourceImages();
     emit completeChanged();
 }
 
-void UIWizardNewCloudVMPageBasic1::sltHandleAccountComboChange()
+void UIWizardNewCloudVMPageBasic1::sltHandleProfileComboChange()
 {
     /* Refresh required settings: */
-    populateAccount();
+    populateProfile();
     populateSourceImages();
     emit completeChanged();
 }
 
-void UIWizardNewCloudVMPageBasic1::sltHandleAccountButtonClick()
+void UIWizardNewCloudVMPageBasic1::sltHandleProfileButtonClick()
 {
     /* Open Cloud Profile Manager: */
     if (gpManager)

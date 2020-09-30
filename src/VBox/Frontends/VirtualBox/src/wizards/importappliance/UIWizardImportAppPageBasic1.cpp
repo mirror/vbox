@@ -55,11 +55,11 @@ UIWizardImportAppPage1::UIWizardImportAppPage1(bool fImportFromOCIByDefault)
     , m_pFileLabel(0)
     , m_pFileSelector(0)
     , m_pCloudContainerLayout(0)
-    , m_pAccountLabel(0)
-    , m_pAccountComboBox(0)
-    , m_pAccountToolButton(0)
-    , m_pAccountInstanceLabel(0)
-    , m_pAccountInstanceList(0)
+    , m_pProfileLabel(0)
+    , m_pProfileComboBox(0)
+    , m_pProfileToolButton(0)
+    , m_pProfileInstanceLabel(0)
+    , m_pProfileInstanceList(0)
 {
 }
 
@@ -128,18 +128,18 @@ void UIWizardImportAppPage1::populateSources()
         setSource("local");
 }
 
-void UIWizardImportAppPage1::populateAccounts()
+void UIWizardImportAppPage1::populateProfiles()
 {
     /* Block signals while updating: */
-    m_pAccountComboBox->blockSignals(true);
+    m_pProfileComboBox->blockSignals(true);
 
     /* Remember current item data to be able to restore it: */
     QString strOldData;
-    if (m_pAccountComboBox->currentIndex() != -1)
-        strOldData = m_pAccountComboBox->itemData(m_pAccountComboBox->currentIndex(), AccountData_ProfileName).toString();
+    if (m_pProfileComboBox->currentIndex() != -1)
+        strOldData = m_pProfileComboBox->itemData(m_pProfileComboBox->currentIndex(), ProfileData_Name).toString();
 
     /* Clear combo initially: */
-    m_pAccountComboBox->clear();
+    m_pProfileComboBox->clear();
     /* Clear Cloud Provider: */
     m_comCloudProvider = CCloudProvider();
 
@@ -173,29 +173,29 @@ void UIWizardImportAppPage1::populateAccounts()
                     continue;
 
                 /* Compose item, fill it's data: */
-                m_pAccountComboBox->addItem(strProfileName);
-                m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, AccountData_ProfileName);
+                m_pProfileComboBox->addItem(strProfileName);
+                m_pProfileComboBox->setItemData(m_pProfileComboBox->count() - 1, strProfileName, ProfileData_Name);
             }
 
             /* Set previous/default item if possible: */
             int iNewIndex = -1;
             if (   iNewIndex == -1
                 && !strOldData.isNull())
-                iNewIndex = m_pAccountComboBox->findData(strOldData, AccountData_ProfileName);
+                iNewIndex = m_pProfileComboBox->findData(strOldData, ProfileData_Name);
             if (   iNewIndex == -1
-                && m_pAccountComboBox->count() > 0)
+                && m_pProfileComboBox->count() > 0)
                 iNewIndex = 0;
             if (iNewIndex != -1)
-                m_pAccountComboBox->setCurrentIndex(iNewIndex);
+                m_pProfileComboBox->setCurrentIndex(iNewIndex);
         }
         while (0);
     }
 
     /* Unblock signals after update: */
-    m_pAccountComboBox->blockSignals(false);
+    m_pProfileComboBox->blockSignals(false);
 }
 
-void UIWizardImportAppPage1::populateAccount()
+void UIWizardImportAppPage1::populateProfile()
 {
     /* Clear Cloud Profile: */
     m_comCloudProfile = CCloudProfile();
@@ -211,13 +211,13 @@ void UIWizardImportAppPage1::populateAccount()
     }
 }
 
-void UIWizardImportAppPage1::populateAccountInstances()
+void UIWizardImportAppPage1::populateProfileInstances()
 {
     /* Block signals while updating: */
-    m_pAccountInstanceList->blockSignals(true);
+    m_pProfileInstanceList->blockSignals(true);
 
     /* Clear list initially: */
-    m_pAccountInstanceList->clear();
+    m_pProfileInstanceList->clear();
     /* Clear Cloud Client: */
     m_comCloudClient = CCloudClient();
 
@@ -266,7 +266,7 @@ void UIWizardImportAppPage1::populateAccountInstances()
             for (int i = 0; i < names.size(); ++i)
             {
                 /* Create list item: */
-                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pAccountInstanceList);
+                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pProfileInstanceList);
                 if (pItem)
                 {
                     pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
@@ -275,14 +275,14 @@ void UIWizardImportAppPage1::populateAccountInstances()
             }
 
             /* Choose the 1st one by default if possible: */
-            if (m_pAccountInstanceList->count())
-                m_pAccountInstanceList->setCurrentRow(0);
+            if (m_pProfileInstanceList->count())
+                m_pProfileInstanceList->setCurrentRow(0);
         }
         while (0);
     }
 
     /* Unblock signals after update: */
-    m_pAccountInstanceList->blockSignals(false);
+    m_pProfileInstanceList->blockSignals(false);
 }
 
 void UIWizardImportAppPage1::populateFormProperties()
@@ -406,13 +406,13 @@ QUuid UIWizardImportAppPage1::sourceId() const
 
 QString UIWizardImportAppPage1::profileName() const
 {
-    const int iIndex = m_pAccountComboBox->currentIndex();
-    return m_pAccountComboBox->itemData(iIndex, AccountData_ProfileName).toString();
+    const int iIndex = m_pProfileComboBox->currentIndex();
+    return m_pProfileComboBox->itemData(iIndex, ProfileData_Name).toString();
 }
 
 QString UIWizardImportAppPage1::machineId() const
 {
-    QListWidgetItem *pItem = m_pAccountInstanceList->currentItem();
+    QListWidgetItem *pItem = m_pProfileInstanceList->currentItem();
     return pItem ? pItem->data(Qt::UserRole).toString() : QString();
 }
 
@@ -547,12 +547,12 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     m_pCloudContainerLayout->setRowStretch(2, 0);
                     m_pCloudContainerLayout->setRowStretch(3, 1);
 
-                    /* Create account label: */
-                    m_pAccountLabel = new QLabel;
-                    if (m_pAccountLabel)
+                    /* Create profile label: */
+                    m_pProfileLabel = new QLabel;
+                    if (m_pProfileLabel)
                     {
                         /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountLabel, 0, 0, Qt::AlignRight);
+                        m_pCloudContainerLayout->addWidget(m_pProfileLabel, 0, 0, Qt::AlignRight);
                     }
 
                     /* Create sub-layout: */
@@ -562,55 +562,55 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                         pSubLayout->setContentsMargins(0, 0, 0, 0);
                         pSubLayout->setSpacing(1);
 
-                        /* Create account combo-box: */
-                        m_pAccountComboBox = new QIComboBox;
-                        if (m_pAccountComboBox)
+                        /* Create profile combo-box: */
+                        m_pProfileComboBox = new QIComboBox;
+                        if (m_pProfileComboBox)
                         {
-                            m_pAccountLabel->setBuddy(m_pAccountComboBox);
+                            m_pProfileLabel->setBuddy(m_pProfileComboBox);
 
                             /* Add into layout: */
-                            pSubLayout->addWidget(m_pAccountComboBox);
+                            pSubLayout->addWidget(m_pProfileComboBox);
                         }
 
-                        /* Create account tool-button: */
-                        m_pAccountToolButton = new QIToolButton;
-                        if (m_pAccountToolButton)
+                        /* Create profile tool-button: */
+                        m_pProfileToolButton = new QIToolButton;
+                        if (m_pProfileToolButton)
                         {
-                            m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                            m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                               ":/cloud_profile_manager_disabled_16px.png"));
 
                             /* Add into layout: */
-                            pSubLayout->addWidget(m_pAccountToolButton);
+                            pSubLayout->addWidget(m_pProfileToolButton);
                         }
 
                         /* Add into layout: */
                         m_pCloudContainerLayout->addLayout(pSubLayout, 0, 1);
                     }
 
-                    /* Create account instance label: */
-                    m_pAccountInstanceLabel = new QLabel;
-                    if (m_pAccountInstanceLabel)
+                    /* Create profile instance label: */
+                    m_pProfileInstanceLabel = new QLabel;
+                    if (m_pProfileInstanceLabel)
                     {
                         /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountInstanceLabel, 1, 0, Qt::AlignRight);
+                        m_pCloudContainerLayout->addWidget(m_pProfileInstanceLabel, 1, 0, Qt::AlignRight);
                     }
 
                     /* Create profile instances table: */
-                    m_pAccountInstanceList = new QListWidget;
-                    if (m_pAccountInstanceList)
+                    m_pProfileInstanceList = new QListWidget;
+                    if (m_pProfileInstanceList)
                     {
-                        m_pAccountInstanceLabel->setBuddy(m_pAccountInstanceLabel);
-                        const QFontMetrics fm(m_pAccountInstanceList->font());
+                        m_pProfileInstanceLabel->setBuddy(m_pProfileInstanceLabel);
+                        const QFontMetrics fm(m_pProfileInstanceList->font());
                         const int iFontWidth = fm.width('x');
                         const int iTotalWidth = 50 * iFontWidth;
                         const int iFontHeight = fm.height();
                         const int iTotalHeight = 4 * iFontHeight;
-                        m_pAccountInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-//                        m_pAccountInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                        m_pAccountInstanceList->setAlternatingRowColors(true);
+                        m_pProfileInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+//                        m_pProfileInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                        m_pProfileInstanceList->setAlternatingRowColors(true);
 
                         /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 1, 1, 2, 1);
+                        m_pCloudContainerLayout->addWidget(m_pProfileInstanceList, 1, 1, 2, 1);
                     }
                 }
 
@@ -628,12 +628,12 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
 
     /* Populate sources: */
     populateSources();
-    /* Populate accounts: */
-    populateAccounts();
-    /* Populate account: */
-    populateAccount();
-    /* Populate account instances: */
-    populateAccountInstances();
+    /* Populate profiles: */
+    populateProfiles();
+    /* Populate profile: */
+    populateProfile();
+    /* Populate profile instances: */
+    populateProfileInstances();
 
     /* Setup connections: */
     if (gpManager)
@@ -643,11 +643,11 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageBasic1::sltHandleSourceChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardImportAppPageBasic1::completeChanged);
-    connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardImportAppPageBasic1::sltHandleAccountComboChange);
-    connect(m_pAccountToolButton, &QIToolButton::clicked,
-            this, &UIWizardImportAppPageBasic1::sltHandleAccountButtonClick);
-    connect(m_pAccountInstanceList, &QListWidget::currentRowChanged,
+    connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            this, &UIWizardImportAppPageBasic1::sltHandleProfileComboChange);
+    connect(m_pProfileToolButton, &QIToolButton::clicked,
+            this, &UIWizardImportAppPageBasic1::sltHandleProfileButtonClick);
+    connect(m_pProfileInstanceList, &QListWidget::currentRowChanged,
             this, &UIWizardImportAppPageBasic1::completeChanged);
 
     /* Register fields: */
@@ -690,15 +690,15 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
 
     /* Translate cloud stuff: */
-    m_pAccountLabel->setText(UIWizardImportApp::tr("&Account:"));
-    m_pAccountInstanceLabel->setText(UIWizardImportApp::tr("&Machines:"));
+    m_pProfileLabel->setText(UIWizardImportApp::tr("&Profile:"));
+    m_pProfileInstanceLabel->setText(UIWizardImportApp::tr("&Machines:"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
     labels << m_pFileLabel;
     labels << m_pSourceLabel;
-    labels << m_pAccountLabel;
-    labels << m_pAccountInstanceLabel;
+    labels << m_pProfileLabel;
+    labels << m_pProfileInstanceLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
@@ -780,10 +780,10 @@ void UIWizardImportAppPageBasic1::updatePageAppearance()
     if (isSourceCloudOne())
     {
         m_pLabelDescription->setText(UIWizardImportApp::
-                                     tr("<p>Please choose one of cloud service accounts you have registered to import virtual "
+                                     tr("<p>Please choose one of cloud service profiles you have registered to import virtual "
                                         "machine from.  Corresponding machines list will be updated.  To continue, "
                                         "select one of machines to import below.</p>"));
-        m_pAccountInstanceList->setFocus();
+        m_pProfileInstanceList->setFocus();
     }
     else
     {
@@ -802,21 +802,21 @@ void UIWizardImportAppPageBasic1::sltHandleSourceChange()
 
     /* Refresh required settings: */
     updatePageAppearance();
-    populateAccounts();
-    populateAccount();
-    populateAccountInstances();
+    populateProfiles();
+    populateProfile();
+    populateProfileInstances();
     emit completeChanged();
 }
 
-void UIWizardImportAppPageBasic1::sltHandleAccountComboChange()
+void UIWizardImportAppPageBasic1::sltHandleProfileComboChange()
 {
     /* Refresh required settings: */
-    populateAccount();
-    populateAccountInstances();
+    populateProfile();
+    populateProfileInstances();
     emit completeChanged();
 }
 
-void UIWizardImportAppPageBasic1::sltHandleAccountButtonClick()
+void UIWizardImportAppPageBasic1::sltHandleProfileButtonClick()
 {
     /* Open Cloud Profile Manager: */
     if (gpManager)

@@ -95,11 +95,11 @@ private slots:
     /** Handles change in MAC address export policy combo-box. */
     void sltHandleMACAddressExportPolicyComboChange();
 
-    /** Handles change in account combo-box. */
-    void sltHandleAccountComboChange();
+    /** Handles change in profile combo-box. */
+    void sltHandleProfileComboChange();
 
-    /** Handles account tool-button click. */
-    void sltHandleAccountButtonClick();
+    /** Handles profile tool-button click. */
+    void sltHandleProfileButtonClick();
 
 private:
 

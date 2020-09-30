@@ -114,23 +114,23 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                                 pSubLayout->setContentsMargins(0, 0, 0, 0);
                                 pSubLayout->setSpacing(1);
 
-                                /* Create account combo-box: */
-                                m_pAccountComboBox = new QIComboBox(pCloudContainer);
-                                if (m_pAccountComboBox)
+                                /* Create profile combo-box: */
+                                m_pProfileComboBox = new QIComboBox(pCloudContainer);
+                                if (m_pProfileComboBox)
                                 {
                                     /* Add into layout: */
-                                    pSubLayout->addWidget(m_pAccountComboBox);
+                                    pSubLayout->addWidget(m_pProfileComboBox);
                                 }
 
-                                /* Create account tool-button: */
-                                m_pAccountToolButton = new QIToolButton(pCloudContainer);
-                                if (m_pAccountToolButton)
+                                /* Create profile tool-button: */
+                                m_pProfileToolButton = new QIToolButton(pCloudContainer);
+                                if (m_pProfileToolButton)
                                 {
-                                    m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                                    m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                                       ":/cloud_profile_manager_disabled_16px.png"));
 
                                     /* Add into layout: */
-                                    pSubLayout->addWidget(m_pAccountToolButton);
+                                    pSubLayout->addWidget(m_pProfileToolButton);
                                 }
 
                                 /* Add into layout: */
@@ -138,20 +138,20 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                             }
 
                             /* Create profile instances table: */
-                            m_pAccountInstanceList = new QListWidget(pCloudContainer);
-                            if (m_pAccountInstanceList)
+                            m_pProfileInstanceList = new QListWidget(pCloudContainer);
+                            if (m_pProfileInstanceList)
                             {
-                                const QFontMetrics fm(m_pAccountInstanceList->font());
+                                const QFontMetrics fm(m_pProfileInstanceList->font());
                                 const int iFontWidth = fm.width('x');
                                 const int iTotalWidth = 50 * iFontWidth;
                                 const int iFontHeight = fm.height();
                                 const int iTotalHeight = 4 * iFontHeight;
-                                m_pAccountInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-//                                m_pAccountInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                                m_pAccountInstanceList->setAlternatingRowColors(true);
+                                m_pProfileInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+//                                m_pProfileInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                                m_pProfileInstanceList->setAlternatingRowColors(true);
 
                                 /* Add into layout: */
-                                m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 1, 0);
+                                m_pCloudContainerLayout->addWidget(m_pProfileInstanceList, 1, 0);
                             }
                         }
 
@@ -229,12 +229,12 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
 
     /* Populate sources: */
     populateSources();
-    /* Populate accounts: */
-    populateAccounts();
-    /* Populate account: */
-    populateAccount();
-    /* Populate account instances: */
-    populateAccountInstances();
+    /* Populate profiles: */
+    populateProfiles();
+    /* Populate profile: */
+    populateProfile();
+    /* Populate profile instances: */
+    populateProfileInstances();
     /* Populate form properties: */
     populateFormProperties();
     refreshFormPropertiesTable();
@@ -247,11 +247,11 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageExpert::sltHandleSourceChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardImportAppPageExpert::sltFilePathChangeHandler);
-    connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardImportAppPageExpert::sltHandleAccountComboChange);
-    connect(m_pAccountToolButton, &QIToolButton::clicked,
-            this, &UIWizardImportAppPageExpert::sltHandleAccountButtonClick);
-    connect(m_pAccountInstanceList, &QListWidget::currentRowChanged,
+    connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            this, &UIWizardImportAppPageExpert::sltHandleProfileComboChange);
+    connect(m_pProfileToolButton, &QIToolButton::clicked,
+            this, &UIWizardImportAppPageExpert::sltHandleProfileButtonClick);
+    connect(m_pProfileInstanceList, &QListWidget::currentRowChanged,
             this, &UIWizardImportAppPageExpert::sltHandleInstanceListChange);
 
     /* Register classes: */
@@ -378,7 +378,7 @@ void UIWizardImportAppPageExpert::updatePageAppearance()
 
     /* Update page appearance according to chosen storage-type: */
     if (isSourceCloudOne())
-        m_pAccountInstanceList->setFocus();
+        m_pProfileInstanceList->setFocus();
     else
         m_pFileSelector->setFocus();
 }
@@ -390,9 +390,9 @@ void UIWizardImportAppPageExpert::sltHandleSourceChange()
 
     /* Refresh required settings: */
     updatePageAppearance();
-    populateAccounts();
-    populateAccount();
-    populateAccountInstances();
+    populateProfiles();
+    populateProfile();
+    populateProfileInstances();
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();
@@ -411,17 +411,17 @@ void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
     emit completeChanged();
 }
 
-void UIWizardImportAppPageExpert::sltHandleAccountComboChange()
+void UIWizardImportAppPageExpert::sltHandleProfileComboChange()
 {
     /* Refresh required settings: */
-    populateAccount();
-    populateAccountInstances();
+    populateProfile();
+    populateProfileInstances();
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();
 }
 
-void UIWizardImportAppPageExpert::sltHandleAccountButtonClick()
+void UIWizardImportAppPageExpert::sltHandleProfileButtonClick()
 {
     /* Open Cloud Profile Manager: */
     if (gpManager)

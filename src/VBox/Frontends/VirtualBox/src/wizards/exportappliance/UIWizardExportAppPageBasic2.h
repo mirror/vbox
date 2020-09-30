@@ -71,10 +71,10 @@ enum
     FormatData_IsItCloudFormat = Qt::UserRole + 4
 };
 
-/** Account combo data fields. */
+/** Profile combo data fields. */
 enum
 {
-    AccountData_ProfileName = Qt::UserRole + 1
+    ProfileData_Name = Qt::UserRole + 1
 };
 
 /** Cloud export option modes. */
@@ -100,10 +100,10 @@ protected:
     void populateFormats();
     /** Populates MAC address policies. */
     void populateMACAddressPolicies();
-    /** Populates accounts. */
-    void populateAccounts();
-    /** Populates account. */
-    void populateAccount();
+    /** Populates profiles. */
+    void populateProfiles();
+    /** Populates profile. */
+    void populateProfile();
     /** Populates form properties. */
     void populateFormProperties();
 
@@ -230,12 +230,12 @@ protected:
     /** Holds the include ISOs check-box instance. */
     QCheckBox *m_pIncludeISOsCheckbox;
 
-    /** Holds the account label instance. */
-    QLabel       *m_pAccountLabel;
-    /** Holds the account combo-box instance. */
-    QComboBox    *m_pAccountComboBox;
-    /** Holds the account management tool-button instance. */
-    QIToolButton *m_pAccountToolButton;
+    /** Holds the profile label instance. */
+    QLabel       *m_pProfileLabel;
+    /** Holds the profile combo-box instance. */
+    QComboBox    *m_pProfileComboBox;
+    /** Holds the profile management tool-button instance. */
+    QIToolButton *m_pProfileToolButton;
 
     /** Holds the machine label instance. */
     QLabel       *m_pMachineLabel;
@@ -305,11 +305,11 @@ private slots:
     /** Handles change in MAC address export policy combo-box. */
     void sltHandleMACAddressExportPolicyComboChange();
 
-    /** Handles change in account combo-box. */
-    void sltHandleAccountComboChange();
+    /** Handles change in profile combo-box. */
+    void sltHandleProfileComboChange();
 
-    /** Handles account tool-button click. */
-    void sltHandleAccountButtonClick();
+    /** Handles profile tool-button click. */
+    void sltHandleProfileButtonClick();
 
 private:
 

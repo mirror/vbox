@@ -48,10 +48,10 @@ enum
     SourceData_ShortName = Qt::UserRole + 3
 };
 
-/** Account combo data fields. */
+/** Profile combo data fields. */
 enum
 {
-    AccountData_ProfileName = Qt::UserRole + 1
+    ProfileData_Name = Qt::UserRole + 1
 };
 
 /** UIWizardPageBase extension for 1st page of the Add Cloud VM wizard. */
@@ -64,12 +64,12 @@ protected:
 
     /** Populates sources. */
     void populateSources();
-    /** Populates accounts. */
-    void populateAccounts();
-    /** Populates account. */
-    void populateAccount();
-    /** Populates account instances. */
-    void populateAccountInstances();
+    /** Populates profiles. */
+    void populateProfiles();
+    /** Populates profile. */
+    void populateProfile();
+    /** Populates profile instances. */
+    void populateProfileInstances();
 
     /** Updates source combo tool-tips. */
     void updateSourceComboToolTip();
@@ -110,16 +110,16 @@ protected:
 
     /** Holds the cloud container layout instance. */
     QGridLayout  *m_pCloudContainerLayout;
-    /** Holds the account label instance. */
-    QLabel       *m_pAccountLabel;
-    /** Holds the account combo-box instance. */
-    QIComboBox   *m_pAccountComboBox;
-    /** Holds the account management tool-button instance. */
-    QIToolButton *m_pAccountToolButton;
-    /** Holds the account instance label instance. */
-    QLabel       *m_pAccountInstanceLabel;
-    /** Holds the account instance list instance. */
-    QListWidget  *m_pAccountInstanceList;
+    /** Holds the profile label instance. */
+    QLabel       *m_pProfileLabel;
+    /** Holds the profile combo-box instance. */
+    QIComboBox   *m_pProfileComboBox;
+    /** Holds the profile management tool-button instance. */
+    QIToolButton *m_pProfileToolButton;
+    /** Holds the profile instance label instance. */
+    QLabel       *m_pProfileInstanceLabel;
+    /** Holds the profile instance list instance. */
+    QListWidget  *m_pProfileInstanceList;
 };
 
 /** UIWizardPage extension for 1st page of the Add Cloud VM wizard, extends UIWizardAddCloudVMPage1 as well. */
@@ -157,11 +157,11 @@ private slots:
     /** Handles change in source combo-box. */
     void sltHandleSourceChange();
 
-    /** Handles change in account combo-box. */
-    void sltHandleAccountComboChange();
+    /** Handles change in profile combo-box. */
+    void sltHandleProfileComboChange();
 
-    /** Handles account tool-button click. */
-    void sltHandleAccountButtonClick();
+    /** Handles profile tool-button click. */
+    void sltHandleProfileButtonClick();
 
 private:
 

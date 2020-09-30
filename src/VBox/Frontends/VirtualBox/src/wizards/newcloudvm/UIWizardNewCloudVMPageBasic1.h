@@ -51,10 +51,10 @@ enum
     LocationData_ShortName       = Qt::UserRole + 3
 };
 
-/** Account combo data fields. */
+/** Profile combo data fields. */
 enum
 {
-    AccountData_ProfileName = Qt::UserRole + 1
+    ProfileData_Name = Qt::UserRole + 1
 };
 
 /** UIWizardPageBase extension for 1st page of the New Cloud VM wizard. */
@@ -67,10 +67,10 @@ protected:
 
     /** Populates locations. */
     void populateLocations();
-    /** Populates accounts. */
-    void populateAccounts();
-    /** Populates account. */
-    void populateAccount();
+    /** Populates profiles. */
+    void populateProfiles();
+    /** Populates profile. */
+    void populateProfile();
     /** Populates source images. */
     void populateSourceImages();
     /** Populates form properties. */
@@ -121,12 +121,12 @@ protected:
     /** Holds the location type combo-box instance. */
     QIComboBox  *m_pLocationComboBox;
 
-    /** Holds the account label instance. */
-    QLabel       *m_pAccountLabel;
-    /** Holds the account combo-box instance. */
-    QIComboBox   *m_pAccountComboBox;
-    /** Holds the account management tool-button instance. */
-    QIToolButton *m_pAccountToolButton;
+    /** Holds the profile label instance. */
+    QLabel       *m_pProfileLabel;
+    /** Holds the profile combo-box instance. */
+    QIComboBox   *m_pProfileComboBox;
+    /** Holds the profile management tool-button instance. */
+    QIToolButton *m_pProfileToolButton;
     /** Holds the source image label instance. */
     QLabel       *m_pSourceImageLabel;
     /** Holds the source tab-bar instance. */
@@ -169,11 +169,11 @@ private slots:
     /** Handles change in location combo-box. */
     void sltHandleLocationChange();
 
-    /** Handles change in account combo-box. */
-    void sltHandleAccountComboChange();
+    /** Handles change in profile combo-box. */
+    void sltHandleProfileComboChange();
 
-    /** Handles account tool-button click. */
-    void sltHandleAccountButtonClick();
+    /** Handles profile tool-button click. */
+    void sltHandleProfileButtonClick();
 
     /** Handles change in source tab-bar. */
     void sltHandleSourceChange();

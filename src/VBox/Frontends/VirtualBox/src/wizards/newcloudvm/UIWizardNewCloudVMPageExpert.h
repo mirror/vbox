@@ -64,10 +64,10 @@ private slots:
     /** Handles change in location combo-box. */
     void sltHandleLocationChange();
 
-    /** Handles change in account combo-box. */
-    void sltHandleAccountComboChange();
-    /** Handles account tool-button click. */
-    void sltHandleAccountButtonClick();
+    /** Handles change in profile combo-box. */
+    void sltHandleProfileComboChange();
+    /** Handles profile tool-button click. */
+    void sltHandleProfileButtonClick();
 
     /** Handles change in source tab-bar. */
     void sltHandleSourceChange();

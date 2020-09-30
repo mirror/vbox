@@ -69,22 +69,22 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
                         pSubLayout->setContentsMargins(0, 0, 0, 0);
                         pSubLayout->setSpacing(1);
 
-                        /* Create account combo-box: */
-                        m_pAccountComboBox = new QIComboBox(m_pCntSource);
-                        if (m_pAccountComboBox)
+                        /* Create profile combo-box: */
+                        m_pProfileComboBox = new QIComboBox(m_pCntSource);
+                        if (m_pProfileComboBox)
                         {
                             /* Add into layout: */
-                            pSubLayout->addWidget(m_pAccountComboBox);
+                            pSubLayout->addWidget(m_pProfileComboBox);
                         }
-                        /* Create account tool-button: */
-                        m_pAccountToolButton = new QIToolButton(m_pCntSource);
-                        if (m_pAccountToolButton)
+                        /* Create profile tool-button: */
+                        m_pProfileToolButton = new QIToolButton(m_pCntSource);
+                        if (m_pProfileToolButton)
                         {
-                            m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                            m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                               ":/cloud_profile_manager_disabled_16px.png"));
 
                             /* Add into layout: */
-                            pSubLayout->addWidget(m_pAccountToolButton);
+                            pSubLayout->addWidget(m_pProfileToolButton);
                         }
 
                         /* Add into layout: */
@@ -92,21 +92,21 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
                     }
 
                     /* Create profile instances table: */
-                    m_pAccountInstanceList = new QListWidget(m_pCntSource);
-                    if (m_pAccountInstanceList)
+                    m_pProfileInstanceList = new QListWidget(m_pCntSource);
+                    if (m_pProfileInstanceList)
                     {
-                        const QFontMetrics fm(m_pAccountInstanceList->font());
+                        const QFontMetrics fm(m_pProfileInstanceList->font());
                         const int iFontWidth = fm.width('x');
                         const int iTotalWidth = 50 * iFontWidth;
                         const int iFontHeight = fm.height();
                         const int iTotalHeight = 4 * iFontHeight;
-                        m_pAccountInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                        //m_pAccountInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                        m_pAccountInstanceList->setAlternatingRowColors(true);
-                        m_pAccountInstanceList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+                        m_pProfileInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                        //m_pProfileInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                        m_pProfileInstanceList->setAlternatingRowColors(true);
+                        m_pProfileInstanceList->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
                         /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 1, 0);
+                        m_pCloudContainerLayout->addWidget(m_pProfileInstanceList, 1, 0);
                     }
 
                     /* Add into layout: */
@@ -125,11 +125,11 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
                 this, &UIWizardAddCloudVMPageExpert::sltHandleSourceChange);
     connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
             this, &UIWizardAddCloudVMPageExpert::sltHandleSourceChange);
-    connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardAddCloudVMPageExpert::sltHandleAccountComboChange);
-    connect(m_pAccountToolButton, &QIToolButton::clicked,
-            this, &UIWizardAddCloudVMPageExpert::sltHandleAccountButtonClick);
-    connect(m_pAccountInstanceList, &QListWidget::currentRowChanged,
+    connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            this, &UIWizardAddCloudVMPageExpert::sltHandleProfileComboChange);
+    connect(m_pProfileToolButton, &QIToolButton::clicked,
+            this, &UIWizardAddCloudVMPageExpert::sltHandleProfileButtonClick);
+    connect(m_pProfileInstanceList, &QListWidget::currentRowChanged,
             this, &UIWizardAddCloudVMPageExpert::completeChanged);
 
     /* Register fields: */
@@ -209,24 +209,24 @@ void UIWizardAddCloudVMPageExpert::sltHandleSourceChange()
     updateSourceComboToolTip();
 
     /* Make instance list focused by default: */
-    m_pAccountInstanceList->setFocus();
+    m_pProfileInstanceList->setFocus();
 
     /* Refresh required settings: */
-    populateAccounts();
-    populateAccount();
-    populateAccountInstances();
+    populateProfiles();
+    populateProfile();
+    populateProfileInstances();
     emit completeChanged();
 }
 
-void UIWizardAddCloudVMPageExpert::sltHandleAccountComboChange()
+void UIWizardAddCloudVMPageExpert::sltHandleProfileComboChange()
 {
     /* Refresh required settings: */
-    populateAccount();
-    populateAccountInstances();
+    populateProfile();
+    populateProfileInstances();
     emit completeChanged();
 }
 
-void UIWizardAddCloudVMPageExpert::sltHandleAccountButtonClick()
+void UIWizardAddCloudVMPageExpert::sltHandleProfileButtonClick()
 {
     /* Open Cloud Profile Manager: */
     if (gpManager)
