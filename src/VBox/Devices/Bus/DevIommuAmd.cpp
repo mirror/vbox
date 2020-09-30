@@ -37,7 +37,7 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** Release log prefix string. */
-#define IOMMU_LOG_PFX                               "IOMMU-AMD"
+#define IOMMU_LOG_PFX                               "AMD-IOMMU"
 /** The current saved state version. */
 #define IOMMU_SAVED_STATE_VERSION                   1
 /** The IOTLB entry magic. */
@@ -2740,7 +2740,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         uint8_t const fDtePerm = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
         if ((fAccess & fDtePerm) != fAccess)
         {
-            LogFunc(("Access denied for IOVA (%#RX64). fAccess=%#x fDtePerm=%#x\n", uIova, fAccess, fDtePerm));
+            LogFunc(("Access denied for IOVA %#RX64. uDevId=%#x fAccess=%#x fDtePerm=%#x\n", uIova, uDevId, fAccess, fDtePerm));
             return VERR_IOMMU_ADDR_ACCESS_DENIED;
         }
         pWalkResult->GCPhysSpa = uIova;
@@ -2757,7 +2757,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         /** @todo r=ramshankar: I cannot make out from the AMD IOMMU spec. if I should be
          *        raising an ILLEGAL_DEV_TABLE_ENTRY event or an IO_PAGE_FAULT event here.
          *        I'm just going with I/O page fault. */
-        LogFunc(("Invalid root page table level %#x -> IOPF\n", uMaxLevel));
+        LogFunc(("Invalid root page table level %#x (uDevId=%#x) -> IOPF\n", uMaxLevel, uDevId));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2830,7 +2830,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
-            LogFunc(("Page table entry not present -> IOPF\n"));
+            LogFunc(("Page table entry not present (uDevId=%#x) -> IOPF\n", uDevId));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2844,7 +2844,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
-            LogFunc(("Page table entry permission denied (fAccess=%#x fPtePerm=%#x) -> IOPF\n", fAccess, fPtePerm));
+            LogFunc(("Page table entry access denied (uDevId=%#x fAccess=%#x fPtePerm=%#x) -> IOPF\n", uDevId, fAccess, fPtePerm));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          true /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4668,7 +4668,7 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     /*
      * Resets read-write portion of the IOMMU state.
      *
-     * State data not initialized here is expected to be initialized during
+     * NOTE! State not initialized here is expected to be initialized during
      * device construction and remain read-only through the lifetime of the VM.
      */
     PIOMMU     pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
@@ -4832,15 +4832,15 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* Capability Header. */
     /* NOTE! Fields (e.g, EFR) must match what we expose in the ACPI tables. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_CAP_HDR,
-                        RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_ID,    0xf)     /* RO - Secure Device capability block */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_PTR,   IOMMU_PCI_OFF_MSI_CAP_HDR)  /* RO - Offset to next capability */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_TYPE,  0x3)     /* RO - IOMMU capability block */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_REV,   0x1)     /* RO - IOMMU interface revision */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_IOTLB_SUP, 0x0)     /* RO - Remote IOTLB support */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_HT_TUNNEL, 0x0)     /* RO - HyperTransport Tunnel support */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_NP_CACHE,  0x0)     /* RO - Cache NP page table entries */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_EFR_SUP,   0x1)     /* RO - Extended Feature Register support */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_EXT,   0x1));   /* RO - Misc. Information Register support */
+                               RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_ID,    0xf)     /* RO - Secure Device capability block */
+                             | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_PTR,   IOMMU_PCI_OFF_MSI_CAP_HDR)  /* RO - Next capability offset */
+                             | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_TYPE,  0x3)     /* RO - IOMMU capability block */
+                             | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_REV,   0x1)     /* RO - IOMMU interface revision */
+                             | RT_BF_MAKE(IOMMU_BF_CAPHDR_IOTLB_SUP, 0x0)     /* RO - Remote IOTLB support */
+                             | RT_BF_MAKE(IOMMU_BF_CAPHDR_HT_TUNNEL, 0x0)     /* RO - HyperTransport Tunnel support */
+                             | RT_BF_MAKE(IOMMU_BF_CAPHDR_NP_CACHE,  0x0)     /* RO - Cache NP page table entries */
+                             | RT_BF_MAKE(IOMMU_BF_CAPHDR_EFR_SUP,   0x1)     /* RO - Extended Feature Register support */
+                             | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_EXT,   0x1));   /* RO - Misc. Information Register support */
 
     /* Base Address Register. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0x0);   /* RW - Base address (Lo) and enable bit */
@@ -4989,46 +4989,44 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * Initialize read-only registers.
      * NOTE! Fields here must match their corresponding field in the ACPI tables.
      */
-    /** @todo Don't remove the =0 assignment for now. It's just there so it's easier
-     *        for me to see existing features that we might want to implement. Do it
-     *        later. */
+    /* Don't remove the commented lines below as it lets us see all features at a glance. */
     pThis->ExtFeat.u64 = 0;
-    pThis->ExtFeat.n.u1PrefetchSup           = 0;
-    pThis->ExtFeat.n.u1PprSup                = 0;
-    pThis->ExtFeat.n.u1X2ApicSup             = 0;
-    pThis->ExtFeat.n.u1NoExecuteSup          = 0;
-    pThis->ExtFeat.n.u1GstTranslateSup       = 0;
-    pThis->ExtFeat.n.u1InvAllSup             = 1;
-    pThis->ExtFeat.n.u1GstVirtApicSup        = 0;
-    pThis->ExtFeat.n.u1HwErrorSup            = 1;
-    pThis->ExtFeat.n.u1PerfCounterSup        = 0;
+    //pThis->ExtFeat.n.u1PrefetchSup           = 0;
+    //pThis->ExtFeat.n.u1PprSup                = 0;
+    //pThis->ExtFeat.n.u1X2ApicSup             = 0;
+    //pThis->ExtFeat.n.u1NoExecuteSup          = 0;
+    //pThis->ExtFeat.n.u1GstTranslateSup       = 0;
+    pThis->ExtFeat.n.u1InvAllSup               = 1;
+    //pThis->ExtFeat.n.u1GstVirtApicSup        = 0;
+    pThis->ExtFeat.n.u1HwErrorSup              = 1;
+    //pThis->ExtFeat.n.u1PerfCounterSup        = 0;
     AssertCompile((IOMMU_MAX_HOST_PT_LEVEL & 0x3) < 3);
     pThis->ExtFeat.n.u2HostAddrTranslateSize = (IOMMU_MAX_HOST_PT_LEVEL & 0x3);
-    pThis->ExtFeat.n.u2GstAddrTranslateSize  = 0;   /* Requires GstTranslateSup */
-    pThis->ExtFeat.n.u2GstCr3RootTblLevel    = 0;   /* Requires GstTranslateSup */
-    pThis->ExtFeat.n.u2SmiFilterSup          = 0;
-    pThis->ExtFeat.n.u3SmiFilterCount        = 0;
-    pThis->ExtFeat.n.u3GstVirtApicModeSup    = 0;   /* Requires GstVirtApicSup */
-    pThis->ExtFeat.n.u2DualPprLogSup         = 0;
-    pThis->ExtFeat.n.u2DualEvtLogSup         = 0;
-    pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup */
-    pThis->ExtFeat.n.u1UserSupervisorSup     = 0;
+    //pThis->ExtFeat.n.u2GstAddrTranslateSize  = 0;   /* Requires GstTranslateSup */
+    //pThis->ExtFeat.n.u2GstCr3RootTblLevel    = 0;   /* Requires GstTranslateSup */
+    //pThis->ExtFeat.n.u2SmiFilterSup          = 0;
+    //pThis->ExtFeat.n.u3SmiFilterCount        = 0;
+    //pThis->ExtFeat.n.u3GstVirtApicModeSup    = 0;   /* Requires GstVirtApicSup */
+    //pThis->ExtFeat.n.u2DualPprLogSup         = 0;
+    //pThis->ExtFeat.n.u2DualEvtLogSup         = 0;
+    //pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup */
+    //pThis->ExtFeat.n.u1UserSupervisorSup     = 0;
     AssertCompile(IOMMU_MAX_DEV_TAB_SEGMENTS <= 3);
-    pThis->ExtFeat.n.u2DevTabSegSup          = IOMMU_MAX_DEV_TAB_SEGMENTS;
-    pThis->ExtFeat.n.u1PprLogOverflowWarn    = 0;
-    pThis->ExtFeat.n.u1PprAutoRespSup        = 0;
-    pThis->ExtFeat.n.u2MarcSup               = 0;
-    pThis->ExtFeat.n.u1BlockStopMarkSup      = 0;
-    pThis->ExtFeat.n.u1PerfOptSup            = 0;
-    pThis->ExtFeat.n.u1MsiCapMmioSup         = 1;
-    pThis->ExtFeat.n.u1GstIoSup              = 0;
-    pThis->ExtFeat.n.u1HostAccessSup         = 0;
-    pThis->ExtFeat.n.u1EnhancedPprSup        = 0;
-    pThis->ExtFeat.n.u1AttrForwardSup        = 0;
-    pThis->ExtFeat.n.u1HostDirtySup          = 0;
-    pThis->ExtFeat.n.u1InvIoTlbTypeSup       = 0;
-    pThis->ExtFeat.n.u1GstUpdateDisSup       = 0;
-    pThis->ExtFeat.n.u1ForcePhysDstSup       = 0;
+    pThis->ExtFeat.n.u2DevTabSegSup            = IOMMU_MAX_DEV_TAB_SEGMENTS;
+    //pThis->ExtFeat.n.u1PprLogOverflowWarn    = 0;
+    //pThis->ExtFeat.n.u1PprAutoRespSup        = 0;
+    //pThis->ExtFeat.n.u2MarcSup               = 0;
+    //pThis->ExtFeat.n.u1BlockStopMarkSup      = 0;
+    //pThis->ExtFeat.n.u1PerfOptSup            = 0;
+    pThis->ExtFeat.n.u1MsiCapMmioSup           = 1;
+    //pThis->ExtFeat.n.u1GstIoSup              = 0;
+    //pThis->ExtFeat.n.u1HostAccessSup         = 0;
+    //pThis->ExtFeat.n.u1EnhancedPprSup        = 0;
+    //pThis->ExtFeat.n.u1AttrForwardSup        = 0;
+    //pThis->ExtFeat.n.u1HostDirtySup          = 0;
+    //pThis->ExtFeat.n.u1InvIoTlbTypeSup       = 0;
+    //pThis->ExtFeat.n.u1GstUpdateDisSup       = 0;
+    //pThis->ExtFeat.n.u1ForcePhysDstSup       = 0;
 
     pThis->RsvdReg = 0;
 
@@ -5052,6 +5050,11 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      */
     iommuAmdR3Reset(pDevIns);
 
+    LogRel(("%s: DSFX=%u.%u DSCX=%u.%u DSSX=%u.%u ExtFeat=%#RX64\n", IOMMU_LOG_PFX,
+            pThis->DevSpecificFeat.n.u4RevMajor, pThis->DevSpecificFeat.n.u4RevMinor,
+            pThis->DevSpecificCtrl.n.u4RevMajor, pThis->DevSpecificCtrl.n.u4RevMinor,
+            pThis->DevSpecificStatus.n.u4RevMajor, pThis->DevSpecificStatus.n.u4RevMinor,
+            pThis->ExtFeat.u64));
     return VINF_SUCCESS;
 }
 
