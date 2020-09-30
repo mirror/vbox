@@ -133,7 +133,7 @@ function Main()
             if i >= Wscript.Arguments.Count then
                MsgSyntaxError "'" & strArg & "' takes a value"             ' quits
             end if
-            strValue = Wscript.Arguments.items(i)
+            strValue = Wscript.Arguments.item(i)
             i = i + 1
          end if
 
