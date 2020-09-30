@@ -1371,12 +1371,12 @@ QString UICommon::helpFile()
     const QString strName = "UserManual";
     const QString strSuffix = "pdf";
 #elif defined(VBOX_WS_X11)
-# if defined(VBOX_WITH_DOCS_QHELP)
-    const QString strName = "UserManual";
-    const QString strSuffix = "qhc";
-# else
+# if defined(VBOX_OSE) || !defined(VBOX_WITH_KCHMVIEWER)
     const QString strName = "UserManual";
     const QString strSuffix = "pdf";
+# else
+    const QString strName = "VirtualBox";
+    const QString strSuffix = "chm";
 # endif
 #endif
 

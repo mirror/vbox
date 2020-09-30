@@ -44,7 +44,7 @@ class SHARED_LIBRARY_STUFF UIHelpBrowserDialogFactory : public QIManagerDialogFa
 {
 public:
 
-    UIHelpBrowserDialogFactory(const QString &strHelpFilePath = QString());
+    UIHelpBrowserDialogFactory();
 
 protected:
 
@@ -52,9 +52,6 @@ protected:
       * @param  pCenterWidget  Brings the widget to center wrt. pCenterWidget. */
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
 
-private:
-
-    QString m_strHelpFilePath;
 };
 
 
@@ -65,7 +62,7 @@ class SHARED_LIBRARY_STUFF UIHelpBrowserDialog : public QIWithRetranslateUI<QIMa
 
 public:
 
-    UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &strHelpFilePath);
+    UIHelpBrowserDialog(QWidget *pCenterWidget);
 
 protected:
 
@@ -103,7 +100,6 @@ private slots:
 
 private:
 
-    QString m_strHelpFilePath;
 };
 
 

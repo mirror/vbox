@@ -3392,14 +3392,15 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     return iResultCode;
 }
 
-void UIMessageCenter::showHelpBrowser(const QString strHelpFilePath, QWidget *pParent /* = 0 */)
+void UIMessageCenter::showHelpBrowser(const QString strHelpFileLocation, QWidget *pParent /* = 0 */)
 {
+    Q_UNUSED(strHelpFileLocation);
     QWidget *pDialogParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
     AssertReturnVoid(pDialogParent);
 
 
     QIManagerDialog *pHelpBrowserDialog;
-    UIHelpBrowserDialogFactory dialogFactory(strHelpFilePath);
+    UIHelpBrowserDialogFactory dialogFactory;
 
     dialogFactory.prepare(pHelpBrowserDialog);
     AssertReturnVoid(pHelpBrowserDialog);
