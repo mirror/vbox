@@ -41,7 +41,6 @@ enum UIActionIndexMN
     UIActionIndexMN_M_File_S_ShowCloudProfileManager,
     UIActionIndexMN_M_File_S_ImportAppliance,
     UIActionIndexMN_M_File_S_ExportAppliance,
-    UIActionIndexMN_M_File_S_NewCloudVM,
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     UIActionIndexMN_M_File_S_ShowExtraDataManager,
 #endif
