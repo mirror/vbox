@@ -653,7 +653,6 @@ static void testRuntimeExtensions(RTTEST hTest, char *pszBuf)
     CHECK42("%RX8", (uint8_t)0xff, "ff");
     CHECK42("%RX8", UINT8_MAX, "ff");
     CHECK42("%RX8", 0x100, "0");
-
 }
 
 static void testThousandSeparators(RTTEST hTest, char *pszBuf)
@@ -940,7 +939,7 @@ int main()
     /*
      * Runtime extensions.
      */
-    testRuntimeExtensions(hTest, psz);
+    testRuntimeExtensions(hTest, pszBuf);
 
     /*
      * Thousand separators.
