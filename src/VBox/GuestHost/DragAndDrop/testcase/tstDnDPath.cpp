@@ -27,14 +27,14 @@
 
 static void tstPathRebase(RTTEST hTest)
 {
-    struct
+    static struct
     {
         char const *pszPath;
         char const *pszPathOld;
         char const *pszPathNew;
         int rc;
         char const *pszResult;
-    } aTests[] = {
+    } const s_aTests[] = {
         /* Invalid stuff. */
         { NULL, NULL, NULL, VERR_INVALID_POINTER, NULL },
         { "foo", "old", NULL, VERR_INVALID_POINTER, NULL },
@@ -55,14 +55,17 @@ static void tstPathRebase(RTTEST hTest)
     };
 
     char *pszPath = NULL;
-    for (size_t i = 0; i < RT_ELEMENTS(aTests); i++)
+    for (size_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
     {
-        RTTEST_CHECK_RC(hTest, DnDPathRebase(aTests[i].pszPath, aTests[i].pszPathOld, aTests[i].pszPathNew, &pszPath), aTests[i].rc);
-        if (RT_SUCCESS(aTests[i].rc))
+        RTTestDisableAssertions(hTest);
+        RTTEST_CHECK_RC(hTest, DnDPathRebase(s_aTests[i].pszPath, s_aTests[i].pszPathOld, s_aTests[i].pszPathNew, &pszPath),
+                        s_aTests[i].rc);
+        RTTestRestoreAssertions(hTest);
+        if (RT_SUCCESS(s_aTests[i].rc))
         {
-            if (aTests[i].pszResult)
-                RTTEST_CHECK_MSG(hTest, RTPathCompare(pszPath, aTests[i].pszResult) == 0,
-                                 (hTest, "Test #%zu failed: Got '%s', expected '%s'", i, pszPath, aTests[i].pszResult));
+            if (s_aTests[i].pszResult)
+                RTTEST_CHECK_MSG(hTest, RTPathCompare(pszPath, s_aTests[i].pszResult) == 0,
+                                 (hTest, "Test #%zu failed: Got '%s', expected '%s'", i, pszPath, s_aTests[i].pszResult));
             RTStrFree(pszPath);
             pszPath = NULL;
         }
