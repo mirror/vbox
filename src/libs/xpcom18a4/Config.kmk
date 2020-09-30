@@ -40,7 +40,7 @@ TEMPLATE_XPCOM_ASDEFS              = $(NO_SUCH_VARIABLE)
 TEMPLATE_XPCOM_CXXFLAGS            = -g -pipe -ansi -Wall -Wno-unused -Wno-non-virtual-dtor \
 	$(VBOX_GCC_Wno-invalid-offsetof) -Wno-sign-compare -Wno-unused -Wno-ctor-dtor-privacy \
 	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
-	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-delete-non-virtual-dtor)
+	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-delete-non-virtual-dtor) $(VBOX_GCC_SANITIZER_FLAGS)
 #if !defined(VBOX_GCC_Wno-delete-non-virtual-dtor) && defined(VBOX_GCC_Wno-non-virtual-dtor)
 ifndef VBOX_GCC_Wno-delete-non-virtual-dtor
  ifdef VBOX_GCC_Wno-non-virtual-dtor
@@ -56,7 +56,7 @@ TEMPLATE_XPCOM_CXXFLAGS.freebsd    = -pthread
 TEMPLATE_XPCOM_CXXFLAGS.linux      = -pthread
 TEMPLATE_XPCOM_CXXFLAGS.solaris    = -fno-omit-frame-pointer # for now anyway.
 TEMPLATE_XPCOM_CFLAGS              = -g -pipe -Wall -Wno-unused -Wno-parentheses -Wno-uninitialized $(VBOX_GCC_fvisibility-hidden) \
-	$(VBOX_GCC_fdiagnostics-show-option)
+	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_SANITIZER_FLAGS)
 TEMPLATE_XPCOM_CFLAGS.x86          = -m32
 TEMPLATE_XPCOM_CFLAGS.amd64        = -m64
 TEMPLATE_XPCOM_CFLAGS.release      = -O
@@ -84,7 +84,7 @@ TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  XP
 # Don't define BSD_SELECT because bsdselect() from kLIBC <= 0.6.3 has problems on SMP
 TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2_4.5\"    OSARCH=\"OS/2\"   XP_OS2 XP_PC OS2=4
 TEMPLATE_XPCOM_DEFS.solaris        = OSTYPE=\"Solaris10\"   OSARCH=\"Solaris\" XP_UNIX=1 XP_SOLARIS=1 HAVE_LIBDL=1 HAVE_SENDFILEV=1 SOLARIS=1 _REENTRANT
-## @todo The LDFLAGS inheriting is being hidden here and below where -fPIC is added.
+TEMPLATE_XPCOM_LDFLAGS             = $(TEMPLATE_VBOXR3NP_LDFLAGS)
 ifdef VBOX_WITH_RUNPATH
 TEMPLATE_XPCOM_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
 else ifdef VBOX_WITH_RELATIVE_RUNPATH
