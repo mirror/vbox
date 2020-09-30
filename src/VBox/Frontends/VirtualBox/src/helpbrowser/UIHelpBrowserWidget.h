@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_logviewer_UIHelpBrowserWidget_h
-#define FEQT_INCLUDED_SRC_logviewer_UIHelpBrowserWidget_h
+#ifndef FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h
+#define FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -221,4 +221,4 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_logviewer_UIHelpBrowserWidget_h */
+#endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h */
