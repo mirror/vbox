@@ -122,7 +122,7 @@ PROGRAMS += \
 	tstRTStrCatCopy \
 	tstRTStrFormat \
 	tstRTStrSplit \
-	tstStrSimplePattern \
+	tstRTStrSimplePattern \
 	tstStrToNum \
 	tstRTStrVersion \
 	tstRTSymlink \
@@ -648,8 +648,8 @@ tstRTStrFormat_SOURCES = tstRTStrFormat.cpp
 tstRTStrSplit_TEMPLATE = VBOXR3TSTEXE
 tstRTStrSplit_SOURCES = tstRTStrSplit.cpp
 
-tstStrSimplePattern_TEMPLATE = VBOXR3TSTEXE
-tstStrSimplePattern_SOURCES = tstStrSimplePattern.cpp
+tstRTStrSimplePattern_TEMPLATE = VBOXR3TSTEXE
+tstRTStrSimplePattern_SOURCES = tstRTStrSimplePattern.cpp
 
 tstStrToNum_TEMPLATE = VBOXR3TSTEXE
 tstStrToNum_SOURCES = tstStrToNum.cpp
