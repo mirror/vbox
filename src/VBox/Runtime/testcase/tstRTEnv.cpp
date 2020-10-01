@@ -316,6 +316,12 @@ int main()
     CHECK_RC(RTEnvDestroy(Env), VINF_SUCCESS);
 
     /*
+     * Cleanups.
+     */
+    RTTESTI_CHECK_RC(RTEnvDestroy(hEnvEq), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTEnvDestroy(hEnvNoEq), VINF_SUCCESS);
+
+    /*
      * Summary
      */
     return RTTestSummaryAndDestroy(hTest);
