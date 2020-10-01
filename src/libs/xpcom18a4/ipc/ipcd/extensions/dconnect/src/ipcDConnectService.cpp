@@ -1360,6 +1360,7 @@ public:
             }
 
             ClientDownInfo *cInfo = new ClientDownInfo(aSenderID);
+            RTMEM_MAY_LEAK(cInfo); /* tstVBoxAPIPerf leaks one allocated during ComPtr<IVirtualBoxClient>::createInprocObject(). */
             g_ClientDownMap[aSenderID] = cInfo;
             g_ClientDownList.push_front(cInfo);
             NS_ASSERTION(g_ClientDownMap.size() == g_ClientDownList.size(),
