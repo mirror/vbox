@@ -473,6 +473,9 @@ ifeq ($(KBUILD_TARGET),os2)
  xpidl-DLLS_SOURCES += $(wildcard $(VBOX_PATH_LIBIDL)/lib/libIDL.dll)
 else
  # We do these ONCE.
+ ifndef VBOX_LIBIDL_CONFIG
+  $(error VBox: Missing libIDL package? VBOX_LIBIDL_CONFIG is empty, neither libIDL-config-2 nor libIDL-config was found)
+ endif
  libIDL_config_cflags := $(shell $(VBOX_LIBIDL_CONFIG) --cflags)
  libIDL_config_libs   := $(shell $(VBOX_LIBIDL_CONFIG) --libs)
  xpidl_CFLAGS = \
