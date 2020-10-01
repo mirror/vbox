@@ -249,38 +249,32 @@ static int dndTransferListObjAdd(PDNDTRANSFERLIST pList, const char *pcszSrcAbs,
         PDNDTRANSFEROBJECT pObj = (PDNDTRANSFEROBJECT)RTMemAllocZ(sizeof(DNDTRANSFEROBJECT));
         if (pObj)
         {
-            pObj = (PDNDTRANSFEROBJECT)RTMemAllocZ(sizeof(DNDTRANSFEROBJECT));
-            if (pObj)
-            {
-                const bool fIsFile = RTFS_IS_FILE(fMode);
+            const bool fIsFile = RTFS_IS_FILE(fMode);
 
-                rc = DnDTransferObjectInitEx(pObj, fIsFile ? DNDTRANSFEROBJTYPE_FILE : DNDTRANSFEROBJTYPE_DIRECTORY,
-                                             pList->pszPathRootAbs, &pcszSrcAbs[idxPathToAdd]);
+            rc = DnDTransferObjectInitEx(pObj, fIsFile ? DNDTRANSFEROBJTYPE_FILE : DNDTRANSFEROBJTYPE_DIRECTORY,
+                                         pList->pszPathRootAbs, &pcszSrcAbs[idxPathToAdd]);
+            if (RT_SUCCESS(rc))
+            {
+                if (fIsFile)
+                    rc = DnDTransferObjectOpen(pObj,
+                                               RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, /** @todo Add a standard fOpen mode for this list. */
+                                               0 /* fMode */, DNDTRANSFEROBJECT_FLAGS_NONE);
                 if (RT_SUCCESS(rc))
                 {
+                    RTListAppend(&pList->lstObj, &pObj->Node);
+
+                    pList->cObj++;
                     if (fIsFile)
-                        rc = DnDTransferObjectOpen(pObj,
-                                                   RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, /** @todo Add a standard fOpen mode for this list. */
-                                                   0 /* fMode */, DNDTRANSFEROBJECT_FLAGS_NONE);
-                    if (RT_SUCCESS(rc))
-                    {
-                        RTListAppend(&pList->lstObj, &pObj->Node);
+                        pList->cbObjTotal += DnDTransferObjectGetSize(pObj);
 
-                        pList->cObj++;
-                        if (fIsFile)
-                            pList->cbObjTotal += DnDTransferObjectGetSize(pObj);
-
-                        if (   fIsFile
-                            && !(fFlags & DNDTRANSFERLIST_FLAGS_KEEP_OPEN)) /* Shall we keep the file open while being added to this list? */
-                            DnDTransferObjectClose(pObj);
-                    }
-
-                    if (RT_FAILURE(rc))
-                        DnDTransferObjectDestroy(pObj);
+                    if (   fIsFile
+                        && !(fFlags & DNDTRANSFERLIST_FLAGS_KEEP_OPEN)) /* Shall we keep the file open while being added to this list? */
+                        DnDTransferObjectClose(pObj);
                 }
+
+                if (RT_FAILURE(rc))
+                    DnDTransferObjectDestroy(pObj);
             }
-            else
-                rc = VERR_NO_MEMORY;
 
             if (RT_FAILURE(rc))
                 RTMemFree(pObj);
