@@ -133,6 +133,8 @@ static void testSorter(RTTEST hTest, FNRTSORT pfnSorter, const char *pszName)
 
         RTTestGuardedFree(hTest, pbArray);
     }
+
+    RTRandAdvDestroy(hRand);
 }
 
 
