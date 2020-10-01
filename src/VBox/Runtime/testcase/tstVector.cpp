@@ -138,6 +138,8 @@ static void testVectorSimple(void)
     RTTESTI_CHECK(ppvVal[0] == (void *)1);
     RTTESTI_CHECK(ppvVal[1] == (void *)3);
     RTTESTI_CHECK(ppvVal[2] == (void *)2);
+
+    RTMemFree(ppvVal);  /** @todo there is no delete vector thing. */
 }
 
 RTVEC_DECL_DELETE(tstDelete, void *, deletePVoid)
@@ -177,6 +179,9 @@ static void testVectorDelete(void)
     /* AssertPtrReturnVoid(ppvVal); */
     RTTESTI_CHECK(ppvVal == tstDeleteBegin(&myVec));
     RTTESTI_CHECK(ppvVal + 1 == tstDeleteEnd(&myVec));
+
+    ppvVal = tstDeleteDetach(&myVec); /** @todo no delete myVec */
+    RTMemFree(ppvVal);
 }
 
 RTVEC_DECL_DELETE_BY_VALUE(tstDeleteValue, void *, deletePVoidValue)
@@ -217,6 +222,9 @@ static void testVectorDeleteValue(void)
     /* AssertPtrReturnVoid(ppvVal); */
     RTTESTI_CHECK(ppvVal == tstDeleteValueBegin(&myVec));
     RTTESTI_CHECK(ppvVal + 1 == tstDeleteValueEnd(&myVec));
+
+    ppvVal = tstDeleteValueDetach(&myVec); /** @todo no delete myVec */
+    RTMemFree(ppvVal);
 }
 
 
