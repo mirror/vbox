@@ -142,6 +142,10 @@ void testHeaderSigning()
         RTTestIFailureDetails("Got auth: %s\n", pszAuth);
         RTTestIFailureDetails("Expected: %s\n", pszExpect);
     }
+
+    RTTESTI_CHECK_RC(RTHttpDestroy(hHttp), VINF_SUCCESS);
+    RTCrKeyRelease(hPublicKey);
+    RTCrKeyRelease(hPrivateKey);
 }
 
 
