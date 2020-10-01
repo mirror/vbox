@@ -794,12 +794,18 @@ TryConnect()
   if (NS_FAILED(rv))
     return rv;
 
-  ipcMessage *msg;
+  ipcMessage *msg = NULL;
 
   // send CLIENT_HELLO and wait for CLIENT_ID response...
   rv = MakeIPCMRequest(new ipcmMessageClientHello(), &msg);
   if (NS_FAILED(rv))
+  {
+#ifdef VBOX  /* MakeIPCMRequest may return a failure (e.g. NS_ERROR_CALL_FAILED) and a response msg. */
+    if (msg)
+      delete msg;
+#endif
     return rv;
+  }
 
   if (IPCM_GetType(msg) == IPCM_MSG_ACK_CLIENT_ID)
     gClientState->selfID = ipcMessageCast<ipcmMessageClientID>(msg)->ClientID();
@@ -1224,11 +1230,17 @@ IPC_ResolveClientName(const char *aName, PRUint32 *aClientID)
 {
   NS_ENSURE_TRUE(gClientState, NS_ERROR_NOT_INITIALIZED);
 
-  ipcMessage *msg;
+  ipcMessage *msg = NULL;
 
   nsresult rv = MakeIPCMRequest(new ipcmMessageQueryClientByName(aName), &msg);
   if (NS_FAILED(rv))
+  {
+#ifdef VBOX  /* MakeIPCMRequest may return a failure (e.g. NS_ERROR_CALL_FAILED) and a response msg. */
+    if (msg)
+      delete msg;
+#endif
     return rv;
+  }
 
   if (IPCM_GetType(msg) == IPCM_MSG_ACK_CLIENT_ID)
     *aClientID = ipcMessageCast<ipcmMessageClientID>(msg)->ClientID();
@@ -1486,5 +1498,8 @@ IPC_OnMessageAvailable(ipcMessage *msg)
   else
   {
     NS_WARNING("message target is undefined");
+#ifdef VBOX
+    delete msg;
+#endif
   }
 }
