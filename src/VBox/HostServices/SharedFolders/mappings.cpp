@@ -457,9 +457,11 @@ int vbsfMappingsRemove(PSHFLSTRING pMapName)
 
                     RTStrFree(g_FolderMapping[i].pszFolderName);
                     RTMemFree(g_FolderMapping[i].pMapName);
-                    g_FolderMapping[i].pszFolderName = NULL;
-                    g_FolderMapping[i].pMapName      = NULL;
-                    g_FolderMapping[i].fValid        = false;
+                    RTMemFree(g_FolderMapping[i].pAutoMountPoint);
+                    g_FolderMapping[i].pszFolderName   = NULL;
+                    g_FolderMapping[i].pMapName        = NULL;
+                    g_FolderMapping[i].pAutoMountPoint = NULL;
+                    g_FolderMapping[i].fValid          = false;
                     vbsfRootHandleRemove(i);
                     vbsfMappingsWakeupAllWaiters();
                     if (rc == VERR_FILE_NOT_FOUND)
