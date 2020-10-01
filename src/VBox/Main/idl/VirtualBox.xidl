@@ -10509,9 +10509,9 @@
 
     <attribute name="number" type="unsigned long" readonly="yes">
       <desc>
-        The number of the partition.
-        <!-- @todo r=bird: This is weird numbering scheme for MBR disk as it goes 1,2,3,4,5,7,9,11,...
-             And has no practical use.  It would be better to use the system specific device node numbering here. -->
+        The number of the partition. Represents the system number of the
+        partition, e.g. /dev/sdX in the linux, where X is the number
+        returned.
       </desc>
     </attribute>
 
