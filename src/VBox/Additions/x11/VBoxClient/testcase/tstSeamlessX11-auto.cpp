@@ -747,6 +747,11 @@ int main( int argc, char **argv)
     g_pszTestName = RTPathFilename(argv[0]);
 
     RTPrintf("%s: TESTING\n", g_pszTestName);
+
+/** @todo r=bird: This testcase is broken and we didn't notice because we
+ *        don't run it on the testboxes! */
+RTPrintf("%s: Note! This testcase is broken!\n", g_pszTestName);
+
     cErrs += smlsDoFixture(&g_testMove,
                            "ConfigureNotify event (window moved)");
     // Currently not working
