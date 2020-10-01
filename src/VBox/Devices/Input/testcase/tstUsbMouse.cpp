@@ -139,6 +139,7 @@ static int tstMouseConstruct(RTTEST hTest, int iInstance, const char *pcszMode,
                 pUsbIns->iInstance          = iInstance;
                 pUsbIns->pHlpR3             = &g_tstUsbHlp;
                 pUsbIns->pvInstanceDataR3   = pUsbIns->achInstanceData;
+                pUsbIns->pCfg               = pCfg;
                 rc = g_UsbHidMou.pfnConstruct(pUsbIns, iInstance, pCfg, NULL);
                 if (RT_SUCCESS(rc))
                 {
@@ -155,6 +156,17 @@ static int tstMouseConstruct(RTTEST hTest, int iInstance, const char *pcszMode,
 }
 
 
+static void tstMouseDestruct(RTTEST hTest, PPDMUSBINS pUsbIns)
+{
+    if (pUsbIns)
+    {
+        g_UsbHidMou.pfnDestruct(pUsbIns);
+        CFGMR3DestroyTree(pUsbIns->pCfg);
+        RTTestGuardedFree(hTest, pUsbIns);
+    }
+}
+
+
 static void testConstructAndDestruct(RTTEST hTest)
 {
     RTTestSub(hTest, "simple construction and destruction");
@@ -164,11 +176,7 @@ static void testConstructAndDestruct(RTTEST hTest)
      */
     PPDMUSBINS pUsbIns = NULL;
     RTTEST_CHECK_RC(hTest, tstMouseConstruct(hTest, 0, "relative", 1, &pUsbIns), VINF_SUCCESS);
-    if (pUsbIns)
-    {
-        g_UsbHidMou.pfnDestruct(pUsbIns);
-        RTTestGuardedFree(hTest, pUsbIns);
-    }
+    tstMouseDestruct(hTest, pUsbIns);
 
     /*
      * Modify the dev hlp version.
@@ -204,8 +212,7 @@ static void testConstructAndDestruct(RTTEST hTest)
         pUsbIns = NULL;
         RTTEST_CHECK_RC(hTest, tstMouseConstruct(hTest, 0, "relative", 1, &pUsbIns, s_aVersionTests[i].uInsVersion),
                         s_aVersionTests[i].rc);
-        if (pUsbIns)
-            RTTestGuardedFree(hTest, pUsbIns);
+        tstMouseDestruct(hTest, pUsbIns);
     }
     RTAssertSetMayPanic(fSavedMayPanic);
     RTAssertSetQuiet(fSavedQuiet);
@@ -252,11 +259,7 @@ static void testSendPositionRel(RTTEST hTest)
             rc = VERR_GENERAL_FAILURE;
     }
     RTTEST_CHECK_RC_OK(hTest, rc);
-    if (pUsbIns)
-    {
-        g_UsbHidMou.pfnDestruct(pUsbIns);
-        RTTestGuardedFree(hTest, pUsbIns);
-    }
+    tstMouseDestruct(hTest, pUsbIns);
 }
 
 
@@ -268,14 +271,11 @@ static void testSendPositionAbs(RTTEST hTest)
     int rc = tstMouseConstruct(hTest, 0, "absolute", 1, &pUsbIns);
     RT_ZERO(Urb);
     if (RT_SUCCESS(rc))
-    {
         rc = g_UsbHidMou.pfnUsbReset(pUsbIns, false);
-    }
     if (RT_SUCCESS(rc))
     {
         if (g_drvTstMouse.pDrv)
-            g_drvTstMouse.pDrv->pfnPutEventAbs(g_drvTstMouse.pDrv, 300, 200, 1,
-                                               3, 3);
+            g_drvTstMouse.pDrv->pfnPutEventAbs(g_drvTstMouse.pDrv, 300, 200, 1, 3, 3);
         else
             rc = VERR_PDM_MISSING_INTERFACE;
     }
@@ -305,11 +305,7 @@ static void testSendPositionAbs(RTTEST hTest)
             rc = VERR_GENERAL_FAILURE;
     }
     RTTEST_CHECK_RC_OK(hTest, rc);
-    if (pUsbIns)
-    {
-        g_UsbHidMou.pfnDestruct(pUsbIns);
-        RTTestGuardedFree(hTest, pUsbIns);
-    }
+    tstMouseDestruct(hTest, pUsbIns);
 }
 
 #if 0
@@ -359,11 +355,7 @@ static void testSendPositionMT(RTTEST hTest)
             rc = VERR_GENERAL_FAILURE;
     }
     RTTEST_CHECK_RC_OK(hTest, rc);
-    if (pUsbIns)
-    {
-        g_UsbHidMou.pfnDestruct(pUsbIns);
-        RTTestGuardedFree(hTest, pUsbIns);
-    }
+    tstMouseDestruct(hTest, pUsbIns);
 }
 #endif
 
