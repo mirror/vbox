@@ -633,17 +633,26 @@ RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase
         psz++;
     }
 
-    if (   !(u64 & RT_BIT_64(63))
-        || (!fPositive && u64 == RT_BIT_64(63)) )
-    { /* likely */ }
+    /* Mixing pi64 assigning and overflow checks is to pacify a tstRTCRest-1
+       asan overflow warning.  */
+    if (!(u64 & RT_BIT_64(63)))
+    {
+        if (psz == pszValue)
+            rc = VERR_NO_DIGITS;
+        if (pi64)
+            *pi64 = fPositive ? u64 : -(int64_t)u64;
+    }
+    else if (!fPositive && u64 == RT_BIT_64(63))
+    {
+        if (pi64)
+            *pi64 = INT64_MIN;
+    }
     else
+    {
         rc = VWRN_NUMBER_TOO_BIG;
-
-    if (pi64)
-        *pi64 = fPositive ? u64 : -(int64_t)u64;
-
-    if (psz == pszValue)
-        rc = VERR_NO_DIGITS;
+        if (pi64)
+            *pi64 = fPositive ? u64 : -(int64_t)u64;
+    }
 
     if (ppszNext)
         *ppszNext = (char *)psz;
