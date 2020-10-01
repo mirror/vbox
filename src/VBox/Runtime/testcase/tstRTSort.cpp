@@ -91,6 +91,8 @@ static void testApvSorter(FNRTSORTAPV pfnSorter, const char *pszName)
         if (!RTSortApvIsSorted(&Data.apv[0], cElements, testApvCompare, &Data))
             RTTestIFailed("failed sorting %u elements", cElements);
     }
+
+    RTRandAdvDestroy(hRand);
 }
 
 
