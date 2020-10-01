@@ -2276,7 +2276,7 @@ ifneq ($(KBUILD_TARGET),win)
  ifneq ($(KBUILD_TARGET),os2)
   # libIDL-config (for xpcom18a4)
   ifeq ($(origin VBOX_LIBIDL_CONFIG),undefined)
-   export VBOX_LIBIDL_CONFIG := $(firstword $(shell which libIDL-config-2 libIDL-config 2> /dev/null))
+   export VBOX_LIBIDL_CONFIG := $(firstword $(which libIDL-config-2 libIDL-config) libIDL-config-2-not-found)
   endif
  endif
 endif
