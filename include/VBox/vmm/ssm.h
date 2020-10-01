@@ -1158,7 +1158,7 @@ typedef struct SSMSTRMOPS
 #define SSMSTRMOPS_VERSION      UINT32_C(0x55aa0001)
 
 
-VMMR3_INT_DECL(void)    SSMR3Term(PVM pVM);
+VMMR3DECL(void)         SSMR3Term(PVM pVM);
 VMMR3_INT_DECL(int)
 SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance, uint32_t uVersion,
                     size_t cbGuess, const char *pszBefore,

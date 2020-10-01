@@ -20,6 +20,8 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/ssm.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
@@ -266,6 +268,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef LOG_ENABLED
     RTLogFlush(NULL);
 #endif
+    SSMR3Term(pVM);
+    STAMR3TermUVM(pUVM);
+    DBGFR3TermUVM(pUVM);
+    MMR3TermUVM(pUVM);
     SUPR3PageFreeEx(pVM, RT_ELEMENTS(aPages));
     RTMemPageFree(pUVM, RT_ALIGN_Z(sizeof(*pUVM), PAGE_SIZE));
     return 0;
