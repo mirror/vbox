@@ -55,7 +55,7 @@ static DECLCALLBACK(int) tstSupSemSRETimed(RTTHREAD hSelf, void *pvUser)
     SUPSEMEVENT hEvent = (SUPSEMEVENT)pvUser;
     RTThreadUserSignal(hSelf);
     int rc = SUPSemEventWaitNoResume(g_pSession, hEvent, 120*1000);
-    AssertReleaseMsgFailed(("%Rrc\n", rc));
+    AssertReleaseMsg(rc == VERR_INTERRUPTED, ("%Rrc\n", rc));
     return rc;
 }
 
@@ -65,7 +65,7 @@ static DECLCALLBACK(int) tstSupSemMRETimed(RTTHREAD hSelf, void *pvUser)
     SUPSEMEVENTMULTI hEventMulti = (SUPSEMEVENTMULTI)pvUser;
     RTThreadUserSignal(hSelf);
     int rc = SUPSemEventMultiWaitNoResume(g_pSession, hEventMulti, 120*1000);
-    AssertReleaseMsgFailed(("%Rrc\n", rc));
+    AssertReleaseMsg(rc == VERR_INTERRUPTED, ("%Rrc\n", rc));
     return rc;
 }
 
@@ -75,7 +75,7 @@ static DECLCALLBACK(int) tstSupSemSREInf(RTTHREAD hSelf, void *pvUser)
     SUPSEMEVENT hEvent = (SUPSEMEVENT)pvUser;
     RTThreadUserSignal(hSelf);
     int rc = SUPSemEventWaitNoResume(g_pSession, hEvent, RT_INDEFINITE_WAIT);
-    AssertReleaseMsgFailed(("%Rrc\n", rc));
+    AssertReleaseMsg(rc == VERR_INTERRUPTED, ("%Rrc\n", rc));
     return rc;
 }
 
@@ -85,7 +85,7 @@ static DECLCALLBACK(int) tstSupSemMREInf(RTTHREAD hSelf, void *pvUser)
     SUPSEMEVENTMULTI hEventMulti = (SUPSEMEVENTMULTI)pvUser;
     RTThreadUserSignal(hSelf);
     int rc = SUPSemEventMultiWaitNoResume(g_pSession, hEventMulti, RT_INDEFINITE_WAIT);
-    AssertReleaseMsgFailed(("%Rrc\n", rc));
+    AssertReleaseMsg(rc == VERR_INTERRUPTED, ("%Rrc\n", rc));
     return rc;
 }
 
