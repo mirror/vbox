@@ -695,6 +695,7 @@ static int createFakeVM(PVM *ppVM)
  */
 static void destroyFakeVM(PVM pVM)
 {
+    SSMR3Term(pVM);
     STAMR3TermUVM(pVM->pUVM);
     MMR3TermUVM(pVM->pUVM);
 }
