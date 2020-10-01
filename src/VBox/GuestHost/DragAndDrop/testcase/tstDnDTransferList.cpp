@@ -51,9 +51,11 @@ int main()
     RT_ZERO(list);
 
     /* Invalid stuff. */
+    RTTestDisableAssertions(hTest);
     RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, "", DNDTRANSFERLISTFMT_NATIVE), VERR_INVALID_PARAMETER);
     RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown, DNDTRANSFERLISTFMT_NATIVE), VINF_SUCCESS);
     RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown, DNDTRANSFERLISTFMT_NATIVE), VERR_WRONG_ORDER);
+    RTTestRestoreAssertions(hTest);
     DnDTransferListDestroy(&list);
 
     /* Empty. */
