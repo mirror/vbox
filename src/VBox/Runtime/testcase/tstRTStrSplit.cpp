@@ -38,15 +38,17 @@
 int main()
 {
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstRTStrSplit", &hTest);
-    if (rc)
-        return rc;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTStrSplit", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
     RTTestBanner(hTest);
 
     /* Invalid stuff. */
+    RTTestDisableAssertions(hTest);
     RTTEST_CHECK_RC(hTest, RTStrSplit(NULL, 0, NULL, NULL, NULL), VERR_INVALID_POINTER);
     RTTEST_CHECK_RC(hTest, RTStrSplit("foo", 0, NULL, NULL, NULL), VERR_INVALID_PARAMETER);
     RTTEST_CHECK_RC(hTest, RTStrSplit("foo", 42, NULL, NULL, NULL), VERR_INVALID_POINTER);
+    RTTestRestoreAssertions(hTest);
 
     char **papszStrings = NULL;
     size_t cStrings = 0;
