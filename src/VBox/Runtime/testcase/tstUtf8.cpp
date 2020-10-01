@@ -98,24 +98,35 @@ static void test1(RTTEST hTest)
         rc = RTStrUtf8ToCurrentCP(&pszCurrent, pszUtf8);
         if (rc == VINF_SUCCESS)
         {
+            RTStrFree(pszUtf8);
             rc = RTStrCurrentCPToUtf8(&pszUtf8, pszCurrent);
             if (rc == VINF_SUCCESS)
                 RTTestPassed(hTest, "Random UTF-16 -> UTF-8 -> Current -> UTF-8 successful.\n");
             else
                 RTTestFailed(hTest, "%d: The third part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Rrc.",
                              __LINE__, rc);
+            if (RT_SUCCESS(rc))
+                RTStrFree(pszUtf8);
+            RTStrFree(pszCurrent);
         }
-        else if (rc == VERR_NO_TRANSLATION)
-            RTTestPassed(hTest, "The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 returned VERR_NO_TRANSLATION.  This is probably as it should be.\n");
-        else if (rc == VWRN_NO_TRANSLATION)
-            RTTestPassed(hTest, "The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 returned VWRN_NO_TRANSLATION.  This is probably as it should be.\n");
         else
-            RTTestFailed(hTest, "%d: The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Rrc.",
-                         __LINE__, rc);
+        {
+            if (rc == VERR_NO_TRANSLATION)
+                RTTestPassed(hTest, "The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 returned VERR_NO_TRANSLATION.  This is probably as it should be.\n");
+            else if (rc == VWRN_NO_TRANSLATION)
+                RTTestPassed(hTest, "The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 returned VWRN_NO_TRANSLATION.  This is probably as it should be.\n");
+            else
+                RTTestFailed(hTest, "%d: The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Rrc.",
+                             __LINE__, rc);
+            if (RT_SUCCESS(rc))
+                RTStrFree(pszCurrent);
+            RTStrFree(pszUtf8);
+        }
     }
     else
         RTTestFailed(hTest, "%d: The first part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Rrc.",
                      __LINE__, rc);
+    RTMemFree(pwszRand);
 
     /*
      * Generate a new random string.
@@ -141,14 +152,17 @@ static void test1(RTTEST hTest)
                 RTTestFailed(hTest, "%d: The second part of random UTF-16 -> UTF-8 -> UTF-16 failed.", __LINE__);
                 RTTestPrintf(hTest, RTTESTLVL_FAILURE, "First differing character is at position %d and has the value %x.\n", i, pwsz[i]);
             }
+            RTUtf16Free(pwsz);
         }
         else
             RTTestFailed(hTest, "%d: The second part of random UTF-16 -> UTF-8 -> UTF-16 failed with return value %Rrc.",
                          __LINE__, rc);
+        RTStrFree(pszUtf8);
     }
     else
         RTTestFailed(hTest, "%d: The first part of random UTF-16 -> UTF-8 -> UTF-16 failed with return value %Rrc.",
                      __LINE__, rc);
+    RTMemFree(pwszRand);
 
     /*
      * Generate yet another random string and convert it to a buffer.
@@ -177,12 +191,14 @@ static void test1(RTTEST hTest)
                 RTTestFailed(hTest, "%d: Incorrect conversion of UTF-16 -> fixed length UTF-8 -> UTF-16.\n", __LINE__);
                 RTTestPrintf(hTest, RTTESTLVL_FAILURE, "First differing character is at position %d and has the value %x.\n", i, pwsz[i]);
             }
+            RTUtf16Free(pwsz);
         }
         else
             RTTestFailed(hTest, "%d: The second part of random UTF-16 -> fixed length UTF-8 -> UTF-16 failed with return value %Rrc.\n", __LINE__, rc);
     }
     else
         RTTestFailed(hTest, "%d: The first part of random UTF-16 -> fixed length UTF-8 -> UTF-16 failed with return value %Rrc.\n", __LINE__, rc);
+    RTMemFree(pwszRand);
 
     /*
      * And again.
@@ -214,10 +230,13 @@ static void test1(RTTEST hTest)
         }
         else
             RTTestFailed(hTest, "%d: The second part of random UTF-16 -> UTF-8 -> fixed length UTF-16 failed with return value %Rrc.\n", __LINE__, rc);
+        RTStrFree(pszUtf8);
     }
     else
         RTTestFailed(hTest, "%d: The first part of random UTF-16 -> UTF-8 -> fixed length UTF-16 failed with return value %Rrc.\n",
                      __LINE__, rc);
+    RTMemFree(pwszRand);
+
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
     for (int i = 0; i < 30; i++)
         pwszRand[i] = GetRandUtf16();
@@ -229,6 +248,7 @@ static void test1(RTTEST hTest)
     else
         RTTestFailed(hTest, "%d: Random UTF-16 -> fixed length UTF-8 with too small buffer returned value %d instead of VERR_BUFFER_OVERFLOW.\n",
                      __LINE__, rc);
+    RTMemFree(pwszRand);
 
     /*
      * last time...
@@ -248,11 +268,12 @@ static void test1(RTTEST hTest)
         else
             RTTestFailed(hTest, "%d: The second part of random UTF-16 -> UTF-8 -> fixed length UTF-16 with too short buffer returned value %Rrc instead of VERR_BUFFER_OVERFLOW.\n",
                          __LINE__, rc);
+        RTStrFree(pszUtf8);
     }
     else
         RTTestFailed(hTest, "%d:The first part of random UTF-16 -> UTF-8 -> fixed length UTF-16 failed with return value %Rrc.\n",
                      __LINE__, rc);
-
+    RTMemFree(pwszRand);
 
     RTTestSubDone(hTest);
 }
@@ -494,6 +515,7 @@ void test2(RTTEST hTest)
             RTTestFailed(hTest, "UTF-8 -> Code Points failed, rc=%Rrc.\n", rc);
 
         /** @todo RTCpsToUtf8 or something. */
+        RTUniFree(paCps);
     }
     else
         RTTestFailed(hTest, "UTF-8 -> Code Points failed, rc=%Rrc.\n", rc);
