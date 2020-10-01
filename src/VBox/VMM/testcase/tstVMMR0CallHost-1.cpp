@@ -140,8 +140,13 @@ void tst(int iFrom, int iTo, int iInc)
         if (iItr >= cIterations / 2)
         {
             /* Note! gcc does funny rounding up of alloca(). */
+# ifndef VBOX_WITH_GCC_SANITIZER
             void  *pv2 = alloca((i % 63) | 1);
             size_t cb2 = (uintptr_t)pvPrev - (uintptr_t)pv2;
+# else
+            size_t cb2 = ((i % 3) + 1) * 16; /* We get what we ask for here, and it's not at RSP/ESP due to guards. */
+            void  *pv2 = alloca(cb2);
+# endif
             RTTESTI_CHECK_MSG(cb2 >= 16 && cb2 <= 128, ("cb2=%zu pv2=%p pvPrev=%p iAlloca=%d\n", cb2, pv2, pvPrev, iItr));
             memset(pv2, 0xff, cb2);
             memset(pvPrev, 0xee, 1);
