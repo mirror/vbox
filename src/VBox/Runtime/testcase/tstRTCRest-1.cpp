@@ -2167,6 +2167,18 @@ public:
     TestResponse() : m_pArray(NULL), m_pMap(NULL), m_pInteger(NULL), m_pStrContentType(NULL)
     { }
 
+    ~TestResponse()
+    {
+        if (m_pStrContentType)
+            delete m_pStrContentType;
+        if (m_pInteger)
+            delete m_pInteger;
+        if (m_pMap)
+            delete m_pMap;
+        if (m_pArray)
+            delete m_pArray;
+    }
+
 protected:
     virtual int consumeHeader(uint32_t a_uMatchWord, const char *a_pchField, size_t a_cchField,
                               const char *a_pchValue, size_t a_cchValue) RT_NOEXCEPT RT_OVERRIDE
