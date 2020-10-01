@@ -473,8 +473,8 @@ ifeq ($(KBUILD_TARGET),os2)
  xpidl-DLLS_SOURCES += $(wildcard $(VBOX_PATH_LIBIDL)/lib/libIDL.dll)
 else
  # We do these ONCE.
- libIDL_config_cflags := $(shell "$(VBOX_LIBIDL_CONFIG)" --cflags)
- libIDL_config_libs   := $(shell "$(VBOX_LIBIDL_CONFIG)" --libs)
+ libIDL_config_cflags := $(shell $(VBOX_LIBIDL_CONFIG) --cflags)
+ libIDL_config_libs   := $(shell $(VBOX_LIBIDL_CONFIG) --libs)
  xpidl_CFLAGS = \
 	$(libIDL_config_cflags)
  ifeq ($(KBUILD_HOST),linux)
