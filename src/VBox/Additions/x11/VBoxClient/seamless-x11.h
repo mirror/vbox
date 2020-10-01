@@ -223,15 +223,7 @@ public:
     /**
      * Shutdown seamless event monitoring.
      */
-    void uninit(void)
-    {
-        if (mHostCallback)
-            stop();
-        mHostCallback = NULL;
-        if (mDisplay)
-            XCloseDisplay(mDisplay);
-        mDisplay = NULL;
-    }
+    void uninit(void);
 
     /**
      * Initialise seamless event reporting in the guest.

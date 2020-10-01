@@ -69,11 +69,11 @@ static unsigned char *XXGetProperty (Display *aDpy, Window aWnd, Atom aPropType,
 }
 
 /**
-  * Initialise the guest and ensure that it is capable of handling seamless mode
-  *
-  * @param  pHostCallback   host callback.
-  * @returns true if it can handle seamless, false otherwise
-  */
+ * Initialise the guest and ensure that it is capable of handling seamless mode
+ *
+ * @param  pHostCallback   host callback.
+ * @returns true if it can handle seamless, false otherwise
+ */
 int SeamlessX11::init(PFNSENDREGIONUPDATE pHostCallback)
 {
     int rc = VINF_SUCCESS;
@@ -94,6 +94,24 @@ int SeamlessX11::init(PFNSENDREGIONUPDATE pHostCallback)
     unmonitorClientList();
     LogRelFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Shutdown seamless event monitoring.
+ */
+void SeamlessX11::uninit(void)
+{
+    if (mHostCallback)
+        stop();
+    mHostCallback = NULL;
+    if (mDisplay)
+        XCloseDisplay(mDisplay);
+    mDisplay = NULL;
+    if (mpRects)
+    {
+        RTMemFree(mpRects);
+        mpRects = NULL;
+    }
 }
 
 /**
