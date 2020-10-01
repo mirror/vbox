@@ -132,6 +132,9 @@ static void tst2(void)
 
     tstShowStats(hStrCache);
     RTTESTI_CHECK_RC(RTStrCacheDestroy(hStrCache), VINF_SUCCESS);
+
+    for (uint32_t i = 0; i < 8192; i++)
+        RTMemFree(apszTests[i]);
 }
 
 
