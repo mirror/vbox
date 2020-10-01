@@ -51,7 +51,6 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
 /** Pointer to a trace log reader instance. */
 typedef struct RTTRACELOGRDRINT *PRTTRACELOGRDRINT;
 
@@ -101,7 +100,7 @@ typedef const RTTRACELOGRDREVTDESC *PCRTTRACELOGRDREVTDESC;
 typedef struct RTTRACELOGRDREVTINT
 {
     /** List node for the global list of events. */
-    RTLISTANCHOR                NdGlob;
+    RTLISTNODE                  NdGlob;
     /** The trace log reader instance the event belongs to. */
     PRTTRACELOGRDRINT           pRdr;
     /** Trace log sequence number. */
@@ -119,7 +118,8 @@ typedef struct RTTRACELOGRDREVTINT
     /** Overall event data size in bytes, including non static data. */
     size_t                      cbEvtData;
     /** Event data, variable in size. */
-    uint8_t                     abEvtData[1];
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    uint8_t                     abEvtData[RT_FLEXIBLE_ARRAY];
 } RTTRACELOGRDREVTINT;
 /** Pointer to a trace log reader event. */
 typedef RTTRACELOGRDREVTINT *PRTTRACELOGRDREVTINT;
@@ -149,7 +149,8 @@ typedef struct RTTRACELOGRDREVTDESC
     /** Embedded event descriptor. */
     RTTRACELOGEVTDESC           EvtDesc;
     /** Array of event item descriptors, variable in size. */
-    RTTRACELOGEVTITEMDESC       aEvtItemDesc[1];
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    RTTRACELOGEVTITEMDESC       aEvtItemDesc[RT_FLEXIBLE_ARRAY];
 } RTTRACELOGRDREVTDESC;
 
 
@@ -178,7 +179,7 @@ typedef struct RTTRACELOGRDRINT
     size_t                      cchDesc;
     /** Pointer to the description if set. */
     const char                  *pszDesc;
-    /** List of received events. */
+    /** List of received events (PRTTRACELOGRDREVTINT::NdGlob). */
     RTLISTANCHOR                LstEvts;
     /** Number of event descriptors known. */
     uint32_t                    cEvtDescsCur;
@@ -1004,10 +1005,12 @@ static DECLCALLBACK(int) rtTraceLogRdrEvtMarkerRecvd(PRTTRACELOGRDRINT pThis, RT
                 pEvt->pacbRawData = pEvtDesc->cRawDataNonStatic ? (size_t *)&pEvt->abEvtData[pEvtStrm->cbEvtData] : NULL;
                 /** @todo Group handling and parenting. */
 
-                pThis->pEvtCur = pEvt;
                 size_t cbEvtDataRecv = pEvtStrm->cRawEvtDataSz * pThis->cbTypeSize + pEvtStrm->cbEvtData;
                 if (cbEvtDataRecv)
+                {
+                    pThis->pEvtCur = pEvt;
                     rc = rtTraceLogRdrStateAdvance(pThis, RTTRACELOGRDRSTATE_RECV_EVT_DATA, cbEvtDataRecv);
+                }
                 else
                 {
                     pThis->pEvtCur = NULL;
@@ -1606,18 +1609,45 @@ RTDECL(int) RTTraceLogRdrCreateFromFile(PRTTRACELOGRDR phTraceLogRdr, const char
 
 RTDECL(int) RTTraceLogRdrDestroy(RTTRACELOGRDR hTraceLogRdr)
 {
+    if (hTraceLogRdr == NIL_RTTRACELOGRDR)
+        return VINF_SUCCESS;
     PRTTRACELOGRDRINT pThis = hTraceLogRdr;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTTRACELOGRDR_MAGIC, VERR_INVALID_HANDLE);
 
     pThis->u32Magic = RTTRACELOGRDR_MAGIC_DEAD;
-    pThis->pfnStreamClose(pThis->pvUser);
+    int rc = pThis->pfnStreamClose(pThis->pvUser);
+    AssertRC(rc);
+
     for (unsigned i = 0; i < pThis->cEvtDescsCur; i++)
         RTMemFree(pThis->papEvtDescs[i]);
     if (pThis->papEvtDescs)
+    {
         RTMemFree(pThis->papEvtDescs);
+        pThis->papEvtDescs = NULL;
+    }
+
+    if (pThis->pEvtCur)
+    {
+        RTMemFree(pThis->pEvtCur);
+        pThis->pEvtCur = NULL;
+    }
+
+    PRTTRACELOGRDREVTINT pCur, pNext;
+    RTListForEachSafe(&pThis->LstEvts, pCur, pNext, RTTRACELOGRDREVTINT, NdGlob)
+    {
+        RTMemFree(pCur);
+    }
+
     RTSemMutexDestroy(pThis->hMtx);
+    pThis->hMtx = NIL_RTSEMMUTEX;
+
     RTMemFree(pThis->pbScratch);
+    pThis->pbScratch = NULL;
+
     RTStrCacheDestroy(pThis->hStrCache);
+    pThis->hStrCache = NIL_RTSTRCACHE;
+
     RTMemFree(pThis);
     return VINF_SUCCESS;
 }
@@ -1627,6 +1657,7 @@ RTDECL(int) RTTraceLogRdrEvtPoll(RTTRACELOGRDR hTraceLogRdr, RTTRACELOGRDRPOLLEV
 {
     PRTTRACELOGRDRINT pThis = hTraceLogRdr;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTTRACELOGRDR_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(penmEvt, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
@@ -1658,6 +1689,7 @@ RTDECL(int) RTTraceLogRdrQueryLastEvt(RTTRACELOGRDR hTraceLogRdr, PRTTRACELOGRDR
 {
     PRTTRACELOGRDRINT pThis = hTraceLogRdr;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTTRACELOGRDR_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(phRdrEvt, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
@@ -1676,6 +1708,7 @@ RTDECL(int) RTTraceLogRdrQueryIterator(RTTRACELOGRDR hTraceLogRdr, PRTTRACELOGRD
 {
     PRTTRACELOGRDRINT pThis = hTraceLogRdr;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTTRACELOGRDR_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(phIt, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
@@ -1700,6 +1733,7 @@ RTDECL(int) RTTraceLogRdrEvtMapToStruct(RTTRACELOGRDR hTraceLogRdr, uint32_t fFl
 
     PRTTRACELOGRDRINT pThis = hTraceLogRdr;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTTRACELOGRDR_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(paMapDesc, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppaEvtHdr, VERR_INVALID_POINTER);
     AssertPtrReturn(pcEvts, VERR_INVALID_POINTER);
