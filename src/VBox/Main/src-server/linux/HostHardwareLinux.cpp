@@ -933,7 +933,7 @@ static int readFilePathsFromDir(const char *pcszPath, DIR *pDir, VECTOR_PTR(char
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
     for (err = readdir_r(pDir, &entry, &pResult);
-         pResult /** @todo r=bird: && err == 0 ? */;
+         pResult != NULL && err == 0;
          err = readdir_r(pDir, &entry, &pResult))
 #if RT_GNUC_PREREQ(4, 6)
 # pragma GCC diagnostic pop
