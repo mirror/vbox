@@ -1891,7 +1891,7 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys
             GCPhys = GCPhysOut;
         else
         {
-            Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
+            Log(("pdmR3DevHlp_PCIPhysWrite: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
                  cbWrite, rc));
             return rc;
         }
