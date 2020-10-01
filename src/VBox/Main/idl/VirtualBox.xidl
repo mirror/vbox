@@ -1603,7 +1603,7 @@
     <const name="LinuxRootARM32"        value="304"><desc>Linux root partition for ARM32.</desc></const>
     <const name="LinuxRootARM64"        value="305"><desc>Linux root partition for ARM64 / AArch64.</desc></const>
     <const name="LinuxHome"             value="306"><desc>Linux /home partition.</desc></const>
-    <const name="LinuxSrv"              value="307"><desc>Linux /srv partition..</desc></const>
+    <const name="LinuxSrv"              value="307"><desc>Linux /srv partition.</desc></const>
     <const name="LinuxPlainDmCrypt"     value="308"><desc>Linux plain dm-crypt partition.</desc></const>
     <const name="LinuxLUKS"             value="309"><desc>Linux unitified key setup (LUKS) partition.</desc></const>
     <const name="LinuxReserved"         value="310"><desc>Linux reserved partition.</desc></const>
@@ -10532,7 +10532,7 @@
       <desc>
         A translation of <link to="IHostDrivePartition::typeMBR"/> and
         <link to="IHostDrivePartition::typeUuid"/> when possible, otherwise
-        set to <link to="PartitionType::Unknown" />.
+        set to <link to="PartitionType_Unknown" />.
       </desc>
     </attribute>
 
