@@ -1074,7 +1074,7 @@ int DnDTransferListGetRootsEx(PDNDTRANSFERLIST pList,
         }
         else /* Native */
         {
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
             /* Convert paths to native path style. */
             rc = DnDPathConvert(szPath, sizeof(szPath), DNDPATHCONVERT_FLAGS_TO_DOS);
 #endif
