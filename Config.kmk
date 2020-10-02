@@ -3051,7 +3051,7 @@ ifeq ($(KBUILD_HOST),linux)
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_HAS_LIBXCB             ?= $(shell /sbin/ldconfig -p|grep -q "\<libxcb\.so\.1\>" && echo "1")'
 endif
 if1of ($(KBUILD_TARGET), linux)
- ifeq ($(KBUILD_TARGET),$(KBUILD_HOST)
+ ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
 	$(QUIET)$(RM) -f -- "$@.sanitizer.so" "$@.sanitizer32.so" '$@.sanitizer.c'
 	$(APPEND) -t '$@.sanitizer.c' 'int foo() { return 42; }'
 	$(QUIET)$(APPEND)  '$@' 'VBOX_GCC_SANITIZER_SO_FILES := \'
