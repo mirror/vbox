@@ -35,6 +35,35 @@
 # define VIRTIO_HEX_DUMP(logLevel, pv, cb, base, title) do { } while (0)
 #endif
 
+#ifdef IN_RING3
+#   define VIRTIOLOG(format...)    LogFunc((format))
+#   define VIRTIOLOGREL(format...) LogRelFunc((format))
+#else
+#   define VIRTIOLOG(format...)    SUPR0Printf(format)
+#   define VIRTIOLOGREL(format...) SUPR0Printf(format)
+#endif
+
+#define VIRTIOLOGLEVEL2(format...)  virtioLogLevel(2,  format)
+#define VIRTIOLOGLEVEL3(format...)  virtioLogLevel(3,  format)
+#define VIRTIOLOGLEVEL4(format...)  virtioLogLevel(4,  format)
+#define VIRTIOLOGLEVEL5(format...)  virtioLogLevel(5,  format)
+#define VIRTIOLOGLEVEL6(format...)  virtioLogLevel(6,  format)
+#define VIRTIOLOGLEVEL7(format...)  virtioLogLevel(7,  format)
+#define VIRTIOLOGLEVEL8(format...)  virtioLogLevel(8,  format)
+#define VIRTIOLOGLEVEL9(format...)  virtioLogLevel(9,  format)
+#define VIRTIOLOGLEVEL10(format...) virtioLogLevel(10, format)
+#define VIRTIOLOGLEVEL11(format...) virtioLogLevel(11, format)
+#define VIRTIOLOGLEVEL12(format...) virtioLogLevel(12, format)
+
+DECLINLINE(void) virtioLogLevel(int logLevel, const char *format...)
+{
+    va_list arglist;
+    va_start(arglist, format);
+    if (LogIsItEnabled(logLevel, LOG_GROUP))
+        VIRTIOLOG(format);
+    va_end(arglist);
+}
+
 /** Pointer to the shared VirtIO state. */
 typedef struct VIRTIOCORE *PVIRTIOCORE;
 /** Pointer to the ring-3 VirtIO state. */
@@ -361,11 +390,11 @@ typedef struct VIRTIOCORER3
     R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pIsrCap;                   /**< Pointer to struct in PCI config area.     */
     R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pDeviceCap;                /**< Pointer to struct in PCI config area.     */
 
-    uint32_t                    cbDevSpecificCfg;                  /**< Size of client's dev-specific config data */
-    R3PTRTYPE(uint8_t *)        pbDevSpecificCfg;                  /**< Pointer to client's struct                */
-    R3PTRTYPE(uint8_t *)        pbPrevDevSpecificCfg;              /**< Previous read dev-specific cfg of client  */
-    bool                        fGenUpdatePending;                 /**< If set, update cfg gen after driver reads */
-    char                        pcszMmioName[MAX_NAME];            /**< MMIO mapping name                         */
+    uint32_t                            cbDevSpecificCfg;          /**< Size of client's dev-specific config data */
+    R3PTRTYPE(uint8_t *)                pbDevSpecificCfg;          /**< Pointer to client's struct                */
+    R3PTRTYPE(uint8_t *)                pbPrevDevSpecificCfg;      /**< Previous read dev-specific cfg of client  */
+    bool                                fGenUpdatePending;         /**< If set, update cfg gen after driver reads */
+    char                                pcszMmioName[MAX_NAME];    /**< MMIO mapping name                         */
 } VIRTIOCORER3;
 
 /**

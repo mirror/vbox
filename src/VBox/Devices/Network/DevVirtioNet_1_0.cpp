@@ -303,8 +303,6 @@ struct VIRTIONETWORKERR3;
 
 typedef struct VIRTIONETVIRTQ
 {
-    struct VIRTIONETWORKER         *pWorker;                    /**< Pointer to R0 worker struct                    */
-    struct VIRTIONETWORKERR3       *pWorkerR3;                  /**< Pointer to R3 worker struct                    */
     uint16_t                       uIdx;                        /**< Index of this queue                            */
     uint16_t                       align;
     char                           szName[VIRTIO_MAX_VIRTQ_NAME_SIZE]; /**< Virtq name                              */
@@ -320,7 +318,6 @@ typedef struct VIRTIONETVIRTQ
 typedef struct VIRTIONETWORKER
 {
     SUPSEMEVENT                     hEvtProcess;                /**< handle of associated sleep/wake-up semaphore   */
-    PVIRTIONETVIRTQ                 pVirtq;                     /**< pointer to queue                               */
     uint16_t                        uIdx;                       /**< Index of this worker                           */
     bool volatile                   fSleeping;                  /**< Flags whether worker thread is sleeping or not */
     bool volatile                   fNotified;                  /**< Flags whether worker thread notified           */
@@ -336,7 +333,6 @@ typedef VIRTIONETWORKER *PVIRTIONETWORKER;
 typedef struct VIRTIONETWORKERR3
 {
     R3PTRTYPE(PPDMTHREAD)           pThread;                    /**< pointer to worker thread's handle              */
-    PVIRTIONETVIRTQ                 pVirtq;                     /**< pointer to queue                               */
     uint16_t                        uIdx;                       /**< Index of this worker                           */
     uint16_t                        pad;
 } VIRTIONETWORKERR3;
@@ -602,6 +598,8 @@ static void virtioNetWakeupRxBufWaiter(PPDMDEVINS pDevIns)
     }
 }
 
+
+
 /**
  * @callback_method_impl{VIRTIOCORER0,pfnVirtqNotified}
  */
@@ -611,10 +609,12 @@ static DECLCALLBACK(void) virtioNetVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE
     PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
 
     PVIRTIONETVIRTQ  pVirtq  = &pThis->aVirtqs[uVirtqNbr];
-    PVIRTIONETWORKER pWorker = pVirtq->pWorker;
+    PVIRTIONETWORKER pWorker = &pThis->aWorkers[uVirtqNbr];
 
 #if defined (IN_RING3) && defined (LOG_ENABLED)
+
      RTLogFlush(NULL);
+
 #endif
 
     if (IS_RX_VIRTQ(uVirtqNbr))
@@ -623,13 +623,13 @@ static DECLCALLBACK(void) virtioNetVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE
 
         if (cBufsAvailable)
         {
-            Log10Func(("%s %u empty bufs added to %s by guest (notifying leaf device)\n",
-                       pThis->szInst, cBufsAvailable, pVirtq->szName));
+            VIRTIOLOGLEVEL10("%s %u empty bufs added to %s by guest (notifying leaf device)\n",
+                       pThis->szInst, cBufsAvailable, pVirtq->szName);
             virtioNetWakeupRxBufWaiter(pDevIns);
         }
         else
-            LogRel(("%s \n\n***WARNING: %s notified but no empty bufs added by guest! (skip notifying of leaf device)\n\n",
-                    pThis->szInst, pVirtq->szName));
+            VIRTIOLOGLEVEL10("%s \n\n***WARNING: %s notified but no empty bufs added by guest! (skip notifying of leaf device)\n\n",
+                    pThis->szInst, pVirtq->szName);
     }
     else if (IS_TX_VIRTQ(uVirtqNbr) || IS_CTRL_VIRTQ(uVirtqNbr))
     {
@@ -638,18 +638,19 @@ static DECLCALLBACK(void) virtioNetVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE
         {
             if (ASMAtomicReadBool(&pWorker->fSleeping))
             {
-                Log10Func(("%s %s has available buffers - waking worker.\n", pThis->szInst, pVirtq->szName));
+                VIRTIOLOGLEVEL10("%s %s has available buffers - waking worker.\n", pThis->szInst, pVirtq->szName);
+
                 int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pWorker->hEvtProcess);
                 AssertRC(rc);
             }
             else
             {
-                Log10Func(("%s %s has available buffers - worker already awake\n", pThis->szInst, pVirtq->szName));
+                VIRTIOLOGLEVEL10("%s %s has available buffers - worker already awake\n", pThis->szInst, pVirtq->szName);
             }
         }
         else
         {
-            Log10Func(("%s %s has available buffers - waking worker.\n", pThis->szInst, pVirtq->szName));
+            VIRTIOLOGLEVEL10("%s %s has available buffers - waking worker.\n", pThis->szInst, pVirtq->szName);
         }
     }
     else
@@ -837,8 +838,11 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
 
             if (pVirtq->fHasWorker)
             {
-                PVIRTIONETWORKER   pWorker   = pVirtq->pWorker;
-                PVIRTIONETWORKERR3 pWorkerR3 = pVirtq->pWorkerR3;
+                PVIRTIONETWORKER   pWorker   = &pThis->aWorkers[uVirtqNbr];
+                PVIRTIONETWORKERR3 pWorkerR3 = &pThisCC->aWorkers[uVirtqNbr];
+
+                Assert((pWorker->uIdx == pVirtq->uIdx));
+                Assert((pWorkerR3->uIdx == pVirtq->uIdx));
 
                 if (pWorker->fAssigned)
                 {
@@ -1133,7 +1137,7 @@ static DECLCALLBACK(int) virtioNetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
     for (int uIdxWorker = 0; uIdxWorker < pThis->cWorkers; uIdxWorker++)
     {
         PVIRTIONETWORKER pWorker = &pThis->aWorkers[uIdxWorker];
-        PVIRTIONETVIRTQ  pVirtq  = pWorker->pVirtq;
+        PVIRTIONETVIRTQ  pVirtq  = &pThis->aVirtqs[uIdxWorker];
         if (pVirtq->fAttachedToVirtioCore)
         {
             Log7Func(("%s Waking %s worker.\n", pThis->szInst, pVirtq->szName));
@@ -2588,7 +2592,7 @@ static int virtioNetR3DestroyWorkerThreads(PPDMDEVINS pDevIns, PVIRTIONET pThis,
     return rc;
 }
 
-static int virtioNetR3CreateOneWorkerThread(PPDMDEVINS pDevIns, PVIRTIONET pThis, uint16_t uIdxWorker,
+static int virtioNetR3CreateOneWorkerThread(PPDMDEVINS pDevIns, PVIRTIONET pThis,
                                             PVIRTIONETWORKER pWorker, PVIRTIONETWORKERR3 pWorkerR3,
                                             PVIRTIONETVIRTQ pVirtq)
 {
@@ -2596,6 +2600,8 @@ static int virtioNetR3CreateOneWorkerThread(PPDMDEVINS pDevIns, PVIRTIONET pThis
     RT_NOREF(pThis);
 
     int rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pWorker->hEvtProcess);
+    LogFunc(("PDMDevHlpSUPSemEventCreate(pDevIns, &pWorker->hEvtProcess=%p)", &pWorker->hEvtProcess));
+    LogFunc(("pWorker->hEvtProcess = %x\n", pWorker->hEvtProcess));
 
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
@@ -2610,10 +2616,6 @@ static int virtioNetR3CreateOneWorkerThread(PPDMDEVINS pDevIns, PVIRTIONET pThis
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Error creating thread for Virtual Virtq %s\n"), pVirtq->uIdx);
 
-    pWorker->pVirtq    = pWorkerR3->pVirtq   = pVirtq;
-    pWorker->uIdx      = pWorkerR3->uIdx     = uIdxWorker;
-    pVirtq->pWorker    = pWorker;
-    pVirtq->pWorkerR3  = pWorkerR3;
     pWorker->fAssigned = true;  /* Because worker's state held in fixed-size array w/empty slots */
 
     LogFunc(("%s pThread: %p\n", pVirtq->szName, pWorkerR3->pThread));
@@ -2624,25 +2626,23 @@ static int virtioNetR3CreateOneWorkerThread(PPDMDEVINS pDevIns, PVIRTIONET pThis
 static int virtioNetR3CreateWorkerThreads(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC pThisCC)
 {
 
-#define CTRLWIDX 0 /* First worker is for the control queue */
 
     Log10Func(("%s\n", pThis->szInst));
 
     PVIRTIONETVIRTQ pCtlVirtq = &pThis->aVirtqs[CTRLQIDX];
-    int rc = virtioNetR3CreateOneWorkerThread(pDevIns, pThis, CTRLQIDX /* uIdxWorker */,
-                                              &pThis->aWorkers[CTRLWIDX], &pThisCC->aWorkers[CTRLWIDX], pCtlVirtq);
+    int rc = virtioNetR3CreateOneWorkerThread(pDevIns, pThis,
+                                              &pThis->aWorkers[CTRLQIDX], &pThisCC->aWorkers[CTRLQIDX], pCtlVirtq);
     AssertRCReturn(rc, rc);
 
     pCtlVirtq->fHasWorker = true;
 
-    uint16_t uIdxWorker = CTRLWIDX + 1;
-    for (uint16_t uVirtqPair = pThis->cInitializedVirtqPairs; uVirtqPair < pThis->cVirtqPairs; uVirtqPair++, uIdxWorker++)
+    for (uint16_t uVirtqPair = pThis->cInitializedVirtqPairs; uVirtqPair < pThis->cVirtqPairs; uVirtqPair++)
     {
         PVIRTIONETVIRTQ pTxVirtq = &pThis->aVirtqs[TXQIDX(uVirtqPair)];
         PVIRTIONETVIRTQ pRxVirtq = &pThis->aVirtqs[RXQIDX(uVirtqPair)];
 
-        rc = virtioNetR3CreateOneWorkerThread(pDevIns, pThis, uIdxWorker, &pThis->aWorkers[uIdxWorker],
-                                              &pThisCC->aWorkers[uIdxWorker], pTxVirtq);
+        rc = virtioNetR3CreateOneWorkerThread(pDevIns, pThis, &pThis->aWorkers[TXQIDX(uVirtqPair)],
+                                                              &pThisCC->aWorkers[TXQIDX(uVirtqPair)], pTxVirtq);
         AssertRCReturn(rc, rc);
 
         pTxVirtq->fHasWorker = true;
@@ -2664,29 +2664,36 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
     PVIRTIONET         pThis     = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
     PVIRTIONETCC       pThisCC   = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIONETCC);
     PVIRTIONETWORKER   pWorker   = (PVIRTIONETWORKER)pThread->pvUser;
-    PVIRTIONETVIRTQ    pVirtq    = pWorker->pVirtq;
+    PVIRTIONETVIRTQ    pVirtq    = &pThis->aVirtqs[pWorker->uIdx];
+    uint16_t           uIdx      = pWorker->uIdx;
+
+    ASMAtomicWriteBool(&pWorker->fSleeping, false);
+
+    Assert(pWorker->uIdx == pVirtq->uIdx);
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
-    LogFunc(("%s worker thread started for %s\n", pThis->szInst, pVirtq->szName));
+    LogFunc(("%s worker thread idx=%d started for %s (virtq idx=%d)\n", pThis->szInst,  pWorker->uIdx, pVirtq->szName, pVirtq->uIdx));
 
     /** @todo Race w/guest enabling/disabling guest notifications cyclically.
               See BugRef #8651, Comment #82 */
-    virtioCoreVirtqEnableNotify(&pThis->Virtio, pVirtq->uIdx, true /* fEnable */);
+    virtioCoreVirtqEnableNotify(&pThis->Virtio, uIdx, true /* fEnable */);
 
     while (   pThread->enmState != PDMTHREADSTATE_TERMINATING
            && pThread->enmState != PDMTHREADSTATE_TERMINATED)
     {
-        if (IS_VIRTQ_EMPTY(pDevIns, &pThis->Virtio, pVirtq->uIdx))
+        if (IS_VIRTQ_EMPTY(pDevIns, &pThis->Virtio,  pVirtq->uIdx))
         {
             /* Atomic interlocks avoid missing alarm while going to sleep & notifier waking the awoken */
             ASMAtomicWriteBool(&pWorker->fSleeping, true);
+
             bool fNotificationSent = ASMAtomicXchgBool(&pWorker->fNotified, false);
             if (!fNotificationSent)
             {
                 Log10Func(("%s %s worker sleeping...\n\n", pThis->szInst, pVirtq->szName));
                 Assert(ASMAtomicReadBool(&pWorker->fSleeping));
+
                 int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pWorker->hEvtProcess, RT_INDEFINITE_WAIT);
                 STAM_COUNTER_INC(&pThis->StatTransmitByThread);
                 AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
@@ -2697,6 +2704,7 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
                ASMAtomicWriteBool(&pWorker->fNotified, false);
             }
             ASMAtomicWriteBool(&pWorker->fSleeping, false);
+
         }
 
         /* Dispatch to the handler for the queue this worker is set up to drive */
@@ -2759,7 +2767,11 @@ static DECLCALLBACK(void) virtioNetR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOC
         for (unsigned uVirtqNbr = 0; uVirtqNbr < pThis->cVirtVirtqs; uVirtqNbr++)
         {
             PVIRTIONETVIRTQ pVirtq = &pThis->aVirtqs[uVirtqNbr];
-            pVirtq->uIdx = uVirtqNbr;
+            PVIRTIONETWORKER pWorker = &pThis->aWorkers[uVirtqNbr];
+
+            Assert(pWorker->uIdx == uVirtqNbr);
+            Assert(pVirtq->uIdx == pWorker->uIdx);
+
             (void) virtioCoreR3VirtqAttach(&pThis->Virtio, pVirtq->uIdx, pVirtq->szName);
             pVirtq->fAttachedToVirtioCore = true;
             if (IS_VIRTQ_EMPTY(pThisCC->pDevIns, &pThis->Virtio, pVirtq->uIdx))
@@ -3031,6 +3043,15 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
      */
     virtioNetR3SetVirtqNames(pThis);
     pThis->aVirtqs[CTRLQIDX].fCtlVirtq = true;
+    for (unsigned uVirtqNbr = 0; uVirtqNbr < pThis->cVirtVirtqs; uVirtqNbr++)
+    {
+        PVIRTIONETVIRTQ pVirtq = &pThis->aVirtqs[uVirtqNbr];
+        PVIRTIONETWORKER pWorker = &pThis->aWorkers[uVirtqNbr];
+        PVIRTIONETWORKERR3 pWorkerR3 = &pThisCC->aWorkers[uVirtqNbr];
+        pVirtq->uIdx = uVirtqNbr;
+        pWorker->uIdx = uVirtqNbr;
+        pWorkerR3->uIdx = uVirtqNbr;
+    }
 
     /*
      * Create queue workers for life of instance. (I.e. they persist through VirtIO bounces)
@@ -3038,6 +3059,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     rc = virtioNetR3CreateWorkerThreads(pDevIns, pThis, pThisCC);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to create worker threads"));
+
 
     /*
      * Attach network driver instance
