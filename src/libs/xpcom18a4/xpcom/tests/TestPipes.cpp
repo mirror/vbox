@@ -511,6 +511,10 @@ TestChainedPipes()
     NS_RELEASE(pump);
     NS_RELEASE(receiverThread);
     NS_RELEASE(receiver);
+    NS_RELEASE(out2);
+    NS_RELEASE(in2);
+    NS_RELEASE(in1);
+    NS_RELEASE(out1);
     return NS_OK;
 }
 
