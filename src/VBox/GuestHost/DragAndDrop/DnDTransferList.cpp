@@ -543,6 +543,7 @@ static int dndTransferListAppendDirectory(PDNDTRANSFERLIST pList, char* pszPathA
             break;
     }
 
+    RTDirClose(hDir);
     return rc;
 }
 
