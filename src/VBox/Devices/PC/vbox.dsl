@@ -1195,6 +1195,24 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                   }
                 }
 
+                // AMD IOMMU (AMD-Vi), I/O Virtualization Reporting Structure
+                Device (IVRS)
+                {
+                    Method(_ADR, 0, NotSerialized)
+                    {
+                        Return (IOMA)
+                    }
+                    Method (_STA, 0, NotSerialized)
+                    {
+                        if (LEqual (IOMA, Zero)) {
+                            Return (0x00)
+                        }
+                        else {
+                            Return (0x0F)
+                        }
+                    }
+                }
+
                 // System Management Controller
                 Device (SMC)
                 {

@@ -1420,6 +1420,12 @@ static DECLCALLBACK(VBOXSTRICTRC)  acpiR3SysInfoIndexWrite(PPDMDEVINS pDevIns, v
         }
 
         u32 >>= pThis->u8IndexShift;
+
+        /* If the index exceeds 31 (which is all we can fit within offset 0x80), we need to divide the index again
+           for indices > 31 and < SYSTEM_INFO_INDEX_END. */
+        if (u32 > SYSTEM_INFO_INDEX_END && pThis->u8IndexShift == 2 && (u32 >> 2) < SYSTEM_INFO_INDEX_END)
+            u32 >>= 2;
+
         AssertMsg(u32 < SYSTEM_INFO_INDEX_END, ("%u - Max=%u. IndexShift=%u\n", u32, SYSTEM_INFO_INDEX_END, pThis->u8IndexShift));
         pThis->uSystemInfoIndex = u32;
     }
