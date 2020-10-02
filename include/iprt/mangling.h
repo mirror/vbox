@@ -1739,6 +1739,7 @@
 # define RTPathUserDocuments                            RT_MANGLER(RTPathUserDocuments)
 # define RTPathUserHome                                 RT_MANGLER(RTPathUserHome)
 # define RTPipeClose                                    RT_MANGLER(RTPipeClose)
+# define RTPipeCloseEx                                  RT_MANGLER(RTPipeCloseEx)
 # define RTPipeCreate                                   RT_MANGLER(RTPipeCreate)
 # define RTPipeFlush                                    RT_MANGLER(RTPipeFlush)
 # define RTPipeFromNative                               RT_MANGLER(RTPipeFromNative)

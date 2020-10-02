@@ -67,6 +67,8 @@ typedef struct RTPIPEINTERNAL
     HPIPE               hPipe;
     /** Set if this is the read end, clear if it's the write end. */
     bool                fRead;
+    /** RTPipeFromNative: Leave open. */
+    bool                fLeaveOpen;
     /** Whether the pipe is in blocking or non-blocking mode. */
     bool                fBlocking;
     /** Set if the pipe is broken. */
@@ -194,6 +196,8 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
                     pThisW->hev             = NULLHANDLE;
                     pThisR->fRead           = true;
                     pThisW->fRead           = false;
+                    pThisR->fLeaveOpen      = false;
+                    pThisW->fLeaveOpen      = false;
                     pThisR->fBlocking       = false;
                     pThisW->fBlocking       = true;
                     //pThisR->fBrokenPipe     = false;
@@ -226,7 +230,7 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
 }
 
 
-RTDECL(int)  RTPipeClose(RTPIPE hPipe)
+RTDECL(int)  RTPipeCloseEx(RTPIPE hPipe, bool fLeaveOpen)
 {
     RTPIPEINTERNAL *pThis = hPipe;
     if (pThis == NIL_RTPIPE)
@@ -242,7 +246,8 @@ RTDECL(int)  RTPipeClose(RTPIPE hPipe)
     Assert(pThis->cUsers == 0);
 
     /* Don't call DosDisConnectNPipe! */
-    DosClose(pThis->hPipe);
+    if (!fLeaveOpen && !pThis->fLeaveOpen)
+        DosClose(pThis->hPipe);
     pThis->hPipe = (HPIPE)-1;
 
     if (pThis->hev != NULLHANDLE)
@@ -260,10 +265,16 @@ RTDECL(int)  RTPipeClose(RTPIPE hPipe)
 }
 
 
+RTDECL(int)  RTPipeClose(RTPIPE hPipe)
+{
+    return RTPipeCloseEx(hPipe, false /*fLeaveOpen*/);
+}
+
+
 RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t fFlags)
 {
     AssertPtrReturn(phPipe, VERR_INVALID_POINTER);
-    AssertReturn(!(fFlags & ~RTPIPE_N_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTPIPE_N_VALID_MASK_FN), VERR_INVALID_PARAMETER);
     AssertReturn(!!(fFlags & RTPIPE_N_READ) != !!(fFlags & RTPIPE_N_WRITE), VERR_INVALID_PARAMETER);
 
     /*
@@ -332,7 +343,8 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
         pThis->u32Magic        = RTPIPE_MAGIC;
         pThis->hPipe           = hNative;
         pThis->hev             = NULLHANDLE;
-        pThis->fRead           = !!(fFlags & RTPIPE_N_READ);
+        pThis->fRead           = RT_BOOL(fFlags & RTPIPE_N_READ);
+        pThis->fLeaveOpen      = RT_BOOL(fFlags & RTPIPE_N_LEAVE_OPEN);
         pThis->fBlocking       = !(fPipeState & NP_NOWAIT);
         //pThis->fBrokenPipe     = false;
         //pThis->cUsers          = 0;
