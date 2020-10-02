@@ -113,8 +113,7 @@ RTDECL(int) RTHandleGetStandard(RTHANDLESTD enmStdHandle, bool fLeaveOpen, PRTHA
             break;
 
         case RTHANDLETYPE_SOCKET:
-            /** @todo fLeaveOpen */
-            rc = rtSocketCreateForNative(&h.u.hSocket, (RTHCUINTPTR)hNative);
+            rc = rtSocketCreateForNative(&h.u.hSocket, (RTHCUINTPTR)hNative, fLeaveOpen);
             break;
 
         default: /* shut up gcc */

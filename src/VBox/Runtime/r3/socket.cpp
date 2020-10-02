@@ -148,6 +148,9 @@ typedef struct RTSOCKETINT
     /** Indicates whether the socket is operating in blocking or non-blocking mode
      * currently. */
     bool                fBlocking;
+    /** Whether to leave the native socket open rather than closing it (for
+     * RTHandleGetStandard). */
+    bool                fLeaveOpen;
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     /** The pollset currently polling this socket.  This is NIL if no one is
      * polling. */
@@ -495,8 +498,10 @@ DECLINLINE(int) rtSocketSwitchBlockingMode(RTSOCKETINT *pThis, bool fBlocking)
  * @returns IPRT status code.
  * @param   ppSocket        Where to return the IPRT socket handle.
  * @param   hNative         The native handle.
+ * @param   fLeaveOpen      Whether to leave the native socket handle open when
+ *                          closed.
  */
-DECLHIDDEN(int) rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative)
+DECLHIDDEN(int) rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative, bool fLeaveOpen)
 {
     RTSOCKETINT *pThis = (RTSOCKETINT *)RTMemPoolAlloc(RTMEMPOOL_DEFAULT, sizeof(*pThis));
     if (!pThis)
@@ -505,6 +510,7 @@ DECLHIDDEN(int) rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE h
     pThis->cUsers           = 0;
     pThis->hNative          = hNative;
     pThis->fClosed          = false;
+    pThis->fLeaveOpen       = fLeaveOpen;
     pThis->fBlocking        = true;
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     pThis->hPollSet         = NIL_RTPOLLSET;
@@ -538,7 +544,7 @@ RTDECL(int) RTSocketFromNative(PRTSOCKET phSocket, RTHCINTPTR uNative)
     AssertReturn(uNative >= 0, VERR_INVALID_PARAMETER);
 #endif
     AssertPtrReturn(phSocket, VERR_INVALID_POINTER);
-    return rtSocketCreateForNative(phSocket, uNative);
+    return rtSocketCreateForNative(phSocket, uNative, false /*fLeaveOpen*/);
 }
 
 
@@ -578,7 +584,7 @@ DECLHIDDEN(int) rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int i
     /*
      * Wrap it.
      */
-    int rc = rtSocketCreateForNative(phSocket, hNative);
+    int rc = rtSocketCreateForNative(phSocket, hNative, false /*fLeaveOpen*/);
     if (RT_FAILURE(rc))
     {
 #ifdef RT_OS_WINDOWS
@@ -723,10 +729,10 @@ DECLHIDDEN(int) rtSocketCreateTcpPair(RTSOCKET *phServer, RTSOCKET *phClient)
     int rc = rtSocketCreateNativeTcpPair(&hServer, &hClient);
     if (RT_SUCCESS(rc))
     {
-        rc = rtSocketCreateForNative(phServer, hServer);
+        rc = rtSocketCreateForNative(phServer, hServer, false /*fLeaveOpen*/);
         if (RT_SUCCESS(rc))
         {
-            rc = rtSocketCreateForNative(phClient, hClient);
+            rc = rtSocketCreateForNative(phClient, hClient, false /*fLeaveOpen*/);
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
             RTSocketRelease(*phServer);
@@ -805,19 +811,22 @@ static int rtSocketCloseIt(RTSOCKETINT *pThis, bool fDestroy)
         {
             pThis->hNative = NIL_RTSOCKETNATIVE;
 
-#ifdef RT_OS_WINDOWS
-            AssertReturn(g_pfnclosesocket, VERR_NET_NOT_UNSUPPORTED);
-            if (g_pfnclosesocket(hNative))
-#else
-            if (close(hNative))
-#endif
+            if (!pThis->fLeaveOpen)
             {
-                rc = rtSocketError();
 #ifdef RT_OS_WINDOWS
-                AssertMsgFailed(("closesocket(%p) -> %Rrc\n", (uintptr_t)hNative, rc));
+                AssertReturn(g_pfnclosesocket, VERR_NET_NOT_UNSUPPORTED);
+                if (g_pfnclosesocket(hNative))
 #else
-                AssertMsgFailed(("close(%d) -> %Rrc\n", hNative, rc));
+                if (close(hNative))
 #endif
+                {
+                    rc = rtSocketError();
+#ifdef RT_OS_WINDOWS
+                    AssertMsgFailed(("closesocket(%p) -> %Rrc\n", (uintptr_t)hNative, rc));
+#else
+                    AssertMsgFailed(("close(%d) -> %Rrc\n", hNative, rc));
+#endif
+                }
             }
         }
 
@@ -2298,7 +2307,7 @@ DECLHIDDEN(int) rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sock
         /*
          * Wrap the client socket.
          */
-        rc = rtSocketCreateForNative(phClient, hNativeClient);
+        rc = rtSocketCreateForNative(phClient, hNativeClient, false /*fLeaveOpen*/);
         if (RT_FAILURE(rc))
         {
 #ifdef RT_OS_WINDOWS
