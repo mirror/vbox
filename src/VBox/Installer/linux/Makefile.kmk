@@ -439,8 +439,8 @@ $(VBOX_LNX_INST_STAGE_DIR)/VirtualBox.tar.bz2: $(VBOX_LNX_INST_ARCH_DEPS)
 	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 ifeq ($(KBUILD_TYPE),asan) # Hack! Include libasan.so.* and libubsan.so.* so we have the matching version when testing.
-	$(CP) -- `ldd "$(VBOX_LNX_INST_OUT_DIR)/archive/VBoxRT.so" | $(SED_EXT) -re '/lib(a|ub)san\.so/!d' -e 's/.* => //' -e 's/ \(0x[0-9a-fA-F]*\) *$(DOLLAR)//'` \
-		"$(VBOX_LNX_INST_OUT_DIR)/archive/"
+	$(CP_EXT) -v -- `ldd "$(VBOX_LNX_INST_OUT_DIR)/archive/VBoxRT.so" | $(SED_EXT) -re '/lib(a|ub)san\.so/!d' -e 's/.* => //' -e 's/ \(0x[0-9a-fA-F]*\) *$(DOLLAR)//'` \
+		"$(VBOX_LNX_INST_OUT_DIR)/archive/" && $(ECHO_EXT) "force external"
 endif
 ifdef VBOX_USE_PBZIP2
 	$(QUIET)tar --dereference --owner 0 --group 0 \
