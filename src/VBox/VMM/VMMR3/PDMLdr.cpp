@@ -121,10 +121,12 @@ int pdmR3LdrInitU(PUVM pUVM)
  * This will unload and free all modules.
  *
  * @param   pUVM        The user mode VM structure.
+ * @param   fFinal      This is clear when in the PDMR3Term/vmR3Destroy call
+ *                      chain, and set when called from PDMR3TermUVM.
  *
  * @remarks This is normally called twice during termination.
  */
-void pdmR3LdrTermU(PUVM pUVM)
+void pdmR3LdrTermU(PUVM pUVM, bool fFinal)
 {
     /*
      * Free the modules.
@@ -146,13 +148,19 @@ void pdmR3LdrTermU(PUVM pUVM)
         switch (pModule->eType)
         {
             case PDMMOD_TYPE_R0:
-            {
-                Assert(pModule->ImageBase);
-                int rc2 = SUPR3FreeModule((void *)(uintptr_t)pModule->ImageBase);
-                AssertRC(rc2);
-                pModule->ImageBase = 0;
-                break;
-            }
+                if (fFinal)
+                {
+                    Assert(pModule->ImageBase);
+                    int rc2 = SUPR3FreeModule((void *)(uintptr_t)pModule->ImageBase);
+                    AssertRC(rc2);
+                    pModule->ImageBase = 0;
+                    break;
+                }
+
+                /* Postpone ring-0 module till the PDMR3TermUVM() phase as VMMR0.r0 is still
+                   busy when we're called the first time very very early in vmR3Destroy().  */
+                pModule = pModule->pNext;
+                continue;
 
 #ifdef VBOX_WITH_RAW_MODE_KEEP
             case PDMMOD_TYPE_RC:

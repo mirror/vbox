@@ -883,7 +883,7 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
     /*
      * Free modules.
      */
-    pdmR3LdrTermU(pVM->pUVM);
+    pdmR3LdrTermU(pVM->pUVM, false /*fFinal*/);
 
     /*
      * Stop task threads.
@@ -915,7 +915,7 @@ VMMR3_INT_DECL(void) PDMR3TermUVM(PUVM pUVM)
      * the second time. In the case of init failure however, this might
      * the first time, which is why we do it.
      */
-    pdmR3LdrTermU(pUVM);
+    pdmR3LdrTermU(pUVM, true /*fFinal*/);
 
     Assert(pUVM->pdm.s.pCritSects == NULL);
     Assert(pUVM->pdm.s.pRwCritSects == NULL);

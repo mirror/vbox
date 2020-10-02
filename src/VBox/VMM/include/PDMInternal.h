@@ -1607,7 +1607,7 @@ void        pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags);
 PPDMDRV     pdmR3DrvLookup(PVM pVM, const char *pszName);
 
 int         pdmR3LdrInitU(PUVM pUVM);
-void        pdmR3LdrTermU(PUVM pUVM);
+void        pdmR3LdrTermU(PUVM pUVM, bool fFinal);
 char       *pdmR3FileR3(const char *pszFile, bool fShared);
 int         pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName);
 
