@@ -899,7 +899,10 @@ int main()
     var[2].ptr = &var[2].val.p;
     
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 15, 3, var)))
+    {
         printf(" = %s\n", var[2].val.p);
+        nsMemory::Free(var[2].val.p);
+    }
     else
         printf("\tFAILED");
 
@@ -907,6 +910,8 @@ int main()
     DoMultipleInheritenceTest2();
     // Disabled by default - takes too much time on slow machines
     //DoSpeedTest();
+
+    NS_RELEASE(test);
 
     return 0;
 }
