@@ -66,11 +66,7 @@ static DECLCALLBACK(int) rtVfsStdPipe_Close(void *pvThis)
 {
     PRTVFSSTDPIPE pThis = (PRTVFSSTDPIPE)pvThis;
 
-    int rc;
-    if (!pThis->fLeaveOpen)
-        rc = RTPipeClose(pThis->hPipe);
-    else
-        rc = VINF_SUCCESS;
+    int rc = RTPipeCloseEx(pThis->hPipe, pThis->fLeaveOpen);
     pThis->hPipe = NIL_RTPIPE;
 
     return rc;
