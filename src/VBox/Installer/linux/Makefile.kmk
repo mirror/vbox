@@ -105,6 +105,10 @@ linux-misc_SOURCES = \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
 	$(linux-misc_0_OUTDIR)/generated.sh=>scripts/generated.sh \
 	$(if $(VBOX_WITH_QTGUI),$(linux-misc_0_OUTDIR)/virtualbox.desktop,)
+ifeq ($(KBUILD_TYPE),asan)
+linux-misc_SOURCES += $(foreach lib,$(VBOX_GCC_SANITIZER_SO_FILES) \
+	,$(lib)=>$(notdir $(lib)) $(lib)=>testcase/$(notdir $(lib)) $(lib)=>tools/$(notdir $(lib)) )
+endif
 linux-misc_CLEAN = \
 	$(linux-misc_0_OUTDIR)/generated.sh \
 	$(linux-misc_0_OUTDIR)/virtualbox.desktop
@@ -352,6 +356,11 @@ ifdef VBOX_WITH_DTRACE
  	$(addprefix dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES))
 endif
 
+# The sanitizer shared objects match the compiler we're using (HACK).
+ifeq ($(KBUILD_TYPE),asan)
+ VBOX_LNX_NO_STRIP += $(notdir $(VBOX_GCC_SANITIZER_SO_FILES))
+endif
+
 # Icons
 VBOX_MIME_ICONS = \
 	$(addprefix $(PATH_ROOT)/src/VBox/Artwork/other/,\
@@ -438,10 +447,6 @@ $(VBOX_LNX_INST_STAGE_DIR)/VirtualBox.tar.bz2: $(VBOX_LNX_INST_ARCH_DEPS)
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
-ifeq ($(KBUILD_TYPE),asan) # Hack! Include libasan.so.* and libubsan.so.* so we have the matching version when testing.
-	$(CP_EXT) -v -- `ldd "$(VBOX_LNX_INST_OUT_DIR)/archive/VBoxRT.so" | $(SED_EXT) -re '/lib(a|ub)san\.so/!d' -e 's/.* => //' -e 's/ \(0x[0-9a-fA-F]*\) *$(DOLLAR)//'` \
-		"$(VBOX_LNX_INST_OUT_DIR)/archive/" && $(ECHO_EXT) "force external"
-endif
 ifdef VBOX_USE_PBZIP2
 	$(QUIET)tar --dereference --owner 0 --group 0 \
 		-cRhf $(patsubst %.bz2,%,$@) -C $(VBOX_LNX_INST_OUT_DIR)/archive $(VBOX_LNX_ARCH_FILES)

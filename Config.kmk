@@ -2627,6 +2627,62 @@ endif
 
 
 #
+# Configure 'asan' type builds.
+#
+# We ASSUME that anyone doing this kind of build on linux has a compiler
+# with sanitizer support (otherwise we'd end up with a circular dependency
+# with DynamicConfig.kmk here to check the compiler version).
+#
+ifeq ($(KBUILD_TYPE),asan)
+ if "$(KBUILD_TARGET)" == "linux"
+VBOX_WITH_GCC_SANITIZER := 1
+ else
+VBOX_WITH_EF_WRAPS := 1
+ endif
+endif
+
+#
+# The address sanitiser library intercepts dlopen() and breaks RPATH $ORIGIN,
+# so we need to link it statically or set LD_LIBRARY_PATH.  To link statically,
+# set VBOX_WITH_GCC_SANITIZER_STATIC in addition.
+#
+ifdef VBOX_WITH_GCC_SANITIZER
+ VBOX_GCC_SANITIZER_FLAGS := \
+ 	-fsanitize=undefined \
+ 	-fsanitize=address \
+ 	-fsanitize=return \
+ 	-fsanitize=bounds \
+ 	-fsanitize=object-size \
+ 	-fno-sanitize=alignment \
+ 	-fno-sanitize=vptr \
+ 	-fno-common \
+ 	-DIPRT_WITH_GCC_SANITIZER \
+ 	-DVBOX_WITH_GCC_SANITIZER
+else ifdef VBOX_WITH_CLANG_SANITIZER ## @todo make work...
+ VBOX_GCC_SANITIZER_FLAGS := \
+ 	-DIPRT_WITH_GCC_SANITIZER \
+ 	-DVBOX_WITH_GCC_SANITIZER \
+ 	-fsanitize=object-size \
+ 	-fsanitize-undefined-trap-on-error
+else
+ VBOX_GCC_SANITIZER_FLAGS =
+endif
+
+# -libasan-static is currently not supported in combination with -no-undefined.
+VBOX_GCC_NO_UNDEFINED    :=
+VBOX_GCC_NO_UNDEFINED_R0 :=
+ifdef VBOX_WITH_GCC_SANITIZER
+ ifdef VBOX_WITH_GCC_SANITIZER_STATIC
+  VBOX_GCC_NO_UNDEFINED    := -Wl,--no-undefined
+  VBOX_GCC_NO_UNDEFINED_R0 := -no-undefined
+  VBOX_GCC_SANITIZER_LDFLAGS += -static-libasan
+ else
+  VBOX_GCC_SANITIZER_LDFLAGS += -lasan
+ endif
+endif
+
+
+#
 # The X11 headers.
 #
 VBOX_PATH_X11_ROOT      = $(PATH_ROOT)/src/VBox/Additions/x11/x11include
@@ -2994,7 +3050,21 @@ endif
 ifeq ($(KBUILD_HOST),linux)
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_HAS_LIBXCB             ?= $(shell /sbin/ldconfig -p|grep -q "\<libxcb\.so\.1\>" && echo "1")'
 endif
-
+if1of ($(KBUILD_TARGET), linux)
+	$(QUIET)$(RM) -f -- "$@.sanitizer.so" "$@.sanitizer32.so" '$@.sanitizer.c'
+	$(APPEND) -t '$@.sanitizer.c' 'int foo() { return 42; }'
+	$(QUIET)$(APPEND)  '$@' 'VBOX_GCC_SANITIZER_SO_FILES := \'
+	$(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(TOOL_$(VBOX_GCC_TOOL)_CC) -fPIC -shared \
+		$(VBOX_GCC_SANITIZER_FLAGS) $(VBOX_GCC_SANITIZER_LDFLAGS) -o "$@.sanitizer.so" "$@.sanitizer.c"
+	ldd "$@.sanitizer.so" | $(SED_EXT) --append '$@' -re '/lib(a|ub)san\.so/!d' -e 's/.* => //' -e 's/ \(0x[0-9a-fA-F]*\) *$(DOLLAR)/ \\/'
+	$(QUIET)$(APPEND) '$@' ''
+#	$(QUIET)$(APPEND)  '$@' 'VBOX_GCC32_SANITIZER_SO_FILES := \'
+#	$(TOOL_$(VBOX_GCC32_TOOL)_ENV_SETUP) $(TOOL_$(VBOX_GCC32_TOOL)_CC) -fPIC -shared \
+#		$(VBOX_GCC_SANITIZER_FLAGS) $(VBOX_GCC_SANITIZER_LDFLAGS) -o "$@.sanitizer32.so" "$@.sanitizer.c"
+#	ldd "$@.sanitizer32.so" | $(SED_EXT) --append '$@' -re '/lib(a|ub)san\.so/!d' -e 's/.* => //' -e 's/ \(0x[0-9a-fA-F]*\) *$(DOLLAR)/ \\/'
+#	$(QUIET)$(APPEND) '$@' ''
+	$(QUIET)$(RM) -f -- "$@.sanitizer.so" "$@.sanitizer32.so" '$@.sanitizer.c'
+endif
 ifdef VBOX_PATH_PREFIX_MINGW32
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW32_VERSION_CC                  ?= $(call VBOX_GCC_VERSION,$(VBOX_PATH_PREFIX_MINGW32)gcc -m32)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW32_VERSION_CXX                 ?= $(call VBOX_GCC_VERSION,$(VBOX_PATH_PREFIX_MINGW32)g++ -m32)'
@@ -3046,18 +3116,6 @@ endif
 
 include $(PATH_OUT)/DynamicConfig.kmk
 endif # !VBOX_NOINC_DYNAMIC_CONFIG_KMK
-
-
-#
-# Configure 'asan' type builds.
-#
-ifeq ($(KBUILD_TYPE),asan)
- if "$(KBUILD_TARGET)" == "linux" && $(VBOX_GCC_VERSION_CC)+0 >= 60000 # 6.0 was picked at random.
-VBOX_WITH_GCC_SANITIZER := 1
- else
-VBOX_WITH_EF_WRAPS := 1
- endif
-endif
 
 
 #
@@ -3120,43 +3178,6 @@ if "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_GCC_TOOL)" != "GXX4MACHO" && "$(VBO
  VBOX_GCC_NON_PEDANTIC_CXX += -Wno-c99-extensions
 endif
 
-# The address sanitiser library intercepts dlopen() and breaks RPATH $ORIGIN,
-# so we need to link it statically or set LD_LIBRARY_PATH.  To link statically,
-# set VBOX_WITH_GCC_SANITIZER_STATIC in addition.
-ifdef VBOX_WITH_GCC_SANITIZER
- VBOX_GCC_SANITIZER_FLAGS := \
- 	-fsanitize=undefined \
- 	-fsanitize=address \
- 	-fsanitize=return \
- 	-fsanitize=bounds \
- 	-fsanitize=object-size \
- 	-fno-sanitize=alignment \
- 	-fno-sanitize=vptr \
- 	-fno-common \
- 	-DIPRT_WITH_GCC_SANITIZER \
- 	-DVBOX_WITH_GCC_SANITIZER
-else ifdef VBOX_WITH_CLANG_SANITIZER ## @todo make work...
- VBOX_GCC_SANITIZER_FLAGS := \
- 	-DIPRT_WITH_GCC_SANITIZER \
- 	-DVBOX_WITH_GCC_SANITIZER \
- 	-fsanitize=object-size \
- 	-fsanitize-undefined-trap-on-error
-else
- VBOX_GCC_SANITIZER_FLAGS =
-endif
-
-# -libasan-static is currently not supported in combination with -no-undefined.
-VBOX_GCC_NO_UNDEFINED    :=
-VBOX_GCC_NO_UNDEFINED_R0 :=
-ifdef VBOX_WITH_GCC_SANITIZER
- ifdef VBOX_WITH_GCC_SANITIZER_STATIC
-  VBOX_GCC_NO_UNDEFINED    := -Wl,--no-undefined
-  VBOX_GCC_NO_UNDEFINED_R0 := -no-undefined
-  VBOX_GCC_SANITIZER_LDFLAGS += -static-libasan
- else
-  VBOX_GCC_SANITIZER_LDFLAGS += -lasan
- endif
-endif
 
 # Disabled Visual C++ warnings, W4:
 #      -wd4065: switch statement contains 'default' but no 'case' labels
