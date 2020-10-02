@@ -48,6 +48,16 @@
 
 static nsIObserverService *anObserverService = NULL;
 
+#ifdef VBOX
+static bool testResult( nsresult rv ) {
+    if ( NS_SUCCEEDED( rv ) ) {
+        printf("...ok\n");
+        return true;
+    }
+    printf("...failed, rv=0x%x\n", (int)rv);
+    return false;
+}
+#else
 static void testResult( nsresult rv ) {
     if ( NS_SUCCEEDED( rv ) ) {
         printf("...ok\n");
@@ -56,11 +66,18 @@ static void testResult( nsresult rv ) {
     }
     return;
 }
+#endif
 
 void printString(nsString &str) {
+#ifdef VBOX  /* asan complains about mixing different allocators */
+    char *cstr = ToNewCString(str);
+    printf("%s", cstr);
+    nsMemory::Free(cstr);
+#else
     const char *cstr = ToNewCString(str);
     printf("%s", cstr);
     delete [] (char*)cstr;
+#endif
 }
 
 class TestObserver : public nsIObserver, public nsSupportsWeakReference {
@@ -110,6 +127,9 @@ int main(int argc, char *argv[])
                                                 NULL,
                                                  NS_GET_IID(nsIObserverService),
                                                 (void **) &anObserverService);
+#ifdef VBOX
+    bool fSuccess = res == NS_OK;
+#endif
 	
     if (res == NS_OK) {
 
@@ -120,32 +140,50 @@ int main(int argc, char *argv[])
             
         printf("Adding Observer-A as observer of topic-A...\n");
         rv = anObserverService->AddObserver(aObserver, topicA.get(), PR_FALSE);
+#ifdef VBOX
+        fSuccess = fSuccess &&
+#endif
         testResult(rv);
  
         printf("Adding Observer-B as observer of topic-A...\n");
         rv = anObserverService->AddObserver(bObserver, topicA.get(), PR_FALSE);
+#ifdef VBOX
+        fSuccess = fSuccess &&
+#endif
         testResult(rv);
  
         printf("Adding Observer-B as observer of topic-B...\n");
         rv = anObserverService->AddObserver(bObserver, topicB.get(), PR_FALSE);
+#ifdef VBOX
+        fSuccess = fSuccess &&
+#endif
         testResult(rv);
 
         printf("Testing Notify(observer-A, topic-A)...\n");
         rv = anObserverService->NotifyObservers( aObserver,
                                    topicA.get(),
                                    NS_LITERAL_STRING("Testing Notify(observer-A, topic-A)").get() );
+#ifdef VBOX
+        fSuccess = fSuccess &&
+#endif
         testResult(rv);
 
         printf("Testing Notify(observer-B, topic-B)...\n");
         rv = anObserverService->NotifyObservers( bObserver,
                                    topicB.get(),
                                    NS_LITERAL_STRING("Testing Notify(observer-B, topic-B)").get() );
+#ifdef VBOX
+        fSuccess = fSuccess &&
+#endif
         testResult(rv);
  
         printf("Testing EnumerateObserverList (for topic-A)...\n");
         nsCOMPtr<nsISimpleEnumerator> e;
         rv = anObserverService->EnumerateObservers(topicA.get(), getter_AddRefs(e));
 
+#ifdef VBOX
+        fSuccess = fSuccess &&
+#endif
         testResult(rv);
 
         printf("Enumerating observers of topic-A...\n");
@@ -162,6 +200,9 @@ int main(int argc, char *argv[])
               rv = observer->Observe( observer, 
                                       topicA.get(), 
                                       NS_LITERAL_STRING("during enumeration").get() );
+#ifdef VBOX
+              fSuccess = fSuccess &&
+#endif
               testResult(rv);
           }
         }
@@ -169,16 +210,41 @@ int main(int argc, char *argv[])
 
         printf("Removing Observer-A...\n");
         rv = anObserverService->RemoveObserver(aObserver, topicA.get());
+#ifdef VBOX
+        fSuccess = fSuccess &&
+#endif
         testResult(rv);
 
 
         printf("Removing Observer-B (topic-A)...\n");
         rv = anObserverService->RemoveObserver(bObserver, topicB.get());
+#ifdef VBOX
+        fSuccess = fSuccess &&
+#endif
         testResult(rv);
         printf("Removing Observer-B (topic-B)...\n");
         rv = anObserverService->RemoveObserver(bObserver, topicA.get());
+#ifdef VBOX
+        fSuccess = fSuccess &&
+#endif
         testResult(rv);
-       
+
+#ifdef VBOX
+        /* Cleanup: */
+        nsrefcnt refs = bObserver->Release();
+        fSuccess = fSuccess && refs == 0;
+        if (refs != 0)
+            printf("bObserver->Release() -> %d, expected 0\n", (int)refs);
+
+        refs = aObserver->Release();
+        fSuccess = fSuccess && refs == 0;
+        if (refs != 0)
+            printf("aObserver->Release() -> %d, expected 0\n", (int)refs);
+#endif
     }
+#ifdef VBOX
+    return fSuccess ? 0 : 1;
+#else
     return NS_OK;
+#endif
 }
