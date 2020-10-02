@@ -114,6 +114,8 @@ void InitTest(const char* creationPath, const char* appendPath)
     PRBool exists;
     file->Exists(&exists);
 
+    NS_RELEASE(file);
+
     if (exists)
         printf("Yup!\n");
     else
