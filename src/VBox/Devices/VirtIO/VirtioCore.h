@@ -62,6 +62,7 @@ DECLINLINE(void) virtioLogLevel(int logLevel, const char *format...)
     if (LogIsItEnabled(logLevel, LOG_GROUP))
         VIRTIOLOG(format);
     va_end(arglist);
+    RT_NOREF(logLevel);
 }
 
 /** Pointer to the shared VirtIO state. */
