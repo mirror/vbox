@@ -1706,7 +1706,7 @@ static int vgsvcGstCtrlSessionReadKeyAndAccept(uint32_t idClient, uint32_t idSes
      * Read it.
      */
     RTHANDLE Handle;
-    int rc = RTHandleGetStandard(RTHANDLESTD_INPUT, &Handle);
+    int rc = RTHandleGetStandard(RTHANDLESTD_INPUT, true /*fLeaveOpen*/, &Handle);
     if (RT_SUCCESS(rc))
     {
         if (Handle.enmType == RTHANDLETYPE_PIPE)

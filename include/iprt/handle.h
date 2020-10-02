@@ -54,10 +54,13 @@ RTDECL(int) RTHandleClose(PRTHANDLE ph);
  *
  * @returns IPRT status code.
  * @param   enmStdHandle    The standard handle.
+ * @param   fLeaveOpen      Whether closing the returned handle should leave the
+ *                          native standard handle open or not.
+ *                          Note! This currently only works with pipe!
  * @param   ph              Pointer to the generic handle.  This will contain
  *                          the most appropriate IPRT handle on success.
  */
-RTDECL(int) RTHandleGetStandard(RTHANDLESTD enmStdHandle, PRTHANDLE ph);
+RTDECL(int) RTHandleGetStandard(RTHANDLESTD enmStdHandle, bool fLeaveOpen, PRTHANDLE ph);
 
 /** @} */
 

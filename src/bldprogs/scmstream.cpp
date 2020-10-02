@@ -364,16 +364,18 @@ int ScmStreamWriteToStdOut(PSCMSTREAM pStream)
      * Do the actual writing.
      */
     RTHANDLE h;
-    rc = RTHandleGetStandard(RTHANDLESTD_OUTPUT, &h);
+    rc = RTHandleGetStandard(RTHANDLESTD_OUTPUT, true /*fLeaveOpen*/, &h);
     if (RT_SUCCESS(rc))
     {
         switch (h.enmType)
         {
             case RTHANDLETYPE_FILE:
                 rc = RTFileWrite(h.u.hFile, pStream->pch, pStream->cb, NULL);
+                /** @todo RTFileClose */
                 break;
             case RTHANDLETYPE_PIPE:
                 rc = RTPipeWriteBlocking(h.u.hPipe, pStream->pch, pStream->cb, NULL);
+                RTPipeClose(h.u.hPipe);
                 break;
             default:
                 rc = VERR_INVALID_HANDLE;

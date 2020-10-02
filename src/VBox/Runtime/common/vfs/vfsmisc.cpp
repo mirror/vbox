@@ -60,7 +60,7 @@ RTDECL(int)         RTVfsIoStrmFromStdHandle(RTHANDLESTD enmStdHandle, uint64_t 
      * Open the handle and see what we get back.
      */
     RTHANDLE h;
-    int rc = RTHandleGetStandard(enmStdHandle, &h);
+    int rc = RTHandleGetStandard(enmStdHandle, fLeaveOpen, &h);
     if (RT_SUCCESS(rc))
     {
         switch (h.enmType)
