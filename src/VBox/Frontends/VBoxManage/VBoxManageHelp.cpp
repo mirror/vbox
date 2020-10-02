@@ -447,15 +447,20 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
     if (enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                      "  VBoxManage [<general option>] <command>\n"
-                     " \n \n"
-                     "General Options:\n \n"
-                     "  [-v|--version]            print version number and exit\n"
+                     "\n"
+                     "\n"
+                     "General Options:\n"
+                     "\n"
+                     "  [-V|--version]            print version number and exit\n"
+                     "  [--dump-build-type]       print build type and exit\n"
                      "  [-q|--nologo]             suppress the logo\n"
                      "  [--settingspw <pw>]       provide the settings password\n"
                      "  [--settingspwfile <file>] provide a file containing the settings password\n"
                      "  [@<response-file>]        load arguments from the given response file (bourne style)\n"
-                     " \n \n"
-                     "Commands:\n \n");
+                     "\n
+                     "\n"
+                     "Commands:\n"
+                     "\n");
 
     const char *pcszSep1 = " ";
     const char *pcszSep2 = "         ";

@@ -429,6 +429,12 @@ int main(int argc, char *argv[])
             RTPrintf("%sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
             return 0;
         }
+        if (!strcmp(argv[i], "--dump-build-type"))
+        {
+            /* Print the build type, and do nothing else. (Used by ValKit to detect build type.) */
+            RTPrintf("%s\n", RTBldCfgType());
+            return 0;
+        }
 #endif
 
         if (   !strcmp(argv[i], "--dumpopts")
