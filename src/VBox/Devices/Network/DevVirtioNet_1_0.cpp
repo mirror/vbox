@@ -623,13 +623,13 @@ static DECLCALLBACK(void) virtioNetVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE
 
         if (cBufsAvailable)
         {
-            VIRTIOLOGLEVEL10("%s %u empty bufs added to %s by guest (notifying leaf device)\n",
-                       pThis->szInst, cBufsAvailable, pVirtq->szName);
+            Log10Func(("%s %u empty bufs added to %s by guest (notifying leaf device)\n",
+                       pThis->szInst, cBufsAvailable, pVirtq->szName));
             virtioNetWakeupRxBufWaiter(pDevIns);
         }
         else
-            VIRTIOLOGLEVEL10("%s \n\n***WARNING: %s notified but no empty bufs added by guest! (skip notifying of leaf device)\n\n",
-                    pThis->szInst, pVirtq->szName);
+            Log10Func(("%s \n\n***WARNING: %s notified but no empty bufs added by guest! (skip notifying of leaf device)\n\n",
+                    pThis->szInst, pVirtq->szName));
     }
     else if (IS_TX_VIRTQ(uVirtqNbr) || IS_CTRL_VIRTQ(uVirtqNbr))
     {
@@ -638,19 +638,19 @@ static DECLCALLBACK(void) virtioNetVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE
         {
             if (ASMAtomicReadBool(&pWorker->fSleeping))
             {
-                VIRTIOLOGLEVEL10("%s %s has available buffers - waking worker.\n", pThis->szInst, pVirtq->szName);
+                Log10Func(("%s %s has available buffers - waking worker.\n", pThis->szInst, pVirtq->szName));
 
                 int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pWorker->hEvtProcess);
                 AssertRC(rc);
             }
             else
             {
-                VIRTIOLOGLEVEL10("%s %s has available buffers - worker already awake\n", pThis->szInst, pVirtq->szName);
+                Log10Func(("%s %s has available buffers - worker already awake\n", pThis->szInst, pVirtq->szName));
             }
         }
         else
         {
-            VIRTIOLOGLEVEL10("%s %s has available buffers - waking worker.\n", pThis->szInst, pVirtq->szName);
+            Log10Func(("%s %s has available buffers - waking worker.\n", pThis->szInst, pVirtq->szName));
         }
     }
     else
