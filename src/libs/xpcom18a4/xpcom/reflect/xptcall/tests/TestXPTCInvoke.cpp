@@ -47,9 +47,78 @@
 #include "nsMemory.h"
 
 // forward declration
-static void DoMultipleInheritenceTest();
-static void DoMultipleInheritenceTest2();
+static int DoMultipleInheritenceTest(int rcExit);
+static int DoMultipleInheritenceTest2(int rcExit);
 static void DoSpeedTest();
+
+
+#include <iprt/string.h>
+
+static char  g_szDirect[16384];
+static char  g_szInvoke[16384];
+static char *g_pszBuffer = NULL;
+static void bufprintf(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    vprintf(pszFormat, va);
+    va_end(va);
+    if (g_pszBuffer)
+    {
+        size_t  cchBuf = strlen(g_pszBuffer);
+        ssize_t cbLeft = (ssize_t)sizeof(g_szDirect) - (ssize_t)cchBuf;
+        if (cbLeft > 0)
+        {
+            va_list va;
+            va_start(va, pszFormat);
+            vsnprintf(&g_pszBuffer[cchBuf], (size_t)cbLeft, pszFormat, va);
+            va_end(va);
+        }
+    }
+}
+
+static void setbuffer(bool fDirect)
+{
+    g_pszBuffer = fDirect ? g_szDirect : g_szInvoke;
+    *g_pszBuffer = '\0';
+}
+
+static int comparebuffers(int rcExit)
+{
+    if (strcmp(g_szDirect, g_szInvoke) == 0)
+        return rcExit;
+    size_t offLine = 0;
+    unsigned iLine   = 1;
+    for (size_t off = 0; ; off++)
+    {
+        char chDirect = g_szDirect[off];
+        char chInvoke = g_szInvoke[off];
+        if (chDirect == chInvoke)
+        {
+            if (!chDirect)
+                return rcExit;
+            if (chDirect == '\n')
+            {
+                offLine = off + 1;
+                iLine++;
+            }
+        }
+        else
+        {
+            size_t cchDirectLine = RTStrOffCharOrTerm(&g_szDirect[offLine], '\n');
+            size_t cchInvokeLine = RTStrOffCharOrTerm(&g_szInvoke[offLine], '\n');
+            printf("direct and invoke runs differs on line %u!\n", iLine);
+            printf("direct: %*.*s\n", (int)cchDirectLine, (int)cchDirectLine, &g_szDirect[offLine]);
+            printf("invoke: %*.*s\n", (int)cchInvokeLine, (int)cchInvokeLine, &g_szInvoke[offLine]);
+
+            return 1;
+        }
+
+    }
+    printf("direct and invoke runs differs!\n");
+    return 1;
+}
+
 
 // {AAC1FB90-E099-11d2-984E-006008962422}
 #define INVOKETESTTARGET_IID \
@@ -311,31 +380,32 @@ int main()
     PRInt32 out, tmp32 = 0;
     PRInt64 out64;
     printf("calling direct:\n");
+    setbuffer(true);
     if(NS_SUCCEEDED(test->AddTwoInts(1,1,&out)))
-        printf("\t1 + 1 = %d\n", out);
+        bufprintf("\t1 + 1 = %d\n", out);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
     PRInt64 one, two;
     LL_I2L(one, 1);
     LL_I2L(two, 2);
     if(NS_SUCCEEDED(test->AddTwoLLs(one,one,&out64)))
     {
         LL_L2I(tmp32, out64);
-        printf("\t1L + 1L = %d\n", (int)tmp32);
+        bufprintf("\t1L + 1L = %d\n", (int)tmp32);
     }
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
     if(NS_SUCCEEDED(test->MultTwoInts(2,2,&out)))
-        printf("\t2 * 2 = %d\n", out);
+        bufprintf("\t2 * 2 = %d\n", out);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
     if(NS_SUCCEEDED(test->MultTwoLLs(two,two,&out64)))
     {
         LL_L2I(tmp32, out64);
-        printf("\t2L * 2L = %d\n", (int)tmp32);
+        bufprintf("\t2L * 2L = %d\n", (int)tmp32);
     }
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     double outD;
     float outF;
@@ -343,58 +413,59 @@ int main()
     char *outS;
 
     if(NS_SUCCEEDED(test->AddManyInts(1,2,3,4,5,6,7,8,9,10,&outI)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n", outI);
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n", outI);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     if(NS_SUCCEEDED(test->AddTwoFloats(1,2,&outF)))
-        printf("\t1 + 2 = %ff\n", (double)outF);
+        bufprintf("\t1 + 2 = %ff\n", (double)outF);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     if(NS_SUCCEEDED(test->AddManyDoubles(1,2,3,4,5,6,7,8,9,10,&outD)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %f\n", outD);
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %f\n", outD);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     if(NS_SUCCEEDED(test->AddManyFloats(1,2,3,4,5,6,7,8,9,10,&outF)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %ff\n", (double)outF);
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %ff\n", (double)outF);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     if(NS_SUCCEEDED(test->AddManyManyFloats(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,&outF)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 +1 15 + 16 + 17 + 18 + 19 + 20 = %ff\n", (double)outF);
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15 + 16 + 17 + 18 + 19 + 20 = %ff\n", (double)outF);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     if(NS_SUCCEEDED(test->AddMixedInts(1,2,3,4,5,6,7,8,9,10,&out64)))
      {
          LL_L2I(tmp32, out64);
-         printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n", (int)tmp32);
+         bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n", (int)tmp32);
      }
      else
-         printf("\tFAILED");
+         bufprintf("\tFAILED");
  
      if(NS_SUCCEEDED(test->AddMixedInts2(1,2,3,4,5,6,7,8,9,10,&out64)))
      {
           LL_L2I(tmp32, out64);
-         printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n", (int)tmp32);
+         bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n", (int)tmp32);
      }
      else
-         printf("\tFAILED");
+         bufprintf("\tFAILED");
 
      if(NS_SUCCEEDED(test->AddMixedFloats(1,2,3,4,5,6,7,8,9,10,11,&outD)))
-         printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 = %f\n", (double)outD);
+         bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 = %f\n", (double)outD);
      else
-         printf("\tFAILED");
+         bufprintf("\tFAILED");
 
      if (NS_SUCCEEDED(test->PassTwoStrings("moo","cow",&outS))) {
-       printf(" = %s\n", outS);
+       bufprintf(" = %s\n", outS);
         nsMemory::Free(outS);
       } else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     printf("calling via invoke:\n");
+    setbuffer(false);
 
     nsXPTCVariant var[21];
 
@@ -412,9 +483,9 @@ int main()
     var[2].ptr = &var[2].val.i32;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 3, 3, var)))
-        printf("\t1 + 1 = %d\n", var[2].val.i32);
+        bufprintf("\t1 + 1 = %d\n", var[2].val.i32);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     LL_I2L(var[0].val.i64, 1);
     var[0].type = nsXPTType::T_I64;
@@ -430,9 +501,9 @@ int main()
     var[2].ptr = &var[2].val.i64;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 5, 3, var)))
-        printf("\t1L + 1L = %d\n", (int)var[2].val.i64);
+        bufprintf("\t1L + 1L = %d\n", (int)var[2].val.i64);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     var[0].val.i32 = 2;
     var[0].type = nsXPTType::T_I32;
@@ -448,9 +519,9 @@ int main()
     var[2].ptr = &var[2].val.i32;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 4, 3, var)))
-        printf("\t2 * 2 = %d\n", var[2].val.i32);
+        bufprintf("\t2 * 2 = %d\n", var[2].val.i32);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     LL_I2L(var[0].val.i64,2);
     var[0].type = nsXPTType::T_I64;
@@ -466,9 +537,9 @@ int main()
     var[2].ptr = &var[2].val.i64;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 6, 3, var)))
-        printf("\t2L * 2L = %d\n", (int)var[2].val.i64);
+        bufprintf("\t2L * 2L = %d\n", (int)var[2].val.i64);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     var[0].val.i32 = 1;
     var[0].type = nsXPTType::T_I32;
@@ -516,7 +587,7 @@ int main()
     var[10].ptr = &var[10].val.i32;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 7, 11, var)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n",
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n",
                 var[10].val.i32);
 
     var[0].val.f = 1.0f;
@@ -533,7 +604,7 @@ int main()
     var[2].ptr = &var[2].val.f;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 8, 3, var)))
-        printf("\t1 + 2 = %ff\n",
+        bufprintf("\t1 + 2 = %ff\n",
                 (double) var[2].val.f);
 
 
@@ -583,10 +654,10 @@ int main()
     var[10].ptr = &var[10].val.d;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 9, 11, var)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %f\n",
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %f\n",
                 var[10].val.d);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     var[0].val.f = 1.0f;
     var[0].type = nsXPTType::T_FLOAT;
@@ -634,10 +705,10 @@ int main()
     var[10].ptr = &var[10].val.f;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 10, 11, var)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %ff\n",
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %ff\n",
                 (double) var[10].val.f);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     var[0].val.f = 1.0f;
     var[0].type = nsXPTType::T_FLOAT;
@@ -725,7 +796,7 @@ int main()
     var[20].ptr = &var[20].val.f;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 11, 21, var)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15 + 16 + 17 + 18 + 19 + 20 = %ff\n",
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15 + 16 + 17 + 18 + 19 + 20 = %ff\n",
                 (double) var[20].val.f);
 
     var[0].val.i64 = 1;
@@ -774,10 +845,10 @@ int main()
     var[10].ptr = &var[10].val.i64;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 12, 11, var)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n",
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n",
 	       (int)var[10].val.i64);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     var[0].val.i32 = 1;
     var[0].type = nsXPTType::T_I32;
@@ -825,10 +896,10 @@ int main()
     var[10].ptr = &var[10].val.i64;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 13, 11, var)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n",
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 = %d\n",
 	       (int)var[10].val.i64);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     var[0].val.f = 1.0f;
     var[0].type = nsXPTType::T_FLOAT;
@@ -880,10 +951,10 @@ int main()
     var[11].ptr = &var[11].val.d;
 
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 14, 12, var)))
-        printf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 = %f\n",
+        bufprintf("\t1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 = %f\n",
                 var[11].val.d);
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
 
     var[0].val.p = (void*)"moo";
     var[0].type = nsXPTType::T_CHAR_STR;
@@ -900,20 +971,21 @@ int main()
     
     if(NS_SUCCEEDED(XPTC_InvokeByIndex(test, 15, 3, var)))
     {
-        printf(" = %s\n", var[2].val.p);
+        bufprintf(" = %s\n", var[2].val.p);
         nsMemory::Free(var[2].val.p);
     }
     else
-        printf("\tFAILED");
+        bufprintf("\tFAILED");
+    int rcExit = comparebuffers(0);
 
-    DoMultipleInheritenceTest();
-    DoMultipleInheritenceTest2();
+    rcExit = DoMultipleInheritenceTest(rcExit);
+    rcExit = DoMultipleInheritenceTest2(rcExit);
     // Disabled by default - takes too much time on slow machines
     //DoSpeedTest();
 
     NS_RELEASE(test);
 
-    return 0;
+    return rcExit;
 }
 
 /***************************************************************************/
@@ -996,14 +1068,14 @@ FooImpl::FooImpl() : Name("FooImpl")
 
 NS_IMETHODIMP FooImpl::FooMethod1(PRInt32 i)
 {
-    printf("\tFooImpl::FooMethod1 called with i == %d, %s part of a %s\n", 
+    bufprintf("\tFooImpl::FooMethod1 called with i == %d, %s part of a %s\n",
            i, Name, ImplName());
     return NS_OK;
 }
 
 NS_IMETHODIMP FooImpl::FooMethod2(PRInt32 i)
 {
-    printf("\tFooImpl::FooMethod2 called with i == %d, %s part of a %s\n", 
+    bufprintf("\tFooImpl::FooMethod2 called with i == %d, %s part of a %s\n",
            i, Name, ImplName());
     return NS_OK;
 }
@@ -1016,14 +1088,14 @@ BarImpl::BarImpl() : Name("BarImpl")
 
 NS_IMETHODIMP BarImpl::BarMethod1(PRInt32 i)
 {
-    printf("\tBarImpl::BarMethod1 called with i == %d, %s part of a %s\n", 
+    bufprintf("\tBarImpl::BarMethod1 called with i == %d, %s part of a %s\n",
            i, Name, ImplName());
     return NS_OK;
 }
 
 NS_IMETHODIMP BarImpl::BarMethod2(PRInt32 i)
 {
-    printf("\tBarImpl::BarMethod2 called with i == %d, %s part of a %s\n", 
+    bufprintf("\tBarImpl::BarMethod2 called with i == %d, %s part of a %s\n",
            i, Name, ImplName());
     return NS_OK;
 }
@@ -1090,11 +1162,11 @@ NS_IMPL_ADDREF(FooBarImpl)
 NS_IMPL_RELEASE(FooBarImpl)
 
 
-static void DoMultipleInheritenceTest()
+static int DoMultipleInheritenceTest(int rcExit)
 {
     FooBarImpl* impl = new FooBarImpl();
     if(!impl)
-        return;
+        return 1;
 
     nsIFoo* foo;
     nsIBar* bar;
@@ -1111,10 +1183,12 @@ static void DoMultipleInheritenceTest()
 
         printf("Calling Foo...\n");
         printf("direct calls:\n");
+        setbuffer(true);
         foo->FooMethod1(1);
         foo->FooMethod2(2);
 
         printf("invoke calls:\n");
+        setbuffer(false);
         var[0].val.i32 = 1;
         var[0].type = nsXPTType::T_I32;
         var[0].flags = 0;
@@ -1125,14 +1199,17 @@ static void DoMultipleInheritenceTest()
         var[0].flags = 0;
         XPTC_InvokeByIndex(foo, 4, 1, var);
 
+        rcExit = comparebuffers(rcExit);
         printf("\n");
 
         printf("Calling Bar...\n");
         printf("direct calls:\n");
+        setbuffer(true);
         bar->BarMethod1(1);
         bar->BarMethod2(2);
 
         printf("invoke calls:\n");
+        setbuffer(false);
         var[0].val.i32 = 1;
         var[0].type = nsXPTType::T_I32;
         var[0].flags = 0;
@@ -1143,12 +1220,16 @@ static void DoMultipleInheritenceTest()
         var[0].flags = 0;
         XPTC_InvokeByIndex(bar, 4, 1, var);
 
+        rcExit = comparebuffers(rcExit);
         printf("\n");
 
         NS_RELEASE(foo);
         NS_RELEASE(bar);
     }
+    else
+        rcExit = 1;
     NS_RELEASE(impl);
+    return rcExit;
 }
 /***************************************************************************/
 /***************************************************************************/
@@ -1201,28 +1282,28 @@ FooBarImpl2::FooBarImpl2() : value(0x12345678)
 
 NS_IMETHODIMP FooBarImpl2::FooMethod1(PRInt32 i)
 {
-    printf("\tFooBarImpl2::FooMethod1 called with i == %d, local value = %x\n", 
+    bufprintf("\tFooBarImpl2::FooMethod1 called with i == %d, local value = %x\n",
            i, value);
     return NS_OK;
 }
 
 NS_IMETHODIMP FooBarImpl2::FooMethod2(PRInt32 i)
 {
-    printf("\tFooBarImpl2::FooMethod2 called with i == %d, local value = %x\n", 
+    bufprintf("\tFooBarImpl2::FooMethod2 called with i == %d, local value = %x\n",
            i, value);
     return NS_OK;
 }
 
 NS_IMETHODIMP FooBarImpl2::BarMethod1(PRInt32 i)
 {
-    printf("\tFooBarImpl2::BarMethod1 called with i == %d, local value = %x\n", 
+    bufprintf("\tFooBarImpl2::BarMethod1 called with i == %d, local value = %x\n",
            i, value);
     return NS_OK;
 }
 
 NS_IMETHODIMP FooBarImpl2::BarMethod2(PRInt32 i)
 {
-    printf("\tFooBarImpl2::BarMethod2 called with i == %d, local value = %x\n", 
+    bufprintf("\tFooBarImpl2::BarMethod2 called with i == %d, local value = %x\n",
            i, value);
     return NS_OK;
 }
@@ -1260,11 +1341,11 @@ FooBarImpl2::QueryInterface(REFNSIID aIID, void** aInstancePtr)
 NS_IMPL_ADDREF(FooBarImpl2)
 NS_IMPL_RELEASE(FooBarImpl2)
 
-static void DoMultipleInheritenceTest2()
+static int DoMultipleInheritenceTest2(int rcExit)
 {
     FooBarImpl2* impl = new FooBarImpl2();
     if(!impl)
-        return;
+        return 1;
 
     nsIFoo2* foo;
     nsIBar2* bar;
@@ -1281,10 +1362,12 @@ static void DoMultipleInheritenceTest2()
 
         printf("Calling Foo...\n");
         printf("direct calls:\n");
+        setbuffer(true);
         foo->FooMethod1(1);
         foo->FooMethod2(2);
 
         printf("invoke calls:\n");
+        setbuffer(false);
         var[0].val.i32 = 1;
         var[0].type = nsXPTType::T_I32;
         var[0].flags = 0;
@@ -1295,14 +1378,17 @@ static void DoMultipleInheritenceTest2()
         var[0].flags = 0;
         XPTC_InvokeByIndex(foo, 4, 1, var);
 
+        rcExit = comparebuffers(rcExit);
         printf("\n");
 
         printf("Calling Bar...\n");
         printf("direct calls:\n");
+        setbuffer(true);
         bar->BarMethod1(1);
         bar->BarMethod2(2);
 
         printf("invoke calls:\n");
+        setbuffer(false);
         var[0].val.i32 = 1;
         var[0].type = nsXPTType::T_I32;
         var[0].flags = 0;
@@ -1313,12 +1399,16 @@ static void DoMultipleInheritenceTest2()
         var[0].flags = 0;
         XPTC_InvokeByIndex(bar, 4, 1, var);
 
+        rcExit = comparebuffers(rcExit);
         printf("\n");
 
         NS_RELEASE(foo);
         NS_RELEASE(bar);
     }
+    else
+        rcExit = 1;
     NS_RELEASE(impl);
+    return rcExit;
 }
 
 static void DoSpeedTest()
