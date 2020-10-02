@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include "plstr.h"
 #include "nsID.h"
+#include "prmem.h"
 
 static const char* const ids[] = {
   "5C347B10-D55C-11D1-89B7-006008911B81",
@@ -69,6 +70,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "TestID: compare of ToString failed on test #%d\n", i);
       return -1;
     }
+    PR_Free(cp);
   }
 
   return 0;
