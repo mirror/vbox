@@ -3051,6 +3051,7 @@ ifeq ($(KBUILD_HOST),linux)
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_HAS_LIBXCB             ?= $(shell /sbin/ldconfig -p|grep -q "\<libxcb\.so\.1\>" && echo "1")'
 endif
 if1of ($(KBUILD_TARGET), linux)
+ ifeq ($(KBUILD_TARGET),$(KBUILD_HOST)
 	$(QUIET)$(RM) -f -- "$@.sanitizer.so" "$@.sanitizer32.so" '$@.sanitizer.c'
 	$(APPEND) -t '$@.sanitizer.c' 'int foo() { return 42; }'
 	$(QUIET)$(APPEND)  '$@' 'VBOX_GCC_SANITIZER_SO_FILES := \'
@@ -3064,6 +3065,7 @@ if1of ($(KBUILD_TARGET), linux)
 #	ldd "$@.sanitizer32.so" | $(SED_EXT) --append '$@' -re '/lib(a|ub)san\.so/!d' -e 's/.* => //' -e 's/ \(0x[0-9a-fA-F]*\) *$(DOLLAR)/ \\/'
 #	$(QUIET)$(APPEND) '$@' ''
 	$(QUIET)$(RM) -f -- "$@.sanitizer.so" "$@.sanitizer32.so" '$@.sanitizer.c'
+ endif
 endif
 ifdef VBOX_PATH_PREFIX_MINGW32
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW32_VERSION_CC                  ?= $(call VBOX_GCC_VERSION,$(VBOX_PATH_PREFIX_MINGW32)gcc -m32)'
