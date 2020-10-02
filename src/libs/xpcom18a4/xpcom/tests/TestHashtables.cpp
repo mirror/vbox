@@ -291,7 +291,7 @@ IFoo::Release()
       
     nsrefcnt newrefcount = --refcount_;
     printf("IFoo@%p::Release(), refcount --> %d\n",
-           NS_STATIC_CAST(void*, this), nsrefcnt);
+           NS_STATIC_CAST(void*, this), newrefcount);
 
     if ( !newrefcount )
       {
