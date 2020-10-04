@@ -30,6 +30,7 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 
+from __future__ import print_function;
 import sys;
 import os;
 
