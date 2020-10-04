@@ -1659,7 +1659,9 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
         Exception wrapped main() worker.
         """
 
-        # parse the arguments.
+        #
+        # Parse the arguments.
+        #
         if asArgs is None:
             asArgs = list(sys.argv);
         iArg = 1;
@@ -1689,9 +1691,11 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
             reporter.error('valid actions: %s' % (self.asNormalActions + self.asSpecialActions + ['all']));
             return rtexitcode.RTEXITCODE_SYNTAX;
 
-        # execte the actions.
+        #
+        # Execte the actions.
+        #
         fRc = True;         # Tristate - True (success), False (failure), None (skipped).
-        asActions = self.asActions;
+        asActions = list(self.asActions); # Must copy it or vboxinstaller.py breaks.
         if 'extract' in asActions:
             reporter.log('*** extract action ***');
             asActions.remove('extract');
@@ -1758,7 +1762,9 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
             reporter.error('unhandled actions: %s' % (asActions,));
             fRc = False;
 
-        # Done
+        #
+        # Done - report the final result.
+        #
         if fRc is None:
             if self.fBadTestbox:
                 reporter.log('****************************************************************');
