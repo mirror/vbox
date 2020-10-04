@@ -36,8 +36,8 @@ import os;
 print('dummydriver.py: hello world!');
 print('dummydriver.py: args: %s' % (sys.argv,));
 
-print('dummydriver.py: environment:')
-for sVar in sorted(os.environ.keys()):
+print('dummydriver.py: environment:');
+for sVar in sorted(os.environ.keys()): # pylint: disable=consider-iterating-dictionary
     print('%s=%s' % (sVar, os.environ[sVar]));
 
 if sys.argv[-1] in [ 'all', 'execute' ]:
