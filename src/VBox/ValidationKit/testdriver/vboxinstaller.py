@@ -70,6 +70,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         self._asSubDriver   = [];   # The sub driver and it's arguments.
         self._asBuildUrls   = [];   # The URLs passed us on the command line.
         self._asBuildFiles  = [];   # The downloaded file names.
+        self._fUnpackedBuildFiles = False;
         self._fAutoInstallPuelExtPack = True;
 
     #
@@ -82,7 +83,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         #             012345678901234567890123456789012345678901234567890123456789012345678901234567890
         reporter.log('');
         reporter.log('vboxinstaller Options:');
-        reporter.log('  --vbox-build    <url[,url2[,..]]>');
+        reporter.log('  --vbox-build    <url[,url2[,...]]>');
         reporter.log('      Comma separated list of URL to file to download and install or/and');
         reporter.log('      unpack.  URLs without a schema are assumed to be files on the');
         reporter.log('      build share and will be copied off it.');
@@ -122,7 +123,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         # Check that we've got what we need.
         #
         if not self._asBuildUrls:
-            reporter.error('No build files specfiied ("--vbox-build file1[,file2[...]]")');
+            reporter.error('No build files specified ("--vbox-build file1[,file2[...]]")');
             return False;
         if not self._asSubDriver:
             reporter.error('No sub testdriver specified. (" -- test/stuff/tdStuff1.py args")');
@@ -165,14 +166,14 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if fRc is True and 'execute' not in self.asActions and 'all' not in self.asActions:
             fRc = self._executeSubDriver([ 'verify', ]);
         if fRc is True and 'execute' not in self.asActions and 'all' not in self.asActions:
-            fRc = self._executeSubDriver([ 'config', ]);
+            fRc = self._executeSubDriver([ 'config', ], fPreloadASan = True);
         return fRc;
 
     def actionExecute(self):
         """
         Execute the sub testdriver.
         """
-        return self._executeSubDriver(self.asActions);
+        return self._executeSubDriver(self.asActions, fPreloadASan = True);
 
     def actionCleanupAfter(self):
         """
@@ -202,7 +203,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         Forward this to the sub testdriver first, then wipe all VBox like
         processes, and finally do the pid file processing (again).
         """
-        fRc1 = self._executeSubDriver([ 'abort', ], fMaySkip = False);
+        fRc1 = self._executeSubDriver([ 'abort', ], fMaySkip = False, fPreloadASan = True);
         fRc2 = self._killAllVBoxProcesses();
         fRc3 = TestDriverBase.actionAbort(self);
         return fRc1 and fRc2 and fRc3;
@@ -211,7 +212,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
     #
     # Persistent variables.
     #
-    ## @todo integrate into the base driver. Persisten accross scratch wipes?
+    ## @todo integrate into the base driver. Persistent accross scratch wipes?
 
     def __persistentVarCalcName(self, sVar):
         """Returns the (full) filename for the given persistent variable."""
@@ -372,13 +373,42 @@ class VBoxInstallerTestDriver(TestDriverBase):
         reporter.log('Exit code [sudo]: %s (%s)' % (iRc, asArgs));
         return (iRc == 0, iRc);
 
-    def _executeSubDriver(self, asActions, fMaySkip = True):
+    def _findASanLibsForASanBuild(self):
+        """
+        Returns a list of (address) santizier related libraries to preload
+        when launching the sub driver.
+        Returns empty list for non-asan builds or on platforms where this isn't needed.
+        """
+        # Note! We include libasan.so.X in the VBoxAll tarball for asan builds, so we
+        #       can use its presence both to detect an 'asan' build and to return it.
+        #       Only the libasan.so.X library needs preloading at present.
+        if self.sHost in ('linux',):
+            sLibASan = self._findFile(r'libasan\.so\..*');
+            if sLibASan:
+                return [sLibASan,];
+        return [];
+
+    def _executeSubDriver(self, asActions, fMaySkip = True, fPreloadASan = True):
         """
         Execute the sub testdriver with the specified action.
         """
         asArgs = list(self._asSubDriver)
         asArgs.append('--no-wipe-clean');
         asArgs.extend(asActions);
+
+        asASanLibs = [];
+        if fPreloadASan:
+            asASanLibs = self._findASanLibsForASanBuild();
+        if asASanLibs:
+            os.environ['LD_PRELOAD'] = ':'.join(asASanLibs);
+            os.environ['LSAN_OPTIONS'] = 'detect_leaks=0'; # We don't want python leaks. vbox.py disables this.
+
+            rc = self._executeSync(asArgs, fMaySkip = fMaySkip);
+
+            del os.environ['LSAN_OPTIONS'];
+            del os.environ['LD_PRELOAD'];
+            return rc;
+
         return self._executeSync(asArgs, fMaySkip = fMaySkip);
 
     def _maybeUnpackArchive(self, sMaybeArchive, fNonFatal = False):
@@ -424,11 +454,12 @@ class VBoxInstallerTestDriver(TestDriverBase):
         # Unpack anything we know what is and append it to the build files
         # list.  This allows us to use VBoxAll*.tar.gz files.
         #
-        for sFile in list(self._asBuildFiles):
+        for sFile in list(self._asBuildFiles): # Note! We copy the list as _maybeUnpackArchive updates it.
             if self._maybeUnpackArchive(sFile, fNonFatal = True) is not True:
                 reporter.testDone(fSkipped = True);
                 return None; # Failed to unpack. Probably local error, like busy
                              # DLLs on windows, no reason for failing the build.
+        self._fUnpackedBuildFiles = True;
 
         #
         # Go to system specific installation code.
@@ -496,9 +527,18 @@ class VBoxInstallerTestDriver(TestDriverBase):
         """
         oRegExp = re.compile(sRegExp);
 
+        reporter.log('_findFile: %s' % (sRegExp,));
         for sFile in self._asBuildFiles:
             if oRegExp.match(os.path.basename(sFile)) and os.path.exists(sFile):
                 return sFile;
+
+        # If we didn't unpack the build files, search all the files in the scratch area:
+        if not self._fUnpackedBuildFiles:
+            for sDir, _, asFiles in os.walk(self.sScratchPath):
+                for sFile in asFiles:
+                    #reporter.log('_findFile: considering %s' % (sFile,));
+                    if oRegExp.match(sFile):
+                        return os.path.join(sDir, sFile);
 
         if fMandatory:
             reporter.error('Failed to find a file matching "%s" in %s.' % (sRegExp, self._asBuildFiles,));
