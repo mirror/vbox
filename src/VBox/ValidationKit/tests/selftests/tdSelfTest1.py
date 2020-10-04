@@ -6,6 +6,8 @@
 Test Manager Self Test - Dummy Test Driver.
 """
 
+from __future__ import print_function;
+
 __copyright__ = \
 """
 Copyright (C) 2012-2020 Oracle Corporation
@@ -30,7 +32,6 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 
-from __future__ import print_function;
 import sys;
 import os;
 
