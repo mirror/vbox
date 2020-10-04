@@ -31,12 +31,19 @@ __version__ = "$Revision$"
 
 
 import sys;
+import os;
 
 print('dummydriver.py: hello world!');
 print('dummydriver.py: args: %s' % (sys.argv,));
+
+print('dummydriver.py: environment:')
+for sVar in sorted(os.environ.keys()):
+    print('%s=%s' % (sVar, os.environ[sVar]));
+
 if sys.argv[-1] in [ 'all', 'execute' ]:
 
     import time;
+
     for i in range(10, 1, -1):
         print('dummydriver.py: %u...', i);
         sys.stdout.flush();
