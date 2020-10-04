@@ -460,6 +460,17 @@ class Build(object): # pylint: disable=too-few-public-methods
             self.sDesignation = os.environ.get('TEST_BUILD_DESIGNATION', 'XXXXX');
             ## @todo Much more work is required here.
 
+            # Determine the build type.
+            (iExit, sStdOut, sStdErr) = utils.processOutputUnchecked([os.path.join(self.sInstallPath,
+                                                                                   'VBoxManage' + base.exeSuff()),
+                                                                      '--dump-build-type']);
+            sStdOut = sStdOut.strip();
+            if iExit == 0 and sStdOut in ('release', 'debug', 'strict', 'dbgopt', 'asan'):
+                self.sType = sStdOut;
+                reporter.log2('build type: %s' % (self.sType));
+            else:
+                reporter.log2('--dump-build-type -> iExit=%u sStdOut=%s' % (iExit, sStdOut,));
+
             # Do some checks.
             sVMMR0 = os.path.join(self.sInstallPath, 'VMMR0.r0');
             if not os.path.isfile(sVMMR0) and utils.getHostOs() == 'solaris': # solaris is special.
@@ -872,6 +883,17 @@ class TestDriver(base.TestDriver):                                              
         self.fAlwaysUploadLogs  = False;
         self.fAlwaysUploadScreenshots = False;
         self.fEnableDebugger          = True;
+
+        # Drop LD_PRELOAD and enable memory leak detection in LSAN_OPTIONS from vboxinstall.py
+        # before doing build detection. This is a little crude and inflexible...
+        if 'LD_PRELOAD' in os.environ:
+            del os.environ['LD_PRELOAD'];
+            if 'LSAN_OPTIONS' in os.environ:
+                asLSanOptions = os.environ['LSAN_OPTIONS'].split(':');
+                try:    asLSanOptions.remove('detect_leaks=0');
+                except: pass;
+                if asLSanOptions: os.environ['LSAN_OPTIONS'] = ':'.join(asLSanOptions);
+                else:         del os.environ['LSAN_OPTIONS'];
 
         # Quietly detect build and validation kit.
         self._detectBuild(False);
