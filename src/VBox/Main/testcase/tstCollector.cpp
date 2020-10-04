@@ -1,8 +1,6 @@
 /* $Id$ */
-
 /** @file
- *
- * Collector classes test cases.
+ * VirtualBox Main - Performance collector classes test cases.
  */
 
 /*
