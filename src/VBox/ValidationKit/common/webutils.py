@@ -173,7 +173,14 @@ def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoPro
             return False;
     else:
         # Assumes file from the build share.
-        sSrcPath = os.path.join(sLocalPrefix, sUrlFile);
+        if sUrlFile.startswith('file:///'):
+            sSrcPath = sUrlFile[7:];
+        elif sUrlFile.startswith('file://'):
+            sSrcPath = sUrlFile[6:];
+        elif os.path.isabs(sUrlFile):
+            sSrcPath = sUrlFile;
+        else:
+            sSrcPath = os.path.join(sLocalPrefix, sUrlFile);
         fnLog('Copying "%s" to "%s"...' % (sSrcPath, sDstFile));
         try:
             utils.copyFileSimple(sSrcPath, sDstFile);
