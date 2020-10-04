@@ -1709,7 +1709,7 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
             reporter.log('*** abort action completed (fRc=%s) ***' % (fRc));
         else:
             if asActions == [ 'all' ]:
-                asActions = self.asNormalActions;
+                asActions = list(self.asNormalActions);
 
             if 'verify' in asActions:
                 reporter.log('*** verify action ***');
