@@ -461,9 +461,9 @@ class Build(object): # pylint: disable=too-few-public-methods
             ## @todo Much more work is required here.
 
             # Determine the build type.
-            (iExit, sStdOut, sStdErr) = utils.processOutputUnchecked([os.path.join(self.sInstallPath,
-                                                                                   'VBoxManage' + base.exeSuff()),
-                                                                      '--dump-build-type']);
+            (iExit, sStdOut, _) = utils.processOutputUnchecked([os.path.join(self.sInstallPath,
+                                                                             'VBoxManage' + base.exeSuff()),
+                                                                '--dump-build-type']);
             sStdOut = sStdOut.strip();
             if iExit == 0 and sStdOut in ('release', 'debug', 'strict', 'dbgopt', 'asan'):
                 self.sType = sStdOut;
