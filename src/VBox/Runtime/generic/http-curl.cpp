@@ -1057,7 +1057,10 @@ static DECLCALLBACK(int) rtHttpLibProxyResolveImports(void *pvUser)
         if (RT_SUCCESS(rc))
             rc = RTLdrGetSymbol(hMod, "px_proxy_factory_get_proxies", (void **)&g_pfnLibProxyFactoryGetProxies);
         if (RT_SUCCESS(rc))
+        {
+            RTMEM_WILL_LEAK(hMod);
             g_hLdrLibProxy = hMod;
+        }
         else
             RTLdrClose(hMod);
         AssertRC(rc);
