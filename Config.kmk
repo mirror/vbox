@@ -1975,10 +1975,27 @@ ifndef VBOX_BLD_PYTHON
  if1of ($(KBUILD_HOST), win)
   VBOX_BLD_PYTHON := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS)/win.x86/python/v*/python$(HOSTSUFF_EXE))) \
   				   python-not-found.exe)
+ else ifndef VBOX_WITH_PYTHON2_PREFERENCE
+  VBOX_BLD_PYTHON := $(firstword \
+	$(which python3$(HOSTSUFF_EXE)) \
+	$(which python3.10$(HOSTSUFF_EXE)) \
+	$(which python3.9$(HOSTSUFF_EXE)) \
+	$(which python3.8$(HOSTSUFF_EXE)) \
+	$(which python3.7$(HOSTSUFF_EXE)) \
+	$(which python3.6$(HOSTSUFF_EXE)) \
+	$(which python3.5$(HOSTSUFF_EXE)) \
+	$(which python3.4$(HOSTSUFF_EXE)) \
+	$(which python2.7$(HOSTSUFF_EXE)) \
+	$(which python$(HOSTSUFF_EXE)) \
+	$(which python2.6$(HOSTSUFF_EXE)) \
+	python-not-found$(HOSTSUFF_EXE) )
  else
-  VBOX_BLD_PYTHON := $(firstword $(which python2.7$(HOSTSUFF_EXE)) $(which python2.6$(HOSTSUFF_EXE)) \
-                                 $(which python$(HOSTSUFF_EXE)) $(which python3$(HOSTSUFF_EXE)) \
-				   python-not-found)
+  VBOX_BLD_PYTHON := $(firstword \
+	$(which python2.7$(HOSTSUFF_EXE)) \
+	$(which python2.6$(HOSTSUFF_EXE)) \
+	$(which python$(HOSTSUFF_EXE)) \
+	$(which python3$(HOSTSUFF_EXE)) \
+	python-not-found$(HOSTSUFF_EXE) )
  endif
 endif
 ## For running python unittests in the validation kit.
