@@ -1248,7 +1248,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
                 LogFlow(("InvalidatePage: Out-of-sync at %RGp PdeSrc=%RX64 PdeDst=%RX64 ShwGCPhys=%RGp iPDDst=%#x\n",
                          GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u, pShwPage->GCPhys, iPDDst));
                 pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-                ASMAtomicWriteSize(pPdeDst, 0);
+                SHW_PDE_ATOMIC_SET(*pPdeDst, 0);
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
                 PGM_INVL_VCPU_TLBS(pVCpu);
             }
@@ -1291,7 +1291,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
             LogFlow(("InvalidatePage: Out-of-sync PD at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-            ASMAtomicWriteSize(pPdeDst, 0);
+            SHW_PDE_ATOMIC_SET(*pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePage4MBPages));
             PGM_INVL_BIG_PG(pVCpu, GCPtrPage);
         }
@@ -1304,7 +1304,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         if (!(PdeDst.u & PGM_PDFLAGS_MAPPING))
         {
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-            ASMAtomicWriteSize(pPdeDst, 0);
+            SHW_PDE_ATOMIC_SET(*pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePagePDNPs));
             PGM_INVL_PG(pVCpu, GCPtrPage);
         }
@@ -2037,7 +2037,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                         PdeDst.au32[0] &= ~PGM_PDFLAGS_TRACK_DIRTY;
                         PdeDst.n.u1Write = PdeSrc.n.u1Write;
                     }
-                    ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+                    SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
                     Log2(("SyncPage: BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} GCPhys=%RGp%s\n",
                           GCPtrPage, PdeSrc.n.u1Present, PdeSrc.n.u1Write, PdeSrc.n.u1User, (uint64_t)PdeSrc.u, GCPhys,
                           PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
@@ -2073,7 +2073,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
      * Yea, I'm lazy.
      */
     pgmPoolFreeByPage(pPool, pShwPage, pShwPde->idx, iPDDst);
-    ASMAtomicWriteSize(pPdeDst, 0);
+    SHW_PDE_ATOMIC_SET(*pPdeDst, 0);
 
     PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
     PGM_INVL_VCPU_TLBS(pVCpu);
@@ -2315,7 +2315,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPUCC pVCpu, uint32_t uErr, PSHW
             PdeDst.n.u1Write      = 1;
             PdeDst.n.u1Accessed   = 1;
             PdeDst.au32[0]       &= ~PGM_PDFLAGS_TRACK_DIRTY;
-            ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+            SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
             PGM_INVL_BIG_PG(pVCpu, GCPtrPage);
             return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;    /* restarts the instruction. */
         }
@@ -2647,7 +2647,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                     PdeDst.b.u1Write = 0;
                 }
             }
-            ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+            SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
             PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
             return VINF_SUCCESS;
         }
@@ -2689,7 +2689,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                  */
                 PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | X86_PDE_AVL_MASK))
                          | GST_GET_PDE_SHW_FLAGS(pVCpu, PdeSrc);
-                ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+                SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
                 PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
 
                 /*
@@ -2785,7 +2785,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                 PdeDst.u |= PGM_PDFLAGS_TRACK_DIRTY;
                 PdeDst.b.u1Write = 0;
             }
-            ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+            SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
             PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
 
             /*
@@ -2977,6 +2977,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
     PSHWPDE         pPdeDst = &pPDDst->a[iPDDst];
 
     /* Fetch the pgm pool shadow descriptor. */
+    /** @todo r=bird: didn't pgmShwGetEPTPDPtr just do this lookup already? */
     PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & EPT_PDPTE_PG_MASK);
     Assert(pShwPde);
 # endif
@@ -3038,7 +3039,6 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
             if (HCPhys != NIL_RTHCPHYS)
             {
                 PdeDst.u &= X86_PDE_AVL_MASK;
-                PdeDst.u |= HCPhys;
                 PdeDst.n.u1Present   = 1;
                 PdeDst.n.u1Write     = 1;
                 PdeDst.b.u1Size      = 1;
@@ -3049,7 +3049,8 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
 #  else
                 PdeDst.n.u1User      = 1;
 #  endif
-                ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+                PdeDst.u |= HCPhys; /* Note! Must be done last of gcc v10.2.1 20200723 (Red Hat 10.2.1-1) may drop the top 32 bits. */
+                SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
 
                 Log(("SyncPT: Use large page at %RGp PDE=%RX64\n", GCPtrPage, PdeDst.u));
                 /* Add a reference to the first page only. */
@@ -3111,7 +3112,6 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
 
     /* Save the new PDE. */
     PdeDst.u &= X86_PDE_AVL_MASK;
-    PdeDst.u |= pShwPage->Core.Key;
     PdeDst.n.u1Present  = 1;
     PdeDst.n.u1Write    = 1;
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
@@ -3120,7 +3120,9 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
     PdeDst.n.u1User     = 1;
     PdeDst.n.u1Accessed = 1;
 # endif
-    ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+    PdeDst.u |= pShwPage->Core.Key; /* Note! Must be done last of gcc v10.2.1 20200723 (Red Hat 10.2.1-1) drops the top 32 bits. */
+    /** @todo r=bird: Stop using bitfields.  But we need to defined/find the EPT flags then. */
+    SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
 
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPT), a);
     if (RT_FAILURE(rc))

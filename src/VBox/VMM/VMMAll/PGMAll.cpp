@@ -1755,7 +1755,12 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
 
         pgmPoolCacheUsed(pPool, pShwPage);
     }
+
     /* The PDPT was cached or created; hook it up now and fill with the default value. */
+/** @todo r=bird: This is sub-optimal, gcc 10 generates a qword move of the address followed by
+ *        a byte write of the 0x7 flag value.  These two writes should be combined, but for that
+ *        we need to add/find the EPT flag defines. */
+/** @todo r=bird: use atomic writes here and maybe only update if really needed? */
     pPml4e->u           = pShwPage->Core.Key;
     pPml4e->n.u1Present = 1;
     pPml4e->n.u1Write   = 1;

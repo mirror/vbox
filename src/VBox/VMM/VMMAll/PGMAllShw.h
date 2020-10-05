@@ -30,6 +30,8 @@
 #undef SHW_PDE_PG_MASK
 #undef SHW_PD_SHIFT
 #undef SHW_PD_MASK
+#undef SHW_PDE_ATOMIC_SET
+#undef SHW_PDE_ATOMIC_SET2
 #undef SHW_PTE_PG_MASK
 #undef SHW_PTE_IS_P
 #undef SHW_PTE_IS_RW
@@ -66,6 +68,8 @@
 # define SHW_PD_SHIFT                   X86_PD_SHIFT
 # define SHW_PD_MASK                    X86_PD_MASK
 # define SHW_TOTAL_PD_ENTRIES           X86_PG_ENTRIES
+# define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU32(&(Pde).u, (uNew)); } while (0)
+# define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU32(&(Pde).u, (Pde2).u); } while (0)
 # define SHW_PTE_PG_MASK                X86_PTE_PG_MASK
 # define SHW_PTE_IS_P(Pte)              ( (Pte).n.u1Present )
 # define SHW_PTE_IS_RW(Pte)             ( (Pte).n.u1Write )
@@ -97,6 +101,8 @@
 # define SHW_PDE_PG_MASK                EPT_PDE_PG_MASK
 # define SHW_PD_SHIFT                   EPT_PD_SHIFT
 # define SHW_PD_MASK                    EPT_PD_MASK
+# define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU64(&(Pde).u, (uNew)); } while (0)
+# define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU64(&(Pde).u, (Pde2).u); } while (0)
 # define SHW_PTE_PG_MASK                EPT_PTE_PG_MASK
 # define SHW_PTE_IS_P(Pte)              ( (Pte).n.u1Present )  /* Approximation, works for us. */
 # define SHW_PTE_IS_RW(Pte)             ( (Pte).n.u1Write )
@@ -132,6 +138,8 @@
 # define SHW_PDE_PG_MASK                X86_PDE_PAE_PG_MASK
 # define SHW_PD_SHIFT                   X86_PD_PAE_SHIFT
 # define SHW_PD_MASK                    X86_PD_PAE_MASK
+# define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU64(&(Pde).u, (uNew)); } while (0)
+# define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU64(&(Pde).u, (Pde2).u); } while (0)
 # define SHW_PTE_PG_MASK                X86_PTE_PAE_PG_MASK
 # define SHW_PTE_IS_P(Pte)              PGMSHWPTEPAE_IS_P(Pte)
 # define SHW_PTE_IS_RW(Pte)             PGMSHWPTEPAE_IS_RW(Pte)
