@@ -460,16 +460,21 @@ class Build(object): # pylint: disable=too-few-public-methods
             self.sDesignation = os.environ.get('TEST_BUILD_DESIGNATION', 'XXXXX');
             ## @todo Much more work is required here.
 
-            # Determine the build type.
-            (iExit, sStdOut, _) = utils.processOutputUnchecked([os.path.join(self.sInstallPath,
-                                                                             'VBoxManage' + base.exeSuff()),
-                                                                '--dump-build-type']);
-            sStdOut = sStdOut.strip();
-            if iExit == 0 and sStdOut in ('release', 'debug', 'strict', 'dbgopt', 'asan'):
-                self.sType = sStdOut;
-                reporter.log2('build type: %s' % (self.sType));
+            # Try Determine the build type.
+            sVBoxManage = os.path.join(self.sInstallPath, 'VBoxManage' + base.exeSuff());
+            if os.path.isfile(sVBoxManage):
+                try:
+                    (iExit, sStdOut, _) = utils.processOutputUnchecked([sVBoxManage, '--dump-build-type']);
+                    sStdOut = sStdOut.strip();
+                    if iExit == 0 and sStdOut in ('release', 'debug', 'strict', 'dbgopt', 'asan'):
+                        self.sType = sStdOut;
+                        reporter.log2('build type: %s' % (self.sType));
+                    else:
+                        reporter.log2('Build: --dump-build-type -> iExit=%u sStdOut=%s' % (iExit, sStdOut,));
+                except:
+                    reporter.logXcpt('Build: Running "%s --dump-build-type" failed!' % (sVBoxManage,));
             else:
-                reporter.log2('--dump-build-type -> iExit=%u sStdOut=%s' % (iExit, sStdOut,));
+                reporter.log('Build: sVBoxManage=%s not found!' % (sVBoxManage,));
 
             # Do some checks.
             sVMMR0 = os.path.join(self.sInstallPath, 'VMMR0.r0');
