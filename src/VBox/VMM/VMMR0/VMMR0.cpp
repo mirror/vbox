@@ -1057,6 +1057,22 @@ VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPUCC pVCpu)
 }
 
 
+/**
+ * Returns the ring-0 release logger instance.
+ *
+ * @returns Pointer to release logger, NULL if not configured.
+ * @param   pVCpu       The cross context virtual CPU structure of the caller.
+ * @thread  EMT(pVCpu)
+ */
+VMMR0_INT_DECL(PRTLOGGER) VMMR0GetReleaseLogger(PVMCPUCC pVCpu)
+{
+    PVMMR0LOGGER pLogger = pVCpu->vmm.s.pR0RelLoggerR0;
+    if (pLogger)
+        return &pLogger->Logger;
+    return NULL;
+}
+
+
 #ifdef VBOX_WITH_STATISTICS
 /**
  * Record return code statistics

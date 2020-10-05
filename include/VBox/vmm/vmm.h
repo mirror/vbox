@@ -469,6 +469,7 @@ VMMR0_INT_DECL(int)  VMMR0ThreadCtxHookCreateForEmt(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(PRTLOGGER) VMMR0GetReleaseLogger(PVMCPUCC pVCpu);
 
 # ifdef LOG_ENABLED
 VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPUCC pVCpu);
