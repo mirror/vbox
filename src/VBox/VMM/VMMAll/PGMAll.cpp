@@ -1722,50 +1722,56 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4
 static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
 {
     PVMCC          pVM   = pVCpu->CTX_SUFF(pVM);
-    const unsigned iPml4 = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
     PPGMPOOL       pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    PEPTPML4       pPml4;
-    PEPTPML4E      pPml4e;
-    PPGMPOOLPAGE   pShwPage;
     int            rc;
 
     Assert(pVM->pgm.s.fNestedPaging);
     PGM_LOCK_ASSERT_OWNER(pVM);
 
-    pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+    /*
+     * PML4 level.
+     */
+
+    PEPTPML4 pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
     Assert(pPml4);
 
     /* Allocate page directory pointer table if not present. */
-    pPml4e = &pPml4->a[iPml4];
-    if (    !pPml4e->n.u1Present
-        &&  !(pPml4e->u & EPT_PML4E_PG_MASK))
+    PPGMPOOLPAGE pShwPage;
     {
-        Assert(!(pPml4e->u & EPT_PML4E_PG_MASK));
-        RTGCPTR64 GCPml4 = (RTGCPTR64)iPml4 << EPT_PML4_SHIFT;
+        const unsigned iPml4 = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
+        PEPTPML4E pPml4e = &pPml4->a[iPml4];
+        EPTPML4E Pml4e;
+        Pml4e.u = pPml4e->u;
+        if (!(Pml4e.u & (EPT_E_PG_MASK | EPT_E_READ)))
+        {
+            RTGCPTR64 GCPml4 = (RTGCPTR64)iPml4 << EPT_PML4_SHIFT;
 
-        rc = pgmPoolAlloc(pVM, GCPml4, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
-                          pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, false /*fLockPage*/,
-                          &pShwPage);
-        AssertRCReturn(rc, rc);
+            rc = pgmPoolAlloc(pVM, GCPml4, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                              pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, false /*fLockPage*/,
+                              &pShwPage);
+            AssertRCReturn(rc, rc);
+
+            /* Hook up the new PDPT now. */
+            ASMAtomicWriteU64(&pPml4e->u, pShwPage->Core.Key | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE);
+        }
+        else
+        {
+            pShwPage = pgmPoolGetPage(pPool, pPml4e->u & EPT_PML4E_PG_MASK);
+            AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
+
+            pgmPoolCacheUsed(pPool, pShwPage);
+
+            /* Hook up the cached PDPT if needed (probably not given 512*512 PTs to sync). */
+            if (Pml4e.u == (pShwPage->Core.Key | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE))
+            { }
+            else
+                ASMAtomicWriteU64(&pPml4e->u, pShwPage->Core.Key | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE);
+        }
     }
-    else
-    {
-        pShwPage = pgmPoolGetPage(pPool, pPml4e->u & EPT_PML4E_PG_MASK);
-        AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
-        pgmPoolCacheUsed(pPool, pShwPage);
-    }
-
-    /* The PDPT was cached or created; hook it up now and fill with the default value. */
-/** @todo r=bird: This is sub-optimal, gcc 10 generates a qword move of the address followed by
- *        a byte write of the 0x7 flag value.  These two writes should be combined, but for that
- *        we need to add/find the EPT flag defines. */
-/** @todo r=bird: use atomic writes here and maybe only update if really needed? */
-    pPml4e->u           = pShwPage->Core.Key;
-    pPml4e->n.u1Present = 1;
-    pPml4e->n.u1Write   = 1;
-    pPml4e->n.u1Execute = 1;
-
+    /*
+     * PDPT level.
+     */
     const unsigned iPdPt = (GCPtr >> EPT_PDPT_SHIFT) & EPT_PDPT_MASK;
     PEPTPDPT  pPdpt = (PEPTPDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     PEPTPDPTE pPdpe = &pPdpt->a[iPdPt];
@@ -1774,14 +1780,18 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
         *ppPdpt = pPdpt;
 
     /* Allocate page directory if not present. */
-    if (    !pPdpe->n.u1Present
-        &&  !(pPdpe->u & EPT_PDPTE_PG_MASK))
+    EPTPDPTE Pdpe;
+    Pdpe.u = pPdpe->u;
+    if (!(Pdpe.u & (EPT_E_PG_MASK | EPT_E_READ)))
     {
         RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
         rc = pgmPoolAlloc(pVM, GCPdPt, PGMPOOLKIND_EPT_PD_FOR_PHYS, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
                           pShwPage->idx, iPdPt, false /*fLockPage*/,
                           &pShwPage);
         AssertRCReturn(rc, rc);
+
+        /* Hook up the new PD now. */
+        ASMAtomicWriteU64(&pPdpe->u, pShwPage->Core.Key | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE);
     }
     else
     {
@@ -1789,12 +1799,13 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
         AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
         pgmPoolCacheUsed(pPool, pShwPage);
+
+        /* Hook up the cached PD if needed (probably not given there are 512 PTs we may need sync). */
+        if (Pdpe.u == (pShwPage->Core.Key | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE))
+        { }
+        else
+            ASMAtomicWriteU64(&pPdpe->u, pShwPage->Core.Key | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE);
     }
-    /* The PD was cached or created; hook it up now and fill with the default value. */
-    pPdpe->u            = pShwPage->Core.Key;
-    pPdpe->n.u1Present  = 1;
-    pPdpe->n.u1Write    = 1;
-    pPdpe->n.u1Execute  = 1;
 
     *ppPD = (PEPTPD)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     return VINF_SUCCESS;
