@@ -84,9 +84,29 @@ MACOS_VERS=$(sw_vers -productVersion)
 sync
 if [[ ${MACOS_VERS} != 11.0* ]]; then
     set -e
-fi
-kextload    '/Library/Application Support/VirtualBox/VBoxDrv.kext'
-kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxUSB.kext'
-kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxNetFlt.kext'
-kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxNetAdp.kext'
+    kextload    '/Library/Application Support/VirtualBox/VBoxDrv.kext'
+    kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxUSB.kext'
+    kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxNetFlt.kext'
+    kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxNetAdp.kext'
+else
+    VBOX_RC=0
+    if ! kmutil load -b org.virtualbox.kext.VBoxDrv; then
+        VBOX_RC=1
+    fi
 
+    if ! kmutil load -b org.virtualbox.kext.VBoxUSB; then
+        VBOX_RC=1
+    fi
+
+    if ! kmutil load -b org.virtualbox.kext.VBoxNetFlt; then
+        VBOX_RC=1
+    fi
+
+    if ! kmutil load -b org.virtualbox.kext.VBoxNetAdp; then
+        VBOX_RC=1
+    fi
+
+    if [ $VBOX_RC -ne 1 ]; then
+        osascript -e 'display dialog "A reboot is required on macOS BigSur and onwards in order to be able to load the installed kernel extensions" buttons { "Ok" } with icon caution'
+    fi
+fi
