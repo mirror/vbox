@@ -448,6 +448,30 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
  * @{
  */
 
+/** @name Common bits
+ * @{ */
+/** Bit 0 - Readable (we often think of it as present). */
+#define EPT_E_BIT_READ          0
+#define EPT_E_READ              RT_BIT_64(EPT_E_BIT_READ)       /**< @see EPT_E_BIT_READ */
+/** Bit 1 - Writable. */
+#define EPT_E_BIT_WRITE         1
+#define EPT_E_WRITE             RT_BIT_64(EPT_E_BIT_WRITE)      /**< @see EPT_E_BIT_WRITE */
+/** Bit 2 - Executable. */
+#define EPT_E_BIT_EXECUTE       2
+#define EPT_E_EXECUTE           RT_BIT_64(EPT_E_BIT_EXECUTE)    /**< @see EPT_E_BIT_EXECUTE */
+/** Bit 3 - Page size (not applicable to all levels). */
+#define EPT_E_BIT_SIZE          3
+#define EPT_E_SIZE              RT_BIT_64(EPT_E_BIT_SIZE)       /**< @see EPT_E_BIT_SIZE */
+/** Bits 8-11 & 52-63 - Available for software */
+#define EPT_E_AVL               UINT64_C(0xfff0000000000f00)
+/** Bits 12-51 - Physical Page number of the next level. */
+#define EPT_E_PG_MASK           UINT64_C(0x000ffffffffff000)
+/** Bits 5-7 - Reserved. */
+#define EPT_E_RESERVED          UINT64_C(0x00e0)
+/** Bits 4-7 - Reserved w/o size bit. */
+#define EPT_E_RESERVED_NO_SIZE  UINT64_C(0x00f0)
+/** @} */
+
 /**
  * Number of page table entries in the EPT. (PDPTE/PDE/PTE)
  */
