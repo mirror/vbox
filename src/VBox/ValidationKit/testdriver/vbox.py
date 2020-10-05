@@ -468,9 +468,9 @@ class Build(object): # pylint: disable=too-few-public-methods
                     sStdOut = sStdOut.strip();
                     if iExit == 0 and sStdOut in ('release', 'debug', 'strict', 'dbgopt', 'asan'):
                         self.sType = sStdOut;
-                        reporter.log2('build type: %s' % (self.sType));
+                        reporter.log('Build: Detected build type: %s' % (self.sType));
                     else:
-                        reporter.log2('Build: --dump-build-type -> iExit=%u sStdOut=%s' % (iExit, sStdOut,));
+                        reporter.log('Build: --dump-build-type -> iExit=%u sStdOut=%s' % (iExit, sStdOut,));
                 except:
                     reporter.logXcpt('Build: Running "%s --dump-build-type" failed!' % (sVBoxManage,));
             else:
