@@ -1073,7 +1073,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
     if (!pPdptDst->a[iPdpt].n.u1Present)
 #  endif
     {
+#ifndef PGM_WITHOUT_MAPPINGS
         Assert(!pPdptDst || !(pPdptDst->a[iPdpt].u & PGM_PLXFLAGS_MAPPING));
+#endif
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePageSkipped));
         PGM_INVL_PG(pVCpu, GCPtrPage);
         return VINF_SUCCESS;

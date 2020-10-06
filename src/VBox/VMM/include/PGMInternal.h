@@ -169,8 +169,10 @@
 /** The entry is a permanent one and it's must always be present.
  * Never free such an entry. */
 #define PGM_PLXFLAGS_PERMANENT          RT_BIT_64(10)
+#ifndef PGM_WITHOUT_MAPPINGS
 /** Mapping (hypervisor allocated pagetable). */
 #define PGM_PLXFLAGS_MAPPING            RT_BIT_64(11)
+#endif
 /** @} */
 
 /** @name Page directory flags.
