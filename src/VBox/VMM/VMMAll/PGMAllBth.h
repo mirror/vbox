@@ -3038,18 +3038,17 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
 
             if (HCPhys != NIL_RTHCPHYS)
             {
+#  if PGM_SHW_TYPE == PGM_TYPE_EPT
+                PdeDst.u = HCPhys | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_LEAF | EPT_E_IGNORE_PAT | EPT_E_TYPE_WB
+                         | (PdeDst.u & X86_PDE_AVL_MASK) /** @todo do we need this? */;
+#  else
                 PdeDst.u &= X86_PDE_AVL_MASK;
                 PdeDst.n.u1Present   = 1;
                 PdeDst.n.u1Write     = 1;
                 PdeDst.b.u1Size      = 1;
-#  if  PGM_SHW_TYPE == PGM_TYPE_EPT
-                PdeDst.n.u1Execute   = 1;
-                PdeDst.b.u1IgnorePAT = 1;
-                PdeDst.b.u3EMT       = VMX_EPT_MEMTYPE_WB;
-#  else
                 PdeDst.n.u1User      = 1;
-#  endif
                 PdeDst.u |= HCPhys; /* Note! Must be done last of gcc v10.2.1 20200723 (Red Hat 10.2.1-1) may drop the top 32 bits. */
+#  endif
                 SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
 
                 Log(("SyncPT: Use large page at %RGp PDE=%RX64\n", GCPtrPage, PdeDst.u));
@@ -3111,17 +3110,18 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
         rc = VINF_SUCCESS; /* Cached entry; assume it's still fully valid. */
 
     /* Save the new PDE. */
+# if PGM_SHW_TYPE == PGM_TYPE_EPT
+    PdeDst.u = pShwPage->Core.Key | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE
+             | (PdeDst.u & X86_PDE_AVL_MASK /** @todo do we really need this? */);
+# else
     PdeDst.u &= X86_PDE_AVL_MASK;
     PdeDst.n.u1Present  = 1;
     PdeDst.n.u1Write    = 1;
-# if PGM_SHW_TYPE == PGM_TYPE_EPT
-    PdeDst.n.u1Execute  = 1;
-# else
     PdeDst.n.u1User     = 1;
     PdeDst.n.u1Accessed = 1;
-# endif
     PdeDst.u |= pShwPage->Core.Key; /* Note! Must be done last of gcc v10.2.1 20200723 (Red Hat 10.2.1-1) drops the top 32 bits. */
     /** @todo r=bird: Stop using bitfields.  But we need to defined/find the EPT flags then. */
+# endif
     SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
 
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPT), a);
