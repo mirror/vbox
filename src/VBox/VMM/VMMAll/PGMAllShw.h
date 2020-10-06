@@ -32,6 +32,7 @@
 #undef SHW_PD_MASK
 #undef SHW_PDE_ATOMIC_SET
 #undef SHW_PDE_ATOMIC_SET2
+#undef SHW_PDE_IS_BIG
 #undef SHW_PTE_PG_MASK
 #undef SHW_PTE_IS_P
 #undef SHW_PTE_IS_RW
@@ -68,6 +69,7 @@
 # define SHW_PD_SHIFT                   X86_PD_SHIFT
 # define SHW_PD_MASK                    X86_PD_MASK
 # define SHW_TOTAL_PD_ENTRIES           X86_PG_ENTRIES
+# define SHW_PDE_IS_BIG(Pde)            ( (Pde).b.u1Size )
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU32(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU32(&(Pde).u, (Pde2).u); } while (0)
 # define SHW_PTE_PG_MASK                X86_PTE_PG_MASK
@@ -101,30 +103,31 @@
 # define SHW_PDE_PG_MASK                EPT_PDE_PG_MASK
 # define SHW_PD_SHIFT                   EPT_PD_SHIFT
 # define SHW_PD_MASK                    EPT_PD_MASK
+# define SHW_PDE_IS_BIG(Pde)            ( (Pde).u & EPT_E_LEAF )
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU64(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU64(&(Pde).u, (Pde2).u); } while (0)
 # define SHW_PTE_PG_MASK                EPT_PTE_PG_MASK
-# define SHW_PTE_IS_P(Pte)              ( (Pte).n.u1Present )  /* Approximation, works for us. */
-# define SHW_PTE_IS_RW(Pte)             ( (Pte).n.u1Write )
+# define SHW_PTE_IS_P(Pte)              ( (Pte).u & EPT_E_READ ) /* Approximation, works for us. */
+# define SHW_PTE_IS_RW(Pte)             ( (Pte).u & EPT_E_WRITE )
 # define SHW_PTE_IS_US(Pte)             ( true )
 # define SHW_PTE_IS_A(Pte)              ( true )
 # define SHW_PTE_IS_D(Pte)              ( true )
-# define SHW_PTE_IS_P_RW(Pte)           ( (Pte).n.u1Present && (Pte).n.u1Write )
+# define SHW_PTE_IS_P_RW(Pte)           ( ((Pte).u & (EPT_E_READ | EPT_E_WRITE)) == (EPT_E_READ | EPT_E_WRITE) )
 # define SHW_PTE_IS_TRACK_DIRTY(Pte)    ( false )
-# define SHW_PTE_GET_HCPHYS(Pte)        ( (Pte).u & X86_PTE_PG_MASK )
+# define SHW_PTE_GET_HCPHYS(Pte)        ( (Pte).u & EPT_PTE_PG_MASK )
 # define SHW_PTE_LOG64(Pte)             ( (Pte).u )
 # define SHW_PTE_GET_U(Pte)             ( (Pte).u )             /**< Use with care. */
 # define SHW_PTE_SET(Pte, uNew)         do { (Pte).u = (uNew); } while (0)
 # define SHW_PTE_ATOMIC_SET(Pte, uNew)  do { ASMAtomicWriteU64(&(Pte).u, (uNew)); } while (0)
 # define SHW_PTE_ATOMIC_SET2(Pte, Pte2) do { ASMAtomicWriteU64(&(Pte).u, (Pte2).u); } while (0)
-# define SHW_PTE_SET_RO(Pte)            do { (Pte).n.u1Write = 0; } while (0)
-# define SHW_PTE_SET_RW(Pte)            do { (Pte).n.u1Write = 1; } while (0)
+# define SHW_PTE_SET_RO(Pte)            do { (Pte).u &= ~EPT_E_WRITE; } while (0)
+# define SHW_PTE_SET_RW(Pte)            do { (Pte).u |= EPT_E_WRITE; } while (0)
 # define SHW_PT_SHIFT                   EPT_PT_SHIFT
 # define SHW_PT_MASK                    EPT_PT_MASK
 # define SHW_PDPT_SHIFT                 EPT_PDPT_SHIFT
 # define SHW_PDPT_MASK                  EPT_PDPT_MASK
 # define SHW_PDPE_PG_MASK               EPT_PDPE_PG_MASK
-# define SHW_TOTAL_PD_ENTRIES           (EPT_PG_AMD64_ENTRIES*EPT_PG_AMD64_PDPE_ENTRIES)
+# define SHW_TOTAL_PD_ENTRIES           (EPT_PG_AMD64_ENTRIES * EPT_PG_AMD64_PDPE_ENTRIES)
 
 #else
 # define SHWPT                          PGMSHWPTPAE
@@ -138,6 +141,7 @@
 # define SHW_PDE_PG_MASK                X86_PDE_PAE_PG_MASK
 # define SHW_PD_SHIFT                   X86_PD_PAE_SHIFT
 # define SHW_PD_MASK                    X86_PD_PAE_MASK
+# define SHW_PDE_IS_BIG(Pde)            ( (Pde).u & X86_PDE_PS )
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU64(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU64(&(Pde).u, (Pde2).u); } while (0)
 # define SHW_PTE_PG_MASK                X86_PTE_PAE_PG_MASK
@@ -367,7 +371,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags,
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
     /* Deal with large pages. */
-    if (Pde.b.u1Size)
+    if (SHW_PDE_IS_BIG(Pde))
     {
         /*
          * Store the results.
@@ -543,7 +547,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
         if (!Pde.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
-        AssertFatal(!Pde.b.u1Size);
+        AssertFatal(!SHW_PDE_IS_BIG(Pde));
 
         /*
          * Map the page table.
