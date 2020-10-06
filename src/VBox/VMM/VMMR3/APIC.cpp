@@ -1549,10 +1549,10 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
         APIC_REG_COUNTER(&pApicCpu->StatMsrReadRZ,     "%u/RZ/MsrRead",     "Number of APIC MSR reads in RZ.");
         APIC_REG_COUNTER(&pApicCpu->StatMsrWriteRZ,    "%u/RZ/MsrWrite",    "Number of APIC MSR writes in RZ.");
 
-        APIC_REG_COUNTER(&pApicCpu->StatMmioReadR3,    "%u/R3/MmioReadR3",  "Number of APIC MMIO reads in R3.");
-        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteR3,   "%u/R3/MmioWriteR3", "Number of APIC MMIO writes in R3.");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrReadR3,     "%u/R3/MsrReadR3",   "Number of APIC MSR reads in R3.");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteR3,    "%u/R3/MsrWriteR3",  "Number of APIC MSR writes in R3.");
+        APIC_REG_COUNTER(&pApicCpu->StatMmioReadR3,    "%u/R3/MmioRead",    "Number of APIC MMIO reads in R3.");
+        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteR3,   "%u/R3/MmioWrite",   "Number of APIC MMIO writes in R3.");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrReadR3,     "%u/R3/MsrRead",     "Number of APIC MSR reads in R3.");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteR3,    "%u/R3/MsrWrite",    "Number of APIC MSR writes in R3.");
 
         APIC_REG_COUNTER(&pApicCpu->StatPostIntrAlreadyPending,
                                                        "%u/PostInterruptAlreadyPending", "Number of times an interrupt is already pending.");
