@@ -456,20 +456,73 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 /** Bit 1 - Writable. */
 #define EPT_E_BIT_WRITE         1
 #define EPT_E_WRITE             RT_BIT_64(EPT_E_BIT_WRITE)      /**< @see EPT_E_BIT_WRITE */
-/** Bit 2 - Executable. */
+/** Bit 2 - Executable.
+ * @note This controls supervisor instruction fetching if mode-based
+ *       execution control is enabled. */
 #define EPT_E_BIT_EXECUTE       2
 #define EPT_E_EXECUTE           RT_BIT_64(EPT_E_BIT_EXECUTE)    /**< @see EPT_E_BIT_EXECUTE */
-/** Bit 3 - Page size (not applicable to all levels). */
-#define EPT_E_BIT_SIZE          3
-#define EPT_E_SIZE              RT_BIT_64(EPT_E_BIT_SIZE)       /**< @see EPT_E_BIT_SIZE */
-/** Bits 8-11 & 52-63 - Available for software */
-#define EPT_E_AVL               UINT64_C(0xfff0000000000f00)
+/** Bits 3-5 - Memory type mask (leaf only, MBZ).
+ * The memory type is only applicable for leaf entries and MBZ for
+ * non-leaf (causes miconfiguration exit). */
+#define EPT_E_TYPE_MASK         UINT64_C(0x0038)
+/** Bits 3-5 - Memory type shifted mask. */
+#define EPT_E_TYPE_SMASK        UINT64_C(0x0007)
+/** Bits 3-5 - Memory type shift count. */
+#define EPT_E_TYPE_SHIFT        3
+/** Bits 3-5 - Memory type: UC. */
+#define EPT_E_TYPE_UC           (UINT64_C(0) << EPT_E_TYPE_SHIFT)
+/** Bits 3-5 - Memory type: WC. */
+#define EPT_E_TYPE_WC           (UINT64_C(1) << EPT_E_TYPE_SHIFT)
+/** Bits 3-5 - Memory type: Invalid (2). */
+#define EPT_E_TYPE_INVALID_2    (UINT64_C(2) << EPT_E_TYPE_SHIFT)
+/** Bits 3-5 - Memory type: Invalid (3). */
+#define EPT_E_TYPE_INVALID_3    (UINT64_C(3) << EPT_E_TYPE_SHIFT)
+/** Bits 3-5 - Memory type: WT. */
+#define EPT_E_TYPE_WT           (UINT64_C(4) << EPT_E_TYPE_SHIFT)
+/** Bits 3-5 - Memory type: WP. */
+#define EPT_E_TYPE_WP           (UINT64_C(5) << EPT_E_TYPE_SHIFT)
+/** Bits 3-5 - Memory type: WB. */
+#define EPT_E_TYPE_WB           (UINT64_C(6) << EPT_E_TYPE_SHIFT)
+
+/** Bit 6 - Ignore page attribute table (leaf, MBZ). */
+#define EPT_E_BIT_IGNORE_PAT    6
+#define EPT_E_IGNORE_PAT        RT_BIT_64(EPT_E_BIT_IGNORE_PAT) /**< @see EPT_E_BIT_IGNORE_PAT */
+/** Bit 7 - Leaf entry (MBZ in PML4, ignored in PT). */
+#define EPT_E_BIT_LEAF          7
+#define EPT_E_LEAF              RT_BIT_64(EPT_E_BIT_LEAF)       /**< @see EPT_E_BIT_LEAF */
+/** Bit 8 - Accessed (all levels).
+ * @note Ignored and not written when EPTP bit 6 is 0. */
+#define EPT_E_BIT_ACCESSED      8
+#define EPT_E_ACCESSED          RT_BIT_64(EPT_E_BIT_ACCESSED)   /**< @see EPT_E_BIT_ACCESSED */
+/** Bit 9 - Dirty (leaf only).
+ * @note Ignored and not written when EPTP bit 6 is 0. */
+#define EPT_E_BIT_DIRTY         9
+#define EPT_E_DIRTY             RT_BIT_64(EPT_E_BIT_DIRTY)      /**< @see EPT_E_BIT_DIRTY */
+/** Bit 10 - Executable for usermode.
+ * @note This ignored if mode-based execution control is disabled. */
+#define EPT_E_BIT_USER_EXECUTE  10
+#define EPT_E_USER_EXECUTE      RT_BIT_64(EPT_E_BIT_USER_EXECUTE) /**< @see EPT_E_BIT_USER_EXECUTE */
+
+/* 11 is always ignored (at time of writing) */
+
 /** Bits 12-51 - Physical Page number of the next level. */
 #define EPT_E_PG_MASK           UINT64_C(0x000ffffffffff000)
-/** Bits 5-7 - Reserved. */
-#define EPT_E_RESERVED          UINT64_C(0x00e0)
-/** Bits 4-7 - Reserved w/o size bit. */
-#define EPT_E_RESERVED_NO_SIZE  UINT64_C(0x00f0)
+
+/** Bit 60 - Supervisor shadow stack (leaf only, ignored).
+ * @note Ignored if EPT bit 7 is 0. */
+#define EPT_E_BIT_SHADOW_STACK  60
+#define EPT_E_SHADOW_STACK      RT_BIT_64(EPT_E_BIT_SHADOW_STACK)   /**< @see EPT_E_BIT_SHADOW_STACK*/
+/** Bit 61 - Sub-page write permissions (PT only, ignored).
+ * @note Ignored if sub-page write permissions for EPT is disabled. */
+#define EPT_E_BIT_SHADOW_STACK  60
+#define EPT_E_SHADOW_STACK      RT_BIT_64(EPT_E_BIT_SHADOW_STACK)   /**< @see EPT_E_BIT_SHADOW_STACK*/
+
+/* Bit 62 is always ignored at time of writing. */
+
+/** Bit 63 - Supress \#VE (leaf only, ignored).
+ * @note Ignored if EPT violation to \#VE conversion is disabled. */
+#define EPT_E_BIT_IGNORE_VE     63
+#define EPT_E_IGNORE_VE         RT_BIT_64(EPT_E_BIT_IGNORE_VE)     /**< @see EPT_E_BIT_IGNORE_VE*/
 /** @} */
 
 /**
