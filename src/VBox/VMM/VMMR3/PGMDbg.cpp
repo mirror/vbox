@@ -1345,7 +1345,11 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                         Pde.b.u1PAT         ? "AT" : "--",
                                         Pde.b.u1NoExecute   ? "NX" : "--",
                                         Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
+#ifndef PGM_WITHOUT_MAPPINGS
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
+#else
+                                        '-',
+#endif
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE2M_PAE_PG_MASK);
                 if (pState->fDumpPageInfo)
@@ -1374,7 +1378,11 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                         Pde.n.u1CacheDisable? "CD" : "--",
                                         Pde.n.u1NoExecute   ? "NX" : "--",
                                         Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
+#ifndef PGM_WITHOUT_MAPPINGS
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
+#else
+                                        '-',
+#endif
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE_PAE_PG_MASK);
                 if (pState->fDumpPageInfo)
@@ -1385,7 +1393,13 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
 
                 if (cMaxDepth)
                 {
-                    int rc2 = pgmR3DumpHierarchyShwPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK, !!(Pde.u & PGM_PDFLAGS_MAPPING));
+                    int rc2 = pgmR3DumpHierarchyShwPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK,
+#ifndef PGM_WITHOUT_MAPPINGS
+                                                         RT_BOOL(Pde.u & PGM_PDFLAGS_MAPPING)
+#else
+                                                         false /*fIsMapping*/
+#endif
+                                                         );
                     if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }
@@ -1661,7 +1675,11 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                                         Pde.b.u1CacheDisable? "CD" : "--",
                                         Pde.b.u1PAT         ? "AT" : "--",
                                         Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
+#ifndef PGM_WITHOUT_MAPPINGS
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
+#else
+                                        '-',
+#endif
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         u64Phys);
                 if (pState->fDumpPageInfo)
@@ -1682,7 +1700,11 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                                         Pde.n.u1WriteThru   ? "WT" : "--",
                                         Pde.n.u1CacheDisable? "CD" : "--",
                                         Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
+#ifndef PGM_WITHOUT_MAPPINGS
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
+#else
+                                        '-',
+#endif
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE_PG_MASK);
                 if (pState->fDumpPageInfo)
@@ -1691,7 +1713,13 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
 
                 if (cMaxDepth)
                 {
-                    int rc2 = pgmR3DumpHierarchyShw32BitPT(pState, Pde.u & X86_PDE_PG_MASK, !!(Pde.u & PGM_PDFLAGS_MAPPING));
+                    int rc2 = pgmR3DumpHierarchyShw32BitPT(pState, Pde.u & X86_PDE_PG_MASK,
+#ifndef PGM_WITHOUT_MAPPINGS
+                                                           !!(Pde.u & PGM_PDFLAGS_MAPPING)
+#else
+                                                           false /*fIsMapping*/
+#endif
+                                                           );
                     if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }

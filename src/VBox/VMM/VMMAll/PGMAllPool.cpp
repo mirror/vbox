@@ -481,7 +481,9 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
                 STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPD));
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PDEPAE);
+#ifndef PGM_WITHOUT_MAPPINGS
                 Assert(!(uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING));
+#endif
                 if (uShw.pPDPae->a[iShw].n.u1Present)
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
@@ -498,7 +500,9 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDEPAE);
                     AssertBreak(iShw2 < RT_ELEMENTS(uShw.pPDPae->a));
 
+#ifndef PGM_WITHOUT_MAPPINGS
                     Assert(!(uShw.pPDPae->a[iShw2].u & PGM_PDFLAGS_MAPPING));
+#endif
                     if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
@@ -3802,7 +3806,9 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             break;
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
             Assert(iUserTable < X86_PG_PAE_ENTRIES);
+#ifndef PGM_WITHOUT_MAPPINGS
             Assert(!(u.pau64[iUserTable] & PGM_PDFLAGS_MAPPING));
+#endif
             break;
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
             Assert(iUserTable < X86_PG_PAE_ENTRIES);
@@ -4484,7 +4490,9 @@ DECLINLINE(void) pgmPoolTrackDerefPD(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PD 
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
     {
         if (    pShwPD->a[i].n.u1Present
+#ifndef PGM_WITHOUT_MAPPINGS
             &&  !(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING)
+#endif
            )
         {
             PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPD->a[i].u & X86_PDE_PG_MASK);
@@ -4509,7 +4517,10 @@ DECLINLINE(void) pgmPoolTrackDerefPDPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
     {
         if (   pShwPD->a[i].n.u1Present
-            && !(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING))
+#ifndef PGM_WITHOUT_MAPPINGS
+            && !(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING)
+#endif
+           )
         {
 #ifdef PGM_WITH_LARGE_PAGES
             if (pShwPD->a[i].b.u1Size)

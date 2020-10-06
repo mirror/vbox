@@ -1192,7 +1192,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
     {
         Assert(     PdeSrc.n.u1User == PdeDst.n.u1User
                &&   (PdeSrc.n.u1Write || !PdeDst.n.u1Write || pVCpu->pgm.s.cNetwareWp0Hacks > 0));
-# ifndef PGM_WITHOUT_MAPPING
+# ifndef PGM_WITHOUT_MAPPINGS
         if (PdeDst.u & PGM_PDFLAGS_MAPPING)
         {
             /*
@@ -1203,7 +1203,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
             rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
         }
         else
-# endif /* !PGM_WITHOUT_MAPPING */
+# endif /* !PGM_WITHOUT_MAPPINGS */
         if (!fIsBigPage)
         {
             /*
@@ -1301,18 +1301,22 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         /*
          * Page directory is not present, mark shadow PDE not present.
          */
+# ifndef PGM_WITHOUT_MAPPINGS
         if (!(PdeDst.u & PGM_PDFLAGS_MAPPING))
+# endif
         {
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
             SHW_PDE_ATOMIC_SET(*pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePagePDNPs));
             PGM_INVL_PG(pVCpu, GCPtrPage);
         }
+# ifndef PGM_WITHOUT_MAPPINGS
         else
         {
             Assert(pgmMapAreMappingsEnabled(pVM));
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePagePDMappings));
         }
+# endif
     }
     return rc;
 
@@ -2983,7 +2987,9 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
 # endif
     SHWPDE          PdeDst = *pPdeDst;
 
+# ifndef PGM_WITHOUT_MAPPINGS
     Assert(!(PdeDst.u & PGM_PDFLAGS_MAPPING));
+# endif
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
 # if defined(PGM_WITH_LARGE_PAGES) && PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE
@@ -3246,7 +3252,9 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         Assert(pPDDst);
         PdeDst = pPDDst->a[iPDDst];
 # endif
+# ifndef PGM_WITHOUT_MAPPINGS
         if (!(PdeDst.u & PGM_PDFLAGS_MAPPING))
+# endif
         {
             if (!PdeDst.n.u1Present)
             {
@@ -3780,6 +3788,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
 #  else
                 const SHWPDE PdeDst = pPDDst->a[iPDDst];
 #  endif
+#  ifndef PGM_WITHOUT_MAPPINGS
                 if (PdeDst.u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(pgmMapAreMappingsEnabled(pVM));
@@ -3790,9 +3799,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                         continue;
                     }
                 }
-                else if (   (PdeDst.u & X86_PDE_P)
-                        || ((PdeDst.u & (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY)) == (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY))
-                        )
+                else
+#  endif
+                if (   (PdeDst.u & X86_PDE_P)
+                    || ((PdeDst.u & (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY)) == (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY)) )
                 {
                     HCPhysShw = PdeDst.u & SHW_PDE_PG_MASK;
                     PPGMPOOLPAGE pPoolPage = pgmPoolGetPage(pPool, HCPhysShw);
