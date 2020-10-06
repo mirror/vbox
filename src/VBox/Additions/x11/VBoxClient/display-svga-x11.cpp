@@ -128,6 +128,7 @@ struct X11CONTEXT
     int hRandREventBase;
     int hRandRErrorBase;
     int hEventMask;
+    bool fMonitorInfoAvailable;
     /** The number of outputs (monitors, including disconnect ones) xrandr reports. */
     int hOutputCount;
     void *pRandLibraryHandle;
@@ -772,8 +773,10 @@ static bool init()
     x11Connect();
     if (x11Context.pDisplay == NULL)
         return false;
-    if (RT_FAILURE(startX11MonitorThread()))
-        return false;
+    /* don't start the monitoring thread if related randr functionality is not available. */
+    if (x11Context.fMonitorInfoAvailable)
+        if (RT_FAILURE(startX11MonitorThread()))
+            return false;
     return true;
 }
 
@@ -833,6 +836,8 @@ static int openLibRandR()
 
     *(void **)(&x11Context.pXRRFreeMonitors) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeMonitors");
     checkFunctionPtr(x11Context.pXRRFreeMonitors);
+
+    x11Context.fMonitorInfoAvailable = x11Context.pXRRGetMonitors && x11Context.pXRRFreeMonitors;
 
     *(void **)(&x11Context.pXRRGetScreenResources) = dlsym(x11Context.pRandLibraryHandle, "XRRGetScreenResources");
     checkFunctionPtrReturn(x11Context.pXRRGetScreenResources);
@@ -896,6 +901,7 @@ static void x11Connect()
     x11Context.pXRRGetCrtcInfo = NULL;
     x11Context.pXRRAddOutputMode = NULL;
     x11Context.fWmwareCtrlExtention = false;
+    x11Context.fMonitorInfoAvailable = false;
 
     int dummy;
     if (x11Context.pDisplay != NULL)
