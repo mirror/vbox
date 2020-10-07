@@ -1450,23 +1450,37 @@ int pgmShwMakePageSupervisorAndWritable(PVMCPUCC pVCpu, RTGCPTR GCPtr, bool fBig
  */
 int pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
 {
-    const unsigned iPdPt    = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-    PX86PDPT       pPdpt    = pgmShwGetPaePDPTPtr(pVCpu);
-    PX86PDPE       pPdpe    = &pPdpt->a[iPdPt];
     PVMCC          pVM      = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL       pPool    = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE   pShwPage;
     int            rc;
-
     PGM_LOCK_ASSERT_OWNER(pVM);
 
+
     /* Allocate page directory if not present. */
-    if (    !pPdpe->n.u1Present
-        &&  !(pPdpe->u & X86_PDPE_PG_MASK))
+    const unsigned iPdPt     = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    PX86PDPT       pPdpt     = pgmShwGetPaePDPTPtr(pVCpu);
+    PX86PDPE       pPdpe     = &pPdpt->a[iPdPt];
+    X86PGPAEUINT const uPdpe = pPdpe->u;
+    if (uPdpe & (X86_PDPE_P | X86_PDPE_PG_MASK))
+    {
+        pShwPage = pgmPoolGetPage(pPool, uPdpe & X86_PDPE_PG_MASK);
+        AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
+        Assert((pPdpe->u & X86_PDPE_PG_MASK) == pShwPage->Core.Key);
+
+        pgmPoolCacheUsed(pPool, pShwPage);
+
+        /* Update the entry if necessary. */
+        X86PGPAEUINT const uPdpeNew = pShwPage->Core.Key | (uGstPdpe & (X86_PDPE_P | X86_PDPE_A)) | (uPdpe & PGM_PDPT_FLAGS);
+        if (uPdpeNew == uPdpe)
+        { /* likely */ }
+        else
+            ASMAtomicWriteU64(&pPdpe->u, uPdpeNew);
+    }
+    else
     {
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
-
         if (pVM->pgm.s.fNestedPaging || !CPUMIsGuestPagingEnabled(pVCpu))
         {
             /* AMD-V nested paging or real/protected mode without paging. */
@@ -1480,13 +1494,11 @@ int pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX8
                 if (!(uGstPdpe & X86_PDPE_P))
                 {
                     /* PD not present; guest must reload CR3 to change it.
-                     * No need to monitor anything in this case.
-                     */
+                     * No need to monitor anything in this case. */
                     Assert(VM_IS_RAW_MODE_ENABLED(pVM));
-
                     GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
                     enmKind = PGMPOOLKIND_PAE_PD_PHYS;
-                    uGstPdpe |= X86_PDPE_P;
+                    Assert(uGstPdpe & X86_PDPE_P); /* caller should do this already */
                 }
                 else
                 {
@@ -1507,18 +1519,11 @@ int pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX8
                           &pShwPage);
         AssertRCReturn(rc, rc);
 
-        /* The PD was cached or created; hook it up now. */
-        pPdpe->u |= pShwPage->Core.Key | (uGstPdpe & (X86_PDPE_P | X86_PDPE_A));
-        PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdpe);
+        /* Hook it up. */
+        ASMAtomicWriteU64(&pPdpe->u, pShwPage->Core.Key | (uGstPdpe & (X86_PDPE_P | X86_PDPE_A)) | (uPdpe & PGM_PDPT_FLAGS));
     }
-    else
-    {
-        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
-        AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
-        Assert((pPdpe->u & X86_PDPE_PG_MASK) == pShwPage->Core.Key);
+    PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdpe);
 
-        pgmPoolCacheUsed(pPool, pShwPage);
-    }
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     return VINF_SUCCESS;
 }
@@ -1534,22 +1539,22 @@ int pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX8
  */
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde)
 {
-    const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-    PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pVCpu);
-    PVM             pVM   = pVCpu->CTX_SUFF(pVM);
-
+    PVM pVM   = pVCpu->CTX_SUFF(pVM);
     PGM_LOCK_ASSERT_OWNER(pVM);
 
+    PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pVCpu);
     AssertReturn(pPdpt, VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT);    /* can't happen */
-    if (!pPdpt->a[iPdPt].n.u1Present)
+    const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    X86PGPAEUINT const uPdpe = pPdpt->a[iPdPt].u;
+    if (!(uPdpe & X86_PDPE_P))
     {
-        LogFlow(("pgmShwGetPaePoolPagePD: PD %d not present (%RX64)\n", iPdPt, pPdpt->a[iPdPt].u));
+        LogFlow(("pgmShwGetPaePoolPagePD: PD %d not present (%RX64)\n", iPdPt, uPdpe));
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
     }
-    AssertMsg(pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK, ("GCPtr=%RGv\n", GCPtr));
+    AssertMsg(uPdpe & X86_PDPE_PG_MASK, ("GCPtr=%RGv\n", GCPtr));
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), uPdpe & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, VERR_PGM_POOL_GET_PAGE_FAILED);
 
     *ppShwPde = pShwPde;
@@ -1576,62 +1581,94 @@ static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT
 {
     PVMCC          pVM           = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
-    const unsigned iPml4         = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
-    bool           fNestedPagingOrNoGstPaging = pVM->pgm.s.fNestedPaging || !CPUMIsGuestPagingEnabled(pVCpu);
-    PPGMPOOLPAGE   pShwPage;
+    bool const     fNestedPagingOrNoGstPaging = pVM->pgm.s.fNestedPaging || !CPUMIsGuestPagingEnabled(pVCpu);
     int            rc;
 
     PGM_LOCK_ASSERT_OWNER(pVM);
 
-    /* Allocate page directory pointer table if not present. */
-    if (    !pPml4e->n.u1Present
-        &&  !(pPml4e->u & X86_PML4E_PG_MASK))
+    /*
+     * PML4.
+     */
+    PPGMPOOLPAGE pShwPage;
     {
-        RTGCPTR64   GCPml4;
-        PGMPOOLKIND enmKind;
+        const unsigned     iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+        PX86PML4E          pPml4e = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
+        X86PGPAEUINT const uPml4e = pPml4e->u;
 
-        Assert(pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
-
-        if (fNestedPagingOrNoGstPaging)
+        /* Allocate page directory pointer table if not present. */
+        if (uPml4e & (X86_PML4E_P | X86_PML4E_PG_MASK))
         {
-            /* AMD-V nested paging or real/protected mode without paging */
-            GCPml4  = (RTGCPTR64)iPml4 << X86_PML4_SHIFT;
-            enmKind = PGMPOOLKIND_64BIT_PDPT_FOR_PHYS;
+            pShwPage = pgmPoolGetPage(pPool, uPml4e & X86_PML4E_PG_MASK);
+            AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
+
+            pgmPoolCacheUsed(pPool, pShwPage);
+
+            /* Update the entry if needed. */
+            X86PGPAEUINT const uPml4eNew = pShwPage->Core.Key | (uGstPml4e & pVCpu->pgm.s.fGstAmd64ShadowedPml4eMask)
+                                         | (uPml4e & PGM_PML4_FLAGS);
+            if (uPml4e == uPml4eNew)
+            { /* likely */ }
+            else
+                ASMAtomicWriteU64(&pPml4e->u, uPml4eNew);
         }
         else
         {
-            GCPml4  = uGstPml4e & X86_PML4E_PG_MASK;
-            enmKind = PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT;
-        }
+            Assert(pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 
-        /* Create a reference back to the PDPT by using the index in its shadow page. */
-        rc = pgmPoolAlloc(pVM, GCPml4, enmKind, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
-                          pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, false /*fLockPage*/,
-                          &pShwPage);
-        AssertRCReturn(rc, rc);
+            RTGCPTR64   GCPml4;
+            PGMPOOLKIND enmKind;
+            if (fNestedPagingOrNoGstPaging)
+            {
+                /* AMD-V nested paging or real/protected mode without paging */
+                GCPml4  = (RTGCPTR64)iPml4 << X86_PML4_SHIFT;
+                enmKind = PGMPOOLKIND_64BIT_PDPT_FOR_PHYS;
+            }
+            else
+            {
+                GCPml4  = uGstPml4e & X86_PML4E_PG_MASK;
+                enmKind = PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT;
+            }
+
+            /* Create a reference back to the PDPT by using the index in its shadow page. */
+            rc = pgmPoolAlloc(pVM, GCPml4, enmKind, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
+                              pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, false /*fLockPage*/,
+                              &pShwPage);
+            AssertRCReturn(rc, rc);
+
+            /* Hook it up. */
+            ASMAtomicWriteU64(&pPml4e->u, pShwPage->Core.Key | (uGstPml4e & pVCpu->pgm.s.fGstAmd64ShadowedPml4eMask)
+                                        | (uPml4e & PGM_PML4_FLAGS));
+        }
     }
-    else
+
+    /*
+     * PDPT.
+     */
+    const unsigned     iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    PX86PDPT           pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
+    PX86PDPE           pPdpe = &pPdpt->a[iPdPt];
+    X86PGPAEUINT const uPdpe = pPdpe->u;
+
+    /* Allocate page directory if not present. */
+    if (uPdpe & (X86_PDPE_P | X86_PDPE_PG_MASK))
     {
-        pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
+        pShwPage = pgmPoolGetPage(pPool, uPdpe & X86_PDPE_PG_MASK);
         AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
         pgmPoolCacheUsed(pPool, pShwPage);
+
+        /* Update the entry if needed. */
+        X86PGPAEUINT const uPdpeNew = pShwPage->Core.Key | (uGstPdpe & pVCpu->pgm.s.fGstAmd64ShadowedPdpeMask)
+                                     | (uPdpe & PGM_PDPT_FLAGS);
+        if (uPdpe == uPdpeNew)
+        { /* likely */ }
+        else
+            ASMAtomicWriteU64(&pPdpe->u, uPdpeNew);
     }
-    /* The PDPT was cached or created; hook it up now. */
-    pPml4e->u |= pShwPage->Core.Key | (uGstPml4e & pVCpu->pgm.s.fGstAmd64ShadowedPml4eMask);
-
-    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-    PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
-    PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
-
-    /* Allocate page directory if not present. */
-    if (    !pPdpe->n.u1Present
-        &&  !(pPdpe->u & X86_PDPE_PG_MASK))
+    else
     {
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
-
         if (fNestedPagingOrNoGstPaging)
         {
             /* AMD-V nested paging or real/protected mode without paging */
@@ -1649,16 +1686,11 @@ static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT
                           pShwPage->idx, iPdPt, false /*fLockPage*/,
                           &pShwPage);
         AssertRCReturn(rc, rc);
-    }
-    else
-    {
-        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
-        AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
-        pgmPoolCacheUsed(pPool, pShwPage);
+        /* Hook it up. */
+        ASMAtomicWriteU64(&pPdpe->u,
+                          pShwPage->Core.Key | (uGstPdpe & pVCpu->pgm.s.fGstAmd64ShadowedPdpeMask) | (uPdpe & PGM_PDPT_FLAGS));
     }
-    /* The PD was cached or created; hook it up now. */
-    pPdpe->u |= pShwPage->Core.Key | (uGstPdpe & pVCpu->pgm.s.fGstAmd64ShadowedPdpeMask);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     return VINF_SUCCESS;
@@ -1677,31 +1709,36 @@ static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT
  */
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PGM_LOCK_ASSERT_OWNER(pVM);
+
+    /*
+     * PML4
+     */
     const unsigned  iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PCX86PML4E      pPml4e = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
-
-    PGM_LOCK_ASSERT_OWNER(pVCpu->CTX_SUFF(pVM));
-
     AssertReturn(pPml4e, VERR_PGM_PML4_MAPPING);
     if (ppPml4e)
         *ppPml4e = (PX86PML4E)pPml4e;
-
-    Log4(("pgmShwGetLongModePDPtr %RGv (%RHv) %RX64\n", GCPtr, pPml4e, pPml4e->u));
-
-    if (!pPml4e->n.u1Present)
+    X86PGPAEUINT const uPml4e = pPml4e->u;
+    Log4(("pgmShwGetLongModePDPtr %RGv (%RHv) %RX64\n", GCPtr, pPml4e, uPml4e));
+    if (!(uPml4e & X86_PML4E_P)) /** @todo other code is check for NULL page frame number! */
         return VERR_PAGE_MAP_LEVEL4_NOT_PRESENT;
 
-    PVM             pVM      = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL        pPool    = pVM->pgm.s.CTX_SUFF(pPool);
-    PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
+    PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, uPml4e & X86_PML4E_PG_MASK);
     AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
-    const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-    PCX86PDPT       pPdpt = *ppPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
-    if (!pPdpt->a[iPdPt].n.u1Present)
+    /*
+     * PDPT
+     */
+    const unsigned      iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    PCX86PDPT           pPdpt = *ppPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
+    X86PGPAEUINT const  uPdpe = pPdpt->a[iPdPt].u;
+    if (!(uPdpe & X86_PDPE_P)) /** @todo other code is check for NULL page frame number! */
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
 
-    pShwPage = pgmPoolGetPage(pPool, pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
+    pShwPage = pgmPoolGetPage(pPool, uPdpe & X86_PDPE_PG_MASK);
     AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
@@ -2282,7 +2319,7 @@ int pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
 
     PX86PDPT        pGuestPDPT  = pVCpu->pgm.s.CTX_SUFF(pGstPaePdpt);
     Assert(pGuestPDPT);
-    Assert(pGuestPDPT->a[iPdpt].n.u1Present);
+    Assert(pGuestPDPT->a[iPdpt].u & X86_PDPE_P);
     RTGCPHYS        GCPhys      = pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK;
     bool const      fChanged    = pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt] != GCPhys;
 

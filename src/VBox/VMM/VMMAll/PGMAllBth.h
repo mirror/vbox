@@ -1068,30 +1068,26 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
 
     /* If the shadow PDPE isn't present, then skip the invalidate. */
 #  ifdef IN_RING3 /* Possible we didn't resync yet when called from REM. */
-    if (!pPdptDst || !pPdptDst->a[iPdpt].n.u1Present)
+    if (!pPdptDst || !(pPdptDst->a[iPdpt].u & X86_PDPE_P))
 #  else
-    if (!pPdptDst->a[iPdpt].n.u1Present)
+    if (!(pPdptDst->a[iPdpt].u & X86_PDPE_P))
 #  endif
     {
-#ifndef PGM_WITHOUT_MAPPINGS
+#  ifndef PGM_WITHOUT_MAPPINGS
         Assert(!pPdptDst || !(pPdptDst->a[iPdpt].u & PGM_PLXFLAGS_MAPPING));
-#endif
+#  endif
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePageSkipped));
         PGM_INVL_PG(pVCpu, GCPtrPage);
         return VINF_SUCCESS;
     }
 
-    const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
-    PPGMPOOLPAGE    pShwPde = NULL;
-    PX86PDPAE       pPDDst;
-
     /* Fetch the pgm pool shadow descriptor. */
-    rc = pgmShwGetPaePoolPagePD(pVCpu, GCPtrPage, &pShwPde);
-    AssertRCSuccessReturn(rc, rc);
-    Assert(pShwPde);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & X86_PDPE_PG_MASK);
+    AssertReturn(pShwPde, VERR_PGM_POOL_GET_PAGE_FAILED);
 
-    pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPde);
-    PX86PDEPAE pPdeDst = &pPDDst->a[iPDDst];
+    PX86PDPAE       pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPde);
+    const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
+    PX86PDEPAE      pPdeDst = &pPDDst->a[iPDDst];
 
 # else /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
     /* PML4 */
@@ -1109,17 +1105,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         PGM_INVL_PG(pVCpu, GCPtrPage);
         return VINF_SUCCESS;
     }
-    Assert(pPDDst);
-
     PX86PDEPAE  pPdeDst  = &pPDDst->a[iPDDst];
     PX86PDPE    pPdpeDst = &pPdptDst->a[iPdpt];
-
-    if (!pPdpeDst->n.u1Present)
-    {
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePageSkipped));
-        PGM_INVL_PG(pVCpu, GCPtrPage);
-        return VINF_SUCCESS;
-    }
+    Assert(pPDDst);
+    Assert(!(pPdpeDst->u & X86_PDPE_P));
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & SHW_PDPE_PG_MASK);
@@ -2100,6 +2089,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
     AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst && pPdptDst);
     PdeDst = pPDDst->a[iPDDst];
+
 #   elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PEPTPD          pPDDst;
@@ -2518,6 +2508,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
     AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst);
     PSHWPDE         pPdeDst  = &pPDDst->a[iPDDst];
+
 # endif
     SHWPDE          PdeDst   = *pPdeDst;
 
@@ -3639,7 +3630,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
         pPml4eDst     = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
 
         /* Fetch the pgm pool shadow descriptor if the shadow pml4e is present. */
-        if (!pPml4eDst->n.u1Present)
+        if (!(pPml4eDst->u & X86_PML4E_P))
         {
             GCPtr += _2M * UINT64_C(512) * UINT64_C(512);
             continue;
@@ -3648,7 +3639,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
         pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
         GCPhysPdptSrc = PGM_A20_APPLY(pVCpu, pPml4eSrc->u & X86_PML4E_PG_MASK);
 
-        if (pPml4eSrc->n.u1Present != pPml4eDst->n.u1Present)
+        if ((pPml4eSrc->u & X86_PML4E_P) != (pPml4eDst->u & X86_PML4E_P))
         {
             AssertMsgFailed(("Present bit doesn't match! pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64\n", pPml4eDst->u, pPml4eSrc->u));
             GCPtr += _2M * UINT64_C(512) * UINT64_C(512);
@@ -3664,9 +3655,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
             continue;
         }
 
-        if (    pPml4eDst->n.u1User      != pPml4eSrc->n.u1User
-            ||  pPml4eDst->n.u1Write     != pPml4eSrc->n.u1Write
-            ||  pPml4eDst->n.u1NoExecute != pPml4eSrc->n.u1NoExecute)
+        if (   (pPml4eDst->u & (X86_PML4E_US | X86_PML4E_RW | X86_PML4E_NX))
+            != (pPml4eSrc->u & (X86_PML4E_US | X86_PML4E_RW | X86_PML4E_NX)))
         {
             AssertMsgFailed(("User/Write/NoExec bits don't match! pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64\n", pPml4eDst->u, pPml4eSrc->u));
             GCPtr += _2M * UINT64_C(512) * UINT64_C(512);
@@ -3713,7 +3703,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
 
             pPdpeDst = &pPdptDst->a[iPdpt];
 
-            if (!pPdpeDst->n.u1Present)
+            if (!(pPdpeDst->u & X86_PDPE_P))
             {
                 GCPtr += 512 * _2M;
                 continue;   /* next PDPTE */
@@ -3722,7 +3712,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
             pShwPde      = pgmPoolGetPage(pPool, pPdpeDst->u & X86_PDPE_PG_MASK);
             GCPhysPdeSrc = PGM_A20_APPLY(pVCpu, PdpeSrc.u & X86_PDPE_PG_MASK);
 
-            if (pPdpeDst->n.u1Present != PdpeSrc.n.u1Present)
+            if ((pPdpeDst->u & X86_PDPE_P) != (PdpeSrc.u & X86_PDPE_P))
             {
                 AssertMsgFailed(("Present bit doesn't match! pPdpeDst.u=%#RX64 pPdpeSrc.u=%RX64\n", pPdpeDst->u, PdpeSrc.u));
                 GCPtr += 512 * _2M;
@@ -3743,9 +3733,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
             }
 
 #   if PGM_GST_TYPE == PGM_TYPE_AMD64
-            if (    pPdpeDst->lm.u1User      != PdpeSrc.lm.u1User
-                ||  pPdpeDst->lm.u1Write     != PdpeSrc.lm.u1Write
-                ||  pPdpeDst->lm.u1NoExecute != PdpeSrc.lm.u1NoExecute)
+            if (    (pPdpeDst->u & (X86_PDPE_US | X86_PDPE_RW | X86_PDPE_LM_NX))
+                !=  (PdpeSrc.u   & (X86_PDPE_US | X86_PDPE_RW | X86_PDPE_LM_NX)))
             {
                 AssertMsgFailed(("User/Write/NoExec bits don't match! pPdpeDst.u=%#RX64 pPdpeSrc.u=%RX64\n", pPdpeDst->u, PdpeSrc.u));
                 GCPtr += 512 * _2M;
@@ -4380,7 +4369,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
         for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
         {
             pVCpu->pgm.s.aGstPaePdpeRegs[i].u = pGuestPDPT->a[i].u;
-            if (pGuestPDPT->a[i].n.u1Present)
+            if (pGuestPDPT->a[i].u & X86_PDPE_P)
             {
                 RTHCPTR     HCPtr;
                 RTGCPHYS    GCPhys = PGM_A20_APPLY(pVCpu, pGuestPDPT->a[i].u & X86_PDPE_PG_MASK);

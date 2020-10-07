@@ -171,7 +171,16 @@
 #define PGM_PLXFLAGS_PERMANENT          RT_BIT_64(10)
 #ifndef PGM_WITHOUT_MAPPINGS
 /** Mapping (hypervisor allocated pagetable). */
-#define PGM_PLXFLAGS_MAPPING            RT_BIT_64(11)
+# define PGM_PLXFLAGS_MAPPING           RT_BIT_64(11)
+# define PGM_PML4_FLAGS                 RT_BIT_64(11)
+#endif
+/** PGM specific bits in PML4 entries. */
+#define PGM_PML4_FLAGS                 0
+/** PGM specific bits in PDPT entries. */
+#ifndef PGM_WITHOUT_MAPPINGS
+# define PGM_PDPT_FLAGS                 (PGM_PLXFLAGS_PERMANENT | PGM_PLXFLAGS_MAPPING)
+#else
+# define PGM_PDPT_FLAGS                 (PGM_PLXFLAGS_PERMANENT)
 #endif
 /** @} */
 

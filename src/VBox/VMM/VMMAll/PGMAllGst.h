@@ -146,7 +146,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         X86PML4E  Pml4e;
         pWalk->Pml4e.u = Pml4e.u = pPml4e->u;
 
-        if (Pml4e.n.u1Present) { /* probable */ }
+        if (Pml4e.u & X86_PML4E_P) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 4);
 
         if (RT_LIKELY(GST_IS_PML4E_VALID(pVCpu, Pml4e))) { /* likely */ }
@@ -175,7 +175,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         X86PDPE  Pdpe;
         pWalk->Pdpe.u = Pdpe.u = pPdpe->u;
 
-        if (Pdpe.n.u1Present) { /* probable */ }
+        if (Pdpe.u & X86_PDPE_P) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 3);
 
         if (RT_LIKELY(GST_IS_PDPE_VALID(pVCpu, Pdpe))) { /* likely */ }

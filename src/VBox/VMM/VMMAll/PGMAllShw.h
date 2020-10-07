@@ -320,7 +320,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags,
 
     /* PML4 */
     X86PML4E        Pml4e = pgmShwGetLongModePML4E(pVCpu, GCPtr);
-    if (!Pml4e.n.u1Present)
+    if (!(Pml4e.u & X86_PML4E_P))
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
     /* PDPT */
@@ -330,7 +330,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags,
         return rc;
     const unsigned  iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
     X86PDPE         Pdpe = pPDPT->a[iPDPT];
-    if (!Pdpe.n.u1Present)
+    if (!(Pdpe.u & X86_PDPE_P))
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
     /* PD */
@@ -342,10 +342,12 @@ PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags,
     Pde = pPd->a[iPd];
 
     /* Merge accessed, write, user and no-execute bits into the PDE. */
-    Pde.n.u1Accessed  &= Pml4e.n.u1Accessed & Pdpe.lm.u1Accessed;
-    Pde.n.u1Write     &= Pml4e.n.u1Write & Pdpe.lm.u1Write;
-    Pde.n.u1User      &= Pml4e.n.u1User & Pdpe.lm.u1User;
-    Pde.n.u1NoExecute |= Pml4e.n.u1NoExecute | Pdpe.lm.u1NoExecute;
+    AssertCompile(X86_PML4E_A  == X86_PDPE_A  && X86_PML4E_A  == X86_PDE_A);
+    AssertCompile(X86_PML4E_RW == X86_PDPE_RW && X86_PML4E_RW == X86_PDE_RW);
+    AssertCompile(X86_PML4E_US == X86_PDPE_US && X86_PML4E_US == X86_PDE_US);
+    AssertCompile(X86_PML4E_NX == X86_PDPE_LM_NX && X86_PML4E_NX == X86_PDE_PAE_NX);
+    Pde.u &= (Pml4e.u & Pdpe.u) | ~(X86PGPAEUINT)(X86_PML4E_A | X86_PML4E_RW | X86_PML4E_US);
+    Pde.u |= (Pml4e.u | Pdpe.u) & X86_PML4E_NX;
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_NESTED_PAE
     X86PDEPAE       Pde = pgmShwGetPaePDE(pVCpu, GCPtr);
@@ -507,7 +509,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
         X86PDEPAE       Pde;
         /* PML4 */
         X86PML4E        Pml4e = pgmShwGetLongModePML4E(pVCpu, GCPtr);
-        if (!Pml4e.n.u1Present)
+        if (!(Pml4e.u & X86_PML4E_P))
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
         /* PDPT */
@@ -517,7 +519,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
             return rc;
         const unsigned  iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
         X86PDPE         Pdpe = pPDPT->a[iPDPT];
-        if (!Pdpe.n.u1Present)
+        if (!(Pdpe.u & X86_PDPE_P))
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
         /* PD */
