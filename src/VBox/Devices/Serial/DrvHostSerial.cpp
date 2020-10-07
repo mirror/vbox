@@ -563,7 +563,10 @@ static int drvHostSerialIoLoopNormal(PPDMDRVINS pDrvIns, PDRVHOSTSERIAL pThis, P
             }
 
             if (fEvtsRecv & RTSERIALPORT_EVT_F_STATUS_LINE_MONITOR_FAILED)
-                LogRel(("HostSerial#%d: Status line monitoring failed at a lower level and is disabled\n", pDrvIns->iInstance));
+            {
+                LogRel(("HostSerial#%d: Status line monitoring failed at a lower level with rc=%Rrc and is disabled\n", pDrvIns->iInstance, rc));
+                rc = VINF_SUCCESS;
+            }
         }
         else if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED)
         {
