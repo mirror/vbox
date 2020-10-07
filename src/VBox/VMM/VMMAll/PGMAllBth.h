@@ -631,7 +631,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
     Assert(GstWalk.Pde.n.u1Present);
 #  endif
     if (    !(uErr & X86_TRAP_PF_P) /* not set means page not present instead of page protection violation */
-        &&  !pPDDst->a[iPDDst].n.u1Present)
+        &&  !SHW_PDE_IS_P(pPDDst->a[iPDDst]))
     {
         STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2SyncPT; });
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
@@ -1466,12 +1466,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVMCC pVM, PCPGMPAGE pPage, uint64
     {
         LogFlow(("SyncHandlerPte: monitored page (%R[pgmpage]) -> mark read-only\n", pPage));
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
-        pPteDst->u             = PGM_PAGE_GET_HCPHYS(pPage);
-        pPteDst->n.u1Present   = 1;
-        pPteDst->n.u1Execute   = 1;
-        pPteDst->n.u1IgnorePAT = 1;
-        pPteDst->n.u3EMT       = VMX_EPT_MEMTYPE_WB;
-        /* PteDst.n.u1Write = 0 && PteDst.n.u1Size = 0 */
+        pPteDst->u = PGM_PAGE_GET_HCPHYS(pPage) | EPT_E_READ | EPT_E_EXECUTE | EPT_E_TYPE_WB | EPT_E_IGNORE_PAT;
 # else
         if (fPteSrc & X86_PTE_A)
         {
@@ -1495,13 +1490,11 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVMCC pVM, PCPGMPAGE pPage, uint64
         LogFlow(("SyncHandlerPte: MMIO page -> invalid \n"));
 #   if PGM_SHW_TYPE == PGM_TYPE_EPT
         /* 25.2.3.1: Reserved physical address bit -> EPT Misconfiguration (exit 49) */
-        pPteDst->u = pVM->pgm.s.HCPhysInvMmioPg;
+        pPteDst->u = pVM->pgm.s.HCPhysInvMmioPg
         /* 25.2.3.1: bits 2:0 = 010b -> EPT Misconfiguration (exit 49) */
-        pPteDst->n.u1Present = 0;
-        pPteDst->n.u1Write   = 1;
-        pPteDst->n.u1Execute = 0;
+                   | EPT_E_WRITE
         /* 25.2.3.1: leaf && 2:0 != 0 && u3Emt in {2, 3, 7} -> EPT Misconfiguration */
-        pPteDst->n.u3EMT     = 7;
+                   | EPT_E_TYPE_INVALID_3;
 #   else
         /* Set high page frame bits that MBZ (bankers on PAE, CPU dependent on AMD64).  */
         SHW_PTE_SET(*pPteDst, pVM->pgm.s.HCPhysInvMmioPg | X86_PTE_PAE_MBZ_MASK_NO_NX | X86_PTE_P);
@@ -1657,13 +1650,8 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
                 {
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPageSkipped));
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
-                    PteDst.u             = PGM_PAGE_GET_HCPHYS(pPage);
-                    PteDst.n.u1Present   = 1;
-                    PteDst.n.u1Write     = 1;
-                    PteDst.n.u1Execute   = 1;
-                    PteDst.n.u1IgnorePAT = 1;
-                    PteDst.n.u3EMT       = VMX_EPT_MEMTYPE_WB;
-                    /* PteDst.n.u1Size = 0 */
+                    PteDst.u = PGM_PAGE_GET_HCPHYS(pPage)
+                             | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_TYPE_WB | EPT_E_IGNORE_PAT;
 # else
                     SHW_PTE_SET(PteDst, fGstShwPteFlags | PGM_PAGE_GET_HCPHYS(pPage));
 # endif
@@ -2127,7 +2115,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
     PdeDst = pPDDst->a[iPDDst];
 #   endif
     /* In the guest SMP case we could have blocked while another VCPU reused this page table. */
-    if (!PdeDst.n.u1Present)
+    if (!SHW_PDE_IS_P(PdeDst))
     {
         AssertMsg(pVM->cCpus > 1, ("Unexpected missing PDE %RX64\n", (uint64_t)PdeDst.u));
         Log(("CPU%d: SyncPage: Pde at %RGv changed behind our back!\n", pVCpu->idCpu, GCPtrPage));
@@ -2135,7 +2123,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
     }
 
     /* Can happen in the guest SMP case; other VCPU activated this PDE while we were blocking to handle the page fault. */
-    if (PdeDst.n.u1Size)
+    if (SHW_PDE_IS_BIG(PdeDst))
     {
         Assert(pVM->pgm.s.fNestedPaging);
         Log(("CPU%d: SyncPage: Pde (big:%RX64) at %RGv changed behind our back!\n", pVCpu->idCpu, PdeDst.u, GCPtrPage));
@@ -2992,7 +2980,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
 # ifndef PGM_WITHOUT_MAPPINGS
     Assert(!(PdeDst.u & PGM_PDFLAGS_MAPPING));
 # endif
-    Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
+    Assert(!SHW_PDE_IS_P(PdeDst)); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
 # if defined(PGM_WITH_LARGE_PAGES) && PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE
     if (    BTH_IS_NP_ACTIVE(pVM)

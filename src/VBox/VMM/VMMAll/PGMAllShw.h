@@ -32,6 +32,7 @@
 #undef SHW_PD_MASK
 #undef SHW_PDE_ATOMIC_SET
 #undef SHW_PDE_ATOMIC_SET2
+#undef SHW_PDE_IS_P
 #undef SHW_PDE_IS_BIG
 #undef SHW_PTE_PG_MASK
 #undef SHW_PTE_IS_P
@@ -69,6 +70,7 @@
 # define SHW_PD_SHIFT                   X86_PD_SHIFT
 # define SHW_PD_MASK                    X86_PD_MASK
 # define SHW_TOTAL_PD_ENTRIES           X86_PG_ENTRIES
+# define SHW_PDE_IS_P(Pde)              ( (Pde).n.u1Present )
 # define SHW_PDE_IS_BIG(Pde)            ( (Pde).b.u1Size )
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU32(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU32(&(Pde).u, (Pde2).u); } while (0)
@@ -103,6 +105,7 @@
 # define SHW_PDE_PG_MASK                EPT_PDE_PG_MASK
 # define SHW_PD_SHIFT                   EPT_PD_SHIFT
 # define SHW_PD_MASK                    EPT_PD_MASK
+# define SHW_PDE_IS_P(Pde)              ( (Pde).u & EPT_E_READ /* always set*/ )
 # define SHW_PDE_IS_BIG(Pde)            ( (Pde).u & EPT_E_LEAF )
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU64(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU64(&(Pde).u, (Pde2).u); } while (0)
@@ -141,6 +144,7 @@
 # define SHW_PDE_PG_MASK                X86_PDE_PAE_PG_MASK
 # define SHW_PD_SHIFT                   X86_PD_PAE_SHIFT
 # define SHW_PD_MASK                    X86_PD_PAE_MASK
+# define SHW_PDE_IS_P(Pde)              ( (Pde).u & X86_PDE_P )
 # define SHW_PDE_IS_BIG(Pde)            ( (Pde).u & X86_PDE_PS )
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU64(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU64(&(Pde).u, (Pde2).u); } while (0)
@@ -367,7 +371,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags,
 # else
 #  error "Misconfigured PGM_SHW_TYPE or something..."
 # endif
-    if (!Pde.n.u1Present)
+    if (!SHW_PDE_IS_P(Pde))
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
     /* Deal with large pages. */
@@ -544,7 +548,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
 # else /* PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_NESTED_32BIT */
         X86PDE          Pde = pgmShwGet32BitPDE(pVCpu, GCPtr);
 # endif
-        if (!Pde.n.u1Present)
+        if (!SHW_PDE_IS_P(Pde))
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
         AssertFatal(!SHW_PDE_IS_BIG(Pde));

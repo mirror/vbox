@@ -444,11 +444,7 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                    (VMX_VMCS_GUEST_CR3_CACHE_IDX + 1)
 /** @} */
 
-/** @name VMX EPT paging structures
- * @{
- */
-
-/** @name Common bits
+/** @name VMX Extended Page Tables (EPT) Common Bits
  * @{ */
 /** Bit 0 - Readable (we often think of it as present). */
 #define EPT_E_BIT_READ          0
@@ -483,6 +479,8 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define EPT_E_TYPE_WP           (UINT64_C(5) << EPT_E_TYPE_SHIFT)
 /** Bits 3-5 - Memory type: WB. */
 #define EPT_E_TYPE_WB           (UINT64_C(6) << EPT_E_TYPE_SHIFT)
+/** Bits 3-5 - Memory type: Invalid (7). */
+#define EPT_E_TYPE_INVALID_7    (UINT64_C(7) << EPT_E_TYPE_SHIFT)
 
 /** Bit 6 - Ignore page attribute table (leaf, MBZ). */
 #define EPT_E_BIT_IGNORE_PAT    6
@@ -524,6 +522,11 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define EPT_E_BIT_IGNORE_VE     63
 #define EPT_E_IGNORE_VE         RT_BIT_64(EPT_E_BIT_IGNORE_VE)     /**< @see EPT_E_BIT_IGNORE_VE*/
 /** @} */
+
+
+/** @name VMX Extended Page Tables (EPT) Structures
+ * @{
+ */
 
 /**
  * Number of page table entries in the EPT. (PDPTE/PDE/PTE)
@@ -569,8 +572,10 @@ AssertCompileSize(EPTPML4EBITS, 8);
  */
 typedef union EPTPML4E
 {
+#ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
     /** Normal view. */
     EPTPML4EBITS    n;
+#endif
     /** Unsigned integer view. */
     X86PGPAEUINT    u;
     /** 64 bit unsigned integer view. */
@@ -634,8 +639,10 @@ AssertCompileSize(EPTPDPTEBITS, 8);
  */
 typedef union EPTPDPTE
 {
+#ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
     /** Normal view. */
     EPTPDPTEBITS    n;
+#endif
     /** Unsigned integer view. */
     X86PGPAEUINT    u;
     /** 64 bit unsigned integer view. */
@@ -733,10 +740,12 @@ AssertCompileSize(EPTPDE2MBITS, 8);
  */
 typedef union EPTPDE
 {
+#ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
     /** Normal view. */
     EPTPDEBITS      n;
     /** 2MB view (big). */
     EPTPDE2MBITS    b;
+#endif
     /** Unsigned integer view. */
     X86PGPAEUINT    u;
     /** 64 bit unsigned integer view. */
@@ -807,8 +816,10 @@ AssertCompileSize(EPTPTEBITS, 8);
  */
 typedef union EPTPTE
 {
+#ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
     /** Normal view. */
     EPTPTEBITS      n;
+#endif
     /** Unsigned integer view. */
     X86PGPAEUINT    u;
     /** 64 bit unsigned integer view. */
