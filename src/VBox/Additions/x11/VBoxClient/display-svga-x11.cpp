@@ -902,6 +902,8 @@ static void x11Connect()
     x11Context.pXRRAddOutputMode = NULL;
     x11Context.fWmwareCtrlExtention = false;
     x11Context.fMonitorInfoAvailable = false;
+    x11Context.hRandRMajor = 0;
+    x11Context.hRandRMinor = 0;
 
     int dummy;
     if (x11Context.pDisplay != NULL)
@@ -947,6 +949,13 @@ static void x11Connect()
 #endif
         if (!fSuccess)
         {
+            XCloseDisplay(x11Context.pDisplay);
+            x11Context.pDisplay = NULL;
+            return;
+        }
+        if (x11Context.hRandRMajor < 1 || x11Context.hRandRMinor <= 3)
+        {
+            VBClLogFatalError("Resizing service requires libXrandr Version >= 1.4. Detected version is %d.%d\n", x11Context.hRandRMajor, x11Context.hRandRMinor);
             XCloseDisplay(x11Context.pDisplay);
             x11Context.pDisplay = NULL;
             return;
@@ -1023,6 +1032,7 @@ static bool disableCRTC(RRCrtc crtcID)
         ret = x11Context.pXRRSetCrtcConfig(x11Context.pDisplay, x11Context.pScreenResources, crtcID,
                                            CurrentTime, 0, 0, None, RR_Rotate_0, NULL, 0);
 #endif
+    /** @todo  In case of unsuccesful crtc config set  we have to revert frame buffer size and crtc sizes. */
     if (ret == Success)
         return true;
     else
@@ -1097,7 +1107,7 @@ static bool resizeFrameBuffer(struct RANDROUTPUT *paOutputs)
         x11Context.pXRRSelectInput(x11Context.pDisplay, x11Context.rootWindow, 0);
 #endif
     XRRScreenSize newSize = currentSize();
-    /** @todo  In case of unsuccesful frame buffer resize we have to revert frame buffer size and crtc sizes. */
+
     if (!event || newSize.width != (int)iXRes || newSize.height != (int)iYRes)
     {
         VBClLogError("Resizing frame buffer to %d %d has failed\n", iXRes, iYRes);
