@@ -540,8 +540,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                         PX86PDPAE pShwPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pPool->CTX_SUFF(pVM), pVCpu, pPage);
                         for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
                         {
-                            if (    pShwPD->a[i].n.u1Present
-                                &&  pShwPD->a[i].b.u1Size)
+                            if ((pShwPD->a[i].u & (X86_PDE_P | X86_PDE_PS)) == (X86_PDE_P | X86_PDE_PS))
                             {
 # ifndef PGM_WITHOUT_MAPPINGS
                                 Assert(!(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING));
