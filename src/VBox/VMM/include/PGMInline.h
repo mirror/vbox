@@ -782,8 +782,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PVMCPUCC pVCpu, RTGCPTR GCPtr)
     if (RT_LIKELY(pGuestPDPT))
     {
         const unsigned iPdpt = (uint32_t)GCPtr >> X86_PDPT_SHIFT;
-        if (    pGuestPDPT->a[iPdpt].n.u1Present
-            &&  !(pGuestPDPT->a[iPdpt].u & pVCpu->pgm.s.fGstPaeMbzPdpeMask) )
+        if ((pGuestPDPT->a[iPdpt].u & (pVCpu->pgm.s.fGstPaeMbzPdpeMask | X86_PDPE_P)) == X86_PDPE_P)
         {
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
@@ -827,38 +826,39 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, unsigned 
     AssertGCPtr32(GCPtr);
 
     /* The PDPE. */
-    PX86PDPT        pGuestPDPT = pgmGstGetPaePDPTPtr(pVCpu);
-    if (RT_UNLIKELY(!pGuestPDPT))
-        return NULL;
-    const unsigned  iPdpt = (uint32_t)GCPtr >> X86_PDPT_SHIFT;
-    if (pPdpe)
-        *pPdpe = pGuestPDPT->a[iPdpt];
-    if (!pGuestPDPT->a[iPdpt].n.u1Present)
-        return NULL;
-    if (RT_UNLIKELY(pVCpu->pgm.s.fGstPaeMbzPdpeMask & pGuestPDPT->a[iPdpt].u))
-        return NULL;
-
-    /* The PDE. */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PX86PDPAE   pGuestPD = NULL;
-    int rc = pgmRZDynMapGCPageInlined(pVCpu,
-                                      pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK,
-                                      (void **)&pGuestPD
-                                      RTLOG_COMMA_SRC_POS);
-    if (RT_FAILURE(rc))
+    PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pVCpu);
+    if (pGuestPDPT)
     {
-        AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
-        return NULL;
-    }
-#else
-    PX86PDPAE   pGuestPD = pVCpu->pgm.s.CTX_SUFF(apGstPaePDs)[iPdpt];
-    if (    !pGuestPD
-        ||  (pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK) != pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt])
-        pgmGstLazyMapPaePD(pVCpu, iPdpt, &pGuestPD);
-#endif
+        const unsigned     iPdpt = (uint32_t)GCPtr >> X86_PDPT_SHIFT;
+        X86PGPAEUINT const uPdpe = pGuestPDPT->a[iPdpt].u;
+        if (pPdpe)
+            pPdpe->u = uPdpe;
+        if ((uPdpe & (pVCpu->pgm.s.fGstPaeMbzPdpeMask | X86_PDPE_P)) == X86_PDPE_P)
+        {
 
-    *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-    return pGuestPD;
+            /* The PDE. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+            PX86PDPAE   pGuestPD = NULL;
+            int rc = pgmRZDynMapGCPageInlined(pVCpu,
+                                              uPdpe & X86_PDPE_PG_MASK,
+                                              (void **)&pGuestPD
+                                              RTLOG_COMMA_SRC_POS);
+            if (RT_FAILURE(rc))
+            {
+                AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
+                return NULL;
+            }
+#else
+            PX86PDPAE   pGuestPD = pVCpu->pgm.s.CTX_SUFF(apGstPaePDs)[iPdpt];
+            if (    !pGuestPD
+                ||  (uPdpe & X86_PDPE_PG_MASK) != pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt])
+                pgmGstLazyMapPaePD(pVCpu, iPdpt, &pGuestPD);
+#endif
+            *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+            return pGuestPD;
+        }
+    }
+    return NULL;
 }
 
 
@@ -918,7 +918,9 @@ DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PVMCPUCC pVCpu, unsigned int iPm
     AssertRCReturn(rc, NULL);
 #else
     PX86PML4 pGuestPml4 = pVCpu->pgm.s.CTX_SUFF(pGstAmd64Pml4);
-    if (RT_UNLIKELY(!pGuestPml4))
+    if (pGuestPml4)
+    { /* likely */ }
+    else
     {
          int rc = pgmGstLazyMapPml4(pVCpu, &pGuestPml4);
          AssertRCReturn(rc, NULL);
@@ -943,30 +945,32 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDE(PVMCPUCC pVCpu, RTGCPTR64 GCPtr)
      *       cause X86_TRAP_PF_RSVD.  This isn't a problem until we start
      *       supporting 52-bit wide physical guest addresses.
      */
-    PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pVCpu);
-    const unsigned  iPml4      = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    if (    RT_LIKELY(pGuestPml4)
-        &&  pGuestPml4->a[iPml4].n.u1Present
-        &&  !(pGuestPml4->a[iPml4].u & pVCpu->pgm.s.fGstAmd64MbzPml4eMask) )
+    PCX86PML4 pGuestPml4 = pgmGstGetLongModePML4Ptr(pVCpu);
+    if (RT_LIKELY(pGuestPml4))
     {
-        PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (RT_SUCCESS(rc))
+        const unsigned     iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+        X86PGPAEUINT const uPml4e = pGuestPml4->a[iPml4].u;
+        if ((uPml4e & (pVCpu->pgm.s.fGstAmd64MbzPml4eMask | X86_PML4E_P)) == X86_PML4E_P)
         {
-            const unsigned iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-            if (    pPdptTemp->a[iPdpt].n.u1Present
-                &&  !(pPdptTemp->a[iPdpt].u & pVCpu->pgm.s.fGstAmd64MbzPdpeMask) )
+            PCX86PDPT pPdptTemp;
+            int rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, uPml4e & X86_PML4E_PG_MASK, &pPdptTemp);
+            if (RT_SUCCESS(rc))
             {
-                PCX86PDPAE pPD;
-                rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
-                if (RT_SUCCESS(rc))
+                const unsigned     iPdpt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+                X86PGPAEUINT const uPdpte = pPdptTemp->a[iPdpt].u;
+                if ((uPdpte & (pVCpu->pgm.s.fGstAmd64MbzPdpeMask | X86_PDPE_P)) == X86_PDPE_P)
                 {
-                    const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-                    return pPD->a[iPD];
+                    PCX86PDPAE pPD;
+                    rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, uPdpte & X86_PDPE_PG_MASK, &pPD);
+                    if (RT_SUCCESS(rc))
+                    {
+                        const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+                        return pPD->a[iPD];
+                    }
                 }
             }
+            AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
         }
-        AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
     }
 
     X86PDEPAE ZeroPde = {0};
@@ -988,42 +992,40 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDE(PVMCPUCC pVCpu, RTGCPTR64 GCPtr)
 DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe, unsigned *piPD)
 {
     /* The PMLE4. */
-    PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pVCpu);
-    if (RT_UNLIKELY(!pGuestPml4))
-        return NULL;
-    const unsigned  iPml4      = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PCX86PML4E      pPml4e     = *ppPml4e = &pGuestPml4->a[iPml4];
-    if (!pPml4e->n.u1Present)
-        return NULL;
-    if (RT_UNLIKELY(pPml4e->u & pVCpu->pgm.s.fGstAmd64MbzPml4eMask))
-        return NULL;
-
-    /* The PDPE. */
-    PCX86PDPT       pPdptTemp;
-    int rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
-    if (RT_FAILURE(rc))
+    PX86PML4 pGuestPml4 = pgmGstGetLongModePML4Ptr(pVCpu);
+    if (pGuestPml4)
     {
-        AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
-        return NULL;
+        const unsigned     iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+        *ppPml4e = &pGuestPml4->a[iPml4];
+        X86PGPAEUINT const uPml4e = pGuestPml4->a[iPml4].u;
+        if ((uPml4e & (pVCpu->pgm.s.fGstAmd64MbzPml4eMask | X86_PML4E_P)) == X86_PML4E_P)
+        {
+            /* The PDPE. */
+            PCX86PDPT pPdptTemp;
+            int rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, uPml4e & X86_PML4E_PG_MASK, &pPdptTemp);
+            if (RT_SUCCESS(rc))
+            {
+                const unsigned     iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+                X86PGPAEUINT const uPdpe = pPdptTemp->a[iPdpt].u;
+                pPdpe->u = uPdpe;
+                if ((uPdpe & (pVCpu->pgm.s.fGstAmd64MbzPdpeMask | X86_PDPE_P)) == X86_PDPE_P)
+                {
+                    /* The PDE. */
+                    PX86PDPAE pPD;
+                    rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, uPdpe & X86_PDPE_PG_MASK, &pPD);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+                        return pPD;
+                    }
+                    AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
+                }
+            }
+            else
+                AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
+        }
     }
-    const unsigned iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-    *pPdpe = pPdptTemp->a[iPdpt];
-    if (!pPdpe->n.u1Present)
-        return NULL;
-    if (RT_UNLIKELY(pPdpe->u & pVCpu->pgm.s.fGstAmd64MbzPdpeMask))
-        return NULL;
-
-    /* The PDE. */
-    PX86PDPAE pPD;
-    rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
-        return NULL;
-    }
-
-    *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-    return pPD;
+    return NULL;
 }
 
 
@@ -1091,22 +1093,22 @@ DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PVMCPUCC pVCpu)
  *
  * @returns Pointer to the shadow PD.
  * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pPdpt       Pointer to the page directory pointer table.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr)
+DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPUCC pVCpu, PX86PDPT pPdpt, RTGCPTR GCPtr)
 {
     const unsigned  iPdpt = (uint32_t)GCPtr >> X86_PDPT_SHIFT;
-    PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pVCpu);
+    if (pPdpt->a[iPdpt].u & X86_PDPE_P)
+    {
+        /* Fetch the pgm pool shadow descriptor. */
+        PVMCC           pVM     = pVCpu->CTX_SUFF(pVM);
+        PPGMPOOLPAGE    pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+        AssertReturn(pShwPde, NULL);
 
-    if (!pPdpt->a[iPdpt].n.u1Present)
-        return NULL;
-
-    /* Fetch the pgm pool shadow descriptor. */
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
-    AssertReturn(pShwPde, NULL);
-
-    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPde);
+        return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPde);
+    }
+    return NULL;
 }
 
 
@@ -1115,22 +1117,11 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr)
  *
  * @returns Pointer to the shadow PD.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pPdpt       Pointer to the page directory pointer table.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPUCC pVCpu, PX86PDPT pPdpt, RTGCPTR GCPtr)
+DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr)
 {
-    const unsigned  iPdpt = (uint32_t)GCPtr >> X86_PDPT_SHIFT;
-
-    if (!pPdpt->a[iPdpt].n.u1Present)
-        return NULL;
-
-    /* Fetch the pgm pool shadow descriptor. */
-    PVMCC             pVM     = pVCpu->CTX_SUFF(pVM);
-    PPGMPOOLPAGE    pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
-    AssertReturn(pShwPde, NULL);
-
-    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPde);
+    return pgmShwGetPaePDPtr(pVCpu, pgmShwGetPaePDPTPtr(pVCpu), GCPtr);
 }
 
 
@@ -1143,15 +1134,13 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPUCC pVCpu, PX86PDPT pPdpt, RTGCPTR 
  */
 DECLINLINE(X86PDEPAE) pgmShwGetPaePDE(PVMCPUCC pVCpu, RTGCPTR GCPtr)
 {
-    const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+    const unsigned  iPd     = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+    PX86PDPAE       pShwPde = pgmShwGetPaePDPtr(pVCpu, GCPtr);
+    if (pShwPde)
+        return pShwPde->a[iPd];
 
-    PX86PDPAE pShwPde = pgmShwGetPaePDPtr(pVCpu, GCPtr);
-    if (!pShwPde)
-    {
-        X86PDEPAE ZeroPde = {0};
-        return ZeroPde;
-    }
-    return pShwPde->a[iPd];
+    X86PDEPAE ZeroPde = {0};
+    return ZeroPde;
 }
 
 
@@ -1165,11 +1154,10 @@ DECLINLINE(X86PDEPAE) pgmShwGetPaePDE(PVMCPUCC pVCpu, RTGCPTR GCPtr)
  */
 DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr)
 {
-    const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-
-    PX86PDPAE pPde = pgmShwGetPaePDPtr(pVCpu, GCPtr);
-    AssertReturn(pPde, NULL);
-    return &pPde->a[iPd];
+    const unsigned iPd     = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+    PX86PDPAE      pShwPde = pgmShwGetPaePDPtr(pVCpu, GCPtr);
+    AssertReturn(pShwPde, NULL);
+    return &pShwPde->a[iPd];
 }
 
 
@@ -1194,15 +1182,13 @@ DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PVMCPUCC pVCpu)
  */
 DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PVMCPUCC pVCpu, RTGCPTR GCPtr)
 {
-    const unsigned  iPml4 = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    const unsigned  iPml4    = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PX86PML4        pShwPml4 = pgmShwGetLongModePML4Ptr(pVCpu);
+    if (pShwPml4)
+        return pShwPml4->a[iPml4];
 
-    if (!pShwPml4)
-    {
-        X86PML4E ZeroPml4e = {0};
-        return ZeroPml4e;
-    }
-    return pShwPml4->a[iPml4];
+    X86PML4E ZeroPml4e = {0};
+    return ZeroPml4e;
 }
 
 
@@ -1216,9 +1202,9 @@ DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PVMCPUCC pVCpu, RTGCPTR GCPtr)
 DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PVMCPUCC pVCpu, unsigned int iPml4)
 {
     PX86PML4 pShwPml4 = pgmShwGetLongModePML4Ptr(pVCpu);
-    if (!pShwPml4)
-        return NULL;
-    return &pShwPml4->a[iPml4];
+    if (pShwPml4)
+        return &pShwPml4->a[iPml4];
+    return NULL;
 }
 
 
