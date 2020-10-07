@@ -1106,9 +1106,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         return VINF_SUCCESS;
     }
     PX86PDEPAE  pPdeDst  = &pPDDst->a[iPDDst];
-    PX86PDPE    pPdpeDst = &pPdptDst->a[iPdpt];
     Assert(pPDDst);
-    Assert(!(pPdpeDst->u & X86_PDPE_P));
+    Assert(!(pPdptDst->a[iPdpt].u & X86_PDPE_P));
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & SHW_PDPE_PG_MASK);
