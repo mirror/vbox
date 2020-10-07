@@ -90,19 +90,19 @@ if [[ ${MACOS_VERS} != 11.0* ]]; then
     kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxNetAdp.kext'
 else
     VBOX_RC=0
-    if ! kmutil load -b org.virtualbox.kext.VBoxDrv; then
+    if ! kmutil load -p '/Library/Application Support/VirtualBox/VBoxDrv.kext'; then
         VBOX_RC=1
     fi
 
-    if ! kmutil load -b org.virtualbox.kext.VBoxUSB; then
+    if ! kmutil load -p '/Library/Application Support/VirtualBox/VBoxUSB.kext'; then
         VBOX_RC=1
     fi
 
-    if ! kmutil load -b org.virtualbox.kext.VBoxNetFlt; then
+    if ! kmutil load -p '/Library/Application Support/VirtualBox/VBoxNetFlt.kext'; then
         VBOX_RC=1
     fi
 
-    if ! kmutil load -b org.virtualbox.kext.VBoxNetAdp; then
+    if ! kmutil load -p '/Library/Application Support/VirtualBox/VBoxNetAdp.kext'; then
         VBOX_RC=1
     fi
 
