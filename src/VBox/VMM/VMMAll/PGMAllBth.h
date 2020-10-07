@@ -1249,9 +1249,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
                     const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                     PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                     Log2(("SyncPage: 4K  %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx %s\n",
-                            GCPtrPage, PteSrc.n.u1Present,
-                            PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                            PteSrc.n.u1User  & PdeSrc.n.u1User,
+                            GCPtrPage, PteSrc.u & X86_PTE_P,
+                            (PteSrc.u & PdeSrc.u & X86_PTE_RW),
+                            (PteSrc.u & PdeSrc.u & X86_PTE_US),
                             (uint64_t)PteSrc.u,
                             SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                             SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
@@ -1933,9 +1933,9 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                                 NOREF(GCPtrCurPage);
                                 PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, *pPteSrc, pShwPage, iPTDst);
                                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
-                                      GCPtrCurPage, pPteSrc->n.u1Present,
-                                      pPteSrc->n.u1Write & PdeSrc.n.u1Write,
-                                      pPteSrc->n.u1User  & PdeSrc.n.u1User,
+                                      GCPtrCurPage, pPteSrc->u & X86_PTE_P,
+                                      !!(pPteSrc->u & PdeSrc.u & X86_PTE_RW),
+                                      !!(pPteSrc->u & PdeSrc.u & X86_PTE_US),
                                       (uint64_t)pPteSrc->u,
                                       SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                                       SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
@@ -1950,9 +1950,9 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                         const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                         PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPage: 4K  %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx %s\n",
-                              GCPtrPage, PteSrc.n.u1Present,
-                              PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                              PteSrc.n.u1User  & PdeSrc.n.u1User,
+                              GCPtrPage, PteSrc.u & X86_PTE_P,
+                              !!(PteSrc.u & PdeSrc.u & X86_PTE_RW),
+                              !!(PteSrc.u & PdeSrc.u & X86_PTE_US),
                               (uint64_t)PteSrc.u,
                               SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                               SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
@@ -2050,8 +2050,8 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                     }
                     SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
                     Log2(("SyncPage: BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} GCPhys=%RGp%s\n",
-                          GCPtrPage, PdeSrc.n.u1Present, PdeSrc.n.u1Write, PdeSrc.n.u1User, (uint64_t)PdeSrc.u, GCPhys,
-                          PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
+                          GCPtrPage, PdeSrc.u & X86_PDE_P, !!(PdeSrc.u & X86_PDE_RW), !!(PdeSrc.u & X86_PDE_US),
+                          (uint64_t)PdeSrc.u, GCPhys, PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
                 }
                 else
                 {
@@ -2682,7 +2682,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
              * Sync all or just a few entries depending on PGM_SYNC_N_PAGES.
              */
             Log2(("SyncPT:   4K  %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx}\n",
-                  GCPtrPage, PdeSrc.b.u1Present, PdeSrc.b.u1Write, PdeSrc.b.u1User, (uint64_t)PdeSrc.u));
+                  GCPtrPage, PdeSrc.u & X86_PTE_P, !!(PdeSrc.u & X86_PTE_RW), !!(PdeSrc.u & X86_PDE_US), (uint64_t)PdeSrc.u));
             PGSTPT pPTSrc;
             rc = PGM_GCPHYS_2_PTR(pVM, GST_GET_PDE_GCPHYS(PdeSrc), &pPTSrc);
             if (RT_SUCCESS(rc))
@@ -2739,9 +2739,9 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                         PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPT:   4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s dst.raw=%08llx iPTSrc=%x PdeSrc.u=%x physpte=%RGp\n",
                               GCPtrCur,
-                              PteSrc.n.u1Present,
-                              PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                              PteSrc.n.u1User  & PdeSrc.n.u1User,
+                              PteSrc.u & X86_PTE_P,
+                              !!(PteSrc.u & PdeSrc.u & X86_PTE_RW),
+                              !!(PteSrc.u & PdeSrc.u & X86_PTE_US),
                               (uint64_t)PteSrc.u,
                               SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : "", SHW_PTE_LOG64(pPTDst->a[iPTDst]), iPTSrc, PdeSrc.au32[0],
                               (RTGCPHYS)(GST_GET_PDE_GCPHYS(PdeSrc) + iPTSrc*sizeof(PteSrc)) ));
@@ -2800,7 +2800,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
             /* Loop thru the entries in the shadow PT. */
             const RTGCPTR   GCPtr  = (GCPtrPage >> SHW_PD_SHIFT) << SHW_PD_SHIFT; NOREF(GCPtr);
             Log2(("SyncPT:   BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} Shw=%RGv GCPhys=%RGp %s\n",
-                  GCPtrPage, PdeSrc.b.u1Present, PdeSrc.b.u1Write, PdeSrc.b.u1User, (uint64_t)PdeSrc.u, GCPtr,
+                  GCPtrPage, PdeSrc.u & X86_PDE_P, !!(PdeSrc.u & X86_PDE_RW), !!(PdeSrc.u & X86_PDE_US), (uint64_t)PdeSrc.u, GCPtr,
                   GCPhys, PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
             PPGMRAMRANGE    pRam   = pgmPhysGetRangeAtOrAbove(pVM, GCPhys);
             unsigned        iPTDst = 0;
