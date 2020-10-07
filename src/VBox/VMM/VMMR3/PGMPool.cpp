@@ -96,6 +96,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM_POOL
+#define VBOX_WITHOUT_PAGING_BIT_FIELDS /* 64-bit bitfields are just asking for trouble. See @bugref{9841} and others. */
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
 #include "PGMInternal.h"
@@ -562,8 +563,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                         for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
                         {
                             Assert((pShwPD->a[i].u & UINT64_C(0xfff0000000000f80)) == 0);
-                            if (    pShwPD->a[i].n.u1Present
-                                &&  pShwPD->a[i].b.u1Size)
+                            if ((pShwPD->a[i].u & (EPT_E_READ | EPT_E_LEAF)) == (EPT_E_READ | EPT_E_LEAF))
                             {
 # ifndef PGM_WITHOUT_MAPPINGS
                                 Assert(!(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING));
@@ -814,8 +814,8 @@ void pgmR3PoolWriteProtectPages(PVM pVM)
                 case PGMPOOLKIND_EPT_PT_FOR_PHYS:
                     for (unsigned iShw = 0; iShw < RT_ELEMENTS(uShw.pPTEpt->a); iShw++)
                     {
-                        if (uShw.pPTEpt->a[iShw].n.u1Present)
-                            uShw.pPTEpt->a[iShw].n.u1Write = 0;
+                        if (uShw.pPTEpt->a[iShw].u & EPT_E_READ)
+                            uShw.pPTEpt->a[iShw].u &= ~(X86PGPAEUINT)EPT_E_WRITE;
                     }
                     break;
 
