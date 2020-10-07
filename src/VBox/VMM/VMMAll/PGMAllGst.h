@@ -207,9 +207,9 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         pWalk->pPde  = pPde  = &pWalk->pPd->a[(GCPtr >> GST_PD_SHIFT) & GST_PD_MASK];
         GSTPDE  Pde;
         pWalk->Pde.u = Pde.u = pPde->u;
-        if (Pde.n.u1Present) { /* probable */ }
+        if (Pde.u & X86_PDE_P) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 2);
-        if (Pde.n.u1Size && GST_IS_PSE_ACTIVE(pVCpu))
+        if ((Pde.u & X86_PDE_PS) && GST_IS_PSE_ACTIVE(pVCpu))
         {
             if (RT_LIKELY(GST_IS_BIG_PDE_VALID(pVCpu, Pde))) { /* likely */ }
             else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 2);

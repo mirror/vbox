@@ -2506,7 +2506,7 @@ typedef union X86PDEPAE
 {
     /** Unsigned integer view. */
     X86PGPAEUINT    u;
-#if 1 /*ndef VBOX_WITHOUT_PAGING_BIT_FIELDS*/
+#ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
     /** Normal view. */
     X86PDEPAEBITS   n;
     /** 2MB page view (big). */

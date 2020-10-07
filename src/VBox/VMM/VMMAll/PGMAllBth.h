@@ -466,6 +466,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
     /*
      * Set the accessed and dirty flags.
      */
+/** @todo Use atomics here as we don't own the lock and stuff: */
 #   if PGM_GST_TYPE == PGM_TYPE_AMD64
     GstWalk.Pml4e.u     |= X86_PML4E_A;
     GstWalk.pPml4e->u   |= X86_PML4E_A;
@@ -474,7 +475,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
 #   endif
     if (GstWalk.Core.fBigPage)
     {
-        Assert(GstWalk.Pde.b.u1Size);
+        Assert(GstWalk.Pde.u & X86_PDE_PS);
         if (uErr & X86_TRAP_PF_RW)
         {
             GstWalk.Pde.u   |= X86_PDE4M_A | X86_PDE4M_D;
@@ -488,7 +489,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
     }
     else
     {
-        Assert(!GstWalk.Pde.b.u1Size);
+        Assert(!(GstWalk.Pde.u & X86_PDE_PS));
         GstWalk.Pde.u   |= X86_PDE_A;
         GstWalk.pPde->u |= X86_PDE_A;
         if (uErr & X86_TRAP_PF_RW)
@@ -628,7 +629,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
      *
      */
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-    Assert(GstWalk.Pde.n.u1Present);
+    Assert(GstWalk.Pde.u & X86_PDE_P);
 #  endif
     if (    !(uErr & X86_TRAP_PF_P) /* not set means page not present instead of page protection violation */
         &&  !SHW_PDE_IS_P(pPDDst->a[iPDDst]))
@@ -834,7 +835,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
 #    if (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) && 1
                 if (   GstWalk.Core.fEffectiveUS
                     && !GstWalk.Core.fEffectiveRW
-                    && (GstWalk.Core.fBigPage || GstWalk.Pde.n.u1Write)
+                    && (GstWalk.Core.fBigPage || (GstWalk.Pde.u & X86_PDE_RW))
                     && pVM->cCpus == 1 /* Sorry, no go on SMP. Add CFGM option? */)
                 {
                     Log(("PGM #PF: Netware WP0+RO+US hack: pvFault=%RGp uErr=%#x (big=%d)\n", pvFault, uErr, GstWalk.Core.fBigPage));
@@ -917,7 +918,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
          */
         else if (    GstWalk.Core.fEffectiveUS
                  && !GstWalk.Core.fEffectiveRW
-                 && (GstWalk.Core.fBigPage || GstWalk.Pde.n.u1Write)
+                 && (GstWalk.Core.fBigPage || (GstWalk.Pde.u & X86_PDE_RW))
                  &&  pVCpu->pgm.s.cNetwareWp0Hacks > 0
                  &&  (CPUMGetGuestCR0(pVCpu) & (X86_CR0_WP | X86_CR0_PG)) == X86_CR0_PG
                  &&  CPUMGetGuestCPL(pVCpu) == 3
@@ -1116,7 +1117,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
 # endif /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
 
     const SHWPDE PdeDst = *pPdeDst;
-    if (!PdeDst.n.u1Present)
+    if (!(PdeDst.u & X86_PDE_P))
     {
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePageSkipped));
         PGM_INVL_PG(pVCpu, GCPtrPage);
@@ -1148,7 +1149,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         PdeSrc.u = 0;
 # endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
     const bool      fWasBigPage = RT_BOOL(PdeDst.u & PGM_PDFLAGS_BIG_PAGE);
-    const bool      fIsBigPage  = PdeSrc.b.u1Size && GST_IS_PSE_ACTIVE(pVCpu);
+    const bool      fIsBigPage  = (PdeSrc.u & X86_PDE_PS) && GST_IS_PSE_ACTIVE(pVCpu);
     if (fWasBigPage != fIsBigPage)
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePageSkipped));
 
@@ -1162,7 +1163,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
     if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)
         || (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
             && fIsBigPage
-            && PdeSrc.b.u1Global
+            && (PdeSrc.u & X86_PDE4M_G)
            )
        )
 #  else
@@ -1178,10 +1179,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
      * Deal with the Guest PDE.
      */
     rc = VINF_SUCCESS;
-    if (PdeSrc.n.u1Present)
+    if (PdeSrc.u & X86_PDE_P)
     {
-        Assert(     PdeSrc.n.u1User == PdeDst.n.u1User
-               &&   (PdeSrc.n.u1Write || !PdeDst.n.u1Write || pVCpu->pgm.s.cNetwareWp0Hacks > 0));
+        Assert(    (PdeSrc.u & X86_PDE_US) == (PdeDst.u & X86_PDE_US)
+               &&  ((PdeSrc.u & X86_PDE_RW) || !(PdeDst.u & X86_PDE_RW) || pVCpu->pgm.s.cNetwareWp0Hacks > 0));
 # ifndef PGM_WITHOUT_MAPPINGS
         if (PdeDst.u & PGM_PDFLAGS_MAPPING)
         {
@@ -1263,7 +1264,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
                  *        FIXME */
                 if (        (PdeSrc.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US))
                         ==  (PdeDst.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US))
-                    &&  (   PdeSrc.b.u1Dirty /** @todo rainy day: What about read-only 4M pages? not very common, but still... */
+                    &&  (   (PdeSrc.u & X86_PDE4M_D) /** @todo rainy day: What about read-only 4M pages? not very common, but still... */
                          || (PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY)))
                 {
                     LogFlow(("Skipping flush for big page containing %RGv (PD=%X .u=%RX64)-> nothing has changed!\n", GCPtrPage, iPDSrc, PdeSrc.u));
@@ -1614,7 +1615,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
                  * If the page or page directory entry is not marked accessed,
                  * we mark the page not present.
                  */
-                if (!PteSrc.n.u1Accessed || !PdeSrc.n.u1Accessed)
+                if (!(PteSrc.u & X86_PTE_A) || !(PdeSrc.u & X86_PDE_A))
                 {
                     LogFlow(("SyncPageWorker: page and or page directory not accessed -> mark not present\n"));
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,AccessedPage));
@@ -1624,8 +1625,9 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
                  * If the page is not flagged as dirty and is writable, then make it read-only, so we can set the dirty bit
                  * when the page is modified.
                  */
-                else if (!PteSrc.n.u1Dirty && (PdeSrc.n.u1Write & PteSrc.n.u1Write))
+                else if (!(PteSrc.u & X86_PTE_D) && (PdeSrc.u & PteSrc.u & X86_PTE_RW))
                 {
+                    AssertCompile(X86_PTE_RW == X86_PDE_RW);
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPage));
                     SHW_PTE_SET(PteDst,
                                   fGstShwPteFlags
@@ -1746,7 +1748,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
     /*
      * Assert preconditions.
      */
-    Assert(PdeSrc.n.u1Present);
+    Assert(PdeSrc.u & X86_PDE_P);
     Assert(cPages);
 #  if 0 /* rarely useful; leave for debugging. */
     STAM_COUNTER_INC(&pVCpu->pgm.s.StatSyncPagePD[(GCPtrPage >> GST_PD_SHIFT) & GST_PD_MASK]);
@@ -1797,7 +1799,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
      *   relevant TLB entries.  If we're write monitoring any page mapped by
      *   the modified entry, we may end up here with a "stale" TLB entry.
      */
-    if (!PdeDst.n.u1Present)
+    if (!(PdeDst.u & X86_PDE_P))
     {
         Log(("CPU%u: SyncPage: Pde at %RGv changed behind our back? (pPdeDst=%p/%RX64) uErr=%#x\n", pVCpu->idCpu, GCPtrPage, pPdeDst, (uint64_t)PdeDst.u, (uint32_t)uErr));
         AssertMsg(pVM->cCpus > 1 || (uErr & (X86_TRAP_PF_P | X86_TRAP_PF_RW)) == (X86_TRAP_PF_P | X86_TRAP_PF_RW),
@@ -1819,7 +1821,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
     /*
      * Check that the page is present and that the shadow PDE isn't out of sync.
      */
-    const bool      fBigPage  = PdeSrc.b.u1Size && GST_IS_PSE_ACTIVE(pVCpu);
+    const bool      fBigPage  = (PdeSrc.u & X86_PDE_PS) && GST_IS_PSE_ACTIVE(pVCpu);
     const bool      fPdeValid = !fBigPage ? GST_IS_PDE_VALID(pVCpu, PdeSrc) : GST_IS_BIG_PDE_VALID(pVCpu, PdeSrc);
     RTGCPHYS        GCPhys;
     if (!fBigPage)
@@ -1839,13 +1841,13 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
 #  endif
     }
     /** @todo This doesn't check the G bit of 2/4MB pages. FIXME */
-    if (    fPdeValid
-        &&  pShwPage->GCPhys == GCPhys
-        &&  PdeSrc.n.u1Present
-        &&  PdeSrc.n.u1User == PdeDst.n.u1User
-        &&  (PdeSrc.n.u1Write == PdeDst.n.u1Write || !PdeDst.n.u1Write)
+    if (   fPdeValid
+        && pShwPage->GCPhys == GCPhys
+        && (PdeSrc.u & X86_PDE_P)
+        && (PdeSrc.u & X86_PDE_US) == (PdeDst.u & X86_PDE_US)
+        && ((PdeSrc.u & X86_PDE_RW) == (PdeDst.u & X86_PDE_RW) || !(PdeDst.u & X86_PDE_RW))
 #  if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-        &&  (PdeSrc.n.u1NoExecute == PdeDst.n.u1NoExecute || !GST_IS_NX_ACTIVE(pVCpu))
+        && ((PdeSrc.u & X86_PDE_PAE_NX) == (PdeDst.u & X86_PDE_PAE_NX) || !GST_IS_NX_ACTIVE(pVCpu))
 #  endif
        )
     {
@@ -1854,7 +1856,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
          * Since we set the accessed bit *before* getting here on a #PF, this
          * check is only meant for dealing with non-#PF'ing paths.
          */
-        if (PdeSrc.n.u1Accessed)
+        if (PdeSrc.u & X86_PDE_A)
         {
             PSHWPT pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
             if (!fBigPage)
@@ -1953,7 +1955,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                     /* Try to make the page writable if necessary. */
                     if (    PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
                         &&  (   PGM_PAGE_IS_ZERO(pPage)
-                             || (   PdeSrc.n.u1Write
+                             || (   (PdeSrc.u & X86_PDE_RW)
                                  && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
 #   ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
                                  && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
@@ -2007,17 +2009,16 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                     /** @todo r=bird: figure out why we need this here, SyncPT should've taken care of this already.
                      * As for invlpg, it simply frees the whole shadow PT.
                      * ...It's possibly because the guest clears it and the guest doesn't really tell us... */
-                    if (    !PdeSrc.b.u1Dirty
-                        &&  PdeSrc.b.u1Write)
+                    if ((PdeSrc.u & (X86_PDE4M_D | X86_PDE_RW)) == X86_PDE_RW)
                     {
                         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPageBig));
                         PdeDst.u |= PGM_PDFLAGS_TRACK_DIRTY;
-                        PdeDst.n.u1Write = 0;
+                        PdeDst.u &= ~(SHWUINT)X86_PDE_RW;
                     }
                     else
                     {
-                        PdeDst.au32[0] &= ~PGM_PDFLAGS_TRACK_DIRTY;
-                        PdeDst.n.u1Write = PdeSrc.n.u1Write;
+                        PdeDst.u &= ~(SHWUINT)(PGM_PDFLAGS_TRACK_DIRTY | X86_PDE_RW);
+                        PdeDst.u |= PdeSrc.u & X86_PDE_RW;
                     }
                     SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
                     Log2(("SyncPage: BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} GCPhys=%RGp%s\n",
@@ -2282,22 +2283,18 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPUCC pVCpu, uint32_t uErr, PSHW
     /*
      * Handle big page.
      */
-    if (pPdeSrc->b.u1Size && GST_IS_PSE_ACTIVE(pVCpu))
+    if ((pPdeSrc->u & X86_PDE_PS) && GST_IS_PSE_ACTIVE(pVCpu))
     {
-        if (    pPdeDst->n.u1Present
-            &&  (pPdeDst->u & PGM_PDFLAGS_TRACK_DIRTY))
+        if ((pPdeSrc->u & (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY)) == (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY))
         {
-            SHWPDE PdeDst = *pPdeDst;
-
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPageTrap));
-            Assert(pPdeSrc->b.u1Write);
+            Assert(pPdeSrc->u & X86_PDE_RW);
 
             /* Note: No need to invalidate this entry on other VCPUs as a stale TLB entry will not harm; write access will simply
-             *       fault again and take this path to only invalidate the entry (see below).
-             */
-            PdeDst.n.u1Write      = 1;
-            PdeDst.n.u1Accessed   = 1;
-            PdeDst.au32[0]       &= ~PGM_PDFLAGS_TRACK_DIRTY;
+             *       fault again and take this path to only invalidate the entry (see below). */
+            SHWPDE PdeDst = *pPdeDst;
+            PdeDst.u &= ~(SHWUINT)PGM_PDFLAGS_TRACK_DIRTY;
+            PdeDst.u |= X86_PDE_RW | X86_PDE_A;
             SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
             PGM_INVL_BIG_PG(pVCpu, GCPtrPage);
             return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;    /* restarts the instruction. */
@@ -2305,9 +2302,8 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPUCC pVCpu, uint32_t uErr, PSHW
 
 # ifdef IN_RING0
         /* Check for stale TLB entry; only applies to the SMP guest case. */
-        if (    pVM->cCpus > 1
-            &&  pPdeDst->n.u1Write
-            &&  pPdeDst->n.u1Accessed)
+        if (   pVM->cCpus > 1
+            && (pPdeDst->u & (X86_PDE_P | X86_PDE_RW | X86_PDE_A)) == (X86_PDE_P | X86_PDE_RW | X86_PDE_A))
         {
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPdeDst->u & SHW_PDE_PG_MASK);
             if (pShwPage)
@@ -2332,13 +2328,9 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPUCC pVCpu, uint32_t uErr, PSHW
      */
     PGSTPT pPTSrc;
     int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GST_GET_PDE_GCPHYS(*pPdeSrc), &pPTSrc);
-    if (RT_FAILURE(rc))
-    {
-        AssertRC(rc);
-        return rc;
-    }
+    AssertRCReturn(rc, rc);
 
-    if (pPdeDst->n.u1Present)
+    if (SHW_PDE_IS_P(*pPdeDst))
     {
         GSTPTE const  *pPteSrc = &pPTSrc->a[(GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK];
         const GSTPTE   PteSrc  = *pPteSrc;
@@ -2550,14 +2542,14 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
 #  endif /* IN_RING3 */
     }
 # endif /* !PGM_WITHOUT_MAPPINGS */
-    Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
+    Assert(!SHW_PDE_IS_P(PdeDst)); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
     /*
      * Sync the page directory entry.
      */
     GSTPDE      PdeSrc = pPDSrc->a[iPDSrc];
-    const bool  fPageTable = !PdeSrc.b.u1Size || !GST_IS_PSE_ACTIVE(pVCpu);
-    if (   PdeSrc.n.u1Present
+    const bool  fPageTable = !(PdeSrc.u & X86_PDE_PS) || !GST_IS_PSE_ACTIVE(pVCpu);
+    if (   (PdeSrc.u & X86_PDE_P)
         && (fPageTable ? GST_IS_PDE_VALID(pVCpu, PdeSrc) : GST_IS_BIG_PDE_VALID(pVCpu, PdeSrc)) )
     {
         /*
@@ -2581,7 +2573,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
         {
             PGMPOOLACCESS enmAccess;
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-            const bool  fNoExecute = PdeSrc.n.u1NoExecute && GST_IS_NX_ACTIVE(pVCpu);
+            const bool  fNoExecute = (PdeSrc.u & X86_PDE_PAE_NX) && GST_IS_NX_ACTIVE(pVCpu);
 # else
             const bool  fNoExecute = false;
 # endif
@@ -2592,16 +2584,16 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
             GCPhys = PGM_A20_APPLY(pVCpu, GCPhys | (GCPtrPage & (1 << X86_PD_PAE_SHIFT)));
 # endif
             /* Determine the right kind of large page to avoid incorrect cached entry reuse. */
-            if (PdeSrc.n.u1User)
+            if (PdeSrc.u & X86_PDE_US)
             {
-                if (PdeSrc.n.u1Write)
+                if (PdeSrc.u & X86_PDE_RW)
                     enmAccess = (fNoExecute) ? PGMPOOLACCESS_USER_RW_NX : PGMPOOLACCESS_USER_RW;
                 else
                     enmAccess = (fNoExecute) ? PGMPOOLACCESS_USER_R_NX  : PGMPOOLACCESS_USER_R;
             }
             else
             {
-                if (PdeSrc.n.u1Write)
+                if (PdeSrc.u & X86_PDE_RW)
                     enmAccess = (fNoExecute) ? PGMPOOLACCESS_SUPERVISOR_RW_NX : PGMPOOLACCESS_SUPERVISOR_RW;
                 else
                     enmAccess = (fNoExecute) ? PGMPOOLACCESS_SUPERVISOR_R_NX  : PGMPOOLACCESS_SUPERVISOR_R;
@@ -2623,12 +2615,11 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
             {
                 PdeDst.u = pShwPage->Core.Key | GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, PdeSrc);
                 /* (see explanation and assumptions further down.) */
-                if (    !PdeSrc.b.u1Dirty
-                    &&  PdeSrc.b.u1Write)
+                if ((PdeSrc.u & (X86_PDE_RW | X86_PDE4M_D)) == X86_PDE_RW)
                 {
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPageBig));
                     PdeDst.u |= PGM_PDFLAGS_TRACK_DIRTY;
-                    PdeDst.b.u1Write = 0;
+                    PdeDst.u &= ~(SHWUINT)X86_PDE_RW;
                 }
             }
             SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
@@ -2654,7 +2645,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
          *
          * The best idea is to leave this change to the caller and add an
          * assertion that it's set already. */
-        pPDSrc->a[iPDSrc].n.u1Accessed = 1;
+        pPDSrc->a[iPDSrc].u |= X86_PDE_A;
         if (fPageTable)
         {
             /*
@@ -2762,12 +2753,11 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
              */
             /** @todo move the above stuff to a section in the PGM documentation. */
             Assert(!(PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY));
-            if (    !PdeSrc.b.u1Dirty
-                &&  PdeSrc.b.u1Write)
+            if ((PdeSrc.u & (X86_PDE_RW | X86_PDE4M_D)) == X86_PDE_RW)
             {
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPageBig));
                 PdeDst.u |= PGM_PDFLAGS_TRACK_DIRTY;
-                PdeDst.b.u1Write = 0;
+                PdeDst.u &= ~(SHWUINT)X86_PDE_RW;
             }
             SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
             PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
@@ -2889,7 +2879,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
         } /* 4KB / 4MB */
     }
     else
-        AssertRelease(!PdeDst.n.u1Present);
+        AssertRelease(!SHW_PDE_IS_P(PdeDst));
 
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPT), a);
     if (RT_FAILURE(rc))
@@ -3028,12 +3018,8 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                 PdeDst.u = HCPhys | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_LEAF | EPT_E_IGNORE_PAT | EPT_E_TYPE_WB
                          | (PdeDst.u & X86_PDE_AVL_MASK) /** @todo do we need this? */;
 #  else
-                PdeDst.u &= X86_PDE_AVL_MASK;
-                PdeDst.n.u1Present   = 1;
-                PdeDst.n.u1Write     = 1;
-                PdeDst.b.u1Size      = 1;
-                PdeDst.n.u1User      = 1;
-                PdeDst.u |= HCPhys; /* Note! Must be done last of gcc v10.2.1 20200723 (Red Hat 10.2.1-1) may drop the top 32 bits. */
+                PdeDst.u = HCPhys | X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PS
+                         | (PdeDst.u & X86_PDE_AVL_MASK) /** @todo PGM_PD_FLAGS? */;
 #  endif
                 SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
 
@@ -3100,13 +3086,8 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
     PdeDst.u = pShwPage->Core.Key | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE
              | (PdeDst.u & X86_PDE_AVL_MASK /** @todo do we really need this? */);
 # else
-    PdeDst.u &= X86_PDE_AVL_MASK;
-    PdeDst.n.u1Present  = 1;
-    PdeDst.n.u1Write    = 1;
-    PdeDst.n.u1User     = 1;
-    PdeDst.n.u1Accessed = 1;
-    PdeDst.u |= pShwPage->Core.Key; /* Note! Must be done last of gcc v10.2.1 20200723 (Red Hat 10.2.1-1) drops the top 32 bits. */
-    /** @todo r=bird: Stop using bitfields.  But we need to defined/find the EPT flags then. */
+    PdeDst.u = pShwPage->Core.Key | X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_A
+             | (PdeDst.u & X86_PDE_AVL_MASK /** @todo use a PGM_PD_FLAGS define */);
 # endif
     SHW_PDE_ATOMIC_SET2(*pPdeDst, PdeDst);
 
@@ -3170,16 +3151,10 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
 # else
     PGSTPD          pPDSrc = NULL;
     const unsigned  iPDSrc = 0;
-    GSTPDE          PdeSrc;
-
-    PdeSrc.u            = 0; /* faked so we don't have to #ifdef everything */
-    PdeSrc.n.u1Present  = 1;
-    PdeSrc.n.u1Write    = 1;
-    PdeSrc.n.u1Accessed = 1;
-    PdeSrc.n.u1User     = 1;
+    GSTPDE const    PdeSrc = { X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_A }; /* faked so we don't have to #ifdef everything */
 # endif
 
-    if (PdeSrc.n.u1Present && PdeSrc.n.u1Accessed)
+    if ((PdeSrc.u & (X86_PDE_P | X86_PDE_A)) == (X86_PDE_P | X86_PDE_A))
     {
         PVMCC pVM = pVCpu->CTX_SUFF(pVM);
         pgmLock(pVM);
@@ -3236,7 +3211,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         if (!(PdeDst.u & PGM_PDFLAGS_MAPPING))
 # endif
         {
-            if (!PdeDst.n.u1Present)
+            if (!(PdeDst.u & X86_PDE_P))
             {
                 /** @todo r=bird: This guy will set the A bit on the PDE,
                  *    probably harmless. */
@@ -3385,7 +3360,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsig
     pPdeDst = &pPDDst->a[iPDDst];
 # endif
 
-    if (!pPdeDst->n.u1Present)
+    if (!(pPdeDst->u & X86_PDE_P))
     {
         rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
         if (rc != VINF_SUCCESS)
@@ -3408,12 +3383,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsig
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         GSTPDE PdeSrc       = pPDSrc->a[iPDSrc];
 # else
-        GSTPDE PdeSrc;
-        PdeSrc.u            = 0; /* faked so we don't have to #ifdef everything */
-        PdeSrc.n.u1Present  = 1;
-        PdeSrc.n.u1Write    = 1;
-        PdeSrc.n.u1Accessed = 1;
-        PdeSrc.n.u1User     = 1;
+        GSTPDE const PdeSrc = { X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_A }; /* faked so we don't have to #ifdef everything */
 # endif
 
         Assert(rc != VINF_EM_RAW_GUEST_TRAP);
@@ -3808,7 +3778,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                     }
 
                     const GSTPDE PdeSrc = pPDSrc->a[(iPDDst >> (GST_PD_SHIFT - SHW_PD_SHIFT)) & GST_PD_MASK];
-                    if (!PdeSrc.n.u1Present)
+                    if (!(PdeSrc.u & X86_PDE_P))
                     {
                         AssertMsgFailed(("Guest PDE at %RGv is not present! PdeDst=%#RX64 PdeSrc=%#RX64\n",
                                         GCPtr, (uint64_t)PdeDst.u, (uint64_t)PdeSrc.u));
@@ -3816,8 +3786,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                         continue;
                     }
 
-                    if (    !PdeSrc.b.u1Size
-                        ||  !fBigPagesSupported)
+                    if (   !(PdeSrc.u & X86_PDE_PS)
+                        || !fBigPagesSupported)
                     {
                         GCPhysGst = GST_GET_PDE_GCPHYS(PdeSrc);
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -3841,8 +3811,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
 #  endif
                     }
 
-                    if (    pPoolPage->enmKind
-                        !=  (!PdeSrc.b.u1Size || !fBigPagesSupported ? BTH_PGMPOOLKIND_PT_FOR_PT : BTH_PGMPOOLKIND_PT_FOR_BIG))
+                    if (   pPoolPage->enmKind
+                        != (!(PdeSrc.u & X86_PDE_PS) || !fBigPagesSupported ? BTH_PGMPOOLKIND_PT_FOR_PT : BTH_PGMPOOLKIND_PT_FOR_BIG))
                     {
                         AssertMsgFailed(("Invalid shadow page table kind %d at %RGv! PdeSrc=%#RX64\n",
                                         pPoolPage->enmKind, GCPtr, (uint64_t)PdeSrc.u));
@@ -3866,7 +3836,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                         continue;
                     }
 
-                    if (    !PdeSrc.b.u1Size
+                    if (    !(PdeSrc.u & X86_PDE_PS)
                         ||  !fBigPagesSupported)
                     {
                         /*
@@ -4099,9 +4069,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                         * Big Page.
                         */
                         uint64_t fIgnoreFlags = X86_PDE_AVL_MASK | GST_PDE_PG_MASK | X86_PDE4M_G | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_PWT | X86_PDE4M_PCD;
-                        if (!PdeSrc.b.u1Dirty && PdeSrc.b.u1Write)
+                        if ((PdeSrc.u & (X86_PDE_RW | X86_PDE4M_D)) == X86_PDE_RW)
                         {
-                            if (PdeDst.n.u1Write)
+                            if (PdeDst.u & X86_PDE_RW)
                             {
                                 AssertMsgFailed(("!DIRTY page at %RGv is writable! PdeSrc=%#RX64 PdeDst=%#RX64\n",
                                                 GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
@@ -4130,14 +4100,14 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                         else if (PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY)
                         {
                             /* access bit emulation (not implemented). */
-                            if (PdeSrc.b.u1Accessed || PdeDst.n.u1Present)
+                            if ((PdeSrc.u & X86_PDE_A) || SHW_PDE_IS_P(PdeDst))
                             {
                                 AssertMsgFailed(("PGM_PDFLAGS_TRACK_DIRTY set at %RGv but no accessed bit emulation! PdeSrc=%#RX64 PdeDst=%#RX64\n",
                                                 GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
                                 cErrors++;
                                 continue;
                             }
-                            if (!PdeDst.n.u1Accessed)
+                            if (!SHW_PDE_IS_A(PdeDst))
                             {
                                 AssertMsgFailed(("!ACCESSED page at %RGv is has the accessed bit set! PdeSrc=%#RX64 PdeDst=%#RX64\n",
                                                 GCPtr, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));

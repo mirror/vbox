@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+#undef SHWUINT
 #undef SHWPT
 #undef PSHWPT
 #undef SHWPTE
@@ -33,6 +34,7 @@
 #undef SHW_PDE_ATOMIC_SET
 #undef SHW_PDE_ATOMIC_SET2
 #undef SHW_PDE_IS_P
+#undef SHW_PDE_IS_A
 #undef SHW_PDE_IS_BIG
 #undef SHW_PTE_PG_MASK
 #undef SHW_PTE_IS_P
@@ -58,6 +60,7 @@
 #undef SHW_PDPE_PG_MASK
 
 #if PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_NESTED_32BIT
+# define SHWUINT                        uint32_t
 # define SHWPT                          X86PT
 # define PSHWPT                         PX86PT
 # define SHWPTE                         X86PTE
@@ -71,6 +74,7 @@
 # define SHW_PD_MASK                    X86_PD_MASK
 # define SHW_TOTAL_PD_ENTRIES           X86_PG_ENTRIES
 # define SHW_PDE_IS_P(Pde)              ( (Pde).n.u1Present )
+# define SHW_PDE_IS_A(Pde)              ( (Pde).n.u1Accessed )
 # define SHW_PDE_IS_BIG(Pde)            ( (Pde).b.u1Size )
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU32(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU32(&(Pde).u, (Pde2).u); } while (0)
@@ -94,6 +98,7 @@
 # define SHW_PT_MASK                    X86_PT_MASK
 
 #elif PGM_SHW_TYPE == PGM_TYPE_EPT
+# define SHWUINT                        uint64_t
 # define SHWPT                          EPTPT
 # define PSHWPT                         PEPTPT
 # define SHWPTE                         EPTPTE
@@ -106,6 +111,7 @@
 # define SHW_PD_SHIFT                   EPT_PD_SHIFT
 # define SHW_PD_MASK                    EPT_PD_MASK
 # define SHW_PDE_IS_P(Pde)              ( (Pde).u & EPT_E_READ /* always set*/ )
+# define SHW_PDE_IS_A(Pde)              ( 1 ) /* We don't use EPT_E_ACCESSED, use with care! */
 # define SHW_PDE_IS_BIG(Pde)            ( (Pde).u & EPT_E_LEAF )
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU64(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU64(&(Pde).u, (Pde2).u); } while (0)
@@ -133,6 +139,7 @@
 # define SHW_TOTAL_PD_ENTRIES           (EPT_PG_AMD64_ENTRIES * EPT_PG_AMD64_PDPE_ENTRIES)
 
 #else
+# define SHWUINT                        uint64_t
 # define SHWPT                          PGMSHWPTPAE
 # define PSHWPT                         PPGMSHWPTPAE
 # define SHWPTE                         PGMSHWPTEPAE
@@ -145,6 +152,7 @@
 # define SHW_PD_SHIFT                   X86_PD_PAE_SHIFT
 # define SHW_PD_MASK                    X86_PD_PAE_MASK
 # define SHW_PDE_IS_P(Pde)              ( (Pde).u & X86_PDE_P )
+# define SHW_PDE_IS_A(Pde)              ( (Pde).u & X86_PDE_A )
 # define SHW_PDE_IS_BIG(Pde)            ( (Pde).u & X86_PDE_PS )
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU64(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU64(&(Pde).u, (Pde2).u); } while (0)

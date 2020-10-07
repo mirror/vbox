@@ -1427,7 +1427,7 @@ int pgmShwMakePageSupervisorAndWritable(PVMCPUCC pVCpu, RTGCPTR GCPtr, bool fBig
                 PX86PDEPAE pPde = pgmShwGetPaePDEPtr(pVCpu, GCPtr);
                 AssertReturn(pPde, VERR_INTERNAL_ERROR_3);
                 Log(("pgmShwMakePageSupervisorAndWritable: PDE=%#llx", pPde->u));
-                pPde->n.u1Write = 1;
+                pPde->u |= X86_PDE_RW;
                 Log(("-> PDE=%#llx (PAE)\n", pPde->u));
                 break;
             }
