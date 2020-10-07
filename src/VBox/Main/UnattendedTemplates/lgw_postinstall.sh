@@ -350,11 +350,11 @@ done
 for i in 1 2 3 4; do metadata=$(ssh ${proxy1_ssh:+ -o ProxyCommand="$proxy1_ssh"} $user@$cbr_ip1 sudo oci-network-config) && break || sleep 15; done
 
 # Extract primary VNIC info
-vnic1_md=`echo "$metadata"|grep -E "^\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+0\s"`
+vnic1_md=`echo "$metadata"|grep -E "\sUP\s"`
 vnic1_dev=`echo $vnic1_md|cut -d ' ' -f 8`
 vnic1_mac=`echo $vnic1_md|cut -d ' ' -f 12`
 # Extract secondary VNIC info
-vnic2_md=`echo "$metadata"|grep -E "^\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+1\s"`
+vnic2_md=`echo "$metadata"|grep -E "\sDOWN\s"`
 vnic2_dev=`echo $vnic2_md|cut -d ' ' -f 8`
 vnic2_gw=`echo $vnic2_md|cut -d ' ' -f 5`
 
