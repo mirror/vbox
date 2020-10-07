@@ -463,50 +463,78 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerGuestFault)(pVCpu, &GstWalk, uErr));
     }
 
+    /* Take the big lock now before we update flags. */
+    *pfLockTaken = true;
+    pgmLock(pVM);
+
     /*
      * Set the accessed and dirty flags.
      */
-/** @todo Use atomics here as we don't own the lock and stuff: */
+    /** @todo Should probably use cmpxchg logic here as we're potentially racing
+     *        other CPUs in SMP configs. (the lock isn't enough, since we take it
+     *        after walking and the page tables could be stale already) */
 #   if PGM_GST_TYPE == PGM_TYPE_AMD64
-    GstWalk.Pml4e.u     |= X86_PML4E_A;
-    GstWalk.pPml4e->u   |= X86_PML4E_A;
-    GstWalk.Pdpe.u      |= X86_PDPE_A;
-    GstWalk.pPdpe->u    |= X86_PDPE_A;
+    if (!(GstWalk.Pml4e.u & X86_PML4E_A))
+    {
+        GstWalk.Pml4e.u |= X86_PML4E_A;
+        GST_ATOMIC_OR(&GstWalk.pPml4e->u, X86_PML4E_A);
+    }
+    if (!(GstWalk.Pdpe.u & X86_PDPE_A))
+    {
+        GstWalk.Pdpe.u |= X86_PDPE_A;
+        GST_ATOMIC_OR(&GstWalk.pPdpe->u, X86_PDPE_A);
+    }
 #   endif
     if (GstWalk.Core.fBigPage)
     {
         Assert(GstWalk.Pde.u & X86_PDE_PS);
         if (uErr & X86_TRAP_PF_RW)
         {
-            GstWalk.Pde.u   |= X86_PDE4M_A | X86_PDE4M_D;
-            GstWalk.pPde->u |= X86_PDE4M_A | X86_PDE4M_D;
+            if ((GstWalk.Pde.u & (X86_PDE4M_A | X86_PDE4M_D)) != (X86_PDE4M_A | X86_PDE4M_D))
+            {
+                GstWalk.Pde.u |= X86_PDE4M_A | X86_PDE4M_D;
+                GST_ATOMIC_OR(&GstWalk.pPde->u, X86_PDE4M_A | X86_PDE4M_D);
+            }
         }
         else
         {
-            GstWalk.Pde.u   |= X86_PDE4M_A;
-            GstWalk.pPde->u |= X86_PDE4M_A;
+            if (!(GstWalk.Pde.u & X86_PDE4M_A))
+            {
+                GstWalk.Pde.u |= X86_PDE4M_A;
+                GST_ATOMIC_OR(&GstWalk.pPde->u, X86_PDE4M_A);
+            }
         }
     }
     else
     {
         Assert(!(GstWalk.Pde.u & X86_PDE_PS));
-        GstWalk.Pde.u   |= X86_PDE_A;
-        GstWalk.pPde->u |= X86_PDE_A;
+        if (!(GstWalk.Pde.u & X86_PDE_A))
+        {
+            GstWalk.Pde.u |= X86_PDE_A;
+            GST_ATOMIC_OR(&GstWalk.pPde->u, X86_PDE_A);
+        }
+
         if (uErr & X86_TRAP_PF_RW)
         {
 #   ifdef VBOX_WITH_STATISTICS
-            if (!GstWalk.Pte.n.u1Dirty)
+            if (GstWalk.Pte.u & X86_PTE_D)
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtiedPage));
             else
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageAlreadyDirty));
 #   endif
-            GstWalk.Pte.u   |= X86_PTE_A | X86_PTE_D;
-            GstWalk.pPte->u |= X86_PTE_A | X86_PTE_D;
+            if ((GstWalk.Pte.u & (X86_PTE_A | X86_PTE_D)) != (X86_PTE_A | X86_PTE_D))
+            {
+                GstWalk.Pte.u |= X86_PTE_A | X86_PTE_D;
+                GST_ATOMIC_OR(&GstWalk.pPte->u, X86_PTE_A | X86_PTE_D);
+            }
         }
         else
         {
-            GstWalk.Pte.u   |= X86_PTE_A;
-            GstWalk.pPte->u |= X86_PTE_A;
+            if (!(GstWalk.Pte.u & X86_PTE_A))
+            {
+                GstWalk.Pte.u |= X86_PTE_A;
+                GST_ATOMIC_OR(&GstWalk.pPte->u, X86_PTE_A);
+            }
         }
         Assert(GstWalk.Pte.u == GstWalk.pPte->u);
     }
@@ -514,11 +542,11 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
               ("%RX64 %RX64 pPte=%p pPde=%p Pte=%RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u, GstWalk.pPte, GstWalk.pPde, (uint64_t)GstWalk.pPte->u));
 #  else  /* !PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
     GSTPDE const PdeSrcDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A}; /** @todo eliminate this */
-#  endif /* !PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
     /* Take the big lock now. */
     *pfLockTaken = true;
     pgmLock(pVM);
+#  endif /* !PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
 #  ifdef PGM_WITH_MMIO_OPTIMIZATIONS
     /*
