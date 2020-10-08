@@ -148,6 +148,7 @@ void pdmR3LdrTermU(PUVM pUVM, bool fFinal)
         switch (pModule->eType)
         {
             case PDMMOD_TYPE_R0:
+            {
                 if (fFinal)
                 {
                     Assert(pModule->ImageBase);
@@ -159,8 +160,12 @@ void pdmR3LdrTermU(PUVM pUVM, bool fFinal)
 
                 /* Postpone ring-0 module till the PDMR3TermUVM() phase as VMMR0.r0 is still
                    busy when we're called the first time very very early in vmR3Destroy().  */
-                pModule = pModule->pNext;
+                PPDMMOD pNextModule = pModule->pNext;
+                pModule->pNext = pUVM->pdm.s.pModules;
+                pUVM->pdm.s.pModules = pModule;
+                pModule = pNextModule;
                 continue;
+            }
 
 #ifdef VBOX_WITH_RAW_MODE_KEEP
             case PDMMOD_TYPE_RC:
