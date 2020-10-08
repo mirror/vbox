@@ -1897,7 +1897,7 @@ static DECLCALLBACK(void) lsilogicR3CopyBufferFromGuestWorker(PPDMDEVINS pDevIns
         void *pvSeg = RTSgBufGetNextSegment(pSgBuf, &cbSeg);
 
         AssertPtr(pvSeg);
-        PDMDevHlpPhysReadUser(pDevIns, GCPhys, pvSeg, cbSeg);
+        PDMDevHlpPCIPhysReadUser(pDevIns, GCPhys, pvSeg, cbSeg);
         GCPhys += cbSeg;
         cbCopy -= cbSeg;
     }
@@ -1970,7 +1970,7 @@ static size_t lsilogicSgBufWalker(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq,
             Log(("%s: Reading SG entry from %RGp\n", __FUNCTION__, GCPhysSgEntryNext));
 
             /* Read the entry. */
-            PDMDevHlpPhysReadMeta(pDevIns, GCPhysSgEntryNext, &SGEntry, sizeof(MptSGEntryUnion));
+            PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhysSgEntryNext, &SGEntry, sizeof(MptSGEntryUnion));
 
 # ifdef LOG_ENABLED
             lsilogicDumpSGEntry(&SGEntry);
@@ -2015,7 +2015,7 @@ static size_t lsilogicSgBufWalker(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq,
         {
             MptSGEntryChain SGEntryChain;
 
-            PDMDevHlpPhysReadMeta(pDevIns, GCPhysSegmentStart + cChainOffsetNext, &SGEntryChain, sizeof(MptSGEntryChain));
+            PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhysSegmentStart + cChainOffsetNext, &SGEntryChain, sizeof(MptSGEntryChain));
 
             AssertMsg(SGEntryChain.u2ElementType == MPTSGENTRYTYPE_CHAIN, ("Invalid SG entry type\n"));
 
@@ -3264,8 +3264,7 @@ static int lsilogicR3ProcessConfigurationRequest(PPDMDEVINS pDevIns, PLSILOGICSC
 
                 LogFlow(("cbBuffer=%u cbPage=%u\n", cbBuffer, cbPage));
 
-                PDMDevHlpPhysReadMeta(pDevIns, GCPhysAddrPageBuffer, pbPageData,
-                                      RT_MIN(cbBuffer, cbPage));
+                PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhysAddrPageBuffer, pbPageData, RT_MIN(cbBuffer, cbPage));
             }
             break;
         }
@@ -4148,7 +4147,7 @@ static DECLCALLBACK(int) lsilogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                                                                           (u32RequestMessageFrameDesc & ~0x07));
 
             /* Read the message header from the guest first. */
-            PDMDevHlpPhysReadMeta(pDevIns, GCPhysMessageFrameAddr, &GuestRequest, sizeof(MptMessageHdr));
+            PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhysMessageFrameAddr, &GuestRequest, sizeof(MptMessageHdr));
 
             /* Determine the size of the request. */
             uint32_t cbRequest = 0;
@@ -4196,7 +4195,7 @@ static DECLCALLBACK(int) lsilogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
             if (cbRequest != 0)
             {
                 /* Read the complete message frame from guest memory now. */
-                PDMDevHlpPhysReadMeta(pDevIns, GCPhysMessageFrameAddr, &GuestRequest, cbRequest);
+                PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhysMessageFrameAddr, &GuestRequest, cbRequest);
 
                 /* Handle SCSI I/O requests now. */
                 if (GuestRequest.Header.u8Function == MPT_MESSAGE_HDR_FUNCTION_SCSI_IO_REQUEST)
