@@ -1912,9 +1912,9 @@ DECLINLINE(unsigned) e1kRxDPrefetch(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     if (nDescsToFetch == 0)
         return 0;
     E1KRXDESC* pFirstEmptyDesc = &pThis->aRxDescriptors[pThis->nRxDFetched];
-    PDMDevHlpPhysRead(pDevIns,
-                      ((uint64_t)RDBAH << 32) + RDBAL + nFirstNotLoaded * sizeof(E1KRXDESC),
-                      pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KRXDESC));
+    PDMDevHlpPCIPhysRead(pDevIns,
+                         ((uint64_t)RDBAH << 32) + RDBAL + nFirstNotLoaded * sizeof(E1KRXDESC),
+                         pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KRXDESC));
     // uint64_t addrBase = ((uint64_t)RDBAH << 32) + RDBAL;
     // unsigned i, j;
     // for (i = pThis->nRxDFetched; i < pThis->nRxDFetched + nDescsInSingleRead; ++i)
@@ -1928,10 +1928,10 @@ DECLINLINE(unsigned) e1kRxDPrefetch(PPDMDEVINS pDevIns, PE1KSTATE pThis)
              nFirstNotLoaded, RDLEN, RDH, RDT));
     if (nDescsToFetch > nDescsInSingleRead)
     {
-        PDMDevHlpPhysRead(pDevIns,
-                          ((uint64_t)RDBAH << 32) + RDBAL,
-                          pFirstEmptyDesc + nDescsInSingleRead,
-                          (nDescsToFetch - nDescsInSingleRead) * sizeof(E1KRXDESC));
+        PDMDevHlpPCIPhysRead(pDevIns,
+                             ((uint64_t)RDBAH << 32) + RDBAL,
+                             pFirstEmptyDesc + nDescsInSingleRead,
+                             (nDescsToFetch - nDescsInSingleRead) * sizeof(E1KRXDESC));
         // Assert(i == pThis->nRxDFetched  + nDescsInSingleRead);
         // for (j = 0; i < pThis->nRxDFetched + nDescsToFetch; ++i, ++j)
         // {
@@ -2552,7 +2552,7 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
     {
         /* Load the descriptor pointed by head */
         E1KRXDESC desc, *pDesc = &desc;
-        PDMDevHlpPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), &desc, sizeof(desc));
+        PDMDevHlpPCIPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), &desc, sizeof(desc));
 # endif /* !E1K_WITH_RXD_CACHE */
         if (pDesc->u64BufAddr)
         {
@@ -3924,7 +3924,7 @@ DECLINLINE(bool) e1kXmitIsGsoBuf(PDMSCATTERGATHER const *pTxSg)
  */
 DECLINLINE(void) e1kLoadDesc(PPDMDEVINS pDevIns, E1KTXDESC *pDesc, RTGCPHYS addr)
 {
-    PDMDevHlpPhysRead(pDevIns, addr, pDesc, sizeof(E1KTXDESC));
+    PDMDevHlpPCIPhysRead(pDevIns, addr, pDesc, sizeof(E1KTXDESC));
 }
 #else /* E1K_WITH_TXD_CACHE */
 /**
@@ -3955,19 +3955,19 @@ DECLINLINE(unsigned) e1kTxDLoadMore(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     if (nDescsToFetch == 0)
         return 0;
     E1KTXDESC* pFirstEmptyDesc = &pThis->aTxDescriptors[pThis->nTxDFetched];
-    PDMDevHlpPhysRead(pDevIns,
-                      ((uint64_t)TDBAH << 32) + TDBAL + nFirstNotLoaded * sizeof(E1KTXDESC),
-                      pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KTXDESC));
+    PDMDevHlpPCIPhysRead(pDevIns,
+                         ((uint64_t)TDBAH << 32) + TDBAL + nFirstNotLoaded * sizeof(E1KTXDESC),
+                         pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KTXDESC));
     E1kLog3(("%s Fetched %u TX descriptors at %08x%08x(0x%x), TDLEN=%08x, TDH=%08x, TDT=%08x\n",
              pThis->szPrf, nDescsInSingleRead,
              TDBAH, TDBAL + TDH * sizeof(E1KTXDESC),
              nFirstNotLoaded, TDLEN, TDH, TDT));
     if (nDescsToFetch > nDescsInSingleRead)
     {
-        PDMDevHlpPhysRead(pDevIns,
-                          ((uint64_t)TDBAH << 32) + TDBAL,
-                          pFirstEmptyDesc + nDescsInSingleRead,
-                          (nDescsToFetch - nDescsInSingleRead) * sizeof(E1KTXDESC));
+        PDMDevHlpPCIPhysRead(pDevIns,
+                             ((uint64_t)TDBAH << 32) + TDBAL,
+                             pFirstEmptyDesc + nDescsInSingleRead,
+                             (nDescsToFetch - nDescsInSingleRead) * sizeof(E1KTXDESC));
         E1kLog3(("%s Fetched %u TX descriptors at %08x%08x\n",
                  pThis->szPrf, nDescsToFetch - nDescsInSingleRead,
                  TDBAH, TDBAL));
@@ -4216,7 +4216,7 @@ static void e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS 
              pThis->szPrf, u16Len, pThis->u32PayRemain, pThis->u16HdrRemain, fSend));
     Assert(pThis->u32PayRemain + pThis->u16HdrRemain > 0);
 
-    PDMDevHlpPhysRead(pDevIns, PhysAddr, pThis->aTxPacketFallback + pThis->u16TxPktLen, u16Len);
+    PDMDevHlpPCIPhysRead(pDevIns, PhysAddr, pThis->aTxPacketFallback + pThis->u16TxPktLen, u16Len);
     E1kLog3(("%s Dump of the segment:\n"
              "%.*Rhxd\n"
              "%s --- End of dump ---\n",
@@ -4326,7 +4326,7 @@ static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS P
     AssertReturn(pThis->u32PayRemain + pThis->u16HdrRemain > 0, VINF_SUCCESS);
 
     if (pThis->u16TxPktLen + u16Len <= sizeof(pThis->aTxPacketFallback))
-        PDMDevHlpPhysRead(pDevIns, PhysAddr, pThis->aTxPacketFallback + pThis->u16TxPktLen, u16Len);
+        PDMDevHlpPCIPhysRead(pDevIns, PhysAddr, pThis->aTxPacketFallback + pThis->u16TxPktLen, u16Len);
     else
         E1kLog(("%s e1kFallbackAddSegment: writing beyond aTxPacketFallback, u16TxPktLen=%d(0x%x) + u16Len=%d(0x%x) > %d\n",
                 pThis->szPrf, pThis->u16TxPktLen, pThis->u16TxPktLen, u16Len, u16Len, sizeof(pThis->aTxPacketFallback)));
@@ -4638,7 +4638,7 @@ static bool e1kAddToFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThis
             E1kLog(("%s e1kAddToFrame:  pTxSg->cbUsed=%d(0x%x) != u16TxPktLen=%d(0x%x)\n",
                     pThis->szPrf, pTxSg->cbUsed, pTxSg->cbUsed, pThis->u16TxPktLen, pThis->u16TxPktLen));
 
-        PDMDevHlpPhysRead(pDevIns, PhysAddr, (uint8_t *)pTxSg->aSegs[0].pvSeg + pThis->u16TxPktLen, cbFragment);
+        PDMDevHlpPCIPhysRead(pDevIns, PhysAddr, (uint8_t *)pTxSg->aSegs[0].pvSeg + pThis->u16TxPktLen, cbFragment);
 
         pTxSg->cbUsed = cbNewPkt;
     }
@@ -5447,7 +5447,7 @@ static void e1kDumpTxDCache(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     for (i = 0; i < cDescs; ++i)
     {
         E1KTXDESC desc;
-        PDMDevHlpPhysRead(pDevIns , e1kDescAddr(TDBAH, TDBAL, i), &desc, sizeof(desc));
+        PDMDevHlpPCIPhysRead(pDevIns , e1kDescAddr(TDBAH, TDBAL, i), &desc, sizeof(desc));
         if (i == tdh)
             LogRel(("E1000: >>> "));
         LogRel(("E1000: %RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, i), &desc));
@@ -6406,7 +6406,7 @@ static int e1kCanReceive(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     if (RT_UNLIKELY(RDLEN == sizeof(E1KRXDESC)))
     {
         E1KRXDESC desc;
-        PDMDevHlpPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), &desc, sizeof(desc));
+        PDMDevHlpPCIPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), &desc, sizeof(desc));
         if (desc.status.fDD)
             cb = 0;
         else
@@ -6435,7 +6435,7 @@ static int e1kCanReceive(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     if (RT_UNLIKELY(RDLEN == sizeof(E1KRXDESC)))
     {
         E1KRXDESC desc;
-        PDMDevHlpPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), &desc, sizeof(desc));
+        PDMDevHlpPCIPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), &desc, sizeof(desc));
         if (desc.status.fDD)
             rc = VERR_NET_NO_BUFFER_SPACE;
     }
@@ -7327,8 +7327,8 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     for (i = 0; i < cDescs; ++i)
     {
         E1KRXDESC desc;
-        PDMDevHlpPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, i),
-                          &desc, sizeof(desc));
+        PDMDevHlpPCIPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, i),
+                             &desc, sizeof(desc));
         if (i == rdh)
             pHlp->pfnPrintf(pHlp, ">>> ");
         pHlp->pfnPrintf(pHlp, "%RGp: %R[e1krxd]\n", e1kDescAddr(RDBAH, RDBAL, i), &desc);
@@ -7356,8 +7356,8 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     for (i = 0; i < cDescs; ++i)
     {
         E1KTXDESC desc;
-        PDMDevHlpPhysRead(pDevIns, e1kDescAddr(TDBAH, TDBAL, i),
-                          &desc, sizeof(desc));
+        PDMDevHlpPCIPhysRead(pDevIns, e1kDescAddr(TDBAH, TDBAL, i),
+                             &desc, sizeof(desc));
         if (i == tdh)
             pHlp->pfnPrintf(pHlp, ">>> ");
         pHlp->pfnPrintf(pHlp, "%RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, i), &desc);
