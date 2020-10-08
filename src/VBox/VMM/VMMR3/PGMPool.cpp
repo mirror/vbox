@@ -874,7 +874,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                             cErrors++;
                         }
                         else if (   PGMSHWPTEPAE_IS_RW(pShwPT->a[j])
-                                 && !pGstPT->a[j].n.u1Write)
+                                 && !(pGstPT->a[j].u & X86_PTE_RW))
                         {
                             if (fFirstMsg)
                             {

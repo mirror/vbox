@@ -1531,8 +1531,8 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPag
         /* Check the new value written by the guest. If present and with a bogus physical address, then
          * it's fairly safe to assume the guest is reusing the PT.
          */
-        if (    fAllowRemoval
-            &&  pGstPT->a[i].n.u1Present)
+        if (   fAllowRemoval
+            && (pGstPT->a[i].u & X86_PTE_P))
         {
             if (!PGMPhysIsGCPhysValid(pPool->CTX_SUFF(pVM), pGstPT->a[i].u & X86_PTE_PAE_PG_MASK))
             {
@@ -3288,12 +3288,11 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 
             if ((PGMSHWPTEPAE_GET_U(pPT->a[iPte]) & (X86_PTE_PAE_PG_MASK | X86_PTE_P | X86_PTE_PAE_MBZ_MASK_NX)) == u64)
             {
-                X86PTEPAE Pte;
-
                 Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX64\n", iPte, PGMSHWPTEPAE_GET_LOG(pPT->a[iPte])));
+                X86PTEPAE Pte;
                 Pte.u = (PGMSHWPTEPAE_GET_U(pPT->a[iPte]) & u64AndMask) | u64OrMask;
                 if (Pte.u & PGM_PTFLAGS_TRACK_DIRTY)
-                    Pte.n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
+                    Pte.u &= ~(X86PGPAEUINT)X86_PTE_RW;    /* need to disallow writes when dirty bit tracking is still active. */
 
                 PGMSHWPTEPAE_ATOMIC_SET(pPT->a[iPte], Pte.u);
                 PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPT);

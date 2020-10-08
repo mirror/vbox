@@ -1575,7 +1575,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
 # endif
 
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-    if (   PteSrc.n.u1Present
+    if (   (PteSrc.u & X86_PTE_P)
         && GST_IS_PTE_VALID(pVCpu, PteSrc))
 # endif
     {
@@ -1605,7 +1605,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
             if (    PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
                 &&  (   PGM_PAGE_IS_ZERO(pPage)
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-                     || (   PteSrc.n.u1Write
+                     || (   (PteSrc.u & X86_PTE_RW)
 #  else
                      || (   1
 #  endif
@@ -1712,7 +1712,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
              * Update statistics and commit the entry.
              */
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-            if (!PteSrc.n.u1Global)
+            if (!(PteSrc.u & X86_PTE_G))
                 pShwPage->fSeenNonGlobal = true;
 # endif
             SHW_PTE_ATOMIC_SET2(*pPteDst, PteDst);
@@ -1723,7 +1723,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
         Log2(("SyncPageWorker: invalid address in Pte\n"));
     }
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-    else if (!PteSrc.n.u1Present)
+    else if (!(PteSrc.u & X86_PTE_P))
         Log2(("SyncPageWorker: page not present in Pte\n"));
     else
         Log2(("SyncPageWorker: invalid Pte\n"));
@@ -1926,7 +1926,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                         {
                             const PGSTPTE pPteSrc = &pPTSrc->a[offPTSrc + iPTDst];
 
-                            if (   pPteSrc->n.u1Present
+                            if (   (pPteSrc->u & X86_PTE_P)
                                 && !SHW_PTE_IS_P(pPTDst->a[iPTDst]))
                             {
                                 RTGCPTR GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
@@ -2381,7 +2381,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPUCC pVCpu, uint32_t uErr, PSHW
                     LogFlow(("DIRTY page trap addr=%RGv\n", GCPtrPage));
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPageTrap));
 
-                    Assert(PteSrc.n.u1Write);
+                    Assert(PteSrc.u & X86_PTE_RW);
 
                     /* Note: No need to invalidate this entry on other VCPUs as a stale TLB
                      *       entry will not harm; write access will simply fault again and
@@ -2733,8 +2733,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                 {
                     const unsigned iPTSrc = iPTDst + offPTSrc;
                     const GSTPTE   PteSrc = pPTSrc->a[iPTSrc];
-
-                    if (PteSrc.n.u1Present)
+                    if (PteSrc.u & X86_PTE_P)
                     {
                         PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPT:   4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s dst.raw=%08llx iPTSrc=%x PdeSrc.u=%x physpte=%RGp\n",
@@ -3917,7 +3916,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                             Assert(SHW_PTE_IS_P(PteDst));
 
                             const GSTPTE PteSrc = pPTSrc->a[iPT + offPTSrc];
-                            if (!PteSrc.n.u1Present)
+                            if (!(PteSrc.u & X86_PTE_P))
                             {
 #  ifdef IN_RING3
                                 PGMAssertHandlerAndFlagsInSync(pVM);
@@ -4022,7 +4021,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                             }
                             else
                             {
-                                if (!PteSrc.n.u1Dirty && PteSrc.n.u1Write)
+                                if ((PteSrc.u & (X86_PTE_RW | X86_PTE_D)) == X86_PTE_RW)
                                 {
                                     if (SHW_PTE_IS_RW(PteDst))
                                     {
@@ -4059,7 +4058,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                                 else if (SHW_PTE_IS_TRACK_DIRTY(PteDst))
                                 {
                                     /* access bit emulation (not implemented). */
-                                    if (PteSrc.n.u1Accessed || SHW_PTE_IS_P(PteDst))
+                                    if ((PteSrc.u & X86_PTE_A) || SHW_PTE_IS_P(PteDst))
                                     {
                                         AssertMsgFailed(("PGM_PTFLAGS_TRACK_DIRTY set at %RGv but no accessed bit emulation! PteSrc=%#RX64 PteDst=%#RX64\n",
                                                          GCPtr + off, (uint64_t)PteSrc.u, SHW_PTE_LOG64(PteDst)));

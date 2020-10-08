@@ -2143,7 +2143,7 @@ typedef union X86PTEPAE
 {
     /** Unsigned integer view */
     X86PGPAEUINT    u;
-#if 1 /*ndef VBOX_WITHOUT_PAGING_BIT_FIELDS*/
+#ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
     /** Bit field view. */
     X86PTEPAEBITS   n;
 #endif

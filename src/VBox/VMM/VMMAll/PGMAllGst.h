@@ -265,7 +265,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         GSTPTE  Pte;
         pWalk->Pte.u = Pte.u = pPte->u;
 
-        if (Pte.n.u1Present) { /* probable */ }
+        if (Pte.u & X86_PTE_P) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 1);
 
         if (RT_LIKELY(GST_IS_PTE_VALID(pVCpu, Pte))) { /* likely */ }
