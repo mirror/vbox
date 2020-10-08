@@ -1311,7 +1311,7 @@ static void ohciR3DoReset(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, uint
 DECLINLINE(void) ohciR3PhysRead(PPDMDEVINS pDevIns, uint32_t Addr, void *pvBuf, size_t cbBuf)
 {
     if (cbBuf)
-        PDMDevHlpPhysReadUser(pDevIns, Addr, pvBuf, cbBuf);
+        PDMDevHlpPCIPhysReadUser(pDevIns, Addr, pvBuf, cbBuf);
 }
 
 /**
@@ -1320,7 +1320,7 @@ DECLINLINE(void) ohciR3PhysRead(PPDMDEVINS pDevIns, uint32_t Addr, void *pvBuf, 
 DECLINLINE(void) ohciR3PhysReadMeta(PPDMDEVINS pDevIns, uint32_t Addr, void *pvBuf, size_t cbBuf)
 {
     if (cbBuf)
-        PDMDevHlpPhysReadMeta(pDevIns, Addr, pvBuf, cbBuf);
+        PDMDevHlpPCIPhysReadMeta(pDevIns, Addr, pvBuf, cbBuf);
 }
 
 /**
@@ -1467,7 +1467,7 @@ static void ohciR3PhysReadCacheRead(PPDMDEVINS pDevIns, POHCIPAGECACHE pPageCach
     {
         if (PageAddr != pPageCache->GCPhysReadCacheAddr)
         {
-            PDMDevHlpPhysRead(pDevIns, PageAddr, pPageCache->abPhysReadCache, sizeof(pPageCache->abPhysReadCache));
+            PDMDevHlpPCIPhysRead(pDevIns, PageAddr, pPageCache->abPhysReadCache, sizeof(pPageCache->abPhysReadCache));
             pPageCache->GCPhysReadCacheAddr = PageAddr;
 #  ifdef VBOX_WITH_OHCI_PHYS_READ_STATS
             ++g_PhysReadState.cPageReads;
@@ -1481,7 +1481,7 @@ static void ohciR3PhysReadCacheRead(PPDMDEVINS pDevIns, POHCIPAGECACHE pPageCach
     }
     else
     {
-        PDMDevHlpPhysRead(pDevIns, GCPhys, pvBuf, cbBuf);
+        PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pvBuf, cbBuf);
 #  ifdef VBOX_WITH_OHCI_PHYS_READ_STATS
         ++g_PhysReadState.cCrossReads;
 #  endif
@@ -4097,7 +4097,7 @@ static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pT
     Assert(cLeft == 0);
 
 # ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
-    /* Get hcca data to minimize calls to ohciR3GetDWords/PDMDevHlpPhysRead. */
+    /* Get hcca data to minimize calls to ohciR3GetDWords/PDMDevHlpPCIPhysRead. */
     uint32_t au32HCCA[OHCI_HCCA_NUM_INTR];
     ohciR3GetDWords(pDevIns, pThis->hcca, au32HCCA, OHCI_HCCA_NUM_INTR);
 # endif
