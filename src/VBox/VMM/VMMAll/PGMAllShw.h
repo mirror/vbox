@@ -79,12 +79,12 @@
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU32(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU32(&(Pde).u, (Pde2).u); } while (0)
 # define SHW_PTE_PG_MASK                X86_PTE_PG_MASK
-# define SHW_PTE_IS_P(Pte)              ( (Pte).n.u1Present )
-# define SHW_PTE_IS_RW(Pte)             ( (Pte).n.u1Write )
-# define SHW_PTE_IS_US(Pte)             ( (Pte).n.u1User )
-# define SHW_PTE_IS_A(Pte)              ( (Pte).n.u1Accessed )
-# define SHW_PTE_IS_D(Pte)              ( (Pte).n.u1Dirty )
-# define SHW_PTE_IS_P_RW(Pte)           ( (Pte).n.u1Present && (Pte).n.u1Write )
+# define SHW_PTE_IS_P(Pte)              ( (Pte).u & X86_PTE_P )
+# define SHW_PTE_IS_RW(Pte)             ( (Pte).u & X86_PTE_RW )
+# define SHW_PTE_IS_US(Pte)             ( (Pte).u & X86_PTE_US )
+# define SHW_PTE_IS_A(Pte)              ( (Pte).u & X86_PTE_A )
+# define SHW_PTE_IS_D(Pte)              ( (Pte).u & X86_PTE_D )
+# define SHW_PTE_IS_P_RW(Pte)           ( ((Pte).u & (X86_PTE_P | X86_PTE_RW)) == (X86_PTE_P | X86_PTE_RW) )
 # define SHW_PTE_IS_TRACK_DIRTY(Pte)    ( !!((Pte).u & PGM_PTFLAGS_TRACK_DIRTY) )
 # define SHW_PTE_GET_HCPHYS(Pte)        ( (Pte).u & X86_PTE_PG_MASK )
 # define SHW_PTE_LOG64(Pte)             ( (uint64_t)(Pte).u )
@@ -92,8 +92,8 @@
 # define SHW_PTE_SET(Pte, uNew)         do { (Pte).u = (uNew); } while (0)
 # define SHW_PTE_ATOMIC_SET(Pte, uNew)  do { ASMAtomicWriteU32(&(Pte).u, (uNew)); } while (0)
 # define SHW_PTE_ATOMIC_SET2(Pte, Pte2) do { ASMAtomicWriteU32(&(Pte).u, (Pte2).u); } while (0)
-# define SHW_PTE_SET_RO(Pte)            do { (Pte).n.u1Write = 0; } while (0)
-# define SHW_PTE_SET_RW(Pte)            do { (Pte).n.u1Write = 1; } while (0)
+# define SHW_PTE_SET_RO(Pte)            do { (Pte).u &= ~(X86PGUINT)X86_PTE_RW; } while (0)
+# define SHW_PTE_SET_RW(Pte)            do { (Pte).u |= X86_PTE_RW; } while (0)
 # define SHW_PT_SHIFT                   X86_PT_SHIFT
 # define SHW_PT_MASK                    X86_PT_MASK
 
@@ -129,7 +129,7 @@
 # define SHW_PTE_SET(Pte, uNew)         do { (Pte).u = (uNew); } while (0)
 # define SHW_PTE_ATOMIC_SET(Pte, uNew)  do { ASMAtomicWriteU64(&(Pte).u, (uNew)); } while (0)
 # define SHW_PTE_ATOMIC_SET2(Pte, Pte2) do { ASMAtomicWriteU64(&(Pte).u, (Pte2).u); } while (0)
-# define SHW_PTE_SET_RO(Pte)            do { (Pte).u &= ~EPT_E_WRITE; } while (0)
+# define SHW_PTE_SET_RO(Pte)            do { (Pte).u &= ~(uint64_t)EPT_E_WRITE; } while (0)
 # define SHW_PTE_SET_RW(Pte)            do { (Pte).u |= EPT_E_WRITE; } while (0)
 # define SHW_PT_SHIFT                   EPT_PT_SHIFT
 # define SHW_PT_MASK                    EPT_PT_MASK

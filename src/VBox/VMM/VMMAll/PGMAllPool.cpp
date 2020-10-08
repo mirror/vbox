@@ -206,17 +206,14 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PTE);
                 LogFlow(("PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT iShw=%x\n", iShw));
-                if (uShw.pPT->a[iShw].n.u1Present)
+                X86PGUINT const uPde = uShw.pPT->a[iShw].u;
+                if (uPde & X86_PTE_P)
                 {
                     X86PTE GstPte;
-
                     int rc = pgmPoolPhysSimpleReadGCPhys(pVM, &GstPte, pvAddress, GCPhysFault, sizeof(GstPte));
                     AssertRC(rc);
-                    Log4(("pgmPoolMonitorChainChanging 32_32: deref %016RX64 GCPhys %08RX32\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, GstPte.u & X86_PTE_PG_MASK));
-                    pgmPoolTracDerefGCPhysHint(pPool, pPage,
-                                               uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK,
-                                               GstPte.u & X86_PTE_PG_MASK,
-                                               iShw);
+                    Log4(("pgmPoolMonitorChainChanging 32_32: deref %016RX64 GCPhys %08RX32\n", uPde & X86_PTE_PG_MASK, GstPte.u & X86_PTE_PG_MASK));
+                    pgmPoolTracDerefGCPhysHint(pPool, pPage, uPde & X86_PTE_PG_MASK, GstPte.u & X86_PTE_PG_MASK, iShw);
                     ASMAtomicWriteU32(&uShw.pPT->a[iShw].u, 0);
                 }
                 break;
@@ -1594,12 +1591,12 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pP
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
         /* Check the new value written by the guest. If present and with a bogus physical address, then
-         * it's fairly safe to assume the guest is reusing the PT.
-         */
-        if (    fAllowRemoval
-            &&  pGstPT->a[i].n.u1Present)
+         * it's fairly safe to assume the guest is reusing the PT. */
+        if (fAllowRemoval)
         {
-            if (!PGMPhysIsGCPhysValid(pPool->CTX_SUFF(pVM), pGstPT->a[i].u & X86_PTE_PG_MASK))
+            X86PGUINT const uPte = pGstPT->a[i].u;
+            if (   (uPte & X86_PTE_P)
+                && !PGMPhysIsGCPhysValid(pPool->CTX_SUFF(pVM), uPte & X86_PTE_PG_MASK))
             {
                 *pfFlush = true;
                 return ++cChanged;
@@ -3210,13 +3207,11 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 
             if ((pPT->a[iPte].u & (X86_PTE_PG_MASK | X86_PTE_P)) == u32)
             {
-                X86PTE Pte;
-
                 Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX32\n", iPte, pPT->a[iPte]));
+                X86PTE Pte;
                 Pte.u = (pPT->a[iPte].u & u32AndMask) | u32OrMask;
                 if (Pte.u & PGM_PTFLAGS_TRACK_DIRTY)
-                    Pte.n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
-
+                    Pte.u &= ~(X86PGUINT)X86_PTE_RW; /* need to disallow writes when dirty bit tracking is still active. */
                 ASMAtomicWriteU32(&pPT->a[iPte].u, Pte.u);
                 PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPT);
                 return fRet;
@@ -3637,12 +3632,14 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVMCC pVM, PPGMPAGE pPhysPage)
                     unsigned        cPresent = pPage->cPresent;
                     PX86PT          pPT      = (PX86PT)PGMPOOL_PAGE_2_PTR(pVM, pPage);
                     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPT->a); i++)
-                        if (pPT->a[i].n.u1Present)
+                    {
+                        const X86PGUINT uPte = pPT->a[i].u;
+                        if (uPte & X86_PTE_P)
                         {
-                            if ((pPT->a[i].u & X86_PTE_PG_MASK) == u32)
+                            if ((uPte & X86_PTE_PG_MASK) == u32)
                             {
                                 //Log4(("pgmPoolTrackFlushGCPhysPTsSlow: idx=%d i=%d pte=%RX32\n", iPage, i, pPT->a[i]));
-                                pPT->a[i].u = 0;
+                                ASMAtomicWriteU32(&pPT->a[i].u, 0);
 
                                 /* Update the counter as we're removing references. */
                                 Assert(pPage->cPresent);
@@ -3653,6 +3650,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVMCC pVM, PPGMPAGE pPhysPage)
                             if (!--cPresent)
                                 break;
                         }
+                    }
                     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPT);
                     break;
                 }
@@ -3671,7 +3669,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVMCC pVM, PPGMPAGE pPhysPage)
                             if ((PGMSHWPTEPAE_GET_U(pPT->a[i]) & X86_PTE_PAE_PG_MASK) == u64)
                             {
                                 //Log4(("pgmPoolTrackFlushGCPhysPTsSlow: idx=%d i=%d pte=%RX64\n", iPage, i, pPT->a[i]));
-                                PGMSHWPTEPAE_SET(pPT->a[i], 0); /// @todo why not atomic?
+                                PGMSHWPTEPAE_ATOMIC_SET(pPT->a[i], 0); /// @todo why not atomic?
 
                                 /* Update the counter as we're removing references. */
                                 Assert(pPage->cPresent);
@@ -3698,7 +3696,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVMCC pVM, PPGMPAGE pPhysPage)
                             if ((uPte & EPT_PTE_PG_MASK) == u64)
                             {
                                 //Log4(("pgmPoolTrackFlushGCPhysPTsSlow: idx=%d i=%d pte=%RX64\n", iPage, i, pPT->a[i]));
-                                pPT->a[i].u = 0;
+                                ASMAtomicWriteU64(&pPT->a[i].u, 0);
 
                                 /* Update the counter as we're removing references. */
                                 Assert(pPage->cPresent);
@@ -4319,12 +4317,13 @@ DECLINLINE(void) pgmPoolTrackDerefPT32Bit32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPag
     RTGCPHYS32 const fPgMask = pPage->fA20Enabled ? X86_PTE_PG_MASK : X86_PTE_PG_MASK & ~RT_BIT_32(20);
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
-        Assert(!(pShwPT->a[i].u & RT_BIT_32(10)));
-        if (pShwPT->a[i].n.u1Present)
+        const X86PGUINT uPte = pShwPT->a[i].u;
+        Assert(!(uPte & RT_BIT_32(10)));
+        if (uPte & X86_PTE_P)
         {
             Log4(("pgmPoolTrackDerefPT32Bit32Bit: i=%d pte=%RX32 hint=%RX32\n",
-                  i, pShwPT->a[i].u & X86_PTE_PG_MASK, pGstPT->a[i].u & X86_PTE_PG_MASK));
-            pgmPoolTracDerefGCPhysHint(pPool, pPage, pShwPT->a[i].u & X86_PTE_PG_MASK, pGstPT->a[i].u & fPgMask, i);
+                  i, uPte & X86_PTE_PG_MASK, pGstPT->a[i].u & X86_PTE_PG_MASK));
+            pgmPoolTracDerefGCPhysHint(pPool, pPage, uPte & X86_PTE_PG_MASK, pGstPT->a[i].u & fPgMask, i);
             if (!pPage->cPresent)
                 break;
         }
@@ -4399,12 +4398,13 @@ DECLINLINE(void) pgmPoolTrackDerefPT32Bit4MB(PPGMPOOL pPool, PPGMPOOLPAGE pPage,
     RTGCPHYS        GCPhys        = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++, GCPhys += PAGE_SIZE)
     {
-        Assert(!(pShwPT->a[i].u & RT_BIT_32(10)));
-        if (pShwPT->a[i].n.u1Present)
+        const X86PGUINT uPte = pShwPT->a[i].u;
+        Assert(!(uPte & RT_BIT_32(10)));
+        if (uPte & X86_PTE_P)
         {
             Log4(("pgmPoolTrackDerefPT32Bit4MB: i=%d pte=%RX32 GCPhys=%RGp\n",
-                  i, pShwPT->a[i].u & X86_PTE_PG_MASK, GCPhys));
-            pgmPoolTracDerefGCPhys(pPool, pPage, pShwPT->a[i].u & X86_PTE_PG_MASK, GCPhys & GCPhysA20Mask, i);
+                  i, uPte & X86_PTE_PG_MASK, GCPhys));
+            pgmPoolTracDerefGCPhys(pPool, pPage, uPte & X86_PTE_PG_MASK, GCPhys & GCPhysA20Mask, i);
             if (!pPage->cPresent)
                 break;
         }

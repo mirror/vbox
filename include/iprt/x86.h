@@ -2074,8 +2074,10 @@ typedef union X86PTE
 {
     /** Unsigned integer view */
     X86PGUINT       u;
+#ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
     /** Bit field view. */
     X86PTEBITS      n;
+#endif
     /** 32-bit view. */
     uint32_t        au32[1];
     /** 16-bit view. */

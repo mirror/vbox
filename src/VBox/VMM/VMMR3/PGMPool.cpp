@@ -792,10 +792,8 @@ void pgmR3PoolWriteProtectPages(PVM pVM)
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
                     for (unsigned iShw = 0; iShw < RT_ELEMENTS(uShw.pPT->a); iShw++)
-                    {
-                        if (uShw.pPT->a[iShw].n.u1Present)
-                            uShw.pPT->a[iShw].n.u1Write = 0;
-                    }
+                        if (uShw.pPT->a[iShw].u & X86_PTE_P)
+                            uShw.pPT->a[iShw].u = ~(X86PGUINT)X86_PTE_RW;
                     break;
 
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
@@ -804,18 +802,14 @@ void pgmR3PoolWriteProtectPages(PVM pVM)
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                     for (unsigned iShw = 0; iShw < RT_ELEMENTS(uShw.pPTPae->a); iShw++)
-                    {
                         if (PGMSHWPTEPAE_IS_P(uShw.pPTPae->a[iShw]))
                             PGMSHWPTEPAE_SET_RO(uShw.pPTPae->a[iShw]);
-                    }
                     break;
 
                 case PGMPOOLKIND_EPT_PT_FOR_PHYS:
                     for (unsigned iShw = 0; iShw < RT_ELEMENTS(uShw.pPTEpt->a); iShw++)
-                    {
                         if (uShw.pPTEpt->a[iShw].u & EPT_E_READ)
                             uShw.pPTEpt->a[iShw].u &= ~(X86PGPAEUINT)EPT_E_WRITE;
-                    }
                     break;
 
                 default:
