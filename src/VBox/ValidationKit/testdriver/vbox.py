@@ -922,6 +922,8 @@ class TestDriver(base.TestDriver):                                              
         if True is True: # pylint: disable=comparison-with-itself
             try:
                 self.oBuild = Build(self, None);
+                reporter.log('VBox %s build at %s (%s).'
+                             % (self.oBuild.sType, self.oBuild.sInstallPath, self.oBuild.sDesignation,));
                 return True;
             except base.GenError:
                 pass;
@@ -948,6 +950,8 @@ class TestDriver(base.TestDriver):                                              
         for sLoc in asLocs:
             try:
                 self.oBuild = Build(self, sLoc);
+                reporter.log('VBox %s build at %s (%s).'
+                             % (self.oBuild.sType, self.oBuild.sInstallPath, self.oBuild.sDesignation,));
                 return True;
             except base.GenError:
                 pass;
