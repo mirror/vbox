@@ -2548,9 +2548,9 @@ int vmsvgaR3GmrTransfer(PVGASTATE pThis, PVGASTATECC pThisCC, const SVGA3dTransf
             Log5Func(("%s phys=%RGp\n", (enmTransferType == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", GCPhys));
 
             if (enmTransferType == SVGA3D_WRITE_HOST_VRAM)
-                rc = PDMDevHlpPhysRead(pDevIns, GCPhys, pbCurrentHost, cbToCopy);
+                rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pbCurrentHost, cbToCopy);
             else
-                rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, pbCurrentHost, cbToCopy);
+                rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pbCurrentHost, cbToCopy);
             AssertRCBreak(rc);
 
             cbCurrentWidth -= cbToCopy;

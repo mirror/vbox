@@ -1793,7 +1793,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
             {
                 /* Read descriptor. */
                 SVGAGuestMemDescriptor desc;
-                rc = PDMDevHlpPhysRead(pDevIns, GCPhys, &desc, sizeof(desc));
+                rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, &desc, sizeof(desc));
                 AssertRCBreak(VBOXSTRICTRC_VAL(rc));
 
                 if (desc.numPages != 0)
@@ -2622,7 +2622,7 @@ static void vmsvgaR3CmdBufWriteStatus(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCB, SVG
     size_t const cbWrite = status == SVGA_CB_STATUS_COMMAND_ERROR
                          ? RT_UOFFSET_AFTER(SVGACBHeader, errorOffset)  /* Both 'status' and 'errorOffset' fields. */
                          : RT_UOFFSET_AFTER(SVGACBHeader, status);      /* Only 'status' field. */
-    PDMDevHlpPhysWrite(pDevIns, GCPhysCB, &hdr, cbWrite);
+    PDMDevHlpPCIPhysWrite(pDevIns, GCPhysCB, &hdr, cbWrite);
 }
 
 
@@ -2992,7 +2992,7 @@ static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATEC
     {
         pCmdBuf->GCPhysCB = GCPhysCB;
 
-        int rc = PDMDevHlpPhysRead(pDevIns, GCPhysCB, &pCmdBuf->hdr, sizeof(pCmdBuf->hdr));
+        int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysCB, &pCmdBuf->hdr, sizeof(pCmdBuf->hdr));
         if (RT_SUCCESS(rc))
         {
             /* Verify the command buffer header. */
@@ -3007,7 +3007,7 @@ static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATEC
                 if (pCmdBuf->pvCommands)
                 {
                     RTGCPHYS const GCPhysCmd = (RTGCPHYS)pCmdBuf->hdr.ptr.pa;
-                    rc = PDMDevHlpPhysRead(pDevIns, GCPhysCmd, pCmdBuf->pvCommands, pCmdBuf->hdr.length);
+                    rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysCmd, pCmdBuf->pvCommands, pCmdBuf->hdr.length);
                     if (RT_SUCCESS(rc))
                     {
                         /* Submit the buffer. Device context buffers will be processed synchronously. */
