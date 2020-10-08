@@ -9604,10 +9604,11 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             if (newConfigFile != configFile)
             {
                 /* get the path to old settings file in renamed directory */
+                Assert(mData->m_strConfigFileFull == configFile);
                 configFile.printf("%s%c%s",
                                   newConfigDir.c_str(),
                                   RTPATH_DELIMITER,
-                                  RTPathFilename(configFile.c_str()));
+                                  RTPathFilename(mData->m_strConfigFileFull.c_str()));
                 if (!fSettingsFileIsNew)
                 {
                     /* perform real rename only if the machine is not new */
