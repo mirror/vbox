@@ -44,6 +44,8 @@
                  (error)) \
  RT_PROXY_STUB(dbus_free_string_array, void, (char **str_array), \
                  (str_array)) \
+ RT_PROXY_STUB(dbus_connection_ref, DBusConnection *, (DBusConnection *connection), \
+                 (connection)) \
  RT_PROXY_STUB(dbus_connection_unref, void, (DBusConnection *connection), \
                  (connection)) \
  RT_PROXY_STUB(dbus_connection_close, void, (DBusConnection *connection), \
