@@ -15,16 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
 #include <VBox/log.h>
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 
 #include <pulse/pulseaudio.h>
 
 #include "pulse_stubs.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define VBOX_PULSE_LIB "libpulse.so.0"
 
 #define PROXY_STUB(function, rettype, signature, shortsig) \
@@ -233,79 +241,77 @@ PROXY_STUB     (pa_usec_to_bytes, size_t,
                 (pa_usec_t t, const pa_sample_spec *spec),
                 (t, spec))
 
-typedef struct
+#define FUNC_ENTRY(function) { #function , (void (**)(void)) & g_pfn_ ## function }
+static struct
 {
-    const char *name;
-    void (**fn)(void);
-} SHARED_FUNC;
-
-#define ELEMENT(function) { #function , (void (**)(void)) & g_pfn_ ## function }
-static SHARED_FUNC SharedFuncs[] =
+    const char *pszName;
+    void     (**pfn)(void);
+} const g_aImportedFunctions[] =
 {
-    ELEMENT(pa_bytes_per_second),
-    ELEMENT(pa_bytes_to_usec),
-    ELEMENT(pa_channel_map_init_auto),
+    FUNC_ENTRY(pa_bytes_per_second),
+    FUNC_ENTRY(pa_bytes_to_usec),
+    FUNC_ENTRY(pa_channel_map_init_auto),
 
-    ELEMENT(pa_context_connect),
-    ELEMENT(pa_context_disconnect),
-    ELEMENT(pa_context_get_server_info),
-    ELEMENT(pa_context_get_sink_info_by_name),
-    ELEMENT(pa_context_get_source_info_by_name),
-    ELEMENT(pa_context_get_state),
-    ELEMENT(pa_context_unref),
-    ELEMENT(pa_context_errno),
-    ELEMENT(pa_context_new),
-    ELEMENT(pa_context_set_state_callback),
+    FUNC_ENTRY(pa_context_connect),
+    FUNC_ENTRY(pa_context_disconnect),
+    FUNC_ENTRY(pa_context_get_server_info),
+    FUNC_ENTRY(pa_context_get_sink_info_by_name),
+    FUNC_ENTRY(pa_context_get_source_info_by_name),
+    FUNC_ENTRY(pa_context_get_state),
+    FUNC_ENTRY(pa_context_unref),
+    FUNC_ENTRY(pa_context_errno),
+    FUNC_ENTRY(pa_context_new),
+    FUNC_ENTRY(pa_context_set_state_callback),
 
-    ELEMENT(pa_frame_size),
-    ELEMENT(pa_get_library_version),
-    ELEMENT(pa_operation_unref),
-    ELEMENT(pa_operation_get_state),
-    ELEMENT(pa_operation_cancel),
-    ELEMENT(pa_rtclock_now),
-    ELEMENT(pa_sample_format_to_string),
-    ELEMENT(pa_sample_spec_valid),
-    ELEMENT(pa_strerror),
+    FUNC_ENTRY(pa_frame_size),
+    FUNC_ENTRY(pa_get_library_version),
+    FUNC_ENTRY(pa_operation_unref),
+    FUNC_ENTRY(pa_operation_get_state),
+    FUNC_ENTRY(pa_operation_cancel),
+    FUNC_ENTRY(pa_rtclock_now),
+    FUNC_ENTRY(pa_sample_format_to_string),
+    FUNC_ENTRY(pa_sample_spec_valid),
+    FUNC_ENTRY(pa_strerror),
 
-    ELEMENT(pa_stream_connect_playback),
-    ELEMENT(pa_stream_connect_record),
-    ELEMENT(pa_stream_disconnect),
-    ELEMENT(pa_stream_get_sample_spec),
-    ELEMENT(pa_stream_set_latency_update_callback),
-    ELEMENT(pa_stream_write),
-    ELEMENT(pa_stream_unref),
-    ELEMENT(pa_stream_get_state),
-    ELEMENT(pa_stream_get_latency),
-    ELEMENT(pa_stream_get_timing_info),
-    ELEMENT(pa_stream_readable_size),
-    ELEMENT(pa_stream_set_buffer_attr),
-    ELEMENT(pa_stream_set_state_callback),
-    ELEMENT(pa_stream_set_underflow_callback),
-    ELEMENT(pa_stream_set_overflow_callback),
-    ELEMENT(pa_stream_set_write_callback),
-    ELEMENT(pa_stream_flush),
-    ELEMENT(pa_stream_drain),
-    ELEMENT(pa_stream_trigger),
-    ELEMENT(pa_stream_new),
-    ELEMENT(pa_stream_get_buffer_attr),
-    ELEMENT(pa_stream_peek),
-    ELEMENT(pa_stream_cork),
-    ELEMENT(pa_stream_drop),
-    ELEMENT(pa_stream_writable_size),
+    FUNC_ENTRY(pa_stream_connect_playback),
+    FUNC_ENTRY(pa_stream_connect_record),
+    FUNC_ENTRY(pa_stream_disconnect),
+    FUNC_ENTRY(pa_stream_get_sample_spec),
+    FUNC_ENTRY(pa_stream_set_latency_update_callback),
+    FUNC_ENTRY(pa_stream_write),
+    FUNC_ENTRY(pa_stream_unref),
+    FUNC_ENTRY(pa_stream_get_state),
+    FUNC_ENTRY(pa_stream_get_latency),
+    FUNC_ENTRY(pa_stream_get_timing_info),
+    FUNC_ENTRY(pa_stream_readable_size),
+    FUNC_ENTRY(pa_stream_set_buffer_attr),
+    FUNC_ENTRY(pa_stream_set_state_callback),
+    FUNC_ENTRY(pa_stream_set_underflow_callback),
+    FUNC_ENTRY(pa_stream_set_overflow_callback),
+    FUNC_ENTRY(pa_stream_set_write_callback),
+    FUNC_ENTRY(pa_stream_flush),
+    FUNC_ENTRY(pa_stream_drain),
+    FUNC_ENTRY(pa_stream_trigger),
+    FUNC_ENTRY(pa_stream_new),
+    FUNC_ENTRY(pa_stream_get_buffer_attr),
+    FUNC_ENTRY(pa_stream_peek),
+    FUNC_ENTRY(pa_stream_cork),
+    FUNC_ENTRY(pa_stream_drop),
+    FUNC_ENTRY(pa_stream_writable_size),
 
-    ELEMENT(pa_threaded_mainloop_stop),
-    ELEMENT(pa_threaded_mainloop_get_api),
-    ELEMENT(pa_threaded_mainloop_free),
-    ELEMENT(pa_threaded_mainloop_signal),
-    ELEMENT(pa_threaded_mainloop_unlock),
-    ELEMENT(pa_threaded_mainloop_new),
-    ELEMENT(pa_threaded_mainloop_wait),
-    ELEMENT(pa_threaded_mainloop_start),
-    ELEMENT(pa_threaded_mainloop_lock),
+    FUNC_ENTRY(pa_threaded_mainloop_stop),
+    FUNC_ENTRY(pa_threaded_mainloop_get_api),
+    FUNC_ENTRY(pa_threaded_mainloop_free),
+    FUNC_ENTRY(pa_threaded_mainloop_signal),
+    FUNC_ENTRY(pa_threaded_mainloop_unlock),
+    FUNC_ENTRY(pa_threaded_mainloop_new),
+    FUNC_ENTRY(pa_threaded_mainloop_wait),
+    FUNC_ENTRY(pa_threaded_mainloop_start),
+    FUNC_ENTRY(pa_threaded_mainloop_lock),
 
-    ELEMENT(pa_usec_to_bytes)
+    FUNC_ENTRY(pa_usec_to_bytes)
 };
-#undef ELEMENT
+#undef FUNC_ENTRY
 
 /**
  * Try to dynamically load the PulseAudio libraries.  This function is not
@@ -316,33 +322,34 @@ static SHARED_FUNC SharedFuncs[] =
  */
 int audioLoadPulseLib(void)
 {
-    int rc = VINF_SUCCESS;
-    unsigned i;
-    static enum { NO = 0, YES, FAIL } isLibLoaded = NO;
+    static volatile int g_rc = VERR_IPE_UNINITIALIZED_STATUS;
     RTLDRMOD hLib;
+    int rc;
 
     LogFlowFunc(("\n"));
-    /* If this is not NO then the function has obviously been called twice,
-       which is likely to be a bug. */
-    if (NO != isLibLoaded)
+
+    /* If this is not VERR_IPE_UNINITIALIZED_STATUS then the function has
+       obviously been called twice, which is likely to be a bug. */
+    rc = g_rc;
+    AssertMsgReturn(rc == VERR_IPE_UNINITIALIZED_STATUS, ("g_rc=%Rrc\n", rc), rc);
+
+    rc = RTLdrLoadSystemEx(VBOX_PULSE_LIB, RTLDRLOAD_FLAGS_NO_UNLOAD, &hLib);
+    if (RT_SUCCESS(rc))
     {
-        AssertMsgFailed(("isLibLoaded == %s\n", YES == isLibLoaded ? "YES" : "NO"));
-        return YES == isLibLoaded ? VINF_SUCCESS : VERR_NOT_SUPPORTED;
+        unsigned i;
+        for (i = 0; i < RT_ELEMENTS(g_aImportedFunctions); i++)
+        {
+            rc = RTLdrGetSymbol(hLib, g_aImportedFunctions[i].pszName, (void **)g_aImportedFunctions[i].pfn);
+            if (RT_FAILURE(rc))
+            {
+                LogRelFunc(("Failed to resolve function #%u: '%s' (%Rrc)\n", i, g_aImportedFunctions[i].pszName, rc));
+                break;
+            }
+        }
     }
-    isLibLoaded = FAIL;
-    rc = RTLdrLoad(VBOX_PULSE_LIB, &hLib);
-    if (RT_FAILURE(rc))
-    {
-        LogRelFunc(("Failed to load library %s\n", VBOX_PULSE_LIB));
-        return rc;
-    }
-    for (i=0; i<RT_ELEMENTS(SharedFuncs); i++)
-    {
-        rc = RTLdrGetSymbol(hLib, SharedFuncs[i].name, (void**)SharedFuncs[i].fn);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-    isLibLoaded = YES;
+    else
+        LogRelFunc(("Failed to load library %s: %Rrc\n", VBOX_PULSE_LIB, rc));
+    g_rc = rc;
     return rc;
 }
 
