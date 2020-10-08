@@ -1081,6 +1081,15 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
     else
         AssertRCReturn(rc, rc);
 
+    bool fEditRemoteWake;
+    rc = CFGMR3QueryBool(pCfg, "EditRemoteWake", &fEditRemoteWake);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        rc = CFGMR3QueryBool(pCfgGlobalDev, "EditRemoteWake", &fEditRemoteWake);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        fEditRemoteWake = true;    /* NB: On by default! */
+    else
+        AssertRCReturn(rc, rc);
+
     /*
      * If we're masking interfaces, edit the descriptors.
      */
@@ -1180,6 +1189,26 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
                         }
                     }
                 }
+        }
+    }
+
+    /*
+     * Disable remote wakeup capability, see @bugref{9839}. This is done on 
+     * a device/configuration level, no need to dig too deep through the descriptors. 
+     * On most backends, we can't perform a real selective suspend, and more importantly 
+     * can't receive a remote wake notification. If a guest suspends the device and waits 
+     * for a remote wake, the device is effectively dead.
+     */
+    if (fEditRemoteWake)
+    {
+        PVUSBDESCCONFIGEX paCfgs = pThis->paCfgDescs;
+        for (unsigned iCfg = 0; iCfg < pThis->DevDesc.bNumConfigurations; iCfg++)
+        {
+            Log(("usb-proxy: pProxyDev=%s configuration %d with bmAttr=%02X\n",
+                 pUsbIns->pszName, paCfgs[iCfg].Core.bmAttributes, iCfg));
+                 paCfgs[iCfg].Core.bmAttributes = paCfgs[iCfg].Core.bmAttributes & ~RT_BIT(5); /* Remote wakeup. */
+            fEdited = true;
+            LogRel(("VUSB: Disabled '%s' remote wakeup for configuration %d\n", pUsbIns->pszName, iCfg));
         }
     }
 
