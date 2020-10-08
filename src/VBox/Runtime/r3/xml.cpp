@@ -165,9 +165,29 @@ EIPRTFailure::EIPRTFailure(int aRC, const char *pszContextFmt, ...)
 
 struct File::Data
 {
-    Data()
-        : handle(NIL_RTFILE), opened(false)
+    Data(RTFILE a_hHandle, const char *a_pszFilename, bool a_fFlushOnClose)
+        : strFileName(a_pszFilename)
+        , handle(a_hHandle)
+        , opened(a_hHandle != NIL_RTFILE)
+        , flushOnClose(a_fFlushOnClose)
     { }
+
+    ~Data()
+    {
+        if (flushOnClose)
+        {
+            RTFileFlush(handle);
+            if (!strFileName.isEmpty())
+                RTDirFlushParent(strFileName.c_str());
+        }
+
+        if (opened)
+        {
+            RTFileClose(handle);
+            handle = NIL_RTFILE;
+            opened = false;
+        }
+    }
 
     RTCString strFileName;
     RTFILE handle;
@@ -176,11 +196,10 @@ struct File::Data
 };
 
 File::File(Mode aMode, const char *aFileName, bool aFlushIt /* = false */)
-    : m(new Data())
+    : m(NULL)
 {
-    m->strFileName = aFileName;
-    m->flushOnClose = aFlushIt;
-
+    /* Try open the file first, as the destructor will not be invoked if we throw anything from here. For details see:
+       https://stackoverflow.com/questions/9971782/destructor-not-invoked-when-an-exception-is-thrown-in-the-constructor */
     uint32_t flags = 0;
     const char *pcszMode = "???";
     switch (aMode)
@@ -203,43 +222,41 @@ File::File(Mode aMode, const char *aFileName, bool aFlushIt /* = false */)
             pcszMode = "reading/writing";
             break;
     }
-
-    int vrc = RTFileOpen(&m->handle, aFileName, flags);
+    RTFILE hFile = NIL_RTFILE;
+    int vrc = RTFileOpen(&hFile, aFileName, flags);
     if (RT_FAILURE(vrc))
         throw EIPRTFailure(vrc, "Runtime error opening '%s' for %s", aFileName, pcszMode);
 
-    m->opened = true;
-    m->flushOnClose = aFlushIt && (flags & RTFILE_O_ACCESS_MASK) != RTFILE_O_READ;
+    /* Now we can create the data and stuff: */
+    try
+    {
+        m = new Data(hFile, aFileName, aFlushIt && (flags & RTFILE_O_ACCESS_MASK) != RTFILE_O_READ);
+    }
+    catch (std::bad_alloc &)
+    {
+        RTFileClose(hFile);
+        throw;
+    }
 }
 
 File::File(RTFILE aHandle, const char *aFileName /* = NULL */, bool aFlushIt /* = false */)
-    : m(new Data())
+    : m(NULL)
 {
     if (aHandle == NIL_RTFILE)
         throw EInvalidArg(RT_SRC_POS);
 
-    m->handle = aHandle;
-
-    if (aFileName)
-        m->strFileName = aFileName;
-
-    m->flushOnClose = aFlushIt;
+    m = new Data(aHandle, aFileName, aFlushIt);
 
     setPos(0);
 }
 
 File::~File()
 {
-    if (m->flushOnClose)
+    if (m)
     {
-        RTFileFlush(m->handle);
-        if (!m->strFileName.isEmpty())
-            RTDirFlushParent(m->strFileName.c_str());
+        delete m;
+        m = NULL;
     }
-
-    if (m->opened)
-        RTFileClose(m->handle);
-    delete m;
 }
 
 const char *File::uri() const
