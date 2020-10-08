@@ -816,8 +816,16 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
         rc = drvAudioStreamDestroyInternalBackend(pThis, pStream);
         if (RT_SUCCESS(rc))
         {
-            rc = drvAudioStreamCreateInternalBackend(pThis, pStream, &pStream->Host.Cfg, NULL /* pCfgAcq */);
+            PDMAUDIOSTREAMCFG CfgHostAcq;
+            rc = drvAudioStreamCreateInternalBackend(pThis, pStream, &pStream->Host.Cfg, &CfgHostAcq);
             /** @todo Validate (re-)acquired configuration with pStream->Host.Cfg? */
+            if (RT_SUCCESS(rc))
+            {
+#ifdef LOG_ENABLED
+                LogFunc(("[%s] Acquired host format:\n",  pStream->szName));
+                DrvAudioHlpStreamCfgPrint(&CfgHostAcq);
+#endif
+            }
         }
     }
 
@@ -1112,6 +1120,38 @@ static DECLCALLBACK(int) drvAudioStreamIterate(PPDMIAUDIOCONNECTOR pInterface, P
 }
 
 /**
+ * Re-initializes the given stream if it is scheduled for this operation.
+ *
+ * @returns VBox status code.
+ * @param   pThis               Pointer to driver instance.
+ * @param   pStream             Stream to check and maybe re-initialize.
+ */
+static int drvAudioStreamMaybeReInit(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT)
+    {
+#ifdef VBOX_WITH_AUDIO_ENUM
+        if (pThis->fEnumerateDevices)
+        {
+            /* Re-enumerate all host devices. */
+            drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
+
+            pThis->fEnumerateDevices = false;
+        }
+#endif /* VBOX_WITH_AUDIO_ENUM */
+
+        /* Remove the pending re-init flag in any case, regardless whether the actual re-initialization succeeded
+         * or not. If it failed, the backend needs to notify us again to try again at some later point in time. */
+        pStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT;
+        rc = drvAudioStreamReInitInternal(pThis, pStream);
+    }
+
+    return rc;
+}
+
+/**
  * Does one iteration of an audio stream.
  * This function gives the backend the chance of iterating / altering data and
  * does the actual mixing between the guest <-> host mixing buffers.
@@ -1130,29 +1170,10 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     if (!pStream)
         return VINF_SUCCESS;
 
-    int rc;
-
     /* Is the stream scheduled for re-initialization? Do so now. */
-    if (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT)
-    {
-#ifdef VBOX_WITH_AUDIO_ENUM
-        if (pThis->fEnumerateDevices)
-        {
-            /* Re-enumerate all host devices. */
-            drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
-
-            pThis->fEnumerateDevices = false;
-        }
-#endif /* VBOX_WITH_AUDIO_ENUM */
-
-        /* Remove the pending re-init flag in any case, regardless whether the actual re-initialization succeeded
-         * or not. If it failed, the backend needs to notify us again to try again at some later point in time. */
-        pStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT;
-
-        rc = drvAudioStreamReInitInternal(pThis, pStream);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
+    int rc = drvAudioStreamMaybeReInit(pThis, pStream);
+    if (RT_FAILURE(rc))
+        return rc;
 
 #ifdef LOG_ENABLED
     char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
@@ -2892,6 +2913,11 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECT
 
     int rc2 = RTCritSectEnter(&pThis->CritSect);
     AssertRC(rc2);
+
+    /* Is the stream scheduled for re-initialization? Do so now. */
+    int rc = drvAudioStreamMaybeReInit(pThis, pStream);
+    if (RT_FAILURE(rc)) /** @todo r=aeichner What is the correct operation in the failure case? */
+        LogRel(("Audio: Reinitializing the stream in drvAudioStreamGetStatus() failed with %Rrc\n", rc));
 
     PDMAUDIOSTREAMSTS fStrmStatus = pStream->fStatus;
 
