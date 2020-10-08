@@ -758,6 +758,26 @@ static void pcnetPhysWrite(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS GCPhy
         PDMDevHlpPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
 }
 
+
+/**
+ * Memory read helper to handle PCI/ISA differences.
+ *
+ * @returns nothing.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       Pointer to the PCNet device instance.
+ * @param   GCPhys      Guest physical memory address.
+ * @param   pvBuf       Host side buffer address.
+ * @param   cbRead      Number of bytes to read.
+ */
+static void pcnetPhysRead(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    if (!PCNET_IS_ISA(pThis))
+        PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+    else
+        PDMDevHlpPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+}
+
+
 /**
  * Load transmit message descriptor (TMD) if we own it.
  * Makes sure we read the OWN bit first, which requires issuing two reads if
@@ -778,10 +798,10 @@ DECLINLINE(bool) pcnetTmdTryLoad(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd
         uint16_t xda[4];    /* Corresponds to memory layout, last word unused. */
 
         /* For SWSTYLE=0, the OWN bit is in the second WORD we need and must be read before the first WORD. */
-        PDMDevHlpPhysRead(pDevIns, addr + sizeof(uint16_t), (void*)&xda[1], 2 * sizeof(uint16_t));
+        pcnetPhysRead(pDevIns, pThis, addr + sizeof(uint16_t), (void*)&xda[1], 2 * sizeof(uint16_t));
         if (!(xda[1] & RT_BIT(15)))
             return false;
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda[0], sizeof(uint16_t));
+        pcnetPhysRead(pDevIns, pThis, addr, (void*)&xda[0], sizeof(uint16_t));
         ((uint32_t *)tmd)[0] = (uint32_t)xda[0] | ((uint32_t)(xda[1] & 0x00ff) << 16);  /* TMD0, buffer address. */
         ((uint32_t *)tmd)[1] = (uint32_t)xda[2] | ((uint32_t)(xda[1] & 0xff00) << 16);  /* TMD1, buffer size and control bits. */
         ((uint32_t *)tmd)[2] = 0;   /* TMD2, status bits, set on error but not read. */
@@ -791,10 +811,10 @@ DECLINLINE(bool) pcnetTmdTryLoad(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd
     {
         /* For SWSTYLE=2, the OWN bit is in the second DWORD we need and must be read first. */
         uint32_t xda[2];
-        PDMDevHlpPhysRead(pDevIns, addr + sizeof(uint32_t), (void*)&xda[1], sizeof(uint32_t));
+        pcnetPhysRead(pDevIns, pThis, addr + sizeof(uint32_t), (void*)&xda[1], sizeof(uint32_t));
         if (!(xda[1] & RT_BIT(31)))
             return false;
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda[0], sizeof(uint32_t));
+        pcnetPhysRead(pDevIns, pThis, addr, (void*)&xda[0], sizeof(uint32_t));
         ((uint32_t *)tmd)[0] = xda[0];  /* TMD0, buffer address. */
         ((uint32_t *)tmd)[1] = xda[1];  /* TMD1, buffer size and control bits. */
         ((uint32_t *)tmd)[2] = 0;       /* TMD2, status bits, set on error but not read. */
@@ -804,7 +824,7 @@ DECLINLINE(bool) pcnetTmdTryLoad(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd
     {
         /* For SWSTYLE=3, the OWN bit is in the first DWORD we need, therefore a single read suffices. */
         uint32_t xda[2];
-        PDMDevHlpPhysRead(pDevIns, addr + sizeof(uint32_t), (void*)&xda, sizeof(xda));
+        pcnetPhysRead(pDevIns, pThis, addr + sizeof(uint32_t), (void*)&xda, sizeof(xda));
         if (!(xda[0] & RT_BIT(31)))
             return false;
         ((uint32_t *)tmd)[0] = xda[1];  /* TMD0, buffer address. */
@@ -833,7 +853,7 @@ DECLINLINE(void) pcnetTmdLoadAll(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd
         uint16_t xda[4];
 
         /* For SWSTYLE=0, we have to do a bit of work. */
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda, sizeof(xda));
+        pcnetPhysRead(pDevIns, pThis, addr, (void*)&xda, sizeof(xda));
         ((uint32_t *)tmd)[0] = (uint32_t)xda[0] | ((uint32_t)(xda[1] & 0x00ff) << 16);  /* TMD0, buffer address. */
         ((uint32_t *)tmd)[1] = (uint32_t)xda[2] | ((uint32_t)(xda[1] & 0xff00) << 16);  /* TMD1, buffer size and control bits. */
         ((uint32_t *)tmd)[2] = (uint32_t)xda[3] << 16;                                  /* TMD2, status bits. */
@@ -842,13 +862,13 @@ DECLINLINE(void) pcnetTmdLoadAll(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
         /* For SWSTYLE=2, simply read the TMD as is. */
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)tmd, sizeof(*tmd));
+        pcnetPhysRead(pDevIns, pThis, addr, (void*)tmd, sizeof(*tmd));
     }
     else
     {
         /* For SWSTYLE=3, swap the first and third DWORD around. */
         uint32_t xda[4];
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda, sizeof(xda));
+        pcnetPhysRead(pDevIns, pThis, addr, (void*)&xda, sizeof(xda));
         ((uint32_t *)tmd)[0] = xda[2];  /* TMD0, buffer address. */
         ((uint32_t *)tmd)[1] = xda[1];  /* TMD1, buffer size and control bits. */
         ((uint32_t *)tmd)[2] = xda[0];  /* TMD2, status bits. */
@@ -917,10 +937,10 @@ DECLINLINE(bool) pcnetRmdLoad(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RMD *rmd, R
     if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
     {
         uint16_t rda[4];
-        PDMDevHlpPhysRead(pDevIns, addr+3, &ownbyte, 1);
+        pcnetPhysRead(pDevIns, pThis, addr+3, &ownbyte, 1);
         if (!(ownbyte & 0x80) && fRetIfNotOwn)
             return false;
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)&rda[0], sizeof(rda));
+        pcnetPhysRead(pDevIns, pThis, addr, (void*)&rda[0], sizeof(rda));
         ((uint32_t *)rmd)[0] = (uint32_t)rda[0] | ((rda[1] & 0x00ff) << 16);
         ((uint32_t *)rmd)[1] = (uint32_t)rda[2] | ((rda[1] & 0xff00) << 16);
         ((uint32_t *)rmd)[2] = (uint32_t)rda[3];
@@ -928,18 +948,18 @@ DECLINLINE(bool) pcnetRmdLoad(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RMD *rmd, R
     }
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
-        PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
+        pcnetPhysRead(pDevIns, pThis, addr+7, &ownbyte, 1);
         if (!(ownbyte & 0x80) && fRetIfNotOwn)
             return false;
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)rmd, 16);
+        pcnetPhysRead(pDevIns, pThis, addr, (void*)rmd, 16);
     }
     else
     {
         uint32_t rda[4];
-        PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
+        pcnetPhysRead(pDevIns, pThis, addr+7, &ownbyte, 1);
         if (!(ownbyte & 0x80) && fRetIfNotOwn)
             return false;
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)&rda[0], sizeof(rda));
+        pcnetPhysRead(pDevIns, pThis, addr, (void*)&rda[0], sizeof(rda));
         ((uint32_t *)rmd)[0] = rda[2];
         ((uint32_t *)rmd)[1] = rda[1];
         ((uint32_t *)rmd)[2] = rda[0];
@@ -1008,7 +1028,7 @@ static void pcnetDescTouch(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS32 add
         cbDesc = 8;
     else
         cbDesc = 16;
-    PDMDevHlpPhysRead(pDevIns, addr, aBuf, cbDesc);
+    pcnetPhysRead(pDevIns, pThis, addr, aBuf, cbDesc);
     pcnetPhysWrite(pDevIns, pThis, addr, aBuf, cbDesc);
 }
 #endif /* IN_RING3 */
@@ -1576,8 +1596,8 @@ static void pcnetR3Init(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pTh
     /** @todo Documentation says that RCVRL and XMTRL are stored as two's complement!
      *        Software is allowed to write these registers directly. */
 # define PCNET_INIT() do { \
-            PDMDevHlpPhysRead(pDevIns, PHYSADDR(pThis, CSR_IADR(pThis)),         \
-                              (uint8_t *)&initblk, sizeof(initblk));             \
+            pcnetPhysRead(pDevIns, pThis, PHYSADDR(pThis, CSR_IADR(pThis)),      \
+                          (uint8_t *)&initblk, sizeof(initblk));                 \
             pThis->aCSR[15]  = RT_LE2H_U16(initblk.mode);                        \
             CSR_RCVRL(pThis) = (initblk.rlen < 9) ? (1 << initblk.rlen) : 512;   \
             CSR_XMTRL(pThis) = (initblk.tlen < 9) ? (1 << initblk.tlen) : 512;   \
@@ -2280,6 +2300,7 @@ DECLINLINE(int) pcnetXmitSendBuf(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETST
  */
 static void pcnetXmitRead1stSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, unsigned cbFrame, PPDMSCATTERGATHER pSgBuf)
 {
+    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     pSgBuf->cbUsed = cbFrame;
     for (uint32_t iSeg = 0; ; iSeg++)
     {
@@ -2291,7 +2312,7 @@ static void pcnetXmitRead1stSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, uns
         }
 
         uint32_t cbRead = (uint32_t)RT_MIN(cbFrame, pSgBuf->aSegs[iSeg].cbSeg);
-        PDMDevHlpPhysRead(pDevIns, GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
+        pcnetPhysRead(pDevIns, pThis, GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
         cbFrame -= cbRead;
         if (!cbFrame)
             return;
@@ -2306,6 +2327,8 @@ static void pcnetXmitRead1stSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, uns
  */
 static void pcnetXmitReadMoreSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, unsigned cbFrame, PPDMSCATTERGATHER pSgBuf)
 {
+    PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+
     /* Find the segment which we'll put the next byte into. */
     size_t      off    = pSgBuf->cbUsed;
     size_t      offSeg = 0;
@@ -2330,8 +2353,8 @@ static void pcnetXmitReadMoreSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, un
     {
         size_t   offIntoSeg = off - offSeg;
         uint32_t cbRead     = (uint32_t)RT_MIN(pSgBuf->aSegs[iSeg].cbSeg - offIntoSeg, cbFrame);
-        PDMDevHlpPhysRead(pDevIns, GCPhysFrame,
-                          (uint8_t *)pSgBuf->aSegs[iSeg].pvSeg + offIntoSeg, cbRead);
+        pcnetPhysRead(pDevIns, pThis, GCPhysFrame,
+                      (uint8_t *)pSgBuf->aSegs[iSeg].pvSeg + offIntoSeg, cbRead);
         cbFrame -= cbRead;
         if (!cbFrame)
             return;
@@ -2350,7 +2373,7 @@ static void pcnetXmitReadMoreSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, un
         }
 
         uint32_t cbRead = (uint32_t)RT_MIN(pSgBuf->aSegs[iSeg].cbSeg, cbFrame);
-        PDMDevHlpPhysRead(pDevIns, GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
+        pcnetPhysRead(pDevIns, pThis, GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
         cbFrame -= cbRead;
         if (!cbFrame)
             return;
@@ -2371,7 +2394,7 @@ DECLINLINE(void) pcnetXmitRead1st(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHY
     if (RT_LIKELY(pSgBuf->aSegs[0].cbSeg >= cbFrame)) /* justification: all drivers returns a single segment atm. */
     {
         pSgBuf->cbUsed = cbFrame;
-        PDMDevHlpPhysRead(pDevIns, GCPhysFrame, pSgBuf->aSegs[0].pvSeg, cbFrame);
+        pcnetPhysRead(pDevIns, pThis, GCPhysFrame, pSgBuf->aSegs[0].pvSeg, cbFrame);
     }
     else
         pcnetXmitRead1stSlow(pDevIns, GCPhysFrame, cbFrame, pSgBuf);
@@ -2388,7 +2411,8 @@ DECLINLINE(void) pcnetXmitReadMore(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, c
     if (RT_LIKELY(pSgBuf->aSegs[0].cbSeg >= cbFrame + off))
     {
         pSgBuf->cbUsed = cbFrame + off;
-        PDMDevHlpPhysRead(pDevIns, GCPhysFrame, (uint8_t *)pSgBuf->aSegs[0].pvSeg + off, cbFrame);
+        PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
+        pcnetPhysRead(pDevIns, pThis, GCPhysFrame, (uint8_t *)pSgBuf->aSegs[0].pvSeg + off, cbFrame);
     }
     else
         pcnetXmitReadMoreSlow(pDevIns, GCPhysFrame, cbFrame, pSgBuf);
