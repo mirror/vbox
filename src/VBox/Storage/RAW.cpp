@@ -597,7 +597,7 @@ static DECLCALLBACK(int) rawProbe(const char *pszFilename, PVDINTERFACE pVDIfsDi
             if (   RT_FAILURE(rc)
                 && (enmDesiredType == VDTYPE_INVALID || enmDesiredType == VDTYPE_FLOPPY)
                 && (cbFile % 512) == 0
-                && cbFile > 512
+                && cbFile >= 512
                 && cbFile <= RAW_MAX_FLOPPY_IMG_SIZE)
             {
                 /** @todo check if the content is DOSish.  */
