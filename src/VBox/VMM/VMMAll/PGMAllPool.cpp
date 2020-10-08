@@ -344,15 +344,14 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
 
                 LogFlow(("pgmPoolMonitorChainChanging: PGMPOOLKIND_32BIT_PD %x\n", iShw));
                 STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPD));
-                if (uShw.pPD->a[iShw].n.u1Present)
+                X86PGUINT const uPde = uShw.pPD->a[iShw].u;
+                if (uPde & X86_PDE_P)
                 {
-                    LogFlow(("pgmPoolMonitorChainChanging: 32 bit pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPD->a[iShw].u));
-                    pgmPoolFree(pVM,
-                                uShw.pPD->a[iShw].u & X86_PDE_PAE_PG_MASK,
-                                pPage->idx,
-                                iShw);
+                    LogFlow(("pgmPoolMonitorChainChanging: 32 bit pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uPde));
+                    pgmPoolFree(pVM, uPde & X86_PDE_PG_MASK, pPage->idx, iShw);
                     ASMAtomicWriteU32(&uShw.pPD->a[iShw].u, 0);
                 }
+
                 /* paranoia / a bit assumptive. */
                 if (    (off & 3)
                     &&  (off & 3) + cbWrite > sizeof(X86PTE))
@@ -361,13 +360,11 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
                     if (    iShw2 != iShw
                         &&  iShw2 < RT_ELEMENTS(uShw.pPD->a))
                     {
-                        if (uShw.pPD->a[iShw2].n.u1Present)
+                        X86PGUINT const uPde2 = uShw.pPD->a[iShw2].u;
+                        if (uPde2 & X86_PDE_P)
                         {
-                            LogFlow(("pgmPoolMonitorChainChanging: 32 bit pd iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPD->a[iShw2].u));
-                            pgmPoolFree(pVM,
-                                        uShw.pPD->a[iShw2].u & X86_PDE_PAE_PG_MASK,
-                                        pPage->idx,
-                                        iShw2);
+                            LogFlow(("pgmPoolMonitorChainChanging: 32 bit pd iShw=%#x: %RX64 -> freeing it!\n", iShw2, uPde2));
+                            pgmPoolFree(pVM, uPde2 & X86_PDE_PG_MASK, pPage->idx, iShw2);
                             ASMAtomicWriteU32(&uShw.pPD->a[iShw2].u, 0);
                         }
                     }
@@ -4481,11 +4478,12 @@ DECLINLINE(void) pgmPoolTrackDerefPD(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PD 
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
     {
-        if (    pShwPD->a[i].n.u1Present
+        X86PGUINT const uPde = pShwPD->a[i].u;
 #ifndef PGM_WITHOUT_MAPPINGS
-            &&  !(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING)
+        if ((uPde & (X86_PDE_P | PGM_PDFLAGS_MAPPING)) == X86_PDE_P)
+#else
+        if (uPde & X86_PDE_P)
 #endif
-           )
         {
             PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPD->a[i].u & X86_PDE_PG_MASK);
             if (pSubPage)

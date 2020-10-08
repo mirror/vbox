@@ -2480,10 +2480,12 @@ typedef union X86PDE
 {
     /** Unsigned integer view. */
     X86PGUINT       u;
+#ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
     /** Normal view. */
     X86PDEBITS      n;
     /** 4MB view (big). */
     X86PDE4MBITS    b;
+#endif
     /** 8 bit unsigned integer view. */
     uint8_t         au8[4];
     /** 16 bit unsigned integer view. */

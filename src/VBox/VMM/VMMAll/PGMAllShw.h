@@ -73,9 +73,9 @@
 # define SHW_PD_SHIFT                   X86_PD_SHIFT
 # define SHW_PD_MASK                    X86_PD_MASK
 # define SHW_TOTAL_PD_ENTRIES           X86_PG_ENTRIES
-# define SHW_PDE_IS_P(Pde)              ( (Pde).n.u1Present )
-# define SHW_PDE_IS_A(Pde)              ( (Pde).n.u1Accessed )
-# define SHW_PDE_IS_BIG(Pde)            ( (Pde).b.u1Size )
+# define SHW_PDE_IS_P(Pde)              ( (Pde).u & X86_PDE_P )
+# define SHW_PDE_IS_A(Pde)              ( (Pde).u & X86_PDE_A )
+# define SHW_PDE_IS_BIG(Pde)            ( (Pde).u & X86_PDE_PS  )
 # define SHW_PDE_ATOMIC_SET(Pde, uNew)  do { ASMAtomicWriteU32(&(Pde).u, (uNew)); } while (0)
 # define SHW_PDE_ATOMIC_SET2(Pde, Pde2) do { ASMAtomicWriteU32(&(Pde).u, (Pde2).u); } while (0)
 # define SHW_PTE_PG_MASK                X86_PTE_PG_MASK

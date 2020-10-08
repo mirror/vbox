@@ -2344,20 +2344,20 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
     for (unsigned iPD = 0; iPD < RT_ELEMENTS(pPDSrc->a); iPD++)
     {
         X86PDE PdeSrc = pPDSrc->a[iPD];
-        if (PdeSrc.n.u1Present)
+        if (PdeSrc.u & X86_PDE_P)
         {
-            if (PdeSrc.b.u1Size && fPSE)
+            if ((PdeSrc.u & X86_PDE_PS) && fPSE)
                 pHlp->pfnPrintf(pHlp,
                                 "%04X - %RGp P=%d U=%d RW=%d G=%d - BIG\n",
                                 iPD,
-                                pgmGstGet4MBPhysPage(pVM, PdeSrc),
-                                PdeSrc.b.u1Present, PdeSrc.b.u1User, PdeSrc.b.u1Write, PdeSrc.b.u1Global && fPGE);
+                                pgmGstGet4MBPhysPage(pVM, PdeSrc), PdeSrc.u & X86_PDE_P, !!(PdeSrc.u & X86_PDE_US),
+                                !!(PdeSrc.u & X86_PDE_RW), (PdeSrc.u & X86_PDE4M_G) && fPGE);
             else
                 pHlp->pfnPrintf(pHlp,
                                 "%04X - %RGp P=%d U=%d RW=%d [G=%d]\n",
                                 iPD,
-                                (RTGCPHYS)(PdeSrc.u & X86_PDE_PG_MASK),
-                                PdeSrc.n.u1Present, PdeSrc.n.u1User, PdeSrc.n.u1Write, PdeSrc.b.u1Global && fPGE);
+                                (RTGCPHYS)(PdeSrc.u & X86_PDE_PG_MASK), PdeSrc.u & X86_PDE_P, !!(PdeSrc.u & X86_PDE_US),
+                                !!(PdeSrc.u & X86_PDE_RW), (PdeSrc.u & X86_PDE4M_G) && fPGE);
         }
     }
     pgmUnlock(pVM);
