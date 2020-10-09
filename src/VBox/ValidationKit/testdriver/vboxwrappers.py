@@ -879,7 +879,9 @@ class SessionWrapper(TdTaskBase):
                 # direct session closes / VM process terminates.  Fun!
                 try:    fIgnore = self.o.state == vboxcon.SessionState_Unlocked;
                 except: fIgnore = False;
-                if not fIgnore:
+                if fIgnore:
+                    self.o  = None; # Must prevent a retry during GC.
+                else:
                     reporter.errorXcpt('ISession::unlockMachine failed on %s' % (self.o));
                     fRc = False;
 
