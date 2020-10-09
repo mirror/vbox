@@ -737,6 +737,16 @@ class Process(TdTaskBase):
             return -127;
         return self.uExitCode >> 8;
 
+    def isNormalExit(self):
+        """
+        Returns True if regular exit(), False if signal or still running.
+        """
+        if self.isRunning():
+            return False;
+        if sys.platform == 'win32':
+            return False;
+        return os.WIFEXITED(self.uExitCode);
+
     def interrupt(self):
         """
         Sends a SIGINT or equivalent to interrupt the process.

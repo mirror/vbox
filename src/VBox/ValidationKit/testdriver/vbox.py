@@ -1317,6 +1317,9 @@ class TestDriver(base.TestDriver):                                              
             else:
                 reporter.log('VBoxSVC is no longer running...');
             if not self.oVBoxSvcProcess.isRunning():
+                iExit = self.oVBoxSvcProcess.getExitCode();
+                if iExit != 0 or not self.oVBoxSvcProcess.isNormalExit():
+                    reporter.error("VBoxSVC exited with status %d (%#x)" % (iExit, self.oVBoxSvcProcess.uExitCode));
                 self.oVBoxSvcProcess = None;
         else:
             # by pid file.
