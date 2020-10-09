@@ -208,6 +208,7 @@ struct Medium::Data
     /** New parent UUID to be set on the next Medium::i_queryInfo call. */
     const Guid uuidParentImage;
 
+/** @todo r=bird: the boolean bitfields are pointless if they're not grouped! */
     bool hostDrive : 1;
 
     settings::StringsMap mapProperties;
@@ -1341,12 +1342,17 @@ HRESULT Medium::initOne(Medium *aParent,
 }
 
 /**
- * Initializes the medium object and its children by loading its data from the
- * given settings node. The medium will always be opened read/write.
+ * Initializes and registers the medium object and its children by loading its
+ * data from the given settings node. The medium will always be opened
+ * read/write.
+ *
+ * @todo r=bird: What's that stuff about 'always be opened read/write'?
  *
  * In this case, since we're loading from a registry, uuidMachineRegistry is
  * always set: it's either the global registry UUID or a machine UUID when
  * loading from a per-machine registry.
+ *
+ * The only caller is currently VirtualBox::initMedia().
  *
  * @param aVirtualBox   VirtualBox object.
  * @param aParent       Parent medium disk or NULL for a root (base) medium.
@@ -1357,66 +1363,105 @@ HRESULT Medium::initOne(Medium *aParent,
  * @param strMachineFolder The machine folder with which to resolve relative
  *                      paths; if empty, then we use the VirtualBox home directory
  * @param mediaTreeLock Autolock.
+ * @param ppRegistered  Where to return the registered Medium object.  This is
+ *                      for handling the case where the medium object we're
+ *                      constructing from settings already has a registered
+ *                      instance that should be used instead of this one.
  *
  * @note Locks the medium tree for writing.
  */
-HRESULT Medium::init(VirtualBox *aVirtualBox,
-                     Medium *aParent,
-                     DeviceType_T aDeviceType,
-                     const Guid &uuidMachineRegistry,
-                     const settings::Medium &data,
-                     const Utf8Str &strMachineFolder,
-                     AutoWriteLock &mediaTreeLock)
+HRESULT Medium::initFromSettings(VirtualBox *aVirtualBox,
+                                 Medium *aParent,
+                                 DeviceType_T aDeviceType,
+                                 const Guid &uuidMachineRegistry,
+                                 const settings::Medium &data,
+                                 const Utf8Str &strMachineFolder,
+                                 AutoWriteLock &mediaTreeLock,
+                                 ComObjPtr<Medium> *ppRegistered)
 {
     using namespace settings;
 
     Assert(aVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
     AssertReturn(aVirtualBox, E_INVALIDARG);
 
-    /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
-
-    unconst(m->pVirtualBox) = aVirtualBox;
-
-    // Do not inline this method call, as the purpose of having this separate
-    // is to save on stack size. Less local variables are the key for reaching
-    // deep recursion levels with small stack (XPCOM/g++ without optimization).
-    HRESULT rc = initOne(aParent, aDeviceType, uuidMachineRegistry, data, strMachineFolder);
-
-
-    /* Don't call Medium::i_queryInfo for registered media to prevent the calling
-     * thread (i.e. the VirtualBox server startup thread) from an unexpected
-     * freeze but mark it as initially inaccessible instead. The vital UUID,
-     * location and format properties are read from the registry file above; to
-     * get the actual state and the rest of the data, the user will have to call
-     * COMGETTER(State). */
-
-    /* load all children */
-    for (settings::MediaList::const_iterator it = data.llChildren.begin();
-         it != data.llChildren.end();
-         ++it)
+    /*
+     * Enclose the state transition NotReady->InInit->Ready.
+     *
+     * Note! This has to be scoped so that we can temporarily drop the
+     *       mediaTreeLock ownership on failure.
+     */
+    HRESULT rc;
+    bool    fRetakeLock = false;
     {
-        const settings::Medium &med = *it;
+        AutoInitSpan autoInitSpan(this);
+        AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-        ComObjPtr<Medium> pMedium;
-        pMedium.createObject();
-        rc = pMedium->init(aVirtualBox,
-                           this,            // parent
-                           aDeviceType,
-                           uuidMachineRegistry,
-                           med,               // child data
-                           strMachineFolder,
-                           mediaTreeLock);
-        if (FAILED(rc)) break;
+        unconst(m->pVirtualBox) = aVirtualBox;
+        ComObjPtr<Medium> pActualThis = this;
 
-        rc = m->pVirtualBox->i_registerMedium(pMedium, &pMedium, mediaTreeLock);
-        if (FAILED(rc)) break;
+        // Do not inline this method call, as the purpose of having this separate
+        // is to save on stack size. Less local variables are the key for reaching
+        // deep recursion levels with small stack (XPCOM/g++ without optimization).
+        rc = initOne(aParent, aDeviceType, uuidMachineRegistry, data, strMachineFolder);
+        if (SUCCEEDED(rc))
+        {
+            /* In order to avoid duplicate instances of the medium object, we need
+               to register the parent before loading any children.  */
+            rc = m->pVirtualBox->i_registerMedium(pActualThis, &pActualThis, mediaTreeLock, true /*fCalledFromMediumInit*/);
+            if (SUCCEEDED(rc))
+            {
+                /* Don't call Medium::i_queryInfo for registered media to prevent the calling
+                 * thread (i.e. the VirtualBox server startup thread) from an unexpected
+                 * freeze but mark it as initially inaccessible instead. The vital UUID,
+                 * location and format properties are read from the registry file above; to
+                 * get the actual state and the rest of the data, the user will have to call
+                 * COMGETTER(State). */
+
+                /* load all children */
+                for (settings::MediaList::const_iterator it = data.llChildren.begin();
+                     it != data.llChildren.end();
+                     ++it)
+                {
+                    const settings::Medium &med = *it;
+
+                    ComObjPtr<Medium> pMedium;
+                    rc = pMedium.createObject();
+                    if (FAILED(rc)) break;
+
+                    rc = pMedium->initFromSettings(aVirtualBox,
+                                                   pActualThis,       // parent
+                                                   aDeviceType,
+                                                   uuidMachineRegistry,
+                                                   med,               // child data
+                                                   strMachineFolder,
+                                                   mediaTreeLock,
+                                                   NULL /*ppRegistered - must _not_ be &pMedium*/);
+                    if (FAILED(rc)) break;
+                }
+            }
+        }
+
+        /* Confirm a successful initialization when it's the case.  Do not confirm duplicates. */
+        if (SUCCEEDED(rc) && (Medium *)pActualThis == this)
+            autoInitSpan.setSucceeded();
+        /* Otherwise we have release the media tree lock so that Medium::uninit()
+           doesn't freak out when it is called by AutoInitSpan::~AutoInitSpan().
+           In the case of duplicates, the uninit will i_deparent this object. */
+        else
+        {
+            /** @todo Non-duplicate: Deregister? What about child load errors, should they
+             *        affect the parents? */
+            mediaTreeLock.release();
+            fRetakeLock = true;
+        }
+
+        /* Must be done after the mediaTreeLock.release above. */
+        if (ppRegistered)
+            *ppRegistered = pActualThis;
     }
 
-    /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
-        autoInitSpan.setSucceeded();
+    if (fRetakeLock)
+        mediaTreeLock.acquire();
 
     return rc;
 }
@@ -4058,24 +4103,11 @@ Utf8Str Medium::i_getName()
 }
 
 /**
- * This adds the given UUID to the list of media registries in which this
- * medium should be registered. The UUID can either be a machine UUID,
- * to add a machine registry, or the global registry UUID as returned by
- * VirtualBox::getGlobalRegistryId().
- *
- * Note that for hard disks, this method does nothing if the medium is
- * already in another registry to avoid having hard disks in more than
- * one registry, which causes trouble with keeping diff images in sync.
- * See getFirstRegistryMachineId() for details.
- *
- * @param id
- * @return true if the registry was added; false if the given id was already on the list.
+ * Same as i_addRegistry() except that we don't check the object state, making
+ * it safe to call with initFromSettings() on the call stack.
  */
-bool Medium::i_addRegistry(const Guid& id)
+bool Medium::i_addRegistryNoCallerCheck(const Guid &id)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-        return false;
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool fAdd = true;
@@ -4110,6 +4142,28 @@ bool Medium::i_addRegistry(const Guid& id)
  * This adds the given UUID to the list of media registries in which this
  * medium should be registered. The UUID can either be a machine UUID,
  * to add a machine registry, or the global registry UUID as returned by
+ * VirtualBox::getGlobalRegistryId().
+ *
+ * Note that for hard disks, this method does nothing if the medium is
+ * already in another registry to avoid having hard disks in more than
+ * one registry, which causes trouble with keeping diff images in sync.
+ * See getFirstRegistryMachineId() for details.
+ *
+ * @param id
+ * @return true if the registry was added; false if the given id was already on the list.
+ */
+bool Medium::i_addRegistry(const Guid &id)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return false;
+    return i_addRegistryNoCallerCheck(id);
+}
+
+/**
+ * This adds the given UUID to the list of media registries in which this
+ * medium should be registered. The UUID can either be a machine UUID,
+ * to add a machine registry, or the global registry UUID as returned by
  * VirtualBox::getGlobalRegistryId(). This recurses over all children.
  *
  * Note that for hard disks, this method does nothing if the medium is
@@ -4128,7 +4182,7 @@ bool Medium::i_addRegistryRecursive(const Guid &id)
     if (FAILED(autoCaller.rc()))
         return false;
 
-    bool fAdd = i_addRegistry(id);
+    bool fAdd = i_addRegistryNoCallerCheck(id);
 
     // protected by the medium tree lock held by our original caller
     for (MediaList::const_iterator it = i_getChildren().begin();

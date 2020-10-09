@@ -920,24 +920,31 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
         const settings::Medium &xmlHD = *it;
 
         ComObjPtr<Medium> pHardDisk;
-        if (SUCCEEDED(rc = pHardDisk.createObject()))
-            rc = pHardDisk->init(this,
-                                 NULL,          // parent
-                                 DeviceType_HardDisk,
-                                 uuidRegistry,
-                                 xmlHD,         // XML data; this recurses to processes the children
-                                 strMachineFolder,
-                                 treeLock);
+        rc = pHardDisk.createObject();
         if (FAILED(rc)) return rc;
-
-        rc = i_registerMedium(pHardDisk, &pHardDisk, treeLock);
+        ComObjPtr<Medium> pHardDiskActual(pHardDisk);
+        rc = pHardDisk->initFromSettings(this,
+                                         NULL,          // parent
+                                         DeviceType_HardDisk,
+                                         uuidRegistry,
+                                         xmlHD,         // XML data; this recurses to processes the children
+                                         strMachineFolder,
+                                         treeLock,
+                                         &pHardDiskActual /*never &pHardDisk!*/);
         if (SUCCEEDED(rc))
         {
-            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pHardDisk->i_getId(), DeviceType_HardDisk));
+            /** @todo r=bird: should we really do notifications for duplicates?
+             *  ((Medium *)pHardDisk != (Medium *)pHardDiskActual)
+             * The problem with that, though, is that for the children we don't quite know 
+             * which are duplicates and which aren't.   The above initFromSettings is 
+             * essentially a merge operation now, so in the duplicate case, we may just 
+             * have added a new (grand)child. */ 
+
+            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pHardDiskActual->i_getId(), DeviceType_HardDisk));
             // Add children IDs to notification using non-recursive children enumeration.
             std::vector<std::pair<MediaList::const_iterator, ComObjPtr<Medium> > > llEnumStack;
-            const MediaList& mediaList = pHardDisk->i_getChildren();
-            llEnumStack.push_back(std::pair<MediaList::const_iterator, ComObjPtr<Medium> >(mediaList.begin(), pHardDisk));
+            const MediaList& mediaList = pHardDiskActual->i_getChildren();
+            llEnumStack.push_back(std::pair<MediaList::const_iterator, ComObjPtr<Medium> >(mediaList.begin(), pHardDiskActual));
             while (!llEnumStack.empty())
             {
                 if (llEnumStack.back().first == llEnumStack.back().second->i_getChildren().end())
@@ -961,8 +968,9 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
         // Avoid trouble with lock/refcount, before returning or not.
         treeLock.release();
         pHardDisk.setNull();
-        treeLock.acquire();
+        pHardDiskActual.setNull();
         if (FAILED(rc)) return rc;
+        treeLock.acquire();
     }
 
     for (it = mediaRegistry.llDvdImages.begin();
@@ -972,24 +980,27 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
         const settings::Medium &xmlDvd = *it;
 
         ComObjPtr<Medium> pImage;
-        if (SUCCEEDED(pImage.createObject()))
-            rc = pImage->init(this,
-                              NULL,
-                              DeviceType_DVD,
-                              uuidRegistry,
-                              xmlDvd,
-                              strMachineFolder,
-                              treeLock);
+        rc = pImage.createObject();
         if (FAILED(rc)) return rc;
 
-        rc = i_registerMedium(pImage, &pImage, treeLock);
+        ComObjPtr<Medium> pImageActually = pImage;
+        rc = pImage->initFromSettings(this,
+                                      NULL,
+                                      DeviceType_DVD,
+                                      uuidRegistry,
+                                      xmlDvd,
+                                      strMachineFolder,
+                                      treeLock,
+                                      &pImageActually);
         if (SUCCEEDED(rc))
-            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pImage->i_getId(), DeviceType_DVD));
+            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pImageActually->i_getId(), DeviceType_DVD));
+
         // Avoid trouble with lock/refcount, before returning or not.
         treeLock.release();
         pImage.setNull();
-        treeLock.acquire();
+        pImageActually.setNull();
         if (FAILED(rc)) return rc;
+        treeLock.acquire();
     }
 
     for (it = mediaRegistry.llFloppyImages.begin();
@@ -999,24 +1010,27 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
         const settings::Medium &xmlFloppy = *it;
 
         ComObjPtr<Medium> pImage;
-        if (SUCCEEDED(pImage.createObject()))
-            rc = pImage->init(this,
-                              NULL,
-                              DeviceType_Floppy,
-                              uuidRegistry,
-                              xmlFloppy,
-                              strMachineFolder,
-                              treeLock);
+        rc = pImage.createObject();
         if (FAILED(rc)) return rc;
 
-        rc = i_registerMedium(pImage, &pImage, treeLock);
+        ComObjPtr<Medium> pImageActually = pImage;
+        rc = pImage->initFromSettings(this,
+                                      NULL,
+                                      DeviceType_Floppy,
+                                      uuidRegistry,
+                                      xmlFloppy,
+                                      strMachineFolder,
+                                      treeLock,
+                                      &pImageActually);
         if (SUCCEEDED(rc))
             uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pImage->i_getId(), DeviceType_Floppy));
+
         // Avoid trouble with lock/refcount, before returning or not.
         treeLock.release();
         pImage.setNull();
-        treeLock.acquire();
+        pImageActually.setNull();
         if (FAILED(rc)) return rc;
+        treeLock.acquire();
     }
 
     if (SUCCEEDED(rc))
@@ -5108,7 +5122,8 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
  */
 HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
                                      ComObjPtr<Medium> *ppMedium,
-                                     AutoWriteLock &mediaTreeLock)
+                                     AutoWriteLock &mediaTreeLock,
+                                     bool fCalledFromMediumInit)
 {
     AssertReturn(pMedium != NULL, E_INVALIDARG);
     AssertReturn(ppMedium != NULL, E_INVALIDARG);
@@ -5212,7 +5227,9 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
     if (fAddToGlobalRegistry)
     {
         AutoWriteLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
-        if (pMedium->i_addRegistry(m->uuidMediaRegistry))
+        if (  fCalledFromMediumInit
+            ? (*ppMedium)->i_addRegistryNoCallerCheck(m->uuidMediaRegistry)
+            : (*ppMedium)->i_addRegistry(m->uuidMediaRegistry))
             i_markRegistryModified(m->uuidMediaRegistry);
     }
 
