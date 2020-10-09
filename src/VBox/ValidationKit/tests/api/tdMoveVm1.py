@@ -32,7 +32,6 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os
 import sys
-import time
 import shutil
 from collections import defaultdict
 
