@@ -379,10 +379,12 @@ class SubTstDrvMoveVm1(base.SubTestDriverBase):
         """
 
         # Run VM and get new Session object.
-        oSession = self.oTstDrv.startVm(oMachine)
+        oSession = self.oTstDrv.startVm(oMachine);
+        if not oSession:
+            return False;
 
         # Some time interval should be here for not closing VM just after start.
-        time.sleep(1)
+        self.oTstDrv.waitForTasks(1000);
 
         if oMachine.state != self.oTstDrv.oVBoxMgr.constants.MachineState_Running:
             reporter.log("Machine '%s' is not Running" % (oMachine.name))
