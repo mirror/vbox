@@ -965,12 +965,12 @@ bool Appliance::i_isApplianceIdle()
     return false;
 }
 
-HRESULT Appliance::i_searchUniqueVMName(Utf8Str& aName) const
+HRESULT Appliance::i_searchUniqueVMName(Utf8Str &aName) const
 {
-    IMachine *machine = NULL;
+    ComPtr<IMachine> ptrMachine;
     char *tmpName = RTStrDup(aName.c_str());
     int i = 1;
-    while (mVirtualBox->FindMachine(Bstr(tmpName).raw(), &machine) != VBOX_E_OBJECT_NOT_FOUND)
+    while (mVirtualBox->FindMachine(Bstr(tmpName).raw(), ptrMachine.asOutParam()) != VBOX_E_OBJECT_NOT_FOUND)
     {
         RTStrFree(tmpName);
         RTStrAPrintf(&tmpName, "%s %d", aName.c_str(), i);

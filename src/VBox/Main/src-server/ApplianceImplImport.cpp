@@ -4315,14 +4315,16 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
  * up any leftovers from this function. For this, the given ImportStack instance has received information
  * about what needs cleaning up (to support rollback).
  *
- * @param vsysThis OVF virtual system (machine) to import.
- * @param vsdescThis  Matching virtual system description (machine) to import.
- * @param pNewMachine out: Newly created machine.
- * @param stack Cleanup stack for when this throws.
+ * @param       vsysThis        OVF virtual system (machine) to import.
+ * @param       vsdescThis      Matching virtual system description (machine) to import.
+ * @param[out]  pNewMachineRet  Newly created machine.
+ * @param       stack           Cleanup stack for when this throws.
+ *
+ * @throws HRESULT
  */
 void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                        ComObjPtr<VirtualSystemDescription> &vsdescThis,
-                                       ComPtr<IMachine> &pNewMachine,
+                                       ComPtr<IMachine> &pNewMachineRet,
                                        ImportStack &stack)
 {
     LogFlowFuncEnter();
@@ -4338,6 +4340,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     SafeArray<BSTR> groups; /* no groups, or maybe one group... */
     if (!stack.strPrimaryGroup.isEmpty() && stack.strPrimaryGroup != "/")
         Bstr(stack.strPrimaryGroup).detachTo(groups.appendedRaw());
+    ComPtr<IMachine> pNewMachine;
     rc = mVirtualBox->CreateMachine(Bstr(stack.strSettingsFilename).raw(),
                                     Bstr(stack.strNameVBox).raw(),
                                     ComSafeArrayAsInParam(groups),
@@ -4345,6 +4348,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                     NULL, /* aCreateFlags */
                                     pNewMachine.asOutParam());
     if (FAILED(rc)) throw rc;
+    pNewMachineRet = pNewMachine;
 
     // set the description
     if (!stack.strDescription.isEmpty())
@@ -5618,8 +5622,6 @@ void Appliance::i_importMachines(ImportStack &stack)
         const ovf::VirtualSystem &vsysThis = *it;
         ComObjPtr<VirtualSystemDescription> vsdescThis = (*it1);
 
-        ComPtr<IMachine> pNewMachine;
-
         // there are two ways in which we can create a vbox machine from OVF:
         // -- either this OVF was written by vbox 3.2 or later, in which case there is a <vbox:Machine> element
         //    in the <VirtualSystem>; then the VirtualSystemDescription::Data has a settings::MachineConfigFile
@@ -5736,6 +5738,7 @@ void Appliance::i_importMachines(ImportStack &stack)
             stack.strDescription = vsdeDescription.front()->strVBoxCurrent;
 
         // import vbox:machine or OVF now
+        ComPtr<IMachine> pNewMachine; /** @todo pointless */
         if (vsdescThis->m->pConfig)
             // vbox:Machine config
             i_importVBoxMachine(vsdescThis, pNewMachine, stack);
