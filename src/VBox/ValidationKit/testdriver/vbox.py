@@ -1316,6 +1316,7 @@ class TestDriver(base.TestDriver):                                              
                         self.oVBoxSvcProcess.wait(7500);
             else:
                 reporter.log('VBoxSVC is no longer running...');
+
             if not self.oVBoxSvcProcess.isRunning():
                 iExit = self.oVBoxSvcProcess.getExitCode();
                 if iExit != 0 or not self.oVBoxSvcProcess.isNormalExit():
@@ -1929,6 +1930,7 @@ class TestDriver(base.TestDriver):                                              
         If your test driver overrides this, it should normally call us at the
         end of the job.
         """
+        cErrorEntry = reporter.getErrorCount();
 
         # Kill any left over VM processes.
         self._powerOffAllVms();
@@ -1963,7 +1965,13 @@ class TestDriver(base.TestDriver):                                              
             # Testbox debugging - END   - TEMPORARY, REMOVE ASAP.
 
         # Finally, call the base driver to wipe the scratch space.
-        return base.TestDriver.actionCleanupAfter(self);
+        fRc = base.TestDriver.actionCleanupAfter(self);
+
+        # Flag failure if the error count increased.
+        if reporter.getErrorCount() > cErrorEntry:
+            fRc = False;
+        return fRc;
+
 
     def actionAbort(self):
         """
