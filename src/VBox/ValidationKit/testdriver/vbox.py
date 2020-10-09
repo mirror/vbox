@@ -1930,7 +1930,7 @@ class TestDriver(base.TestDriver):                                              
         If your test driver overrides this, it should normally call us at the
         end of the job.
         """
-        cErrorEntry = reporter.getErrorCount();
+        cErrorsEntry = reporter.getErrorCount();
 
         # Kill any left over VM processes.
         self._powerOffAllVms();
@@ -1968,7 +1968,7 @@ class TestDriver(base.TestDriver):                                              
         fRc = base.TestDriver.actionCleanupAfter(self);
 
         # Flag failure if the error count increased.
-        if reporter.getErrorCount() > cErrorEntry:
+        if reporter.getErrorCount() > cErrorsEntry:
             fRc = False;
         return fRc;
 
