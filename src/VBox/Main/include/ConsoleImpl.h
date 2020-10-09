@@ -734,7 +734,7 @@ private:
                        const char *pcszBwGroup,
                        bool fDiscard,
                        bool fNonRotational,
-                       IMedium *pMedium,
+                       ComPtr<IMedium> ptrMedium,
                        MachineState_T aMachineState,
                        HRESULT *phrc);
     int i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pfHostIP, bool *pfEncrypted);

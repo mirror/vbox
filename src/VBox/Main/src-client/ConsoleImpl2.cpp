@@ -4514,8 +4514,8 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
         mapMediumAttachments[devicePath] = pMediumAtt;
 
-        ComPtr<IMedium> pMedium;
-        hrc = pMediumAtt->COMGETTER(Medium)(pMedium.asOutParam());                          H();
+        ComPtr<IMedium> ptrMedium;
+        hrc = pMediumAtt->COMGETTER(Medium)(ptrMedium.asOutParam());                        H();
 
         /*
          * 1. Only check this for hard disk images.
@@ -4526,16 +4526,16 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
             && (   aMachineState == MachineState_Starting
                 || aMachineState == MachineState_Restoring))
         {
-            rc = i_checkMediumLocation(pMedium, &fUseHostIOCache);
+            rc = i_checkMediumLocation(ptrMedium, &fUseHostIOCache);
             if (RT_FAILURE(rc))
                 return rc;
         }
 
         BOOL fPassthrough = FALSE;
-        if (pMedium)
+        if (ptrMedium.isNotNull())
         {
             BOOL fHostDrive;
-            hrc = pMedium->COMGETTER(HostDrive)(&fHostDrive);                               H();
+            hrc = ptrMedium->COMGETTER(HostDrive)(&fHostDrive);                             H();
             if (  (   lType == DeviceType_DVD
                    || lType == DeviceType_Floppy)
                 && !fHostDrive)
@@ -4544,7 +4544,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                  * Informative logging.
                  */
                 Bstr strFile;
-                hrc = pMedium->COMGETTER(Location)(strFile.asOutParam());                   H();
+                hrc = ptrMedium->COMGETTER(Location)(strFile.asOutParam());                 H();
                 Utf8Str utfFile = Utf8Str(strFile);
                 RTFSTYPE enmFsTypeFile = RTFSTYPE_UNKNOWN;
                 (void)RTFsQueryType(utfFile.c_str(), &enmFsTypeFile);
@@ -4592,7 +4592,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                             strBwGroup.isEmpty() ? NULL : Utf8Str(strBwGroup).c_str(),
                             !!fDiscard,
                             !!fNonRotational,
-                            pMedium,
+                            ptrMedium,
                             aMachineState,
                             phrc);
         if (RT_FAILURE(rc))
@@ -4678,7 +4678,7 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                             const char *pcszBwGroup,
                             bool fDiscard,
                             bool fNonRotational,
-                            IMedium *pMedium,
+                            ComPtr<IMedium> ptrMedium,
                             MachineState_T aMachineState,
                             HRESULT *phrc)
 {
@@ -4694,22 +4694,22 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
 
 
         BOOL fHostDrive = FALSE;
-        MediumType_T mediumType  = MediumType_Normal;
-        if (pMedium)
+        MediumType_T mediumType = MediumType_Normal;
+        if (ptrMedium.isNotNull())
         {
-            hrc = pMedium->COMGETTER(HostDrive)(&fHostDrive);                               H();
-            hrc = pMedium->COMGETTER(Type)(&mediumType);                                    H();
+            hrc = ptrMedium->COMGETTER(HostDrive)(&fHostDrive);                             H();
+            hrc = ptrMedium->COMGETTER(Type)(&mediumType);                                  H();
         }
 
         if (fHostDrive)
         {
-            Assert(pMedium);
+            Assert(ptrMedium.isNotNull());
             if (enmType == DeviceType_DVD)
             {
                 InsertConfigString(pLunL0, "Driver", "HostDVD");
                 InsertConfigNode(pLunL0, "Config", &pCfg);
 
-                hrc = pMedium->COMGETTER(Location)(bstr.asOutParam());                      H();
+                hrc = ptrMedium->COMGETTER(Location)(bstr.asOutParam());                    H();
                 InsertConfigString(pCfg, "Path", bstr);
 
                 InsertConfigInteger(pCfg, "Passthrough", fPassthrough);
@@ -4719,7 +4719,7 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                 InsertConfigString(pLunL0, "Driver", "HostFloppy");
                 InsertConfigNode(pLunL0, "Config", &pCfg);
 
-                hrc = pMedium->COMGETTER(Location)(bstr.asOutParam());                      H();
+                hrc = ptrMedium->COMGETTER(Location)(bstr.asOutParam());                    H();
                 InsertConfigString(pCfg, "Path", bstr);
             }
         }
@@ -4754,7 +4754,7 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                     InsertConfigInteger(pCfg, "Mountable", 0);
             }
 
-            if (    pMedium
+            if (    ptrMedium.isNotNull()
                 && (   enmType == DeviceType_DVD
                     || enmType == DeviceType_Floppy)
                )
@@ -4766,29 +4766,31 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                 // we failed on startup, but that's not good because the only way out then
                 // would be to discard the VM state...
                 MediumState_T mediumState;
-                hrc = pMedium->RefreshState(&mediumState);                                  H();
+                hrc = ptrMedium->RefreshState(&mediumState);                                H();
                 if (mediumState == MediumState_Inaccessible)
                 {
                     Bstr loc;
-                    hrc = pMedium->COMGETTER(Location)(loc.asOutParam());                   H();
+                    hrc = ptrMedium->COMGETTER(Location)(loc.asOutParam());                 H();
                     i_atVMRuntimeErrorCallbackF(0, "DvdOrFloppyImageInaccessible",
                                                 "The image file '%ls' is inaccessible and is being ignored. "
                                                 "Please select a different image file for the virtual %s drive.",
                                                 loc.raw(),
                                                 enmType == DeviceType_DVD ? "DVD" : "floppy");
-                    pMedium = NULL;
+                    ptrMedium.setNull();
                 }
             }
 
-            if (pMedium)
+            if (ptrMedium.isNotNull())
             {
                 /* Start with length of parent chain, as the list is reversed */
                 unsigned uImage = 0;
-                IMedium *pTmp = pMedium;
-                while (pTmp)
+                ComPtr<IMedium> ptrTmp = ptrMedium;
+                while (ptrTmp.isNotNull())
                 {
                     uImage++;
-                    hrc = pTmp->COMGETTER(Parent)(&pTmp);                                   H();
+                    ComPtr<IMedium> ptrParent;
+                    hrc = ptrTmp->COMGETTER(Parent)(ptrParent.asOutParam());               H();
+                    ptrTmp = ptrParent;
                 }
                 /* Index of last image */
                 uImage--;
@@ -4812,10 +4814,10 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                 }
 # endif
 
-                hrc = pMedium->COMGETTER(Location)(bstr.asOutParam());                      H();
+                hrc = ptrMedium->COMGETTER(Location)(bstr.asOutParam());                    H();
                 InsertConfigString(pCfg, "Path", bstr);
 
-                hrc = pMedium->COMGETTER(Format)(bstr.asOutParam());                        H();
+                hrc = ptrMedium->COMGETTER(Format)(bstr.asOutParam());                      H();
                 InsertConfigString(pCfg, "Format", bstr);
 
                 if (mediumType == MediumType_Readonly)
@@ -4876,23 +4878,24 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                 /* Pass all custom parameters. */
                 bool fHostIP = true;
                 bool fEncrypted = false;
-                hrc = i_configMediumProperties(pCfg, pMedium, &fHostIP, &fEncrypted); H();
+                hrc = i_configMediumProperties(pCfg, ptrMedium, &fHostIP, &fEncrypted); H();
 
                 /* Create an inverted list of parents. */
                 uImage--;
-                IMedium *pParentMedium = pMedium;
+                ComPtr<IMedium> ptrParentMedium = ptrMedium;
                 for (PCFGMNODE pParent = pCfg;; uImage--)
                 {
-                    hrc = pParentMedium->COMGETTER(Parent)(&pMedium);                       H();
-                    if (!pMedium)
+                    ComPtr<IMedium> ptrCurMedium;
+                    hrc = ptrParentMedium->COMGETTER(Parent)(ptrCurMedium.asOutParam());    H();
+                    if (ptrCurMedium.isNull())
                         break;
 
                     PCFGMNODE pCur;
                     InsertConfigNode(pParent, "Parent", &pCur);
-                    hrc = pMedium->COMGETTER(Location)(bstr.asOutParam());                  H();
+                    hrc = ptrCurMedium->COMGETTER(Location)(bstr.asOutParam()); H();
                     InsertConfigString(pCur, "Path", bstr);
 
-                    hrc = pMedium->COMGETTER(Format)(bstr.asOutParam());                    H();
+                    hrc = ptrCurMedium->COMGETTER(Format)(bstr.asOutParam());  H();
                     InsertConfigString(pCur, "Format", bstr);
 
                     if (fSetupMerge)
@@ -4904,11 +4907,11 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                     }
 
                     /* Configure medium properties. */
-                    hrc = i_configMediumProperties(pCur, pMedium, &fHostIP, &fEncrypted); H();
+                    hrc = i_configMediumProperties(pCur, ptrCurMedium, &fHostIP, &fEncrypted); H();
 
                     /* next */
                     pParent = pCur;
-                    pParentMedium = pMedium;
+                    ptrParentMedium = ptrCurMedium;
                 }
 
                 /* Custom code: put marker to not use host IP stack to driver
