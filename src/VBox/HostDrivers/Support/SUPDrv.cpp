@@ -1812,6 +1812,8 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
                 REQ_CHECK_EXPR_FMT(offPrevEnd == pReq->u.In.cbImageBits,
                                    ("SUP_IOCTL_LDR_LOAD: offPrevEnd %#lx cbImageBits %#lx\n", (long)i, (long)offPrevEnd, (long)pReq->u.In.cbImageBits));
             }
+            REQ_CHECK_EXPR_FMT(!(pReq->u.In.fFlags & ~SUPLDRLOAD_F_VALID_MASK),
+                               ("SUP_IOCTL_LDR_LOAD: fFlags=%#x\n", (unsigned)pReq->u.In.fFlags));
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrLoad(pDevExt, pSession, pReq);
@@ -5133,6 +5135,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pImage->uState          = SUP_IOCTL_LDR_OPEN;
     pImage->cUsage          = 1;
     pImage->pDevExt         = pDevExt;
+    pImage->pImageImport    = NULL;
     pImage->uMagic          = SUPDRVLDRIMAGE_MAGIC;
     memcpy(pImage->szName, pReq->u.In.szName, cchName + 1);
 
@@ -5294,6 +5297,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 {
     PSUPDRVLDRUSAGE pUsage;
     PSUPDRVLDRIMAGE pImage;
+    PSUPDRVLDRIMAGE pImageImport;
     int             rc;
     SUPDRV_CHECK_SMAP_SETUP();
     LogFlow(("supdrvIOCtl_LdrLoad: pvImageBase=%p cbImageWithEverything=%d\n", pReq->u.In.pvImageBase, pReq->u.In.cbImageWithEverything));
@@ -5341,6 +5345,29 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     {
         supdrvLdrUnlock(pDevExt);
         return supdrvLdrLoadError(VERR_PERMISSION_DENIED, pReq, "Loader is locked down");
+    }
+
+    /*
+     * If the new image is a dependant of VMMR0.r0, resolve it via the
+     * caller's usage list and make sure it's in ready state.
+     */
+    pImageImport = NULL;
+    if (pReq->u.In.fFlags & SUPLDRLOAD_F_DEP_VMMR0)
+    {
+        PSUPDRVLDRUSAGE pUsageDependency = pSession->pLdrUsage;
+        while (pUsageDependency && pUsageDependency->pImage->pvImage != pDevExt->pvVMMR0)
+            pUsageDependency = pUsageDependency->pNext;
+        if (!pUsageDependency || !pDevExt->pvVMMR0)
+        {
+            supdrvLdrUnlock(pDevExt);
+            return supdrvLdrLoadError(VERR_MODULE_NOT_FOUND, pReq, "VMMR0.r0 not loaded by session");
+        }
+        pImageImport = pUsageDependency->pImage;
+        if (pImageImport->uState != SUP_IOCTL_LDR_LOAD)
+        {
+            supdrvLdrUnlock(pDevExt);
+            return supdrvLdrLoadError(VERR_MODULE_NOT_FOUND, pReq, "VMMR0.r0 is not ready (state %#x)", pImageImport->uState);
+        }
     }
 
     /*
@@ -5519,6 +5546,14 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
     if (RT_SUCCESS(rc))
     {
+        /* Increase the usage counter of any import image. */
+        if (pImageImport)
+        {
+            pImageImport->cUsage++;
+            pImage->pImageImport = pImageImport;
+        }
+
+        /* Done! */
         SUPR0Printf("vboxdrv: %RKv %s\n", pImage->pvImage, pImage->szName);
         pReq->u.Out.uErrorMagic = 0;
         pReq->u.Out.szError[0]  = '\0';
@@ -5591,6 +5626,8 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      */
     rc = VINF_SUCCESS;
     pImage = pUsage->pImage;
+    Log(("SUP_IOCTL_LDR_FREE: pImage=%p %s cUsage=%d r3=%d r0=%u\n",
+         pImage, pImage->szName, pImage->cUsage, pUsage->cRing3Usage, pUsage->cRing0Usage));
     if (pImage->cUsage <= 1 || pUsage->cRing3Usage + pUsage->cRing0Usage <= 1)
     {
         /*
@@ -5990,94 +6027,116 @@ static int supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage, bo
  */
 static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
-    PSUPDRVLDRIMAGE pImagePrev;
-    LogFlow(("supdrvLdrFree: pImage=%p\n", pImage));
-
-    /*
-     * Warn if we're releasing images while the image loader interface is
-     * locked down -- we won't be able to reload them!
-     */
-    if (pDevExt->fLdrLockedDown)
-        Log(("supdrvLdrFree: Warning: unloading '%s' image, while loader interface is locked down!\n", pImage->szName));
-
-    /* find it - arg. should've used doubly linked list. */
-    Assert(pDevExt->pLdrImages);
-    pImagePrev = NULL;
-    if (pDevExt->pLdrImages != pImage)
+    unsigned cLoops;
+    for (cLoops = 0; ; cLoops++)
     {
-        pImagePrev = pDevExt->pLdrImages;
-        while (pImagePrev->pNext != pImage)
-            pImagePrev = pImagePrev->pNext;
-        Assert(pImagePrev->pNext == pImage);
-    }
+        PSUPDRVLDRIMAGE pImagePrev;
+        PSUPDRVLDRIMAGE pImageImport;
+        LogFlow(("supdrvLdrFree: pImage=%p %s [loop %u]\n", pImage, pImage->szName, cLoops));
+        AssertBreak(cLoops < 2);
 
-    /* unlink */
-    if (pImagePrev)
-        pImagePrev->pNext = pImage->pNext;
-    else
-        pDevExt->pLdrImages = pImage->pNext;
+        /*
+         * Warn if we're releasing images while the image loader interface is
+         * locked down -- we won't be able to reload them!
+         */
+        if (pDevExt->fLdrLockedDown)
+            Log(("supdrvLdrFree: Warning: unloading '%s' image, while loader interface is locked down!\n", pImage->szName));
 
-    /* check if this is VMMR0.r0 unset its entry point pointers. */
-    if (pDevExt->pvVMMR0 == pImage->pvImage)
-        supdrvLdrUnsetVMMR0EPs(pDevExt);
+        /* find it - arg. should've used doubly linked list. */
+        Assert(pDevExt->pLdrImages);
+        pImagePrev = NULL;
+        if (pDevExt->pLdrImages != pImage)
+        {
+            pImagePrev = pDevExt->pLdrImages;
+            while (pImagePrev->pNext != pImage)
+                pImagePrev = pImagePrev->pNext;
+            Assert(pImagePrev->pNext == pImage);
+        }
 
-    /* check for objects with destructors in this image. (Shouldn't happen.) */
-    if (pDevExt->pObjs)
-    {
-        unsigned        cObjs = 0;
-        PSUPDRVOBJ      pObj;
-        RTSpinlockAcquire(pDevExt->Spinlock);
-        for (pObj = pDevExt->pObjs; pObj; pObj = pObj->pNext)
-            if (RT_UNLIKELY((uintptr_t)pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImageBits))
-            {
-                pObj->pfnDestructor = NULL;
-                cObjs++;
-            }
-        RTSpinlockRelease(pDevExt->Spinlock);
-        if (cObjs)
-            OSDBGPRINT(("supdrvLdrFree: Image '%s' has %d dangling objects!\n", pImage->szName, cObjs));
-    }
+        /* unlink */
+        if (pImagePrev)
+            pImagePrev->pNext = pImage->pNext;
+        else
+            pDevExt->pLdrImages = pImage->pNext;
 
-    /* call termination function if fully loaded. */
-    if (    pImage->pfnModuleTerm
-        &&  pImage->uState == SUP_IOCTL_LDR_LOAD)
-    {
-        LogFlow(("supdrvIOCtl_LdrLoad: calling pfnModuleTerm=%p\n", pImage->pfnModuleTerm));
-        pDevExt->hLdrTermThread = RTThreadNativeSelf();
-        pImage->pfnModuleTerm(pImage);
-        pDevExt->hLdrTermThread = NIL_RTNATIVETHREAD;
-    }
+        /* check if this is VMMR0.r0 unset its entry point pointers. */
+        if (pDevExt->pvVMMR0 == pImage->pvImage)
+            supdrvLdrUnsetVMMR0EPs(pDevExt);
 
-    /* Inform the tracing component. */
-    supdrvTracerModuleUnloading(pDevExt, pImage);
+        /* check for objects with destructors in this image. (Shouldn't happen.) */
+        if (pDevExt->pObjs)
+        {
+            unsigned        cObjs = 0;
+            PSUPDRVOBJ      pObj;
+            RTSpinlockAcquire(pDevExt->Spinlock);
+            for (pObj = pDevExt->pObjs; pObj; pObj = pObj->pNext)
+                if (RT_UNLIKELY((uintptr_t)pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImageBits))
+                {
+                    pObj->pfnDestructor = NULL;
+                    cObjs++;
+                }
+            RTSpinlockRelease(pDevExt->Spinlock);
+            if (cObjs)
+                OSDBGPRINT(("supdrvLdrFree: Image '%s' has %d dangling objects!\n", pImage->szName, cObjs));
+        }
 
-    /* Do native unload if appropriate, then inform the native code about the
-       unloading (mainly for non-native loading case). */
-    if (pImage->fNative)
-        supdrvOSLdrUnload(pDevExt, pImage);
-    supdrvOSLdrNotifyUnloaded(pDevExt, pImage);
+        /* call termination function if fully loaded. */
+        if (    pImage->pfnModuleTerm
+            &&  pImage->uState == SUP_IOCTL_LDR_LOAD)
+        {
+            LogFlow(("supdrvIOCtl_LdrLoad: calling pfnModuleTerm=%p\n", pImage->pfnModuleTerm));
+            pDevExt->hLdrTermThread = RTThreadNativeSelf();
+            pImage->pfnModuleTerm(pImage);
+            pDevExt->hLdrTermThread = NIL_RTNATIVETHREAD;
+        }
 
-    /* free the image */
-    pImage->uMagic  = SUPDRVLDRIMAGE_MAGIC_DEAD;
-    pImage->cUsage  = 0;
-    pImage->pDevExt = NULL;
-    pImage->pNext   = NULL;
-    pImage->uState  = SUP_IOCTL_LDR_FREE;
+        /* Inform the tracing component. */
+        supdrvTracerModuleUnloading(pDevExt, pImage);
+
+        /* Do native unload if appropriate, then inform the native code about the
+           unloading (mainly for non-native loading case). */
+        if (pImage->fNative)
+            supdrvOSLdrUnload(pDevExt, pImage);
+        supdrvOSLdrNotifyUnloaded(pDevExt, pImage);
+
+        /* free the image */
+        pImage->uMagic  = SUPDRVLDRIMAGE_MAGIC_DEAD;
+        pImage->cUsage  = 0;
+        pImage->pDevExt = NULL;
+        pImage->pNext   = NULL;
+        pImage->uState  = SUP_IOCTL_LDR_FREE;
 #ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
-    RTR0MemObjFree(pImage->hMemObjImage, true /*fMappings*/);
-    pImage->hMemObjImage = NIL_RTR0MEMOBJ;
+        RTR0MemObjFree(pImage->hMemObjImage, true /*fMappings*/);
+        pImage->hMemObjImage = NIL_RTR0MEMOBJ;
 #else
-    RTMemExecFree(pImage->pvImageAlloc, pImage->cbImageBits + 31);
-    pImage->pvImageAlloc = NULL;
+        RTMemExecFree(pImage->pvImageAlloc, pImage->cbImageBits + 31);
+        pImage->pvImageAlloc = NULL;
 #endif
-    pImage->pvImage = NULL;
-    RTMemFree(pImage->pachStrTab);
-    pImage->pachStrTab = NULL;
-    RTMemFree(pImage->paSymbols);
-    pImage->paSymbols = NULL;
-    RTMemFree(pImage->paSegments);
-    pImage->paSegments = NULL;
-    RTMemFree(pImage);
+        pImage->pvImage = NULL;
+        RTMemFree(pImage->pachStrTab);
+        pImage->pachStrTab = NULL;
+        RTMemFree(pImage->paSymbols);
+        pImage->paSymbols = NULL;
+        RTMemFree(pImage->paSegments);
+        pImage->paSegments = NULL;
+
+        pImageImport = pImage->pImageImport;
+        pImage->pImageImport = NULL;
+
+        RTMemFree(pImage);
+
+        /*
+         * Deal with any import image.
+         */
+        if (!pImageImport)
+            break;
+        if (pImageImport->cUsage > 1)
+        {
+            pImageImport->cUsage--;
+            break;
+        }
+        pImage = pImageImport;
+    }
 }
 
 

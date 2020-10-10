@@ -221,9 +221,8 @@ typedef SUPREQHDR *PSUPREQHDR;
  *
  * @todo Pending work on next major version change:
  *          - Nothing.
- * @note 0x002f0000 is used by 6.0. The next version number must be 0x00300000.
  */
-#define SUPDRV_IOC_VERSION                              0x002e0000
+#define SUPDRV_IOC_VERSION                              0x00300000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -481,6 +480,8 @@ typedef struct SUPLDRLOAD
             uint32_t        cSegments;
             /** Size of image data in achImage. */
             uint32_t        cbImageWithEverything;
+            /** Flags (SUPLDRLOAD_F_XXX). */
+            uint32_t        fFlags;
             /** The image data. */
             uint8_t         abImage[1];
         } In;
@@ -498,6 +499,10 @@ typedef struct SUPLDRLOAD
  * present on SUP_IOCTL_LDR_LOAD failure.
  * @remarks The value is choosen to be an unlikely init and term address. */
 #define SUPLDRLOAD_ERROR_MAGIC      UINT64_C(0xabcdefef0feddcb9)
+/** The module depends on VMMR0. */
+#define SUPLDRLOAD_F_DEP_VMMR0      RT_BIT_32(0)
+/** Valid flag mask. */
+#define SUPLDRLOAD_F_VALID_MASK     UINT32_C(0x00000001)
 /** @} */
 
 

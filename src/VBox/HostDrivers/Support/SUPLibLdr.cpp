@@ -124,6 +124,7 @@ typedef struct SUPLDRRESIMPARGS
 {
     const char *pszModule;
     PRTERRINFO  pErrInfo;
+    uint32_t    fLoadReq;               /**< SUPLDRLOAD_F_XXX */
 } SUPLDRRESIMPARGS, *PSUPLDRRESIMPARGS;
 
 /**
@@ -186,14 +187,13 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
     /*
      * Check the VMMR0.r0 module if loaded.
      */
-    /** @todo call the SUPR3LoadModule caller.... */
-    /** @todo proper reference counting and such. */
     if (g_pvVMMR0 != NIL_RTR0PTR)
     {
         void *pvValue;
         if (!SUPR3GetSymbolR0((void *)g_pvVMMR0, pszSymbol, &pvValue))
         {
             *pValue = (uintptr_t)pvValue;
+            pArgs->fLoadReq |= SUPLDRLOAD_F_DEP_VMMR0;
             return VINF_SUCCESS;
         }
     }
@@ -518,7 +518,7 @@ static int supLoadModuleInner(RTLDRMOD hLdrMod, PSUPLDRLOAD pLoadReq, uint32_t c
     /*
      * Get the image bits.
      */
-    SUPLDRRESIMPARGS Args = { pszModule, pErrInfo };
+    SUPLDRRESIMPARGS Args = { pszModule, pErrInfo, 0 };
     int rc = RTLdrGetBits(hLdrMod, &pLoadReq->u.In.abImage[0], uImageBase, supLoadModuleResolveImport, &Args);
     if (RT_FAILURE(rc))
     {
@@ -658,6 +658,7 @@ static int supLoadModuleInner(RTLDRMOD hLdrMod, PSUPLDRLOAD pLoadReq, uint32_t c
     pLoadReq->u.In.cSegments                  = cSegments;
     pLoadReq->u.In.cbImageWithEverything      = cbImageWithEverything;
     pLoadReq->u.In.pvImageBase                = uImageBase;
+    pLoadReq->u.In.fFlags                     = Args.fLoadReq;
     if (!g_uSupFakeMode)
     {
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_LDR_LOAD, pLoadReq, SUP_IOCTL_LDR_LOAD_SIZE(cbImageWithEverything));
