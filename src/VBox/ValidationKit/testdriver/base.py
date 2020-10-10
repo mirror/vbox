@@ -744,7 +744,7 @@ class Process(TdTaskBase):
         if self.isRunning():
             return False;
         if sys.platform == 'win32':
-            return False;
+            return True;
         return os.WIFEXITED(self.uExitCode); # pylint: disable=no-member
 
     def interrupt(self):
