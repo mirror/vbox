@@ -935,10 +935,11 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
         {
             /** @todo r=bird: should we really do notifications for duplicates?
              *  ((Medium *)pHardDisk != (Medium *)pHardDiskActual)
-             * The problem with that, though, is that for the children we don't quite know 
-             * which are duplicates and which aren't.   The above initFromSettings is 
-             * essentially a merge operation now, so in the duplicate case, we may just 
-             * have added a new (grand)child. */ 
+             * The problem with that, though, is that for the children we don't quite know
+             * which are duplicates and which aren't.   The above initFromSettings is
+             * essentially poforming a merge operation now, so in the duplicate case, we may
+             * just have added a new (grand)child.  Why don't we just pass uIdsForNotify
+             * down to initFromSettings, that'll save us this extra walking? */
 
             uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pHardDiskActual->i_getId(), DeviceType_HardDisk));
             // Add children IDs to notification using non-recursive children enumeration.
