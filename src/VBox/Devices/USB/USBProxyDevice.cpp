@@ -1193,10 +1193,10 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
     }
 
     /*
-     * Disable remote wakeup capability, see @bugref{9839}. This is done on 
-     * a device/configuration level, no need to dig too deep through the descriptors. 
-     * On most backends, we can't perform a real selective suspend, and more importantly 
-     * can't receive a remote wake notification. If a guest suspends the device and waits 
+     * Disable remote wakeup capability, see @bugref{9839}. This is done on
+     * a device/configuration level, no need to dig too deep through the descriptors.
+     * On most backends, we can't perform a real selective suspend, and more importantly
+     * can't receive a remote wake notification. If a guest suspends the device and waits
      * for a remote wake, the device is effectively dead.
      */
     if (fEditRemoteWake)
