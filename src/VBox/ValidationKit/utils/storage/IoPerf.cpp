@@ -392,11 +392,11 @@ static RTIOQUEUEOP ioPerfJobTestGetIoQOp(PIOPERFJOB pJob)
     {
         case IOPERFTEST_FIRST_WRITE:
         case IOPERFTEST_SEQ_WRITE:
-        case IOPERFTEST_SEQ_READ:
         case IOPERFTEST_REV_WRITE:
         case IOPERFTEST_RND_WRITE:
             return RTIOQUEUEOP_WRITE;
 
+        case IOPERFTEST_SEQ_READ:
         case IOPERFTEST_RND_READ:
         case IOPERFTEST_REV_READ:
             return RTIOQUEUEOP_READ;
