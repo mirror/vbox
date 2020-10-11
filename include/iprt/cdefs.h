@@ -1338,7 +1338,7 @@
 # define DECLEXPORT(a_RetType)          a_RetType
 #endif
 
-/** @def DECL_IMPORT_NOTHROW
+/** @def DECL_EXPORT_NOTHROW
  * How to declare an exported function that does not throw C++ exceptions.
  * @param   a_RetType   The return type of the function declaration.
  */
