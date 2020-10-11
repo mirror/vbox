@@ -45,11 +45,13 @@ extern DECL_HIDDEN_DATA(bool volatile)  g_frtAtExitCalled;
 
 /**
  * Validates and sets the process priority.
+ *
  * This will check that all rtThreadNativeSetPriority() will success for all the
  * thread types when applied to the current thread.
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  * @param   enmPriority     The priority to validate and set.
+ *
  * @remark  Located in sched.
  */
 DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority);

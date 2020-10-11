@@ -596,15 +596,6 @@ static int rtSchedNativeCheckThreadTypes(const PROCPRIORITY *pCfg, bool fHavePri
 }
 
 
-/**
- * Validates and sets the process priority.
- *
- * This will check that all rtThreadNativeSetPriority() will success for all the
- * thread types when applied to the current thread.
- *
- * @returns iprt status code.
- * @param   enmPriority     The priority to validate and set.
- */
 DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
 {
     Assert(enmPriority > RTPROCPRIORITY_INVALID && enmPriority < RTPROCPRIORITY_LAST);
@@ -680,17 +671,6 @@ static DECLCALLBACK(int) rtThreadLinuxSetPriorityCallback(PRTTHREADINT pThread, 
 }
 
 
-/**
- * Sets the priority of the thread according to the thread type
- * and current process priority.
- *
- * The RTTHREADINT::enmType member has not yet been updated and will be updated by
- * the caller on a successful return.
- *
- * @returns iprt status code.
- * @param   pThread     The thread in question.
- * @param   enmType     The thread type.
- */
 DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     /* sanity */
