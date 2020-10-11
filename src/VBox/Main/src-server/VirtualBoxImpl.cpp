@@ -5119,6 +5119,7 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
  *                  created.
  * @param mediaTreeLock Reference to the AutoWriteLock holding the media tree
  *                  lock, necessary to release it in the right spot.
+ * @param fCalledFromMediumInit Flag whether this is called from Medium::init().
  * @return
  */
 HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
