@@ -1453,12 +1453,6 @@ static DECLCALLBACK(int) pdmBlkCacheEntryDestroy(PAVLRU64NODECORE pNode, void *p
     return VINF_SUCCESS;
 }
 
-/**
- * Destroys all cache resources used by the given endpoint.
- *
- * @returns nothing.
- * @param   pBlkCache       Block cache handle.
- */
 VMMR3DECL(void) PDMR3BlkCacheRelease(PPDMBLKCACHE pBlkCache)
 {
     PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
