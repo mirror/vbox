@@ -929,7 +929,8 @@ public:
     GuestDnDMIMEList  defaultFormats(void) const { return m_strDefaultFormats; }
     /** @}  */
 
-    /** @name Source / target management. */
+    /** @name Source / target management.
+     * @{ */
     int               registerSource(const ComObjPtr<GuestDnDSource> &Source);
     int               unregisterSource(const ComObjPtr<GuestDnDSource> &Source);
     size_t            getSourceCount(void);
