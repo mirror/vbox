@@ -303,6 +303,7 @@ int main(int argc, char **argv)
     size_t cbAfterRand = RTHeapOffsetGetFreeSize(Heap);
     RTTESTI_CHECK_MSG(cbAfterRand == cbAfter, ("cbAfterRand=%zu cbAfter=%zu\n", cbAfterRand, cbAfter));
 
+    RTTESTI_CHECK_RC(rc = RTRandAdvDestroy(hRand), VINF_SUCCESS);
     return RTTestSummaryAndDestroy(hTest);
 }
 
