@@ -337,7 +337,7 @@ static PVERIFIERCACHEIMPORT volatile g_pVerifierCacheTodoImports = NULL;
 /** The windows path to dir \\SystemRoot\\System32 directory (technically
  *  this whatever \\KnownDlls\\KnownDllPath points to). */
 SUPSYSROOTDIRBUF            g_System32WinPath;
-/** @ */
+/** @} */
 
 /** Positive if the DLL notification callback has been registered, counts
  * registration attempts as negative. */
