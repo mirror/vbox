@@ -88,7 +88,8 @@ typedef struct SHCLCLIENTPODSTATE
 } SHCLCLIENTPODSTATE, *PSHCLCLIENTPODSTATE;
 
 /** @name SHCLCLIENTSTATE_FLAGS_XXX
- * @note Part of saved state! */
+ * @note Part of saved state!
+ * @{ */
 /** No Shared Clipboard client flags defined. */
 #define SHCLCLIENTSTATE_FLAGS_NONE              0
 /** Client has a guest read operation active. Currently unused. */
@@ -98,7 +99,7 @@ typedef struct SHCLCLIENTPODSTATE
 /** @} */
 
 /**
- * Strucutre needed to support backwards compatbility for old(er) Guest Additions (< 6.1),
+ * Structure needed to support backwards compatbility for old(er) Guest Additions (< 6.1),
  * which did not know the context ID concept then.
  */
 typedef struct SHCLCLIENTLEGACYCID
@@ -116,7 +117,7 @@ typedef struct SHCLCLIENTLEGACYCID
 typedef SHCLCLIENTLEGACYCID *PSHCLCLIENTLEGACYCID;
 
 /**
- * Strucutre for keeping legacy state, required for keeping backwards compatibility
+ * Structure for keeping legacy state, required for keeping backwards compatibility
  * to old(er) Guest Additions.
  */
 typedef struct SHCLCLIENTLEGACYSTATE
