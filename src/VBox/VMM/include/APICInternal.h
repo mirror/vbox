@@ -844,7 +844,7 @@ typedef enum APICMSRACCESS
     /** Count of enum members (don't use). */
     APICMSRACCESS_COUNT
 } APICMSRACCESS;
-/** @} */
+
 
 /** @def APIC_CACHE_LINE_SIZE
  * Padding (in bytes) for aligning data in different cache lines. Present
