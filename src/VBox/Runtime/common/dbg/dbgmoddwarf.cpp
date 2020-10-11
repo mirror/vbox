@@ -234,7 +234,8 @@ typedef struct RTDWARFCURSOR
  */
 typedef struct RTDWARFLINESTATE
 {
-    /** Virtual Line Number Machine Registers. */
+    /** @name Virtual Line Number Machine Registers.
+     * @{ */
     struct
     {
         uint64_t        uAddress;
