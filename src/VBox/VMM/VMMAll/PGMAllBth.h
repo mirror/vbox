@@ -518,9 +518,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
         {
 #   ifdef VBOX_WITH_STATISTICS
             if (GstWalk.Pte.u & X86_PTE_D)
-                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtiedPage));
-            else
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageAlreadyDirty));
+            else
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtiedPage));
 #   endif
             if ((GstWalk.Pte.u & (X86_PTE_A | X86_PTE_D)) != (X86_PTE_A | X86_PTE_D))
             {
@@ -2313,7 +2313,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPUCC pVCpu, uint32_t uErr, PSHW
      */
     if ((pPdeSrc->u & X86_PDE_PS) && GST_IS_PSE_ACTIVE(pVCpu))
     {
-        if ((pPdeSrc->u & (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY)) == (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY))
+        if ((pPdeDst->u & (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY)) == (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY))
         {
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPageTrap));
             Assert(pPdeSrc->u & X86_PDE_RW);
