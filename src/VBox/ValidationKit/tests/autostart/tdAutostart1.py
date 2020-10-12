@@ -34,18 +34,6 @@ __version__ = "$Id$"
 import os;
 import sys;
 import re;
-import ssl;
-
-# Python 3 hacks:
-if sys.version_info[0] < 3:
-    import urllib2 as urllib; # pylint: disable=import-error,no-name-in-module
-    from urllib2        import ProxyHandler as urllib_ProxyHandler; # pylint: disable=import-error,no-name-in-module
-    from urllib2        import build_opener as urllib_build_opener; # pylint: disable=import-error,no-name-in-module
-else:
-    import urllib; # pylint: disable=import-error,no-name-in-module
-    from urllib.request import ProxyHandler as urllib_ProxyHandler; # pylint: disable=import-error,no-name-in-module
-    from urllib.request import build_opener as urllib_build_opener; # pylint: disable=import-error,no-name-in-module
-
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -59,12 +47,6 @@ from testdriver import base;
 from testdriver import vbox;
 from testdriver import vboxcon;
 from testdriver import vboxwrappers;
-from common     import utils;
-
-# Python 3 hacks:
-if sys.version_info[0] >= 3:
-    long = int      # pylint: disable=redefined-builtin,invalid-name
-    xrange = range; # pylint: disable=redefined-builtin,invalid-name
 
 
 class VBoxManageStdOutWrapper(object):
@@ -114,64 +96,13 @@ class VBoxManageStdOutWrapper(object):
         return None;
 
 
-def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoProxies=True):
-    """
-    Downloads the given file if an URL is given, otherwise assume it's
-    something on the build share and copy it from there.
-
-    Raises no exceptions, returns log + success indicator instead.
-
-    Note! This method may use proxies configured on the system and the
-          http_proxy, ftp_proxy, no_proxy environment variables.
-
-    """
-    if fnError is None:
-        fnError = fnLog;
-
-    if  sUrlFile.startswith('http://') \
-     or sUrlFile.startswith('https://') \
-     or sUrlFile.startswith('ftp://'):
-        # Download the file.
-        fnLog('Downloading "%s" to "%s"...' % (sUrlFile, sDstFile));
-        try:
-            # Disable SSL certificate verification for our servers
-            ssl_ctx = ssl.create_default_context();
-            ssl_ctx.check_hostname = False;
-            ssl_ctx.verify_mode = ssl.CERT_NONE;
-
-            ## @todo We get 404.html content instead of exceptions here, which is confusing and should be addressed.
-            if not fNoProxies:
-                oOpener = urllib_build_opener(urllib.HTTPSHandler(context = ssl_ctx));
-            else:
-                oOpener = urllib_build_opener(urllib.HTTPSHandler(context = ssl_ctx), urllib_ProxyHandler(proxies = dict()));
-            oSrc = oOpener.open(sUrlFile);
-            oDst = utils.openNoInherit(sDstFile, 'wb');
-            oDst.write(oSrc.read());
-            oDst.close();
-            oSrc.close();
-        except Exception as oXcpt:
-            fnError('Error downloading "%s" to "%s": %s' % (sUrlFile, sDstFile, oXcpt));
-            return False;
-    else:
-        # Assumes file from the build share.
-        sSrcPath = os.path.join(sLocalPrefix, sUrlFile);
-        fnLog('Copying "%s" to "%s"...' % (sSrcPath, sDstFile));
-        try:
-            utils.copyFileSimple(sSrcPath, sDstFile);
-        except Exception as oXcpt:
-            fnError('Error copying "%s" to "%s": %s' % (sSrcPath, sDstFile, oXcpt));
-            return False;
-
-    return True;
-
-
 class tdAutostartOs(object):
     """
     Base autostart helper class to provide common methods.
     """
 
-    def __init__(self, oTestDriver, fpApiVer, sGuestAdditionsIso):
-        self.oTestDriver = oTestDriver;
+    def __init__(self, oTstDrv, fpApiVer, sGuestAdditionsIso):
+        self.oTstDrv = oTstDrv;
         self.fpApiVer = fpApiVer;
         self.sGuestAdditionsIso = sGuestAdditionsIso;
 
@@ -235,7 +166,7 @@ class tdAutostartOs(object):
                     if fRc:
                         break;
 
-            self.oTestDriver.sleep(10);
+            self.oTstDrv.sleep(10);
             cAttempt += 1;
         return fRc;
 
@@ -480,8 +411,7 @@ class tdAutostartOs(object):
             fRc = False;
         else:
             if oCurProgress is not None:
-                oWrapperProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTestDriver.oVBoxMgr,
-                                                                self.oTestDriver, "uploadFile");
+                oWrapperProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "uploadFile");
                 oWrapperProgress.wait();
                 if not oWrapperProgress.isSuccess():
                     oWrapperProgress.logResult(fIgnoreErrors = False);
@@ -493,7 +423,7 @@ class tdAutostartOs(object):
 
     def downloadFile(self, oGuestSession, sSrc, sDst, fIgnoreErrors = False):
         """
-        Upload the string into guest.
+        Get a file (sSrc) from the guest storing it on the host (sDst).
         """
         fRc = True;
         try:
@@ -509,8 +439,8 @@ class tdAutostartOs(object):
             fRc = False;
         else:
             if oCurProgress is not None:
-                oWrapperProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTestDriver.oVBoxMgr,
-                                                                self.oTestDriver, "downloadFile");
+                oWrapperProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr,
+                                                                self.oTstDrv, "downloadFile");
                 oWrapperProgress.wait();
                 if not oWrapperProgress.isSuccess():
                     oWrapperProgress.logResult(fIgnoreErrors);
@@ -535,7 +465,10 @@ class tdAutostartOs(object):
         """
         fRc = True;
         for sGstFile in asFiles:
-            sTmpFile = os.path.join(self.oTestDriver.sScratchPath, 'tmp-' + os.path.basename(sGstFile));
+            ## @todo r=bird: You need to use the guest specific path functions here.
+            ##       Best would be to add basenameEx to common/pathutils.py.  See how joinEx
+            ##       is used by BaseTestVm::pathJoin and such.
+            sTmpFile = os.path.join(self.oTstDrv.sScratchPath, 'tmp-' + os.path.basename(sGstFile));
             reporter.log2('Downloading file "%s" to "%s" ...' % (sGstFile, sTmpFile));
             # First try to remove (unlink) an existing temporary file, as we don't truncate the file.
             try:    os.unlink(sTmpFile);
@@ -558,20 +491,20 @@ class tdAutostartOsLinux(tdAutostartOs):
     Autostart support methods for Linux guests.
     """
 
-    def __init__(self, oTestDriver, asTestBuildDirs, fpApiVer, sGuestAdditionsIso):
-        tdAutostartOs.__init__(self, oTestDriver, fpApiVer, sGuestAdditionsIso);
+    def __init__(self, oTstDrv, asTestBuildDirs, fpApiVer, sGuestAdditionsIso):
+        tdAutostartOs.__init__(self, oTstDrv, fpApiVer, sGuestAdditionsIso);
         self.sTestBuild = self._findFile('^VirtualBox-.*\\.run$', asTestBuildDirs);
         if not self.sTestBuild:
             raise base.GenError("VirtualBox install package not found");
 
-    def waitVMisReady(self, oSession, fWaitTrayControl):
+    def waitVmIsReady(self, oSession, fWaitTrayControl):
         """
         Waits the VM is ready after start or reboot.
         Returns result (true or false) and guest session obtained
         """
         _ = fWaitTrayControl;
         # Give the VM a time to reboot
-        self.oTestDriver.sleep(30);
+        self.oTstDrv.sleep(30);
 
         # Waiting the VM is ready.
         # To do it, one will try to open the guest session and start the guest process in loop
@@ -584,7 +517,7 @@ class tdAutostartOsLinux(tdAutostartOs):
         fRc = False;
         while cAttempt < 30:
             fRc, oGuestSession = self.createSession(oSession, 'Session for user: vbox',
-                                            'vbox', 'password', 10 * 1000, False);
+                                                    'vbox', 'password', 10 * 1000, False);
             if fRc:
                 (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Start a guest process',
                                                           30 * 1000, '/sbin/ifconfig',
@@ -595,7 +528,7 @@ class tdAutostartOsLinux(tdAutostartOs):
 
                 self.closeSession(oGuestSession, False);
 
-            self.oTestDriver.sleep(10);
+            self.oTstDrv.sleep(10);
             cAttempt += 1;
 
         return (fRc, oGuestSession);
@@ -614,7 +547,7 @@ class tdAutostartOsLinux(tdAutostartOs):
             reporter.error('Calling the reboot utility failed');
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
         if fRc:
-            (fRc, oGuestSession) = self.waitVMisReady(oSession, False);
+            (fRc, oGuestSession) = self.waitVmIsReady(oSession, False);
 
         if not fRc:
             reporter.error('VM is not ready after reboot');
@@ -654,8 +587,8 @@ class tdAutostartOsLinux(tdAutostartOs):
 
         fRc = False;
         # Install Kernel headers, which are required for actually installing the Linux Additions.
-        if oVM.OSTypeId.startswith('Debian') \
-        or oVM.OSTypeId.startswith('Ubuntu'):
+        if   oVM.OSTypeId.startswith('Debian') \
+          or oVM.OSTypeId.startswith('Ubuntu'):
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing Kernel headers',
                                                   5 * 60 *1000, '/usr/bin/apt-get',
                                                   ['/usr/bin/apt-get', 'install', '-y',
@@ -672,10 +605,10 @@ class tdAutostartOsLinux(tdAutostartOs):
                     reporter.error('Error installing additional installer dependencies');
 
         elif oVM.OSTypeId.startswith('OL') \
-        or   oVM.OSTypeId.startswith('Oracle') \
-        or   oVM.OSTypeId.startswith('RHEL') \
-        or   oVM.OSTypeId.startswith('Redhat') \
-        or   oVM.OSTypeId.startswith('Cent'):
+          or oVM.OSTypeId.startswith('Oracle') \
+          or oVM.OSTypeId.startswith('RHEL') \
+          or oVM.OSTypeId.startswith('Redhat') \
+          or oVM.OSTypeId.startswith('Cent'):
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing Kernel headers',
                                                   5 * 60 *1000, '/usr/bin/yum',
                                                   ['/usr/bin/yum', '-y', 'install', 'kernel-headers'],
@@ -710,7 +643,7 @@ class tdAutostartOsLinux(tdAutostartOs):
                 # the actual installation finished. So just wait until the GA installed
                 fRc = self.closeSession(oGuestSession);
                 if fRc:
-                    (fRc, oGuestSession) = self.waitVMisReady(oSession, False);
+                    (fRc, oGuestSession) = self.waitVmIsReady(oSession, False);
 
                 # Download log files.
                 # Ignore errors as all files above might not be present for whatever reason.
@@ -763,8 +696,7 @@ class tdAutostartOsLinux(tdAutostartOs):
         reporter.testDone();
         return fRc;
 
-    def configureAutostart(self, oGuestSession, sDefaultPolicy = 'allow',
-                           asUserAllow = (), asUserDeny = ()):
+    def configureAutostart(self, oGuestSession, sDefaultPolicy = 'allow', asUserAllow = (), asUserDeny = ()):
         """
         Configures the autostart feature in the guest.
         """
@@ -885,7 +817,7 @@ class tdAutostartOsLinux(tdAutostartOs):
         all calls will be perfomed using 'sudo -u sUser'
         """
 
-        self.oTestDriver.sleep(30);
+        self.oTstDrv.sleep(30);
 
         _ = oSession;
 
@@ -911,9 +843,9 @@ class tdAutostartOsDarwin(tdAutostartOs):
     Autostart support methods for Darwin guests.
     """
 
-    def __init__(self, oTestDriver, sTestBuildDir, fpApiVer, sGuestAdditionsIso):
+    def __init__(self, oTstDrv, sTestBuildDir, fpApiVer, sGuestAdditionsIso):
         _ = sTestBuildDir;
-        tdAutostartOs.__init__(self, oTestDriver, fpApiVer, sGuestAdditionsIso);
+        tdAutostartOs.__init__(self, oTstDrv, fpApiVer, sGuestAdditionsIso);
         raise base.GenError('Testing the autostart functionality for Darwin is not implemented');
 
 
@@ -922,9 +854,9 @@ class tdAutostartOsSolaris(tdAutostartOs):
     Autostart support methods for Solaris guests.
     """
 
-    def __init__(self, oTestDriver, sTestBuildDir, fpApiVer, sGuestAdditionsIso):
+    def __init__(self, oTstDrv, sTestBuildDir, fpApiVer, sGuestAdditionsIso):
         _ = sTestBuildDir;
-        tdAutostartOs.__init__(self, oTestDriver, fpApiVer, sGuestAdditionsIso);
+        tdAutostartOs.__init__(self, oTstDrv, fpApiVer, sGuestAdditionsIso);
         raise base.GenError('Testing the autostart functionality for Solaris is not implemented');
 
 
@@ -933,19 +865,19 @@ class tdAutostartOsWin(tdAutostartOs):
     Autostart support methods for Windows guests.
     """
 
-    def __init__(self, oTestDriver, asTestBuildDirs, fpApiVer, sGuestAdditionsIso):
-        tdAutostartOs.__init__(self, oTestDriver, fpApiVer, sGuestAdditionsIso);
+    def __init__(self, oTstDrv, asTestBuildDirs, fpApiVer, sGuestAdditionsIso):
+        tdAutostartOs.__init__(self, oTstDrv, fpApiVer, sGuestAdditionsIso);
         self.sTestBuild = self._findFile('^VirtualBox-.*\\.(exe|msi)$', asTestBuildDirs);
         if not self.sTestBuild:
             raise base.GenError("VirtualBox install package not found");
         return;
 
-    def waitVMisReady(self, oSession, fWaitTrayControl, fWaitFacility = True):
+    def waitVmIsReady(self, oSession, fWaitTrayControl, fWaitFacility = True):
         """
         Waits the VM is ready after start or reboot.
         """
         # Give the VM a time to reboot
-        self.oTestDriver.sleep(30);
+        self.oTstDrv.sleep(30);
 
         # Waiting the VM is ready.
         # To do it, one will try to open the guest session and start the guest process in loop
@@ -956,8 +888,7 @@ class tdAutostartOsWin(tdAutostartOs):
         cAttempt = 0;
         oGuestSession = None;
         while cAttempt < 10:
-            fRc, oGuestSession = self.createSession(oSession, 'Session for user: vbox',
-                                            'vbox', 'password', 10 * 1000, False);
+            fRc, oGuestSession = self.createSession(oSession, 'Session for user: vbox', 'vbox', 'password', 10 * 1000, False);
             if fRc:
                 (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Start a guest process',
                                                           30 * 1000, 'C:\\Windows\\System32\\ipconfig.exe',
@@ -967,7 +898,7 @@ class tdAutostartOsWin(tdAutostartOs):
                     break;
                 self.closeSession(oGuestSession, False);
 
-            self.oTestDriver.sleep(10);
+            self.oTstDrv.sleep(10);
             cAttempt += 1;
 
         return (fRc, oGuestSession);
@@ -986,7 +917,7 @@ class tdAutostartOsWin(tdAutostartOs):
             reporter.error('Calling the shutdown utility failed');
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
         if fRc:
-            (fRc, oGuestSession) = self.waitVMisReady(oSession, True);
+            (fRc, oGuestSession) = self.waitVmIsReady(oSession, True);
         if not fRc:
             reporter.error('VM is not ready after reboot');
         reporter.testDone();
@@ -1034,8 +965,8 @@ class tdAutostartOsWin(tdAutostartOs):
             fRc = False;
         else:
             if oCurProgress is not None:
-                oWrapperProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTestDriver.oVBoxMgr,
-                                                                self.oTestDriver, "installAdditions");
+                oWrapperProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr,
+                                                                self.oTstDrv, "installAdditions");
                 oWrapperProgress.wait(cMsTimeout = 10 * 60 * 1000);
                 if not oWrapperProgress.isSuccess():
                     oWrapperProgress.logResult(fIgnoreErrors = False);
@@ -1049,7 +980,7 @@ class tdAutostartOsWin(tdAutostartOs):
         ## Install the public signing key.
         ##
         #
-        #self.oTestDriver.sleep(60 * 2);
+        #self.oTstDrv.sleep(60 * 2);
         #
         #if oVM.OSTypeId not in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003'):
         #    (fRc, _, _, _) = \
@@ -1082,7 +1013,7 @@ class tdAutostartOsWin(tdAutostartOs):
         #    # the actual installation finished. So just wait until the GA installed
         #    fRc = self.closeSession(oGuestSession, True);
         #    if fRc:
-        #        (fRc, oGuestSession) = self.waitVMisReady(oSession, False, False);
+        #        (fRc, oGuestSession) = self.waitVmIsReady(oSession, False, False);
         #---------------------------------------
 
         # Store the result and try download logs anyway.
@@ -1161,12 +1092,12 @@ class tdAutostartOsWin(tdAutostartOs):
         reporter.testDone();
         return fRc;
 
-    def configureAutostart(self, oGuestSession, sDefaultPolicy = 'allow',
-                           asUserAllow = (), asUserDeny = ()):
+    def configureAutostart(self, oGuestSession, sDefaultPolicy = 'allow', asUserAllow = (), asUserDeny = ()):
         """
         Configures the autostart feature in the guest.
         """
         reporter.testStart('Configure autostart');
+
         # Create autostart database directory writeable for everyone
         (fRc, _, _, _) = \
             self.guestProcessExecute(oGuestSession, 'Setting the autostart environment variable',
@@ -1176,14 +1107,14 @@ class tdAutostartOsWin(tdAutostartOs):
                                       '/v', 'VBOXAUTOSTART_CONFIG', '/d',
                                       'C:\\ProgramData\\autostart.cfg', '/f'],
                                      False, True);
-        if not fRc:
-            reporter.error('Setting the autostart environment variable failed');
-
         if fRc:
             sVBoxCfg = self._createAutostartCfg(sDefaultPolicy, asUserAllow, asUserDeny);
             fRc = self.uploadString(oGuestSession, sVBoxCfg, 'C:\\ProgramData\\autostart.cfg');
             if not fRc:
                 reporter.error('Upload the autostart.cfg failed');
+        else:
+            reporter.error('Setting the autostart environment variable failed');
+
         reporter.testDone();
         return fRc;
 
@@ -1241,7 +1172,7 @@ class tdAutostartOsWin(tdAutostartOs):
         Check for VM running in the guest after autostart.
         """
 
-        self.oTestDriver.sleep(30);
+        self.oTstDrv.sleep(30);
 
         _ = oGuestSession;
 
@@ -1255,9 +1186,9 @@ class tdAutostartOsWin(tdAutostartOs):
 
 
             (fRc, _, _, aBuf) = self.guestProcessExecute(oGuestSession, 'Check for running VM',
-                                                       60 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
-                                                       ['C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
-                                                        'list', 'runningvms'], True, True);
+                                                         60 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
+                                                         [ 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
+                                                           'list', 'runningvms' ], True, True);
             if not fRc:
                 reporter.error('Checking the VM %s is running for user %s failed' % (sVmName, sUser));
             else:
@@ -1328,7 +1259,7 @@ obj.DeleteFile("config.inf")
 obj.DeleteFile("database.sdb")
 
 WScript.Echo "Logon As A Service Right granted to user '"& strUserName &"'"
-                           """ % sUser;
+                           """ % (sUser,);
             fRc = self.uploadString(oGuestSession, sSecPolicyEditor, 'C:\\Temp\\adjustsec.vbs');
             if not fRc:
                 reporter.error('Upload the adjustsec.vbs failed');
@@ -1364,7 +1295,9 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         self.asTestVMsDef       = [self.ksOsWindows, self.ksOsLinux]; #[self.ksOsLinux, self.ksOsWindows];
         self.asTestVMs          = self.asTestVMsDef;
         self.asSkipVMs          = [];
-        self.asTestBuildDirs      = None; #'D:/AlexD/TestBox/TestAdditionalFiles';
+        ## @todo r=bird: The --test-build-dirs option as primary way to get the installation files to test
+        ## is not an acceptable test practice as we don't know wtf you're testing.  See defect for more.
+        self.asTestBuildDirs    = None; #'D:/AlexD/TestBox/TestAdditionalFiles';
         self.sGuestAdditionsIso = None; #'D:/AlexD/TestBox/TestAdditionalFiles/VBoxGuestAdditions_6.1.2.iso';
 
     #
@@ -1526,7 +1459,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
 
         if oGuestOsHlp is not None:
             #wait the VM is ready after starting
-            (fRc, oGuestSession) = oGuestOsHlp.waitVMisReady(oSession, True);
+            (fRc, oGuestSession) = oGuestOsHlp.waitVmIsReady(oSession, True);
             #install fresh guest additions
             if fRc:
                 (fRc, oGuestSession) = oGuestOsHlp.installAdditions(oSession, oGuestSession, oVM);
