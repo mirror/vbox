@@ -405,7 +405,11 @@ void vbox_fbdev_fini(struct drm_device *dev)
 				vbox_bo_unpin(bo);
 			vbox_bo_unreserve(bo);
 		}
+#if RTLNX_VER_MIN(5,9,0)
+		drm_gem_object_put(afb->obj);
+#else
 		drm_gem_object_put_unlocked(afb->obj);
+#endif
 		afb->obj = NULL;
 	}
 	drm_fb_helper_fini(&fbdev->helper);

@@ -46,7 +46,11 @@ static void vbox_user_framebuffer_destroy(struct drm_framebuffer *fb)
 	struct vbox_framebuffer *vbox_fb = to_vbox_framebuffer(fb);
 
 	if (vbox_fb->obj)
+#if RTLNX_VER_MIN(5,9,0)
+		drm_gem_object_put(vbox_fb->obj);
+#else
 		drm_gem_object_put_unlocked(vbox_fb->obj);
+#endif
 
 	drm_framebuffer_cleanup(fb);
 	kfree(fb);
@@ -221,7 +225,11 @@ static struct drm_framebuffer *vbox_user_framebuffer_create(
 err_free_vbox_fb:
 	kfree(vbox_fb);
 err_unref_obj:
+#if RTLNX_VER_MIN(5,9,0)
+	drm_gem_object_put(obj);
+#else
 	drm_gem_object_put_unlocked(obj);
+#endif
 	return ERR_PTR(ret);
 }
 
@@ -588,7 +596,11 @@ int vbox_dumb_create(struct drm_file *file,
 		return ret;
 
 	ret = drm_gem_handle_create(file, gobj, &handle);
+#if RTLNX_VER_MIN(5,9,0)
+	drm_gem_object_put(gobj);
+#else
 	drm_gem_object_put_unlocked(gobj);
+#endif
 	if (ret)
 		return ret;
 

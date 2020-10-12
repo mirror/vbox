@@ -262,7 +262,12 @@ static const struct file_operations vbox_fops = {
 	.read = drm_read,
 };
 
-static int vbox_master_set(struct drm_device *dev,
+#if RTLNX_VER_MIN(5,9,0)
+static void
+#else
+static int
+#endif
+            vbox_master_set(struct drm_device *dev,
 			   struct drm_file *file_priv, bool from_open)
 {
 	struct vbox_private *vbox = dev->dev_private;
@@ -281,7 +286,9 @@ static int vbox_master_set(struct drm_device *dev,
 	schedule_delayed_work(&vbox->refresh_work, VBOX_REFRESH_PERIOD);
 	mutex_unlock(&vbox->hw_mutex);
 
+#if RTLNX_VER_MAX(5,9,0)
 	return 0;
+#endif
 }
 
 #if RTLNX_VER_MAX(4,8,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4)

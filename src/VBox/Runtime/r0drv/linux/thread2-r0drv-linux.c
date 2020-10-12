@@ -54,51 +54,44 @@ DECLHIDDEN(int) rtThreadNativeInit(void)
 
 DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
-#if RTLNX_VER_MIN(2,6,11)
-    /* See comment near MAX_RT_PRIO in linux/sched.h for details on
-       sched_priority. */
-    int                 iSchedClass = SCHED_NORMAL;
-    struct sched_param  Param       = { .sched_priority = MAX_PRIO - 1 };
+    int                 iSchedClass = SCHED_FIFO;
+    int                 rc = VINF_SUCCESS;
+    struct sched_param  Param = { 0 };
+
+    RT_NOREF_PV(pThread);
+#if RTLNX_VER_MIN(5,9,0)
+    RT_NOREF_PV(iSchedClass);
+    RT_NOREF_PV(Param);
+#endif
     switch (enmType)
     {
-        case RTTHREADTYPE_INFREQUENT_POLLER:
-            Param.sched_priority = MAX_RT_PRIO + 5;
-            break;
-
-        case RTTHREADTYPE_EMULATION:
-            Param.sched_priority = MAX_RT_PRIO + 4;
-            break;
-
-        case RTTHREADTYPE_DEFAULT:
-            Param.sched_priority = MAX_RT_PRIO + 3;
-            break;
-
-        case RTTHREADTYPE_MSG_PUMP:
-            Param.sched_priority = MAX_RT_PRIO + 2;
-            break;
-
         case RTTHREADTYPE_IO:
-            iSchedClass = SCHED_FIFO;
+#if RTLNX_VER_MAX(5,9,0)
+            /* Set max. priority to preempt all other threads on this CPU. */
             Param.sched_priority = MAX_RT_PRIO - 1;
-            break;
-
-        case RTTHREADTYPE_TIMER:
-            iSchedClass = SCHED_FIFO;
-            Param.sched_priority = 1; /* not 0 just in case */
-            break;
-
-        default:
-            AssertMsgFailed(("enmType=%d\n", enmType));
-            return VERR_INVALID_PARAMETER;
-    }
-
-    sched_setscheduler(current, iSchedClass, &Param);
-#else
-    RT_NOREF_PV(enmType);
+#else 
+            /* Effectively changes prio to 50 */
+            sched_set_fifo(current);
 #endif
-    RT_NOREF_PV(pThread);
-
-    return VINF_SUCCESS;
+            break;
+        case RTTHREADTYPE_TIMER:
+#if RTLNX_VER_MAX(5,9,0)
+            Param.sched_priority = 1; /* not 0 just in case */
+#else
+            /* Just one above SCHED_NORMAL class */
+            sched_set_fifo_low(current);
+#endif
+            break;
+        default:
+            /* pretend success instead of VERR_NOT_SUPPORTED */
+            return rc;
+    }
+#if RTLNX_VER_MAX(5,9,0)
+    if ((sched_setscheduler(current, iSchedClass, &Param)) != 0) {
+        rc = VERR_GENERAL_FAILURE;
+    }
+#endif
+    return rc;
 }
 
 

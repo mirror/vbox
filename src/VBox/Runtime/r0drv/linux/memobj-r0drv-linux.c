@@ -1181,7 +1181,9 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
          */
         else
             rc = get_user_pages_remote(
+# if GET_USER_PAGES_API < KERNEL_VERSION(5, 9, 0)
                                 pTask,                  /* Task for fault accounting. */
+# endif
                                 pTask->mm,              /* Whose pages. */
                                 R3Ptr,                  /* Where from. */
                                 cPages,                 /* How many pages. */
