@@ -186,10 +186,9 @@ static const char *g_tst_apszSupAtoms[] =
 Atom XInternAtom(Display *, const char *pcsz, int)
 {
     Atom atom = 0;
-    unsigned i = 0;
-    const size_t j = clipReportMaxX11Formats();
-
-    for (i = 0; i < j; ++i)
+    const size_t const cFormats = clipReportMaxX11Formats();
+    size_t i;
+    for (i = 0; i < cFormats; ++i)
     {
         if (!strcmp(pcsz, g_aFormats[i].pcszAtom))
             atom = (Atom) (i + 0x1000);
