@@ -188,7 +188,9 @@ int main()
     }
 
 #ifdef DEBUG_andy
-    rc = manualTest();
+    int rc = manualTest();
+    if (RT_FAILURE(rc))
+        return RTEXITCODE_FAILURE;
 #endif
 
     RTTestIPrintf(RTTESTLVL_INFO, "Doing basic tests ...\n");
