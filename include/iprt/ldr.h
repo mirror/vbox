@@ -1207,25 +1207,51 @@ typedef enum RTLDRSIGNATURETYPE
 } RTLDRSIGNATURETYPE;
 
 /**
+ * Signature information provided by FNRTLDRVALIDATESIGNEDDATA.
+ */
+typedef struct RTLDRSIGNATUREINFO
+{
+    /** The signature number (0-based). */
+    uint16_t            iSignature;
+    /** The total number of signatures. */
+    uint16_t            cSignatures;
+    /** Sginature format type. */
+    RTLDRSIGNATURETYPE  enmType;
+    /** The signature data (formatted according to enmType). */
+    void const         *pvSignature;
+    /** The size of the buffer pvSignature points to. */
+    size_t              cbSignature;
+    /** Pointer to the signed data, if external.
+     * NULL if the data is internal to the signature structure. */
+    void const         *pvExternalData;
+    /** Size of the signed data, if external.
+     * 0 if internal to the signature structure. */
+    size_t              cbExternalData;
+} RTLDRSIGNATUREINFO;
+/** Pointer to a signature structure. */
+typedef RTLDRSIGNATUREINFO *PRTLDRSIGNATUREINFO;
+/** Pointer to a const signature structure. */
+typedef RTLDRSIGNATUREINFO const *PCRTLDRSIGNATUREINFO;
+
+/**
  * Callback used by RTLdrVerifySignature to verify the signature and associated
  * certificates.
  *
- * @returns IPRT status code.
+ * This is called multiple times when the executable contains more than one
+ * signature (PE only at the moment).  The RTLDRSIGNATUREINFO::cSignatures gives
+ * the total number of signatures (and thereby callbacks) and
+ * RTLDRSIGNATUREINFO::iSignature indicates the current one.
+ *
+ * @returns IPRT status code.  A status code other than VINF_SUCCESS will
+ *          prevent callbacks the remaining signatures (if any).
  * @param   hLdrMod         The module handle.
  * @param   enmSignature    The signature format.
- * @param   pvSignature     The signature data. Format given by @a enmSignature.
- * @param   cbSignature     The size of the buffer @a pvSignature points to.
- * @param   pvExternalData  Pointer to the signed data, if external. NULL if the
- *                          data is internal to the signature structure.
- * @param   cbExternalData Size of the signed data, if external.  0 if
- *                          internal to the signature structure.
+ * @param   pInfo           Signature information.
  * @param   pErrInfo        Pointer to an error info buffer, optional.
  * @param   pvUser          User argument.
  *
  */
-typedef DECLCALLBACKTYPE(int, FNRTLDRVALIDATESIGNEDDATA,(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature,
-                                                         void const *pvSignature, size_t cbSignature,
-                                                         void const *pvExternalData, size_t cbExternalData,
+typedef DECLCALLBACKTYPE(int, FNRTLDRVALIDATESIGNEDDATA,(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREINFO pInfo,
                                                          PRTERRINFO pErrInfo, void *pvUser));
 /** Pointer to a signature verification callback. */
 typedef FNRTLDRVALIDATESIGNEDDATA *PFNRTLDRVALIDATESIGNEDDATA;

@@ -43,16 +43,12 @@
 *********************************************************************************************************************************/
 static int g_iDummy = 0;
 
-static DECLCALLBACK(int) TestCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature,
-                                      void const *pvSignature, size_t cbSignature,
-                                      void const *pvExternalData, size_t cbExternalData,
-                                      PRTERRINFO pErrInfo, void *pvUser)
+
+static DECLCALLBACK(int) TestCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREINFO pInfo, PRTERRINFO pErrInfo, void *pvUser)
 {
-    RT_NOREF_PV(hLdrMod); RT_NOREF_PV(enmSignature); RT_NOREF_PV(pvSignature); RT_NOREF_PV(cbSignature);
-    RT_NOREF_PV(pErrInfo); RT_NOREF_PV(pvUser); RT_NOREF_PV(pvExternalData); RT_NOREF_PV(cbExternalData);
+    RT_NOREF(hLdrMod, pInfo, pErrInfo, pvUser);
     return VINF_SUCCESS;
 }
-
 
 
 int main(int argc, char **argv)

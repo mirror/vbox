@@ -1251,8 +1251,10 @@ typedef struct VERIFYEXESTATE
     bool        fKernel;
     int         cVerbose;
     enum { kSignType_Windows, kSignType_OSX } enmSignType;
-    uint64_t    uTimestamp;
     RTLDRARCH   enmLdrArch;
+    uint32_t    cBad;
+    uint32_t    cOkay;
+    const char *pszFilename;
 } VERIFYEXESTATE;
 
 # ifdef VBOX
@@ -1401,56 +1403,106 @@ static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCer
     return rc;
 }
 
-
 /** @callback_method_impl{FNRTLDRVALIDATESIGNEDDATA}  */
-static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature,
-                                           void const *pvSignature, size_t cbSignature,
-                                           void const *pvExternalData, size_t cbExternalData,
-                                           PRTERRINFO pErrInfo, void *pvUser)
+static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREINFO pInfo, PRTERRINFO pErrInfo, void *pvUser)
 {
     VERIFYEXESTATE *pState = (VERIFYEXESTATE *)pvUser;
-    RT_NOREF_PV(hLdrMod); RT_NOREF_PV(cbSignature);
+    RT_NOREF_PV(hLdrMod);
 
-    switch (enmSignature)
+    switch (pInfo->enmType)
     {
         case RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA:
         {
-            PCRTCRPKCS7CONTENTINFO pContentInfo = (PCRTCRPKCS7CONTENTINFO)pvSignature;
-
-            RTTIMESPEC ValidationTime;
-            RTTimeSpecSetSeconds(&ValidationTime, pState->uTimestamp);
+            PCRTCRPKCS7CONTENTINFO pContentInfo = (PCRTCRPKCS7CONTENTINFO)pInfo->pvSignature;
 
             /*
-             * Dump the signed data if so requested.
+             * Dump the signed data if so requested and it's the first one, assuming that
+             * additional signatures in contained wihtin the same ContentInfo structure.
              */
-            if (pState->cVerbose)
+            if (pState->cVerbose && pInfo->iSignature == 0)
                 RTAsn1Dump(&pContentInfo->SeqCore.Asn1Core, 0, 0, RTStrmDumpPrintfV, g_pStdOut);
 
+            /*
+             * We'll try different alternative timestamps here.
+             */
+            struct { RTTIMESPEC TimeSpec; const char *pszDesc; } aTimes[2];
+            unsigned cTimes = 0;
+
+            /* Linking timestamp: */
+            uint64_t uLinkingTime = 0;
+            int rc = RTLdrQueryProp(hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &uLinkingTime, sizeof(uLinkingTime));
+            if (RT_SUCCESS(rc))
+            {
+                RTTimeSpecSetSeconds(&aTimes[0].TimeSpec, uLinkingTime);
+                aTimes[0].pszDesc = "at link time";
+                cTimes++;
+            }
+            else if (rc != VERR_NOT_FOUND)
+                RTMsgError("RTLdrQueryProp/RTLDRPROP_TIMESTAMP_SECONDS failed on '%s': %Rrc\n", pState->pszFilename, rc);
+
+            /* Now: */
+            RTTimeNow(&aTimes[cTimes].TimeSpec);
+            aTimes[cTimes].pszDesc = "now";
+            cTimes++;
 
             /*
-             * Do the actual verification.  Will have to modify this so it takes
-             * the authenticode policies into account.
+             * Do the actual verification.
              */
-            if (pvExternalData)
-                return RTCrPkcs7VerifySignedDataWithExternalData(pContentInfo,
-                                                                 RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
-                                                                 | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT
-                                                                 | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT
-                                                                 | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS,
-                                                                 pState->hAdditionalStore, pState->hRootStore, &ValidationTime,
-                                                                 VerifyExecCertVerifyCallback, pState,
-                                                                 pvExternalData, cbExternalData, pErrInfo);
-            return RTCrPkcs7VerifySignedData(pContentInfo,
-                                             RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
-                                             | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT
-                                             | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT
-                                             | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS,
-                                             pState->hAdditionalStore, pState->hRootStore, &ValidationTime,
-                                             VerifyExecCertVerifyCallback, pState, pErrInfo);
+            for (unsigned iTime = 0; iTime < cTimes; iTime++)
+            {
+                if (pInfo->pvExternalData)
+                    rc = RTCrPkcs7VerifySignedDataWithExternalData(pContentInfo,
+                                                                   RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
+                                                                   | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT
+                                                                   | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT
+                                                                   | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS,
+                                                                   pState->hAdditionalStore, pState->hRootStore,
+                                                                   &aTimes[iTime].TimeSpec,
+                                                                   VerifyExecCertVerifyCallback, pState,
+                                                                   pInfo->pvExternalData, pInfo->cbExternalData, pErrInfo);
+                else
+                    rc = RTCrPkcs7VerifySignedData(pContentInfo,
+                                                   RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
+                                                   | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT
+                                                   | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT
+                                                   | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS,
+                                                   pState->hAdditionalStore, pState->hRootStore,
+                                                   &aTimes[iTime].TimeSpec,
+                                                   VerifyExecCertVerifyCallback, pState, pErrInfo);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(rc == VINF_SUCCESS);
+                    if (pInfo->cSignatures == 1)
+                        RTMsgInfo("'%s' is valid %s.\n", pState->pszFilename, aTimes[iTime].pszDesc);
+                    else
+                        RTMsgInfo("'%s' signature #%u is valid %s.\n",
+                                  pState->pszFilename, pInfo->iSignature + 1, aTimes[iTime].pszDesc);
+                    pState->cOkay++;
+                    return VINF_SUCCESS;
+                }
+                if (rc != VERR_CR_X509_CPV_NOT_VALID_AT_TIME)
+                {
+                    if (pInfo->cSignatures == 1)
+                        RTMsgError("%s: Failed to verify signature: %Rrc%#RTeim\n", pState->pszFilename, rc, pErrInfo);
+                    else
+                        RTMsgError("%s: Failed to verify signature #%u: %Rrc%#RTeim\n",
+                                   pState->pszFilename, pInfo->iSignature + 1, rc, pErrInfo);
+                    pState->cBad++;
+                    return VINF_SUCCESS;
+                }
+            }
+
+            if (pInfo->cSignatures == 1)
+                RTMsgError("%s: Signature is not valid at present or link time.\n", pState->pszFilename);
+            else
+                RTMsgError("%s: Signature #%u is not valid at present or link time.\n",
+                           pState->pszFilename, pInfo->iSignature + 1);
+            pState->cBad++;
+            return VINF_SUCCESS;
         }
 
         default:
-            return RTErrInfoSetF(pErrInfo, VERR_NOT_SUPPORTED, "Unsupported signature type: %d", enmSignature);
+            return RTErrInfoSetF(pErrInfo, VERR_NOT_SUPPORTED, "Unsupported signature type: %d", pInfo->enmType);
     }
 }
 
@@ -1467,33 +1519,14 @@ static RTEXITCODE HandleVerifyExeWorker(VERIFYEXESTATE *pState, const char *pszF
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error opening executable image '%s': %Rrc", pszFilename, rc);
 
+    /* Reset the state. */
+    pState->cBad        = 0;
+    pState->cOkay       = 0;
+    pState->pszFilename = pszFilename;
 
-    RTTIMESPEC Now;
-    bool       fTriedNow = false;
-    rc = RTLdrQueryProp(hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &pState->uTimestamp, sizeof(pState->uTimestamp));
-    if (rc == VERR_NOT_FOUND)
-    {
-        fTriedNow = true;
-        pState->uTimestamp = RTTimeSpecGetSeconds(RTTimeNow(&Now));
-        rc = VINF_SUCCESS;
-    }
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTLdrVerifySignature(hLdrMod, VerifyExeCallback, pState, RTErrInfoInitStatic(pStaticErrInfo));
-        if (RT_SUCCESS(rc))
-            RTMsgInfo("'%s' is valid.\n", pszFilename);
-        else if (rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME && !fTriedNow)
-        {
-            pState->uTimestamp = RTTimeSpecGetSeconds(RTTimeNow(&Now));
-            rc = RTLdrVerifySignature(hLdrMod, VerifyExeCallback, pState, RTErrInfoInitStatic(pStaticErrInfo));
-            if (RT_SUCCESS(rc))
-                RTMsgInfo("'%s' is valid now, but not at link time.\n", pszFilename);
-        }
-        if (RT_FAILURE(rc))
-            RTMsgError("RTLdrVerifySignature failed on '%s': %Rrc - %s\n", pszFilename, rc, pStaticErrInfo->szMsg);
-    }
-    else
-        RTMsgError("RTLdrQueryProp/RTLDRPROP_TIMESTAMP_SECONDS failed on '%s': %Rrc\n", pszFilename, rc);
+    rc = RTLdrVerifySignature(hLdrMod, VerifyExeCallback, pState, RTErrInfoInitStatic(pStaticErrInfo));
+    if (RT_FAILURE(rc))
+        RTMsgError("RTLdrVerifySignature failed on '%s': %Rrc - %s\n", pszFilename, rc, pStaticErrInfo->szMsg);
 
     int rc2 = RTLdrClose(hLdrMod);
     if (RT_FAILURE(rc2))
@@ -1501,7 +1534,7 @@ static RTEXITCODE HandleVerifyExeWorker(VERIFYEXESTATE *pState, const char *pszF
     if (RT_FAILURE(rc))
         return rc != VERR_LDRVI_NOT_SIGNED ? RTEXITCODE_FAILURE : RTEXITCODE_SKIPPED;
 
-    return RTEXITCODE_SUCCESS;
+    return pState->cOkay > 0 ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
@@ -1530,8 +1563,9 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
 
     VERIFYEXESTATE State =
     {
-        NIL_RTCRSTORE, NIL_RTCRSTORE, NIL_RTCRSTORE, false, false,
-        VERIFYEXESTATE::kSignType_Windows, 0, RTLDRARCH_WHATEVER
+        NIL_RTCRSTORE, NIL_RTCRSTORE, NIL_RTCRSTORE, false, 0,
+        VERIFYEXESTATE::kSignType_Windows, RTLDRARCH_WHATEVER,
+        0, 0, NULL
     };
     int rc = RTCrStoreCreateInMem(&State.hRootStore, 0);
     if (RT_SUCCESS(rc))

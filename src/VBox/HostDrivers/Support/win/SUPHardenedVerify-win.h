@@ -97,8 +97,7 @@ typedef struct SUPHNTVIRDR
     RTLDRREADER Core;
     /** The file handle. */
     HANDLE      hFile;
-    /** Handle to event sempahore in case we're force to deal with asynchronous
-     * I/O. */
+    /** Handle to event sempahore in case we're force to deal with asynchronous I/O. */
     HANDLE      hEvent;
     /** Current file offset. */
     RTFOFF      off;
@@ -106,8 +105,15 @@ typedef struct SUPHNTVIRDR
     uint64_t    cbFile;
     /** Flags for the verification callback, SUPHNTVI_F_XXX. */
     uint32_t    fFlags;
-    /** The executable timstamp in second since unix epoch. */
-    uint64_t    uTimestamp;
+    /** Number of signatures that verified okay. */
+    uint16_t    cOkaySignatures;
+    /** Number of signatures that couldn't be successfully verified (time stamp
+     * issues, no certificate path, etc) but weren't fatal. */
+    uint16_t    cNokSignatures;
+    /** Total number of signatures. */
+    uint16_t    cTotalSignatures;
+    /** The last non-fatal signature failure. */
+    int         rcLastSignatureFailure;
     /** Log name. */
     char        szFilename[1];
 } SUPHNTVIRDR;

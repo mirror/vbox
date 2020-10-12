@@ -5536,10 +5536,15 @@ rtldrMachO_VerifySignature(PRTLDRMODINTERNAL pMod, PFNRTLDRVALIDATESIGNEDDATA pf
                     /*
                      * Finally, let the caller verify the certificate chain for the PKCS#7 bit.
                      */
-                    rc = pfnCallback(&pThis->Core, RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA,
-                                     &pSignature->ContentInfo, sizeof(pSignature->ContentInfo),
-                                     pSignature->aCodeDirs[0].pCodeDir, pSignature->aCodeDirs[0].cb,
-                                     pErrInfo, pvUser);
+                    RTLDRSIGNATUREINFO Info;
+                    Info.iSignature     = 0;
+                    Info.cSignatures    = 1;
+                    Info.enmType        = RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA;
+                    Info.pvSignature    = &pSignature->ContentInfo;
+                    Info.cbSignature    = sizeof(pSignature->ContentInfo);
+                    Info.pvExternalData = pSignature->aCodeDirs[0].pCodeDir;
+                    Info.cbExternalData = pSignature->aCodeDirs[0].cb;
+                    rc = pfnCallback(&pThis->Core, &Info, pErrInfo, pvUser);
                 }
             }
         }

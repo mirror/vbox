@@ -1352,20 +1352,18 @@ static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCertificatCallback(PCRTCRX509C
 /**
  * @callback_method_impl{FNRTLDRVALIDATESIGNEDDATA}
  */
-static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature,
-                                                           void const *pvSignature, size_t cbSignature,
-                                                           void const *pvExternalData, size_t cbExternalData,
+static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREINFO pInfo,
                                                            PRTERRINFO pErrInfo, void *pvUser)
 {
     PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
-    RT_NOREF_PV(hLdrMod); RT_NOREF_PV(cbSignature);
+    RT_NOREF_PV(hLdrMod);
 
-    switch (enmSignature)
+    switch (pInfo->enmType)
     {
         case RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA:
-            if (pvExternalData)
+            if (pInfo->pvExternalData)
             {
-                PCRTCRPKCS7CONTENTINFO pContentInfo = (PCRTCRPKCS7CONTENTINFO)pvSignature;
+                PCRTCRPKCS7CONTENTINFO pContentInfo = (PCRTCRPKCS7CONTENTINFO)pInfo->pvSignature;
                 RTTIMESPEC             ValidationTime;
                 RTTimeNow(&ValidationTime);
 
@@ -1375,12 +1373,12 @@ static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCallback(RTLDRMOD hLdrMod, RTL
                                                                  | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT,
                                                                  pDevExt->hAdditionalStore, pDevExt->hRootStore, &ValidationTime,
                                                                  supdrvDarwinLdrOpenVerifyCertificatCallback, pDevExt,
-                                                                 pvExternalData, cbExternalData, pErrInfo);
+                                                                 pInfo->pvExternalData, pInfo->cbExternalData, pErrInfo);
             }
             return RTErrInfoSetF(pErrInfo, VERR_NOT_SUPPORTED, "Expected external data with signature!");
 
         default:
-            return RTErrInfoSetF(pErrInfo, VERR_NOT_SUPPORTED, "Unsupported signature type: %d", enmSignature);
+            return RTErrInfoSetF(pErrInfo, VERR_NOT_SUPPORTED, "Unsupported signature type: %d", pInfo->enmType);
     }
 }
 
