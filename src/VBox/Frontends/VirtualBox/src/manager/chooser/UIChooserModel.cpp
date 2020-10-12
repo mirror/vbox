@@ -1193,10 +1193,10 @@ void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
     buildTreeForMainRoot(true /* preserve selection */);
 }
 
-void UIChooserModel::sltHandleCloudProfileManagerRestrictionChange()
+void UIChooserModel::sltHandleCloudProfileManagerCumulativeChange()
 {
     /* Call to base-class: */
-    UIChooserAbstractModel::sltHandleCloudProfileManagerRestrictionChange();
+    UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange();
 
     /* Build tree for main root: */
     buildTreeForMainRoot(true /* preserve selection */);
