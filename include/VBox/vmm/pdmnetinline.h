@@ -542,16 +542,17 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
         case PDMNETWORKGSOTYPE_IPV4_UDP:
             if (iSeg == 0)
             {
-                Assert(pGso->offHdr2 + sizeof(uint16_t) <= cbFrame);
-                /* uh_ulen cannot exceed cbFrame - pGso->offHdr2 (offset of UDP header) */
-                if ((unsigned)(pGso->offHdr2 + RT_BE2H_U16(((PCRTNETUDP)&pbFrame[pGso->offHdr2])->uh_ulen)) > cbFrame)
+                /* uh_ulen shall not exceed cbFrame - pGso->offHdr2 (offset of UDP header) */
+                PRTNETUDP pUdpHdr = (PRTNETUDP)&pbFrame[pGso->offHdr2];
+                Assert(pGso->offHdr2 + RT_UOFFSET_AFTER(RTNETUDP, uh_ulen) <= cbFrame);
+                if ((unsigned)(pGso->offHdr2 + RT_BE2H_U16(pUdpHdr->uh_ulen)) > cbFrame)
                 {
-                    if (cbFrame > UINT16_MAX)
-                        ((PRTNETUDP)&pbFrame[pGso->offHdr2])->uh_ulen = 0xFFFF;
+                    size_t cbUdp = cbFrame - pGso->offHdr2;
+                    if (cbUdp >= UINT16_MAX)
+                        pUdpHdr->uh_ulen = UINT16_MAX;
                     else
-                        ((PRTNETUDP)&pbFrame[pGso->offHdr2])->uh_ulen = RT_H2BE_U16((uint16_t)(cbFrame - pGso->offHdr2));
+                        pUdpHdr->uh_ulen = RT_H2BE_U16((uint16_t)cbUdp);
                 }
-                Assert((unsigned)(pGso->offHdr2 + ((PCRTNETUDP)&pbFrame[pGso->offHdr2])->uh_ulen) <= cbFrame);
                 pdmNetGsoUpdateUdpHdrUfo(RTNetIPv4PseudoChecksum((PRTNETIPV4)&pbFrame[pGso->offHdr1]),
                                          pbSegHdrs, pbFrame, pGso->offHdr2);
             }
