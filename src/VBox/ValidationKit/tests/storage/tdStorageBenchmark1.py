@@ -569,7 +569,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.asDiskFormats           = self.asDiskFormatsDef;
         self.asDiskVariantsDef       = ['Dynamic', 'Fixed', 'DynamicSplit2G', 'FixedSplit2G', 'Network'];
         self.asDiskVariants          = self.asDiskVariantsDef;
-        self.asTestsDef              = ['iozone', 'fio', 'ioperf'];
+        self.asTestsDef              = ['ioperf'];
         self.asTests                 = self.asTestsDef;
         self.asTestSetsDef           = ['Fast', 'Functionality', 'Benchmark', 'Stress'];
         self.asTestSets              = self.asTestSetsDef;
