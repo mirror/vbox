@@ -818,6 +818,10 @@ void UIChooserAbstractModel::prepareConnections()
             this, &UIChooserAbstractModel::sltSnapshotChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProviderListChanged,
             this, &UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
+            this, &UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
+            this, &UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProviderUninstall,
             this, &UIChooserAbstractModel::sltHandleCloudProviderUninstall);
 

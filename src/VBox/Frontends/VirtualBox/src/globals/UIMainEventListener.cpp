@@ -28,6 +28,8 @@
 #include "COMEnums.h"
 #include "CCanShowWindowEvent.h"
 #include "CClipboardModeChangedEvent.h"
+#include "CCloudProfileChangedEvent.h"
+#include "CCloudProfileRegisteredEvent.h"
 #include "CCloudProviderListChangedEvent.h"
 #include "CCloudProviderUninstallEvent.h"
 #include "CCursorPositionChangedEvent.h"
@@ -331,6 +333,18 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
             CCloudProviderUninstallEvent comEventSpecific(pEvent);
             emit sigCloudProviderUninstall(comEventSpecific.GetId());
             LogRel(("GUI: UIMainEventListener/HandleEvent: KVBoxEventType_OnCloudProviderUninstall event done\n"));
+            break;
+        }
+        case KVBoxEventType_OnCloudProfileRegistered:
+        {
+            CCloudProfileRegisteredEvent comEventSpecific(pEvent);
+            emit sigCloudProfileRegistered(comEventSpecific.GetProviderId(), comEventSpecific.GetName(), comEventSpecific.GetRegistered());
+            break;
+        }
+        case KVBoxEventType_OnCloudProfileChanged:
+        {
+            CCloudProfileChangedEvent comEventSpecific(pEvent);
+            emit sigCloudProfileChanged(comEventSpecific.GetProviderId(), comEventSpecific.GetName());
             break;
         }
 

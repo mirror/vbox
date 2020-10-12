@@ -54,6 +54,10 @@ signals:
     void sigCloudProviderUninstall(const QUuid &uId);
     /** Notifies about cloud provider list changed. */
     void sigCloudProviderListChanged();
+    /** Notifies about cloud profile with specified @a strName of provider with specified @a uProviderId is @a fRegistered. */
+    void sigCloudProfileRegistered(const QUuid &uProviderId, const QString &strName, bool fRegistered);
+    /** Notifies about cloud profile with specified @a strName of provider with specified @a uProviderId is changed. */
+    void sigCloudProfileChanged(const QUuid &uProviderId, const QString &strName);
 
     /** Notifies about storage controller change.
       * @param  uMachineId         Brings the ID of machine corresponding controller belongs to.
@@ -163,6 +167,8 @@ void UIVirtualBoxEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnSnapshotRestored
         << KVBoxEventType_OnCloudProviderListChanged
         << KVBoxEventType_OnCloudProviderUninstall
+        << KVBoxEventType_OnCloudProfileRegistered
+        << KVBoxEventType_OnCloudProfileChanged
         << KVBoxEventType_OnStorageControllerChanged
         << KVBoxEventType_OnStorageDeviceChanged
         << KVBoxEventType_OnMediumChanged
@@ -210,6 +216,12 @@ void UIVirtualBoxEventHandlerProxy::prepareConnections()
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), SIGNAL(sigCloudProviderUninstall(QUuid)),
             this, SIGNAL(sigCloudProviderUninstall(QUuid)),
+            Qt::DirectConnection);
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigCloudProfileRegistered(QUuid, QString, bool)),
+            this, SIGNAL(sigCloudProfileRegistered(QUuid, QString, bool)),
+            Qt::DirectConnection);
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigCloudProfileChanged(QUuid, QString)),
+            this, SIGNAL(sigCloudProfileChanged(QUuid, QString)),
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), SIGNAL(sigStorageControllerChange(QUuid, QString)),
             this, SIGNAL(sigStorageControllerChange(QUuid, QString)),
@@ -323,6 +335,12 @@ void UIVirtualBoxEventHandler::prepareConnections()
     connect(m_pProxy, SIGNAL(sigCloudProviderUninstall(QUuid)),
             this, SIGNAL(sigCloudProviderUninstall(QUuid)),
             Qt::BlockingQueuedConnection);
+    connect(m_pProxy, SIGNAL(sigCloudProfileRegistered(QUuid, QString, bool)),
+            this, SIGNAL(sigCloudProfileRegistered(QUuid, QString, bool)),
+            Qt::QueuedConnection);
+    connect(m_pProxy, SIGNAL(sigCloudProfileChanged(QUuid, QString)),
+            this, SIGNAL(sigCloudProfileChanged(QUuid, QString)),
+            Qt::QueuedConnection);
     connect(m_pProxy, SIGNAL(sigStorageControllerChange(QUuid, QString)),
             this, SIGNAL(sigStorageControllerChange(QUuid, QString)),
             Qt::QueuedConnection);
