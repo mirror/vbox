@@ -143,7 +143,6 @@ RTR3DECL(int) RTTestCreateChild(const char *pszTest, PRTTEST phTest);
  *
  * @returns IPRT status code.
  * @param   pszTest         The test name.
- * @param   pszXmlFile      The XML output file/pipe/whatever.
  * @param   fFlags          Flags, see RTTEST_C_XXX.
  * @param   enmMaxLevel     The max message level.  Use RTTESTLVL_INVALID for
  *                          the default output level or one from the
@@ -754,7 +753,7 @@ RTR3DECL(int) RTTestRestoreAssertions(RTTEST hTest);
             return (rcRet); \
          } \
     } while (0)
-/** @def RTTEST_CHECK_MSG_RET
+/** @def RTTEST_CHECK_MSG_RETV
  * Check whether a boolean expression holds true, returns void on false.
  *
  * If the expression is false, call RTTestFailed giving the line number and expression.
@@ -1176,7 +1175,7 @@ RTR3DECL(int) RTTestIRestoreAssertions(void);
             return; \
          } \
     } while (0)
-/** @def RTTESTI_CHECK_RETV
+/** @def RTTESTI_CHECK_BREAK
  * Check whether a boolean expression holds true, returns void on false.
  *
  * If the expression is false, call RTTestIFailed giving the line number and
@@ -1241,7 +1240,7 @@ RTR3DECL(int) RTTestIRestoreAssertions(void);
             return (rcRet); \
          } \
     } while (0)
-/** @def RTTESTI_CHECK_MSG_RET
+/** @def RTTESTI_CHECK_MSG_RETV
  * Check whether a boolean expression holds true, returns void on false.
  *
  * If the expression is false, call RTTestIFailed giving the line number and
