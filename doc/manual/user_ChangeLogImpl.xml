@@ -289,14 +289,6 @@ technical terms if no non-technical ones are clear enough.
         </para>
       </listitem>
 
-      <listitem>
-        <para>
-          Shared Clipboard: Implemented experimental support for file transfers
-          (Windows hosts/guests only at the moment). Needs to be enabled via
-          VBoxManage (disabled by default).
-        </para>
-      </listitem>
-
     </itemizedlist>
 
     <para>
