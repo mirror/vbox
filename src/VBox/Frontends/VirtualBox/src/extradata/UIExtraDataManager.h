@@ -157,9 +157,6 @@ public:
 
     /** @name General
       * @{ */
-        /** Returns event handling type. */
-        EventHandlingType eventHandlingType();
-
         /** Returns a list of restricted dialogs. */
         UIExtraDataMetaDefs::DialogType restrictedDialogTypes(const QUuid &uID);
         /** Defines a list of restricted dialogs. */

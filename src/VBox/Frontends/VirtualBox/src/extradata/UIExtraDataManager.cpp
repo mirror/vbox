@@ -176,16 +176,11 @@ void UIExtraDataEventHandler::prepareListener()
         << KVBoxEventType_OnExtraDataChanged;
 
     /* Register event listener for VirtualBox event source: */
-    comEventSourceVBox.RegisterListener(m_comEventListener, eventTypes,
-        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
+    comEventSourceVBox.RegisterListener(m_comEventListener, eventTypes, FALSE /* active? */);
     AssertWrapperOk(comEventSourceVBox);
 
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Register event sources in their listeners as well: */
-        m_pQtListener->getWrapped()->registerSource(comEventSourceVBox, m_comEventListener);
-    }
+    /* Register event sources in their listeners as well: */
+    m_pQtListener->getWrapped()->registerSource(comEventSourceVBox, m_comEventListener);
 }
 
 void UIExtraDataEventHandler::prepareConnections()
@@ -206,12 +201,8 @@ void UIExtraDataEventHandler::cleanupConnections()
 
 void UIExtraDataEventHandler::cleanupListener()
 {
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Unregister everything: */
-        m_pQtListener->getWrapped()->unregisterSources();
-    }
+    /* Unregister everything: */
+    m_pQtListener->getWrapped()->unregisterSources();
 
     /* Make sure VBoxSVC is available: */
     if (!uiCommon().isVBoxSVCAvailable())
@@ -1902,7 +1893,6 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 {
     return QStringList()
            << QString()
-           << GUI_EventHandlingType
            << GUI_RestrictedDialogs
            << GUI_SuppressMessages << GUI_InvertMessageOption
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -2269,11 +2259,6 @@ UIExtraDataManager::~UIExtraDataManager()
 {
     /* Disconnect from static instance: */
     s_pInstance = 0;
-}
-
-EventHandlingType UIExtraDataManager::eventHandlingType()
-{
-    return gpConverter->fromInternalString<EventHandlingType>(extraDataString(GUI_EventHandlingType));
 }
 
 UIExtraDataMetaDefs::DialogType UIExtraDataManager::restrictedDialogTypes(const QUuid &uID)

@@ -66,27 +66,18 @@ void UIGuestControlTreeItem::prepareListener(CEventSource comEventSource, QVecto
     m_comEventListener = CEventListener(m_pQtListener);
 
     /* Register event listener for CProgress event source: */
-    comEventSource.RegisterListener(m_comEventListener, eventTypes,
-        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
+    comEventSource.RegisterListener(m_comEventListener, eventTypes, FALSE /* active? */);
 
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Register event sources in their listeners as well: */
-        m_pQtListener->getWrapped()->registerSource(comEventSource, m_comEventListener);
-    }
+    /* Register event sources in their listeners as well: */
+    m_pQtListener->getWrapped()->registerSource(comEventSource, m_comEventListener);
 }
 
 void UIGuestControlTreeItem::cleanupListener(CEventSource comEventSource)
 {
     if (!comEventSource.isOk())
         return;
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Unregister everything: */
-        m_pQtListener->getWrapped()->unregisterSources();
-    }
+    /* Unregister everything: */
+    m_pQtListener->getWrapped()->unregisterSources();
 
     /* Make sure VBoxSVC is available: */
     if (!uiCommon().isVBoxSVCAvailable())

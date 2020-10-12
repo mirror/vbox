@@ -43,9 +43,6 @@ namespace UIExtraDataDefs
 {
     /** @name General
       * @{ */
-        /** Holds event handling type. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_EventHandlingType;
-
         /** Holds restricted dialogs. */
         SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedDialogs;
     /** @} */
@@ -790,14 +787,6 @@ public:
         DetailsElementOptionTypeDescription_Default = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeDescription);
-};
-
-
-/** Common UI: Event handling types. */
-enum EventHandlingType
-{
-    EventHandlingType_Active,
-    EventHandlingType_Passive
 };
 
 

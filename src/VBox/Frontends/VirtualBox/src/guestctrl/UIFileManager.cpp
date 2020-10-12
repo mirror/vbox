@@ -638,15 +638,10 @@ void UIFileManager::prepareListener(ComObjPtr<UIMainEventListenerImpl> &QtListen
     comEventListener = CEventListener(QtListener);
 
     /* Register event listener for CProgress event source: */
-    comEventSource.RegisterListener(comEventListener, eventTypes,
-        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
+    comEventSource.RegisterListener(comEventListener, eventTypes, FALSE /* active? */);
 
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Register event sources in their listeners as well: */
-        QtListener->getWrapped()->registerSource(comEventSource, comEventListener);
-    }
+    /* Register event sources in their listeners as well: */
+    QtListener->getWrapped()->registerSource(comEventSource, comEventListener);
 }
 
 void UIFileManager::cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
@@ -655,12 +650,8 @@ void UIFileManager::cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListen
 {
     if (!comEventSource.isOk())
         return;
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Unregister everything: */
-        QtListener->getWrapped()->unregisterSources();
-    }
+    /* Unregister everything: */
+    QtListener->getWrapped()->unregisterSources();
 
     /* Make sure VBoxSVC is available: */
     if (!uiCommon().isVBoxSVCAvailable())

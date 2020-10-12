@@ -205,16 +205,11 @@ void UIConsoleEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnDnDModeChanged;
 
     /* Register event listener for console event source: */
-    comEventSourceConsole.RegisterListener(m_comEventListener, eventTypes,
-        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
+    comEventSourceConsole.RegisterListener(m_comEventListener, eventTypes, FALSE /* active? */);
     AssertWrapperOk(comEventSourceConsole);
 
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Register event sources in their listeners as well: */
-        m_pQtListener->getWrapped()->registerSource(comEventSourceConsole, m_comEventListener);
-    }
+    /* Register event sources in their listeners as well: */
+    m_pQtListener->getWrapped()->registerSource(comEventSourceConsole, m_comEventListener);
 }
 
 void UIConsoleEventHandlerProxy::prepareConnections()
@@ -298,12 +293,8 @@ void UIConsoleEventHandlerProxy::cleanupListener()
     /* Make sure session is passed: */
     AssertPtrReturnVoid(m_pSession);
 
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Unregister everything: */
-        m_pQtListener->getWrapped()->unregisterSources();
-    }
+    /* Unregister everything: */
+    m_pQtListener->getWrapped()->unregisterSources();
 
     /* Get console: */
     const CConsole comConsole = m_pSession->session().GetConsole();

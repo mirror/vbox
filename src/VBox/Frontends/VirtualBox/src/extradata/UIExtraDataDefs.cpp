@@ -20,7 +20,6 @@
 
 
 /* General: */
-const char *UIExtraDataDefs::GUI_EventHandlingType = "GUI/EventHandlingType";
 const char *UIExtraDataDefs::GUI_RestrictedDialogs = "GUI/RestrictedDialogs";
 
 

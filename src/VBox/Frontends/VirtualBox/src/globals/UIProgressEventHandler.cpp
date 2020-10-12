@@ -63,18 +63,13 @@ void UIProgressEventHandler::prepareListener()
         << KVBoxEventType_OnProgressTaskCompleted;
 
     /* Register event listener for CProgress event source: */
-    comEventSourceProgress.RegisterListener(m_comEventListener, eventTypes,
-        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
+    comEventSourceProgress.RegisterListener(m_comEventListener, eventTypes, FALSE /* active? */);
     AssertWrapperOk(comEventSourceProgress);
 
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Register event sources in their listeners as well: */
-        m_pQtListener->getWrapped()->registerSource(comEventSourceProgress,
-                                                    m_comEventListener,
-                                                    QSet<KVBoxEventType>() << KVBoxEventType_OnProgressTaskCompleted);
-    }
+    /* Register event sources in their listeners as well: */
+    m_pQtListener->getWrapped()->registerSource(comEventSourceProgress,
+                                                m_comEventListener,
+                                                QSet<KVBoxEventType>() << KVBoxEventType_OnProgressTaskCompleted);
 }
 
 void UIProgressEventHandler::prepareConnections()
@@ -98,12 +93,8 @@ void UIProgressEventHandler::cleanupConnections()
 
 void UIProgressEventHandler::cleanupListener()
 {
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Unregister everything: */
-        m_pQtListener->getWrapped()->unregisterSources();
-    }
+    /* Unregister everything: */
+    m_pQtListener->getWrapped()->unregisterSources();
 
     /* Make sure VBoxSVC is available: */
     if (!uiCommon().isVBoxSVCAvailable())

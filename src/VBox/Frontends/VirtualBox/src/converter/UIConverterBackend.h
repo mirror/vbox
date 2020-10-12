@@ -108,7 +108,6 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<UIToolType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIVisualStateType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<DetailsElementType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<PreviewUpdateIntervalType>();
-template<> SHARED_LIBRARY_STUFF bool canConvert<EventHandlingType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<GUIFeatureType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<GlobalSettingsPageType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<MachineSettingsPageType>();
@@ -231,7 +230,6 @@ template<> SHARED_LIBRARY_STUFF QString toInternalString(const PreviewUpdateInte
 template<> SHARED_LIBRARY_STUFF PreviewUpdateIntervalType fromInternalString<PreviewUpdateIntervalType>(const QString &strPreviewUpdateIntervalType);
 template<> SHARED_LIBRARY_STUFF int toInternalInteger(const PreviewUpdateIntervalType &previewUpdateIntervalType);
 template<> SHARED_LIBRARY_STUFF PreviewUpdateIntervalType fromInternalInteger<PreviewUpdateIntervalType>(const int &iPreviewUpdateIntervalType);
-template<> SHARED_LIBRARY_STUFF EventHandlingType fromInternalString<EventHandlingType>(const QString &strEventHandlingType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const GUIFeatureType &guiFeatureType);
 template<> SHARED_LIBRARY_STUFF GUIFeatureType fromInternalString<GUIFeatureType>(const QString &strGuiFeatureType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const GlobalSettingsPageType &globalSettingsPageType);
