@@ -797,7 +797,6 @@ void UIChooserAbstractModel::prepare()
 
 void UIChooserAbstractModel::prepareConnections()
 {
-#ifdef VBOX_GUI_WITH_CLOUD_VMS
     /* Cloud thread-pool connections: */
     connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
             this, &UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete);
@@ -805,7 +804,6 @@ void UIChooserAbstractModel::prepareConnections()
      * this is to be replaced by corresponding Main API event later. */
     connect(&uiCommon(), &UICommon::sigCloudMachineRegistered,
             this, &UIChooserAbstractModel::sltCloudMachineRegistered);
-#endif
 
     /* Setup global connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
@@ -887,7 +885,6 @@ void UIChooserAbstractModel::reloadLocalTree()
 
 void UIChooserAbstractModel::reloadCloudTree()
 {
-#ifdef VBOX_GUI_WITH_CLOUD_VMS
     LogRelFlow(("UIChooserAbstractModel: Loading cloud providers/profiles...\n"));
 
     /* Wipe out existing cloud providers first.
@@ -987,7 +984,6 @@ void UIChooserAbstractModel::reloadCloudTree()
     }
 
     LogRelFlow(("UIChooserAbstractModel: Cloud providers/profiles loaded.\n"));
-#endif /* VBOX_GUI_WITH_CLOUD_VMS */
 }
 
 void UIChooserAbstractModel::addLocalMachineIntoTheTree(const CMachine &comMachine,
