@@ -267,8 +267,8 @@ static void
 #else
 static int
 #endif
-            vbox_master_set(struct drm_device *dev,
-			   struct drm_file *file_priv, bool from_open)
+vbox_master_set(struct drm_device *dev,
+		struct drm_file *file_priv, bool from_open)
 {
 	struct vbox_private *vbox = dev->dev_private;
 

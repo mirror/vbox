@@ -137,9 +137,8 @@
 #include <linux/interrupt.h>
 #include <linux/completion.h>
 #include <linux/compiler.h>
-/* linux/fs.h defines HAVE_UNLOCKED_IOCTL from 2.6.11 till 5.9, but its meaning remains valid */
-#if RTLNX_VER_MIN(5,9,0)
-# define HAVE_UNLOCKED_IOCTL 1
+#if RTLNX_VER_MIN(5,9,0) /* linux/fs.h defined HAVE_UNLOCKED_IOCTL from 2.6.11 up to 5.9, when it became an implicit assumption. */
+# define HAVE_UNLOCKED_IOCTL 1 /* We use this in a couple of places, so for now just define it for 5.9+ too. */
 #endif
 #if !defined(HAVE_UNLOCKED_IOCTL) && RTLNX_VER_MAX(2,6,38)
 # include <linux/smp_lock.h>
