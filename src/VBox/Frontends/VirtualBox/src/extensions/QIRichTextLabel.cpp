@@ -26,7 +26,7 @@
 
 QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
     : QWidget(pParent)
-    , m_pTextEdit()
+    , m_pTextBrowser()
     , m_iMinimumTextWidth(0)
 {
     /* Configure self: */
@@ -39,55 +39,56 @@ QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
         /* Configure layout: */
         pMainLayout->setMargin(0);
 
-        /* Create text-edit: */
-        m_pTextEdit = new QTextEdit;
-        if (m_pTextEdit)
+        /* Create text-browser: */
+        m_pTextBrowser = new QTextBrowser;
+        if (m_pTextBrowser)
         {
-            /* Configure text-edit: */
-            m_pTextEdit->setReadOnly(true);
-            m_pTextEdit->setFocusPolicy(Qt::NoFocus);
-            m_pTextEdit->setFrameShape(QFrame::NoFrame);
-            m_pTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-            m_pTextEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+            /* Configure text-browser: */
+            m_pTextBrowser->setReadOnly(true);
+            m_pTextBrowser->setFocusPolicy(Qt::NoFocus);
+            m_pTextBrowser->setFrameShape(QFrame::NoFrame);
+            m_pTextBrowser->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            m_pTextBrowser->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+            m_pTextBrowser->setOpenExternalLinks(true);
 
-            /* Tune text-edit viewport palette: */
-            m_pTextEdit->viewport()->setAutoFillBackground(false);
-            QPalette pal = m_pTextEdit->viewport()->palette();
+            /* Tune text-browser viewport palette: */
+            m_pTextBrowser->viewport()->setAutoFillBackground(false);
+            QPalette pal = m_pTextBrowser->viewport()->palette();
             pal.setColor(QPalette::Active,   QPalette::Text, pal.color(QPalette::Active,   QPalette::WindowText));
             pal.setColor(QPalette::Inactive, QPalette::Text, pal.color(QPalette::Inactive, QPalette::WindowText));
             pal.setColor(QPalette::Disabled, QPalette::Text, pal.color(QPalette::Disabled, QPalette::WindowText));
-            m_pTextEdit->viewport()->setPalette(pal);
+            m_pTextBrowser->viewport()->setPalette(pal);
         }
 
         /* Add into layout: */
-        pMainLayout->addWidget(m_pTextEdit);
+        pMainLayout->addWidget(m_pTextBrowser);
     }
 }
 
 QString QIRichTextLabel::text() const
 {
-    return m_pTextEdit->toHtml();
+    return m_pTextBrowser->toHtml();
 }
 
 void QIRichTextLabel::registerImage(const QImage &image, const QString &strName)
 {
-    m_pTextEdit->document()->addResource(QTextDocument::ImageResource, QUrl(strName), QVariant(image));
+    m_pTextBrowser->document()->addResource(QTextDocument::ImageResource, QUrl(strName), QVariant(image));
 }
 
 QTextOption::WrapMode QIRichTextLabel::wordWrapMode() const
 {
-    return m_pTextEdit->wordWrapMode();
+    return m_pTextBrowser->wordWrapMode();
 }
 
 void QIRichTextLabel::setWordWrapMode(QTextOption::WrapMode policy)
 {
-    m_pTextEdit->setWordWrapMode(policy);
+    m_pTextBrowser->setWordWrapMode(policy);
 }
 
 void QIRichTextLabel::installEventFilter(QObject *pFilterObj)
 {
     QWidget::installEventFilter(pFilterObj);
-    m_pTextEdit->installEventFilter(pFilterObj);
+    m_pTextBrowser->installEventFilter(pFilterObj);
 }
 
 void QIRichTextLabel::setMinimumTextWidth(int iMinimumTextWidth)
@@ -96,7 +97,7 @@ void QIRichTextLabel::setMinimumTextWidth(int iMinimumTextWidth)
     m_iMinimumTextWidth = iMinimumTextWidth;
 
     /* Get corresponding QTextDocument: */
-    QTextDocument *pTextDocument = m_pTextEdit->document();
+    QTextDocument *pTextDocument = m_pTextBrowser->document();
     /* Bug in QTextDocument (?) : setTextWidth doesn't work from the first time. */
     for (int iTry = 0; pTextDocument->textWidth() != m_iMinimumTextWidth && iTry < 3; ++iTry)
         pTextDocument->setTextWidth(m_iMinimumTextWidth);
@@ -104,17 +105,17 @@ void QIRichTextLabel::setMinimumTextWidth(int iMinimumTextWidth)
     QSize size = pTextDocument->size().toSize();
 
     /* Resize to content size: */
-    m_pTextEdit->setMinimumSize(size);
+    m_pTextBrowser->setMinimumSize(size);
     layout()->activate();
 }
 
 void QIRichTextLabel::setText(const QString &strText)
 {
     /* Set text: */
-    m_pTextEdit->setHtml(strText);
+    m_pTextBrowser->setHtml(strText);
 
     /* Get corresponding QTextDocument: */
-    QTextDocument *pTextDocument = m_pTextEdit->document();
+    QTextDocument *pTextDocument = m_pTextBrowser->document();
 
     // WORKAROUND:
     // Ok, here is the trick.  In Qt 5.6.x initial QTextDocument size is always 0x0
