@@ -2542,7 +2542,7 @@ static void rtldrPE_VerifySignatureDestroy(PRTLDRMODPE pModPe, PRTLDRPESIGNATURE
 {
     RT_NOREF_PV(pModPe);
     RTCrPkcs7ContentInfo_Delete(&pSignature->PrimaryContentInfo);
-    if (pSignature->paNested > 0)
+    if (pSignature->paNested)
     {
         RTMemTmpFree(pSignature->paNested);
         pSignature->paNested = NULL;
