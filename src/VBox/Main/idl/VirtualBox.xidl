@@ -27698,6 +27698,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <method name="readCloudMachineStubList">
+      <desc>
+        Make the list of cloud machine stubs available via
+        <link to="#cloudMachineStubList"/> attribute.
+        Like with <link to="#getCloudMachine"/>, the returned machines
+        are initiatally inaccessible and require a refresh to get
+        their data from the cloud.
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+    <attribute name="cloudMachineStubList" type="ICloudMachine" safearray="yes" readonly="yes">
+      <desc>
+        See <link to="#readCloudMachineStubList"/>.
+      </desc>
+    </attribute>
+
     <method name="addCloudMachine">
       <desc>
         Adopt a running instance and register it as cloud machine.
