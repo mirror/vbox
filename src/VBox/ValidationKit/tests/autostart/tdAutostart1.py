@@ -1228,10 +1228,10 @@ class tdAutostartOsWin(tdAutostartOs):
             sSecPolicyEditor = """
 $oUser = New-Object System.Security.Principal.NTAccount("%s")
 $oSID = $oUser.Translate([System.Security.Principal.SecurityIdentifier])
-$sExportFile = '.\cfg.inf'
-$sSecDb = '.\secedt.sdb'
-$sSecDb1 = '.\secedt.jfm'
-$sImportFile = '.\newcfg.inf'
+$sExportFile = '.\\cfg.inf'
+$sSecDb = '.\\secedt.sdb'
+$sSecDb1 = '.\\secedt.jfm'
+$sImportFile = '.\\newcfg.inf'
 secedit /export /cfg $sExportFile
 $sCurrServiceLogonRight = Get-Content -Path $sExportFile |
     Where-Object -FilterScript {$PSItem -match 'SeServiceLogonRight'}
