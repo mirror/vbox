@@ -1226,15 +1226,15 @@ class tdAutostartOsWin(tdAutostartOs):
         #Allow the user to logon as service
         if fRc:
             sSecPolicyEditor = """
-$oUser = New-Object System.Security.Principal.NTAccount("%s")
+$sUser = '%s'
+$oUser = New-Object System.Security.Principal.NTAccount("$sUser")
 $oSID = $oUser.Translate([System.Security.Principal.SecurityIdentifier])
-$sExportFile = '.\\cfg.inf'
-$sSecDb = '.\\secedt.sdb'
-$sSecDb1 = '.\\secedt.jfm'
-$sImportFile = '.\\newcfg.inf'
+$sExportFile = 'C:\\Temp\\cfg.inf'
+$sSecDb = 'C:\\Temp\\secedt.sdb'
+$sImportFile = 'C:\\Temp\\newcfg.inf'
 secedit /export /cfg $sExportFile
 $sCurrServiceLogonRight = Get-Content -Path $sExportFile |
-    Where-Object -FilterScript {$PSItem -match 'SeServiceLogonRight'}
+    Where-Object {$_ -Match 'SeServiceLogonRight'}
 $asFileContent = @'
 [Unicode]
 Unicode=yes
@@ -1258,7 +1258,6 @@ secedit /configure /db $sSecDb
 Remove-Item -Path $sExportFile
 Remove-Item -Path $sSecDb
 Remove-Item -Path $sImportFile
-Remove-Item -Path $sSecDb1
                            """ % (sUser,);
             fRc = self.uploadString(oGuestSession, sSecPolicyEditor, 'C:\\Temp\\adjustsec.ps1');
             if not fRc:
@@ -1266,9 +1265,9 @@ Remove-Item -Path $sSecDb1
         if fRc:
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession,
                                                       'Setting the "Logon as service" policy to the user %s' % sUser,
-                                                      60 * 1000, 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
-                                                      ['powershell.exe', '-file', 'C:\\Temp\\adjustsec.ps1', '-ExecutionPolicy',
-                                                       'Bypass' ], False, True);
+                                                      300 * 1000, 'C:\\Windows\\System32\\cmd.exe',
+                                                      ['cmd.exe', '/c', "type C:\\Temp\\adjustsec.ps1 | powershell -"],
+                                                      False, True);
             if not fRc:
                 reporter.error('Setting the "Logon as service" policy to the user %s failed' % sUser);
         try:
