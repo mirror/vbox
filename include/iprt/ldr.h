@@ -1245,11 +1245,9 @@ typedef RTLDRSIGNATUREINFO const *PCRTLDRSIGNATUREINFO;
  * @returns IPRT status code.  A status code other than VINF_SUCCESS will
  *          prevent callbacks the remaining signatures (if any).
  * @param   hLdrMod         The module handle.
- * @param   enmSignature    The signature format.
  * @param   pInfo           Signature information.
  * @param   pErrInfo        Pointer to an error info buffer, optional.
  * @param   pvUser          User argument.
- *
  */
 typedef DECLCALLBACKTYPE(int, FNRTLDRVALIDATESIGNEDDATA,(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREINFO pInfo,
                                                          PRTERRINFO pErrInfo, void *pvUser));
