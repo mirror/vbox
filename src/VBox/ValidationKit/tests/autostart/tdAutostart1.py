@@ -1226,52 +1226,53 @@ class tdAutostartOsWin(tdAutostartOs):
         #Allow the user to logon as service
         if fRc:
             sSecPolicyEditor = """
-' SetLogonAsAServiceRight.vbs
-' Sample VBScript to set or grant Logon As A Service Right.
-' Author: http://www.morgantechspace.com/
-' ------------------------------------------------------'
-
-Dim strUserName,ConfigFileName,OrgStr,RepStr,inputFile,strInputFile,outputFile,obj
-strUserName = "%s"
-Dim oShell
-Set oShell = CreateObject ("WScript.Shell")
-oShell.Run "secedit /export /cfg config.inf", 0, true
-oShell.Run "secedit /import /cfg config.inf /db database.sdb", 0, true
-
-ConfigFileName = "config.inf"
-OrgStr = "SeServiceLogonRight ="
-RepStr = "SeServiceLogonRight = " & strUserName & ","
-Set inputFile = CreateObject("Scripting.FileSystemObject").OpenTextFile("config.inf", 1,1,-1)
-strInputFile = inputFile.ReadAll
-inputFile.Close
-Set inputFile = Nothing
-
-Set outputFile = CreateObject("Scripting.FileSystemObject").OpenTextFile("config.inf",2,1,-1)
-outputFile.Write (Replace(strInputFile,OrgStr,RepStr))
-outputFile.Close
-Set outputFile = Nothing
-
-oShell.Run "secedit /configure /db database.sdb /cfg config.inf",0,true
-set oShell= Nothing
-
-Set obj = CreateObject("Scripting.FileSystemObject")
-obj.DeleteFile("config.inf")
-obj.DeleteFile("database.sdb")
-
-WScript.Echo "Logon As A Service Right granted to user '"& strUserName &"'"
+$oUser = New-Object System.Security.Principal.NTAccount("%s")
+$oSID = $oUser.Translate([System.Security.Principal.SecurityIdentifier])
+$sExportFile = '.\cfg.inf'
+$sSecDb = '.\secedt.sdb'
+$sSecDb1 = '.\secedt.jfm'
+$sImportFile = '.\newcfg.inf'
+secedit /export /cfg $sExportFile
+$sCurrServiceLogonRight = Get-Content -Path $sExportFile |
+    Where-Object -FilterScript {$PSItem -match 'SeServiceLogonRight'}
+$asFileContent = @'
+[Unicode]
+Unicode=yes
+[System Access]
+[Event Audit]
+[Registry Values]
+[Version]
+signature="$CHICAGO$"
+Revision=1
+[Profile Description]
+Description=GrantLogOnAsAService security template
+[Privilege Rights]
+{0}*{1}
+'@ -f $(
+        if($sCurrServiceLogonRight){"$sCurrServiceLogonRight,"}
+        else{'SeServiceLogonRight = '}
+    ), $oSid.Value
+Set-Content -Path $sImportFile -Value $asFileContent
+secedit /import /db $sSecDb /cfg $sImportFile
+secedit /configure /db $sSecDb
+Remove-Item -Path $sExportFile
+Remove-Item -Path $sSecDb
+Remove-Item -Path $sImportFile
+Remove-Item -Path $sSecDb1
                            """ % (sUser,);
-            fRc = self.uploadString(oGuestSession, sSecPolicyEditor, 'C:\\Temp\\adjustsec.vbs');
+            fRc = self.uploadString(oGuestSession, sSecPolicyEditor, 'C:\\Temp\\adjustsec.ps1');
             if not fRc:
-                reporter.error('Upload the adjustsec.vbs failed');
+                reporter.error('Upload the adjustsec.ps1 failed');
         if fRc:
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession,
                                                       'Setting the "Logon as service" policy to the user %s' % sUser,
-                                                      30 * 1000, 'C:\\Windows\\System32\\cscript.exe',
-                                                      ['cscript.exe', 'C:\\Temp\\adjustsec.vbs', '//Nologo'], False, True);
+                                                      60 * 1000, 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
+                                                      ['powershell.exe', '-file', 'C:\\Temp\\adjustsec.ps1', '-ExecutionPolicy',
+                                                       'Bypass' ], False, True);
             if not fRc:
                 reporter.error('Setting the "Logon as service" policy to the user %s failed' % sUser);
         try:
-            oGuestSession.fsObjRemove('C:\\Temp\\adjustsec.vbs');
+            oGuestSession.fsObjRemove('C:\\Temp\\adjustsec.ps1');
         except:
             fRc = reporter.errorXcpt('Removing policy script failed');
         reporter.testDone();
