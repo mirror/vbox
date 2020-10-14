@@ -455,37 +455,25 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
-            if (!(pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED))
-                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_ENABLE);
+            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_ENABLE);
             break;
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
         {
-            if (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED)
-                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_DISABLE);
+            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_DISABLE);
             break;
         }
 
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
-            /* Only pause if the stream is enabled. */
-            if (!(pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED))
-                break;
-
-            if (!(pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_PAUSED))
-                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_PAUSE);
+            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_PAUSE);
             break;
         }
 
         case PDMAUDIOSTREAMCMD_RESUME:
         {
-            /* Only need to resume if the stream is enabled. */
-            if (!(pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED))
-                break;
-
-            if (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_PAUSED)
-                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_RESUME);
+            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_RESUME);
             break;
         }
 
