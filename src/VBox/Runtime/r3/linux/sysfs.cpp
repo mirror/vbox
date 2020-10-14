@@ -127,6 +127,22 @@ DECLINLINE(int) rtLinuxSysFsConstructPath(char *pszBuf, size_t cchBuf, const cha
 }
 
 
+RTDECL(int) RTLinuxConstructPathV(char *pszPath, size_t cbPath, const char *pszFormat, va_list va)
+{
+    return rtLinuxSysFsConstructPath(pszPath, cbPath, pszFormat, va);
+}
+
+
+RTDECL(int) RTLinuxConstructPath(char *pszPath, size_t cbPath, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = rtLinuxSysFsConstructPath(pszPath, cbPath, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
 RTDECL(int) RTLinuxSysFsExistsExV(const char *pszFormat, va_list va)
 {
     int iSavedErrno = errno;

@@ -445,6 +445,30 @@ RTDECL(int) RTLinuxCheckDevicePathV(dev_t DevNum, RTFMODE fMode, char *pszBuf, s
 RTDECL(int) RTLinuxCheckDevicePath(dev_t DevNum, RTFMODE fMode, char *pszBuf, size_t cchBuf,
                                    const char *pszPattern, ...) RT_IPRT_FORMAT_ATTR(5, 6);
 
+/**
+ * Constructs the path of a sysfs file from the format parameters passed,
+ * prepending "/sys/" if the path is relative.
+ *
+ * @returns IPRT status code.
+ * @param   pszPath    Where to write the path.
+ * @param   cbPath     The size of the buffer pointed to by @a pszPath.
+ * @param   pszFormat  The name format, either absolute or relative to "/sys/".
+ * @param   va         The format args.
+ */
+RTDECL(int) RTLinuxConstructPathV(char *pszPath, size_t cbPath, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+
+/**
+ * Constructs the path of a sysfs file from the format parameters passed,
+ * prepending "/sys/" if the path is relative.
+ *
+ * @returns IPRT status code.
+ * @param   pszPath    Where to write the path.
+ * @param   cbPath     The size of the buffer pointed to by @a pszPath.
+ * @param   pszFormat  The name format, either absolute or relative to "/sys/".
+ * @param   ...        The format args.
+ */
+RTDECL(int) RTLinuxConstructPath(char *pszPath, size_t cbPath, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+
 /** @} */
 
 RT_C_DECLS_END
