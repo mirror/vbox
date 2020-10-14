@@ -3947,6 +3947,9 @@ DECLINLINE(unsigned) e1kTxDLoadMore(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     AssertCompile(E1K_TXD_CACHE_SIZE < (256 * sizeof(pThis->nTxDFetched)));
     unsigned nDescsToFetch      = RT_MIN(nDescsAvailable, E1K_TXD_CACHE_SIZE - pThis->nTxDFetched);
     unsigned nDescsTotal        = TDLEN / sizeof(E1KTXDESC);
+    Assert(nDescsTotal != 0);
+    if (nDescsTotal == 0)
+        return 0;
     unsigned nFirstNotLoaded    = (TDH + pThis->nTxDFetched) % nDescsTotal;
     unsigned nDescsInSingleRead = RT_MIN(nDescsToFetch, nDescsTotal - nFirstNotLoaded);
     E1kLog3(("%s e1kTxDLoadMore: nDescsAvailable=%u nDescsToFetch=%u nDescsTotal=%u nFirstNotLoaded=0x%x nDescsInSingleRead=%u\n",
@@ -5462,7 +5465,10 @@ static void e1kDumpTxDCache(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     {
         if (i == pThis->iTxDCurrent)
             LogRel(("E1000: >>> "));
-        LogRel(("E1000: %RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, tdh++ % cDescs), &pThis->aTxDescriptors[i]));
+        if (cDescs)
+            LogRel(("E1000: %RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, tdh++ % cDescs), &pThis->aTxDescriptors[i]));
+        else
+            LogRel(("E1000: <lost>: %R[e1ktxd]\n", &pThis->aTxDescriptors[i]));
     }
 }
 
@@ -7344,9 +7350,13 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     {
         if (i == pThis->iRxDCurrent)
             pHlp->pfnPrintf(pHlp, ">>> ");
-        pHlp->pfnPrintf(pHlp, "%RGp: %R[e1krxd]\n",
-                        e1kDescAddr(RDBAH, RDBAL, rdh++ % cDescs),
-                        &pThis->aRxDescriptors[i]);
+        if (cDescs)
+            pHlp->pfnPrintf(pHlp, "%RGp: %R[e1krxd]\n",
+                            e1kDescAddr(RDBAH, RDBAL, rdh++ % cDescs),
+                            &pThis->aRxDescriptors[i]);
+        else
+            pHlp->pfnPrintf(pHlp, "<lost>: %R[e1krxd]\n",
+                            &pThis->aRxDescriptors[i]);
     }
 #endif /* E1K_WITH_RXD_CACHE */
 
@@ -7373,9 +7383,13 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     {
         if (i == pThis->iTxDCurrent)
             pHlp->pfnPrintf(pHlp, ">>> ");
-        pHlp->pfnPrintf(pHlp, "%RGp: %R[e1ktxd]\n",
-                        e1kDescAddr(TDBAH, TDBAL, tdh++ % cDescs),
-                        &pThis->aTxDescriptors[i]);
+        if (cDescs)
+            pHlp->pfnPrintf(pHlp, "%RGp: %R[e1ktxd]\n",
+                            e1kDescAddr(TDBAH, TDBAL, tdh++ % cDescs),
+                            &pThis->aTxDescriptors[i]);
+        else
+            pHlp->pfnPrintf(pHlp, "<lost>: %R[e1ktxd]\n",
+                            &pThis->aTxDescriptors[i]);
     }
 #endif /* E1K_WITH_TXD_CACHE */
 
