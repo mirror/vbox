@@ -612,7 +612,7 @@ void UIChooserAbstractModel::sltLocalMachineDataChanged(const QUuid &uMachineId)
     invisibleRoot()->updateAllNodes(uMachineId);
 }
 
-void UIChooserAbstractModel::sltLocalMachineRegistered(const QUuid &uMachineId, const bool fRegistered)
+void UIChooserAbstractModel::sltLocalMachineRegistrationChanged(const QUuid &uMachineId, const bool fRegistered)
 {
     /* Existing VM unregistered? */
     if (!fRegistered)
@@ -635,8 +635,8 @@ void UIChooserAbstractModel::sltLocalMachineRegistered(const QUuid &uMachineId, 
     }
 }
 
-void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                                       const QUuid &uMachineId, const bool fRegistered)
+void UIChooserAbstractModel::sltCloudMachineRegistrationChanged(const QString &strProviderShortName, const QString &strProfileName,
+                                                                const QUuid &uMachineId, const bool fRegistered)
 {
     /* Search for profile node: */
     const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
@@ -799,7 +799,7 @@ void UIChooserAbstractModel::prepareConnections()
     /* Setup temporary connections,
      * this is to be replaced by corresponding Main API event later. */
     connect(&uiCommon(), &UICommon::sigCloudMachineRegistered,
-            this, &UIChooserAbstractModel::sltCloudMachineRegistered);
+            this, &UIChooserAbstractModel::sltCloudMachineRegistrationChanged);
 
     /* Setup global connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
@@ -807,7 +807,7 @@ void UIChooserAbstractModel::prepareConnections()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
             this, &UIChooserAbstractModel::sltLocalMachineDataChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
-            this, &UIChooserAbstractModel::sltLocalMachineRegistered);
+            this, &UIChooserAbstractModel::sltLocalMachineRegistrationChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
             this, &UIChooserAbstractModel::sltSessionStateChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake,

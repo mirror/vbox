@@ -143,12 +143,12 @@ protected slots:
         /** Handles local machine data change for machine with certain @a uMachineId. */
         virtual void sltLocalMachineDataChanged(const QUuid &uMachineId);
         /** Handles local machine registering/unregistering for machine with certain @a uMachineId. */
-        virtual void sltLocalMachineRegistered(const QUuid &uMachineId, const bool fRegistered);
+        virtual void sltLocalMachineRegistrationChanged(const QUuid &uMachineId, const bool fRegistered);
         /** Handles cloud machine registering/unregistering for machine with certain @a uMachineId.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name. */
-        virtual void sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                               const QUuid &uMachineId, const bool fRegistered);
+        virtual void sltCloudMachineRegistrationChanged(const QString &strProviderShortName, const QString &strProfileName,
+                                                        const QUuid &uMachineId, const bool fRegistered);
         /** Handles session @a enmState change for machine with certain @a uMachineId. */
         virtual void sltSessionStateChanged(const QUuid &uMachineId, const KSessionState enmState);
         /** Handles snapshot change for machine/snapshot with certain @a uMachineId / @a uSnapshotId. */

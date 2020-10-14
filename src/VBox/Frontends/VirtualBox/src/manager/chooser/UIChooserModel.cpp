@@ -1078,14 +1078,14 @@ bool UIChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
     return QObject::eventFilter(pWatched, pEvent);
 }
 
-void UIChooserModel::sltLocalMachineRegistered(const QUuid &uMachineId, const bool fRegistered)
+void UIChooserModel::sltLocalMachineRegistrationChanged(const QUuid &uMachineId, const bool fRegistered)
 {
     /* Existing VM unregistered => make sure no item with passed uMachineId is selected: */
     if (!fRegistered)
         makeSureNoItemWithCertainIdSelected(uMachineId);
 
     /* Call to base-class: */
-    UIChooserAbstractModel::sltLocalMachineRegistered(uMachineId, fRegistered);
+    UIChooserAbstractModel::sltLocalMachineRegistrationChanged(uMachineId, fRegistered);
 
     /* Existing VM unregistered? */
     if (!fRegistered)
@@ -1109,15 +1109,15 @@ void UIChooserModel::sltLocalMachineRegistered(const QUuid &uMachineId, const bo
     }
 }
 
-void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                               const QUuid &uMachineId, const bool fRegistered)
+void UIChooserModel::sltCloudMachineRegistrationChanged(const QString &strProviderShortName, const QString &strProfileName,
+                                                        const QUuid &uMachineId, const bool fRegistered)
 {
     /* Existing VM unregistered => make sure no item with passed uMachineId is selected: */
     if (!fRegistered)
         makeSureNoItemWithCertainIdSelected(uMachineId);
 
     /* Call to base-class: */
-    UIChooserAbstractModel::sltCloudMachineRegistered(strProviderShortName, strProfileName, uMachineId, fRegistered);
+    UIChooserAbstractModel::sltCloudMachineRegistrationChanged(strProviderShortName, strProfileName, uMachineId, fRegistered);
 
     /* Existing VM unregistered? */
     if (!fRegistered)
@@ -1781,10 +1781,10 @@ void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machine
         AssertPtrReturnVoid(pItem->parentItem()->parentItem());
         const QString strProviderShortName = pItem->parentItem()->parentItem()->name();
         const QString strProfileName = pItem->parentItem()->name();
-        sltCloudMachineRegistered(strProviderShortName,
-                                  strProfileName,
-                                  uId /* machine ID */,
-                                  false /* registered? */);
+        sltCloudMachineRegistrationChanged(strProviderShortName,
+                                           strProfileName,
+                                           uId /* machine ID */,
+                                           false /* registered? */);
     }
 }
 
