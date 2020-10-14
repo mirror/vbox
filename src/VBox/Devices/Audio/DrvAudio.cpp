@@ -763,7 +763,11 @@ static int drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
     /* Mark all host streams to re-initialize. */
     PPDMAUDIOSTREAM pStream;
     RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, Node)
+    {
         pStream->fStatus |= PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT;
+        pStream->cTriesReInit   = 0;
+        pStream->tsLastReInitNs = 0;
+    }
 
 # ifdef VBOX_WITH_AUDIO_ENUM
     /* Re-enumerate all host devices as soon as possible. */
@@ -779,6 +783,8 @@ static int drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
  * This might be the case if the backend told us we need to re-initialize because something
  * on the host side has changed.
  *
+ * Note: Does not touch the stream's status flags.
+ *
  * @returns IPRT status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to re-initialize.
@@ -793,7 +799,7 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
     /*
      * Gather current stream status.
      */
-    bool fIsEnabled = RT_BOOL(pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED); /* Stream is enabled? */
+    const bool fIsEnabled = RT_BOOL(pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED); /* Stream is enabled? */
 
     /*
      * Destroy and re-create stream on backend side.
@@ -868,7 +874,6 @@ static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
     LogFunc(("[%s]\n", pStream->szName));
 
     pStream->fStatus = PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED;
-
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Reset statistics.
@@ -1110,33 +1115,65 @@ static DECLCALLBACK(int) drvAudioStreamIterate(PPDMIAUDIOCONNECTOR pInterface, P
 /**
  * Re-initializes the given stream if it is scheduled for this operation.
  *
- * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to check and maybe re-initialize.
  */
-static int drvAudioStreamMaybeReInit(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
+static void drvAudioStreamMaybeReInit(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
 {
-    int rc = VINF_SUCCESS;
-
     if (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT)
     {
-#ifdef VBOX_WITH_AUDIO_ENUM
-        if (pThis->fEnumerateDevices)
-        {
-            /* Re-enumerate all host devices. */
-            drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
+        const unsigned cMaxTries = 3; /** @todo Make this configurable? */
+        const uint64_t tsNowNs   = RTTimeNanoTS();
 
-            pThis->fEnumerateDevices = false;
-        }
+        /* Throttle re-initializing streams on failure. */
+        if (   pStream->cTriesReInit < cMaxTries
+            && tsNowNs - pStream->tsLastReInitNs >= RT_NS_1SEC * pStream->cTriesReInit) /** @todo Ditto. */
+        {
+#ifdef VBOX_WITH_AUDIO_ENUM
+            if (pThis->fEnumerateDevices)
+            {
+                /* Re-enumerate all host devices. */
+                drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
+
+                pThis->fEnumerateDevices = false;
+            }
 #endif /* VBOX_WITH_AUDIO_ENUM */
 
-        /* Remove the pending re-init flag in any case, regardless whether the actual re-initialization succeeded
-         * or not. If it failed, the backend needs to notify us again to try again at some later point in time. */
-        pStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT;
-        rc = drvAudioStreamReInitInternal(pThis, pStream);
-    }
+            int rc = drvAudioStreamReInitInternal(pThis, pStream);
+            if (RT_FAILURE(rc))
+            {
+                pStream->cTriesReInit++;
+                pStream->tsLastReInitNs = tsNowNs;
+            }
+            else
+            {
+                /* Remove the pending re-init flag on success. */
+                pStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT;
+            }
+        }
+        else
+        {
+            /* Did we exceed our tries re-initializing the stream?
+             * Then this one is dead-in-the-water, so disable it for further use. */
+            if (pStream->cTriesReInit == cMaxTries)
+            {
+                LogRel(("Audio: Re-initializing stream '%s' exceeded maximum retries (%u), leaving as disabled\n",
+                        pStream->szName, cMaxTries));
 
-    return rc;
+                /* Don't try to re-initialize anymore and mark as disabled. */
+                pStream->fStatus &= ~(PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT | PDMAUDIOSTREAMSTS_FLAGS_ENABLED);
+
+                /* Note: Further writes to this stream go to / will be read from the bit bucket (/dev/null) from now on. */
+            }
+        }
+
+#ifdef LOG_ENABLED
+        char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
+        Log3Func(("[%s] fStatus=%s\n", pStream->szName, pszStreamSts));
+        RTStrFree(pszStreamSts);
+#endif /* LOG_ENABLED */
+
+    }
 }
 
 /**
@@ -1159,9 +1196,7 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
         return VINF_SUCCESS;
 
     /* Is the stream scheduled for re-initialization? Do so now. */
-    int rc = drvAudioStreamMaybeReInit(pThis, pStream);
-    if (RT_FAILURE(rc))
-        return rc;
+    drvAudioStreamMaybeReInit(pThis, pStream);
 
 #ifdef LOG_ENABLED
     char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
@@ -1178,6 +1213,8 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 
     /* Whether to try closing a pending to close stream. */
     bool fTryClosePending = false;
+
+    int rc;
 
     do
     {
@@ -2903,9 +2940,7 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECT
     AssertRC(rc2);
 
     /* Is the stream scheduled for re-initialization? Do so now. */
-    int rc = drvAudioStreamMaybeReInit(pThis, pStream);
-    if (RT_FAILURE(rc)) /** @todo r=aeichner What is the correct operation in the failure case? */
-        LogRel(("Audio: Reinitializing the stream in drvAudioStreamGetStatus() failed with %Rrc\n", rc));
+    drvAudioStreamMaybeReInit(pThis, pStream);
 
     PDMAUDIOSTREAMSTS fStrmStatus = pStream->fStatus;
 
