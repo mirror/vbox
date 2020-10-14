@@ -1610,58 +1610,14 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescr
 
             PDSOUNDDEV pDSoundDev = (PDSOUNDDEV)pDev->pvData;
 
-            if (pGUID)
+            if (pGUID) /* pGUID == NULL means default device. */
                 memcpy(&pDSoundDev->Guid, pGUID, sizeof(GUID));
 
-            LPDIRECTSOUND8 pDS;
-            HRESULT hr = directSoundPlayInterfaceCreate(pGUID, &pDS);
-            if (SUCCEEDED(hr))
-            {
-                do
-                {
-                    DSCAPS DSCaps;
-                    RT_ZERO(DSCaps);
-                    DSCaps.dwSize = sizeof(DSCAPS);
-                    hr = IDirectSound_GetCaps(pDS, &DSCaps);
-                    if (FAILED(hr))
-                        break;
+            rc = DrvAudioHlpDeviceEnumAdd(pDevEnm, pDev);
 
-                    pDev->cMaxOutputChannels = DSCaps.dwFlags & DSCAPS_PRIMARYSTEREO ? 2 : 1;
-
-                    DWORD dwSpeakerCfg;
-                    hr = IDirectSound_GetSpeakerConfig(pDS, &dwSpeakerCfg);
-                    if (FAILED(hr))
-                        break;
-
-                    unsigned uSpeakerCount = 0;
-                    switch (DSSPEAKER_CONFIG(dwSpeakerCfg))
-                    {
-                        case DSSPEAKER_MONO:             uSpeakerCount = 1; break;
-                        case DSSPEAKER_HEADPHONE:        uSpeakerCount = 2; break;
-                        case DSSPEAKER_STEREO:           uSpeakerCount = 2; break;
-                        case DSSPEAKER_QUAD:             uSpeakerCount = 4; break;
-                        case DSSPEAKER_SURROUND:         uSpeakerCount = 4; break;
-                        case DSSPEAKER_5POINT1:          uSpeakerCount = 6; break;
-                        case DSSPEAKER_5POINT1_SURROUND: uSpeakerCount = 6; break;
-                        case DSSPEAKER_7POINT1:          uSpeakerCount = 8; break;
-                        case DSSPEAKER_7POINT1_SURROUND: uSpeakerCount = 8; break;
-                        default:                                            break;
-                    }
-
-                    if (uSpeakerCount) /* Do we need to update the channel count? */
-                        pDev->cMaxOutputChannels = uSpeakerCount;
-
-                } while (0);
-
-                directSoundPlayInterfaceDestroy(pDS);
-
-                rc = VINF_SUCCESS;
-            }
-            else
-                rc = VERR_GENERAL_FAILURE;
-
-            if (RT_SUCCESS(rc))
-                rc = DrvAudioHlpDeviceEnumAdd(pDevEnm, pDev);
+            /* Note: Querying the actual device information will be done at some 
+             *       later point in time outside this enumeration callback to prevent
+             *       DSound hangs. */
         }
     }
     else
@@ -1716,35 +1672,14 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescri
 
             PDSOUNDDEV pDSoundDev = (PDSOUNDDEV)pDev->pvData;
 
-            if (pGUID)
+            if (pGUID) /* pGUID == NULL means default capture device. */
                 memcpy(&pDSoundDev->Guid, pGUID, sizeof(GUID));
 
-            LPDIRECTSOUNDCAPTURE8 pDSC;
-            HRESULT hr = directSoundCaptureInterfaceCreate(pGUID, &pDSC);
-            if (SUCCEEDED(hr))
-            {
-                do
-                {
-                    DSCCAPS DSCCaps;
-                    RT_ZERO(DSCCaps);
-                    DSCCaps.dwSize = sizeof(DSCCAPS);
-                    hr = IDirectSoundCapture_GetCaps(pDSC, &DSCCaps);
-                    if (FAILED(hr))
-                        break;
+            rc = DrvAudioHlpDeviceEnumAdd(pDevEnm, pDev);
 
-                    pDev->cMaxInputChannels = DSCCaps.dwChannels;
-
-                } while (0);
-
-                directSoundCaptureInterfaceDestroy(pDSC);
-
-                rc = VINF_SUCCESS;
-            }
-            else
-                rc = VERR_GENERAL_FAILURE;
-
-            if (RT_SUCCESS(rc))
-                rc = DrvAudioHlpDeviceEnumAdd(pDevEnm, pDev);
+            /* Note: Querying the actual device information will be done at some 
+             *       later point in time outside this enumeration callback to prevent
+             *       DSound hangs. */
         }
     }
     else
@@ -1760,6 +1695,110 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescri
 }
 
 /**
+ * Qqueries information for a given (DirectSound) device.
+ *
+ * @returns VBox status code.
+ * @param   pThis               Host audio driver instance.
+ * @param   pDev                Audio device to query information for.
+ */
+static int dsoundDeviceQueryInfo(PDRVHOSTDSOUND pThis, PPDMAUDIODEVICE pDev)
+{
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pDev,  VERR_INVALID_POINTER);
+
+    PDSOUNDDEV pDSoundDev = (PDSOUNDDEV)pDev->pvData;
+    AssertPtr(pDSoundDev);
+
+    int rc;
+
+    if (pDev->enmUsage == PDMAUDIODIR_OUT)
+    {
+        LPDIRECTSOUND8 pDS;
+        HRESULT hr = directSoundPlayInterfaceCreate(&pDSoundDev->Guid, &pDS);
+        if (SUCCEEDED(hr))
+        {
+            DSCAPS DSCaps;
+            RT_ZERO(DSCaps);
+            DSCaps.dwSize = sizeof(DSCAPS);
+            hr = IDirectSound_GetCaps(pDS, &DSCaps);
+            if (SUCCEEDED(hr))
+            {
+                pDev->cMaxOutputChannels = DSCaps.dwFlags & DSCAPS_PRIMARYSTEREO ? 2 : 1;
+
+                DWORD dwSpeakerCfg;
+                hr = IDirectSound_GetSpeakerConfig(pDS, &dwSpeakerCfg);
+                if (SUCCEEDED(hr))
+                {
+                    unsigned uSpeakerCount = 0;
+                    switch (DSSPEAKER_CONFIG(dwSpeakerCfg))
+                    {
+                        case DSSPEAKER_MONO:             uSpeakerCount = 1; break;
+                        case DSSPEAKER_HEADPHONE:        uSpeakerCount = 2; break;
+                        case DSSPEAKER_STEREO:           uSpeakerCount = 2; break;
+                        case DSSPEAKER_QUAD:             uSpeakerCount = 4; break;
+                        case DSSPEAKER_SURROUND:         uSpeakerCount = 4; break;
+                        case DSSPEAKER_5POINT1:          uSpeakerCount = 6; break;
+                        case DSSPEAKER_5POINT1_SURROUND: uSpeakerCount = 6; break;
+                        case DSSPEAKER_7POINT1:          uSpeakerCount = 8; break;
+                        case DSSPEAKER_7POINT1_SURROUND: uSpeakerCount = 8; break;
+                        default:                                            break;
+                    }
+
+                    if (uSpeakerCount) /* Do we need to update the channel count? */
+                        pDev->cMaxOutputChannels = uSpeakerCount;
+
+                    rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    LogRel(("DSound: Error retrieving playback device speaker config, hr=%Rhrc\n", hr));
+                    rc = VERR_ACCESS_DENIED; /** @todo Fudge! */
+                }
+            }
+            else
+            {
+                LogRel(("DSound: Error retrieving playback device capabilities, hr=%Rhrc\n", hr));
+                rc = VERR_ACCESS_DENIED; /** @todo Fudge! */
+            }
+
+            directSoundPlayInterfaceDestroy(pDS);
+        }
+        else
+            rc = VERR_GENERAL_FAILURE;
+    }
+    else if (pDev->enmUsage == PDMAUDIODIR_IN)
+    {
+        LPDIRECTSOUNDCAPTURE8 pDSC;
+        HRESULT hr = directSoundCaptureInterfaceCreate(&pDSoundDev->Guid, &pDSC);
+        if (SUCCEEDED(hr))
+        {
+            DSCCAPS DSCCaps;
+            RT_ZERO(DSCCaps);
+            DSCCaps.dwSize = sizeof(DSCCAPS);
+            hr = IDirectSoundCapture_GetCaps(pDSC, &DSCCaps);
+            if (SUCCEEDED(hr))
+            {
+                pDev->cMaxInputChannels = DSCCaps.dwChannels;
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                LogRel(("DSound: Error retrieving capture device capabilities, hr=%Rhrc\n", hr));
+                rc = VERR_ACCESS_DENIED; /** @todo Fudge! */
+            }
+
+            directSoundCaptureInterfaceDestroy(pDSC);
+        }
+        else
+            rc = VERR_GENERAL_FAILURE;
+    }
+    else
+        AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+
+    return rc;
+}
+
+/**
  * Does a (Re-)enumeration of the host's playback + capturing devices.
  *
  * @return  IPRT status code.
@@ -1768,7 +1807,8 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescri
  */
 static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIODEVICEENUM pDevEnm)
 {
-    AssertPtrReturn(pThis,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     DSLOG(("DSound: Enumerating devices ...\n"));
 
@@ -1780,10 +1820,15 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIODEVICEENUM pDev
         EnumCtx.fFlags  = 0;
         EnumCtx.pDevEnm = pDevEnm;
 
+        /*
+         * Enumerate playback devices.
+         */
         PFNDIRECTSOUNDENUMERATEW pfnDirectSoundEnumerateW = NULL;
         rc = RTLdrGetSymbol(hDSound, "DirectSoundEnumerateW", (void**)&pfnDirectSoundEnumerateW);
         if (RT_SUCCESS(rc))
         {
+            DSLOG(("DSound: Enumerating playback devices ...\n"));
+
             HRESULT hr = pfnDirectSoundEnumerateW(&dsoundDevicesEnumCbPlayback, &EnumCtx);
             if (FAILED(hr))
                 LogRel(("DSound: Error enumerating host playback devices: %Rhrc\n", hr));
@@ -1791,10 +1836,15 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIODEVICEENUM pDev
         else
             LogRel(("DSound: Error starting to enumerate host playback devices: %Rrc\n", rc));
 
+        /*
+         * Enumerate capture devices.
+         */
         PFNDIRECTSOUNDCAPTUREENUMERATEW pfnDirectSoundCaptureEnumerateW = NULL;
         rc = RTLdrGetSymbol(hDSound, "DirectSoundCaptureEnumerateW", (void**)&pfnDirectSoundCaptureEnumerateW);
         if (RT_SUCCESS(rc))
         {
+            DSLOG(("DSound: Enumerating capture devices ...\n"));
+
             HRESULT hr = pfnDirectSoundCaptureEnumerateW(&dsoundDevicesEnumCbCapture, &EnumCtx);
             if (FAILED(hr))
                 LogRel(("DSound: Error enumerating host capture devices: %Rhrc\n", hr));
@@ -1802,12 +1852,19 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIODEVICEENUM pDev
         else
             LogRel(("DSound: Error starting to enumerate host capture devices: %Rrc\n", rc));
 
+        /*
+         * Query Information from all enumerated devices.
+         */
+        PPDMAUDIODEVICE pDev;
+        RTListForEach(&pDevEnm->lstDevices, pDev, PDMAUDIODEVICE, Node)
+            /* ignore rc */ dsoundDeviceQueryInfo(pThis, pDev);
+
         RTLdrClose(hDSound);
     }
     else
     {
         /* No dsound.dll on this system. */
-        LogRel(("DSound: Could not load dsound.dll: %Rrc\n", rc));
+        LogRel(("DSound: Could not load dsound.dll for enumerating devices: %Rrc\n", rc));
     }
 
     DSLOG(("DSound: Enumerating devices done\n"));
