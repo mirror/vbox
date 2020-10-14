@@ -636,7 +636,7 @@ void UIChooserAbstractModel::sltLocalMachineRegistered(const QUuid &uMachineId, 
 }
 
 void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                                       const QUuid &uId, const bool fRegistered)
+                                                       const QUuid &uMachineId, const bool fRegistered)
 {
     /* Search for profile node: */
     const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
@@ -650,7 +650,7 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
     if (!fRegistered)
     {
         /* Remove machine-items with passed id: */
-        pProfileNode->removeAllNodes(uId);
+        pProfileNode->removeAllNodes(uMachineId);
 
         /* If there are no items left: */
         if (pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
@@ -665,7 +665,7 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
     else
     {
         /* Add new machine-item: */
-        const CCloudMachine comMachine = cloudMachineById(strProviderShortName, strProfileName, uId);
+        const CCloudMachine comMachine = cloudMachineById(strProviderShortName, strProfileName, uMachineId);
         addCloudMachineIntoTheTree(strProfileNodeName, comMachine, true /* make it visible */);
 
         /* Search for possible fake node: */
@@ -688,7 +688,7 @@ void UIChooserAbstractModel::sltSnapshotChanged(const QUuid &uMachineId, const Q
     invisibleRoot()->updateAllNodes(uMachineId);
 }
 
-void UIChooserAbstractModel::sltHandleCloudProviderUninstall(const QUuid &uId)
+void UIChooserAbstractModel::sltHandleCloudProviderUninstall(const QUuid &uProviderId)
 {
     /* Search for top-level provider node: */
     foreach (UIChooserNode *pNode, m_pInvisibleRootNode->nodes(UIChooserNodeType_Group))
@@ -701,7 +701,7 @@ void UIChooserAbstractModel::sltHandleCloudProviderUninstall(const QUuid &uId)
             continue;
         const QUuid uIteratedId = pGroupNode->property("id").toUuid();
         AssertReturnVoid(!uIteratedId.isNull());
-        if (uIteratedId != uId)
+        if (uIteratedId != uProviderId)
             continue;
 
         /* Remove found provider node: */

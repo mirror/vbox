@@ -1078,14 +1078,14 @@ bool UIChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
     return QObject::eventFilter(pWatched, pEvent);
 }
 
-void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fRegistered)
+void UIChooserModel::sltLocalMachineRegistered(const QUuid &uMachineId, const bool fRegistered)
 {
-    /* Existing VM unregistered => make sure no item with passed uId is selected: */
+    /* Existing VM unregistered => make sure no item with passed uMachineId is selected: */
     if (!fRegistered)
-        makeSureNoItemWithCertainIdSelected(uId);
+        makeSureNoItemWithCertainIdSelected(uMachineId);
 
     /* Call to base-class: */
-    UIChooserAbstractModel::sltLocalMachineRegistered(uId, fRegistered);
+    UIChooserAbstractModel::sltLocalMachineRegistered(uMachineId, fRegistered);
 
     /* Existing VM unregistered? */
     if (!fRegistered)
@@ -1097,12 +1097,12 @@ void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fReg
     else
     {
         /* Should we show this VM? */
-        if (gEDataManager->showMachineInVirtualBoxManagerChooser(uId))
+        if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
         {
             /* Rebuild tree for main root: */
             buildTreeForMainRoot(false /* preserve selection */);
             /* Select newly added item: */
-            setSelectedItem(root()->searchForItem(uId.toString(),
+            setSelectedItem(root()->searchForItem(uMachineId.toString(),
                                                   UIChooserItemSearchFlag_Machine |
                                                   UIChooserItemSearchFlag_ExactId));
         }
@@ -1110,14 +1110,14 @@ void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fReg
 }
 
 void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                               const QUuid &uId, const bool fRegistered)
+                                               const QUuid &uMachineId, const bool fRegistered)
 {
-    /* Existing VM unregistered => make sure no item with passed uId is selected: */
+    /* Existing VM unregistered => make sure no item with passed uMachineId is selected: */
     if (!fRegistered)
-        makeSureNoItemWithCertainIdSelected(uId);
+        makeSureNoItemWithCertainIdSelected(uMachineId);
 
     /* Call to base-class: */
-    UIChooserAbstractModel::sltCloudMachineRegistered(strProviderShortName, strProfileName, uId, fRegistered);
+    UIChooserAbstractModel::sltCloudMachineRegistered(strProviderShortName, strProfileName, uMachineId, fRegistered);
 
     /* Existing VM unregistered? */
     if (!fRegistered)
@@ -1131,13 +1131,13 @@ void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortNa
         /* Rebuild tree for main root: */
         buildTreeForMainRoot(false /* preserve selection */);
         /* Select newly added item: */
-        setSelectedItem(root()->searchForItem(uId.toString(),
+        setSelectedItem(root()->searchForItem(uMachineId.toString(),
                                               UIChooserItemSearchFlag_Machine |
                                               UIChooserItemSearchFlag_ExactId));
     }
 }
 
-void UIChooserModel::sltHandleCloudProviderUninstall(const QUuid &uId)
+void UIChooserModel::sltHandleCloudProviderUninstall(const QUuid &uProviderId)
 {
     /* Search for selected cloud machine items: */
     foreach (UIVirtualMachineItem *pItem, selectedMachineItems())
@@ -1153,24 +1153,24 @@ void UIChooserModel::sltHandleCloudProviderUninstall(const QUuid &uId)
     }
 
     /* Call to base-class: */
-    UIChooserAbstractModel::sltHandleCloudProviderUninstall(uId);
+    UIChooserAbstractModel::sltHandleCloudProviderUninstall(uProviderId);
 
     /* Notify about selection invalidated: */
     emit sigSelectionInvalidated();
 }
 
-void UIChooserModel::sltReloadMachine(const QUuid &uId)
+void UIChooserModel::sltReloadMachine(const QUuid &uMachineId)
 {
     /* Call to base-class: */
-    UIChooserAbstractModel::sltReloadMachine(uId);
+    UIChooserAbstractModel::sltReloadMachine(uMachineId);
 
     /* Should we show this VM? */
-    if (gEDataManager->showMachineInVirtualBoxManagerChooser(uId))
+    if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
     {
         /* Rebuild tree for main root: */
         buildTreeForMainRoot(false /* preserve selection */);
         /* Select newly added item: */
-        setSelectedItem(root()->searchForItem(uId.toString(),
+        setSelectedItem(root()->searchForItem(uMachineId.toString(),
                                               UIChooserItemSearchFlag_Machine |
                                               UIChooserItemSearchFlag_ExactId));
     }

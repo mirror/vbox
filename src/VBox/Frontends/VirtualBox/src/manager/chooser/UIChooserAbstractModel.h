@@ -148,13 +148,13 @@ protected slots:
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name. */
         virtual void sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                               const QUuid &uId, const bool fRegistered);
+                                               const QUuid &uMachineId, const bool fRegistered);
         /** Handles session @a enmState change for machine with certain @a uMachineId. */
         virtual void sltSessionStateChanged(const QUuid &uMachineId, const KSessionState enmState);
         /** Handles snapshot change for machine/snapshot with certain @a uMachineId / @a uSnapshotId. */
         virtual void sltSnapshotChanged(const QUuid &uMachineId, const QUuid &uSnapshotId);
-        /** Handles event about cloud provider with @a uId being uninstalled. */
-        virtual void sltHandleCloudProviderUninstall(const QUuid &uId);
+        /** Handles event about cloud provider with @a uProviderId being uninstalled. */
+        virtual void sltHandleCloudProviderUninstall(const QUuid &uProviderId);
     /** @} */
 
     /** @name Children stuff.

@@ -260,21 +260,21 @@ protected slots:
 
     /** @name Main event handling stuff.
       * @{ */
-        /** Handles local machine registering/unregistering for machine with certain @a uId. */
-        virtual void sltLocalMachineRegistered(const QUuid &uId, const bool fRegistered) /* override */;
-        /** Handles cloud machine registering/unregistering for machine with certain @a uId.
+        /** Handles local machine registering/unregistering for machine with certain @a uMachineId. */
+        virtual void sltLocalMachineRegistered(const QUuid &uMachineId, const bool fRegistered) /* override */;
+        /** Handles cloud machine registering/unregistering for machine with certain @a uMachineId.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name. */
         virtual void sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                               const QUuid &uId, const bool fRegistered);
-        /** Handles event about cloud provider with @a uId being uninstalled. */
-        virtual void sltHandleCloudProviderUninstall(const QUuid &uId);
+                                               const QUuid &uMachineId, const bool fRegistered);
+        /** Handles event about cloud provider with @a uProviderId being uninstalled. */
+        virtual void sltHandleCloudProviderUninstall(const QUuid &uProviderId);
     /** @} */
 
     /** @name Children stuff.
       * @{ */
-        /** Handles reload machine with certain @a uId request. */
-        virtual void sltReloadMachine(const QUuid &uId) /* override */;
+        /** Handles reload machine with certain @a uMachineId request. */
+        virtual void sltReloadMachine(const QUuid &uMachineId) /* override */;
     /** @} */
 
     /** @name Cloud stuff.
