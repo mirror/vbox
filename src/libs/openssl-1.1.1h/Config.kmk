@@ -26,7 +26,7 @@ else ifeq ($(KBUILD_TARGET), win)
 endif
 
 # Can't use relative paths when dealing with sub-makefiles.
-VBOX_PATH_OPENSSL        := $(PATH_ROOT)/src/libs/openssl-1.1.1g
+VBOX_PATH_OPENSSL        := $(PATH_ROOT)/src/libs/openssl-1.1.1h
 VBOX_PATH_CRYPTO         := $(VBOX_PATH_OPENSSL)/crypto
 VBOX_PATH_CRYPTO_GENASM  := $(VBOX_PATH_CRYPTO)/genasm-$(VBOX_CRYPTO_ASM_SCHEME)
 VBOX_PATH_CRYPTO_AES     := $(VBOX_PATH_CRYPTO)/aes
