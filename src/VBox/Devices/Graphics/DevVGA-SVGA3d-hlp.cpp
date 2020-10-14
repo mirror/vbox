@@ -17,18 +17,54 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
 #include <VBox/AssertGuest.h>
-#include <VBox/log.h>
+
+#ifdef SHADER_VERIFY_STANDALONE
+# include <stdio.h>
+# define Log3(a) printf a
+# define LogRel(a) printf a
+#else
+# include <VBox/log.h>
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/errcore.h>
 #include <iprt/types.h>
+#include <iprt/string.h>
 
-#include "DevVGA-SVGA.h"
+#include "svga3d_reg.h"
+#include "svga3d_shaderdefs.h"
 
+ /** Per shader data is stored in this structure. */
 typedef struct VMSVGA3DSHADERPARSECONTEXT
 {
-    uint32_t type;
+    /** Version token. */
+    SVGA3dShaderVersion version;
 } VMSVGA3DSHADERPARSECONTEXT;
+
+/** Callback which parses a parameter token.
+ *
+ * @param pCtx     The shader data.
+ * @param Op       Instruction opcode which the token is used with.
+ * @param Token    The parameter token which must be parsed.
+ * @param idxToken Index of the parameter token in the instruction. 0 for the first parameter.
+ *
+ * @return VBox error code.
+ */
+typedef int FNSHADERPARSETOKEN(VMSVGA3DSHADERPARSECONTEXT* pCtx, uint32_t Op, uint32_t Token, uint32_t idxToken);
+typedef FNSHADERPARSETOKEN* PFNSHADERPARSETOKEN;
+
+/** Information about a shader opcode. */
+typedef struct VMSVGA3DSHADERPARSEOP
+{
+    /** Opcode. */
+    SVGA3dShaderOpCodeType Op;
+    /** Maximum number of parameters. */
+    uint32_t Length;
+    /** Pointer to callback, which parse each parameter.
+     * The size is the number of maximum possible parameters: dest + 3 * src
+     */
+    PFNSHADERPARSETOKEN apfnParse[4];
+} VMSVGA3DSHADERPARSEOP;
 
 static int vmsvga3dShaderParseRegOffset(VMSVGA3DSHADERPARSECONTEXT *pCtx,
                                         bool fIsSrc,
@@ -88,54 +124,190 @@ static int vmsvga3dShaderParseRegOffset(VMSVGA3DSHADERPARSECONTEXT *pCtx,
     return VINF_SUCCESS;
 }
 
-#if 0
-static int vmsvga3dShaderParseSrcToken(VMSVGA3DSHADERPARSECONTEXT *pCtx, uint32_t const *pToken)
+/* Parse a declaration parameter token:
+ * https://docs.microsoft.com/en-us/windows-hardware/drivers/display/dcl-instruction
+ *
+ * See FNSHADERPARSETOKEN.
+ */
+static int vmsvga3dShaderParseDclToken(VMSVGA3DSHADERPARSECONTEXT* pCtx, uint32_t Op, uint32_t Token, uint32_t idxToken)
 {
-    RT_NOREF(pCtx);
-
-    SVGA3dShaderSrcToken src;
-    src.value = *pToken;
-
-    SVGA3dShaderRegType const regType = (SVGA3dShaderRegType)(src.type_upper << 3 | src.type_lower);
-    Log3(("Src: type %d, r0 %d, srcMod %d, swizzle 0x%x, r1 %d, relAddr %d, num %d\n",
-          regType, src.reserved0, src.srcMod, src.swizzle, src.reserved1, src.relAddr, src.num));
-
-    return vmsvga3dShaderParseRegOffset(pCtx, true, regType, src.num);
+    RT_NOREF(pCtx, Op, Token, idxToken);
+    return VINF_SUCCESS;
 }
-#endif
 
-static int vmsvga3dShaderParseDestToken(VMSVGA3DSHADERPARSECONTEXT *pCtx, uint32_t const *pToken)
+/* Parse a label (D3DSPR_LABEL) parameter token.
+ *
+ * See FNSHADERPARSETOKEN.
+ */
+static int vmsvga3dShaderParseLabelToken(VMSVGA3DSHADERPARSECONTEXT* pCtx, uint32_t Op, uint32_t Token, uint32_t idxToken)
 {
-    RT_NOREF(pCtx);
+    RT_NOREF(pCtx, Op, Token, idxToken);
+    return VINF_SUCCESS;
+}
+
+/* Parse a destination parameter token:
+ * https://docs.microsoft.com/en-us/windows-hardware/drivers/display/destination-parameter-token
+ * See FNSHADERPARSETOKEN.
+ */
+static int vmsvga3dShaderParseDestToken(VMSVGA3DSHADERPARSECONTEXT* pCtx, uint32_t Op, uint32_t Token, uint32_t idxToken)
+{
+    RT_NOREF(pCtx, Op, idxToken);
 
     SVGA3dShaderDestToken dest;
-    dest.value = *pToken;
+    dest.value = Token;
 
     SVGA3dShaderRegType const regType = (SVGA3dShaderRegType)(dest.type_upper << 3 | dest.type_lower);
     Log3(("Dest: type %d, r0 %d, shfScale %d, dstMod %d, mask 0x%x, r1 %d, relAddr %d, num %d\n",
-          regType, dest.reserved0, dest.shfScale, dest.dstMod, dest.mask, dest.reserved1, dest.relAddr, dest.num));
+        regType, dest.reserved0, dest.shfScale, dest.dstMod, dest.mask, dest.reserved1, dest.relAddr, dest.num));
 
     return vmsvga3dShaderParseRegOffset(pCtx, false, regType, dest.num);
 }
 
-static int vmsvga3dShaderParseDclArgs(VMSVGA3DSHADERPARSECONTEXT *pCtx, uint32_t const *pToken)
+/* Parse a source parameter token:
+ * https://docs.microsoft.com/en-us/windows-hardware/drivers/display/source-parameter-token
+ * See FNSHADERPARSETOKEN.
+ */
+static int vmsvga3dShaderParseSrcToken(VMSVGA3DSHADERPARSECONTEXT* pCtx, uint32_t Op, uint32_t Token, uint32_t idxToken)
 {
-    SVGA3DOpDclArgs a;
-    a.values[0] = pToken[0]; // declaration
-    a.values[1] = pToken[1]; // dst
+    RT_NOREF(pCtx, Op, idxToken);
 
-    return vmsvga3dShaderParseDestToken(pCtx, (uint32_t *)&a.dst);
+    SVGA3dShaderSrcToken src;
+    src.value = Token;
+
+    SVGA3dShaderRegType const regType = (SVGA3dShaderRegType)(src.type_upper << 3 | src.type_lower);
+    Log3(("Src: type %d, r0 %d, srcMod %d, swizzle 0x%x, r1 %d, relAddr %d, num %d\n",
+        regType, src.reserved0, src.srcMod, src.swizzle, src.reserved1, src.relAddr, src.num));
+
+    return vmsvga3dShaderParseRegOffset(pCtx, true, regType, src.num);
 }
+
+/* Shortcut defines. */
+#define PT_DCL  vmsvga3dShaderParseDclToken
+#define PT_LBL  vmsvga3dShaderParseLabelToken
+#define PT_DEST vmsvga3dShaderParseDestToken
+#define PT_SRC  vmsvga3dShaderParseSrcToken
+
+/* Information about opcodes:
+ * https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/d3d9types/ne-d3d9types-_d3dshader_instruction_opcode_type
+ */
+static const VMSVGA3DSHADERPARSEOP aOps[] =
+{
+    /*         Op                Length    Parameters */
+    /* 00 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 01 */ { SVGA3DOP_MOV,          2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 02 */ { SVGA3DOP_ADD,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 03 */ { SVGA3DOP_SUB,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 04 */ { SVGA3DOP_MAD,          4, { PT_DEST, PT_SRC,  PT_SRC,  PT_SRC  } },
+    /* 05 */ { SVGA3DOP_MUL,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 06 */ { SVGA3DOP_RCP,          2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 07 */ { SVGA3DOP_RSQ,          2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 08 */ { SVGA3DOP_DP3,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 09 */ { SVGA3DOP_DP4,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 10 */ { SVGA3DOP_MIN,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 11 */ { SVGA3DOP_MAX,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 12 */ { SVGA3DOP_SLT,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 13 */ { SVGA3DOP_SGE,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 14 */ { SVGA3DOP_EXP,          2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 15 */ { SVGA3DOP_LOG,          2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 16 */ { SVGA3DOP_LIT,          2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 17 */ { SVGA3DOP_DST,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 18 */ { SVGA3DOP_LRP,          4, { PT_DEST, PT_SRC,  PT_SRC,  PT_SRC  } },
+    /* 19 */ { SVGA3DOP_FRC,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 20 */ { SVGA3DOP_M4x4,         3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 21 */ { SVGA3DOP_M4x3,         3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 22 */ { SVGA3DOP_M3x4,         3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 23 */ { SVGA3DOP_M3x3,         3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 24 */ { SVGA3DOP_M3x2,         3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 25 */ { SVGA3DOP_CALL,         1, { PT_LBL,  NULL,    NULL,    NULL    } },
+    /* 26 */ { SVGA3DOP_CALLNZ,       2, { PT_LBL,  PT_SRC,  NULL,    NULL    } },
+    /* 27 */ { SVGA3DOP_LOOP,         1, { PT_SRC,  NULL,    NULL,    NULL    } },
+    /* 28 */ { SVGA3DOP_RET,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 29 */ { SVGA3DOP_ENDLOOP,      0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 30 */ { SVGA3DOP_LABEL,        1, { PT_LBL,  NULL,    NULL,    NULL    } },
+    /* 31 */ { SVGA3DOP_DCL,          2, { PT_DCL,  PT_DEST, NULL,    NULL    } },
+    /* 32 */ { SVGA3DOP_POW,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 33 */ { SVGA3DOP_CRS,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 34 */ { SVGA3DOP_SGN,          4, { PT_DEST, PT_SRC,  PT_SRC,  PT_SRC  } },
+    /* 35 */ { SVGA3DOP_ABS,          2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 36 */ { SVGA3DOP_NRM,          2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 37 */ { SVGA3DOP_SINCOS,       4, { PT_DEST, PT_SRC,  PT_SRC,  PT_SRC  } },
+    /* 38 */ { SVGA3DOP_REP,          1, { PT_SRC,  NULL,    NULL,    NULL    } },
+    /* 39 */ { SVGA3DOP_ENDREP,       0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 40 */ { SVGA3DOP_IF,           1, { PT_SRC,  NULL,    NULL,    NULL    } },
+    /* 41 */ { SVGA3DOP_IFC,          2, { PT_SRC,  PT_SRC,  NULL,    NULL    } },
+    /* 42 */ { SVGA3DOP_ELSE,         0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 43 */ { SVGA3DOP_ENDIF,        0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 44 */ { SVGA3DOP_BREAK,        0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 45 */ { SVGA3DOP_BREAKC,       2, { PT_SRC,  PT_SRC,  NULL,    NULL    } },
+    /* 46 */ { SVGA3DOP_MOVA,         2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 47 */ { SVGA3DOP_DEFB,         2, { PT_DEST, NULL,    NULL,    NULL    } },
+    /* 48 */ { SVGA3DOP_DEFI,         5, { PT_DEST, NULL,    NULL,    NULL    } },
+    /* 49 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 50 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 51 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 52 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 53 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 54 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 55 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 56 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 57 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 58 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 59 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 60 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 61 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 62 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 63 */ { SVGA3DOP_NOP,          0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 64 */ { SVGA3DOP_TEXCOORD,     2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 65 */ { SVGA3DOP_TEXKILL,      1, { PT_DEST, NULL,    NULL,    NULL    } },
+    /* 66 */ { SVGA3DOP_TEX,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } }, // pre-1.4 = tex dest, post-1.4 = texld dest, src, src
+    /* 67 */ { SVGA3DOP_TEXBEM,       2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 68 */ { SVGA3DOP_TEXBEML,      2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 69 */ { SVGA3DOP_TEXREG2AR,    2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 70 */ { SVGA3DOP_TEXREG2GB,    2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 71 */ { SVGA3DOP_TEXM3x2PAD,   2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 72 */ { SVGA3DOP_TEXM3x2TEX,   2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 73 */ { SVGA3DOP_TEXM3x3PAD,   2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 74 */ { SVGA3DOP_TEXM3x3TEX,   2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 75 */ { SVGA3DOP_RESERVED0,    0, { NULL,    NULL,    NULL,    NULL    } },
+    /* 76 */ { SVGA3DOP_TEXM3x3SPEC,  3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 77 */ { SVGA3DOP_TEXM3x3VSPEC, 2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 78 */ { SVGA3DOP_EXPP,         2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 79 */ { SVGA3DOP_LOGP,         2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 80 */ { SVGA3DOP_CND,          4, { PT_DEST, PT_SRC,  PT_SRC,  PT_SRC  } },
+    /* 81 */ { SVGA3DOP_DEF,          5, { PT_DEST, NULL,    NULL,    NULL    } },
+    /* 82 */ { SVGA3DOP_TEXREG2RGB,   2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 83 */ { SVGA3DOP_TEXDP3TEX,    2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 84 */ { SVGA3DOP_TEXM3x2DEPTH, 2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 85 */ { SVGA3DOP_TEXDP3,       2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 86 */ { SVGA3DOP_TEXM3x3,      2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 87 */ { SVGA3DOP_TEXDEPTH,     1, { PT_DEST, NULL,    NULL,    NULL    } },
+    /* 88 */ { SVGA3DOP_CMP,          4, { PT_DEST, PT_SRC,  PT_SRC,  PT_SRC  } },
+    /* 89 */ { SVGA3DOP_BEM,          3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 90 */ { SVGA3DOP_DP2ADD,       4, { PT_DEST, PT_SRC,  PT_SRC,  PT_SRC  } },
+    /* 91 */ { SVGA3DOP_DSX,          2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 92 */ { SVGA3DOP_DSY,          2, { PT_DEST, PT_SRC,  NULL,    NULL    } },
+    /* 93 */ { SVGA3DOP_TEXLDD,       3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 94 */ { SVGA3DOP_SETP,         3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 95 */ { SVGA3DOP_TEXLDL,       3, { PT_DEST, PT_SRC,  PT_SRC,  NULL    } },
+    /* 96 */ { SVGA3DOP_BREAKP,       1, { PT_SRC,  NULL,    NULL,    NULL    } },
+};
+
+#undef PT_DCL
+#undef PT_LBL
+#undef PT_DEST
+#undef PT_SRC
 
 /* Parse the shader code
  * https://docs.microsoft.com/en-us/windows-hardware/drivers/display/shader-code-format
  */
-int vmsvga3dShaderParse(uint32_t cbShaderData, uint32_t const *pShaderData)
+int vmsvga3dShaderParse(SVGA3dShaderType type, uint32_t cbShaderData, uint32_t const* pShaderData)
 {
-    uint32_t const *paTokensStart = (uint32_t *)pShaderData;
+    uint32_t const* paTokensStart = (uint32_t*)pShaderData;
     uint32_t const cTokens = cbShaderData / sizeof(uint32_t);
 
-    /* 48KB is an arbitrary limit. */
+    ASSERT_GUEST_RETURN(cTokens * sizeof(uint32_t) == cbShaderData, VERR_INVALID_PARAMETER);
+
+    /* Need at least the version token and SVGA3DOP_END instruction token. 48KB is an arbitrary limit. */
     ASSERT_GUEST_RETURN(cTokens >= 2 && cTokens < (48 * _1K) / sizeof(paTokensStart[0]), VERR_INVALID_PARAMETER);
 
 #ifdef LOG_ENABLED
@@ -156,138 +328,81 @@ int vmsvga3dShaderParse(uint32_t cbShaderData, uint32_t const *pShaderData)
     Log3(("\n"));
 #endif
 
-    /* "The first token must be a version token." */
-    SVGA3dShaderVersion const *pVersion = (SVGA3dShaderVersion const *)paTokensStart;
-    ASSERT_GUEST_RETURN(   pVersion->type == SVGA3D_VS_TYPE
-                        || pVersion->type == SVGA3D_PS_TYPE, VERR_PARSE_ERROR);
-
     VMSVGA3DSHADERPARSECONTEXT ctx;
-    ctx.type = pVersion->type;
+    RT_ZERO(ctx);
+
+    /* "The first token must be a version token." */
+    ctx.version = *(SVGA3dShaderVersion*)paTokensStart;
+    ASSERT_GUEST_RETURN(ctx.version.type == SVGA3D_VS_TYPE
+        || ctx.version.type == SVGA3D_PS_TYPE, VERR_PARSE_ERROR);
+    /* A vertex shader should not be defined with a pixel shader bytecode (and visa versa)*/
+    ASSERT_GUEST_RETURN((ctx.version.type == SVGA3D_VS_TYPE && type == SVGA3D_SHADERTYPE_VS)
+                     || (ctx.version.type == SVGA3D_PS_TYPE && type == SVGA3D_SHADERTYPE_PS), VERR_PARSE_ERROR);
+    ASSERT_GUEST_RETURN(ctx.version.major >= 2 && ctx.version.major <= 4, VERR_PARSE_ERROR);
 
     /* Scan the tokens. Immediately return an error code on any unexpected data. */
-    const uint32_t *paTokensEnd = &paTokensStart[cTokens];
-    const uint32_t *pToken = &paTokensStart[1];
+    uint32_t const* paTokensEnd = &paTokensStart[cTokens];
+    uint32_t const* pToken = &paTokensStart[1]; /* Skip the version token. */
+    bool  bEndTokenFound = false;
     while (pToken < paTokensEnd)
     {
-        SVGA3dShaderInstToken const token = *(SVGA3dShaderInstToken *)pToken;
+        SVGA3dShaderInstToken const token = *(SVGA3dShaderInstToken*)pToken;
 
         /* Figure out the instruction length, which is how many tokens follow the instruction token. */
-        uint32_t cInstLen;
-        if (token.op == SVGA3DOP_COMMENT)
-            cInstLen = token.comment_size;
-        else
-            cInstLen = token.size;
+        uint32_t const cInstLen = token.op == SVGA3DOP_COMMENT
+            ? token.comment_size
+            : token.size;
 
         Log3(("op %d, cInstLen %d\n", token.op, cInstLen));
 
+        /* Must not be greater than the number of remaining tokens. */
         ASSERT_GUEST_RETURN(cInstLen < paTokensEnd - pToken, VERR_PARSE_ERROR);
 
+        /* Stop parsing if this is the SVGA3DOP_END instruction. */
         if (token.op == SVGA3DOP_END)
         {
             ASSERT_GUEST_RETURN(token.value == 0x0000FFFF, VERR_PARSE_ERROR);
+            bEndTokenFound = true;
             break;
         }
 
-        int rc;
-        switch (token.op)
+        /* If this instrution is in the aOps table. */
+        if (token.op <= SVGA3DOP_BREAKP)
         {
-            case SVGA3DOP_DCL:
-                ASSERT_GUEST_RETURN(cInstLen == 2, VERR_PARSE_ERROR);
-                rc = vmsvga3dShaderParseDclArgs(&ctx, &pToken[1]);
+            VMSVGA3DSHADERPARSEOP const* pOp = &aOps[token.op];
+
+            /* cInstLen can be greater than pOp->Length.
+             * W10 guest sends a vertex shader MUL instruction with length 4.
+             * So figure out the actual number of valid parameters.
+             */
+            uint32_t const cParams = RT_MIN(cInstLen, pOp->Length);
+
+            /* Parse paramater tokens. */
+            uint32_t i;
+            for (i = 0; i < RT_MIN(cParams, RT_ELEMENTS(pOp->apfnParse)); ++i)
+            {
+                if (!pOp->apfnParse[i])
+                    continue;
+
+                int rc = pOp->apfnParse[i](&ctx, token.op, pToken[i + 1], i);
                 if (RT_FAILURE(rc))
                     return rc;
-                break;
-            case SVGA3DOP_NOP:
-            case SVGA3DOP_MOV:
-            case SVGA3DOP_ADD:
-            case SVGA3DOP_SUB:
-            case SVGA3DOP_MAD:
-            case SVGA3DOP_MUL:
-            case SVGA3DOP_RCP:
-            case SVGA3DOP_RSQ:
-            case SVGA3DOP_DP3:
-            case SVGA3DOP_DP4:
-            case SVGA3DOP_MIN:
-            case SVGA3DOP_MAX:
-            case SVGA3DOP_SLT:
-            case SVGA3DOP_SGE:
-            case SVGA3DOP_EXP:
-            case SVGA3DOP_LOG:
-            case SVGA3DOP_LIT:
-            case SVGA3DOP_DST:
-            case SVGA3DOP_LRP:
-            case SVGA3DOP_FRC:
-            case SVGA3DOP_M4x4:
-            case SVGA3DOP_M4x3:
-            case SVGA3DOP_M3x4:
-            case SVGA3DOP_M3x3:
-            case SVGA3DOP_M3x2:
-            case SVGA3DOP_CALL:
-            case SVGA3DOP_CALLNZ:
-            case SVGA3DOP_LOOP:
-            case SVGA3DOP_RET:
-            case SVGA3DOP_ENDLOOP:
-            case SVGA3DOP_LABEL:
-            case SVGA3DOP_POW:
-            case SVGA3DOP_CRS:
-            case SVGA3DOP_SGN:
-            case SVGA3DOP_ABS:
-            case SVGA3DOP_NRM:
-            case SVGA3DOP_SINCOS:
-            case SVGA3DOP_REP:
-            case SVGA3DOP_ENDREP:
-            case SVGA3DOP_IF:
-            case SVGA3DOP_IFC:
-            case SVGA3DOP_ELSE:
-            case SVGA3DOP_ENDIF:
-            case SVGA3DOP_BREAK:
-            case SVGA3DOP_BREAKC:
-            case SVGA3DOP_MOVA:
-            case SVGA3DOP_DEFB:
-            case SVGA3DOP_DEFI:
-            case SVGA3DOP_TEXCOORD:
-            case SVGA3DOP_TEXKILL:
-            case SVGA3DOP_TEX:
-            case SVGA3DOP_TEXBEM:
-            case SVGA3DOP_TEXBEML:
-            case SVGA3DOP_TEXREG2AR:
-            case SVGA3DOP_TEXREG2GB:
-            case SVGA3DOP_TEXM3x2PAD:
-            case SVGA3DOP_TEXM3x2TEX:
-            case SVGA3DOP_TEXM3x3PAD:
-            case SVGA3DOP_TEXM3x3TEX:
-            case SVGA3DOP_RESERVED0:
-            case SVGA3DOP_TEXM3x3SPEC:
-            case SVGA3DOP_TEXM3x3VSPEC:
-            case SVGA3DOP_EXPP:
-            case SVGA3DOP_LOGP:
-            case SVGA3DOP_CND:
-            case SVGA3DOP_DEF:
-            case SVGA3DOP_TEXREG2RGB:
-            case SVGA3DOP_TEXDP3TEX:
-            case SVGA3DOP_TEXM3x2DEPTH:
-            case SVGA3DOP_TEXDP3:
-            case SVGA3DOP_TEXM3x3:
-            case SVGA3DOP_TEXDEPTH:
-            case SVGA3DOP_CMP:
-            case SVGA3DOP_BEM:
-            case SVGA3DOP_DP2ADD:
-            case SVGA3DOP_DSX:
-            case SVGA3DOP_DSY:
-            case SVGA3DOP_TEXLDD:
-            case SVGA3DOP_SETP:
-            case SVGA3DOP_TEXLDL:
-            case SVGA3DOP_BREAKP:
-            case SVGA3DOP_PHASE:
-            case SVGA3DOP_COMMENT:
-                break;
-
-            default:
-                ASSERT_GUEST_FAILED_RETURN(VERR_PARSE_ERROR);
+            }
         }
+        else if (token.op == SVGA3DOP_PHASE
+            || token.op == SVGA3DOP_COMMENT)
+        {
+        }
+        else
+            ASSERT_GUEST_FAILED_RETURN(VERR_PARSE_ERROR);
 
         /* Next token. */
         pToken += cInstLen + 1;
+    }
+
+    if (!bEndTokenFound)
+    {
+        ASSERT_GUEST_FAILED_RETURN(VERR_PARSE_ERROR);
     }
 
     return VINF_SUCCESS;

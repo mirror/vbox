@@ -7333,7 +7333,7 @@ int vmsvga3dShaderDefine(PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA3
 
     AssertReturn(shid < SVGA3D_MAX_SHADER_IDS, VERR_INVALID_PARAMETER);
 
-    rc = vmsvga3dShaderParse(cbData, pShaderData);
+    rc = vmsvga3dShaderParse(type, cbData, pShaderData);
     if (RT_FAILURE(rc))
     {
         AssertRC(rc);
