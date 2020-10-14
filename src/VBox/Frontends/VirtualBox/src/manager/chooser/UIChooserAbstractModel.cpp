@@ -635,6 +635,27 @@ void UIChooserAbstractModel::sltLocalMachineRegistrationChanged(const QUuid &uMa
     }
 }
 
+void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
+                                                       const CCloudMachine &comMachine, bool fSelect)
+{
+    /* Search for profile node: */
+    const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+    QList<UIChooserNode*> profileNodes;
+    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
+    AssertReturnVoid(!profileNodes.isEmpty());
+    UIChooserNode *pProfileNode = profileNodes.first();
+    AssertPtrReturnVoid(pProfileNode);
+
+    /* Add new machine-item: */
+    addCloudMachineIntoTheTree(strProfileNodeName, comMachine, fSelect);
+
+    /* Search for possible fake node: */
+    QList<UIChooserNode*> fakeNodes;
+    pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
+    /* Delete fake node if present: */
+    delete fakeNodes.value(0);
+}
+
 void UIChooserAbstractModel::sltCloudMachineRegistrationChanged(const QString &strProviderShortName, const QString &strProfileName,
                                                                 const QUuid &uMachineId, const bool fRegistered)
 {
@@ -796,9 +817,11 @@ void UIChooserAbstractModel::prepareConnections()
     /* Cloud thread-pool connections: */
     connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
             this, &UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete);
-    /* Setup temporary connections,
-     * this is to be replaced by corresponding Main API event later. */
+
+    /* Cloud VM registration connections: */
     connect(&uiCommon(), &UICommon::sigCloudMachineRegistered,
+            this, &UIChooserAbstractModel::sltCloudMachineRegistered);
+    connect(&uiCommon(), &UICommon::sigCloudMachineRegistrationChanged,
             this, &UIChooserAbstractModel::sltCloudMachineRegistrationChanged);
 
     /* Setup global connections: */

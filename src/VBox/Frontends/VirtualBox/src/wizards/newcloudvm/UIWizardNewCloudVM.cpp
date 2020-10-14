@@ -164,8 +164,7 @@ bool UIWizardNewCloudVM::createCloudVM()
         if (comMachine.isNotNull())
             uiCommon().notifyCloudMachineRegistered(field("location").toString(),
                                                     field("profileName").toString(),
-                                                    comMachine.GetId(),
-                                                    true /* registered */);
+                                                    comMachine);
 
         /* Finally, success: */
         fResult = true;

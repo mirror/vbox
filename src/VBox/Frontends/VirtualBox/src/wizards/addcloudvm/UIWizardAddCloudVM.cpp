@@ -110,8 +110,7 @@ bool UIWizardAddCloudVM::addCloudVMs()
                     {
                         uiCommon().notifyCloudMachineRegistered(field("source").toString(),
                                                                 field("profileName").toString(),
-                                                                comMachine.GetId(),
-                                                                true /* registered */);
+                                                                comMachine);
                         fResult = true;
                     }
                 }

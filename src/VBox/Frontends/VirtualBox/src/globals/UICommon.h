@@ -85,16 +85,26 @@ signals:
         void sigVBoxSVCAvailabilityChange();
     /** @} */
 
-    /** @name Temporary: Cloud Virtual Machine stuff.
+    /** @name Cloud Virtual Machine stuff.
      * @{ */
-        /** Notifies listeners about cloud VM was (un)registered.
-          * @note   This is to be replaced by corresponding Main API event later.
+        /** Notifies listeners about cloud VM was registered.
+          * @param  strProviderShortName  Brings provider short name.
+          * @param  strProfileName        Brings profile name.
+          * @param  comCloudMachine       Brings cloud VM.
+          * @param  fSelect               Brings whether registered VM should be selected. */
+        void sigCloudMachineRegistered(const QString &strProviderShortName,
+                                       const QString &strProfileName,
+                                       const CCloudMachine &comCloudMachine,
+                                       const bool fSelect);
+        /** Notifies listeners about cloud VM registeration changed.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name.
           * @param  uId                   Brings cloud VM id.
           * @param  fRegistered           True is machine was registered, false otherwise. */
-        void sigCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                       const QUuid &uId, const bool fRegistered);
+        void sigCloudMachineRegistrationChanged(const QString &strProviderShortName,
+                                                const QString &strProfileName,
+                                                const QUuid &uId,
+                                                const bool fRegistered);
     /** @} */
 
     /** @name COM: Virtual Media stuff.
@@ -499,16 +509,24 @@ public:
         CSession tryToOpenSessionFor(CMachine &comMachine);
     /** @} */
 
-    /** @name Temporary: Cloud Virtual Machine stuff.
+    /** @name Cloud Virtual Machine stuff.
      * @{ */
-        /** Notifies listeners about cloud VM was (un)registered.
-          * @note   This is to be replaced by corresponding Main API event later.
+        /** Notifies listeners about cloud VM was registered.
+          * @param  strProviderShortName  Brings provider short name.
+          * @param  strProfileName        Brings profile name.
+          * @param  comCloudMachine       Brings cloud VM. */
+        void notifyCloudMachineRegistered(const QString &strProviderShortName,
+                                          const QString &strProfileName,
+                                          const CCloudMachine &comCloudMachine);
+        /** Notifies listeners about cloud VM registeration changed.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name.
           * @param  uId                   Brings cloud VM id.
           * @param  fRegistered           True is machine was registered, false otherwise. */
-        void notifyCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                          const QUuid &uId, const bool fRegistered);
+        void notifyCloudMachineRegistrationChanged(const QString &strProviderShortName,
+                                                   const QString &strProfileName,
+                                                   const QUuid &uId,
+                                                   const bool fRegistered);
     /** @} */
 
     /** @name COM: Virtual Media stuff.
