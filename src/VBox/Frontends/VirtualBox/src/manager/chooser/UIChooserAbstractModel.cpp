@@ -636,7 +636,7 @@ void UIChooserAbstractModel::sltLocalMachineRegistered(const QUuid &uMachineId, 
 }
 
 void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                                       const QUuid &uMachineId, const bool fRegistered)
+                                                       const QUuid &uId, const bool fRegistered)
 {
     /* Search for profile node: */
     const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
@@ -650,7 +650,7 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
     if (!fRegistered)
     {
         /* Remove machine-items with passed id: */
-        pProfileNode->removeAllNodes(uMachineId);
+        pProfileNode->removeAllNodes(uId);
 
         /* If there are no items left: */
         if (pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
@@ -665,7 +665,7 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
     else
     {
         /* Add new machine-item: */
-        const CCloudMachine comMachine = cloudMachineById(strProviderShortName, strProfileName, uMachineId);
+        const CCloudMachine comMachine = cloudMachineById(strProviderShortName, strProfileName, uId);
         addCloudMachineIntoTheTree(strProfileNodeName, comMachine, true /* make it visible */);
 
         /* Search for possible fake node: */
@@ -734,11 +734,13 @@ void UIChooserAbstractModel::sltStartGroupSaving()
 void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
 {
     /* Skip unrelated tasks: */
-    if (!pTask || pTask->type() != UITask::Type_CloudListMachines)
+    AssertPtrReturnVoid(pTask);
+    if (pTask->type() != UITask::Type_CloudListMachines)
         return;
 
     /* Cast task to corresponding sub-class: */
-    UITaskCloudListMachines *pAcquiringTask = static_cast<UITaskCloudListMachines*>(pTask);
+    UITaskCloudListMachines *pAcquiringTask = qobject_cast<UITaskCloudListMachines*>(pTask);
+    AssertPtrReturnVoid(pAcquiringTask);
 
     /* Search for profile node: */
     const QString strProfileNodeName = QString("/%1/%2").arg(pAcquiringTask->providerShortName(), pAcquiringTask->profileName());
