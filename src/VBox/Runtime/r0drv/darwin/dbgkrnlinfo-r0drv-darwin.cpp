@@ -337,7 +337,8 @@ static int rtR0DbgKrnlDarwinInitLoadDisplacements(RTDBGKRNLINFOINT *pThis)
 #endif
         KNOWN_ENTRY(vm_map_unwire),   /* __TEXT */
         KNOWN_ENTRY(kernel_map),      /* __HIB */
-        KNOWN_ENTRY(gIOServicePlane)  /* __DATA */
+        KNOWN_ENTRY(gIOServicePlane), /* __DATA (__HIB on ElCapitan) */
+        KNOWN_ENTRY(page_mask)        /* __DATA on ElCapitan */
 #undef KNOWN_ENTRY
     };
 
