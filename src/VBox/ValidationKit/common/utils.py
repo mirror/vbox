@@ -831,6 +831,34 @@ def sudoProcessPopen(*aPositionalArgs, **dKeywordArgs):
     return processPopenSafe(*aPositionalArgs, **dKeywordArgs);
 
 
+def whichProgram(sName, sPath = None):
+    """
+    Works similar to the 'which' utility on unix.
+
+    Returns path to the given program if found.
+    Returns None if not found.
+    """
+    sHost = getHostOs();
+    sSep  = ';' if sHost in [ 'win', 'os2' ] else ':';
+
+    if sPath is None:
+        if sHost == 'win':
+            sPath = os.environ.get('Path', None);
+        else:
+            sPath = os.environ.get('PATH', None);
+        if sPath is None:
+            return None;
+
+    for sDir in sPath.split(sSep):
+        if sDir.strip() != '':
+            sTest = os.path.abspath(os.path.join(sDir, sName));
+        else:
+            sTest = os.path.abspath(sName);
+        if os.path.exists(sTest):
+            return sTest;
+
+    return None;
+
 #
 # Generic process stuff.
 #
