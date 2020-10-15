@@ -3202,6 +3202,7 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
     AssertRC(rc);
     QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
 # else /* #if !defined(VBOX_OSE) && defined(VBOX_WITH_KCHMVIEWER) */
+    /* instead of viewing the pdf manual show qtHelp one. This is soon to be default in all platforms. */
     showHelpBrowser(strLocation);
 # endif /* #if defined(VBOX_OSE) || !defined(VBOX_WITH_KCHMVIEWER) */
 #elif defined (VBOX_WS_MAC)
@@ -3392,15 +3393,14 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     return iResultCode;
 }
 
-void UIMessageCenter::showHelpBrowser(const QString strHelpFileLocation, QWidget *pParent /* = 0 */)
+void UIMessageCenter::showHelpBrowser(const QString strHelpFilePath, QWidget *pParent /* = 0 */)
 {
-    Q_UNUSED(strHelpFileLocation);
     QWidget *pDialogParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
     AssertReturnVoid(pDialogParent);
 
 
     QIManagerDialog *pHelpBrowserDialog;
-    UIHelpBrowserDialogFactory dialogFactory;
+    UIHelpBrowserDialogFactory dialogFactory(strHelpFilePath);
 
     dialogFactory.prepare(pHelpBrowserDialog);
     AssertReturnVoid(pHelpBrowserDialog);

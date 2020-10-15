@@ -6926,7 +6926,7 @@ ifdef VBOX_WITH_QTGUI
  ifeq ($(KBUILD_TARGET), darwin)
   VBOX_QT_MOD = QtCore QtGui QtWidgets QtPrintSupport QtMacExtras $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
  else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
-  VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport Qt5Help Qt5Network Qt5CLucene Qt5Sql $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
+  VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
   if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
    VBOX_QT_MOD += Qt5DBus Qt5XcbQpa Qt5X11Extras
    # legacy libraries required to be installed on EL5
@@ -6939,6 +6939,12 @@ ifdef VBOX_WITH_QTGUI
   endif # win
  endif # linux freebsd netbsd openbsd solaris win
 
+ ifeq ($(KBUILD_TARGET), linux)
+   #VBOX_QT_PLUGINS += \
+    # plugins/sqldrivers/libqsqlite.so
+   VBOX_QT_MOD += Qt5Help Qt5Network Qt5CLucene Qt5Sql
+ endif # linux
+ 
  VBOX_QT_MOD_NAMES = $(foreach qtmod,$(VBOX_QT_MOD),$(qtmod)$(VBOX_QT_INFIX))
 
  # Hack LD_LIBRARY_PATH for stuff in tools.

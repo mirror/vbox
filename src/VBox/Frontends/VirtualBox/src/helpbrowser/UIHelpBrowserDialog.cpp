@@ -43,13 +43,14 @@
 *   Class UIHelpBrowserDialogFactory implementation.                                                                             *
 *********************************************************************************************************************************/
 
-UIHelpBrowserDialogFactory::UIHelpBrowserDialogFactory()
+UIHelpBrowserDialogFactory::UIHelpBrowserDialogFactory(const QString &strHelpFilePath /*  = QString() */)
+    :m_strHelpFilePath(strHelpFilePath)
 {
 }
 
 void UIHelpBrowserDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIHelpBrowserDialog(pCenterWidget);
+    pDialog = new UIHelpBrowserDialog(pCenterWidget, m_strHelpFilePath);
 }
 
 
@@ -57,8 +58,9 @@ void UIHelpBrowserDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCen
 *   Class UIHelpBrowserDialog implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pCenterWidget)
+UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &strHelpFilePath)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    , m_strHelpFilePath(strHelpFilePath)
 {
 }
 
@@ -79,7 +81,12 @@ void UIHelpBrowserDialog::configure()
 void UIHelpBrowserDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIHelpBrowserWidget *pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, true /* show toolbar */, this);
+    UIHelpBrowserWidget *pWidget = 0;
+
+#ifdef VBOX_WS_X11
+    pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath, true /* show toolbar */, this);
+#endif
+
     if (pWidget)
     {
         /* Configure widget: */
@@ -104,34 +111,10 @@ void UIHelpBrowserDialog::finalize()
 
 void UIHelpBrowserDialog::loadSettings()
 {
-    /* Invent default window geometry: */
-    const QRect availableGeo = gpDesktop->availableGeometry(this);
-    int iDefaultWidth = availableGeo.width() / 2;
-    int iDefaultHeight = availableGeo.height() * 3 / 4;
-    /* Try obtain the default width of the current logviewer: */
-    const UIHelpBrowserWidget *pWidget = qobject_cast<const UIHelpBrowserWidget*>(widget());
-    if (pWidget)
-    {
-        const int iWidth = pWidget->defaultLogPageWidth();
-        if (iWidth != 0)
-            iDefaultWidth = iWidth;
-    }
-    QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);
-
-    /* Load geometry from extradata: */
-    const QRect geo = gEDataManager->logWindowGeometry(this, centerWidget(), defaultGeo);
-    LogRel2(("GUI: UIHelpBrowserDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
-             geo.x(), geo.y(), geo.width(), geo.height()));
-    restoreGeometry(geo);
 }
 
 void UIHelpBrowserDialog::saveSettings()
 {
-    /* Save geometry to extradata: */
-    const QRect geo = currentGeometry();
-    LogRel2(("GUI: UIHelpBrowserDialog: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
-             geo.x(), geo.y(), geo.width(), geo.height()));
-    gEDataManager->setLogWindowGeometry(geo, isCurrentlyMaximized());
 }
 
 bool UIHelpBrowserDialog::shouldBeMaximized() const
