@@ -19,7 +19,7 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFont>
-#ifdef VBOX_WS_X11
+#ifdef RT_OS_LINUX
  #include <QtHelp/QHelpEngine>
  #include <QtHelp/QHelpContentWidget>
 #endif
@@ -62,25 +62,25 @@ public:
 
 private:
 
-#ifdef VBOX_WS_X11
+#ifdef RT_OS_LINUX
     const QHelpEngine* m_pHelpEngine;
 #endif
 };
 
 UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* = 0 */)
     :QTextBrowser(pParent)
-#ifdef VBOX_WS_X11
+#ifdef RT_OS_LINUX
     , m_pHelpEngine(pHelpEngine)
 #endif
 {
-#ifndef VBOX_WS_X11
+#ifndef RT_OS_LINUX
     Q_UNUSED(pHelpEngine);
 #endif
 }
 
 QVariant UIHelpBrowserViewer::loadResource(int type, const QUrl &name)
 {
-#ifdef VBOX_WS_X11
+#ifdef RT_OS_LINUX
     if (name.scheme() == "qthelp" && m_pHelpEngine)
         return QVariant(m_pHelpEngine->fileData(name));
     else
@@ -103,7 +103,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pTabWidget(0)
     , m_pToolBar(0)
     , m_strHelpFilePath(strHelpFilePath)
-#ifdef VBOX_WS_X11
+#ifdef RT_OS_LINUX
     , m_pHelpEngine(0)
 #endif
     , m_pTextBrowser(0)
@@ -150,7 +150,7 @@ void UIHelpBrowserWidget::prepareWidgets()
     /* Create main layout: */
     m_pMainLayout = new QHBoxLayout(this);
     AssertReturnVoid(m_pMainLayout);
-#ifdef VBOX_WS_X11
+#ifdef RT_OS_LINUX
     m_pHelpEngine = new QHelpEngine(m_strHelpFilePath, this);
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
@@ -248,7 +248,7 @@ void UIHelpBrowserWidget::keyPressEvent(QKeyEvent *pEvent)
 
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 {
-#ifdef VBOX_WS_X11
+#ifdef RT_OS_LINUX
     AssertReturnVoid(m_pTextBrowser && m_pHelpEngine);
 
     QList<QUrl> files = m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList());

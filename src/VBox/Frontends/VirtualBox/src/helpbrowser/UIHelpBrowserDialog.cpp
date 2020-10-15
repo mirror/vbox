@@ -83,7 +83,7 @@ void UIHelpBrowserDialog::configureCentralWidget()
     /* Create widget: */
     UIHelpBrowserWidget *pWidget = 0;
 
-#ifdef VBOX_WS_X11
+#ifdef RT_OS_LINUX
     pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath, true /* show toolbar */, this);
 #endif
 

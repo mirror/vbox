@@ -125,7 +125,7 @@ private:
     /** @} */
 
     QString       m_strHelpFilePath;
-#ifdef VBOX_WS_X11
+#ifdef RT_OS_LINUX
     QHelpEngine  *m_pHelpEngine;
 #endif
     UIHelpBrowserViewer *m_pTextBrowser;
