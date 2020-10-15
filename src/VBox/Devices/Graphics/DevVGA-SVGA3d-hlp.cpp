@@ -20,8 +20,8 @@
 
 #ifdef SHADER_VERIFY_STANDALONE
 # include <stdio.h>
-//# define Log3(a) printf a        - /* @todo r=bird: This is strictly forbidden. Noone redefines Log macros ever! */
-//# define LogRel(a) printf a      - /* @todo r=bird: This is strictly forbidden. Noone redefines Log macros ever! */
+//# define Log3(a) printf a        - /** @todo r=bird: This is strictly forbidden. Noone redefines Log macros ever! */
+//# define LogRel(a) printf a      - /** @todo r=bird: This is strictly forbidden. Noone redefines Log macros ever! */
 #else
 # include <VBox/log.h>
 #endif
