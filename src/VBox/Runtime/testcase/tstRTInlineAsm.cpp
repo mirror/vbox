@@ -46,10 +46,11 @@
 #else
 # include <iprt/time.h>
 #endif
+#include <iprt/mem.h>
+#include <iprt/param.h>
 #include <iprt/rand.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/param.h>
 #include <iprt/thread.h>
 #include <iprt/test.h>
 #include <iprt/time.h>
