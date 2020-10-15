@@ -647,8 +647,9 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
                                                         "updated.  To continue, select one of images to create virtual "
                                                         "machine on the basis of it.</p>"));
 
-    /* Translate cloud stuff: */
+    /* Translate profile stuff: */
     m_pProfileLabel->setText(UIWizardNewCloudVM::tr("&Profile:"));
+    m_pProfileToolButton->setToolTip(UIWizardNewCloudVM::tr("Open Cloud Profile Manager..."));
     m_pSourceImageLabel->setText(UIWizardNewCloudVM::tr("&Source:"));
 
     /* Translate source tab-bar: */

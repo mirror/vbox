@@ -967,8 +967,9 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files in exported VM archive."));
     m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("&Include ISO image files"));
 
-    /* Translate Profile label: */
+    /* Translate profile stuff: */
     m_pProfileLabel->setText(UIWizardExportApp::tr("&Profile:"));
+    m_pProfileToolButton->setToolTip(UIWizardExportApp::tr("Open Cloud Profile Manager..."));
 
     /* Translate option label: */
     m_pMachineLabel->setText(UIWizardExportApp::tr("Machine Creation:"));

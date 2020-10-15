@@ -512,8 +512,9 @@ void UIWizardAddCloudVMPageBasic1::retranslateUi()
                                                         "updated.  To continue, select at least one instance to add virtual "
                                                         "machine on the basis of it.</p>"));
 
-    /* Translate cloud stuff: */
+    /* Translate profile stuff: */
     m_pProfileLabel->setText(UIWizardAddCloudVM::tr("&Profile:"));
+    m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Open Cloud Profile Manager..."));
     m_pProfileInstanceLabel->setText(UIWizardAddCloudVM::tr("&Instances:"));
 
     /* Adjust label widths: */

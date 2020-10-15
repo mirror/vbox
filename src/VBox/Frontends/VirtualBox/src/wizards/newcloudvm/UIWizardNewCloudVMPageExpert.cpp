@@ -216,6 +216,9 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
     m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Boot Volumes"));
     m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Images"));
 
+    /* Translate profile stuff: */
+    m_pProfileToolButton->setToolTip(UIWizardNewCloudVM::tr("Open Cloud Profile Manager..."));
+
     /* Translate settings container: */
     m_pSettingsCnt->setTitle(UIWizardNewCloudVM::tr("Settings"));
 

@@ -687,8 +687,9 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
 
-    /* Translate cloud stuff: */
+    /* Translate profile stuff: */
     m_pProfileLabel->setText(UIWizardImportApp::tr("&Profile:"));
+    m_pProfileToolButton->setToolTip(UIWizardImportApp::tr("Open Cloud Profile Manager..."));
     m_pProfileInstanceLabel->setText(UIWizardImportApp::tr("&Machines:"));
 
     /* Adjust label widths: */

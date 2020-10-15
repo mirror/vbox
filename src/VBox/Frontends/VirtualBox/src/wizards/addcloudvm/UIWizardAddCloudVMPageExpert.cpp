@@ -143,6 +143,9 @@ void UIWizardAddCloudVMPageExpert::retranslateUi()
     /* Translate source container: */
     m_pCntSource->setTitle(UIWizardAddCloudVM::tr("Source"));
 
+    /* Translate profile stuff: */
+    m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Open Cloud Profile Manager..."));
+
     /* Translate received values of Source combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pSourceComboBox->count(); ++i)
