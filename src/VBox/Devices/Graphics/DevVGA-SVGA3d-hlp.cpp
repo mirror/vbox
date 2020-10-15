@@ -355,7 +355,7 @@ int vmsvga3dShaderParse(SVGA3dShaderType type, uint32_t cbShaderData, uint32_t c
         Log3(("op %d, cInstLen %d\n", token.op, cInstLen));
 
         /* Must not be greater than the number of remaining tokens. */
-        ASSERT_GUEST_RETURN(cInstLen < paTokensEnd - pToken, VERR_PARSE_ERROR);
+        ASSERT_GUEST_RETURN(cInstLen < (uintptr_t)(paTokensEnd - pToken), VERR_PARSE_ERROR);
 
         /* Stop parsing if this is the SVGA3DOP_END instruction. */
         if (token.op == SVGA3DOP_END)
