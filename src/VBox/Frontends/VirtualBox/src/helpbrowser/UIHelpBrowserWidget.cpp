@@ -73,6 +73,9 @@ UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget
     , m_pHelpEngine(pHelpEngine)
 #endif
 {
+#ifndef VBOX_WS_X11
+    Q_UNUSED(pHelpEngine);
+#endif
 }
 
 QVariant UIHelpBrowserViewer::loadResource(int type, const QUrl &name)
