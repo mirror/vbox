@@ -254,7 +254,7 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
     QList<QUrl> files = m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList());
     if (!files.empty())
         m_pTextBrowser->setSource(files[0]);
-    /*  @todo: show some kind of error maybe. */
+    /** @todo show some kind of error maybe. */
 #endif
 }
 
