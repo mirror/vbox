@@ -119,8 +119,9 @@ const char *getCacheAss(unsigned u)
     if (u >= 256)
         return "???";
 
-    char *pszRet;
-    RTStrAPrintf(&pszRet, "%d way", u);     /* intentional leak! */
+    char *pszRet = NULL;
+    RTStrAPrintf(&pszRet, "%d way", u);
+    RTMEM_WILL_LEAK(pszRet);
     return pszRet;
 }
 
