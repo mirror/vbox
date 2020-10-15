@@ -360,12 +360,12 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 /* Add into layout: */
                                 m_pSettingsLayout2->addWidget(m_pMachineLabel, 1, 0);
                             }
-                            /* Create Export Then Ask button: */
-                            m_pRadioExportThenAsk = new QRadioButton;
-                            if (m_pRadioExportThenAsk)
+                            /* Create Do Not Ask button: */
+                            m_pRadioDoNotAsk = new QRadioButton;
+                            if (m_pRadioDoNotAsk)
                             {
                                 /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pRadioExportThenAsk, 1, 1);
+                                m_pSettingsLayout2->addWidget(m_pRadioDoNotAsk, 1, 1);
                             }
                             /* Create Ask Then Export button: */
                             m_pRadioAskThenExport = new QRadioButton;
@@ -374,12 +374,12 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 /* Add into layout: */
                                 m_pSettingsLayout2->addWidget(m_pRadioAskThenExport, 2, 1);
                             }
-                            /* Create Do Not Ask button: */
-                            m_pRadioDoNotAsk = new QRadioButton;
-                            if (m_pRadioDoNotAsk)
+                            /* Create Export Then Ask button: */
+                            m_pRadioExportThenAsk = new QRadioButton;
+                            if (m_pRadioExportThenAsk)
                             {
                                 /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pRadioDoNotAsk, 3, 1);
+                                m_pSettingsLayout2->addWidget(m_pRadioExportThenAsk, 3, 1);
                             }
                         }
 
@@ -516,9 +516,9 @@ void UIWizardExportAppPageExpert::retranslateUi()
 
     /* Translate option label: */
     m_pMachineLabel->setText(UIWizardExportApp::tr("Machine Creation:"));
-    m_pRadioExportThenAsk->setText(UIWizardExportApp::tr("Ask me about it &after exporting disk as custom image"));
+    m_pRadioDoNotAsk->setText(UIWizardExportApp::tr("Do not ask me about it, leave custom &image for future usage"));
     m_pRadioAskThenExport->setText(UIWizardExportApp::tr("Ask me about it &before exporting disk as custom image"));
-    m_pRadioDoNotAsk->setText(UIWizardExportApp::tr("Do &not ask me about it, leave custom image for future usage"));
+    m_pRadioExportThenAsk->setText(UIWizardExportApp::tr("Ask me about it &after exporting disk as custom image"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
