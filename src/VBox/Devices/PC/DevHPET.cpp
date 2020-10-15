@@ -141,12 +141,21 @@
 #define HPET_TN_CFG_BITS_READONLY_OR_RESERVED 0xffff80b1U
 
 /** Extract the timer count from the capabilities. */
-#define HPET_CAP_GET_TIMERS(a_u32)      ( ((a_u32) >> 8) & 0x1f )
+#define HPET_CAP_GET_TIMERS(a_u32)              ((((a_u32) >> 8) + 1) & 0x1f)
+/** Revision ID. */
+#define HPET_CAP_GET_REV_ID(a_u32)              ((a_u32) & 0xff)
+/** Counter size. */
+#define HPET_CAP_HAS_64BIT_COUNT_SIZE(a_u32)    RT_BOOL((a_u32) & RT_BIT(13))
+/** Legacy Replacement Route. */
+#define HPET_CAP_HAS_LEG_RT(a_u32)              RT_BOOL((a_u32) & RT_BIT(15))
+
 
 /** The version of the saved state. */
-#define HPET_SAVED_STATE_VERSION       2
+#define HPET_SAVED_STATE_VERSION                3
+/** The version of the saved state prior to the off-by-1 timer count fix. */
+#define HPET_SAVED_STATE_VERSION_PRE_TIMER      2
 /** Empty saved state */
-#define HPET_SAVED_STATE_VERSION_EMPTY 1
+#define HPET_SAVED_STATE_VERSION_EMPTY          1
 
 
 /**
@@ -1215,6 +1224,7 @@ static DECLCALLBACK(int) hpetR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
      * The state.
      */
     uint32_t const cTimers = HPET_CAP_GET_TIMERS(pThis->u32Capabilities);
+    AssertReturn(cTimers <= RT_ELEMENTS(pThis->aTimers), VERR_OUT_OF_RANGE);
     for (uint32_t iTimer = 0; iTimer < cTimers; iTimer++)
     {
         PHPETTIMER pHpetTimer = &pThis->aTimers[iTimer];
@@ -1248,7 +1258,8 @@ static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
      */
     if (uVersion == HPET_SAVED_STATE_VERSION_EMPTY)
         return VINF_SUCCESS;
-    if (uVersion != HPET_SAVED_STATE_VERSION)
+    if (   uVersion != HPET_SAVED_STATE_VERSION
+        && uVersion != HPET_SAVED_STATE_VERSION_PRE_TIMER)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /*
@@ -1286,9 +1297,21 @@ static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     rc = pHlp->pfnSSMGetU64(pSSM, &pThis->u64HpetCounter);
     if (RT_FAILURE(rc))
         return rc;
-    if (HPET_CAP_GET_TIMERS(RT_LO_U32(u64CapPer)) != cTimers)
+
+    /* Older saved state have an off-by-1 timer count bug. */
+    uint8_t cCapTimers = HPET_CAP_GET_TIMERS(RT_LO_U32(u64CapPer));
+    if (   uVersion <= HPET_SAVED_STATE_VERSION_PRE_TIMER
+        && cCapTimers > 0 /* Paranoia */)
+        --cCapTimers;
+
+    /* Verify capability reported timer count matches timer count in the saved state field. */
+    if (cCapTimers != cTimers)
         return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Capabilities does not match timer count: cTimers=%#x caps=%#x"),
-                                       cTimers, (unsigned)HPET_CAP_GET_TIMERS(u64CapPer));
+                                       cTimers, cCapTimers);
+    if (HPET_CAP_GET_TIMERS(RT_LO_U32(u64CapPer)) > RT_ELEMENTS(pThis->aTimers))
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - too many timers in capability register: CAP=%#x => %u times, max %u"),
+                                       RT_LO_U32(u64CapPer), (unsigned)HPET_CAP_GET_TIMERS(RT_LO_U32(u64CapPer)), RT_ELEMENTS(pThis->aTimers));
+
     pThis->u32Capabilities  = RT_LO_U32(u64CapPer);
     pThis->u32Period        = RT_HI_U32(u64CapPer);
 
@@ -1454,6 +1477,11 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * This must be done prior to registering the HPET, right?
      */
     hpetR3Reset(pDevIns);
+
+    uint32_t const fCaps = pThis->u32Capabilities;
+    LogRel(("HPET: Capabilities=%#RX32 (LegacyRt=%RTbool CounterSize=%s Timers=%u Revision=%#x)\n",
+            fCaps, HPET_CAP_HAS_LEG_RT(fCaps), HPET_CAP_HAS_64BIT_COUNT_SIZE(fCaps) ? "64-bit" : "32-bit",
+            HPET_CAP_GET_TIMERS(fCaps), HPET_CAP_GET_REV_ID(fCaps)));
 
     /*
      * Register the HPET and get helpers.
