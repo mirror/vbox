@@ -712,6 +712,29 @@ void UIChooserAbstractModel::sltCloudMachineUnregistered(const QString &strProvi
                                  UIFakeCloudVirtualMachineItemState_Done);
 }
 
+void UIChooserAbstractModel::sltCloudMachinesUnregistered(const QString &strProviderShortName,
+                                                          const QString &strProfileName,
+                                                          const QList<QUuid> &ids)
+{
+    /* Search for profile node: */
+    const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+    QList<UIChooserNode*> profileNodes;
+    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
+    UIChooserNode *pProfileNode = profileNodes.value(0);
+    if (!pProfileNode)
+        return;
+
+    /* Remove machine-items with passed id: */
+    foreach (const QUuid &uId, ids)
+        pProfileNode->removeAllNodes(uId);
+
+    /* If there are no items left => add fake cloud VM node: */
+    if (pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
+        new UIChooserNodeMachine(pProfileNode /* parent */,
+                                 0 /* position */,
+                                 UIFakeCloudVirtualMachineItemState_Done);
+}
+
 void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName,
                                                        const QString &strProfileName,
                                                        const CCloudMachine &comMachine)
@@ -726,6 +749,29 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
 
     /* Add new machine-item: */
     addCloudMachineIntoTheTree(strProfileNodeName, comMachine, true /* make it visible? */);
+
+    /* Search for possible fake node: */
+    QList<UIChooserNode*> fakeNodes;
+    pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
+    /* Delete fake node if present: */
+    delete fakeNodes.value(0);
+}
+
+void UIChooserAbstractModel::sltCloudMachinesRegistered(const QString &strProviderShortName,
+                                                        const QString &strProfileName,
+                                                        const QVector<CCloudMachine> &machines)
+{
+    /* Search for profile node: */
+    const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+    QList<UIChooserNode*> profileNodes;
+    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
+    UIChooserNode *pProfileNode = profileNodes.value(0);
+    if (!pProfileNode)
+        return;
+
+    /* Add new machine-items: */
+    foreach (const CCloudMachine &comMachine, machines)
+        addCloudMachineIntoTheTree(strProfileNodeName, comMachine, false /* make it visible? */);
 
     /* Search for possible fake node: */
     QList<UIChooserNode*> fakeNodes;
@@ -751,34 +797,41 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     if (!pProfileNode)
         return;
 
-    /* Search for fake node: */
-    QList<UIChooserNode*> fakeNodes;
-    pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
-    UIChooserNode *pFakeNode = fakeNodes.value(0);
-    if (!pFakeNode)
-        return;
-
-    /* And if we have at least one cloud machine: */
-    const QVector<CCloudMachine> machines = pAcquiringTask->result();
-    if (!machines.isEmpty())
+    /* Compose old set of machine IDs: */
+    QSet<QUuid> oldIDs;
+    foreach (UIChooserNode *pNode, pProfileNode->nodes(UIChooserNodeType_Machine))
     {
-        /* Remove fake node: */
-        delete pFakeNode;
-
-        /* Add real cloud VM nodes: */
-        foreach (const CCloudMachine &comCloudMachine, machines)
-            createCloudMachineNode(pProfileNode, comCloudMachine);
+        AssertPtrReturnVoid(pNode);
+        UIChooserNodeMachine *pNodeMachine = pNode->toMachineNode();
+        AssertPtrReturnVoid(pNodeMachine);
+        if (pNodeMachine->cacheType() != UIVirtualMachineItemType_CloudReal)
+            continue;
+        oldIDs << pNodeMachine->id();
     }
-    else
+    /* Compose new set of machine IDs and map of machines: */
+    QSet<QUuid> newIDs;
+    QMap<QUuid, CCloudMachine> newMachines;
+    foreach (const CCloudMachine &comMachine, pAcquiringTask->result())
     {
-        /* Otherwise toggle and update "Empty" node: */
-        UIChooserNodeMachine *pFakeMachineNode = pFakeNode->toMachineNode();
-        AssertReturnVoid(pFakeMachineNode && pFakeMachineNode->cacheType() == UIVirtualMachineItemType_CloudFake);
-        UIVirtualMachineItemCloud *pFakeCloudMachineItem = pFakeMachineNode->cache()->toCloud();
-        AssertPtrReturnVoid(pFakeCloudMachineItem);
-        pFakeCloudMachineItem->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
-        pFakeCloudMachineItem->setFakeCloudItemErrorMessage(pAcquiringTask->errorInfo());
+        QUuid uId;
+        AssertReturnVoid(cloudMachineId(comMachine, uId));
+        newMachines[uId] = comMachine;
+        newIDs << uId;
     }
+
+    /* Calculate set of unregistered/registered IDs: */
+    const QSet<QUuid> unregisteredIDs = oldIDs - newIDs;
+    const QSet<QUuid> registeredIDs = newIDs - oldIDs;
+    QVector<CCloudMachine> registeredMachines;
+    foreach (const QUuid &uId, registeredIDs)
+        registeredMachines << newMachines.value(uId);
+
+    /* Remove unregistered cloud VM nodes: */
+    if (!unregisteredIDs.isEmpty())
+        sltCloudMachinesUnregistered(pAcquiringTask->providerShortName(), pAcquiringTask->profileName(), unregisteredIDs.toList());
+    /* Add registered cloud VM nodes: */
+    if (!registeredMachines.isEmpty())
+        sltCloudMachinesRegistered(pAcquiringTask->providerShortName(), pAcquiringTask->profileName(), registeredMachines);
 }
 
 void UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange()

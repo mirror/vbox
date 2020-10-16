@@ -1168,6 +1168,21 @@ void UIChooserModel::sltCloudMachineUnregistered(const QString &strProviderShort
     buildTreeForMainRoot(true /* preserve selection */);
 }
 
+void UIChooserModel::sltCloudMachinesUnregistered(const QString &strProviderShortName,
+                                                  const QString &strProfileName,
+                                                  const QList<QUuid> &ids)
+{
+    /* Make sure no item with one of passed ids is selected: */
+    foreach (const QUuid &uId, ids)
+        makeSureNoItemWithCertainIdSelected(uId);
+
+    /* Call to base-class: */
+    UIChooserAbstractModel::sltCloudMachinesUnregistered(strProviderShortName, strProfileName, ids);
+
+    /* Rebuild tree for main root: */
+    buildTreeForMainRoot(true /* preserve selection */);
+}
+
 void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortName,
                                                const QString &strProfileName,
                                                const CCloudMachine &comMachine)
@@ -1184,6 +1199,17 @@ void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortNa
         setSelectedItem(root()->searchForItem(uMachineId.toString(),
                                               UIChooserItemSearchFlag_Machine |
                                               UIChooserItemSearchFlag_ExactId));
+}
+
+void UIChooserModel::sltCloudMachinesRegistered(const QString &strProviderShortName,
+                                                const QString &strProfileName,
+                                                const QVector<CCloudMachine> &machines)
+{
+    /* Call to base-class: */
+    UIChooserAbstractModel::sltCloudMachinesRegistered(strProviderShortName, strProfileName, machines);
+
+    /* Rebuild tree for main root: */
+    buildTreeForMainRoot(true /* preserve selection */);
 }
 
 void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)

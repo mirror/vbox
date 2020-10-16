@@ -171,12 +171,24 @@ protected slots:
         virtual void sltCloudMachineUnregistered(const QString &strProviderShortName,
                                                  const QString &strProfileName,
                                                  const QUuid &uId);
+        /** Handles cloud machine unregistering for a list of @a ids.
+          * @param  strProviderShortName  Brings provider short name.
+          * @param  strProfileName        Brings profile name. */
+        virtual void sltCloudMachinesUnregistered(const QString &strProviderShortName,
+                                                  const QString &strProfileName,
+                                                  const QList<QUuid> &ids);
         /** Handles cloud machine registering for @a comMachine.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name. */
         virtual void sltCloudMachineRegistered(const QString &strProviderShortName,
                                                const QString &strProfileName,
                                                const CCloudMachine &comMachine);
+        /** Handles cloud machine registering for a list of @a machines.
+          * @param  strProviderShortName  Brings provider short name.
+          * @param  strProfileName        Brings profile name. */
+        virtual void sltCloudMachinesRegistered(const QString &strProviderShortName,
+                                                const QString &strProfileName,
+                                                const QVector<CCloudMachine> &machines);
 
         /** Handles list cloud machines task complete signal. */
         virtual void sltHandleCloudListMachinesTaskComplete(UITask *pTask);
