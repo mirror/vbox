@@ -208,7 +208,7 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
  	Accessibility.xml
 
  VBOX_QHCP_FILES = \
-	UserManual.qhcp
+	QtHelpCollectionProject.qhcp
 
  # Wildcard the images path for every supported language
  $(foreach f,$(VBOX_MANUAL_LANGUAGES), \
@@ -261,7 +261,7 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
         $(addprefix HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(lang))) \
         html-single/UserManual.xhtml \
         html-single/UserManual.qhp \
-        html-single/UserManual.qhcp \
+        html-single/QtHelpCollectionProject.qhcp \
         html-single/UserManual.qhc \
         html-single/UserManual.qch \
         $(addprefix HTMLHelp/,    index.html go01.html) \
@@ -917,12 +917,12 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhp: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml
 
 ################Copy qhcp file from the source directory###############################
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhcp: \
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/QtHelpCollectionProject.qhcp: \
 	$$(dir $$@)
 	$(QUIET)$(INSTALL_STAGING) -m0664 -- $(addprefix $(VBOX_PATH_MANUAL_SRC)/, $(VBOX_QHCP_FILES)) $@
 
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhc: \
-	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhcp \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/QtHelpCollectionProject.qhcp \
 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhp \
 	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/, $(VBOX_MANUAL_PNG_FILES_en_US))
 	qcollectiongenerator $<
