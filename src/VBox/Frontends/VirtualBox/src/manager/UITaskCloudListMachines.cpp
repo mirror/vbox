@@ -23,10 +23,13 @@
 #include "CCloudClient.h"
 
 
-UITaskCloudListMachines::UITaskCloudListMachines(const QString &strProviderShortName, const QString &strProfileName)
+UITaskCloudListMachines::UITaskCloudListMachines(const QString &strProviderShortName,
+                                                 const QString &strProfileName,
+                                                 bool fWithRefresh)
     : UITask(Type_CloudListMachines)
     , m_strProviderShortName(strProviderShortName)
     , m_strProfileName(strProfileName)
+    , m_fWithRefresh(fWithRefresh)
 {
 }
 
@@ -51,6 +54,8 @@ void UITaskCloudListMachines::run()
     m_mutex.lock();
     CCloudClient comCloudClient = cloudClientByName(m_strProviderShortName, m_strProfileName, m_strErrorInfo);
     if (m_strErrorInfo.isNull())
-        m_result = listCloudMachines(comCloudClient, m_strErrorInfo);
+        m_result = m_fWithRefresh
+                 ? listCloudMachines(comCloudClient, m_strErrorInfo)
+                 : listCloudMachineStubs(comCloudClient, m_strErrorInfo);
     m_mutex.unlock();
 }

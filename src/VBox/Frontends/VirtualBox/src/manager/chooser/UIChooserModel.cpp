@@ -922,7 +922,8 @@ void UIChooserModel::refreshSelectedMachineItems()
                 UIChooserItem *pParentOfParent = pParent->parentItem();
                 AssertPtrReturnVoid(pParentOfParent);
                 UITaskCloudListMachines *pTask = new UITaskCloudListMachines(pParentOfParent->name(),
-                                                                             pParent->name());
+                                                                             pParent->name(),
+                                                                             true /* with refresh? */);
                 AssertPtrReturnVoid(pTask);
                 uiCommon().threadPoolCloud()->enqueueTask(pTask);
 

@@ -115,6 +115,12 @@ namespace UICloudNetworkingStuff
     /** Acquires cloud machines of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
     SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,
                                                                   QString &strErrorMessage);
+    /** Acquires cloud machine stubs of certain @a comCloudClient, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachineStubs(CCloudClient comCloudClient,
+                                                                      QWidget *pParent = 0);
+    /** Acquires cloud machine stubs of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
+    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachineStubs(CCloudClient comCloudClient,
+                                                                      QString &strErrorMessage);
 
     /** Acquires @a comCloudMachine ID as a @a uResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineId(const CCloudMachine &comCloudMachine,

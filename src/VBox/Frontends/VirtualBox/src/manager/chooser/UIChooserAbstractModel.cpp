@@ -980,7 +980,8 @@ void UIChooserAbstractModel::reloadCloudTree()
 
             /* Create list cloud machines task: */
             UITaskCloudListMachines *pTask = new UITaskCloudListMachines(strProviderShortName,
-                                                                         strProfileName);
+                                                                         strProfileName,
+                                                                         true /* with refresh? */);
             if (pTask)
                 uiCommon().threadPoolCloud()->enqueueTask(pTask);
         }

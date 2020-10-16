@@ -40,13 +40,18 @@ public:
 
     /** Constructs task taking @a strProviderShortName and @a strProfileName as data.
       * @param  strProviderShortName  Brings the provider short name.
-      * @param  strProfileName        Brings the profile name. */
-    UITaskCloudListMachines(const QString &strProviderShortName, const QString &strProfileName);
+      * @param  strProfileName        Brings the profile name.
+      * @param  fWithRefresh          Brings whether the task includes refresh. */
+    UITaskCloudListMachines(const QString &strProviderShortName,
+                            const QString &strProfileName,
+                            bool fWithRefresh);
 
     /** Returns provider short name. */
     QString providerShortName() const { return m_strProviderShortName; }
     /** Returns profile name. */
     QString profileName() const { return m_strProfileName; }
+    /** Returns whether the task includes refresh. */
+    bool withRefresh() const { return m_fWithRefresh; }
 
     /** Returns error info. */
     QString errorInfo() const;
@@ -68,6 +73,8 @@ private:
     const QString  m_strProviderShortName;
     /** Holds the profile name. */
     const QString  m_strProfileName;
+    /** Holds whether the task includes refresh. */
+    const bool     m_fWithRefresh;
 
     /** Holds the error info. */
     QString  m_strErrorInfo;
