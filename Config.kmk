@@ -6941,8 +6941,8 @@ ifdef VBOX_WITH_QTGUI
  endif # linux freebsd netbsd openbsd solaris win
 
  ifeq ($(KBUILD_TARGET), linux)
-   VBOX_QT_PLUGINS += \
-     plugins/sqldrivers/libqsqlite.so
+   #VBOX_QT_PLUGINS += \
+    # plugins/sqldrivers/libqsqlite.so
    VBOX_QT_MOD += Qt5Help Qt5Network Qt5CLucene Qt5Sql
  endif # linux
 
