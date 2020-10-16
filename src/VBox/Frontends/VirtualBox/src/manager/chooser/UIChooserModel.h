@@ -262,17 +262,7 @@ protected slots:
       * @{ */
         /** Handles local machine registering/unregistering for machine with certain @a uMachineId. */
         virtual void sltLocalMachineRegistrationChanged(const QUuid &uMachineId, const bool fRegistered) /* override */;
-        /** Handles cloud machine registering for @a comMachine.
-          * @param  strProviderShortName  Brings provider short name.
-          * @param  strProfileName        Brings profile name.
-          * @param  fSelect               Brings whether registered machine should be selected. */
-        virtual void sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                               const CCloudMachine &comMachine, bool fSelect);
-        /** Handles cloud machine registering/unregistering for machine with certain @a uMachineId.
-          * @param  strProviderShortName  Brings provider short name.
-          * @param  strProfileName        Brings profile name. */
-        virtual void sltCloudMachineRegistrationChanged(const QString &strProviderShortName, const QString &strProfileName,
-                                                        const QUuid &uMachineId, const bool fRegistered) /* override */;
+
         /** Handles event about cloud provider with @a uProviderId being uninstalled. */
         virtual void sltHandleCloudProviderUninstall(const QUuid &uProviderId) /* override */;
     /** @} */
@@ -285,8 +275,21 @@ protected slots:
 
     /** @name Cloud stuff.
       * @{ */
+        /** Handles cloud machine registering for @a comMachine.
+          * @param  strProviderShortName  Brings provider short name.
+          * @param  strProfileName        Brings profile name.
+          * @param  fSelect               Brings whether registered machine should be selected. */
+        virtual void sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
+                                               const CCloudMachine &comMachine, bool fSelect);
+        /** Handles cloud machine registering/unregistering for machine with certain @a uMachineId.
+          * @param  strProviderShortName  Brings provider short name.
+          * @param  strProfileName        Brings profile name. */
+        virtual void sltCloudMachineRegistrationChanged(const QString &strProviderShortName, const QString &strProfileName,
+                                                        const QUuid &uMachineId, const bool fRegistered) /* override */;
+
         /** Handles list cloud machines task complete signal. */
         virtual void sltHandleCloudListMachinesTaskComplete(UITask *pTask) /* override */;
+
         /** Handles Cloud Profile Manager cumulative changes. */
         virtual void sltHandleCloudProfileManagerCumulativeChange() /* override */;
     /** @} */

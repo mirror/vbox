@@ -635,6 +635,61 @@ void UIChooserAbstractModel::sltLocalMachineRegistrationChanged(const QUuid &uMa
     }
 }
 
+void UIChooserAbstractModel::sltSessionStateChanged(const QUuid &uMachineId, const KSessionState)
+{
+    /* Update machine-nodes with passed id: */
+    invisibleRoot()->updateAllNodes(uMachineId);
+}
+
+void UIChooserAbstractModel::sltSnapshotChanged(const QUuid &uMachineId, const QUuid &)
+{
+    /* Update machine-nodes with passed id: */
+    invisibleRoot()->updateAllNodes(uMachineId);
+}
+
+void UIChooserAbstractModel::sltHandleCloudProviderUninstall(const QUuid &uProviderId)
+{
+    /* Search for top-level provider node: */
+    foreach (UIChooserNode *pNode, m_pInvisibleRootNode->nodes(UIChooserNodeType_Group))
+    {
+        /* Skip unrelated nodes: */
+        AssertPtrReturnVoid(pNode);
+        UIChooserNodeGroup *pGroupNode = pNode->toGroupNode();
+        AssertPtrReturnVoid(pGroupNode);
+        if (pGroupNode->groupType() != UIChooserNodeGroupType_Provider)
+            continue;
+        const QUuid uIteratedId = pGroupNode->property("id").toUuid();
+        AssertReturnVoid(!uIteratedId.isNull());
+        if (uIteratedId != uProviderId)
+            continue;
+
+        /* Remove found provider node: */
+        delete pNode;
+    }
+}
+
+void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
+{
+    /* Remove machine-items with passed id: */
+    invisibleRoot()->removeAllNodes(uMachineId);
+    /* Wipe out empty groups: */
+    wipeOutEmptyGroups();
+
+    /* Should we show this VM? */
+    if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
+    {
+        /* Add new machine-item: */
+        const CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
+        addLocalMachineIntoTheTree(comMachine, true /* make it visible */);
+    }
+}
+
+void UIChooserAbstractModel::sltStartGroupSaving()
+{
+    saveGroupSettings();
+    saveGroupDefinitions();
+}
+
 void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
                                                        const CCloudMachine &comMachine, bool fSelect)
 {
@@ -695,61 +750,6 @@ void UIChooserAbstractModel::sltCloudMachineRegistrationChanged(const QString &s
         /* Delete fake node if present: */
         delete fakeNodes.value(0);
     }
-}
-
-void UIChooserAbstractModel::sltSessionStateChanged(const QUuid &uMachineId, const KSessionState)
-{
-    /* Update machine-nodes with passed id: */
-    invisibleRoot()->updateAllNodes(uMachineId);
-}
-
-void UIChooserAbstractModel::sltSnapshotChanged(const QUuid &uMachineId, const QUuid &)
-{
-    /* Update machine-nodes with passed id: */
-    invisibleRoot()->updateAllNodes(uMachineId);
-}
-
-void UIChooserAbstractModel::sltHandleCloudProviderUninstall(const QUuid &uProviderId)
-{
-    /* Search for top-level provider node: */
-    foreach (UIChooserNode *pNode, m_pInvisibleRootNode->nodes(UIChooserNodeType_Group))
-    {
-        /* Skip unrelated nodes: */
-        AssertPtrReturnVoid(pNode);
-        UIChooserNodeGroup *pGroupNode = pNode->toGroupNode();
-        AssertPtrReturnVoid(pGroupNode);
-        if (pGroupNode->groupType() != UIChooserNodeGroupType_Provider)
-            continue;
-        const QUuid uIteratedId = pGroupNode->property("id").toUuid();
-        AssertReturnVoid(!uIteratedId.isNull());
-        if (uIteratedId != uProviderId)
-            continue;
-
-        /* Remove found provider node: */
-        delete pNode;
-    }
-}
-
-void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
-{
-    /* Remove machine-items with passed id: */
-    invisibleRoot()->removeAllNodes(uMachineId);
-    /* Wipe out empty groups: */
-    wipeOutEmptyGroups();
-
-    /* Should we show this VM? */
-    if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
-    {
-        /* Add new machine-item: */
-        const CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
-        addLocalMachineIntoTheTree(comMachine, true /* make it visible */);
-    }
-}
-
-void UIChooserAbstractModel::sltStartGroupSaving()
-{
-    saveGroupSettings();
-    saveGroupDefinitions();
 }
 
 void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)

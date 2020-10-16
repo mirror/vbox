@@ -1110,6 +1110,49 @@ void UIChooserModel::sltLocalMachineRegistrationChanged(const QUuid &uMachineId,
     }
 }
 
+void UIChooserModel::sltHandleCloudProviderUninstall(const QUuid &uProviderId)
+{
+    /* Search for selected cloud machine items: */
+    foreach (UIVirtualMachineItem *pItem, selectedMachineItems())
+    {
+        /* Skip unrelated nodes: */
+        AssertPtrReturnVoid(pItem);
+        UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+        if (!pCloudItem)
+            continue;
+
+        /* Wait for cloud machine refresh task to complete: */
+        pCloudItem->waitForAsyncInfoUpdateFinished();
+    }
+
+    /* Call to base-class: */
+    UIChooserAbstractModel::sltHandleCloudProviderUninstall(uProviderId);
+
+    /* Notify about selection invalidated: */
+    emit sigSelectionInvalidated();
+}
+
+void UIChooserModel::sltReloadMachine(const QUuid &uMachineId)
+{
+    /* Call to base-class: */
+    UIChooserAbstractModel::sltReloadMachine(uMachineId);
+
+    /* Should we show this VM? */
+    if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
+    {
+        /* Rebuild tree for main root: */
+        buildTreeForMainRoot(false /* preserve selection */);
+        /* Select newly added item: */
+        setSelectedItem(root()->searchForItem(uMachineId.toString(),
+                                              UIChooserItemSearchFlag_Machine |
+                                              UIChooserItemSearchFlag_ExactId));
+    }
+    makeSureAtLeastOneItemSelected();
+
+    /* Notify listeners about selection change: */
+    emit sigSelectionChanged();
+}
+
 void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
                                                const CCloudMachine &comMachine, bool fSelect)
 {
@@ -1156,49 +1199,6 @@ void UIChooserModel::sltCloudMachineRegistrationChanged(const QString &strProvid
                                               UIChooserItemSearchFlag_Machine |
                                               UIChooserItemSearchFlag_ExactId));
     }
-}
-
-void UIChooserModel::sltHandleCloudProviderUninstall(const QUuid &uProviderId)
-{
-    /* Search for selected cloud machine items: */
-    foreach (UIVirtualMachineItem *pItem, selectedMachineItems())
-    {
-        /* Skip unrelated nodes: */
-        AssertPtrReturnVoid(pItem);
-        UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
-        if (!pCloudItem)
-            continue;
-
-        /* Wait for cloud machine refresh task to complete: */
-        pCloudItem->waitForAsyncInfoUpdateFinished();
-    }
-
-    /* Call to base-class: */
-    UIChooserAbstractModel::sltHandleCloudProviderUninstall(uProviderId);
-
-    /* Notify about selection invalidated: */
-    emit sigSelectionInvalidated();
-}
-
-void UIChooserModel::sltReloadMachine(const QUuid &uMachineId)
-{
-    /* Call to base-class: */
-    UIChooserAbstractModel::sltReloadMachine(uMachineId);
-
-    /* Should we show this VM? */
-    if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
-    {
-        /* Rebuild tree for main root: */
-        buildTreeForMainRoot(false /* preserve selection */);
-        /* Select newly added item: */
-        setSelectedItem(root()->searchForItem(uMachineId.toString(),
-                                              UIChooserItemSearchFlag_Machine |
-                                              UIChooserItemSearchFlag_ExactId));
-    }
-    makeSureAtLeastOneItemSelected();
-
-    /* Notify listeners about selection change: */
-    emit sigSelectionChanged();
 }
 
 void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
