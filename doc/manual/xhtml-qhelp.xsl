@@ -11,6 +11,10 @@
   <xsl:variable name="newline"><xsl:text>
   </xsl:text></xsl:variable>
 
+  <xsl:variable name="inputFileName">
+    <xsl:text>UserManual.xhtml</xsl:text>
+  </xsl:variable>
+
   <xsl:template match="/">
     <xsl:element name="QtHelpProject">
       <xsl:attribute name="version">
@@ -22,10 +26,11 @@
       <xsl:element name="virtualFolder">manual</xsl:element>
       <xsl:value-of select="$newline" />
       <xsl:element name="filterSection">
-        <!-- No keywords and toc for now -->
-        <!-- <xsl:value-of select="$newline" /> -->
-        <!-- <xsl:element name="toc"></xsl:element> -->
-        <!-- <xsl:value-of select="$newline" /> -->
+        <xsl:value-of select="$newline" />
+        <xsl:element name="toc">
+          <xsl:apply-templates select="//xhtml:div[@class='toc']//xhtml:span[@class='chapter']"/>
+        </xsl:element><!-- toc -->
+        <xsl:value-of select="$newline" />
         <!-- <xsl:element name="keywords"></xsl:element> -->
         <xsl:value-of select="$newline" />
         <xsl:element name="files">
@@ -38,7 +43,7 @@
           <!-- <xsl:apply-templates select="//xhtml:div[@class='toc']//xhtml:span[@class='chapter']"/> -->
           <!-- ====================single html input file========================== -->
           <xsl:element name="file">
-            <xsl:text>UserManual.xhtml</xsl:text>
+            <xsl:value-of select="$inputFileName" />
           </xsl:element>
           <xsl:value-of select="$newline" />
           <!-- ===================================================================== -->
@@ -53,15 +58,19 @@
     </xsl:element>
   </xsl:template>
 
+  <!-- ===================toc related template(s)====================== -->
   <xsl:template match="xhtml:span[@class='chapter']">
-    <xsl:element name="file">
-      <xsl:text>ch</xsl:text>
-      <xsl:value-of select="format-number(position(), '00')"/>
-      <xsl:text>.html</xsl:text>
+    <xsl:element name="section">
+      <xsl:attribute name="title">
+        <xsl:value-of select="*" />
+      </xsl:attribute>
+      <xsl:attribute name="ref">
+                    <xsl:value-of select="$inputFileName" /><xsl:value-of select="xhtml:a/@href" />
+      </xsl:attribute>
     </xsl:element>
     <xsl:value-of select="$newline" />
   </xsl:template>
-
+  <!-- ==============================================================   -->
 
   <xsl:template match="//xhtml:img">
     <xsl:element name="file">
