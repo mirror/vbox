@@ -484,9 +484,10 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
 
 /* define RTCList here to see what happens without MT support ;)
  * (valgrind is the preferred tool to check). */
-#define MTTESTLISTTYPE  RTCMTList
-#define MTTESTTYPE      uint32_t
-#define MTTESTITEMS     1000
+#define MTTEST_LIST_TYPE            RTCMTList
+#define MTTEST_TYPE                 uint32_t
+#define MTTEST_ITEMS                1000
+#define MTTEST_ITEMS_NOT_REMOVED    100
 
 /**
  * Thread for prepending items to a shared list.
@@ -496,11 +497,11 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
  */
 static DECLCALLBACK(int) MtTest1ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
-    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
 
     /* Prepend new items at the start of the list. */
-    for (size_t i = 0; i < MTTESTITEMS; ++i)
+    for (size_t i = 0; i < MTTEST_ITEMS; ++i)
         pTestList->prepend(0x0);
 
     return VINF_SUCCESS;
@@ -514,11 +515,11 @@ static DECLCALLBACK(int) MtTest1ThreadProc(RTTHREAD hSelf, void *pvUser)
  */
 static DECLCALLBACK(int) MtTest2ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
-    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
 
     /* Append new items at the end of the list. */
-    for (size_t i = 0; i < MTTESTITEMS; ++i)
+    for (size_t i = 0; i < MTTEST_ITEMS; ++i)
         pTestList->append(0xFFFFFFFF);
 
     return VINF_SUCCESS;
@@ -532,11 +533,11 @@ static DECLCALLBACK(int) MtTest2ThreadProc(RTTHREAD hSelf, void *pvUser)
  */
 static DECLCALLBACK(int) MtTest3ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
-    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
 
     /* Insert new items in the middle of the list. */
-    for (size_t i = 0; i < MTTESTITEMS; ++i)
+    for (size_t i = 0; i < MTTEST_ITEMS; ++i)
         pTestList->insert(pTestList->size() / 2, 0xF0F0F0F0);
 
     return VINF_SUCCESS;
@@ -550,17 +551,18 @@ static DECLCALLBACK(int) MtTest3ThreadProc(RTTHREAD hSelf, void *pvUser)
  */
 static DECLCALLBACK(int) MtTest4ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
-    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
 
-    MTTESTTYPE a;
+    MTTEST_TYPE a;
     /* Try to read C items from random places. */
-    for (size_t i = 0; i < MTTESTITEMS; ++i)
+    for (size_t i = 0; i < MTTEST_ITEMS; ++i)
     {
         /* Make sure there is at least one item in the list. */
         while (pTestList->isEmpty())
             RTThreadYield();
-        a = pTestList->at(RTRandU32Ex(0, (uint32_t)pTestList->size() - 1));
+        uint32_t const idx = RTRandU32Ex(0, RT_MIN((uint32_t)pTestList->size() / 2, MTTEST_ITEMS_NOT_REMOVED));
+        a = pTestList->at(idx);
     }
 
     return VINF_SUCCESS;
@@ -574,16 +576,17 @@ static DECLCALLBACK(int) MtTest4ThreadProc(RTTHREAD hSelf, void *pvUser)
  */
 static DECLCALLBACK(int) MtTest5ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
-    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
 
     /* Try to replace C items from random places. */
-    for (size_t i = 0; i < MTTESTITEMS; ++i)
+    for (size_t i = 0; i < MTTEST_ITEMS; ++i)
     {
         /* Make sure there is at least one item in the list. */
         while (pTestList->isEmpty())
             RTThreadYield();
-        pTestList->replace(RTRandU32Ex(0, (uint32_t)pTestList->size() - 1), 0xFF00FF00);
+        uint32_t const idx = RTRandU32Ex(0, RT_MIN((uint32_t)pTestList->size() / 2, MTTEST_ITEMS_NOT_REMOVED));
+        pTestList->replace(idx, 0xFF00FF00);
     }
 
     return VINF_SUCCESS;
@@ -597,14 +600,14 @@ static DECLCALLBACK(int) MtTest5ThreadProc(RTTHREAD hSelf, void *pvUser)
  */
 static DECLCALLBACK(int) MtTest6ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
-    MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
 
     /* Try to delete items from random places. */
-    for (size_t i = 0; i < MTTESTITEMS; ++i)
+    for (size_t i = 0; i < MTTEST_ITEMS; ++i)
     {
-        /* Make sure there is at least one item in the list. */
-        while (pTestList->isEmpty())
+        /* Removal is racing thread 4 and 5, so, make sure we don't */
+        while (pTestList->size() <= MTTEST_ITEMS_NOT_REMOVED)
             RTThreadYield();
         pTestList->removeAt(RTRandU32Ex(0, (uint32_t)pTestList->size() - 1));
     }
@@ -619,9 +622,9 @@ static DECLCALLBACK(int) MtTest6ThreadProc(RTTHREAD hSelf, void *pvUser)
  */
 static void test2()
 {
-    RTTestISubF("MT test with 6 threads (%u tests per thread).", MTTESTITEMS);
+    RTTestISubF("MT test with 6 threads (%u tests per thread).", MTTEST_ITEMS);
 
-    MTTESTLISTTYPE<MTTESTTYPE>  testList;
+    MTTEST_LIST_TYPE<MTTEST_TYPE>  testList;
     RTTHREAD                    ahThreads[6];
     static struct CLANG11WEIRDNESS { PFNRTTHREAD pfn; } aThreads[6] =
     {
@@ -642,7 +645,7 @@ static void test2()
         RTTESTI_CHECK_RC(RTThreadWait(ahThreads[i], cWait, NULL), VINF_SUCCESS);
     }
 
-    RTTESTI_CHECK_RETV(testList.size() == MTTESTITEMS * 2);
+    RTTESTI_CHECK_RETV(testList.size() == MTTEST_ITEMS * 2);
     for (size_t i = 0; i < testList.size(); ++i)
     {
         uint32_t a = testList.at(i);
