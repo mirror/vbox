@@ -778,12 +778,12 @@ typedef struct RTCRX509TBSCERTIFICATE
         RTASN1CONTEXTTAG3               CtxTag3;
         /** The unique identifier value. */
         RTCRX509EXTENSIONS              Extensions;
-        /** Extensions summary flags. */
+        /** Extensions summary flags (RTCRX509TBSCERTIFICATE_F_PRESENT_XXX). */
         uint32_t                        fFlags;
-        /** Key usage flags. */
+        /** Key usage flags (RTCRX509CERT_KEY_USAGE_F_XXX). */
         uint32_t                        fKeyUsage;
-        /** Extended key usage flags. */
-        uint32_t                        fExtKeyUsage;
+        /** Extended key usage flags (RTCRX509CERT_EKU_F_XXX). */
+        uint64_t                        fExtKeyUsage;
 
         /** Pointer to the authority key ID extension if present. */
         PCRTCRX509AUTHORITYKEYIDENTIFIER pAuthorityKeyIdentifier;
@@ -898,6 +898,8 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRX509TBSCERTIFICATE, RTDECL, RTCrX509TbsCertif
 #define RTCRX509CERT_EKU_F_MS_LIFETIME_SIGNING              RT_BIT_64(37)
 #define RTCRX509CERT_EKU_F_MS_DRM                           RT_BIT_64(38)
 #define RTCRX509CERT_EKU_F_MS_DRM_INDIVIDUALIZATION         RT_BIT_64(39)
+#define RTCRX509CERT_EKU_F_MS_WHQL_CRYPTO                   RT_BIT_64(40)
+#define RTCRX509CERT_EKU_F_MS_ATTEST_WHQL_CRYPTO            RT_BIT_64(41)
 /** @} */
 
 /** @name Key purpose OIDs (extKeyUsage)
@@ -927,6 +929,7 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRX509TBSCERTIFICATE, RTDECL, RTCrX509TbsCertif
 #define RTCRX509_MS_EKU_SGC_SERIALIZED_OID                  "1.3.6.1.4.1.311.10.3.3.1"
 #define RTCRX509_MS_EKU_ENCRYPTED_FILE_SYSTEM_OID           "1.3.6.1.4.1.311.10.3.4"
 #define RTCRX509_MS_EKU_WHQL_CRYPTO_OID                     "1.3.6.1.4.1.311.10.3.5"
+#define RTCRX509_MS_EKU_ATTEST_WHQL_CRYPTO_OID              "1.3.6.1.4.1.311.10.3.5.1"
 #define RTCRX509_MS_EKU_NT5_CRYPTO_OID                      "1.3.6.1.4.1.311.10.3.6"
 #define RTCRX509_MS_EKU_OEM_WHQL_CRYPTO_OID                 "1.3.6.1.4.1.311.10.3.7"
 #define RTCRX509_MS_EKU_EMBEDDED_NT_CRYPTO_OID              "1.3.6.1.4.1.311.10.3.8"

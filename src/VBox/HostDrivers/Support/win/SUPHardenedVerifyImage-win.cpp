@@ -958,6 +958,51 @@ static DECLCALLBACK(void) supHardNtViAsn1DumpToErrInfo(void *pvUser, const char 
 
 
 /**
+ * Attempts to locate a root certificate in the specified store.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if found.
+ * @retval  VWRN_NOT_FOUND if not found.
+ *
+ * @param   hRootStore      The root certificate store to search.
+ * @param   pSubject        The root certificate subject.
+ * @param   pPublicKeyInfo  The public key of the root certificate to find.
+ */
+static int supHardNtViCertVerifyFindRootCert(RTCRSTORE hRootStore, PCRTCRX509NAME pSubject,
+                                             PCRTCRX509SUBJECTPUBLICKEYINFO pPublicKeyInfo)
+{
+    RTCRSTORECERTSEARCH Search;
+    int rc = RTCrStoreCertFindBySubjectOrAltSubjectByRfc5280(hRootStore, pSubject, &Search);
+    AssertRCReturn(rc, rc);
+
+    rc = VWRN_NOT_FOUND;
+    PCRTCRCERTCTX pCertCtx;
+    while ((pCertCtx = RTCrStoreCertSearchNext(hRootStore, &Search)) != NULL)
+    {
+        PCRTCRX509SUBJECTPUBLICKEYINFO pCertPubKeyInfo = NULL;
+        if (pCertCtx->pCert)
+            pCertPubKeyInfo = &pCertCtx->pCert->TbsCertificate.SubjectPublicKeyInfo;
+        else if (pCertCtx->pTaInfo)
+            pCertPubKeyInfo = &pCertCtx->pTaInfo->PubKey;
+        else
+            pCertPubKeyInfo = NULL;
+        if (   pCertPubKeyInfo
+            && RTCrX509SubjectPublicKeyInfo_Compare(pCertPubKeyInfo, pPublicKeyInfo) == 0)
+        {
+            RTCrCertCtxRelease(pCertCtx);
+            rc = VINF_SUCCESS;
+            break;
+        }
+        RTCrCertCtxRelease(pCertCtx);
+    }
+
+    int rc2 = RTCrStoreCertSearchDestroy(hRootStore, &Search);
+    AssertRC(rc2);
+    return rc;
+}
+
+
+/**
  * @callback_method_impl{FNRTCRPKCS7VERIFYCERTCALLBACK,
  * Standard code signing.  Use this for Microsoft SPC.}
  */
@@ -993,8 +1038,10 @@ static DECLCALLBACK(int) supHardNtViCertVerifyCallback(PCRTCRX509CERTIFICATE pCe
         && (fFlags & RTCRPKCS7VCC_F_SIGNED_DATA))
     {
         /*
-         * If kernel signing, a valid certificate path must be anchored by the
-         * microsoft kernel signing root certificate.
+         * For kernel code signing there are two options for a valid certificate path:
+         *  1. Anchored by the microsoft kernel signing root certificate (g_hNtKernelRootStore).
+         *  2. Anchored by an SPC root and signing entity including a 1.3.6.1.4.1.311.10.3.5 (WHQL)
+         *     or 1.3.6.1.4.1.311.10.3.5.1 (WHQL attestation) extended usage key.
          */
         if (pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING)
         {
@@ -1017,36 +1064,37 @@ static DECLCALLBACK(int) supHardNtViCertVerifyCallback(PCRTCRX509CERTIFICATE pCe
                     cValid++;
 
                     /*
-                     * Search the kernel signing root store for a matching anchor.
+                     * 1. Search the kernel signing root store for a matching anchor.
                      */
-                    RTCRSTORECERTSEARCH Search;
-                    rc = RTCrStoreCertFindBySubjectOrAltSubjectByRfc5280(g_hNtKernelRootStore, pSubject, &Search);
-                    AssertRCBreak(rc);
-
-                    PCRTCRCERTCTX pCertCtx;
-                    while ((pCertCtx = RTCrStoreCertSearchNext(g_hNtKernelRootStore, &Search)) != NULL)
+                    rc = supHardNtViCertVerifyFindRootCert(g_hNtKernelRootStore, pSubject, pPublicKeyInfo);
+                    if (rc == VINF_SUCCESS)
+                        cFound++;
+                    /*
+                     * 2. Check for WHQL EKU and make sure it has a SPC root.
+                     */
+                    else if (   rc == VWRN_NOT_FOUND
+                             && (  pCert->TbsCertificate.T3.fExtKeyUsage
+                                 & (RTCRX509CERT_EKU_F_MS_ATTEST_WHQL_CRYPTO | RTCRX509CERT_EKU_F_MS_WHQL_CRYPTO)))
                     {
-                        PCRTCRX509SUBJECTPUBLICKEYINFO pCertPubKeyInfo = NULL;
-                        if (pCertCtx->pCert)
-                            pCertPubKeyInfo = &pCertCtx->pCert->TbsCertificate.SubjectPublicKeyInfo;
-                        else if (pCertCtx->pTaInfo)
-                            pCertPubKeyInfo = &pCertCtx->pTaInfo->PubKey;
-                        else
-                            pCertPubKeyInfo = NULL;
-                        if (   pCertPubKeyInfo
-                            && RTCrX509SubjectPublicKeyInfo_Compare(pCertPubKeyInfo, pPublicKeyInfo) == 0)
+                        rc = supHardNtViCertVerifyFindRootCert(g_hSpcRootStore, pSubject, pPublicKeyInfo);
+                        if (rc == VINF_SUCCESS)
                             cFound++;
-                        RTCrCertCtxRelease(pCertCtx);
                     }
-
-                    int rc2 = RTCrStoreCertSearchDestroy(g_hNtKernelRootStore, &Search); AssertRC(rc2);
+                    AssertRCBreak(rc);
                 }
             }
             if (RT_SUCCESS(rc) && cFound == 0)
-                rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_NOT_VALID_KERNEL_CODE_SIGNATURE, "Not valid kernel code signature.");
+                rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_NOT_VALID_KERNEL_CODE_SIGNATURE,
+                                   "Signature #%u/%u: Not valid kernel code signature.",
+                                   pNtViRdr->iCurSignature + 1, pNtViRdr->cTotalSignatures);
+
+
             if (RT_SUCCESS(rc) && cValid < 2 && g_fHaveOtherRoots)
                 rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_UNEXPECTED_VALID_PATH_COUNT,
-                                   "Expected at least %u valid paths, not %u.", 2, cValid);
+                                   "Signature #%u/%u: Expected at least %u valid paths, not %u.",
+                                   pNtViRdr->iCurSignature + 1, pNtViRdr->cTotalSignatures, 2, cValid);
+            if (rc == VWRN_NOT_FOUND)
+                rc = VINF_SUCCESS;
         }
     }
 
@@ -1103,6 +1151,7 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREI
     PSUPHNTVIRDR pNtViRdr = (PSUPHNTVIRDR)pvUser;
     Assert(pNtViRdr->Core.uMagic == RTLDRREADER_MAGIC);
     pNtViRdr->cTotalSignatures = pInfo->cSignatures;
+    pNtViRdr->iCurSignature    = pInfo->iSignature;
 
     AssertReturn(pInfo->enmType == RTLDRSIGNATURETYPE_PKCS7_SIGNED_DATA, VERR_INTERNAL_ERROR_5);
     AssertReturn(!pInfo->pvExternalData, VERR_INTERNAL_ERROR_5);
@@ -1124,7 +1173,8 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREI
                                                             &pSignerInfo->IssuerAndSerialNumber.Name,
                                                             &pSignerInfo->IssuerAndSerialNumber.SerialNumber))
             return RTErrInfoSetF(pErrInfo, VERR_SUP_VP_NOT_SIGNED_WITH_BUILD_CERT,
-                                 "Not signed with the build certificate (serial %.*Rhxs, expected %.*Rhxs)",
+                                 "Signature #%u/%u: Not signed with the build certificate (serial %.*Rhxs, expected %.*Rhxs)",
+                                 pInfo->iSignature + 1, pInfo->cSignatures,
                                  pSignerInfo->IssuerAndSerialNumber.SerialNumber.Asn1Core.cb,
                                  pSignerInfo->IssuerAndSerialNumber.SerialNumber.Asn1Core.uData.pv,
                                  g_BuildX509Cert.TbsCertificate.SerialNumber.Asn1Core.cb,
@@ -1194,7 +1244,7 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREI
         {
             if (rc != VINF_SUCCESS)
             {
-                SUP_DPRINTF(("%s: Signature #%u/%u: info status: %d\n", pNtViRdr->szFilename, pInfo->iSignature, pInfo->cbSignature, rc));
+                SUP_DPRINTF(("%s: Signature #%u/%u: info status: %d\n", pNtViRdr->szFilename, pInfo->iSignature + 1, pInfo->cSignatures, rc));
                 if (pNtViRdr->rcLastSignatureFailure == VINF_SUCCESS)
                     pNtViRdr->rcLastSignatureFailure = rc;
             }
@@ -1209,7 +1259,7 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREI
 
         if (rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME && i + 1 < cTimes)
             SUP_DPRINTF(("%s: Signature #%u/%u: VERR_CR_X509_CPV_NOT_VALID_AT_TIME for %#RX64; retrying against current time: %#RX64.\n",
-                         pNtViRdr->szFilename, pInfo->iSignature, pInfo->cbSignature,
+                         pNtViRdr->szFilename, pInfo->iSignature + 1, pInfo->cSignatures,
                          RTTimeSpecGetSeconds(&aTimes[0].TimeSpec), RTTimeSpecGetSeconds(&aTimes[1].TimeSpec)));
         else
         {
@@ -1221,7 +1271,7 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREI
             if (   rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME
                 || rc == VERR_CR_X509_CPV_NO_TRUSTED_PATHS)
             {
-                SUP_DPRINTF(("%s: Signature #%u/%u: %s (%d) w/ timestamp=%#RX64/%s.\n", pNtViRdr->szFilename, pInfo->iSignature, pInfo->cbSignature,
+                SUP_DPRINTF(("%s: Signature #%u/%u: %s (%d) w/ timestamp=%#RX64/%s.\n", pNtViRdr->szFilename, pInfo->iSignature + 1, pInfo->cSignatures,
                              rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME ? "VERR_CR_X509_CPV_NOT_VALID_AT_TIME" : "VERR_CR_X509_CPV_NO_TRUSTED_PATHS", rc,
                              RTTimeSpecGetSeconds(&aTimes[i].TimeSpec), aTimes[i].pszDesc));
 
@@ -1234,7 +1284,7 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREI
                 }
             }
             else
-                SUP_DPRINTF(("%s: Signature #%u/%u: %Rrc w/ timestamp=%#RX64/%s.\n", pNtViRdr->szFilename, pInfo->iSignature, pInfo->cbSignature,
+                SUP_DPRINTF(("%s: Signature #%u/%u: %Rrc w/ timestamp=%#RX64/%s.\n", pNtViRdr->szFilename, pInfo->iSignature + 1, pInfo->cSignatures,
                              rc, RTTimeSpecGetSeconds(&aTimes[i].TimeSpec), aTimes[i].pszDesc));
             return rc;
         }

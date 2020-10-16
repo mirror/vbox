@@ -112,6 +112,8 @@ typedef struct SUPHNTVIRDR
     uint16_t    cNokSignatures;
     /** Total number of signatures. */
     uint16_t    cTotalSignatures;
+    /** The current signature (for passing to supHardNtViCertVerifyCallback). */
+    uint16_t    iCurSignature;
     /** The last non-fatal signature failure. */
     int         rcLastSignatureFailure;
     /** Log name. */

@@ -39,11 +39,63 @@
 #include <iprt/stream.h>
 
 
+//#define DYNAMIC
+#ifdef DYNAMIC
+# include <iprt/win/windows.h>
+
+# define DYNAMIC_IMPORTS() \
+    ONE_IMPORT(RTR3InitExe); \
+    ONE_IMPORT(RTMsgInitFailure); \
+    ONE_IMPORT(RTGetOpt); \
+    ONE_IMPORT(RTGetOptInit); \
+    ONE_IMPORT(RTGetOptPrintError); \
+    ONE_IMPORT(RTMsgError); \
+    ONE_IMPORT(RTMsgErrorExit); \
+    ONE_IMPORT(RTMsgInfo); \
+    ONE_IMPORT(RTPrintf); \
+    ONE_IMPORT(SUPR3HardenedVerifyInit); \
+    ONE_IMPORT(SUPR3HardenedVerifyPlugIn)
+
+# define ONE_IMPORT(a_fnName) static decltype(a_fnName) *g_pfn##a_fnName
+DYNAMIC_IMPORTS();
+# undef ONE_IMPORT
+
+static void resolve(void)
+{
+    HMODULE hmod = LoadLibrary("VBoxRT.dll");
+    DWORD cbWritten = 0;
+
+# define ONE_IMPORT(a_fnName) do { \
+            g_pfn##a_fnName = (decltype(a_fnName) *)GetProcAddress(hmod, #a_fnName); \
+            if (!g_pfn##a_fnName) \
+                WriteFile(GetStdHandle(STD_ERROR_HANDLE), RT_STR_TUPLE("Failed to resolve: " #a_fnName "\r\n"), &cbWritten, NULL); \
+        } while (0)
+    DYNAMIC_IMPORTS();
+# undef ONE_IMPORT
+}
+
+#define RTR3InitExe                  g_pfnRTR3InitExe
+#define RTMsgInitFailure             g_pfnRTMsgInitFailure
+#define RTGetOpt                     g_pfnRTGetOpt
+#define RTGetOptInit                 g_pfnRTGetOptInit
+#define RTGetOptPrintError           g_pfnRTGetOptPrintError
+#define RTMsgError                   g_pfnRTMsgError
+#define RTMsgErrorExit               g_pfnRTMsgErrorExit
+#define RTMsgInfo                    g_pfnRTMsgInfo
+#define RTPrintf                     g_pfnRTPrintf
+#define SUPR3HardenedVerifyInit      g_pfnSUPR3HardenedVerifyInit
+#define SUPR3HardenedVerifyPlugIn    g_pfnSUPR3HardenedVerifyPlugIn
+
+#endif /* DYNAMIC */
+
 int main(int argc, char **argv)
 {
     /*
      * Init.
      */
+#ifdef DYNAMIC
+    resolve();
+#endif
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);

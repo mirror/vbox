@@ -203,7 +203,7 @@ RTDECL(int) RTCrPkcs7VerifyCertCallbackCodeSigning(PCRTCRX509CERTIFICATE pCert, 
             if (!(pCert->TbsCertificate.T3.fFlags & RTCRX509TBSCERTIFICATE_F_PRESENT_EXT_KEY_USAGE))
                 return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_KEY_USAGE_MISMATCH, "No extended key usage certificate attribute.");
             if (!(pCert->TbsCertificate.T3.fExtKeyUsage & RTCRX509CERT_EKU_F_CODE_SIGNING))
-                return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_KEY_USAGE_MISMATCH, "fExtKeyUsage=%#x, missing %#x",
+                return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_KEY_USAGE_MISMATCH, "fExtKeyUsage=%#RX64, missing CODE_SIGNING (%#RX64)",
                                      pCert->TbsCertificate.T3.fExtKeyUsage, RTCRX509CERT_EKU_F_CODE_SIGNING);
         }
     }
