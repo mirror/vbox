@@ -525,6 +525,17 @@ static DECLCALLBACK(int) MtTest2ThreadProc(RTTHREAD hSelf, void *pvUser)
     return VINF_SUCCESS;
 }
 
+/** Returns an index that is safe from the removal thread. */
+static uint32_t MtTestSafeRandomIndex(MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList)
+{
+    uint32_t cItems = (uint32_t)pTestList->size();
+    if (cItems > MTTEST_ITEMS)
+        cItems -= MTTEST_ITEMS;
+    if (cItems < MTTEST_ITEMS_NOT_REMOVED)
+        cItems = MTTEST_ITEMS_NOT_REMOVED;
+    return RTRandU32Ex(0, cItems - 1);
+}
+
 /**
  * Thread for inserting items to a shared list.
  *
@@ -538,7 +549,7 @@ static DECLCALLBACK(int) MtTest3ThreadProc(RTTHREAD hSelf, void *pvUser)
 
     /* Insert new items in the middle of the list. */
     for (size_t i = 0; i < MTTEST_ITEMS; ++i)
-        pTestList->insert(pTestList->size() / 2, 0xF0F0F0F0);
+        pTestList->insert(MtTestSafeRandomIndex(pTestList), 0xF0F0F0F0);
 
     return VINF_SUCCESS;
 }
@@ -561,8 +572,7 @@ static DECLCALLBACK(int) MtTest4ThreadProc(RTTHREAD hSelf, void *pvUser)
         /* Make sure there is at least one item in the list. */
         while (pTestList->isEmpty())
             RTThreadYield();
-        uint32_t const idx = RTRandU32Ex(0, RT_MIN((uint32_t)pTestList->size() / 2, MTTEST_ITEMS_NOT_REMOVED));
-        a = pTestList->at(idx);
+        a = pTestList->at(MtTestSafeRandomIndex(pTestList));
     }
 
     return VINF_SUCCESS;
@@ -585,8 +595,7 @@ static DECLCALLBACK(int) MtTest5ThreadProc(RTTHREAD hSelf, void *pvUser)
         /* Make sure there is at least one item in the list. */
         while (pTestList->isEmpty())
             RTThreadYield();
-        uint32_t const idx = RTRandU32Ex(0, RT_MIN((uint32_t)pTestList->size() / 2, MTTEST_ITEMS_NOT_REMOVED));
-        pTestList->replace(idx, 0xFF00FF00);
+        pTestList->replace(MtTestSafeRandomIndex(pTestList), 0xFF00FF00);
     }
 
     return VINF_SUCCESS;
