@@ -44,6 +44,13 @@
 # include <iprt/nt/nt-and-windows.h>
 # include <winioctl.h>
 #endif
+#ifdef RT_OS_LINUX
+# include <errno.h>
+# include <sys/stat.h>
+# include <iprt/dir.h>
+# include <iprt/symlink.h>
+# include <iprt/linux/sysfs.h>
+#endif
 
 #include "VDBackends.h"
 
@@ -3543,6 +3550,79 @@ static int vmdkRawDescPostProcessPartitions(PVMDKIMAGE pImage, PVDISKRAW pRawDes
     return VINF_SUCCESS;
 }
 
+
+#ifdef RT_OS_LINUX
+/**
+ * Searches the dir specified in @a pszBlockDevDir for subdirectories with a
+ * 'dev' file matching @a uDevToLocate.
+ *
+ * This is used both
+ *
+ * @returns IPRT status code, errors have been reported properly.
+ * @param   pImage          For error reporting.
+ * @param   pszBlockDevDir  Input: Path to the directory search under.
+ *                          Output: Path to the directory containing information
+ *                          for @a uDevToLocate.
+ * @param   cbBlockDevDir   The size of the buffer @a pszBlockDevDir points to.
+ * @param   uDevToLocate    The device number of the block device info dir to
+ *                          locate.
+ * @param   pszDevToLocate  For error reporting.
+ */
+static int vmdkFindSysBlockDevPath(PVMDKIMAGE pImage, char *pszBlockDevDir, size_t cbBlockDevDir,
+                                   dev_t uDevToLocate, const char *pszDevToLocate)
+{
+    size_t const cchDir = RTPathEnsureTrailingSeparator(pszBlockDevDir, cbBlockDevDir);
+    AssertReturn(cchDir > 0, VERR_BUFFER_OVERFLOW);
+
+    RTDIR hDir = NIL_RTDIR;
+    int rc = RTDirOpen(&hDir, pszBlockDevDir);
+    if (RT_SUCCESS(rc))
+    {
+        for (;;)
+        {
+            RTDIRENTRY Entry;
+            rc = RTDirRead(hDir, &Entry, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                /* We're interested in directories and symlinks. */
+                if (   Entry.enmType == RTDIRENTRYTYPE_DIRECTORY
+                    || Entry.enmType == RTDIRENTRYTYPE_SYMLINK
+                    || Entry.enmType == RTDIRENTRYTYPE_UNKNOWN)
+                {
+                    rc = RTStrCopy(&pszBlockDevDir[cchDir], cbBlockDevDir - cchDir, Entry.szName);
+                    AssertContinue(RT_SUCCESS(rc)); /* should not happen! */
+
+                    dev_t uThisDevNo = ~uDevToLocate;
+                    rc = RTLinuxSysFsReadDevNumFile(&uThisDevNo, "%s/dev", pszBlockDevDir);
+                    if (RT_SUCCESS(rc) && uThisDevNo == uDevToLocate)
+                        break;
+                }
+            }
+            else
+            {
+                pszBlockDevDir[cchDir] = '\0';
+                if (rc == VERR_NO_MORE_FILES)
+                    rc = vdIfError(pImage->pIfError, VERR_NOT_FOUND, RT_SRC_POS,
+                                   N_("VMDK: Image path: '%s'. Failed to locate device corresponding to '%s' under '%s'"),
+                                   pImage->pszFilename, pszDevToLocate, pszBlockDevDir);
+                else
+                    rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                   N_("VMDK: Image path: '%s'. RTDirRead failed enumerating '%s': %Rrc"),
+                                   pImage->pszFilename, pszBlockDevDir, rc);
+                break;
+            }
+        }
+        RTDirClose(hDir);
+    }
+    else
+        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. Failed to open dir '%s' for listing: %Rrc"),
+                       pImage->pszFilename, pszBlockDevDir, rc);
+    return rc;
+}
+#endif /* RT_OS_LINUX */
+
+
 /**
  * Attempts to verify the raw partition path.
  *
@@ -3668,6 +3748,79 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
         }
         else
             rc = VERR_NO_TMP_MEMORY;
+    }
+
+#elif defined(RT_OS_LINUX)
+    RT_NOREF(hVol);
+
+    /* Stat the two devices first to get their device numbers.  (We probably
+       could make some assumptions here about the major & minor number assignments
+       for legacy nodes, but it doesn't hold up for nvme, so we'll skip that.) */
+    struct stat StDrive, StPart;
+    if (fstat((int)RTFileToNative(hRawDrive), &StDrive) != 0)
+        rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. fstat failed on '%s': %d"), pImage->pszFilename, pszRawDrive, errno);
+    else if (fstat((int)RTFileToNative(hRawPart), &StPart) != 0)
+        rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. fstat failed on '%s': %d"), pImage->pszFilename, pPartDesc->pszRawDevice, errno);
+    else
+    {
+        /* Scan the directories immediately under /sys/block/ for one with a
+           'dev' file matching the drive's device number: */
+        char szSysPath[RTPATH_MAX];
+        rc = RTLinuxConstructPath(szSysPath, sizeof(szSysPath), "block/");
+        AssertRCReturn(rc, rc); /* this shall not fail */
+        if (RTDirExists(szSysPath))
+        {
+            rc = vmdkFindSysBlockDevPath(pImage, szSysPath, sizeof(szSysPath), StDrive.st_rdev, pszRawDrive);
+
+            /* Now, scan the directories under that again for a partition device
+               matching the hRawPart device's number: */
+            if (RT_SUCCESS(rc))
+                rc = vmdkFindSysBlockDevPath(pImage, szSysPath, sizeof(szSysPath), StPart.st_rdev, pPartDesc->pszRawDevice);
+
+            /* Having found the /sys/block/device/partition/ path, we can finally
+               read the partition attributes and compare with hVol. */
+            if (RT_SUCCESS(rc))
+            {
+                /* partition number: */
+                int64_t iLnxPartition = 0;
+                rc = RTLinuxSysFsReadIntFile(10, &iLnxPartition, "%s/partition", szSysPath);
+                if (RT_SUCCESS(rc) && iLnxPartition != idxPartition)
+                    rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                   N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Partition number %RI64, expected %RU32"),
+                                   pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, iLnxPartition, idxPartition);
+                /* else: ignore failure? */
+
+                /* start offset: */
+                uint32_t const cbLnxSector = 512; /* It's hardcoded in the Linux kernel */
+                if (RT_SUCCESS(rc))
+                {
+                    int64_t offLnxStart = -1;
+                    rc = RTLinuxSysFsReadIntFile(10, &offLnxStart, "%s/start", szSysPath);
+                    offLnxStart *= cbLnxSector;
+                    if (RT_SUCCESS(rc) && offLnxStart != (int64_t)pPartDesc->offStartInVDisk)
+                        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Start offset %RI64, expected %RU64"),
+                                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, offLnxStart, pPartDesc->offStartInVDisk);
+                    /* else: ignore failure? */
+                }
+
+                /* the size: */
+                if (RT_SUCCESS(rc))
+                {
+                    int64_t cbLnxData = -1;
+                    rc = RTLinuxSysFsReadIntFile(10, &cbLnxData, "%s/size", szSysPath);
+                    cbLnxData *= cbLnxSector;
+                    if (RT_SUCCESS(rc) && cbLnxData != (int64_t)pPartDesc->cbData)
+                        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Size %RI64, expected %RU64"),
+                                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cbLnxData, pPartDesc->cbData);
+                    /* else: ignore failure? */
+                }
+            }
+        }
+        /* else: We've got nothing to work on, so only do content comparison. */
     }
 #else
     RT_NOREF(hVol); /* PORTME */
