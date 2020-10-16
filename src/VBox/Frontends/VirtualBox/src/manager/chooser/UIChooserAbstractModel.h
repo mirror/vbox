@@ -21,6 +21,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QUuid>
+
 /* GUI includes: */
 #include "UIChooserDefs.h"
 
@@ -28,7 +31,6 @@
 #include "COMEnums.h"
 
 /* Forward declaration: */
-class QUuid;
 class UIChooser;
 class UIChooserNode;
 class UITask;
@@ -163,19 +165,18 @@ protected slots:
 
     /** @name Cloud stuff.
       * @{ */
+        /** Handles cloud machine unregistering for @a uId.
+          * @param  strProviderShortName  Brings provider short name.
+          * @param  strProfileName        Brings profile name. */
+        virtual void sltCloudMachineUnregistered(const QString &strProviderShortName,
+                                                 const QString &strProfileName,
+                                                 const QUuid &uId);
         /** Handles cloud machine registering for @a comMachine.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name. */
         virtual void sltCloudMachineRegistered(const QString &strProviderShortName,
                                                const QString &strProfileName,
                                                const CCloudMachine &comMachine);
-        /** Handles cloud machine registering/unregistering for machine with certain @a uMachineId.
-          * @param  strProviderShortName  Brings provider short name.
-          * @param  strProfileName        Brings profile name. */
-        virtual void sltCloudMachineRegistrationChanged(const QString &strProviderShortName,
-                                                        const QString &strProfileName,
-                                                        const QUuid &uMachineId,
-                                                        const bool fRegistered);
 
         /** Handles list cloud machines task complete signal. */
         virtual void sltHandleCloudListMachinesTaskComplete(UITask *pTask);

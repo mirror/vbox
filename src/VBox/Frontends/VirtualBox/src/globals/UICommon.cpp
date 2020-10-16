@@ -2575,19 +2575,18 @@ CSession UICommon::tryToOpenSessionFor(CMachine &comMachine)
     return comSession;
 }
 
+void UICommon::notifyCloudMachineUnregistered(const QString &strProviderShortName,
+                                              const QString &strProfileName,
+                                              const QUuid &uId)
+{
+    emit sigCloudMachineUnregistered(strProviderShortName, strProfileName, uId);
+}
+
 void UICommon::notifyCloudMachineRegistered(const QString &strProviderShortName,
                                             const QString &strProfileName,
                                             const CCloudMachine &comMachine)
 {
     emit sigCloudMachineRegistered(strProviderShortName, strProfileName, comMachine);
-}
-
-void UICommon::notifyCloudMachineRegistrationChanged(const QString &strProviderShortName,
-                                                     const QString &strProfileName,
-                                                     const QUuid &uId,
-                                                     const bool fRegistered)
-{
-    emit sigCloudMachineRegistrationChanged(strProviderShortName, strProfileName, uId, fRegistered);
 }
 
 void UICommon::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)

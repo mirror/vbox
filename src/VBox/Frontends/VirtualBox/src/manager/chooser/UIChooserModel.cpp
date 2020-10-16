@@ -1153,6 +1153,20 @@ void UIChooserModel::sltReloadMachine(const QUuid &uMachineId)
     emit sigSelectionChanged();
 }
 
+void UIChooserModel::sltCloudMachineUnregistered(const QString &strProviderShortName,
+                                                 const QString &strProfileName,
+                                                 const QUuid &uId)
+{
+    /* Make sure no item with passed uId is selected: */
+    makeSureNoItemWithCertainIdSelected(uId);
+
+    /* Call to base-class: */
+    UIChooserAbstractModel::sltCloudMachineUnregistered(strProviderShortName, strProfileName, uId);
+
+    /* Rebuild tree for main root: */
+    buildTreeForMainRoot(true /* preserve selection */);
+}
+
 void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortName,
                                                const QString &strProfileName,
                                                const CCloudMachine &comMachine)
@@ -1169,36 +1183,6 @@ void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortNa
         setSelectedItem(root()->searchForItem(uMachineId.toString(),
                                               UIChooserItemSearchFlag_Machine |
                                               UIChooserItemSearchFlag_ExactId));
-}
-
-void UIChooserModel::sltCloudMachineRegistrationChanged(const QString &strProviderShortName,
-                                                        const QString &strProfileName,
-                                                        const QUuid &uMachineId,
-                                                        const bool fRegistered)
-{
-    /* Existing VM unregistered => make sure no item with passed uMachineId is selected: */
-    if (!fRegistered)
-        makeSureNoItemWithCertainIdSelected(uMachineId);
-
-    /* Call to base-class: */
-    UIChooserAbstractModel::sltCloudMachineRegistrationChanged(strProviderShortName, strProfileName, uMachineId, fRegistered);
-
-    /* Existing VM unregistered? */
-    if (!fRegistered)
-    {
-        /* Rebuild tree for main root: */
-        buildTreeForMainRoot(true /* preserve selection */);
-    }
-    /* New VM registered? */
-    else
-    {
-        /* Rebuild tree for main root: */
-        buildTreeForMainRoot(false /* preserve selection */);
-        /* Select newly added item: */
-        setSelectedItem(root()->searchForItem(uMachineId.toString(),
-                                              UIChooserItemSearchFlag_Machine |
-                                              UIChooserItemSearchFlag_ExactId));
-    }
 }
 
 void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
@@ -1802,10 +1786,9 @@ void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machine
         AssertPtrReturnVoid(pItem->parentItem()->parentItem());
         const QString strProviderShortName = pItem->parentItem()->parentItem()->name();
         const QString strProfileName = pItem->parentItem()->name();
-        sltCloudMachineRegistrationChanged(strProviderShortName,
-                                           strProfileName,
-                                           uId /* machine ID */,
-                                           false /* registered? */);
+        sltCloudMachineUnregistered(strProviderShortName,
+                                    strProfileName,
+                                    uId /* machine ID */);
     }
 }
 

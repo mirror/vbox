@@ -87,6 +87,13 @@ signals:
 
     /** @name Cloud Virtual Machine stuff.
      * @{ */
+        /** Notifies listeners about cloud VM was unregistered.
+          * @param  strProviderShortName  Brings provider short name.
+          * @param  strProfileName        Brings profile name.
+          * @param  uId                   Brings cloud VM id. */
+        void sigCloudMachineUnregistered(const QString &strProviderShortName,
+                                         const QString &strProfileName,
+                                         const QUuid &uId);
         /** Notifies listeners about cloud VM was registered.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name.
@@ -94,15 +101,6 @@ signals:
         void sigCloudMachineRegistered(const QString &strProviderShortName,
                                        const QString &strProfileName,
                                        const CCloudMachine &comMachine);
-        /** Notifies listeners about cloud VM registeration changed.
-          * @param  strProviderShortName  Brings provider short name.
-          * @param  strProfileName        Brings profile name.
-          * @param  uId                   Brings cloud VM id.
-          * @param  fRegistered           True is machine was registered, false otherwise. */
-        void sigCloudMachineRegistrationChanged(const QString &strProviderShortName,
-                                                const QString &strProfileName,
-                                                const QUuid &uId,
-                                                const bool fRegistered);
     /** @} */
 
     /** @name COM: Virtual Media stuff.
@@ -509,6 +507,13 @@ public:
 
     /** @name Cloud Virtual Machine stuff.
      * @{ */
+        /** Notifies listeners about cloud VM was unregistered.
+          * @param  strProviderShortName  Brings provider short name.
+          * @param  strProfileName        Brings profile name.
+          * @param  uId                   Brings cloud VM id. */
+        void notifyCloudMachineUnregistered(const QString &strProviderShortName,
+                                            const QString &strProfileName,
+                                            const QUuid &uId);
         /** Notifies listeners about cloud VM was registered.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name.
@@ -516,15 +521,6 @@ public:
         void notifyCloudMachineRegistered(const QString &strProviderShortName,
                                           const QString &strProfileName,
                                           const CCloudMachine &comMachine);
-        /** Notifies listeners about cloud VM registeration changed.
-          * @param  strProviderShortName  Brings provider short name.
-          * @param  strProfileName        Brings profile name.
-          * @param  uId                   Brings cloud VM id.
-          * @param  fRegistered           True is machine was registered, false otherwise. */
-        void notifyCloudMachineRegistrationChanged(const QString &strProviderShortName,
-                                                   const QString &strProfileName,
-                                                   const QUuid &uId,
-                                                   const bool fRegistered);
     /** @} */
 
     /** @name COM: Virtual Media stuff.

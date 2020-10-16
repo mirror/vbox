@@ -690,6 +690,28 @@ void UIChooserAbstractModel::sltStartGroupSaving()
     saveGroupDefinitions();
 }
 
+void UIChooserAbstractModel::sltCloudMachineUnregistered(const QString &strProviderShortName,
+                                                         const QString &strProfileName,
+                                                         const QUuid &uId)
+{
+    /* Search for profile node: */
+    const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+    QList<UIChooserNode*> profileNodes;
+    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
+    UIChooserNode *pProfileNode = profileNodes.value(0);
+    if (!pProfileNode)
+        return;
+
+    /* Remove machine-item with passed uId: */
+    pProfileNode->removeAllNodes(uId);
+
+    /* If there are no items left => add fake cloud VM node: */
+    if (pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
+        new UIChooserNodeMachine(pProfileNode /* parent */,
+                                 0 /* position */,
+                                 UIFakeCloudVirtualMachineItemState_Done);
+}
+
 void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName,
                                                        const QString &strProfileName,
                                                        const CCloudMachine &comMachine)
@@ -710,49 +732,6 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
     pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
     /* Delete fake node if present: */
     delete fakeNodes.value(0);
-}
-
-void UIChooserAbstractModel::sltCloudMachineRegistrationChanged(const QString &strProviderShortName,
-                                                                const QString &strProfileName,
-                                                                const QUuid &uMachineId,
-                                                                const bool fRegistered)
-{
-    /* Search for profile node: */
-    const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
-    QList<UIChooserNode*> profileNodes;
-    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
-    UIChooserNode *pProfileNode = profileNodes.value(0);
-    if (!pProfileNode)
-        return;
-
-    /* Existing VM unregistered? */
-    if (!fRegistered)
-    {
-        /* Remove machine-items with passed id: */
-        pProfileNode->removeAllNodes(uMachineId);
-
-        /* If there are no items left: */
-        if (pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
-        {
-            /* Add fake cloud VM item: */
-            new UIChooserNodeMachine(pProfileNode /* parent */,
-                                     0 /* position */,
-                                     UIFakeCloudVirtualMachineItemState_Done);
-        }
-    }
-    /* New VM registered? */
-    else
-    {
-        /* Add new machine-item: */
-        const CCloudMachine comMachine = cloudMachineById(strProviderShortName, strProfileName, uMachineId);
-        addCloudMachineIntoTheTree(strProfileNodeName, comMachine, true /* make it visible */);
-
-        /* Search for possible fake node: */
-        QList<UIChooserNode*> fakeNodes;
-        pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
-        /* Delete fake node if present: */
-        delete fakeNodes.value(0);
-    }
 }
 
 void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
@@ -820,10 +799,10 @@ void UIChooserAbstractModel::prepareConnections()
             this, &UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete);
 
     /* Cloud VM registration connections: */
+    connect(&uiCommon(), &UICommon::sigCloudMachineUnregistered,
+            this, &UIChooserAbstractModel::sltCloudMachineUnregistered);
     connect(&uiCommon(), &UICommon::sigCloudMachineRegistered,
             this, &UIChooserAbstractModel::sltCloudMachineRegistered);
-    connect(&uiCommon(), &UICommon::sigCloudMachineRegistrationChanged,
-            this, &UIChooserAbstractModel::sltCloudMachineRegistrationChanged);
 
     /* Setup global connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
