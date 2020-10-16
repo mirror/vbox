@@ -2118,7 +2118,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverReconfigure(PPDMDEVINS pDevIns, uint3
     {
         AssertPtrReturn(papszDrivers[i], VERR_INVALID_POINTER);
         size_t cchDriver = strlen(papszDrivers[i]);
-        AssertPtrReturn(cchDriver > 0 && cchDriver < RT_SIZEOFMEMB(PDMDRVREG, szName), VERR_OUT_OF_RANGE);
+        AssertReturn(cchDriver > 0 && cchDriver < RT_SIZEOFMEMB(PDMDRVREG, szName), VERR_OUT_OF_RANGE);
 
         if (papConfigs)
             AssertPtrNullReturn(papConfigs[i], VERR_INVALID_POINTER);
