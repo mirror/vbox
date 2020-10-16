@@ -1115,6 +1115,9 @@ static DECLCALLBACK(int) drvAudioStreamIterate(PPDMIAUDIOCONNECTOR pInterface, P
 /**
  * Re-initializes the given stream if it is scheduled for this operation.
  *
+ * @note This caller must have entered the critical section of the driver instance,
+ *       needed for the host device (re-)enumeration.
+ *
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to check and maybe re-initialize.
  */
@@ -1132,8 +1135,16 @@ static void drvAudioStreamMaybeReInit(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
 #ifdef VBOX_WITH_AUDIO_ENUM
             if (pThis->fEnumerateDevices)
             {
+                /* Make sure to leave the driver's critical section before enumerating host stuff. */
+                int rc2 = RTCritSectLeave(&pThis->CritSect);
+                AssertRC(rc2);
+
                 /* Re-enumerate all host devices. */
                 drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
+
+                /* Re-enter the critical section again. */
+                rc2 = RTCritSectEnter(&pThis->CritSect);
+                AssertRC(rc2);
 
                 pThis->fEnumerateDevices = false;
             }
@@ -2096,6 +2107,8 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns, PDMAUDIOBAC
  * This functionality might not be implemented by all backends and will return
  * VERR_NOT_SUPPORTED if not being supported.
  *
+ * @note Must not hold the driver's critical section!
+ *
  * @returns IPRT status code.
  * @param   pThis               Driver instance to be called.
  * @param   fLog                Whether to print the enumerated device to the release log or not.
@@ -2103,6 +2116,8 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns, PDMAUDIOBAC
  */
 static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIODEVICEENUM pDevEnum)
 {
+    AssertReturn(RTCritSectIsOwned(&pThis->CritSect) == false, VERR_WRONG_ORDER);
+
     int rc;
 
     /*
