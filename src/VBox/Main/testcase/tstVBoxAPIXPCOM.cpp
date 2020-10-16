@@ -452,6 +452,10 @@ int main(int argc, char **argv)
     }
 
 #if 1 /* Please ignore this! It is very very crude. */
+# ifdef RTPATH_APP_PRIVATE_ARCH
+    if (!getenv("VBOX_XPCOM_HOME"))
+        setenv("VBOX_XPCOM_HOME", RTPATH_APP_PRIVATE_ARCH, 1);
+# else
     char szTmp[8192];
     if (!getenv("VBOX_XPCOM_HOME"))
     {
@@ -461,6 +465,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "tstVBoxAPIXPCOM: VBOX_XPCOM_HOME is not set, using '%s' instead\n", szTmp);
         setenv("VBOX_XPCOM_HOME", szTmp, 1);
     }
+# endif
 #endif
     (void)argc; (void)argv;
 
