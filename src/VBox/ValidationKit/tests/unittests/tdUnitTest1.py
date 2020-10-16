@@ -94,6 +94,7 @@ class tdUnitTest1(vbox.TestDriver):
             'testcase/tstRTTemp': '',                   # ??
             'testcase/tstRTTime': '',                   # ??
             'testcase/tstTime-2': '',                   # Total time differs too much! ... delta=-10859859
+            'testcase/tstTime-4': '',                   # Needs to be converted to DLL; ditto for tstTime-2.
             'testcase/tstUtf8': '',                     # ??
             'testcase/tstVMMR0CallHost-2': '',          # STATUS_STACK_OVERFLOW
             'testcase/tstX86-1': '',                    # Fails on win.x86.
@@ -262,7 +263,9 @@ class tdUnitTest1(vbox.TestDriver):
         'testcase/tstMMHyperHeap',
         'testcase/tstPage',
         'testcase/tstPin',
-        'testcase/tstRTTime', 'testcase/tstTime', # GIP test case.
+        'testcase/tstRTTime',   'testcase/tstTime',   # GIP test case.
+        'testcase/tstRTTime-2', 'testcase/tstTime-2', # GIP test case.
+        'testcase/tstRTTime-4', 'testcase/tstTime-4', # GIP test case.
         'testcase/tstSSM',
         'testcase/tstSupSem-Zombie',
     ]
