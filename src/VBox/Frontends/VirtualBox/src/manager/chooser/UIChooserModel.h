@@ -279,13 +279,17 @@ protected slots:
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name.
           * @param  fSelect               Brings whether registered machine should be selected. */
-        virtual void sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                               const CCloudMachine &comMachine, bool fSelect);
+        virtual void sltCloudMachineRegistered(const QString &strProviderShortName,
+                                               const QString &strProfileName,
+                                               const CCloudMachine &comMachine,
+                                               bool fSelect) /* override */;
         /** Handles cloud machine registering/unregistering for machine with certain @a uMachineId.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name. */
-        virtual void sltCloudMachineRegistrationChanged(const QString &strProviderShortName, const QString &strProfileName,
-                                                        const QUuid &uMachineId, const bool fRegistered) /* override */;
+        virtual void sltCloudMachineRegistrationChanged(const QString &strProviderShortName,
+                                                        const QString &strProfileName,
+                                                        const QUuid &uMachineId,
+                                                        const bool fRegistered) /* override */;
 
         /** Handles list cloud machines task complete signal. */
         virtual void sltHandleCloudListMachinesTaskComplete(UITask *pTask) /* override */;

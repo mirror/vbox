@@ -1153,8 +1153,10 @@ void UIChooserModel::sltReloadMachine(const QUuid &uMachineId)
     emit sigSelectionChanged();
 }
 
-void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
-                                               const CCloudMachine &comMachine, bool fSelect)
+void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortName,
+                                               const QString &strProfileName,
+                                               const CCloudMachine &comMachine,
+                                               bool fSelect)
 {
     /* Call to base-class: */
     UIChooserAbstractModel::sltCloudMachineRegistered(strProviderShortName, strProfileName, comMachine, fSelect);
@@ -1173,8 +1175,10 @@ void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderShortNa
     }
 }
 
-void UIChooserModel::sltCloudMachineRegistrationChanged(const QString &strProviderShortName, const QString &strProfileName,
-                                                        const QUuid &uMachineId, const bool fRegistered)
+void UIChooserModel::sltCloudMachineRegistrationChanged(const QString &strProviderShortName,
+                                                        const QString &strProfileName,
+                                                        const QUuid &uMachineId,
+                                                        const bool fRegistered)
 {
     /* Existing VM unregistered => make sure no item with passed uMachineId is selected: */
     if (!fRegistered)
