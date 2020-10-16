@@ -65,7 +65,7 @@
         <xsl:value-of select="*" />
       </xsl:attribute>
       <xsl:attribute name="ref">
-                    <xsl:value-of select="$inputFileName" /><xsl:value-of select="xhtml:a/@href" />
+        <xsl:value-of select="$inputFileName" /><xsl:value-of select="xhtml:a/@href" />
       </xsl:attribute>
     </xsl:element>
     <xsl:value-of select="$newline" />
