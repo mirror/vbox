@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    QtHelpCollectionProject.xsl:
-        XML to configure qt help project.
+    UserManul.qhcp:
+        UserManual qt help configuration file. XML to configure qt help project.
 
     Copyright (C) 2018-2020 Oracle Corporation
 
