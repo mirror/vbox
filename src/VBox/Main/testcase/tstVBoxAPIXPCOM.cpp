@@ -427,6 +427,12 @@ void createVM(IVirtualBox *virtualBox)
                 printf("Failed to delete the machine! rc=%#x\n",
                        NS_FAILED(rc) ? rc : resultCode);
         }
+
+        /* Release the media array: */
+        for (PRUint32 i = 0; i < cMedia; i++)
+            if (aMedia[i])
+                aMedia[i]->Release();
+        nsMemory::Free(aMedia);
     }
 }
 
