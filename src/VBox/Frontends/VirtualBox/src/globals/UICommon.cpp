@@ -2577,9 +2577,9 @@ CSession UICommon::tryToOpenSessionFor(CMachine &comMachine)
 
 void UICommon::notifyCloudMachineRegistered(const QString &strProviderShortName,
                                             const QString &strProfileName,
-                                            const CCloudMachine &comCloudMachine)
+                                            const CCloudMachine &comMachine)
 {
-    emit sigCloudMachineRegistered(strProviderShortName, strProfileName, comCloudMachine, true /* select */);
+    emit sigCloudMachineRegistered(strProviderShortName, strProfileName, comMachine);
 }
 
 void UICommon::notifyCloudMachineRegistrationChanged(const QString &strProviderShortName,

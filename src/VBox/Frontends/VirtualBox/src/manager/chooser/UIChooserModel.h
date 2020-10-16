@@ -281,8 +281,7 @@ protected slots:
           * @param  fSelect               Brings whether registered machine should be selected. */
         virtual void sltCloudMachineRegistered(const QString &strProviderShortName,
                                                const QString &strProfileName,
-                                               const CCloudMachine &comMachine,
-                                               bool fSelect) /* override */;
+                                               const CCloudMachine &comMachine) /* override */;
         /** Handles cloud machine registering/unregistering for machine with certain @a uMachineId.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name. */

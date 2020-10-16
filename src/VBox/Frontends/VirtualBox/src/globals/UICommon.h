@@ -90,12 +90,10 @@ signals:
         /** Notifies listeners about cloud VM was registered.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name.
-          * @param  comCloudMachine       Brings cloud VM.
-          * @param  fSelect               Brings whether registered VM should be selected. */
+          * @param  comMachine            Brings cloud VM. */
         void sigCloudMachineRegistered(const QString &strProviderShortName,
                                        const QString &strProfileName,
-                                       const CCloudMachine &comCloudMachine,
-                                       const bool fSelect);
+                                       const CCloudMachine &comMachine);
         /** Notifies listeners about cloud VM registeration changed.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name.
@@ -514,10 +512,10 @@ public:
         /** Notifies listeners about cloud VM was registered.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name.
-          * @param  comCloudMachine       Brings cloud VM. */
+          * @param  comMachine            Brings cloud VM. */
         void notifyCloudMachineRegistered(const QString &strProviderShortName,
                                           const QString &strProfileName,
-                                          const CCloudMachine &comCloudMachine);
+                                          const CCloudMachine &comMachine);
         /** Notifies listeners about cloud VM registeration changed.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name.
