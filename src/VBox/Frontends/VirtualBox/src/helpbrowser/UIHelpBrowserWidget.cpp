@@ -19,15 +19,17 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFont>
+#include <QHBoxLayout>
 #ifdef RT_OS_LINUX
  #include <QtHelp/QHelpEngine>
  #include <QtHelp/QHelpContentWidget>
+ #include <QtHelp/QHelpIndexWidget>
 #endif
 #include <QMenu>
 #include <QScrollBar>
 #include <QStyle>
+#include <QSplitter>
 #include <QTextBrowser>
-#include <QHBoxLayout>
 #ifdef RT_OS_SOLARIS
 # include <QFontDatabase>
 #endif
@@ -107,6 +109,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pHelpEngine(0)
 #endif
     , m_pTextBrowser(0)
+    , m_pSplitter(0)
 {
     /* Prepare VM Log-Viewer: */
     prepare();
@@ -149,24 +152,33 @@ void UIHelpBrowserWidget::prepareWidgets()
 {
     /* Create main layout: */
     m_pMainLayout = new QHBoxLayout(this);
-    AssertReturnVoid(m_pMainLayout);
+    m_pSplitter = new QSplitter;
+
+    AssertReturnVoid(m_pMainLayout && m_pSplitter);
+
+    m_pMainLayout->addWidget(m_pSplitter);
 #ifdef RT_OS_LINUX
     m_pHelpEngine = new QHelpEngine(m_strHelpFilePath, this);
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
 
-    // m_pTabWidget = new QITabWidget;
-    // m_pMainLayout->addWidget(m_pTabWidget);
+    m_pTabWidget = new QITabWidget;
+    AssertReturnVoid(m_pTabWidget);
+    m_pSplitter->addWidget(m_pTabWidget);
+    m_pTabWidget->addTab(m_pHelpEngine->contentWidget(), tr("Contents"));
+    m_pTabWidget->addTab(m_pHelpEngine->indexWidget(), tr("Index"));
+
     m_pTextBrowser = new UIHelpBrowserViewer(m_pHelpEngine);
     AssertReturnVoid(m_pTextBrowser);
-    m_pMainLayout->addWidget(m_pTextBrowser);
+    m_pSplitter->addWidget(m_pTextBrowser);
+
+    m_pSplitter->setStretchFactor(0, 1);
+    m_pSplitter->setStretchFactor(1, 4);
+    m_pSplitter->setChildrenCollapsible(false);
 
     if (QFile(m_strHelpFilePath).exists() && m_pHelpEngine)
-    {
-        bool fSetupResult = m_pHelpEngine->setupData();
-        //m_pHelpEngine->registerDocumentation(m_strHelpFilePath));
-        printf("setup data %d %s\n", fSetupResult, qPrintable(m_strHelpFilePath));
-    }
+        m_pHelpEngine->setupData();
+
 #endif
 }
 
@@ -250,7 +262,6 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 {
 #ifdef RT_OS_LINUX
     AssertReturnVoid(m_pTextBrowser && m_pHelpEngine);
-
     QList<QUrl> files = m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList());
     if (!files.empty())
         m_pTextBrowser->setSource(files[0]);

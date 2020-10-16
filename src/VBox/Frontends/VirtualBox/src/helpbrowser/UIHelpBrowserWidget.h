@@ -44,6 +44,7 @@ class QITabWidget;
 class QIToolBar;
 class UIActionPool;
 class UIDialogPanel;
+class QSplitter;
 
 /** QWidget extension providing GUI for VirtualBox LogViewer. It
  *  encapsulates log pages, toolbar, a tab widget and manages
@@ -129,6 +130,7 @@ private:
     QHelpEngine  *m_pHelpEngine;
 #endif
     UIHelpBrowserViewer *m_pTextBrowser;
+    QSplitter           *m_pSplitter;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h */
