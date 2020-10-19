@@ -137,11 +137,13 @@ inline PyObject *PyBool_FromLong(long ok)
 #  define PyInt_Check(o) PyLong_Check(o)
 #  define PyInt_AsLong(o) PyLong_AsLong(o)
 #  define PyNumber_Int(o) PyNumber_Long(o)
-#  ifndef PyUnicode_AsUTF8
-#   define PyUnicode_AsUTF8(o) _PyUnicode_AsString(o)
-#  endif
-#  ifndef PyUnicode_AsUTF8AndSize
-#   define PyUnicode_AsUTF8AndSize(o,s) _PyUnicode_AsStringAndSize(o,s)
+#  if !defined(Py_LIMITED_API) && PY_VERSION_HEX <= 0x03030000 /* 3.3 added PyUnicode_AsUTF8AndSize */
+#   ifndef PyUnicode_AsUTF8
+#    define PyUnicode_AsUTF8(o) _PyUnicode_AsString(o)
+#   endif
+#   ifndef PyUnicode_AsUTF8AndSize
+#    define PyUnicode_AsUTF8AndSize(o,s) _PyUnicode_AsStringAndSize(o,s)
+#   endif
 #  endif
 typedef struct PyMethodChain
 {
@@ -174,16 +176,22 @@ class Py_nsISupports;
 
 #else /* Py_LIMITED_API */
 
+# if PY_VERSION_HEX <= 0x03030000
+#  error "Py_LIMITED_API mode only works for Python 3.3 and higher."
+# endif
+
 const char *PyXPCOMGetObTypeName(PyTypeObject *pTypeObj);
 # define PyXPCOM_ObTypeName(obj) PyXPCOMGetObTypeName(Py_TYPE(obj))
 
-/** @todo shouldn't be using PyUnicode_AsUTF8 from cpython/unicodeobject.h! */
-# undef PyUnicode_AsUTF8
-extern "C" PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *);
-
-/** @todo shouldn't be using PyUnicode_AsUTF8AndSize from cpython/unicodeobject.h! */
-# undef PyUnicode_AsUTF8AndSize
+# if Py_LIMITED_API < 0x030A0000
+/* Note! While we should not technically be using PyUnicode_AsUTF8AndSize, it was
+   made part of the limited API in 3.10 (see https://bugs.python.org/issue41784 and
+   https://github.com/python/cpython/commit/a05195ac61f1908ac5990cccb5aa82442bdaf15d). */
 extern "C" PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(PyObject *, Py_ssize_t *);
+# endif
+
+/* PyUnicode_AsUTF8 is just PyUnicode_AsUTF8AndSize without returning a size. */
+# define PyUnicode_AsUTF8(o) PyUnicode_AsUTF8AndSize(o, NULL)
 
 DECLINLINE(int) PyRun_SimpleString(const char *pszCode)
 {
