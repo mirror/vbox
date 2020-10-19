@@ -1268,7 +1268,7 @@ typedef struct PDMIOMMUREGR0
     uint32_t            idxIommu;
 
     /**
-     * Performs a physical memory read transaction through the IOMMU.
+     * Translates the physical address for a memory read transaction through the IOMMU.
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
@@ -1283,7 +1283,7 @@ typedef struct PDMIOMMUREGR0
                                           PRTGCPHYS pGCPhysSpa));
 
     /**
-     * Performs a physical memory write transaction through the IOMMU.
+     * Translates the physical address for a memory write transaction through the IOMMU.
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
@@ -1332,7 +1332,7 @@ typedef struct PDMIOMMUREGRC
     uint32_t            idxIommu;
 
     /**
-     * Performs a physical memory read transaction through the IOMMU.
+     * Translates the physical address for a memory read transaction through the IOMMU.
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
@@ -1347,7 +1347,7 @@ typedef struct PDMIOMMUREGRC
                                           PRTGCPHYS pGCPhysSpa));
 
     /**
-     * Performs a physical memory write transaction through the IOMMU.
+     * Translates the physical address for a memory write transaction through the IOMMU.
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
@@ -1396,7 +1396,7 @@ typedef struct PDMIOMMUREGR3
     uint32_t            uPadding0;
 
     /**
-     * Performs a physical memory read transaction through the IOMMU.
+     * Translates the physical address for a memory read transaction through the IOMMU.
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
@@ -1411,7 +1411,7 @@ typedef struct PDMIOMMUREGR3
                                           PRTGCPHYS pGCPhysSpa));
 
     /**
-     * Performs a physical memory write transaction through the IOMMU.
+     * Translates the physical address for a memory write transaction through the IOMMU.
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
