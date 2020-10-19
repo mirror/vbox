@@ -1557,6 +1557,8 @@ VOID DxgkDdiUnload(
     {
         RTLogDestroy(pLogger);
     }
+
+    RTR0Term();
 }
 
 NTSTATUS DxgkDdiQueryInterface(
