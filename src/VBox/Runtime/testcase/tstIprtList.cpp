@@ -489,6 +489,8 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
 #define MTTEST_ITEMS                1000
 #define MTTEST_ITEMS_NOT_REMOVED    100
 
+static RTSEMEVENTMULTI g_hEvtMtTest = NIL_RTSEMEVENTMULTI;
+
 /**
  * Thread for prepending items to a shared list.
  *
@@ -499,6 +501,7 @@ static DECLCALLBACK(int) MtTest1ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
+    RTSemEventMultiWait(g_hEvtMtTest, RT_MS_1MIN);
 
     /* Prepend new items at the start of the list. */
     for (size_t i = 0; i < MTTEST_ITEMS; ++i)
@@ -517,6 +520,7 @@ static DECLCALLBACK(int) MtTest2ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
+    RTSemEventMultiWait(g_hEvtMtTest, RT_MS_1MIN);
 
     /* Append new items at the end of the list. */
     for (size_t i = 0; i < MTTEST_ITEMS; ++i)
@@ -530,9 +534,15 @@ static uint32_t MtTestSafeRandomIndex(MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList)
 {
     uint32_t cItems = (uint32_t)pTestList->size();
     if (cItems > MTTEST_ITEMS)
+    {
         cItems -= MTTEST_ITEMS;
-    if (cItems < MTTEST_ITEMS_NOT_REMOVED)
+        if (cItems < MTTEST_ITEMS_NOT_REMOVED)
+            cItems = MTTEST_ITEMS_NOT_REMOVED;
+    }
+    else if (cItems > MTTEST_ITEMS_NOT_REMOVED)
         cItems = MTTEST_ITEMS_NOT_REMOVED;
+    else if (cItems <= 1)
+        return 0;
     return RTRandU32Ex(0, cItems - 1);
 }
 
@@ -546,6 +556,7 @@ static DECLCALLBACK(int) MtTest3ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
+    RTSemEventMultiWait(g_hEvtMtTest, RT_MS_1MIN);
 
     /* Insert new items in the middle of the list. */
     for (size_t i = 0; i < MTTEST_ITEMS; ++i)
@@ -564,6 +575,7 @@ static DECLCALLBACK(int) MtTest4ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
+    RTSemEventMultiWait(g_hEvtMtTest, RT_MS_1MIN);
 
     MTTEST_TYPE a;
     /* Try to read C items from random places. */
@@ -588,6 +600,7 @@ static DECLCALLBACK(int) MtTest5ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
+    RTSemEventMultiWait(g_hEvtMtTest, RT_MS_1MIN);
 
     /* Try to replace C items from random places. */
     for (size_t i = 0; i < MTTEST_ITEMS; ++i)
@@ -611,6 +624,7 @@ static DECLCALLBACK(int) MtTest6ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTEST_LIST_TYPE<MTTEST_TYPE> *pTestList = (MTTEST_LIST_TYPE<MTTEST_TYPE> *)pvUser;
     RT_NOREF_PV(hSelf);
+    RTSemEventMultiWait(g_hEvtMtTest, RT_MS_1MIN);
 
     /* Try to delete items from random places. */
     for (size_t i = 0; i < MTTEST_ITEMS; ++i)
@@ -640,19 +654,24 @@ static void test2()
         {MtTest1ThreadProc}, {MtTest2ThreadProc}, {MtTest3ThreadProc}, {MtTest4ThreadProc}, {MtTest5ThreadProc}, {MtTest6ThreadProc}
     };
 
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiCreate(&g_hEvtMtTest), VINF_SUCCESS);
+
     for (unsigned i = 0; i < RT_ELEMENTS(ahThreads); i++)
     {
         RTTESTI_CHECK_RC_RETV(RTThreadCreateF(&ahThreads[i], aThreads[i].pfn, &testList, 0,
                                               RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest%u", i), VINF_SUCCESS);
     }
 
-    uint64_t tsMsDeadline = RTTimeMilliTS() + 60000;
+    RTTESTI_CHECK_RC(RTSemEventMultiSignal(g_hEvtMtTest), VINF_SUCCESS);
+    uint64_t tsMsDeadline = RTTimeMilliTS() + RT_MS_1MIN;
     for (unsigned i = 0; i < RT_ELEMENTS(ahThreads); i++)
     {
         uint64_t tsNow = RTTimeMilliTS();
         uint32_t cWait = tsNow > tsMsDeadline ? 5000 : tsMsDeadline - tsNow;
         RTTESTI_CHECK_RC(RTThreadWait(ahThreads[i], cWait, NULL), VINF_SUCCESS);
     }
+    RTTESTI_CHECK_RC(RTSemEventMultiDestroy(g_hEvtMtTest), VINF_SUCCESS);
+    g_hEvtMtTest = NIL_RTSEMEVENTMULTI;
 
     RTTESTI_CHECK_RETV(testList.size() == MTTEST_ITEMS * 2);
     for (size_t i = 0; i < testList.size(); ++i)
