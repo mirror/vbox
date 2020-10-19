@@ -84,6 +84,7 @@ protected:
 private slots:
 
     void sltHandleHelpEngineSetupFinished();
+    void sltHandleContentWidgetItemClicked(const QModelIndex &index);
 
 private:
 

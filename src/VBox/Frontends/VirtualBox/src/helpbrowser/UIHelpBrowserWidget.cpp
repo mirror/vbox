@@ -159,11 +159,10 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pMainLayout->addWidget(m_pSplitter);
 #ifdef RT_OS_LINUX
     m_pHelpEngine = new QHelpEngine(m_strHelpFilePath, this);
-    connect(m_pHelpEngine, &QHelpEngine::setupFinished,
-            this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
 
     m_pTabWidget = new QITabWidget;
     AssertReturnVoid(m_pTabWidget);
+    AssertReturnVoid(m_pHelpEngine->contentWidget() && m_pHelpEngine->indexWidget());
     m_pSplitter->addWidget(m_pTabWidget);
     m_pTabWidget->addTab(m_pHelpEngine->contentWidget(), tr("Contents"));
     m_pTabWidget->addTab(m_pHelpEngine->indexWidget(), tr("Index"));
@@ -176,9 +175,20 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pSplitter->setStretchFactor(1, 4);
     m_pSplitter->setChildrenCollapsible(false);
 
+    connect(m_pHelpEngine, &QHelpEngine::setupFinished,
+            this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
+
+    connect(m_pHelpEngine->contentWidget(), &QHelpContentWidget::linkActivated,
+            m_pTextBrowser, &UIHelpBrowserViewer::setSource);
+    connect(m_pHelpEngine->contentWidget(), &QHelpContentWidget::clicked,
+            this, &UIHelpBrowserWidget::sltHandleContentWidgetItemClicked);
+
+
+    connect(m_pHelpEngine->indexWidget(), &QHelpIndexWidget::linkActivated,
+            m_pTextBrowser, &UIHelpBrowserViewer::setSource);
+
     if (QFile(m_strHelpFilePath).exists() && m_pHelpEngine)
         m_pHelpEngine->setupData();
-
 #endif
 }
 
@@ -268,5 +278,22 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
     /** @todo show some kind of error maybe. */
 #endif
 }
+
+void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &index)
+{
+#ifdef RT_OS_LINUX
+    AssertReturnVoid(m_pTextBrowser && m_pHelpEngine && m_pHelpEngine->contentWidget());
+    QHelpContentModel *pContentModel =
+        qobject_cast<QHelpContentModel*>(m_pHelpEngine->contentWidget()->model());
+    if (!pContentModel)
+        return;
+    QHelpContentItem *pItem = pContentModel->contentItemAt(index);
+    if (!pItem)
+        return;
+    const QUrl &url = pItem->url();
+    m_pTextBrowser->setSource(url);
+#endif
+}
+
 
 #include "UIHelpBrowserWidget.moc"
