@@ -1775,8 +1775,7 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
         return;
 
     /* For every selected machine-item: */
-    typedef QPair<QString, QString> UICloudAccount;
-    QSet<UICloudAccount> changedAccounts;
+    QSet<UICloudAccountKey> changedCloudAccountKeys;
     foreach (UIChooserItemMachine *pMachineItem, machineItems)
     {
         /* Acquire cloud machine: */
@@ -1800,19 +1799,25 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
             msgCenter().cannotRemoveCloudMachine(comMachine, comProgress);
             continue;
         }
-        /* Compose cloud account to update: */
+        /* Compose cloud account key to update: */
         const QString strProviderShortName = pMachineItem->parentItem()->parentItem()->name();
         const QString strProfileName = pMachineItem->parentItem()->name();
-        const UICloudAccount account = qMakePair(strProviderShortName, strProfileName);
-        if (!changedAccounts.contains(account))
-            changedAccounts.insert(account);
+        const UICloudAccountKey accountKey = qMakePair(strProviderShortName, strProfileName);
+        if (!changedCloudAccountKeys.contains(accountKey))
+            changedCloudAccountKeys.insert(accountKey);
     }
 
-    /* Restart list cloud machines task for required accounts: */
-    foreach (const UICloudAccount &account, changedAccounts)
+    /* Restart List Cloud Machines task for required account keys: */
+    foreach (const UICloudAccountKey &accountKey, changedCloudAccountKeys)
     {
-        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(account.first /* short provider name */,
-                                                                     account.second /* profile name */,
+        /* Skip cloud account keys already being updated: */
+        if (containsCloudAccountKey(accountKey))
+            continue;
+        insertCloudAccountKey(accountKey);
+
+        /* Create a task for particular cloud account key: */
+        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(accountKey.first /* short provider name */,
+                                                                     accountKey.second /* profile name */,
                                                                      false /* with refresh? */);
         AssertPtrReturnVoid(pTask);
         uiCommon().threadPoolCloud()->enqueueTask(pTask);

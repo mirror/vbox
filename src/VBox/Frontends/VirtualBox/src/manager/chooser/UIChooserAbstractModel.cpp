@@ -600,6 +600,21 @@ void UIChooserAbstractModel::sltGroupDefinitionsSaveComplete()
     emit sigGroupSavingStateChanged();
 }
 
+void UIChooserAbstractModel::insertCloudAccountKey(const UICloudAccountKey &key)
+{
+    m_cloudAccountKeysBeingUpdated.insert(key);
+}
+
+void UIChooserAbstractModel::removeCloudAccountKey(const UICloudAccountKey &key)
+{
+    m_cloudAccountKeysBeingUpdated.remove(key);
+}
+
+bool UIChooserAbstractModel::containsCloudAccountKey(const UICloudAccountKey &key) const
+{
+    return m_cloudAccountKeysBeingUpdated.contains(key);
+}
+
 void UIChooserAbstractModel::sltLocalMachineStateChanged(const QUuid &uMachineId, const KMachineState)
 {
     /* Update machine-nodes with passed id: */
@@ -832,6 +847,10 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     /* Add registered cloud VM nodes: */
     if (!registeredMachines.isEmpty())
         sltCloudMachinesRegistered(pAcquiringTask->providerShortName(), pAcquiringTask->profileName(), registeredMachines);
+
+    /* Remove cloud account key from the list of keys currently being updated: */
+    const UICloudAccountKey accountKey = qMakePair(pAcquiringTask->providerShortName(), pAcquiringTask->profileName());
+    removeCloudAccountKey(accountKey);
 }
 
 void UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange()
@@ -1030,6 +1049,10 @@ void UIChooserAbstractModel::reloadCloudTree()
             new UIChooserNodeMachine(pProfileNode /* parent */,
                                      0 /* position */,
                                      UIFakeCloudVirtualMachineItemState_Loading);
+
+            /* Insert cloud account key into a list of keys currently being updated: */
+            const UICloudAccountKey cloudAccountKey = qMakePair(strProviderShortName, strProfileName);
+            insertCloudAccountKey(cloudAccountKey);
 
             /* Create list cloud machines task: */
             UITaskCloudListMachines *pTask = new UITaskCloudListMachines(strProviderShortName,
