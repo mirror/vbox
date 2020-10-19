@@ -707,9 +707,9 @@ void UIChooserModel::removeSelectedMachineItems()
 
     /* Prepare arrays: */
     QMap<QUuid, bool> verdicts;
-    QList<UIChooserItemMachine*> itemsToRemove;
+    QList<UIChooserItemMachine*> localMachineItemsToRemove;
     QList<CMachine> localMachinesToUnregister;
-    QList<CCloudMachine> cloudMachinesToUnregister;
+    QList<UIChooserItemMachine*> cloudMachineItemsToUnregister;
 
     /* For each selected machine-item: */
     foreach (UIChooserItemMachine *pMachineItem, selectedMachineItemList)
@@ -723,7 +723,7 @@ void UIChooserModel::removeSelectedMachineItems()
         {
             /* To remove similar machine items? */
             if (!verdicts.value(uId))
-                itemsToRemove << pMachineItem;
+                localMachineItemsToRemove << pMachineItem;
             continue;
         }
 
@@ -753,21 +753,21 @@ void UIChooserModel::removeSelectedMachineItems()
             if (pMachineItem->cacheType() == UIVirtualMachineItemType_Local)
                 localMachinesToUnregister.append(pMachineItem->cache()->toLocal()->machine());
             else if (pMachineItem->cacheType() == UIVirtualMachineItemType_CloudReal)
-                cloudMachinesToUnregister.append(pMachineItem->cache()->toCloud()->machine());
+                cloudMachineItemsToUnregister.append(pMachineItem);
         }
         else
-            itemsToRemove << pMachineItem;
+            localMachineItemsToRemove << pMachineItem;
     }
 
     /* If we have something to remove: */
-    if (!itemsToRemove.isEmpty())
-        removeItems(itemsToRemove);
+    if (!localMachineItemsToRemove.isEmpty())
+        removeLocalMachineItems(localMachineItemsToRemove);
     /* If we have something local to unregister: */
     if (!localMachinesToUnregister.isEmpty())
         unregisterLocalMachines(localMachinesToUnregister);
     /* If we have something cloud to unregister: */
-    if (!cloudMachinesToUnregister.isEmpty())
-        unregisterCloudMachines(cloudMachinesToUnregister);
+    if (!cloudMachineItemsToUnregister.isEmpty())
+        unregisterCloudMachineItems(cloudMachineItemsToUnregister);
 }
 
 void UIChooserModel::moveSelectedMachineItemsToGroupItem(const QString &strName /* = QString() */)
@@ -1685,7 +1685,7 @@ void UIChooserModel::updateTreeForMainRoot()
     updateLayout();
 }
 
-void UIChooserModel::removeItems(const QList<UIChooserItemMachine*> &machineItems)
+void UIChooserModel::removeLocalMachineItems(const QList<UIChooserItemMachine*> &machineItems)
 {
     /* Confirm machine-items removal: */
     QStringList names;
@@ -1762,24 +1762,25 @@ void UIChooserModel::unregisterLocalMachines(const QList<CMachine> &machines)
     }
 }
 
-void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machines)
+void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachine*> &machineItems)
 {
+    /* Compose a list of machines: */
+    QList<CCloudMachine> machines;
+    foreach (UIChooserItemMachine *pMachineItem, machineItems)
+        machines << pMachineItem->cache()->toCloud()->machine();
+
     /* Confirm machine removal: */
     const int iResultCode = msgCenter().confirmCloudMachineRemoval(machines);
     if (iResultCode == AlertButton_Cancel)
         return;
 
-    /* For every selected machine: */
-    foreach (CCloudMachine comMachine, machines)
+    /* For every selected machine-item: */
+    typedef QPair<QString, QString> UICloudAccount;
+    QSet<UICloudAccount> changedAccounts;
+    foreach (UIChooserItemMachine *pMachineItem, machineItems)
     {
-        /* Remember machine ID: */
-        const QUuid uId = comMachine.GetId();
-        if (!comMachine.isOk())
-        {
-            msgCenter().cannotAcquireCloudMachineParameter(comMachine);
-            continue;
-        }
-
+        /* Acquire cloud machine: */
+        CCloudMachine comMachine = pMachineItem->cache()->toCloud()->machine();
         CProgress comProgress;
         /* Prepare remove progress: */
         if (iResultCode == AlertButton_Choice1)
@@ -1792,7 +1793,6 @@ void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machine
             msgCenter().cannotRemoveCloudMachine(comMachine);
             continue;
         }
-
         /* And show unregister progress finally: */
         msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_delete_90px.png", 0, 0);
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
@@ -1800,22 +1800,22 @@ void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machine
             msgCenter().cannotRemoveCloudMachine(comMachine, comProgress);
             continue;
         }
+        /* Compose cloud account to update: */
+        const QString strProviderShortName = pMachineItem->parentItem()->parentItem()->name();
+        const QString strProfileName = pMachineItem->parentItem()->name();
+        const UICloudAccount account = qMakePair(strProviderShortName, strProfileName);
+        if (!changedAccounts.contains(account))
+            changedAccounts.insert(account);
+    }
 
-        // WORKAROUND:
-        // Hehey! Now we have to remove deleted VM nodes and then update tree for the main root node
-        // ourselves cause there is no corresponding event yet. So we are calling actual handler to do that.
-        UIChooserItem *pItem = root()->searchForItem(uId.toString(),
-                                                     UIChooserItemSearchFlag_Machine |
-                                                     UIChooserItemSearchFlag_ExactId);
-        AssertPtrReturnVoid(pItem);
-        AssertReturnVoid(pItem->node()->toMachineNode()->cacheType() == UIVirtualMachineItemType_CloudReal);
-        AssertPtrReturnVoid(pItem->parentItem());
-        AssertPtrReturnVoid(pItem->parentItem()->parentItem());
-        const QString strProviderShortName = pItem->parentItem()->parentItem()->name();
-        const QString strProfileName = pItem->parentItem()->name();
-        sltCloudMachineUnregistered(strProviderShortName,
-                                    strProfileName,
-                                    uId /* machine ID */);
+    /* Restart list cloud machines task for required accounts: */
+    foreach (const UICloudAccount &account, changedAccounts)
+    {
+        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(account.first /* short provider name */,
+                                                                     account.second /* profile name */,
+                                                                     false /* with refresh? */);
+        AssertPtrReturnVoid(pTask);
+        uiCommon().threadPoolCloud()->enqueueTask(pTask);
     }
 }
 

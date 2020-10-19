@@ -378,12 +378,12 @@ private:
         /** Update tree for main root. */
         void updateTreeForMainRoot();
 
-        /** Removes @a machineItems. */
-        void removeItems(const QList<UIChooserItemMachine*> &machineItems);
+        /** Removes a list of local virtual @a machineItems. */
+        void removeLocalMachineItems(const QList<UIChooserItemMachine*> &machineItems);
         /** Unregisters a list of local virtual @a machines. */
         void unregisterLocalMachines(const QList<CMachine> &machines);
-        /** Unregisters a list of cloud virtual @a machines. */
-        void unregisterCloudMachines(const QList<CCloudMachine> &machines);
+        /** Unregisters a list of cloud virtual @a machineItems. */
+        void unregisterCloudMachineItems(const QList<UIChooserItemMachine*> &machineItems);
 
         /** Processes drag move @a pEvent. */
         bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
