@@ -50,6 +50,16 @@
 #include <nsXPCOM.h>
 #include <nsISupportsPrimitives.h>
 
+#if defined(Py_LIMITED_API) && defined(RT_OS_LINUX)
+# include <features.h>
+# ifdef __GLIBC_PREREQ
+#  if __GLIBC_PREREQ(2,9)
+#   define PYXPCOM_HAVE_PIPE2
+#   include <fcntl.h>
+#  endif
+# endif
+#endif
+
 
 #ifndef Py_LIMITED_API
 static PyTypeObject PyInterfaceType_Type = {
@@ -89,19 +99,16 @@ static PyTypeObject *g_pPyInterfaceTypeObj = NULL;
 /**
  * Gets the base XPCOM interface type object, creating it if needed.
  */
-static PyTypeObject *PyXPCOM_GetInterfaceType(void)
+static PyTypeObject *PyXPCOM_CreateInterfaceType(void)
 {
-	PyTypeObject *pTypeObj = g_pPyInterfaceTypeObj;
-	if (pTypeObj)
-		return pTypeObj;
-
 	static char g_szTypeDoc[] = "Define the behavior of a PythonCOM Interface type."; /* need non-const */
 	PyType_Slot aTypeSlots[] = {
 		{ Py_tp_doc,    	g_szTypeDoc },
 		{ 0, NULL } /* terminator */
 	};
+	static const char g_szClassNm[] = "interface-type";
 	PyType_Spec TypeSpec = {
-		/* .name: */ 		"interface-type",
+		/* .name: */ 		g_szClassNm,
 		/* .basicsize: */       0,
 		/* .itemsize: */	0,
 		/* .flags: */   	Py_TPFLAGS_BASETYPE,
@@ -111,7 +118,7 @@ static PyTypeObject *PyXPCOM_GetInterfaceType(void)
         PyObject *exc_typ = NULL, *exc_val = NULL, *exc_tb = NULL;
         PyErr_Fetch(&exc_typ, &exc_val, &exc_tb); /* goes south in PyType_Ready if we don't clear exceptions first. */
 
-	pTypeObj = (PyTypeObject *)PyType_FromSpec(&TypeSpec);
+	PyTypeObject *pTypeObj = (PyTypeObject *)PyType_FromSpec(&TypeSpec);
 	assert(pTypeObj);
 
         PyErr_Restore(exc_typ, exc_val, exc_tb);
@@ -119,17 +126,67 @@ static PyTypeObject *PyXPCOM_GetInterfaceType(void)
 
 	/*
 	 * Verify/correct g_offObTypeNameMember.
+	 *
+	 * Using pipe+write to probe the memory content, banking on the kernel
+	 * to return EFAULT when we pass it an invalid address.
 	 */
-	/** @todo (could use pipe+read to safely probe memory) */
+	for (size_t off = sizeof(PyVarObject); off < sizeof(PyVarObject) + 64; off += sizeof(char *)) {
+		const char * const pszProbe = *(const char **)((uintptr_t)(pTypeObj) + off);
+		if (RT_VALID_PTR(pszProbe)) {
+			int fds[2] = { -1, -1 };
+# ifdef PYXPCOM_HAVE_PIPE2
+			int rc = pipe2(fds, O_CLOEXEC);
+# else
+			int rc = pipe(fds);
+# endif
+			if (rc)
+				break;
+
+			ssize_t cbWritten = write(fds[1], pszProbe, sizeof(g_szClassNm));
+			if (cbWritten == (ssize_t)sizeof(g_szClassNm)) {
+				char szReadBack[sizeof(g_szClassNm)];
+				ssize_t offRead = 0;
+				while (offRead < cbWritten) {
+					ssize_t cbRead = read(fds[0], &szReadBack[offRead], cbWritten - offRead);
+					if (cbRead >= 0) {
+						offRead += cbRead;
+					} else if (errno != EINTR)
+						break;
+				}
+				if (   cbWritten == offRead
+				    && memcmp(szReadBack, g_szClassNm, sizeof(szReadBack)) == 0) {
+					g_offObTypeNameMember = off;
+					close(fds[0]);
+					close(fds[1]);
+					return pTypeObj;
+				}
+			}
+			close(fds[0]);
+			close(fds[1]);
+		}
+	}
+	assert(0);
 
 	return pTypeObj;
 }
 
 /**
+ * Gets the base XPCOM interface type object, creating it if needed.
+ */
+static PyTypeObject *PyXPCOM_GetInterfaceType(void)
+{
+	PyTypeObject *pTypeObj = g_pPyInterfaceTypeObj;
+	if (pTypeObj)
+		return pTypeObj;
+	return PyXPCOM_CreateInterfaceType();
+}
+
+/**
  * Get the PyTypeObject::ob_name value.
  *
- * @todo This is _horrible_, but there appears to be no simple tp_name getters
- *       till https://bugs.python.org/issue31497 (2017).
+ * @todo This is _horrible_, but there appears to be no simple tp_name getter
+ *       till https://bugs.python.org/issue31497 (2017 / 3.7.0).  But even then
+ *       it is not part of the limited API.
  */
 const char *PyXPCOMGetObTypeName(PyTypeObject *pTypeObj)
 {
