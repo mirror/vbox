@@ -722,8 +722,11 @@ if1of ($(KBUILD_TARGET), darwin linux solaris)
 endif
 # Use XPIDL instead of XSLT stylesheet
 VBOX_WITH_JAVA_SUPPORT_IN_XPIDL ?=
-# Build against multiple Python versions present in the system
+# Build against multiple Python versions present in the system (only up to 3.2,
+# unless VBOX_WITH_ONLY_PYTHON_LIMITED_API is overridden).
 VBOX_WITH_MULTIVERSION_PYTHON ?= 1
+# Only build the limited Python extension API version for 3.3 and later.
+VBOX_WITH_ONLY_PYTHON_LIMITED_API = 1
 # Enable the kchmviewer.
 VBOX_WITH_KCHMVIEWER = 1
 # Build the Validation Kit.
