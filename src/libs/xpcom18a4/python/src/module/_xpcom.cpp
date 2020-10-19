@@ -83,7 +83,7 @@ extern PYXPCOM_EXPORT void PyXPCOM_InterpreterState_Ensure();
 #  define MANGLE_MODULE_NAME(a_szName)  a_szName RT_XSTR(MODULE_NAME_SUFFIX)
 #  define MANGLE_MODULE_INIT(a_Name)    RT_CONCAT(a_Name, MODULE_NAME_SUFFIX)
 # endif
-# ifdef VBOX_PYXPCOM_VERSIONED
+# if defined(VBOX_PYXPCOM_VERSIONED) && !defined(VBOX_PYXPCOM_MAJOR_VERSIONED)
 #  if   PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
 #   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_8")
 #   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_8)
@@ -131,10 +131,13 @@ extern PYXPCOM_EXPORT void PyXPCOM_InterpreterState_Ensure();
 #   error "Fix module versioning. This Python version is not recognized."
 #  endif
 # else
-#  if PY_MAJOR_VERSION <= 2
+#  if PY_MAJOR_VERSION <= 2 && defined(VBOX_PYXPCOM_MAJOR_VERSIONED)
+#   define MODULE_NAME 	  MANGLE_MODULE_NAME("VBoxPython2")
+#   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2)
+#  elif PY_MAJOR_VERSION <= 2
 #   define MODULE_NAME 	  MANGLE_MODULE_NAME("VBoxPython")
 #   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython)
-#  elif defined(Py_LIMITED_API)
+#  elif defined(Py_LIMITED_API) || defined(VBOX_PYXPCOM_MAJOR_VERSIONED)
 #   define MODULE_NAME 	  MANGLE_MODULE_NAME("VBoxPython3")
 #   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3)
 #  else
