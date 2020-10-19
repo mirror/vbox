@@ -92,6 +92,7 @@ private:
     void prepareActions();
     void prepareWidgets();
     void prepareToolBar();
+    void prepareMenuAndMenuActions();
     void loadOptions();
 
     void saveOptions();
@@ -130,8 +131,9 @@ private:
 #ifdef RT_OS_LINUX
     QHelpEngine  *m_pHelpEngine;
 #endif
-    UIHelpBrowserViewer *m_pTextBrowser;
+    UIHelpBrowserViewer *m_pContentViewer;
     QSplitter           *m_pSplitter;
+    QMenu               *m_pMenu;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h */

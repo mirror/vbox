@@ -108,10 +108,10 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
 #ifdef RT_OS_LINUX
     , m_pHelpEngine(0)
 #endif
-    , m_pTextBrowser(0)
+    , m_pContentViewer(0)
     , m_pSplitter(0)
+    , m_pMenu(0)
 {
-    /* Prepare VM Log-Viewer: */
     prepare();
 }
 
@@ -123,7 +123,7 @@ UIHelpBrowserWidget::~UIHelpBrowserWidget()
 
 QMenu *UIHelpBrowserWidget::menu() const
 {
-    return 0;//m_pActionPool->action(UIActionIndex_M_LogWindow)->menu();
+    return m_pMenu;
 }
 
 
@@ -138,8 +138,7 @@ void UIHelpBrowserWidget::prepare()
 
     prepareActions();
     prepareWidgets();
-
-
+    prepareMenuAndMenuActions();
     retranslateUi();
 }
 
@@ -167,9 +166,9 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pTabWidget->addTab(m_pHelpEngine->contentWidget(), tr("Contents"));
     m_pTabWidget->addTab(m_pHelpEngine->indexWidget(), tr("Index"));
 
-    m_pTextBrowser = new UIHelpBrowserViewer(m_pHelpEngine);
-    AssertReturnVoid(m_pTextBrowser);
-    m_pSplitter->addWidget(m_pTextBrowser);
+    m_pContentViewer = new UIHelpBrowserViewer(m_pHelpEngine);
+    AssertReturnVoid(m_pContentViewer);
+    m_pSplitter->addWidget(m_pContentViewer);
 
     m_pSplitter->setStretchFactor(0, 1);
     m_pSplitter->setStretchFactor(1, 4);
@@ -179,13 +178,13 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
 
     connect(m_pHelpEngine->contentWidget(), &QHelpContentWidget::linkActivated,
-            m_pTextBrowser, &UIHelpBrowserViewer::setSource);
+            m_pContentViewer, &UIHelpBrowserViewer::setSource);
     connect(m_pHelpEngine->contentWidget(), &QHelpContentWidget::clicked,
             this, &UIHelpBrowserWidget::sltHandleContentWidgetItemClicked);
 
 
     connect(m_pHelpEngine->indexWidget(), &QHelpIndexWidget::linkActivated,
-            m_pTextBrowser, &UIHelpBrowserViewer::setSource);
+            m_pContentViewer, &UIHelpBrowserViewer::setSource);
 
     if (QFile(m_strHelpFilePath).exists() && m_pHelpEngine)
         m_pHelpEngine->setupData();
@@ -216,6 +215,13 @@ void UIHelpBrowserWidget::prepareToolBar()
         m_pMainLayout->addWidget(m_pToolBar);
 #endif
     }
+}
+
+void UIHelpBrowserWidget::prepareMenuAndMenuActions()
+{
+    m_pMenu = new QMenu(tr("View"), this);
+    AssertReturnVoid(m_pMenu);
+    m_pMenu->addAction(tr("View"));
 }
 
 void UIHelpBrowserWidget::loadOptions()
@@ -271,10 +277,10 @@ void UIHelpBrowserWidget::keyPressEvent(QKeyEvent *pEvent)
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 {
 #ifdef RT_OS_LINUX
-    AssertReturnVoid(m_pTextBrowser && m_pHelpEngine);
+    AssertReturnVoid(m_pContentViewer && m_pHelpEngine);
     QList<QUrl> files = m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList());
     if (!files.empty())
-        m_pTextBrowser->setSource(files[0]);
+        m_pContentViewer->setSource(files[0]);
     /** @todo show some kind of error maybe. */
 #endif
 }
@@ -282,7 +288,7 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &index)
 {
 #ifdef RT_OS_LINUX
-    AssertReturnVoid(m_pTextBrowser && m_pHelpEngine && m_pHelpEngine->contentWidget());
+    AssertReturnVoid(m_pContentViewer && m_pHelpEngine && m_pHelpEngine->contentWidget());
     QHelpContentModel *pContentModel =
         qobject_cast<QHelpContentModel*>(m_pHelpEngine->contentWidget()->model());
     if (!pContentModel)
@@ -291,7 +297,9 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &i
     if (!pItem)
         return;
     const QUrl &url = pItem->url();
-    m_pTextBrowser->setSource(url);
+    m_pContentViewer->setSource(url);
+#else
+    Q_UNUSED(index);
 #endif
 }
 
