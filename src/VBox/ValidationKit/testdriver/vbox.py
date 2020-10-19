@@ -474,7 +474,7 @@ class Build(object): # pylint: disable=too-few-public-methods
                 except:
                     reporter.logXcpt('Build: Running "%s --dump-build-type" failed!' % (sVBoxManage,));
             else:
-                reporter.log('Build: sVBoxManage=%s not found!' % (sVBoxManage,));
+                reporter.log3('Build: sVBoxManage=%s not found' % (sVBoxManage,));
 
             # Do some checks.
             sVMMR0 = os.path.join(self.sInstallPath, 'VMMR0.r0');
