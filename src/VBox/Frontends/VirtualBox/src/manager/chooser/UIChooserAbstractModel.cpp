@@ -581,6 +581,21 @@ QString UIChooserAbstractModel::valueToString(UIChooserNodeDataValueType enmType
     return QString();
 }
 
+void UIChooserAbstractModel::insertCloudAccountKey(const UICloudAccountKey &key)
+{
+    m_cloudAccountKeysBeingUpdated.insert(key);
+}
+
+void UIChooserAbstractModel::removeCloudAccountKey(const UICloudAccountKey &key)
+{
+    m_cloudAccountKeysBeingUpdated.remove(key);
+}
+
+bool UIChooserAbstractModel::containsCloudAccountKey(const UICloudAccountKey &key) const
+{
+    return m_cloudAccountKeysBeingUpdated.contains(key);
+}
+
 void UIChooserAbstractModel::sltHandleCloudMachineStateChange()
 {
     UIVirtualMachineItem *pCache = qobject_cast<UIVirtualMachineItem*>(sender());
@@ -598,21 +613,6 @@ void UIChooserAbstractModel::sltGroupDefinitionsSaveComplete()
 {
     makeSureGroupDefinitionsSaveIsFinished();
     emit sigGroupSavingStateChanged();
-}
-
-void UIChooserAbstractModel::insertCloudAccountKey(const UICloudAccountKey &key)
-{
-    m_cloudAccountKeysBeingUpdated.insert(key);
-}
-
-void UIChooserAbstractModel::removeCloudAccountKey(const UICloudAccountKey &key)
-{
-    m_cloudAccountKeysBeingUpdated.remove(key);
-}
-
-bool UIChooserAbstractModel::containsCloudAccountKey(const UICloudAccountKey &key) const
-{
-    return m_cloudAccountKeysBeingUpdated.contains(key);
 }
 
 void UIChooserAbstractModel::sltLocalMachineStateChanged(const QUuid &uMachineId, const KMachineState)
