@@ -187,6 +187,9 @@ public:
 
     /** @name Search stuff.
       * @{ */
+        /** Performs a search for an item matching @a strDefinition. */
+        UIChooserItem *searchItemByDefinition(const QString &strDefinition) const;
+
         /** Performs a search using @a strSearchTerm and @a iSearchFlags specified. */
         virtual void performSearch(const QString &strSearchTerm, int iSearchFlags) /* override */;
         /** Resets the search result data members and disables item's visual effects.

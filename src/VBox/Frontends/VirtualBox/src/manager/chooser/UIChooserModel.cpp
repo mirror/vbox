@@ -202,54 +202,8 @@ void UIChooserModel::setSelectedItem(UIChooserItem *pItem)
 
 void UIChooserModel::setSelectedItem(const QString &strDefinition)
 {
-    /* Ignore if empty definition passed: */
-    if (strDefinition.isEmpty())
-        return;
-
-    /* Parse definition: */
-    UIChooserItem *pItem = 0;
-    const QString strItemType = strDefinition.section('=', 0, 0);
-    const QString strItemDescriptor = strDefinition.section('=', 1, -1);
-    /* Its a local group-item definition? */
-    if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Local))
-    {
-        /* Search for group-item with passed descriptor (name): */
-        pItem = root()->searchForItem(strItemDescriptor,
-                                      UIChooserItemSearchFlag_LocalGroup |
-                                      UIChooserItemSearchFlag_ExactId);
-    }
-    /* Its a provider group-item definition? */
-    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Provider))
-    {
-        /* Search for group-item with passed descriptor (name): */
-        pItem = root()->searchForItem(strItemDescriptor,
-                                      UIChooserItemSearchFlag_CloudProvider |
-                                      UIChooserItemSearchFlag_ExactId);
-    }
-    /* Its a profile group-item definition? */
-    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Profile))
-    {
-        /* Search for group-item with passed descriptor (name): */
-        pItem = root()->searchForItem(strItemDescriptor,
-                                      UIChooserItemSearchFlag_CloudProfile |
-                                      UIChooserItemSearchFlag_ExactId);
-    }
-    /* Its a global-item definition? */
-    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Global))
-    {
-        /* Search for global-item with required name: */
-        pItem = root()->searchForItem(strItemDescriptor,
-                                      UIChooserItemSearchFlag_Global |
-                                      UIChooserItemSearchFlag_ExactName);
-    }
-    /* Its a machine-item definition? */
-    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Machine))
-    {
-        /* Search for machine-item with required ID: */
-        pItem = root()->searchForItem(strItemDescriptor,
-                                      UIChooserItemSearchFlag_Machine |
-                                      UIChooserItemSearchFlag_ExactId);
-    }
+    /* Search an item by definition: */
+    UIChooserItem *pItem = searchItemByDefinition(strDefinition);
 
     /* Make sure found item is in navigation list: */
     if (!pItem || !navigationItems().contains(pItem))
@@ -507,6 +461,61 @@ void UIChooserModel::updateNavigationItemList()
 {
     m_navigationItems.clear();
     m_navigationItems = createNavigationItemList(root());
+}
+
+UIChooserItem *UIChooserModel::searchItemByDefinition(const QString &strDefinition) const
+{
+    /* Null if empty definition passed: */
+    if (strDefinition.isEmpty())
+        return 0;
+
+    /* Parse definition: */
+    UIChooserItem *pItem = 0;
+    const QString strItemType = strDefinition.section('=', 0, 0);
+    const QString strItemDescriptor = strDefinition.section('=', 1, -1);
+    /* Its a local group-item definition? */
+    if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Local))
+    {
+        /* Search for group-item with passed descriptor (name): */
+        pItem = root()->searchForItem(strItemDescriptor,
+                                      UIChooserItemSearchFlag_LocalGroup |
+                                      UIChooserItemSearchFlag_ExactId);
+    }
+    /* Its a provider group-item definition? */
+    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Provider))
+    {
+        /* Search for group-item with passed descriptor (name): */
+        pItem = root()->searchForItem(strItemDescriptor,
+                                      UIChooserItemSearchFlag_CloudProvider |
+                                      UIChooserItemSearchFlag_ExactId);
+    }
+    /* Its a profile group-item definition? */
+    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Profile))
+    {
+        /* Search for group-item with passed descriptor (name): */
+        pItem = root()->searchForItem(strItemDescriptor,
+                                      UIChooserItemSearchFlag_CloudProfile |
+                                      UIChooserItemSearchFlag_ExactId);
+    }
+    /* Its a global-item definition? */
+    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Global))
+    {
+        /* Search for global-item with required name: */
+        pItem = root()->searchForItem(strItemDescriptor,
+                                      UIChooserItemSearchFlag_Global |
+                                      UIChooserItemSearchFlag_ExactName);
+    }
+    /* Its a machine-item definition? */
+    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Machine))
+    {
+        /* Search for machine-item with required ID: */
+        pItem = root()->searchForItem(strItemDescriptor,
+                                      UIChooserItemSearchFlag_Machine |
+                                      UIChooserItemSearchFlag_ExactId);
+    }
+
+    /* Return result: */
+    return pItem;
 }
 
 void UIChooserModel::performSearch(const QString &strSearchTerm, int iSearchFlags)
