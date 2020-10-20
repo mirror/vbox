@@ -45,6 +45,12 @@ bool UIChooser::isGroupSavingInProgress() const
     return model()->isGroupSavingInProgress();
 }
 
+bool UIChooser::isCloudUpdateInProgress() const
+{
+    AssertPtrReturn(model(), false);
+    return model()->isCloudUpdateInProgress();
+}
+
 UIVirtualMachineItem *UIChooser::currentItem() const
 {
     AssertPtrReturn(model(), 0);
@@ -240,6 +246,8 @@ void UIChooser::prepareConnections()
             this, &UIChooser::sigCloudMachineStateChange);
     connect(model(), &UIChooserModel::sigGroupSavingStateChanged,
             this, &UIChooser::sigGroupSavingStateChanged);
+    connect(model(), &UIChooserModel::sigCloudUpdateStateChanged,
+            this, &UIChooser::sigCloudUpdateStateChanged);
 
     /* Chooser-model connections: */
     connect(model(), &UIChooserModel::sigToolMenuRequested,
@@ -286,6 +294,8 @@ void UIChooser::cleanupConnections()
                this, &UIChooser::sigCloudMachineStateChange);
     disconnect(model(), &UIChooserModel::sigGroupSavingStateChanged,
                this, &UIChooser::sigGroupSavingStateChanged);
+    disconnect(model(), &UIChooserModel::sigCloudUpdateStateChanged,
+               this, &UIChooser::sigCloudUpdateStateChanged);
 
     /* Chooser-model connections: */
     disconnect(model(), &UIChooserModel::sigToolMenuRequested,

@@ -116,6 +116,11 @@ bool UIVirtualBoxManagerWidget::isGroupSavingInProgress() const
     return m_pPaneChooser->isGroupSavingInProgress();
 }
 
+bool UIVirtualBoxManagerWidget::isCloudUpdateInProgress() const
+{
+    return m_pPaneChooser->isCloudUpdateInProgress();
+}
+
 void UIVirtualBoxManagerWidget::openGroupNameEditor()
 {
     m_pPaneChooser->openGroupNameEditor();
@@ -674,6 +679,8 @@ void UIVirtualBoxManagerWidget::prepareConnections()
             m_pPaneToolsMachine, &UIToolPaneMachine::sigToggleFinished);
     connect(m_pPaneChooser, &UIChooser::sigGroupSavingStateChanged,
             this, &UIVirtualBoxManagerWidget::sigGroupSavingStateChanged);
+    connect(m_pPaneChooser, &UIChooser::sigCloudUpdateStateChanged,
+            this, &UIVirtualBoxManagerWidget::sigCloudUpdateStateChanged);
     connect(m_pPaneChooser, &UIChooser::sigToolMenuRequested,
             this, &UIVirtualBoxManagerWidget::sltHandleToolMenuRequested);
     connect(m_pPaneChooser, &UIChooser::sigCloudMachineStateChange,
@@ -939,6 +946,8 @@ void UIVirtualBoxManagerWidget::cleanupConnections()
                m_pPaneToolsMachine, &UIToolPaneMachine::sigToggleFinished);
     disconnect(m_pPaneChooser, &UIChooser::sigGroupSavingStateChanged,
                this, &UIVirtualBoxManagerWidget::sigGroupSavingStateChanged);
+    disconnect(m_pPaneChooser, &UIChooser::sigCloudUpdateStateChanged,
+               this, &UIVirtualBoxManagerWidget::sigCloudUpdateStateChanged);
     disconnect(m_pPaneChooser, &UIChooser::sigToolMenuRequested,
                this, &UIVirtualBoxManagerWidget::sltHandleToolMenuRequested);
     disconnect(m_pPaneChooser, &UIChooser::sigCloudMachineStateChange,

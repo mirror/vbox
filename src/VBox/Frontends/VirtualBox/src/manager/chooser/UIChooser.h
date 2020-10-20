@@ -52,6 +52,12 @@ signals:
         void sigGroupSavingStateChanged();
     /** @} */
 
+    /** @name Cloud update stuff.
+      * @{ */
+        /** Notifies listeners about cloud update state change. */
+        void sigCloudUpdateStateChanged();
+    /** @} */
+
     /** @name Tool stuff.
       * @{ */
         /** Notifies listeners about tool popup-menu request for certain @a enmClass and @a position. */
@@ -102,6 +108,12 @@ public:
       * @{ */
         /** Returns whether group saving is in progress. */
         bool isGroupSavingInProgress() const;
+    /** @} */
+
+    /** @name Cloud update stuff.
+      * @{ */
+        /** Returns whether cloud update is in progress. */
+        bool isCloudUpdateInProgress() const;
     /** @} */
 
     /** @name Current-item stuff.

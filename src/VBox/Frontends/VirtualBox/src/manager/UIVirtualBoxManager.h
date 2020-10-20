@@ -130,6 +130,8 @@ private slots:
         void sltHandleChooserPaneIndexChange();
         /** Handles signal about group saving progress change. */
         void sltHandleGroupSavingProgressChange();
+        /** Handles signal about cloud update progress change. */
+        void sltHandleCloudUpdateProgressChange();
 
         /** Handles singal about Tool type change.  */
         void sltHandleToolTypeChange();
@@ -359,6 +361,9 @@ private:
         bool isSingleLocalGroupSelected() const;
         /** Returns whether single cloud profile group is selected. */
         bool isSingleCloudProfileGroupSelected() const;
+
+        /** Returns whether cloud update is in progress. */
+        bool isCloudUpdateInProgress() const;
     /** @} */
 
     /** @name Various VM helpers.

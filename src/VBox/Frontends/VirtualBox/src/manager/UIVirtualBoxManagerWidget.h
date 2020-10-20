@@ -69,6 +69,8 @@ signals:
         void sigChooserPaneIndexChange();
         /** Notifies about Chooser-pane group saving change. */
         void sigGroupSavingStateChanged();
+        /** Notifies about Chooser-pane cloud update change. */
+        void sigCloudUpdateStateChanged();
 
         /** Notifies about state change for cloud machine with certain @a uId. */
         void sigCloudMachineStateChange(const QUuid &uId);
@@ -144,6 +146,8 @@ public:
 
         /** Returns whether group saving is in progress. */
         bool isGroupSavingInProgress() const;
+        /** Returns whether cloud update is in progress. */
+        bool isCloudUpdateInProgress() const;
 
         /** Opens group name editor. */
         void openGroupNameEditor();

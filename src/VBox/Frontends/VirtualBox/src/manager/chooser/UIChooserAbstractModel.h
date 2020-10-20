@@ -64,6 +64,12 @@ signals:
         void sigGroupSavingStateChanged();
     /** @} */
 
+    /** @name Cloud update stuff.
+      * @{ */
+        /** Notifies listeners about cloud update state changed. */
+        void sigCloudUpdateStateChanged();
+    /** @} */
+
 public:
 
     /** Constructs abstract Chooser-model passing @a pParent to the base-class. */
@@ -132,6 +138,8 @@ public:
         void removeCloudAccountKey(const UICloudAccountKey &key);
         /** Returns whether cloud account @a key is a part of key set currently being updated. */
         bool containsCloudAccountKey(const UICloudAccountKey &key) const;
+        /** Returns whether at least one cloud account update is in progress. */
+        bool isCloudUpdateInProgress() const;
     /** @} */
 
 public slots:
