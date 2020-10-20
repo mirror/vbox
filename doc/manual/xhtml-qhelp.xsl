@@ -28,7 +28,7 @@
       <xsl:element name="filterSection">
         <xsl:value-of select="$newline" />
         <xsl:element name="toc">
-          <xsl:apply-templates select="//xhtml:div[@class='toc']//xhtml:span[@class='chapter']"/>
+          <xsl:apply-templates select="//xhtml:div[@class='toc']//xhtml:span[@class='chapter'] | //xhtml:div[@class='toc']//xhtml:span[@class='preface']"/>
         </xsl:element><!-- toc -->
         <xsl:value-of select="$newline" />
         <!-- <xsl:element name="keywords"></xsl:element> -->
@@ -59,7 +59,7 @@
   </xsl:template>
 
   <!-- ===================toc related template(s)====================== -->
-  <xsl:template match="xhtml:span[@class='chapter']">
+  <xsl:template match="xhtml:span[@class='chapter'] | xhtml:span[@class='preface']">
     <xsl:element name="section">
       <xsl:attribute name="title">
         <xsl:value-of select="*" />
