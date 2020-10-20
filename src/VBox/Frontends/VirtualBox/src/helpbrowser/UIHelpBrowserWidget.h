@@ -36,19 +36,18 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
-class QHelpEngine;
-class QPlainTextEdit;
-class UIHelpBrowserViewer;
 class QHBoxLayout;
+class QHelpEngine;
+class QHelpContentWidget;
+class QHelpIndexWidget;
+class QPlainTextEdit;
+class QSplitter;
 class QITabWidget;
 class QIToolBar;
 class UIActionPool;
 class UIDialogPanel;
-class QSplitter;
+class UIHelpBrowserViewer;
 
-/** QWidget extension providing GUI for VirtualBox LogViewer. It
- *  encapsulates log pages, toolbar, a tab widget and manages
- *  interaction between these classes. */
 class SHARED_LIBRARY_STUFF UIHelpBrowserWidget  : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -59,19 +58,13 @@ signals:
 
 public:
 
-    /** Constructs the VM Log-Viewer by passing @a pParent to QWidget base-class constructor.
-      * @param  enmEmbedding  Brings the type of widget embedding.
-      * @param  fShowToolbar  Brings whether we should create/show toolbar.*/
     UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &strHelpFilePath,
                         bool fShowToolbar = true, QWidget *pParent = 0);
-    /** Destructs the VM Log-Viewer. */
     ~UIHelpBrowserWidget();
 
-    /** Returns the menu. */
     QMenu *menu() const;
 
 #ifdef VBOX_WS_MAC
-    /** Returns the toolbar. */
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
@@ -92,7 +85,7 @@ private:
     void prepareActions();
     void prepareWidgets();
     void prepareToolBar();
-    void prepareMenuAndMenuActions();
+    void prepareMenu();
     void loadOptions();
 
     void saveOptions();
@@ -134,6 +127,10 @@ private:
     UIHelpBrowserViewer *m_pContentViewer;
     QSplitter           *m_pSplitter;
     QMenu               *m_pMenu;
+    QHelpContentWidget  *m_pContentWidget;
+    QHelpIndexWidget    *m_pIndexWidget;
+    QWidget             *m_pBookmarksWidget;
+    QAction             *m_pShowHideContentsWidgetAction;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h */

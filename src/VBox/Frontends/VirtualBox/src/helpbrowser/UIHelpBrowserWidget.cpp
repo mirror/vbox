@@ -53,6 +53,14 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
+enum HelpBrowserTabs
+{
+    HelpBrowserTabs_TOC = 0,
+    HelpBrowserTabs_Index,
+    HelpBrowserTabs_Bookmarks,
+    HelpBrowserTabs_Max
+};
+
 class UIHelpBrowserViewer : public QTextBrowser
 {
     Q_OBJECT;
@@ -111,6 +119,10 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pContentViewer(0)
     , m_pSplitter(0)
     , m_pMenu(0)
+    , m_pContentWidget(0)
+    , m_pIndexWidget(0)
+    , m_pBookmarksWidget(0)
+    , m_pShowHideContentsWidgetAction(0)
 {
     prepare();
 }
@@ -138,13 +150,14 @@ void UIHelpBrowserWidget::prepare()
 
     prepareActions();
     prepareWidgets();
-    prepareMenuAndMenuActions();
+    prepareMenu();
     retranslateUi();
 }
 
 void UIHelpBrowserWidget::prepareActions()
 {
-
+    m_pShowHideContentsWidgetAction = new QAction(this);
+    m_pShowHideContentsWidgetAction->setData(HelpBrowserTabs_TOC);
 }
 
 void UIHelpBrowserWidget::prepareWidgets()
@@ -158,13 +171,18 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pMainLayout->addWidget(m_pSplitter);
 #ifdef RT_OS_LINUX
     m_pHelpEngine = new QHelpEngine(m_strHelpFilePath, this);
-
+    m_pBookmarksWidget = new QWidget(this);
     m_pTabWidget = new QITabWidget;
-    AssertReturnVoid(m_pTabWidget);
-    AssertReturnVoid(m_pHelpEngine->contentWidget() && m_pHelpEngine->indexWidget());
+    AssertReturnVoid(m_pTabWidget && m_pHelpEngine && m_pBookmarksWidget);
+
+    m_pContentWidget = m_pHelpEngine->contentWidget();
+    m_pIndexWidget = m_pHelpEngine->indexWidget();
+
+    AssertReturnVoid(m_pContentWidget && m_pIndexWidget);
     m_pSplitter->addWidget(m_pTabWidget);
-    m_pTabWidget->addTab(m_pHelpEngine->contentWidget(), tr("Contents"));
-    m_pTabWidget->addTab(m_pHelpEngine->indexWidget(), tr("Index"));
+    m_pTabWidget->insertTab(HelpBrowserTabs_TOC, m_pContentWidget, QString());
+    m_pTabWidget->insertTab(HelpBrowserTabs_Index, m_pIndexWidget, QString());
+    m_pTabWidget->insertTab(HelpBrowserTabs_Bookmarks, m_pBookmarksWidget, QString());
 
     m_pContentViewer = new UIHelpBrowserViewer(m_pHelpEngine);
     AssertReturnVoid(m_pContentViewer);
@@ -177,13 +195,13 @@ void UIHelpBrowserWidget::prepareWidgets()
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
 
-    connect(m_pHelpEngine->contentWidget(), &QHelpContentWidget::linkActivated,
+    connect(m_pContentWidget, &QHelpContentWidget::linkActivated,
             m_pContentViewer, &UIHelpBrowserViewer::setSource);
-    connect(m_pHelpEngine->contentWidget(), &QHelpContentWidget::clicked,
+    connect(m_pContentWidget, &QHelpContentWidget::clicked,
             this, &UIHelpBrowserWidget::sltHandleContentWidgetItemClicked);
 
 
-    connect(m_pHelpEngine->indexWidget(), &QHelpIndexWidget::linkActivated,
+    connect(m_pIndexWidget, &QHelpIndexWidget::linkActivated,
             m_pContentViewer, &UIHelpBrowserViewer::setSource);
 
     if (QFile(m_strHelpFilePath).exists() && m_pHelpEngine)
@@ -217,7 +235,7 @@ void UIHelpBrowserWidget::prepareToolBar()
     }
 }
 
-void UIHelpBrowserWidget::prepareMenuAndMenuActions()
+void UIHelpBrowserWidget::prepareMenu()
 {
     m_pMenu = new QMenu(tr("View"), this);
     AssertReturnVoid(m_pMenu);
@@ -250,6 +268,14 @@ void UIHelpBrowserWidget::retranslateUi()
     if (m_pToolBar)
         m_pToolBar->updateLayout();
 #endif
+    if (m_pTabWidget)
+    {
+        m_pTabWidget->setTabText(HelpBrowserTabs_TOC, tr("Contents"));
+        m_pTabWidget->setTabText(HelpBrowserTabs_Index, tr("Index"));
+        m_pTabWidget->setTabText(HelpBrowserTabs_Bookmarks, tr("Bookmarks"));
+    }
+    if (m_pShowHideContentsWidgetAction)
+        m_pShowHideContentsWidgetAction->setText("Show/Hide Contents");
 }
 
 void UIHelpBrowserWidget::showEvent(QShowEvent *pEvent)
@@ -288,9 +314,9 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &index)
 {
 #ifdef RT_OS_LINUX
-    AssertReturnVoid(m_pContentViewer && m_pHelpEngine && m_pHelpEngine->contentWidget());
+    AssertReturnVoid(m_pContentViewer && m_pHelpEngine && m_pContentWidget);
     QHelpContentModel *pContentModel =
-        qobject_cast<QHelpContentModel*>(m_pHelpEngine->contentWidget()->model());
+        qobject_cast<QHelpContentModel*>(m_pContentWidget->model());
     if (!pContentModel)
         return;
     QHelpContentItem *pItem = pContentModel->contentItemAt(index);
