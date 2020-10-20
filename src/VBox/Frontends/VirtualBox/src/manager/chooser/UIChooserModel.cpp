@@ -1657,10 +1657,11 @@ QList<UIChooserItem*> UIChooserModel::createNavigationItemList(UIChooserItem *pI
 
 void UIChooserModel::buildTreeForMainRoot(bool fPreserveSelection /* = false */)
 {
-    /* Remember first selected item if requested: */
-    QString strSelectedItemDefinition;
-    if (fPreserveSelection && firstSelectedItem())
-        strSelectedItemDefinition = firstSelectedItem()->definition();
+    /* Remember all selected items if requested: */
+    QStringList selectedItemDefinitions;
+    if (fPreserveSelection && !selectedItems().isEmpty())
+        foreach (UIChooserItem *pSelectedItem, selectedItems())
+            selectedItemDefinitions << pSelectedItem->definition();
 
     /* Cleanup previous tree if exists: */
     delete m_pRoot;
@@ -1676,10 +1677,18 @@ void UIChooserModel::buildTreeForMainRoot(bool fPreserveSelection /* = false */)
     /* Update tree for main root: */
     updateTreeForMainRoot();
 
-    /* Restore selection if requested: */
+    /* Restore all selected items if requested: */
     if (fPreserveSelection)
     {
-        setSelectedItem(strSelectedItemDefinition);
+        QList<UIChooserItem*> selectedItems;
+        foreach (const QString &strSelectedItemDefinition, selectedItemDefinitions)
+        {
+            UIChooserItem *pSelectedItem = searchItemByDefinition(strSelectedItemDefinition);
+            if (pSelectedItem)
+                selectedItems << pSelectedItem;
+        }
+        setSelectedItems(selectedItems);
+        setCurrentItem(firstSelectedItem());
         makeSureAtLeastOneItemSelected();
     }
 
