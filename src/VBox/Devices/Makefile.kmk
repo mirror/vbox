@@ -150,7 +150,6 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
  	VBOX_WITH_DMI_CHASSIS \
  	VBOX_WITH_DMI_OEMSTRINGS \
-	$(if $(VBOX_WITH_NEW_LPC_DEVICE),VBOX_WITH_NEW_LPC_DEVICE,) \
  	$(if $(VBOX_WITH_IOMMU_AMD),VBOX_WITH_IOMMU_AMD,)
  VBoxDD_DEFS.win         = _WIN32_WINNT=0x0510
  ifeq ($(KBUILD_TARGET_ARCH),x86)
@@ -183,7 +182,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	PC/DevFwCommon.cpp \
  	PC/DevPcArch.cpp \
  	PC/DevQemuFwCfg.cpp \
-	$(if $(VBOX_WITH_NEW_LPC_DEVICE),PC/DevLpc-new.cpp,) \
+ 	PC/DevLpc.cpp \
 	GIMDev/GIMDev.cpp \
 	GIMDev/DrvUDP.cpp \
  	VMMDev/VMMDev.cpp \
@@ -1086,14 +1085,12 @@ endif
  VBoxDD2_TEMPLATE        = VBoxR3DllWarnNoPic
  VBoxDD2_DEFS            = \
 	IN_VBOXDD2 \
-	$(if $(VBOX_WITH_PXE_ROM),VBOX_WITH_PXE_ROM,) \
-       $(if $(VBOX_WITH_NEW_LPC_DEVICE),VBOX_WITH_NEW_LPC_DEVICE,)
+	$(if $(VBOX_WITH_PXE_ROM),VBOX_WITH_PXE_ROM,)
  VBoxDD2_INCS           := \
 	build \
  	$(PATH_SUB_CURRENT)
  VBoxDD2_SOURCES         = \
- 	build/VBoxDD2.cpp \
- 	$(if $(VBOX_WITH_NEW_LPC_DEVICE),,PC/DevLPC.cpp)
+ 	build/VBoxDD2.cpp
  VBoxDD2_LIBS            = \
  	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \

@@ -75,10 +75,6 @@ extern DECLIMPORT(const unsigned)       g_cbEfiFirmware64;
 # endif
 #endif /* !IN_VBOXDD2 */
 
-#ifndef VBOX_WITH_NEW_LPC_DEVICE
-extern const PDMDEVREG g_DeviceLPC;
-#endif
-
 RT_C_DECLS_END
 
 #endif /* !VBOX_INCLUDED_SRC_build_VBoxDD2_h */
