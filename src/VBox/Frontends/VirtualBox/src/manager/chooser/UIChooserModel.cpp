@@ -66,6 +66,8 @@ UIChooserModel::UIChooserModel(UIChooser *pParent, UIActionPool *pActionPool)
     , m_iCurrentSearchResultIndex(-1)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
+    , m_fPreventCloudProfileUpdate(false)
+    , m_pTimerCloudProfileUpdate(0)
 {
     prepare();
 }
@@ -1237,7 +1239,12 @@ void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
     UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(pTask);
 
     /* Rebuild tree for main root: */
+    m_fPreventCloudProfileUpdate = true;
     buildTreeForMainRoot(true /* preserve selection */);
+    m_fPreventCloudProfileUpdate = false;
+
+    /* Restart cloud profile update timer: */
+    m_pTimerCloudProfileUpdate->start(10000);
 }
 
 void UIChooserModel::sltHandleCloudProfileManagerCumulativeChange()
@@ -1304,11 +1311,93 @@ void UIChooserModel::sltCurrentDragObjectDestroyed()
     root()->resetDragToken();
 }
 
+void UIChooserModel::sltUpdateSelectedCloudProfiles()
+{
+    /* Ignore if cloud profile update is restricted: */
+    if (m_fPreventCloudProfileUpdate)
+        return;
+
+    /* For every selected item: */
+    QSet<UICloudAccountKey> selectedCloudAccountKeys;
+    foreach (UIChooserItem *pSelectedItem, selectedItems())
+    {
+        /* Enumerate cloud account keys to update: */
+        switch (pSelectedItem->type())
+        {
+            case UIChooserNodeType_Group:
+            {
+                UIChooserItemGroup *pGroupItem = pSelectedItem->toGroupItem();
+                AssertPtrReturnVoid(pGroupItem);
+                switch (pGroupItem->groupType())
+                {
+                    case UIChooserNodeGroupType_Provider:
+                    {
+                        const QString strProviderShortName = pSelectedItem->name();
+                        foreach (UIChooserItem *pChildItem, pSelectedItem->items(UIChooserNodeType_Group))
+                        {
+                            const QString strProfileName = pChildItem->name();
+                            const UICloudAccountKey cloudAccountKey = qMakePair(strProviderShortName, strProfileName);
+                            if (!selectedCloudAccountKeys.contains(cloudAccountKey))
+                                selectedCloudAccountKeys.insert(cloudAccountKey);
+                        }
+                        break;
+                    }
+                    case UIChooserNodeGroupType_Profile:
+                    {
+                        const QString strProviderShortName = pSelectedItem->parentItem()->name();
+                        const QString strProfileName = pSelectedItem->name();
+                        const UICloudAccountKey cloudAccountKey = qMakePair(strProviderShortName, strProfileName);
+                        if (!selectedCloudAccountKeys.contains(cloudAccountKey))
+                            selectedCloudAccountKeys.insert(cloudAccountKey);
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                break;
+            }
+            case UIChooserNodeType_Machine:
+            {
+                UIChooserItemMachine *pMachineItem = pSelectedItem->toMachineItem();
+                AssertPtrReturnVoid(pMachineItem);
+                if (   pMachineItem->cacheType() == UIVirtualMachineItemType_CloudFake
+                    || pMachineItem->cacheType() == UIVirtualMachineItemType_CloudReal)
+                {
+                    const QString strProviderShortName = pMachineItem->parentItem()->parentItem()->name();
+                    const QString strProfileName = pMachineItem->parentItem()->name();
+                    const UICloudAccountKey cloudAccountKey = qMakePair(strProviderShortName, strProfileName);
+                    if (!selectedCloudAccountKeys.contains(cloudAccountKey))
+                        selectedCloudAccountKeys.insert(cloudAccountKey);
+                }
+                break;
+            }
+        }
+    }
+
+    /* Restart List Cloud Machines task for selected account keys: */
+    foreach (const UICloudAccountKey &cloudAccountKey, selectedCloudAccountKeys)
+    {
+        /* Skip cloud account keys already being updated: */
+        if (containsCloudAccountKey(cloudAccountKey))
+            continue;
+        insertCloudAccountKey(cloudAccountKey);
+
+        /* Create a task for particular cloud account key: */
+        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(cloudAccountKey.first /* short provider name */,
+                                                                     cloudAccountKey.second /* profile name */,
+                                                                     false /* with refresh? */);
+        AssertPtrReturnVoid(pTask);
+        uiCommon().threadPoolCloud()->enqueueTask(pTask);
+    }
+}
+
 void UIChooserModel::prepare()
 {
     prepareScene();
     prepareContextMenu();
     prepareHandlers();
+    prepareCloudUpdateTimer();
+    prepareConnections();
 }
 
 void UIChooserModel::prepareScene()
@@ -1462,6 +1551,21 @@ void UIChooserModel::prepareHandlers()
     m_pKeyboardHandler = new UIChooserHandlerKeyboard(this);
 }
 
+void UIChooserModel::prepareCloudUpdateTimer()
+{
+    m_pTimerCloudProfileUpdate = new QTimer;
+    if (m_pTimerCloudProfileUpdate)
+        m_pTimerCloudProfileUpdate->setSingleShot(true);
+}
+
+void UIChooserModel::prepareConnections()
+{
+    connect(this, &UIChooserModel::sigSelectionChanged,
+            this, &UIChooserModel::sltUpdateSelectedCloudProfiles);
+    connect(m_pTimerCloudProfileUpdate, &QTimer::timeout,
+            this, &UIChooserModel::sltUpdateSelectedCloudProfiles);
+}
+
 void UIChooserModel::loadLastSelectedItem()
 {
     /* Load last selected-item (choose first if unable to load): */
@@ -1492,6 +1596,20 @@ void UIChooserModel::saveLastSelectedItem()
     gEDataManager->setSelectorWindowLastItemChosen(pFirstSelectedItem ? pFirstSelectedItem->definition() : QString());
 }
 
+void UIChooserModel::cleanupConnections()
+{
+    disconnect(this, &UIChooserModel::sigSelectionChanged,
+               this, &UIChooserModel::sltUpdateSelectedCloudProfiles);
+    disconnect(m_pTimerCloudProfileUpdate, &QTimer::timeout,
+               this, &UIChooserModel::sltUpdateSelectedCloudProfiles);
+}
+
+void UIChooserModel::cleanupCloudUpdateTimer()
+{
+    delete m_pTimerCloudProfileUpdate;
+    m_pTimerCloudProfileUpdate = 0;
+}
+
 void UIChooserModel::cleanupHandlers()
 {
     delete m_pKeyboardHandler;
@@ -1516,6 +1634,8 @@ void UIChooserModel::cleanupScene()
 
 void UIChooserModel::cleanup()
 {
+    cleanupConnections();
+    cleanupCloudUpdateTimer();
     cleanupHandlers();
     cleanupContextMenu();
     cleanupScene();
@@ -1799,10 +1919,17 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
     foreach (UIChooserItemMachine *pMachineItem, machineItems)
         machines << pMachineItem->cache()->toCloud()->machine();
 
+    /* Stop cloud update prematurely: */
+    m_pTimerCloudProfileUpdate->stop();
+
     /* Confirm machine removal: */
     const int iResultCode = msgCenter().confirmCloudMachineRemoval(machines);
     if (iResultCode == AlertButton_Cancel)
+    {
+        /* Resume cloud update if cancelled: */
+        m_pTimerCloudProfileUpdate->start(10000);
         return;
+    }
 
     /* For every selected machine-item: */
     QSet<UICloudAccountKey> changedCloudAccountKeys;

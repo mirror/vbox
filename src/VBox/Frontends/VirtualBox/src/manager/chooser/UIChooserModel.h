@@ -329,6 +329,12 @@ private slots:
         void sltCurrentDragObjectDestroyed();
     /** @} */
 
+    /** @name Cloud stuff.
+      * @{ */
+        /** Updates selected cloud profiles. */
+        void sltUpdateSelectedCloudProfiles();
+    /** @} */
+
 private:
 
     /** @name Prepare/Cleanup cascade.
@@ -341,11 +347,19 @@ private:
         void prepareContextMenu();
         /** Prepares handlers. */
         void prepareHandlers();
+        /** Prepares cloud update timer. */
+        void prepareCloudUpdateTimer();
+        /** Prepares connections. */
+        void prepareConnections();
         /** Loads last selected-items. */
         void loadLastSelectedItem();
 
         /** Saves last selected-items. */
         void saveLastSelectedItem();
+        /** Cleanups connections. */
+        void cleanupConnections();
+        /** Cleanups cloud update timer.*/
+        void cleanupCloudUpdateTimer();
         /** Cleanups handlers. */
         void cleanupHandlers();
         /** Cleanups context-menu. */
@@ -441,6 +455,14 @@ private:
         int              m_iScrollingTokenSize;
         /** Holds whether drag scrolling is in progress. */
         bool             m_fIsScrollingInProgress;
+    /** @} */
+
+    /** @name Cloud stuff.
+      * @{ */
+        /** Holds whether cloud profile update is restricted. */
+        bool    m_fPreventCloudProfileUpdate;
+        /** Holds cloud profile update timer instance. */
+        QTimer *m_pTimerCloudProfileUpdate;
     /** @} */
 };
 
