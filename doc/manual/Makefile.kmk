@@ -259,7 +259,7 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
         $(VBOX_MANUAL_PNG_FILES_$(lang)) \
         $(notdir $(VBOX_MANUAL_TEX_UNICODE_FILES)) \
         $(addprefix HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(lang))) \
-        html-single/UserManual.xhtml \
+        html-single/UserManual.html \
         html-single/UserManual.qhp \
         html-single/UserManual.qhcp \
         html-single/UserManual.qhc \
@@ -784,7 +784,7 @@ $(PATH_STAGE_BIN)/VBoxDocumentation.zip: $(VBOX_MANUAL_PACK)
 
 ##########################################################################################
 #
-#  UserManual.xhtml
+#  UserManual.html
 #
 ##########################################################################################
 VBOX_DOCBOOK_HTML_ONE_PAGE_FORMATCFG = \
@@ -792,7 +792,7 @@ VBOX_DOCBOOK_HTML_ONE_PAGE_FORMATCFG = \
 	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
 	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
 
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml: \
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
 		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_XML_FILES)) \
 		$(VBOX_MANUAL_XML_FILES_COMMON) \
 		$(VBOX_MANUAL_XML_FILES_GENERATED_en_US) \
@@ -803,7 +803,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml: \
 		$(VBOX_XML_ENTITIES) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc $(notdir $(firstword $(filter %.xsl,$^))),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) \
-		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml \
+		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html \
 		$(VBOX_PATH_MANUAL_SRC)/docbook-html-one-page-formatcfg.xsl \
 		$<
 
@@ -829,7 +829,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
 		$<
 
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
-		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml \
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html \
         $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US))
 	$(call MSG_L1,Packing documentation $@)
@@ -837,7 +837,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
 		-9 -r $@ html-single html-chunks $(VBOX_MANUAL_PNG_FILES_en_US)
 
-html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.xhtml
+html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 qhelp:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhc
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
