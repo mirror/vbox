@@ -105,6 +105,7 @@ RT_DECL_DATA_CONST(RTCRPEMMARKER const) g_aRTCrKeyAllMarkers[] =
     { g_aWords_RsaPublicKey,  RT_ELEMENTS(g_aWords_RsaPublicKey) },
     { g_aWords_PublicKey,     RT_ELEMENTS(g_aWords_PublicKey) },
     { g_aWords_RsaPrivateKey, RT_ELEMENTS(g_aWords_RsaPrivateKey) },
+    { g_aWords_EncryptedPrivateKey, RT_ELEMENTS(g_aWords_EncryptedPrivateKey) },
     { g_aWords_PrivateKey,    RT_ELEMENTS(g_aWords_PrivateKey) },
 };
 /** Number of entries in g_aRTCrKeyAllMarkers. */

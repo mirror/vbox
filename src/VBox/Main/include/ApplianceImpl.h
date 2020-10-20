@@ -145,6 +145,8 @@ private:
     static void i_exportOPCThreadTask(TaskOPC *pTask);
     static void i_importOrExportCloudThreadTask(TaskCloud *pTask);
 
+    HRESULT i_findFirstBootableImage(ComPtr<IMedium>& bootMedium, const ComPtr<IMachine> &pMachine);
+
     HRESULT i_initBackendNames();
 
     Utf8Str i_typeOfVirtualDiskFormatFromURI(Utf8Str type) const;

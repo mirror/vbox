@@ -365,6 +365,21 @@ public:
                 break;
             }
 
+            case VBoxEventType_OnProgressPercentageChanged:
+            {
+                ComPtr<IProgressPercentageChangedEvent> pV = aEvent;
+                Assert(pV);
+                LONG percent = 0;
+                pV->COMGETTER(Percent)(&percent);
+                {
+                    LogRel(("VBoxSDLEventListener: got the percent %d from the event "
+                            "VBoxEventType_OnProgressPercentageChanged.\n", percent));
+                    RTPrintf("VBoxSDLEventListener: got the percent %d from the event "
+                             "VBoxEventType_OnProgressPercentageChanged.\n", percent);
+                }
+                break;
+            }
+
             default:
                 AssertFailed();
         }
@@ -596,6 +611,21 @@ public:
 # endif
                 }
 #endif /* !RT_OS_DARWIN */
+                break;
+            }
+
+            case VBoxEventType_OnProgressPercentageChanged:
+            {
+                ComPtr<IProgressPercentageChangedEvent> pV = aEvent;
+                Assert(pV);
+                LONG percent = 0;
+                pV->COMGETTER(Percent)(&percent);
+                {
+                    LogRel(("VBoxSDLConsoleEventListener: got the percent %d from the event "
+                            "VBoxEventType_OnProgressPercentageChanged.\n", percent));
+                    RTPrintf("VBoxSDLConsoleEventListener: got the percent %d from the event "
+                             "VBoxEventType_OnProgressPercentageChanged.\n", percent);
+                }
                 break;
             }
 
@@ -2107,6 +2137,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         pVBoxListener = listener;
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnExtraDataChanged);
+
+        eventTypes.push_back(VBoxEventType_OnProgressPercentageChanged);
         CHECK_ERROR(pES, RegisterListener(pVBoxListener, ComSafeArrayAsInParam(eventTypes), true));
     }
 
@@ -2124,6 +2156,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         eventTypes.push_back(VBoxEventType_OnRuntimeError);
         eventTypes.push_back(VBoxEventType_OnCanShowWindow);
         eventTypes.push_back(VBoxEventType_OnShowWindow);
+        eventTypes.push_back(VBoxEventType_OnProgressPercentageChanged);
         CHECK_ERROR(pES, RegisterListener(pConsoleListener, ComSafeArrayAsInParam(eventTypes), true));
         // until we've tried to to start the VM, ignore power off events
         pConsoleListener->getWrapped()->ignorePowerOffEvents(true);
@@ -2371,7 +2404,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                      */
                     case SDL_USER_EVENT_XPCOM_EVENTQUEUE:
                     {
-                        LogFlow(("SDL_USER_EVENT_XPCOM_EVENTQUEUE: processing XPCOM event queue...\n"));
+//                      LogFlow(("SDL_USER_EVENT_XPCOM_EVENTQUEUE: processing XPCOM event queue...\n"));
                         eventQ->processEventQueue(0);
                         signalXPCOMEventQueueThread();
                         break;

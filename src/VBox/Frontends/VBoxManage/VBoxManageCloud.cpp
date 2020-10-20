@@ -122,12 +122,6 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
-    if (a->argc == iFirst)
-    {
-        RTPrintf("Empty command parameter list, show help.\n");
-        printHelp(g_pStdOut);
-        return RTEXITCODE_SUCCESS;
-    }
 
     Utf8Str strCompartmentId;
     com::SafeArray<CloudMachineState_T> machineStates;
@@ -294,12 +288,6 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
-    if (a->argc == iFirst)
-    {
-        RTPrintf("Empty command parameter list, show help.\n");
-        printHelp(g_pStdOut);
-        return RTEXITCODE_SUCCESS;
-    }
 
     Utf8Str strCompartmentId;
     com::SafeArray<CloudImageState_T> imageStates;
@@ -541,6 +529,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
     ComPtr<IVirtualSystemDescription> pVSD = virtualSystemDescriptions[0];
 
     Utf8Str strDisplayName, strImageId, strBootVolumeId, strPublicSSHKey;
+    bool fKeyPresented = false;
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
@@ -602,6 +591,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
                 strPublicSSHKey = ValueUnion.psz;
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicSSHKey,
                                      Bstr(ValueUnion.psz).raw(), NULL);
+                fKeyPresented = true;
                 break;
             case 1001:
             case 1002:
@@ -619,8 +609,12 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
-    if (strPublicSSHKey.isEmpty())
-        RTPrintf("Warning!!! Public SSH key doesn't present in the passed arguments...\n");
+    if ( fKeyPresented )
+        if (strPublicSSHKey.isEmpty())
+            RTPrintf("Warning!!! The value of the passed public SSH key is empty...\n");
+    else
+        return errorArgument("Parameter --public-ssh-key is absent. if there is no need to pass a key just use the form"
+                             " '--public-ssh-key='.");
 
     if (strImageId.isNotEmpty() && strBootVolumeId.isNotEmpty())
         return errorArgument("Parameters --image-id and --boot-volume-id are mutually exclusive. "
@@ -786,7 +780,7 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
         Utf8Str strNotFound;
     };
 
-    const size_t vsdHReadableArraySize = 12;//the number of items in the vsdHReadableArray
+    const size_t vsdHReadableArraySize = 14;//the number of items in the vsdHReadableArray
     vsdHReadable vsdHReadableArray[vsdHReadableArraySize] = {
         {VirtualSystemDescriptionType_CloudDomain, "Availability domain = %ls\n", "Availability domain wasn't found\n"},
         {VirtualSystemDescriptionType_Name, "Instance displayed name = %ls\n", "Instance displayed name wasn't found\n"},
@@ -801,7 +795,10 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
         {VirtualSystemDescriptionType_Memory, "RAM = %ls MB\n", "Value for RAM wasn't found\n"},
         {VirtualSystemDescriptionType_CPU, "CPUs = %ls\n", "Numbers of CPUs weren't found\n"},
         {VirtualSystemDescriptionType_CloudPublicIP, "Instance public IP = %ls\n", "Public IP wasn't found\n"},
-        {VirtualSystemDescriptionType_Miscellaneous, "%ls\n", "Free-form tags or metadata weren't found\n"}
+        {VirtualSystemDescriptionType_CloudInstanceMetadata, "%ls\n", "Metadata weren't found\n"},
+        {VirtualSystemDescriptionType_CloudInstanceFreeFormTags, "%ls\n", "Instance free-form tags weren't found\n"},
+        {VirtualSystemDescriptionType_CloudImageFreeFormTags, "%ls\n", "Image free-form tags weren't found\n"}
+
     };
 
     com::SafeArray<VirtualSystemDescriptionType_T> retTypes;

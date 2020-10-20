@@ -403,7 +403,13 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
                 curl_easy_setopt(pThis->pCurl, CURLOPT_ERRORBUFFER, pThis->szErrorBuffer);
 
                 *phHttp = (RTHTTP)pThis;
-
+#if 0 // XXX: uwe
+		{
+		const char *verbose = getenv("CURL_VERBOSE");
+		if (verbose != NULL && *verbose != '0')
+		  curl_easy_setopt(pThis->pCurl, CURLOPT_VERBOSE, 1L);
+		}
+#endif
                 return VINF_SUCCESS;
             }
             rc = VERR_NO_MEMORY;
@@ -439,9 +445,13 @@ RTR3DECL(int) RTHttpReset(RTHTTP hHttp, uint32_t fFlags)
     pThis->offUploadContent         = 0;
     pThis->rcOutput                 = VINF_SUCCESS;
 
-    /* Tell the proxy configuration code to reapply settings even if they
-       didn't change as cURL has forgotten them: */
-    pThis->fReapplyProxyInfo        = true;
+#if 0 // XXX: uwe
+    {
+    const char *verbose = getenv("CURL_VERBOSE");
+    if (verbose != NULL && *verbose != '0')
+      curl_easy_setopt(pThis->pCurl, CURLOPT_VERBOSE, 1L);
+    }
+#endif
 
     return VINF_SUCCESS;
 }
@@ -2635,6 +2645,9 @@ RTR3DECL(int) RTHttpUseTemporaryCaFile(RTHTTP hHttp, PRTERRINFO pErrInfo)
 
                 pThis->fDeleteCaFile = true;
                 pThis->pszCaFile = pszCaFile;
+
+//              RTPrintf("pszCaFile=\"%s\"\n", pszCaFile); // XXX: uwe
+
                 return VINF_SUCCESS;
             }
 
