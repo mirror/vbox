@@ -146,6 +146,16 @@ void UIChooserItemGroup::updateFavorites()
     model()->updateLayout();
 }
 
+int UIChooserItemGroup::scrollingValue() const
+{
+    return m_pScrollArea->scrollingValue();
+}
+
+void UIChooserItemGroup::setScrollingValue(int iValue)
+{
+    m_pScrollArea->setScrollingValue(iValue);
+}
+
 void UIChooserItemGroup::scrollBy(int iDelta)
 {
     m_pScrollArea->scrollBy(iDelta);

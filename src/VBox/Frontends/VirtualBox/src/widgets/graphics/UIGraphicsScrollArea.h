@@ -49,6 +49,10 @@ public:
     /** Returns scroll-area viewport. */
     QIGraphicsWidget *viewport() const;
 
+    /** Returns scrolling location value in pixels. */
+    int scrollingValue() const;
+    /** Defines scrolling location @a iValue in pixels. */
+    void setScrollingValue(int iValue);
     /** Performs scrolling by @a iDelta pixels. */
     void scrollBy(int iDelta);
 

@@ -113,6 +113,18 @@ QIGraphicsWidget *UIGraphicsScrollArea::viewport() const
     return m_pViewport;
 }
 
+int UIGraphicsScrollArea::scrollingValue() const
+{
+    return m_pScrollBar->value();
+}
+
+void UIGraphicsScrollArea::setScrollingValue(int iValue)
+{
+    iValue = qMax(iValue, 0);
+    iValue = qMin(iValue, m_pScrollBar->maximum());
+    m_pScrollBar->setValue(iValue);
+}
+
 void UIGraphicsScrollArea::scrollBy(int iDelta)
 {
     m_pScrollBar->setValue(m_pScrollBar->value() + iDelta);
