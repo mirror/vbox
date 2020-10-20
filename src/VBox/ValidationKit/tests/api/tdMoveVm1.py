@@ -144,6 +144,10 @@ class SubTstDrvMoveVm1(base.SubTestDriverBase):
         """
         fRc = True
         try:
+
+            ## @todo r=bird: Too much unncessary crap inside try clause.  Only oVM.moveTo needs to be here.
+            ##               Though, you could make an argument for oVM.name too, perhaps.
+
             # move machine
             reporter.log('Moving machine "%s" to the "%s"' % (oVM.name, sLocation))
             sType = 'basic'
@@ -231,7 +235,7 @@ class SubTstDrvMoveVm1(base.SubTestDriverBase):
                     reporter.log('Item location "%s" isn\'t correct' % (eachItem))
 
                 reporter.log('####### Reference locations: #######')
-                for eachItem in aReferences:
+                for eachItem in aActuals:
                     reporter.log(' "%s"' % (eachItem))
 
                 if len(intersection) != len(aActuals):

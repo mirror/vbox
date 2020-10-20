@@ -711,9 +711,7 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
         ComObjPtr<Progress> progress;
         try
         {
-            alock.release();
             rc = i_writeCloudImpl(m->locInfo, progress);
-            alock.acquire();
         }
         catch (HRESULT aRC)
         {
@@ -884,8 +882,6 @@ HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aL
 
 HRESULT Appliance::i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
-    HRESULT hrc = S_OK;
-
     for (list<ComObjPtr<VirtualSystemDescription> >::const_iterator
          it = m->virtualSystemDescriptions.begin();
          it != m->virtualSystemDescriptions.end();
@@ -900,44 +896,17 @@ HRESULT Appliance::i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Prog
             ++itSkipped;
         }
 
-        //Detect bootable disk and remove others from the VirtualSystemDescription
-        ComPtr<IMedium> pBootableMedium;
-        hrc = i_findFirstBootableImage(pBootableMedium, vsdescThis->m->pMachine);
-
-        if (FAILED(hrc)) 
-            throw hrc;
-        if (pBootableMedium.isNull())
-            throw hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("Could not find any bootable disk"));
-
-        ComPtr<IMedium> pBootableBaseMedium;
-        // returns pBootableMedium if there are no diff images
-        hrc = pBootableMedium->COMGETTER(Base)(pBootableBaseMedium.asOutParam());
-        if (FAILED(hrc)) 
-            throw hrc;
-
-        //Get base bootable disk location
-        Bstr bstrBootLocation;
-        hrc = pBootableBaseMedium->COMGETTER(Location)(bstrBootLocation.asOutParam());
-        if (FAILED(hrc)) throw hrc;
-        Utf8Str strBootLocation = bstrBootLocation;
-
+        //remove all disks from the VirtualSystemDescription exept one
         skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
         itSkipped = skipped.begin();
+
+        Utf8Str strBootLocation;
         while (itSkipped != skipped.end())
         {
-            Utf8Str path = (*itSkipped)->strVBoxCurrent;
-            // Locate the Medium object for this entry (by location/path).
-            Log(("Finding disk \"%s\"\n", path.c_str()));
-            ComObjPtr<Medium> ptrSourceDisk;
-            hrc = mVirtualBox->i_findHardDiskByLocation(path, true , &ptrSourceDisk);
-            if (FAILED(hrc)) 
-                throw hrc;
-
-            if (!path.equalsIgnoreCase(strBootLocation))
-                (*itSkipped)->skipIt = true;
+            if (strBootLocation.isEmpty())
+                strBootLocation = (*itSkipped)->strVBoxCurrent;
             else
-                LogRel(("Possible bootable disk \"%s\"\n", path.c_str()));
-
+                (*itSkipped)->skipIt = true;
             ++itSkipped;
         }
 
@@ -962,7 +931,7 @@ HRESULT Appliance::i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Prog
     }
 
     // Create a progress object here otherwise Task won't be created successfully
-    hrc = aProgress.createObject();
+    HRESULT hrc = aProgress.createObject();
     if (SUCCEEDED(hrc))
     {
         if (aLocInfo.strProvider.equals("OCI"))

@@ -519,7 +519,6 @@ protected:
 
 /**
  * RHEL 7 installer (same as RHEL 6).
- * The class was added for better handling any possible subtle difference between RHEL6 and RHEL7.
  */
 class UnattendedRhel7Installer : public UnattendedRhel6Installer
 {
@@ -540,7 +539,6 @@ public:
 
 /**
  * RHEL 8 installer (same as RHEL 7).
- * The class was added for better handling any possible subtle difference between RHEL7 and RHEL8.
  */
 class UnattendedRhel8Installer : public UnattendedRhel7Installer
 {
@@ -606,9 +604,7 @@ public:
 
 
 /**
- * Oracle Linux 6 installer. 
- * (same as RHEL 6, except for the templates). 
- * The reason of adding new class is to sepatate the RHEL from OL.
+ * Oracle Linux 6 installer.
  */
 class UnattendedOracleLinux6Installer : public UnattendedRhel6Installer
 {
@@ -624,8 +620,7 @@ public:
 
 
 /**
- * Oracle Linux 7 installer. Same as OL 6.
- * The class was added for better handling any possible subtle difference between OL6 and OL7.
+ * Oracle Linux 7 installer.
  */
 class UnattendedOracleLinux7Installer : public UnattendedOracleLinux6Installer
 {
@@ -645,8 +640,7 @@ public:
 
 
 /**
- * Oracle Linux 8 installer. Same as OL 7.
- * The class was added for better handling any possible subtle difference between OL7 and OL8.
+ * Oracle Linux 8 installer.
  */
 class UnattendedOracleLinux8Installer : public UnattendedOracleLinux7Installer
 {

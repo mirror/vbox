@@ -156,7 +156,6 @@ public:
     static DECLCALLBACK(int) i_iprtProgressCallback(unsigned uPercentage, void *pvUser);
     static DECLCALLBACK(int) i_vdProgressCallback(void *pvUser, unsigned uPercentage);
 
-    HRESULT i_addOperations(ULONG cOperations, ULONG ulTotalOperationsWeight);
 protected:
     DECLARE_EMPTY_CTOR_DTOR(Progress)
 

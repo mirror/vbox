@@ -25,7 +25,6 @@
 #include <iprt/cpp/utils.h>
 #include <VBox/com/array.h>
 #include <map>
-#include <stack>
 
 #include "ApplianceImpl.h"
 #include "VFSExplorerImpl.h"
@@ -1407,113 +1406,6 @@ DECLCALLBACK(int) Appliance::TaskCloud::updateProgress(unsigned uPercent, void *
         pTask->pProgress->SetCurrentOperationProgress(uPercent);
     }
     return VINF_SUCCESS;
-}
-
-HRESULT Appliance::i_findFirstBootableImage(ComPtr<IMedium>& bootMedium, const ComPtr<IMachine> &pMachine)
-{
-    HRESULT hrc = S_OK;
-    LogFlowFuncEnter();
-
-    const ComPtr<IMachine> &baseMachine = pMachine;
-    try
-    {
-        /* Fetch all available storage controllers */
-        com::SafeIfaceArray<IStorageController> aStorageControllers;
-//      AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        hrc = baseMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers));
-//      alock.release();
-        bool fBootMediumFound = false;
-        ComPtr<IMedium> ptrBootMedium;
-        std::stack <StorageBus_T> aBuses;
-        //insert buses in priority StorageBus_IDE - highest, StorageBus_SAS - lowest
-        aBuses.push(StorageBus_SAS);
-        aBuses.push(StorageBus_SCSI);
-        aBuses.push(StorageBus_SATA);
-        aBuses.push(StorageBus_IDE);
-
-        while (!aBuses.empty())
-        {
-            Bstr    bstrControllerName;
-            Utf8Str strControllerName;
-            ComPtr<IStorageController> sc;
-            StorageBus_T eTargetStorageBusType = aBuses.top();
-            StorageBus_T eSourceStorageBusType;
-            bool f = false;
-
-            for (size_t i=0; i<aStorageControllers.size(); ++i)
-            {
-                sc = aStorageControllers[i];
-                sc->COMGETTER(Name)(bstrControllerName.asOutParam());
-                sc->COMGETTER(Bus)(&eSourceStorageBusType);
-                if (eSourceStorageBusType == eTargetStorageBusType)
-                {
-                    f = true;
-                    break;
-                }
-            }
-
-            if (!f)
-            {
-                aBuses.pop();
-                continue;
-            }
-
-            com::SafeIfaceArray<IMediumAttachment> aMediumAttachments;
-            hrc = baseMachine->GetMediumAttachmentsOfController(bstrControllerName.raw(),
-                                                                ComSafeArrayAsOutParam(aMediumAttachments));
-
-            strControllerName = bstrControllerName;
-            AssertLogRelReturn(strControllerName.isNotEmpty(), setErrorBoth(E_UNEXPECTED, VERR_INTERNAL_ERROR_2));
-
-            for (size_t j = 0; j < aMediumAttachments.size(); j++)
-            {
-                //some checks just in case
-                LONG iPort = -1;
-                hrc = aMediumAttachments[j]->COMGETTER(Port)(&iPort);
-                AssertComRCReturn(hrc, hrc);
-
-                LONG iDevice = -1;
-                hrc = aMediumAttachments[j]->COMGETTER(Device)(&iDevice);
-                AssertComRCReturn(hrc, hrc);
-
-                DeviceType_T enmType;
-                hrc = aMediumAttachments[j]->COMGETTER(Type)(&enmType);
-                AssertComRCReturn(hrc, hrc);
-
-                if (enmType == DeviceType_HardDisk)
-                {
-                    ComPtr<IMedium> ptrMedium;
-                    hrc = aMediumAttachments[j]->COMGETTER(Medium)(ptrMedium.asOutParam());
-                    AssertComRCReturn(hrc, hrc);
-
-                    if (ptrMedium.isNotNull())
-                    {
-                        ptrBootMedium = ptrMedium;
-                        fBootMediumFound = true;
-                        break;
-                    }
-                }
-            }
-
-            if (fBootMediumFound)
-            {
-                hrc = S_OK;
-                break;
-            }
-            else
-                aBuses.pop();
-        }
-
-        if (ptrBootMedium != NULL && !ptrBootMedium.isNull())
-            ptrBootMedium.queryInterfaceTo(bootMedium.asOutParam());
-    }
-    catch (HRESULT erc)
-    {
-        hrc = setError(erc, tr("Exception during finding a bootable disk "));
-    }
-
-    LogFlowFuncLeave();
-    return hrc;
 }
 
 void i_parseURI(Utf8Str strUri, LocationInfo &locInfo)

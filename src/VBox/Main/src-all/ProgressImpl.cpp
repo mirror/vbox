@@ -320,13 +320,6 @@ void Progress::uninit()
 
 
 // public methods only for internal purposes
- 
-HRESULT Progress::i_addOperations(ULONG cOperations, ULONG ulTotalOperationsWeight)
-{
-    m_cOperations += cOperations;
-    m_ulTotalOperationsWeight += ulTotalOperationsWeight;
-    return S_OK;
-}
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -1065,7 +1058,7 @@ HRESULT Progress::setNextOperation(const com::Utf8Str &aNextOperationDescription
     m_ulCurrentOperationWeight = aNextOperationsWeight;
     m_ulOperationPercent = 0;
 
-    LogRel(("%s: aNextOperationsWeight = %d; m_ulCurrentOperation is now %d, m_ulOperationsCompletedWeight is now %d\n",
+    LogThisFunc(("%s: aNextOperationsWeight = %d; m_ulCurrentOperation is now %d, m_ulOperationsCompletedWeight is now %d\n",
                  m_operationDescription.c_str(), aNextOperationsWeight, m_ulCurrentOperation, m_ulOperationsCompletedWeight));
 
     /* wake up all waiting threads */
