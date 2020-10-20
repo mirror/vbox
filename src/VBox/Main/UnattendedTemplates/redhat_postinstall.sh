@@ -177,9 +177,9 @@ log_command_in_target yum -y install "kernel-headers-$(uname -r)"
 log_command_in_target yum -y install gcc
 log_command_in_target yum -y install binutils
 log_command_in_target yum -y install make
-@@VBOX_GUEST_OS_COND_VERSION@@**8.0.0**
+@@VBOX_COND_GUEST_VERSION[>8.0.0]@@
 log_command_in_target yum -y install elfutils-libelf-devel
-@@VBOX_GUEST_OS_COND_END@@
+@@VBOX_COND_END@@
 log_command_in_target yum -y install dkms
 log_command_in_target yum -y install make
 log_command_in_target yum -y install bzip2

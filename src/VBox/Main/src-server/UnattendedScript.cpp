@@ -58,8 +58,6 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
     static const char s_szPrefixInsert[]   = "@@VBOX_INSERT_";
     static const char s_szPrefixCond[]     = "@@VBOX_COND_";
     static const char s_szPrefixCondEnd[]  = "@@VBOX_COND_END@@";
-    static const char s_szPrefixCondGuestOs[]     = "@@VBOX_GUEST_OS_COND_";
-    static const char s_szPrefixCondGuestOsEnd[]  = "@@VBOX_GUEST_OS_COND_END@@";
 
     struct
     {
@@ -70,7 +68,6 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
     HRESULT     hrc         = E_FAIL;
     size_t      offTemplate = 0;
     size_t      cchTemplate = mStrScriptFullContent.length();
-    size_t      cchInternalCorrect = 0;//used in logic handling the placeholder @@VBOX_GUEST_OS_COND_XXX@@
     rStrDst.setNull();
     for (;;)
     {
@@ -85,7 +82,7 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
             {
                 try
                 {
-                    rStrDst.append(mStrScriptFullContent, offTemplate + cchInternalCorrect, cchToCopy - + cchInternalCorrect);
+                    rStrDst.append(mStrScriptFullContent, offTemplate , cchToCopy);
                 }
                 catch (std::bad_alloc &)
                 {
@@ -94,7 +91,6 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
                 }
             }
             offTemplate += cchToCopy;
-            cchInternalCorrect = 0;//don't forget to reset
         }
 
         /*
@@ -111,6 +107,11 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
             while (   offPlaceholder + cchPlaceholder < cchTemplate
                    && (ch = pszPlaceholder[cchPlaceholder]) != '\0'
                    && (   ch == '_'
+                       || ch == '['
+                       || ch == ']'
+                       || ch == '.'
+                       || ch == '>'
+                       || ch == '<'
                        || RT_C_IS_UPPER(ch)
                        || RT_C_IS_DIGIT(ch)) )
                 cchPlaceholder++;
@@ -127,8 +128,7 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
             if (   pszPlaceholder[cchPlaceholder - 1] != '@'
                 || pszPlaceholder[cchPlaceholder - 2] != '@'
                 || (   strncmp(pszPlaceholder, s_szPrefixInsert, sizeof(s_szPrefixInsert) - 1) != 0
-                    && strncmp(pszPlaceholder, s_szPrefixCond,   sizeof(s_szPrefixCond)   - 1) != 0
-                    && strncmp(pszPlaceholder, s_szPrefixCondGuestOs,   sizeof(s_szPrefixCondGuestOs) - 1) != 0) )
+                    && strncmp(pszPlaceholder, s_szPrefixCond,   sizeof(s_szPrefixCond)   - 1) != 0 ) )
             {
                 hrc = mpSetError->setError(E_FAIL, mpSetError->tr("Malformed template placeholder '%.*s'"),
                                            cchPlaceholder, pszPlaceholder);
@@ -187,65 +187,14 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
              * @@VBOX_COND_XXX@@: Push the previous outputting state and combine it with the
              *                    one from the condition.
              */
-            else if ( strncmp(pszPlaceholder, s_szPrefixCond, sizeof(s_szPrefixCond) - 1U) == 0 )
+            else
             {
+                Assert(strncmp(pszPlaceholder, s_szPrefixCond, sizeof(s_szPrefixCond) - 1) == 0);
                 if (cConds + 1 < RT_ELEMENTS(aConds))
                 {
                     aConds[cConds].fSavedOutputting = fOutputting;
                     bool fNewOutputting = fOutputting;
                     hrc = getConditional(pszPlaceholder, cchPlaceholder, &fNewOutputting);
-                    if (SUCCEEDED(hrc))
-                        fOutputting = fOutputting && fNewOutputting;
-                    else
-                        break;
-                    cConds++;
-                }
-                else
-                {
-                    hrc = mpSetError->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
-                                                   mpSetError->tr("Too deep conditional nesting at offset %zu (%#zx)"),
-                                                   offPlaceholder, offPlaceholder);
-                    break;
-                }
-            }
-            /*
-             * @@VBOX_GUEST_OS_COND_END@@: Pop one item of the conditional stack.
-             */
-            else if ( strncmp(pszPlaceholder, s_szPrefixCondGuestOsEnd, sizeof(s_szPrefixCondGuestOsEnd) - 1U) == 0 )
-            {
-                if (cConds > 0)
-                {
-                    cConds--;
-                    fOutputting = aConds[cConds].fSavedOutputting;
-                }
-                else
-                {
-                    hrc = mpSetError->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
-                                                   mpSetError->tr("%s without @@VBOX_GUEST_OS_COND_XXX@@ at offset %zu (%#zx)"),
-                                                   s_szPrefixCondGuestOsEnd, offPlaceholder, offPlaceholder);
-                    break;
-                }
-            }
-            /*
-             * @@VBOX_GUEST_OS_COND_XXX@@: Push the previous outputting state and combine it with the
-             *                             one from the condition.
-             */
-            else
-            {
-                Assert(strncmp(pszPlaceholder, s_szPrefixCondGuestOs, sizeof(s_szPrefixCondGuestOs) - 1) == 0);
-                if (cConds + 1 < RT_ELEMENTS(aConds))
-                {
-                    aConds[cConds].fSavedOutputting = fOutputting;
-                    bool fNewOutputting = fOutputting;
-
-                    //offTemplate is the beginning of content, offEndContent is the end of content
-                    //@@PLACEHOLDER_BEGIN@@Content@@PLACEHOLDER_END@@
-                    //                    ^       ^
-                    //                    |       |
-                    //             offTemplate  offEndContent
-                    size_t offEndContent = mStrScriptFullContent.find(s_szPrefix, offTemplate);
-                    size_t cchContent = offEndContent - offTemplate - 1;
-                    hrc = getGuestOSConditional(pszPlaceholder, cchPlaceholder, cchContent, &cchInternalCorrect, &fNewOutputting);
                     if (SUCCEEDED(hrc))
                         fOutputting = fOutputting && fNewOutputting;
                     else
@@ -498,92 +447,13 @@ HRESULT UnattendedScriptTemplate::getUnescapedReplacement(const char *pachPlaceh
 #undef IS_PLACEHOLDER_MATCH
 }
 
-HRESULT UnattendedScriptTemplate::getGuestOSConditional(const char *pachPlaceholder,
-                                                        size_t cchPlaceholder,
-                                                        size_t cchContent,
-                                                        size_t *cchCorrect,
-                                                        bool *pfOutputting)
-{
-#define IS_PLACEHOLDER_MATCH(a_szMatch) \
-        (   cchPlaceholder == sizeof("@@VBOX_GUEST_OS_COND_" a_szMatch "@@") - 1U \
-         && memcmp(pachPlaceholder, "@@VBOX_GUEST_OS_COND_" a_szMatch "@@", sizeof("@@VBOX_GUEST_OS_COND_" a_szMatch "@@") - 1U) == 0)
-
-    if ( IS_PLACEHOLDER_MATCH("VERSION") )
-    {
-        Utf8Str strT(pachPlaceholder + cchPlaceholder, cchContent);
-        RTCList<RTCString> partList = strT.split("**");
-        Utf8Str strRequiredOSVersion;
-        if (partList.size() == 2)//when the version is placed together with the placeholder in one line in the file
-        {
-            //The case when the string has been splitted on the 2 parts:
-            //1. OS version
-            //2. Actual content
-            strRequiredOSVersion.assign(partList.at(0));
-            //cchCorrect = "**" + length of OS version string + "**"
-            *cchCorrect = 2 + partList.at(0).length() + 2;// must be subtracted from the cchContent
-        }
-        else if (partList.size() == 3)//when the version is placed on a standalone line in the file
-        {
-            //The case when the string has been splitted on the 3 parts:
-            //1. Empty string or string with only "\n"
-            //2. OS version
-            //3. Actual content
-            strRequiredOSVersion.assign(partList.at(1));
-            *cchCorrect = 2 + partList.at(0).length() + partList.at(1).length() + 2;// must be subtracted from the cchContent
-        }
-        else//case with wrong string syntax
-        {
-            *cchCorrect = 0;
-            *pfOutputting = false;
-            LogRel(("Malformed content of the template @@VBOX_GUEST_OS_COND_VERSION@@\n"));
-            return S_OK;
-        }
-
-        if (strRequiredOSVersion.isEmpty())
-            *pfOutputting = false;
-        else
-        {
-            Utf8Str strDetectedOSVersion = mpUnattended->i_getDetectedOSVersion();
-            RTCList<RTCString> partListRequired = strRequiredOSVersion.split(".");
-            RTCList<RTCString> partListDetected = strDetectedOSVersion.split(".");
-            *pfOutputting = false;//initially is set to "false"
-
-            /** @todo r=vvp: Should we check the string with a requested OS version for digits?
-             *        (with RTLocCIsDigit()) */
-            //Major version must be presented
-            if ( partListDetected.at(0).toUInt32() >= partListRequired.at(0).toUInt32() )//comparison major versions
-            {
-                //OS major versions are equal or detected guest OS major version is greater. Go further.
-                if (partListDetected.size() > 1 && partListRequired.size() > 1)//comparison minor versions
-                {
-                    if (partListDetected.at(1).toUInt32() >= partListRequired.at(1).toUInt32())
-                        //OS minor versions are equal or detected guest OS minor version is greater. Go further.
-                        *pfOutputting = true;
-                    else
-                        //The detected guest OS minor version is less than the requested one.
-                        *pfOutputting = false;
-                }
-                else
-                    //OS minor versions are absent.
-                    *pfOutputting = true;
-            }
-            else
-                //The detected guest OS major version is less than the requested one.
-                *pfOutputting = false;
-        }
-    }
-    else
-        return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, mpSetError->tr("Unknown conditional placeholder '%.*s'"),
-                                        cchPlaceholder, pachPlaceholder);
-    return S_OK;
-#undef IS_PLACEHOLDER_MATCH
-}
-
 HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, size_t cchPlaceholder, bool *pfOutputting)
 {
 #define IS_PLACEHOLDER_MATCH(a_szMatch) \
         (   cchPlaceholder == sizeof("@@VBOX_COND_" a_szMatch "@@") - 1U \
          && memcmp(pachPlaceholder, "@@VBOX_COND_" a_szMatch "@@", sizeof("@@VBOX_COND_" a_szMatch "@@") - 1U) == 0)
+#define IS_PLACEHOLDER_PARTIALLY_MATCH(a_szMatch) \
+	 	(memcmp(pachPlaceholder, "@@VBOX_COND_" a_szMatch, sizeof("@@VBOX_COND_" a_szMatch) - 1U) == 0)
 
     /* Install Guest Additions: */
     if (IS_PLACEHOLDER_MATCH("IS_INSTALLING_ADDITIONS"))
@@ -622,6 +492,38 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
         *pfOutputting = !mpUnattended->i_isRtcUsingUtc();
     else if (IS_PLACEHOLDER_MATCH("HAS_PROXY"))
         *pfOutputting = mpUnattended->i_getProxy().isNotEmpty();
+    else if (IS_PLACEHOLDER_PARTIALLY_MATCH("GUEST_VERSION"))
+    {
+        //parse the placeholder and extract the OS version from there
+        RTCString strPlaceHolder(pachPlaceholder);
+        size_t startPos = sizeof("@@VBOX_COND_GUEST_VERSION") - 1;//-1 is for '\n'
+        size_t endPos = strPlaceHolder.find("@@", startPos + 2);
+        //next part should look like [>8.0.0] for example where:
+        // - "[,]" is just the brackets to wrap up the condition;
+        // - ">" is "greater". Also possible comparison is "<";
+        // - 8.0.0 is required guest OS version.
+        //The end of placeholder is "@@" like for others.
+
+        if ( strPlaceHolder[endPos] == '@'
+             && strPlaceHolder[endPos+1] == '@' )
+        {
+            if ( strPlaceHolder[startPos++] == '[' && strPlaceHolder[--endPos] == ']' )
+            {
+                char chComp = strPlaceHolder[startPos++];
+                RTCString strRequiredOSVersion = strPlaceHolder.substr(startPos, endPos - startPos);
+                RTCString strDetectedOSVersion = mpUnattended->i_getDetectedOSVersion();
+                int res = RTStrVersionCompare(strDetectedOSVersion.c_str(), strRequiredOSVersion.c_str());
+                if ( res >= 0 && chComp == '>' )
+                        *pfOutputting = true;
+                else if ( res < 0 && chComp == '<' )
+                        *pfOutputting = true;
+                else
+                    *pfOutputting = false;
+            }
+        }
+        else
+            *pfOutputting = false;//initially is set to "false"
+    }
     else
         return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, mpSetError->tr("Unknown conditional placeholder '%.*s'"),
                                         cchPlaceholder, pachPlaceholder);
