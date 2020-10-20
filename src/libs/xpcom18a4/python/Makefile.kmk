@@ -205,7 +205,11 @@ endif
 #
 # Unversioned Python 2.x.
 #
- if defined(VBOX_PYTHON27_INC) || defined(VBOX_PYTHON26_INC)
+# Note! No python LIBS here as we don't want to depend on any specific python
+#       version in a generic extension module.
+#
+ if (defined(VBOX_PYTHON27_INC) || defined(VBOX_PYTHON26_INC)) && "$(KBUILD_TARGET)" != "darwin"
+
 DLLS += VBoxPython2
 VBoxPython2_EXTENDS    = VBoxPythonBase
 VBoxPython2_EXTENDS_BY = appending
@@ -217,39 +221,28 @@ VBoxPython2_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBO
   endif
   if defined(VBOX_PYTHON26_INC)
 VBoxPython2_INCS       = $(VBOX_PYTHON26_INC)
-   ifn1of ($(KBUILD_TARGET), linux)
-VBoxPython2_LIBS       = $(VBOX_PYTHON26_LIB)
-   endif
   else
 VBoxPython2_INCS       = $(VBOX_PYTHON27_INC)
-   ifn1of ($(KBUILD_TARGET), linux)
-VBoxPython2_LIBS       = $(VBOX_PYTHON27_LIB)
-   endif
   endif
- endif
 
- if defined(VBOX_WITH_32_ON_64_MAIN_API) && (defined(VBOX_PYTHON27_LIB_X86) || defined(VBOX_PYTHON26_INC_X86))
+  if defined(VBOX_WITH_32_ON_64_MAIN_API) && (defined(VBOX_PYTHON26LIB_X86) || defined(VBOX_PYTHON27LIB_X86))
 DLLS += VBoxPython2_x86
 VBoxPython2_x86_EXTENDS    = VBoxPythonBase_x86
 VBoxPython2_x86_EXTENDS_BY = appending
-VBoxPython2_x86_DEFS       = VBOX_PYXPCOM_MAJOR_VERSIONED $(VBoxPythonBase_x86_DEFS)
-  ifdef KMK_WITH_VERSION_COMPARE
+VBoxPython2_x86_DEFS       = VBOX_PYXPCOM_MAJOR_VERSIONED
+   ifdef KMK_WITH_VERSION_COMPARE
 VBoxPython2_x86_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vle "10.7",OSX107,-x86)
-  else
+   else
 VBoxPython2_x86_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.7" && "$(length-var VBOX_DEF_MACOSX_VERSION_MIN)" == "4",OSX107,-x86)
-  endif
-  if defined(VBOX_PYTHON26LIB_X86)
+   endif
+   if defined(VBOX_PYTHON26LIB_X86)
 VBoxPython2_x86_INCS       = $(VBOX_PYTHON26_INC)
-   ifn1of ($(KBUILD_TARGET), linux)
-VBoxPython2_x86_LIBS       = $(VBOX_PYTHON26_LIB_X86)
-   endif
-  else
+   else
 VBoxPython2_x86_INCS       = $(VBOX_PYTHON27_INC)
-   ifn1of ($(KBUILD_TARGET), linux)
-VBoxPython2_x86_LIBS       = $(VBOX_PYTHON27_LIB_X86)
    endif
   endif
- endif
+
+ endif # (defined(VBOX_PYTHON27_INC) || defined(VBOX_PYTHON26_INC)) && "$(KBUILD_TARGET)" != "darwin"
 
 
 ifdef VBOX_PYTHON31_INC
