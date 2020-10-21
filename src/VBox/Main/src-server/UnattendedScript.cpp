@@ -453,7 +453,7 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
         (   cchPlaceholder == sizeof("@@VBOX_COND_" a_szMatch "@@") - 1U \
          && memcmp(pachPlaceholder, "@@VBOX_COND_" a_szMatch "@@", sizeof("@@VBOX_COND_" a_szMatch "@@") - 1U) == 0)
 #define IS_PLACEHOLDER_PARTIALLY_MATCH(a_szMatch) \
-	 	(memcmp(pachPlaceholder, "@@VBOX_COND_" a_szMatch, sizeof("@@VBOX_COND_" a_szMatch) - 1U) == 0)
+        (memcmp(pachPlaceholder, "@@VBOX_COND_" a_szMatch, sizeof("@@VBOX_COND_" a_szMatch) - 1U) == 0)
 
     /* Install Guest Additions: */
     if (IS_PLACEHOLDER_MATCH("IS_INSTALLING_ADDITIONS"))
