@@ -231,7 +231,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, 
 {
     uint32_t const uIoPortFirst = uIoPort;
     uint32_t const uIoPortLast  = uIoPortFirst + cbValue - 1;
- 
+
     /*
      * Check hyper breakpoints first as the VMM debugger has priority over
      * the guest.
