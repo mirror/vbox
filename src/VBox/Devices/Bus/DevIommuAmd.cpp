@@ -321,6 +321,12 @@ typedef struct IOMMU
     STAMCOUNTER             StatMemWriteR3;             /**< Number of memory write translation requests in R3. */
     STAMCOUNTER             StatMemWriteRZ;             /**< Number of memory write translation requests in RZ. */
 
+    STAMCOUNTER             StatMemBulkReadR3;          /**< Number of memory read bulk translation requests in R3. */
+    STAMCOUNTER             StatMemBulkReadRZ;          /**< Number of memory read bulk translation requests in RZ. */
+
+    STAMCOUNTER             StatMemBulkWriteR3;         /**< Number of memory read bulk translation requests in R3. */
+    STAMCOUNTER             StatMemBulkWriteRZ;         /**< Number of memory read bulk translation requests in RZ. */
+
     STAMCOUNTER             StatCmd;                    /**< Number of commands processed. */
     STAMCOUNTER             StatCmdCompWait;            /**< Number of Completion Wait commands processed. */
     STAMCOUNTER             StatCmdInvDte;              /**< Number of Invalidate DTE commands processed. */
@@ -3060,92 +3066,147 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
 
 
 /**
- * Memory read request from a device.
+ * Memory access transaction from a device.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
  * @param   uDevId      The device ID (bus, device, function).
- * @param   uIova       The I/O virtual address being read.
- * @param   cbRead      The number of bytes being read.
+ * @param   uIova       The I/O virtual address being accessed.
+ * @param   cbAccess    The number of bytes being accessed.
+ * @param   fFlags      The access flags, see PDMIOMMU_MEM_F_XXX.
  * @param   pGCPhysSpa  Where to store the translated system physical address.
  *
  * @thread  Any.
  */
-static DECLCALLBACK(int) iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbRead,
-                                               PRTGCPHYS pGCPhysSpa)
+static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
+                                                 uint32_t fFlags, PRTGCPHYS pGCPhysSpa)
 {
     /* Validate. */
-    Assert(pDevIns);
-    Assert(pGCPhysSpa);
-    Assert(cbRead > 0);
+    AssertPtr(pDevIns);
+    AssertPtr(pGCPhysSpa);
+    Assert(cbAccess > 0);
+    Assert(!(fFlags & ~PDMIOMMU_MEM_F_VALID_MASK));
 
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-
-    /* Addresses are forwarded without translation when the IOMMU is disabled. */
+    PIOMMU  pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
     if (Ctrl.n.u1IommuEn)
     {
-        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
-        LogFunc(("uDevId=%#x uIova=%#RX64 cbRead=%u\n", uDevId, uIova, cbRead));
+        IOMMUOP enmOp;
+        uint8_t fAccess;
+        if (fFlags & PDMIOMMU_MEM_F_READ)
+        {
+            enmOp   = IOMMUOP_MEM_READ;
+            fAccess = IOMMU_IO_PERM_READ;
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
+        }
+        else
+        {
+            Assert(fFlags & PDMIOMMU_MEM_F_WRITE);
+            enmOp   = IOMMUOP_MEM_WRITE;
+            fAccess = IOMMU_IO_PERM_WRITE;
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
+        }
+
+#ifdef LOG_ENABLED
+        static const char * const s_apszAccess[] = { "none", "read", "write" };
+        Assert(fAccess > 0 && fAccess < RT_ELEMENTS(s_apszAccess));
+        const char *pszAccess = s_apszAccess[fAccess];
+        LogFlowFunc(("uDevId=%#x uIova=%#RX64 szAccess=%s cbAccess=%zu\n", uDevId, uIova, pszAccess, cbAccess));
+#endif
 
         /** @todo IOMMU: IOTLB cache lookup. */
 
         /* Lookup the IOVA from the device table. */
-        int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbRead, IOMMU_IO_PERM_READ, IOMMUOP_MEM_READ, pGCPhysSpa);
+        int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbAccess, fAccess, enmOp, pGCPhysSpa);
         if (RT_SUCCESS(rc))
-            LogFlowFunc(("uDevId=%#x uIova=%#RX64 cRead=%u pGCPhysSpa=%#RGp\n", uDevId, uIova, cbRead, *pGCPhysSpa));
+        { /* likely */ }
         else
-            LogFunc(("Failed! uDevId=%#x uIova=%#RX64 cbWrite=%u rc=%Rrc\n", uDevId, uIova, cbRead, rc));
+            LogFunc(("DTE lookup failed! uDevId=%#x uIova=%#RX64 fAccess=%s cbAccess=%zu rc=%Rrc\n", uDevId, uIova, fAccess,
+                     cbAccess, rc));
         return rc;
     }
 
+    /* Addresses are forwarded without translation when the IOMMU is disabled. */
     *pGCPhysSpa = uIova;
     return VINF_SUCCESS;
 }
 
 
 /**
- * Memory write request from a device.
+ * Memory access bulk (one or more 4K pages) request from a device.
  *
  * @returns VBox status code.
- * @param   pDevIns     The IOMMU device instance.
- * @param   uDevId      The device ID (bus, device, function).
- * @param   uIova       The I/O virtual address being written.
- * @param   cbWrite     The number of bytes being written.
- * @param   pGCPhysSpa  Where to store the translated physical address.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   uDevId          The device ID (bus, device, function).
+ * @param   cPages          The number of pages being written.
+ * @param   pauIovas        The I/O virtual addresses for each page being accessed.
+ * @param   fFlags          The access flags, see PDMIOMMU_MEM_F_XXX.
+ * @param   paGCPhysSpa     Where to store the translated physical addresses.
  *
  * @thread  Any.
  */
-static DECLCALLBACK(int) iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite,
-                                                PRTGCPHYS pGCPhysSpa)
+static DECLCALLBACK(int) iommuAmdDeviceMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas,
+                                                     uint64_t const *pauIovas, uint32_t fFlags, PRTGCPHYS paGCPhysSpa)
 {
     /* Validate. */
-    Assert(pDevIns);
-    Assert(pGCPhysSpa);
-    Assert(cbWrite > 0);
+    AssertPtr(pDevIns);
+    Assert(cIovas > 0);
+    AssertPtr(pauIovas);
+    AssertPtr(paGCPhysSpa);
+    Assert(!(fFlags & ~PDMIOMMU_MEM_F_VALID_MASK));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-
-    /* Addresses are forwarded without translation when the IOMMU is disabled. */
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
     if (Ctrl.n.u1IommuEn)
     {
-        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
+        IOMMUOP enmOp;
+        uint8_t fAccess;
+        if (fFlags & PDMIOMMU_MEM_F_READ)
+        {
+            enmOp   = IOMMUOP_MEM_READ;
+            fAccess = IOMMU_IO_PERM_READ;
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkRead));
+        }
+        else
+        {
+            Assert(fFlags & PDMIOMMU_MEM_F_WRITE);
+            enmOp   = IOMMUOP_MEM_WRITE;
+            fAccess = IOMMU_IO_PERM_WRITE;
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkWrite));
+        }
+
+#ifdef LOG_ENABLED
+        static const char * const s_apszAccess[] = { "none", "read", "write" };
+        Assert(fAccess > 0 && fAccess < RT_ELEMENTS(s_apszAccess));
+        const char *pszAccess = s_apszAccess[fAccess];
+        LogFlowFunc(("uDevId=%#x cIovas=%zu szAccess=%s\n", uDevId, cIovas, pszAccess));
+#endif
 
         /** @todo IOMMU: IOTLB cache lookup. */
 
-        /* Lookup the IOVA from the device table. */
-        int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbWrite, IOMMU_IO_PERM_WRITE, IOMMUOP_MEM_WRITE, pGCPhysSpa);
-        if (RT_SUCCESS(rc))
-            LogFlowFunc(("uDevId=%#x uIova=%#RX64 cbWrite=%u pGCPhysSpa=%#RGp\n", uDevId, uIova, cbWrite, *pGCPhysSpa));
-        else
-            LogFunc(("Failed! uDevId=%#x uIova=%#RX64 cbWrite=%u rc=%Rrc\n", uDevId, uIova, cbWrite, rc));
-        return rc;
+        /* Lookup each IOVA from the device table. */
+        for (size_t i = 0; i < cIovas; i++)
+        {
+            int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, pauIovas[i], X86_PAGE_SIZE, fAccess, enmOp, &paGCPhysSpa[i]);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+            {
+                LogFunc(("Failed! uDevId=%#x uIova=%#RX64 fAccess=%u rc=%Rrc\n", uDevId, pauIovas[i], fAccess, rc));
+                return rc;
+            }
+        }
+    }
+    else
+    {
+        /* Addresses are forwarded without translation when the IOMMU is disabled. */
+        for (size_t i = 0; i < cIovas; i++)
+            paGCPhysSpa[i] = pauIovas[i];
     }
 
-    *pGCPhysSpa = uIova;
     return VINF_SUCCESS;
 }
+
 
 
 /**
@@ -4790,11 +4851,11 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      */
     PDMIOMMUREGR3 IommuReg;
     RT_ZERO(IommuReg);
-    IommuReg.u32Version  = PDM_IOMMUREGCC_VERSION;
-    IommuReg.pfnMemRead  = iommuAmdDeviceMemRead;
-    IommuReg.pfnMemWrite = iommuAmdDeviceMemWrite;
-    IommuReg.pfnMsiRemap = iommuAmdDeviceMsiRemap;
-    IommuReg.u32TheEnd   = PDM_IOMMUREGCC_VERSION;
+    IommuReg.u32Version       = PDM_IOMMUREGCC_VERSION;
+    IommuReg.pfnMemAccess     = iommuAmdDeviceMemAccess;
+    IommuReg.pfnMemBulkAccess = iommuAmdDeviceMemBulkAccess;
+    IommuReg.pfnMsiRemap      = iommuAmdDeviceMsiRemap;
+    IommuReg.u32TheEnd        = PDM_IOMMUREGCC_VERSION;
     int rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to register ourselves as an IOMMU device"));
@@ -4961,6 +5022,12 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemWriteR3,  STAMTYPE_COUNTER, "R3/MemWrite",  STAMUNIT_OCCURENCES, "Number of memory write translation requests in R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemWriteRZ,  STAMTYPE_COUNTER, "RZ/MemWrite",  STAMUNIT_OCCURENCES, "Number of memory write translation requests in RZ.");
 
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkReadR3,  STAMTYPE_COUNTER, "R3/MemBulkRead",  STAMUNIT_OCCURENCES, "Number of memory bulk read translation requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkReadRZ,  STAMTYPE_COUNTER, "RZ/MemBulkRead",  STAMUNIT_OCCURENCES, "Number of memory bulk read translation requests in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkWriteR3, STAMTYPE_COUNTER, "R3/MemBulkWrite", STAMUNIT_OCCURENCES, "Number of memory bulk write translation requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMemBulkWriteRZ, STAMTYPE_COUNTER, "RZ/MemBulkWrite", STAMUNIT_OCCURENCES, "Number of memory bulk write translation requests in RZ.");
+
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmd, STAMTYPE_COUNTER, "R3/Commands", STAMUNIT_OCCURENCES, "Number of commands processed (total).");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdCompWait, STAMTYPE_COUNTER, "R3/Commands/CompWait", STAMUNIT_OCCURENCES, "Number of Completion Wait commands processed.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdInvDte, STAMTYPE_COUNTER, "R3/Commands/InvDte", STAMUNIT_OCCURENCES, "Number of Invalidate DTE commands processed.");
@@ -5078,12 +5145,12 @@ static DECLCALLBACK(int) iommuAmdRZConstruct(PPDMDEVINS pDevIns)
     /* Set up the IOMMU RZ callbacks. */
     PDMIOMMUREGCC IommuReg;
     RT_ZERO(IommuReg);
-    IommuReg.u32Version  = PDM_IOMMUREGCC_VERSION;
-    IommuReg.idxIommu    = pThis->idxIommu;
-    IommuReg.pfnMemRead  = iommuAmdDeviceMemRead;
-    IommuReg.pfnMemWrite = iommuAmdDeviceMemWrite;
-    IommuReg.pfnMsiRemap = iommuAmdDeviceMsiRemap;
-    IommuReg.u32TheEnd   = PDM_IOMMUREGCC_VERSION;
+    IommuReg.u32Version       = PDM_IOMMUREGCC_VERSION;
+    IommuReg.idxIommu         = pThis->idxIommu;
+    IommuReg.pfnMemAccess     = iommuAmdDeviceMemAccess;
+    IommuReg.pfnMemBulkAccess = iommuAmdDeviceMemBulkAccess;
+    IommuReg.pfnMsiRemap      = iommuAmdDeviceMsiRemap;
+    IommuReg.u32TheEnd        = PDM_IOMMUREGCC_VERSION;
     rc = PDMDevHlpIommuSetUpContext(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp));
     AssertRCReturn(rc, rc);
 

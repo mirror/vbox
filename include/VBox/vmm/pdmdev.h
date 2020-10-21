@@ -1256,6 +1256,17 @@ typedef R3PTRTYPE(const PDMPCIHLPR3 *) PCPDMPCIHLPR3;
 #define PDM_PCIHLPR3_VERSION                    PDM_VERSION_MAKE(0xfffb, 5, 0)
 
 
+/** @name PDMIOMMU_MEM_F_XXX - IOMMU memory access transaction flags.
+ * These flags are used for memory access transactions via the IOMMU interface.
+ * @{ */
+/** Memory read. */
+#define PDMIOMMU_MEM_F_READ         RT_BIT_32(0)
+/** Memory write. */
+#define PDMIOMMU_MEM_F_WRITE        RT_BIT_32(1)
+/** Valid flag mask. */
+#define PDMIOMMU_MEM_F_VALID_MASK   (PDMIOMMU_MEM_F_READ | PDMIOMMU_MEM_F_WRITE)
+/** @} */
+
 /**
  * IOMMU registration structure for ring-0.
  */
@@ -1268,34 +1279,38 @@ typedef struct PDMIOMMUREGR0
     uint32_t            idxIommu;
 
     /**
-     * Translates the physical address for a memory read transaction through the IOMMU.
+     * Translates the physical address for a memory transaction through the IOMMU.
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
      * @param   uDevId      The device identifier (bus, device, function).
-     * @param   uIova       The I/O virtual address being read.
-     * @param   cbRead      The number of bytes being read.
+     * @param   uIova       The I/O virtual address being accessed.
+     * @param   cbAccess    The number of bytes being accessed.
+     * @param   fFlags      Access flags, see PDMIOMMU_MEM_F_XXX.
      * @param   pGCPhysSpa  Where to store the translated system physical address.
      *
      * @thread  Any.
      */
-    DECLR0CALLBACKMEMBER(int, pfnMemRead,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbRead,
-                                          PRTGCPHYS pGCPhysSpa));
+    DECLR0CALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
+                                            uint32_t fFlags, PRTGCPHYS pGCPhysSpa));
 
     /**
-     * Translates the physical address for a memory write transaction through the IOMMU.
+     * Translates in bulk physical page addresses for memory transactions through the
+     * IOMMU.
      *
      * @returns VBox status code.
-     * @param   pDevIns     The IOMMU device instance.
-     * @param   uDevId      The device identifier (bus, device, function).
-     * @param   uIova       The I/O virtual address being written.
-     * @param   cbRead      The number of bytes being written.
-     * @param   pGCPhysSpa  Where to store the translated system physical address.
+     * @param   pDevIns         The IOMMU device instance.
+     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   cIovas          The number of I/O virtual addresses being accessed.
+     * @param   pauIovas        The I/O virtual addresses being accessed.
+     * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
+     * @param   paGCPhysSpa     Where to store the translated system physical page
+     *                          addresses.
      *
      * @thread  Any.
      */
-    DECLR0CALLBACKMEMBER(int, pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite,
-                                           PRTGCPHYS pGCPhysSpa));
+    DECLR0CALLBACKMEMBER(int, pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+                                                uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
 
     /**
      * Performs an interrupt remap request through the IOMMU.
@@ -1317,7 +1332,7 @@ typedef struct PDMIOMMUREGR0
 typedef PDMIOMMUREGR0 *PPDMIOMMUREGR0;
 
 /** Current PDMIOMMUREG version number. */
-#define PDM_IOMMUREGR0_VERSION                      PDM_VERSION_MAKE(0xff10, 1, 0)
+#define PDM_IOMMUREGR0_VERSION                      PDM_VERSION_MAKE(0xff10, 2, 0)
 
 
 /**
@@ -1332,34 +1347,38 @@ typedef struct PDMIOMMUREGRC
     uint32_t            idxIommu;
 
     /**
-     * Translates the physical address for a memory read transaction through the IOMMU.
+     * Translates the physical address for a memory transaction through the IOMMU.
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
      * @param   uDevId      The device identifier (bus, device, function).
-     * @param   uIova       The I/O virtual address being read.
-     * @param   cbRead      The number of bytes being read.
+     * @param   uIova       The I/O virtual address being accessed.
+     * @param   cbAccess    The number of bytes being accessed.
+     * @param   fFlags      Access flags, see PDMIOMMU_MEM_F_XXX.
      * @param   pGCPhysSpa  Where to store the translated system physical address.
      *
      * @thread  Any.
      */
-    DECLRCCALLBACKMEMBER(int, pfnMemRead,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbRead,
-                                          PRTGCPHYS pGCPhysSpa));
+    DECLRCCALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
+                                            uint32_t fFlags, PRTGCPHYS pGCPhysSpa));
 
     /**
-     * Translates the physical address for a memory write transaction through the IOMMU.
+     * Translates in bulk physical page addresses for memory transactions through the
+     * IOMMU.
      *
      * @returns VBox status code.
-     * @param   pDevIns     The IOMMU device instance.
-     * @param   uDevId      The device identifier (bus, device, function).
-     * @param   uIova       The I/O virtual address being written.
-     * @param   cbRead      The number of bytes being written.
-     * @param   pGCPhysSpa  Where to store the translated system physical address.
+     * @param   pDevIns         The IOMMU device instance.
+     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   cIovas          The number of I/O virtual addresses being accessed.
+     * @param   pauIovas        The I/O virtual addresses being accessed.
+     * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
+     * @param   paGCPhysSpa     Where to store the translated system physical page
+     *                          addresses.
      *
      * @thread  Any.
      */
-    DECLRCCALLBACKMEMBER(int, pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite,
-                                           PRTGCPHYS pGCPhysSpa));
+    DECLRCCALLBACKMEMBER(int, pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+                                                uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
 
     /**
      * Performs an interrupt remap request through the IOMMU.
@@ -1381,7 +1400,7 @@ typedef struct PDMIOMMUREGRC
 typedef PDMIOMMUREGRC *PPDMIOMMUREGRC;
 
 /** Current PDMIOMMUREG version number. */
-#define PDM_IOMMUREGRC_VERSION                      PDM_VERSION_MAKE(0xff11, 1, 0)
+#define PDM_IOMMUREGRC_VERSION                      PDM_VERSION_MAKE(0xff11, 2, 0)
 
 
 /**
@@ -1396,34 +1415,38 @@ typedef struct PDMIOMMUREGR3
     uint32_t            uPadding0;
 
     /**
-     * Translates the physical address for a memory read transaction through the IOMMU.
+     * Translates the physical address for a memory transaction through the IOMMU.
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
      * @param   uDevId      The device identifier (bus, device, function).
-     * @param   uIova       The I/O virtual address being read.
-     * @param   cbRead      The number of bytes being read.
+     * @param   uIova       The I/O virtual address being accessed.
+     * @param   cbAccess    The number of bytes being accessed.
+     * @param   fFlags      Access flags, see PDMIOMMU_MEM_F_XXX.
      * @param   pGCPhysSpa  Where to store the translated system physical address.
      *
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMemRead,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbRead,
-                                          PRTGCPHYS pGCPhysSpa));
+    DECLR3CALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
+                                            uint32_t fFlags, PRTGCPHYS pGCPhysSpa));
 
     /**
-     * Translates the physical address for a memory write transaction through the IOMMU.
+     * Translates in bulk physical page addresses for memory transactions through the
+     * IOMMU.
      *
      * @returns VBox status code.
-     * @param   pDevIns     The IOMMU device instance.
-     * @param   uDevId      The device identifier (bus, device, function).
-     * @param   uIova       The I/O virtual address being written.
-     * @param   cbWrite     The number of bytes being written.
-     * @param   pGCPhysSpa  Where to store the translated system physical address.
+     * @param   pDevIns         The IOMMU device instance.
+     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   cIovas          The number of I/O virtual addresses being accessed.
+     * @param   pauIovas        The I/O virtual addresses being accessed.
+     * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
+     * @param   paGCPhysSpa     Where to store the translated system physical page
+     *                          addresses.
      *
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite,
-                                           PRTGCPHYS pGCPhysSpa));
+    DECLR3CALLBACKMEMBER(int, pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+                                                uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
 
     /**
      * Performs an interrupt remap request through the IOMMU.
@@ -1445,7 +1468,7 @@ typedef struct PDMIOMMUREGR3
 typedef PDMIOMMUREGR3 *PPDMIOMMUREGR3;
 
 /** Current PDMIOMMUREG version number. */
-#define PDM_IOMMUREGR3_VERSION                      PDM_VERSION_MAKE(0xff12, 1, 0)
+#define PDM_IOMMUREGR3_VERSION                      PDM_VERSION_MAKE(0xff12, 2, 0)
 
 /** IOMMU registration structure for the current context. */
 typedef CTX_SUFF(PDMIOMMUREG)  PDMIOMMUREGCC;
@@ -2263,7 +2286,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 44, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 45, 0)
 
 /**
  * PDM Device API.
@@ -3347,6 +3370,109 @@ typedef struct PDMDEVHLPR3
      * @thread  Any thread, but the call may involve the emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags));
+
+    /**
+     * Requests the mapping of a guest page into ring-3 in preparation for a bus master
+     * physical memory write operation.
+     *
+     * Refer pfnPhysGCPhys2CCPtr() for further details.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pPciDev     The PCI device structure.  If NULL the default
+     *                      PCI device for this device instance is used.
+     * @param   GCPhys      The guest physical address of the page that should be
+     *                      mapped.
+     * @param   fFlags      Flags reserved for future use, MBZ.
+     * @param   ppv         Where to store the address corresponding to GCPhys.
+     * @param   pLock       Where to store the lock information that
+     *                      pfnPhysReleasePageMappingLock needs.
+     *
+     * @remarks Avoid calling this API from within critical sections (other than the PGM
+     *          one) because of the deadlock risk when we have to delegating the task to
+     *          an EMT.
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPCIPhysGCPhys2CCPtr,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags,
+                                                      void **ppv, PPGMPAGEMAPLOCK pLock));
+
+    /**
+     * Requests the mapping of a guest page into ring-3, external threads, in prepartion
+     * for a bus master physical memory read operation.
+     *
+     * Refer pfnPhysGCPhys2CCPtrReadOnly() for further details.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pPciDev             The PCI device structure.  If NULL the default
+     *                              PCI device for this device instance is used.
+     * @param   GCPhys              The guest physical address of the page that
+     *                              should be mapped.
+     * @param   fFlags              Flags reserved for future use, MBZ.
+     * @param   ppv                 Where to store the address corresponding to
+     *                              GCPhys.
+     * @param   pLock               Where to store the lock information that
+     *                              pfnPhysReleasePageMappingLock needs.
+     *
+     * @remarks  Avoid calling this API from within critical sections.
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPCIPhysGCPhys2CCPtrReadOnly,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
+                                                              uint32_t fFlags, void const **ppv, PPGMPAGEMAPLOCK pLock));
+
+    /**
+     * Requests the mapping of multiple guest pages into ring-3 in prepartion for a bus
+     * master physical memory write operation.
+     *
+     * When you're done with the pages, call pfnPhysBulkReleasePageMappingLocks()
+     * ASAP to release them.
+     *
+     * Refer pfnPhysBulkGCPhys2CCPtr() for further details.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pPciDev             The PCI device structure.  If NULL the default
+     *                              PCI device for this device instance is used.
+     * @param   cPages              Number of pages to lock.
+     * @param   paGCPhysPages       The guest physical address of the pages that
+     *                              should be mapped (@a cPages entries).
+     * @param   fFlags              Flags reserved for future use, MBZ.
+     * @param   papvPages           Where to store the ring-3 mapping addresses
+     *                              corresponding to @a paGCPhysPages.
+     * @param   paLocks             Where to store the locking information that
+     *                              pfnPhysBulkReleasePageMappingLock needs (@a cPages
+     *                              in length).
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPCIPhysBulkGCPhys2CCPtr,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages,
+                                                          PCRTGCPHYS paGCPhysPages, uint32_t fFlags, void **papvPages,
+                                                          PPGMPAGEMAPLOCK paLocks));
+
+    /**
+     * Requests the mapping of multiple guest pages into ring-3 in preparation for a bus
+     * master physical memory read operation.
+     *
+     * When you're done with the pages, call pfnPhysBulkReleasePageMappingLocks()
+     * ASAP to release them.
+     *
+     * Refer pfnPhysBulkGCPhys2CCPtrReadOnly() for further details.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pPciDev             The PCI device structure.  If NULL the default
+     *                              PCI device for this device instance is used.
+     * @param   cPages              Number of pages to lock.
+     * @param   paGCPhysPages       The guest physical address of the pages that
+     *                              should be mapped (@a cPages entries).
+     * @param   fFlags              Flags reserved for future use, MBZ.
+     * @param   papvPages           Where to store the ring-3 mapping addresses
+     *                              corresponding to @a paGCPhysPages.
+     * @param   paLocks             Where to store the lock information that
+     *                              pfnPhysReleasePageMappingLock needs (@a cPages
+     *                              in length).
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPCIPhysBulkGCPhys2CCPtrReadOnly,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages,
+                                                                  PCRTGCPHYS paGCPhysPages, uint32_t fFlags,
+                                                                  void const **papvPages, PPGMPAGEMAPLOCK paLocks));
 
     /**
      * Sets the IRQ for the given PCI device.
@@ -7215,6 +7341,48 @@ DECLINLINE(int) PDMDevHlpPCIPhysWriteUserEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciD
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, PDM_DEVHLP_PHYS_RW_F_DATA_USER);
 }
+
+#ifdef IN_RING3
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIPhysGCPhys2CCPtr
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysGCPhys2CCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags,
+                                             void **ppv, PPGMPAGEMAPLOCK pLock)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysGCPhys2CCPtr(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIPhysGCPhys2CCPtrReadOnly
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags,
+                                                     void const **ppv, PPGMPAGEMAPLOCK pLock)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysGCPhys2CCPtrReadOnly(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIPhysBulkGCPhys2CCPtr
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysBulkGCPhys2CCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages,
+                                                 PCRTGCPHYS paGCPhysPages, uint32_t fFlags, void **papvPages,
+                                                 PPGMPAGEMAPLOCK paLocks)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysBulkGCPhys2CCPtr(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages,
+                                                               paLocks);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIPhysBulkGCPhys2CCPtrReadOnly
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysBulkGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages,
+                                                         PCRTGCPHYS paGCPhysPages, uint32_t fFlags, void const **papvPages,
+                                                         PPGMPAGEMAPLOCK paLocks)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysBulkGCPhys2CCPtrReadOnly(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags,
+                                                                       papvPages, paLocks);
+}
+#endif  /* IN_RING3 */
 
 /**
  * Sets the IRQ for the default PCI device.

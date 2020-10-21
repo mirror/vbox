@@ -697,12 +697,12 @@ typedef struct PDMIOMMU
 
     /** Pointer to the IOMMU device instance - R3. */
     PPDMDEVINSR3                pDevInsR3;
-    /** @copydoc PDMIOMMUREGR3::pfnMemRead */
-    DECLR3CALLBACKMEMBER(int,   pfnMemRead,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbRead,
-                                            PRTGCPHYS pGCPhysSpa));
-    /** @copydoc PDMIOMMUREGR3::pfnMemWrite */
-    DECLR3CALLBACKMEMBER(int,   pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbWrite,
-                                             PRTGCPHYS pGCPhysSpa));
+    /** @copydoc PDMIOMMUREGR3::pfnMemAccess */
+    DECLR3CALLBACKMEMBER(int,   pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbAccess,
+                                              uint32_t fFlags, PRTGCPHYS pGCPhysSpa));
+    /** @copydoc PDMIOMMUREGR3::pfnMemBulkAccess */
+    DECLR3CALLBACKMEMBER(int,   pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+                                                  uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
     /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
     DECLR3CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 } PDMIOMMU;
@@ -719,12 +719,12 @@ typedef struct PDMIOMMUR0
 
     /** Pointer to IOMMU device instance. */
     PPDMDEVINSR0                pDevInsR0;
-    /** @copydoc PDMIOMMUREGR0::pfnMemRead */
-    DECLR0CALLBACKMEMBER(int,   pfnMemRead,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbRead,
-                                            PRTGCPHYS pGCPhysSpa));
-    /** @copydoc PDMIOMMUREGR3::pfnMemWrite */
-    DECLR0CALLBACKMEMBER(int,   pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbWrite,
-                                             PRTGCPHYS pGCPhysSpa));
+    /** @copydoc PDMIOMMUREGR3::pfnMemAccess */
+    DECLR0CALLBACKMEMBER(int,   pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbAccess,
+                                              uint32_t fFlags, PRTGCPHYS pGCPhysSpa));
+    /** @copydoc PDMIOMMUREGR3::pfnMemBulkAccess */
+    DECLR0CALLBACKMEMBER(int,   pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+                                                  uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
     /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
     DECLR0CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 } PDMIOMMUR0;

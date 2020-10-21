@@ -164,7 +164,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV 
 
         RTGCPHYS GCPhysOut;
         uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemRead(pDevInsIommu, uDeviceId, GCPhys, cbRead, &GCPhysOut);
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut);
         if (RT_SUCCESS(rc))
             GCPhys = GCPhysOut;
         else
@@ -218,7 +218,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV
 
         RTGCPHYS GCPhysOut;
         uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemWrite(pDevInsIommu, uDeviceId, GCPhys, cbWrite, &GCPhysOut);
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut);
         if (RT_SUCCESS(rc))
             GCPhys = GCPhysOut;
         else
@@ -1052,9 +1052,9 @@ static DECLCALLBACK(int) pdmR0DevHlp_IommuSetUpContext(PPDMDEVINS pDevIns, PPDMI
     AssertPtrReturn(pIommuReg, VERR_INVALID_POINTER);
     AssertLogRelMsgReturn(pIommuReg->u32Version == PDM_IOMMUREGCC_VERSION,
                           ("%#x vs %#x\n", pIommuReg->u32Version, PDM_IOMMUREGCC_VERSION), VERR_VERSION_MISMATCH);
-    AssertPtrReturn(pIommuReg->pfnMemRead, VERR_INVALID_POINTER);
-    AssertPtrReturn(pIommuReg->pfnMemWrite, VERR_INVALID_POINTER);
-    AssertPtrReturn(pIommuReg->pfnMsiRemap, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMemAccess,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMemBulkAccess, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMsiRemap,      VERR_INVALID_POINTER);
     AssertLogRelMsgReturn(pIommuReg->u32TheEnd == PDM_IOMMUREGCC_VERSION,
                           ("%#x vs %#x\n", pIommuReg->u32TheEnd, PDM_IOMMUREGCC_VERSION), VERR_VERSION_MISMATCH);
 
@@ -1082,12 +1082,12 @@ static DECLCALLBACK(int) pdmR0DevHlp_IommuSetUpContext(PPDMDEVINS pDevIns, PPDMI
     /*
      * Register.
      */
-    pIommuR0->idxIommu    = idxIommu;
-    pIommuR0->uPadding0   = 0xdeaddead;
-    pIommuR0->pDevInsR0   = pDevIns;
-    pIommuR0->pfnMemRead  = pIommuReg->pfnMemRead;
-    pIommuR0->pfnMemWrite = pIommuReg->pfnMemWrite;
-    pIommuR0->pfnMsiRemap = pIommuReg->pfnMsiRemap;
+    pIommuR0->idxIommu         = idxIommu;
+    pIommuR0->uPadding0        = 0xdeaddead;
+    pIommuR0->pDevInsR0        = pDevIns;
+    pIommuR0->pfnMemAccess     = pIommuReg->pfnMemAccess;
+    pIommuR0->pfnMemBulkAccess = pIommuReg->pfnMemBulkAccess;
+    pIommuR0->pfnMsiRemap      = pIommuReg->pfnMsiRemap;
 
     *ppIommuHlp = &g_pdmR0IommuHlp;
 

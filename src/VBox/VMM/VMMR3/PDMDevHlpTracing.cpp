@@ -431,7 +431,7 @@ pdmR3DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
 
         RTGCPHYS GCPhysOut;
         uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemRead(pDevInsIommu, uDevId, GCPhys, cbRead, &GCPhysOut);
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut);
         if (RT_SUCCESS(rc))
             GCPhys = GCPhysOut;
         else
@@ -487,7 +487,7 @@ pdmR3DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
 
         RTGCPHYS GCPhysOut;
         uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemWrite(pDevInsIommu, uDevId, GCPhys, cbWrite, &GCPhysOut);
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, & GCPhysOut);
         if (RT_SUCCESS(rc))
             GCPhys = GCPhysOut;
         else

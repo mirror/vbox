@@ -42,6 +42,7 @@
 #include <iprt/ctype.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/mem.h>
 
 #include "dtrace/VBoxVMM.h"
 #include "PDMInline.h"
@@ -1832,7 +1833,7 @@ pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
 
         RTGCPHYS GCPhysOut;
         uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemRead(pDevInsIommu, uDevId, GCPhys, cbRead, &GCPhysOut);
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut);
         if (RT_SUCCESS(rc))
             GCPhys = GCPhysOut;
         else
@@ -1886,7 +1887,7 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys
 
         RTGCPHYS GCPhysOut;
         uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemWrite(pDevInsIommu, uDevId, GCPhys, cbWrite, &GCPhysOut);
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut);
         if (RT_SUCCESS(rc))
             GCPhys = GCPhysOut;
         else
@@ -1899,6 +1900,248 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys
 #endif
 
     return pDevIns->pHlpR3->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite, fFlags);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIPhysGCPhys2CCPtr} */
+static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysGCPhys2CCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
+                                                         uint32_t fFlags, void **ppv, PPGMPAGEMAPLOCK pLock)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    if (!pPciDev) /* NULL is an alias for the default PCI device. */
+        pPciDev = pDevIns->apPciDevs[0];
+    AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
+    PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(pDevIns, pPciDev);
+
+#ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
+    if (PCIDevIsBusmaster(pPciDev))
+    { /* likely */ }
+    else
+    {
+        LogFunc(("caller='%s'/%d: returns %Rrc - Not bus master! GCPhys=%RGp fFlags=%#RX32\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, fFlags));
+        return VERR_PDM_NOT_PCI_BUS_MASTER;
+    }
+#endif
+
+#ifdef VBOX_WITH_IOMMU_AMD
+    /** @todo IOMMU: Optimize/re-organize things here later. */
+    PVM        pVM          = pDevIns->Internal.s.pVMR3;
+    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    if (   pDevInsIommu
+        && pDevInsIommu != pDevIns)
+    {
+        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
+        Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
+        PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
+
+        RTGCPHYS GCPhysOut;
+        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, X86_PAGE_SIZE, PDMIOMMU_MEM_F_WRITE, &GCPhysOut);
+        if (RT_SUCCESS(rc))
+            GCPhys = GCPhysOut;
+        else
+        {
+            LogFunc(("IOMMU translation failed. uDevId=%#x GCPhys=%#RGp rc=%Rrc\n", uDevId, GCPhys, rc));
+            return rc;
+        }
+    }
+#endif
+
+    return pDevIns->pHlpR3->pfnPhysGCPhys2CCPtr(pDevIns, GCPhys, fFlags, ppv, pLock);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIPhysGCPhys2CCPtrReadOnly} */
+static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
+                                                                 uint32_t fFlags, void const **ppv, PPGMPAGEMAPLOCK pLock)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    if (!pPciDev) /* NULL is an alias for the default PCI device. */
+        pPciDev = pDevIns->apPciDevs[0];
+    AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
+    PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(pDevIns, pPciDev);
+
+#ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
+    if (PCIDevIsBusmaster(pPciDev))
+    { /* likely */ }
+    else
+    {
+        LogFunc(("caller='%s'/%d: returns %Rrc - Not bus master! GCPhys=%RGp fFlags=%#RX32\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, fFlags));
+        return VERR_PDM_NOT_PCI_BUS_MASTER;
+    }
+#endif
+
+#ifdef VBOX_WITH_IOMMU_AMD
+    /** @todo IOMMU: Optimize/re-organize things here later. */
+    PVM        pVM          = pDevIns->Internal.s.pVMR3;
+    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    if (   pDevInsIommu
+        && pDevInsIommu != pDevIns)
+    {
+        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
+        Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
+        PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
+
+        RTGCPHYS GCPhysOut;
+        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, X86_PAGE_SIZE, PDMIOMMU_MEM_F_READ, &GCPhysOut);
+        if (RT_SUCCESS(rc))
+            GCPhys = GCPhysOut;
+        else
+        {
+            LogFunc(("IOMMU translation failed. uDevId=%#x GCPhys=%#RGp rc=%Rrc\n", uDevId, GCPhys, rc));
+            return rc;
+        }
+    }
+#endif
+
+    return pDevIns->pHlpR3->pfnPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhys, fFlags, ppv, pLock);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIPhysBulkGCPhys2CCPtr} */
+static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages,
+                                                             PCRTGCPHYS paGCPhysPages, uint32_t fFlags, void **papvPages,
+                                                             PPGMPAGEMAPLOCK paLocks)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    if (!pPciDev) /* NULL is an alias for the default PCI device. */
+        pPciDev = pDevIns->apPciDevs[0];
+    AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
+    PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(pDevIns, pPciDev);
+
+#ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
+    if (PCIDevIsBusmaster(pPciDev))
+    { /* likely */ }
+    else
+    {
+        LogFunc(("caller='%s'/%d: returns %Rrc - Not bus master! cPages=%zu fFlags=%#RX32\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, cPages, fFlags));
+        return VERR_PDM_NOT_PCI_BUS_MASTER;
+    }
+#endif
+
+#ifdef VBOX_WITH_IOMMU_AMD
+    /** @todo IOMMU: Optimize/re-organize things here later. */
+    PVM        pVM          = pDevIns->Internal.s.pVMR3;
+    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    if (   pDevInsIommu
+        && pDevInsIommu != pDevIns)
+    {
+        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
+        Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
+        PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
+
+        /* Allocate space of translated addresses. */
+        size_t const cbIovas  = cPages * sizeof(uint64_t);
+        PRTGCPHYS paGCPhysSpa = (PRTGCPHYS)RTMemAllocZ(cbIovas);
+        if (paGCPhysSpa)
+        { /* likely */ }
+        else
+        {
+            LogFunc(("caller='%s'/%d: returns %Rrc - Failed to alloc %zu bytes for IOVA addresses\n",
+                     pDevIns->pReg->szName, pDevIns->iInstance, VERR_NO_MEMORY, cbIovas));
+            return VERR_NO_MEMORY;
+        }
+
+        /* Ask the IOMMU for corresponding translated physical addresses. */
+        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
+        AssertCompile(sizeof(RTGCPHYS) == sizeof(uint64_t));
+        int rc = pIommu->pfnMemBulkAccess(pDevInsIommu, uDevId, cPages, (uint64_t const *)paGCPhysPages, PDMIOMMU_MEM_F_WRITE,
+                                          paGCPhysSpa);
+        if (RT_SUCCESS(rc))
+        {
+            /* Perform the bulk mapping but with the translated addresses. */
+            rc = pDevIns->pHlpR3->pfnPhysBulkGCPhys2CCPtr(pDevIns, cPages, paGCPhysSpa, fFlags, papvPages, paLocks);
+            if (RT_FAILURE(rc))
+                LogFunc(("Bulk mapping of addresses failed. cPages=%zu fFlags=%#x rc=%Rrc\n", rc, cPages, fFlags));
+        }
+        else
+            LogFunc(("IOMMU bulk translation failed. uDevId=%#x cPages=%zu rc=%Rrc\n", uDevId, cPages, rc));
+
+        /* Free the translated addresses and return result of the address translation or mapping operation. */
+        RTMemFree(paGCPhysSpa);
+        return rc;
+    }
+#endif
+
+    return pDevIns->pHlpR3->pfnPhysBulkGCPhys2CCPtr(pDevIns, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIPhysBulkGCPhys2CCPtrReadOnly} */
+static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages,
+                                                                     PCRTGCPHYS paGCPhysPages, uint32_t fFlags,
+                                                                     const void **papvPages, PPGMPAGEMAPLOCK paLocks)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    if (!pPciDev) /* NULL is an alias for the default PCI device. */
+        pPciDev = pDevIns->apPciDevs[0];
+    AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
+    PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(pDevIns, pPciDev);
+
+#ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
+    if (PCIDevIsBusmaster(pPciDev))
+    { /* likely */ }
+    else
+    {
+        LogFunc(("caller='%s'/%d: returns %Rrc - Not bus master! cPages=%zu fFlags=%#RX32\n",
+                 pDevIns->pReg->szName, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, cPages, fFlags));
+        return VERR_PDM_NOT_PCI_BUS_MASTER;
+    }
+#endif
+
+#ifdef VBOX_WITH_IOMMU_AMD
+    /** @todo IOMMU: Optimize/re-organize things here later. */
+    PVM        pVM          = pDevIns->Internal.s.pVMR3;
+    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    if (   pDevInsIommu
+        && pDevInsIommu != pDevIns)
+    {
+        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
+        Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
+        PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
+
+        /* Allocate space of translated addresses. */
+        size_t const cbIovas  = cPages * sizeof(uint64_t);
+        PRTGCPHYS paGCPhysSpa = (PRTGCPHYS)RTMemAllocZ(cbIovas);
+        if (paGCPhysSpa)
+        { /* likely */ }
+        else
+        {
+            LogFunc(("caller='%s'/%d: returns %Rrc - Failed to alloc %zu bytes for IOVA addresses\n",
+                     pDevIns->pReg->szName, pDevIns->iInstance, VERR_NO_MEMORY, cbIovas));
+            return VERR_NO_MEMORY;
+        }
+
+        /* Ask the IOMMU for corresponding translated physical addresses. */
+        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
+        AssertCompile(sizeof(RTGCPHYS) == sizeof(uint64_t));
+        int rc = pIommu->pfnMemBulkAccess(pDevInsIommu, uDevId, cPages, (uint64_t const *)paGCPhysPages, PDMIOMMU_MEM_F_READ,
+                                          paGCPhysSpa);
+        if (RT_SUCCESS(rc))
+        {
+            /* Perform the bulk mapping but with the translated addresses. */
+            rc = pDevIns->pHlpR3->pfnPhysBulkGCPhys2CCPtrReadOnly(pDevIns, cPages, paGCPhysSpa, fFlags, papvPages, paLocks);
+            if (RT_FAILURE(rc))
+                LogFunc(("Bulk mapping of addresses failed. cPages=%zu fFlags=%#x rc=%Rrc\n", rc, cPages, fFlags));
+        }
+        else
+            LogFunc(("IOMMU bulk translation failed. uDevId=%#x cPages=%zu rc=%Rrc\n", uDevId, cPages, rc));
+
+        /* Free the translated addresses and return result of the address translation or mapping operation. */
+        RTMemFree(paGCPhysSpa);
+        return rc;
+    }
+#endif
+
+    return pDevIns->pHlpR3->pfnPhysBulkGCPhys2CCPtrReadOnly(pDevIns, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
 }
 
 
@@ -3357,9 +3600,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
     AssertMsgReturn(pIommuReg->u32Version == PDM_IOMMUREGR3_VERSION,
                     ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32Version, PDM_IOMMUREGR3_VERSION),
                     VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pIommuReg->pfnMemRead, VERR_INVALID_POINTER);
-    AssertPtrReturn(pIommuReg->pfnMemWrite, VERR_INVALID_POINTER);
-    AssertPtrReturn(pIommuReg->pfnMsiRemap, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMemAccess,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMemBulkAccess, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMsiRemap,      VERR_INVALID_POINTER);
     AssertMsgReturn(pIommuReg->u32TheEnd == PDM_IOMMUREGR3_VERSION,
                     ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32TheEnd, PDM_IOMMUREGR3_VERSION),
                     VERR_INVALID_PARAMETER);
@@ -3391,11 +3634,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
     /*
      * Init the R3 bits.
      */
-    pIommu->idxIommu    = idxIommu;
-    pIommu->pDevInsR3   = pDevIns;
-    pIommu->pfnMemRead  = pIommuReg->pfnMemRead;
-    pIommu->pfnMemWrite = pIommuReg->pfnMemWrite;
-    pIommu->pfnMsiRemap = pIommuReg->pfnMsiRemap;
+    pIommu->idxIommu         = idxIommu;
+    pIommu->pDevInsR3        = pDevIns;
+    pIommu->pfnMemAccess     = pIommuReg->pfnMemAccess;
+    pIommu->pfnMemBulkAccess = pIommuReg->pfnMemBulkAccess;
+    pIommu->pfnMsiRemap      = pIommuReg->pfnMsiRemap;
     Log(("PDM: Registered IOMMU device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
 
     /* Set the helper pointer and return. */
@@ -4219,6 +4462,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PCIConfigRead,
     pdmR3DevHlp_PCIPhysRead,
     pdmR3DevHlp_PCIPhysWrite,
+    pdmR3DevHlp_PCIPhysGCPhys2CCPtr,
+    pdmR3DevHlp_PCIPhysGCPhys2CCPtrReadOnly,
+    pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtr,
+    pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PCISetIrq,
     pdmR3DevHlp_PCISetIrqNoWait,
     pdmR3DevHlp_ISASetIrq,
@@ -4564,6 +4811,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_PCIConfigRead,
     pdmR3DevHlpTracing_PCIPhysRead,
     pdmR3DevHlpTracing_PCIPhysWrite,
+    pdmR3DevHlp_PCIPhysGCPhys2CCPtr,
+    pdmR3DevHlp_PCIPhysGCPhys2CCPtrReadOnly,
+    pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtr,
+    pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlpTracing_PCISetIrq,
     pdmR3DevHlpTracing_PCISetIrqNoWait,
     pdmR3DevHlpTracing_ISASetIrq,
@@ -5066,6 +5317,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PCIConfigRead,
     pdmR3DevHlp_PCIPhysRead,
     pdmR3DevHlp_PCIPhysWrite,
+    pdmR3DevHlp_PCIPhysGCPhys2CCPtr,
+    pdmR3DevHlp_PCIPhysGCPhys2CCPtrReadOnly,
+    pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtr,
+    pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PCISetIrq,
     pdmR3DevHlp_PCISetIrqNoWait,
     pdmR3DevHlp_ISASetIrq,
