@@ -528,8 +528,13 @@ typedef struct DBGFEVENT
         /** Breakpoint. */
         struct DBGFEVENTBP
         {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
             /** The identifier of the breakpoint which was hit. */
             RTUINT                  iBp;
+#else
+            /** The handle of the breakpoint which was hit. */
+            DBGFBP                  hBp;
+#endif
         } Bp;
 
         /** Generic debug event. */
@@ -743,14 +748,21 @@ VMMR3DECL(int) DBGFR3InterruptSoftwareIsEnabled(PUVM pUVM, uint8_t iInterrupt);
 /** Breakpoint type. */
 typedef enum DBGFBPTYPE
 {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     /** Free breakpoint entry. */
     DBGFBPTYPE_FREE = 0,
+#else
+    /** Invalid breakpoint type. */
+    DBGFBPTYPE_INVALID = 0,
+#endif
     /** Debug register. */
     DBGFBPTYPE_REG,
     /** INT 3 instruction. */
     DBGFBPTYPE_INT3,
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     /** Recompiler. */
     DBGFBPTYPE_REM,
+#endif
     /** Port I/O breakpoint. */
     DBGFBPTYPE_PORT_IO,
     /** Memory mapped I/O breakpoint. */
@@ -797,6 +809,186 @@ typedef enum DBGFBPTYPE
 #define DBGFBPIOACCESS_VALID_MASK_MMIO      UINT32_C(0x00001f1f)
 /** @} */
 
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+/**
+ * The visible breakpoint state (read-only).
+ */
+typedef struct DBGFBPPUB
+{
+    /** The number of breakpoint hits. */
+    uint64_t        cHits;
+    /** The hit number which starts to trigger the breakpoint. */
+    uint64_t        iHitTrigger;
+    /** The hit number which stops triggering the breakpoint (disables it).
+     * Use ~(uint64_t)0 if it should never stop. */
+    uint64_t        iHitDisable;
+    /** The breakpoint owner handle (a nil owner defers the breakpoint to the
+     * debugger). */
+    DBGFBPOWNER     hOwner;
+    /** The breakpoint type. */
+    DBGFBPTYPE      enmType;
+    /** The breakpoint handle this state belongs to. */
+    DBGFBP          hBp;
+    /** Breakpoint flags, see DBGF_BP_F_XXX. */
+    uint32_t        fFlags;
+
+    /** Union of type specific data. */
+    union
+    {
+        /** The flat GC address breakpoint address for REG and INT3 breakpoints. */
+        RTGCUINTPTR         GCPtr;
+
+        /** Debug register data. */
+        struct DBGFBPREG
+        {
+            /** The flat GC address of the breakpoint. */
+            RTGCUINTPTR     GCPtr;
+            /** The debug register number. */
+            uint8_t         iReg;
+            /** The access type (one of the X86_DR7_RW_* value). */
+            uint8_t         fType;
+            /** The access size. */
+            uint8_t         cb;
+        } Reg;
+
+        /** INT3 breakpoint data. */
+        struct DBGFBPINT3
+        {
+            /** The flat GC address of the breakpoint. */
+            RTGCUINTPTR     GCPtr;
+            /** The physical address of the breakpoint. */
+            RTGCPHYS        PhysAddr;
+            /** The byte value we replaced by the INT 3 instruction. */
+            uint8_t         bOrg;
+        } Int3;
+
+        /** I/O port breakpoint data.   */
+        struct DBGFBPPORTIO
+        {
+            /** The first port. */
+            RTIOPORT        uPort;
+            /** The number of ports. */
+            RTIOPORT        cPorts;
+            /** Valid DBGFBPIOACCESS_XXX selection, max DWORD size. */
+            uint32_t        fAccess;
+        } PortIo;
+
+        /** Memory mapped I/O breakpoint data. */
+        struct DBGFBPMMIO
+        {
+            /** The first MMIO address. */
+            RTGCPHYS        PhysAddr;
+            /** The size of the MMIO range in bytes. */
+            uint32_t        cb;
+            /** Valid DBGFBPIOACCESS_XXX selection, max QWORD size. */
+            uint32_t        fAccess;
+        } Mmio;
+
+        /** Padding to the anticipated size. */
+        uint64_t    u64Padding[3];
+    } u;
+} DBGFBPPUB;
+AssertCompileSize(DBGFBPPUB, 64);
+AssertCompileMembersAtSameOffset(DBGFBPPUB, u.GCPtr, DBGFBPPUB, u.Reg.GCPtr);
+AssertCompileMembersAtSameOffset(DBGFBPPUB, u.GCPtr, DBGFBPPUB, u.Int3.GCPtr);
+
+/** Pointer to the visible breakpoint state. */
+typedef DBGFBPPUB *PDBGFBPPUB;
+/** Pointer to a const visible breakpoint state. */
+typedef const DBGFBPPUB *PCDBGFBPPUB;
+
+/** @name Possible DBGFBPPUB::fFlags flags.
+ * @{ */
+/** Flag whether the breakpoint is enabled currently. */
+#define DBGF_BP_F_ENABLED                   RT_BIT_32(0)
+/** @} */
+
+/**
+ * Breakpoint hit handler.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if the breakpoint was handled and guest execution can resume.
+ * @retval  VINF_DBGF_BP_HALT if guest execution should be stopped and the debugger should be invoked.
+ *
+ * @param   pVM         The cross-context VM structure pointer.
+ * @param   idCpu       ID of the vCPU triggering the breakpoint.
+ * @param   pvUser      User argument of the set breakpoint.
+ * @param   pBpPub      Pointer to the readonly public state of the breakpoint.
+ *
+ * @remarks The handler is called on the EMT of vCPU triggering the breakpoint and no locks are held.
+ * @remarks Any status code returned other than the ones mentioned will send the VM straight into a
+ *          guru meditation.
+ */
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNDBGFBPHIT,(PVM pVM, VMCPUID idCpu, void *pvUserBp, PCDBGFBPPUB pBpPub));
+/** Pointer to a FNDBGFBPHIT(). */
+typedef FNDBGFBPHIT *PFNDBGFBPHIT;
+
+
+#ifdef IN_RING3
+/** @defgroup grp_dbgf_bp_r3    The DBGF Breakpoint Host Context Ring-3 API
+ * @{ */
+VMMR3DECL(int) DBGFR3BpOwnerCreate(PUVM pUVM, PFNDBGFBPHIT pfnBpHit, PDBGFBPOWNER phBpOwner);
+VMMR3DECL(int) DBGFR3BpOwnerDestroy(PUVM pUVM, DBGFBPOWNER hBpOwner);
+
+VMMR3DECL(int) DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idSrcCpu, PCDBGFADDRESS pAddress,
+                               uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
+VMMR3DECL(int) DBGFR3BpSetInt3Ex(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
+                                 VMCPUID idSrcCpu, PCDBGFADDRESS pAddress,
+                                 uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
+VMMR3DECL(int) DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger,
+                              uint64_t iHitDisable, uint8_t fType, uint8_t cb, PDBGFBP phBp);
+VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
+                                PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
+                                uint8_t fType, uint8_t cb, PDBGFBP phBp);
+VMMR3DECL(int) DBGFR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger,
+                              uint64_t iHitDisable, PDBGFBP phBp);
+VMMR3DECL(int) DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
+                                 uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
+VMMR3DECL(int) DBGFR3BpSetPortIoEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
+                                   RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
+                                   uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
+VMMR3DECL(int) DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_t fAccess,
+                               uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
+VMMR3DECL(int) DBGFR3BpSetMmioEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
+                                 RTGCPHYS GCPhys, uint32_t cb, uint32_t fAccess,
+                                 uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
+VMMR3DECL(int) DBGFR3BpClear(PUVM pUVM, DBGFBP hBp);
+VMMR3DECL(int) DBGFR3BpEnable(PUVM pUVM, DBGFBP hBp);
+VMMR3DECL(int) DBGFR3BpDisable(PUVM pUVM, DBGFBP hBp);
+
+/**
+ * Breakpoint enumeration callback function.
+ *
+ * @returns VBox status code.
+ *          The enumeration stops on failure status and VINF_CALLBACK_RETURN.
+ * @param   pUVM        The user mode VM handle.
+ * @param   pvUser      The user argument.
+ * @param   pBp         Pointer to the breakpoint information. (readonly)
+ */
+typedef DECLCALLBACKTYPE(int, FNDBGFBPENUM,(PUVM pUVM, PCDBGFBPPUB pBpPub));
+/** Pointer to a breakpoint enumeration callback function. */
+typedef FNDBGFBPENUM *PFNDBGFBPENUM;
+
+VMMR3DECL(int) DBGFR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void *pvUser);
+/** @} */
+#endif /* !IN_RING3 */
+
+
+#if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
+/** @defgroup grp_dbgf_bp_r0    The DBGF Breakpoint Host Context Ring-0 API
+ * @{ */
+VMMR0_INT_DECL(void) DBGFR0InitPerVMData(PGVM pGVM);
+VMMR0_INT_DECL(void) DBGFR0CleanupVM(PGVM pGVM);
+
+VMMR0_INT_DECL(int)  DBGFR0BpOwnerSetUpContext(PGVM pGVM, DBGFBPOWNER hBpOwner, PFNDBGFBPHIT pfnBpHit);
+VMMR0_INT_DECL(int)  DBGFR0BpOwnerDestroyContext(PGVM pGVM, DBGFBPOWNER hBpOwner);
+
+VMMR0_INT_DECL(int)  DBGFR0BpSetUpContext(PGVM pGVM, DBGFBP hBp, void *pvUser);
+VMMR0_INT_DECL(int)  DBGFR0BpDestroyContext(PGVM pGVM, DBGFBP hBp);
+/** @} */
+#endif /* IN_RING0 || DOXYGEN_RUNNING */
+
+#else /* !VBOX_WITH_LOTS_OF_DBGF_BPS */
 /**
  * A Breakpoint.
  */
@@ -889,7 +1081,7 @@ typedef DBGFBP *PDBGFBP;
 /** Pointer to a const breakpoint. */
 typedef const DBGFBP *PCDBGFBP;
 
-#ifdef IN_RING3 /* The breakpoint management API is only available in ring-3. */
+# ifdef IN_RING3 /* The breakpoint management API is only available in ring-3. */
 VMMR3DECL(int)  DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idSrcCpu, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
 VMMR3DECL(int)  DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
                                uint8_t fType, uint8_t cb, uint32_t *piBp);
@@ -916,7 +1108,8 @@ typedef DECLCALLBACKTYPE(int, FNDBGFBPENUM,(PUVM pUVM, void *pvUser, PCDBGFBP pB
 typedef FNDBGFBPENUM *PFNDBGFBPENUM;
 
 VMMR3DECL(int)              DBGFR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void *pvUser);
-#endif /* IN_RING3 */
+# endif /* IN_RING3 */
+#endif /* !VBOX_WITH_LOTS_OF_DBGF_BPS */
 
 VMM_INT_DECL(RTGCUINTREG)   DBGFBpGetDR7(PVM pVM);
 VMM_INT_DECL(RTGCUINTREG)   DBGFBpGetDR0(PVM pVM);

@@ -746,6 +746,7 @@ typedef struct DBGFOS *PDBGFOS;
 typedef struct DBGFOS const *PCDBGFOS;
 
 
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
 /**
  * Breakpoint search optimization.
  */
@@ -760,6 +761,31 @@ typedef struct DBGFBPSEARCHOPT
 } DBGFBPSEARCHOPT;
 /** Pointer to a breakpoint search optimziation structure. */
 typedef DBGFBPSEARCHOPT *PDBGFBPSEARCHOPT;
+#else
+/**
+ * Hardware breakpoint state.
+ */
+typedef struct DBGFBPHW
+{
+    /** The flat GC address of the breakpoint. */
+    RTGCUINTPTR     GCPtr;
+    /** The breakpoint handle if active, NIL_DBGFBP if disabled. */
+    DBGFBP          hBp;
+    /** The access type (one of the X86_DR7_RW_* value). */
+    uint8_t         fType;
+    /** The access size. */
+    uint8_t         cb;
+    /** Flag whether the breakpoint is currently enabled. */
+    bool            fEnabled;
+    /** Padding. */
+    uint8_t         bPad;
+} DBGFBPHW;
+AssertCompileSize(DBGFBPHW, 16);
+/** Pointer to a hardware breakpoint state. */
+typedef DBGFBPHW *PDBGFBPHW;
+/** Pointer to a const hardware breakpoint state. */
+typedef const DBGFBPHW *PCDBGFBPHW;
+#endif
 
 
 
@@ -789,9 +815,13 @@ typedef struct DBGF
     uint8_t                     cEnabledHwBreakpoints;
     /** The number of enabled hardware I/O breakpoints. */
     uint8_t                     cEnabledHwIoBreakpoints;
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     /** The number of enabled INT3 breakpoints. */
     uint8_t                     cEnabledInt3Breakpoints;
     uint8_t                     abPadding; /**< Unused padding space up for grabs. */
+#else
+    uint16_t                    u16Pad;
+#endif
     uint32_t                    uPadding;
 
     /** Debugger Attached flag.
@@ -829,6 +859,7 @@ typedef struct DBGF
 
     uint32_t                    u32Padding[2]; /**< Alignment padding. */
 
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     /** Array of hardware breakpoints. (0..3)
      * This is shared among all the CPUs because life is much simpler that way. */
     DBGFBP                      aHwBreakpoints[4];
@@ -842,6 +873,11 @@ typedef struct DBGF
     DBGFBPSEARCHOPT             PortIo;
     /** INT3 breakpoint search optimizations. */
     DBGFBPSEARCHOPT             Int3;
+#else
+    /** Array of hardware breakpoints (0..3).
+     * This is shared among all the CPUs because life is much simpler that way. */
+    DBGFBPHW                    aHwBreakpoints[4];
+#endif
 
     /**
      * Bug check data.
@@ -906,6 +942,7 @@ typedef struct DBGFCPU
      * @see DBGFCPU_2_VM(). */
     uint32_t                offVM;
 
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     /** Current active breakpoint (id).
      * This is ~0U if not active. It is set when a execution engine
      * encounters a breakpoint and returns VINF_EM_DBG_BREAKPOINT. This is
@@ -914,6 +951,14 @@ typedef struct DBGFCPU
      *
      * @todo drop this in favor of aEvents!  */
     uint32_t                iActiveBp;
+#else
+    /** Current active breakpoint handle.
+     * This is NIL_DBGFBP if not active. It is set when a execution engine
+     * encounters a breakpoint and returns VINF_EM_DBG_BREAKPOINT.
+     *
+     * @todo drop this in favor of aEvents!  */
+    DBGFBP                  hBpActive;
+#endif
     /** Set if we're singlestepping in raw mode.
      * This is checked and cleared in the \#DB handler. */
     bool                    fSingleSteppingRaw;
@@ -1091,7 +1136,12 @@ typedef struct DBGFUSERPERVMCPU
 int  dbgfR3AsInit(PUVM pUVM);
 void dbgfR3AsTerm(PUVM pUVM);
 void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta);
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+DECLHIDDEN(int) dbgfR3BpInit(PVM pVM);
+DECLHIDDEN(int) dbgfR3BpTerm(PVM pVM);
+#else
 int  dbgfR3BpInit(PVM pVM);
+#endif
 int  dbgfR3InfoInit(PUVM pUVM);
 int  dbgfR3InfoTerm(PUVM pUVM);
 int  dbgfR3OSInit(PUVM pUVM);

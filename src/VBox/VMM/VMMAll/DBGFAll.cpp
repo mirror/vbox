@@ -49,6 +49,7 @@ AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.cSelectedEvents,       VM, dbgf
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
 {
     RTGCUINTREG uDr7 = X86_DR7_GD | X86_DR7_GE | X86_DR7_LE | X86_DR7_RA1_MASK;
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     PDBGFBP     pBp = &pVM->dbgf.s.aHwBreakpoints[0];
     unsigned    cLeft = RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
     while (cLeft-- > 0)
@@ -67,6 +68,26 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
         }
         pBp++;
     }
+#else
+    for (uint32_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); i++)
+    {
+        PCDBGFBPHW  pBp = &pVM->dbgf.s.aHwBreakpoints[i];
+
+        if (    pBp->hBp != NIL_DBGFBP
+            &&  pBp->fEnabled)
+        {
+            static const uint8_t s_au8Sizes[8] =
+            {
+                X86_DR7_LEN_BYTE, X86_DR7_LEN_BYTE, X86_DR7_LEN_WORD, X86_DR7_LEN_BYTE,
+                X86_DR7_LEN_DWORD,X86_DR7_LEN_BYTE, X86_DR7_LEN_BYTE, X86_DR7_LEN_QWORD
+            };
+            uDr7 |= X86_DR7_G(i)
+                 |  X86_DR7_RW(i, pBp->fType)
+                 |  X86_DR7_LEN(i, s_au8Sizes[pBp->cb]);
+        }
+        pBp++;
+    }
+#endif
     return uDr7;
 }
 
@@ -79,9 +100,14 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
  */
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR0(PVM pVM)
 {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     PCDBGFBP    pBp = &pVM->dbgf.s.aHwBreakpoints[0];
     Assert(pBp->u.Reg.iReg == 0);
     return pBp->u.Reg.GCPtr;
+#else
+    PCDBGFBPHW pBp = &pVM->dbgf.s.aHwBreakpoints[0];
+    return pBp->GCPtr;
+#endif
 }
 
 
@@ -93,9 +119,14 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR0(PVM pVM)
  */
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR1(PVM pVM)
 {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     PCDBGFBP    pBp = &pVM->dbgf.s.aHwBreakpoints[1];
     Assert(pBp->u.Reg.iReg == 1);
     return pBp->u.Reg.GCPtr;
+#else
+    PCDBGFBPHW pBp = &pVM->dbgf.s.aHwBreakpoints[1];
+    return pBp->GCPtr;
+#endif
 }
 
 
@@ -107,9 +138,14 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR1(PVM pVM)
  */
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM)
 {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     PCDBGFBP    pBp = &pVM->dbgf.s.aHwBreakpoints[2];
     Assert(pBp->u.Reg.iReg == 2);
     return pBp->u.Reg.GCPtr;
+#else
+    PCDBGFBPHW pBp = &pVM->dbgf.s.aHwBreakpoints[2];
+    return pBp->GCPtr;
+#endif
 }
 
 
@@ -121,9 +157,14 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM)
  */
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
 {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     PCDBGFBP    pBp = &pVM->dbgf.s.aHwBreakpoints[3];
     Assert(pBp->u.Reg.iReg == 3);
     return pBp->u.Reg.GCPtr;
+#else
+    PCDBGFBPHW pBp = &pVM->dbgf.s.aHwBreakpoints[3];
+    return pBp->GCPtr;
+#endif
 }
 
 
@@ -162,7 +203,12 @@ VMM_INT_DECL(bool) DBGFBpIsHwIoArmed(PVM pVM)
  */
 VMM_INT_DECL(bool) DBGFBpIsInt3Armed(PVM pVM)
 {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     return pVM->dbgf.s.cEnabledInt3Breakpoints > 0;
+#else
+    RT_NOREF(pVM);
+    return false; /** @todo */
+#endif
 }
 
 
@@ -185,8 +231,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, 
 {
     uint32_t const uIoPortFirst = uIoPort;
     uint32_t const uIoPortLast  = uIoPortFirst + cbValue - 1;
-
-
+ 
     /*
      * Check hyper breakpoints first as the VMM debugger has priority over
      * the guest.
@@ -195,6 +240,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, 
     {
         for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
         {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
             if (   pVM->dbgf.s.aHwBreakpoints[iBp].u.Reg.fType == X86_DR7_RW_IO
                 && pVM->dbgf.s.aHwBreakpoints[iBp].fEnabled
                 && pVM->dbgf.s.aHwBreakpoints[iBp].enmType     == DBGFBPTYPE_REG )
@@ -213,6 +259,28 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, 
                     return VINF_EM_DBG_BREAKPOINT;
                 }
             }
+#else
+            PCDBGFBPHW  pBp = &pVM->dbgf.s.aHwBreakpoints[iBp];
+
+            if (   pBp->fType == X86_DR7_RW_IO
+                && pBp->hBp == NIL_DBGFBP
+                && pBp->fEnabled)
+            {
+                uint8_t  cbReg      = pBp->cb; Assert(RT_IS_POWER_OF_TWO(cbReg));
+                uint64_t uDrXFirst  = pBp->GCPtr & ~(uint64_t)(cbReg - 1);
+                uint64_t uDrXLast   = uDrXFirst + cbReg - 1;
+                if (uDrXFirst <= uIoPortLast && uDrXLast >= uIoPortFirst)
+                {
+                    /* (See also DBGFRZTrap01Handler.) */
+                    pVCpu->dbgf.s.hBpActive = pBp->hBp;
+                    pVCpu->dbgf.s.fSingleSteppingRaw = false;
+
+                    LogFlow(("DBGFBpCheckIo: hit hw breakpoint %d at %04x:%RGv (iop %#x)\n",
+                             iBp, pCtx->cs.Sel, pCtx->rip, uIoPort));
+                    return VINF_EM_DBG_BREAKPOINT;
+                }
+            }
+#endif
         }
     }
 
@@ -253,7 +321,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, 
                     pCtx->dr[6] |= X86_DR6_B(iBp);
                     pCtx->dr[7] &= ~X86_DR7_GD;
                     LogFlow(("DBGFBpCheckIo: hit hw breakpoint %d at %04x:%RGv (iop %#x)\n",
-                             pVM->dbgf.s.aHwBreakpoints[iBp].iBp, pCtx->cs.Sel, pCtx->rip, uIoPort));
+                             iBp, pCtx->cs.Sel, pCtx->rip, uIoPort));
                     return VINF_EM_RAW_GUEST_TRAP;
                 }
             }

@@ -68,6 +68,7 @@ VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     {
         for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
         {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
             if (    ((uint32_t)uDr6 & RT_BIT_32(iBp))
                 &&  pVM->dbgf.s.aHwBreakpoints[iBp].enmType == DBGFBPTYPE_REG)
             {
@@ -78,6 +79,18 @@ VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
 
                 return fInHyper ? VINF_EM_DBG_HYPER_BREAKPOINT : VINF_EM_DBG_BREAKPOINT;
             }
+#else
+            if (    ((uint32_t)uDr6 & RT_BIT_32(iBp))
+                &&  pVM->dbgf.s.aHwBreakpoints[iBp].hBp != NIL_DBGFBP)
+            {
+                pVCpu->dbgf.s.hBpActive = pVM->dbgf.s.aHwBreakpoints[iBp].hBp;
+                pVCpu->dbgf.s.fSingleSteppingRaw = false;
+                LogFlow(("DBGFRZTrap03Handler: hit hw breakpoint %x at %04x:%RGv\n",
+                         pVM->dbgf.s.aHwBreakpoints[iBp].hBp, pRegFrame->cs.Sel, pRegFrame->rip));
+
+                return fInHyper ? VINF_EM_DBG_HYPER_BREAKPOINT : VINF_EM_DBG_BREAKPOINT;
+            }
+#endif
         }
     }
 
@@ -196,6 +209,7 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     const bool fInHyper = false;
 #endif
 
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     /*
      * Get the trap address and look it up in the breakpoint table.
      * Don't bother if we don't have any breakpoints.
@@ -205,11 +219,11 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     {
         RTGCPTR pPc;
         int rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss.Sel, pRegFrame->cs.Sel, &pRegFrame->cs,
-#ifdef IN_RC
+# ifdef IN_RC
                                               pRegFrame->eip - 1,
-#else
+# else
                                               pRegFrame->rip /* no -1 in R0 */,
-#endif
+# endif
                                               &pPc);
         AssertRCReturn(rc, rc);
 
@@ -232,6 +246,7 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
             iBp++;
         }
     }
+#endif /* !VBOX_WITH_LOTS_OF_DBGF_BPS */
 
     return fInHyper
          ? VINF_EM_DBG_HYPER_ASSERTION

@@ -520,6 +520,22 @@ typedef R3PTRTYPE(struct DBGFTRACERINSR3 *) PDBGFTRACERINSR3;
 typedef R0PTRTYPE(struct DBGFTRACERINSR0 *) PDBGFTRACERINSR0;
 /** RC pointer to a DBGF tracer instance. */
 typedef RCPTRTYPE(struct DBGFTRACERINSRC *) PDBGFTRACERINSRC;
+
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+/** A cross context DBGF breakpoint owner handle. */
+typedef uint32_t                DBGFBPOWNER;
+/** Pointer to a cross context DBGF breakpoint owner handle. */
+typedef DBGFBPOWNER             *PDBGFBPOWNER;
+/** A NIL DBGF breakpoint owner handle. */
+#define NIL_DBGFBPOWNER         ((uint32_t)UINT32_MAX)
+
+/** A cross context DBGF breakpoint handle. */
+typedef uint32_t                DBGFBP;
+/** Pointer to a cross context DBGF breakpoint handle. */
+typedef DBGFBP                  *PDBGFBP;
+/** A NIL DBGF breakpoint handle. */
+#define NIL_DBGFBP              ((uint32_t)UINT32_MAX)
+#endif
 /** @} */
 
 

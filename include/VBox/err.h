@@ -325,6 +325,11 @@
 #define VWRN_DBGF_ALREADY_RUNNING           (-1222)
 /** Internal processing error \#1 in the DBGF core code. */
 #define VERR_DBGF_IPE_1                     (-1223)
+/** Returned by a breakpoint callback when guest execution should be suspended
+ * and the VM should be dropped into the debugger. */
+#define VINF_DBGF_BP_HALT                   (1224)
+/** The breakpoint owner handle is still used by one or more breakpoints. */
+#define VERR_DBGF_OWNER_BUSY                (-1225)
 /** @} */
 
 
