@@ -729,9 +729,7 @@ void UIChooserAbstractModel::sltCloudMachineUnregistered(const QString &strProvi
 
     /* If there are no items left => add fake cloud VM node: */
     if (pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
-        new UIChooserNodeMachine(pProfileNode /* parent */,
-                                 0 /* position */,
-                                 UIFakeCloudVirtualMachineItemState_Done);
+        createCloudMachineNode(pProfileNode, UIFakeCloudVirtualMachineItemState_Done);
 }
 
 void UIChooserAbstractModel::sltCloudMachinesUnregistered(const QString &strProviderShortName,
@@ -752,9 +750,7 @@ void UIChooserAbstractModel::sltCloudMachinesUnregistered(const QString &strProv
 
     /* If there are no items left => add fake cloud VM node: */
     if (pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
-        new UIChooserNodeMachine(pProfileNode /* parent */,
-                                 0 /* position */,
-                                 UIFakeCloudVirtualMachineItemState_Done);
+        createCloudMachineNode(pProfileNode, UIFakeCloudVirtualMachineItemState_Done);
 }
 
 void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName,
@@ -1053,9 +1049,7 @@ void UIChooserAbstractModel::reloadCloudTree()
                                        UIChooserNodeGroupType_Profile);
 
             /* Add fake cloud VM item: */
-            new UIChooserNodeMachine(pProfileNode /* parent */,
-                                     0 /* position */,
-                                     UIFakeCloudVirtualMachineItemState_Loading);
+            createCloudMachineNode(pProfileNode, UIFakeCloudVirtualMachineItemState_Loading);
 
             /* Insert cloud account key into a list of keys currently being updated: */
             const UICloudAccountKey cloudAccountKey = qMakePair(strProviderShortName, strProfileName);
@@ -1462,6 +1456,13 @@ void UIChooserAbstractModel::createLocalMachineNode(UIChooserNode *pParentNode, 
                                                     UIChooserNodeDataPrefixType_Machine,
                                                     toOldStyleUuid(comMachine.GetId())),
                              comMachine);
+}
+
+void UIChooserAbstractModel::createCloudMachineNode(UIChooserNode *pParentNode, UIFakeCloudVirtualMachineItemState enmState)
+{
+    new UIChooserNodeMachine(pParentNode,
+                             0 /* position */,
+                             enmState);
 }
 
 void UIChooserAbstractModel::createCloudMachineNode(UIChooserNode *pParentNode, const CCloudMachine &comMachine)

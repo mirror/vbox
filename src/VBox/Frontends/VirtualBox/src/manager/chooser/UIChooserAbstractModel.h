@@ -27,6 +27,7 @@
 
 /* GUI includes: */
 #include "UIChooserDefs.h"
+#include "UIManagerDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -279,7 +280,9 @@ private:
 
         /** Creates local machine node based on certain @a comMachine as a child of specified @a pParentNode. */
         void createLocalMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine);
-        /** Creates cloud machine node based on certain @a comMachine as a child of specified @a pParentNode. */
+        /** Creates fake cloud machine node in passed @a enmState as a child of specified @a pParentNode. */
+        void createCloudMachineNode(UIChooserNode *pParentNode, UIFakeCloudVirtualMachineItemState enmState);
+        /** Creates real cloud machine node based on certain @a comMachine as a child of specified @a pParentNode. */
         void createCloudMachineNode(UIChooserNode *pParentNode, const CCloudMachine &comMachine);
 
         /** Gathers a list of possible group node names for machine nodes listed in @a exceptions, starting from @a pCurrentNode. */
