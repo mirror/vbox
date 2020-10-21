@@ -3138,7 +3138,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uD
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
  * @param   uDevId          The device ID (bus, device, function).
- * @param   cPages          The number of pages being written.
+ * @param   cIovas          The number of addresses being accessed.
  * @param   pauIovas        The I/O virtual addresses for each page being accessed.
  * @param   fFlags          The access flags, see PDMIOMMU_MEM_F_XXX.
  * @param   paGCPhysSpa     Where to store the translated physical addresses.
