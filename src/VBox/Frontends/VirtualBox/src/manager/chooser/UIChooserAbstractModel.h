@@ -307,6 +307,14 @@ private:
         void makeSureGroupDefinitionsSaveIsFinished();
     /** @} */
 
+    /** @name Cloud stuff.
+      * @{ */
+        /** Searches for profile node with passed @a strProviderShortName and @a strProfileName. */
+        UIChooserNode *searchProfileNode(const QString &strProviderShortName, const QString &strProfileName);
+        /** Searches for fake node under passed @a pProfileNode. */
+        UIChooserNode *searchFakeNode(UIChooserNode *pProfileNode);
+    /** @} */
+
     /** @name General stuff.
       * @{ */
         /** Holds the parent widget reference. */

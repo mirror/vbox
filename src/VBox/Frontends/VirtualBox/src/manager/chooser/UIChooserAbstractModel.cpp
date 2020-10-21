@@ -717,10 +717,7 @@ void UIChooserAbstractModel::sltCloudMachineUnregistered(const QString &strProvi
                                                          const QUuid &uId)
 {
     /* Search for profile node: */
-    const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
-    QList<UIChooserNode*> profileNodes;
-    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
-    UIChooserNode *pProfileNode = profileNodes.value(0);
+    UIChooserNode *pProfileNode = searchProfileNode(strProviderShortName, strProfileName);
     if (!pProfileNode)
         return;
 
@@ -737,10 +734,7 @@ void UIChooserAbstractModel::sltCloudMachinesUnregistered(const QString &strProv
                                                           const QList<QUuid> &ids)
 {
     /* Search for profile node: */
-    const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
-    QList<UIChooserNode*> profileNodes;
-    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
-    UIChooserNode *pProfileNode = profileNodes.value(0);
+    UIChooserNode *pProfileNode = searchProfileNode(strProviderShortName, strProfileName);
     if (!pProfileNode)
         return;
 
@@ -758,21 +752,16 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
                                                        const CCloudMachine &comMachine)
 {
     /* Search for profile node: */
-    const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
-    QList<UIChooserNode*> profileNodes;
-    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
-    UIChooserNode *pProfileNode = profileNodes.value(0);
+    UIChooserNode *pProfileNode = searchProfileNode(strProviderShortName, strProfileName);
     if (!pProfileNode)
         return;
 
     /* Add new machine-item: */
-    addCloudMachineIntoTheTree(strProfileNodeName, comMachine, true /* make it visible? */);
+    const QString strGroup = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+    addCloudMachineIntoTheTree(strGroup, comMachine, true /* make it visible? */);
 
-    /* Search for possible fake node: */
-    QList<UIChooserNode*> fakeNodes;
-    pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
     /* Delete fake node if present: */
-    delete fakeNodes.value(0);
+    delete searchFakeNode(pProfileNode);
 }
 
 void UIChooserAbstractModel::sltCloudMachinesRegistered(const QString &strProviderShortName,
@@ -780,22 +769,17 @@ void UIChooserAbstractModel::sltCloudMachinesRegistered(const QString &strProvid
                                                         const QVector<CCloudMachine> &machines)
 {
     /* Search for profile node: */
-    const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
-    QList<UIChooserNode*> profileNodes;
-    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
-    UIChooserNode *pProfileNode = profileNodes.value(0);
+    UIChooserNode *pProfileNode = searchProfileNode(strProviderShortName, strProfileName);
     if (!pProfileNode)
         return;
 
     /* Add new machine-items: */
+    const QString strGroup = QString("/%1/%2").arg(strProviderShortName, strProfileName);
     foreach (const CCloudMachine &comMachine, machines)
-        addCloudMachineIntoTheTree(strProfileNodeName, comMachine, false /* make it visible? */);
+        addCloudMachineIntoTheTree(strGroup, comMachine, false /* make it visible? */);
 
-    /* Search for possible fake node: */
-    QList<UIChooserNode*> fakeNodes;
-    pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
     /* Delete fake node if present: */
-    delete fakeNodes.value(0);
+    delete searchFakeNode(pProfileNode);
 }
 
 void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
@@ -806,12 +790,11 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
         return;
     UITaskCloudListMachines *pAcquiringTask = qobject_cast<UITaskCloudListMachines*>(pTask);
     AssertPtrReturnVoid(pAcquiringTask);
+    const QString strProviderShortName = pAcquiringTask->providerShortName();
+    const QString strProfileName = pAcquiringTask->profileName();
 
     /* Search for profile node: */
-    const QString strProfileNodeName = QString("/%1/%2").arg(pAcquiringTask->providerShortName(), pAcquiringTask->profileName());
-    QList<UIChooserNode*> profileNodes;
-    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
-    UIChooserNode *pProfileNode = profileNodes.value(0);
+    UIChooserNode *pProfileNode = searchProfileNode(strProviderShortName, strProfileName);
     if (!pProfileNode)
         return;
 
@@ -846,13 +829,13 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
 
     /* Remove unregistered cloud VM nodes: */
     if (!unregisteredIDs.isEmpty())
-        sltCloudMachinesUnregistered(pAcquiringTask->providerShortName(), pAcquiringTask->profileName(), unregisteredIDs.toList());
+        sltCloudMachinesUnregistered(strProviderShortName, strProfileName, unregisteredIDs.toList());
     /* Add registered cloud VM nodes: */
     if (!registeredMachines.isEmpty())
-        sltCloudMachinesRegistered(pAcquiringTask->providerShortName(), pAcquiringTask->profileName(), registeredMachines);
+        sltCloudMachinesRegistered(strProviderShortName, strProfileName, registeredMachines);
 
     /* Remove cloud account key from the list of keys currently being updated: */
-    const UICloudAccountKey accountKey = qMakePair(pAcquiringTask->providerShortName(), pAcquiringTask->profileName());
+    const UICloudAccountKey accountKey = qMakePair(strProviderShortName, strProfileName);
     removeCloudAccountKey(accountKey);
 }
 
@@ -1616,6 +1599,29 @@ void UIChooserAbstractModel::makeSureGroupDefinitionsSaveIsFinished()
     /* Cleanup if necessary: */
     if (UIThreadGroupDefinitionsSave::instance())
         UIThreadGroupDefinitionsSave::cleanup();
+}
+
+UIChooserNode *UIChooserAbstractModel::searchProfileNode(const QString &strProviderShortName, const QString &strProfileName)
+{
+    /* Compose profile node ID: */
+    const QString strProfileNodeId = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+
+    /* Search for a list of nodes matching required ID: */
+    QList<UIChooserNode*> profileNodes;
+    invisibleRoot()->searchForNodes(strProfileNodeId, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
+
+    /* Return 1st node if any: */
+    return profileNodes.value(0);
+}
+
+UIChooserNode *UIChooserAbstractModel::searchFakeNode(UIChooserNode *pProfileNode)
+{
+    /* Search for a list of nodes matching null ID: */
+    QList<UIChooserNode*> fakeNodes;
+    pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
+
+    /* Return 1st node if any: */
+    return fakeNodes.value(0);
 }
 
 
