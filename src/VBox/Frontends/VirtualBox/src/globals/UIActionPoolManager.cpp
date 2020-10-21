@@ -3775,10 +3775,6 @@ void UIActionPoolManager::updateMenuFile()
     /* Clear contents: */
     pMenu->clear();
 
-    /* Check if Ext Pack is ready, some of actions my depend on it: */
-    CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
-    const bool fExtPackAccessible = !extPack.isNull() && extPack.GetUsable();
-
     /* The Application / 'File' menu contents is very different depending on host type. */
 
 #ifdef VBOX_WS_MAC
@@ -3812,8 +3808,7 @@ void UIActionPoolManager::updateMenuFile()
     /* 'Show Host Network Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
     /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
-    if (fExtPackAccessible)
-        pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
 
 #else /* !VBOX_WS_MAC */
 
@@ -3836,8 +3831,7 @@ void UIActionPoolManager::updateMenuFile()
     /* 'Show Host Network Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
     /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
-    if (fExtPackAccessible)
-        pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Access Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndex_M_Application_S_NetworkAccessManager));

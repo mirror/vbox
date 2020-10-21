@@ -1413,10 +1413,6 @@ void UIChooserModel::prepareContextMenu()
     m_localMenus[UIChooserNodeType_Global] = new QMenu;
     if (QMenu *pMenuGlobal = m_localMenus.value(UIChooserNodeType_Global))
     {
-        /* Check if Ext Pack is ready, some of actions my depend on it: */
-        CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
-        const bool fExtPackAccessible = !extPack.isNull() && extPack.GetUsable();
-
 #ifdef VBOX_WS_MAC
         pMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_About));
         pMenuGlobal->addSeparator();
@@ -1429,8 +1425,7 @@ void UIChooserModel::prepareContextMenu()
 # endif
         pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
         pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
-        if (fExtPackAccessible)
-            pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
 
 #else /* !VBOX_WS_MAC */
 
@@ -1444,8 +1439,7 @@ void UIChooserModel::prepareContextMenu()
 # endif
         pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
         pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
-        if (fExtPackAccessible)
-            pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         pMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
         if (gEDataManager->applicationUpdateEnabled())

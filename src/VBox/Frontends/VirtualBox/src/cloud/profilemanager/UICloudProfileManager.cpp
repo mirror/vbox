@@ -565,10 +565,10 @@ void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
     UIItemCloudProfile *pItemProfile = qobject_cast<UIItemCloudProfile*>(pItem);
 
     /* Update actions availability: */
-    m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Add)->setEnabled(!pItem || pItemProvider);
-    m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Import)->setEnabled(!pItem || pItemProvider);
+    m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Add)->setEnabled(pItemProvider || pItemProfile);
+    m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Import)->setEnabled(pItemProvider || pItemProfile);
     m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Remove)->setEnabled(pItemProfile);
-    m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details)->setEnabled(pItemProfile || pItemProvider);
+    m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details)->setEnabled(pItemProvider || pItemProfile);
 
     /* If there is an item => update details data: */
     if (pItemProfile)
