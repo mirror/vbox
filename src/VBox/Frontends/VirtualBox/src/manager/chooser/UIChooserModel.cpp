@@ -1959,22 +1959,22 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
         /* Compose cloud account key to update: */
         const QString strProviderShortName = pMachineItem->parentItem()->parentItem()->name();
         const QString strProfileName = pMachineItem->parentItem()->name();
-        const UICloudAccountKey accountKey = qMakePair(strProviderShortName, strProfileName);
-        if (!changedCloudAccountKeys.contains(accountKey))
-            changedCloudAccountKeys.insert(accountKey);
+        const UICloudAccountKey cloudAccountKey = qMakePair(strProviderShortName, strProfileName);
+        if (!changedCloudAccountKeys.contains(cloudAccountKey))
+            changedCloudAccountKeys.insert(cloudAccountKey);
     }
 
     /* Restart List Cloud Machines task for required account keys: */
-    foreach (const UICloudAccountKey &accountKey, changedCloudAccountKeys)
+    foreach (const UICloudAccountKey &cloudAccountKey, changedCloudAccountKeys)
     {
         /* Skip cloud account keys already being updated: */
-        if (containsCloudAccountKey(accountKey))
+        if (containsCloudAccountKey(cloudAccountKey))
             continue;
-        insertCloudAccountKey(accountKey);
+        insertCloudAccountKey(cloudAccountKey);
 
         /* Create a task for particular cloud account key: */
-        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(accountKey.first /* short provider name */,
-                                                                     accountKey.second /* profile name */,
+        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(cloudAccountKey.first /* short provider name */,
+                                                                     cloudAccountKey.second /* profile name */,
                                                                      false /* with refresh? */);
         AssertPtrReturnVoid(pTask);
         uiCommon().threadPoolCloud()->enqueueTask(pTask);
