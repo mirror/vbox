@@ -308,17 +308,6 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
                 /* If profile is Ok finally: */
                 if (comCloudProfile.isOk())
                 {
-                    /* Acquire cloud profile manager restrictions: */
-                    const QStringList restrictions = gEDataManager->cloudProfileManagerRestrictions();
-
-                    /* Update profile in the tree: */
-                    UIDataCloudProfile data;
-                    loadCloudProfile(comCloudProfile, restrictions, *pProviderItem, data);
-                    updateItemForCloudProfile(data, true, pProfileItem);
-
-                    /* Make sure current-item fetched: */
-                    sltHandleCurrentItemChange();
-
                     /* Save profile changes: */
                     comCloudProvider.SaveProfiles();
                     /* Show error message if necessary: */
@@ -385,33 +374,16 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
             const QVector<QString> keys = pProviderItem->m_propertyDescriptions.keys().toVector();
             const QVector<QString> values(keys.size());
             comCloudProvider.CreateProfile(strProfileName, keys, values);
-
             /* Show error message if necessary: */
             if (!comCloudProvider.isOk())
-                msgCenter().cannotCreateCloudProfle(comCloudProvider, this);
+                msgCenter().cannotCreateCloudProfile(comCloudProvider, this);
             else
             {
-                /* Look for corresponding profile: */
-                CCloudProfile comCloudProfile = comCloudProvider.GetProfileByName(strProfileName);
+                /* Save profile changes: */
+                comCloudProvider.SaveProfiles();
                 /* Show error message if necessary: */
                 if (!comCloudProvider.isOk())
-                    msgCenter().cannotFindCloudProfile(comCloudProvider, strProfileName, this);
-                else
-                {
-                    /* Acquire cloud profile manager restrictions: */
-                    const QStringList restrictions = gEDataManager->cloudProfileManagerRestrictions();
-
-                    /* Add profile to the tree: */
-                    UIDataCloudProfile data;
-                    loadCloudProfile(comCloudProfile, restrictions, *pProviderItem, data);
-                    createItemForCloudProfile(pProviderItem, data, true);
-
-                    /* Save profile changes: */
-                    comCloudProvider.SaveProfiles();
-                    /* Show error message if necessary: */
-                    if (!comCloudProvider.isOk())
-                        msgCenter().cannotSaveCloudProfiles(comCloudProvider, this);
-                }
+                    msgCenter().cannotSaveCloudProfiles(comCloudProvider, this);
             }
         }
     }
@@ -458,8 +430,6 @@ void UICloudProfileManagerWidget::sltImportCloudProfiles()
             /* Show error message if necessary: */
             if (!comCloudProvider.isOk())
                 msgCenter().cannotImportCloudProfiles(comCloudProvider, this);
-            else
-                loadCloudStuff();
         }
     }
 
@@ -512,10 +482,9 @@ void UICloudProfileManagerWidget::sltRemoveCloudProfile()
             {
                 /* Remove current profile: */
                 comCloudProfile.Remove();
-                /// @todo how do we check that?
-
-                /* Remove interface from the tree: */
-                delete pProfileItem;
+                /* Show error message if necessary: */
+                if (!comCloudProfile.isOk())
+                    msgCenter().cannotRemoveCloudProfile(comCloudProfile, this);
 
                 /* Save profile changes: */
                 comCloudProvider.SaveProfiles();
@@ -801,6 +770,12 @@ void UICloudProfileManagerWidget::prepareConnections()
             this, &UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges);
 
     /* Extra-data connections: */
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProviderListChanged,
+            this, &UICloudProfileManagerWidget::sltLoadCloudStuff);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
+            this, &UICloudProfileManagerWidget::sltLoadCloudStuff);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
+            this, &UICloudProfileManagerWidget::sltLoadCloudStuff);
     connect(gEDataManager, &UIExtraDataManager::sigCloudProfileManagerRestrictionChange,
             this, &UICloudProfileManagerWidget::sltLoadCloudStuff);
 }

@@ -1874,11 +1874,18 @@ void UIMessageCenter::cannotFindCloudProfile(const CCloudProvider &comProvider, 
           UIErrorString::formatErrorInfo(comProvider));
 }
 
-void UIMessageCenter::cannotCreateCloudProfle(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
+void UIMessageCenter::cannotCreateCloudProfile(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to create cloud profile."),
           UIErrorString::formatErrorInfo(comProvider));
+}
+
+void UIMessageCenter::cannotRemoveCloudProfile(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to remove cloud profile."),
+          UIErrorString::formatErrorInfo(comProfile));
 }
 
 void UIMessageCenter::cannotSaveCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
