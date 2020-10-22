@@ -167,7 +167,11 @@ private:
 
     /** @name Tree-widget stuff.
       * @{ */
-        /** Seearches a provider item with specified @a uId. */
+        /** Recursively searches for an item with specified @a strDefinition,
+          * using @a pParentItem as an item to start search from. */
+        QTreeWidgetItem *searchItem(const QString &strDefinition,
+                                    QTreeWidgetItem *pParentItem = 0) const;
+        /** Searches for a provider item with specified @a uId. */
         UIItemCloudProvider *searchItem(const QUuid &uId) const;
 
         /** Creates a new tree-widget item

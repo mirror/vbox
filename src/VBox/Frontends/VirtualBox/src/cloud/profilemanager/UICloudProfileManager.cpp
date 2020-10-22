@@ -24,16 +24,17 @@
 #include "QIDialogButtonBox.h"
 #include "QIInputDialog.h"
 #include "QIMessageBox.h"
+#include "QIToolBar.h"
 #include "QITreeWidget.h"
-#include "UICommon.h"
 #include "UIActionPoolManager.h"
 #include "UICloudNetworkingStuff.h"
-#include "UIExtraDataManager.h"
-#include "UIIconPool.h"
 #include "UICloudProfileDetailsWidget.h"
 #include "UICloudProfileManager.h"
+#include "UICommon.h"
+#include "UIExtraDataManager.h"
+#include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "QIToolBar.h"
+#include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
 #include "CCloudProfile.h"
@@ -813,6 +814,10 @@ void UICloudProfileManagerWidget::loadSettings()
 
 void UICloudProfileManagerWidget::loadCloudStuff()
 {
+    /* Save current item definition: */
+    QITreeWidgetItem *pCurrentItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
+    const QString strDefinition = pCurrentItem ? pCurrentItem->data(Column_Name, Data_Definition).toString() : QString();
+
     /* Clear tree first of all: */
     m_pTreeWidget->clear();
 
@@ -851,8 +856,13 @@ void UICloudProfileManagerWidget::loadCloudStuff()
         pItem->setExpanded(true);
     }
 
-    /* Choose the 1st item as current initially: */
-    m_pTreeWidget->setCurrentItem(m_pTreeWidget->topLevelItem(0));
+    /* Try to restore current item by definition: */
+    if (!strDefinition.isEmpty())
+        m_pTreeWidget->setCurrentItem(searchItem(strDefinition));
+    /* Choose the 1st item as current if nothing chosen: */
+    if (!m_pTreeWidget->currentItem())
+        m_pTreeWidget->setCurrentItem(m_pTreeWidget->topLevelItem(0));
+    /* Handle current item change in any case: */
     sltHandleCurrentItemChange();
 }
 
@@ -914,6 +924,31 @@ void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfi
     /* Show error message if necessary: */
     if (!comProfile.isOk())
         msgCenter().cannotAcquireCloudProfileParameter(comProfile, this);
+}
+
+QTreeWidgetItem *UICloudProfileManagerWidget::searchItem(const QString &strDefinition,
+                                                         QTreeWidgetItem *pParentItem /* = 0 */) const
+{
+    /* If no parent-item passed => we will start from the invisible-root-item: */
+    if (!pParentItem)
+        pParentItem = m_pTreeWidget->invisibleRootItem();
+
+    /* Check whether parent-item is of required type: */
+    QITreeWidgetItem *pParentItemOfType = QITreeWidgetItem::toItem(pParentItem);
+    if (pParentItemOfType)
+    {
+        /* Check if parent-item has required definition: */
+        if (pParentItemOfType->data(Column_Name, Data_Definition).toString() == strDefinition)
+            return pParentItem;
+    }
+
+    /* Iterate through parent-item children: */
+    for (int i = 0; i < pParentItem->childCount(); ++i)
+        if (QTreeWidgetItem *pChildItem = searchItem(strDefinition, pParentItem->child(i)))
+            return pChildItem;
+
+    /* Null by default: */
+    return 0;
 }
 
 UIItemCloudProvider *UICloudProfileManagerWidget::searchItem(const QUuid &uId) const
