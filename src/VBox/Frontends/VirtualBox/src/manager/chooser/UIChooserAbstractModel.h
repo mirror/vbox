@@ -287,6 +287,9 @@ private:
 
         /** Gathers a list of possible group node names for machine nodes listed in @a exceptions, starting from @a pCurrentNode. */
         QStringList gatherPossibleGroupNodeNames(UIChooserNode *pCurrentNode, QList<UIChooserNode*> exceptions) const;
+
+        /** Returns whether passed @a pParentNode contains child node with passed @a uId. */
+        bool checkIfNodeContainChildWithId(UIChooserNode *pParentNode, const QUuid &uId) const;
     /** @} */
 
     /** @name Group saving stuff.

@@ -756,8 +756,15 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
     if (!pProfileNode)
         return;
 
-    /* Add new machine-item: */
+    /* Compose corresponding group path: */
     const QString strGroup = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+    /* Make sure there is no VM with such ID already: */
+    QUuid uId;
+    if (!cloudMachineId(comMachine, uId))
+        return;
+    if (checkIfNodeContainChildWithId(pProfileNode, uId))
+        return;
+    /* Add new machine-item: */
     addCloudMachineIntoTheTree(strGroup, comMachine, true /* make it visible? */);
 
     /* Delete fake node if present: */
@@ -773,10 +780,19 @@ void UIChooserAbstractModel::sltCloudMachinesRegistered(const QString &strProvid
     if (!pProfileNode)
         return;
 
-    /* Add new machine-items: */
+    /* Compose corresponding group path: */
     const QString strGroup = QString("/%1/%2").arg(strProviderShortName, strProfileName);
     foreach (const CCloudMachine &comMachine, machines)
+    {
+        /* Make sure there is no VM with such ID already: */
+        QUuid uId;
+        if (!cloudMachineId(comMachine, uId))
+            continue;
+        if (checkIfNodeContainChildWithId(pProfileNode, uId))
+            continue;
+        /* Add new machine-item: */
         addCloudMachineIntoTheTree(strGroup, comMachine, false /* make it visible? */);
+    }
 
     /* Delete fake node if present: */
     delete searchFakeNode(pProfileNode);
@@ -1493,6 +1509,37 @@ QStringList UIChooserAbstractModel::gatherPossibleGroupNodeNames(UIChooserNode *
 
     /* Return result: */
     return result;
+}
+
+bool UIChooserAbstractModel::checkIfNodeContainChildWithId(UIChooserNode *pParentNode, const QUuid &uId) const
+{
+    /* Check parent-node type: */
+    AssertPtrReturn(pParentNode, false);
+    switch (pParentNode->type())
+    {
+        case UIChooserNodeType_Machine:
+        {
+            /* Check if pParentNode has the passed uId itself: */
+            UIChooserNodeMachine *pMachineNode = pParentNode->toMachineNode();
+            AssertPtrReturn(pMachineNode, false);
+            if (pMachineNode->id() == uId)
+                return true;
+            break;
+        }
+        case UIChooserNodeType_Group:
+        {
+            /* Recursively iterate through children: */
+            foreach (UIChooserNode *pChildNode, pParentNode->nodes())
+                if (checkIfNodeContainChildWithId(pChildNode, uId))
+                    return true;
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* False by default: */
+    return false;
 }
 
 void UIChooserAbstractModel::saveGroupSettings()
