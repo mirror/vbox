@@ -910,6 +910,7 @@ $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/,$(VBOX_MANUAL_PNG_FILES_en_
 	$(call MSG_L1,Copying temporary $< => $@)
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- '$<' '$(@D)'
 
+################Generate qHelp's qhp file out of HTMLHelp###############################
 $(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl: \
 		$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xml $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,xsltproc $<)
@@ -935,7 +936,6 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/htmlhelp.hhp: \
 		$(HTMLHELPOPTS) $(VBOX_PATH_MANUAL_SRC)/docbook-htmlhelp-formatcfg.xsl \
 		$<
 
-################Generate qHelp's qhp file out of HTMLHelp###############################
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qhp: \
 		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatemanual.run,) \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) \
