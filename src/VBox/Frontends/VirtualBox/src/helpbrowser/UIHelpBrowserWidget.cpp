@@ -305,8 +305,18 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 #ifdef RT_OS_LINUX
     AssertReturnVoid(m_pContentViewer && m_pHelpEngine);
     QList<QUrl> files = m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList());
-    if (!files.empty())
-        m_pContentViewer->setSource(files[0]);
+    /* Search for the index of the index.htnl: */
+    int iIndex = 0;
+    for (int i = 0; i < files.size(); ++i)
+    {
+        if (files[i].toString().contains("index.html", Qt::CaseInsensitive))
+        {
+            iIndex = i;
+            break;
+        }
+    }
+    if (files.size() > iIndex)
+        m_pContentViewer->setSource(files[iIndex]);
     /** @todo show some kind of error maybe. */
 #endif
 }
