@@ -843,7 +843,6 @@ html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 qhelp:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qhc
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
-hhp:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/htmlhelp.hhp
 
 #
 # ChangeLog.html
