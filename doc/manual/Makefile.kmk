@@ -327,11 +327,11 @@ VBox-docs-usermanual_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf
 
 VBox-docs-usermanual-qhc_INST = $(INST_BIN)
 VBox-docs-usermanual-qhc_MODE = a+r,u+w
-VBox-docs-usermanual-qhc_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qhc
+VBox-docs-usermanual-qhc_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qhc
 
 VBox-docs-usermanual-qch_INST = $(INST_BIN)
 VBox-docs-usermanual-qch_MODE = a+r,u+w
-VBox-docs-usermanual-qch_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.qch
+VBox-docs-usermanual-qch_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch
 
 #
 # target for installing translated UserManual_*.pdf
