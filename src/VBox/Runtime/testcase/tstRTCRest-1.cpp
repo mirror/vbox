@@ -2024,6 +2024,11 @@ public:
         return m_Array.resetToDefault();
     }
 
+    const char *getOperationName() const RT_NOEXCEPT RT_OVERRIDE
+    {
+        return "Test";
+    }
+
     int xmitPrepare(RTCString *a_pStrPath, RTCString *a_pStrQuery, RTHTTP a_hHttp, RTCString *a_pStrBody) const RT_NOEXCEPT RT_OVERRIDE
     {
         RT_NOREF(a_pStrPath, a_pStrQuery, a_hHttp, a_pStrBody);
@@ -2177,6 +2182,11 @@ public:
             delete m_pMap;
         if (m_pArray)
             delete m_pArray;
+    }
+
+    const char *getOperationName() const RT_NOEXCEPT RT_OVERRIDE
+    {
+        return "Test";
     }
 
 protected:

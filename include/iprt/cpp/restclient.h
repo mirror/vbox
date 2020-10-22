@@ -347,6 +347,13 @@ public:
     virtual int resetToDefault() RT_NOEXCEPT = 0;
 
     /**
+     * Getter for the operation name.  Provided by the generated
+     * subclasses so that base class code may use it for more
+     * informative logs.
+     */
+    virtual const char *getOperationName() const RT_NOEXCEPT = 0;
+
+    /**
      * Prepares the HTTP handle for transmitting this request.
      *
      * @returns IPRT status code.
@@ -470,6 +477,13 @@ public:
      * Resets the object state.
      */
     virtual void reset(void) RT_NOEXCEPT;
+
+    /**
+     * Getter for the operation name.  Provided by the generated
+     * subclasses so that base class code may use it for more
+     * informative logs.
+     */
+    virtual const char *getOperationName() const RT_NOEXCEPT = 0;
 
     /**
      * Prepares the HTTP handle for receiving the response.

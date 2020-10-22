@@ -33,6 +33,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/cpp/restarray.h>
 #include <iprt/cpp/reststringmap.h>
 
@@ -99,15 +100,20 @@ int RTCRestClientRequestBase::doPathParameters(RTCString *a_pStrPath, const char
                      != RTCRestObjectBase::kCollectionFormat_multi,
                      VERR_INTERNAL_ERROR_3);
         AssertMsgReturn(a_paPathParamStates[i].pObj != NULL,
-                        ("Path parameter '%s' is not set!\n", a_paPathParams[i].pszName),
+                        ("%s: Path parameter '%s' is not set!\n",
+                         getOperationName(), a_paPathParams[i].pszName),
                         VERR_REST_PATH_PARAMETER_NOT_SET);
         AssertMsgReturn(m_fIsSet & RT_BIT_64(a_paPathParams[i].iBitNo),
-                        ("Path parameter '%s' is not set!\n", a_paPathParams[i].pszName),
+                        ("%s: Path parameter '%s' is not set!\n",
+                         getOperationName(), a_paPathParams[i].pszName),
                         VERR_REST_PATH_PARAMETER_NOT_SET);
 
         RTCString strPathParam;
         rc = a_paPathParamStates[i].pObj->toString(&strPathParam, a_paPathParams[i].fFlags);
         AssertRCReturn(rc, rc);
+
+        LogRel5(("> %s: /%s = %s\n",
+                 getOperationName(), a_paPathParams[i].pszName, strPathParam.c_str()));
 
         RTCString strTmpVal;
         rc = strTmpVal.printfNoThrow("%RMpa", strPathParam.c_str()); /* urlencode */
@@ -140,10 +146,12 @@ int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPAR
             || (m_fIsSet & RT_BIT_64(a_paQueryParams[i].iBitNo)) )
         {
             AssertMsgReturn(a_papQueryParamObjs[i] != NULL,
-                            ("Required query parameter '%s' is not set!\n", a_paQueryParams[i].pszName),
+                            ("%s: Required query parameter '%s' is not set!\n",
+                             getOperationName(), a_paQueryParams[i].pszName),
                             VERR_REST_REQUIRED_QUERY_PARAMETER_NOT_SET);
             AssertMsgReturn(m_fIsSet & RT_BIT_64(a_paQueryParams[i].iBitNo),
-                            ("Required query parameter '%s' is not set!\n", a_paQueryParams[i].pszName),
+                            ("%s: Required query parameter '%s' is not set!\n",
+                             getOperationName(), a_paQueryParams[i].pszName),
                             VERR_REST_REQUIRED_QUERY_PARAMETER_NOT_SET);
 
             if (   (a_paQueryParams[i].fFlags & RTCRestObjectBase::kCollectionFormat_Mask)
@@ -154,6 +162,9 @@ int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPAR
 
                 rc = a_pStrQuery->appendPrintfNoThrow("%c%RMpa=%RMpa", chSep, a_paQueryParams[i].pszName, strTmpVal.c_str());
                 AssertRCReturn(rc, rc);
+
+                LogRel5(("> %s: ?%s = %s\n",
+                         getOperationName(), a_paQueryParams[i].pszName, strTmpVal.c_str()));
 
                 chSep = '&';
             }
@@ -173,6 +184,9 @@ int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPAR
 
                     rc = a_pStrQuery->appendPrintfNoThrow("%c%RMpa=%RMpa", chSep, a_paQueryParams[i].pszName, strTmpVal.c_str());
                     AssertRCReturn(rc, rc);
+
+                    LogRel5(("> %s: ?%s[%d] = %s\n",
+                             getOperationName(), a_paQueryParams[i].pszName, j, strTmpVal.c_str()));
 
                     chSep = '&';
                 }
@@ -197,10 +211,12 @@ int RTCRestClientRequestBase::doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC
             || (m_fIsSet & RT_BIT_64(a_paHeaderParams[i].iBitNo)) )
         {
             AssertMsgReturn(m_fIsSet & RT_BIT_64(a_paHeaderParams[i].iBitNo),
-                            ("Required header parameter '%s' is not set!\n", a_paHeaderParams[i].pszName),
+                            ("%s: Required header parameter '%s' is not set!\n",
+                             getOperationName(), a_paHeaderParams[i].pszName),
                             VERR_REST_REQUIRED_HEADER_PARAMETER_NOT_SET);
             AssertMsgReturn(a_papHeaderParamObjs[i] != NULL,
-                            ("Required header parameter '%s' is not set!\n", a_paHeaderParams[i].pszName),
+                            ("Required header parameter '%s' is not set!\n",
+                             getOperationName(), a_paHeaderParams[i].pszName),
                             VERR_REST_REQUIRED_HEADER_PARAMETER_NOT_SET);
 
             if (!a_paHeaderParams[i].fMapCollection)
@@ -211,6 +227,9 @@ int RTCRestClientRequestBase::doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC
                 rc = RTHttpAddHeader(a_hHttp, a_paHeaderParams[i].pszName, strTmpVal.c_str(), strTmpVal.length(),
                                      RTHTTPADDHDR_F_BACK);
                 AssertRCReturn(rc, rc);
+
+                LogRel5(("> %s: :%s = %s\n",
+                         getOperationName(), a_paHeaderParams[i].pszName, strTmpVal.c_str()));
             }
             else if (!a_papHeaderParamObjs[i]->isNull())
             {
@@ -237,6 +256,9 @@ int RTCRestClientRequestBase::doHeaderParameters(RTHTTP a_hHttp, HEADERPARAMDESC
                     rc = RTHttpAddHeader(a_hHttp, strTmpName.c_str(), strTmpVal.c_str(), strTmpVal.length(),
                                          RTHTTPADDHDR_F_BACK);
                     AssertRCReturn(rc, rc);
+
+                    LogRel5(("> %s: :%s = %s\n",
+                             getOperationName(), strTmpName.c_str(), strTmpVal.c_str()));
                 }
             }
             else
