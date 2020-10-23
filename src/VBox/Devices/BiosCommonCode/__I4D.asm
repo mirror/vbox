@@ -25,7 +25,11 @@ if VBOX_BIOS_CPU lt 80386
 extrn NeedToImplementOn8086__I4D:near
 endif
 
+; MASM (ML.EXE) is used for PXE and no longer understands the .8086 directive.
+; WASM is used for the BIOS and understands it just fine.
+ifdef __WASM__
                 .8086
+endif
 
 
 _TEXT           segment public 'CODE' use16
@@ -68,7 +72,10 @@ if VBOX_BIOS_CPU ge 80386
                 add     sp, 2
                 pop     ax
                 rol     eax, 16
+ifdef __WASM__
                 .8086
+endif
+
 else
                 call    NeedToImplementOn8086__I4D
 endif

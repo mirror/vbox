@@ -21,7 +21,12 @@
 ;*******************************************************************************
 public          __U4D
 
+; MASM (ML.EXE) is used for PXE and no longer understands the .8086 directive.
+; WASM is used for the BIOS and understands it just fine.
+ifdef __WASM__
                 .8086
+endif
+
 
 if VBOX_BIOS_CPU lt 80386
 extrn _DoUInt32Div:near
@@ -69,7 +74,9 @@ if VBOX_BIOS_CPU ge 80386
                 add     sp, 2
                 pop     ax
                 rol     eax, 16
+ifdef __WASM__
                 .8086
+endif
 else
                 ;
                 ; If the divisor is only 16-bit, use a fast path
