@@ -83,6 +83,9 @@ public:
 
     /** Returns item name. */
     QString name() const { return m_strName; }
+
+    /** Returns definition composed on the basis of @a strShortName. */
+    static QString definition(const QString &strShortName);
 };
 
 /** Cloud Profile Manager profile's tree-widget item. */
@@ -100,6 +103,9 @@ public:
 
     /** Returns item name. */
     QString name() const { return m_strName; }
+
+    /** Returns definition composed on the basis of @a strProviderShortName and @a strName. */
+    static QString definition(const QString &strProviderShortName, const QString &strName);
 };
 
 
@@ -120,8 +126,14 @@ void UIItemCloudProvider::updateFields()
     /* Update item fields: */
     setText(Column_Name, m_strName);
     setData(Column_Name, Data_ProviderID, m_uId);
-    setData(Column_Name, Data_Definition, QVariant::fromValue(QString("/%1").arg(m_strShortName)));
+    setData(Column_Name, Data_Definition, QVariant::fromValue(definition(m_strShortName)));
     setCheckState(Column_ListVMs, m_fRestricted ? Qt::Unchecked : Qt::Checked);
+}
+
+/* static */
+QString UIItemCloudProvider::definition(const QString &strShortName)
+{
+    return QString("/%1").arg(strShortName);
 }
 
 
@@ -141,8 +153,14 @@ void UIItemCloudProfile::updateFields()
 {
     /* Update item fields: */
     setText(Column_Name, m_strName);
-    setData(Column_Name, Data_Definition, QVariant::fromValue(QString("/%1/%2").arg(m_strProviderShortName, m_strName)));
+    setData(Column_Name, Data_Definition, QVariant::fromValue(definition(m_strProviderShortName, m_strName)));
     setCheckState(Column_ListVMs, m_fRestricted ? Qt::Unchecked : Qt::Checked);
+}
+
+/* static */
+QString UIItemCloudProfile::definition(const QString &strProviderShortName, const QString &strName)
+{
+    return QString("/%1/%2").arg(strProviderShortName, strName);
 }
 
 
@@ -800,7 +818,8 @@ void UICloudProfileManagerWidget::loadCloudStuff()
         createItemForCloudProvider(providerData, false);
 
         /* Make sure provider item is properly inserted: */
-        UIItemCloudProvider *pItem = searchItem(providerData.m_uId);
+        QTreeWidgetItem *pItem = searchItem(UIItemCloudProvider::definition(providerData.m_strShortName));
+        AssertPtrReturnVoid(pItem);
 
         /* Iterate through provider's profiles: */
         foreach (const CCloudProfile &comCloudProfile, listCloudProfiles(comCloudProvider))
@@ -840,7 +859,7 @@ void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comPro
         providerData.m_strShortName = comProvider.GetShortName();
     if (comProvider.isOk())
         providerData.m_strName = comProvider.GetName();
-    const QString strProviderPath = QString("/%1").arg(providerData.m_strShortName);
+    const QString strProviderPath = UIItemCloudProvider::definition(providerData.m_strShortName);
     providerData.m_fRestricted = restrictions.contains(strProviderPath);
     foreach (const QString &strSupportedPropertyName, comProvider.GetSupportedPropertyNames())
         providerData.m_propertyDescriptions[strSupportedPropertyName] = comProvider.GetPropertyDescription(strSupportedPropertyName);
@@ -861,7 +880,7 @@ void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfi
     /* Gather profile settings: */
     if (comProfile.isOk())
         profileData.m_strName = comProfile.GetName();
-    const QString strProfilePath = QString("/%1/%2").arg(providerData.m_strShortName).arg(profileData.m_strName);
+    const QString strProfilePath = UIItemCloudProfile::definition(providerData.m_strShortName, profileData.m_strName);
     profileData.m_fRestricted = restrictions.contains(strProfilePath);
 
     if (comProfile.isOk())
@@ -910,16 +929,6 @@ QTreeWidgetItem *UICloudProfileManagerWidget::searchItem(const QString &strDefin
         if (QTreeWidgetItem *pChildItem = searchItem(strDefinition, pParentItem->child(i)))
             return pChildItem;
 
-    /* Null by default: */
-    return 0;
-}
-
-UIItemCloudProvider *UICloudProfileManagerWidget::searchItem(const QUuid &uId) const
-{
-    /* Iterate through tree-widget children: */
-    for (int i = 0; i < m_pTreeWidget->childCount(); ++i)
-        if (m_pTreeWidget->childItem(i)->data(Column_Name, Data_ProviderID).toUuid() == uId)
-            return qobject_cast<UIItemCloudProvider*>(m_pTreeWidget->childItem(i));
     /* Null by default: */
     return 0;
 }
