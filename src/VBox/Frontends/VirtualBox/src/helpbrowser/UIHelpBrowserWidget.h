@@ -121,7 +121,7 @@ private:
     /** @} */
 
     QString       m_strHelpFilePath;
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     QHelpEngine  *m_pHelpEngine;
 #endif
     UIHelpBrowserViewer *m_pContentViewer;

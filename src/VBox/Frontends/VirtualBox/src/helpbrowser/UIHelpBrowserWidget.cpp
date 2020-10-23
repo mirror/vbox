@@ -20,7 +20,7 @@
 #include <QDir>
 #include <QFont>
 #include <QHBoxLayout>
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
  #include <QtHelp/QHelpEngine>
  #include <QtHelp/QHelpContentWidget>
  #include <QtHelp/QHelpIndexWidget>
@@ -72,25 +72,25 @@ public:
 
 private:
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     const QHelpEngine* m_pHelpEngine;
 #endif
 };
 
 UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* = 0 */)
     :QTextBrowser(pParent)
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     , m_pHelpEngine(pHelpEngine)
 #endif
 {
-#ifndef RT_OS_LINUX
+#if !defined(RT_OS_LINUX) || !defined(VBOX_WITH_DOCS_QHELP)
     Q_UNUSED(pHelpEngine);
 #endif
 }
 
 QVariant UIHelpBrowserViewer::loadResource(int type, const QUrl &name)
 {
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     if (name.scheme() == "qthelp" && m_pHelpEngine)
         return QVariant(m_pHelpEngine->fileData(name));
     else
@@ -113,7 +113,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pTabWidget(0)
     , m_pToolBar(0)
     , m_strHelpFilePath(strHelpFilePath)
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     , m_pHelpEngine(0)
 #endif
     , m_pContentViewer(0)
@@ -169,7 +169,7 @@ void UIHelpBrowserWidget::prepareWidgets()
     AssertReturnVoid(m_pMainLayout && m_pSplitter);
 
     m_pMainLayout->addWidget(m_pSplitter);
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     m_pHelpEngine = new QHelpEngine(m_strHelpFilePath, this);
     m_pBookmarksWidget = new QWidget(this);
     m_pTabWidget = new QITabWidget;
@@ -302,7 +302,7 @@ void UIHelpBrowserWidget::keyPressEvent(QKeyEvent *pEvent)
 
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 {
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     AssertReturnVoid(m_pContentViewer && m_pHelpEngine);
     QList<QUrl> files = m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList());
     /* Search for the index of the index.htnl: */
@@ -323,7 +323,7 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 
 void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &index)
 {
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     AssertReturnVoid(m_pContentViewer && m_pHelpEngine && m_pContentWidget);
     QHelpContentModel *pContentModel =
         qobject_cast<QHelpContentModel*>(m_pContentWidget->model());
