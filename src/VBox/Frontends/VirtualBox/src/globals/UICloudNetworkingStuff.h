@@ -96,6 +96,10 @@ namespace UICloudNetworkingStuff
     SHARED_LIBRARY_STUFF bool cloudProviderShortName(const CCloudProvider &comCloudProvider,
                                                      QString &strResult,
                                                      QWidget *pParent = 0);
+    /** Acquires @a comCloudProvider name as a @a strResult, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF bool cloudProviderName(const CCloudProvider &comCloudProvider,
+                                                QString &strResult,
+                                                QWidget *pParent = 0);
 
     /** Acquires cloud profiles of certain @a comCloudProvider, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF QVector<CCloudProfile> listCloudProfiles(CCloudProvider comCloudProvider,
@@ -108,6 +112,11 @@ namespace UICloudNetworkingStuff
     SHARED_LIBRARY_STUFF bool cloudProfileName(const CCloudProfile &comCloudProfile,
                                                QString &strResult,
                                                QWidget *pParent = 0);
+    /** Acquires @a comCloudProfile properties as a @a keys/values using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF bool cloudProfileProperties(const CCloudProfile &comCloudProfile,
+                                                     QVector<QString> &keys,
+                                                     QVector<QString> &values,
+                                                     QWidget *pParent = 0);
 
     /** Acquires cloud machines of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,

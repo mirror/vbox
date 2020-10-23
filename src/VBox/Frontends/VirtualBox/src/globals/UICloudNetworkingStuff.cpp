@@ -281,6 +281,21 @@ bool UICloudNetworkingStuff::cloudProviderShortName(const CCloudProvider &comClo
     return false;
 }
 
+bool UICloudNetworkingStuff::cloudProviderName(const CCloudProvider &comCloudProvider,
+                                               QString &strResult,
+                                               QWidget *pParent /* = 0 */)
+{
+    const QString strName = comCloudProvider.GetName();
+    if (!comCloudProvider.isOk())
+        msgCenter().cannotAcquireCloudProviderParameter(comCloudProvider, pParent);
+    else
+    {
+        strResult = strName;
+        return true;
+    }
+    return false;
+}
+
 QVector<CCloudProfile> UICloudNetworkingStuff::listCloudProfiles(CCloudProvider comCloudProvider,
                                                                  QWidget *pParent /* = 0 */)
 {
@@ -325,6 +340,26 @@ bool UICloudNetworkingStuff::cloudProfileName(const CCloudProfile &comCloudProfi
     else
     {
         strResult = strName;
+        return true;
+    }
+    return false;
+}
+
+bool UICloudNetworkingStuff::cloudProfileProperties(const CCloudProfile &comCloudProfile,
+                                                    QVector<QString> &keys,
+                                                    QVector<QString> &values,
+                                                    QWidget *pParent /* = 0 */)
+{
+    QVector<QString> aKeys;
+    QVector<QString> aValues;
+    aValues = comCloudProfile.GetProperties(QString(), aKeys);
+    if (!comCloudProfile.isOk())
+        msgCenter().cannotAcquireCloudProfileParameter(comCloudProfile, pParent);
+    else
+    {
+        aValues.resize(aKeys.size());
+        keys = aKeys;
+        values = aValues;
         return true;
     }
     return false;
