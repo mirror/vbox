@@ -91,6 +91,7 @@ extern void tstRequestTargets(SHCLX11CTX* pCtx);
 *********************************************************************************************************************************/
 class formats;
 SHCL_X11_DECL(Atom) clipGetAtom(PSHCLX11CTX pCtx, const char *pszName);
+SHCL_X11_DECL(void) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx);
 
 
 /*********************************************************************************************************************************
@@ -661,6 +662,15 @@ SHCL_X11_DECL(void) clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *paIdxF
 {
     LogFlowFuncEnter();
 
+    pCtx->fXtBusy = false;
+    if (pCtx->fXtNeedsUpdate)
+    {
+        /* We may already be out of date. */
+        pCtx->fXtNeedsUpdate = false;
+        clipQueryX11FormatsCallback(pCtx);
+        return;
+    }
+
     if (paIdxFmtTargets == NULL)
     {
         /* No data available */
@@ -689,30 +699,10 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
 
     PSHCLX11CTX pCtx = reinterpret_cast<SHCLX11CTX *>(pClient);
 
-#ifndef TESTCASE
-    LogFlowFunc(("fXtNeedsUpdate=%RTbool, fXtBusy=%RTbool\n", pCtx->fXtNeedsUpdate, pCtx->fXtBusy));
-
-    if (pCtx->fXtNeedsUpdate)
-    {
-        // The data from this callback is already out of date.  Refresh it.
-        pCtx->fXtNeedsUpdate = false;
-        XtGetSelectionValue(pCtx->pWidget,
-                            clipGetAtom(pCtx, "CLIPBOARD"),
-                            clipGetAtom(pCtx, "TARGETS"),
-                            clipConvertX11TargetsCallback, pCtx,
-                            CurrentTime);
-        return;
-    }
-    else
-    {
-        pCtx->fXtBusy = false;
-    }
-#endif
-
-    Atom *pAtoms = (Atom *)pValue;
-
     LogFlowFunc(("pValue=%p, *pcLen=%u, *atomType=%d%s\n",
                  pValue, *pcLen, *atomType, *atomType == XT_CONVERT_FAIL ? " (XT_CONVERT_FAIL)" : ""));
+
+    Atom *pAtoms = (Atom *)pValue;
 
     unsigned cFormats = *pcLen;
 
@@ -783,16 +773,15 @@ SHCL_X11_DECL(void) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx)
     if (pCtx->fXtBusy)
     {
         pCtx->fXtNeedsUpdate = true;
+        return;
     }
-    else
-    {
-        pCtx->fXtBusy = true;
-        XtGetSelectionValue(pCtx->pWidget,
-                            clipGetAtom(pCtx, "CLIPBOARD"),
-                            clipGetAtom(pCtx, "TARGETS"),
-                            clipConvertX11TargetsCallback, pCtx,
-                            CurrentTime);
-    }
+
+    pCtx->fXtBusy = true;
+    XtGetSelectionValue(pCtx->pWidget,
+                        clipGetAtom(pCtx, "CLIPBOARD"),
+                        clipGetAtom(pCtx, "TARGETS"),
+                        clipConvertX11TargetsCallback, pCtx,
+                        CurrentTime);
 #else
     tstRequestTargets(pCtx);
 #endif
@@ -1772,6 +1761,13 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
     void  *pvDst = NULL;
     size_t cbDst = 0;
 
+    PSHCLX11CTX pCtx = pReq->pCtx;
+    AssertPtr(pReq->pCtx);
+
+    pCtx->fXtBusy = false;
+    if (pCtx->fXtNeedsUpdate)
+        clipQueryX11FormatsCallback(pCtx);
+
     if (pvSrc == NULL)
     {
         /* The clipboard selection may have changed before we could get it. */
@@ -2022,7 +2018,14 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
 
     int rc = VERR_NO_DATA; /* VBox thinks we have data and we don't. */
 
-    if (pReq->uFmtVBox & VBOX_SHCL_FMT_UNICODETEXT)
+    const bool fXtBusy = pCtx->fXtBusy;
+    pCtx->fXtBusy = true;
+    if (fXtBusy)
+    {
+        /* If the clipboard is busy just fend off the request. */
+        rc = VERR_TRY_AGAIN;
+    }
+    else if (pReq->uFmtVBox & VBOX_SHCL_FMT_UNICODETEXT)
     {
         pReq->idxFmtX11 = pCtx->idxFmtText;
         if (pReq->idxFmtX11 != SHCLX11FMT_INVALID)
@@ -2062,6 +2065,8 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
 #endif
     else
     {
+        pCtx->fXtBusy = false;
+
         rc = VERR_NOT_IMPLEMENTED;
     }
 
