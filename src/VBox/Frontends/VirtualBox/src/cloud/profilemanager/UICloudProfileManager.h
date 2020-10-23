@@ -170,11 +170,11 @@ private:
                                     QTreeWidgetItem *pParentItem = 0) const;
 
         /** Creates a new tree-widget item
-          * on the basis of passed @a providerData, @a fChooseItem if requested. */
-        void createItemForCloudProvider(const UIDataCloudProvider &providerData, bool fChooseItem);
+          * on the basis of passed @a providerData. */
+        void createItemForCloudProvider(const UIDataCloudProvider &providerData);
         /** Creates a new tree-widget item as a child of certain @a pParent,
-          * on the basis of passed @a profileData, @a fChooseItem if requested. */
-        void createItemForCloudProfile(QTreeWidgetItem *pParent, const UIDataCloudProfile &profileData, bool fChooseItem);
+          * on the basis of passed @a profileData. */
+        void createItemForCloudProfile(QTreeWidgetItem *pParent, const UIDataCloudProfile &profileData);
 
         /* Gathers a list of Cloud Profile Manager restrictions starting from @a pParentItem. */
         QStringList gatherCloudProfileManagerRestrictions(QTreeWidgetItem *pParentItem);

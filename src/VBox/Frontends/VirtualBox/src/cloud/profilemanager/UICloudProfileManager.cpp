@@ -815,7 +815,7 @@ void UICloudProfileManagerWidget::loadCloudStuff()
         /* Load provider data: */
         UIDataCloudProvider providerData;
         loadCloudProvider(comCloudProvider, restrictions, providerData);
-        createItemForCloudProvider(providerData, false);
+        createItemForCloudProvider(providerData);
 
         /* Make sure provider item is properly inserted: */
         QTreeWidgetItem *pItem = searchItem(UIItemCloudProvider::definition(providerData.m_strShortName));
@@ -831,7 +831,7 @@ void UICloudProfileManagerWidget::loadCloudStuff()
             /* Load profile data: */
             UIDataCloudProfile profileData;
             loadCloudProfile(comCloudProfile, restrictions, providerData, profileData);
-            createItemForCloudProfile(pItem, profileData, false);
+            createItemForCloudProfile(pItem, profileData);
         }
 
         /* Expand provider item finally: */
@@ -933,8 +933,7 @@ QTreeWidgetItem *UICloudProfileManagerWidget::searchItem(const QString &strDefin
     return 0;
 }
 
-void UICloudProfileManagerWidget::createItemForCloudProvider(const UIDataCloudProvider &providerData,
-                                                             bool fChooseItem)
+void UICloudProfileManagerWidget::createItemForCloudProvider(const UIDataCloudProvider &providerData)
 {
     /* Create new provider item: */
     UIItemCloudProvider *pItem = new UIItemCloudProvider;
@@ -945,15 +944,11 @@ void UICloudProfileManagerWidget::createItemForCloudProvider(const UIDataCloudPr
         pItem->updateFields();
         /* Add item to the tree: */
         m_pTreeWidget->addTopLevelItem(pItem);
-        /* And choose it as current if necessary: */
-        if (fChooseItem)
-            m_pTreeWidget->setCurrentItem(pItem);
     }
 }
 
 void UICloudProfileManagerWidget::createItemForCloudProfile(QTreeWidgetItem *pParent,
-                                                            const UIDataCloudProfile &profileData,
-                                                            bool fChooseItem)
+                                                            const UIDataCloudProfile &profileData)
 {
     /* Create new profile item: */
     UIItemCloudProfile *pItem = new UIItemCloudProfile;
@@ -964,9 +959,6 @@ void UICloudProfileManagerWidget::createItemForCloudProfile(QTreeWidgetItem *pPa
         pItem->updateFields();
         /* Add item to the parent: */
         pParent->addChild(pItem);
-        /* And choose it as current if necessary: */
-        if (fChooseItem)
-            m_pTreeWidget->setCurrentItem(pItem);
     }
 }
 
