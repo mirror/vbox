@@ -251,7 +251,7 @@ void UICloudProfileManagerWidget::sltResetCloudProfileDetailsChanges()
 
 void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
 {
-    /* It can be that there is provider item, not profile item currently selected.
+    /* It can be that this is provider item, not profile item currently selected.
      * In such case we are not applying parameters, we are creating new one profile. */
     QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
     UIItemCloudProvider *pMaybeProviderItem = qobject_cast<UIItemCloudProvider*>(pItem);
@@ -260,78 +260,62 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
 
     /* Get profile item: */
     UIItemCloudProfile *pProfileItem = qobject_cast<UIItemCloudProfile*>(pItem);
-    AssertMsgReturnVoid(pProfileItem, ("Current item must not be null!\n"));
+    AssertPtrReturnVoid(pProfileItem);
+    /* Get provider item: */
+    UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
+    AssertPtrReturnVoid(pProviderItem);
 
-    /* Get item data: */
-    UIDataCloudProfile oldData = *pProfileItem;
-    UIDataCloudProfile newData = m_pDetailsWidget->data();
+    /* Acquire provider short name: */
+    const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
-    /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
-
-    /* Get CloudProviderManager for further activities: */
-    CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
-    /* Show error message if necessary: */
-    if (!comVBox.isOk())
-        msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
-    else
+    /* Look for corresponding provider: */
+    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName, this);
+    if (comCloudProvider.isNotNull())
     {
-        /* Get provider item: */
-        UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
-        /* Acquire provider short name: */
-        const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
+        /* Get old/new data: */
+        UIDataCloudProfile oldData = *pProfileItem;
+        UIDataCloudProfile newData = m_pDetailsWidget->data();
 
-        /* Look for corresponding provider: */
-        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderByShortName(strShortName);
-        /* Show error message if necessary: */
-        if (!comCloudProviderManager.isOk())
-            msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager, this);
-        else
+        /* Look for corresponding profile: */
+        CCloudProfile comCloudProfile = cloudProfileByName(strShortName, oldData.m_strName, this);
+        if (comCloudProfile.isNotNull())
         {
-            /* Look for corresponding profile: */
-            CCloudProfile comCloudProfile = comCloudProvider.GetProfileByName(oldData.m_strName);
+            /* Set profile name, if necessary: */
+            if (newData.m_strName != oldData.m_strName)
+                comCloudProfile.SetName(newData.m_strName);
             /* Show error message if necessary: */
-            if (!comCloudProvider.isOk())
-                msgCenter().cannotFindCloudProfile(comCloudProvider, oldData.m_strName, this);
+            if (!comCloudProfile.isOk())
+                msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
             else
             {
-                /* Set profile name, if necessary: */
-                if (newData.m_strName != oldData.m_strName)
-                    comCloudProfile.SetName(newData.m_strName);
-                /* Show error message if necessary: */
-                if (!comCloudProfile.isOk())
-                    msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
-                else
+                /* Iterate through old/new data: */
+                foreach (const QString &strKey, oldData.m_data.keys())
                 {
-                    /* Iterate through old/new data: */
-                    foreach (const QString &strKey, oldData.m_data.keys())
+                    /* Get values: */
+                    const QString strOldValue = oldData.m_data.value(strKey).first;
+                    const QString strNewValue = newData.m_data.value(strKey).first;
+                    if (strNewValue != strOldValue)
                     {
-                        /* Get values: */
-                        const QString strOldValue = oldData.m_data.value(strKey).first;
-                        const QString strNewValue = newData.m_data.value(strKey).first;
-                        if (strNewValue != strOldValue)
+                        /* Apply property: */
+                        comCloudProfile.SetProperty(strKey, strNewValue);
+                        /* Show error message if necessary: */
+                        if (!comCloudProfile.isOk())
                         {
-                            /* Apply property: */
-                            comCloudProfile.SetProperty(strKey, strNewValue);
-                            /* Show error message if necessary: */
-                            if (!comCloudProfile.isOk())
-                            {
-                                msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
-                                break;
-                            }
+                            msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
+                            break;
                         }
                     }
                 }
+            }
 
-                /* If profile is Ok finally: */
-                if (comCloudProfile.isOk())
-                {
-                    /* Save profile changes: */
-                    comCloudProvider.SaveProfiles();
-                    /* Show error message if necessary: */
-                    if (!comCloudProvider.isOk())
-                        msgCenter().cannotSaveCloudProfiles(comCloudProvider, this);
-                }
+            /* If profile is Ok finally: */
+            if (comCloudProfile.isOk())
+            {
+                /* Save profile changes: */
+                comCloudProvider.SaveProfiles();
+                /* Show error message if necessary: */
+                if (!comCloudProvider.isOk())
+                    msgCenter().cannotSaveCloudProfiles(comCloudProvider, this);
             }
         }
     }
@@ -342,7 +326,7 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
     /* Get provider item: */
     QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
     UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pItem);
-    AssertMsgReturnVoid(pProviderItem, ("Current item must not be null!\n"));
+    AssertPtrReturnVoid(pProviderItem);
 
     /* Acquire profile name if not proposed by details widget: */
     QString strProfileName = m_pDetailsWidget->data().m_strName;
@@ -365,41 +349,27 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
             return;
     }
 
-    /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    /* Acquire provider short name: */
+    const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
-    /* Get CloudProviderManager for further activities: */
-    CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
-    /* Show error message if necessary: */
-    if (!comVBox.isOk())
-        msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
-    else
+    /* Look for corresponding provider: */
+    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName, this);
+    if (comCloudProvider.isNotNull())
     {
-        /* Acquire provider short name: */
-        const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
-
-        /* Look for corresponding provider: */
-        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderByShortName(strShortName);
+        /* Create new profile: */
+        const QVector<QString> keys = pProviderItem->m_propertyDescriptions.keys().toVector();
+        const QVector<QString> values(keys.size());
+        comCloudProvider.CreateProfile(strProfileName, keys, values);
         /* Show error message if necessary: */
-        if (!comCloudProviderManager.isOk())
-            msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager, this);
+        if (!comCloudProvider.isOk())
+            msgCenter().cannotCreateCloudProfile(comCloudProvider, this);
         else
         {
-            /* Create new profile: */
-            const QVector<QString> keys = pProviderItem->m_propertyDescriptions.keys().toVector();
-            const QVector<QString> values(keys.size());
-            comCloudProvider.CreateProfile(strProfileName, keys, values);
+            /* Save profile changes: */
+            comCloudProvider.SaveProfiles();
             /* Show error message if necessary: */
             if (!comCloudProvider.isOk())
-                msgCenter().cannotCreateCloudProfile(comCloudProvider, this);
-            else
-            {
-                /* Save profile changes: */
-                comCloudProvider.SaveProfiles();
-                /* Show error message if necessary: */
-                if (!comCloudProvider.isOk())
-                    msgCenter().cannotSaveCloudProfiles(comCloudProvider, this);
-            }
+                msgCenter().cannotSaveCloudProfiles(comCloudProvider, this);
         }
     }
 }
@@ -409,40 +379,25 @@ void UICloudProfileManagerWidget::sltImportCloudProfiles()
     /* Get provider item: */
     QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
     UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pItem);
-    AssertMsgReturnVoid(pProviderItem, ("Current item must not be null!\n"));
+    AssertPtrReturnVoid(pProviderItem);
 
     /* If there are profiles exist => confirm cloud profile import. */
     if (   pProviderItem->childCount() != 0
         && !msgCenter().confirmCloudProfilesImport(this))
         return;
 
-    /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    /* Acquire provider short name: */
+    const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
-    /* Get CloudProviderManager for further activities: */
-    CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
-    /* Show error message if necessary: */
-    if (!comVBox.isOk())
-        msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
-    else
+    /* Look for corresponding provider: */
+    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName, this);
+    if (comCloudProvider.isNotNull())
     {
-        /* Acquire provider short name: */
-        const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
-
-        /* Look for corresponding provider: */
-        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderByShortName(strShortName);
+        /* Import profiles: */
+        comCloudProvider.ImportProfiles();
         /* Show error message if necessary: */
-        if (!comCloudProviderManager.isOk())
-            msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager, this);
-        else
-        {
-            /* Import profiles: */
-            comCloudProvider.ImportProfiles();
-
-            /* Show error message if necessary: */
-            if (!comCloudProvider.isOk())
-                msgCenter().cannotImportCloudProfiles(comCloudProvider, this);
-        }
+        if (!comCloudProvider.isOk())
+            msgCenter().cannotImportCloudProfiles(comCloudProvider, this);
     }
 }
 
@@ -451,50 +406,36 @@ void UICloudProfileManagerWidget::sltRemoveCloudProfile()
     /* Get profile item: */
     QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
     UIItemCloudProfile *pProfileItem = qobject_cast<UIItemCloudProfile*>(pItem);
-    AssertMsgReturnVoid(pProfileItem, ("Current item must not be null!\n"));
+    AssertPtrReturnVoid(pProfileItem);
+    /* Get provider item: */
+    UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
+    AssertPtrReturnVoid(pProviderItem);
 
-    /* Get profile name: */
-    const QString strProfileName(pProfileItem->name());
+    /* Acquire profile name: */
+    const QString strProfileName = pProfileItem->name();
 
     /* Confirm cloud profile removal: */
     if (!msgCenter().confirmCloudProfileRemoval(strProfileName, this))
         return;
 
-    /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
+    /* Acquire provider short name: */
+    const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
-    /* Get CloudProviderManager for further activities: */
-    CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
-    /* Show error message if necessary: */
-    if (!comVBox.isOk())
-        msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
-    else
+    /* Look for corresponding provider: */
+    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName, this);
+    if (comCloudProvider.isNotNull())
     {
-        /* Get provider item: */
-        UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
-        /* Acquire provider short name: */
-        const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
-
-        /* Look for corresponding provider: */
-        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderByShortName(strShortName);
-        /* Show error message if necessary: */
-        if (!comCloudProviderManager.isOk())
-            msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager, this);
-        else
+        /* Look for corresponding profile: */
+        CCloudProfile comCloudProfile = cloudProfileByName(strShortName, strProfileName, this);
+        if (comCloudProfile.isNotNull())
         {
-            /* Look for corresponding profile: */
-            CCloudProfile comCloudProfile = comCloudProvider.GetProfileByName(strProfileName);
+            /* Remove current profile: */
+            comCloudProfile.Remove();
             /* Show error message if necessary: */
-            if (!comCloudProvider.isOk())
-                msgCenter().cannotFindCloudProfile(comCloudProvider, strProfileName, this);
+            if (!comCloudProfile.isOk())
+                msgCenter().cannotRemoveCloudProfile(comCloudProfile, this);
             else
             {
-                /* Remove current profile: */
-                comCloudProfile.Remove();
-                /* Show error message if necessary: */
-                if (!comCloudProfile.isOk())
-                    msgCenter().cannotRemoveCloudProfile(comCloudProfile, this);
-
                 /* Save profile changes: */
                 comCloudProvider.SaveProfiles();
                 /* Show error message if necessary: */
@@ -854,19 +795,14 @@ void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comPro
 {
     /* Gather provider settings: */
     if (comProvider.isOk())
-        providerData.m_uId = comProvider.GetId();
+        cloudProviderId(comProvider, providerData.m_uId, this);
     if (comProvider.isOk())
-        providerData.m_strShortName = comProvider.GetShortName();
+        cloudProviderShortName(comProvider, providerData.m_strShortName);
     if (comProvider.isOk())
-        providerData.m_strName = comProvider.GetName();
-    const QString strProviderPath = UIItemCloudProvider::definition(providerData.m_strShortName);
-    providerData.m_fRestricted = restrictions.contains(strProviderPath);
+        cloudProviderName(comProvider, providerData.m_strName);
+    providerData.m_fRestricted = restrictions.contains(UIItemCloudProvider::definition(providerData.m_strShortName));
     foreach (const QString &strSupportedPropertyName, comProvider.GetSupportedPropertyNames())
         providerData.m_propertyDescriptions[strSupportedPropertyName] = comProvider.GetPropertyDescription(strSupportedPropertyName);
-
-    /* Show error message if necessary: */
-    if (!comProvider.isOk())
-        msgCenter().cannotAcquireCloudProviderParameter(comProvider, this);
 }
 
 void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfile,
@@ -879,33 +815,16 @@ void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfi
 
     /* Gather profile settings: */
     if (comProfile.isOk())
-        profileData.m_strName = comProfile.GetName();
-    const QString strProfilePath = UIItemCloudProfile::definition(providerData.m_strShortName, profileData.m_strName);
-    profileData.m_fRestricted = restrictions.contains(strProfilePath);
-
+        cloudProfileName(comProfile, profileData.m_strName);
+    profileData.m_fRestricted = restrictions.contains(UIItemCloudProfile::definition(providerData.m_strShortName, profileData.m_strName));
     if (comProfile.isOk())
     {
-        /* Acquire properties: */
         QVector<QString> keys;
         QVector<QString> values;
-        QVector<QString> descriptions;
-        values = comProfile.GetProperties(QString(), keys);
-
-        /* Sync sizes: */
-        values.resize(keys.size());
-        descriptions.resize(keys.size());
-
-        if (comProfile.isOk())
-        {
-            /* Enumerate all the keys: */
+        if (cloudProfileProperties(comProfile, keys, values))
             for (int i = 0; i < keys.size(); ++i)
                 profileData.m_data[keys.at(i)] = qMakePair(values.at(i), providerData.m_propertyDescriptions.value(keys.at(i)));
-        }
     }
-
-    /* Show error message if necessary: */
-    if (!comProfile.isOk())
-        msgCenter().cannotAcquireCloudProfileParameter(comProfile, this);
 }
 
 QTreeWidgetItem *UICloudProfileManagerWidget::searchItem(const QString &strDefinition,
