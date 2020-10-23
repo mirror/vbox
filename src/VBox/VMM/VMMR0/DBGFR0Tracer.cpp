@@ -53,7 +53,7 @@
  * @param   pGVM        The global (ring-0) VM structure.
  * @param   pTracer     The device instance.
  */
-DECLHIDDEN(int) dbgfR0TracerDestroy(PGVM pGVM, PDBGFTRACERINSR0 pTracer)
+DECLHIDDEN(void) dbgfR0TracerDestroy(PGVM pGVM, PDBGFTRACERINSR0 pTracer)
 {
     RT_NOREF(pGVM);
 
@@ -67,8 +67,6 @@ DECLHIDDEN(int) dbgfR0TracerDestroy(PGVM pGVM, PDBGFTRACERINSR0 pTracer)
     hMemObj = pTracer->hMemObj;
     pTracer->hMemObj = NIL_RTR0MEMOBJ;
     RTR0MemObjFree(hMemObj, true);
-
-    return VINF_SUCCESS;
 }
 
 

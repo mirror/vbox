@@ -1185,6 +1185,10 @@ DECLHIDDEN(int) dbgfR3DisasInstrStateEx(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS p
 
 #endif /* IN_RING3 */
 
+#ifdef IN_RING0
+DECLHIDDEN(void) dbgfR0TracerDestroy(PGVM pGVM, PDBGFTRACERINSR0 pTracer);
+#endif /* !IN_RING0 */
+
 /** @} */
 
 #endif /* !VMM_INCLUDED_SRC_include_DBGFInternal_h */

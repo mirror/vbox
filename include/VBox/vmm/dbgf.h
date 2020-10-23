@@ -58,6 +58,9 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
 /** @defgroup grp_dbgf_r0  The R0 DBGF API
  * @{
  */
+VMMR0_INT_DECL(void) DBGFR0InitPerVMData(PGVM pGVM);
+VMMR0_INT_DECL(void) DBGFR0CleanupVM(PGVM pGVM);
+
 /**
  * Request buffer for DBGFR0TracerCreateReqHandler / VMMR0_DO_DBGF_TRACER_CREATE.
  * @see DBGFR0TracerCreateReqHandler.
