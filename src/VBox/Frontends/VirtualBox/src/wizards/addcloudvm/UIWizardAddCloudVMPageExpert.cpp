@@ -27,6 +27,7 @@
 #include "QIToolButton.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardAddCloudVM.h"
 #include "UIWizardAddCloudVMPageExpert.h"
@@ -120,9 +121,10 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
     }
 
     /* Setup connections: */
-    if (gpManager)
-        connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
-                this, &UIWizardAddCloudVMPageExpert::sltHandleSourceChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
+            this, &UIWizardAddCloudVMPageExpert::sltHandleSourceChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
+            this, &UIWizardAddCloudVMPageExpert::sltHandleSourceChange);
     connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
             this, &UIWizardAddCloudVMPageExpert::sltHandleSourceChange);
     connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),

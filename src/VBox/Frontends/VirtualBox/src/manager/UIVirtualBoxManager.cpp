@@ -630,8 +630,6 @@ void UIVirtualBoxManager::sltOpenCloudProfileManagerWindow()
         UICloudProfileManagerFactory(m_pActionPool).prepare(m_pManagerCloudProfile, this);
         connect(m_pManagerCloudProfile, &QIManagerDialog::sigClose,
                 this, &UIVirtualBoxManager::sltCloseCloudProfileManagerWindow);
-        connect(m_pManagerCloudProfile, &QIManagerDialog::sigChange,
-                this, &UIVirtualBoxManager::sigCloudProfileManagerChange);
     }
 
     /* Show instance: */
@@ -2099,8 +2097,6 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltHandleCloudMachineStateChange);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChange,
             this, &UIVirtualBoxManager::sltHandleToolTypeChange);
-    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCloudProfileManagerChange,
-            this, &UIVirtualBoxManager::sigCloudProfileManagerChange);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSettingsLinkClicked,
             this, &UIVirtualBoxManager::sltOpenMachineSettingsDialog);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange,

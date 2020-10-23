@@ -87,12 +87,6 @@ signals:
         void sigToolTypeChange();
     /** @} */
 
-    /** @name Tools / Cloud Profile Manager stuff.
-      * @{ */
-        /** Notifies listeners about Cloud Profile Manager change. */
-        void sigCloudProfileManagerChange();
-    /** @} */
-
     /** @name Tools / Details pane stuff.
       * @{ */
         /** Notifies aboud Details-pane link clicked. */

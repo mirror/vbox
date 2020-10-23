@@ -37,6 +37,7 @@
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppDefs.h"
@@ -405,9 +406,10 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     populateMACAddressPolicies();
 
     /* Setup connections: */
-    if (gpManager)
-        connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
-                this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
+            this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
+            this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardExportAppPageExpert::sltHandleFileSelectorChange);

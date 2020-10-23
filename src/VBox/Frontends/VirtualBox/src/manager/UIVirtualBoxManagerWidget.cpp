@@ -573,8 +573,6 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         {
                             if (m_pPaneChooser->isGlobalItemSelected())
                                 m_pPaneToolsGlobal->setActive(true);
-                            connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigCloudProfileManagerChange,
-                                    this, &UIVirtualBoxManagerWidget::sigCloudProfileManagerChange);
                             connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigSwitchToMachinePerformancePane,
                                     this, &UIVirtualBoxManagerWidget::sltSwitchToMachinePerformancePane);
 

@@ -91,9 +91,6 @@ class SHARED_LIBRARY_STUFF QIManagerDialog : public QIWithRestorableGeometry<QMa
 
 signals:
 
-    /** Notifies listeners about dialog change. */
-    void sigChange();
-
     /** Notifies listeners about dialog should be closed. */
     void sigClose();
 

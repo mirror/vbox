@@ -35,6 +35,7 @@
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppDefs.h"
@@ -860,9 +861,10 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     populateProfile();
 
     /* Setup connections: */
-    if (gpManager)
-        connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
-                this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
+            this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
+            this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardExportAppPageBasic2::sltHandleFileSelectorChange);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),

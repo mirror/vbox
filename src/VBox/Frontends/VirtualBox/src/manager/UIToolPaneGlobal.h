@@ -48,9 +48,6 @@ class UIToolPaneGlobal : public QWidget
 
 signals:
 
-    /** Notifies listeners about Cloud Profile Manager change. */
-    void sigCloudProfileManagerChange();
-
     /** Notifies listeners about request to switch to Performance pane of machine with @a uMachineId. */
     void sigSwitchToMachinePerformancePane(const QUuid &uMachineId);
 

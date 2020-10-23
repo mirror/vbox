@@ -33,6 +33,7 @@
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageExpert.h"
@@ -240,9 +241,10 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     refreshFormPropertiesTable();
 
     /* Setup connections: */
-    if (gpManager)
-        connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
-                this, &UIWizardImportAppPageExpert::sltHandleSourceChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
+            this, &UIWizardImportAppPageExpert::sltHandleSourceChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
+            this, &UIWizardImportAppPageExpert::sltHandleSourceChange);
     connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
             this, &UIWizardImportAppPageExpert::sltHandleSourceChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
