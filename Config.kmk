@@ -6938,7 +6938,7 @@ ifdef VBOX_WITH_QTGUI
      VBOX_QT_MOD += Qt5Help Qt5Network Qt5CLucene Qt5Sql
    endif # linux
  endif
- 
+
  VBOX_QT_MOD_NAMES = $(foreach qtmod,$(VBOX_QT_MOD),$(qtmod)$(VBOX_QT_INFIX))
 
  # Hack LD_LIBRARY_PATH for stuff in tools.
