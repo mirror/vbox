@@ -276,7 +276,7 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFor
  *
  * @param  pCtx                 Request context information.
  * @param  rcCompletion         The completion status of the request.
- * @param  pReq                 Request to complete.
+ * @param  pReq                 Request to complete. Will be free'd by the callback.
  * @param  pv                   Address of data from completed request. Optional.
  * @param  cb                   Size (in bytes) of data from completed request. Optional.
  *
@@ -285,30 +285,36 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFor
 DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
                                                          CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
+    AssertPtrReturnVoid(pCtx);
     RT_NOREF(rcCompletion);
+    AssertPtrReturnVoid(pReq);
 
     LogFlowFunc(("rcCompletion=%Rrc, pReq=%p, pv=%p, cb=%RU32, idEvent=%RU32\n", rcCompletion, pReq, pv, cb, pReq->idEvent));
-
-    AssertMsgRC(rcCompletion, ("Clipboard data completion from X11 failed with %Rrc\n", rcCompletion));
 
     if (pReq->idEvent != NIL_SHCLEVENTID)
     {
         int rc2;
 
         PSHCLEVENTPAYLOAD pPayload = NULL;
-        if (pv && cb)
+        if (   RT_SUCCESS(rcCompletion)
+            && pv
+            && cb)
         {
             rc2 = ShClPayloadAlloc(pReq->idEvent, pv, cb, &pPayload);
             AssertRC(rc2);
         }
 
-        RTCritSectEnter(&pCtx->pClient->CritSect);
-        rc2 = ShClEventSignal(&pCtx->pClient->EventSrc, pReq->idEvent, pPayload);
-        AssertRC(rc2);
-        RTCritSectLeave(&pCtx->pClient->CritSect);
+        rc2 = RTCritSectEnter(&pCtx->pClient->CritSect);
+        if (RT_SUCCESS(rc2))
+        {
+            ShClEventSignal(&pCtx->pClient->EventSrc, pReq->idEvent, pPayload);
+            /* Note: Skip checking if signalling the event is successful, as it could be gone already by now. */
+            RTCritSectLeave(&pCtx->pClient->CritSect);
+        }
     }
 
-    RTMemFree(pReq);
+    if (pReq)
+        RTMemFree(pReq);
 }
 
 /**
