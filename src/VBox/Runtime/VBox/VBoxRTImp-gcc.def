@@ -394,8 +394,6 @@ EXPORTS
     _ZN25RTCRestClientResponseBase29deserializeBodyFromJsonCursorERK17RTCRestJsonCursor
     _ZN25RTCRestClientResponseBase5resetEv
     _ZN25RTCRestClientResponseBase8addErrorEiPKcz
-    _ZN25RTCRestClientResponseBaseC1ERKS_
-    _ZN25RTCRestClientResponseBaseC1Ev
     _ZN25RTCRestClientResponseBaseC2ERKS_
     _ZN25RTCRestClientResponseBaseC2Ev
     _ZN25RTCRestClientResponseBaseD0Ev
