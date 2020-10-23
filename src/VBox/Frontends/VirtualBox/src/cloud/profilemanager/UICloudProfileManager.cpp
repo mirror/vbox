@@ -961,20 +961,6 @@ void UICloudProfileManagerWidget::createItemForCloudProfile(QTreeWidgetItem *pPa
     }
 }
 
-void UICloudProfileManagerWidget::updateItemForCloudProfile(const UIDataCloudProfile &profileData, bool fChooseItem, UIItemCloudProfile *pItem)
-{
-    /* Update passed item: */
-    if (pItem)
-    {
-        /* Configure item: */
-        pItem->UIDataCloudProfile::operator=(profileData);
-        pItem->updateFields();
-        /* And choose it as current if necessary: */
-        if (fChooseItem)
-            m_pTreeWidget->setCurrentItem(pItem);
-    }
-}
-
 QStringList UICloudProfileManagerWidget::gatherCloudProfileManagerRestrictions(QTreeWidgetItem *pParentItem)
 {
     /* Prepare result: */
