@@ -54,9 +54,9 @@ Q_DECLARE_METATYPE(CloudItemType);
 /** Tree-widget data types. */
 enum
 {
-    Data_ItemType   = Qt::UserRole + 1,
-    Data_ProviderID = Qt::UserRole + 2,
-    Data_Definition = Qt::UserRole + 3,
+    Data_ItemType          = Qt::UserRole + 1,
+    Data_ProviderShortName = Qt::UserRole + 2,
+    Data_Definition        = Qt::UserRole + 3,
 };
 
 /** Tree-widget column types. */
@@ -125,7 +125,7 @@ void UIItemCloudProvider::updateFields()
 {
     /* Update item fields: */
     setText(Column_Name, m_strName);
-    setData(Column_Name, Data_ProviderID, m_uId);
+    setData(Column_Name, Data_ProviderShortName, m_strShortName);
     setData(Column_Name, Data_Definition, QVariant::fromValue(definition(m_strShortName)));
     setCheckState(Column_ListVMs, m_fRestricted ? Qt::Unchecked : Qt::Checked);
 }
@@ -278,14 +278,14 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
     {
         /* Get provider item: */
         UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
-        /* Acquire provider ID: */
-        const QUuid uId = pProviderItem->data(Column_Name, Data_ProviderID).toUuid();
+        /* Acquire provider short name: */
+        const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
         /* Look for corresponding provider: */
-        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderById(uId);
+        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderByShortName(strShortName);
         /* Show error message if necessary: */
         if (!comCloudProviderManager.isOk())
-            msgCenter().cannotFindCloudProvider(comCloudProviderManager, uId, this);
+            msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager, this);
         else
         {
             /* Look for corresponding profile: */
@@ -375,14 +375,14 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
         msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
     else
     {
-        /* Acquire provider ID: */
-        const QUuid uId = pProviderItem->data(Column_Name, Data_ProviderID).toUuid();
+        /* Acquire provider short name: */
+        const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
         /* Look for corresponding provider: */
-        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderById(uId);
+        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderByShortName(strShortName);
         /* Show error message if necessary: */
         if (!comCloudProviderManager.isOk())
-            msgCenter().cannotFindCloudProvider(comCloudProviderManager, uId, this);
+            msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager, this);
         else
         {
             /* Create new profile: */
@@ -426,14 +426,14 @@ void UICloudProfileManagerWidget::sltImportCloudProfiles()
         msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
     else
     {
-        /* Acquire provider ID: */
-        const QUuid uId = pProviderItem->data(Column_Name, Data_ProviderID).toUuid();
+        /* Acquire provider short name: */
+        const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
         /* Look for corresponding provider: */
-        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderById(uId);
+        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderByShortName(strShortName);
         /* Show error message if necessary: */
         if (!comCloudProviderManager.isOk())
-            msgCenter().cannotFindCloudProvider(comCloudProviderManager, uId, this);
+            msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager, this);
         else
         {
             /* Import profiles: */
@@ -472,14 +472,14 @@ void UICloudProfileManagerWidget::sltRemoveCloudProfile()
     {
         /* Get provider item: */
         UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
-        /* Acquire provider ID: */
-        const QUuid uId = pProviderItem->data(Column_Name, Data_ProviderID).toUuid();
+        /* Acquire provider short name: */
+        const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
         /* Look for corresponding provider: */
-        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderById(uId);
+        CCloudProvider comCloudProvider = comCloudProviderManager.GetProviderByShortName(strShortName);
         /* Show error message if necessary: */
         if (!comCloudProviderManager.isOk())
-            msgCenter().cannotFindCloudProvider(comCloudProviderManager, uId, this);
+            msgCenter().cannotAcquireCloudProviderManagerParameter(comCloudProviderManager, this);
         else
         {
             /* Look for corresponding profile: */
