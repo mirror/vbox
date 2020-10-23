@@ -848,6 +848,10 @@ static DECLCALLBACK(int) clipEventThread(RTTHREAD hThreadSelf, void *pvUser)
     if (pCtx->fGrabClipboardOnStart)
         clipQueryX11FormatsCallback(pCtx);
 
+    /* We're now ready to run, tell parent. */
+    int rc2 = RTThreadUserSignal(hThreadSelf);
+    AssertRC(rc2);
+
     while (XtAppGetExitFlag(pCtx->appContext) == FALSE)
     {
         clipPeekEventAndDoXFixesHandling(pCtx);
@@ -1133,7 +1137,7 @@ void ShClX11Destroy(PSHCLX11CTX pCtx)
  */
 int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
 {
-    int rc = VINF_SUCCESS;
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     /*
      * Immediately return if we are not connected to the X server.
@@ -1141,26 +1145,30 @@ int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
     if (!pCtx->fHaveX11)
         return VINF_SUCCESS;
 
-    rc = clipInit(pCtx);
+    int rc = clipInit(pCtx);
     if (RT_SUCCESS(rc))
     {
         clipResetX11Formats(pCtx);
         pCtx->fGrabClipboardOnStart = fGrab;
-    }
+
 #ifndef TESTCASE
-    if (RT_SUCCESS(rc))
-    {
         LogRel2(("Shared Clipboard: Starting X11 event thread ...\n"));
 
         rc = RTThreadCreate(&pCtx->Thread, clipEventThread, pCtx, 0,
                             RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLX11");
+        if (RT_SUCCESS(rc))
+            rc = RTThreadUserWait(pCtx->Thread, RT_MS_30SEC /* msTimeout */);
+
         if (RT_FAILURE(rc))
         {
             LogRel(("Shared Clipboard: Failed to start the X11 event thread with %Rrc\n", rc));
             clipUninit(pCtx);
         }
-    }
+        else
+            LogRel2(("Shared Clipboard: X11 event thread started\n"));
 #endif
+    }
+
     return rc;
 }
 
@@ -1177,41 +1185,36 @@ int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
  */
 int ShClX11ThreadStop(PSHCLX11CTX pCtx)
 {
-    int rc, rcThread;
-    unsigned count = 0;
     /*
      * Immediately return if we are not connected to the X server.
      */
     if (!pCtx->fHaveX11)
         return VINF_SUCCESS;
 
-    LogRel(("Shared Clipboard: Stopping X11 event thread ...\n"));
+    LogRel2(("Shared Clipboard: Stopping X11 event thread ...\n"));
 
     /* Write to the "stop" pipe. */
     clipQueueToEventThread(pCtx, clipStopEventThreadWorker, (XtPointer)pCtx);
 
+    int rc;
+
 #ifndef TESTCASE
-    do
-    {
-        rc = RTThreadWait(pCtx->Thread, 1000, &rcThread);
-        ++count;
-        Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
-    } while ((VERR_TIMEOUT == rc) && (count < 300));
+    LogRel2(("Shared Clipboard: Waiting for X11 event thread to stop ...\n"));
+
+    int rcThread;
+    rc = RTThreadWait(pCtx->Thread, RT_MS_30SEC /* msTimeout */, &rcThread);
+    if (RT_SUCCESS(rc))
+        rc = rcThread;
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Stopping X11 event thread failed with %Rrc\n", rc));
 #else
     rc = VINF_SUCCESS;
-    rcThread = VINF_SUCCESS;
-    RT_NOREF_PV(count);
 #endif
-    if (RT_SUCCESS(rc))
-    {
-        AssertRC(rcThread);
-    }
-    else
-        LogRel(("Shared Clipboard: Stopping X11 event thread failed with %Rrc\n", rc));
+
+    LogRel2(("Shared Clipboard: X11 event thread stopped\n"));
 
     clipUninit(pCtx);
-
-    RT_NOREF_PV(rcThread);
     return rc;
 }
 
