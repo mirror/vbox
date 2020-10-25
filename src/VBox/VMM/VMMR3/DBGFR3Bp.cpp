@@ -109,7 +109,7 @@
  *     -# The L2 table consists of multiple index based AVL trees, there is one for each reference
  *        from the L1 table. The key for the table are the upper 6 bytes of the breakpoint address
  *        used for searching. This tree is traversed until either a matching address is found and
- *        the breakpoint is being processed or again forwardedto the guest if it isn't successful.
+ *        the breakpoint is being processed or again forwarded to the guest if it isn't successful.
  *        Each entry in the L2 table is 16 bytes big and densly packed to avoid excessive memory usage.
  *
  *
@@ -154,7 +154,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
-#include <iprt/string.h>
+#include <iprt/mem.h>
 
 
 /*********************************************************************************************************************************
@@ -169,16 +169,38 @@ RT_C_DECLS_BEGIN
 RT_C_DECLS_END
 
 
-
 /**
  * Initialize the breakpoint mangement.
  *
  * @returns VBox status code.
- * @param   pVM                 The cross context VM structure.
+ * @param   pUVM                The user mode VM handle.
  */
-DECLHIDDEN(int) dbgfR3BpInit(PVM pVM)
+DECLHIDDEN(int) dbgfR3BpInit(PUVM pUVM)
 {
-    RT_NOREF(pVM);
+    PVM pVM = pUVM->pVM;
+
+    /* Init hardware breakpoint states. */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); i++)
+    {
+        PDBGFBPHW pHwBp = &pVM->dbgf.s.aHwBreakpoints[i];
+
+        AssertCompileSize(DBGFBP, sizeof(uint32_t));
+        pHwBp->hBp      = NIL_DBGFBP;
+        //pHwBp->fEnabled = false;
+    }
+
+    /* Now the global breakpoint table chunks. */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pUVM->dbgf.s.aBpChunks); i++)
+    {
+        PDBGFBPCHUNKR3 pBpChunk = &pUVM->dbgf.s.aBpChunks[i];
+
+        //pBpChunk->pBpBaseR3 = NULL;
+        //pBpChunk->pbmAlloc  = NULL;
+        //pBpChunk->cBpsFree  = 0;
+        pBpChunk->idChunk = DBGF_BP_CHUNK_ID_INVALID; /* Not allocated. */
+    }
+
+    //pUVM->dbgf.s.paBpLocL1R3 = NULL;
     return VINF_SUCCESS;
 }
 
@@ -187,12 +209,556 @@ DECLHIDDEN(int) dbgfR3BpInit(PVM pVM)
  * Terminates the breakpoint mangement.
  *
  * @returns VBox status code.
- * @param   pVM                 The cross context VM structure.
+ * @param   pUVM                The user mode VM handle.
  */
-DECLHIDDEN(int) dbgfR3BpTerm(PVM pVM)
+DECLHIDDEN(int) dbgfR3BpTerm(PUVM pUVM)
 {
-    RT_NOREF(pVM);
+    /* Free all allocated chunk bitmaps (the chunks itself are destroyed during ring-0 VM destruction). */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pUVM->dbgf.s.aBpChunks); i++)
+    {
+        PDBGFBPCHUNKR3 pBpChunk = &pUVM->dbgf.s.aBpChunks[i];
+
+        if (pBpChunk->idChunk != DBGF_BP_CHUNK_ID_INVALID)
+        {
+            AssertPtr(pBpChunk->pbmAlloc);
+            RTMemFree((void *)pBpChunk->pbmAlloc);
+            pBpChunk->pbmAlloc = NULL;
+            pBpChunk->idChunk = DBGF_BP_CHUNK_ID_INVALID;
+        }
+    }
+
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpInitEmtWorker(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    RT_NOREF(pvUser);
+
+    VMCPU_ASSERT_EMT(pVCpu);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    /*
+     * The initialization will be done on EMT(0). It is possible that multiple
+     * initialization attempts are done because dbgfR3BpEnsureInit() can be called
+     * from racing non EMT threads when trying to set a breakpoint for the first time.
+     * Just fake success if the L1 is already present which means that a previous rendezvous
+     * successfully initialized the breakpoint manager.
+     */
+    PUVM pUVM = pVM->pUVM;
+    if (   pVCpu->idCpu == 0
+        && !pUVM->dbgf.s.paBpLocL1R3)
+    {
+        DBGFBPINITREQ Req;
+        Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        Req.Hdr.cbReq    = sizeof(Req);
+        Req.paBpLocL1R3  = NULL;
+        int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_INIT, 0 /*u64Arg*/, &Req.Hdr);
+        AssertLogRelMsgRCReturn(rc, ("VMMR0_DO_DBGF_BP_INIT failed: %Rrc\n", rc), rc);
+        pUVM->dbgf.s.paBpLocL1R3 = Req.paBpLocL1R3;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Ensures that the breakpoint manager is fully initialized.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ *
+ * @thread Any thread.
+ */
+static int dbgfR3BpEnsureInit(PUVM pUVM)
+{
+    /* If the L1 lookup table is allocated initialization succeeded before. */
+    if (RT_LIKELY(pUVM->dbgf.s.paBpLocL1R3))
+        return VINF_SUCCESS;
+
+    /* Gather all EMTs and call into ring-0 to initialize the breakpoint manager. */
+    return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpInitEmtWorker, NULL /*pvUser*/);
+}
+
+
+/**
+ * Returns the internal breakpoint state for the given handle.
+ *
+ * @returns Pointer to the internal breakpoint state or NULL if the handle is invalid.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBp                 The breakpoint handle to resolve.
+ */
+DECLINLINE(PDBGFBPINT) dbgfR3BpGetByHnd(PUVM pUVM, DBGFBP hBp)
+{
+    uint32_t idChunk  = DBGF_BP_HND_GET_CHUNK_ID(hBp);
+    uint32_t idxEntry = DBGF_BP_HND_GET_ENTRY(hBp);
+
+    AssertReturn(idChunk < DBGF_BP_CHUNK_COUNT, NULL);
+    AssertReturn(idxEntry < DBGF_BP_COUNT_PER_CHUNK, NULL);
+
+    PDBGFBPCHUNKR3 pBpChunk = &pUVM->dbgf.s.aBpChunks[idChunk];
+    AssertReturn(pBpChunk->idChunk == idChunk, NULL);
+    AssertPtrReturn(pBpChunk->pbmAlloc, NULL);
+    AssertReturn(ASMBitTest(pBpChunk->pbmAlloc, idxEntry), NULL);
+
+    return &pBpChunk->pBpBaseR3[idxEntry];
+}
+
+
+/**
+ * Get a breakpoint give by address.
+ *
+ * @returns The breakpoint handle on success or NIL_DBGF if not found.
+ * @param   pUVM                The user mode VM handle.
+ * @param   enmType             The breakpoint type.
+ * @param   GCPtr               The breakpoint address.
+ * @param   ppBp                Where to store the pointer to the internal breakpoint state on success, optional.
+ */
+static DBGFBP dbgfR3BpGetByAddr(PUVM pUVM, DBGFBPTYPE enmType, RTGCUINTPTR GCPtr, PDBGFBPINT *ppBp)
+{
+    DBGFBP hBp = NIL_DBGFBP;
+
+    switch (enmType)
+    {
+        case DBGFBPTYPE_REG:
+        {
+            PVM pVM = pUVM->pVM;
+            VM_ASSERT_VALID_EXT_RETURN(pVM, NIL_DBGFBP);
+
+            for (uint32_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); i++)
+            {
+                PDBGFBPHW pHwBp = &pVM->dbgf.s.aHwBreakpoints[i];
+
+                AssertCompileSize(DBGFBP, sizeof(uint32_t));
+                DBGFBP hBpTmp = ASMAtomicReadU32(&pHwBp->hBp);
+                if (   pHwBp->GCPtr == GCPtr
+                    && hBpTmp != NIL_DBGFBP)
+                {
+                    hBp = hBpTmp;
+                    break;
+                }
+            }
+
+            break;
+        }
+
+        case DBGFBPTYPE_INT3:
+            break;
+
+        default:
+            AssertMsgFailed(("enmType=%d\n", enmType));
+            break;
+    }
+
+    if (   hBp != NIL_DBGFBP
+        && ppBp)
+        *ppBp =  dbgfR3BpGetByHnd(pUVM, hBp);
+    return hBp;
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpChunkAllocEmtWorker(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    uint32_t idChunk = (uint32_t)(uintptr_t)pvUser;
+
+    VMCPU_ASSERT_EMT(pVCpu);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    AssertReturn(idChunk < DBGF_BP_CHUNK_COUNT, VERR_DBGF_BP_IPE_1);
+
+    PUVM pUVM = pVM->pUVM;
+    PDBGFBPCHUNKR3 pBpChunk = &pUVM->dbgf.s.aBpChunks[idChunk];
+
+    AssertReturn(   pBpChunk->idChunk == DBGF_BP_CHUNK_ID_INVALID
+                 || pBpChunk->idChunk == idChunk,
+                 VERR_DBGF_BP_IPE_2);
+
+    /*
+     * The initialization will be done on EMT(0). It is possible that multiple
+     * allocation attempts are done when multiple racing non EMT threads try to
+     * allocate a breakpoint and a new chunk needs to be allocated.
+     * Ignore the request and succeed if the chunk is allocated meaning that a
+     * previous rendezvous successfully allocated the chunk.
+     */
+    int rc = VINF_SUCCESS;
+    if (   pVCpu->idCpu == 0
+        && pBpChunk->idChunk == DBGF_BP_CHUNK_ID_INVALID)
+    {
+        /* Allocate the bitmap first so we can skip calling into VMMR0 if it fails. */
+        AssertCompile(!(DBGF_BP_COUNT_PER_CHUNK % 8));
+        volatile void *pbmAlloc = RTMemAllocZ(DBGF_BP_COUNT_PER_CHUNK / 8);
+        if (RT_LIKELY(pbmAlloc))
+        {
+            DBGFBPCHUNKALLOCREQ Req;
+            Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+            Req.Hdr.cbReq    = sizeof(Req);
+            Req.idChunk      = idChunk;
+            Req.pChunkBaseR3 = NULL;
+            rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_CHUNK_ALLOC, 0 /*u64Arg*/, &Req.Hdr);
+            AssertLogRelMsgRC(rc, ("VMMR0_DO_DBGF_BP_CHUNK_ALLOC failed: %Rrc\n", rc));
+            if (RT_SUCCESS(rc))
+            {
+                pBpChunk->pBpBaseR3 = (PDBGFBPINT)Req.pChunkBaseR3;
+                pBpChunk->pbmAlloc   = pbmAlloc;
+                pBpChunk->cBpsFree  = DBGF_BP_COUNT_PER_CHUNK;
+                pBpChunk->idChunk   = idChunk;
+                return VINF_SUCCESS;
+            }
+
+            RTMemFree((void *)pbmAlloc);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Tries to allocate the given chunk which requires an EMT rendezvous.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idChunk             The chunk to allocate.
+ *
+ * @thread Any thread.
+ */
+DECLINLINE(int) dbgfR3BpChunkAlloc(PUVM pUVM, uint32_t idChunk)
+{
+    return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpChunkAllocEmtWorker, (void *)(uintptr_t)idChunk);
+}
+
+
+/**
+ * Tries to allocate a new breakpoint of the given type.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hOwner              The owner handle, NIL_DBGFBPOWNER if none assigned.
+ * @param   pvUser              Opaque user data passed in the owner callback.
+ * @param   enmType             Breakpoint type to allocate.
+ * @param   iHitTrigger         The hit count at which the breakpoint start triggering.
+ *                              Use 0 (or 1) if it's gonna trigger at once.
+ * @param   iHitDisable         The hit count which disables the breakpoint.
+ *                              Use ~(uint64_t) if it's never gonna be disabled.
+ * @param   phBp                Where to return the opaque breakpoint handle on success.
+ * @param   ppBp                Where to return the pointer to the internal breakpoint state on success.
+ *
+ * @thread Any thread.
+ */
+static int dbgfR3BpAlloc(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser, DBGFBPTYPE enmType,
+                         uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp,
+                         PDBGFBPINT *ppBp)
+{
+    /*
+     * Search for a chunk having a free entry, allocating new chunks
+     * if the encountered ones are full.
+     *
+     * This can be called from multiple threads at the same time so special care
+     * has to be taken to not require any locking here.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pUVM->dbgf.s.aBpChunks); i++)
+    {
+        PDBGFBPCHUNKR3 pBpChunk = &pUVM->dbgf.s.aBpChunks[i];
+
+        uint32_t idChunk  = ASMAtomicReadU32(&pBpChunk->idChunk);
+        if (idChunk == DBGF_BP_CHUNK_ID_INVALID)
+        {
+            int rc = dbgfR3BpChunkAlloc(pUVM, i);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("DBGF/Bp: Allocating new breakpoint table chunk failed with %Rrc\n", rc));
+                break;
+            }
+
+            idChunk = ASMAtomicReadU32(&pBpChunk->idChunk);
+            Assert(idChunk == i);
+        }
+
+        /** @todo Optimize with some hinting if this turns out to be too slow. */
+        for (;;)
+        {
+            uint32_t cBpsFree = ASMAtomicReadU32(&pBpChunk->cBpsFree);
+            if (cBpsFree)
+            {
+                /*
+                 * Scan the associated bitmap for a free entry, if none can be found another thread
+                 * raced us and we go to the next chunk.
+                 */
+                int32_t iClr = ASMBitFirstClear(pBpChunk->pbmAlloc, DBGF_BP_COUNT_PER_CHUNK);
+                if (iClr != -1)
+                {
+                    /*
+                     * Try to allocate, we could get raced here as well. In that case
+                     * we try again.
+                     */
+                    if (!ASMAtomicBitTestAndSet(pBpChunk->pbmAlloc, iClr))
+                    {
+                        /* Success, immediately mark as allocated, initialize the breakpoint state and return. */
+                        ASMAtomicDecU32(&pBpChunk->cBpsFree);
+
+                        PDBGFBPINT pBp = &pBpChunk->pBpBaseR3[iClr];
+                        pBp->Pub.cHits = 0;
+                        pBp->Pub.iHitTrigger   = iHitTrigger;
+                        pBp->Pub.iHitDisable   = iHitDisable;
+                        pBp->Pub.hOwner        = hOwner;
+                        pBp->Pub.fFlagsAndType = DBGF_BP_PUB_SET_FLAGS_AND_TYPE(enmType, DBGF_BP_F_DEFAULT);
+                        pBp->pvUserR3          = pvUser;
+
+                        /** @todo Owner handling (reference and call ring-0 if it has an ring-0 callback). */
+
+                        *phBp = DBGF_BP_HND_CREATE(idChunk, iClr);
+                        *ppBp = pBp;
+                        return VINF_SUCCESS;
+                    }
+                    /* else Retry with another spot. */
+                }
+                else /* no free entry in bitmap, go to the next chunk */
+                    break;
+            }
+            else /* !cBpsFree, go to the next chunk */
+                break;
+        }
+    }
+
+    return VERR_DBGF_NO_MORE_BP_SLOTS;
+}
+
+
+/**
+ * Frees the given breakpoint handle.
+ *
+ * @returns nothing.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBp                 The breakpoint handle to free.
+ * @param   pBp                 The internal breakpoint state pointer.
+ */
+static void dbgfR3BpFree(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
+{
+    uint32_t idChunk  = DBGF_BP_HND_GET_CHUNK_ID(hBp);
+    uint32_t idxEntry = DBGF_BP_HND_GET_ENTRY(hBp);
+
+    AssertReturnVoid(idChunk < DBGF_BP_CHUNK_COUNT);
+    AssertReturnVoid(idxEntry < DBGF_BP_COUNT_PER_CHUNK);
+
+    PDBGFBPCHUNKR3 pBpChunk = &pUVM->dbgf.s.aBpChunks[idChunk];
+    AssertPtrReturnVoid(pBpChunk->pbmAlloc);
+    AssertReturnVoid(ASMBitTest(pBpChunk->pbmAlloc, idxEntry));
+
+    /** @todo Need a trip to Ring-0 if an owner is assigned with a Ring-0 part to clear the breakpoint. */
+    /** @todo Release owner. */
+    memset(pBp, 0, sizeof(*pBp));
+
+    ASMAtomicBitClear(pBpChunk->pbmAlloc, idxEntry);
+    ASMAtomicIncU32(&pBpChunk->cBpsFree);
+}
+
+
+/**
+ * Sets the enabled flag of the given breakpoint to the given value.
+ *
+ * @returns nothing.
+ * @param   pBp                 The breakpoint to set the state.
+ * @param   fEnabled            Enabled status.
+ */
+DECLINLINE(void) dbgfR3BpSetEnabled(PDBGFBPINT pBp, bool fEnabled)
+{
+    DBGFBPTYPE enmType = DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType);
+    if (fEnabled)
+        pBp->Pub.fFlagsAndType = DBGF_BP_PUB_SET_FLAGS_AND_TYPE(enmType, DBGF_BP_F_ENABLED);
+    else
+        pBp->Pub.fFlagsAndType = DBGF_BP_PUB_SET_FLAGS_AND_TYPE(enmType, 0 /*fFlags*/);
+}
+
+
+/**
+ * Assigns a hardware breakpoint state to the given register breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross-context VM structure pointer.
+ * @param   hBp                 The breakpoint handle to assign.
+ * @param   pBp                 The internal breakpoint state.
+ *
+ * @thread Any thread.
+ */
+static int dbgfR3BpRegAssign(PVM pVM, DBGFBP hBp, PDBGFBPINT pBp)
+{
+    AssertReturn(pBp->Pub.u.Reg.iReg == UINT8_MAX, VERR_DBGF_BP_IPE_3);
+
+    for (uint8_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); i++)
+    {
+        PDBGFBPHW pHwBp = &pVM->dbgf.s.aHwBreakpoints[i];
+
+        AssertCompileSize(DBGFBP, sizeof(uint32_t));
+        if (ASMAtomicCmpXchgU32(&pHwBp->hBp, hBp, NIL_DBGFBP))
+        {
+            pHwBp->GCPtr    = pBp->Pub.u.Reg.GCPtr;
+            pHwBp->fType    = pBp->Pub.u.Reg.fType;
+            pHwBp->cb       = pBp->Pub.u.Reg.cb;
+            pHwBp->fEnabled = DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType);
+
+            pBp->Pub.u.Reg.iReg = i;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_DBGF_NO_MORE_BP_SLOTS;
+}
+
+
+/**
+ * Removes the assigned hardware breakpoint state from the given register breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross-context VM structure pointer.
+ * @param   hBp                 The breakpoint handle to remove.
+ * @param   pBp                 The internal breakpoint state.
+ *
+ * @thread Any thread.
+ */
+static int dbgfR3BpRegRemove(PVM pVM, DBGFBP hBp, PDBGFBPINT pBp)
+{
+    AssertReturn(pBp->Pub.u.Reg.iReg < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints), VERR_DBGF_BP_IPE_3);
+
+    PDBGFBPHW pHwBp = &pVM->dbgf.s.aHwBreakpoints[pBp->Pub.u.Reg.iReg];
+    AssertReturn(pHwBp->hBp == hBp, VERR_DBGF_BP_IPE_4);
+    AssertReturn(!pHwBp->fEnabled, VERR_DBGF_BP_IPE_5);
+
+    pHwBp->GCPtr = 0;
+    pHwBp->fType = 0;
+    pHwBp->cb    = 0;
+    ASMCompilerBarrier();
+
+    ASMAtomicWriteU32(&pHwBp->hBp, NIL_DBGFBP);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    RT_NOREF(pvUser);
+
+    /*
+     * CPU 0 updates the enabled hardware breakpoint counts.
+     */
+    if (pVCpu->idCpu == 0)
+    {
+        pVM->dbgf.s.cEnabledHwBreakpoints   = 0;
+        pVM->dbgf.s.cEnabledHwIoBreakpoints = 0;
+
+        for (uint32_t iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
+        {
+            if (pVM->dbgf.s.aHwBreakpoints[iBp].fEnabled)
+            {
+                pVM->dbgf.s.cEnabledHwBreakpoints   += 1;
+                pVM->dbgf.s.cEnabledHwIoBreakpoints += pVM->dbgf.s.aHwBreakpoints[iBp].fType == X86_DR7_RW_IO;
+            }
+        }
+    }
+
+    return CPUMRecalcHyperDRx(pVCpu, UINT8_MAX, false);
+}
+
+
+/**
+ * Arms the given breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBp                 The breakpoint handle to arm.
+ * @param   pBp                 The internal breakpoint state pointer for the handle.
+ */
+static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
+{
+    int rc = VINF_SUCCESS;
+    PVM pVM = pUVM->pVM;
+
+    Assert(!DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType));
+    switch (DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType))
+    {
+        case DBGFBPTYPE_REG:
+        {
+            Assert(pBp->Pub.u.Reg.iReg < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints));
+            PDBGFBPHW pBpHw = &pVM->dbgf.s.aHwBreakpoints[pBp->Pub.u.Reg.iReg];
+            Assert(pBpHw->hBp == hBp); RT_NOREF(hBp);
+
+            dbgfR3BpSetEnabled(pBp, true /*fEnabled*/);
+            ASMAtomicWriteBool(&pBpHw->fEnabled, true);
+            rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpRegRecalcOnCpu, NULL);
+            if (RT_FAILURE(rc))
+            {
+                ASMAtomicWriteBool(&pBpHw->fEnabled, false);
+                dbgfR3BpSetEnabled(pBp, false /*fEnabled*/);
+            }
+            break;
+        }
+        case DBGFBPTYPE_INT3:
+        case DBGFBPTYPE_PORT_IO:
+        case DBGFBPTYPE_MMIO:
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+        default:
+            AssertMsgFailedReturn(("Invalid breakpoint type %d\n", DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType)),
+                                  VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Disarms the given breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBp                 The breakpoint handle to disarm.
+ * @param   pBp                 The internal breakpoint state pointer for the handle.
+ */
+static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
+{
+    int rc = VINF_SUCCESS;
+    PVM pVM = pUVM->pVM;
+
+    Assert(DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType));
+    switch (DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType))
+    {
+        case DBGFBPTYPE_REG:
+        {
+            Assert(pBp->Pub.u.Reg.iReg < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints));
+            PDBGFBPHW pBpHw = &pVM->dbgf.s.aHwBreakpoints[pBp->Pub.u.Reg.iReg];
+            Assert(pBpHw->hBp == hBp); RT_NOREF(hBp);
+
+            dbgfR3BpSetEnabled(pBp, false /*fEnabled*/);
+            ASMAtomicWriteBool(&pBpHw->fEnabled, false);
+            rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpRegRecalcOnCpu, NULL);
+            if (RT_FAILURE(rc))
+            {
+                ASMAtomicWriteBool(&pBpHw->fEnabled, true);
+                dbgfR3BpSetEnabled(pBp, true /*fEnabled*/);
+            }
+            break;
+        }
+        case DBGFBPTYPE_INT3:
+        case DBGFBPTYPE_PORT_IO:
+        case DBGFBPTYPE_MMIO:
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+        default:
+            AssertMsgFailedReturn(("Invalid breakpoint type %d\n", DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType)),
+                                  VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+    }
+
+    return rc;
 }
 
 
@@ -284,14 +850,45 @@ VMMR3DECL(int) DBGFR3BpSetInt3Ex(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
                                  uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser != NULL, VERR_INVALID_PARAMETER);
+    AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser == NULL, VERR_INVALID_PARAMETER);
     AssertReturn(DBGFR3AddrIsValid(pUVM, pAddress), VERR_INVALID_PARAMETER);
     AssertReturn(iHitTrigger <= iHitDisable, VERR_INVALID_PARAMETER);
     AssertPtrReturn(phBp, VERR_INVALID_POINTER);
 
-    RT_NOREF(idSrcCpu);
+    int rc = dbgfR3BpEnsureInit(pUVM);
+    AssertRCReturn(rc, rc);
 
-    return VERR_NOT_IMPLEMENTED;
+    DBGFBP hBp = NIL_DBGFBP;
+    PDBGFBPINT pBp = NULL;
+    rc = dbgfR3BpAlloc(pUVM, hOwner, pvUser, DBGFBPTYPE_INT3, iHitTrigger, iHitDisable, &hBp, &pBp);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Translate & save the breakpoint address into a guest-physical address.
+         */
+        rc = DBGFR3AddrToPhys(pUVM, idSrcCpu, pAddress, &pBp->Pub.u.Int3.PhysAddr);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * The physical address from DBGFR3AddrToPhys() is the start of the page,
+             * we need the exact byte offset into the page while writing to it in dbgfR3BpInt3Arm().
+             */
+            pBp->Pub.u.Int3.PhysAddr |= (pAddress->FlatPtr & X86_PAGE_OFFSET_MASK);
+            pBp->Pub.u.Int3.GCPtr     = pAddress->FlatPtr;
+
+            /* Enable the breakpoint. */
+            rc = dbgfR3BpArm(pUVM, hBp, pBp);
+            if (RT_SUCCESS(rc))
+            {
+                *phBp = hBp;
+                return VINF_SUCCESS;
+            }
+        }
+
+        dbgfR3BpFree(pUVM, hBp, pBp);
+    }
+
+    return rc;
 }
 
 
@@ -344,7 +941,7 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
                                 uint8_t fType, uint8_t cb, PDBGFBP phBp)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser != NULL, VERR_INVALID_PARAMETER);
+    AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser == NULL, VERR_INVALID_PARAMETER);
     AssertReturn(DBGFR3AddrIsValid(pUVM, pAddress), VERR_INVALID_PARAMETER);
     AssertReturn(iHitTrigger <= iHitDisable, VERR_INVALID_PARAMETER);
     AssertReturn(cb > 0 && cb <= 8 && RT_IS_POWER_OF_TWO(cb), VERR_INVALID_PARAMETER);
@@ -363,7 +960,60 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
             AssertMsgFailedReturn(("fType=%#x\n", fType), VERR_INVALID_PARAMETER);
     }
 
-    return VERR_NOT_IMPLEMENTED;
+    int rc = dbgfR3BpEnsureInit(pUVM);
+    AssertRCReturn(rc, rc);
+
+    PDBGFBPINT pBp = NULL;
+    DBGFBP hBp = dbgfR3BpGetByAddr(pUVM, DBGFBPTYPE_REG, pAddress->FlatPtr, &pBp);
+    if (    hBp != NIL_DBGFBP
+        &&  pBp->Pub.u.Reg.cb == cb
+        &&  pBp->Pub.u.Reg.fType == fType)
+    {
+        rc = VINF_SUCCESS;
+        if (!DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
+            rc = dbgfR3BpArm(pUVM, hBp, pBp);
+        if (RT_SUCCESS(rc))
+        {
+            rc = VINF_DBGF_BP_ALREADY_EXIST;
+            if (phBp)
+                *phBp = hBp;
+        }
+        return rc;
+    }
+
+    /* Allocate new breakpoint. */
+    rc = dbgfR3BpAlloc(pUVM, hOwner, pvUser, DBGFBPTYPE_REG, iHitTrigger, iHitDisable, &hBp, &pBp);
+    if (RT_SUCCESS(rc))
+    {
+        pBp->Pub.u.Reg.GCPtr = pAddress->FlatPtr;
+        pBp->Pub.u.Reg.fType = fType;
+        pBp->Pub.u.Reg.cb    = cb;
+        pBp->Pub.u.Reg.iReg  = UINT8_MAX;
+        ASMCompilerBarrier();
+
+        /* Assign the proper hardware breakpoint. */
+        rc = dbgfR3BpRegAssign(pUVM->pVM, hBp, pBp);
+        if (RT_SUCCESS(rc))
+        {
+            /* Arm the breakpoint. */
+            rc = dbgfR3BpArm(pUVM, hBp, pBp);
+            if (RT_SUCCESS(rc))
+            {
+                if (phBp)
+                    *phBp = hBp;
+                return VINF_SUCCESS;
+            }
+            else
+            {
+                int rc2 = dbgfR3BpRegRemove(pUVM->pVM, hBp, pBp);
+                AssertRC(rc2); RT_NOREF(rc2);
+            }
+        }
+
+        dbgfR3BpFree(pUVM, hBp, pBp);
+    }
+
+    return rc;
 }
 
 
@@ -429,13 +1079,16 @@ VMMR3DECL(int) DBGFR3BpSetPortIoEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
                                    uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser != NULL, VERR_INVALID_PARAMETER);
+    AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser == NULL, VERR_INVALID_PARAMETER);
     AssertReturn(!(fAccess & ~DBGFBPIOACCESS_VALID_MASK_PORT_IO), VERR_INVALID_FLAGS);
     AssertReturn(fAccess, VERR_INVALID_FLAGS);
     AssertReturn(iHitTrigger <= iHitDisable, VERR_INVALID_PARAMETER);
     AssertPtrReturn(phBp, VERR_INVALID_POINTER);
     AssertReturn(cPorts > 0, VERR_OUT_OF_RANGE);
     AssertReturn((RTIOPORT)(uPort + cPorts) < uPort, VERR_OUT_OF_RANGE);
+
+    int rc = dbgfR3BpEnsureInit(pUVM);
+    AssertRCReturn(rc, rc);
 
     return VERR_NOT_IMPLEMENTED;
 }
@@ -490,13 +1143,16 @@ VMMR3DECL(int) DBGFR3BpSetMmioEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
                                  uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser != NULL, VERR_INVALID_PARAMETER);
+    AssertReturn(hOwner != NIL_DBGFBPOWNER || pvUser == NULL, VERR_INVALID_PARAMETER);
     AssertReturn(!(fAccess & ~DBGFBPIOACCESS_VALID_MASK_MMIO), VERR_INVALID_FLAGS);
     AssertReturn(fAccess, VERR_INVALID_FLAGS);
     AssertReturn(iHitTrigger <= iHitDisable, VERR_INVALID_PARAMETER);
     AssertPtrReturn(phBp, VERR_INVALID_POINTER);
     AssertReturn(cb, VERR_OUT_OF_RANGE);
     AssertReturn(GCPhys + cb < GCPhys, VERR_OUT_OF_RANGE);
+
+    int rc = dbgfR3BpEnsureInit(pUVM);
+    AssertRCReturn(rc, rc);
 
     return VERR_NOT_IMPLEMENTED;
 }
@@ -516,7 +1172,30 @@ VMMR3DECL(int) DBGFR3BpClear(PUVM pUVM, DBGFBP hBp)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(hBp != NIL_DBGFBPOWNER, VERR_INVALID_HANDLE);
 
-    return VERR_NOT_IMPLEMENTED;
+    PDBGFBPINT pBp = dbgfR3BpGetByHnd(pUVM, hBp);
+    AssertPtrReturn(pBp, VERR_DBGF_BP_NOT_FOUND);
+
+    /* Disarm the breakpoint when it is enabled. */
+    if (DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
+    {
+        int rc = dbgfR3BpDisarm(pUVM, hBp, pBp);
+        AssertRC(rc);
+    }
+
+    switch (DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType))
+    {
+        case DBGFBPTYPE_REG:
+        {
+            int rc = dbgfR3BpRegRemove(pUVM->pVM, hBp, pBp);
+            AssertRC(rc);
+            break;
+        }
+        default:
+            break;
+    }
+
+    dbgfR3BpFree(pUVM, hBp, pBp);
+    return VINF_SUCCESS;
 }
 
 
@@ -531,10 +1210,22 @@ VMMR3DECL(int) DBGFR3BpClear(PUVM pUVM, DBGFBP hBp)
  */
 VMMR3DECL(int) DBGFR3BpEnable(PUVM pUVM, DBGFBP hBp)
 {
+    /*
+     * Validate the input.
+     */
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(hBp != NIL_DBGFBPOWNER, VERR_INVALID_HANDLE);
 
-    return VERR_NOT_IMPLEMENTED;
+    PDBGFBPINT pBp = dbgfR3BpGetByHnd(pUVM, hBp);
+    AssertPtrReturn(pBp, VERR_DBGF_BP_NOT_FOUND);
+
+    int rc = VINF_SUCCESS;
+    if (!DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
+        rc = dbgfR3BpArm(pUVM, hBp, pBp);
+    else
+        rc = VINF_DBGF_BP_ALREADY_ENABLED;
+
+    return rc;
 }
 
 
@@ -555,7 +1246,16 @@ VMMR3DECL(int) DBGFR3BpDisable(PUVM pUVM, DBGFBP hBp)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(hBp != NIL_DBGFBPOWNER, VERR_INVALID_HANDLE);
 
-    return VERR_NOT_IMPLEMENTED;
+    PDBGFBPINT pBp = dbgfR3BpGetByHnd(pUVM, hBp);
+    AssertPtrReturn(pBp, VERR_DBGF_BP_NOT_FOUND);
+
+    int rc = VINF_SUCCESS;
+    if (DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
+        rc = dbgfR3BpDisarm(pUVM, hBp, pBp);
+    else
+        rc = VINF_DBGF_BP_ALREADY_DISABLED;
+
+    return rc;
 }
 
 

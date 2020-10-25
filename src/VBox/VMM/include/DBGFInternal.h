@@ -54,6 +54,20 @@
 #define DBGF_TRACER_EVT_SZ               (DBGF_TRACER_EVT_HDR_SZ + DBGF_TRACER_EVT_PAYLOAD_SZ)
 
 
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+/** @name Breakpoint handling defines.
+ * @{ */
+/** Maximum number of breakpoints supported (power of two). */
+#define DBGF_BP_COUNT_MAX                   _1M
+/** Size of a single breakpoint structure in bytes. */
+#define DBGF_BP_ENTRY_SZ                    64
+/** Number of breakpoints handled in one chunk (power of two). */
+#define DBGF_BP_COUNT_PER_CHUNK             _64K
+/** Number of chunks required to support all breakpoints. */
+#define DBGF_BP_CHUNK_COUNT                 (DBGF_BP_COUNT_MAX / DBGF_BP_COUNT_PER_CHUNK)
+/** @} */
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -762,29 +776,115 @@ typedef struct DBGFBPSEARCHOPT
 /** Pointer to a breakpoint search optimziation structure. */
 typedef DBGFBPSEARCHOPT *PDBGFBPSEARCHOPT;
 #else
+
+/** An invalid breakpoint chunk ID. */
+#define DBGF_BP_CHUNK_ID_INVALID                    UINT32_MAX
+/** Generates a unique breakpoint handle from the given chunk ID and entry inside the chunk. */
+#define DBGF_BP_HND_CREATE(a_idChunk, a_idEntry)    RT_MAKE_U32(a_idEntry, a_idChunk);
+/** Returns the chunk ID from the given breakpoint handle. */
+#define DBGF_BP_HND_GET_CHUNK_ID(a_hBp)             ((uint32_t)RT_HI_U16(a_hBp))
+/** Returns the entry index inside a chunk from the given breakpoint handle. */
+#define DBGF_BP_HND_GET_ENTRY(a_hBp)                ((uint32_t)RT_LO_U16(a_hBp))
+
+
+/**
+ * The internal breakpoint state, shared part.
+ */
+typedef struct DBGFBPINT
+{
+    /** The publicly visible part. */
+    DBGFBPPUB                   Pub;
+    /** The opaque user argument for the owner callback, Ring-3 Ptr. */
+    R3PTRTYPE(void *)           pvUserR3;
+} DBGFBPINT;
+AssertCompileSize(DBGFBPINT, DBGF_BP_ENTRY_SZ);
+/** Pointer to an internal breakpoint state. */
+typedef DBGFBPINT *PDBGFBPINT;
+/** Pointer to an const internal breakpoint state. */
+typedef const DBGFBPINT *PCDBGFBPINT;
+
+
+/**
+ * The internal breakpoint state, R0 part.
+ */
+typedef struct DBGFBPINTR0
+{
+    /** The owner handle. */
+    DBGFBPOWNER                 hOwner;
+    /** Flag whether the breakpoint is in use. */
+    bool                        fInUse;
+    /** Padding to 8 byte alignment. */
+    bool                        afPad[3];
+    /** Opaque user data for the owner callback, Ring-0 Ptr. */
+    R0PTRTYPE(void *)           pvUserR0;
+} DBGFBPINTR0;
+AssertCompileMemberAlignment(DBGFBPINTR0, pvUserR0, 8);
+AssertCompileSize(DBGFBPINTR0, 16);
+/** Pointer to an internal breakpoint state - Ring-0 Ptr. */
+typedef R0PTRTYPE(DBGFBPINTR0 *) PDBGFBPINTR0;
+
+
 /**
  * Hardware breakpoint state.
  */
 typedef struct DBGFBPHW
 {
     /** The flat GC address of the breakpoint. */
-    RTGCUINTPTR     GCPtr;
-    /** The breakpoint handle if active, NIL_DBGFBP if disabled. */
-    DBGFBP          hBp;
+    RTGCUINTPTR                 GCPtr;
+    /** The breakpoint handle if active, NIL_DBGFBP if not in use. */
+    volatile DBGFBP             hBp;
     /** The access type (one of the X86_DR7_RW_* value). */
-    uint8_t         fType;
+    uint8_t                     fType;
     /** The access size. */
-    uint8_t         cb;
+    uint8_t                     cb;
     /** Flag whether the breakpoint is currently enabled. */
-    bool            fEnabled;
+    volatile bool               fEnabled;
     /** Padding. */
-    uint8_t         bPad;
+    uint8_t                     bPad;
 } DBGFBPHW;
 AssertCompileSize(DBGFBPHW, 16);
 /** Pointer to a hardware breakpoint state. */
 typedef DBGFBPHW *PDBGFBPHW;
 /** Pointer to a const hardware breakpoint state. */
 typedef const DBGFBPHW *PCDBGFBPHW;
+
+
+/**
+ * A breakpoint table chunk, ring-3 state.
+ */
+typedef struct DBGFBPCHUNKR3
+{
+    /** Pointer to the R3 base of the chunk. */
+    R3PTRTYPE(PDBGFBPINT)       pBpBaseR3;
+    /** Bitmap of free/occupied breakpoint entries. */
+    R3PTRTYPE(volatile void *)  pbmAlloc;
+    /** Number of free breakpoints in the chunk. */
+    volatile uint32_t           cBpsFree;
+    /** The chunk index this tracking structure refers to. */
+    uint32_t                    idChunk;
+} DBGFBPCHUNKR3;
+/** Pointer to a breakpoint table chunk - Ring-3 Ptr. */
+typedef DBGFBPCHUNKR3 *PDBGFBPCHUNKR3;
+/** Pointer to a const breakpoint table chunk - Ring-3 Ptr. */
+typedef const DBGFBPCHUNKR3 *PCDBGFBPCHUNKR3;
+
+
+/**
+ * Breakpoint table chunk, ring-0 state.
+ */
+typedef struct DBGFBPCHUNKR0
+{
+    /** The chunks memory. */
+    RTR0MEMOBJ                  hMemObj;
+    /** The ring-3 mapping object. */
+    RTR0MEMOBJ                  hMapObj;
+    /** Pointer to the breakpoint entries base. */
+    R0PTRTYPE(PDBGFBPINT)       paBpBaseSharedR0;
+    /** Pointer to the Ring-0 only part of the breakpoints. */
+    PDBGFBPINTR0                paBpBaseR0Only;
+} DBGFBPCHUNKR0;
+/** Pointer to a breakpoint table chunk - Ring-0 Ptr. */
+typedef R0PTRTYPE(DBGFBPCHUNKR0 *) PDBGFBPCHUNKR0;
 #endif
 
 
@@ -874,9 +974,12 @@ typedef struct DBGF
     /** INT3 breakpoint search optimizations. */
     DBGFBPSEARCHOPT             Int3;
 #else
+    /** @name Breakpoint handling related state.
+     * @{ */
     /** Array of hardware breakpoints (0..3).
      * This is shared among all the CPUs because life is much simpler that way. */
-    DBGFBPHW                    aHwBreakpoints[4];
+    DBGFBPHW                        aHwBreakpoints[4];
+    /** @} */
 #endif
 
     /**
@@ -1016,6 +1119,22 @@ typedef struct DBGFR0PERVM
 {
     /** Pointer to the tracer instance if enabled. */
     R0PTRTYPE(struct DBGFTRACERINSR0 *) pTracerR0;
+
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+    /** @name Breakpoint handling related state, Ring-0 only part.
+     * @{ */
+    /** Global breakpoint table chunk array. */
+    DBGFBPCHUNKR0                       aBpChunks[DBGF_BP_CHUNK_COUNT];
+    /** The L1 lookup tables memory object. */
+    RTR0MEMOBJ                          hMemObjBpLocL1;
+    /** The L1 lookup tables mapping object. */
+    RTR0MEMOBJ                          hMapObjBpLocL1;
+    /** Base pointer to the L1 locator table. */
+    R0PTRTYPE(volatile uint32_t *)      paBpLocL1R0;
+    /** Flag whether the breakpoint manager was initialized (on demand). */
+    bool                                fInit;
+    /** @} */
+#endif
 } DBGFR0PERVM;
 
 /**
@@ -1090,6 +1209,16 @@ typedef struct DBGFUSERPERVM
     volatile uint32_t           idxDbgEvtRead;
     /** @} */
 
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+    /** @name Breakpoint handling related state.
+     * @{ */
+    /** Global breakpoint table chunk array. */
+    DBGFBPCHUNKR3                   aBpChunks[DBGF_BP_CHUNK_COUNT];
+    /** Base pointer to the L1 locator table. */
+    R3PTRTYPE(volatile uint32_t *)  paBpLocL1R3;
+    /** @} */
+#endif
+
     /** The type database lock. */
     RTSEMRW                     hTypeDbLock;
     /** String space for looking up types.  (Protected by hTypeDbLock.) */
@@ -1137,8 +1266,8 @@ int  dbgfR3AsInit(PUVM pUVM);
 void dbgfR3AsTerm(PUVM pUVM);
 void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta);
 #ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
-DECLHIDDEN(int) dbgfR3BpInit(PVM pVM);
-DECLHIDDEN(int) dbgfR3BpTerm(PVM pVM);
+DECLHIDDEN(int) dbgfR3BpInit(PUVM pUVM);
+DECLHIDDEN(int) dbgfR3BpTerm(PUVM pUVM);
 #else
 int  dbgfR3BpInit(PVM pVM);
 #endif
@@ -1187,6 +1316,8 @@ DECLHIDDEN(int) dbgfR3DisasInstrStateEx(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS p
 
 #ifdef IN_RING0
 DECLHIDDEN(void) dbgfR0TracerDestroy(PGVM pGVM, PDBGFTRACERINSR0 pTracer);
+DECLHIDDEN(void) dbgfR0BpInit(PGVM pGVM);
+DECLHIDDEN(void) dbgfR0BpDestroy(PGVM pGVM);
 #endif /* !IN_RING0 */
 
 /** @} */

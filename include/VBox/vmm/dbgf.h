@@ -85,6 +85,43 @@ typedef struct DBGFTRACERCREATEREQ
 typedef DBGFTRACERCREATEREQ *PDBGFTRACERCREATEREQ;
 
 VMMR0_INT_DECL(int) DBGFR0TracerCreateReqHandler(PGVM pGVM, PDBGFTRACERCREATEREQ pReq);
+
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+/**
+ * Request buffer for DBGFR0BpInitReqHandler / VMMR0_DO_DBGF_BP_INIT.
+ * @see DBGFR0BpInitReqHandler.
+ */
+typedef struct DBGFBPINITREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR                  Hdr;
+    /** Out: Ring-3 pointer of the L1 lookup table on success. */
+    R3PTRTYPE(volatile uint32_t *)  paBpLocL1R3;
+} DBGFBPINITREQ;
+/** Pointer to a DBGFR0BpInitReqHandler / VMMR0_DO_DBGF_BP_INIT request buffer. */
+typedef DBGFBPINITREQ *PDBGFBPINITREQ;
+
+VMMR0_INT_DECL(int) DBGFR0BpInitReqHandler(PGVM pGVM, PDBGFBPINITREQ pReq);
+
+/**
+ * Request buffer for DBGFR0BpChunkAllocReqHandler / VMMR0_DO_DBGF_CHUNK_ALLOC.
+ * @see DBGFR0BpChunkAllocReqHandler.
+ */
+typedef struct DBGFBPCHUNKALLOCREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR          Hdr;
+    /** Out: Ring-3 pointer of the chunk base on success. */
+    R3PTRTYPE(void *)       pChunkBaseR3;
+
+    /** The chunk ID to allocate. */
+    uint32_t                idChunk;
+} DBGFBPCHUNKALLOCREQ;
+/** Pointer to a DBGFR0BpChunkAllocReqHandler / VMMR0_DO_DBGF_CHUNK_ALLOC request buffer. */
+typedef DBGFBPCHUNKALLOCREQ *PDBGFBPCHUNKALLOCREQ;
+
+VMMR0_INT_DECL(int) DBGFR0BpChunkAllocReqHandler(PGVM pGVM, PDBGFBPCHUNKALLOCREQ pReq);
+#endif
 /** @} */
 
 
@@ -828,12 +865,9 @@ typedef struct DBGFBPPUB
     /** The breakpoint owner handle (a nil owner defers the breakpoint to the
      * debugger). */
     DBGFBPOWNER     hOwner;
-    /** The breakpoint type. */
-    DBGFBPTYPE      enmType;
-    /** The breakpoint handle this state belongs to. */
-    DBGFBP          hBp;
-    /** Breakpoint flags, see DBGF_BP_F_XXX. */
-    uint32_t        fFlags;
+    /** Breakpoint type and flags, see DBGFBPTYPE for type and DBGF_BP_F_XXX for flags.
+     * Needs to be smashed together to be able to stay in the size limits. */
+    uint32_t        fFlagsAndType;
 
     /** Union of type specific data. */
     union
@@ -888,10 +922,10 @@ typedef struct DBGFBPPUB
         } Mmio;
 
         /** Padding to the anticipated size. */
-        uint64_t    u64Padding[3];
+        uint64_t    u64Padding[2];
     } u;
 } DBGFBPPUB;
-AssertCompileSize(DBGFBPPUB, 64);
+AssertCompileSize(DBGFBPPUB, 64 - 8);
 AssertCompileMembersAtSameOffset(DBGFBPPUB, u.GCPtr, DBGFBPPUB, u.Reg.GCPtr);
 AssertCompileMembersAtSameOffset(DBGFBPPUB, u.GCPtr, DBGFBPPUB, u.Int3.GCPtr);
 
@@ -900,11 +934,21 @@ typedef DBGFBPPUB *PDBGFBPPUB;
 /** Pointer to a const visible breakpoint state. */
 typedef const DBGFBPPUB *PCDBGFBPPUB;
 
-/** @name Possible DBGFBPPUB::fFlags flags.
+/** Sets the DBGFPUB::fFlagsAndType member. */
+#define DBGF_BP_PUB_SET_FLAGS_AND_TYPE(a_enmType, a_fFlags) ((uint32_t)(a_enmType) | (a_fFlags))
+/** Returns the type of the DBGFPUB::fFlagsAndType member. */
+#define DBGF_BP_PUB_GET_TYPE(a_fFlagsAndType) ((DBGFBPTYPE)((a_fFlagsAndType) & (UINT32_C(0x7fffffff))))
+/** Returns the enabled status of DBGFPUB::fFlagsAndType member. */
+#define DBGF_BP_PUB_IS_ENABLED(a_fFlagsAndType) RT_BOOL((DBGFBPTYPE)((a_fFlagsAndType) & DBGF_BP_F_ENABLED))
+
+/** @name Possible DBGFBPPUB::fFlagsAndType flags.
  * @{ */
+/** Default flags. */
+#define DBGF_BP_F_DEFAULT                   0
 /** Flag whether the breakpoint is enabled currently. */
-#define DBGF_BP_F_ENABLED                   RT_BIT_32(0)
+#define DBGF_BP_F_ENABLED                   RT_BIT_32(31)
 /** @} */
+
 
 /**
  * Breakpoint hit handler.
@@ -915,14 +959,15 @@ typedef const DBGFBPPUB *PCDBGFBPPUB;
  *
  * @param   pVM         The cross-context VM structure pointer.
  * @param   idCpu       ID of the vCPU triggering the breakpoint.
- * @param   pvUser      User argument of the set breakpoint.
+ * @param   pvUserBp    User argument of the set breakpoint.
+ * @param   hBp         The breakpoint handle.
  * @param   pBpPub      Pointer to the readonly public state of the breakpoint.
  *
  * @remarks The handler is called on the EMT of vCPU triggering the breakpoint and no locks are held.
  * @remarks Any status code returned other than the ones mentioned will send the VM straight into a
  *          guru meditation.
  */
-typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNDBGFBPHIT,(PVM pVM, VMCPUID idCpu, void *pvUserBp, PCDBGFBPPUB pBpPub));
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNDBGFBPHIT,(PVM pVM, VMCPUID idCpu, void *pvUserBp, DBGFBP hBp, PCDBGFBPPUB pBpPub));
 /** Pointer to a FNDBGFBPHIT(). */
 typedef FNDBGFBPHIT *PFNDBGFBPHIT;
 
@@ -966,9 +1011,10 @@ VMMR3DECL(int) DBGFR3BpDisable(PUVM pUVM, DBGFBP hBp);
  *          The enumeration stops on failure status and VINF_CALLBACK_RETURN.
  * @param   pUVM        The user mode VM handle.
  * @param   pvUser      The user argument.
- * @param   pBp         Pointer to the breakpoint information. (readonly)
+ * @param   hBp         The breakpoint handle.
+ * @param   pBp         Pointer to the public breakpoint information. (readonly)
  */
-typedef DECLCALLBACKTYPE(int, FNDBGFBPENUM,(PUVM pUVM, PCDBGFBPPUB pBpPub));
+typedef DECLCALLBACKTYPE(int, FNDBGFBPENUM,(PUVM pUVM, void *pvUser, DBGFBP hBp, PCDBGFBPPUB pBpPub));
 /** Pointer to a breakpoint enumeration callback function. */
 typedef FNDBGFBPENUM *PFNDBGFBPENUM;
 

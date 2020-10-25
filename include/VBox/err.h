@@ -330,6 +330,16 @@
 #define VINF_DBGF_BP_HALT                   (1224)
 /** The breakpoint owner handle is still used by one or more breakpoints. */
 #define VERR_DBGF_OWNER_BUSY                (-1225)
+/** Internal processing error \#1 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_1                  (-1226)
+/** Internal processing error \#2 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_2                  (-1227)
+/** Internal processing error \#3 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_3                  (-1228)
+/** Internal processing error \#4 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_4                  (-1229)
+/** Internal processing error \#5 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_5                  (-1230)
 /** @} */
 
 

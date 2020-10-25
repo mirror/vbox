@@ -147,7 +147,7 @@ typedef struct UVM
 #ifdef VMM_INCLUDED_SRC_include_DBGFInternal_h
         struct DBGFUSERPERVM    s;
 #endif
-        uint8_t                 padding[384];
+        uint8_t                 padding[1024];
     } dbgf;
 
     /** Per virtual CPU data. */

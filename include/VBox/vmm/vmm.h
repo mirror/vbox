@@ -430,6 +430,10 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_DBGF_TRACER_CREATE = 710,
     /** Call DBGFR0TraceCallReqHandler. */
     VMMR0_DO_DBGF_TRACER_CALL_REQ_HANDLER,
+    /** Call DBGFR0BpInitReqHandler(). */
+    VMMR0_DO_DBGF_BP_INIT,
+    /** Call DBGFR0BpChunkAllocReqHandler(). */
+    VMMR0_DO_DBGF_BP_CHUNK_ALLOC,
 
     /** The usual 32-bit type blow up. */
     VMMR0_DO_32BIT_HACK = 0x7fffffff

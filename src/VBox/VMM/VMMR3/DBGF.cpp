@@ -148,7 +148,11 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
                 rc = dbgfR3AsInit(pUVM);
                 if (RT_SUCCESS(rc))
                 {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
                     rc = dbgfR3BpInit(pVM);
+#else
+                    rc = dbgfR3BpInit(pUVM);
+#endif
                     if (RT_SUCCESS(rc))
                     {
                         rc = dbgfR3OSInit(pUVM);
@@ -174,7 +178,7 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
                             dbgfR3OSTermPart2(pUVM);
                         }
 #ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
-                        dbgfR3BpTerm(pVM);
+                        dbgfR3BpTerm(pUVM);
 #endif
                     }
                     dbgfR3AsTerm(pUVM);
@@ -206,7 +210,7 @@ VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
     dbgfR3PlugInTerm(pUVM);
     dbgfR3OSTermPart2(pUVM);
 #ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
-    dbgfR3BpTerm(pVM);
+    dbgfR3BpTerm(pUVM);
 #endif
     dbgfR3AsTerm(pUVM);
     dbgfR3RegTerm(pUVM);

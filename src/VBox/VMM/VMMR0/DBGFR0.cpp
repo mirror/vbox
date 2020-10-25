@@ -54,6 +54,10 @@
 VMMR0_INT_DECL(void) DBGFR0InitPerVMData(PGVM pGVM)
 {
     pGVM->dbgfr0.s.pTracerR0 = NULL;
+
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+    dbgfR0BpInit(pGVM);
+#endif
 }
 
 
@@ -66,6 +70,10 @@ VMMR0_INT_DECL(void) DBGFR0CleanupVM(PGVM pGVM)
     if (pGVM->dbgfr0.s.pTracerR0)
         dbgfR0TracerDestroy(pGVM, pGVM->dbgfr0.s.pTracerR0);
     pGVM->dbgfr0.s.pTracerR0 = NULL;
+#endif
+
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+    dbgfR0BpDestroy(pGVM);
 #endif
 }
 
