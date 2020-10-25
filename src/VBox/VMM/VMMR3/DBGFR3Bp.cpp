@@ -642,6 +642,106 @@ static int dbgfR3BpRegRemove(PVM pVM, DBGFBP hBp, PDBGFBPINT pBp)
 
 
 /**
+ * Adds the given int3 breakpoint to the appropriate lookup tables.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBp                 The breakpoint handle to add.
+ * @param   pBp                 The internal breakpoint state.
+ */
+static int dbgfR3BpInt3Add(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
+{
+    AssertReturn(DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3, VERR_DBGF_BP_IPE_3);
+
+    int rc = VINF_SUCCESS;
+    uint16_t idxL1 = DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(pBp->Pub.u.Int3.GCPtr);
+    uint8_t  cTries = 16;
+
+    while (cTries--)
+    {
+        uint32_t u32Entry = ASMAtomicReadU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1]);
+
+        if (u32Entry == DBGF_BP_INT3_L1_ENTRY_TYPE_NULL)
+        {
+            /*
+             * No breakpoint assigned so far for this entry, create an entry containing
+             * the direct breakpoint handle and try to exchange it atomically.
+             */
+            u32Entry = DBGF_BP_INT3_L1_ENTRY_CREATE_BP_HND(hBp);
+            if (ASMAtomicCmpXchgU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1], u32Entry, DBGF_BP_INT3_L1_ENTRY_TYPE_NULL))
+                break;
+        }
+        else
+        {
+            uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry);
+            if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND)
+            {
+                /** @todo Allocate a new root entry and one leaf to accomodate for the two handles,
+                 * then replace the new entry. */
+                rc = VERR_NOT_IMPLEMENTED;
+                break;
+            }
+            else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
+            {
+                /** @todo Walk the L2 tree searching for the correct spot, add the new entry
+                 * and rebalance the tree. */
+                rc = VERR_NOT_IMPLEMENTED;
+                break;
+            }
+        }
+    }
+
+    if (   RT_SUCCESS(rc)
+        && !cTries) /* Too much contention, abort with an error. */
+        rc = VERR_DBGF_BP_INT3_ADD_TRIES_REACHED;
+
+    return rc;
+}
+
+
+/**
+ * Removes the given int3 breakpoint from all lookup tables.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBp                 The breakpoint handle to remove.
+ * @param   pBp                 The internal breakpoint state.
+ */
+static int dbgfR3BpInt3Remove(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
+{
+    AssertReturn(DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3, VERR_DBGF_BP_IPE_3);
+
+    int rc = VINF_SUCCESS;
+    uint16_t idxL1 = DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(pBp->Pub.u.Int3.GCPtr);
+
+    for (;;)
+    {
+        uint32_t u32Entry = ASMAtomicReadU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1]);
+        AssertReturn(u32Entry != DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, VERR_DBGF_BP_IPE_6);
+
+        uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry);
+        if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND)
+        {
+            /* Single breakpoint, just exchange atomically with the null value. */
+            if (ASMAtomicCmpXchgU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1], DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, u32Entry))
+                break;
+            break;
+        }
+        else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
+        {
+            /** @todo Walk the L2 tree searching for the correct spot, remove the entry
+             * and rebalance the tree. */
+            RT_NOREF(hBp);
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+        }
+    }
+
+    return rc;
+}
+
+
+/**
  * @callback_method_impl{FNVMMEMTRENDEZVOUS}
  */
 static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, void *pvUser)
@@ -677,6 +777,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, 
  * @param   pUVM                The user mode VM handle.
  * @param   hBp                 The breakpoint handle to arm.
  * @param   pBp                 The internal breakpoint state pointer for the handle.
+ *
+ * @thread Any thread.
  */
 static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
@@ -703,6 +805,32 @@ static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
             break;
         }
         case DBGFBPTYPE_INT3:
+        {
+            dbgfR3BpSetEnabled(pBp, true /*fEnabled*/);
+
+            /** @todo When we enable the first int3 breakpoint we should do this in an EMT rendezvous
+             * as the VMX code intercepts #BP only when at least one int3 breakpoint is enabled.
+             * A racing vCPU might trigger it and forward it to the guest causing panics/crashes/havoc. */
+            /*
+             * Save current byte and write the int3 instruction byte.
+             */
+            rc = PGMPhysSimpleReadGCPhys(pVM, &pBp->Pub.u.Int3.bOrg, pBp->Pub.u.Int3.PhysAddr, sizeof(pBp->Pub.u.Int3.bOrg));
+            if (RT_SUCCESS(rc))
+            {
+                static const uint8_t s_bInt3 = 0xcc;
+                rc = PGMPhysSimpleWriteGCPhys(pVM, pBp->Pub.u.Int3.PhysAddr, &s_bInt3, sizeof(s_bInt3));
+                if (RT_SUCCESS(rc))
+                {
+                    ASMAtomicIncU32(&pVM->dbgf.s.cEnabledInt3Breakpoints);
+                    Log(("DBGF: Set breakpoint at %RGv (Phys %RGp)\n", pBp->Pub.u.Int3.GCPtr, pBp->Pub.u.Int3.PhysAddr));
+                }
+            }
+
+            if (RT_FAILURE(rc))
+                dbgfR3BpSetEnabled(pBp, false /*fEnabled*/);
+
+            break;
+        }
         case DBGFBPTYPE_PORT_IO:
         case DBGFBPTYPE_MMIO:
             rc = VERR_NOT_IMPLEMENTED;
@@ -723,6 +851,8 @@ static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
  * @param   pUVM                The user mode VM handle.
  * @param   hBp                 The breakpoint handle to disarm.
  * @param   pBp                 The internal breakpoint state pointer for the handle.
+ *
+ * @thread Any thread.
  */
 static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
@@ -749,6 +879,31 @@ static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
             break;
         }
         case DBGFBPTYPE_INT3:
+        {
+            dbgfR3BpSetEnabled(pBp, false /*fEnabled*/);
+
+            /*
+             * Check that the current byte is the int3 instruction, and restore the original one.
+             * We currently ignore invalid bytes.
+             */
+            uint8_t bCurrent = 0;
+            rc = PGMPhysSimpleReadGCPhys(pVM, &bCurrent, pBp->Pub.u.Int3.PhysAddr, sizeof(bCurrent));
+            if (   RT_SUCCESS(rc)
+                && bCurrent == 0xcc)
+            {
+                rc = PGMPhysSimpleWriteGCPhys(pVM, pBp->Pub.u.Int3.PhysAddr, &pBp->Pub.u.Int3.bOrg, sizeof(pBp->Pub.u.Int3.bOrg));
+                if (RT_SUCCESS(rc))
+                {
+                    ASMAtomicDecU32(&pVM->dbgf.s.cEnabledInt3Breakpoints);
+                    Log(("DBGF: Removed breakpoint at %RGv (Phys %RGp)\n", pBp->Pub.u.Int3.GCPtr, pBp->Pub.u.Int3.PhysAddr));
+                }
+            }
+
+            if (RT_FAILURE(rc))
+                dbgfR3BpSetEnabled(pBp, true /*fEnabled*/);
+
+            break;
+        }
         case DBGFBPTYPE_PORT_IO:
         case DBGFBPTYPE_MMIO:
             rc = VERR_NOT_IMPLEMENTED;
@@ -876,12 +1031,19 @@ VMMR3DECL(int) DBGFR3BpSetInt3Ex(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
             pBp->Pub.u.Int3.PhysAddr |= (pAddress->FlatPtr & X86_PAGE_OFFSET_MASK);
             pBp->Pub.u.Int3.GCPtr     = pAddress->FlatPtr;
 
-            /* Enable the breakpoint. */
-            rc = dbgfR3BpArm(pUVM, hBp, pBp);
+            /* Add the breakpoint to the lookup tables. */
+            rc = dbgfR3BpInt3Add(pUVM, hBp, pBp);
             if (RT_SUCCESS(rc))
             {
-                *phBp = hBp;
-                return VINF_SUCCESS;
+                /* Enable the breakpoint. */
+                rc = dbgfR3BpArm(pUVM, hBp, pBp);
+                if (RT_SUCCESS(rc))
+                {
+                    *phBp = hBp;
+                    return VINF_SUCCESS;
+                }
+
+                int rc2 = dbgfR3BpInt3Remove(pUVM, hBp, pBp); AssertRC(rc2);
             }
         }
 

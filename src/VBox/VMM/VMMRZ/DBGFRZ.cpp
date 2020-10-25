@@ -189,6 +189,62 @@ VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     return VINF_EM_RAW_GUEST_TRAP;
 }
 
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+# ifdef IN_RING0
+/**
+ * Returns the internal breakpoint state for the given handle.
+ *
+ * @returns Pointer to the internal breakpoint state or NULL if the handle is invalid.
+ * @param   pVM                 The ring-0 VM structure pointer.
+ * @param   hBp                 The breakpoint handle to resolve.
+ * @param   ppBpR0              Where to store the pointer to the ring-0 only part of the breakpoint
+ *                              on success, optional.
+ */
+DECLINLINE(PDBGFBPINT) dbgfR0BpGetByHnd(PVMCC pVM, DBGFBP hBp, PDBGFBPINTR0 *ppBpR0)
+{
+    uint32_t idChunk  = DBGF_BP_HND_GET_CHUNK_ID(hBp);
+    uint32_t idxEntry = DBGF_BP_HND_GET_ENTRY(hBp);
+
+    AssertReturn(idChunk < DBGF_BP_CHUNK_COUNT, NULL);
+    AssertReturn(idxEntry < DBGF_BP_COUNT_PER_CHUNK, NULL);
+
+    PDBGFBPCHUNKR0 pBpChunk = &pVM->dbgfr0.s.aBpChunks[idChunk];
+    AssertPtrReturn(pBpChunk->paBpBaseSharedR0, NULL);
+
+    if (ppBpR0)
+        *ppBpR0 = &pBpChunk->paBpBaseR0Only[idxEntry];
+    return &pBpChunk->paBpBaseSharedR0[idxEntry];
+}
+# endif
+
+
+/**
+ * Executes the actions associated with the given breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pRegFrame   Pointer to the register frame for the trap.
+ * @param   hBp         The breakpoint handle which hit.
+ * @param   pBp         The shared breakpoint state.
+ * @param   pBpR0       The ring-0 only breakpoint state.
+ * @param   fInHyper    Flag whether the breakpoint triggered in hypervisor code.
+ */
+DECLINLINE(int) dbgfRZBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
+                            DBGFBP hBp, PDBGFBPINT pBp, PDBGFBPINTR0 pBpR0, bool fInHyper)
+{
+    uint64_t cHits = ASMAtomicIncU64(&pBp->Pub.cHits);
+    pVCpu->dbgf.s.hBpActive = hBp;
+
+    /** @todo Owner handling. */
+
+    LogFlow(("dbgfRZBpHit: hit breakpoint %u at %04x:%RGv cHits=0x%RX64\n",
+             hBp, pRegFrame->cs.Sel, pRegFrame->rip, cHits));
+    return fInHyper
+         ? VINF_EM_DBG_HYPER_BREAKPOINT
+         : VINF_EM_DBG_BREAKPOINT;
+}
+#endif /* !VBOX_WITH_LOTS_OF_DBGF_BPS */
 
 /**
  * \#BP (Breakpoint) handler.
@@ -201,7 +257,7 @@ VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */
-VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame)
 {
 #ifdef IN_RC
     const bool fInHyper = !(pRegFrame->ss.Sel & X86_SEL_RPL) && !pRegFrame->eflags.Bits.u1VM;
@@ -244,6 +300,53 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
                      : VINF_EM_DBG_BREAKPOINT;
             }
             iBp++;
+        }
+    }
+#else
+# ifdef IN_RC
+# error "You lucky person have the pleasure to implement the raw mode part for this!"
+# endif
+
+    if (pVM->dbgfr0.s.CTX_SUFF(paBpLocL1))
+    {
+        RTGCPTR GCPtrBp;
+        int rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss.Sel, pRegFrame->cs.Sel, &pRegFrame->cs,
+# ifdef IN_RC
+                                              pRegFrame->eip - 1,
+# else
+                                              pRegFrame->rip /* no -1 in R0 */,
+# endif
+                                              &GCPtrBp);
+        AssertRCReturn(rc, rc);
+
+        const uint16_t idxL1      = DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(GCPtrBp);
+        const uint32_t u32L1Entry = ASMAtomicReadU32(&pVM->dbgfr0.s.CTX_SUFF(paBpLocL1)[idxL1]);
+
+        LogFlowFunc(("GCPtrBp=%RGv idxL1=%u u32L1Entry=%#x\n", GCPtrBp, idxL1, u32L1Entry));
+        if (u32L1Entry != DBGF_BP_INT3_L1_ENTRY_TYPE_NULL)
+        {
+            uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32L1Entry);
+            if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND)
+            {
+                DBGFBP hBp = DBGF_BP_INT3_L1_ENTRY_GET_BP_HND(u32L1Entry);
+
+                /* Query the internal breakpoint state from the handle. */
+                PDBGFBPINTR0 pBpR0 = NULL;
+                PDBGFBPINT pBp = dbgfR0BpGetByHnd(pVM, hBp, &pBpR0);
+                if (   pBp
+                    && DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3)
+                {
+                    if (pBp->Pub.u.Int3.GCPtr == (RTGCUINTPTR)GCPtrBp)
+                        return dbgfRZBpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0, fInHyper);
+                    /* else Genuine guest trap. */
+                }
+                /** @todo else Guru meditation */
+            }
+            else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
+            {
+                /** @todo Walk the L2 tree searching for the correct spot. */
+            }
+            /** @todo else Guru meditation */
         }
     }
 #endif /* !VBOX_WITH_LOTS_OF_DBGF_BPS */

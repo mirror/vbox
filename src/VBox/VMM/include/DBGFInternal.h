@@ -787,6 +787,36 @@ typedef DBGFBPSEARCHOPT *PDBGFBPSEARCHOPT;
 #define DBGF_BP_HND_GET_ENTRY(a_hBp)                ((uint32_t)RT_LO_U16(a_hBp))
 
 
+/** @name DBGF int3 L1 lookup table entry types.
+ * @{ */
+/** No breakpoint handle assigned for this entry - special value which can be used
+ * for comparison with the whole entry. */
+#define DBGF_BP_INT3_L1_ENTRY_TYPE_NULL                 UINT32_C(0)
+/** Direct breakpoint handle. */
+#define DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND               1
+/** Index into the L2 tree denoting the root of a search tree. */
+#define DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX               2
+/** @} */
+
+
+/** Returns the entry type for the given L1 lookup table entry. */
+#define DBGF_BP_INT3_L1_ENTRY_GET_TYPE(a_u32Entry)      ((a_u32Entry) >> 28)
+/** Returns a DBGF breakpoint handle from the given L1 lookup table entry,
+ * type needs to be DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND. */
+#define DBGF_BP_INT3_L1_ENTRY_GET_BP_HND(a_u32Entry)    ((DBGFBP)((a_u32Entry) & UINT32_C(0x0fffffff)))
+/** Returns a L2 index from the given L1 lookup table entry,
+ * type needs to be DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX. */
+#define DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(a_u32Entry)    ((a_u32Entry) & UINT32_C(0x0fffffff))
+/** Creates a L1 entry value from the given type and data. */
+#define DBGF_BP_INT3_L1_ENTRY_CREATE(a_Type, a_u32Data) ((((uint32_t)(a_Type)) << 28) | ((a_u32Data) & UINT32_C(0x0fffffff)))
+/** Creates a breakpoint handle type L1 lookup entry. */
+#define DBGF_BP_INT3_L1_ENTRY_CREATE_BP_HND(a_hBp)      DBGF_BP_INT3_L1_ENTRY_CREATE(DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND, a_hBp)
+/** Creates a L2 index type L1 lookup entry. */
+#define DBGF_BP_INT3_L1_ENTRY_CREATE_L2_IDX(a_idxL2)    DBGF_BP_INT3_L1_ENTRY_CREATE(DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX, a_idxL2)
+
+/** Extracts the lowest bits from the given GC pointer used as an index into the L1 lookup table. */
+#define DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(a_GCPtr)  ((uint16_t)((a_GCPtr) & UINT16_C(0xffff)))
+
 /**
  * The internal breakpoint state, shared part.
  */
@@ -919,10 +949,12 @@ typedef struct DBGF
     /** The number of enabled INT3 breakpoints. */
     uint8_t                     cEnabledInt3Breakpoints;
     uint8_t                     abPadding; /**< Unused padding space up for grabs. */
-#else
-    uint16_t                    u16Pad;
-#endif
     uint32_t                    uPadding;
+#else
+    uint16_t                    u16Pad; /**< Unused padding space up for grabs. */
+    /** The number of enabled INT3 breakpoints. */
+    volatile uint32_t           cEnabledInt3Breakpoints;
+#endif
 
     /** Debugger Attached flag.
      * Set if a debugger is attached, elsewise it's clear.

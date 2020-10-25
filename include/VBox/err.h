@@ -340,6 +340,10 @@
 #define VERR_DBGF_BP_IPE_4                  (-1229)
 /** Internal processing error \#5 in the DBGF breakpoint manager code. */
 #define VERR_DBGF_BP_IPE_5                  (-1230)
+/** Internal processing error \#6 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_6                  (-1231)
+/** Number of tries to add an int3 breakpoint table to the lookup tables reached. */
+#define VERR_DBGF_BP_INT3_ADD_TRIES_REACHED (-1232)
 /** @} */
 
 
