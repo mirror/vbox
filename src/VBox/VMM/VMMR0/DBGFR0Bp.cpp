@@ -138,7 +138,7 @@ DECLHIDDEN(void) dbgfR0BpDestroy(PGVM pGVM)
  *
  * @returns VBox status code.
  * @param   pGVM            The global (ring-0) VM structure.
- * @param   ppBpLocL1R3     Where to return the ring-3 L1 lookup table address on success.
+ * @param   ppaBpLocL1R3    Where to return the ring-3 L1 lookup table address on success.
  * @thread  EMT(0)
  */
 static int dbgfR0BpInitWorker(PGVM pGVM, R3PTRTYPE(volatile uint32_t *) *ppaBpLocL1R3)
