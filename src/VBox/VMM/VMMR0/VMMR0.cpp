@@ -2286,6 +2286,15 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
             VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
             break;
         }
+
+        case VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC:
+        {
+            if (!pReqHdr || u64Arg || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = DBGFR0BpL2TblChunkAllocReqHandler(pGVM, (PDBGFBPL2TBLCHUNKALLOCREQ)pReqHdr);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
 #endif
 
         /*
@@ -2394,6 +2403,7 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
 #ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
             case VMMR0_DO_DBGF_BP_INIT:
             case VMMR0_DO_DBGF_BP_CHUNK_ALLOC:
+            case VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC:
 #endif
             {
                 PGVMCPU        pGVCpu        = &pGVM->aCpus[idCpu];

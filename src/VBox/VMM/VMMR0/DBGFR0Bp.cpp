@@ -61,6 +61,15 @@ DECLHIDDEN(void) dbgfR0BpInit(PGVM pGVM)
         //pBpChunk->paBpBaseR0Only   = NULL;
     }
 
+    for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->dbgfr0.s.aBpL2TblChunks); i++)
+    {
+        PDBGFBPL2TBLCHUNKR0 pL2Chunk = &pGVM->dbgfr0.s.aBpL2TblChunks[i];
+
+        pL2Chunk->hMemObj          = NIL_RTR0MEMOBJ;
+        pL2Chunk->hMapObj          = NIL_RTR0MEMOBJ;
+        //pL2Chunk->paBpL2TblBaseSharedR0 = NULL;
+    }
+
     pGVM->dbgfr0.s.hMemObjBpLocL1 = NIL_RTR0MEMOBJ;
     //pGVM->dbgfr0.s.paBpLocL1R0    = NULL;
     //pGVM->dbgfr0.s.fInit          = false;
@@ -111,6 +120,26 @@ DECLHIDDEN(void) dbgfR0BpDestroy(PGVM pGVM)
             }
         }
 
+        for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->dbgfr0.s.aBpL2TblChunks); i++)
+        {
+            PDBGFBPL2TBLCHUNKR0 pL2Chunk = &pGVM->dbgfr0.s.aBpL2TblChunks[i];
+
+            if (pL2Chunk->hMemObj != NIL_RTR0MEMOBJ)
+            {
+                Assert(pL2Chunk->hMapObj != NIL_RTR0MEMOBJ);
+
+                pL2Chunk->paBpL2TblBaseSharedR0 = NULL;
+
+                hMemObj = pL2Chunk->hMapObj;
+                pL2Chunk->hMapObj = NIL_RTR0MEMOBJ;
+                RTR0MemObjFree(hMemObj, true);
+
+                hMemObj = pL2Chunk->hMemObj;
+                pL2Chunk->hMemObj = NIL_RTR0MEMOBJ;
+                RTR0MemObjFree(hMemObj, true);
+            }
+        }
+
         pGVM->dbgfr0.s.fInit = false;
     }
 #ifdef RT_STRICT
@@ -127,6 +156,15 @@ DECLHIDDEN(void) dbgfR0BpDestroy(PGVM pGVM)
             Assert(pBpChunk->hMapObj == NIL_RTR0MEMOBJ);
             Assert(!pBpChunk->paBpBaseSharedR0);
             Assert(!pBpChunk->paBpBaseR0Only);
+        }
+
+        for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->dbgfr0.s.aBpL2TblChunks); i++)
+        {
+            PDBGFBPL2TBLCHUNKR0 pL2Chunk = &pGVM->dbgfr0.s.aBpL2TblChunks[i];
+
+            Assert(pL2Chunk->hMemObj == NIL_RTR0MEMOBJ);
+            Assert(pL2Chunk->hMapObj == NIL_RTR0MEMOBJ);
+            Assert(!pL2Chunk->paBpL2TblBaseSharedR0);
         }
     }
 #endif
@@ -238,6 +276,52 @@ static int dbgfR0BpChunkAllocWorker(PGVM pGVM, uint32_t idChunk, R3PTRTYPE(void 
 
 
 /**
+ * Worker for DBGFR0BpL2TblChunkAllocReqHandler() that does the actual chunk allocation.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @param   idChunk         The chunk ID to allocate.
+ * @param   ppL2ChunkBaseR3 Where to return the ring-3 chunk base address on success.
+ * @thread  EMT(0)
+ */
+static int dbgfR0BpL2TblChunkAllocWorker(PGVM pGVM, uint32_t idChunk, R3PTRTYPE(void *) *ppL2ChunkBaseR3)
+{
+    /*
+     * Figure out how much memory we need for the chunk and allocate it.
+     */
+    uint32_t const cbTotal = RT_ALIGN_32(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK * sizeof(DBGFBPL2ENTRY), PAGE_SIZE);
+
+    RTR0MEMOBJ hMemObj;
+    int rc = RTR0MemObjAllocPage(&hMemObj, cbTotal, false /*fExecutable*/);
+    if (RT_FAILURE(rc))
+        return rc;
+    RT_BZERO(RTR0MemObjAddress(hMemObj), cbTotal);
+
+    /* Map it. */
+    RTR0MEMOBJ hMapObj;
+    rc = RTR0MemObjMapUserEx(&hMapObj, hMemObj, (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, RTR0ProcHandleSelf(),
+                             0 /*offSub*/, cbTotal);
+    if (RT_SUCCESS(rc))
+    {
+        PDBGFBPL2TBLCHUNKR0 pL2ChunkR0 = &pGVM->dbgfr0.s.aBpL2TblChunks[idChunk];
+
+        pL2ChunkR0->hMemObj               = hMemObj;
+        pL2ChunkR0->hMapObj               = hMapObj;
+        pL2ChunkR0->paBpL2TblBaseSharedR0 = (PDBGFBPL2ENTRY)RTR0MemObjAddress(hMemObj);
+
+        /*
+         * We're done.
+         */
+        *ppL2ChunkBaseR3 = RTR0MemObjAddressR3(hMapObj);
+        return rc;
+    }
+
+    RTR0MemObjFree(hMemObj, true);
+    return rc;
+}
+
+
+/**
  * Used by ring-3 DBGF to fully initialize the breakpoint manager for operation.
  *
  * @returns VBox status code.
@@ -290,5 +374,35 @@ VMMR0_INT_DECL(int) DBGFR0BpChunkAllocReqHandler(PGVM pGVM, PDBGFBPCHUNKALLOCREQ
     AssertReturn(pGVM->dbgfr0.s.aBpChunks[idChunk].hMemObj == NIL_RTR0MEMOBJ, VERR_INVALID_PARAMETER);
 
     return dbgfR0BpChunkAllocWorker(pGVM, idChunk, &pReq->pChunkBaseR3);
+}
+
+
+/**
+ * Used by ring-3 DBGF to allocate a given chunk in the global L2 lookup table.
+ *
+ * @returns VBox status code.
+ * @param   pGVM    The global (ring-0) VM structure.
+ * @param   pReq    Pointer to the request buffer.
+ * @thread  EMT(0)
+ */
+VMMR0_INT_DECL(int) DBGFR0BpL2TblChunkAllocReqHandler(PGVM pGVM, PDBGFBPL2TBLCHUNKALLOCREQ pReq)
+{
+    LogFlow(("DBGFR0BpL2TblChunkAllocReqHandler:\n"));
+
+    /*
+     * Validate the request.
+     */
+    AssertReturn(pReq->Hdr.cbReq == sizeof(*pReq), VERR_INVALID_PARAMETER);
+
+    uint32_t const idChunk = pReq->idChunk;
+    AssertReturn(idChunk < DBGF_BP_L2_TBL_CHUNK_COUNT, VERR_INVALID_PARAMETER);
+
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
+    AssertRCReturn(rc, rc);
+
+    AssertReturn(pGVM->dbgfr0.s.fInit, VERR_WRONG_ORDER);
+    AssertReturn(pGVM->dbgfr0.s.aBpL2TblChunks[idChunk].hMemObj == NIL_RTR0MEMOBJ, VERR_INVALID_PARAMETER);
+
+    return dbgfR0BpL2TblChunkAllocWorker(pGVM, idChunk, &pReq->pChunkBaseR3);
 }
 

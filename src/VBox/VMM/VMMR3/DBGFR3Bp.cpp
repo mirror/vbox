@@ -200,8 +200,19 @@ DECLHIDDEN(int) dbgfR3BpInit(PUVM pUVM)
         pBpChunk->idChunk = DBGF_BP_CHUNK_ID_INVALID; /* Not allocated. */
     }
 
+    for (uint32_t i = 0; i < RT_ELEMENTS(pUVM->dbgf.s.aBpL2TblChunks); i++)
+    {
+        PDBGFBPL2TBLCHUNKR3 pL2Chunk = &pUVM->dbgf.s.aBpL2TblChunks[i];
+
+        //pL2Chunk->pL2BaseR3 = NULL;
+        //pL2Chunk->pbmAlloc  = NULL;
+        //pL2Chunk->cFree     = 0;
+        pL2Chunk->idChunk = DBGF_BP_CHUNK_ID_INVALID; /* Not allocated. */
+    }
+
     //pUVM->dbgf.s.paBpLocL1R3 = NULL;
-    return VINF_SUCCESS;
+    pUVM->dbgf.s.hMtxBpL2Wr = NIL_RTSEMFASTMUTEX;
+    return RTSemFastMutexCreate(&pUVM->dbgf.s.hMtxBpL2Wr);
 }
 
 
@@ -225,6 +236,25 @@ DECLHIDDEN(int) dbgfR3BpTerm(PUVM pUVM)
             pBpChunk->pbmAlloc = NULL;
             pBpChunk->idChunk = DBGF_BP_CHUNK_ID_INVALID;
         }
+    }
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pUVM->dbgf.s.aBpL2TblChunks); i++)
+    {
+        PDBGFBPL2TBLCHUNKR3 pL2Chunk = &pUVM->dbgf.s.aBpL2TblChunks[i];
+
+        if (pL2Chunk->idChunk != DBGF_BP_CHUNK_ID_INVALID)
+        {
+            AssertPtr(pL2Chunk->pbmAlloc);
+            RTMemFree((void *)pL2Chunk->pbmAlloc);
+            pL2Chunk->pbmAlloc = NULL;
+            pL2Chunk->idChunk = DBGF_BP_CHUNK_ID_INVALID;
+        }
+    }
+
+    if (pUVM->dbgf.s.hMtxBpL2Wr != NIL_RTSEMFASTMUTEX)
+    {
+        RTSemFastMutexDestroy(pUVM->dbgf.s.hMtxBpL2Wr);
+        pUVM->dbgf.s.hMtxBpL2Wr = NIL_RTSEMFASTMUTEX;
     }
 
     return VINF_SUCCESS;
@@ -562,6 +592,188 @@ static void dbgfR3BpFree(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 
 
 /**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpL2TblChunkAllocEmtWorker(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    uint32_t idChunk = (uint32_t)(uintptr_t)pvUser;
+
+    VMCPU_ASSERT_EMT(pVCpu);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    AssertReturn(idChunk < DBGF_BP_L2_TBL_CHUNK_COUNT, VERR_DBGF_BP_IPE_1);
+
+    PUVM pUVM = pVM->pUVM;
+    PDBGFBPL2TBLCHUNKR3 pL2Chunk = &pUVM->dbgf.s.aBpL2TblChunks[idChunk];
+
+    AssertReturn(   pL2Chunk->idChunk == DBGF_BP_L2_IDX_CHUNK_ID_INVALID
+                 || pL2Chunk->idChunk == idChunk,
+                 VERR_DBGF_BP_IPE_2);
+
+    /*
+     * The initialization will be done on EMT(0). It is possible that multiple
+     * allocation attempts are done when multiple racing non EMT threads try to
+     * allocate a breakpoint and a new chunk needs to be allocated.
+     * Ignore the request and succeed if the chunk is allocated meaning that a
+     * previous rendezvous successfully allocated the chunk.
+     */
+    int rc = VINF_SUCCESS;
+    if (   pVCpu->idCpu == 0
+        && pL2Chunk->idChunk == DBGF_BP_L2_IDX_CHUNK_ID_INVALID)
+    {
+        /* Allocate the bitmap first so we can skip calling into VMMR0 if it fails. */
+        AssertCompile(!(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK % 8));
+        volatile void *pbmAlloc = RTMemAllocZ(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK / 8);
+        if (RT_LIKELY(pbmAlloc))
+        {
+            DBGFBPL2TBLCHUNKALLOCREQ Req;
+            Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+            Req.Hdr.cbReq    = sizeof(Req);
+            Req.idChunk      = idChunk;
+            Req.pChunkBaseR3 = NULL;
+            rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC, 0 /*u64Arg*/, &Req.Hdr);
+            AssertLogRelMsgRC(rc, ("VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC failed: %Rrc\n", rc));
+            if (RT_SUCCESS(rc))
+            {
+                pL2Chunk->pL2BaseR3 = (PDBGFBPL2ENTRY)Req.pChunkBaseR3;
+                pL2Chunk->pbmAlloc  = pbmAlloc;
+                pL2Chunk->cFree     = DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK;
+                pL2Chunk->idChunk   = idChunk;
+                return VINF_SUCCESS;
+            }
+
+            RTMemFree((void *)pbmAlloc);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Tries to allocate the given L2 table chunk which requires an EMT rendezvous.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idChunk             The chunk to allocate.
+ *
+ * @thread Any thread.
+ */
+DECLINLINE(int) dbgfR3BpL2TblChunkAlloc(PUVM pUVM, uint32_t idChunk)
+{
+    return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpL2TblChunkAllocEmtWorker, (void *)(uintptr_t)idChunk);
+}
+
+
+/**
+ * Tries to allocate a new breakpoint of the given type.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pidxL2Tbl           Where to return the L2 table entry index on success.
+ * @param   ppL2TblEntry        Where to return the pointer to the L2 table entry on success.
+ *
+ * @thread Any thread.
+ */
+static int dbgfR3BpL2TblEntryAlloc(PUVM pUVM, uint32_t *pidxL2Tbl, PDBGFBPL2ENTRY *ppL2TblEntry)
+{
+    /*
+     * Search for a chunk having a free entry, allocating new chunks
+     * if the encountered ones are full.
+     *
+     * This can be called from multiple threads at the same time so special care
+     * has to be taken to not require any locking here.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pUVM->dbgf.s.aBpL2TblChunks); i++)
+    {
+        PDBGFBPL2TBLCHUNKR3 pL2Chunk = &pUVM->dbgf.s.aBpL2TblChunks[i];
+
+        uint32_t idChunk  = ASMAtomicReadU32(&pL2Chunk->idChunk);
+        if (idChunk == DBGF_BP_L2_IDX_CHUNK_ID_INVALID)
+        {
+            int rc = dbgfR3BpL2TblChunkAlloc(pUVM, i);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("DBGF/Bp: Allocating new breakpoint L2 lookup table chunk failed with %Rrc\n", rc));
+                break;
+            }
+
+            idChunk = ASMAtomicReadU32(&pL2Chunk->idChunk);
+            Assert(idChunk == i);
+        }
+
+        /** @todo Optimize with some hinting if this turns out to be too slow. */
+        for (;;)
+        {
+            uint32_t cFree = ASMAtomicReadU32(&pL2Chunk->cFree);
+            if (cFree)
+            {
+                /*
+                 * Scan the associated bitmap for a free entry, if none can be found another thread
+                 * raced us and we go to the next chunk.
+                 */
+                int32_t iClr = ASMBitFirstClear(pL2Chunk->pbmAlloc, DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK);
+                if (iClr != -1)
+                {
+                    /*
+                     * Try to allocate, we could get raced here as well. In that case
+                     * we try again.
+                     */
+                    if (!ASMAtomicBitTestAndSet(pL2Chunk->pbmAlloc, iClr))
+                    {
+                        /* Success, immediately mark as allocated, initialize the breakpoint state and return. */
+                        ASMAtomicDecU32(&pL2Chunk->cFree);
+
+                        PDBGFBPL2ENTRY pL2Entry = &pL2Chunk->pL2BaseR3[iClr];
+
+                        *pidxL2Tbl    = DBGF_BP_L2_IDX_CREATE(idChunk, iClr);
+                        *ppL2TblEntry = pL2Entry;
+                        return VINF_SUCCESS;
+                    }
+                    /* else Retry with another spot. */
+                }
+                else /* no free entry in bitmap, go to the next chunk */
+                    break;
+            }
+            else /* !cFree, go to the next chunk */
+                break;
+        }
+    }
+
+    return VERR_DBGF_NO_MORE_BP_SLOTS;
+}
+
+
+/**
+ * Frees the given breakpoint handle.
+ *
+ * @returns nothing.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idxL2Tbl            The L2 table index to free.
+ * @param   pL2TblEntry         The L2 table entry pointer to free.
+ */
+static void dbgfR3BpL2TblEntryFree(PUVM pUVM, uint32_t idxL2Tbl, PDBGFBPL2ENTRY pL2TblEntry)
+{
+    uint32_t idChunk  = DBGF_BP_L2_IDX_GET_CHUNK_ID(idxL2Tbl);
+    uint32_t idxEntry = DBGF_BP_L2_IDX_GET_ENTRY(idxL2Tbl);
+
+    AssertReturnVoid(idChunk < DBGF_BP_L2_TBL_CHUNK_COUNT);
+    AssertReturnVoid(idxEntry < DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK);
+
+    PDBGFBPL2TBLCHUNKR3 pL2Chunk = &pUVM->dbgf.s.aBpL2TblChunks[idChunk];
+    AssertPtrReturnVoid(pL2Chunk->pbmAlloc);
+    AssertReturnVoid(ASMBitTest(pL2Chunk->pbmAlloc, idxEntry));
+
+    memset(pL2TblEntry, 0, sizeof(*pL2TblEntry));
+
+    ASMAtomicBitClear(pL2Chunk->pbmAlloc, idxEntry);
+    ASMAtomicIncU32(&pL2Chunk->cFree);
+}
+
+
+/**
  * Sets the enabled flag of the given breakpoint to the given value.
  *
  * @returns nothing.
@@ -880,8 +1092,6 @@ static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
         }
         case DBGFBPTYPE_INT3:
         {
-            dbgfR3BpSetEnabled(pBp, false /*fEnabled*/);
-
             /*
              * Check that the current byte is the int3 instruction, and restore the original one.
              * We currently ignore invalid bytes.
@@ -895,13 +1105,10 @@ static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
                 if (RT_SUCCESS(rc))
                 {
                     ASMAtomicDecU32(&pVM->dbgf.s.cEnabledInt3Breakpoints);
+                    dbgfR3BpSetEnabled(pBp, false /*fEnabled*/);
                     Log(("DBGF: Removed breakpoint at %RGv (Phys %RGp)\n", pBp->Pub.u.Int3.GCPtr, pBp->Pub.u.Int3.PhysAddr));
                 }
             }
-
-            if (RT_FAILURE(rc))
-                dbgfR3BpSetEnabled(pBp, true /*fEnabled*/);
-
             break;
         }
         case DBGFBPTYPE_PORT_IO:

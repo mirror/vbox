@@ -55,7 +55,7 @@
 
 
 #ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
-/** @name Breakpoint handling defines.
+/** @name Global breakpoint table handling defines.
  * @{ */
 /** Maximum number of breakpoints supported (power of two). */
 #define DBGF_BP_COUNT_MAX                   _1M
@@ -65,6 +65,16 @@
 #define DBGF_BP_COUNT_PER_CHUNK             _64K
 /** Number of chunks required to support all breakpoints. */
 #define DBGF_BP_CHUNK_COUNT                 (DBGF_BP_COUNT_MAX / DBGF_BP_COUNT_PER_CHUNK)
+/** @} */
+
+/** @name L2 lookup table limit defines.
+ * @{ */
+/** Maximum number of entreis in the L2 lookup table. */
+#define DBGF_BP_L2_TBL_ENTRY_COUNT_MAX      _512K
+/** Number of L2 entries handled in one chunk. */
+#define DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK    _64K
+/** Number of chunks required tp support all L2 lookup table entries. */
+#define DBGF_BP_L2_TBL_CHUNK_COUNT          (DBGF_BP_L2_TBL_ENTRY_COUNT_MAX / DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK)
 /** @} */
 #endif
 
@@ -915,6 +925,98 @@ typedef struct DBGFBPCHUNKR0
 } DBGFBPCHUNKR0;
 /** Pointer to a breakpoint table chunk - Ring-0 Ptr. */
 typedef R0PTRTYPE(DBGFBPCHUNKR0 *) PDBGFBPCHUNKR0;
+
+
+/**
+ * L2 lookup table entry.
+ *
+ * @remark The order of the members matters to be able to atomically update
+ *         the AVL left/right pointers and depth with a single 64bit atomic write.
+ * @verbatim
+ *         7         6        5        4        3        2        1        0
+ *     +--------+--------+--------+--------+--------+--------+--------+--------+
+ *     |    hBp[15:0]    |                   GCPtrKey[63:16]                   |
+ *     +--------+--------+--------+--------+--------+--------+--------+--------+
+ *     | hBp[27:16] | iDepth |     idxRight[21:0]     |      idxLeft[21:0]     |
+ *     +--------+--------+--------+--------+--------+--------+--------+--------+
+ *                  \_8 bits_/
+ * @endverbatim
+ */
+typedef struct DBGFBPL2ENTRY
+{
+    /** The upper 6 bytes of the breakpoint address and the low 16 bits of the breakpoint handle. */
+    volatile uint64_t           u64GCPtrKeyAndBpHnd1;
+    /** Left/right lower index, tree depth and remaining 12 bits of the breakpoint handle. */
+    volatile uint64_t           u64LeftRightIdxDepthBpHnd2;
+} DBGFBPL2ENTRY;
+AssertCompileSize(DBGFBPL2ENTRY, 16);
+/** Pointer to a L2 lookup table entry. */
+typedef DBGFBPL2ENTRY *PDBGFBPL2ENTRY;
+/** Pointer to a const L2 lookup table entry. */
+typedef const DBGFBPL2ENTRY *PCDBGFBPL2ENTRY;
+
+/** An invalid breakpoint chunk ID. */
+#define DBGF_BP_L2_IDX_CHUNK_ID_INVALID             UINT32_MAX
+/** Generates a unique breakpoint handle from the given chunk ID and entry inside the chunk. */
+#define DBGF_BP_L2_IDX_CREATE(a_idChunk, a_idEntry) RT_MAKE_U32(a_idEntry, a_idChunk);
+/** Returns the chunk ID from the given breakpoint handle. */
+#define DBGF_BP_L2_IDX_GET_CHUNK_ID(a_idxL2)        ((uint32_t)RT_HI_U16(a_idxL2))
+/** Returns the entry index inside a chunk from the given breakpoint handle. */
+#define DBGF_BP_L2_IDX_GET_ENTRY(a_idxL2)           ((uint32_t)RT_LO_U16(a_idxL2))
+
+/** Number of bits for the left/right index pointers. */
+#define DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_BITS            22
+/** Index mask. */
+#define DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_MASK            (RT_BIT_32(DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_BITS) - 1)
+/** Returns the upper 6 bytes of the GC pointer from the given breakpoint entry. */
+#define DBGF_BP_L2_ENTRY_GET_GCPTR(a_u64GCPtrKeyAndBpHnd1) ((a_u64GCPtrKeyAndBpHnd1) & UINT64_C(0x0000ffffffffffff))
+/** Returns the breakpoint handle from both L2 entry members. */
+#define DBGF_BP_L2_ENTRY_GET_BP_HND(a_u64GCPtrKeyAndBpHnd1, a_u64LeftRightIdxDepthBpHnd2) \
+    ((DBGFBP)(((a_u64GCPtrKeyAndBpHnd1) >> 48) | (((a_u64LeftRightIdxDepthBpHnd2) >> 52) << 16)))
+/** Extracts the depth of the second 64bit L2 entry value. */
+#define DBGF_BP_L2_ENTRY_GET_DEPTH(a_u64LeftRightIdxDepthBpHnd2) ((uint8_t)(((a_u64LeftRightIdxDepthBpHnd2) >> 44) & UINT8_MAX))
+/** Extracts the lower right index value from the L2 entry value. */
+#define DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(a_u64LeftRightIdxDepthBpHnd2) \
+    ((uint32_t)(((a_u64LeftRightIdxDepthBpHnd2) >> 22) & DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_MASK))
+/** Extracts the lower left index value from the L2 entry value. */
+#define DBGF_BP_L2_ENTRY_GET_IDX_LEFT(a_u64LeftRightIdxDepthBpHnd2) \
+    ((uint32_t)((a_u64LeftRightIdxDepthBpHnd2) & DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_MASK))
+
+
+/**
+ * A breakpoint L2 lookup table chunk, ring-3 state.
+ */
+typedef struct DBGFBPL2TBLCHUNKR3
+{
+    /** Pointer to the R3 base of the chunk. */
+    R3PTRTYPE(PDBGFBPL2ENTRY)   pL2BaseR3;
+    /** Bitmap of free/occupied breakpoint entries. */
+    R3PTRTYPE(volatile void *)  pbmAlloc;
+    /** Number of free entries in the chunk. */
+    volatile uint32_t           cFree;
+    /** The chunk index this tracking structure refers to. */
+    uint32_t                    idChunk;
+} DBGFBPL2TBLCHUNKR3;
+/** Pointer to a breakpoint L2 lookup table chunk - Ring-3 Ptr. */
+typedef DBGFBPL2TBLCHUNKR3 *PDBGFBPL2TBLCHUNKR3;
+/** Pointer to a const breakpoint L2 lookup table chunk - Ring-3 Ptr. */
+typedef const DBGFBPL2TBLCHUNKR3 *PCDBGFBPL2TBLCHUNKR3;
+
+
+/**
+ * Breakpoint L2 lookup table chunk, ring-0 state.
+ */
+typedef struct DBGFBPL2TBLCHUNKR0
+{
+    /** The chunks memory. */
+    RTR0MEMOBJ                  hMemObj;
+    /** The ring-3 mapping object. */
+    RTR0MEMOBJ                  hMapObj;
+    /** Pointer to the breakpoint entries base. */
+    R0PTRTYPE(PDBGFBPL2ENTRY)   paBpL2TblBaseSharedR0;
+} DBGFBPL2TBLCHUNKR0;
+/** Pointer to a breakpoint L2 lookup table chunk - Ring-0 Ptr. */
+typedef R0PTRTYPE(DBGFBPL2TBLCHUNKR0 *) PDBGFBPL2TBLCHUNKR0;
 #endif
 
 
@@ -1157,6 +1259,8 @@ typedef struct DBGFR0PERVM
      * @{ */
     /** Global breakpoint table chunk array. */
     DBGFBPCHUNKR0                       aBpChunks[DBGF_BP_CHUNK_COUNT];
+    /** Breakpoint L2 lookup table chunk array. */
+    DBGFBPL2TBLCHUNKR0                  aBpL2TblChunks[DBGF_BP_L2_TBL_CHUNK_COUNT];
     /** The L1 lookup tables memory object. */
     RTR0MEMOBJ                          hMemObjBpLocL1;
     /** The L1 lookup tables mapping object. */
@@ -1246,8 +1350,13 @@ typedef struct DBGFUSERPERVM
      * @{ */
     /** Global breakpoint table chunk array. */
     DBGFBPCHUNKR3                   aBpChunks[DBGF_BP_CHUNK_COUNT];
+    /** Breakpoint L2 lookup table chunk array. */
+    DBGFBPL2TBLCHUNKR3              aBpL2TblChunks[DBGF_BP_L2_TBL_CHUNK_COUNT];
     /** Base pointer to the L1 locator table. */
     R3PTRTYPE(volatile uint32_t *)  paBpLocL1R3;
+    /** Fast mutex protecting the L2 table from concurrent write accesses (EMTs
+     * can still do read accesses without holding it while traversing the trees). */
+    RTSEMFASTMUTEX                  hMtxBpL2Wr;
     /** @} */
 #endif
 

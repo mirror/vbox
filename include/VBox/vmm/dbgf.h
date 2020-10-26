@@ -121,6 +121,25 @@ typedef struct DBGFBPCHUNKALLOCREQ
 typedef DBGFBPCHUNKALLOCREQ *PDBGFBPCHUNKALLOCREQ;
 
 VMMR0_INT_DECL(int) DBGFR0BpChunkAllocReqHandler(PGVM pGVM, PDBGFBPCHUNKALLOCREQ pReq);
+
+/**
+ * Request buffer for DBGFR0BpL2TblChunkAllocReqHandler / VMMR0_DO_DBGF_L2_TBL_CHUNK_ALLOC.
+ * @see DBGFR0BpL2TblChunkAllocReqHandler.
+ */
+typedef struct DBGFBPL2TBLCHUNKALLOCREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR          Hdr;
+    /** Out: Ring-3 pointer of the chunk base on success. */
+    R3PTRTYPE(void *)       pChunkBaseR3;
+
+    /** The chunk ID to allocate. */
+    uint32_t                idChunk;
+} DBGFBPL2TBLCHUNKALLOCREQ;
+/** Pointer to a DBGFR0BpChunkAllocReqHandler / VMMR0_DO_DBGF_L2_TBL_CHUNK_ALLOC request buffer. */
+typedef DBGFBPL2TBLCHUNKALLOCREQ *PDBGFBPL2TBLCHUNKALLOCREQ;
+
+VMMR0_INT_DECL(int) DBGFR0BpL2TblChunkAllocReqHandler(PGVM pGVM, PDBGFBPL2TBLCHUNKALLOCREQ pReq);
 #endif
 /** @} */
 
