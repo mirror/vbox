@@ -67,10 +67,10 @@
        <arg choice="req" rep="norepeat">--display-name=<replaceable>name</replaceable></arg>
        <arg choice="req" rep="norepeat">--shape=<replaceable>type</replaceable></arg>
        <arg choice="req" rep="norepeat">--subnet=<replaceable>id</replaceable></arg>
+       <arg choice="req" rep="repeat">--public-ssh-key=<replaceable>key string</replaceable></arg>
        <arg rep="norepeat">--boot-disk-size=<replaceable>size in GB</replaceable></arg>
        <arg rep="norepeat">--publicip=<replaceable>true/false</replaceable></arg>
        <arg rep="norepeat">--privateip=<replaceable>IP address</replaceable></arg>
-       <arg rep="repeat">--public-ssh-key=<replaceable>key string</replaceable></arg>
        <arg rep="norepeat">--launch-mode=<replaceable>NATIVE/EMULATED/PARAVIRTUALIZED</replaceable></arg>
      </cmdsynopsis>
      <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-info" sepchar=" ">
@@ -288,8 +288,8 @@
         There are two standard ways to create an instance in the Cloud:
          1. Create an instance from an existing custom image.
          2. Create an instance from an existing bootable volume. This bootable volume shouldn't  be attached to any instance.
-        For the 1st approach next parameters are required: image-id and  boot-disk-size.
-        For the 2nd approach next parameters are required: boot-volume-id;
+        For the 1st approach next parameters are required: image-id, boot-disk-size and public-ssh-key.
+        For the 2nd approach next parameters are required: boot-volume-id and public-ssh-key;
         The rest parameters are common for both cases:
          display-name, launch-mode, subnet-id, publicIP, privateIP, shape, domain.
       </para>
