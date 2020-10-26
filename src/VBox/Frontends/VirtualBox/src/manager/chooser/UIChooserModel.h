@@ -459,8 +459,6 @@ private:
 
     /** @name Cloud stuff.
       * @{ */
-        /** Holds whether cloud profile update is restricted. */
-        bool    m_fPreventCloudProfileUpdate;
         /** Holds cloud profile update timer instance. */
         QTimer *m_pTimerCloudProfileUpdate;
     /** @} */

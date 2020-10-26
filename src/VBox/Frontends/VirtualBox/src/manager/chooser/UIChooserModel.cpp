@@ -66,7 +66,6 @@ UIChooserModel::UIChooserModel(UIChooser *pParent, UIActionPool *pActionPool)
     , m_iCurrentSearchResultIndex(-1)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
-    , m_fPreventCloudProfileUpdate(false)
     , m_pTimerCloudProfileUpdate(0)
 {
     prepare();
@@ -1238,11 +1237,6 @@ void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
     /* Call to base-class: */
     UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(pTask);
 
-    /* Rebuild tree for main root: */
-    m_fPreventCloudProfileUpdate = true;
-    buildTreeForMainRoot(true /* preserve selection */);
-    m_fPreventCloudProfileUpdate = false;
-
     /* Restart cloud profile update timer: */
     m_pTimerCloudProfileUpdate->start(10000);
 }
@@ -1313,10 +1307,6 @@ void UIChooserModel::sltCurrentDragObjectDestroyed()
 
 void UIChooserModel::sltUpdateSelectedCloudProfiles()
 {
-    /* Ignore if cloud profile update is restricted: */
-    if (m_fPreventCloudProfileUpdate)
-        return;
-
     /* For every selected item: */
     QSet<UICloudAccountKey> selectedCloudAccountKeys;
     foreach (UIChooserItem *pSelectedItem, selectedItems())
