@@ -435,6 +435,11 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_GuestControl_LogViewerVisiblePanels;
     /** @} */
 
+    /** @name Help Browser
+      * @{ */
+        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowserLastURL;
+    /** @} */
+
     /** @name Manager UI: VM Resource Monitor Related stuff
       * @{ */
         SHARED_LIBRARY_STUFF extern const char *GUI_VMResourceManager_HiddenColumns;

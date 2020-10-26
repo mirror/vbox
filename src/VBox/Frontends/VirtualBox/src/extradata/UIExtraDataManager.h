@@ -784,6 +784,12 @@ public:
         QStringList logViewerVisiblePanels();
     /** @} */
 
+    /** @name Help Browser
+      * @{ */
+        void setHelpBrowserLastUrl(const QString &url);
+        QString helpBrowserLastUrl();
+    /** @} */
+
     /** @name Manager UI: VM Resource Monitor
       * @{ */
         void setVMResourceMonitorHiddenColumnList(const QStringList &hiddenColumnList);

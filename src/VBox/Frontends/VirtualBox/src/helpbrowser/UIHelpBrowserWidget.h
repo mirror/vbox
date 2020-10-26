@@ -79,6 +79,7 @@ private slots:
     void sltHandleHelpEngineSetupFinished();
     void sltHandleContentWidgetItemClicked(const QModelIndex &index);
     void sltHandleTabVisibility(bool togggled);
+    void sltHandleHelpBrowserViewerSourceChange(const QUrl &source);
 
 private:
 

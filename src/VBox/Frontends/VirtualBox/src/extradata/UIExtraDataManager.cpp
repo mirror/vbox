@@ -4591,6 +4591,16 @@ QStringList UIExtraDataManager::logViewerVisiblePanels()
     return extraDataStringList(GUI_GuestControl_LogViewerVisiblePanels);
 }
 
+void UIExtraDataManager::setHelpBrowserLastUrl(const QString &url)
+{
+    setExtraDataString(GUI_HelpBrowserLastURL, url);
+}
+
+QString UIExtraDataManager::helpBrowserLastUrl()
+{
+    return extraDataString(GUI_HelpBrowserLastURL);
+}
+
 void UIExtraDataManager::setVMResourceMonitorHiddenColumnList(const QStringList &hiddenColumnList)
 {
     setExtraDataStringList(GUI_VMResourceManager_HiddenColumns, hiddenColumnList);

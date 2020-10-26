@@ -127,6 +127,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
 {
     qRegisterMetaType<HelpBrowserTabs>("HelpBrowserTabs");
     prepare();
+    loadOptions();
 }
 
 UIHelpBrowserWidget::~UIHelpBrowserWidget()
@@ -148,8 +149,6 @@ bool UIHelpBrowserWidget::shouldBeMaximized() const
 
 void UIHelpBrowserWidget::prepare()
 {
-    loadOptions();
-
     prepareActions();
     prepareWidgets();
     prepareMenu();
@@ -196,6 +195,10 @@ void UIHelpBrowserWidget::prepareWidgets()
 
     m_pContentViewer = new UIHelpBrowserViewer(m_pHelpEngine);
     AssertReturnVoid(m_pContentViewer);
+
+
+    connect(m_pContentViewer, &UIHelpBrowserViewer::sourceChanged,
+        this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
     m_pSplitter->addWidget(m_pContentViewer);
 
     m_pSplitter->setStretchFactor(0, 1);
@@ -204,13 +207,10 @@ void UIHelpBrowserWidget::prepareWidgets()
 
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
-
     connect(m_pContentWidget, &QHelpContentWidget::linkActivated,
             m_pContentViewer, &UIHelpBrowserViewer::setSource);
     connect(m_pContentWidget, &QHelpContentWidget::clicked,
             this, &UIHelpBrowserWidget::sltHandleContentWidgetItemClicked);
-
-
     connect(m_pIndexWidget, &QHelpIndexWidget::linkActivated,
             m_pContentViewer, &UIHelpBrowserViewer::setSource);
 
@@ -255,10 +255,20 @@ void UIHelpBrowserWidget::prepareMenu()
 
 void UIHelpBrowserWidget::loadOptions()
 {
+    if (m_pContentViewer)
+    {
+        QUrl url(gEDataManager->helpBrowserLastUrl());
+        if (url.isValid())
+            m_pContentViewer->setSource(url);
+    }
 }
 
 void UIHelpBrowserWidget::saveOptions()
 {
+    if (m_pContentViewer)
+    {
+        gEDataManager->setHelpBrowserLastUrl(m_pContentViewer->source().toString());
+    }
 }
 
 void UIHelpBrowserWidget::cleanup()
@@ -354,6 +364,11 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &i
 #else
     Q_UNUSED(index);
 #endif
+}
+
+void UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange(const QUrl &source)
+{
+    printf("%s\n", qPrintable(source.toString()));
 }
 
 
