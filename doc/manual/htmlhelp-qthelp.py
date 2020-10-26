@@ -220,7 +220,7 @@ def main(argv):
 
     out_xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>', \
                      '<QtHelpProject version="1.0">' , \
-                     '<namespace>org.qt-project.simpletextviewer</namespace>', \
+                     '<namespace>org.virtualbox</namespace>', \
                      '<virtualFolder>doc</virtualFolder>', \
                      '<filterSection>']
     out_xml_lines += parse_toc(helphtmlfolder) + create_files_section(helphtmlfolder)

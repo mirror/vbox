@@ -3199,19 +3199,21 @@ void UIMessageCenter::sltResetSuppressedMessages()
 
 void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 {
+    Q_UNUSED(strLocation);
 #if defined (VBOX_WS_WIN)
     HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
 #elif defined (VBOX_WS_X11)
-# if !defined(VBOX_OSE) && defined(VBOX_WITH_KCHMVIEWER)
+ #if defined(VBOX_WITH_DOCS_QHELP)
+
     char szViewerPath[RTPATH_MAX];
     int rc;
     rc = RTPathAppPrivateArch(szViewerPath, sizeof(szViewerPath));
     AssertRC(rc);
     QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
-# else /* #if !defined(VBOX_OSE) && defined(VBOX_WITH_KCHMVIEWER) */
+
     /* instead of viewing the pdf manual show qtHelp one. This is soon to be default in all platforms. */
     showHelpBrowser(strLocation);
-# endif /* #if defined(VBOX_OSE) || !defined(VBOX_WITH_KCHMVIEWER) */
+# endif /* #if defined(VBOX_WITH_DOCS_QHELP) */
 #elif defined (VBOX_WS_MAC)
     uiCommon().openURL("file://" + strLocation);
 #endif

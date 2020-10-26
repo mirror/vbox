@@ -86,7 +86,12 @@ ifdef HHC
  $(error HHC was renamed to VBOX_HHC!)
 endif
 
+VBOX_QHCP_FILES = \
+	UserManual.qhcp
 
+VBOX_QHELP_OUTPUT_FILES = \
+	UserManual.qch \
+	UserManual.qhc
 
 VBOXMANAGEHELP_PATH       ?= $(PATH_STAGE_BIN)/VBoxManageHelp$(SUFF_EXE)
 
@@ -154,7 +159,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   INSTALLS += VBox-docs-usermanual-qch
   VBOX_PATH_BIN_QHELP = $(PATH_STAGE_BIN)/UserManual.qch
   VBOX_PATH_BIN_QHELP += $(PATH_STAGE_BIN)/UserManual.qhc
- else  # Do not build chm.
+ else  # Do not install qhelp.
   VBOX_PATH_BIN_QHELP =
  endif
 
@@ -207,8 +212,6 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
  VBOX_ACCESSIBILITY_XML_FILES = \
  	Accessibility.xml
 
- VBOX_QHCP_FILES = \
-	UserManual.qhcp
 
  # Wildcard the images path for every supported language
  $(foreach f,$(VBOX_MANUAL_LANGUAGES), \
@@ -841,7 +844,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
 
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
-qhelp:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qhc
+qhelp:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/, $(VBOX_QHELP_OUTPUT_FILES))
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
 #
@@ -953,6 +956,10 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qhc: \
 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qhp \
 	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/, $(VBOX_MANUAL_PNG_FILES_en_US))
 	qcollectiongenerator $<
+
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch: \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qhc
+
 
 # Handy aliases.
 validate-manpages:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_REFENTRY_FILES))
