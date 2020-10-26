@@ -35,11 +35,12 @@
 extern SHCLX11FMTTABLE g_aFormats[];
 
 extern void clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *pTargets, size_t cTargets);
-extern void clipReportEmptyX11CB(PSHCLX11CTX pCtx);
-extern void clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, unsigned cbSrc);
+extern void clipReportEmpty(PSHCLX11CTX pCtx);
+extern void clipConvertDataFromX11Worker(void *pClient, void *pvSrc, unsigned cbSrc);
 extern SHCLX11FMTIDX clipGetTextFormatFromTargets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *pTargets, size_t cTargets);
 extern SHCLX11FMT clipRealFormatForX11Format(SHCLX11FMTIDX uFmtIdx);
 extern Atom clipGetAtom(PSHCLX11CTX pCtx, const char *pcszName);
+extern void clipQueryX11Formats(PSHCLX11CTX pCtx);
 extern size_t clipReportMaxX11Formats(void);
 
 
@@ -60,7 +61,6 @@ void tstClipQueueToEventThread(void (*proc)(void *, void *), void *client_data);
 /*********************************************************************************************************************************
 *   Own callback implementations                                                                                                 *
 *********************************************************************************************************************************/
-extern DECLCALLBACK(void) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx);
 extern DECLCALLBACK(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
                                                         Atom * /* selection */, Atom *atomType,
                                                         XtPointer pValue, long unsigned int *pcLen,
@@ -223,7 +223,7 @@ void tstClipRequestData(PSHCLX11CTX pCtx, SHCLX11FMTIDX target, void *closure)
     int format = 0;
     if (target != g_tst_aSelTargetsIdx[0])
     {
-        clipConvertDataFromX11CallbackWorker(closure, NULL, 0); /* Could not convert to target. */
+        clipConvertDataFromX11Worker(closure, NULL, 0); /* Could not convert to target. */
         return;
     }
     void *pValue = NULL;
@@ -235,7 +235,7 @@ void tstClipRequestData(PSHCLX11CTX pCtx, SHCLX11FMTIDX target, void *closure)
         count = 0;
         format = 0;
     }
-    clipConvertDataFromX11CallbackWorker(closure, pValue, count * format / 8);
+    clipConvertDataFromX11Worker(closure, pValue, count * format / 8);
     if (pValue)
         RTMemFree(pValue);
 }
@@ -338,7 +338,7 @@ static void tstClipSetSelectionValues(const char *pcszTarget, Atom type,
 
 static void tstClipSendTargetUpdate(PSHCLX11CTX pCtx)
 {
-    clipQueryX11FormatsCallback(pCtx);
+    clipQueryX11Formats(pCtx);
 }
 
 /* Configure if and how the X11 TARGETS clipboard target will fail. */
@@ -771,7 +771,7 @@ int main()
      */
     RTTestSub(hTest, "notification of switch to X11 clipboard");
     tstClipInvalidateFormats();
-    clipReportEmptyX11CB(&X11Ctx);
+    clipReportEmpty(&X11Ctx);
     RTTEST_CHECK_MSG(hTest, tstClipQueryFormats() == 0,
                      (hTest, "Failed to send a format update (release) notification\n"));
 

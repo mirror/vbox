@@ -91,7 +91,7 @@ extern void tstRequestTargets(SHCLX11CTX* pCtx);
 *********************************************************************************************************************************/
 class formats;
 SHCL_X11_DECL(Atom) clipGetAtom(PSHCLX11CTX pCtx, const char *pszName);
-SHCL_X11_DECL(void) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx);
+SHCL_X11_DECL(void) clipQueryX11Formats(PSHCLX11CTX pCtx);
 
 
 /*********************************************************************************************************************************
@@ -469,7 +469,7 @@ static void clipResetX11Formats(PSHCLX11CTX pCtx)
  *
  * @param  pCtx                 The X11 clipboard context to use.
  */
-SHCL_X11_DECL(void) clipReportEmptyX11CB(PSHCLX11CTX pCtx)
+SHCL_X11_DECL(void) clipReportEmpty(PSHCLX11CTX pCtx)
 {
     clipResetX11Formats(pCtx);
     clipReportFormatsToVBox(pCtx);
@@ -667,14 +667,14 @@ SHCL_X11_DECL(void) clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *paIdxF
     {
         /* We may already be out of date. */
         pCtx->fXtNeedsUpdate = false;
-        clipQueryX11FormatsCallback(pCtx);
+        clipQueryX11Formats(pCtx);
         return;
     }
 
     if (paIdxFmtTargets == NULL)
     {
         /* No data available */
-        clipReportEmptyX11CB(pCtx);
+        clipReportEmpty(pCtx);
         return;
     }
 
@@ -765,7 +765,7 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
  *
  * @param   pCtx                The X11 clipboard context to use.
  */
-SHCL_X11_DECL(void) clipQueryX11FormatsCallback(PSHCLX11CTX pCtx)
+SHCL_X11_DECL(void) clipQueryX11Formats(PSHCLX11CTX pCtx)
 {
 #ifndef TESTCASE
     LogFlowFunc(("fXtBusy=%RTbool\n", pCtx->fXtBusy));
@@ -823,9 +823,9 @@ static void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
         {
             if (   (event.fixes.subtype == 0  /* XFixesSetSelectionOwnerNotify */)
                 && (event.fixes.owner != 0))
-                clipQueryX11FormatsCallback(pCtx);
+                clipQueryX11Formats(pCtx);
             else
-                clipReportEmptyX11CB(pCtx);
+                clipReportEmpty(pCtx);
         }
     }
 }
@@ -835,18 +835,19 @@ static void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
  *
  * @returns VBox status code.
  * @param   hThreadSelf             Associated thread handle.
- * @param   pvUser                  Pointer to user-provided thread data.
+ * @param   pvUser                  Pointer to the X11 clipboard context to use.
  */
 static DECLCALLBACK(int) clipEventThread(RTTHREAD hThreadSelf, void *pvUser)
 {
     RT_NOREF(hThreadSelf);
+    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
     LogRel(("Shared Clipboard: Starting X11 event thread\n"));
 
     PSHCLX11CTX pCtx = (SHCLX11CTX *)pvUser;
 
     if (pCtx->fGrabClipboardOnStart)
-        clipQueryX11FormatsCallback(pCtx);
+        clipQueryX11Formats(pCtx);
 
     /* We're now ready to run, tell parent. */
     int rc2 = RTThreadUserSignal(hThreadSelf);
@@ -890,12 +891,16 @@ static void clipUninit(PSHCLX11CTX pCtx)
     pCtx->wakeupPipeWrite = 0;
 }
 
-/** Worker function for stopping the clipboard which runs on the event
- * thread. */
-static void clipStopEventThreadWorker(void *pUserData, void *)
+/**
+ * Worker function for stopping the clipboard which runs on the event
+ * thread.
+ *
+ * @param   pvUserData          Pointer to the X11 clipboard context to use.
+ */
+static void clipStopEventThreadWorker(void *pvUserData, void *)
 {
 
-    PSHCLX11CTX pCtx = (SHCLX11CTX *)pUserData;
+    PSHCLX11CTX pCtx = (PSHCLX11CTX)pvUserData;
 
     /* This might mean that we are getting stopped twice. */
     Assert(pCtx->pWidget != NULL);
@@ -966,12 +971,14 @@ static int clipLoadXFixes(Display *pDisplay, PSHCLX11CTX pCtx)
 /**
  * This is the callback which is scheduled when data is available on the
  * wakeup pipe.  It simply reads all data from the pipe.
+ *
+ * @param   pvUserData          Pointer to the X11 clipboard context to use.
  */
-static void clipDrainWakeupPipe(XtPointer pUserData, int *, XtInputId *)
+static void clipDrainWakeupPipe(XtPointer pvUserData, int *, XtInputId *)
 {
     LogFlowFuncEnter();
 
-    PSHCLX11CTX pCtx = (SHCLX11CTX *)pUserData;
+    PSHCLX11CTX pCtx = (PSHCLX11CTX)pvUserData;
     char acBuf[WAKE_UP_STRING_LEN];
 
     while (read(pCtx->wakeupPipeRead, acBuf, sizeof(acBuf)) > 0) {}
@@ -1345,12 +1352,12 @@ static int clipReadVBoxShCl(PSHCLX11CTX pCtx, SHCLFORMAT Format,
  * @param  piFormatReturn       Where to store the bit width (8, 16, 32) of the
  *                              data we are returning.
  */
-static int clipUtf16CRLFToUtf8LF(Display *pDisplay, PRTUTF16 pwszSrc,
-                                 size_t cbSrc, Atom *atomTarget,
-                                 Atom *atomTypeReturn,
-                                 XtPointer *pValReturn,
-                                 unsigned long *pcLenReturn,
-                                 int *piFormatReturn)
+static int clipConvertUtf16ToX11Data(Display *pDisplay, PRTUTF16 pwszSrc,
+                                     size_t cbSrc, Atom *atomTarget,
+                                     Atom *atomTypeReturn,
+                                     XtPointer *pValReturn,
+                                     unsigned long *pcLenReturn,
+                                     int *piFormatReturn)
 {
     RT_NOREF(pDisplay);
     AssertReturn(cbSrc % sizeof(RTUTF16) == 0, VERR_INVALID_PARAMETER);
@@ -1405,7 +1412,7 @@ static int clipUtf16CRLFToUtf8LF(Display *pDisplay, PRTUTF16 pwszSrc,
  * @param  piFormatReturn       Where to store the bit width (8, 16, 32) of the
  *                              data we are returning.
  */
-static int clipWinHTMLToUtf8ForX11CB(Display *pDisplay, const char *pszSrc,
+static int clipConvertHtmlToX11Data(Display *pDisplay, const char *pszSrc,
                                     size_t cbSrc, Atom *atomTarget,
                                     Atom *atomTypeReturn,
                                     XtPointer *pValReturn,
@@ -1463,11 +1470,11 @@ static void clipTrimTrailingNul(XtPointer pText, unsigned long *pcText,
        --(*pcText);
 }
 
-static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
-                                   Atom *atomTypeReturn,
-                                   XtPointer *pValReturn,
-                                   unsigned long *pcLenReturn,
-                                   int *piFormatReturn)
+static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
+                                Atom *atomTypeReturn,
+                                XtPointer *pValReturn,
+                                unsigned long *pcLenReturn,
+                                int *piFormatReturn)
 {
     int rc = VINF_SUCCESS;
 
@@ -1493,10 +1500,10 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
             && (   (fmtX11 == SHCLX11FMT_UTF8)
                 || (fmtX11 == SHCLX11FMT_TEXT)))
         {
-            rc = clipUtf16CRLFToUtf8LF(XtDisplay(pCtx->pWidget),
-                                       (PRTUTF16)pv, cb, atomTarget,
-                                       atomTypeReturn, pValReturn,
-                                       pcLenReturn, piFormatReturn);
+            rc = clipConvertUtf16ToX11Data(XtDisplay(pCtx->pWidget),
+                                           (PRTUTF16)pv, cb, atomTarget,
+                                           atomTypeReturn, pValReturn,
+                                           pcLenReturn, piFormatReturn);
         }
 
         if (RT_SUCCESS(rc))
@@ -1539,18 +1546,18 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
             rc = VERR_NO_DATA;
         if (RT_SUCCESS(rc))
         {
-            /*
-             * The common VBox HTML encoding will be - Utf8
-             * because it more general for HTML formats then UTF16
-             * X11 clipboard returns UTF-16, so before sending it we should
-             * convert it to UTF8.
-             * It's very strange but here we get UTF-16 from x11 clipboard
-             * in same time we send UTF-8 to x11 clipboard and it's work.
+            /**
+             * The common VBox HTML encoding will be UTF-8.
+             * Before sending it to the X11 clipboard we have to convert it to UTF-8 first.
+             *
+             * Strange that we get UTF-16 from the X11 clipboard, but
+             * in same time we send UTF-8 to X11 clipboard and it works.
+             ** @todo r=andy Verify this.
              */
-            rc = clipWinHTMLToUtf8ForX11CB(XtDisplay(pCtx->pWidget),
-                                           (const char*)pv, cb, atomTarget,
-                                           atomTypeReturn, pValReturn,
-                                           pcLenReturn, piFormatReturn);
+            rc = clipConvertHtmlToX11Data(XtDisplay(pCtx->pWidget),
+                                          (const char*)pv, cb, atomTarget,
+                                          atomTypeReturn, pValReturn,
+                                          pcLenReturn, piFormatReturn);
             if (RT_SUCCESS(rc))
                 clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, fmtX11);
 
@@ -1622,8 +1629,8 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
         rc = clipCreateX11Targets(pCtx, atomTypeReturn, pValReturn,
                                   pcLenReturn, piFormatReturn);
     else
-        rc = clipConvertVBoxCBForX11(pCtx, atomTarget, atomTypeReturn,
-                                     pValReturn, pcLenReturn, piFormatReturn);
+        rc = clipConvertToX11Data(pCtx, atomTarget, atomTypeReturn,
+                                  pValReturn, pcLenReturn, piFormatReturn);
 
     LogFlowFunc(("returning %RTbool, rc=%Rrc\n", RT_SUCCESS(rc), rc));
     return RT_SUCCESS(rc) ? True : False;
@@ -1640,8 +1647,14 @@ typedef struct _CLIPNEWVBOXFORMATS
     SHCLFORMATS  Formats;
 } CLIPNEWVBOXFORMATS, *PCLIPNEWVBOXFORMATS;
 
-/** Invalidates the local cache of the data in the VBox clipboard. */
-static void clipInvalidateVBoxCBCache(PSHCLX11CTX pCtx)
+
+
+/**
+ * Invalidates the local cache of the data in the VBox clipboard.
+ *
+ * @param   pCtx                The X11 clipboard context to use.
+ */
+static void clipInvalidateClipboardCache(PSHCLX11CTX pCtx)
 {
     if (pCtx->pvUnicodeCache != NULL)
     {
@@ -1652,15 +1665,19 @@ static void clipInvalidateVBoxCBCache(PSHCLX11CTX pCtx)
 
 /**
  * Takes possession of the X11 clipboard (and middle-button selection).
+ *
+ * @param   pCtx                The X11 clipboard context to use.
+ * @param   uFormats            Clipboard formats to set.
  */
-static void clipGrabX11CB(PSHCLX11CTX pCtx, SHCLFORMATS Formats)
+static void clipGrabX11Clipboard(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
 {
     LogFlowFuncEnter();
 
     if (XtOwnSelection(pCtx->pWidget, clipGetAtom(pCtx, "CLIPBOARD"),
                        CurrentTime, clipXtConvertSelectionProc, NULL, 0))
     {
-        pCtx->vboxFormats = Formats;
+        pCtx->vboxFormats = uFormats;
+
         /* Grab the middle-button paste selection too. */
         XtOwnSelection(pCtx->pWidget, clipGetAtom(pCtx, "PRIMARY"),
                        CurrentTime, clipXtConvertSelectionProc, NULL, 0);
@@ -1681,35 +1698,38 @@ static void clipGrabX11CB(PSHCLX11CTX pCtx, SHCLFORMATS Formats)
  * Worker function for ShClX11ReportFormatsToX11 which runs on the
  * event thread.
  *
- * @param pUserData             Pointer to a CLIPNEWVBOXFORMATS structure containing
+ * @param pvUserData            Pointer to a CLIPNEWVBOXFORMATS structure containing
  *                              information about the VBox formats available and the
  *                              clipboard context data.  Must be freed by the worker.
  */
-static void ShClX11ReportFormatsToX11Worker(void *pUserData, void * /* interval */)
+static void ShClX11ReportFormatsToX11Worker(void *pvUserData, void * /* interval */)
 {
-    CLIPNEWVBOXFORMATS *pFormats = (CLIPNEWVBOXFORMATS *)pUserData;
-    PSHCLX11CTX pCtx = pFormats->pCtx;
+    AssertPtrReturnVoid(pvUserData);
 
-    uint32_t fFormats = pFormats->Formats;
+    CLIPNEWVBOXFORMATS *pFormats = (CLIPNEWVBOXFORMATS *)pvUserData;
+
+    PSHCLX11CTX pCtx     = pFormats->pCtx;
+    SHCLFORMATS fFormats = pFormats->Formats;
 
     RTMemFree(pFormats);
 
     LogFlowFunc (("fFormats=0x%x\n", fFormats));
 
-    clipInvalidateVBoxCBCache(pCtx);
-    clipGrabX11CB(pCtx, fFormats);
+    clipInvalidateClipboardCache(pCtx);
+    clipGrabX11Clipboard(pCtx, fFormats);
     clipResetX11Formats(pCtx);
 
     LogFlowFuncLeave();
 }
 
 /**
- * Announces new clipboard formats to the host.
+ * Announces new clipboard formats to the X11 clipboard.
  *
  * @returns VBox status code.
- * @param   Formats             Clipboard formats offered.
+ * @param   pCtx                Context data for the clipboard backend.
+ * @param   uFormats            Clipboard formats offered.
  */
-int ShClX11ReportFormatsToX11(PSHCLX11CTX pCtx, uint32_t Formats)
+int ShClX11ReportFormatsToX11(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
 {
     /*
      * Immediately return if we are not connected to the X server.
@@ -1724,10 +1744,10 @@ int ShClX11ReportFormatsToX11(PSHCLX11CTX pCtx, uint32_t Formats)
     if (pFormats)
     {
         pFormats->pCtx    = pCtx;
-        pFormats->Formats = Formats;
+        pFormats->Formats = uFormats;
 
         rc = clipQueueToEventThread(pCtx, ShClX11ReportFormatsToX11Worker,
-                                    (XtPointer) pFormats);
+                                    (XtPointer)pFormats);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -1742,11 +1762,8 @@ int ShClX11ReportFormatsToX11(PSHCLX11CTX pCtx, uint32_t Formats)
  *
  * Converts the text obtained UTF-16LE with Windows EOLs.
  * Converts full BMP data to DIB format.
- *
- * @note  Callback for XtGetSelectionValue, for use when
- *        the X11 clipboard contains a format we understand.
  */
-SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, unsigned cbSrc)
+SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, unsigned cbSrc)
 {
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pClient;
     AssertPtrReturnVoid(pReq);
@@ -1769,7 +1786,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
 
     pCtx->fXtBusy = false;
     if (pCtx->fXtNeedsUpdate)
-        clipQueryX11FormatsCallback(pCtx);
+        clipQueryX11Formats(pCtx);
 
     if (pvSrc == NULL)
     {
@@ -1973,20 +1990,17 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
  *
  * Converts the text obtained UTF-16LE with Windows EOLs.
  * Converts full BMP data to DIB format.
- *
- * @note  Callback for XtGetSelectionValue(), for use when
- *        the X11 clipboard contains a format we understand.
  */
-SHCL_X11_DECL(void) clipConvertDataFromX11Callback(Widget widget, XtPointer pClient,
-                                                   Atom * /* selection */, Atom *atomType,
-                                                   XtPointer pvSrc, long unsigned int *pcLen,
-                                                   int *piFormat)
+SHCL_X11_DECL(void) clipConvertDataFromX11(Widget widget, XtPointer pClient,
+                                           Atom * /* selection */, Atom *atomType,
+                                           XtPointer pvSrc, long unsigned int *pcLen,
+                                           int *piFormat)
 {
     RT_NOREF(widget);
     if (*atomType == XT_CONVERT_FAIL) /* Xt timeout */
-        clipConvertDataFromX11CallbackWorker(pClient, NULL, 0);
+        clipConvertDataFromX11Worker(pClient, NULL, 0);
     else
-        clipConvertDataFromX11CallbackWorker(pClient, pvSrc, (*pcLen) * (*piFormat) / 8);
+        clipConvertDataFromX11Worker(pClient, pvSrc, (*pcLen) * (*piFormat) / 8);
 
     XtFree((char *)pvSrc);
 }
@@ -1997,7 +2011,7 @@ static int clipGetSelectionValue(PSHCLX11CTX pCtx, SHCLX11FMTIDX idxFmt,
 #ifndef TESTCASE
     XtGetSelectionValue(pCtx->pWidget, clipGetAtom(pCtx, "CLIPBOARD"),
                         clipAtomForX11Format(pCtx, idxFmt),
-                        clipConvertDataFromX11Callback,
+                        clipConvertDataFromX11,
                         reinterpret_cast<XtPointer>(pReq),
                         CurrentTime);
 #else
@@ -2009,6 +2023,10 @@ static int clipGetSelectionValue(PSHCLX11CTX pCtx, SHCLX11FMTIDX idxFmt,
 
 /**
  * Worker function for ShClX11ReadDataFromX11 which runs on the event thread.
+ *
+ * @param pvUserData            Pointer to a CLIPREADX11CBREQ structure containing
+ *                              information about the clipboard read request.
+ *                              Must be free'd by the worker.
  */
 static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */)
 {
@@ -2100,6 +2118,8 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
  */
 int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMAT Format, CLIPREADCBREQ *pReq)
 {
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+
     /*
      * Immediately return if we are not connected to the X server.
      */
