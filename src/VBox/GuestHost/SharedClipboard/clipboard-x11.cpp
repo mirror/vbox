@@ -947,7 +947,6 @@ static int clipLoadXFixes(Display *pDisplay, PSHCLX11CTX pCtx)
     }
     return rc;
 }
-#endif /* !TESTCASE */
 
 /**
  * This is the callback which is scheduled when data is available on the
@@ -964,6 +963,7 @@ static void clipThreadDrainWakeupPipe(XtPointer pvUserData, int *, XtInputId *)
 
     while (read(pCtx->wakeupPipeRead, acBuf, sizeof(acBuf)) > 0) {}
 }
+#endif /* !TESTCASE */
 
 /**
  * X11-specific initialisation for the Shared Clipboard.
