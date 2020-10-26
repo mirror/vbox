@@ -78,6 +78,7 @@ private slots:
 
     void sltHandleHelpEngineSetupFinished();
     void sltHandleContentWidgetItemClicked(const QModelIndex &index);
+    void sltHandleTabVisibility(bool togggled);
 
 private:
 
@@ -90,7 +91,6 @@ private:
 
     void saveOptions();
     void cleanup();
-
     /** @name Event handling stuff.
       * @{ */
         /** Handles translation event. */
@@ -130,7 +130,7 @@ private:
     QHelpContentWidget  *m_pContentWidget;
     QHelpIndexWidget    *m_pIndexWidget;
     QWidget             *m_pBookmarksWidget;
-    QAction             *m_pShowHideContentsWidgetAction;
+    QAction             *m_pShowHideTabWidgetAction;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h */

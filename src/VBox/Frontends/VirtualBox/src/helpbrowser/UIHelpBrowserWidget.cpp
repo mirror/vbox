@@ -60,6 +60,7 @@ enum HelpBrowserTabs
     HelpBrowserTabs_Bookmarks,
     HelpBrowserTabs_Max
 };
+Q_DECLARE_METATYPE(HelpBrowserTabs);
 
 class UIHelpBrowserViewer : public QTextBrowser
 {
@@ -122,8 +123,9 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pContentWidget(0)
     , m_pIndexWidget(0)
     , m_pBookmarksWidget(0)
-    , m_pShowHideContentsWidgetAction(0)
+    , m_pShowHideTabWidgetAction(0)
 {
+    qRegisterMetaType<HelpBrowserTabs>("HelpBrowserTabs");
     prepare();
 }
 
@@ -156,8 +158,10 @@ void UIHelpBrowserWidget::prepare()
 
 void UIHelpBrowserWidget::prepareActions()
 {
-    m_pShowHideContentsWidgetAction = new QAction(this);
-    m_pShowHideContentsWidgetAction->setData(HelpBrowserTabs_TOC);
+    m_pShowHideTabWidgetAction = new QAction(this);
+    m_pShowHideTabWidgetAction->setCheckable(true);
+    m_pShowHideTabWidgetAction->setChecked(true);
+    connect(m_pShowHideTabWidgetAction, &QAction::toggled, this, &UIHelpBrowserWidget::sltHandleTabVisibility);
 }
 
 void UIHelpBrowserWidget::prepareWidgets()
@@ -174,15 +178,21 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pBookmarksWidget = new QWidget(this);
     m_pTabWidget = new QITabWidget;
     AssertReturnVoid(m_pTabWidget && m_pHelpEngine && m_pBookmarksWidget);
+    //m_pTabWidget->setTabsClosable(true);
 
     m_pContentWidget = m_pHelpEngine->contentWidget();
     m_pIndexWidget = m_pHelpEngine->indexWidget();
 
     AssertReturnVoid(m_pContentWidget && m_pIndexWidget);
     m_pSplitter->addWidget(m_pTabWidget);
+
     m_pTabWidget->insertTab(HelpBrowserTabs_TOC, m_pContentWidget, QString());
     m_pTabWidget->insertTab(HelpBrowserTabs_Index, m_pIndexWidget, QString());
     m_pTabWidget->insertTab(HelpBrowserTabs_Bookmarks, m_pBookmarksWidget, QString());
+
+    // insertTabWidgets(HelpBrowserTabs_TOC);
+    // insertTabWidgets(HelpBrowserTabs_Index);
+    // insertTabWidgets(HelpBrowserTabs_Bookmarks);
 
     m_pContentViewer = new UIHelpBrowserViewer(m_pHelpEngine);
     AssertReturnVoid(m_pContentViewer);
@@ -239,7 +249,8 @@ void UIHelpBrowserWidget::prepareMenu()
 {
     m_pMenu = new QMenu(tr("View"), this);
     AssertReturnVoid(m_pMenu);
-    m_pMenu->addAction(tr("View"));
+
+    m_pMenu->addAction(m_pShowHideTabWidgetAction);
 }
 
 void UIHelpBrowserWidget::loadOptions()
@@ -274,8 +285,8 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pTabWidget->setTabText(HelpBrowserTabs_Index, tr("Index"));
         m_pTabWidget->setTabText(HelpBrowserTabs_Bookmarks, tr("Bookmarks"));
     }
-    if (m_pShowHideContentsWidgetAction)
-        m_pShowHideContentsWidgetAction->setText("Show/Hide Contents");
+    if (m_pShowHideTabWidgetAction)
+        m_pShowHideTabWidgetAction->setText("Show/Hide Tabs Widget");
 }
 
 void UIHelpBrowserWidget::showEvent(QShowEvent *pEvent)
@@ -299,6 +310,12 @@ void UIHelpBrowserWidget::keyPressEvent(QKeyEvent *pEvent)
    QWidget::keyPressEvent(pEvent);
 }
 
+void UIHelpBrowserWidget::sltHandleTabVisibility(bool fToggled)
+{
+    if (!m_pTabWidget)
+        return;
+    m_pTabWidget->setVisible(fToggled);
+}
 
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 {
