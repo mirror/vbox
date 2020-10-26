@@ -55,7 +55,7 @@ static SHCLX11FMTIDX tstClipFindX11FormatByAtomText(const char *pcszAtom);
 *********************************************************************************************************************************/
 void tstRequestTargets(SHCLX11CTX* pCtx);
 void tstClipRequestData(PSHCLX11CTX pCtx, SHCLX11FMTIDX target, void *closure);
-void tstClipQueueToEventThread(void (*proc)(void *, void *), void *client_data);
+void tstThreadScheduleCall(void (*proc)(void *, void *), void *client_data);
 
 
 /*********************************************************************************************************************************
@@ -75,7 +75,7 @@ extern DECLCALLBACK(void) clipConvertX11TargetsCallback(Widget widget, XtPointer
 
 /* For the purpose of the test case, we just execute the procedure to be
  * scheduled, as we are running single threaded. */
-void tstClipQueueToEventThread(void (*proc)(void *, void *), void *client_data)
+void tstThreadScheduleCall(void (*proc)(void *, void *), void *client_data)
 {
     proc(client_data, NULL);
 }
@@ -669,13 +669,12 @@ int main()
      * Run the tests.
      */
     SHCLX11CTX X11Ctx;
-    rc = ShClX11Init(&X11Ctx, NULL, false);
+    rc = ShClX11Init(&X11Ctx, NULL /* pParent */, false /* fHeadless */);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
+
     char *pc;
     uint32_t cbActual;
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-    rc = ShClX11ThreadStart(&X11Ctx, false /* fGrab */);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
     /* UTF-8 from X11 */
     RTTestSub(hTest, "reading UTF-8 from X11");
@@ -888,16 +887,12 @@ int main()
     RTTestSub(hTest, "recovery from a bad format request");
     tstBadFormatRequestFromHost(hTest, &X11Ctx);
 
-    rc = ShClX11ThreadStop(&X11Ctx);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
     ShClX11Destroy(&X11Ctx);
 
     /*
      * Headless clipboard tests
      */
-    rc = ShClX11Init(&X11Ctx, NULL, true);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
-    rc = ShClX11ThreadStart(&X11Ctx, false /* fGrab */);
+    rc = ShClX11Init(&X11Ctx, NULL /* pParent */, true /* fHeadless */);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
     /* Read from X11 */
@@ -918,9 +913,8 @@ int main()
                         sizeof("hello world") * 2);
     tstNoSelectionOwnership(&X11Ctx, "reading from VBox, headless clipboard");
 
-    rc = ShClX11ThreadStop(&X11Ctx);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
-
+    ShClX11Destroy(&X11Ctx);
+    /* Note: Doing this twice is intentional. */
     ShClX11Destroy(&X11Ctx);
 
     return RTTestSummaryAndDestroy(hTest);
