@@ -662,6 +662,7 @@ SHCL_X11_DECL(void) clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *paIdxF
 {
     LogFlowFuncEnter();
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
     pCtx->fXtBusy = false;
     if (pCtx->fXtNeedsUpdate)
     {
@@ -670,6 +671,7 @@ SHCL_X11_DECL(void) clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *paIdxF
         clipQueryX11Formats(pCtx);
         return;
     }
+#endif
 
     if (paIdxFmtTargets == NULL)
     {
@@ -768,8 +770,9 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
 SHCL_X11_DECL(void) clipQueryX11Formats(PSHCLX11CTX pCtx)
 {
 #ifndef TESTCASE
-    LogFlowFunc(("fXtBusy=%RTbool\n", pCtx->fXtBusy));
 
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
+    LogFlowFunc(("fXtBusy=%RTbool\n", pCtx->fXtBusy));
     if (pCtx->fXtBusy)
     {
         pCtx->fXtNeedsUpdate = true;
@@ -777,6 +780,8 @@ SHCL_X11_DECL(void) clipQueryX11Formats(PSHCLX11CTX pCtx)
     }
 
     pCtx->fXtBusy = true;
+# endif
+
     XtGetSelectionValue(pCtx->pWidget,
                         clipGetAtom(pCtx, "CLIPBOARD"),
                         clipGetAtom(pCtx, "TARGETS"),
@@ -1109,8 +1114,10 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCONTEXT pParent, bool fHeadless)
     pCtx->fHaveX11       = !fHeadless;
     pCtx->pFrontend      = pParent;
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
     pCtx->fXtBusy        = false;
     pCtx->fXtNeedsUpdate = false;
+#endif
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
@@ -1781,12 +1788,14 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
     void  *pvDst = NULL;
     size_t cbDst = 0;
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
     PSHCLX11CTX pCtx = pReq->pCtx;
     AssertPtr(pReq->pCtx);
 
     pCtx->fXtBusy = false;
     if (pCtx->fXtNeedsUpdate)
         clipQueryX11Formats(pCtx);
+#endif
 
     if (pvSrc == NULL)
     {
@@ -2039,6 +2048,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
 
     int rc = VERR_NO_DATA; /* VBox thinks we have data and we don't. */
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
     const bool fXtBusy = pCtx->fXtBusy;
     pCtx->fXtBusy = true;
     if (fXtBusy)
@@ -2046,7 +2056,9 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
         /* If the clipboard is busy just fend off the request. */
         rc = VERR_TRY_AGAIN;
     }
-    else if (pReq->uFmtVBox & VBOX_SHCL_FMT_UNICODETEXT)
+    else
+#endif
+    if (pReq->uFmtVBox & VBOX_SHCL_FMT_UNICODETEXT)
     {
         pReq->idxFmtX11 = pCtx->idxFmtText;
         if (pReq->idxFmtX11 != SHCLX11FMT_INVALID)
@@ -2086,8 +2098,9 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
 #endif
     else
     {
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
         pCtx->fXtBusy = false;
-
+#endif
         rc = VERR_NOT_IMPLEMENTED;
     }
 

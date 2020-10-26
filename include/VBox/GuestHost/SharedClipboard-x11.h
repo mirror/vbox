@@ -35,6 +35,9 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 
+/** Enables the Xt busy / update handling. */
+#define VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY      1
+
 /**
  * Enumeration for all clipboard formats which we support on X11.
  */
@@ -116,6 +119,7 @@ typedef struct _SHCLX11CTX
     void (*fixesSelectInput)(Display *, Window, Atom, unsigned long);
     /** The first XFixes event number. */
     int fixesEventBase;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
     /** XtGetSelectionValue on some versions of libXt isn't re-entrant
      * so block overlapping requests on this flag. */
     bool fXtBusy;
@@ -123,6 +127,7 @@ typedef struct _SHCLX11CTX
      * an update later - the first callback should check and clear this flag
      * before processing the callback event. */
     bool fXtNeedsUpdate;
+#endif
 } SHCLX11CTX, *PSHCLX11CTX;
 
 /** @name Shared Clipboard APIs for X11.
