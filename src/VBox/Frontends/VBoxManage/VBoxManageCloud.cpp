@@ -529,7 +529,6 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
     ComPtr<IVirtualSystemDescription> pVSD = virtualSystemDescriptions[0];
 
     Utf8Str strDisplayName, strImageId, strBootVolumeId, strPublicSSHKey;
-    bool fKeyPresented = false;
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
@@ -591,8 +590,6 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
                 strPublicSSHKey = ValueUnion.psz;
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicSSHKey,
                                      Bstr(ValueUnion.psz).raw(), NULL);
-                if ( !strPublicSSHKey.isEmpty() )
-                    fKeyPresented = true;
                 break;
             case 1001:
             case 1002:
@@ -610,9 +607,8 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
-    if ( !fKeyPresented )
-        return errorArgument("Parameter --public-ssh-key is absent. if there is no need to pass a key just use the form"
-                             " '--public-ssh-key='.");
+    if (strPublicSSHKey.isEmpty())
+        RTPrintf("Warning!!! Public SSH key doesn't present in the passed arguments...\n");
 
     if (strImageId.isNotEmpty() && strBootVolumeId.isNotEmpty())
         return errorArgument("Parameters --image-id and --boot-volume-id are mutually exclusive. "
