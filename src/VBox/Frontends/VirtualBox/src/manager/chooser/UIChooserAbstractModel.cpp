@@ -849,6 +849,15 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     /* Add registered cloud VM nodes: */
     if (!registeredMachines.isEmpty())
         sltCloudMachinesRegistered(strProviderShortName, strProfileName, registeredMachines);
+    /* If we changed nothing and have nothing currently: */
+    if (unregisteredIDs.isEmpty() && newIDs.isEmpty())
+    {
+        /* We should update at least fake cloud machine node: */
+        UIChooserNode *pFakeNode = searchFakeNode(pProfileNode);
+        AssertPtrReturnVoid(pFakeNode);
+        pFakeNode->toMachineNode()->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
+        pFakeNode->item()->updateItem();
+    }
 
     /* Remove cloud account key from the list of keys currently being updated: */
     const UICloudAccountKey accountKey = qMakePair(strProviderShortName, strProfileName);
