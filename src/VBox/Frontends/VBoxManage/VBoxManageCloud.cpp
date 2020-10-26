@@ -122,12 +122,6 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
-    if (a->argc == iFirst)
-    {
-        RTPrintf("Empty command parameter list, show help.\n");
-        printHelp(g_pStdOut);
-        return RTEXITCODE_SUCCESS;
-    }
 
     Utf8Str strCompartmentId;
     com::SafeArray<CloudMachineState_T> machineStates;
@@ -294,12 +288,6 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
-    if (a->argc == iFirst)
-    {
-        RTPrintf("Empty command parameter list, show help.\n");
-        printHelp(g_pStdOut);
-        return RTEXITCODE_SUCCESS;
-    }
 
     Utf8Str strCompartmentId;
     com::SafeArray<CloudImageState_T> imageStates;
