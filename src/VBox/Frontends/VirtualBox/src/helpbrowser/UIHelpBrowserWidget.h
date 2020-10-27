@@ -92,6 +92,8 @@ private:
 
     void saveOptions();
     void cleanup();
+    QUrl findIndexHtml() const;
+    void show404Error();
     /** @name Event handling stuff.
       * @{ */
         /** Handles translation event. */
@@ -132,6 +134,7 @@ private:
     QHelpIndexWidget    *m_pIndexWidget;
     QWidget             *m_pBookmarksWidget;
     QAction             *m_pShowHideTabWidgetAction;
+    QString              m_strPageNotFoundText;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h */

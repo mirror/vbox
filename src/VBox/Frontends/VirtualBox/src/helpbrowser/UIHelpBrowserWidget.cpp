@@ -41,12 +41,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "UIVMLogPage.h"
 #include "UIHelpBrowserWidget.h"
-#include "UIVMLogViewerBookmarksPanel.h"
-#include "UIVMLogViewerFilterPanel.h"
-#include "UIVMLogViewerSearchPanel.h"
-#include "UIVMLogViewerOptionsPanel.h"
 #include "QIToolBar.h"
 #include "UICommon.h"
 
@@ -255,11 +250,18 @@ void UIHelpBrowserWidget::prepareMenu()
 
 void UIHelpBrowserWidget::loadOptions()
 {
-    if (m_pContentViewer)
+    if (m_pContentViewer && m_pHelpEngine)
     {
         QUrl url(gEDataManager->helpBrowserLastUrl());
+        if (url.isEmpty())
+            return;
         if (url.isValid())
-            m_pContentViewer->setSource(url);
+        {
+            if (m_pHelpEngine->findFile(url).isValid())
+                m_pContentViewer->setSource(url);
+            else
+                show404Error(url);
+        }
     }
 }
 
@@ -296,7 +298,9 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pTabWidget->setTabText(HelpBrowserTabs_Bookmarks, tr("Bookmarks"));
     }
     if (m_pShowHideTabWidgetAction)
-        m_pShowHideTabWidgetAction->setText("Show/Hide Tabs Widget");
+        m_pShowHideTabWidgetAction->setText(tr("Show/Hide Tabs Widget"));
+
+    m_strPageNotFoundText = tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>");
 }
 
 void UIHelpBrowserWidget::showEvent(QShowEvent *pEvent)
@@ -327,13 +331,10 @@ void UIHelpBrowserWidget::sltHandleTabVisibility(bool fToggled)
     m_pTabWidget->setVisible(fToggled);
 }
 
-void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
+QUrl UIHelpBrowserWidget::findIndexHtml() const
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
-    AssertReturnVoid(m_pContentViewer && m_pHelpEngine);
     QList<QUrl> files = m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList());
-    /* Search for the index of the index.htnl: */
-    int iIndex = 0;
+    int iIndex = -1;
     for (int i = 0; i < files.size(); ++i)
     {
         if (files[i].toString().contains("index.html", Qt::CaseInsensitive))
@@ -342,9 +343,40 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
             break;
         }
     }
-    if (files.size() > iIndex)
-        m_pContentViewer->setSource(files[iIndex]);
-    /** @todo show some kind of error maybe. */
+    if (iIndex == -1)
+    {
+        /* If index html/htm could not be found try to find a html file at least: */
+        for (int i = 0; i < files.size(); ++i)
+        {
+            if (files[i].toString().contains(".html", Qt::CaseInsensitive) ||
+                files[i].toString().contains(".htm", Qt::CaseInsensitive))
+            {
+                iIndex = i;
+                break;
+            }
+        }
+    }
+    if (iIndex != -1 && files.size() > iIndex)
+        return files[iIndex];
+    return QUrl();
+}
+
+void UIHelpBrowserWidget::show404Error(const QUrl &url)
+{
+    if (m_pContentWidget)
+        m_pContentViewer->setText(m_strPageNotFoundText.arg(url.toString()));
+}
+
+void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
+{
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+    AssertReturnVoid(m_pContentViewer && m_pHelpEngine);
+    /* Search for the index of the index.htnl: */
+    QUrl url = findIndexHtml();
+    if (url.isValid())
+        m_pContentViewer->setSource(url);
+    else
+        show404Error(url);
 #endif
 }
 
@@ -368,7 +400,7 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &i
 
 void UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange(const QUrl &source)
 {
-    printf("%s\n", qPrintable(source.toString()));
+    Q_UNUSED(source);
 }
 
 
