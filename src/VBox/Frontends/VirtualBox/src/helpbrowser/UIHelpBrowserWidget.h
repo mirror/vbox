@@ -93,7 +93,7 @@ private:
     void saveOptions();
     void cleanup();
     QUrl findIndexHtml() const;
-    void show404Error();
+    void show404Error(const QUrl &url);
     /** @name Event handling stuff.
       * @{ */
         /** Handles translation event. */
