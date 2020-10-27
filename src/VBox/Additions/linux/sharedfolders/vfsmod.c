@@ -763,7 +763,8 @@ static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
         }
     }
 
-    iroot = ilookup(sb, 0);
+    /* '.' and '..' entries are st_ino == 0 so root is #1 */
+    iroot = ilookup(sb, 1);
     if (!iroot)
         return -ENOSYS;
 
