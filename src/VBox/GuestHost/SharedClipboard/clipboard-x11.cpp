@@ -404,7 +404,7 @@ static int clipThreadScheduleCall(PSHCLX11CTX pCtx,
     LogFlowFunc(("proc=%p, client_data=%p\n", proc, client_data));
 
 #ifndef TESTCASE
-    XtAppAddTimeOut(pCtx->appContext, 0, (XtTimerCallbackProc)proc,
+    XtAppAddTimeOut(pCtx->pAppContext, 0, (XtTimerCallbackProc)proc,
                     (XtPointer)client_data);
     ssize_t cbWritten = write(pCtx->wakeupPipeWrite, WAKE_UP_STRING, WAKE_UP_STRING_LEN);
     Assert(cbWritten == WAKE_UP_STRING_LEN);
@@ -823,7 +823,7 @@ static void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
         XFixesSelectionNotifyEvent fixes;
     } event = { { 0 } };
 
-    if (XtAppPeekEvent(pCtx->appContext, &event.event))
+    if (XtAppPeekEvent(pCtx->pAppContext, &event.event))
     {
         if (   (event.event.type == pCtx->fixesEventBase)
             && (event.fixes.owner != XtWindow(pCtx->pWidget)))
@@ -846,32 +846,50 @@ static void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
  */
 static DECLCALLBACK(int) clipThreadMain(RTTHREAD hThreadSelf, void *pvUser)
 {
-    RT_NOREF(hThreadSelf);
-    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+    PSHCLX11CTX pCtx = (PSHCLX11CTX)pvUser;
+    AssertPtr(pCtx);
 
-    LogRel2(("Shared Clipboard: Starting X11 event thread\n"));
+    LogFlowFunc(("pCtx=%p\n", pCtx));
 
-    PSHCLX11CTX pCtx = (SHCLX11CTX *)pvUser;
+    bool fSignalled = false; /* Whether we have signalled the parent already or not. */
 
-    clipInitInternal(pCtx);
-
-    if (pCtx->fGrabClipboardOnStart)
-        clipQueryX11Formats(pCtx);
-
-    /* We're now ready to run, tell parent. */
-    int rc2 = RTThreadUserSignal(hThreadSelf);
-    AssertRC(rc2);
-
-    while (XtAppGetExitFlag(pCtx->appContext) == FALSE)
+    int rc = clipInitInternal(pCtx);
+    if (RT_SUCCESS(rc))
     {
-        clipPeekEventAndDoXFixesHandling(pCtx);
-        XtAppProcessEvent(pCtx->appContext, XtIMAll);
+        rc = clipRegisterContext(pCtx);
+        if (RT_SUCCESS(rc))
+        {
+            if (pCtx->fGrabClipboardOnStart)
+                clipQueryX11Formats(pCtx);
+
+            pCtx->fThreadStarted = true;
+
+            /* We're now ready to run, tell parent. */
+            int rc2 = RTThreadUserSignal(hThreadSelf);
+            AssertRC(rc2);
+
+            fSignalled = true;
+
+            while (XtAppGetExitFlag(pCtx->pAppContext) == FALSE)
+            {
+                clipPeekEventAndDoXFixesHandling(pCtx);
+                XtAppProcessEvent(pCtx->pAppContext, XtIMAll);
+            }
+
+            clipUnregisterContext(pCtx);
+        }
+
+        clipUninitInternal(pCtx);
     }
 
-    clipUninitInternal(pCtx);
+    if (!fSignalled) /* Signal parent if we didn't do so yet. */
+    {
+        int rc2 = RTThreadUserSignal(hThreadSelf);
+        AssertRC(rc2);
+    }
 
-    LogRel2(("Shared Clipboard: X11 event thread terminated successfully\n"));
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -890,7 +908,7 @@ static void clipThreadSignalStop(void *pvUserData, void *)
     /* Set the termination flag to tell the Xt event loop to exit.  We
      * reiterate that any outstanding requests from the X11 event loop to
      * the VBox part *must* have returned before we do this. */
-    XtAppSetExitFlag(pCtx->appContext);
+    XtAppSetExitFlag(pCtx->pAppContext);
 }
 
 /**
@@ -989,9 +1007,9 @@ static int clipInitInternal(PSHCLX11CTX pCtx)
 
     int rc = VINF_SUCCESS;
 
-    Assert(pCtx->appContext == NULL); /* No nested initialization. */
-    pCtx->appContext = XtCreateApplicationContext();
-    if (pCtx->appContext == NULL)
+    Assert(pCtx->pAppContext == NULL); /* No nested initialization. */
+    pCtx->pAppContext = XtCreateApplicationContext();
+    if (pCtx->pAppContext == NULL)
     {
         LogRel(("Shared Clipboard: Failed to create Xt application context\n"));
         return VERR_NOT_SUPPORTED; /** @todo Fudge! */
@@ -1000,7 +1018,7 @@ static int clipInitInternal(PSHCLX11CTX pCtx)
     /* Create a window and make it a clipboard viewer. */
     int      cArgc  = 0;
     char    *pcArgv = 0;
-    Display *pDisplay = XtOpenDisplay(pCtx->appContext, 0, 0, "VBoxShCl", 0, 0, &cArgc, &pcArgv);
+    Display *pDisplay = XtOpenDisplay(pCtx->pAppContext, 0, 0, "VBoxShCl", 0, 0, &cArgc, &pcArgv);
     if (pDisplay == NULL)
     {
         LogRel(("Shared Clipboard: Failed to connect to the X11 clipboard - the window system may not be running\n"));
@@ -1024,11 +1042,21 @@ static int clipInitInternal(PSHCLX11CTX pCtx)
                                            1, NULL);
         if (pCtx->pWidget == NULL)
         {
-            LogRel(("Shared Clipboard: Failed to construct the X11 window\n"));
+            LogRel(("Shared Clipboard: Failed to create Xt app shell\n"));
             rc = VERR_NO_MEMORY; /** @todo r=andy Improve this. */
         }
         else
-            rc = clipRegisterContext(pCtx);
+        {
+#ifndef TESTCASE
+            if (!XtAppAddInput(pCtx->pAppContext, pCtx->wakeupPipeRead,
+                               (XtPointer) XtInputReadMask,
+                               clipThreadDrainWakeupPipe, (XtPointer) pCtx))
+            {
+                LogRel(("Shared Clipboard: Failed to add input to Xt app context\n"));
+                rc = VERR_ACCESS_DENIED; /** @todo r=andy Improve this. */
+            }
+#endif
+        }
     }
 
     if (RT_SUCCESS(rc))
@@ -1070,17 +1098,16 @@ static void clipUninitInternal(PSHCLX11CTX pCtx)
     if (pCtx->pWidget)
     {
         /* Valid widget + invalid appcontext = bug.  But don't return yet. */
-        AssertPtr(pCtx->appContext);
-        clipUnregisterContext(pCtx);
+        AssertPtr(pCtx->pAppContext);
 
         XtDestroyWidget(pCtx->pWidget);
         pCtx->pWidget = NULL;
     }
 
-    if (pCtx->appContext)
+    if (pCtx->pAppContext)
     {
-        XtDestroyApplicationContext(pCtx->appContext);
-        pCtx->appContext = NULL;
+        XtDestroyApplicationContext(pCtx->pAppContext);
+        pCtx->pAppContext = NULL;
     }
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
@@ -1132,6 +1159,8 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCONTEXT pParent, bool fHeadless)
     {
         /** @todo The testcases currently do not utilize the threading code. So init stuff here. */
         rc = clipInitInternal(pCtx);
+        if (RT_SUCCESS(rc))
+            rc = clipRegisterContext(pCtx);
     }
 #endif
 
@@ -1154,6 +1183,7 @@ void ShClX11Destroy(PSHCLX11CTX pCtx)
 #ifdef TESTCASE
     /** @todo The testcases currently do not utilize the threading code. So uninit stuff here. */
     clipUninitInternal(pCtx);
+    clipUnregisterContext(pCtx);
 #endif
 
     if (pCtx->fHaveX11)
@@ -1196,17 +1226,15 @@ int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
     int pipes[2];
     if (!pipe(pipes))
     {
-        pCtx->wakeupPipeRead = pipes[0];
+        pCtx->wakeupPipeRead  = pipes[0];
         pCtx->wakeupPipeWrite = pipes[1];
-        if (!XtAppAddInput(pCtx->appContext, pCtx->wakeupPipeRead,
-                           (XtPointer) XtInputReadMask,
-                           clipThreadDrainWakeupPipe, (XtPointer) pCtx))
-            rc = VERR_NO_MEMORY;  /* What failure means is not doc'ed. */
-        if (   RT_SUCCESS(rc)
-            && (fcntl(pCtx->wakeupPipeRead, F_SETFL, O_NONBLOCK) != 0))
+
+        if (!fcntl(pCtx->wakeupPipeRead, F_SETFL, O_NONBLOCK))
+        {
+            rc = VINF_SUCCESS;
+        }
+        else
             rc = RTErrConvertFromErrno(errno);
-        if (RT_FAILURE(rc))
-            LogRel(("Shared Clipboard: Failed to setup the termination mechanism\n"));
     }
     else
         rc = RTErrConvertFromErrno(errno);
@@ -1226,7 +1254,14 @@ int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
             clipUninitInternal(pCtx);
         }
         else
-            LogRel2(("Shared Clipboard: X11 event thread started\n"));
+        {
+            if (!pCtx->fThreadStarted)
+            {
+                LogRel(("Shared Clipboard: X11 event thread reported an error while starting\n"));
+            }
+            else
+                LogRel2(("Shared Clipboard: X11 event thread started\n"));
+        }
     }
 
     LogFlowFuncLeaveRC(rc);

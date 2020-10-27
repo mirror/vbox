@@ -82,11 +82,14 @@ typedef struct _SHCLX11CTX
     PSHCLCONTEXT pFrontend;
     /** Is an X server actually available? */
     bool fHaveX11;
-    /** The X Toolkit application context structure */
-    XtAppContext appContext;
+    /** The X Toolkit application context structure. */
+    XtAppContext pAppContext;
 
     /** We have a separate thread to wait for window and clipboard events. */
     RTTHREAD Thread;
+    /** Flag indicating that the thread is in a started state. */
+    bool fThreadStarted;
+
     /** The X Toolkit widget which we use as our clipboard client.  It is never made visible. */
     Widget pWidget;
 
