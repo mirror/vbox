@@ -117,8 +117,10 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pMenu(0)
     , m_pContentWidget(0)
     , m_pIndexWidget(0)
+    , m_pContentModel(0)
     , m_pBookmarksWidget(0)
     , m_pShowHideTabWidgetAction(0)
+    , m_fModelContentCreated(false)
 {
     qRegisterMetaType<HelpBrowserTabs>("HelpBrowserTabs");
     prepare();
@@ -176,17 +178,14 @@ void UIHelpBrowserWidget::prepareWidgets()
 
     m_pContentWidget = m_pHelpEngine->contentWidget();
     m_pIndexWidget = m_pHelpEngine->indexWidget();
+    m_pContentModel = m_pHelpEngine->contentModel();
 
-    AssertReturnVoid(m_pContentWidget && m_pIndexWidget);
+    AssertReturnVoid(m_pContentWidget && m_pIndexWidget && m_pContentModel);
     m_pSplitter->addWidget(m_pTabWidget);
 
     m_pTabWidget->insertTab(HelpBrowserTabs_TOC, m_pContentWidget, QString());
     m_pTabWidget->insertTab(HelpBrowserTabs_Index, m_pIndexWidget, QString());
     m_pTabWidget->insertTab(HelpBrowserTabs_Bookmarks, m_pBookmarksWidget, QString());
-
-    // insertTabWidgets(HelpBrowserTabs_TOC);
-    // insertTabWidgets(HelpBrowserTabs_Index);
-    // insertTabWidgets(HelpBrowserTabs_Bookmarks);
 
     m_pContentViewer = new UIHelpBrowserViewer(m_pHelpEngine);
     AssertReturnVoid(m_pContentViewer);
@@ -208,6 +207,8 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sltHandleContentWidgetItemClicked);
     connect(m_pIndexWidget, &QHelpIndexWidget::linkActivated,
             m_pContentViewer, &UIHelpBrowserViewer::setSource);
+    connect(m_pContentModel, &QHelpContentModel::contentsCreated,
+            this, &UIHelpBrowserWidget::sltHandleContentsCreated);
 
     if (QFile(m_strHelpFilePath).exists() && m_pHelpEngine)
         m_pHelpEngine->setupData();
@@ -398,7 +399,9 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &i
     if (!pItem)
         return;
     const QUrl &url = pItem->url();
+    m_pContentViewer->blockSignals(true);
     m_pContentViewer->setSource(url);
+    m_pContentViewer->blockSignals(false);
 #else
     Q_UNUSED(index);
 #endif
@@ -406,8 +409,29 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &i
 
 void UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange(const QUrl &source)
 {
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+    if (m_fModelContentCreated && m_pContentWidget && source.isValid() && m_pContentModel)
+    {
+        QModelIndex index = m_pContentWidget->indexOf(source);
+        QItemSelectionModel *pSelectionModel = m_pContentWidget->selectionModel();
+        if (pSelectionModel && index.isValid())
+        {
+            m_pContentWidget->blockSignals(true);
+            pSelectionModel->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+            m_pContentWidget->scrollTo(index, QAbstractItemView::EnsureVisible);
+            m_pContentWidget->expand(index);
+            m_pContentWidget->blockSignals(false);
+        }
+    }
+#else
     Q_UNUSED(source);
+#endif
 }
 
-
+void UIHelpBrowserWidget::sltHandleContentsCreated()
+{
+    m_fModelContentCreated = true;
+    if (m_pContentViewer)
+        sltHandleHelpBrowserViewerSourceChange(m_pContentViewer->source());
+}
 #include "UIHelpBrowserWidget.moc"

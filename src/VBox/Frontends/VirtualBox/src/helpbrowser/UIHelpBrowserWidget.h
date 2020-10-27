@@ -38,6 +38,7 @@
 /* Forward declarations: */
 class QHBoxLayout;
 class QHelpEngine;
+class QHelpContentModel;
 class QHelpContentWidget;
 class QHelpIndexWidget;
 class QPlainTextEdit;
@@ -80,6 +81,7 @@ private slots:
     void sltHandleContentWidgetItemClicked(const QModelIndex &index);
     void sltHandleTabVisibility(bool togggled);
     void sltHandleHelpBrowserViewerSourceChange(const QUrl &source);
+    void sltHandleContentsCreated();
 
 private:
 
@@ -132,9 +134,12 @@ private:
     QMenu               *m_pMenu;
     QHelpContentWidget  *m_pContentWidget;
     QHelpIndexWidget    *m_pIndexWidget;
+    QHelpContentModel   *m_pContentModel;
     QWidget             *m_pBookmarksWidget;
     QAction             *m_pShowHideTabWidgetAction;
     QString              m_strPageNotFoundText;
+    /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
+    bool                 m_fModelContentCreated;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h */
