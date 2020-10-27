@@ -30,6 +30,7 @@
 #include <QStyle>
 #include <QSplitter>
 #include <QTextBrowser>
+#include <QVBoxLayout>
 #ifdef RT_OS_SOLARIS
 # include <QFontDatabase>
 #endif
@@ -44,6 +45,7 @@
 #include "UIHelpBrowserWidget.h"
 #include "QIToolBar.h"
 #include "UICommon.h"
+#include "UIIconPool.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -120,6 +122,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pContentModel(0)
     , m_pBookmarksWidget(0)
     , m_pShowHideTabWidgetAction(0)
+    , m_pGoHomeAction(0)
     , m_fModelContentCreated(false)
 {
     qRegisterMetaType<HelpBrowserTabs>("HelpBrowserTabs");
@@ -146,7 +149,12 @@ bool UIHelpBrowserWidget::shouldBeMaximized() const
 
 void UIHelpBrowserWidget::prepare()
 {
+    /* Create main layout: */
+    m_pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(m_pMainLayout);
+
     prepareActions();
+    prepareToolBar();
     prepareWidgets();
     prepareMenu();
     retranslateUi();
@@ -158,15 +166,14 @@ void UIHelpBrowserWidget::prepareActions()
     m_pShowHideTabWidgetAction->setCheckable(true);
     m_pShowHideTabWidgetAction->setChecked(true);
     connect(m_pShowHideTabWidgetAction, &QAction::toggled, this, &UIHelpBrowserWidget::sltHandleTabVisibility);
+    m_pGoHomeAction = new QAction(UIIconPool::iconSet(":/file_manager_go_home_16px.png"), "", this);
+    connect(m_pGoHomeAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltHandleGoHomeAction);
 }
 
 void UIHelpBrowserWidget::prepareWidgets()
 {
-    /* Create main layout: */
-    m_pMainLayout = new QHBoxLayout(this);
     m_pSplitter = new QSplitter;
-
-    AssertReturnVoid(m_pMainLayout && m_pSplitter);
+    AssertReturnVoid(m_pSplitter);
 
     m_pMainLayout->addWidget(m_pSplitter);
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
@@ -225,7 +232,7 @@ void UIHelpBrowserWidget::prepareToolBar()
         const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-
+        m_pToolBar->addAction(m_pGoHomeAction);
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -387,6 +394,8 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 #endif
 }
 
+void sltHandleGoHomeAction();
+
 void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &index)
 {
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
@@ -434,4 +443,16 @@ void UIHelpBrowserWidget::sltHandleContentsCreated()
     if (m_pContentViewer)
         sltHandleHelpBrowserViewerSourceChange(m_pContentViewer->source());
 }
+
+void UIHelpBrowserWidget::sltHandleGoHomeAction()
+{
+    if (!m_pContentViewer)
+        return;
+
+    QUrl homeUrl = findIndexHtml();
+    if (!homeUrl.isValid())
+        return;
+    m_pContentViewer->setSource(homeUrl);
+}
+
 #include "UIHelpBrowserWidget.moc"

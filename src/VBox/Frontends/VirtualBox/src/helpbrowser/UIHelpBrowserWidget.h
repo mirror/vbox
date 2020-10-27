@@ -36,7 +36,7 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
-class QHBoxLayout;
+class QVBoxLayout;
 class QHelpEngine;
 class QHelpContentModel;
 class QHelpContentWidget;
@@ -82,6 +82,7 @@ private slots:
     void sltHandleTabVisibility(bool togggled);
     void sltHandleHelpBrowserViewerSourceChange(const QUrl &source);
     void sltHandleContentsCreated();
+    void sltHandleGoHomeAction();
 
 private:
 
@@ -118,7 +119,7 @@ private:
     bool m_fIsPolished;
 
     /** Holds container for log-pages. */
-    QHBoxLayout         *m_pMainLayout;
+    QVBoxLayout         *m_pMainLayout;
     QITabWidget *m_pTabWidget;
     /** @name Toolbar and menu variables.
       * @{ */
@@ -137,6 +138,7 @@ private:
     QHelpContentModel   *m_pContentModel;
     QWidget             *m_pBookmarksWidget;
     QAction             *m_pShowHideTabWidgetAction;
+    QAction             *m_pGoHomeAction;
     QString              m_strPageNotFoundText;
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
     bool                 m_fModelContentCreated;
