@@ -250,6 +250,7 @@ void UIHelpBrowserWidget::prepareMenu()
 
 void UIHelpBrowserWidget::loadOptions()
 {
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     if (m_pContentViewer && m_pHelpEngine)
     {
         QUrl url(gEDataManager->helpBrowserLastUrl());
@@ -263,6 +264,7 @@ void UIHelpBrowserWidget::loadOptions()
                 show404Error(url);
         }
     }
+#endif
 }
 
 void UIHelpBrowserWidget::saveOptions()
@@ -333,6 +335,7 @@ void UIHelpBrowserWidget::sltHandleTabVisibility(bool fToggled)
 
 QUrl UIHelpBrowserWidget::findIndexHtml() const
 {
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     QList<QUrl> files = m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList());
     int iIndex = -1;
     for (int i = 0; i < files.size(); ++i)
@@ -359,6 +362,9 @@ QUrl UIHelpBrowserWidget::findIndexHtml() const
     if (iIndex != -1 && files.size() > iIndex)
         return files[iIndex];
     return QUrl();
+#else
+    return QUrl();
+#endif
 }
 
 void UIHelpBrowserWidget::show404Error(const QUrl &url)
