@@ -790,9 +790,10 @@ void UIChooserModel::moveSelectedMachineItemsToGroupItem(const QString &strName 
         /* Create new group node in the current root: */
         pTargetGroupNode = new UIChooserNodeGroup(invisibleRoot(),
                                                   invisibleRoot()->nodes().size() /* position */,
-                                                  true /* opened */,
+                                                  QUuid() /* id */,
                                                   uniqueGroupName(invisibleRoot()),
-                                                  UIChooserNodeGroupType_Local);
+                                                  UIChooserNodeGroupType_Local,
+                                                  true /* opened */);
         pTargetGroupItem = new UIChooserItemGroup(root(), pTargetGroupNode);
     }
     else

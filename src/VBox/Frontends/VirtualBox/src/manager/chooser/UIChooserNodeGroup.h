@@ -33,15 +33,17 @@ class UIChooserNodeGroup : public UIChooserNode
 public:
 
     /** Constructs chooser node passing @a pParent to the base-class.
-      * @param  iPosition     Brings the initial node position
-      * @param  fOpened       Brings whether this group node is opened..
+      * @param  iPosition     Brings the initial node position.
+      * @param  uId           Brings current node id.
       * @param  strName       Brings current node name.
-      * @param  enmGroupType  Brings group node type. */
+      * @param  enmGroupType  Brings group node type.
+      * @param  fOpened       Brings whether this group node is opened. */
     UIChooserNodeGroup(UIChooserNode *pParent,
                        int iPosition,
-                       bool fOpened,
+                       const QUuid &uId,
                        const QString &strName,
-                       UIChooserNodeGroupType enmGroupType);
+                       UIChooserNodeGroupType enmGroupType,
+                       bool fOpened);
     /** Constructs chooser node passing @a pParent to the base-class.
       * @param  iPosition  Brings the initial node position.
       * @param  pCopyFrom  Brings the node to copy data from. */
@@ -107,6 +109,9 @@ public:
     /** Performs sorting of children nodes. */
     virtual void sortNodes() /* override */;
 
+    /** Returns node group id. */
+    QUuid id() const;
+
 protected:
 
     /** Handles translation event. */
@@ -117,12 +122,14 @@ private:
     /** Copies children contents from @a pCopyFrom item. */
     void copyContents(UIChooserNodeGroup *pCopyFrom);
 
-    /** Holds whether node is opened. */
-    bool                    m_fOpened;
+    /** Holds the node id. */
+    QUuid                   m_uId;
     /** Holds the node name. */
     QString                 m_strName;
     /** Holds the group node type. */
     UIChooserNodeGroupType  m_enmGroupType;
+    /** Holds whether node is opened. */
+    bool                    m_fOpened;
 
     /** Holds group children. */
     QList<UIChooserNode*>  m_nodesGroup;

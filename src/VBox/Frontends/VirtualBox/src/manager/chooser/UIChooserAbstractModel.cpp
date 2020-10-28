@@ -410,9 +410,10 @@ void UIChooserAbstractModel::init()
     /* Create invisible root group node: */
     m_pInvisibleRootNode = new UIChooserNodeGroup(0 /* parent */,
                                                   0 /* position */,
-                                                  true /* opened */,
+                                                  QUuid() /* id */,
                                                   QString() /* name */,
-                                                  UIChooserNodeGroupType_Local);
+                                                  UIChooserNodeGroupType_Local,
+                                                  true /* opened */);
     if (invisibleRoot())
     {
         /* Link root to this model: */
@@ -1077,11 +1078,12 @@ void UIChooserAbstractModel::reloadCloudTree()
                                    getDesiredNodePosition(invisibleRoot(),
                                                           UIChooserNodeDataPrefixType_Provider,
                                                           strProviderShortName),
+                                   uProviderId,
+                                   strProviderShortName,
+                                   UIChooserNodeGroupType_Provider,
                                    shouldGroupNodeBeOpened(invisibleRoot(),
                                                            UIChooserNodeDataPrefixType_Provider,
-                                                           strProviderShortName),
-                                   strProviderShortName,
-                                   UIChooserNodeGroupType_Provider);
+                                                           strProviderShortName));
         pProviderNode->setProperty("id", uProviderId);
 
         /* Iterate through provider's profiles: */
@@ -1107,11 +1109,12 @@ void UIChooserAbstractModel::reloadCloudTree()
                                        getDesiredNodePosition(pProviderNode,
                                                               UIChooserNodeDataPrefixType_Profile,
                                                               strProfileName),
+                                       QUuid() /* id */,
+                                       strProfileName,
+                                       UIChooserNodeGroupType_Profile,
                                        shouldGroupNodeBeOpened(pProviderNode,
                                                                UIChooserNodeDataPrefixType_Profile,
-                                                               strProfileName),
-                                       strProfileName,
-                                       UIChooserNodeGroupType_Profile);
+                                                               strProfileName));
 
             /* Add fake cloud VM item: */
             createCloudMachineNode(pProfileNode, UIFakeCloudVirtualMachineItemState_Loading);
@@ -1249,11 +1252,12 @@ UIChooserNode *UIChooserAbstractModel::getLocalGroupNode(const QString &strName,
                                getDesiredNodePosition(pParentNode,
                                                       UIChooserNodeDataPrefixType_Local,
                                                       strSecondSubName),
+                               QUuid() /* id */,
+                               strSecondSubName,
+                               UIChooserNodeGroupType_Local,
                                fAllGroupsOpened || shouldGroupNodeBeOpened(pParentNode,
                                                                            UIChooserNodeDataPrefixType_Local,
-                                                                           strSecondSubName),
-                               strSecondSubName,
-                               UIChooserNodeGroupType_Local);
+                                                                           strSecondSubName));
     return strSecondSuffix.isEmpty() ? pNewGroupNode : getLocalGroupNode(strFirstSuffix, pNewGroupNode, fAllGroupsOpened);
 }
 
