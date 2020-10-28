@@ -179,8 +179,10 @@ public slots:
 
     /** @name Cloud machine stuff.
       * @{ */
-        /** Handles cloud machine state change. */
-        void sltHandleCloudMachineStateChange();
+        /** Handles cloud machine refresh started. */
+        void sltHandleCloudMachineRefreshStarted();
+        /** Handles cloud machine refresh finished. */
+        void sltHandleCloudMachineRefreshFinished();
     /** @} */
 
     /** @name Group saving stuff.

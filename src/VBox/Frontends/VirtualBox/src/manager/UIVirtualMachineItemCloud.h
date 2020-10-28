@@ -43,8 +43,10 @@ class UIVirtualMachineItemCloud : public UIVirtualMachineItem
 
 signals:
 
-    /** Notifies listeners about state change. */
-    void sigStateChange();
+    /** Notifies listeners about refresh started. */
+    void sigRefreshStarted();
+    /** Notifies listeners about refresh finished. */
+    void sigRefreshFinished();
 
 public:
 

@@ -305,8 +305,11 @@ void UIVirtualMachineItemCloud::sltRefreshCloudMachineInfo()
         /* Prepare 'Refresh' progress handler: */
         m_pProgressHandler = new UIProgress(m_comProgress, this);
         if (m_pProgressHandler)
+        {
             connect(m_pProgressHandler.data(), &UIProgress::sigProgressEventHandlingFinished,
                     this, &UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone);
+            emit sigRefreshStarted();
+        }
     }
 }
 
@@ -328,7 +331,7 @@ void UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone()
 
     /* If not canceled => notify listeners: */
     if (!fCanceled)
-        emit sigStateChange();
+        emit sigRefreshFinished();
 }
 
 void UIVirtualMachineItemCloud::prepare()
