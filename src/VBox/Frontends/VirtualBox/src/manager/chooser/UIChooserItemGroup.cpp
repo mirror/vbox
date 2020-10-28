@@ -94,6 +94,11 @@ UIChooserNodeGroup *UIChooserItemGroup::nodeToGroupType() const
     return node() ? node()->toGroupNode() : 0;
 }
 
+QUuid UIChooserItemGroup::id() const
+{
+    return nodeToGroupType() ? nodeToGroupType()->id() : QUuid();
+}
+
 UIChooserNodeGroupType UIChooserItemGroup::groupType() const
 {
     return nodeToGroupType() ? nodeToGroupType()->groupType() : UIChooserNodeGroupType_Invalid;

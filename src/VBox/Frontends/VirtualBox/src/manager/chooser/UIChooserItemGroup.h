@@ -72,7 +72,8 @@ public:
       * @{ */
         /** Returns group node reference. */
         UIChooserNodeGroup *nodeToGroupType() const;
-
+        /** Returns item machine id. */
+        QUuid id() const;
         /** Returns group node type. */
         UIChooserNodeGroupType groupType() const;
 
