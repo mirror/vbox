@@ -42,6 +42,14 @@ namespace UICloudNetworkingStuff
     /** Acquires cloud provider manager,
       * using @a strErrorMessage to store messages to. */
     SHARED_LIBRARY_STUFF CCloudProviderManager cloudProviderManager(QString &strErrorMessage);
+    /** Acquires cloud provider specified by @a uProviderId,
+      * using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF CCloudProvider cloudProviderById(const QUuid &uProviderId,
+                                                          QWidget *pParent = 0);
+    /** Acquires cloud provider specified by @a uProviderId,
+      * using @a strErrorMessage to store messages to. */
+    SHARED_LIBRARY_STUFF CCloudProvider cloudProviderById(const QUuid &uProviderId,
+                                                          QString &strErrorMessage);
     /** Acquires cloud provider specified by @a strProviderShortName,
       * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF CCloudProvider cloudProviderByShortName(const QString &strProviderShortName,

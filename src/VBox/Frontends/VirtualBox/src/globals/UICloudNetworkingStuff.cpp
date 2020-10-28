@@ -65,6 +65,42 @@ CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager(QString &strE
     return CCloudProviderManager();
 }
 
+CCloudProvider UICloudNetworkingStuff::cloudProviderById(const QUuid &uProviderId,
+                                                         QWidget *pParent /* = 0 */)
+{
+    /* Acquire cloud provider manager: */
+    CCloudProviderManager comProviderManager = cloudProviderManager(pParent);
+    if (comProviderManager.isNotNull())
+    {
+        /* Acquire cloud provider: */
+        CCloudProvider comProvider = comProviderManager.GetProviderById(uProviderId);
+        if (!comProviderManager.isOk())
+            msgCenter().cannotAcquireCloudProviderManagerParameter(comProviderManager, pParent);
+        else
+            return comProvider;
+    }
+    /* Null by default: */
+    return CCloudProvider();
+}
+
+CCloudProvider UICloudNetworkingStuff::cloudProviderById(const QUuid &uProviderId,
+                                                         QString &strErrorMessage)
+{
+    /* Acquire cloud provider manager: */
+    CCloudProviderManager comProviderManager = cloudProviderManager(strErrorMessage);
+    if (comProviderManager.isNotNull())
+    {
+        /* Acquire cloud provider: */
+        CCloudProvider comProvider = comProviderManager.GetProviderById(uProviderId);
+        if (!comProviderManager.isOk())
+            strErrorMessage = UIErrorString::formatErrorInfo(comProviderManager);
+        else
+            return comProvider;
+    }
+    /* Null by default: */
+    return CCloudProvider();
+}
+
 CCloudProvider UICloudNetworkingStuff::cloudProviderByShortName(const QString &strProviderShortName,
                                                                 QWidget *pParent /* = 0 */)
 {
