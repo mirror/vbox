@@ -267,7 +267,7 @@ static void rtThreadPosixBlockSignals(void)
         sigfillset(&SigAct.sa_mask);
 
         int rc = sigaction(g_iSigPokeThread, &SigAct, &SigActOld);
-        AssertMsg(rc == 0, ("rc=%Rrc errno=%d\n", RTErrConvertFromErrno(errno), errno));
+        AssertMsg(rc == 0, ("rc=%Rrc errno=%d\n", RTErrConvertFromErrno(errno), errno)); RT_NOREF(rc);
         AssertMsg(rc || SigActOld.sa_handler == rtThreadPosixPokeSignal, ("%p\n", SigActOld.sa_handler));
 # else
         siginterrupt(g_iSigPokeThread, 1);
