@@ -914,8 +914,6 @@ int main()
     tstNoSelectionOwnership(&X11Ctx, "reading from VBox, headless clipboard");
 
     ShClX11Destroy(&X11Ctx);
-    /* Note: Doing this twice is intentional. */
-    ShClX11Destroy(&X11Ctx);
 
     return RTTestSummaryAndDestroy(hTest);
 }

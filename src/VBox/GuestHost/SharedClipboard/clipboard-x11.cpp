@@ -335,14 +335,14 @@ static void clipUnregisterContext(PSHCLX11CTX pCtx)
 {
     AssertPtrReturnVoid(pCtx);
 
-    Widget widget = pCtx->pWidget;
-    AssertPtrReturnVoid(widget);
+    Widget pWidget = pCtx->pWidget;
+    AssertPtrReturnVoid(pWidget);
 
     bool fFound = false;
     for (unsigned i = 0; i < RT_ELEMENTS(g_aContexts); ++i)
     {
-        Assert(!fFound || g_aContexts[i].pWidget != widget);
-        if (g_aContexts[i].pWidget == widget)
+        Assert(!fFound || g_aContexts[i].pWidget != pWidget);
+        if (g_aContexts[i].pWidget == pWidget)
         {
             Assert(g_aContexts[i].pCtx != NULL);
             g_aContexts[i].pWidget = NULL;
@@ -1182,8 +1182,8 @@ void ShClX11Destroy(PSHCLX11CTX pCtx)
 
 #ifdef TESTCASE
     /** @todo The testcases currently do not utilize the threading code. So uninit stuff here. */
-    clipUninitInternal(pCtx);
     clipUnregisterContext(pCtx);
+    clipUninitInternal(pCtx);
 #endif
 
     if (pCtx->fHaveX11)
