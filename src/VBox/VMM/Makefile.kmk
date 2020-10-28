@@ -511,7 +511,7 @@ VMMR0_SOURCES   = \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
 	VMMAll/DBGFAll.cpp \
-	VMMAll/DBGFAllBp.cpp \
+	$(if-expr defined(VBOX_WITH_LOTS_OF_DBGF_BPS), VMMAll/DBGFAllBp.cpp,) \
 	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMAll/DBGFAllTracer.cpp,) \
 	VMMAll/EMAll.cpp \
 	VMMAll/GIMAll.cpp \
