@@ -938,8 +938,8 @@ static int dbgfR3BpInt3L2BstCreate(PUVM pUVM, uint32_t idxL1, uint32_t u32EntryO
  * @returns VBox status code.
  * @param   pUVM                The user mode VM handle.
  * @param   idxL2Root           The index of the tree root in the L2 table.
- * @param   hBpRoot             The node DBGF handle to insert.
- * @param   GCPtrRoot           The nodes GC pointer to use as a key.
+ * @param   hBp                 The node DBGF handle to insert.
+ * @param   GCPtr               The nodes GC pointer to use as a key.
  */
 static int dbgfR3BpInt2L2BstNodeInsert(PUVM pUVM, uint32_t idxL2Root, DBGFBP hBp, RTGCUINTPTR GCPtr)
 {
