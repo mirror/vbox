@@ -1718,6 +1718,18 @@ void UIChooserAbstractModel::makeSureGroupDefinitionsSaveIsFinished()
         UIThreadGroupDefinitionsSave::cleanup();
 }
 
+UIChooserNode *UIChooserAbstractModel::searchProviderNode(const QUuid &uProviderId)
+{
+    /* Search for a list of nodes matching passed name: */
+    QList<UIChooserNode*> providerNodes;
+    invisibleRoot()->searchForNodes(uProviderId.toString(),
+                                    UIChooserItemSearchFlag_CloudProvider | UIChooserItemSearchFlag_ExactId,
+                                    providerNodes);
+
+    /* Return 1st node if any: */
+    return providerNodes.value(0);
+}
+
 UIChooserNode *UIChooserAbstractModel::searchProviderNode(const QString &strProviderShortName)
 {
     /* Search for a list of nodes matching passed name: */

@@ -344,6 +344,8 @@ private:
 
     /** @name Cloud stuff.
       * @{ */
+        /** Searches for provider node with passed @a uProviderId. */
+        UIChooserNode *searchProviderNode(const QUuid &uProviderId);
         /** Searches for provider node with passed @a strProviderShortName. */
         UIChooserNode *searchProviderNode(const QString &strProviderShortName);
 
