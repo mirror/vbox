@@ -240,7 +240,7 @@ static const DeviceAssignmentRule g_aIch9Rules[] =
 static const DeviceAssignmentRule g_aIch9IommuLsiRules[] =
 {
     /* AMD IOMMU. */
-    {"iommu-amd",     0,  0,  2, 0},
+    {"iommu-amd",     0,  0,  0, 0},
     /* AMD IOMMU: Reserved for southbridge I/O APIC. */
     {"sb-ioapic",     0, 20,  0, 0},
 
