@@ -45,16 +45,6 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-#if defined(IN_RC) || defined(IN_RING0)
-/** @defgroup grp_dbgf_rz  The RZ DBGF API
- * @{
- */
-VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6, bool fAltStepping);
-VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame);
-/** @} */
-#endif
-
-
 /** @defgroup grp_dbgf_r0  The R0 DBGF API
  * @{
  */
@@ -1191,6 +1181,8 @@ VMM_INT_DECL(bool)          DBGFIsStepping(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTIOPORT uIoPort, uint8_t cbValue);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArgs(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, DBGFEVENTCTX enmCtx,
                                                      unsigned cArgs, ...);
+VMM_INT_DECL(int)           DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6, bool fAltStepping);
+VMM_INT_DECL(int)           DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame);
 
 
 #ifdef IN_RING3 /* The CPU mode API only works in ring-3. */

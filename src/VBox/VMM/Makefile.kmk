@@ -505,12 +505,12 @@ VMMR0_SOURCES   = \
 	VMMR0/VMMR0.cpp \
 	VMMRZ/CPUMRZ.cpp \
 	VMMRZ/CPUMRZA.asm \
-	VMMRZ/DBGFRZ.cpp \
 	VMMRZ/VMMRZ.cpp \
 	VMMAll/APICAll.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
 	VMMAll/DBGFAll.cpp \
+	VMMAll/DBGFAllBp.cpp \
 	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMAll/DBGFAllTracer.cpp,) \
 	VMMAll/EMAll.cpp \
 	VMMAll/GIMAll.cpp \

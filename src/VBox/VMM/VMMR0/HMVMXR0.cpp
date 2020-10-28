@@ -13937,7 +13937,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptBP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     AssertRCReturn(rc, rc);
 
     if (!pVmxTransient->fIsNestedGuest)
-        rc = DBGFRZTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx));
+        rc = DBGFTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx));
     else
         rc = VINF_EM_RAW_GUEST_TRAP;
 
@@ -13994,7 +13994,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptDB(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     if (!pVmxTransient->fIsNestedGuest)
     {
-        rc = DBGFRZTrap01Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx), uDR6, pVCpu->hm.s.fSingleInstruction);
+        rc = DBGFTrap01Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx), uDR6, pVCpu->hm.s.fSingleInstruction);
 
         /*
          * Prevents stepping twice over the same instruction when the guest is stepping using

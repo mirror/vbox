@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DBGF - Debugger Facility, RZ part.
+ * DBGF - Debugger Facility, All Context breakpoint management part.
  */
 
 /*
@@ -64,7 +64,6 @@ DECLINLINE(PDBGFBPINT) dbgfR0BpGetByHnd(PVMCC pVM, DBGFBP hBp, PDBGFBPINTR0 *ppB
         *ppBpR0 = &pBpChunk->paBpBaseR0Only[idxEntry];
     return &pBpChunk->paBpBaseSharedR0[idxEntry];
 }
-# endif
 
 
 /**
@@ -78,7 +77,7 @@ DECLINLINE(PDBGFBPINT) dbgfR0BpGetByHnd(PVMCC pVM, DBGFBP hBp, PDBGFBPINTR0 *ppB
  * @param   pBp         The shared breakpoint state.
  * @param   pBpR0       The ring-0 only breakpoint state.
  */
-DECLINLINE(int) dbgfRZBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
+DECLINLINE(int) dbgfR0BpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
                             DBGFBP hBp, PDBGFBPINT pBp, PDBGFBPINTR0 pBpR0)
 {
     uint64_t cHits = ASMAtomicIncU64(&pBp->Pub.cHits);
@@ -102,7 +101,7 @@ DECLINLINE(int) dbgfRZBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
  *
  * @note The content of the resolved L2 table entry is not validated!.
  */
-DECLINLINE(PCDBGFBPL2ENTRY) dbgfRZBpL2GetByIdx(PVMCC pVM, uint32_t idxL2)
+DECLINLINE(PCDBGFBPL2ENTRY) dbgfR0BpL2GetByIdx(PVMCC pVM, uint32_t idxL2)
 {
     uint32_t idChunk  = DBGF_BP_L2_IDX_GET_CHUNK_ID(idxL2);
     uint32_t idxEntry = DBGF_BP_L2_IDX_GET_ENTRY(idxL2);
@@ -127,12 +126,12 @@ DECLINLINE(PCDBGFBPL2ENTRY) dbgfRZBpL2GetByIdx(PVMCC pVM, uint32_t idxL2)
  * @param   idxL2Root   L2 table index of the table root.
  * @param   GCPtrKey    The key to search for.
  */
-static int dbgfRZBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
-                          uint32_t idxL2Root, RTGCUINTPTR GCPtrKey)
+static int dbgfBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
+                        uint32_t idxL2Root, RTGCUINTPTR GCPtrKey)
 {
     /** @todo We don't use the depth right now but abort the walking after a fixed amount of levels. */
     uint8_t iDepth = 32;
-    PCDBGFBPL2ENTRY pL2Entry = dbgfRZBpL2GetByIdx(pVM, idxL2Root);
+    PCDBGFBPL2ENTRY pL2Entry = dbgfR0BpL2GetByIdx(pVM, idxL2Root);
 
     while (RT_LIKELY(   iDepth-- > 0
                      && pL2Entry))
@@ -152,7 +151,7 @@ static int dbgfRZBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
             PDBGFBPINT pBp = dbgfR0BpGetByHnd(pVM, hBp, &pBpR0);
             if (   pBp
                 && DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3)
-                return dbgfRZBpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0);
+                return dbgfR0BpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0);
 
             /* The entry got corrupted, just abort. */
             return VERR_DBGF_BP_L2_LOOKUP_FAILED;
@@ -166,11 +165,12 @@ static int dbgfRZBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
         if (idxL2Next == DBGF_BP_L2_ENTRY_IDX_END)
             return VINF_EM_RAW_GUEST_TRAP;
 
-        pL2Entry = dbgfRZBpL2GetByIdx(pVM, idxL2Next);
+        pL2Entry = dbgfR0BpL2GetByIdx(pVM, idxL2Next);
     }
 
     return VERR_DBGF_BP_L2_LOOKUP_FAILED;
 }
+# endif /* !IN_RING0 */
 #endif /* !VBOX_WITH_LOTS_OF_DBGF_BPS */
 
 
@@ -187,7 +187,7 @@ static int dbgfRZBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
  * @param   uDr6            The DR6 hypervisor register value.
  * @param   fAltStepping    Alternative stepping indicator.
  */
-VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6, bool fAltStepping)
+VMM_INT_DECL(int) DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6, bool fAltStepping)
 {
     /** @todo Intel docs say that X86_DR6_BS has the highest priority... */
     RT_NOREF(pRegFrame);
@@ -255,7 +255,7 @@ VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */
-VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(int) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame)
 {
 #ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     /*
@@ -289,6 +289,9 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE 
         }
     }
 #else
+#ifndef IN_RING0
+# error "Todo"
+#endif
     if (pVM->dbgfr0.s.CTX_SUFF(paBpLocL1))
     {
         RTGCPTR GCPtrBp;
@@ -316,15 +319,15 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE 
                     && DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3)
                 {
                     if (pBp->Pub.u.Int3.GCPtr == (RTGCUINTPTR)GCPtrBp)
-                        rc = dbgfRZBpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0);
+                        rc = dbgfR0BpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0);
                     /* else: Genuine guest trap. */
                 }
                 else /* Invalid breakpoint handle or not an int3 breakpoint. */
                     rc = VERR_DBGF_BP_L1_LOOKUP_FAILED;
             }
             else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
-                rc = dbgfRZBpL2Walk(pVM, pVCpu, pRegFrame, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32L1Entry),
-                                    DBGF_BP_INT3_L2_KEY_EXTRACT_FROM_ADDR((RTGCUINTPTR)GCPtrBp));
+                rc = dbgfBpL2Walk(pVM, pVCpu, pRegFrame, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32L1Entry),
+                                  DBGF_BP_INT3_L2_KEY_EXTRACT_FROM_ADDR((RTGCUINTPTR)GCPtrBp));
             else /* Some invalid type. */
                 rc = VERR_DBGF_BP_L1_LOOKUP_FAILED;
         }
