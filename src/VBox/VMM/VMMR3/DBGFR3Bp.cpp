@@ -943,6 +943,8 @@ static int dbgfR3BpInt3L2BstCreate(PUVM pUVM, uint32_t idxL1, uint32_t u32EntryO
  */
 static int dbgfR3BpInt2L2BstNodeInsert(PUVM pUVM, uint32_t idxL2Root, DBGFBP hBp, RTGCUINTPTR GCPtr)
 {
+    GCPtr = DBGF_BP_INT3_L2_KEY_EXTRACT_FROM_ADDR(GCPtr);
+
     /* Allocate a new node first. */
     uint32_t idxL2Nd = 0;
     PDBGFBPL2ENTRY pL2Nd = NULL;
@@ -1021,6 +1023,138 @@ static int dbgfR3BpInt3L2BstNodeAdd(PUVM pUVM, uint32_t idxL1, DBGFBP hBp, RTGCU
 
 
 /**
+ * Gets the leftmost from the given tree node start index.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idxL2Start          The start index to walk from.
+ * @param   pidxL2Leftmost      Where to store the L2 table index of the leftmost entry.
+ * @param   ppL2NdLeftmost      Where to store the pointer to the leftmost L2 table entry.
+ * @param   pidxL2NdLeftParent  Where to store the L2 table index of the leftmost entries parent.
+ * @param   ppL2NdLeftParent    Where to store the pointer to the leftmost L2 table entries parent.
+ */
+static int dbgfR33BpInt3BstGetLeftmostEntryFromNode(PUVM pUVM, uint32_t idxL2Start,
+                                                    uint32_t *pidxL2Leftmost, PDBGFBPL2ENTRY *ppL2NdLeftmost,
+                                                    uint32_t *pidxL2NdLeftParent, PDBGFBPL2ENTRY *ppL2NdLeftParent)
+{
+    uint32_t idxL2Parent = DBGF_BP_L2_ENTRY_IDX_END;
+    PDBGFBPL2ENTRY pL2NdParent = NULL;
+
+    for (;;)
+    {
+        PDBGFBPL2ENTRY pL2Entry = dbgfR3BpL2GetByIdx(pUVM, idxL2Start);
+        AssertPtr(pL2Entry);
+
+        uint32_t idxL2Left = DBGF_BP_L2_ENTRY_GET_IDX_LEFT(pL2Entry->u64LeftRightIdxDepthBpHnd2);
+        if (idxL2Start == DBGF_BP_L2_ENTRY_IDX_END)
+        {
+            *pidxL2Leftmost     = idxL2Start;
+            *ppL2NdLeftmost     = pL2Entry;
+            *pidxL2NdLeftParent = idxL2Parent;
+            *ppL2NdLeftParent   = pL2NdParent;
+            break;
+        }
+
+        idxL2Parent = idxL2Start;
+        idxL2Start  = idxL2Left;
+        pL2NdParent = pL2Entry;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Removes the given node rearranging the tree.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idxL1               The index into the L1 table pointing to the binary search tree containing the node.
+ * @param   idxL2Root           The L2 table index where the tree root is located.
+ * @param   idxL2Nd             The node index to remove.
+ * @param   pL2Nd               The L2 table entry to remove.
+ * @param   idxL2NdParent       The parents index, can be DBGF_BP_L2_ENTRY_IDX_END if the root is about to be removed.
+ * @param   pL2NdParent         The parents L2 table entry, can be NULL if the root is about to be removed.
+ * @param   fLeftChild          Flag whether the node is the left child of the parent or the right one.
+ */
+static int dbgfR3BpInt3BstNodeRemove(PUVM pUVM, uint32_t idxL1, uint32_t idxL2Root,
+                                     uint32_t idxL2Nd, PDBGFBPL2ENTRY pL2Nd,
+                                     uint32_t idxL2NdParent, PDBGFBPL2ENTRY pL2NdParent,
+                                     bool fLeftChild)
+{
+    /*
+     * If there are only two nodes remaining the tree will get destroyed and the
+     * L1 entry will be converted to the direct handle type.
+     */
+    uint32_t idxL2Left  = DBGF_BP_L2_ENTRY_GET_IDX_LEFT(pL2Nd->u64LeftRightIdxDepthBpHnd2);
+    uint32_t idxL2Right = DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(pL2Nd->u64LeftRightIdxDepthBpHnd2);
+
+    Assert(idxL2NdParent != DBGF_BP_L2_ENTRY_IDX_END || !pL2NdParent);
+    uint32_t idxL2ParentNew = DBGF_BP_L2_ENTRY_IDX_END;
+    if (idxL2Right == DBGF_BP_L2_ENTRY_IDX_END)
+        idxL2ParentNew = idxL2Left;
+    else
+    {
+        /* Find the leftmost entry of the right subtree and move it to the to be removed nodes location in the tree. */
+        PDBGFBPL2ENTRY pL2NdLeftmostParent   = NULL;
+        PDBGFBPL2ENTRY pL2NdLeftmost         = NULL;
+        uint32_t idxL2NdLeftmostParent = DBGF_BP_L2_ENTRY_IDX_END;
+        uint32_t idxL2Leftmost = DBGF_BP_L2_ENTRY_IDX_END;
+        int rc = dbgfR33BpInt3BstGetLeftmostEntryFromNode(pUVM, idxL2Right, &idxL2Leftmost ,&pL2NdLeftmost,
+                                                          &idxL2NdLeftmostParent, &pL2NdLeftmostParent);
+        AssertRCReturn(rc, rc);
+
+        if (pL2NdLeftmostParent)
+        {
+            /* Rearrange the leftmost entries parents pointer. */
+            dbgfBpL2TblEntryUpdateLeft(pL2NdLeftmostParent, DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(pL2NdLeftmost->u64LeftRightIdxDepthBpHnd2), 0 /*iDepth*/);
+            dbgfBpL2TblEntryUpdateRight(pL2NdLeftmost, idxL2Right, 0 /*iDepth*/);
+        }
+
+        dbgfBpL2TblEntryUpdateLeft(pL2NdLeftmost, idxL2Left, 0 /*iDepth*/);
+
+        /* Update the remove nodes parent to point to the new node. */
+        idxL2ParentNew = idxL2Leftmost;
+    }
+
+    if (pL2NdParent)
+    {
+        /* Asssign the new L2 index to proper parents left or right pointer. */
+        if (fLeftChild)
+            dbgfBpL2TblEntryUpdateLeft(pL2NdParent, idxL2ParentNew, 0 /*iDepth*/);
+        else
+            dbgfBpL2TblEntryUpdateRight(pL2NdParent, idxL2ParentNew, 0 /*iDepth*/);
+    }
+    else
+    {
+        /* The root node is removed, set the new root in the L1 table. */
+        Assert(idxL2ParentNew != DBGF_BP_L2_ENTRY_IDX_END);
+        idxL2Root = idxL2ParentNew;
+        ASMAtomicXchgU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1], DBGF_BP_INT3_L1_ENTRY_CREATE_L2_IDX(idxL2Left));
+    }
+
+    /* Free the node. */
+    dbgfR3BpL2TblEntryFree(pUVM, idxL2Nd, pL2Nd);
+
+    /*
+     * Check whether the old/new root is the only node remaining and convert the L1
+     * table entry to a direct breakpoint handle one in that case.
+     */
+    pL2Nd = dbgfR3BpL2GetByIdx(pUVM, idxL2Root);
+    AssertPtr(pL2Nd);
+    if (   DBGF_BP_L2_ENTRY_GET_IDX_LEFT(pL2Nd->u64LeftRightIdxDepthBpHnd2) == DBGF_BP_L2_ENTRY_IDX_END
+        && DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(pL2Nd->u64LeftRightIdxDepthBpHnd2) == DBGF_BP_L2_ENTRY_IDX_END)
+    {
+        DBGFBP hBp = DBGF_BP_L2_ENTRY_GET_BP_HND(pL2Nd->u64GCPtrKeyAndBpHnd1, pL2Nd->u64LeftRightIdxDepthBpHnd2);
+        dbgfR3BpL2TblEntryFree(pUVM, idxL2Root, pL2Nd);
+        ASMAtomicXchgU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1], DBGF_BP_INT3_L1_ENTRY_CREATE_BP_HND(hBp));
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Removes the given breakpoint handle keyed with the GC pointer from the L2 binary search tree
  * pointed to by the given L2 root index.
  *
@@ -1031,11 +1165,48 @@ static int dbgfR3BpInt3L2BstNodeAdd(PUVM pUVM, uint32_t idxL1, DBGFBP hBp, RTGCU
  * @param   hBp                 The breakpoint handle which is to be removed.
  * @param   GCPtr               The GC pointer the breakpoint is keyed with.
  */
-static int dbgfR3BpInt2L2BstNodeRemove(PUVM pUVM, uint32_t idxL1, uint32_t idxL2Root, DBGFBP hBp, RTGCUINTPTR GCPtr)
+static int dbgfR3BpInt3L2BstRemove(PUVM pUVM, uint32_t idxL1, uint32_t idxL2Root, DBGFBP hBp, RTGCUINTPTR GCPtr)
 {
+    GCPtr = DBGF_BP_INT3_L2_KEY_EXTRACT_FROM_ADDR(GCPtr);
+
     int rc = RTSemFastMutexRequest(pUVM->dbgf.s.hMtxBpL2Wr); AssertRC(rc);
 
-    RT_NOREF(idxL1, idxL2Root, hBp, GCPtr);
+    uint32_t idxL2Cur = idxL2Root;
+    uint32_t idxL2Parent = DBGF_BP_L2_ENTRY_IDX_END;
+    bool fLeftChild = false;
+    PDBGFBPL2ENTRY pL2EntryParent = NULL;
+    for (;;)
+    {
+        PDBGFBPL2ENTRY pL2Entry = dbgfR3BpL2GetByIdx(pUVM, idxL2Cur);
+        AssertPtr(pL2Entry);
+
+        /* Check whether this node is to be removed.. */
+        RTGCUINTPTR GCPtrL2Entry = DBGF_BP_L2_ENTRY_GET_GCPTR(pL2Entry->u64GCPtrKeyAndBpHnd1);
+        if (GCPtrL2Entry == GCPtr)
+        {
+            Assert(DBGF_BP_L2_ENTRY_GET_BP_HND(pL2Entry->u64GCPtrKeyAndBpHnd1, pL2Entry->u64LeftRightIdxDepthBpHnd2) == hBp);
+
+            rc = dbgfR3BpInt3BstNodeRemove(pUVM, idxL1, idxL2Root, idxL2Cur, pL2Entry,
+                                           idxL2Parent, pL2EntryParent, fLeftChild);
+            break;
+        }
+
+        pL2EntryParent = pL2Entry;
+        idxL2Parent    = idxL2Cur;
+
+        if (GCPtrL2Entry < GCPtr)
+        {
+            fLeftChild = true;
+            idxL2Cur = DBGF_BP_L2_ENTRY_GET_IDX_LEFT(pL2Entry->u64LeftRightIdxDepthBpHnd2);
+        }
+        else
+        {
+            fLeftChild = false;
+            idxL2Cur = DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(pL2Entry->u64LeftRightIdxDepthBpHnd2);
+        }
+
+        AssertBreakStmt(idxL2Cur != DBGF_BP_L2_ENTRY_IDX_END, rc = VERR_DBGF_BP_L2_LOOKUP_FAILED);
+    }
 
     int rc2 = RTSemFastMutexRelease(pUVM->dbgf.s.hMtxBpL2Wr); AssertRC(rc2);
 
@@ -1131,13 +1302,13 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpInt3RemoveEmtWorker(PVM pVM, PVMCPU pV
                 u32Entry = ASMAtomicReadU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1]);
                 AssertReturn(DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry) == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX, VERR_DBGF_BP_IPE_9);
 
-                rc = dbgfR3BpInt2L2BstNodeRemove(pUVM, idxL1, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32Entry),
-                                                 hBp, pBp->Pub.u.Int3.GCPtr);
+                rc = dbgfR3BpInt3L2BstRemove(pUVM, idxL1, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32Entry),
+                                             hBp, pBp->Pub.u.Int3.GCPtr);
             }
         }
         else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
-            rc = dbgfR3BpInt2L2BstNodeRemove(pUVM, idxL1, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32Entry),
-                                             hBp, pBp->Pub.u.Int3.GCPtr);
+            rc = dbgfR3BpInt3L2BstRemove(pUVM, idxL1, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32Entry),
+                                         hBp, pBp->Pub.u.Int3.GCPtr);
     }
 
     return rc;
