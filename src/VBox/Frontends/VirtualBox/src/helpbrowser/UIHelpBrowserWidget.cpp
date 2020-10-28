@@ -121,7 +121,8 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pIndexWidget(0)
     , m_pContentModel(0)
     , m_pBookmarksWidget(0)
-    , m_pShowHideTabWidgetAction(0)
+    , m_pShowHideSideBarAction(0)
+    , m_pShowHideToolBarAction(0)
     , m_pHomeAction(0)
     , m_pForwardAction(0)
     , m_pBackwardAction(0)
@@ -164,10 +165,17 @@ void UIHelpBrowserWidget::prepare()
 
 void UIHelpBrowserWidget::prepareActions()
 {
-    m_pShowHideTabWidgetAction = new QAction(this);
-    m_pShowHideTabWidgetAction->setCheckable(true);
-    m_pShowHideTabWidgetAction->setChecked(true);
-    connect(m_pShowHideTabWidgetAction, &QAction::toggled, this, &UIHelpBrowserWidget::sltHandleTabVisibility);
+    m_pShowHideSideBarAction = new QAction(this);
+    m_pShowHideSideBarAction->setCheckable(true);
+    m_pShowHideSideBarAction->setChecked(true);
+    connect(m_pShowHideSideBarAction, &QAction::toggled, this, &UIHelpBrowserWidget::sltHandleSideBarVisibility);
+
+    m_pShowHideToolBarAction = new QAction(this);
+    m_pShowHideToolBarAction->setCheckable(true);
+    m_pShowHideToolBarAction->setChecked(true);
+    connect(m_pShowHideToolBarAction, &QAction::toggled, this, &UIHelpBrowserWidget::sltHandleToolBarVisibility);
+
+
     m_pHomeAction =
         new QAction(UIIconPool::iconSet(":/help_browser_home_32px.png"), QString(), this);
     connect(m_pHomeAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltHandleHomeAction);
@@ -274,7 +282,9 @@ void UIHelpBrowserWidget::prepareMenu()
     m_pMenu = new QMenu(tr("View"), this);
     AssertReturnVoid(m_pMenu);
 
-    m_pMenu->addAction(m_pShowHideTabWidgetAction);
+    m_pMenu->addAction(m_pShowHideSideBarAction);
+    m_pMenu->addAction(m_pShowHideToolBarAction);
+
 }
 
 void UIHelpBrowserWidget::loadOptions()
@@ -328,8 +338,11 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pTabWidget->setTabText(HelpBrowserTabs_Index, tr("Index"));
         m_pTabWidget->setTabText(HelpBrowserTabs_Bookmarks, tr("Bookmarks"));
     }
-    if (m_pShowHideTabWidgetAction)
-        m_pShowHideTabWidgetAction->setText(tr("Show/Hide Tabs Widget"));
+    if (m_pShowHideSideBarAction)
+        m_pShowHideSideBarAction->setText(tr("Show/Hide Side Bar"));
+
+    if (m_pShowHideToolBarAction)
+        m_pShowHideToolBarAction->setText(tr("Show/Hide Tool Bar"));
 
     m_strPageNotFoundText = tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>");
 
@@ -373,11 +386,16 @@ void UIHelpBrowserWidget::keyPressEvent(QKeyEvent *pEvent)
    QWidget::keyPressEvent(pEvent);
 }
 
-void UIHelpBrowserWidget::sltHandleTabVisibility(bool fToggled)
+void UIHelpBrowserWidget::sltHandleSideBarVisibility(bool fToggled)
 {
-    if (!m_pTabWidget)
-        return;
-    m_pTabWidget->setVisible(fToggled);
+    if (m_pTabWidget)
+        m_pTabWidget->setVisible(fToggled);
+}
+
+void UIHelpBrowserWidget::sltHandleToolBarVisibility(bool fToggled)
+{
+    if (m_pToolBar)
+        m_pToolBar->setVisible(fToggled);
 }
 
 QUrl UIHelpBrowserWidget::findIndexHtml() const

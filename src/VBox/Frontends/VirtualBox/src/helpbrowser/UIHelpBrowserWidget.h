@@ -79,7 +79,8 @@ private slots:
 
     void sltHandleHelpEngineSetupFinished();
     void sltHandleContentWidgetItemClicked(const QModelIndex &index);
-    void sltHandleTabVisibility(bool togggled);
+    void sltHandleSideBarVisibility(bool togggled);
+    void sltHandleToolBarVisibility(bool togggled);
     void sltHandleHelpBrowserViewerSourceChange(const QUrl &source);
     void sltHandleContentsCreated();
     void sltHandleHomeAction();
@@ -141,7 +142,8 @@ private:
     QHelpIndexWidget    *m_pIndexWidget;
     QHelpContentModel   *m_pContentModel;
     QWidget             *m_pBookmarksWidget;
-    QAction             *m_pShowHideTabWidgetAction;
+    QAction             *m_pShowHideSideBarAction;
+    QAction             *m_pShowHideToolBarAction;
     QAction             *m_pHomeAction;
     QAction             *m_pForwardAction;
     QAction             *m_pBackwardAction;
