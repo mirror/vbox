@@ -330,20 +330,30 @@
 #define VINF_DBGF_BP_HALT                   (1224)
 /** The breakpoint owner handle is still used by one or more breakpoints. */
 #define VERR_DBGF_OWNER_BUSY                (-1225)
-/** Internal processing error \#1 in the DBGF breakpoint manager code. */
-#define VERR_DBGF_BP_IPE_1                  (-1226)
-/** Internal processing error \#2 in the DBGF breakpoint manager code. */
-#define VERR_DBGF_BP_IPE_2                  (-1227)
-/** Internal processing error \#3 in the DBGF breakpoint manager code. */
-#define VERR_DBGF_BP_IPE_3                  (-1228)
-/** Internal processing error \#4 in the DBGF breakpoint manager code. */
-#define VERR_DBGF_BP_IPE_4                  (-1229)
-/** Internal processing error \#5 in the DBGF breakpoint manager code. */
-#define VERR_DBGF_BP_IPE_5                  (-1230)
-/** Internal processing error \#6 in the DBGF breakpoint manager code. */
-#define VERR_DBGF_BP_IPE_6                  (-1231)
 /** Number of tries to add an int3 breakpoint table to the lookup tables reached. */
-#define VERR_DBGF_BP_INT3_ADD_TRIES_REACHED (-1232)
+#define VERR_DBGF_BP_INT3_ADD_TRIES_REACHED (-1226)
+/** Internal processing error \#1 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_1                  (-1227)
+/** Internal processing error \#2 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_2                  (-1228)
+/** Internal processing error \#3 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_3                  (-1229)
+/** Internal processing error \#4 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_4                  (-1230)
+/** Internal processing error \#5 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_5                  (-1231)
+/** Internal processing error \#6 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_6                  (-1232)
+/** Internal processing error \#7 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_7                  (-1233)
+/** Internal processing error \#8 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_8                  (-1234)
+/** Internal processing error \#9 in the DBGF breakpoint manager code. */
+#define VERR_DBGF_BP_IPE_9                  (-1235)
+/** Level 2 lookup failed because the L1 lookup table is corrupted. */
+#define VERR_DBGF_BP_L1_LOOKUP_FAILED       (-1236)
+/** Level 2 lookup failed because the L2 lookup table is corrupted. */
+#define VERR_DBGF_BP_L2_LOOKUP_FAILED       (-1237)
 /** @} */
 
 

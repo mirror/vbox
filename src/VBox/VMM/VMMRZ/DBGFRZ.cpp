@@ -245,6 +245,89 @@ DECLINLINE(int) dbgfRZBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
          ? VINF_EM_DBG_HYPER_BREAKPOINT
          : VINF_EM_DBG_BREAKPOINT;
 }
+
+
+/**
+ * Returns the pointer to the L2 table entry from the given index.
+ *
+ * @returns Current context pointer to the L2 table entry or NULL if the provided index value is invalid.
+ * @param   pVM         The cross context VM structure.
+ * @param   idxL2       The L2 table index to resolve.
+ *
+ * @note The content of the resolved L2 table entry is not validated!.
+ */
+DECLINLINE(PCDBGFBPL2ENTRY) dbgfRZBpL2GetByIdx(PVMCC pVM, uint32_t idxL2)
+{
+    uint32_t idChunk  = DBGF_BP_L2_IDX_GET_CHUNK_ID(idxL2);
+    uint32_t idxEntry = DBGF_BP_L2_IDX_GET_ENTRY(idxL2);
+
+    AssertReturn(idChunk < DBGF_BP_L2_TBL_CHUNK_COUNT, NULL);
+    AssertReturn(idxEntry < DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK, NULL);
+
+    PDBGFBPL2TBLCHUNKR0 pL2Chunk = &pVM->dbgfr0.s.aBpL2TblChunks[idChunk];
+    AssertPtrReturn(pL2Chunk->paBpL2TblBaseSharedR0, NULL);
+
+    return &pL2Chunk->CTX_SUFF(paBpL2TblBaseShared)[idxEntry];
+}
+
+
+/**
+ * Walks the L2 table starting at the given root index searching for the given key.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pRegFrame   Pointer to the register frame for the trap.
+ * @param   fInHyper    Flag whether the breakpoint triggered in hypervisor code.
+ * @param   idxL2Root   L2 table index of the table root.
+ * @param   GCPtrKey    The key to search for.
+ */
+static int dbgfRZBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, bool fInHyper,
+                          uint32_t idxL2Root, RTGCUINTPTR GCPtrKey)
+{
+    /** @todo We don't use the depth right now but abort the walking after a fixed amount of levels. */
+    uint8_t iDepth = 32;
+    PCDBGFBPL2ENTRY pL2Entry = dbgfRZBpL2GetByIdx(pVM, idxL2Root);
+
+    while (RT_LIKELY(   iDepth-- > 0
+                     && pL2Entry))
+    {
+        /* Make a copy of the entry before verification. */
+        DBGFBPL2ENTRY L2Entry;
+        L2Entry.u64GCPtrKeyAndBpHnd1       = ASMAtomicReadU64((volatile uint64_t *)&pL2Entry->u64GCPtrKeyAndBpHnd1);
+        L2Entry.u64LeftRightIdxDepthBpHnd2 = ASMAtomicReadU64((volatile uint64_t *)&pL2Entry->u64LeftRightIdxDepthBpHnd2);
+
+        RTGCUINTPTR GCPtrL2Entry = DBGF_BP_L2_ENTRY_GET_GCPTR(L2Entry.u64GCPtrKeyAndBpHnd1);
+        if (GCPtrKey == GCPtrL2Entry)
+        {
+            DBGFBP hBp = DBGF_BP_L2_ENTRY_GET_BP_HND(L2Entry.u64GCPtrKeyAndBpHnd1, L2Entry.u64LeftRightIdxDepthBpHnd2);
+
+            /* Query the internal breakpoint state from the handle. */
+            PDBGFBPINTR0 pBpR0 = NULL;
+            PDBGFBPINT pBp = dbgfR0BpGetByHnd(pVM, hBp, &pBpR0);
+            if (   pBp
+                && DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3)
+                return dbgfRZBpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0, fInHyper);
+
+            /* The entry got corrupted, just abort. */
+            return VERR_DBGF_BP_L2_LOOKUP_FAILED;
+        }
+
+        /* Not found, get to the next level. */
+        uint32_t idxL2Next =   (GCPtrKey < GCPtrL2Entry)
+                             ? DBGF_BP_L2_ENTRY_GET_IDX_LEFT(L2Entry.u64LeftRightIdxDepthBpHnd2)
+                             : DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(L2Entry.u64LeftRightIdxDepthBpHnd2);
+        /* It is genuine guest trap or we hit some assertion if we are at the end. */
+        if (idxL2Next == DBGF_BP_L2_ENTRY_IDX_END)
+            return fInHyper
+                 ? VINF_EM_DBG_HYPER_ASSERTION
+                 : VINF_EM_RAW_GUEST_TRAP;
+
+        pL2Entry = dbgfRZBpL2GetByIdx(pVM, idxL2Next);
+    }
+
+    return VERR_DBGF_BP_L2_LOOKUP_FAILED;
+}
 #endif /* !VBOX_WITH_LOTS_OF_DBGF_BPS */
 
 /**
@@ -341,13 +424,15 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE 
                         return dbgfRZBpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0, fInHyper);
                     /* else Genuine guest trap. */
                 }
-                /** @todo else Guru meditation */
+
+                return VERR_DBGF_BP_L1_LOOKUP_FAILED;
             }
             else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
-            {
-                /** @todo Walk the L2 tree searching for the correct spot. */
-            }
-            /** @todo else Guru meditation */
+                return dbgfRZBpL2Walk(pVM, pVCpu, pRegFrame, fInHyper, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32L1Entry),
+                                      DBGF_BP_INT3_L2_KEY_EXTRACT_FROM_ADDR((RTGCUINTPTR)GCPtrBp));
+
+            /* Some invalid type. */
+            return VERR_DBGF_BP_L1_LOOKUP_FAILED;
         }
     }
 #endif /* !VBOX_WITH_LOTS_OF_DBGF_BPS */

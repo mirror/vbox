@@ -955,6 +955,9 @@ typedef DBGFBPL2ENTRY *PDBGFBPL2ENTRY;
 /** Pointer to a const L2 lookup table entry. */
 typedef const DBGFBPL2ENTRY *PCDBGFBPL2ENTRY;
 
+/** Extracts the part from the given GC pointer used as the key in the L2 binary search tree. */
+#define DBGF_BP_INT3_L2_KEY_EXTRACT_FROM_ADDR(a_GCPtr)  ((uint64_t)((a_GCPtr) >> 16))
+
 /** An invalid breakpoint chunk ID. */
 #define DBGF_BP_L2_IDX_CHUNK_ID_INVALID             UINT32_MAX
 /** Generates a unique breakpoint handle from the given chunk ID and entry inside the chunk. */
@@ -966,15 +969,39 @@ typedef const DBGFBPL2ENTRY *PCDBGFBPL2ENTRY;
 
 /** Number of bits for the left/right index pointers. */
 #define DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_BITS            22
+/** Special index value marking the end of a tree. */
+#define DBGF_BP_L2_ENTRY_IDX_END                        UINT32_C(0x3fffff)
+/** Number of bits to shift the breakpoint handle in the first part. */
+#define DBGF_BP_L2_ENTRY_BP_1ST_SHIFT                   48
+/** Mask for the first part of the breakpoint handle. */
+#define DBGF_BP_L2_ENTRY_BP_1ST_MASK                    UINT32_C(0x0000ffff)
+/** Number of bits to shift the breakpoint handle in the second part. */
+#define DBGF_BP_L2_ENTRY_BP_2ND_SHIFT                   52
+/** Mask for the second part of the breakpoint handle. */
+#define DBGF_BP_L2_ENTRY_BP_2ND_MASK                    UINT32_C(0x0fff0000)
+/** Mask for the second part of the breakpoint handle stored in the L2 entry. */
+#define DBGF_BP_L2_ENTRY_BP_2ND_L2_ENTRY_MASK           UINT64_C(0xfff0000000000000)
+/** Number of bits to shift the depth in the second part. */
+#define DBGF_BP_L2_ENTRY_DEPTH_SHIFT                    44
+/** Mask for the depth. */
+#define DBGF_BP_L2_ENTRY_DEPTH_MASK                     UINT8_MAX
+/** Number of bits to shift the right L2 index in the second part. */
+#define DBGF_BP_L2_ENTRY_RIGHT_IDX_SHIFT                22
+/** Number of bits to shift the left L2 index in the second part. */
+#define DBGF_BP_L2_ENTRY_LEFT_IDX_SHIFT                 0
 /** Index mask. */
 #define DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_MASK            (RT_BIT_32(DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_BITS) - 1)
+/** Left index mask. */
+#define DBGF_BP_L2_ENTRY_LEFT_IDX_MASK                  (DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_MASK << DBGF_BP_L2_ENTRY_LEFT_IDX_SHIFT)
+/** Right index mask. */
+#define DBGF_BP_L2_ENTRY_RIGHT_IDX_MASK                 (DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_MASK << DBGF_BP_L2_ENTRY_RIGHT_IDX_SHIFT)
 /** Returns the upper 6 bytes of the GC pointer from the given breakpoint entry. */
 #define DBGF_BP_L2_ENTRY_GET_GCPTR(a_u64GCPtrKeyAndBpHnd1) ((a_u64GCPtrKeyAndBpHnd1) & UINT64_C(0x0000ffffffffffff))
 /** Returns the breakpoint handle from both L2 entry members. */
 #define DBGF_BP_L2_ENTRY_GET_BP_HND(a_u64GCPtrKeyAndBpHnd1, a_u64LeftRightIdxDepthBpHnd2) \
-    ((DBGFBP)(((a_u64GCPtrKeyAndBpHnd1) >> 48) | (((a_u64LeftRightIdxDepthBpHnd2) >> 52) << 16)))
+    ((DBGFBP)(((a_u64GCPtrKeyAndBpHnd1) >> DBGF_BP_L2_ENTRY_BP_1ST_SHIFT) | (((a_u64LeftRightIdxDepthBpHnd2) >> DBGF_BP_L2_ENTRY_BP_2ND_SHIFT) << 16)))
 /** Extracts the depth of the second 64bit L2 entry value. */
-#define DBGF_BP_L2_ENTRY_GET_DEPTH(a_u64LeftRightIdxDepthBpHnd2) ((uint8_t)(((a_u64LeftRightIdxDepthBpHnd2) >> 44) & UINT8_MAX))
+#define DBGF_BP_L2_ENTRY_GET_DEPTH(a_u64LeftRightIdxDepthBpHnd2) ((uint8_t)(((a_u64LeftRightIdxDepthBpHnd2) >> DBGF_BP_L2_ENTRY_DEPTH_SHIFT) & DBGF_BP_L2_ENTRY_DEPTH_MASK))
 /** Extracts the lower right index value from the L2 entry value. */
 #define DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(a_u64LeftRightIdxDepthBpHnd2) \
     ((uint32_t)(((a_u64LeftRightIdxDepthBpHnd2) >> 22) & DBGF_BP_L2_ENTRY_LEFT_RIGHT_IDX_MASK))

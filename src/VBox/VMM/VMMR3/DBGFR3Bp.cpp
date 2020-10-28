@@ -156,6 +156,8 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 
+#include "DBGFInline.h"
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -854,6 +856,194 @@ static int dbgfR3BpRegRemove(PVM pVM, DBGFBP hBp, PDBGFBPINT pBp)
 
 
 /**
+ * Returns the pointer to the L2 table entry from the given index.
+ *
+ * @returns Current context pointer to the L2 table entry or NULL if the provided index value is invalid.
+ * @param   pUVM        The user mode VM handle.
+ * @param   idxL2       The L2 table index to resolve.
+ *
+ * @note The content of the resolved L2 table entry is not validated!.
+ */
+DECLINLINE(PDBGFBPL2ENTRY) dbgfR3BpL2GetByIdx(PUVM pUVM, uint32_t idxL2)
+{
+    uint32_t idChunk  = DBGF_BP_L2_IDX_GET_CHUNK_ID(idxL2);
+    uint32_t idxEntry = DBGF_BP_L2_IDX_GET_ENTRY(idxL2);
+
+    AssertReturn(idChunk < DBGF_BP_L2_TBL_CHUNK_COUNT, NULL);
+    AssertReturn(idxEntry < DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK, NULL);
+
+    PDBGFBPL2TBLCHUNKR3 pL2Chunk = &pUVM->dbgf.s.aBpL2TblChunks[idChunk];
+    AssertPtrReturn(pL2Chunk->pbmAlloc, NULL);
+    AssertReturn(ASMBitTest(pL2Chunk->pbmAlloc, idxEntry), NULL);
+
+    return &pL2Chunk->CTX_SUFF(pL2Base)[idxEntry];
+}
+
+
+/**
+ * Creates a binary search tree with the given root and leaf nodes.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idxL1               The index into the L1 table where the created tree should be linked into.
+ * @param   u32EntryOld         The old entry in the L1 table used to compare with in the atomic update.
+ * @param   hBpRoot             The root node DBGF handle to assign.
+ * @param   GCPtrRoot           The root nodes GC pointer to use as a key.
+ * @param   hBpLeaf             The leafs node DBGF handle to assign.
+ * @param   GCPtrLeaf           The leafs node GC pointer to use as a key.
+ */
+static int dbgfR3BpInt3L2BstCreate(PUVM pUVM, uint32_t idxL1, uint32_t u32EntryOld,
+                                   DBGFBP hBpRoot, RTGCUINTPTR GCPtrRoot,
+                                   DBGFBP hBpLeaf, RTGCUINTPTR GCPtrLeaf)
+{
+    AssertReturn(GCPtrRoot != GCPtrLeaf, VERR_DBGF_BP_IPE_9);
+    Assert(DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(GCPtrRoot) == DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(GCPtrLeaf));
+
+    /* Allocate two nodes. */
+    uint32_t idxL2Root = 0;
+    PDBGFBPL2ENTRY pL2Root = NULL;
+    int rc = dbgfR3BpL2TblEntryAlloc(pUVM, &idxL2Root, &pL2Root);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t idxL2Leaf = 0;
+        PDBGFBPL2ENTRY pL2Leaf = NULL;
+        rc = dbgfR3BpL2TblEntryAlloc(pUVM, &idxL2Leaf, &pL2Leaf);
+        if (RT_SUCCESS(rc))
+        {
+            dbgfBpL2TblEntryInit(pL2Leaf, hBpLeaf, GCPtrLeaf, DBGF_BP_L2_ENTRY_IDX_END, DBGF_BP_L2_ENTRY_IDX_END, 0 /*iDepth*/);
+            if (GCPtrLeaf < GCPtrRoot)
+                dbgfBpL2TblEntryInit(pL2Root, hBpRoot, GCPtrRoot, idxL2Leaf, DBGF_BP_L2_ENTRY_IDX_END, 0 /*iDepth*/);
+            else
+                dbgfBpL2TblEntryInit(pL2Root, hBpRoot, GCPtrRoot, DBGF_BP_L2_ENTRY_IDX_END, idxL2Leaf, 0 /*iDepth*/);
+
+            uint32_t const u32Entry = DBGF_BP_INT3_L1_ENTRY_CREATE_L2_IDX(idxL2Root);
+            if (ASMAtomicCmpXchgU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1], u32Entry, u32EntryOld))
+                return VINF_SUCCESS;
+
+            /* The L1 entry has changed due to another thread racing us during insertion, free nodes and try again. */
+            rc = VINF_TRY_AGAIN;
+            dbgfR3BpL2TblEntryFree(pUVM, idxL2Leaf, pL2Leaf);
+        }
+
+        dbgfR3BpL2TblEntryFree(pUVM, idxL2Root, pL2Root);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Inserts the given breakpoint handle into an existing binary search tree.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idxL2Root           The index of the tree root in the L2 table.
+ * @param   hBpRoot             The node DBGF handle to insert.
+ * @param   GCPtrRoot           The nodes GC pointer to use as a key.
+ */
+static int dbgfR3BpInt2L2BstNodeInsert(PUVM pUVM, uint32_t idxL2Root, DBGFBP hBp, RTGCUINTPTR GCPtr)
+{
+    /* Allocate a new node first. */
+    uint32_t idxL2Nd = 0;
+    PDBGFBPL2ENTRY pL2Nd = NULL;
+    int rc = dbgfR3BpL2TblEntryAlloc(pUVM, &idxL2Nd, &pL2Nd);
+    if (RT_SUCCESS(rc))
+    {
+        /* Walk the tree and find the correct node to insert to. */
+        PDBGFBPL2ENTRY pL2Entry = dbgfR3BpL2GetByIdx(pUVM, idxL2Root);
+        while (RT_LIKELY(pL2Entry))
+        {
+            /* Make a copy of the entry. */
+            DBGFBPL2ENTRY L2Entry;
+            L2Entry.u64GCPtrKeyAndBpHnd1       = ASMAtomicReadU64((volatile uint64_t *)&pL2Entry->u64GCPtrKeyAndBpHnd1);
+            L2Entry.u64LeftRightIdxDepthBpHnd2 = ASMAtomicReadU64((volatile uint64_t *)&pL2Entry->u64LeftRightIdxDepthBpHnd2);
+
+            RTGCUINTPTR GCPtrL2Entry = DBGF_BP_L2_ENTRY_GET_GCPTR(L2Entry.u64GCPtrKeyAndBpHnd1);
+            AssertBreak(GCPtr != GCPtrL2Entry);
+
+            /* Not found, get to the next level. */
+            uint32_t idxL2Next =   (GCPtr < GCPtrL2Entry)
+                                 ? DBGF_BP_L2_ENTRY_GET_IDX_LEFT(L2Entry.u64LeftRightIdxDepthBpHnd2)
+                                 : DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(L2Entry.u64LeftRightIdxDepthBpHnd2);
+            if (idxL2Next == DBGF_BP_L2_ENTRY_IDX_END)
+            {
+                /* Insert the new node here. */
+                dbgfBpL2TblEntryInit(pL2Nd, hBp, GCPtr, DBGF_BP_L2_ENTRY_IDX_END, DBGF_BP_L2_ENTRY_IDX_END, 0 /*iDepth*/);
+                if (GCPtr < GCPtrL2Entry)
+                    dbgfBpL2TblEntryUpdateLeft(pL2Entry, idxL2Next, 0 /*iDepth*/);
+                else
+                    dbgfBpL2TblEntryUpdateRight(pL2Entry, idxL2Next, 0 /*iDepth*/);
+                return VINF_SUCCESS;
+            }
+
+            pL2Entry = dbgfR3BpL2GetByIdx(pUVM, idxL2Next);
+        }
+
+        rc = VERR_DBGF_BP_L2_LOOKUP_FAILED;
+        dbgfR3BpL2TblEntryFree(pUVM, idxL2Nd, pL2Nd);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Adds the given breakpoint handle keyed with the GC pointer to the proper L2 binary search tree
+ * possibly creating a new tree.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idxL1               The index into the L1 table the breakpoint uses.
+ * @param   hBp                 The breakpoint handle which is to be added.
+ * @param   GCPtr               The GC pointer the breakpoint is keyed with.
+ */
+static int dbgfR3BpInt3L2BstNodeAdd(PUVM pUVM, uint32_t idxL1, DBGFBP hBp, RTGCUINTPTR GCPtr)
+{
+    int rc = RTSemFastMutexRequest(pUVM->dbgf.s.hMtxBpL2Wr); AssertRC(rc);
+
+    uint32_t u32Entry = ASMAtomicReadU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1]); /* Re-read, could get raced by a remove operation. */
+    uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry);
+    if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND)
+    {
+        /* Create a new search tree, gather the necessary information first. */
+        DBGFBP hBp2 = DBGF_BP_INT3_L1_ENTRY_GET_BP_HND(u32Entry);
+        PDBGFBPINT pBp2 = dbgfR3BpGetByHnd(pUVM, hBp2);
+        AssertStmt(VALID_PTR(pBp2), rc = VERR_DBGF_BP_IPE_7);
+        if (RT_SUCCESS(rc))
+            rc = dbgfR3BpInt3L2BstCreate(pUVM, idxL1, u32Entry, hBp, GCPtr, hBp2, pBp2->Pub.u.Int3.GCPtr);
+    }
+    else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
+        rc = dbgfR3BpInt2L2BstNodeInsert(pUVM, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32Entry), hBp, GCPtr);
+
+    int rc2 = RTSemFastMutexRelease(pUVM->dbgf.s.hMtxBpL2Wr); AssertRC(rc2);
+    return rc;
+}
+
+
+/**
+ * Removes the given breakpoint handle keyed with the GC pointer from the L2 binary search tree
+ * pointed to by the given L2 root index.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idxL1               The index into the L1 table pointing to the binary search tree.
+ * @param   idxL2Root           The L2 table index where the tree root is located.
+ * @param   hBp                 The breakpoint handle which is to be removed.
+ * @param   GCPtr               The GC pointer the breakpoint is keyed with.
+ */
+static int dbgfR3BpInt2L2BstNodeRemove(PUVM pUVM, uint32_t idxL1, uint32_t idxL2Root, DBGFBP hBp, RTGCUINTPTR GCPtr)
+{
+    int rc = RTSemFastMutexRequest(pUVM->dbgf.s.hMtxBpL2Wr); AssertRC(rc);
+
+    RT_NOREF(idxL1, idxL2Root, hBp, GCPtr);
+
+    int rc2 = RTSemFastMutexRelease(pUVM->dbgf.s.hMtxBpL2Wr); AssertRC(rc2);
+
+    return rc;
+}
+
+
+/**
  * Adds the given int3 breakpoint to the appropriate lookup tables.
  *
  * @returns VBox status code.
@@ -885,27 +1075,70 @@ static int dbgfR3BpInt3Add(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
         }
         else
         {
-            uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry);
-            if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND)
-            {
-                /** @todo Allocate a new root entry and one leaf to accomodate for the two handles,
-                 * then replace the new entry. */
-                rc = VERR_NOT_IMPLEMENTED;
-                break;
-            }
-            else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
-            {
-                /** @todo Walk the L2 tree searching for the correct spot, add the new entry
-                 * and rebalance the tree. */
-                rc = VERR_NOT_IMPLEMENTED;
-                break;
-            }
+            rc = dbgfR3BpInt3L2BstNodeAdd(pUVM, idxL1, hBp, pBp->Pub.u.Int3.GCPtr);
+            if (rc == VINF_TRY_AGAIN)
+                continue;
+
+            break;
         }
     }
 
     if (   RT_SUCCESS(rc)
         && !cTries) /* Too much contention, abort with an error. */
         rc = VERR_DBGF_BP_INT3_ADD_TRIES_REACHED;
+
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpInt3RemoveEmtWorker(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    DBGFBP hBp = (DBGFBP)(uintptr_t)pvUser;
+
+    VMCPU_ASSERT_EMT(pVCpu);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    PUVM pUVM = pVM->pUVM;
+    PDBGFBPINT pBp = dbgfR3BpGetByHnd(pUVM, hBp);
+    AssertPtrReturn(pBp, VERR_DBGF_BP_IPE_8);
+
+    int rc = VINF_SUCCESS;
+    if (pVCpu->idCpu == 0)
+    {
+        uint16_t idxL1 = DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(pBp->Pub.u.Int3.GCPtr);
+        uint32_t u32Entry = ASMAtomicReadU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1]);
+        AssertReturn(u32Entry != DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, VERR_DBGF_BP_IPE_6);
+
+        uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry);
+        if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND)
+        {
+            /* Single breakpoint, just exchange atomically with the null value. */
+            if (!ASMAtomicCmpXchgU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1], DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, u32Entry))
+            {
+                /*
+                 * A breakpoint addition must have raced us converting the L1 entry to an L2 index type, re-read
+                 * and remove the node from the created binary search tree.
+                 *
+                 * This works because after the entry was converted to an L2 index it can only be converted back
+                 * to a direct handle by removing one or more nodes which always goes through the fast mutex
+                 * protecting the L2 table. Likewise adding a new breakpoint requires grabbing the mutex as well
+                 * so there is serialization here and the node can be removed safely without having to worry about
+                 * concurrent tree modifications.
+                 */
+                u32Entry = ASMAtomicReadU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1]);
+                AssertReturn(DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry) == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX, VERR_DBGF_BP_IPE_9);
+
+                rc = dbgfR3BpInt2L2BstNodeRemove(pUVM, idxL1, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32Entry),
+                                                 hBp, pBp->Pub.u.Int3.GCPtr);
+            }
+        }
+        else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
+            rc = dbgfR3BpInt2L2BstNodeRemove(pUVM, idxL1, DBGF_BP_INT3_L1_ENTRY_GET_L2_IDX(u32Entry),
+                                             hBp, pBp->Pub.u.Int3.GCPtr);
+    }
 
     return rc;
 }
@@ -923,33 +1156,11 @@ static int dbgfR3BpInt3Remove(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
     AssertReturn(DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3, VERR_DBGF_BP_IPE_3);
 
-    int rc = VINF_SUCCESS;
-    uint16_t idxL1 = DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(pBp->Pub.u.Int3.GCPtr);
-
-    for (;;)
-    {
-        uint32_t u32Entry = ASMAtomicReadU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1]);
-        AssertReturn(u32Entry != DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, VERR_DBGF_BP_IPE_6);
-
-        uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32Entry);
-        if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_BP_HND)
-        {
-            /* Single breakpoint, just exchange atomically with the null value. */
-            if (ASMAtomicCmpXchgU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1], DBGF_BP_INT3_L1_ENTRY_TYPE_NULL, u32Entry))
-                break;
-            break;
-        }
-        else if (u8Type == DBGF_BP_INT3_L1_ENTRY_TYPE_L2_IDX)
-        {
-            /** @todo Walk the L2 tree searching for the correct spot, remove the entry
-             * and rebalance the tree. */
-            RT_NOREF(hBp);
-            rc = VERR_NOT_IMPLEMENTED;
-            break;
-        }
-    }
-
-    return rc;
+    /*
+     * This has to be done by an EMT rendezvous in order to not have an EMT traversing
+     * any L2 trees while it is being removed.
+     */
+    return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpInt3RemoveEmtWorker, (void *)(uintptr_t)hBp);
 }
 
 
