@@ -83,7 +83,8 @@ enum UIChooserItemSearchFlag
     UIChooserItemSearchFlag_CloudProvider = RT_BIT(3),
     UIChooserItemSearchFlag_CloudProfile  = RT_BIT(4),
     UIChooserItemSearchFlag_ExactId       = RT_BIT(5),
-    UIChooserItemSearchFlag_ExactName     = RT_BIT(6)
+    UIChooserItemSearchFlag_ExactName     = RT_BIT(6),
+    UIChooserItemSearchFlag_FullName      = RT_BIT(7),
 };
 
 

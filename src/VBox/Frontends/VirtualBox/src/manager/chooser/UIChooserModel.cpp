@@ -480,7 +480,7 @@ UIChooserItem *UIChooserModel::searchItemByDefinition(const QString &strDefiniti
         /* Search for group-item with passed descriptor (name): */
         pItem = root()->searchForItem(strItemDescriptor,
                                       UIChooserItemSearchFlag_LocalGroup |
-                                      UIChooserItemSearchFlag_ExactId);
+                                      UIChooserItemSearchFlag_FullName);
     }
     /* Its a provider group-item definition? */
     else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Provider))
@@ -488,7 +488,7 @@ UIChooserItem *UIChooserModel::searchItemByDefinition(const QString &strDefiniti
         /* Search for group-item with passed descriptor (name): */
         pItem = root()->searchForItem(strItemDescriptor,
                                       UIChooserItemSearchFlag_CloudProvider |
-                                      UIChooserItemSearchFlag_ExactId);
+                                      UIChooserItemSearchFlag_FullName);
     }
     /* Its a profile group-item definition? */
     else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Profile))
@@ -496,7 +496,7 @@ UIChooserItem *UIChooserModel::searchItemByDefinition(const QString &strDefiniti
         /* Search for group-item with passed descriptor (name): */
         pItem = root()->searchForItem(strItemDescriptor,
                                       UIChooserItemSearchFlag_CloudProfile |
-                                      UIChooserItemSearchFlag_ExactId);
+                                      UIChooserItemSearchFlag_FullName);
     }
     /* Its a global-item definition? */
     else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Global))
@@ -801,7 +801,7 @@ void UIChooserModel::moveSelectedMachineItemsToGroupItem(const QString &strName 
         /* Search for existing group with certain name: */
         UIChooserItem *pTargetItem = root()->searchForItem(strName,
                                                            UIChooserItemSearchFlag_LocalGroup |
-                                                           UIChooserItemSearchFlag_ExactId);
+                                                           UIChooserItemSearchFlag_FullName);
         AssertPtrReturnVoid(pTargetItem);
         pTargetGroupItem = pTargetItem->toGroupItem();
         UIChooserNode *pTargetNode = pTargetItem->node();
