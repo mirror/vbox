@@ -36,6 +36,7 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
+class QHBoxLayout;
 class QVBoxLayout;
 class QHelpEngine;
 class QHelpContentModel;
@@ -47,6 +48,7 @@ class QITabWidget;
 class QIToolBar;
 class UIActionPool;
 class UIDialogPanel;
+class UIHelpBrowserAddressBar;
 class UIHelpBrowserViewer;
 
 class SHARED_LIBRARY_STUFF UIHelpBrowserWidget  : public QIWithRetranslateUI<QWidget>
@@ -88,6 +90,8 @@ private slots:
     void sltHandleBackwardAction();
     void sltHandleForwardAvailable(bool fAvailable);
     void sltHandleBackwardAvailable(bool fAvailable);
+    void sltHandleHistoryChanged();
+    void sltHandleAddressBarIndexChanged(int index);
 
 private:
 
@@ -125,6 +129,8 @@ private:
 
     /** Holds container for log-pages. */
     QVBoxLayout         *m_pMainLayout;
+    QHBoxLayout         *m_pTopLayout;
+
     QITabWidget *m_pTabWidget;
     /** @name Toolbar and menu variables.
       * @{ */
@@ -135,6 +141,7 @@ private:
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     QHelpEngine  *m_pHelpEngine;
 #endif
+    UIHelpBrowserAddressBar *m_pAddressBar;
     UIHelpBrowserViewer *m_pContentViewer;
     QSplitter           *m_pSplitter;
     QMenu               *m_pMenu;

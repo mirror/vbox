@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QDateTime>
 #include <QDir>
 #include <QFont>
@@ -27,6 +28,7 @@
 #endif
 #include <QMenu>
 #include <QScrollBar>
+#include <QSpacerItem>
 #include <QStyle>
 #include <QSplitter>
 #include <QTextBrowser>
@@ -59,6 +61,15 @@ enum HelpBrowserTabs
 };
 Q_DECLARE_METATYPE(HelpBrowserTabs);
 
+class UIHelpBrowserAddressBar : public QComboBox
+{
+    Q_OBJECT;
+
+public:
+    UIHelpBrowserAddressBar(QWidget *pParent = 0);
+
+};
+
 class UIHelpBrowserViewer : public QTextBrowser
 {
     Q_OBJECT;
@@ -67,6 +78,11 @@ public:
 
     UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent = 0);
     virtual QVariant loadResource(int type, const QUrl &name) /* override */;
+    void emitHistoryChangedSignal();
+
+public slots:
+
+    //virtual void setSource(const QUrl &name) /* override */;
 
 private:
 
@@ -74,6 +90,11 @@ private:
     const QHelpEngine* m_pHelpEngine;
 #endif
 };
+
+UIHelpBrowserAddressBar::UIHelpBrowserAddressBar(QWidget *pParent /* = 0 */)
+    :QComboBox(pParent)
+{
+}
 
 UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* = 0 */)
     :QTextBrowser(pParent)
@@ -98,6 +119,11 @@ QVariant UIHelpBrowserViewer::loadResource(int type, const QUrl &name)
 #endif
 }
 
+void UIHelpBrowserViewer::emitHistoryChangedSignal()
+{
+    emit historyChanged();
+    emit backwardAvailable(true);
+}
 
 UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
                                          const QString &strHelpFilePath,
@@ -108,12 +134,14 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_fShowToolbar(fShowToolbar)
     , m_fIsPolished(false)
     , m_pMainLayout(0)
+    , m_pTopLayout(0)
     , m_pTabWidget(0)
     , m_pToolBar(0)
     , m_strHelpFilePath(strHelpFilePath)
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
     , m_pHelpEngine(0)
 #endif
+    , m_pAddressBar(0)
     , m_pContentViewer(0)
     , m_pSplitter(0)
     , m_pMenu(0)
@@ -226,6 +254,8 @@ void UIHelpBrowserWidget::prepareWidgets()
         this, &UIHelpBrowserWidget::sltHandleBackwardAvailable);
     connect(m_pContentViewer, &UIHelpBrowserViewer::sourceChanged,
         this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::historyChanged,
+        this, &UIHelpBrowserWidget::sltHandleHistoryChanged);
 
     m_pSplitter->addWidget(m_pContentViewer);
 
@@ -248,9 +278,10 @@ void UIHelpBrowserWidget::prepareWidgets()
         m_pHelpEngine->setupData();
 #endif
 }
-
+#include <QPushButton>
 void UIHelpBrowserWidget::prepareToolBar()
 {
+    m_pTopLayout = new QHBoxLayout;
     /* Create toolbar: */
     m_pToolBar = new QIToolBar(parentWidget());
     if (m_pToolBar)
@@ -268,13 +299,22 @@ void UIHelpBrowserWidget::prepareToolBar()
         if (m_enmEmbedding == EmbedTo_Stack)
         {
             /* Add into layout: */
-            m_pMainLayout->addWidget(m_pToolBar);
+            m_pTopLayout->addWidget(m_pToolBar);
+            m_pMainLayout->addLayout(m_pTopLayout);
         }
 #else
         /* Add into layout: */
-        m_pMainLayout->addWidget(m_pToolBar);
+        m_pTopLayout->addWidget(m_pToolBar);
+        m_pMainLayout->addLayout(m_pTopLayout);
 #endif
     }
+    m_pAddressBar = new UIHelpBrowserAddressBar();
+    m_pAddressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_pTopLayout->addWidget(m_pAddressBar);
+    connect(m_pAddressBar, static_cast<void(UIHelpBrowserAddressBar::*)(int)>(&UIHelpBrowserAddressBar::currentIndexChanged),
+            this, &UIHelpBrowserWidget::sltHandleAddressBarIndexChanged);
+
+    //m_pTopLayout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed));
 }
 
 void UIHelpBrowserWidget::prepareMenu()
@@ -298,7 +338,10 @@ void UIHelpBrowserWidget::loadOptions()
         if (url.isValid())
         {
             if (m_pHelpEngine->findFile(url).isValid())
+            {
                 m_pContentViewer->setSource(url);
+                m_pContentViewer->clearHistory();
+            }
             else
                 show404Error(url);
         }
@@ -468,6 +511,8 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &i
     m_pContentViewer->blockSignals(true);
     m_pContentViewer->setSource(url);
     m_pContentViewer->blockSignals(false);
+    /* emit historyChanged signal explicitly since we have blocked the signals: */
+    m_pContentViewer->emitHistoryChangedSignal();
 #else
     Q_UNUSED(index);
 #endif
@@ -534,6 +579,43 @@ void UIHelpBrowserWidget::sltHandleBackwardAvailable(bool fAvailable)
 {
     if (m_pBackwardAction)
         m_pBackwardAction->setEnabled(fAvailable);
+}
+
+void UIHelpBrowserWidget::sltHandleHistoryChanged()
+{
+    if (!m_pContentViewer)
+        return;
+    int iCurrentIndex = 0;
+    /* QTextBrower history has negative and positive indices for bacward and forward items, respectively.
+     * 0 is the current item: */
+    m_pAddressBar->blockSignals(true);
+    m_pAddressBar->clear();
+    for (int i = -1 * m_pContentViewer->backwardHistoryCount(); i <= m_pContentViewer->forwardHistoryCount(); ++i)
+    {
+        m_pAddressBar->addItem(m_pContentViewer->historyTitle(i), i);
+        if (i == 0)
+            iCurrentIndex = m_pAddressBar->count();
+    }
+    /* Make sure address bar show the current item: */
+    m_pAddressBar->setCurrentIndex(iCurrentIndex - 1);
+    m_pAddressBar->blockSignals(false);
+}
+
+void UIHelpBrowserWidget::sltHandleAddressBarIndexChanged(int iIndex)
+{
+    if (!m_pAddressBar && iIndex >= m_pAddressBar->count())
+        return;
+    int iHistoryIndex = m_pAddressBar->itemData(iIndex).toInt();
+    /* There seems to be no way to one-step-jump to a history item: */
+    if (iHistoryIndex == 0)
+        return;
+    else if (iHistoryIndex > 0)
+        for (int i = 0; i < iHistoryIndex; ++i)
+            m_pContentViewer->forward();
+    else
+        for (int i = 0; i > iHistoryIndex ; --i)
+            m_pContentViewer->backward();
+
 }
 
 #include "UIHelpBrowserWidget.moc"
