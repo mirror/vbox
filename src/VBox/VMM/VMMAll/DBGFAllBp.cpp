@@ -28,7 +28,9 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 
-#include "DBGFInline.h"
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+# include "DBGFInline.h"
+#endif
 
 
 #ifdef IN_RC
