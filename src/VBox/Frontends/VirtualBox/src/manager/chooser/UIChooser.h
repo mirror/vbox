@@ -112,8 +112,8 @@ public:
 
     /** @name Cloud update stuff.
       * @{ */
-        /** Returns whether cloud update is in progress. */
-        bool isCloudUpdateInProgress() const;
+        /** Returns whether at least one cloud profile currently being updated. */
+        bool isCloudProfileUpdateInProgress() const;
     /** @} */
 
     /** @name Current-item stuff.

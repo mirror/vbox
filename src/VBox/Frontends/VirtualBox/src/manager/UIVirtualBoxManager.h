@@ -359,8 +359,8 @@ private:
         /** Returns whether single cloud profile group is selected. */
         bool isSingleCloudProfileGroupSelected() const;
 
-        /** Returns whether cloud update is in progress. */
-        bool isCloudUpdateInProgress() const;
+        /** Returns whether at least one cloud profile currently being updated. */
+        bool isCloudProfileUpdateInProgress() const;
     /** @} */
 
     /** @name Various VM helpers.

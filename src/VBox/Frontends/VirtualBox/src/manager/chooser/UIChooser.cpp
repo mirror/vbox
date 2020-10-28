@@ -45,10 +45,10 @@ bool UIChooser::isGroupSavingInProgress() const
     return model()->isGroupSavingInProgress();
 }
 
-bool UIChooser::isCloudUpdateInProgress() const
+bool UIChooser::isCloudProfileUpdateInProgress() const
 {
     AssertPtrReturn(model(), false);
-    return model()->isCloudUpdateInProgress();
+    return model()->isCloudProfileUpdateInProgress();
 }
 
 UIVirtualMachineItem *UIChooser::currentItem() const

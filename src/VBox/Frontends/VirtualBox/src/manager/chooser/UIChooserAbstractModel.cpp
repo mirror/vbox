@@ -645,9 +645,19 @@ bool UIChooserAbstractModel::containsCloudEntityKey(const UICloudEntityKey &key)
     return m_cloudEntityKeysBeingUpdated.contains(key);
 }
 
-bool UIChooserAbstractModel::isCloudUpdateInProgress() const
+bool UIChooserAbstractModel::isCloudProfileUpdateInProgress() const
 {
-    return !m_cloudEntityKeysBeingUpdated.isEmpty();
+    /* Compose RE for profile: */
+    QRegExp re("^/[^/]+/[^/]+$");
+    /* Check whether keys match profile RE: */
+    foreach (const UICloudEntityKey &key, m_cloudEntityKeysBeingUpdated)
+    {
+        const int iIndex = re.indexIn(key.toString());
+        if (iIndex != -1)
+            return true;
+    }
+    /* False by default: */
+    return false;
 }
 
 void UIChooserAbstractModel::sltHandleCloudMachineStateChange()

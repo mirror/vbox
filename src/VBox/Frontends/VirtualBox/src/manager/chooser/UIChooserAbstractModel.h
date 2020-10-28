@@ -170,8 +170,9 @@ public:
         void removeCloudEntityKey(const UICloudEntityKey &key);
         /** Returns whether cloud entity @a key is a part of key set currently being updated. */
         bool containsCloudEntityKey(const UICloudEntityKey &key) const;
-        /** Returns whether at least one cloud entity update is in progress. */
-        bool isCloudUpdateInProgress() const;
+
+        /** Returns whether at least one cloud profile currently being updated. */
+        bool isCloudProfileUpdateInProgress() const;
     /** @} */
 
 public slots:

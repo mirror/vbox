@@ -140,8 +140,8 @@ public:
 
         /** Returns whether group saving is in progress. */
         bool isGroupSavingInProgress() const;
-        /** Returns whether cloud update is in progress. */
-        bool isCloudUpdateInProgress() const;
+        /** Returns whether at least one cloud profile currently being updated. */
+        bool isCloudProfileUpdateInProgress() const;
 
         /** Opens group name editor. */
         void openGroupNameEditor();

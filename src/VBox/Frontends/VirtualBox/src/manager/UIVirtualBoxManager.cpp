@@ -2382,9 +2382,9 @@ bool UIVirtualBoxManager::isSingleCloudProfileGroupSelected() const
     return m_pWidget->isSingleCloudProfileGroupSelected();
 }
 
-bool UIVirtualBoxManager::isCloudUpdateInProgress() const
+bool UIVirtualBoxManager::isCloudProfileUpdateInProgress() const
 {
-    return m_pWidget->isCloudUpdateInProgress();
+    return m_pWidget->isCloudProfileUpdateInProgress();
 }
 
 void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = QString() */)
@@ -3185,7 +3185,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexMN_M_Machine_S_Remove:
         {
             return !isGroupSavingInProgress() &&
-                   (isItemsLocal(items) || !isCloudUpdateInProgress()) &&
+                   (isItemsLocal(items) || !isCloudProfileUpdateInProgress()) &&
                    isAtLeastOneItemRemovable(items);
         }
         case UIActionIndexMN_M_Group_M_MoveToGroup:

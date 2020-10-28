@@ -116,9 +116,9 @@ bool UIVirtualBoxManagerWidget::isGroupSavingInProgress() const
     return m_pPaneChooser->isGroupSavingInProgress();
 }
 
-bool UIVirtualBoxManagerWidget::isCloudUpdateInProgress() const
+bool UIVirtualBoxManagerWidget::isCloudProfileUpdateInProgress() const
 {
-    return m_pPaneChooser->isCloudUpdateInProgress();
+    return m_pPaneChooser->isCloudProfileUpdateInProgress();
 }
 
 void UIVirtualBoxManagerWidget::openGroupNameEditor()
