@@ -46,10 +46,10 @@ struct UICloudEntityKey
     /** Constructs cloud entity key on the basis of passed parameters.
       * @param  strProviderShortName  Brings provider short name.
       * @param  strProfileName        Brings profile name.
-      * @param  strMachineName        Brings machine name. */
+      * @param  uMachineId            Brings machine id. */
     UICloudEntityKey(const QString &strProviderShortName = QString(),
                      const QString &strProfileName = QString(),
-                     const QString &strMachineName = QString());
+                     const QUuid &uMachineId = QUuid());
     /** Constructs cloud entity key on the basis of @a another one. */
     UICloudEntityKey(const UICloudEntityKey &another);
 
@@ -63,8 +63,8 @@ struct UICloudEntityKey
     QString m_strProviderShortName;
     /** Holds profile name. */
     QString m_strProfileName;
-    /** Holds machine name. */
-    QString m_strMachineName;
+    /** Holds machine id. */
+    QUuid m_uMachineId;
 };
 
 inline uint qHash(const UICloudEntityKey &key, uint uSeed)
