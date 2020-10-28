@@ -309,7 +309,6 @@ typedef struct IOMMU
      * @{ */
     STAMCOUNTER             StatMmioReadR3;             /**< Number of MMIO reads in R3. */
     STAMCOUNTER             StatMmioReadRZ;             /**< Number of MMIO reads in RZ. */
-
     STAMCOUNTER             StatMmioWriteR3;            /**< Number of MMIO writes in R3. */
     STAMCOUNTER             StatMmioWriteRZ;            /**< Number of MMIO writes in RZ. */
 
@@ -323,9 +322,8 @@ typedef struct IOMMU
 
     STAMCOUNTER             StatMemBulkReadR3;          /**< Number of memory read bulk translation requests in R3. */
     STAMCOUNTER             StatMemBulkReadRZ;          /**< Number of memory read bulk translation requests in RZ. */
-
-    STAMCOUNTER             StatMemBulkWriteR3;         /**< Number of memory read bulk translation requests in R3. */
-    STAMCOUNTER             StatMemBulkWriteRZ;         /**< Number of memory read bulk translation requests in RZ. */
+    STAMCOUNTER             StatMemBulkWriteR3;         /**< Number of memory write bulk translation requests in R3. */
+    STAMCOUNTER             StatMemBulkWriteRZ;         /**< Number of memory write bulk translation requests in RZ. */
 
     STAMCOUNTER             StatCmd;                    /**< Number of commands processed. */
     STAMCOUNTER             StatCmdCompWait;            /**< Number of Completion Wait commands processed. */
