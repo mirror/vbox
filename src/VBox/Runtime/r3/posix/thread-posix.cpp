@@ -193,7 +193,7 @@ static void rtThreadPosixSelectPokeSignal(void)
                     struct sigaction SigAct;
                     RT_ZERO(SigAct);
                     SigAct.sa_handler = rtThreadPosixPokeSignal;
-                    SigAct.sa_flags   = 0;
+                    SigAct.sa_flags   = 0;      /* no SA_RESTART! */
                     sigfillset(&SigAct.sa_mask);
 
                     /* ASSUMES no sigaction race... (lazy bird) */
@@ -248,9 +248,31 @@ static void rtThreadPosixBlockSignals(void)
         sigaddset(&SigSet, SIGALRM);
         sigprocmask(SIG_BLOCK, &SigSet, NULL);
     }
+
 #ifdef RTTHREAD_POSIX_WITH_POKE
+    /*
+     * bird 2020-10-28: Not entirely sure we do this, but it makes sure the signal works
+     *                  on the new thread.  Probably some pre-NPTL linux reasons.
+     */
     if (g_iSigPokeThread != -1)
+    {
+# if 1 /* siginterrupt() is typically implemented as two sigaction calls, this should be faster and w/o deprecations: */
+        struct sigaction SigActOld;
+        RT_ZERO(SigActOld);
+
+        struct sigaction SigAct;
+        RT_ZERO(SigAct);
+        SigAct.sa_handler = rtThreadPosixPokeSignal;
+        SigAct.sa_flags   = 0;          /* no SA_RESTART! */
+        sigfillset(&SigAct.sa_mask);
+
+        int rc = sigaction(g_iSigPokeThread, &SigAct, &SigActOld);
+        AssertMsg(rc == 0, ("rc=%Rrc errno=%d\n", RTErrConvertFromErrno(errno), errno));
+        AssertMsg(rc || SigActOld.sa_handler == rtThreadPosixPokeSignal, ("%p\n", SigActOld.sa_handler));
+# else
         siginterrupt(g_iSigPokeThread, 1);
+# endif
+    }
 #endif
 }
 
