@@ -848,7 +848,7 @@ static void ichac97R3StreamFetchBDLE(PPDMDEVINS pDevIns, PAC97STREAM pStream)
     PAC97BMREGS pRegs = &pStream->Regs;
 
     AC97BDLE BDLE;
-    PDMDevHlpPhysRead(pDevIns, pRegs->bdbar + pRegs->civ * sizeof(AC97BDLE), &BDLE, sizeof(AC97BDLE));
+    PDMDevHlpPCIPhysRead(pDevIns, pRegs->bdbar + pRegs->civ * sizeof(AC97BDLE), &BDLE, sizeof(AC97BDLE));
     pRegs->bd_valid   = 1;
 # ifndef RT_LITTLE_ENDIAN
 #  error "Please adapt the code (audio buffers are little endian)!"
@@ -1571,7 +1571,7 @@ static void ichac97R3BDLEDumpAll(PPDMDEVINS pDevIns, uint64_t u64BDLBase, uint16
     for (uint16_t i = 0; i < cBDLE; i++)
     {
         AC97BDLE BDLE;
-        PDMDevHlpPhysRead(pDevIns, u64BDLBase + i * sizeof(AC97BDLE), &BDLE, sizeof(AC97BDLE));
+        PDMDevHlpPCIPhysRead(pDevIns, u64BDLBase + i * sizeof(AC97BDLE), &BDLE, sizeof(AC97BDLE));
 
 # ifndef RT_LITTLE_ENDIAN
 #  error "Please adapt the code (audio buffers are little endian)!"
@@ -2893,7 +2893,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
 
                 if (cbDst)
                 {
-                    int rc2 = PDMDevHlpPhysRead(pDevIns, pRegs->bd.addr, (uint8_t *)pvDst, cbDst);
+                    int rc2 = PDMDevHlpPCIPhysRead(pDevIns, pRegs->bd.addr, (uint8_t *)pvDst, cbDst);
                     AssertRC(rc2);
 
                     if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
@@ -2918,9 +2918,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
 
                 if (cbSrc)
                 {
-/** @todo r=bird: Just curious, DevHDA uses PDMDevHlpPCIPhysWrite here.  So,
- *        is AC97 not subject to PCI busmaster enable/disable? */
-                    int rc2 = PDMDevHlpPhysWrite(pDevIns, pRegs->bd.addr, (uint8_t *)pvSrc, cbSrc);
+                    int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, pRegs->bd.addr, (uint8_t *)pvSrc, cbSrc);
                     AssertRC(rc2);
 
                     if (RT_LIKELY(!pStreamCC->Dbg.Runtime.fEnabled))
