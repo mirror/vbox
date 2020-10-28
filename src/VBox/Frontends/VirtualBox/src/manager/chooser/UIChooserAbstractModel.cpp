@@ -1714,27 +1714,68 @@ void UIChooserAbstractModel::makeSureGroupDefinitionsSaveIsFinished()
         UIThreadGroupDefinitionsSave::cleanup();
 }
 
-UIChooserNode *UIChooserAbstractModel::searchProfileNode(const QString &strProviderShortName, const QString &strProfileName)
+UIChooserNode *UIChooserAbstractModel::searchProviderNode(const QString &strProviderShortName)
 {
-    /* Compose profile node ID: */
-    const QString strProfileNodeId = QString("/%1/%2").arg(strProviderShortName, strProfileName);
+    /* Search for a list of nodes matching passed name: */
+    QList<UIChooserNode*> providerNodes;
+    invisibleRoot()->searchForNodes(strProviderShortName,
+                                    UIChooserItemSearchFlag_CloudProvider | UIChooserItemSearchFlag_ExactName,
+                                    providerNodes);
 
-    /* Search for a list of nodes matching required ID: */
+    /* Return 1st node if any: */
+    return providerNodes.value(0);
+}
+
+UIChooserNode *UIChooserAbstractModel::searchProfileNode(UIChooserNode *pProviderNode, const QString &strProfileName)
+{
+    AssertPtrReturn(pProviderNode, 0);
+
+    /* Search for a list of nodes matching passed name: */
     QList<UIChooserNode*> profileNodes;
-    invisibleRoot()->searchForNodes(strProfileNodeId, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
+    pProviderNode->searchForNodes(strProfileName,
+                                  UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactName,
+                                  profileNodes);
 
     /* Return 1st node if any: */
     return profileNodes.value(0);
 }
 
-UIChooserNode *UIChooserAbstractModel::searchFakeNode(UIChooserNode *pProfileNode)
+UIChooserNode *UIChooserAbstractModel::searchProfileNode(const QString &strProviderShortName, const QString &strProfileName)
 {
-    /* Search for a list of nodes matching null ID: */
-    QList<UIChooserNode*> fakeNodes;
-    pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
+    /* Wrap method above: */
+    return searchProfileNode(searchProviderNode(strProviderShortName), strProfileName);
+}
+
+UIChooserNode *UIChooserAbstractModel::searchMachineNode(UIChooserNode *pProfileNode, const QUuid &uMachineId)
+{
+    AssertPtrReturn(pProfileNode, 0);
+
+    /* Search for a list of nodes matching passed ID: */
+    QList<UIChooserNode*> machineNodes;
+    pProfileNode->searchForNodes(uMachineId.toString(),
+                                 UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId,
+                                 machineNodes);
 
     /* Return 1st node if any: */
-    return fakeNodes.value(0);
+    return machineNodes.value(0);
+}
+
+UIChooserNode *UIChooserAbstractModel::searchMachineNode(const QString &strProviderShortName, const QString &strProfileName, const QUuid &uMachineId)
+{
+    /* Wrap method above: */
+    return searchMachineNode(searchProfileNode(strProviderShortName, strProfileName), uMachineId);
+}
+
+UIChooserNode *UIChooserAbstractModel::searchFakeNode(UIChooserNode *pProfileNode)
+{
+    /* Wrap method above: */
+    return searchMachineNode(pProfileNode, QUuid());
+}
+
+UIChooserNode *UIChooserAbstractModel::searchFakeNode(const QString &strProviderShortName, const QString &strProfileName)
+{
+    /* Wrap method above: */
+    return searchMachineNode(strProviderShortName, strProfileName, QUuid());
 }
 
 
