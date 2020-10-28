@@ -32,15 +32,46 @@
 /* COM includes: */
 #include "COMEnums.h"
 
-/* Typedefs: */
-typedef QPair<QString, QString> UICloudAccountKey;
-
 /* Forward declaration: */
 class UIChooser;
 class UIChooserNode;
 class UITask;
 class CCloudMachine;
 class CMachine;
+
+
+/** Cloud entity key definition. */
+struct UICloudEntityKey
+{
+    /** Constructs cloud entity key on the basis of passed parameters.
+      * @param  strProviderShortName  Brings provider short name.
+      * @param  strProfileName        Brings profile name.
+      * @param  strMachineName        Brings machine name. */
+    UICloudEntityKey(const QString &strProviderShortName = QString(),
+                     const QString &strProfileName = QString(),
+                     const QString &strMachineName = QString());
+    /** Constructs cloud entity key on the basis of @a another one. */
+    UICloudEntityKey(const UICloudEntityKey &another);
+
+    /** Returns whether this one key equals to @a another one. */
+    bool operator==(const UICloudEntityKey &another) const;
+
+    /** Returns string key representation. */
+    QString toString() const;
+
+    /** Holds provider short name. */
+    QString m_strProviderShortName;
+    /** Holds profile name. */
+    QString m_strProfileName;
+    /** Holds machine name. */
+    QString m_strMachineName;
+};
+
+inline uint qHash(const UICloudEntityKey &key, uint uSeed)
+{
+    return qHash(key.toString(), uSeed);
+}
+
 
 /** QObject extension used as VM Chooser-pane abstract model.
   * This class is used to load/save a tree of abstract invisible
@@ -133,13 +164,13 @@ public:
 
     /** @name Cloud update stuff.
       * @{ */
-        /** Inserts cloud account @a key into a set of keys currently being updated. */
-        void insertCloudAccountKey(const UICloudAccountKey &key);
-        /** Removes cloud account @a key from a set of keys currently being updated. */
-        void removeCloudAccountKey(const UICloudAccountKey &key);
-        /** Returns whether cloud account @a key is a part of key set currently being updated. */
-        bool containsCloudAccountKey(const UICloudAccountKey &key) const;
-        /** Returns whether at least one cloud account update is in progress. */
+        /** Inserts cloud entity @a key into a set of keys currently being updated. */
+        void insertCloudEntityKey(const UICloudEntityKey &key);
+        /** Removes cloud entity @a key from a set of keys currently being updated. */
+        void removeCloudEntityKey(const UICloudEntityKey &key);
+        /** Returns whether cloud entity @a key is a part of key set currently being updated. */
+        bool containsCloudEntityKey(const UICloudEntityKey &key) const;
+        /** Returns whether at least one cloud entity update is in progress. */
         bool isCloudUpdateInProgress() const;
     /** @} */
 
@@ -344,8 +375,8 @@ private:
 
     /** @name Cloud update stuff.
       * @{ */
-        /** Holds the set of cloud account keys currently being updated. */
-        QSet<UICloudAccountKey>  m_cloudAccountKeysBeingUpdated;
+        /** Holds the set of cloud entity keys currently being updated. */
+        QSet<UICloudEntityKey>  m_cloudEntityKeysBeingUpdated;
     /** @} */
 };
 

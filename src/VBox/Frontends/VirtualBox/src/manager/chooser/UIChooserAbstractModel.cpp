@@ -349,6 +349,51 @@ void UIThreadGroupDefinitionsSave::run()
 
 
 /*********************************************************************************************************************************
+*   Class UICloudEntityKey implementation.                                                                                       *
+*********************************************************************************************************************************/
+
+UICloudEntityKey::UICloudEntityKey(const QString &strProviderShortName /* = QString() */,
+                                   const QString &strProfileName /* = QString() */,
+                                   const QString &strMachineName /* = QString() */)
+    : m_strProviderShortName(strProviderShortName)
+    , m_strProfileName(strProfileName)
+    , m_strMachineName(strMachineName)
+{
+}
+
+UICloudEntityKey::UICloudEntityKey(const UICloudEntityKey &another)
+    : m_strProviderShortName(another.m_strProviderShortName)
+    , m_strProfileName(another.m_strProfileName)
+    , m_strMachineName(another.m_strMachineName)
+{
+}
+
+bool UICloudEntityKey::operator==(const UICloudEntityKey &another) const
+{
+    return    true
+           && m_strProviderShortName == another.m_strProviderShortName
+           && m_strProfileName == another.m_strProfileName
+           && m_strProfileName == another.m_strProfileName
+              ;
+}
+
+QString UICloudEntityKey::toString() const
+{
+    QString strResult;
+    if (m_strProviderShortName.isEmpty())
+        return strResult;
+    strResult += QString("/%1").arg(m_strProviderShortName);
+    if (m_strProfileName.isEmpty())
+        return strResult;
+    strResult += QString("/%1").arg(m_strProfileName);
+    if (m_strMachineName.isEmpty())
+        return strResult;
+    strResult += QString("/%1").arg(m_strMachineName);
+    return strResult;
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIChooserAbstractModel implementation.                                                                                 *
 *********************************************************************************************************************************/
 
@@ -581,26 +626,28 @@ QString UIChooserAbstractModel::valueToString(UIChooserNodeDataValueType enmType
     return QString();
 }
 
-void UIChooserAbstractModel::insertCloudAccountKey(const UICloudAccountKey &key)
+void UIChooserAbstractModel::insertCloudEntityKey(const UICloudEntityKey &key)
 {
-    m_cloudAccountKeysBeingUpdated.insert(key);
+//    printf("Cloud entity with key %s being updated..\n", key.toString().toUtf8().constData());
+    m_cloudEntityKeysBeingUpdated.insert(key);
     emit sigCloudUpdateStateChanged();
 }
 
-void UIChooserAbstractModel::removeCloudAccountKey(const UICloudAccountKey &key)
+void UIChooserAbstractModel::removeCloudEntityKey(const UICloudEntityKey &key)
 {
-    m_cloudAccountKeysBeingUpdated.remove(key);
+//    printf("Cloud entity with key %s is updated!\n", key.toString().toUtf8().constData());
+    m_cloudEntityKeysBeingUpdated.remove(key);
     emit sigCloudUpdateStateChanged();
 }
 
-bool UIChooserAbstractModel::containsCloudAccountKey(const UICloudAccountKey &key) const
+bool UIChooserAbstractModel::containsCloudEntityKey(const UICloudEntityKey &key) const
 {
-    return m_cloudAccountKeysBeingUpdated.contains(key);
+    return m_cloudEntityKeysBeingUpdated.contains(key);
 }
 
 bool UIChooserAbstractModel::isCloudUpdateInProgress() const
 {
-    return !m_cloudAccountKeysBeingUpdated.isEmpty();
+    return !m_cloudEntityKeysBeingUpdated.isEmpty();
 }
 
 void UIChooserAbstractModel::sltHandleCloudMachineStateChange()
@@ -859,9 +906,9 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
         pFakeNode->item()->updateItem();
     }
 
-    /* Remove cloud account key from the list of keys currently being updated: */
-    const UICloudAccountKey accountKey = qMakePair(strProviderShortName, strProfileName);
-    removeCloudAccountKey(accountKey);
+    /* Remove cloud entity key from the list of keys currently being updated: */
+    const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
+    removeCloudEntityKey(cloudEntityKey);
 }
 
 void UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange()
@@ -1059,9 +1106,9 @@ void UIChooserAbstractModel::reloadCloudTree()
             /* Add fake cloud VM item: */
             createCloudMachineNode(pProfileNode, UIFakeCloudVirtualMachineItemState_Loading);
 
-            /* Insert cloud account key into a list of keys currently being updated: */
-            const UICloudAccountKey cloudAccountKey = qMakePair(strProviderShortName, strProfileName);
-            insertCloudAccountKey(cloudAccountKey);
+            /* Insert cloud entity key into a list of keys currently being updated: */
+            const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
+            insertCloudEntityKey(cloudEntityKey);
 
             /* Create list cloud machines task: */
             UITaskCloudListMachines *pTask = new UITaskCloudListMachines(strProviderShortName,
