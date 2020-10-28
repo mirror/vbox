@@ -82,7 +82,11 @@ private slots:
     void sltHandleTabVisibility(bool togggled);
     void sltHandleHelpBrowserViewerSourceChange(const QUrl &source);
     void sltHandleContentsCreated();
-    void sltHandleGoHomeAction();
+    void sltHandleHomeAction();
+    void sltHandleForwardAction();
+    void sltHandleBackwardAction();
+    void sltHandleForwardAvailable(bool fAvailable);
+    void sltHandleBackwardAvailable(bool fAvailable);
 
 private:
 
@@ -138,7 +142,9 @@ private:
     QHelpContentModel   *m_pContentModel;
     QWidget             *m_pBookmarksWidget;
     QAction             *m_pShowHideTabWidgetAction;
-    QAction             *m_pGoHomeAction;
+    QAction             *m_pHomeAction;
+    QAction             *m_pForwardAction;
+    QAction             *m_pBackwardAction;
     QString              m_strPageNotFoundText;
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
     bool                 m_fModelContentCreated;

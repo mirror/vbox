@@ -122,7 +122,9 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pContentModel(0)
     , m_pBookmarksWidget(0)
     , m_pShowHideTabWidgetAction(0)
-    , m_pGoHomeAction(0)
+    , m_pHomeAction(0)
+    , m_pForwardAction(0)
+    , m_pBackwardAction(0)
     , m_fModelContentCreated(false)
 {
     qRegisterMetaType<HelpBrowserTabs>("HelpBrowserTabs");
@@ -166,8 +168,19 @@ void UIHelpBrowserWidget::prepareActions()
     m_pShowHideTabWidgetAction->setCheckable(true);
     m_pShowHideTabWidgetAction->setChecked(true);
     connect(m_pShowHideTabWidgetAction, &QAction::toggled, this, &UIHelpBrowserWidget::sltHandleTabVisibility);
-    m_pGoHomeAction = new QAction(UIIconPool::iconSet(":/file_manager_go_home_16px.png"), "", this);
-    connect(m_pGoHomeAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltHandleGoHomeAction);
+    m_pHomeAction =
+        new QAction(UIIconPool::iconSet(":/help_browser_home_32px.png"), QString(), this);
+    connect(m_pHomeAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltHandleHomeAction);
+
+    m_pForwardAction =
+        new QAction(UIIconPool::iconSet(":/help_browser_forward_32px.png", ":/help_browser_forward_disabled_32px.png"), QString(), this);
+    connect(m_pForwardAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltHandleForwardAction);
+    sltHandleForwardAvailable(false);
+
+    m_pBackwardAction =
+        new QAction(UIIconPool::iconSet(":/help_browser_backward_32px.png", ":/help_browser_backward_disabled_32px.png"), QString(), this);
+    connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltHandleBackwardAction);
+    sltHandleBackwardAvailable(false);
 }
 
 void UIHelpBrowserWidget::prepareWidgets()
@@ -197,9 +210,15 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pContentViewer = new UIHelpBrowserViewer(m_pHelpEngine);
     AssertReturnVoid(m_pContentViewer);
 
-
     connect(m_pContentViewer, &UIHelpBrowserViewer::sourceChanged,
         this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::forwardAvailable,
+        this, &UIHelpBrowserWidget::sltHandleForwardAvailable);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::backwardAvailable,
+        this, &UIHelpBrowserWidget::sltHandleBackwardAvailable);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::sourceChanged,
+        this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
+
     m_pSplitter->addWidget(m_pContentViewer);
 
     m_pSplitter->setStretchFactor(0, 1);
@@ -229,10 +248,12 @@ void UIHelpBrowserWidget::prepareToolBar()
     if (m_pToolBar)
     {
         /* Configure toolbar: */
+        m_pToolBar->setToolButtonStyle(Qt::ToolButtonIconOnly);
         const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-        m_pToolBar->addAction(m_pGoHomeAction);
+        m_pToolBar->addAction(m_pBackwardAction);
+        m_pToolBar->addAction(m_pForwardAction);
+        m_pToolBar->addAction(m_pHomeAction);
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -311,6 +332,24 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pShowHideTabWidgetAction->setText(tr("Show/Hide Tabs Widget"));
 
     m_strPageNotFoundText = tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>");
+
+    if (m_pHomeAction)
+    {
+        m_pHomeAction->setText(tr("Home"));
+        m_pHomeAction->setToolTip(tr("Return to start page"));
+    }
+
+    if (m_pBackwardAction)
+    {
+        m_pBackwardAction->setText(tr("Backward"));
+        m_pBackwardAction->setToolTip(tr("Navigate to previous page"));
+    }
+
+    if (m_pForwardAction)
+    {
+        m_pForwardAction->setText(tr("Forward"));
+        m_pForwardAction->setToolTip(tr("Navigate to next page"));
+    }
 }
 
 void UIHelpBrowserWidget::showEvent(QShowEvent *pEvent)
@@ -394,7 +433,7 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 #endif
 }
 
-void sltHandleGoHomeAction();
+void sltHandleHomeAction();
 
 void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &index)
 {
@@ -444,7 +483,7 @@ void UIHelpBrowserWidget::sltHandleContentsCreated()
         sltHandleHelpBrowserViewerSourceChange(m_pContentViewer->source());
 }
 
-void UIHelpBrowserWidget::sltHandleGoHomeAction()
+void UIHelpBrowserWidget::sltHandleHomeAction()
 {
     if (!m_pContentViewer)
         return;
@@ -453,6 +492,30 @@ void UIHelpBrowserWidget::sltHandleGoHomeAction()
     if (!homeUrl.isValid())
         return;
     m_pContentViewer->setSource(homeUrl);
+}
+
+void UIHelpBrowserWidget::sltHandleForwardAction()
+{
+    if (m_pContentViewer)
+        m_pContentViewer->forward();
+}
+
+void UIHelpBrowserWidget::sltHandleBackwardAction()
+{
+    if (m_pContentViewer)
+        m_pContentViewer->backward();
+}
+
+void UIHelpBrowserWidget::sltHandleForwardAvailable(bool fAvailable)
+{
+    if (m_pForwardAction)
+        m_pForwardAction->setEnabled(fAvailable);
+}
+
+void UIHelpBrowserWidget::sltHandleBackwardAvailable(bool fAvailable)
+{
+    if (m_pBackwardAction)
+        m_pBackwardAction->setEnabled(fAvailable);
 }
 
 #include "UIHelpBrowserWidget.moc"
