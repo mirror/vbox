@@ -301,6 +301,7 @@ VBoxAPIWrap_PCH_HDR       := $(PATH_SUB_CURRENT)/src-all/xpcom/VBoxAPIWrap-preco
  	$(if-expr defined(VBOX_ONLY_EXTPACKS) \
 	, $(addprefix $(VBoxAPIWrap_0_OUTDIR)/,$(filter \
 	Cloud%\
+	DataStreamWrap.cpp\
 	%FormValueWrap.cpp\
 	%FormWrap.cpp\
 	StringArrayWrap.cpp\
