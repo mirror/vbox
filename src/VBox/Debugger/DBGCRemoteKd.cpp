@@ -1159,8 +1159,13 @@ typedef enum KDRECVSTATE
  */
 typedef struct KDCTXHWBP
 {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     /** The DBGF breakpoint handle if active, UINT32_MAX if not active. */
-    uint32_t                    iDbgfBp;
+    uint32_t                    hDbgfBp;
+#else
+    /** The DBGF breakpoint handle if active, NIL_DBGFBP if not active. */
+    DBGFBP                      hDbgfBp;
+#endif
     /** The linear address of the breakpoint if active. */
     RTGCPTR                     GCPtrBp;
     /** Access type of the breakpoint, see X86_DR7_RW_*. */
@@ -1238,6 +1243,10 @@ typedef PKDCTX *PPKDCTX;
 #define KD_PTR_CREATE(a_pThis, a_GCPtr) ((a_pThis)->f32Bit && ((a_GCPtr) & RT_BIT_32(31)) ? (a_GCPtr) | UINT64_C(0xffffffff00000000) : (a_GCPtr))
 /** Returns the value of a possibly sign extended guest context pointer received for 32bit targets. */
 #define KD_PTR_GET(a_pThis, a_GCPtr) ((a_pThis)->f32Bit ? (a_GCPtr) & ~UINT64_C(0xffffffff00000000) : (a_GCPtr))
+
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
+# define NIL_DBGFBP              ((uint32_t)UINT32_MAX)
+#endif
 
 
 /*********************************************************************************************************************************
@@ -1518,13 +1527,13 @@ static void dbgcKdCtxHwBpReset(PKDCTX pThis)
     {
         PKDCTXHWBP pBp = &pThis->aHwBp[i];
 
-        if (pBp->iDbgfBp != UINT32_MAX)
+        if (pBp->hDbgfBp != NIL_DBGFBP)
         {
-            int rc = DBGFR3BpClear(pThis->Dbgc.pUVM, pBp->iDbgfBp);
+            int rc = DBGFR3BpClear(pThis->Dbgc.pUVM, pBp->hDbgfBp);
             AssertRC(rc);
         }
 
-        pBp->iDbgfBp    = UINT32_MAX;
+        pBp->hDbgfBp    = NIL_DBGFBP;
         pBp->GCPtrBp    = 0;
         pBp->fAcc       = 0;
         pBp->fLen       = 0;
@@ -1560,11 +1569,11 @@ static int dbgcKdCtxHwBpUpdate(PKDCTX pThis, PKDCTXHWBP pBp, uint8_t fAcc, uint8
         || pBp->GCPtrBp != GCPtrBp)
     {
         /* Clear the old breakpoint. */
-        if (pBp->iDbgfBp != UINT32_MAX)
+        if (pBp->hDbgfBp != NIL_DBGFBP)
         {
-            rc = DBGFR3BpClear(pThis->Dbgc.pUVM, pBp->iDbgfBp);
+            rc = DBGFR3BpClear(pThis->Dbgc.pUVM, pBp->hDbgfBp);
             AssertRC(rc);
-            pBp->iDbgfBp = UINT32_MAX;
+            pBp->hDbgfBp = NIL_DBGFBP;
         }
 
         pBp->fAcc    = fAcc;
@@ -1598,7 +1607,7 @@ static int dbgcKdCtxHwBpUpdate(PKDCTX pThis, PKDCTXHWBP pBp, uint8_t fAcc, uint8
             }
 
             rc = DBGFR3BpSetReg(pThis->Dbgc.pUVM, &AddrBp, 0 /*iHitTrigger*/, UINT64_MAX /*iHitDisable*/,
-                                pBp->fAcc, cb, &pBp->iDbgfBp);
+                                pBp->fAcc, cb, &pBp->hDbgfBp);
         }
     }
 
@@ -3916,22 +3925,22 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
         case DBGFEVENT_BREAKPOINT_MMIO:
         case DBGFEVENT_BREAKPOINT_HYPER:
         {
-            rc = dbgcBpExec(pDbgc, pEvent->u.Bp.iBp);
+            rc = dbgcBpExec(pDbgc, pEvent->u.Bp.hBp);
             switch (rc)
             {
                 case VERR_DBGC_BP_NOT_FOUND:
                     rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Unknown breakpoint %u! (%s)\n",
-                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                                                 pEvent->u.Bp.hBp, dbgcGetEventCtx(pEvent->enmCtx));
                     break;
 
                 case VINF_DBGC_BP_NO_COMMAND:
                     rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Breakpoint %u! (%s)\n",
-                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                                                 pEvent->u.Bp.hBp, dbgcGetEventCtx(pEvent->enmCtx));
                     break;
 
                 case VINF_BUFFER_OVERFLOW:
                     rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Breakpoint %u! Command too long to execute! (%s)\n",
-                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                                                 pEvent->u.Bp.hBp, dbgcGetEventCtx(pEvent->enmCtx));
                     break;
 
                 default:
@@ -3950,7 +3959,7 @@ static int dbgcKdCtxProcessEvent(PKDCTX pThis, PCDBGFEVENT pEvent)
             /* Figure out the breakpoint and set the triggered flag for emulation of DR6. */
             for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aHwBp); i++)
             {
-                if (pThis->aHwBp[i].iDbgfBp == pEvent->u.Bp.iBp)
+                if (pThis->aHwBp[i].hDbgfBp == pEvent->u.Bp.hBp)
                 {
                     pThis->aHwBp[i].fTriggered = true;
                     break;
@@ -4292,7 +4301,7 @@ static int dbgcKdCtxCreate(PPKDCTX ppKdCtx, PCDBGCIO pIo, unsigned fFlags)
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aHwBp); i++)
     {
         PKDCTXHWBP pBp = &pThis->aHwBp[i];
-        pBp->iDbgfBp = UINT32_MAX;
+        pBp->hDbgfBp = NIL_DBGFBP;
     }
 
     dbgcKdCtxHwBpReset(pThis);

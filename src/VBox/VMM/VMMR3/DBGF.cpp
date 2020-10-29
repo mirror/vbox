@@ -785,7 +785,7 @@ VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
      */
     DBGFEVENT DbgEvent;
 #ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-    RTUINT iBp = DbgEvent.u.Bp.iBp = pVCpu->dbgf.s.iActiveBp;
+    RTUINT iBp = DbgEvent.u.Bp.hBp = pVCpu->dbgf.s.iActiveBp;
     pVCpu->dbgf.s.iActiveBp = ~0U;
     if (iBp != ~0U)
     {
@@ -816,10 +816,10 @@ VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
         if (    pVM->dbgf.s.aBreakpoints[i].enmType == DBGFBPTYPE_REM
             &&  pVM->dbgf.s.aBreakpoints[i].u.Rem.GCPtr == eip)
         {
-            DbgEvent.u.Bp.iBp = pVM->dbgf.s.aBreakpoints[i].iBp;
+            DbgEvent.u.Bp.hBp = pVM->dbgf.s.aBreakpoints[i].iBp;
             break;
         }
-    AssertMsg(DbgEvent.u.Bp.iBp != ~0U, ("eip=%08x\n", eip));
+    AssertMsg(DbgEvent.u.Bp.hBp != ~0U, ("eip=%08x\n", eip));
     return dbgfR3SendEventWaitEx(pVM, pVCpu, enmEvent, DBGFEVENTCTX_REM, &DbgEvent.u, sizeof(DbgEvent.u.Bp));
 #else
     return VERR_DBGF_IPE_1;

@@ -579,7 +579,7 @@ typedef struct DBGFEVENT
         {
 #ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
             /** The identifier of the breakpoint which was hit. */
-            RTUINT                  iBp;
+            RTUINT                  hBp;
 #else
             /** The handle of the breakpoint which was hit. */
             DBGFBP                  hBp;

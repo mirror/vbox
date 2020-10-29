@@ -944,6 +944,7 @@ static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 }
 
 
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
 /**
  * Breakpoint enumeration callback function.
  *
@@ -953,16 +954,40 @@ static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
  * @param   pBp         Pointer to the breakpoint information. (readonly)
  */
 static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PCDBGFBP pBp)
+#else
+/**
+ * Breakpoint enumeration callback function.
+ *
+ * @returns VBox status code. Any failure will stop the enumeration.
+ * @param   pUVM        The user mode VM handle.
+ * @param   pvUser      The user argument.
+ * @param   hBp         The DBGF breakpoint handle.
+ * @param   pBp         Pointer to the breakpoint information. (readonly)
+ */
+static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, DBGFBP hBp, PCDBGFBPPUB pBp)
+#endif
 {
     PDBGC   pDbgc   = (PDBGC)pvUser;
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     PDBGCBP pDbgcBp = dbgcBpGet(pDbgc, pBp->iBp);
+#else
+    PDBGCBP pDbgcBp = dbgcBpGet(pDbgc, hBp);
+#endif
 
     /*
      * BP type and size.
      */
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%#4x %c ", pBp->iBp, pBp->fEnabled ? 'e' : 'd');
+#else
+    DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%#4x %c ", hBp, DBGF_BP_PUB_IS_ENABLED(pBp->fFlagsAndType) ? 'e' : 'd');
+#endif
     bool fHasAddress = false;
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
     switch (pBp->enmType)
+#else
+    switch (DBGF_BP_PUB_GET_TYPE(pBp->fFlagsAndType))
+#endif
     {
         case DBGFBPTYPE_INT3:
             DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " p %RGv", pBp->u.Int3.GCPtr);
@@ -985,17 +1010,24 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PC
             break;
         }
 
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
         case DBGFBPTYPE_REM:
             DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " r %RGv", pBp->u.Rem.GCPtr);
             fHasAddress = true;
             break;
+#endif
 
 /** @todo realign the list when I/O and MMIO breakpoint command have been added and it's possible to test this code. */
         case DBGFBPTYPE_PORT_IO:
         case DBGFBPTYPE_MMIO:
         {
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
             uint32_t fAccess = pBp->enmType == DBGFBPTYPE_PORT_IO ? pBp->u.PortIo.fAccess : pBp->u.Mmio.fAccess;
             DBGCCmdHlpPrintf(&pDbgc->CmdHlp, pBp->enmType == DBGFBPTYPE_PORT_IO ?  " i" : " m");
+#else
+            uint32_t fAccess = DBGF_BP_PUB_GET_TYPE(pBp->fFlagsAndType) == DBGFBPTYPE_PORT_IO ? pBp->u.PortIo.fAccess : pBp->u.Mmio.fAccess;
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, DBGF_BP_PUB_GET_TYPE(pBp->fFlagsAndType) == DBGFBPTYPE_PORT_IO ?  " i" : " m");
+#endif
             DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " %c%c%c%c%c%c",
                              fAccess & DBGFBPIOACCESS_READ_MASK   ? 'r' : '-',
                              fAccess & DBGFBPIOACCESS_READ_BYTE   ? '1' : '-',
@@ -1010,7 +1042,11 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PC
                              fAccess & DBGFBPIOACCESS_WRITE_DWORD ? '4' : '-',
                              fAccess & DBGFBPIOACCESS_WRITE_QWORD ? '8' : '-',
                              fAccess & DBGFBPIOACCESS_WRITE_OTHER ? '+' : '-');
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
             if (pBp->enmType == DBGFBPTYPE_PORT_IO)
+#else
+            if (DBGF_BP_PUB_GET_TYPE(pBp->fFlagsAndType) == DBGFBPTYPE_PORT_IO)
+#endif
                 DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " %04x-%04x",
                                  pBp->u.PortIo.uPort, pBp->u.PortIo.uPort + pBp->u.PortIo.cPorts - 1);
             else
@@ -1019,7 +1055,11 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PC
         }
 
         default:
+#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
             DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " unknown type %d!!", pBp->enmType);
+#else
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, " unknown type %d!!", DBGF_BP_PUB_GET_TYPE(pBp->fFlagsAndType));
+#endif
             AssertFailed();
             break;
 

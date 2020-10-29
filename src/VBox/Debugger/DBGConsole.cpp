@@ -684,22 +684,22 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
         case DBGFEVENT_BREAKPOINT_HYPER:
         {
             pDbgc->idCpu = pEvent->idCpu;
-            rc = dbgcBpExec(pDbgc, pEvent->u.Bp.iBp);
+            rc = dbgcBpExec(pDbgc, pEvent->u.Bp.hBp);
             switch (rc)
             {
                 case VERR_DBGC_BP_NOT_FOUND:
                     rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: Unknown breakpoint %u! (%s)\n",
-                                                 pEvent->idCpu, pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                                                 pEvent->idCpu, pEvent->u.Bp.hBp, dbgcGetEventCtx(pEvent->enmCtx));
                     break;
 
                 case VINF_DBGC_BP_NO_COMMAND:
                     rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: Breakpoint %u! (%s)\n",
-                                                 pEvent->idCpu, pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                                                 pEvent->idCpu, pEvent->u.Bp.hBp, dbgcGetEventCtx(pEvent->enmCtx));
                     break;
 
                 case VINF_BUFFER_OVERFLOW:
                     rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: Breakpoint %u! Command too long to execute! (%s)\n",
-                                                 pEvent->idCpu, pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                                                 pEvent->idCpu, pEvent->u.Bp.hBp, dbgcGetEventCtx(pEvent->enmCtx));
                     break;
 
                 default:
