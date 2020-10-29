@@ -25,6 +25,9 @@
  #include <QtHelp/QHelpEngine>
  #include <QtHelp/QHelpContentWidget>
  #include <QtHelp/QHelpIndexWidget>
+#include <QtHelp/QHelpSearchEngine>
+#include <QtHelp/QHelpSearchQueryWidget>
+#include <QtHelp/QHelpSearchResultWidget>
 #endif
 #include <QMenu>
 #include <QScrollBar>
@@ -56,6 +59,7 @@ enum HelpBrowserTabs
 {
     HelpBrowserTabs_TOC = 0,
     HelpBrowserTabs_Index,
+    HelpBrowserTabs_Search,
     HelpBrowserTabs_Bookmarks,
     HelpBrowserTabs_Max
 };
@@ -148,12 +152,17 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pContentWidget(0)
     , m_pIndexWidget(0)
     , m_pContentModel(0)
+    , m_pHelpSearchEngine(0)
+    , m_pHelpSearchQueryWidget(0)
+    , m_pHelpSearchResultWidget(0)
     , m_pBookmarksWidget(0)
+    , m_pSearchContainerWidget(0)
     , m_pShowHideSideBarAction(0)
     , m_pShowHideToolBarAction(0)
     , m_pHomeAction(0)
     , m_pForwardAction(0)
     , m_pBackwardAction(0)
+    , m_pAddBookmarkAction(0)
     , m_fModelContentCreated(false)
 {
     qRegisterMetaType<HelpBrowserTabs>("HelpBrowserTabs");
@@ -187,6 +196,7 @@ void UIHelpBrowserWidget::prepare()
     prepareActions();
     prepareToolBar();
     prepareWidgets();
+    prepareSearchWidgets();
     prepareMenu();
     retranslateUi();
 }
@@ -217,6 +227,10 @@ void UIHelpBrowserWidget::prepareActions()
         new QAction(UIIconPool::iconSet(":/help_browser_backward_32px.png", ":/help_browser_backward_disabled_32px.png"), QString(), this);
     connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltHandleBackwardAction);
     sltHandleBackwardAvailable(false);
+
+    m_pAddBookmarkAction =
+        new QAction(UIIconPool::iconSet(":/help_browser_add_bookmark.png"), QString(), this);
+    connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltHandleAddBookmarkAction);
 }
 
 void UIHelpBrowserWidget::prepareWidgets()
@@ -229,8 +243,9 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pHelpEngine = new QHelpEngine(m_strHelpFilePath, this);
     m_pBookmarksWidget = new QWidget(this);
     m_pTabWidget = new QITabWidget;
-    AssertReturnVoid(m_pTabWidget && m_pHelpEngine && m_pBookmarksWidget);
-    //m_pTabWidget->setTabsClosable(true);
+    AssertReturnVoid(m_pTabWidget &&
+                     m_pHelpEngine &&
+                     m_pBookmarksWidget);
 
     m_pContentWidget = m_pHelpEngine->contentWidget();
     m_pIndexWidget = m_pHelpEngine->indexWidget();
@@ -278,7 +293,58 @@ void UIHelpBrowserWidget::prepareWidgets()
         m_pHelpEngine->setupData();
 #endif
 }
-#include <QPushButton>
+
+void UIHelpBrowserWidget::prepareSearchWidgets()
+{
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+# if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+
+    AssertReturnVoid(m_pTabWidget && m_pHelpEngine);
+
+    m_pSearchContainerWidget = new QWidget;
+    m_pTabWidget->insertTab(HelpBrowserTabs_Search, m_pSearchContainerWidget, QString());
+
+    m_pHelpSearchEngine = m_pHelpEngine->searchEngine();
+    AssertReturnVoid(m_pHelpSearchEngine);
+
+    m_pHelpSearchQueryWidget = m_pHelpSearchEngine->queryWidget();
+    m_pHelpSearchResultWidget = m_pHelpSearchEngine->resultWidget();
+    AssertReturnVoid(m_pHelpSearchQueryWidget && m_pHelpSearchResultWidget);
+
+    QVBoxLayout *pSearchLayout = new QVBoxLayout(m_pSearchContainerWidget);
+    pSearchLayout->addWidget(m_pHelpSearchQueryWidget);
+    pSearchLayout->addWidget(m_pHelpSearchResultWidget);
+
+
+    connect(m_pHelpSearchQueryWidget, &QHelpSearchQueryWidget::search,
+            this, &UIHelpBrowserWidget::sltHandleSearchStart);
+    // connect(resultWidget, &QHelpSearchResultWidget::requestShowLink,
+    //         this, &SearchWidget::requestShowLink);
+
+    // connect(searchEngine, &QHelpSearchEngine::searchingStarted,
+    //         this, &SearchWidget::searchingStarted);
+    // connect(searchEngine, &QHelpSearchEngine::searchingFinished,
+    //         this, &SearchWidget::searchingFinished);
+
+
+
+
+    // connect(m_pHelpSearchEngine, &QHelpSearchEngine::indexingStarted,
+    //         this, &UIHelpBrowserWidget::sltHandleIndexingStarted);
+    // connect(m_pHelpSearchEngine, &QHelpSearchEngine::indexingFinished,
+    //         this, &UIHelpBrowserWidget::sltHandleIndexingFinished);
+
+    //void	searchingFinished(int searchResultCount)
+
+
+    connect(m_pHelpSearchEngine, &QHelpSearchEngine::searchingStarted,
+            this, &UIHelpBrowserWidget::sltHandleSearchingStarted);
+
+    m_pHelpSearchEngine->reindexDocumentation();
+# endif//if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+#endif
+}
+
 void UIHelpBrowserWidget::prepareToolBar()
 {
     m_pTopLayout = new QHBoxLayout;
@@ -293,6 +359,7 @@ void UIHelpBrowserWidget::prepareToolBar()
         m_pToolBar->addAction(m_pBackwardAction);
         m_pToolBar->addAction(m_pForwardAction);
         m_pToolBar->addAction(m_pHomeAction);
+        m_pToolBar->addAction(m_pAddBookmarkAction);
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -379,6 +446,7 @@ void UIHelpBrowserWidget::retranslateUi()
     {
         m_pTabWidget->setTabText(HelpBrowserTabs_TOC, tr("Contents"));
         m_pTabWidget->setTabText(HelpBrowserTabs_Index, tr("Index"));
+        m_pTabWidget->setTabText(HelpBrowserTabs_Search, tr("Search"));
         m_pTabWidget->setTabText(HelpBrowserTabs_Bookmarks, tr("Bookmarks"));
     }
     if (m_pShowHideSideBarAction)
@@ -618,4 +686,30 @@ void UIHelpBrowserWidget::sltHandleAddressBarIndexChanged(int iIndex)
 
 }
 
+void UIHelpBrowserWidget::sltHandleAddBookmarkAction()
+{
+}
+
+void UIHelpBrowserWidget::sltHandleIndexingStarted()
+{
+    printf("indexing started\n");
+}
+
+void UIHelpBrowserWidget::sltHandleIndexingFinished()
+{
+    printf("indexing finished\n");
+}
+
+void UIHelpBrowserWidget::sltHandleSearchingStarted()
+{
+    printf("search started\n");
+}
+
+void UIHelpBrowserWidget::sltHandleSearchStart()
+{
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+    AssertReturnVoid(m_pHelpSearchEngine && m_pHelpSearchQueryWidget);
+    m_pHelpSearchEngine->search(m_pHelpSearchQueryWidget->searchInput());
+#endif
+}
 #include "UIHelpBrowserWidget.moc"

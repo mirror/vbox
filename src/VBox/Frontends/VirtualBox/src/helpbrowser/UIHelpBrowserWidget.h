@@ -42,6 +42,9 @@ class QHelpEngine;
 class QHelpContentModel;
 class QHelpContentWidget;
 class QHelpIndexWidget;
+class QHelpSearchEngine;
+class QHelpSearchQueryWidget;
+class QHelpSearchResultWidget;
 class QPlainTextEdit;
 class QSplitter;
 class QITabWidget;
@@ -92,12 +95,18 @@ private slots:
     void sltHandleBackwardAvailable(bool fAvailable);
     void sltHandleHistoryChanged();
     void sltHandleAddressBarIndexChanged(int index);
+    void sltHandleAddBookmarkAction();
+    void sltHandleIndexingStarted();
+    void sltHandleIndexingFinished();
+    void sltHandleSearchingStarted();
+    void sltHandleSearchStart();
 
 private:
 
     void prepare();
     void prepareActions();
     void prepareWidgets();
+    void prepareSearchWidgets();
     void prepareToolBar();
     void prepareMenu();
     void loadOptions();
@@ -148,12 +157,17 @@ private:
     QHelpContentWidget  *m_pContentWidget;
     QHelpIndexWidget    *m_pIndexWidget;
     QHelpContentModel   *m_pContentModel;
+    QHelpSearchEngine   *m_pHelpSearchEngine;
+    QHelpSearchQueryWidget *m_pHelpSearchQueryWidget;
+    QHelpSearchResultWidget *m_pHelpSearchResultWidget;
     QWidget             *m_pBookmarksWidget;
+    QWidget             *m_pSearchContainerWidget;
     QAction             *m_pShowHideSideBarAction;
     QAction             *m_pShowHideToolBarAction;
     QAction             *m_pHomeAction;
     QAction             *m_pForwardAction;
     QAction             *m_pBackwardAction;
+    QAction             *m_pAddBookmarkAction;
     QString              m_strPageNotFoundText;
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
     bool                 m_fModelContentCreated;
