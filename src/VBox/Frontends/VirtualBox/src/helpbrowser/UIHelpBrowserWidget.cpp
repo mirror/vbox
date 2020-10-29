@@ -334,7 +334,7 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
     // connect(m_pHelpSearchEngine, &QHelpSearchEngine::indexingFinished,
     //         this, &UIHelpBrowserWidget::sltHandleIndexingFinished);
 
-    //void	searchingFinished(int searchResultCount)
+    //void      searchingFinished(int searchResultCount)
 
 
     connect(m_pHelpSearchEngine, &QHelpSearchEngine::searchingStarted,
