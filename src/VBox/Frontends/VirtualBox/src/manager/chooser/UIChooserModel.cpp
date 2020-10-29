@@ -1296,7 +1296,7 @@ void UIChooserModel::sltCurrentDragObjectDestroyed()
 void UIChooserModel::sltUpdateSelectedCloudProfiles()
 {
     /* For every selected item: */
-    QSet<UICloudEntityKey> selectedCloudAccountKeys;
+    QSet<UICloudEntityKey> selectedCloudEntityKeys;
     foreach (UIChooserItem *pSelectedItem, selectedItems())
     {
         /* Enumerate cloud entity keys to update: */
@@ -1315,8 +1315,8 @@ void UIChooserModel::sltUpdateSelectedCloudProfiles()
                         {
                             const QString strProfileName = pChildItem->name();
                             const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
-                            if (!selectedCloudAccountKeys.contains(cloudEntityKey))
-                                selectedCloudAccountKeys.insert(cloudEntityKey);
+                            if (!selectedCloudEntityKeys.contains(cloudEntityKey))
+                                selectedCloudEntityKeys.insert(cloudEntityKey);
                         }
                         break;
                     }
@@ -1325,8 +1325,8 @@ void UIChooserModel::sltUpdateSelectedCloudProfiles()
                         const QString strProviderShortName = pSelectedItem->parentItem()->name();
                         const QString strProfileName = pSelectedItem->name();
                         const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
-                        if (!selectedCloudAccountKeys.contains(cloudEntityKey))
-                            selectedCloudAccountKeys.insert(cloudEntityKey);
+                        if (!selectedCloudEntityKeys.contains(cloudEntityKey))
+                            selectedCloudEntityKeys.insert(cloudEntityKey);
                         break;
                     }
                     default:
@@ -1344,16 +1344,16 @@ void UIChooserModel::sltUpdateSelectedCloudProfiles()
                     const QString strProviderShortName = pMachineItem->parentItem()->parentItem()->name();
                     const QString strProfileName = pMachineItem->parentItem()->name();
                     const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
-                    if (!selectedCloudAccountKeys.contains(cloudEntityKey))
-                        selectedCloudAccountKeys.insert(cloudEntityKey);
+                    if (!selectedCloudEntityKeys.contains(cloudEntityKey))
+                        selectedCloudEntityKeys.insert(cloudEntityKey);
                 }
                 break;
             }
         }
     }
 
-    /* Restart List Cloud Machines task for selected account keys: */
-    foreach (const UICloudEntityKey &cloudEntityKey, selectedCloudAccountKeys)
+    /* Restart List Cloud Machines task for selected entity keys: */
+    foreach (const UICloudEntityKey &cloudEntityKey, selectedCloudEntityKeys)
     {
         /* Skip cloud entity keys already being updated: */
         if (containsCloudEntityKey(cloudEntityKey))
@@ -1910,9 +1910,14 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
     }
 
     /* For every selected machine-item: */
-    QSet<UICloudEntityKey> changedCloudAccountKeys;
+    QSet<UICloudEntityKey> changedCloudEntityKeys;
     foreach (UIChooserItemMachine *pMachineItem, machineItems)
     {
+        /* Compose cloud entity keys for profile: */
+        const QString strProviderShortName = pMachineItem->parentItem()->parentItem()->name();
+        const QString strProfileName = pMachineItem->parentItem()->name();
+        const UICloudEntityKey cloudEntityKeyForProfile = UICloudEntityKey(strProviderShortName, strProfileName);
+
         /* Acquire cloud machine: */
         CCloudMachine comMachine = pMachineItem->cache()->toCloud()->machine();
         CProgress comProgress;
@@ -1934,16 +1939,14 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
             msgCenter().cannotRemoveCloudMachine(comMachine, comProgress);
             continue;
         }
-        /* Compose cloud entity key to update: */
-        const QString strProviderShortName = pMachineItem->parentItem()->parentItem()->name();
-        const QString strProfileName = pMachineItem->parentItem()->name();
-        const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
-        if (!changedCloudAccountKeys.contains(cloudEntityKey))
-            changedCloudAccountKeys.insert(cloudEntityKey);
+
+        /* Append cloud entity key for profile to update: */
+        if (!changedCloudEntityKeys.contains(cloudEntityKeyForProfile))
+            changedCloudEntityKeys.insert(cloudEntityKeyForProfile);
     }
 
-    /* Restart List Cloud Machines task for required account keys: */
-    foreach (const UICloudEntityKey &cloudEntityKey, changedCloudAccountKeys)
+    /* Restart List Cloud Machines task for required entity keys: */
+    foreach (const UICloudEntityKey &cloudEntityKey, changedCloudEntityKeys)
     {
         /* Skip cloud entity keys already being updated: */
         if (containsCloudEntityKey(cloudEntityKey))
