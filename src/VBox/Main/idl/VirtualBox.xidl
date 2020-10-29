@@ -27305,7 +27305,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <interface name="ICloudMachine" extends="$unknown"
-             uuid="8e3b08e6-a605-11ea-9edf-3bfdab40b718"
+             uuid="147816c8-17e0-11eb-81fa-87cea6263e1a"
              wsmap="managed"
              reservedMethods="16" reservedAttributes="8">
     <desc>
@@ -27483,6 +27483,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getConsoleHistory">
+      <desc>
+        Get the backlog of the machine's console.  If you have ever
+        seen console teletypes, this is like looking at the last few
+        meters of the paper it spewed.
+      </desc>
+      <param name="stream" type="IDataStream" dir="out">
+        <desc>
+          Data stream object for reading the console history.  For now
+          we are abusing/repurposing this interface from the media
+          convertion API to avoid marshalling a huge string through
+          xpcom.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return"><desc>
           Progress object to track the operation completion.
         </desc>
       </param>
