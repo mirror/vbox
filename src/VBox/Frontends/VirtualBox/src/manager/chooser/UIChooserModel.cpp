@@ -1130,19 +1130,6 @@ void UIChooserModel::sltLocalMachineRegistrationChanged(const QUuid &uMachineId,
 
 void UIChooserModel::sltHandleCloudProviderUninstall(const QUuid &uProviderId)
 {
-    /* Search for selected cloud machine items: */
-    foreach (UIVirtualMachineItem *pItem, selectedMachineItems())
-    {
-        /* Skip unrelated nodes: */
-        AssertPtrReturnVoid(pItem);
-        UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
-        if (!pCloudItem)
-            continue;
-
-        /* Wait for cloud machine refresh task to complete: */
-        pCloudItem->waitForAsyncInfoUpdateFinished();
-    }
-
     /* Call to base-class: */
     UIChooserAbstractModel::sltHandleCloudProviderUninstall(uProviderId);
 
