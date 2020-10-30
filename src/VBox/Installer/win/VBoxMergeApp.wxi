@@ -227,17 +227,22 @@
         </File>
  <?endif ?>
 <?endif ?>
+<?if $(env.VBOX_WITH_FE_BALLOONCTRL) = "yes" ?>
         <File Id="file_VBoxBalloonCtrl.exe" Name="VBoxBalloonCtrl.exe"
               Source="$(env.PATH_OUT)\bin\VBoxBalloonCtrl.exe"/>
+<?endif ?>
+<?if $(env.VBOX_WITH_FE_BUGREPORT) = "yes" ?>
         <File Id="file_VBoxBugReport.exe" Name="VBoxBugReport.exe"
               Source="$(env.PATH_OUT)\bin\VBoxBugReport.exe"/>
+<?endif ?>
+<?if $(env.VBOX_WITH_FE_AUTOSTART) = "yes" ?>
         <File Id="file_VBoxAutostartSvc.exe" Name="VBoxAutostartSvc.exe"
               Source="$(env.PATH_OUT)\bin\VBoxAutostartSvc.exe" />
+<?endif ?>
 <?if $(env.VBOX_WITH_VBOX_IMG) = "yes" ?>
         <File Id="file_vbox_img.exe" Name="vbox-img.exe"
               Source="$(env.PATH_OUT)\bin\vbox-img.exe"/>
 <?endif ?>
-
         <!-- Misc tools -->
         <File Id="file_VBoxNetDHCP.exe" Name="VBoxNetDHCP.exe"
               Source="$(env.PATH_OUT)\bin\VBoxNetDHCP.exe"/>
@@ -349,8 +354,10 @@
         <File Id="file_VirtualBox_150px.png" Name="VirtualBox_150px.png"
               Source="$(env.PATH_OUT)\bin\VirtualBox_150px.png" />
 
+ <?if $(env.VBOX_WITH_VMSVGA3D) = "yes" or $(env.VBOX_WITH_VIDEOHWACCEL) = "yes" ?>
         <File Id="file_VBoxTestOGL.exe" Name="VBoxTestOGL.exe"
-            Source="$(env.PATH_OUT)\bin\VBoxTestOGL.exe" />
+              Source="$(env.PATH_OUT)\bin\VBoxTestOGL.exe" />
+ <?endif ?>
 <?endif ?>
 <?if $(env.VBOX_WITH_DEBUGGER_GUI) = "yes" ?>
         <File Id="file_VBoxDbg.dll" Name="VBoxDbg.dll"
