@@ -802,6 +802,7 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UIPopupCenter.h \
 	src/globals/UIProgressEventHandler.h \
 	src/globals/UIProgressObject.h \
+	src/globals/UIProgressTask.h \
 	src/globals/UIQObjectStuff.h \
 	src/globals/UIShortcutPool.h \
 	src/globals/UITask.h \
@@ -1321,6 +1322,7 @@ UICommon_SOURCES = \
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIProgressEventHandler.cpp \
 	src/globals/UIProgressObject.cpp \
+	src/globals/UIProgressTask.cpp \
 	src/globals/UIQObjectStuff.cpp \
 	src/globals/UIShortcutPool.cpp \
 	src/globals/UITextTable.cpp \
