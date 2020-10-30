@@ -180,10 +180,16 @@ void UIChooserModel::setSelectedItems(const QList<UIChooserItem*> &items)
 
     /* Update all the old items (they are no longer selected): */
     foreach (UIChooserItem *pItem, oldCurrentItems)
+    {
+        pItem->setSelected(false);
         pItem->update();
+    }
     /* Update all the new items (they are selected now): */
     foreach (UIChooserItem *pItem, m_selectedItems)
+    {
+        pItem->setSelected(true);
         pItem->update();
+    }
 
     /* Notify about selection changes: */
     emit sigSelectionChanged();
