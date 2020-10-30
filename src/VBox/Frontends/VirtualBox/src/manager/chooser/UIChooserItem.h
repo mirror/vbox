@@ -140,6 +140,13 @@ public:
         /** Returns whether item is hovered. */
         bool isHovered() const;
 
+        /** Returns whether item is selected.
+          * @note Sometimes it's useful to know whether item is selected in model above. */
+        virtual bool isSelected() const;
+        /** Defines item as @a fSelected.
+          * @note Don't forget to call for base-class method when reimplementing it. */
+        virtual void setSelected(bool fSelected);
+
         /** Starts item editing. */
         virtual void startEditing() = 0;
 
@@ -307,6 +314,8 @@ private:
 
         /** Holds whether item is hovered. */
         bool                         m_fHovered;
+        /** Holds whether item is selected. */
+        bool                         m_fSelected;
         /** Holds the hovering animation machine instance. */
         QStateMachine               *m_pHoveringMachine;
         /** Holds the forward hovering animation instance. */
