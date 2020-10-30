@@ -225,11 +225,6 @@ private slots:
         void sltGroupToggleStart();
         /** Handles group toggle finish for group finally @a fToggled. */
         void sltGroupToggleFinish(bool fToggled);
-
-        /** Handles root indentation. */
-        void sltIndentRoot();
-        /** Handles root unindentation. */
-        void sltUnindentRoot();
     /** @} */
 
 private:

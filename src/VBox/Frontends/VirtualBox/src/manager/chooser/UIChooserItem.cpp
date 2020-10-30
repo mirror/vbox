@@ -402,15 +402,6 @@ bool UIChooserItem::isHovered() const
     return m_fHovered;
 }
 
-void UIChooserItem::setHovered(bool fHovered)
-{
-    m_fHovered = fHovered;
-    if (m_fHovered)
-        emit sigHoverEnter();
-    else
-        emit sigHoverLeave();
-}
-
 void UIChooserItem::setDisabledEffect(bool fOn)
 {
     if (m_pDisabledEffect)

@@ -139,8 +139,6 @@ public:
 
         /** Returns whether item is hovered. */
         bool isHovered() const;
-        /** Defines whether item is @a fHovered. */
-        void setHovered(bool fHovered);
 
         /** Starts item editing. */
         virtual void startEditing() = 0;

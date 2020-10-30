@@ -1036,18 +1036,6 @@ void UIChooserItemGroup::sltGroupToggleFinish(bool fToggled)
     emit sigToggleFinished();
 }
 
-void UIChooserItemGroup::sltIndentRoot()
-{
-    /* Unhover before indenting: */
-    setHovered(false);
-}
-
-void UIChooserItemGroup::sltUnindentRoot()
-{
-    /* Unhover before unindenting: */
-    setHovered(false);
-}
-
 void UIChooserItemGroup::prepare()
 {
     /* Prepare self: */
