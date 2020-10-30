@@ -20,11 +20,14 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
+
 #include <tchar.h>
 #include <stdio.h>
 
 #include <msi.h>
 #include <msiquery.h>
+
+#include <iprt/utf16.h>
 
 
 #if (_MSC_VER < 1400) /* Provide swprintf_s to VC < 8.0. */
@@ -39,25 +42,56 @@ int swprintf_s(WCHAR *buffer, size_t cbBuffer, const WCHAR *format, ...)
 }
 #endif
 
-UINT VBoxGetProperty(MSIHANDLE a_hModule, WCHAR *a_pwszName, WCHAR *a_pwszValue, DWORD a_dwSize)
+UINT VBoxGetMsiProp(MSIHANDLE hMsi, WCHAR *pwszName, WCHAR *pwszValue, DWORD dwSize)
 {
     DWORD dwBuffer = 0;
-    UINT uiRet = MsiGetPropertyW(a_hModule, a_pwszName, L"", &dwBuffer);
+    UINT uiRet = MsiGetPropertyW(hMsi, pwszName, L"", &dwBuffer);
     if (uiRet == ERROR_MORE_DATA)
     {
         ++dwBuffer;     /* On output does not include terminating null, so add 1. */
 
-        if (dwBuffer > a_dwSize)
+        if (dwBuffer > dwSize)
             return ERROR_MORE_DATA;
 
-        ZeroMemory(a_pwszValue, a_dwSize);
-        uiRet = MsiGetPropertyW(a_hModule, a_pwszName, a_pwszValue, &dwBuffer);
+        ZeroMemory(pwszValue, dwSize);
+        uiRet = MsiGetPropertyW(hMsi, pwszName, pwszValue, &dwBuffer);
     }
     return uiRet;
 }
 
-UINT VBoxSetProperty(MSIHANDLE a_hModule, WCHAR *a_pwszName, WCHAR *a_pwszValue)
+/**
+ * Retrieves a MSI property (in UTF-8).
+ *
+ * Convenience function for VBoxGetMsiProp().
+ *
+ * @returns VBox status code.
+ * @param   hMsi                MSI handle to use.
+ * @param   pcszName            Name of property to retrieve.
+ * @param   ppszValue           Where to store the allocated value on success.
+ *                              Must be free'd using RTStrFree() by the caller.
+ */
+int VBoxGetMsiPropUtf8(MSIHANDLE hMsi, const char *pcszName, char **ppszValue)
 {
-    return MsiSetPropertyW(a_hModule, a_pwszName, a_pwszValue);
+    PRTUTF16 pwszName;
+    int rc = RTStrToUtf16(pcszName, &pwszName);
+    if (RT_SUCCESS(rc))
+    {
+        WCHAR wszValue[1024]; /* 1024 should be enough for everybody (tm). */
+        if (VBoxGetMsiProp(hMsi, pwszName, wszValue, sizeof(wszValue)) == ERROR_SUCCESS)
+        {
+            rc = RTUtf16ToUtf8(wszValue, ppszValue);
+        }
+        else
+            rc = VERR_NOT_FOUND;
+
+        RTUtf16Free(pwszName);
+    }
+
+    return rc;
+}
+
+UINT VBoxSetMsiProp(MSIHANDLE hMsi, WCHAR *pwszName, WCHAR *pwszValue)
+{
+    return MsiSetPropertyW(hMsi, pwszName, pwszValue);
 }
 

@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxInstallHelper
-VBoxInstallHelper_TEMPLATE = VBOXR3STATIC
+VBoxInstallHelper_TEMPLATE = VBoxR3Static
 VBoxInstallHelper_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
 VBoxInstallHelper_DEFS    += VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxInstallHelper_DEPS     = $(VBOX_SVN_REV_KMK)
@@ -35,7 +35,7 @@ ifndef VBOX_OSE
  VBoxInstallHelper_SOURCES += internal/VBoxSerial.cpp
 endif
 VBoxInstallHelper_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
-VBoxInstallHelper_LIBS     = $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib
+VBoxInstallHelper_LIBS    += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib
 ifdef VBOX_WITH_NETFLT
  VBoxInstallHelper_LIBS   += \
 	$(PATH_STAGE_LIB)/WinNetConfig.lib \
