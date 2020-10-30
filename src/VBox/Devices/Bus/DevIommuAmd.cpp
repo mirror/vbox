@@ -890,6 +890,9 @@ static VBOXSTRICTRC iommuAmdDevTabBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 
     /* Update the register. */
     pThis->aDevTabBaseAddrs[0].u64 = u64Value;
+
+    /* Paranoia. */
+    Assert(pThis->aDevTabBaseAddrs[0].n.u9Size <= g_auDevTabSegMaxSizes[0]);
     return VINF_SUCCESS;
 }
 
@@ -2666,6 +2669,7 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
     PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
 
+    /* Figure out which device table segment is being accessed. */
     uint8_t const idxSegsEn = Ctrl.n.u3DevTabSegEn;
     Assert(idxSegsEn < RT_ELEMENTS(g_auDevTabSegShifts));
 
@@ -2674,22 +2678,34 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
     AssertCompile(RT_ELEMENTS(g_auDevTabSegShifts) == RT_ELEMENTS(g_auDevTabSegMasks));
 
     RTGCPHYS const GCPhysDevTab = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base << X86_PAGE_4K_SHIFT;
-    uint16_t const offDte       = (uDevId & ~g_auDevTabSegMasks[idxSegsEn]) * sizeof(DTE_T);
+    uint32_t const offDte       = (uDevId & ~g_auDevTabSegMasks[idxSegsEn]) * sizeof(DTE_T);
     RTGCPHYS const GCPhysDte    = GCPhysDevTab + offDte;
 
-    Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));
-    int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDte, pDte, sizeof(*pDte));
-    if (RT_FAILURE(rc))
+    /* Ensure the DTE falls completely within the device table segment. */
+    uint32_t const cbDevTabSeg  = (pThis->aDevTabBaseAddrs[idxSeg].n.u9Size + 1) << X86_PAGE_4K_SHIFT;
+    if (offDte + sizeof(DTE_T) <= cbDevTabSeg)
     {
+        /* Read the device table entry from guest memory. */
+        Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));
+        int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDte, pDte, sizeof(*pDte));
+        if (RT_SUCCESS(rc))
+            return rc;
+
+        /* Raise a device table hardware error. */
         LogFunc(("Failed to read device table entry at %#RGp. rc=%Rrc -> DevTabHwError\n", GCPhysDte, rc));
 
         EVT_DEV_TAB_HW_ERROR_T EvtDevTabHwErr;
         iommuAmdInitDevTabHwErrorEvent(uDevId, GCPhysDte, enmOp, &EvtDevTabHwErr);
         iommuAmdRaiseDevTabHwErrorEvent(pDevIns, enmOp, &EvtDevTabHwErr);
-        return VERR_IOMMU_IPE_1;
+        return VERR_IOMMU_DTE_READ_FAILED;
     }
 
-    return rc;
+    /* Raise an I/O page fault for out-of-bounds acccess. */
+    EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+    iommuAmdInitIoPageFaultEvent(uDevId, 0 /* uDomainId */, 0 /* uIova */, false /* fPresent */, false /* fRsvdNotZero */,
+                                 false /* fPermDenied */, enmOp, &EvtIoPageFault);
+    iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_DevId_Invalid);
+    return VERR_IOMMU_DTE_BAD_OFFSET;
 }
 
 
@@ -3243,8 +3259,7 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, GCPhysIn, false /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
-        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
-                                      kIoPageFaultType_IrteAddrInvalid);
+        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteAddrInvalid);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
@@ -3347,7 +3362,9 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
 static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     /* Read the device table entry from memory. */
-    LogFlowFunc(("uDevId=%#x enmOp=%u\n", uDevId, enmOp));
+    LogFlowFunc(("uDevId=%#x (%#x:%#x:%#x) enmOp=%u\n", uDevId,
+                 ((uDevId >> VBOX_PCI_BUS_SHIFT) & VBOX_PCI_BUS_MASK),
+                 ((uDevId >> VBOX_PCI_DEVFN_DEV_SHIFT) & VBOX_PCI_DEVFN_DEV_MASK), (uDevId & VBOX_PCI_DEVFN_FUN_MASK), enmOp));
 
     DTE_T Dte;
     int rc = iommuAmdReadDte(pDevIns, uDevId, enmOp, &Dte);
@@ -3403,19 +3420,6 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                     case VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO:
                     {
                         uint8_t const uIntrCtrl = Dte.n.u2IntrCtrl;
-                        if (uIntrCtrl == IOMMU_INTR_CTRL_TARGET_ABORT)
-                        {
-                            LogFunc(("IntCtl=0: Target aborting fixed/arbitrated interrupt -> Target abort\n"));
-                            iommuAmdSetPciTargetAbort(pDevIns);
-                            return VERR_IOMMU_INTR_REMAP_DENIED;
-                        }
-
-                        if (uIntrCtrl == IOMMU_INTR_CTRL_FWD_UNMAPPED)
-                        {
-                            fPassThru = true;
-                            break;
-                        }
-
                         if (uIntrCtrl == IOMMU_INTR_CTRL_REMAP)
                         {
                             /* Validate the encoded interrupt table length when IntCtl specifies remapping. */
@@ -3443,11 +3447,24 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                             return VERR_IOMMU_INTR_REMAP_FAILED;
                         }
 
+                        if (uIntrCtrl == IOMMU_INTR_CTRL_FWD_UNMAPPED)
+                        {
+                            fPassThru = true;
+                            break;
+                        }
+
+                        if (uIntrCtrl == IOMMU_INTR_CTRL_TARGET_ABORT)
+                        {
+                            LogFunc(("IntCtl=0: Remapping disallowed for fixed/arbitrated interrupt (%#x) -> Target abort\n",
+                                     pMsiIn->Data.n.u8Vector));
+                            iommuAmdSetPciTargetAbort(pDevIns);
+                            return VERR_IOMMU_INTR_REMAP_DENIED;
+                        }
+
                         /* Paranoia. */
                         Assert(uIntrCtrl == IOMMU_INTR_CTRL_RSVD);
 
                         LogFunc(("IntCtl mode invalid %#x -> Illegal DTE\n", uIntrCtrl));
-
                         EVT_ILLEGAL_DTE_T Event;
                         iommuAmdInitIllegalDteEvent(uDevId, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
                         iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntCtl);
@@ -3473,6 +3490,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                     return VINF_SUCCESS;
                 }
 
+                LogFunc(("Remapping/passthru disallowed for interrupt (%#x) -> Target abort\n", pMsiIn->Data.n.u8Vector));
                 iommuAmdSetPciTargetAbort(pDevIns);
                 return VERR_IOMMU_INTR_REMAP_DENIED;
             }
