@@ -1006,9 +1006,6 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
         /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane: */
         if (pItem->itemType() == UIVirtualMachineItemType_Local)
             m_pPaneToolsMachine->setMachine(pItem->toLocal()->machine());
-        /* Update current cloud machine state: */
-        if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
-            pItem->toCloud()->updateInfoAsync(false /* delayed? */);
     }
     else
     {

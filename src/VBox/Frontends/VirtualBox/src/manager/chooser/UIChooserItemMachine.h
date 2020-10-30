@@ -105,6 +105,9 @@ protected:
         /** Returns RTTI item type. */
         virtual int type() const /* override */ { return Type; }
 
+        /** Defines item as @a fSelected. */
+        virtual void setSelected(bool fSelected) /* override */;
+
         /** Starts item editing. */
         virtual void startEditing() /* override */;
 

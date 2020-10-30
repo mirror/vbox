@@ -30,6 +30,7 @@
 #include "UIChooserNodeMachine.h"
 #include "UIIconPool.h"
 #include "UIVirtualBoxManager.h"
+#include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
 
 /* Other VBox includes: */
@@ -218,6 +219,23 @@ void UIChooserItemMachine::paint(QPainter *pPainter, const QStyleOptionGraphicsI
     paintFrame(pPainter, rectangle);
     /* Paint machine info: */
     paintMachineInfo(pPainter, rectangle);
+}
+
+void UIChooserItemMachine::setSelected(bool fSelected)
+{
+    /* Call to base-class: */
+    UIChooserItem::setSelected(fSelected);
+
+    /* Special treatment for real cloud items: */
+    if (cacheType() == UIVirtualMachineItemType_CloudReal)
+    {
+        UIVirtualMachineItemCloud *pCloudMachineItem = cache()->toCloud();
+        AssertPtrReturnVoid(pCloudMachineItem);
+        if (fSelected && pCloudMachineItem->accessible())
+            pCloudMachineItem->updateInfoAsync(false /* delayed? */);
+        else
+            pCloudMachineItem->waitForAsyncInfoUpdateFinished();
+    }
 }
 
 void UIChooserItemMachine::startEditing()
