@@ -21,20 +21,15 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QPointer>
-
 /* GUI includes: */
 #include "UIVirtualMachineItem.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CCloudMachine.h"
-#include "CProgress.h"
 
 /* Forward declarations: */
-class QTimer;
-class UIProgressObject;
+class UIProgressTask;
 
 /** UIVirtualMachineItem sub-class used as cloud Virtual Machine item interface. */
 class UIVirtualMachineItemCloud : public UIVirtualMachineItem
@@ -55,7 +50,7 @@ public:
     /** Constructs real cloud VM item on the basis of taken @a comCloudMachine. */
     UIVirtualMachineItemCloud(const CCloudMachine &comCloudMachine);
     /** Destructs cloud VM item. */
-    virtual ~UIVirtualMachineItemCloud();
+    virtual ~UIVirtualMachineItemCloud() /* override */;
 
     /** @name Arguments.
       * @{ */
@@ -128,8 +123,6 @@ protected:
 
 private slots:
 
-        /** Starts cloud VM info refresh progress. */
-        void sltRefreshCloudMachineInfo();
         /** Handles signal about cloud VM info refresh progress is done. */
         void sltHandleRefreshCloudMachineInfoDone();
 
@@ -159,14 +152,10 @@ private:
         /** Holds fake cloud item error message. */
         QString                             m_strFakeCloudItemErrorMessage;
 
-        /** Holds whether we should update info. */
-        bool                        m_fRefreshScheduled;
-        /** Holds the machine refresh timer instance. */
-        QTimer                     *m_pTimer;
-        /** Holds the machine refresh progress object instance. */
-        CProgress                   m_comProgress;
-        /** Holds the machine refresh progress handler instance. */
-        QPointer<UIProgressObject>  m_pProgressHandler;
+        /** Holds whether we plan to refresh info. */
+        bool            m_fRefreshScheduled;
+        /** Holds the refresh progress-task instance. */
+        UIProgressTask *m_pProgressTaskRefresh;
     /** @} */
 };
 

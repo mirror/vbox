@@ -26,7 +26,7 @@
 #include "UIErrorString.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "UIProgressObject.h"
+#include "UIProgressTask.h"
 #include "UIThreadPool.h"
 #include "UIVirtualMachineItemCloud.h"
 
@@ -35,12 +35,65 @@
 #include "CVirtualBoxErrorInfo.h"
 
 
+/** UIProgressTask extension performing cloud machine refresh task. */
+class UIProgressTaskRefreshCloudMachine : public UIProgressTask
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs @a comCloudMachine refresh task passing @a pParent to the base-class. */
+    UIProgressTaskRefreshCloudMachine(QObject *pParent, const CCloudMachine &comCloudMachine);
+
+protected:
+
+    /** Creates and returns started progress-wrapper required to init UIProgressObject. */
+    virtual CProgress createProgress() /* override */;
+    /** Handles finished @a comProgress wrapper. */
+    virtual void handleProgressFinished(CProgress &comProgress) /* override */;
+
+private:
+
+    /** Holds the cloud machine wrapper. */
+    CCloudMachine  m_comCloudMachine;
+};
+
+
+/*********************************************************************************************************************************
+*   Class UIProgressTaskRefreshCloudMachine implementation.                                                                      *
+*********************************************************************************************************************************/
+
+UIProgressTaskRefreshCloudMachine::UIProgressTaskRefreshCloudMachine(QObject *pParent, const CCloudMachine &comCloudMachine)
+    : UIProgressTask(pParent)
+    , m_comCloudMachine(comCloudMachine)
+{
+}
+
+CProgress UIProgressTaskRefreshCloudMachine::createProgress()
+{
+    CProgress comProgress = m_comCloudMachine.Refresh();
+    if (!m_comCloudMachine.isOk())
+        msgCenter().cannotAcquireCloudMachineParameter(m_comCloudMachine);
+    return comProgress;
+}
+
+void UIProgressTaskRefreshCloudMachine::handleProgressFinished(CProgress &comProgress)
+{
+    if (!comProgress.GetCanceled() && (!comProgress.isOk() || comProgress.GetResultCode() != 0))
+        msgCenter().cannotAcquireCloudMachineParameter(comProgress);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIVirtualMachineItemCloud implementation.                                                                              *
+*********************************************************************************************************************************/
+
 UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(UIFakeCloudVirtualMachineItemState enmState)
     : UIVirtualMachineItem(UIVirtualMachineItemType_CloudFake)
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(enmState)
     , m_fRefreshScheduled(false)
-    , m_pTimer(0)
+    , m_pProgressTaskRefresh(0)
 {
     prepare();
 }
@@ -51,7 +104,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comClo
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_NotApplicable)
     , m_fRefreshScheduled(false)
-    , m_pTimer(0)
+    , m_pProgressTaskRefresh(0)
 {
     prepare();
 }
@@ -75,27 +128,34 @@ void UIVirtualMachineItemCloud::setFakeCloudItemErrorMessage(const QString &strE
 
 void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed, bool fSubscribe /* = false */)
 {
+    /* Ignore refresh request if progress-task is absent: */
+    if (!m_pProgressTaskRefresh)
+        return;
+
     /* Mark update scheduled if requested: */
     if (fSubscribe)
         m_fRefreshScheduled = true;
 
-    /* Ignore refresh request if timer or progress is already running: */
-    if (m_pTimer->isActive() || m_pProgressHandler)
-        return;
-
-    /* Schedule refresh request in a 10 or 0 seconds: */
-    m_pTimer->setInterval(fDelayed ? 10000 : 0);
-    m_pTimer->start();
+    /* Schedule refresh request in a 10 or 0 seconds
+     * if progress-task isn't already scheduled or running: */
+    if (   !m_pProgressTaskRefresh->isScheduled()
+        && !m_pProgressTaskRefresh->isRunning())
+        m_pProgressTaskRefresh->schedule(fDelayed ? 10000 : 0);
 }
 
 void UIVirtualMachineItemCloud::waitForAsyncInfoUpdateFinished()
 {
+    /* Ignore cancel request if progress-task is absent: */
+    if (!m_pProgressTaskRefresh)
+        return;
+
     /* Mark update canceled in any case: */
     m_fRefreshScheduled = false;
 
-    /* Cancel the progress-handler if any: */
-    if (m_pProgressHandler)
-        m_pProgressHandler->cancel();
+    /* Cancel refresh request
+     * if progress-task already running: */
+    if (m_pProgressTaskRefresh->isRunning())
+        m_pProgressTaskRefresh->cancel();
 }
 
 void UIVirtualMachineItemCloud::recache()
@@ -297,51 +357,13 @@ void UIVirtualMachineItemCloud::retranslateUi()
     }
 }
 
-void UIVirtualMachineItemCloud::sltRefreshCloudMachineInfo()
-{
-    /* Make sure item is of real cloud type and is initialized: */
-    AssertReturnVoid(itemType() == UIVirtualMachineItemType_CloudReal);
-
-    /* Ignore refresh request if there is progress already: */
-    if (m_pProgressHandler)
-        return;
-
-    /* Create 'Refresh' progress: */
-    m_comProgress = m_comCloudMachine.Refresh();
-    if (!m_comCloudMachine.isOk())
-        msgCenter().cannotAcquireCloudMachineParameter(m_comCloudMachine);
-    else
-    {
-        /* Prepare 'Refresh' progress handler: */
-        m_pProgressHandler = new UIProgressObject(m_comProgress, this);
-        if (m_pProgressHandler)
-        {
-            connect(m_pProgressHandler.data(), &UIProgressObject::sigProgressEventHandlingFinished,
-                    this, &UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone);
-            emit sigRefreshStarted();
-        }
-    }
-}
-
 void UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone()
 {
-    /* Was the progress canceled? */
-    const bool fCanceled = m_comProgress.GetCanceled();
-
-    /* If not canceled => check progress result: */
-    if (!fCanceled && (!m_comProgress.isOk() || m_comProgress.GetResultCode() != 0))
-        msgCenter().cannotAcquireCloudMachineParameter(m_comProgress);
-
     /* Recache: */
     recache();
 
-    /* Cleanup the handler and the progress: */
-    delete m_pProgressHandler;
-    m_comProgress = CProgress();
-
-    /* If not canceled => notify listeners: */
-    if (!fCanceled)
-        emit sigRefreshFinished();
+    /* Notify listeners: */
+    emit sigRefreshFinished();
 
     /* Refresh again if scheduled: */
     if (m_fRefreshScheduled)
@@ -350,13 +372,17 @@ void UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone()
 
 void UIVirtualMachineItemCloud::prepare()
 {
-    /* Prepare timer: */
-    m_pTimer = new QTimer(this);
-    if (m_pTimer)
+    /* Prepare progress-task if necessary: */
+    if (itemType() == UIVirtualMachineItemType_CloudReal)
     {
-        m_pTimer->setSingleShot(true);
-        connect(m_pTimer, &QTimer::timeout,
-                this, &UIVirtualMachineItemCloud::sltRefreshCloudMachineInfo);
+        m_pProgressTaskRefresh = new UIProgressTaskRefreshCloudMachine(this, machine());
+        if (m_pProgressTaskRefresh)
+        {
+            connect(m_pProgressTaskRefresh, &UIProgressTaskRefreshCloudMachine::sigProgressStarted,
+                    this, &UIVirtualMachineItemCloud::sigRefreshStarted);
+            connect(m_pProgressTaskRefresh, &UIProgressTaskRefreshCloudMachine::sigProgressFinished,
+                    this, &UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone);
+        }
     }
 
     /* Recache finally: */
@@ -365,7 +391,10 @@ void UIVirtualMachineItemCloud::prepare()
 
 void UIVirtualMachineItemCloud::cleanup()
 {
-    /* Cleanup timer: */
-    delete m_pTimer;
-    m_pTimer = 0;
+    /* Cleanup progress-task: */
+    delete m_pProgressTaskRefresh;
+    m_pProgressTaskRefresh = 0;
 }
+
+
+#include "UIVirtualMachineItemCloud.moc"

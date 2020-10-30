@@ -940,6 +940,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/cloud/profilemanager/UICloudProfileManager.cpp \
 	src/hostnetwork/UIHostNetworkManager.cpp \
 	src/manager/UIVirtualBoxManager.cpp \
+	src/manager/UIVirtualMachineItemCloud.cpp \
 	src/manager/UIWelcomePane.cpp \
 	src/manager/chooser/UIChooserAbstractModel.cpp \
 	src/monitor/resource/UIResourceMonitor.cpp \
