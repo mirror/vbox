@@ -34,7 +34,7 @@
 #include "UIMachineSettingsGeneral.h"
 #include "UIModalWindowManager.h"
 #include "UINameAndSystemEditor.h"
-#include "UIProgressDialog.h"
+#include "UIProgressObject.h"
 
 /* COM includes: */
 #include "CExtPack.h"
@@ -1153,16 +1153,16 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                     }
 
                     /* Create encryption update progress object: */
-                    QPointer<UIProgress> pObject;
+                    QPointer<UIProgressObject> pObject;
                     if (fSuccess)
                     {
-                        pObject = new UIProgress(comProgress);
+                        pObject = new UIProgressObject(comProgress);
                         if (pObject)
                         {
-                            connect(pObject.data(), &UIProgress::sigProgressChange,
+                            connect(pObject.data(), &UIProgressObject::sigProgressChange,
                                     this, &UIMachineSettingsGeneral::sigOperationProgressChange,
                                     Qt::QueuedConnection);
-                            connect(pObject.data(), &UIProgress::sigProgressError,
+                            connect(pObject.data(), &UIProgressObject::sigProgressError,
                                     this, &UIMachineSettingsGeneral::sigOperationProgressError,
                                     Qt::BlockingQueuedConnection);
                             pObject->exec();

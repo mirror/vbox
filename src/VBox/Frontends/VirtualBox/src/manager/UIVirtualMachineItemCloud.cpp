@@ -26,7 +26,7 @@
 #include "UIErrorString.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "UIProgressDialog.h"
+#include "UIProgressObject.h"
 #include "UIThreadPool.h"
 #include "UIVirtualMachineItemCloud.h"
 
@@ -313,10 +313,10 @@ void UIVirtualMachineItemCloud::sltRefreshCloudMachineInfo()
     else
     {
         /* Prepare 'Refresh' progress handler: */
-        m_pProgressHandler = new UIProgress(m_comProgress, this);
+        m_pProgressHandler = new UIProgressObject(m_comProgress, this);
         if (m_pProgressHandler)
         {
-            connect(m_pProgressHandler.data(), &UIProgress::sigProgressEventHandlingFinished,
+            connect(m_pProgressHandler.data(), &UIProgressObject::sigProgressEventHandlingFinished,
                     this, &UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone);
             emit sigRefreshStarted();
         }

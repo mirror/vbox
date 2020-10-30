@@ -34,7 +34,6 @@ class UIMiniCancelButton;
 class UIProgressEventHandler;
 class CProgress;
 
-
 /** QProgressDialog enhancement that allows to:
   * 1) prevent closing the dialog when it has no cancel button;
   * 2) effectively track the IProgress object completion (w/o using
@@ -167,77 +166,6 @@ private:
     /** Holds the operation description template. */
     static const char *m_spcszOpDescTpl;
 };
-
-
-/** QObject reimplementation allowing to effectively track the CProgress object completion
-  * (w/o using CProgress::waitForCompletion() and w/o blocking the calling thread in any other way for too long).
-  * @note The CProgress instance is passed as a non-const reference to the constructor
-  *       (to memorize COM errors if they happen), and therefore must not be destroyed
-  *       before the created UIProgress instance is destroyed.
-  * @todo To be moved to separate files. */
-class SHARED_LIBRARY_STUFF UIProgress : public QObject
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies listeners about wrapped CProgress change.
-      * @param  iOperations   Brings the number of operations CProgress have.
-      * @param  strOperation  Brings the description of the current CProgress operation.
-      * @param  iOperation    Brings the index of the current CProgress operation.
-      * @param  iPercent      Brings the percentage of the current CProgress operation. */
-    void sigProgressChange(ulong iOperations, QString strOperation,
-                           ulong iOperation, ulong iPercent);
-
-    /** Notifies listeners about particular COM error.
-      * @param strErrorInfo holds the details of the error happened. */
-    void sigProgressError(QString strErrorInfo);
-
-    /** Notifies listeners about wrapped CProgress complete. */
-    void sigProgressComplete();
-
-    /** Notifies listeners about CProgress event handling finished. */
-    void sigProgressEventHandlingFinished();
-
-public:
-
-    /** Constructs progress handler passing @a pParent to the base-class.
-      * @param  comProgress   Brings the progress reference. */
-    UIProgress(CProgress &comProgress, QObject *pParent = 0);
-    /** Destructs progress handler. */
-    virtual ~UIProgress() /* override */;
-
-    /** Executes the progress within local event-loop. */
-    void exec();
-    /** Cancels the progress within local event-loop. */
-    void cancel();
-
-private slots:
-
-    /** Handles percentage changed event for progress with @a uProgressId to @a iPercent. */
-    void sltHandleProgressPercentageChange(const QUuid &uProgressId, const int iPercent);
-    /** Handles task completed event for progress with @a uProgressId. */
-    void sltHandleProgressTaskComplete(const QUuid &uProgressId);
-
-private:
-
-    /** Prepares all. */
-    void prepare();
-    /** Cleanups all. */
-    void cleanup();
-
-    /** Holds the progress reference. */
-    CProgress &m_comProgress;
-
-    /** Holds the progress event handler instance. */
-    UIProgressEventHandler *m_pEventHandler;
-
-    /** Holds the exec event-loop instance. */
-    QPointer<QEventLoop>  m_pEventLoopExec;
-    /** Holds the cancel event-loop instance. */
-    QPointer<QEventLoop>  m_pEventLoopCancel;
-};
-
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIProgressDialog_h */
 
