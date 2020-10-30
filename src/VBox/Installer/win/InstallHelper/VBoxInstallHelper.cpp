@@ -332,7 +332,7 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
 
     uint32_t fProcess = 0;
 #ifndef DEBUG
-    uint32_t fProcess |= RTPROC_FLAGS_HIDDEN;
+             fProcess |= RTPROC_FLAGS_HIDDEN;
 #endif
 
     char szPythonPath[RTPATH_MAX] = { 0 };
