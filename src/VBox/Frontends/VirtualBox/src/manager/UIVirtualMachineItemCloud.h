@@ -79,7 +79,7 @@ public:
         QString fakeCloudItemErrorMessage() const { return m_strFakeCloudItemErrorMessage; }
 
         /** Updates cloud VM info async way, @a fDelayed if requested or instant otherwise. */
-        void updateInfoAsync(bool fDelayed);
+        void updateInfoAsync(bool fDelayed, bool fSubscribe = false);
         /** Makes sure async info update is finished.
           * @note  This method creates own event-loop to avoid blocking calling thread event processing,
           *        so it's safe to call it from the GUI thread, ofc the method itself will be blocked. */
@@ -159,6 +159,8 @@ private:
         /** Holds fake cloud item error message. */
         QString                             m_strFakeCloudItemErrorMessage;
 
+        /** Holds whether we should update info. */
+        bool                  m_fRefreshScheduled;
         /** Holds the machine refresh timer instance. */
         QTimer               *m_pTimer;
         /** Holds the machine refresh progress object instance. */

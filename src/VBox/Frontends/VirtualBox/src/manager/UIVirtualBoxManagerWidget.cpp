@@ -406,8 +406,6 @@ void UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange(const QUuid &uI
             {
                 /* Propagate current items to update the Details-pane: */
                 m_pPaneToolsMachine->setItems(currentItems());
-                /* Repeat the task a bit delayed: */
-                pItem->toCloud()->updateInfoAsync(true /* delayed? */);
             }
         }
         else

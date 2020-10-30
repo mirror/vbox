@@ -39,6 +39,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(UIFakeCloudVirtualMachineIt
     : UIVirtualMachineItem(UIVirtualMachineItemType_CloudFake)
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(enmState)
+    , m_fRefreshScheduled(false)
     , m_pTimer(0)
 {
     prepare();
@@ -49,6 +50,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comClo
     , m_comCloudMachine(comCloudMachine)
     , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_NotApplicable)
+    , m_fRefreshScheduled(false)
     , m_pTimer(0)
 {
     prepare();
@@ -56,6 +58,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comClo
 
 UIVirtualMachineItemCloud::~UIVirtualMachineItemCloud()
 {
+    cleanup();
 }
 
 void UIVirtualMachineItemCloud::setFakeCloudItemState(UIFakeCloudVirtualMachineItemState enmState)
@@ -70,8 +73,12 @@ void UIVirtualMachineItemCloud::setFakeCloudItemErrorMessage(const QString &strE
     recache();
 }
 
-void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed)
+void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed, bool fSubscribe /* = false */)
 {
+    /* Mark update scheduled if requested: */
+    if (fSubscribe)
+        m_fRefreshScheduled = true;
+
     /* Ignore refresh request if timer or progress is already running: */
     if (m_pTimer->isActive() || m_pProgressHandler)
         return;
@@ -83,6 +90,9 @@ void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed)
 
 void UIVirtualMachineItemCloud::waitForAsyncInfoUpdateFinished()
 {
+    /* Mark update canceled in any case: */
+    m_fRefreshScheduled = false;
+
     /* Cancel the progress-handler if any: */
     if (m_pProgressHandler)
         m_pProgressHandler->cancel();
@@ -332,6 +342,10 @@ void UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone()
     /* If not canceled => notify listeners: */
     if (!fCanceled)
         emit sigRefreshFinished();
+
+    /* Refresh again if scheduled: */
+    if (m_fRefreshScheduled)
+        updateInfoAsync(true /* async? */);
 }
 
 void UIVirtualMachineItemCloud::prepare()
