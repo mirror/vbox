@@ -100,7 +100,7 @@ private slots:
     void sltHandleIndexingFinished();
     void sltHandleSearchingStarted();
     void sltHandleSearchStart();
-
+    void sltAnchorClicked(const QUrl &link);
 private:
 
     void prepare();

@@ -3226,6 +3226,7 @@ void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType enmType,
 }
 
 UIMessageCenter::UIMessageCenter()
+    : m_pHelpBrowserDialog(0)
 {
     /* Assign instance: */
     s_pInstance = this;
@@ -3396,29 +3397,28 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
 
 void UIMessageCenter::showHelpBrowser(const QString strHelpFilePath, QWidget *pParent /* = 0 */)
 {
-    QWidget *pDialogParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
-    AssertReturnVoid(pDialogParent);
+    Q_UNUSED(pParent);
+    if (!m_pHelpBrowserDialog)
+    {
 
-
-    QIManagerDialog *pHelpBrowserDialog;
-    UIHelpBrowserDialogFactory dialogFactory(strHelpFilePath);
-
-    dialogFactory.prepare(pHelpBrowserDialog);
-    AssertReturnVoid(pHelpBrowserDialog);
-
-    connect(pHelpBrowserDialog, &QIManagerDialog::sigClose,
-            this, &UIMessageCenter::sltCloseHelpBrowser);
-
-    pHelpBrowserDialog->show();
-    pHelpBrowserDialog->setWindowState(pHelpBrowserDialog->windowState() & ~Qt::WindowMinimized);
-    pHelpBrowserDialog->activateWindow();
+        UIHelpBrowserDialogFactory dialogFactory(strHelpFilePath);
+        dialogFactory.prepare(m_pHelpBrowserDialog);
+        AssertReturnVoid(m_pHelpBrowserDialog);
+        connect(m_pHelpBrowserDialog, &QIManagerDialog::sigClose,
+                this, &UIMessageCenter::sltCloseHelpBrowser);
+    }
+    m_pHelpBrowserDialog->show();
+    m_pHelpBrowserDialog->setWindowState(m_pHelpBrowserDialog->windowState() & ~Qt::WindowMinimized);
+    m_pHelpBrowserDialog->activateWindow();
 }
 
 void UIMessageCenter::sltCloseHelpBrowser()
 {
-    QIManagerDialog *pDialog = qobject_cast<QIManagerDialog*>(sender());
-    if (!pDialog)
+    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
+    if (m_pHelpBrowserDialog != pDialog || !pDialog)
         return;
 
+    m_pHelpBrowserDialog = 0;
+    pDialog->close();
     UIHelpBrowserDialogFactory().cleanup(pDialog);
 }

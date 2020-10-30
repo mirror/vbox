@@ -261,6 +261,8 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pContentViewer = new UIHelpBrowserViewer(m_pHelpEngine);
     AssertReturnVoid(m_pContentViewer);
 
+    m_pContentViewer->setOpenExternalLinks(false);
+
     connect(m_pContentViewer, &UIHelpBrowserViewer::sourceChanged,
         this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
     connect(m_pContentViewer, &UIHelpBrowserViewer::forwardAvailable,
@@ -271,6 +273,9 @@ void UIHelpBrowserWidget::prepareWidgets()
         this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
     connect(m_pContentViewer, &UIHelpBrowserViewer::historyChanged,
         this, &UIHelpBrowserWidget::sltHandleHistoryChanged);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::anchorClicked,
+        this, &UIHelpBrowserWidget::sltAnchorClicked);
+
 
     m_pSplitter->addWidget(m_pContentViewer);
 
@@ -335,7 +340,7 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
     connect(m_pHelpSearchEngine, &QHelpSearchEngine::searchingStarted,
             this, &UIHelpBrowserWidget::sltHandleSearchingStarted);
 
-
+    m_pHelpSearchEngine->reindexDocumentation();
 # endif//if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
 #endif
 }
@@ -655,7 +660,8 @@ void UIHelpBrowserWidget::sltHandleHistoryChanged()
     m_pAddressBar->clear();
     for (int i = -1 * m_pContentViewer->backwardHistoryCount(); i <= m_pContentViewer->forwardHistoryCount(); ++i)
     {
-        m_pAddressBar->addItem(m_pContentViewer->historyTitle(i), i);
+        QString strItem = QString("%1 (%2)").arg(m_pContentViewer->historyTitle(i)).arg(m_pContentViewer->historyUrl(i).toString());
+        m_pAddressBar->addItem(strItem, i);
         if (i == 0)
             iCurrentIndex = m_pAddressBar->count();
     }
@@ -712,4 +718,10 @@ void UIHelpBrowserWidget::sltHandleSearchStart()
     m_pHelpSearchEngine->search(m_pHelpSearchQueryWidget->searchInput());
 #endif
 }
+
+void UIHelpBrowserWidget::sltAnchorClicked(const QUrl &link)
+{
+    Q_UNUSED(link);
+}
+
 #include "UIHelpBrowserWidget.moc"
