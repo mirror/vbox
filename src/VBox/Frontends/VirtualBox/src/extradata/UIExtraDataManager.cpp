@@ -1980,7 +1980,9 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_Dbg_Enabled << GUI_Dbg_AutoShow
 #endif /* VBOX_WITH_DEBUGGER_GUI */
            << GUI_ExtraDataManager_Geometry << GUI_ExtraDataManager_SplitterHints
-           << GUI_LogWindowGeometry;
+           << GUI_LogWindowGeometry
+           << GUI_HelpBrowserLastURL
+           << GUI_HelpBrowserDialogGeometry;
 }
 
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
@@ -4599,6 +4601,35 @@ void UIExtraDataManager::setHelpBrowserLastUrl(const QString &url)
 QString UIExtraDataManager::helpBrowserLastUrl()
 {
     return extraDataString(GUI_HelpBrowserLastURL);
+}
+
+QRect UIExtraDataManager::helpBrowserDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)
+{
+    return dialogGeometry(GUI_HelpBrowserDialogGeometry, pWidget, pParentWidget, defaultGeometry);
+}
+
+void UIExtraDataManager::setHelpBrowserDialogGeometry(const QRect &geometry, bool fMaximized)
+{
+    /* Serialize passed values: */
+    QStringList data;
+    data << QString::number(geometry.x());
+    data << QString::number(geometry.y());
+    data << QString::number(geometry.width());
+    data << QString::number(geometry.height());
+    if (fMaximized)
+        data << GUI_Geometry_State_Max;
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_HelpBrowserDialogGeometry, data);
+}
+
+bool UIExtraDataManager::helpBrowserDialogShouldBeMaximized()
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_HelpBrowserDialogGeometry);
+
+    /* Make sure 5th item has required value: */
+    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
 void UIExtraDataManager::setVMResourceMonitorHiddenColumnList(const QStringList &hiddenColumnList)

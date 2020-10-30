@@ -314,12 +314,12 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
     QVBoxLayout *pSearchLayout = new QVBoxLayout(m_pSearchContainerWidget);
     pSearchLayout->addWidget(m_pHelpSearchQueryWidget);
     pSearchLayout->addWidget(m_pHelpSearchResultWidget);
-
+    m_pHelpSearchQueryWidget->expandExtendedSearch();
 
     connect(m_pHelpSearchQueryWidget, &QHelpSearchQueryWidget::search,
             this, &UIHelpBrowserWidget::sltHandleSearchStart);
-    // connect(resultWidget, &QHelpSearchResultWidget::requestShowLink,
-    //         this, &SearchWidget::requestShowLink);
+    connect(m_pHelpSearchResultWidget, &QHelpSearchResultWidget::requestShowLink,
+            m_pContentViewer, &UIHelpBrowserViewer::setSource);
 
     // connect(searchEngine, &QHelpSearchEngine::searchingStarted,
     //         this, &SearchWidget::searchingStarted);
@@ -327,20 +327,15 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
     //         this, &SearchWidget::searchingFinished);
 
 
-
-
-    // connect(m_pHelpSearchEngine, &QHelpSearchEngine::indexingStarted,
-    //         this, &UIHelpBrowserWidget::sltHandleIndexingStarted);
-    // connect(m_pHelpSearchEngine, &QHelpSearchEngine::indexingFinished,
-    //         this, &UIHelpBrowserWidget::sltHandleIndexingFinished);
-
-    //void      searchingFinished(int searchResultCount)
-
+    connect(m_pHelpSearchEngine, &QHelpSearchEngine::indexingStarted,
+            this, &UIHelpBrowserWidget::sltHandleIndexingStarted);
+    connect(m_pHelpSearchEngine, &QHelpSearchEngine::indexingFinished,
+            this, &UIHelpBrowserWidget::sltHandleIndexingFinished);
 
     connect(m_pHelpSearchEngine, &QHelpSearchEngine::searchingStarted,
             this, &UIHelpBrowserWidget::sltHandleSearchingStarted);
 
-    m_pHelpSearchEngine->reindexDocumentation();
+
 # endif//if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
 #endif
 }
@@ -692,17 +687,22 @@ void UIHelpBrowserWidget::sltHandleAddBookmarkAction()
 
 void UIHelpBrowserWidget::sltHandleIndexingStarted()
 {
+    if (m_pSearchContainerWidget)
+        m_pSearchContainerWidget->setEnabled(false);
     printf("indexing started\n");
 }
 
 void UIHelpBrowserWidget::sltHandleIndexingFinished()
 {
+    if (m_pSearchContainerWidget)
+        m_pSearchContainerWidget->setEnabled(true);
+
     printf("indexing finished\n");
 }
 
 void UIHelpBrowserWidget::sltHandleSearchingStarted()
 {
-    printf("search started\n");
+
 }
 
 void UIHelpBrowserWidget::sltHandleSearchStart()

@@ -111,15 +111,29 @@ void UIHelpBrowserDialog::finalize()
 
 void UIHelpBrowserDialog::loadSettings()
 {
+    const QRect availableGeo = gpDesktop->availableGeometry(this);
+    int iDefaultWidth = availableGeo.width() / 2;
+    int iDefaultHeight = availableGeo.height() * 3 / 4;
+    QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);
+
+    /* Load geometry from extradata: */
+    const QRect geo = gEDataManager->helpBrowserDialogGeometry(this, centerWidget(), defaultGeo);
+    LogRel2(("GUI: UIHelpBrowserDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+             geo.x(), geo.y(), geo.width(), geo.height()));
+    restoreGeometry(geo);
 }
 
 void UIHelpBrowserDialog::saveSettings()
 {
+    const QRect geo = currentGeometry();
+    LogRel2(("GUI: UIHelpBrowserDialog: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
+             geo.x(), geo.y(), geo.width(), geo.height()));
+    gEDataManager->setHelpBrowserDialogGeometry(geo, isCurrentlyMaximized());
 }
 
 bool UIHelpBrowserDialog::shouldBeMaximized() const
 {
-    return gEDataManager->logWindowShouldBeMaximized();
+    return gEDataManager->helpBrowserDialogShouldBeMaximized();
 }
 
 void UIHelpBrowserDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)

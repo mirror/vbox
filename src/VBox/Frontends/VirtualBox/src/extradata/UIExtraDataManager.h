@@ -788,6 +788,9 @@ public:
       * @{ */
         void setHelpBrowserLastUrl(const QString &url);
         QString helpBrowserLastUrl();
+        QRect helpBrowserDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry);
+        void setHelpBrowserDialogGeometry(const QRect &geometry, bool fMaximized);
+        bool helpBrowserDialogShouldBeMaximized();
     /** @} */
 
     /** @name Manager UI: VM Resource Monitor

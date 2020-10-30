@@ -114,7 +114,7 @@ void UIVMLogViewerDialog::finalize()
 
 void UIVMLogViewerDialog::loadSettings()
 {
-    /* Invent default window geometry: */
+
     const QRect availableGeo = gpDesktop->availableGeometry(this);
     int iDefaultWidth = availableGeo.width() / 2;
     int iDefaultHeight = availableGeo.height() * 3 / 4;
