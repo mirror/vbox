@@ -118,6 +118,12 @@ RTCRestOutputBase &RTCRestStringMapBase::serializeAsJson(RTCRestOutputBase &a_rD
 
 int RTCRestStringMapBase::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
+    if (RTJsonValueGetType(a_rCursor.m_hValue) == RTJSONVALTYPE_NULL)
+    {
+        setNull();
+        return VINF_SUCCESS;
+    }
+
     /*
      * Make sure the object starts out with an empty map.
      */
@@ -260,6 +266,9 @@ size_t RTCRestStringMapBase::size() const RT_NOEXCEPT
 
 bool RTCRestStringMapBase::containsKey(const char *a_pszKey) const RT_NOEXCEPT
 {
+    if (isNull())
+        return false;
+
     return RTStrSpaceGet((PRTSTRSPACE)&m_Map, a_pszKey) != NULL;
 }
 
@@ -272,6 +281,9 @@ bool RTCRestStringMapBase::containsKey(RTCString const &a_rStrKey) const RT_NOEX
 
 bool RTCRestStringMapBase::remove(const char *a_pszKey) RT_NOEXCEPT
 {
+    if (isNull())
+        return false;
+
     MapEntry *pRemoved = (MapEntry *)RTStrSpaceRemove(&m_Map, a_pszKey);
     if (pRemoved)
     {
@@ -422,6 +434,9 @@ int RTCRestStringMapBase::putCopyWorker(const char *a_pszKey, RTCRestObjectBase 
 
 RTCRestObjectBase *RTCRestStringMapBase::getWorker(const char *a_pszKey) RT_NOEXCEPT
 {
+    if (isNull())
+        return NULL;
+
     MapEntry *pHit = (MapEntry *)RTStrSpaceGet(&m_Map, a_pszKey);
     if (pHit)
         return pHit->pValue;
@@ -431,6 +446,9 @@ RTCRestObjectBase *RTCRestStringMapBase::getWorker(const char *a_pszKey) RT_NOEX
 
 RTCRestObjectBase const *RTCRestStringMapBase::getWorker(const char *a_pszKey) const RT_NOEXCEPT
 {
+    if (isNull())
+        return NULL;
+
     MapEntry const *pHit = (MapEntry const *)RTStrSpaceGet((PRTSTRSPACE)&m_Map, a_pszKey);
     if (pHit)
         return pHit->pValue;
