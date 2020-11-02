@@ -352,12 +352,17 @@ void UIThreadGroupDefinitionsSave::run()
 *   Class UIChooserAbstractModel implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIChooserAbstractModel:: UIChooserAbstractModel(UIChooser *pParent)
+UIChooserAbstractModel::UIChooserAbstractModel(UIChooser *pParent)
     : QObject(pParent)
     , m_pParent(pParent)
     , m_pInvisibleRootNode(0)
 {
     prepare();
+}
+
+UIChooserAbstractModel::~UIChooserAbstractModel()
+{
+    cleanup();
 }
 
 void UIChooserAbstractModel::init()
@@ -947,7 +952,7 @@ void UIChooserAbstractModel::prepareConnections()
     connect(&uiCommon(), &UICommon::sigCloudMachineRegistered,
             this, &UIChooserAbstractModel::sltCloudMachineRegistered);
 
-    /* Setup global connections: */
+    /* Global connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
             this, &UIChooserAbstractModel::sltLocalMachineStateChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
@@ -973,14 +978,66 @@ void UIChooserAbstractModel::prepareConnections()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProviderUninstall,
             this, &UIChooserAbstractModel::sltHandleCloudProviderUninstall);
 
-    /* Setup group saving connections: */
+    /* Group saving connections: */
     connect(this, &UIChooserAbstractModel::sigStartGroupSaving,
             this, &UIChooserAbstractModel::sltStartGroupSaving,
             Qt::QueuedConnection);
 
-    /* Setup extra-data connections: */
+    /* Extra-data connections: */
     connect(gEDataManager, &UIExtraDataManager::sigCloudProfileManagerRestrictionChange,
             this, &UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange);
+}
+
+void UIChooserAbstractModel::cleanupConnections()
+{
+    /* Cloud thread-pool connections: */
+    disconnect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
+               this, &UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete);
+
+    /* Cloud VM registration connections: */
+    disconnect(&uiCommon(), &UICommon::sigCloudMachineUnregistered,
+               this, &UIChooserAbstractModel::sltCloudMachineUnregistered);
+    disconnect(&uiCommon(), &UICommon::sigCloudMachineRegistered,
+               this, &UIChooserAbstractModel::sltCloudMachineRegistered);
+
+    /* Global connections: */
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+               this, &UIChooserAbstractModel::sltLocalMachineStateChanged);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
+               this, &UIChooserAbstractModel::sltLocalMachineDataChanged);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
+               this, &UIChooserAbstractModel::sltLocalMachineRegistrationChanged);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
+               this, &UIChooserAbstractModel::sltSessionStateChanged);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake,
+               this, &UIChooserAbstractModel::sltSnapshotChanged);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotDelete,
+               this, &UIChooserAbstractModel::sltSnapshotChanged);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotChange,
+               this, &UIChooserAbstractModel::sltSnapshotChanged);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore,
+               this, &UIChooserAbstractModel::sltSnapshotChanged);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProviderListChanged,
+               this, &UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
+               this, &UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
+               this, &UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange);
+    disconnect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProviderUninstall,
+               this, &UIChooserAbstractModel::sltHandleCloudProviderUninstall);
+
+    /* Group saving connections: */
+    disconnect(this, &UIChooserAbstractModel::sigStartGroupSaving,
+               this, &UIChooserAbstractModel::sltStartGroupSaving);
+
+    /* Extra-data connections: */
+    disconnect(gEDataManager, &UIExtraDataManager::sigCloudProfileManagerRestrictionChange,
+               this, &UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange);
+}
+
+void UIChooserAbstractModel::cleanup()
+{
+    cleanupConnections();
 }
 
 void UIChooserAbstractModel::reloadLocalTree()
