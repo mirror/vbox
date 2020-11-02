@@ -147,6 +147,14 @@
 
     <!---->
 
+    <String Id="WarnPythonDlg_Title">Missing Dependencies</String>
+    <String Id="WarnPythonDlg_Title2">Python Core / win32api</String>
+    <String Id="WarnPythonDlg_Desc">Installing the [ProductName] Python bindings requires the Python Core package and the win32api bindings to be installed first.</String>
+    <String Id="WarnPythonDlg_Desc2">When continuing the installation of the [ProductName] Python bindings now, those need to be set up manually later. Refert to the [ProductName] SDK manual for more information.</String>
+    <String Id="WarnPythonDlg_Question">Proceed with installation now?</String>
+
+    <!---->
+
     <String Id="DiskCostDlg_SpaceRequired">Ο χώρος στο δίσκο που απαιτείται για την εγκατάσταση των επιλεγμένων δυνατοτήτων.</String>
     <String Id="DiskCostDlg_NotEnoughSpace">Οι επισημασμένοι τόμοι (αν υπάρχουν) δεν διαθέτουν αρκετό χώρο στο δίσκο για τις επιλεγμένες δυνατότητες. Μπορείτε είτε να αφαιρέσετε ορισμένα αρχεία από τους τόμους που έχουν επισημανθεί, είτε να εγκαταστήσετε λιγότερες δυνατότητες σε τοπικές μονάδες, ή να επιλέξετε διαφορετικές μονάδες προορισμού.</String>
     <String Id="DiskCostDlg_SpaceRequirements">Απαιτήσεις Χώρου στο Δίσκο</String>

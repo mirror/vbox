@@ -143,7 +143,78 @@ UINT __stdcall CheckSerial(MSIHANDLE hModule)
 }
 
 /**
- * Tries to retrieve the Python installation path on the system.
+ * Waits for a started process to terminate.
+ *
+ * @returns VBox status code.
+ * @param   Process             Handle of process to wait for.
+ * @param   msTimeout           Timeout (in ms) to wait for process to terminate.
+ * @param   pProcSts            Pointer to process status on return.
+ */
+static int procWait(RTPROCESS Process, RTMSINTERVAL msTimeout, PRTPROCSTATUS pProcSts)
+{
+    uint64_t tsStartMs = RTTimeMilliTS();
+
+    while (RTTimeMilliTS() - tsStartMs <= msTimeout)
+    {
+        int rc = RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, pProcSts);
+        if (rc == VERR_PROCESS_RUNNING)
+            continue;
+        else if (RT_FAILURE(rc))
+            return rc;
+
+        if (   pProcSts->iStatus   != 0
+            || pProcSts->enmReason != RTPROCEXITREASON_NORMAL)
+        {
+            rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        }
+
+        return VINF_SUCCESS;
+    }
+
+    return VERR_TIMEOUT;
+}
+
+/**
+ * Runs an executable on the OS.
+ *
+ * @returns VBox status code.
+ * @param   hModule             Windows installer module handle.
+ * @param   pcsExe              Absolute path of executable to run.
+ * @param   papcszArgs          Pointer to command line arguments to use for calling the executable.
+ * @param   cArgs               Number of command line arguments in \a papcszArgs.
+ */
+static int procRun(MSIHANDLE hModule, const char *pcszImage, const char **papcszArgs, size_t cArgs)
+{
+    RT_NOREF(cArgs);
+
+    RTPROCESS Process;
+    RT_ZERO(Process);
+
+    uint32_t fProcess  = 0;
+#ifndef DEBUG
+             fProcess |= RTPROC_FLAGS_HIDDEN;
+#endif
+
+    int rc = RTProcCreate(pcszImage, papcszArgs, RTENV_DEFAULT, fProcess, &Process);
+    if (RT_SUCCESS(rc))
+    {
+        RTPROCSTATUS ProcSts;
+        RT_ZERO(ProcSts);
+
+        rc = procWait(Process, RT_MS_30SEC, &ProcSts);
+
+        if (RT_FAILURE(rc))
+            logStringF(hModule, "procRun: Waiting for process \"%s\" failed with %Rrc (process status: %d, reason: %d)\n",
+                       pcszImage, rc, ProcSts.iStatus, ProcSts.enmReason);
+    }
+    else
+        logStringF(hModule, "procRun: Creating process for \"%s\" failed with %Rrc\n", pcszImage, rc);
+
+    return rc;
+}
+
+/**
+ * Tries to retrieve the Python installation path on the system, extended version.
  *
  * @returns VBox status code.
  * @param   hModule             Windows installer module handle.
@@ -151,7 +222,7 @@ UINT __stdcall CheckSerial(MSIHANDLE hModule)
  * @param   ppszPath            Where to store the allocated Python path on success.
  *                              Must be free'd by the caller using RTStrFree().
  */
-static int getPythonPath(MSIHANDLE hModule, HKEY hKeyRoot, char **ppszPath)
+static int getPythonPathEx(MSIHANDLE hModule, HKEY hKeyRoot, char **ppszPath)
 {
     HKEY hkPythonCore = NULL;
     LSTATUS dwErr = RegOpenKeyExW(hKeyRoot, L"SOFTWARE\\Python\\PythonCore", 0, KEY_READ, &hkPythonCore);
@@ -193,7 +264,7 @@ static int getPythonPath(MSIHANDLE hModule, HKEY hKeyRoot, char **ppszPath)
 
         dwErr = RegQueryValueExW(hkPythonInstPath, L"", NULL, &dwKeyType, (LPBYTE)wszVal, &dwKey);
         if (dwErr == ERROR_SUCCESS)
-            logStringF(hModule, "InstallPythonAPI: Path \"%ls\" found.", wszVal);
+            logStringF(hModule, "getPythonPath: Path \"%ls\" found.", wszVal);
 
         if (pszPythonPath) /* Free former path, if any. */
         {
@@ -206,7 +277,7 @@ static int getPythonPath(MSIHANDLE hModule, HKEY hKeyRoot, char **ppszPath)
 
         if (!RTPathExists(pszPythonPath))
         {
-            logStringF(hModule, "InstallPythonAPI: Warning: Path \"%s\" does not exist, skipping.", wszVal);
+            logStringF(hModule, "getPythonPath: Warning: Defined path \"%s\" does not exist, skipping.", wszVal);
             rc = VERR_PATH_NOT_FOUND;
         }
 
@@ -226,35 +297,65 @@ static int getPythonPath(MSIHANDLE hModule, HKEY hKeyRoot, char **ppszPath)
 }
 
 /**
- * Waits for a started process to terminate.
+ * Retrieves the absolute path of the Python installation.
  *
  * @returns VBox status code.
- * @param   Process             Handle of process to wait for.
- * @param   msTimeout           Timeout (in ms) to wait for process to terminate.
- * @param   pProcSts            Pointer to process status on return.
+ * @param   hModule             Windows installer module handle.
+ * @param   ppszPath            Where to store the absolute path of the Python installation.
+ *                              Must be free'd by the caller.
  */
-int procWait(RTPROCESS Process, RTMSINTERVAL msTimeout, PRTPROCSTATUS pProcSts)
+static int getPythonPath(MSIHANDLE hModule, char **ppszPath)
 {
-    uint64_t tsStartMs = RTTimeMilliTS();
+    int rc = getPythonPathEx(hModule, HKEY_LOCAL_MACHINE, ppszPath);
+    if (RT_FAILURE(rc))
+        rc = getPythonPathEx(hModule, HKEY_CURRENT_USER, ppszPath);
 
-    while (RTTimeMilliTS() - tsStartMs <= msTimeout)
+    return rc;
+}
+
+/**
+ * Retrieves the absolute path of the Python executable.
+ *
+ * @returns VBox status code.
+ * @param   hModule             Windows installer module handle.
+ * @param   ppszPythonExe       Where to store the absolute path of the Python executable.
+ *                              Must be free'd by the caller.
+ */
+static int getPythonExe(MSIHANDLE hModule, char **ppszPythonExe)
+{
+    int rc = getPythonPath(hModule, ppszPythonExe);
+    if (RT_SUCCESS(rc))
+        rc = RTStrAAppend(ppszPythonExe, "python.exe"); /** @todo Can this change? */
+
+    return rc;
+}
+
+/**
+ * Checks if all dependencies for running the VBox Python API bindings are met.
+ *
+ * @returns VBox status code, or error if depedencies are not met.
+ * @param   hModule             Windows installer module handle.
+ * @param   pcszPythonExe       Path to Python interpreter image (.exe).
+ */
+static int checkPythonDependencies(MSIHANDLE hModule, const char *pcszPythonExe)
+{
+    /*
+     * Check if importing the win32api module works.
+     * This is a prerequisite for setting up the VBox API.
+     */
+    logStringF(hModule, "checkPythonDependencies: Checking for win32api extensions ...");
+
+    const char *papszArgs[4] = { pcszPythonExe, "-c", "import win32api", NULL};
+
+    int rc = procRun(hModule, pcszPythonExe, papszArgs, RT_ELEMENTS(papszArgs));
+    if (RT_SUCCESS(rc))
     {
-        int rc = RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, pProcSts);
-        if (rc == VERR_PROCESS_RUNNING)
-            continue;
-        else if (RT_FAILURE(rc))
-            return rc;
-
-        if (   pProcSts->iStatus   != 0
-            || pProcSts->enmReason != RTPROCEXITREASON_NORMAL)
-        {
-            rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
-        }
-
-        return VINF_SUCCESS;
+        logStringF(hModule, "checkPythonDependencies: win32api found\n");
     }
+    else
+        logStringF(hModule, "checkPythonDependencies: Importing win32api failed with %Rrc\n", rc);
 
-    return VERR_TIMEOUT;
+    return rc;
 }
 
 /**
@@ -271,10 +372,7 @@ int procWait(RTPROCESS Process, RTMSINTERVAL msTimeout, PRTPROCSTATUS pProcSts)
 UINT __stdcall IsPythonInstalled(MSIHANDLE hModule)
 {
     char *pszPythonPath;
-    int rc = getPythonPath(hModule, HKEY_LOCAL_MACHINE, &pszPythonPath);
-    if (RT_FAILURE(rc))
-        rc = getPythonPath(hModule, HKEY_CURRENT_USER, &pszPythonPath);
-
+    int rc = getPythonPath(hModule, &pszPythonPath);
     if (RT_SUCCESS(rc))
     {
         logStringF(hModule, "IsPythonInstalled: Python installation found at \"%s\"", pszPythonPath);
@@ -295,7 +393,41 @@ UINT __stdcall IsPythonInstalled(MSIHANDLE hModule)
     else
         logStringF(hModule, "IsPythonInstalled: Error: No suitable Python installation found (%Rrc), skipping installation.", rc);
 
+    if (RT_FAILURE(rc))
+        logStringF(hModule, "IsPythonInstalled: Python seems not to be installed (%Rrc); please download + install the Python Core package.", rc);
+
     VBoxSetMsiProp(hModule, L"VBOX_PYTHON_INSTALLED", RT_SUCCESS(rc) ? L"1" : L"0");
+
+    return ERROR_SUCCESS; /* Never return failure. */
+}
+
+/**
+ * Checks if all dependencies for running the VBox Python API bindings are met.
+ *
+ * Called from the MSI installer as custom action.
+ *
+ * @returns Always ERROR_SUCCESS.
+ *          Sets public property VBOX_PYTHON_DEPS_INSTALLED to "0" (false) or "1" (success).
+ *
+ * @param   hModule             Windows installer module handle.
+ */
+UINT __stdcall ArePythonAPIDepsInstalled(MSIHANDLE hModule)
+{
+    char *pszPythonExe;
+    int rc = getPythonExe(hModule, &pszPythonExe);
+    if (RT_SUCCESS(rc))
+    {
+        rc = checkPythonDependencies(hModule, pszPythonExe);
+        if (RT_SUCCESS(rc))
+            logStringF(hModule, "ArePythonAPIDepsInstalled: Dependencies look good.\n");
+
+        RTStrFree(pszPythonExe);
+    }
+
+    if (RT_FAILURE(rc))
+        logStringF(hModule, "ArePythonAPIDepsInstalled: Failed with %Rrc\n", rc);
+
+    VBoxSetMsiProp(hModule, L"VBOX_PYTHON_DEPS_INSTALLED", RT_SUCCESS(rc) ? L"1" : L"0");
 
     return ERROR_SUCCESS; /* Never return failure. */
 }
@@ -314,102 +446,51 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
 {
     logStringF(hModule, "InstallPythonAPI: Checking for installed Python environment(s) ...");
 
-    char *pszPythonPath;
-    int rc = getPythonPath(hModule, HKEY_LOCAL_MACHINE, &pszPythonPath);
-    if (RT_FAILURE(rc))
-        rc = getPythonPath(hModule, HKEY_CURRENT_USER, &pszPythonPath);
-
+    char *pszPythonExe;
+    int rc = getPythonExe(hModule, &pszPythonExe);
     if (RT_FAILURE(rc))
     {
         VBoxSetMsiProp(hModule, L"VBOX_API_INSTALLED", L"0");
-
-        logStringF(hModule, "InstallPythonAPI: Python seems not to be installed (%Rrc); please download + install the Python Core package.", rc);
         return ERROR_SUCCESS;
-    }
-
-    logStringF(hModule, "InstallPythonAPI: Python installation found at \"%s\".", pszPythonPath);
-    logStringF(hModule, "InstallPythonAPI: Checking for win32api extensions ...");
-
-    uint32_t fProcess = 0;
-#ifndef DEBUG
-             fProcess |= RTPROC_FLAGS_HIDDEN;
-#endif
-
-    char szPythonPath[RTPATH_MAX] = { 0 };
-    rc = RTPathAppend(szPythonPath, sizeof(szPythonPath), pszPythonPath);
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTPathAppend(szPythonPath, sizeof(szPythonPath), "python.exe");
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Check if importing the win32api module works.
-             * This is a prerequisite for setting up the VBox API.
-             */
-            RTPROCESS Process;
-            RT_ZERO(Process);
-            const char *papszArgs[4] = { szPythonPath, "-c", "import win32api", NULL};
-            rc = RTProcCreate(szPythonPath, papszArgs, RTENV_DEFAULT, fProcess, &Process);
-            if (RT_SUCCESS(rc))
-            {
-                RTPROCSTATUS ProcSts;
-                rc = procWait(Process, RT_MS_30SEC, &ProcSts);
-                if (RT_FAILURE(rc))
-                    logStringF(hModule, "InstallPythonAPI: Importing the win32api failed with %d (exit reason: %d)\n",
-                                   ProcSts.iStatus, ProcSts.enmReason);
-            }
-        }
     }
 
     /*
      * Set up the VBox API.
      */
+    /* Get the VBox API setup string. */
+    char *pszVBoxSDKPath;
+    rc = VBoxGetMsiPropUtf8(hModule, "CustomActionData", &pszVBoxSDKPath);
     if (RT_SUCCESS(rc))
     {
-        /* Get the VBox API setup string. */
-        char *pszVBoxSDKPath;
-        rc = VBoxGetMsiPropUtf8(hModule, "CustomActionData", &pszVBoxSDKPath);
+        /* Make sure our current working directory is the VBox installation path. */
+        rc = RTPathSetCurrent(pszVBoxSDKPath);
         if (RT_SUCCESS(rc))
         {
-            /* Make sure our current working directory is the VBox installation path. */
-            rc = RTPathSetCurrent(pszVBoxSDKPath);
+            /* Set required environment variables. */
+            rc = RTEnvSet("VBOX_INSTALL_PATH", pszVBoxSDKPath);
             if (RT_SUCCESS(rc))
             {
-                /* Set required environment variables. */
-                rc = RTEnvSet("VBOX_INSTALL_PATH", pszVBoxSDKPath);
+                logStringF(hModule, "InstallPythonAPI: Invoking vboxapisetup.py in \"%s\" ...\n", pszVBoxSDKPath);
+
+                const char *papszArgs[4] = { pszPythonExe, "vboxapisetup.py", "install", NULL};
+
+                rc = procRun(hModule, pszPythonExe, papszArgs, RT_ELEMENTS(papszArgs));
                 if (RT_SUCCESS(rc))
-                {
-                    RTPROCSTATUS ProcSts;
-                    RT_ZERO(ProcSts);
+                    logStringF(hModule, "InstallPythonAPI: Installation of vboxapisetup.py successful\n");
 
-                    logStringF(hModule, "InstallPythonAPI: Invoking vboxapisetup.py in \"%s\" ...\n", pszVBoxSDKPath);
-
-                    RTPROCESS Process;
-                    RT_ZERO(Process);
-                    const char *papszArgs[4] = { szPythonPath, "vboxapisetup.py", "install", NULL};
-                    rc = RTProcCreate(szPythonPath, papszArgs, RTENV_DEFAULT, fProcess, &Process);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = procWait(Process, RT_MS_30SEC, &ProcSts);
-                        if (RT_SUCCESS(rc))
-                            logStringF(hModule, "InstallPythonAPI: Installation of vboxapisetup.py successful\n");
-                    }
-
-                    if (RT_FAILURE(rc))
-                        logStringF(hModule, "InstallPythonAPI: Calling vboxapisetup.py failed with %Rrc (process status: %d, exit reason: %d)\n",
-                                   rc, ProcSts.iStatus, ProcSts.enmReason);
-                }
-                else
-                    logStringF(hModule, "InstallPythonAPI: Could set environment variable VBOX_INSTALL_PATH, rc=%Rrc\n", rc);
+                if (RT_FAILURE(rc))
+                    logStringF(hModule, "InstallPythonAPI: Calling vboxapisetup.py failed with %Rrc\n", rc);
             }
             else
-                logStringF(hModule, "InstallPythonAPI: Could set working directory to \"%s\", rc=%Rrc\n", pszVBoxSDKPath, rc);
-
-            RTStrFree(pszVBoxSDKPath);
+                logStringF(hModule, "InstallPythonAPI: Could set environment variable VBOX_INSTALL_PATH, rc=%Rrc\n", rc);
         }
         else
-            logStringF(hModule, "InstallPythonAPI: Unable to retrieve VBox installation directory, rc=%Rrc\n", rc);
+            logStringF(hModule, "InstallPythonAPI: Could set working directory to \"%s\", rc=%Rrc\n", pszVBoxSDKPath, rc);
+
+        RTStrFree(pszVBoxSDKPath);
     }
+    else
+        logStringF(hModule, "InstallPythonAPI: Unable to retrieve VBox installation directory, rc=%Rrc\n", rc);
 
     /*
      * Do some sanity checking if the VBox API works.
@@ -418,26 +499,17 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
     {
         logStringF(hModule, "InstallPythonAPI: Validating VBox API ...\n");
 
-        RTPROCSTATUS ProcSts;
-        RT_ZERO(ProcSts);
+        const char *papszArgs[4] = { pszPythonExe, "-c", "from vboxapi import VirtualBoxManager", NULL};
 
-        RTPROCESS Process;
-        RT_ZERO(Process);
-        const char *papszArgs[4] = { szPythonPath, "-c", "from vboxapi import VirtualBoxManager", NULL};
-        rc = RTProcCreate(szPythonPath, papszArgs, RTENV_DEFAULT, fProcess, &Process);
+        rc = procRun(hModule, pszPythonExe, papszArgs, RT_ELEMENTS(papszArgs));
         if (RT_SUCCESS(rc))
-        {
-            rc = procWait(Process, RT_MS_30SEC, &ProcSts);
-            if (RT_SUCCESS(rc))
-                logStringF(hModule, "InstallPythonAPI: VBox API looks good.\n");
-        }
+            logStringF(hModule, "InstallPythonAPI: VBox API looks good.\n");
 
         if (RT_FAILURE(rc))
-            logStringF(hModule, "InstallPythonAPI: Validating VBox API failed with %Rrc (process status: %d, exit reason: %d)\n",
-                       rc, ProcSts.iStatus, ProcSts.enmReason);
+            logStringF(hModule, "InstallPythonAPI: Validating VBox API failed with %Rrc\n", rc);
     }
 
-    RTStrFree(pszPythonPath);
+    RTStrFree(pszPythonExe);
 
     VBoxSetMsiProp(hModule, L"VBOX_API_INSTALLED", RT_SUCCESS(rc) ? L"1" : L"0");
 

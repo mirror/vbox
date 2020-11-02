@@ -114,6 +114,12 @@ Questo è il tipo predefinito per le nuove versioni di Windows (Vista e successi
     <String Id="WarnDisconNetIfacesDlg_Desc">L'installazione delle funzionalità di rete di [ProductName] ripristinerà la connessione di rete causando una disconnessione temporanea dalla rete.</String>
     <String Id="WarnDisconNetIfacesDlg_Question">Vuoi procedere subito con l'installazione?</String>
     <!---->
+    <String Id="WarnPythonDlg_Title">Missing Dependencies</String>
+    <String Id="WarnPythonDlg_Title2">Python Core / win32api</String>
+    <String Id="WarnPythonDlg_Desc">Installing the [ProductName] Python bindings requires the Python Core package and the win32api bindings to be installed first.</String>
+    <String Id="WarnPythonDlg_Desc2">When continuing the installation of the [ProductName] Python bindings now, those need to be set up manually later. Refert to the [ProductName] SDK manual for more information.</String>
+    <String Id="WarnPythonDlg_Question">Proceed with installation now?</String>
+    <!---->
     <String Id="DiskCostDlg_SpaceRequired">Lo spazio su disco richiesto per l'installazione delle funzionalità selezionate.</String>
     <String Id="DiskCostDlg_NotEnoughSpace">I volumi evidenziati non hanno spazio disponibile sufficiente per le funzionalità attualmente selezionate. Puoi rimuovere alcuni file dai volumi evidenziati, scegliere di installare meno funzionalità sul disco locale o selezionare un disco di destinazione diverso.</String>
     <String Id="DiskCostDlg_SpaceRequirements">Requisiti di spazio disco</String>

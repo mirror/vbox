@@ -560,7 +560,7 @@
 <?endif ?>
 
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-        <Feature Id="VBoxPython" Title="VirtualBox Python 2.x Support" Level="1"
+        <Feature Id="VBoxPython" Title="VirtualBox Python Support" Level="1"
                  Description="!(loc.VB_Python)"
                  ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
                  Absent="allow" AllowAdvertise="no" >

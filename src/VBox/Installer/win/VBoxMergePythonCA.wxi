@@ -16,6 +16,8 @@
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
+    <CustomAction Id="ca_IsPythonInstalled" BinaryKey="VBoxInstallHelper" DllEntry="IsPythonInstalled" Execute="immediate" Return="check" Impersonate="no"/>
+    <CustomAction Id="ca_ArePythonAPIDepsInstalled" BinaryKey="VBoxInstallHelper" DllEntry="ArePythonAPIDepsInstalled" Execute="immediate" Return="check" Impersonate="no"/>
     <CustomAction Id="ca_InstallPythonAPI" BinaryKey="VBoxInstallHelper" DllEntry="InstallPythonAPI" Execute="deferred" Return="check" Impersonate="no"/>
     <CustomAction Id="ca_InstallPythonAPIArgs" Property="ca_InstallPythonAPI" Value="[msm_VBoxPythonFolder]" Execute="immediate"/>
 

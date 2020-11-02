@@ -304,7 +304,13 @@
                 -->
                 <Publish Event="NewDialog" Value="VBoxCustomize2Dlg"/>
         <?else ?>
-                <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
+                <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
+                    <Publish Event="NewDialog" Value="VBoxWarnPythonDlg"><![CDATA[(&VBoxPython=3 AND (VBOX_PYTHON_DEPS_INSTALLED="0"))]]></Publish>
+                    <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[((&VBoxPython<3) OR (VBOX_PYTHON_DEPS_INSTALLED="1"))]]></Publish>
+                <?else ?>
+                    <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
+                <?endif?>
+
         <?endif ?>
                 <Subscribe Event="SelectionNoItems" Attribute="Enabled" />
             </Control>
@@ -412,12 +418,16 @@
 <?endif?> <!-- VBOX_WITH_QTGUI -->
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17"
                 Default="yes" Cancel="yes" Text="!(loc.ButtonText_Next)">
-            <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
+                <!-- Note: The order of publishing the event(s) here is important. -->
+<?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
+                <Publish Event="NewDialog" Value="VBoxWarnPythonDlg"><![CDATA[((&VBoxPython=3) AND (VBOX_PYTHON_DEPS_INSTALLED="0"))]]></Publish>
+<?endif?>
+<?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
                 <Publish Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg"><![CDATA[(&VBoxNetworkFlt=3)]]></Publish>
                 <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(&VBoxNetworkFlt<3)]]></Publish>
-            <?else ?>
+<?else ?>
                 <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
-            <?endif?>
+<?endif?>
             </Control>
             <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17"
                 Text="!(loc.ButtonText_Back)">
@@ -477,6 +487,57 @@
             <!-- Next dialog is the warning dialog for TAP devices -->
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Yes)">
                  <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
+            </Control>
+
+            <!-- Canceling will bring up a confirmation dialog ('SpawnDialog' attribute) -->
+            <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_No)">
+                <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
+            </Control>
+
+        </Dialog>
+
+        <Dialog Id="VBoxWarnPythonDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
+
+            <!-- The wizard has a bitmap as background. The source is defined as a property below. -->
+            <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="[DialogBitmap]" />
+
+            <!-- Title text drawn on the background -->
+            <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes">
+                <Text>{\DlgWarnPython}!(loc.WarnPythonDlg_Title)</Text>
+            </Control>
+
+            <Control Id="Title2" Type="Text" X="135" Y="40" Width="220" Height="60" Transparent="yes" NoPrefix="yes">
+                <Text>{\DlgWarnPython}!(loc.WarnPythonDlg_Title2)</Text>
+            </Control>
+
+            <!-- Text saying what we gonna do -->
+            <Control Id="Description" Type="Text" X="135" Y="70" Width="220" Height="130" Transparent="yes" NoPrefix="yes">
+                <Text>!(loc.WarnPythonDlg_Desc)</Text>
+            </Control>
+
+            <Control Id="Description2" Type="Text" X="135" Y="115" Width="220" Height="130" Transparent="yes" NoPrefix="yes">
+                <Text>!(loc.WarnPythonDlg_Desc2)</Text>
+            </Control>
+
+            <Control Id="Description3" Type="Text" X="135" Y="160" Width="220" Height="130" Transparent="yes" NoPrefix="yes">
+                <Text>!(loc.WarnPythonDlg_Question)</Text>
+            </Control>
+
+            <!-- And a line for looking nice... -->
+            <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+
+            <!-- Build number text drawn left bottom -->
+            <Control Id="Build" Type="Text" X="20" Y="247" Width="220" Height="10" Transparent="yes" NoPrefix="yes">
+                <Text>[Version_text] $(var.Property_Version)</Text>
+            </Control>
+
+            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Yes)">
+<?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
+                <Publish Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg"><![CDATA[(&VBoxNetworkFlt=3)]]></Publish>
+                <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(&VBoxNetworkFlt<3)]]></Publish>
+<?else ?>
+                <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
+<?endif?>
             </Control>
 
             <!-- Canceling will bring up a confirmation dialog ('SpawnDialog' attribute) -->
@@ -1010,6 +1071,7 @@
         <TextStyle Id="DlgVerdanaBold13" FaceName="Verdana" Size="13" Bold="yes" />
         <TextStyle Id="DlgInvalidSerial" FaceName="Verdana" Size="13" Bold="yes" Red="255" />
         <TextStyle Id="DlgWarnDisconNetIfaces" FaceName="Verdana" Size="13" Bold="yes" Red="255" />
+        <TextStyle Id="DlgWarnPython" FaceName="Verdana" Size="13" Bold="yes" />
 
         <!-- The UIText table contains the localized versions of some of the strings used in the user interface.
                These strings are not part of any other table. The UIText table is for strings that have no logical place in any other table. -->
@@ -1175,7 +1237,10 @@
 
             <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
             <Custom Action="ca_DefaultTargetDir" After="FileCost"><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
-
+<?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
+            <Custom Action="ca_IsPythonInstalled" After="FileCost" />
+            <Custom Action="ca_ArePythonAPIDepsInstalled" After="ca_IsPythonInstalled" />
+<?endif?>
             <FindRelatedProducts Suppress="no">1</FindRelatedProducts>
 
             <Show Dialog="VBoxFatalErrorDlg" OnExit="error" />

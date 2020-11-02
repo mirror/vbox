@@ -143,6 +143,14 @@ This is default for newer versions of Windows (Vista and newer).</String>
 
     <!---->
 
+    <String Id="WarnPythonDlg_Title">Fehlende Abhängigkeiten</String>
+    <String Id="WarnPythonDlg_Title2">Python Core / win32api</String>
+    <String Id="WarnPythonDlg_Desc">Um die [ProductName] Python-Unterstützung zu installieren, werden Python Core als auch das win32api-Paket benötigt.</String>
+    <String Id="WarnPythonDlg_Desc2">Wenn nun mit der Installation der [ProductName] Python-Unterstützung fortgefahren wird, muss diese später manuell eingerichtet werden. Bitte dazu im SDK-Handbuch für mehr Informationen nachschlagen.</String>
+    <String Id="WarnPythonDlg_Question">Jetzt mit der Installation fortfahren?</String>
+
+    <!---->
+
     <String Id="DiskCostDlg_SpaceRequired">Der erforderliche Speicherplatz für die Installation der ausgewählten Features.</String>
     <String Id="DiskCostDlg_NotEnoughSpace">Die markierten Datenträger verfügen nicht über genügend Speicherplatz für die ausgewählten Features. Sie können entweder einige Dateien von den markierten Datenträgern entfernen, weniger Features installieren oder einen anderen Zieldatenträger auswählen.</String>
     <String Id="DiskCostDlg_SpaceRequirements">Erforderlicher Speicherplatz</String>

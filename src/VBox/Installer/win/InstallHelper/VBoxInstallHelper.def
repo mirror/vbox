@@ -19,6 +19,8 @@ LIBRARY "VBoxInstallHelper"
 EXPORTS
     IsSerialCheckNeeded
     CheckSerial
+    IsPythonInstalled
+    ArePythonAPIDepsInstalled
     InstallPythonAPI
     InstallBranding
     UninstallBranding
@@ -34,4 +36,3 @@ EXPORTS
     RemoveHostOnlyInterfaces
     Ndis6CreateHostOnlyInterface
     Ndis6UpdateHostOnlyInterfaces
-

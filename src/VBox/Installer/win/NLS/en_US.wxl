@@ -147,6 +147,14 @@ This is default for newer versions of Windows (Vista and newer).</String>
 
     <!---->
 
+    <String Id="WarnPythonDlg_Title">Missing Dependencies</String>
+    <String Id="WarnPythonDlg_Title2">Python Core / win32api</String>
+    <String Id="WarnPythonDlg_Desc">Installing the [ProductName] Python bindings requires the Python Core package and the win32api bindings to be installed first.</String>
+    <String Id="WarnPythonDlg_Desc2">When continuing the installation of the [ProductName] Python bindings now, those need to be set up manually later. Refert to the [ProductName] SDK manual for more information.</String>
+    <String Id="WarnPythonDlg_Question">Proceed with installation now?</String>
+
+    <!---->
+
     <String Id="DiskCostDlg_SpaceRequired">The disk space required for the installation of the selected features.</String>
     <String Id="DiskCostDlg_NotEnoughSpace">The highlighted volumes (if any) do not have enough disk space available for the currently selected features. You can either remove some files from the highlighted volumes, or choose to install less features onto local drive(s), or select different destination drive(s).</String>
     <String Id="DiskCostDlg_SpaceRequirements">Disk Space Requirements</String>
