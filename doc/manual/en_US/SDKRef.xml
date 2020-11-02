@@ -1496,9 +1496,11 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>
         layer that abstracts out most platform-specific details from the
         application and allows the developer to focus on application logic.
         The VirtualBox installer automatically sets up this glue layer for the
-        system default Python install. See below for details on how to set up
-        the glue layer if you want to use a different Python
-        installation.</para>
+        system default Python installation.</para>
+
+        <para>See <xref linkend="glue-python-setup"/> for details on how to
+        set up the glue layer if you want to use a different Python installation,
+        or if the VirtualBox installer failed to detect and set it up accordingly.</para>
 
         <para>The minimum supported Python version is 2.6.</para>
 
@@ -1568,12 +1570,20 @@ for m in mgr.getArray(vbox, 'machines'):
         uniform session creation and closing
         (<computeroutput>mgr.getSessionObject()</computeroutput>).</para>
 
-        <para>In case you want to use the glue layer with a different Python
-        installation, use these steps in a shell to add the necessary
-        files:</para>
+        <sect3 id="glue-python-setup">
+          <title>Manual or subsequent setup</title>
+
+          <para>In case you want to use the glue layer with a different Python
+            installation or the installer failed to set it up, use these steps
+            in a shell to install the necessary files:</para>
 
         <screen>    # cd VBOX_INSTALL_PATH/sdk/installer
     # PYTHON vboxapisetup.py install</screen>
+
+           <note>On Windows hosts, a Python distribution along with the
+             win32api bindings package need to be installed as a prerequisite.</note>
+        </sect3>
+
       </sect2>
 
       <sect2 id="cppcom">
