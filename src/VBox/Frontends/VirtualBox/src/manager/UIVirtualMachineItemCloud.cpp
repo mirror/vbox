@@ -143,6 +143,16 @@ void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed, bool fSubscribe /
         m_pProgressTaskRefresh->schedule(fDelayed ? 10000 : 0);
 }
 
+void UIVirtualMachineItemCloud::stopAsyncUpdates()
+{
+    /* Ignore cancel request if progress-task is absent: */
+    if (!m_pProgressTaskRefresh)
+        return;
+
+    /* Mark update canceled in any case: */
+    m_fRefreshScheduled = false;
+}
+
 void UIVirtualMachineItemCloud::waitForAsyncInfoUpdateFinished()
 {
     /* Ignore cancel request if progress-task is absent: */

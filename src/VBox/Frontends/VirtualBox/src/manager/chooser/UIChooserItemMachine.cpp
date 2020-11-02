@@ -234,7 +234,7 @@ void UIChooserItemMachine::setSelected(bool fSelected)
         if (fSelected && pCloudMachineItem->accessible())
             pCloudMachineItem->updateInfoAsync(false /* delayed? */, true /* subscribe */);
         else
-            pCloudMachineItem->waitForAsyncInfoUpdateFinished();
+            pCloudMachineItem->stopAsyncUpdates();
     }
 }
 
