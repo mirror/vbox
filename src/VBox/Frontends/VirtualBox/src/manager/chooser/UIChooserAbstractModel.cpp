@@ -628,11 +628,11 @@ void UIChooserAbstractModel::sltHandleCloudMachineRefreshStarted()
     /* Search for a first machine node with passed ID: */
     UIChooserNode *pMachineNode = searchMachineNode(invisibleRoot(), uId);
 
-    /* Insert cloud entity key into a list of keys currently being updated: */
-    const UICloudEntityKey cloudEntityKey = UICloudEntityKey(pMachineNode->parentNode()->parentNode()->name(),
-                                                             pMachineNode->parentNode()->name(),
-                                                             pMachineNode->toMachineNode()->id());
-    insertCloudEntityKey(cloudEntityKey);
+    /* Insert cloud machine key into a list of keys currently being updated: */
+    const UICloudEntityKey guiCloudMachineKey = UICloudEntityKey(pMachineNode->parentNode()->parentNode()->name(),
+                                                                 pMachineNode->parentNode()->name(),
+                                                                 pMachineNode->toMachineNode()->id());
+    insertCloudEntityKey(guiCloudMachineKey);
 }
 
 void UIChooserAbstractModel::sltHandleCloudMachineRefreshFinished()
@@ -647,11 +647,11 @@ void UIChooserAbstractModel::sltHandleCloudMachineRefreshFinished()
     /* Search for a first machine node with passed ID: */
     UIChooserNode *pMachineNode = searchMachineNode(invisibleRoot(), uId);
 
-    /* Remove cloud entity key from the list of keys currently being updated: */
-    const UICloudEntityKey cloudEntityKey = UICloudEntityKey(pMachineNode->parentNode()->parentNode()->name(),
-                                                             pMachineNode->parentNode()->name(),
-                                                             pMachineNode->toMachineNode()->id());
-    removeCloudEntityKey(cloudEntityKey);
+    /* Remove cloud machine key from the list of keys currently being updated: */
+    const UICloudEntityKey guiCloudMachineKey = UICloudEntityKey(pMachineNode->parentNode()->parentNode()->name(),
+                                                                 pMachineNode->parentNode()->name(),
+                                                                 pMachineNode->toMachineNode()->id());
+    removeCloudEntityKey(guiCloudMachineKey);
 
     /* Notify listeners: */
     emit sigCloudMachineStateChange(uId);
@@ -754,12 +754,6 @@ void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
         const CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
         addLocalMachineIntoTheTree(comMachine, true /* make it visible */);
     }
-}
-
-void UIChooserAbstractModel::sltStartGroupSaving()
-{
-    saveGroupSettings();
-    saveGroupDefinitions();
 }
 
 void UIChooserAbstractModel::sltCloudMachineUnregistered(const QString &strProviderShortName,
@@ -910,14 +904,20 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     }
 
     /* Remove cloud entity key from the list of keys currently being updated: */
-    const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
-    removeCloudEntityKey(cloudEntityKey);
+    const UICloudEntityKey guiCloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
+    removeCloudEntityKey(guiCloudEntityKey);
 }
 
 void UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange()
 {
     /* Reload cloud tree: */
     reloadCloudTree();
+}
+
+void UIChooserAbstractModel::sltStartGroupSaving()
+{
+    saveGroupSettings();
+    saveGroupDefinitions();
 }
 
 void UIChooserAbstractModel::prepare()
@@ -1110,9 +1110,9 @@ void UIChooserAbstractModel::reloadCloudTree()
             /* Add fake cloud VM item: */
             createCloudMachineNode(pProfileNode, UIFakeCloudVirtualMachineItemState_Loading);
 
-            /* Insert cloud entity key into a list of keys currently being updated: */
-            const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
-            insertCloudEntityKey(cloudEntityKey);
+            /* Insert cloud profile key into a list of keys currently being updated: */
+            const UICloudEntityKey guiCloudProfileKey = UICloudEntityKey(strProviderShortName, strProfileName);
+            insertCloudEntityKey(guiCloudProfileKey);
 
             /* Create list cloud machines task: */
             UITaskCloudListMachines *pTask = new UITaskCloudListMachines(strProviderShortName,

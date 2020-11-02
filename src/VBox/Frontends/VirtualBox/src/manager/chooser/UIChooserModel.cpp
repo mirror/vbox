@@ -939,13 +939,13 @@ void UIChooserModel::refreshSelectedMachineItems()
                 UIChooserItem *pParentOfParent = pParent->parentItem();
                 AssertPtrReturnVoid(pParentOfParent);
 
-                /* Insert cloud entity key into a list of keys currently being updated: */
-                const UICloudEntityKey cloudEntityKey = UICloudEntityKey(pParentOfParent->name(), pParent->name());
-                insertCloudEntityKey(cloudEntityKey);
+                /* Insert cloud profile key into a list of keys currently being updated: */
+                const UICloudEntityKey guiCloudProfileKey = UICloudEntityKey(pParentOfParent->name(), pParent->name());
+                insertCloudEntityKey(guiCloudProfileKey);
 
                 /* Create list cloud machines task: */
-                UITaskCloudListMachines *pTask = new UITaskCloudListMachines(cloudEntityKey.m_strProviderShortName,
-                                                                             cloudEntityKey.m_strProfileName,
+                UITaskCloudListMachines *pTask = new UITaskCloudListMachines(guiCloudProfileKey.m_strProviderShortName,
+                                                                             guiCloudProfileKey.m_strProfileName,
                                                                              true /* with refresh? */);
                 AssertPtrReturnVoid(pTask);
                 uiCommon().threadPoolCloud()->enqueueTask(pTask);
@@ -1302,10 +1302,10 @@ void UIChooserModel::sltCurrentDragObjectDestroyed()
 void UIChooserModel::sltUpdateSelectedCloudProfiles()
 {
     /* For every selected item: */
-    QSet<UICloudEntityKey> selectedCloudEntityKeys;
+    QSet<UICloudEntityKey> selectedCloudProfileKeys;
     foreach (UIChooserItem *pSelectedItem, selectedItems())
     {
-        /* Enumerate cloud entity keys to update: */
+        /* Enumerate cloud profile keys to update: */
         switch (pSelectedItem->type())
         {
             case UIChooserNodeType_Group:
@@ -1320,9 +1320,9 @@ void UIChooserModel::sltUpdateSelectedCloudProfiles()
                         foreach (UIChooserItem *pChildItem, pSelectedItem->items(UIChooserNodeType_Group))
                         {
                             const QString strProfileName = pChildItem->name();
-                            const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
-                            if (!selectedCloudEntityKeys.contains(cloudEntityKey))
-                                selectedCloudEntityKeys.insert(cloudEntityKey);
+                            const UICloudEntityKey guiCloudProfileKey = UICloudEntityKey(strProviderShortName, strProfileName);
+                            if (!selectedCloudProfileKeys.contains(guiCloudProfileKey))
+                                selectedCloudProfileKeys.insert(guiCloudProfileKey);
                         }
                         break;
                     }
@@ -1330,9 +1330,9 @@ void UIChooserModel::sltUpdateSelectedCloudProfiles()
                     {
                         const QString strProviderShortName = pSelectedItem->parentItem()->name();
                         const QString strProfileName = pSelectedItem->name();
-                        const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
-                        if (!selectedCloudEntityKeys.contains(cloudEntityKey))
-                            selectedCloudEntityKeys.insert(cloudEntityKey);
+                        const UICloudEntityKey guiCloudProfileKey = UICloudEntityKey(strProviderShortName, strProfileName);
+                        if (!selectedCloudProfileKeys.contains(guiCloudProfileKey))
+                            selectedCloudProfileKeys.insert(guiCloudProfileKey);
                         break;
                     }
                     default:
@@ -1349,26 +1349,26 @@ void UIChooserModel::sltUpdateSelectedCloudProfiles()
                 {
                     const QString strProviderShortName = pMachineItem->parentItem()->parentItem()->name();
                     const QString strProfileName = pMachineItem->parentItem()->name();
-                    const UICloudEntityKey cloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
-                    if (!selectedCloudEntityKeys.contains(cloudEntityKey))
-                        selectedCloudEntityKeys.insert(cloudEntityKey);
+                    const UICloudEntityKey guiCloudProfileKey = UICloudEntityKey(strProviderShortName, strProfileName);
+                    if (!selectedCloudProfileKeys.contains(guiCloudProfileKey))
+                        selectedCloudProfileKeys.insert(guiCloudProfileKey);
                 }
                 break;
             }
         }
     }
 
-    /* Restart List Cloud Machines task for selected entity keys: */
-    foreach (const UICloudEntityKey &cloudEntityKey, selectedCloudEntityKeys)
+    /* Restart List Cloud Machines task for selected profile keys: */
+    foreach (const UICloudEntityKey &guiCloudProfileKey, selectedCloudProfileKeys)
     {
-        /* Skip cloud entity keys already being updated: */
-        if (containsCloudEntityKey(cloudEntityKey))
+        /* Skip cloud profile keys already being updated: */
+        if (containsCloudEntityKey(guiCloudProfileKey))
             continue;
-        insertCloudEntityKey(cloudEntityKey);
+        insertCloudEntityKey(guiCloudProfileKey);
 
         /* Create a task for particular cloud entity key: */
-        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(cloudEntityKey.m_strProviderShortName,
-                                                                     cloudEntityKey.m_strProfileName,
+        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(guiCloudProfileKey.m_strProviderShortName,
+                                                                     guiCloudProfileKey.m_strProfileName,
                                                                      false /* with refresh? */);
         AssertPtrReturnVoid(pTask);
         uiCommon().threadPoolCloud()->enqueueTask(pTask);
@@ -1957,17 +1957,17 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
             changedCloudEntityKeys.insert(cloudEntityKeyForProfile);
     }
 
-    /* Restart List Cloud Machines task for required entity keys: */
-    foreach (const UICloudEntityKey &cloudEntityKey, changedCloudEntityKeys)
+    /* Restart List Cloud Machines task for required profile keys: */
+    foreach (const UICloudEntityKey &guiCloudProfileKey, changedCloudEntityKeys)
     {
-        /* Skip cloud entity keys already being updated: */
-        if (containsCloudEntityKey(cloudEntityKey))
+        /* Skip cloud profile keys already being updated: */
+        if (containsCloudEntityKey(guiCloudProfileKey))
             continue;
-        insertCloudEntityKey(cloudEntityKey);
+        insertCloudEntityKey(guiCloudProfileKey);
 
         /* Create a task for particular cloud entity key: */
-        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(cloudEntityKey.m_strProviderShortName,
-                                                                     cloudEntityKey.m_strProfileName,
+        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(guiCloudProfileKey.m_strProviderShortName,
+                                                                     guiCloudProfileKey.m_strProfileName,
                                                                      false /* with refresh? */);
         AssertPtrReturnVoid(pTask);
         uiCommon().threadPoolCloud()->enqueueTask(pTask);
