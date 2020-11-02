@@ -26,7 +26,9 @@
 #include <QString>
 #include <QUuid>
 
-/** Cloud entity key definition. */
+/** Cloud entity key definition.
+  * This is a key for various indexed containers,
+  * allowing to distinguish one cloud entity from another. */
 struct UICloudEntityKey
 {
     /** Constructs cloud entity key on the basis of passed parameters.
@@ -41,6 +43,8 @@ struct UICloudEntityKey
 
     /** Returns whether this one key equals to @a another one. */
     bool operator==(const UICloudEntityKey &another) const;
+    /** Returns whether this one key is less than @a another one. */
+    bool operator<(const UICloudEntityKey &another) const;
 
     /** Returns string key representation. */
     QString toString() const;

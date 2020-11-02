@@ -38,9 +38,14 @@ UICloudEntityKey::UICloudEntityKey(const UICloudEntityKey &another)
 bool UICloudEntityKey::operator==(const UICloudEntityKey &another) const
 {
     return    true
-           && m_strProviderShortName == another.m_strProviderShortName
-           && m_strProfileName == another.m_strProfileName
-           && m_uMachineId == another.m_uMachineId
+           && toString() == another.toString()
+              ;
+}
+
+bool UICloudEntityKey::operator<(const UICloudEntityKey &another) const
+{
+    return    true
+           && toString() < another.toString()
               ;
 }
 
