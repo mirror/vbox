@@ -147,7 +147,7 @@ private:
     /** @} */
 
     QString       m_strHelpFilePath;
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     QHelpEngine  *m_pHelpEngine;
 #endif
     UIHelpBrowserAddressBar *m_pAddressBar;

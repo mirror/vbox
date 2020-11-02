@@ -21,13 +21,13 @@
 #include <QDir>
 #include <QFont>
 #include <QHBoxLayout>
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
  #include <QtHelp/QHelpEngine>
  #include <QtHelp/QHelpContentWidget>
  #include <QtHelp/QHelpIndexWidget>
-#include <QtHelp/QHelpSearchEngine>
-#include <QtHelp/QHelpSearchQueryWidget>
-#include <QtHelp/QHelpSearchResultWidget>
+ #include <QtHelp/QHelpSearchEngine>
+ #include <QtHelp/QHelpSearchQueryWidget>
+ #include <QtHelp/QHelpSearchResultWidget>
 #endif
 #include <QMenu>
 #include <QScrollBar>
@@ -90,7 +90,7 @@ public slots:
 
 private:
 
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     const QHelpEngine* m_pHelpEngine;
 #endif
 };
@@ -102,18 +102,18 @@ UIHelpBrowserAddressBar::UIHelpBrowserAddressBar(QWidget *pParent /* = 0 */)
 
 UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* = 0 */)
     :QTextBrowser(pParent)
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     , m_pHelpEngine(pHelpEngine)
 #endif
 {
-#if !defined(RT_OS_LINUX) || !defined(VBOX_WITH_DOCS_QHELP)
+#if !defined(RT_OS_LINUX) || !defined(VBOX_WITH_DOCS_QHELP) || !(QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     Q_UNUSED(pHelpEngine);
 #endif
 }
 
 QVariant UIHelpBrowserViewer::loadResource(int type, const QUrl &name)
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     if (name.scheme() == "qthelp" && m_pHelpEngine)
         return QVariant(m_pHelpEngine->fileData(name));
     else
@@ -142,7 +142,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pTabWidget(0)
     , m_pToolBar(0)
     , m_strHelpFilePath(strHelpFilePath)
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     , m_pHelpEngine(0)
 #endif
     , m_pAddressBar(0)
@@ -239,7 +239,7 @@ void UIHelpBrowserWidget::prepareWidgets()
     AssertReturnVoid(m_pSplitter);
 
     m_pMainLayout->addWidget(m_pSplitter);
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     m_pHelpEngine = new QHelpEngine(m_strHelpFilePath, this);
     m_pBookmarksWidget = new QWidget(this);
     m_pTabWidget = new QITabWidget;
@@ -301,7 +301,7 @@ void UIHelpBrowserWidget::prepareWidgets()
 
 void UIHelpBrowserWidget::prepareSearchWidgets()
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
 # if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
 
     AssertReturnVoid(m_pTabWidget && m_pHelpEngine);
@@ -396,7 +396,7 @@ void UIHelpBrowserWidget::prepareMenu()
 
 void UIHelpBrowserWidget::loadOptions()
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     if (m_pContentViewer && m_pHelpEngine)
     {
         QUrl url(gEDataManager->helpBrowserLastUrl());
@@ -511,7 +511,7 @@ void UIHelpBrowserWidget::sltHandleToolBarVisibility(bool fToggled)
 
 QUrl UIHelpBrowserWidget::findIndexHtml() const
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     QList<QUrl> files = m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList());
     int iIndex = -1;
     for (int i = 0; i < files.size(); ++i)
@@ -551,7 +551,7 @@ void UIHelpBrowserWidget::show404Error(const QUrl &url)
 
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     AssertReturnVoid(m_pContentViewer && m_pHelpEngine);
     /* Search for the index of the index.htnl: */
     QUrl url = findIndexHtml();
@@ -566,7 +566,7 @@ void sltHandleHomeAction();
 
 void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &index)
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     AssertReturnVoid(m_pContentViewer && m_pHelpEngine && m_pContentWidget);
     QHelpContentModel *pContentModel =
         qobject_cast<QHelpContentModel*>(m_pContentWidget->model());
@@ -588,7 +588,7 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex &i
 
 void UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange(const QUrl &source)
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     if (m_fModelContentCreated && m_pContentWidget && source.isValid() && m_pContentModel)
     {
         QModelIndex index = m_pContentWidget->indexOf(source);
@@ -713,7 +713,7 @@ void UIHelpBrowserWidget::sltHandleSearchingStarted()
 
 void UIHelpBrowserWidget::sltHandleSearchStart()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     AssertReturnVoid(m_pHelpSearchEngine && m_pHelpSearchQueryWidget);
     m_pHelpSearchEngine->search(m_pHelpSearchQueryWidget->searchInput());
 #endif
