@@ -349,51 +349,6 @@ void UIThreadGroupDefinitionsSave::run()
 
 
 /*********************************************************************************************************************************
-*   Class UICloudEntityKey implementation.                                                                                       *
-*********************************************************************************************************************************/
-
-UICloudEntityKey::UICloudEntityKey(const QString &strProviderShortName /* = QString() */,
-                                   const QString &strProfileName /* = QString() */,
-                                   const QUuid &uMachineId /* = QUuid() */)
-    : m_strProviderShortName(strProviderShortName)
-    , m_strProfileName(strProfileName)
-    , m_uMachineId(uMachineId)
-{
-}
-
-UICloudEntityKey::UICloudEntityKey(const UICloudEntityKey &another)
-    : m_strProviderShortName(another.m_strProviderShortName)
-    , m_strProfileName(another.m_strProfileName)
-    , m_uMachineId(another.m_uMachineId)
-{
-}
-
-bool UICloudEntityKey::operator==(const UICloudEntityKey &another) const
-{
-    return    true
-           && m_strProviderShortName == another.m_strProviderShortName
-           && m_strProfileName == another.m_strProfileName
-           && m_uMachineId == another.m_uMachineId
-              ;
-}
-
-QString UICloudEntityKey::toString() const
-{
-    QString strResult;
-    if (m_strProviderShortName.isEmpty())
-        return strResult;
-    strResult += QString("/%1").arg(m_strProviderShortName);
-    if (m_strProfileName.isEmpty())
-        return strResult;
-    strResult += QString("/%1").arg(m_strProfileName);
-    if (m_uMachineId.isNull())
-        return strResult;
-    strResult += QString("/%1").arg(m_uMachineId.toString());
-    return strResult;
-}
-
-
-/*********************************************************************************************************************************
 *   Class UIChooserAbstractModel implementation.                                                                                 *
 *********************************************************************************************************************************/
 
