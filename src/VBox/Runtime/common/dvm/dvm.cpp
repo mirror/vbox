@@ -140,6 +140,8 @@ static const char * const g_apszDvmVolTypes[] =
     "Windows storage spaces",
 
     "IBM GPFS",
+
+    "OS/2",
 };
 AssertCompile(RT_ELEMENTS(g_apszDvmVolTypes) == RTDVMVOLTYPE_END);
 

@@ -100,6 +100,9 @@ typedef enum RTDVMVOLTYPE
     /** Volume hosts an IBM general parallel file system (GPFS). */
     RTDVMVOLTYPE_IBM_GPFS,
 
+    /** OS/2 (Arca Noae) type 1 partition. */
+    RTDVMVOLTYPE_ARCA_OS2,
+
     /** End of the valid values. */
     RTDVMVOLTYPE_END,
     /** Usual 32bit hack. */
