@@ -944,11 +944,7 @@ void UIChooserModel::refreshSelectedMachineItems()
                 insertCloudEntityKey(guiCloudProfileKey);
 
                 /* Create list cloud machines task: */
-                UITaskCloudListMachines *pTask = new UITaskCloudListMachines(guiCloudProfileKey.m_strProviderShortName,
-                                                                             guiCloudProfileKey.m_strProfileName,
-                                                                             true /* with refresh? */);
-                AssertPtrReturnVoid(pTask);
-                uiCommon().threadPoolCloud()->enqueueTask(pTask);
+                createReadCloudMachineListTask(guiCloudProfileKey, true /* with refresh? */);
 
                 break;
             }
@@ -1367,11 +1363,7 @@ void UIChooserModel::sltUpdateSelectedCloudProfiles()
         insertCloudEntityKey(guiCloudProfileKey);
 
         /* Create a task for particular cloud entity key: */
-        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(guiCloudProfileKey.m_strProviderShortName,
-                                                                     guiCloudProfileKey.m_strProfileName,
-                                                                     false /* with refresh? */);
-        AssertPtrReturnVoid(pTask);
-        uiCommon().threadPoolCloud()->enqueueTask(pTask);
+        createReadCloudMachineListTask(guiCloudProfileKey, false /* with refresh? */);
     }
 }
 
@@ -1966,11 +1958,7 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
         insertCloudEntityKey(guiCloudProfileKey);
 
         /* Create a task for particular cloud entity key: */
-        UITaskCloudListMachines *pTask = new UITaskCloudListMachines(guiCloudProfileKey.m_strProviderShortName,
-                                                                     guiCloudProfileKey.m_strProfileName,
-                                                                     false /* with refresh? */);
-        AssertPtrReturnVoid(pTask);
-        uiCommon().threadPoolCloud()->enqueueTask(pTask);
+        createReadCloudMachineListTask(guiCloudProfileKey, false /* with refresh? */);
     }
 }
 

@@ -221,6 +221,15 @@ protected slots:
         virtual void sltHandleCloudProfileManagerCumulativeChange();
     /** @} */
 
+protected:
+
+    /** @name Children stuff.
+      * @{ */
+        /** Creates and registers read cloud machine list task with @a guiCloudProfileKey.
+          * @param  fWithRefresh  Brings whether machines should be refreshed as well. */
+        void createReadCloudMachineListTask(const UICloudEntityKey &guiCloudProfileKey, bool fWithRefresh);
+    /** @} */
+
 private slots:
 
     /** @name Group saving stuff.

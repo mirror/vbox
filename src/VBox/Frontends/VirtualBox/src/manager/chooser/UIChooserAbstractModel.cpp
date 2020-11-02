@@ -914,6 +914,16 @@ void UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange()
     reloadCloudTree();
 }
 
+void UIChooserAbstractModel::createReadCloudMachineListTask(const UICloudEntityKey &guiCloudProfileKey, bool fWithRefresh)
+{
+    /* Create list cloud machines task: */
+    UITaskCloudListMachines *pTask = new UITaskCloudListMachines(guiCloudProfileKey.m_strProviderShortName,
+                                                                 guiCloudProfileKey.m_strProfileName,
+                                                                 fWithRefresh);
+    AssertPtrReturnVoid(pTask);
+    uiCommon().threadPoolCloud()->enqueueTask(pTask);
+}
+
 void UIChooserAbstractModel::sltStartGroupSaving()
 {
     saveGroupSettings();
@@ -1115,11 +1125,7 @@ void UIChooserAbstractModel::reloadCloudTree()
             insertCloudEntityKey(guiCloudProfileKey);
 
             /* Create list cloud machines task: */
-            UITaskCloudListMachines *pTask = new UITaskCloudListMachines(strProviderShortName,
-                                                                         strProfileName,
-                                                                         true /* with refresh? */);
-            AssertPtrReturnVoid(pTask);
-            uiCommon().threadPoolCloud()->enqueueTask(pTask);
+            createReadCloudMachineListTask(guiCloudProfileKey, true /* with refresh? */);
         }
     }
 
