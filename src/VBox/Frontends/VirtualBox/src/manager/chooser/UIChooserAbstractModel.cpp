@@ -29,8 +29,7 @@
 #include "UICloudNetworkingStuff.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
-#include "UITaskCloudListMachines.h"
-#include "UIThreadPool.h"
+#include "UIProgressTaskReadCloudMachineList.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItemCloud.h"
 
@@ -589,14 +588,14 @@ QString UIChooserAbstractModel::valueToString(UIChooserNodeDataValueType enmType
 
 void UIChooserAbstractModel::insertCloudEntityKey(const UICloudEntityKey &key)
 {
-//    printf("Cloud entity with key %s being updated..\n", key.toString().toUtf8().constData());
+    printf("Cloud entity with key %s being updated..\n", key.toString().toUtf8().constData());
     m_cloudEntityKeysBeingUpdated.insert(key);
     emit sigCloudUpdateStateChanged();
 }
 
 void UIChooserAbstractModel::removeCloudEntityKey(const UICloudEntityKey &key)
 {
-//    printf("Cloud entity with key %s is updated!\n", key.toString().toUtf8().constData());
+    printf("Cloud entity with key %s is updated!\n", key.toString().toUtf8().constData());
     m_cloudEntityKeysBeingUpdated.remove(key);
     emit sigCloudUpdateStateChanged();
 }
@@ -847,19 +846,24 @@ void UIChooserAbstractModel::sltCloudMachinesRegistered(const QString &strProvid
     delete searchFakeNode(pProfileNode);
 }
 
-void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
+void UIChooserAbstractModel::sltHandleReadCloudMachineListTaskComplete()
 {
-    /* Skip unrelated tasks: */
-    AssertPtrReturnVoid(pTask);
-    if (pTask->type() != UITask::Type_CloudListMachines)
+    /* Parse task result: */
+    UIProgressTaskReadCloudMachineList *pSender = qobject_cast<UIProgressTaskReadCloudMachineList*>(sender());
+    AssertPtrReturnVoid(pSender);
+    const UICloudEntityKey guiCloudProfileKey = pSender->cloudProfileKey();
+    const QVector<CCloudMachine> machines = pSender->machines();
+
+    /* Delete task: */
+    delete pSender;
+
+    /* Check whether this task was expected: */
+    if (!containsCloudEntityKey(guiCloudProfileKey))
         return;
-    UITaskCloudListMachines *pAcquiringTask = qobject_cast<UITaskCloudListMachines*>(pTask);
-    AssertPtrReturnVoid(pAcquiringTask);
-    const QString strProviderShortName = pAcquiringTask->providerShortName();
-    const QString strProfileName = pAcquiringTask->profileName();
 
     /* Search for profile node: */
-    UIChooserNode *pProfileNode = searchProfileNode(strProviderShortName, strProfileName);
+    UIChooserNode *pProfileNode = searchProfileNode(guiCloudProfileKey.m_strProviderShortName,
+                                                    guiCloudProfileKey.m_strProfileName);
     if (!pProfileNode)
         return;
 
@@ -877,7 +881,7 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     /* Compose new set of machine IDs and map of machines: */
     QSet<QUuid> newIDs;
     QMap<QUuid, CCloudMachine> newMachines;
-    foreach (const CCloudMachine &comMachine, pAcquiringTask->result())
+    foreach (const CCloudMachine &comMachine, machines)
     {
         QUuid uId;
         AssertReturnVoid(cloudMachineId(comMachine, uId));
@@ -894,10 +898,14 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
 
     /* Remove unregistered cloud VM nodes: */
     if (!unregisteredIDs.isEmpty())
-        sltCloudMachinesUnregistered(strProviderShortName, strProfileName, unregisteredIDs.toList());
+        sltCloudMachinesUnregistered(guiCloudProfileKey.m_strProviderShortName,
+                                     guiCloudProfileKey.m_strProfileName,
+                                     unregisteredIDs.toList());
     /* Add registered cloud VM nodes: */
     if (!registeredMachines.isEmpty())
-        sltCloudMachinesRegistered(strProviderShortName, strProfileName, registeredMachines);
+        sltCloudMachinesRegistered(guiCloudProfileKey.m_strProviderShortName,
+                                   guiCloudProfileKey.m_strProfileName,
+                                   registeredMachines);
     /* If we changed nothing and have nothing currently: */
     if (unregisteredIDs.isEmpty() && newIDs.isEmpty())
     {
@@ -909,8 +917,7 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     }
 
     /* Remove cloud entity key from the list of keys currently being updated: */
-    const UICloudEntityKey guiCloudEntityKey = UICloudEntityKey(strProviderShortName, strProfileName);
-    removeCloudEntityKey(guiCloudEntityKey);
+    removeCloudEntityKey(guiCloudProfileKey);
 }
 
 void UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange()
@@ -921,12 +928,24 @@ void UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange()
 
 void UIChooserAbstractModel::createReadCloudMachineListTask(const UICloudEntityKey &guiCloudProfileKey, bool fWithRefresh)
 {
-    /* Create list cloud machines task: */
-    UITaskCloudListMachines *pTask = new UITaskCloudListMachines(guiCloudProfileKey.m_strProviderShortName,
-                                                                 guiCloudProfileKey.m_strProfileName,
-                                                                 fWithRefresh);
-    AssertPtrReturnVoid(pTask);
-    uiCommon().threadPoolCloud()->enqueueTask(pTask);
+    /* Do not create task if already registered: */
+    if (containsCloudEntityKey(guiCloudProfileKey))
+        return;
+
+    /* Create task: */
+    UIProgressTaskReadCloudMachineList *pTask = new UIProgressTaskReadCloudMachineList(this,
+                                                                                       guiCloudProfileKey,
+                                                                                       fWithRefresh);
+    if (pTask)
+    {
+        /* Insert cloud profile key into a list of keys currently being updated: */
+        insertCloudEntityKey(guiCloudProfileKey);
+
+        /* Connect and start it finally: */
+        connect(pTask, &UIProgressTaskReadCloudMachineList::sigProgressFinished,
+                this, &UIChooserAbstractModel::sltHandleReadCloudMachineListTaskComplete);
+        pTask->start();
+    }
 }
 
 void UIChooserAbstractModel::sltStartGroupSaving()
@@ -942,10 +961,6 @@ void UIChooserAbstractModel::prepare()
 
 void UIChooserAbstractModel::prepareConnections()
 {
-    /* Cloud thread-pool connections: */
-    connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
-            this, &UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete);
-
     /* Cloud VM registration connections: */
     connect(&uiCommon(), &UICommon::sigCloudMachineUnregistered,
             this, &UIChooserAbstractModel::sltCloudMachineUnregistered);
@@ -988,12 +1003,14 @@ void UIChooserAbstractModel::prepareConnections()
             this, &UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange);
 }
 
+void UIChooserAbstractModel::cleanupTasks()
+{
+    foreach (UIProgressTaskReadCloudMachineList *pTask, findChildren<UIProgressTaskReadCloudMachineList*>())
+        delete pTask;
+}
+
 void UIChooserAbstractModel::cleanupConnections()
 {
-    /* Cloud thread-pool connections: */
-    disconnect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
-               this, &UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete);
-
     /* Cloud VM registration connections: */
     disconnect(&uiCommon(), &UICommon::sigCloudMachineUnregistered,
                this, &UIChooserAbstractModel::sltCloudMachineUnregistered);
@@ -1037,6 +1054,7 @@ void UIChooserAbstractModel::cleanupConnections()
 
 void UIChooserAbstractModel::cleanup()
 {
+    cleanupTasks();
     cleanupConnections();
 }
 
@@ -1177,11 +1195,8 @@ void UIChooserAbstractModel::reloadCloudTree()
             /* Add fake cloud VM item: */
             createCloudMachineNode(pProfileNode, UIFakeCloudVirtualMachineItemState_Loading);
 
-            /* Insert cloud profile key into a list of keys currently being updated: */
+            /* Create read cloud machine list task: */
             const UICloudEntityKey guiCloudProfileKey = UICloudEntityKey(strProviderShortName, strProfileName);
-            insertCloudEntityKey(guiCloudProfileKey);
-
-            /* Create list cloud machines task: */
             createReadCloudMachineListTask(guiCloudProfileKey, true /* with refresh? */);
         }
     }

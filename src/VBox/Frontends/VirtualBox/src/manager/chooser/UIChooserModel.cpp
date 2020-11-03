@@ -43,8 +43,6 @@
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
-#include "UITaskCloudListMachines.h"
-#include "UIThreadPool.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
@@ -939,11 +937,8 @@ void UIChooserModel::refreshSelectedMachineItems()
                 UIChooserItem *pParentOfParent = pParent->parentItem();
                 AssertPtrReturnVoid(pParentOfParent);
 
-                /* Insert cloud profile key into a list of keys currently being updated: */
+                /* Create read cloud machine list task: */
                 const UICloudEntityKey guiCloudProfileKey = UICloudEntityKey(pParentOfParent->name(), pParent->name());
-                insertCloudEntityKey(guiCloudProfileKey);
-
-                /* Create list cloud machines task: */
                 createReadCloudMachineListTask(guiCloudProfileKey, true /* with refresh? */);
 
                 break;
@@ -1218,14 +1213,10 @@ void UIChooserModel::sltCloudMachinesRegistered(const QString &strProviderShortN
     buildTreeForMainRoot(true /* preserve selection */);
 }
 
-void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
+void UIChooserModel::sltHandleReadCloudMachineListTaskComplete()
 {
-    /* Skip unrelated tasks: */
-    if (!pTask || pTask->type() != UITask::Type_CloudListMachines)
-        return;
-
     /* Call to base-class: */
-    UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(pTask);
+    UIChooserAbstractModel::sltHandleReadCloudMachineListTaskComplete();
 
     /* Restart cloud profile update timer: */
     m_pTimerCloudProfileUpdate->start(10000);
@@ -1356,15 +1347,7 @@ void UIChooserModel::sltUpdateSelectedCloudProfiles()
 
     /* Restart List Cloud Machines task for selected profile keys: */
     foreach (const UICloudEntityKey &guiCloudProfileKey, selectedCloudProfileKeys)
-    {
-        /* Skip cloud profile keys already being updated: */
-        if (containsCloudEntityKey(guiCloudProfileKey))
-            continue;
-        insertCloudEntityKey(guiCloudProfileKey);
-
-        /* Create a task for particular cloud entity key: */
         createReadCloudMachineListTask(guiCloudProfileKey, false /* with refresh? */);
-    }
 }
 
 void UIChooserModel::prepare()
@@ -1951,15 +1934,7 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
 
     /* Restart List Cloud Machines task for required profile keys: */
     foreach (const UICloudEntityKey &guiCloudProfileKey, changedCloudEntityKeys)
-    {
-        /* Skip cloud profile keys already being updated: */
-        if (containsCloudEntityKey(guiCloudProfileKey))
-            continue;
-        insertCloudEntityKey(guiCloudProfileKey);
-
-        /* Create a task for particular cloud entity key: */
         createReadCloudMachineListTask(guiCloudProfileKey, false /* with refresh? */);
-    }
 }
 
 bool UIChooserModel::processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)

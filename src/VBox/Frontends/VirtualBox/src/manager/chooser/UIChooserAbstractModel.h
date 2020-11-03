@@ -36,7 +36,6 @@
 /* Forward declaration: */
 class UIChooser;
 class UIChooserNode;
-class UITask;
 class CCloudMachine;
 class CMachine;
 
@@ -216,8 +215,8 @@ protected slots:
                                                 const QString &strProfileName,
                                                 const QVector<CCloudMachine> &machines);
 
-        /** Handles list cloud machines task complete signal. */
-        virtual void sltHandleCloudListMachinesTaskComplete(UITask *pTask);
+        /** Handles read cloud machine list task complete signal. */
+        virtual void sltHandleReadCloudMachineListTaskComplete();
 
         /** Handles Cloud Profile Manager cumulative change. */
         virtual void sltHandleCloudProfileManagerCumulativeChange();
@@ -249,6 +248,8 @@ private:
         /** Prepares connections. */
         void prepareConnections();
 
+        /** Cleanups tasks. */
+        void cleanupTasks();
         /** Cleanups connections. */
         void cleanupConnections();
         /** Cleanups all. */

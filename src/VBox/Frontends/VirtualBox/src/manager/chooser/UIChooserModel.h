@@ -303,8 +303,8 @@ protected slots:
                                                 const QString &strProfileName,
                                                 const QVector<CCloudMachine> &machines) /* override */;
 
-        /** Handles list cloud machines task complete signal. */
-        virtual void sltHandleCloudListMachinesTaskComplete(UITask *pTask) /* override */;
+        /** Handles read cloud machine list task complete signal. */
+        virtual void sltHandleReadCloudMachineListTaskComplete() /* override */;
 
         /** Handles Cloud Profile Manager cumulative changes. */
         virtual void sltHandleCloudProfileManagerCumulativeChange() /* override */;
