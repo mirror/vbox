@@ -71,14 +71,23 @@ UIProgressTaskRefreshCloudMachine::UIProgressTaskRefreshCloudMachine(QObject *pP
 
 CProgress UIProgressTaskRefreshCloudMachine::createProgress()
 {
+    /* Prepare resulting progress-wrapper: */
+    CProgress comResult;
+
+    /* Initialize actual progress-wrapper: */
     CProgress comProgress = m_comCloudMachine.Refresh();
     if (!m_comCloudMachine.isOk())
         msgCenter().cannotAcquireCloudMachineParameter(m_comCloudMachine);
-    return comProgress;
+    else
+        comResult = comProgress;
+
+    /* Return progress-wrapper in any case: */
+    return comResult;
 }
 
 void UIProgressTaskRefreshCloudMachine::handleProgressFinished(CProgress &comProgress)
 {
+    /* Handle progress-wrapper errors: */
     if (!comProgress.GetCanceled() && (!comProgress.isOk() || comProgress.GetResultCode() != 0))
         msgCenter().cannotAcquireCloudMachineParameter(comProgress);
 }
