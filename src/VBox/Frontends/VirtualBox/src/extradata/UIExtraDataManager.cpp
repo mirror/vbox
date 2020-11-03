@@ -1981,7 +1981,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #endif /* VBOX_WITH_DEBUGGER_GUI */
            << GUI_ExtraDataManager_Geometry << GUI_ExtraDataManager_SplitterHints
            << GUI_LogWindowGeometry
-           << GUI_HelpBrowserLastURL
+           << GUI_HelpBrowserLastURLList
            << GUI_HelpBrowserDialogGeometry;
 }
 
@@ -4593,14 +4593,14 @@ QStringList UIExtraDataManager::logViewerVisiblePanels()
     return extraDataStringList(GUI_GuestControl_LogViewerVisiblePanels);
 }
 
-void UIExtraDataManager::setHelpBrowserLastUrl(const QString &url)
+void UIExtraDataManager::setHelpBrowserLastUrlList(const QStringList &urlList)
 {
-    setExtraDataString(GUI_HelpBrowserLastURL, url);
+    setExtraDataStringList(GUI_HelpBrowserLastURLList, urlList);
 }
 
-QString UIExtraDataManager::helpBrowserLastUrl()
+QStringList UIExtraDataManager::helpBrowserLastUrlList()
 {
-    return extraDataString(GUI_HelpBrowserLastURL);
+    return extraDataStringList(GUI_HelpBrowserLastURLList);
 }
 
 QRect UIExtraDataManager::helpBrowserDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)

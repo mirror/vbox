@@ -238,7 +238,7 @@ const char *UIExtraDataDefs::GUI_LogViewerNoFontStyleName = "noFontStyleName";
 const char *UIExtraDataDefs::GUI_GuestControl_LogViewerVisiblePanels = "GUI/LogViewerVisiblePanels";
 
 /* Help Browser */
-const char *UIExtraDataDefs::GUI_HelpBrowserLastURL = "GUI/HelpBrowserLastURL";
+const char *UIExtraDataDefs::GUI_HelpBrowserLastURLList = "GUI/HelpBrowserLastURLList";
 const char *UIExtraDataDefs::GUI_HelpBrowserDialogGeometry = "GUI/HelpBrowserDialogGeomety";
 
 /* VM Resource Monitor: */

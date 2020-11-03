@@ -51,9 +51,9 @@ class QITabWidget;
 class QIToolBar;
 class UIActionPool;
 class UIDialogPanel;
-class UIHelpBrowserAddressBar;
-class UIHelpBrowserViewer;
+class UIHelpBrowserTabManager;
 
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
 class SHARED_LIBRARY_STUFF UIHelpBrowserWidget  : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -86,21 +86,13 @@ private slots:
     void sltHandleContentWidgetItemClicked(const QModelIndex &index);
     void sltHandleSideBarVisibility(bool togggled);
     void sltHandleToolBarVisibility(bool togggled);
-    void sltHandleHelpBrowserViewerSourceChange(const QUrl &source);
     void sltHandleContentsCreated();
-    void sltHandleHomeAction();
-    void sltHandleForwardAction();
-    void sltHandleBackwardAction();
-    void sltHandleForwardAvailable(bool fAvailable);
-    void sltHandleBackwardAvailable(bool fAvailable);
-    void sltHandleHistoryChanged();
-    void sltHandleAddressBarIndexChanged(int index);
-    void sltHandleAddBookmarkAction();
     void sltHandleIndexingStarted();
     void sltHandleIndexingFinished();
     void sltHandleSearchingStarted();
     void sltHandleSearchStart();
-    void sltAnchorClicked(const QUrl &link);
+    void sltHandleHelpBrowserViewerSourceChange(const QUrl &source);
+
 private:
 
     void prepare();
@@ -110,20 +102,20 @@ private:
     void prepareToolBar();
     void prepareMenu();
     void loadOptions();
-
+    QStringList loadSavedUrlList();
     void saveOptions();
     void cleanup();
     QUrl findIndexHtml() const;
     void show404Error(const QUrl &url);
     /** @name Event handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+     * @{ */
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
-        /** Handles Qt show @a pEvent. */
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
-        /** Handles Qt key-press @a pEvent. */
-        virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+    /** Handles Qt show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    /** Handles Qt key-press @a pEvent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
     /** @} */
 
     /** Holds the widget's embedding type. */
@@ -142,35 +134,28 @@ private:
 
     QITabWidget *m_pTabWidget;
     /** @name Toolbar and menu variables.
-      * @{ */
-        QIToolBar *m_pToolBar;
+     * @{ */
+    QIToolBar *m_pToolBar;
     /** @} */
 
     QString       m_strHelpFilePath;
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     QHelpEngine  *m_pHelpEngine;
-#endif
-    UIHelpBrowserAddressBar *m_pAddressBar;
-    UIHelpBrowserViewer *m_pContentViewer;
     QSplitter           *m_pSplitter;
     QMenu               *m_pMenu;
     QHelpContentWidget  *m_pContentWidget;
     QHelpIndexWidget    *m_pIndexWidget;
     QHelpContentModel   *m_pContentModel;
-    QHelpSearchEngine   *m_pHelpSearchEngine;
-    QHelpSearchQueryWidget *m_pHelpSearchQueryWidget;
-    QHelpSearchResultWidget *m_pHelpSearchResultWidget;
+    QHelpSearchEngine   *m_pSearchEngine;
+    QHelpSearchQueryWidget *m_pSearchQueryWidget;
+    QHelpSearchResultWidget *m_pSearchResultWidget;
+    UIHelpBrowserTabManager *m_pTabManager;
     QWidget             *m_pBookmarksWidget;
     QWidget             *m_pSearchContainerWidget;
     QAction             *m_pShowHideSideBarAction;
     QAction             *m_pShowHideToolBarAction;
-    QAction             *m_pHomeAction;
-    QAction             *m_pForwardAction;
-    QAction             *m_pBackwardAction;
-    QAction             *m_pAddBookmarkAction;
-    QString              m_strPageNotFoundText;
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
     bool                 m_fModelContentCreated;
 };
 
+#endif /* #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h */

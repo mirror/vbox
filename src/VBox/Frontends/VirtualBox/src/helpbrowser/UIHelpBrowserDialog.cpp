@@ -66,10 +66,10 @@ UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &
 
 void UIHelpBrowserDialog::retranslateUi()
 {
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     setWindowTitle(UIHelpBrowserWidget::tr("User Manual"));
-
-    /* Translate buttons: */
     button(ButtonType_Close)->setText(UIHelpBrowserWidget::tr("Close"));
+#endif
 }
 
 void UIHelpBrowserDialog::configure()
@@ -80,13 +80,8 @@ void UIHelpBrowserDialog::configure()
 
 void UIHelpBrowserDialog::configureCentralWidget()
 {
-    /* Create widget: */
-    UIHelpBrowserWidget *pWidget = 0;
-
-#ifdef RT_OS_LINUX
-    pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath, true /* show toolbar */, this);
-#endif
-
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+    UIHelpBrowserWidget *pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath, true /* show toolbar */, this);
     if (pWidget)
     {
         /* Configure widget: */
@@ -101,6 +96,7 @@ void UIHelpBrowserDialog::configureCentralWidget()
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
     }
+#endif
 }
 
 void UIHelpBrowserDialog::finalize()

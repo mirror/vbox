@@ -786,8 +786,8 @@ public:
 
     /** @name Help Browser
       * @{ */
-        void setHelpBrowserLastUrl(const QString &url);
-        QString helpBrowserLastUrl();
+        void setHelpBrowserLastUrlList(const QStringList &urlList);
+        QStringList helpBrowserLastUrlList();
         QRect helpBrowserDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry);
         void setHelpBrowserDialogGeometry(const QRect &geometry, bool fMaximized);
         bool helpBrowserDialogShouldBeMaximized();

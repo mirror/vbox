@@ -437,7 +437,7 @@ namespace UIExtraDataDefs
 
     /** @name Help Browser
       * @{ */
-        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowserLastURL;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowserLastURLList;
         SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowserDialogGeometry;
     /** @} */
 
