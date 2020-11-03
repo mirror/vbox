@@ -598,7 +598,6 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pContentModel = m_pHelpEngine->contentModel();
 
     AssertReturnVoid(m_pContentWidget && m_pIndexWidget && m_pContentModel);
-    m_pContentWidget->installEventFilter(this);
     m_pSplitter->addWidget(m_pTabWidget);
 
     m_pTabWidget->insertTab(HelpBrowserTabs_TOC, m_pContentWidget, QString());
@@ -615,8 +614,9 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
-    connect(m_pContentWidget, &QHelpContentWidget::clicked,
-            this, &UIHelpBrowserWidget::sltHandleContentWidgetItemClicked);
+    if (m_pContentWidget->selectionModel())
+        connect(m_pContentWidget->selectionModel(), &QItemSelectionModel::selectionChanged,
+                this, &UIHelpBrowserWidget::sltHandleContentWidgetSelectionChanged);
     connect(m_pContentModel, &QHelpContentModel::contentsCreated,
             this, &UIHelpBrowserWidget::sltHandleContentsCreated);
 
@@ -770,22 +770,6 @@ QUrl UIHelpBrowserWidget::findIndexHtml() const
         return QUrl();
 }
 
-bool UIHelpBrowserWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
-{
-    if (pWatched == m_pContentWidget)
-    {
-        if (pEvent->type() == QEvent::MouseButtonPress ||
-            pEvent->type() == QEvent::MouseMove ||
-            pEvent->type() == QEvent::KeyPress ||
-            pEvent->type() == QEvent::MouseButtonDblClick)
-            printf("xxxxxxxxxxx %d\n", pEvent->type());
-        else
-            printf("%d\n", pEvent->type());
-
-    }
-    return false;
-}
-
 void UIHelpBrowserWidget::cleanup()
 {
     /* Save options: */
@@ -870,8 +854,20 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex & 
         return;
     const QUrl &url = pItem->url();
     m_pTabManager->setCurrentSource(url);
+
+    m_pContentWidget->scrollTo(index, QAbstractItemView::EnsureVisible);
+    m_pContentWidget->expand(index);
+
 }
 
+void UIHelpBrowserWidget::sltHandleContentWidgetSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+    Q_UNUSED(deselected);
+    QModelIndexList selectedItemIndices = selected.indexes();
+    if (selectedItemIndices.isEmpty())
+        return;
+    sltHandleContentWidgetItemClicked(selectedItemIndices[0]);
+}
 
 void UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange(const QUrl &source)
 {
