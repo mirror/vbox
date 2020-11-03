@@ -74,9 +74,13 @@ Q_DECLARE_METATYPE(HelpBrowserTabs);
 *   UIHelpBrowserViewer definition.                                                                                        *
 *********************************************************************************************************************************/
 
-class UIHelpBrowserViewer : public QTextBrowser
+class UIHelpBrowserViewer : public QIWithRetranslateUI<QTextBrowser>
 {
     Q_OBJECT;
+
+signals:
+
+    void sigOpenLinkInNewTab(const QUrl &url);
 
 public:
 
@@ -87,11 +91,20 @@ public:
 
 public slots:
 
-    //virtual void setSource(const QUrl &name) /* override */;
+
+protected:
+
+    void contextMenuEvent(QContextMenuEvent *event) /* override */;
+
+private slots:
+
+    void sltHandleOpenInNewTab();
 
 private:
 
+    void retranslateUi();
     const QHelpEngine* m_pHelpEngine;
+    QString m_strOpenInNewTab;
 };
 
 /*********************************************************************************************************************************
@@ -105,6 +118,8 @@ class UIHelpBrowserTab : public QWidget
 signals:
 
     void sigSourceChanged(const QUrl &url);
+    void sigTitleUpdate(const QString &strTitle);
+    void sigOpenLinkInNewTab(const QUrl &url);
 
 public:
 
@@ -113,6 +128,7 @@ public:
 
     QUrl source() const;
     void setSource(const QUrl &url);
+    QString documentTitle() const;
 
 private slots:
 
@@ -169,6 +185,12 @@ public:
     void setCurrentSource(const QUrl &url);
     /* Return the list of urls of all open tabs as QStringList. */
     QStringList tabUrlList();
+    void addNewTab(const QUrl &initialUrl);
+
+private slots:
+
+    void sltHandletabTitleChange(const QString &strTitle);
+    void sltHandleOpenLinkInNewTab(const QUrl &url);
 
 private:
 
@@ -177,6 +199,7 @@ private:
     const QHelpEngine* m_pHelpEngine;
     QUrl m_homeUrl;
     QStringList m_savedUrlList;
+    bool m_fSwitchToNewTab;
 };
 
 /*********************************************************************************************************************************
@@ -222,6 +245,13 @@ void UIHelpBrowserTab::setSource(const QUrl &url)
     }
 }
 
+QString UIHelpBrowserTab::documentTitle() const
+{
+    if (!m_pContentViewer)
+        return QString();
+    return m_pContentViewer->documentTitle();
+}
+
 void UIHelpBrowserTab::prepare(const QUrl &initialUrl)
 {
     m_pMainLayout = new QVBoxLayout(this);
@@ -246,7 +276,8 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
         this, &UIHelpBrowserTab::sltHandleHistoryChanged);
     connect(m_pContentViewer, &UIHelpBrowserViewer::anchorClicked,
         this, &UIHelpBrowserTab::sltAnchorClicked);
-
+    connect(m_pContentViewer, &UIHelpBrowserViewer::sigOpenLinkInNewTab,
+        this, &UIHelpBrowserTab::sigOpenLinkInNewTab);
     m_pContentViewer->setSource(initialUrl, m_strPageNotFoundText);
 }
 
@@ -356,6 +387,7 @@ void UIHelpBrowserTab::sltHandleHistoryChanged()
     if (m_pForwardAction)
         m_pForwardAction->setEnabled(m_pContentViewer->isForwardAvailable());
 
+    emit sigTitleUpdate(m_pContentViewer->historyTitle(0));
 }
 
 void UIHelpBrowserTab::sltHandleAddressBarIndexChanged(int iIndex)
@@ -390,10 +422,11 @@ void UIHelpBrowserTab::sltAnchorClicked(const QUrl &link)
 *********************************************************************************************************************************/
 
 UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* = 0 */)
-    :QTextBrowser(pParent)
+    :QIWithRetranslateUI<QTextBrowser>(pParent)
     , m_pHelpEngine(pHelpEngine)
 {
     Q_UNUSED(pHelpEngine);
+    retranslateUi();
 }
 
 QVariant UIHelpBrowserViewer::loadResource(int type, const QUrl &name)
@@ -418,6 +451,38 @@ void UIHelpBrowserViewer::setSource(const QUrl &url, const QString &strError)
         QTextBrowser::setSource(url);
 }
 
+void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
+{
+    QMenu *pMenu = createStandardContextMenu();
+    QString strAnchor = anchorAt(event->pos());
+    if (!strAnchor.isEmpty())
+    {
+        QString strLink = source().resolved(anchorAt(event->pos())).toString();
+
+        QAction *pOpenInNewTabAction = new QAction(m_strOpenInNewTab);
+        pOpenInNewTabAction->setData(strLink);
+        connect(pOpenInNewTabAction, &QAction::triggered,
+                this, &UIHelpBrowserViewer::sltHandleOpenInNewTab);
+        pMenu->addAction(pOpenInNewTabAction);
+    }
+    pMenu->exec(event->globalPos());
+    delete pMenu;
+}
+
+void UIHelpBrowserViewer::retranslateUi()
+{
+    m_strOpenInNewTab = UIHelpBrowserWidget::tr("Open Link in New Tab");
+}
+
+void UIHelpBrowserViewer::sltHandleOpenInNewTab()
+{
+    QAction *pSender = qobject_cast<QAction*>(sender());
+    if (!pSender)
+        return;
+    QUrl url = pSender->data().toUrl();
+    if (url.isValid())
+        emit sigOpenLinkInNewTab(url);
+}
 
 /*********************************************************************************************************************************
 *   UIHelpBrowserTabManager definition.                                                                                          *
@@ -429,8 +494,24 @@ UIHelpBrowserTabManager::UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine
     , m_pHelpEngine(pHelpEngine)
     , m_homeUrl(homeUrl)
     , m_savedUrlList(urlList)
+    , m_fSwitchToNewTab(true)
 {
     prepare();
+}
+
+void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl)
+{
+   UIHelpBrowserTab *pTabWidget = new  UIHelpBrowserTab(m_pHelpEngine, m_homeUrl, initialUrl);
+   AssertReturnVoid(pTabWidget);
+   int index = addTab(pTabWidget, pTabWidget->documentTitle());
+   connect(pTabWidget, &UIHelpBrowserTab::sigSourceChanged,
+           this, &UIHelpBrowserTabManager::sigSourceChanged);
+   connect(pTabWidget, &UIHelpBrowserTab::sigTitleUpdate,
+           this, &UIHelpBrowserTabManager::sltHandletabTitleChange);
+   connect(pTabWidget, &UIHelpBrowserTab::sigOpenLinkInNewTab,
+           this, &UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab);
+   if (m_fSwitchToNewTab)
+       setCurrentIndex(index);
 }
 
 void UIHelpBrowserTabManager::initilizeTabs()
@@ -440,10 +521,7 @@ void UIHelpBrowserTabManager::initilizeTabs()
     QUrl initialUrl;
     if (!m_savedUrlList.isEmpty())
         initialUrl = m_savedUrlList[0];
-    UIHelpBrowserTab *pTabWidget = new  UIHelpBrowserTab(m_pHelpEngine, m_homeUrl, initialUrl);
-    addTab(pTabWidget, QString());
-    connect(pTabWidget, &UIHelpBrowserTab::sigSourceChanged,
-            this, &UIHelpBrowserTabManager::sigSourceChanged);
+    addNewTab(initialUrl);
 }
 
 QUrl UIHelpBrowserTabManager::currentSource() const
@@ -473,6 +551,24 @@ QStringList UIHelpBrowserTabManager::tabUrlList()
         list << pTab->source().toString();
     }
     return list;
+}
+
+void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
+{
+    for (int i = 0; i < count(); ++i)
+    {
+        if (sender() == widget(i))
+        {
+            setTabText(i, strTitle);
+            continue;
+        }
+    }
+}
+
+void UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab(const QUrl &url)
+{
+    if (url.isValid())
+        addNewTab(url);
 }
 
 void UIHelpBrowserTabManager::prepare()
@@ -857,7 +953,6 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex & 
 
     m_pContentWidget->scrollTo(index, QAbstractItemView::EnsureVisible);
     m_pContentWidget->expand(index);
-
 }
 
 void UIHelpBrowserWidget::sltHandleContentWidgetSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
