@@ -588,14 +588,14 @@ QString UIChooserAbstractModel::valueToString(UIChooserNodeDataValueType enmType
 
 void UIChooserAbstractModel::insertCloudEntityKey(const UICloudEntityKey &key)
 {
-    printf("Cloud entity with key %s being updated..\n", key.toString().toUtf8().constData());
+//    printf("Cloud entity with key %s being updated..\n", key.toString().toUtf8().constData());
     m_cloudEntityKeysBeingUpdated.insert(key);
     emit sigCloudUpdateStateChanged();
 }
 
 void UIChooserAbstractModel::removeCloudEntityKey(const UICloudEntityKey &key)
 {
-    printf("Cloud entity with key %s is updated!\n", key.toString().toUtf8().constData());
+//    printf("Cloud entity with key %s is updated!\n", key.toString().toUtf8().constData());
     m_cloudEntityKeysBeingUpdated.remove(key);
     emit sigCloudUpdateStateChanged();
 }
