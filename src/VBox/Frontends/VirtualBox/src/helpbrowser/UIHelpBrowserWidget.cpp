@@ -82,6 +82,7 @@ public:
     UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent = 0);
     virtual QVariant loadResource(int type, const QUrl &name) /* override */;
     void emitHistoryChangedSignal();
+    void setSource(const QUrl &url, const QString &strError);
 
 public slots:
 
@@ -152,6 +153,10 @@ class UIHelpBrowserTabManager : public QITabWidget
 {
     Q_OBJECT;
 
+signals:
+
+    void sigSourceChanged(const QUrl &url);
+
 public:
 
     UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine, const QUrl &homeUrl,
@@ -209,7 +214,7 @@ void UIHelpBrowserTab::setSource(const QUrl &url)
     if (m_pContentViewer)
     {
         m_pContentViewer->blockSignals(true);
-        m_pContentViewer->setSource(url);
+        m_pContentViewer->setSource(url, m_strPageNotFoundText);
         m_pContentViewer->blockSignals(false);
         /* emit historyChanged signal explicitly since we have blocked the signals: */
         m_pContentViewer->emitHistoryChangedSignal();
@@ -241,7 +246,7 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
     connect(m_pContentViewer, &UIHelpBrowserViewer::anchorClicked,
         this, &UIHelpBrowserTab::sltAnchorClicked);
 
-    m_pContentViewer->setSource(initialUrl);
+    m_pContentViewer->setSource(initialUrl, m_strPageNotFoundText);
 }
 
 void UIHelpBrowserTab::prepareToolBarAndAddressBar()
@@ -310,8 +315,7 @@ void UIHelpBrowserTab::sltHandleHomeAction()
 {
     if (!m_pContentViewer)
         return;
-    if (m_homeUrl.isValid())
-        m_pContentViewer->setSource(m_homeUrl);
+    m_pContentViewer->setSource(m_homeUrl, m_strPageNotFoundText);
 }
 
 void UIHelpBrowserTab::sltHandleForwardAction()
@@ -405,6 +409,14 @@ void UIHelpBrowserViewer::emitHistoryChangedSignal()
     emit backwardAvailable(true);
 }
 
+void UIHelpBrowserViewer::setSource(const QUrl &url, const QString &strError)
+{
+    if (!url.isValid())
+        setText(strError.arg(url.toString()));
+    else
+        QTextBrowser::setSource(url);
+}
+
 
 /*********************************************************************************************************************************
 *   UIHelpBrowserTabManager definition.                                                                                          *
@@ -424,15 +436,13 @@ void UIHelpBrowserTabManager::initilizeTabs()
 {
     clearAndDeleteTabs();
     /* Add a single tab with m_homeUrl: */
-    if (m_savedUrlList.isEmpty())
-    {
-        addTab(new  UIHelpBrowserTab(m_pHelpEngine, m_homeUrl, QUrl()), QString());
-    }
-    else
-    {
-        addTab(new  UIHelpBrowserTab(m_pHelpEngine, m_homeUrl, m_savedUrlList[0]), QString());
-
-    }
+    QUrl initialUrl;
+    if (!m_savedUrlList.isEmpty())
+        initialUrl = m_savedUrlList[0];
+    UIHelpBrowserTab *pTabWidget = new  UIHelpBrowserTab(m_pHelpEngine, m_homeUrl, initialUrl);
+    addTab(pTabWidget, QString());
+    connect(pTabWidget, &UIHelpBrowserTab::sigSourceChanged,
+            this, &UIHelpBrowserTabManager::sigSourceChanged);
 }
 
 QUrl UIHelpBrowserTabManager::currentSource() const
@@ -599,16 +609,15 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pSplitter->setStretchFactor(1, 4);
     m_pSplitter->setChildrenCollapsible(false);
 
+    connect(m_pTabManager, &UIHelpBrowserTabManager::sigSourceChanged,
+            this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
-    // connect(m_pContentWidget, &QHelpContentWidget::linkActivated,
-    //         m_pContentViewer, &UIHelpBrowserViewer::setSource);
     connect(m_pContentWidget, &QHelpContentWidget::clicked,
             this, &UIHelpBrowserWidget::sltHandleContentWidgetItemClicked);
-    // connect(m_pIndexWidget, &QHelpIndexWidget::linkActivated,
-    //         m_pContentViewer, &UIHelpBrowserViewer::setSource);
     connect(m_pContentModel, &QHelpContentModel::contentsCreated,
             this, &UIHelpBrowserWidget::sltHandleContentsCreated);
+
 
     if (QFile(m_strHelpFilePath).exists() && m_pHelpEngine)
         m_pHelpEngine->setupData();
@@ -825,50 +834,11 @@ void UIHelpBrowserWidget::sltHandleToolBarVisibility(bool fToggled)
         m_pToolBar->setVisible(fToggled);
 }
 
-void UIHelpBrowserWidget::show404Error(const QUrl & /*url*/)
-{
-//     QList<QUrl> files = m_pHelpEngine->files(m_pHelpEngine->namespaceName(m_strHelpFilePath), QStringList());
-//     int iIndex = -1;
-//     for (int i = 0; i < files.size(); ++i)
-//     {
-//         if (files[i].toString().contains("index.html", Qt::CaseInsensitive))
-//         {
-//             iIndex = i;
-//             break;
-//         }
-//     }
-//     if (iIndex == -1)
-//     {
-//         /* If index html/htm could not be found try to find a html file at least: */
-//         for (int i = 0; i < files.size(); ++i)
-//         {
-//             if (files[i].toString().contains(".html", Qt::CaseInsensitive) ||
-//                 files[i].toString().contains(".htm", Qt::CaseInsensitive))
-//             {
-//                 iIndex = i;
-//                 break;
-//             }
-//         }
-//     }
-//     if (iIndex != -1 && files.size() > iIndex)
-//         return files[iIndex];
-//     return QUrl();
-// #else
-//     return QUrl();
-}
-
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 {
     AssertReturnVoid(m_pTabManager && m_pHelpEngine);
     m_pTabManager->initilizeTabs();
-    /* Search for the index of the index.htnl: */
-    // QUrl url = findIndexHtml();
-    // if (url.isValid())
-    //     m_pContentViewer->setSource(url);
-    // else
-    //     show404Error(url);
 }
-
 
 void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex & index)
 {

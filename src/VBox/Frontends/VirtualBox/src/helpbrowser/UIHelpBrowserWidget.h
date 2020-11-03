@@ -106,16 +106,15 @@ private:
     void saveOptions();
     void cleanup();
     QUrl findIndexHtml() const;
-    void show404Error(const QUrl &url);
     /** @name Event handling stuff.
      * @{ */
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+       virtual void retranslateUi() /* override */;
 
-    /** Handles Qt show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
-    /** Handles Qt key-press @a pEvent. */
-    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+       /** Handles Qt show @a pEvent. */
+       virtual void showEvent(QShowEvent *pEvent) /* override */;
+       /** Handles Qt key-press @a pEvent. */
+       virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
     /** @} */
 
     /** Holds the widget's embedding type. */
