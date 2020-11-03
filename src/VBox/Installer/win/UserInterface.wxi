@@ -305,8 +305,12 @@
                 <Publish Event="NewDialog" Value="VBoxCustomize2Dlg"/>
         <?else ?>
                 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-                    <Publish Event="NewDialog" Value="VBoxWarnPythonDlg"><![CDATA[(&VBoxPython=3 AND (VBOX_PYTHON_DEPS_INSTALLED="0"))]]></Publish>
-                    <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[((&VBoxPython<3) OR (VBOX_PYTHON_DEPS_INSTALLED="1"))]]></Publish>
+                    <!-- Check for the Python core package and other dependencies first.
+                         The install helper code will set the public properties VBOX_PYTHON_INSTALLED / VBOX_PYTHON_DEPS_INSTALLED. -->
+                    <Publish Event="DoAction" Value="ca_IsPythonInstalled" Order="0" />
+                    <Publish Event="DoAction" Value="ca_ArePythonAPIDepsInstalled" Order="1" />
+                    <Publish Event="NewDialog" Value="VBoxWarnPythonDlg"><![CDATA[(&VBoxPython=3) AND (VBOX_PYTHON_DEPS_INSTALLED="0")]]></Publish>
+                    <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(&VBoxPython<3) OR (VBOX_PYTHON_DEPS_INSTALLED="1")]]></Publish>
                 <?else ?>
                     <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
                 <?endif?>
@@ -1237,10 +1241,7 @@
 
             <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
             <Custom Action="ca_DefaultTargetDir" After="FileCost"><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
-<?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-            <Custom Action="ca_IsPythonInstalled" After="FileCost" />
-            <Custom Action="ca_ArePythonAPIDepsInstalled" After="ca_IsPythonInstalled" />
-<?endif?>
+
             <FindRelatedProducts Suppress="no">1</FindRelatedProducts>
 
             <Show Dialog="VBoxFatalErrorDlg" OnExit="error" />
