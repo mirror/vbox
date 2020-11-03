@@ -517,11 +517,11 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl)
 void UIHelpBrowserTabManager::initilizeTabs()
 {
     clearAndDeleteTabs();
-    /* Add a single tab with m_homeUrl: */
-    QUrl initialUrl;
-    if (!m_savedUrlList.isEmpty())
-        initialUrl = m_savedUrlList[0];
-    addNewTab(initialUrl);
+    if (m_savedUrlList.isEmpty())
+        addNewTab(QUrl());
+    else
+        for (int i = 0; i < m_savedUrlList.size(); ++i)
+            addNewTab(m_savedUrlList[i]);
 }
 
 QUrl UIHelpBrowserTabManager::currentSource() const
@@ -749,7 +749,6 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
     //         this, &SearchWidget::searchingStarted);
     // connect(searchEngine, &QHelpSearchEngine::searchingFinished,
     //         this, &SearchWidget::searchingFinished);
-
 
     connect(m_pSearchEngine, &QHelpSearchEngine::indexingStarted,
             this, &UIHelpBrowserWidget::sltHandleIndexingStarted);
