@@ -861,59 +861,63 @@ void UIChooserAbstractModel::sltHandleReadCloudMachineListTaskComplete()
     if (!containsCloudEntityKey(guiCloudProfileKey))
         return;
 
-    /* Search for profile node: */
-    UIChooserNode *pProfileNode = searchProfileNode(guiCloudProfileKey.m_strProviderShortName,
-                                                    guiCloudProfileKey.m_strProfileName);
-    if (!pProfileNode)
-        return;
-
-    /* Compose old set of machine IDs: */
-    QSet<QUuid> oldIDs;
-    foreach (UIChooserNode *pNode, pProfileNode->nodes(UIChooserNodeType_Machine))
+    /* Search for provider node separately, it can be removed already: */
+    UIChooserNode *pProviderNode = searchProviderNode(guiCloudProfileKey.m_strProviderShortName);
+    if (pProviderNode)
     {
-        AssertPtrReturnVoid(pNode);
-        UIChooserNodeMachine *pNodeMachine = pNode->toMachineNode();
-        AssertPtrReturnVoid(pNodeMachine);
-        if (pNodeMachine->cacheType() != UIVirtualMachineItemType_CloudReal)
-            continue;
-        oldIDs << pNodeMachine->id();
-    }
-    /* Compose new set of machine IDs and map of machines: */
-    QSet<QUuid> newIDs;
-    QMap<QUuid, CCloudMachine> newMachines;
-    foreach (const CCloudMachine &comMachine, machines)
-    {
-        QUuid uId;
-        AssertReturnVoid(cloudMachineId(comMachine, uId));
-        newMachines[uId] = comMachine;
-        newIDs << uId;
-    }
+        /* Search for profile node separately, it can be hidden at all: */
+        UIChooserNode *pProfileNode = searchProfileNode(pProviderNode, guiCloudProfileKey.m_strProfileName);
+        if (pProfileNode)
+        {
+            /* Compose old set of machine IDs: */
+            QSet<QUuid> oldIDs;
+            foreach (UIChooserNode *pNode, pProfileNode->nodes(UIChooserNodeType_Machine))
+            {
+                AssertPtrReturnVoid(pNode);
+                UIChooserNodeMachine *pNodeMachine = pNode->toMachineNode();
+                AssertPtrReturnVoid(pNodeMachine);
+                if (pNodeMachine->cacheType() != UIVirtualMachineItemType_CloudReal)
+                    continue;
+                oldIDs << pNodeMachine->id();
+            }
+            /* Compose new set of machine IDs and map of machines: */
+            QSet<QUuid> newIDs;
+            QMap<QUuid, CCloudMachine> newMachines;
+            foreach (const CCloudMachine &comMachine, machines)
+            {
+                QUuid uId;
+                AssertReturnVoid(cloudMachineId(comMachine, uId));
+                newMachines[uId] = comMachine;
+                newIDs << uId;
+            }
 
-    /* Calculate set of unregistered/registered IDs: */
-    const QSet<QUuid> unregisteredIDs = oldIDs - newIDs;
-    const QSet<QUuid> registeredIDs = newIDs - oldIDs;
-    QVector<CCloudMachine> registeredMachines;
-    foreach (const QUuid &uId, registeredIDs)
-        registeredMachines << newMachines.value(uId);
+            /* Calculate set of unregistered/registered IDs: */
+            const QSet<QUuid> unregisteredIDs = oldIDs - newIDs;
+            const QSet<QUuid> registeredIDs = newIDs - oldIDs;
+            QVector<CCloudMachine> registeredMachines;
+            foreach (const QUuid &uId, registeredIDs)
+                registeredMachines << newMachines.value(uId);
 
-    /* Remove unregistered cloud VM nodes: */
-    if (!unregisteredIDs.isEmpty())
-        sltCloudMachinesUnregistered(guiCloudProfileKey.m_strProviderShortName,
-                                     guiCloudProfileKey.m_strProfileName,
-                                     unregisteredIDs.toList());
-    /* Add registered cloud VM nodes: */
-    if (!registeredMachines.isEmpty())
-        sltCloudMachinesRegistered(guiCloudProfileKey.m_strProviderShortName,
-                                   guiCloudProfileKey.m_strProfileName,
-                                   registeredMachines);
-    /* If we changed nothing and have nothing currently: */
-    if (unregisteredIDs.isEmpty() && newIDs.isEmpty())
-    {
-        /* We should update at least fake cloud machine node: */
-        UIChooserNode *pFakeNode = searchFakeNode(pProfileNode);
-        AssertPtrReturnVoid(pFakeNode);
-        pFakeNode->toMachineNode()->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
-        pFakeNode->item()->updateItem();
+            /* Remove unregistered cloud VM nodes: */
+            if (!unregisteredIDs.isEmpty())
+                sltCloudMachinesUnregistered(guiCloudProfileKey.m_strProviderShortName,
+                                             guiCloudProfileKey.m_strProfileName,
+                                             unregisteredIDs.toList());
+            /* Add registered cloud VM nodes: */
+            if (!registeredMachines.isEmpty())
+                sltCloudMachinesRegistered(guiCloudProfileKey.m_strProviderShortName,
+                                           guiCloudProfileKey.m_strProfileName,
+                                           registeredMachines);
+            /* If we changed nothing and have nothing currently: */
+            if (unregisteredIDs.isEmpty() && newIDs.isEmpty())
+            {
+                /* We should update at least fake cloud machine node: */
+                UIChooserNode *pFakeNode = searchFakeNode(pProfileNode);
+                AssertPtrReturnVoid(pFakeNode);
+                pFakeNode->toMachineNode()->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
+                pFakeNode->item()->updateItem();
+            }
+        }
     }
 
     /* Remove cloud entity key from the list of keys currently being updated: */
