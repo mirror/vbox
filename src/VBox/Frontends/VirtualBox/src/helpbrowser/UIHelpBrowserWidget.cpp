@@ -30,6 +30,7 @@
  #include <QtHelp/QHelpSearchResultWidget>
 #endif
 #include <QMenu>
+#include <QMouseEvent>
 #include <QScrollBar>
 #include <QSpacerItem>
 #include <QStyle>
@@ -597,6 +598,7 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pContentModel = m_pHelpEngine->contentModel();
 
     AssertReturnVoid(m_pContentWidget && m_pIndexWidget && m_pContentModel);
+    m_pContentWidget->installEventFilter(this);
     m_pSplitter->addWidget(m_pTabWidget);
 
     m_pTabWidget->insertTab(HelpBrowserTabs_TOC, m_pContentWidget, QString());
@@ -766,6 +768,22 @@ QUrl UIHelpBrowserWidget::findIndexHtml() const
         return files[iIndex];
     else
         return QUrl();
+}
+
+bool UIHelpBrowserWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+    if (pWatched == m_pContentWidget)
+    {
+        if (pEvent->type() == QEvent::MouseButtonPress ||
+            pEvent->type() == QEvent::MouseMove ||
+            pEvent->type() == QEvent::KeyPress ||
+            pEvent->type() == QEvent::MouseButtonDblClick)
+            printf("xxxxxxxxxxx %d\n", pEvent->type());
+        else
+            printf("%d\n", pEvent->type());
+
+    }
+    return false;
 }
 
 void UIHelpBrowserWidget::cleanup()

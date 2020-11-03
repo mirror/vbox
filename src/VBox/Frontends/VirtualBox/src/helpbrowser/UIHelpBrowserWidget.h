@@ -106,6 +106,8 @@ private:
     void saveOptions();
     void cleanup();
     QUrl findIndexHtml() const;
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
     /** @name Event handling stuff.
      * @{ */
     /** Handles translation event. */
