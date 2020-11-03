@@ -248,8 +248,6 @@ private:
         /** Prepares connections. */
         void prepareConnections();
 
-        /** Cleanups tasks. */
-        void cleanupTasks();
         /** Cleanups connections. */
         void cleanupConnections();
         /** Cleanups all. */

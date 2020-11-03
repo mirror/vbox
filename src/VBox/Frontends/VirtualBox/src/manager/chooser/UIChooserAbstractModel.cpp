@@ -1003,12 +1003,6 @@ void UIChooserAbstractModel::prepareConnections()
             this, &UIChooserAbstractModel::sltHandleCloudProfileManagerCumulativeChange);
 }
 
-void UIChooserAbstractModel::cleanupTasks()
-{
-    foreach (UIProgressTaskReadCloudMachineList *pTask, findChildren<UIProgressTaskReadCloudMachineList*>())
-        delete pTask;
-}
-
 void UIChooserAbstractModel::cleanupConnections()
 {
     /* Cloud VM registration connections: */
@@ -1054,7 +1048,6 @@ void UIChooserAbstractModel::cleanupConnections()
 
 void UIChooserAbstractModel::cleanup()
 {
-    cleanupTasks();
     cleanupConnections();
 }
 
