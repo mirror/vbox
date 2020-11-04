@@ -3466,6 +3466,27 @@ int vmsvga3dContextDefineOgl(PVGASTATECC pThisCC, uint32_t cid, uint32_t fFlags)
  * HW accelerated graphics output.
  */
 
+/**
+ * VMSVGA3d screen data.
+ *
+ * Allocated on the heap and pointed to by VMSVGASCREENOBJECT::pHwScreen.
+ */
+typedef struct VMSVGAHWSCREEN
+{
+    /* OpenGL context, which is used for the screen updates. */
+    GLXContext glxctx;
+
+    /* The overlay window. */
+    Window xwindow;
+
+    /* The RGBA texture which hold the screen content. */
+    GLuint idScreenTexture;
+
+    /* Read and draw framebuffer objects for copying a surface to the screen texture. */
+    GLuint idReadFramebuffer;
+    GLuint idDrawFramebuffer;
+} VMSVGAHWSCREEN;
+
 /* Send a notification to the UI. */
 #if 0 /* Unused */
 static int vmsvga3dDrvNotifyHwScreen(PVGASTATECC pThisCC, VBOX3D_NOTIFY_TYPE enmNotification,

@@ -1168,30 +1168,6 @@ static SSMFIELD const g_aVMSVGA3DSTATEFields[] =
 };
 #endif /* VMSVGA3D_INCL_STRUCTURE_DESCRIPTORS */
 
-/**
- * VMSVGA3d screen data.
- *
- * Allocated on the heap and pointed to by VMSVGASCREENOBJECT::pHwScreen.
- */
-typedef struct VMSVGAHWSCREEN
-{
-    uint32_t u32Reserved0;
-#if defined(RT_OS_LINUX)
-    /* OpenGL context, which is used for the screen updates. */
-    GLXContext glxctx;
-
-    /* The overlay window. */
-    Window xwindow;
-
-    /* The RGBA texture which hold the screen content. */
-    GLuint idScreenTexture;
-
-    /* Read and draw framebuffer objects for copying a surface to the screen texture. */
-    GLuint idReadFramebuffer;
-    GLuint idDrawFramebuffer;
-#endif
-} VMSVGAHWSCREEN;
-
 int vmsvga3dBackDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
 int vmsvga3dBackDestroyScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
 
