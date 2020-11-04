@@ -41,22 +41,25 @@ endif
 # faster for development cycles. Tweak to your likings if needed.
 #
 ifdef VBOX_INSTALLER_QUICK
- VBOX_INSTALLER_LANGUAGES    := en_US
- VBOX_WITH_ADDITIONS_PACKING :=
- VBOX_WITH_DEBUGGER_GUI      :=
- VBOX_WITH_EFIFW_PACKING     :=
- VBOX_WITH_EXTPACK           :=
- VBOX_WITH_NETADP            :=
- VBOX_WITH_NETFLT            :=
- VBOX_WITH_PYTHON            :=
- VBOX_WITH_SDS               :=
- VBOX_WITH_WEBSERVICES       :=
- VBOX_WITH_UNATTENDED        :=
- VBOX_WITH_DOCS_PACKING      :=
- VBOX_WITH_QTGUI             :=
- VBOX_WITH_USB               :=
- VBOX_WITH_VBOX_IMG          :=
- VBOX_WITH_VBOXSDL           :=
+ VBOX_INSTALLER_LANGUAGES       := en_US
+ VBOX_WITH_LICENSE_DISPLAY      :=
+ VBOX_WITH_SERIALNUMBER_INSTALL :=
+ VBOX_WITH_ADDITIONS_PACKING    :=
+ VBOX_WITH_DEBUGGER_GUI         :=
+ VBOX_WITH_EFIFW_PACKING        :=
+ VBOX_WITH_EXTPACK              :=
+ VBOX_WITH_NETADP               :=
+ VBOX_WITH_NETFLT               :=
+ VBOX_WITH_PYTHON               :=
+ VBOX_WITH_SDS                  :=
+ VBOX_WITH_WEBSERVICES          :=
+ VBOX_WITH_UNATTENDED           :=
+ VBOX_WITH_DOCS_PACKING         :=
+ VBOX_WITH_QTGUI                :=
+ VBOX_WITH_USB                  :=
+ VBOX_WITH_VBOX_IMG             :=
+ VBOX_WITH_VBOXSDL              :=
+ VBOX_CAB_COMPRESSION_LEVEL     := none
 endif
 
 #
@@ -66,7 +69,9 @@ endif
 #      on the installer.
 #
 VBOX_WIN_INST_MAKEFILE_DEP := $(MAKEFILE_CURRENT)
-VBOX_CAB_COMPRESSION_LEVEL := high
+ifndef VBOX_CAB_COMPRESSION_LEVEL
+ VBOX_CAB_COMPRESSION_LEVEL := high
+endif
 
 VBOX_PATH_WIN_INST_SRC     := $(PATH_SUB_CURRENT)
 VBOX_WIN_INST_OUT_DIR      := $(PATH_TARGET)/Installer/win
