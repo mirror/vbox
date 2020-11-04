@@ -85,7 +85,6 @@ private slots:
 
     void sltHandleHelpEngineSetupFinished();
     void sltHandleContentWidgetItemClicked(const QModelIndex &index);
-    void sltHandleContentWidgetSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void sltHandleSideBarVisibility(bool togggled);
     void sltHandleToolBarVisibility(bool togggled);
     void sltHandleContentsCreated();
@@ -94,7 +93,8 @@ private slots:
     void sltHandleSearchingStarted();
     void sltHandleSearchStart();
     void sltHandleHelpBrowserViewerSourceChange(const QUrl &source);
-    void sltOpenLinksContextMenu(const QPoint &pos);
+    void sltOpenLinkWithUrl(const QUrl &url);
+    void sltShowLinksContextMenu(const QPoint &pos);
     void sltOpenLinkInNewTab();
     void sltOpenLink();
 

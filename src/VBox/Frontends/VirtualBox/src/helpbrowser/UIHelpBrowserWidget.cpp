@@ -738,15 +738,12 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
-    // if (m_pContentWidget->selectionModel())
-    //     connect(m_pContentWidget->selectionModel(), &QItemSelectionModel::selectionChanged,
-    //             this, &UIHelpBrowserWidget::sltHandleContentWidgetSelectionChanged);
     connect(m_pContentWidget, &QHelpContentWidget::clicked,
             this, &UIHelpBrowserWidget::sltHandleContentWidgetItemClicked);
     connect(m_pContentModel, &QHelpContentModel::contentsCreated,
             this, &UIHelpBrowserWidget::sltHandleContentsCreated);
     connect(m_pContentWidget, &QHelpContentWidget::customContextMenuRequested,
-            this, &UIHelpBrowserWidget::sltOpenLinksContextMenu);
+            this, &UIHelpBrowserWidget::sltShowLinksContextMenu);
 
     if (QFile(m_strHelpFilePath).exists() && m_pHelpEngine)
         m_pHelpEngine->setupData();
@@ -765,6 +762,7 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
     m_pSearchQueryWidget = m_pSearchEngine->queryWidget();
     m_pSearchResultWidget = m_pSearchEngine->resultWidget();
     AssertReturnVoid(m_pSearchQueryWidget && m_pSearchResultWidget);
+    m_pSearchResultWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
     QVBoxLayout *pSearchLayout = new QVBoxLayout(m_pSearchContainerWidget);
     pSearchLayout->addWidget(m_pSearchQueryWidget);
@@ -773,8 +771,10 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
 
     connect(m_pSearchQueryWidget, &QHelpSearchQueryWidget::search,
             this, &UIHelpBrowserWidget::sltHandleSearchStart);
-    // connect(m_pSearchResultWidget, &QHelpSearchResultWidget::requestShowLink,
-    //         m_pContentViewer, &UIHelpBrowserViewer::setSource);
+    connect(m_pSearchResultWidget, &QHelpSearchResultWidget::requestShowLink,
+            this, &UIHelpBrowserWidget::sltOpenLinkWithUrl);
+    connect(m_pSearchResultWidget, &QHelpContentWidget::customContextMenuRequested,
+            this, &UIHelpBrowserWidget::sltShowLinksContextMenu);
 
     // connect(searchEngine, &QHelpSearchEngine::searchingStarted,
     //         this, &SearchWidget::searchingStarted);
@@ -992,15 +992,6 @@ void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex & 
     m_pContentWidget->expand(index);
 }
 
-void UIHelpBrowserWidget::sltHandleContentWidgetSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
-{
-    Q_UNUSED(deselected);
-    QModelIndexList selectedItemIndices = selected.indexes();
-    if (selectedItemIndices.isEmpty())
-        return;
-    sltHandleContentWidgetItemClicked(selectedItemIndices[0]);
-}
-
 void UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange(const QUrl &source)
 {
     if (m_fModelContentCreated && m_pContentWidget && source.isValid() && m_pContentModel)
@@ -1051,16 +1042,26 @@ void UIHelpBrowserWidget::sltHandleSearchStart()
     m_pSearchEngine->search(m_pSearchQueryWidget->searchInput());
 }
 
-void UIHelpBrowserWidget::sltOpenLinksContextMenu(const QPoint &pos)
+void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
 {
     QWidget *pSender = qobject_cast<QWidget*>(sender());
     if (!pSender)
         return;
 
     QUrl url;
-
     if (pSender == m_pContentWidget)
         url = contentWidgetUrl(m_pContentWidget->currentIndex());
+    else if (pSender == m_pSearchResultWidget)
+    {
+        QTextBrowser* browser = m_pSearchResultWidget->findChild<QTextBrowser*>();
+        if (!browser)
+            return;
+        if (!browser->rect().contains(pos, true))
+            return;
+        QPoint browserPos = browser->mapFromGlobal(m_pSearchResultWidget->mapToGlobal(pos));
+        printf("pos %d %d\n", pos.x(), pos.y());
+        url = browser->anchorAt(browserPos);
+    }
 
     if (!url.isValid())
         return;
@@ -1098,6 +1099,11 @@ void UIHelpBrowserWidget::openLinkSlotHandler(QObject *pSenderObject, bool fOpen
         m_pTabManager->setSource(url, fOpenInNewTab);
 }
 
+void UIHelpBrowserWidget::sltOpenLinkWithUrl(const QUrl &url)
+{
+    if (m_pTabManager && url.isValid())
+        m_pTabManager->setSource(url, false);
+}
 #include "UIHelpBrowserWidget.moc"
 
 #endif /*#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))*/
