@@ -94,6 +94,9 @@ private slots:
     void sltHandleSearchingStarted();
     void sltHandleSearchStart();
     void sltHandleHelpBrowserViewerSourceChange(const QUrl &source);
+    void sltOpenLinksContextMenu(const QPoint &pos);
+    void sltOpenLinkInNewTab();
+    void sltOpenLink();
 
 private:
 
@@ -108,7 +111,9 @@ private:
     void saveOptions();
     void cleanup();
     QUrl findIndexHtml() const;
-    //bool eventFilter(QObject *pWatched, QEvent *pEvent);
+    /* Returns the url of the item with @p itemIndex. */
+    QUrl contentWidgetUrl(const QModelIndex &itemIndex);
+    void openLinkSlotHandler(QObject *pSenderObject, bool fOpenInNewTab);
 
     /** @name Event handling stuff.
      * @{ */

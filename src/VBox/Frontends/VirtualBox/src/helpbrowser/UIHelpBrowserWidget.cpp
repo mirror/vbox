@@ -104,7 +104,6 @@ private:
 
     void retranslateUi();
     const QHelpEngine* m_pHelpEngine;
-    QString m_strOpenInNewTab;
 };
 
 /*********************************************************************************************************************************
@@ -182,10 +181,9 @@ public:
     void initilizeTabs();
     /* Url of the current tab. */
     QUrl currentSource() const;
-    void setCurrentSource(const QUrl &url);
+    void setSource(const QUrl &url, bool fNewTab = false);
     /* Return the list of urls of all open tabs as QStringList. */
     QStringList tabUrlList();
-    void addNewTab(const QUrl &initialUrl);
 
 private slots:
 
@@ -198,6 +196,7 @@ private:
 
     void prepare();
     void clearAndDeleteTabs();
+    void addNewTab(const QUrl &initialUrl);
     const QHelpEngine* m_pHelpEngine;
     QUrl m_homeUrl;
     QStringList m_savedUrlList;
@@ -375,7 +374,9 @@ void UIHelpBrowserTab::sltHandleHistoryChanged()
     m_pAddressBar->clear();
     for (int i = -1 * m_pContentViewer->backwardHistoryCount(); i <= m_pContentViewer->forwardHistoryCount(); ++i)
     {
+        int iIndex = m_pAddressBar->count();
         m_pAddressBar->addItem(m_pContentViewer->historyUrl(i).toString(), i);
+        m_pAddressBar->setItemData(iIndex, m_pContentViewer->historyTitle(i), Qt::ToolTipRole);
         if (i == 0)
             iCurrentIndex = m_pAddressBar->count();
     }
@@ -460,7 +461,7 @@ void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
     {
         QString strLink = source().resolved(anchorAt(event->pos())).toString();
 
-        QAction *pOpenInNewTabAction = new QAction(m_strOpenInNewTab);
+        QAction *pOpenInNewTabAction = new QAction(UIHelpBrowserWidget::tr("Open Link in New Tab"));
         pOpenInNewTabAction->setData(strLink);
         connect(pOpenInNewTabAction, &QAction::triggered,
                 this, &UIHelpBrowserViewer::sltHandleOpenInNewTab);
@@ -472,7 +473,6 @@ void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
 
 void UIHelpBrowserViewer::retranslateUi()
 {
-    m_strOpenInNewTab = UIHelpBrowserWidget::tr("Open Link in New Tab");
 }
 
 void UIHelpBrowserViewer::sltHandleOpenInNewTab()
@@ -534,12 +534,17 @@ QUrl UIHelpBrowserTabManager::currentSource() const
     return pTab->source();
 }
 
-void UIHelpBrowserTabManager::setCurrentSource(const QUrl &url)
+void UIHelpBrowserTabManager::setSource(const QUrl &url, bool fNewTab /* = false */)
 {
-    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
-    if (!pTab)
-        return;
-    pTab->setSource(url);
+    if (!fNewTab)
+    {
+        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+        if (!pTab)
+            return;
+        pTab->setSource(url);
+    }
+    else
+        addNewTab(url);
 }
 
 QStringList UIHelpBrowserTabManager::tabUrlList()
@@ -717,6 +722,7 @@ void UIHelpBrowserWidget::prepareWidgets()
 
     AssertReturnVoid(m_pContentWidget && m_pIndexWidget && m_pContentModel);
     m_pSplitter->addWidget(m_pTabWidget);
+    m_pContentWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
     m_pTabWidget->insertTab(HelpBrowserTabs_TOC, m_pContentWidget, QString());
     m_pTabWidget->insertTab(HelpBrowserTabs_Index, m_pIndexWidget, QString());
@@ -732,12 +738,15 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
-    if (m_pContentWidget->selectionModel())
-        connect(m_pContentWidget->selectionModel(), &QItemSelectionModel::selectionChanged,
-                this, &UIHelpBrowserWidget::sltHandleContentWidgetSelectionChanged);
+    // if (m_pContentWidget->selectionModel())
+    //     connect(m_pContentWidget->selectionModel(), &QItemSelectionModel::selectionChanged,
+    //             this, &UIHelpBrowserWidget::sltHandleContentWidgetSelectionChanged);
+    connect(m_pContentWidget, &QHelpContentWidget::clicked,
+            this, &UIHelpBrowserWidget::sltHandleContentWidgetItemClicked);
     connect(m_pContentModel, &QHelpContentModel::contentsCreated,
             this, &UIHelpBrowserWidget::sltHandleContentsCreated);
-
+    connect(m_pContentWidget, &QHelpContentWidget::customContextMenuRequested,
+            this, &UIHelpBrowserWidget::sltOpenLinksContextMenu);
 
     if (QFile(m_strHelpFilePath).exists() && m_pHelpEngine)
         m_pHelpEngine->setupData();
@@ -887,6 +896,18 @@ QUrl UIHelpBrowserWidget::findIndexHtml() const
         return QUrl();
 }
 
+QUrl UIHelpBrowserWidget::contentWidgetUrl(const QModelIndex &itemIndex)
+{
+    QHelpContentModel *pContentModel =
+        qobject_cast<QHelpContentModel*>(m_pContentWidget->model());
+    if (!pContentModel)
+        return QUrl();
+    QHelpContentItem *pItem = pContentModel->contentItemAt(itemIndex);
+    if (!pItem)
+        return QUrl();
+    return pItem->url();
+}
+
 void UIHelpBrowserWidget::cleanup()
 {
     /* Save options: */
@@ -962,15 +983,10 @@ void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex & index)
 {
     AssertReturnVoid(m_pTabManager && m_pHelpEngine && m_pContentWidget);
-    QHelpContentModel *pContentModel =
-        qobject_cast<QHelpContentModel*>(m_pContentWidget->model());
-    if (!pContentModel)
+    QUrl url = contentWidgetUrl(index);
+    if (!url.isValid())
         return;
-    QHelpContentItem *pItem = pContentModel->contentItemAt(index);
-    if (!pItem)
-        return;
-    const QUrl &url = pItem->url();
-    m_pTabManager->setCurrentSource(url);
+    m_pTabManager->setSource(url);
 
     m_pContentWidget->scrollTo(index, QAbstractItemView::EnsureVisible);
     m_pContentWidget->expand(index);
@@ -1035,6 +1051,52 @@ void UIHelpBrowserWidget::sltHandleSearchStart()
     m_pSearchEngine->search(m_pSearchQueryWidget->searchInput());
 }
 
+void UIHelpBrowserWidget::sltOpenLinksContextMenu(const QPoint &pos)
+{
+    QWidget *pSender = qobject_cast<QWidget*>(sender());
+    if (!pSender)
+        return;
+
+    QUrl url;
+
+    if (pSender == m_pContentWidget)
+        url = contentWidgetUrl(m_pContentWidget->currentIndex());
+
+    if (!url.isValid())
+        return;
+
+    QMenu menu;
+    QAction *pOpen = menu.addAction(tr("Open in Link"));
+    QAction *pOpenInNewTab = menu.addAction(tr("Open in Link New Tab"));
+    pOpen->setData(url);
+    pOpenInNewTab->setData(url);
+    connect(pOpenInNewTab, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltOpenLinkInNewTab);
+    connect(pOpen, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltOpenLink);
+
+    menu.exec(pSender->mapToGlobal(pos));
+}
+
+void UIHelpBrowserWidget::sltOpenLinkInNewTab()
+{
+    openLinkSlotHandler(sender(), true);
+}
+
+void UIHelpBrowserWidget::sltOpenLink()
+{
+    openLinkSlotHandler(sender(), false);
+}
+
+void UIHelpBrowserWidget::openLinkSlotHandler(QObject *pSenderObject, bool fOpenInNewTab)
+{
+    QAction *pAction = qobject_cast<QAction*>(pSenderObject);
+    if (!pAction)
+        return;
+    QUrl url = pAction->data().toUrl();
+    if (m_pTabManager && url.isValid())
+        m_pTabManager->setSource(url, fOpenInNewTab);
+}
 
 #include "UIHelpBrowserWidget.moc"
 
