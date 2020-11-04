@@ -191,6 +191,8 @@ private slots:
 
     void sltHandletabTitleChange(const QString &strTitle);
     void sltHandleOpenLinkInNewTab(const QUrl &url);
+    void sltHandleTabClose(int iTabIndex);
+    void sltHandleCurrentChanged(int iTabIndex);
 
 private:
 
@@ -373,8 +375,7 @@ void UIHelpBrowserTab::sltHandleHistoryChanged()
     m_pAddressBar->clear();
     for (int i = -1 * m_pContentViewer->backwardHistoryCount(); i <= m_pContentViewer->forwardHistoryCount(); ++i)
     {
-        QString strItem = QString("%1 (%2)").arg(m_pContentViewer->historyTitle(i)).arg(m_pContentViewer->historyUrl(i).toString());
-        m_pAddressBar->addItem(strItem, i);
+        m_pAddressBar->addItem(m_pContentViewer->historyUrl(i).toString(), i);
         if (i == 0)
             iCurrentIndex = m_pAddressBar->count();
     }
@@ -484,6 +485,7 @@ void UIHelpBrowserViewer::sltHandleOpenInNewTab()
         emit sigOpenLinkInNewTab(url);
 }
 
+
 /*********************************************************************************************************************************
 *   UIHelpBrowserTabManager definition.                                                                                          *
 *********************************************************************************************************************************/
@@ -545,7 +547,7 @@ QStringList UIHelpBrowserTabManager::tabUrlList()
     QStringList list;
     for (int i = 0; i < count(); ++i)
     {
-        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
         if (!pTab || !pTab->source().isValid())
             continue;
         list << pTab->source().toString();
@@ -560,6 +562,7 @@ void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
         if (sender() == widget(i))
         {
             setTabText(i, strTitle);
+            setTabToolTip(i, strTitle);
             continue;
         }
     }
@@ -571,10 +574,29 @@ void UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab(const QUrl &url)
         addNewTab(url);
 }
 
+void UIHelpBrowserTabManager::sltHandleTabClose(int iTabIndex)
+{
+    if (count() <= 1)
+        return;
+    QWidget *pWidget = widget(iTabIndex);
+    if (!pWidget)
+        return;
+    removeTab(iTabIndex);
+    delete pWidget;
+}
+
+void UIHelpBrowserTabManager::sltHandleCurrentChanged(int iTabIndex)
+{
+    Q_UNUSED(iTabIndex);
+    emit sigSourceChanged(currentSource());
+}
+
 void UIHelpBrowserTabManager::prepare()
 {
     setTabsClosable(true);
-    //setTabBarAutoHide(true);
+    setTabBarAutoHide(true);
+    connect(this, &UIHelpBrowserTabManager::tabCloseRequested, this, &UIHelpBrowserTabManager::sltHandleTabClose);
+    connect(this, &UIHelpBrowserTabManager::currentChanged, this, &UIHelpBrowserTabManager::sltHandleCurrentChanged);
 }
 
 void UIHelpBrowserTabManager::clearAndDeleteTabs()
