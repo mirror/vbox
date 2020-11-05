@@ -251,6 +251,10 @@ typedef struct IOAPIC
     STAMCOUNTER             StatRedundantLevelIntr;
     /** Number of suppressed level-triggered interrupts (by remote IRR). */
     STAMCOUNTER             StatSuppressedLevelIntr;
+    /** Number of IOMMU discarded interrupts (signaled by RTE). */
+    STAMCOUNTER             StatIommuDiscardedIntr;
+    /** Number of IOMMU denied or failed MSIs. */
+    STAMCOUNTER             StatIommuDiscardedMsi;
     /** Number of returns to ring-3 due to EOI broadcast lock contention. */
     STAMCOUNTER             StatEoiContention;
     /** Number of returns to ring-3 due to Set RTE lock contention. */
@@ -534,6 +538,7 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
             ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
         else
         {
+            STAM_COUNTER_INC(&pThis->StatIommuDiscardedIntr);
             Log(("IOAPIC: Interrupt (%#x) discarded (rc=%Rrc)\n", ApicIntr.u8Vector, rcRemap));
             return;
         }
@@ -893,6 +898,7 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int
 static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
     PIOAPICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOAPICCC);
+    PIOAPIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicSendMsi: uBusDevFn=%#x Addr=%#RX64 Data=%#RX32\n", uBusDevFn, pMsi->Addr.u64, pMsi->Data.u32));
 
     XAPICINTR ApicIntr;
@@ -910,6 +916,7 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
         ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
     else
     {
+        STAM_COUNTER_INC(&pThis->StatIommuDiscardedMsi);
         if (rcRemap == VERR_IOMMU_INTR_REMAP_DENIED)
             Log3(("IOAPIC: MSI (Addr=%#RX64 Data=%#RX32) remapping denied. rc=%Rrc", pMsi->Addr.u64, pMsi->Data.u32, rcRemap));
         else
@@ -924,7 +931,6 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
     /*
      * Deliver to the local APIC via the system/3-wire-APIC bus.
      */
-    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     STAM_REL_COUNTER_INC(&pThis->aStatVectors[ApicIntr.u8Vector]);
 
     int rc = pThisCC->pIoApicHlp->pfnApicBusDeliver(pDevIns,
@@ -1476,6 +1482,8 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRedundantEdgeIntr,   STAMTYPE_COUNTER, "RedundantEdgeIntr",   STAMUNIT_OCCURENCES, "Number of redundant edge-triggered interrupts (no IRR change).");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRedundantLevelIntr,  STAMTYPE_COUNTER, "RedundantLevelIntr",  STAMUNIT_OCCURENCES, "Number of redundant level-triggered interrupts (no IRR change).");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSuppressedLevelIntr, STAMTYPE_COUNTER, "SuppressedLevelIntr", STAMUNIT_OCCURENCES, "Number of suppressed level-triggered interrupts by remote IRR.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIommuDiscardedIntr,  STAMTYPE_COUNTER, "IommuDiscardedIntr",  STAMUNIT_OCCURENCES, "Number of interrupts discarded due to IOMMU.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIommuDiscardedMsi,   STAMTYPE_COUNTER, "IommuDiscardedMsi",   STAMUNIT_OCCURENCES, "Number of MSIs discarded due to IOMMU.");
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiContention,    STAMTYPE_COUNTER, "CritSect/ContentionSetEoi", STAMUNIT_OCCURENCES, "Number of times the critsect is busy during EOI writes causing trips to R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetRteContention, STAMTYPE_COUNTER, "CritSect/ContentionSetRte", STAMUNIT_OCCURENCES, "Number of times the critsect is busy during RTE writes causing trips to R3.");
