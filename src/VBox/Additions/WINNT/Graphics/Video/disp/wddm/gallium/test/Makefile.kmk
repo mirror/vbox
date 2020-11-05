@@ -35,4 +35,21 @@ PROGRAMS.amd64 += VBoxGaD3DTest-x86
 VBoxGaD3DTest-x86_EXTENDS = VBoxGaD3DTest
 VBoxGaD3DTest-x86_BLD_TRG_ARCH = x86
 
+
+PROGRAMS += VBoxD3D11
+VBoxD3D11_TEMPLATE    = VBoxR3StaticNonPedantic
+VBoxD3D11_SDKS        = WINDDK80
+VBoxD3D11_CXXFLAGS   += -wd4458 -wd4838 -wd5029 -wd5039
+VBoxD3D11_LIBS        = d3d11.lib
+VBoxD3D11_SOURCES     = \
+	d3d11main.cpp \
+	d3d11render.cpp
+
+#
+# 32-bit version of VBoxD3D11.
+#
+PROGRAMS.amd64 += VBoxD3D11-x86
+VBoxD3D11-x86_EXTENDS = VBoxD3D11
+VBoxD3D11-x86_BLD_TRG_ARCH = x86
+
 include $(FILE_KBUILD_SUB_FOOTER)
