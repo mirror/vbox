@@ -52,32 +52,12 @@
                 <Text>[Version_text] $(var.Property_Version)</Text>
             </Control>
 
-            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)">
-                <!-- Set the install mode -->
-                <Publish Property="InstallMode" Value="!(loc.InstallModeCustom)">1</Publish>
-        <?if $(env.VBOX_WITH_LICENSE_DISPLAY) = "yes" ?>
-                <!-- Next dialog is the license agreement -->
-                <Publish Event="NewDialog" Value="VBoxLicenseAgreementDlg">1</Publish>
-        <?else ?>
-                <!-- Decide which dialog to show next: The serial number dialog (if this is a branded build)
-                     or directly proceed to the customization dialog (VBox not installed yet) -->
-                <?if $(env.VBOX_WITH_SERIALNUMBER_INSTALL) = "yes" ?>
-                    <Publish Event="NewDialog" Value="VBoxCheckSerialDlg">1</Publish>
-                <?else ?>
-                    <Publish Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[(PREVIOUSVERSIONSINSTALLED OR NEWERVERSIONDETECTED)]]></Publish>
-                    <Publish Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[(NOT PREVIOUSVERSIONSINSTALLED) AND (NOT NEWERVERSIONDETECTED)]]></Publish>
-                <?endif ?>
-        <?endif ?>
-            </Control>
+            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)" />
 
             <!-- Canceling will bring up a confirmation dialog ('SpawnDialog' attribute) -->
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_Cancel)">
                 <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
             </Control>
-
-            <!-- Uncomment if we need a 'back' button
-            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="!(loc.ButtonText_Back)" />
-            -->
         </Dialog>
 
         <!-- The radio button group used for the license agreement page -->
@@ -117,22 +97,11 @@
                 <Text>[Version_text] $(var.Property_Version)</Text>
             </Control>
 
-            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)">
-                <Publish Event="NewDialog" Value="VBoxWelcomeDlg">1</Publish>
-            </Control>
-
+            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)" />
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)">
                 <!-- 'Next' button is only enabled when 'I agree' radio button is selected -->
                 <Condition Action="disable"><![CDATA[IAgree <> "Yes"]]></Condition>
                 <Condition Action="enable"><![CDATA[IAgree = "Yes"]]></Condition>
-                <!-- Decide which dialog to show next: The serial number dialog (if this is a branded build)
-                     or directly proceed to the customization dialog (VBox not installed yet) -->
-            <?if $(env.VBOX_WITH_SERIALNUMBER_INSTALL) = "yes" ?>
-                <Publish Event="NewDialog" Value="VBoxCheckSerialDlg">1</Publish>
-            <?else ?>
-                <Publish Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[(PREVIOUSVERSIONSINSTALLED OR NEWERVERSIONDETECTED)]]></Publish>
-                <Publish Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[(NOT PREVIOUSVERSIONSINSTALLED) AND (NOT NEWERVERSIONDETECTED)]]></Publish>
-            <?endif ?>
             </Control>
 
             <!-- Canceling will bring up a confirmation dialog ('SpawnDialog' attribute) -->
@@ -174,29 +143,18 @@
                 <Text>!(loc.CheckSerialDlg_Footer)</Text>
             </Control>
 
+            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)" />
+            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Check)" />
+            <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_Cancel)">
+                <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
+            </Control>
+
             <!-- And a line for looking nice... -->
             <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
 
             <!-- Build number text drawn left bottom -->
             <Control Id="Build" Type="Text" X="20" Y="247" Width="220" Height="10" Transparent="yes" NoPrefix="yes">
                 <Text>[Version_text] $(var.Property_Version)</Text>
-            </Control>
-
-            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)">
-        <?if $(env.VBOX_WITH_LICENSE_DISPLAY) = "yes" ?>
-                <Publish Event="NewDialog" Value="VBoxLicenseAgreementDlg">1</Publish>
-        <?else ?>
-                <Publish Event="NewDialog" Value="VBoxWelcomeDlg">1</Publish>
-        <?endif ?>
-            </Control>
-            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Check)">
-                <Publish Event="DoAction" Value="ca_CheckSerial">1</Publish>
-                <Publish Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[(PREVIOUSVERSIONSINSTALLED OR NEWERVERSIONDETECTED) AND (SERIALVALID = "1")]]></Publish>
-                <Publish Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[(NOT PREVIOUSVERSIONSINSTALLED) AND (NOT NEWERVERSIONDETECTED) AND (SERIALVALID = "1")]]></Publish>
-                <Publish Event="NewDialog" Value="VBoxWrongSerialDlg"><![CDATA[SERIALVALID = "0"]]></Publish>
-            </Control>
-            <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_Cancel)">
-                <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
             </Control>
 
         </Dialog>
@@ -228,9 +186,7 @@
                 <Text>[Version_text] $(var.Property_Version)</Text>
             </Control>
 
-            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Back)">
-                 <Publish Event="NewDialog" Value="VBoxCheckSerialDlg">1</Publish>
-            </Control>
+            <Control Id="Back" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Back)" />
 
             <!-- Canceling will bring up a confirmation dialog ('SpawnDialog' attribute) -->
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_Cancel)">
@@ -284,38 +240,8 @@
                 <Condition Action="hide">Installed</Condition>
             </Control>
 
-            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)">
-        <?if $(env.VBOX_WITH_LICENSE_DISPLAY) = "yes" ?>
-                <Publish Event="NewDialog" Value="VBoxLicenseAgreementDlg"><![CDATA[(NOT CHECKSERIAL) AND (InstallMode = "!(loc.InstallModeCustom)")]]></Publish>
-                <Publish Event="NewDialog" Value="VBoxCheckSerialDlg"><![CDATA[CHECKSERIAL]]></Publish>
-        <?else ?>
-                <Publish Event="NewDialog" Value="VBoxWelcomeDlg">1</Publish>
-        <?endif ?>
-            </Control>
+            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)" />
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)">
-        <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-                <!--
-                uncomment next two lines if there is a need in wizard page VBoxSelectionNetworkTypeDlg
-                don't forget to comment one line after
-                -->
-                <!--
-                <Publish Event="NewDialog" Value="VBoxSelectionNetworkTypeDlg"><![CDATA[VersionNT >= 600]]></Publish>
-                <Publish Event="NewDialog" Value="VBoxCustomize2Dlg"><![CDATA[VersionNT < 600]]></Publish>
-                -->
-                <Publish Event="NewDialog" Value="VBoxCustomize2Dlg"/>
-        <?else ?>
-                <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-                    <!-- Check for the Python core package and other dependencies first.
-                         The install helper code will set the public properties VBOX_PYTHON_INSTALLED / VBOX_PYTHON_DEPS_INSTALLED. -->
-                    <Publish Event="DoAction" Value="ca_IsPythonInstalled" Order="0" />
-                    <Publish Event="DoAction" Value="ca_ArePythonAPIDepsInstalled" Order="1" />
-                    <Publish Event="NewDialog" Value="VBoxWarnPythonDlg"><![CDATA[(&VBoxPython=3) AND (VBOX_PYTHON_DEPS_INSTALLED="0")]]></Publish>
-                    <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(&VBoxPython<3) OR (VBOX_PYTHON_DEPS_INSTALLED="1")]]></Publish>
-                <?else ?>
-                    <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
-                <?endif?>
-
-        <?endif ?>
                 <Subscribe Event="SelectionNoItems" Attribute="Enabled" />
             </Control>
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_Cancel)">
@@ -334,6 +260,7 @@
           <RadioButton Text="!(loc.SelectionNetworkTypeDlg_RadioButtonNDIS5)" Value="NDIS5" X="5" Y="0" Width="120" Height="20" />
           <RadioButton Text="!(loc.SelectionNetworkTypeDlg_RadioButtonNDIS6)" Value="NDIS6" X="5" Y="20" Width="120" Height="20" />
         </RadioButtonGroup>
+
         <Dialog Id="VBoxSelectionNetworkTypeDlg" Width="370" Height="270" Title="[ProductName] !(loc.Setup)" NoMinimize="yes">
             <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
             <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
@@ -363,14 +290,8 @@
               <Condition Action="show"> NETWORKTYPE = "NDIS6"</Condition>
             </Control>
 
-            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17"
-                Default="yes" Cancel="yes" Text="!(loc.ButtonText_Next)">
-                <Publish Event="NewDialog" Value="VBoxCustomize2Dlg">1</Publish>
-            </Control>
-            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17"
-                Text="!(loc.ButtonText_Back)">
-                <Publish Event="NewDialog" Value="VBoxCustomizeDlg">1</Publish>
-            </Control>
+            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="!(loc.ButtonText_Next)"/>
+            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)"/>
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17"
                 Text="!(loc.ButtonText_Cancel)">
                 <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
@@ -420,35 +341,8 @@
                 <Text>!(loc.Customize2Dlg_RegisterFileExtensions)</Text>
             </Control>
 <?endif?> <!-- VBOX_WITH_QTGUI -->
-            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17"
-                Default="yes" Cancel="yes" Text="!(loc.ButtonText_Next)">
-                <!-- Note: The order of publishing the event(s) here is important. -->
-<?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-                <Publish Event="NewDialog" Value="VBoxWarnPythonDlg"><![CDATA[((&VBoxPython=3) AND (VBOX_PYTHON_DEPS_INSTALLED="0"))]]></Publish>
-<?endif?>
-<?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-                <Publish Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg"><![CDATA[(&VBoxNetworkFlt=3)]]></Publish>
-                <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(&VBoxNetworkFlt<3)]]></Publish>
-<?else ?>
-                <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
-<?endif?>
-            </Control>
-            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17"
-                Text="!(loc.ButtonText_Back)">
-                <!--
-                uncomment next two lines if there is a need in wizard page VBoxSelectionNetworkTypeDlg
-                don't forget to comment one line after
-                -->
-                <!--
-                <Publish Event="NewDialog" Value="VBoxSelectionNetworkTypeDlg"><![CDATA[VersionNT >= 600]]></Publish>
-                <Publish Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[VersionNT < 600]]></Publish>
-                -->
-                <Publish Event="NewDialog" Value="VBoxCustomizeDlg"/>
-            </Control>
-            <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17"
-                Text="!(loc.ButtonText_Cancel)">
-                <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
-            </Control>
+            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)" />
+            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)" />
 
             <!-- Build number text drawn left bottom -->
             <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
@@ -488,12 +382,7 @@
                 <Text>[Version_text] $(var.Property_Version)</Text>
             </Control>
 
-            <!-- Next dialog is the warning dialog for TAP devices -->
-            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Yes)">
-                 <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
-            </Control>
-
-            <!-- Canceling will bring up a confirmation dialog ('SpawnDialog' attribute) -->
+            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Yes)" />
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_No)">
                 <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
             </Control>
@@ -535,16 +424,7 @@
                 <Text>[Version_text] $(var.Property_Version)</Text>
             </Control>
 
-            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Yes)">
-<?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-                <Publish Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg"><![CDATA[(&VBoxNetworkFlt=3)]]></Publish>
-                <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(&VBoxNetworkFlt<3)]]></Publish>
-<?else ?>
-                <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
-<?endif?>
-            </Control>
-
-            <!-- Canceling will bring up a confirmation dialog ('SpawnDialog' attribute) -->
+            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Yes)" />
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_No)">
                 <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
             </Control>
@@ -636,13 +516,7 @@
                 <Publish Event="EnableRollback" Value="False"><![CDATA[OutOfDiskSpace = 1 AND OutOfNoRbDiskSpace = 0 AND PROMPTROLLBACKCOST="D"]]></Publish>
                 <Publish Event="SpawnDialog" Value="VBoxOutOfDiskDlg"><![CDATA[(OutOfDiskSpace = 1 AND OutOfNoRbDiskSpace = 1) OR (OutOfDiskSpace = 1 AND PROMPTROLLBACKCOST="F")]]></Publish>
             </Control>
-            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)">
-        <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-                <Publish Event="NewDialog" Value="VBoxCustomize2Dlg"><![CDATA[InstallMode = "!(loc.InstallModeCustom)"]]></Publish>
-        <?else ?>
-                <Publish Event="NewDialog" Value="VBoxCustomizeDlg">1</Publish>
-        <?endif ?>
-            </Control>
+            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.ButtonText_Back)" />
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_Cancel)">
                 <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
             </Control>
@@ -1236,12 +1110,97 @@
         <Property Id="FolderUp">folderupico</Property>
         <Property Id="FolderNew">foldernewico</Property>
 
-        <!-- This defines the order in which the GUI panels will be shown to the user -->
+        <!-- Property which defines if we need to show the customization dialog or not.
+             We only show the dialog on new installs to let the users choose the components to install. -->
+        <Property Id="VBOX_SHOW_CUSTOMIZE_DLG">
+            <![CDATA[((PREVIOUSVERSIONSINSTALLED OR NEWERVERSIONDETECTED) OR ((NOT PREVIOUSVERSIONSINSTALLED) AND (NOT NEWERVERSIONDETECTED)))]]>
+        </Property>
+<?if $(env.VBOX_WITH_LICENSE_DISPLAY) = "yes" ?>
+        <!-- Property which defines whether the license dialog will be shown or not. -->
+        <Property Id="VBOX_SHOW_LICENSE_DLG">1</Property>
+<?endif?>
+<?if $(env.VBOX_WITH_SERIALNUMBER_INSTALL) = "yes2" ?>
+        <!-- Property which defines whether the installer checks the serial number or not. -->
+        <Property Id="VBOX_SHOW_SERIAL_CHECK_DLG">1</Property>
+<?endif?>
+<?if $(env.VBOX_WITH_QTGUI) = "no" ?>
+        <!-- Property which defines whether to show the second customization dialog. This second customization
+             dialog only is needed for GUI-based options, so skip if we either don't ship FE/Qt or don't show
+             the (first) customization dialog. -->
+        <Property Id="VBOX_SHOW_CUSTOMIZE2_DLG"><![CDATA[VBOX_SHOW_CUSTOMIZE_DLG]]></Property>
+<?endif?>
+
+
+        <!-- In graphical (attended) mode we always choose a custom installation to let the user chose. -->
+        <Property Id="InstallMode" Value="!(loc.InstallModeCustom)" />
+
+        <!-- Dialog routing table (sort-of truth table).
+             Here (and only here!) the routing for the customized dialogs are defined, e.g.
+             what happens next when pressing the "Next" or "Back" buttons on a dialog.
+
+             This can vary based on the defines we (don't) set above or custom actions in our
+             install helper DLL. -->
+
+        <!-- Note: All values except 0 and "" (empty string) are interpreted as TRUE. -->
+
+        <Publish Dialog="VBoxWelcomeDlg" Control="Next" Event="NewDialog" Value="VBoxLicenseAgreementDlg"><![CDATA[VBOX_SHOW_LICENSE_DLG]]></Publish>
+        <Publish Dialog="VBoxWelcomeDlg" Control="Next" Event="NewDialog" Value="VBoxCheckSerialDlg"><![CDATA[(NOT VBOX_SHOW_LICENSE_DLG) AND VBOX_SHOW_SERIAL_CHECK_DLG]]></Publish>
+        <Publish Dialog="VBoxWelcomeDlg" Control="Next" Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[VBOX_SHOW_CUSTOMIZE_DLG AND (NOT VBOX_SHOW_LICENSE_DLG) AND (NOT VBOX_SHOW_SERIAL_CHECK_DLG)]]></Publish>
+        <Publish Dialog="VBoxWelcomeDlg" Control="Next" Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[NOT VBOX_SHOW_CUSTOMIZE_DLG AND (NOT VBOX_SHOW_LICENSE_DLG) AND (NOT VBOX_SHOW_SERIAL_CHECK_DLG)]]></Publish>
+
+        <Publish Dialog="VBoxLicenseAgreementDlg" Control="Next" Event="NewDialog" Value="VBoxCheckSerialDlg"><![CDATA[VBOX_SHOW_SERIAL_CHECK_DLG]]></Publish>
+        <Publish Dialog="VBoxLicenseAgreementDlg" Control="Next" Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[(NOT VBOX_SHOW_SERIAL_CHECK_DLG) AND (VBOX_SHOW_CUSTOMIZE_DLG)]]></Publish>
+        <Publish Dialog="VBoxLicenseAgreementDlg" Control="Next" Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(NOT VBOX_SHOW_SERIAL_CHECK_DLG) AND (NOT VBOX_SHOW_CUSTOMIZE_DLG)]]></Publish>
+        <Publish Dialog="VBoxLicenseAgreementDlg" Control="Back" Event="NewDialog" Value="VBoxWelcomeDlg">1</Publish>
+
+        <Publish Dialog="VBoxCheckSerialDlg" Control="Back" Event="NewDialog" Value="VBoxLicenseAgreementDlg"><![CDATA[VBOX_SHOW_LICENSE_DLG]]></Publish>
+        <Publish Dialog="VBoxCheckSerialDlg" Control="Back" Event="NewDialog" Value="VBoxWelcomeDlg"><![CDATA[NOT VBOX_SHOW_LICENSE_DLG]]></Publish>
+        <Publish Dialog="VBoxCheckSerialDlg" Control="Next" Event="DoAction" Value="ca_CheckSerial" Order="1">1</Publish>
+        <Publish Dialog="VBoxCheckSerialDlg" Control="Next" Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[(PREVIOUSVERSIONSINSTALLED OR NEWERVERSIONDETECTED) AND (VBOX_SERIAL_IS_VALID="1")]]></Publish>
+        <Publish Dialog="VBoxCheckSerialDlg" Control="Next" Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[(NOT PREVIOUSVERSIONSINSTALLED) AND (NOT NEWERVERSIONDETECTED) AND (VBOX_SERIAL_IS_VALID="1")]]></Publish>
+        <Publish Dialog="VBoxCheckSerialDlg" Control="Next" Event="NewDialog" Value="VBoxWrongSerialDlg"><![CDATA[VBOX_SERIAL_IS_VALID="0"]]></Publish>
+
+        <Publish Dialog="VBoxWrongSerialDlg" Control="Back" Event="NewDialog" Value="VBoxCheckSerialDlg">1</Publish>
+
+        <!-- Note: We have to set (1) or unset ({}) the properties first (see order #), as those will be needed for further routing. -->
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_PYTHONAPI_DLG" Value="1" Order="1"><![CDATA[(&VBoxPython=3) AND (VBOX_PYTHON_DEPS_INSTALLED="0")]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_PYTHONAPI_DLG" Value="{}" Order="2"><![CDATA[(&VBoxPython<3)]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_DISCONNECTIFACES_DLG" Value="1" Order="3"><![CDATA[&VBoxNetworkFlt=3]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Property="VBOX_SHOW_WARN_DISCONNECTIFACES_DLG" Value="{}" Order="4"><![CDATA[&VBoxNetworkFlt<3]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg" Order="10"><![CDATA[VBOX_SHOW_WARN_DISCONNECTIFACES_DLG]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxWarnPythonDlg" Order="11"><![CDATA[VBOX_SHOW_WARN_PYTHONAPI_DLG AND (NOT VBOX_SHOW_WARN_DISCONNECTIFACES_DLG)]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxCustomize2Dlg" Order="12"><![CDATA[VBOX_SHOW_CUSTOMIZE2_DLG AND (NOT VBOX_SHOW_WARN_DISCONNECTIFACES_DLG) AND (NOT VBOX_SHOW_WARN_PYTHONAPI_DLG)]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Next" Event="NewDialog" Value="VBoxVerifyReadyDlg" Order="13"><![CDATA[(NOT VBOX_SHOW_CUSTOMIZE2_DLG) AND (NOT VBOX_SHOW_WARN_DISCONNECTIFACES_DLG) AND (NOT VBOX_SHOW_WARN_PYTHONAPI_DLG)]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Back" Event="NewDialog" Value="VBoxCheckSerialDlg"><![CDATA[VBOX_SHOW_SERIAL_CHECK_DLG]]></Publish>
+        <Publish Dialog="VBoxCustomizeDlg" Control="Back" Event="NewDialog" Value="VBoxLicenseAgreementDlg"><![CDATA[NOT VBOX_SHOW_SERIAL_CHECK_DLG]]></Publish>
+
+        <Publish Dialog="VBoxWarnDisconNetIfacesDlg" Control="Next" Event="NewDialog" Value="VBoxCustomize2Dlg"><![CDATA[VBOX_SHOW_CUSTOMIZE2_DLG AND (NOT VBOX_SHOW_WARN_PYTHONAPI_DLG)]]></Publish>
+        <Publish Dialog="VBoxWarnDisconNetIfacesDlg" Control="Next" Event="NewDialog" Value="VBoxWarnPythonDlg"><![CDATA[VBOX_SHOW_WARN_PYTHONAPI_DLG]]></Publish>
+        <!-- Note: VBoxWarnDisconNetIfacesDlg only has a "Cancel" button which aborts the installation. -->
+
+        <Publish Dialog="VBoxWarnPythonDlg" Control="Next" Event="NewDialog" Value="VBoxCustomize2Dlg"><![CDATA[VBOX_SHOW_CUSTOMIZE2_DLG]]></Publish>
+        <Publish Dialog="VBoxWarnPythonDlg" Control="Next" Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[NOT VBOX_SHOW_CUSTOMIZE2_DLG]]></Publish>
+        <!-- Note: VBoxWarnPythonDlg only has a "Cancel" button which aborts the installation. -->
+
+        <Publish Dialog="VBoxCustomize2Dlg" Control="Back" Event="NewDialog" Value="VBoxCustomizeDlg">1</Publish>
+        <Publish Dialog="VBoxCustomize2Dlg" Control="Next" Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
+
+        <Publish Dialog="VBoxVerifyReadyDlg" Control="Back" Event="NewDialog" Value="VBoxCustomize2Dlg"><![CDATA[VBOX_SHOW_CUSTOMIZE2_DLG]]></Publish>
+        <Publish Dialog="VBoxVerifyReadyDlg" Control="Back" Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[NOT VBOX_SHOW_CUSTOMIZE2_DLG]]></Publish>
+        <Publish Dialog="VBoxVerifyReadyDlg" Control="Next" Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
+
+        <!-- This defines the order in which the GUI panels will be shown to the user. -->
         <InstallUISequence>
 
             <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
             <Custom Action="ca_DefaultTargetDir" After="FileCost"><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
 
+<?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
+            <!-- Check for the Python core package and other dependencies first.
+                 The install helper code will set the public properties VBOX_PYTHON_INSTALLED / VBOX_PYTHON_DEPS_INSTALLED. -->
+            <Custom Action="ca_IsPythonInstalled" After="CostFinalize">1</Custom>
+            <Custom Action="ca_ArePythonAPIDepsInstalled" After="CostFinalize">1</Custom>
+<?endif?>
             <FindRelatedProducts Suppress="no">1</FindRelatedProducts>
 
             <Show Dialog="VBoxFatalErrorDlg" OnExit="error" />
@@ -1252,6 +1211,7 @@
             <Show Dialog="VBoxMaintenanceWelcomeDlg" After="VBoxResumeDlg">Installed AND (NOT RESUME) AND (NOT Preselected)</Show>
             <Show Dialog="VBoxExitDlg" OnExit="success">1</Show>
             <Show Dialog="VBoxProgressDlg" After="VBoxMaintenanceWelcomeDlg" />
+
         </InstallUISequence>
 
         <!-- The AdminUISequence table lists actions that the installer calls in sequence when the top-level ADMIN
