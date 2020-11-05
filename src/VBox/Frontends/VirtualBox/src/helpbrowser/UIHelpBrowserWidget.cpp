@@ -29,8 +29,10 @@
  #include <QtHelp/QHelpSearchQueryWidget>
  #include <QtHelp/QHelpSearchResultWidget>
 #endif
+#include <QLabel>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QPixmap>
 #include <QScrollBar>
 #include <QSpacerItem>
 #include <QStyle>
@@ -42,17 +44,18 @@
 #endif
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "QIFileDialog.h"
 #include "QITabWidget.h"
+#include "QIToolBar.h"
+#include "QIToolButton.h"
 #include "UIActionPool.h"
 #include "UIExtraDataManager.h"
+#include "UIHelpBrowserWidget.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "UIHelpBrowserWidget.h"
-#include "QITabWidget.h"
-#include "QIToolBar.h"
-#include "UICommon.h"
-#include "UIIconPool.h"
+#include "UISearchLineEdit.h"
+
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -62,13 +65,44 @@
 enum HelpBrowserTabs
 {
     HelpBrowserTabs_TOC = 0,
-    HelpBrowserTabs_Index,
     HelpBrowserTabs_Search,
     HelpBrowserTabs_Bookmarks,
+    HelpBrowserTabs_Index,
     HelpBrowserTabs_Max
 };
 Q_DECLARE_METATYPE(HelpBrowserTabs);
 
+
+/*********************************************************************************************************************************
+*   UIFindInPageWidget definition.                                                                                        *
+*********************************************************************************************************************************/
+class UIFindInPageWidget : public QIWithRetranslateUI<QWidget>
+{
+
+    Q_OBJECT;
+
+signals:
+
+    void sigDragging(const QPoint &delta);
+
+public:
+
+    UIFindInPageWidget(QWidget *pParent = 0);
+
+protected:
+
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+
+private:
+
+    void prepare();
+    void retranslateUi();
+    UISearchLineEdit  *m_pSearchLineEdit;
+    QIToolButton      *m_pDownButton;
+    QIToolButton      *m_pUpButton;
+    QLabel            *m_pDragMoveLabel;
+    QPoint m_previousMousePosition;
+};
 
 /*********************************************************************************************************************************
 *   UIHelpBrowserViewer definition.                                                                                        *
@@ -95,15 +129,21 @@ public slots:
 protected:
 
     void contextMenuEvent(QContextMenuEvent *event) /* override */;
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
 
 private slots:
 
     void sltHandleOpenInNewTab();
+    void sltHandleFindWidgetDrag(const QPoint &delta);
 
 private:
 
     void retranslateUi();
     const QHelpEngine* m_pHelpEngine;
+    UIFindInPageWidget *m_pFindInPageWidget;
+    /* Initilized as false and set to true once the find widget is positioned during first resize. */
+    bool m_fFindWidgetPositioned;
 };
 
 /*********************************************************************************************************************************
@@ -128,6 +168,7 @@ public:
     QUrl source() const;
     void setSource(const QUrl &url);
     QString documentTitle() const;
+    void setToolBarVisible(bool fVisible);
 
 private slots:
 
@@ -150,10 +191,11 @@ private:
     QAction     *m_pForwardAction;
     QAction     *m_pBackwardAction;
     QAction     *m_pAddBookmarkAction;
+    QAction     *m_pFindInPageAction;
 
     QVBoxLayout *m_pMainLayout;
     QIToolBar   *m_pToolBar;
-    QComboBox *m_pAddressBar;
+    QComboBox   *m_pAddressBar;
     UIHelpBrowserViewer *m_pContentViewer;
     const QHelpEngine* m_pHelpEngine;
     QString              m_strPageNotFoundText;
@@ -184,6 +226,7 @@ public:
     void setSource(const QUrl &url, bool fNewTab = false);
     /* Return the list of urls of all open tabs as QStringList. */
     QStringList tabUrlList();
+    void setToolBarVisible(bool fVisible);
 
 private slots:
 
@@ -204,6 +247,78 @@ private:
 };
 
 /*********************************************************************************************************************************
+*   UIFindInPageWidget implementation.                                                                                        *
+*********************************************************************************************************************************/
+UIFindInPageWidget::UIFindInPageWidget(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pSearchLineEdit(0)
+    , m_pDownButton(0)
+    , m_pUpButton(0)
+    , m_previousMousePosition(-1, -1)
+{
+    prepare();
+}
+
+bool UIFindInPageWidget::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    if (pObject == m_pDragMoveLabel)
+    {
+        if (pEvent->type() == QEvent::MouseMove)
+        {
+            QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+            if (pMouseEvent->buttons() == Qt::LeftButton)
+            {
+                if (m_previousMousePosition != QPoint(-1, -1))
+                    emit sigDragging(pMouseEvent->globalPos() - m_previousMousePosition);
+                m_previousMousePosition = pMouseEvent->globalPos();
+            }
+        }
+        else if (pEvent->type() == QEvent::MouseButtonRelease)
+            m_previousMousePosition = QPoint(-1, -1);
+    }
+    return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+}
+
+void UIFindInPageWidget::prepare()
+{
+    setAutoFillBackground(true);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+
+    QHBoxLayout *pLayout = new QHBoxLayout(this);
+    m_pSearchLineEdit = new UISearchLineEdit;
+    AssertReturnVoid(pLayout && m_pSearchLineEdit);
+
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    pLayout->setContentsMargins(0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin),
+                                0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
+                                0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin),
+                                0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
+    m_pDragMoveLabel = new QLabel;
+    AssertReturnVoid(m_pDragMoveLabel);
+    m_pDragMoveLabel->installEventFilter(this);
+    m_pDragMoveLabel->setPixmap(QPixmap(":/drag_move_16px.png"));
+    pLayout->addWidget(m_pDragMoveLabel);
+
+
+    pLayout->setSpacing(0);
+    pLayout->addWidget(m_pSearchLineEdit);
+
+    m_pUpButton = new QIToolButton;
+    m_pDownButton = new QIToolButton;
+
+    pLayout->addWidget(m_pUpButton);
+    pLayout->addWidget(m_pDownButton);
+
+    m_pUpButton->setIcon(UIIconPool::iconSet(":/arrow_up_10px.png"));
+    m_pDownButton->setIcon(UIIconPool::iconSet(":/arrow_down_10px.png"));
+
+}
+
+void UIFindInPageWidget::retranslateUi()
+{
+}
+
+/*********************************************************************************************************************************
 *   UIHelpBrowserTab implementation.                                                                                        *
 *********************************************************************************************************************************/
 
@@ -214,6 +329,7 @@ UIHelpBrowserTab::UIHelpBrowserTab(const QHelpEngine  *pHelpEngine, const QUrl &
     , m_pForwardAction(0)
     , m_pBackwardAction(0)
     , m_pAddBookmarkAction(0)
+    , m_pFindInPageAction(0)
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_pAddressBar(0)
@@ -251,6 +367,14 @@ QString UIHelpBrowserTab::documentTitle() const
     if (!m_pContentViewer)
         return QString();
     return m_pContentViewer->documentTitle();
+}
+
+void UIHelpBrowserTab::setToolBarVisible(bool fVisible)
+{
+    if (m_pToolBar)
+        m_pToolBar->setVisible(fVisible);
+    if (m_pAddressBar)
+        m_pAddressBar->setVisible(fVisible);
 }
 
 void UIHelpBrowserTab::prepare(const QUrl &initialUrl)
@@ -292,6 +416,8 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
         new QAction(UIIconPool::iconSet(":/help_browser_backward_32px.png", ":/help_browser_backward_disabled_32px.png"), QString(), this);
     m_pAddBookmarkAction =
         new QAction(UIIconPool::iconSet(":/help_browser_add_bookmark.png"), QString(), this);
+    m_pFindInPageAction =
+        new QAction(UIIconPool::iconSet(":/help_browser_search.png"), QString(), this);
 
     connect(m_pHomeAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleHomeAction);
     connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
@@ -307,6 +433,7 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
     m_pToolBar->addAction(m_pForwardAction);
     m_pToolBar->addAction(m_pHomeAction);
     m_pToolBar->addAction(m_pAddBookmarkAction);
+    m_pToolBar->addAction(m_pFindInPageAction);
 
     m_pAddressBar = new QComboBox();
     m_pAddressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -426,8 +553,11 @@ void UIHelpBrowserTab::sltAnchorClicked(const QUrl &link)
 UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QTextBrowser>(pParent)
     , m_pHelpEngine(pHelpEngine)
+    , m_pFindInPageWidget(new UIFindInPageWidget(this))
+    , m_fFindWidgetPositioned(false)
 {
-    Q_UNUSED(pHelpEngine);
+    connect(m_pFindInPageWidget, &UIFindInPageWidget::sigDragging,
+            this, &UIHelpBrowserViewer::sltHandleFindWidgetDrag);
     retranslateUi();
 }
 
@@ -471,6 +601,28 @@ void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
     delete pMenu;
 }
 
+void UIHelpBrowserViewer::paintEvent(QPaintEvent *pEvent)
+{
+    // if (m_pFindInPageWidget)
+    // {
+    //     m_pFindInPageWidget->show();
+    //     m_pFindInPageWidget->update();
+    // }
+    QIWithRetranslateUI<QTextBrowser>::paintEvent(pEvent);
+}
+
+void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
+{
+    printf("resize %d\n", width());
+    if (m_pFindInPageWidget && !m_fFindWidgetPositioned)
+    {
+        m_pFindInPageWidget->move(width() - m_pFindInPageWidget->width() - 50, 10);
+        m_fFindWidgetPositioned = true;
+    }
+    QIWithRetranslateUI<QTextBrowser>::resizeEvent(pEvent);
+}
+
+
 void UIHelpBrowserViewer::retranslateUi()
 {
 }
@@ -485,6 +637,22 @@ void UIHelpBrowserViewer::sltHandleOpenInNewTab()
         emit sigOpenLinkInNewTab(url);
 }
 
+void UIHelpBrowserViewer::sltHandleFindWidgetDrag(const QPoint &delta)
+{
+    if (!m_pFindInPageWidget)
+        return;
+    QRect geo = m_pFindInPageWidget->geometry();
+    geo.translate(delta);
+    int margin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
+    bool fIn = true;
+    if (geo.left() < margin || geo.top() < margin)
+        fIn = false;
+    if (geo.right() > width() - margin || geo.bottom() > height() - margin)
+        fIn = false;
+    if (fIn)
+        m_pFindInPageWidget->move(m_pFindInPageWidget->pos() + delta);
+    update();
+}
 
 /*********************************************************************************************************************************
 *   UIHelpBrowserTabManager definition.                                                                                          *
@@ -558,6 +726,17 @@ QStringList UIHelpBrowserTabManager::tabUrlList()
         list << pTab->source().toString();
     }
     return list;
+}
+
+void UIHelpBrowserTabManager::setToolBarVisible(bool fVisible)
+{
+    for (int i = 0; i < count(); ++i)
+    {
+        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
+        if (!pTab)
+            continue;
+        pTab->setToolBarVisible(fVisible);
+    }
 }
 
 void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
@@ -635,7 +814,8 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_strHelpFilePath(strHelpFilePath)
     , m_pHelpEngine(0)
     , m_pSplitter(0)
-    , m_pMenu(0)
+    , m_pFileMenu(0)
+    , m_pViewMenu(0)
     , m_pContentWidget(0)
     , m_pIndexWidget(0)
     , m_pContentModel(0)
@@ -662,7 +842,7 @@ UIHelpBrowserWidget::~UIHelpBrowserWidget()
 
 QMenu *UIHelpBrowserWidget::menu() const
 {
-    return m_pMenu;
+    return m_pViewMenu;
 }
 
 
@@ -763,6 +943,7 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
     m_pSearchResultWidget = m_pSearchEngine->resultWidget();
     AssertReturnVoid(m_pSearchQueryWidget && m_pSearchResultWidget);
     m_pSearchResultWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_pSearchQueryWidget->setCompactMode(false);
 
     QVBoxLayout *pSearchLayout = new QVBoxLayout(m_pSearchContainerWidget);
     pSearchLayout->addWidget(m_pSearchQueryWidget);
@@ -826,11 +1007,13 @@ void UIHelpBrowserWidget::prepareToolBar()
 
 void UIHelpBrowserWidget::prepareMenu()
 {
-    m_pMenu = new QMenu(tr("View"), this);
-    AssertReturnVoid(m_pMenu);
+    m_pFileMenu = new QMenu(tr("File"), this);
+    m_pViewMenu = new QMenu(tr("View"), this);
+    AssertReturnVoid(m_pViewMenu);
 
-    m_pMenu->addAction(m_pShowHideSideBarAction);
-    m_pMenu->addAction(m_pShowHideToolBarAction);
+    m_pFileMenu->addAction("asd");
+    m_pViewMenu->addAction(m_pShowHideSideBarAction);
+    m_pViewMenu->addAction(m_pShowHideToolBarAction);
 
 }
 
@@ -970,8 +1153,8 @@ void UIHelpBrowserWidget::sltHandleSideBarVisibility(bool fToggled)
 
 void UIHelpBrowserWidget::sltHandleToolBarVisibility(bool fToggled)
 {
-    if (m_pToolBar)
-        m_pToolBar->setVisible(fToggled);
+    if (m_pTabManager)
+        m_pTabManager->setToolBarVisible(fToggled);
 }
 
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
@@ -1059,7 +1242,6 @@ void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
         if (!browser->rect().contains(pos, true))
             return;
         QPoint browserPos = browser->mapFromGlobal(m_pSearchResultWidget->mapToGlobal(pos));
-        printf("pos %d %d\n", pos.x(), pos.y());
         url = browser->anchorAt(browserPos);
     }
 

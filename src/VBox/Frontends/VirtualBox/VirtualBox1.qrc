@@ -162,6 +162,7 @@
         <file alias="download_manager_loading_16px.png">images/download_manager_loading_16px.png</file>
         <file alias="drag_drop_16px.png">images/drag_drop_16px.png</file>
         <file alias="drag_drop_disabled_16px.png">images/drag_drop_disabled_16px.png</file>
+        <file alias="drag_move_16px.png">images/drag_move_16px.png</file>
         <file alias="edata_add_16px.png">images/edata_add_16px.png</file>
         <file alias="edata_add_24px.png">images/edata_add_24px.png</file>
         <file alias="edata_add_disabled_16px.png">images/edata_add_disabled_16px.png</file>

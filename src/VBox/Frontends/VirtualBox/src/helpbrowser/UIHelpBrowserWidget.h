@@ -149,7 +149,8 @@ private:
     QString       m_strHelpFilePath;
     QHelpEngine  *m_pHelpEngine;
     QSplitter           *m_pSplitter;
-    QMenu               *m_pMenu;
+    QMenu               *m_pFileMenu;
+    QMenu               *m_pViewMenu;
     QHelpContentWidget  *m_pContentWidget;
     QHelpIndexWidget    *m_pIndexWidget;
     QHelpContentModel   *m_pContentModel;
