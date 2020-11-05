@@ -140,10 +140,14 @@ private slots:
 private:
 
     void retranslateUi();
+    bool isRectInside(const QRect &rect, int iMargin) const;
+    void moveFindWidgetIn(int iMargin);
     const QHelpEngine* m_pHelpEngine;
+
     UIFindInPageWidget *m_pFindInPageWidget;
     /* Initilized as false and set to true once the find widget is positioned during first resize. */
     bool m_fFindWidgetPositioned;
+    const int m_iMarginForFindWidget;
 };
 
 /*********************************************************************************************************************************
@@ -555,6 +559,7 @@ UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget
     , m_pHelpEngine(pHelpEngine)
     , m_pFindInPageWidget(new UIFindInPageWidget(this))
     , m_fFindWidgetPositioned(false)
+    , m_iMarginForFindWidget(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin))
 {
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigDragging,
             this, &UIHelpBrowserViewer::sltHandleFindWidgetDrag);
@@ -603,21 +608,21 @@ void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
 
 void UIHelpBrowserViewer::paintEvent(QPaintEvent *pEvent)
 {
-    // if (m_pFindInPageWidget)
-    // {
-    //     m_pFindInPageWidget->show();
-    //     m_pFindInPageWidget->update();
-    // }
     QIWithRetranslateUI<QTextBrowser>::paintEvent(pEvent);
 }
 
 void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
 {
-    printf("resize %d\n", width());
-    if (m_pFindInPageWidget && !m_fFindWidgetPositioned)
+    if (m_pFindInPageWidget)
     {
-        m_pFindInPageWidget->move(width() - m_pFindInPageWidget->width() - 50, 10);
-        m_fFindWidgetPositioned = true;
+        if (!m_fFindWidgetPositioned)
+        {
+            m_pFindInPageWidget->move(width() - m_pFindInPageWidget->width() - 50, 0);
+            m_fFindWidgetPositioned = true;
+        }
+        else
+            if (!isRectInside(m_pFindInPageWidget->geometry(), m_iMarginForFindWidget))
+                moveFindWidgetIn(m_iMarginForFindWidget);
     }
     QIWithRetranslateUI<QTextBrowser>::resizeEvent(pEvent);
 }
@@ -625,6 +630,33 @@ void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
 
 void UIHelpBrowserViewer::retranslateUi()
 {
+}
+
+void UIHelpBrowserViewer::moveFindWidgetIn(int iMargin)
+{
+    if (!m_pFindInPageWidget)
+        return;
+
+    QRect  rect = m_pFindInPageWidget->geometry();
+    if (rect.left() < iMargin)
+        rect.translate(-rect.left() + iMargin, 0);
+    if (rect.right() > width() - iMargin)
+        rect.translate((width() - iMargin - rect.right()), 0);
+    if (rect.top() < iMargin)
+        rect.translate(0, -rect.top() + iMargin);
+
+    if (rect.bottom() > height() - iMargin)
+        rect.translate(0, (height() - iMargin - rect.bottom()));
+    m_pFindInPageWidget->setGeometry(rect);
+}
+
+ bool UIHelpBrowserViewer::isRectInside(const QRect &rect, int iMargin) const
+{
+    if (rect.left() < iMargin || rect.top() < iMargin)
+        return false;
+    if (rect.right() > width() - iMargin || rect.bottom() > height() - iMargin)
+        return false;
+    return true;
 }
 
 void UIHelpBrowserViewer::sltHandleOpenInNewTab()
@@ -643,13 +675,9 @@ void UIHelpBrowserViewer::sltHandleFindWidgetDrag(const QPoint &delta)
         return;
     QRect geo = m_pFindInPageWidget->geometry();
     geo.translate(delta);
-    int margin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
-    bool fIn = true;
-    if (geo.left() < margin || geo.top() < margin)
-        fIn = false;
-    if (geo.right() > width() - margin || geo.bottom() > height() - margin)
-        fIn = false;
-    if (fIn)
+
+    /* Allow the move if m_pFindInPageWidget stays inside after the move: */
+    if (isRectInside(geo, m_iMarginForFindWidget))
         m_pFindInPageWidget->move(m_pFindInPageWidget->pos() + delta);
     update();
 }
