@@ -40,39 +40,6 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
-class UIVMLogViewerSearchField: public QLineEdit
-{
-    Q_OBJECT;
-
-public:
-
-    UIVMLogViewerSearchField(QWidget *pParent)
-        : QLineEdit(pParent)
-    {
-        m_baseBrush = palette().base();
-    }
-
-    void markError()
-    {
-        QPalette pal = palette();
-        QColor c(Qt::red);
-        c.setAlphaF(0.3);
-        pal.setBrush(QPalette::Base, c);
-        setPalette(pal);
-    }
-
-    void unmarkError()
-    {
-        QPalette pal = palette();
-        pal.setBrush(QPalette::Base, m_baseBrush);
-        setPalette(pal);
-    }
-
-private:
-    /* Private member vars */
-    QBrush m_baseBrush;
-
-};
 
 UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
     : UIVMLogViewerPanel(pParent, pViewer)
@@ -282,7 +249,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 
 void UIVMLogViewerSearchPanel::prepareConnections()
 {
-    connect(m_pSearchEditor, &UIVMLogViewerSearchField::textChanged, this, &UIVMLogViewerSearchPanel::sltSearchTextChanged);
+    connect(m_pSearchEditor, &UISearchLineEdit::textChanged, this, &UIVMLogViewerSearchPanel::sltSearchTextChanged);
     connect(m_pNextButton, &QIToolButton::clicked, this, &UIVMLogViewerSearchPanel::sltSelectNextPreviousMatch);
     connect(m_pPreviousButton, &QIToolButton::clicked, this, &UIVMLogViewerSearchPanel::sltSelectNextPreviousMatch);
 
@@ -570,5 +537,3 @@ QTextDocument::FindFlags UIVMLogViewerSearchPanel::constructFindFlags(SearchDire
        findFlags = findFlags | QTextDocument::FindWholeWords;
    return findFlags;
 }
-
-#include "UIVMLogViewerSearchPanel.moc"

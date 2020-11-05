@@ -993,7 +993,6 @@ UICommon_QT_MOCSRCS = \
 	src/globals/UIVirtualBoxClientEventHandler.cpp \
 	src/helpbrowser/UIHelpBrowserWidget.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
-	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/monitor/performance/UIPerformanceMonitor.cpp \
 	src/medium/UIMediumEnumerator.cpp \

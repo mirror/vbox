@@ -34,7 +34,6 @@ class QLabel;
 class QWidget;
 class QIToolButton;
 class UISearchLineEdit;
-class UIVMLogViewerSearchField;
 class UIVMLogViewerWidget;
 
 /** UIVMLogViewerPanel extension
