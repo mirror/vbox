@@ -408,7 +408,7 @@ void UIVMLogViewerSearchPanel::performSearch(SearchDirection , bool )
     if (m_pSearchEditor)
     {
         m_pSearchEditor->setMatchCount(m_matchedCursorPosition.size());
-        m_pSearchEditor->setScroolToIndex(m_matchedCursorPosition.empty() ? -1 : 0);
+        m_pSearchEditor->setScrollToIndex(m_matchedCursorPosition.empty() ? -1 : 0);
     }
     if (m_pHighlightAllCheckBox->isChecked())
         highlightAll(pDocument, searchString);
@@ -493,7 +493,6 @@ void UIVMLogViewerSearchPanel::selectMatch(int iMatchIndex, const QString &searc
     cursor.setPosition(m_matchedCursorPosition.at(iMatchIndex) + searchString.length(), QTextCursor::KeepAnchor);
     textEdit()->ensureCursorVisible();
     textEdit()->setTextCursor(cursor);
-    return;
 }
 
 void UIVMLogViewerSearchPanel::moveSelection(bool fForward)
@@ -504,7 +503,7 @@ void UIVMLogViewerSearchPanel::moveSelection(bool fForward)
         m_iSelectedMatchIndex = m_iSelectedMatchIndex <= 0 ? m_matchedCursorPosition.size() - 1 : (m_iSelectedMatchIndex - 1);
     selectMatch(m_iSelectedMatchIndex, m_pSearchEditor->text());
     if (m_pSearchEditor)
-        m_pSearchEditor->setScroolToIndex(m_iSelectedMatchIndex);
+        m_pSearchEditor->setScrollToIndex(m_iSelectedMatchIndex);
 }
 
 int UIVMLogViewerSearchPanel::countMatches(QTextDocument *pDocument, const QString &searchString) const

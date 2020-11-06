@@ -261,5 +261,5 @@ void UIMediumSearchWidget::updateSearchLineEdit(int iMatchCount, int iScrollToIn
     if (!m_pSearchTermLineEdit)
         return;
     m_pSearchTermLineEdit->setMatchCount(iMatchCount);
-    m_pSearchTermLineEdit->setScroolToIndex(iScrollToIndex);
+    m_pSearchTermLineEdit->setScrollToIndex(iScrollToIndex);
 }

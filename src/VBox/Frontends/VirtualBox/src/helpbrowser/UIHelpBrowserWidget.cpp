@@ -85,10 +85,14 @@ signals:
 
     void sigDragging(const QPoint &delta);
     void sigSearchTextChanged(const QString &strSearchText);
+    void sigSelectNextMatch();
+    void sigSelectPreviousMatch();
 
 public:
 
     UIFindInPageWidget(QWidget *pParent = 0);
+    void setMatchCountAndCurrentIndex(int iTotalMatchCount, int iCurrentlyScrolledIndex);
+    void clearSearchField();
 
 protected:
 
@@ -99,8 +103,8 @@ private:
     void prepare();
     void retranslateUi();
     UISearchLineEdit  *m_pSearchLineEdit;
-    QIToolButton      *m_pDownButton;
-    QIToolButton      *m_pUpButton;
+    QIToolButton      *m_pNextButton;
+    QIToolButton      *m_pPreviousButton;
     QLabel            *m_pDragMoveLabel;
     QPoint m_previousMousePosition;
 };
@@ -139,18 +143,26 @@ private slots:
     void sltHandleOpenInNewTab();
     void sltHandleFindWidgetDrag(const QPoint &delta);
     void sltHandleFindInPageSearchTextChange(const QString &strSearchText);
+    void sltSelectPreviousMatch();
+    void sltSelectNextMatch();
 
 private:
 
     void retranslateUi();
     bool isRectInside(const QRect &rect, int iMargin) const;
     void moveFindWidgetIn(int iMargin);
+    void findAllMatches(const QString &searchString);
+    void highlightFinds(int iSearchTermLength);
+    void selectMatch(int iMatchIndex, int iSearchStringLength);
     const QHelpEngine* m_pHelpEngine;
-
     UIFindInPageWidget *m_pFindInPageWidget;
     /* Initilized as false and set to true once the find widget is positioned during first resize. */
     bool m_fFindWidgetPositioned;
     const int m_iMarginForFindWidget;
+    /** Document positions of the cursors within the document for all matches. */
+    QVector<int>   m_matchedCursorPosition;
+    int m_iSelectedMatchIndex;
+    int m_iSearchTermLength;
 };
 
 /*********************************************************************************************************************************
@@ -254,17 +266,35 @@ private:
     bool m_fSwitchToNewTab;
 };
 
+
 /*********************************************************************************************************************************
-*   UIFindInPageWidget implementation.                                                                                        *
+*   UIFindInPageWidget implementation.                                                                                           *
 *********************************************************************************************************************************/
 UIFindInPageWidget::UIFindInPageWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pSearchLineEdit(0)
-    , m_pDownButton(0)
-    , m_pUpButton(0)
+    , m_pNextButton(0)
+    , m_pPreviousButton(0)
     , m_previousMousePosition(-1, -1)
 {
     prepare();
+}
+
+void UIFindInPageWidget::setMatchCountAndCurrentIndex(int iTotalMatchCount, int iCurrentlyScrolledIndex)
+{
+    if (!m_pSearchLineEdit)
+        return;
+    m_pSearchLineEdit->setMatchCount(iTotalMatchCount);
+    m_pSearchLineEdit->setScrollToIndex(iCurrentlyScrolledIndex);
+}
+
+void UIFindInPageWidget::clearSearchField()
+{
+    if (!m_pSearchLineEdit)
+        return;
+    m_pSearchLineEdit->blockSignals(true);
+    m_pSearchLineEdit->reset();
+    m_pSearchLineEdit->blockSignals(false);
 }
 
 bool UIFindInPageWidget::eventFilter(QObject *pObject, QEvent *pEvent)
@@ -295,7 +325,7 @@ void UIFindInPageWidget::prepare()
     QHBoxLayout *pLayout = new QHBoxLayout(this);
     m_pSearchLineEdit = new UISearchLineEdit;
     AssertReturnVoid(pLayout && m_pSearchLineEdit);
-
+    setFocusProxy(m_pSearchLineEdit);
     QFontMetrics fontMetric(m_pSearchLineEdit->font());
     setMinimumSize(40 * fontMetric.width("x"),
                    fontMetric.height() +
@@ -315,15 +345,17 @@ void UIFindInPageWidget::prepare()
     pLayout->setSpacing(0);
     pLayout->addWidget(m_pSearchLineEdit);
 
-    m_pUpButton = new QIToolButton;
-    m_pDownButton = new QIToolButton;
+    m_pPreviousButton = new QIToolButton;
+    m_pNextButton = new QIToolButton;
 
-    pLayout->addWidget(m_pUpButton);
-    pLayout->addWidget(m_pDownButton);
+    pLayout->addWidget(m_pPreviousButton);
+    pLayout->addWidget(m_pNextButton);
 
-    m_pUpButton->setIcon(UIIconPool::iconSet(":/arrow_up_10px.png"));
-    m_pDownButton->setIcon(UIIconPool::iconSet(":/arrow_down_10px.png"));
+    m_pPreviousButton->setIcon(UIIconPool::iconSet(":/arrow_up_10px.png"));
+    m_pNextButton->setIcon(UIIconPool::iconSet(":/arrow_down_10px.png"));
 
+    connect(m_pPreviousButton, &QIToolButton::pressed, this, &UIFindInPageWidget::sigSelectPreviousMatch);
+    connect(m_pNextButton, &QIToolButton::pressed, this, &UIFindInPageWidget::sigSelectNextMatch);
 }
 
 void UIFindInPageWidget::retranslateUi()
@@ -580,11 +612,20 @@ UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget
     , m_pFindInPageWidget(new UIFindInPageWidget(this))
     , m_fFindWidgetPositioned(false)
     , m_iMarginForFindWidget(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin))
+    , m_iSelectedMatchIndex(0)
+    , m_iSearchTermLength(0)
 {
+    setUndoRedoEnabled(true);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigDragging,
             this, &UIHelpBrowserViewer::sltHandleFindWidgetDrag);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSearchTextChanged,
             this, &UIHelpBrowserViewer::sltHandleFindInPageSearchTextChange);
+
+    connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSelectPreviousMatch,
+            this, &UIHelpBrowserViewer::sltSelectPreviousMatch);
+    connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSelectNextMatch,
+            this, &UIHelpBrowserViewer::sltSelectNextMatch);
+
     m_pFindInPageWidget->setVisible(false);
     retranslateUi();
 }
@@ -613,11 +654,17 @@ void UIHelpBrowserViewer::setSource(const QUrl &url, const QString &strError)
 
 void UIHelpBrowserViewer::toggleFindInPageWidget(bool fVisible)
 {
-    if (m_pFindInPageWidget)
+    if (!m_pFindInPageWidget)
+        return;
+    m_pFindInPageWidget->setVisible(fVisible);
+
+    if (!fVisible)
     {
-        m_pFindInPageWidget->setVisible(fVisible);
-        update();
+        document()->undo();
+        m_pFindInPageWidget->clearSearchField();
     }
+    else
+        m_pFindInPageWidget->setFocus();
 }
 
 void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
@@ -683,13 +730,68 @@ void UIHelpBrowserViewer::moveFindWidgetIn(int iMargin)
     m_pFindInPageWidget->update();
 }
 
- bool UIHelpBrowserViewer::isRectInside(const QRect &rect, int iMargin) const
+bool UIHelpBrowserViewer::isRectInside(const QRect &rect, int iMargin) const
 {
     if (rect.left() < iMargin || rect.top() < iMargin)
         return false;
     if (rect.right() > width() - iMargin || rect.bottom() > height() - iMargin)
         return false;
     return true;
+}
+
+void UIHelpBrowserViewer::findAllMatches(const QString &searchString)
+{
+    QTextDocument *pDocument = document();
+    AssertReturnVoid(pDocument);
+
+    m_matchedCursorPosition.clear();
+    if (searchString.isEmpty())
+        return;
+    QTextCursor cursor(pDocument);
+    QTextDocument::FindFlags flags;
+    int iMatchCount = 0;
+    while (!cursor.isNull() && !cursor.atEnd())
+    {
+        cursor = pDocument->find(searchString, cursor, flags);
+        if (!cursor.isNull())
+        {
+            m_matchedCursorPosition << cursor.position() - searchString.length();
+            ++iMatchCount;
+        }
+    }
+}
+
+void UIHelpBrowserViewer::highlightFinds(int iSearchTermLength)
+{
+    QTextDocument* pDocument = document();
+    AssertReturnVoid(pDocument);
+    /* Clear previous highlight: */
+    pDocument->undo();
+
+    QTextCursor highlightCursor(pDocument);
+    QTextCharFormat colorFormat(highlightCursor.charFormat());
+    QTextCursor cursor(pDocument);
+    cursor.beginEditBlock();
+    colorFormat.setBackground(Qt::yellow);
+    for (int i = 0; i < m_matchedCursorPosition.size(); ++i)
+    {
+        highlightCursor.setPosition(m_matchedCursorPosition[i]);
+        highlightCursor.setPosition(m_matchedCursorPosition[i] + iSearchTermLength, QTextCursor::KeepAnchor);
+        if (!highlightCursor.isNull())
+            highlightCursor.mergeCharFormat(colorFormat);
+    }
+    cursor.endEditBlock();
+}
+
+void UIHelpBrowserViewer::selectMatch(int iMatchIndex, int iSearchStringLength)
+{
+    QTextCursor cursor = textCursor();
+    /* Move the cursor to the beginning of the matched string: */
+    cursor.setPosition(m_matchedCursorPosition.at(iMatchIndex), QTextCursor::MoveAnchor);
+    /* Move the cursor to the end of the matched string while keeping the anchor at the begining thus selecting the text: */
+    cursor.setPosition(m_matchedCursorPosition.at(iMatchIndex) + iSearchStringLength, QTextCursor::KeepAnchor);
+    ensureCursorVisible();
+    setTextCursor(cursor);
 }
 
 void UIHelpBrowserViewer::sltHandleOpenInNewTab()
@@ -717,8 +819,31 @@ void UIHelpBrowserViewer::sltHandleFindWidgetDrag(const QPoint &delta)
 
 void UIHelpBrowserViewer::sltHandleFindInPageSearchTextChange(const QString &strSearchText)
 {
-    printf("%s\n", qPrintable(strSearchText));
+    m_iSearchTermLength = strSearchText.length();
+    findAllMatches(strSearchText);
+    highlightFinds(m_iSearchTermLength);
+    //scrollToMatch(int iMatchIndex);
+    selectMatch(0, m_iSearchTermLength);
+    if (m_pFindInPageWidget)
+        m_pFindInPageWidget->setMatchCountAndCurrentIndex(m_matchedCursorPosition.size(), 0);
 }
+
+void UIHelpBrowserViewer::sltSelectPreviousMatch()
+{
+    m_iSelectedMatchIndex = m_iSelectedMatchIndex <= 0 ? m_matchedCursorPosition.size() - 1 : (m_iSelectedMatchIndex - 1);
+    selectMatch(m_iSelectedMatchIndex, m_iSearchTermLength);
+    if (m_pFindInPageWidget)
+        m_pFindInPageWidget->setMatchCountAndCurrentIndex(m_matchedCursorPosition.size(), m_iSelectedMatchIndex);
+}
+
+void UIHelpBrowserViewer::sltSelectNextMatch()
+{
+    m_iSelectedMatchIndex = m_iSelectedMatchIndex >= m_matchedCursorPosition.size() - 1 ? 0 : (m_iSelectedMatchIndex + 1);
+    selectMatch(m_iSelectedMatchIndex, m_iSearchTermLength);
+    if (m_pFindInPageWidget)
+        m_pFindInPageWidget->setMatchCountAndCurrentIndex(m_matchedCursorPosition.size(), m_iSelectedMatchIndex);
+}
+
 
 /*********************************************************************************************************************************
 *   UIHelpBrowserTabManager definition.                                                                                          *

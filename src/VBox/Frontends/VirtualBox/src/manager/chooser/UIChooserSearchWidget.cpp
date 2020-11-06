@@ -53,7 +53,7 @@ void UIChooserSearchWidget::setScroolToIndex(int iScrollToIndex)
 {
     if (!m_pLineEdit)
         return;
-    m_pLineEdit->setScroolToIndex(iScrollToIndex);
+    m_pLineEdit->setScrollToIndex(iScrollToIndex);
 }
 
 void UIChooserSearchWidget::appendToSearchString(const QString &strSearchText)

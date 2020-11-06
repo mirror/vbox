@@ -74,7 +74,7 @@ void UISearchLineEdit::setMatchCount(int iMatchCount)
     repaint();
 }
 
-void UISearchLineEdit::setScroolToIndex(int iScrollToIndex)
+void UISearchLineEdit::setScrollToIndex(int iScrollToIndex)
 {
     if (m_iScrollToIndex == iScrollToIndex)
         return;
