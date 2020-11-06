@@ -172,7 +172,7 @@ private:
 *   UIHelpBrowserTab definition.                                                                                        *
 *********************************************************************************************************************************/
 
-class UIHelpBrowserTab : public QWidget
+class UIHelpBrowserTab : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -210,6 +210,7 @@ private:
     void prepareWidgets(const QUrl &initialUrl);
     void prepareToolBarAndAddressBar();
     virtual void retranslateUi() /* override */;
+    void setActionTextAndToolTip(QAction *pAction, const QString &strText, const QString &strToolTip);
 
     QAction     *m_pHomeAction;
     QAction     *m_pForwardAction;
@@ -377,7 +378,7 @@ void UIFindInPageWidget::retranslateUi()
 
 UIHelpBrowserTab::UIHelpBrowserTab(const QHelpEngine  *pHelpEngine, const QUrl &homeUrl,
                                    const QUrl &initialUrl, QWidget *pParent /* = 0 */)
-    :QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_pHomeAction(0)
     , m_pForwardAction(0)
     , m_pBackwardAction(0)
@@ -436,6 +437,7 @@ void UIHelpBrowserTab::prepare(const QUrl &initialUrl)
     AssertReturnVoid(m_pMainLayout);
     prepareToolBarAndAddressBar();
     prepareWidgets(initialUrl);
+    retranslateUi();
 }
 
 void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
@@ -509,29 +511,24 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
     m_pMainLayout->addLayout(pTopLayout);
 }
 
+void UIHelpBrowserTab::setActionTextAndToolTip(QAction *pAction, const QString &strText, const QString &strToolTip)
+{
+    if (!pAction)
+        return;
+    pAction->setText(strText);
+    pAction->setToolTip(strToolTip);
+}
+
 void UIHelpBrowserTab::retranslateUi()
 {
     m_strPageNotFoundText = tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>");
 
-    if (m_pHomeAction)
-    {
-        m_pHomeAction->setText(tr("Home"));
-        m_pHomeAction->setToolTip(tr("Return to start page"));
-    }
-
-    if (m_pBackwardAction)
-    {
-        m_pBackwardAction->setText(tr("Backward"));
-        m_pBackwardAction->setToolTip(tr("Navigate to previous page"));
-    }
-
-    if (m_pForwardAction)
-    {
-        m_pForwardAction->setText(tr("Forward"));
-        m_pForwardAction->setToolTip(tr("Navigate to next page"));
-    }
+    setActionTextAndToolTip(m_pHomeAction, tr("Home"), tr("Return to start page"));
+    setActionTextAndToolTip(m_pBackwardAction, tr("Backward"), tr("Navigate to previous page"));
+    setActionTextAndToolTip(m_pForwardAction, tr("Forward"), tr("Navigate to next page"));
+    setActionTextAndToolTip(m_pAddBookmarkAction, tr("Bookmark"), tr("Add a new bookmark"));
+    setActionTextAndToolTip(m_pFindInPageAction, tr("Find in Page"), tr("Find a string in the current page"));
 }
-
 
 void UIHelpBrowserTab::sltHandleHomeAction()
 {
