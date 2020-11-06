@@ -3203,9 +3203,18 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 #if defined (VBOX_WS_WIN)
     HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
 #elif defined (VBOX_WS_X11)
- #if defined(VBOX_WITH_DOCS_QHELP)
+# if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     showHelpBrowser(strLocation);
-# endif /* #if defined(VBOX_WITH_DOCS_QHELP) */
+# endif /* #if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
+# ifndef VBOX_OSE
+    char szViewerPath[RTPATH_MAX];
+    int rc;
+    rc = RTPathAppPrivateArch(szViewerPath, sizeof(szViewerPath));
+    AssertRC(rc);
+    QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
+# else /* #ifndef VBOX_OSE */
+    vboxGlobal().openURL("file://" + strLocation);
+# endif /* #ifdef VBOX_OSE */
 #elif defined (VBOX_WS_MAC)
     uiCommon().openURL("file://" + strLocation);
 #endif
