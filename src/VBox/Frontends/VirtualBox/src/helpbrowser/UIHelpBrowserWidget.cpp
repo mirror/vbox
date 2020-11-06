@@ -84,6 +84,7 @@ class UIFindInPageWidget : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigDragging(const QPoint &delta);
+    void sigSearchTextChanged(const QString &strSearchText);
 
 public:
 
@@ -122,6 +123,7 @@ public:
     virtual QVariant loadResource(int type, const QUrl &name) /* override */;
     void emitHistoryChangedSignal();
     void setSource(const QUrl &url, const QString &strError);
+    void toggleFindInPageWidget(bool fVisible);
 
 public slots:
 
@@ -136,6 +138,7 @@ private slots:
 
     void sltHandleOpenInNewTab();
     void sltHandleFindWidgetDrag(const QPoint &delta);
+    void sltHandleFindInPageSearchTextChange(const QString &strSearchText);
 
 private:
 
@@ -179,6 +182,7 @@ private slots:
     void sltHandleHomeAction();
     void sltHandleForwardAction();
     void sltHandleBackwardAction();
+    void sltHandleFindInPageAction(bool fToggled);
     void sltHandleHistoryChanged();
     void sltHandleAddressBarIndexChanged(int index);
     void sltHandleAddBookmarkAction();
@@ -286,17 +290,21 @@ bool UIFindInPageWidget::eventFilter(QObject *pObject, QEvent *pEvent)
 void UIFindInPageWidget::prepare()
 {
     setAutoFillBackground(true);
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
 
     QHBoxLayout *pLayout = new QHBoxLayout(this);
     m_pSearchLineEdit = new UISearchLineEdit;
     AssertReturnVoid(pLayout && m_pSearchLineEdit);
 
-    pLayout->setContentsMargins(0, 0, 0, 0);
-    pLayout->setContentsMargins(0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin),
-                                0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
-                                0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin),
-                                0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
+    QFontMetrics fontMetric(m_pSearchLineEdit->font());
+    setMinimumSize(40 * fontMetric.width("x"),
+                   fontMetric.height() +
+                   qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) +
+                   qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin));
+
+    connect(m_pSearchLineEdit, &UISearchLineEdit::textChanged,
+            this, &UIFindInPageWidget::sigSearchTextChanged);
+
     m_pDragMoveLabel = new QLabel;
     AssertReturnVoid(m_pDragMoveLabel);
     m_pDragMoveLabel->installEventFilter(this);
@@ -423,11 +431,17 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
     m_pFindInPageAction =
         new QAction(UIIconPool::iconSet(":/help_browser_search.png"), QString(), this);
 
+    AssertReturnVoid(m_pHomeAction && m_pForwardAction &&
+                     m_pBackwardAction && m_pAddBookmarkAction &&
+                     m_pFindInPageAction);
+    m_pFindInPageAction->setCheckable(true);
+
     connect(m_pHomeAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleHomeAction);
     connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
     connect(m_pForwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleForwardAction);
     connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleBackwardAction);
-    AssertReturnVoid(m_pHomeAction && m_pForwardAction && m_pBackwardAction && m_pAddBookmarkAction);
+    connect(m_pFindInPageAction, &QAction::toggled, this, &UIHelpBrowserTab::sltHandleFindInPageAction);
+
     m_pForwardAction->setEnabled(false);
     m_pBackwardAction->setEnabled(false);
 
@@ -492,6 +506,12 @@ void UIHelpBrowserTab::sltHandleBackwardAction()
 {
     if (m_pContentViewer)
         m_pContentViewer->backward();
+}
+
+void UIHelpBrowserTab::sltHandleFindInPageAction(bool fToggled)
+{
+    if (m_pContentViewer)
+        m_pContentViewer->toggleFindInPageWidget(fToggled);
 }
 
 void UIHelpBrowserTab::sltHandleHistoryChanged()
@@ -563,6 +583,9 @@ UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget
 {
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigDragging,
             this, &UIHelpBrowserViewer::sltHandleFindWidgetDrag);
+    connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSearchTextChanged,
+            this, &UIHelpBrowserViewer::sltHandleFindInPageSearchTextChange);
+    m_pFindInPageWidget->setVisible(false);
     retranslateUi();
 }
 
@@ -586,6 +609,15 @@ void UIHelpBrowserViewer::setSource(const QUrl &url, const QString &strError)
         setText(strError.arg(url.toString()));
     else
         QTextBrowser::setSource(url);
+}
+
+void UIHelpBrowserViewer::toggleFindInPageWidget(bool fVisible)
+{
+    if (m_pFindInPageWidget)
+    {
+        m_pFindInPageWidget->setVisible(fVisible);
+        update();
+    }
 }
 
 void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
@@ -617,7 +649,7 @@ void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
     {
         if (!m_fFindWidgetPositioned)
         {
-            m_pFindInPageWidget->move(width() - m_pFindInPageWidget->width() - 50, 0);
+            m_pFindInPageWidget->move(width() - m_pFindInPageWidget->width() - 10, 10);
             m_fFindWidgetPositioned = true;
         }
         else
@@ -648,6 +680,7 @@ void UIHelpBrowserViewer::moveFindWidgetIn(int iMargin)
     if (rect.bottom() > height() - iMargin)
         rect.translate(0, (height() - iMargin - rect.bottom()));
     m_pFindInPageWidget->setGeometry(rect);
+    m_pFindInPageWidget->update();
 }
 
  bool UIHelpBrowserViewer::isRectInside(const QRect &rect, int iMargin) const
@@ -680,6 +713,11 @@ void UIHelpBrowserViewer::sltHandleFindWidgetDrag(const QPoint &delta)
     if (isRectInside(geo, m_iMarginForFindWidget))
         m_pFindInPageWidget->move(m_pFindInPageWidget->pos() + delta);
     update();
+}
+
+void UIHelpBrowserViewer::sltHandleFindInPageSearchTextChange(const QString &strSearchText)
+{
+    printf("%s\n", qPrintable(strSearchText));
 }
 
 /*********************************************************************************************************************************
