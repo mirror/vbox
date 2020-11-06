@@ -507,10 +507,7 @@ if1of ($(KBUILD_TARGET), linux solaris)
 endif
 # Enable building PAM modules.
 if1of ($(KBUILD_TARGET), linux solaris)
- # This PAM module requires guest properties.
- ifdef VBOX_WITH_GUEST_PROPS
-  VBOX_WITH_PAM = 1
- endif
+ VBOX_WITH_PAM = 1
 endif
 # Enable internal networking.
 VBOX_WITH_INTERNAL_NETWORKING = 1
