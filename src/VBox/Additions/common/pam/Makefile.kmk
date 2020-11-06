@@ -23,8 +23,7 @@ DLLS += pam_vbox
 
 pam_vbox_TEMPLATE = VBOXGUESTR3DLL
 pam_vbox_DEFS     = LOG_TO_BACKDOOR VBOX_WITH_HGCM
-pam_vbox_DEFS    += \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
+pam_vbox_DEFS    += VBOX_WITH_GUEST_PROPS
 pam_vbox_SOURCES  = pam_vbox.cpp
 pam_vbox_LIBS = \
 	pam \
