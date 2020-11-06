@@ -87,6 +87,7 @@ signals:
     void sigSearchTextChanged(const QString &strSearchText);
     void sigSelectNextMatch();
     void sigSelectPreviousMatch();
+    void sigClose();
 
 public:
 
@@ -105,6 +106,7 @@ private:
     UISearchLineEdit  *m_pSearchLineEdit;
     QIToolButton      *m_pNextButton;
     QIToolButton      *m_pPreviousButton;
+    QIToolButton      *m_pCloseButton;
     QLabel            *m_pDragMoveLabel;
     QPoint m_previousMousePosition;
 };
@@ -120,6 +122,7 @@ class UIHelpBrowserViewer : public QIWithRetranslateUI<QTextBrowser>
 signals:
 
     void sigOpenLinkInNewTab(const QUrl &url);
+    void sigCloseFindInPageWidget();
 
 public:
 
@@ -199,6 +202,7 @@ private slots:
     void sltHandleAddressBarIndexChanged(int index);
     void sltHandleAddBookmarkAction();
     void sltAnchorClicked(const QUrl &link);
+    void sltCloseFindInPageWidget();
 
 private:
 
@@ -275,6 +279,7 @@ UIFindInPageWidget::UIFindInPageWidget(QWidget *pParent /* = 0 */)
     , m_pSearchLineEdit(0)
     , m_pNextButton(0)
     , m_pPreviousButton(0)
+    , m_pCloseButton(0)
     , m_previousMousePosition(-1, -1)
 {
     prepare();
@@ -347,15 +352,19 @@ void UIFindInPageWidget::prepare()
 
     m_pPreviousButton = new QIToolButton;
     m_pNextButton = new QIToolButton;
+    m_pCloseButton = new QIToolButton;
 
     pLayout->addWidget(m_pPreviousButton);
     pLayout->addWidget(m_pNextButton);
+    pLayout->addWidget(m_pCloseButton);
 
     m_pPreviousButton->setIcon(UIIconPool::iconSet(":/arrow_up_10px.png"));
     m_pNextButton->setIcon(UIIconPool::iconSet(":/arrow_down_10px.png"));
+    m_pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
 
     connect(m_pPreviousButton, &QIToolButton::pressed, this, &UIFindInPageWidget::sigSelectPreviousMatch);
     connect(m_pNextButton, &QIToolButton::pressed, this, &UIFindInPageWidget::sigSelectNextMatch);
+    connect(m_pCloseButton, &QIToolButton::pressed, this, &UIFindInPageWidget::sigClose);
 }
 
 void UIFindInPageWidget::retranslateUi()
@@ -447,6 +456,9 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
         this, &UIHelpBrowserTab::sltAnchorClicked);
     connect(m_pContentViewer, &UIHelpBrowserViewer::sigOpenLinkInNewTab,
         this, &UIHelpBrowserTab::sigOpenLinkInNewTab);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::sigCloseFindInPageWidget,
+            this, &UIHelpBrowserTab::sltCloseFindInPageWidget);
+
     m_pContentViewer->setSource(initialUrl, m_strPageNotFoundText);
 }
 
@@ -595,12 +607,16 @@ void UIHelpBrowserTab::sltHandleAddBookmarkAction()
 {
 }
 
-
 void UIHelpBrowserTab::sltAnchorClicked(const QUrl &link)
 {
     Q_UNUSED(link);
 }
 
+void UIHelpBrowserTab::sltCloseFindInPageWidget()
+{
+    if (m_pFindInPageAction)
+        m_pFindInPageAction->setChecked(false);
+}
 
 /*********************************************************************************************************************************
 *   UIHelpBrowserViewer implementation.                                                                                          *
@@ -625,6 +641,8 @@ UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget
             this, &UIHelpBrowserViewer::sltSelectPreviousMatch);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSelectNextMatch,
             this, &UIHelpBrowserViewer::sltSelectNextMatch);
+    connect(m_pFindInPageWidget, &UIFindInPageWidget::sigClose,
+            this, &UIHelpBrowserViewer::sigCloseFindInPageWidget);
 
     m_pFindInPageWidget->setVisible(false);
     retranslateUi();
@@ -696,7 +714,7 @@ void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
     {
         if (!m_fFindWidgetPositioned)
         {
-            m_pFindInPageWidget->move(width() - m_pFindInPageWidget->width() - 10, 10);
+            m_pFindInPageWidget->move(m_iMarginForFindWidget, m_iMarginForFindWidget);
             m_fFindWidgetPositioned = true;
         }
         else
@@ -843,7 +861,6 @@ void UIHelpBrowserViewer::sltSelectNextMatch()
     if (m_pFindInPageWidget)
         m_pFindInPageWidget->setMatchCountAndCurrentIndex(m_matchedCursorPosition.size(), m_iSelectedMatchIndex);
 }
-
 
 /*********************************************************************************************************************************
 *   UIHelpBrowserTabManager definition.                                                                                          *
