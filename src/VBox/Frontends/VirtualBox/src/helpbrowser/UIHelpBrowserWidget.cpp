@@ -615,6 +615,7 @@ void UIHelpBrowserTab::sltCloseFindInPageWidget()
         m_pFindInPageAction->setChecked(false);
 }
 
+
 /*********************************************************************************************************************************
 *   UIHelpBrowserViewer implementation.                                                                                          *
 *********************************************************************************************************************************/
@@ -858,6 +859,7 @@ void UIHelpBrowserViewer::sltSelectNextMatch()
     if (m_pFindInPageWidget)
         m_pFindInPageWidget->setMatchCountAndCurrentIndex(m_matchedCursorPosition.size(), m_iSelectedMatchIndex);
 }
+
 
 /*********************************************************************************************************************************
 *   UIHelpBrowserTabManager definition.                                                                                          *
