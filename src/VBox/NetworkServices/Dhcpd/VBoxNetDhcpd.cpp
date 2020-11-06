@@ -138,7 +138,6 @@ private:
     int ifGetBuf();
     int ifActivate();
 
-    int ifWait(uint32_t cMillies = RT_INDEFINITE_WAIT);
     int ifProcessInput();
     int ifFlush();
 
@@ -377,16 +376,33 @@ int VBoxNetDhcpd::ifActivate()
 }
 
 
+/**
+ * Process incoming packages forever.
+ *
+ * @note This function normally never returns, given that the process is
+ *       typically just killed when shutting down a network.
+ */
 void VBoxNetDhcpd::ifPump()
 {
     for (;;)
     {
-        int rc = ifWait();
-        if (   rc != VERR_INTERRUPTED
-#if 0 /* we wait indefinitely */
-            && rc != VERR_TIMEOUT
-#endif
-            )
+        /*
+         * Wait for input:
+         */
+        INTNETIFWAITREQ WaitReq;
+        WaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        WaitReq.Hdr.cbReq = sizeof(WaitReq);
+        WaitReq.pSession = m_pSession;
+        WaitReq.hIf = m_hIf;
+        WaitReq.cMillies = RT_INDEFINITE_WAIT;
+        int rc = CALL_VMMR0(VMMR0_DO_INTNET_IF_WAIT, WaitReq);
+
+        /*
+         * Process any pending input before we wait again:
+         */
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_INTERRUPTED
+            || rc == VERR_TIMEOUT /* paranoia */)
             ifProcessInput();
         else
         {
@@ -397,35 +413,14 @@ void VBoxNetDhcpd::ifPump()
 }
 
 
-int VBoxNetDhcpd::ifWait(uint32_t cMillies)
-{
-    AssertReturn(m_pSession != NIL_RTR0PTR, VERR_GENERAL_FAILURE);
-    AssertReturn(m_hIf != INTNET_HANDLE_INVALID, VERR_GENERAL_FAILURE);
-
-    INTNETIFWAITREQ WaitReq;
-    int rc;
-
-    WaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    WaitReq.Hdr.cbReq = sizeof(WaitReq);
-    WaitReq.pSession = m_pSession;
-    WaitReq.hIf = m_hIf;
-
-    WaitReq.cMillies = cMillies;
-
-    rc = CALL_VMMR0(VMMR0_DO_INTNET_IF_WAIT, WaitReq);
-    return rc;
-}
-
-
 int VBoxNetDhcpd::ifProcessInput()
 {
     AssertReturn(m_pSession != NIL_RTR0PTR, VERR_GENERAL_FAILURE);
     AssertReturn(m_hIf != INTNET_HANDLE_INVALID, VERR_GENERAL_FAILURE);
     AssertReturn(m_pIfBuf != NULL, VERR_GENERAL_FAILURE);
 
-    for (PCINTNETHDR pHdr;
-         (pHdr = IntNetRingGetNextFrameToRead(&m_pIfBuf->Recv)) != NULL;
-         IntNetRingSkipFrame(&m_pIfBuf->Recv))
+    PCINTNETHDR pHdr = IntNetRingGetNextFrameToRead(&m_pIfBuf->Recv);
+    while (pHdr)
     {
         const uint8_t u8Type = pHdr->u8Type;
         void *pvSegFrame;
@@ -440,25 +435,28 @@ int VBoxNetDhcpd::ifProcessInput()
         }
         else if (u8Type == INTNETHDR_TYPE_GSO)
         {
-            PCPDMNETWORKGSO pGso;
             size_t cbGso = pHdr->cbFrame;
             size_t cbFrame = cbGso - sizeof(PDMNETWORKGSO);
 
-            pGso = IntNetHdrGetGsoContext(pHdr, m_pIfBuf);
-            if (!PDMNetGsoIsValid(pGso, cbGso, cbFrame))
-                continue;
-
-            const uint32_t cSegs = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
-            for (uint32_t i = 0; i < cSegs; ++i)
+            PCPDMNETWORKGSO pGso = IntNetHdrGetGsoContext(pHdr, m_pIfBuf);
+            if (PDMNetGsoIsValid(pGso, cbGso, cbFrame))
             {
-                uint8_t abHdrScratch[256];
-                pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame,
-                                                     abHdrScratch,
-                                                     i, cSegs,
-                                                     &cbSegFrame);
-                ifInput(pvSegFrame, (uint32_t)cbFrame);
+                const uint32_t cSegs = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
+                for (uint32_t i = 0; i < cSegs; ++i)
+                {
+                    uint8_t abHdrScratch[256];
+                    pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame,
+                                                         abHdrScratch,
+                                                         i, cSegs,
+                                                         &cbSegFrame);
+                    ifInput(pvSegFrame, (uint32_t)cbFrame);
+                }
             }
         }
+
+        /* Advance: */
+        IntNetRingSkipFrame(&m_pIfBuf->Recv);
+        pHdr = IntNetRingGetNextFrameToRead(&m_pIfBuf->Recv);
     }
 
     return VINF_SUCCESS;
@@ -490,7 +488,8 @@ int VBoxNetDhcpd::ifInput(void *pvFrame, uint32_t cbFrame)
      */
     struct pbuf *q = p;
     uint8_t *pbChunk = (uint8_t *)pvFrame;
-    do {
+    do
+    {
         uint8_t *payload = (uint8_t *)q->payload;
         size_t len = q->len;
 
@@ -516,16 +515,13 @@ int VBoxNetDhcpd::ifInput(void *pvFrame, uint32_t cbFrame)
  */
 err_t VBoxNetDhcpd::netifLinkOutput(pbuf *pPBuf)
 {
-    PINTNETHDR pHdr;
-    void *pvFrame;
-    u16_t cbFrame;
-    int rc;
-
     if (pPBuf->tot_len < sizeof(struct eth_hdr)) /* includes ETH_PAD_SIZE */
         return ERR_ARG;
 
-    cbFrame = pPBuf->tot_len - ETH_PAD_SIZE;
-    rc = IntNetRingAllocateFrame(&m_pIfBuf->Send, cbFrame, &pHdr, &pvFrame);
+    PINTNETHDR pHdr;
+    void *pvFrame;
+    u16_t cbFrame = pPBuf->tot_len - ETH_PAD_SIZE;
+    int rc = IntNetRingAllocateFrame(&m_pIfBuf->Send, cbFrame, &pHdr, &pvFrame);
     if (RT_FAILURE(rc))
         return ERR_MEM;
 
@@ -540,7 +536,6 @@ err_t VBoxNetDhcpd::netifLinkOutput(pbuf *pPBuf)
 int VBoxNetDhcpd::ifFlush()
 {
     INTNETIFSENDREQ SendReq;
-    int rc;
 
     SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     SendReq.Hdr.cbReq = sizeof(SendReq);
@@ -548,8 +543,7 @@ int VBoxNetDhcpd::ifFlush()
 
     SendReq.hIf = m_hIf;
 
-    rc = CALL_VMMR0(VMMR0_DO_INTNET_IF_SEND, SendReq);
-    return rc;
+    return CALL_VMMR0(VMMR0_DO_INTNET_IF_SEND, SendReq);
 }
 
 
