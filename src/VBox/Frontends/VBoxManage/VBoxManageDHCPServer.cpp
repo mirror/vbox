@@ -1026,6 +1026,74 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleRemove(PDHCPDCMDCTX pCtx, int argc, c
 
 
 /**
+ * Handles the 'start' subcommand.
+ */
+static DECLCALLBACK(RTEXITCODE) dhcpdHandleStart(PDHCPDCMDCTX pCtx, int argc, char **argv)
+{
+    /*
+     * Parse the command line.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        DHCPD_CMD_COMMON_OPTION_DEFS(),
+    };
+
+    RTGETOPTSTATE   GetState;
+    int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    RTGETOPTUNION   ValueUnion;
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (vrc)
+        {
+            DHCPD_CMD_COMMON_OPTION_CASES(pCtx, vrc, &ValueUnion);
+            default:
+                return errorGetOpt(vrc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Locate the server.
+     */
+    ComPtr<IDHCPServer> ptrDHCPServer = dhcpdFindServer(pCtx);
+    if (ptrDHCPServer.isNotNull())
+    {
+        /*
+         * We have to figure out the trunk name and type here, which is silly to
+         * leave to the API client as it's a pain to get right.  But here we go...
+         */
+        static char const s_szHostOnlyPrefix[] = "HostInterfaceNetworking-";
+        bool fHostOnly = true;
+        Bstr strTrunkName;
+        if (pCtx->pszInterface)
+            strTrunkName = pCtx->pszInterface;
+        else if (RTStrStartsWith(pCtx->pszNetwork, s_szHostOnlyPrefix))
+            strTrunkName = &pCtx->pszNetwork[sizeof(s_szHostOnlyPrefix) - 1];
+        else
+            fHostOnly = false;
+
+        Bstr strTrunkType;
+        if (fHostOnly)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
+            strTrunkType = "netadp";
+#else /* lazy implementations: */
+            strTrunkType = "netflt";
+#endif
+        else
+            strTrunkType = "whatever";
+
+        HRESULT hrc = ptrDHCPServer->Start(strTrunkName.raw(), strTrunkType.raw());
+        if (SUCCEEDED(hrc))
+            return RTEXITCODE_SUCCESS;
+        errorArgument("Failed to start the server");
+        GlueHandleComErrorNoCtx(ptrDHCPServer, hrc);
+    }
+    return RTEXITCODE_FAILURE;
+}
+
+
+/**
  * Handles the 'restart' subcommand.
  */
 static DECLCALLBACK(RTEXITCODE) dhcpdHandleRestart(PDHCPDCMDCTX pCtx, int argc, char **argv)
@@ -1059,11 +1127,55 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleRestart(PDHCPDCMDCTX pCtx, int argc, 
     ComPtr<IDHCPServer> ptrDHCPServer = dhcpdFindServer(pCtx);
     if (ptrDHCPServer.isNotNull())
     {
-        HRESULT hrc;
-        CHECK_ERROR2(hrc, ptrDHCPServer, Restart());
+        HRESULT hrc = ptrDHCPServer->Restart();
         if (SUCCEEDED(hrc))
             return RTEXITCODE_SUCCESS;
-        errorArgument("Failed to restart server");
+        errorArgument("Failed to restart the server");
+        GlueHandleComErrorNoCtx(ptrDHCPServer, hrc);
+    }
+    return RTEXITCODE_FAILURE;
+}
+
+
+/**
+ * Handles the 'stop' subcommand.
+ */
+static DECLCALLBACK(RTEXITCODE) dhcpdHandleStop(PDHCPDCMDCTX pCtx, int argc, char **argv)
+{
+    /*
+     * Parse the command line.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        DHCPD_CMD_COMMON_OPTION_DEFS(),
+    };
+
+    RTGETOPTSTATE   GetState;
+    int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    RTGETOPTUNION   ValueUnion;
+    while ((vrc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (vrc)
+        {
+            DHCPD_CMD_COMMON_OPTION_CASES(pCtx, vrc, &ValueUnion);
+            default:
+                return errorGetOpt(vrc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Locate the server and perform the requested operation.
+     */
+    ComPtr<IDHCPServer> ptrDHCPServer = dhcpdFindServer(pCtx);
+    if (ptrDHCPServer.isNotNull())
+    {
+        HRESULT hrc = ptrDHCPServer->Stop();
+        if (SUCCEEDED(hrc))
+            return RTEXITCODE_SUCCESS;
+        errorArgument("Failed to stop the server");
+        GlueHandleComErrorNoCtx(ptrDHCPServer, hrc);
     }
     return RTEXITCODE_FAILURE;
 }
@@ -1168,7 +1280,9 @@ RTEXITCODE handleDHCPServer(HandlerArg *pArg)
         { "add",            dhcpdHandleAddAndModify,    HELP_SCOPE_DHCPSERVER_ADD },
         { "modify",         dhcpdHandleAddAndModify,    HELP_SCOPE_DHCPSERVER_MODIFY },
         { "remove",         dhcpdHandleRemove,          HELP_SCOPE_DHCPSERVER_REMOVE },
+        { "start",          dhcpdHandleStart,           HELP_SCOPE_DHCPSERVER_START },
         { "restart",        dhcpdHandleRestart,         HELP_SCOPE_DHCPSERVER_RESTART },
+        { "stop",           dhcpdHandleStop,            HELP_SCOPE_DHCPSERVER_STOP },
         { "findlease",      dhcpdHandleFindLease,       HELP_SCOPE_DHCPSERVER_FINDLEASE },
     };
 

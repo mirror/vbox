@@ -209,8 +209,22 @@
         <arg choice="plain">--interface=<replaceable>ifname</replaceable></arg>
       </group>
     </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-dhcpserver-start">
+      <command>VBoxManage dhcpserver start</command>
+      <group choice="req">
+        <arg choice="plain">--network=<replaceable>netname</replaceable></arg>
+        <arg choice="plain">--interface=<replaceable>ifname</replaceable></arg>
+      </group>
+    </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-dhcpserver-restart">
       <command>VBoxManage dhcpserver restart</command>
+      <group choice="req">
+        <arg choice="plain">--network=<replaceable>netname</replaceable></arg>
+        <arg choice="plain">--interface=<replaceable>ifname</replaceable></arg>
+      </group>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-dhcpserver-stop">
+      <command>VBoxManage dhcpserver stop</command>
       <group choice="req">
         <arg choice="plain">--network=<replaceable>netname</replaceable></arg>
         <arg choice="plain">--interface=<replaceable>ifname</replaceable></arg>
@@ -528,11 +542,27 @@
       </para>
     </refsect2>
 
+    <refsect2 id="vboxmanage-dhcpserver-start">
+      <title>dhcpserver start</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Start the specified DHCP server.
+      </para>
+    </refsect2>
+
     <refsect2 id="vboxmanage-dhcpserver-restart">
       <title>dhcpserver restart</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Restarts the specified DHCP server.  The DHCP server must be running.
+      </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-dhcpserver-stop">
+      <title>dhcpserver stop</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Stops the specified DHCP server.
       </para>
     </refsect2>
 
