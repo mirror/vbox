@@ -2036,6 +2036,7 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
     *puResult = uReg;
     return VINF_SUCCESS;
 #else
+    NOREF(pPciDev);
     PCIOMMUREGACC pReg = iommuAmdGetRegAccessForOffset(off);
     if (pReg)
     { /* likely */ }
