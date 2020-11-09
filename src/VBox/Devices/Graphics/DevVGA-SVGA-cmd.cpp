@@ -276,6 +276,7 @@ const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
 
 
 #if !defined(VMSVGA3D_DX)
+# ifdef VBOX_WITH_VMSVGA3D
 /*
  * Stubs for old backends.
  */
@@ -302,6 +303,7 @@ int vmsvga3dSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage
     RT_NOREF(pThisCC, pImage, pMap, fWritten);
     return VERR_NOT_IMPLEMENTED;
 }
+# endif
 #endif
 
 
@@ -325,9 +327,13 @@ static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth,
      */
 
     /* Verify and normalize the ptDepth value. */
-    if (RT_LIKELY(ptDepth >= SVGA3D_MOBFMT_PTDEPTH64_0 && ptDepth <= SVGA3D_MOBFMT_PTDEPTH64_2))
+    if (RT_LIKELY(   ptDepth == SVGA3D_MOBFMT_PTDEPTH64_0
+                  || ptDepth == SVGA3D_MOBFMT_PTDEPTH64_1
+                  || ptDepth == SVGA3D_MOBFMT_PTDEPTH64_2))
         ASSERT_GUEST_RETURN(fGCPhys64, VERR_INVALID_PARAMETER);
-    else if (ptDepth >= SVGA3D_MOBFMT_PTDEPTH_0 && ptDepth <= SVGA3D_MOBFMT_PTDEPTH_2)
+    else if (   ptDepth == SVGA3D_MOBFMT_PTDEPTH_0
+             || ptDepth == SVGA3D_MOBFMT_PTDEPTH_1
+             || ptDepth == SVGA3D_MOBFMT_PTDEPTH_2)
     {
         ASSERT_GUEST_RETURN(!fGCPhys64, VERR_INVALID_PARAMETER);
         /* Shift ptDepth to the SVGA3D_MOBFMT_PTDEPTH64_x range. */
