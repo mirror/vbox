@@ -2001,7 +2001,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDefineGBMob *pCmd = (SVGA3dCmdDefineGBMob *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdDefineGBMob(pThisCC, pCmd);
         break;
     }
 
