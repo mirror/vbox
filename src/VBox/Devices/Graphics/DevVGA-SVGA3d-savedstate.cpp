@@ -148,7 +148,7 @@ static int vmsvga3dLoadReinitContext(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pCont
 
 static int vmsvga3dLoadVMSVGA3DSURFACEPreMipLevels(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, VMSVGA3DSURFACE *pSurface)
 {
-    typedef struct VMSVGA3DSURFACEPreMipLevels
+    struct VMSVGA3DSURFACEPreMipLevels
     {
         uint32_t            id;
 #ifdef VMSVGA3D_OPENGL
@@ -168,35 +168,35 @@ static int vmsvga3dLoadVMSVGA3DSURFACEPreMipLevels(PPDMDEVINS pDevIns, PSSMHANDL
         uint32_t            multiSampleCount;
         SVGA3dTextureFilter autogenFilter;
         uint32_t            cbBlock;
-    } VMSVGA3DSURFACEPreMipLevels;
+    };
 
     static SSMFIELD const s_aVMSVGA3DSURFACEFieldsPreMipLevels[] =
     {
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, id),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, id),
 #ifdef VMSVGA3D_OPENGL
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, idWeakContextAssociation),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, idWeakContextAssociation),
 #else
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, idAssociatedContext),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, idAssociatedContext),
 #endif
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, surfaceFlags),
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, format),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, surfaceFlags),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, format),
 #ifdef VMSVGA3D_OPENGL
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, internalFormatGL),
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, formatGL),
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, typeGL),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, internalFormatGL),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, formatGL),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, typeGL),
 #endif
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, faces),
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, cFaces),
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, multiSampleCount),
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, autogenFilter),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, faces),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, cFaces),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, multiSampleCount),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, autogenFilter),
 #ifdef VMSVGA3D_DIRECT3D
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, format), /* Yes, the 'format' field is duplicated. */
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, format), /* Yes, the 'format' field is duplicated. */
 #endif
-        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, cbBlock),
+        SSMFIELD_ENTRY(struct VMSVGA3DSURFACEPreMipLevels, cbBlock),
         SSMFIELD_ENTRY_TERM()
     };
 
-    VMSVGA3DSURFACEPreMipLevels surfacePreMipLevels;
+    struct VMSVGA3DSURFACEPreMipLevels surfacePreMipLevels;
     int rc = pDevIns->pHlpR3->pfnSSMGetStructEx(pSSM, &surfacePreMipLevels, sizeof(surfacePreMipLevels), 0, s_aVMSVGA3DSURFACEFieldsPreMipLevels, NULL);
     if (RT_SUCCESS(rc))
     {
