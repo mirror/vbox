@@ -30,9 +30,11 @@
  #include <QtHelp/QHelpSearchResultWidget>
 #endif
 #include <QLabel>
+#include <QListWidget>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPixmap>
+#include <QPushButton>
 #include <QScrollBar>
 #include <QSpacerItem>
 #include <QStyle>
@@ -72,6 +74,63 @@ enum HelpBrowserTabs
 };
 Q_DECLARE_METATYPE(HelpBrowserTabs);
 
+const int iBookmarkUrlDataType = 6;
+
+
+/*********************************************************************************************************************************
+*   UIBookmarksListContainer definition.                                                                                         *
+*********************************************************************************************************************************/
+class UIBookmarksListWidget : public QListWidget
+{
+
+    Q_OBJECT;
+
+signals:
+
+    void sigBookmarkDoubleClick(const QUrl &url);
+
+public:
+
+    UIBookmarksListWidget(QWidget *pParent = 0);
+
+protected:
+
+    void mouseDoubleClickEvent(QMouseEvent *event) /* override */;
+
+};
+
+
+/*********************************************************************************************************************************
+*   UIBookmarksListContainer definition.                                                                                         *
+*********************************************************************************************************************************/
+class UIBookmarksListContainer : public QIWithRetranslateUI<QWidget>
+{
+
+    Q_OBJECT;
+
+signals:
+
+    void sigBookmarkDoubleClick(const QUrl &url);
+    void sigListWidgetContextMenuRequest(const QPoint &listWidgetLocalPos);
+
+public:
+
+    UIBookmarksListContainer(QWidget *pParent = 0);
+    void addBookmark(const QUrl &url, const QString &strTitle);
+    QUrl currentBookmarkUrl();
+
+protected:
+
+    void retranslateUi() /* override */;
+
+private:
+
+    void prepare();
+    int itemIndex(const QUrl &url);
+
+    QVBoxLayout  *m_pMainLayout;
+    UIBookmarksListWidget  *m_pListWidget;
+};
 
 /*********************************************************************************************************************************
 *   UIFindInPageWidget definition.                                                                                        *
@@ -181,6 +240,7 @@ signals:
     void sigSourceChanged(const QUrl &url);
     void sigTitleUpdate(const QString &strTitle);
     void sigOpenLinkInNewTab(const QUrl &url);
+    void sigAddBookmark(const QUrl &url, const QString &strTitle);
 
 public:
 
@@ -239,6 +299,7 @@ class UIHelpBrowserTabManager : public QITabWidget
 signals:
 
     void sigSourceChanged(const QUrl &url);
+    void sigAddBookmark(const QUrl &url, const QString &strTitle);
 
 public:
 
@@ -270,6 +331,85 @@ private:
     QStringList m_savedUrlList;
     bool m_fSwitchToNewTab;
 };
+
+
+/*********************************************************************************************************************************
+*   UIBookmarksListContainer implementation.                                                                                     *
+*********************************************************************************************************************************/
+UIBookmarksListWidget::UIBookmarksListWidget(QWidget *pParent /* = 0 */)
+    :QListWidget(pParent)
+{
+}
+
+void UIBookmarksListWidget::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    QListWidgetItem *pItem = currentItem();
+    if (!pItem)
+        return;
+    emit sigBookmarkDoubleClick(pItem->data(iBookmarkUrlDataType).toUrl());
+    QListWidget::mouseDoubleClickEvent(event);
+}
+
+
+/*********************************************************************************************************************************
+*   UIBookmarksListContainer implementation.                                                                                     *
+*********************************************************************************************************************************/
+
+UIBookmarksListContainer::UIBookmarksListContainer(QWidget *pParent /* = 0 */)
+    :QIWithRetranslateUI<QWidget>(pParent)
+    , m_pMainLayout(0)
+    , m_pListWidget(0)
+{
+    prepare();
+}
+
+void UIBookmarksListContainer::addBookmark(const QUrl &url, const QString &strTitle)
+{
+    if (!m_pListWidget)
+        return;
+    if (itemIndex(url) != -1)
+        return;
+    QListWidgetItem *pNewItem = new QListWidgetItem(strTitle, m_pListWidget);
+    pNewItem->setData(iBookmarkUrlDataType, url);
+    pNewItem->setToolTip(url.toString());
+}
+
+QUrl UIBookmarksListContainer::currentBookmarkUrl()
+{
+    if (!m_pListWidget || !m_pListWidget->currentItem())
+        return QUrl();
+    return m_pListWidget->currentItem()->data(iBookmarkUrlDataType).toUrl();
+}
+
+void UIBookmarksListContainer::retranslateUi()
+{
+}
+
+void UIBookmarksListContainer::prepare()
+{
+    m_pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(m_pMainLayout);
+    m_pListWidget = new UIBookmarksListWidget;
+    AssertReturnVoid(m_pListWidget);
+    m_pMainLayout->addWidget(m_pListWidget);
+    m_pListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_pListWidget, &UIBookmarksListWidget::sigBookmarkDoubleClick,
+            this, &UIBookmarksListContainer::sigBookmarkDoubleClick);
+    connect(m_pListWidget, &UIBookmarksListWidget::customContextMenuRequested,
+            this, &UIBookmarksListContainer::sigListWidgetContextMenuRequest);
+}
+
+int UIBookmarksListContainer::itemIndex(const QUrl &url)
+{
+    if (!m_pListWidget || !url.isValid())
+        return -1;
+    for (int i = 0; i < m_pListWidget->count(); ++i)
+    {
+        if (m_pListWidget->item(i)->data(iBookmarkUrlDataType).toUrl() == url)
+            return i;
+    }
+    return -1;
+}
 
 
 /*********************************************************************************************************************************
@@ -494,7 +634,7 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
     m_pFindInPageAction->setCheckable(true);
 
     connect(m_pHomeAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleHomeAction);
-    connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
+    connect(m_pAddBookmarkAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
     connect(m_pForwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleForwardAction);
     connect(m_pBackwardAction, &QAction::triggered, this, &UIHelpBrowserTab::sltHandleBackwardAction);
     connect(m_pFindInPageAction, &QAction::toggled, this, &UIHelpBrowserTab::sltHandleFindInPageAction);
@@ -613,6 +753,7 @@ void UIHelpBrowserTab::sltHandleAddressBarIndexChanged(int iIndex)
 
 void UIHelpBrowserTab::sltHandleAddBookmarkAction()
 {
+    emit sigAddBookmark(source(), documentTitle());
 }
 
 void UIHelpBrowserTab::sltAnchorClicked(const QUrl &link)
@@ -899,6 +1040,8 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl)
            this, &UIHelpBrowserTabManager::sltHandletabTitleChange);
    connect(pTabWidget, &UIHelpBrowserTab::sigOpenLinkInNewTab,
            this, &UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab);
+   connect(pTabWidget, &UIHelpBrowserTab::sigAddBookmark,
+           this, &UIHelpBrowserTabManager::sigAddBookmark);
    if (m_fSwitchToNewTab)
        setCurrentIndex(index);
 }
@@ -1106,7 +1249,7 @@ void UIHelpBrowserWidget::prepareWidgets()
 
     m_pMainLayout->addWidget(m_pSplitter);
     m_pHelpEngine = new QHelpEngine(m_strHelpFilePath, this);
-    m_pBookmarksWidget = new QWidget(this);
+    m_pBookmarksWidget = new UIBookmarksListContainer(this);
     m_pTabWidget = new QITabWidget;
     m_pTabManager = new UIHelpBrowserTabManager(m_pHelpEngine, findIndexHtml(), loadSavedUrlList());
 
@@ -1124,8 +1267,8 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pContentWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
     m_pTabWidget->insertTab(HelpBrowserTabs_TOC, m_pContentWidget, QString());
-    m_pTabWidget->insertTab(HelpBrowserTabs_Index, m_pIndexWidget, QString());
     m_pTabWidget->insertTab(HelpBrowserTabs_Bookmarks, m_pBookmarksWidget, QString());
+    m_pTabWidget->insertTab(HelpBrowserTabs_Index, m_pIndexWidget, QString());
 
     m_pSplitter->addWidget(m_pTabManager);
 
@@ -1135,6 +1278,8 @@ void UIHelpBrowserWidget::prepareWidgets()
 
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigSourceChanged,
             this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
+    connect(m_pTabManager, &UIHelpBrowserTabManager::sigAddBookmark,
+           this, &UIHelpBrowserWidget::sltAddNewBookmark);
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
     connect(m_pContentWidget, &QHelpContentWidget::clicked,
@@ -1142,6 +1287,10 @@ void UIHelpBrowserWidget::prepareWidgets()
     connect(m_pContentModel, &QHelpContentModel::contentsCreated,
             this, &UIHelpBrowserWidget::sltHandleContentsCreated);
     connect(m_pContentWidget, &QHelpContentWidget::customContextMenuRequested,
+            this, &UIHelpBrowserWidget::sltShowLinksContextMenu);
+    connect(m_pBookmarksWidget, &UIBookmarksListContainer::sigBookmarkDoubleClick,
+            this, &UIHelpBrowserWidget::sltOpenLinkWithUrl);
+    connect(m_pBookmarksWidget, &UIBookmarksListContainer::sigListWidgetContextMenuRequest,
             this, &UIHelpBrowserWidget::sltShowLinksContextMenu);
 
     if (QFile(m_strHelpFilePath).exists() && m_pHelpEngine)
@@ -1458,11 +1607,21 @@ void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
         QTextBrowser* browser = m_pSearchResultWidget->findChild<QTextBrowser*>();
         if (!browser)
             return;
-        if (!browser->rect().contains(pos, true))
-            return;
+        // if (!browser->rect().contains(pos, true))
+        //     return;
         QPoint browserPos = browser->mapFromGlobal(m_pSearchResultWidget->mapToGlobal(pos));
         url = browser->anchorAt(browserPos);
     }
+    else if (pSender == m_pBookmarksWidget)
+    {
+        /* Assuming that only the UIBookmarksListWidget under the m_pBookmarksWidget sends the context menu request: */
+        UIBookmarksListWidget *pListWidget = m_pBookmarksWidget->findChild<UIBookmarksListWidget*>();
+        if (!pListWidget)
+            return;
+        url = m_pBookmarksWidget->currentBookmarkUrl();
+    }
+    else
+        return;
 
     if (!url.isValid())
         return;
@@ -1488,6 +1647,12 @@ void UIHelpBrowserWidget::sltOpenLinkInNewTab()
 void UIHelpBrowserWidget::sltOpenLink()
 {
     openLinkSlotHandler(sender(), false);
+}
+
+void UIHelpBrowserWidget::sltAddNewBookmark(const QUrl &url, const QString &strTitle)
+{
+    if (m_pBookmarksWidget)
+        m_pBookmarksWidget->addBookmark(url, strTitle);
 }
 
 void UIHelpBrowserWidget::openLinkSlotHandler(QObject *pSenderObject, bool fOpenInNewTab)
