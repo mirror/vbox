@@ -146,6 +146,82 @@ static int vmsvga3dLoadReinitContext(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pCont
     return VINF_SUCCESS;
 }
 
+static int vmsvga3dLoadVMSVGA3DSURFACEPreMipLevels(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, VMSVGA3DSURFACE *pSurface)
+{
+    typedef struct VMSVGA3DSURFACEPreMipLevels
+    {
+        uint32_t            id;
+#ifdef VMSVGA3D_OPENGL
+        uint32_t            idWeakContextAssociation;
+#else
+        uint32_t            idAssociatedContext;
+#endif
+        uint32_t            surfaceFlags;
+        SVGA3dSurfaceFormat format;
+#ifdef VMSVGA3D_OPENGL
+        GLint               internalFormatGL;
+        GLint               formatGL;
+        GLint               typeGL;
+#endif
+        SVGA3dSurfaceFace   faces[SVGA3D_MAX_SURFACE_FACES];
+        uint32_t            cFaces;
+        uint32_t            multiSampleCount;
+        SVGA3dTextureFilter autogenFilter;
+        uint32_t            cbBlock;
+    } VMSVGA3DSURFACEPreMipLevels;
+
+    static SSMFIELD const s_aVMSVGA3DSURFACEFieldsPreMipLevels[] =
+    {
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, id),
+#ifdef VMSVGA3D_OPENGL
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, idWeakContextAssociation),
+#else
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, idAssociatedContext),
+#endif
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, surfaceFlags),
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, format),
+#ifdef VMSVGA3D_OPENGL
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, internalFormatGL),
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, formatGL),
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, typeGL),
+#endif
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, faces),
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, cFaces),
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, multiSampleCount),
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, autogenFilter),
+#ifdef VMSVGA3D_DIRECT3D
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, format), /* Yes, the 'format' field is duplicated. */
+#endif
+        SSMFIELD_ENTRY(VMSVGA3DSURFACEPreMipLevels, cbBlock),
+        SSMFIELD_ENTRY_TERM()
+    };
+
+    VMSVGA3DSURFACEPreMipLevels surfacePreMipLevels;
+    int rc = pDevIns->pHlpR3->pfnSSMGetStructEx(pSSM, &surfacePreMipLevels, sizeof(surfacePreMipLevels), 0, s_aVMSVGA3DSURFACEFieldsPreMipLevels, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        pSurface->id                       = surfacePreMipLevels.id;
+#ifdef VMSVGA3D_OPENGL
+        pSurface->idWeakContextAssociation = surfacePreMipLevels.idWeakContextAssociation;
+#else
+        pSurface->idAssociatedContext      = surfacePreMipLevels.idAssociatedContext;
+#endif
+        pSurface->surfaceFlags             = surfacePreMipLevels.surfaceFlags;
+        pSurface->format                   = surfacePreMipLevels.format;
+#ifdef VMSVGA3D_OPENGL
+        pSurface->internalFormatGL         = surfacePreMipLevels.internalFormatGL;
+        pSurface->formatGL                 = surfacePreMipLevels.formatGL;
+        pSurface->typeGL                   = surfacePreMipLevels.typeGL;
+#endif
+        pSurface->cLevels                  = surfacePreMipLevels.faces[0].numMipLevels;
+        pSurface->cFaces                   = surfacePreMipLevels.cFaces;
+        pSurface->multiSampleCount         = surfacePreMipLevels.multiSampleCount;
+        pSurface->autogenFilter            = surfacePreMipLevels.autogenFilter;
+        pSurface->cbBlock                  = surfacePreMipLevels.cbBlock;
+    }
+    return rc;
+}
+
 int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     RT_NOREF(pDevIns, pThis, uPass);
@@ -407,11 +483,14 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
             LogFlow(("vmsvga3dLoadExec: Loading sid=%#x\n", sid));
 
             /* Fetch the surface structure first. */
-            rc = pHlp->pfnSSMGetStructEx(pSSM, &surface, sizeof(surface), 0, g_aVMSVGA3DSURFACEFields, NULL);
+            if (RT_LIKELY(uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_MIPLEVELS))
+                rc = pHlp->pfnSSMGetStructEx(pSSM, &surface, sizeof(surface), 0, g_aVMSVGA3DSURFACEFields, NULL);
+            else
+                rc = vmsvga3dLoadVMSVGA3DSURFACEPreMipLevels(pDevIns, pSSM, &surface);
             AssertRCReturn(rc, rc);
 
             {
-                uint32_t             cMipLevels = surface.faces[0].numMipLevels * surface.cFaces;
+                uint32_t             cMipLevels = surface.cLevels * surface.cFaces;
                 PVMSVGA3DMIPMAPLEVEL pMipmapLevel = (PVMSVGA3DMIPMAPLEVEL)RTMemAlloc(cMipLevels * sizeof(VMSVGA3DMIPMAPLEVEL));
                 AssertReturn(pMipmapLevel, VERR_NO_MEMORY);
                 SVGA3dSize *pMipmapLevelSize = (SVGA3dSize *)RTMemAlloc(cMipLevels * sizeof(SVGA3dSize));
@@ -420,9 +499,9 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
                 /* Load the mip map level info. */
                 for (uint32_t face=0; face < surface.cFaces; face++)
                 {
-                    for (uint32_t j = 0; j < surface.faces[0].numMipLevels; j++)
+                    for (uint32_t j = 0; j < surface.cLevels; j++)
                     {
-                        uint32_t idx = j + face * surface.faces[0].numMipLevels;
+                        uint32_t idx = j + face * surface.cLevels;
                         /* Load the mip map level struct. */
                         rc = pHlp->pfnSSMGetStructEx(pSSM, &pMipmapLevel[idx], sizeof(pMipmapLevel[idx]), 0,
                                                      g_aVMSVGA3DMIPMAPLEVELFields, NULL);
@@ -432,8 +511,8 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
                     }
                 }
 
-                rc = vmsvga3dSurfaceDefine(pThisCC, sid, surface.surfaceFlags, surface.format, surface.faces,
-                                           surface.multiSampleCount, surface.autogenFilter, cMipLevels, pMipmapLevelSize);
+                rc = vmsvga3dSurfaceDefine(pThisCC, sid, surface.surfaceFlags, surface.format, surface.multiSampleCount,
+                                           surface.autogenFilter, surface.cLevels, &pMipmapLevelSize[0]);
                 AssertRCReturn(rc, rc);
 
                 RTMemFree(pMipmapLevelSize);
@@ -446,7 +525,7 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
             pSurface->fDirty = false;
 
             /* Load the mip map level data. */
-            for (uint32_t j = 0; j < pSurface->faces[0].numMipLevels * pSurface->cFaces; j++)
+            for (uint32_t j = 0; j < pSurface->cLevels * pSurface->cFaces; j++)
             {
                 PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[j];
                 bool fDataPresent = false;
@@ -683,9 +762,9 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
             /* Save the mip map level info. */
             for (uint32_t face=0; face < pSurface->cFaces; face++)
             {
-                for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
+                for (uint32_t i = 0; i < pSurface->cLevels; i++)
                 {
-                    uint32_t idx = i + face * pSurface->faces[0].numMipLevels;
+                    uint32_t idx = i + face * pSurface->cLevels;
                     PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[idx];
 
                     /* Save a copy of the mip map level struct. */
@@ -697,9 +776,9 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
             /* Save the mip map level data. */
             for (uint32_t face=0; face < pSurface->cFaces; face++)
             {
-                for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
+                for (uint32_t i = 0; i < pSurface->cLevels; i++)
                 {
-                    uint32_t idx = i + face * pSurface->faces[0].numMipLevels;
+                    uint32_t idx = i + face * pSurface->cLevels;
                     PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[idx];
 
                     Log(("Surface sid=%u: save mipmap level %d with %x bytes data.\n", sid, i, pMipmapLevel->cbSurface));
@@ -876,6 +955,8 @@ int vmsvga3dSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM)
                         }
 
                         RTMemFree(pData);
+#elif defined(VMSVGA3D_DX)
+                        /** @todo */
 #elif defined(VMSVGA3D_OPENGL)
                         void *pData = NULL;
 

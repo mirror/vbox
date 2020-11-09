@@ -253,8 +253,11 @@ typedef struct VMSVGASCREENOBJECT
     uint32_t    cbPitch;
     /** Bits per pixel. */
     uint32_t    cBpp;
+    /** The physical DPI that the guest expects for this screen. Zero, if the guest is not DPI aware. */
+    uint32_t    cDpi;
     bool        fDefined;
     bool        fModified;
+    void       *pvScreenBitmap;
 #ifdef VBOX_WITH_VMSVGA3D
     /** Pointer to the HW accelerated (3D) screen data. */
     R3PTRTYPE(PVMSVGAHWSCREEN) pHwScreen;
@@ -360,7 +363,7 @@ typedef struct VMSVGAState
 #elif defined(DEBUG_GMR_ACCESS)
     uint32_t                    uPadding1;
 #endif
-    /** Number of GMRs. */
+    /** Number of GMRs (VMSVGA_MAX_GMR_IDS, count of elements in VMSVGAR3STATE::paGMR array). */
     uint32_t                    cGMR;
     uint32_t                    uScreenOffset; /* Used only for loading older saved states. */
 
@@ -565,5 +568,6 @@ int vmsvgaR3GmrTransfer(PVGASTATE pThis, PVGASTATECC pThisCC, const SVGA3dTransf
 void vmsvgaR3ClipCopyBox(const SVGA3dSize *pSizeSrc, const SVGA3dSize *pSizeDest, SVGA3dCopyBox *pBox);
 void vmsvgaR3ClipBox(const SVGA3dSize *pSize, SVGA3dBox *pBox);
 void vmsvgaR3ClipRect(SVGASignedRect const *pBound, SVGASignedRect *pRect);
+void vmsvgaR3Clip3dRect(SVGA3dRect const *pBound, SVGA3dRect RT_UNTRUSTED_GUEST *pRect);
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA_h */

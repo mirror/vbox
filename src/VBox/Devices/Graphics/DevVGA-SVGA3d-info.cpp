@@ -290,9 +290,8 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
          */
         for (uint32_t iFace = 0; iFace < pSurface->cFaces; iFace++)
         {
-            Assert(pSurface->faces[iFace].numMipLevels <= pSurface->faces[0].numMipLevels);
-            PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iFace * pSurface->faces[0].numMipLevels];
-            for (uint32_t i = 0; i < pSurface->faces[iFace].numMipLevels; i++, pMipmapLevel++)
+            PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iFace * pSurface->cLevels];
+            for (uint32_t i = 0; i < pSurface->cLevels; i++, pMipmapLevel++)
             {
                 if (VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
                 {
@@ -497,6 +496,9 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                         default:
                             AssertMsgFailed(("%#x\n", fSwitchFlags));
                     }
+#elif defined(VMSVGA3D_DX)
+                    /** @todo */
+                    RT_NOREF(pState);
 #else
 # error "misconfigured"
 #endif
@@ -1521,6 +1523,8 @@ static void vmsvga3dInfoContextWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DCONTEXT pC
         vmsvga3dInfoHostWindow(pHlp, (uintptr_t)pContext->hwnd);
 # ifdef VMSVGA3D_DIRECT3D
     pHlp->pfnPrintf(pHlp, "pDevice:                 %p\n", pContext->pDevice);
+# elif defined(VMSVGA3D_DX)
+    /** @todo */
 # else
     pHlp->pfnPrintf(pHlp, "hdc:                     %p\n", pContext->hdc);
     pHlp->pfnPrintf(pHlp, "hglrc:                   %p\n", pContext->hglrc);
@@ -1918,7 +1922,7 @@ void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
     static volatile uint32_t sSeq = 0;
     const uint32_t u32Seq = ASMAtomicIncU32(&sSeq);
 
-    for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; ++i)
+    for (uint32_t i = 0; i < pSurface->cLevels; ++i)
     {
         if (!pSurface->paMipmapLevels[i].pSurfaceData)
             continue;
@@ -1977,16 +1981,14 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
     pHlp->pfnPrintf(pHlp, "Flags:                   %#x", pSurface->surfaceFlags);
     vmsvga3dInfoU32Flags(pHlp, pSurface->surfaceFlags, "SVGA3D_SURFACE_", g_aSvga3DSurfaceFlags, RT_ELEMENTS(g_aSvga3DSurfaceFlags));
     pHlp->pfnPrintf(pHlp, "\n");
-    if (pSurface->cFaces == 0)
+    if (pSurface->cFaces != 0)
         pHlp->pfnPrintf(pHlp, "Faces:                   %u\n", pSurface->cFaces);
+    if (pSurface->cLevels != 0)
+        pHlp->pfnPrintf(pHlp, "Mipmap levels:  %u\n", pSurface->cLevels);
     for (uint32_t iFace = 0; iFace < pSurface->cFaces; iFace++)
     {
-        Assert(pSurface->faces[iFace].numMipLevels <= pSurface->faces[0].numMipLevels);
-        if (pSurface->faces[iFace].numMipLevels == 0)
-            pHlp->pfnPrintf(pHlp, "Faces[%u] Mipmap levels:  %u\n", iFace, pSurface->faces[iFace].numMipLevels);
-
-        uint32_t iMipmap = iFace * pSurface->faces[0].numMipLevels;
-        for (uint32_t iLevel = 0; iLevel < pSurface->faces[iFace].numMipLevels; iLevel++, iMipmap++)
+        uint32_t iMipmap = iFace * pSurface->cLevels;
+        for (uint32_t iLevel = 0; iLevel < pSurface->cLevels; iLevel++, iMipmap++)
         {
             pHlp->pfnPrintf(pHlp, "Face #%u, mipmap #%u[%u]:%s  cx=%u, cy=%u, cz=%u, cbSurface=%#x, cbPitch=%#x",
                             iFace, iLevel, iMipmap, iMipmap < 10 ? " " : "",
@@ -2029,6 +2031,8 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
     RTAvlU32DoWithAll(&pSurface->pSharedObjectTree, true /*fFromLeft*/, vmsvga3dInfoSharedObjectCallback, (void *)pHlp);
     pHlp->pfnPrintf(pHlp, "fStencilAsTexture:       %RTbool\n", pSurface->fStencilAsTexture);
 
+#elif defined(VMSVGA3D_DX)
+    /** @todo */
 #elif defined(VMSVGA3D_OPENGL)
     /** @todo   */
 #else
@@ -2038,8 +2042,8 @@ static void vmsvga3dInfoSurfaceWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pS
     if (fVerbose)
         for (uint32_t iFace = 0; iFace < pSurface->cFaces; iFace++)
         {
-            uint32_t iMipmap = iFace * pSurface->faces[0].numMipLevels;
-            for (uint32_t iLevel = 0; iLevel < pSurface->faces[iFace].numMipLevels; iLevel++, iMipmap++)
+            uint32_t iMipmap = iFace * pSurface->cLevels;
+            for (uint32_t iLevel = 0; iLevel < pSurface->cLevels; iLevel++, iMipmap++)
                 if (pSurface->paMipmapLevels[iMipmap].pSurfaceData)
                 {
                     if (ASMMemIsZero(pSurface->paMipmapLevels[iMipmap].pSurfaceData,

@@ -36,6 +36,10 @@
 # include "DevVGA-SVGA3d.h"
 #endif
 
+#ifdef DUMP_BITMAPS
+# include <iprt/formats/bmp.h>
+# include <stdio.h>
+#endif
 
 #if defined(LOG_ENABLED) || defined(VBOX_STRICT)
 # define SVGA_CASE_ID2STR(idx) case idx: return #idx
@@ -271,6 +275,429 @@ const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
 #endif /* LOG_ENABLED || VBOX_STRICT */
 
 
+#if !defined(VMSVGA3D_DX)
+/*
+ * Stubs for old backends.
+ */
+int vmsvga3dScreenTargetBind(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, uint32_t sid)
+{
+    RT_NOREF(pThisCC, pScreen, sid);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int vmsvga3dScreenTargetUpdate(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, SVGA3dRect const *pRect)
+{
+    RT_NOREF(pThisCC, pScreen, pRect);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox, VMSVGA3D_SURFACE_MAP enmMapType, VMSVGA3D_MAPPED_SURFACE *pMap)
+{
+    RT_NOREF(pThisCC, pImage, pBox, enmMapType, pMap);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int vmsvga3dSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, VMSVGA3D_MAPPED_SURFACE *pMap, bool fWritten)
+{
+    RT_NOREF(pThisCC, pImage, pMap, fWritten);
+    return VERR_NOT_IMPLEMENTED;
+}
+#endif
+
+
+/*
+ *
+ * Guest-Backed Objects (GBO).
+ *
+ */
+
+static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, bool fGCPhys64, PVMSVGAGBO pGbo)
+{
+    ASSERT_GUEST_RETURN(sizeInBytes <= _128M, VERR_INVALID_PARAMETER); /** @todo Less than SVGA_REG_MOB_MAX_SIZE */
+
+    /*
+     * The 'baseAddress' is a page number and points to the 'root page' of the GBO.
+     * Content of the root page depends on the ptDepth value:
+     * SVGA3D_MOBFMT_PTDEPTH[64]_0 - the only data page;
+     * SVGA3D_MOBFMT_PTDEPTH[64]_1 - array of page numbers for data pages;
+     * SVGA3D_MOBFMT_PTDEPTH[64]_2 - array of page numbers for SVGA3D_MOBFMT_PTDEPTH[64]_1 pages.
+     * The code below extracts the page addresses of the GBO.
+     */
+
+    /* Verify and normalize the ptDepth value. */
+    if (RT_LIKELY(ptDepth >= SVGA3D_MOBFMT_PTDEPTH64_0 && ptDepth <= SVGA3D_MOBFMT_PTDEPTH64_2))
+        ASSERT_GUEST_RETURN(fGCPhys64, VERR_INVALID_PARAMETER);
+    else if (ptDepth >= SVGA3D_MOBFMT_PTDEPTH_0 && ptDepth <= SVGA3D_MOBFMT_PTDEPTH_2)
+    {
+        ASSERT_GUEST_RETURN(!fGCPhys64, VERR_INVALID_PARAMETER);
+        /* Shift ptDepth to the SVGA3D_MOBFMT_PTDEPTH64_x range. */
+        ptDepth = (SVGAMobFormat)(ptDepth + SVGA3D_MOBFMT_PTDEPTH64_0 - SVGA3D_MOBFMT_PTDEPTH_0);
+    }
+    else if (ptDepth == SVGA3D_MOBFMT_RANGE)
+    { }
+    else
+        ASSERT_GUEST_FAILED_RETURN(VERR_INVALID_PARAMETER);
+
+    uint32_t const cPPNsPerPage = X86_PAGE_SIZE / (fGCPhys64 ? sizeof(PPN64) : sizeof(PPN));
+
+    pGbo->cbTotal = sizeInBytes;
+    pGbo->cTotalPages = (sizeInBytes + X86_PAGE_SIZE - 1) >> X86_PAGE_SHIFT;
+
+    /* Allocate the maximum amount possible (everything non-continuous) */
+    PVMSVGAGBODESCRIPTOR paDescriptors = (PVMSVGAGBODESCRIPTOR)RTMemAlloc(pGbo->cTotalPages * sizeof(VMSVGAGBODESCRIPTOR));
+    AssertReturn(paDescriptors, VERR_NO_MEMORY);
+
+    int rc = VINF_SUCCESS;
+    if (ptDepth == SVGA3D_MOBFMT_PTDEPTH64_0)
+    {
+        ASSERT_GUEST_STMT_RETURN(pGbo->cTotalPages == 1,
+                                 RTMemFree(paDescriptors),
+                                 VERR_INVALID_PARAMETER);
+
+        RTGCPHYS GCPhys = (RTGCPHYS)baseAddress << X86_PAGE_SHIFT;
+        GCPhys &= UINT64_C(0x00000FFFFFFFFFFF); /* Seeing rubbish in the top bits with certain linux guests. */
+        paDescriptors[0].GCPhys   = GCPhys;
+        paDescriptors[0].cPages = 1;
+    }
+    else if (ptDepth == SVGA3D_MOBFMT_PTDEPTH64_1)
+    {
+        ASSERT_GUEST_STMT_RETURN(pGbo->cTotalPages <= cPPNsPerPage,
+                                 RTMemFree(paDescriptors),
+                                 VERR_INVALID_PARAMETER);
+
+        /* Read the root page. */
+        uint8_t au8RootPage[X86_PAGE_SIZE];
+        RTGCPHYS GCPhys = (RTGCPHYS)baseAddress << X86_PAGE_SHIFT;
+        rc = PDMDevHlpPCIPhysRead(pSvgaR3State->pDevIns, GCPhys, &au8RootPage, sizeof(au8RootPage));
+        if (RT_SUCCESS(rc))
+        {
+            PPN64 *paPPN64 = (PPN64 *)&au8RootPage[0];
+            PPN *paPPN32 = (PPN *)&au8RootPage[0];
+            for (uint32_t iPPN = 0; iPPN < pGbo->cTotalPages; ++iPPN)
+            {
+                GCPhys = (RTGCPHYS)(fGCPhys64 ? paPPN64[iPPN] : paPPN32[iPPN]) << X86_PAGE_SHIFT;
+                GCPhys &= UINT64_C(0x00000FFFFFFFFFFF); /* Seeing rubbish in the top bits with certain linux guests. */
+                paDescriptors[iPPN].GCPhys   = GCPhys;
+                paDescriptors[iPPN].cPages = 1;
+            }
+        }
+    }
+    else if (ptDepth == SVGA3D_MOBFMT_PTDEPTH64_2)
+    {
+        ASSERT_GUEST_STMT_RETURN(pGbo->cTotalPages <= cPPNsPerPage * cPPNsPerPage,
+                                 RTMemFree(paDescriptors),
+                                 VERR_INVALID_PARAMETER);
+
+        /* Read the Level2 root page. */
+        uint8_t au8RootPageLevel2[X86_PAGE_SIZE];
+        RTGCPHYS GCPhys = (RTGCPHYS)baseAddress << X86_PAGE_SHIFT;
+        rc = PDMDevHlpPCIPhysRead(pSvgaR3State->pDevIns, GCPhys, &au8RootPageLevel2, sizeof(au8RootPageLevel2));
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cPagesLeft = pGbo->cTotalPages;
+
+            PPN64 *paPPN64Level2 = (PPN64 *)&au8RootPageLevel2[0];
+            PPN *paPPN32Level2 = (PPN *)&au8RootPageLevel2[0];
+
+            uint32_t const cPPNsLevel2 = (pGbo->cTotalPages + cPPNsPerPage - 1) / cPPNsPerPage;
+            for (uint32_t iPPNLevel2 = 0; iPPNLevel2 < cPPNsLevel2; ++iPPNLevel2)
+            {
+                /* Read the Level1 root page. */
+                uint8_t au8RootPage[X86_PAGE_SIZE];
+                RTGCPHYS GCPhysLevel1 = (RTGCPHYS)(fGCPhys64 ? paPPN64Level2[iPPNLevel2] : paPPN32Level2[iPPNLevel2]) << X86_PAGE_SHIFT;
+                GCPhys &= UINT64_C(0x00000FFFFFFFFFFF); /* Seeing rubbish in the top bits with certain linux guests. */
+                rc = PDMDevHlpPCIPhysRead(pSvgaR3State->pDevIns, GCPhysLevel1, &au8RootPage, sizeof(au8RootPage));
+                if (RT_SUCCESS(rc))
+                {
+                    PPN64 *paPPN64 = (PPN64 *)&au8RootPage[0];
+                    PPN *paPPN32 = (PPN *)&au8RootPage[0];
+
+                    uint32_t const cPPNs = RT_MIN(cPagesLeft, cPPNsPerPage);
+                    for (uint32_t iPPN = 0; iPPN < cPPNs; ++iPPN)
+                    {
+                        GCPhys = (RTGCPHYS)(fGCPhys64 ? paPPN64[iPPN] : paPPN32[iPPN]) << X86_PAGE_SHIFT;
+                        GCPhys &= UINT64_C(0x00000FFFFFFFFFFF); /* Seeing rubbish in the top bits with certain linux guests. */
+                        paDescriptors[iPPN + iPPNLevel2 * cPPNsPerPage].GCPhys   = GCPhys;
+                        paDescriptors[iPPN + iPPNLevel2 * cPPNsPerPage].cPages = 1;
+                    }
+                    cPagesLeft -= cPPNs;
+                }
+            }
+        }
+    }
+    else if (ptDepth == SVGA3D_MOBFMT_RANGE)
+    {
+        RTGCPHYS GCPhys = (RTGCPHYS)baseAddress << X86_PAGE_SHIFT;
+        GCPhys &= UINT64_C(0x00000FFFFFFFFFFF); /* Seeing rubbish in the top bits with certain linux guests. */
+        paDescriptors[0].GCPhys = GCPhys;
+        paDescriptors[0].cPages = pGbo->cTotalPages;
+    }
+    else
+    {
+        AssertFailed();
+        return VERR_INTERNAL_ERROR; /* ptDepth should be already verified. */
+    }
+
+    /* Compress the descriptors. */
+    if (ptDepth != SVGA3D_MOBFMT_RANGE)
+    {
+        uint32_t iDescriptor = 0;
+        for (uint32_t i = 1; i < pGbo->cTotalPages; ++i)
+        {
+            /* Continuous physical memory? */
+            if (paDescriptors[i].GCPhys == paDescriptors[iDescriptor].GCPhys + paDescriptors[iDescriptor].cPages * X86_PAGE_SIZE)
+            {
+                Assert(paDescriptors[iDescriptor].cPages);
+                paDescriptors[iDescriptor].cPages++;
+                Log5Func(("Page %x GCPhys=%RGp successor\n", i, paDescriptors[i].GCPhys));
+            }
+            else
+            {
+                iDescriptor++;
+                paDescriptors[iDescriptor].GCPhys   = paDescriptors[i].GCPhys;
+                paDescriptors[iDescriptor].cPages = 1;
+                Log5Func(("Page %x GCPhys=%RGp\n", i, paDescriptors[iDescriptor].GCPhys));
+            }
+        }
+
+        pGbo->cDescriptors = iDescriptor + 1;
+        Log5Func(("Nr of descriptors %d\n", pGbo->cDescriptors));
+    }
+    else
+        pGbo->cDescriptors = 1;
+
+    if (RT_LIKELY(pGbo->cDescriptors < pGbo->cTotalPages))
+    {
+        pGbo->paDescriptors = (PVMSVGAGBODESCRIPTOR)RTMemRealloc(paDescriptors, pGbo->cDescriptors * sizeof(VMSVGAGBODESCRIPTOR));
+        AssertReturn(pGbo->paDescriptors, VERR_NO_MEMORY);
+    }
+    else
+        pGbo->paDescriptors = paDescriptors;
+
+    return VINF_SUCCESS;
+}
+
+
+static void vmsvgaR3GboDestroy(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
+{
+    RT_NOREF(pSvgaR3State);
+    if (RT_LIKELY(VMSVGA_IS_GBO_CREATED(pGbo)))
+    {
+        RTMemFree(pGbo->paDescriptors);
+        RT_ZERO(pGbo);
+    }
+}
+
+
+typedef enum VMSVGAGboTransferDirection
+{
+    VMSVGAGboTransferDirection_Read,
+    VMSVGAGboTransferDirection_Write,
+} VMSVGAGboTransferDirection;
+
+static int vmsvgaR3GboTransfer(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo,
+                               uint32_t off, void *pvData, uint32_t cbData,
+                               VMSVGAGboTransferDirection enmDirection)
+{
+// ASMBreakpoint();
+    int rc = VINF_SUCCESS;
+    uint8_t *pu8CurrentHost  = (uint8_t *)pvData;
+
+    /* Find the right descriptor */
+    PCVMSVGAGBODESCRIPTOR const paDescriptors = pGbo->paDescriptors;
+    uint32_t iDescriptor = 0;                               /* Index in the descriptor array. */
+    uint32_t offDescriptor = 0;                             /* GMR offset of the current descriptor. */
+    while (offDescriptor + paDescriptors[iDescriptor].cPages * X86_PAGE_SIZE <= off)
+    {
+        offDescriptor += paDescriptors[iDescriptor].cPages * X86_PAGE_SIZE;
+        AssertReturn(offDescriptor < pGbo->cbTotal, VERR_INTERNAL_ERROR); /* overflow protection */
+        ++iDescriptor;
+        AssertReturn(iDescriptor < pGbo->cDescriptors, VERR_INTERNAL_ERROR);
+    }
+
+    while (cbData)
+    {
+        uint32_t cbToCopy;
+        if (off + cbData <= offDescriptor + paDescriptors[iDescriptor].cPages * X86_PAGE_SIZE)
+            cbToCopy = cbData;
+        else
+        {
+            cbToCopy = (offDescriptor + paDescriptors[iDescriptor].cPages * X86_PAGE_SIZE - off);
+            AssertReturn(cbToCopy <= cbData, VERR_INVALID_PARAMETER);
+        }
+
+        RTGCPHYS const GCPhys = paDescriptors[iDescriptor].GCPhys + off - offDescriptor;
+        Log5Func(("%s phys=%RGp\n", (enmDirection == VMSVGAGboTransferDirection_Read) ? "READ" : "WRITE", GCPhys));
+
+        if (enmDirection == VMSVGAGboTransferDirection_Read)
+            rc = PDMDevHlpPCIPhysRead(pSvgaR3State->pDevIns, GCPhys, pu8CurrentHost, cbToCopy);
+        else
+            rc = PDMDevHlpPCIPhysWrite(pSvgaR3State->pDevIns, GCPhys, pu8CurrentHost, cbToCopy);
+        AssertRCBreak(rc);
+
+        cbData         -= cbToCopy;
+        off            += cbToCopy;
+        pu8CurrentHost += cbToCopy;
+
+        /* Go to the next descriptor if there's anything left. */
+        if (cbData)
+        {
+            offDescriptor += paDescriptors[iDescriptor].cPages * X86_PAGE_SIZE;
+            AssertReturn(offDescriptor < pGbo->cbTotal, VERR_INTERNAL_ERROR);
+            ++iDescriptor;
+            AssertReturn(iDescriptor < pGbo->cDescriptors, VERR_INTERNAL_ERROR);
+        }
+    }
+    return rc;
+}
+
+
+static int vmsvgaR3GboWrite(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo,
+                            uint32_t off, void const *pvData, uint32_t cbData)
+{
+    return vmsvgaR3GboTransfer(pSvgaR3State, pGbo,
+                               off, (void *)pvData, cbData,
+                               VMSVGAGboTransferDirection_Write);
+}
+
+
+static int vmsvgaR3GboRead(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo,
+                           uint32_t off, void *pvData, uint32_t cbData)
+{
+    return vmsvgaR3GboTransfer(pSvgaR3State, pGbo,
+                               off, pvData, cbData,
+                               VMSVGAGboTransferDirection_Read);
+}
+
+
+/*
+ *
+ * Object Tables.
+ *
+ */
+
+static int vmsvgaR3OTableVerifyIndex(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGboOTable,
+                                     uint32_t idx, uint32_t cbEntry)
+{
+    RT_NOREF(pSvgaR3State);
+
+    /* The table must exist and the index must be within the table. */
+    ASSERT_GUEST_RETURN(VMSVGA_IS_GBO_CREATED(pGboOTable), VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(idx < pGboOTable->cbTotal / cbEntry, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+    return VINF_SUCCESS;
+}
+
+
+static int vmsvgaR3OTableRead(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGboOTable,
+                              uint32_t idx, uint32_t cbEntry,
+                              void *pvData, uint32_t cbData)
+{
+    AssertReturn(cbData <= cbEntry, VERR_INVALID_PARAMETER);
+
+    int rc = vmsvgaR3OTableVerifyIndex(pSvgaR3State, pGboOTable, idx, cbEntry);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t const off = idx * cbEntry;
+        rc = vmsvgaR3GboRead(pSvgaR3State, pGboOTable, off, pvData, cbData);
+    }
+    return rc;
+}
+
+static int vmsvgaR3OTableWrite(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGboOTable,
+                               uint32_t idx, uint32_t cbEntry,
+                               void const *pvData, uint32_t cbData)
+{
+    AssertReturn(cbData <= cbEntry, VERR_INVALID_PARAMETER);
+
+    int rc = vmsvgaR3OTableVerifyIndex(pSvgaR3State, pGboOTable, idx, cbEntry);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t const off = idx * cbEntry;
+        rc = vmsvgaR3GboWrite(pSvgaR3State, pGboOTable, off, pvData, cbData);
+    }
+    return rc;
+}
+
+
+/*
+ *
+ * The guest's Memory OBjects (MOB).
+ *
+ */
+
+static int vmsvgaR3MobCreate(PVMSVGAR3STATE pSvgaR3State,
+                             SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, SVGAMobId mobid,
+                             bool fGCPhys64, PVMSVGAMOB pMob)
+{
+    RT_ZERO(*pMob);
+
+    /* Update the entry in the pSvgaR3State->pGboOTableMob. */
+    SVGAOTableMobEntry entry;
+    entry.ptDepth     = ptDepth;
+    entry.sizeInBytes = sizeInBytes;
+    entry.base        = baseAddress;
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableMob,
+                                 mobid, SVGA3D_OTABLE_MOB_ENTRY_SIZE, &entry, sizeof(entry));
+    if (RT_SUCCESS(rc))
+    {
+        /* Create the corresponding GBO. */
+        rc = vmsvgaR3GboCreate(pSvgaR3State, ptDepth, baseAddress, sizeInBytes, fGCPhys64, &pMob->Gbo);
+        if (RT_SUCCESS(rc))
+        {
+            /* Add to the tree of known GBOs and the LRU list. */
+            pMob->Core.Key = mobid;
+            if (RTAvlU32Insert(&pSvgaR3State->MOBTree, &pMob->Core))
+            {
+                RTListPrepend(&pSvgaR3State->MOBLRUList, &pMob->nodeLRU);
+                return VINF_SUCCESS;
+            }
+
+            vmsvgaR3GboDestroy(pSvgaR3State, &pMob->Gbo);
+        }
+    }
+
+    return rc;
+}
+
+
+static int vmsvgaR3MobDestroy(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid)
+{
+    /* Update the entry in the pSvgaR3State->pGboOTableMob. */
+    SVGAOTableMobEntry entry;
+    RT_ZERO(entry);
+    vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableMob,
+                        mobid, SVGA3D_OTABLE_MOB_ENTRY_SIZE, &entry, sizeof(entry));
+
+    PVMSVGAMOB pMob = (PVMSVGAMOB)RTAvlU32Remove(&pSvgaR3State->MOBTree, mobid);
+    if (pMob)
+    {
+        RTListNodeRemove(&pMob->nodeLRU);
+        vmsvgaR3GboDestroy(pSvgaR3State, &pMob->Gbo);
+        RTMemFree(pMob);
+        return VINF_SUCCESS;
+    }
+
+    return VERR_INVALID_PARAMETER;
+}
+
+
+static PVMSVGAMOB vmsvgaR3MobGet(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid)
+{
+    PVMSVGAMOB pMob = (PVMSVGAMOB)RTAvlU32Get(&pSvgaR3State->MOBTree, mobid);
+    if (pMob)
+    {
+        /* Move to the head of the LRU list. */
+        RTListNodeRemove(&pMob->nodeLRU);
+        RTListPrepend(&pSvgaR3State->MOBLRUList, &pMob->nodeLRU);
+    }
+
+    return pMob;
+}
+
+/*
+ * Screen objects.
+ */
 VMSVGASCREENOBJECT *vmsvgaR3GetScreenObject(PVGASTATECC pThisCC, uint32_t idScreen)
 {
     PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
@@ -434,6 +861,610 @@ static void vmsvgaR3InstallNewCursor(PVGASTATECC pThisCC, PVMSVGAR3STATE pSVGASt
 
 
 #ifdef VBOX_WITH_VMSVGA3D
+
+/*
+ * SVGA_3D_CMD_* handlers.
+ */
+
+
+/** SVGA_3D_CMD_SURFACE_DEFINE 1040, SVGA_3D_CMD_SURFACE_DEFINE_V2 1070
+ *
+ * @param pThisCC         The VGA/VMSVGA state for the current context.
+ * @param pCmd            The VMSVGA command.
+ * @param cMipLevelSizes  Number of elements in the paMipLevelSizes array.
+ * @param paMipLevelSizes Arrays of surface sizes for each face and miplevel.
+ */
+static void vmsvga3dCmdDefineSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineSurface_v2 const *pCmd,
+                                     uint32_t cMipLevelSizes, SVGA3dSize *paMipLevelSizes)
+{
+    ASSERT_GUEST_RETURN_VOID(pCmd->sid < SVGA3D_MAX_SURFACE_IDS);
+    ASSERT_GUEST_RETURN_VOID(cMipLevelSizes >= 1);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    /* Number of faces (cFaces) is specified as the number of the first non-zero elements in the 'face' array.
+     * Since only plain surfaces (cFaces == 1) and cubemaps (cFaces == 6) are supported
+     * (see also SVGA3dCmdDefineSurface definition in svga3d_reg.h), we ignore anything else.
+     */
+    uint32_t cRemainingMipLevels = cMipLevelSizes;
+    uint32_t cFaces = 0;
+    for (uint32_t i = 0; i < SVGA3D_MAX_SURFACE_FACES; ++i)
+    {
+        if (pCmd->face[i].numMipLevels == 0)
+            break;
+
+        /* All SVGA3dSurfaceFace structures must have the same value of numMipLevels field */
+        ASSERT_GUEST_RETURN_VOID(pCmd->face[i].numMipLevels == pCmd->face[0].numMipLevels);
+
+        /* numMipLevels value can't be greater than the number of remaining elements in the paMipLevelSizes array. */
+        ASSERT_GUEST_RETURN_VOID(pCmd->face[i].numMipLevels <= cRemainingMipLevels);
+        cRemainingMipLevels -= pCmd->face[i].numMipLevels;
+
+        ++cFaces;
+    }
+    for (uint32_t i = cFaces; i < SVGA3D_MAX_SURFACE_FACES; ++i)
+        ASSERT_GUEST_RETURN_VOID(pCmd->face[i].numMipLevels == 0);
+
+    /* cFaces must be 6 for a cubemap and 1 otherwise. */
+    ASSERT_GUEST_RETURN_VOID(cFaces == (uint32_t)((pCmd->surfaceFlags & SVGA3D_SURFACE_CUBEMAP) ? 6 : 1));
+
+    /* Sum of face[i].numMipLevels must be equal to cMipLevels. */
+    ASSERT_GUEST_RETURN_VOID(cRemainingMipLevels == 0);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    /* Verify paMipLevelSizes */
+    uint32_t cWidth  = paMipLevelSizes[0].width;
+    uint32_t cHeight = paMipLevelSizes[0].height;
+    uint32_t cDepth  = paMipLevelSizes[0].depth;
+    for (uint32_t i = 1; i < pCmd->face[0].numMipLevels; ++i)
+    {
+        cWidth >>= 1;
+        if (cWidth == 0) cWidth = 1;
+        cHeight >>= 1;
+        if (cHeight == 0) cHeight = 1;
+        cDepth >>= 1;
+        if (cDepth == 0) cDepth = 1;
+        for (uint32_t iFace = 0; iFace < cFaces; ++iFace)
+        {
+            uint32_t const iMipLevelSize = iFace * pCmd->face[0].numMipLevels + i;
+            ASSERT_GUEST_RETURN_VOID(   cWidth  == paMipLevelSizes[iMipLevelSize].width
+                                     && cHeight == paMipLevelSizes[iMipLevelSize].height
+                                     && cDepth  == paMipLevelSizes[iMipLevelSize].depth);
+        }
+    }
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    /* Create the surface. */
+    vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
+                          pCmd->multisampleCount, pCmd->autogenFilter,
+                          pCmd->face[0].numMipLevels, &paMipLevelSizes[0]);
+}
+
+
+/* SVGA_3D_CMD_DEFINE_GB_MOB 1093 */
+static void vmsvga3dCmdDefineGBMob(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob const *pCmd)
+{
+    ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    ASSERT_GUEST_RETURN_VOID(pCmd->mobid != SVGA_ID_INVALID); /* The guest should not use this id. */
+
+    /* Maybe just update the OTable and create Gbo when the MOB is actually accessed? */
+    /* Allocate a structure for the MOB. */
+    PVMSVGAMOB pMob = (PVMSVGAMOB)RTMemAllocZ(sizeof(*pMob));
+    AssertPtrReturnVoid(pMob);
+
+    int rc = vmsvgaR3MobCreate(pSvgaR3State, pCmd->ptDepth, pCmd->base, pCmd->sizeInBytes, pCmd->mobid, /*fGCPhys64=*/ false, pMob);
+    if (RT_SUCCESS(rc))
+    {
+        return;
+    }
+
+    AssertFailed();
+
+    RTMemFree(pMob);
+}
+
+
+/* SVGA_3D_CMD_DESTROY_GB_MOB 1094 */
+static void vmsvga3dCmdDestroyGBMob(PVGASTATECC pThisCC, SVGA3dCmdDestroyGBMob const *pCmd)
+{
+//    ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    ASSERT_GUEST_RETURN_VOID(pCmd->mobid != SVGA_ID_INVALID); /* The guest should not use this id. */
+
+    int rc = vmsvgaR3MobDestroy(pSvgaR3State, pCmd->mobid);
+    if (RT_SUCCESS(rc))
+    {
+        return;
+    }
+
+    AssertFailed();
+}
+
+
+/* SVGA_3D_CMD_DEFINE_GB_SURFACE 1097 */
+static void vmsvga3dCmdDefineGBSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSurface const *pCmd)
+{
+//     ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    /* Update the entry in the pSvgaR3State->pGboOTableSurface. */
+    SVGAOTableSurfaceEntry entry;
+    RT_ZERO(entry);
+    entry.format = pCmd->format;
+    entry.surfaceFlags = pCmd->surfaceFlags;
+    entry.numMipLevels = pCmd->numMipLevels;
+    entry.multisampleCount = pCmd->multisampleCount;
+    entry.autogenFilter = pCmd->autogenFilter;
+    entry.size = pCmd->size;
+    entry.mobid = SVGA_ID_INVALID;
+    // entry.arraySize = 0;
+    // entry.mobPitch = 0;
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+                                 pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
+    if (RT_SUCCESS(rc))
+    {
+        /* Create the host surface. */
+        /** @todo fGBO = true flag. */
+        vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
+                              pCmd->multisampleCount, pCmd->autogenFilter,
+                              pCmd->numMipLevels, &pCmd->size);
+    }
+}
+
+
+/* SVGA_3D_CMD_DESTROY_GB_SURFACE 1098 */
+static void vmsvga3dCmdDestroyGBSurface(PVGASTATECC pThisCC, SVGA3dCmdDestroyGBSurface const *pCmd)
+{
+//     ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    /* Update the entry in the pSvgaR3State->pGboOTableSurface. */
+    SVGAOTableSurfaceEntry entry;
+    RT_ZERO(entry);
+    entry.mobid = SVGA_ID_INVALID;
+    vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+                        pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
+
+    vmsvga3dSurfaceDestroy(pThisCC, pCmd->sid);
+}
+
+
+/* SVGA_3D_CMD_BIND_GB_SURFACE 1099 */
+static void vmsvga3dCmdBindGBSurface(PVGASTATECC pThisCC, SVGA3dCmdBindGBSurface const *pCmd)
+{
+//     ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    RT_NOREF(pCmd, pSvgaR3State);
+
+    /* Assign the mobid to the surface. */
+    int rc = VINF_SUCCESS;
+    if (pCmd->mobid != SVGA_ID_INVALID)
+        rc = vmsvgaR3OTableVerifyIndex(pSvgaR3State, &pSvgaR3State->GboOTableMob,
+                                       pCmd->mobid, SVGA3D_OTABLE_MOB_ENTRY_SIZE);
+    if (RT_SUCCESS(rc))
+    {
+        SVGAOTableSurfaceEntry entry;
+        rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+                                pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
+        if (RT_SUCCESS(rc))
+        {
+            entry.mobid = pCmd->mobid;
+            rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+                                     pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
+            if (RT_SUCCESS(rc))
+            {
+                /* */
+            }
+        }
+    }
+}
+
+
+#ifdef DUMP_BITMAPS
+static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE const *pMap)
+{
+    if (pMap->cbPixel != 4)
+        return VERR_NOT_SUPPORTED;
+
+    int const w = pMap->box.w;
+    int const h = pMap->box.h;
+
+    const int cbBitmap = w * h * 4;
+
+    FILE *f = fopen(pszFilename, "wb");
+    if (!f)
+        return VERR_FILE_NOT_FOUND;
+
+    {
+        BMPFILEHDR fileHdr;
+        RT_ZERO(fileHdr);
+        fileHdr.uType      = BMP_HDR_MAGIC;
+        fileHdr.cbFileSize = sizeof(BMPFILEHDR) + sizeof(BMPWIN3XINFOHDR) + cbBitmap;
+        fileHdr.offBits    = sizeof(BMPFILEHDR) + sizeof(BMPWIN3XINFOHDR);
+
+        BMPWIN3XINFOHDR coreHdr;
+        RT_ZERO(coreHdr);
+        coreHdr.cbSize      = sizeof(coreHdr);
+        coreHdr.uWidth      = w;
+        coreHdr.uHeight     = -h;
+        coreHdr.cPlanes     = 1;
+        coreHdr.cBits       = 32;
+        coreHdr.cbSizeImage = cbBitmap;
+
+        fwrite(&fileHdr, 1, sizeof(fileHdr), f);
+        fwrite(&coreHdr, 1, sizeof(coreHdr), f);
+    }
+
+    if (pMap->cbPixel == 4)
+    {
+        const uint8_t *s = (uint8_t *)pMap->pvData;
+        for (int32_t y = 0; y < h; ++y)
+        {
+            fwrite(s, 1, w * pMap->cbPixel, f);
+
+            s += pMap->cbRowPitch;
+        }
+    }
+
+    fclose(f);
+
+    return VINF_SUCCESS;
+}
+
+
+void vmsvga3dMapWriteBmpFile(VMSVGA3D_MAPPED_SURFACE const *pMap, char const *pszPrefix)
+{
+    static int idxBitmap = 0;
+    char *pszFilename = RTStrAPrintf2("bmp\\%s%d.bmp", pszPrefix, idxBitmap++);
+    vmsvga3dBmpWrite(pszFilename, pMap);
+    RTStrFree(pszFilename);
+}
+#endif /* DUMP_BITMAPS */
+
+
+/* SVGA_3D_CMD_UPDATE_GB_IMAGE 1101 */
+static void vmsvga3dCmdUpdateGBImage(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBImage const *pCmd)
+{
+//     ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    LogFlowFunc(("sid=%u @%u,%u,%u %ux%ux%u\n",
+                 pCmd->image.sid, pCmd->box.x, pCmd->box.y, pCmd->box.z, pCmd->box.w, pCmd->box.h, pCmd->box.d));
+
+    /* "update a surface from its backing MOB." */
+    SVGAOTableSurfaceEntry entrySurface;
+    int rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+                            pCmd->image.sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entrySurface, sizeof(entrySurface));
+    if (RT_SUCCESS(rc))
+    {
+        PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, entrySurface.mobid);
+        if (pMob)
+        {
+            VMSVGA3D_MAPPED_SURFACE map;
+            rc = vmsvga3dSurfaceMap(pThisCC, &pCmd->image, &pCmd->box, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
+            if (RT_SUCCESS(rc))
+            {
+                /* Copy MOB -> mapped surface. */
+                uint32_t offSrc = pCmd->box.x * map.cbPixel
+                                + pCmd->box.y * entrySurface.size.width * map.cbPixel
+                                + pCmd->box.z * entrySurface.size.height * entrySurface.size.width * map.cbPixel;
+                uint8_t *pu8Dst = (uint8_t *)map.pvData;
+                for (uint32_t z = 0; z < pCmd->box.d; ++z)
+                {
+                    for (uint32_t y = 0; y < pCmd->box.h; ++y)
+                    {
+                        rc = vmsvgaR3GboRead(pSvgaR3State, &pMob->Gbo, offSrc, pu8Dst, pCmd->box.w * map.cbPixel);
+                        if (RT_FAILURE(rc))
+                            break;
+
+                        pu8Dst += map.cbRowPitch;
+                        offSrc += entrySurface.size.width * map.cbPixel;
+                    }
+
+                    pu8Dst += map.cbDepthPitch;
+                    offSrc += entrySurface.size.height * entrySurface.size.width * map.cbPixel;
+                }
+
+                // vmsvga3dMapWriteBmpFile(&map, "Dynamic");
+
+                vmsvga3dSurfaceUnmap(pThisCC, &pCmd->image, &map, /* fWritten =  */true);
+            }
+        }
+    }
+}
+
+
+/* SVGA_3D_CMD_INVALIDATE_GB_SURFACE 1106 */
+static void vmsvga3dCmdInvalidateGBSurface(PVGASTATECC pThisCC, SVGA3dCmdInvalidateGBSurface const *pCmd)
+{
+//     ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    RT_NOREF(pSvgaR3State, pCmd);
+    /** @todo Implement. */
+}
+
+
+/* SVGA_3D_CMD_SET_OTABLE_BASE64 1115 */
+static void vmsvga3dCmdSetOTableBase64(PVGASTATECC pThisCC, SVGA3dCmdSetOTableBase64 const *pCmd)
+{
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    /*
+     * Create a GBO for the table.
+     */
+    PVMSVGAGBO pGbo;
+    switch (pCmd->type)
+    {
+        case SVGA_OTABLE_MOB:
+        {
+            pGbo = &pSvgaR3State->GboOTableMob;
+            break;
+        }
+        case SVGA_OTABLE_SURFACE:
+        {
+            pGbo = &pSvgaR3State->GboOTableSurface;
+            break;
+        }
+        case SVGA_OTABLE_CONTEXT:
+        {
+            pGbo = &pSvgaR3State->GboOTableContext;
+            break;
+        }
+        case SVGA_OTABLE_SHADER:
+        {
+            pGbo = &pSvgaR3State->GboOTableShader;
+            break;
+        }
+        case SVGA_OTABLE_SCREENTARGET:
+        {
+            pGbo = &pSvgaR3State->GboOTableScreenTarget;
+            break;
+        }
+        default:
+            pGbo = NULL;
+            ASSERT_GUEST_FAILED();
+            break;
+    }
+
+    if (pGbo)
+    {
+        /* Recreate. */
+        vmsvgaR3GboDestroy(pSvgaR3State, pGbo);
+        int rc = vmsvgaR3GboCreate(pSvgaR3State, pCmd->ptDepth, pCmd->baseAddress, pCmd->sizeInBytes, /*fGCPhys64=*/ true, pGbo);
+        AssertRC(rc);
+    }
+}
+
+
+/* SVGA_3D_CMD_DEFINE_GB_SCREENTARGET 1124 */
+static void vmsvga3dCmdDefineGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dCmdDefineGBScreenTarget const *pCmd)
+{
+//     ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    ASSERT_GUEST_RETURN_VOID(pCmd->stid < RT_ELEMENTS(pSvgaR3State->aScreens));
+    ASSERT_GUEST_RETURN_VOID(pCmd->width > 0 && pCmd->width <= pThis->svga.u32MaxWidth); /* SVGA_REG_SCREENTARGET_MAX_WIDTH */
+    ASSERT_GUEST_RETURN_VOID(pCmd->height > 0 && pCmd->height <= pThis->svga.u32MaxHeight); /* SVGA_REG_SCREENTARGET_MAX_HEIGHT */
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    /* Update the entry in the pSvgaR3State->pGboOTableScreenTarget. */
+    SVGAOTableScreenTargetEntry entry;
+    RT_ZERO(entry);
+    entry.image.sid = SVGA_ID_INVALID;
+    // entry.image.face = 0;
+    // entry.image.mipmap = 0;
+    entry.width = pCmd->width;
+    entry.height = pCmd->height;
+    entry.xRoot = pCmd->xRoot;
+    entry.yRoot = pCmd->yRoot;
+    entry.flags = pCmd->flags;
+    entry.dpi = pCmd->dpi;
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableScreenTarget,
+                                 pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entry, sizeof(entry));
+    if (RT_SUCCESS(rc))
+    {
+        /* Screen objects and screen targets are similar, therefore we will use the same for both. */
+        /** @todo Generic screen object/target interface. */
+        VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[pCmd->stid];
+        pScreen->fDefined  = true;
+        pScreen->fModified = true;
+        pScreen->fuScreen  = SVGA_SCREEN_MUST_BE_SET
+                           | (RT_BOOL(pCmd->flags & SVGA_STFLAG_PRIMARY) ? SVGA_SCREEN_IS_PRIMARY : 0);
+        pScreen->idScreen  = pCmd->stid;
+
+        pScreen->xOrigin = pCmd->xRoot;
+        pScreen->yOrigin = pCmd->yRoot;
+        pScreen->cWidth  = pCmd->width;
+        pScreen->cHeight = pCmd->height;
+        pScreen->offVRAM = 0; /* Always for screen targets, they use either a separate memory buffer or a host window. */
+        pScreen->cbPitch = pCmd->width * 4;
+        pScreen->cBpp    = 32;
+
+        if (RT_LIKELY(pThis->svga.f3DEnabled))
+            vmsvga3dDefineScreen(pThis, pThisCC, pScreen);
+
+        if (!pScreen->pHwScreen)
+        {
+            /* System memory buffer. */
+            pScreen->pvScreenBitmap = RTMemAllocZ(pScreen->cHeight * pScreen->cbPitch);
+        }
+
+        pThis->svga.fGFBRegisters = false;
+        vmsvgaR3ChangeMode(pThis, pThisCC);
+    }
+}
+
+
+/* SVGA_3D_CMD_DESTROY_GB_SCREENTARGET 1125 */
+static void vmsvga3dCmdDestroyGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dCmdDestroyGBScreenTarget const *pCmd)
+{
+//    ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    ASSERT_GUEST_RETURN_VOID(pCmd->stid < RT_ELEMENTS(pSvgaR3State->aScreens));
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    /* Update the entry in the pSvgaR3State->pGboOTableScreenTarget. */
+    SVGAOTableScreenTargetEntry entry;
+    RT_ZERO(entry);
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableScreenTarget,
+                                 pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entry, sizeof(entry));
+    if (RT_SUCCESS(rc))
+    {
+        /* Screen objects and screen targets are similar, therefore we will use the same for both. */
+        /** @todo Generic screen object/target interface. */
+        VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[pCmd->stid];
+        pScreen->fModified = true;
+        pScreen->fDefined  = false;
+        pScreen->idScreen  = pCmd->stid;
+
+        if (RT_LIKELY(pThis->svga.f3DEnabled))
+            vmsvga3dDestroyScreen(pThisCC, pScreen);
+
+        vmsvgaR3ChangeMode(pThis, pThisCC);
+
+        RTMemFree(pScreen->pvScreenBitmap);
+        pScreen->pvScreenBitmap = NULL;
+    }
+}
+
+
+/* SVGA_3D_CMD_BIND_GB_SCREENTARGET 1126 */
+static void vmsvga3dCmdBindGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdBindGBScreenTarget const *pCmd)
+{
+//     ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    /* "Binding a surface to a Screen Target the same as flipping" */
+
+    ASSERT_GUEST_RETURN_VOID(pCmd->stid < RT_ELEMENTS(pSvgaR3State->aScreens));
+    ASSERT_GUEST_RETURN_VOID(pCmd->image.face == 0 && pCmd->image.mipmap == 0);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    /* Assign the surface to the screen target. */
+    int rc = VINF_SUCCESS;
+    if (pCmd->image.sid != SVGA_ID_INVALID)
+        rc = vmsvgaR3OTableVerifyIndex(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+                                       pCmd->image.sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE);
+    if (RT_SUCCESS(rc))
+    {
+        SVGAOTableScreenTargetEntry entry;
+        rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->GboOTableScreenTarget,
+                                pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entry, sizeof(entry));
+        if (RT_SUCCESS(rc))
+        {
+            entry.image = pCmd->image;
+            rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableScreenTarget,
+                                     pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entry, sizeof(entry));
+            if (RT_SUCCESS(rc))
+            {
+                VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[pCmd->stid];
+                rc = vmsvga3dScreenTargetBind(pThisCC, pScreen, pCmd->image.sid);
+                AssertRC(rc);
+            }
+        }
+    }
+}
+
+
+/* SVGA_3D_CMD_UPDATE_GB_SCREENTARGET 1127 */
+static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBScreenTarget const *pCmd)
+{
+//     ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    /* Update the screen target from its backing surface. */
+    ASSERT_GUEST_RETURN_VOID(pCmd->stid < RT_ELEMENTS(pSvgaR3State->aScreens));
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    /* Get the screen target info. */
+    SVGAOTableScreenTargetEntry entryScreenTarget;
+    int rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->GboOTableScreenTarget,
+                                pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entryScreenTarget, sizeof(entryScreenTarget));
+    if (RT_SUCCESS(rc))
+    {
+        ASSERT_GUEST_RETURN_VOID(entryScreenTarget.image.face == 0 && entryScreenTarget.image.mipmap == 0);
+        RT_UNTRUSTED_VALIDATED_FENCE();
+
+        if (entryScreenTarget.image.sid != SVGA_ID_INVALID)
+        {
+            SVGAOTableSurfaceEntry entrySurface;
+            rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+                                    entryScreenTarget.image.sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entrySurface, sizeof(entrySurface));
+            if (RT_SUCCESS(rc))
+            {
+                /* Copy entrySurface.mobid content to the screen target. */
+                if (entrySurface.mobid != SVGA_ID_INVALID)
+                {
+                    RT_UNTRUSTED_VALIDATED_FENCE();
+                    SVGA3dRect targetRect = pCmd->rect;
+
+                    VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[pCmd->stid];
+                    if (pScreen->pHwScreen)
+                    {
+                        /* Copy the screen target surface to the backend's screen. */
+                        vmsvga3dScreenTargetUpdate(pThisCC, pScreen, &targetRect);
+                    }
+                    else if (pScreen->pvScreenBitmap)
+                    {
+                        /* Copy the screen target surface to the memory buffer. */
+                        VMSVGA3D_MAPPED_SURFACE map;
+                        rc = vmsvga3dSurfaceMap(pThisCC, &entryScreenTarget.image, NULL, VMSVGA3D_SURFACE_MAP_READ, &map);
+                        if (RT_SUCCESS(rc))
+                        {
+                            uint8_t const *pu8Src = (uint8_t *)map.pvData
+                                                  + targetRect.x * map.cbPixel
+                                                  + targetRect.y * map.cbRowPitch;
+                            uint8_t *pu8Dst = (uint8_t *)pScreen->pvScreenBitmap
+                                            + targetRect.x * map.cbPixel
+                                            + targetRect.y * map.box.w * map.cbPixel;
+                            for (uint32_t y = 0; y < targetRect.h; ++y)
+                            {
+                                memcpy(pu8Dst, pu8Src, targetRect.w * map.cbPixel);
+
+                                pu8Src += map.cbRowPitch;
+                                pu8Dst += map.box.w * map.cbPixel;
+                            }
+
+                            vmsvga3dSurfaceUnmap(pThisCC, &entryScreenTarget.image, &map, /* fWritten =  */ false);
+
+                            vmsvgaR3UpdateScreen(pThisCC, pScreen, pCmd->rect.x, pCmd->rect.y, pCmd->rect.w, pCmd->rect.h);
+                        }
+                        else
+                            AssertFailed();
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/* SVGA_3D_CMD_DEFINE_GB_MOB64 1135 */
+static void vmsvga3dCmdDefineGBMob64(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob64 const *pCmd)
+{
+//     ASMBreakpoint();
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    ASSERT_GUEST_RETURN_VOID(pCmd->mobid != SVGA_ID_INVALID); /* The guest should not use this id. */
+
+    /* Maybe just update the OTable and create Gbo when the MOB is actually accessed? */
+    /* Allocate a structure for the MOB. */
+    PVMSVGAMOB pMob = (PVMSVGAMOB)RTMemAllocZ(sizeof(*pMob));
+    AssertPtrReturnVoid(pMob);
+
+    int rc = vmsvgaR3MobCreate(pSvgaR3State, pCmd->ptDepth, pCmd->base, pCmd->sizeInBytes, pCmd->mobid, /*fGCPhys64=*/ true, pMob);
+    if (RT_SUCCESS(rc))
+    {
+        return;
+    }
+
+    RTMemFree(pMob);
+}
+
+
 /** @def VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK
  * Check that the 3D command has at least a_cbMin of payload bytes after the
  * header.  Will break out of the switch if it doesn't.
@@ -472,9 +1503,16 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
         STAM_REL_COUNTER_INC(&pSvgaR3State->StatR3Cmd3dSurfaceDefine);
 
-        uint32_t const cMipLevels = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dSize);
-        vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, (uint32_t)pCmd->surfaceFlags, pCmd->format, pCmd->face, 0,
-                              SVGA3D_TEX_FILTER_NONE, cMipLevels, (SVGA3dSize *)(pCmd + 1));
+        SVGA3dCmdDefineSurface_v2 cmd;
+        cmd.sid              = pCmd->sid;
+        cmd.surfaceFlags     = pCmd->surfaceFlags;
+        cmd.format           = pCmd->format;
+        memcpy(cmd.face, pCmd->face, sizeof(cmd.face));
+        cmd.multisampleCount = 0;
+        cmd.autogenFilter    = SVGA3D_TEX_FILTER_NONE;
+
+        uint32_t const cMipLevelSizes = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dSize);
+        vmsvga3dCmdDefineSurface(pThisCC, &cmd, cMipLevelSizes, (SVGA3dSize *)(pCmd + 1));
 # ifdef DEBUG_GMR_ACCESS
         VMR3ReqCallWaitU(PDMDevHlpGetUVM(pDevIns), VMCPUID_ANY, (PFNRT)vmsvgaR3ResetGmrHandlers, 1, pThis);
 # endif
@@ -487,10 +1525,11 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
         STAM_REL_COUNTER_INC(&pSvgaR3State->StatR3Cmd3dSurfaceDefineV2);
 
-        uint32_t const cMipLevels = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dSize);
-        vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format, pCmd->face,
-                              pCmd->multisampleCount, pCmd->autogenFilter,
-                              cMipLevels, (SVGA3dSize *)(pCmd + 1));
+        uint32_t const cMipLevelSizes = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dSize);
+        vmsvga3dCmdDefineSurface(pThisCC, pCmd, cMipLevelSizes, (SVGA3dSize *)(pCmd + 1));
+# ifdef DEBUG_GMR_ACCESS
+        VMR3ReqCallWaitU(PDMDevHlpGetUVM(pDevIns), VMCPUID_ANY, (PFNRT)vmsvgaR3ResetGmrHandlers, 1, pThis);
+# endif
         break;
     }
 
@@ -970,7 +2009,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdDestroyGBMob(pThisCC, pCmd);
         break;
     }
 
@@ -992,7 +2031,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDefineGBSurface *pCmd = (SVGA3dCmdDefineGBSurface *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdDefineGBSurface(pThisCC, pCmd);
         break;
     }
 
@@ -1000,7 +2039,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDestroyGBSurface *pCmd = (SVGA3dCmdDestroyGBSurface *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdDestroyGBSurface(pThisCC, pCmd);
         break;
     }
 
@@ -1008,7 +2047,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdBindGBSurface *pCmd = (SVGA3dCmdBindGBSurface *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdBindGBSurface(pThisCC, pCmd);
         break;
     }
 
@@ -1024,7 +2063,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdUpdateGBImage *pCmd = (SVGA3dCmdUpdateGBImage *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdUpdateGBImage(pThisCC, pCmd);
         break;
     }
 
@@ -1064,7 +2103,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdInvalidateGBSurface *pCmd = (SVGA3dCmdInvalidateGBSurface *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdInvalidateGBSurface(pThisCC, pCmd);
         break;
     }
 
@@ -1136,7 +2175,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdSetOTableBase64 *pCmd = (SVGA3dCmdSetOTableBase64 *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdSetOTableBase64(pThisCC, pCmd);
         break;
     }
 
@@ -1205,7 +2244,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDefineGBScreenTarget *pCmd = (SVGA3dCmdDefineGBScreenTarget *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdDefineGBScreenTarget(pThis, pThisCC, pCmd);
         break;
     }
 
@@ -1213,7 +2252,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDestroyGBScreenTarget *pCmd = (SVGA3dCmdDestroyGBScreenTarget *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdDestroyGBScreenTarget(pThis, pThisCC, pCmd);
         break;
     }
 
@@ -1221,7 +2260,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdBindGBScreenTarget *pCmd = (SVGA3dCmdBindGBScreenTarget *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdBindGBScreenTarget(pThisCC, pCmd);
         break;
     }
 
@@ -1229,7 +2268,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdUpdateGBScreenTarget *pCmd = (SVGA3dCmdUpdateGBScreenTarget *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdUpdateGBScreenTarget(pThisCC, pCmd);
         break;
     }
 
@@ -1294,7 +2333,7 @@ int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId e
     {
         SVGA3dCmdDefineGBMob64 *pCmd = (SVGA3dCmdDefineGBMob64 *)pvCmd;
         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-        VMSVGA_3D_CMD_NOTIMPL(); RT_NOREF(pCmd);
+        vmsvga3dCmdDefineGBMob64(pThisCC, pCmd);
         break;
     }
 
@@ -2710,5 +3749,68 @@ void vmsvgaR3ClipRect(SVGASignedRect const *pBound, SVGASignedRect *pRect)
     pRect->right = right;
     pRect->top = top;
     pRect->bottom = bottom;
+}
+
+
+/**
+ * Clip.
+ *
+ * @param   pBound  Bounding rectangle.
+ * @param   pRect   Rectangle to be clipped.
+ */
+void vmsvgaR3Clip3dRect(SVGA3dRect const *pBound, SVGA3dRect RT_UNTRUSTED_GUEST *pRect)
+{
+    uint32_t const leftBound   = pBound->x;
+    uint32_t const rightBound  = pBound->x + pBound->w;
+    uint32_t const topBound    = pBound->y;
+    uint32_t const bottomBound = pBound->y + pBound->h;
+
+    uint32_t x = pRect->x;
+    uint32_t y = pRect->y;
+    uint32_t w = pRect->w;
+    uint32_t h = pRect->h;
+
+    /* Make sure that right and bottom coordinates can be safely computed. */
+    if (x > rightBound)
+        x = rightBound;
+    if (w > rightBound - x)
+        w = rightBound - x;
+    if (y > bottomBound)
+        y = bottomBound;
+    if (h > bottomBound - y)
+        h = bottomBound - y;
+
+    /* Switch from x, y, w, h to left, top, right, bottom. */
+    uint32_t left   = x;
+    uint32_t right  = x + w;
+    uint32_t top    = y;
+    uint32_t bottom = y + h;
+
+    /* A standard left, right, bottom, top clipping. */
+    if (left < leftBound)
+        left = leftBound;
+    if (right < leftBound)
+        right = leftBound;
+
+    if (left > rightBound)
+        left = rightBound;
+    if (right > rightBound)
+        right = rightBound;
+
+    if (top < topBound)
+        top = topBound;
+    if (bottom < topBound)
+        bottom = topBound;
+
+    if (top > bottomBound)
+        top = bottomBound;
+    if (bottom > bottomBound)
+        bottom = bottomBound;
+
+    /* Back to x, y, w, h representation. */
+    pRect->x = left;
+    pRect->y = top;
+    pRect->w = right - left;
+    pRect->h = bottom - top;
 }
 

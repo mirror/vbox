@@ -2365,7 +2365,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
 
     LogFunc(("sid=%u\n", pSurface->id));
 
-    uint32_t const numMipLevels = pSurface->faces[0].numMipLevels;
+    uint32_t const numMipLevels = pSurface->cLevels;
 
     /* Fugure out what kind of texture we are creating. */
     GLenum binding;
@@ -2424,7 +2424,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
     /* Set the mipmap base and max level parameters. */
     glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-    glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, pSurface->faces[0].numMipLevels - 1);
+    glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, pSurface->cLevels - 1);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     if (pSurface->fDirty)
@@ -5721,7 +5721,7 @@ int vmsvga3dSetTextureState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cTexture
                     if (pSurface->oglId.texture == OPENGL_INVALID_ID)
                     {
                         Log(("CreateTexture (%d,%d) levels=%d\n",
-                              pSurface->paMipmapLevels[0].mipmapSize.width, pSurface->paMipmapLevels[0].mipmapSize.height, pSurface->faces[0].numMipLevels));
+                              pSurface->paMipmapLevels[0].mipmapSize.width, pSurface->paMipmapLevels[0].mipmapSize.height, pSurface->cLevels));
                         rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pSurface);
                         AssertRCReturn(rc, rc);
                     }

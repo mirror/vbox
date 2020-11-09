@@ -28,6 +28,9 @@
 # error "DevVGA-SVGA-internal.h is only for ring-3 code"
 #endif
 
+#include <iprt/avl.h>
+#include <iprt/list.h>
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -46,11 +49,54 @@ typedef struct
  */
 typedef struct
 {
-    uint32_t                    cMaxPages;
-    uint32_t                    cbTotal;
-    uint32_t                    numDescriptors;
-    PVMSVGAGMRDESCRIPTOR        paDesc;
+    uint32_t                cMaxPages;
+    uint32_t                cbTotal;
+    uint32_t                numDescriptors;
+    PVMSVGAGMRDESCRIPTOR    paDesc;
 } GMR, *PGMR;
+
+/*
+ * GBO (Guest Backed Object).
+ * A GBO is a list of the guest pages. GBOs are used for VMSVGA MOBs (Memory OBjects)
+ * and Object Tables which the guest shares with the host.
+ *
+ * A GBO is similar to a GMR. Nevertheless I'll create a new code for GBOs in order
+ * to avoid tweaking and possibly breaking existing code. Moreover it will be probably possible to
+ * map the guest pages into the host R3 memory and access them directly.
+ */
+
+/* GBO descriptor. */
+typedef struct VMSVGAGBODESCRIPTOR
+{
+   RTGCPHYS                 GCPhys;
+   uint64_t                 cPages;
+} VMSVGAGBODESCRIPTOR, *PVMSVGAGBODESCRIPTOR;
+typedef VMSVGAGBODESCRIPTOR const *PCVMSVGAGBODESCRIPTOR;
+
+/* GBO.
+ */
+typedef struct VMSVGAGBO
+{
+    uint32_t                u32Reserved;
+    uint32_t                cTotalPages;
+    uint32_t                cbTotal;
+    uint32_t                cDescriptors;
+    PVMSVGAGBODESCRIPTOR    paDescriptors;
+} VMSVGAGBO, *PVMSVGAGBO;
+typedef VMSVGAGBO const *PCVMSVGAGBO;
+
+#define VMSVGA_IS_GBO_CREATED(a_Gbo) ((a_Gbo)->paDescriptors != NULL)
+
+/* MOB is also a GBO.
+ */
+typedef struct VMSVGAMOB
+{
+    AVLU32NODECORE          Core; /* Key is the mobid. */
+    RTLISTNODE              nodeLRU;
+    VMSVGAGBO               Gbo;
+} VMSVGAMOB, *PVMSVGAMOB;
+typedef VMSVGAMOB const *PCVMSVGAMOB;
+
 
 typedef struct VMSVGACMDBUF *PVMSVGACMDBUF;
 typedef struct VMSVGACMDBUFCTX *PVMSVGACMDBUFCTX;
@@ -83,6 +129,7 @@ typedef struct VMSVGACMDBUFCTX
  */
 typedef struct VMSVGAR3STATE
 {
+    PPDMDEVINS              pDevIns; /* Stored here to use with PDMDevHlp* */
     GMR                    *paGMR; // [VMSVGAState::cGMR]
     struct
     {
@@ -126,6 +173,19 @@ typedef struct VMSVGAR3STATE
     uint32_t volatile       fCmdBuf;
     /** Critical section for accessing the command buffer data. */
     RTCRITSECT              CritSectCmdBuf;
+
+    /**  */
+    VMSVGAGBO               GboOTableMob;
+    VMSVGAGBO               GboOTableSurface;
+    VMSVGAGBO               GboOTableContext;
+    VMSVGAGBO               GboOTableShader;
+    VMSVGAGBO               GboOTableScreenTarget;
+
+    /** Tree of guest's Memory OBjects. Key is mobid. */
+    AVLU32TREE              MOBTree;
+    /** Least Recently Used list of MOBs.
+     * To unmap older MOBs when the guest exceeds SVGA_REG_SUGGESTED_GBOBJECT_MEM_SIZE_KB (SVGA_REG_GBOBJECT_MEM_SIZE_KB) value. */
+    RTLISTANCHOR            MOBLRUList;
 
     /** Tracks how much time we waste reading SVGA_REG_BUSY with a busy FIFO. */
     STAMPROFILE             StatBusyDelayEmts;

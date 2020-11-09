@@ -49,55 +49,25 @@
  * @param   sid                 The ID of the surface to (re-)define.
  * @param   surfaceFlags        .
  * @param   format              .
- * @param   face                .
  * @param   multisampleCount    .
  * @param   autogenFilter       .
- * @param   cMipLevels          .
- * @param   paMipLevelSizes     .
+ * @param   numMipLevels        .
+ * @param   pMipLevel0Size      .
  */
-int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFlags, SVGA3dSurfaceFormat format,
-                          SVGA3dSurfaceFace face[SVGA3D_MAX_SURFACE_FACES], uint32_t multisampleCount,
-                          SVGA3dTextureFilter autogenFilter, uint32_t cMipLevels, SVGA3dSize *paMipLevelSizes)
+int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceFlags surfaceFlags, SVGA3dSurfaceFormat format,
+                          uint32_t multisampleCount, SVGA3dTextureFilter autogenFilter,
+                          uint32_t numMipLevels, SVGA3dSize const *pMipLevel0Size)
 {
     PVMSVGA3DSURFACE pSurface;
     PVMSVGA3DSTATE   pState = pThisCC->svga.p3dState;
-    AssertReturn(pState, VERR_NO_MEMORY);
+    AssertReturn(pState, VERR_INVALID_STATE);
 
-    Log(("vmsvga3dSurfaceDefine: sid=%u surfaceFlags=%x format=%s (%x) multiSampleCount=%d autogenFilter=%d, cMipLevels=%d size=(%d,%d,%d)\n",
-         sid, surfaceFlags, vmsvgaLookupEnum((int)format, &g_SVGA3dSurfaceFormat2String), format, multisampleCount, autogenFilter,
-         cMipLevels, paMipLevelSizes->width, paMipLevelSizes->height, paMipLevelSizes->depth));
+    LogFunc(("sid=%u surfaceFlags=%#x format=%s (%#x) multiSampleCount=%d autogenFilter=%d, numMipLevels=%d size=(%dx%dx%d)\n",
+             sid, surfaceFlags, vmsvgaLookupEnum((int)format, &g_SVGA3dSurfaceFormat2String), format, multisampleCount, autogenFilter,
+             numMipLevels, pMipLevel0Size->width, pMipLevel0Size->height, pMipLevel0Size->depth));
 
     AssertReturn(sid < SVGA3D_MAX_SURFACE_IDS, VERR_INVALID_PARAMETER);
-    AssertReturn(cMipLevels >= 1, VERR_INVALID_PARAMETER);
-
-    /* Number of faces (cFaces) is specified as the number of the first non-zero elements in the 'face' array.
-     * Since only plain surfaces (cFaces == 1) and cubemaps (cFaces == 6) are supported
-     * (see also SVGA3dCmdDefineSurface definition in svga3d_reg.h), we ignore anything else.
-     */
-    uint32_t cRemainingMipLevels = cMipLevels;
-    uint32_t cFaces = 0;
-    for (uint32_t i = 0; i < SVGA3D_MAX_SURFACE_FACES; ++i)
-    {
-        if (face[i].numMipLevels == 0)
-            break;
-
-        /* All SVGA3dSurfaceFace structures must have the same value of numMipLevels field */
-        AssertReturn(face[i].numMipLevels == face[0].numMipLevels, VERR_INVALID_PARAMETER);
-
-        /* numMipLevels value can't be greater than the number of remaining elements in the paMipLevelSizes array. */
-        AssertReturn(face[i].numMipLevels <= cRemainingMipLevels, VERR_INVALID_PARAMETER);
-        cRemainingMipLevels -= face[i].numMipLevels;
-
-        ++cFaces;
-    }
-    for (uint32_t i = cFaces; i < SVGA3D_MAX_SURFACE_FACES; ++i)
-        AssertReturn(face[i].numMipLevels == 0, VERR_INVALID_PARAMETER);
-
-    /* cFaces must be 6 for a cubemap and 1 otherwise. */
-    AssertReturn(cFaces == (uint32_t)((surfaceFlags & SVGA3D_SURFACE_CUBEMAP) ? 6 : 1), VERR_INVALID_PARAMETER);
-
-    /* Sum of face[i].numMipLevels must be equal to cMipLevels. */
-    AssertReturn(cRemainingMipLevels == 0, VERR_INVALID_PARAMETER);
+    AssertReturn(numMipLevels >= 1, VERR_INVALID_PARAMETER);
 
     if (sid >= pState->cSurfaces)
     {
@@ -125,12 +95,18 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFla
 #ifdef VMSVGA3D_OPENGL
     pSurface->idWeakContextAssociation = SVGA3D_INVALID_ID;
     pSurface->oglId.buffer          = OPENGL_INVALID_ID;
+#elif defined(VMSVGA3D_DX)
+    // pSurface->pBackendSurface       = NULL;
 #else /* VMSVGA3D_DIRECT3D */
     pSurface->idAssociatedContext   = SVGA3D_INVALID_ID;
     pSurface->hSharedObject         = NULL;
     pSurface->pSharedObjectTree     = NULL;
 #endif
 
+    /** @todo This 'switch' and the sufraceFlags tweaks should not be necessary.
+     * The actual surface type will be figured out when the surface is actually used later.
+     * The backends code must be reviewed for unnecessary dependencies on the surfaceFlags value.
+     */
     /* The surface type is sort of undefined now, even though the hints and format can help to clear that up.
      * In some case we'll have to wait until the surface is used to create the D3D object.
      */
@@ -144,6 +120,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFla
     case SVGA3D_Z_DF16:
     case SVGA3D_Z_DF24:
     case SVGA3D_Z_D24S8_INT:
+        Assert(surfaceFlags & SVGA3D_SURFACE_HINT_DEPTHSTENCIL);
         surfaceFlags |= SVGA3D_SURFACE_HINT_DEPTHSTENCIL;
         break;
 
@@ -170,6 +147,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFla
     case SVGA3D_X1R5G5B5:
     case SVGA3D_A1R5G5B5:
     case SVGA3D_A4R4G4B4:
+        Assert(surfaceFlags & (SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_SCREENTARGET));
         surfaceFlags |= SVGA3D_SURFACE_HINT_TEXTURE;
         break;
 
@@ -209,21 +187,86 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFla
 
     pSurface->surfaceFlags      = surfaceFlags;
     pSurface->format            = format;
-    memcpy(pSurface->faces, face, sizeof(pSurface->faces));
-    pSurface->cFaces            = cFaces;
+    /* cFaces is 6 for a cubemaps and 1 otherwise. */
+    pSurface->cFaces            = (uint32_t)((surfaceFlags & SVGA3D_SURFACE_CUBEMAP) ? 6 : 1);
+    pSurface->cLevels           = numMipLevels;
     pSurface->multiSampleCount  = multisampleCount;
     pSurface->autogenFilter     = autogenFilter;
     Assert(autogenFilter != SVGA3D_TEX_FILTER_FLATCUBIC);
     Assert(autogenFilter != SVGA3D_TEX_FILTER_GAUSSIANCUBIC);
-    pSurface->cMipmapLevels     = cMipLevels;
-    pSurface->paMipmapLevels    = (PVMSVGA3DMIPMAPLEVEL)RTMemAllocZ(cMipLevels * sizeof(VMSVGA3DMIPMAPLEVEL));
+    pSurface->paMipmapLevels    = (PVMSVGA3DMIPMAPLEVEL)RTMemAllocZ(numMipLevels * pSurface->cFaces * sizeof(VMSVGA3DMIPMAPLEVEL));
     AssertReturn(pSurface->paMipmapLevels, VERR_NO_MEMORY);
-
-    for (uint32_t i=0; i < cMipLevels; i++)
-        pSurface->paMipmapLevels[i].mipmapSize = paMipLevelSizes[i];
 
     pSurface->cbBlock = vmsvga3dSurfaceFormatSize(format, &pSurface->cxBlock, &pSurface->cyBlock);
     AssertReturn(pSurface->cbBlock, VERR_INVALID_PARAMETER);
+
+    /** @todo cbMemRemaining = value of SVGA_REG_MOB_MAX_SIZE */
+    uint32_t cbMemRemaining = SVGA3D_MAX_SURFACE_MEM_SIZE; /* Do not allow more than this for a surface. */
+    SVGA3dSize mipmapSize = *pMipLevel0Size;
+    for (uint32_t i = 0; i < numMipLevels; ++i)
+    {
+        for (uint32_t iFace = 0; iFace < pSurface->cFaces; ++iFace)
+        {
+            uint32_t const iMipmap = iFace * numMipLevels + i;
+            LogFunc(("[%d] face %d mip level %d (%d,%d,%d) cbBlock=%#x block %dx%d\n",
+                     iMipmap, iFace, i, mipmapSize.width, mipmapSize.height, mipmapSize.depth,
+                     pSurface->cbBlock, pSurface->cxBlock, pSurface->cyBlock));
+
+            uint32_t cBlocksX;
+            uint32_t cBlocksY;
+            if (RT_LIKELY(pSurface->cxBlock == 1 && pSurface->cyBlock == 1))
+            {
+                cBlocksX = mipmapSize.width;
+                cBlocksY = mipmapSize.height;
+            }
+            else
+            {
+                cBlocksX = mipmapSize.width / pSurface->cxBlock;
+                if (mipmapSize.width % pSurface->cxBlock)
+                    ++cBlocksX;
+                cBlocksY = mipmapSize.height / pSurface->cyBlock;
+                if (mipmapSize.height % pSurface->cyBlock)
+                    ++cBlocksY;
+            }
+
+            AssertReturn(cBlocksX > 0 && cBlocksY > 0 && mipmapSize.depth > 0, VERR_INVALID_PARAMETER);
+
+            const uint32_t cMaxBlocksX = cbMemRemaining / pSurface->cbBlock;
+            if (cBlocksX > cMaxBlocksX)
+                return VERR_INVALID_PARAMETER;
+            const uint32_t cbSurfacePitch = pSurface->cbBlock * cBlocksX;
+            LogFunc(("cbSurfacePitch=0x%x\n", cbSurfacePitch));
+
+            const uint32_t cMaxBlocksY = cbMemRemaining / cbSurfacePitch;
+            if (cBlocksY > cMaxBlocksY)
+                return VERR_INVALID_PARAMETER;
+            const uint32_t cbSurfacePlane = cbSurfacePitch * cBlocksY;
+
+            const uint32_t cMaxDepth = cbMemRemaining / cbSurfacePlane;
+            if (mipmapSize.depth > cMaxDepth)
+                return VERR_INVALID_PARAMETER;
+            const uint32_t cbSurface = cbSurfacePlane * mipmapSize.depth;
+
+            PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iMipmap];
+            pMipmapLevel->mipmapSize     = mipmapSize;
+            pMipmapLevel->cBlocksX       = cBlocksX;
+            pMipmapLevel->cBlocksY       = cBlocksY;
+            pMipmapLevel->cBlocks        = cBlocksX * cBlocksY * mipmapSize.depth;
+            pMipmapLevel->cbSurfacePitch = cbSurfacePitch;
+            pMipmapLevel->cbSurfacePlane = cbSurfacePlane;
+            pMipmapLevel->cbSurface      = cbSurface;
+            pMipmapLevel->pSurfaceData   = NULL;
+
+            cbMemRemaining -= cbSurface;
+        }
+
+        mipmapSize.width >>= 1;
+        if (mipmapSize.width == 0) mipmapSize.width = 1;
+        mipmapSize.height >>= 1;
+        if (mipmapSize.height == 0) mipmapSize.height = 1;
+        mipmapSize.depth >>= 1;
+        if (mipmapSize.depth == 0) mipmapSize.depth = 1;
+    }
 
 #ifdef VMSVGA3D_DIRECT3D
     /* Translate the format and usage flags to D3D. */
@@ -245,6 +288,8 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFla
     /* pSurface->u.pSurface = NULL; */
     /* pSurface->bounce.pTexture = NULL; */
     /* pSurface->emulated.pTexture = NULL; */
+#elif defined(VMSVGA3D_DX)
+    /* Nothing, because all backend specific data reside in pSurface->pBackendSurface. */
 #else
     /* pSurface->fEmulated = false; */
     /* pSurface->idEmulated = OPENGL_INVALID_ID; */
@@ -263,63 +308,11 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFla
     Assert(!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface));
 
     /* Allocate buffer to hold the surface data until we can move it into a D3D object */
-    uint32_t cbMemRemaining = SVGA3D_MAX_SURFACE_MEM_SIZE; /* Do not allow more than this for a surface. */
-    for (uint32_t i = 0; i < cMipLevels; ++i)
+    for (uint32_t i = 0; i < numMipLevels * pSurface->cFaces; ++i)
     {
         PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[i];
-        LogFunc(("[%d] face %d mip level %d (%d,%d,%d) cbBlock=0x%x block %dx%d\n",
-                 i, i / pSurface->faces[0].numMipLevels, i % pSurface->faces[0].numMipLevels,
-                 pMipmapLevel->mipmapSize.width, pMipmapLevel->mipmapSize.height, pMipmapLevel->mipmapSize.depth,
-                 pSurface->cbBlock, pSurface->cxBlock, pSurface->cyBlock));
-
-        uint32_t cBlocksX;
-        uint32_t cBlocksY;
-        if (RT_LIKELY(pSurface->cxBlock == 1 && pSurface->cyBlock == 1))
-        {
-            cBlocksX = pMipmapLevel->mipmapSize.width;
-            cBlocksY = pMipmapLevel->mipmapSize.height;
-        }
-        else
-        {
-            cBlocksX = pMipmapLevel->mipmapSize.width / pSurface->cxBlock;
-            if (pMipmapLevel->mipmapSize.width % pSurface->cxBlock)
-                ++cBlocksX;
-            cBlocksY = pMipmapLevel->mipmapSize.height / pSurface->cyBlock;
-            if (pMipmapLevel->mipmapSize.height % pSurface->cyBlock)
-                ++cBlocksY;
-        }
-
-        if (   cBlocksX == 0
-            || cBlocksY == 0
-            || pMipmapLevel->mipmapSize.depth == 0)
-            return VERR_INVALID_PARAMETER;
-
-        const uint32_t cMaxBlocksX = cbMemRemaining / pSurface->cbBlock;
-        if (cBlocksX > cMaxBlocksX)
-            return VERR_INVALID_PARAMETER;
-        const uint32_t cbSurfacePitch = pSurface->cbBlock * cBlocksX;
-        LogFunc(("cbSurfacePitch=0x%x\n", cbSurfacePitch));
-
-        const uint32_t cMaxBlocksY = cbMemRemaining / cbSurfacePitch;
-        if (cBlocksY > cMaxBlocksY)
-            return VERR_INVALID_PARAMETER;
-        const uint32_t cbSurfacePlane = cbSurfacePitch * cBlocksY;
-
-        const uint32_t cMaxDepth = cbMemRemaining / cbSurfacePlane;
-        if (pMipmapLevel->mipmapSize.depth > cMaxDepth)
-            return VERR_INVALID_PARAMETER;
-        const uint32_t cbSurface = cbSurfacePlane * pMipmapLevel->mipmapSize.depth;
-
-        pMipmapLevel->cBlocksX       = cBlocksX;
-        pMipmapLevel->cBlocksY       = cBlocksY;
-        pMipmapLevel->cBlocks        = cBlocksX * cBlocksY * pMipmapLevel->mipmapSize.depth;
-        pMipmapLevel->cbSurfacePitch = cbSurfacePitch;
-        pMipmapLevel->cbSurfacePlane = cbSurfacePlane;
-        pMipmapLevel->cbSurface      = cbSurface;
-        pMipmapLevel->pSurfaceData   = RTMemAllocZ(cbSurface);
+        pMipmapLevel->pSurfaceData = RTMemAllocZ(pMipmapLevel->cbSurface);
         AssertReturn(pMipmapLevel->pSurfaceData, VERR_NO_MEMORY);
-
-        cbMemRemaining -= cbSurface;
     }
     return VINF_SUCCESS;
 }
@@ -362,7 +355,7 @@ int vmsvga3dSurfaceDestroy(PVGASTATECC pThisCC, uint32_t sid)
 
     if (pSurface->paMipmapLevels)
     {
-        for (uint32_t i = 0; i < pSurface->cMipmapLevels; ++i)
+        for (uint32_t i = 0; i < pSurface->cLevels * pSurface->cFaces; ++i)
             RTMemFreeZ(pSurface->paMipmapLevels[i].pSurfaceData, pSurface->paMipmapLevels[i].cbSurface);
         RTMemFree(pSurface->paMipmapLevels);
     }
@@ -404,11 +397,10 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dSurfac
     rc = vmsvga3dSurfaceFromSid(pState, sidDst, &pDstSurface);
     AssertRCReturn(rc, rc);
 
-    /* Can use faces[0].numMipLevels, because numMipLevels is the same for all faces. */
     AssertReturn(pSrcSfcImg->face < pSrcSurface->cFaces, VERR_INVALID_PARAMETER);
-    AssertReturn(pSrcSfcImg->mipmap < pSrcSurface->faces[0].numMipLevels, VERR_INVALID_PARAMETER);
+    AssertReturn(pSrcSfcImg->mipmap < pSrcSurface->cLevels, VERR_INVALID_PARAMETER);
     AssertReturn(pDstSfcImg->face < pDstSurface->cFaces, VERR_INVALID_PARAMETER);
-    AssertReturn(pDstSfcImg->mipmap < pDstSurface->faces[0].numMipLevels, VERR_INVALID_PARAMETER);
+    AssertReturn(pDstSfcImg->mipmap < pDstSurface->cLevels, VERR_INVALID_PARAMETER);
 
     PVMSVGA3DCONTEXT pContext;
 #ifdef VMSVGA3D_OPENGL
@@ -513,7 +505,8 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAGuestImage gues
 #ifdef VMSVGA3D_DIRECT3D
         /* Flush the drawing pipeline for this surface as it could be used in a shared context. */
         vmsvga3dSurfaceFlush(pSurface);
-
+#elif defined(VMSVGA3D_DX)
+        /** @todo */
 #else /* VMSVGA3D_OPENGL */
         pContext = &pState->SharedCtx;
         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);

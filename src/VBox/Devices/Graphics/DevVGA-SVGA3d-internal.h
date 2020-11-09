@@ -28,10 +28,10 @@
 # error "VMSVGA3D_INCL_INTERNALS is only for ring-3 code"
 #endif
 #ifdef VMSVGA3D_OPENGL
-# ifdef VMSVGA3D_DIRECT3D
+# if defined(VMSVGA3D_DIRECT3D) || defined(VMSVGA3D_DX)
 #  error "Both VMSVGA3D_DIRECT3D and VMSVGA3D_OPENGL cannot be defined at the same time."
 # endif
-#elif !defined(VMSVGA3D_DIRECT3D)
+#elif !defined(VMSVGA3D_DIRECT3D) && !defined(VMSVGA3D_DX)
 # error "Either VMSVGA3D_OPENGL or VMSVGA3D_DIRECT3D must be defined."
 #endif
 
@@ -50,6 +50,8 @@
 # ifdef VMSVGA3D_DIRECT3D
 #  include <d3d9.h>
 #  include <iprt/avl.h>
+# elif defined(VMSVGA3D_DX)
+#  include <d3d11.h>
 # else
 #  include <GL/gl.h>
 #  include "vmsvga_glext/wglext.h"
@@ -535,11 +537,16 @@ typedef enum VMSVGA3DOGLRESTYPE
 } VMSVGA3DOGLRESTYPE;
 #endif
 
+/* The 3D backend surface. The actual structure is 3D API specific. */
+typedef struct VMSVGA3DBACKENDSURFACE *PVMSVGA3DBACKENDSURFACE;
+
 /**
  * VMSVGA3d surface.
  */
 typedef struct VMSVGA3DSURFACE
 {
+    PVMSVGA3DBACKENDSURFACE pBackendSurface;
+
     uint32_t                id;
 #ifdef VMSVGA3D_OPENGL
     uint32_t                idWeakContextAssociation;
@@ -565,10 +572,9 @@ typedef struct VMSVGA3DSURFACE
     bool                    fEmulated; /* Whether the texture format is emulated. */
     GLuint                  idEmulated; /* GL name of the intermediate texture. */
 #endif
-    SVGA3dSurfaceFace       faces[SVGA3D_MAX_SURFACE_FACES];
-    uint32_t                cFaces;
-    uint32_t                cMipmapLevels;
-    PVMSVGA3DMIPMAPLEVEL    paMipmapLevels;
+    uint32_t                cFaces; /* Number of faces: 6 for cubemaps, 1 for everything else. */
+    uint32_t                cLevels; /* Number of mipmap levels per face. */
+    PVMSVGA3DMIPMAPLEVEL    paMipmapLevels; /* cFaces * cLevels elements. */
     uint32_t                multiSampleCount;
     SVGA3dTextureFilter     autogenFilter;
 #ifdef VMSVGA3D_DIRECT3D
@@ -645,29 +651,12 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, internalFormatGL),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, formatGL),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, typeGL),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DSURFACE, id),
 # endif
-    SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, faces),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, cFaces),
-    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DSURFACE, paMipmapLevels),
+    SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, cLevels),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, multiSampleCount),
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, autogenFilter),
-# ifdef VMSVGA3D_DIRECT3D
-    SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, format), /** @todo format duplicated. */
-    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DSURFACE, formatD3D),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DSURFACE, fUsageD3D),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DSURFACE, multiSampleTypeD3D),
-# endif
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, cbBlock),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DSURFACE, fDirty),
-# ifdef VMSVGA3D_DIRECT3D
-    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DSURFACE, hSharedObject),
-    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DSURFACE, pQuery),
-    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DSURFACE, u.pSurface),
-    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DSURFACE, bounce.pTexture),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DSURFACE, pSharedObjectTree),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DSURFACE, fStencilAsTexture),
-# endif
     SSMFIELD_ENTRY_TERM()
 };
 #endif
@@ -686,6 +675,8 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
  */
 #ifdef VMSVGA3D_DIRECT3D
 # define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->u.pSurface != NULL)
+#elif defined(VMSVGA3D_DX)
+# define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->pBackendSurface != NULL)
 #else
 # define VMSVGA3DSURFACE_HAS_HW_SURFACE(a_pSurface) ((a_pSurface)->oglId.texture != OPENGL_INVALID_ID)
 #endif
@@ -700,6 +691,9 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
 # define VMSVGA3DSURFACE_NEEDS_DATA(a_pSurface) \
    (   (a_pSurface)->enmD3DResType == VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER \
     || (a_pSurface)->enmD3DResType == VMSVGA3D_D3DRESTYPE_INDEX_BUFFER)
+#elif defined(VMSVGA3D_DX)
+  /** @todo */
+# define VMSVGA3DSURFACE_NEEDS_DATA(a_pSurface) (false)
 #else
 # define VMSVGA3DSURFACE_NEEDS_DATA(a_pSurface) \
     ((a_pSurface)->enmOGLResType == VMSVGA3D_OGLRESTYPE_BUFFER)
@@ -718,6 +712,8 @@ typedef struct VMSVGA3DSHADER
 #ifdef VMSVGA3D_DIRECT3D
         IDirect3DVertexShader9     *pVertexShader;
         IDirect3DPixelShader9      *pPixelShader;
+#elif defined(VMSVGA3D_DX)
+        /** todo */
 #else
         void                       *pVertexShader;
         void                       *pPixelShader;
@@ -769,6 +765,8 @@ typedef struct VMSVGA3DQUERY
 {
 #ifdef VMSVGA3D_DIRECT3D
     IDirect3DQuery9    *pQuery;
+#elif defined(VMSVGA3D_DX)
+    /** @todo */
 #else /* VMSVGA3D_OPENGL */
     GLuint              idQuery;
 #endif
@@ -784,6 +782,8 @@ static SSMFIELD const g_aVMSVGA3DQUERYFields[] =
 {
 #ifdef VMSVGA3D_DIRECT3D
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DQUERY, pQuery),
+#elif defined(VMSVGA3D_DX)
+    /** @todo */
 #else /* VMSVGA3D_OPENGL */
     SSMFIELD_ENTRY_IGNORE(          VMSVGA3DQUERY, idQuery),
 #endif
@@ -795,6 +795,9 @@ static SSMFIELD const g_aVMSVGA3DQUERYFields[] =
 
 #ifdef VMSVGA3D_DIRECT3D
 #define VMSVGA3DQUERY_EXISTS(p) ((p)->pQuery && (p)->enmQueryState != VMSVGA3DQUERYSTATE_NULL)
+#elif defined(VMSVGA3D_DX)
+    /** @todo */
+#define VMSVGA3DQUERY_EXISTS(p) (false)
 #else
 #define VMSVGA3DQUERY_EXISTS(p) ((p)->idQuery && (p)->enmQueryState != VMSVGA3DQUERYSTATE_NULL)
 #endif
@@ -812,6 +815,8 @@ typedef struct VMSVGA3DCONTEXT
 #  else
     IDirect3DDevice9Ex     *pDevice;
 #  endif
+# elif defined(VMSVGA3D_DX)
+    /** @todo */
 # else
     /* Device context of the context window. */
     HDC                     hdc;
@@ -910,6 +915,8 @@ static SSMFIELD const g_aVMSVGA3DCONTEXTFields[] =
 # ifdef RT_OS_WINDOWS
 #  ifdef VMSVGA3D_DIRECT3D
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGA3DCONTEXT, pDevice),
+#  elif defined(VMSVGA3D_DX)
+    /** @todo */
 #  else
     SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, hdc),
     SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, hglrc),
@@ -966,6 +973,9 @@ static SSMFIELD const g_aVMSVGA3DCONTEXTFields[] =
 typedef struct VMSVGA3DFORMATCONVERTER *PVMSVGA3DFORMATCONVERTER;
 #endif
 
+/* The 3D backend. The actual structure is 3D API specific. */
+typedef struct VMSVGA3DBACKEND *PVMSVGA3DBACKEND;
+
 /**
  * VMSVGA3d state data.
  *
@@ -995,6 +1005,8 @@ typedef struct VMSVGA3DSTATE
     bool                    fSupportedFormatUYVY : 1;
     bool                    fSupportedFormatYUY2 : 1;
     bool                    fSupportedFormatA8B8G8R8 : 1;
+# elif defined(VMSVGA3D_DX)
+    PVMSVGA3DBACKEND        pBackend;
 # endif
     /** Window Thread. */
     R3PTRTYPE(RTTHREAD)     pWindowThread;
@@ -1296,17 +1308,14 @@ DECLINLINE(int) vmsvga3dSurfaceFromSid(PVMSVGA3DSTATE pState, uint32_t sid, PVMS
 DECLINLINE(int) vmsvga3dMipmapLevel(PVMSVGA3DSURFACE pSurface, uint32_t face, uint32_t mipmap,
                                     PVMSVGA3DMIPMAPLEVEL *ppMipmapLevel)
 {
-    /* Can use faces[0].numMipLevels, because numMipLevels is the same for all faces. */
-    const uint32_t numMipLevels = pSurface->faces[0].numMipLevels;
-
     AssertMsgReturn(face < pSurface->cFaces,
                     ("cFaces %d, face %d\n", pSurface->cFaces, face),
                     VERR_INVALID_PARAMETER);
-    AssertMsgReturn(mipmap < numMipLevels,
-                    ("numMipLevels %d, mipmap %d", numMipLevels, mipmap),
+    AssertMsgReturn(mipmap < pSurface->cLevels,
+                    ("numMipLevels %d, mipmap %d", pSurface->cLevels, mipmap),
                     VERR_INVALID_PARAMETER);
 
-    *ppMipmapLevel = &pSurface->paMipmapLevels[face * numMipLevels + mipmap];
+    *ppMipmapLevel = &pSurface->paMipmapLevels[face * pSurface->cLevels + mipmap];
     return VINF_SUCCESS;
 }
 
@@ -1323,6 +1332,22 @@ DECLINLINE(D3DCUBEMAP_FACES) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
         case 4: Face = D3DCUBEMAP_FACE_POSITIVE_Z; break;
         default:
         case 5: Face = D3DCUBEMAP_FACE_NEGATIVE_Z; break;
+    }
+    return Face;
+}
+#elif defined(VMSVGA3D_DX)
+DECLINLINE(D3D11_TEXTURECUBE_FACE) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
+{
+    D3D11_TEXTURECUBE_FACE Face;
+    switch (iFace)
+    {
+        case 0: Face = D3D11_TEXTURECUBE_FACE_POSITIVE_X; break;
+        case 1: Face = D3D11_TEXTURECUBE_FACE_NEGATIVE_X; break;
+        case 2: Face = D3D11_TEXTURECUBE_FACE_POSITIVE_Y; break;
+        case 3: Face = D3D11_TEXTURECUBE_FACE_NEGATIVE_Y; break;
+        case 4: Face = D3D11_TEXTURECUBE_FACE_POSITIVE_Z; break;
+        default:
+        case 5: Face = D3D11_TEXTURECUBE_FACE_NEGATIVE_Z; break;
     }
     return Face;
 }
@@ -1353,7 +1378,7 @@ int vmsvga3dOcclusionQueryGetData(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pConte
 void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
                                  const char *pszPath, const char *pszNamePrefix, const char *pszNameSuffix);
 
-#ifdef VMSVGA3D_DIRECT3D
+#if defined(VMSVGA3D_DIRECT3D) || defined(VMSVGA3D_DX)
 #define D3D_RELEASE(ptr) do { \
     if (ptr)                  \
     {                         \
@@ -1361,7 +1386,9 @@ void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
         (ptr) = 0;            \
     }                         \
 } while (0)
+#endif
 
+#if defined(VMSVGA3D_DIRECT3D)
 HRESULT D3D9UpdateTexture(PVMSVGA3DCONTEXT pContext,
                           PVMSVGA3DSURFACE pSurface);
 HRESULT D3D9GetRenderTargetData(PVMSVGA3DCONTEXT pContext,

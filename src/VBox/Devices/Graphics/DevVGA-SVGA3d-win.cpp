@@ -1195,7 +1195,7 @@ static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVMSVGA3DSTATE pState
         const uint32_t cWidth = pSurface->paMipmapLevels[0].mipmapSize.width;
         const uint32_t cHeight = pSurface->paMipmapLevels[0].mipmapSize.height;
         const uint32_t cDepth = pSurface->paMipmapLevels[0].mipmapSize.depth;
-        const uint32_t numMipLevels = pSurface->faces[0].numMipLevels;
+        const uint32_t numMipLevels = pSurface->cLevels;
 
         LogFunc(("Create shared %stexture copy d3d (%d,%d,%d) cMip=%d usage %x format %x.\n",
                   pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE ? "volume " :
@@ -1852,7 +1852,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
     const uint32_t cWidth = pSurface->paMipmapLevels[0].mipmapSize.width;
     const uint32_t cHeight = pSurface->paMipmapLevels[0].mipmapSize.height;
     const uint32_t cDepth = pSurface->paMipmapLevels[0].mipmapSize.depth;
-    const uint32_t numMipLevels = pSurface->faces[0].numMipLevels;
+    const uint32_t numMipLevels = pSurface->cLevels;
 
     /*
      * Create D3D texture object.
@@ -1907,7 +1907,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
              || pSurface->formatD3D == D3DFMT_D16)
     {
         Assert(pSurface->cFaces == 1);
-        Assert(pSurface->faces[0].numMipLevels == 1);
+        Assert(pSurface->cLevels == 1);
         Assert(cDepth == 1);
 
         /* Use the INTZ format for a depth/stencil surface that will be used as a texture */
@@ -2222,7 +2222,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
         AssertMsgReturn(hr == D3D_OK, ("UpdateTexture failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
         /* We will now use the bounce texture for all memory accesses, so free our surface memory buffer. */
-        for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
+        for (uint32_t i = 0; i < pSurface->cLevels; i++)
         {
             RTMemFree(pSurface->paMipmapLevels[i].pSurfaceData);
             pSurface->paMipmapLevels[i].pSurfaceData = NULL;
@@ -2708,7 +2708,7 @@ int vmsvga3dContextDestroy(PVGASTATECC pThisCC, uint32_t cid)
                 uint32_t const              multisampleCount = pSurface->multiSampleCount;
                 SVGA3dTextureFilter const   autogenFilter    = pSurface->autogenFilter;
                 uint32_t const              cFaces           = pSurface->cFaces;
-                uint32_t const              cMipLevels       = pSurface->faces[0].numMipLevels;
+                uint32_t const              cMipLevels       = pSurface->cLevels;
 
                 SVGA3dSize *pMipLevelSize = (SVGA3dSize *)RTMemAllocZ(cMipLevels * cFaces * sizeof(SVGA3dSize));
                 AssertReturn(pMipLevelSize, VERR_NO_MEMORY);
@@ -2722,10 +2722,6 @@ int vmsvga3dContextDestroy(PVGASTATECC pThisCC, uint32_t cid)
                     }
                 }
 
-                SVGA3dSurfaceFace aFaces[SVGA3D_MAX_SURFACE_FACES];
-                AssertCompile(sizeof(aFaces) == sizeof(pSurface->faces));
-                memcpy(aFaces, pSurface->faces, sizeof(pSurface->faces));
-
                 /* Recreate the surface with the original settings; destroys the contents, but that seems fairly safe since the context is also destroyed. */
 #ifdef DEBUG_sunlover
                 /** @todo not safe with shared objects */
@@ -2735,8 +2731,8 @@ int vmsvga3dContextDestroy(PVGASTATECC pThisCC, uint32_t cid)
                 rc = vmsvga3dSurfaceDestroy(pThisCC, sid);
                 AssertRC(rc);
 
-                rc = vmsvga3dSurfaceDefine(pThisCC, sid, surfaceFlags, format, aFaces, multisampleCount, autogenFilter,
-                                           cMipLevels * cFaces, pMipLevelSize);
+                rc = vmsvga3dSurfaceDefine(pThisCC, sid, surfaceFlags, format, multisampleCount, autogenFilter,
+                                           cMipLevels, &pMipLevelSize[0]);
                 AssertRC(rc);
 
                 Assert(!pSurface->u.pSurface);
@@ -4058,9 +4054,9 @@ int vmsvga3dSetRenderTarget(PVGASTATECC pThisCC, uint32_t cid, SVGA3dRenderTarge
                 &&  pRenderTarget->fDirty)
             {
                 Log(("vmsvga3dSetRenderTarget: sync dirty depth/stencil buffer\n"));
-                Assert(pRenderTarget->faces[0].numMipLevels == 1);
+                Assert(pRenderTarget->cLevels == 1);
 
-                for (uint32_t i = 0; i < pRenderTarget->faces[0].numMipLevels; i++)
+                for (uint32_t i = 0; i < pRenderTarget->cLevels; i++)
                 {
                     if (pRenderTarget->paMipmapLevels[i].fDirty)
                     {
@@ -4400,7 +4396,7 @@ int vmsvga3dSetTextureState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cTexture
                 if (!pSurface->u.pTexture)
                 {
                     Assert(pSurface->idAssociatedContext == SVGA3D_INVALID_ID);
-                    LogFunc(("CreateTexture (%d,%d) level=%d fUsage=%x format=%x\n", pSurface->paMipmapLevels[0].mipmapSize.width, pSurface->paMipmapLevels[0].mipmapSize.height, pSurface->faces[0].numMipLevels, pSurface->fUsageD3D, pSurface->formatD3D));
+                    LogFunc(("CreateTexture (%d,%d) level=%d fUsage=%x format=%x\n", pSurface->paMipmapLevels[0].mipmapSize.width, pSurface->paMipmapLevels[0].mipmapSize.height, pSurface->cLevels, pSurface->fUsageD3D, pSurface->formatD3D));
                     rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pSurface);
                     AssertRCReturn(rc, rc);
                 }

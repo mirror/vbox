@@ -48,6 +48,28 @@
 #define FLOAT_FMT_ARGS(r)                       (r) >= 0.0f ? "" : "-", (unsigned)RT_ABS(r), (unsigned)(RT_ABS((r) - (unsigned)(r)) * 1000000.0f)
 
 
+typedef enum VMSVGA3D_SURFACE_MAP
+{
+    VMSVGA3D_SURFACE_MAP_READ,
+    VMSVGA3D_SURFACE_MAP_WRITE,
+    VMSVGA3D_SURFACE_MAP_READ_WRITE,
+    VMSVGA3D_SURFACE_MAP_WRITE_DISCARD,
+} VMSVGA3D_SURFACE_MAP;
+
+typedef struct VMSVGA3D_MAPPED_SURFACE
+{
+    VMSVGA3D_SURFACE_MAP enmMapType;
+    SVGA3dBox box;
+    uint32_t cbPixel;
+    uint32_t cbRowPitch;
+    uint32_t cbDepthPitch;
+    void *pvData;
+} VMSVGA3D_MAPPED_SURFACE;
+
+#ifdef DUMP_BITMAPS
+void vmsvga3dMapWriteBmpFile(VMSVGA3D_MAPPED_SURFACE const *pMap, char const *pszPrefix);
+#endif
+
 /* DevVGA-SVGA.cpp: */
 void vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t sid);
 
@@ -62,9 +84,9 @@ int vmsvga3dReset(PVGASTATECC pThisCC);
 void vmsvga3dUpdateHostScreenViewport(PVGASTATECC pThisCC, uint32_t idScreen, VMSVGAVIEWPORT const *pOldViewport);
 int vmsvga3dQueryCaps(PVGASTATECC pThisCC, uint32_t idx3dCaps, uint32_t *pu32Val);
 
-int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFlags, SVGA3dSurfaceFormat format,
-                          SVGA3dSurfaceFace face[SVGA3D_MAX_SURFACE_FACES], uint32_t multisampleCount,
-                          SVGA3dTextureFilter autogenFilter, uint32_t cMipLevels, SVGA3dSize *pMipLevelSize);
+int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceFlags surfaceFlags, SVGA3dSurfaceFormat format,
+                          uint32_t multisampleCount, SVGA3dTextureFilter autogenFilter,
+                          uint32_t cMipLevels, SVGA3dSize const *pMipLevel0Size);
 int vmsvga3dSurfaceDestroy(PVGASTATECC pThisCC, uint32_t sid);
 int vmsvga3dSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSurfaceImageId src,
                         uint32_t cCopyBoxes, SVGA3dCopyBox *pBox);
@@ -106,6 +128,12 @@ int vmsvga3dShaderSetConst(PVGASTATECC pThisCC, uint32_t cid, uint32_t reg, SVGA
 int vmsvga3dQueryBegin(PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type);
 int vmsvga3dQueryEnd(PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult);
 int vmsvga3dQueryWait(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult);
+
+int vmsvga3dScreenTargetBind(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, uint32_t sid);
+int vmsvga3dScreenTargetUpdate(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, SVGA3dRect const *pRect);
+
+int vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox, VMSVGA3D_SURFACE_MAP enmMapType, VMSVGA3D_MAPPED_SURFACE *pMap);
+int vmsvga3dSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, VMSVGA3D_MAPPED_SURFACE *pMap, bool fWritten);
 
 /* DevVGA-SVGA3d-shared.h: */
 #if defined(RT_OS_WINDOWS) && defined(IN_RING3)
