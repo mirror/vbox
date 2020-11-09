@@ -159,8 +159,8 @@ private:
     void selectMatch(int iMatchIndex, int iSearchStringLength);
     const QHelpEngine* m_pHelpEngine;
     UIFindInPageWidget *m_pFindInPageWidget;
-    /* Initilized as false and set to true once the find widget is positioned during first resize. */
-    bool m_fFindWidgetPositioned;
+    /* Initilized as false and set to true once the user drag moves the find widget. */
+    bool m_fFindWidgetDragged;
     const int m_iMarginForFindWidget;
     /** Document positions of the cursors within the document for all matches. */
     QVector<int>   m_matchedCursorPosition;
@@ -624,7 +624,7 @@ UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget
     :QIWithRetranslateUI<QTextBrowser>(pParent)
     , m_pHelpEngine(pHelpEngine)
     , m_pFindInPageWidget(new UIFindInPageWidget(this))
-    , m_fFindWidgetPositioned(false)
+    , m_fFindWidgetDragged(false)
     , m_iMarginForFindWidget(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin))
     , m_iSelectedMatchIndex(0)
     , m_iSearchTermLength(0)
@@ -672,6 +672,11 @@ void UIHelpBrowserViewer::toggleFindInPageWidget(bool fVisible)
 {
     if (!m_pFindInPageWidget)
         return;
+    /* Try to position the widget somewhere meaningful initially: */
+    if (!m_fFindWidgetDragged)
+        m_pFindInPageWidget->move(width() - m_iMarginForFindWidget - m_pFindInPageWidget->width(),
+                                  m_iMarginForFindWidget);
+
     m_pFindInPageWidget->setVisible(fVisible);
 
     if (!fVisible)
@@ -708,16 +713,11 @@ void UIHelpBrowserViewer::paintEvent(QPaintEvent *pEvent)
 
 void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
 {
+    /* Make sure the widget stays inside the parent during parent resize: */
     if (m_pFindInPageWidget)
     {
-        if (!m_fFindWidgetPositioned)
-        {
-            m_pFindInPageWidget->move(m_iMarginForFindWidget, m_iMarginForFindWidget);
-            m_fFindWidgetPositioned = true;
-        }
-        else
-            if (!isRectInside(m_pFindInPageWidget->geometry(), m_iMarginForFindWidget))
-                moveFindWidgetIn(m_iMarginForFindWidget);
+        if (!isRectInside(m_pFindInPageWidget->geometry(), m_iMarginForFindWidget))
+            moveFindWidgetIn(m_iMarginForFindWidget);
     }
     QIWithRetranslateUI<QTextBrowser>::resizeEvent(pEvent);
 }
@@ -830,6 +830,7 @@ void UIHelpBrowserViewer::sltHandleFindWidgetDrag(const QPoint &delta)
     /* Allow the move if m_pFindInPageWidget stays inside after the move: */
     if (isRectInside(geo, m_iMarginForFindWidget))
         m_pFindInPageWidget->move(m_pFindInPageWidget->pos() + delta);
+    m_fFindWidgetDragged = true;
     update();
 }
 
