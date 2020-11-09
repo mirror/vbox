@@ -58,7 +58,6 @@ QIManagerDialog::QIManagerDialog(QWidget *pCenterWidget)
     : m_pCenterWidget(pCenterWidget)
     , m_fCloseEmitted(false)
     , m_pWidget(0)
-    , m_pWidgetMenu(0)
 #ifdef VBOX_WS_MAC
     , m_pWidgetToolbar(0)
 #endif
@@ -186,10 +185,13 @@ void QIManagerDialog::prepareButtonBox()
 
 void QIManagerDialog::prepareMenuBar()
 {
-    if (!m_pWidgetMenu)
+    /* Skip the call if there are no menus to add: */
+    if (m_widgetMenus.isEmpty())
         return;
-    /* Add widget menu: */
-    menuBar()->addMenu(m_pWidgetMenu);
+
+    /* Add all the widget menus: */
+    foreach (QMenu *pMenu, m_widgetMenus)
+        menuBar()->addMenu(pMenu);
 
 #ifdef VBOX_WS_MAC
     /* Prepare 'Window' menu: */
