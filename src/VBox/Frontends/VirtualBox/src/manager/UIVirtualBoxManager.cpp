@@ -245,6 +245,21 @@ bool UIAcquirePublicKeyDialog::loadFileContents(const QString &strPath, bool fIg
         return false;
     }
 
+    /* Make sure file exists and is of suitable size: */
+    QFileInfo fi(strPath);
+    if (!fi.exists())
+    {
+        if (!fIgnoreErrors)
+            msgCenter().publicKeyFileDoesntExist(strPath);
+        return false;
+    }
+    if (fi.size() > 10 * _1K)
+    {
+        if (!fIgnoreErrors)
+            msgCenter().publicKeyFileIsOfTooLargeSize(strPath);
+        return false;
+    }
+
     /* Make sure file can be opened: */
     QFile file(strPath);
     if (!file.open(QIODevice::ReadOnly))

@@ -1072,6 +1072,20 @@ void UIMessageCenter::publicKeyFilePathIsEmpty(QWidget *pParent /* = 0 */) const
           tr("Public key file path is empty."));
 }
 
+void UIMessageCenter::publicKeyFileDoesntExist(const QString &strPath, QWidget *pParent /* = 0 */) const
+{
+    alert(pParent, MessageType_Error,
+          tr("Failed to open the public key file <nobr><b>%1</b></nobr>. File doesn't exist.")
+             .arg(strPath));
+}
+
+void UIMessageCenter::publicKeyFileIsOfTooLargeSize(const QString &strPath, QWidget *pParent /* = 0 */) const
+{
+    alert(pParent, MessageType_Error,
+          tr("Failed to open the public key file <nobr><b>%1</b></nobr>. File is too large for the key.")
+             .arg(strPath));
+}
+
 void UIMessageCenter::publicKeyFileIsntReadable(const QString &strPath, QWidget *pParent /* = 0 */) const
 {
     alert(pParent, MessageType_Error,

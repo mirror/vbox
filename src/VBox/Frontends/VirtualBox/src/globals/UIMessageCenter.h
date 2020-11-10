@@ -309,6 +309,8 @@ public:
     void cannotDeleteConsoleConnection(const CCloudMachine &comMachine, QWidget *pParent = 0);
     void cannotDeleteConsoleConnection(const CProgress &comProgress, const QString &strMachineName, QWidget *pParent = 0);
     void publicKeyFilePathIsEmpty(QWidget *pParent = 0) const;
+    void publicKeyFileDoesntExist(const QString &strPath, QWidget *pParent = 0) const;
+    void publicKeyFileIsOfTooLargeSize(const QString &strPath, QWidget *pParent = 0) const;
     void publicKeyFileIsntReadable(const QString &strPath, QWidget *pParent = 0) const;
 
     /* API: Snapshot warnings: */
