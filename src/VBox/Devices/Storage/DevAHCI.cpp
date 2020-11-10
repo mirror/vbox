@@ -3858,7 +3858,7 @@ static DECLCALLBACK(int) ahciR3IoReqQueryBuf(PPDMIMEDIAEXPORT pInterface, PDMMED
         if (   cbData >= _4K
             && !(GCPhysAddrDataBase & (_4K - 1)))
         {
-            rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, GCPhysAddrDataBase, 0, ppvBuf, &pIoReq->PgLck);
+            rc = PDMDevHlpPCIPhysGCPhys2CCPtr(pDevIns, NULL /* pPciDev */, GCPhysAddrDataBase, 0, ppvBuf, &pIoReq->PgLck);
             if (RT_SUCCESS(rc))
             {
                 pIoReq->fMapped = true;
