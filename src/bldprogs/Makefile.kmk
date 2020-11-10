@@ -100,5 +100,6 @@ gccplugin$(SUFF_DLL): VBoxCompilerPlugInsGcc.cpp VBoxCompilerPlugInsCommon.cpp V
 		VBoxCompilerPlugInsCommon.cpp
 
 
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
