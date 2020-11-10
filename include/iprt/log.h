@@ -939,10 +939,10 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define LogWarnFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_WARN, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_WARN, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogWarnFunc(a) \
-    do { LogFlow((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
+    do { LogFlow((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
 #endif
 /** @} */
 
@@ -957,9 +957,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define LogThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define LogThisFunc(a) do { Log(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log(a); } while (0)
+# define LogThisFunc(a) do { Log(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log(a); } while (0)
 #endif
 
 /** @def Log2ThisFunc
@@ -969,9 +969,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log2ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log2ThisFunc(a) do { Log2(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log2(a); } while (0)
+# define Log2ThisFunc(a) do { Log2(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log2(a); } while (0)
 #endif
 
 /** @def Log3ThisFunc
@@ -981,9 +981,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log3ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log3ThisFunc(a) do { Log3(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log3(a); } while (0)
+# define Log3ThisFunc(a) do { Log3(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log3(a); } while (0)
 #endif
 
 /** @def Log4ThisFunc
@@ -993,9 +993,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log4ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log4ThisFunc(a) do { Log4(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log4(a); } while (0)
+# define Log4ThisFunc(a) do { Log4(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log4(a); } while (0)
 #endif
 
 /** @def Log5ThisFunc
@@ -1005,9 +1005,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log5ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log5ThisFunc(a) do { Log5(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log5(a); } while (0)
+# define Log5ThisFunc(a) do { Log5(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log5(a); } while (0)
 #endif
 
 /** @def Log6ThisFunc
@@ -1017,9 +1017,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log6ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log6ThisFunc(a) do { Log6(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log6(a); } while (0)
+# define Log6ThisFunc(a) do { Log6(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log6(a); } while (0)
 #endif
 
 /** @def Log7ThisFunc
@@ -1029,9 +1029,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log7ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_7, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_7, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log7ThisFunc(a) do { Log7(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log7(a); } while (0)
+# define Log7ThisFunc(a) do { Log7(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log7(a); } while (0)
 #endif
 
 /** @def Log8ThisFunc
@@ -1041,9 +1041,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log8ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_8, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_8, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log8ThisFunc(a) do { Log8(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log8(a); } while (0)
+# define Log8ThisFunc(a) do { Log8(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log8(a); } while (0)
 #endif
 
 /** @def Log9ThisFunc
@@ -1053,9 +1053,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log9ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_9, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_9, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log9ThisFunc(a) do { Log9(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log9(a); } while (0)
+# define Log9ThisFunc(a) do { Log9(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log9(a); } while (0)
 #endif
 
 /** @def Log10ThisFunc
@@ -1065,9 +1065,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log10ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_10, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_10, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log10ThisFunc(a) do { Log10(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log10(a); } while (0)
+# define Log10ThisFunc(a) do { Log10(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log10(a); } while (0)
 #endif
 
 /** @def Log11ThisFunc
@@ -1077,9 +1077,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log11ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_11, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_11, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log11ThisFunc(a) do { Log11(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log11(a); } while (0)
+# define Log11ThisFunc(a) do { Log11(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log11(a); } while (0)
 #endif
 
 /** @def Log12ThisFunc
@@ -1089,9 +1089,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log12ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_12, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_12, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define Log12ThisFunc(a) do { Log12(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log12(a); } while (0)
+# define Log12ThisFunc(a) do { Log12(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log12(a); } while (0)
 #endif
 
 /** @def LogFlowThisFunc
@@ -1101,9 +1101,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define LogFlowThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define LogFlowThisFunc(a) do { LogFlow(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
+# define LogFlowThisFunc(a) do { LogFlow(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
 #endif
 
 /** @def LogWarnThisFunc
@@ -1113,9 +1113,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define LogWarnThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_WARN, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_WARN, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define LogWarnThisFunc(a) do { LogWarn(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogWarn(a); } while (0)
+# define LogWarnThisFunc(a) do { LogWarn(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogWarn(a); } while (0)
 #endif
 /** @} */
 
@@ -1141,10 +1141,10 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log1WarningFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": WARNING! %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": WARNING! %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define Log1WarningFunc(a) \
-    do { Log((LOG_FN_FMT ": WARNING! ", __PRETTY_FUNCTION__)); Log(a); } while (0)
+    do { Log((LOG_FN_FMT ": WARNING! ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log(a); } while (0)
 #endif
 
 /** @def Log1WarningThisFunc
@@ -1155,10 +1155,10 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define Log1WarningThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": WARNING! %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": WARNING! %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define Log1WarningThisFunc(a) \
-    do { Log(("{%p} " LOG_FN_FMT ": WARNING! ", this, __PRETTY_FUNCTION__)); Log(a); } while (0)
+    do { Log(("{%p} " LOG_FN_FMT ": WARNING! ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log(a); } while (0)
 #endif
 
 
@@ -1208,7 +1208,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  * @{  */
 /** Source position for passing to a function call. */
 #ifdef LOG_ENABLED
-# define RTLOG_COMMA_SRC_POS        , __FILE__, __LINE__, __PRETTY_FUNCTION__
+# define RTLOG_COMMA_SRC_POS        , __FILE__, __LINE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__
 #else
 # define RTLOG_COMMA_SRC_POS        RT_NOTHING
 #endif
@@ -1615,9 +1615,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define LogRelFlowFunc(a)  _LogRelIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define LogRelFlowFunc(a)  _LogRelIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define LogRelFlowFunc(a)  do { LogRelFlow((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRelFlow(a); } while (0)
+# define LogRelFlowFunc(a)  do { LogRelFlow((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRelFlow(a); } while (0)
 #endif
 
 /** @def LogRelMaxFunc
@@ -1626,10 +1626,10 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define LogRelMaxFunc(a_cMax, a) \
-    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogRelMaxFunc(a_cMax, a) \
-    do { LogRelMax(a_cMax, (LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRelMax(a_cMax, a); } while (0)
+    do { LogRelMax(a_cMax, (LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRelMax(a_cMax, a); } while (0)
 #endif
 
 /** @def LogRelMaxFlowFunc
@@ -1643,10 +1643,10 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define LogRelMaxFlowFunc(a_cMax, a) \
-    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogRelMaxFlowFunc(a_cMax, a) \
-    do { LogRelMaxFlow(a_cMax, (LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRelFlow(a_cMax, a); } while (0)
+    do { LogRelMaxFlow(a_cMax, (LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRelFlow(a_cMax, a); } while (0)
 #endif
 
 /** @} */
@@ -1661,10 +1661,10 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define LogRelThisFunc(a) \
-    _LogRelItLikely(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelItLikely(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogRelThisFunc(a) \
-    do { LogRel(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRel(a); } while (0)
+    do { LogRel(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRel(a); } while (0)
 #endif
 
 /** @def LogRelMaxThisFunc
@@ -1675,10 +1675,10 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define LogRelMaxThisFunc(a_cMax, a) \
-    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogRelMaxThisFunc(a_cMax, a) \
-    do { LogRelMax(a_cMax, ("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRelMax(a_cMax, a); } while (0)
+    do { LogRelMax(a_cMax, ("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRelMax(a_cMax, a); } while (0)
 #endif
 
 /** @def LogRelFlowThisFunc
@@ -1687,9 +1687,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #ifdef LOG_USE_C99
 # define LogRelFlowThisFunc(a) \
-    _LogRelIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
-# define LogRelFlowThisFunc(a) do { LogRelFlow(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRelFlow(a); } while (0)
+# define LogRelFlowThisFunc(a) do { LogRelFlow(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRelFlow(a); } while (0)
 #endif
 
 
