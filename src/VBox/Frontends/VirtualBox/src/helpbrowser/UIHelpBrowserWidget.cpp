@@ -34,6 +34,8 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPixmap>
+#include <QtPrintSupport/QPrintDialog>
+#include <QtPrintSupport/QPrinter>
 #include <QPushButton>
 #include <QScrollBar>
 #include <QSpacerItem>
@@ -251,6 +253,7 @@ public:
     void setSource(const QUrl &url);
     QString documentTitle() const;
     void setToolBarVisible(bool fVisible);
+    void printCurrent(QPrinter &printer);
 
 private slots:
 
@@ -313,6 +316,7 @@ public:
     /* Return the list of urls of all open tabs as QStringList. */
     QStringList tabUrlList();
     void setToolBarVisible(bool fVisible);
+    void printCurrent(QPrinter &printer);
 
 private slots:
 
@@ -580,6 +584,14 @@ void UIHelpBrowserTab::setToolBarVisible(bool fVisible)
         m_pToolBar->setVisible(fVisible);
     if (m_pAddressBar)
         m_pAddressBar->setVisible(fVisible);
+}
+
+void UIHelpBrowserTab::printCurrent(QPrinter &printer)
+{
+    if (m_pContentViewer)
+    {
+        m_pContentViewer->print(&printer);
+    }
 }
 
 void UIHelpBrowserTab::prepare(const QUrl &initialUrl)
@@ -1101,6 +1113,14 @@ void UIHelpBrowserTabManager::setToolBarVisible(bool fVisible)
     }
 }
 
+void UIHelpBrowserTabManager::printCurrent(QPrinter &printer)
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (!pTab)
+        return;
+    return pTab->printCurrent(printer);
+}
+
 void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
 {
     for (int i = 0; i < count(); ++i)
@@ -1187,6 +1207,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pTabManager(0)
     , m_pBookmarksWidget(0)
     , m_pSearchContainerWidget(0)
+    , m_pPrintDialogAction(0)
     , m_pShowHideSideBarAction(0)
     , m_pShowHideToolBarAction(0)
     , m_fModelContentCreated(false)
@@ -1202,9 +1223,13 @@ UIHelpBrowserWidget::~UIHelpBrowserWidget()
     cleanup();
 }
 
-QMenu *UIHelpBrowserWidget::menu() const
+QList<QMenu*> UIHelpBrowserWidget::menus() const
 {
-    return m_pViewMenu;
+    QList<QMenu*> menuList;
+    menuList
+        << m_pFileMenu
+        << m_pViewMenu;
+    return menuList;
 }
 
 
@@ -1232,14 +1257,18 @@ void UIHelpBrowserWidget::prepareActions()
     m_pShowHideSideBarAction = new QAction(this);
     m_pShowHideSideBarAction->setCheckable(true);
     m_pShowHideSideBarAction->setChecked(true);
-    connect(m_pShowHideSideBarAction, &QAction::toggled, this, &UIHelpBrowserWidget::sltHandleSideBarVisibility);
+    connect(m_pShowHideSideBarAction, &QAction::toggled,
+            this, &UIHelpBrowserWidget::sltHandleSideBarVisibility);
 
     m_pShowHideToolBarAction = new QAction(this);
     m_pShowHideToolBarAction->setCheckable(true);
     m_pShowHideToolBarAction->setChecked(true);
-    connect(m_pShowHideToolBarAction, &QAction::toggled, this, &UIHelpBrowserWidget::sltHandleToolBarVisibility);
+    connect(m_pShowHideToolBarAction, &QAction::toggled,
+            this, &UIHelpBrowserWidget::sltHandleToolBarVisibility);
 
-
+    m_pPrintDialogAction = new QAction(this);
+    connect(m_pPrintDialogAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltShowPrintDialog);
 }
 
 void UIHelpBrowserWidget::prepareWidgets()
@@ -1378,11 +1407,13 @@ void UIHelpBrowserWidget::prepareMenu()
     m_pFileMenu = new QMenu(tr("File"), this);
     m_pViewMenu = new QMenu(tr("View"), this);
     AssertReturnVoid(m_pViewMenu);
+    if (m_pPrintDialogAction)
+        m_pFileMenu->addAction(m_pPrintDialogAction);
 
-    m_pFileMenu->addAction("asd");
-    m_pViewMenu->addAction(m_pShowHideSideBarAction);
-    m_pViewMenu->addAction(m_pShowHideToolBarAction);
-
+    if (m_pShowHideSideBarAction)
+        m_pViewMenu->addAction(m_pShowHideSideBarAction);
+    if (m_pShowHideToolBarAction)
+        m_pViewMenu->addAction(m_pShowHideToolBarAction);
 }
 
 void UIHelpBrowserWidget::loadOptions()
@@ -1489,6 +1520,8 @@ void UIHelpBrowserWidget::retranslateUi()
 
     if (m_pShowHideToolBarAction)
         m_pShowHideToolBarAction->setText(tr("Show/Hide Tool Bar"));
+    if (m_pPrintDialogAction)
+        m_pPrintDialogAction->setText(tr("Print..."));
 }
 
 
@@ -1523,6 +1556,19 @@ void UIHelpBrowserWidget::sltHandleToolBarVisibility(bool fToggled)
 {
     if (m_pTabManager)
         m_pTabManager->setToolBarVisible(fToggled);
+}
+
+void UIHelpBrowserWidget::sltShowPrintDialog()
+{
+    if (!m_pTabManager)
+        return;
+    QPrinter printer;
+    QPrintDialog printDialog(&printer, this);
+    if (printDialog.exec() == QDialog::Accepted)
+    {
+        m_pTabManager->printCurrent(printer);
+        //   PrintWidget(this);
+    }
 }
 
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()

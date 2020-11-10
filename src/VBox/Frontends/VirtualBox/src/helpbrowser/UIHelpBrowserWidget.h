@@ -70,7 +70,7 @@ public:
                         bool fShowToolbar = true, QWidget *pParent = 0);
     ~UIHelpBrowserWidget();
 
-    QMenu *menu() const;
+    QList<QMenu*> menus() const;
 
 #ifdef VBOX_WS_MAC
     QIToolBar *toolbar() const { return m_pToolBar; }
@@ -88,6 +88,7 @@ private slots:
     void sltHandleContentWidgetItemClicked(const QModelIndex &index);
     void sltHandleSideBarVisibility(bool togggled);
     void sltHandleToolBarVisibility(bool togggled);
+    void sltShowPrintDialog();
     void sltHandleContentsCreated();
     void sltHandleIndexingStarted();
     void sltHandleIndexingFinished();
@@ -162,6 +163,7 @@ private:
     UIHelpBrowserTabManager  *m_pTabManager;
     UIBookmarksListContainer *m_pBookmarksWidget;
     QWidget             *m_pSearchContainerWidget;
+    QAction             *m_pPrintDialogAction;
     QAction             *m_pShowHideSideBarAction;
     QAction             *m_pShowHideToolBarAction;
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
