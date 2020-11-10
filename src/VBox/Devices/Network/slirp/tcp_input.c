@@ -323,10 +323,16 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
     {
         so = inso;
         Log4(("NAT: tcp_input: %R[natsock]\n", so));
+
         /* Re-set a few variables */
         tp = sototcpcb(so);
+
         m = so->so_m;
-        so->so_m = 0;
+        optp = so->so_optp;     /* points into m if set */
+        optlen = so->so_optlen;
+        so->so_m = NULL;
+        so->so_optp = 0;
+        so->so_optlen = 0;
 
         if (RT_LIKELY(so->so_ohdr != NULL))
         {
@@ -825,6 +831,8 @@ findso:
                 so->so_m = m;
                 so->so_ti = ti;
                 so->so_ohdr = RTMemDup(ohdr, ohdrlen);
+                so->so_optp = optp;
+                so->so_optlen = optlen;
                 tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
                 TCP_STATE_SWITCH_TO(tp, TCPS_SYN_RECEIVED);
             }
@@ -2014,7 +2022,8 @@ tcp_mss(PNATState pData, register struct tcpcb *tp, u_int offer)
     struct socket *so = tp->t_socket;
     int mss;
 
-    LogFlowFunc(("ENTER: tcp_mss: tp = %R[tcpcb793], offer = %d\n", tp, offer));
+    LogFlowFunc(("ENTER: tcp_mss: offer=%u, t_maxseg=%u; tp=%R[natsock]\n",
+                 offer, (unsigned int)tp->t_maxseg, so));
 
     mss = min(if_mtu, if_mru) - sizeof(struct tcpiphdr);
     if (offer)
@@ -2028,7 +2037,6 @@ tcp_mss(PNATState pData, register struct tcpcb *tp, u_int offer)
     sbreserve(pData, &so->so_snd, tcp_sndspace+((tcp_sndspace%mss)?(mss-(tcp_sndspace%mss)):0));
     sbreserve(pData, &so->so_rcv, tcp_rcvspace+((tcp_rcvspace%mss)?(mss-(tcp_rcvspace%mss)):0));
 
-    Log2((" returning mss = %d\n", mss));
-
+    LogFlowFunc(("LEAVE: mss=%d\n", mss));
     return mss;
 }

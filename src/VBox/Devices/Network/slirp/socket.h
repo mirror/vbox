@@ -59,6 +59,8 @@ struct socket
     struct tcpiphdr *so_ti;      /* Pointer to the original ti within
                                   * so_mconn, for non-blocking connections */
     uint8_t         *so_ohdr;    /* unmolested IP header of the datagram in so_m */
+    caddr_t         so_optp;     /* tcp options in so_m */
+    int             so_optlen;   /* length of options in so_m */
     int             so_urgc;
     struct in_addr  so_faddr;    /* foreign host table entry */
     struct in_addr  so_laddr;    /* local host table entry */
