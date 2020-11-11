@@ -33,22 +33,23 @@
 #include <QListWidget>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QPainter>
 #include <QPixmap>
 #include <QtPrintSupport/QPrintDialog>
 #include <QtPrintSupport/QPrinter>
 #include <QPushButton>
-#include <QScrollBar>
 #include <QSpacerItem>
-#include <QStyle>
 #include <QSplitter>
 #include <QTextBrowser>
 #include <QVBoxLayout>
+#include <QWidgetAction>
 #ifdef RT_OS_SOLARIS
 # include <QFontDatabase>
 #endif
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "QIAdvancedSlider.h"
 #include "QIFileDialog.h"
 #include "QITabWidget.h"
 #include "QIToolBar.h"
@@ -76,7 +77,48 @@ enum HelpBrowserTabs
 };
 Q_DECLARE_METATYPE(HelpBrowserTabs);
 
-const int iBookmarkUrlDataType = 6;
+static const int iBookmarkUrlDataType = 6;
+static const QPair<float, float> fontScaleMinMax(0.5f, 3.f);
+
+/*********************************************************************************************************************************
+*   UIFontScaleWidget definition.                                                                                         *
+*********************************************************************************************************************************/
+class UIFontScaleWidget : public QIWithRetranslateUI<QWidget>
+{
+
+    Q_OBJECT;
+
+signals:
+
+    void sigFontPointSizeChanged(int iNewFontPointSize);
+
+public:
+
+    UIFontScaleWidget(int iInitialFontPointSize, QWidget *pParent = 0);
+    void setFontPointSize(int iFontPointSize);
+    int fontPointSize() const;
+
+protected:
+
+    void retranslateUi() /* override */;
+
+private slots:
+
+    void sltSetFontPointSize();
+
+private:
+
+    void prepare();
+    int fontPercentage() const;
+    QHBoxLayout  *m_pMainLayout;
+    QIToolButton *m_pMinusButton;
+    QIToolButton *m_pResetButton;
+    QIToolButton *m_pPlusButton;
+    QIAdvancedSlider *m_pSlider;
+    QLabel *m_pValueLabel;
+    int m_iInitialFontPointSize;
+    int m_iFontPointSize;
+};
 
 
 /*********************************************************************************************************************************
@@ -184,6 +226,7 @@ signals:
 
     void sigOpenLinkInNewTab(const QUrl &url);
     void sigCloseFindInPageWidget();
+    void sigFontPointSizeChanged(int iFontPointSize);
 
 public:
 
@@ -192,6 +235,7 @@ public:
     void emitHistoryChangedSignal();
     void setSource(const QUrl &url, const QString &strError);
     void toggleFindInPageWidget(bool fVisible);
+    int initialFontPointSize() const;
 
 public slots:
 
@@ -199,8 +243,8 @@ public slots:
 protected:
 
     void contextMenuEvent(QContextMenuEvent *event) /* override */;
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual void wheelEvent(QWheelEvent *pEvent) /* override */;
 
 private slots:
 
@@ -227,6 +271,7 @@ private:
     QVector<int>   m_matchedCursorPosition;
     int m_iSelectedMatchIndex;
     int m_iSearchTermLength;
+    int m_iInitialFontPointSize;
 };
 
 /*********************************************************************************************************************************
@@ -243,6 +288,7 @@ signals:
     void sigTitleUpdate(const QString &strTitle);
     void sigOpenLinkInNewTab(const QUrl &url);
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
+    void sigFontPointSizeChanged(int iFontPointSize);
 
 public:
 
@@ -253,7 +299,9 @@ public:
     void setSource(const QUrl &url);
     QString documentTitle() const;
     void setToolBarVisible(bool fVisible);
-    void printCurrent(QPrinter &printer);
+    void print(QPrinter &printer);
+    int initialFontPointSize() const;
+    void setFontPointSize(int iPointSize);
 
 private slots:
 
@@ -317,6 +365,12 @@ public:
     QStringList tabUrlList();
     void setToolBarVisible(bool fVisible);
     void printCurrent(QPrinter &printer);
+    int initialFontPointSize() const;
+    void setFontPointSize(int iPointSize);
+
+protected:
+
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
 
 private slots:
 
@@ -324,6 +378,7 @@ private slots:
     void sltHandleOpenLinkInNewTab(const QUrl &url);
     void sltHandleTabClose(int iTabIndex);
     void sltHandleCurrentChanged(int iTabIndex);
+    void sltHandleFontSizeChange(int iFontPointSize);
 
 private:
 
@@ -331,10 +386,110 @@ private:
     void clearAndDeleteTabs();
     void addNewTab(const QUrl &initialUrl);
     const QHelpEngine* m_pHelpEngine;
+    UIFontScaleWidget *m_pFontScaleWidget;
     QUrl m_homeUrl;
     QStringList m_savedUrlList;
     bool m_fSwitchToNewTab;
 };
+
+
+/*********************************************************************************************************************************
+*   UIFontScaleWidget implementation.                                                                                            *
+*********************************************************************************************************************************/
+
+UIFontScaleWidget::UIFontScaleWidget(int iInitialFontPointSize, QWidget *pParent /* = 0 */)
+    :QIWithRetranslateUI<QWidget>(pParent)
+    , m_pMainLayout(0)
+    , m_pMinusButton(0)
+    , m_pResetButton(0)
+    , m_pPlusButton(0)
+    , m_pSlider(0)
+    , m_pValueLabel(0)
+    , m_iInitialFontPointSize(iInitialFontPointSize)
+    , m_iFontPointSize(iInitialFontPointSize)
+{
+    prepare();
+}
+
+void UIFontScaleWidget::setFontPointSize(int iFontPointSize)
+{
+    if (m_iFontPointSize == iFontPointSize)
+        return;
+    m_iFontPointSize = iFontPointSize;
+    if (m_pValueLabel && m_iInitialFontPointSize != 0)
+    {
+        m_pValueLabel->setText(QString("%1\%").arg(QString::number(fontPercentage())));
+    }
+}
+
+int UIFontScaleWidget::fontPointSize() const
+{
+    return m_iFontPointSize;
+}
+
+void UIFontScaleWidget::retranslateUi()
+{
+}
+
+void UIFontScaleWidget::prepare()
+{
+    setAutoFillBackground(true);
+    m_pMainLayout = new QHBoxLayout(this);
+    AssertReturnVoid(m_pMainLayout);
+    m_pMainLayout->setSpacing(0);
+    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+    m_pMinusButton = new QIToolButton;
+    m_pResetButton = new QIToolButton;
+    m_pPlusButton = new QIToolButton;
+    //m_pSlider = new QIAdvancedSlider;
+    m_pValueLabel = new QLabel;
+    AssertReturnVoid(m_pMinusButton &&
+                     m_pResetButton &&
+                     m_pPlusButton &&
+                     m_pValueLabel);
+
+    m_pValueLabel->setText(QString("%1\%").arg(QString::number(fontPercentage())));
+
+    m_pMinusButton->setIcon(UIIconPool::iconSet(":/help_browser_minus_32px.png"));
+    m_pResetButton->setIcon(UIIconPool::iconSet(":/help_browser_reset_32px.png"));
+    m_pPlusButton->setIcon(UIIconPool::iconSet(":/help_browser_plus_32px.png"));
+
+    connect(m_pPlusButton, &QIToolButton::pressed, this, &UIFontScaleWidget::sltSetFontPointSize);
+    connect(m_pMinusButton, &QIToolButton::pressed, this, &UIFontScaleWidget::sltSetFontPointSize);
+    connect(m_pResetButton, &QIToolButton::pressed, this, &UIFontScaleWidget::sltSetFontPointSize);
+
+    m_pMainLayout->addWidget(m_pResetButton);
+    m_pMainLayout->addWidget(m_pMinusButton);
+    //m_pMainLayout->addWidget(m_pSlider);
+    m_pMainLayout->addWidget(m_pValueLabel);
+    m_pMainLayout->addWidget(m_pPlusButton);
+}
+
+int UIFontScaleWidget::fontPercentage() const
+{
+    if (m_iInitialFontPointSize == 0)
+        return 0;
+    return 100 * m_iFontPointSize / m_iInitialFontPointSize;
+}
+
+void UIFontScaleWidget::sltSetFontPointSize()
+{
+    if (!sender())
+        return;
+    int iStep = 2;
+    int iNewSize = m_iFontPointSize;
+    if (sender() == m_pMinusButton)
+        iNewSize -= iStep;
+    else if (sender() == m_pPlusButton)
+        iNewSize += iStep;
+    else if (sender() == m_pResetButton)
+        iNewSize = m_iInitialFontPointSize;
+    if (iNewSize >= fontScaleMinMax.second * m_iInitialFontPointSize ||
+        iNewSize <= fontScaleMinMax.first * m_iInitialFontPointSize)
+        iNewSize = m_iFontPointSize;
+    setFontPointSize(iNewSize);
+    emit sigFontPointSizeChanged(m_iFontPointSize);
+}
 
 
 /*********************************************************************************************************************************
@@ -586,11 +741,28 @@ void UIHelpBrowserTab::setToolBarVisible(bool fVisible)
         m_pAddressBar->setVisible(fVisible);
 }
 
-void UIHelpBrowserTab::printCurrent(QPrinter &printer)
+void UIHelpBrowserTab::print(QPrinter &printer)
+{
+    if (m_pContentViewer)
+        m_pContentViewer->print(&printer);
+}
+
+int UIHelpBrowserTab::initialFontPointSize() const
+{
+    if (m_pContentViewer)
+        return m_pContentViewer->initialFontPointSize();
+    return 0;
+}
+
+void UIHelpBrowserTab::setFontPointSize(int iPointSize)
 {
     if (m_pContentViewer)
     {
-        m_pContentViewer->print(&printer);
+        if (m_pContentViewer->font().pointSize() == iPointSize)
+            return;
+        QFont mFont = m_pContentViewer->font();
+        mFont.setPointSize(iPointSize);
+        m_pContentViewer->setFont(mFont);
     }
 }
 
@@ -612,7 +784,6 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
 
     m_pMainLayout->addWidget(m_pContentViewer);
     m_pContentViewer->setOpenExternalLinks(false);
-
     connect(m_pContentViewer, &UIHelpBrowserViewer::sourceChanged,
         this, &UIHelpBrowserTab::sigSourceChanged);
     connect(m_pContentViewer, &UIHelpBrowserViewer::historyChanged,
@@ -623,6 +794,8 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
         this, &UIHelpBrowserTab::sigOpenLinkInNewTab);
     connect(m_pContentViewer, &UIHelpBrowserViewer::sigCloseFindInPageWidget,
             this, &UIHelpBrowserTab::sltCloseFindInPageWidget);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::sigFontPointSizeChanged,
+            this, &UIHelpBrowserTab::sigFontPointSizeChanged);
 
     m_pContentViewer->setSource(initialUrl, m_strPageNotFoundText);
 }
@@ -793,6 +966,7 @@ UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget
     , m_iSelectedMatchIndex(0)
     , m_iSearchTermLength(0)
 {
+    m_iInitialFontPointSize = font().pointSize();
     setUndoRedoEnabled(true);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigDragging,
             this, &UIHelpBrowserViewer::sltHandleFindWidgetDrag);
@@ -852,6 +1026,11 @@ void UIHelpBrowserViewer::toggleFindInPageWidget(bool fVisible)
         m_pFindInPageWidget->setFocus();
 }
 
+int UIHelpBrowserViewer::initialFontPointSize() const
+{
+    return m_iInitialFontPointSize;
+}
+
 void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu *pMenu = createStandardContextMenu();
@@ -870,11 +1049,6 @@ void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
     delete pMenu;
 }
 
-void UIHelpBrowserViewer::paintEvent(QPaintEvent *pEvent)
-{
-    QIWithRetranslateUI<QTextBrowser>::paintEvent(pEvent);
-}
-
 void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
 {
     /* Make sure the widget stays inside the parent during parent resize: */
@@ -886,6 +1060,21 @@ void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
     QIWithRetranslateUI<QTextBrowser>::resizeEvent(pEvent);
 }
 
+void UIHelpBrowserViewer::wheelEvent(QWheelEvent *pEvent)
+{
+    int iPreviousSize = font().pointSize();
+    QTextBrowser::wheelEvent(pEvent);
+    /* Don't allow font size to get too large or small: */
+    if (font().pointSize() >= fontScaleMinMax.second * m_iInitialFontPointSize ||
+        font().pointSize() <= fontScaleMinMax.first * m_iInitialFontPointSize)
+    {
+        QFont mFont = font();
+        mFont.setPointSize(iPreviousSize);
+        setFont(mFont);
+    }
+    else
+        emit sigFontPointSizeChanged(font().pointSize());
+}
 
 void UIHelpBrowserViewer::retranslateUi()
 {
@@ -1034,6 +1223,7 @@ UIHelpBrowserTabManager::UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine
                                                  const QStringList &urlList, QWidget *pParent /* = 0 */)
     : QITabWidget(pParent)
     , m_pHelpEngine(pHelpEngine)
+    , m_pFontScaleWidget(0)
     , m_homeUrl(homeUrl)
     , m_savedUrlList(urlList)
     , m_fSwitchToNewTab(true)
@@ -1054,8 +1244,18 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl)
            this, &UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab);
    connect(pTabWidget, &UIHelpBrowserTab::sigAddBookmark,
            this, &UIHelpBrowserTabManager::sigAddBookmark);
+   connect(pTabWidget, &UIHelpBrowserTab::sigFontPointSizeChanged,
+           this, &UIHelpBrowserTabManager::sltHandleFontSizeChange);
+
    if (m_fSwitchToNewTab)
        setCurrentIndex(index);
+
+   if (!m_pFontScaleWidget)
+   {
+       m_pFontScaleWidget = new UIFontScaleWidget(initialFontPointSize(), this);
+       connect(m_pFontScaleWidget, &UIFontScaleWidget::sigFontPointSizeChanged,
+               this, &UIHelpBrowserTabManager::sltHandleFontSizeChange);
+   }
 }
 
 void UIHelpBrowserTabManager::initilizeTabs()
@@ -1118,7 +1318,39 @@ void UIHelpBrowserTabManager::printCurrent(QPrinter &printer)
     UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
     if (!pTab)
         return;
-    return pTab->printCurrent(printer);
+    return pTab->print(printer);
+}
+
+void UIHelpBrowserTabManager::paintEvent(QPaintEvent *pEvent)
+{
+    if (m_pFontScaleWidget)
+    {
+        int iMargin = 20;
+        m_pFontScaleWidget->move(width() - m_pFontScaleWidget->width() - iMargin,
+                                 height() - m_pFontScaleWidget->height() - iMargin);
+    }
+    QITabWidget::paintEvent(pEvent);
+}
+
+int UIHelpBrowserTabManager::initialFontPointSize() const
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (!pTab)
+        return 0;
+    return pTab->initialFontPointSize();
+}
+
+void UIHelpBrowserTabManager::setFontPointSize(int iPointSize)
+{
+    for (int i = 0; i < count(); ++i)
+    {
+        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
+        if (!pTab)
+            continue;
+        pTab->setFontPointSize(iPointSize);
+    }
+    if (m_pFontScaleWidget)
+        m_pFontScaleWidget->setFontPointSize(iPointSize);
 }
 
 void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
@@ -1155,6 +1387,11 @@ void UIHelpBrowserTabManager::sltHandleCurrentChanged(int iTabIndex)
 {
     Q_UNUSED(iTabIndex);
     emit sigSourceChanged(currentSource());
+}
+
+void UIHelpBrowserTabManager::sltHandleFontSizeChange(int iFontPointSize)
+{
+    setFontPointSize(iFontPointSize);
 }
 
 void UIHelpBrowserTabManager::prepare()
@@ -1231,7 +1468,6 @@ QList<QMenu*> UIHelpBrowserWidget::menus() const
         << m_pViewMenu;
     return menuList;
 }
-
 
 bool UIHelpBrowserWidget::shouldBeMaximized() const
 {
@@ -1407,6 +1643,7 @@ void UIHelpBrowserWidget::prepareMenu()
     m_pFileMenu = new QMenu(tr("File"), this);
     m_pViewMenu = new QMenu(tr("View"), this);
     AssertReturnVoid(m_pViewMenu);
+
     if (m_pPrintDialogAction)
         m_pFileMenu->addAction(m_pPrintDialogAction);
 
@@ -1716,6 +1953,7 @@ void UIHelpBrowserWidget::sltOpenLinkWithUrl(const QUrl &url)
     if (m_pTabManager && url.isValid())
         m_pTabManager->setSource(url, false);
 }
+
 #include "UIHelpBrowserWidget.moc"
 
 #endif /*#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))*/
