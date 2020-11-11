@@ -3184,8 +3184,8 @@ static bool ohciR3ServiceTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYP
         struct OHCITDENTRY *pNext;
     }   Head;
 
-# ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     POHCICC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
+# ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     ohciR3PhysReadCacheInvalidate(&pThisCC->CacheTD);
 # endif
 
