@@ -313,7 +313,77 @@ int vmsvga3dSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage
  *
  */
 
-static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, bool fGCPhys64, PVMSVGAGBO pGbo)
+/**
+ * HC access handler for GBOs which require write protection, i.e. OTables, etc.
+ *
+ * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
+ * @param   pVM             VM Handle.
+ * @param   pVCpu           The cross context CPU structure for the calling EMT.
+ * @param   GCPhys          The physical address the guest is writing to.
+ * @param   pvPhys          The HC mapping of that address.
+ * @param   pvBuf           What the guest is reading/writing.
+ * @param   cbBuf           How much it's reading/writing.
+ * @param   enmAccessType   The access type.
+ * @param   enmOrigin       Who is making the access.
+ * @param   pvUser          User argument.
+ */
+DECLCALLBACK(VBOXSTRICTRC)
+vmsvgaR3GboAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                         PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+{
+    RT_NOREF(pVM, pVCpu, pvPhys, enmAccessType);
+
+    if (RT_LIKELY(enmOrigin == PGMACCESSORIGIN_DEVICE || enmOrigin == PGMACCESSORIGIN_DEBUGGER))
+        return VINF_PGM_HANDLER_DO_DEFAULT;
+
+    PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
+    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
+    PVMSVGAR3STATE pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    /*
+     * The guest is not allowed to access the memory.
+     * Set the error condition.
+     */
+    ASMAtomicWriteBool(&pThis->svga.fBadGuest, true);
+
+    /* Try to find the GBO which the guest is accessing. */
+    char const *pszTarget = NULL;
+    for (uint32_t i = 0; i < RT_ELEMENTS(pSvgaR3State->aGboOTables) && !pszTarget; ++i)
+    {
+        PVMSVGAGBO pGbo = &pSvgaR3State->aGboOTables[i];
+        if (pGbo->cDescriptors)
+        {
+            for (uint32_t j = 0; j < pGbo->cDescriptors; ++j)
+            {
+                if (   GCPhys >= pGbo->paDescriptors[j].GCPhys
+                    && GCPhys < pGbo->paDescriptors[j].GCPhys + pGbo->paDescriptors[j].cPages * PAGE_SIZE)
+                {
+                    switch (i)
+                    {
+                        case SVGA_OTABLE_MOB:          pszTarget = "SVGA_OTABLE_MOB";          break;
+                        case SVGA_OTABLE_SURFACE:      pszTarget = "SVGA_OTABLE_SURFACE";      break;
+                        case SVGA_OTABLE_CONTEXT:      pszTarget = "SVGA_OTABLE_CONTEXT";      break;
+                        case SVGA_OTABLE_SHADER:       pszTarget = "SVGA_OTABLE_SHADER";       break;
+                        case SVGA_OTABLE_SCREENTARGET: pszTarget = "SVGA_OTABLE_SCREENTARGET"; break;
+                        case SVGA_OTABLE_DXCONTEXT:    pszTarget = "SVGA_OTABLE_DXCONTEXT";    break;
+                        default:                       pszTarget = "Unknown OTABLE";           break;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    LogRelMax(8, ("VMSVGA: invalid guest access to page %RGp, target %s:\n"
+                  "%.*Rhxd\n",
+                  GCPhys, pszTarget ? pszTarget : "unknown", RT_MIN(cbBuf, 256), pvBuf));
+
+    return VINF_PGM_HANDLER_DO_DEFAULT;
+}
+
+
+static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, bool fGCPhys64, bool fWriteProtected, PVMSVGAGBO pGbo)
 {
     ASSERT_GUEST_RETURN(sizeInBytes <= _128M, VERR_INVALID_PARAMETER); /** @todo Less than SVGA_REG_MOB_MAX_SIZE */
 
@@ -480,15 +550,34 @@ static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth,
     else
         pGbo->paDescriptors = paDescriptors;
 
+    if (fWriteProtected)
+    {
+        pGbo->fGboFlags |= VMSVGAGBO_F_WRITE_PROTECTED;
+        for (uint32_t i = 0; i < pGbo->cDescriptors; ++i)
+        {
+            rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pSvgaR3State->pDevIns),
+                                            pGbo->paDescriptors[i].GCPhys, pGbo->paDescriptors[i].GCPhys + pGbo->paDescriptors[i].cPages * PAGE_SIZE - 1,
+                                            pSvgaR3State->hGboAccessHandlerType, pSvgaR3State->pDevIns, NIL_RTR0PTR, NIL_RTRCPTR, "VMSVGA GBO");
+            AssertRC(rc);
+        }
+    }
+
     return VINF_SUCCESS;
 }
 
 
 static void vmsvgaR3GboDestroy(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
 {
-    RT_NOREF(pSvgaR3State);
     if (RT_LIKELY(VMSVGA_IS_GBO_CREATED(pGbo)))
     {
+        if (pGbo->fGboFlags & VMSVGAGBO_F_WRITE_PROTECTED)
+        {
+            for (uint32_t i = 0; i < pGbo->cDescriptors; ++i)
+            {
+                int rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pSvgaR3State->pDevIns), pGbo->paDescriptors[i].GCPhys);
+                AssertRC(rc);
+            }
+        }
         RTMemFree(pGbo->paDescriptors);
         RT_ZERO(pGbo);
     }
@@ -643,12 +732,12 @@ static int vmsvgaR3MobCreate(PVMSVGAR3STATE pSvgaR3State,
     entry.ptDepth     = ptDepth;
     entry.sizeInBytes = sizeInBytes;
     entry.base        = baseAddress;
-    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableMob,
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_MOB],
                                  mobid, SVGA3D_OTABLE_MOB_ENTRY_SIZE, &entry, sizeof(entry));
     if (RT_SUCCESS(rc))
     {
         /* Create the corresponding GBO. */
-        rc = vmsvgaR3GboCreate(pSvgaR3State, ptDepth, baseAddress, sizeInBytes, fGCPhys64, &pMob->Gbo);
+        rc = vmsvgaR3GboCreate(pSvgaR3State, ptDepth, baseAddress, sizeInBytes, fGCPhys64, /* fWriteProtected = */ false, &pMob->Gbo);
         if (RT_SUCCESS(rc))
         {
             /* Add to the tree of known GBOs and the LRU list. */
@@ -672,7 +761,7 @@ static int vmsvgaR3MobDestroy(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid)
     /* Update the entry in the pSvgaR3State->pGboOTableMob. */
     SVGAOTableMobEntry entry;
     RT_ZERO(entry);
-    vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableMob,
+    vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_MOB],
                         mobid, SVGA3D_OTABLE_MOB_ENTRY_SIZE, &entry, sizeof(entry));
 
     PVMSVGAMOB pMob = (PVMSVGAMOB)RTAvlU32Remove(&pSvgaR3State->MOBTree, mobid);
@@ -1007,7 +1096,7 @@ static void vmsvga3dCmdDefineGBSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSur
     entry.mobid = SVGA_ID_INVALID;
     // entry.arraySize = 0;
     // entry.mobPitch = 0;
-    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
                                  pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
     if (RT_SUCCESS(rc))
     {
@@ -1030,7 +1119,7 @@ static void vmsvga3dCmdDestroyGBSurface(PVGASTATECC pThisCC, SVGA3dCmdDestroyGBS
     SVGAOTableSurfaceEntry entry;
     RT_ZERO(entry);
     entry.mobid = SVGA_ID_INVALID;
-    vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+    vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
                         pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
 
     vmsvga3dSurfaceDestroy(pThisCC, pCmd->sid);
@@ -1047,17 +1136,17 @@ static void vmsvga3dCmdBindGBSurface(PVGASTATECC pThisCC, SVGA3dCmdBindGBSurface
     /* Assign the mobid to the surface. */
     int rc = VINF_SUCCESS;
     if (pCmd->mobid != SVGA_ID_INVALID)
-        rc = vmsvgaR3OTableVerifyIndex(pSvgaR3State, &pSvgaR3State->GboOTableMob,
+        rc = vmsvgaR3OTableVerifyIndex(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_MOB],
                                        pCmd->mobid, SVGA3D_OTABLE_MOB_ENTRY_SIZE);
     if (RT_SUCCESS(rc))
     {
         SVGAOTableSurfaceEntry entry;
-        rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+        rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
                                 pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
         if (RT_SUCCESS(rc))
         {
             entry.mobid = pCmd->mobid;
-            rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+            rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
                                      pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
             if (RT_SUCCESS(rc))
             {
@@ -1141,7 +1230,7 @@ static void vmsvga3dCmdUpdateGBImage(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBImage
 
     /* "update a surface from its backing MOB." */
     SVGAOTableSurfaceEntry entrySurface;
-    int rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+    int rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
                             pCmd->image.sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entrySurface, sizeof(entrySurface));
     if (RT_SUCCESS(rc))
     {
@@ -1201,44 +1290,22 @@ static void vmsvga3dCmdSetOTableBase64(PVGASTATECC pThisCC, SVGA3dCmdSetOTableBa
      * Create a GBO for the table.
      */
     PVMSVGAGBO pGbo;
-    switch (pCmd->type)
+    if (pCmd->type <= RT_ELEMENTS(pSvgaR3State->aGboOTables))
     {
-        case SVGA_OTABLE_MOB:
-        {
-            pGbo = &pSvgaR3State->GboOTableMob;
-            break;
-        }
-        case SVGA_OTABLE_SURFACE:
-        {
-            pGbo = &pSvgaR3State->GboOTableSurface;
-            break;
-        }
-        case SVGA_OTABLE_CONTEXT:
-        {
-            pGbo = &pSvgaR3State->GboOTableContext;
-            break;
-        }
-        case SVGA_OTABLE_SHADER:
-        {
-            pGbo = &pSvgaR3State->GboOTableShader;
-            break;
-        }
-        case SVGA_OTABLE_SCREENTARGET:
-        {
-            pGbo = &pSvgaR3State->GboOTableScreenTarget;
-            break;
-        }
-        default:
-            pGbo = NULL;
-            ASSERT_GUEST_FAILED();
-            break;
+        RT_UNTRUSTED_VALIDATED_FENCE();
+        pGbo = &pSvgaR3State->aGboOTables[pCmd->type];
+    }
+    else
+    {
+        ASSERT_GUEST_FAILED();
+        pGbo = NULL;
     }
 
     if (pGbo)
     {
         /* Recreate. */
         vmsvgaR3GboDestroy(pSvgaR3State, pGbo);
-        int rc = vmsvgaR3GboCreate(pSvgaR3State, pCmd->ptDepth, pCmd->baseAddress, pCmd->sizeInBytes, /*fGCPhys64=*/ true, pGbo);
+        int rc = vmsvgaR3GboCreate(pSvgaR3State, pCmd->ptDepth, pCmd->baseAddress, pCmd->sizeInBytes, /*fGCPhys64=*/ true, /* fWriteProtected = */ true, pGbo);
         AssertRC(rc);
     }
 }
@@ -1267,7 +1334,7 @@ static void vmsvga3dCmdDefineGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC
     entry.yRoot = pCmd->yRoot;
     entry.flags = pCmd->flags;
     entry.dpi = pCmd->dpi;
-    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableScreenTarget,
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SCREENTARGET],
                                  pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entry, sizeof(entry));
     if (RT_SUCCESS(rc))
     {
@@ -1315,7 +1382,7 @@ static void vmsvga3dCmdDestroyGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisC
     /* Update the entry in the pSvgaR3State->pGboOTableScreenTarget. */
     SVGAOTableScreenTargetEntry entry;
     RT_ZERO(entry);
-    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableScreenTarget,
+    int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SCREENTARGET],
                                  pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entry, sizeof(entry));
     if (RT_SUCCESS(rc))
     {
@@ -1352,17 +1419,17 @@ static void vmsvga3dCmdBindGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdBindGBSc
     /* Assign the surface to the screen target. */
     int rc = VINF_SUCCESS;
     if (pCmd->image.sid != SVGA_ID_INVALID)
-        rc = vmsvgaR3OTableVerifyIndex(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+        rc = vmsvgaR3OTableVerifyIndex(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
                                        pCmd->image.sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE);
     if (RT_SUCCESS(rc))
     {
         SVGAOTableScreenTargetEntry entry;
-        rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->GboOTableScreenTarget,
+        rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SCREENTARGET],
                                 pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entry, sizeof(entry));
         if (RT_SUCCESS(rc))
         {
             entry.image = pCmd->image;
-            rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->GboOTableScreenTarget,
+            rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SCREENTARGET],
                                      pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entry, sizeof(entry));
             if (RT_SUCCESS(rc))
             {
@@ -1387,7 +1454,7 @@ static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdate
 
     /* Get the screen target info. */
     SVGAOTableScreenTargetEntry entryScreenTarget;
-    int rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->GboOTableScreenTarget,
+    int rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SCREENTARGET],
                                 pCmd->stid, SVGA3D_OTABLE_SCREEN_TARGET_ENTRY_SIZE, &entryScreenTarget, sizeof(entryScreenTarget));
     if (RT_SUCCESS(rc))
     {
@@ -1397,7 +1464,7 @@ static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdate
         if (entryScreenTarget.image.sid != SVGA_ID_INVALID)
         {
             SVGAOTableSurfaceEntry entrySurface;
-            rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->GboOTableSurface,
+            rc = vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
                                     entryScreenTarget.image.sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entrySurface, sizeof(entrySurface));
             if (RT_SUCCESS(rc))
             {

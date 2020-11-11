@@ -328,7 +328,9 @@ typedef struct VMSVGAState
     bool                        fGFBRegisters;
     /** SVGA 3D overlay enabled or not. */
     bool                        f3DOverlayEnabled;
-    bool                        afPadding[5];
+    /** Indicates that the guest behaves incorrectly. */
+    bool volatile               fBadGuest;
+    bool                        afPadding[4];
     uint32_t                    uWidth;
     uint32_t                    uHeight;
     uint32_t                    uBpp;
@@ -381,7 +383,9 @@ typedef struct VMSVGAState
     uint32_t                    au32DevCaps[SVGA3D_DEVCAP_MAX];
     /** Index written to the SVGA_REG_DEV_CAP register. */
     uint32_t                    u32DevCapIndex;
+    /** Low 32 bit of a command buffer address written to the SVGA_REG_COMMAND_LOW register. */
     uint32_t                    u32RegCommandLow;
+    /** High 32 bit of a command buffer address written to the SVGA_REG_COMMAND_HIGH register. */
     uint32_t                    u32RegCommandHigh;
 
     STAMCOUNTER                 StatRegBitsPerPixelWr;

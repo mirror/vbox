@@ -798,16 +798,24 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, uint32_t idx3dCaps, uint32_t *pu32Val
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    int rc= VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
 
     switch (idx3dCaps)
     {
+    case SVGA3D_DEVCAP_3D:
+        *pu32Val = 1;
+        break;
+
     case SVGA3D_DEVCAP_MAX_TEXTURE_WIDTH:
         *pu32Val = 8192;
         break;
 
     case SVGA3D_DEVCAP_MAX_TEXTURE_HEIGHT:
         *pu32Val = 8192;
+        break;
+
+    case SVGA3D_DEVCAP_DX:
+        *pu32Val = 1;
         break;
 
     default:

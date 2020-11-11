@@ -77,13 +77,15 @@ typedef VMSVGAGBODESCRIPTOR const *PCVMSVGAGBODESCRIPTOR;
  */
 typedef struct VMSVGAGBO
 {
-    uint32_t                u32Reserved;
+    uint32_t                fGboFlags;
     uint32_t                cTotalPages;
     uint32_t                cbTotal;
     uint32_t                cDescriptors;
     PVMSVGAGBODESCRIPTOR    paDescriptors;
 } VMSVGAGBO, *PVMSVGAGBO;
 typedef VMSVGAGBO const *PCVMSVGAGBO;
+
+#define VMSVGAGBO_F_WRITE_PROTECTED 1
 
 #define VMSVGA_IS_GBO_CREATED(a_Gbo) ((a_Gbo)->paDescriptors != NULL)
 
@@ -174,12 +176,11 @@ typedef struct VMSVGAR3STATE
     /** Critical section for accessing the command buffer data. */
     RTCRITSECT              CritSectCmdBuf;
 
+    /** Write protected GBOs (OTables) access handler type handle. */
+    PGMPHYSHANDLERTYPE      hGboAccessHandlerType;
+
     /**  */
-    VMSVGAGBO               GboOTableMob;
-    VMSVGAGBO               GboOTableSurface;
-    VMSVGAGBO               GboOTableContext;
-    VMSVGAGBO               GboOTableShader;
-    VMSVGAGBO               GboOTableScreenTarget;
+    VMSVGAGBO               aGboOTables[SVGA_OTABLE_MAX];
 
     /** Tree of guest's Memory OBjects. Key is mobid. */
     AVLU32TREE              MOBTree;
@@ -283,6 +284,9 @@ typedef struct VMSVGAR3STATE
 DECLCALLBACK(int) vmsvgaR3ResetGmrHandlers(PVGASTATE pThis);
 DECLCALLBACK(int) vmsvgaR3DeregisterGmr(PPDMDEVINS pDevIns, uint32_t gmrId);
 #endif
+
+DECLCALLBACK(VBOXSTRICTRC) vmsvgaR3GboAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
 
 void vmsvgaR3ResetScreens(PVGASTATE pThis, PVGASTATECC pThisCC);
 
