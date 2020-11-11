@@ -245,7 +245,46 @@ void UIAcquirePublicKeyDialog::prepareWidgets()
 
 void UIAcquirePublicKeyDialog::prepareEditorContents()
 {
-    loadFileContents(gEDataManager->cloudConsolePublicKeyPath(), true /* ignore errors */);
+    /* Try to load last remembered file contents: */
+    if (!loadFileContents(gEDataManager->cloudConsolePublicKeyPath(), true /* ignore errors */))
+    {
+        /* We have failed to load file mentioned in extra-data, now we have
+         * to check whether file present in one of default paths: */
+        QStringList paths;
+#ifdef VBOX_WS_WIN
+        // WORKAROUND:
+        // There is additional default path on Windows:
+        paths << QDir(QDir::homePath()).absoluteFilePath("oci");
+#endif
+        paths << QDir(QDir::homePath()).absoluteFilePath(".ssh");
+
+        /* Look for required file in one of those paths: */
+        QString strAbsoluteFilePathWeNeed;
+        foreach (const QString &strPath, paths)
+        {
+            /* Gather possible file names, there can be few of them: */
+            const QStringList fileNames = QStringList() << "id_rsa" << "id_rsa.pub";
+            /* For each file name we have to: */
+            foreach (const QString &strFileName, fileNames)
+            {
+                /* Compose absolute file path: */
+                const QString strAbsoluteFilePath = QDir(strPath).absoluteFilePath(strFileName);
+                /* If that file exists, we are referring it: */
+                if (QFile::exists(strAbsoluteFilePath))
+                {
+                    strAbsoluteFilePathWeNeed = strAbsoluteFilePath;
+                    break;
+                }
+            }
+            /* Break early if we have found something: */
+            if (!strAbsoluteFilePathWeNeed.isEmpty())
+                break;
+        }
+
+        /* Try to open file if it was really found: */
+        if (!strAbsoluteFilePathWeNeed.isEmpty())
+            loadFileContents(strAbsoluteFilePathWeNeed, true /* ignore errors */);
+    }
 }
 
 bool UIAcquirePublicKeyDialog::loadFileContents(const QString &strPath, bool fIgnoreErrors /* = false */)
