@@ -49,14 +49,14 @@
 # include <VBox/version.h>
 #endif /* VBOXGLTEST_WITH_LOGGING */
 
-#ifndef RT_OS_WINDOWS
-# include <GL/gl.h> /* For GLubyte and friends. */
-#endif
-
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <QGLWidget>
 # include <QApplication>
 # include <VBox/VBoxGL2D.h>
+#endif
+
+#ifndef RT_OS_WINDOWS
+# include <GL/gl.h> /* For GLubyte and friends. */
 #endif
 
 /**
