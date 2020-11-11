@@ -508,6 +508,7 @@ static const char *vmsvgaIndexToString(PVGASTATE pThis, uint32_t idxReg)
 }
 #endif /* LOG_ENABLED */
 
+#if defined(LOG_ENABLED) || (defined(IN_RING3) && defined(VBOX_WITH_VMSVGA3D))
 static const char *vmsvgaDevCapIndexToString(SVGA3dDevCapIndex idxDevCap)
 {
     switch (idxDevCap)
@@ -765,6 +766,7 @@ static const char *vmsvgaDevCapIndexToString(SVGA3dDevCapIndex idxDevCap)
     }
     return "UNKNOWN";
 }
+#endif /* defined(LOG_ENABLED) || (defined(IN_RING3) && defined(VBOX_WITH_VMSVGA3D)) */
 #undef SVGA_CASE_ID2STR
 
 
