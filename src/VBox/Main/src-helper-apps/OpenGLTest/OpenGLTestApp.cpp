@@ -33,26 +33,30 @@
 
 #include <string.h>
 
-#define VBOXGLTEST_WITH_LOGGING
+#define VBOXGLTEST_WITH_LOGGING /** @todo r=andy Is this intentional? */
 
 #ifdef VBOXGLTEST_WITH_LOGGING
-#include "package-generated.h"
+# include "package-generated.h"
 
-#include <iprt/log.h>
-#include <iprt/param.h>
-#include <iprt/time.h>
-#include <iprt/system.h>
-#include <iprt/process.h>
-#include <iprt/env.h>
+# include <iprt/log.h>
+# include <iprt/param.h>
+# include <iprt/time.h>
+# include <iprt/system.h>
+# include <iprt/process.h>
+# include <iprt/env.h>
 
-#include <VBox/log.h>
-#include <VBox/version.h>
+# include <VBox/log.h>
+# include <VBox/version.h>
+#endif /* VBOXGLTEST_WITH_LOGGING */
+
+#ifndef RT_OS_WINDOWS
+# include <GL/gl.h> /* For GLubyte and friends. */
 #endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-#include <QGLWidget>
-#include <QApplication>
-#include <VBox/VBoxGL2D.h>
+# include <QGLWidget>
+# include <QApplication>
+# include <VBox/VBoxGL2D.h>
 #endif
 
 /**
