@@ -370,6 +370,7 @@ public:
     int initialFontPointSize() const;
     void setFontPointSize(int iPointSize);
     int fontPointSize() const;
+    void setFontScaleWidgetVisible(bool fToggled);
 
 protected:
 
@@ -1370,6 +1371,12 @@ int UIHelpBrowserTabManager::fontPointSize() const
     return pTab->fontPointSize();
 }
 
+void UIHelpBrowserTabManager::setFontScaleWidgetVisible(bool fToggled)
+{
+    if (m_pFontScaleWidget)
+        m_pFontScaleWidget->setVisible(fToggled);
+}
+
 void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
 {
     for (int i = 0; i < count(); ++i)
@@ -1464,6 +1471,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pPrintDialogAction(0)
     , m_pShowHideSideBarAction(0)
     , m_pShowHideToolBarAction(0)
+    , m_pShowHideFontScaleWidget(0)
     , m_pFontSizeLargerAction(0)
     , m_pFontSizeSmallerAction(0)
     , m_pFontSizeResetAction(0)
@@ -1511,13 +1519,19 @@ void UIHelpBrowserWidget::prepareActions()
     m_pShowHideSideBarAction->setCheckable(true);
     m_pShowHideSideBarAction->setChecked(true);
     connect(m_pShowHideSideBarAction, &QAction::toggled,
-            this, &UIHelpBrowserWidget::sltHandleSideBarVisibility);
+            this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
 
     m_pShowHideToolBarAction = new QAction(this);
     m_pShowHideToolBarAction->setCheckable(true);
     m_pShowHideToolBarAction->setChecked(true);
     connect(m_pShowHideToolBarAction, &QAction::toggled,
-            this, &UIHelpBrowserWidget::sltHandleToolBarVisibility);
+            this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
+
+    m_pShowHideFontScaleWidget = new QAction(this);
+    m_pShowHideFontScaleWidget->setCheckable(true);
+    m_pShowHideFontScaleWidget->setChecked(true);
+    connect(m_pShowHideFontScaleWidget, &QAction::toggled,
+            this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
 
     m_pPrintDialogAction = new QAction(this);
     connect(m_pPrintDialogAction, &QAction::triggered,
@@ -1678,6 +1692,8 @@ void UIHelpBrowserWidget::prepareMenu()
         m_pViewMenu->addAction(m_pShowHideSideBarAction);
     if (m_pShowHideToolBarAction)
         m_pViewMenu->addAction(m_pShowHideToolBarAction);
+    if (m_pShowHideFontScaleWidget)
+        m_pViewMenu->addAction(m_pShowHideFontScaleWidget);
 }
 
 void UIHelpBrowserWidget::loadOptions()
@@ -1768,6 +1784,8 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pShowHideSideBarAction->setText(tr("Show Side Bar"));
     if (m_pShowHideToolBarAction)
         m_pShowHideToolBarAction->setText(tr("Show Tool Bar"));
+    if (m_pShowHideFontScaleWidget)
+        m_pShowHideFontScaleWidget->setText(tr("Show Font Scale Widget"));
     if (m_pPrintDialogAction)
         m_pPrintDialogAction->setText(tr("Print..."));
 
@@ -1793,16 +1811,23 @@ void UIHelpBrowserWidget::keyPressEvent(QKeyEvent *pEvent)
    QWidget::keyPressEvent(pEvent);
 }
 
-void UIHelpBrowserWidget::sltHandleSideBarVisibility(bool fToggled)
+void UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle(bool fToggled)
 {
-    if (m_pTabWidget)
-        m_pTabWidget->setVisible(fToggled);
-}
-
-void UIHelpBrowserWidget::sltHandleToolBarVisibility(bool fToggled)
-{
-    if (m_pTabManager)
-        m_pTabManager->setToolBarVisible(fToggled);
+    if (sender() == m_pShowHideSideBarAction)
+    {
+        if (m_pTabWidget)
+            m_pTabWidget->setVisible(fToggled);
+    }
+    else if (sender() == m_pShowHideToolBarAction)
+    {
+        if (m_pTabManager)
+            m_pTabManager->setToolBarVisible(fToggled);
+    }
+    else if (sender() == m_pShowHideFontScaleWidget)
+    {
+        if (m_pTabManager)
+            m_pTabManager->setFontScaleWidgetVisible(fToggled);
+    }
 }
 
 void UIHelpBrowserWidget::sltShowPrintDialog()
