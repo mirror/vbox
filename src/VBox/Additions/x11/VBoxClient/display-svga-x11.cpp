@@ -669,48 +669,13 @@ static bool isXwayland(void)
     const char *const pDisplayType = getenv("WAYLAND_DISPLAY");
     const char *pSessionType;
 
-    if (pDisplayType != NULL) {
+    if (pDisplayType != NULL)
         return true;
-    }
-    pSessionType = getenv("XDG_SESSION_TYPE");
-    if ((pSessionType != NULL) && (RTStrIStartsWith(pSessionType, "wayland"))) {
+
+    pSessionType = getenv("XDG_SESSION_TYPE"); /** @todo r=andy Use RTEnv API. */
+    if ((pSessionType != NULL) && (RTStrIStartsWith(pSessionType, "wayland")))
         return true;
-    }
-    return false;
-}
 
-/**
- * We start VBoxDRMClient from VBoxService in case  some guest property is set.
- * We check the same guest property here and dont start this service in case
- * it (guest property) is set.
- */
-static bool checkDRMClient(void)
-{
-    bool fStartClient = false;
-
-    uint32_t idClient;
-    int rc = VbglR3GuestPropConnect(&idClient);
-    if (RT_SUCCESS(rc))
-    {
-        fStartClient = VbglR3GuestPropExist(idClient, "/VirtualBox/GuestAdd/DRMResize" /*pszPropName*/);
-        VbglR3GuestPropDisconnect(idClient);
-    }
-
-    return fStartClient;
-}
-
-static bool startDRMClient(void)
-{
-    char* argv[] = {NULL};
-    char* env[] = {NULL};
-    char szDRMClientPath[RTPATH_MAX];
-    RTPathExecDir(szDRMClientPath, RTPATH_MAX);
-    RTPathAppend(szDRMClientPath, RTPATH_MAX, "VBoxDRMClient");
-    VBClLogInfo("Starting DRM client.\n");
-    int rc = execve(szDRMClientPath, argv, env);
-    if (rc == -1)
-        VBClLogFatalError("execve for '%s' returns the following error %d: %s\n", szDRMClientPath, errno, strerror(errno));
-    /* This is reached only when execve fails. */
     return false;
 }
 
@@ -722,27 +687,40 @@ static DECLCALLBACK(int) vbclSVGAInit(void)
     /* In 32-bit guests GAs build on our release machines causes an xserver hang.
      * So for 32-bit GAs we use our DRM client. */
 #if ARCH_BITS == 32
-    /* igore rc */ startDRMClient();
-    return VERR_NOT_AVAILABLE;
+    int rc = VbglR3DRMClientStart();
+    if (RT_FAILURE(rc))
+        VBClLogError("Starting DRM resizing client (32-bit) failed with %Rrc\n", rc);
+    return VERR_NOT_AVAILABLE; /** @todo r=andy Why ignoring rc here? */
 #endif
 
     /* If DRM client is already running don't start this service. */
-    if (checkDRMClient())
+    if (VbglR3DRMClientIsRunning())
     {
-        VBClLogFatalError("DRM resizing is already running. Exiting this service\n");
+        VBClLogInfo("DRM resizing is already running. Exiting this service\n");
         return VERR_NOT_AVAILABLE;
     }
+
     if (isXwayland())
-        return startDRMClient();
+    {
+        int rc = VbglR3DRMClientStart();
+        if (RT_FAILURE(rc))
+            VBClLogError("Starting DRM resizing client failed with %Rrc\n", rc);
+        return rc;
+    }
 
     x11Connect();
+
     if (x11Context.pDisplay == NULL)
-        return false;
+        return VERR_NOT_AVAILABLE;
+
     /* don't start the monitoring thread if related randr functionality is not available. */
     if (x11Context.fMonitorInfoAvailable)
+    {
         if (RT_FAILURE(startX11MonitorThread()))
-            return false;
-    return true;
+            return VERR_NOT_AVAILABLE;
+    }
+
+    return VINF_SUCCESS;
 }
 
 /**

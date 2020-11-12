@@ -121,6 +121,7 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibCoreDump.cpp \
 	VBoxGuestR3LibCpuHotPlug.cpp \
 	VBoxGuestR3LibCredentials.cpp \
+	VBoxGuestR3LibDRMClient.cpp \
 	VBoxGuestR3LibEvent.cpp \
 	VBoxGuestR3LibGuestUser.cpp \
 	VBoxGuestR3LibGR.cpp \

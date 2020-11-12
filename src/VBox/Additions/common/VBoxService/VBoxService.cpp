@@ -893,34 +893,6 @@ static RTEXITCODE vbglInitFailure(int rcVbgl)
     return RTMsgErrorExit(RTEXITCODE_FAILURE, "VbglR3Init failed with rc=%Rrc\n", rcVbgl);
 }
 
-#ifdef VBOX_WITH_VBOXSERVICE_DRMRESIZE
-/**
- * Check for a guest property and start VBoxDRMClient if it exists.
- *
- */
-static void startDRMResize(void)
-{
-    uint32_t uGuestPropSvcClientID;
-    int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
-    if (RT_SUCCESS(rc))
-    {
-        rc = VbglR3GuestPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/DRMResize");
-        if (RT_SUCCESS(rc))
-        {
-            RTMsgInfo("Starting DRM resize service");
-            char szDRMClientPath[RTPATH_MAX];
-            RTPathExecDir(szDRMClientPath, RTPATH_MAX);
-            RTPathStripSuffix(szDRMClientPath);
-            RTPathAppend(szDRMClientPath, RTPATH_MAX, "VBoxDRMClient");
-            const char *apszArgs[1] = { NULL };
-            rc = RTProcCreate("VBoxDRMClient", apszArgs, RTENV_DEFAULT,
-                              RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SEARCH_PATH, NULL);
-            if (rc == -1)
-                RTMsgError("Could not start DRM resize service");
-        }
-    }
-}
-#endif /* VBOX_WITH_VBOXSERVICE_DRMRESIZE */
 
 int main(int argc, char **argv)
 {
@@ -1187,7 +1159,12 @@ int main(int argc, char **argv)
         return rcExit;
 
 #ifdef VBOX_WITH_VBOXSERVICE_DRMRESIZE
-    startDRMResize();
+	if (VbglR3DRMClientIsNeeded())
+    {
+        rc = VbglR3DRMClientStart();
+        if (RT_FAILURE(rc))
+            VGSvcError("Starting DRM resizing client failed with %Rrc\n", rc);
+    }
 #endif /* VBOX_WITH_VBOXSERVICE_DRMRESIZE */
 
 #ifdef RT_OS_WINDOWS
