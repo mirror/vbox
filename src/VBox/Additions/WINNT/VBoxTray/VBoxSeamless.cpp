@@ -402,6 +402,7 @@ static DECLCALLBACK(int) VBoxSeamlessWorker(void *pvInstance, bool volatile *pfS
             break;
         }
 
+        /** @todo r=andy We do duplicate code here (see VbglR3SeamlessWaitEvent()). */
         uint32_t fEvent = 0;
         rc = VbglR3WaitEvent(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST, 5000 /*ms*/, &fEvent);
 
