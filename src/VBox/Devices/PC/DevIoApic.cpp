@@ -538,6 +538,7 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         {
             ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
             Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte)); /* Ensure polarity hasn't changed. */
+            Assert(ApicIntr.u8TriggerMode == u8TriggerMode);                /* Ensure trigger mode hasn't changed. */
         }
         else
         {
