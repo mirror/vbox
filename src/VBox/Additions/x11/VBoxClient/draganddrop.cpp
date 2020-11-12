@@ -542,7 +542,8 @@ public:
 public:
 
     int  init(uint32_t uScreenID);
-    void uninit(void);
+    int  term(void);
+    void stop(void);
     void reset(void);
 
     /* X11 message processing. */
@@ -665,9 +666,10 @@ public:
         RT_ZERO(m_dndCtx);
     }
 
-    int init(void);
-    int run(bool fDaemonised = false);
-    void cleanup(void);
+    int  init(void);
+    int  worker(bool volatile *pfShutdown);
+    void stop(void);
+    int  term(void);
 
 private:
 
@@ -676,24 +678,27 @@ private:
 
     /* Private member vars */
     Display             *m_pDisplay;
-
-    /** Our (thread-safe) event queue with
-     *  mixed events (DnD HGCM / X11). */
-    RTCMTList<DnDEvent>    m_eventQueue;
+    /** Our (thread-safe) event queue with mixed events (DnD HGCM / X11). */
+    RTCMTList<DnDEvent>  m_eventQueue;
     /** Critical section for providing serialized access to list
      *  event queue's contents. */
     RTCRITSECT           m_eventQueueCS;
+    /** Thread handle for the HGCM message pumping thread. */
     RTTHREAD             m_hHGCMThread;
+    /** Thread handle for the X11 message pumping thread. */
     RTTHREAD             m_hX11Thread;
     /** This service' DnD command context. */
     VBGLR3GUESTDNDCMDCTX m_dndCtx;
+    /** Event semaphore for new DnD events. */
     RTSEMEVENT           m_hEventSem;
+    /** Pointer to the allocated DnD instance.
+        Currently we only support and handle one instance at a time. */
     DragInstance        *m_pCurDnD;
     /** Stop indicator flag to signal the thread that it should shut down. */
     bool                 m_fStop;
 
     friend class DragInstance;
-};
+} g_Svc;
 
 /*********************************************************************************************************************************
  * DragInstanc implementation.                                                                                                   *
@@ -714,28 +719,47 @@ DragInstance::DragInstance(Display *pDisplay, DragAndDropService *pParent)
 }
 
 /**
- * Unitializes (destroys) this drag instance.
+ * Stops this drag instance.
  */
-void DragInstance::uninit(void)
+void DragInstance::stop(void)
+{
+    LogFlowFuncEnter();
+
+    int rc2 = VbglR3DnDDisconnect(&m_dndCtx);
+    AssertRC(rc2);
+
+    LogFlowFuncLeave();
+}
+
+/**
+ * Terminates (destroys) this drag instance.
+ *
+ * @return VBox status code.
+ */
+int DragInstance::term(void)
 {
     LogFlowFuncEnter();
 
     if (m_wndProxy.hWnd != 0)
         XDestroyWindow(m_pDisplay, m_wndProxy.hWnd);
 
-    int rc2 = VbglR3DnDDisconnect(&m_dndCtx);
+    int rc = VbglR3DnDDisconnect(&m_dndCtx);
+    AssertRCReturn(rc, rc);
 
     if (m_pvSelReqData)
         RTMemFree(m_pvSelReqData);
 
-    rc2 = RTSemEventDestroy(m_eventQueueEvent);
-    AssertRC(rc2);
+    rc = RTSemEventDestroy(m_eventQueueEvent);
+    AssertRCReturn(rc, rc);
 
-    rc2 = RTCritSectDelete(&m_eventQueueCS);
-    AssertRC(rc2);
+    rc = RTCritSectDelete(&m_eventQueueCS);
+    AssertRCReturn(rc, rc);
 
-    rc2 = RTCritSectDelete(&m_dataCS);
-    AssertRC(rc2);
+    rc = RTCritSectDelete(&m_dataCS);
+    AssertRCReturn(rc, rc);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -3066,11 +3090,7 @@ int VBoxDnDProxyWnd::sendFinished(Window hWndSource, VBOXDNDACTION dndAction)
  * DragAndDropService implementation.                                                                                            *
  ********************************************************************************************************************************/
 
-/**
- * Initializes the drag and drop service.
- *
- * @returns IPRT status code.
- */
+/** @copydoc VBCLSERVICE::pfnInit */
 int DragAndDropService::init(void)
 {
     LogFlowFuncEnter();
@@ -3105,7 +3125,7 @@ int DragAndDropService::init(void)
                             0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE, "dndHGCM");
         AssertRCBreak(rc);
 
-        rc = RTThreadUserWait(m_hHGCMThread, 10 * 1000 /* 10s timeout */);
+        rc = RTThreadUserWait(m_hHGCMThread, RT_MS_30SEC);
         AssertRCBreak(rc);
 
         if (ASMAtomicReadBool(&m_fStop))
@@ -3116,7 +3136,7 @@ int DragAndDropService::init(void)
                             0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE, "dndX11");
         AssertRCBreak(rc);
 
-        rc = RTThreadUserWait(m_hX11Thread, 10 * 1000 /* 10s timeout */);
+        rc = RTThreadUserWait(m_hX11Thread, RT_MS_30SEC);
         AssertRCBreak(rc);
 
         if (ASMAtomicReadBool(&m_fStop))
@@ -3134,19 +3154,9 @@ int DragAndDropService::init(void)
     return rc;
 }
 
-/**
- * Main loop for the drag and drop service which does the HGCM message
- * processing and routing to the according drag and drop instance(s).
- *
- * @returns IPRT status code.
- * @param   fDaemonised             Whether to run in daemonized or not. Does not
- *                                  apply for this service.
- */
-int DragAndDropService::run(bool fDaemonised /* = false */)
+/** @copydoc VBCLSERVICE::pfnWorker */
+int DragAndDropService::worker(bool volatile *pfShutdown)
 {
-    RT_NOREF1(fDaemonised);
-    LogFlowThisFunc(("fDaemonised=%RTbool\n", fDaemonised));
-
     int rc;
     do
     {
@@ -3166,13 +3176,13 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
         {
             if (RT_FAILURE(rc))
                 VBClLogError("Unable to connect to drag and drop service, rc=%Rrc\n", rc);
-            else if (rc == VINF_PERMISSION_DENIED)
-                VBClLogError("Not available on host, terminating\n");
+            else if (rc == VINF_PERMISSION_DENIED) /* No error, DnD might be just disabled. */
+                VBClLogInfo("Not available on host, terminating\n");
             break;
         }
 
-        VBClLogInfo("Started\n");
-        VBClLogInfo("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+        /* Let the main thread know that it can continue spawning services. */
+        RTThreadUserSignal(RTThreadSelf());
 
         /* Enter the main event processing loop. */
         do
@@ -3281,9 +3291,15 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                         break;
                     }
 #endif
+                    case VBGLR3DNDEVENTTYPE_QUIT:
+                    {
+                        rc = VINF_SUCCESS;
+                        break;
+                    }
+
                     default:
                     {
-                       VBClLogError("Received unsupported message '%RU32'\n", pVbglR3Event->enmType);
+                        VBClLogError("Received unsupported message type %RU32\n", pVbglR3Event->enmType);
                         rc = VERR_NOT_SUPPORTED;
                         break;
                     }
@@ -3293,14 +3309,19 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                 if (RT_FAILURE(rc))
                 {
                     /* Tell the user. */
-                   VBClLogError("Processing message %RU32 failed with %Rrc\n", pVbglR3Event->enmType, rc);
+                    VBClLogError("Processing message %RU32 failed with %Rrc\n", pVbglR3Event->enmType, rc);
 
                     /* If anything went wrong, do a reset and start over. */
                     m_pCurDnD->reset();
                 }
 
+                const bool fQuit = pVbglR3Event->enmType == VBGLR3DNDEVENTTYPE_QUIT;
+
                 VbglR3DnDEventFree(e.hgcm);
                 e.hgcm = NULL;
+
+                if (fQuit)
+                    break;
             }
             else if (e.enmType == DnDEvent::DnDEventType_X11)
             {
@@ -3316,9 +3337,10 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
              */
             XFlush(m_pDisplay);
 
-        } while (!ASMAtomicReadBool(&m_fStop));
+            if (m_fStop)
+                break;
 
-        VBClLogInfo("Stopped with rc=%Rrc\n", rc);
+        } while (!ASMAtomicReadBool(pfShutdown));
 
     } while (0);
 
@@ -3332,51 +3354,81 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
     return rc;
 }
 
-void DragAndDropService::cleanup(void)
+/** @copydoc VBCLSERVICE::pfnStop */
+void DragAndDropService::stop(void)
 {
     LogFlowFuncEnter();
-
-    VBClLogInfo("Terminating ...\n");
 
     /* Set stop flag first. */
     ASMAtomicXchgBool(&m_fStop, true);
 
-    /* Disconnect from the HGCM host service, which in turn will make the HGCM thread stop. */
+    /* First, disconnect any instances. */
+    if (m_pCurDnD)
+        m_pCurDnD->stop();
+
+    /* Second, disconnect the service's DnD connection. */
     VbglR3DnDDisconnect(&m_dndCtx);
+
+    LogFlowFuncLeave();
+}
+
+/** @copydoc VBCLSERVICE::pfnTerm */
+int DragAndDropService::term(void)
+{
+    int rc = VINF_SUCCESS;
 
     /*
      * Wait for threads to terminate.
      */
-    int rcThread, rc2;
-    if (m_hHGCMThread != NIL_RTTHREAD)
-    {
-        VBClLogInfo("Terminating HGCM thread ...\n");
-
-        rc2 = RTThreadWait(m_hHGCMThread, 30 * 1000 /* 30s timeout */, &rcThread);
-        if (RT_SUCCESS(rc2))
-            rc2 = rcThread;
-
-        if (RT_FAILURE(rc2))
-            VBClLogInfo("Error waiting for HGCM thread to terminate: %Rrc\n", rc2);
-    }
+    int rcThread;
 
     if (m_hX11Thread != NIL_RTTHREAD)
     {
-        VBClLogInfo("Terminating X11 thread ...\n");
+        VBClLogVerbose(2, "Terminating X11 thread ...\n");
 
-        rc2 = RTThreadWait(m_hX11Thread, 200 /* 200ms timeout */, &rcThread);
+        int rc2 = RTThreadWait(m_hX11Thread, RT_MS_30SEC, &rcThread);
         if (RT_SUCCESS(rc2))
             rc2 = rcThread;
 
         if (RT_FAILURE(rc2))
             VBClLogError("Error waiting for X11 thread to terminate: %Rrc\n", rc2);
+
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+
+        m_hX11Thread = NIL_RTTHREAD;
+
+        VBClLogVerbose(2, "X11 thread terminated\n");
     }
 
-    VBClLogInfo("Terminating threads done\n");
+    if (m_hHGCMThread != NIL_RTTHREAD)
+    {
+        VBClLogVerbose(2, "Terminating HGCM thread ...\n");
+
+        int rc2 = RTThreadWait(m_hHGCMThread, RT_MS_30SEC, &rcThread);
+        if (RT_SUCCESS(rc2))
+            rc2 = rcThread;
+
+        if (RT_FAILURE(rc2))
+            VBClLogError("Error waiting for HGCM thread to terminate: %Rrc\n", rc2);
+
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+
+        m_hHGCMThread = NIL_RTTHREAD;
+
+        VBClLogVerbose(2, "HGCM thread terminated\n");
+    }
+
+    if (m_pCurDnD)
+    {
+        delete m_pCurDnD;
+        m_pCurDnD = NULL;
+    }
 
     xHelpers::destroyInstance();
 
-    VbglR3Term();
+    return rc;
 }
 
 /**
@@ -3397,6 +3449,8 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
     /* Let the service instance know in any case. */
     int rc = RTThreadUserSignal(hThread);
     AssertRCReturn(rc, rc);
+
+    VBClLogVerbose(2, "HGCM thread started\n");
 
     /* Number of invalid messages skipped in a row. */
     int cMsgSkippedInvalid = 0;
@@ -3420,26 +3474,22 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
         }
         else
         {
-            if (rc == VERR_INTERRUPTED) /* Can happen due to disconnect, for instance. */
-                rc = VINF_SUCCESS;
+            VBClLogError("Processing next message failed with rc=%Rrc\n", rc);
 
-            if (RT_FAILURE(rc))
+            /* Old(er) hosts either are broken regarding DnD support or otherwise
+             * don't support the stuff we do on the guest side, so make sure we
+             * don't process invalid messages forever. */
+
+            if (cMsgSkippedInvalid++ > 32)
             {
-                VBClLogError("Processing next message failed with rc=%Rrc\n", rc);
-
-                /* Old(er) hosts either are broken regarding DnD support or otherwise
-                 * don't support the stuff we do on the guest side, so make sure we
-                 * don't process invalid messages forever. */
-
-                if (cMsgSkippedInvalid++ > 32)
-                {
-                    VBClLogError("Too many invalid/skipped messages from host, exiting ...\n");
-                    break;
-                }
+                VBClLogError("Too many invalid/skipped messages from host, exiting ...\n");
+                break;
             }
         }
 
     } while (!ASMAtomicReadBool(&pThis->m_fStop));
+
+    VBClLogVerbose(2, "HGCM thread ended\n");
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -3464,13 +3514,11 @@ DECLCALLBACK(int) DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvU
 
     /* Note: Nothing to initialize here (yet). */
 
-    /* Set stop indicator on failure. */
-    if (RT_FAILURE(rc))
-        ASMAtomicXchgBool(&pThis->m_fStop, true);
-
     /* Let the service instance know in any case. */
     int rc2 = RTThreadUserSignal(hThread);
     AssertRC(rc2);
+
+    VBClLogVerbose(2, "X11 thread started\n");
 
     DnDEvent e;
     do
@@ -3502,82 +3550,46 @@ DECLCALLBACK(int) DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvU
 
     } while (!ASMAtomicReadBool(&pThis->m_fStop));
 
+    VBClLogVerbose(2, "X11 thread ended\n");
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
-/** Drag and drop magic number, start of a UUID. */
-#define DRAGANDDROPSERVICE_MAGIC 0x67c97173
-
-/** VBoxClient service class wrapping the logic for the service while
- *  the main VBoxClient code provides the daemon logic needed by all services.
- */
-struct DRAGANDDROPSERVICE
+/** @copydoc VBCLSERVICE::pfnInit */
+static int vbclDnDInit(void)
 {
-    /** The service interface. */
-    struct VBCLSERVICE *pInterface;
-    /** Magic number for sanity checks. */
-    uint32_t uMagic;
-    /** Service object. */
-    DragAndDropService mDragAndDrop;
+    return g_Svc.init();
+}
+
+/** @copydoc VBCLSERVICE::pfnWorker */
+static int vbclDnDWorker(bool volatile *pfShutdown)
+{
+    return g_Svc.worker(pfShutdown);
+}
+
+/** @copydoc VBCLSERVICE::pfnStop */
+static void vbclDnDStop(void)
+{
+    g_Svc.stop();
+}
+
+/** @copydoc VBCLSERVICE::pfnTerm */
+static int vbclDnDTerm(void)
+{
+    return g_Svc.term();
+}
+
+VBCLSERVICE g_SvcDragAndDrop =
+{
+    "dnd",                         /* szName */
+    "Drag'n'Drop",                 /* pszDescription */
+    ".vboxclient-draganddrop.pid", /* pszPidFilePath */
+    NULL,                          /* pszUsage */
+    NULL,                          /* pszOptions */
+    NULL,                          /* pfnOption */
+    vbclDnDInit,                   /* pfnInit */
+    vbclDnDWorker,                 /* pfnWorker */
+    vbclDnDStop,                   /* pfnStop*/
+    vbclDnDTerm                    /* pfnTerm */
 };
 
-static const char *getName()
-{
-    return "Drag and Drop (DnD)";
-}
-
-static const char *getPidFilePath()
-{
-    return ".vboxclient-draganddrop.pid";
-}
-
-static int init(struct VBCLSERVICE **ppInterface)
-{
-    struct DRAGANDDROPSERVICE *pSelf = (struct DRAGANDDROPSERVICE *)ppInterface;
-
-    if (pSelf->uMagic != DRAGANDDROPSERVICE_MAGIC)
-        VBClLogFatalError("Bad DnD service object!\n");
-    return pSelf->mDragAndDrop.init();
-}
-
-static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
-{
-    struct DRAGANDDROPSERVICE *pSelf = (struct DRAGANDDROPSERVICE *)ppInterface;
-
-    if (pSelf->uMagic != DRAGANDDROPSERVICE_MAGIC)
-        VBClLogFatalError("Bad DnD service object!\n");
-    return pSelf->mDragAndDrop.run(fDaemonised);
-}
-
-static void cleanup(struct VBCLSERVICE **ppInterface)
-{
-   struct DRAGANDDROPSERVICE *pSelf = (struct DRAGANDDROPSERVICE *)ppInterface;
-
-    if (pSelf->uMagic != DRAGANDDROPSERVICE_MAGIC)
-        VBClLogFatalError("Bad DnD service object!\n");
-    return pSelf->mDragAndDrop.cleanup();
-}
-
-struct VBCLSERVICE vbclDragAndDropInterface =
-{
-    getName,
-    getPidFilePath,
-    init,
-    run,
-    cleanup
-};
-
-/* Static factory. */
-struct VBCLSERVICE **VBClGetDragAndDropService(void)
-{
-    struct DRAGANDDROPSERVICE *pService =
-        (struct DRAGANDDROPSERVICE *)RTMemAlloc(sizeof(*pService));
-
-    if (!pService)
-        VBClLogFatalError("Out of memory\n");
-    pService->pInterface = &vbclDragAndDropInterface;
-    pService->uMagic = DRAGANDDROPSERVICE_MAGIC;
-    new(&pService->mDragAndDrop) DragAndDropService();
-    return &pService->pInterface;
-}

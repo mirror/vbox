@@ -82,6 +82,21 @@ int vbclLogNotify(const char *pszMessage)
 }
 
 /**
+ * Logs a verbose message.
+ *
+ * @param   pszFormat   The message text.
+ * @param   va          Format arguments.
+ */
+static void vbClLogV(const char *pszFormat, va_list va)
+{
+    char *psz = NULL;
+    RTStrAPrintfV(&psz, pszFormat, va);
+    AssertPtrReturnVoid(psz);
+    LogRel(("%s", psz));
+    RTStrFree(psz);
+}
+
+/**
  * Logs a fatal error, notifies the desktop environment via a message and
  * exits the application immediately.
  *
@@ -96,9 +111,9 @@ void VBClLogFatalError(const char *pszFormat, ...)
     RTStrAPrintfV(&psz, pszFormat, args);
     va_end(args);
 
-    AssertPtr(psz);
-    LogFlowFunc(("%s", psz));
-    LogRel(("%s", psz));
+    AssertPtrReturnVoid(psz);
+    LogFunc(("Fatal Error: %s", psz));
+    LogRel(("Fatal Error: %s", psz));
 
     vbclLogNotify(psz);
 
@@ -118,9 +133,9 @@ void VBClLogError(const char *pszFormat, ...)
     RTStrAPrintfV(&psz, pszFormat, args);
     va_end(args);
 
-    AssertPtr(psz);
-    LogFlowFunc(("%s", psz));
-    LogRel(("%s", psz));
+    AssertPtrReturnVoid(psz);
+    LogFunc(("Error: %s", psz));
+    LogRel(("Error: %s", psz));
 
     RTStrFree(psz);
 }
@@ -134,15 +149,27 @@ void  VBClLogInfo(const char *pszFormat, ...)
 {
     va_list args;
     va_start(args, pszFormat);
-    char *psz = NULL;
-    RTStrAPrintfV(&psz, pszFormat, args);
+    vbClLogV(pszFormat, args);
     va_end(args);
+}
 
-    AssertPtr(psz);
-    LogFlowFunc(("%s", psz));
-    LogRel(("%s", psz));
-
-    RTStrFree(psz);
+/**
+ * Displays a verbose message based on the currently
+ * set global verbosity level.
+ *
+ * @param   iLevel      Minimum log level required to display this message.
+ * @param   pszFormat   The message text.
+ * @param   ...         Format arguments.
+ */
+void VBClLogVerbose(unsigned iLevel, const char *pszFormat, ...)
+{
+    if (iLevel <= g_cVerbosity)
+    {
+        va_list va;
+        va_start(va, pszFormat);
+        vbClLogV(pszFormat, va);
+        va_end(va);
+    }
 }
 
 /**
@@ -264,6 +291,3 @@ void VBClLogDestroy(void)
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
 }
 
-void foo()
-{
-}

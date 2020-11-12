@@ -732,7 +732,7 @@ static int readGuestProperty(uint32_t u32ClientId, const char *pszPropName)
  * We check the same guest property here and dont start this service in case
  * it (guest property) is set.
  */
-static bool checkDRMClient()
+static bool checkDRMClient(void)
 {
    uint32_t uGuestPropSvcClientID;
    int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
@@ -744,7 +744,7 @@ static bool checkDRMClient()
    return true;
 }
 
-static bool startDRMClient()
+static bool startDRMClient(void)
 {
     char* argv[] = {NULL};
     char* env[] = {NULL};
@@ -754,18 +754,26 @@ static bool startDRMClient()
     VBClLogInfo("Starting DRM client.\n");
     int rc = execve(szDRMClientPath, argv, env);
     if (rc == -1)
-        VBClLogFatalError("execve for % returns the following error %d %s\n", szDRMClientPath, errno, strerror(errno));
+        VBClLogFatalError("execve for '%s' returns the following error %d: %s\n", szDRMClientPath, errno, strerror(errno));
     /* This is reached only when execve fails. */
     return false;
 }
 
-static bool init()
+/** @copydoc VBCLSERVICE::pfnInit */
+static int vbclSVGAInit(void)
 {
+    /* In 32-bit guests GAs build on our release machines causes an xserver hang.
+     * So for 32-bit GAs we use our DRM client. */
+#if ARCH_BITS == 32
+    /* igore rc */ startDRMClient();
+    return VERR_NOT_AVAILABLE;
+#endif
+
     /* If DRM client is already running don't start this service. */
     if (checkDRMClient())
     {
         VBClLogFatalError("DRM resizing is already running. Exiting this service\n");
-        return false;
+        return VERR_NOT_AVAILABLE;
     }
     if (isXwayland())
         return startDRMClient();
@@ -780,14 +788,17 @@ static bool init()
     return true;
 }
 
-static void cleanup()
+/** @copydoc VBCLSERVICE::pfnStop */
+static void vbclSVGAStop(void)
 {
     if (mpMonitorPositions)
     {
         free(mpMonitorPositions);
         mpMonitorPositions = NULL;
     }
-    stopX11MonitorThread();
+
+    stopX11MonitorThread(); /** @todo r=andy We ignore rc!? */
+
     if (x11Context.pRandLibraryHandle)
     {
         dlclose(x11Context.pRandLibraryHandle);
@@ -1330,29 +1341,9 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
     XFlush(x11Context.pDisplay);
 }
 
-static const char *getName()
+static int vbclSVGAWorker(bool volatile *pfShutdown)
 {
-    return "Display SVGA X11";
-}
-
-static const char *getPidFilePath()
-{
-    return ".vboxclient-display-svga-x11.pid";
-}
-
-static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
-{
-    RT_NOREF(ppInterface, fDaemonised);
-
-    /* In 32-bit guests GAs build on our release machines causes an xserver hang.
-     * So for 32-bit GAs we use our DRM client. */
-#if ARCH_BITS == 32
-    startDRMClient();
-    return VERR_NOT_AVAILABLE;
-#endif
-
-    if (!init())
-        return VERR_NOT_AVAILABLE;
+    RT_NOREF(pfShutdown);
 
     /* Do not acknowledge the first event we query for to pick up old events,
      * e.g. from before a guest reboot. */
@@ -1368,6 +1359,10 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
     if (rc == VERR_RESOURCE_BUSY)  /* Someone else has already acquired it. */
         return VERR_RESOURCE_BUSY;
+
+    /* Let the main thread know that it can continue spawning services. */
+    RTThreadUserSignal(RTThreadSelf());
+
     for (;;)
     {
         struct VMMDevDisplayDef aDisplays[VMW_MAX_HEADS];
@@ -1441,19 +1436,19 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         if (RT_FAILURE(rc))
             VBClLogFatalError("Failure waiting for event, rc=%Rrc\n", rc);
     }
-    cleanup();
 }
 
-static struct VBCLSERVICE interface =
+VBCLSERVICE g_SvcDisplaySVGA =
 {
-    getName,
-    getPidFilePath,
-    VBClServiceDefaultHandler, /* Init */
-    run,
-    VBClServiceDefaultCleanup
-}, *pInterface = &interface;
+    "dp-svga-x11",                      /* szName */
+    "SVGA X11 display",                 /* pszDescription */
+    ".vboxclient-display-svga-x11.pid", /* pszPidFilePath */
+    NULL,                               /* pszUsage */
+    NULL,                               /* pszOptions */
+    NULL,                               /* pfnOption */
+    vbclSVGAInit,                       /* pfnInit */
+    vbclSVGAWorker,                     /* pfnWorker */
+    vbclSVGAStop,                       /* pfnStop*/
+    NULL                                /* pfnTerm */
+};
 
-struct VBCLSERVICE **VBClDisplaySVGAX11Service()
-{
-    return &pInterface;
-}

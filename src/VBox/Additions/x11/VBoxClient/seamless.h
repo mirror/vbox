@@ -83,34 +83,17 @@ public:
     RTMEM_IMPLEMENT_NEW_AND_DELETE();
 #endif
 
-    /**
-      * Initialise the service.
-      */
+    /** @copydoc VBCLSERVICE::pfnInit */
     int init(void);
 
-    /**
-      * Run the service.
-      * @returns iprt status value
-      */
-    int run(void);
+    /** @copydoc VBCLSERVICE::pfnWorker */
+    int worker(bool volatile *pfShutdown);
 
-    /**
-     * Stops the service.
-     */
-    void stop();
+    /** @copydoc VBCLSERVICE::pfnStop */
+    void stop(void);
 
-    /** Pause the service loop.  This must be safe to call on a different thread
-     * and potentially before @a run is or after it exits.
-     * This is called by the VT monitoring thread to allow the service to disable
-     * itself when the X server is switched out.  If the monitoring functionality
-     * is available then @a pause or @a resume will be called as soon as it starts
-     * up. */
-    int pause();
-    /** Resume after pausing.  The same applies here as for @a pause. */
-    int resume();
-
-    /** Run a few tests to be sure everything is working as intended. */
-    int selfTest();
+    /** @copydoc VBCLSERVICE::pfnTerm */
+    int term(void);
 };
 
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_seamless_h */

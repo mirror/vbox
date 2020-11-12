@@ -21,6 +21,9 @@ include $(KBUILD_PATH)/subheader.kmk
 # Use header files from our tree for randr and xinerama. and don't link but rather dlopen libXrand
 VBOX_WITH_DISTRO_XRAND_XINERAMA=
 
+# We don't yet have a seamless mode compilation flag, so define it here unconditionally.
+VBOX_WITH_SEAMLESS:=1
+
 #
 # VBoxClient - clipboard and seamless.
 #
@@ -45,11 +48,7 @@ VBoxClient_INCS += ../x11include/libXrandr-1.5.2
 VBoxClient_INCS += ../x11include/randrproto-1.6.0
 VBoxClient_SOURCES = \
 	main.cpp \
-	display-svga-x11.cpp \
-	seamless.cpp \
-	seamless-x11.cpp \
-	logging.cpp \
-	hostversion.cpp
+	logging.cpp
 
 VBoxDRMClient_TEMPLATE = NewVBoxGuestR3Exe
 VBoxDRMClient_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
@@ -83,8 +82,8 @@ VBoxClient_LDFLAGS.netbsd = \
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  ifdef VBOX_DND_WITH_XTEST
- VBoxClient_DEFS += VBOX_DND_WITH_XTEST
- VBoxClient_LIBS += \
+  VBoxClient_DEFS += VBOX_DND_WITH_XTEST
+  VBoxClient_LIBS += \
 	Xtst
  endif
 endif
@@ -93,30 +92,45 @@ endif
 # __wrap_memcpy, which we can wrap around memcpy@GLIBC_2.2.5.  I do not know
 # how else to do that without recompiling or implementing our own memcpy.
 ifeq ($(KBUILD_TARGET),linux)
-VBoxClient_LDFLAGS.amd64 += \
+ VBoxClient_LDFLAGS.amd64 += \
 	-Wl,--wrap=memcpy
 endif
 
 ifdef VBOX_WITH_GUEST_PROPS
-VBoxClient_DEFS += VBOX_WITH_GUEST_PROPS
+ VBoxClient_DEFS    += VBOX_WITH_GUEST_PROPS
+ VBoxClient_SOURCES += \
+	hostversion.cpp
 endif
 
 ifdef VBOX_WITH_DRAG_AND_DROP
-VBoxClient_DEFS += \
+ VBoxClient_DEFS     += \
 	VBOX_WITH_DRAG_AND_DROP \
 	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
-VBoxClient_SOURCES += \
+ VBoxClient_SOURCES  += \
 	draganddrop.cpp
-VBoxClient_LIBS     += \
+ VBoxClient_LIBS     += \
 	$(VBOX_LIB_VBGL_R3) \
 	$(PATH_STAGE_LIB)/additions/VBoxDnDGuestR3Lib$(VBOX_SUFF_LIB)
 endif
 
+ifdef VBOX_WITH_SEAMLESS
+ VBoxClient_DEFS    += VBOX_WITH_SEAMLESS
+ VBoxClient_SOURCES += \
+	seamless.cpp \
+	seamless-x11.cpp
+endif
+
+ifdef VBOX_WITH_VMSVGA
+ VBoxClient_DEFS    += VBOX_WITH_VMSVGA
+ VBoxClient_SOURCES += \
+	display-svga-x11.cpp
+endif
+
 ifdef VBOX_WITH_SHARED_CLIPBOARD
- VBoxClient_DEFS += \
+ VBoxClient_DEFS     += \
 	VBOX_WITH_SHARED_CLIPBOARD \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS),VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS,)
- VBoxClient_SOURCES += \
+ VBoxClient_SOURCES  += \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
 	clipboard.cpp
@@ -171,6 +185,7 @@ $$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
           testcase/tstSeamlessX11.cpp \
           seamless.cpp \
           seamless-x11.cpp
+  tstSeamlessX11_DEFS   += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
   tstSeamlessX11_LIBPATH = \
           $(VBOX_LIBPATH_X11)
   tstSeamlessX11_LIBS = \

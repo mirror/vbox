@@ -59,6 +59,16 @@ void VBClLogFatalError(const char *pszFormat, ...)
     exit(1);
 }
 
+void VBClLogVerbose(unsigned iLevel, const char *pszFormat, ...)
+{
+    RT_NOREF(iLevel);
+
+    va_list va;
+    va_start(va, pszFormat);
+    RTPrintf("%s", pszFormat);
+    va_end(va);
+}
+
 int VBClStartVTMonitor()
 {
     return VINF_SUCCESS;
@@ -155,7 +165,8 @@ int main( int argc, char **argv)
     {
         RTPrintf("Failed to initialise seamless Additions, rc = %Rrc\n", rc);
     }
-    rc = seamless.run();
+    bool fShutdown = false;
+    rc = seamless.worker(&fShutdown);
     if (rc != VINF_SUCCESS)
     {
         RTPrintf("Failed to run seamless Additions, rc = %Rrc\n", rc);

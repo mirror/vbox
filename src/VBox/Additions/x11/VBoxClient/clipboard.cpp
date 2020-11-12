@@ -57,7 +57,7 @@ typedef struct _SHCLCTXFUSE
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_FUSE */
 
 /**
- * Global clipboard context information.
+ * Struct keeping a Shared Clipboard context.
  */
 struct SHCLCONTEXT
 {
@@ -74,7 +74,7 @@ struct SHCLCONTEXT
     SHCLX11CTX       X11;
 };
 
-/** Only one client is supported. There seems to be no need for more clients. */
+/** Only one context is supported at a time for now. */
 static SHCLCONTEXT g_Ctx;
 
 
@@ -257,8 +257,6 @@ static int vboxClipboardConnect(void)
  */
 int vboxClipboardMain(void)
 {
-    LogRel(("Worker loop running\n"));
-
     int rc;
 
     PSHCLCONTEXT pCtx = &g_Ctx;
@@ -330,7 +328,7 @@ int vboxClipboardMain(void)
 
                 case VBGLR3CLIPBOARDEVENTTYPE_QUIT:
                 {
-                    LogRel2(("Host requested termination\n"));
+                    VBClLogVerbose(2, "Host requested termination\n");
                     fShutdown = true;
                     break;
                 }
@@ -367,8 +365,6 @@ int vboxClipboardMain(void)
             break;
     }
 
-    LogRel(("Worker loop ended\n"));
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -376,7 +372,7 @@ int vboxClipboardMain(void)
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
 static DECLCALLBACK(int) vboxClipoardFUSEThread(RTTHREAD hThreadSelf, void *pvUser)
 {
-    RT_NOREF(hThreadSelf, pvUser);
+    RT_NOREF(pvUser);
 
     VbglR3Init();
 
@@ -408,13 +404,13 @@ static DECLCALLBACK(int) vboxClipoardFUSEThread(RTTHREAD hThreadSelf, void *pvUs
         rc = ShClFuseMain(&Opts);
     }
     else
-        LogRel(("Error creating FUSE mount directory, rc=%Rrc\n", rc));
+        VBClLogError("Error creating FUSE mount directory, rc=%Rrc\n", rc);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-static int vboxClipboardFUSEStart()
+static int vboxClipboardFUSEStart(void)
 {
     LogFlowFuncEnter();
 
@@ -429,7 +425,7 @@ static int vboxClipboardFUSEStart()
     return rc;
 }
 
-static int vboxClipboardFUSEStop()
+static int vboxClipboardFUSEStop(void)
 {
     LogFlowFuncEnter();
 
@@ -443,20 +439,9 @@ static int vboxClipboardFUSEStop()
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_FUSE */
 
-static const char *getName()
+/** @copydoc VBCLSERVICE::pfnInit */
+static int vbclShClInit(void)
 {
-    return "Shared Clipboard";
-}
-
-static const char *getPidFilePath()
-{
-    return ".vboxclient-clipboard.pid";
-}
-
-static int init(struct VBCLSERVICE **pSelf)
-{
-    RT_NOREF(pSelf);
-
     int rc;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -469,9 +454,10 @@ static int init(struct VBCLSERVICE **pSelf)
     return rc;
 }
 
-static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
+/** @copydoc VBCLSERVICE::pfnWorker */
+static int vbclShClWorker(bool volatile *pfShutdown)
 {
-    RT_NOREF(ppInterface, fDaemonised);
+    RT_NOREF(pfShutdown);
 
     /* Initialise the guest library. */
     int rc = vboxClipboardConnect();
@@ -482,6 +468,9 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         if (RT_SUCCESS(rc))
         {
 #endif
+            /* Let the main thread know that it can continue spawning services. */
+            RTThreadUserSignal(RTThreadSelf());
+
             rc = vboxClipboardMain();
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
@@ -501,36 +490,36 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     return rc;
 }
 
-static void cleanup(struct VBCLSERVICE **ppInterface)
+/** @copydoc VBCLSERVICE::pfnStop */
+static void vbclShClStop(void)
 {
-    RT_NOREF(ppInterface);
+    /* Disconnect from the host service.
+     * This will also send a VBOX_SHCL_HOST_MSG_QUIT from the host so that we can break out from our message worker. */
+    VbglR3ClipboardDisconnect(g_Ctx.CmdCtx.idClient);
+    g_Ctx.CmdCtx.idClient = 0;
+}
 
+/** @copydoc VBCLSERVICE::pfnTerm */
+static int vbclShClTerm(void)
+{
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     ShClTransferCtxDestroy(&g_Ctx.TransferCtx);
 #endif
+
+    return VINF_SUCCESS;
 }
 
-struct VBCLSERVICE vbclClipboardInterface =
+VBCLSERVICE g_SvcClipboard =
 {
-    getName,
-    getPidFilePath,
-    init,
-    run,
-    cleanup
+    "shcl",                      /* szName */
+    "Shared Clipboard",          /* pszDescription */
+    ".vboxclient-clipboard.pid", /* pszPidFilePath */
+    NULL,                        /* pszUsage */
+    NULL,                        /* pszOptions */
+    NULL,                        /* pfnOption */
+    vbclShClInit,                /* pfnInit */
+    vbclShClWorker,              /* pfnWorker */
+    vbclShClStop,                /* pfnStop*/
+    vbclShClTerm                 /* pfnTerm */
 };
 
-struct CLIPBOARDSERVICE
-{
-    struct VBCLSERVICE *pInterface;
-};
-
-struct VBCLSERVICE **VBClGetClipboardService(void)
-{
-    struct CLIPBOARDSERVICE *pService =
-        (struct CLIPBOARDSERVICE *)RTMemAlloc(sizeof(*pService));
-
-    if (!pService)
-        VBClLogFatalError("Out of memory\n");
-    pService->pInterface = &vbclClipboardInterface;
-    return &pService->pInterface;
-}
