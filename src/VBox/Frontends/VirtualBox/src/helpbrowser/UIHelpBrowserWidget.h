@@ -100,6 +100,7 @@ private slots:
     void sltOpenLinkInNewTab();
     void sltOpenLink();
     void sltAddNewBookmark(const QUrl &url, const QString &strTitle);
+    void sltHandleFontSizeactions();
 
 private:
 
@@ -166,6 +167,9 @@ private:
     QAction             *m_pPrintDialogAction;
     QAction             *m_pShowHideSideBarAction;
     QAction             *m_pShowHideToolBarAction;
+    QAction             *m_pFontSizeLargerAction;
+    QAction             *m_pFontSizeSmallerAction;
+    QAction             *m_pFontSizeResetAction;
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
     bool                 m_fModelContentCreated;
 };

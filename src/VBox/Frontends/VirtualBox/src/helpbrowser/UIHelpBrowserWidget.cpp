@@ -79,6 +79,7 @@ Q_DECLARE_METATYPE(HelpBrowserTabs);
 
 static const int iBookmarkUrlDataType = 6;
 static const QPair<float, float> fontScaleMinMax(0.5f, 3.f);
+static int iFontPointSizeChangeStep = 2;
 
 /*********************************************************************************************************************************
 *   UIFontScaleWidget definition.                                                                                         *
@@ -302,6 +303,7 @@ public:
     void print(QPrinter &printer);
     int initialFontPointSize() const;
     void setFontPointSize(int iPointSize);
+    int fontPointSize() const;
 
 private slots:
 
@@ -367,6 +369,7 @@ public:
     void printCurrent(QPrinter &printer);
     int initialFontPointSize() const;
     void setFontPointSize(int iPointSize);
+    int fontPointSize() const;
 
 protected:
 
@@ -476,12 +479,11 @@ void UIFontScaleWidget::sltSetFontPointSize()
 {
     if (!sender())
         return;
-    int iStep = 2;
     int iNewSize = m_iFontPointSize;
     if (sender() == m_pMinusButton)
-        iNewSize -= iStep;
+        iNewSize -= iFontPointSizeChangeStep;
     else if (sender() == m_pPlusButton)
-        iNewSize += iStep;
+        iNewSize += iFontPointSizeChangeStep;
     else if (sender() == m_pResetButton)
         iNewSize = m_iInitialFontPointSize;
     if (iNewSize >= fontScaleMinMax.second * m_iInitialFontPointSize ||
@@ -764,6 +766,13 @@ void UIHelpBrowserTab::setFontPointSize(int iPointSize)
         mFont.setPointSize(iPointSize);
         m_pContentViewer->setFont(mFont);
     }
+}
+
+int UIHelpBrowserTab::fontPointSize() const
+{
+    if (!m_pContentViewer)
+        return 0;
+    return m_pContentViewer->font().pointSize();
 }
 
 void UIHelpBrowserTab::prepare(const QUrl &initialUrl)
@@ -1353,6 +1362,14 @@ void UIHelpBrowserTabManager::setFontPointSize(int iPointSize)
         m_pFontScaleWidget->setFontPointSize(iPointSize);
 }
 
+int UIHelpBrowserTabManager::fontPointSize() const
+{
+    UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(currentWidget());
+    if (!pTab)
+        return 0;
+    return pTab->fontPointSize();
+}
+
 void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
 {
     for (int i = 0; i < count(); ++i)
@@ -1447,6 +1464,9 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
     , m_pPrintDialogAction(0)
     , m_pShowHideSideBarAction(0)
     , m_pShowHideToolBarAction(0)
+    , m_pFontSizeLargerAction(0)
+    , m_pFontSizeSmallerAction(0)
+    , m_pFontSizeResetAction(0)
     , m_fModelContentCreated(false)
 {
     qRegisterMetaType<HelpBrowserTabs>("HelpBrowserTabs");
@@ -1456,7 +1476,6 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
 
 UIHelpBrowserWidget::~UIHelpBrowserWidget()
 {
-    /* Cleanup VM Log-Viewer: */
     cleanup();
 }
 
@@ -1476,12 +1495,10 @@ bool UIHelpBrowserWidget::shouldBeMaximized() const
 
 void UIHelpBrowserWidget::prepare()
 {
-    /* Create main layout: */
     m_pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(m_pMainLayout);
 
     prepareActions();
-    //prepareToolBar();
     prepareWidgets();
     prepareSearchWidgets();
     prepareMenu();
@@ -1505,6 +1522,22 @@ void UIHelpBrowserWidget::prepareActions()
     m_pPrintDialogAction = new QAction(this);
     connect(m_pPrintDialogAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sltShowPrintDialog);
+
+    m_pFontSizeLargerAction = new QAction(this);
+    m_pFontSizeLargerAction->setIcon(UIIconPool::iconSet(":/help_browser_plus_32px.png"));
+
+    m_pFontSizeSmallerAction = new QAction(this);
+    m_pFontSizeSmallerAction->setIcon(UIIconPool::iconSet(":/help_browser_minus_32px.png"));
+
+    m_pFontSizeResetAction = new QAction(this);
+    m_pFontSizeResetAction->setIcon(UIIconPool::iconSet(":/help_browser_reset_32px.png"));
+
+    connect(m_pFontSizeLargerAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltHandleFontSizeactions);
+    connect(m_pFontSizeSmallerAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltHandleFontSizeactions);
+    connect(m_pFontSizeResetAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltHandleFontSizeactions);
 }
 
 void UIHelpBrowserWidget::prepareWidgets()
@@ -1589,17 +1622,10 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
             this, &UIHelpBrowserWidget::sltOpenLinkWithUrl);
     connect(m_pSearchResultWidget, &QHelpContentWidget::customContextMenuRequested,
             this, &UIHelpBrowserWidget::sltShowLinksContextMenu);
-
-    // connect(searchEngine, &QHelpSearchEngine::searchingStarted,
-    //         this, &SearchWidget::searchingStarted);
-    // connect(searchEngine, &QHelpSearchEngine::searchingFinished,
-    //         this, &SearchWidget::searchingFinished);
-
     connect(m_pSearchEngine, &QHelpSearchEngine::indexingStarted,
             this, &UIHelpBrowserWidget::sltHandleIndexingStarted);
     connect(m_pSearchEngine, &QHelpSearchEngine::indexingFinished,
             this, &UIHelpBrowserWidget::sltHandleIndexingFinished);
-
     connect(m_pSearchEngine, &QHelpSearchEngine::searchingStarted,
             this, &UIHelpBrowserWidget::sltHandleSearchingStarted);
 
@@ -1609,18 +1635,12 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
 void UIHelpBrowserWidget::prepareToolBar()
 {
     m_pTopLayout = new QHBoxLayout;
-    /* Create toolbar: */
     m_pToolBar = new QIToolBar(parentWidget());
     if (m_pToolBar)
     {
-        /* Configure toolbar: */
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonIconOnly);
         const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-        // m_pToolBar->addAction(m_pBackwardAction);
-        // m_pToolBar->addAction(m_pForwardAction);
-        // m_pToolBar->addAction(m_pHomeAction);
-        // m_pToolBar->addAction(m_pAddBookmarkAction);
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -1647,6 +1667,13 @@ void UIHelpBrowserWidget::prepareMenu()
     if (m_pPrintDialogAction)
         m_pFileMenu->addAction(m_pPrintDialogAction);
 
+    if (m_pFontSizeLargerAction)
+        m_pViewMenu->addAction(m_pFontSizeLargerAction);
+    if (m_pFontSizeSmallerAction)
+        m_pViewMenu->addAction(m_pFontSizeSmallerAction);
+    if (m_pFontSizeResetAction)
+        m_pViewMenu->addAction(m_pFontSizeResetAction);
+    m_pViewMenu->addSeparator();
     if (m_pShowHideSideBarAction)
         m_pViewMenu->addAction(m_pShowHideSideBarAction);
     if (m_pShowHideToolBarAction)
@@ -1655,22 +1682,6 @@ void UIHelpBrowserWidget::prepareMenu()
 
 void UIHelpBrowserWidget::loadOptions()
 {
-    // if (m_pContentViewer && m_pHelpEngine)
-    // {
-    //     QUrl url(gEDataManager->helpBrowserLastUrl());
-    //     if (url.isEmpty())
-    //         return;
-    //     if (url.isValid())
-    //     {
-    //         if (m_pHelpEngine->findFile(url).isValid())
-    //         {
-    //             m_pContentViewer->setSource(url);
-    //             m_pContentViewer->clearHistory();
-    //         }
-    //         else
-    //             show404Error(url);
-    //     }
-    // }
 }
 
 QStringList UIHelpBrowserWidget::loadSavedUrlList()
@@ -1752,29 +1763,28 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pTabWidget->setTabText(HelpBrowserTabs_Search, tr("Search"));
         m_pTabWidget->setTabText(HelpBrowserTabs_Bookmarks, tr("Bookmarks"));
     }
-    if (m_pShowHideSideBarAction)
-        m_pShowHideSideBarAction->setText(tr("Show/Hide Side Bar"));
 
+    if (m_pShowHideSideBarAction)
+        m_pShowHideSideBarAction->setText(tr("Show Side Bar"));
     if (m_pShowHideToolBarAction)
-        m_pShowHideToolBarAction->setText(tr("Show/Hide Tool Bar"));
+        m_pShowHideToolBarAction->setText(tr("Show Tool Bar"));
     if (m_pPrintDialogAction)
         m_pPrintDialogAction->setText(tr("Print..."));
+
+    if (m_pFontSizeLargerAction)
+        m_pFontSizeLargerAction->setText(tr("Increase Font Size"));
+    if (m_pFontSizeSmallerAction)
+        m_pFontSizeSmallerAction->setText(tr("Decrease Font Size"));
+    if (m_pFontSizeResetAction)
+        m_pFontSizeResetAction->setText(tr("Reset Font Size"));
 }
 
 
 void UIHelpBrowserWidget::showEvent(QShowEvent *pEvent)
 {
     QWidget::showEvent(pEvent);
-
-    /* One may think that QWidget::polish() is the right place to do things
-     * below, but apparently, by the time when QWidget::polish() is called,
-     * the widget style & layout are not fully done, at least the minimum
-     * size hint is not properly calculated. Since this is sometimes necessary,
-     * we provide our own "polish" implementation: */
-
-    if (m_fIsPolished)
+   if (m_fIsPolished)
         return;
-
     m_fIsPolished = true;
 }
 
@@ -1802,10 +1812,7 @@ void UIHelpBrowserWidget::sltShowPrintDialog()
     QPrinter printer;
     QPrintDialog printDialog(&printer, this);
     if (printDialog.exec() == QDialog::Accepted)
-    {
         m_pTabManager->printCurrent(printer);
-        //   PrintWidget(this);
-    }
 }
 
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
@@ -1854,20 +1861,16 @@ void UIHelpBrowserWidget::sltHandleIndexingStarted()
 {
     if (m_pSearchContainerWidget)
         m_pSearchContainerWidget->setEnabled(false);
-    printf("indexing started\n");
 }
 
 void UIHelpBrowserWidget::sltHandleIndexingFinished()
 {
     if (m_pSearchContainerWidget)
         m_pSearchContainerWidget->setEnabled(true);
-
-    printf("indexing finished\n");
 }
 
 void UIHelpBrowserWidget::sltHandleSearchingStarted()
 {
-
 }
 
 void UIHelpBrowserWidget::sltHandleSearchStart()
@@ -1952,6 +1955,20 @@ void UIHelpBrowserWidget::sltOpenLinkWithUrl(const QUrl &url)
 {
     if (m_pTabManager && url.isValid())
         m_pTabManager->setSource(url, false);
+}
+
+void UIHelpBrowserWidget::sltHandleFontSizeactions()
+{
+    if (!sender() || !m_pTabManager)
+        return;
+    int iFontPointSize = m_pTabManager->fontPointSize();
+    if (sender() == m_pFontSizeResetAction)
+        iFontPointSize = m_pTabManager->initialFontPointSize();
+    else if (sender() == m_pFontSizeLargerAction)
+        iFontPointSize += iFontPointSizeChangeStep;
+    else if (sender() == m_pFontSizeSmallerAction)
+        iFontPointSize -= iFontPointSizeChangeStep;
+    m_pTabManager->setFontPointSize(iFontPointSize);
 }
 
 #include "UIHelpBrowserWidget.moc"
