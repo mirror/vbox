@@ -249,7 +249,8 @@ protected:
 
 private slots:
 
-    void sltHandleOpenInNewTab();
+    void sltHandleOpenLinkInNewTab();
+    void sltHandleOpenLink();
     void sltHandleFindWidgetDrag(const QPoint &delta);
     void sltHandleFindInPageSearchTextChange(const QString &strSearchText);
     void sltSelectPreviousMatch();
@@ -1043,20 +1044,31 @@ int UIHelpBrowserViewer::initialFontPointSize() const
 
 void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
 {
-    QMenu *pMenu = createStandardContextMenu();
+    QMenu pMenu;
+    QAction *pOpenLinkAction = new QAction(UIHelpBrowserWidget::tr("Open Link"));
+    connect(pOpenLinkAction, &QAction::triggered,
+            this, &UIHelpBrowserViewer::sltHandleOpenLink);
+
+    QAction *pOpenInNewTabAction = new QAction(UIHelpBrowserWidget::tr("Open Link in New Tab"));
+    connect(pOpenInNewTabAction, &QAction::triggered,
+            this, &UIHelpBrowserViewer::sltHandleOpenLinkInNewTab);
+
+    pMenu.addAction(pOpenLinkAction);
+    pMenu.addAction(pOpenInNewTabAction);
+
     QString strAnchor = anchorAt(event->pos());
     if (!strAnchor.isEmpty())
     {
         QString strLink = source().resolved(anchorAt(event->pos())).toString();
-
-        QAction *pOpenInNewTabAction = new QAction(UIHelpBrowserWidget::tr("Open Link in New Tab"));
+        pOpenLinkAction->setData(strLink);
         pOpenInNewTabAction->setData(strLink);
-        connect(pOpenInNewTabAction, &QAction::triggered,
-                this, &UIHelpBrowserViewer::sltHandleOpenInNewTab);
-        pMenu->addAction(pOpenInNewTabAction);
     }
-    pMenu->exec(event->globalPos());
-    delete pMenu;
+    else
+    {
+        pOpenLinkAction->setEnabled(false);
+        pOpenInNewTabAction->setEnabled(false);
+    }
+    pMenu.exec(event->globalPos());
 }
 
 void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
@@ -1173,7 +1185,7 @@ void UIHelpBrowserViewer::selectMatch(int iMatchIndex, int iSearchStringLength)
     setTextCursor(cursor);
 }
 
-void UIHelpBrowserViewer::sltHandleOpenInNewTab()
+void UIHelpBrowserViewer::sltHandleOpenLinkInNewTab()
 {
     QAction *pSender = qobject_cast<QAction*>(sender());
     if (!pSender)
@@ -1181,6 +1193,16 @@ void UIHelpBrowserViewer::sltHandleOpenInNewTab()
     QUrl url = pSender->data().toUrl();
     if (url.isValid())
         emit sigOpenLinkInNewTab(url);
+}
+
+void UIHelpBrowserViewer::sltHandleOpenLink()
+{
+    QAction *pSender = qobject_cast<QAction*>(sender());
+    if (!pSender)
+        return;
+    QUrl url = pSender->data().toUrl();
+    if (url.isValid())
+        QTextBrowser::setSource(url);
 }
 
 void UIHelpBrowserViewer::sltHandleFindWidgetDrag(const QPoint &delta)
@@ -1615,7 +1637,7 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
 
     m_pSearchContainerWidget = new QWidget;
     m_pTabWidget->insertTab(HelpBrowserTabs_Search, m_pSearchContainerWidget, QString());
-
+    m_pTabWidget->setTabPosition(QTabWidget::South);
     m_pSearchEngine = m_pHelpEngine->searchEngine();
     AssertReturnVoid(m_pSearchEngine);
 
