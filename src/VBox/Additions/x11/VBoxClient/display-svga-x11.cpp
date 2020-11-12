@@ -759,8 +759,10 @@ static bool startDRMClient(void)
     return false;
 }
 
-/** @copydoc VBCLSERVICE::pfnInit */
-static int vbclSVGAInit(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnInit}
+ */
+static DECLCALLBACK(int) vbclSVGAInit(void)
 {
     /* In 32-bit guests GAs build on our release machines causes an xserver hang.
      * So for 32-bit GAs we use our DRM client. */
@@ -788,8 +790,10 @@ static int vbclSVGAInit(void)
     return true;
 }
 
-/** @copydoc VBCLSERVICE::pfnStop */
-static void vbclSVGAStop(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnStop}
+ */
+static DECLCALLBACK(void) vbclSVGAStop(void)
 {
     if (mpMonitorPositions)
     {
@@ -1341,7 +1345,10 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
     XFlush(x11Context.pDisplay);
 }
 
-static int vbclSVGAWorker(bool volatile *pfShutdown)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnWorker}
+ */
+static DECLCALLBACK(int) vbclSVGAWorker(bool volatile *pfShutdown)
 {
     RT_NOREF(pfShutdown);
 

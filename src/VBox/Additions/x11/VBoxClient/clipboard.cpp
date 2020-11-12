@@ -439,8 +439,10 @@ static int vboxClipboardFUSEStop(void)
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_FUSE */
 
-/** @copydoc VBCLSERVICE::pfnInit */
-static int vbclShClInit(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnInit}
+ */
+static DECLCALLBACK(int) vbclShClInit(void)
 {
     int rc;
 
@@ -454,8 +456,10 @@ static int vbclShClInit(void)
     return rc;
 }
 
-/** @copydoc VBCLSERVICE::pfnWorker */
-static int vbclShClWorker(bool volatile *pfShutdown)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnWorker}
+ */
+static DECLCALLBACK(int) vbclShClWorker(bool volatile *pfShutdown)
 {
     RT_NOREF(pfShutdown);
 
@@ -490,8 +494,10 @@ static int vbclShClWorker(bool volatile *pfShutdown)
     return rc;
 }
 
-/** @copydoc VBCLSERVICE::pfnStop */
-static void vbclShClStop(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnStop}
+ */
+static DECLCALLBACK(void) vbclShClStop(void)
 {
     /* Disconnect from the host service.
      * This will also send a VBOX_SHCL_HOST_MSG_QUIT from the host so that we can break out from our message worker. */
@@ -499,8 +505,10 @@ static void vbclShClStop(void)
     g_Ctx.CmdCtx.idClient = 0;
 }
 
-/** @copydoc VBCLSERVICE::pfnTerm */
-static int vbclShClTerm(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnTerm}
+ */
+static DECLCALLBACK(int) vbclShClTerm(void)
 {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     ShClTransferCtxDestroy(&g_Ctx.TransferCtx);

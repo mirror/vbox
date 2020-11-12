@@ -314,26 +314,34 @@ int SeamlessMain::stopX11MonitorThread(void)
     return rc;
 }
 
-/** @copydoc VBCLSERVICE::pfnInit */
-static int vbclSeamlessInit(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnInit}
+ */
+static DECLCALLBACK(int) vbclSeamlessInit(void)
 {
     return g_Svc.mSeamless.init();
 }
 
-/** @copydoc VBCLSERVICE::pfnWorker */
-static int vbclSeamlessWorker(bool volatile *pfShutdown)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnWorker}
+ */
+static DECLCALLBACK(int) vbclSeamlessWorker(bool volatile *pfShutdown)
 {
     return g_Svc.mSeamless.worker(pfShutdown);
 }
 
-/** @copydoc VBCLSERVICE::pfnStop */
-static void vbclSeamlessStop(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnStop}
+ */
+static DECLCALLBACK(void) vbclSeamlessStop(void)
 {
     return g_Svc.mSeamless.stop();
 }
 
-/** @copydoc VBCLSERVICE::pfnTerm */
-static int vbclSeamlessTerm(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnTerm}
+ */
+static DECLCALLBACK(int) vbclSeamlessTerm(void)
 {
     return g_Svc.mSeamless.term();
 }

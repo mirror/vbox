@@ -3555,26 +3555,34 @@ DECLCALLBACK(int) DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvU
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-/** @copydoc VBCLSERVICE::pfnInit */
-static int vbclDnDInit(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnInit}
+ */
+static DECLCALLBACK(int) vbclDnDInit(void)
 {
     return g_Svc.init();
 }
 
-/** @copydoc VBCLSERVICE::pfnWorker */
-static int vbclDnDWorker(bool volatile *pfShutdown)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnWorker}
+ */
+static DECLCALLBACK(int) vbclDnDWorker(bool volatile *pfShutdown)
 {
     return g_Svc.worker(pfShutdown);
 }
 
-/** @copydoc VBCLSERVICE::pfnStop */
-static void vbclDnDStop(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnStop}
+ */
+static DECLCALLBACK(void) vbclDnDStop(void)
 {
     g_Svc.stop();
 }
 
-/** @copydoc VBCLSERVICE::pfnTerm */
-static int vbclDnDTerm(void)
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnTerm}
+ */
+static DECLCALLBACK(int) vbclDnDTerm(void)
 {
     return g_Svc.term();
 }

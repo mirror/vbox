@@ -116,10 +116,12 @@ static int showNotify(const char *pszHeader, const char *pszBody)
     return rc;
 }
 
-/** @copydoc VBCLSERVICE::pfnWorker */
+/**
+ * @interface_method_impl{VBCLSERVICE,pfnWorker}
+ */
 /** @todo Move this part in VbglR3 and just provide a callback for the platform-specific
           notification stuff, since this is very similar to the VBoxTray code. */
-static int vbclHostVerWorker(bool volatile *pfShutdown)
+static DECLCALLBACK(int) vbclHostVerWorker(bool volatile *pfShutdown)
 {
     RT_NOREF(pfShutdown);
 
