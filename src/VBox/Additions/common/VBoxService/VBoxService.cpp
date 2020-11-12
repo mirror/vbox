@@ -1159,7 +1159,7 @@ int main(int argc, char **argv)
         return rcExit;
 
 #ifdef VBOX_WITH_VBOXSERVICE_DRMRESIZE
-	if (VbglR3DRMClientIsNeeded())
+    if (VbglR3DRMClientIsNeeded())
     {
         rc = VbglR3DRMClientStart();
         if (RT_FAILURE(rc))
