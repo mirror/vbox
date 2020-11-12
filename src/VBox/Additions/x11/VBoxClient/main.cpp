@@ -24,6 +24,7 @@
 #include <signal.h>
 #include <X11/Xlib.h>
 #include "product-generated.h"
+#include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/critsect.h>
 #include <iprt/errno.h>
