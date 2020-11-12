@@ -680,68 +680,23 @@ static bool isXwayland(void)
 }
 
 /**
- * An abbreviated copy of the VGSvcReadProp from VBoxServiceUtils.cpp
- */
-static int readGuestProperty(uint32_t u32ClientId, const char *pszPropName)
-{
-    AssertPtrReturn(pszPropName, VERR_INVALID_POINTER);
-
-    uint32_t    cbBuf = _1K;
-    void       *pvBuf = NULL;
-    int         rc    = VINF_SUCCESS;  /* MSC can't figure out the loop */
-
-    for (unsigned cTries = 0; cTries < 10; cTries++)
-    {
-        /*
-         * (Re-)Allocate the buffer and try read the property.
-         */
-        RTMemFree(pvBuf);
-        pvBuf = RTMemAlloc(cbBuf);
-        if (!pvBuf)
-        {
-            VBClLogError("Guest Property: Failed to allocate %zu bytes\n", cbBuf);
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-        char    *pszValue;
-        char    *pszFlags;
-        uint64_t uTimestamp;
-        rc = VbglR3GuestPropRead(u32ClientId, pszPropName, pvBuf, cbBuf, &pszValue, &uTimestamp, &pszFlags, NULL);
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_BUFFER_OVERFLOW)
-            {
-                /* try again with a bigger buffer. */
-                cbBuf *= 2;
-                continue;
-            }
-            else
-                break;
-        }
-        else
-            break;
-    }
-
-    if (pvBuf)
-        RTMemFree(pvBuf);
-    return rc;
-}
-
-/**
  * We start VBoxDRMClient from VBoxService in case  some guest property is set.
  * We check the same guest property here and dont start this service in case
  * it (guest property) is set.
  */
 static bool checkDRMClient(void)
 {
-   uint32_t uGuestPropSvcClientID;
-   int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
-   if (RT_FAILURE(rc))
-       return false;
-   rc = readGuestProperty(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/DRMResize" /*pszPropName*/);
-   if (RT_FAILURE(rc))
-       return false;
-   return true;
+    bool fStartClient = false;
+
+    uint32_t idClient;
+    int rc = VbglR3GuestPropConnect(&idClient);
+    if (RT_SUCCESS(rc))
+    {
+        fStartClient = VbglR3GuestPropExist(idClient, "/VirtualBox/GuestAdd/DRMResize" /*pszPropName*/);
+        VbglR3GuestPropDisconnect(idClient);
+    }
+
+    return fStartClient;
 }
 
 static bool startDRMClient(void)

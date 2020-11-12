@@ -37,6 +37,7 @@
 # include <iprt/mem.h>
 #endif
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/stdarg.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -145,6 +146,19 @@ VBGLR3DECL(int) VbglR3GuestPropConnect(HGCMCLIENTID *pidClient)
 VBGLR3DECL(int) VbglR3GuestPropDisconnect(HGCMCLIENTID idClient)
 {
     return VbglR3HGCMDisconnect(idClient);
+}
+
+
+/**
+ * Checks if @a pszPropName exists.
+ *
+ * @returns \c true if the guest property exists, \c false if not.
+ * @param   idClient            The HGCM client ID for the guest property session.
+ * @param   pszPropName         The property name.
+ */
+VBGLR3DECL(bool) VbglR3GuestPropExist(uint32_t idClient, const char *pszPropName)
+{
+    return RT_SUCCESS(VbglR3GuestPropReadEx(idClient, pszPropName, NULL /*ppszValue*/, NULL /* ppszFlags */, NULL /* puTimestamp */));
 }
 
 
@@ -351,6 +365,81 @@ VBGLR3DECL(int) VbglR3GuestPropRead(HGCMCLIENTID idClient, const char *pszName,
     }
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Reads a guest property by returning allocated values.
+ *
+ * @returns VBox status code, fully bitched.
+ *
+ * @param   idClient            The HGCM client ID for the guest property session.
+ * @param   pszPropName         The property name.
+ * @param   ppszValue           Where to return the value.  This is always set
+ *                              to NULL.  Needs to be free'd using RTStrFree().  Optional.
+ * @param   ppszFlags           Where to return the value flags.
+ *                              Needs to be free'd using RTStrFree().  Optional.
+ * @param   puTimestamp         Where to return the timestamp.  This is only set
+ *                              on success.  Optional.
+ */
+VBGLR3DECL(int) VbglR3GuestPropReadEx(uint32_t idClient,
+                                      const char *pszPropName, char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
+{
+    AssertPtrReturn(pszPropName, VERR_INVALID_POINTER);
+
+    uint32_t    cbBuf = _1K;
+    void       *pvBuf = NULL;
+    int         rc    = VINF_SUCCESS;  /* MSC can't figure out the loop */
+
+    if (ppszValue)
+        *ppszValue = NULL;
+
+    for (unsigned cTries = 0; cTries < 10; cTries++)
+    {
+        /*
+         * (Re-)Allocate the buffer and try read the property.
+         */
+        RTMemFree(pvBuf);
+        pvBuf = RTMemAlloc(cbBuf);
+        if (!pvBuf)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        char    *pszValue;
+        char    *pszFlags;
+        uint64_t uTimestamp;
+        rc = VbglR3GuestPropRead(idClient, pszPropName, pvBuf, cbBuf, &pszValue, &uTimestamp, &pszFlags, NULL);
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_BUFFER_OVERFLOW)
+            {
+                /* try again with a bigger buffer. */
+                cbBuf *= 2;
+                continue;
+            }
+            break;
+        }
+
+        if (ppszValue)
+        {
+            *ppszValue = RTStrDup(pszValue);
+            if (!*ppszValue)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+        }
+
+        if (puTimestamp)
+            *puTimestamp = uTimestamp;
+        if (ppszFlags)
+            *ppszFlags = RTStrDup(pszFlags);
+        break; /* done */
+    }
+
+    if (pvBuf)
+        RTMemFree(pvBuf);
+    return rc;
 }
 
 #ifndef VBOX_VBGLR3_XSERVER

@@ -33,89 +33,6 @@
 
 
 #ifdef VBOX_WITH_GUEST_PROPS
-
-/**
- * Reads a guest property.
- *
- * @returns VBox status code, fully bitched.
- *
- * @param   u32ClientId         The HGCM client ID for the guest property session.
- * @param   pszPropName         The property name.
- * @param   ppszValue           Where to return the value.  This is always set
- *                              to NULL.  Free it using RTStrFree().  Optional.
- * @param   ppszFlags           Where to return the value flags. Free it
- *                              using RTStrFree().  Optional.
- * @param   puTimestamp         Where to return the timestamp.  This is only set
- *                              on success.  Optional.
- */
-int VGSvcReadProp(uint32_t u32ClientId, const char *pszPropName, char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
-{
-    AssertPtrReturn(pszPropName, VERR_INVALID_POINTER);
-
-    uint32_t    cbBuf = _1K;
-    void       *pvBuf = NULL;
-    int         rc    = VINF_SUCCESS;  /* MSC can't figure out the loop */
-
-    if (ppszValue)
-        *ppszValue = NULL;
-
-    for (unsigned cTries = 0; cTries < 10; cTries++)
-    {
-        /*
-         * (Re-)Allocate the buffer and try read the property.
-         */
-        RTMemFree(pvBuf);
-        pvBuf = RTMemAlloc(cbBuf);
-        if (!pvBuf)
-        {
-            VGSvcError("Guest Property: Failed to allocate %zu bytes\n", cbBuf);
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-        char    *pszValue;
-        char    *pszFlags;
-        uint64_t uTimestamp;
-        rc = VbglR3GuestPropRead(u32ClientId, pszPropName, pvBuf, cbBuf, &pszValue, &uTimestamp, &pszFlags, NULL);
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_BUFFER_OVERFLOW)
-            {
-                /* try again with a bigger buffer. */
-                cbBuf *= 2;
-                continue;
-            }
-            if (rc == VERR_NOT_FOUND)
-                VGSvcVerbose(2, "Guest Property: %s not found\n", pszPropName);
-            else
-                VGSvcError("Guest Property: Failed to query '%s': %Rrc\n", pszPropName, rc);
-            break;
-        }
-
-        VGSvcVerbose(2, "Guest Property: Read '%s' = '%s', timestamp %RU64n\n", pszPropName, pszValue, uTimestamp);
-        if (ppszValue)
-        {
-            *ppszValue = RTStrDup(pszValue);
-            if (!*ppszValue)
-            {
-                VGSvcError("Guest Property: RTStrDup failed for '%s'\n", pszValue);
-                rc = VERR_NO_MEMORY;
-                break;
-            }
-        }
-
-        if (puTimestamp)
-            *puTimestamp = uTimestamp;
-        if (ppszFlags)
-            *ppszFlags = RTStrDup(pszFlags);
-        break; /* done */
-    }
-
-    if (pvBuf)
-        RTMemFree(pvBuf);
-    return rc;
-}
-
-
 /**
  * Reads a guest property as a 32-bit value.
  *
@@ -129,7 +46,7 @@ int VGSvcReadProp(uint32_t u32ClientId, const char *pszPropName, char **ppszValu
 int VGSvcReadPropUInt32(uint32_t u32ClientId, const char *pszPropName, uint32_t *pu32, uint32_t u32Min, uint32_t u32Max)
 {
     char *pszValue;
-    int rc = VGSvcReadProp(u32ClientId, pszPropName, &pszValue, NULL /* ppszFlags */, NULL /* puTimestamp */);
+    int rc = VbglR3GuestPropReadEx(u32ClientId, pszPropName, &pszValue, NULL /* ppszFlags */, NULL /* puTimestamp */);
     if (RT_SUCCESS(rc))
     {
         char *pszNext;
@@ -142,22 +59,6 @@ int VGSvcReadPropUInt32(uint32_t u32ClientId, const char *pszPropName, uint32_t 
     }
     return rc;
 }
-
-/**
- * Checks if @a pszPropName exists.
- *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS if it exists.
- * @retval  VERR_NOT_FOUND if not found.
- *
- * @param   u32ClientId         The HGCM client ID for the guest property session.
- * @param   pszPropName         The property name.
- */
-int VGSvcCheckPropExist(uint32_t u32ClientId, const char *pszPropName)
-{
-    return VGSvcReadProp(u32ClientId, pszPropName, NULL /*ppszValue*/, NULL /* ppszFlags */, NULL /* puTimestamp */);
-}
-
 
 /**
  * Reads a guest property from the host side.
@@ -182,7 +83,7 @@ int VGSvcReadHostProp(uint32_t u32ClientId, const char *pszPropName, bool fReadO
 
     char *pszValue = NULL;
     char *pszFlags = NULL;
-    int rc = VGSvcReadProp(u32ClientId, pszPropName, &pszValue, &pszFlags, puTimestamp);
+    int rc = VbglR3GuestPropReadEx(u32ClientId, pszPropName, &pszValue, &pszFlags, puTimestamp);
     if (RT_SUCCESS(rc))
     {
         /* Check security bits. */

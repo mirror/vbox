@@ -904,7 +904,7 @@ static void startDRMResize(void)
     int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
     if (RT_SUCCESS(rc))
     {
-        rc = VGSvcCheckPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/DRMResize");
+        rc = VbglR3GuestPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/DRMResize");
         if (RT_SUCCESS(rc))
         {
             RTMsgInfo("Starting DRM resize service");

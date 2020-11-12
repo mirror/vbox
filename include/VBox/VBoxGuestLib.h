@@ -822,6 +822,7 @@ typedef struct VBGLR3GUESTPROPENUM VBGLR3GUESTPROPENUM;
 typedef VBGLR3GUESTPROPENUM *PVBGLR3GUESTPROPENUM;
 VBGLR3DECL(int)     VbglR3GuestPropConnect(uint32_t *pidClient);
 VBGLR3DECL(int)     VbglR3GuestPropDisconnect(HGCMCLIENTID idClient);
+VBGLR3DECL(bool)    VbglR3GuestPropExist(uint32_t idClient, const char *pszPropName);
 VBGLR3DECL(int)     VbglR3GuestPropWrite(HGCMCLIENTID idClient, const char *pszName, const char *pszValue, const char *pszFlags);
 VBGLR3DECL(int)     VbglR3GuestPropWriteValue(HGCMCLIENTID idClient, const char *pszName, const char *pszValue);
 VBGLR3DECL(int)     VbglR3GuestPropWriteValueV(HGCMCLIENTID idClient, const char *pszName,
@@ -830,6 +831,8 @@ VBGLR3DECL(int)     VbglR3GuestPropWriteValueF(HGCMCLIENTID idClient, const char
                                                const char *pszValueFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 VBGLR3DECL(int)     VbglR3GuestPropRead(HGCMCLIENTID idClient, const char *pszName, void *pvBuf, uint32_t cbBuf, char **ppszValue,
                                         uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
+VBGLR3DECL(int)     VbglR3GuestPropReadEx(uint32_t u32ClientId,
+                                          const char *pszPropName, char **ppszValue, char **ppszFlags, uint64_t *puTimestamp);
 VBGLR3DECL(int)     VbglR3GuestPropReadValue(uint32_t ClientId, const char *pszName, char *pszValue, uint32_t cchValue,
                                              uint32_t *pcchValueActual);
 VBGLR3DECL(int)     VbglR3GuestPropReadValueAlloc(HGCMCLIENTID idClient, const char *pszName, char **ppszValue);
