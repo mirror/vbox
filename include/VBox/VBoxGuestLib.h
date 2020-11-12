@@ -1231,6 +1231,8 @@ typedef enum VBGLR3DNDEVENTTYPE
     VBGLR3DNDEVENTTYPE_GH_REQ_PENDING = 101,
     VBGLR3DNDEVENTTYPE_GH_DROP        = 102,
 # endif
+    /** Tells the caller that it has to quit operation. */
+    VBGLR3DNDEVENTTYPE_QUIT           = 200,
     /** Blow the type up to 32-bit. */
     VBGLR3DNDEVENTTYPE_32BIT_HACK = 0x7fffffff
 } VBGLR3DNDEVENTTYPE;

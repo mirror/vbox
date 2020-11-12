@@ -609,6 +609,12 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND a_hWnd, UINT a_uMsg, WPARAM a_wParam, 
                     break;
                 }
 
+                case VBGLR3DNDEVENTTYPE_QUIT:
+                {
+                    LogRel(("DnD: Received quit message, shutting down ...\n"));
+                    PostQuitMessage(0);
+                }
+
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
                 case VBGLR3DNDEVENTTYPE_GH_ERROR:
                 {
@@ -1875,12 +1881,6 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
             }
             else
                 LogRel(("DnD: Processing proxy window event %RU32 failed with %Rrc\n", pVbglR3Event->enmType, rc));
-        }
-        else if (rc == VERR_INTERRUPTED) /* Disconnected from service. */
-        {
-            LogRel(("DnD: Received quit message, shutting down ...\n"));
-            pWnd->PostMessage(WM_QUIT, 0 /* wParm */, 0 /* lParm */);
-            rc = VINF_SUCCESS;
         }
 
         if (RT_FAILURE(rc))

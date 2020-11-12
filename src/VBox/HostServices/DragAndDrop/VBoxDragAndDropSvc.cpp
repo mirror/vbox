@@ -146,10 +146,15 @@ private:
  */
 void DragAndDropClient::disconnect(void) RT_NOEXCEPT
 {
-    LogFlowThisFunc(("uClient=%RU32\n", m_idClient));
+    LogFlowThisFunc(("uClient=%RU32, fDeferred=%RTbool\n", m_idClient, IsDeferred()));
 
+    /*
+     * If the client still is waiting for a message (i.e in deferred mode),
+     * complete the call with a VERR_CANCELED status so that the client (VBoxTray / VBoxClient) knows
+     * it should bail out.
+     */
     if (IsDeferred())
-        CompleteDeferred(VERR_INTERRUPTED);
+        CompleteDeferred(VERR_CANCELLED);
 
     /*
      * Let the host know.
@@ -470,10 +475,6 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
             rc = VINF_SUCCESS;
             break;
     }
-
-#ifdef DEBUG_andy
-    LogFlowFunc(("Mode (%RU32) check rc=%Rrc\n", modeGet(), rc));
-#endif
 
 #define DO_HOST_CALLBACK();                                                                   \
     if (   RT_SUCCESS(rc)                                                                     \
@@ -1027,6 +1028,8 @@ do { \
      */
     if (rc == VINF_HGCM_ASYNC_EXECUTE)
     {
+        LogFlowFunc(("Deferring client %RU32\n", idClient));
+
         try
         {
             AssertPtr(pClient);
