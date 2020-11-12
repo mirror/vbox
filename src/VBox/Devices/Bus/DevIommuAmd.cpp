@@ -3231,7 +3231,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemBulkAccess(PPDMDEVINS pDevIns, uint16_
  * @param   pDevIns     The IOMMU device instance.
  * @param   uDevId      The device ID.
  * @param   pDte        The device table entry.
- * @param   GCPhysIn    The source MSI address.
+ * @param   GCPhysIn    The source MSI address (used for reporting errors).
  * @param   uDataIn     The source MSI data.
  * @param   enmOp       The IOMMU operation being performed.
  * @param   pIrte       Where to store the interrupt remapping table entry.
