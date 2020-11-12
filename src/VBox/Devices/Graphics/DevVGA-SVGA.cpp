@@ -5764,7 +5764,7 @@ static void vmsvgaR3InitFifo3DCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->svga.au32DevCaps); ++i)
     {
         uint32_t val = 0;
-        int rc = vmsvga3dQueryCaps(pThisCC, i, &val);
+        int rc = vmsvga3dQueryCaps(pThisCC, (SVGA3dDevCapIndex)i, &val);
         if (RT_SUCCESS(rc))
             pThis->svga.au32DevCaps[i] = val;
         else

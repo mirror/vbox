@@ -93,14 +93,468 @@ struct VMSVGA3DBACKEND
 } VMSVGA3DBACKEND;
 
 
-DXGI_FORMAT vmsvgaDXSurfaceFormat2Dxgi(SVGA3dSurfaceFormat format)
+static DXGI_FORMAT vmsvgaDXScreenTargetFormat2Dxgi(SVGA3dSurfaceFormat format)
 {
     switch (format)
     {
-        case SVGA3D_X8R8G8B8: return DXGI_FORMAT_B8G8R8A8_UNORM;
-        default: break;
+        /** @todo More formats required? */
+        case SVGA3D_X8R8G8B8:                   return DXGI_FORMAT_B8G8R8A8_UNORM;
+        case SVGA3D_A8R8G8B8:                   return DXGI_FORMAT_B8G8R8A8_UNORM;
+        default:
+            AssertFailed();
+            break;
     }
     return DXGI_FORMAT_UNKNOWN;
+}
+
+
+static DXGI_FORMAT vmsvgaDXSurfaceFormat2Dxgi(SVGA3dSurfaceFormat format)
+{
+#define DXGI_FORMAT_ DXGI_FORMAT_UNKNOWN
+    /** @todo More formats. */
+    switch (format)
+    {
+        case SVGA3D_X8R8G8B8:                   return DXGI_FORMAT_B8G8R8X8_UNORM;
+        case SVGA3D_A8R8G8B8:                   return DXGI_FORMAT_B8G8R8A8_UNORM;
+        case SVGA3D_R5G6B5:                     return DXGI_FORMAT_B5G6R5_UNORM;
+        case SVGA3D_X1R5G5B5:                   return DXGI_FORMAT_B5G5R5A1_UNORM;
+        case SVGA3D_A1R5G5B5:                   return DXGI_FORMAT_B5G5R5A1_UNORM;
+        case SVGA3D_A4R4G4B4:                   break; // 11.1 return DXGI_FORMAT_B4G4R4A4_UNORM;
+        case SVGA3D_Z_D32:                      break;
+        case SVGA3D_Z_D16:                      return DXGI_FORMAT_D16_UNORM;
+        case SVGA3D_Z_D24S8:                    return DXGI_FORMAT_D24_UNORM_S8_UINT;
+        case SVGA3D_Z_D15S1:                    break;
+        case SVGA3D_LUMINANCE8:                 return DXGI_FORMAT_;
+        case SVGA3D_LUMINANCE4_ALPHA4:          return DXGI_FORMAT_;
+        case SVGA3D_LUMINANCE16:                return DXGI_FORMAT_;
+        case SVGA3D_LUMINANCE8_ALPHA8:          return DXGI_FORMAT_;
+        case SVGA3D_DXT1:                       return DXGI_FORMAT_;
+        case SVGA3D_DXT2:                       return DXGI_FORMAT_;
+        case SVGA3D_DXT3:                       return DXGI_FORMAT_;
+        case SVGA3D_DXT4:                       return DXGI_FORMAT_;
+        case SVGA3D_DXT5:                       return DXGI_FORMAT_;
+        case SVGA3D_BUMPU8V8:                   return DXGI_FORMAT_;
+        case SVGA3D_BUMPL6V5U5:                 return DXGI_FORMAT_;
+        case SVGA3D_BUMPX8L8V8U8:               return DXGI_FORMAT_;
+        case SVGA3D_FORMAT_DEAD1:               break;
+        case SVGA3D_ARGB_S10E5:                 return DXGI_FORMAT_;
+        case SVGA3D_ARGB_S23E8:                 return DXGI_FORMAT_;
+        case SVGA3D_A2R10G10B10:                return DXGI_FORMAT_;
+        case SVGA3D_V8U8:                       return DXGI_FORMAT_;
+        case SVGA3D_Q8W8V8U8:                   return DXGI_FORMAT_;
+        case SVGA3D_CxV8U8:                     return DXGI_FORMAT_;
+        case SVGA3D_X8L8V8U8:                   return DXGI_FORMAT_;
+        case SVGA3D_A2W10V10U10:                return DXGI_FORMAT_;
+        case SVGA3D_ALPHA8:                     return DXGI_FORMAT_;
+        case SVGA3D_R_S10E5:                    return DXGI_FORMAT_;
+        case SVGA3D_R_S23E8:                    return DXGI_FORMAT_;
+        case SVGA3D_RG_S10E5:                   return DXGI_FORMAT_;
+        case SVGA3D_RG_S23E8:                   return DXGI_FORMAT_;
+        case SVGA3D_BUFFER:                     return DXGI_FORMAT_;
+        case SVGA3D_Z_D24X8:                    return DXGI_FORMAT_;
+        case SVGA3D_V16U16:                     return DXGI_FORMAT_;
+        case SVGA3D_G16R16:                     return DXGI_FORMAT_;
+        case SVGA3D_A16B16G16R16:               return DXGI_FORMAT_;
+        case SVGA3D_UYVY:                       return DXGI_FORMAT_;
+        case SVGA3D_YUY2:                       return DXGI_FORMAT_;
+        case SVGA3D_NV12:                       return DXGI_FORMAT_;
+        case SVGA3D_AYUV:                       return DXGI_FORMAT_;
+        case SVGA3D_R32G32B32A32_TYPELESS:      return DXGI_FORMAT_R32G32B32A32_TYPELESS;
+        case SVGA3D_R32G32B32A32_UINT:          return DXGI_FORMAT_R32G32B32A32_UINT;
+        case SVGA3D_R32G32B32A32_SINT:          return DXGI_FORMAT_R32G32B32A32_SINT;
+        case SVGA3D_R32G32B32_TYPELESS:         return DXGI_FORMAT_R32G32B32_TYPELESS;
+        case SVGA3D_R32G32B32_FLOAT:            return DXGI_FORMAT_R32G32B32_FLOAT;
+        case SVGA3D_R32G32B32_UINT:             return DXGI_FORMAT_R32G32B32_UINT;
+        case SVGA3D_R32G32B32_SINT:             return DXGI_FORMAT_R32G32B32_SINT;
+        case SVGA3D_R16G16B16A16_TYPELESS:      return DXGI_FORMAT_R16G16B16A16_TYPELESS;
+        case SVGA3D_R16G16B16A16_UINT:          return DXGI_FORMAT_R16G16B16A16_UINT;
+        case SVGA3D_R16G16B16A16_SNORM:         return DXGI_FORMAT_R16G16B16A16_SNORM;
+        case SVGA3D_R16G16B16A16_SINT:          return DXGI_FORMAT_R16G16B16A16_SINT;
+        case SVGA3D_R32G32_TYPELESS:            return DXGI_FORMAT_R32G32_TYPELESS;
+        case SVGA3D_R32G32_UINT:                return DXGI_FORMAT_R32G32_UINT;
+        case SVGA3D_R32G32_SINT:                return DXGI_FORMAT_R32G32_SINT;
+        case SVGA3D_R32G8X24_TYPELESS:          return DXGI_FORMAT_R32G8X24_TYPELESS;
+        case SVGA3D_D32_FLOAT_S8X24_UINT:       return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+        case SVGA3D_R32_FLOAT_X8X24:            return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+        case SVGA3D_X32_G8X24_UINT:             return DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
+        case SVGA3D_R10G10B10A2_TYPELESS:       return DXGI_FORMAT_R10G10B10A2_TYPELESS;
+        case SVGA3D_R10G10B10A2_UINT:           return DXGI_FORMAT_R10G10B10A2_UINT;
+        case SVGA3D_R11G11B10_FLOAT:            return DXGI_FORMAT_R11G11B10_FLOAT;
+        case SVGA3D_R8G8B8A8_TYPELESS:          return DXGI_FORMAT_R8G8B8A8_TYPELESS;
+        case SVGA3D_R8G8B8A8_UNORM:             return DXGI_FORMAT_R8G8B8A8_UNORM;
+        case SVGA3D_R8G8B8A8_UNORM_SRGB:        return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        case SVGA3D_R8G8B8A8_UINT:              return DXGI_FORMAT_R8G8B8A8_UINT;
+        case SVGA3D_R8G8B8A8_SINT:              return DXGI_FORMAT_R8G8B8A8_SINT;
+        case SVGA3D_R16G16_TYPELESS:            return DXGI_FORMAT_R16G16_TYPELESS;
+        case SVGA3D_R16G16_UINT:                return DXGI_FORMAT_R16G16_UINT;
+        case SVGA3D_R16G16_SINT:                return DXGI_FORMAT_R16G16_SINT;
+        case SVGA3D_R32_TYPELESS:               return DXGI_FORMAT_R32_TYPELESS;
+        case SVGA3D_D32_FLOAT:                  return DXGI_FORMAT_D32_FLOAT;
+        case SVGA3D_R32_UINT:                   return DXGI_FORMAT_R32_UINT;
+        case SVGA3D_R32_SINT:                   return DXGI_FORMAT_R32_SINT;
+        case SVGA3D_R24G8_TYPELESS:             return DXGI_FORMAT_R24G8_TYPELESS;
+        case SVGA3D_D24_UNORM_S8_UINT:          return DXGI_FORMAT_D24_UNORM_S8_UINT;
+        case SVGA3D_R24_UNORM_X8:               return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+        case SVGA3D_X24_G8_UINT:                return DXGI_FORMAT_X24_TYPELESS_G8_UINT;
+        case SVGA3D_R8G8_TYPELESS:              return DXGI_FORMAT_R8G8_TYPELESS;
+        case SVGA3D_R8G8_UNORM:                 return DXGI_FORMAT_R8G8_UNORM;
+        case SVGA3D_R8G8_UINT:                  return DXGI_FORMAT_R8G8_UINT;
+        case SVGA3D_R8G8_SINT:                  return DXGI_FORMAT_R8G8_SINT;
+        case SVGA3D_R16_TYPELESS:               return DXGI_FORMAT_R16_TYPELESS;
+        case SVGA3D_R16_UNORM:                  return DXGI_FORMAT_R16_UNORM;
+        case SVGA3D_R16_UINT:                   return DXGI_FORMAT_R16_UINT;
+        case SVGA3D_R16_SNORM:                  return DXGI_FORMAT_R16_SNORM;
+        case SVGA3D_R16_SINT:                   return DXGI_FORMAT_R16_SINT;
+        case SVGA3D_R8_TYPELESS:                return DXGI_FORMAT_R8_TYPELESS;
+        case SVGA3D_R8_UNORM:                   return DXGI_FORMAT_R8_UNORM;
+        case SVGA3D_R8_UINT:                    return DXGI_FORMAT_R8_UINT;
+        case SVGA3D_R8_SNORM:                   return DXGI_FORMAT_R8_SNORM;
+        case SVGA3D_R8_SINT:                    return DXGI_FORMAT_R8_SINT;
+        case SVGA3D_P8:                         break;
+        case SVGA3D_R9G9B9E5_SHAREDEXP:         return DXGI_FORMAT_R9G9B9E5_SHAREDEXP;
+        case SVGA3D_R8G8_B8G8_UNORM:            return DXGI_FORMAT_R8G8_B8G8_UNORM;
+        case SVGA3D_G8R8_G8B8_UNORM:            return DXGI_FORMAT_G8R8_G8B8_UNORM;
+        case SVGA3D_BC1_TYPELESS:               return DXGI_FORMAT_BC1_TYPELESS;
+        case SVGA3D_BC1_UNORM_SRGB:             return DXGI_FORMAT_BC1_UNORM_SRGB;
+        case SVGA3D_BC2_TYPELESS:               return DXGI_FORMAT_BC2_TYPELESS;
+        case SVGA3D_BC2_UNORM_SRGB:             return DXGI_FORMAT_BC2_UNORM_SRGB;
+        case SVGA3D_BC3_TYPELESS:               return DXGI_FORMAT_BC3_TYPELESS;
+        case SVGA3D_BC3_UNORM_SRGB:             return DXGI_FORMAT_BC3_UNORM_SRGB;
+        case SVGA3D_BC4_TYPELESS:               return DXGI_FORMAT_BC4_TYPELESS;
+        case SVGA3D_ATI1:                       break;
+        case SVGA3D_BC4_SNORM:                  return DXGI_FORMAT_BC4_SNORM;
+        case SVGA3D_BC5_TYPELESS:               return DXGI_FORMAT_BC5_TYPELESS;
+        case SVGA3D_ATI2:                       break;
+        case SVGA3D_BC5_SNORM:                  return DXGI_FORMAT_BC5_SNORM;
+        case SVGA3D_R10G10B10_XR_BIAS_A2_UNORM: return DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM;
+        case SVGA3D_B8G8R8A8_TYPELESS:          return DXGI_FORMAT_B8G8R8A8_TYPELESS;
+        case SVGA3D_B8G8R8A8_UNORM_SRGB:        return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+        case SVGA3D_B8G8R8X8_TYPELESS:          return DXGI_FORMAT_B8G8R8X8_TYPELESS;
+        case SVGA3D_B8G8R8X8_UNORM_SRGB:        return DXGI_FORMAT_B8G8R8X8_UNORM_SRGB;
+        case SVGA3D_Z_DF16:                     break;
+        case SVGA3D_Z_DF24:                     break;
+        case SVGA3D_Z_D24S8_INT:                return DXGI_FORMAT_D24_UNORM_S8_UINT;
+        case SVGA3D_YV12:                       break;
+        case SVGA3D_R32G32B32A32_FLOAT:         return DXGI_FORMAT_R32G32B32A32_FLOAT;
+        case SVGA3D_R16G16B16A16_FLOAT:         return DXGI_FORMAT_R16G16B16A16_FLOAT;
+        case SVGA3D_R16G16B16A16_UNORM:         return DXGI_FORMAT_R16G16B16A16_UNORM;
+        case SVGA3D_R32G32_FLOAT:               return DXGI_FORMAT_R32G32_FLOAT;
+        case SVGA3D_R10G10B10A2_UNORM:          return DXGI_FORMAT_R10G10B10A2_UNORM;
+        case SVGA3D_R8G8B8A8_SNORM:             return DXGI_FORMAT_R8G8B8A8_SNORM;
+        case SVGA3D_R16G16_FLOAT:               return DXGI_FORMAT_R16G16_FLOAT;
+        case SVGA3D_R16G16_UNORM:               return DXGI_FORMAT_R16G16_UNORM;
+        case SVGA3D_R16G16_SNORM:               return DXGI_FORMAT_R16G16_SNORM;
+        case SVGA3D_R32_FLOAT:                  return DXGI_FORMAT_R32_FLOAT;
+        case SVGA3D_R8G8_SNORM:                 return DXGI_FORMAT_R8G8_SNORM;
+        case SVGA3D_R16_FLOAT:                  return DXGI_FORMAT_R16_FLOAT;
+        case SVGA3D_D16_UNORM:                  return DXGI_FORMAT_D16_UNORM;
+        case SVGA3D_A8_UNORM:                   return DXGI_FORMAT_A8_UNORM;
+        case SVGA3D_BC1_UNORM:                  return DXGI_FORMAT_BC1_UNORM;
+        case SVGA3D_BC2_UNORM:                  return DXGI_FORMAT_BC2_UNORM;
+        case SVGA3D_BC3_UNORM:                  return DXGI_FORMAT_BC3_UNORM;
+        case SVGA3D_B5G6R5_UNORM:               return DXGI_FORMAT_B5G6R5_UNORM;
+        case SVGA3D_B5G5R5A1_UNORM:             return DXGI_FORMAT_B5G5R5A1_UNORM;
+        case SVGA3D_B8G8R8A8_UNORM:             return DXGI_FORMAT_B8G8R8A8_UNORM;
+        case SVGA3D_B8G8R8X8_UNORM:             return DXGI_FORMAT_B8G8R8X8_UNORM;
+        case SVGA3D_BC4_UNORM:                  return DXGI_FORMAT_BC4_UNORM;
+        case SVGA3D_BC5_UNORM:                  return DXGI_FORMAT_BC5_UNORM;
+
+        case SVGA3D_FORMAT_INVALID:
+        case SVGA3D_FORMAT_MAX:                 break;
+    }
+    // AssertFailed();
+    return DXGI_FORMAT_UNKNOWN;
+#undef DXGI_FORMAT_
+}
+
+
+static SVGA3dSurfaceFormat vmsvgaDXDevCapSurfaceFmt2Format(SVGA3dDevCapIndex enmDevCap)
+{
+    switch (enmDevCap)
+    {
+        case SVGA3D_DEVCAP_SURFACEFMT_X8R8G8B8:                 return SVGA3D_X8R8G8B8;
+        case SVGA3D_DEVCAP_SURFACEFMT_A8R8G8B8:                 return SVGA3D_A8R8G8B8;
+        case SVGA3D_DEVCAP_SURFACEFMT_A2R10G10B10:              return SVGA3D_A2R10G10B10;
+        case SVGA3D_DEVCAP_SURFACEFMT_X1R5G5B5:                 return SVGA3D_X1R5G5B5;
+        case SVGA3D_DEVCAP_SURFACEFMT_A1R5G5B5:                 return SVGA3D_A1R5G5B5;
+        case SVGA3D_DEVCAP_SURFACEFMT_A4R4G4B4:                 return SVGA3D_A4R4G4B4;
+        case SVGA3D_DEVCAP_SURFACEFMT_R5G6B5:                   return SVGA3D_R5G6B5;
+        case SVGA3D_DEVCAP_SURFACEFMT_LUMINANCE16:              return SVGA3D_LUMINANCE16;
+        case SVGA3D_DEVCAP_SURFACEFMT_LUMINANCE8_ALPHA8:        return SVGA3D_LUMINANCE8_ALPHA8;
+        case SVGA3D_DEVCAP_SURFACEFMT_ALPHA8:                   return SVGA3D_ALPHA8;
+        case SVGA3D_DEVCAP_SURFACEFMT_LUMINANCE8:               return SVGA3D_LUMINANCE8;
+        case SVGA3D_DEVCAP_SURFACEFMT_Z_D16:                    return SVGA3D_Z_D16;
+        case SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8:                  return SVGA3D_Z_D24S8;
+        case SVGA3D_DEVCAP_SURFACEFMT_Z_D24X8:                  return SVGA3D_Z_D24X8;
+        case SVGA3D_DEVCAP_SURFACEFMT_DXT1:                     return SVGA3D_DXT1;
+        case SVGA3D_DEVCAP_SURFACEFMT_DXT2:                     return SVGA3D_DXT2;
+        case SVGA3D_DEVCAP_SURFACEFMT_DXT3:                     return SVGA3D_DXT3;
+        case SVGA3D_DEVCAP_SURFACEFMT_DXT4:                     return SVGA3D_DXT4;
+        case SVGA3D_DEVCAP_SURFACEFMT_DXT5:                     return SVGA3D_DXT5;
+        case SVGA3D_DEVCAP_SURFACEFMT_BUMPX8L8V8U8:             return SVGA3D_BUMPX8L8V8U8;
+        case SVGA3D_DEVCAP_SURFACEFMT_A2W10V10U10:              return SVGA3D_A2W10V10U10;
+        case SVGA3D_DEVCAP_SURFACEFMT_BUMPU8V8:                 return SVGA3D_BUMPU8V8;
+        case SVGA3D_DEVCAP_SURFACEFMT_Q8W8V8U8:                 return SVGA3D_Q8W8V8U8;
+        case SVGA3D_DEVCAP_SURFACEFMT_CxV8U8:                   return SVGA3D_CxV8U8;
+        case SVGA3D_DEVCAP_SURFACEFMT_R_S10E5:                  return SVGA3D_R_S10E5;
+        case SVGA3D_DEVCAP_SURFACEFMT_R_S23E8:                  return SVGA3D_R_S23E8;
+        case SVGA3D_DEVCAP_SURFACEFMT_RG_S10E5:                 return SVGA3D_RG_S10E5;
+        case SVGA3D_DEVCAP_SURFACEFMT_RG_S23E8:                 return SVGA3D_RG_S23E8;
+        case SVGA3D_DEVCAP_SURFACEFMT_ARGB_S10E5:               return SVGA3D_ARGB_S10E5;
+        case SVGA3D_DEVCAP_SURFACEFMT_ARGB_S23E8:               return SVGA3D_ARGB_S23E8;
+        case SVGA3D_DEVCAP_SURFACEFMT_V16U16:                   return SVGA3D_V16U16;
+        case SVGA3D_DEVCAP_SURFACEFMT_G16R16:                   return SVGA3D_G16R16;
+        case SVGA3D_DEVCAP_SURFACEFMT_A16B16G16R16:             return SVGA3D_A16B16G16R16;
+        case SVGA3D_DEVCAP_SURFACEFMT_UYVY:                     return SVGA3D_UYVY;
+        case SVGA3D_DEVCAP_SURFACEFMT_YUY2:                     return SVGA3D_YUY2;
+        case SVGA3D_DEVCAP_SURFACEFMT_NV12:                     return SVGA3D_NV12;
+        case SVGA3D_DEVCAP_SURFACEFMT_AYUV:                     return SVGA3D_AYUV;
+        case SVGA3D_DEVCAP_SURFACEFMT_Z_DF16:                   return SVGA3D_Z_DF16;
+        case SVGA3D_DEVCAP_SURFACEFMT_Z_DF24:                   return SVGA3D_Z_DF24;
+        case SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8_INT:              return SVGA3D_Z_D24S8_INT;
+        case SVGA3D_DEVCAP_SURFACEFMT_ATI1:                     return SVGA3D_ATI1;
+        case SVGA3D_DEVCAP_SURFACEFMT_ATI2:                     return SVGA3D_ATI2;
+        case SVGA3D_DEVCAP_SURFACEFMT_YV12:                     return SVGA3D_YV12;
+        default:
+            AssertFailed();
+            break;
+    }
+    return SVGA3D_FORMAT_INVALID;
+}
+
+
+static SVGA3dSurfaceFormat vmsvgaDXDevCapDxfmt2Format(SVGA3dDevCapIndex enmDevCap)
+{
+    switch (enmDevCap)
+    {
+        case SVGA3D_DEVCAP_DXFMT_X8R8G8B8:                      return SVGA3D_X8R8G8B8;
+        case SVGA3D_DEVCAP_DXFMT_A8R8G8B8:                      return SVGA3D_A8R8G8B8;
+        case SVGA3D_DEVCAP_DXFMT_R5G6B5:                        return SVGA3D_R5G6B5;
+        case SVGA3D_DEVCAP_DXFMT_X1R5G5B5:                      return SVGA3D_X1R5G5B5;
+        case SVGA3D_DEVCAP_DXFMT_A1R5G5B5:                      return SVGA3D_A1R5G5B5;
+        case SVGA3D_DEVCAP_DXFMT_A4R4G4B4:                      return SVGA3D_A4R4G4B4;
+        case SVGA3D_DEVCAP_DXFMT_Z_D32:                         return SVGA3D_Z_D32;
+        case SVGA3D_DEVCAP_DXFMT_Z_D16:                         return SVGA3D_Z_D16;
+        case SVGA3D_DEVCAP_DXFMT_Z_D24S8:                       return SVGA3D_Z_D24S8;
+        case SVGA3D_DEVCAP_DXFMT_Z_D15S1:                       return SVGA3D_Z_D15S1;
+        case SVGA3D_DEVCAP_DXFMT_LUMINANCE8:                    return SVGA3D_LUMINANCE8;
+        case SVGA3D_DEVCAP_DXFMT_LUMINANCE4_ALPHA4:             return SVGA3D_LUMINANCE4_ALPHA4;
+        case SVGA3D_DEVCAP_DXFMT_LUMINANCE16:                   return SVGA3D_LUMINANCE16;
+        case SVGA3D_DEVCAP_DXFMT_LUMINANCE8_ALPHA8:             return SVGA3D_LUMINANCE8_ALPHA8;
+        case SVGA3D_DEVCAP_DXFMT_DXT1:                          return SVGA3D_DXT1;
+        case SVGA3D_DEVCAP_DXFMT_DXT2:                          return SVGA3D_DXT2;
+        case SVGA3D_DEVCAP_DXFMT_DXT3:                          return SVGA3D_DXT3;
+        case SVGA3D_DEVCAP_DXFMT_DXT4:                          return SVGA3D_DXT4;
+        case SVGA3D_DEVCAP_DXFMT_DXT5:                          return SVGA3D_DXT5;
+        case SVGA3D_DEVCAP_DXFMT_BUMPU8V8:                      return SVGA3D_BUMPU8V8;
+        case SVGA3D_DEVCAP_DXFMT_BUMPL6V5U5:                    return SVGA3D_BUMPL6V5U5;
+        case SVGA3D_DEVCAP_DXFMT_BUMPX8L8V8U8:                  return SVGA3D_BUMPX8L8V8U8;
+        case SVGA3D_DEVCAP_DXFMT_FORMAT_DEAD1:                  return SVGA3D_FORMAT_DEAD1;
+        case SVGA3D_DEVCAP_DXFMT_ARGB_S10E5:                    return SVGA3D_ARGB_S10E5;
+        case SVGA3D_DEVCAP_DXFMT_ARGB_S23E8:                    return SVGA3D_ARGB_S23E8;
+        case SVGA3D_DEVCAP_DXFMT_A2R10G10B10:                   return SVGA3D_A2R10G10B10;
+        case SVGA3D_DEVCAP_DXFMT_V8U8:                          return SVGA3D_V8U8;
+        case SVGA3D_DEVCAP_DXFMT_Q8W8V8U8:                      return SVGA3D_Q8W8V8U8;
+        case SVGA3D_DEVCAP_DXFMT_CxV8U8:                        return SVGA3D_CxV8U8;
+        case SVGA3D_DEVCAP_DXFMT_X8L8V8U8:                      return SVGA3D_X8L8V8U8;
+        case SVGA3D_DEVCAP_DXFMT_A2W10V10U10:                   return SVGA3D_A2W10V10U10;
+        case SVGA3D_DEVCAP_DXFMT_ALPHA8:                        return SVGA3D_ALPHA8;
+        case SVGA3D_DEVCAP_DXFMT_R_S10E5:                       return SVGA3D_R_S10E5;
+        case SVGA3D_DEVCAP_DXFMT_R_S23E8:                       return SVGA3D_R_S23E8;
+        case SVGA3D_DEVCAP_DXFMT_RG_S10E5:                      return SVGA3D_RG_S10E5;
+        case SVGA3D_DEVCAP_DXFMT_RG_S23E8:                      return SVGA3D_RG_S23E8;
+        case SVGA3D_DEVCAP_DXFMT_BUFFER:                        return SVGA3D_BUFFER;
+        case SVGA3D_DEVCAP_DXFMT_Z_D24X8:                       return SVGA3D_Z_D24X8;
+        case SVGA3D_DEVCAP_DXFMT_V16U16:                        return SVGA3D_V16U16;
+        case SVGA3D_DEVCAP_DXFMT_G16R16:                        return SVGA3D_G16R16;
+        case SVGA3D_DEVCAP_DXFMT_A16B16G16R16:                  return SVGA3D_A16B16G16R16;
+        case SVGA3D_DEVCAP_DXFMT_UYVY:                          return SVGA3D_UYVY;
+        case SVGA3D_DEVCAP_DXFMT_YUY2:                          return SVGA3D_YUY2;
+        case SVGA3D_DEVCAP_DXFMT_NV12:                          return SVGA3D_NV12;
+        case SVGA3D_DEVCAP_DXFMT_AYUV:                          return SVGA3D_AYUV;
+        case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_TYPELESS:         return SVGA3D_R32G32B32A32_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_UINT:             return SVGA3D_R32G32B32A32_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_SINT:             return SVGA3D_R32G32B32A32_SINT;
+        case SVGA3D_DEVCAP_DXFMT_R32G32B32_TYPELESS:            return SVGA3D_R32G32B32_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_R32G32B32_FLOAT:               return SVGA3D_R32G32B32_FLOAT;
+        case SVGA3D_DEVCAP_DXFMT_R32G32B32_UINT:                return SVGA3D_R32G32B32_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R32G32B32_SINT:                return SVGA3D_R32G32B32_SINT;
+        case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_TYPELESS:         return SVGA3D_R16G16B16A16_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_UINT:             return SVGA3D_R16G16B16A16_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_SNORM:            return SVGA3D_R16G16B16A16_SNORM;
+        case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_SINT:             return SVGA3D_R16G16B16A16_SINT;
+        case SVGA3D_DEVCAP_DXFMT_R32G32_TYPELESS:               return SVGA3D_R32G32_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_R32G32_UINT:                   return SVGA3D_R32G32_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R32G32_SINT:                   return SVGA3D_R32G32_SINT;
+        case SVGA3D_DEVCAP_DXFMT_R32G8X24_TYPELESS:             return SVGA3D_R32G8X24_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_D32_FLOAT_S8X24_UINT:          return SVGA3D_D32_FLOAT_S8X24_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R32_FLOAT_X8X24_TYPELESS:      return SVGA3D_R32_FLOAT_X8X24;
+        case SVGA3D_DEVCAP_DXFMT_X32_TYPELESS_G8X24_UINT:       return SVGA3D_X32_G8X24_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R10G10B10A2_TYPELESS:          return SVGA3D_R10G10B10A2_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_R10G10B10A2_UINT:              return SVGA3D_R10G10B10A2_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R11G11B10_FLOAT:               return SVGA3D_R11G11B10_FLOAT;
+        case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_TYPELESS:             return SVGA3D_R8G8B8A8_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_UNORM:                return SVGA3D_R8G8B8A8_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_UNORM_SRGB:           return SVGA3D_R8G8B8A8_UNORM_SRGB;
+        case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_UINT:                 return SVGA3D_R8G8B8A8_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_SINT:                 return SVGA3D_R8G8B8A8_SINT;
+        case SVGA3D_DEVCAP_DXFMT_R16G16_TYPELESS:               return SVGA3D_R16G16_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_R16G16_UINT:                   return SVGA3D_R16G16_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R16G16_SINT:                   return SVGA3D_R16G16_SINT;
+        case SVGA3D_DEVCAP_DXFMT_R32_TYPELESS:                  return SVGA3D_R32_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_D32_FLOAT:                     return SVGA3D_D32_FLOAT;
+        case SVGA3D_DEVCAP_DXFMT_R32_UINT:                      return SVGA3D_R32_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R32_SINT:                      return SVGA3D_R32_SINT;
+        case SVGA3D_DEVCAP_DXFMT_R24G8_TYPELESS:                return SVGA3D_R24G8_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_D24_UNORM_S8_UINT:             return SVGA3D_D24_UNORM_S8_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R24_UNORM_X8_TYPELESS:         return SVGA3D_R24_UNORM_X8;
+        case SVGA3D_DEVCAP_DXFMT_X24_TYPELESS_G8_UINT:          return SVGA3D_X24_G8_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R8G8_TYPELESS:                 return SVGA3D_R8G8_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_R8G8_UNORM:                    return SVGA3D_R8G8_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_R8G8_UINT:                     return SVGA3D_R8G8_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R8G8_SINT:                     return SVGA3D_R8G8_SINT;
+        case SVGA3D_DEVCAP_DXFMT_R16_TYPELESS:                  return SVGA3D_R16_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_R16_UNORM:                     return SVGA3D_R16_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_R16_UINT:                      return SVGA3D_R16_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R16_SNORM:                     return SVGA3D_R16_SNORM;
+        case SVGA3D_DEVCAP_DXFMT_R16_SINT:                      return SVGA3D_R16_SINT;
+        case SVGA3D_DEVCAP_DXFMT_R8_TYPELESS:                   return SVGA3D_R8_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_R8_UNORM:                      return SVGA3D_R8_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_R8_UINT:                       return SVGA3D_R8_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R8_SNORM:                      return SVGA3D_R8_SNORM;
+        case SVGA3D_DEVCAP_DXFMT_R8_SINT:                       return SVGA3D_R8_SINT;
+        case SVGA3D_DEVCAP_DXFMT_P8:                            return SVGA3D_P8;
+        case SVGA3D_DEVCAP_DXFMT_R9G9B9E5_SHAREDEXP:            return SVGA3D_R9G9B9E5_SHAREDEXP;
+        case SVGA3D_DEVCAP_DXFMT_R8G8_B8G8_UNORM:               return SVGA3D_R8G8_B8G8_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_G8R8_G8B8_UNORM:               return SVGA3D_G8R8_G8B8_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_BC1_TYPELESS:                  return SVGA3D_BC1_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_BC1_UNORM_SRGB:                return SVGA3D_BC1_UNORM_SRGB;
+        case SVGA3D_DEVCAP_DXFMT_BC2_TYPELESS:                  return SVGA3D_BC2_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_BC2_UNORM_SRGB:                return SVGA3D_BC2_UNORM_SRGB;
+        case SVGA3D_DEVCAP_DXFMT_BC3_TYPELESS:                  return SVGA3D_BC3_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_BC3_UNORM_SRGB:                return SVGA3D_BC3_UNORM_SRGB;
+        case SVGA3D_DEVCAP_DXFMT_BC4_TYPELESS:                  return SVGA3D_BC4_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_ATI1:                          return SVGA3D_ATI1;
+        case SVGA3D_DEVCAP_DXFMT_BC4_SNORM:                     return SVGA3D_BC4_SNORM;
+        case SVGA3D_DEVCAP_DXFMT_BC5_TYPELESS:                  return SVGA3D_BC5_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_ATI2:                          return SVGA3D_ATI2;
+        case SVGA3D_DEVCAP_DXFMT_BC5_SNORM:                     return SVGA3D_BC5_SNORM;
+        case SVGA3D_DEVCAP_DXFMT_R10G10B10_XR_BIAS_A2_UNORM:    return SVGA3D_R10G10B10_XR_BIAS_A2_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_B8G8R8A8_TYPELESS:             return SVGA3D_B8G8R8A8_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_B8G8R8A8_UNORM_SRGB:           return SVGA3D_B8G8R8A8_UNORM_SRGB;
+        case SVGA3D_DEVCAP_DXFMT_B8G8R8X8_TYPELESS:             return SVGA3D_B8G8R8X8_TYPELESS;
+        case SVGA3D_DEVCAP_DXFMT_B8G8R8X8_UNORM_SRGB:           return SVGA3D_B8G8R8X8_UNORM_SRGB;
+        case SVGA3D_DEVCAP_DXFMT_Z_DF16:                        return SVGA3D_Z_DF16;
+        case SVGA3D_DEVCAP_DXFMT_Z_DF24:                        return SVGA3D_Z_DF24;
+        case SVGA3D_DEVCAP_DXFMT_Z_D24S8_INT:                   return SVGA3D_Z_D24S8_INT;
+        case SVGA3D_DEVCAP_DXFMT_YV12:                          return SVGA3D_YV12;
+        case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_FLOAT:            return SVGA3D_R32G32B32A32_FLOAT;
+        case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_FLOAT:            return SVGA3D_R16G16B16A16_FLOAT;
+        case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_UNORM:            return SVGA3D_R16G16B16A16_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_R32G32_FLOAT:                  return SVGA3D_R32G32_FLOAT;
+        case SVGA3D_DEVCAP_DXFMT_R10G10B10A2_UNORM:             return SVGA3D_R10G10B10A2_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_SNORM:                return SVGA3D_R8G8B8A8_SNORM;
+        case SVGA3D_DEVCAP_DXFMT_R16G16_FLOAT:                  return SVGA3D_R16G16_FLOAT;
+        case SVGA3D_DEVCAP_DXFMT_R16G16_UNORM:                  return SVGA3D_R16G16_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_R16G16_SNORM:                  return SVGA3D_R16G16_SNORM;
+        case SVGA3D_DEVCAP_DXFMT_R32_FLOAT:                     return SVGA3D_R32_FLOAT;
+        case SVGA3D_DEVCAP_DXFMT_R8G8_SNORM:                    return SVGA3D_R8G8_SNORM;
+        case SVGA3D_DEVCAP_DXFMT_R16_FLOAT:                     return SVGA3D_R16_FLOAT;
+        case SVGA3D_DEVCAP_DXFMT_D16_UNORM:                     return SVGA3D_D16_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_A8_UNORM:                      return SVGA3D_A8_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_BC1_UNORM:                     return SVGA3D_BC1_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_BC2_UNORM:                     return SVGA3D_BC2_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_BC3_UNORM:                     return SVGA3D_BC3_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_B5G6R5_UNORM:                  return SVGA3D_B5G6R5_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_B5G5R5A1_UNORM:                return SVGA3D_B5G5R5A1_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_B8G8R8A8_UNORM:                return SVGA3D_B8G8R8A8_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_B8G8R8X8_UNORM:                return SVGA3D_B8G8R8X8_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_BC4_UNORM:                     return SVGA3D_BC4_UNORM;
+        case SVGA3D_DEVCAP_DXFMT_BC5_UNORM:                     return SVGA3D_BC5_UNORM;
+        default:
+            AssertFailed();
+            break;
+    }
+    return SVGA3D_FORMAT_INVALID;
+}
+
+
+static int vmsvgaDXCheckFormatSupportPreDX(PVMSVGA3DSTATE pState, SVGA3dSurfaceFormat enmFormat, uint32_t *pu32DevCap)
+{
+    int rc = VINF_SUCCESS;
+
+    *pu32DevCap = 0;
+
+    DXGI_FORMAT const dxgiFormat = vmsvgaDXSurfaceFormat2Dxgi(enmFormat);
+    if (dxgiFormat != DXGI_FORMAT_UNKNOWN)
+    {
+        RT_NOREF(pState);
+        /** @todo Implement */
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
+    return rc;
+}
+
+static int vmsvgaDXCheckFormatSupport(PVMSVGA3DSTATE pState, SVGA3dSurfaceFormat enmFormat, uint32_t *pu32DevCap)
+{
+    int rc = VINF_SUCCESS;
+
+    *pu32DevCap = 0;
+
+    DXGI_FORMAT const dxgiFormat = vmsvgaDXSurfaceFormat2Dxgi(enmFormat);
+    if (dxgiFormat != DXGI_FORMAT_UNKNOWN)
+    {
+        ID3D11Device *pDevice = pState->pBackend->pDevice;
+        UINT FormatSupport = 0;
+        HRESULT hr = pDevice->CheckFormatSupport(dxgiFormat, &FormatSupport);
+        if (SUCCEEDED(hr))
+        {
+            *pu32DevCap |= SVGA3D_DXFMT_SUPPORTED;
+
+            if (FormatSupport & D3D11_FORMAT_SUPPORT_SHADER_SAMPLE)
+                *pu32DevCap |= SVGA3D_DXFMT_SHADER_SAMPLE;
+
+            if (FormatSupport & D3D11_FORMAT_SUPPORT_RENDER_TARGET)
+                *pu32DevCap |= SVGA3D_DXFMT_COLOR_RENDERTARGET;
+
+            if (FormatSupport & D3D11_FORMAT_SUPPORT_DEPTH_STENCIL)
+                *pu32DevCap |= SVGA3D_DXFMT_DEPTH_RENDERTARGET;
+
+            if (FormatSupport & D3D11_FORMAT_SUPPORT_BLENDABLE)
+                *pu32DevCap |= SVGA3D_DXFMT_BLENDABLE;
+
+            if (FormatSupport & D3D11_FORMAT_SUPPORT_MIP)
+                *pu32DevCap |= SVGA3D_DXFMT_MIPS;
+
+            if (FormatSupport & D3D11_FORMAT_SUPPORT_TEXTURECUBE)
+                *pu32DevCap |= SVGA3D_DXFMT_ARRAY;
+
+            if (FormatSupport & D3D11_FORMAT_SUPPORT_TEXTURE3D)
+                *pu32DevCap |= SVGA3D_DXFMT_VOLUME;
+
+            if (FormatSupport & D3D11_FORMAT_SUPPORT_IA_VERTEX_BUFFER)
+                *pu32DevCap |= SVGA3D_DXFMT_DX_VERTEX_BUFFER;
+
+            UINT NumQualityLevels;
+            hr = pDevice->CheckMultisampleQualityLevels(dxgiFormat, 2, &NumQualityLevels);
+            if (SUCCEEDED(hr) && NumQualityLevels != 0)
+                *pu32DevCap |= SVGADX_DXFMT_MULTISAMPLE_2;
+
+            hr = pDevice->CheckMultisampleQualityLevels(dxgiFormat, 4, &NumQualityLevels);
+            if (SUCCEEDED(hr) && NumQualityLevels != 0)
+                *pu32DevCap |= SVGADX_DXFMT_MULTISAMPLE_4;
+
+            hr = pDevice->CheckMultisampleQualityLevels(dxgiFormat, 8, &NumQualityLevels);
+            if (SUCCEEDED(hr) && NumQualityLevels != 0)
+                *pu32DevCap |= SVGADX_DXFMT_MULTISAMPLE_8;
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
+    return rc;
 }
 
 
@@ -622,7 +1076,7 @@ int vmsvga3dBackSurfaceCreateScreenTarget(PVMSVGA3DSTATE pState, PVMSVGA3DSURFAC
     Assert(pSurface->cLevels == 1);
     td.MipLevels          = 1;
     td.ArraySize          = 1;
-    td.Format             = DXGI_FORMAT_B8G8R8A8_UNORM;
+    td.Format             = vmsvgaDXScreenTargetFormat2Dxgi(pSurface->format); // DXGI_FORMAT_B8G8R8A8_UNORM;
     td.SampleDesc.Count   = 1;
     td.SampleDesc.Quality = 0;
     td.Usage              = D3D11_USAGE_DEFAULT;
@@ -793,12 +1247,21 @@ void vmsvga3dUpdateHostScreenViewport(PVGASTATECC pThisCC, uint32_t idScreen, VM
 }
 
 
-int vmsvga3dQueryCaps(PVGASTATECC pThisCC, uint32_t idx3dCaps, uint32_t *pu32Val)
+int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t *pu32Val)
 {
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
     int rc = VINF_SUCCESS;
+
+    *pu32Val = 0;
+
+    /* Most values are taken from:
+     * https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-devices-downlevel-intro
+     *
+     * Shader values are from
+     * https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-models
+     */
 
     switch (idx3dCaps)
     {
@@ -806,21 +1269,484 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, uint32_t idx3dCaps, uint32_t *pu32Val
         *pu32Val = 1;
         break;
 
-    case SVGA3D_DEVCAP_MAX_TEXTURE_WIDTH:
-        *pu32Val = 8192;
+    case SVGA3D_DEVCAP_MAX_LIGHTS:
+        *pu32Val = SVGA3D_NUM_LIGHTS; /* VGPU9. Not applicable to DX11. */
         break;
 
+    case SVGA3D_DEVCAP_MAX_TEXTURES:
+        *pu32Val = SVGA3D_NUM_TEXTURE_UNITS; /* VGPU9. Not applicable to DX11. */
+        break;
+
+    case SVGA3D_DEVCAP_MAX_CLIP_PLANES:
+        *pu32Val = SVGA3D_NUM_CLIPPLANES;
+        break;
+
+    case SVGA3D_DEVCAP_VERTEX_SHADER_VERSION:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = SVGA3DVSVERSION_40;
+        else
+            *pu32Val = SVGA3DVSVERSION_30;
+        break;
+
+    case SVGA3D_DEVCAP_VERTEX_SHADER:
+        *pu32Val = 1;
+        break;
+
+    case SVGA3D_DEVCAP_FRAGMENT_SHADER_VERSION:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = SVGA3DPSVERSION_40;
+        else
+            *pu32Val = SVGA3DPSVERSION_30;
+        break;
+
+    case SVGA3D_DEVCAP_FRAGMENT_SHADER:
+        *pu32Val = 1;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_RENDER_TARGETS:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = 8;
+        else
+            *pu32Val = 4;
+        break;
+
+    case SVGA3D_DEVCAP_S23E8_TEXTURES:
+    case SVGA3D_DEVCAP_S10E5_TEXTURES:
+        /* Must be obsolete by now; surface format caps specify the same thing. */
+        break;
+
+    case SVGA3D_DEVCAP_MAX_FIXED_VERTEXBLEND:
+        /* Obsolete */
+        break;
+
+    /*
+     *   2. The BUFFER_FORMAT capabilities are deprecated, and they always
+     *      return TRUE. Even on physical hardware that does not support
+     *      these formats natively, the SVGA3D device will provide an emulation
+     *      which should be invisible to the guest OS.
+     */
+    case SVGA3D_DEVCAP_D16_BUFFER_FORMAT:
+    case SVGA3D_DEVCAP_D24S8_BUFFER_FORMAT:
+    case SVGA3D_DEVCAP_D24X8_BUFFER_FORMAT:
+        *pu32Val = 1;
+        break;
+
+    case SVGA3D_DEVCAP_QUERY_TYPES:
+        /* Obsolete */
+        break;
+
+    case SVGA3D_DEVCAP_TEXTURE_GRADIENT_SAMPLING:
+        /* Obsolete */
+        break;
+
+    case SVGA3D_DEVCAP_MAX_POINT_SIZE:
+        AssertCompile(sizeof(uint32_t) == sizeof(float));
+        *(float *)pu32Val = 256.0f;  /* VGPU9. Not applicable to DX11. */
+        break;
+
+    case SVGA3D_DEVCAP_MAX_SHADER_TEXTURES:
+        /* Obsolete */
+        break;
+
+    case SVGA3D_DEVCAP_MAX_TEXTURE_WIDTH:
     case SVGA3D_DEVCAP_MAX_TEXTURE_HEIGHT:
-        *pu32Val = 8192;
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_11_0)
+            *pu32Val = 16384;
+        else if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = 8192;
+        else if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_9_3)
+            *pu32Val = 4096;
+        else
+            *pu32Val = 2048;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_VOLUME_EXTENT:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = 2048;
+        else
+            *pu32Val = 256;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_TEXTURE_REPEAT:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_11_0)
+            *pu32Val = 16384;
+        else if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_9_3)
+            *pu32Val = 8192;
+        else if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_9_2)
+            *pu32Val = 2048;
+        else
+            *pu32Val = 128;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_TEXTURE_ASPECT_RATIO:
+        /* Obsolete */
+        break;
+
+    case SVGA3D_DEVCAP_MAX_TEXTURE_ANISOTROPY:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_9_2)
+            *pu32Val = D3D11_REQ_MAXANISOTROPY;
+        else
+            *pu32Val = 2; // D3D_FL9_1_DEFAULT_MAX_ANISOTROPY;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_PRIMITIVE_COUNT:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = UINT32_MAX;
+        else if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_9_2)
+            *pu32Val = 1048575; // D3D_FL9_2_IA_PRIMITIVE_MAX_COUNT;
+        else
+            *pu32Val = 65535; // D3D_FL9_1_IA_PRIMITIVE_MAX_COUNT;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_VERTEX_INDEX:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = UINT32_MAX;
+        else if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_9_2)
+            *pu32Val = 1048575;
+        else
+            *pu32Val = 65534;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_VERTEX_SHADER_INSTRUCTIONS:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = UINT32_MAX;
+        else
+            *pu32Val = 512;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_FRAGMENT_SHADER_INSTRUCTIONS:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = UINT32_MAX;
+        else
+            *pu32Val = 512;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_VERTEX_SHADER_TEMPS:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = 4096;
+        else
+            *pu32Val = 32;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_FRAGMENT_SHADER_TEMPS:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = 4096;
+        else
+            *pu32Val = 32;
+        break;
+
+    case SVGA3D_DEVCAP_TEXTURE_OPS:
+        /* Obsolete */
+        break;
+
+    case SVGA3D_DEVCAP_SURFACEFMT_X8R8G8B8:
+    case SVGA3D_DEVCAP_SURFACEFMT_A8R8G8B8:
+    case SVGA3D_DEVCAP_SURFACEFMT_A2R10G10B10:
+    case SVGA3D_DEVCAP_SURFACEFMT_X1R5G5B5:
+    case SVGA3D_DEVCAP_SURFACEFMT_A1R5G5B5:
+    case SVGA3D_DEVCAP_SURFACEFMT_A4R4G4B4:
+    case SVGA3D_DEVCAP_SURFACEFMT_R5G6B5:
+    case SVGA3D_DEVCAP_SURFACEFMT_LUMINANCE16:
+    case SVGA3D_DEVCAP_SURFACEFMT_LUMINANCE8_ALPHA8:
+    case SVGA3D_DEVCAP_SURFACEFMT_ALPHA8:
+    case SVGA3D_DEVCAP_SURFACEFMT_LUMINANCE8:
+    case SVGA3D_DEVCAP_SURFACEFMT_Z_D16:
+    case SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8:
+    case SVGA3D_DEVCAP_SURFACEFMT_Z_D24X8:
+    case SVGA3D_DEVCAP_SURFACEFMT_DXT1:
+    case SVGA3D_DEVCAP_SURFACEFMT_DXT2:
+    case SVGA3D_DEVCAP_SURFACEFMT_DXT3:
+    case SVGA3D_DEVCAP_SURFACEFMT_DXT4:
+    case SVGA3D_DEVCAP_SURFACEFMT_DXT5:
+    case SVGA3D_DEVCAP_SURFACEFMT_BUMPX8L8V8U8:
+    case SVGA3D_DEVCAP_SURFACEFMT_A2W10V10U10:
+    case SVGA3D_DEVCAP_SURFACEFMT_BUMPU8V8:
+    case SVGA3D_DEVCAP_SURFACEFMT_Q8W8V8U8:
+    case SVGA3D_DEVCAP_SURFACEFMT_CxV8U8:
+    case SVGA3D_DEVCAP_SURFACEFMT_R_S10E5:
+    case SVGA3D_DEVCAP_SURFACEFMT_R_S23E8:
+    case SVGA3D_DEVCAP_SURFACEFMT_RG_S10E5:
+    case SVGA3D_DEVCAP_SURFACEFMT_RG_S23E8:
+    case SVGA3D_DEVCAP_SURFACEFMT_ARGB_S10E5:
+    case SVGA3D_DEVCAP_SURFACEFMT_ARGB_S23E8:
+    case SVGA3D_DEVCAP_SURFACEFMT_V16U16:
+    case SVGA3D_DEVCAP_SURFACEFMT_G16R16:
+    case SVGA3D_DEVCAP_SURFACEFMT_A16B16G16R16:
+    case SVGA3D_DEVCAP_SURFACEFMT_UYVY:
+    case SVGA3D_DEVCAP_SURFACEFMT_YUY2:
+    case SVGA3D_DEVCAP_SURFACEFMT_NV12:
+    case SVGA3D_DEVCAP_SURFACEFMT_AYUV:
+    case SVGA3D_DEVCAP_SURFACEFMT_Z_DF16:
+    case SVGA3D_DEVCAP_SURFACEFMT_Z_DF24:
+    case SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8_INT:
+    case SVGA3D_DEVCAP_SURFACEFMT_ATI1:
+    case SVGA3D_DEVCAP_SURFACEFMT_ATI2:
+    case SVGA3D_DEVCAP_SURFACEFMT_YV12:
+    {
+        SVGA3dSurfaceFormat const enmFormat = vmsvgaDXDevCapSurfaceFmt2Format(idx3dCaps);
+        rc = vmsvgaDXCheckFormatSupportPreDX(pState, enmFormat, pu32Val);
+        break;
+    }
+
+    case SVGA3D_DEVCAP_MISSING62:
+        /* Unused */
+        break;
+
+    case SVGA3D_DEVCAP_MAX_VERTEX_SHADER_TEXTURES:
+        /* Obsolete */
+        break;
+
+    case SVGA3D_DEVCAP_MAX_SIMULTANEOUS_RENDER_TARGETS:
+        if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_10_0)
+            *pu32Val = 8;
+        else if (pState->pBackend->FeatureLevel >= D3D_FEATURE_LEVEL_9_3)
+            *pu32Val = 4; // D3D_FL9_3_SIMULTANEOUS_RENDER_TARGET_COUNT
+        else
+            *pu32Val = 1; // D3D_FL9_1_SIMULTANEOUS_RENDER_TARGET_COUNT
+        break;
+
+    case SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES:
+    case SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES:
+        *pu32Val = (1 << (2-1)) | (1 << (4-1)) | (1 << (8-1)); /* 2x, 4x, 8x */
+        break;
+
+    case SVGA3D_DEVCAP_ALPHATOCOVERAGE:
+        /* Obsolete? */
+        break;
+
+    case SVGA3D_DEVCAP_SUPERSAMPLE:
+        /* Obsolete? */
+        break;
+
+    case SVGA3D_DEVCAP_AUTOGENMIPMAPS:
+        *pu32Val = 1;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_CONTEXT_IDS:
+        *pu32Val = SVGA3D_MAX_CONTEXT_IDS;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_SURFACE_IDS:
+        *pu32Val = SVGA3D_MAX_SURFACE_IDS;
+        break;
+
+    case SVGA3D_DEVCAP_DEAD1:
+        /* Obsolete */
+        break;
+
+    case SVGA3D_DEVCAP_VIDEO_DECODE:
+        /* Obsolete */
+        break;
+
+    case SVGA3D_DEVCAP_VIDEO_PROCESS:
+        /* Obsolete */
+        break;
+
+    case SVGA3D_DEVCAP_LINE_AA:
+        *pu32Val = 1;
+        break;
+
+    case SVGA3D_DEVCAP_LINE_STIPPLE:
+        *pu32Val = 0; /* DX11 does not seem to support this directly. */
+        break;
+
+    case SVGA3D_DEVCAP_MAX_LINE_WIDTH:
+        AssertCompile(sizeof(uint32_t) == sizeof(float));
+        *(float *)pu32Val = 1.0f;
+        break;
+
+    case SVGA3D_DEVCAP_MAX_AA_LINE_WIDTH:
+        AssertCompile(sizeof(uint32_t) == sizeof(float));
+        *(float *)pu32Val = 1.0f;
+        break;
+
+    case SVGA3D_DEVCAP_LOGICOPS:
+        /* Deprecated. */
+        AssertCompile(SVGA3D_DEVCAP_LOGICOPS == 92); /* Newer SVGA headers redefine this. */
+        *pu32Val = 0; /* Supported starting with Direct3D 11.1 */
+        break;
+
+    case SVGA3D_DEVCAP_TS_COLOR_KEY:
+        *pu32Val = 0; /* DX11 does not seem to support this directly. */
+        break;
+
+    case SVGA3D_DEVCAP_DEAD2:
         break;
 
     case SVGA3D_DEVCAP_DX:
         *pu32Val = 1;
         break;
 
-    default:
-        *pu32Val = 0;
+    case SVGA3D_DEVCAP_MAX_TEXTURE_ARRAY_SIZE:
+        *pu32Val = D3D11_REQ_TEXTURE2D_ARRAY_AXIS_DIMENSION;
+        break;
+
+    case SVGA3D_DEVCAP_DX_MAX_VERTEXBUFFERS:
+        *pu32Val = D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
+        break;
+
+    case SVGA3D_DEVCAP_DX_MAX_CONSTANT_BUFFERS:
+        *pu32Val = D3D11_COMMONSHADER_CONSTANT_BUFFER_HW_SLOT_COUNT;
+        break;
+
+    case SVGA3D_DEVCAP_DX_PROVOKING_VERTEX:
+        *pu32Val = 0; /* boolean */
+        break;
+
+    case SVGA3D_DEVCAP_DXFMT_X8R8G8B8:
+    case SVGA3D_DEVCAP_DXFMT_A8R8G8B8:
+    case SVGA3D_DEVCAP_DXFMT_R5G6B5:
+    case SVGA3D_DEVCAP_DXFMT_X1R5G5B5:
+    case SVGA3D_DEVCAP_DXFMT_A1R5G5B5:
+    case SVGA3D_DEVCAP_DXFMT_A4R4G4B4:
+    case SVGA3D_DEVCAP_DXFMT_Z_D32:
+    case SVGA3D_DEVCAP_DXFMT_Z_D16:
+    case SVGA3D_DEVCAP_DXFMT_Z_D24S8:
+    case SVGA3D_DEVCAP_DXFMT_Z_D15S1:
+    case SVGA3D_DEVCAP_DXFMT_LUMINANCE8:
+    case SVGA3D_DEVCAP_DXFMT_LUMINANCE4_ALPHA4:
+    case SVGA3D_DEVCAP_DXFMT_LUMINANCE16:
+    case SVGA3D_DEVCAP_DXFMT_LUMINANCE8_ALPHA8:
+    case SVGA3D_DEVCAP_DXFMT_DXT1:
+    case SVGA3D_DEVCAP_DXFMT_DXT2:
+    case SVGA3D_DEVCAP_DXFMT_DXT3:
+    case SVGA3D_DEVCAP_DXFMT_DXT4:
+    case SVGA3D_DEVCAP_DXFMT_DXT5:
+    case SVGA3D_DEVCAP_DXFMT_BUMPU8V8:
+    case SVGA3D_DEVCAP_DXFMT_BUMPL6V5U5:
+    case SVGA3D_DEVCAP_DXFMT_BUMPX8L8V8U8:
+    case SVGA3D_DEVCAP_DXFMT_FORMAT_DEAD1:
+    case SVGA3D_DEVCAP_DXFMT_ARGB_S10E5:
+    case SVGA3D_DEVCAP_DXFMT_ARGB_S23E8:
+    case SVGA3D_DEVCAP_DXFMT_A2R10G10B10:
+    case SVGA3D_DEVCAP_DXFMT_V8U8:
+    case SVGA3D_DEVCAP_DXFMT_Q8W8V8U8:
+    case SVGA3D_DEVCAP_DXFMT_CxV8U8:
+    case SVGA3D_DEVCAP_DXFMT_X8L8V8U8:
+    case SVGA3D_DEVCAP_DXFMT_A2W10V10U10:
+    case SVGA3D_DEVCAP_DXFMT_ALPHA8:
+    case SVGA3D_DEVCAP_DXFMT_R_S10E5:
+    case SVGA3D_DEVCAP_DXFMT_R_S23E8:
+    case SVGA3D_DEVCAP_DXFMT_RG_S10E5:
+    case SVGA3D_DEVCAP_DXFMT_RG_S23E8:
+    case SVGA3D_DEVCAP_DXFMT_BUFFER:
+    case SVGA3D_DEVCAP_DXFMT_Z_D24X8:
+    case SVGA3D_DEVCAP_DXFMT_V16U16:
+    case SVGA3D_DEVCAP_DXFMT_G16R16:
+    case SVGA3D_DEVCAP_DXFMT_A16B16G16R16:
+    case SVGA3D_DEVCAP_DXFMT_UYVY:
+    case SVGA3D_DEVCAP_DXFMT_YUY2:
+    case SVGA3D_DEVCAP_DXFMT_NV12:
+    case SVGA3D_DEVCAP_DXFMT_AYUV:
+    case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_SINT:
+    case SVGA3D_DEVCAP_DXFMT_R32G32B32_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_R32G32B32_FLOAT:
+    case SVGA3D_DEVCAP_DXFMT_R32G32B32_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R32G32B32_SINT:
+    case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_SNORM:
+    case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_SINT:
+    case SVGA3D_DEVCAP_DXFMT_R32G32_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_R32G32_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R32G32_SINT:
+    case SVGA3D_DEVCAP_DXFMT_R32G8X24_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_D32_FLOAT_S8X24_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R32_FLOAT_X8X24_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_X32_TYPELESS_G8X24_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R10G10B10A2_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_R10G10B10A2_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R11G11B10_FLOAT:
+    case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_UNORM_SRGB:
+    case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_SINT:
+    case SVGA3D_DEVCAP_DXFMT_R16G16_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_R16G16_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R16G16_SINT:
+    case SVGA3D_DEVCAP_DXFMT_R32_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_D32_FLOAT:
+    case SVGA3D_DEVCAP_DXFMT_R32_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R32_SINT:
+    case SVGA3D_DEVCAP_DXFMT_R24G8_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_D24_UNORM_S8_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R24_UNORM_X8_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_X24_TYPELESS_G8_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R8G8_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_R8G8_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_R8G8_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R8G8_SINT:
+    case SVGA3D_DEVCAP_DXFMT_R16_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_R16_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_R16_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R16_SNORM:
+    case SVGA3D_DEVCAP_DXFMT_R16_SINT:
+    case SVGA3D_DEVCAP_DXFMT_R8_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_R8_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_R8_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R8_SNORM:
+    case SVGA3D_DEVCAP_DXFMT_R8_SINT:
+    case SVGA3D_DEVCAP_DXFMT_P8:
+    case SVGA3D_DEVCAP_DXFMT_R9G9B9E5_SHAREDEXP:
+    case SVGA3D_DEVCAP_DXFMT_R8G8_B8G8_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_G8R8_G8B8_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_BC1_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_BC1_UNORM_SRGB:
+    case SVGA3D_DEVCAP_DXFMT_BC2_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_BC2_UNORM_SRGB:
+    case SVGA3D_DEVCAP_DXFMT_BC3_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_BC3_UNORM_SRGB:
+    case SVGA3D_DEVCAP_DXFMT_BC4_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_ATI1:
+    case SVGA3D_DEVCAP_DXFMT_BC4_SNORM:
+    case SVGA3D_DEVCAP_DXFMT_BC5_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_ATI2:
+    case SVGA3D_DEVCAP_DXFMT_BC5_SNORM:
+    case SVGA3D_DEVCAP_DXFMT_R10G10B10_XR_BIAS_A2_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_B8G8R8A8_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_B8G8R8A8_UNORM_SRGB:
+    case SVGA3D_DEVCAP_DXFMT_B8G8R8X8_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_B8G8R8X8_UNORM_SRGB:
+    case SVGA3D_DEVCAP_DXFMT_Z_DF16:
+    case SVGA3D_DEVCAP_DXFMT_Z_DF24:
+    case SVGA3D_DEVCAP_DXFMT_Z_D24S8_INT:
+    case SVGA3D_DEVCAP_DXFMT_YV12:
+    case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_FLOAT:
+    case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_FLOAT:
+    case SVGA3D_DEVCAP_DXFMT_R16G16B16A16_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_R32G32_FLOAT:
+    case SVGA3D_DEVCAP_DXFMT_R10G10B10A2_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_R8G8B8A8_SNORM:
+    case SVGA3D_DEVCAP_DXFMT_R16G16_FLOAT:
+    case SVGA3D_DEVCAP_DXFMT_R16G16_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_R16G16_SNORM:
+    case SVGA3D_DEVCAP_DXFMT_R32_FLOAT:
+    case SVGA3D_DEVCAP_DXFMT_R8G8_SNORM:
+    case SVGA3D_DEVCAP_DXFMT_R16_FLOAT:
+    case SVGA3D_DEVCAP_DXFMT_D16_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_A8_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_BC1_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_BC2_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_BC3_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_B5G6R5_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_B5G5R5A1_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_B8G8R8A8_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_B8G8R8X8_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_BC4_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_BC5_UNORM:
+    {
+        SVGA3dSurfaceFormat const enmFormat = vmsvgaDXDevCapDxfmt2Format(idx3dCaps);
+        rc = vmsvgaDXCheckFormatSupport(pState, enmFormat, pu32Val);
+        break;
+    }
+
+    case SVGA3D_DEVCAP_MAX:
+    case SVGA3D_DEVCAP_INVALID:
         rc = VERR_NOT_SUPPORTED;
+        break;
     }
 
     return rc;
