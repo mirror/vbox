@@ -535,7 +535,10 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, &MsiIn, &MsiOut);
         LogFlow(("IOAPIC: IOMMU Remap. rc=%Rrc VectorIn=%#x VectorOut=%#x\n", rcRemap, MsiIn.Data.n.u8Vector, MsiOut.Data.n.u8Vector));
         if (RT_SUCCESS(rcRemap))
+        {
             ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
+            Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte)); /* Ensure polarity hasn't changed. */
+        }
         else
         {
             STAM_COUNTER_INC(&pThis->StatIommuDiscardedIntr);
