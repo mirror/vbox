@@ -1655,6 +1655,11 @@ bool UIHelpBrowserWidget::shouldBeMaximized() const
 void UIHelpBrowserWidget::prepare()
 {
     m_pMainLayout = new QVBoxLayout(this);
+    m_pMainLayout->setContentsMargins(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin),
+                                      qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
+                                      0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin),
+                                      0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
+
     AssertReturnVoid(m_pMainLayout);
 
     prepareActions();
