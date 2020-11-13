@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QClipboard>
 #include <QComboBox>
 #include <QDateTime>
 #include <QDir>
@@ -292,6 +293,7 @@ private slots:
 
     void sltHandleOpenLinkInNewTab();
     void sltHandleOpenLink();
+    void sltHandleCopyLink();
     void sltHandleFindWidgetDrag(const QPoint &delta);
     void sltHandleFindInPageSearchTextChange(const QString &strSearchText);
     void sltSelectPreviousMatch();
@@ -1181,9 +1183,14 @@ void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
     connect(pOpenInNewTabAction, &QAction::triggered,
             this, &UIHelpBrowserViewer::sltHandleOpenLinkInNewTab);
 
+    QAction *pCopyLink = new QAction(UIHelpBrowserWidget::tr("Copy Link"));
+    connect(pCopyLink, &QAction::triggered,
+            this, &UIHelpBrowserViewer::sltHandleCopyLink);
+
     pMenu.addAction(pNavigationActions);
     pMenu.addAction(pOpenLinkAction);
     pMenu.addAction(pOpenInNewTabAction);
+    pMenu.addAction(pCopyLink);
 
     QString strAnchor = anchorAt(event->pos());
     if (!strAnchor.isEmpty())
@@ -1191,11 +1198,13 @@ void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
         QString strLink = source().resolved(anchorAt(event->pos())).toString();
         pOpenLinkAction->setData(strLink);
         pOpenInNewTabAction->setData(strLink);
+        pCopyLink->setData(strLink);
     }
     else
     {
         pOpenLinkAction->setEnabled(false);
         pOpenInNewTabAction->setEnabled(false);
+        pCopyLink->setEnabled(false);
     }
     pMenu.exec(event->globalPos());
 }
@@ -1332,6 +1341,20 @@ void UIHelpBrowserViewer::sltHandleOpenLink()
     QUrl url = pSender->data().toUrl();
     if (url.isValid())
         QTextBrowser::setSource(url);
+}
+
+void UIHelpBrowserViewer::sltHandleCopyLink()
+{
+    QAction *pSender = qobject_cast<QAction*>(sender());
+    if (!pSender)
+        return;
+    QUrl url = pSender->data().toUrl();
+    if (url.isValid())
+    {
+        QClipboard *pClipboard = QApplication::clipboard();
+        if (pClipboard)
+            pClipboard->setText(url.toString());
+    }
 }
 
 void UIHelpBrowserViewer::sltHandleFindWidgetDrag(const QPoint &delta)
@@ -2096,12 +2119,17 @@ void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
     QMenu menu;
     QAction *pOpen = menu.addAction(tr("Open in Link"));
     QAction *pOpenInNewTab = menu.addAction(tr("Open in Link New Tab"));
+    QAction *pCopyLink = menu.addAction(tr("Copy Link"));
+
     pOpen->setData(url);
     pOpenInNewTab->setData(url);
+    pCopyLink->setData(url);
     connect(pOpenInNewTab, &QAction::triggered,
             this, &UIHelpBrowserWidget::sltOpenLinkInNewTab);
     connect(pOpen, &QAction::triggered,
             this, &UIHelpBrowserWidget::sltOpenLink);
+    connect(pCopyLink, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sltCopyLink);
 
     menu.exec(pSender->mapToGlobal(pos));
 }
@@ -2114,6 +2142,20 @@ void UIHelpBrowserWidget::sltOpenLinkInNewTab()
 void UIHelpBrowserWidget::sltOpenLink()
 {
     openLinkSlotHandler(sender(), false);
+}
+
+void UIHelpBrowserWidget::sltCopyLink()
+{
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    if (!pAction)
+        return;
+    QUrl url = pAction->data().toUrl();
+    if (url.isValid())
+    {
+        QClipboard *pClipboard = QApplication::clipboard();
+        if (pClipboard)
+            pClipboard->setText(url.toString());
+    }
 }
 
 void UIHelpBrowserWidget::sltAddNewBookmark(const QUrl &url, const QString &strTitle)

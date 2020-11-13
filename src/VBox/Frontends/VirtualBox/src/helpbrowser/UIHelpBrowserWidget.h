@@ -98,6 +98,7 @@ private slots:
     void sltShowLinksContextMenu(const QPoint &pos);
     void sltOpenLinkInNewTab();
     void sltOpenLink();
+    void sltCopyLink();
     void sltAddNewBookmark(const QUrl &url, const QString &strTitle);
     void sltHandleFontSizeactions();
 
