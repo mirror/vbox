@@ -81,6 +81,43 @@ static const int iBookmarkUrlDataType = 6;
 static const QPair<float, float> fontScaleMinMax(0.5f, 3.f);
 static int iFontPointSizeChangeStep = 2;
 
+
+/*********************************************************************************************************************************
+*   UIContextMenuNavigationAction definition.                                                                                    *
+*********************************************************************************************************************************/
+class UIContextMenuNavigationAction : public QWidgetAction
+{
+
+    Q_OBJECT;
+
+signals:
+
+    void sigGoBackward();
+    void sigGoForward();
+    void sigGoHome();
+    void sigAddBookmark();
+
+public:
+
+    UIContextMenuNavigationAction(QObject *pParent = 0);
+    void setBackwardAvailable(bool fAvailable);
+    void setForwardAvailable(bool fAvailable);
+
+protected:
+
+
+private slots:
+
+
+private:
+
+    void prepare();
+    QIToolButton *m_pBackwardButton;
+    QIToolButton *m_pForwardButton;
+    QIToolButton *m_pHomeButton;
+    QIToolButton *m_pAddBookmarkButton;
+};
+
 /*********************************************************************************************************************************
 *   UIFontScaleWidget definition.                                                                                         *
 *********************************************************************************************************************************/
@@ -228,6 +265,10 @@ signals:
     void sigOpenLinkInNewTab(const QUrl &url);
     void sigCloseFindInPageWidget();
     void sigFontPointSizeChanged(int iFontPointSize);
+    void sigGoBackward();
+    void sigGoForward();
+    void sigGoHome();
+    void sigAddBookmark();
 
 public:
 
@@ -396,6 +437,71 @@ private:
     QStringList m_savedUrlList;
     bool m_fSwitchToNewTab;
 };
+
+
+/*********************************************************************************************************************************
+*   UIContextMenuNavigationAction implementation.                                                                                *
+*********************************************************************************************************************************/
+UIContextMenuNavigationAction::UIContextMenuNavigationAction(QObject *pParent /* = 0 */)
+    :QWidgetAction(pParent)
+    , m_pBackwardButton(0)
+    , m_pForwardButton(0)
+    , m_pHomeButton(0)
+    , m_pAddBookmarkButton(0)
+{
+    prepare();
+}
+
+void UIContextMenuNavigationAction::setBackwardAvailable(bool fAvailable)
+{
+    if (m_pBackwardButton)
+        m_pBackwardButton->setEnabled(fAvailable);
+}
+
+void UIContextMenuNavigationAction::setForwardAvailable(bool fAvailable)
+{
+    if (m_pForwardButton)
+        m_pForwardButton->setEnabled(fAvailable);
+}
+
+void UIContextMenuNavigationAction::prepare()
+{
+    QWidget *pWidget = new QWidget;
+    setDefaultWidget(pWidget);
+    QHBoxLayout *pMainLayout = new QHBoxLayout(pWidget);
+    AssertReturnVoid(pMainLayout);
+
+    m_pBackwardButton = new QIToolButton;
+    m_pForwardButton = new QIToolButton;
+    m_pHomeButton = new QIToolButton;
+    m_pAddBookmarkButton = new QIToolButton;
+
+    AssertReturnVoid(m_pBackwardButton &&
+                     m_pForwardButton &&
+                     m_pHomeButton);
+    m_pForwardButton->setEnabled(false);
+    m_pBackwardButton->setEnabled(false);
+    m_pHomeButton->setIcon(UIIconPool::iconSet(":/help_browser_home_32px.png"));
+    m_pForwardButton->setIcon(UIIconPool::iconSet(":/help_browser_forward_32px.png", ":/help_browser_forward_disabled_32px.png"));
+    m_pBackwardButton->setIcon(UIIconPool::iconSet(":/help_browser_backward_32px.png", ":/help_browser_backward_disabled_32px.png"));
+    m_pAddBookmarkButton->setIcon(UIIconPool::iconSet(":/help_browser_add_bookmark.png"));
+
+    pMainLayout->addWidget(m_pBackwardButton);
+    pMainLayout->addWidget(m_pForwardButton);
+    pMainLayout->addWidget(m_pHomeButton);
+    pMainLayout->addWidget(m_pAddBookmarkButton);
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
+    //pMainLayout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed));
+
+    connect(m_pBackwardButton, &QIToolButton::pressed,
+            this, &UIContextMenuNavigationAction::sigGoBackward);
+    connect(m_pForwardButton, &QIToolButton::pressed,
+            this, &UIContextMenuNavigationAction::sigGoForward);
+    connect(m_pHomeButton, &QIToolButton::pressed,
+            this, &UIContextMenuNavigationAction::sigGoHome);
+    connect(m_pAddBookmarkButton, &QIToolButton::pressed,
+            this, &UIContextMenuNavigationAction::sigAddBookmark);
+}
 
 
 /*********************************************************************************************************************************
@@ -807,6 +913,14 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
             this, &UIHelpBrowserTab::sltCloseFindInPageWidget);
     connect(m_pContentViewer, &UIHelpBrowserViewer::sigFontPointSizeChanged,
             this, &UIHelpBrowserTab::sigFontPointSizeChanged);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::sigGoBackward,
+            this, &UIHelpBrowserTab::sltHandleBackwardAction);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::sigGoForward,
+            this, &UIHelpBrowserTab::sltHandleForwardAction);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::sigGoHome,
+            this, &UIHelpBrowserTab::sltHandleHomeAction);
+    connect(m_pContentViewer, &UIHelpBrowserViewer::sigAddBookmark,
+            this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
 
     m_pContentViewer->setSource(initialUrl, m_strPageNotFoundText);
 }
@@ -1045,6 +1159,20 @@ int UIHelpBrowserViewer::initialFontPointSize() const
 void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu pMenu;
+
+    UIContextMenuNavigationAction *pNavigationActions = new UIContextMenuNavigationAction;
+    pNavigationActions->setBackwardAvailable(isBackwardAvailable());
+    pNavigationActions->setForwardAvailable(isForwardAvailable());
+
+    connect(pNavigationActions, &UIContextMenuNavigationAction::sigGoBackward,
+            this, &UIHelpBrowserViewer::sigGoBackward);
+    connect(pNavigationActions, &UIContextMenuNavigationAction::sigGoForward,
+            this, &UIHelpBrowserViewer::sigGoForward);
+    connect(pNavigationActions, &UIContextMenuNavigationAction::sigGoHome,
+            this, &UIHelpBrowserViewer::sigGoHome);
+    connect(pNavigationActions, &UIContextMenuNavigationAction::sigAddBookmark,
+            this, &UIHelpBrowserViewer::sigAddBookmark);
+
     QAction *pOpenLinkAction = new QAction(UIHelpBrowserWidget::tr("Open Link"));
     connect(pOpenLinkAction, &QAction::triggered,
             this, &UIHelpBrowserViewer::sltHandleOpenLink);
@@ -1053,6 +1181,7 @@ void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
     connect(pOpenInNewTabAction, &QAction::triggered,
             this, &UIHelpBrowserViewer::sltHandleOpenLinkInNewTab);
 
+    pMenu.addAction(pNavigationActions);
     pMenu.addAction(pOpenLinkAction);
     pMenu.addAction(pOpenInNewTabAction);
 
