@@ -42,8 +42,6 @@
 /*********************************************************************************************************************************
 *   Defines                                                                                                                      *
 *********************************************************************************************************************************/
-#define VBOXCLIENT_OPT_NORESPAWN            950
-
 #define VBOXCLIENT_OPT_SERVICES             980
 #define VBOXCLIENT_OPT_CHECKHOSTVERSION     VBOXCLIENT_OPT_SERVICES
 #define VBOXCLIENT_OPT_CLIPBOARD            VBOXCLIENT_OPT_SERVICES + 1
@@ -256,25 +254,26 @@ static void vboxClientUsage(const char *pcszFileName)
     RTPrintf("\n");
     RTPrintf("Options:\n");
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
-    RTPrintf("  --clipboard        starts the shared clipboard service\n");
+    RTPrintf("  --clipboard          starts the shared clipboard service\n");
 #endif
 #ifdef VBOX_WITH_DRAG_AND_DROP
-    RTPrintf("  --draganddrop      starts the drag and drop service\n");
+    RTPrintf("  --draganddrop        starts the drag and drop service\n");
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
-    RTPrintf("  --checkhostversion starts the host version notifier service\n");
+    RTPrintf("  --checkhostversion   starts the host version notifier service\n");
 #endif
 #ifdef VBOX_WITH_SEAMLESS
-    RTPrintf("  --seamless         starts the seamless windows service\n");
+    RTPrintf("  --seamless           starts the seamless windows service\n");
 #endif
 #ifdef VBOX_WITH_VMSVGA
-    RTPrintf("  --vmsvga           starts VMSVGA dynamic resizing for X11/Wayland guests\n");
+    RTPrintf("  --vmsvga             starts VMSVGA dynamic resizing for X11/Wayland guests\n");
 #endif
-    RTPrintf("  -f, --foreground   run in the foreground (no daemonizing)\n");
-    RTPrintf("  -d, --nodaemon     continues running as a system service\n");
-    RTPrintf("  -h, --help         shows this help text\n");
-    RTPrintf("  -v, --verbose      increases logging verbosity level\n");
-    RTPrintf("  -V, --version      shows version information\n");
+    RTPrintf("  -f, --foreground     run in the foreground (no daemonizing)\n");
+    RTPrintf("  -d, --nodaemon       continues running as a system service\n");
+    RTPrintf("  -h, --help           shows this help text\n");
+    RTPrintf("  -l, --logfile <path> enables logging to a file\n");
+    RTPrintf("  -v, --verbose        increases logging verbosity level\n");
+    RTPrintf("  -V, --version        shows version information\n");
     RTPrintf("\n");
 }
 
@@ -349,7 +348,6 @@ int main(int argc, char *argv[])
         { "--foreground",                   'f',                                      RTGETOPT_REQ_NOTHING },
         { "--help",                         'h',                                      RTGETOPT_REQ_NOTHING },
         { "--logfile",                      'l',                                      RTGETOPT_REQ_STRING  },
-        { "--no-respawn",                   VBOXCLIENT_OPT_NORESPAWN,                 RTGETOPT_REQ_NOTHING },
         { "--version",                      'V',                                      RTGETOPT_REQ_NOTHING },
         { "--verbose",                      'v',                                      RTGETOPT_REQ_NOTHING },
 
