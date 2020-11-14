@@ -129,12 +129,6 @@ int vmsvga3dQueryBegin(PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type);
 int vmsvga3dQueryEnd(PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult);
 int vmsvga3dQueryWait(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult);
 
-int vmsvga3dScreenTargetBind(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, uint32_t sid);
-int vmsvga3dScreenTargetUpdate(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, SVGA3dRect const *pRect);
-
-int vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox, VMSVGA3D_SURFACE_MAP enmMapType, VMSVGA3D_MAPPED_SURFACE *pMap);
-int vmsvga3dSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, VMSVGA3D_MAPPED_SURFACE *pMap, bool fWritten);
-
 /* DevVGA-SVGA3d-shared.h: */
 #if defined(RT_OS_WINDOWS) && defined(IN_RING3)
 # include <iprt/win/windows.h>
@@ -270,6 +264,21 @@ const char *vmsvgaDeclMethod2String(SVGA3dDeclMethod method);
 const char *vmsvgaSurfaceType2String(SVGA3dSurfaceFormat format);
 const char *vmsvga3dPrimitiveType2String(SVGA3dPrimitiveType PrimitiveType);
 #endif
+
+
+#define VMSVGA3D_BACKEND_INTERFACE_NAME_GBO "GBO"
+typedef struct
+{
+    DECLCALLBACKMEMBER(int, pfnScreenTargetBind,   (PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, uint32_t sid));
+    DECLCALLBACKMEMBER(int, pfnScreenTargetUpdate, (PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, SVGA3dRect const *pRect));
+} VMSVGA3DBACKENDFUNCSGBO;
+
+#define VMSVGA3D_BACKEND_INTERFACE_NAME_MAP "MAP"
+typedef struct
+{
+    DECLCALLBACKMEMBER(int, pfnSurfaceMap,   (PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox, VMSVGA3D_SURFACE_MAP enmMapType, VMSVGA3D_MAPPED_SURFACE *pMap));
+    DECLCALLBACKMEMBER(int, pfnSurfaceUnmap, (PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, VMSVGA3D_MAPPED_SURFACE *pMap, bool fWritten));
+} VMSVGA3DBACKENDFUNCSMAP;
 
 #define VMSVGA3D_BACKEND_INTERFACE_NAME_DX "DX"
 typedef struct

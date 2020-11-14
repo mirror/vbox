@@ -278,32 +278,8 @@ const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
 #if !defined(VMSVGA3D_DX)
 # ifdef VBOX_WITH_VMSVGA3D
 /*
- * Stubs for old backends.
+ * Stub for old backends.
  */
-int vmsvga3dScreenTargetBind(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, uint32_t sid)
-{
-    RT_NOREF(pThisCC, pScreen, sid);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int vmsvga3dScreenTargetUpdate(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, SVGA3dRect const *pRect)
-{
-    RT_NOREF(pThisCC, pScreen, pRect);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox, VMSVGA3D_SURFACE_MAP enmMapType, VMSVGA3D_MAPPED_SURFACE *pMap)
-{
-    RT_NOREF(pThisCC, pImage, pBox, enmMapType, pMap);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int vmsvga3dSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, VMSVGA3D_MAPPED_SURFACE *pMap, bool fWritten)
-{
-    RT_NOREF(pThisCC, pImage, pMap, fWritten);
-    return VERR_NOT_IMPLEMENTED;
-}
-
 int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs)
 {
     RT_NOREF(pThisCC, pszInterfaceName, pvInterfaceFuncs, cbInterfaceFuncs);
@@ -1244,7 +1220,7 @@ static void vmsvga3dCmdUpdateGBImage(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBImage
         if (pMob)
         {
             VMSVGA3D_MAPPED_SURFACE map;
-            rc = vmsvga3dSurfaceMap(pThisCC, &pCmd->image, &pCmd->box, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
+            rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, &pCmd->image, &pCmd->box, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
             if (RT_SUCCESS(rc))
             {
                 /* Copy MOB -> mapped surface. */
@@ -1270,7 +1246,7 @@ static void vmsvga3dCmdUpdateGBImage(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBImage
 
                 // vmsvga3dMapWriteBmpFile(&map, "Dynamic");
 
-                vmsvga3dSurfaceUnmap(pThisCC, &pCmd->image, &map, /* fWritten =  */true);
+                pSvgaR3State->pFuncsMap->pfnSurfaceUnmap(pThisCC, &pCmd->image, &map, /* fWritten =  */true);
             }
         }
     }
@@ -1440,7 +1416,7 @@ static void vmsvga3dCmdBindGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdBindGBSc
             if (RT_SUCCESS(rc))
             {
                 VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[pCmd->stid];
-                rc = vmsvga3dScreenTargetBind(pThisCC, pScreen, pCmd->image.sid);
+                rc = pSvgaR3State->pFuncsGBO->pfnScreenTargetBind(pThisCC, pScreen, pCmd->image.sid);
                 AssertRC(rc);
             }
         }
@@ -1484,13 +1460,13 @@ static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdate
                     if (pScreen->pHwScreen)
                     {
                         /* Copy the screen target surface to the backend's screen. */
-                        vmsvga3dScreenTargetUpdate(pThisCC, pScreen, &targetRect);
+                        pSvgaR3State->pFuncsGBO->pfnScreenTargetUpdate(pThisCC, pScreen, &targetRect);
                     }
                     else if (pScreen->pvScreenBitmap)
                     {
                         /* Copy the screen target surface to the memory buffer. */
                         VMSVGA3D_MAPPED_SURFACE map;
-                        rc = vmsvga3dSurfaceMap(pThisCC, &entryScreenTarget.image, NULL, VMSVGA3D_SURFACE_MAP_READ, &map);
+                        rc = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, &entryScreenTarget.image, NULL, VMSVGA3D_SURFACE_MAP_READ, &map);
                         if (RT_SUCCESS(rc))
                         {
                             uint8_t const *pu8Src = (uint8_t *)map.pvData
@@ -1507,7 +1483,7 @@ static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdate
                                 pu8Dst += map.box.w * map.cbPixel;
                             }
 
-                            vmsvga3dSurfaceUnmap(pThisCC, &entryScreenTarget.image, &map, /* fWritten =  */ false);
+                            pSvgaR3State->pFuncsMap->pfnSurfaceUnmap(pThisCC, &entryScreenTarget.image, &map, /* fWritten =  */ false);
 
                             vmsvgaR3UpdateScreen(pThisCC, pScreen, pCmd->rect.x, pCmd->rect.y, pCmd->rect.w, pCmd->rect.h);
                         }

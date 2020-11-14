@@ -892,8 +892,8 @@ int vmsvga3dBackSurfaceBlitToScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pSc
 }
 
 
-int vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox,
-                       VMSVGA3D_SURFACE_MAP enmMapType, VMSVGA3D_MAPPED_SURFACE *pMap)
+static DECLCALLBACK(int) vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox,
+                                            VMSVGA3D_SURFACE_MAP enmMapType, VMSVGA3D_MAPPED_SURFACE *pMap)
 {
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
@@ -986,7 +986,7 @@ int vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, 
 }
 
 
-int vmsvga3dSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, VMSVGA3D_MAPPED_SURFACE *pMap, bool fWritten)
+static DECLCALLBACK(int) vmsvga3dSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, VMSVGA3D_MAPPED_SURFACE *pMap, bool fWritten)
 {
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
@@ -1121,7 +1121,7 @@ int vmsvga3dBackSurfaceCreateScreenTarget(PVMSVGA3DSTATE pState, PVMSVGA3DSURFAC
 }
 
 
-int vmsvga3dScreenTargetBind(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, uint32_t sid)
+static DECLCALLBACK(int) vmsvga3dScreenTargetBind(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, uint32_t sid)
 {
     int rc = VINF_SUCCESS;
 
@@ -1172,7 +1172,7 @@ int vmsvga3dScreenTargetBind(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, u
 }
 
 
-int vmsvga3dScreenTargetUpdate(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, SVGA3dRect const *pRect)
+static DECLCALLBACK(int) vmsvga3dScreenTargetUpdate(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, SVGA3dRect const *pRect)
 {
     VMSVGAHWSCREEN *pHwScreen = pScreen->pHwScreen;
     AssertReturn(pHwScreen, VERR_NOT_SUPPORTED);
@@ -3108,6 +3108,40 @@ int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, vo
                 p->pfnDXSetPSConstantBufferOffset = vmsvga3dDXSetPSConstantBufferOffset;
                 p->pfnDXSetGSConstantBufferOffset = vmsvga3dDXSetGSConstantBufferOffset;
                 p->pfnDXCondBindAllShader         = vmsvga3dDXCondBindAllShader;
+            }
+        }
+        else
+        {
+            AssertFailed();
+            rc = VERR_INVALID_PARAMETER;
+        }
+    }
+    else if (RTStrCmp(pszInterfaceName, VMSVGA3D_BACKEND_INTERFACE_NAME_MAP) == 0)
+    {
+        if (cbInterfaceFuncs == sizeof(VMSVGA3DBACKENDFUNCSMAP))
+        {
+            if (pvInterfaceFuncs)
+            {
+                VMSVGA3DBACKENDFUNCSMAP *p = (VMSVGA3DBACKENDFUNCSMAP *)pvInterfaceFuncs;
+                p->pfnSurfaceMap   = vmsvga3dSurfaceMap;
+                p->pfnSurfaceUnmap = vmsvga3dSurfaceUnmap;
+            }
+        }
+        else
+        {
+            AssertFailed();
+            rc = VERR_INVALID_PARAMETER;
+        }
+    }
+    else if (RTStrCmp(pszInterfaceName, VMSVGA3D_BACKEND_INTERFACE_NAME_GBO) == 0)
+    {
+        if (cbInterfaceFuncs == sizeof(VMSVGA3DBACKENDFUNCSGBO))
+        {
+            if (pvInterfaceFuncs)
+            {
+                VMSVGA3DBACKENDFUNCSGBO *p = (VMSVGA3DBACKENDFUNCSGBO *)pvInterfaceFuncs;
+                p->pfnScreenTargetBind   = vmsvga3dScreenTargetBind;
+                p->pfnScreenTargetUpdate = vmsvga3dScreenTargetUpdate;
             }
         }
         else

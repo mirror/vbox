@@ -5665,6 +5665,10 @@ static void vmsvgaR3StateTerm(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
     }
 
 # ifdef VBOX_WITH_VMSVGA3D
+    RTMemFree(pSVGAState->pFuncsMap);
+    pSVGAState->pFuncsMap = NULL;
+    RTMemFree(pSVGAState->pFuncsGBO);
+    pSVGAState->pFuncsGBO = NULL;
     RTMemFree(pSVGAState->pFuncsDX);
     pSVGAState->pFuncsDX = NULL;
 # endif
@@ -5722,6 +5726,24 @@ static int vmsvgaR3Init3dInterfaces(PVGASTATECC pThisCC)
         vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_DX, pSVGAState->pFuncsDX, sizeof(VMSVGA3DBACKENDFUNCSDX));
     }
 
+    rc = vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_MAP, NULL, sizeof(VMSVGA3DBACKENDFUNCSMAP));
+    if (RT_SUCCESS(rc))
+    {
+        pSVGAState->pFuncsMap = (VMSVGA3DBACKENDFUNCSMAP *)RTMemAllocZ(sizeof(VMSVGA3DBACKENDFUNCSMAP));
+        AssertReturn(pSVGAState->pFuncsMap, VERR_NO_MEMORY);
+
+        vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_MAP, pSVGAState->pFuncsMap, sizeof(VMSVGA3DBACKENDFUNCSMAP));
+    }
+
+    rc = vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_GBO, NULL, sizeof(VMSVGA3DBACKENDFUNCSGBO));
+    if (RT_SUCCESS(rc))
+    {
+        pSVGAState->pFuncsGBO = (VMSVGA3DBACKENDFUNCSGBO *)RTMemAllocZ(sizeof(VMSVGA3DBACKENDFUNCSGBO));
+        AssertReturn(pSVGAState->pFuncsGBO, VERR_NO_MEMORY);
+
+        vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_GBO, pSVGAState->pFuncsGBO, sizeof(VMSVGA3DBACKENDFUNCSGBO));
+    }
+
     return VINF_SUCCESS;
 }
 # endif
@@ -5754,11 +5776,12 @@ static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
     {
         pThis->svga.u32DeviceCaps |= SVGA_CAP_COMMAND_BUFFERS /* Enable register based command buffer submission. */
 //                                  |  SVGA_CAP_CMD_BUFFERS_2   /* Support for SVGA_REG_CMD_PREPEND_LOW/HIGH */
-//                                  |  SVGA_CAP_GBOBJECTS       /* Enable guest-backed objects and surfaces. */
                                   ;
 
 # ifdef VBOX_WITH_VMSVGA3D
         PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+        if (pSVGAState->pFuncsGBO)
+           pThis->svga.u32DeviceCaps |= SVGA_CAP_GBOBJECTS;     /* Enable guest-backed objects and surfaces. */
         if (pSVGAState->pFuncsDX)
            pThis->svga.u32DeviceCaps |= SVGA_CAP_CMD_BUFFERS_3; /* AKA SVGA_CAP_DX. Enable support for DX commands, and command buffers in a mob. */
 # endif
