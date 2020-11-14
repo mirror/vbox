@@ -188,6 +188,10 @@ typedef struct VMSVGAR3STATE
      * To unmap older MOBs when the guest exceeds SVGA_REG_SUGGESTED_GBOBJECT_MEM_SIZE_KB (SVGA_REG_GBOBJECT_MEM_SIZE_KB) value. */
     RTLISTANCHOR            MOBLRUList;
 
+# ifdef VBOX_WITH_VMSVGA3D
+    VMSVGA3DBACKENDFUNCSDX  *pFuncsDX;
+# endif
+
     /** Tracks how much time we waste reading SVGA_REG_BUSY with a busy FIFO. */
     STAMPROFILE             StatBusyDelayEmts;
 

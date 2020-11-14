@@ -155,10 +155,7 @@
 /* should go BEFORE any other DevVGA include to make all DevVGA.h config defines be visible */
 #include "DevVGA.h"
 
-#ifdef IN_RING3
 /* Should be included after DevVGA.h/DevVGA-SVGA.h to pick all defines. */
-#include "DevVGA-SVGA-internal.h"
-#endif
 #ifdef VBOX_WITH_VMSVGA3D
 # include "DevVGA-SVGA3d.h"
 # ifdef RT_OS_DARWIN
@@ -169,6 +166,9 @@
 #   include "DevVGA-SVGA3d-glLdr.h"
 #  endif
 # endif
+#endif
+#ifdef IN_RING3
+#include "DevVGA-SVGA-internal.h"
 #endif
 
 
@@ -3684,6 +3684,7 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
                     /* Unsupported command. */
                     STAM_REL_COUNTER_INC(&pSvgaR3State->StatFifoUnkCmds);
                     ASSERT_GUEST_MSG_FAILED(("cmdId=%d\n", cmdId));
+                    LogRelMax(16, ("VMSVGA: unsupported command %d\n", cmdId));
                     CBstatus = SVGA_CB_STATUS_COMMAND_ERROR;
                     break;
                 }
@@ -4931,6 +4932,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                 {
                     STAM_REL_COUNTER_INC(&pSVGAState->StatFifoUnkCmds);
                     AssertMsgFailed(("enmCmdId=%d\n", enmCmdId));
+                    LogRelMax(16, ("VMSVGA: unsupported command %d\n", enmCmdId));
                 }
             }
 
@@ -5661,6 +5663,11 @@ static void vmsvgaR3StateTerm(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
         RTCritSectLeave(&pSVGAState->CritSectCmdBuf);
         RTCritSectDelete(&pSVGAState->CritSectCmdBuf);
     }
+
+# ifdef VBOX_WITH_VMSVGA3D
+    RTMemFree(pSVGAState->pFuncsDX);
+    pSVGAState->pFuncsDX = NULL;
+# endif
 }
 
 /**
@@ -5674,7 +5681,7 @@ static void vmsvgaR3StateTerm(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
 static int vmsvgaR3StateInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
 {
     int rc = VINF_SUCCESS;
-    RT_ZERO(*pSVGAState);
+
     pSVGAState->pDevIns = pDevIns;
 
     pSVGAState->paGMR = (PGMR)RTMemAllocZ(pThis->svga.cGMR * sizeof(GMR));
@@ -5694,6 +5701,30 @@ static int vmsvgaR3StateInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVMSVGAR3STATE
     RTListInit(&pSVGAState->MOBLRUList);
     return rc;
 }
+
+# ifdef VBOX_WITH_VMSVGA3D
+/**
+ * Initializes the optional host 3D backend interfaces.
+ *
+ * @returns VBox status code.
+ * @param   pThisCC   The VGA/VMSVGA state for ring-3.
+ */
+static int vmsvgaR3Init3dInterfaces(PVGASTATECC pThisCC)
+{
+    PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+
+    int rc = vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_DX, NULL, sizeof(VMSVGA3DBACKENDFUNCSDX));
+    if (RT_SUCCESS(rc))
+    {
+        pSVGAState->pFuncsDX = (VMSVGA3DBACKENDFUNCSDX *)RTMemAllocZ(sizeof(VMSVGA3DBACKENDFUNCSDX));
+        AssertReturn(pSVGAState->pFuncsDX, VERR_NO_MEMORY);
+
+        vmsvga3dQueryInterface(pThisCC, VMSVGA3D_BACKEND_INTERFACE_NAME_DX, pSVGAState->pFuncsDX, sizeof(VMSVGA3DBACKENDFUNCSDX));
+    }
+
+    return VINF_SUCCESS;
+}
+# endif
 
 /**
  * Initializes the host capabilities: device and FIFO.
@@ -5724,8 +5755,13 @@ static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
         pThis->svga.u32DeviceCaps |= SVGA_CAP_COMMAND_BUFFERS /* Enable register based command buffer submission. */
 //                                  |  SVGA_CAP_CMD_BUFFERS_2   /* Support for SVGA_REG_CMD_PREPEND_LOW/HIGH */
 //                                  |  SVGA_CAP_GBOBJECTS       /* Enable guest-backed objects and surfaces. */
-//                                  |  SVGA_CAP_CMD_BUFFERS_3   /* AKA SVGA_CAP_DX. Enable support for DX commands, and command buffers in a mob. */
                                   ;
+
+# ifdef VBOX_WITH_VMSVGA3D
+        PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
+        if (pSVGAState->pFuncsDX)
+           pThis->svga.u32DeviceCaps |= SVGA_CAP_CMD_BUFFERS_3; /* AKA SVGA_CAP_DX. Enable support for DX commands, and command buffers in a mob. */
+# endif
     }
 
 # ifdef VBOX_WITH_VMSVGA3D
@@ -5859,6 +5895,12 @@ int vmsvgaR3Reset(PPDMDEVINS pDevIns)
 
     RT_BZERO(pThisCC->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
 
+# ifdef VBOX_WITH_VMSVGA3D
+    /* Device capabilities depend on this. */
+    if (pThis->svga.f3DEnabled)
+        vmsvgaR3Init3dInterfaces(pThisCC);
+# endif
+
     /* Initialize FIFO and register capabilities. */
     vmsvgaR3InitCaps(pThis, pThisCC);
 
@@ -5985,20 +6027,26 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
                                           "VMSVGA GBO", &pSVGAState->hGboAccessHandlerType);
     AssertRCReturn(rc, rc);
 
-    /* Initialize FIFO and register capabilities. */
-    vmsvgaR3InitCaps(pThis, pThisCC);
-
 # ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
     {
         rc = vmsvga3dInit(pDevIns, pThis, pThisCC);
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+        {
+            /* Device capabilities depend on this. */
+            vmsvgaR3Init3dInterfaces(pThisCC);
+        }
+        else
         {
             LogRel(("VMSVGA3d: 3D support disabled! (vmsvga3dInit -> %Rrc)\n", rc));
             pThis->svga.f3DEnabled = false;
         }
     }
 # endif
+
+    /* Initialize FIFO and register capabilities. */
+    vmsvgaR3InitCaps(pThis, pThisCC);
+
     /* VRAM tracking is enabled by default during bootup. */
     pThis->svga.fVRAMTracking = true;
 
