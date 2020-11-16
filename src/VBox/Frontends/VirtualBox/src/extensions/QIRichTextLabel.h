@@ -44,6 +44,8 @@ public:
 
     /** Registers @a image under a passed @a strName. */
     void registerImage(const QImage &image, const QString &strName);
+    /** Registers @a pixmap under a passed @a strName. */
+    void registerPixmap(const QPixmap &pixmap, const QString &strName);
 
     /** Returns word wrapping policy. */
     QTextOption::WrapMode wordWrapMode() const;

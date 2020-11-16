@@ -75,6 +75,11 @@ void QIRichTextLabel::registerImage(const QImage &image, const QString &strName)
     m_pTextBrowser->document()->addResource(QTextDocument::ImageResource, QUrl(strName), QVariant(image));
 }
 
+void QIRichTextLabel::registerPixmap(const QPixmap &pixmap, const QString &strName)
+{
+    m_pTextBrowser->document()->addResource(QTextDocument::ImageResource, QUrl(strName), QVariant(pixmap));
+}
+
 QTextOption::WrapMode QIRichTextLabel::wordWrapMode() const
 {
     return m_pTextBrowser->wordWrapMode();
