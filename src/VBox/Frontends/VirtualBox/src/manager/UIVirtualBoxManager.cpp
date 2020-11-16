@@ -139,6 +139,9 @@ private:
     /** Prepare editor contents. */
     void prepareEditorContents();
 
+    /** Returns a list of default key folders. */
+    QStringList defaultKeyFolders() const;
+
     /** Loads file contents.
       * @returns Whether file was really loaded. */
     bool loadFileContents(const QString &strPath, bool fIgnoreErrors = false);
@@ -245,22 +248,17 @@ void UIAcquirePublicKeyDialog::prepareWidgets()
 
 void UIAcquirePublicKeyDialog::prepareEditorContents()
 {
+    /* Check whether we were able to load key file: */
+    bool fFileLoaded = false;
+
     /* Try to load last remembered file contents: */
-    if (!loadFileContents(gEDataManager->cloudConsolePublicKeyPath(), true /* ignore errors */))
+    fFileLoaded = loadFileContents(gEDataManager->cloudConsolePublicKeyPath(), true /* ignore errors */);
+    if (!fFileLoaded)
     {
         /* We have failed to load file mentioned in extra-data, now we have
          * to check whether file present in one of default paths: */
-        QStringList paths;
-#ifdef VBOX_WS_WIN
-        // WORKAROUND:
-        // There is additional default path on Windows:
-        paths << QDir(QDir::homePath()).absoluteFilePath("oci");
-#endif
-        paths << QDir(QDir::homePath()).absoluteFilePath(".ssh");
-
-        /* Look for required file in one of those paths: */
         QString strAbsoluteFilePathWeNeed;
-        foreach (const QString &strPath, paths)
+        foreach (const QString &strPath, defaultKeyFolders())
         {
             /* Gather possible file names, there can be few of them: */
             const QStringList fileNames = QStringList() << "id_rsa" << "id_rsa.pub";
@@ -283,8 +281,20 @@ void UIAcquirePublicKeyDialog::prepareEditorContents()
 
         /* Try to open file if it was really found: */
         if (!strAbsoluteFilePathWeNeed.isEmpty())
-            loadFileContents(strAbsoluteFilePathWeNeed, true /* ignore errors */);
+            fFileLoaded = loadFileContents(strAbsoluteFilePathWeNeed, true /* ignore errors */);
     }
+}
+
+QStringList UIAcquirePublicKeyDialog::defaultKeyFolders() const
+{
+    QStringList folders;
+#ifdef VBOX_WS_WIN
+    // WORKAROUND:
+    // There is additional default folder on Windows:
+    folders << QDir::toNativeSeparators(QDir(QDir::homePath()).absoluteFilePath("oci"));
+#endif
+    folders << QDir::toNativeSeparators(QDir(QDir::homePath()).absoluteFilePath(".ssh"));
+    return folders;
 }
 
 bool UIAcquirePublicKeyDialog::loadFileContents(const QString &strPath, bool fIgnoreErrors /* = false */)
