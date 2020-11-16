@@ -24,6 +24,7 @@
 #include <QPushButton>
 #include <QStandardPaths>
 #include <QStatusBar>
+#include <QStyle>
 #include <QTextEdit>
 #ifndef VBOX_WS_WIN
 # include <QRegExp>
@@ -33,12 +34,14 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "QIFileDialog.h"
+#include "QIRichTextLabel.h"
 #include "UIActionPoolManager.h"
 #include "UICloudConsoleManager.h"
 #include "UICloudMachineSettingsDialog.h"
 #include "UICloudNetworkingStuff.h"
 #include "UICloudProfileManager.h"
 #include "UIDesktopServices.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIHostNetworkManager.h"
@@ -117,6 +120,9 @@ public:
 
 private slots:
 
+    /** Handles help-viewer @a link click. */
+    void sltHandleHelpViewerLinkClick(const QUrl &link);
+
     /** Handles abstract @a pButton click. */
     void sltHandleButtonClicked(QAbstractButton *pButton);
     /** Handles Open button click. */
@@ -141,11 +147,15 @@ private:
 
     /** Returns a list of default key folders. */
     QStringList defaultKeyFolders() const;
+    /** Returns a list of key generation tools. */
+    QStringList keyGenerationTools() const;
 
     /** Loads file contents.
       * @returns Whether file was really loaded. */
     bool loadFileContents(const QString &strPath, bool fIgnoreErrors = false);
 
+    /** Holds the help-viewer instance. */
+    QIRichTextLabel   *m_pHelpViewer;
     /** Holds the text-editor instance. */
     QTextEdit         *m_pTextEditor;
     /** Holds the button-box instance. */
@@ -159,6 +169,7 @@ private:
 
 UIAcquirePublicKeyDialog::UIAcquirePublicKeyDialog(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QDialog>(pParent)
+    , m_pHelpViewer(0)
     , m_pTextEditor(0)
     , m_pButtonBox(0)
 {
@@ -169,6 +180,15 @@ UIAcquirePublicKeyDialog::UIAcquirePublicKeyDialog(QWidget *pParent /* = 0 */)
 QString UIAcquirePublicKeyDialog::publicKey() const
 {
     return m_pTextEditor->toPlainText();
+}
+
+void UIAcquirePublicKeyDialog::sltHandleHelpViewerLinkClick(const QUrl &link)
+{
+    /* Parse the link meta and use it to get tool path to copy to clipboard: */
+    bool fOk = false;
+    const uint uToolNumber = link.toString().section('#', 1, 1).toUInt(&fOk);
+    if (fOk)
+        QApplication::clipboard()->setText(keyGenerationTools().value(uToolNumber), QClipboard::Clipboard);
 }
 
 void UIAcquirePublicKeyDialog::sltHandleButtonClicked(QAbstractButton *pButton)
@@ -203,6 +223,39 @@ void UIAcquirePublicKeyDialog::sltRevalidate()
 void UIAcquirePublicKeyDialog::retranslateUi()
 {
     setWindowTitle(tr("Public key"));
+
+    /* Generating help-viewer text: */
+    QStringList folders;
+    foreach (const QString &strFolder, defaultKeyFolders())
+        folders << QString("&nbsp;%1").arg(strFolder);
+    const QStringList initialTools = keyGenerationTools();
+    QStringList tools;
+    foreach (const QString &strTool, initialTools)
+        tools << QString("&nbsp;<a href=#%1><img src='manager://copy'/></a>&nbsp;&nbsp;%2")
+                         .arg(initialTools.indexOf(strTool))
+                         .arg(strTool);
+#ifdef VBOX_WS_WIN
+    m_pHelpViewer->setText(tr("We haven't found public key id_rsa[.pub] in suitable locations. "
+                              "If you have one, please put it under one of those folders OR copy "
+                              "content to the edit box below:<br><br>"
+                              "%1<br><br>"
+                              "If you don't have one, please consider using one of the following "
+                              "tools to generate it:<br><br>"
+                              "%2")
+                           .arg(folders.join("<br>"))
+                           .arg(tools.join("<br>")));
+#else
+    m_pHelpViewer->setText(tr("We haven't found public key id_rsa[.pub] in suitable location. "
+                              "If you have one, please put it under specified folder OR copy "
+                              "content to the edit box below:<br><br>"
+                              "%1<br><br>"
+                              "If you don't have one, please consider using the following "
+                              "tool to generate it:<br><br>"
+                              "%2")
+                           .arg(folders.join("<br>"))
+                           .arg(tools.join("<br>")));
+#endif
+
     m_pTextEditor->setPlaceholderText(tr("Paste public key"));
     m_pButtonBox->button(QDialogButtonBox::Open)->setText(tr("Browse"));
 }
@@ -218,7 +271,7 @@ void UIAcquirePublicKeyDialog::prepare()
 
     /* Resize to suitable size: */
     const int iMinimumHeightHint = minimumSizeHint().height();
-    resize(iMinimumHeightHint * 2, iMinimumHeightHint);
+    resize(iMinimumHeightHint * 1.618, iMinimumHeightHint);
 }
 
 void UIAcquirePublicKeyDialog::prepareWidgets()
@@ -227,12 +280,28 @@ void UIAcquirePublicKeyDialog::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
+        /* Create help-viewer: */
+        m_pHelpViewer = new QIRichTextLabel(this);
+        if (m_pHelpViewer)
+        {
+            /* Prepare icon and size as well: */
+            const QIcon icon = UIIconPool::iconSet(":/file_manager_copy_16px.png");
+            const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 2 / 3;
+
+            /* Configure help-viewer: */
+            m_pHelpViewer->setHidden(true);
+            m_pHelpViewer->setMinimumTextWidth(gpDesktop->screenGeometry(window()).width() / 5);
+            m_pHelpViewer->registerPixmap(icon.pixmap(window()->windowHandle(), QSize(iMetric, iMetric)), "manager://copy");
+            connect(m_pHelpViewer, &QIRichTextLabel::sigLinkClicked, this, &UIAcquirePublicKeyDialog::sltHandleHelpViewerLinkClick);
+            pLayout->addWidget(m_pHelpViewer, 2);
+        }
+
         /* Prepare text-editor: */
         m_pTextEditor = new QTextEdit(this);
         if (m_pTextEditor)
         {
             connect(m_pTextEditor, &QTextEdit::textChanged, this, &UIAcquirePublicKeyDialog::sltRevalidate);
-            pLayout->addWidget(m_pTextEditor);
+            pLayout->addWidget(m_pTextEditor, 1);
         }
 
         /* Prepare button-box: */
@@ -283,6 +352,10 @@ void UIAcquirePublicKeyDialog::prepareEditorContents()
         if (!strAbsoluteFilePathWeNeed.isEmpty())
             fFileLoaded = loadFileContents(strAbsoluteFilePathWeNeed, true /* ignore errors */);
     }
+
+    /* Show/hide help-viewer depending on
+     * whether we were able to load the file: */
+    m_pHelpViewer->setHidden(fFileLoaded);
 }
 
 QStringList UIAcquirePublicKeyDialog::defaultKeyFolders() const
@@ -295,6 +368,20 @@ QStringList UIAcquirePublicKeyDialog::defaultKeyFolders() const
 #endif
     folders << QDir::toNativeSeparators(QDir(QDir::homePath()).absoluteFilePath(".ssh"));
     return folders;
+}
+
+QStringList UIAcquirePublicKeyDialog::keyGenerationTools() const
+{
+    QStringList tools;
+#ifdef VBOX_WS_WIN
+    // WORKAROUND:
+    // There is additional key generation tool on Windows:
+    tools << "puttygen.exe";
+    tools << "ssh-keygen.exe -m PEM -t rsa -b 4096";
+#else
+    tools << "ssh-keygen -m PEM -t rsa -b 4096";
+#endif
+    return tools;
 }
 
 bool UIAcquirePublicKeyDialog::loadFileContents(const QString &strPath, bool fIgnoreErrors /* = false */)
