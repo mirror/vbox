@@ -91,7 +91,7 @@ static int vboxClipboardSvcWinDataGet(uint32_t u32Format, const void *pvSrc, uin
             {
                 /* Do not copy data. The dst buffer is not enough. */
                 RTMemFree(pszBuf);
-                return;
+                return VERR_BUFFER_OVERFLOW;
             }
             memcpy(pvDst, pszBuf, cbBuf);
             RTMemFree(pszBuf);
