@@ -11,6 +11,7 @@ import os.path
 import re
 import codecs
 import logging
+from HTMLParser import HTMLParser
 
 __copyright__ = \
 """
@@ -28,6 +29,35 @@ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 
 # number of opened and not yet closed section tags of toc section
 open_section_tags = 0
+
+html_files = []
+
+class html_parser(HTMLParser):
+  def __init__(self):
+    HTMLParser.__init__(self)
+    self.a_tag=[]
+
+  def handle_starttag(self, tag, attributes):
+    if tag != 'div' and tag != 'a':
+        return
+    if tag == 'a':
+        for a in attributes:
+            if a[0] == 'name':
+                self.a_tag.append(a[1])
+
+# use html_parser stuff to collect <a name tags
+def create_keywords_section(folder):
+    keywords_section_lines = ['<keywords>']
+    for html_file_name in html_files:
+        full_html_path = os.path.join(folder, html_file_name)
+        file_content = open(full_html_path, 'r').read()
+        parser = html_parser()
+        parser.feed(file_content)
+        for k in parser.a_tag:
+            line = '<keyword name="' + k + '" id="' + k + '" ref="' + html_file_name + '#' + k + '"/>'
+            keywords_section_lines.append(line);
+    keywords_section_lines.append('</keywords>')
+    return keywords_section_lines
 
 # find the png files under /images folder and create a part of the
 # qhelp project file with <file> tags
@@ -48,11 +78,12 @@ def create_image_list(folder):
 
 # open htmlhelp.hhp files and read the list of html files from there
 def create_html_list(folder):
+    global html_files
     file_name = 'htmlhelp.hhp'
-    html_files_list = []
+    html_file_lines = []
     if not file_name in os.listdir(folder):
         logging.error('Could not find the file "%s" in "%s"', file_name, folder)
-        return html_files_list
+        return html_file_lines
     full_path = os.path.join(folder, 'htmlhelp.hhp')
     file = open(full_path, "r")
     lines = file.readlines()
@@ -66,8 +97,9 @@ def create_html_list(folder):
         if marker_found == 0:
             continue
         if '.html' in line:
-            html_files_list.append('<file>' + line.strip('\n') + '</file>')
-    return html_files_list
+            html_file_lines.append('<file>' + line.strip('\n') + '</file>')
+            html_files.append(line.strip('\n'))
+    return html_file_lines
 
 
 def create_files_section(folder):
@@ -141,11 +173,11 @@ def parse_line(lines, index):
         result = parse_non_object_tag(lines, index)
     return result
 
-# parse toc.hhc file. assuming all the relevant informations
+# parse toc.hhc file. assuming all the relevant information
 # is stored in tags and attributes. data "whatever is outside of
 # <... > pairs is filtered out. we also assume < ..> are not nested
 # and each < matches to a >
-def parse_toc(folder):
+def create_toc(folder):
     toc_file = 'toc.hhc'
     content = [x[2] for x in os.walk(folder)]
     if toc_file not in content[0]:
@@ -223,7 +255,8 @@ def main(argv):
                      '<namespace>org.virtualbox</namespace>', \
                      '<virtualFolder>doc</virtualFolder>', \
                      '<filterSection>']
-    out_xml_lines += parse_toc(helphtmlfolder) + create_files_section(helphtmlfolder)
+    out_xml_lines += create_toc(helphtmlfolder) + create_files_section(helphtmlfolder)
+    out_xml_lines += create_keywords_section(helphtmlfolder)
     out_xml_lines += ['</filterSection>', '</QtHelpProject>']
 
     out_file = open(output_filename, 'w')
