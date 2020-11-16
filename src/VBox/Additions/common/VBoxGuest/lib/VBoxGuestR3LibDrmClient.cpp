@@ -45,7 +45,7 @@
  *
  * @returns \c true if the DRM resizing client is needed, \c false if not.
  */
-VBGLR3DECL(bool) VbglR3DRMClientIsNeeded(void)
+VBGLR3DECL(bool) VbglR3DrmClientIsNeeded(void)
 {
     bool fStartClient = false;
 
@@ -68,9 +68,9 @@ VBGLR3DECL(bool) VbglR3DRMClientIsNeeded(void)
  *
  * @returns \c true if the DRM resizing client is running, \c false if not.
  */
-VBGLR3DECL(bool) VbglR3DRMClientIsRunning(void)
+VBGLR3DECL(bool) VbglR3DrmClientIsRunning(void)
 {
-    return VbglR3DRMClientIsNeeded();
+    return VbglR3DrmClientIsNeeded();
 }
 
 /**
@@ -78,7 +78,7 @@ VBGLR3DECL(bool) VbglR3DRMClientIsRunning(void)
  *
  * @returns VBox status code.
  */
-VBGLR3DECL(int) VbglR3DRMClientStart(void)
+VBGLR3DECL(int) VbglR3DrmClientStart(void)
 {
     char szDRMClientPath[RTPATH_MAX];
     int rc = RTPathExecDir(szDRMClientPath, RTPATH_MAX);

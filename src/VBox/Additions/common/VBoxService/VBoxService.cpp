@@ -1159,9 +1159,9 @@ int main(int argc, char **argv)
         return rcExit;
 
 #ifdef VBOX_WITH_VBOXSERVICE_DRMRESIZE
-    if (VbglR3DRMClientIsNeeded())
+    if (VbglR3DrmClientIsNeeded())
     {
-        rc = VbglR3DRMClientStart();
+        rc = VbglR3DrmClientStart();
         if (RT_FAILURE(rc))
             VGSvcError("Starting DRM resizing client failed with %Rrc\n", rc);
     }

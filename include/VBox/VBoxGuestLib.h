@@ -815,9 +815,9 @@ VBGLR3DECL(int)     VbglR3WriteCoreDump(void);
 
 /** @name DRM client handling
  * @{ */
-VBGLR3DECL(bool)    VbglR3DRMClientIsNeeded(void);
-VBGLR3DECL(bool)    VbglR3DRMClientIsRunning(void);
-VBGLR3DECL(int)     VbglR3DRMClientStart(void);
+VBGLR3DECL(bool)    VbglR3DrmClientIsNeeded(void);
+VBGLR3DECL(bool)    VbglR3DrmClientIsRunning(void);
+VBGLR3DECL(int)     VbglR3DrmClientStart(void);
 /** @}  */
 
 # ifdef VBOX_WITH_GUEST_PROPS

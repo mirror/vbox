@@ -689,14 +689,14 @@ static DECLCALLBACK(int) vbclSVGAInit(void)
     /* In 32-bit guests GAs build on our release machines causes an xserver hang.
      * So for 32-bit GAs we use our DRM client. */
 #if ARCH_BITS == 32
-    rc = VbglR3DRMClientStart();
+    rc = VbglR3DrmClientStart();
     if (RT_FAILURE(rc))
         VBClLogError("Starting DRM resizing client (32-bit) failed with %Rrc\n", rc);
     return VERR_NOT_AVAILABLE; /** @todo r=andy Why ignoring rc here? */
 #endif
 
     /* If DRM client is already running don't start this service. */
-    if (VbglR3DRMClientIsRunning())
+    if (VbglR3DrmClientIsRunning())
     {
         VBClLogInfo("DRM resizing is already running. Exiting this service\n");
         return VERR_NOT_AVAILABLE;
@@ -704,7 +704,7 @@ static DECLCALLBACK(int) vbclSVGAInit(void)
 
     if (isXwayland())
     {
-        rc = VbglR3DRMClientStart();
+        rc = VbglR3DrmClientStart();
         if (RT_FAILURE(rc))
             VBClLogError("Starting DRM resizing client failed with %Rrc\n", rc);
         return rc;
