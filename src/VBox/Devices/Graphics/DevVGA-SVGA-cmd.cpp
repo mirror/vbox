@@ -2600,6 +2600,12 @@ ASMBreakpoint();
  */
 int vmsvgaR3Process3dCmd(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifo3dCmdId enmCmdId, uint32_t cbCmd, void const *pvCmd)
 {
+    if (enmCmdId > SVGA_3D_CMD_MAX)
+    {
+        LogRelMax(16, ("VMSVGA: unsupported 3D command %d\n", enmCmdId));
+        ASSERT_GUEST_FAILED_RETURN(VERR_NOT_IMPLEMENTED);
+    }
+
     int rcParse = VINF_SUCCESS;
     PVMSVGAR3STATE pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
