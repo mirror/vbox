@@ -58,6 +58,9 @@ QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
             pal.setColor(QPalette::Inactive, QPalette::Text, pal.color(QPalette::Inactive, QPalette::WindowText));
             pal.setColor(QPalette::Disabled, QPalette::Text, pal.color(QPalette::Disabled, QPalette::WindowText));
             m_pTextBrowser->viewport()->setPalette(pal);
+
+            /* Setup connections finally: */
+            connect(m_pTextBrowser, &QTextBrowser::anchorClicked, this, &QIRichTextLabel::sigLinkClicked);
         }
 
         /* Add into layout: */

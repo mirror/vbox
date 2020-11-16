@@ -34,6 +34,11 @@ class SHARED_LIBRARY_STUFF QIRichTextLabel : public QWidget
     Q_OBJECT;
     Q_PROPERTY(QString text READ text WRITE setText);
 
+signals:
+
+    /** Notifies listeners about @a link clicked. */
+    void sigLinkClicked(const QUrl &link);
+
 public:
 
     /** Constructs rich text-label passing @a pParent to the base-class. */
