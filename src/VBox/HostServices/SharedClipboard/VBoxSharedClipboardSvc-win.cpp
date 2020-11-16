@@ -66,9 +66,15 @@ struct SHCLCONTEXT
 
 
 /** @todo Someone please explain the protocol wrt overflows...  */
-static void vboxClipboardSvcWinGetData(uint32_t u32Format, const void *pvSrc, uint32_t cbSrc,
-                                       void *pvDst, uint32_t cbDst, uint32_t *pcbActualDst)
+static int vboxClipboardSvcWinDataGet(uint32_t u32Format, const void *pvSrc, uint32_t cbSrc,
+                                      void *pvDst, uint32_t cbDst, uint32_t *pcbActualDst)
 {
+    AssertPtrReturn(pvSrc,        VERR_INVALID_POINTER);
+    AssertReturn   (cbSrc,        VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pvDst,        VERR_INVALID_POINTER);
+    AssertReturn   (cbDst,        VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbActualDst, VERR_INVALID_POINTER);
+
     LogFlowFunc(("cbSrc = %d, cbDst = %d\n", cbSrc, cbDst));
 
     if (   u32Format == VBOX_SHCL_FMT_HTML
@@ -95,13 +101,10 @@ static void vboxClipboardSvcWinGetData(uint32_t u32Format, const void *pvSrc, ui
     }
     else
     {
-        *pcbActualDst = cbSrc;
+        *pcbActualDst = cbSrc; /* Tell the caller how much space we need. */
 
         if (cbSrc > cbDst)
-        {
-            /* Do not copy data. The dst buffer is not enough. */
-            return;
-        }
+            return VERR_BUFFER_OVERFLOW;
 
         memcpy(pvDst, pvSrc, cbSrc);
     }
@@ -110,9 +113,19 @@ static void vboxClipboardSvcWinGetData(uint32_t u32Format, const void *pvSrc, ui
     ShClDbgDumpData(pvDst, cbSrc, u32Format);
 #endif
 
-    return;
+    return VINF_SUCCESS;
 }
 
+/**
+ * Sets (places) clipboard data into the Windows clipboard.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard context to use.
+ * @param   cfFormat            Windows clipboard format to set data for.
+ * @param   pvData              Pointer to actual clipboard data to set.
+ * @param   cbData              Size (in bytes) of actual clipboard data to set.
+ * @note
+ */
 static int vboxClipboardSvcWinDataSet(PSHCLCONTEXT pCtx, UINT cfFormat, void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
@@ -162,6 +175,9 @@ static int vboxClipboardSvcWinDataSet(PSHCLCONTEXT pCtx, UINT cfFormat, void *pv
     else
         rc = RTErrConvertFromWin32(GetLastError());
 
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Setting clipboard data for Windows host failed with %Rrc\n", rc));
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -173,7 +189,7 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT uFormat, void **p
 
     if (fFormat == VBOX_SHCL_FMT_NONE)
     {
-        LogRel2(("Shared Clipbaord: Windows format %u not supported, ingoring\n", uFormat));
+        LogRel2(("Shared Clipboard: Windows format %u not supported, ignoring\n", uFormat));
         return VERR_NOT_SUPPORTED;
     }
 
@@ -192,6 +208,9 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT uFormat, void **p
         ShClEventRelease(&pCtx->pClient->EventSrc, idEvent);
         ShClEventUnregister(&pCtx->pClient->EventSrc, idEvent);
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Reading guest clipboard data for Windows host failed with %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -339,7 +358,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
         {
             /* Announce available formats. Do not insert data -- will be inserted in WM_RENDERFORMAT (or via IDataObject). */
             SHCLFORMATS fFormats = (uint32_t)lParam;
-            LogFunc(("SHCL_WIN_WM_REPORT_FORMATS: fFormats=0x%x\n", fFormats));
+            LogFunc(("SHCL_WIN_WM_REPORT_FORMATS: fFormats=%#xn", fFormats));
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             if (fFormats & VBOX_SHCL_FMT_URI_LIST)
@@ -372,6 +391,10 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
 
                     SharedClipboardWinClose();
                 }
+
+                if (RT_FAILURE(rc))
+                    LogRel(("Shared Clipboard: Reporting clipboard formats %#x to Windows host failed with %Rrc\n", fFormats, rc));
+
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             }
 #endif
@@ -713,7 +736,7 @@ int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 }
 
 int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                        SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)
+                        SHCLFORMAT uFmt, void *pvData, uint32_t cbData, uint32_t *pcbActual)
 {
     AssertPtrReturn(pClient,   VERR_INVALID_POINTER);
     AssertPtrReturn(pCmdCtx,   VERR_INVALID_POINTER);
@@ -724,7 +747,7 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 
     AssertPtrReturn(pClient->State.pCtx, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("uFormat=%02X\n", uFormat));
+    LogFlowFunc(("uFmt=%#x\n", uFmt));
 
     HANDLE hClip = NULL;
 
@@ -736,22 +759,17 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     int rc = SharedClipboardWinOpen(pWinCtx->hWnd);
     if (RT_SUCCESS(rc))
     {
-        LogFunc(("Clipboard opened\n"));
-
-        if (uFormat & VBOX_SHCL_FMT_BITMAP)
+        if (uFmt & VBOX_SHCL_FMT_BITMAP)
         {
+            LogFunc(("CF_DIB\n"));
             hClip = GetClipboardData(CF_DIB);
             if (hClip != NULL)
             {
                 LPVOID lp = GlobalLock(hClip);
-
                 if (lp != NULL)
                 {
-                    LogFunc(("CF_DIB\n"));
-
-                    vboxClipboardSvcWinGetData(VBOX_SHCL_FMT_BITMAP, lp, GlobalSize(hClip),
-                                               pvData, cbData, pcbActual);
-
+                    rc = vboxClipboardSvcWinDataGet(VBOX_SHCL_FMT_BITMAP, lp, GlobalSize(hClip),
+                                                    pvData, cbData, pcbActual);
                     GlobalUnlock(hClip);
                 }
                 else
@@ -760,20 +778,17 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                 }
             }
         }
-        else if (uFormat & VBOX_SHCL_FMT_UNICODETEXT)
+        else if (uFmt & VBOX_SHCL_FMT_UNICODETEXT)
         {
+            LogFunc(("CF_UNICODETEXT\n"));
             hClip = GetClipboardData(CF_UNICODETEXT);
             if (hClip != NULL)
             {
                 LPWSTR uniString = (LPWSTR)GlobalLock(hClip);
-
                 if (uniString != NULL)
                 {
-                    LogFunc(("CF_UNICODETEXT\n"));
-
-                    vboxClipboardSvcWinGetData(VBOX_SHCL_FMT_UNICODETEXT, uniString, (lstrlenW(uniString) + 1) * 2,
-                                               pvData, cbData, pcbActual);
-
+                    rc = vboxClipboardSvcWinDataGet(VBOX_SHCL_FMT_UNICODETEXT, uniString, (lstrlenW(uniString) + 1) * 2,
+                                                    pvData, cbData, pcbActual);
                     GlobalUnlock(hClip);
                 }
                 else
@@ -782,23 +797,26 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                 }
             }
         }
-        else if (uFormat & VBOX_SHCL_FMT_HTML)
+        else if (uFmt & VBOX_SHCL_FMT_HTML)
         {
-            UINT format = RegisterClipboardFormat(SHCL_WIN_REGFMT_HTML);
-            if (format != 0)
+            LogFunc(("SHCL_WIN_REGFMT_HTML\n"));
+            UINT uRegFmt = RegisterClipboardFormat(SHCL_WIN_REGFMT_HTML);
+            if (uRegFmt != 0)
             {
-                hClip = GetClipboardData(format);
+                hClip = GetClipboardData(uRegFmt);
                 if (hClip != NULL)
                 {
                     LPVOID lp = GlobalLock(hClip);
                     if (lp != NULL)
                     {
-                        /** @todo r=andy Add data overflow handling. */
-                        vboxClipboardSvcWinGetData(VBOX_SHCL_FMT_HTML, lp, GlobalSize(hClip),
-                                                   pvData, cbData, pcbActual);
+                        rc = vboxClipboardSvcWinDataGet(VBOX_SHCL_FMT_HTML, lp, GlobalSize(hClip),
+                                                        pvData, cbData, pcbActual);
 #ifdef LOG_ENABLED
-                        LogFlowFunc(("Raw HTML clipboard data from host:"));
-                        ShClDbgDumpHtml((char *)pvData, cbData);
+                        if (RT_SUCCESS(rc))
+                        {
+                            LogFlowFunc(("Raw HTML clipboard data from host:\n"));
+                            ShClDbgDumpHtml((char *)pvData, cbData);
+                        }
 #endif
                         GlobalUnlock(hClip);
                     }
@@ -810,7 +828,7 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
             }
         }
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-        else if (uFormat & VBOX_SHCL_FMT_URI_LIST)
+        else if (uFmt & VBOX_SHCL_FMT_URI_LIST)
         {
             AssertFailed(); /** @todo */
         }
@@ -818,11 +836,14 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
         SharedClipboardWinClose();
     }
 
-    if (hClip == NULL)
+    if (hClip == NULL) /* Empty data is not fatal. */
     {
         /* Reply with empty data. */
-        vboxClipboardSvcWinGetData(0, NULL, 0, pvData, cbData, pcbActual);
+        vboxClipboardSvcWinDataGet(0, NULL, 0, pvData, cbData, pcbActual);
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Error reading host clipboard data in format %#x from Windows, rc=%Rrc\n", uFmt, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;

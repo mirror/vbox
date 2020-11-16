@@ -1331,12 +1331,15 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
         RTCritSectLeave(&pClient->CritSect);
     }
 
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Requesting data in formats %#x from guest failed with %Rrc\n", fFormats, rc));
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 /**
- * Signals that clipboard data from the guest has been received.
+ * Signals the host that clipboard data from the guest has been received.
  *
  * @returns VBox status code. Returns VERR_NOT_FOUND when related event ID was not found.
  * @param   pClient             Client the guest clipboard data was received for.
@@ -1388,6 +1391,9 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
         }
     }
 
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Signalling of guest clipboard data to the host failed with %Rrc\n", rc));
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -1402,8 +1408,9 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
  */
 int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
-    LogFlowFunc(("fFormats=%#x\n", fFormats));
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("fFormats=%#x\n", fFormats));
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /*
@@ -1452,6 +1459,9 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     }
     else
         rc = VERR_NO_MEMORY;
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Reporting formats %#x to guest failed with %Rrc\n", fFormats, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1526,7 +1536,11 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
                 g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
             }
             else
+            {
                 rc = ShClBackendFormatAnnounce(pClient, fFormats);
+                if (RT_FAILURE(rc))
+                    LogRel(("Shared Clipboard: Reporting guest clipboard formats to the host failed with %Rrc\n", rc));
+            }
         }
     }
 
@@ -1534,7 +1548,14 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
 }
 
 /**
- * Handles the VBOX_SHCL_GUEST_FN_DATA_READ message from the guest.
+ * Called when the guest wants to read host clipboard data.
+ * Handles the VBOX_SHCL_GUEST_FN_DATA_READ message.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_BUFFER_OVERFLOW if the guest supplied a smaller buffer than needed in order to read the host clipboard data.
+ * @param   pClient             Client that wants to read host clipboard data.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
  */
 static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
@@ -1636,8 +1657,9 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
 
         /* Read clipboard data from the extension. */
         rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof(parms));
-        LogRelFlowFunc(("Shared Clipboard: DATA/Ext: fDelayedAnnouncement=%RTbool fDelayedFormats=%#x cbData=%RU32->%RU32 rc=%Rrc\n",
-                        g_ExtState.fDelayedAnnouncement, g_ExtState.fDelayedFormats, cbData, parms.cbData, rc));
+
+        LogRel2(("Shared Clipboard: Read extension clipboard data (fDelayedAnnouncement=%RTbool, fDelayedFormats=%#x, max %RU32 bytes), got %RU32 bytes: rc=%Rrc\n",
+                 g_ExtState.fDelayedAnnouncement, g_ExtState.fDelayedFormats, cbData, parms.cbData, rc));
 
         /* Did the extension send the clipboard formats yet?
          * Otherwise, do this now. */
@@ -1658,7 +1680,12 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
     else
     {
         rc = ShClBackendReadData(pClient, &cmdCtx, uFormat, pvData, cbData, &cbActual);
-        LogRelFlowFunc(("Shared Clipboard: DATA/Host: cbData=%RU32->%RU32 rc=%Rrc\n", cbData, cbActual, rc));
+        if (RT_SUCCESS(rc))
+        {
+            LogRel2(("Shared Clipboard: Read host clipboard data (max %RU32 bytes), got %RU32 bytes\n", cbData, cbActual));
+        }
+        else
+            LogRel(("Shared Clipboard: Reading host clipboard data failed with %Rrc\n", rc));
     }
 
     if (RT_SUCCESS(rc))
@@ -1678,6 +1705,15 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
     return rc;
 }
 
+/**
+ * Called when the guest writes clipboard data to the host.
+ * Handles the VBOX_SHCL_GUEST_FN_DATA_WRITE message.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client that wants to read host clipboard data.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ */
 int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFuncEnter();
@@ -1810,9 +1846,13 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     {
         /* Let the backend implementation know. */
         rc = ShClBackendWriteData(pClient, &cmdCtx, uFormat, pvData, cbData);
+        if (RT_FAILURE(rc))
+            LogRel(("Shared Clipboard: Writing guest clipboard data to the host failed with %Rrc\n", rc));
 
         int rc2; /* Don't return internals back to the guest. */
         rc2 = ShClSvcGuestDataSignal(pClient, &cmdCtx, uFormat, pvData, cbData); /* To complete pending events, if any. */
+        if (RT_FAILURE(rc2))
+            LogRel(("Shared Clipboard: Signalling host about guest clipboard data failed with %Rrc\n", rc2));
         AssertRC(rc2);
     }
 

@@ -229,6 +229,9 @@ int ShClBackendReadData(PSHCLCLIENT pClient,
     else
         rc = VERR_NO_MEMORY;
 
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Error reading host clipboard data from X11, rc=%Rrc\n", rc));
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -286,7 +289,6 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
                                                          CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     AssertPtrReturnVoid(pCtx);
-    RT_NOREF(rcCompletion);
     AssertPtrReturnVoid(pReq);
 
     LogFlowFunc(("rcCompletion=%Rrc, pReq=%p, pv=%p, cb=%RU32, idEvent=%RU32\n", rcCompletion, pReq, pv, cb, pReq->idEvent));
@@ -315,6 +317,8 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
 
     if (pReq)
         RTMemFree(pReq);
+
+    LogRel2(("Shared Clipboard: Request for clipboard data from X11 host completed with %Rrc\n", rcCompletion));
 }
 
 /**
@@ -374,6 +378,9 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
             ShClEventUnregister(&pCtx->pClient->EventSrc, idEvent);
         }
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Requesting data in format %#x for X11 host failed with %Rrc\n", fFormat, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;

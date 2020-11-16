@@ -260,6 +260,8 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORM
     *pcbActual = 0;
 
     int rc = readFromPasteboard(pClient->State.pCtx->hPasteboard, fFormat, pvData, cbData, pcbActual);
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Error reading host clipboard data from macOS, rc=%Rrc\n", rc));
 
     ShClSvcUnlock();
 
