@@ -347,7 +347,10 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         """
         print('error: %s' % (sText,));
         if self.oLogFile is not None:
-            self.oLogFile.write((u'error: %s\n' % (sText,)).encode('utf-8'));
+            if sys.version_info[0] >= 3:
+                self.oLogFile.write(u'error: %s\n' % (sText,));
+            else:
+                self.oLogFile.write((u'error: %s\n' % (sText,)).encode('utf-8'));
         return 1;
 
     def dprint(self, sText):
@@ -358,7 +361,10 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             if not self.oConfig.fQuiet:
                 print('debug: %s' % (sText, ));
             if self.oLogFile is not None:
-                self.oLogFile.write((u'debug: %s\n' % (sText,)).encode('utf-8'));
+                if sys.version_info[0] >= 3:
+                    self.oLogFile.write(u'debug: %s\n' % (sText,));
+                else:
+                    self.oLogFile.write((u'debug: %s\n' % (sText,)).encode('utf-8'));
         return 0;
 
     def vprint(self, sText):
@@ -368,7 +374,10 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         if not self.oConfig.fQuiet:
             print('info: %s' % (sText,));
         if self.oLogFile is not None:
-            self.oLogFile.write((u'info: %s\n' % (sText,)).encode('utf-8'));
+            if sys.version_info[0] >= 3:
+                self.oLogFile.write(u'info: %s\n' % (sText,));
+            else:
+                self.oLogFile.write((u'info: %s\n' % (sText,)).encode('utf-8'));
         return 0;
 
     def getFailureReason(self, tReason):
