@@ -63,7 +63,8 @@
 /shaderlib/wine/vbox/VBoxWineEx.h:       --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --strip-trailing-blanks
 /shaderlib/winoverride.h:                --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --strip-trailing-blanks
 
-/vmsvga/*.h: --external-copyright --no-convert-tabs
+--filter-out-dirs  "/vmsvga_include/."
+
 /vmsvga_glext/*.h: --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 
 /DevVGATmpl.h:                          --no-fix-header-guards
