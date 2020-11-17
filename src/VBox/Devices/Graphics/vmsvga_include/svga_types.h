@@ -23,17 +23,21 @@
  * SOFTWARE.
  *
  **********************************************************/
-#ifndef _VM_BASIC_TYPES_H_
-#define _VM_BASIC_TYPES_H_
-#include <linux/kernel.h>
+#ifndef _SVGA_TYPES_H_
+#define _SVGA_TYPES_H_
+#include <iprt/types.h>
 
-typedef u32 uint32;
-typedef s32 int32;
-typedef u64 uint64;
-typedef u16 uint16;
-typedef s16 int16;
-typedef u8  uint8;
-typedef s8  int8;
+typedef int64_t int64;
+typedef uint64_t uint64;
+
+typedef int32_t int32;
+typedef uint32_t uint32;
+
+typedef int16_t int16;
+typedef uint16_t uint16;
+
+typedef int8_t int8;
+typedef uint8_t uint8;
 
 typedef uint64 PA;
 typedef uint32 PPN;
@@ -42,8 +46,8 @@ typedef uint64 PPN64;
 
 typedef bool Bool;
 
-#define MAX_UINT64 U64_MAX
-#define MAX_UINT32 U32_MAX
+#define MAX_UINT64 UINT64_MAX
+#define MAX_UINT32 UINT32_MAX
 #define MAX_UINT16 U16_MAX
 
 #define CONST64U(x) x##ULL
