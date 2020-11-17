@@ -27,12 +27,9 @@ ifndef VBOX_VMM_CONFIG_KMK_INCLUDED
  include $(PATH_ROOT)/src/VBox/VMM/Config.kmk
 endif
 
-# We need the Additions/3D/Config.kmk for the VBOX_PATH_VMSVGA_INC variable.
-ifndef VBOX_MESA3D_CONFIG_KMK_INCLUDED
- include $(PATH_ROOT)/src/VBox/Additions/3D/Config.kmk
-endif
-
 VBOX_PATH_DEVICES_SRC := $(PATH_ROOT)/src/VBox/Devices
+
+VBOX_PATH_VMSVGA_DEVICE_INC := $(VBOX_PATH_DEVICES_SRC)/Graphics/vmsvga_include
 
 #
 # VBoxBios - Template for building 16-bit BIOS code.

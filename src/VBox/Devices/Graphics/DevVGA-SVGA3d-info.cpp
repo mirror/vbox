@@ -94,7 +94,7 @@ static const VMSVGAINFOENUM g_aSVGA3dSurfaceFormats[] =
     { SVGA3D_UYVY               , "UYVY" },
     { SVGA3D_YUY2               , "YUY2" },
     { SVGA3D_NV12               , "NV12" },
-    { SVGA3D_AYUV               , "AYUV" },
+    { SVGA3D_FORMAT_DEAD2       , "DEAD2" }, /* Old SVGA3D_AYUV */
     { SVGA3D_ATI1               , "ATI1" },
     { SVGA3D_ATI2               , "ATI2" },
     { SVGA3D_Z_DF16             , "Z_DF16" },
@@ -118,7 +118,7 @@ static const char * const g_apszTexureFilters[] =
     "GAUSSIANQUAD",
 };
 
-/** SVGA3dSurfaceFlags values, prefix SVGA3D_SURFACE_. */
+/** SVGA3dSurface1Flags values, prefix SVGA3D_SURFACE_. */
 static VMSVGAINFOFLAGS32 const g_aSvga3DSurfaceFlags[] =
 {
     { SVGA3D_SURFACE_CUBEMAP            , "CUBEMAP" },
@@ -130,7 +130,7 @@ static VMSVGAINFOFLAGS32 const g_aSvga3DSurfaceFlags[] =
     { SVGA3D_SURFACE_HINT_RENDERTARGET  , "HINT_RENDERTARGET" },
     { SVGA3D_SURFACE_HINT_DEPTHSTENCIL  , "HINT_DEPTHSTENCIL" },
     { SVGA3D_SURFACE_HINT_WRITEONLY     , "HINT_WRITEONLY" },
-    { SVGA3D_SURFACE_MASKABLE_ANTIALIAS , "MASKABLE_ANTIALIAS" },
+    { SVGA3D_SURFACE_DEAD2              , "MASKABLE_ANTIALIAS" }, /* SVGA3D_SURFACE_MASKABLE_ANTIALIAS */
     { SVGA3D_SURFACE_AUTOGENMIPMAPS     , "AUTOGENMIPMAPS" },
 };
 
@@ -1029,7 +1029,7 @@ void vmsvga3dAsciiPrint(PFNVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
             case SVGA3D_UYVY:
             case SVGA3D_YUY2:
             case SVGA3D_NV12:
-            case SVGA3D_AYUV:
+            case SVGA3D_FORMAT_DEAD2: /* Old SVGA3D_AYUV */
             case SVGA3D_ATI1:
             case SVGA3D_ATI2:
             case SVGA3D_Z_DF16:

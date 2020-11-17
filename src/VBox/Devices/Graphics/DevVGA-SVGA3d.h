@@ -84,7 +84,7 @@ int vmsvga3dReset(PVGASTATECC pThisCC);
 void vmsvga3dUpdateHostScreenViewport(PVGASTATECC pThisCC, uint32_t idScreen, VMSVGAVIEWPORT const *pOldViewport);
 int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t *pu32Val);
 
-int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurfaceFlags surfaceFlags, SVGA3dSurfaceFormat format,
+int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags surfaceFlags, SVGA3dSurfaceFormat format,
                           uint32_t multisampleCount, SVGA3dTextureFilter autogenFilter,
                           uint32_t cMipLevels, SVGA3dSize const *pMipLevel0Size);
 int vmsvga3dSurfaceDestroy(PVGASTATECC pThisCC, uint32_t sid);
@@ -320,7 +320,7 @@ typedef struct
     DECLCALLBACKMEMBER(void, pfnDXClearDepthStencilView,     (PVMSVGA3DSTATE p3dState));
     DECLCALLBACKMEMBER(void, pfnDXPredCopyRegion,            (PVMSVGA3DSTATE p3dState));
     DECLCALLBACKMEMBER(void, pfnDXPredCopy,                  (PVMSVGA3DSTATE p3dState));
-    DECLCALLBACKMEMBER(void, pfnDXStretchBlt,                (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXPresentBlt,                (PVMSVGA3DSTATE p3dState));
     DECLCALLBACKMEMBER(void, pfnDXGenMips,                   (PVMSVGA3DSTATE p3dState));
     DECLCALLBACKMEMBER(void, pfnDXUpdateSubResource,         (PVMSVGA3DSTATE p3dState));
     DECLCALLBACKMEMBER(void, pfnDXReadbackSubResource,       (PVMSVGA3DSTATE p3dState));
@@ -363,7 +363,49 @@ typedef struct
     DECLCALLBACKMEMBER(void, pfnDXSetVSConstantBufferOffset, (PVMSVGA3DSTATE p3dState));
     DECLCALLBACKMEMBER(void, pfnDXSetPSConstantBufferOffset, (PVMSVGA3DSTATE p3dState));
     DECLCALLBACKMEMBER(void, pfnDXSetGSConstantBufferOffset, (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXSetHSConstantBufferOffset, (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXSetDSConstantBufferOffset, (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXSetCSConstantBufferOffset, (PVMSVGA3DSTATE p3dState));
     DECLCALLBACKMEMBER(void, pfnDXCondBindAllShader,         (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnScreenCopy,                  (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnGrowOTable,                  (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXGrowCOTable,               (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnIntraSurfaceCopy,            (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDefineGBSurface_v3,          (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXResolveCopy,               (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXPredResolveCopy,           (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXPredConvertRegion,         (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXPredConvert,               (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnWholeSurfaceCopy,            (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXDefineUAView,              (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXDestroyUAView,             (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXClearUAViewUint,           (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXClearUAViewFloat,          (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXCopyStructureCount,        (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXSetUAViews,                (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXDrawIndexedInstancedIndirect, (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXDrawInstancedIndirect,     (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXDispatch,                  (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXDispatchIndirect,          (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnWriteZeroSurface,            (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnHintZeroSurface,             (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXTransferToBuffer,          (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXSetStructureCount,         (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnLogicOpsBitBlt,              (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnLogicOpsTransBlt,            (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnLogicOpsStretchBlt,          (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnLogicOpsColorFill,           (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnLogicOpsAlphaBlend,          (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnLogicOpsClearTypeBlend,      (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDefineGBSurface_v4,          (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXSetCSUAViews,              (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXSetMinLOD,                 (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXDefineDepthStencilView_v2, (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXDefineStreamOutputWithMob, (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXSetShaderIface,            (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXBindStreamOutput,          (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnSurfaceStretchBltNonMSToMS,  (PVMSVGA3DSTATE p3dState));
+    DECLCALLBACKMEMBER(void, pfnDXBindShaderIface,           (PVMSVGA3DSTATE p3dState));
 } VMSVGA3DBACKENDFUNCSDX;
 
 int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, void *pvInterfaceFuncs, size_t cbInterfaceFuncs);

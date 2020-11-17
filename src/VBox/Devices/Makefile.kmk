@@ -300,7 +300,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
 
  ifdef VBOX_WITH_VMSVGA
   VBoxDD_DEFS           += VBOX_WITH_VMSVGA
-  VBoxDD_INCS           += $(VBOX_PATH_VMSVGA_INC)
+  VBoxDD_INCS           += $(VBOX_PATH_VMSVGA_DEVICE_INC)
   VBoxDD_SOURCES        += \
   	Graphics/DevVGA-SVGA.cpp \
   	Graphics/DevVGA-SVGA-cmd.cpp
@@ -1146,7 +1146,7 @@ endif
  	IN_RT_R0  # - WTF is IN_RT_R0 doing here?
  VBoxDDR0_DEFS.win      += VBOX_WITH_WIN_PARPORT_SUP
  VBoxDDR0_INCS           = build $(VBOX_GRAPHICS_INCS)
- VBoxDDR0_INCS          += $(VBOX_PATH_VMSVGA_INC)
+ VBoxDDR0_INCS          += $(VBOX_PATH_VMSVGA_DEVICE_INC)
  VBoxDDR0_SDKS.win 	  = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  VBoxDDR0_SOURCES        = \
  	build/VBoxDDR0.cpp \

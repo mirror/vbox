@@ -430,6 +430,7 @@ static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATEC
  */
 static const char *vmsvgaIndexToString(PVGASTATE pThis, uint32_t idxReg)
 {
+    AssertCompile(SVGA_REG_TOP == 77); /* Ensure that the correct headers are used. */
     switch (idxReg)
     {
         SVGA_CASE_ID2STR(SVGA_REG_ID);
@@ -458,7 +459,7 @@ static const char *vmsvgaIndexToString(PVGASTATE pThis, uint32_t idxReg)
         SVGA_CASE_ID2STR(SVGA_REG_SYNC);                /* See "FIFO Synchronization Registers" */
         SVGA_CASE_ID2STR(SVGA_REG_BUSY);                /* See "FIFO Synchronization Registers" */
         SVGA_CASE_ID2STR(SVGA_REG_GUEST_ID);            /* Set guest OS identifier */
-        SVGA_CASE_ID2STR(SVGA_REG_CURSOR_ID);           /* (Deprecated) */
+        SVGA_CASE_ID2STR(SVGA_REG_DEAD);                /* (Deprecated) SVGA_REG_CURSOR_ID. */
         SVGA_CASE_ID2STR(SVGA_REG_CURSOR_X);            /* (Deprecated) */
         SVGA_CASE_ID2STR(SVGA_REG_CURSOR_Y);            /* (Deprecated) */
         SVGA_CASE_ID2STR(SVGA_REG_CURSOR_ON);           /* (Deprecated) */
@@ -492,10 +493,29 @@ static const char *vmsvgaIndexToString(PVGASTATE pThis, uint32_t idxReg)
         SVGA_CASE_ID2STR(SVGA_REG_SUGGESTED_GBOBJECT_MEM_SIZE_KB); /* Suggested limit on mob mem */
         SVGA_CASE_ID2STR(SVGA_REG_DEV_CAP);            /* Write dev cap index, read value */
         SVGA_CASE_ID2STR(SVGA_REG_CMD_PREPEND_LOW);
-        SVGA_CASE_ID2STR(SVGA_REG_iCMD_PREPEND_HIGH);
+        SVGA_CASE_ID2STR(SVGA_REG_CMD_PREPEND_HIGH);
         SVGA_CASE_ID2STR(SVGA_REG_SCREENTARGET_MAX_WIDTH);
         SVGA_CASE_ID2STR(SVGA_REG_SCREENTARGET_MAX_HEIGHT);
         SVGA_CASE_ID2STR(SVGA_REG_MOB_MAX_SIZE);
+        SVGA_CASE_ID2STR(SVGA_REG_BLANK_SCREEN_TARGETS);
+        SVGA_CASE_ID2STR(SVGA_REG_CAP2);
+        SVGA_CASE_ID2STR(SVGA_REG_DEVEL_CAP);
+        SVGA_CASE_ID2STR(SVGA_REG_GUEST_DRIVER_ID);
+        SVGA_CASE_ID2STR(SVGA_REG_GUEST_DRIVER_VERSION1);
+        SVGA_CASE_ID2STR(SVGA_REG_GUEST_DRIVER_VERSION2);
+        SVGA_CASE_ID2STR(SVGA_REG_GUEST_DRIVER_VERSION3);
+        SVGA_CASE_ID2STR(SVGA_REG_CURSOR_MOBID);
+        SVGA_CASE_ID2STR(SVGA_REG_CURSOR_MAX_BYTE_SIZE);
+        SVGA_CASE_ID2STR(SVGA_REG_CURSOR_MAX_DIMENSION);
+        SVGA_CASE_ID2STR(SVGA_REG_FIFO_CAPS);
+        SVGA_CASE_ID2STR(SVGA_REG_FENCE);
+        SVGA_CASE_ID2STR(SVGA_REG_RESERVED1);
+        SVGA_CASE_ID2STR(SVGA_REG_RESERVED2);
+        SVGA_CASE_ID2STR(SVGA_REG_RESERVED3);
+        SVGA_CASE_ID2STR(SVGA_REG_RESERVED4);
+        SVGA_CASE_ID2STR(SVGA_REG_RESERVED5);
+        SVGA_CASE_ID2STR(SVGA_REG_SCREENDMA);
+        SVGA_CASE_ID2STR(SVGA_REG_GBOBJECT_MEM_SIZE_KB);
         SVGA_CASE_ID2STR(SVGA_REG_TOP);                /* Must be 1 more than the last register */
 
         default:
@@ -511,6 +531,7 @@ static const char *vmsvgaIndexToString(PVGASTATE pThis, uint32_t idxReg)
 #if defined(LOG_ENABLED) || (defined(IN_RING3) && defined(VBOX_WITH_VMSVGA3D))
 static const char *vmsvgaDevCapIndexToString(SVGA3dDevCapIndex idxDevCap)
 {
+    AssertCompile(SVGA3D_DEVCAP_MAX == 260);
     switch (idxDevCap)
     {
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_INVALID);
@@ -584,13 +605,13 @@ static const char *vmsvgaDevCapIndexToString(SVGA3dDevCapIndex idxDevCap)
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SURFACEFMT_A16B16G16R16);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SURFACEFMT_UYVY);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SURFACEFMT_YUY2);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_ALPHATOCOVERAGE);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SUPERSAMPLE);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD4); /* SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES */
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD5); /* SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES */
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD7); /* SVGA3D_DEVCAP_ALPHATOCOVERAGE */
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD6); /* SVGA3D_DEVCAP_SUPERSAMPLE */
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_AUTOGENMIPMAPS);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SURFACEFMT_NV12);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SURFACEFMT_AYUV);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD10); /* SVGA3D_DEVCAP_SURFACEFMT_AYUV */
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MAX_CONTEXT_IDS);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MAX_SURFACE_IDS);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SURFACEFMT_Z_DF16);
@@ -599,18 +620,18 @@ static const char *vmsvgaDevCapIndexToString(SVGA3dDevCapIndex idxDevCap)
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SURFACEFMT_ATI1);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SURFACEFMT_ATI2);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD1);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_VIDEO_DECODE);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_VIDEO_PROCESS);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD8); /* SVGA3D_DEVCAP_VIDEO_DECODE */
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD9); /* SVGA3D_DEVCAP_VIDEO_PROCESS */
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_LINE_AA);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_LINE_STIPPLE);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MAX_LINE_WIDTH);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MAX_AA_LINE_WIDTH);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SURFACEFMT_YV12);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_LOGICOPS);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD3); /* Old SVGA3D_DEVCAP_LOGICOPS */
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_TS_COLOR_KEY);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD2);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DX);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MAX_TEXTURE_ARRAY_SIZE);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXCONTEXT);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DEAD11); /* SVGA3D_DEVCAP_MAX_TEXTURE_ARRAY_SIZE */
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DX_MAX_VERTEXBUFFERS);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DX_MAX_CONSTANT_BUFFERS);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DX_PROVOKING_VERTEX);
@@ -658,7 +679,7 @@ static const char *vmsvgaDevCapIndexToString(SVGA3dDevCapIndex idxDevCap)
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_UYVY);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_YUY2);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_NV12);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_AYUV);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_FORMAT_DEAD2); /* SVGA3D_DEVCAP_DXFMT_AYUV */
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R32G32B32A32_TYPELESS);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R32G32B32A32_UINT);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R32G32B32A32_SINT);
@@ -675,8 +696,8 @@ static const char *vmsvgaDevCapIndexToString(SVGA3dDevCapIndex idxDevCap)
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R32G32_SINT);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R32G8X24_TYPELESS);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_D32_FLOAT_S8X24_UINT);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R32_FLOAT_X8X24_TYPELESS);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_X32_TYPELESS_G8X24_UINT);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R32_FLOAT_X8X24);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_X32_G8X24_UINT);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R10G10B10A2_TYPELESS);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R10G10B10A2_UINT);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R11G11B10_FLOAT);
@@ -694,8 +715,8 @@ static const char *vmsvgaDevCapIndexToString(SVGA3dDevCapIndex idxDevCap)
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R32_SINT);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R24G8_TYPELESS);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_D24_UNORM_S8_UINT);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R24_UNORM_X8_TYPELESS);
-        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_X24_TYPELESS_G8_UINT);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R24_UNORM_X8);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_X24_G8_UINT);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R8G8_TYPELESS);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R8G8_UNORM);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_R8G8_UINT);
@@ -758,6 +779,22 @@ static const char *vmsvgaDevCapIndexToString(SVGA3dDevCapIndex idxDevCap)
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_B8G8R8X8_UNORM);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_BC4_UNORM);
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_BC5_UNORM);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SM41);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MULTISAMPLE_2X);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MULTISAMPLE_4X);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MS_FULL_QUALITY);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_LOGICOPS);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_LOGIC_BLENDOPS);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_RESERVED_1);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_BC6H_TYPELESS);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_BC6H_UF16);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_BC6H_SF16);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_BC7_TYPELESS);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_BC7_UNORM);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_DXFMT_BC7_UNORM_SRGB);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_RESERVED_2);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_SM5);
+        SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MULTISAMPLE_8X);
 
         SVGA_CASE_ID2STR(SVGA3D_DEVCAP_MAX);
 
@@ -1329,7 +1366,7 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             break;
 
         /* Mouse cursor support. */
-        case SVGA_REG_CURSOR_ID:
+        case SVGA_REG_DEAD: /* SVGA_REG_CURSOR_ID */
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorIdRd);
             *pu32 = pThis->svga.uCursorID;
             break;
@@ -1437,7 +1474,7 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             *pu32 = 0; /* Not supported. */
             break;
 
-        case SVGA_REG_iCMD_PREPEND_HIGH:
+        case SVGA_REG_CMD_PREPEND_HIGH:
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegCmdPrependHighRd);
             *pu32 = 0; /* Not supported. */
             break;
@@ -1970,7 +2007,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
             break;
 
         /* Mouse cursor support */
-        case SVGA_REG_CURSOR_ID:
+        case SVGA_REG_DEAD: /* SVGA_REG_CURSOR_ID */
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegCursorIdWr);
             pThis->svga.uCursorID = u32;
             break;
@@ -2173,7 +2210,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
             /* Not supported. */
             break;
 
-        case SVGA_REG_iCMD_PREPEND_HIGH:
+        case SVGA_REG_CMD_PREPEND_HIGH:
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegCmdPrependHighWr);
             /* Not supported. */
             break;
@@ -2617,17 +2654,17 @@ static int vmsvgaR3DebugFifoAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, bo
     case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_SURFACEFMT_YUY2:
         Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_SURFACEFMT_YUY2 = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
         break;
-    case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES:
-        Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
+    case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_DEAD4: /* SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES */
+        Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_DEAD4 (SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES) = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
         break;
-    case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES:
-        Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
+    case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_DEAD5: /* SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES */
+        Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_DEAD5 (SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES) = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
         break;
-    case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_ALPHATOCOVERAGE:
-        Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_ALPHATOCOVERAGE = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
+    case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_DEAD7: /* SVGA3D_DEVCAP_ALPHATOCOVERAGE */
+        Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_DEAD7 (SVGA3D_DEVCAP_ALPHATOCOVERAGE) = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
         break;
-    case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_SUPERSAMPLE:
-        Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_SUPERSAMPLE = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
+    case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_DEAD6: /* SVGA3D_DEVCAP_SUPERSAMPLE */
+        Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_DEAD6 (SVGA3D_DEVCAP_SUPERSAMPLE) = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
         break;
     case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_AUTOGENMIPMAPS:
         Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_AUTOGENMIPMAPS = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
@@ -2635,8 +2672,8 @@ static int vmsvgaR3DebugFifoAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, bo
     case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_SURFACEFMT_NV12:
         Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_SURFACEFMT_NV12 = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
         break;
-    case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_SURFACEFMT_AYUV:
-        Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_SURFACEFMT_AYUV = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
+    case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_DEAD10: /* SVGA3D_DEVCAP_SURFACEFMT_AYUV */
+        Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_DEAD10 (SVGA3D_DEVCAP_SURFACEFMT_AYUV) = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
         break;
     case SVGA_FIFO_3D_CAPS + SVGA3D_DEVCAP_MAX_CONTEXT_IDS:
         Log(("vmsvgaFIFOAccess [0x%x]: %s SVGA_FIFO_3D_CAPS SVGA3D_DEVCAP_MAX_CONTEXT_IDS = %x\n", GCPhysOffset >> 2, (fWriteAccess) ? "WRITE" : "READ", pFIFO[GCPhysOffset >> 2]));
@@ -5783,7 +5820,7 @@ static void vmsvgaR3InitCaps(PVGASTATE pThis, PVGASTATECC pThisCC)
         if (pSVGAState->pFuncsGBO)
            pThis->svga.u32DeviceCaps |= SVGA_CAP_GBOBJECTS;     /* Enable guest-backed objects and surfaces. */
         if (pSVGAState->pFuncsDX)
-           pThis->svga.u32DeviceCaps |= SVGA_CAP_CMD_BUFFERS_3; /* AKA SVGA_CAP_DX. Enable support for DX commands, and command buffers in a mob. */
+           pThis->svga.u32DeviceCaps |= SVGA_CAP_DX;            /* Enable support for DX commands, and command buffers in a mob. */
 # endif
     }
 
@@ -6214,7 +6251,7 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     REG_CNT(&pThis->svga.StatRegBusyWr,                   "VMSVGA/Reg/BusyWrite",                  "SVGA_REG_BUSY writes.");
     REG_CNT(&pThis->svga.StatRegCursorXWr,                "VMSVGA/Reg/CursorXWrite",               "SVGA_REG_CURSOR_X writes.");
     REG_CNT(&pThis->svga.StatRegCursorYWr,                "VMSVGA/Reg/CursorYWrite",               "SVGA_REG_CURSOR_Y writes.");
-    REG_CNT(&pThis->svga.StatRegCursorIdWr,               "VMSVGA/Reg/CursorIdWrite",              "SVGA_REG_CURSOR_ID writes.");
+    REG_CNT(&pThis->svga.StatRegCursorIdWr,               "VMSVGA/Reg/CursorIdWrite",              "SVGA_REG_DEAD (SVGA_REG_CURSOR_ID) writes.");
     REG_CNT(&pThis->svga.StatRegCursorOnWr,               "VMSVGA/Reg/CursorOnWrite",              "SVGA_REG_CURSOR_ON writes.");
     REG_CNT(&pThis->svga.StatRegDepthWr,                  "VMSVGA/Reg/DepthWrite",                 "SVGA_REG_DEPTH writes.");
     REG_CNT(&pThis->svga.StatRegDisplayHeightWr,          "VMSVGA/Reg/DisplayHeightWrite",         "SVGA_REG_DISPLAY_HEIGHT writes.");
@@ -6245,7 +6282,7 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     REG_CNT(&pThis->svga.StatRegCommandHighWr,            "VMSVGA/Reg/CommandHighWrite",           "SVGA_REG_COMMAND_HIGH writes.");
     REG_CNT(&pThis->svga.StatRegDevCapWr,                 "VMSVGA/Reg/DevCapWrite",                "SVGA_REG_DEV_CAP writes.");
     REG_CNT(&pThis->svga.StatRegCmdPrependLowWr,          "VMSVGA/Reg/CmdPrependLowWrite",         "SVGA_REG_CMD_PREPEND_LOW writes.");
-    REG_CNT(&pThis->svga.StatRegCmdPrependHighWr,         "VMSVGA/Reg/CmdPrependHighWrite",        "SVGA_REG_iCMD_PREPEND_HIGH writes.");
+    REG_CNT(&pThis->svga.StatRegCmdPrependHighWr,         "VMSVGA/Reg/CmdPrependHighWrite",        "SVGA_REG_CMD_PREPEND_HIGH writes.");
 
     REG_CNT(&pThis->svga.StatRegBitsPerPixelRd,           "VMSVGA/Reg/BitsPerPixelRead",           "SVGA_REG_BITS_PER_PIXEL reads.");
     REG_CNT(&pThis->svga.StatRegBlueMaskRd,               "VMSVGA/Reg/BlueMaskRead",               "SVGA_REG_BLUE_MASK reads.");
@@ -6255,7 +6292,7 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     REG_CNT(&pThis->svga.StatRegConfigDoneRd,             "VMSVGA/Reg/ConfigDoneRead",             "SVGA_REG_CONFIG_DONE reads.");
     REG_CNT(&pThis->svga.StatRegCursorXRd,                "VMSVGA/Reg/CursorXRead",                "SVGA_REG_CURSOR_X reads.");
     REG_CNT(&pThis->svga.StatRegCursorYRd,                "VMSVGA/Reg/CursorYRead",                "SVGA_REG_CURSOR_Y reads.");
-    REG_CNT(&pThis->svga.StatRegCursorIdRd,               "VMSVGA/Reg/CursorIdRead",               "SVGA_REG_CURSOR_ID reads.");
+    REG_CNT(&pThis->svga.StatRegCursorIdRd,               "VMSVGA/Reg/CursorIdRead",               "SVGA_REG_DEAD (SVGA_REG_CURSOR_ID) reads.");
     REG_CNT(&pThis->svga.StatRegCursorOnRd,               "VMSVGA/Reg/CursorOnRead",               "SVGA_REG_CURSOR_ON reads.");
     REG_CNT(&pThis->svga.StatRegDepthRd,                  "VMSVGA/Reg/DepthRead",                  "SVGA_REG_DEPTH reads.");
     REG_CNT(&pThis->svga.StatRegDisplayHeightRd,          "VMSVGA/Reg/DisplayHeightRead",          "SVGA_REG_DISPLAY_HEIGHT reads.");
@@ -6305,7 +6342,7 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     REG_CNT(&pThis->svga.StatRegGBMemSizeRd,              "VMSVGA/Reg/GBMemSizeRead",              "SVGA_REG_SUGGESTED_GBOBJECT_MEM_SIZE_KB reads.");
     REG_CNT(&pThis->svga.StatRegDevCapRd,                 "VMSVGA/Reg/DevCapRead",                 "SVGA_REG_DEV_CAP reads.");
     REG_CNT(&pThis->svga.StatRegCmdPrependLowRd,          "VMSVGA/Reg/CmdPrependLowRead",          "SVGA_REG_CMD_PREPEND_LOW reads.");
-    REG_CNT(&pThis->svga.StatRegCmdPrependHighRd,         "VMSVGA/Reg/CmdPrependHighRead",         "SVGA_REG_iCMD_PREPEND_HIGH reads.");
+    REG_CNT(&pThis->svga.StatRegCmdPrependHighRd,         "VMSVGA/Reg/CmdPrependHighRead",         "SVGA_REG_CMD_PREPEND_HIGH reads.");
     REG_CNT(&pThis->svga.StatRegScrnTgtMaxWidthRd,        "VMSVGA/Reg/ScrnTgtMaxWidthRead",        "SVGA_REG_SCREENTARGET_MAX_WIDTH reads.");
     REG_CNT(&pThis->svga.StatRegScrnTgtMaxHeightRd,       "VMSVGA/Reg/ScrnTgtMaxHeightRead",       "SVGA_REG_SCREENTARGET_MAX_HEIGHT reads.");
     REG_CNT(&pThis->svga.StatRegMobMaxSizeRd,             "VMSVGA/Reg/MobMaxSizeRead",             "SVGA_REG_MOB_MAX_SIZE reads.");

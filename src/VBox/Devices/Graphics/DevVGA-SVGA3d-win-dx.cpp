@@ -110,6 +110,11 @@ static DXGI_FORMAT vmsvgaDXScreenTargetFormat2Dxgi(SVGA3dSurfaceFormat format)
 
 static DXGI_FORMAT vmsvgaDXSurfaceFormat2Dxgi(SVGA3dSurfaceFormat format)
 {
+    /* Ensure that correct headers are used.
+     * SVGA3D_AYUV was equal to 45, then replaced with SVGA3D_FORMAT_DEAD2 = 45, and redefined as SVGA3D_AYUV = 152.
+     */
+    AssertCompile(SVGA3D_AYUV == 152);
+
 #define DXGI_FORMAT_ DXGI_FORMAT_UNKNOWN
     /** @todo More formats. */
     switch (format)
@@ -158,7 +163,7 @@ static DXGI_FORMAT vmsvgaDXSurfaceFormat2Dxgi(SVGA3dSurfaceFormat format)
         case SVGA3D_UYVY:                       return DXGI_FORMAT_;
         case SVGA3D_YUY2:                       return DXGI_FORMAT_;
         case SVGA3D_NV12:                       return DXGI_FORMAT_;
-        case SVGA3D_AYUV:                       return DXGI_FORMAT_;
+        case SVGA3D_FORMAT_DEAD2:               break; /* Old SVGA3D_AYUV */
         case SVGA3D_R32G32B32A32_TYPELESS:      return DXGI_FORMAT_R32G32B32A32_TYPELESS;
         case SVGA3D_R32G32B32A32_UINT:          return DXGI_FORMAT_R32G32B32A32_UINT;
         case SVGA3D_R32G32B32A32_SINT:          return DXGI_FORMAT_R32G32B32A32_SINT;
@@ -259,6 +264,15 @@ static DXGI_FORMAT vmsvgaDXSurfaceFormat2Dxgi(SVGA3dSurfaceFormat format)
         case SVGA3D_BC4_UNORM:                  return DXGI_FORMAT_BC4_UNORM;
         case SVGA3D_BC5_UNORM:                  return DXGI_FORMAT_BC5_UNORM;
 
+        case SVGA3D_B4G4R4A4_UNORM:             return DXGI_FORMAT_;
+        case SVGA3D_BC6H_TYPELESS:              return DXGI_FORMAT_;
+        case SVGA3D_BC6H_UF16:                  return DXGI_FORMAT_;
+        case SVGA3D_BC6H_SF16:                  return DXGI_FORMAT_;
+        case SVGA3D_BC7_TYPELESS:               return DXGI_FORMAT_;
+        case SVGA3D_BC7_UNORM:                  return DXGI_FORMAT_;
+        case SVGA3D_BC7_UNORM_SRGB:             return DXGI_FORMAT_;
+        case SVGA3D_AYUV:                       return DXGI_FORMAT_;
+
         case SVGA3D_FORMAT_INVALID:
         case SVGA3D_FORMAT_MAX:                 break;
     }
@@ -308,7 +322,7 @@ static SVGA3dSurfaceFormat vmsvgaDXDevCapSurfaceFmt2Format(SVGA3dDevCapIndex enm
         case SVGA3D_DEVCAP_SURFACEFMT_UYVY:                     return SVGA3D_UYVY;
         case SVGA3D_DEVCAP_SURFACEFMT_YUY2:                     return SVGA3D_YUY2;
         case SVGA3D_DEVCAP_SURFACEFMT_NV12:                     return SVGA3D_NV12;
-        case SVGA3D_DEVCAP_SURFACEFMT_AYUV:                     return SVGA3D_AYUV;
+        case SVGA3D_DEVCAP_DEAD10:                              return SVGA3D_FORMAT_DEAD2; /* SVGA3D_DEVCAP_SURFACEFMT_AYUV -> SVGA3D_AYUV */
         case SVGA3D_DEVCAP_SURFACEFMT_Z_DF16:                   return SVGA3D_Z_DF16;
         case SVGA3D_DEVCAP_SURFACEFMT_Z_DF24:                   return SVGA3D_Z_DF24;
         case SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8_INT:              return SVGA3D_Z_D24S8_INT;
@@ -371,7 +385,7 @@ static SVGA3dSurfaceFormat vmsvgaDXDevCapDxfmt2Format(SVGA3dDevCapIndex enmDevCa
         case SVGA3D_DEVCAP_DXFMT_UYVY:                          return SVGA3D_UYVY;
         case SVGA3D_DEVCAP_DXFMT_YUY2:                          return SVGA3D_YUY2;
         case SVGA3D_DEVCAP_DXFMT_NV12:                          return SVGA3D_NV12;
-        case SVGA3D_DEVCAP_DXFMT_AYUV:                          return SVGA3D_AYUV;
+        case SVGA3D_DEVCAP_DXFMT_FORMAT_DEAD2:                  return SVGA3D_FORMAT_DEAD2; /* SVGA3D_DEVCAP_DXFMT_AYUV -> SVGA3D_AYUV */
         case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_TYPELESS:         return SVGA3D_R32G32B32A32_TYPELESS;
         case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_UINT:             return SVGA3D_R32G32B32A32_UINT;
         case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_SINT:             return SVGA3D_R32G32B32A32_SINT;
@@ -388,8 +402,8 @@ static SVGA3dSurfaceFormat vmsvgaDXDevCapDxfmt2Format(SVGA3dDevCapIndex enmDevCa
         case SVGA3D_DEVCAP_DXFMT_R32G32_SINT:                   return SVGA3D_R32G32_SINT;
         case SVGA3D_DEVCAP_DXFMT_R32G8X24_TYPELESS:             return SVGA3D_R32G8X24_TYPELESS;
         case SVGA3D_DEVCAP_DXFMT_D32_FLOAT_S8X24_UINT:          return SVGA3D_D32_FLOAT_S8X24_UINT;
-        case SVGA3D_DEVCAP_DXFMT_R32_FLOAT_X8X24_TYPELESS:      return SVGA3D_R32_FLOAT_X8X24;
-        case SVGA3D_DEVCAP_DXFMT_X32_TYPELESS_G8X24_UINT:       return SVGA3D_X32_G8X24_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R32_FLOAT_X8X24:               return SVGA3D_R32_FLOAT_X8X24;
+        case SVGA3D_DEVCAP_DXFMT_X32_G8X24_UINT:                return SVGA3D_X32_G8X24_UINT;
         case SVGA3D_DEVCAP_DXFMT_R10G10B10A2_TYPELESS:          return SVGA3D_R10G10B10A2_TYPELESS;
         case SVGA3D_DEVCAP_DXFMT_R10G10B10A2_UINT:              return SVGA3D_R10G10B10A2_UINT;
         case SVGA3D_DEVCAP_DXFMT_R11G11B10_FLOAT:               return SVGA3D_R11G11B10_FLOAT;
@@ -407,8 +421,8 @@ static SVGA3dSurfaceFormat vmsvgaDXDevCapDxfmt2Format(SVGA3dDevCapIndex enmDevCa
         case SVGA3D_DEVCAP_DXFMT_R32_SINT:                      return SVGA3D_R32_SINT;
         case SVGA3D_DEVCAP_DXFMT_R24G8_TYPELESS:                return SVGA3D_R24G8_TYPELESS;
         case SVGA3D_DEVCAP_DXFMT_D24_UNORM_S8_UINT:             return SVGA3D_D24_UNORM_S8_UINT;
-        case SVGA3D_DEVCAP_DXFMT_R24_UNORM_X8_TYPELESS:         return SVGA3D_R24_UNORM_X8;
-        case SVGA3D_DEVCAP_DXFMT_X24_TYPELESS_G8_UINT:          return SVGA3D_X24_G8_UINT;
+        case SVGA3D_DEVCAP_DXFMT_R24_UNORM_X8:                  return SVGA3D_R24_UNORM_X8;
+        case SVGA3D_DEVCAP_DXFMT_X24_G8_UINT:                   return SVGA3D_X24_G8_UINT;
         case SVGA3D_DEVCAP_DXFMT_R8G8_TYPELESS:                 return SVGA3D_R8G8_TYPELESS;
         case SVGA3D_DEVCAP_DXFMT_R8G8_UNORM:                    return SVGA3D_R8G8_UNORM;
         case SVGA3D_DEVCAP_DXFMT_R8G8_UINT:                     return SVGA3D_R8G8_UINT;
@@ -539,15 +553,7 @@ static int vmsvgaDXCheckFormatSupport(PVMSVGA3DSTATE pState, SVGA3dSurfaceFormat
             UINT NumQualityLevels;
             hr = pDevice->CheckMultisampleQualityLevels(dxgiFormat, 2, &NumQualityLevels);
             if (SUCCEEDED(hr) && NumQualityLevels != 0)
-                *pu32DevCap |= SVGADX_DXFMT_MULTISAMPLE_2;
-
-            hr = pDevice->CheckMultisampleQualityLevels(dxgiFormat, 4, &NumQualityLevels);
-            if (SUCCEEDED(hr) && NumQualityLevels != 0)
-                *pu32DevCap |= SVGADX_DXFMT_MULTISAMPLE_4;
-
-            hr = pDevice->CheckMultisampleQualityLevels(dxgiFormat, 8, &NumQualityLevels);
-            if (SUCCEEDED(hr) && NumQualityLevels != 0)
-                *pu32DevCap |= SVGADX_DXFMT_MULTISAMPLE_8;
+                *pu32DevCap |= SVGA3D_DXFMT_MULTISAMPLE;
         }
         else
             rc = VERR_NOT_SUPPORTED;
@@ -1252,6 +1258,12 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
 
     *pu32Val = 0;
 
+    if (idx3dCaps > SVGA3D_DEVCAP_MAX)
+    {
+        LogRelMax(16, ("VMSVGA: unsupported SVGA3D_DEVCAP %d\n", idx3dCaps));
+        return VERR_NOT_SUPPORTED;
+    }
+
     /* Most values are taken from:
      * https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-devices-downlevel-intro
      *
@@ -1471,7 +1483,7 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
     case SVGA3D_DEVCAP_SURFACEFMT_UYVY:
     case SVGA3D_DEVCAP_SURFACEFMT_YUY2:
     case SVGA3D_DEVCAP_SURFACEFMT_NV12:
-    case SVGA3D_DEVCAP_SURFACEFMT_AYUV:
+    case SVGA3D_DEVCAP_DEAD10: /* SVGA3D_DEVCAP_SURFACEFMT_AYUV */
     case SVGA3D_DEVCAP_SURFACEFMT_Z_DF16:
     case SVGA3D_DEVCAP_SURFACEFMT_Z_DF24:
     case SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8_INT:
@@ -1501,17 +1513,17 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
             *pu32Val = 1; // D3D_FL9_1_SIMULTANEOUS_RENDER_TARGET_COUNT
         break;
 
-    case SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES:
-    case SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES:
+    case SVGA3D_DEVCAP_DEAD4: /* SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES */
+    case SVGA3D_DEVCAP_DEAD5: /* SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES */
         *pu32Val = (1 << (2-1)) | (1 << (4-1)) | (1 << (8-1)); /* 2x, 4x, 8x */
         break;
 
-    case SVGA3D_DEVCAP_ALPHATOCOVERAGE:
-        /* Obsolete? */
+    case SVGA3D_DEVCAP_DEAD7: /* SVGA3D_DEVCAP_ALPHATOCOVERAGE */
+        /* Obsolete */
         break;
 
-    case SVGA3D_DEVCAP_SUPERSAMPLE:
-        /* Obsolete? */
+    case SVGA3D_DEVCAP_DEAD6: /* SVGA3D_DEVCAP_SUPERSAMPLE */
+        /* Obsolete */
         break;
 
     case SVGA3D_DEVCAP_AUTOGENMIPMAPS:
@@ -1530,11 +1542,11 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
         /* Obsolete */
         break;
 
-    case SVGA3D_DEVCAP_VIDEO_DECODE:
+    case SVGA3D_DEVCAP_DEAD8: /* SVGA3D_DEVCAP_VIDEO_DECODE */
         /* Obsolete */
         break;
 
-    case SVGA3D_DEVCAP_VIDEO_PROCESS:
+    case SVGA3D_DEVCAP_DEAD9: /* SVGA3D_DEVCAP_VIDEO_PROCESS */
         /* Obsolete */
         break;
 
@@ -1556,10 +1568,9 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
         *(float *)pu32Val = 1.0f;
         break;
 
-    case SVGA3D_DEVCAP_LOGICOPS:
+    case SVGA3D_DEVCAP_DEAD3: /* Old SVGA3D_DEVCAP_LOGICOPS */
         /* Deprecated. */
-        AssertCompile(SVGA3D_DEVCAP_LOGICOPS == 92); /* Newer SVGA headers redefine this. */
-        *pu32Val = 0; /* Supported starting with Direct3D 11.1 */
+        AssertCompile(SVGA3D_DEVCAP_DEAD3 == 92); /* Newer SVGA headers redefine this. */
         break;
 
     case SVGA3D_DEVCAP_TS_COLOR_KEY:
@@ -1569,11 +1580,11 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
     case SVGA3D_DEVCAP_DEAD2:
         break;
 
-    case SVGA3D_DEVCAP_DX:
+    case SVGA3D_DEVCAP_DXCONTEXT:
         *pu32Val = 1;
         break;
 
-    case SVGA3D_DEVCAP_MAX_TEXTURE_ARRAY_SIZE:
+    case SVGA3D_DEVCAP_DEAD11: /* SVGA3D_DEVCAP_MAX_TEXTURE_ARRAY_SIZE */
         *pu32Val = D3D11_REQ_TEXTURE2D_ARRAY_AXIS_DIMENSION;
         break;
 
@@ -1633,7 +1644,7 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
     case SVGA3D_DEVCAP_DXFMT_UYVY:
     case SVGA3D_DEVCAP_DXFMT_YUY2:
     case SVGA3D_DEVCAP_DXFMT_NV12:
-    case SVGA3D_DEVCAP_DXFMT_AYUV:
+    case SVGA3D_DEVCAP_DXFMT_FORMAT_DEAD2: /* SVGA3D_DEVCAP_DXFMT_AYUV */
     case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_TYPELESS:
     case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_UINT:
     case SVGA3D_DEVCAP_DXFMT_R32G32B32A32_SINT:
@@ -1650,8 +1661,8 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
     case SVGA3D_DEVCAP_DXFMT_R32G32_SINT:
     case SVGA3D_DEVCAP_DXFMT_R32G8X24_TYPELESS:
     case SVGA3D_DEVCAP_DXFMT_D32_FLOAT_S8X24_UINT:
-    case SVGA3D_DEVCAP_DXFMT_R32_FLOAT_X8X24_TYPELESS:
-    case SVGA3D_DEVCAP_DXFMT_X32_TYPELESS_G8X24_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R32_FLOAT_X8X24:
+    case SVGA3D_DEVCAP_DXFMT_X32_G8X24_UINT:
     case SVGA3D_DEVCAP_DXFMT_R10G10B10A2_TYPELESS:
     case SVGA3D_DEVCAP_DXFMT_R10G10B10A2_UINT:
     case SVGA3D_DEVCAP_DXFMT_R11G11B10_FLOAT:
@@ -1669,8 +1680,8 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
     case SVGA3D_DEVCAP_DXFMT_R32_SINT:
     case SVGA3D_DEVCAP_DXFMT_R24G8_TYPELESS:
     case SVGA3D_DEVCAP_DXFMT_D24_UNORM_S8_UINT:
-    case SVGA3D_DEVCAP_DXFMT_R24_UNORM_X8_TYPELESS:
-    case SVGA3D_DEVCAP_DXFMT_X24_TYPELESS_G8_UINT:
+    case SVGA3D_DEVCAP_DXFMT_R24_UNORM_X8:
+    case SVGA3D_DEVCAP_DXFMT_X24_G8_UINT:
     case SVGA3D_DEVCAP_DXFMT_R8G8_TYPELESS:
     case SVGA3D_DEVCAP_DXFMT_R8G8_UNORM:
     case SVGA3D_DEVCAP_DXFMT_R8G8_UINT:
@@ -1733,11 +1744,56 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
     case SVGA3D_DEVCAP_DXFMT_B8G8R8X8_UNORM:
     case SVGA3D_DEVCAP_DXFMT_BC4_UNORM:
     case SVGA3D_DEVCAP_DXFMT_BC5_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_BC6H_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_BC6H_UF16:
+    case SVGA3D_DEVCAP_DXFMT_BC6H_SF16:
+    case SVGA3D_DEVCAP_DXFMT_BC7_TYPELESS:
+    case SVGA3D_DEVCAP_DXFMT_BC7_UNORM:
+    case SVGA3D_DEVCAP_DXFMT_BC7_UNORM_SRGB:
     {
         SVGA3dSurfaceFormat const enmFormat = vmsvgaDXDevCapDxfmt2Format(idx3dCaps);
         rc = vmsvgaDXCheckFormatSupport(pState, enmFormat, pu32Val);
         break;
     }
+
+    case SVGA3D_DEVCAP_SM41:
+        *pu32Val = 0; /* boolean */
+        break;
+
+    case SVGA3D_DEVCAP_MULTISAMPLE_2X:
+        *pu32Val = 0; /* boolean */
+        break;
+
+    case SVGA3D_DEVCAP_MULTISAMPLE_4X:
+        *pu32Val = 0; /* boolean */
+        break;
+
+    case SVGA3D_DEVCAP_MS_FULL_QUALITY:
+        *pu32Val = 0; /* boolean */
+        break;
+
+    case SVGA3D_DEVCAP_LOGICOPS:
+        AssertCompile(SVGA3D_DEVCAP_LOGICOPS == 248);
+        *pu32Val = 0; /* boolean */
+        break;
+
+    case SVGA3D_DEVCAP_LOGIC_BLENDOPS:
+        *pu32Val = 0; /* boolean */
+        break;
+
+    case SVGA3D_DEVCAP_RESERVED_1:
+        break;
+
+    case SVGA3D_DEVCAP_RESERVED_2:
+        break;
+
+    case SVGA3D_DEVCAP_SM5:
+        *pu32Val = 0; /* boolean */
+        break;
+
+    case SVGA3D_DEVCAP_MULTISAMPLE_8X:
+        *pu32Val = 0; /* boolean */
+        break;
 
     case SVGA3D_DEVCAP_MAX:
     case SVGA3D_DEVCAP_INVALID:
@@ -2612,7 +2668,7 @@ static DECLCALLBACK(void) vmsvga3dDXPredCopy(PVMSVGA3DSTATE p3dState)
 }
 
 
-static DECLCALLBACK(void) vmsvga3dDXStretchBlt(PVMSVGA3DSTATE p3dState)
+static DECLCALLBACK(void) vmsvga3dDXPresentBlt(PVMSVGA3DSTATE p3dState)
 {
     PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
 
@@ -2999,7 +3055,385 @@ static DECLCALLBACK(void) vmsvga3dDXSetGSConstantBufferOffset(PVMSVGA3DSTATE p3d
 }
 
 
+static DECLCALLBACK(void) vmsvga3dDXSetHSConstantBufferOffset(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXSetDSConstantBufferOffset(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXSetCSConstantBufferOffset(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
 static DECLCALLBACK(void) vmsvga3dDXCondBindAllShader(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dScreenCopy(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dGrowOTable(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXGrowCOTable(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dIntraSurfaceCopy(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDefineGBSurface_v3(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXResolveCopy(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXPredResolveCopy(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXPredConvertRegion(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXPredConvert(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dWholeSurfaceCopy(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXDefineUAView(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXDestroyUAView(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXClearUAViewUint(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXClearUAViewFloat(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXCopyStructureCount(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXSetUAViews(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXDrawIndexedInstancedIndirect(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXDrawInstancedIndirect(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXDispatch(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXDispatchIndirect(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dWriteZeroSurface(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dHintZeroSurface(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXTransferToBuffer(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXSetStructureCount(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dLogicOpsBitBlt(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dLogicOpsTransBlt(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dLogicOpsStretchBlt(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dLogicOpsColorFill(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dLogicOpsAlphaBlend(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dLogicOpsClearTypeBlend(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDefineGBSurface_v4(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXSetCSUAViews(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXSetMinLOD(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXDefineDepthStencilView_v2(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXDefineStreamOutputWithMob(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXSetShaderIface(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXBindStreamOutput(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dSurfaceStretchBltNonMSToMS(PVMSVGA3DSTATE p3dState)
+{
+    PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
+
+    RT_NOREF(pBackend);
+    AssertFailed(); /** @todo Implement */
+}
+
+
+static DECLCALLBACK(void) vmsvga3dDXBindShaderIface(PVMSVGA3DSTATE p3dState)
 {
     PVMSVGA3DBACKEND pBackend = p3dState->pBackend;
 
@@ -3064,7 +3498,7 @@ int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, vo
                 p->pfnDXClearDepthStencilView     = vmsvga3dDXClearDepthStencilView;
                 p->pfnDXPredCopyRegion            = vmsvga3dDXPredCopyRegion;
                 p->pfnDXPredCopy                  = vmsvga3dDXPredCopy;
-                p->pfnDXStretchBlt                = vmsvga3dDXStretchBlt;
+                p->pfnDXPresentBlt                = vmsvga3dDXPresentBlt;
                 p->pfnDXGenMips                   = vmsvga3dDXGenMips;
                 p->pfnDXUpdateSubResource         = vmsvga3dDXUpdateSubResource;
                 p->pfnDXReadbackSubResource       = vmsvga3dDXReadbackSubResource;
@@ -3107,7 +3541,49 @@ int vmsvga3dQueryInterface(PVGASTATECC pThisCC, char const *pszInterfaceName, vo
                 p->pfnDXSetVSConstantBufferOffset = vmsvga3dDXSetVSConstantBufferOffset;
                 p->pfnDXSetPSConstantBufferOffset = vmsvga3dDXSetPSConstantBufferOffset;
                 p->pfnDXSetGSConstantBufferOffset = vmsvga3dDXSetGSConstantBufferOffset;
+                p->pfnDXSetHSConstantBufferOffset = vmsvga3dDXSetHSConstantBufferOffset;
+                p->pfnDXSetDSConstantBufferOffset = vmsvga3dDXSetDSConstantBufferOffset;
+                p->pfnDXSetCSConstantBufferOffset = vmsvga3dDXSetCSConstantBufferOffset;
                 p->pfnDXCondBindAllShader         = vmsvga3dDXCondBindAllShader;
+                p->pfnScreenCopy                  = vmsvga3dScreenCopy;
+                p->pfnGrowOTable                  = vmsvga3dGrowOTable;
+                p->pfnDXGrowCOTable               = vmsvga3dDXGrowCOTable;
+                p->pfnIntraSurfaceCopy            = vmsvga3dIntraSurfaceCopy;
+                p->pfnDefineGBSurface_v3          = vmsvga3dDefineGBSurface_v3;
+                p->pfnDXResolveCopy               = vmsvga3dDXResolveCopy;
+                p->pfnDXPredResolveCopy           = vmsvga3dDXPredResolveCopy;
+                p->pfnDXPredConvertRegion         = vmsvga3dDXPredConvertRegion;
+                p->pfnDXPredConvert               = vmsvga3dDXPredConvert;
+                p->pfnWholeSurfaceCopy            = vmsvga3dWholeSurfaceCopy;
+                p->pfnDXDefineUAView              = vmsvga3dDXDefineUAView;
+                p->pfnDXDestroyUAView             = vmsvga3dDXDestroyUAView;
+                p->pfnDXClearUAViewUint           = vmsvga3dDXClearUAViewUint;
+                p->pfnDXClearUAViewFloat          = vmsvga3dDXClearUAViewFloat;
+                p->pfnDXCopyStructureCount        = vmsvga3dDXCopyStructureCount;
+                p->pfnDXSetUAViews                = vmsvga3dDXSetUAViews;
+                p->pfnDXDrawIndexedInstancedIndirect = vmsvga3dDXDrawIndexedInstancedIndirect;
+                p->pfnDXDrawInstancedIndirect     = vmsvga3dDXDrawInstancedIndirect;
+                p->pfnDXDispatch                  = vmsvga3dDXDispatch;
+                p->pfnDXDispatchIndirect          = vmsvga3dDXDispatchIndirect;
+                p->pfnWriteZeroSurface            = vmsvga3dWriteZeroSurface;
+                p->pfnHintZeroSurface             = vmsvga3dHintZeroSurface;
+                p->pfnDXTransferToBuffer          = vmsvga3dDXTransferToBuffer;
+                p->pfnDXSetStructureCount         = vmsvga3dDXSetStructureCount;
+                p->pfnLogicOpsBitBlt              = vmsvga3dLogicOpsBitBlt;
+                p->pfnLogicOpsTransBlt            = vmsvga3dLogicOpsTransBlt;
+                p->pfnLogicOpsStretchBlt          = vmsvga3dLogicOpsStretchBlt;
+                p->pfnLogicOpsColorFill           = vmsvga3dLogicOpsColorFill;
+                p->pfnLogicOpsAlphaBlend          = vmsvga3dLogicOpsAlphaBlend;
+                p->pfnLogicOpsClearTypeBlend      = vmsvga3dLogicOpsClearTypeBlend;
+                p->pfnDefineGBSurface_v4          = vmsvga3dDefineGBSurface_v4;
+                p->pfnDXSetCSUAViews              = vmsvga3dDXSetCSUAViews;
+                p->pfnDXSetMinLOD                 = vmsvga3dDXSetMinLOD;
+                p->pfnDXDefineDepthStencilView_v2 = vmsvga3dDXDefineDepthStencilView_v2;
+                p->pfnDXDefineStreamOutputWithMob = vmsvga3dDXDefineStreamOutputWithMob;
+                p->pfnDXSetShaderIface            = vmsvga3dDXSetShaderIface;
+                p->pfnDXBindStreamOutput          = vmsvga3dDXBindStreamOutput;
+                p->pfnSurfaceStretchBltNonMSToMS  = vmsvga3dSurfaceStretchBltNonMSToMS;
+                p->pfnDXBindShaderIface           = vmsvga3dDXBindShaderIface;
             }
         }
         else

@@ -599,16 +599,16 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
     case SVGA3D_DEVCAP_TEXTURE_OPS:
         break;
 
-    case SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES:
+    case SVGA3D_DEVCAP_DEAD4: /* SVGA3D_DEVCAP_MULTISAMPLE_NONMASKABLESAMPLES */
         break;
 
-    case SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES:
+    case SVGA3D_DEVCAP_DEAD5: /* SVGA3D_DEVCAP_MULTISAMPLE_MASKABLESAMPLES */
         break;
 
-    case SVGA3D_DEVCAP_ALPHATOCOVERAGE:
+    case SVGA3D_DEVCAP_DEAD7: /* SVGA3D_DEVCAP_ALPHATOCOVERAGE */
         break;
 
-    case SVGA3D_DEVCAP_SUPERSAMPLE:
+    case SVGA3D_DEVCAP_DEAD6: /* SVGA3D_DEVCAP_SUPERSAMPLE */
         break;
 
     case SVGA3D_DEVCAP_AUTOGENMIPMAPS:
@@ -794,7 +794,7 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
         *pu32Val = vmsvga3dGetSurfaceFormatSupport(pState, idx3dCaps, (D3DFORMAT)MAKEFOURCC('N', 'V', '1', '2'));
         break;
 
-    case SVGA3D_DEVCAP_SURFACEFMT_AYUV:
+    case SVGA3D_DEVCAP_DEAD10: /* SVGA3D_DEVCAP_SURFACEFMT_AYUV */
         *pu32Val = vmsvga3dGetSurfaceFormatSupport(pState, idx3dCaps, (D3DFORMAT)MAKEFOURCC('A', 'Y', 'U', 'V'));
         break;
 
@@ -1055,7 +1055,7 @@ D3DFORMAT vmsvga3dSurfaceFormat2D3D(SVGA3dSurfaceFormat format)
         return (D3DFORMAT)MAKEFOURCC('N', 'V', '1', '2');
 
     /* Video format with alpha */
-    case SVGA3D_AYUV:
+    case SVGA3D_FORMAT_DEAD2: /* Old SVGA3D_AYUV */
         return (D3DFORMAT)MAKEFOURCC('A', 'Y', 'U', 'V');
 
     case SVGA3D_R8G8B8A8_SNORM:

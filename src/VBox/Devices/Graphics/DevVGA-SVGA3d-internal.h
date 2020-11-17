@@ -553,7 +553,7 @@ typedef struct VMSVGA3DSURFACE
 #else
     uint32_t                idAssociatedContext;
 #endif
-    uint32_t                surfaceFlags;
+    SVGA3dSurface1Flags     surfaceFlags; /* @todo SVGA3dSurfaceAllFlags as an union. */
     SVGA3dSurfaceFormat     format;
 #ifdef VMSVGA3D_OPENGL
     GLint                   internalFormatGL;
