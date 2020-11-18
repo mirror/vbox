@@ -56,9 +56,6 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strGroup /* = QStr
     , m_iSASCount(0)
     , m_iUSBCount(0)
 {
-    setOptions(options() | QWizard::HaveHelpButton);
-    if (button(QWizard::HelpButton))
-        button(QWizard::HelpButton)->setProperty("helptag", "gui-createvm");
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/wizard_new_welcome.png");
@@ -96,6 +93,7 @@ void UIWizardNewVM::prepare()
             break;
         }
     }
+    enableHelpButton("gui-createvm");
     /* Call to base-class: */
     UIWizard::prepare();
 }

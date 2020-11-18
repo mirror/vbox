@@ -50,11 +50,6 @@ void UIWizard::prepare()
 
     /* Make sure custom buttons shown even if final page is first to show: */
     sltCurrentIdChanged(startId());
-
-    /* If help button is enabled by the subclass, connect it to proper slot: */
-    if (button(QWizard::HelpButton))
-        connect(button(QWizard::HelpButton), &QAbstractButton::pressed,
-                &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
 }
 
 UIWizard::UIWizard(QWidget *pParent, WizardType enmType, WizardMode enmMode /* = WizardMode_Auto */)
@@ -271,6 +266,23 @@ void UIWizard::assignBackground(const QString &strBackground)
 }
 
 #endif
+
+void UIWizard::enableHelpButton(const QString &strHelpTag /* = QString() */)
+{
+    setOptions(options() | QWizard::HaveHelpButton);
+    if (button(QWizard::HelpButton))
+    {
+        button(QWizard::HelpButton)->setProperty("helptag", strHelpTag);
+        connect(button(QWizard::HelpButton), &QAbstractButton::pressed,
+                &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+    }
+}
+
+void UIWizard::setHelpButtonHelpTag(const QString &strHelpTag /* = QString() */)
+{
+    if (button(QWizard::HelpButton))
+        button(QWizard::HelpButton)->setProperty("helptag", strHelpTag);
+}
 
 void UIWizard::sltCurrentIdChanged(int iId)
 {

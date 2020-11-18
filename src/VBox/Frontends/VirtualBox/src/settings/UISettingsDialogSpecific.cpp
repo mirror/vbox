@@ -702,6 +702,7 @@ void UISettingsDialogMachine::prepare()
                     pSettingsPage = new UIMachineSettingsGeneral;
                     addItem(":/machine_32px.png", ":/machine_24px.png", ":/machine_16px.png",
                             iPageIndex, "#general", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "generalsettings");
                     break;
                 }
                 /* System page: */
@@ -710,6 +711,7 @@ void UISettingsDialogMachine::prepare()
                     pSettingsPage = new UIMachineSettingsSystem;
                     addItem(":/chipset_32px.png", ":/chipset_24px.png", ":/chipset_16px.png",
                             iPageIndex, "#system", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "settings-system");
                     break;
                 }
                 /* Display page: */
@@ -830,6 +832,9 @@ void UISettingsDialogMachine::prepare()
     /* First item as default: */
     else
         m_pSelector->selectById(MachineSettingsPageType_General);
+
+    /* Enabled the 'Help' button of the button box for the context senstive help: */
+    enableHelpButton();
 }
 
 bool UISettingsDialogMachine::isPageAvailable(int iPageId) const

@@ -117,7 +117,7 @@ void UISettingsDialog::reject()
 void UISettingsDialog::sltCategoryChanged(int cId)
 {
     const int iIndex = m_pages.value(cId);
-
+    setHelpButtonHelpTag(iIndex);
 #ifdef VBOX_WS_MAC
     /* If index is within the stored size list bounds: */
     if (iIndex < m_sizeList.count())
@@ -425,6 +425,28 @@ void UISettingsDialog::addItem(const QString &strBigIcon,
     }
 }
 
+void UISettingsDialog::enableHelpButton()
+{
+    if (m_pButtonBox)
+    {
+        QPushButton *pHelpButton = m_pButtonBox->addButton(QDialogButtonBox::Help);
+        if (pHelpButton)
+            connect(pHelpButton, &QAbstractButton::pressed,
+                    &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+    }
+}
+
+void UISettingsDialog::setHelpButtonHelpTag(int iPageType)
+{
+    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Help))
+        m_pButtonBox->button(QDialogButtonBox::Help)->setProperty("helptag", m_pageHelpTags[iPageType]);
+}
+
+void UISettingsDialog::addPageHelpTag(int iPageType, const QString &strHelpTag)
+{
+    m_pageHelpTags[iPageType] = strHelpTag;
+}
+
 void UISettingsDialog::revalidate(UIPageValidator *pValidator)
 {
     /* Perform page revalidation: */
@@ -666,8 +688,6 @@ void UISettingsDialog::prepare()
     if (m_pButtonBox)
     {
         m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
-        connect(m_pButtonBox, &QIDialogButtonBox::helpRequested,
-                &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
 
         /* Create status-bar: */
         m_pStatusBar = new QStackedWidget;

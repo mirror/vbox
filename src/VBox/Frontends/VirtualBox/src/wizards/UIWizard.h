@@ -77,6 +77,10 @@ protected:
     /** Assigns @a strBackground. */
     void assignBackground(const QString &strBackground);
 #endif
+    /** Inserts the standard help button to the button box of the wizard. Optional @param strHelpTag
+      * is set as property. This is used for context sensitive help. */
+    void enableHelpButton(const QString &strHelpTag = QString());
+    void setHelpButtonHelpTag(const QString &strHelpTag = QString());
 
 protected slots:
 
