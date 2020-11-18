@@ -932,7 +932,8 @@ void UIChooserAbstractModel::sltHandleReadCloudMachineListTaskComplete()
                 UIChooserNode *pFakeNode = searchFakeNode(pProfileNode);
                 AssertPtrReturnVoid(pFakeNode);
                 pFakeNode->toMachineNode()->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
-                pFakeNode->item()->updateItem();
+                if (pFakeNode->item())
+                    pFakeNode->item()->updateItem();
             }
         }
     }
