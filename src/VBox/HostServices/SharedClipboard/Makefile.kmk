@@ -48,7 +48,6 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
  VBoxSharedClipboard_SOURCES += \
 	VBoxSharedClipboardSvc-transfers.cpp \
 	VBoxSharedClipboardSvc-utils.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardArea.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp
  VBoxSharedClipboard_SOURCES.win += \

@@ -388,7 +388,6 @@ int ShClBackendTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 /** @name Internal Shared Clipboard transfer host service functions.
  * @{
  */
-int shClSvcTransferAreaDetach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer);
 int shClSvcTransferHandler(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE callHandle, uint32_t u32Function,
                            uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival);
 int shClSvcTransferHostHandler(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);

@@ -1214,12 +1214,6 @@ private:
     HRESULT onSessionEnd(const ComPtr<ISession> &aSession,
                          ComPtr<IProgress> &aProgress);
     HRESULT finishOnlineMergeMedium();
-    HRESULT clipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID);
-    HRESULT clipboardAreaUnregister(ULONG aID);
-    HRESULT clipboardAreaAttach(ULONG aID);
-    HRESULT clipboardAreaDetach(ULONG aID);
-    HRESULT clipboardAreaGetMostRecent(ULONG *aID);
-    HRESULT clipboardAreaGetRefCount(ULONG aID, ULONG *aRefCount);
     HRESULT pullGuestProperties(std::vector<com::Utf8Str> &aNames,
                                 std::vector<com::Utf8Str> &aValues,
                                 std::vector<LONG64> &aTimestamps,
@@ -1376,12 +1370,6 @@ private:
     HRESULT onSessionEnd(const ComPtr<ISession> &aSession,
                          ComPtr<IProgress> &aProgress);
     HRESULT finishOnlineMergeMedium();
-    HRESULT clipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID);
-    HRESULT clipboardAreaUnregister(ULONG aID);
-    HRESULT clipboardAreaAttach(ULONG aID);
-    HRESULT clipboardAreaDetach(ULONG aID);
-    HRESULT clipboardAreaGetMostRecent(ULONG *aID);
-    HRESULT clipboardAreaGetRefCount(ULONG aID, ULONG *aRefCount);
     HRESULT pullGuestProperties(std::vector<com::Utf8Str> &aNames,
                                 std::vector<com::Utf8Str> &aValues,
                                 std::vector<LONG64> &aTimestamps,

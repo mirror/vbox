@@ -72,14 +72,6 @@ void shClSvcClientTransfersReset(PSHCLCLIENT pClient)
 
     LogFlowFuncEnter();
 
-    const uint32_t cTransfers = ShClTransferCtxGetTotalTransfers(&pClient->TransferCtx);
-    for (uint32_t i = 0; i < cTransfers; i++)
-    {
-        PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(&pClient->TransferCtx, i);
-        if (pTransfer)
-            shClSvcTransferAreaDetach(&pClient->State, pTransfer);
-    }
-
     ShClTransferCtxDestroy(&pClient->TransferCtx);
 }
 
@@ -1310,17 +1302,6 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
         return VERR_ACCESS_DENIED;
     }
 
-    /* A (valid) service extension is needed because VBoxSVC needs to keep track of the
-     * clipboard areas cached on the host. */
-    if (!g_ExtState.pfnExtension)
-    {
-#ifdef DEBUG_andy
-        AssertPtr(g_ExtState.pfnExtension);
-#endif
-        LogFunc(("Invalid / no service extension set, skipping transfer handling\n"));
-        return VERR_NOT_SUPPORTED;
-    }
-
     int rc = VERR_INVALID_PARAMETER; /* Play safe by default. */
 
     /*
@@ -1760,190 +1741,6 @@ int shClSvcTransferHostMsgHandler(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
 }
 
 /**
- * Registers an clipboard transfer area.
- *
- * @returns VBox status code.
- * @param   pClientState        Client state to use.
- * @param   pTransfer           Shared Clipboard transfer to register a clipboard area for.
- */
-int shClSvcTransferAreaRegister(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer)
-{
-    RT_NOREF(pClientState);
-
-    LogFlowFuncEnter();
-
-    AssertMsgReturn(pTransfer->pArea == NULL, ("An area already is registered for this transfer\n"),
-                    VERR_WRONG_ORDER);
-
-    pTransfer->pArea = new SharedClipboardArea();
-    if (!pTransfer->pArea)
-        return VERR_NO_MEMORY;
-
-    int rc;
-
-    if (g_ExtState.pfnExtension)
-    {
-        SHCLEXTAREAPARMS parms;
-        RT_ZERO(parms);
-
-        parms.uID = NIL_SHCLAREAID;
-
-        /* As the meta data is now complete, register a new clipboard on the host side. */
-        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER, &parms, sizeof(parms));
-        if (RT_SUCCESS(rc))
-        {
-            /* Note: Do *not* specify SHCLAREA_OPEN_FLAGS_MUST_NOT_EXIST as flags here, as VBoxSVC took care of the
-             *       clipboard area creation already. */
-            rc = pTransfer->pArea->OpenTemp(parms.uID /* Area ID */,
-                                            SHCLAREA_OPEN_FLAGS_NONE);
-        }
-
-        LogFlowFunc(("Registered new clipboard area (%RU32) by client %RU32 with rc=%Rrc\n",
-                     parms.uID, pClientState->uClientID, rc));
-    }
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Unregisters an clipboard transfer area.
- *
- * @returns VBox status code.
- * @param   pClientState        Client state to use.
- * @param   pTransfer           Shared Clipboard transfer to unregister a clipboard area from.
- */
-int shClSvcTransferAreaUnregister(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer)
-{
-    RT_NOREF(pClientState);
-
-    LogFlowFuncEnter();
-
-    if (!pTransfer->pArea)
-        return VINF_SUCCESS;
-
-    int rc = VINF_SUCCESS;
-
-    if (g_ExtState.pfnExtension)
-    {
-        SHCLEXTAREAPARMS parms;
-        RT_ZERO(parms);
-
-        parms.uID = pTransfer->pArea->GetID();
-
-        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_UNREGISTER, &parms, sizeof(parms));
-        if (RT_SUCCESS(rc))
-        {
-            rc = pTransfer->pArea->Close();
-            if (RT_SUCCESS(rc))
-            {
-                delete pTransfer->pArea;
-                pTransfer->pArea = NULL;
-            }
-        }
-
-        LogFlowFunc(("Unregistered clipboard area (%RU32) by client %RU32 with rc=%Rrc\n",
-                     parms.uID, pClientState->uClientID, rc));
-    }
-
-    delete pTransfer->pArea;
-    pTransfer->pArea = NULL;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Attaches to an existing (registered) clipboard transfer area.
- *
- * @returns VBox status code.
- * @param   pClientState        Client state to use.
- * @param   pTransfer           Shared Clipboard transfer to attach a clipboard area to.
- * @param   uID                 ID of clipboard area to to attach to. Specify 0 to attach to the most recent one.
- */
-int shClSvcTransferAreaAttach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer,
-                              SHCLAREAID uID)
-{
-    RT_NOREF(pClientState);
-
-    LogFlowFuncEnter();
-
-    AssertMsgReturn(pTransfer->pArea == NULL, ("An area already is attached to this transfer\n"),
-                    VERR_WRONG_ORDER);
-
-    pTransfer->pArea = new SharedClipboardArea();
-    if (!pTransfer->pArea)
-        return VERR_NO_MEMORY;
-
-    int rc = VINF_SUCCESS;
-
-    if (g_ExtState.pfnExtension)
-    {
-        SHCLEXTAREAPARMS parms;
-        RT_ZERO(parms);
-
-        parms.uID = uID; /* 0 means most recent clipboard area. */
-
-        /* The client now needs to attach to the most recent clipboard area
-         * to keep a reference to it. The host does the actual book keeping / cleanup then.
-         *
-         * This might fail if the host does not have a most recent clipboard area (yet). */
-        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH, &parms, sizeof(parms));
-        if (RT_SUCCESS(rc))
-            rc = pTransfer->pArea->OpenTemp(parms.uID /* Area ID */);
-
-        LogFlowFunc(("Attached client %RU32 to clipboard area %RU32 with rc=%Rrc\n",
-                     pClientState->uClientID, parms.uID, rc));
-    }
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Detaches from an clipboard transfer area.
- *
- * @returns VBox status code.
- * @param   pClientState        Client state to use.
- * @param   pTransfer           Shared Clipboard transfer to detach a clipboard area from.
- */
-int shClSvcTransferAreaDetach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer)
-{
-    RT_NOREF(pClientState);
-
-    LogFlowFuncEnter();
-
-    if (!pTransfer->pArea)
-        return VINF_SUCCESS;
-
-    const uint32_t uAreaID = pTransfer->pArea->GetID();
-
-    int rc = VINF_SUCCESS;
-
-    if (g_ExtState.pfnExtension)
-    {
-        SHCLEXTAREAPARMS parms;
-        RT_ZERO(parms);
-        parms.uID = uAreaID;
-
-        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
-
-        LogFlowFunc(("Detached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
-                     pClientState->uClientID, uAreaID, rc));
-    }
-
-    delete pTransfer->pArea;
-    pTransfer->pArea = NULL;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
  * Reports a transfer status to the guest.
  *
  * @returns VBox status code.
@@ -2040,23 +1837,19 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
 
                 if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
                 {
-                    rc = shClSvcTransferAreaRegister(&pClient->State, pTransfer);
-                    if (RT_SUCCESS(rc))
-                    {
-                        creationCtx.Interface.pfnTransferOpen  = shClSvcTransferIfaceOpen;
-                        creationCtx.Interface.pfnTransferClose = shClSvcTransferIfaceClose;
+                    creationCtx.Interface.pfnTransferOpen  = shClSvcTransferIfaceOpen;
+                    creationCtx.Interface.pfnTransferClose = shClSvcTransferIfaceClose;
 
-                        creationCtx.Interface.pfnRootsGet      = shClSvcTransferIfaceGetRoots;
+                    creationCtx.Interface.pfnRootsGet      = shClSvcTransferIfaceGetRoots;
 
-                        creationCtx.Interface.pfnListOpen      = shClSvcTransferIfaceListOpen;
-                        creationCtx.Interface.pfnListClose     = shClSvcTransferIfaceListClose;
-                        creationCtx.Interface.pfnListHdrRead   = shClSvcTransferIfaceListHdrRead;
-                        creationCtx.Interface.pfnListEntryRead = shClSvcTransferIfaceListEntryRead;
+                    creationCtx.Interface.pfnListOpen      = shClSvcTransferIfaceListOpen;
+                    creationCtx.Interface.pfnListClose     = shClSvcTransferIfaceListClose;
+                    creationCtx.Interface.pfnListHdrRead   = shClSvcTransferIfaceListHdrRead;
+                    creationCtx.Interface.pfnListEntryRead = shClSvcTransferIfaceListEntryRead;
 
-                        creationCtx.Interface.pfnObjOpen       = shClSvcTransferIfaceObjOpen;
-                        creationCtx.Interface.pfnObjClose      = shClSvcTransferIfaceObjClose;
-                        creationCtx.Interface.pfnObjRead       = shClSvcTransferIfaceObjRead;
-                    }
+                    creationCtx.Interface.pfnObjOpen       = shClSvcTransferIfaceObjOpen;
+                    creationCtx.Interface.pfnObjClose      = shClSvcTransferIfaceObjClose;
+                    creationCtx.Interface.pfnObjRead       = shClSvcTransferIfaceObjRead;
                 }
                 else if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
                 {

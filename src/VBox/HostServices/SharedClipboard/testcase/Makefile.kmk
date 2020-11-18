@@ -38,8 +38,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   tstClipboardServiceHost_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
   tstClipboardServiceHost_SOURCES += \
 	../VBoxSharedClipboardSvc-transfers.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardArea.cpp
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp
  endif
 
  #

@@ -466,135 +466,6 @@ typedef struct _SHCLOBJDATACHUNK
 } SHCLOBJDATACHUNK, *PSHCLOBJDATACHUNK;
 
 /**
- * Enumeration for specifying a clipboard area object type.
- */
-typedef enum _SHCLAREAOBJTYPE
-{
-    /** Unknown object type; do not use. */
-    SHCLAREAOBJTYPE_UNKNOWN = 0,
-    /** Object is a directory. */
-    SHCLAREAOBJTYPE_DIR,
-    /** Object is a file. */
-    SHCLAREAOBJTYPE_FILE,
-    /** Object is a symbolic link. */
-    SHCLAREAOBJTYPE_SYMLINK,
-    /** The usual 32-bit hack. */
-    SHCLAREAOBJTYPE_32Bit_Hack = 0x7fffffff
-} SHCLAREAOBJTYPE;
-
-/** Clipboard area ID. A valid area is >= 1.
- *  If 0 is specified, the last (most recent) area is meant.
- *  Set to UINT32_MAX if not initialized. */
-typedef uint32_t SHCLAREAID;
-
-/** Defines a non-initialized (nil) clipboard area. */
-#define NIL_SHCLAREAID       UINT32_MAX
-
-/** SharedClipboardArea open flags. */
-typedef uint32_t SHCLAREAOPENFLAGS;
-
-/** No clipboard area open flags specified. */
-#define SHCLAREA_OPEN_FLAGS_NONE               0
-/** The clipboard area must not exist yet. */
-#define SHCLAREA_OPEN_FLAGS_MUST_NOT_EXIST     RT_BIT(0)
-/** Mask of all valid clipboard area open flags.  */
-#define SHCLAREA_OPEN_FLAGS_VALID_MASK         0x1
-
-/** Defines a clipboard area object state. */
-typedef uint32_t SHCLAREAOBJSTATE;
-
-/** No object state set. */
-#define SHCLAREAOBJSTATE_NONE                0
-/** The object is considered as being complete (e.g. serialized). */
-#define SHCLAREAOBJSTATE_COMPLETE            RT_BIT(0)
-
-/**
- * Lightweight structure to keep a clipboard area object's state.
- *
- * Note: We don't want to use the ClipboardURIObject class here, as this
- *       is too heavy for this purpose.
- */
-typedef struct _SHCLAREAOBJ
-{
-    SHCLAREAOBJTYPE  enmType;
-    SHCLAREAOBJSTATE fState;
-} SHCLAREAOBJ, *PSHCLAREAOBJ;
-
-/**
- * Class for maintaining a Shared Clipboard area on the host or guest.
- *
- * This will contain all received files & directories for a single Shared
- * Clipboard operation.
- *
- * In case of a failed Shared Clipboard operation this class can also
- * perform a gentle rollback if required.
- */
-class SharedClipboardArea
-{
-public:
-
-    SharedClipboardArea(void);
-    SharedClipboardArea(const char *pszPath, SHCLAREAID uID = NIL_SHCLAREAID,
-                        SHCLAREAOPENFLAGS fFlags = SHCLAREA_OPEN_FLAGS_NONE);
-    virtual ~SharedClipboardArea(void);
-
-public:
-
-    uint32_t AddRef(void);
-    uint32_t Release(void);
-
-    int Lock(void);
-    int Unlock(void);
-
-    int AddObject(const char *pszPath, const SHCLAREAOBJ &Obj);
-    int GetObject(const char *pszPath, PSHCLAREAOBJ pObj);
-
-    int Close(void);
-    bool IsOpen(void) const;
-    int OpenEx(const char *pszPath, SHCLAREAID uID = NIL_SHCLAREAID,
-               SHCLAREAOPENFLAGS fFlags = SHCLAREA_OPEN_FLAGS_NONE);
-    int OpenTemp(SHCLAREAID uID = NIL_SHCLAREAID,
-                 SHCLAREAOPENFLAGS fFlags = SHCLAREA_OPEN_FLAGS_NONE);
-    SHCLAREAID GetID(void) const;
-    const char *GetDirAbs(void) const;
-    uint32_t GetRefCount(void);
-    int Reopen(void);
-    int Reset(bool fDeleteContent);
-    int Rollback(void);
-
-public:
-
-    static int PathConstruct(const char *pszBase, SHCLAREAID uID, char *pszPath, size_t cbPath);
-
-protected:
-
-    int initInternal(void);
-    int destroyInternal(void);
-    int closeInternal(void);
-
-protected:
-
-    typedef std::map<RTCString, SHCLAREAOBJ> SharedClipboardAreaFsObjMap;
-
-    /** Creation timestamp (in ms). */
-    uint64_t                     m_tsCreatedMs;
-    /** Number of references to this instance. */
-    volatile uint32_t            m_cRefs;
-    /** Critical section for serializing access. */
-    RTCRITSECT                   m_CritSect;
-    /** Open flags. */
-    uint32_t                     m_fOpen;
-    /** Directory handle for root clipboard directory. */
-    RTDIR                        m_hDir;
-    /** Absolute path to root clipboard directory. */
-    RTCString                    m_strPathAbs;
-    /** List for holding created directories in the case of a rollback. */
-    SharedClipboardAreaFsObjMap  m_mapObj;
-    /** Associated clipboard area ID. */
-    SHCLAREAID                   m_uID;
-};
-
-/**
  * Structure for handling a single transfer object context.
  */
 typedef struct _SHCLCLIENTTRANSFEROBJCTX
@@ -861,10 +732,6 @@ typedef struct SHCLTRANSFER
     SHCLOBJHANDLE            uObjHandleNext;
     /** Map of all objects handles related to this transfer. */
     RTLISTANCHOR             lstObj;
-    /** The transfer's own (local) area, if any (can be NULL if not needed).
-     *  The area itself has a clipboard area ID assigned.
-     *  On the host this area ID gets shared (maintained / locked) across all VMs via VBoxSVC. */
-    SharedClipboardArea     *pArea;
     /** The transfer's own provider context. */
     SHCLPROVIDERCTX          ProviderCtx;
     /** The transfer's provider interface. */
@@ -990,7 +857,6 @@ bool ShClTransferListEntryIsValid(PSHCLLISTENTRY pListEntry);
 int ShClTransferSetInterface(PSHCLTRANSFER pTransfer, PSHCLPROVIDERCREATIONCTX pCreationCtx);
 int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
 void ShClTransferReset(PSHCLTRANSFER pTransfer);
-SharedClipboardArea *ShClTransferGetArea(PSHCLTRANSFER pTransfer);
 
 uint32_t ShClTransferRootsCount(PSHCLTRANSFER pTransfer);
 int ShClTransferRootsEntry(PSHCLTRANSFER pTransfer, uint64_t uIndex, PSHCLROOTLISTENTRY pEntry);
@@ -1024,4 +890,3 @@ bool ShClMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax);
 const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus);
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_transfers_h */
-

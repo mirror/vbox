@@ -725,10 +725,6 @@ ifdef VBOX_WITH_HOSTNETIF_API
  endif
 endif
 
-ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
- VBoxSVC_SOURCES += $(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardArea.cpp
-endif
-
 $(call KB_FN_DO_PASS0_ON_TARGET,VBoxSVC) # Sets VBoxSVC_0_OUTDIR
 
 ifdef VBOX_WITH_MAIN_USB_ID_DATABASE # Generate a database of USB vendor IDs and device IDs.

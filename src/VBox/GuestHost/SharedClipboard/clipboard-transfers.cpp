@@ -1164,8 +1164,6 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
     pTransfer->State.enmDir    = SHCLTRANSFERDIR_UNKNOWN;
     pTransfer->State.enmSource = SHCLSOURCE_INVALID;
 
-    pTransfer->pArea = NULL; /* Will be created later if needed. */
-
     pTransfer->Thread.hThread    = NIL_RTTHREAD;
     pTransfer->Thread.fCancelled = false;
     pTransfer->Thread.fStarted   = false;
@@ -2138,19 +2136,6 @@ void ShClTransferReset(PSHCLTRANSFER pTransfer)
 
         RTMemFree(pItObj);
     }
-}
-
-/**
- * Returns the clipboard area for a Shared Clipboard transfer.
- *
- * @returns Current clipboard area, or NULL if none.
- * @param   pTransfer           Clipboard transfer to return clipboard area for.
- */
-SharedClipboardArea *ShClTransferGetArea(PSHCLTRANSFER pTransfer)
-{
-    AssertPtrReturn(pTransfer, NULL);
-
-    return pTransfer->pArea;
 }
 
 /**

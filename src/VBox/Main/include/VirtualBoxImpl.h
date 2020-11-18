@@ -74,10 +74,6 @@ namespace settings
 class VirtualBoxClassFactory; /* See ../src-server/win/svcmain.cpp  */
 #endif
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-struct SharedClipboardAreaData;
-#endif
-
 class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxWrap
 #ifdef RT_OS_WINDOWS
@@ -177,18 +173,6 @@ public:
     void i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId);
     void i_onSnapshotRestored(const Guid &aMachineId, const Guid &aSnapshotId);
     void i_onSnapshotChanged(const Guid &aMachineId, const Guid &aSnapshotId);
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    int i_clipboardAreaCreate(ULONG uAreaID, uint32_t fFlags, SharedClipboardAreaData **ppAreaData);
-    int i_clipboardAreaDestroy(SharedClipboardAreaData *pAreaData);
-
-    HRESULT i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID);
-    HRESULT i_onClipboardAreaUnregister(ULONG aID);
-    HRESULT i_onClipboardAreaAttach(ULONG aID);
-    HRESULT i_onClipboardAreaDetach(ULONG aID);
-    ULONG i_onClipboardAreaGetMostRecent(void);
-    ULONG i_onClipboardAreaGetRefCount(ULONG aID);
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
     void i_onGuestPropertyChanged(const Guid &aMachineId, const Utf8Str &aName, const Utf8Str &aValue, const Utf8Str &aFlags);
     void i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bool fRemove, const Utf8Str &aName,

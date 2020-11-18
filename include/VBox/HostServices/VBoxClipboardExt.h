@@ -38,18 +38,6 @@
 #define VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE      (1)
 #define VBOX_CLIPBOARD_EXT_FN_DATA_READ            (2)
 #define VBOX_CLIPBOARD_EXT_FN_DATA_WRITE           (3)
-/** Registers a new clipboard area.
- *  Uses the SHCLEXTAREAPARMS struct. */
-#define VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER        (4)
-/** Unregisters an existing clipboard area.
- *  Uses the SHCLEXTAREAPARMS struct. */
-#define VBOX_CLIPBOARD_EXT_FN_AREA_UNREGISTER      (5)
-/** Attaches to an existing clipboard area.
- *  Uses the SHCLEXTAREAPARMS struct. */
-#define VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH          (6)
-/** Detaches from an existing clipboard area.
- *  Uses the SHCLEXTAREAPARMS struct. */
-#define VBOX_CLIPBOARD_EXT_FN_AREA_DETACH          (7)
 
 typedef DECLCALLBACKTYPE(int, FNVRDPCLIPBOARDEXTCALLBACK,(uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData));
 typedef FNVRDPCLIPBOARDEXTCALLBACK *PFNVRDPCLIPBOARDEXTCALLBACK;
@@ -64,39 +52,5 @@ typedef struct _SHCLEXTPARMS
     } u;
     uint32_t   cbData;
 } SHCLEXTPARMS;
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-typedef uint32_t SHCLEXTAREAREGISTETRFLAGS;
-/** No clipboard register area flags specified. */
-#define SHCLEXTAREA_REGISTER_FLAGS_NONE        0
-
-typedef uint32_t SHCLEXTAREAATTACHFLAGS;
-/** No clipboard attach area flags specified. */
-#define SHCLEXTAREA_ATTACH_FLAGS_NONE          0
-
-/**
- * Structure for keeping clipboard area callback parameters.
- */
-typedef struct _SHCLEXTAREAPARMS
-{
-    /** The clipboard area's ID the callback is for. */
-    SHCLAREAID uID;
-    union
-    {
-        struct
-        {
-            void                              *pvData;
-            uint32_t                           cbData;
-            /** Area register flags; not used yet and must be set to 0. */
-            SHCLEXTAREAREGISTETRFLAGS fFlags;
-        } fn_register;
-        struct
-        {
-            /** Area attach flags; not used yet and must be set to 0. */
-            SHCLEXTAREAATTACHFLAGS    fFlags;
-        } fn_attach;
-    } u;
-} SHCLEXTAREAPARMS, *PSHCLEXTAREAPARMS;
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardExt_h */
