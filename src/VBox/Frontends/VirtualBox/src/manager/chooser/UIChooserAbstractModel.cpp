@@ -870,6 +870,7 @@ void UIChooserAbstractModel::sltHandleReadCloudMachineListTaskComplete()
     AssertPtrReturnVoid(pSender);
     const UICloudEntityKey guiCloudProfileKey = pSender->cloudProfileKey();
     const QVector<CCloudMachine> machines = pSender->machines();
+    const QString strErrorMessage = pSender->errorMessage();
 
     /* Delete task: */
     delete pSender;
@@ -931,7 +932,10 @@ void UIChooserAbstractModel::sltHandleReadCloudMachineListTaskComplete()
                 /* We should update at least fake cloud machine node: */
                 UIChooserNode *pFakeNode = searchFakeNode(pProfileNode);
                 AssertPtrReturnVoid(pFakeNode);
-                pFakeNode->toMachineNode()->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
+                UIVirtualMachineItemCloud *pFakeMachineItem = pFakeNode->toMachineNode()->cache()->toCloud();
+                AssertPtrReturnVoid(pFakeMachineItem);
+                pFakeMachineItem->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
+                pFakeMachineItem->setFakeCloudItemErrorMessage(strErrorMessage);
                 if (pFakeNode->item())
                     pFakeNode->item()->updateItem();
             }

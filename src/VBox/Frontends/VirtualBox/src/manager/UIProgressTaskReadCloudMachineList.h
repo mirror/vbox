@@ -48,6 +48,9 @@ public:
     /** Returns resulting cloud machine-wrapper vector. */
     QVector<CCloudMachine> machines() const;
 
+    /** Returns error message. */
+    QString errorMessage() const;
+
 protected:
 
     /** Creates and returns started progress-wrapper required to init UIProgressObject. */
@@ -66,6 +69,9 @@ private:
     CCloudClient            m_comCloudClient;
     /** Holds the resulting cloud machine-wrapper vector. */
     QVector<CCloudMachine>  m_machines;
+
+    /** Holds the error message. */
+    QString  m_strErrorMessage;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UIProgressTaskReadCloudMachineList_h */

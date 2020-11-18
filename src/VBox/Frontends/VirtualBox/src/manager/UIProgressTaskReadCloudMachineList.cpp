@@ -17,7 +17,7 @@
 
 /* GUI includes: */
 #include "UICloudNetworkingStuff.h"
-#include "UIMessageCenter.h"
+#include "UIErrorString.h"
 #include "UIProgressTaskReadCloudMachineList.h"
 
 
@@ -40,46 +40,47 @@ QVector<CCloudMachine> UIProgressTaskReadCloudMachineList::machines() const
     return m_machines;
 }
 
+QString UIProgressTaskReadCloudMachineList::errorMessage() const
+{
+    return m_strErrorMessage;
+}
+
 CProgress UIProgressTaskReadCloudMachineList::createProgress()
 {
     /* Create cloud client: */
     m_comCloudClient = cloudClientByName(m_guiCloudProfileKey.m_strProviderShortName,
-                                         m_guiCloudProfileKey.m_strProfileName);
+                                         m_guiCloudProfileKey.m_strProfileName,
+                                         m_strErrorMessage);
+    if (m_comCloudClient.isNull())
+        return CProgress();
 
-    /* Prepare resulting progress-wrapper: */
-    CProgress comResult;
-
-    /* Initialize actual progress-wrapper: */
-    if (m_fWithRefresh)
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_fWithRefresh
+                          ? m_comCloudClient.ReadCloudMachineList()
+                          : m_comCloudClient.ReadCloudMachineStubList();
+    if (!m_comCloudClient.isOk())
     {
-        CProgress comProgress = m_comCloudClient.ReadCloudMachineList();
-        if (!m_comCloudClient.isOk())
-            msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
-        else
-            comResult = comProgress;
-    }
-    else
-    {
-        CProgress comProgress = m_comCloudClient.ReadCloudMachineStubList();
-        if (!m_comCloudClient.isOk())
-            msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
-        else
-            comResult = comProgress;
+        m_strErrorMessage = UIErrorString::formatErrorInfo(m_comCloudClient);
+        return CProgress();
     }
 
-    /* Return progress-wrapper in any case: */
-    return comResult;
+    /* Return progress-wrapper: */
+    return comProgress;
 }
 
 void UIProgressTaskReadCloudMachineList::handleProgressFinished(CProgress &comProgress)
 {
     /* Handle progress-wrapper errors: */
     if (!comProgress.GetCanceled() && (!comProgress.isOk() || comProgress.GetResultCode() != 0))
-        msgCenter().cannotAcquireCloudClientParameter(comProgress);
     {
-        /* Fill the result: */
-        m_machines = m_fWithRefresh ? m_comCloudClient.GetCloudMachineList() : m_comCloudClient.GetCloudMachineStubList();
-        if (!m_comCloudClient.isOk())
-            msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
+        m_strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+        return;
     }
+
+    /* Fill the result: */
+    m_machines = m_fWithRefresh
+               ? m_comCloudClient.GetCloudMachineList()
+               : m_comCloudClient.GetCloudMachineStubList();
+    if (!m_comCloudClient.isOk())
+        m_strErrorMessage = UIErrorString::formatErrorInfo(m_comCloudClient);
 }
