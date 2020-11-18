@@ -276,7 +276,7 @@ public:
     UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent = 0);
     virtual QVariant loadResource(int type, const QUrl &name) /* override */;
     void emitHistoryChangedSignal();
-    void setSource(const QUrl &url, const QString &strError);
+    void setSource(const QUrl &url) /* override */;
     void toggleFindInPageWidget(bool fVisible);
     int initialFontPointSize() const;
 
@@ -380,7 +380,6 @@ private:
     QComboBox   *m_pAddressBar;
     UIHelpBrowserViewer *m_pContentViewer;
     const QHelpEngine* m_pHelpEngine;
-    QString              m_strPageNotFoundText;
     QUrl m_homeUrl;
 };
 
@@ -403,7 +402,10 @@ public:
     UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine, const QUrl &homeUrl,
                             const QStringList &urlList, QWidget *pParent = 0);
     QStringList tabUrlList() const;
-    void initilizeTabs();
+    /** Either start with a single tab showin the home url or saved tab(s). Depending on the params. passed to ctor. */
+    void initializeTabs();
+    /** Initialize with a single url. Effectively disables multitab. Possibly used in context sensitive help mode. */
+    void initializeSingleTab(const QUrl &url);
     /* Url of the current tab. */
     QUrl currentSource() const;
     void setSource(const QUrl &url, bool fNewTab = false);
@@ -415,6 +417,7 @@ public:
     void setFontPointSize(int iPointSize);
     int fontPointSize() const;
     void setFontScaleWidgetVisible(bool fToggled);
+    void setMultiTabEnabled(bool fFlag);
 
 protected:
 
@@ -437,7 +440,10 @@ private:
     UIFontScaleWidget *m_pFontScaleWidget;
     QUrl m_homeUrl;
     QStringList m_savedUrlList;
+    /** Immediately switch the newly created tab. Otherwise open the tab in background. */
     bool m_fSwitchToNewTab;
+    bool m_fMultiTabEnabled;
+    bool m_fToolBarVisible;
 };
 
 
@@ -831,7 +837,7 @@ void UIHelpBrowserTab::setSource(const QUrl &url)
     if (m_pContentViewer)
     {
         m_pContentViewer->blockSignals(true);
-        m_pContentViewer->setSource(url, m_strPageNotFoundText);
+        m_pContentViewer->setSource(url);
         m_pContentViewer->blockSignals(false);
         /* emit historyChanged signal explicitly since we have blocked the signals: */
         m_pContentViewer->emitHistoryChangedSignal();
@@ -924,7 +930,7 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
     connect(m_pContentViewer, &UIHelpBrowserViewer::sigAddBookmark,
             this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
 
-    m_pContentViewer->setSource(initialUrl, m_strPageNotFoundText);
+    m_pContentViewer->setSource(initialUrl);
 }
 
 void UIHelpBrowserTab::prepareToolBarAndAddressBar()
@@ -984,8 +990,6 @@ void UIHelpBrowserTab::setActionTextAndToolTip(QAction *pAction, const QString &
 
 void UIHelpBrowserTab::retranslateUi()
 {
-    m_strPageNotFoundText = tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>");
-
     setActionTextAndToolTip(m_pHomeAction, tr("Home"), tr("Return to start page"));
     setActionTextAndToolTip(m_pBackwardAction, tr("Backward"), tr("Navigate to previous page"));
     setActionTextAndToolTip(m_pForwardAction, tr("Forward"), tr("Navigate to next page"));
@@ -997,7 +1001,7 @@ void UIHelpBrowserTab::sltHandleHomeAction()
 {
     if (!m_pContentViewer)
         return;
-    m_pContentViewer->setSource(m_homeUrl, m_strPageNotFoundText);
+    m_pContentViewer->setSource(m_homeUrl);
 }
 
 void UIHelpBrowserTab::sltHandleForwardAction()
@@ -1125,12 +1129,14 @@ void UIHelpBrowserViewer::emitHistoryChangedSignal()
     emit backwardAvailable(true);
 }
 
-void UIHelpBrowserViewer::setSource(const QUrl &url, const QString &strError)
+void UIHelpBrowserViewer::setSource(const QUrl &url)
 {
-    if (!url.isValid())
-        setText(strError.arg(url.toString()));
-    else
-        QTextBrowser::setSource(url);
+    QTextBrowser::setSource(url);
+    QTextDocument *pDocument = document();
+    if (!pDocument || pDocument->isEmpty())
+    {
+        setText(tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
+    }
 }
 
 void UIHelpBrowserViewer::toggleFindInPageWidget(bool fVisible)
@@ -1411,14 +1417,19 @@ UIHelpBrowserTabManager::UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine
     , m_homeUrl(homeUrl)
     , m_savedUrlList(urlList)
     , m_fSwitchToNewTab(true)
+    , m_fMultiTabEnabled(true)
+    , m_fToolBarVisible(true)
 {
     prepare();
 }
 
 void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl)
 {
+    if (!m_fMultiTabEnabled && count() >= 1)
+        return;
    UIHelpBrowserTab *pTabWidget = new  UIHelpBrowserTab(m_pHelpEngine, m_homeUrl, initialUrl);
    AssertReturnVoid(pTabWidget);
+   pTabWidget->setToolBarVisible(m_fToolBarVisible);
    int index = addTab(pTabWidget, pTabWidget->documentTitle());
    connect(pTabWidget, &UIHelpBrowserTab::sigSourceChanged,
            this, &UIHelpBrowserTabManager::sigSourceChanged);
@@ -1442,14 +1453,23 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl)
    }
 }
 
-void UIHelpBrowserTabManager::initilizeTabs()
+void UIHelpBrowserTabManager::initializeTabs()
 {
     clearAndDeleteTabs();
+    /* Start with a single tab showing the home URL: */
     if (m_savedUrlList.isEmpty())
         addNewTab(QUrl());
+    /* Start with saved tab(s): */
     else
         for (int i = 0; i < m_savedUrlList.size(); ++i)
             addNewTab(m_savedUrlList[i]);
+}
+
+void UIHelpBrowserTabManager::initializeSingleTab(const QUrl &url)
+{
+    m_fMultiTabEnabled = false;
+    clearAndDeleteTabs();
+    addNewTab(url);
 }
 
 QUrl UIHelpBrowserTabManager::currentSource() const
@@ -1488,6 +1508,7 @@ QStringList UIHelpBrowserTabManager::tabUrlList()
 
 void UIHelpBrowserTabManager::setToolBarVisible(bool fVisible)
 {
+    /* Make sure existing tabs are configured: */
     for (int i = 0; i < count(); ++i)
     {
         UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
@@ -1495,6 +1516,8 @@ void UIHelpBrowserTabManager::setToolBarVisible(bool fVisible)
             continue;
         pTab->setToolBarVisible(fVisible);
     }
+    /* This is for the tabs that will be created later: */
+    m_fToolBarVisible = fVisible;
 }
 
 void UIHelpBrowserTabManager::printCurrent(QPrinter &printer)
@@ -1616,19 +1639,18 @@ void UIHelpBrowserTabManager::clearAndDeleteTabs()
 *   UIHelpBrowserWidget implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding,
-                                         const QString &strHelpFilePath,
-                                         bool fShowToolbar /* = true */,
-                                         QWidget *pParent /* = 0 */)
+UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &strHelpFilePath,
+                                         const QString &strKeyword /* = QString() */, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
-    , m_fShowToolbar(fShowToolbar)
     , m_fIsPolished(false)
     , m_pMainLayout(0)
     , m_pTopLayout(0)
     , m_pTabWidget(0)
     , m_pToolBar(0)
     , m_strHelpFilePath(strHelpFilePath)
+    , m_strKeyword(strKeyword)
+    , m_fContextSensitiveMode(strKeyword.isEmpty() ? false : true)
     , m_pHelpEngine(0)
     , m_pSplitter(0)
     , m_pFileMenu(0)
@@ -1762,9 +1784,9 @@ void UIHelpBrowserWidget::prepareWidgets()
     m_pTabWidget->insertTab(HelpBrowserTabs_Index, m_pIndexWidget, QString());
 
     m_pSplitter->addWidget(m_pTabManager);
+    m_pSplitter->setStretchFactor(0,0);
+    m_pSplitter->setStretchFactor(1,1);
 
-    m_pSplitter->setStretchFactor(0, 1);
-    m_pSplitter->setStretchFactor(1, 4);
     m_pSplitter->setChildrenCollapsible(false);
 
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigSourceChanged,
@@ -1795,6 +1817,8 @@ void UIHelpBrowserWidget::prepareSearchWidgets()
     m_pSearchContainerWidget = new QWidget;
     m_pTabWidget->insertTab(HelpBrowserTabs_Search, m_pSearchContainerWidget, QString());
     m_pTabWidget->setTabPosition(QTabWidget::South);
+
+
     m_pSearchEngine = m_pHelpEngine->searchEngine();
     AssertReturnVoid(m_pSearchEngine);
 
@@ -1886,7 +1910,8 @@ QStringList UIHelpBrowserWidget::loadSavedUrlList()
 
 void UIHelpBrowserWidget::saveOptions()
 {
-    if (m_pTabManager)
+    /* dont save the url list if context sensitive mode; */
+    if (m_pTabManager && !m_fContextSensitiveMode)
         gEDataManager->setHelpBrowserLastUrlList(m_pTabManager->tabUrlList());
 }
 
@@ -2021,8 +2046,6 @@ void UIHelpBrowserWidget::sltShowPrintDialog()
 
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
 {
-    AssertReturnVoid(m_pTabManager && m_pHelpEngine);
-    m_pTabManager->initilizeTabs();
 }
 
 void UIHelpBrowserWidget::sltHandleContentWidgetItemClicked(const QModelIndex & index)
@@ -2069,8 +2092,23 @@ void UIHelpBrowserWidget::sltHandleIndexingStarted()
 
 void UIHelpBrowserWidget::sltHandleIndexingFinished()
 {
-    if (m_pSearchContainerWidget)
-        m_pSearchContainerWidget->setEnabled(true);
+    AssertReturnVoid(m_pTabManager &&
+                     m_pHelpEngine &&
+                     m_pSearchContainerWidget);
+
+    m_pSearchContainerWidget->setEnabled(true);
+    if (!m_fContextSensitiveMode)
+        m_pTabManager->initializeTabs();
+    else
+    {
+        QMap<QString, QUrl> map = m_pHelpEngine->linksForIdentifier(m_strKeyword);
+        if (!map.isEmpty())
+        {
+            /* We have to a have a single url per keyword in this case: */
+            QUrl keywordUrl = map.first();
+            m_pTabManager->initializeSingleTab(keywordUrl);
+        }
+    }
 }
 
 void UIHelpBrowserWidget::sltHandleSearchingStarted()

@@ -265,6 +265,7 @@ public:
     void warnAboutInvalidEncryptionPassword(const QString &strPasswordId, QWidget *pParent = 0);
     void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
     void cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent = 0) const;
+    void cannotFindHelpFile(const QString &strFileLocation, QWidget *pParent = 0) const;
 
     /* API: Selector warnings: */
     void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const;
@@ -551,6 +552,7 @@ public slots:
     void sltResetSuppressedMessages();
     void sltShowUserManual(const QString &strLocation);
     void sltCloseHelpBrowser();
+    void sltHandleDialogHelpButtonPress();
 
 private slots:
 
@@ -601,8 +603,9 @@ private:
                        int iButton1, int iButton2, int iButton3,
                        const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                        const QString &strAutoConfirmId) const;
-
-    void showHelpBrowser(const QString strHelpFilePath, QWidget *pParent = 0);
+    /** @param strKeyword is passed possbily from a hrlp button and used by QHelpEngine infrastructure to find a
+      * corresponding Url. */
+    void showHelpBrowser(const QString &strHelpFilePath, const QString &strKeyword, QWidget *pParent = 0);
 
     /** Holds the list of shown warnings. */
     mutable QStringList m_warnings;

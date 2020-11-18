@@ -25,6 +25,7 @@
 #include "UIWizard.h"
 #include "UIWizardPage.h"
 #include "UICommon.h"
+#include "UIMessageCenter.h"
 #include "QIRichTextLabel.h"
 #include "UIExtraDataManager.h"
 
@@ -49,6 +50,11 @@ void UIWizard::prepare()
 
     /* Make sure custom buttons shown even if final page is first to show: */
     sltCurrentIdChanged(startId());
+
+    /* If help button is enabled by the subclass, connect it to proper slot: */
+    if (button(QWizard::HelpButton))
+        connect(button(QWizard::HelpButton), &QAbstractButton::pressed,
+                &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
 }
 
 UIWizard::UIWizard(QWidget *pParent, WizardType enmType, WizardMode enmMode /* = WizardMode_Auto */)
@@ -532,4 +538,3 @@ void UIWizard::assignWatermarkHelper()
     setPixmap(QWizard::WatermarkPixmap, pixWatermarkNew);
 }
 #endif /* !VBOX_WS_MAC */
-

@@ -42,9 +42,13 @@ class UIHelpBrowserDialog;
 /** QIManagerDialogFactory extension used as a factory for Log Viewer dialog. */
 class SHARED_LIBRARY_STUFF UIHelpBrowserDialogFactory : public QIManagerDialogFactory
 {
+
 public:
 
-    UIHelpBrowserDialogFactory(const QString &strHelpFilePath = QString());
+    /** @param strHelpFilePath: the full path of the qHelp archive file.
+      * @param strKeyword: optional keyword string. Used in context sensitive help. */
+    UIHelpBrowserDialogFactory(const QString &strHelpFilePath, const QString &strKeyword = QString());
+    UIHelpBrowserDialogFactory();
 
 protected:
 
@@ -55,9 +59,8 @@ protected:
 private:
 
     QString m_strHelpFilePath;
+    QString    m_strKeyword;
 };
-
-
 
 class SHARED_LIBRARY_STUFF UIHelpBrowserDialog : public QIWithRetranslateUI<QIManagerDialog>
 {
@@ -65,7 +68,8 @@ class SHARED_LIBRARY_STUFF UIHelpBrowserDialog : public QIWithRetranslateUI<QIMa
 
 public:
 
-    UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &strHelpFilePath);
+    UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &strHelpFilePath,
+                        const QString &strKeyword = QString());
 
 protected:
 
@@ -104,6 +108,7 @@ private slots:
 private:
 
     QString m_strHelpFilePath;
+    QString m_strKeyword;
 };
 
 

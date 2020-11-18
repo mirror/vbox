@@ -67,7 +67,7 @@ signals:
 public:
 
     UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &strHelpFilePath,
-                        bool fShowToolbar = true, QWidget *pParent = 0);
+                        const QString &strKeyword = QString(), QWidget *pParent = 0);
     ~UIHelpBrowserWidget();
 
     QList<QMenu*> menus() const;
@@ -134,8 +134,6 @@ private:
     const EmbedTo m_enmEmbedding;
     /** Hold sthe action-pool reference. */
     UIActionPool *m_pActionPool;
-    /** Holds whether we should create/show toolbar. */
-    const bool    m_fShowToolbar;
 
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;
@@ -151,6 +149,9 @@ private:
     /** @} */
 
     QString       m_strHelpFilePath;
+    /** Start the browser with this keyword. When not empty widget is shown `only` with html viewer and single tab.*/
+    QString m_strKeyword;
+    bool    m_fContextSensitiveMode;
     QHelpEngine  *m_pHelpEngine;
     QSplitter           *m_pSplitter;
     QMenu               *m_pFileMenu;

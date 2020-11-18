@@ -43,14 +43,22 @@
 *   Class UIHelpBrowserDialogFactory implementation.                                                                             *
 *********************************************************************************************************************************/
 
-UIHelpBrowserDialogFactory::UIHelpBrowserDialogFactory(const QString &strHelpFilePath /*  = QString() */)
-    :m_strHelpFilePath(strHelpFilePath)
+UIHelpBrowserDialogFactory::UIHelpBrowserDialogFactory(const QString &strHelpFilePath,
+                                                       const QString &strKeyword /* = QString() */)
+    : m_strHelpFilePath(strHelpFilePath)
+    , m_strKeyword(strKeyword)
+{
+}
+
+UIHelpBrowserDialogFactory::UIHelpBrowserDialogFactory()
+    : m_strHelpFilePath(QString())
+    , m_strKeyword(QString())
 {
 }
 
 void UIHelpBrowserDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIHelpBrowserDialog(pCenterWidget, m_strHelpFilePath);
+    pDialog = new UIHelpBrowserDialog(pCenterWidget, m_strHelpFilePath, m_strKeyword);
 }
 
 
@@ -58,9 +66,11 @@ void UIHelpBrowserDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCen
 *   Class UIHelpBrowserDialog implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &strHelpFilePath)
+UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &strHelpFilePath,
+                                         const QString &strKeyword /* = QString() */)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_strHelpFilePath(strHelpFilePath)
+    , m_strKeyword(strKeyword)
 {
 }
 
@@ -81,7 +91,7 @@ void UIHelpBrowserDialog::configure()
 void UIHelpBrowserDialog::configureCentralWidget()
 {
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-    UIHelpBrowserWidget *pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath, true /* show toolbar */, this);
+    UIHelpBrowserWidget *pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath, m_strKeyword);
     if (pWidget)
     {
         /* Configure widget: */

@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QAbstractButton>
 #include <QDir>
 #include <QFileInfo>
 #include <QLocale>
@@ -611,6 +612,14 @@ void UIMessageCenter::cannotAcquireMachineParameter(const CMachine &comMachine, 
     /* Show the error: */
     error(pParent, MessageType_Error,
           tr("Failed to acquire machine parameter."), UIErrorString::formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotFindHelpFile(const QString &strFileLocation, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to find help file."),
+          QString("%1:<!--EOM-->%2").arg(tr("The following file could not found")).arg(strFileLocation));
 }
 
 void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const
@@ -3224,9 +3233,8 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
     HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
 #elif defined (VBOX_WS_X11)
 # if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-    showHelpBrowser(strLocation);
-# endif /* #if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
-# ifndef VBOX_OSE
+    showHelpBrowser(strLocation, QString());
+# elif !defined(VBOX_OSE)
     char szViewerPath[RTPATH_MAX];
     int rc;
     rc = RTPathAppPrivateArch(szViewerPath, sizeof(szViewerPath));
@@ -3424,13 +3432,17 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     return iResultCode;
 }
 
-void UIMessageCenter::showHelpBrowser(const QString strHelpFilePath, QWidget *pParent /* = 0 */)
+void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, const QString &strKeyword, QWidget *pParent /* = 0 */)
 {
     Q_UNUSED(pParent);
+    if (!QFileInfo(strHelpFilePath).exists())
+    {
+        cannotFindHelpFile(strHelpFilePath, pParent);
+        return;
+    }
     if (!m_pHelpBrowserDialog)
     {
-
-        UIHelpBrowserDialogFactory dialogFactory(strHelpFilePath);
+        UIHelpBrowserDialogFactory dialogFactory(strHelpFilePath, strKeyword);
         dialogFactory.prepare(m_pHelpBrowserDialog);
         AssertReturnVoid(m_pHelpBrowserDialog);
         connect(m_pHelpBrowserDialog, &QIManagerDialog::sigClose,
@@ -3450,4 +3462,19 @@ void UIMessageCenter::sltCloseHelpBrowser()
     m_pHelpBrowserDialog = 0;
     pDialog->close();
     UIHelpBrowserDialogFactory().cleanup(pDialog);
+}
+
+void UIMessageCenter::sltHandleDialogHelpButtonPress()
+{
+# if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+
+    QAbstractButton *pSender = qobject_cast<QAbstractButton*>(sender());
+    if (!pSender)
+        return;
+    QVariant keyWordProp = pSender->property("helptag");
+    if (!keyWordProp.isValid() || !keyWordProp.canConvert(QMetaType::QString))
+        return;
+    QString strKeyword = keyWordProp.toString();
+    showHelpBrowser(uiCommon().helpFile(), strKeyword);
+# endif /* #if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }
