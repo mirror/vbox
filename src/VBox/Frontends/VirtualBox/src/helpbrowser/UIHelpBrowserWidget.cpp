@@ -425,8 +425,11 @@ private slots:
     void sltHandletabTitleChange(const QString &strTitle);
     void sltHandleOpenLinkInNewTab(const QUrl &url);
     void sltHandleTabClose(int iTabIndex);
+    /** Closes/deletes all tabs other than the one with tab index @iTabIndex. */
+    void sltHandleOtherTabs();
     void sltHandleCurrentChanged(int iTabIndex);
     void sltHandleFontSizeChange(int iFontPointSize);
+    void sltShowTabBarContextMenu(const QPoint &pos);
 
 private:
 
@@ -1590,6 +1593,27 @@ void UIHelpBrowserTabManager::sltHandleTabClose(int iTabIndex)
     delete pWidget;
 }
 
+void UIHelpBrowserTabManager::sltHandleOtherTabs()
+{
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    if (!pAction)
+        return;
+    int iTabIndex = pAction->data().toInt();
+    if (iTabIndex < 0 || iTabIndex >= count())
+        return;
+    QString strTitle = tabText(iTabIndex);
+    QList<QWidget*> widgetList;
+    for (int i = 0; i < count(); ++i)
+        widgetList.append(widget(i));
+    clear();
+    for (int i = 0; i < widgetList.size(); ++i)
+    {
+        if (i != iTabIndex)
+            delete widgetList[i];
+    }
+    addTab(widgetList[iTabIndex], strTitle);
+}
+
 void UIHelpBrowserTabManager::sltHandleCurrentChanged(int iTabIndex)
 {
     Q_UNUSED(iTabIndex);
@@ -1601,12 +1625,28 @@ void UIHelpBrowserTabManager::sltHandleFontSizeChange(int iFontPointSize)
     setFontPointSize(iFontPointSize);
 }
 
+void UIHelpBrowserTabManager::sltShowTabBarContextMenu(const QPoint &pos)
+{
+    if (!tabBar())
+        return;
+    QMenu menu;
+    QAction *pCloseAll = menu.addAction(UIHelpBrowserWidget::tr("Close other tabs"));
+    connect(pCloseAll, &QAction::triggered, this, &UIHelpBrowserTabManager::sltHandleOtherTabs);
+    pCloseAll->setData(tabBar()->tabAt(pos));
+    menu.exec(tabBar()->mapToGlobal(pos));
+}
+
 void UIHelpBrowserTabManager::prepare()
 {
     setTabsClosable(true);
     setTabBarAutoHide(true);
     connect(this, &UIHelpBrowserTabManager::tabCloseRequested, this, &UIHelpBrowserTabManager::sltHandleTabClose);
     connect(this, &UIHelpBrowserTabManager::currentChanged, this, &UIHelpBrowserTabManager::sltHandleCurrentChanged);
+    if (tabBar())
+    {
+        tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(tabBar(), &QTabBar::customContextMenuRequested, this, &UIHelpBrowserTabManager::sltShowTabBarContextMenu);
+    }
 }
 
 void UIHelpBrowserTabManager::clearAndDeleteTabs()
@@ -2134,8 +2174,6 @@ void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
         QTextBrowser* browser = m_pSearchResultWidget->findChild<QTextBrowser*>();
         if (!browser)
             return;
-        // if (!browser->rect().contains(pos, true))
-        //     return;
         QPoint browserPos = browser->mapFromGlobal(m_pSearchResultWidget->mapToGlobal(pos));
         url = browser->anchorAt(browserPos);
     }
