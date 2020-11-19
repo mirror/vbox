@@ -1581,7 +1581,7 @@ def parseIsoTimestamp(sTs):
     iHour = int(sTime[0:2]);
     assert(sTime[2] == ':');
     iMin  = int(sTime[3:5]);
-    if (sTime[5] == ':')
+    if sTime[5] == ':':
         iSec = int(sTime[6:8]);
 
         # Fraction?
