@@ -43,22 +43,19 @@
 *   Class UIHelpBrowserDialogFactory implementation.                                                                             *
 *********************************************************************************************************************************/
 
-UIHelpBrowserDialogFactory::UIHelpBrowserDialogFactory(const QString &strHelpFilePath,
-                                                       const QString &strKeyword /* = QString() */)
+UIHelpBrowserDialogFactory::UIHelpBrowserDialogFactory(const QString &strHelpFilePath)
     : m_strHelpFilePath(strHelpFilePath)
-    , m_strKeyword(strKeyword)
 {
 }
 
 UIHelpBrowserDialogFactory::UIHelpBrowserDialogFactory()
     : m_strHelpFilePath(QString())
-    , m_strKeyword(QString())
 {
 }
 
 void UIHelpBrowserDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIHelpBrowserDialog(pCenterWidget, m_strHelpFilePath, m_strKeyword);
+    pDialog = new UIHelpBrowserDialog(pCenterWidget, m_strHelpFilePath);
 }
 
 
@@ -66,12 +63,17 @@ void UIHelpBrowserDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCen
 *   Class UIHelpBrowserDialog implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &strHelpFilePath,
-                                         const QString &strKeyword /* = QString() */)
+UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &strHelpFilePath)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_strHelpFilePath(strHelpFilePath)
-    , m_strKeyword(strKeyword)
+    , m_pWidget(0)
 {
+}
+
+void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
+{
+    if (m_pWidget)
+        m_pWidget->showHelpForKeyword(strKeyword);
 }
 
 void UIHelpBrowserDialog::retranslateUi()
@@ -91,20 +93,20 @@ void UIHelpBrowserDialog::configure()
 void UIHelpBrowserDialog::configureCentralWidget()
 {
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-    UIHelpBrowserWidget *pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath, m_strKeyword);
-    if (pWidget)
+    m_pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath);
+    if (m_pWidget)
     {
         /* Configure widget: */
-        setWidget(pWidget);
-        setWidgetMenus(pWidget->menus());
+        setWidget(m_pWidget);
+        setWidgetMenus(m_pWidget->menus());
 #ifdef VBOX_WS_MAC
-        setWidgetToolbar(pWidget->toolbar());
+        setWidgetToolbar(m_pWidget->toolbar());
 #endif
-        connect(pWidget, &UIHelpBrowserWidget::sigSetCloseButtonShortCut,
+        connect(m_pWidget, &UIHelpBrowserWidget::sigSetCloseButtonShortCut,
                 this, &UIHelpBrowserDialog::sltSetCloseButtonShortCut);
 
         /* Add into layout: */
-        centralWidget()->layout()->addWidget(pWidget);
+        centralWidget()->layout()->addWidget(m_pWidget);
     }
 #endif
 }

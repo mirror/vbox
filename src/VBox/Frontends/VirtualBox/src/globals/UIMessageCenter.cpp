@@ -614,12 +614,14 @@ void UIMessageCenter::cannotAcquireMachineParameter(const CMachine &comMachine, 
           tr("Failed to acquire machine parameter."), UIErrorString::formatErrorInfo(comMachine));
 }
 
-void UIMessageCenter::cannotFindHelpFile(const QString &strFileLocation, QWidget *pParent /* = 0 */) const
+void UIMessageCenter::cannotFindHelpFile(const QString &strFileLocation) const
 {
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to find help file."),
-          QString("%1:<!--EOM-->%2").arg(tr("The following file could not found")).arg(strFileLocation));
+    alert(0, MessageType_Error, QString("<p>%1:</p>%2").arg(tr("Failed to find the following help file")).arg(strFileLocation));
+}
+
+void UIMessageCenter::cannotFindHelpTag() const
+{
+    alert(0, MessageType_Error, QString("<p>%1</p>").arg(tr("There is no help page for this dialog.")));
 }
 
 void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const
@@ -3437,17 +3439,24 @@ void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, const QStr
     Q_UNUSED(pParent);
     if (!QFileInfo(strHelpFilePath).exists())
     {
-        cannotFindHelpFile(strHelpFilePath, pParent);
+        cannotFindHelpFile(strHelpFilePath);
         return;
     }
     if (!m_pHelpBrowserDialog)
     {
-        UIHelpBrowserDialogFactory dialogFactory(strHelpFilePath, strKeyword);
+        UIHelpBrowserDialogFactory dialogFactory(strHelpFilePath);
         dialogFactory.prepare(m_pHelpBrowserDialog);
         AssertReturnVoid(m_pHelpBrowserDialog);
         connect(m_pHelpBrowserDialog, &QIManagerDialog::sigClose,
                 this, &UIMessageCenter::sltCloseHelpBrowser);
     }
+    if (!strKeyword.isEmpty())
+    {
+        UIHelpBrowserDialog *pWidget = qobject_cast<UIHelpBrowserDialog*>(m_pHelpBrowserDialog);
+        if (pWidget)
+            pWidget->showHelpForKeyword(strKeyword);
+    }
+
     m_pHelpBrowserDialog->show();
     m_pHelpBrowserDialog->setWindowState(m_pHelpBrowserDialog->windowState() & ~Qt::WindowMinimized);
     m_pHelpBrowserDialog->activateWindow();
@@ -3473,8 +3482,17 @@ void UIMessageCenter::sltHandleDialogHelpButtonPress()
         return;
     QVariant keyWordProp = pSender->property("helptag");
     if (!keyWordProp.isValid() || !keyWordProp.canConvert(QMetaType::QString))
+    {
+        cannotFindHelpTag();
         return;
+    }
     QString strKeyword = keyWordProp.toString();
+    if (strKeyword.isEmpty())
+    {
+        cannotFindHelpTag();
+        return;
+    }
+
     showHelpBrowser(uiCommon().helpFile(), strKeyword);
 # endif /* #if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }

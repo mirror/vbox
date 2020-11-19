@@ -117,7 +117,7 @@ void UISettingsDialog::reject()
 void UISettingsDialog::sltCategoryChanged(int cId)
 {
     const int iIndex = m_pages.value(cId);
-    setHelpButtonHelpTag(iIndex);
+    setHelpButtonHelpTag(cId);
 #ifdef VBOX_WS_MAC
     /* If index is within the stored size list bounds: */
     if (iIndex < m_sizeList.count())
@@ -422,17 +422,6 @@ void UISettingsDialog::addItem(const QString &strBigIcon,
     {
         pSettingsPage->setId(cId);
         assignValidator(pSettingsPage);
-    }
-}
-
-void UISettingsDialog::enableHelpButton()
-{
-    if (m_pButtonBox)
-    {
-        QPushButton *pHelpButton = m_pButtonBox->addButton(QDialogButtonBox::Help);
-        if (pHelpButton)
-            connect(pHelpButton, &QAbstractButton::pressed,
-                    &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
     }
 }
 
@@ -783,13 +772,16 @@ void UISettingsDialog::prepareWidgets()
 
     m_pButtonBox = new QIDialogButtonBox(pCentralWidget);
     m_pButtonBox->setObjectName(QStringLiteral("m_pButtonBox"));
-    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok);
+    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|
+                                     QDialogButtonBox::Ok| QDialogButtonBox::Help);
     pMainLayout->addWidget(m_pButtonBox, 2, 0, 1, 2);
 
     setCentralWidget(pCentralWidget);
 
     QObject::connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISettingsDialog::reject);
     QObject::connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISettingsDialog::accept);
+    connect(m_pButtonBox->button(QDialogButtonBox::Help), &QAbstractButton::pressed,
+                                 &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
 }
 
 void UISettingsDialog::assignValidator(UISettingsPage *pPage)

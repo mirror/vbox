@@ -66,12 +66,10 @@ signals:
 
 public:
 
-    UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &strHelpFilePath,
-                        const QString &strKeyword = QString(), QWidget *pParent = 0);
+    UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &strHelpFilePath, QWidget *pParent = 0);
     ~UIHelpBrowserWidget();
-
     QList<QMenu*> menus() const;
-
+    void showHelpForKeyword(const QString &strKeyword);
 #ifdef VBOX_WS_MAC
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
@@ -129,29 +127,26 @@ private:
        /** Handles Qt key-press @a pEvent. */
        virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
     /** @} */
+    /* Looks for Url for the keyword using QHelpEngine API and shows it in a new tab whne successful. */
+    void findAndShowUrlForKeyword(const QString &strKeyword);
 
     /** Holds the widget's embedding type. */
     const EmbedTo m_enmEmbedding;
-    /** Hold sthe action-pool reference. */
     UIActionPool *m_pActionPool;
-
-    /** Holds whether the dialog is polished. */
     bool m_fIsPolished;
 
-    /** Holds container for log-pages. */
     QVBoxLayout         *m_pMainLayout;
     QHBoxLayout         *m_pTopLayout;
-
+    /** Container tab widget for content, index, bookmark widgets. Sits on a side bar. */
     QITabWidget *m_pTabWidget;
+
     /** @name Toolbar and menu variables.
      * @{ */
-    QIToolBar *m_pToolBar;
+       QIToolBar *m_pToolBar;
     /** @} */
 
     QString       m_strHelpFilePath;
     /** Start the browser with this keyword. When not empty widget is shown `only` with html viewer and single tab.*/
-    QString m_strKeyword;
-    bool    m_fContextSensitiveMode;
     QHelpEngine  *m_pHelpEngine;
     QSplitter           *m_pSplitter;
     QMenu               *m_pFileMenu;
@@ -174,6 +169,11 @@ private:
     QAction             *m_pFontSizeResetAction;
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
     bool                 m_fModelContentCreated;
+    bool                 m_fIndexingFinished;
+    /** This queue is used in unlikely case where possibly several keywords are requested to be shown
+      *  but indexing is not yet finished. In that case we queue the keywords and process them after
+      * after indexing is finished. */
+    QStringList          m_keywordList;
 };
 
 #endif /* #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */

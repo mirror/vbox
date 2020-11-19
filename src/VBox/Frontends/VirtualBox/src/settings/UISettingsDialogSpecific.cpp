@@ -196,6 +196,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsGeneral;
                     addItem(":/machine_32px.png", ":/machine_24px.png", ":/machine_16px.png",
                             iPageIndex, "#general", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "globalsettings");
                     break;
                 }
                 /* Input page: */
@@ -204,6 +205,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsInput;
                     addItem(":/keyboard_32px.png", ":/keyboard_24px.png", ":/keyboard_16px.png",
                             iPageIndex, "#input", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "globalsettings");
                     break;
                 }
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -213,6 +215,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsUpdate;
                     addItem(":/refresh_32px.png", ":/refresh_24px.png", ":/refresh_16px.png",
                             iPageIndex, "#update", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "globalsettings");
                     break;
                 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
@@ -222,6 +225,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsLanguage;
                     addItem(":/site_32px.png", ":/site_24px.png", ":/site_16px.png",
                             iPageIndex, "#language", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "globalsettings");
                     break;
                 }
                 /* Display page: */
@@ -230,6 +234,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsDisplay;
                     addItem(":/vrdp_32px.png", ":/vrdp_24px.png", ":/vrdp_16px.png",
                             iPageIndex, "#display", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "globalsettings");
                     break;
                 }
                 /* Network page: */
@@ -238,6 +243,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsNetwork;
                     addItem(":/nw_32px.png", ":/nw_24px.png", ":/nw_16px.png",
                             iPageIndex, "#network", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "globalsettings");
                     break;
                 }
                 /* Extensions page: */
@@ -246,6 +252,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsExtension;
                     addItem(":/extension_pack_32px.png", ":/extension_pack_24px.png", ":/extension_pack_16px.png",
                             iPageIndex, "#extensions", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "globalsettings");
                     break;
                 }
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -255,6 +262,7 @@ void UISettingsDialogGlobal::prepare()
                     pSettingsPage = new UIGlobalSettingsProxy;
                     addItem(":/proxy_32px.png", ":/proxy_24px.png", ":/proxy_16px.png",
                             iPageIndex, "#proxy", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "globalsettings");
                     break;
                 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
@@ -720,6 +728,7 @@ void UISettingsDialogMachine::prepare()
                     pSettingsPage = new UIMachineSettingsDisplay;
                     addItem(":/vrdp_32px.png", ":/vrdp_24px.png", ":/vrdp_16px.png",
                             iPageIndex, "#display", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "settings-display");
                     break;
                 }
                 /* Storage page: */
@@ -730,6 +739,7 @@ void UISettingsDialogMachine::prepare()
                             this, &UISettingsDialogMachine::sltResetFirstRunFlag);
                     addItem(":/hd_32px.png", ":/hd_24px.png", ":/hd_16px.png",
                             iPageIndex, "#storage", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "settings-storage");
                     break;
                 }
                 /* Audio page: */
@@ -738,6 +748,7 @@ void UISettingsDialogMachine::prepare()
                     pSettingsPage = new UIMachineSettingsAudio;
                     addItem(":/sound_32px.png", ":/sound_24px.png", ":/sound_16px.png",
                             iPageIndex, "#audio", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "settings-audio");
                     break;
                 }
                 /* Network page: */
@@ -746,6 +757,7 @@ void UISettingsDialogMachine::prepare()
                     pSettingsPage = new UIMachineSettingsNetworkPage;
                     addItem(":/nw_32px.png", ":/nw_24px.png", ":/nw_16px.png",
                             iPageIndex, "#network", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "settings-network");
                     break;
                 }
                 /* Ports page: */
@@ -761,6 +773,7 @@ void UISettingsDialogMachine::prepare()
                     pSettingsPage = new UIMachineSettingsSerialPage;
                     addItem(":/serial_port_32px.png", ":/serial_port_24px.png", ":/serial_port_16px.png",
                             iPageIndex, "#serialPorts", pSettingsPage, MachineSettingsPageType_Ports);
+                    addPageHelpTag(iPageIndex, "serialports");
                     break;
                 }
                 /* USB page: */
@@ -769,6 +782,7 @@ void UISettingsDialogMachine::prepare()
                     pSettingsPage = new UIMachineSettingsUSB;
                     addItem(":/usb_32px.png", ":/usb_24px.png", ":/usb_16px.png",
                             iPageIndex, "#usb", pSettingsPage, MachineSettingsPageType_Ports);
+                    addPageHelpTag(iPageIndex, "usb-support");
                     break;
                 }
                 /* Shared Folders page: */
@@ -777,6 +791,7 @@ void UISettingsDialogMachine::prepare()
                     pSettingsPage = new UIMachineSettingsSF;
                     addItem(":/sf_32px.png", ":/sf_24px.png", ":/sf_16px.png",
                             iPageIndex, "#sharedFolders", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "shared-folders");
                     break;
                 }
                 /* Interface page: */
@@ -785,6 +800,7 @@ void UISettingsDialogMachine::prepare()
                     pSettingsPage = new UIMachineSettingsInterface(m_machine.GetId());
                     addItem(":/interface_32px.png", ":/interface_24px.png", ":/interface_16px.png",
                             iPageIndex, "#userInterface", pSettingsPage);
+                    addPageHelpTag(iPageIndex, "user-interface");
                     break;
                 }
                 default:
@@ -832,9 +848,6 @@ void UISettingsDialogMachine::prepare()
     /* First item as default: */
     else
         m_pSelector->selectById(MachineSettingsPageType_General);
-
-    /* Enabled the 'Help' button of the button box for the context senstive help: */
-    enableHelpButton();
 }
 
 bool UISettingsDialogMachine::isPageAvailable(int iPageId) const

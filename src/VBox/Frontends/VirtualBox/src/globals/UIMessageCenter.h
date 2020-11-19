@@ -265,7 +265,8 @@ public:
     void warnAboutInvalidEncryptionPassword(const QString &strPasswordId, QWidget *pParent = 0);
     void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
     void cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent = 0) const;
-    void cannotFindHelpFile(const QString &strFileLocation, QWidget *pParent = 0) const;
+    void cannotFindHelpFile(const QString &strFileLocation) const;
+    void cannotFindHelpTag() const;
 
     /* API: Selector warnings: */
     void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const;

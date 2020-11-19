@@ -135,8 +135,6 @@ protected:
     /** Verifies data integrity between certain @a pSettingsPage and other pages. */
     virtual void recorrelate(UISettingsPage *pSettingsPage) { Q_UNUSED(pSettingsPage); }
 
-    /** Inserts the standard help button to the button box of the dialog and make a connection to the appropirate slot. */
-    void enableHelpButton();
     /** Set/change/reset the help tag of the help buttons help tag. Possibly used as tabs are changed. Searches the map
      * m_pageHelpTags for the help tag for the page with @iPageType (GlobalSettingsPageType or MachineSettingsPageType) */
     void setHelpButtonHelpTag(int iPageType);
