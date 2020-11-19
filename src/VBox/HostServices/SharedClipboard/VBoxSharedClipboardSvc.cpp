@@ -115,29 +115,7 @@
  * - Windows alternate data streams (ADS) are not allowed.
  * - No support for ACLs yet.
  * - No (maybe never) support for NT4.
- *
- * @section sec_transfers_areas         Clipboard areas.
- *
- * For larger / longer transfers there might be file data
- * temporarily cached on the host, which has not been transferred to the
- * destination yet. Such a cache is called a "Shared Clipboard Area", which
- * in turn is identified by a unique ID across all VMs running on the same
- * host. To control the access (and needed cleanup) of such clipboard areas,
- * VBoxSVC (Main) is used for this task. A Shared Clipboard client can register,
- * unregister, attach to and detach from a clipboard area. If all references
- * to a clipboard area are released, a clipboard area gets detroyed automatically
- * by VBoxSVC.
- *
- * By default a clipboard area lives in the user's temporary directory in the
- * sub folder "VirtualBox Shared Clipboards/clipboard-<ID>". VBoxSVC does not
- * do any file locking in a clipboard area, but keeps the clipboard areas's
- * directory open to prevent deletion by third party processes.
- *
- * @todo We might use some VFS / container (IPRT?) for this instead of the
- *       host's file system directly?
- *       bird> Yes, but may take some work as we don't have the pick and choose
- *             kind of VFS containers implemented yet.
- *
+
  * @section sec_transfer_structure        Transfer handling structure
  *
  * All structures / classes are designed for running on both, on the guest
@@ -152,15 +130,6 @@
  * callbacks which might be needed by various implementations. Also, transfers
  * optionally can run in an asynchronous thread to prevent blocking the UI while
  * running.
- *
- * A Shared Clipboard transfer can maintain its own clipboard area; for the host
- * service such a clipboard area is coupled to a clipboard area registered or
- * attached with VBoxSVC. This is needed because multiple transfers from
- * multiple VMs (n:n) can rely on the same clipboard area, so there needs a
- * master keeping tracking of a clipboard area. To minimize IPC traffic only the
- * minimum de/attaching is done at the moment. A clipboard area gets cleaned up
- * (i.e. physically deleted) if no references are held to it  anymore, or if
- * VBoxSVC goes down.
  *
  * @section sec_transfer_providers        Transfer providers
  *
