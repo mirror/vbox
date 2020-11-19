@@ -75,6 +75,8 @@ void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     if (m_pWidget)
         m_pWidget->showHelpForKeyword(strKeyword);
+#else
+    Q_UNUSED(strKeyword);
 #endif
 }
 
