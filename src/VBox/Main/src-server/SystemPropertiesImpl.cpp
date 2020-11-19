@@ -1252,7 +1252,7 @@ HRESULT SystemProperties::getDefaultFrontend(com::Utf8Str &aDefaultFrontend)
 HRESULT SystemProperties::setDefaultFrontend(const com::Utf8Str &aDefaultFrontend)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    if (m->strDefaultFrontend == Utf8Str(aDefaultFrontend))
+    if (m->strDefaultFrontend == aDefaultFrontend)
         return S_OK;
     HRESULT rc = i_setDefaultFrontend(aDefaultFrontend);
     alock.release();
