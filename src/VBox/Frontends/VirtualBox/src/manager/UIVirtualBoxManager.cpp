@@ -1775,6 +1775,59 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
     }
 }
 
+void UIVirtualBoxManager::sltPerformTerminateMachine()
+{
+    /* Get selected items: */
+    QList<UIVirtualMachineItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
+
+    /* Prepare the list of the machines to be terminated: */
+    QStringList machinesToTerminate;
+    QList<UIVirtualMachineItem*> itemsToTerminate;
+    foreach (UIVirtualMachineItem *pItem, items)
+    {
+        if (isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Terminate, QList<UIVirtualMachineItem*>() << pItem))
+        {
+            machinesToTerminate << pItem->name();
+            itemsToTerminate << pItem;
+        }
+    }
+    AssertMsg(!machinesToTerminate.isEmpty(), ("This action should not be allowed!"));
+
+    /* Confirm terminating: */
+    if (   machinesToTerminate.isEmpty()
+        || !msgCenter().confirmTerminateCloudInstance(machinesToTerminate.join(", ")))
+        return;
+
+    /* For every confirmed item to terminate: */
+    foreach (UIVirtualMachineItem *pItem, itemsToTerminate)
+    {
+        /* Get cloud machine: */
+        AssertPtrReturnVoid(pItem);
+        UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+        AssertPtrReturnVoid(pCloudItem);
+        CCloudMachine comMachine = pCloudItem->machine();
+
+        /* Acquire machine name: */
+        QString strName;
+        if (!cloudMachineName(comMachine, strName))
+            continue;
+
+        /* Prepare terminate cloud instance progress: */
+        CProgress comProgress = comMachine.Terminate();
+        if (!comMachine.isOk())
+        {
+            msgCenter().cannotTerminateCloudInstance(comMachine);
+            continue;
+        }
+
+        /* Show terminate cloud instance progress: */
+        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotTerminateCloudInstance(comProgress, strName);
+    }
+}
+
 void UIVirtualBoxManager::sltPerformShutdownMachine()
 {
     /* Get selected items: */
@@ -2396,6 +2449,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
     connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformSaveMachineState);
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Terminate), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformTerminateMachine);
     connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformShutdownMachine);
     connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff), &UIAction::triggered,
@@ -2406,6 +2461,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformSaveMachineState);
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Terminate), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformTerminateMachine);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformShutdownMachine);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff), &UIAction::triggered,
@@ -2878,12 +2935,31 @@ void UIVirtualBoxManager::updateMenuGroupConsole(QMenu *pMenu)
     pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications));
 }
 
-void UIVirtualBoxManager::updateMenuGroupClose(QMenu *)
+void UIVirtualBoxManager::updateMenuGroupClose(QMenu *pMenu)
 {
+    /* Get first selected item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertPtrReturnVoid(pItem);
     /* Get selected items: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
+    /* For local machine: */
+    if (pItem->itemType() == UIVirtualMachineItemType_Local)
+    {
+        // pMenu->addAction(action(UIActionIndexMN_M_Group_M_Close_S_Detach));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff));
+    }
+    else
+    {
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Terminate));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff));
+    }
+
+    /* Configure 'Group' / 'Close' menu: */
     actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Shutdown, items));
 }
 
@@ -3001,12 +3077,31 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
     }
 }
 
-void UIVirtualBoxManager::updateMenuMachineClose(QMenu *)
+void UIVirtualBoxManager::updateMenuMachineClose(QMenu *pMenu)
 {
+    /* Get first selected item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertPtrReturnVoid(pItem);
     /* Get selected items: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
+    /* For local machine: */
+    if (pItem->itemType() == UIVirtualMachineItemType_Local)
+    {
+        // pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Close_S_Detach));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff));
+    }
+    else
+    {
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Terminate));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff));
+    }
+
+    /* Configure 'Machine' / 'Close' menu: */
     actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Shutdown, items));
 }
 
@@ -3143,6 +3238,7 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexMN_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close, items));
     actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Detach)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Detach, items));
     actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_SaveState, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Terminate)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Terminate, items));
     actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Shutdown, items));
     actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_PowerOff, items));
 
@@ -3150,6 +3246,7 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items));
     actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Detach)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Detach, items));
     actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_SaveState, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Terminate)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Terminate, items));
     actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Shutdown, items));
     actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_PowerOff, items));
 
@@ -3407,7 +3504,8 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexMN_M_Group_M_Close:
         case UIActionIndexMN_M_Machine_M_Close:
         {
-            return isAtLeastOneItemStarted(items);
+            return    (isItemsLocal(items) && isAtLeastOneItemStarted(items))
+                   || (isItemsCloud(items) && isAtLeastOneItemDiscardable(items));
         }
         case UIActionIndexMN_M_Group_M_Close_S_Detach:
         case UIActionIndexMN_M_Machine_M_Close_S_Detach:
@@ -3416,6 +3514,12 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         {
             return    isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items)
                    && isItemsLocal(items);
+        }
+        case UIActionIndexMN_M_Group_M_Close_S_Terminate:
+        case UIActionIndexMN_M_Machine_M_Close_S_Terminate:
+        {
+            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items)
+                   && isAtLeastOneItemDiscardable(items);
         }
         case UIActionIndexMN_M_Group_M_Close_S_Shutdown:
         case UIActionIndexMN_M_Machine_M_Close_S_Shutdown:
@@ -3442,6 +3546,15 @@ bool UIVirtualBoxManager::isItemsLocal(const QList<UIVirtualMachineItem*> &items
 {
     foreach (UIVirtualMachineItem *pItem, items)
         if (!pItem->toLocal())
+            return false;
+    return true;
+}
+
+/* static */
+bool UIVirtualBoxManager::isItemsCloud(const QList<UIVirtualMachineItem*> &items)
+{
+    foreach (UIVirtualMachineItem *pItem, items)
+        if (!pItem->toCloud())
             return false;
     return true;
 }
