@@ -172,35 +172,39 @@ function parseIsoTimestamp(sTs)
         sTime = sTime.substring(1);
     }
 
-    /* HH:MM:SS */
+    /* HH:MM[:SS[.fraction] */
     var iHour = parseInt(sTime.substring(0, 2), 10);
     console.assert(sTime.charAt(2) == ':');
     var iMin  = parseInt(sTime.substring(3, 5), 10);
-    console.assert(sTime.charAt(5) == ':');
-    var iSec  = parseInt(sTime.substring(6, 8), 10);
-
-    /* Fraction? */
-    var offTime = 8;
+    var iSec          = 0;
     var iMicroseconds = 0;
-    if (offTime < sTime.length && '.,'.includes(sTime.charAt(offTime)))
+    var offTime       = 5;
+    if (sTime.charAt(5) == ':')
     {
-        offTime += 1;
-        var cchFraction = 0;
-        while (offTime + cchFraction < sTime.length && '0123456789'.includes(sTime.charAt(offTime + cchFraction)))
-            cchFraction += 1;
-        if (cchFraction > 0)
+        iSec  = parseInt(sTime.substring(6, 8), 10);
+
+        /* Fraction? */
+        offTime = 8;
+        if (offTime < sTime.length && '.,'.includes(sTime.charAt(offTime)))
         {
-            iMicroseconds = parseInt(sTime.substring(offTime, offTime + cchFraction), 10);
-            offTime += cchFraction;
-            while (cchFraction < 6)
-            {
-                iMicroseconds *= 10;
+            offTime += 1;
+            var cchFraction = 0;
+            while (offTime + cchFraction < sTime.length && '0123456789'.includes(sTime.charAt(offTime + cchFraction)))
                 cchFraction += 1;
-            }
-            while (cchFraction > 6)
+            if (cchFraction > 0)
             {
-                iMicroseconds = iMicroseconds / 10;
-                cchFraction -= 1;
+                iMicroseconds = parseInt(sTime.substring(offTime, offTime + cchFraction), 10);
+                offTime += cchFraction;
+                while (cchFraction < 6)
+                {
+                    iMicroseconds *= 10;
+                    cchFraction += 1;
+                }
+                while (cchFraction > 6)
+                {
+                    iMicroseconds = iMicroseconds / 10;
+                    cchFraction -= 1;
+                }
             }
         }
     }
