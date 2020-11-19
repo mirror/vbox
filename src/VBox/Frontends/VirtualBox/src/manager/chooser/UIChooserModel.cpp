@@ -1472,7 +1472,6 @@ void UIChooserModel::prepareContextMenu()
         pMenuGroup->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Console)->menu());
         pMenuGroup->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
         pMenuGroup->addSeparator();
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Discard));
         pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
         pMenuGroup->addSeparator();
         pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
@@ -1490,7 +1489,6 @@ void UIChooserModel::prepareContextMenu()
         pMenuMachine->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Console)->menu());
         pMenuMachine->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
         pMenuMachine->addSeparator();
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));
         pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh));
         pMenuMachine->addSeparator();
         pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent));

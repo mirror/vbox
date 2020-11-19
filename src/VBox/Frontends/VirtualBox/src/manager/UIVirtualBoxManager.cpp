@@ -1565,30 +1565,20 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
 
     /* Prepare the list of the machines to be discarded/terminated: */
     QStringList machinesToDiscard;
-    QStringList machinesToTerminate;
     QList<UIVirtualMachineItem*> itemsToDiscard;
-    QList<UIVirtualMachineItem*> itemsToTerminate;
     foreach (UIVirtualMachineItem *pItem, items)
     {
         if (isActionEnabled(UIActionIndexMN_M_Group_S_Discard, QList<UIVirtualMachineItem*>() << pItem))
         {
-            if (pItem->itemType() == UIVirtualMachineItemType_Local)
-            {
-                machinesToDiscard << pItem->name();
-                itemsToDiscard << pItem;
-            }
-            else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
-            {
-                machinesToTerminate << pItem->name();
-                itemsToTerminate << pItem;
-            }
+            machinesToDiscard << pItem->name();
+            itemsToDiscard << pItem;
         }
     }
-    AssertMsg(!machinesToDiscard.isEmpty() || !machinesToTerminate.isEmpty(), ("This action should not be allowed!"));
+    AssertMsg(!machinesToDiscard.isEmpty(), ("This action should not be allowed!"));
 
-    /* Confirm discarding/terminating: */
-    if (   (machinesToDiscard.isEmpty() || !msgCenter().confirmDiscardSavedState(machinesToDiscard.join(", ")))
-        && (machinesToTerminate.isEmpty() || !msgCenter().confirmTerminateCloudInstance(machinesToTerminate.join(", "))))
+    /* Confirm discarding: */
+    if (   machinesToDiscard.isEmpty()
+        || !msgCenter().confirmDiscardSavedState(machinesToDiscard.join(", ")))
         return;
 
     /* For every confirmed item to discard: */
@@ -1608,34 +1598,6 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
 
         /* Unlock machine finally: */
         comSession.UnlockMachine();
-    }
-
-    /* For every confirmed item to terminate: */
-    foreach (UIVirtualMachineItem *pItem, itemsToTerminate)
-    {
-        /* Get cloud machine: */
-        AssertPtrReturnVoid(pItem);
-        UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
-        AssertPtrReturnVoid(pCloudItem);
-        CCloudMachine comMachine = pCloudItem->machine();
-
-        /* Acquire machine name: */
-        QString strName;
-        if (!cloudMachineName(comMachine, strName))
-            continue;
-
-        /* Prepare terminate cloud instance progress: */
-        CProgress comProgress = comMachine.Terminate();
-        if (!comMachine.isOk())
-        {
-            msgCenter().cannotTerminateCloudInstance(comMachine);
-            continue;
-        }
-
-        /* Show terminate cloud instance progress: */
-        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotTerminateCloudInstance(comProgress, strName);
     }
 }
 
@@ -2826,7 +2788,6 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Console)->menu());
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Discard));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
@@ -2884,7 +2845,6 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Console)->menu());
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent));
@@ -3196,20 +3156,6 @@ void UIVirtualBoxManager::updateActionsAppearance()
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
 
-    /* Discard/Terminate action is deremined by 1st item: */
-    if (   pItem
-        && (   pItem->itemType() == UIVirtualMachineItemType_CloudFake
-            || pItem->itemType() == UIVirtualMachineItemType_CloudReal))
-    {
-        actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->setState(1);
-        actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->setState(1);
-    }
-    else
-    {
-        actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->setState(0);
-        actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->setState(0);
-    }
-
     /* Start/Show action is deremined by 1st item: */
     if (pItem && pItem->accessible())
     {
@@ -3399,6 +3345,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexMN_M_Machine_S_Discard:
         {
             return !isGroupSavingInProgress() &&
+                   isItemsLocal(items) &&
                    isAtLeastOneItemDiscardable(items) &&
                     (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
                      m_pWidget->isCurrentStateItemSelected());
@@ -3464,26 +3411,23 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         }
         case UIActionIndexMN_M_Group_M_Close_S_Detach:
         case UIActionIndexMN_M_Machine_M_Close_S_Detach:
-        {
-            return isItemsLocal(items) &&
-                   isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items);
-        }
         case UIActionIndexMN_M_Group_M_Close_S_SaveState:
         case UIActionIndexMN_M_Machine_M_Close_S_SaveState:
         {
-            return isItemsLocal(items) &&
-                   isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items);
+            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items)
+                   && isItemsLocal(items);
         }
         case UIActionIndexMN_M_Group_M_Close_S_Shutdown:
         case UIActionIndexMN_M_Machine_M_Close_S_Shutdown:
         {
-            return isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items) &&
-                   isAtLeastOneItemAbleToShutdown(items);
+            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items)
+                   && isAtLeastOneItemAbleToShutdown(items);
         }
         case UIActionIndexMN_M_Group_M_Close_S_PowerOff:
         case UIActionIndexMN_M_Machine_M_Close_S_PowerOff:
         {
-            return isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items);
+            return    isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items)
+                   && isAtLeastOneItemStarted(items);
         }
         default:
             break;
@@ -3640,8 +3584,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeStartedOrShown(const QList<UIVirt
 bool UIVirtualBoxManager::isAtLeastOneItemDiscardable(const QList<UIVirtualMachineItem*> &items)
 {
     foreach (UIVirtualMachineItem *pItem, items)
-        if (   (   pItem->isItemSaved()
-                || pItem->itemType() == UIVirtualMachineItemType_CloudReal)
+        if (   pItem->isItemSaved()
             && pItem->isItemEditable())
             return true;
     return false;
