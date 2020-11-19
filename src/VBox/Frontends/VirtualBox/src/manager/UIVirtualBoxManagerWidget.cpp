@@ -86,6 +86,16 @@ bool UIVirtualBoxManagerWidget::isMachineItemSelected() const
     return m_pPaneChooser->isMachineItemSelected();
 }
 
+bool UIVirtualBoxManagerWidget::isLocalMachineItemSelected() const
+{
+    return m_pPaneChooser->isLocalMachineItemSelected();
+}
+
+bool UIVirtualBoxManagerWidget::isCloudMachineItemSelected() const
+{
+    return m_pPaneChooser->isCloudMachineItemSelected();
+}
+
 bool UIVirtualBoxManagerWidget::isSingleGroupSelected() const
 {
     return m_pPaneChooser->isSingleGroupSelected();
@@ -94,6 +104,11 @@ bool UIVirtualBoxManagerWidget::isSingleGroupSelected() const
 bool UIVirtualBoxManagerWidget::isSingleLocalGroupSelected() const
 {
     return m_pPaneChooser->isSingleLocalGroupSelected();
+}
+
+bool UIVirtualBoxManagerWidget::isSingleCloudProviderGroupSelected() const
+{
+    return m_pPaneChooser->isSingleCloudProviderGroupSelected();
 }
 
 bool UIVirtualBoxManagerWidget::isSingleCloudProfileGroupSelected() const
@@ -337,12 +352,16 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange()
         recacheCurrentItemInformation();
 
     /* Calculate selection type: */
-    const SelectionType enmSelectedItemType = isSingleGroupSelected()
-                                            ? SelectionType_SingleGroupItem
+    const SelectionType enmSelectedItemType = isSingleLocalGroupSelected()
+                                            ? SelectionType_SingleLocalGroupItem
+                                            : isSingleCloudProviderGroupSelected() || isSingleCloudProfileGroupSelected()
+                                            ? SelectionType_SingleCloudGroupItem
                                             : isGlobalItemSelected()
                                             ? SelectionType_FirstIsGlobalItem
-                                            : isMachineItemSelected()
-                                            ? SelectionType_FirstIsMachineItem
+                                            : isLocalMachineItemSelected()
+                                            ? SelectionType_FirstIsLocalMachineItem
+                                            : isCloudMachineItemSelected()
+                                            ? SelectionType_FirstIsCloudMachineItem
                                             : SelectionType_Invalid;
     /* Acquire current item: */
     UIVirtualMachineItem *pItem = currentItem();

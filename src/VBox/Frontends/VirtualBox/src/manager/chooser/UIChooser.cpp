@@ -81,6 +81,18 @@ bool UIChooser::isMachineItemSelected() const
     return model()->isMachineItemSelected();
 }
 
+bool UIChooser::isLocalMachineItemSelected() const
+{
+    AssertPtrReturn(model(), false);
+    return model()->isLocalMachineItemSelected();
+}
+
+bool UIChooser::isCloudMachineItemSelected() const
+{
+    AssertPtrReturn(model(), false);
+    return model()->isCloudMachineItemSelected();
+}
+
 bool UIChooser::isSingleGroupSelected() const
 {
     AssertPtrReturn(model(), false);
@@ -91,6 +103,12 @@ bool UIChooser::isSingleLocalGroupSelected() const
 {
     AssertPtrReturn(model(), false);
     return model()->isSingleLocalGroupSelected();
+}
+
+bool UIChooser::isSingleCloudProviderGroupSelected() const
+{
+    AssertPtrReturn(model(), false);
+    return model()->isSingleCloudProviderGroupSelected();
 }
 
 bool UIChooser::isSingleCloudProfileGroupSelected() const

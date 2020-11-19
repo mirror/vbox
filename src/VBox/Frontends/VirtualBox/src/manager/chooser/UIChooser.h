@@ -129,11 +129,17 @@ public:
         bool isGlobalItemSelected() const;
         /** Returns whether machine item is selected. */
         bool isMachineItemSelected() const;
+        /** Returns whether local machine item is selected. */
+        bool isLocalMachineItemSelected() const;
+        /** Returns whether cloud machine item is selected. */
+        bool isCloudMachineItemSelected() const;
 
         /** Returns whether single group is selected. */
         bool isSingleGroupSelected() const;
         /** Returns whether single local group is selected. */
         bool isSingleLocalGroupSelected() const;
+        /** Returns whether single cloud provider group is selected. */
+        bool isSingleCloudProviderGroupSelected() const;
         /** Returns whether single cloud profile group is selected. */
         bool isSingleCloudProfileGroupSelected() const;
         /** Returns whether all items of one group are selected. */

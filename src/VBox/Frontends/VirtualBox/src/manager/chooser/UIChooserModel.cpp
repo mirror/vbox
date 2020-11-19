@@ -292,6 +292,18 @@ bool UIChooserModel::isMachineItemSelected() const
     return firstSelectedItem() && firstSelectedItem()->type() == UIChooserNodeType_Machine;
 }
 
+bool UIChooserModel::isLocalMachineItemSelected() const
+{
+    return    isMachineItemSelected()
+           && firstSelectedItem()->toMachineItem()->cacheType() == UIVirtualMachineItemType_Local;
+}
+
+bool UIChooserModel::isCloudMachineItemSelected() const
+{
+    return    isMachineItemSelected()
+           && firstSelectedItem()->toMachineItem()->cacheType() == UIVirtualMachineItemType_CloudReal;
+}
+
 bool UIChooserModel::isSingleGroupSelected() const
 {
     return    selectedItems().size() == 1
@@ -302,6 +314,12 @@ bool UIChooserModel::isSingleLocalGroupSelected() const
 {
     return    isSingleGroupSelected()
            && firstSelectedItem()->toGroupItem()->groupType() == UIChooserNodeGroupType_Local;
+}
+
+bool UIChooserModel::isSingleCloudProviderGroupSelected() const
+{
+    return    isSingleGroupSelected()
+           && firstSelectedItem()->toGroupItem()->groupType() == UIChooserNodeGroupType_Provider;
 }
 
 bool UIChooserModel::isSingleCloudProfileGroupSelected() const
