@@ -1577,30 +1577,35 @@ def parseIsoTimestamp(sTs):
     while sTime[0] in 'Tt \t\n\r':
         sTime = sTime[1:];
 
-    # HH:MM:SS
+    # HH:MM[:SS]
     iHour = int(sTime[0:2]);
     assert(sTime[2] == ':');
     iMin  = int(sTime[3:5]);
-    assert(sTime[5] == ':');
-    iSec  = int(sTime[6:8]);
+    if (sTime[5] == ':')
+        iSec = int(sTime[6:8]);
 
-    # Fraction?
-    offTime = 8;
-    iMicroseconds = 0;
-    if offTime < len(sTime) and sTime[offTime] in '.,':
-        offTime += 1;
-        cchFraction = 0;
-        while offTime + cchFraction < len(sTime) and sTime[offTime + cchFraction] in '0123456789':
-            cchFraction += 1;
-        if cchFraction > 0:
-            iMicroseconds = int(sTime[offTime : (offTime + cchFraction)]);
-            offTime += cchFraction;
-            while cchFraction < 6:
-                iMicroseconds *= 10;
+        # Fraction?
+        offTime = 8;
+        iMicroseconds = 0;
+        if offTime < len(sTime) and sTime[offTime] in '.,':
+            offTime += 1;
+            cchFraction = 0;
+            while offTime + cchFraction < len(sTime) and sTime[offTime + cchFraction] in '0123456789':
                 cchFraction += 1;
-            while cchFraction > 6:
-                iMicroseconds = iMicroseconds // 10;
-                cchFraction -= 1;
+            if cchFraction > 0:
+                iMicroseconds = int(sTime[offTime : (offTime + cchFraction)]);
+                offTime += cchFraction;
+                while cchFraction < 6:
+                    iMicroseconds *= 10;
+                    cchFraction += 1;
+                while cchFraction > 6:
+                    iMicroseconds = iMicroseconds // 10;
+                    cchFraction -= 1;
+
+    else:
+        iSec          = 0;
+        iMicroseconds = 0;
+        offTime       = 5;
 
     # Naive?
     if offTime >= len(sTime):
