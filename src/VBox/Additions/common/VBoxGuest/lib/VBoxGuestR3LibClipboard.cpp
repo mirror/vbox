@@ -99,16 +99,22 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuest
      */
     pCtx->idClient              = 0;
     pCtx->fHostFeatures         = 0;
-    pCtx->fGuestFeatures        = 0;
+    pCtx->fGuestFeatures        = VBOX_SHCL_GF_NONE;
     pCtx->fUseLegacyProtocol    = true;
     pCtx->cParmsRecived         = 0;
     pCtx->idContext             = 0;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    /* Indicate that this guest supports Shared Clipboard file transfers. */
     pCtx->fGuestFeatures       |= VBOX_SHCL_GF_0_TRANSFERS;
+# ifdef RT_OS_WINDOWS
+    /* Indicate that on Windows guest OSes we have our own IDataObject implementation which
+     * integrates nicely into the guest's Windows Explorer showing / handling the Shared Clipboard file transfers. */
+    pCtx->fGuestFeatures       |= VBOX_SHCL_GF_0_TRANSFERS_FRONTEND;
+# endif
     pCtx->cbChunkSize           = VBOX_SHCL_DEFAULT_CHUNK_SIZE; /** @todo Make this configurable. */
     pCtx->cbMaxChunkSize        = VBOX_SHCL_MAX_CHUNK_SIZE;     /** @todo Ditto. */
-#endif
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
     /*
      * First step is connecting to the HGCM service.

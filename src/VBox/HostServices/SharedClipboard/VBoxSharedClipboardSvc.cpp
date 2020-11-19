@@ -760,6 +760,7 @@ static int shClSvcClientReportFeatures(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE h
         pClient->State.fGuestFeatures0 = fFeatures0;
         pClient->State.fGuestFeatures1 = fFeatures1;
         Log(("[Client %RU32] features: %#RX64 %#RX64\n", pClient->State.uClientID, fFeatures0, fFeatures1));
+        LogRel2(("Shared Clipboard: Guest reported the following features: %#RX64\n", fFeatures0)); /* fFeatures1 not used yet. */
     }
     else
         LogFunc(("pfnCallComplete -> %Rrc\n", rc));

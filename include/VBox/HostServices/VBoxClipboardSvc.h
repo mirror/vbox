@@ -617,8 +617,13 @@
 /** The guest can handle context IDs where applicable. */
 #define VBOX_SHCL_GF_0_CONTEXT_ID                 RT_BIT_64(0)
 /** The guest can copy & paste files and directories.
- * @since 6.1.?  */
+ * @since 6.x */
 #define VBOX_SHCL_GF_0_TRANSFERS                  RT_BIT_64(1)
+/** The guest supports a (guest OS-)native frontend for showing and handling file transfers.
+ *  If not set, the host will show a modal progress dialog instead and transferring file to
+ *  a guest-specific temporary location first.
+ *  Currently only supported for Windows guests (integrated into Windows Explorer via IDataObject). */
+#define VBOX_SHCL_GF_0_TRANSFERS_FRONTEND         RT_BIT_64(2)
 /** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
  * correctly (old hosts might not). */
 #define VBOX_SHCL_GF_1_MUST_BE_ONE                RT_BIT_64(63)
