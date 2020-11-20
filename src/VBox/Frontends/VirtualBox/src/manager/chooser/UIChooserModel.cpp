@@ -624,8 +624,8 @@ void UIChooserModel::startEditingSelectedGroupItemName()
 
 void UIChooserModel::disbandSelectedGroupItem()
 {
-    /* Only for single selected group: */
-    if (!isSingleGroupSelected())
+    /* Only for single selected local group: */
+    if (!isSingleLocalGroupSelected())
         return;
 
     /* Check if we have collisions between disbandable group children and their potential siblings: */
