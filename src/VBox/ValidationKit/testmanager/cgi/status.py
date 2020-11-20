@@ -112,18 +112,17 @@ def testbox_data_processing(oDb):
         test_sched_group = line[4]
         testboxes_dict = dict_update(testboxes_dict, testbox_name, test_result)
 
-        if "testbox_os" not in testboxes_dict[testbox_name].keys(): ## bird: you don't need to use keys() here.
+        if "testbox_os" not in testboxes_dict[testbox_name]:
             testboxes_dict[testbox_name].update({"testbox_os": test_box_os})
 
-        if "sched_group" not in testboxes_dict[testbox_name].keys():
+        if "sched_group" not in testboxes_dict[testbox_name]:
             testboxes_dict[testbox_name].update({"sched_group": test_sched_group})
         elif test_sched_group not in testboxes_dict[testbox_name]["sched_group"]:
-            testboxes_dict[testbox_name]["sched_group"] = testboxes_dict[testbox_name]["sched_group"] + ","+ test_sched_group
+            testboxes_dict[testbox_name]["sched_group"] += "," + test_sched_group
 
         if test_result == "running":
             testboxes_dict[testbox_name].update({"hours_running": find_test_duration(test_created)})
 
-    #earlier: clean_file_and_insert_data(testboxes_dict, target_file)
     return testboxes_dict;
 
 
@@ -136,26 +135,26 @@ def os_results_separating(vb_dict, test_name, testbox_os, test_result):
         dict_update(vb_dict, test_name + " / darwin", test_result)
     elif testbox_os == "solaris":
         dict_update(vb_dict, test_name + " / solaris", test_result)
-    else:
-        dict_update(vb_dict, test_name + " / other", test_result)
+#    else:
+#        dict_update(vb_dict, test_name + " / other", test_result)
 
+
+# const/immutable.
+g_kdTestStatuses = {
+    'running': 0,
+    'success': 0,
+    'skipped': 0,
+    'bad-testbox': 0,
+    'aborted': 0,
+    'failure': 0,
+    'timed-out': 0,
+    'rebooted': 0,
+}
 
 def dict_update(target_dict, key_name, test_result):
-    def test_statuses_dict_default():
-        test_statuses_dict = {
-            'running': 0,
-            'success': 0,
-            'skipped': 0,
-            'bad-testbox': 0,
-            'aborted': 0,
-            'failure': 0,
-            'timed-out': 0,
-            'rebooted': 0,
-        }
-        return test_statuses_dict
-    if key_name not in target_dict.keys():
-        target_dict.update({key_name: test_statuses_dict_default().copy()})
-    if test_result in test_statuses_dict_default().keys():
+    if key_name not in target_dict:
+        target_dict.update({key_name: g_kdTestStatuses.copy()})
+    if test_result in g_kdTestStatuses:
         target_dict[key_name][test_result] += 1
     return target_dict
 
