@@ -450,7 +450,7 @@ SELECT  TestSets.enmStatus,
 FROM    TestSets
 INNER JOIN BuildCategories
         ON BuildCategories.idBuildCategory = TestSets.idBuildCategory
-       AND BuildCategories.sBranch         = '%s'
+       AND BuildCategories.sBranch         = %s
 INNER JOIN TestCases
         ON TestCases.idGenTestCase         = TestSets.idGenTestCase
 INNER JOIN TestBoxesWithStrings
