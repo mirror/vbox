@@ -294,11 +294,10 @@ class StatusDispatcher(object): # pylint: disable=too-few-public-methods
         """
         return (TMDatabaseConnection(self._oSrvGlue.dprint),);
 
-    def _actionMagicMirrorTestBoxes(self, sCmd):
+    def _actionMagicMirrorTestBoxes(self):
         """
         Produces test result status for the magic mirror dashboard
         """
-        _ = sCmd;
 
         #
         # Parse arguments and connect to the database.
@@ -345,7 +344,7 @@ LEFT OUTER JOIN TestSets
 
         return True;
 
-    def _actionMagicMirrorTestResults(self, sCmd):
+    def _actionMagicMirrorTestResults(self):
         """
         Produces test result status for the magic mirror dashboard
         """
@@ -353,7 +352,6 @@ LEFT OUTER JOIN TestSets
         #
         # Parse arguments and connect to the database.
         #
-        _ = sCmd;
         sBranch = self._getStringParam('sBranch');
         cHoursBack = self._getIntParam('cHours', 1, 24*14, 6); ## @todo why 6 hours here and 12 for test boxes?
         self._checkForUnknownParameters();
