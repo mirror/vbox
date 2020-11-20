@@ -279,6 +279,7 @@ public:
     void setSource(const QUrl &url) /* override */;
     void toggleFindInPageWidget(bool fVisible);
     int initialFontPointSize() const;
+    void setFont(const QFont &);
 
 public slots:
 
@@ -1163,6 +1164,18 @@ int UIHelpBrowserViewer::initialFontPointSize() const
     return m_iInitialFontPointSize;
 }
 
+void UIHelpBrowserViewer::setFont(const QFont &font)
+{
+    QIWithRetranslateUI<QTextBrowser>::setFont(font);
+    /* Make sure the font size of the find in widget stays constant: */
+    if (m_pFindInPageWidget)
+    {
+        QFont wFont(font);
+        wFont.setPointSize(m_iInitialFontPointSize);
+        m_pFindInPageWidget->setFont(wFont);
+    }
+}
+
 void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu pMenu;
@@ -1303,8 +1316,6 @@ void UIHelpBrowserViewer::highlightFinds(int iSearchTermLength)
     pDocument->undo();
 
     QTextCursor highlightCursor(pDocument);
-
-
     QTextCursor cursor(pDocument);
     cursor.beginEditBlock();
     for (int i = 0; i < m_matchedCursorPosition.size(); ++i)
