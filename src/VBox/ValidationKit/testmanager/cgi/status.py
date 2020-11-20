@@ -311,42 +311,94 @@ class StatusDispatcher(object): # pylint: disable=too-few-public-methods
 
         #
         # Get the data.
-        # bird: I changed these to join on idGenTestBox.
-        # @todo The query isn't very efficient as postgresql probably will repeat the
-        #       subselect in column 5 for each result row.
+        #
+        # Note! We're not joining on TestBoxesWithStrings.idTestBox =
+        #       TestSets.idGenTestBox here because of indexes.  This is
+        #       also more consistent with the rest of the query.
+        # Note! The original SQL is slow because of the 'OR TestSets.tsDone'
+        #       part, using AND and UNION is significatly faster because
+        #       it matches the TestSetsGraphBoxIdx (index).
         #
         (oDb,) = self._connectToDb();
         if oDb is None:
             return False;
 
+        #        oDb.execute('''
+        #SELECT  TestBoxesWithStrings.sName,
+        #        TestSets.enmStatus,
+        #        TestSets.tsCreated,
+        #        TestBoxesWithStrings.sOS,
+        #        SchedGroupNames.sSchedGroupNames
+        #FROM    (SELECT TestBoxesInSchedGroups.idTestBox AS idTestBox,
+        #                STRING_AGG(SchedGroups.sName, ',') AS sSchedGroupNames
+        #         FROM   TestBoxesInSchedGroups
+        #         INNER JOIN SchedGroups
+        #                 ON SchedGroups.idSchedGroup = TestBoxesInSchedGroups.idSchedGroup
+        #         WHERE  TestBoxesInSchedGroups.tsExpire = 'infinity'::TIMESTAMP
+        #            AND SchedGroups.tsExpire            = 'infinity'::TIMESTAMP
+        #         GROUP BY TestBoxesInSchedGroups.idTestBox)
+        #        AS SchedGroupNames,
+        #        TestBoxesWithStrings
+        #LEFT OUTER JOIN TestSets
+        #             ON TestSets.idTestBox = TestBoxesWithStrings.idTestBox
+        #            AND (   TestSets.tsCreated > (CURRENT_TIMESTAMP - '%s hours'::interval)
+        #                 OR TestSets.tsDone IS NULL)
+        #WHERE   TestBoxesWithStrings.tsExpire = 'infinity'::TIMESTAMP
+        #  AND   SchedGroupNames.idTestBox = TestBoxesWithStrings.idTestBox
+        #''', (cHoursBack,));
         oDb.execute('''
-SELECT  TestBoxesWithStrings.sName,
-        TestSets.enmStatus,
-        TestSets.tsCreated,
-        TestBoxesWithStrings.sOS,
-        SchedGroupNames.sSchedGroupNames
-FROM    (SELECT TestBoxesInSchedGroups.idTestBox AS idTestBox,
-                STRING_AGG(SchedGroups.sName, ',') AS sSchedGroupNames
-         FROM   TestBoxesInSchedGroups
-         INNER JOIN SchedGroups
-                 ON SchedGroups.idSchedGroup = TestBoxesInSchedGroups.idSchedGroup
-         WHERE  TestBoxesInSchedGroups.tsExpire = 'infinity'::TIMESTAMP
-            AND SchedGroups.tsExpire            = 'infinity'::TIMESTAMP
-         GROUP BY TestBoxesInSchedGroups.idTestBox)
-        AS SchedGroupNames,
-        TestBoxesWithStrings
-LEFT OUTER JOIN TestSets
-             ON TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox
-            AND (   TestSets.tsCreated > (CURRENT_TIMESTAMP - '%s hours'::interval)
-                 OR TestSets.tsDone IS NULL)
-WHERE   TestBoxesWithStrings.tsExpire = 'infinity'::TIMESTAMP
-  AND   SchedGroupNames.idTestBox = TestBoxesWithStrings.idTestBox
-''', (cHoursBack,));
+(   SELECT  TestBoxesWithStrings.sName,
+            TestSets.enmStatus,
+            TestSets.tsCreated,
+            TestBoxesWithStrings.sOS,
+            SchedGroupNames.sSchedGroupNames
+    FROM    (
+            SELECT TestBoxesInSchedGroups.idTestBox AS idTestBox,
+            STRING_AGG(SchedGroups.sName, ',') AS sSchedGroupNames
+            FROM   TestBoxesInSchedGroups
+            INNER JOIN SchedGroups
+                    ON SchedGroups.idSchedGroup = TestBoxesInSchedGroups.idSchedGroup
+            WHERE   TestBoxesInSchedGroups.tsExpire = 'infinity'::TIMESTAMP
+                AND SchedGroups.tsExpire            = 'infinity'::TIMESTAMP
+            GROUP BY TestBoxesInSchedGroups.idTestBox
+            ) AS SchedGroupNames,
+            TestBoxesWithStrings
+    LEFT OUTER JOIN TestSets
+                 ON TestSets.idTestBox  = TestBoxesWithStrings.idTestBox
+                AND TestSets.tsCreated >= (CURRENT_TIMESTAMP - '%s hours'::interval)
+                AND TestSets.tsDone IS NOT NULL
+    WHERE   TestBoxesWithStrings.tsExpire = 'infinity'::TIMESTAMP
+      AND   SchedGroupNames.idTestBox = TestBoxesWithStrings.idTestBox
+) UNION (
+    SELECT  TestBoxesWithStrings.sName,
+            TestSets.enmStatus,
+            TestSets.tsCreated,
+            TestBoxesWithStrings.sOS,
+            SchedGroupNames.sSchedGroupNames
+    FROM    (
+            SELECT TestBoxesInSchedGroups.idTestBox AS idTestBox,
+            STRING_AGG(SchedGroups.sName, ',') AS sSchedGroupNames
+            FROM   TestBoxesInSchedGroups
+            INNER JOIN SchedGroups
+                    ON SchedGroups.idSchedGroup = TestBoxesInSchedGroups.idSchedGroup
+            WHERE   TestBoxesInSchedGroups.tsExpire = 'infinity'::TIMESTAMP
+                AND SchedGroups.tsExpire            = 'infinity'::TIMESTAMP
+            GROUP BY TestBoxesInSchedGroups.idTestBox
+            ) AS SchedGroupNames,
+            TestBoxesWithStrings
+    LEFT OUTER JOIN TestSets
+                 ON TestSets.idTestBox  = TestBoxesWithStrings.idTestBox
+                AND TestSets.tsCreated < (CURRENT_TIMESTAMP - '%s hours'::interval)
+                AND TestSets.tsDone IS NULL
+    WHERE   TestBoxesWithStrings.tsExpire = 'infinity'::TIMESTAMP
+      AND   SchedGroupNames.idTestBox = TestBoxesWithStrings.idTestBox
+)''', (cHoursBack, cHoursBack,));
 
-        # Process the data
+
+        #
+        # Process, format and output data.
+        #
         dResult = testbox_data_processing(oDb);
-
-        # Format and output it.
         self._oSrvGlue.setContentType('text/plain');
         self._oSrvGlue.write(format_data(dResult));
 
@@ -366,8 +418,12 @@ WHERE   TestBoxesWithStrings.tsExpire = 'infinity'::TIMESTAMP
 
         #
         # Get the data.
-        # bird: I changed these to join on idGenTestBox and idGenTestCase instead of
-        #       also needing to check the tsExpire columns.
+        #
+        # Note! These queries should be joining TestBoxesWithStrings and TestSets
+        #       on idGenTestBox rather than on idTestBox and tsExpire=inf, but
+        #       we don't have any index matching those.  So, we'll ignore tests
+        #       performed by deleted testboxes for the present as that doesn't
+        #       happen often and we want the ~1000x speedup.
         #
         (oDb,) = self._connectToDb();
         if oDb is None:
@@ -380,10 +436,11 @@ SELECT  TestSets.enmStatus,
         TestBoxesWithStrings.sOS
 FROM    TestSets
 INNER JOIN TestCases
-        ON TestCases.idGenTestCase           = TestCases.idGenTestCase
+        ON TestCases.idGenTestCase         = TestCases.idGenTestCase
 INNER JOIN TestBoxesWithStrings
-        ON TestBoxesWithStrings.idGenTestBox = TestSets.idGenTestBox
-WHERE   TestSets.tsCreated                   > (CURRENT_TIMESTAMP - '%s hours'::interval)
+        ON TestBoxesWithStrings.idTestBox  = TestSets.idTestBox
+       AND TestBoxesWithStrings.tsExpire   = 'infinity'::TIMESTAMP
+WHERE   TestSets.tsCreated                >= (CURRENT_TIMESTAMP - '%s hours'::interval)
 ''', (cHoursBack,));
         else:
             oDb.execute('''
@@ -392,13 +449,14 @@ SELECT  TestSets.enmStatus,
         TestBoxesWithStrings.sOS
 FROM    TestSets
 INNER JOIN BuildCategories
-        ON BuildCategories.idBuildCategory   = TestSets.idBuildCategory
-       AND BuildCategories.sBuildCategories  = '%s'
+        ON BuildCategories.idBuildCategory = TestSets.idBuildCategory
+       AND BuildCategories.sBranch         = '%s'
 INNER JOIN TestCases
-        ON TestCases.idGenTestCase           = TestSets.idGenTestCase
+        ON TestCases.idGenTestCase         = TestSets.idGenTestCase
 INNER JOIN TestBoxesWithStrings
-        ON TestBoxesWithStrings.idGenTestBox = TestSets.idGenTestBox
-WHERE   TestSets.tsCreated                   > (CURRENT_TIMESTAMP - '%s hours'::interval)
+        ON TestBoxesWithStrings.idTestBox  = TestSets.idTestBox
+       AND TestBoxesWithStrings.tsExpire   = 'infinity'::TIMESTAMP
+WHERE   TestSets.tsCreated                >= (CURRENT_TIMESTAMP - '%s hours'::interval)
 ''', (sBranch, cHoursBack,));
 
         # Process the data
