@@ -441,7 +441,7 @@ SELECT  TestSets.enmStatus,
         TestBoxesWithStrings.sOS
 FROM    TestSets
 INNER JOIN TestCases
-        ON TestCases.idGenTestCase         = TestCases.idGenTestCase
+        ON TestCases.idGenTestCase         = TestSets.idGenTestCase
 INNER JOIN TestBoxesWithStrings
         ON TestBoxesWithStrings.idTestBox  = TestSets.idTestBox
        AND TestBoxesWithStrings.tsExpire   = 'infinity'::TIMESTAMP
