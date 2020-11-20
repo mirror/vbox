@@ -511,7 +511,9 @@ void UIVMCloseDialog::prepareButtonBox()
                                        | QDialogButtonBox::Ok);
         connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIVMCloseDialog::accept);
         connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMCloseDialog::reject);
-        connect(pButtonBox, &QIDialogButtonBox::helpRequested, &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
+        connect(pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
+                &msgCenter(), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+        pButtonBox->button(QIDialogButtonBox::Help)->setProperty("helptag", "intro-save-machine-state");
 
         /* Add into layout: */
         m_pMainLayout->addWidget(pButtonBox);
