@@ -311,7 +311,7 @@ class StatusDispatcher(object): # pylint: disable=too-few-public-methods
 
         #
         # Get the data.
-        # bird: I changed these to join on idGenTestBox and skipping the tsExpire condition.
+        # bird: I changed these to join on idGenTestBox.
         # @todo The query isn't very efficient as postgresql probably will repeat the
         #       subselect in column 5 for each result row.
         #
@@ -324,19 +324,23 @@ SELECT  TestBoxesWithStrings.sName,
         TestSets.enmStatus,
         TestSets.tsCreated,
         TestBoxesWithStrings.sOS,
-        (   SELECT  STRING_AGG(SchedGroups.sName, ',')
-            FROM    SchedGroups
-            INNER JOIN TestBoxesInSchedGroups
-                    ON TestBoxesInSchedGroups.idSchedGroup = SchedGroups.idSchedGroup
-                   AND TestBoxesInSchedGroups.idTestBox    = TestBoxesWithStrings.idTestBox
-            WHERE   TestBoxesInSchedGroups.tsExpire = 'infinity'::TIMESTAMP
-                AND SchedGroups.tsExpire            = 'infinity'::TIMESTAMP
-        ) AS SchedGroupName
-FROM    TestBoxesWithStrings
+        SchedGroupNames.sSchedGroupNames
+FROM    TestBoxesWithStrings,
+        (SELECT TestBoxesInSchedGroups.idTestBox AS idTestBox,
+                STRING_AGG(SchedGroups.sName, ',') AS sSchedGroupNames
+         FROM   TestBoxesInSchedGroups
+         INNER JOIN SchedGroups
+                 ON SchedGroups.idSchedGroup = TestBoxesInSchedGroups.idSchedGroup
+         WHERE  TestBoxesInSchedGroups.tsExpire = 'infinity'::TIMESTAMP
+            AND SchedGroups.tsExpire            = 'infinity'::TIMESTAMP
+         GROUP BY TestBoxesInSchedGroups.idTestBox)
+        AS SchedGroupNames
 LEFT OUTER JOIN TestSets
              ON TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox
             AND (   TestSets.tsCreated > (CURRENT_TIMESTAMP - '%s hours'::interval)
                  OR TestSets.tsDone IS NULL)
+WHERE   TestBoxesWithStrings.tsExpire = 'infinity'::TIMESTAMP
+  AND   SchedGroupNames.idTestBox = TestBoxesWithStrings.idTestBox
 ''', (cHoursBack,));
 
         # Process the data
