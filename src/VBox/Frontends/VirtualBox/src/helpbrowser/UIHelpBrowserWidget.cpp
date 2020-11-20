@@ -1303,16 +1303,20 @@ void UIHelpBrowserViewer::highlightFinds(int iSearchTermLength)
     pDocument->undo();
 
     QTextCursor highlightCursor(pDocument);
-    QTextCharFormat colorFormat(highlightCursor.charFormat());
+
+
     QTextCursor cursor(pDocument);
     cursor.beginEditBlock();
-    colorFormat.setBackground(Qt::yellow);
     for (int i = 0; i < m_matchedCursorPosition.size(); ++i)
     {
         highlightCursor.setPosition(m_matchedCursorPosition[i]);
+
+        QTextCharFormat colorFormat(highlightCursor.charFormat());
+        colorFormat.setBackground(Qt::yellow);
+
         highlightCursor.setPosition(m_matchedCursorPosition[i] + iSearchTermLength, QTextCursor::KeepAnchor);
         if (!highlightCursor.isNull())
-            highlightCursor.mergeCharFormat(colorFormat);
+            highlightCursor.setCharFormat(colorFormat);
     }
     cursor.endEditBlock();
 }
