@@ -376,7 +376,7 @@ FROM    TestSets
 INNER JOIN TestCases
         ON TestCases.idGenTestCase           = TestCases.idGenTestCase
 INNER JOIN TestBoxesWithStrings
-        ON TestBoxesWithStrings.idGenTestBox = TestSets.idGetTestBox
+        ON TestBoxesWithStrings.idGenTestBox = TestSets.idGenTestBox
 WHERE   TestSets.tsCreated                   > (CURRENT_TIMESTAMP - '%s hours'::interval)
 ''', (cHoursBack,));
         else:
@@ -389,9 +389,9 @@ INNER JOIN BuildCategories
         ON BuildCategories.idBuildCategory   = TestSets.idBuildCategory
        AND BuildCategories.sBuildCategories  = '%s'
 INNER JOIN TestCases
-        ON TestCases.idGenTestCase           = TestSets.idGetTestCase
+        ON TestCases.idGenTestCase           = TestSets.idGenTestCase
 INNER JOIN TestBoxesWithStrings
-        ON TestBoxesWithStrings.idGenTestBox = TestSets.idGetTestBox
+        ON TestBoxesWithStrings.idGenTestBox = TestSets.idGenTestBox
 WHERE   TestSets.tsCreated                   > (CURRENT_TIMESTAMP - '%s hours'::interval)
 ''', (sBranch, cHoursBack,));
 
