@@ -614,8 +614,8 @@ UIChooserItem *UIChooserModel::root() const
 
 void UIChooserModel::startEditingSelectedGroupItemName()
 {
-    /* Only for single selected group: */
-    if (!isSingleGroupSelected())
+    /* Only for single selected local group: */
+    if (!isSingleLocalGroupSelected())
         return;
 
     /* Start editing first selected item name: */
