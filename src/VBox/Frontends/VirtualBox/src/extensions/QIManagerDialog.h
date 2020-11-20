@@ -149,6 +149,9 @@ protected:
         /** Handles close @a pEvent. */
         virtual void closeEvent(QCloseEvent *pEvent) /* override */;
     /** @} */
+    /** Sets the property 'helptag' of the button box's help button to @param strHelpTag and
+      * sets up the appropirate connection. */
+    void configureButtonBoxHelpButton(const QString &strHelpTag);
 
 private:
 

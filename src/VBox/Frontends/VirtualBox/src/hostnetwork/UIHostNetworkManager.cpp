@@ -1048,6 +1048,8 @@ void UIHostNetworkManager::configureButtonBox()
     // for signals above, we should handle that stuff here again:
     button(ButtonType_Apply)->setVisible(gEDataManager->hostNetworkManagerDetailsExpanded());
     button(ButtonType_Reset)->setVisible(gEDataManager->hostNetworkManagerDetailsExpanded());
+
+    configureButtonBoxHelpButton("networkingdetails");
 }
 
 void UIHostNetworkManager::finalize()

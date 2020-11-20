@@ -1007,6 +1007,8 @@ void UICloudProfileManager::configureButtonBox()
     // for signals above, we should handle that stuff here again:
     button(ButtonType_Apply)->setVisible(gEDataManager->cloudProfileManagerDetailsExpanded());
     button(ButtonType_Reset)->setVisible(gEDataManager->cloudProfileManagerDetailsExpanded());
+
+    configureButtonBoxHelpButton("ovf-cloud-profile-manager");
 }
 
 void UICloudProfileManager::finalize()

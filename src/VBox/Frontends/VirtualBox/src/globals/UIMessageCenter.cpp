@@ -3235,7 +3235,7 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
     HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
 #elif defined (VBOX_WS_X11)
 # if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-    showHelpBrowser(strLocation, QString());
+    showHelpBrowser(strLocation);
 # elif !defined(VBOX_OSE)
     char szViewerPath[RTPATH_MAX];
     int rc;
@@ -3434,7 +3434,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     return iResultCode;
 }
 
-void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, const QString &strKeyword, QWidget *pParent /* = 0 */)
+void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, QWidget *pParent /* = 0 */)
 {
     Q_UNUSED(pParent);
     if (!QFileInfo(strHelpFilePath).exists())
@@ -3449,12 +3449,6 @@ void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, const QStr
         AssertReturnVoid(m_pHelpBrowserDialog);
         connect(m_pHelpBrowserDialog, &QIManagerDialog::sigClose,
                 this, &UIMessageCenter::sltCloseHelpBrowser);
-    }
-    if (!strKeyword.isEmpty())
-    {
-        UIHelpBrowserDialog *pWidget = qobject_cast<UIHelpBrowserDialog*>(m_pHelpBrowserDialog);
-        if (pWidget)
-            pWidget->showHelpForKeyword(strKeyword);
     }
 
     m_pHelpBrowserDialog->show();
@@ -3493,6 +3487,10 @@ void UIMessageCenter::sltHandleDialogHelpButtonPress()
         return;
     }
 
-    showHelpBrowser(uiCommon().helpFile(), strKeyword);
+    showHelpBrowser(uiCommon().helpFile());
+
+    UIHelpBrowserDialog *pWidget = qobject_cast<UIHelpBrowserDialog*>(m_pHelpBrowserDialog);
+    if (pWidget)
+        pWidget->showHelpForKeyword(strKeyword);
 # endif /* #if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }

@@ -1721,6 +1721,7 @@ void UIMediumManager::configureButtonBox()
         /* Notify widget it has progress-bar: */
         widget()->setProgressBar(m_pProgressBar);
     }
+    configureButtonBoxHelpButton("vdis");
 }
 
 void UIMediumManager::finalize()

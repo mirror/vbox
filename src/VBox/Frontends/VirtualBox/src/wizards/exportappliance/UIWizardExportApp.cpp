@@ -237,7 +237,12 @@ void UIWizardExportApp::prepare()
             break;
         }
     }
-    enableHelpButton("ovf");
+
+    if (!m_fFastTraverToExportOCI)
+        enableHelpButton("ovf");
+    else
+        enableHelpButton("cloud-export-oci");
+
     /* Call to base-class: */
     UIWizard::prepare();
 

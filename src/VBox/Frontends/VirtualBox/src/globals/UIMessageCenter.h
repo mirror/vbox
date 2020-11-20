@@ -604,9 +604,7 @@ private:
                        int iButton1, int iButton2, int iButton3,
                        const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                        const QString &strAutoConfirmId) const;
-    /** @param strKeyword is passed possbily from a hrlp button and used by QHelpEngine infrastructure to find a
-      * corresponding Url. */
-    void showHelpBrowser(const QString &strHelpFilePath, const QString &strKeyword, QWidget *pParent = 0);
+    void showHelpBrowser(const QString &strHelpFilePath, QWidget *pParent = 0);
 
     /** Holds the list of shown warnings. */
     mutable QStringList m_warnings;

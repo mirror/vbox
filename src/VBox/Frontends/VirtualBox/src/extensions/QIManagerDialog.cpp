@@ -26,6 +26,7 @@
 #include "QIManagerDialog.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIMessageCenter.h"
 #ifdef VBOX_WS_MAC
 # include "QIToolBar.h"
 # include "UIWindowMenuManager.h"
@@ -74,6 +75,17 @@ void QIManagerDialog::closeEvent(QCloseEvent *pEvent)
     {
         m_fCloseEmitted = true;
         emit sigClose();
+    }
+}
+
+void QIManagerDialog::configureButtonBoxHelpButton(const QString &strHelpTag)
+{
+    QPushButton *pHelpButton = m_pButtonBox->button(QDialogButtonBox::Help);
+    if (pHelpButton)
+    {
+        pHelpButton->setProperty("helptag", strHelpTag);
+        connect(pHelpButton, &QPushButton::pressed,
+               &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
     }
 }
 
@@ -154,9 +166,9 @@ void QIManagerDialog::prepareButtonBox()
     {
         /* Configure button-box: */
 #ifdef VBOX_WS_WIN
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Reset | QDialogButtonBox::Save |  QDialogButtonBox::Close);
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Reset | QDialogButtonBox::Save |  QDialogButtonBox::Close | QDialogButtonBox::Help);
 #else
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Reset | QDialogButtonBox::Apply |  QDialogButtonBox::Close);
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Reset | QDialogButtonBox::Apply |  QDialogButtonBox::Close | QDialogButtonBox::Help);
 #endif
         m_buttons[ButtonType_Reset] = m_pButtonBox->button(QDialogButtonBox::Reset);
 #ifdef VBOX_WS_WIN
