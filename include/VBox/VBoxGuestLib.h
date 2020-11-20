@@ -576,6 +576,25 @@ VBGLR3DECL(int)     VbglR3GetSessionId(uint64_t *pu64IdSession);
 /** @name Shared Clipboard
  * @{ */
 
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+/**
+ * Structure for maintaining a VbglR3 Shared Clipboard transfer context.
+ */
+typedef struct VBGLR3SHCLTRANSFERCMDCTX
+{
+    /** Default chunk size (in bytes).
+     * This is set by VbglR3ClipboardConnectEx(). */
+    uint32_t                    cbChunkSize;
+    /** Max chunk size (in bytes).
+     * This is set by VbglR3ClipboardConnectEx(). */
+    uint32_t                    cbMaxChunkSize;
+    /** Callback table to use for all transfers. */
+    SHCLTRANSFERCALLBACKS       Callbacks;
+} VBGLR3SHCLTRANSFERCTX;
+/** Pointer to a Shared Clipboard transfer context. */
+typedef VBGLR3SHCLTRANSFERCMDCTX *PVBGLR3SHCLTRANSFERCMDCTX;
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
+
 /**
  * The context required for either retrieving or sending a HGCM shared clipboard
  * commands from or to the host.
@@ -599,25 +618,14 @@ typedef struct VBGLR3SHCLCMDCTX
     /** The guest feature flags reported to the host (VBOX_SHCL_GF_XXX).
      * This is set by VbglR3ClipboardConnectEx().  */
     uint64_t                    fGuestFeatures;
-#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /** Default chunk size (in bytes).
-     * This is set by VbglR3ClipboardConnectEx(). */
-    uint32_t                    cbChunkSize;
-    /** Max chunk size (in bytes).
-     * This is set by VbglR3ClipboardConnectEx(). */
-    uint32_t                    cbMaxChunkSize;
-#  endif
-
     /** The context ID - input or/and output depending on the operation. */
     uint64_t                    idContext;
     /** OUT: Number of parameters retrieved.
      * This is set by ??. */
     uint32_t                    cParmsRecived;
-
-#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /** Callback table to use for all transfers. */
-    SHCLTRANSFERCALLBACKS       Callbacks;
-#  endif
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    VBGLR3SHCLTRANSFERCMDCTX    Transfers;
+# endif
 } VBGLR3SHCLCMDCTX;
 /** Pointer to a shared clipboard context for Vbgl. */
 typedef VBGLR3SHCLCMDCTX *PVBGLR3SHCLCMDCTX;

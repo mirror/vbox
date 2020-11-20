@@ -50,8 +50,8 @@ SharedClipboardWinStreamImpl::SharedClipboardWinStreamImpl(SharedClipboardWinDat
     : m_pParent(pParent)
     , m_lRefCount(1) /* Our IDataObjct *always* holds the last reference to this object; needed for the callbacks. */
     , m_pTransfer(pTransfer)
-    , m_strPath(strPath)
     , m_hObj(SHCLOBJHANDLE_INVALID)
+    , m_strPath(strPath)
     , m_objInfo(*pObjInfo)
     , m_cbProcessed(0)
     , m_fIsComplete(false)

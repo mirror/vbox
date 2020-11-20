@@ -112,8 +112,8 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuest
      * integrates nicely into the guest's Windows Explorer showing / handling the Shared Clipboard file transfers. */
     pCtx->fGuestFeatures       |= VBOX_SHCL_GF_0_TRANSFERS_FRONTEND;
 # endif
-    pCtx->cbChunkSize           = VBOX_SHCL_DEFAULT_CHUNK_SIZE; /** @todo Make this configurable. */
-    pCtx->cbMaxChunkSize        = VBOX_SHCL_MAX_CHUNK_SIZE;     /** @todo Ditto. */
+    pCtx->Transfers.cbChunkSize    = VBOX_SHCL_DEFAULT_CHUNK_SIZE; /** @todo Make this configurable. */
+    pCtx->Transfers.cbMaxChunkSize = VBOX_SHCL_MAX_CHUNK_SIZE;     /** @todo Ditto. */
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
     /*
@@ -147,19 +147,19 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuest
                     {
                         VBGL_HGCM_HDR_INIT(&MsgChunkSize.hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE,
                                            VBOX_SHCL_CPARMS_NEGOTIATE_CHUNK_SIZE);
-                        MsgChunkSize.cb32MaxChunkSize.SetUInt32(pCtx->cbMaxChunkSize);
+                        MsgChunkSize.cb32MaxChunkSize.SetUInt32(pCtx->Transfers.cbMaxChunkSize);
                         MsgChunkSize.cb32ChunkSize.SetUInt32(0); /* If set to 0, let the host choose. */
                         rc = VbglR3HGCMCall(&MsgChunkSize.hdr, sizeof(MsgChunkSize));
                     } while (rc == VERR_INTERRUPTED);
                     if (RT_SUCCESS(rc))
                     {
                         Assert(MsgChunkSize.cb32ChunkSize.type == VMMDevHGCMParmType_32bit);
-                        pCtx->cbChunkSize    = RT_MIN(MsgChunkSize.cb32ChunkSize.u.value32,    pCtx->cbChunkSize);
+                        pCtx->Transfers.cbChunkSize    = RT_MIN(MsgChunkSize.cb32ChunkSize.u.value32,    pCtx->Transfers.cbChunkSize);
                         Assert(MsgChunkSize.cb32MaxChunkSize.type == VMMDevHGCMParmType_32bit);
-                        pCtx->cbMaxChunkSize = RT_MIN(MsgChunkSize.cb32MaxChunkSize.u.value32, pCtx->cbMaxChunkSize);
+                        pCtx->Transfers.cbMaxChunkSize = RT_MIN(MsgChunkSize.cb32MaxChunkSize.u.value32, pCtx->Transfers.cbMaxChunkSize);
 
                         LogRel2(("Shared Clipboard: Using chunk size %RU32 (maximum is %RU32)\n",
-                                 pCtx->cbChunkSize, pCtx->cbMaxChunkSize));
+                                 pCtx->Transfers.cbChunkSize, pCtx->Transfers.cbMaxChunkSize));
                     }
                 }
                 else
@@ -1802,7 +1802,7 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
     int rc = ShClTransferCreate(&pTransfer);
     if (RT_SUCCESS(rc))
     {
-        ShClTransferSetCallbacks(pTransfer, &pCmdCtx->Callbacks);
+        ShClTransferSetCallbacks(pTransfer, &pCmdCtx->Transfers.Callbacks);
 
         rc = ShClTransferCtxTransferRegisterByIndex(pTransferCtx, pTransfer, uTransferID);
         if (RT_SUCCESS(rc))
@@ -2217,12 +2217,12 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                                                                          VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
                     AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
-                    AssertBreakStmt(pCmdCtx->cbChunkSize, rc = VERR_INVALID_PARAMETER);
+                    AssertBreakStmt(pCmdCtx->Transfers.cbChunkSize, rc = VERR_INVALID_PARAMETER);
 
-                    const uint32_t cbToRead = RT_MIN(cbBuf, pCmdCtx->cbChunkSize);
+                    const uint32_t cbToRead = RT_MIN(cbBuf, pCmdCtx->Transfers.cbChunkSize);
 
                     LogFlowFunc(("hObj=%RU64, cbBuf=%RU32, fFlags=0x%x -> cbChunkSize=%RU32, cbToRead=%RU32\n",
-                                 hObj, cbBuf, fFlags, pCmdCtx->cbChunkSize, cbToRead));
+                                 hObj, cbBuf, fFlags, pCmdCtx->Transfers.cbChunkSize, cbToRead));
 
                     void *pvBuf = RTMemAlloc(cbToRead);
                     if (pvBuf)
