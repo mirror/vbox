@@ -1137,6 +1137,11 @@ void UIHelpBrowserViewer::setSource(const QUrl &url)
     {
         setText(tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
     }
+    if (m_pFindInPageWidget && m_pFindInPageWidget->isVisible())
+    {
+        document()->undo();
+        m_pFindInPageWidget->clearSearchField();
+    }
 }
 
 void UIHelpBrowserViewer::toggleFindInPageWidget(bool fVisible)
