@@ -1863,7 +1863,7 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
                 creationCtx.enmSource = pClient->State.enmSource;
                 creationCtx.pvUser    = pClient;
 
-                uint32_t uTransferID = 0;
+                SHCLTRANSFERID uTransferID = 0;
 
                 rc = ShClTransferSetInterface(pTransfer, &creationCtx);
                 if (RT_SUCCESS(rc))

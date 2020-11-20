@@ -146,7 +146,7 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
 
     const SHCLTRANSFERDIR enmDir = ShClTransferGetDir(pTransfer);
 
-    LogFlowFunc(("pCtx=%p, idTransfer=%RU16, enmDir=%RU32\n", pCtx, ShClTransferGetID(pTransfer), enmDir));
+    LogFlowFunc(("pCtx=%p, idTransfer=%RU32, enmDir=%RU32\n", pCtx, ShClTransferGetID(pTransfer), enmDir));
 
     int rc;
 
@@ -187,7 +187,7 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     if (RT_FAILURE(rc))
         LogRel(("Shared Clipboard: Starting transfer failed, rc=%Rrc\n", rc));
 
-    LogFlowFunc(("LEAVE: idTransfer=%RU16, rc=%Rrc\n", ShClTransferGetID(pTransfer), rc));
+    LogFlowFunc(("LEAVE: idTransfer=%RU32, rc=%Rrc\n", ShClTransferGetID(pTransfer), rc));
     return rc;
 }
 

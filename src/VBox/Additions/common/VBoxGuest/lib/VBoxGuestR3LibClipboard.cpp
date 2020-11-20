@@ -1847,13 +1847,13 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
         if (ppTransfer)
             *ppTransfer = pTransfer;
 
-        LogRel2(("Shared Clipboard: Transfer ID=%RU16 (%s %s) successfully started\n",
+        LogRel2(("Shared Clipboard: Transfer ID=%RU32 (%s %s) successfully started\n",
                  uTransferID,
                  enmDir    == SHCLTRANSFERDIR_FROM_REMOTE ? "reading from" : "writing to",
                  enmSource == SHCLSOURCE_LOCAL            ? "local"        : "remote"));
     }
     else
-        LogRel(("Shared Clipboard: Unable to start transfer ID=%RU16, rc=%Rrc\n", uTransferID, rc));
+        LogRel(("Shared Clipboard: Unable to start transfer ID=%RU32, rc=%Rrc\n", uTransferID, rc));
 
     /* Send a reply in any case. */
     int rc2 = VbglR3ClipboardTransferStatusReply(pCmdCtx, pTransfer,
@@ -1894,10 +1894,10 @@ static int vbglR3ClipboardTransferStop(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFERC
 
         if (RT_SUCCESS(rc))
         {
-            LogRel2(("Shared Clipboard: Transfer ID=%RU16 successfully stopped\n", uTransferID));
+            LogRel2(("Shared Clipboard: Transfer ID=%RU32 successfully stopped\n", uTransferID));
         }
         else
-            LogRel(("Shared Clipboard: Unable to stop transfer ID=%RU16, rc=%Rrc\n", uTransferID, rc));
+            LogRel(("Shared Clipboard: Unable to stop transfer ID=%RU32, rc=%Rrc\n", uTransferID, rc));
 
         /* Send a reply in any case. */
         int rc2 = VbglR3ClipboardTransferStatusReply(pCmdCtx, pTransfer,
@@ -1938,7 +1938,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                 {
                     const SHCLTRANSFERID uTransferID = VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext);
 
-                    LogFlowFunc(("[Transfer %RU16] enmDir=%RU32, status=%s\n",
+                    LogFlowFunc(("[Transfer %RU32] enmDir=%RU32, status=%s\n",
                                  uTransferID, enmDir, ShClTransferStatusToStr(transferReport.uStatus)));
 
                     switch (transferReport.uStatus)
@@ -1994,7 +1994,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
 
                         pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_TRANSFER_STATUS;
 
-                        LogRel2(("Shared Clipboard: Received status %s (rc=%Rrc) for transfer ID=%RU16\n",
+                        LogRel2(("Shared Clipboard: Received status %s (rc=%Rrc) for transfer ID=%RU32\n",
                                  ShClTransferStatusToStr(pEvent->u.TransferStatus.Report.uStatus), pEvent->u.TransferStatus.Report.rc,
                                  pEvent->u.TransferStatus.uID));
                     }

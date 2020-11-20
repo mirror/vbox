@@ -803,7 +803,7 @@ void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk);
 int ShClTransferCreate(PSHCLTRANSFER *ppTransfer);
 int ShClTransferDestroy(PSHCLTRANSFER pTransfer);
 
-int ShClTransferInit(PSHCLTRANSFER pTransfer, uint32_t uID, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource);
+int ShClTransferInit(PSHCLTRANSFER pTransfer, SHCLTRANSFERID uID, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource);
 int ShClTransferOpen(PSHCLTRANSFER pTransfer);
 int ShClTransferClose(PSHCLTRANSFER pTransfer);
 
@@ -878,9 +878,9 @@ uint32_t ShClTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransferCtx);
 uint32_t ShClTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx);
 void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx);
 bool ShClTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx);
-int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t *pidTransfer);
-int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t idTransfer);
-int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, uint32_t idTransfer);
+int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID *pidTransfer);
+int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID idTransfer);
+int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID idTransfer);
 
 void ShClFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc);
 

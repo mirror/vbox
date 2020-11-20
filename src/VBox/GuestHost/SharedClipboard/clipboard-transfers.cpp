@@ -1241,7 +1241,7 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
  * @param   enmSource           Specifies the data source of the transfer.
  */
 int ShClTransferInit(PSHCLTRANSFER pTransfer,
-                     uint32_t uID, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource)
+                     SHCLTRANSFERID uID, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource)
 {
     pTransfer->State.uID       = uID;
     pTransfer->State.enmDir    = enmDir;
@@ -2148,7 +2148,7 @@ uint32_t ShClTransferRootsCount(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, 0);
 
-    LogFlowFunc(("[Transfer %RU16] cRoots=%RU64\n", pTransfer->State.uID, pTransfer->cRoots));
+    LogFlowFunc(("[Transfer %RU32] cRoots=%RU64\n", pTransfer->State.uID, pTransfer->cRoots));
     return (uint32_t)pTransfer->cRoots;
 }
 
@@ -2444,7 +2444,7 @@ SHCLTRANSFERDIR ShClTransferGetDir(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLTRANSFERDIR_UNKNOWN);
 
-    LogFlowFunc(("[Transfer %RU16] enmDir=%RU32\n", pTransfer->State.uID, pTransfer->State.enmDir));
+    LogFlowFunc(("[Transfer %RU32] enmDir=%RU32\n", pTransfer->State.uID, pTransfer->State.enmDir));
     return pTransfer->State.enmDir;
 }
 
@@ -2458,7 +2458,7 @@ SHCLSOURCE ShClTransferGetSource(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLSOURCE_INVALID);
 
-    LogFlowFunc(("[Transfer %RU16] enmSource=%RU32\n", pTransfer->State.uID, pTransfer->State.enmSource));
+    LogFlowFunc(("[Transfer %RU32] enmSource=%RU32\n", pTransfer->State.uID, pTransfer->State.enmSource));
     return pTransfer->State.enmSource;
 }
 
@@ -2472,7 +2472,7 @@ SHCLTRANSFERSTATUS ShClTransferGetStatus(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLTRANSFERSTATUS_NONE);
 
-    LogFlowFunc(("[Transfer %RU16] enmStatus=%RU32\n", pTransfer->State.uID, pTransfer->State.enmStatus));
+    LogFlowFunc(("[Transfer %RU32] enmStatus=%RU32\n", pTransfer->State.uID, pTransfer->State.enmStatus));
     return pTransfer->State.enmStatus;
 }
 
@@ -2775,7 +2775,7 @@ uint32_t ShClTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx)
  * @param   pTransfer           Transfer to register.
  * @param   pidTransfer         Where to return the transfer ID on success. Optional.
  */
-int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t *pidTransfer)
+int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID *pidTransfer)
 {
     AssertPtrReturn(pTransferCtx,      VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -2786,7 +2786,7 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
      * for a free one, wrapping around.  We've reserved both the zero'th and
      * max-1 IDs.
      */
-    uint32_t idTransfer = RTRandU32Ex(1, VBOX_SHCL_MAX_TRANSFERS - 2);
+    SHCLTRANSFERID idTransfer = RTRandU32Ex(1, VBOX_SHCL_MAX_TRANSFERS - 2);
 
     if (!ASMBitTestAndSet(&pTransferCtx->bmTransferIds[0], idTransfer))
     { /* likely */ }
@@ -2828,7 +2828,7 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
  * @param   pTransfer           Transfer to register.
  * @param   idTransfer          Transfer ID to use for registration.
  */
-int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t idTransfer)
+int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID idTransfer)
 {
     LogFlowFunc(("cTransfers=%RU16, idTransfer=%RU32\n", pTransferCtx->cTransfers, idTransfer));
 
@@ -2857,7 +2857,7 @@ int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLT
  * @param   pTransferCtx                Transfer context to unregister transfer from.
  * @param   idTransfer          Transfer ID to unregister.
  */
-int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, uint32_t idTransfer)
+int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID idTransfer)
 {
     int rc = VINF_SUCCESS;
     AssertMsgStmt(ASMBitTestAndClear(&pTransferCtx->bmTransferIds, idTransfer), ("idTransfer=%#x\n", idTransfer), rc = VERR_NOT_FOUND);
