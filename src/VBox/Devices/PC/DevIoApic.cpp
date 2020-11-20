@@ -484,14 +484,13 @@ DECLINLINE(void) ioapicGetMsiFromApicIntr(PCXAPICINTR pIntr, PMSIMSG pMsi)
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared I/O APIC device state.
  * @param   pThisCC     The I/O APIC device state for the current context.
- * @param   uBusDevFn   The bus:device:function of the device initiating the IRQ.
  * @param   idxRte      The index of the RTE (validated).
  *
  * @remarks It is the responsibility of the caller to verify that an interrupt is
  *          pending for the pin corresponding to the RTE before calling this
  *          function.
  */
-static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC pThisCC, PCIBDF uBusDevFn, uint8_t idxRte)
+static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC pThisCC, uint8_t idxRte)
 {
 #ifndef IOAPIC_WITH_PDM_CRITSECT
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
@@ -528,19 +527,19 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
 #ifdef VBOX_WITH_IOMMU_AMD
         /*
          * The interrupt may need to be remapped (or discarded) if an IOMMU is present.
+         * For line-based interrupts we must use the southbridge I/O APIC's BDF as
+         * the origin of the interrupt, see @bugref{9654#c74}.
          */
         MSIMSG MsiOut;
         MSIMSG MsiIn;
         RT_ZERO(MsiOut);
         RT_ZERO(MsiIn);
         ioapicGetMsiFromApicIntr(&ApicIntr, &MsiIn);
-        if (!PCIBDF_IS_VALID(uBusDevFn))
-            uBusDevFn = VBOX_PCI_BDF_SB_IOAPIC;
-        int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, &MsiIn, &MsiOut);
-        LogFlow(("IOAPIC: IOMMU Remap. rc=%Rrc VectorIn=%#x VectorOut=%#x\n", rcRemap, MsiIn.Data.n.u8Vector, MsiOut.Data.n.u8Vector));
+        int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, VBOX_PCI_BDF_SB_IOAPIC, &MsiIn, &MsiOut);
         if (RT_SUCCESS(rcRemap))
         {
             STAM_COUNTER_INC(&pThis->StatIommuRemappedIntr);
+            LogFlow(("IOAPIC: IOMMU remapped interrupt %#x to %#x\n", rcRemap, MsiIn.Data.n.u8Vector, MsiOut.Data.n.u8Vector));
             ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
             Assert(ApicIntr.u8Polarity == IOAPIC_RTE_GET_POLARITY(u64Rte)); /* Ensure polarity hasn't changed. */
             Assert(ApicIntr.u8TriggerMode == u8TriggerMode);                /* Ensure trigger mode hasn't changed. */
@@ -548,11 +547,9 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         else
         {
             STAM_COUNTER_INC(&pThis->StatIommuDiscardedIntr);
-            Log(("IOAPIC: Interrupt (%#x) discarded (rc=%Rrc)\n", ApicIntr.u8Vector, rcRemap));
+            Log(("IOAPIC: IOMMU discarded interrupt %#x. rc=%Rrc\n", ApicIntr.u8Vector, rcRemap));
             return;
         }
-#else
-        NOREF(uBusDevFn);
 #endif
 
         uint32_t const u32TagSrc = pThis->au32TagSrc[idxRte];
@@ -676,7 +673,7 @@ static VBOXSTRICTRC ioapicSetRedirTableEntry(PPDMDEVINS pDevIns, PIOAPIC pThis, 
         if (pThis->uIrr & uPinMask)
         {
             LogFlow(("IOAPIC: ioapicSetRedirTableEntry: Signalling pending interrupt. idxRte=%u\n", idxRte));
-            ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, VBOX_PCI_BDF_SB_IOAPIC, idxRte);
+            ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, idxRte);
         }
 
         IOAPIC_UNLOCK(pDevIns, pThis, pThisCC);
@@ -791,12 +788,14 @@ static DECLCALLBACK(VBOXSTRICTRC) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vec
                  */
                 uint32_t const uPinMask = UINT32_C(1) << idxRte;
                 if (pThis->uIrr & uPinMask)
-                    ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, VBOX_PCI_BDF_SB_IOAPIC, idxRte);
+                    ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, idxRte);
             }
         }
 
         IOAPIC_UNLOCK(pDevIns, pThis, pThisCC);
+#ifndef VBOX_WITH_IOMMU_AMD
         AssertMsg(fRemoteIrrCleared, ("Failed to clear remote IRR for vector %#x (%u)\n", u8Vector, u8Vector));
+#endif
     }
     else
         STAM_COUNTER_INC(&pThis->StatEoiContention);
@@ -810,10 +809,11 @@ static DECLCALLBACK(VBOXSTRICTRC) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vec
  */
 static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc)
 {
+    RT_NOREF(uBusDevFn);    /** @todo r=ramshankar: Remove this argument if it's also unnecessary with Intel IOMMU. */
 #define IOAPIC_ASSERT_IRQ(a_uBusDevFn, a_idxRte, a_PinMask) do { \
         pThis->au32TagSrc[(a_idxRte)] = !pThis->au32TagSrc[(a_idxRte)] ? uTagSrc : RT_BIT_32(31); \
         pThis->uIrr |= a_PinMask; \
-        ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, (a_uBusDevFn), (a_idxRte)); \
+        ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, (a_idxRte)); \
     } while (0)
 
     PIOAPIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
@@ -929,10 +929,7 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
     else
     {
         STAM_COUNTER_INC(&pThis->StatIommuDiscardedMsi);
-        if (rcRemap == VERR_IOMMU_INTR_REMAP_DENIED)
-            Log3(("IOAPIC: MSI (Addr=%#RX64 Data=%#RX32) remapping denied. rc=%Rrc", pMsi->Addr.u64, pMsi->Data.u32, rcRemap));
-        else
-            Log(("IOAPIC: MSI (Addr=%#RX64 Data=%#RX32) remapping failed. rc=%Rrc", pMsi->Addr.u64, pMsi->Data.u32, rcRemap));
+        Log(("IOAPIC: MSI (Addr=%#RX64 Data=%#RX32) remapping failed. rc=%Rrc", pMsi->Addr.u64, pMsi->Data.u32, rcRemap));
         return;
     }
 #else
@@ -1377,8 +1374,8 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
      */
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "NumCPUs|ChipType", "");
 
-    /* The number of CPUs is currently unused, but left in CFGM and saved-state in case an ID of 0 is
-       upsets some guest which we haven't yet tested. */
+    /* The number of CPUs is currently unused, but left in CFGM and saved-state in case an ID of 0
+       upsets some guest which we haven't yet been tested. */
     uint32_t cCpus;
     int rc = pHlp->pfnCFGMQueryU32Def(pCfg, "NumCPUs", &cCpus, 1);
     if (RT_FAILURE(rc))
