@@ -325,8 +325,7 @@ SELECT  TestBoxesWithStrings.sName,
         TestSets.tsCreated,
         TestBoxesWithStrings.sOS,
         SchedGroupNames.sSchedGroupNames
-FROM    TestBoxesWithStrings,
-        (SELECT TestBoxesInSchedGroups.idTestBox AS idTestBox,
+FROM    (SELECT TestBoxesInSchedGroups.idTestBox AS idTestBox,
                 STRING_AGG(SchedGroups.sName, ',') AS sSchedGroupNames
          FROM   TestBoxesInSchedGroups
          INNER JOIN SchedGroups
@@ -334,7 +333,8 @@ FROM    TestBoxesWithStrings,
          WHERE  TestBoxesInSchedGroups.tsExpire = 'infinity'::TIMESTAMP
             AND SchedGroups.tsExpire            = 'infinity'::TIMESTAMP
          GROUP BY TestBoxesInSchedGroups.idTestBox)
-        AS SchedGroupNames
+        AS SchedGroupNames,
+        TestBoxesWithStrings
 LEFT OUTER JOIN TestSets
              ON TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox
             AND (   TestSets.tsCreated > (CURRENT_TIMESTAMP - '%s hours'::interval)
