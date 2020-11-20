@@ -101,6 +101,11 @@ void UIFileManagerDialog::configureCentralWidget()
     }
 }
 
+void UIFileManagerDialog::configureButtonBox()
+{
+    configureButtonBoxHelpButton("guestadd-gc-file-manager");
+}
+
 void UIFileManagerDialog::finalize()
 {
     /* Apply language settings: */

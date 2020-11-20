@@ -21,23 +21,25 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIVMInformationDialog.h"
-#include "UIExtraDataManager.h"
-#include "UISession.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
-#include "UIMachineView.h"
-#include "UIConverter.h"
-#include "UIIconPool.h"
 #include "QITabWidget.h"
 #include "QIDialogButtonBox.h"
 #include "UICommon.h"
-#include "VBoxUtils.h"
+#include "UIConverter.h"
+#include "UIExtraDataManager.h"
+#include "UIIconPool.h"
 #include "UIInformationConfiguration.h"
-#include "UIPerformanceMonitor.h"
 #include "UIInformationRuntime.h"
 #include "UIGuestProcessControlWidget.h"
+#include "UIMachineLogic.h"
 #include "UIMachine.h"
+#include "UIMachineView.h"
+#include "UIMachineWindow.h"
+#include "UIMessageCenter.h"
+#include "UIPerformanceMonitor.h"
+#include "UISession.h"
+#include "UIVMInformationDialog.h"
+#include "VBoxUtils.h"
+
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -244,10 +246,13 @@ void UIVMInformationDialog::prepareButtonBox()
     AssertPtrReturnVoid(m_pButtonBox);
     {
         /* Configure button-box: */
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Close);
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Close | QDialogButtonBox::Help);
         m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
+        m_pButtonBox->button(QDialogButtonBox::Help)->setProperty("helptag", "guestadd-guestprops");
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMInformationDialog::close);
-        /* Add button-box into main-layout: */
+        connect(m_pButtonBox->button(QDialogButtonBox::Help), &QPushButton::pressed,
+                &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+        /* add button-box into main-layout: */
         centralWidget()->layout()->addWidget(m_pButtonBox);
     }
 }

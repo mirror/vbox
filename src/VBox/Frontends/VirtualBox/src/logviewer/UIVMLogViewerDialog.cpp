@@ -105,6 +105,11 @@ void UIVMLogViewerDialog::configureCentralWidget()
     }
 }
 
+void UIVMLogViewerDialog::configureButtonBox()
+{
+    configureButtonBoxHelpButton("collect-debug-info");
+}
+
 void UIVMLogViewerDialog::finalize()
 {
     /* Apply language settings: */

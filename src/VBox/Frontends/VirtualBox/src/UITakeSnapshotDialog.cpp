@@ -279,9 +279,9 @@ void UITakeSnapshotDialog::prepareContents()
                     this, &UITakeSnapshotDialog::accept);
             connect(m_pButtonBox, &QIDialogButtonBox::rejected,
                     this, &UITakeSnapshotDialog::reject);
-            connect(m_pButtonBox, &QIDialogButtonBox::helpRequested,
-                    &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
-
+            connect(m_pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
+                    &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+            m_pButtonBox->button(QIDialogButtonBox::Help)->setProperty("helptag", "snapshots");
             /* Add into layout: */
             pLayout->addWidget(m_pButtonBox, 3, 0, 1, 2);
         }

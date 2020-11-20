@@ -92,6 +92,7 @@ protected:
         virtual void configure() /* override */;
         /** Configures central-widget. */
         virtual void configureCentralWidget() /* override */;
+        virtual void configureButtonBox() /* override */;
         /** Perform final preparations. */
         virtual void finalize() /* override */;
         /** Loads dialog setting from extradata. */

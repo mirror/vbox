@@ -3470,7 +3470,6 @@ void UIMessageCenter::sltCloseHelpBrowser()
 void UIMessageCenter::sltHandleDialogHelpButtonPress()
 {
 # if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-
     QAbstractButton *pSender = qobject_cast<QAbstractButton*>(sender());
     if (!pSender)
         return;

@@ -830,6 +830,7 @@ private:
     QToolButton  *m_pLayoutListButton;
     QToolButton  *m_pSettingsButton;
     QToolButton  *m_pResetButton;
+    QToolButton  *m_pHelpButton;
     QLabel       *m_pMessageLabel;
 };
 
@@ -3561,6 +3562,7 @@ UISoftKeyboardStatusBarWidget::UISoftKeyboardStatusBarWidget(QWidget *pParent /*
     , m_pLayoutListButton(0)
     , m_pSettingsButton(0)
     , m_pResetButton(0)
+    , m_pHelpButton(0)
     , m_pMessageLabel(0)
 {
     prepareObjects();
@@ -3574,6 +3576,8 @@ void UISoftKeyboardStatusBarWidget::retranslateUi()
         m_pSettingsButton->setToolTip(UISoftKeyboard::tr("Settings"));
     if (m_pResetButton)
         m_pResetButton->setToolTip(UISoftKeyboard::tr("Reset the keyboard and release all keys"));
+    if (m_pHelpButton)
+        m_pHelpButton->setToolTip(UISoftKeyboard::tr("Help"));
 }
 
 void UISoftKeyboardStatusBarWidget::prepareObjects()
@@ -3621,6 +3625,19 @@ void UISoftKeyboardStatusBarWidget::prepareObjects()
         m_pResetButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
         connect(m_pResetButton, &QToolButton::clicked, this, &UISoftKeyboardStatusBarWidget::sigResetKeyboard);
         pLayout->addWidget(m_pResetButton);
+    }
+
+    m_pHelpButton = new QToolButton;
+    if (m_pHelpButton)
+    {
+        m_pHelpButton->setIcon(UIIconPool::iconSet(":/soft_keyboard_help_16px.png"));
+        m_pHelpButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        m_pHelpButton->resize(QSize(iIconMetric, iIconMetric));
+        m_pHelpButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+        m_pHelpButton->setProperty("helptag", "soft-keyb");
+        connect(m_pHelpButton, &QToolButton::clicked, &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+        pLayout->addWidget(m_pHelpButton);
     }
 
     retranslateUi();

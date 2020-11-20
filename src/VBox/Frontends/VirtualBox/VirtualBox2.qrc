@@ -294,6 +294,7 @@
         <file alias="snapshot_take_disabled_32px.png">images/snapshot_take_disabled_32px.png</file>
         <file alias="soft_keyboard_16px.png">images/soft_keyboard_16px.png</file>
         <file alias="soft_keyboard_32px.png">images/soft_keyboard_32px.png</file>
+        <file alias="soft_keyboard_help_16px.png">images/soft_keyboard_help_16px.png</file>
         <file alias="soft_keyboard_layout_copy_16px.png">images/soft_keyboard_layout_copy_16px.png</file>
         <file alias="soft_keyboard_layout_copy_disabled_16px.png">images/soft_keyboard_layout_copy_disabled_16px.png</file>
         <file alias="soft_keyboard_layout_edit_16px.png">images/soft_keyboard_layout_edit_16px.png</file>
