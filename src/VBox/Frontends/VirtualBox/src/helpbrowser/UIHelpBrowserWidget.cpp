@@ -426,8 +426,9 @@ private slots:
     void sltHandletabTitleChange(const QString &strTitle);
     void sltHandleOpenLinkInNewTab(const QUrl &url);
     void sltHandleTabClose(int iTabIndex);
+    void sltHandleContextMenuTabClose();
     /** Closes/deletes all tabs other than the one with tab index @iTabIndex. */
-    void sltHandleOtherTabs();
+    void sltHandleCloseOtherTabs();
     void sltHandleCurrentChanged(int iTabIndex);
     void sltHandleFontSizeChange(int iFontPointSize);
     void sltShowTabBarContextMenu(const QPoint &pos);
@@ -1613,7 +1614,18 @@ void UIHelpBrowserTabManager::sltHandleTabClose(int iTabIndex)
     delete pWidget;
 }
 
-void UIHelpBrowserTabManager::sltHandleOtherTabs()
+void UIHelpBrowserTabManager::sltHandleContextMenuTabClose()
+{
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    if (!pAction)
+        return;
+    int iTabIndex = pAction->data().toInt();
+    if (iTabIndex < 0 || iTabIndex >= count())
+        return;
+    sltHandleTabClose(iTabIndex);
+}
+
+void UIHelpBrowserTabManager::sltHandleCloseOtherTabs()
 {
     QAction *pAction = qobject_cast<QAction*>(sender());
     if (!pAction)
@@ -1651,8 +1663,13 @@ void UIHelpBrowserTabManager::sltShowTabBarContextMenu(const QPoint &pos)
         return;
     QMenu menu;
     QAction *pCloseAll = menu.addAction(UIHelpBrowserWidget::tr("Close other tabs"));
-    connect(pCloseAll, &QAction::triggered, this, &UIHelpBrowserTabManager::sltHandleOtherTabs);
+    connect(pCloseAll, &QAction::triggered, this, &UIHelpBrowserTabManager::sltHandleCloseOtherTabs);
     pCloseAll->setData(tabBar()->tabAt(pos));
+
+    QAction *pClose = menu.addAction(UIHelpBrowserWidget::tr("Close tab"));
+    connect(pClose, &QAction::triggered, this, &UIHelpBrowserTabManager::sltHandleContextMenuTabClose);
+    pClose->setData(tabBar()->tabAt(pos));
+
     menu.exec(tabBar()->mapToGlobal(pos));
 }
 
