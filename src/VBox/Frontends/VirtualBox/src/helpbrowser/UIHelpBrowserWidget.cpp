@@ -2303,6 +2303,10 @@ void UIHelpBrowserWidget::sltHandleFontSizeactions()
         iFontPointSize += iFontPointSizeChangeStep;
     else if (sender() == m_pFontSizeSmallerAction)
         iFontPointSize -= iFontPointSizeChangeStep;
+
+    if (iFontPointSize >= fontScaleMinMax.second * m_pTabManager->initialFontPointSize() ||
+        iFontPointSize <= fontScaleMinMax.first * m_pTabManager->initialFontPointSize())
+        return;
     m_pTabManager->setFontPointSize(iFontPointSize);
 }
 
