@@ -101,7 +101,10 @@ def find_test_duration(created):
 
 def testbox_data_processing(oDb):
     testboxes_dict = {}
-    for line in oDb.fetchOne():
+    while True:
+        line = oDb.fetchOne();
+        if line is None:
+            break;
         testbox_name = line[0]
         test_result = line[1]
         test_created = line[2]
@@ -397,7 +400,10 @@ WHERE   TestSets.tsCreated                   > (CURRENT_TIMESTAMP - '%s hours'::
 
         # Process the data
         dResult = {};
-        for aoRow in oDb.fetchOne():
+        while True:
+            aoRow = oDb.fetchOne();
+            if aoRow is None:
+                break;
             os_results_separating(dResult, aoRow[1], aoRow[2], aoRow[0])  # save all test results
 
         # Format and output it.
