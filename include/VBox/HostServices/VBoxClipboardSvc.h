@@ -93,18 +93,6 @@
 /** Reports an error to the guest.
  * @since   6.1 - still a todo  */
 #define VBOX_SHCL_HOST_FN_ERROR              5
-/** Reports that a new clipboard area has been registered.
- * @since   6.1 - not implemented */
-#define VBOX_SHCL_HOST_FN_AREA_REGISTER      6
-/** Reports that a clipboard area has been unregistered.
- * @since   6.1 - not implemented  */
-#define VBOX_SHCL_HOST_FN_AREA_UNREGISTER    7
-/** Reports that a client (host / guest) has attached to a clipboard area.
- * @since   6.1 - not implemented  */
-#define VBOX_SHCL_HOST_FN_AREA_ATTACH        8
-/** Reports that a client (host / guest) has detached from a clipboard area.
- * @since   6.1 - not implemented */
-#define VBOX_SHCL_HOST_FN_AREA_DETACH        9
 /** @} */
 
 
