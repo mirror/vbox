@@ -240,6 +240,7 @@ const char *UIExtraDataDefs::GUI_GuestControl_LogViewerVisiblePanels = "GUI/LogV
 /* Help Browser */
 const char *UIExtraDataDefs::GUI_HelpBrowserLastURLList = "GUI/HelpBrowserLastURLList";
 const char *UIExtraDataDefs::GUI_HelpBrowserDialogGeometry = "GUI/HelpBrowserDialogGeomety";
+const char *UIExtraDataDefs::GUI_HelpBrowserBookmarks = "GUI/HelpBrowserBookmarks";
 
 /* VM Resource Monitor: */
 const char *UIExtraDataDefs::GUI_VMResourceManager_HiddenColumns = "GUI/VMResourceManagerHiddenColumns";

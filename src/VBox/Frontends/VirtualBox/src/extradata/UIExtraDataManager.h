@@ -791,6 +791,8 @@ public:
         QRect helpBrowserDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry);
         void setHelpBrowserDialogGeometry(const QRect &geometry, bool fMaximized);
         bool helpBrowserDialogShouldBeMaximized();
+        void setHelpBrowserBookmarks(const QStringList &bookmarks);
+        QStringList helpBrowserBookmarks();
     /** @} */
 
     /** @name Manager UI: VM Resource Monitor

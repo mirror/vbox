@@ -200,6 +200,8 @@ public:
 
     UIBookmarksListContainer(QWidget *pParent = 0);
     void addBookmark(const QUrl &url, const QString &strTitle);
+    /** Return all bookmarks a url, title pair list. */
+    QStringList bookmarks() const;
     QUrl currentBookmarkUrl();
 
 protected:
@@ -612,7 +614,7 @@ void UIFontScaleWidget::sltSetFontPointSize()
 
 
 /*********************************************************************************************************************************
-*   UIBookmarksListContainer implementation.                                                                                     *
+*   UIBookmarksListWidget implementation.                                                                                        *
 *********************************************************************************************************************************/
 UIBookmarksListWidget::UIBookmarksListWidget(QWidget *pParent /* = 0 */)
     :QListWidget(pParent)
@@ -652,6 +654,21 @@ void UIBookmarksListContainer::addBookmark(const QUrl &url, const QString &strTi
     pNewItem->setToolTip(url.toString());
 }
 
+QStringList UIBookmarksListContainer::bookmarks() const
+{
+    if (!m_pListWidget)
+        return QStringList();
+    QStringList bookmarks;
+    for (int i = 0; i < m_pListWidget->count(); ++i)
+    {
+        QListWidgetItem *pItem = m_pListWidget->item(i);
+        if (!pItem)
+            continue;
+        bookmarks << pItem->data(iBookmarkUrlDataType).toUrl().toString() << pItem->text();
+    }
+    return bookmarks;
+}
+
 QUrl UIBookmarksListContainer::currentBookmarkUrl()
 {
     if (!m_pListWidget || !m_pListWidget->currentItem())
@@ -667,6 +684,8 @@ void UIBookmarksListContainer::prepare()
 {
     m_pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(m_pMainLayout);
+    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+
     m_pListWidget = new UIBookmarksListWidget;
     AssertReturnVoid(m_pListWidget);
     m_pMainLayout->addWidget(m_pListWidget);
@@ -991,11 +1010,11 @@ void UIHelpBrowserTab::setActionTextAndToolTip(QAction *pAction, const QString &
 
 void UIHelpBrowserTab::retranslateUi()
 {
-    setActionTextAndToolTip(m_pHomeAction, tr("Home"), tr("Return to start page"));
-    setActionTextAndToolTip(m_pBackwardAction, tr("Backward"), tr("Navigate to previous page"));
-    setActionTextAndToolTip(m_pForwardAction, tr("Forward"), tr("Navigate to next page"));
-    setActionTextAndToolTip(m_pAddBookmarkAction, tr("Bookmark"), tr("Add a new bookmark"));
-    setActionTextAndToolTip(m_pFindInPageAction, tr("Find in Page"), tr("Find a string in the current page"));
+    setActionTextAndToolTip(m_pHomeAction, tr("Home"), tr("Return to Start Page"));
+    setActionTextAndToolTip(m_pBackwardAction, tr("Backward"), tr("Navigate to Previous Page"));
+    setActionTextAndToolTip(m_pForwardAction, tr("Forward"), tr("Navigate to Next Page"));
+    setActionTextAndToolTip(m_pAddBookmarkAction, tr("Bookmark"), tr("Add a New Bookmark"));
+    setActionTextAndToolTip(m_pFindInPageAction, tr("Find in Page"), tr("Find a String in the Current Page"));
 }
 
 void UIHelpBrowserTab::sltHandleHomeAction()
@@ -1662,11 +1681,11 @@ void UIHelpBrowserTabManager::sltShowTabBarContextMenu(const QPoint &pos)
     if (!tabBar())
         return;
     QMenu menu;
-    QAction *pCloseAll = menu.addAction(UIHelpBrowserWidget::tr("Close other tabs"));
+    QAction *pCloseAll = menu.addAction(UIHelpBrowserWidget::tr("Close Other Tabs"));
     connect(pCloseAll, &QAction::triggered, this, &UIHelpBrowserTabManager::sltHandleCloseOtherTabs);
     pCloseAll->setData(tabBar()->tabAt(pos));
 
-    QAction *pClose = menu.addAction(UIHelpBrowserWidget::tr("Close tab"));
+    QAction *pClose = menu.addAction(UIHelpBrowserWidget::tr("Close Tab"));
     connect(pClose, &QAction::triggered, this, &UIHelpBrowserTabManager::sltHandleContextMenuTabClose);
     pClose->setData(tabBar()->tabAt(pos));
 
@@ -1780,6 +1799,7 @@ void UIHelpBrowserWidget::prepare()
     prepareWidgets();
     prepareSearchWidgets();
     prepareMenu();
+    loadBookmarks();
     retranslateUi();
 }
 
@@ -1977,6 +1997,32 @@ QStringList UIHelpBrowserWidget::loadSavedUrlList()
     return gEDataManager->helpBrowserLastUrlList();
 }
 
+void UIHelpBrowserWidget::loadBookmarks()
+{
+    if (!m_pBookmarksWidget)
+        return;
+
+    QStringList bookmarks = gEDataManager->helpBrowserBookmarks();
+    /* bookmarks list is supposed to have url title pair: */
+    for (int i = 0; i < bookmarks.size(); ++i)
+    {
+        const QString &url = bookmarks[i];
+        if (i+1 >= bookmarks.size())
+            break;
+        ++i;
+        const QString &strTitle = bookmarks[i];
+        printf("%s %s\n", qPrintable(url), qPrintable(strTitle));
+        m_pBookmarksWidget->addBookmark(url, strTitle);
+    }
+}
+
+void UIHelpBrowserWidget::saveBookmarks()
+{
+    if (!m_pBookmarksWidget)
+        return;
+    gEDataManager->setHelpBrowserBookmarks(m_pBookmarksWidget->bookmarks());
+}
+
 void UIHelpBrowserWidget::saveOptions()
 {
     if (m_pTabManager)
@@ -2028,8 +2074,8 @@ QUrl UIHelpBrowserWidget::contentWidgetUrl(const QModelIndex &itemIndex)
 
 void UIHelpBrowserWidget::cleanup()
 {
-    /* Save options: */
     saveOptions();
+    saveBookmarks();
 }
 
 void UIHelpBrowserWidget::retranslateUi()

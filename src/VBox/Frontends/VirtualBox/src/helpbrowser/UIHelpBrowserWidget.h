@@ -46,6 +46,7 @@ class QHelpIndexWidget;
 class QHelpSearchEngine;
 class QHelpSearchQueryWidget;
 class QHelpSearchResultWidget;
+class QListWidget;
 class QPlainTextEdit;
 class QSplitter;
 class QITabWidget;
@@ -110,6 +111,9 @@ private:
     void prepareMenu();
     void loadOptions();
     QStringList loadSavedUrlList();
+    /** Bookmark list is save as url-title pairs. */
+    void loadBookmarks();
+    void saveBookmarks();
     void saveOptions();
     void cleanup();
     QUrl findIndexHtml() const;
@@ -167,6 +171,7 @@ private:
     QAction             *m_pFontSizeLargerAction;
     QAction             *m_pFontSizeSmallerAction;
     QAction             *m_pFontSizeResetAction;
+
     /* This is set t true when handling QHelpContentModel::contentsCreated signal. */
     bool                 m_fModelContentCreated;
     bool                 m_fIndexingFinished;
