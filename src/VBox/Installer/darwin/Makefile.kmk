@@ -748,8 +748,11 @@ ifdef VBOX_SIGNING_MODE
 				--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist"))
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,,\
 		--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist",)
-	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP),,)
+	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP),,\
+		--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist",)
 	$(foreach bin, $(VBOX_DI_VBAPP_PROGS_HARDENED) \
+		, $(NLTAB)codesign -d -v -v -v --entitlements :- $(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin) )
+	$(foreach bin, $(VBOX_DI_VBAPP_PROGS) \
 		, $(NLTAB)codesign -d -v -v -v --entitlements :- $(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin) )
  endif
 endif
@@ -782,6 +785,7 @@ else
 	$(SED) -s '/WITH_HARDENING/d' -o $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/postflight $(VBOX_PATH_DI_SRC)/VirtualBox/postflight
 	$(CHMOD) 0755 $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/postflight
 endif
+	ls -lR $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/
 	@# Build the package.
 	$(VBOX_PKGBUILD) \
        	--root   $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/ \
