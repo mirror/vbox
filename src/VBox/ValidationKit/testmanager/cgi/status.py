@@ -48,48 +48,6 @@ from testmanager.core.db                import TMDatabaseConnection;
 
 
 
-def how_many_days_in_month(year, month):
-    def leap_year_check(year):
-        if year % 4 == 0 and year % 100 != 0:
-            return True
-        if year % 100 == 0 and year % 400 == 0:
-            return True
-        return False
-
-    month31 = (1, 3, 5, 7, 8, 10, 12)
-    month30 = (4, 6, 9, 11)
-    if month in month31:
-        days = 31
-    elif month in month30:
-        days = 30
-    else:
-        if leap_year_check(year):
-            days = 29
-        else:
-            days = 28
-    return days
-
-
-def target_date_from_time_span(cur_date, time_span_hours):
-    cur_year = cur_date.year
-    cur_month = cur_date.month
-    cur_day = cur_date.day
-    cur_hour = cur_date.hour
-    if cur_hour >= time_span_hours:
-        return cur_date.replace(hour=cur_hour-time_span_hours)
-    if cur_day > 1:
-        return cur_date.replace(day=cur_day-1,
-                                hour=24+cur_hour-time_span_hours)
-    if cur_month > 1:
-        return cur_date.replace(month=cur_month-1,
-                                day=how_many_days_in_month(cur_year, cur_month-1),
-                                hour=24+cur_hour-time_span_hours)
-    return cur_date.replace(year=cur_year-1,
-                            month=12,
-                            day=31,
-                            hour=24+cur_hour-time_span_hours)
-
-
 def timeDeltaToHours(oTimeDelta):
     return oTimeDelta.days * 24 + oTimeDelta.seconds // 3600
 
