@@ -234,5 +234,7 @@ const char *ShClHostMsgToStr(uint32_t uMsg);
  */
 const char *ShClGuestMsgToStr(uint32_t uMsg);
 
+char *ShClFormatsToStrA(SHCLFORMATS fFormats);
+
 #endif /* !VBOX_INCLUDED_GuestHost_clipboard_helper_h */
 

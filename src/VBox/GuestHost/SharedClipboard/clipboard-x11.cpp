@@ -47,6 +47,7 @@
 #include <X11/Xproto.h>
 #include <X11/StringDefs.h>
 
+#include <iprt/assert.h>
 #include <iprt/types.h>
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
@@ -443,7 +444,12 @@ static void clipReportFormatsToVBox(PSHCLX11CTX pCtx)
 #endif
     LogFlow((" -> vboxFmt=%#x\n", vboxFmt));
 
-    LogRel2(("Shared Clipboard: X11 reported available VBox formats: %#x\n", vboxFmt));
+#ifdef LOG_ENABLED
+    char *pszFmts = ShClFormatsToStrA(vboxFmt);
+    AssertPtrReturnVoid(pszFmts);
+    LogRel2(("Shared Clipboard: X11 reported available VBox formats '%s'\n", pszFmts));
+    RTStrFree(pszFmts);
+#endif
 
     ShClX11ReportFormatsCallback(pCtx->pFrontend, vboxFmt);
 }
@@ -1584,8 +1590,13 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
     LogFlowFunc(("vboxFormats=0x%x, idxFmtX11=%u ('%s'), fmtX11=%u\n",
                  pCtx->vboxFormats, idxFmtX11, g_aFormats[idxFmtX11].pcszAtom, fmtX11));
 
-    LogRel2(("Shared Clipboard: Converting VBox formats %#x to '%s' for X11\n",
-             pCtx->vboxFormats, g_aFormats[idxFmtX11].pcszAtom));
+#ifdef LOG_ENABLED
+    char *pszFmts = ShClFormatsToStrA(pCtx->vboxFormats);
+    AssertPtrReturn(pszFmts, VERR_NO_MEMORY);
+    LogRel2(("Shared Clipboard: Converting VBox formats '%s' to '%s' for X11\n",
+             pszFmts, g_aFormats[idxFmtX11].pcszAtom));
+    RTStrFree(pszFmts);
+#endif
 
     if (   ((fmtX11 == SHCLX11FMT_UTF8) || (fmtX11 == SHCLX11FMT_TEXT))
         && (pCtx->vboxFormats & VBOX_SHCL_FMT_UNICODETEXT))
@@ -1695,8 +1706,13 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Converting VBox formats %#x to '%s' for X11 (idxFmtX11=%u, fmtX11=%u) failed, rc=%Rrc\n",
-                pCtx->vboxFormats, g_aFormats[idxFmtX11].pcszAtom, idxFmtX11, fmtX11, rc));
+    {
+        char *pszFmts2 = ShClFormatsToStrA(pCtx->vboxFormats);
+        AssertPtrReturn(pszFmts2, VERR_NO_MEMORY);
+        LogRel(("Shared Clipboard: Converting VBox formats '%s' to '%s' for X11 (idxFmtX11=%u, fmtX11=%u) failed, rc=%Rrc\n",
+                pszFmts2, g_aFormats[idxFmtX11].pcszAtom, idxFmtX11, fmtX11, rc));
+        RTStrFree(pszFmts2);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

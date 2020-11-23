@@ -643,25 +643,6 @@
 #define VBOX_SHCL_HF_0_TRANSFERS                  RT_BIT_64(1)
 /** @} */
 
-
-/** @name VBOX_SHCL_FMT_XXX - Data formats (flags) for Shared Clipboard.
- * @{
- */
-/** No format set. */
-#define VBOX_SHCL_FMT_NONE          0
-/** Shared Clipboard format is an Unicode text. */
-#define VBOX_SHCL_FMT_UNICODETEXT   RT_BIT(0)
-/** Shared Clipboard format is bitmap (BMP / DIB). */
-#define VBOX_SHCL_FMT_BITMAP        RT_BIT(1)
-/** Shared Clipboard format is HTML. */
-#define VBOX_SHCL_FMT_HTML          RT_BIT(2)
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-/** Shared Clipboard format is a transfer list. */
-# define VBOX_SHCL_FMT_URI_LIST     RT_BIT(3)
-#endif
-/** @}  */
-
-
 /** @name Context ID related macros and limits
  * @{ */
 /**

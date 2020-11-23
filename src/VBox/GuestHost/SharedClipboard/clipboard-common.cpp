@@ -1127,3 +1127,57 @@ const char *ShClGuestMsgToStr(uint32_t uMsg)
     }
     return "Unknown";
 }
+
+/**
+ * Converts Shared Clipboard formats to a string.
+ *
+ * @returns Stringified Shared Clipboard formats, or NULL on failure. Must be free'd with RTStrFree().
+ * @param   fFormats            Shared Clipboard formats to convert.
+ *
+ */
+char *ShClFormatsToStrA(SHCLFORMATS fFormats)
+{
+#define APPEND_FMT_TO_STR(_aFmt)                \
+    if (fFormats & VBOX_SHCL_FMT_##_aFmt)       \
+    {                                           \
+        if (pszFmts)                            \
+        {                                       \
+            rc2 = RTStrAAppend(&pszFmts, ", "); \
+            if (RT_FAILURE(rc2))                \
+                break;                          \
+        }                                       \
+                                                \
+        rc2 = RTStrAAppend(&pszFmts, #_aFmt);   \
+        if (RT_FAILURE(rc2))                    \
+            break;                              \
+    }
+
+    char *pszFmts = NULL;
+    int rc2 = VINF_SUCCESS;
+
+    do
+    {
+        APPEND_FMT_TO_STR(UNICODETEXT);
+        APPEND_FMT_TO_STR(BITMAP);
+        APPEND_FMT_TO_STR(HTML);
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        APPEND_FMT_TO_STR(URI_LIST);
+# endif
+
+    } while (0);
+
+    if (!pszFmts)
+        rc2 = RTStrAAppend(&pszFmts, "NONE");
+
+    if (   RT_FAILURE(rc2)
+        && pszFmts)
+    {
+        RTStrFree(pszFmts);
+        pszFmts = NULL;
+    }
+
+#undef APPEND_FMT_TO_STR
+
+    return pszFmts;
+}
+

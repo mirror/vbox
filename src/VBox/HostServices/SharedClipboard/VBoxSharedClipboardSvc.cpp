@@ -1212,6 +1212,12 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
         /* Remove it from the mask. */
         fFormats &= ~fFormat;
 
+#ifdef LOG_ENABLED
+        char *pszFmt = ShClFormatsToStrA(fFormat);
+        AssertPtrReturn(pszFmt, VERR_NO_MEMORY);
+        LogRel2(("Shared Clipboard: Requesting guest clipboard data in format '%s'\n", pszFmt));
+        RTStrFree(pszFmt);
+#endif
         /*
          * Allocate messages, one for each format.
          */
@@ -1388,11 +1394,18 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
      */
     if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_ENABLED))
     {
-        LogFlowFunc(("fFormats=%#x -> %#x\n", fFormats, fFormats & ~VBOX_SHCL_FMT_URI_LIST));
         fFormats &= ~VBOX_SHCL_FMT_URI_LIST;
     }
+    else
+        LogRel2(("Shared Clipboard: Warning: File transfers are disabled, ignoring\n"));
 #endif
-    LogRel2(("Shared Clipboard: Reporting formats %#x to guest\n", fFormats));
+
+#ifdef LOG_ENABLED
+    char *pszFmts = ShClFormatsToStrA(fFormats);
+    AssertPtrReturn(pszFmts, VERR_NO_MEMORY);
+    LogRel2(("Shared Clipboard: Reporting formats '%s' to guest\n", pszFmts));
+    RTStrFree(pszFmts);
+#endif
 
     /*
      * Allocate a message, populate parameters and post it to the client.
@@ -1507,6 +1520,12 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
             }
             else
             {
+#ifdef LOG_ENABLED
+                char *pszFmts = ShClFormatsToStrA(fFormats);
+                AssertPtrReturn(pszFmts, VERR_NO_MEMORY);
+                LogRel2(("Shared Clipboard: Guest reported formats '%s' to host\n", pszFmts));
+                RTStrFree(pszFmts);
+#endif
                 rc = ShClBackendFormatAnnounce(pClient, fFormats);
                 if (RT_FAILURE(rc))
                     LogRel(("Shared Clipboard: Reporting guest clipboard formats to the host failed with %Rrc\n", rc));
@@ -1605,7 +1624,12 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
             pClient->State.POD.uFormat = uFormat;
     }
 
-    LogRel2(("Shared Clipboard: Guest wants to read %RU32 bytes host clipboard data in format %RU32\n", cbData, uFormat));
+#ifdef LOG_ENABLED
+    char *pszFmt = ShClFormatsToStrA(uFormat);
+    AssertPtrReturn(pszFmt, VERR_NO_MEMORY);
+    LogRel2(("Shared Clipboard: Guest wants to read %RU32 bytes host clipboard data in format '%s'\n", cbData, pszFmt));
+    RTStrFree(pszFmt);
+#endif
 
     /*
      * Do the reading.
@@ -1795,7 +1819,12 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
             pClient->State.POD.uFormat = uFormat;
     }
 
-    LogRel2(("Shared Clipboard: Guest writes %RU32 bytes clipboard data in format %RU32 to host\n", cbData, uFormat));
+#ifdef LOG_ENABLED
+    char *pszFmt = ShClFormatsToStrA(uFormat);
+    AssertPtrReturn(pszFmt, VERR_NO_MEMORY);
+    LogRel2(("Shared Clipboard: Guest writes %RU32 bytes clipboard data in format '%s' to host\n", cbData, pszFmt));
+    RTStrFree(pszFmt);
+#endif
 
     /*
      * Write the data to the active host side clipboard.

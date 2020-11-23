@@ -32,6 +32,35 @@
 #include <iprt/types.h>
 #include <iprt/list.h>
 
+/** @name VBOX_SHCL_FMT_XXX - Data formats (flags) for Shared Clipboard.
+ * @{
+ */
+/** No format set. */
+#define VBOX_SHCL_FMT_NONE          0
+/** Shared Clipboard format is an Unicode text. */
+#define VBOX_SHCL_FMT_UNICODETEXT   RT_BIT(0)
+/** Shared Clipboard format is bitmap (BMP / DIB). */
+#define VBOX_SHCL_FMT_BITMAP        RT_BIT(1)
+/** Shared Clipboard format is HTML. */
+#define VBOX_SHCL_FMT_HTML          RT_BIT(2)
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+/** Shared Clipboard format is a transfer list. */
+# define VBOX_SHCL_FMT_URI_LIST     RT_BIT(3)
+#endif
+/** @}  */
+
+
+/** A single Shared Clipboard format (VBOX_SHCL_FMT_XXX). */
+typedef uint32_t SHCLFORMAT;
+/** Pointer to a single Shared Clipboard format (VBOX_SHCL_FMT_XXX). */
+typedef SHCLFORMAT *PSHCLFORMAT;
+
+/** Bit map (flags) of Shared Clipboard formats (VBOX_SHCL_FMT_XXX). */
+typedef uint32_t SHCLFORMATS;
+/** Pointer to a bit map of Shared Clipboard formats (VBOX_SHCL_FMT_XXX). */
+typedef SHCLFORMATS *PSHCLFORMATS;
+
+
 /**
  * Shared Clipboard transfer direction.
  */
@@ -48,17 +77,6 @@ typedef enum SHCLTRANSFERDIR
 } SHCLTRANSFERDIR;
 /** Pointer to a shared clipboard transfer direction. */
 typedef SHCLTRANSFERDIR *PSHCLTRANSFERDIR;
-
-
-/** A single Shared Clipboard format (VBOX_SHCL_FMT_XXX). */
-typedef uint32_t SHCLFORMAT;
-/** Pointer to a single Shared Clipboard format (VBOX_SHCL_FMT_XXX). */
-typedef SHCLFORMAT *PSHCLFORMAT;
-
-/** Bit map (flags) of Shared Clipboard formats (VBOX_SHCL_FMT_XXX). */
-typedef uint32_t SHCLFORMATS;
-/** Pointer to a bit map of Shared Clipboard formats (VBOX_SHCL_FMT_XXX). */
-typedef SHCLFORMATS *PSHCLFORMATS;
 
 
 /**
