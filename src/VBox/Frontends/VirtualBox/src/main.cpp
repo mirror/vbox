@@ -61,10 +61,6 @@
 #ifdef VBOX_WS_MAC
 # include <dlfcn.h>
 # include <sys/mman.h>
-# ifdef VBOX_RUNTIME_UI
-//# include <mach-o/dyld.h>
-extern "C" const char *_dyld_get_image_name(uint32_t);
-# endif
 #endif /* VBOX_WS_MAC */
 #ifdef VBOX_WS_X11
 # include <dlfcn.h>
@@ -135,6 +131,11 @@ QString g_QStrHintReinstall = QApplication::tr(
 # include <stdio.h>
 # include <dlfcn.h>
 # include <iprt/formats/mach-o.h>
+
+//# include <mach-o/dyld.h> /* Not included because of definiton clashes with our own Mach-O header. */
+extern "C" const char *_dyld_get_image_name(uint32_t);
+extern "C" const mach_header_64_t *_dyld_get_image_header(uint32_t);
+extern "C" uint32_t _dyld_image_count(void);
 
 /**
  * Override this one to try hide the fact that we're setuid to root
@@ -367,10 +368,9 @@ static bool patchExtSym(mach_header_64_t *pHdr, const char *pszSymbol, uintptr_t
  */
 static void HideSetUidRootFromAppKit()
 {
-    void *pvAddr;
     /* Find issetguid() and make it always return 0 by modifying the code: */
 # if 0
-    pvAddr = dlsym(RTLD_DEFAULT, "issetugid");
+    void *pvAddr = dlsym(RTLD_DEFAULT, "issetugid");
     int rc = mprotect((void *)((uintptr_t)pvAddr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE | PROT_READ | PROT_EXEC);
     if (!rc)
         ASMAtomicWriteU32((volatile uint32_t *)pvAddr, 0xccc3c031); /* xor eax, eax; ret; int3 */
@@ -378,8 +378,9 @@ static void HideSetUidRootFromAppKit()
 # endif
     {
         /* Failing that, find AppKit and patch its import table: */
+# if 0 /* Fails with BigSur and SIP disabled for some unknown reason (SIP enabled works fine). */
         void *pvAppKit = dlopen("/System/Library/Frameworks/AppKit.framework/AppKit", RTLD_NOLOAD);
-        pvAddr = dlsym(pvAppKit, "NSApplicationMain");
+        void *pvAddr = dlsym(pvAppKit, "NSApplicationMain");
         Dl_info Info = {0};
         if (   dladdr(pvAddr, &Info)
             && Info.dli_fbase != NULL)
@@ -393,6 +394,23 @@ static void HideSetUidRootFromAppKit()
         }
         else
             write(2, RT_STR_TUPLE("WARNING: Failed to patch issetugid in AppKit! (dladdr)\n"));
+# else
+#  define APP_KIT_FRAMEWORK_PATH "/System/Library/Frameworks/AppKit.framework"
+        for (uint32_t i = 0; i < _dyld_image_count(); i++)
+        {
+            const char *pszImageName = _dyld_get_image_name(i);
+            if (!strncmp(pszImageName, APP_KIT_FRAMEWORK_PATH, sizeof(APP_KIT_FRAMEWORK_PATH) - 1))
+            {
+                if (!patchExtSym((mach_header_64_t *)_dyld_get_image_header(i), "_issetugid", (uintptr_t)&issetugid_for_AppKit))
+                    write(2, RT_STR_TUPLE("WARNING: Failed to patch issetugid in AppKit! (patchExtSym)\n"));
+#  ifdef DEBUG
+                else
+                    write(2, RT_STR_TUPLE("INFO: Successfully patched _issetugid import for AppKit!\n"));
+#  endif
+                break;
+            }
+        }
+# endif
     }
 
 }
