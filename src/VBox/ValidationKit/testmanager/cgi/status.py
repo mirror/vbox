@@ -33,7 +33,6 @@ __version__ = "$Revision$"
 # Standard python imports.
 import os
 import sys
-import datetime
 
 # Only the main script needs to modify the path.
 g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))));
@@ -91,12 +90,8 @@ def target_date_from_time_span(cur_date, time_span_hours):
                             hour=24+cur_hour-time_span_hours)
 
 
-def find_test_duration(created):
-    now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
-    diff = now - created
-    days, seconds = diff.days, diff.seconds
-    hours = days * 24 + seconds // 3600
-    return hours
+def timeDeltaToHours(oTimeDelta):
+    return oTimeDelta.days * 24 + oTimeDelta.seconds // 3600
 
 
 def testbox_data_processing(oDb):
@@ -107,7 +102,7 @@ def testbox_data_processing(oDb):
             break;
         testbox_name = line[0]
         test_result = line[1]
-        test_created = line[2]
+        oTimeDeltaSinceStarted = line[2]
         test_box_os = line[3]
         test_sched_group = line[4]
         testboxes_dict = dict_update(testboxes_dict, testbox_name, test_result)
@@ -121,7 +116,7 @@ def testbox_data_processing(oDb):
             testboxes_dict[testbox_name]["sched_group"] += "," + test_sched_group
 
         if test_result == "running":
-            testboxes_dict[testbox_name].update({"hours_running": find_test_duration(test_created)})
+            testboxes_dict[testbox_name].update({"hours_running": timeDeltaToHours(oTimeDeltaSinceStarted)})
 
     return testboxes_dict;
 
@@ -135,8 +130,8 @@ def os_results_separating(vb_dict, test_name, testbox_os, test_result):
         dict_update(vb_dict, test_name + " / darwin", test_result)
     elif testbox_os == "solaris":
         dict_update(vb_dict, test_name + " / solaris", test_result)
-#    else:
-#        dict_update(vb_dict, test_name + " / other", test_result)
+    else:
+        dict_update(vb_dict, test_name + " / other", test_result)
 
 
 # const/immutable.
@@ -329,7 +324,7 @@ class StatusDispatcher(object): # pylint: disable=too-few-public-methods
         #        oDb.execute('''
         #SELECT  TestBoxesWithStrings.sName,
         #        TestSets.enmStatus,
-        #        TestSets.tsCreated,
+        #        CURRENT_TIME - TestSets.tsCreated,
         #        TestBoxesWithStrings.sOS,
         #        SchedGroupNames.sSchedGroupNames
         #FROM    (SELECT TestBoxesInSchedGroups.idTestBox AS idTestBox,
@@ -352,7 +347,7 @@ class StatusDispatcher(object): # pylint: disable=too-few-public-methods
         oDb.execute('''
 (   SELECT  TestBoxesWithStrings.sName,
             TestSets.enmStatus,
-            TestSets.tsCreated,
+            CURRENT_TIME - TestSets.tsCreated,
             TestBoxesWithStrings.sOS,
             SchedGroupNames.sSchedGroupNames
     FROM    (
@@ -375,7 +370,7 @@ class StatusDispatcher(object): # pylint: disable=too-few-public-methods
 ) UNION (
     SELECT  TestBoxesWithStrings.sName,
             TestSets.enmStatus,
-            TestSets.tsCreated,
+            CURRENT_TIME - TestSets.tsCreated,
             TestBoxesWithStrings.sOS,
             SchedGroupNames.sSchedGroupNames
     FROM    (
