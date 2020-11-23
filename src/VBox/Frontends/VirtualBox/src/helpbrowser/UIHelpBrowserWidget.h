@@ -99,7 +99,10 @@ private slots:
     void sltOpenLink();
     void sltCopyLink();
     void sltAddNewBookmark(const QUrl &url, const QString &strTitle);
-    void sltHandleFontSizeactions();
+    void sltHandleFontSizeActions();
+    void sltHandleTabListChanged(const QStringList &titleList);
+    void sltHandleTabChoose();
+    void sltHandleCurrentTabChanged(int iIndex);
 
 private:
 
@@ -120,6 +123,7 @@ private:
     /* Returns the url of the item with @p itemIndex. */
     QUrl contentWidgetUrl(const QModelIndex &itemIndex);
     void openLinkSlotHandler(QObject *pSenderObject, bool fOpenInNewTab);
+    void updateTabsMenu(const QStringList &titleList);
 
     /** @name Event handling stuff.
      * @{ */
@@ -155,6 +159,7 @@ private:
     QSplitter           *m_pSplitter;
     QMenu               *m_pFileMenu;
     QMenu               *m_pViewMenu;
+    QMenu               *m_pTabsMenu;
     QHelpContentWidget  *m_pContentWidget;
     QHelpIndexWidget    *m_pIndexWidget;
     QHelpContentModel   *m_pContentModel;

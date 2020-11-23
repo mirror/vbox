@@ -399,25 +399,29 @@ signals:
 
     void sigSourceChanged(const QUrl &url);
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
+    /** list.first is tab title and list.second is tab's index. */
+    void sigTabsListChanged(const QStringList &titleList);
 
 public:
 
     UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine, const QUrl &homeUrl,
                             const QStringList &urlList, QWidget *pParent = 0);
+    /* Return the list of urls of all open tabs as QStringList. */
     QStringList tabUrlList() const;
+    QStringList tabTitleList() const;
+
     /** Either start with a single tab showin the home url or saved tab(s). Depending on the params. passed to ctor. */
     void initializeTabs();
     /* Url of the current tab. */
     QUrl currentSource() const;
     void setSource(const QUrl &url, bool fNewTab = false);
-    /* Return the list of urls of all open tabs as QStringList. */
-    QStringList tabUrlList();
     void setToolBarVisible(bool fVisible);
     void printCurrent(QPrinter &printer);
     int initialFontPointSize() const;
     void setFontPointSize(int iPointSize);
     int fontPointSize() const;
     void setFontScaleWidgetVisible(bool fToggled);
+    void switchToTab(int iIndex);
 
 protected:
 
@@ -440,6 +444,8 @@ private:
     void prepare();
     void clearAndDeleteTabs();
     void addNewTab(const QUrl &initialUrl);
+    /** Check if lists of tab url/title has changed. if so emit a signal. */
+    void updateTabUrlTitleList();
     const QHelpEngine* m_pHelpEngine;
     UIFontScaleWidget *m_pFontScaleWidget;
     QUrl m_homeUrl;
@@ -447,6 +453,7 @@ private:
     /** Immediately switch the newly created tab. Otherwise open the tab in background. */
     bool m_fSwitchToNewTab;
     bool m_fToolBarVisible;
+    QStringList m_tabTitleList;
 };
 
 
@@ -1489,6 +1496,20 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl)
    }
 }
 
+void UIHelpBrowserTabManager::updateTabUrlTitleList()
+{
+    QList<QPair<QString, int> > newList;
+
+    QStringList titles = tabTitleList();
+
+    if (titles == m_tabTitleList)
+        return;
+
+    m_tabTitleList = titles;
+
+    emit sigTabsListChanged(m_tabTitleList);
+}
+
 void UIHelpBrowserTabManager::initializeTabs()
 {
     clearAndDeleteTabs();
@@ -1499,6 +1520,7 @@ void UIHelpBrowserTabManager::initializeTabs()
     else
         for (int i = 0; i < m_savedUrlList.size(); ++i)
             addNewTab(m_savedUrlList[i]);
+    updateTabUrlTitleList();
 }
 
 QUrl UIHelpBrowserTabManager::currentSource() const
@@ -1520,9 +1542,11 @@ void UIHelpBrowserTabManager::setSource(const QUrl &url, bool fNewTab /* = false
     }
     else
         addNewTab(url);
+
+    updateTabUrlTitleList();
 }
 
-QStringList UIHelpBrowserTabManager::tabUrlList()
+QStringList UIHelpBrowserTabManager::tabUrlList() const
 {
     QStringList list;
     for (int i = 0; i < count(); ++i)
@@ -1534,6 +1558,20 @@ QStringList UIHelpBrowserTabManager::tabUrlList()
     }
     return list;
 }
+
+QStringList UIHelpBrowserTabManager::tabTitleList() const
+{
+    QStringList list;
+    for (int i = 0; i < count(); ++i)
+    {
+        UIHelpBrowserTab *pTab = qobject_cast<UIHelpBrowserTab*>(widget(i));
+        if (!pTab || !pTab->source().isValid())
+            continue;
+        list << pTab->documentTitle();
+    }
+    return list;
+}
+
 
 void UIHelpBrowserTabManager::setToolBarVisible(bool fVisible)
 {
@@ -1603,6 +1641,13 @@ void UIHelpBrowserTabManager::setFontScaleWidgetVisible(bool fToggled)
         m_pFontScaleWidget->setVisible(fToggled);
 }
 
+void UIHelpBrowserTabManager::switchToTab(int iIndex)
+{
+    if (iIndex == currentIndex())
+        return;
+    setCurrentIndex(iIndex);
+}
+
 void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
 {
     for (int i = 0; i < count(); ++i)
@@ -1614,12 +1659,14 @@ void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
             continue;
         }
     }
+    updateTabUrlTitleList();
 }
 
 void UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab(const QUrl &url)
 {
     if (url.isValid())
         addNewTab(url);
+    updateTabUrlTitleList();
 }
 
 void UIHelpBrowserTabManager::sltHandleTabClose(int iTabIndex)
@@ -1631,6 +1678,7 @@ void UIHelpBrowserTabManager::sltHandleTabClose(int iTabIndex)
         return;
     removeTab(iTabIndex);
     delete pWidget;
+    updateTabUrlTitleList();
 }
 
 void UIHelpBrowserTabManager::sltHandleContextMenuTabClose()
@@ -1663,6 +1711,7 @@ void UIHelpBrowserTabManager::sltHandleCloseOtherTabs()
             delete widgetList[i];
     }
     addTab(widgetList[iTabIndex], strTitle);
+    updateTabUrlTitleList();
 }
 
 void UIHelpBrowserTabManager::sltHandleCurrentChanged(int iTabIndex)
@@ -1734,6 +1783,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &st
     , m_pSplitter(0)
     , m_pFileMenu(0)
     , m_pViewMenu(0)
+    , m_pTabsMenu(0)
     , m_pContentWidget(0)
     , m_pIndexWidget(0)
     , m_pContentModel(0)
@@ -1768,7 +1818,8 @@ QList<QMenu*> UIHelpBrowserWidget::menus() const
     QList<QMenu*> menuList;
     menuList
         << m_pFileMenu
-        << m_pViewMenu;
+        << m_pViewMenu
+        << m_pTabsMenu;
     return menuList;
 }
 
@@ -1796,9 +1847,9 @@ void UIHelpBrowserWidget::prepare()
     AssertReturnVoid(m_pMainLayout);
 
     prepareActions();
+    prepareMenu();
     prepareWidgets();
     prepareSearchWidgets();
-    prepareMenu();
     loadBookmarks();
     retranslateUi();
 }
@@ -1837,11 +1888,11 @@ void UIHelpBrowserWidget::prepareActions()
     m_pFontSizeResetAction->setIcon(UIIconPool::iconSet(":/help_browser_reset_32px.png"));
 
     connect(m_pFontSizeLargerAction, &QAction::triggered,
-            this, &UIHelpBrowserWidget::sltHandleFontSizeactions);
+            this, &UIHelpBrowserWidget::sltHandleFontSizeActions);
     connect(m_pFontSizeSmallerAction, &QAction::triggered,
-            this, &UIHelpBrowserWidget::sltHandleFontSizeactions);
+            this, &UIHelpBrowserWidget::sltHandleFontSizeActions);
     connect(m_pFontSizeResetAction, &QAction::triggered,
-            this, &UIHelpBrowserWidget::sltHandleFontSizeactions);
+            this, &UIHelpBrowserWidget::sltHandleFontSizeActions);
 }
 
 void UIHelpBrowserWidget::prepareWidgets()
@@ -1882,6 +1933,10 @@ void UIHelpBrowserWidget::prepareWidgets()
             this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigAddBookmark,
            this, &UIHelpBrowserWidget::sltAddNewBookmark);
+    connect(m_pTabManager, &UIHelpBrowserTabManager::sigTabsListChanged,
+           this, &UIHelpBrowserWidget::sltHandleTabListChanged);
+    connect(m_pTabManager, &UIHelpBrowserTabManager::currentChanged,
+           this, &UIHelpBrowserWidget::sltHandleCurrentTabChanged);
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
     connect(m_pContentWidget, &QHelpContentWidget::clicked,
@@ -1968,7 +2023,9 @@ void UIHelpBrowserWidget::prepareMenu()
 {
     m_pFileMenu = new QMenu(tr("File"), this);
     m_pViewMenu = new QMenu(tr("View"), this);
-    AssertReturnVoid(m_pViewMenu);
+    m_pTabsMenu = new QMenu(tr("Tabs"), this);
+
+    AssertReturnVoid(m_pFileMenu && m_pViewMenu && m_pTabsMenu);
 
     if (m_pPrintDialogAction)
         m_pFileMenu->addAction(m_pPrintDialogAction);
@@ -2011,7 +2068,6 @@ void UIHelpBrowserWidget::loadBookmarks()
             break;
         ++i;
         const QString &strTitle = bookmarks[i];
-        printf("%s %s\n", qPrintable(url), qPrintable(strTitle));
         m_pBookmarksWidget->addBookmark(url, strTitle);
     }
 }
@@ -2332,13 +2388,28 @@ void UIHelpBrowserWidget::openLinkSlotHandler(QObject *pSenderObject, bool fOpen
         m_pTabManager->setSource(url, fOpenInNewTab);
 }
 
+void UIHelpBrowserWidget::updateTabsMenu(const QStringList &titles)
+{
+    if (!m_pTabsMenu)
+        return;
+    m_pTabsMenu->clear();
+    for (int i = 0; i < titles.size(); ++i)
+    {
+        QAction *pAction = m_pTabsMenu->addAction(titles[i]);
+        pAction->setData(i);
+        connect(pAction, &QAction::triggered, this, &UIHelpBrowserWidget::sltHandleTabChoose);
+    }
+    if (m_pTabManager)
+        sltHandleCurrentTabChanged(m_pTabManager->currentIndex());
+}
+
 void UIHelpBrowserWidget::sltOpenLinkWithUrl(const QUrl &url)
 {
     if (m_pTabManager && url.isValid())
         m_pTabManager->setSource(url, false);
 }
 
-void UIHelpBrowserWidget::sltHandleFontSizeactions()
+void UIHelpBrowserWidget::sltHandleFontSizeActions()
 {
     if (!sender() || !m_pTabManager)
         return;
@@ -2354,6 +2425,39 @@ void UIHelpBrowserWidget::sltHandleFontSizeactions()
         iFontPointSize <= fontScaleMinMax.first * m_pTabManager->initialFontPointSize())
         return;
     m_pTabManager->setFontPointSize(iFontPointSize);
+}
+
+void UIHelpBrowserWidget::sltHandleTabListChanged(const QStringList &titleList)
+{
+    updateTabsMenu(titleList);
+}
+
+void UIHelpBrowserWidget::sltHandleTabChoose()
+{
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    if (!pAction)
+        return;
+    int iIndex = pAction->data().toInt();
+    if (m_pTabManager)
+        m_pTabManager->switchToTab(iIndex);
+}
+
+void UIHelpBrowserWidget::sltHandleCurrentTabChanged(int iIndex)
+{
+    Q_UNUSED(iIndex);
+    if (!m_pTabsMenu)
+        return;
+    QList<QAction*> list = m_pTabsMenu->actions();
+    if (iIndex >= list.size())
+        return;
+
+    for (int i = 0; i < list.size(); ++i)
+    {
+        if (i == iIndex)
+            list[i]->setIcon(UIIconPool::iconSet(":/help_browser_star_16px.png"));
+        else
+            list[i]->setIcon(QIcon());
+    }
 }
 
 #include "UIHelpBrowserWidget.moc"
