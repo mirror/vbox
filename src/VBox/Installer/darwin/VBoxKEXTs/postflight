@@ -82,7 +82,7 @@ fi
 #
 MACOS_VERS=$(sw_vers -productVersion)
 sync
-if [[ ${MACOS_VERS} != 11.0* ]]; then
+if [[ ${MACOS_VERS} != 11.* ]]; then
     set -e
     kextload    '/Library/Application Support/VirtualBox/VBoxDrv.kext'
     kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxUSB.kext'
