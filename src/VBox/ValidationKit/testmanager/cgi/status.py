@@ -324,7 +324,7 @@ class StatusDispatcher(object): # pylint: disable=too-few-public-methods
         #        oDb.execute('''
         #SELECT  TestBoxesWithStrings.sName,
         #        TestSets.enmStatus,
-        #        CURRENT_TIME - TestSets.tsCreated,
+        #        CURRENT_TIMESTAMP - TestSets.tsCreated,
         #        TestBoxesWithStrings.sOS,
         #        SchedGroupNames.sSchedGroupNames
         #FROM    (SELECT TestBoxesInSchedGroups.idTestBox AS idTestBox,
@@ -347,7 +347,7 @@ class StatusDispatcher(object): # pylint: disable=too-few-public-methods
         oDb.execute('''
 (   SELECT  TestBoxesWithStrings.sName,
             TestSets.enmStatus,
-            CURRENT_TIME - TestSets.tsCreated,
+            CURRENT_TIMESTAMP - TestSets.tsCreated,
             TestBoxesWithStrings.sOS,
             SchedGroupNames.sSchedGroupNames
     FROM    (
@@ -370,7 +370,7 @@ class StatusDispatcher(object): # pylint: disable=too-few-public-methods
 ) UNION (
     SELECT  TestBoxesWithStrings.sName,
             TestSets.enmStatus,
-            CURRENT_TIME - TestSets.tsCreated,
+            CURRENT_TIMESTAMP - TestSets.tsCreated,
             TestBoxesWithStrings.sOS,
             SchedGroupNames.sSchedGroupNames
     FROM    (
