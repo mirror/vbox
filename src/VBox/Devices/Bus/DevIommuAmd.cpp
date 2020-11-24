@@ -3144,7 +3144,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uD
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
-            LogFunc(("DTE lookup failed! uDevId=%#x uIova=%#RX64 fAccess=%s cbAccess=%zu rc=%Rrc\n", uDevId, uIova, fAccess,
+            LogFunc(("DTE lookup failed! uDevId=%#x uIova=%#RX64 fAccess=%u cbAccess=%zu rc=%#Rrc\n", uDevId, uIova, fAccess,
                      cbAccess, rc));
         return rc;
     }
