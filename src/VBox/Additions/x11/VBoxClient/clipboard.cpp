@@ -40,6 +40,7 @@
 
 #include "VBoxClient.h"
 
+#include "clipboard.h"
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
 # include "clipboard-fuse.h"
 #endif
@@ -49,34 +50,50 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-typedef struct _SHCLCTXFUSE
-{
-    RTTHREAD Thread;
-} SHCLCTXFUSE;
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_FUSE */
-
-/**
- * Struct keeping a Shared Clipboard context.
- */
-struct SHCLCONTEXT
-{
-    /** Client command context */
-    VBGLR3SHCLCMDCTX CmdCtx;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /** Associated transfer data. */
-    SHCLTRANSFERCTX  TransferCtx;
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-    SHCLCTXFUSE      FUSE;
-# endif
-#endif
-    /** X11 clipboard context. */
-    SHCLX11CTX       X11;
-};
-
 /** Only one context is supported at a time for now. */
-static SHCLCONTEXT g_Ctx;
+SHCLCONTEXT g_Ctx;
+SHCLFUSECTX g_FuseCtx;
 
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+static DECLCALLBACK(int) vbclShClOnTransferInitCallback(PSHCLTRANSFERCALLBACKDATA pData)
+{
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+    return ShClFuseOnTransferInitCallback(pData);
+# else
+    # error "Implement me!"
+    return VERR_NOT_IMPLEMENTED;
+# endif
+}
+
+static DECLCALLBACK(int)  vbclShClOnTransferStartCallback(PSHCLTRANSFERCALLBACKDATA pData)
+{
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+    return ShClFuseOnTransferStartCallback(pData);
+# else
+    # error "Implement me!"
+    return VERR_NOT_IMPLEMENTED;
+# endif
+}
+
+static DECLCALLBACK(void) vbclShClOnTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
+{
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+    return ShClFuseOnTransferCompleteCallback(pData, rc);
+# else
+    # error "Implement me!"
+# endif
+}
+
+static DECLCALLBACK(void) vbclShClOnTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
+{
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
+    return ShClFuseOnTransferErrorCallback(pData, rc);
+# else
+    # error "Implement me!"
+# endif
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /**
  * Callback implementation for getting clipboard data from the host.
@@ -369,76 +386,6 @@ int vboxClipboardMain(void)
     return rc;
 }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-static DECLCALLBACK(int) vboxClipoardFUSEThread(RTTHREAD hThreadSelf, void *pvUser)
-{
-    RT_NOREF(pvUser);
-
-    VbglR3Init();
-
-    LogFlowFuncEnter();
-
-    RTThreadUserSignal(hThreadSelf);
-
-    SHCL_FUSE_OPTS Opts;
-    RT_ZERO(Opts);
-
-    Opts.fForeground     = true;
-    Opts.fSingleThreaded = false; /** @todo Do we want multithread here? */
-
-    int rc = RTPathTemp(Opts.szMountPoint, sizeof(Opts.szMountPoint));
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTPathAppend(Opts.szMountPoint, sizeof(Opts.szMountPoint), "VBoxSharedClipboard");
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTDirCreate(Opts.szMountPoint, 0700,
-                             RTDIRCREATE_FLAGS_NO_SYMLINKS);
-            if (rc == VERR_ALREADY_EXISTS)
-                rc = VINF_SUCCESS;
-        }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        rc = ShClFuseMain(&Opts);
-    }
-    else
-        VBClLogError("Error creating FUSE mount directory, rc=%Rrc\n", rc);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-static int vboxClipboardFUSEStart(void)
-{
-    LogFlowFuncEnter();
-
-    PSHCLCONTEXT pCtx = &g_Ctx;
-
-    int rc = RTThreadCreate(&pCtx->FUSE.Thread, vboxClipoardFUSEThread, &pCtx->FUSE, 0,
-                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLFUSE");
-    if (RT_SUCCESS(rc))
-        rc = RTThreadUserWait(pCtx->FUSE.Thread, 30 * 1000);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-static int vboxClipboardFUSEStop(void)
-{
-    LogFlowFuncEnter();
-
-    PSHCLCONTEXT pCtx = &g_Ctx;
-
-    int rcThread;
-    int rc = RTThreadWait(pCtx->FUSE.Thread, 1000, &rcThread);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_FUSE */
-
 /**
  * @interface_method_impl{VBCLSERVICE,pfnInit}
  */
@@ -447,6 +394,17 @@ static DECLCALLBACK(int) vbclShClInit(void)
     int rc;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    /* Install callbacks. */
+    RT_ZERO(g_Ctx.CmdCtx.Transfers.Callbacks);
+
+    g_Ctx.CmdCtx.Transfers.Callbacks.pvUser = &g_Ctx; /* Assign context as user-provided callback data. */
+    g_Ctx.CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
+
+    g_Ctx.CmdCtx.Transfers.Callbacks.pfnTransferInitialize = vbclShClOnTransferInitCallback;
+    g_Ctx.CmdCtx.Transfers.Callbacks.pfnTransferStart      = vbclShClOnTransferStartCallback;
+    g_Ctx.CmdCtx.Transfers.Callbacks.pfnTransferComplete   = vbclShClOnTransferCompleteCallback;
+    g_Ctx.CmdCtx.Transfers.Callbacks.pfnTransferError      = vbclShClOnTransferErrorCallback;
+
     rc = ShClTransferCtxInit(&g_Ctx.TransferCtx);
 #else
     rc = VINF_SUCCESS;
@@ -468,19 +426,23 @@ static DECLCALLBACK(int) vbclShClWorker(bool volatile *pfShutdown)
     if (RT_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-        rc = vboxClipboardFUSEStart();
+        rc = VbClShClFUSEInit(&g_FuseCtx, &g_Ctx);
         if (RT_SUCCESS(rc))
         {
+            rc = VbClShClFUSEStart(&g_FuseCtx);
+            if (RT_SUCCESS(rc))
+            {
 #endif
-            /* Let the main thread know that it can continue spawning services. */
-            RTThreadUserSignal(RTThreadSelf());
+                /* Let the main thread know that it can continue spawning services. */
+                RTThreadUserSignal(RTThreadSelf());
 
-            rc = vboxClipboardMain();
+                rc = vboxClipboardMain();
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-            int rc2 = vboxClipboardFUSEStop();
-            if (RT_SUCCESS(rc))
-                rc = rc2;
+                int rc2 = VbClShClFUSEStop(&g_FuseCtx);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
         }
 #endif
     }
