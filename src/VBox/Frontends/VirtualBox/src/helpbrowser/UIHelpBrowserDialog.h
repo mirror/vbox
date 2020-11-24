@@ -21,22 +21,11 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QMap>
-#include <QString>
-
 /* GUI includes: */
-#include "QIManagerDialog.h"
+#include "QIWithRestorableGeometry.h"
 #include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
-
-/* COM includes: */
-#include "COMEnums.h"
 
 /* Forward declarations: */
-class QDialogButtonBox;
-class QVBoxLayout;
-class UIHelpBrowserDialog;
 class UIHelpBrowserWidget;
 
 class SHARED_LIBRARY_STUFF UIHelpBrowserDialog : public QIWithRetranslateUI<QIWithRestorableGeometry<QMainWindow> >

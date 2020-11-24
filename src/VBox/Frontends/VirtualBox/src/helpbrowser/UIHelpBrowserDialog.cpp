@@ -19,14 +19,7 @@
 #if defined(RT_OS_SOLARIS)
 # include <QFontDatabase>
 #endif
-#include <QDialogButtonBox>
-#include <QKeyEvent>
-#include <QLabel>
 #include <QMenuBar>
-#include <QPlainTextEdit>
-#include <QPushButton>
-#include <QScrollBar>
-#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
@@ -34,7 +27,6 @@
 #include "UIIconPool.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIHelpBrowserWidget.h"
-#include "UICommon.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
