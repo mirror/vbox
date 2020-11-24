@@ -82,6 +82,9 @@ void UIHelpBrowserDialog::prepareCentralWidget()
 #endif
     setCentralWidget((m_pWidget));
 
+    connect(m_pWidget, &UIHelpBrowserWidget::sigCloseDialog,
+            this, &UIHelpBrowserDialog::close);
+
     const QList<QMenu*> menuList = m_pWidget->menus();
     foreach (QMenu *pMenu, menuList)
         menuBar()->addMenu(pMenu);

@@ -1793,7 +1793,7 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &st
     , m_pTabManager(0)
     , m_pBookmarksWidget(0)
     , m_pSearchContainerWidget(0)
-    , m_pPrintDialogAction(0)
+    , m_pPrintAction(0)
     , m_pShowHideSideBarAction(0)
     , m_pShowHideToolBarAction(0)
     , m_pShowHideFontScaleWidget(0)
@@ -1874,9 +1874,13 @@ void UIHelpBrowserWidget::prepareActions()
     connect(m_pShowHideFontScaleWidget, &QAction::toggled,
             this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
 
-    m_pPrintDialogAction = new QAction(this);
-    connect(m_pPrintDialogAction, &QAction::triggered,
+    m_pPrintAction = new QAction(this);
+    connect(m_pPrintAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sltShowPrintDialog);
+
+    m_pCloseDialogAction = new QAction(this);
+    connect(m_pCloseDialogAction, &QAction::triggered,
+            this, &UIHelpBrowserWidget::sigCloseDialog);
 
     m_pFontSizeLargerAction = new QAction(this);
     m_pFontSizeLargerAction->setIcon(UIIconPool::iconSet(":/help_browser_plus_32px.png"));
@@ -2027,8 +2031,10 @@ void UIHelpBrowserWidget::prepareMenu()
 
     AssertReturnVoid(m_pFileMenu && m_pViewMenu && m_pTabsMenu);
 
-    if (m_pPrintDialogAction)
-        m_pFileMenu->addAction(m_pPrintDialogAction);
+    if (m_pPrintAction)
+        m_pFileMenu->addAction(m_pPrintAction);
+    if (m_pCloseDialogAction)
+        m_pFileMenu->addAction(m_pCloseDialogAction);
 
     if (m_pFontSizeLargerAction)
         m_pViewMenu->addAction(m_pFontSizeLargerAction);
@@ -2160,8 +2166,11 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pShowHideToolBarAction->setText(tr("Show Tool Bar"));
     if (m_pShowHideFontScaleWidget)
         m_pShowHideFontScaleWidget->setText(tr("Show Font Scale Widget"));
-    if (m_pPrintDialogAction)
-        m_pPrintDialogAction->setText(tr("Print..."));
+
+    if (m_pPrintAction)
+        m_pPrintAction->setText(tr("Print..."));
+    if (m_pCloseDialogAction)
+        m_pCloseDialogAction->setText(tr("Close"));
 
     if (m_pFontSizeLargerAction)
         m_pFontSizeLargerAction->setText(tr("Increase Font Size"));

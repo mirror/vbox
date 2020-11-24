@@ -63,7 +63,7 @@ class SHARED_LIBRARY_STUFF UIHelpBrowserWidget  : public QIWithRetranslateUI<QWi
 
 signals:
 
-    void sigSetCloseButtonShortCut(QKeySequence);
+    void sigCloseDialog();
 
 public:
 
@@ -169,7 +169,8 @@ private:
     UIHelpBrowserTabManager  *m_pTabManager;
     UIBookmarksListContainer *m_pBookmarksWidget;
     QWidget             *m_pSearchContainerWidget;
-    QAction             *m_pPrintDialogAction;
+    QAction             *m_pPrintAction;
+    QAction             *m_pCloseDialogAction;
     QAction             *m_pShowHideSideBarAction;
     QAction             *m_pShowHideToolBarAction;
     QAction             *m_pShowHideFontScaleWidget;
