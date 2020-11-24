@@ -33,7 +33,7 @@
 #include "CProgress.h"
 
 /* Forward declarations: */
-class QIManagerDialog;
+class UIHelpBrowserDialog;
 class UIMedium;
 struct StorageSlot;
 #ifdef VBOX_WITH_DRAG_AND_DROP
@@ -552,7 +552,7 @@ public slots:
     void sltShowHelpHelpDialog();
     void sltResetSuppressedMessages();
     void sltShowUserManual(const QString &strLocation);
-    void sltCloseHelpBrowser();
+    void sltHelpBrowserClosed();
     void sltHandleDialogHelpButtonPress();
 
 private slots:
@@ -610,7 +610,7 @@ private:
     mutable QStringList m_warnings;
 
     /** Holds UIHelpBrowserDialog instance. */
-    QIManagerDialog *m_pHelpBrowserDialog;
+    UIHelpBrowserDialog *m_pHelpBrowserDialog;
 
     /** Holds the singleton message-center instance. */
     static UIMessageCenter *s_pInstance;

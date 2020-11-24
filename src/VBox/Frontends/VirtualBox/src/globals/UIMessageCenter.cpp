@@ -3444,11 +3444,9 @@ void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, QWidget *p
     }
     if (!m_pHelpBrowserDialog)
     {
-        UIHelpBrowserDialogFactory dialogFactory(strHelpFilePath);
-        dialogFactory.prepare(m_pHelpBrowserDialog);
+        m_pHelpBrowserDialog = new UIHelpBrowserDialog(0 /* parent */, 0 /* Center Widget */, strHelpFilePath);
         AssertReturnVoid(m_pHelpBrowserDialog);
-        connect(m_pHelpBrowserDialog, &QIManagerDialog::sigClose,
-                this, &UIMessageCenter::sltCloseHelpBrowser);
+        connect(m_pHelpBrowserDialog, &QMainWindow::destroyed, this, &UIMessageCenter::sltHelpBrowserClosed);
     }
 
     m_pHelpBrowserDialog->show();
@@ -3456,15 +3454,9 @@ void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, QWidget *p
     m_pHelpBrowserDialog->activateWindow();
 }
 
-void UIMessageCenter::sltCloseHelpBrowser()
+void UIMessageCenter::sltHelpBrowserClosed()
 {
-    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
-    if (m_pHelpBrowserDialog != pDialog || !pDialog)
-        return;
-
     m_pHelpBrowserDialog = 0;
-    pDialog->close();
-    UIHelpBrowserDialogFactory().cleanup(pDialog);
 }
 
 void UIMessageCenter::sltHandleDialogHelpButtonPress()

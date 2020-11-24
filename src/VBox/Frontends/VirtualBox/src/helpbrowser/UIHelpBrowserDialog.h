@@ -39,75 +39,40 @@ class QVBoxLayout;
 class UIHelpBrowserDialog;
 class UIHelpBrowserWidget;
 
-/** QIManagerDialogFactory extension used as a factory for Log Viewer dialog. */
-class SHARED_LIBRARY_STUFF UIHelpBrowserDialogFactory : public QIManagerDialogFactory
-{
-
-public:
-
-    /** @param strHelpFilePath: the full path of the qHelp archive file. */
-    UIHelpBrowserDialogFactory(const QString &strHelpFilePath);
-    UIHelpBrowserDialogFactory();
-
-protected:
-
-    /** Creates derived @a pDialog instance.
-      * @param  pCenterWidget  Brings the widget to center wrt. pCenterWidget. */
-    virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
-
-private:
-
-    QString m_strHelpFilePath;
-};
-
-class SHARED_LIBRARY_STUFF UIHelpBrowserDialog : public QIWithRetranslateUI<QIManagerDialog>
+class SHARED_LIBRARY_STUFF UIHelpBrowserDialog : public QIWithRetranslateUI<QIWithRestorableGeometry<QMainWindow> >
 {
     Q_OBJECT;
 
 public:
 
-    UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &strHelpFilePath);
+    UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidget, const QString &strHelpFilePath);
+    ~UIHelpBrowserDialog();
     /** A passthru function for QHelpIndexWidget::showHelpForKeyword. */
     void showHelpForKeyword(const QString &strKeyword);
 
 protected:
 
-    /** @name Event-handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
-    /** @} */
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
     /** @name Prepare/cleanup cascade.
      * @{ */
-        /** Configures all. */
-        virtual void configure() /* override */;
-        /** Configures central-widget. */
-        virtual void configureCentralWidget() /* override */;
-        /** Perform final preparations. */
-        virtual void finalize() /* override */;
-        /** Loads dialog setting from extradata. */
-        virtual void loadSettings() /* override */;
 
-        /** Saves dialog setting into extradata. */
+        virtual void prepareCentralWidget() /* override */;
+        virtual void loadSettings() /* override */;
         virtual void saveSettings() /* override */;
     /** @} */
 
-    /** @name Functions related to geometry restoration.
-     * @{ */
-        /** Returns whether the window should be maximized when geometry being restored. */
-        virtual bool shouldBeMaximized() const /* override */;
-    /** @} */
+    /** Returns whether the window should be maximized when geometry being restored. */
+    virtual bool shouldBeMaximized() const /* override */;
 
 private slots:
-
-    /** Must be handles soemthing related to close @a shortcut. */
-    void sltSetCloseButtonShortCut(QKeySequence shortcut);
 
 private:
 
     QString m_strHelpFilePath;
     UIHelpBrowserWidget *m_pWidget;
+    QWidget *m_pCenterWidget;
 };
 
 

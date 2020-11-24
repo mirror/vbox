@@ -22,6 +22,7 @@
 #include <QDialogButtonBox>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QMenuBar>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollBar>
@@ -40,34 +41,25 @@
 
 
 /*********************************************************************************************************************************
-*   Class UIHelpBrowserDialogFactory implementation.                                                                             *
-*********************************************************************************************************************************/
-
-UIHelpBrowserDialogFactory::UIHelpBrowserDialogFactory(const QString &strHelpFilePath)
-    : m_strHelpFilePath(strHelpFilePath)
-{
-}
-
-UIHelpBrowserDialogFactory::UIHelpBrowserDialogFactory()
-    : m_strHelpFilePath(QString())
-{
-}
-
-void UIHelpBrowserDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
-{
-    pDialog = new UIHelpBrowserDialog(pCenterWidget, m_strHelpFilePath);
-}
-
-
-/*********************************************************************************************************************************
 *   Class UIHelpBrowserDialog implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pCenterWidget, const QString &strHelpFilePath)
-    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidget, const QString &strHelpFilePath)
+    : QIWithRetranslateUI<QIWithRestorableGeometry<QMainWindow> >(pParent)
     , m_strHelpFilePath(strHelpFilePath)
     , m_pWidget(0)
+    , m_pCenterWidget(pCenterWidget)
 {
+    setAttribute(Qt::WA_DeleteOnClose);
+    setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
+    prepareCentralWidget();
+    loadSettings();
+    retranslateUi();
+}
+
+UIHelpBrowserDialog::~UIHelpBrowserDialog()
+{
+    saveSettings();
 }
 
 void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
@@ -83,42 +75,25 @@ void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
 void UIHelpBrowserDialog::retranslateUi()
 {
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-    setWindowTitle(UIHelpBrowserWidget::tr("User Manual"));
-    button(ButtonType_Close)->setText(UIHelpBrowserWidget::tr("Close"));
+    setWindowTitle(UIHelpBrowserWidget::tr("Oracle VM VirtualBox User Manual"));
 #endif
 }
 
-void UIHelpBrowserDialog::configure()
-{
-    /* Apply window icons: */
-    setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
-}
 
-void UIHelpBrowserDialog::configureCentralWidget()
+void UIHelpBrowserDialog::prepareCentralWidget()
 {
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     m_pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath);
-    if (m_pWidget)
-    {
-        /* Configure widget: */
-        setWidget(m_pWidget);
-        setWidgetMenus(m_pWidget->menus());
+    AssertPtrReturnVoid(m_pWidget);
 #ifdef VBOX_WS_MAC
-        setWidgetToolbar(m_pWidget->toolbar());
+    setWidgetToolbar(m_pWidget->toolbar());
 #endif
-        connect(m_pWidget, &UIHelpBrowserWidget::sigSetCloseButtonShortCut,
-                this, &UIHelpBrowserDialog::sltSetCloseButtonShortCut);
+    setCentralWidget((m_pWidget));
 
-        /* Add into layout: */
-        centralWidget()->layout()->addWidget(m_pWidget);
-    }
+    const QList<QMenu*> menuList = m_pWidget->menus();
+    foreach (QMenu *pMenu, menuList)
+        menuBar()->addMenu(pMenu);
 #endif
-}
-
-void UIHelpBrowserDialog::finalize()
-{
-    /* Apply language settings: */
-    retranslateUi();
 }
 
 void UIHelpBrowserDialog::loadSettings()
@@ -129,7 +104,7 @@ void UIHelpBrowserDialog::loadSettings()
     QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);
 
     /* Load geometry from extradata: */
-    const QRect geo = gEDataManager->helpBrowserDialogGeometry(this, centerWidget(), defaultGeo);
+    const QRect geo = gEDataManager->helpBrowserDialogGeometry(this, m_pCenterWidget, defaultGeo);
     LogRel2(("GUI: UIHelpBrowserDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
              geo.x(), geo.y(), geo.width(), geo.height()));
     restoreGeometry(geo);
@@ -146,10 +121,4 @@ void UIHelpBrowserDialog::saveSettings()
 bool UIHelpBrowserDialog::shouldBeMaximized() const
 {
     return gEDataManager->helpBrowserDialogShouldBeMaximized();
-}
-
-void UIHelpBrowserDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
-{
-    if (button(ButtonType_Close))
-        button(ButtonType_Close)->setShortcut(shortcut);
 }
