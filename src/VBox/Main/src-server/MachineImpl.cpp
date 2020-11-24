@@ -8095,8 +8095,8 @@ HRESULT Machine::initDataAndChildObjects()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
-    AssertComRCReturn(   getObjectState().getState() == ObjectState::InInit
-                      || getObjectState().getState() == ObjectState::Limited, E_FAIL);
+    AssertReturn(   getObjectState().getState() == ObjectState::InInit
+                 || getObjectState().getState() == ObjectState::Limited, E_FAIL);
 
     AssertReturn(!mData->mAccessible, E_FAIL);
 
@@ -8180,8 +8180,8 @@ void Machine::uninitDataAndChildObjects()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
-    AssertComRCReturnVoid(   getObjectState().getState() == ObjectState::InUninit
-                          || getObjectState().getState() == ObjectState::Limited);
+    AssertReturnVoid(   getObjectState().getState() == ObjectState::InUninit
+                     || getObjectState().getState() == ObjectState::Limited);
 
     /* tell all our other child objects we've been uninitialized */
     if (mBandwidthControl)
