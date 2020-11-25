@@ -89,11 +89,11 @@ void UIGlobalSettingsLanguage::getFromCache()
 void UIGlobalSettingsLanguage::putToCache()
 {
     /* Prepare new data: */
-    UIDataSettingsGlobalLanguage newInputData = m_pCache->base();
+    UIDataSettingsGlobalLanguage newData = m_pCache->base();
 
     /* Cache new data: */
-    newInputData.m_strLanguageId = m_pEditorLanguageSettings->value();
-    m_pCache->cacheCurrentData(newInputData);
+    newData.m_strLanguageId = m_pEditorLanguageSettings->value();
+    m_pCache->cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
