@@ -26,9 +26,8 @@
 
 /* Forward declarations: */
 class QCheckBox;
-class QComboBox;
 class QLabel;
-class QSpinBox;
+class UIMaximumGuestScreenSizeEditor;
 class UIScaleFactorEditor;
 struct UIDataSettingsGlobalDisplay;
 typedef UISettingsCache<UIDataSettingsGlobalDisplay> UISettingsCacheGlobalDisplay;
@@ -43,7 +42,7 @@ public:
     /** Constructs Display settings page. */
     UIGlobalSettingsDisplay();
     /** Destructs Display settings page. */
-    ~UIGlobalSettingsDisplay();
+    virtual ~UIGlobalSettingsDisplay() /* override */;
 
 protected:
 
@@ -64,26 +63,16 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
-private slots:
-
-    /** Handles maximum guest-screen size policy change. */
-    void sltHandleMaximumGuestScreenSizePolicyChange();
-
 private:
 
     /** Prepares all. */
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares connections. */
-    void prepareConnections();
     /** Cleanups all. */
     void cleanup();
 
-    /** Reloads maximum guest-screen size policy combo-box. */
-    void reloadMaximumGuestScreenSizePolicyComboBox();
-
-    /** Saves existing display data from the cache. */
+    /** Saves existing data from the cache. */
     bool saveDisplayData();
 
     /** Holds the page data cache instance. */
@@ -91,26 +80,22 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the max guest screen size label instance. */
-        QLabel              *m_pLabelMaxGuestScreenSize;
-        /** Holds the max guest screen size combo instance. */
-        QComboBox           *m_pComboMaxGuestScreenSize;
-        /** Holds the max guest screen width label instance. */
-        QLabel              *m_pLabelMaxGuestScreenWidth;
-        /** Holds the max guest screen width spinbox instance. */
-        QSpinBox            *m_pSpinboxMaxGuestScreenWidth;
-        /** Holds the max guest screen height label instance. */
-        QLabel              *m_pLabelMaxGuestScreenHeight;
-        /** Holds the max guest screen height spinbox instance. */
-        QSpinBox            *m_pSpinboxMaxGuestScreenHeight;
+        /** Holds the maximum guest screen size label instance. */
+        QLabel                         *m_pLabelMaximumGuestScreenSizePolicy;
+        /** Holds the maximum guest screen width label instance. */
+        QLabel                         *m_pLabelMaximumGuestScreenWidth;
+        /** Holds the maximum guest screen height label instance. */
+        QLabel                         *m_pLabelMaximumGuestScreenHeight;
+        /** Holds the maximum guest screen size editor instance. */
+        UIMaximumGuestScreenSizeEditor *m_pEditorMaximumGuestScreenSize;
         /** Holds the scale-factor label instance. */
-        QLabel              *m_pLabelScaleFactor;
+        QLabel                         *m_pLabelScaleFactor;
         /** Holds the scale-factor editor instance. */
-        UIScaleFactorEditor *m_pEditorScaleFactor;
+        UIScaleFactorEditor            *m_pEditorScaleFactor;
         /** Holds the 'machine-windows' label instance. */
-        QLabel              *m_pLabelMachineWindows;
+        QLabel                         *m_pLabelMachineWindows;
         /** Holds the 'activate on mouse hover' check-box instance. */
-        QCheckBox           *m_pCheckBoxActivateOnMouseHover;
+        QCheckBox                      *m_pCheckBoxActivateOnMouseHover;
     /** @} */
 };
 

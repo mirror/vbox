@@ -1070,6 +1070,7 @@ enum MaximumGuestScreenSizePolicy
     /** Anything up to host-screen available space. */
     MaximumGuestScreenSizePolicy_Automatic
 };
+Q_DECLARE_METATYPE(MaximumGuestScreenSizePolicy);
 
 
 /** Manager UI: VM resource Monitor Column types.
