@@ -75,23 +75,23 @@ def get_installed_products():
             hkey_product_properties = OpenKey(hkey_products, product_guid + r'\InstallProperties', 0, KEY_ALL_ACCESS)
             try:
                 value = QueryValueEx(hkey_product_properties, 'DisplayName')[0]
-            except WindowsError, exception:
-                if exception.winerror != 2:
+            except WindowsError as oXcpt:
+                if oXcpt.winerror != 2:
                     raise
                 value = '<unknown>'
             CloseKey(hkey_product_properties)
             products[product_guid] = value
             product_index += 1
-    except WindowsError, exceptione:
-        if exceptione.winerror != 259:
-            print exceptione.strerror + '.', 'error', exceptione.winerror
+    except WindowsError as oXcpt:
+        if oXcpt.winerror != 259:
+            print(oXcpt.strerror + '.', 'error', oXcpt.winerror)
     CloseKey(hkey_products)
 
-    print 'Installed products:'
+    print('Installed products:')
     for product_key in sorted(products.keys()):
-        print transpose_guid(product_key), '=', products[product_key]
+        print(transpose_guid(product_key), '=', products[product_key])
 
-    print
+    print()
     return products
 
 def get_missing_products(hkey_components):
@@ -126,23 +126,23 @@ def main():
 
     missing_products = get_missing_products(hkey_components)
 
-    print 'Missing products refer the following components:'
+    print('Missing products refer the following components:')
     for product_guid in sorted(missing_products.keys()):
         if product_guid[1:] == '0'*31:
             continue
-        print 'Product', transpose_guid(product_guid) + ':'
+        print('Product', transpose_guid(product_guid) + ':')
         for component_guid, component_file in missing_products[product_guid]:
-            print ' ' + transpose_guid(component_guid), '=', component_file
+            print(' ' + transpose_guid(component_guid), '=', component_file)
 
-        print 'Remove all references to product', transpose_guid(product_guid) + '? [y/n]'
+        print('Remove all references to product', transpose_guid(product_guid) + '? [y/n]')
         if strtobool(raw_input().lower()):
             for component_guid, component_file in missing_products[product_guid]:
                 hkey_component = OpenKey(hkey_components, component_guid, 0, KEY_ALL_ACCESS)
-                print 'Removing reference in ' + transpose_guid(component_guid), '=', component_file
+                print('Removing reference in ' + transpose_guid(component_guid), '=', component_file)
                 DeleteValue(hkey_component, product_guid)
                 CloseKey(hkey_component)
         else:
-            print 'Cancelled removal of product', transpose_guid(product_guid)
+            print('Cancelled removal of product', transpose_guid(product_guid))
 
     CloseKey(hkey_components)
 

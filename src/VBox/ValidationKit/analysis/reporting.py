@@ -217,14 +217,14 @@ def produceHtmlReport(oTest):
     """
     Produce an HTML report on stdout (via print).
     """
-    print 'not implemented: %s' % (oTest);
+    print('not implemented: %s' % (oTest));
     return False;
 
 def produceReStructuredTextReport(oTest):
     """
     Produce a ReStructured text report on stdout (via print).
     """
-    print 'not implemented: %s' % (oTest);
+    print('not implemented: %s' % (oTest));
     return False;
 
 def produceTextReport(oTest):
@@ -275,28 +275,28 @@ def produceTextReport(oTest):
             for i in range(len(asLine)):
                 if i > 0: sLine += '  ';
                 sLine += asLine[i].center(acchColumns[i]);
-            print sLine;
+            print(sLine);
 
         # Units.
         sLine = '';
         for i in range(len(oTable.asUnits)):
             if i > 0: sLine += '  ';
             sLine += oTable.asUnits[i].center(acchColumns[i]);
-        print sLine;
+        print(sLine);
 
         # Separator line.
         sLine = '';
         for i in range(len(oTable.asHeader)):
             if i > 0: sLine += '  '
             sLine += '=' * acchColumns[i];
-        print sLine;
+        print(sLine);
 
         # The rows.
         for asColumns in oTable.aasRows:
             sText = asColumns[0].ljust(acchColumns[0]);
             for i in range(1, len(asColumns)):
                 sText += '  ' + asColumns[i].rjust(acchColumns[i]);
-            print sText;
+            print(sText);
 
     return None;
 
