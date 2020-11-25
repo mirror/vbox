@@ -53,7 +53,7 @@ typedef RTFTPSERVER                            *PRTFTPSERVER;
 #define NIL_RTFTPSERVER                         ((RTFTPSERVER)0)
 
 /** Maximum length (in characters) a command can have (without parameters). */
-#define RTFTPSERVER_MAX_CMD_LEN                 64
+#define RTFTPSERVER_MAX_CMD_LEN                 8
 
 /**
  * Enumeration for defining the current server connection mode.

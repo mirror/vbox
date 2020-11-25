@@ -325,7 +325,7 @@ typedef struct RTFTPSERVERCLIENT
 typedef RTFTPSERVERCLIENT *PRTFTPSERVERCLIENT;
 
 /** Function pointer declaration for a specific FTP server command handler. */
-typedef DECLCALLBACKTYPE(int, FNRTFTPSERVERCMD,(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs));
+typedef DECLCALLBACKTYPE(int, FNRTFTPSERVERCMD,(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs));
 /** Pointer to a FNRTFTPSERVERCMD(). */
 typedef FNRTFTPSERVERCMD *PFNRTFTPSERVERCMD;
 
@@ -336,7 +336,7 @@ typedef FNRTFTPSERVERCMD *PFNRTFTPSERVERCMD;
 static int  rtFtpServerDataConnOpen(PRTFTPSERVERDATACONN pDataConn, PRTNETADDRIPV4 pAddr, uint16_t uPort);
 static int  rtFtpServerDataConnClose(PRTFTPSERVERDATACONN pDataConn);
 static void rtFtpServerDataConnReset(PRTFTPSERVERDATACONN pDataConn);
-static int  rtFtpServerDataConnStart(PRTFTPSERVERDATACONN pDataConn, PFNRTTHREAD pfnThread, uint8_t cArgs, const char * const *apcszArgs);
+static int  rtFtpServerDataConnStart(PRTFTPSERVERDATACONN pDataConn, PFNRTTHREAD pfnThread, uint8_t cArgs, const char * const *apszArgs);
 static int  rtFtpServerDataConnStop(PRTFTPSERVERDATACONN pDataConn);
 static void rtFtpServerDataConnDestroy(PRTFTPSERVERDATACONN pDataConn);
 static int  rtFtpServerDataConnFlush(PRTFTPSERVERDATACONN pDataConn);
@@ -374,9 +374,7 @@ typedef struct RTFTPSERVERCMD_ENTRY
 {
     /** Command ID. */
     RTFTPSERVERCMD      enmCmd;
-    /** Command represented as ASCII string.
-     * @todo r=bird: It's a waste to use 64 byte here when all supported commands
-     *       are 3 or 4 chars + terminator.  For (64-bit) alignment reasons,  */
+    /** Command represented as ASCII string. */
     char                szCmd[RTFTPSERVER_MAX_CMD_LEN];
     /** Whether the commands needs a logged in (valid) user. */
     bool                fNeedsUser;
@@ -465,17 +463,17 @@ static int rtFtpServerSendReplyRc(PRTFTPSERVERCLIENT pClient, RTFTPSERVER_REPLY 
  * @returns VBox status code.
  * @param   pClient             Client to reply to.
  * @param   enmReply            Reply code to send.
- * @param   pcszFormat          Format string of message to send with the reply code.
+ * @param   pszFormat           Format string of message to send with the reply code.
  */
 static int rtFtpServerSendReplyRcEx(PRTFTPSERVERCLIENT pClient, RTFTPSERVER_REPLY enmReply,
-                                    const char *pcszFormat, ...)
+                                    const char *pszFormat, ...)
 {
     char *pszMsg = NULL;
 
     va_list args;
-    va_start(args, pcszFormat);
+    va_start(args, pszFormat);
     char *pszFmt = NULL;
-    const int cch = RTStrAPrintfV(&pszFmt, pcszFormat, args);
+    const int cch = RTStrAPrintfV(&pszFmt, pszFormat, args);
     va_end(args);
     AssertReturn(cch > 0, VERR_NO_MEMORY);
 
@@ -511,15 +509,15 @@ static int rtFtpServerSendReplyRcEx(PRTFTPSERVERCLIENT pClient, RTFTPSERVER_REPL
  *
  * @returns VBox status code.
  * @param   pClient             Client to reply to.
- * @param   pcszFormat          Format to reply.
+ * @param   pszFormat           Format to reply.
  * @param   ...                 Format arguments.
  */
-static int rtFtpServerSendReplyStr(PRTFTPSERVERCLIENT pClient, const char *pcszFormat, ...)
+static int rtFtpServerSendReplyStr(PRTFTPSERVERCLIENT pClient, const char *pszFormat, ...)
 {
     va_list args;
-    va_start(args, pcszFormat);
+    va_start(args, pszFormat);
     char *psz = NULL;
-    const int cch = RTStrAPrintfV(&psz, pcszFormat, args);
+    const int cch = RTStrAPrintfV(&psz, pszFormat, args);
     va_end(args);
     AssertReturn(cch > 0, VERR_NO_MEMORY);
 
@@ -539,22 +537,22 @@ static int rtFtpServerSendReplyStr(PRTFTPSERVERCLIENT pClient, const char *pcszF
  * Validates if a given absolute path is valid or not.
  *
  * @returns \c true if path is valid, or \c false if not.
- * @param   pcszPath            Path to check.
+ * @param   pszPath             Path to check.
  * @param   fIsAbsolute         Whether the path to check is an absolute path or not.
  */
-static bool rtFtpServerPathIsValid(const char *pcszPath, bool fIsAbsolute)
+static bool rtFtpServerPathIsValid(const char *pszPath, bool fIsAbsolute)
 {
-    if (!pcszPath)
+    if (!pszPath)
         return false;
 
-    bool fIsValid =    strlen(pcszPath)
-                    && RTStrIsValidEncoding(pcszPath)
-                    && RTStrStr(pcszPath, "..") == NULL;     /** @todo Very crude for now -- improve this. */
+    bool fIsValid =    strlen(pszPath)
+                    && RTStrIsValidEncoding(pszPath)
+                    && RTStrStr(pszPath, "..") == NULL;     /** @todo Very crude for now -- improve this. */
     if (   fIsValid
         && fIsAbsolute)
     {
         RTFSOBJINFO objInfo;
-        int rc2 = RTPathQueryInfo(pcszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+        int rc2 = RTPathQueryInfo(pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
         if (RT_SUCCESS(rc2))
         {
             fIsValid =    RTFS_IS_DIRECTORY(objInfo.Attr.fMode)
@@ -566,7 +564,7 @@ static bool rtFtpServerPathIsValid(const char *pcszPath, bool fIsAbsolute)
             fIsValid = false;
     }
 
-    LogFlowFunc(("pcszPath=%s -> %RTbool\n", pcszPath, fIsValid));
+    LogFlowFunc(("pszPath=%s -> %RTbool\n", pszPath, fIsValid));
     return fIsValid;
 }
 
@@ -575,16 +573,16 @@ static bool rtFtpServerPathIsValid(const char *pcszPath, bool fIsAbsolute)
  *
  * @returns VBox status code.
  * @param   pState              Client state to set current working directory for.
- * @param   pcszPath            Working directory to set.
+ * @param   pszPath             Working directory to set.
  */
-static int rtFtpSetCWD(PRTFTPSERVERCLIENTSTATE pState, const char *pcszPath)
+static int rtFtpSetCWD(PRTFTPSERVERCLIENTSTATE pState, const char *pszPath)
 {
     RTStrFree(pState->pszCWD);
 
-    if (!rtFtpServerPathIsValid(pcszPath, false /* fIsAbsolute */))
+    if (!rtFtpServerPathIsValid(pszPath, false /* fIsAbsolute */))
         return VERR_INVALID_PARAMETER;
 
-    pState->pszCWD = RTStrDup(pcszPath);
+    pState->pszCWD = RTStrDup(pszPath);
 
     LogFlowFunc(("Current CWD is now '%s'\n", pState->pszCWD));
 
@@ -598,11 +596,11 @@ static int rtFtpSetCWD(PRTFTPSERVERCLIENTSTATE pState, const char *pcszPath)
  *
  * @returns VBox status code, or VERR_NOT_FOUND if user has not been found.
  * @param   pClient             Client to look up user for.
- * @param   pcszUser            User name to look up.
+ * @param   pszUser             User name to look up.
  */
-static int rtFtpServerLookupUser(PRTFTPSERVERCLIENT pClient, const char *pcszUser)
+static int rtFtpServerLookupUser(PRTFTPSERVERCLIENT pClient, const char *pszUser)
 {
-    RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnUserConnect, pcszUser);
+    RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnUserConnect, pszUser);
 }
 
 /**
@@ -610,12 +608,12 @@ static int rtFtpServerLookupUser(PRTFTPSERVERCLIENT pClient, const char *pcszUse
  *
  * @returns VBox status code, or VERR_ACCESS_DENIED if authentication failed.
  * @param   pClient             Client to authenticate.
- * @param   pcszUser            User name to authenticate with.
- * @param   pcszPassword        Password to authenticate with.
+ * @param   pszUser             User name to authenticate with.
+ * @param   pszPassword         Password to authenticate with.
  */
-static int rtFtpServerAuthenticate(PRTFTPSERVERCLIENT pClient, const char *pcszUser, const char *pcszPassword)
+static int rtFtpServerAuthenticate(PRTFTPSERVERCLIENT pClient, const char *pszUser, const char *pszPassword)
 {
-    RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnUserAuthenticate, pcszUser, pcszPassword);
+    RTFTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnUserAuthenticate, pszUser, pszPassword);
 }
 
 /**
@@ -712,13 +710,13 @@ static int rtFtpServerFsObjInfoToStr(PRTFSOBJINFO pObjInfo, char *pszFsObjInfo, 
  * See RFC 959, 4.1.2.
  *
  * @returns VBox status code.
- * @param   pcszStr             String to parse.
+ * @param   pszStr              String to parse.
  * @param   pAddr               Where to store the IPv4 address on success.
  * @param   puPort              Where to store the port number on success.
  */
-static int rtFtpParseHostAndPort(const char *pcszStr, PRTNETADDRIPV4 pAddr, uint16_t *puPort)
+static int rtFtpParseHostAndPort(const char *pszStr, PRTNETADDRIPV4 pAddr, uint16_t *puPort)
 {
-    AssertPtrReturn(pcszStr, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszStr, VERR_INVALID_POINTER);
     AssertPtrReturn(pAddr, VERR_INVALID_POINTER);
     AssertPtrReturn(puPort, VERR_INVALID_POINTER);
 
@@ -727,7 +725,7 @@ static int rtFtpParseHostAndPort(const char *pcszStr, PRTNETADDRIPV4 pAddr, uint
 
     /* Parse IP (v4). */
     /** @todo I don't think IPv6 ever will be a thing here, or will it? */
-    rc = RTStrToUInt8Ex(pcszStr, &pszNext, 10, &pAddr->au8[0]);
+    rc = RTStrToUInt8Ex(pszStr, &pszNext, 10, &pAddr->au8[0]);
     if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS)
         return VERR_INVALID_PARAMETER;
     if (*pszNext++ != ',')
@@ -773,15 +771,15 @@ static int rtFtpParseHostAndPort(const char *pcszStr, PRTNETADDRIPV4 pAddr, uint
  *
  * @returns Duplicated argument vector or NULL if failed or no arguments given. Needs to be free'd with rtFtpCmdArgsFree().
  * @param   cArgs               Number of arguments in argument vector.
- * @param   apcszArgs           Pointer to argument vector to duplicate.
+ * @param   apszArgs            Pointer to argument vector to duplicate.
  */
-static char** rtFtpCmdArgsDup(uint8_t cArgs, const char * const *apcszArgs)
+static char** rtFtpCmdArgsDup(uint8_t cArgs, const char * const *apszArgs)
 {
     if (!cArgs)
         return NULL;
 
-    char **apcszArgsDup = (char **)RTMemAlloc(cArgs * sizeof(char *));
-    if (!apcszArgsDup)
+    char **apszArgsDup = (char **)RTMemAlloc(cArgs * sizeof(char *));
+    if (!apszArgsDup)
     {
         AssertFailed();
         return NULL;
@@ -792,35 +790,35 @@ static char** rtFtpCmdArgsDup(uint8_t cArgs, const char * const *apcszArgs)
     uint8_t i;
     for (i = 0; i < cArgs; i++)
     {
-        apcszArgsDup[i] = RTStrDup(apcszArgs[i]);
-        if (!apcszArgsDup[i])
+        apszArgsDup[i] = RTStrDup(apszArgs[i]);
+        if (!apszArgsDup[i])
             rc2 = VERR_NO_MEMORY;
     }
 
     if (RT_FAILURE(rc2))
     {
         while (i--)
-            RTStrFree(apcszArgsDup[i]);
+            RTStrFree(apszArgsDup[i]);
 
-        RTMemFree(apcszArgsDup);
+        RTMemFree(apszArgsDup);
         return NULL;
     }
 
-    return apcszArgsDup;
+    return apszArgsDup;
 }
 
 /**
  * Frees a command argument vector.
  *
  * @param   cArgs               Number of arguments in argument vector.
- * @param   papcszArgs          Pointer to argument vector to free.
+ * @param   papszArgs           Pointer to argument vector to free.
  */
-static void rtFtpCmdArgsFree(uint8_t cArgs, char **papcszArgs)
+static void rtFtpCmdArgsFree(uint8_t cArgs, char **papszArgs)
 {
     while (cArgs--)
-        RTStrFree(papcszArgs[cArgs]);
+        RTStrFree(papszArgs[cArgs]);
 
-    RTMemFree(papcszArgs);
+    RTMemFree(papszArgs);
 }
 
 /**
@@ -1000,14 +998,14 @@ static int rtFtpServerDataConnAddData(PRTFTPSERVERDATACONN pDataConn, const void
  *
  * @returns VBox status code.
  * @param   pDataConn           Data connection to write to.
- * @param   pcszFormat          Format string to send. No (terminal) termination added.
+ * @param   pszFormat           Format string to send. No (terminal) termination added.
  */
-static int rtFtpServerDataConnPrintf(PRTFTPSERVERDATACONN pDataConn, const char *pcszFormat, ...)
+static int rtFtpServerDataConnPrintf(PRTFTPSERVERDATACONN pDataConn, const char *pszFormat, ...)
 {
     va_list args;
-    va_start(args, pcszFormat);
+    va_start(args, pszFormat);
     char *pszFmt = NULL;
-    const int cch = RTStrAPrintfV(&pszFmt, pcszFormat, args);
+    const int cch = RTStrAPrintfV(&pszFmt, pszFormat, args);
     va_end(args);
     AssertReturn(cch > 0, VERR_NO_MEMORY);
 
@@ -1056,12 +1054,12 @@ static DECLCALLBACK(int) rtFtpServerDataConnFileWriteThread(RTTHREAD ThreadSelf,
     RTThreadUserSignal(RTThreadSelf());
 
     AssertPtr(pDataConn->papszArgs);
-    const char *pcszFile = pDataConn->papszArgs[0];
-    AssertPtr(pcszFile);
+    const char *pszFile = pDataConn->papszArgs[0];
+    AssertPtr(pszFile);
 
     void *pvHandle = NULL; /* Opaque handle known to the actual implementation. */
 
-    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileOpen, pcszFile,
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileOpen, pszFile,
                                    RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &pvHandle);
     if (RT_SUCCESS(rc))
     {
@@ -1141,10 +1139,10 @@ static int rtFtpServerDataConnCreate(PRTFTPSERVERCLIENT pClient, PRTFTPSERVERDAT
  * @param   pDataConn           Data connection to start.
  * @param   pfnThread           Thread function for the data connection to use.
  * @param   cArgs               Number of arguments.
- * @param   apcszArgs           Array of arguments.
+ * @param   apszArgs            Array of arguments.
  */
 static int rtFtpServerDataConnStart(PRTFTPSERVERDATACONN pDataConn, PFNRTTHREAD pfnThread,
-                                    uint8_t cArgs, const char * const *apcszArgs)
+                                    uint8_t cArgs, const char * const *apszArgs)
 {
     AssertPtrReturn(pDataConn, VERR_INVALID_POINTER);
     AssertPtrReturn(pfnThread, VERR_INVALID_POINTER);
@@ -1157,7 +1155,7 @@ static int rtFtpServerDataConnStart(PRTFTPSERVERDATACONN pDataConn, PFNRTTHREAD 
 
     if (cArgs)
     {
-        pDataConn->papszArgs = rtFtpCmdArgsDup(cArgs, apcszArgs);
+        pDataConn->papszArgs = rtFtpCmdArgsDup(cArgs, apszArgs);
         if (!pDataConn->papszArgs)
             rc = VERR_NO_MEMORY;
     }
@@ -1278,9 +1276,9 @@ static void rtFtpServerDataConnReset(PRTFTPSERVERDATACONN pDataConn)
 *   Command Protocol Handlers                                                                                                    *
 *********************************************************************************************************************************/
 
-static DECLCALLBACK(int) rtFtpServerHandleABOR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleABOR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
-    RT_NOREF(cArgs, apcszArgs);
+    RT_NOREF(cArgs, apszArgs);
 
     int rc = rtFtpServerDataConnClose(pClient->pDataConn);
     if (RT_SUCCESS(rc))
@@ -1294,9 +1292,9 @@ static DECLCALLBACK(int) rtFtpServerHandleABOR(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleCDUP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleCDUP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
-    RT_NOREF(cArgs, apcszArgs);
+    RT_NOREF(cArgs, apszArgs);
 
     int rc;
 
@@ -1330,31 +1328,31 @@ static DECLCALLBACK(int) rtFtpServerHandleCDUP(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleCWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleCWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
 
     int rc;
 
-    const char *pcszPath = apcszArgs[0];
+    const char *pszPath = apszArgs[0];
 
-    if (!rtFtpServerPathIsValid(pcszPath, false /* fIsAbsolute */))
+    if (!rtFtpServerPathIsValid(pszPath, false /* fIsAbsolute */))
         return VERR_INVALID_PARAMETER;
 
-    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnPathSetCurrent, pcszPath);
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnPathSetCurrent, pszPath);
 
     if (RT_SUCCESS(rc))
-        rc = rtFtpSetCWD(&pClient->State, pcszPath);
+        rc = rtFtpSetCWD(&pClient->State, pszPath);
 
     return rtFtpServerSendReplyRc(pClient,
                                     RT_SUCCESS(rc)
                                   ? RTFTPSERVER_REPLY_OKAY : RTFTPSERVER_REPLY_CONN_REQ_FILE_ACTION_NOT_TAKEN);
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleFEAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleFEAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
-    RT_NOREF(cArgs, apcszArgs);
+    RT_NOREF(cArgs, apszArgs);
 
     int rc = rtFtpServerSendReplyStr(pClient, "211-BEGIN Features:");
     if (RT_SUCCESS(rc))
@@ -1870,22 +1868,22 @@ static DECLCALLBACK(int) rtFtpServerDataConnListThread(RTTHREAD ThreadSelf, void
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
     /* If no argument is given, use the server's CWD as the path. */
-    const char *pcszPath = cArgs ? apcszArgs[0] : pClient->State.pszCWD;
-    AssertPtr(pcszPath);
+    const char *pszPath = cArgs ? apszArgs[0] : pClient->State.pszCWD;
+    AssertPtr(pszPath);
 
     int rc = VINF_SUCCESS;
 
-    if (!rtFtpServerPathIsValid(pcszPath, false /* fIsAbsolute */))
+    if (!rtFtpServerPathIsValid(pszPath, false /* fIsAbsolute */))
     {
         int rc2 = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_CONN_REQ_FILE_ACTION_NOT_TAKEN);
         AssertRC(rc2);
     }
     else
     {
-        RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileStat, pcszPath, NULL /* PRTFSOBJINFO */);
+        RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileStat, pszPath, NULL /* PRTFSOBJINFO */);
 
         if (RT_SUCCESS(rc))
         {
@@ -1893,7 +1891,7 @@ static DECLCALLBACK(int) rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8
             {
                 rc = rtFtpServerDataConnCreate(pClient, &pClient->pDataConn);
                 if (RT_SUCCESS(rc))
-                    rc = rtFtpServerDataConnStart(pClient->pDataConn, rtFtpServerDataConnListThread, cArgs, apcszArgs);
+                    rc = rtFtpServerDataConnStart(pClient->pDataConn, rtFtpServerDataConnListThread, cArgs, apszArgs);
 
                 int rc2 = rtFtpServerSendReplyRc(  pClient, RT_SUCCESS(rc)
                                                  ? RTFTPSERVER_REPLY_DATACONN_ALREADY_OPEN
@@ -1916,17 +1914,17 @@ static DECLCALLBACK(int) rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleMODE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleMODE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
-    RT_NOREF(pClient, cArgs, apcszArgs);
+    RT_NOREF(pClient, cArgs, apszArgs);
 
     /** @todo Anything to do here? */
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleNOOP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleNOOP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
-    RT_NOREF(cArgs, apcszArgs);
+    RT_NOREF(cArgs, apszArgs);
 
     /* Save timestamp of last command sent. */
     pClient->State.tsLastCmdMs = RTTimeMilliTS();
@@ -1934,15 +1932,15 @@ static DECLCALLBACK(int) rtFtpServerHandleNOOP(PRTFTPSERVERCLIENT pClient, uint8
     return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
 }
 
-static DECLCALLBACK(int) rtFtpServerHandlePASS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandlePASS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
     if (cArgs != 1)
         return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
 
-    const char *pcszPassword = apcszArgs[0];
-    AssertPtrReturn(pcszPassword, VERR_INVALID_PARAMETER);
+    const char *pszPassword = apszArgs[0];
+    AssertPtrReturn(pszPassword, VERR_INVALID_PARAMETER);
 
-    int rc = rtFtpServerAuthenticate(pClient, pClient->State.pszUser, pcszPassword);
+    int rc = rtFtpServerAuthenticate(pClient, pClient->State.pszUser, pszPassword);
     if (RT_SUCCESS(rc))
     {
         rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_LOGGED_IN_PROCEED);
@@ -1959,14 +1957,14 @@ static DECLCALLBACK(int) rtFtpServerHandlePASS(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandlePORT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandlePORT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
     if (cArgs != 1)
         return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
 
     RTFTPSERVER_REPLY rcClient;
 
-    int rc = rtFtpParseHostAndPort(apcszArgs[0], &pClient->DataConnAddr, &pClient->uDataConnPort);
+    int rc = rtFtpParseHostAndPort(apszArgs[0], &pClient->DataConnAddr, &pClient->uDataConnPort);
     if (RT_SUCCESS(rc))
         rcClient = RTFTPSERVER_REPLY_OKAY;
     else
@@ -1979,9 +1977,9 @@ static DECLCALLBACK(int) rtFtpServerHandlePORT(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandlePWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandlePWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
-    RT_NOREF(cArgs, apcszArgs);
+    RT_NOREF(cArgs, apszArgs);
 
     int rc;
 
@@ -1995,9 +1993,9 @@ static DECLCALLBACK(int) rtFtpServerHandlePWD(PRTFTPSERVERCLIENT pClient, uint8_
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleOPTS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleOPTS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
-    RT_NOREF(cArgs, apcszArgs);
+    RT_NOREF(cArgs, apszArgs);
 
     int rc = VINF_SUCCESS;
 
@@ -2008,9 +2006,9 @@ static DECLCALLBACK(int) rtFtpServerHandleOPTS(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
-    RT_NOREF(cArgs, apcszArgs);
+    RT_NOREF(cArgs, apszArgs);
 
     int rc = VINF_SUCCESS;
 
@@ -2031,16 +2029,16 @@ static DECLCALLBACK(int) rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
     if (cArgs != 1) /* File name needs to be present. */
         return VERR_INVALID_PARAMETER;
 
     int rc;
 
-    const char *pcszPath = apcszArgs[0];
+    const char *pszPath = apszArgs[0];
 
-    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileStat, pcszPath, NULL /* PRTFSOBJINFO */);
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileStat, pszPath, NULL /* PRTFSOBJINFO */);
 
     if (RT_SUCCESS(rc))
     {
@@ -2050,7 +2048,7 @@ static DECLCALLBACK(int) rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8
             {
                 rc = rtFtpServerDataConnCreate(pClient, &pClient->pDataConn);
                 if (RT_SUCCESS(rc))
-                    rc = rtFtpServerDataConnStart(pClient->pDataConn, rtFtpServerDataConnFileWriteThread, cArgs, apcszArgs);
+                    rc = rtFtpServerDataConnStart(pClient->pDataConn, rtFtpServerDataConnFileWriteThread, cArgs, apszArgs);
 
                 int rc2 = rtFtpServerSendReplyRc(  pClient, RT_SUCCESS(rc)
                                                  ? RTFTPSERVER_REPLY_DATACONN_ALREADY_OPEN
@@ -2079,17 +2077,17 @@ static DECLCALLBACK(int) rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleSIZE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleSIZE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
 
     int rc;
 
-    const char *pcszPath = apcszArgs[0];
+    const char *pszPath = apszArgs[0];
     uint64_t uSize = 0;
 
-    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileGetSize, pcszPath, &uSize);
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileGetSize, pszPath, &uSize);
 
     if (RT_SUCCESS(rc))
     {
@@ -2104,7 +2102,7 @@ static DECLCALLBACK(int) rtFtpServerHandleSIZE(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
@@ -2114,9 +2112,9 @@ static DECLCALLBACK(int) rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8
     RTFSOBJINFO objInfo;
     RT_ZERO(objInfo);
 
-    const char *pcszPath = apcszArgs[0];
+    const char *pszPath = apszArgs[0];
 
-    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileStat, pcszPath, &objInfo);
+    RTFTPSERVER_HANDLE_CALLBACK_VA(pfnOnFileStat, pszPath, &objInfo);
 
     if (RT_SUCCESS(rc))
     {
@@ -2125,7 +2123,7 @@ static DECLCALLBACK(int) rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8
         if (RT_SUCCESS(rc))
         {
             char szFsPathInfo[RTPATH_MAX + 16];
-            const ssize_t cchPathInfo = RTStrPrintf2(szFsPathInfo, sizeof(szFsPathInfo), " %2zu %s\n", strlen(pcszPath), pcszPath);
+            const ssize_t cchPathInfo = RTStrPrintf2(szFsPathInfo, sizeof(szFsPathInfo), " %2zu %s\n", strlen(pszPath), pszPath);
             if (cchPathInfo > 0)
             {
                 rc = RTStrCat(szFsObjInfo, sizeof(szFsObjInfo), szFsPathInfo);
@@ -2146,16 +2144,16 @@ static DECLCALLBACK(int) rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleSTRU(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleSTRU(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
 
-    const char *pcszType = apcszArgs[0];
+    const char *pszType = apszArgs[0];
 
     int rc;
 
-    if (!RTStrICmp(pcszType, "F"))
+    if (!RTStrICmp(pszType, "F"))
     {
         pClient->State.enmStructType = RTFTPSERVER_STRUCT_TYPE_FILE;
 
@@ -2167,9 +2165,9 @@ static DECLCALLBACK(int) rtFtpServerHandleSTRU(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleSYST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleSYST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
-    RT_NOREF(cArgs, apcszArgs);
+    RT_NOREF(cArgs, apszArgs);
 
     char szOSInfo[64];
     int rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szOSInfo, sizeof(szOSInfo));
@@ -2179,20 +2177,20 @@ static DECLCALLBACK(int) rtFtpServerHandleSYST(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleTYPE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleTYPE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
 
-    const char *pcszType = apcszArgs[0];
+    const char *pszType = apszArgs[0];
 
     int rc = VINF_SUCCESS;
 
-    if (!RTStrICmp(pcszType, "A"))
+    if (!RTStrICmp(pszType, "A"))
     {
         pClient->State.enmDataType = RTFTPSERVER_DATA_TYPE_ASCII;
     }
-    else if (!RTStrICmp(pcszType, "I")) /* Image (binary). */
+    else if (!RTStrICmp(pszType, "I")) /* Image (binary). */
     {
         pClient->State.enmDataType = RTFTPSERVER_DATA_TYPE_IMAGE;
     }
@@ -2205,20 +2203,20 @@ static DECLCALLBACK(int) rtFtpServerHandleTYPE(PRTFTPSERVERCLIENT pClient, uint8
     return rc;
 }
 
-static DECLCALLBACK(int) rtFtpServerHandleUSER(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleUSER(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
 
-    const char *pcszUser = apcszArgs[0];
-    AssertPtrReturn(pcszUser, VERR_INVALID_PARAMETER);
+    const char *pszUser = apszArgs[0];
+    AssertPtrReturn(pszUser, VERR_INVALID_PARAMETER);
 
     rtFtpServerClientStateReset(&pClient->State);
 
-    int rc = rtFtpServerLookupUser(pClient, pcszUser);
+    int rc = rtFtpServerLookupUser(pClient, pszUser);
     if (RT_SUCCESS(rc))
     {
-        pClient->State.pszUser = RTStrDup(pcszUser);
+        pClient->State.pszUser = RTStrDup(pszUser);
         AssertPtrReturn(pClient->State.pszUser, VERR_NO_MEMORY);
 
         rc = rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_USERNAME_OKAY_NEED_PASSWORD);
@@ -2244,23 +2242,23 @@ static DECLCALLBACK(int) rtFtpServerHandleUSER(PRTFTPSERVERCLIENT pClient, uint8
  * Parses FTP command arguments handed in by the client.
  *
  * @returns VBox status code.
- * @param   pcszCmdParms        Pointer to command arguments, if any. Can be NULL if no arguments are given.
+ * @param   pszCmdParms         Pointer to command arguments, if any. Can be NULL if no arguments are given.
  * @param   pcArgs              Returns the number of parsed arguments, separated by a space (hex 0x20).
- * @param   ppapcszArgs         Returns the string array of parsed arguments. Needs to be free'd with rtFtpServerCmdArgsFree().
+ * @param   ppapszArgs          Returns the string array of parsed arguments. Needs to be free'd with rtFtpServerCmdArgsFree().
  */
-static int rtFtpServerCmdArgsParse(const char *pcszCmdParms, uint8_t *pcArgs, char ***ppapcszArgs)
+static int rtFtpServerCmdArgsParse(const char *pszCmdParms, uint8_t *pcArgs, char ***ppapszArgs)
 {
     *pcArgs      = 0;
-    *ppapcszArgs = NULL;
+    *ppapszArgs = NULL;
 
-    if (!pcszCmdParms) /* No parms given? Bail out early. */
+    if (!pszCmdParms) /* No parms given? Bail out early. */
         return VINF_SUCCESS;
 
     /** @todo Anything else to do here? */
     /** @todo Check if quoting is correct. */
 
     int cArgs = 0;
-    int rc = RTGetOptArgvFromString(ppapcszArgs, &cArgs, pcszCmdParms, RTGETOPTARGV_CNV_QUOTE_MS_CRT, " " /* Separators */);
+    int rc = RTGetOptArgvFromString(ppapszArgs, &cArgs, pszCmdParms, RTGETOPTARGV_CNV_QUOTE_MS_CRT, " " /* Separators */);
     if (RT_SUCCESS(rc))
     {
         if (cArgs <= UINT8_MAX)
@@ -2277,11 +2275,11 @@ static int rtFtpServerCmdArgsParse(const char *pcszCmdParms, uint8_t *pcArgs, ch
 /**
  * Frees a formerly argument string array parsed by rtFtpServerCmdArgsParse().
  *
- * @param   ppapcszArgs         Argument string array to free.
+ * @param   ppapszArgs          Argument string array to free.
  */
-static void rtFtpServerCmdArgsFree(char **ppapcszArgs)
+static void rtFtpServerCmdArgsFree(char **ppapszArgs)
 {
-    RTGetOptArgvFree(ppapcszArgs);
+    RTGetOptArgvFree(ppapszArgs);
 }
 
 /**
@@ -2289,24 +2287,20 @@ static void rtFtpServerCmdArgsFree(char **ppapcszArgs)
  *
  * @returns VBox status code.
  * @param   pClient             Client to process commands for.
- * @param   pcszCmd             Command string to parse and handle.
+ * @param   pszCmd              Command string to parse and handle.
  * @param   cbCmd               Size (in bytes) of command string.
  */
-static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd, size_t cbCmd)
+static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pszCmd, size_t cbCmd)
 {
-    /** @todo r=bird: pcszCmd is a misnomer, it is _clearly_ not const as you
-     * modify it all over the place!  Please do _not_use 'c' to mean 'const', it
-     * means 'count of'. */
     /* Make sure to terminate the string in any case. */
-    pcszCmd[RT_MIN(RTFTPSERVER_MAX_CMD_LEN, cbCmd)] = '\0';
+    pszCmd[RT_MIN(RTFTPSERVER_MAX_CMD_LEN, cbCmd)] = '\0';
 
     /* A tiny bit of sanitation. */
-    RTStrStripL(pcszCmd);
+    RTStrStripL(pszCmd);
 
     /* First, terminate string by finding the command end marker (telnet style). */
     /** @todo Not sure if this is entirely correct and/or needs tweaking; good enough for now as it seems. */
-    /** @todo r=bird: Why are you using the case-insensitive version here? */
-    char *pszCmdEnd = RTStrIStr(pcszCmd, "\r\n");
+    char *pszCmdEnd = RTStrStr(pszCmd, "\r\n");
     if (pszCmdEnd)
         *pszCmdEnd = '\0';
 
@@ -2317,7 +2311,7 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
 
     uint8_t cArgs     = 0;
     char  **papszArgs = NULL;
-    int rc = rtFtpServerCmdArgsParse(pcszCmd, &cArgs, &papszArgs);
+    int rc = rtFtpServerCmdArgsParse(pszCmd, &cArgs, &papszArgs);
     if (   RT_SUCCESS(rc)
         && cArgs) /* At least the actual command (without args) must be present. */
     {
@@ -2414,7 +2408,7 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
  *       don't use C++ overloading in C code, it's unnecessary and confusing
  *       (even in C++ code, see init() methods in the API).
  */
-static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
+static int rtFtpServerClientMain(PRTFTPSERVERCLIENT pClient)
 {
     int rc;
 
@@ -2526,7 +2520,7 @@ static DECLCALLBACK(int) rtFtpServerClientThread(RTSOCKET hSocket, void *pvUser)
     {
         ASMAtomicIncU32(&pThis->cClients);
 
-        rc = rtFtpServerProcessCommands(&Client);
+        rc = rtFtpServerClientMain(&Client);
 
         ASMAtomicDecU32(&pThis->cClients);
     }
@@ -2536,11 +2530,11 @@ static DECLCALLBACK(int) rtFtpServerClientThread(RTSOCKET hSocket, void *pvUser)
     return rc;
 }
 
-RTR3DECL(int) RTFtpServerCreate(PRTFTPSERVER phFTPServer, const char *pcszAddress, uint16_t uPort,
+RTR3DECL(int) RTFtpServerCreate(PRTFTPSERVER phFTPServer, const char *pszAddress, uint16_t uPort,
                                 PRTFTPSERVERCALLBACKS pCallbacks, void *pvUser, size_t cbUser)
 {
     AssertPtrReturn(phFTPServer,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pcszAddress,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pszAddress,  VERR_INVALID_POINTER);
     AssertReturn   (uPort,        VERR_INVALID_PARAMETER);
     AssertPtrReturn(pCallbacks,   VERR_INVALID_POINTER);
     /* pvUser is optional. */
@@ -2555,7 +2549,7 @@ RTR3DECL(int) RTFtpServerCreate(PRTFTPSERVER phFTPServer, const char *pcszAddres
         pThis->pvUser    = pvUser;
         pThis->cbUser    = cbUser;
 
-        rc = RTTcpServerCreate(pcszAddress, uPort, RTTHREADTYPE_DEFAULT, "ftpsrv",
+        rc = RTTcpServerCreate(pszAddress, uPort, RTTHREADTYPE_DEFAULT, "ftpsrv",
                                rtFtpServerClientThread, pThis /* pvUser */, &pThis->pTCPServer);
         if (RT_SUCCESS(rc))
         {
