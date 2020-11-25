@@ -121,7 +121,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<ScalingOptimizationType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<MiniToolbarAlignment>();
 #endif
 template<> SHARED_LIBRARY_STUFF bool canConvert<InformationElementType>();
-template<> SHARED_LIBRARY_STUFF bool canConvert<MaxGuestResolutionPolicy>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<MaximumGuestScreenSizePolicy>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIMediumFormat>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UISettingsDefs::RecordingMode>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<VMResourceMonitorColumn>();
@@ -261,8 +261,8 @@ template<> SHARED_LIBRARY_STUFF InformationElementType fromString<InformationEle
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const InformationElementType &informationElementType);
 template<> SHARED_LIBRARY_STUFF InformationElementType fromInternalString<InformationElementType>(const QString &strInformationElementType);
 template<> SHARED_LIBRARY_STUFF QIcon toIcon(const InformationElementType &informationElementType);
-template<> SHARED_LIBRARY_STUFF QString toInternalString(const MaxGuestResolutionPolicy &enmMaxGuestResolutionPolicy);
-template<> SHARED_LIBRARY_STUFF MaxGuestResolutionPolicy fromInternalString<MaxGuestResolutionPolicy>(const QString &strMaxGuestResolutionPolicy);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const MaximumGuestScreenSizePolicy &enmMaximumGuestScreenSizePolicy);
+template<> SHARED_LIBRARY_STUFF MaximumGuestScreenSizePolicy fromInternalString<MaximumGuestScreenSizePolicy>(const QString &strMaximumGuestScreenSizePolicy);
 template<> SHARED_LIBRARY_STUFF QString toString(const UIMediumFormat &enmUIMediumFormat);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIMediumFormat &enmUIMediumFormat);
 template<> SHARED_LIBRARY_STUFF UIMediumFormat fromInternalString<UIMediumFormat>(const QString &strUIMediumFormat);

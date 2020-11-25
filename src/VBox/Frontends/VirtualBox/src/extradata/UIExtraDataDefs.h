@@ -1058,18 +1058,19 @@ enum InformationElementType
 Q_DECLARE_METATYPE(InformationElementType);
 
 
-/** Runtime UI: Maximum guest-screen resolution policy types.
-  * @note This policy determines which guest-screen resolutions we wish to
-  *       handle. We also accept anything smaller than the current resolution. */
-enum MaxGuestResolutionPolicy
+/** Runtime UI: Maximum guest-screen size policy types.
+  * @note This policy determines which guest-screen sizes we wish to
+  *       handle. We also accept anything smaller than the current size. */
+enum MaximumGuestScreenSizePolicy
 {
     /** Anything at all. */
-    MaxGuestResolutionPolicy_Any,
+    MaximumGuestScreenSizePolicy_Any,
     /** Anything up to a fixed size. */
-    MaxGuestResolutionPolicy_Fixed,
+    MaximumGuestScreenSizePolicy_Fixed,
     /** Anything up to host-screen available space. */
-    MaxGuestResolutionPolicy_Automatic
+    MaximumGuestScreenSizePolicy_Automatic
 };
+
 
 /** Manager UI: VM resource Monitor Column types.
   * @note The first element must be 0 and the rest must be consecutive */

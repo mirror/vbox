@@ -75,7 +75,7 @@ template<> bool canConvert<ScalingOptimizationType>() { return true; }
 template<> bool canConvert<MiniToolbarAlignment>() { return true; }
 #endif
 template<> bool canConvert<InformationElementType>() { return true; }
-template<> bool canConvert<MaxGuestResolutionPolicy>() { return true; }
+template<> bool canConvert<MaximumGuestScreenSizePolicy>() { return true; }
 template<> bool canConvert<UIMediumFormat>() { return true; }
 template<> bool canConvert<UISettingsDefs::RecordingMode>() { return true; }
 template<> bool canConvert<VMResourceMonitorColumn>(){ return true; };
@@ -2456,41 +2456,41 @@ template<> QIcon toIcon(const InformationElementType &informationElementType)
     return QIcon();
 }
 
-/* QString <= MaxGuestResolutionPolicy: */
-template<> QString toInternalString(const MaxGuestResolutionPolicy &enmMaxGuestResolutionPolicy)
+/* QString <= MaximumGuestScreenSizePolicy: */
+template<> QString toInternalString(const MaximumGuestScreenSizePolicy &enmMaximumGuestScreenSizePolicy)
 {
     QString strResult;
-    switch (enmMaxGuestResolutionPolicy)
+    switch (enmMaximumGuestScreenSizePolicy)
     {
-        case MaxGuestResolutionPolicy_Automatic: strResult = ""; break;
-        case MaxGuestResolutionPolicy_Any:       strResult = "any"; break;
+        case MaximumGuestScreenSizePolicy_Automatic: strResult = ""; break;
+        case MaximumGuestScreenSizePolicy_Any:       strResult = "any"; break;
         default:
         {
-            AssertMsgFailed(("No text for max guest resolution policy=%d", enmMaxGuestResolutionPolicy));
+            AssertMsgFailed(("No text for max guest resolution policy=%d", enmMaximumGuestScreenSizePolicy));
             break;
         }
     }
     return strResult;
 }
 
-/* MaxGuestResolutionPolicy <= QString: */
-template<> MaxGuestResolutionPolicy fromInternalString<MaxGuestResolutionPolicy>(const QString &strMaxGuestResolutionPolicy)
+/* MaximumGuestScreenSizePolicy <= QString: */
+template<> MaximumGuestScreenSizePolicy fromInternalString<MaximumGuestScreenSizePolicy>(const QString &strMaximumGuestScreenSizePolicy)
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys; QList<MaxGuestResolutionPolicy> values;
-    keys << "auto";   values << MaxGuestResolutionPolicy_Automatic;
+    QStringList keys; QList<MaximumGuestScreenSizePolicy> values;
+    keys << "auto";   values << MaximumGuestScreenSizePolicy_Automatic;
     /* Auto type for empty value: */
-    if (strMaxGuestResolutionPolicy.isEmpty())
-        return MaxGuestResolutionPolicy_Automatic;
+    if (strMaximumGuestScreenSizePolicy.isEmpty())
+        return MaximumGuestScreenSizePolicy_Automatic;
     /* Fixed type for value which can be parsed: */
-    if (QRegularExpression("[1-9]\\d*,[1-9]\\d*").match(strMaxGuestResolutionPolicy).hasMatch())
-        return MaxGuestResolutionPolicy_Fixed;
+    if (QRegularExpression("[1-9]\\d*,[1-9]\\d*").match(strMaximumGuestScreenSizePolicy).hasMatch())
+        return MaximumGuestScreenSizePolicy_Fixed;
     /* Any type for unknown words: */
-    if (!keys.contains(strMaxGuestResolutionPolicy, Qt::CaseInsensitive))
-        return MaxGuestResolutionPolicy_Any;
+    if (!keys.contains(strMaximumGuestScreenSizePolicy, Qt::CaseInsensitive))
+        return MaximumGuestScreenSizePolicy_Any;
     /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strMaxGuestResolutionPolicy, Qt::CaseInsensitive)));
+    return values.at(keys.indexOf(QRegExp(strMaximumGuestScreenSizePolicy, Qt::CaseInsensitive)));
 }
 
 /* QString <= UIMediumFormat: */

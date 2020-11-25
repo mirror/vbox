@@ -349,9 +349,8 @@ protected:
     /** Holds current host-screen number. */
     int m_iHostScreenNumber;
 
-    /** The policy for calculating the maximum guest resolution which we wish
-     * to handle. */
-    MaxGuestResolutionPolicy m_maxGuestSizePolicy;
+    /** Holds the maximum guest screen size policy. */
+    MaximumGuestScreenSizePolicy m_enmMaximumGuestScreenSizePolicy;
     /** The maximum guest size for fixed size policy. */
     QSize m_fixedMaxGuestSize;
     /** Maximum guest resolution which we wish to handle.  Must be accessed

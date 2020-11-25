@@ -638,7 +638,7 @@ UIMachineView::UIMachineView(UIMachineWindow *pMachineWindow, ulong uScreenId)
     , m_pFrameBuffer(0)
     , m_previousState(KMachineState_Null)
     , m_iHostScreenNumber(0)
-    , m_maxGuestSizePolicy(MaxGuestResolutionPolicy_Automatic)
+    , m_enmMaximumGuestScreenSizePolicy(MaximumGuestScreenSizePolicy_Automatic)
     , m_u64MaxGuestSize(0)
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     , m_fIsDraggingFromGuest(false)
@@ -653,8 +653,8 @@ void UIMachineView::loadMachineViewSettings()
     {
         /* Remember the maximum guest size policy for
          * telling the guest about video modes we like: */
-        m_maxGuestSizePolicy = gEDataManager->maxGuestResolutionPolicy();
-        if (m_maxGuestSizePolicy == MaxGuestResolutionPolicy_Fixed)
+        m_enmMaximumGuestScreenSizePolicy = gEDataManager->maxGuestResolutionPolicy();
+        if (m_enmMaximumGuestScreenSizePolicy == MaximumGuestScreenSizePolicy_Fixed)
             m_fixedMaxGuestSize = gEDataManager->maxGuestResolutionForPolicyFixed();
     }
 }
@@ -979,15 +979,15 @@ int UIMachineView::visibleHeight() const
 void UIMachineView::setMaxGuestSize(const QSize &minimumSizeHint /* = QSize() */)
 {
     QSize maxSize;
-    switch (m_maxGuestSizePolicy)
+    switch (m_enmMaximumGuestScreenSizePolicy)
     {
-        case MaxGuestResolutionPolicy_Fixed:
+        case MaximumGuestScreenSizePolicy_Fixed:
             maxSize = m_fixedMaxGuestSize;
             break;
-        case MaxGuestResolutionPolicy_Automatic:
+        case MaximumGuestScreenSizePolicy_Automatic:
             maxSize = calculateMaxGuestSize().expandedTo(minimumSizeHint);
             break;
-        case MaxGuestResolutionPolicy_Any:
+        case MaximumGuestScreenSizePolicy_Any:
             /* (0, 0) means any of course. */
             maxSize = QSize(0, 0);
     }

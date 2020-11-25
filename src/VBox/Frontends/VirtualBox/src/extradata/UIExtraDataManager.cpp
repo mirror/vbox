@@ -2430,16 +2430,16 @@ void UIExtraDataManager::setLanguageId(const QString &strLanguageId)
     setExtraDataString(GUI_LanguageID, strLanguageId);
 }
 
-MaxGuestResolutionPolicy UIExtraDataManager::maxGuestResolutionPolicy()
+MaximumGuestScreenSizePolicy UIExtraDataManager::maxGuestResolutionPolicy()
 {
     /* Return maximum guest-screen resolution policy: */
-    return gpConverter->fromInternalString<MaxGuestResolutionPolicy>(extraDataString(GUI_MaxGuestResolution));
+    return gpConverter->fromInternalString<MaximumGuestScreenSizePolicy>(extraDataString(GUI_MaxGuestResolution));
 }
 
-void UIExtraDataManager::setMaxGuestScreenResolution(MaxGuestResolutionPolicy enmPolicy, const QSize resolution /* = QSize() */)
+void UIExtraDataManager::setMaxGuestScreenResolution(MaximumGuestScreenSizePolicy enmPolicy, const QSize resolution /* = QSize() */)
 {
     /* If policy is 'Fixed' => call the wrapper: */
-    if (enmPolicy == MaxGuestResolutionPolicy_Fixed)
+    if (enmPolicy == MaximumGuestScreenSizePolicy_Fixed)
         setMaxGuestResolutionForPolicyFixed(resolution);
     /* Otherwise => just store the value: */
     else
@@ -2450,10 +2450,10 @@ QSize UIExtraDataManager::maxGuestResolutionForPolicyFixed()
 {
     /* Acquire maximum guest-screen resolution policy: */
     const QString strPolicy = extraDataString(GUI_MaxGuestResolution);
-    const MaxGuestResolutionPolicy enmPolicy = gpConverter->fromInternalString<MaxGuestResolutionPolicy>(strPolicy);
+    const MaximumGuestScreenSizePolicy enmPolicy = gpConverter->fromInternalString<MaximumGuestScreenSizePolicy>(strPolicy);
 
     /* Make sure maximum guest-screen resolution policy is really Fixed: */
-    if (enmPolicy != MaxGuestResolutionPolicy_Fixed)
+    if (enmPolicy != MaximumGuestScreenSizePolicy_Fixed)
         return QSize();
 
     /* Parse maximum guest-screen resolution: */
@@ -2473,7 +2473,7 @@ void UIExtraDataManager::setMaxGuestResolutionForPolicyFixed(const QSize &resolu
 {
     /* If resolution is 'empty' => call the wrapper: */
     if (resolution.isEmpty())
-        setMaxGuestScreenResolution(MaxGuestResolutionPolicy_Automatic);
+        setMaxGuestScreenResolution(MaximumGuestScreenSizePolicy_Automatic);
     /* Otherwise => just store the value: */
     else
         setExtraDataString(GUI_MaxGuestResolution, QString("%1,%2").arg(resolution.width()).arg(resolution.height()));
