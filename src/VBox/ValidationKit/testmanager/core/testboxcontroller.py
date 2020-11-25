@@ -729,7 +729,7 @@ class TestBoxController(object): # pylint: disable=too-few-public-methods
                                                 cbFile = cbFile, fCommit = True);
 
         offFile  = 0;
-        oSrcFile = self._oSrvGlue.getBodyIoStream();
+        oSrcFile = self._oSrvGlue.getBodyIoStreamBinary();
         while offFile < cbFile:
             cbToRead = cbFile - offFile;
             if cbToRead > 256*1024:

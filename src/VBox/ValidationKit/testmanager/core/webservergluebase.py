@@ -279,6 +279,12 @@ class WebServerGlueBase(object):
         """
         raise WebServerGlueException('getUrlPath is not implemented');
 
+    def getBodyIoStreamBinary(self):
+        """
+        Returns file object for reading the binary HTML body.
+        """
+        raise WebServerGlueException('getBodyIoStreamBinary is not implemented');
+
     #
     # Output stuff.
     #

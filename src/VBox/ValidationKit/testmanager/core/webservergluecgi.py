@@ -83,3 +83,8 @@ class WebServerGlueCgi(WebServerGlueBase):
     def getBodyIoStream(self):
         return sys.stdin;
 
+    def getBodyIoStreamBinary(self):
+        # Python 3: sys.stdin.read() returns a string. To get untranslated
+        #           binary data we use the sys.stdin.buffer object instead.
+        return getattr(sys.stdin, 'buffer', sys.stdin);
+
