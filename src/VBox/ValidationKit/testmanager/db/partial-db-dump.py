@@ -75,8 +75,8 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
                            help = 'How many days to dump (counting backward from current date).');
         oParser.add_option('--load-dump-into-database', dest = 'fLoadDumpIntoDatabase', action = 'store_true',
                            default = False, help = 'For loading instead of dumping.');
-        oParser.add_option('--lmza', dest = 'fLmza', action = 'store_true',
-                           default = False, help = 'Use LMZA instead of Deflate compression.');
+        oParser.add_option('--store', dest = 'fStore', action = 'store_true',
+                           default = False, help = 'Do not compress the zip file.');
 
         (self.oConfig, _) = oParser.parse_args();
 
@@ -142,8 +142,8 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
         """ Does the dumping of the database. """
 
         enmCompression = zipfile.ZIP_DEFLATED;
-        if self.oConfig.fLmza:
-            enmCompression = getattr(zipfile, 'ZIP_LZMA', zipfile.ZIP_DEFLATED);
+        if self.oConfig.fStore:
+            enmCompression = zipfile.ZIP_STORED;
         oZipFile = zipfile.ZipFile(self.oConfig.sFilename, 'w', enmCompression);
 
         oDb.begin();
