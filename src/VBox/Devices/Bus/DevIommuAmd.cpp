@@ -2020,6 +2020,7 @@ static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, P
              pEvtDevTabHwErr->n.u64Addr, enmOp, pEvtDevTabHwErr->n.u2Type));
 }
 
+
 #ifdef IN_RING3
 /**
  * Initializes an ILLEGAL_COMMAND_ERROR event.
@@ -2791,7 +2792,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uD
             STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
         }
 
-#ifdef LOG_ENABLED
+#ifdef VBOX_STRICT
         static const char * const s_apszAccess[] = { "none", "read", "write" };
         Assert(fAccess > 0 && fAccess < RT_ELEMENTS(s_apszAccess));
         const char *pszAccess = s_apszAccess[fAccess];
@@ -2859,7 +2860,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemBulkAccess(PPDMDEVINS pDevIns, uint16_
             STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkWrite));
         }
 
-#ifdef LOG_ENABLED
+#ifdef VBOX_STRICT
         static const char * const s_apszAccess[] = { "none", "read", "write" };
         Assert(fAccess > 0 && fAccess < RT_ELEMENTS(s_apszAccess));
         const char *pszAccess = s_apszAccess[fAccess];
@@ -3263,8 +3264,8 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
     return rcStrict;
 }
 
-# ifdef IN_RING3
 
+#ifdef IN_RING3
 /**
  * Processes an IOMMU command.
  *
@@ -4818,7 +4819,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     return VINF_SUCCESS;
 }
 
-# else  /* !IN_RING3 */
+#else
 
 /**
  * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
@@ -4849,8 +4850,8 @@ static DECLCALLBACK(int) iommuAmdRZConstruct(PPDMDEVINS pDevIns)
 
     return VINF_SUCCESS;
 }
+#endif
 
-# endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
