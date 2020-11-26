@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_net_UINetworkRequestWidget_h
-#define FEQT_INCLUDED_SRC_net_UINetworkRequestWidget_h
+#ifndef FEQT_INCLUDED_SRC_networking_UINetworkRequestWidget_h
+#define FEQT_INCLUDED_SRC_networking_UINetworkRequestWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -27,7 +27,7 @@
 #include "UIPopupBox.h"
 
 /* Forward declarations: */
-class UINetworkManagerDialog;
+class UINetworkRequestManagerWindow;
 class QWidget;
 class QGridLayout;
 class QProgressBar;
@@ -50,10 +50,10 @@ signals:
 
 protected:
 
-    /** Allows creation of UINetworkRequestWidget to UINetworkManagerDialog only. */
-    friend class UINetworkManagerDialog;
+    /** Allows creation of UINetworkRequestWidget to UINetworkRequestManagerWindow only. */
+    friend class UINetworkRequestManagerWindow;
     /** Constructs @a pNetworkRequest widget passing @a pParent to the base-class. */
-    UINetworkRequestWidget(UINetworkManagerDialog *pParent, UINetworkRequest *pNetworkRequest);
+    UINetworkRequestWidget(UINetworkRequestManagerWindow *pParent, UINetworkRequest *pNetworkRequest);
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -98,5 +98,5 @@ private:
     QTimer *m_pTimer;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_net_UINetworkRequestWidget_h */
+#endif /* !FEQT_INCLUDED_SRC_networking_UINetworkRequestWidget_h */
 

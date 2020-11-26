@@ -35,8 +35,8 @@
 #include "UIProgressDialog.h"
 #include "UIErrorString.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkManager.h"
-# include "UINetworkManagerDialog.h"
+# include "UINetworkRequestManager.h"
+# include "UINetworkRequestManagerWindow.h"
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #include "UIModalWindowManager.h"
 #include "UIExtraDataManager.h"

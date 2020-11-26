@@ -18,8 +18,8 @@
 /* GUI includes: */
 #include "UIModalWindowManager.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkManager.h"
-# include "UINetworkManagerDialog.h"
+# include "UINetworkRequestManager.h"
+# include "UINetworkRequestManagerWindow.h"
 #endif
 #include "UIProgressDialog.h"
 

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UINetworkManagerDialog stuff declaration.
+ * VBox Qt GUI - UINetworkRequestManagerWindow stuff declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_net_UINetworkManagerDialog_h
-#define FEQT_INCLUDED_SRC_net_UINetworkManagerDialog_h
+#ifndef FEQT_INCLUDED_SRC_networking_UINetworkRequestManagerWindow_h
+#define FEQT_INCLUDED_SRC_networking_UINetworkRequestManagerWindow_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -39,7 +39,7 @@ class UINetworkRequest;
 class UINetworkRequestWidget;
 
 /** QMainWindow reimplementation to reflect network-requests. */
-class SHARED_LIBRARY_STUFF UINetworkManagerDialog : public QIWithRetranslateUI<QMainWindow>
+class SHARED_LIBRARY_STUFF UINetworkRequestManagerWindow : public QIWithRetranslateUI<QMainWindow>
 {
     Q_OBJECT;
 
@@ -55,10 +55,10 @@ public slots:
 
 protected:
 
-    /** Allows creation of UINetworkManagerDialog to UINetworkManager. */
-    friend class UINetworkManager;
+    /** Allows creation of UINetworkRequestManagerWindow to UINetworkRequestManager. */
+    friend class UINetworkRequestManager;
     /** Constructs Network Manager Dialog. */
-    UINetworkManagerDialog();
+    UINetworkRequestManagerWindow();
 
     /** Allows adding/removing network-request widgets to UINetworkRequest. */
     friend class UINetworkRequest;
@@ -93,5 +93,5 @@ private:
     QMap<QUuid, UINetworkRequestWidget*>  m_widgets;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_net_UINetworkManagerDialog_h */
+#endif /* !FEQT_INCLUDED_SRC_networking_UINetworkRequestManagerWindow_h */
 

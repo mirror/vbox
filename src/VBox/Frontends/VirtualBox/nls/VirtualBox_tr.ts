@@ -16746,7 +16746,7 @@ Oturum Panelini kullanın</translation>
     </message>
 </context>
 <context>
-    <name>UINetworkManagerDialog</name>
+    <name>UINetworkRequestManagerWindow</name>
     <message>
         <source>Network Operations Manager</source>
         <translation>Ağ İşlemleri Yöneticisi</translation>
@@ -16785,7 +16785,7 @@ Oturum Panelini kullanın</translation>
     </message>
 </context>
 <context>
-    <name>UINetworkManagerIndicator</name>
+    <name>UINetworkRequestManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
         <translation>Şu anki ağ işlemi:</translation>

@@ -9439,7 +9439,7 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>UINetworkManagerDialog</name>
+    <name>UINetworkRequestManagerWindow</name>
     <message>
         <source>Network Operations Manager</source>
         <translation>網路操作管理員</translation>
@@ -9474,7 +9474,7 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>UINetworkManagerIndicator</name>
+    <name>UINetworkRequestManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
         <translation>目前網路操作:</translation>

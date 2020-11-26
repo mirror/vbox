@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UINetworkManagerIndicator stuff implementation.
+ * VBox Qt GUI - UINetworkRequestManagerIndicator stuff implementation.
  */
 
 /*
@@ -18,25 +18,25 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIIconPool.h"
-#include "UINetworkManagerIndicator.h"
+#include "UINetworkRequestManagerIndicator.h"
 #include "UINetworkRequest.h"
 
 
-UINetworkManagerIndicator::UINetworkManagerIndicator()
+UINetworkRequestManagerIndicator::UINetworkRequestManagerIndicator()
 {
     /* Assign state icons: */
-    setStateIcon(UINetworkManagerIndicatorState_Idle, UIIconPool::iconSet(":/download_manager_16px.png"));
-    setStateIcon(UINetworkManagerIndicatorState_Loading, UIIconPool::iconSet(":/download_manager_loading_16px.png"));
-    setStateIcon(UINetworkManagerIndicatorState_Error, UIIconPool::iconSet(":/download_manager_error_16px.png"));
+    setStateIcon(UINetworkRequestManagerIndicatorState_Idle, UIIconPool::iconSet(":/download_manager_16px.png"));
+    setStateIcon(UINetworkRequestManagerIndicatorState_Loading, UIIconPool::iconSet(":/download_manager_loading_16px.png"));
+    setStateIcon(UINetworkRequestManagerIndicatorState_Error, UIIconPool::iconSet(":/download_manager_error_16px.png"));
 
     /* Translate content: */
     retranslateUi();
 }
 
-void UINetworkManagerIndicator::updateAppearance()
+void UINetworkRequestManagerIndicator::updateAppearance()
 {
     /* First of all, we are hiding LED in case of 'idle' state: */
-    if (state() == UINetworkManagerIndicatorState_Idle && !isHidden())
+    if (state() == UINetworkRequestManagerIndicatorState_Idle && !isHidden())
         hide();
 
     /* Prepare description: */
@@ -76,11 +76,11 @@ void UINetworkManagerIndicator::updateAppearance()
     setToolTip(strDecription);
 
     /* Finally, we are showing LED in case of state is not 'idle': */
-    if (state() != UINetworkManagerIndicatorState_Idle && isHidden())
+    if (state() != UINetworkRequestManagerIndicatorState_Idle && isHidden())
         show();
 }
 
-void UINetworkManagerIndicator::sltAddNetworkManagerIndicatorDescription(UINetworkRequest *pNetworkRequest)
+void UINetworkRequestManagerIndicator::sltAddNetworkManagerIndicatorDescription(UINetworkRequest *pNetworkRequest)
 {
     /* Make sure network-request is really exists: */
     AssertMsg(pNetworkRequest, ("Invalid network-request passed!"));
@@ -93,21 +93,21 @@ void UINetworkManagerIndicator::sltAddNetworkManagerIndicatorDescription(UINetwo
 
     /* Prepare network-request listeners: */
     connect(pNetworkRequest, static_cast<void(UINetworkRequest::*)(const QUuid&)>(&UINetworkRequest::sigStarted),
-            this, &UINetworkManagerIndicator::sltSetProgressToStarted);
+            this, &UINetworkRequestManagerIndicator::sltSetProgressToStarted);
     connect(pNetworkRequest, &UINetworkRequest::sigCanceled,
-            this, &UINetworkManagerIndicator::sltSetProgressToCanceled);
+            this, &UINetworkRequestManagerIndicator::sltSetProgressToCanceled);
     connect(pNetworkRequest, static_cast<void(UINetworkRequest::*)(const QUuid&)>(&UINetworkRequest::sigFinished),
-            this, &UINetworkManagerIndicator::sltSetProgressToFinished);
+            this, &UINetworkRequestManagerIndicator::sltSetProgressToFinished);
     connect(pNetworkRequest, static_cast<void(UINetworkRequest::*)(const QUuid&, const QString &)>(&UINetworkRequest::sigFailed),
-            this, &UINetworkManagerIndicator::sltSetProgressToFailed);
+            this, &UINetworkRequestManagerIndicator::sltSetProgressToFailed);
     connect(pNetworkRequest, static_cast<void(UINetworkRequest::*)(const QUuid&, qint64, qint64)>(&UINetworkRequest::sigProgress),
-            this, &UINetworkManagerIndicator::sltSetProgress);
+            this, &UINetworkRequestManagerIndicator::sltSetProgress);
 
     /* Update appearance: */
     recalculateIndicatorState();
 }
 
-void UINetworkManagerIndicator::sldRemoveNetworkManagerIndicatorDescription(const QUuid &uuid)
+void UINetworkRequestManagerIndicator::sldRemoveNetworkManagerIndicatorDescription(const QUuid &uuid)
 {
     /* Make sure network-request still registered: */
     AssertMsg(m_ids.contains(uuid), ("Network-request already unregistered!"));
@@ -123,13 +123,13 @@ void UINetworkManagerIndicator::sldRemoveNetworkManagerIndicatorDescription(cons
     recalculateIndicatorState();
 }
 
-void UINetworkManagerIndicator::retranslateUi()
+void UINetworkRequestManagerIndicator::retranslateUi()
 {
     /* Update appearance: */
     updateAppearance();
 }
 
-void UINetworkManagerIndicator::sltSetProgressToStarted(const QUuid &uuid)
+void UINetworkRequestManagerIndicator::sltSetProgressToStarted(const QUuid &uuid)
 {
     /* Make sure that network-request still registered: */
     AssertMsg(m_ids.contains(uuid), ("That network-request already unregistered!"));
@@ -146,7 +146,7 @@ void UINetworkManagerIndicator::sltSetProgressToStarted(const QUuid &uuid)
     recalculateIndicatorState();
 }
 
-void UINetworkManagerIndicator::sltSetProgressToCanceled(const QUuid &uuid)
+void UINetworkRequestManagerIndicator::sltSetProgressToCanceled(const QUuid &uuid)
 {
     /* Make sure that network-request still registered: */
     AssertMsg(m_ids.contains(uuid), ("That network-request already unregistered!"));
@@ -156,7 +156,7 @@ void UINetworkManagerIndicator::sltSetProgressToCanceled(const QUuid &uuid)
     recalculateIndicatorState();
 }
 
-void UINetworkManagerIndicator::sltSetProgressToFailed(const QUuid &uuid, const QString &)
+void UINetworkRequestManagerIndicator::sltSetProgressToFailed(const QUuid &uuid, const QString &)
 {
     /* Make sure that network-request still registered: */
     AssertMsg(m_ids.contains(uuid), ("That network-request already unregistered!"));
@@ -171,7 +171,7 @@ void UINetworkManagerIndicator::sltSetProgressToFailed(const QUuid &uuid, const 
     recalculateIndicatorState();
 }
 
-void UINetworkManagerIndicator::sltSetProgressToFinished(const QUuid &uuid)
+void UINetworkRequestManagerIndicator::sltSetProgressToFinished(const QUuid &uuid)
 {
     /* Make sure that network-request still registered: */
     AssertMsg(m_ids.contains(uuid), ("That network-request already unregistered!"));
@@ -181,7 +181,7 @@ void UINetworkManagerIndicator::sltSetProgressToFinished(const QUuid &uuid)
     recalculateIndicatorState();
 }
 
-void UINetworkManagerIndicator::sltSetProgress(const QUuid &uuid, qint64 iReceived, qint64 iTotal)
+void UINetworkRequestManagerIndicator::sltSetProgress(const QUuid &uuid, qint64 iReceived, qint64 iTotal)
 {
     /* Make sure that network-request still registered: */
     AssertMsg(m_ids.contains(uuid), ("That network-request already unregistered!"));
@@ -197,13 +197,13 @@ void UINetworkManagerIndicator::sltSetProgress(const QUuid &uuid, qint64 iReceiv
     updateAppearance();
 }
 
-void UINetworkManagerIndicator::recalculateIndicatorState()
+void UINetworkRequestManagerIndicator::recalculateIndicatorState()
 {
     /* Check if there are network-requests at all: */
     if (m_ids.isEmpty())
     {
         /* Set state to 'idle': */
-        setState(UINetworkManagerIndicatorState_Idle);
+        setState(UINetworkRequestManagerIndicatorState_Idle);
     }
     else
     {
@@ -222,12 +222,12 @@ void UINetworkManagerIndicator::recalculateIndicatorState()
         if (fIsThereAtLeastOneFailedNetworkRequest)
         {
             /* Set state to 'error': */
-            setState(UINetworkManagerIndicatorState_Error);
+            setState(UINetworkRequestManagerIndicatorState_Error);
         }
         else
         {
             /* Set state to 'loading': */
-            setState(UINetworkManagerIndicatorState_Loading);
+            setState(UINetworkRequestManagerIndicatorState_Loading);
         }
     }
 

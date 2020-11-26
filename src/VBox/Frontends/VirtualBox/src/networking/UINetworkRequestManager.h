@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UINetworkManager stuff declaration.
+ * VBox Qt GUI - UINetworkRequestManager stuff declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_net_UINetworkManager_h
-#define FEQT_INCLUDED_SRC_net_UINetworkManager_h
+#ifndef FEQT_INCLUDED_SRC_networking_UINetworkRequestManager_h
+#define FEQT_INCLUDED_SRC_networking_UINetworkRequestManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -33,13 +33,13 @@
 class QUrl;
 class QWidget;
 class UINetworkCustomer;
-class UINetworkManagerDialog;
-class UINetworkManagerIndicator;
+class UINetworkRequestManagerWindow;
+class UINetworkRequestManagerIndicator;
 class UINetworkRequest;
 
 /** QObject class extension.
   * Providing network access for VirtualBox application purposes. */
-class SHARED_LIBRARY_STUFF UINetworkManager : public QObject
+class SHARED_LIBRARY_STUFF UINetworkRequestManager : public QObject
 {
     Q_OBJECT;
 
@@ -61,14 +61,14 @@ public:
     static void destroy();
 
     /** Returns the singleton instance. */
-    static UINetworkManager *instance() { return s_pInstance; }
+    static UINetworkRequestManager *instance() { return s_pInstance; }
 
     /** Returns pointer to network-manager dialog. */
-    UINetworkManagerDialog *window() const;
+    UINetworkRequestManagerWindow *window() const;
 
     /** Creates network-manager state-indicator.
       * @remarks To be cleaned up by the caller. */
-    UINetworkManagerIndicator *createIndicator() const;
+    UINetworkRequestManagerIndicator *createIndicator() const;
 
     /** Registers @a pNetworkRequest in network-manager. */
     void registerNetworkRequest(UINetworkRequest *pNetworkRequest);
@@ -93,9 +93,9 @@ protected:
 private:
 
     /** Constructs network manager. */
-    UINetworkManager();
+    UINetworkRequestManager();
     /** Destructs network manager. */
-    ~UINetworkManager();
+    ~UINetworkRequestManager();
 
     /** Prepares all. */
     void prepare();
@@ -123,17 +123,17 @@ private slots:
 private:
 
     /** Holds the singleton instance. */
-    static UINetworkManager *s_pInstance;
+    static UINetworkRequestManager *s_pInstance;
 
     /** Holds the map of current requests. */
     QMap<QUuid, UINetworkRequest*> m_requests;
 
     /** Holds the network manager dialog instance. */
-    UINetworkManagerDialog *m_pNetworkManagerDialog;
+    UINetworkRequestManagerWindow *m_pNetworkManagerDialog;
 };
 
 /** Singleton Network Manager 'official' name. */
-#define gNetworkManager UINetworkManager::instance()
+#define gNetworkManager UINetworkRequestManager::instance()
 
-#endif /* !FEQT_INCLUDED_SRC_net_UINetworkManager_h */
+#endif /* !FEQT_INCLUDED_SRC_networking_UINetworkRequestManager_h */
 

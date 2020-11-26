@@ -25,13 +25,13 @@
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UIIconPool.h"
-#include "UINetworkManager.h"
-#include "UINetworkManagerDialog.h"
+#include "UINetworkRequestManager.h"
+#include "UINetworkRequestManagerWindow.h"
 #include "UINetworkRequest.h"
 #include "UINetworkRequestWidget.h"
 
 
-UINetworkRequestWidget::UINetworkRequestWidget(UINetworkManagerDialog *pParent, UINetworkRequest *pNetworkRequest)
+UINetworkRequestWidget::UINetworkRequestWidget(UINetworkRequestManagerWindow *pParent, UINetworkRequest *pNetworkRequest)
     : QIWithRetranslateUI<UIPopupBox>(pParent)
     , m_pContentWidget(new QWidget(this))
     , m_pMainLayout(new QGridLayout(m_pContentWidget))
@@ -124,13 +124,13 @@ void UINetworkRequestWidget::retranslateUi()
     const QString &strTitle = m_pNetworkRequest->description();
 
     /* Set popup title (default if missed): */
-    setTitle(strTitle.isEmpty() ? UINetworkManagerDialog::tr("Network Operation") : strTitle);
+    setTitle(strTitle.isEmpty() ? UINetworkRequestManagerWindow::tr("Network Operation") : strTitle);
 
     /* Translate retry button: */
-    m_pRetryButton->setStatusTip(UINetworkManagerDialog::tr("Restart network operation"));
+    m_pRetryButton->setStatusTip(UINetworkRequestManagerWindow::tr("Restart network operation"));
 
     /* Translate cancel button: */
-    m_pCancelButton->setStatusTip(UINetworkManagerDialog::tr("Cancel network operation"));
+    m_pCancelButton->setStatusTip(UINetworkRequestManagerWindow::tr("Cancel network operation"));
 
     /* Translate error label: */
     if (m_pNetworkRequest->reply())
@@ -226,6 +226,6 @@ const QString UINetworkRequestWidget::composeErrorText(QString strErrorText)
     strErrorText.prepend("<br>");
 
     /* Return final result: */
-    return UINetworkManagerDialog::tr("The network operation failed with the following error: %1.").arg(strErrorText);
+    return UINetworkRequestManagerWindow::tr("The network operation failed with the following error: %1.").arg(strErrorText);
 }
 

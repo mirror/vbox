@@ -20,7 +20,7 @@
 
 /* Local includes: */
 #include "UINetworkCustomer.h"
-#include "UINetworkManager.h"
+#include "UINetworkRequestManager.h"
 
 
 UINetworkCustomer::UINetworkCustomer(QObject *pParent /* = 0 */, bool fForceCall /* = true */)

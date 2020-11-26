@@ -9280,7 +9280,7 @@
     </message>
 </context>
 <context>
-    <name>UINetworkManagerDialog</name>
+    <name>UINetworkRequestManagerWindow</name>
     <message>
         <source>Network Operations Manager</source>
         <translation>Gestor d&apos;operacions de xarxa</translation>
@@ -9315,7 +9315,7 @@
     </message>
 </context>
 <context>
-    <name>UINetworkManagerIndicator</name>
+    <name>UINetworkRequestManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
         <translation>Operacions de xarxa actuals:</translation>

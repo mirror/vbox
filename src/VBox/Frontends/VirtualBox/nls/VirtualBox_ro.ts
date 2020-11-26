@@ -13400,7 +13400,7 @@ Acest director este folosit, dacÄƒ nu este explicit specificat altfel, atunci cÃ
     </message>
 </context>
 <context>
-    <name>UINetworkManagerDialog</name>
+    <name>UINetworkRequestManagerWindow</name>
     <message>
         <source>Network Operations Manager</source>
         <translation type="unfinished"></translation>
@@ -13435,7 +13435,7 @@ Acest director este folosit, dacÄƒ nu este explicit specificat altfel, atunci cÃ
     </message>
 </context>
 <context>
-    <name>UINetworkManagerIndicator</name>
+    <name>UINetworkRequestManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
         <translation type="unfinished"></translation>

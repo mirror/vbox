@@ -33,7 +33,7 @@
 #include "QIFileDialog.h"
 #include "UIActionPoolRuntime.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkManager.h"
+# include "UINetworkRequestManager.h"
 # include "UIDownloaderAdditions.h"
 #endif
 #include "UIHostComboEditor.h"

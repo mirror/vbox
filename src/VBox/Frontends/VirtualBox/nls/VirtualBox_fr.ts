@@ -15778,7 +15778,7 @@
     </message>
 </context>
 <context>
-    <name>UINetworkManagerDialog</name>
+    <name>UINetworkRequestManagerWindow</name>
     <message>
         <source>Network Operations Manager</source>
         <translation>Gestionnaire d&apos;opérations réseau</translation>
@@ -15817,7 +15817,7 @@
     </message>
 </context>
 <context>
-    <name>UINetworkManagerIndicator</name>
+    <name>UINetworkRequestManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
         <translation>Opérations réseau actuelles :</translation>

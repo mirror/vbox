@@ -30,7 +30,7 @@
 #include "UIShortcutPool.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UIExtraDataManager.h"
-# include "UINetworkManager.h"
+# include "UINetworkRequestManager.h"
 # include "UIUpdateManager.h"
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
@@ -2571,7 +2571,7 @@ void UIActionPool::prepareConnections()
 #endif
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     connect(action(UIActionIndex_M_Application_S_NetworkAccessManager), &UIAction::triggered,
-            gNetworkManager, &UINetworkManager::show, Qt::UniqueConnection);
+            gNetworkManager, &UINetworkRequestManager::show, Qt::UniqueConnection);
     connect(action(UIActionIndex_M_Application_S_CheckForUpdates), &UIAction::triggered,
             gUpdateManager, &UIUpdateManager::sltForceCheck, Qt::UniqueConnection);
 #endif

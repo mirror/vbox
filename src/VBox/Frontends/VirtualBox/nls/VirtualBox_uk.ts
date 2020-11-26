@@ -15597,7 +15597,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UINetworkManager</name>
+    <name>UINetworkRequestManager</name>
     <message>
         <source>Network Operation</source>
         <translation type="obsolete">Операції мережі</translation>
@@ -15632,7 +15632,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UINetworkManagerDialog</name>
+    <name>UINetworkRequestManagerWindow</name>
     <message>
         <source>Network Operations Manager</source>
         <translation>Керування мережевими операціями</translation>
@@ -15671,7 +15671,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UINetworkManagerIndicator</name>
+    <name>UINetworkRequestManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
         <translation>Поточні мережеві операції:</translation>

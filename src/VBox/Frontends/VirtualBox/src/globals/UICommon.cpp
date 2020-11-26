@@ -67,7 +67,7 @@
 #include "UIExtraDataManager.h"
 #include "QIFileDialog.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkManager.h"
+# include "UINetworkRequestManager.h"
 # include "UIUpdateManager.h"
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #include "UIConverter.h"
@@ -4535,7 +4535,7 @@ void UICommon::prepare()
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* Create network manager: */
-    UINetworkManager::create();
+    UINetworkRequestManager::create();
 
     /* Schedule update manager: */
     UIUpdateManager::schedule();
@@ -4577,7 +4577,7 @@ void UICommon::cleanup()
     UIUpdateManager::shutdown();
 
     /* Destroy network manager: */
-    UINetworkManager::destroy();
+    UINetworkRequestManager::destroy();
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
     /* Destroy shortcut pool: */

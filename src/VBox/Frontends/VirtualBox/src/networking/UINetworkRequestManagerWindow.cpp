@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UINetworkManagerDialog stuff implementation.
+ * VBox Qt GUI - UINetworkRequestManagerWindow stuff implementation.
  */
 
 /*
@@ -29,13 +29,13 @@
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINetworkCustomer.h"
-#include "UINetworkManager.h"
-#include "UINetworkManagerDialog.h"
+#include "UINetworkRequestManager.h"
+#include "UINetworkRequestManagerWindow.h"
 #include "UINetworkRequest.h"
 #include "UINetworkRequestWidget.h"
 
 
-void UINetworkManagerDialog::showNormal()
+void UINetworkRequestManagerWindow::showNormal()
 {
     /* Show (restore if necessary): */
     QMainWindow::showNormal();
@@ -47,7 +47,7 @@ void UINetworkManagerDialog::showNormal()
     activateWindow();
 }
 
-UINetworkManagerDialog::UINetworkManagerDialog()
+UINetworkRequestManagerWindow::UINetworkRequestManagerWindow()
 {
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/download_manager_32px.png", ":/download_manager_16px.png"));
@@ -75,7 +75,7 @@ UINetworkManagerDialog::UINetworkManagerDialog()
 
     /* Create button-box: */
     m_pButtonBox = new QIDialogButtonBox(QDialogButtonBox::Cancel, Qt::Horizontal, centralWidget());
-    connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UINetworkManagerDialog::sltHandleCancelAllButtonPress);
+    connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UINetworkRequestManagerWindow::sltHandleCancelAllButtonPress);
     m_pButtonBox->setHidden(true);
 
     /* Layout content: */
@@ -91,7 +91,7 @@ UINetworkManagerDialog::UINetworkManagerDialog()
     retranslateUi();
 }
 
-void UINetworkManagerDialog::addNetworkRequestWidget(UINetworkRequest *pNetworkRequest)
+void UINetworkRequestManagerWindow::addNetworkRequestWidget(UINetworkRequest *pNetworkRequest)
 {
     /* Make sure network-request is really exists: */
     AssertMsg(pNetworkRequest, ("Network-request doesn't exists!\n"));
@@ -117,7 +117,7 @@ void UINetworkManagerDialog::addNetworkRequestWidget(UINetworkRequest *pNetworkR
     connect(pNetworkRequestWidget, &UINetworkRequestWidget::sigCancel, pNetworkRequest, &UINetworkRequest::sltCancel, Qt::QueuedConnection);
 }
 
-void UINetworkManagerDialog::removeNetworkRequestWidget(const QUuid &uuid)
+void UINetworkRequestManagerWindow::removeNetworkRequestWidget(const QUuid &uuid)
 {
     /* Make sure network-request widget still present: */
     AssertMsg(m_widgets.contains(uuid), ("Network-request widget already removed!\n"));
@@ -140,14 +140,14 @@ void UINetworkManagerDialog::removeNetworkRequestWidget(const QUuid &uuid)
     }
 }
 
-void UINetworkManagerDialog::sltHandleCancelAllButtonPress()
+void UINetworkRequestManagerWindow::sltHandleCancelAllButtonPress()
 {
     /* Ask if user wants to cancel all current network-requests: */
     if (msgCenter().confirmCancelingAllNetworkRequests())
         emit sigCancelNetworkRequests();
 }
 
-void UINetworkManagerDialog::retranslateUi()
+void UINetworkRequestManagerWindow::retranslateUi()
 {
     /* Set window caption: */
     setWindowTitle(tr("Network Operations Manager"));
@@ -160,7 +160,7 @@ void UINetworkManagerDialog::retranslateUi()
     m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Cancel all active network operations"));
 }
 
-void UINetworkManagerDialog::showEvent(QShowEvent *pShowEvent)
+void UINetworkRequestManagerWindow::showEvent(QShowEvent *pShowEvent)
 {
     /* Resize to minimum size-hint: */
     resize(minimumSizeHint());
@@ -172,7 +172,7 @@ void UINetworkManagerDialog::showEvent(QShowEvent *pShowEvent)
     QMainWindow::showEvent(pShowEvent);
 }
 
-void UINetworkManagerDialog::keyPressEvent(QKeyEvent *pKeyPressEvent)
+void UINetworkRequestManagerWindow::keyPressEvent(QKeyEvent *pKeyPressEvent)
 {
     /* 'Escape' key used to close the dialog: */
     if (pKeyPressEvent->key() == Qt::Key_Escape)

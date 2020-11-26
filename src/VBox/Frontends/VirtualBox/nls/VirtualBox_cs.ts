@@ -16303,7 +16303,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UINetworkManager</name>
+    <name>UINetworkRequestManager</name>
     <message>
         <source>Network Operation</source>
         <translation type="obsolete">Síťová operace</translation>
@@ -16338,7 +16338,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UINetworkManagerDialog</name>
+    <name>UINetworkRequestManagerWindow</name>
     <message>
         <source>Network Operations Manager</source>
         <translation>Správce síťových operací</translation>
@@ -16377,7 +16377,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UINetworkManagerIndicator</name>
+    <name>UINetworkRequestManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
         <translation>Aktuální síťová operace:</translation>

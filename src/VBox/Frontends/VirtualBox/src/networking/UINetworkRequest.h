@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_net_UINetworkRequest_h
-#define FEQT_INCLUDED_SRC_net_UINetworkRequest_h
+#ifndef FEQT_INCLUDED_SRC_networking_UINetworkRequest_h
+#define FEQT_INCLUDED_SRC_networking_UINetworkRequest_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -31,9 +31,9 @@
 #include "UINetworkReply.h"
 
 /* Forward declarations: */
-class UINetworkManager;
-class UINetworkManagerDialog;
-class UINetworkManagerIndicator;
+class UINetworkRequestManager;
+class UINetworkRequestManagerWindow;
+class UINetworkRequestManagerIndicator;
 class UINetworkRequestWidget;
 class UINetworkCustomer;
 
@@ -44,17 +44,17 @@ class SHARED_LIBRARY_STUFF UINetworkRequest : public QObject
 
 signals:
 
-    /** Notifies common UINetworkManager about progress with @a uuid changed.
+    /** Notifies common UINetworkRequestManager about progress with @a uuid changed.
       * @param  iReceived  Holds the amount of bytes received.
       * @param  iTotal     Holds the amount of total bytes to receive. */
     void sigProgress(const QUuid &uuid, qint64 iReceived, qint64 iTotal);
-    /** Notifies UINetworkManager about progress with @a uuid started. */
+    /** Notifies UINetworkRequestManager about progress with @a uuid started. */
     void sigStarted(const QUuid &uuid);
-    /** Notifies UINetworkManager about progress with @a uuid canceled. */
+    /** Notifies UINetworkRequestManager about progress with @a uuid canceled. */
     void sigCanceled(const QUuid &uuid);
-    /** Notifies UINetworkManager about progress with @a uuid finished. */
+    /** Notifies UINetworkRequestManager about progress with @a uuid finished. */
     void sigFinished(const QUuid &uuid);
-    /** Notifies UINetworkManager about progress with @a uuid failed with @a strError. */
+    /** Notifies UINetworkRequestManager about progress with @a uuid failed with @a strError. */
     void sigFailed(const QUuid &uuid, const QString &strError);
 
     /** Notifies own UINetworkRequestWidget about progress changed.
@@ -78,7 +78,7 @@ public:
                      const QString &strTarget,
                      const UserDictionary &requestHeaders,
                      UINetworkCustomer *pCustomer,
-                     UINetworkManager *pNetworkManager);
+                     UINetworkRequestManager *pNetworkManager);
     /** Destructs network-request. */
     ~UINetworkRequest();
 
@@ -87,7 +87,7 @@ public:
     /** Returns the request customer. */
     UINetworkCustomer* customer() { return m_pCustomer; }
     /** Returns the request manager. */
-    UINetworkManager* manager() const { return m_pNetworkManager; }
+    UINetworkRequestManager* manager() const { return m_pNetworkManager; }
     /** Returns unique request QUuid. */
     const QUuid& uuid() const { return m_uuid; }
     /** Returns the request reply. */
@@ -132,7 +132,7 @@ private:
     /** Holds the request customer. */
     UINetworkCustomer *m_pCustomer;
     /** Holds the request manager. */
-    UINetworkManager *m_pNetworkManager;
+    UINetworkRequestManager *m_pNetworkManager;
     /** Holds unique request QUuid. */
     const QUuid m_uuid;
 
@@ -147,5 +147,5 @@ private:
     QPointer<UINetworkReply> m_pReply;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_net_UINetworkRequest_h */
+#endif /* !FEQT_INCLUDED_SRC_networking_UINetworkRequest_h */
 

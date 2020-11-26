@@ -16092,7 +16092,7 @@ serial ports</comment>
     </message>
 </context>
 <context>
-    <name>UINetworkManager</name>
+    <name>UINetworkRequestManager</name>
     <message>
         <source>Network Operation</source>
         <translation type="obsolete">Nätverksåtgärd</translation>
@@ -16127,7 +16127,7 @@ serial ports</comment>
     </message>
 </context>
 <context>
-    <name>UINetworkManagerDialog</name>
+    <name>UINetworkRequestManagerWindow</name>
     <message>
         <source>Network Operations Manager</source>
         <translation>Hanterare för nätverksåtgärder</translation>
@@ -16166,7 +16166,7 @@ serial ports</comment>
     </message>
 </context>
 <context>
-    <name>UINetworkManagerIndicator</name>
+    <name>UINetworkRequestManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
         <translation>Aktuella nätverksåtgärder:</translation>

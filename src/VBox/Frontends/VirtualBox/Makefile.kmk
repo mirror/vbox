@@ -311,7 +311,7 @@ VBOX_GUI_INC_DIRS += \
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 VBOX_GUI_INC_DIRS += \
-	./src/net
+	./src/networking
 endif
 
 #
@@ -910,18 +910,18 @@ UICommon_QT_MOCHDRS = \
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_QT_MOCHDRS += \
-	src/net/UIDownloader.h \
-	src/net/UIDownloaderAdditions.h \
-	src/net/UIDownloaderExtensionPack.h \
-	src/net/UIDownloaderUserManual.h \
-	src/net/UINetworkCustomer.h \
-	src/net/UINetworkManager.h \
-	src/net/UINetworkManagerDialog.h \
-	src/net/UINetworkManagerIndicator.h \
-	src/net/UINetworkRequest.h \
-	src/net/UINetworkRequestWidget.h \
-	src/net/UINetworkReply.h \
-	src/net/UIUpdateManager.h \
+	src/networking/UIDownloader.h \
+	src/networking/UIDownloaderAdditions.h \
+	src/networking/UIDownloaderExtensionPack.h \
+	src/networking/UIDownloaderUserManual.h \
+	src/networking/UINetworkCustomer.h \
+	src/networking/UINetworkRequestManager.h \
+	src/networking/UINetworkRequestManagerWindow.h \
+	src/networking/UINetworkRequestManagerIndicator.h \
+	src/networking/UINetworkRequest.h \
+	src/networking/UINetworkRequestWidget.h \
+	src/networking/UINetworkReply.h \
+	src/networking/UIUpdateManager.h \
 	src/settings/editors/UIUpdateSettingsEditor.h \
 	src/settings/global/UIGlobalSettingsProxy.h \
 	src/settings/global/UIGlobalSettingsUpdate.h
@@ -1019,8 +1019,8 @@ UICommon_QT_MOCSRCS = \
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_QT_MOCSRCS += \
-	src/net/UINetworkReply.cpp \
-	src/net/UIUpdateManager.cpp
+	src/networking/UINetworkReply.cpp \
+	src/networking/UIUpdateManager.cpp
 endif
 
 ifdef VBOX_WITH_XPCOM
@@ -1437,19 +1437,19 @@ UICommon_SOURCES = \
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_SOURCES += \
-	src/net/UIDownloader.cpp \
-	src/net/UIDownloaderAdditions.cpp \
-	src/net/UIDownloaderExtensionPack.cpp \
-	src/net/UIDownloaderUserManual.cpp \
-	src/net/UINetworkCustomer.cpp \
-	src/net/UINetworkManager.cpp \
-	src/net/UINetworkManagerDialog.cpp \
-	src/net/UINetworkManagerIndicator.cpp \
-	src/net/UINetworkRequest.cpp \
-	src/net/UINetworkRequestWidget.cpp \
-	src/net/UINetworkReply.cpp \
-	src/net/UIUpdateDefs.cpp \
-	src/net/UIUpdateManager.cpp \
+	src/networking/UIDownloader.cpp \
+	src/networking/UIDownloaderAdditions.cpp \
+	src/networking/UIDownloaderExtensionPack.cpp \
+	src/networking/UIDownloaderUserManual.cpp \
+	src/networking/UINetworkCustomer.cpp \
+	src/networking/UINetworkRequestManager.cpp \
+	src/networking/UINetworkRequestManagerWindow.cpp \
+	src/networking/UINetworkRequestManagerIndicator.cpp \
+	src/networking/UINetworkRequest.cpp \
+	src/networking/UINetworkRequestWidget.cpp \
+	src/networking/UINetworkReply.cpp \
+	src/networking/UIUpdateDefs.cpp \
+	src/networking/UIUpdateManager.cpp \
 	src/settings/editors/UIUpdateSettingsEditor.cpp \
 	src/settings/global/UIGlobalSettingsProxy.cpp \
 	src/settings/global/UIGlobalSettingsUpdate.cpp

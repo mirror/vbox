@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UINetworkManagerIndicator stuff declaration.
+ * VBox Qt GUI - UINetworkRequestManagerIndicator stuff declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_net_UINetworkManagerIndicator_h
-#define FEQT_INCLUDED_SRC_net_UINetworkManagerIndicator_h
+#ifndef FEQT_INCLUDED_SRC_networking_UINetworkRequestManagerIndicator_h
+#define FEQT_INCLUDED_SRC_networking_UINetworkRequestManagerIndicator_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -35,23 +35,23 @@ class UINetworkRequest;
 
 
 /** Network-manager status-bar indicator states. */
-enum UINetworkManagerIndicatorState
+enum UINetworkRequestManagerIndicatorState
 {
-    UINetworkManagerIndicatorState_Idle,
-    UINetworkManagerIndicatorState_Loading,
-    UINetworkManagerIndicatorState_Error
+    UINetworkRequestManagerIndicatorState_Idle,
+    UINetworkRequestManagerIndicatorState_Loading,
+    UINetworkRequestManagerIndicatorState_Error
 };
 
 
 /** QIStateStatusBarIndicator extension for network-manager indicator. */
-class SHARED_LIBRARY_STUFF UINetworkManagerIndicator : public QIWithRetranslateUI<QIStateStatusBarIndicator>
+class SHARED_LIBRARY_STUFF UINetworkRequestManagerIndicator : public QIWithRetranslateUI<QIStateStatusBarIndicator>
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs network manager indicator. */
-    UINetworkManagerIndicator();
+    UINetworkRequestManagerIndicator();
 
     /** Updates appearance. */
     void updateAppearance();
@@ -112,5 +112,5 @@ private:
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_net_UINetworkManagerIndicator_h */
+#endif /* !FEQT_INCLUDED_SRC_networking_UINetworkRequestManagerIndicator_h */
 

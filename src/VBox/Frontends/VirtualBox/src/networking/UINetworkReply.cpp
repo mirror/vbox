@@ -25,7 +25,7 @@
 
 /* GUI includes: */
 #include "UINetworkReply.h"
-#include "UINetworkManager.h"
+#include "UINetworkRequestManager.h"
 #include "UIExtraDataManager.h"
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
 # include "UICommon.h"

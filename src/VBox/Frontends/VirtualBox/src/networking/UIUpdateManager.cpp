@@ -30,7 +30,7 @@
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
-#include "UINetworkManager.h"
+#include "UINetworkRequestManager.h"
 #include "UINetworkCustomer.h"
 #include "UINetworkRequest.h"
 #include "UIUpdateDefs.h"

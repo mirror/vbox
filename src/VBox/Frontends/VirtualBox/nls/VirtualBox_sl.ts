@@ -14502,9 +14502,9 @@
     </message>
 </context>
 <context>
-    <name>UINetworkManagerDialog</name>
+    <name>UINetworkRequestManagerWindow</name>
     <message>
-        <location filename="../src/net/UINetworkManagerDialog.cpp" line="+153"/>
+        <location filename="../src/net/UINetworkRequestManagerWindow.cpp" line="+153"/>
         <source>Network Operations Manager</source>
         <translation>Upravljalnik omrežnih opravil</translation>
     </message>
@@ -14545,9 +14545,9 @@
     </message>
 </context>
 <context>
-    <name>UINetworkManagerIndicator</name>
+    <name>UINetworkRequestManagerIndicator</name>
     <message>
-        <location filename="../src/net/UINetworkManagerIndicator.cpp" line="+55"/>
+        <location filename="../src/net/UINetworkRequestManagerIndicator.cpp" line="+55"/>
         <source>Current network operations:</source>
         <translation>Trenutna omrežna opravila:</translation>
     </message>
