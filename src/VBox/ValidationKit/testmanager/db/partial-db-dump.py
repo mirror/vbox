@@ -143,7 +143,7 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
 
         enmCompression = zipfile.ZIP_DEFLATED;
         if self.oConfig.fLmza:
-            enmCompression = getattr(zipfile. 'ZIP_LZMA', zipfile.ZIP_DEFLATED);
+            enmCompression = getattr(zipfile, 'ZIP_LZMA', zipfile.ZIP_DEFLATED);
         oZipFile = zipfile.ZipFile(self.oConfig.sFilename, 'w', enmCompression);
 
         oDb.begin();
