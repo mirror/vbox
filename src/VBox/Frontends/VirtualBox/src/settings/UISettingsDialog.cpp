@@ -774,6 +774,8 @@ void UISettingsDialog::prepareWidgets()
     m_pButtonBox->setObjectName(QStringLiteral("m_pButtonBox"));
     m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|
                                      QDialogButtonBox::Ok| QDialogButtonBox::Help);
+    m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(Qt::Key_F1);
+
     pMainLayout->addWidget(m_pButtonBox, 2, 0, 1, 2);
 
     setCentralWidget(pCentralWidget);
