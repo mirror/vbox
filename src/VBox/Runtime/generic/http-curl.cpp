@@ -2103,7 +2103,7 @@ static int rtHttpUpdateUserAgentHeader(PRTHTTPINTERNAL pThis, PRTHTTPHEADER pNew
 
 
 /**
- * Free the headers associated with the insance (w/o telling cURL about it).
+ * Free the headers associated with the instance (w/o telling cURL about it).
  *
  * @param   pThis       The HTTP client instance.
  */
