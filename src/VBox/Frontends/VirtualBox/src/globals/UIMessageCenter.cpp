@@ -3479,5 +3479,7 @@ void UIMessageCenter::sltHandleHelpRequest(const QString &strHelpKeyword)
     /* Show the help page for the @p strHelpKeyword: */
     if (m_pHelpBrowserDialog)
         m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
+#else
+    Q_UNUSED(strHelpKeyword);
 # endif /* #if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }
