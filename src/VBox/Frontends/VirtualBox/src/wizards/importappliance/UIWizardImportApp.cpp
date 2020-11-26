@@ -161,6 +161,7 @@ UIWizardImportApp::UIWizardImportApp(QWidget *pParent, bool fImportFromOCIByDefa
 
 void UIWizardImportApp::prepare()
 {
+    enableHelpButton("ovf");
     /* Create corresponding pages: */
     switch (mode())
     {
@@ -182,7 +183,6 @@ void UIWizardImportApp::prepare()
             break;
         }
     }
-    enableHelpButton("ovf");
     /* Call to base-class: */
     UIWizard::prepare();
 }

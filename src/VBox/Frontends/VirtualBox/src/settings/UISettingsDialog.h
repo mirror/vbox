@@ -135,11 +135,8 @@ protected:
     /** Verifies data integrity between certain @a pSettingsPage and other pages. */
     virtual void recorrelate(UISettingsPage *pSettingsPage) { Q_UNUSED(pSettingsPage); }
 
-    /** Set/change/reset the help tag of the help buttons help tag. Possibly used as tabs are changed. Searches the map
-     * m_pageHelpTags for the help tag for the page with @iPageType (GlobalSettingsPageType or MachineSettingsPageType) */
-    void setHelpButtonHelpTag(int iPageType);
-    /** Inserts an item to the map m_pageHelpTags. */
-    void addPageHelpTag(int iPageType, const QString &strHelpTag);
+    /** Inserts an item to the map m_pageHelpKeywords. */
+    void addPageHelpKeyword(int iPageType, const QString &strHelpKeyword);
 
     /** Validates data correctness using certain @a pValidator. */
     void revalidate(UIPageValidator *pValidator);
@@ -210,7 +207,7 @@ private:
     QMap<int, int>  m_pages;
     /** Stores the help tag per page. Key is the page type (either GlobalSettingsPageType or MachineSettingsPageType)
       * and value is the help tag. Used in context sensitive help: */
-    QMap<int, QString> m_pageHelpTags;
+    QMap<int, QString> m_pageHelpKeywords;
 
 #ifdef VBOX_WS_MAC
     /** Holds the list of settings page sizes for animation purposes. */

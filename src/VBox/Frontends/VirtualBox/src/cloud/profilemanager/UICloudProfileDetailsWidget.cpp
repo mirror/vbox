@@ -186,6 +186,7 @@ void UICloudProfileDetailsWidget::prepare()
 
     /* Update button states finally: */
     updateButtonStates();
+    uiCommon().setHelpKeyword(this, "ovf-cloud-profile-manager");
 }
 
 void UICloudProfileDetailsWidget::prepareWidgets()

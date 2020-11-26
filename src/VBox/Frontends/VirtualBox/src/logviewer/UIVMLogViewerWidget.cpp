@@ -434,6 +434,7 @@ void UIVMLogViewerWidget::prepare()
     sltRefresh();
     /* Setup escape shortcut: */
     manageEscapeShortCut();
+    uiCommon().setHelpKeyword(this, "collect-debug-info");
 }
 
 void UIVMLogViewerWidget::prepareActions()

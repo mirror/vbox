@@ -706,6 +706,7 @@ void UIMediumManagerWidget::prepare()
         if (!uiCommon().isMediumEnumerationInProgress())
             sltHandleMediumEnumerationFinish();
     }
+    uiCommon().setHelpKeyword(this,"vdis");
 }
 
 void UIMediumManagerWidget::prepareConnections()
@@ -1652,15 +1653,19 @@ void UIMediumManager::retranslateUi()
     button(ButtonType_Reset)->setText(tr("Reset"));
     button(ButtonType_Apply)->setText(tr("Apply"));
     button(ButtonType_Close)->setText(tr("Close"));
+    button(ButtonType_Help)->setText(tr("Help"));
     button(ButtonType_Reset)->setStatusTip(tr("Reset changes in current medium details"));
     button(ButtonType_Apply)->setStatusTip(tr("Apply changes in current medium details"));
     button(ButtonType_Close)->setStatusTip(tr("Close dialog without saving"));
+    button(ButtonType_Help)->setStatusTip(tr("Show dialog help"));
     button(ButtonType_Reset)->setShortcut(QString("Ctrl+Backspace"));
     button(ButtonType_Apply)->setShortcut(QString("Ctrl+Return"));
     button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
+    button(ButtonType_Help)->setShortcut(Qt::Key_F1);
     button(ButtonType_Reset)->setToolTip(tr("Reset Changes (%1)").arg(button(ButtonType_Reset)->shortcut().toString()));
     button(ButtonType_Apply)->setToolTip(tr("Apply Changes (%1)").arg(button(ButtonType_Apply)->shortcut().toString()));
     button(ButtonType_Close)->setToolTip(tr("Close Window (%1)").arg(button(ButtonType_Close)->shortcut().toString()));
+    button(ButtonType_Help)->setToolTip(tr("Show Help (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
 }
 
 void UIMediumManager::configure()
@@ -1721,7 +1726,6 @@ void UIMediumManager::configureButtonBox()
         /* Notify widget it has progress-bar: */
         widget()->setProgressBar(m_pProgressBar);
     }
-    configureButtonBoxHelpButton("vdis");
 }
 
 void UIMediumManager::finalize()

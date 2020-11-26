@@ -3904,6 +3904,21 @@ QPixmap UICommon::joinPixmaps(const QPixmap &pixmap1, const QPixmap &pixmap2)
     return result;
 }
 
+/* static */
+void UICommon::setHelpKeyword(QObject *pObject, const QString &strHelpKeyword)
+{
+    if (pObject)
+        pObject->setProperty("helpkeyword", strHelpKeyword);
+}
+
+/* static */
+QString UICommon::helpKeyword(const QObject *pObject)
+{
+    if (!pObject)
+        return QString();
+    return pObject->property("helpkeyword").toString();
+}
+
 bool UICommon::openURL(const QString &strUrl) const
 {
     /** Service event. */

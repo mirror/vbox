@@ -619,7 +619,7 @@ void UIMessageCenter::cannotFindHelpFile(const QString &strFileLocation) const
     alert(0, MessageType_Error, QString("<p>%1:</p>%2").arg(tr("Failed to find the following help file")).arg(strFileLocation));
 }
 
-void UIMessageCenter::cannotFindHelpTag() const
+void UIMessageCenter::cannotFindHelpKeyword() const
 {
     alert(0, MessageType_Error, QString("<p>%1</p>").arg(tr("There is no help page for this dialog.")));
 }
@@ -3462,26 +3462,22 @@ void UIMessageCenter::sltHelpBrowserClosed()
 void UIMessageCenter::sltHandleDialogHelpButtonPress()
 {
 # if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-    QWidget *pSender = qobject_cast<QWidget*>(sender());
-    if (!pSender)
-        return;
-    QVariant keyWordProp = pSender->property("helptag");
-    if (!keyWordProp.isValid() || !keyWordProp.canConvert(QMetaType::QString))
-    {
-        cannotFindHelpTag();
-        return;
-    }
-    QString strKeyword = keyWordProp.toString();
-    if (strKeyword.isEmpty())
-    {
-        cannotFindHelpTag();
-        return;
-    }
+    sltHandleHelpRequest(uiCommon().helpKeyword(sender()));
+#endif /* #if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
+}
 
+void UIMessageCenter::sltHandleHelpRequest(const QString &strHelpKeyword)
+{
+# if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+    if (strHelpKeyword.isEmpty())
+    {
+        cannotFindHelpKeyword();
+        return;
+    }
+    /* First open or show the help browser: */
     showHelpBrowser(uiCommon().helpFile());
-
-    UIHelpBrowserDialog *pWidget = qobject_cast<UIHelpBrowserDialog*>(m_pHelpBrowserDialog);
-    if (pWidget)
-        pWidget->showHelpForKeyword(strKeyword);
+    /* Show the help page for the @p strHelpKeyword: */
+    if (m_pHelpBrowserDialog)
+        m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
 # endif /* #if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }

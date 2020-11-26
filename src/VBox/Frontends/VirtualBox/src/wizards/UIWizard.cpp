@@ -267,19 +267,13 @@ void UIWizard::assignBackground(const QString &strBackground)
 
 #endif
 
-void UIWizard::enableHelpButton(const QString &strHelpTag /* = QString() */)
+void UIWizard::enableHelpButton(const QString &strHelpKeyword)
 {
     setOptions(options() | QWizard::HaveHelpButton);
-    setProperty("helptag", strHelpTag);
+    uiCommon().setHelpKeyword(this, strHelpKeyword);
     if (button(QWizard::HelpButton))
         button(QWizard::HelpButton)->setShortcut(Qt::Key_F1);
     connect(this, &UIWizard::helpRequested, &msgCenter(), &UIMessageCenter::sltHandleDialogHelpButtonPress);
-}
-
-void UIWizard::setHelpButtonHelpTag(const QString &strHelpTag /* = QString() */)
-{
-    if (button(QWizard::HelpButton))
-        button(QWizard::HelpButton)->setProperty("helptag", strHelpTag);
 }
 
 void UIWizard::sltCurrentIdChanged(int iId)

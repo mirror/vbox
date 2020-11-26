@@ -567,6 +567,10 @@ void UICloudProfileManagerWidget::prepare()
 
     /* Load cloud stuff: */
     loadCloudStuff();
+
+    /* Set help keyowrd for context sensitive help: */
+    uiCommon().setHelpKeyword(this, "ovf-cloud-profile-manager");
+
 }
 
 void UICloudProfileManagerWidget::prepareActions()
@@ -950,15 +954,19 @@ void UICloudProfileManager::retranslateUi()
     button(ButtonType_Reset)->setText(tr("Reset"));
     button(ButtonType_Apply)->setText(tr("Apply"));
     button(ButtonType_Close)->setText(tr("Close"));
+    button(ButtonType_Help)->setText(tr("Help"));
     button(ButtonType_Reset)->setStatusTip(tr("Reset changes in current cloud profile details"));
     button(ButtonType_Apply)->setStatusTip(tr("Apply changes in current cloud profile details"));
     button(ButtonType_Close)->setStatusTip(tr("Close dialog without saving"));
+    button(ButtonType_Help)->setStatusTip(tr("Show dialog help"));
     button(ButtonType_Reset)->setShortcut(QString("Ctrl+Backspace"));
     button(ButtonType_Apply)->setShortcut(QString("Ctrl+Return"));
     button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
+    button(ButtonType_Help)->setShortcut(Qt::Key_F1);
     button(ButtonType_Reset)->setToolTip(tr("Reset Changes (%1)").arg(button(ButtonType_Reset)->shortcut().toString()));
     button(ButtonType_Apply)->setToolTip(tr("Apply Changes (%1)").arg(button(ButtonType_Apply)->shortcut().toString()));
     button(ButtonType_Close)->setToolTip(tr("Close Window (%1)").arg(button(ButtonType_Close)->shortcut().toString()));
+    button(ButtonType_Help)->setToolTip(tr("Close Window (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
 }
 
 void UICloudProfileManager::configure()
@@ -1007,8 +1015,6 @@ void UICloudProfileManager::configureButtonBox()
     // for signals above, we should handle that stuff here again:
     button(ButtonType_Apply)->setVisible(gEDataManager->cloudProfileManagerDetailsExpanded());
     button(ButtonType_Reset)->setVisible(gEDataManager->cloudProfileManagerDetailsExpanded());
-
-    configureButtonBoxHelpButton("ovf-cloud-profile-manager");
 }
 
 void UICloudProfileManager::finalize()

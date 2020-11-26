@@ -78,15 +78,9 @@ void QIManagerDialog::closeEvent(QCloseEvent *pEvent)
     }
 }
 
-void QIManagerDialog::configureButtonBoxHelpButton(const QString &strHelpTag)
+void QIManagerDialog::sltHandleHelpRequested()
 {
-    QPushButton *pHelpButton = m_pButtonBox->button(QDialogButtonBox::Help);
-    if (pHelpButton)
-    {
-        pHelpButton->setProperty("helptag", strHelpTag);
-        connect(pHelpButton, &QPushButton::pressed,
-               &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
-    }
+    emit sigHelpRequested(uiCommon().helpKeyword(m_pWidget));
 }
 
 void QIManagerDialog::prepare()
@@ -177,8 +171,12 @@ void QIManagerDialog::prepareButtonBox()
         m_buttons[ButtonType_Apply] = m_pButtonBox->button(QDialogButtonBox::Apply);
 #endif
         m_buttons[ButtonType_Close] = m_pButtonBox->button(QDialogButtonBox::Close);
+        m_buttons[ButtonType_Help] = m_pButtonBox->button(QDialogButtonBox::Help);
+
         /* Assign shortcuts: */
         button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
+        button(ButtonType_Help)->setShortcut(Qt::Key_F1);
+
         /* Hide 'Reset' and 'Apply' initially: */
         button(ButtonType_Reset)->hide();
         button(ButtonType_Apply)->hide();
@@ -186,6 +184,9 @@ void QIManagerDialog::prepareButtonBox()
         button(ButtonType_Reset)->setEnabled(false);
         button(ButtonType_Apply)->setEnabled(false);
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &QIManagerDialog::close);
+        /* Connections to enable the context sensitive help: */
+        connect(m_pButtonBox, &QDialogButtonBox::helpRequested, this, &QIManagerDialog::sltHandleHelpRequested);
+        connect(this, &QIManagerDialog::sigHelpRequested, &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
 
         /* Configure button-box: */
         configureButtonBox();

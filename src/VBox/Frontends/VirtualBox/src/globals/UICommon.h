@@ -694,6 +694,17 @@ public:
         static QPixmap joinPixmaps(const QPixmap &pixmap1, const QPixmap &pixmap2);
     /** @} */
 
+    /** @name Context sensitive help related functionality
+     * @{ */
+        /** Sets the property for help keyword on a QObject
+          * @param  pObject      The object to set the help keyword property on
+          * @param  strKeyword   The values of the key word property. */
+        static void setHelpKeyword(QObject *pObject, const QString &strHelpKeyword);
+        /** Returns the property for help keyword of a QObject. If no such property exists returns an empty QString.
+          * @param  pWidget      The object to get the help keyword property from. */
+        static QString helpKeyword(const QObject *pWidget);
+    /** @} */
+
 public slots:
 
     /** @name Process arguments stuff.

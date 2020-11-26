@@ -56,6 +56,7 @@ enum ButtonType
     ButtonType_Reset   = RT_BIT(0),
     ButtonType_Apply   = RT_BIT(1),
     ButtonType_Close   = RT_BIT(2),
+    ButtonType_Help    = RT_BIT(3)
 };
 
 
@@ -93,6 +94,9 @@ signals:
 
     /** Notifies listeners about dialog should be closed. */
     void sigClose();
+    /** Emitted when help botton is pressed. Listerners use @param strHelpKeyword to find related
+      * section in the manual and show it. */
+    void sigHelpRequested(const QString &strHelpKeyword);
 
 protected:
 
@@ -149,9 +153,12 @@ protected:
         /** Handles close @a pEvent. */
         virtual void closeEvent(QCloseEvent *pEvent) /* override */;
     /** @} */
-    /** Sets the property 'helptag' of the button box's help button to @param strHelpTag and
-      * sets up the appropirate connection. */
-    void configureButtonBoxHelpButton(const QString &strHelpTag);
+
+private slots:
+
+    /** Possbily connected to QDialogBox::helpRequested signal and is used to emit sigHelpRequired
+      * with a proper help tag. */
+    void sltHandleHelpRequested();
 
 private:
 

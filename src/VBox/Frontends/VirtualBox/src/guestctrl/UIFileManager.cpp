@@ -134,6 +134,7 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     retranslateUi();
     restorePanelVisibility();
     UIFileManagerOptions::create();
+    uiCommon().setHelpKeyword(this, "guestadd-gc-file-manager");
 }
 
 UIFileManager::~UIFileManager()

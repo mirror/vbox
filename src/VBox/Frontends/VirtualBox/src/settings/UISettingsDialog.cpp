@@ -116,8 +116,10 @@ void UISettingsDialog::reject()
 
 void UISettingsDialog::sltCategoryChanged(int cId)
 {
+    if (m_pButtonBox)
+        uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), m_pageHelpKeywords[cId]);
     const int iIndex = m_pages.value(cId);
-    setHelpButtonHelpTag(cId);
+
 #ifdef VBOX_WS_MAC
     /* If index is within the stored size list bounds: */
     if (iIndex < m_sizeList.count())
@@ -425,15 +427,9 @@ void UISettingsDialog::addItem(const QString &strBigIcon,
     }
 }
 
-void UISettingsDialog::setHelpButtonHelpTag(int iPageType)
+void UISettingsDialog::addPageHelpKeyword(int iPageType, const QString &strHelpKeyword)
 {
-    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Help))
-        m_pButtonBox->button(QDialogButtonBox::Help)->setProperty("helptag", m_pageHelpTags[iPageType]);
-}
-
-void UISettingsDialog::addPageHelpTag(int iPageType, const QString &strHelpTag)
-{
-    m_pageHelpTags[iPageType] = strHelpTag;
+    m_pageHelpKeywords[iPageType] = strHelpKeyword;
 }
 
 void UISettingsDialog::revalidate(UIPageValidator *pValidator)
