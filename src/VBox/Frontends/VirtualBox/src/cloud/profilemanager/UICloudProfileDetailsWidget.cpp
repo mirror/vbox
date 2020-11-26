@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
+#include "UICommon.h"
 #include "UICloudProfileDetailsWidget.h"
 
 /* Other VBox includes: */
