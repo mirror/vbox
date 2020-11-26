@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHostNetworkUtils namespace implementation.
+ * VBox Qt GUI - UINetworkManagerUtils namespace implementation.
  */
 
 /*
@@ -16,10 +16,10 @@
  */
 
 /* GUI includes: */
-#include "UIHostNetworkUtils.h"
+#include "UINetworkManagerUtils.h"
 
 
-quint32 UIHostNetworkUtils::ipv4FromQStringToQuint32(const QString &strAddress)
+quint32 UINetworkManagerUtils::ipv4FromQStringToQuint32(const QString &strAddress)
 {
     quint32 uAddress = 0;
     foreach (const QString &strPart, strAddress.split('.'))
@@ -33,7 +33,7 @@ quint32 UIHostNetworkUtils::ipv4FromQStringToQuint32(const QString &strAddress)
     return uAddress;
 }
 
-QString UIHostNetworkUtils::ipv4FromQuint32ToQString(quint32 uAddress)
+QString UINetworkManagerUtils::ipv4FromQuint32ToQString(quint32 uAddress)
 {
     QStringList address;
     while (uAddress)
@@ -45,17 +45,17 @@ QString UIHostNetworkUtils::ipv4FromQuint32ToQString(quint32 uAddress)
     return address.join('.');
 }
 
-quint32 UIHostNetworkUtils::incrementNetworkAddress(quint32 uAddress)
+quint32 UINetworkManagerUtils::incrementNetworkAddress(quint32 uAddress)
 {
     return advanceNetworkAddress(uAddress, true /* forward */);
 }
 
-quint32 UIHostNetworkUtils::decrementNetworkAddress(quint32 uAddress)
+quint32 UINetworkManagerUtils::decrementNetworkAddress(quint32 uAddress)
 {
     return advanceNetworkAddress(uAddress, false /* forward */);
 }
 
-quint32 UIHostNetworkUtils::advanceNetworkAddress(quint32 uAddress, bool fForward)
+quint32 UINetworkManagerUtils::advanceNetworkAddress(quint32 uAddress, bool fForward)
 {
     /* Success by default: */
     bool fSuccess = true;
@@ -94,7 +94,7 @@ quint32 UIHostNetworkUtils::advanceNetworkAddress(quint32 uAddress, bool fForwar
     return uAddress;
 }
 
-QStringList UIHostNetworkUtils::makeDhcpServerProposal(const QString &strInterfaceAddress, const QString &strInterfaceMask)
+QStringList UINetworkManagerUtils::makeDhcpServerProposal(const QString &strInterfaceAddress, const QString &strInterfaceMask)
 {
     /* Convert interface address/mask into digital form and calculate inverted interface mask: */
     const quint32 uAddress = ipv4FromQStringToQuint32(strInterfaceAddress);

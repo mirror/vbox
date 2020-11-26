@@ -8932,9 +8932,9 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
+    <name>UINetworkDetailsWidget</name>
     <message>
-        <location filename="../src/hostnetwork/UIHostNetworkDetailsWidget.cpp" line="+77"/>
+        <location filename="../src/hostnetwork/UINetworkDetailsWidget.cpp" line="+77"/>
         <source>&amp;Adapter</source>
         <translation type="unfinished">&amp;Egokitzailea</translation>
     </message>
@@ -9134,7 +9134,7 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManager</name>
+    <name>UINetworkManager</name>
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
@@ -9186,7 +9186,7 @@
         <translation type="obsolete">Ezarri gabe</translation>
     </message>
     <message>
-        <location filename="../src/hostnetwork/UIHostNetworkManager.cpp" line="+228"/>
+        <location filename="../src/hostnetwork/UINetworkManager.cpp" line="+228"/>
         <source>DHCP Server</source>
         <translation type="unfinished">DHCP Zerbitzaria</translation>
     </message>
@@ -9306,7 +9306,7 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManagerWidget</name>
+    <name>UINetworkManagerWidget</name>
     <message>
         <source>Networking</source>
         <translation type="obsolete">Sareketa</translation>
@@ -10138,7 +10138,7 @@
 <context>
     <name>UIItemHostNetwork</name>
     <message>
-        <location filename="../src/hostnetwork/UIHostNetworkManager.cpp" line="-910"/>
+        <location filename="../src/hostnetwork/UINetworkManager.cpp" line="-910"/>
         <source>Enable</source>
         <comment>DHCP Server</comment>
         <translation type="unfinished">Gaitu</translation>

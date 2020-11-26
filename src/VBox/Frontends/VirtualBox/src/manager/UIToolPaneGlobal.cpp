@@ -25,8 +25,8 @@
 /* GUI includes */
 #include "UIActionPoolManager.h"
 #include "UICloudProfileManager.h"
-#include "UIHostNetworkManager.h"
 #include "UIMediumManager.h"
+#include "UINetworkManager.h"
 #include "UIToolPaneGlobal.h"
 #include "UIResourceMonitor.h"
 #include "UIWelcomePane.h"
@@ -142,7 +142,7 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
             case UIToolType_Network:
             {
                 /* Create Host Network Manager: */
-                m_pPaneNetwork = new UIHostNetworkManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
+                m_pPaneNetwork = new UINetworkManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
                 AssertPtrReturnVoid(m_pPaneNetwork);
                 {
 #ifndef VBOX_WS_MAC

@@ -6406,7 +6406,7 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
+    <name>UINetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
         <translation type="unfinished">แ&amp;ผงวงจร</translation>
@@ -6565,7 +6565,7 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManager</name>
+    <name>UINetworkManager</name>
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
@@ -6721,7 +6721,7 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManagerWidget</name>
+    <name>UINetworkManagerWidget</name>
     <message>
         <source>Networking</source>
         <translation type="obsolete">เครือข่าย</translation>

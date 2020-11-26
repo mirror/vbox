@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHostNetworkManager class implementation.
+ * VBox Qt GUI - UINetworkManager class implementation.
  */
 
 /*
@@ -27,10 +27,10 @@
 #include "UIActionPoolManager.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
-#include "UIHostNetworkDetailsWidget.h"
-#include "UIHostNetworkManager.h"
-#include "UIHostNetworkUtils.h"
 #include "UIMessageCenter.h"
+#include "UINetworkDetailsWidget.h"
+#include "UINetworkManager.h"
+#include "UINetworkManagerUtils.h"
 #include "QIToolBar.h"
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
@@ -185,11 +185,11 @@ int UIItemHostNetwork::maskToCidr(const QString &strMask)
 
 
 /*********************************************************************************************************************************
-*   Class UIHostNetworkManagerWidget implementation.                                                                             *
+*   Class UINetworkManagerWidget implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                                                       bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
+UINetworkManagerWidget::UINetworkManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+                                               bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
@@ -203,12 +203,12 @@ UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(EmbedTo enmEmbedding, UIA
     uiCommon().setHelpKeyword(this, "networkingdetails");
 }
 
-QMenu *UIHostNetworkManagerWidget::menu() const
+QMenu *UINetworkManagerWidget::menu() const
 {
     return m_pActionPool->action(UIActionIndexMN_M_NetworkWindow)->menu();
 }
 
-void UIHostNetworkManagerWidget::retranslateUi()
+void UINetworkManagerWidget::retranslateUi()
 {
     /* Adjust toolbar: */
 #ifdef VBOX_WS_MAC
@@ -223,14 +223,14 @@ void UIHostNetworkManagerWidget::retranslateUi()
 
     /* Translate tree-widget: */
     const QStringList fields = QStringList()
-                               << UIHostNetworkManager::tr("Name")
-                               << UIHostNetworkManager::tr("IPv4 Address/Mask")
-                               << UIHostNetworkManager::tr("IPv6 Address/Mask")
-                               << UIHostNetworkManager::tr("DHCP Server");
+                               << UINetworkManager::tr("Name")
+                               << UINetworkManager::tr("IPv4 Address/Mask")
+                               << UINetworkManager::tr("IPv6 Address/Mask")
+                               << UINetworkManager::tr("DHCP Server");
     m_pTreeWidget->setHeaderLabels(fields);
 }
 
-void UIHostNetworkManagerWidget::resizeEvent(QResizeEvent *pEvent)
+void UINetworkManagerWidget::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
     QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
@@ -239,7 +239,7 @@ void UIHostNetworkManagerWidget::resizeEvent(QResizeEvent *pEvent)
     sltAdjustTreeWidget();
 }
 
-void UIHostNetworkManagerWidget::showEvent(QShowEvent *pEvent)
+void UINetworkManagerWidget::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
     QIWithRetranslateUI<QWidget>::showEvent(pEvent);
@@ -248,13 +248,13 @@ void UIHostNetworkManagerWidget::showEvent(QShowEvent *pEvent)
     sltAdjustTreeWidget();
 }
 
-void UIHostNetworkManagerWidget::sltResetHostNetworkDetailsChanges()
+void UINetworkManagerWidget::sltResetHostNetworkDetailsChanges()
 {
     /* Just push the current item data there again: */
     sltHandleCurrentItemChange();
 }
 
-void UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges()
+void UINetworkManagerWidget::sltApplyHostNetworkDetailsChanges()
 {
     /* Get network item: */
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
@@ -374,7 +374,7 @@ void UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges()
     }
 }
 
-void UIHostNetworkManagerWidget::sltCreateHostNetwork()
+void UINetworkManagerWidget::sltCreateHostNetwork()
 {
     /* Get host for further activities: */
     CHost comHost = uiCommon().host();
@@ -389,7 +389,7 @@ void UIHostNetworkManagerWidget::sltCreateHostNetwork()
     else
     {
         /* Show interface creation progress: */
-        msgCenter().showModalProgressDialog(progress, UIHostNetworkManager::tr("Adding network ..."), ":/progress_network_interface_90px.png", this, 0);
+        msgCenter().showModalProgressDialog(progress, UINetworkManager::tr("Adding network ..."), ":/progress_network_interface_90px.png", this, 0);
 
         /* Show error message if necessary: */
         if (!progress.isOk() || progress.GetResultCode() != 0)
@@ -428,7 +428,7 @@ void UIHostNetworkManagerWidget::sltCreateHostNetwork()
     }
 }
 
-void UIHostNetworkManagerWidget::sltRemoveHostNetwork()
+void UINetworkManagerWidget::sltRemoveHostNetwork()
 {
     /* Get network item: */
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
@@ -490,7 +490,7 @@ void UIHostNetworkManagerWidget::sltRemoveHostNetwork()
             else
             {
                 /* Show interface removal progress: */
-                msgCenter().showModalProgressDialog(progress, UIHostNetworkManager::tr("Removing network ..."), ":/progress_network_interface_90px.png", this, 0);
+                msgCenter().showModalProgressDialog(progress, UINetworkManager::tr("Removing network ..."), ":/progress_network_interface_90px.png", this, 0);
 
                 /* Show error message if necessary: */
                 if (!progress.isOk() || progress.GetResultCode() != 0)
@@ -508,7 +508,7 @@ void UIHostNetworkManagerWidget::sltRemoveHostNetwork()
     }
 }
 
-void UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility(bool fVisible)
+void UINetworkManagerWidget::sltToggleHostNetworkDetailsVisibility(bool fVisible)
 {
     /* Save the setting: */
     gEDataManager->setHostNetworkManagerDetailsExpanded(fVisible);
@@ -518,13 +518,13 @@ void UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility(bool fVis
     emit sigHostNetworkDetailsVisibilityChanged(fVisible);
 }
 
-void UIHostNetworkManagerWidget::sltRefreshHostNetworks()
+void UINetworkManagerWidget::sltRefreshHostNetworks()
 {
     // Not implemented.
     AssertMsgFailed(("Not implemented!"));
 }
 
-void UIHostNetworkManagerWidget::sltAdjustTreeWidget()
+void UINetworkManagerWidget::sltAdjustTreeWidget()
 {
     /* Get the tree-widget abstract interface: */
     QAbstractItemView *pItemView = m_pTreeWidget;
@@ -548,7 +548,7 @@ void UIHostNetworkManagerWidget::sltAdjustTreeWidget()
     m_pTreeWidget->setColumnWidth(Column_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
 }
 
-void UIHostNetworkManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
+void UINetworkManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
 {
     /* Get network item: */
     UIItemHostNetwork *pChangedItem = static_cast<UIItemHostNetwork*>(pItem);
@@ -632,7 +632,7 @@ void UIHostNetworkManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
     }
 }
 
-void UIHostNetworkManagerWidget::sltHandleCurrentItemChange()
+void UINetworkManagerWidget::sltHandleCurrentItemChange()
 {
     /* Get network item: */
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
@@ -652,7 +652,7 @@ void UIHostNetworkManagerWidget::sltHandleCurrentItemChange()
     }
 }
 
-void UIHostNetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
+void UINetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
 {
     /* Compose temporary context-menu: */
     QMenu menu;
@@ -670,7 +670,7 @@ void UIHostNetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &posit
     menu.exec(m_pTreeWidget->mapToGlobal(position));
 }
 
-void UIHostNetworkManagerWidget::prepare()
+void UINetworkManagerWidget::prepare()
 {
     /* Prepare actions: */
     prepareActions();
@@ -687,7 +687,7 @@ void UIHostNetworkManagerWidget::prepare()
     loadHostNetworks();
 }
 
-void UIHostNetworkManagerWidget::prepareActions()
+void UINetworkManagerWidget::prepareActions()
 {
     /* First of all, add actions which has smaller shortcut scope: */
     addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create));
@@ -697,16 +697,16 @@ void UIHostNetworkManagerWidget::prepareActions()
 
     /* Connect actions: */
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create), &QAction::triggered,
-            this, &UIHostNetworkManagerWidget::sltCreateHostNetwork);
+            this, &UINetworkManagerWidget::sltCreateHostNetwork);
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove), &QAction::triggered,
-            this, &UIHostNetworkManagerWidget::sltRemoveHostNetwork);
+            this, &UINetworkManagerWidget::sltRemoveHostNetwork);
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::toggled,
-            this, &UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility);
+            this, &UINetworkManagerWidget::sltToggleHostNetworkDetailsVisibility);
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Refresh), &QAction::triggered,
-            this, &UIHostNetworkManagerWidget::sltRefreshHostNetworks);
+            this, &UINetworkManagerWidget::sltRefreshHostNetworks);
 }
 
-void UIHostNetworkManagerWidget::prepareWidgets()
+void UINetworkManagerWidget::prepareWidgets()
 {
     /* Create main-layout: */
     new QVBoxLayout(this);
@@ -730,7 +730,7 @@ void UIHostNetworkManagerWidget::prepareWidgets()
     }
 }
 
-void UIHostNetworkManagerWidget::prepareToolBar()
+void UINetworkManagerWidget::prepareToolBar()
 {
     /* Create toolbar: */
     m_pToolBar = new QIToolBar(parentWidget());
@@ -763,7 +763,7 @@ void UIHostNetworkManagerWidget::prepareToolBar()
     }
 }
 
-void UIHostNetworkManagerWidget::prepareTreeWidget()
+void UINetworkManagerWidget::prepareTreeWidget()
 {
     /* Create tree-widget: */
     m_pTreeWidget = new QITreeWidget;
@@ -779,11 +779,11 @@ void UIHostNetworkManagerWidget::prepareTreeWidget()
         m_pTreeWidget->sortByColumn(Column_Name, Qt::AscendingOrder);
         m_pTreeWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
         connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
-                this, &UIHostNetworkManagerWidget::sltHandleCurrentItemChange);
+                this, &UINetworkManagerWidget::sltHandleCurrentItemChange);
         connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
-                this, &UIHostNetworkManagerWidget::sltHandleContextMenuRequest);
+                this, &UINetworkManagerWidget::sltHandleContextMenuRequest);
         connect(m_pTreeWidget, &QITreeWidget::itemChanged,
-                this, &UIHostNetworkManagerWidget::sltHandleItemChange);
+                this, &UINetworkManagerWidget::sltHandleItemChange);
         connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
                 m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::setChecked);
 
@@ -792,35 +792,35 @@ void UIHostNetworkManagerWidget::prepareTreeWidget()
     }
 }
 
-void UIHostNetworkManagerWidget::prepareDetailsWidget()
+void UINetworkManagerWidget::prepareDetailsWidget()
 {
     /* Create details-widget: */
-    m_pDetailsWidget = new UIHostNetworkDetailsWidget(m_enmEmbedding);
+    m_pDetailsWidget = new UINetworkDetailsWidget(m_enmEmbedding);
     AssertPtrReturnVoid(m_pDetailsWidget);
     {
         /* Configure details-widget: */
         m_pDetailsWidget->setVisible(false);
         m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-        connect(m_pDetailsWidget, &UIHostNetworkDetailsWidget::sigDataChanged,
-                this, &UIHostNetworkManagerWidget::sigHostNetworkDetailsDataChanged);
-        connect(m_pDetailsWidget, &UIHostNetworkDetailsWidget::sigDataChangeRejected,
-                this, &UIHostNetworkManagerWidget::sltResetHostNetworkDetailsChanges);
-        connect(m_pDetailsWidget, &UIHostNetworkDetailsWidget::sigDataChangeAccepted,
-                this, &UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges);
+        connect(m_pDetailsWidget, &UINetworkDetailsWidget::sigDataChanged,
+                this, &UINetworkManagerWidget::sigHostNetworkDetailsDataChanged);
+        connect(m_pDetailsWidget, &UINetworkDetailsWidget::sigDataChangeRejected,
+                this, &UINetworkManagerWidget::sltResetHostNetworkDetailsChanges);
+        connect(m_pDetailsWidget, &UINetworkDetailsWidget::sigDataChangeAccepted,
+                this, &UINetworkManagerWidget::sltApplyHostNetworkDetailsChanges);
 
         /* Add into layout: */
         layout()->addWidget(m_pDetailsWidget);
     }
 }
 
-void UIHostNetworkManagerWidget::loadSettings()
+void UINetworkManagerWidget::loadSettings()
 {
     /* Details action/widget: */
     m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->setChecked(gEDataManager->hostNetworkManagerDetailsExpanded());
     sltToggleHostNetworkDetailsVisibility(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->isChecked());
 }
 
-void UIHostNetworkManagerWidget::loadHostNetworks()
+void UINetworkManagerWidget::loadHostNetworks()
 {
     /* Clear tree first of all: */
     m_pTreeWidget->clear();
@@ -854,7 +854,7 @@ void UIHostNetworkManagerWidget::loadHostNetworks()
     }
 }
 
-void UIHostNetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInterface, UIDataHostNetwork &data)
+void UINetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInterface, UIDataHostNetwork &data)
 {
     /* Gather interface settings: */
     if (comInterface.isOk())
@@ -912,7 +912,7 @@ void UIHostNetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &co
     }
 }
 
-void UIHostNetworkManagerWidget::createItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem)
+void UINetworkManagerWidget::createItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem)
 {
     /* Create new item: */
     UIItemHostNetwork *pItem = new UIItemHostNetwork;
@@ -929,7 +929,7 @@ void UIHostNetworkManagerWidget::createItemForNetworkHost(const UIDataHostNetwor
     }
 }
 
-void UIHostNetworkManagerWidget::updateItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem)
+void UINetworkManagerWidget::updateItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem)
 {
     /* Update passed item: */
     AssertPtrReturnVoid(pItem);
@@ -945,31 +945,31 @@ void UIHostNetworkManagerWidget::updateItemForNetworkHost(const UIDataHostNetwor
 
 
 /*********************************************************************************************************************************
-*   Class UIHostNetworkManagerFactory implementation.                                                                            *
+*   Class UINetworkManagerFactory implementation.                                                                                *
 *********************************************************************************************************************************/
 
-UIHostNetworkManagerFactory::UIHostNetworkManagerFactory(UIActionPool *pActionPool /* = 0 */)
+UINetworkManagerFactory::UINetworkManagerFactory(UIActionPool *pActionPool /* = 0 */)
     : m_pActionPool(pActionPool)
 {
 }
 
-void UIHostNetworkManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
+void UINetworkManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIHostNetworkManager(pCenterWidget, m_pActionPool);
+    pDialog = new UINetworkManager(pCenterWidget, m_pActionPool);
 }
 
 
 /*********************************************************************************************************************************
-*   Class UIHostNetworkManager implementation.                                                                                   *
+*   Class UINetworkManager implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UIHostNetworkManager::UIHostNetworkManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
+UINetworkManager::UINetworkManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_pActionPool(pActionPool)
 {
 }
 
-void UIHostNetworkManager::sltHandleButtonBoxClick(QAbstractButton *pButton)
+void UINetworkManager::sltHandleButtonBoxClick(QAbstractButton *pButton)
 {
     /* Disable buttons first of all: */
     button(ButtonType_Reset)->setEnabled(false);
@@ -983,7 +983,7 @@ void UIHostNetworkManager::sltHandleButtonBoxClick(QAbstractButton *pButton)
         emit sigDataChangeAccepted();
 }
 
-void UIHostNetworkManager::retranslateUi()
+void UINetworkManager::retranslateUi()
 {
     /* Translate window title: */
     setWindowTitle(tr("Host Network Manager"));
@@ -1007,16 +1007,16 @@ void UIHostNetworkManager::retranslateUi()
     button(ButtonType_Help)->setToolTip(tr("Show Help (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
 }
 
-void UIHostNetworkManager::configure()
+void UINetworkManager::configure()
 {
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/host_iface_manager_32px.png", ":/host_iface_manager_16px.png"));
 }
 
-void UIHostNetworkManager::configureCentralWidget()
+void UINetworkManager::configureCentralWidget()
 {
     /* Create widget: */
-    UIHostNetworkManagerWidget *pWidget = new UIHostNetworkManagerWidget(EmbedTo_Dialog, m_pActionPool, true, this);
+    UINetworkManagerWidget *pWidget = new UINetworkManagerWidget(EmbedTo_Dialog, m_pActionPool, true, this);
     AssertPtrReturnVoid(pWidget);
     {
         /* Configure widget: */
@@ -1025,29 +1025,29 @@ void UIHostNetworkManager::configureCentralWidget()
 #ifdef VBOX_WS_MAC
         setWidgetToolbar(pWidget->toolbar());
 #endif
-        connect(this, &UIHostNetworkManager::sigDataChangeRejected,
-                pWidget, &UIHostNetworkManagerWidget::sltResetHostNetworkDetailsChanges);
-        connect(this, &UIHostNetworkManager::sigDataChangeAccepted,
-                pWidget, &UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges);
+        connect(this, &UINetworkManager::sigDataChangeRejected,
+                pWidget, &UINetworkManagerWidget::sltResetHostNetworkDetailsChanges);
+        connect(this, &UINetworkManager::sigDataChangeAccepted,
+                pWidget, &UINetworkManagerWidget::sltApplyHostNetworkDetailsChanges);
 
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
     }
 }
 
-void UIHostNetworkManager::configureButtonBox()
+void UINetworkManager::configureButtonBox()
 {
     /* Configure button-box: */
-    connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsVisibilityChanged,
+    connect(widget(), &UINetworkManagerWidget::sigHostNetworkDetailsVisibilityChanged,
             button(ButtonType_Apply), &QPushButton::setVisible);
-    connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsVisibilityChanged,
+    connect(widget(), &UINetworkManagerWidget::sigHostNetworkDetailsVisibilityChanged,
             button(ButtonType_Reset), &QPushButton::setVisible);
-    connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsDataChanged,
+    connect(widget(), &UINetworkManagerWidget::sigHostNetworkDetailsDataChanged,
             button(ButtonType_Apply), &QPushButton::setEnabled);
-    connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsDataChanged,
+    connect(widget(), &UINetworkManagerWidget::sigHostNetworkDetailsDataChanged,
             button(ButtonType_Reset), &QPushButton::setEnabled);
     connect(buttonBox(), &QIDialogButtonBox::clicked,
-            this, &UIHostNetworkManager::sltHandleButtonBoxClick);
+            this, &UINetworkManager::sltHandleButtonBoxClick);
     // WORKAROUND:
     // Since we connected signals later than extra-data loaded
     // for signals above, we should handle that stuff here again:
@@ -1055,16 +1055,16 @@ void UIHostNetworkManager::configureButtonBox()
     button(ButtonType_Reset)->setVisible(gEDataManager->hostNetworkManagerDetailsExpanded());
 }
 
-void UIHostNetworkManager::finalize()
+void UINetworkManager::finalize()
 {
     /* Apply language settings: */
     retranslateUi();
 }
 
-UIHostNetworkManagerWidget *UIHostNetworkManager::widget()
+UINetworkManagerWidget *UINetworkManager::widget()
 {
-    return qobject_cast<UIHostNetworkManagerWidget*>(QIManagerDialog::widget());
+    return qobject_cast<UINetworkManagerWidget*>(QIManagerDialog::widget());
 }
 
 
-#include "UIHostNetworkManager.moc"
+#include "UINetworkManager.moc"

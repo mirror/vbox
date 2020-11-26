@@ -6892,7 +6892,7 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
+    <name>UINetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
         <translation>&amp;Adapter</translation>
@@ -7051,7 +7051,7 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManager</name>
+    <name>UINetworkManager</name>
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
@@ -7259,7 +7259,7 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManagerWidget</name>
+    <name>UINetworkManagerWidget</name>
     <message>
         <source>Networking</source>
         <translation type="vanished">Netzwerk</translation>

@@ -7965,7 +7965,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
+    <name>UINetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
         <translation type="unfinished">Адаптер</translation>
@@ -8124,7 +8124,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManager</name>
+    <name>UINetworkManager</name>
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
@@ -8262,7 +8262,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManagerWidget</name>
+    <name>UINetworkManagerWidget</name>
     <message>
         <source>Networking</source>
         <translation type="obsolete">Мрежање</translation>

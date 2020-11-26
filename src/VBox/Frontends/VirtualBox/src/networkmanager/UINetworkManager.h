@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHostNetworkManager class declaration.
+ * VBox Qt GUI - UINetworkManager class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkManager_h
-#define FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkManager_h
+#ifndef FEQT_INCLUDED_SRC_networkmanager_UINetworkManager_h
+#define FEQT_INCLUDED_SRC_networkmanager_UINetworkManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -35,14 +35,14 @@ class QTreeWidgetItem;
 class QIDialogButtonBox;
 class QITreeWidget;
 class UIActionPool;
-class UIHostNetworkDetailsWidget;
+class UINetworkDetailsWidget;
 class UIItemHostNetwork;
 class QIToolBar;
 struct UIDataHostNetwork;
 
 
 /** QWidget extension providing GUI with the pane to control host network related functionality. */
-class UIHostNetworkManagerWidget : public QIWithRetranslateUI<QWidget>
+class UINetworkManagerWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -59,7 +59,7 @@ public:
       * @param  enmEmbedding  Brings the type of widget embedding.
       * @param  pActionPool   Brings the action-pool reference.
       * @param  fShowToolbar  Brings whether we should create/show toolbar. */
-    UIHostNetworkManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+    UINetworkManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                bool fShowToolbar = true, QWidget *pParent = 0);
 
     /** Returns the menu. */
@@ -178,19 +178,19 @@ private:
         /** Holds the tree-widget instance. */
         QITreeWidget *m_pTreeWidget;
         /** Holds the details-widget instance. */
-        UIHostNetworkDetailsWidget *m_pDetailsWidget;
+        UINetworkDetailsWidget *m_pDetailsWidget;
     /** @} */
 };
 
 
 /** QIManagerDialogFactory extension used as a factory for Host Network Manager dialog. */
-class UIHostNetworkManagerFactory : public QIManagerDialogFactory
+class UINetworkManagerFactory : public QIManagerDialogFactory
 {
 public:
 
     /** Constructs Media Manager factory acquiring additional arguments.
       * @param  pActionPool  Brings the action-pool reference. */
-    UIHostNetworkManagerFactory(UIActionPool *pActionPool = 0);
+    UINetworkManagerFactory(UIActionPool *pActionPool = 0);
 
 protected:
 
@@ -204,7 +204,7 @@ protected:
 
 
 /** QIManagerDialog extension providing GUI with the dialog to control host network related functionality. */
-class UIHostNetworkManager : public QIWithRetranslateUI<QIManagerDialog>
+class UINetworkManager : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
@@ -228,7 +228,7 @@ private:
     /** Constructs Host Network Manager dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to.
       * @param  pActionPool    Brings the action-pool reference. */
-    UIHostNetworkManager(QWidget *pCenterWidget, UIActionPool *pActionPool);
+    UINetworkManager(QWidget *pCenterWidget, UIActionPool *pActionPool);
 
     /** @name Event-handling stuff.
       * @{ */
@@ -251,7 +251,7 @@ private:
     /** @name Widget stuff.
       * @{ */
         /** Returns the widget. */
-        virtual UIHostNetworkManagerWidget *widget() /* override */;
+        virtual UINetworkManagerWidget *widget() /* override */;
     /** @} */
 
     /** @name Action related variables.
@@ -261,8 +261,8 @@ private:
     /** @} */
 
     /** Allow factory access to private/protected members: */
-    friend class UIHostNetworkManagerFactory;
+    friend class UINetworkManagerFactory;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkManager_h */
+#endif /* !FEQT_INCLUDED_SRC_networkmanager_UINetworkManager_h */
 

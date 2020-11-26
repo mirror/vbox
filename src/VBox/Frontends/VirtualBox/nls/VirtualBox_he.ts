@@ -6208,7 +6208,7 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
+    <name>UINetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
         <translation type="unfinished">&amp;מתאם</translation>
@@ -6367,7 +6367,7 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManager</name>
+    <name>UINetworkManager</name>
     <message>
         <source>Adapter</source>
         <translation type="obsolete">מתאם</translation>
@@ -6501,7 +6501,7 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManagerWidget</name>
+    <name>UINetworkManagerWidget</name>
     <message>
         <source>Networking</source>
         <translation type="obsolete">רישות</translation>

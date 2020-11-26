@@ -5378,7 +5378,7 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
+    <name>UINetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
         <translation type="unfinished"></translation>
@@ -5537,7 +5537,7 @@
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManager</name>
+    <name>UINetworkManager</name>
     <message>
         <source>DHCP Server</source>
         <translation type="unfinished"></translation>

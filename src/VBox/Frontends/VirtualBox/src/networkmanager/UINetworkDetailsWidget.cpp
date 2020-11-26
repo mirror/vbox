@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHostNetworkDetailsWidget class implementation.
+ * VBox Qt GUI - UINetworkDetailsWidget class implementation.
  */
 
 /*
@@ -28,16 +28,16 @@
 #include "QIDialogButtonBox.h"
 #include "QILineEdit.h"
 #include "QITabWidget.h"
-#include "UIHostNetworkDetailsWidget.h"
-#include "UIHostNetworkUtils.h"
 #include "UIIconPool.h"
+#include "UINetworkDetailsWidget.h"
+#include "UINetworkManagerUtils.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
 #include "iprt/cidr.h"
 
 
-UIHostNetworkDetailsWidget::UIHostNetworkDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
+UINetworkDetailsWidget::UINetworkDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pTabWidget(0)
@@ -59,7 +59,7 @@ UIHostNetworkDetailsWidget::UIHostNetworkDetailsWidget(EmbedTo enmEmbedding, QWi
     prepare();
 }
 
-void UIHostNetworkDetailsWidget::setData(const UIDataHostNetwork &data)
+void UINetworkDetailsWidget::setData(const UIDataHostNetwork &data)
 {
     /* Cache old/new data: */
     m_oldData = data;
@@ -71,7 +71,7 @@ void UIHostNetworkDetailsWidget::setData(const UIDataHostNetwork &data)
     loadDataForDHCPServer();
 }
 
-void UIHostNetworkDetailsWidget::retranslateUi()
+void UINetworkDetailsWidget::retranslateUi()
 {
     /* Translate tab-widget: */
     m_pTabWidget->setTabText(0, tr("&Adapter"));
@@ -131,7 +131,7 @@ void UIHostNetworkDetailsWidget::retranslateUi()
     retranslateValidation();
 }
 
-void UIHostNetworkDetailsWidget::sltToggledButtonAutomatic(bool fChecked)
+void UINetworkDetailsWidget::sltToggledButtonAutomatic(bool fChecked)
 {
     m_newData.m_interface.m_fDHCPEnabled = fChecked;
     loadDataForInterface();
@@ -139,7 +139,7 @@ void UIHostNetworkDetailsWidget::sltToggledButtonAutomatic(bool fChecked)
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltToggledButtonManual(bool fChecked)
+void UINetworkDetailsWidget::sltToggledButtonManual(bool fChecked)
 {
     m_newData.m_interface.m_fDHCPEnabled = !fChecked;
     loadDataForInterface();
@@ -147,35 +147,35 @@ void UIHostNetworkDetailsWidget::sltToggledButtonManual(bool fChecked)
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltTextChangedIPv4(const QString &strText)
+void UINetworkDetailsWidget::sltTextChangedIPv4(const QString &strText)
 {
     m_newData.m_interface.m_strAddress = strText;
     revalidate(m_pErrorPaneIPv4);
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltTextChangedNMv4(const QString &strText)
+void UINetworkDetailsWidget::sltTextChangedNMv4(const QString &strText)
 {
     m_newData.m_interface.m_strMask = strText;
     revalidate(m_pErrorPaneNMv4);
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltTextChangedIPv6(const QString &strText)
+void UINetworkDetailsWidget::sltTextChangedIPv6(const QString &strText)
 {
     m_newData.m_interface.m_strAddress6 = strText;
     revalidate(m_pErrorPaneIPv6);
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltTextChangedNMv6(const QString &strText)
+void UINetworkDetailsWidget::sltTextChangedNMv6(const QString &strText)
 {
     m_newData.m_interface.m_strPrefixLength6 = strText;
     revalidate(m_pErrorPaneNMv6);
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltStatusChangedServer(int iChecked)
+void UINetworkDetailsWidget::sltStatusChangedServer(int iChecked)
 {
     m_newData.m_dhcpserver.m_fEnabled = (bool)iChecked;
     loadDataForDHCPServer();
@@ -183,35 +183,35 @@ void UIHostNetworkDetailsWidget::sltStatusChangedServer(int iChecked)
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltTextChangedAddress(const QString &strText)
+void UINetworkDetailsWidget::sltTextChangedAddress(const QString &strText)
 {
     m_newData.m_dhcpserver.m_strAddress = strText;
     revalidate(m_pErrorPaneDHCPAddress);
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltTextChangedMask(const QString &strText)
+void UINetworkDetailsWidget::sltTextChangedMask(const QString &strText)
 {
     m_newData.m_dhcpserver.m_strMask = strText;
     revalidate(m_pErrorPaneDHCPMask);
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltTextChangedLowerAddress(const QString &strText)
+void UINetworkDetailsWidget::sltTextChangedLowerAddress(const QString &strText)
 {
     m_newData.m_dhcpserver.m_strLowerAddress = strText;
     revalidate(m_pErrorPaneDHCPLowerAddress);
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltTextChangedUpperAddress(const QString &strText)
+void UINetworkDetailsWidget::sltTextChangedUpperAddress(const QString &strText)
 {
     m_newData.m_dhcpserver.m_strUpperAddress = strText;
     revalidate(m_pErrorPaneDHCPUpperAddress);
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::sltHandleButtonBoxClick(QAbstractButton *pButton)
+void UINetworkDetailsWidget::sltHandleButtonBoxClick(QAbstractButton *pButton)
 {
     /* Make sure button-box exists: */
     AssertPtrReturnVoid(m_pButtonBoxInterface);
@@ -233,7 +233,7 @@ void UIHostNetworkDetailsWidget::sltHandleButtonBoxClick(QAbstractButton *pButto
         emit sigDataChangeAccepted();
 }
 
-void UIHostNetworkDetailsWidget::prepare()
+void UINetworkDetailsWidget::prepare()
 {
     /* Prepare this: */
     prepareThis();
@@ -245,7 +245,7 @@ void UIHostNetworkDetailsWidget::prepare()
     updateButtonStates();
 }
 
-void UIHostNetworkDetailsWidget::prepareThis()
+void UINetworkDetailsWidget::prepareThis()
 {
     /* Create layout: */
     QVBoxLayout *pLayout = new QVBoxLayout(this);
@@ -259,7 +259,7 @@ void UIHostNetworkDetailsWidget::prepareThis()
     }
 }
 
-void UIHostNetworkDetailsWidget::prepareTabWidget()
+void UINetworkDetailsWidget::prepareTabWidget()
 {
     /* Create tab-widget: */
     m_pTabWidget = new QITabWidget;
@@ -275,7 +275,7 @@ void UIHostNetworkDetailsWidget::prepareTabWidget()
     }
 }
 
-void UIHostNetworkDetailsWidget::prepareTabInterface()
+void UINetworkDetailsWidget::prepareTabInterface()
 {
     /* Create 'Interface' tab: */
     QWidget *pTabInterface = new QWidget;
@@ -307,7 +307,7 @@ void UIHostNetworkDetailsWidget::prepareTabInterface()
                 {
                     /* Configure radio-button: */
                     connect(m_pButtonAutomatic, &QRadioButton::toggled,
-                            this, &UIHostNetworkDetailsWidget::sltToggledButtonAutomatic);
+                            this, &UINetworkDetailsWidget::sltToggledButtonAutomatic);
                     /* Add into layout: */
                     pLayoutAutomatic->addWidget(m_pButtonAutomatic);
                 }
@@ -342,7 +342,7 @@ void UIHostNetworkDetailsWidget::prepareTabInterface()
                 {
                     /* Configure radio-button: */
                     connect(m_pButtonManual, &QRadioButton::toggled,
-                            this, &UIHostNetworkDetailsWidget::sltToggledButtonManual);
+                            this, &UINetworkDetailsWidget::sltToggledButtonManual);
                     /* Add into layout: */
                     pLayoutManual->addWidget(m_pButtonManual);
                 }
@@ -387,7 +387,7 @@ void UIHostNetworkDetailsWidget::prepareTabInterface()
                     /* Configure editor: */
                     m_pLabelIPv4->setBuddy(m_pEditorIPv4);
                     connect(m_pEditorIPv4, &QLineEdit::textChanged,
-                            this, &UIHostNetworkDetailsWidget::sltTextChangedIPv4);
+                            this, &UINetworkDetailsWidget::sltTextChangedIPv4);
                     /* Add into layout: */
                     pLayoutIPv4->addWidget(m_pEditorIPv4);
                 }
@@ -428,7 +428,7 @@ void UIHostNetworkDetailsWidget::prepareTabInterface()
                     /* Configure editor: */
                     m_pLabelNMv4->setBuddy(m_pEditorNMv4);
                     connect(m_pEditorNMv4, &QLineEdit::textChanged,
-                            this, &UIHostNetworkDetailsWidget::sltTextChangedNMv4);
+                            this, &UINetworkDetailsWidget::sltTextChangedNMv4);
                     /* Add into layout: */
                     pLayoutNMv4->addWidget(m_pEditorNMv4);
                 }
@@ -469,7 +469,7 @@ void UIHostNetworkDetailsWidget::prepareTabInterface()
                     /* Configure editor: */
                     m_pLabelIPv6->setBuddy(m_pEditorIPv6);
                     connect(m_pEditorIPv6, &QLineEdit::textChanged,
-                            this, &UIHostNetworkDetailsWidget::sltTextChangedIPv6);
+                            this, &UINetworkDetailsWidget::sltTextChangedIPv6);
                     /* Add into layout: */
                     pLayoutIPv6->addWidget(m_pEditorIPv6);
                 }
@@ -510,7 +510,7 @@ void UIHostNetworkDetailsWidget::prepareTabInterface()
                     /* Configure editor: */
                     m_pLabelNMv6->setBuddy(m_pEditorNMv6);
                     connect(m_pEditorNMv6, &QLineEdit::textChanged,
-                            this, &UIHostNetworkDetailsWidget::sltTextChangedNMv6);
+                            this, &UINetworkDetailsWidget::sltTextChangedNMv6);
                     /* Add into layout: */
                     pLayoutNMv6->addWidget(m_pEditorNMv6);
                 }
@@ -557,7 +557,7 @@ void UIHostNetworkDetailsWidget::prepareTabInterface()
                 AssertPtrReturnVoid(m_pButtonBoxInterface);
                 /* Configure button-box: */
                 m_pButtonBoxInterface->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-                connect(m_pButtonBoxInterface, &QIDialogButtonBox::clicked, this, &UIHostNetworkDetailsWidget::sltHandleButtonBoxClick);
+                connect(m_pButtonBoxInterface, &QIDialogButtonBox::clicked, this, &UINetworkDetailsWidget::sltHandleButtonBoxClick);
 
                 /* Add into layout: */
                 pLayoutInterface->addWidget(m_pButtonBoxInterface, 7, 0, 1, 3);
@@ -568,7 +568,7 @@ void UIHostNetworkDetailsWidget::prepareTabInterface()
     }
 }
 
-void UIHostNetworkDetailsWidget::prepareTabDHCPServer()
+void UINetworkDetailsWidget::prepareTabDHCPServer()
 {
     /* Create 'DHCP server' tab: */
     QWidget *pTabDHCPServer = new QWidget;
@@ -593,7 +593,7 @@ void UIHostNetworkDetailsWidget::prepareTabDHCPServer()
             {
                 /* Configure check-box: */
                 connect(m_pCheckBoxDHCP, &QCheckBox::stateChanged,
-                        this, &UIHostNetworkDetailsWidget::sltStatusChangedServer);
+                        this, &UINetworkDetailsWidget::sltStatusChangedServer);
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pCheckBoxDHCP, 0, 0, 1, 2);
 #ifdef VBOX_WS_MAC
@@ -623,7 +623,7 @@ void UIHostNetworkDetailsWidget::prepareTabDHCPServer()
                     /* Configure editor: */
                     m_pLabelDHCPAddress->setBuddy(m_pEditorDHCPAddress);
                     connect(m_pEditorDHCPAddress, &QLineEdit::textChanged,
-                            this, &UIHostNetworkDetailsWidget::sltTextChangedAddress);
+                            this, &UINetworkDetailsWidget::sltTextChangedAddress);
                     /* Add into layout: */
                     pLayoutDHCPAddress->addWidget(m_pEditorDHCPAddress);
                 }
@@ -664,7 +664,7 @@ void UIHostNetworkDetailsWidget::prepareTabDHCPServer()
                     /* Configure editor: */
                     m_pLabelDHCPMask->setBuddy(m_pEditorDHCPMask);
                     connect(m_pEditorDHCPMask, &QLineEdit::textChanged,
-                            this, &UIHostNetworkDetailsWidget::sltTextChangedMask);
+                            this, &UINetworkDetailsWidget::sltTextChangedMask);
                     /* Add into layout: */
                     pLayoutDHCPMask->addWidget(m_pEditorDHCPMask);
                 }
@@ -705,7 +705,7 @@ void UIHostNetworkDetailsWidget::prepareTabDHCPServer()
                     /* Configure editor: */
                     m_pLabelDHCPLowerAddress->setBuddy(m_pEditorDHCPLowerAddress);
                     connect(m_pEditorDHCPLowerAddress, &QLineEdit::textChanged,
-                            this, &UIHostNetworkDetailsWidget::sltTextChangedLowerAddress);
+                            this, &UINetworkDetailsWidget::sltTextChangedLowerAddress);
                     /* Add into layout: */
                     pLayoutDHCPLowerAddress->addWidget(m_pEditorDHCPLowerAddress);
                 }
@@ -746,7 +746,7 @@ void UIHostNetworkDetailsWidget::prepareTabDHCPServer()
                     /* Configure editor: */
                     m_pLabelDHCPUpperAddress->setBuddy(m_pEditorDHCPUpperAddress);
                     connect(m_pEditorDHCPUpperAddress, &QLineEdit::textChanged,
-                            this, &UIHostNetworkDetailsWidget::sltTextChangedUpperAddress);
+                            this, &UINetworkDetailsWidget::sltTextChangedUpperAddress);
                     /* Add into layout: */
                     pLayoutDHCPUpperAddress->addWidget(m_pEditorDHCPUpperAddress);
                 }
@@ -793,7 +793,7 @@ void UIHostNetworkDetailsWidget::prepareTabDHCPServer()
                 AssertPtrReturnVoid(m_pButtonBoxServer);
                 /* Configure button-box: */
                 m_pButtonBoxServer->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-                connect(m_pButtonBoxServer, &QIDialogButtonBox::clicked, this, &UIHostNetworkDetailsWidget::sltHandleButtonBoxClick);
+                connect(m_pButtonBoxServer, &QIDialogButtonBox::clicked, this, &UINetworkDetailsWidget::sltHandleButtonBoxClick);
 
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pButtonBoxServer, 6, 0, 1, 3);
@@ -804,7 +804,7 @@ void UIHostNetworkDetailsWidget::prepareTabDHCPServer()
     }
 }
 
-void UIHostNetworkDetailsWidget::loadDataForInterface()
+void UINetworkDetailsWidget::loadDataForInterface()
 {
     /* Toggle IPv4 & IPv6 interface fields availability: */
     const bool fIsInterfaceConfigurable = !m_newData.m_interface.m_fDHCPEnabled;
@@ -831,7 +831,7 @@ void UIHostNetworkDetailsWidget::loadDataForInterface()
     m_pEditorNMv6->setText(m_newData.m_interface.m_strPrefixLength6);
 }
 
-void UIHostNetworkDetailsWidget::loadDataForDHCPServer()
+void UINetworkDetailsWidget::loadDataForDHCPServer()
 {
     /* Toggle DHCP server fields availability: */
     const bool fIsDHCPServerEnabled = m_newData.m_dhcpserver.m_fEnabled;
@@ -872,7 +872,7 @@ void UIHostNetworkDetailsWidget::loadDataForDHCPServer()
     }
 }
 
-void UIHostNetworkDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
+void UINetworkDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
 {
     /* Validate 'Interface' tab content: */
     if (!pWidget || pWidget == m_pErrorPaneAutomatic)
@@ -957,7 +957,7 @@ void UIHostNetworkDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
     retranslateValidation(pWidget);
 }
 
-void UIHostNetworkDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 */)
+void UINetworkDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 */)
 {
     /* Translate 'Interface' tab content: */
     if (!pWidget || pWidget == m_pErrorPaneAutomatic)
@@ -991,7 +991,7 @@ void UIHostNetworkDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 *
                                                     "DHCP server upper address bound.").arg(m_newData.m_interface.m_strName));
 }
 
-void UIHostNetworkDetailsWidget::updateButtonStates()
+void UINetworkDetailsWidget::updateButtonStates()
 {
 //    if (m_oldData != m_newData)
 //        printf("Interface: %s, %s, %s, %s;  DHCP server: %d, %s, %s, %s, %s\n",

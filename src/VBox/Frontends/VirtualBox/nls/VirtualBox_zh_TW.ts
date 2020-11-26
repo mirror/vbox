@@ -5515,7 +5515,7 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
+    <name>UINetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
         <translation>網路卡(&amp;A)</translation>
@@ -5674,7 +5674,7 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManager</name>
+    <name>UINetworkManager</name>
     <message>
         <source>DHCP Server</source>
         <translation>DHCP 伺服器</translation>

@@ -44,12 +44,12 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
-#include "UIHostNetworkManager.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UIMediumManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
+#include "UINetworkManager.h"
 #include "UIQObjectStuff.h"
 #include "UISettingsDialogSpecific.h"
 #include "UIVirtualBoxManager.h"
@@ -775,7 +775,7 @@ void UIVirtualBoxManager::sltOpenHostNetworkManagerWindow()
     /* Create instance if not yet created: */
     if (!m_pManagerHostNetwork)
     {
-        UIHostNetworkManagerFactory(m_pActionPool).prepare(m_pManagerHostNetwork, this);
+        UINetworkManagerFactory(m_pActionPool).prepare(m_pManagerHostNetwork, this);
         connect(m_pManagerHostNetwork, &QIManagerDialog::sigClose,
                 this, &UIVirtualBoxManager::sltCloseHostNetworkManagerWindow);
     }
@@ -790,7 +790,7 @@ void UIVirtualBoxManager::sltCloseHostNetworkManagerWindow()
 {
     /* Destroy instance if still exists: */
     if (m_pManagerHostNetwork)
-        UIHostNetworkManagerFactory().cleanup(m_pManagerHostNetwork);
+        UINetworkManagerFactory().cleanup(m_pManagerHostNetwork);
 }
 
 void UIVirtualBoxManager::sltOpenCloudProfileManagerWindow()
@@ -820,7 +820,7 @@ void UIVirtualBoxManager::sltCloseCloudProfileManagerWindow()
 {
     /* Destroy instance if still exists: */
     if (m_pManagerCloudProfile)
-        UIHostNetworkManagerFactory().cleanup(m_pManagerCloudProfile);
+        UINetworkManagerFactory().cleanup(m_pManagerCloudProfile);
 }
 
 void UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow()
@@ -843,7 +843,7 @@ void UIVirtualBoxManager::sltCloseCloudConsoleManagerWindow()
 {
     /* Destroy instance if still exists: */
     if (m_pManagerCloudConsole)
-        UIHostNetworkManagerFactory().cleanup(m_pManagerCloudConsole);
+        UINetworkManagerFactory().cleanup(m_pManagerCloudConsole);
 }
 
 void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)

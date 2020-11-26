@@ -7331,7 +7331,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
+    <name>UINetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
         <translation type="unfinished">Pl&amp;acă de rețea</translation>
@@ -7490,7 +7490,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManager</name>
+    <name>UINetworkManager</name>
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>

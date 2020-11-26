@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHostNetworkDetailsWidget class declaration.
+ * VBox Qt GUI - UINetworkDetailsWidget class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkDetailsWidget_h
-#define FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkDetailsWidget_h
+#ifndef FEQT_INCLUDED_SRC_networkmanager_UINetworkDetailsWidget_h
+#define FEQT_INCLUDED_SRC_networkmanager_UINetworkDetailsWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -161,7 +161,7 @@ struct UIDataHostNetwork
 
 
 /** Host Network Manager: Host network details-widget. */
-class UIHostNetworkDetailsWidget : public QIWithRetranslateUI<QWidget>
+class UINetworkDetailsWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -179,7 +179,7 @@ public:
 
     /** Constructs medium details dialog passing @a pParent to the base-class.
       * @param  enmEmbedding  Brings embedding type. */
-    UIHostNetworkDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent = 0);
+    UINetworkDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent = 0);
 
     /** Returns the host network data. */
     const UIDataHostNetwork &data() const { return m_newData; }
@@ -353,5 +353,5 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkDetailsWidget_h */
+#endif /* !FEQT_INCLUDED_SRC_networkmanager_UINetworkDetailsWidget_h */
 

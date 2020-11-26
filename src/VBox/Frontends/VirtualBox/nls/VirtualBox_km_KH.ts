@@ -7199,7 +7199,7 @@ creating/removing host-only network</comment>
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
+    <name>UINetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
         <translation type="unfinished">អាដាប់ទ័រ</translation>
@@ -7358,7 +7358,7 @@ creating/removing host-only network</comment>
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManager</name>
+    <name>UINetworkManager</name>
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>

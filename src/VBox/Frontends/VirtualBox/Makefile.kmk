@@ -265,10 +265,10 @@ VBOX_GUI_INC_DIRS = \
 	./src/extradata \
 	./src/globals \
 	./src/helpbrowser \
-	./src/hostnetwork \
 	./src/logviewer \
 	./src/medium \
 	./src/medium/viso \
+	./src/networkmanager \
 	./src/objects \
 	./src/platform \
 	./src/platform/darwin \
@@ -576,8 +576,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/cloud/profilemanager/UICloudProfileDetailsWidget.h \
 	src/cloud/profilemanager/UICloudProfileManager.h \
 	src/globals/UIStarter.h \
-	src/hostnetwork/UIHostNetworkDetailsWidget.h \
-	src/hostnetwork/UIHostNetworkManager.h \
 	src/manager/UIErrorPane.h \
 	src/manager/UIProgressTaskReadCloudMachineList.h \
 	src/manager/UITaskCloudGetSettingsForm.h \
@@ -623,6 +621,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumManager.h \
 	src/monitor/resource/UIResourceMonitor.h \
+	src/networkmanager/UINetworkDetailsWidget.h \
+	src/networkmanager/UINetworkManager.h \
 	src/snapshots/UISnapshotDetailsWidget.h \
 	src/snapshots/UISnapshotPane.h \
 	src/widgets/UIApplianceEditorWidget.h \
@@ -939,12 +939,12 @@ UICommon_QT_MOCHDRS.darwin += \
 VirtualBox_QT_MOCSRCS = \
 	src/cloud/consolemanager/UICloudConsoleManager.cpp \
 	src/cloud/profilemanager/UICloudProfileManager.cpp \
-	src/hostnetwork/UIHostNetworkManager.cpp \
 	src/manager/UIVirtualBoxManager.cpp \
 	src/manager/UIVirtualMachineItemCloud.cpp \
 	src/manager/UIWelcomePane.cpp \
 	src/manager/chooser/UIChooserAbstractModel.cpp \
 	src/monitor/resource/UIResourceMonitor.cpp \
+	src/networkmanager/UINetworkManager.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \
 	src/widgets/UIApplianceEditorWidget.cpp \
@@ -1054,9 +1054,6 @@ VirtualBox_SOURCES = \
 	src/cloud/profilemanager/UICloudProfileDetailsWidget.cpp \
 	src/cloud/profilemanager/UICloudProfileManager.cpp \
 	src/globals/UIStarter.cpp \
-	src/hostnetwork/UIHostNetworkDetailsWidget.cpp \
-	src/hostnetwork/UIHostNetworkManager.cpp \
-	src/hostnetwork/UIHostNetworkUtils.cpp \
 	src/manager/UICloudEntityKey.cpp \
 	src/manager/UIErrorPane.cpp \
 	src/manager/UIProgressTaskReadCloudMachineList.cpp \
@@ -1103,6 +1100,9 @@ VirtualBox_SOURCES = \
 	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumManager.cpp \
 	src/monitor/resource/UIResourceMonitor.cpp \
+	src/networkmanager/UINetworkDetailsWidget.cpp \
+	src/networkmanager/UINetworkManager.cpp \
+	src/networkmanager/UINetworkManagerUtils.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \
 	src/widgets/UIApplianceEditorWidget.cpp \

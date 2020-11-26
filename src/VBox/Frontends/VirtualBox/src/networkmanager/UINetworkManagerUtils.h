@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHostNetworkUtils namespace declaration.
+ * VBox Qt GUI - UINetworkManagerUtils namespace declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkUtils_h
-#define FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkUtils_h
+#ifndef FEQT_INCLUDED_SRC_networkmanager_UINetworkManagerUtils_h
+#define FEQT_INCLUDED_SRC_networkmanager_UINetworkManagerUtils_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -26,7 +26,7 @@
 
 
 /** Host Network Manager: Host network utilities. */
-namespace UIHostNetworkUtils
+namespace UINetworkManagerUtils
 {
     /** Converts IPv4 address from QString to quint32. */
     quint32 ipv4FromQStringToQuint32(const QString &strAddress);
@@ -47,7 +47,7 @@ namespace UIHostNetworkUtils
 }
 
 /* Using this namespace where included: */
-using namespace UIHostNetworkUtils;
+using namespace UINetworkManagerUtils;
 
-#endif /* !FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkUtils_h */
+#endif /* !FEQT_INCLUDED_SRC_networkmanager_UINetworkManagerUtils_h */
 

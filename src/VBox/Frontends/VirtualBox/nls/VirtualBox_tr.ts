@@ -9236,7 +9236,7 @@ Oturum Panelini kullanın</translation>
     </message>
 </context>
 <context>
-    <name>UIHostNetworkDetailsWidget</name>
+    <name>UINetworkDetailsWidget</name>
     <message>
         <source>&amp;Adapter</source>
         <translation>&amp;Bağdaştırıcı</translation>
@@ -9395,7 +9395,7 @@ Oturum Panelini kullanın</translation>
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManager</name>
+    <name>UINetworkManager</name>
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
@@ -9603,7 +9603,7 @@ Oturum Panelini kullanın</translation>
     </message>
 </context>
 <context>
-    <name>UIHostNetworkManagerWidget</name>
+    <name>UINetworkManagerWidget</name>
     <message>
         <source>Networking</source>
         <translation type="vanished">Ağ oluşturma</translation>
