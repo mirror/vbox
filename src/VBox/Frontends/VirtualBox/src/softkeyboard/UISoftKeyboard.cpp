@@ -814,6 +814,7 @@ signals:
     void sigShowHideSidePanel();
     void sigShowSettingWidget();
     void sigResetKeyboard();
+    void sigHelpButtonPressed();
 
 public:
 
@@ -3635,8 +3636,7 @@ void UISoftKeyboardStatusBarWidget::prepareObjects()
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         m_pHelpButton->resize(QSize(iIconMetric, iIconMetric));
         m_pHelpButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
-        m_pHelpButton->setProperty("helptag", "soft-keyb");
-        connect(m_pHelpButton, &QToolButton::clicked, &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+        connect(m_pHelpButton, &QToolButton::clicked, this, &UISoftKeyboardStatusBarWidget::sigHelpButtonPressed);
         pLayout->addWidget(m_pHelpButton);
     }
 
@@ -3862,6 +3862,7 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
     loadSettings();
     configure();
     retranslateUi();
+    uiCommon().setHelpKeyword(this, "soft-keyb");
 }
 
 UISoftKeyboard::~UISoftKeyboard()
@@ -3905,6 +3906,15 @@ bool UISoftKeyboard::event(QEvent *pEvent)
     {
         if (m_pKeyboardWidget)
             m_pKeyboardWidget->parentDialogDeactivated();
+    }
+    else if (pEvent->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
+        if (pKeyEvent)
+        {
+            if (pKeyEvent->key() == Qt::Key_F1)
+                sltHandleHelpRequest();
+        }
     }
     return QMainWindowWithRestorableGeometryAndRetranslateUi::event(pEvent);
 }
@@ -4119,6 +4129,11 @@ void UISoftKeyboard::sltResetKeyboard()
     update();
 }
 
+void UISoftKeyboard::sltHandleHelpRequest()
+{
+    emit sigHelpRequested(uiCommon().helpKeyword(this));
+}
+
 void UISoftKeyboard::prepareObjects()
 {
     m_pSplitter = new QSplitter;
@@ -4191,6 +4206,7 @@ void UISoftKeyboard::prepareConnections()
     connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigShowHideSidePanel, this, &UISoftKeyboard::sltShowHideSidePanel);
     connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigShowSettingWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
     connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigResetKeyboard, this, &UISoftKeyboard::sltResetKeyboard);
+    connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigHelpButtonPressed, this, &UISoftKeyboard::sltHandleHelpRequest);
 
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigHideOSMenuKeys, this, &UISoftKeyboard::sltShowHideOSMenuKeys);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigHideNumPad, this, &UISoftKeyboard::sltShowHideNumPad);
@@ -4198,6 +4214,8 @@ void UISoftKeyboard::prepareConnections()
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorCellClicked, this, &UISoftKeyboard::sltHandleColorCellClick);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigCloseSettingsWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorThemeSelectionChanged, this, &UISoftKeyboard::sltHandleColorThemeListSelection);
+
+    connect(this, &UISoftKeyboard::sigHelpRequested, &msgCenter(), &UIMessageCenter::sltHandleDialogHelpButtonPress);
 }
 
 void UISoftKeyboard::saveSettings()

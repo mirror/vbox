@@ -53,6 +53,10 @@ class UISoftKeyboard : public QMainWindowWithRestorableGeometryAndRetranslateUi
 {
     Q_OBJECT;
 
+signals:
+
+    void sigHelpRequested(const QString &strHelpKeyword);
+
 public:
 
     UISoftKeyboard(QWidget *pParent, UISession *pSession, QWidget *pCenterWidget,
@@ -97,6 +101,7 @@ private slots:
     void sltShowHideMultimediaKeys(bool fHide);
     void sltHandleColorCellClick(int iColorRow);
     void sltResetKeyboard();
+    void sltHandleHelpRequest();
 
 private:
 
