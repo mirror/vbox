@@ -270,12 +270,10 @@ void UIWizard::assignBackground(const QString &strBackground)
 void UIWizard::enableHelpButton(const QString &strHelpTag /* = QString() */)
 {
     setOptions(options() | QWizard::HaveHelpButton);
+    setProperty("helptag", strHelpTag);
     if (button(QWizard::HelpButton))
-    {
-        button(QWizard::HelpButton)->setProperty("helptag", strHelpTag);
-        connect(button(QWizard::HelpButton), &QAbstractButton::pressed,
-                &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
-    }
+        button(QWizard::HelpButton)->setShortcut(Qt::Key_F1);
+    connect(this, &UIWizard::helpRequested, &msgCenter(), &UIMessageCenter::sltHandleDialogHelpButtonPress);
 }
 
 void UIWizard::setHelpButtonHelpTag(const QString &strHelpTag /* = QString() */)

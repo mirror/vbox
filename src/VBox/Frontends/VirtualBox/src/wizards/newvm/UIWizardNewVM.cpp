@@ -71,6 +71,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strGroup /* = QStr
 
 void UIWizardNewVM::prepare()
 {
+    enableHelpButton("gui-createvm");
     /* Create corresponding pages: */
     switch (mode())
     {
@@ -93,7 +94,6 @@ void UIWizardNewVM::prepare()
             break;
         }
     }
-    enableHelpButton("gui-createvm");
     /* Call to base-class: */
     UIWizard::prepare();
 }

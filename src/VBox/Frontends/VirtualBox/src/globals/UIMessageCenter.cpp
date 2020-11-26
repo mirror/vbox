@@ -3462,7 +3462,7 @@ void UIMessageCenter::sltHelpBrowserClosed()
 void UIMessageCenter::sltHandleDialogHelpButtonPress()
 {
 # if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-    QAbstractButton *pSender = qobject_cast<QAbstractButton*>(sender());
+    QWidget *pSender = qobject_cast<QWidget*>(sender());
     if (!pSender)
         return;
     QVariant keyWordProp = pSender->property("helptag");

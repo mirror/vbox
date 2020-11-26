@@ -187,6 +187,7 @@ void UIWizardCloneVM::retranslateUi()
 
 void UIWizardCloneVM::prepare()
 {
+    enableHelpButton("clone");
     QString strDefaultMachineFolder = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     /* Create corresponding pages: */
     switch (mode())
