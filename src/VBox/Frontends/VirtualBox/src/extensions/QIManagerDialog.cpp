@@ -186,7 +186,7 @@ void QIManagerDialog::prepareButtonBox()
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &QIManagerDialog::close);
         /* Connections to enable the context sensitive help: */
         connect(m_pButtonBox, &QDialogButtonBox::helpRequested, this, &QIManagerDialog::sltHandleHelpRequested);
-        connect(this, &QIManagerDialog::sigHelpRequested, &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
+        connect(this, &QIManagerDialog::sigHelpRequested, &msgCenter(), &UIMessageCenter::sltHandleHelpRequestWithKeyword);
 
         /* Configure button-box: */
         configureButtonBox();

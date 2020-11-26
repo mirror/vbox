@@ -779,7 +779,7 @@ void UISettingsDialog::prepareWidgets()
     QObject::connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISettingsDialog::reject);
     QObject::connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISettingsDialog::accept);
     connect(m_pButtonBox->button(QDialogButtonBox::Help), &QAbstractButton::pressed,
-                                 &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+                                 &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
 }
 
 void UISettingsDialog::assignValidator(UISettingsPage *pPage)

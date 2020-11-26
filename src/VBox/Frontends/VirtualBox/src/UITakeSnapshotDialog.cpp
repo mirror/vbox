@@ -298,7 +298,7 @@ void UITakeSnapshotDialog::prepareContents()
             connect(m_pButtonBox, &QIDialogButtonBox::rejected,
                     this, &UITakeSnapshotDialog::reject);
             connect(m_pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
-                    &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+                    &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
             m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(Qt::Key_F1);
             uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "snapshots");
             /* Add into layout: */

@@ -265,7 +265,7 @@ void UIVMInformationDialog::prepareButtonBox()
         uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), "guestadd-guestprops");
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMInformationDialog::close);
         connect(m_pButtonBox->button(QDialogButtonBox::Help), &QPushButton::pressed,
-                &(msgCenter()), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+                &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
         /* add button-box into main-layout: */
         centralWidget()->layout()->addWidget(m_pButtonBox);
     }

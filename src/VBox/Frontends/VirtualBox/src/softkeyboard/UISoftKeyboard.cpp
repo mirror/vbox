@@ -4215,7 +4215,7 @@ void UISoftKeyboard::prepareConnections()
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigCloseSettingsWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorThemeSelectionChanged, this, &UISoftKeyboard::sltHandleColorThemeListSelection);
 
-    connect(this, &UISoftKeyboard::sigHelpRequested, &msgCenter(), &UIMessageCenter::sltHandleDialogHelpButtonPress);
+    connect(this, &UISoftKeyboard::sigHelpRequested, &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
 }
 
 void UISoftKeyboard::saveSettings()

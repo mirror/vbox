@@ -553,8 +553,8 @@ public slots:
     void sltResetSuppressedMessages();
     void sltShowUserManual(const QString &strLocation);
     void sltHelpBrowserClosed();
-    void sltHandleDialogHelpButtonPress();
-    void sltHandleHelpRequest(const QString &strHelpKeyword);
+    void sltHandleHelpRequest();
+    void sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword);
 
 private slots:
 
