@@ -90,7 +90,6 @@ class PartialDbDump(object): # pylint: disable=too-few-public-methods
         'FailureCategories',
         'FailureReasons',
         'GlobalResources',
-        'TestBoxStrTab',
         'Testcases',
         'TestcaseArgs',
         'TestcaseDeps',
