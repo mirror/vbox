@@ -248,6 +248,7 @@ static const struct
     { NULL,       NULL }
 };
 
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
@@ -295,6 +296,14 @@ static const RTHTTPSERVERMETHOD_ENTRY g_aMethodMap[] =
 *   Internal functions                                                                                                           *
 *********************************************************************************************************************************/
 
+/**
+ * Guesses the HTTP MIME type based on a given file extension.
+ *
+ * Note: Has to include the beginning dot, e.g. ".mp3" (see IPRT).
+ *
+ * @returns Guessed MIME type, or "application/octet-stream" if not found.
+ * @param   pszFileExt          File extension to guess MIME type for.
+ */
 static const char *rtHttpServerGuessMIMEType(const char *pszFileExt)
 {
     if (pszFileExt)
@@ -310,6 +319,12 @@ static const char *rtHttpServerGuessMIMEType(const char *pszFileExt)
     return "application/octet-stream";
 }
 
+/**
+ * Allocates and initializes a new client request.
+ *
+ * @returns Pointer to the new client request, or NULL on OOM.
+ *          Needs to be free'd with rtHttpServerReqFree().
+ */
 static PRTHTTPSERVERREQ rtHttpServerReqAlloc(void)
 {
     PRTHTTPSERVERREQ pReq = (PRTHTTPSERVERREQ)RTMemAllocZ(sizeof(RTHTTPSERVERREQ));
@@ -321,6 +336,11 @@ static PRTHTTPSERVERREQ rtHttpServerReqAlloc(void)
     return pReq;
 }
 
+/**
+ * Frees a formerly allocated client request.
+ *
+ * @param   pReq                Pointer to client request to free.
+ */
 static void rtHttpServerReqFree(PRTHTTPSERVERREQ pReq)
 {
     if (!pReq)
@@ -339,6 +359,14 @@ static void rtHttpServerReqFree(PRTHTTPSERVERREQ pReq)
 *   Protocol Functions                                                                                                           *
 *********************************************************************************************************************************/
 
+/**
+ * Main function for sending a response back to the client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to reply to.
+ * @param   enmSts              Status code to send.
+ * @param   pHdrLst             Header list to send. Optional and can be NULL.
+ */
 static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient,
                                          RTHTTPSTATUS enmSts, PRTHTTPHEADERLIST pHdrLst)
 {
@@ -404,7 +432,7 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient,
 }
 
 /**
- * Replies with (three digit) response status back to the client.
+ * Replies with (three digit) response status back to the client, extended version.
  *
  * @returns VBox status code.
  * @param   pClient             Client to reply to.
@@ -418,11 +446,27 @@ static int rtHttpServerSendResponseEx(PRTHTTPSERVERCLIENT pClient, RTHTTPSTATUS 
     return rc;
 }
 
+/**
+ * Replies with (three digit) response status back to the client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to reply to.
+ * @param   enmSts              Status code to send.
+ */
 static int rtHttpServerSendResponseSimple(PRTHTTPSERVERCLIENT pClient, RTHTTPSTATUS enmSts)
 {
     return rtHttpServerSendResponseEx(pClient, enmSts, NULL /* pHdrLst */);
 }
 
+/**
+ * Sends a chunk of the response body to the client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to send body to.
+ * @param   pvBuf               Data buffer to send.
+ * @param   cbBuf               Size (in bytes) of data buffer to send.
+ * @param   pcbSent             Where to store the sent bytes. Optional and can be NULL.
+ */
 static int rtHttpServerSendResponseBody(PRTHTTPSERVERCLIENT pClient, void *pvBuf, size_t cbBuf, size_t *pcbSent)
 {
     int rc = RTTcpWrite(pClient->hSocket, pvBuf, cbBuf);
@@ -433,6 +477,12 @@ static int rtHttpServerSendResponseBody(PRTHTTPSERVERCLIENT pClient, void *pvBuf
     return rc;
 }
 
+/**
+ * Resolves a VBox status code to a HTTP status code.
+ *
+ * @returns Resolved HTTP status code, or RTHTTPSTATUS_INTERNALSERVERERROR if not able to resolve.
+ * @param   rc                  VBox status code to resolve.
+ */
 static RTHTTPSTATUS rtHttpServerRcToStatus(int rc)
 {
     switch (rc)
@@ -458,6 +508,13 @@ static RTHTTPSTATUS rtHttpServerRcToStatus(int rc)
 *   Command Protocol Handlers                                                                                                    *
 *********************************************************************************************************************************/
 
+/**
+ * Handler for the GET method.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to handle GET method for.
+ * @param   pReq                Client request to handle.
+ */
 static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTHTTPSERVERREQ pReq)
 {
     LogFlowFuncEnter();
@@ -542,6 +599,13 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
     return rc;
 }
 
+/**
+ * Handler for the HEAD method.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to handle HEAD method for.
+ * @param   pReq                Client request to handle.
+ */
 static DECLCALLBACK(int) rtHttpServerHandleHEAD(PRTHTTPSERVERCLIENT pClient, PRTHTTPSERVERREQ pReq)
 {
     LogFlowFuncEnter();
@@ -624,6 +688,14 @@ static bool rtHttpServerPathIsValid(const char *pszPath, bool fIsAbsolute)
 
 }
 
+/**
+ * Parses headers and fills them into a given header list.
+ *
+ * @returns VBox status code.
+ * @param   hList               Header list to fill parsed headers in.
+ * @param   pszReq              Request string with headers to parse.
+ * @param   cbReq               Size (in bytes) of request string to parse.
+ */
 static int rtHttpServerParseHeaders(RTHTTPHEADERLIST hList, char *pszReq, size_t cbReq)
 {
     /* Nothing to parse left? Bail out early. */
@@ -637,6 +709,16 @@ static int rtHttpServerParseHeaders(RTHTTPHEADERLIST hList, char *pszReq, size_t
     return VINF_SUCCESS;
 }
 
+/**
+ * Main function for parsing and allocating a client request.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to parse request from.
+ * @param   pszReq              Request string with headers to parse.
+ * @param   cbReq               Size (in bytes) of request string to parse.
+ * @param   ppReq               Where to store the allocated client request on success.
+ *                              Needs to be free'd via rtHttpServerReqFree().
+ */
 static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq, size_t cbReq,
                                     PRTHTTPSERVERREQ *ppReq)
 {
