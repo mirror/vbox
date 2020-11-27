@@ -423,6 +423,11 @@ public:
     void setFontScaleWidgetVisible(bool fToggled);
     void switchToTab(int iIndex);
 
+public slots:
+
+    void sltHandleCloseCurrentTab();
+    void sltHandleCloseOtherTabs();
+
 protected:
 
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
@@ -433,11 +438,10 @@ private slots:
     void sltHandleOpenLinkInNewTab(const QUrl &url);
     void sltHandleTabClose(int iTabIndex);
     void sltHandleContextMenuTabClose();
-    /** Closes/deletes all tabs other than the one with tab index @iTabIndex. */
-    void sltHandleCloseOtherTabs();
     void sltHandleCurrentChanged(int iTabIndex);
     void sltHandleFontSizeChange(int iFontPointSize);
     void sltShowTabBarContextMenu(const QPoint &pos);
+    void sltHandleCloseOtherTabsContextMenuAction();
 
 private:
 
@@ -446,6 +450,8 @@ private:
     void addNewTab(const QUrl &initialUrl);
     /** Check if lists of tab url/title has changed. if so emit a signal. */
     void updateTabUrlTitleList();
+    /** Closes all tabs other than the one with index @param iTabIndex. */
+    void closeAllTabsBut(int iTabIndex);
     const QHelpEngine* m_pHelpEngine;
     UIFontScaleWidget *m_pFontScaleWidget;
     QUrl m_homeUrl;
@@ -1506,8 +1512,23 @@ void UIHelpBrowserTabManager::updateTabUrlTitleList()
         return;
 
     m_tabTitleList = titles;
-
     emit sigTabsListChanged(m_tabTitleList);
+}
+
+void UIHelpBrowserTabManager::closeAllTabsBut(int iTabIndex)
+{
+    QString strTitle = tabText(iTabIndex);
+    QList<QWidget*> widgetList;
+    for (int i = 0; i < count(); ++i)
+        widgetList.append(widget(i));
+    clear();
+    for (int i = 0; i < widgetList.size(); ++i)
+    {
+        if (i != iTabIndex)
+            delete widgetList[i];
+    }
+    addTab(widgetList[iTabIndex], strTitle);
+    updateTabUrlTitleList();
 }
 
 void UIHelpBrowserTabManager::initializeTabs()
@@ -1692,26 +1713,26 @@ void UIHelpBrowserTabManager::sltHandleContextMenuTabClose()
     sltHandleTabClose(iTabIndex);
 }
 
-void UIHelpBrowserTabManager::sltHandleCloseOtherTabs()
+void UIHelpBrowserTabManager::sltHandleCloseOtherTabsContextMenuAction()
 {
+    /* Find the index of the sender tab. we will close all tabs but sender tab: */
     QAction *pAction = qobject_cast<QAction*>(sender());
     if (!pAction)
         return;
     int iTabIndex = pAction->data().toInt();
     if (iTabIndex < 0 || iTabIndex >= count())
         return;
-    QString strTitle = tabText(iTabIndex);
-    QList<QWidget*> widgetList;
-    for (int i = 0; i < count(); ++i)
-        widgetList.append(widget(i));
-    clear();
-    for (int i = 0; i < widgetList.size(); ++i)
-    {
-        if (i != iTabIndex)
-            delete widgetList[i];
-    }
-    addTab(widgetList[iTabIndex], strTitle);
-    updateTabUrlTitleList();
+    closeAllTabsBut(iTabIndex);
+}
+
+void UIHelpBrowserTabManager::sltHandleCloseCurrentTab()
+{
+    sltHandleTabClose(currentIndex());
+}
+
+void UIHelpBrowserTabManager::sltHandleCloseOtherTabs()
+{
+    closeAllTabsBut(currentIndex());
 }
 
 void UIHelpBrowserTabManager::sltHandleCurrentChanged(int iTabIndex)
@@ -1731,7 +1752,7 @@ void UIHelpBrowserTabManager::sltShowTabBarContextMenu(const QPoint &pos)
         return;
     QMenu menu;
     QAction *pCloseAll = menu.addAction(UIHelpBrowserWidget::tr("Close Other Tabs"));
-    connect(pCloseAll, &QAction::triggered, this, &UIHelpBrowserTabManager::sltHandleCloseOtherTabs);
+    connect(pCloseAll, &QAction::triggered, this, &UIHelpBrowserTabManager::sltHandleCloseOtherTabsContextMenuAction);
     pCloseAll->setData(tabBar()->tabAt(pos));
 
     QAction *pClose = menu.addAction(UIHelpBrowserWidget::tr("Close Tab"));
@@ -1882,6 +1903,7 @@ void UIHelpBrowserWidget::prepareActions()
     connect(m_pCloseDialogAction, &QAction::triggered,
             this, &UIHelpBrowserWidget::sigCloseDialog);
 
+    /* For size control actions: */
     m_pFontSizeLargerAction = new QAction(this);
     m_pFontSizeLargerAction->setIcon(UIIconPool::iconSet(":/help_browser_plus_32px.png"));
 
@@ -2402,6 +2424,18 @@ void UIHelpBrowserWidget::updateTabsMenu(const QStringList &titles)
     if (!m_pTabsMenu)
         return;
     m_pTabsMenu->clear();
+
+    QAction *pCloseTabAction = m_pTabsMenu->addAction(tr("Close Tab"));
+    QAction *pCloseOtherTabsAction = m_pTabsMenu->addAction(tr("Close Other Tabs"));
+
+    pCloseTabAction->setEnabled(titles.size() > 1);
+    pCloseOtherTabsAction->setEnabled(titles.size() > 1);
+
+    connect(pCloseTabAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltHandleCloseCurrentTab);
+    connect(pCloseOtherTabsAction, &QAction::triggered, m_pTabManager, &UIHelpBrowserTabManager::sltHandleCloseOtherTabs);
+
+    m_pTabsMenu->addSeparator();
+
     for (int i = 0; i < titles.size(); ++i)
     {
         QAction *pAction = m_pTabsMenu->addAction(titles[i]);
@@ -2456,17 +2490,15 @@ void UIHelpBrowserWidget::sltHandleCurrentTabChanged(int iIndex)
     Q_UNUSED(iIndex);
     if (!m_pTabsMenu)
         return;
-    QList<QAction*> list = m_pTabsMenu->actions();
-    if (iIndex >= list.size())
-        return;
 
+    /** Mark the action with iIndex+3 by assigning an icon to it. it is iIndex+3 and not iIndex since we have
+      * two additional (close tab, close other tabs and a separator) action on top of the tab selection actions: */
+    QList<QAction*> list = m_pTabsMenu->actions();
     for (int i = 0; i < list.size(); ++i)
-    {
-        if (i == iIndex)
-            list[i]->setIcon(UIIconPool::iconSet(":/help_browser_star_16px.png"));
-        else
-            list[i]->setIcon(QIcon());
-    }
+        list[i]->setIcon(QIcon());
+    if (iIndex+3 >= list.size())
+        return;
+    list[iIndex+3]->setIcon(UIIconPool::iconSet(":/help_browser_star_16px.png"));
 }
 
 #include "UIHelpBrowserWidget.moc"
