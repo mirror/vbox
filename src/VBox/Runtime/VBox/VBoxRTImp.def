@@ -1124,7 +1124,7 @@ EXPORTS
     RTHttpGetHeaderText
     RTHttpGetRedirLocation
     RTHttpGetText
-    RTHttpMethodName
+    RTHttpMethodToStr
     RTHttpPerform
     RTHttpReset
     RTHttpSetCAFile
@@ -2247,4 +2247,3 @@ EXPORTS
     RTHttpRawSetVerbose
     RTHttpRawSetWriteCallback
     RTHttpRawSetWriteHeaderCallback
-

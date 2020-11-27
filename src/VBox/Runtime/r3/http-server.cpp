@@ -408,7 +408,7 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient,
  *
  * @returns VBox status code.
  * @param   pClient             Client to reply to.
- * @param   enmStatus           Status code to send.
+ * @param   enmSts              Status code to send.
  * @param   pHdrLst             Header list to send. Optional and can be NULL.
  */
 static int rtHttpServerSendResponseEx(PRTHTTPSERVERCLIENT pClient, RTHTTPSTATUS enmSts, PRTHTTPHEADERLIST pHdrLst)
