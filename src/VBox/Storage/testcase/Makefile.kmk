@@ -149,7 +149,7 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
    vbox-img_LIBS += xml2
   endif
  else ifeq ($(KBUILD_TARGET),freebsd)
-  vbox-img_LIBS += iconv
+  vbox-img_LIBS += iconv geom bsdxml sbuf
   ifdef SDK_VBOX_LIBXML2_LIBS
    vbox-img_LIBS += xml2 lzma
   endif

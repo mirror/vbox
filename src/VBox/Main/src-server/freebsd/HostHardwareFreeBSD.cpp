@@ -61,8 +61,8 @@ typedef enum DriveType_T
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList, bool isDVD, bool *pfSuccess) RT_NOTHROW_PROTP;
-static int getDriveInfoFromCAM(DriveInfoList *pList, DriveType_T enmDriveType, bool *pfSuccess) RT_NOTHROW_PROTP;
+static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList, bool isDVD, bool *pfSuccess) RT_NOTHROW_DEF;
+static int getDriveInfoFromCAM(DriveInfoList *pList, DriveType_T enmDriveType, bool *pfSuccess) RT_NOTHROW_DEF;
 
 
 /** Find the length of a string, ignoring trailing non-ascii or control

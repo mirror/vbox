@@ -100,6 +100,8 @@ if !defined(VBOX_ONLY_EXTPACKS)
  VBoxDDU_LIBS             = \
  	$(LIB_RUNTIME) \
  	$(PATH_STAGE_LIB)/StorageLib$(VBOX_SUFF_LIB)
+ VBoxDDU_LIBS.freebsd    += \
+ 	geom
  if defined(VBOX_WITH_USB) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   VBoxDDU_LIBS           += \
  	$(PATH_STAGE_LIB)/USBLib$(VBOX_SUFF_LIB)

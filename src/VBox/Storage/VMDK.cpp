@@ -51,6 +51,11 @@
 # include <iprt/symlink.h>
 # include <iprt/linux/sysfs.h>
 #endif
+#ifdef RT_OS_FREEBSD
+#include <libgeom.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#endif
 
 #include "VDBackends.h"
 
@@ -3622,6 +3627,131 @@ static int vmdkFindSysBlockDevPath(PVMDKIMAGE pImage, char *pszBlockDevDir, size
 }
 #endif /* RT_OS_LINUX */
 
+#ifdef RT_OS_FREEBSD
+
+
+/**
+ * Reads the config data from the provider and returns offset and size
+ *
+ * @return IPRT status code
+ * @param pProvider   GEOM provider representing partition
+ * @param pcbOffset   Placeholder for the offset of the partition
+ * @param pcbSize     Placeholder for the size of the partition
+ */
+static int vmdkReadPartitionsParamsFromProvider(gprovider *pProvider, uint64_t *pcbOffset, uint64_t *pcbSize)
+{
+    gconfig *pConfEntry;
+    int rc = VERR_NOT_FOUND;
+
+    /*
+     * Required parameters are located in the list containing key/value pairs.
+     * Both key and value are in text form. Manuals tells nothing about the fact
+     * that the both parameters should be present in the list. Thus, there are
+     * cases when only one parameter is presented. To handle such cases we treat
+     * absent params as zero allowing the caller decide the case is either correct
+     * or an error.
+     */
+    uint64_t cbOffset = 0;
+    uint64_t cbSize = 0;
+    LIST_FOREACH(pConfEntry, &pProvider->lg_config, lg_config)
+    {
+        if (RTStrCmp(pConfEntry->lg_name, "offset") == 0)
+        {
+            cbOffset = RTStrToUInt64(pConfEntry->lg_val);
+            rc = VINF_SUCCESS;
+        }
+        else if (RTStrCmp(pConfEntry->lg_name, "length") == 0)
+        {
+            cbSize = RTStrToUInt64(pConfEntry->lg_val);
+            rc = VINF_SUCCESS;
+        }
+    }
+    if (RT_SUCCESS(rc))
+    {
+        *pcbOffset = cbOffset;
+        *pcbSize = cbSize;
+    }
+    return rc;
+}
+
+
+/**
+ * Searches the partition specified by name and calculates its size and absolute offset.
+ *
+ * @return IPRT status code.
+ * @param pParentClass       Class containing pParentGeom
+ * @param pszParentGeomName  Name of the parent geom where we are looking for provider
+ * @param pszProviderName    Name of the provider we are looking for
+ * @param pcbAbsoluteOffset  Placeholder for the absolute offset of the partition, i.e. offset from the beginning of the disk
+ * @param psbSize            Placeholder for the size of the partition.
+ */
+static int vmdkFindPartitionParamsByName(gclass *pParentClass, const char *pszParentGeomName, const char *pszProviderName,
+                                         uint64_t *pcbAbsoluteOffset, uint64_t *pcbSize)
+{
+    AssertReturn(pParentClass,       VERR_INVALID_PARAMETER);
+    AssertReturn(pszParentGeomName,  VERR_INVALID_PARAMETER);
+    AssertReturn(pszProviderName,    VERR_INVALID_PARAMETER);
+    AssertReturn(pcbAbsoluteOffset,  VERR_INVALID_PARAMETER);
+    AssertReturn(pcbSize,            VERR_INVALID_PARAMETER);
+
+    ggeom *pParentGeom;
+    int rc = VERR_NOT_FOUND;
+    LIST_FOREACH(pParentGeom, &pParentClass->lg_geom, lg_geom)
+    {
+        if (RTStrCmp(pParentGeom->lg_name, pszParentGeomName) == 0)
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+    }
+    if (RT_FAILURE(rc))
+        return rc;
+
+    gprovider *pProvider;
+    /*
+     * First, go over providers without handling EBR or BSDLabel
+     * partitions for case when looking provider is child
+     * of the givng geom, to reduce searching time
+     */
+    LIST_FOREACH(pProvider, &pParentGeom->lg_provider, lg_provider)
+    {
+        if (RTStrCmp(pProvider->lg_name, pszProviderName) == 0)
+            return vmdkReadPartitionsParamsFromProvider(pProvider, pcbAbsoluteOffset, pcbSize);
+    }
+
+    /*
+     * No provider found. Go over the parent geom again
+     * and make recursions if geom represents EBR or BSDLabel.
+     * In this case given parent geom contains only EBR or BSDLabel
+     * partition itself and their own partitions are in the separate
+     * geoms. Also, partition offsets are relative to geom, so
+     * we have to add offset from child provider with parent geoms
+     * provider
+     */
+
+    LIST_FOREACH(pProvider, &pParentGeom->lg_provider, lg_provider)
+    {
+        uint64_t cbOffset = 0;
+        uint64_t cbSize = 0;
+        rc = vmdkReadPartitionsParamsFromProvider(pProvider, &cbOffset, &cbSize);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        uint64_t cbProviderOffset = 0;
+        uint64_t cbProviderSize = 0;
+        rc = vmdkFindPartitionParamsByName(pParentClass, pProvider->lg_name, pszProviderName, &cbProviderOffset, &cbProviderSize);
+        if (RT_SUCCESS(rc))
+        {
+            *pcbAbsoluteOffset = cbOffset + cbProviderOffset;
+            *pcbSize = cbProviderSize;
+            return rc;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+#endif
+
 
 /**
  * Attempts to verify the raw partition path.
@@ -3821,6 +3951,67 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
             }
         }
         /* else: We've got nothing to work on, so only do content comparison. */
+    }
+#elif defined(RT_OS_FREEBSD)
+    char szDriveDevName[256];
+    char* pszDevName = fdevname_r(RTFileToNative(hRawDrive), szDriveDevName, 256);
+    if (pszDevName == NULL)
+        rc = vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. '%s' is not a drive path"), pImage->pszFilename, pszRawDrive);
+    char szPartDevName[256];
+    if (RT_SUCCESS(rc))
+    {
+        pszDevName = fdevname_r(RTFileToNative(hRawPart), szPartDevName, 256);
+        if (pszDevName == NULL)
+            rc = vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                           N_("VMDK: Image path: '%s'. '%s' is not a partition path"), pImage->pszFilename, pPartDesc->pszRawDevice);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        gmesh geomMesh;
+        int err = geom_gettree(&geomMesh);
+        if (err == 0)
+        {
+            /* Find root class containg partitions info */
+            gclass* pPartClass;
+            LIST_FOREACH(pPartClass, &geomMesh.lg_class, lg_class)
+            {
+                if (RTStrCmp(pPartClass->lg_name, "PART") == 0)
+                    break;
+            }
+            if (pPartClass == NULL || RTStrCmp(pPartClass->lg_name, "PART") != 0)
+                rc = vdIfError(pImage->pIfError, VERR_GENERAL_FAILURE, RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'. 'PART' class not found in the GEOM tree"), pImage->pszFilename);
+
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Find provider representing partition device */
+                uint64_t cbOffset;
+                uint64_t cbSize;
+                rc = vmdkFindPartitionParamsByName(pPartClass, szDriveDevName, szPartDevName, &cbOffset, &cbSize);
+                if (RT_SUCCESS(rc))
+                {
+                    if (cbOffset != pPartDesc->offStartInVDisk)
+                        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Start offset %RU64, expected %RU64"),
+                                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cbOffset, pPartDesc->offStartInVDisk);
+                    if (cbSize != pPartDesc->cbData)
+                        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Size %RU64, expected %RU64"),
+                                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cbSize, pPartDesc->cbData);
+                }
+                else
+                    rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                   N_("VMDK: Image path: '%s'. Error getting geom provider for the partition '%s' of the drive '%s' in the GEOM tree: %Rrc"),
+                                   pImage->pszFilename, pPartDesc->pszRawDevice, pszRawDrive, rc);
+            }
+
+            geom_deletetree(&geomMesh);
+        }
+        else
+            rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(err), RT_SRC_POS,
+                           N_("VMDK: Image path: '%s'. geom_gettree failed: %d"), pImage->pszFilename, err);
     }
 #else
     RT_NOREF(hVol); /* PORTME */
