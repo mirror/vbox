@@ -31,6 +31,7 @@
 #endif
 
 #include <iprt/types.h>
+#include <iprt/http-common.h>
 
 RT_C_DECLS_BEGIN
 
@@ -205,29 +206,6 @@ RTR3DECL(void) RTHttpFreeResponse(void *pvResponse);
  * @param   pszDstFile      The destination file name.
  */
 RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDstFile);
-
-/** HTTP methods. */
-typedef enum RTHTTPMETHOD
-{
-    RTHTTPMETHOD_INVALID = 0,
-    RTHTTPMETHOD_GET,
-    RTHTTPMETHOD_PUT,
-    RTHTTPMETHOD_POST,
-    RTHTTPMETHOD_PATCH,
-    RTHTTPMETHOD_DELETE,
-    RTHTTPMETHOD_HEAD,
-    RTHTTPMETHOD_OPTIONS,
-    RTHTTPMETHOD_TRACE,
-    RTHTTPMETHOD_END,
-    RTHTTPMETHOD_32BIT_HACK = 0x7fffffff
-} RTHTTPMETHOD;
-
-/**
- * Returns the name of the HTTP method.
- * @returns Read only string.
- * @param   enmMethod       The HTTP method to name.
- */
-RTR3DECL(const char *) RTHttpMethodName(RTHTTPMETHOD enmMethod);
 
 /**
  * Performs generic blocking HTTP request, optionally returning the body and headers.

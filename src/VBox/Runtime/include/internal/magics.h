@@ -84,9 +84,13 @@
 /** The value of RTFILEAIOREQINT::u32Magic. (Stephen Edwin King)  */
 #define RTFILEAIOREQ_MAGIC              UINT32_C(0x19470921)
 /** The magic value for RTFTPSERVERINTERNAL::u32Magic. */
-#define RTFTPSERVER_MAGIC               UINT32_C(0xfeed0004) /**< @todo find a value */
+#define RTFTPSERVER_MAGIC               UINT32_C(0x20170610)
 /** The value of RTFTPSERVERINTERNAL::u32Magic after close. */
 #define RTFTPSERVER_MAGIC_DEAD          (~RTFTPSERVER_MAGIC)
+/** The magic value for RTFTPSERVERINTERNAL::u32Magic. */
+#define RTHTTPSERVER_MAGIC              UINT32_C(0x20200602)
+/** The value for RTFTPSERVERINTERNAL::u32Magic after close. */
+#define RTHTTPSERVER_MAGIC_DEAD         (~RTHTTPSERVER_MAGIC)
 /** The value of RTENVINTERNAL::u32Magic. (Rumiko Takahashi) */
 #define RTENV_MAGIC                     UINT32_C(0x19571010)
 /** The value of RTERRVARS::ai32Vars[0]. (Ryuichi Sakamoto) */
@@ -103,6 +107,10 @@
 #define RTHTTP_MAGIC                    UINT32_C(0x18420225)
 /** The value of RTHTTPINTERNAL::u32Magic after close. */
 #define RTHTTP_MAGIC_DEAD               UINT32_C(0x19120330)
+/** The magic value for RTHTTPHEADERLISTINTERNAL::u32Magic. (Ken Follett) */
+#define RTHTTPHEADERLIST_MAGIC          UINT32_C(0x19490605)
+/** The value of RTHTTPHEADERLISTINTERNAL::u32Magic after close. */
+#define RTHTTPHEADERLIST_MAGIC_DEAD     (~RTHTTPHEADERLIST_MAGIC)
 /** The value of RTINIFILEINT::u32Magic. (Jane Austen) */
 #define RTINIFILE_MAGIC                 UINT32_C(0x17751216)
 /** The value of RTINIFILEINT::u32Magic after close. */

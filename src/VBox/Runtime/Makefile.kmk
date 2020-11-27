@@ -79,7 +79,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_VALIDATIONKIT && !VBOX_ONLY_DOCS
  # Normal build.
  #
  ifndef VBOX_ONLY_EXTPACKS
-  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+  #include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
@@ -696,6 +696,7 @@ RuntimeR3_SOURCES       = \
 	generic/critsect-generic.cpp \
 	generic/critsectrw-generic.cpp \
 	generic/env-generic.cpp \
+ 	generic/http.cpp \
 	generic/RTDirCreateUniqueNumbered-generic.cpp \
 	generic/RTEnvDupEx-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
@@ -729,6 +730,7 @@ RuntimeR3_SOURCES       = \
 	r3/fileio.cpp \
 	r3/fs.cpp \
 	r3/ftp-server.cpp \
+	r3/http-server.cpp \
 	r3/init.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \

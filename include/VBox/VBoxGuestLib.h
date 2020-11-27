@@ -624,6 +624,7 @@ typedef struct VBGLR3SHCLCMDCTX
      * This is set by ??. */
     uint32_t                    cParmsRecived;
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    /** Data related to Shared Clipboard file transfers. */
     VBGLR3SHCLTRANSFERCMDCTX    Transfers;
 # endif
 } VBGLR3SHCLCMDCTX;

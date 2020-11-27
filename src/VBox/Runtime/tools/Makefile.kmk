@@ -157,6 +157,11 @@ if !defined(VBOX_ONLY_BUILD)
   RTHttp_SOURCES = RTHttp.cpp
  endif
 
+ # RTHttpServer implements a simple HTTP server.
+ PROGRAMS += RTHttpServer
+ RTHttpServer_TEMPLATE = VBoxR3Tool
+ RTHttpServer_SOURCES = RTHttpServer.cpp
+
  # RTLdrCheckImports - import checker.
  PROGRAMS += RTLdrCheckImports
  RTLdrCheckImports_TEMPLATE = VBoxR3Tool
