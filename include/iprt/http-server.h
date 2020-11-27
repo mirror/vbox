@@ -90,7 +90,7 @@ typedef RTHTTPSERVERRESP *PRTHTTPSERVERRESP;
  */
 typedef struct RTHTTPSERVERCLIENTSTATE
 {
-
+    uint32_t         fUnused;
 } RTHTTPSERVERCLIENTSTATE;
 /** Pointer to a FTP server client state. */
 typedef RTHTTPSERVERCLIENTSTATE *PRTHTTPSERVERCLIENTSTATE;

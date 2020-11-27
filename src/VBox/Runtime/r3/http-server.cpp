@@ -505,9 +505,9 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
 
             RTHttpHeaderListDestroy(HdrLst);
 
-            size_t cbToRead = fsObj.cbObject;
-            size_t cbRead;
-            size_t cbWritten;
+            size_t cbToRead  = fsObj.cbObject;
+            size_t cbRead    = 0; /* Shut up GCC. */
+            size_t cbWritten = 0; /* Ditto. */
             while (cbToRead)
             {
                 RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRead, uID, pvBuf, RT_MIN(cbBuf, cbToRead), &cbRead);
