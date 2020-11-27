@@ -465,11 +465,12 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
     int rc;
 
     RTFSOBJINFO fsObj;
+    RT_ZERO(fsObj); /* Shut up MSVC. */
     RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq->pszUrl, &fsObj);
     if (RT_FAILURE(rc))
         return rc;
 
-    uint64_t uID;
+    uint64_t uID = 0; /* Ditto. */
     RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnOpen, pReq->pszUrl, &uID);
 
     if (RT_SUCCESS(rc))
@@ -548,6 +549,7 @@ static DECLCALLBACK(int) rtHttpServerHandleHEAD(PRTHTTPSERVERCLIENT pClient, PRT
     int rc;
 
     RTFSOBJINFO fsObj;
+    RT_ZERO(fsObj); /* Shut up MSVC. */
     RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq->pszUrl, &fsObj);
     if (RT_SUCCESS(rc))
     {
@@ -892,4 +894,3 @@ RTR3DECL(int) RTHttpServerDestroy(RTHTTPSERVER hHttpServer)
 
     return rc;
 }
-
