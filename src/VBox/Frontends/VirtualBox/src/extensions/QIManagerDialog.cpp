@@ -175,7 +175,7 @@ void QIManagerDialog::prepareButtonBox()
 
         /* Assign shortcuts: */
         button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
-        button(ButtonType_Help)->setShortcut(Qt::Key_F1);
+        button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
 
         /* Hide 'Reset' and 'Apply' initially: */
         button(ButtonType_Reset)->hide();

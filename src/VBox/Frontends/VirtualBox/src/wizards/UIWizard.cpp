@@ -272,7 +272,7 @@ void UIWizard::enableHelpButton(const QString &strHelpKeyword)
     setOptions(options() | QWizard::HaveHelpButton);
     uiCommon().setHelpKeyword(this, strHelpKeyword);
     if (button(QWizard::HelpButton))
-        button(QWizard::HelpButton)->setShortcut(Qt::Key_F1);
+        button(QWizard::HelpButton)->setShortcut(QKeySequence::HelpContents);
     connect(this, &UIWizard::helpRequested, &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
 }
 

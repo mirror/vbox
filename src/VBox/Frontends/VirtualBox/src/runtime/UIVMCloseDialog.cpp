@@ -513,7 +513,7 @@ void UIVMCloseDialog::prepareButtonBox()
         connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMCloseDialog::reject);
         connect(pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
                 &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
-        pButtonBox->button(QIDialogButtonBox::Help)->setShortcut(Qt::Key_F1);
+        pButtonBox->button(QIDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
         uiCommon().setHelpKeyword(pButtonBox->button(QIDialogButtonBox::Help), "intro-save-machine-state");
 
         /* Add into layout: */

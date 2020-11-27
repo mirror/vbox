@@ -112,7 +112,7 @@ void UITakeSnapshotDialog::retranslateUi()
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Close dialog without taking a snapshot"));
         m_pButtonBox->button(QDialogButtonBox::Help)->setStatusTip(tr("Show dialog help"));
 
-        m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(Qt::Key_F1);
+        m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
 
         m_pButtonBox->button(QDialogButtonBox::Ok)->setToolTip(tr("Accept (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setToolTip(tr("Cancel (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
@@ -299,7 +299,7 @@ void UITakeSnapshotDialog::prepareContents()
                     this, &UITakeSnapshotDialog::reject);
             connect(m_pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
                     &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
-            m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(Qt::Key_F1);
+            m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
             uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "snapshots");
             /* Add into layout: */
             pLayout->addWidget(m_pButtonBox, 3, 0, 1, 2);

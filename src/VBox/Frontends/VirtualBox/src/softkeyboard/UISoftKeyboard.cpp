@@ -3912,7 +3912,7 @@ bool UISoftKeyboard::event(QEvent *pEvent)
         QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
         if (pKeyEvent)
         {
-            if (pKeyEvent->key() == Qt::Key_F1)
+            if (QKeySequence(pKeyEvent->key()) == QKeySequence::HelpContents)
                 sltHandleHelpRequest();
         }
     }
