@@ -114,8 +114,8 @@ RTR3DECL(const char *) RTHttpMethodToStr(RTHTTPMETHOD enmMethod)
 
 RTR3DECL(const char *) RTHttpStatusToStr(RTHTTPSTATUS enmSts)
 {
-	switch (enmSts)
-	{
+    switch (enmSts)
+    {
         case RTHTTPSTATUS_OK                           : return "OK";
         case RTHTTPSTATUS_CREATED                      : return "Created";
         case RTHTTPSTATUS_ACCEPTED                     : return "Accepted";
@@ -127,48 +127,48 @@ RTR3DECL(const char *) RTHttpStatusToStr(RTHTTPSTATUS enmSts)
         case RTHTTPSTATUS_ALREADYREPORTED              : return "Already Reported";
         case RTHTTPSTATUS_IMUSED                       : return "IM Used";
 
-    	case RTHTTPSTATUS_BADREQUEST                   : return "Bad Request";
-    	case RTHTTPSTATUS_UNAUTHORIZED                 : return "Unauthorized";
-    	case RTHTTPSTATUS_PAYMENTREQUIRED              : return "Payment Required";
-    	case RTHTTPSTATUS_FORBIDDEN                    : return "Forbidden";
-    	case RTHTTPSTATUS_NOTFOUND                     : return "Not Found";
-    	case RTHTTPSTATUS_METHODNOTALLOWED             : return "Method Not Allowed";
-    	case RTHTTPSTATUS_NOTACCEPTABLE                : return "Not Acceptable";
-    	case RTHTTPSTATUS_PROXYAUTHENTICATIONREQUIRED  : return "Proxy Authentication Required";
-    	case RTHTTPSTATUS_REQUESTTIMEOUT               : return "Request Timeout";
-    	case RTHTTPSTATUS_CONFLICT                     : return "Conflict";
-    	case RTHTTPSTATUS_GONE                         : return "Gone";
-    	case RTHTTPSTATUS_LENGTHREQUIRED               : return "Length Required";
-    	case RTHTTPSTATUS_PRECONDITIONFAILED           : return "Precondition Failed";
-    	case RTHTTPSTATUS_PAYLOADTOOLARGE              : return "Payload Too Large";
-    	case RTHTTPSTATUS_URITOOLONG                   : return "URI Too Long";
-    	case RTHTTPSTATUS_UNSUPPORTEDMEDIATYPE         : return "Unsupported Media Type";
-    	case RTHTTPSTATUS_RANGENOTSATISFIABLE          : return "Range Not Satisfiable";
-    	case RTHTTPSTATUS_EXPECTATIONFAILED            : return "Expectation Failed";
-    	case RTHTTPSTATUS_IMATEAPOT                    : return "I'm a teapot";
-    	case RTHTTPSTATUS_UNPROCESSABLEENTITY          : return "Unprocessable Entity";
-    	case RTHTTPSTATUS_LOCKED                       : return "Locked";
-    	case RTHTTPSTATUS_FAILEDDEPENDENCY             : return "Failed Dependency";
-    	case RTHTTPSTATUS_UPGRADEREQUIRED              : return "Upgrade Required";
-    	case RTHTTPSTATUS_PRECONDITIONREQUIRED         : return "Precondition Required";
-    	case RTHTTPSTATUS_TOOMANYREQUESTS              : return "Too Many Requests";
-    	case RTHTTPSTATUS_REQUESTHEADERFIELDSTOOLARGE  : return "Request Header Fields Too Large";
-    	case RTHTTPSTATUS_UNAVAILABLEFORLEGALREASONS   : return "Unavailable For Legal Reasons";
+        case RTHTTPSTATUS_BADREQUEST                   : return "Bad Request";
+        case RTHTTPSTATUS_UNAUTHORIZED                 : return "Unauthorized";
+        case RTHTTPSTATUS_PAYMENTREQUIRED              : return "Payment Required";
+        case RTHTTPSTATUS_FORBIDDEN                    : return "Forbidden";
+        case RTHTTPSTATUS_NOTFOUND                     : return "Not Found";
+        case RTHTTPSTATUS_METHODNOTALLOWED             : return "Method Not Allowed";
+        case RTHTTPSTATUS_NOTACCEPTABLE                : return "Not Acceptable";
+        case RTHTTPSTATUS_PROXYAUTHENTICATIONREQUIRED  : return "Proxy Authentication Required";
+        case RTHTTPSTATUS_REQUESTTIMEOUT               : return "Request Timeout";
+        case RTHTTPSTATUS_CONFLICT                     : return "Conflict";
+        case RTHTTPSTATUS_GONE                         : return "Gone";
+        case RTHTTPSTATUS_LENGTHREQUIRED               : return "Length Required";
+        case RTHTTPSTATUS_PRECONDITIONFAILED           : return "Precondition Failed";
+        case RTHTTPSTATUS_PAYLOADTOOLARGE              : return "Payload Too Large";
+        case RTHTTPSTATUS_URITOOLONG                   : return "URI Too Long";
+        case RTHTTPSTATUS_UNSUPPORTEDMEDIATYPE         : return "Unsupported Media Type";
+        case RTHTTPSTATUS_RANGENOTSATISFIABLE          : return "Range Not Satisfiable";
+        case RTHTTPSTATUS_EXPECTATIONFAILED            : return "Expectation Failed";
+        case RTHTTPSTATUS_IMATEAPOT                    : return "I'm a teapot";
+        case RTHTTPSTATUS_UNPROCESSABLEENTITY          : return "Unprocessable Entity";
+        case RTHTTPSTATUS_LOCKED                       : return "Locked";
+        case RTHTTPSTATUS_FAILEDDEPENDENCY             : return "Failed Dependency";
+        case RTHTTPSTATUS_UPGRADEREQUIRED              : return "Upgrade Required";
+        case RTHTTPSTATUS_PRECONDITIONREQUIRED         : return "Precondition Required";
+        case RTHTTPSTATUS_TOOMANYREQUESTS              : return "Too Many Requests";
+        case RTHTTPSTATUS_REQUESTHEADERFIELDSTOOLARGE  : return "Request Header Fields Too Large";
+        case RTHTTPSTATUS_UNAVAILABLEFORLEGALREASONS   : return "Unavailable For Legal Reasons";
 
-    	case RTHTTPSTATUS_INTERNALSERVERERROR          : return "Internal Server Error";
-    	case RTHTTPSTATUS_NOTIMPLEMENTED               : return "Not Implemented";
-    	case RTHTTPSTATUS_BADGATEWAY                   : return "Bad Gateway";
-    	case RTHTTPSTATUS_SERVICEUNAVAILABLE           : return "Service Unavailable";
-    	case RTHTTPSTATUS_GATEWAYTIMEOUT               : return "Gateway Time-out";
-    	case RTHTTPSTATUS_HTTPVERSIONNOTSUPPORTED      : return "HTTP Version Not Supported";
-    	case RTHTTPSTATUS_VARIANTALSONEGOTIATES        : return "Variant Also Negotiates";
-    	case RTHTTPSTATUS_INSUFFICIENTSTORAGE          : return "Insufficient Storage";
-    	case RTHTTPSTATUS_LOOPDETECTED                 : return "Loop Detected";
-    	case RTHTTPSTATUS_NOTEXTENDED                  : return "Not Extended";
-    	case RTHTTPSTATUS_NETWORKAUTHENTICATIONREQUIRED: return "Network Authentication Required";
+        case RTHTTPSTATUS_INTERNALSERVERERROR          : return "Internal Server Error";
+        case RTHTTPSTATUS_NOTIMPLEMENTED               : return "Not Implemented";
+        case RTHTTPSTATUS_BADGATEWAY                   : return "Bad Gateway";
+        case RTHTTPSTATUS_SERVICEUNAVAILABLE           : return "Service Unavailable";
+        case RTHTTPSTATUS_GATEWAYTIMEOUT               : return "Gateway Time-out";
+        case RTHTTPSTATUS_HTTPVERSIONNOTSUPPORTED      : return "HTTP Version Not Supported";
+        case RTHTTPSTATUS_VARIANTALSONEGOTIATES        : return "Variant Also Negotiates";
+        case RTHTTPSTATUS_INSUFFICIENTSTORAGE          : return "Insufficient Storage";
+        case RTHTTPSTATUS_LOOPDETECTED                 : return "Loop Detected";
+        case RTHTTPSTATUS_NOTEXTENDED                  : return "Not Extended";
+        case RTHTTPSTATUS_NETWORKAUTHENTICATIONREQUIRED: return "Network Authentication Required";
 
-    	default: break;
-	}
+        default: break;
+    }
 
     AssertFailed();
     return "<Not implemented>";

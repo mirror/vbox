@@ -59,15 +59,15 @@ typedef enum RTHTTPSTATUS
      * 2xx - Success / information codes.
      */
     RTHTTPSTATUS_OK                            = 200,
-	RTHTTPSTATUS_CREATED                       = 201,
-	RTHTTPSTATUS_ACCEPTED                      = 202,
-	RTHTTPSTATUS_NONAUTHORITATIVEINFORMATION   = 203,
-	RTHTTPSTATUS_NOCONTENT                     = 204,
-	RTHTTPSTATUS_RESETCONTENT                  = 205,
-	RTHTTPSTATUS_PARTIALCONTENT                = 206,
-	RTHTTPSTATUS_MULTISTATUS                   = 207,
-	RTHTTPSTATUS_ALREADYREPORTED               = 208,
-	RTHTTPSTATUS_IMUSED                        = 226,
+    RTHTTPSTATUS_CREATED                       = 201,
+    RTHTTPSTATUS_ACCEPTED                      = 202,
+    RTHTTPSTATUS_NONAUTHORITATIVEINFORMATION   = 203,
+    RTHTTPSTATUS_NOCONTENT                     = 204,
+    RTHTTPSTATUS_RESETCONTENT                  = 205,
+    RTHTTPSTATUS_PARTIALCONTENT                = 206,
+    RTHTTPSTATUS_MULTISTATUS                   = 207,
+    RTHTTPSTATUS_ALREADYREPORTED               = 208,
+    RTHTTPSTATUS_IMUSED                        = 226,
     /**
      * 4xx - Client error codes.
      */
