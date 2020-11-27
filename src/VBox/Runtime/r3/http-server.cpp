@@ -795,7 +795,7 @@ static int rtHttpServerProcessRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq,
 {
     RTHTTPSTATUS enmSts = RTHTTPSTATUS_INTERNAL_NOT_SET;
 
-    PRTHTTPSERVERREQ pReq;
+    PRTHTTPSERVERREQ pReq = NULL; /* Shut up GCC. */
     int rc = rtHttpServerParseRequest(pClient, pszReq, cbReq, &pReq);
     if (RT_SUCCESS(rc))
     {
