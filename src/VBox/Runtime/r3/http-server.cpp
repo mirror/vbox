@@ -159,7 +159,6 @@ typedef RTHTTPSERVERINTERNAL *PRTHTTPSERVERINTERNAL;
             RTHTTPCALLBACKDATA Data = { &pClient->State, pClient->pServer->pvUser, pClient->pServer->cbUser }; \
             return pCallbacks->a_Name(&Data, __VA_ARGS__); \
         } \
-        return VERR_NOT_IMPLEMENTED; \
     } while (0)
 
 
@@ -354,6 +353,73 @@ static void rtHttpServerReqFree(PRTHTTPSERVERREQ pReq)
     RTMemFree(pReq);
 }
 
+/**
+ * Initializes a HTTP server response with an allocated body size.
+ *
+ * @returns VBox status code.
+ * @param   pResp               HTTP server response to initialize.
+ * @param   cbBody              Body size (in bytes) to allocate.
+ */
+RTR3DECL(int) RTHttpServerResponseInitEx(PRTHTTPSERVERRESP pResp, size_t cbBody)
+{
+    pResp->enmSts = RTHTTPSTATUS_INTERNAL_NOT_SET;
+
+    int rc = RTHttpHeaderListInit(&pResp->hHdrLst);
+    AssertRCReturn(rc, rc);
+
+    if (cbBody)
+    {
+        pResp->pvBody      = RTMemAlloc(cbBody);
+        AssertPtrReturn(pResp->pvBody, VERR_NO_MEMORY);
+        pResp->cbBodyAlloc = cbBody;
+    }
+    else
+    {
+        pResp->cbBodyAlloc = 0;
+    }
+
+    pResp->cbBodyUsed = 0;
+
+    return rc;
+}
+
+/**
+ * Initializes a HTTP server response.
+ *
+ * @returns VBox status code.
+ * @param   pResp               HTTP server response to initialize.
+ */
+RTR3DECL(int) RTHttpServerResponseInit(PRTHTTPSERVERRESP pResp)
+{
+    return RTHttpServerResponseInitEx(pResp, 0 /* cbBody */);
+}
+
+/**
+ * Destroys a formerly initialized HTTP server response.
+ *
+ * @param   pResp               Pointer to HTTP server response to destroy.
+ */
+RTR3DECL(void) RTHttpServerResponseDestroy(PRTHTTPSERVERRESP pResp)
+{
+    if (!pResp)
+        return;
+
+    pResp->enmSts = RTHTTPSTATUS_INTERNAL_NOT_SET;
+
+    RTHttpHeaderListDestroy(pResp->hHdrLst);
+
+    if (pResp->pvBody)
+    {
+        Assert(pResp->cbBodyAlloc);
+
+        RTMemFree(pResp->pvBody);
+        pResp->pvBody = NULL;
+    }
+
+    pResp->cbBodyAlloc = 0;
+    pResp->cbBodyUsed  = 0;
+}
+
 
 /*********************************************************************************************************************************
 *   Protocol Functions                                                                                                           *
@@ -521,14 +587,20 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
 
     int rc;
 
+    /* If a low-level GET request handler is defined, call it and return. */
+    RTHTTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnGetRequest, pReq);
+
     RTFSOBJINFO fsObj;
     RT_ZERO(fsObj); /* Shut up MSVC. */
-    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq->pszUrl, &fsObj);
+
+    char *pszMIMEHint = NULL;
+
+    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq->pszUrl, &fsObj, &pszMIMEHint);
     if (RT_FAILURE(rc))
         return rc;
 
-    uint64_t uID = 0; /* Ditto. */
-    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnOpen, pReq->pszUrl, &uID);
+    void *pvHandle;
+    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnOpen, pReq->pszUrl, &pvHandle);
 
     if (RT_SUCCESS(rc))
     {
@@ -544,6 +616,9 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
 
             char szVal[16];
 
+            /* Note: For directories fsObj.cbObject contains the actual size (in bytes)
+             *       of the body data for the directory listing. */
+
             ssize_t cch = RTStrPrintf2(szVal, sizeof(szVal), "%RU64", fsObj.cbObject);
             AssertBreakStmt(cch, VERR_BUFFER_OVERFLOW);
             rc = RTHttpHeaderListAdd(HdrLst, "Content-Length", szVal, strlen(szVal), RTHTTPHEADERLISTADD_F_BACK);
@@ -554,8 +629,17 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
             rc = RTHttpHeaderListAdd(HdrLst, "Content-Encoding", szVal, strlen(szVal), RTHTTPHEADERLISTADD_F_BACK);
             AssertRCBreak(rc);
 
-            const char *pszMIME = rtHttpServerGuessMIMEType(RTPathSuffix(pReq->pszUrl));
-            rc = RTHttpHeaderListAdd(HdrLst, "Content-Type", pszMIME, strlen(pszMIME), RTHTTPHEADERLISTADD_F_BACK);
+            if (pszMIMEHint == NULL)
+            {
+                const char *pszMIME = rtHttpServerGuessMIMEType(RTPathSuffix(pReq->pszUrl));
+                rc = RTHttpHeaderListAdd(HdrLst, "Content-Type", pszMIME, strlen(pszMIME), RTHTTPHEADERLISTADD_F_BACK);
+            }
+            else
+            {
+                rc = RTHttpHeaderListAdd(HdrLst, "Content-Type", pszMIMEHint, strlen(pszMIMEHint), RTHTTPHEADERLISTADD_F_BACK);
+                RTStrFree(pszMIMEHint);
+                pszMIMEHint = NULL;
+            }
             AssertRCReturn(rc, rc);
 
             rc = rtHttpServerSendResponseEx(pClient, RTHTTPSTATUS_OK, &HdrLst);
@@ -568,7 +652,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
             size_t cbWritten = 0; /* Ditto. */
             while (cbToRead)
             {
-                RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRead, uID, pvBuf, RT_MIN(cbBuf, cbToRead), &cbRead);
+                RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRead, pvHandle, pvBuf, RT_MIN(cbBuf, cbToRead), &cbRead);
                 if (RT_FAILURE(rc))
                     break;
                 rc = rtHttpServerSendResponseBody(pClient, pvBuf, cbRead, &cbWritten);
@@ -589,7 +673,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
 
         int rc2 = rc; /* Save rc. */
 
-        RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnClose, uID);
+        RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnClose, pvHandle);
 
         if (RT_FAILURE(rc2)) /* Restore original rc on failure. */
             rc = rc2;
@@ -610,11 +694,17 @@ static DECLCALLBACK(int) rtHttpServerHandleHEAD(PRTHTTPSERVERCLIENT pClient, PRT
 {
     LogFlowFuncEnter();
 
+    /* If a low-level HEAD request handler is defined, call it and return. */
+    RTHTTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnHeadRequest, pReq);
+
     int rc;
 
     RTFSOBJINFO fsObj;
     RT_ZERO(fsObj); /* Shut up MSVC. */
-    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq->pszUrl, &fsObj);
+
+    char *pszMIMEHint = NULL;
+
+    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq->pszUrl, &fsObj, &pszMIMEHint);
     if (RT_SUCCESS(rc))
     {
         RTHTTPHEADERLIST HdrLst;

@@ -78,6 +78,10 @@ typedef struct RTHTTPSERVERRESP
 /** Pointer to a HTTP server response. */
 typedef RTHTTPSERVERRESP *PRTHTTPSERVERRESP;
 
+RTR3DECL(int)  RTHttpServerResponseInitEx(PRTHTTPSERVERRESP pResp, size_t cbBody);
+RTR3DECL(int)  RTHttpServerResponseInit(PRTHTTPSERVERRESP pResp);
+RTR3DECL(void) RTHttpServerResponseDestroy(PRTHTTPSERVERRESP pResp);
+
 /**
  * Structure for maintaining a HTTP server client state.
  *
@@ -113,11 +117,68 @@ typedef RTHTTPCALLBACKDATA *PRTHTTPCALLBACKDATA;
  */
 typedef struct RTHTTPSERVERCALLBACKS
 {
-    DECLCALLBACKMEMBER(int, pfnOpen,(PRTHTTPCALLBACKDATA pData, const char *pszUrl, uint64_t *pidObj));
-    DECLCALLBACKMEMBER(int, pfnRead,(PRTHTTPCALLBACKDATA pData, uint64_t idObj, void *pvBuf, size_t cbBuf, size_t *pcbRead));
-    DECLCALLBACKMEMBER(int, pfnClose,(PRTHTTPCALLBACKDATA pData, uint64_t idObj));
-    DECLCALLBACKMEMBER(int, pfnQueryInfo,(PRTHTTPCALLBACKDATA pData, const char *pszUrl, PRTFSOBJINFO pObjInfo));
+    /**
+     * Called before a given URL will be retrieved by the GET method.
+     *
+     * Note: High level function, not being called when pfnOnGetRequest is implemented.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to HTTP callback data.
+     * @param   pszUrl          URL to handle.
+     * @param   ppvHandle       Where to return the pointer to the opaque handle used for object identification.
+     */
+    DECLCALLBACKMEMBER(int, pfnOpen,(PRTHTTPCALLBACKDATA pData, const char *pszUrl, void **ppvHandle));
+    /**
+     * Called when a given URL will be retrieved by the GET method.
+     *
+     * Note:  High level function, not being called when pfnOnGetRequest is implemented.
+     * Note2: Can be called multiple times, based on the body size to send.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to HTTP callback data.
+     * @param   pszUrl          URL to handle.
+     * @param   pvHandle        Opaque handle for object identification.
+     */
+    DECLCALLBACKMEMBER(int, pfnRead,(PRTHTTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead));
+    /**
+     * Called when a given URL is done retrieving by the GET method.
+     *
+     * Note: High level function, not being called when pfnOnGetRequest is implemented.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to HTTP callback data.
+     * @param   pszUrl          URL to handle.
+     * @param   pvHandle        Opaque handle for object identification.
+     */
+    DECLCALLBACKMEMBER(int, pfnClose,(PRTHTTPCALLBACKDATA pData, void *pvHandle));
+    /**
+     * Queries information about a given URL.
+     *
+     * Will be called with GET or HEAD request.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to HTTP callback data.
+     * @param   pszUrl          URL to query information for.
+     * @param   pObjInfo        Where to store the queried file information on success.
+     * @param   ppszMIMEHint    Where to return an allocated MIME type hint on success.
+     *                          Must be free'd by the caller using RTStrFree().
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryInfo,(PRTHTTPCALLBACKDATA pData, const char *pszUrl, PRTFSOBJINFO pObjInfo, char **ppszMIMEHint));
+    /**
+     * Low-level handler for a GET method request.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to HTTP callback data.
+     * @param   pReq            Pointer to request to handle.
+     */
     DECLCALLBACKMEMBER(int, pfnOnGetRequest,(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq));
+    /**
+     * Low-level handler for a HEAD method request.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to HTTP callback data.
+     * @param   pReq            Pointer to request to handle.
+     */
     DECLCALLBACKMEMBER(int, pfnOnHeadRequest,(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq));
 } RTHTTPSERVERCALLBACKS;
 /** Pointer to a HTTP server callback data table. */

@@ -68,13 +68,14 @@ typedef struct HTTPSERVERDATA
 {
     /** The absolute path of the HTTP server's root directory. */
     char szPathRootAbs[RTPATH_MAX];
-    /** The relative current working directory (CWD) to szRootDir. */
-    char szCWD[RTPATH_MAX];
+    RTFMODE      fMode;
     union
     {
-        RTFILE File;
-        RTDIR Dir;
+        RTFILE   File;
+        RTVFSDIR Dir;
     } h;
+    /** Cached response data. */
+    RTHTTPSERVERRESP Resp;
 } HTTPSERVERDATA;
 typedef HTTPSERVERDATA *PHTTPSERVERDATA;
 
@@ -288,6 +289,10 @@ static int dirRead(RTVFSDIR hVfsDir, char **ppszEntry, PRTFSOBJINFO pInfo)
                 break;
         }
 
+        /* Skip dot directories. */
+        if (RTDirEntryExIsStdDotLink(pDirEntry))
+            continue;
+
         *ppszEntry = RTStrDup(pDirEntry->szName);
         AssertPtrReturn(*ppszEntry, VERR_NO_MEMORY);
 
@@ -304,151 +309,239 @@ static int dirRead(RTVFSDIR hVfsDir, char **ppszEntry, PRTFSOBJINFO pInfo)
 }
 
 static int dirEntryWrite(char *pszBuf, size_t cbBuf,
-                         const char *pszEntry, const PRTFSOBJINFO pInfo, size_t *pcbWritten)
+                         const char *pszEntry, const PRTFSOBJINFO pObjInfo, size_t *pcbWritten)
 {
-    RT_NOREF(pInfo);
+    char szModTime[32];
+    if (RTTimeSpecToString(&pObjInfo->ModificationTime, szModTime, sizeof(szModTime)) == NULL)
+        return VERR_BUFFER_UNDERFLOW;
 
-    ssize_t cch = RTStrPrintf2(pszBuf, cbBuf, "201: %s\r\n", pszEntry);
+    int rc = VINF_SUCCESS;
+
+    ssize_t cch = RTStrPrintf2(pszBuf, cbBuf, "201: %s %RU64 %s %s\r\n",
+                               pszEntry, pObjInfo->cbObject, szModTime,
+                               /** @todo Very crude; only files and directories are supported for now. */
+                               RTFS_IS_FILE(pObjInfo->Attr.fMode) ? "FILE" : "DIRECTORY");
     if (cch <= 0)
-        return VERR_BUFFER_OVERFLOW;
+        rc = VERR_BUFFER_OVERFLOW;
 
-    /*
-    Content-type:
-    Last-Modified:
-    Content-Length:
-    */
-
-    *pcbWritten = (size_t)cch;
-
-    return VINF_SUCCESS;
-}
-
-static DECLCALLBACK(int) onGetRequest(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq)
-{
-    PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
-    Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
-
-    /* Construct absolute path. */
-    char *pszPathAbs = NULL;
-    if (RTStrAPrintf(&pszPathAbs, "%s/%s", pThis->szPathRootAbs, pReq->pszUrl) <= 0)
-        return VERR_NO_MEMORY;
-
-    RTVFSDIR hVfsDir;
-    int rc = dirOpen(pszPathAbs, &hVfsDir);
     if (RT_SUCCESS(rc))
     {
-        pReq->pvBody      = RTMemAlloc(_4K);
-        AssertPtrReturn(pReq->pvBody, VERR_NO_MEMORY); /** @todo Leaks stuff. */
-        pReq->cbBodyAlloc = _4K;
-        pReq->cbBodyUsed  =  0;
-
-        char *pszEntry  = NULL;
-        RTFSOBJINFO fsObjInfo;
-
-        while (RT_SUCCESS(rc = dirRead(hVfsDir, &pszEntry, &fsObjInfo)))
-        {
-            char *pszBody = (char *)pReq->pvBody;
-
-            size_t cbWritten;
-            rc = dirEntryWrite(&pszBody[pReq->cbBodyUsed], pReq->cbBodyAlloc - pReq->cbBodyUsed, pszEntry, &fsObjInfo, &cbWritten);
-            if (rc == VERR_BUFFER_OVERFLOW)
-            {
-                pReq->cbBodyAlloc *= 2; /** @todo Improve this. */
-                pReq->pvBody       = RTMemRealloc(pReq->pvBody, pReq->cbBodyAlloc);
-                AssertPtrBreakStmt(pReq->pvBody, rc = VERR_NO_MEMORY);
-
-                pszBody = (char *)pReq->pvBody;
-
-                rc = dirEntryWrite(&pszBody[pReq->cbBodyUsed], pReq->cbBodyAlloc - pReq->cbBodyUsed, pszEntry, &fsObjInfo, &cbWritten);
-            }
-
-            if (RT_SUCCESS(rc))
-                pReq->cbBodyUsed += cbWritten;
-
-            RTStrFree(pszEntry);
-
-            if (RT_FAILURE(rc))
-                break;
-        }
-
-        if (rc == VERR_NO_MORE_FILES) /* All entries consumed? */
-            rc = VINF_SUCCESS;
-
-        dirClose(hVfsDir);
+        *pcbWritten = (size_t)cch;
     }
 
-    RTStrFree(pszPathAbs);
     return rc;
 }
 
-static DECLCALLBACK(int) onHeadRequest(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq)
+/**
+ * Resolves (and validates) a given URL to an absolute (local) path.
+ *
+ * @returns VBox status code.
+ * @param   pThis               HTTP server instance data.
+ * @param   pszUrl              URL to resolve.
+ * @param   ppszPathAbs         Where to store the resolved absolute path on success.
+ *                              Needs to be free'd with RTStrFree().
+ */
+static int pathResolve(PHTTPSERVERDATA pThis, const char *pszUrl, char **ppszPathAbs)
 {
-    RT_NOREF(pData, pReq);
+    /* Construct absolute path. */
+    char *pszPathAbs = NULL;
+    if (RTStrAPrintf(&pszPathAbs, "%s/%s", pThis->szPathRootAbs, pszUrl) <= 0)
+        return VERR_NO_MEMORY;
+
+#ifdef VBOX_STRICT
+    RTFSOBJINFO objInfo;
+    int rc2 = RTPathQueryInfo(pszPathAbs, &objInfo, RTFSOBJATTRADD_NOTHING);
+    AssertRCReturn(rc, rc);
+    AssertReturn(!RTFS_IS_SYMLINK(objInfo.Attr.fMode), VERR_NOT_SUPPORTED);
+#endif
+
+    *ppszPathAbs = pszPathAbs;
 
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) onOpen(PRTHTTPCALLBACKDATA pData, const char *pszUrl, uint64_t *pidObj)
+DECLCALLBACK(int) onOpen(PRTHTTPCALLBACKDATA pData, const char *pszUrl, void **ppvHandle)
 {
     PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
     Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
 
-    /* Construct absolute path. */
     char *pszPathAbs = NULL;
-    if (RTStrAPrintf(&pszPathAbs, "%s/%s", pThis->szPathRootAbs, pszUrl) <= 0)
-        return VERR_NO_MEMORY;
-
-    int rc = RTFileOpen(&pThis->h.File, pszPathAbs,
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (RT_SUCCESS(rc))
-        *pidObj = 42;
-
-    RTStrFree(pszPathAbs);
-    return rc;
-}
-
-DECLCALLBACK(int) onRead(PRTHTTPCALLBACKDATA pData, uint64_t idObj, void *pvBuf, size_t cbBuf, size_t *pcbRead)
-{
-    PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
-    Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
-
-    AssertReturn(idObj == 42, VERR_NOT_FOUND);
-
-    return RTFileRead(pThis->h.File, pvBuf, cbBuf, pcbRead);
-}
-
-DECLCALLBACK(int) onClose(PRTHTTPCALLBACKDATA pData, uint64_t idObj)
-{
-    PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
-    Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
-
-    AssertReturn(idObj == 42, VERR_NOT_FOUND);
-
-    int rc = RTFileClose(pThis->h.File);
-    if (RT_SUCCESS(rc))
-        pThis->h.File = NIL_RTFILE;
-
-    return rc;
-}
-
-DECLCALLBACK(int) onQueryInfo(PRTHTTPCALLBACKDATA pData, const char *pszUrl, PRTFSOBJINFO pObjInfo)
-{
-    PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
-    Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
-
-    /* Construct absolute path. */
-    char *pszPathAbs = NULL;
-    if (RTStrAPrintf(&pszPathAbs, "%s/%s", pThis->szPathRootAbs, pszUrl) <= 0)
-        return VERR_NO_MEMORY;
-
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszPathAbs,
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    int rc = pathResolve(pThis, pszUrl, &pszPathAbs);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileQueryInfo(hFile, pObjInfo, RTFSOBJATTRADD_NOTHING);
+        RTFSOBJINFO objInfo;
+        rc = RTPathQueryInfo(pszPathAbs, &objInfo, RTFSOBJATTRADD_NOTHING);
+        AssertRCReturn(rc, rc);
+        if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+        {
+            /* Nothing to do here;
+             * The directory listing has been cached already in onQueryInfo(). */
+        }
+        else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+        {
+            rc = RTFileOpen(&pThis->h.File, pszPathAbs,
+                            RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+        }
 
-        RTFileClose(hFile);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->fMode = objInfo.Attr.fMode;
+
+             uint64_t *puHandle = (uint64_t *)RTMemAlloc(sizeof(uint64_t));
+             *puHandle  = 42; /** @todo Fudge. */
+             *ppvHandle = puHandle;
+        }
+
+        RTStrFree(pszPathAbs);
+    }
+    return rc;
+}
+
+DECLCALLBACK(int) onRead(PRTHTTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+{
+    PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
+
+    AssertReturn(*(uint64_t *)pvHandle == 42 /** @todo Fudge. */, VERR_NOT_FOUND);
+
+    if (RTFS_IS_DIRECTORY(pThis->fMode))
+    {
+        PRTHTTPSERVERRESP pResp = &pThis->Resp;
+
+        const size_t cbToCopy = RT_MIN(cbBuf, pResp->cbBodyUsed);
+        memcpy(pvBuf, pResp->pvBody, cbToCopy);
+        Assert(pResp->cbBodyUsed >= cbToCopy);
+        pResp->cbBodyUsed -= cbToCopy;
+
+        *pcbRead = cbToCopy;
+
+        return VINF_SUCCESS;
+    }
+    else if (RTFS_IS_FILE(pThis->fMode))
+        return RTFileRead(pThis->h.File, pvBuf, cbBuf, pcbRead);
+
+    return VERR_NOT_IMPLEMENTED; /* Never reached. */
+}
+
+DECLCALLBACK(int) onClose(PRTHTTPCALLBACKDATA pData, void *pvHandle)
+{
+    PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
+
+    AssertReturn(*(uint64_t *)pvHandle == 42 /** @todo Fudge. */, VERR_NOT_FOUND);
+
+    int rc;
+
+    if (RTFS_IS_FILE(pThis->fMode))
+    {
+        rc = RTFileClose(pThis->h.File);
+        if (RT_SUCCESS(rc))
+            pThis->h.File = NIL_RTFILE;
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    RTMemFree(pvHandle);
+    pvHandle = NULL;
+
+    return rc;
+}
+
+DECLCALLBACK(int) onQueryInfo(PRTHTTPCALLBACKDATA pData,
+                              const char *pszUrl, PRTFSOBJINFO pObjInfo, char **ppszMIMEHint)
+{
+    PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
+
+    char *pszPathAbs = NULL;
+    int rc = pathResolve(pThis, pszUrl, &pszPathAbs);
+    if (RT_SUCCESS(rc))
+    {
+        RTFSOBJINFO objInfo;
+        rc = RTPathQueryInfo(pszPathAbs, &objInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+            {
+                PRTHTTPSERVERRESP pResp = &pThis->Resp;
+
+                RTVFSDIR hVfsDir;
+                rc = dirOpen(pszPathAbs, &hVfsDir);
+                if (RT_SUCCESS(rc))
+                {
+                    RTHttpServerResponseDestroy(pResp);
+                    RTHttpServerResponseInitEx(pResp, _4K);
+
+                    /*
+                     * Write body header.
+                     */
+                    ssize_t cch = RTStrPrintf2((char *)pResp->pvBody, pResp->cbBodyAlloc,
+                                               "300: file://%s\r\n"
+                                               "200: filename content-length last-modified file-type\r\n",
+                                               pszUrl);
+                    Assert(cch);
+
+                    pResp->cbBodyUsed = strlen((char *)pResp->pvBody);
+
+                    /*
+                     * Write body entries.
+                     */
+                    char       *pszEntry = NULL;
+                    RTFSOBJINFO fsObjInfo;
+                    while (RT_SUCCESS(rc = dirRead(hVfsDir, &pszEntry, &fsObjInfo)))
+                    {
+                        char *pszBody = (char *)pResp->pvBody;
+
+                        size_t cbWritten;
+                        rc = dirEntryWrite(&pszBody[pResp->cbBodyUsed], pResp->cbBodyAlloc - pResp->cbBodyUsed, pszEntry, &fsObjInfo, &cbWritten);
+                        if (rc == VERR_BUFFER_OVERFLOW)
+                        {
+                            pResp->cbBodyAlloc *= 2; /** @todo Improve this. */
+                            pResp->pvBody       = RTMemRealloc(pResp->pvBody, pResp->cbBodyAlloc);
+                            AssertPtrBreakStmt(pResp->pvBody, rc = VERR_NO_MEMORY);
+
+                            pszBody = (char *)pResp->pvBody;
+
+                            rc = dirEntryWrite(&pszBody[pResp->cbBodyUsed], pResp->cbBodyAlloc - pResp->cbBodyUsed, pszEntry, &fsObjInfo, &cbWritten);
+                        }
+
+                        if (RT_SUCCESS(rc))
+                            pResp->cbBodyUsed += cbWritten;
+
+                        RTStrFree(pszEntry);
+
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
+
+                    if (rc == VERR_NO_MORE_FILES) /* All entries consumed? */
+                        rc = VINF_SUCCESS;
+
+                    dirClose(hVfsDir);
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTStrAPrintf(ppszMIMEHint, "text/plain");
+                        if (RT_SUCCESS(rc))
+                            pObjInfo->cbObject = pResp->cbBodyUsed;
+                    }
+                }
+            }
+            else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+            {
+                RTFILE hFile;
+                rc = RTFileOpen(&hFile, pszPathAbs,
+                                RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTFileQueryInfo(hFile, pObjInfo, RTFSOBJATTRADD_NOTHING);
+
+                    RTFileClose(hFile);
+                }
+            }
+        }
+
+        RTStrFree(pszPathAbs);
     }
 
     return rc;
@@ -541,9 +634,6 @@ int main(int argc, char **argv)
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Retrieving current directory failed: %Rrc", rc);
     }
 
-    /* Initialize CWD. */
-    RTStrPrintf2(g_HttpServerData.szCWD, sizeof(g_HttpServerData.szCWD), "/");
-
     /* Install signal handler. */
     rc = signalHandlerInstall();
     if (RT_SUCCESS(rc))
@@ -558,11 +648,12 @@ int main(int argc, char **argv)
         Callbacks.pfnRead          = onRead;
         Callbacks.pfnClose         = onClose;
         Callbacks.pfnQueryInfo     = onQueryInfo;
-        Callbacks.pfnOnGetRequest  = onGetRequest;
-        Callbacks.pfnOnHeadRequest = onHeadRequest;
 
         g_HttpServerData.h.File = NIL_RTFILE;
-        g_HttpServerData.h.Dir  = NIL_RTDIR;
+        g_HttpServerData.h.Dir  = NIL_RTVFSDIR;
+
+        rc = RTHttpServerResponseInit(&g_HttpServerData.Resp);
+        AssertRC(rc);
 
         RTHTTPSERVER hHTTPServer;
         rc = RTHttpServerCreate(&hHTTPServer, szAddress, uPort, &Callbacks,
