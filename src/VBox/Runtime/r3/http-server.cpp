@@ -599,7 +599,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
     if (RT_FAILURE(rc))
         return rc;
 
-    void *pvHandle;
+    void *pvHandle = NULL;
     RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnOpen, pReq->pszUrl, &pvHandle);
 
     if (RT_SUCCESS(rc))
