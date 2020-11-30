@@ -479,6 +479,7 @@ DECLCALLBACK(int) onQueryInfo(PRTHTTPCALLBACKDATA pData,
                                                "300: file://%s\r\n"
                                                "200: filename content-length last-modified file-type\r\n",
                                                pszUrl);
+                    RT_NOREF(cch);
                     Assert(cch);
 
                     pResp->cbBodyUsed = strlen((char *)pResp->pvBody);
