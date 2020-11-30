@@ -57,6 +57,9 @@ protected:
 
 private slots:
 
+    void sltHandleLinkHighlighted(const QString& strLink);
+    void sltHandleStatusBarVisibilityChange(bool fVisible);
+
 private:
 
     QString m_strHelpFilePath;

@@ -161,7 +161,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   UIBookmarksListContainer definition.                                                                                         *
+*   UIBookmarksListWidget definition.                                                                                         *
 *********************************************************************************************************************************/
 class UIBookmarksListWidget : public QListWidget
 {
@@ -179,7 +179,7 @@ public:
 protected:
 
     void mouseDoubleClickEvent(QMouseEvent *event) /* override */;
-
+    void mousePressEvent(QMouseEvent *pEvent) /* override */;
 };
 
 
@@ -204,9 +204,17 @@ public:
     QStringList bookmarks() const;
     QUrl currentBookmarkUrl();
 
+public:
+
+    void sltDeleteSelectedBookmark();
+
 protected:
 
     void retranslateUi() /* override */;
+
+private slots:
+
+    void sltHandleContextMenuRequest(const QPoint &listWidgetLocalPos);
 
 private:
 
@@ -288,7 +296,7 @@ public slots:
 
 protected:
 
-    void contextMenuEvent(QContextMenuEvent *event) /* override */;
+    virtual void contextMenuEvent(QContextMenuEvent *event) /* override */;
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     virtual void wheelEvent(QWheelEvent *pEvent) /* override */;
 
@@ -337,6 +345,7 @@ signals:
     void sigOpenLinkInNewTab(const QUrl &url);
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
     void sigFontPointSizeChanged(int iFontPointSize);
+    void sigLinkHighlighted(const QString &strLink);
 
 public:
 
@@ -401,6 +410,7 @@ signals:
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
     /** list.first is tab title and list.second is tab's index. */
     void sigTabsListChanged(const QStringList &titleList);
+    void sigLinkHighlighted(const QString &strLink);
 
 public:
 
@@ -632,6 +642,7 @@ void UIFontScaleWidget::sltSetFontPointSize()
 UIBookmarksListWidget::UIBookmarksListWidget(QWidget *pParent /* = 0 */)
     :QListWidget(pParent)
 {
+    setSelectionMode(QAbstractItemView::SingleSelection);
 }
 
 void UIBookmarksListWidget::mouseDoubleClickEvent(QMouseEvent *event)
@@ -643,6 +654,15 @@ void UIBookmarksListWidget::mouseDoubleClickEvent(QMouseEvent *event)
     QListWidget::mouseDoubleClickEvent(event);
 }
 
+void UIBookmarksListWidget::mousePressEvent(QMouseEvent *pEvent)
+{
+    if (!indexAt(pEvent->pos()).isValid())
+    {
+        clearSelection();
+        setCurrentItem(0);
+    }
+    QListWidget::mousePressEvent(pEvent);
+}
 
 /*********************************************************************************************************************************
 *   UIBookmarksListContainer implementation.                                                                                     *
@@ -689,6 +709,17 @@ QUrl UIBookmarksListContainer::currentBookmarkUrl()
     return m_pListWidget->currentItem()->data(iBookmarkUrlDataType).toUrl();
 }
 
+void UIBookmarksListContainer::sltDeleteSelectedBookmark()
+{
+    if (!m_pListWidget || !m_pListWidget->currentItem())
+        return;
+    QListWidgetItem *pCurrentItem = m_pListWidget->takeItem(m_pListWidget->currentRow());
+
+    delete pCurrentItem;
+
+
+}
+
 void UIBookmarksListContainer::retranslateUi()
 {
 }
@@ -706,7 +737,14 @@ void UIBookmarksListContainer::prepare()
     connect(m_pListWidget, &UIBookmarksListWidget::sigBookmarkDoubleClick,
             this, &UIBookmarksListContainer::sigBookmarkDoubleClick);
     connect(m_pListWidget, &UIBookmarksListWidget::customContextMenuRequested,
-            this, &UIBookmarksListContainer::sigListWidgetContextMenuRequest);
+            this, &UIBookmarksListContainer::sltHandleContextMenuRequest);
+}
+
+void UIBookmarksListContainer::sltHandleContextMenuRequest(const QPoint &listWidgetLocalPos)
+{
+    if (!m_pListWidget || !m_pListWidget->currentItem())
+        return;
+    emit sigListWidgetContextMenuRequest(listWidgetLocalPos);
 }
 
 int UIBookmarksListContainer::itemIndex(const QUrl &url)
@@ -962,6 +1000,8 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
             this, &UIHelpBrowserTab::sltHandleHomeAction);
     connect(m_pContentViewer, &UIHelpBrowserViewer::sigAddBookmark,
             this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
+    connect(m_pContentViewer, static_cast<void(UIHelpBrowserViewer::*)(const QString&)>(&UIHelpBrowserViewer::highlighted),
+            this, &UIHelpBrowserTab::sigLinkHighlighted);
 
     m_pContentViewer->setSource(initialUrl);
 }
@@ -1490,6 +1530,8 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl)
            this, &UIHelpBrowserTabManager::sigAddBookmark);
    connect(pTabWidget, &UIHelpBrowserTab::sigFontPointSizeChanged,
            this, &UIHelpBrowserTabManager::sltHandleFontSizeChange);
+   connect(pTabWidget, &UIHelpBrowserTab::sigLinkHighlighted,
+           this, &UIHelpBrowserTabManager::sigLinkHighlighted);
 
    if (m_fSwitchToNewTab)
        setCurrentIndex(index);
@@ -1817,7 +1859,8 @@ UIHelpBrowserWidget::UIHelpBrowserWidget(EmbedTo enmEmbedding, const QString &st
     , m_pPrintAction(0)
     , m_pShowHideSideBarAction(0)
     , m_pShowHideToolBarAction(0)
-    , m_pShowHideFontScaleWidget(0)
+    , m_pShowHideFontScaleWidgetAction(0)
+    , m_pShowHideStatusBarAction(0)
     , m_pFontSizeLargerAction(0)
     , m_pFontSizeSmallerAction(0)
     , m_pFontSizeResetAction(0)
@@ -1889,11 +1932,18 @@ void UIHelpBrowserWidget::prepareActions()
     connect(m_pShowHideToolBarAction, &QAction::toggled,
             this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
 
-    m_pShowHideFontScaleWidget = new QAction(this);
-    m_pShowHideFontScaleWidget->setCheckable(true);
-    m_pShowHideFontScaleWidget->setChecked(true);
-    connect(m_pShowHideFontScaleWidget, &QAction::toggled,
+    m_pShowHideFontScaleWidgetAction = new QAction(this);
+    m_pShowHideFontScaleWidgetAction->setCheckable(true);
+    m_pShowHideFontScaleWidgetAction->setChecked(true);
+    connect(m_pShowHideFontScaleWidgetAction, &QAction::toggled,
             this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
+
+    m_pShowHideStatusBarAction = new QAction(this);
+    m_pShowHideStatusBarAction->setCheckable(true);
+    m_pShowHideStatusBarAction->setChecked(true);
+    connect(m_pShowHideStatusBarAction, &QAction::toggled,
+            this, &UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle);
+
 
     m_pPrintAction = new QAction(this);
     connect(m_pPrintAction, &QAction::triggered,
@@ -1958,11 +2008,14 @@ void UIHelpBrowserWidget::prepareWidgets()
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigSourceChanged,
             this, &UIHelpBrowserWidget::sltHandleHelpBrowserViewerSourceChange);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigAddBookmark,
-           this, &UIHelpBrowserWidget::sltAddNewBookmark);
+            this, &UIHelpBrowserWidget::sltAddNewBookmark);
     connect(m_pTabManager, &UIHelpBrowserTabManager::sigTabsListChanged,
-           this, &UIHelpBrowserWidget::sltHandleTabListChanged);
+            this, &UIHelpBrowserWidget::sltHandleTabListChanged);
     connect(m_pTabManager, &UIHelpBrowserTabManager::currentChanged,
-           this, &UIHelpBrowserWidget::sltHandleCurrentTabChanged);
+            this, &UIHelpBrowserWidget::sltHandleCurrentTabChanged);
+    connect(m_pTabManager, &UIHelpBrowserTabManager::sigLinkHighlighted,
+            this, &UIHelpBrowserWidget::sigLinkHighlighted);
+
     connect(m_pHelpEngine, &QHelpEngine::setupFinished,
             this, &UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished);
     connect(m_pContentWidget, &QHelpContentWidget::clicked,
@@ -2069,8 +2122,10 @@ void UIHelpBrowserWidget::prepareMenu()
         m_pViewMenu->addAction(m_pShowHideSideBarAction);
     if (m_pShowHideToolBarAction)
         m_pViewMenu->addAction(m_pShowHideToolBarAction);
-    if (m_pShowHideFontScaleWidget)
-        m_pViewMenu->addAction(m_pShowHideFontScaleWidget);
+    if (m_pShowHideFontScaleWidgetAction)
+        m_pViewMenu->addAction(m_pShowHideFontScaleWidgetAction);
+    if (m_pShowHideStatusBarAction)
+        m_pViewMenu->addAction(m_pShowHideStatusBarAction);
 }
 
 void UIHelpBrowserWidget::loadOptions()
@@ -2186,8 +2241,11 @@ void UIHelpBrowserWidget::retranslateUi()
         m_pShowHideSideBarAction->setText(tr("Show Side Bar"));
     if (m_pShowHideToolBarAction)
         m_pShowHideToolBarAction->setText(tr("Show Tool Bar"));
-    if (m_pShowHideFontScaleWidget)
-        m_pShowHideFontScaleWidget->setText(tr("Show Font Scale Widget"));
+    if (m_pShowHideFontScaleWidgetAction)
+        m_pShowHideFontScaleWidgetAction->setText(tr("Show Font Scale Widget"));
+    if (m_pShowHideStatusBarAction)
+        m_pShowHideStatusBarAction->setText(tr("Show Status Bar"));
+
 
     if (m_pPrintAction)
         m_pPrintAction->setText(tr("Print..."));
@@ -2239,11 +2297,13 @@ void UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle(bool fToggled)
         if (m_pTabManager)
             m_pTabManager->setToolBarVisible(fToggled);
     }
-    else if (sender() == m_pShowHideFontScaleWidget)
+    else if (sender() == m_pShowHideFontScaleWidgetAction)
     {
         if (m_pTabManager)
             m_pTabManager->setFontScaleWidgetVisible(fToggled);
     }
+    else if (sender() == m_pShowHideStatusBarAction)
+        emit sigStatusBarVisible(fToggled);
 }
 
 void UIHelpBrowserWidget::sltShowPrintDialog()
@@ -2369,12 +2429,17 @@ void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
     pOpen->setData(url);
     pOpenInNewTab->setData(url);
     pCopyLink->setData(url);
-    connect(pOpenInNewTab, &QAction::triggered,
-            this, &UIHelpBrowserWidget::sltOpenLinkInNewTab);
-    connect(pOpen, &QAction::triggered,
-            this, &UIHelpBrowserWidget::sltOpenLink);
-    connect(pCopyLink, &QAction::triggered,
-            this, &UIHelpBrowserWidget::sltCopyLink);
+
+    connect(pOpenInNewTab, &QAction::triggered, this, &UIHelpBrowserWidget::sltOpenLinkInNewTab);
+    connect(pOpen, &QAction::triggered, this, &UIHelpBrowserWidget::sltOpenLink);
+    connect(pCopyLink, &QAction::triggered, this, &UIHelpBrowserWidget::sltCopyLink);
+
+    if (pSender == m_pBookmarksWidget)
+    {
+        menu.addSeparator();
+        QAction *pDeleteBookmark = menu.addAction(tr("Delete Bookmark"));
+        connect(pDeleteBookmark, &QAction::triggered, m_pBookmarksWidget, &UIBookmarksListContainer::sltDeleteSelectedBookmark);
+    }
 
     menu.exec(pSender->mapToGlobal(pos));
 }
@@ -2500,6 +2565,7 @@ void UIHelpBrowserWidget::sltHandleCurrentTabChanged(int iIndex)
         return;
     list[iIndex+3]->setIcon(UIIconPool::iconSet(":/help_browser_star_16px.png"));
 }
+
 
 #include "UIHelpBrowserWidget.moc"
 

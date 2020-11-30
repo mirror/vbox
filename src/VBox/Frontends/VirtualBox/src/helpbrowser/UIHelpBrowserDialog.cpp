@@ -20,6 +20,7 @@
 # include <QFontDatabase>
 #endif
 #include <QMenuBar>
+#include <QStatusBar>
 
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
@@ -45,6 +46,7 @@ UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidge
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
     prepareCentralWidget();
+    statusBar()->show();
     loadSettings();
     retranslateUi();
 }
@@ -84,6 +86,10 @@ void UIHelpBrowserDialog::prepareCentralWidget()
 
     connect(m_pWidget, &UIHelpBrowserWidget::sigCloseDialog,
             this, &UIHelpBrowserDialog::close);
+    connect(m_pWidget, &UIHelpBrowserWidget::sigLinkHighlighted,
+            this, &UIHelpBrowserDialog::sltHandleLinkHighlighted);
+    connect(m_pWidget, &UIHelpBrowserWidget::sigStatusBarVisible,
+            this, &UIHelpBrowserDialog::sltHandleStatusBarVisibilityChange);
 
     const QList<QMenu*> menuList = m_pWidget->menus();
     foreach (QMenu *pMenu, menuList)
@@ -111,4 +117,14 @@ void UIHelpBrowserDialog::saveSettings()
 bool UIHelpBrowserDialog::shouldBeMaximized() const
 {
     return gEDataManager->helpBrowserDialogShouldBeMaximized();
+}
+
+void UIHelpBrowserDialog::sltHandleLinkHighlighted(const QString& strLink)
+{
+    statusBar()->showMessage(strLink);
+}
+
+void UIHelpBrowserDialog::sltHandleStatusBarVisibilityChange(bool fVisible)
+{
+    statusBar()->setVisible(fVisible);
 }
