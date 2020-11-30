@@ -161,7 +161,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   UIBookmarksListWidget definition.                                                                                         *
+*   UIBookmarksListWidget definition.                                                                                            *
 *********************************************************************************************************************************/
 class UIBookmarksListWidget : public QListWidget
 {
@@ -663,6 +663,7 @@ void UIBookmarksListWidget::mousePressEvent(QMouseEvent *pEvent)
     }
     QListWidget::mousePressEvent(pEvent);
 }
+
 
 /*********************************************************************************************************************************
 *   UIBookmarksListContainer implementation.                                                                                     *
