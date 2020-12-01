@@ -24,6 +24,7 @@
 
 /* GUI includes */
 #include "UIActionPoolManager.h"
+#include "UICommon.h"
 #include "UICloudProfileManager.h"
 #include "UIMediumManager.h"
 #include "UINetworkManager.h"
