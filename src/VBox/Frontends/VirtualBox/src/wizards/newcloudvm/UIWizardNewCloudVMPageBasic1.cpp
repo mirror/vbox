@@ -583,6 +583,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 if (m_pSourceImageList)
                 {
                     m_pSourceImageLabel->setBuddy(m_pSourceImageList);
+                    m_pSourceImageList->setSortingEnabled(true);
                     const QFontMetrics fm(m_pSourceImageList->font());
                     const int iFontWidth = fm.width('x');
                     const int iTotalWidth = 50 * iFontWidth;
