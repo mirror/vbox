@@ -3024,8 +3024,8 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         /* Copy command to clipboard actions: */
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix));
-        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows));
+//        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix));
+//        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows));
         pMenu->addSeparator();
 
         /* Default Connect action: */
