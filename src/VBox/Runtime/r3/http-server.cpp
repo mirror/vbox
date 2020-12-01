@@ -436,6 +436,7 @@ static void rtHttpServerLogProto(PRTHTTPSERVERCLIENT pClient, bool fWrite, const
 {
     RT_NOREF(pClient);
 
+#ifdef LOGGING_ENABLED
     if (!pszData) /* Nothing to log? Bail out. */
         return;
 
@@ -452,6 +453,9 @@ static void rtHttpServerLogProto(PRTHTTPSERVERCLIENT pClient, bool fWrite, const
 
         RTMemFree(ppapszStrings);
     }
+#else
+    RT_NOREF(fWrite, pszData);
+#endif
 }
 
 /**
