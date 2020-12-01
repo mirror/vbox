@@ -308,6 +308,9 @@ private slots:
 
         /** Handles call to toggle machine search widget visibility to be @a fVisible. */
         void sltPerformMachineSearchWidgetVisibilityToggling(bool fVisible);
+
+        /** Handles call to show help viewer. */
+        void sltPerformShowHelpBrowser();
     /** @} */
 
 private:

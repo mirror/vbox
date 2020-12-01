@@ -97,6 +97,9 @@ public:
     /** Returns whether current-state item of Snapshot pane is selected. */
     bool isCurrentStateItemSelected() const;
 
+    /** Returns the help keyword of the current tool's widget. */
+    QString currentHelpKeyword() const;
+
 private:
 
     /** Prepares all. */

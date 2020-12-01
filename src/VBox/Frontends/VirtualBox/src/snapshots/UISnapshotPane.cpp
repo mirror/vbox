@@ -1204,6 +1204,9 @@ void UISnapshotPane::prepare()
     /* Load settings: */
     loadSettings();
 
+
+    uiCommon().setHelpKeyword(this, "snapshots");
+
     /* Apply language settings: */
     retranslateUi();
 }

@@ -310,6 +310,32 @@ bool UIToolPaneMachine::isCurrentStateItemSelected() const
     return m_pPaneSnapshots->isCurrentStateItemSelected();
 }
 
+QString UIToolPaneMachine::currentHelpKeyword() const
+{
+    QWidget *pCurrentToolWidget = 0;
+    switch (currentTool())
+    {
+        case UIToolType_Error:
+            pCurrentToolWidget = m_pPaneError;
+            break;
+        case UIToolType_Details:
+            pCurrentToolWidget = m_pPaneDetails;
+            break;
+        case UIToolType_Snapshots:
+            pCurrentToolWidget = m_pPaneSnapshots;
+            break;
+        case UIToolType_Logs:
+            pCurrentToolWidget = m_pPaneLogViewer;
+            break;
+        case UIToolType_Performance:
+            pCurrentToolWidget = m_pPanePerformanceMonitor;
+            break;
+        default:
+            break;
+    }
+    return uiCommon().helpKeyword(pCurrentToolWidget);
+}
+
 void UIToolPaneMachine::prepare()
 {
     /* Create stacked-layout: */

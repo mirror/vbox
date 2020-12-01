@@ -208,6 +208,12 @@ public:
         void updateToolBarMenuButtons(bool fSeparateMenuSection);
     /** @} */
 
+    /** @name Help browser stuff.
+      * @{ */
+        /** Shpws the help browser. */
+        void showHelpBrowser();
+    /** @} */
+
 public slots:
 
     /** @name Tool-bar stuff.

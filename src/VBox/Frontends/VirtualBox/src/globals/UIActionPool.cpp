@@ -2578,9 +2578,8 @@ void UIActionPool::prepareConnections()
     connect(action(UIActionIndex_M_Application_S_ResetWarnings), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltResetSuppressedMessages, Qt::UniqueConnection);
 
-    /* 'Help' menu connections: */
-    connect(action(UIActionIndex_Simple_Contents), &UIAction::triggered,
-            &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog, Qt::UniqueConnection);
+    /* 'Help' menu connections. Note that connections for UIActionIndex_Simple_Contents is done
+     *   in manager and runtime uis separately in their respective classes: */
     connect(action(UIActionIndex_Simple_WebSite), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltShowHelpWebDialog, Qt::UniqueConnection);
     connect(action(UIActionIndex_Simple_BugTracker), &UIAction::triggered,

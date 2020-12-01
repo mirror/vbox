@@ -2138,6 +2138,11 @@ void UIVirtualBoxManager::sltPerformMachineSearchWidgetVisibilityToggling(bool f
     m_pWidget->setMachineSearchWidgetVisibility(fVisible);
 }
 
+void UIVirtualBoxManager::sltPerformShowHelpBrowser()
+{
+    m_pWidget->showHelpBrowser();
+}
+
 void UIVirtualBoxManager::prepare()
 {
 #ifdef VBOX_WS_X11
@@ -2475,6 +2480,12 @@ void UIVirtualBoxManager::prepareConnections()
     /* 'Machine/Tools' menu connections: */
     connect(actionPool()->actionGroup(UIActionIndexMN_M_Machine_M_Tools), &QActionGroup::triggered,
             this, &UIVirtualBoxManager::sltPerformShowMachineTool);
+
+    /* 'Help' menu contents action connection. It is done here since we need different behaviour in
+     * the manager and runtime UIs: */
+    connect(actionPool()->action(UIActionIndex_Simple_Contents), &UIAction::triggered,
+        this, &UIVirtualBoxManager::sltPerformShowHelpBrowser);
+
 }
 
 void UIVirtualBoxManager::loadSettings()

@@ -241,6 +241,33 @@ void UIToolPaneGlobal::closeTool(UIToolType enmType)
     handleTokenChange();
 }
 
+QString UIToolPaneGlobal::currentHelpKeyword() const
+{
+    QWidget *pCurrentToolWidget = 0;
+    //UIToolType currentTool() const;
+    switch (currentTool())
+    {
+        case UIToolType_Welcome:
+            pCurrentToolWidget = m_pPaneWelcome;
+            break;
+        case UIToolType_Media:
+            pCurrentToolWidget = m_pPaneMedia;
+            break;
+        case UIToolType_Network:
+            pCurrentToolWidget = m_pPaneNetwork;
+            break;
+        case UIToolType_Cloud:
+            pCurrentToolWidget = m_pPaneCloud;
+            break;
+        case UIToolType_Resources:
+            pCurrentToolWidget = m_pPaneResourceMonitor;
+            break;
+        default:
+            break;
+    }
+    return uiCommon().helpKeyword(pCurrentToolWidget);
+}
+
 void UIToolPaneGlobal::prepare()
 {
     /* Create stacked-layout: */

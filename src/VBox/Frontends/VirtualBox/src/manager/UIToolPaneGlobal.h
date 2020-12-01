@@ -71,6 +71,8 @@ public:
     void openTool(UIToolType enmType);
     /** Closes tool of passed @a enmType, deletes one if exists. */
     void closeTool(UIToolType enmType);
+    /** Returns the help keyword of the current tool's widget. */
+    QString currentHelpKeyword() const;
 
 private:
 

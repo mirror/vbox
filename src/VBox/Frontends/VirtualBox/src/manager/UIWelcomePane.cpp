@@ -23,6 +23,7 @@
 
 /* GUI includes */
 #include "QIWithRetranslateUI.h"
+#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIWelcomePane.h"
 
@@ -212,6 +213,8 @@ void UIWelcomePane::prepare()
         /* Add stretch: */
         pMainLayout->addStretch();
     }
+
+    uiCommon().setHelpKeyword(this, "intro-starting");
 
     /* Translate finally: */
     retranslateUi();

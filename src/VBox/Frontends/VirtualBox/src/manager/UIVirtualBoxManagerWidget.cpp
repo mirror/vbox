@@ -27,6 +27,7 @@
 #include "UIActionPoolManager.h"
 #include "UIExtraDataManager.h"
 #include "UIChooser.h"
+#include "UIMessageCenter.h"
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UITabBar.h"
@@ -255,6 +256,17 @@ void UIVirtualBoxManagerWidget::updateToolBarMenuButtons(bool fSeparateMenuSecti
     QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)));
     if (pButton)
         pButton->setPopupMode(fSeparateMenuSection ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
+}
+
+void UIVirtualBoxManagerWidget::showHelpBrowser()
+{
+    QString strHelpKeyword;
+    if (isGlobalItemSelected())
+        strHelpKeyword = m_pPaneToolsGlobal->currentHelpKeyword();
+    else if (isMachineItemSelected())
+        strHelpKeyword = m_pPaneToolsMachine->currentHelpKeyword();
+
+    msgCenter().sltHandleHelpRequestWithKeyword(strHelpKeyword);
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest(const QPoint &position)
