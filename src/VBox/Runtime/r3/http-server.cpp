@@ -426,6 +426,48 @@ RTR3DECL(void) RTHttpServerResponseDestroy(PRTHTTPSERVERRESP pResp)
 *********************************************************************************************************************************/
 
 /**
+ * Logs the HTTP protocol communication to the debug logger (2).
+ *
+ * @param   pClient             Client to log communication for.
+ * @param   fWrite              Whether the server is writing (to client) or reading (from client).
+ * @param   pszData             Actual protocol communication data to log.
+ */
+static void rtHttpServerLogProto(PRTHTTPSERVERCLIENT pClient, bool fWrite, const char *pszData)
+{
+    RT_NOREF(pClient);
+
+    if (!pszData) /* Nothing to log? Bail out. */
+        return;
+
+    char **ppapszStrings;
+    size_t cStrings;
+    int rc2 = RTStrSplit(pszData, strlen(pszData), "\r\n", &ppapszStrings, &cStrings);
+    if (RT_SUCCESS(rc2))
+    {
+        for (size_t i = 0; i < cStrings; i++)
+        {
+            Log2(("%s %s\n", fWrite ? ">" : "<", ppapszStrings[i]));
+            RTStrFree(ppapszStrings[i]);
+        }
+
+        RTMemFree(ppapszStrings);
+    }
+}
+
+/**
+ * Writes HTTP protocol communication data to a connected client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to write data to.
+ * @param   pszData             Data to write. Must be zero-terminated.
+ */
+static int rtHttpServerWriteProto(PRTHTTPSERVERCLIENT pClient, const char *pszData)
+{
+    rtHttpServerLogProto(pClient, true /* fWrite */, pszData);
+    return RTTcpWrite(pClient->hSocket, pszData, strlen(pszData));
+}
+
+/**
  * Main function for sending a response back to the client.
  *
  * @returns VBox status code.
@@ -486,7 +528,7 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient,
         /* Append trailing EOL. */
         rc = RTStrAAppend(&pszHdr, "\r\n");
         if (RT_SUCCESS(rc))
-            rc = RTTcpWrite(pClient->hSocket, pszHdr, strlen(pszHdr));
+            rc = rtHttpServerWriteProto(pClient, pszHdr);
     }
 
     RTStrFree(pszHdr);
@@ -981,7 +1023,9 @@ static int rtHttpServerClientMain(PRTHTTPSERVERCLIENT pClient)
         if (   RT_SUCCESS(rc)
             && cbReadTotal)
         {
-            LogFlowFunc(("Received request (%zu bytes):\n%s\n\n", cbReadTotal, pszReq));
+            LogFlowFunc(("Received client request (%zu bytes)\n", cbReadTotal));
+
+            rtHttpServerLogProto(pClient, false /* fWrite */, szReq);
 
             rc = rtHttpServerProcessRequest(pClient, szReq, cbReadTotal);
         }
