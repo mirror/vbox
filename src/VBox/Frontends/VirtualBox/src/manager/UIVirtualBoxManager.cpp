@@ -2484,8 +2484,7 @@ void UIVirtualBoxManager::prepareConnections()
     /* 'Help' menu contents action connection. It is done here since we need different behaviour in
      * the manager and runtime UIs: */
     connect(actionPool()->action(UIActionIndex_Simple_Contents), &UIAction::triggered,
-        this, &UIVirtualBoxManager::sltPerformShowHelpBrowser);
-
+            this, &UIVirtualBoxManager::sltPerformShowHelpBrowser);
 }
 
 void UIVirtualBoxManager::loadSettings()

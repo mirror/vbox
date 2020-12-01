@@ -1186,6 +1186,11 @@ void UIMachineLogic::prepareActionConnections()
     connect(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools), &UIAction::triggered,
             this, &UIMachineLogic::sltInstallGuestAdditions);
 
+    /* 'Help' menu 'Contents' action. Done here since we react differently to this action
+     * in manager and runtime UI: */
+    connect(actionPool()->action(UIActionIndex_Simple_Contents), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowStatistics), &UIAction::triggered,
