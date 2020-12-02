@@ -436,7 +436,7 @@ static void rtHttpServerLogProto(PRTHTTPSERVERCLIENT pClient, bool fWrite, const
 {
     RT_NOREF(pClient);
 
-#ifdef LOGGING_ENABLED
+#ifdef LOG_ENABLED
     if (!pszData) /* Nothing to log? Bail out. */
         return;
 
@@ -477,18 +477,31 @@ static int rtHttpServerWriteProto(PRTHTTPSERVERCLIENT pClient, const char *pszDa
  * @returns VBox status code.
  * @param   pClient             Client to reply to.
  * @param   enmSts              Status code to send.
- * @param   pHdrLst             Header list to send. Optional and can be NULL.
  */
-static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient,
-                                         RTHTTPSTATUS enmSts, PRTHTTPHEADERLIST pHdrLst)
+static int rtHttpServerSendResponse(PRTHTTPSERVERCLIENT pClient, RTHTTPSTATUS enmSts)
 {
-    char *pszHdr;
-    int rc = RTStrAPrintf(&pszHdr,
+    char *pszResp;
+    int rc = RTStrAPrintf(&pszResp,
                           "%s %RU32 %s\r\n", RTHTTPVER_1_1_STR, enmSts, RTHttpStatusToStr(enmSts));
     AssertRCReturn(rc, rc);
+    rc = rtHttpServerWriteProto(pClient, pszResp);
+    RTStrFree(pszResp);
 
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Main function for sending response headers back to the client.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to reply to.
+ * @param   pHdrLst             Header list to send. Optional and can be NULL.
+ */
+static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient, PRTHTTPHEADERLIST pHdrLst)
+{
     RTHTTPHEADERLIST HdrLst;
-    rc = RTHttpHeaderListInit(&HdrLst);
+    int rc = RTHttpHeaderListInit(&HdrLst);
     AssertRCReturn(rc, rc);
 
 #ifdef DEBUG
@@ -503,6 +516,8 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient,
     /* Note: Deliberately don't include the VBox version due to security reasons. */
     rc = RTHttpHeaderListAdd(HdrLst, "Server", "Oracle VirtualBox", strlen("Oracle VirtualBox"), RTHTTPHEADERLISTADD_F_BACK);
     AssertRCReturn(rc, rc);
+
+    char *pszHdr = NULL;
 
     size_t i = 0;
     const char *pszEntry;
@@ -539,7 +554,7 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient,
 
     RTHttpHeaderListDestroy(HdrLst);
 
-    LogFlowFunc(("enmStatus=%s, rc=%Rrc\n", RTHttpStatusToStr(enmSts), rc));
+    LogFlowFunc(("rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -553,7 +568,9 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient,
  */
 static int rtHttpServerSendResponseEx(PRTHTTPSERVERCLIENT pClient, RTHTTPSTATUS enmSts, PRTHTTPHEADERLIST pHdrLst)
 {
-    int rc = rtHttpServerSendResponseHdrEx(pClient, enmSts, pHdrLst);
+    int rc = rtHttpServerSendResponse(pClient, enmSts);
+    if (RT_SUCCESS(rc))
+        rc = rtHttpServerSendResponseHdrEx(pClient, pHdrLst);
 
     return rc;
 }
