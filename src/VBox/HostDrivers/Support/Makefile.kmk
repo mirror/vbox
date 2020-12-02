@@ -413,8 +413,25 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
  endif
 endif
 
-# Things specific to the posix crowd.
-if1of ($(KBUILD_TARGET), linux darwin solaris)
+# macOS specifics.
+ifeq ($(KBUILD_TARGET),darwin)
+ SUPR3HardenedStatic_DEFS += \
+ 	LOG_DISABLED
+
+ SUPR3HardenedStatic_INCS += $(VBOX_PATH_RUNTIME_SRC)/include
+
+ SUPR3HardenedStatic_SOURCES += \
+ 	darwin/SUPR3HardenedMain-darwin.cpp \
+       \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg1Weak.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2Weak.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2WeakV.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/generic/RTAssertShouldPanic-generic.cpp
+endif
+
+# Things specific to the rest of the posix crowd.
+if1of ($(KBUILD_TARGET), linux solaris)
  SUPR3HardenedStatic_DEFS += \
  	IN_DIS \
 	IN_DIS_STATIC \

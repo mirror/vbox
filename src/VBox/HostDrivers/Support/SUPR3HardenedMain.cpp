@@ -2634,7 +2634,9 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(g_pszSupLibHardenedProgName);
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_VERIFY_TRUST_READY;
 #else /* !RT_OS_WINDOWS */
-# ifndef RT_OS_FREEBSD /** @todo portme */
+# if defined(RT_OS_DARWIN)
+    supR3HardenedDarwinInit();
+# elif !defined(RT_OS_FREEBSD) /** @todo Portme. */
     /*
      * Posix: Hook the load library interface interface.
      */

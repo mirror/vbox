@@ -38,14 +38,7 @@
 
 #include <dlfcn.h>
 #include <sys/mman.h>
-#ifdef RT_OS_DARWIN
-# include <errno.h>
-# include <fcntl.h>
-# include <sys/stat.h> /* fstat() */
-# include <unistd.h>   /* readlink() */
-# include <stdlib.h>
-# include <sys/sysctl.h> /* sysctlbyname() */
-#elif defined(RT_OS_SOLARIS)
+#if defined(RT_OS_SOLARIS)
 # include <link.h>
 #endif
 #include <stdio.h>
@@ -57,11 +50,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-
-/** For OS X. */
-#ifndef MAP_ANONYMOUS
-# define MAP_ANONYMOUS MAP_ANON
-#endif
 
 /**
  * Memory for code patching.
@@ -191,7 +179,7 @@ DECLASM(bool) supR3HardenedPosixMonitor_VerifyLibrary(const char *pszFilename)
     if (   pszFilename
         && strchr(pszFilename, '/') != NULL)
     {
-#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
+#if defined(RT_OS_LINUX)
         int rc = supR3HardenedVerifyFileFollowSymlinks(pszFilename, RTHCUINTPTR_MAX, true /* fMaybe3rdParty */,
                                                        NULL /* pErrInfo */);
 #else
@@ -641,37 +629,11 @@ static DECLCALLBACK(void) supR3HardenedPosixMonitorDlmopenResolve(void)
  */
 DECLHIDDEN(void) supR3HardenedPosixInit(void)
 {
-    int  rc;
-    bool fIgnoreFailure = false;
-
-#ifdef RT_OS_DARWIN
-    /*
-     * Try figure out / guess if we've got hardened runtime here.  For now we'll
-     * just ignore patching errors if when hardened runtime is active.
-     */
-    int (*pfnCsOps)(pid_t, unsigned int, void *, size_t);
-    *(void **)&pfnCsOps = dlsym(RTLD_DEFAULT, "csops");
-    if (!pfnCsOps)
-        supR3HardenedFatalMsg("supR3HardenedPosixInit", kSupInitOp_Integrity, VERR_SYMBOL_NOT_FOUND,
-                              "Failed locate the 'csops' function");
-
-    uint32_t fFlags = 0;
-    rc = pfnCsOps(getpid(), 0 /*CS_OPS_STATUS*/, &fFlags, sizeof(fFlags));
-# if 0
-    char szMsg[128];
-    write(2, szMsg, sprintf(szMsg,"DEBUG: p_csflags=%#x rc=%d\n", fFlags, rc));
-# endif
-    if (rc != 0)
-        supR3HardenedFatalMsg("supR3HardenedPosixInit", kSupInitOp_Integrity, VERR_GENERAL_FAILURE,
-                              "csops/CS_OPS_STATUS failed (%d)", rc);
-    fIgnoreFailure = RT_BOOL(fFlags & 0x00010000 /*CS_RUNTIME*/);
-#endif
-
     for (unsigned i = 0; i < RT_ELEMENTS(g_aHooks); i++)
     {
         PCSUPHARDENEDPOSIXHOOK pHook = &g_aHooks[i];
-        rc = supR3HardenedMainPosixHookOne(pHook->pszSymbol, pHook->pfnHook, pHook->ppfnRealResume, pHook->pfnResolve);
-        if (RT_FAILURE(rc) && !fIgnoreFailure)
+        int rc = supR3HardenedMainPosixHookOne(pHook->pszSymbol, pHook->pfnHook, pHook->ppfnRealResume, pHook->pfnResolve);
+        if (RT_FAILURE(rc))
             supR3HardenedFatalMsg("supR3HardenedPosixInit", kSupInitOp_Integrity, rc,
                                   "Failed to hook the %s interface", pHook->pszSymbol);
     }

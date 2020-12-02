@@ -494,7 +494,11 @@ DECLHIDDEN(char *)  supR3HardenedWinReadErrorInfoDevice(char *pszErrorInfo, size
 DECLHIDDEN(void)    supR3HardenedWinReportErrorToParent(const char *pszWhere, SUPINITOP enmWhat, int rc,
                                                         const char *pszFormat, va_list va);
 #else   /* !RT_OS_WINDOWS */
+# if !defined(RT_OS_DARWIN)
 DECLHIDDEN(void)    supR3HardenedPosixInit(void);
+# else  /* !RT_OS_DARWIN */
+DECLHIDDEN(void)    supR3HardenedDarwinInit(void);
+#endif  /* !RT_OS_DARWIN */
 #endif  /* !RT_OS_WINDOWS */
 
 SUPR3DECL(int)      supR3PageLock(void *pvStart, size_t cPages, PSUPPAGE paPages);
