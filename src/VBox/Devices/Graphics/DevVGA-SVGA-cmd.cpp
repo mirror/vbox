@@ -672,10 +672,15 @@ static int vmsvgaR3GboTransfer(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo,
         RTGCPHYS const GCPhys = paDescriptors[iDescriptor].GCPhys + off - offDescriptor;
         Log5Func(("%s phys=%RGp\n", (enmDirection == VMSVGAGboTransferDirection_Read) ? "READ" : "WRITE", GCPhys));
 
+        /*
+         * We are deliberately using the non-PCI version of PDMDevHlpPCIPhys[Read|Write] as the
+         * guest-side VMSVGA driver seems to allocate non-DMA (regular physical) addresses,
+         * see @bugref{9654#c75}.
+         */
         if (enmDirection == VMSVGAGboTransferDirection_Read)
-            rc = PDMDevHlpPCIPhysRead(pSvgaR3State->pDevIns, GCPhys, pu8CurrentHost, cbToCopy);
+            rc = PDMDevHlpPhysRead(pSvgaR3State->pDevIns, GCPhys, pu8CurrentHost, cbToCopy);
         else
-            rc = PDMDevHlpPCIPhysWrite(pSvgaR3State->pDevIns, GCPhys, pu8CurrentHost, cbToCopy);
+            rc = PDMDevHlpPhysWrite(pSvgaR3State->pDevIns, GCPhys, pu8CurrentHost, cbToCopy);
         AssertRCBreak(rc);
 
         cbData         -= cbToCopy;
@@ -6340,10 +6345,15 @@ int vmsvgaR3GmrTransfer(PVGASTATE pThis, PVGASTATECC pThisCC, const SVGA3dTransf
 
             Log5Func(("%s phys=%RGp\n", (enmTransferType == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", GCPhys));
 
+            /*
+             * We are deliberately using the non-PCI version of PDMDevHlpPCIPhys[Read|Write] as the
+             * guest-side VMSVGA driver seems to allocate non-DMA (physical memory) addresses,
+             * see @bugref{9654#c75}.
+             */
             if (enmTransferType == SVGA3D_WRITE_HOST_VRAM)
-                rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pbCurrentHost, cbToCopy);
+                rc = PDMDevHlpPhysRead(pDevIns, GCPhys, pbCurrentHost, cbToCopy);
             else
-                rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pbCurrentHost, cbToCopy);
+                rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, pbCurrentHost, cbToCopy);
             AssertRCBreak(rc);
 
             cbCurrentWidth -= cbToCopy;
