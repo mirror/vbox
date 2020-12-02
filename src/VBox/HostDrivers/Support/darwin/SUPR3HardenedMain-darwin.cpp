@@ -40,6 +40,7 @@
 #include <sys/sysctl.h> /* sysctlbyname() */
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h> /* issetugid() */
 #include <mach-o/dyld.h>
 
 #include "SUPLibInternal.h"
@@ -85,6 +86,7 @@ typedef FNDLOPEN *PFNDLOPEN;
 extern "C" void _dyld_register_func_for_add_image(void (*func)(const struct mach_header* mh, intptr_t vmaddr_slide));
 
 static void * supR3HardenedDarwinDlopenInterpose(const char *path, int mode);
+static int supR3HardenedDarwinIssetugidInterpose(void);
 
 
 /*********************************************************************************************************************************
@@ -101,7 +103,8 @@ static PFNDLOPEN               g_pfnDlopenReal = NULL;
  */
 static const DYLDINTERPOSE     g_aInterposers[] =
 {
-    { (const void *)(uintptr_t)&supR3HardenedDarwinDlopenInterpose, (const void *)(uintptr_t)&dlopen }
+    { (const void *)(uintptr_t)&supR3HardenedDarwinDlopenInterpose,    (const void *)(uintptr_t)&dlopen    },
+    { (const void *)(uintptr_t)&supR3HardenedDarwinIssetugidInterpose, (const void *)(uintptr_t)&issetugid }
 };
 
 
@@ -142,6 +145,35 @@ static void * supR3HardenedDarwinDlopenInterpose(const char *path, int mode)
     }
 
     return g_pfnDlopenReal(path, mode);
+}
+
+
+/**
+ * Override this one to try hide the fact that we're setuid to root orginially.
+ *
+ * @sa issetugid() man page.
+ *
+ * Mac OS X: Really ugly hack to bypass a set-uid check in AppKit.
+ *
+ * This will modify the issetugid() function to always return zero.  This must
+ * be done _before_ AppKit is initialized, otherwise it will refuse to play ball
+ * with us as it distrusts set-uid processes since Snow Leopard.  We, however,
+ * have carefully dropped all root privileges at this point and there should be
+ * no reason for any security concern here.
+ */
+static int supR3HardenedDarwinIssetugidInterpose(void)
+{
+    Dl_info Info = {0};
+    char szMsg[512];
+    size_t cchMsg;
+    const void * uCaller = __builtin_return_address(0);
+    if (dladdr(uCaller, &Info))
+        cchMsg = snprintf(szMsg, sizeof(szMsg), "DEBUG: issetugid_for_AppKit was called by %p %s::%s+%p (via %p)\n",
+                          uCaller, Info.dli_fname, Info.dli_sname, (void *)((uintptr_t)uCaller - (uintptr_t)Info.dli_saddr), __builtin_return_address(1));
+    else
+        cchMsg = snprintf(szMsg, sizeof(szMsg), "DEBUG: issetugid_for_AppKit was called by %p (via %p)\n", uCaller, __builtin_return_address(1));
+    write(2, szMsg, cchMsg);
+    return 0;
 }
 
 
