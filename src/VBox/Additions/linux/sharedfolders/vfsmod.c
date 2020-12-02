@@ -906,27 +906,27 @@ static int vbsf_read_super_26(struct super_block *sb, void *data, int flags)
 
     return err;
 }
-#endif
 
-#if RTLNX_VER_RANGE(2,6,39,  5,1,0)
+# if RTLNX_VER_MIN(2,6,39)
 static struct dentry *sf_mount(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {
     TRACE();
     return mount_nodev(fs_type, flags, data, vbsf_read_super_26);
 }
-#elif RTLNX_VER_RANGE(2,6,18,  2,6,39)
+# elif RTLNX_VER_MIN(2,6,18)
 static int vbsf_get_sb(struct file_system_type *fs_type, int flags, const char *dev_name, void *data, struct vfsmount *mnt)
 {
     TRACE();
     return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26, mnt);
 }
-#elif RTLNX_VER_MAX(2,6,18) /* < 2.6.18 */
+# else /* 2.6.18 > version >= 2.5.4 */
 static struct super_block *vbsf_get_sb(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {
     TRACE();
     return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26);
 }
-#endif
+# endif
+#endif /* 5.1.0 > version >= 2.5.4 */
 
 #if RTLNX_VER_MAX(2,5,4)  /* < 2.5.4 */
 
