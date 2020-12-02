@@ -13,6 +13,10 @@
  * - No encryption (TLS).
  * - No IPv6 support.
  * - No multi-threading.
+ *
+ * For WebDAV (optional via RTHTTP_WITH_WEBDAV):
+ * - Only OPTIONS + PROPLIST methods are implemented (e.g. simple read-only support).
+ * - No pagination support for directory listings.
  */
 
 /*
@@ -131,8 +135,6 @@ typedef RTHTTPSERVERINTERNAL *PRTHTTPSERVERINTERNAL;
             RTHTTPCALLBACKDATA Data = { &pClient->State, pClient->pServer->pvUser, pClient->pServer->cbUser }; \
             rc = pCallbacks->a_Name(&Data); \
         } \
-        else \
-            rc = VERR_NOT_IMPLEMENTED; \
     } while (0)
 
 /** Handles a HTTP server callback with arguments and sets rc accordingly. */
@@ -145,8 +147,6 @@ typedef RTHTTPSERVERINTERNAL *PRTHTTPSERVERINTERNAL;
             RTHTTPCALLBACKDATA Data = { &pClient->State, pClient->pServer->pvUser, pClient->pServer->cbUser }; \
             rc = pCallbacks->a_Name(&Data, __VA_ARGS__); \
         } \
-        else \
-            rc = VERR_NOT_IMPLEMENTED; \
     } while (0)
 
 /** Handles a HTTP server callback with arguments and returns. */
@@ -255,8 +255,12 @@ static const struct
 /** @name Method handlers.
  * @{
  */
-static FNRTHTTPSERVERMETHOD rtHttpServerHandleGET;
-static FNRTHTTPSERVERMETHOD rtHttpServerHandleHEAD;
+static FNRTHTTPSERVERMETHOD  rtHttpServerHandleGET;
+static FNRTHTTPSERVERMETHOD  rtHttpServerHandleHEAD;
+#ifdef RTHTTP_WITH_WEBDAV
+ static FNRTHTTPSERVERMETHOD rtHttpServerHandleOPTIONS;
+ static FNRTHTTPSERVERMETHOD rtHttpServerHandlePROPFIND;
+#endif
 /** @} */
 
 /**
@@ -282,8 +286,12 @@ typedef RTHTTPSERVERMETHOD_ENTRY *PRTHTTPMETHOD_ENTRY;
  */
 static const RTHTTPSERVERMETHOD_ENTRY g_aMethodMap[] =
 {
-    { RTHTTPMETHOD_GET,  rtHttpServerHandleGET },
-    { RTHTTPMETHOD_HEAD, rtHttpServerHandleHEAD },
+    { RTHTTPMETHOD_GET,      rtHttpServerHandleGET },
+    { RTHTTPMETHOD_HEAD,     rtHttpServerHandleHEAD },
+#ifdef RTHTTP_WITH_WEBDAV
+    { RTHTTPMETHOD_OPTIONS,  rtHttpServerHandleOPTIONS },
+    { RTHTTPMETHOD_PROPFIND, rtHttpServerHandlePROPFIND },
+#endif
     { RTHTTPMETHOD_END,  NULL }
 };
 
@@ -517,6 +525,13 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient, PRTHTTPHEA
     rc = RTHttpHeaderListAdd(HdrLst, "Server", "Oracle VirtualBox", strlen("Oracle VirtualBox"), RTHTTPHEADERLISTADD_F_BACK);
     AssertRCReturn(rc, rc);
 
+#ifdef RTHTTP_WITH_WEBDAV
+    rc = RTHttpHeaderListAdd(HdrLst, "Allow", "GET, HEAD, PROPFIND", strlen("GET, HEAD, PROPFIND"), RTHTTPHEADERLISTADD_F_BACK);
+    AssertRCReturn(rc, rc);
+    rc = RTHttpHeaderListAdd(HdrLst, "DAV", "1", strlen("1"), RTHTTPHEADERLISTADD_F_BACK); /* Note: v1 is sufficient for read-only access. */
+    AssertRCReturn(rc, rc);
+#endif
+
     char *pszHdr = NULL;
 
     size_t i = 0;
@@ -620,6 +635,7 @@ static RTHTTPSTATUS rtHttpServerRcToStatus(int rc)
         case VERR_INVALID_PARAMETER:    return RTHTTPSTATUS_BADREQUEST;
         case VERR_INVALID_POINTER:      return RTHTTPSTATUS_BADREQUEST;
         case VERR_NOT_IMPLEMENTED:      return RTHTTPSTATUS_NOTIMPLEMENTED;
+        case VERR_NOT_SUPPORTED:        return RTHTTPSTATUS_NOTIMPLEMENTED;
         case VERR_PATH_NOT_FOUND:       return RTHTTPSTATUS_NOTFOUND;
         case VERR_FILE_NOT_FOUND:       return RTHTTPSTATUS_NOTFOUND;
         case VERR_IS_A_DIRECTORY:       return RTHTTPSTATUS_FORBIDDEN;
@@ -648,7 +664,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
 {
     LogFlowFuncEnter();
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /* If a low-level GET request handler is defined, call it and return. */
     RTHTTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnGetRequest, pReq);
@@ -658,12 +674,12 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
 
     char *pszMIMEHint = NULL;
 
-    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq->pszUrl, &fsObj, &pszMIMEHint);
+    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq, &fsObj, &pszMIMEHint);
     if (RT_FAILURE(rc))
         return rc;
 
     void *pvHandle = NULL;
-    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnOpen, pReq->pszUrl, &pvHandle);
+    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnOpen, pReq, &pvHandle);
 
     if (RT_SUCCESS(rc))
     {
@@ -760,14 +776,12 @@ static DECLCALLBACK(int) rtHttpServerHandleHEAD(PRTHTTPSERVERCLIENT pClient, PRT
     /* If a low-level HEAD request handler is defined, call it and return. */
     RTHTTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnHeadRequest, pReq);
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     RTFSOBJINFO fsObj;
     RT_ZERO(fsObj); /* Shut up MSVC. */
 
-    char *pszMIMEHint = NULL;
-
-    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq->pszUrl, &fsObj, &pszMIMEHint);
+    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq, &fsObj, NULL /* pszMIMEHint */);
     if (RT_SUCCESS(rc))
     {
         RTHTTPHEADERLIST HdrLst;
@@ -804,6 +818,120 @@ static DECLCALLBACK(int) rtHttpServerHandleHEAD(PRTHTTPSERVERCLIENT pClient, PRT
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
+#ifdef RTHTTP_WITH_WEBDAV
+/**
+ * Handler for the OPTIONS method.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to handle OPTIONS method for.
+ * @param   pReq                Client request to handle.
+ */
+static DECLCALLBACK(int) rtHttpServerHandleOPTIONS(PRTHTTPSERVERCLIENT pClient, PRTHTTPSERVERREQ pReq)
+{
+    LogFlowFuncEnter();
+
+    RT_NOREF(pReq);
+
+    int rc = rtHttpServerSendResponseEx(pClient, RTHTTPSTATUS_OK, NULL /* pHdrLst */);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Handler for the PROPFIND (WebDAV) method.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to handle PROPFIND method for.
+ * @param   pReq                Client request to handle.
+ */
+static DECLCALLBACK(int) rtHttpServerHandlePROPFIND(PRTHTTPSERVERCLIENT pClient, PRTHTTPSERVERREQ pReq)
+{
+    LogFlowFuncEnter();
+
+    int rc = VINF_SUCCESS;
+
+    /* If a low-level GET request handler is defined, call it and return. */
+    RTHTTPSERVER_HANDLE_CALLBACK_VA_RET(pfnOnGetRequest, pReq);
+
+    RTFSOBJINFO fsObj;
+    RT_ZERO(fsObj); /* Shut up MSVC. */
+
+    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq, &fsObj, NULL /* pszMIMEHint */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    void *pvHandle = NULL;
+    RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnOpen, pReq, &pvHandle);
+
+    if (RT_SUCCESS(rc))
+    {
+        size_t cbBuf = _64K;
+        void  *pvBuf = RTMemAlloc(cbBuf);
+        AssertPtrReturn(pvBuf, VERR_NO_MEMORY);
+
+        for (;;)
+        {
+            RTHTTPHEADERLIST HdrLst;
+            rc = RTHttpHeaderListInit(&HdrLst);
+            AssertRCReturn(rc, rc);
+
+            char szVal[16];
+
+            rc = RTHttpHeaderListAdd(HdrLst, "Content-Type", "text/xml; charset=utf-8", strlen("text/xml; charset=utf-8"), RTHTTPHEADERLISTADD_F_BACK);
+            AssertRCBreak(rc);
+
+            /* Note: For directories fsObj.cbObject contains the actual size (in bytes)
+             *       of the body data for the directory listing. */
+
+            ssize_t cch = RTStrPrintf2(szVal, sizeof(szVal), "%RU64", fsObj.cbObject);
+            AssertBreakStmt(cch, VERR_BUFFER_OVERFLOW);
+            rc = RTHttpHeaderListAdd(HdrLst, "Content-Length", szVal, strlen(szVal), RTHTTPHEADERLISTADD_F_BACK);
+            AssertRCBreak(rc);
+
+            rc = rtHttpServerSendResponseEx(pClient, RTHTTPSTATUS_MULTISTATUS, &HdrLst);
+            AssertRCReturn(rc, rc);
+
+            RTHttpHeaderListDestroy(HdrLst);
+
+            size_t cbToRead  = fsObj.cbObject;
+            size_t cbRead    = 0; /* Shut up GCC. */
+            size_t cbWritten = 0; /* Ditto. */
+            while (cbToRead)
+            {
+                RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRead, pvHandle, pvBuf, RT_MIN(cbBuf, cbToRead), &cbRead);
+                if (RT_FAILURE(rc))
+                    break;
+                rtHttpServerLogProto(pClient, true /* fWrite */, (const char *)pvBuf);
+                rc = rtHttpServerSendResponseBody(pClient, pvBuf, cbRead, &cbWritten);
+                AssertBreak(cbToRead >= cbWritten);
+                cbToRead -= cbWritten;
+                if (rc == VERR_NET_CONNECTION_RESET_BY_PEER) /* Clients often apruptly abort the connection when done. */
+                {
+                    rc = VINF_SUCCESS;
+                    break;
+                }
+                AssertRCBreak(rc);
+            }
+
+            break;
+        } /* for (;;) */
+
+        RTMemFree(pvBuf);
+
+        int rc2 = rc; /* Save rc. */
+
+        RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnClose, pvHandle);
+
+        if (RT_FAILURE(rc2)) /* Restore original rc on failure. */
+            rc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+#endif /* RTHTTP_WITH_WEBDAV */
 
 /**
  * Validates if a given path is valid or not.
@@ -911,8 +1039,12 @@ static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq, s
     REQ_GET_NEXT_STRING
 
     /* Note: Method names are case sensitive. */
-    if      (!RTStrCmp(pszReq, "GET"))  pReq->enmMethod = RTHTTPMETHOD_GET;
-    else if (!RTStrCmp(pszReq, "HEAD")) pReq->enmMethod = RTHTTPMETHOD_HEAD;
+    if      (!RTStrCmp(pszReq, "GET"))      pReq->enmMethod = RTHTTPMETHOD_GET;
+    else if (!RTStrCmp(pszReq, "HEAD"))     pReq->enmMethod = RTHTTPMETHOD_HEAD;
+#ifdef RTHTTP_WITH_WEBDAV
+    else if (!RTStrCmp(pszReq, "OPTIONS"))  pReq->enmMethod = RTHTTPMETHOD_OPTIONS;
+    else if (!RTStrCmp(pszReq, "PROPFIND")) pReq->enmMethod = RTHTTPMETHOD_PROPFIND;
+#endif
     else
         return VERR_NOT_SUPPORTED;
 
@@ -1121,12 +1253,24 @@ RTR3DECL(int) RTHttpServerDestroy(RTHTTPSERVER hHttpServer)
 
     AssertPtr(pThis->pTCPServer);
 
-    int rc = RTTcpServerDestroy(pThis->pTCPServer);
+    int rc = VINF_SUCCESS;
+
+    PRTHTTPSERVERCALLBACKS pCallbacks = &pThis->Callbacks;
+    if (pCallbacks->pfnDestroy)
+    {
+        RTHTTPCALLBACKDATA Data = { NULL /* pClient */, pThis->pvUser, pThis->cbUser };
+        rc = pCallbacks->pfnDestroy(&Data);
+    }
+
     if (RT_SUCCESS(rc))
     {
-        pThis->u32Magic = RTHTTPSERVER_MAGIC_DEAD;
+        rc = RTTcpServerDestroy(pThis->pTCPServer);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->u32Magic = RTHTTPSERVER_MAGIC_DEAD;
 
-        RTMemFree(pThis);
+            RTMemFree(pThis);
+        }
     }
 
     return rc;

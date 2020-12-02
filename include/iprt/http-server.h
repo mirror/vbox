@@ -124,10 +124,10 @@ typedef struct RTHTTPSERVERCALLBACKS
      *
      * @returns VBox status code.
      * @param   pData           Pointer to HTTP callback data.
-     * @param   pszUrl          URL to handle.
+     * @param   pReq            Pointer to request to handle.
      * @param   ppvHandle       Where to return the pointer to the opaque handle used for object identification.
      */
-    DECLCALLBACKMEMBER(int, pfnOpen,(PRTHTTPCALLBACKDATA pData, const char *pszUrl, void **ppvHandle));
+    DECLCALLBACKMEMBER(int, pfnOpen,(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, void **ppvHandle));
     /**
      * Called when a given URL will be retrieved by the GET method.
      *
@@ -136,8 +136,10 @@ typedef struct RTHTTPSERVERCALLBACKS
      *
      * @returns VBox status code.
      * @param   pData           Pointer to HTTP callback data.
-     * @param   pszUrl          URL to handle.
      * @param   pvHandle        Opaque handle for object identification.
+     * @param   pvBuf           Pointer to buffer where to store the read data.
+     * @param   cbBuf           Size (in bytes) of the buffer where to store the read data.
+     * @param   pcbRead         Where to return the amount (in bytes) of read data. Optional and can be NULL.
      */
     DECLCALLBACKMEMBER(int, pfnRead,(PRTHTTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead));
     /**
@@ -158,12 +160,12 @@ typedef struct RTHTTPSERVERCALLBACKS
      *
      * @returns VBox status code.
      * @param   pData           Pointer to HTTP callback data.
-     * @param   pszUrl          URL to query information for.
+     * @param   pReq            Pointer to request to handle.
      * @param   pObjInfo        Where to store the queried file information on success.
      * @param   ppszMIMEHint    Where to return an allocated MIME type hint on success.
      *                          Must be free'd by the caller using RTStrFree().
      */
-    DECLCALLBACKMEMBER(int, pfnQueryInfo,(PRTHTTPCALLBACKDATA pData, const char *pszUrl, PRTFSOBJINFO pObjInfo, char **ppszMIMEHint));
+    DECLCALLBACKMEMBER(int, pfnQueryInfo,(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, PRTFSOBJINFO pObjInfo, char **ppszMIMEHint));
     /**
      * Low-level handler for a GET method request.
      *
@@ -180,11 +182,18 @@ typedef struct RTHTTPSERVERCALLBACKS
      * @param   pReq            Pointer to request to handle.
      */
     DECLCALLBACKMEMBER(int, pfnOnHeadRequest,(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq));
+    /**
+     * Called before the HTTP server will be destroyed.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to HTTP callback data.
+     */
+    DECLCALLBACKMEMBER(int, pfnDestroy,(PRTHTTPCALLBACKDATA pData));
 } RTHTTPSERVERCALLBACKS;
 /** Pointer to a HTTP server callback data table. */
 typedef RTHTTPSERVERCALLBACKS *PRTHTTPSERVERCALLBACKS;
 
-/** Maximum length (in bytes) a client request can have. */
+/** Maximum length (in bytes) a single client request can have. */
 #define RTHTTPSERVER_MAX_REQ_LEN        _8K
 
 /**

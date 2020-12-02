@@ -48,6 +48,8 @@
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
+#define LOG_GROUP RTLOGGROUP_HTTP
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
@@ -285,7 +287,7 @@ static int dirRead(RTVFSDIR hVfsDir, char **ppszEntry, PRTFSOBJINFO pInfo)
                 if (pDirEntry)
                     continue;
             }
-            else if (rc != VERR_NO_MORE_FILES)
+            else
                 break;
         }
 
@@ -308,7 +310,52 @@ static int dirRead(RTVFSDIR hVfsDir, char **ppszEntry, PRTFSOBJINFO pInfo)
     return rc;
 }
 
-static int dirEntryWrite(char *pszBuf, size_t cbBuf,
+#ifdef RTHTTP_WITH_WEBDAV
+static int dirEntryWriteDAV(char *pszBuf, size_t cbBuf,
+                            const char *pszEntry, const PRTFSOBJINFO pObjInfo, size_t *pcbWritten)
+{
+    char szBirthTime[32];
+    if (RTTimeSpecToString(&pObjInfo->BirthTime, szBirthTime, sizeof(szBirthTime)) == NULL)
+        return VERR_BUFFER_UNDERFLOW;
+
+    char szModTime[32];
+    if (RTTimeSpecToString(&pObjInfo->ModificationTime, szModTime, sizeof(szModTime)) == NULL)
+        return VERR_BUFFER_UNDERFLOW;
+
+    int rc = VINF_SUCCESS;
+
+    /**
+     * !!! HACK ALERT !!!
+     ** @todo Build up and use a real XML DOM here. Works with Gnome / Gvfs-compatible apps though.
+     */
+    ssize_t cch = RTStrPrintf(pszBuf, cbBuf,
+"<d:response>"
+"<d:href>%s</d:href>"
+"<d:propstat>"
+"<d:status>HTTP/1.1 200 OK</d:status>"
+"<d:prop>"
+"<d:displayname>%s</d:displayname>"
+"<d:getcontentlength>%RU64</d:getcontentlength>"
+"<d:getcontenttype>%s</d:getcontenttype>"
+"<d:creationdate>%s</d:creationdate>"
+"<d:getlastmodified>%s</d:getlastmodified>"
+"<d:getetag/>"
+"<d:resourcetype><d:collection/></d:resourcetype>"
+"</d:prop>"
+"</d:propstat>"
+"</d:response>",
+                        pszEntry, pszEntry, pObjInfo->cbObject, "application/octet-stream", szBirthTime, szModTime);
+
+    if (cch <= 0)
+        rc = VERR_BUFFER_OVERFLOW;
+
+    *pcbWritten = cch;
+
+    return rc;
+}
+#endif /* RTHTTP_WITH_WEBDAV */
+
+static int dirEntryWrite(RTHTTPMETHOD enmMethod, char *pszBuf, size_t cbBuf,
                          const char *pszEntry, const PRTFSOBJINFO pObjInfo, size_t *pcbWritten)
 {
     char szModTime[32];
@@ -317,12 +364,29 @@ static int dirEntryWrite(char *pszBuf, size_t cbBuf,
 
     int rc = VINF_SUCCESS;
 
-    ssize_t cch = RTStrPrintf2(pszBuf, cbBuf, "201: %s %RU64 %s %s\r\n",
-                               pszEntry, pObjInfo->cbObject, szModTime,
-                               /** @todo Very crude; only files and directories are supported for now. */
-                               RTFS_IS_FILE(pObjInfo->Attr.fMode) ? "FILE" : "DIRECTORY");
-    if (cch <= 0)
-        rc = VERR_BUFFER_OVERFLOW;
+    ssize_t cch = 0;
+
+    if (enmMethod == RTHTTPMETHOD_GET)
+    {
+        cch = RTStrPrintf2(pszBuf, cbBuf, "201: %s %RU64 %s %s\r\n",
+                           pszEntry, pObjInfo->cbObject, szModTime,
+                           /** @todo Very crude; only files and directories are supported for now. */
+                           RTFS_IS_FILE(pObjInfo->Attr.fMode) ? "FILE" : "DIRECTORY");
+        if (cch <= 0)
+            rc = VERR_BUFFER_OVERFLOW;
+    }
+#ifdef RTHTTP_WITH_WEBDAV
+    else if (enmMethod == RTHTTPMETHOD_PROPFIND)
+    {
+        char szBuf[RTPATH_MAX + _4K]; /** @todo Just a rough guesstimate. */
+        rc = dirEntryWriteDAV(szBuf, sizeof(szBuf), pszEntry, pObjInfo, (size_t *)&cch);
+        if (RT_SUCCESS(rc))
+            rc = RTStrCat(pszBuf, cbBuf, szBuf);
+        AssertRC(rc);
+    }
+#endif /* RTHTTP_WITH_WEBDAV */
+    else
+        rc = VERR_NOT_SUPPORTED;
 
     if (RT_SUCCESS(rc))
     {
@@ -360,13 +424,13 @@ static int pathResolve(PHTTPSERVERDATA pThis, const char *pszUrl, char **ppszPat
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) onOpen(PRTHTTPCALLBACKDATA pData, const char *pszUrl, void **ppvHandle)
+DECLCALLBACK(int) onOpen(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, void **ppvHandle)
 {
     PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
     Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
 
     char *pszPathAbs = NULL;
-    int rc = pathResolve(pThis, pszUrl, &pszPathAbs);
+    int rc = pathResolve(pThis, pReq->pszUrl, &pszPathAbs);
     if (RT_SUCCESS(rc))
     {
         RTFSOBJINFO objInfo;
@@ -394,6 +458,8 @@ DECLCALLBACK(int) onOpen(PRTHTTPCALLBACKDATA pData, const char *pszUrl, void **p
 
         RTStrFree(pszPathAbs);
     }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -403,6 +469,8 @@ DECLCALLBACK(int) onRead(PRTHTTPCALLBACKDATA pData, void *pvHandle, void *pvBuf,
     Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
 
     AssertReturn(*(uint64_t *)pvHandle == 42 /** @todo Fudge. */, VERR_NOT_FOUND);
+
+    int rc;
 
     if (RTFS_IS_DIRECTORY(pThis->fMode))
     {
@@ -415,12 +483,17 @@ DECLCALLBACK(int) onRead(PRTHTTPCALLBACKDATA pData, void *pvHandle, void *pvBuf,
 
         *pcbRead = cbToCopy;
 
-        return VINF_SUCCESS;
+        rc = VINF_SUCCESS;
     }
     else if (RTFS_IS_FILE(pThis->fMode))
-        return RTFileRead(pThis->h.File, pvBuf, cbBuf, pcbRead);
+    {
+        rc = RTFileRead(pThis->h.File, pvBuf, cbBuf, pcbRead);
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
 
-    return VERR_NOT_IMPLEMENTED; /* Never reached. */
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 DECLCALLBACK(int) onClose(PRTHTTPCALLBACKDATA pData, void *pvHandle)
@@ -444,17 +517,25 @@ DECLCALLBACK(int) onClose(PRTHTTPCALLBACKDATA pData, void *pvHandle)
     RTMemFree(pvHandle);
     pvHandle = NULL;
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 DECLCALLBACK(int) onQueryInfo(PRTHTTPCALLBACKDATA pData,
-                              const char *pszUrl, PRTFSOBJINFO pObjInfo, char **ppszMIMEHint)
+                              PRTHTTPSERVERREQ pReq, PRTFSOBJINFO pObjInfo, char **ppszMIMEHint)
 {
     PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
     Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
 
+    /** !!!! WARNING !!!
+     **
+     ** Not production-ready code below!
+     ** @todo Use something like bodyAdd() instead of the RTStrPrintf2() hacks.
+     **
+     ** !!!! WARNING !!! */
+
     char *pszPathAbs = NULL;
-    int rc = pathResolve(pThis, pszUrl, &pszPathAbs);
+    int rc = pathResolve(pThis, pReq->pszUrl, &pszPathAbs);
     if (RT_SUCCESS(rc))
     {
         RTFSOBJINFO objInfo;
@@ -470,20 +551,43 @@ DECLCALLBACK(int) onQueryInfo(PRTHTTPCALLBACKDATA pData,
                 if (RT_SUCCESS(rc))
                 {
                     RTHttpServerResponseDestroy(pResp);
-                    RTHttpServerResponseInitEx(pResp, _4K);
+                    RTHttpServerResponseInitEx(pResp, _64K); /** @todo Make this more dynamic. */
+
+                    char  *pszBody    = (char *)pResp->pvBody;
+                    size_t cbBodyLeft = pResp->cbBodyAlloc;
 
                     /*
                      * Write body header.
                      */
-                    ssize_t cch = RTStrPrintf2((char *)pResp->pvBody, pResp->cbBodyAlloc,
-                                               "300: file://%s\r\n"
-                                               "200: filename content-length last-modified file-type\r\n",
-                                               pszUrl);
-                    RT_NOREF(cch);
-                    Assert(cch);
+                    if (pReq->enmMethod == RTHTTPMETHOD_GET)
+                    {
+                        ssize_t cch = RTStrPrintf2(pszBody, cbBodyLeft,
+                                                   "300: file://%s\r\n"
+                                                   "200: filename content-length last-modified file-type\r\n",
+                                                   pReq->pszUrl);
+                        Assert(cch);
+                        pszBody    += cch;
+                        cbBodyLeft -= cch;
+                    }
+#ifdef RTHTTP_WITH_WEBDAV
+                    else if (pReq->enmMethod == RTHTTPMETHOD_PROPFIND)
+                    {
+                        ssize_t cch = RTStrPrintf2(pszBody, cbBodyLeft, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n");
+                        Assert(cch);
+                        pszBody    += cch;
+                        cbBodyLeft -= cch;
 
-                    pResp->cbBodyUsed = strlen((char *)pResp->pvBody);
+                        cch = RTStrPrintf2(pszBody, cbBodyLeft, "<d:multistatus xmlns:d=\"DAV:\">\r\n");
+                        Assert(cch);
+                        pszBody    += cch;
+                        cbBodyLeft -= cch;
 
+                        rc = dirEntryWriteDAV(pszBody, cbBodyLeft, "/", &objInfo, (size_t *)&cch);
+                        AssertRC(rc);
+                        pszBody    += cch;
+                        cbBodyLeft -= cch;
+                    }
+#endif /* RTHTTP_WITH_WEBDAV */
                     /*
                      * Write body entries.
                      */
@@ -491,23 +595,27 @@ DECLCALLBACK(int) onQueryInfo(PRTHTTPCALLBACKDATA pData,
                     RTFSOBJINFO fsObjInfo;
                     while (RT_SUCCESS(rc = dirRead(hVfsDir, &pszEntry, &fsObjInfo)))
                     {
-                        char *pszBody = (char *)pResp->pvBody;
-
-                        size_t cbWritten;
-                        rc = dirEntryWrite(&pszBody[pResp->cbBodyUsed], pResp->cbBodyAlloc - pResp->cbBodyUsed, pszEntry, &fsObjInfo, &cbWritten);
+                        size_t cbWritten = 0;
+                        rc = dirEntryWrite(pReq->enmMethod, pszBody, cbBodyLeft, pszEntry, &fsObjInfo, &cbWritten);
                         if (rc == VERR_BUFFER_OVERFLOW)
                         {
-                            pResp->cbBodyAlloc *= 2; /** @todo Improve this. */
+                            pResp->cbBodyAlloc += _4K; /** @todo Improve this. */
                             pResp->pvBody       = RTMemRealloc(pResp->pvBody, pResp->cbBodyAlloc);
                             AssertPtrBreakStmt(pResp->pvBody, rc = VERR_NO_MEMORY);
 
                             pszBody = (char *)pResp->pvBody;
+                            cbBodyLeft += _4K; /** @todo Ditto. */
 
-                            rc = dirEntryWrite(&pszBody[pResp->cbBodyUsed], pResp->cbBodyAlloc - pResp->cbBodyUsed, pszEntry, &fsObjInfo, &cbWritten);
+                            rc = dirEntryWrite(pReq->enmMethod, pszBody, cbBodyLeft, pszEntry, &fsObjInfo, &cbWritten);
                         }
 
-                        if (RT_SUCCESS(rc))
-                            pResp->cbBodyUsed += cbWritten;
+                        if (   RT_SUCCESS(rc)
+                            && cbWritten)
+                        {
+                            pszBody    += cbWritten;
+                            Assert(cbBodyLeft > cbWritten);
+                            cbBodyLeft -= cbWritten;
+                        }
 
                         RTStrFree(pszEntry);
 
@@ -520,11 +628,32 @@ DECLCALLBACK(int) onQueryInfo(PRTHTTPCALLBACKDATA pData,
 
                     dirClose(hVfsDir);
 
+                    /*
+                     * Write footers, if any.
+                     */
                     if (RT_SUCCESS(rc))
                     {
-                        rc = RTStrAPrintf(ppszMIMEHint, "text/plain");
-                        if (RT_SUCCESS(rc))
-                            pObjInfo->cbObject = pResp->cbBodyUsed;
+                        if (pReq->enmMethod == RTHTTPMETHOD_GET)
+                        {
+                            if (ppszMIMEHint)
+                                rc = RTStrAPrintf(ppszMIMEHint, "text/plain");
+                        }
+#ifdef RTHTTP_WITH_WEBDAV
+                        else if (pReq->enmMethod == RTHTTPMETHOD_PROPFIND)
+                        {
+                            /**
+                             * !!! HACK ALERT !!!
+                             ** @todo Build up and use a real XML DOM here. Works with Gnome / Gvfs-compatible apps though.
+                             */
+                            ssize_t cch = RTStrPrintf2(pszBody, cbBodyLeft, "</d:multistatus>\r\n");
+                            Assert(cch);
+                            RT_NOREF(cch);
+                        }
+#endif /* RTHTTP_WITH_WEBDAV */
+
+                        pResp->cbBodyUsed = strlen((char *)pResp->pvBody);
+
+                        pObjInfo->cbObject = pResp->cbBodyUsed;
                     }
                 }
             }
@@ -540,12 +669,25 @@ DECLCALLBACK(int) onQueryInfo(PRTHTTPCALLBACKDATA pData,
                     RTFileClose(hFile);
                 }
             }
+            else
+                rc = VERR_NOT_SUPPORTED;
         }
 
         RTStrFree(pszPathAbs);
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+DECLCALLBACK(int) onDestroy(PRTHTTPCALLBACKDATA pData)
+{
+    PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
+    Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
+
+    RTHttpServerResponseDestroy(&pThis->Resp);
+
+    return VINF_SUCCESS;
 }
 
 int main(int argc, char **argv)
@@ -649,6 +791,7 @@ int main(int argc, char **argv)
         Callbacks.pfnRead          = onRead;
         Callbacks.pfnClose         = onClose;
         Callbacks.pfnQueryInfo     = onQueryInfo;
+        Callbacks.pfnDestroy       = onDestroy;
 
         g_HttpServerData.h.File = NIL_RTFILE;
         g_HttpServerData.h.Dir  = NIL_RTVFSDIR;
