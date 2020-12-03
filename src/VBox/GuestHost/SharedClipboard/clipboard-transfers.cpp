@@ -232,7 +232,7 @@ int ShClTransferListHdrAlloc(PSHCLLISTHDR *ppListHdr)
 /**
  * Frees a transfer list header structure.
  *
- * @param   pListEntry          transfer list header structure to free.
+ * @param   pListEntry          Transfer list header structure to free.
  */
 void ShClTransferListHdrFree(PSHCLLISTHDR pListHdr)
 {
@@ -251,7 +251,7 @@ void ShClTransferListHdrFree(PSHCLLISTHDR pListHdr)
  * Duplicates (allocates) a transfer list header structure.
  *
  * @returns Duplicated transfer list header structure on success.
- * @param   pListHdr            transfer list header to duplicate.
+ * @param   pListHdr            Transfer list header to duplicate.
  */
 PSHCLLISTHDR ShClTransferListHdrDup(PSHCLLISTHDR pListHdr)
 {
@@ -359,7 +359,7 @@ int ShClTransferListOpenParmsCopy(PSHCLLISTOPENPARMS pDst, PSHCLLISTOPENPARMS pS
  * Duplicates a transfer list open parameters structure.
  *
  * @returns Duplicated transfer list open parameters structure on success, or NULL on failure.
- * @param   pParms              transfer list open parameters structure to duplicate.
+ * @param   pParms              Transfer list open parameters structure to duplicate.
  */
 PSHCLLISTOPENPARMS ShClTransferListOpenParmsDup(PSHCLLISTOPENPARMS pParms)
 {
@@ -385,7 +385,7 @@ PSHCLLISTOPENPARMS ShClTransferListOpenParmsDup(PSHCLLISTOPENPARMS pParms)
  * Initializes a transfer list open parameters structure.
  *
  * @returns VBox status code.
- * @param   pParms              transfer list open parameters structure to initialize.
+ * @param   pParms              Transfer list open parameters structure to initialize.
  */
 int ShClTransferListOpenParmsInit(PSHCLLISTOPENPARMS pParms)
 {
@@ -406,7 +406,7 @@ int ShClTransferListOpenParmsInit(PSHCLLISTOPENPARMS pParms)
 /**
  * Destroys a transfer list open parameters structure.
  *
- * @param   pParms              transfer list open parameters structure to destroy.
+ * @param   pParms              Transfer list open parameters structure to destroy.
  */
 void ShClTransferListOpenParmsDestroy(PSHCLLISTOPENPARMS pParms)
 {
