@@ -66,7 +66,7 @@ PACKING          += \
 OTHER_CLEAN      += \
 	$(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg \
 	$(PATH_STAGE_BIN)/$(PKG_FILENAME).tar.gz \
-	$(PATH_STAGE_BIN)/$(PKG_FILENAME).p5p \
+	$(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).p5p \
 	$(PATH_STAGE_BIN)/VirtualBoxDebug.tar.bz2 \
 	$(VBOX_PATH_SI_SCRATCH)/dist-copy.ts
 
@@ -731,8 +731,8 @@ $(PATH_STAGE_BIN)/$(PKG_FILENAME).tar.gz: \
 #
 # Creates the IPS style installer package.
 #
-solaris-package-ips:: $(PATH_STAGE_BIN)/$(PKG_FILENAME).p5p
-$(PATH_STAGE_BIN)/$(PKG_FILENAME).p5p: \
+solaris-package-ips:: $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).p5p
+$(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).p5p: \
 		$(VBOX_PATH_SI_SCRATCH)/dist-copy.ts \
 		$(VBOX_SI_DEP_ON_MAKEFILE) \
 		| $$(dir $$@)
@@ -744,6 +744,7 @@ $(PATH_STAGE_BIN)/$(PKG_FILENAME).p5p: \
 		$(PKG_FILENAME) \
 		$(KBUILD_TARGET_ARCH) \
 		$(VBOX_SVN_REV)
+	$(MV) -- "$(VBOX_PATH_SI_SCRATCH_PKG)/$(PKG_FILENAME).p5p" "$@"
 
 
 ## List of file list variable names relevant for debug info.
