@@ -307,6 +307,9 @@ endif
 ifdef IPRT_WITH_FUTEX_BASED_SEMS
  RuntimeR3_DEFS.linux  += IPRT_WITH_FUTEX_BASED_SEMS
 endif
+ifdef IPRT_HTTP_WITH_WEBDAV
+ RuntimeR3_DEFS        += IPRT_HTTP_WITH_WEBDAV
+endif
 RuntimeR3_INCS          = \
 	include \
 	$(SDK_VBOX_ZLIB_INCS) \

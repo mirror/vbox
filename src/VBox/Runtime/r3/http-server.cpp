@@ -14,7 +14,7 @@
  * - No IPv6 support.
  * - No multi-threading.
  *
- * For WebDAV (optional via RTHTTP_WITH_WEBDAV):
+ * For WebDAV (optional via IPRT_HTTP_WITH_WEBDAV):
  * - Only OPTIONS + PROPLIST methods are implemented (e.g. simple read-only support).
  * - No pagination support for directory listings.
  */
@@ -257,7 +257,7 @@ static const struct
  */
 static FNRTHTTPSERVERMETHOD  rtHttpServerHandleGET;
 static FNRTHTTPSERVERMETHOD  rtHttpServerHandleHEAD;
-#ifdef RTHTTP_WITH_WEBDAV
+#ifdef IPRT_HTTP_WITH_WEBDAV
  static FNRTHTTPSERVERMETHOD rtHttpServerHandleOPTIONS;
  static FNRTHTTPSERVERMETHOD rtHttpServerHandlePROPFIND;
 #endif
@@ -288,7 +288,7 @@ static const RTHTTPSERVERMETHOD_ENTRY g_aMethodMap[] =
 {
     { RTHTTPMETHOD_GET,      rtHttpServerHandleGET },
     { RTHTTPMETHOD_HEAD,     rtHttpServerHandleHEAD },
-#ifdef RTHTTP_WITH_WEBDAV
+#ifdef IPRT_HTTP_WITH_WEBDAV
     { RTHTTPMETHOD_OPTIONS,  rtHttpServerHandleOPTIONS },
     { RTHTTPMETHOD_PROPFIND, rtHttpServerHandlePROPFIND },
 #endif
@@ -525,7 +525,7 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient, PRTHTTPHEA
     rc = RTHttpHeaderListAdd(HdrLst, "Server", "Oracle VirtualBox", strlen("Oracle VirtualBox"), RTHTTPHEADERLISTADD_F_BACK);
     AssertRCReturn(rc, rc);
 
-#ifdef RTHTTP_WITH_WEBDAV
+#ifdef IPRT_HTTP_WITH_WEBDAV
     rc = RTHttpHeaderListAdd(HdrLst, "Allow", "GET, HEAD, PROPFIND", strlen("GET, HEAD, PROPFIND"), RTHTTPHEADERLISTADD_F_BACK);
     AssertRCReturn(rc, rc);
     rc = RTHttpHeaderListAdd(HdrLst, "DAV", "1", strlen("1"), RTHTTPHEADERLISTADD_F_BACK); /* Note: v1 is sufficient for read-only access. */
@@ -819,7 +819,7 @@ static DECLCALLBACK(int) rtHttpServerHandleHEAD(PRTHTTPSERVERCLIENT pClient, PRT
     return rc;
 }
 
-#ifdef RTHTTP_WITH_WEBDAV
+#ifdef IPRT_HTTP_WITH_WEBDAV
 /**
  * Handler for the OPTIONS method.
  *
@@ -931,7 +931,7 @@ static DECLCALLBACK(int) rtHttpServerHandlePROPFIND(PRTHTTPSERVERCLIENT pClient,
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif /* RTHTTP_WITH_WEBDAV */
+#endif /* IPRT_HTTP_WITH_WEBDAV */
 
 /**
  * Validates if a given path is valid or not.
@@ -1041,7 +1041,7 @@ static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq, s
     /* Note: Method names are case sensitive. */
     if      (!RTStrCmp(pszReq, "GET"))      pReq->enmMethod = RTHTTPMETHOD_GET;
     else if (!RTStrCmp(pszReq, "HEAD"))     pReq->enmMethod = RTHTTPMETHOD_HEAD;
-#ifdef RTHTTP_WITH_WEBDAV
+#ifdef IPRT_HTTP_WITH_WEBDAV
     else if (!RTStrCmp(pszReq, "OPTIONS"))  pReq->enmMethod = RTHTTPMETHOD_OPTIONS;
     else if (!RTStrCmp(pszReq, "PROPFIND")) pReq->enmMethod = RTHTTPMETHOD_PROPFIND;
 #endif

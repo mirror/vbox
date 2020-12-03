@@ -161,6 +161,9 @@ if !defined(VBOX_ONLY_BUILD)
  PROGRAMS += RTHttpServer
  RTHttpServer_TEMPLATE = VBoxR3Tool
  RTHttpServer_SOURCES = RTHttpServer.cpp
+ ifdef IPRT_HTTP_WITH_WEBDAV
+  RTHttpServer_DEFS   += IPRT_HTTP_WITH_WEBDAV
+ endif
 
  # RTLdrCheckImports - import checker.
  PROGRAMS += RTLdrCheckImports
