@@ -8,39 +8,51 @@ set name=variant.opensolaris.zone value=global value=nonglobal
 set name=info.classification value=org.opensolaris.category.2008:System/Virtualization
 
 # Drop system directories to not have conflicting permissions
-<transform dir path=etc$->drop>
-<transform dir path=opt$->drop>
-<transform dir path=platform.*$->drop>
-<transform dir path=usr.*$->drop>
-<transform dir path=var$->drop>
-<transform dir path=var/svc$->drop>
-<transform dir path=var/svc/manifest$->drop>
-<transform dir path=var/svc/manifest/application$->drop>
+<transform dir path=etc$ -> drop>
+<transform dir path=opt$ -> drop>
+<transform dir path=platform.*$ -> drop>
+<transform dir path=usr.*$ -> drop>
+<transform dir path=var$ -> drop>
+<transform dir path=var/svc$ -> drop>
+<transform dir path=var/svc/manifest$ -> drop>
+<transform dir path=var/svc/manifest/application$ -> drop>
 
 # Drop all files in root, they are for packaging purposes
-<transform file path=[^/]*$->drop>
+<transform file path=[^/]*$ -> drop>
+<transform dir file path=vbox-repo.*$ -> drop>
 
 # Drop STREAMS based NetFilter driver, obsolete for Solaris 11
-<transform file path=platform/i86pc/kernel/drv/amd64/vboxflt$->drop>
-<transform file path=platform/i86pc/kernel/drv/vboxflt\.conf$->drop>
+<transform file path=platform/i86pc/kernel/drv/amd64/vboxflt$ -> drop>
+<transform file path=platform/i86pc/kernel/drv/vboxflt\.conf$ -> drop>
 
 # Drop legacy libraries, needed only for Solaris 10
-<transform dir path=opt/VirtualBox/amd64/legacy$->drop>
-<transform file path=opt/VirtualBox/amd64/legacy/.*$->drop>
+<transform dir path=opt/VirtualBox/amd64/legacy$ -> drop>
+<transform file path=opt/VirtualBox/amd64/legacy/.*$ -> drop>
+
+# Drop all API helper libraries for python 2.x other than 2.7
+<transform file path=opt/VirtualBox/VBoxPython2_[^7].*\.so.*$->drop>
+
+# Tweak: do not try to get the dependencies for libGL.so which is needed by Qt
+<transform file path=opt/VirtualBox/amd64/libQt5GuiVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/libQt5PrintSupportVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/libQt5WidgetsVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/libQt5X11ExtrasVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/libQt5XcbQpaVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/plugins/platforms/libqxcb\.so$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/plugins/xcbglintegrations/libqxcb-glx-integration\.so$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+
+# Some binaries must be SUID.
+<transform file path=opt/VirtualBox/amd64/(VBoxNetAdpCtl|VBoxNetDHCP|VBoxNetNAT)$ -> set mode 4755>
+$(HARDENED_ONLY)<transform file path=opt/VirtualBox/amd64/(VirtualBoxVM|VBoxHeadless|VBoxSDL)$ -> set mode 4755>
 
 # Set the appropriate pkg variant for drivers (global zone only)
-#<transform file path=opt/VirtualBox/.*$->add pkg.depend.runpath $PKGDEPEND_RUNPATH:/opt/VirtualBox/amd64>
-<transform file path=platform/i86pc/kernel/drv/amd64/vboxdrv$->add variant.opensolaris.zone global>
-<transform file path=platform/i86pc/kernel/drv/amd64/vboxbow$->add variant.opensolaris.zone global>
-<transform file path=platform/i86pc/kernel/drv/amd64/vboxnet$->add variant.opensolaris.zone global>
-<transform file path=platform/i86pc/kernel/drv/amd64/vboxusb$->add variant.opensolaris.zone global>
-<transform file path=platform/i86pc/kernel/drv/amd64/vboxusbmon$->add variant.opensolaris.zone global>
+<transform file path=platform/i86pc/kernel/drv/amd64/[^/]*$ -> add variant.opensolaris.zone global>
+<transform file path=platform/i86pc/kernel/drv/.*$ -> set group sys>
 
-# pkg doesn't lookup /kernel/misc/amd64 but looks up /kernel/misc/amd64/misc/amd64. whatever
-# the below transform for drivers fixes where pkg resolves it's dependencies (we link drivers with -N misc/*)
-#<transform file path=platform/i86pc/kernel/drv/amd64/.*$->add pkg.depend.runpath $PKGDEPEND_RUNPATH:/kernel>
+# Handle SMF manifests
+<transform dir file path=var/svc/manifest/.*$ -> set group sys>
+<transform file path=var/svc/manifest/.*\.xml$ -> default restart_fmri svc:/system/manifest-import:default>
 
 # todo:
 # resolve dependencies properly for python
 <transform file path=opt/VirtualBox/vboxshell\.py$->drop>
-<transform file path=opt/VirtualBox/VBoxPython2_[^7].*\.so.*$->drop>

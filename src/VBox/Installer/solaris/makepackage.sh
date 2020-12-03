@@ -93,6 +93,7 @@ package_spec_append_info()
 
 package_spec_append_content()
 {
+    rm -rf "$1/vbox-repo"
     pkgsend generate "$1" | pkgfmt >> "$PACKAGE_SPEC"
 }
 
@@ -110,15 +111,21 @@ package_spec_fixup_content()
 
 package_create()
 {
-    pkgmogrify -DVBOX_PKGNAME="$VBOX_PKGNAME" "$PACKAGE_SPEC" vbox-ips.mog | pkgfmt > "$PACKAGE_SPEC.1"
+    VBOX_DEF_HARDENED=
+    [ -z "$HARDENED" ] && VBOX_DEF_HARDENED='#'
+
+    pkgmogrify -DVBOX_PKGNAME="$VBOX_PKGNAME" -DHARDENED_ONLY="$VBOX_DEF_HARDENED" "$PACKAGE_SPEC" "$1/vbox-ips.mog" | pkgfmt > "$PACKAGE_SPEC.1"
 
     pkgdepend generate -m -d "$1" "$PACKAGE_SPEC.1" | pkgfmt > "$PACKAGE_SPEC.2"
 
-    pkgdepend resolve -m -v "$PACKAGE_SPEC.2"
+    pkgdepend resolve -m "$PACKAGE_SPEC.2"
 
-    pkglint "$PACKAGE_SPEC.2.res"
+    # Too expensive, and in this form not useful since it does not have
+    # the package manifests without using options -r (for repo access) and
+    # -c (for caching the data). Not viable since the cache would be lost
+    # for every build.
+    #pkglint "$PACKAGE_SPEC.2.res"
 
-    rm -rf "$1/vbox-repo"
     pkgrepo create "$1/vbox-repo"
     pkgrepo -s "$1/vbox-repo" set publisher/prefix=virtualbox
 
@@ -129,7 +136,8 @@ package_create()
     pkgrepo -s "$1/vbox-repo" list
 
     # Convert into package archive
-    pkgrecv -s "$1/vbox-repo" -a -d "$2" -m latest "$3"
+    rm -f "$1/$2"
+    pkgrecv -a -s "$1/vbox-repo" -d "$1/$2" -m latest "$3"
     #rm -rf "$1/vbox-repo"
 }
 
@@ -159,7 +167,7 @@ package_spec_append_content()
 {
     cd "$1"
     # Exclude directories to not cause install-time conflicts with existing system directories
-    find . ! -type d | "$VBOX_GGREP" -v -wE 'prototype|makepackage\.sh|vbox\.pkginfo|postinstall\.sh|checkinstall\.sh|preremove\.sh|vbox\.space|virtualbox\.p5m.*' | LC_COLLATE=C sort | pkgproto >> "$PACKAGE_SPEC"
+    find . ! -type d | "$VBOX_GGREP" -v -wE 'prototype|makepackage\.sh|vbox\.pkginfo|postinstall\.sh|checkinstall\.sh|preremove\.sh|vbox\.space|vbox-ips.mog|virtualbox\.p5m.*|vbox-repo' | LC_COLLATE=C sort | pkgproto >> "$PACKAGE_SPEC"
     cd -
     "$VBOX_AWK" 'NF == 3 && $1 == "s" && $2 == "none" { $3="/"$3 } { print }' "$PACKAGE_SPEC" > "$PACKAGE_SPEC.tmp"
     mv -f "$PACKAGE_SPEC.tmp" "$PACKAGE_SPEC"
@@ -203,27 +211,27 @@ package_spec_fixup_content()
     package_spec_fixup_filelist '$2 == "none"'                                                                  '$5 = "root"; $6 = "bin"'
 
     # HostDriver vboxdrv
-    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxdrv"'                                    '$6 = "sys"'
+    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxdrv.conf"'                               '$6 = "sys"'
     package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/amd64/vboxdrv"'                              '$6 = "sys"'
 
     # NetFilter vboxflt
-    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxflt"'                                    '$6 = "sys"'
+    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxflt.conf"'                               '$6 = "sys"'
     package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/amd64/vboxflt"'                              '$6 = "sys"'
 
     # NetFilter vboxbow
-    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxbow"'                                    '$6 = "sys"'
+    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxbow.conf"'                               '$6 = "sys"'
     package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/amd64/vboxbow"'                              '$6 = "sys"'
 
     # NetAdapter vboxnet
-    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxnet"'                                    '$6 = "sys"'
+    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxnet.conf"'                               '$6 = "sys"'
     package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/amd64/vboxnet"'                              '$6 = "sys"'
 
     # USBMonitor vboxusbmon
-    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxusbmon"'                                 '$6 = "sys"'
+    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxusbmon.conf"'                            '$6 = "sys"'
     package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/amd64/vboxusbmon"'                           '$6 = "sys"'
 
     # USB Client vboxusb
-    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxusb"'                                    '$6 = "sys"'
+    package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/vboxusb.conf"'                               '$6 = "sys"'
     package_spec_fixup_filelist '$3 == "/platform/i86pc/kernel/drv/amd64/vboxusb"'                              '$6 = "sys"'
 
     # Manifest class action scripts
@@ -255,7 +263,7 @@ package_spec_fixup_content()
 
     echo " --- start of $PACKAGE_SPEC  ---"
     cat "$PACKAGE_SPEC"
-    echo " --- end of $PACKAGE_SPEC --- "
+    echo " --- end of $PACKAGE_SPEC ---"
 }
 
 package_create()
