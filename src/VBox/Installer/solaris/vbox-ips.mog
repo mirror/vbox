@@ -1,0 +1,46 @@
+# Transmogrification from prepared package directory layout to IPS
+set name=pkg.fmri value=$(VBOX_PKGNAME)@@VBOX_VERSION_STRING@,5.11-0.0.0.@VBOX_SVN_REV@.0.0.0
+set name=pkg.human-version value="@VBOX_VERSION_STRING@r@VBOX_SVN_REV@"
+set name=pkg.summary value="@VBOX_PRODUCT@"
+set name=pkg.description value="A powerful PC virtualization solution"
+set name=variant.arch value=@UNAME_P@
+set name=variant.opensolaris.zone value=global value=nonglobal
+set name=info.classification value=org.opensolaris.category.2008:System/Virtualization
+
+# Drop system directories to not have conflicting permissions
+<transform dir path=etc$->drop>
+<transform dir path=opt$->drop>
+<transform dir path=platform.*$->drop>
+<transform dir path=usr.*$->drop>
+<transform dir path=var$->drop>
+<transform dir path=var/svc$->drop>
+<transform dir path=var/svc/manifest$->drop>
+<transform dir path=var/svc/manifest/application$->drop>
+
+# Drop all files in root, they are for packaging purposes
+<transform file path=[^/]*$->drop>
+
+# Drop STREAMS based NetFilter driver, obsolete for Solaris 11
+<transform file path=platform/i86pc/kernel/drv/amd64/vboxflt$->drop>
+<transform file path=platform/i86pc/kernel/drv/vboxflt\.conf$->drop>
+
+# Drop legacy libraries, needed only for Solaris 10
+<transform dir path=opt/VirtualBox/amd64/legacy$->drop>
+<transform file path=opt/VirtualBox/amd64/legacy/.*$->drop>
+
+# Set the appropriate pkg variant for drivers (global zone only)
+#<transform file path=opt/VirtualBox/.*$->add pkg.depend.runpath $PKGDEPEND_RUNPATH:/opt/VirtualBox/amd64>
+<transform file path=platform/i86pc/kernel/drv/amd64/vboxdrv$->add variant.opensolaris.zone global>
+<transform file path=platform/i86pc/kernel/drv/amd64/vboxbow$->add variant.opensolaris.zone global>
+<transform file path=platform/i86pc/kernel/drv/amd64/vboxnet$->add variant.opensolaris.zone global>
+<transform file path=platform/i86pc/kernel/drv/amd64/vboxusb$->add variant.opensolaris.zone global>
+<transform file path=platform/i86pc/kernel/drv/amd64/vboxusbmon$->add variant.opensolaris.zone global>
+
+# pkg doesn't lookup /kernel/misc/amd64 but looks up /kernel/misc/amd64/misc/amd64. whatever
+# the below transform for drivers fixes where pkg resolves it's dependencies (we link drivers with -N misc/*)
+#<transform file path=platform/i86pc/kernel/drv/amd64/.*$->add pkg.depend.runpath $PKGDEPEND_RUNPATH:/kernel>
+
+# todo:
+# resolve dependencies properly for python
+<transform file path=opt/VirtualBox/vboxshell\.py$->drop>
+<transform file path=opt/VirtualBox/VBoxPython2_[^7].*\.so.*$->drop>
