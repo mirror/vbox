@@ -378,8 +378,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         if (   CPUMIsGuestInVmxNonRootMode(pCtx)
             && CPUMIsGuestVmxInterceptEvents(pCtx)
-            && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
-            && CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
+            && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
         {
             VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
             Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);

@@ -3527,7 +3527,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPUCC pVCpu, uint8_t uVector, bool
             /*
              * If the interrupt is pending and we -do- need to acknowledge the interrupt
              * on VM-exit, postpone VM-exit till after the interrupt controller has been
-             * acknowledged that the interrupt has been consumed.
+             * acknowledged that the interrupt has been consumed. Callers would have to call
+             * us again after getting the vector (and ofc, with fIntPending with false).
              */
             return VINF_VMX_INTERCEPT_NOT_ACTIVE;
         }
@@ -3535,21 +3536,29 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPUCC pVCpu, uint8_t uVector, bool
         /*
          * If the interrupt is no longer pending (i.e. it has been acknowledged) and the
          * "External interrupt exiting" and "Acknowledge interrupt on VM-exit" controls are
-         * all set, we cause the VM-exit now. We need to record the external interrupt that
-         * just occurred in the VM-exit interruption information field.
+         * all set, we need to record the vector of the external interrupt in the
+         * VM-exit interruption information field. Otherwise, mark this field as invalid.
          *
          * See Intel spec. 27.2.2 "Information for VM Exits Due to Vectored Events".
          */
+        uint32_t uExitIntInfo;
         if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT)
         {
-            bool const     fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
-            uint32_t const uExitIntInfo   = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,           uVector)
-                                          | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,             VMX_EXIT_INT_INFO_TYPE_EXT_INT)
-                                          | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET, fNmiUnblocking)
-                                          | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,            1);
-            iemVmxVmcsSetExitIntInfo(pVCpu, uExitIntInfo);
-            return iemVmxVmexit(pVCpu, VMX_EXIT_EXT_INT, 0 /* u64ExitQual */);
+            bool const fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
+            uExitIntInfo = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,           uVector)
+                         | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,             VMX_EXIT_INT_INFO_TYPE_EXT_INT)
+                         | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET, fNmiUnblocking)
+                         | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,            1);
         }
+        else
+            uExitIntInfo = 0;
+        iemVmxVmcsSetExitIntInfo(pVCpu, uExitIntInfo);
+
+        /*
+         * Cause the VM-exit whether or not the vector has been stored
+         * in the VM-exit interruption-information field.
+         */
+        return iemVmxVmexit(pVCpu, VMX_EXIT_EXT_INT, 0 /* u64ExitQual */);
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
