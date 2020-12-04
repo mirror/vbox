@@ -450,7 +450,7 @@ static void rtHttpServerLogProto(PRTHTTPSERVERCLIENT pClient, bool fWrite, const
 
     char **ppapszStrings;
     size_t cStrings;
-    int rc2 = RTStrSplit(pszData, strlen(pszData), "\r\n", &ppapszStrings, &cStrings);
+    int rc2 = RTStrSplit(pszData, strlen(pszData), RTHTTPSERVER_HTTP11_EOL_STR, &ppapszStrings, &cStrings);
     if (RT_SUCCESS(rc2))
     {
         for (size_t i = 0; i < cStrings; i++)
@@ -540,7 +540,7 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient, PRTHTTPHEA
     {
         rc = RTStrAAppend(&pszHdr, pszEntry);
         AssertRCBreak(rc);
-        rc = RTStrAAppend(&pszHdr, "\r\n");
+        rc = RTStrAAppend(&pszHdr, RTHTTPSERVER_HTTP11_EOL_STR);
         AssertRCBreak(rc);
     }
 
@@ -552,7 +552,7 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient, PRTHTTPHEA
         {
             rc = RTStrAAppend(&pszHdr, pszEntry);
             AssertRCBreak(rc);
-            rc = RTStrAAppend(&pszHdr, "\r\n");
+            rc = RTStrAAppend(&pszHdr, RTHTTPSERVER_HTTP11_EOL_STR);
             AssertRCBreak(rc);
         }
     }
@@ -560,7 +560,7 @@ static int rtHttpServerSendResponseHdrEx(PRTHTTPSERVERCLIENT pClient, PRTHTTPHEA
     if (RT_SUCCESS(rc))
     {
         /* Append trailing EOL. */
-        rc = RTStrAAppend(&pszHdr, "\r\n");
+        rc = RTStrAAppend(&pszHdr, RTHTTPSERVER_HTTP11_EOL_STR);
         if (RT_SUCCESS(rc))
             rc = rtHttpServerWriteProto(pClient, pszHdr);
     }
@@ -720,6 +720,20 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
                 pszMIMEHint = NULL;
             }
             AssertRCReturn(rc, rc);
+
+            if (pClient->State.msKeepAlive)
+            {
+                /* If the client requested to keep alive the connection,
+                 * always override this with 30s and report this back to the client. */
+                pClient->State.msKeepAlive = RT_MS_30SEC; /** @todo Make this configurable. */
+#ifdef DEBUG_andy
+                pClient->State.msKeepAlive = 5000;
+#endif
+                cch = RTStrPrintf2(szVal, sizeof(szVal), "timeout=%RU64", pClient->State.msKeepAlive / RT_MS_1SEC); /** @todo No pipelining support here yet. */
+                AssertBreakStmt(cch, VERR_BUFFER_OVERFLOW);
+                rc = RTHttpHeaderListAdd(HdrLst, "Keep-Alive", szVal, strlen(szVal), RTHTTPHEADERLISTADD_F_BACK);
+                AssertRCReturn(rc, rc);
+            }
 
             rc = rtHttpServerSendResponseEx(pClient, RTHTTPSTATUS_OK, &HdrLst);
             AssertRCReturn(rc, rc);
@@ -903,7 +917,7 @@ static DECLCALLBACK(int) rtHttpServerHandlePROPFIND(PRTHTTPSERVERCLIENT pClient,
                 RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRead, pvHandle, pvBuf, RT_MIN(cbBuf, cbToRead), &cbRead);
                 if (RT_FAILURE(rc))
                     break;
-                rtHttpServerLogProto(pClient, true /* fWrite */, (const char *)pvBuf);
+                //rtHttpServerLogProto(pClient, true /* fWrite */, (const char *)pvBuf);
                 rc = rtHttpServerSendResponseBody(pClient, pvBuf, cbRead, &cbWritten);
                 AssertBreak(cbToRead >= cbWritten);
                 cbToRead -= cbWritten;
@@ -970,28 +984,35 @@ static bool rtHttpServerPathIsValid(const char *pszPath, bool fIsAbsolute)
 }
 
 /**
- * Parses headers and fills them into a given header list.
+ * Parses headers and sets (replaces) a given header list.
  *
  * @returns VBox status code.
  * @param   hList               Header list to fill parsed headers in.
- * @param   pszReq              Request string with headers to parse.
- * @param   cbReq               Size (in bytes) of request string to parse.
+ * @param   cStrings            Number of strings to parse for \a papszStrings.
+ * @param   papszStrings        Array of strings to parse.
  */
-static int rtHttpServerParseHeaders(RTHTTPHEADERLIST hList, char *pszReq, size_t cbReq)
+static int rtHttpServerParseHeaders(RTHTTPHEADERLIST hList, size_t cStrings, char **papszStrings)
 {
     /* Nothing to parse left? Bail out early. */
-    if (   !pszReq
-        || !cbReq)
+    if (   !cStrings
+        || !papszStrings)
         return VINF_SUCCESS;
 
-    /* Nothing to do here yet. */
-    RT_NOREF(hList);
+#ifdef LOG_ENABLED
+    for (size_t i = 0; i < cStrings; i++)
+        LogFlowFunc(("Header: %s\n", papszStrings[i]));
+#endif
 
-    return VINF_SUCCESS;
+    int rc = RTHttpHeaderListSet(hList, cStrings, papszStrings);
+
+    LogFlowFunc(("rc=%Rrc, cHeaders=%zu\n", rc, cStrings));
+    return rc;
 }
 
 /**
  * Main function for parsing and allocating a client request.
+ *
+ * See: https://tools.ietf.org/html/rfc2616#section-2.2
  *
  * @returns VBox status code.
  * @param   pClient             Client to parse request from.
@@ -1011,7 +1032,16 @@ static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq, s
     /* We only support UTF-8 charset for now. */
     AssertReturn(RTStrIsValidEncoding(pszReq), VERR_INVALID_PARAMETER);
 
-    /** Advances pszReq to the next string in the request.
+    char **ppapszStrings = NULL;
+    size_t cStrings      = 0;
+    int rc = RTStrSplit(pszReq, cbReq, RTHTTPSERVER_HTTP11_EOL_STR, &ppapszStrings, &cStrings);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (!cStrings)
+        return VERR_INVALID_PARAMETER;
+
+    /** Advances pszReq to the next string in the current line.
      ** @todo Can we do better here? */
 #define REQ_GET_NEXT_STRING \
     pszReq = psz; \
@@ -1023,46 +1053,90 @@ static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq, s
         psz++; \
     } \
     else /* Be strict for now. */ \
-        AssertFailedReturn(VERR_INVALID_PARAMETER);
+        AssertFailedBreakStmt(rc = VERR_INVALID_PARAMETER);
 
-    char *psz = pszReq;
+    PRTHTTPSERVERREQ pReq = NULL;
 
-    /* Make sure to terminate the string in any case. */
-    psz[RT_MIN(RTHTTPSERVER_MAX_REQ_LEN - 1, cbReq)] = '\0';
+    for (;;) /* To use break. */
+    {
+        /* Start with the first line. */
+        char *psz = ppapszStrings[0];
+        AssertPtrBreakStmt(psz, rc = VERR_INVALID_PARAMETER);
 
-    /* A tiny bit of sanitation. */
-    RTStrStrip(psz);
+        /* A tiny bit of sanitation. */
+        RTStrStrip(psz);
 
-    PRTHTTPSERVERREQ pReq = rtHttpServerReqAlloc();
-    AssertPtrReturn(pReq, VERR_NO_MEMORY);
+        pReq = rtHttpServerReqAlloc();
+        AssertPtrBreakStmt(pReq, rc = VERR_NO_MEMORY);
 
-    REQ_GET_NEXT_STRING
+        REQ_GET_NEXT_STRING
 
-    /* Note: Method names are case sensitive. */
-    if      (!RTStrCmp(pszReq, "GET"))      pReq->enmMethod = RTHTTPMETHOD_GET;
-    else if (!RTStrCmp(pszReq, "HEAD"))     pReq->enmMethod = RTHTTPMETHOD_HEAD;
+        /*
+         * Parse method to use. Method names are case sensitive.
+         */
+        if      (!RTStrCmp(pszReq, "GET"))      pReq->enmMethod = RTHTTPMETHOD_GET;
+        else if (!RTStrCmp(pszReq, "HEAD"))     pReq->enmMethod = RTHTTPMETHOD_HEAD;
 #ifdef IPRT_HTTP_WITH_WEBDAV
-    else if (!RTStrCmp(pszReq, "OPTIONS"))  pReq->enmMethod = RTHTTPMETHOD_OPTIONS;
-    else if (!RTStrCmp(pszReq, "PROPFIND")) pReq->enmMethod = RTHTTPMETHOD_PROPFIND;
+        else if (!RTStrCmp(pszReq, "OPTIONS"))  pReq->enmMethod = RTHTTPMETHOD_OPTIONS;
+        else if (!RTStrCmp(pszReq, "PROPFIND")) pReq->enmMethod = RTHTTPMETHOD_PROPFIND;
 #endif
+        else
+        {
+            rc = VERR_NOT_SUPPORTED;
+            break;
+        }
+
+        REQ_GET_NEXT_STRING
+
+        /** @todo Do URL unescaping here. */
+
+        if (!rtHttpServerPathIsValid(pszReq, false /* fIsAbsolute */))
+        {
+            rc = VERR_PATH_NOT_FOUND;
+            break;
+        }
+
+        pReq->pszUrl = RTStrDup(pszReq);
+
+        REQ_GET_NEXT_STRING
+
+        /* We're picky heree: Only HTTP 1.1 is supported by now. */
+        if (RTStrCmp(pszReq, RTHTTPVER_1_1_STR)) /** @todo Use RTStrVersionCompare. Later. */
+        {
+            rc = VERR_NOT_SUPPORTED;
+            break;
+        }
+
+        /** @todo Anything else needed for the first line here? */
+
+        /*
+         * Process headers, if any.
+         */
+        if (cStrings > 1)
+        {
+            rc = rtHttpServerParseHeaders(pReq->hHdrLst, cStrings - 1, &ppapszStrings[1]);
+            if (RT_SUCCESS(rc))
+            {
+                if (RTHttpHeaderListGet(pReq->hHdrLst, "Connection", RTSTR_MAX))
+                    pClient->State.msKeepAlive = RT_MS_30SEC; /** @todo Insert the real value here. */
+            }
+        }
+        break;
+    } /* for (;;) */
+
+    /*
+     * Cleanup.
+     */
+    for (size_t i = 0; i < cStrings; i++)
+        RTStrFree(ppapszStrings[i]);
+    RTMemFree(ppapszStrings);
+
+    if (RT_FAILURE(rc))
+    {
+        rtHttpServerReqFree(pReq);
+        pReq = NULL;
+    }
     else
-        return VERR_NOT_SUPPORTED;
-
-    REQ_GET_NEXT_STRING
-
-    pReq->pszUrl = RTStrDup(pszReq);
-
-    if (!rtHttpServerPathIsValid(pReq->pszUrl, false /* fIsAbsolute */))
-        return VERR_PATH_NOT_FOUND;
-
-    REQ_GET_NEXT_STRING
-
-    /* Only HTTP 1.1 is supported by now. */
-    if (RTStrCmp(pszReq, RTHTTPVER_1_1_STR)) /** @todo Use RTStrVersionCompare. Later. */
-        return VERR_NOT_SUPPORTED;
-
-    int rc = rtHttpServerParseHeaders(pReq->hHdrLst, pszReq, cbReq);
-    if (RT_SUCCESS(rc))
         *ppReq = pReq;
 
     return rc;
@@ -1135,9 +1209,45 @@ static int rtHttpServerClientMain(PRTHTTPSERVERCLIENT pClient)
 
     LogFlowFunc(("Client connected\n"));
 
-    rc = RTTcpSelectOne(pClient->hSocket, RT_INDEFINITE_WAIT);
-    if (RT_SUCCESS(rc))
+    /* Initialize client state. */
+    pClient->State.msKeepAlive = 0;
+
+    RTMSINTERVAL cWaitMs      = RT_INDEFINITE_WAIT; /* The first wait always waits indefinitely. */
+    uint64_t     tsLastReadMs = 0;
+
+    for (;;)
     {
+        rc = RTTcpSelectOne(pClient->hSocket, cWaitMs);
+        if (RT_FAILURE(rc))
+        {
+            LogFlowFunc(("RTTcpSelectOne=%Rrc (cWaitMs=%RU64)\n", rc, cWaitMs));
+            if (rc == VERR_TIMEOUT)
+            {
+                if (pClient->State.msKeepAlive) /* Keep alive handling needed? */
+                {
+                    if (!tsLastReadMs)
+                        tsLastReadMs = RTTimeMilliTS();
+                    const uint64_t tsDeltaMs = pClient->State.msKeepAlive - (RTTimeMilliTS() - tsLastReadMs);
+                    LogFlowFunc(("tsLastReadMs=%RU64, tsDeltaMs=%RU64\n", tsLastReadMs, tsDeltaMs));
+                    Log3Func(("Keep alive active (%RU32ms): %RU64ms remaining\n", pClient->State.msKeepAlive, tsDeltaMs));
+                    if (   tsDeltaMs > cWaitMs
+                        && tsDeltaMs < pClient->State.msKeepAlive)
+                        continue;
+
+                    LogFunc(("Keep alive active: Client did not respond within %RU32ms, closing\n", pClient->State.msKeepAlive));
+                    rc = VINF_SUCCESS;
+                    break;
+                }
+            }
+
+            break;
+        }
+
+        LogFlowFunc(("Reading client request ...\n"));
+
+        tsLastReadMs = RTTimeMilliTS();
+        cWaitMs      = 200;  /* All consequtive waits do busy waiting for now. */
+
         char  *pszReq      = szReq;
         size_t cbRead;
         size_t cbToRead    = sizeof(szReq);
@@ -1181,6 +1291,26 @@ static int rtHttpServerClientMain(PRTHTTPSERVERCLIENT pClient)
             rtHttpServerLogProto(pClient, false /* fWrite */, szReq);
 
             rc = rtHttpServerProcessRequest(pClient, szReq, cbReadTotal);
+        }
+        else
+            break;
+
+    } /* for */
+
+    if (RT_FAILURE(rc))
+    {
+        switch (rc)
+        {
+            case VERR_NET_CONNECTION_RESET_BY_PEER:
+            {
+                LogFunc(("Client closed the connection\n"));
+                rc = VINF_SUCCESS;
+                break;
+            }
+
+            default:
+                LogFunc(("Client processing failed with %Rrc\n", rc));
+                break;
         }
     }
 

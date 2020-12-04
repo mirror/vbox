@@ -90,7 +90,9 @@ RTR3DECL(void) RTHttpServerResponseDestroy(PRTHTTPSERVERRESP pResp);
  */
 typedef struct RTHTTPSERVERCLIENTSTATE
 {
-    uint32_t         fUnused;
+    /** If non-zero, the time (in ms) to keep a client connection alive.
+     *  Requested via client header, but set and controlled by the server in the end. */
+    RTMSINTERVAL msKeepAlive;
 } RTHTTPSERVERCLIENTSTATE;
 /** Pointer to a FTP server client state. */
 typedef RTHTTPSERVERCLIENTSTATE *PRTHTTPSERVERCLIENTSTATE;
@@ -195,6 +197,9 @@ typedef RTHTTPSERVERCALLBACKS *PRTHTTPSERVERCALLBACKS;
 
 /** Maximum length (in bytes) a single client request can have. */
 #define RTHTTPSERVER_MAX_REQ_LEN        _8K
+/** EOL string according to the HTTP 1.1 specs.
+ *  See https://tools.ietf.org/html/rfc2616#section-2.2 */
+#define RTHTTPSERVER_HTTP11_EOL_STR     "\r\n"
 
 /**
  * Creates a HTTP server instance.
