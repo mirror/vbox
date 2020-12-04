@@ -767,9 +767,12 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
             }
 
             rc = rtHttpServerSendResponseEx(pClient, RTHTTPSTATUS_OK, &HdrLst);
-            AssertRCReturn(rc, rc);
 
             RTHttpHeaderListDestroy(HdrLst);
+
+            if (rc == VERR_BROKEN_PIPE) /* Could happen on fast reloads. */
+                break;
+            AssertRCReturn(rc, rc);
 
             size_t cbToRead  = fsObj.cbObject;
             size_t cbRead    = 0; /* Shut up GCC. */
@@ -1052,7 +1055,7 @@ static int rtHttpServerParseHeaders(RTHTTPHEADERLIST hList, size_t cStrings, cha
  * @param   ppReq               Where to store the allocated client request on success.
  *                              Needs to be free'd via rtHttpServerReqFree().
  */
-static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq, size_t cbReq,
+static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, const char *pszReq, size_t cbReq,
                                     PRTHTTPSERVERREQ *ppReq)
 {
     RT_NOREF(pClient);
@@ -1063,53 +1066,45 @@ static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq, s
     /* We only support UTF-8 charset for now. */
     AssertReturn(RTStrIsValidEncoding(pszReq), VERR_INVALID_PARAMETER);
 
-    char **ppapszStrings = NULL;
-    size_t cStrings      = 0;
-    int rc = RTStrSplit(pszReq, cbReq, RTHTTPSERVER_HTTP11_EOL_STR, &ppapszStrings, &cStrings);
+    char **ppapszReq = NULL;
+    size_t cReq      = 0;
+    int rc = RTStrSplit(pszReq, cbReq, RTHTTPSERVER_HTTP11_EOL_STR, &ppapszReq, &cReq);
     if (RT_FAILURE(rc))
         return rc;
 
-    if (!cStrings)
+    if (!cReq)
         return VERR_INVALID_PARAMETER;
 
-    /** Advances pszReq to the next string in the current line.
-     ** @todo Can we do better here? */
-#define REQ_GET_NEXT_STRING \
-    pszReq = psz; \
-    while (psz && !RT_C_IS_SPACE(*psz)) \
-        psz++; \
-    if (psz) \
-    { \
-        *psz = '\0'; \
-        psz++; \
-    } \
-    else /* Be strict for now. */ \
-        AssertFailedBreakStmt(rc = VERR_INVALID_PARAMETER);
+#ifdef LOG_ENABLED
+    for (size_t i = 0; i < cReq; i++)
+        LogFlowFunc(("%s\n", ppapszReq[i]));
+#endif
 
     PRTHTTPSERVERREQ pReq = NULL;
 
-    for (;;) /* To use break. */
+    char **ppapszFirstLine = NULL;
+    size_t cFirstLine = 0;
+    rc = RTStrSplit(ppapszReq[0], strlen(ppapszReq[0]), " ", &ppapszFirstLine, &cFirstLine);
+    if (RT_SUCCESS(rc))
     {
-        /* Start with the first line. */
-        char *psz = ppapszStrings[0];
-        AssertPtrBreakStmt(psz, rc = VERR_INVALID_PARAMETER);
+        if (cFirstLine < 3) /* At leat the method, path and version has to be present. */
+            rc = VERR_INVALID_PARAMETER;
+    }
 
-        /* A tiny bit of sanitation. */
-        RTStrStrip(psz);
-
+    while (RT_SUCCESS(rc)) /* To use break. */
+    {
         pReq = rtHttpServerReqAlloc();
         AssertPtrBreakStmt(pReq, rc = VERR_NO_MEMORY);
-
-        REQ_GET_NEXT_STRING
 
         /*
          * Parse method to use. Method names are case sensitive.
          */
-        if      (!RTStrCmp(pszReq, "GET"))      pReq->enmMethod = RTHTTPMETHOD_GET;
-        else if (!RTStrCmp(pszReq, "HEAD"))     pReq->enmMethod = RTHTTPMETHOD_HEAD;
+        const char *pszMethod = ppapszFirstLine[0];
+        if      (!RTStrCmp(pszMethod, "GET"))      pReq->enmMethod = RTHTTPMETHOD_GET;
+        else if (!RTStrCmp(pszMethod, "HEAD"))     pReq->enmMethod = RTHTTPMETHOD_HEAD;
 #ifdef IPRT_HTTP_WITH_WEBDAV
-        else if (!RTStrCmp(pszReq, "OPTIONS"))  pReq->enmMethod = RTHTTPMETHOD_OPTIONS;
-        else if (!RTStrCmp(pszReq, "PROPFIND")) pReq->enmMethod = RTHTTPMETHOD_PROPFIND;
+        else if (!RTStrCmp(pszMethod, "OPTIONS"))  pReq->enmMethod = RTHTTPMETHOD_OPTIONS;
+        else if (!RTStrCmp(pszMethod, "PROPFIND")) pReq->enmMethod = RTHTTPMETHOD_PROPFIND;
 #endif
         else
         {
@@ -1117,22 +1112,25 @@ static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq, s
             break;
         }
 
-        REQ_GET_NEXT_STRING
-
+        /*
+         * Parse requested path.
+         */
         /** @todo Do URL unescaping here. */
-
-        if (!rtHttpServerPathIsValid(pszReq, false /* fIsAbsolute */))
+        const char *pszPath = ppapszFirstLine[1];
+        if (!rtHttpServerPathIsValid(pszPath, false /* fIsAbsolute */))
         {
             rc = VERR_PATH_NOT_FOUND;
             break;
         }
 
-        pReq->pszUrl = RTStrDup(pszReq);
+        pReq->pszUrl = RTStrDup(pszPath);
 
-        REQ_GET_NEXT_STRING
-
-        /* We're picky heree: Only HTTP 1.1 is supported by now. */
-        if (RTStrCmp(pszReq, RTHTTPVER_1_1_STR)) /** @todo Use RTStrVersionCompare. Later. */
+        /*
+         * Parse HTTP version to use.
+         * We're picky heree: Only HTTP 1.1 is supported by now.
+         */
+        const char *pszVer = ppapszFirstLine[2];
+        if (RTStrCmp(pszVer, RTHTTPVER_1_1_STR)) /** @todo Use RTStrVersionCompare. Later. */
         {
             rc = VERR_NOT_SUPPORTED;
             break;
@@ -1143,9 +1141,9 @@ static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq, s
         /*
          * Process headers, if any.
          */
-        if (cStrings > 1)
+        if (cReq > 1)
         {
-            rc = rtHttpServerParseHeaders(pReq->hHdrLst, cStrings - 1, &ppapszStrings[1]);
+            rc = rtHttpServerParseHeaders(pReq->hHdrLst, cReq - 1, &ppapszReq[1]);
             if (RT_SUCCESS(rc))
             {
                 if (RTHttpHeaderListGet(pReq->hHdrLst, "Connection", RTSTR_MAX))
@@ -1158,9 +1156,14 @@ static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq, s
     /*
      * Cleanup.
      */
-    for (size_t i = 0; i < cStrings; i++)
-        RTStrFree(ppapszStrings[i]);
-    RTMemFree(ppapszStrings);
+
+    for (size_t i = 0; i < cFirstLine; i++)
+        RTStrFree(ppapszFirstLine[i]);
+    RTMemFree(ppapszFirstLine);
+
+    for (size_t i = 0; i < cReq; i++)
+        RTStrFree(ppapszReq[i]);
+    RTMemFree(ppapszReq);
 
     if (RT_FAILURE(rc))
     {
