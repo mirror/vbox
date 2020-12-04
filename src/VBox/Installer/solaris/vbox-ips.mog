@@ -30,7 +30,8 @@ set name=info.classification value=org.opensolaris.category.2008:System/Virtuali
 <transform file path=opt/VirtualBox/amd64/legacy/.*$ -> drop>
 
 # Drop all API helper libraries for python 2.x other than 2.7
-<transform file path=opt/VirtualBox/VBoxPython2_[^7].*\.so.*$->drop>
+<transform file path=opt/VirtualBox/64/VBoxPython2\.so.*$ -> drop>
+<transform file path=opt/VirtualBox/(64/)?VBoxPython2_[^7].*\.so.*$ -> drop>
 
 # Tweak: do not try to get the dependencies for libGL.so which is needed by Qt
 <transform file path=opt/VirtualBox/amd64/libQt5GuiVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
@@ -55,4 +56,4 @@ $(HARDENED_ONLY)<transform file path=opt/VirtualBox/amd64/(VirtualBoxVM|VBoxHead
 
 # todo:
 # resolve dependencies properly for python
-<transform file path=opt/VirtualBox/vboxshell\.py$->drop>
+<transform file path=opt/VirtualBox/vboxshell\.py$ -> drop>
