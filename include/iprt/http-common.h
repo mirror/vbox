@@ -168,6 +168,23 @@ typedef struct RTHTTPHEADERENTRY
 typedef RTHTTPHEADERENTRY *PRTHTTPHEADERENTRY;
 
 /**
+ * Structure for maintaining a HTTP body.
+ */
+typedef struct RTHTTPBODY
+{
+    /** Body to send, if any. Can be NULL. */
+    void            *pvBody;
+    /** Body allocation size (in bytes). */
+    size_t           cbBodyAlloc;
+    /** How much body data is being used (in bytes). */
+    size_t           cbBodyUsed;
+    /** Current body data read/write offset (in bytes). */
+    size_t           offBody;
+} RTHTTPBODY;
+/** Pointer to a HTTP body. */
+typedef RTHTTPBODY *PRTHTTPBODY;
+
+/**
  * Returns the name of the HTTP method.
  * @returns Read only string.
  * @param   enmMethod       The HTTP method to name.

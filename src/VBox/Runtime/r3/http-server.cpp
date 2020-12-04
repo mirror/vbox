@@ -327,6 +327,55 @@ static const char *rtHttpServerGuessMIMEType(const char *pszFileExt)
 }
 
 /**
+ * Initializes a HTTP body.
+ *
+ * @param   pBody               Body to initialize.
+ * @param   cbSize              Size of body (in bytes) to allocate. Optional and can be 0.
+ */
+static int rtHttpServerBodyInit(PRTHTTPBODY pBody, size_t cbSize)
+{
+    if (cbSize)
+    {
+        pBody->pvBody      = RTMemAlloc(cbSize);
+        AssertPtrReturn(pBody->pvBody, VERR_NO_MEMORY);
+        pBody->cbBodyAlloc = cbSize;
+    }
+    else
+    {
+        pBody->pvBody      = NULL;
+        pBody->cbBodyAlloc = 0;
+    }
+
+    pBody->cbBodyUsed = 0;
+    pBody->offBody    = 0;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Destroys a HTTP body.
+ *
+ * @param   pBody               Body to destroy.
+ */
+static void rtHttpServerBodyDestroy(PRTHTTPBODY pBody)
+{
+    if (!pBody)
+        return;
+
+    if (pBody->pvBody)
+    {
+        Assert(pBody->cbBodyAlloc);
+
+        RTMemFree(pBody->pvBody);
+        pBody->pvBody = NULL;
+    }
+
+    pBody->cbBodyAlloc  = 0;
+    pBody->cbBodyUsed   = 0;
+    pBody->offBody      = 0;
+}
+
+/**
  * Allocates and initializes a new client request.
  *
  * @returns Pointer to the new client request, or NULL on OOM.
@@ -338,6 +387,9 @@ static PRTHTTPSERVERREQ rtHttpServerReqAlloc(void)
     AssertPtrReturn(pReq, NULL);
 
     int rc2 = RTHttpHeaderListInit(&pReq->hHdrLst);
+    AssertRC(rc2);
+
+    rc2 = rtHttpServerBodyInit(&pReq->Body, 0 /* cbSize */);
     AssertRC(rc2);
 
     return pReq;
@@ -355,8 +407,7 @@ static void rtHttpServerReqFree(PRTHTTPSERVERREQ pReq)
 
     RTHttpHeaderListDestroy(pReq->hHdrLst);
 
-    RTMemFree(pReq->pvBody);
-    pReq->pvBody = NULL;
+    rtHttpServerBodyDestroy(&pReq->Body);
 
     RTMemFree(pReq);
 }
@@ -375,18 +426,7 @@ RTR3DECL(int) RTHttpServerResponseInitEx(PRTHTTPSERVERRESP pResp, size_t cbBody)
     int rc = RTHttpHeaderListInit(&pResp->hHdrLst);
     AssertRCReturn(rc, rc);
 
-    if (cbBody)
-    {
-        pResp->pvBody      = RTMemAlloc(cbBody);
-        AssertPtrReturn(pResp->pvBody, VERR_NO_MEMORY);
-        pResp->cbBodyAlloc = cbBody;
-    }
-    else
-    {
-        pResp->cbBodyAlloc = 0;
-    }
-
-    pResp->cbBodyUsed = 0;
+    rc = rtHttpServerBodyInit(&pResp->Body, cbBody);
 
     return rc;
 }
@@ -416,16 +456,7 @@ RTR3DECL(void) RTHttpServerResponseDestroy(PRTHTTPSERVERRESP pResp)
 
     RTHttpHeaderListDestroy(pResp->hHdrLst);
 
-    if (pResp->pvBody)
-    {
-        Assert(pResp->cbBodyAlloc);
-
-        RTMemFree(pResp->pvBody);
-        pResp->pvBody = NULL;
-    }
-
-    pResp->cbBodyAlloc = 0;
-    pResp->cbBodyUsed  = 0;
+    rtHttpServerBodyDestroy(&pResp->Body);
 }
 
 
