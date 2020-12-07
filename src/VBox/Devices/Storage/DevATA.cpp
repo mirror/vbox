@@ -2002,6 +2002,7 @@ static bool atapiR3ReadSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
 {
     int rc;
     uint64_t cbBlockRegion = 0;
+    VDREGIONDATAFORM enmDataForm;
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     uint32_t const iATAPILBA     = s->iATAPILBA;
@@ -2015,7 +2016,7 @@ static bool atapiR3ReadSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
     ataR3LockLeave(pDevIns, pCtl);
 
     rc = pDevR3->pDrvMedia->pfnQueryRegionPropertiesForLba(pDevR3->pDrvMedia, iATAPILBA, NULL, NULL,
-                                                      &cbBlockRegion, NULL);
+                                                      &cbBlockRegion, &enmDataForm);
     if (RT_SUCCESS(rc))
     {
         STAM_PROFILE_ADV_START(&s->StatReads, r);
@@ -2068,11 +2069,29 @@ static bool atapiR3ReadSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
                 for (uint32_t i = iATAPILBA; i < iEndSector; i++)
                 {
                     uint8_t abTmp[2352];
+                    uint8_t cbSkip;
+
                     rc = pDevR3->pDrvMedia->pfnRead(pDevR3->pDrvMedia, (uint64_t)i * 2352, &abTmp[0], 2352);
                     if (RT_FAILURE(rc))
                         break;
 
-                    memcpy(pbBuf, &abTmp[16], 2048);
+                    /* Mode 2 has an additional subheader before user data; we need to
+                     * skip 16 bytes for Mode 1 (sync + header) and 20 bytes for Mode 2       +
+                     * (sync + header + subheader).
+                     */
+                    switch (enmDataForm) {
+                    case VDREGIONDATAFORM_MODE2_2352:
+                    case VDREGIONDATAFORM_XA_2352:
+                        cbSkip = 24;
+                        break;
+                    case VDREGIONDATAFORM_MODE1_2352:
+                        cbSkip = 16;
+                        break;
+                    default:
+                        AssertMsgFailed(("Unexpected region form (%#u), using default skip value\n", enmDataForm));
+                        cbSkip = 16;
+                    }
+                    memcpy(pbBuf, &abTmp[cbSkip], 2048);
                     pbBuf += 2048;
                 }
             }

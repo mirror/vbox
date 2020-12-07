@@ -95,6 +95,7 @@ typedef enum CUEKEYWORD
     CUEKEYWORD_TRACK,
     CUEKEYWORD_MODE1_2048,
     CUEKEYWORD_MODE1_2352,
+    CUEKEYWORD_MODE2_2352,
     CUEKEYWORD_AUDIO,
     CUEKEYWORD_REM
 } CUEKEYWORD;
@@ -252,6 +253,7 @@ static const CUEKEYWORDDESC g_aCueKeywords[] =
     {RT_STR_TUPLE("TRACK"),      CUEKEYWORD_TRACK},
     {RT_STR_TUPLE("MODE1/2048"), CUEKEYWORD_MODE1_2048},
     {RT_STR_TUPLE("MODE1/2352"), CUEKEYWORD_MODE1_2352},
+    {RT_STR_TUPLE("MODE2/2352"), CUEKEYWORD_MODE2_2352},
     {RT_STR_TUPLE("AUDIO"),      CUEKEYWORD_AUDIO},
     {RT_STR_TUPLE("REM"),        CUEKEYWORD_REM}
 };
@@ -959,7 +961,8 @@ static int cueParseTrack(PCUEIMAGE pThis, PCUETOKENIZER pTokenizer)
                 CUEKEYWORD enmDataMode = pTokenizer->pTokenCurr->Type.Keyword.enmKeyword;
                 if (   cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_AUDIO)
                     || cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_MODE1_2048)
-                    || cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_MODE1_2352))
+                    || cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_MODE1_2352)
+                    || cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_MODE2_2352))
                 {
                     /*
                      * Parse everything coming below the track (index points, etc.), we only need to find
@@ -980,6 +983,11 @@ static int cueParseTrack(PCUEIMAGE pThis, PCUETOKENIZER pTokenizer)
                             {
                                 pRegion->cbBlock     = 2352;
                                 pRegion->enmDataForm = VDREGIONDATAFORM_MODE1_2352;
+                            }
+                            else if (enmDataMode == CUEKEYWORD_MODE2_2352)
+                            {
+                                pRegion->cbBlock     = 2352;
+                                pRegion->enmDataForm = VDREGIONDATAFORM_MODE2_2352;
                             }
                             else if (enmDataMode == CUEKEYWORD_AUDIO)
                             {
