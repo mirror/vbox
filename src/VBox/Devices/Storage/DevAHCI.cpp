@@ -243,8 +243,6 @@ typedef struct AHCIREQ
     uint8_t                    cmdFis[AHCI_CMDFIS_TYPE_H2D_SIZE];
     /** The ATAPI command data. */
     uint8_t                    aATAPICmd[ATAPI_PACKET_SIZE];
-    /** Size of one sector for the ATAPI transfer. */
-    uint32_t                   cbATAPISector;
     /** Physical address of the command header. - GC */
     RTGCPHYS                   GCPhysCmdHdrAddr;
     /** Physical address of the PRDT */
