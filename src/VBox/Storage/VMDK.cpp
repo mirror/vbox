@@ -56,6 +56,13 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #endif
+#ifdef RT_OS_SOLARIS
+#include <sys/dkio.h>
+#include <sys/vtoc.h>
+#include <sys/efi_partition.h>
+#include <unistd.h>
+#include <errno.h>
+#endif
 
 #include "VDBackends.h"
 
@@ -3952,6 +3959,7 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
         }
         /* else: We've got nothing to work on, so only do content comparison. */
     }
+    
 #elif defined(RT_OS_FREEBSD)
     char szDriveDevName[256];
     char* pszDevName = fdevname_r(RTFileToNative(hRawDrive), szDriveDevName, 256);
@@ -4013,6 +4021,99 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
             rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(err), RT_SRC_POS,
                            N_("VMDK: Image path: '%s'. geom_gettree failed: %d"), pImage->pszFilename, err);
     }
+    
+#elif defined(RT_OS_SOLARIS)
+    RT_NOREF(hVol);
+    
+    dk_cinfo dkiDriveInfo;
+    dk_cinfo dkiPartInfo;
+    if (ioctl(RTFileToNative(hRawDrive), DKIOCINFO, (caddr_t)&dkiDriveInfo) == -1)
+        rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. DKIOCINFO failed on '%s': %d"), pImage->pszFilename, pszRawDrive, errno);
+    else if (ioctl(RTFileToNative(hRawPart), DKIOCINFO, (caddr_t)&dkiPartInfo) == -1)
+        rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. DKIOCINFO failed on '%s': %d"), pImage->pszFilename, pszRawDrive, errno);
+    else if (  dkiDriveInfo.dki_ctype != dkiPartInfo.dki_ctype
+            || dkiDriveInfo.dki_cnum  != dkiPartInfo.dki_cnum
+            || dkiDriveInfo.dki_addr  != dkiPartInfo.dki_addr
+            || dkiDriveInfo.dki_unit  != dkiPartInfo.dki_unit
+            || dkiDriveInfo.dki_slave != dkiPartInfo.dki_slave)
+        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s' (%#x != %#x || %#x != %#x || %#x != %#x || %#x != %#x || %#x != %#x)"),
+                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive,
+                       dkiDriveInfo.dki_ctype, dkiPartInfo.dki_ctype, dkiDriveInfo.dki_cnum, dkiPartInfo.dki_cnum,
+                       dkiDriveInfo.dki_addr, dkiPartInfo.dki_addr, dkiDriveInfo.dki_unit, dkiPartInfo.dki_unit,
+                       dkiDriveInfo.dki_slave, dkiPartInfo.dki_slave);
+    else
+    {
+        uint64_t cbOffset = 0;
+        uint64_t cbSize = 0;
+        dk_gpt *pEfi = NULL;
+        int idxEfiPart = efi_alloc_and_read(RTFileToNative(hRawPart), &pEfi);
+        if (idxEfiPart >= 0)
+        {
+            if ((uint32_t)dkiPartInfo.dki_partition + 1 == idxPartition)
+            {
+                cbOffset = pEfi->efi_parts[idxEfiPart].p_start * pEfi->efi_lbasize;
+                cbSize   = pEfi->efi_parts[idxEfiPart].p_size  * pEfi->efi_lbasize;
+            }
+            else
+                rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'. Partition #%u number ('%s') verification failed on '%s' (%#x != %#x)"),
+                               pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive,
+                               idxPartition, (uint32_t)dkiPartInfo.dki_partition + 1);
+            efi_free(pEfi);
+        }
+        else
+        {
+            /* 
+             * Manual says the efi_alloc_and_read returns VT_EINVAL if no EFI partition table found. 
+             * Actually, the function returns any error, e.g. VT_ERROR. Thus, we are not sure, is it 
+             * real error or just no EFI table found. Therefore, let's try to obtain partition info
+             * using another way. If there is an error, it returns errno which will be handled below.
+             */
+               
+            uint32_t numPartition = (uint32_t)dkiPartInfo.dki_partition;
+            if (numPartition > NDKMAP)
+                numPartition -= NDKMAP;
+            if (numPartition != idxPartition)
+                rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'. Partition #%u number ('%s') verification failed on '%s' (%#x != %#x)"),
+                               pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive,
+                               idxPartition, numPartition);
+            else
+            {
+                dk_minfo_ext mediaInfo;
+                if (ioctl(RTFileToNative(hRawPart), DKIOCGMEDIAINFOEXT, (caddr_t)&mediaInfo) == -1)
+                    rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                   N_("VMDK: Image path: '%s'. Partition #%u number ('%s') verification failed on '%s'. Can not obtain partition info: %d"),
+                                   pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, errno);
+                else
+                {
+                    extpart_info extPartInfo;
+                    if (ioctl(RTFileToNative(hRawPart), DKIOCEXTPARTINFO, (caddr_t)&extPartInfo) != -1)
+                    {
+                        cbOffset = (uint64_t)extPartInfo.p_start * mediaInfo.dki_lbsize;
+                        cbSize   = (uint64_t)extPartInfo.p_length * mediaInfo.dki_lbsize;
+                    }
+                    else
+                        rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Partition #%u number ('%s') verification failed on '%s'. Can not obtain partition info: %d"),
+                                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, errno);
+                }
+            }
+        }
+        if (RT_SUCCESS(rc) && cbOffset != pPartDesc->offStartInVDisk)
+            rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                           N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Start offset %RI64, expected %RU64"),
+                           pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cbOffset, pPartDesc->offStartInVDisk);
+
+        if (RT_SUCCESS(rc) && cbSize != pPartDesc->cbData)
+            rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                           N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Size %RI64, expected %RU64"),
+                           pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cbSize, pPartDesc->cbData);
+    }
+    
 #else
     RT_NOREF(hVol); /* PORTME */
 #endif
@@ -4235,6 +4336,45 @@ static int vmdkRawDescDoPartitions(PVMDKIMAGE pImage, RTDVM hVolMgr, PVDISKRAW p
 #elif defined(RT_OS_WINDOWS)
                 rc = vmdkRawDescWinMakePartitionName(pImage, pszRawDrive, hRawDrive, idxPartition, &paPartDescs[i].pszRawDevice);
                 AssertRCReturn(rc, rc);
+#elif defined(RT_OS_SOLARIS)
+                if (pRawDesc->enmPartitioningType == VDISKPARTTYPE_MBR)
+                {
+                    /* 
+                     * MBR partitions have device nodes in form /dev/(r)dsk/cXtYdZpK
+                     * where X is the controller,
+                     *       Y is target (SCSI device number),
+                     *       Z is disk number,
+                     *       K is partition number,
+                     *         where p0 is the whole disk
+                     *               p1-pN are the partitions of the disk
+                     */
+                    const char *pszRawDrivePath = pszRawDrive;
+                    char szDrivePath[RTPATH_MAX];
+                    size_t cbRawDrive = strlen(pszRawDrive);
+                    if (  cbRawDrive > 1 && strcmp(&pszRawDrive[cbRawDrive - 2], "p0") == 0)
+                    {
+                        memcpy(szDrivePath, pszRawDrive, cbRawDrive - 2);
+                        szDrivePath[cbRawDrive - 2] = '\0';
+                        pszRawDrivePath = szDrivePath;
+                    }
+                    RTStrAPrintf(&paPartDescs[i].pszRawDevice, "%sp%u", pszRawDrivePath, idxPartition);
+                }
+                else /* GPT */
+                {
+                    /*
+                     * GPT partitions have device nodes in form /dev/(r)dsk/cXtYdZsK
+                     * where X is the controller,
+                     *       Y is target (SCSI device number),
+                     *       Z is disk number,
+                     *       K is partition number, zero based. Can be only from 0 to 6.
+                     *         Thus, only partitions numbered 0 through 6 have device nodes.
+                     */
+                    if (idxPartition > 7)
+                        return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                         N_("VMDK: Image path: '%s'. the partition #%u on '%s' has no device node and can not be specified with 'Relative' property"),
+                                         pImage->pszFilename, idxPartition, pszRawDrive);
+                    RTStrAPrintf(&paPartDescs[i].pszRawDevice, "%ss%u", pszRawDrive, idxPartition - 1);
+                }
 #else
                 AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* The option parsing code should have prevented this - PORTME */
 #endif
@@ -4639,7 +4779,7 @@ static int vmdkRawDescParseConfig(PVMDKIMAGE pImage, char **ppszRawDrive,
             return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
                              N_("VMDK: Image path: '%s'. The 'Relative' option is not supported for whole-drive configurations, only when selecting partitions"),
                              pImage->pszFilename);
-#if !defined(RT_OS_DARWIN) && !defined(RT_OS_LINUX) && !defined(RT_OS_FREEBSD) && !defined(RT_OS_WINDOWS) /* PORTME */
+#if !defined(RT_OS_DARWIN) && !defined(RT_OS_LINUX) && !defined(RT_OS_FREEBSD) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_SOLARIS) /* PORTME */
         if (*pfRelative == true)
             return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
                              N_("VMDK: Image path: '%s'. The 'Relative' option is not supported on this host OS"),
