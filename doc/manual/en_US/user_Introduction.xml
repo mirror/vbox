@@ -4200,9 +4200,9 @@
         guest system can be viewed and modified.
       </para>
     </sect2>
-    <sect2 id="vm-resource-monitor">
+    <sect2 id="resource-monitor">
 
-      <title>VM Resource Monitor</title>
+      <title>Resource Monitor</title>
 
       <para>
         &product-name; has a widget that shows several performance metrics
@@ -4212,11 +4212,11 @@
         It is possible to configure the set of metrics to be shown and select a metric
         with respect to which the list of virtual machines are sorted.
       </para>
-      <figure id="fig-vm-resource-monitor">
-        <title>VM Resource Monitor</title>
+      <figure id="fig-resource-monitor">
+        <title>Resource Monitor</title>
         <mediaobject>
           <imageobject>
-            <imagedata align="center" fileref="images/vmresourcemonitor.png"
+            <imagedata align="center" fileref="images/resourcemonitor.png"
                        width="14cm" />
           </imageobject>
         </mediaobject>
@@ -4248,8 +4248,24 @@
           Configuration Details tab.
         </para>
       </listitem>
-
+      <listitem>
+        <para>
+          <emphasis role="bold">Performance Monitor</emphasis> tab has several time series charts
+          which monitors guests resource usage including CPU, RAM, Disk I/O, and Network. Note
+          that RAM chart requires guest additions to be running on the guest system to work. The
+          Performance Monitor is also avaible from the manager UI machine menu.
+        </para>
+      </listitem>
       </itemizedlist>
+      <figure id="fig-vm-performance-monitor">
+        <title>VM Performance Monitor</title>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" fileref="images/vmperformancemonitor.png"
+                       width="14cm" />
+          </imageobject>
+        </mediaobject>
+      </figure>
 
 
     </sect2>
