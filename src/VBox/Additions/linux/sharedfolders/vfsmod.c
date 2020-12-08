@@ -60,6 +60,8 @@
 #if RTLNX_VER_MIN(5,1,0)
 # include <linux/fs_context.h>
 # include <linux/fs_parser.h>
+#elif RTLNX_VER_MIN(2,6,0)
+# include <linux/parser.h>
 #endif
 
 
@@ -219,14 +221,11 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
     TRACE();
     *sf_gp = NULL; /* (old gcc maybe used initialized) */
 
-#if RTLNX_VER_MAX(5,1,0)
+#if RTLNX_VER_MAX(2,6,0)
     /*
      * Validate info.
      */
-    if (   info->nullchar != '\0'
-        || info->signature[0] != VBSF_MOUNT_SIGNATURE_BYTE_0
-        || info->signature[1] != VBSF_MOUNT_SIGNATURE_BYTE_1
-        || info->signature[2] != VBSF_MOUNT_SIGNATURE_BYTE_2) {
+    if (!VBSF_IS_MOUNT_VBOXSF_DATA(info)) {
         SFLOGRELBOTH(("vboxsf: Invalid info signature: %#x %#x %#x %#x!\n",
                       info->nullchar, info->signature[0], info->signature[1], info->signature[2]));
         return -EINVAL;
@@ -549,6 +548,196 @@ static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info
 }
 
 
+#if RTLNX_VER_RANGE(2,6,0,  5,1,0)
+/**
+ * The following section of code uses the Linux match_token() function to
+ * parse string-based mount options.
+ */
+static void vbsf_init_mount_info(struct vbsf_mount_info_new *mount_info,
+    const char *sf_name)
+{
+    mount_info->ttl = mount_info->msDirCacheTTL = mount_info->msInodeTTL = -1;
+    mount_info->dmode = mount_info->fmode = ~0U;
+    mount_info->enmCacheMode = kVbsfCacheMode_Strict;
+    mount_info->length = sizeof(struct vbsf_mount_info_new);
+    if (sf_name)
+        strlcpy(mount_info->name, sf_name, sizeof(mount_info->name));
+}
+
+enum {
+    Opt_iocharset,  /* nls_name[] */
+    Opt_nls,        /* alias for iocharset */
+    Opt_uid,
+    Opt_gid,
+    Opt_ttl,
+    Opt_dmode,
+    Opt_fmode,
+    Opt_dmask,
+    Opt_fmask,
+    Opt_umask,
+    Opt_maxiopages,
+    Opt_dirbuf,
+    Opt_dcachettl,
+    Opt_inodettl,
+    Opt_cachemode,  /* enum vbsf_cache_mode */
+    Opt_tag,
+    Opt_err
+};
+
+# if RTLNX_VER_MAX(2,6,28)
+static match_table_t vbsf_tokens = {
+# else
+static const match_table_t vbsf_tokens = {
+# endif
+    { Opt_iocharset,  "iocharset=%s" },
+    { Opt_nls,        "nls=%s" },
+    { Opt_uid,        "uid=%u" },
+    { Opt_gid,        "gid=%u" },
+    { Opt_ttl,        "ttl=%u" },
+    { Opt_dmode,      "dmode=%o" },
+    { Opt_fmode,      "fmode=%o" },
+    { Opt_dmask,      "dmask=%o" },
+    { Opt_fmask,      "fmask=%o" },
+    { Opt_umask,      "umask=%o" },
+    { Opt_maxiopages, "maxiopages=%u" },
+    { Opt_dirbuf,     "dirbuf=%u" },
+    { Opt_dcachettl,  "dcachettl=%u" },
+    { Opt_inodettl,   "inodettl=%u" },
+    { Opt_cachemode,  "cache=%s" },
+    { Opt_tag,        "tag=%s" },  /* private option for automounter */
+    { Opt_err,        NULL }
+};
+
+static int vbsf_parse_mount_options(char *options,
+    struct vbsf_mount_info_new *mount_info)
+{
+    substring_t args[MAX_OPT_ARGS];
+    int option;
+    int token;
+    char *p;
+    char *iocharset;
+    char *cachemode;
+    char *tag;
+
+    if (!options)
+        return -EINVAL;
+
+    while ((p = strsep(&options, ",")) != NULL) {
+        if (!*p)
+            continue;
+
+        token = match_token(p, vbsf_tokens, args);
+        switch (token) {
+        case Opt_iocharset:
+        case Opt_nls:
+            iocharset = match_strdup(&args[0]);
+            if (!iocharset) {
+                SFLOGRELBOTH(("vboxsf: Could not allocate memory for iocharset!\n"));
+                return -ENOMEM;
+            }
+            strlcpy(mount_info->nls_name, iocharset,
+                sizeof(mount_info->nls_name));
+            kfree(iocharset);
+            break;
+        case Opt_uid:
+            if (match_int(&args[0], &option))
+                return -EINVAL;
+            mount_info->uid = option;
+            break;
+        case Opt_gid:
+            if (match_int(&args[0], &option))
+                return -EINVAL;
+            mount_info->gid = option;
+            break;
+        case Opt_ttl:
+            if (match_int(&args[0], &option))
+                return -EINVAL;
+            mount_info->ttl = option;
+            break;
+        case Opt_dmode:
+            if (match_octal(&args[0], &option))
+                return -EINVAL;
+            mount_info->dmode = option;
+            break;
+        case Opt_fmode:
+            if (match_octal(&args[0], &option))
+                return -EINVAL;
+            mount_info->fmode = option;
+            break;
+        case Opt_dmask:
+            if (match_octal(&args[0], &option))
+                return -EINVAL;
+            mount_info->dmask = option;
+            break;
+        case Opt_fmask:
+            if (match_octal(&args[0], &option))
+                return -EINVAL;
+            mount_info->fmask = option;
+            break;
+        case Opt_umask:
+            if (match_octal(&args[0], &option))
+                return -EINVAL;
+            mount_info->dmask = mount_info->fmask = option;
+            break;
+        case Opt_maxiopages:
+            if (match_int(&args[0], &option))
+                return -EINVAL;
+            mount_info->cMaxIoPages = option;
+            break;
+        case Opt_dirbuf:
+            if (match_int(&args[0], &option))
+                return -EINVAL;
+            mount_info->cbDirBuf = option;
+            break;
+        case Opt_dcachettl:
+            if (match_int(&args[0], &option))
+                return -EINVAL;
+            mount_info->msDirCacheTTL = option;
+            break;
+        case Opt_inodettl:
+            if (match_int(&args[0], &option))
+                return -EINVAL;
+            mount_info->msInodeTTL = option;
+            break;
+        case Opt_cachemode: {
+            cachemode = match_strdup(&args[0]);
+            if (!cachemode) {
+                SFLOGRELBOTH(("vboxsf: Could not allocate memory for cachemode!\n"));
+                return -ENOMEM;
+            }
+            if (!strcmp(cachemode, "default") || !strcmp(cachemode, "strict"))
+                mount_info->enmCacheMode = kVbsfCacheMode_Strict;
+            else if (!strcmp(cachemode, "none"))
+                mount_info->enmCacheMode = kVbsfCacheMode_None;
+            else if (!strcmp(cachemode, "read"))
+                mount_info->enmCacheMode = kVbsfCacheMode_Read;
+            else if (!strcmp(cachemode, "readwrite"))
+                mount_info->enmCacheMode = kVbsfCacheMode_ReadWrite;
+            else
+                printk(KERN_WARNING "vboxsf: cache mode (%s) is out of range, using default instead.\n", cachemode);
+            kfree(cachemode);
+            break;
+        }
+        case Opt_tag:
+            tag = match_strdup(&args[0]);
+            if (!tag) {
+                SFLOGRELBOTH(("vboxsf: Could not allocate memory for automount tag!\n"));
+                return -ENOMEM;
+            }
+            strlcpy(mount_info->szTag, tag, sizeof(mount_info->szTag));
+            kfree(tag);
+            break;
+        default:
+            printk(KERN_ERR "unrecognised mount option \"%s\"", p);
+            return -EINVAL;
+        }
+    }
+
+    return 0;
+}
+#endif /* 5.1.0 > version >= 2.6.0 */
+
+
 /**
  * This is called by vbsf_read_super_24(), vbsf_read_super_26(), and
  * vbsf_get_tree() when vfs mounts the fs and wants to read the super_block.
@@ -777,16 +966,20 @@ static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
 
 # if RTLNX_VER_MIN(5,1,0)
     vbsf_super_info_copy_remount_options(pSuperInfo, info);
-# else
-    if (data && data[0] != 0) {
-        struct vbsf_mount_info_new *info = (struct vbsf_mount_info_new *)data;
-        if (   info->nullchar == '\0'
-            && info->signature[0] == VBSF_MOUNT_SIGNATURE_BYTE_0
-            && info->signature[1] == VBSF_MOUNT_SIGNATURE_BYTE_1
-            && info->signature[2] == VBSF_MOUNT_SIGNATURE_BYTE_2) {
-            vbsf_super_info_copy_remount_options(pSuperInfo, info);
-        }
+# elif RTLNX_VER_MIN(2,6,0)
+    if (VBSF_IS_MOUNT_VBOXSF_DATA(data)) {
+        vbsf_super_info_copy_remount_options(pSuperInfo, (struct vbsf_mount_info_new *)data);
+    } else {
+        struct vbsf_mount_info_new mount_opts = { '\0' };
+        vbsf_init_mount_info(&mount_opts, NULL);
+        err = vbsf_parse_mount_options(data, &mount_opts);
+        if (err)
+            return err;
+        vbsf_super_info_copy_remount_options(pSuperInfo, &mount_opts);
     }
+# else /* < 2.6.0 */
+    if (VBSF_IS_MOUNT_VBOXSF_DATA(data))
+        vbsf_super_info_copy_remount_options(pSuperInfo, (struct vbsf_mount_info_new *)data);
 # endif
 
     /* '.' and '..' entries are st_ino == 0 so root is #1 */
@@ -911,18 +1104,55 @@ static int vbsf_read_super_26(struct super_block *sb, void *data, int flags)
 static struct dentry *sf_mount(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {
     TRACE();
-    return mount_nodev(fs_type, flags, data, vbsf_read_super_26);
+
+    if (!VBSF_IS_MOUNT_VBOXSF_DATA(data)) {
+        int rc;
+        struct vbsf_mount_info_new mount_opts = { '\0' };
+
+        vbsf_init_mount_info(&mount_opts, dev_name);
+        rc = vbsf_parse_mount_options(data, &mount_opts);
+        if (rc)
+            return ERR_PTR(rc);
+        return mount_nodev(fs_type, flags, &mount_opts, vbsf_read_super_26);
+    } else {
+        return mount_nodev(fs_type, flags, data, vbsf_read_super_26);
+    }
 }
 # elif RTLNX_VER_MIN(2,6,18)
 static int vbsf_get_sb(struct file_system_type *fs_type, int flags, const char *dev_name, void *data, struct vfsmount *mnt)
 {
     TRACE();
-    return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26, mnt);
+
+    if (!VBSF_IS_MOUNT_VBOXSF_DATA(data)) {
+        int rc;
+        struct vbsf_mount_info_new mount_opts = { '\0' };
+
+        vbsf_init_mount_info(&mount_opts, dev_name);
+        rc = vbsf_parse_mount_options(data, &mount_opts);
+        if (rc)
+            return rc;
+        return get_sb_nodev(fs_type, flags, &mount_opts, vbsf_read_super_26,
+            mnt);
+    } else {
+        return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26, mnt);
+    }
 }
 # else /* 2.6.18 > version >= 2.5.4 */
 static struct super_block *vbsf_get_sb(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {
     TRACE();
+#  if RTLNX_VER_MIN(2,6,0)
+    if (!VBSF_IS_MOUNT_VBOXSF_DATA(data)) {
+        int rc;
+        struct vbsf_mount_info_new mount_opts = { '\0' };
+
+        vbsf_init_mount_info(&mount_opts, dev_name);
+        rc = vbsf_parse_mount_options(data, &mount_opts);
+        if (rc)
+            return ERR_PTR(rc);
+        return get_sb_nodev(fs_type, flags, &mount_opts, vbsf_read_super_26);
+    }
+#  endif
     return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26);
 }
 # endif
@@ -1137,13 +1367,8 @@ static int vbsf_parse_monolithic(struct fs_context *fc, void *data)
     struct vbsf_mount_info_new *info = fc->fs_private;
 
     if (data) {
-        struct vbsf_mount_info_new *mount_opts =
-            (struct vbsf_mount_info_new *)data;
-        if (mount_opts->nullchar == '\0'
-            && mount_opts->signature[0] == VBSF_MOUNT_SIGNATURE_BYTE_0
-            && mount_opts->signature[1] == VBSF_MOUNT_SIGNATURE_BYTE_1
-            && mount_opts->signature[2] == VBSF_MOUNT_SIGNATURE_BYTE_2) {
-            memcpy(info, mount_opts, sizeof(struct vbsf_mount_info_new));
+        if (VBSF_IS_MOUNT_VBOXSF_DATA(data)) {
+            memcpy(info, data, sizeof(struct vbsf_mount_info_new));
         } else {
             /* this will call vbsf_parse_param() */
             return generic_parse_monolithic(fc, data);
