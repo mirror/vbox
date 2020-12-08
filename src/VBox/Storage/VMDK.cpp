@@ -3959,7 +3959,7 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
         }
         /* else: We've got nothing to work on, so only do content comparison. */
     }
-    
+
 #elif defined(RT_OS_FREEBSD)
     char szDriveDevName[256];
     char* pszDevName = fdevname_r(RTFileToNative(hRawDrive), szDriveDevName, 256);
@@ -4021,10 +4021,10 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
             rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(err), RT_SRC_POS,
                            N_("VMDK: Image path: '%s'. geom_gettree failed: %d"), pImage->pszFilename, err);
     }
-    
+
 #elif defined(RT_OS_SOLARIS)
     RT_NOREF(hVol);
-    
+
     dk_cinfo dkiDriveInfo;
     dk_cinfo dkiPartInfo;
     if (ioctl(RTFileToNative(hRawDrive), DKIOCINFO, (caddr_t)&dkiDriveInfo) == -1)
@@ -4066,13 +4066,13 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
         }
         else
         {
-            /* 
-             * Manual says the efi_alloc_and_read returns VT_EINVAL if no EFI partition table found. 
-             * Actually, the function returns any error, e.g. VT_ERROR. Thus, we are not sure, is it 
+            /*
+             * Manual says the efi_alloc_and_read returns VT_EINVAL if no EFI partition table found.
+             * Actually, the function returns any error, e.g. VT_ERROR. Thus, we are not sure, is it
              * real error or just no EFI table found. Therefore, let's try to obtain partition info
              * using another way. If there is an error, it returns errno which will be handled below.
              */
-               
+
             uint32_t numPartition = (uint32_t)dkiPartInfo.dki_partition;
             if (numPartition > NDKMAP)
                 numPartition -= NDKMAP;
@@ -4113,7 +4113,7 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
                            N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Size %RI64, expected %RU64"),
                            pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cbSize, pPartDesc->cbData);
     }
-    
+
 #else
     RT_NOREF(hVol); /* PORTME */
 #endif
