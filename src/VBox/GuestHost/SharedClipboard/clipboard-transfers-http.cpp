@@ -549,3 +549,16 @@ char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTrans
     return pszUrl;
 }
 
+/**
+ * Returns whether a given HTTP server instance is running or not.
+ *
+ * @returns \c true if running, or \c false if not.
+ * @param   pSrv                HTTP server instance to check running state for.
+ */
+bool ShClTransferHttpServerIsRunning(PSHCLHTTPSERVER pSrv)
+{
+    AssertPtrReturn(pSrv, false);
+
+    return (pSrv->hHTTPServer != NIL_RTHTTPSERVER); /* Seems enough for now. */
+}
+
