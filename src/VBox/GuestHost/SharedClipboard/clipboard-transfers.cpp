@@ -2713,7 +2713,7 @@ void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
         ShClTransferReset(pTransfer);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-    /* @todo Anything to do here? */
+    /** @todo Anything to do here? */
 #endif
 }
 
