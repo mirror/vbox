@@ -51,8 +51,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     {
         m_pToolBox = new QToolBox;
         m_pNameAndSystemContainer = new QWidget(this);
-        QGridLayout *pNameContainerLayout = new QGridLayout(m_pNameAndSystemContainer);
-        createNameOSTypeWidgets(pNameContainerLayout, false);
+        createNameOSTypeWidgets(m_pNameAndSystemContainer, false);
         m_pGAInstallContainer = createGAInstallWidgets();
         m_pUsernameHostnameContainer = createUserNameHostNameWidgets();
 
@@ -418,8 +417,6 @@ void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnable
         m_pISOSelectorLabel->setEnabled(fEnabled);
     if (m_pISOFilePathSelector)
         m_pISOFilePathSelector->setEnabled(fEnabled);
-    if (m_pStartHeadlessLabel)
-        m_pStartHeadlessLabel->setEnabled(fEnabled);
     if (m_pStartHeadlessCheckBox)
         m_pStartHeadlessCheckBox->setEnabled(fEnabled);
 }

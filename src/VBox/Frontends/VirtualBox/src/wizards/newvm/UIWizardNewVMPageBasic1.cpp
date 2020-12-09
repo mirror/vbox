@@ -181,7 +181,6 @@ static const osTypePattern gs_OSTypePattern[] =
 UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
     : m_pISOSelectorLabel(0)
     , m_pISOFilePathSelector(0)
-    , m_pStartHeadlessLabel(0)
     , m_pEnableUnattendedInstallCheckBox(0)
     , m_pStartHeadlessCheckBox(0)
     , m_pNameAndFolderEditor(0)
@@ -278,70 +277,63 @@ bool UIWizardNewVMPage1::checkISOFile() const
     return true;
 }
 
-void UIWizardNewVMPage1::createNameOSTypeWidgets(QGridLayout *pGridLayout, bool fCreateLabels /* = true */)
+void UIWizardNewVMPage1::createNameOSTypeWidgets(QWidget *pContainerWidget, bool fCreateLabels /* = true */)
 {
-    if (pGridLayout)
+    AssertReturnVoid(pContainerWidget);
+    QGridLayout *pGridLayout = new QGridLayout(pContainerWidget);
+    AssertReturnVoid(pGridLayout);
+
+    int iLayoutRow = 0;
+    if (fCreateLabels)
     {
-        int iLayoutRow = 0;
-        if (fCreateLabels)
-        {
-            m_pNameOSTypeLabel = new QIRichTextLabel;
-            if (m_pNameOSTypeLabel)
-                pGridLayout->addWidget(m_pNameOSTypeLabel, iLayoutRow++, 0, 1, 3);
-        }
-
-        m_pNameAndFolderEditor = new UINameAndSystemEditor(0, true, true, false);
-        if (m_pNameAndFolderEditor)
-            pGridLayout->addWidget(m_pNameAndFolderEditor, iLayoutRow++, 1, 1, 2);
-
-        if (fCreateLabels)
-        {
-            m_pUnattendedLabel = new QIRichTextLabel;
-            if (m_pUnattendedLabel)
-                pGridLayout->addWidget(m_pUnattendedLabel, iLayoutRow++, 0, 1, 3);
-        }
-
-        m_pEnableUnattendedInstallCheckBox = new QCheckBox;
-        pGridLayout->addWidget(m_pEnableUnattendedInstallCheckBox, iLayoutRow++, 0, 1, 3);
-
-        m_pISOSelectorLabel = new QLabel;
-        if (m_pISOSelectorLabel)
-        {
-            m_pISOSelectorLabel->setAlignment(Qt::AlignRight);
-            m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            m_pISOSelectorLabel->setEnabled(false);
-            pGridLayout->addWidget(m_pISOSelectorLabel, iLayoutRow++, 1);
-        }
-        m_pISOFilePathSelector = new UIFilePathSelector;
-        if (m_pISOFilePathSelector)
-        {
-            m_pISOFilePathSelector->setResetEnabled(false);
-            m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-            m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-            m_pISOFilePathSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            m_pISOFilePathSelector->setEnabled(false);
-            pGridLayout->addWidget(m_pISOFilePathSelector, iLayoutRow++, 2);
-        }
-
-        m_pStartHeadlessLabel = new QLabel;
-        if (m_pStartHeadlessLabel)
-        {
-            m_pStartHeadlessLabel->setAlignment(Qt::AlignRight);
-            m_pStartHeadlessLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            m_pStartHeadlessLabel->setEnabled(false);
-            pGridLayout->addWidget(m_pStartHeadlessLabel, iLayoutRow++, 1);
-        }
-        m_pStartHeadlessCheckBox = new QCheckBox;
-        if (m_pStartHeadlessCheckBox)
-        {
-            m_pStartHeadlessCheckBox->setEnabled(false);
-            pGridLayout->addWidget(m_pStartHeadlessCheckBox, iLayoutRow++, 2);
-        }
-
-        m_pSystemTypeEditor = new UINameAndSystemEditor(0, false, false, true);
-        if (m_pSystemTypeEditor)
-            pGridLayout->addWidget(m_pSystemTypeEditor, iLayoutRow++, 1, 1, 2);
+        m_pNameOSTypeLabel = new QIRichTextLabel;
+        if (m_pNameOSTypeLabel)
+            pGridLayout->addWidget(m_pNameOSTypeLabel, iLayoutRow++, 0, 1, 3);
     }
+
+    m_pNameAndFolderEditor = new UINameAndSystemEditor(0, true, true, false);
+    if (m_pNameAndFolderEditor)
+        pGridLayout->addWidget(m_pNameAndFolderEditor, iLayoutRow++, 1, 1, 2);
+
+    if (fCreateLabels)
+    {
+        m_pUnattendedLabel = new QIRichTextLabel;
+        if (m_pUnattendedLabel)
+            pGridLayout->addWidget(m_pUnattendedLabel, iLayoutRow++, 0, 1, 3);
+    }
+
+    m_pEnableUnattendedInstallCheckBox = new QCheckBox;
+    pGridLayout->addWidget(m_pEnableUnattendedInstallCheckBox, iLayoutRow++, 0, 1, 3);
+
+    m_pISOSelectorLabel = new QLabel;
+    if (m_pISOSelectorLabel)
+    {
+        m_pISOSelectorLabel->setAlignment(Qt::AlignRight);
+        m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+        m_pISOSelectorLabel->setEnabled(false);
+        pGridLayout->addWidget(m_pISOSelectorLabel, iLayoutRow, 1);
+    }
+    m_pISOFilePathSelector = new UIFilePathSelector;
+    if (m_pISOFilePathSelector)
+    {
+        m_pISOFilePathSelector->setResetEnabled(false);
+        m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+        m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+        m_pISOFilePathSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        m_pISOFilePathSelector->setEnabled(false);
+        pGridLayout->addWidget(m_pISOFilePathSelector, iLayoutRow++, 2);
+    }
+
+    m_pStartHeadlessCheckBox = new QCheckBox;
+    if (m_pStartHeadlessCheckBox)
+    {
+        m_pStartHeadlessCheckBox->setEnabled(false);
+        pGridLayout->addWidget(m_pStartHeadlessCheckBox, iLayoutRow++, 2);
+    }
+
+    m_pSystemTypeEditor = new UINameAndSystemEditor(0, false, false, true);
+    if (m_pSystemTypeEditor)
+        pGridLayout->addWidget(m_pSystemTypeEditor, iLayoutRow++, 1, 1, 2);
 }
 
 bool UIWizardNewVMPage1::createMachineFolder()
@@ -496,17 +488,14 @@ void UIWizardNewVMPage1::retranslateWidgets()
     }
 
     if (m_pISOSelectorLabel)
-        m_pISOSelectorLabel->setText(UIWizardNewVM::tr("Image:"));
+        m_pISOSelectorLabel->setText(UIWizardNewVM::tr("Installation Medium:"));
 
-    if (m_pStartHeadlessLabel)
-        m_pStartHeadlessLabel->setText(UIWizardNewVM::tr("Options:"));
     if (m_pStartHeadlessCheckBox)
     {
         m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("Start VM Headless"));
         m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked, the unattended install will start the virtual "
                                                                "machine in headless mode after the guest OS install."));
     }
-
 }
 
 UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
@@ -517,8 +506,11 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
 
 void UIWizardNewVMPageBasic1::prepare()
 {
-    QGridLayout *pMainLayout = new QGridLayout(this);;
-    createNameOSTypeWidgets(pMainLayout, false);
+    QWidget *pContainerWidget = new QWidget;
+    QVBoxLayout *pPageLayout = new QVBoxLayout(this);
+    pPageLayout->addWidget(pContainerWidget);
+    createNameOSTypeWidgets(pContainerWidget, false);
+    pPageLayout->addStretch();
     createConnections();
     /* Register fields: */
     registerField("name*", m_pNameAndFolderEditor, "name", SIGNAL(sigNameChanged(const QString &)));
@@ -589,8 +581,6 @@ void UIWizardNewVMPageBasic1::sltUnattendedCheckBoxToggle(bool fEnabled)
         m_pISOSelectorLabel->setEnabled(fEnabled);
     if (m_pISOFilePathSelector)
         m_pISOFilePathSelector->setEnabled(fEnabled);
-    if (m_pStartHeadlessLabel)
-        m_pStartHeadlessLabel->setEnabled(fEnabled);
     if (m_pStartHeadlessCheckBox)
         m_pStartHeadlessCheckBox->setEnabled(fEnabled);
     emit completeChanged();
@@ -617,14 +607,12 @@ void UIWizardNewVMPageBasic1::retranslateUi()
 
     if (   m_pNameAndFolderEditor
            && m_pSystemTypeEditor
-        && m_pISOSelectorLabel
-        && m_pStartHeadlessLabel)
+           && m_pISOSelectorLabel)
     {
         int iMinWidthHint = 0;
         iMinWidthHint = qMax(iMinWidthHint, m_pISOSelectorLabel->minimumSizeHint().width());
-        iMinWidthHint = qMax(iMinWidthHint, m_pStartHeadlessLabel->minimumSizeHint().width());
-        m_pNameAndFolderEditor->setMinimumLayoutIndent(iMinWidthHint);
-        m_pSystemTypeEditor->setMinimumLayoutIndent(iMinWidthHint);
+        // m_pNameAndFolderEditor->setMinimumLayoutIndent(iMinWidthHint);
+        // m_pSystemTypeEditor->setMinimumLayoutIndent(iMinWidthHint);
     }
 }
 

@@ -74,7 +74,7 @@ protected:
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
     void composeMachineFilePath();
     /** Creates the page widgets and adds them into the @p pGridLayout. */
-    void createNameOSTypeWidgets(QGridLayout *pGridLayout, bool fCreateLabels = true);
+    void createNameOSTypeWidgets(QWidget *pContainerWidget, bool fCreateLabels = true);
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     /** Colors the widgets red if they cause isComplete to fail. */
     void markWidgets() const;
@@ -86,7 +86,6 @@ protected:
        QLabel *m_pISOSelectorLabel;
        /** Holds the ISO selector editor instance. */
        mutable UIFilePathSelector *m_pISOFilePathSelector;
-       QLabel *m_pStartHeadlessLabel;
        QCheckBox *m_pEnableUnattendedInstallCheckBox;
        QCheckBox *m_pStartHeadlessCheckBox;
        /** We have two UINameAndSystemEditor instance since name/vm path fields and OS type fields
