@@ -72,8 +72,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     /* Register classes: */
     qRegisterMetaType<CMedium>();
     /* Register fields: */
-    registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
-    registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
+    registerField("name*", m_pNameAndFolderEditor, "name", SIGNAL(sigNameChanged(const QString &)));
+    registerField("type", m_pSystemTypeEditor, "type", SIGNAL(sigOsTypeChanged()));
     registerField("machineFilePath", this, "machineFilePath");
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
@@ -106,9 +106,6 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
     /* Call to base-class: */
     onNameChanged(strNewText);
 
-    /* Fetch recommended RAM value: */
-    CGuestOSType type = m_pNameAndSystemEditor->type();
-
     composeMachineFilePath();
     /* Broadcast complete-change: */
     emit completeChanged();
@@ -126,7 +123,7 @@ void UIWizardNewVMPageExpert::sltOsTypeChanged()
     onOsTypeChanged();
 
     /* Fetch recommended RAM value: */
-    CGuestOSType type = m_pNameAndSystemEditor->type();
+    CGuestOSType type = m_pSystemTypeEditor->type();
     m_pBaseMemoryEditor->setValue(type.GetRecommendedRAM());
 
     /* Broadcast complete-change: */
@@ -203,15 +200,18 @@ void UIWizardNewVMPageExpert::retranslateUi()
 void UIWizardNewVMPageExpert::createConnections()
 {
     /* Connections for Name, OS Type, and unattended install stuff: */
-    if (m_pNameAndSystemEditor)
+    if (m_pNameAndFolderEditor)
     {
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
+        connect(m_pNameAndFolderEditor, &UINameAndSystemEditor::sigNameChanged,
                 this, &UIWizardNewVMPageExpert::sltNameChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged,
+        connect(m_pNameAndFolderEditor, &UINameAndSystemEditor::sigPathChanged,
                 this, &UIWizardNewVMPageExpert::sltPathChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
+    }
+    if (m_pSystemTypeEditor)
+    {
+        connect(m_pSystemTypeEditor, &UINameAndSystemEditor::sigOsTypeChanged,
                 this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
+        connect(m_pSystemTypeEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
                 this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
     }
     if (m_pButtonGroup)

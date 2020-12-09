@@ -96,7 +96,8 @@ protected:
        /** Holds the headless start checkbox instance. */
        QCheckBox *m_pStartHeadlessCheckBox;
        /** Provides a path selector and a line edit field for path and name entry. */
-       UINameAndSystemEditor *m_pNameAndSystemEditor;
+       UINameAndSystemEditor *m_pNameAndFolderEditor;
+       UINameAndSystemEditor *m_pSystemTypeEditor;
        QIRichTextLabel *m_pUnattendedLabel;
        QIRichTextLabel *m_pNameOSTypeLabel;
        QButtonGroup *m_pButtonGroup;
