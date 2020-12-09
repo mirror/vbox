@@ -912,6 +912,7 @@ int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFE
 int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, PSHCLTRANSFERCTX pCtx);
 int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort);
 int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv);
+void ShClTransferHttpServerInit(PSHCLHTTPSERVER pSrv);
 int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer);
 int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer);
 bool ShClTransferHttpServerHasTransfer(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer);

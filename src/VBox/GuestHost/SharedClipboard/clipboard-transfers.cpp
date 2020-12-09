@@ -1141,7 +1141,7 @@ void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
 }
 
 /**
- * Creates an Clipboard transfer.
+ * Creates a clipboard transfer.
  *
  * @returns VBox status code.
  * @param   ppTransfer          Where to return the created Shared Clipboard transfer struct.
@@ -1207,7 +1207,7 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 }
 
 /**
- * Destroys an Clipboard transfer context struct.
+ * Destroys a clipboard transfer context struct.
  *
  * @returns VBox status code.
  * @param   pTransferCtx                Clipboard transfer to destroy.
@@ -2659,6 +2659,9 @@ int ShClTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
 
         RT_ZERO(pTransferCtx->bmTransferIds);
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+        ShClTransferHttpServerInit(&pTransferCtx->HttpServer);
+#endif
         ShClTransferCtxReset(pTransferCtx);
     }
 
@@ -2708,6 +2711,10 @@ void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
     PSHCLTRANSFER pTransfer;
     RTListForEach(&pTransferCtx->List, pTransfer, SHCLTRANSFER, Node)
         ShClTransferReset(pTransfer);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+    /* @todo Anything to do here? */
+#endif
 }
 
 /**
@@ -2812,10 +2819,21 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
 
     pTransferCtx->cTransfers++;
 
+    int rc = VINF_SUCCESS;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+    if (!ShClTransferHttpServerIsRunning(&pTransferCtx->HttpServer)) /* Only one HTTP server per transfer context. */
+        rc = ShClTransferHttpServerCreate(&pTransferCtx->HttpServer, NULL /* puPort */);
+
+    if (RT_SUCCESS(rc))
+        rc = ShClTransferHttpServerRegisterTransfer(&pTransferCtx->HttpServer, pTransfer);
+#endif
+
     if (pidTransfer)
         *pidTransfer = idTransfer;
 
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -2850,11 +2868,44 @@ int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLT
 }
 
 /**
+ * Removes a transfer from a transfer context.
+ *
+ * @param   pTransferCtx        Transfer context to remove transfer from.
+ * @param   pTransfer           Transfer to remove.
+ */
+static void shclTransferCtxTransferRemove(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer)
+{
+    RTListNodeRemove(&pTransfer->Node);
+
+    Assert(pTransferCtx->cTransfers);
+    pTransferCtx->cTransfers--;
+
+    Assert(pTransferCtx->cTransfers >= pTransferCtx->cRunning);
+
+    LogFlowFunc(("Now %RU32 transfers left\n", pTransferCtx->cTransfers));
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+    if (ShClTransferHttpServerIsRunning(&pTransferCtx->HttpServer))
+    {
+        /* Try unregistering transfer (if it was registered before). */
+        int rc2 = ShClTransferHttpServerUnregisterTransfer(&pTransferCtx->HttpServer, pTransfer);
+        if (RT_SUCCESS(rc2))
+        {
+            /* No more registered transfers left? Tear down the HTTP server instance then. */
+            if (pTransferCtx->cTransfers == 0)
+                rc2 = ShClTransferHttpServerDestroy(&pTransferCtx->HttpServer);
+        }
+        AssertRC(rc2);
+    }
+#endif
+}
+
+/**
  * Unregisters a transfer from an Transfer context.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NOT_FOUND if the transfer ID was not found.
- * @param   pTransferCtx                Transfer context to unregister transfer from.
+ * @param   pTransferCtx        Transfer context to unregister transfer from.
  * @param   idTransfer          Transfer ID to unregister.
  */
 int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID idTransfer)
@@ -2867,14 +2918,7 @@ int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFE
     PSHCLTRANSFER pTransfer = shClTransferCtxGetTransferInternal(pTransferCtx, idTransfer);
     if (pTransfer)
     {
-        RTListNodeRemove(&pTransfer->Node);
-
-        Assert(pTransferCtx->cTransfers);
-        pTransferCtx->cTransfers--;
-
-        Assert(pTransferCtx->cTransfers >= pTransferCtx->cRunning);
-
-        LogFlowFunc(("Now %RU32 transfers left\n", pTransferCtx->cTransfers));
+        shclTransferCtxTransferRemove(pTransferCtx, pTransfer);
     }
     else
         rc = VERR_NOT_FOUND;
@@ -2887,7 +2931,7 @@ int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFE
  * Cleans up all associated transfers which are not needed (anymore).
  * This can be due to transfers which only have been announced but not / never being run.
  *
- * @param   pTransferCtx                Transfer context to cleanup transfers for.
+ * @param   pTransferCtx        Transfer context to cleanup transfers for.
  */
 void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
 {
@@ -2905,14 +2949,12 @@ void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
     {
         if (ShClTransferGetStatus(pTransfer) != SHCLTRANSFERSTATUS_STARTED)
         {
+            shclTransferCtxTransferRemove(pTransferCtx, pTransfer);
+
             ShClTransferDestroy(pTransfer);
-            RTListNodeRemove(&pTransfer->Node);
 
             RTMemFree(pTransfer);
             pTransfer = NULL;
-
-            Assert(pTransferCtx->cTransfers);
-            pTransferCtx->cTransfers--;
         }
     }
 }
@@ -2921,7 +2963,7 @@ void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
  * Returns whether the maximum of concurrent transfers of a specific transfer contexthas been reached or not.
  *
  * @returns \c if maximum has been reached, \c false if not.
- * @param   pTransferCtx                Transfer context to determine value for.
+ * @param   pTransferCtx        Transfer context to determine value for.
  */
 bool ShClTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx)
 {

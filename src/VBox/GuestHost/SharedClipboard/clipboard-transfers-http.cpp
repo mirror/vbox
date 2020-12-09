@@ -181,6 +181,12 @@ static DECLCALLBACK(int) shClTransferHttpDestroy(PRTHTTPCALLBACKDATA pData)
     return ShClTransferHttpServerDestroyInternal(pThis);
 }
 
+/**
+ * Destroys a Shared Clipboard HTTP server instance, internal version.
+ *
+ * @returns VBox status code.
+ * @param   pSrv                Shared Clipboard HTTP server instance to destroy.
+ */
 int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pSrv)
 {
     PSHCLHTTPSERVERTRANSFER pSrvTx, pSrvTxNext;
@@ -194,25 +200,32 @@ int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pSrv)
 
     RTHttpServerResponseDestroy(&pSrv->Resp);
 
+    pSrv->hHTTPServer = NIL_RTHTTPSERVER;
+
     return RTCritSectDelete(&pSrv->CritSect);
 }
 
+/**
+ * Locks the critical section of a Shared Clipboard HTTP server instance.
+ *
+ * @param   pSrv                Shared Clipboard HTTP server instance to lock.
+ */
 DECLINLINE(void) shClTransferHttpServerLock(PSHCLHTTPSERVER pSrv)
 {
     int rc2 = RTCritSectEnter(&pSrv->CritSect);
     AssertRC(rc2);
 }
 
+/**
+ * Unlocks the critical section of a Shared Clipboard HTTP server instance.
+ *
+ * @param   pSrv                Shared Clipboard HTTP server instance to unlock.
+ */
 DECLINLINE(void) shClTransferHttpServerUnlock(PSHCLHTTPSERVER pSrv)
 {
     int rc2 = RTCritSectLeave(&pSrv->CritSect);
     AssertRC(rc2);
 }
-
-
-/*********************************************************************************************************************************
-*   Public functions                                                                                                             *
-*********************************************************************************************************************************/
 
 /**
  * Initializes a new Shared Clipboard HTTP server instance.
@@ -229,6 +242,23 @@ static void shClTransferHttpServerInitInternal(PSHCLHTTPSERVER pSrv)
     AssertRC(rc2);
 }
 
+
+/*********************************************************************************************************************************
+*   Public functions                                                                                                             *
+*********************************************************************************************************************************/
+
+/**
+ * Initializes a new Shared Clipboard HTTP server instance.
+ *
+ * @param   pSrv                HTTP server instance to initialize.
+ */
+void ShClTransferHttpServerInit(PSHCLHTTPSERVER pSrv)
+{
+    AssertPtrReturnVoid(pSrv);
+
+    shClTransferHttpServerInitInternal(pSrv);
+}
+
 /**
  * Creates a new Shared Clipboard HTTP server instance, extended version.
  *
@@ -239,8 +269,6 @@ static void shClTransferHttpServerInitInternal(PSHCLHTTPSERVER pSrv)
 int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
-
-    shClTransferHttpServerInitInternal(pSrv);
 
     RTHTTPSERVERCALLBACKS Callbacks;
     RT_ZERO(Callbacks);
@@ -373,9 +401,16 @@ int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER p
             ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "%s/%RU16/", szUuid, pTransfer->State.uID);
             AssertReturn(cch, VERR_BUFFER_OVERFLOW);
 
-            RTListAppend(&pSrv->lstTransfers, &pSrvTx->Node);
+            pSrvTx->pTransfer = pTransfer;
 
+            RTListAppend(&pSrv->lstTransfers, &pSrvTx->Node);
             pSrv->cTransfers++;
+
+            LogFunc(("pTransfer=%p, idTransfer=%RU16, szPath=%s -> %RU32 transfers\n",
+                     pSrvTx->pTransfer, pSrvTx->pTransfer->State.uID, pSrvTx->szPathVirtual, pSrv->cTransfers));
+
+            LogRel2(("Shared Clipboard: Registered HTTP transfer %RU16, now %RU32 HTTP transfers total\n",
+                     pTransfer->State.uID, pSrv->cTransfers));
         }
     }
 
@@ -384,6 +419,7 @@ int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER p
 
     shClTransferHttpServerUnlock(pSrv);
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -403,6 +439,8 @@ int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER
 
     AssertReturn(pSrv->cTransfers, VERR_WRONG_ORDER);
 
+    int rc = VINF_SUCCESS;
+
     PSHCLHTTPSERVERTRANSFER pSrvTx;
     RTListForEach(&pSrv->lstTransfers, pSrvTx, SHCLHTTPSERVERTRANSFER, Node)
     {
@@ -417,13 +455,21 @@ int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER
             Assert(pSrv->cTransfers);
             pSrv->cTransfers--;
 
-            shClTransferHttpServerUnlock(pSrv);
-            return VINF_SUCCESS;
+            LogFunc(("pTransfer=%p, idTransfer=%RU16, szPath=%s -> %RU32 transfers\n",
+                     pSrvTx->pTransfer, pSrvTx->pTransfer->State.uID, pSrvTx->szPathVirtual, pSrv->cTransfers));
+
+            LogRel2(("Shared Clipboard: Unregistered HTTP transfer %RU16, now %RU32 HTTP transfers total\n",
+                     pTransfer->State.uID, pSrv->cTransfers));
+
+            rc = VINF_SUCCESS;
+            break;
         }
     }
 
     shClTransferHttpServerUnlock(pSrv);
-    return VERR_NOT_FOUND;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
