@@ -58,6 +58,7 @@
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <iprt/cpp/list.h>
 # include <iprt/cpp/ministring.h>
+# include <VBox/GuestHost/SharedClipboard-transfers.h>
 #endif
 
 #include <VBox/log.h>
@@ -1426,8 +1427,9 @@ static int clipReadVBoxShCl(PSHCLX11CTX pCtx, SHCLFORMAT Format,
         }
     }
     else
-        rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, Format,
-                                              &pv, &cb);
+    {
+        rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, Format, &pv, &cb);
+    }
 
     if (RT_SUCCESS(rc))
     {
@@ -2049,18 +2051,27 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
                 /* For URI lists we only accept valid UTF-8 encodings. */
                 if (RT_SUCCESS(RTStrValidateEncodingEx((char *)pvSrc, cbSrc, 0)))
                 {
-                    /* URI lists on X are string separated with "\r\n". */
+                    /* URI lists on X are strings separated with "\r\n". */
                     RTCList<RTCString> lstRootEntries = RTCString((char *)pvSrc, cbSrc).split("\r\n");
                     for (size_t i = 0; i < lstRootEntries.size(); ++i)
                     {
                         char *pszEntry = RTUriFilePath(lstRootEntries.at(i).c_str());
                         AssertPtrBreakStmt(pszEntry, VERR_INVALID_PARAMETER);
 
-                        LogFlowFunc(("URI list entry '%s'\n", pszEntry));
+                        rc = RTStrAAppend((char **)&pvDst, "http://localhost");
+                        AssertRCBreakStmt(rc, VERR_NO_MEMORY);
+                        cbDst += (uint32_t)strlen(pszEntry);
+
+
+
+                        /** @todo BUGBUG Fix port! */
+                        /** @todo Add port + UUID (virtual path). */
 
                         rc = RTStrAAppend((char **)&pvDst, pszEntry);
                         AssertRCBreakStmt(rc, VERR_NO_MEMORY);
                         cbDst += (uint32_t)strlen(pszEntry);
+
+                        LogFlowFunc(("URI list entry '%s'\n", (char *)pvDst));
 
                         rc = RTStrAAppend((char **)&pvDst, "\r\n");
                         AssertRCBreakStmt(rc, VERR_NO_MEMORY);

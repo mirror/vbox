@@ -35,6 +35,9 @@
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <iprt/fs.h>
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+# include <iprt/http-server.h>
+#endif
 #include <iprt/list.h>
 
 #include <iprt/cpp/list.h>
@@ -761,6 +764,25 @@ typedef struct _SHCLTRANSFERREPORT
     uint32_t              fFlags;
 } SHCLTRANSFERREPORT, *PSHCLTRANSFERREPORT;
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+typedef struct _SHCLHTTPSERVER
+{
+    /** Critical section for serializing access. */
+    RTCRITSECT          CritSect;
+    /** Handle of the HTTP server instance. */
+    RTHTTPSERVER        hHTTPServer;
+    /** Port number the HTTP server is running on. 0 if not running. */
+    uint16_t            uPort;
+    /** List of registered HTTP transfers. */
+    RTLISTANCHOR        lstTransfers;
+    /** Number of registered HTTP transfers. */
+    uint32_t            cTransfers;
+    /** Cached response data. */
+    RTHTTPSERVERRESP    Resp;
+} SHCLHTTPSERVER;
+typedef SHCLHTTPSERVER *PSHCLHTTPSERVER;
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
+
 /**
  * Structure for keeping Shared Clipboard transfer context around.
  */
@@ -778,6 +800,10 @@ typedef struct _SHCLTRANSFERCTX
     uint16_t                    cMaxRunning;
     /** Number of total transfers (in list). */
     uint16_t                    cTransfers;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+    /** HTTP server instance for this transfer context. */
+    SHCLHTTPSERVER              HttpServer;
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
 } SHCLTRANSFERCTX, *PSHCLTRANSFERCTX;
 
 int ShClTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
@@ -881,6 +907,19 @@ bool ShClTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx);
 int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID *pidTransfer);
 int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID idTransfer);
 int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID idTransfer);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, PSHCLTRANSFERCTX pCtx);
+int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort);
+int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv);
+int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer);
+int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer);
+bool ShClTransferHttpServerHasTransfer(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer);
+uint16_t ShClTransferHttpServerGetPort(PSHCLHTTPSERVER pSrv);
+uint32_t ShClTransferHttpServerGetTransferCount(PSHCLHTTPSERVER pSrv);
+char *ShClTransferHttpServerGetAddressA(PSHCLHTTPSERVER pSrv);
+char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer);
+#endif
 
 void ShClFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc);
 
