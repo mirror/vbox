@@ -69,7 +69,7 @@ typedef SHCLHTTPSERVERTRANSFER *PSHCLHTTPSERVERTRANSFER;
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
-int ShClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pThis);
+int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pThis);
 
 
 /*********************************************************************************************************************************
@@ -104,18 +104,37 @@ static PSHCLHTTPSERVERTRANSFER shClTransferHttpServerGetTransferById(PSHCLHTTPSE
  */
 static int shClTransferHttpPathValidate(PSHCLHTTPSERVER pThis, const char *pszUrl)
 {
+    AssertPtrReturn(pszUrl, VERR_INVALID_POINTER);
+
+    int rc = VERR_PATH_NOT_FOUND;
+
     PSHCLHTTPSERVERTRANSFER pSrvTx;
     RTListForEach(&pThis->lstTransfers, pSrvTx, SHCLHTTPSERVERTRANSFER, Node)
     {
         AssertPtr(pSrvTx->pTransfer);
+
+        const char *psz = pszUrl;
+
         /* Be picky here, do a case sensitive comparison. */
-        if (RTStrStartsWith(pszUrl, pSrvTx->szPathVirtual))
-            return VINF_SUCCESS;
+        if (RTStrStartsWith(psz, pSrvTx->szPathVirtual))
+        {
+            /* Skip the virtual root path. */
+            psz += RTStrNLen(pSrvTx->szPathVirtual, RTPATH_MAX);
+
+
+
+            LogFlowFunc(("psz=%s\n", psz));
+
+            rc = VINF_SUCCESS;
+            break;
+        }
     }
 
-    return VERR_PATH_NOT_FOUND;
+    LogFlowFunc(("pszUrl=%s, rc=%Rrc\n", pszUrl, rc));
+    return rc;
 }
 
+/** @copydoc RTHTTPSERVERCALLBACKS::pfnOpen */
 static DECLCALLBACK(int) shClTransferHttpOpen(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, void **ppvHandle)
 {
     PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser;
@@ -131,6 +150,7 @@ static DECLCALLBACK(int) shClTransferHttpOpen(PRTHTTPCALLBACKDATA pData, PRTHTTP
     return rc;
 }
 
+/** @copydoc RTHTTPSERVERCALLBACKS::pfnRead */
 static DECLCALLBACK(int) shClTransferHttpRead(PRTHTTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
     PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser;
@@ -144,6 +164,7 @@ static DECLCALLBACK(int) shClTransferHttpRead(PRTHTTPCALLBACKDATA pData, void *p
     return rc;
 }
 
+/** @copydoc RTHTTPSERVERCALLBACKS::pfnClose */
 static DECLCALLBACK(int) shClTransferHttpClose(PRTHTTPCALLBACKDATA pData, void *pvHandle)
 {
     PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser;
@@ -157,6 +178,7 @@ static DECLCALLBACK(int) shClTransferHttpClose(PRTHTTPCALLBACKDATA pData, void *
     return rc;
 }
 
+/** @copydoc RTHTTPSERVERCALLBACKS::pfnQueryInfo */
 static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
                                                    PRTHTTPSERVERREQ pReq, PRTFSOBJINFO pObjInfo, char **ppszMIMEHint)
 {
@@ -173,12 +195,13 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
     return rc;
 }
 
+/** @copydoc RTHTTPSERVERCALLBACKS::pfnDestroy */
 static DECLCALLBACK(int) shClTransferHttpDestroy(PRTHTTPCALLBACKDATA pData)
 {
     PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser;
     Assert(pData->cbUser == sizeof(SHCLHTTPSERVER));
 
-    return ShClTransferHttpServerDestroyInternal(pThis);
+    return shClTransferHttpServerDestroyInternal(pThis);
 }
 
 /**

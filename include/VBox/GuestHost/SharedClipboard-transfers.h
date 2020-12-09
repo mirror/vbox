@@ -909,7 +909,7 @@ int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLT
 int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID idTransfer);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, PSHCLTRANSFERCTX pCtx);
+int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, uint16_t *puPort);
 int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort);
 int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv);
 void ShClTransferHttpServerInit(PSHCLHTTPSERVER pSrv);
