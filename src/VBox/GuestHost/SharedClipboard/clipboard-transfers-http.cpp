@@ -75,6 +75,14 @@ int ShClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pThis);
 /*********************************************************************************************************************************
 *   Internal functions                                                                                                           *
 *********************************************************************************************************************************/
+
+/**
+ * Return the HTTP server transfer for a specific transfer ID.
+ *
+ * @returns Pointer to HTTP server transfer if found, NULL if not found.
+ * @param   pSrv                HTTP server instance.
+ * @param   idTransfer          Transfer ID to return HTTP server transfer for.
+ */
 static PSHCLHTTPSERVERTRANSFER shClTransferHttpServerGetTransferById(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer)
 {
     PSHCLHTTPSERVERTRANSFER pSrvTx;
@@ -205,6 +213,14 @@ DECLINLINE(void) shClTransferHttpServerUnlock(PSHCLHTTPSERVER pSrv)
 /*********************************************************************************************************************************
 *   Public functions                                                                                                             *
 *********************************************************************************************************************************/
+
+/**
+ * Creates a new Shared Clipboard HTTP server instance, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pSrv                HTTP server instance to create.
+ * @param   uPort               TCP port number to use.
+ */
 int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
@@ -248,6 +264,15 @@ int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
     return rc;
 }
 
+/**
+ * Creates a new Shared Clipboard HTTP server instance.
+ *
+ * This does automatic probing of TCP ports if one already is being used.
+ *
+ * @returns VBox status code.
+ * @param   pSrv                HTTP server instance to create.
+ * @param   puPort              Where to return the TCP port number being used on success.
+ */
 int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, uint16_t *puPort)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
@@ -280,6 +305,12 @@ int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, uint16_t *puPort)
     return rc;
 }
 
+/**
+ * Destroys a Shared Clipboard HTTP server instance.
+ *
+ * @returns VBox status code.
+ * @param   pSrv                HTTP server instance to destroy.
+ */
 int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
@@ -301,6 +332,13 @@ int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv)
     return rc;
 }
 
+/**
+ * Registers a Shared Clipboard transfer to a HTTP server instance.
+ *
+ * @returns VBox status code.
+ * @param   pSrv                HTTP server instance to register transfer for.
+ * @param   pTransfer           Transfer to register.
+ */
 int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
@@ -340,6 +378,13 @@ int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER p
     return rc;
 }
 
+/**
+ * Unregisters a formerly registered Shared Clipboard transfer.
+ *
+ * @returns VBox status code.
+ * @param   pSrv                HTTP server instance to unregister transfer from.
+ * @param   pTransfer           Transfer to unregister.
+ */
 int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
@@ -360,6 +405,7 @@ int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER
             RTMemFree(pSrvTx);
             pSrvTx = NULL;
 
+            Assert(pSrv->cTransfers);
             pSrv->cTransfers--;
 
             shClTransferHttpServerUnlock(pSrv);
@@ -371,6 +417,13 @@ int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER
     return VERR_NOT_FOUND;
 }
 
+/**
+ * Returns whether a specific transfer ID is registered with a HTTP server instance or not.
+ *
+ * @returns \c true if the transfer ID is registered, \c false if not.
+ * @param   pSrv                HTTP server instance.
+ * @param   idTransfer          Transfer ID to check for.
+ */
 bool ShClTransferHttpServerHasTransfer(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer)
 {
     AssertPtrReturn(pSrv, false);
@@ -384,6 +437,12 @@ bool ShClTransferHttpServerHasTransfer(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTr
     return fRc;
 }
 
+/**
+ * Returns the used TCP port number of a HTTP server instance.
+ *
+ * @returns TCP port number. 0 if not specified yet.
+ * @param   pSrv                HTTP server instance to return port for.
+ */
 uint16_t ShClTransferHttpServerGetPort(PSHCLHTTPSERVER pSrv)
 {
     AssertPtrReturn(pSrv, 0);
@@ -397,6 +456,12 @@ uint16_t ShClTransferHttpServerGetPort(PSHCLHTTPSERVER pSrv)
     return uPort;
 }
 
+/**
+ * Returns the number of registered HTTP server transfers of a HTTP server instance.
+ *
+ * @returns Number of registered transfers.
+ * @param   pSrv                HTTP server instance to return registered transfers for.
+ */
 uint32_t ShClTransferHttpServerGetTransferCount(PSHCLHTTPSERVER pSrv)
 {
     AssertPtrReturn(pSrv, 0);
@@ -410,12 +475,26 @@ uint32_t ShClTransferHttpServerGetTransferCount(PSHCLHTTPSERVER pSrv)
     return cTransfers;
 }
 
+/**
+ * Returns the host name (scheme) of a HTTP server instance.
+ *
+ * @param   pSrv                HTTP server instance to return host name (scheme) for.
+ *
+ * @returns Host name (scheme).
+ */
 static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv)
 {
     RT_NOREF(pSrv);
     return "http://localhost"; /* Hardcoded for now. */
 }
 
+/**
+ * Returns an allocated string with a HTTP server instance's address.
+ *
+ * @returns Allocated string with a HTTP server instance's address, or NULL on OOM.
+ *          Needs to be free'd by the caller using RTStrFree().
+ * @param   pSrv                HTTP server instance to return address for.
+ */
 char *ShClTransferHttpServerGetAddressA(PSHCLHTTPSERVER pSrv)
 {
     AssertPtrReturn(pSrv, NULL);
@@ -429,6 +508,13 @@ char *ShClTransferHttpServerGetAddressA(PSHCLHTTPSERVER pSrv)
     return pszAddress;
 }
 
+/**
+ * Returns an allocated string with the URL of a given Shared Clipboard transfer ID.
+ *
+ * @returns Allocated string with the URL of a given Shared Clipboard transfer ID, or NULL if not found.
+ *          Needs to be free'd by the caller using RTStrFree().
+ * @param   pSrv                HTTP server instance to return URL for.
+ */
 char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer)
 {
     AssertPtrReturn(pSrv, NULL);
