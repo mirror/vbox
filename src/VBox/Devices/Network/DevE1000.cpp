@@ -4156,9 +4156,10 @@ static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pT
  *                      checksum from.
  * @param   cse         Offset in packet to stop computing
  *                      checksum at.
+ * @param   fUdp        Replace 0 checksum with all 1s.
  * @thread  E1000_TX
  */
-static void e1kInsertChecksum(PE1KSTATE pThis, uint8_t *pPkt, uint16_t u16PktLen, uint8_t cso, uint8_t css, uint16_t cse)
+static void e1kInsertChecksum(PE1KSTATE pThis, uint8_t *pPkt, uint16_t u16PktLen, uint8_t cso, uint8_t css, uint16_t cse, bool fUdp = false)
 {
     RT_NOREF1(pThis);
 
@@ -4186,6 +4187,8 @@ static void e1kInsertChecksum(PE1KSTATE pThis, uint8_t *pPkt, uint16_t u16PktLen
     }
 
     uint16_t u16ChkSum = e1kCSum16(pPkt + css, cse - css + 1);
+    if (fUdp && u16ChkSum == 0)
+        u16ChkSum = ~u16ChkSum;     /* 0 means no checksum computed in case of UDP (see @bugref{9883}) */
     E1kLog2(("%s Inserting csum: %04X at %02X, old value: %04X\n", pThis->szPrf,
              u16ChkSum, cso, *(uint16_t*)(pPkt + cso)));
     *(uint16_t*)(pPkt + cso) = u16ChkSum;
@@ -4911,7 +4914,8 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC,
                             e1kInsertChecksum(pThis, (uint8_t *)pThisCC->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->u16TxPktLen,
                                               pThis->contextNormal.tu.u8CSO,
                                               pThis->contextNormal.tu.u8CSS,
-                                              pThis->contextNormal.tu.u16CSE);
+                                              pThis->contextNormal.tu.u16CSE,
+                                              !pThis->contextNormal.dw2.fTCP);
                         e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
                     }
                     else
@@ -5106,7 +5110,8 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC,
                                 e1kInsertChecksum(pThis, (uint8_t *)pThisCC->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->u16TxPktLen,
                                                   pThis->contextNormal.tu.u8CSO,
                                                   pThis->contextNormal.tu.u8CSS,
-                                                  pThis->contextNormal.tu.u16CSE);
+                                                  pThis->contextNormal.tu.u16CSE,
+                                                  !pThis->contextNormal.dw2.fTCP);
                             e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
                         }
                         else
