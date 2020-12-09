@@ -74,19 +74,19 @@
     </para>
     <itemizedlist>
       <listitem><para>
-          <emphasis role="strong">Linux:</emphasis>
+          <emphasis role="bold">Linux:</emphasis>
           <filename>/usr/bin/VBoxManage</filename>
         </para></listitem>
       <listitem><para>
-          <emphasis role="strong">Mac OS X:</emphasis>
+          <emphasis role="bold">Mac OS X:</emphasis>
           <filename>/Applications/VirtualBox.app/Contents/MacOS/VBoxManage</filename>
         </para></listitem>
       <listitem><para>
-          <emphasis role="strong">Oracle Solaris:</emphasis>
+          <emphasis role="bold">Oracle Solaris:</emphasis>
           <filename>/opt/VirtualBox/bin/VBoxManage</filename>
         </para></listitem>
       <listitem><para>
-          <emphasis role="strong">Windows:</emphasis>
+          <emphasis role="bold">Windows:</emphasis>
           <filename>C:\Program
           Files\Oracle\VirtualBox\VBoxManage.exe</filename>
         </para></listitem>
