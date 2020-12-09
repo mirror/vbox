@@ -557,7 +557,7 @@
   </xsl:template>
 
   <xsl:template match="para">
-    <xsl:if test="not(name(..)='footnote' or name(..)='note' or name(..)='warning' or (name(../..)='varlistentry' and position()=1))">
+    <xsl:if test="not(name(..)='footnote' or name(..)='note' or name(..)='warning' or name(..)='entry' or (name(../..)='varlistentry' and position()=1))">
       <xsl:text>&#x0a;&#x0a;</xsl:text>
     </xsl:if>
     <xsl:apply-templates />
@@ -1069,6 +1069,7 @@
                    or (name(..) = 'command')        or (name(../..) = 'command')
                    or (name(..) = 'cmdsynopsis')    or (name(../..) = 'cmdsynopsis')
                    or (name(..) = 'replaceable')    or (name(../..) = 'replaceable')
+                   or (name(..) = 'entry')          or (name(../..) = 'entry')
                      ">
         <xsl:variable name="subst5">
           <xsl:call-template name="str:subst">
