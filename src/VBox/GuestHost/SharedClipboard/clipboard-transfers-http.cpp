@@ -282,12 +282,12 @@ int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
  *
  * @returns VBox status code.
  * @param   pSrv                HTTP server instance to create.
- * @param   puPort              Where to return the TCP port number being used on success.
+ * @param   puPort              Where to return the TCP port number being used on success. Optional.
  */
 int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, uint16_t *puPort)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
-    AssertPtrReturn(puPort, VERR_INVALID_POINTER);
+    /* puPort is optional. */
 
     /** @todo Try favorite ports first (e.g. 8080, 8000, ...)? */
 
@@ -299,13 +299,11 @@ int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, uint16_t *puPort)
         for (int i = 0; i < 32; i++)
         {
             uPort = RTRandAdvU32Ex(hRand, 1024, UINT16_MAX);
-#ifdef DEBUG_andy
-            uPort = 8000; /** @todo BUGBUG Remove this! */
-#endif
             rc = ShClTransferHttpServerCreateEx(pSrv, (uint32_t)uPort);
             if (RT_SUCCESS(rc))
             {
-                *puPort = uPort;
+                if (puPort)
+                    *puPort = uPort;
                 break;
             }
         }
