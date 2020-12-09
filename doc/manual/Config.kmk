@@ -71,6 +71,7 @@ VBOX_MANUAL_XML_FILES = \
 	user_PrivacyPolicy.xml \
 	user_Glossary.xml \
 	oracle-accessibility-en.xml \
+	oracle-diversity.xml \
 	oracle-support-en.xml
 
 ## List of user manual XML files common for all languages.
@@ -98,7 +99,7 @@ VBOX_XML_ENTITIES         ?= $(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent
 # one of them is enough, they show the same information).
 ifdef VBOX_XML_CATALOG
  VBOX_XSLTPROC_WITH_CAT    = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -E "XML_DEBUG_CATALOG=" $1 -- \
- 	$(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
+	$(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
  VBOX_XMLLINT_WITH_CAT     = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -E "XML_DEBUG_CATALOG=" -- \
 	$(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
 else
@@ -146,7 +147,7 @@ endef
 #
 # @param   1   Destination file.
 # @param   2   Full source file path.
-# @param   3	Help infix.
+# @param   3   Help infix.
 define def_vbox_single_refentry_to_h
 $(1).ts +| $(1): \
 		$$(VBOX_DOCBOOK_REFENTRY_TO_C_HELP) \
@@ -207,7 +208,9 @@ ifdef VBOX_XML_CATALOG
 		'  <delegatePublic publicIdStartString="-//OASIS/ENTITIES DocBook XML"      catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
 		'  <delegatePublic publicIdStartString="-//OASIS/DTD DocBook XML"           catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
 		'  <delegateSystem systemIdStartString="http://www.oasis-open.org/docbook/" catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
+		'  <delegateSystem systemIdStartString="http://docbook.org/"                catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
 		'  <delegateURI uriStartString="http://www.oasis-open.org/docbook/"         catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
+		'  <delegateURI uriStartString="http://docbook.org/"                        catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG_DOCBOOK)"/>' \
 		'  <delegateSystem systemIdStartString="$(VBOX_PATH_MANUAL_SRC)"            catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG_MANUAL)"/>' \
 		'  <delegateSystem systemIdStartString="$(VBOX_PATH_MANUAL_OUTBASE)"        catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG_MANUAL)"/>' \
 		'  <delegateURI uriStartString="$(VBOX_PATH_MANUAL_SRC)"                    catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG_MANUAL)"/>' \
@@ -232,7 +235,9 @@ ifdef VBOX_XML_CATALOG
 		'  <public publicId="-//OASIS//DTD XML Exchange Table Model 19990315//EN"               uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK_DTD)/soextblx.dtd"/>' \
 		'  <public publicId="-//OASIS//DTD DocBook XML CALS Table Model V4.5//EN"               uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK_DTD)/calstblx.dtd"/>' \
 		'  <rewriteSystem systemIdStartString="http://www.oasis-open.org/docbook/xml/4.5" rewritePrefix="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK_DTD)"/>' \
+		'  <rewriteSystem systemIdStartString="http://docbook.org/xml/4.5"                rewritePrefix="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK_DTD)"/>' \
 		'  <rewriteURI         uriStartString="http://www.oasis-open.org/docbook/xml/4.5" rewritePrefix="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK_DTD)"/>' \
+		'  <rewriteURI         uriStartString="http://docbook.org/xml/4.5"                rewritePrefix="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK_DTD)"/>' \
 		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Arrow Relations//EN"   uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsa.ent"/>' \
 		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Binary Operators//EN"  uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsb.ent"/>' \
 		'  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Delimiters//EN"        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsc.ent"/>' \
@@ -262,11 +267,12 @@ ifdef VBOX_XML_CATALOG
 		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
 		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-accessibility-en.xml"            uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-accessibility-en.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-diversity.xml"            uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-diversity.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-support-en.xml"                  uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-support-en.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_ChangeLogImpl.xml"                  uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xsl"                        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl"/>' \
 		$(foreach x,user_VBoxManage_CommandsOverview.xml user_isomakercmd-man.xml $(addprefix user_,$(VBOX_MANUAL_XML_REFENTRY_FILES) man_VBoxHeadless.xml man_vboximg-mount.xml)\
-	 	,'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/$(x)"        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/$(x)"/>') \
+		,'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/$(x)"        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/$(x)"/>') \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/SDKRef_apiref.xml"                       uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef_apiref.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/all-entities.ent"                        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/html/docbook.xsl"                              uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK)/html/docbook.xsl"/>' \
