@@ -1420,12 +1420,12 @@ vga = 864</screen>
           following command:
         </para>
 
-<screen>$ VBoxManage createmedium disk --filename /path/to/file.vmdk --format=VMDK
+<screen>$ VBoxManage createmedium disk --filename <replaceable>path-to-file</replaceable>.vmdk --format=VMDK
  --variant RawDisk --property RawDrive=/dev/sda</screen>
 
         <para>
           This creates the
-          <filename>/<replaceable>path-to-file</replaceable>.vmdk</filename>
+          <filename><replaceable>path-to-file</replaceable>.vmdk</filename>
           file image that must be an absolute path. All data is read and
           written from <filename>/dev/sda</filename>.
         </para>
@@ -1454,7 +1454,7 @@ vga = 864</screen>
         </para>
 
 <screen>$ VBoxManage storageattach WindowsXP --storagectl "IDE Controller" \
- --port 0 --device 0 --type hdd --medium /path/to/file.vmdk</screen>
+ --port 0 --device 0 --type hdd --medium <replaceable>path-to-file</replaceable>.vmdk</screen>
 
         <para>
           When this is done the selected virtual machine will boot from
@@ -1487,7 +1487,7 @@ vga = 864</screen>
           command:
         </para>
 
-<screen>$ VBoxManage createmedium disk --filename /path/to/file.vmdk --format=VMDK
+<screen>$ VBoxManage createmedium disk --filename <replaceable>path-to-file</replaceable>.vmdk --format=VMDK
 --variant RawDisk --property RawDrive=/dev/sda --property Partitions=1,5</screen>
 
         <para>
@@ -1495,7 +1495,7 @@ vga = 864</screen>
           except for the additional
           <option>--property Partitions=1,5</option>
           parameter. This example would create the image
-          <filename>/path/to/file.vmdk</filename>,
+          <filename><replaceable>path-to-file</replaceable>.vmdk</filename>,
           which must be absolute, and partitions 1 and 5 of
           <filename>/dev/sda</filename> would be made accessible to the
           guest.
@@ -1549,7 +1549,7 @@ vga = 864</screen>
           image, use:
         </para>
 
-<screen>$ VBoxManage createmedium disk --filename /path/to/file.vmdk --format=VMDK
+<screen>$ VBoxManage createmedium disk --filename <replaceable>path-to-file</replaceable>.vmdk --format=VMDK
 --variant RawDisk --property RawDrive=/dev/sda --property Partitions=1,5
 --property Relative=1</screen>
 
@@ -1571,14 +1571,14 @@ vga = 864</screen>
           This enables for example the guest to boot directly to
           Windows, while the host boots Linux from the "same" disk. For
           this purpose the <option>--property-file
-          BootSector=/path/to/file/with/boot_sector</option>
+          BootSector=<replaceable>path-to-file-with-boot-sector</replaceable></option>
           parameter is provided. It specifies a file name from which to
           take the MBR code. The partition table is not modified at all,
           so a MBR file from a system with totally different
           partitioning can be used. An example of this is:
         </para>
 
-<screen>$ VBoxManage createmedium disk --filename /path/to/file.vmdk --format=VMDK
+<screen>$ VBoxManage createmedium disk --filename <replaceable>path-to-file</replaceable>.vmdk --format=VMDK
 --variant RawDisk --property RawDrive=/dev/sda --property Partitions=1,5
 --property-file BootSector=winxp.mbr</screen>
 
@@ -2152,7 +2152,7 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> \
     </para>
 
 <screen>$ VBoxManage setextradata <replaceable>VM-name</replaceable> \
-"VBoxInternal/Devices/acpi/0/Config/CustomTable0" "/path/to/table.bin"</screen>
+"VBoxInternal/Devices/acpi/0/Config/CustomTable0" "/<replaceable>path-to-table</replaceable>.bin"</screen>
 
     <para>
       Configuring custom ACPI tables can for example avoid the need for
