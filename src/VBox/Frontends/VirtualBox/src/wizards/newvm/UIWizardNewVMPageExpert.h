@@ -78,7 +78,7 @@ private slots:
     void sltOsTypeChanged();
     void sltVirtualDiskSourceChanged();
     void sltGetWithFileOpenDialog();
-    void sltUnattendedCheckBoxToggle();
+    void sltUnattendedCheckBoxToggle(bool fEnable);
     void sltISOPathChanged(const QString &strPath);
     void sltInstallGACheckBoxToggle(bool fChecked);
     void sltGAISOPathChanged(const QString &strPath);

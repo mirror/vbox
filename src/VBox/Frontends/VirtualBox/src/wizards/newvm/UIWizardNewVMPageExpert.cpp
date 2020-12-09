@@ -97,8 +97,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     m_pToolBox->setStyleSheet("QToolBox::tab:selected { font: bold; }");
     //m_pToolBox->setStyleSheet("QToolBox::tab:hover { font: bold; }");
     //qApp->setStyleSheet("QWidget#bla {  background: blue; }");
-    if (m_pButtonUnattended)
-        disableEnableUnattendedRelatedWidgets(m_pButtonUnattended->isChecked());
+    if (m_pEnableUnattendedInstallCheckBox)
+        disableEnableUnattendedRelatedWidgets(m_pEnableUnattendedInstallCheckBox->isChecked());
 }
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
@@ -145,10 +145,9 @@ void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
     getWithFileOpenDialog();
 }
 
-void UIWizardNewVMPageExpert::sltUnattendedCheckBoxToggle()
+void UIWizardNewVMPageExpert::sltUnattendedCheckBoxToggle(bool fEnabled)
 {
-    if (m_pButtonUnattended)
-        disableEnableUnattendedRelatedWidgets(m_pButtonUnattended->isChecked());
+    disableEnableUnattendedRelatedWidgets(fEnabled);
     emit completeChanged();
 }
 
@@ -214,8 +213,8 @@ void UIWizardNewVMPageExpert::createConnections()
         connect(m_pSystemTypeEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
                 this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
     }
-    if (m_pButtonGroup)
-        connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+    if (m_pEnableUnattendedInstallCheckBox)
+        connect(m_pEnableUnattendedInstallCheckBox, &QCheckBox::clicked,
                 this, &UIWizardNewVMPageExpert::sltUnattendedCheckBoxToggle);
     if (m_pISOFilePathSelector)
         connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged,
@@ -285,8 +284,8 @@ void UIWizardNewVMPageExpert::initializePage()
     if (m_pDiskSelector)
         m_pDiskSelector->setCurrentIndex(0);
 
-    if (m_pButtonUnattended)
-        disableEnableUnattendedRelatedWidgets(m_pButtonUnattended->isChecked());
+    if (m_pEnableUnattendedInstallCheckBox)
+        disableEnableUnattendedRelatedWidgets(m_pEnableUnattendedInstallCheckBox->isChecked());
     m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
     m_pProductKeyLineEdit->setEnabled(isProductKeyWidgetEnabled());
 }

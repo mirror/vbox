@@ -83,24 +83,18 @@ protected:
 
     /** @name Widgets
      * @{ */
-       /** Holds the simple variant button instance. */
-       QRadioButton *m_pButtonSimple;
-       /** Holds the unattended variant button instance. */
-       QRadioButton *m_pButtonUnattended;
-       /** Holds the ISO selector label instance. */
        QLabel *m_pISOSelectorLabel;
        /** Holds the ISO selector editor instance. */
        mutable UIFilePathSelector *m_pISOFilePathSelector;
-       /** Holds the headless start label instance. */
        QLabel *m_pStartHeadlessLabel;
-       /** Holds the headless start checkbox instance. */
+       QCheckBox *m_pEnableUnattendedInstallCheckBox;
        QCheckBox *m_pStartHeadlessCheckBox;
-       /** Provides a path selector and a line edit field for path and name entry. */
+       /** We have two UINameAndSystemEditor instance since name/vm path fields and OS type fields
+        * are separated. */
        UINameAndSystemEditor *m_pNameAndFolderEditor;
        UINameAndSystemEditor *m_pSystemTypeEditor;
        QIRichTextLabel *m_pUnattendedLabel;
        QIRichTextLabel *m_pNameOSTypeLabel;
-       QButtonGroup *m_pButtonGroup;
     /** @} */
 
     QString m_strDetectedOSTypeId;
@@ -161,7 +155,7 @@ private slots:
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
     void sltISOPathChanged(const QString &strPath);
-    void sltUnattendedCheckBoxToggle();
+    void sltUnattendedCheckBoxToggle(bool fEnable);
 
 private:
 
