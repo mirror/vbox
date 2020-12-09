@@ -26,9 +26,9 @@
 
 /* Forward declarations: */
 class QCheckBox;
-class QGridLayout;
 class QLabel;
 class QRadioButton;
+class QVBoxLayout;
 class QIRichTextLabel;
 class UIFilePathSelector;
 class UINameAndSystemEditor;
@@ -74,7 +74,7 @@ protected:
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
     void composeMachineFilePath();
     /** Creates the page widgets and adds them into the @p pGridLayout. */
-    void createNameOSTypeWidgets(QWidget *pContainerWidget, bool fCreateLabels = true);
+    void createNameOSTypeWidgets(QVBoxLayout *pLayout, bool fCreateLabels = true);
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     /** Colors the widgets red if they cause isComplete to fail. */
     void markWidgets() const;

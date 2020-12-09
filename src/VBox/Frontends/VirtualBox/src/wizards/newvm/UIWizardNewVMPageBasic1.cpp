@@ -277,41 +277,39 @@ bool UIWizardNewVMPage1::checkISOFile() const
     return true;
 }
 
-void UIWizardNewVMPage1::createNameOSTypeWidgets(QWidget *pContainerWidget, bool fCreateLabels /* = true */)
+void UIWizardNewVMPage1::createNameOSTypeWidgets(QVBoxLayout *pLayout, bool fCreateLabels /* = true */)
 {
-    AssertReturnVoid(pContainerWidget);
-    QGridLayout *pGridLayout = new QGridLayout(pContainerWidget);
-    AssertReturnVoid(pGridLayout);
+    AssertReturnVoid(pLayout);
 
-    int iLayoutRow = 0;
     if (fCreateLabels)
     {
         m_pNameOSTypeLabel = new QIRichTextLabel;
         if (m_pNameOSTypeLabel)
-            pGridLayout->addWidget(m_pNameOSTypeLabel, iLayoutRow++, 0, 1, 3);
+            pLayout->addWidget(m_pNameOSTypeLabel);
     }
 
     m_pNameAndFolderEditor = new UINameAndSystemEditor(0, true, true, false);
     if (m_pNameAndFolderEditor)
-        pGridLayout->addWidget(m_pNameAndFolderEditor, iLayoutRow++, 1, 1, 2);
+        pLayout->addWidget(m_pNameAndFolderEditor);
 
     if (fCreateLabels)
     {
         m_pUnattendedLabel = new QIRichTextLabel;
         if (m_pUnattendedLabel)
-            pGridLayout->addWidget(m_pUnattendedLabel, iLayoutRow++, 0, 1, 3);
+            pLayout->addWidget(m_pUnattendedLabel);
     }
 
+    QGridLayout *pUnattendedInstall = new QGridLayout;
     m_pEnableUnattendedInstallCheckBox = new QCheckBox;
-    pGridLayout->addWidget(m_pEnableUnattendedInstallCheckBox, iLayoutRow++, 0, 1, 3);
+    pUnattendedInstall->addWidget(m_pEnableUnattendedInstallCheckBox, 0, 0, 1, 4, Qt::AlignLeft);
 
     m_pISOSelectorLabel = new QLabel;
     if (m_pISOSelectorLabel)
     {
         m_pISOSelectorLabel->setAlignment(Qt::AlignRight);
-        m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+        m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
         m_pISOSelectorLabel->setEnabled(false);
-        pGridLayout->addWidget(m_pISOSelectorLabel, iLayoutRow, 1);
+        pUnattendedInstall->addWidget(m_pISOSelectorLabel, 1, 0, 1, 1, Qt::AlignRight);
     }
     m_pISOFilePathSelector = new UIFilePathSelector;
     if (m_pISOFilePathSelector)
@@ -319,21 +317,22 @@ void UIWizardNewVMPage1::createNameOSTypeWidgets(QWidget *pContainerWidget, bool
         m_pISOFilePathSelector->setResetEnabled(false);
         m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
         m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-        m_pISOFilePathSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_pISOFilePathSelector->setEnabled(false);
-        pGridLayout->addWidget(m_pISOFilePathSelector, iLayoutRow++, 2);
+        pUnattendedInstall->addWidget(m_pISOFilePathSelector, 1, 1, 1, 4);
     }
 
     m_pStartHeadlessCheckBox = new QCheckBox;
     if (m_pStartHeadlessCheckBox)
     {
         m_pStartHeadlessCheckBox->setEnabled(false);
-        pGridLayout->addWidget(m_pStartHeadlessCheckBox, iLayoutRow++, 2);
+        pUnattendedInstall->addWidget(m_pStartHeadlessCheckBox, 2, 1, 1, 1);
     }
-
+    pLayout->addLayout(pUnattendedInstall);
     m_pSystemTypeEditor = new UINameAndSystemEditor(0, false, false, true);
     if (m_pSystemTypeEditor)
-        pGridLayout->addWidget(m_pSystemTypeEditor, iLayoutRow++, 1, 1, 2);
+        pLayout->addWidget(m_pSystemTypeEditor);
+
 }
 
 bool UIWizardNewVMPage1::createMachineFolder()
@@ -488,7 +487,7 @@ void UIWizardNewVMPage1::retranslateWidgets()
     }
 
     if (m_pISOSelectorLabel)
-        m_pISOSelectorLabel->setText(UIWizardNewVM::tr("Installation Medium:"));
+        m_pISOSelectorLabel->setText(UIWizardNewVM::tr("Installer:"));
 
     if (m_pStartHeadlessCheckBox)
     {
@@ -506,10 +505,8 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
 
 void UIWizardNewVMPageBasic1::prepare()
 {
-    QWidget *pContainerWidget = new QWidget;
     QVBoxLayout *pPageLayout = new QVBoxLayout(this);
-    pPageLayout->addWidget(pContainerWidget);
-    createNameOSTypeWidgets(pContainerWidget, false);
+    createNameOSTypeWidgets(pPageLayout, false);
     pPageLayout->addStretch();
     createConnections();
     /* Register fields: */
@@ -605,15 +602,15 @@ void UIWizardNewVMPageBasic1::retranslateUi()
                                              "The name you choose will be used throughout VirtualBox "
                                              "to identify this machine."));
 
-    if (   m_pNameAndFolderEditor
-           && m_pSystemTypeEditor
-           && m_pISOSelectorLabel)
-    {
-        int iMinWidthHint = 0;
-        iMinWidthHint = qMax(iMinWidthHint, m_pISOSelectorLabel->minimumSizeHint().width());
-        // m_pNameAndFolderEditor->setMinimumLayoutIndent(iMinWidthHint);
-        // m_pSystemTypeEditor->setMinimumLayoutIndent(iMinWidthHint);
-    }
+    // if (   m_pNameAndFolderEditor
+    //        && m_pSystemTypeEditor
+    //        && m_pISOSelectorLabel)
+    // {
+    //     int iMinWidthHint = 0;
+    //     iMinWidthHint = qMax(iMinWidthHint, m_pISOSelectorLabel->minimumSizeHint().width());
+    //     m_pNameAndFolderEditor->setMinimumLayoutIndent(iMinWidthHint);
+    //     m_pSystemTypeEditor->setMinimumLayoutIndent(iMinWidthHint);
+    // }
 }
 
 void UIWizardNewVMPageBasic1::initializePage()
