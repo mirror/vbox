@@ -215,6 +215,21 @@ DECLINLINE(void) shClTransferHttpServerUnlock(PSHCLHTTPSERVER pSrv)
 *********************************************************************************************************************************/
 
 /**
+ * Initializes a new Shared Clipboard HTTP server instance.
+ *
+ * @param   pSrv                HTTP server instance to initialize.
+ */
+static void shClTransferHttpServerInitInternal(PSHCLHTTPSERVER pSrv)
+{
+    pSrv->hHTTPServer = NIL_RTHTTPSERVER;
+    pSrv->uPort       = 0;
+    RTListInit(&pSrv->lstTransfers);
+    pSrv->cTransfers  = 0;
+    int rc2 = RTHttpServerResponseInit(&pSrv->Resp);
+    AssertRC(rc2);
+}
+
+/**
  * Creates a new Shared Clipboard HTTP server instance, extended version.
  *
  * @returns VBox status code.
@@ -224,6 +239,8 @@ DECLINLINE(void) shClTransferHttpServerUnlock(PSHCLHTTPSERVER pSrv)
 int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
+
+    shClTransferHttpServerInitInternal(pSrv);
 
     RTHTTPSERVERCALLBACKS Callbacks;
     RT_ZERO(Callbacks);
@@ -239,14 +256,8 @@ int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
                                 pSrv, sizeof(SHCLHTTPSERVER));
     if (RT_SUCCESS(rc))
     {
-        rc = RTHttpServerResponseInit(&pSrv->Resp);
-        AssertRCReturn(rc, rc);
-
         rc = RTCritSectInit(&pSrv->CritSect);
         AssertRCReturn(rc, rc);
-
-        RTListInit(&pSrv->lstTransfers);
-        pSrv->cTransfers = 0;
 
         pSrv->uPort = uPort;
 
