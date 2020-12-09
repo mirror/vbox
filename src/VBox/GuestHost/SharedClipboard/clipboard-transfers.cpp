@@ -2655,7 +2655,7 @@ int ShClTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
 
         pTransferCtx->cTransfers  = 0;
         pTransferCtx->cRunning    = 0;
-        pTransferCtx->cMaxRunning = UINT16_MAX; /** @todo Make this configurable? */
+        pTransferCtx->cMaxRunning = 64; /** @todo Make this configurable? */
 
         RT_ZERO(pTransferCtx->bmTransferIds);
 
