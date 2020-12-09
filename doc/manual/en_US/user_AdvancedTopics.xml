@@ -20,7 +20,7 @@
     <para>
       When a guest operating system is running in a virtual machine, it
       might be desirable to perform coordinated and automated logins
-      using credentials from a master login system. Credentials are user
+      using credentials passed from the host. Credentials are user
       name, password, and domain name, where each value might be empty.
     </para>
 
@@ -1435,7 +1435,7 @@ vga = 864</screen>
           for example use <filename>\\.\PhysicalDrive0</filename>. On a
           Mac OS X host, instead of the above device specification use
           for example <filename>/dev/rdisk1</filename>. Note that on Mac
-          OS X you can only get access to entire disk if no volume is
+          OS X you can only get access to an entire disk if no volume is
           mounted from it.
         </para>
 
@@ -2874,8 +2874,8 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
       <title>Configure VM Selector Menu Entries</title>
 
       <para>
-        You can disable, or blacklist, certain entries in the global
-        settings page of the VM selector:
+        You can disable certain entries in the global settings page of
+        the VM selector:
       </para>
 
 <screen>$ VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages <replaceable>property</replaceable>[,<replaceable>property</replaceable>...]</screen>
@@ -3007,8 +3007,7 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
       <title>Configure VM Window Menu Entries</title>
 
       <para>
-        You can disable, or blacklist, certain menu actions in the VM
-        window:
+        You can disable certain menu actions in the VM window:
       </para>
 
 <screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus OPTION[,OPTION...]</screen>
@@ -3137,10 +3136,10 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
 <screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus</screen>
 
       <para>
-        You can also disable, or blacklist, certain menu actions of
-        certain menus. Use the following command to disable certain
-        actions of the <emphasis role="bold">Application</emphasis>
-        menu. This is only available on Mac OS X hosts.
+        You can also disable certain menu actions of certain menus. Use
+        the following command to disable certain actions of the
+        <emphasis role="bold">Application</emphasis> menu. This is only
+        available on Mac OS X hosts.
       </para>
 
 <screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeApplicationMenuActions OPTION[,OPTION...]</screen>
@@ -4167,7 +4166,7 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
       <title>Configure VM Window Status Bar Entries</title>
 
       <para>
-        You can disable, or blacklist, certain status bar items:
+        You can disable certain status bar items:
       </para>
 
 <screen>VBoxManage setextradata "VM name"|global GUI/RestrictedStatusBarIndicators OPTION[,OPTION...]</screen>
@@ -4326,7 +4325,7 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
       <title>Configure VM Window Visual Modes</title>
 
       <para>
-        You can disable, or blacklist, certain VM visual modes:
+        You can disable certain VM visual modes:
       </para>
 
 <screen>$ VBoxManage setextradata <replaceable>VM-name</replaceable> GUI/RestrictedVisualStates <replaceable>property</replaceable>[,<replaceable>property</replaceable>...]</screen>
@@ -4676,8 +4675,8 @@ $ VBoxManage setextradata <replaceable>VM-name</replaceable> VBoxInternal2/CoreD
       <title>Action when Terminating the VM</title>
 
       <para>
-        You can disallow, or blacklist, certain actions when terminating
-        a VM. To disallow specific actions, use the following command:
+        You can disallow certain actions when terminating a VM. To
+        disallow specific actions, use the following command:
       </para>
 
 <screen>$ VBoxManage setextradata <replaceable>VM-name</replaceable> GUI/RestrictedCloseActions <replaceable>property</replaceable>[,<replaceable>property</replaceable>...]</screen>
@@ -6086,52 +6085,54 @@ alice = {
 
       <para>
         On Windows, autostart functionality consist of two components.
-        First one is configuration file where the administrator can both
-        set delayed start of the VMs and temporary disable autostarting
-        for the particular user. The configuration file should be located
-        in the folder accessible by all required users but it should have
-        permissions allowing the only reading by everyone but
-        administrators. The configuration file contains several options.
-        One is <literal>default_policy</literal> which controls whether the
-        autostart service allows or denies to start a VM for users which
-        are not in the exception list. The exception list starts with
+        The first component is a configuration file where the
+        administrator can both set a delayed start for the VMs and
+        temporarily disable autostarting for a particular user. The
+        configuration file should be located in a folder accessible by
+        all required users but it should have permissions allowing only
+        reading by everyone but administrators. The configuration file
+        contains several options. The
+        <literal>default_policy</literal> controls whether the autostart
+        service allows or denies starting of a VM for users that are not
+        in the exception list. The exception list starts with
         <literal>exception_list</literal> and contains a comma separated
-        list with usernames. Furthermore a separate startup delay can be
-        configured for every user to avoid overloading the host. A
+        list with usernames. Furthermore, a separate startup delay can
+        be configured for every user to avoid overloading the host. A
         sample configuration is given below:
       </para>
 
 <screen>
-# Default policy is to deny starting a VM, the other option is "allow".
-default_policy = deny
+	# Default policy is to deny starting a VM, the other option is "allow".
+	default_policy = deny
 
-# Bob is allowed to start virtual machines but starting them
-# will be delayed for 10 seconds
-bob = {
-    allow = true
-    startup_delay = 10
-}
+	# Bob is allowed to start virtual machines but starting them
+	# will be delayed for 10 seconds
+	bob = {
+	    allow = true
+	    startup_delay = 10
+	}
 
-# Alice is not allowed to start virtual machines, useful to exclude certain users
-# if the default policy is set to allow.
-alice = {
-    allow = false
-}
+	# Alice is not allowed to start virtual machines, useful to exclude certain users
+	# if the default policy is set to allow.
+	alice = {
+	    allow = false
+	}
 </screen>
 
       <para>
-        The user name can be specified using the following forms: "user",
-        "domain\user", ".\user" and "user@domain". Administrator must add
-        the <literal>VBOXAUTOSTART_CONFIG</literal> environment variable into
-        system variables containing the path to the configuration file
-        described above. The environment variable tells the autostart services
-        what configuration file is used.
+        The user name can be specified using the following forms:
+        "user", "domain\user", ".\user" and "user@domain". An
+        administrator must add the
+        <literal>VBOXAUTOSTART_CONFIG</literal> environment variable
+        into system variables containing the path to the configuration
+        file described above. The environment variable tells the
+        autostart services which configuration file is used.
       </para>
 
       <para>
-        Second component of autostart functionality is Windows service, every
-        instance of it works on behalf of particular user using its own
-        credentials.
+        The second component of autostart functionality is a Windows
+        service. Every instance of this works on behalf of a particular
+        user using their credentials.
       </para>
 
       <para>
@@ -6139,7 +6140,7 @@ alice = {
         administrators group must run the following command:
       </para>
 
-  <screen>VBoxAutostartSvc install --user=<replaceable>user</replaceable> [--password-file=<replaceable>password_file</replaceable>]</screen>
+<screen>VBoxAutostartSvc install --user=<replaceable>user</replaceable> [--password-file=<replaceable>password_file</replaceable>]</screen>
 
       <para>
         The password file should contain the password followed by a line
@@ -6152,7 +6153,7 @@ alice = {
         administrators group must run the following command:
       </para>
 
-  <screen>VBoxAutostartSvc delete --user=<replaceable>user</replaceable></screen>
+<screen>VBoxAutostartSvc delete --user=<replaceable>user</replaceable></screen>
 
       <para>
         If a user has changed their password then a member of the
@@ -6163,19 +6164,19 @@ alice = {
       </para>
 
       <para>
-        Finally, the particular user should define which VM should be
-        started at boot or not. The user should run the following command
-        for every VM it desired to start at boot:
+        Finally, the user should define which VMs should be started at
+        boot. The user should run the following command for every VM
+        they wish to start at boot:
       </para>
 
-  <screen>VBoxManage modifyvm <replaceable>VM name or UUID</replaceable> --autostart-enabled on</screen>
+<screen>VBoxManage modifyvm <replaceable>VM name or UUID</replaceable> --autostart-enabled on</screen>
 
       <para>
-        The user can remove the particular VM from the VMs starting at boot
-        by running the following command:
+        The user can remove a particular VM from the VMs starting at
+        boot by running the following command:
       </para>
 
-  <screen>VBoxManage modifyvm <replaceable>VM name or UUID</replaceable> --autostart-enabled off</screen>
+<screen>VBoxManage modifyvm <replaceable>VM name or UUID</replaceable> --autostart-enabled off</screen>
 
     </sect2>
 

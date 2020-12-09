@@ -762,13 +762,13 @@ Report was written to '2019-03-26-13-32-02-bugreport.tgz'</screen>
 
       <para>
         <literal>[<replaceable>x</replaceable>]</literal> specifies the
-        disk for IDE. <literal>0</literal> represents the master device
-        on the first channel, <literal>1</literal> represents the slave
-        device on the first channel, <literal>2</literal> represents the
-        master device on the second channel, and <literal>3</literal>
-        represents the slave device on the second channel. For SATA, use
-        values between <literal>0</literal> and <literal>29</literal>.
-        This configuration option applies to disks only. Do not use this
+        disk. For IDE, <literal>0</literal> represents device 0 on the
+        primary channel, <literal>1</literal> represents device 1 on the
+        primary channel, <literal>2</literal> represents device 0 on the
+        secondary channel, and <literal>3</literal> represents device 1
+        on the secondary channel. For SATA, use values between
+        <literal>0</literal> and <literal>29</literal>. This
+        configuration option applies to disks only. Do not use this
         option for CD or DVD drives.
       </para>
 
@@ -821,9 +821,10 @@ Report was written to '2019-03-26-13-32-02-bugreport.tgz'</screen>
 
       <para>
         <literal>[<replaceable>x</replaceable>]</literal> specifies the
-        disk. is 0 for the master device on the first channel, 1 for the
-        slave device on the first channel, 2 for the master device on
-        the second channel or 3 for the master device on the second
+        disk. Enter <literal>0</literal> for device 0 on the primary
+        channel, <literal>1</literal> for device 1 on the primary
+        channel, <literal>2</literal> for device 0 on the secondary
+        channel, or <literal>3</literal> for device 1 on the secondary
         channel.
       </para>
 
@@ -1309,7 +1310,7 @@ Report was written to '2019-03-26-13-32-02-bugreport.tgz'</screen>
 
   <sect1 id="ts_lin-x11-guests">
 
-    <title>Linux and X11/Wayland Guests</title>
+    <title>Linux and X11 Guests</title>
 
     <sect2 id="ts_linux-guest-high-cpu">
 
@@ -1385,10 +1386,10 @@ apic=debug and send a report.  Then try booting with the 'noapic' option</screen
 
     <sect2 id="ts_linux-guest-x11-services">
 
-      <title>Shared Clipboard, Auto-Resizing, and Seamless Desktop in X11/Wayland Guests</title>
+      <title>Shared Clipboard, Auto-Resizing, and Seamless Desktop in X11 Guests</title>
 
       <para>
-        Guest desktop services in guests running the X11/Wayland window system
+        Guest desktop services in guests running the X11 window system
         such as Oracle Solaris and Linux, are provided by a guest
         service called <command>VBoxClient</command>, which runs under
         the ID of the user who started the desktop session and is
@@ -1399,8 +1400,7 @@ apic=debug and send a report.  Then try booting with the 'noapic' option</screen
 
 <screen>$ VBoxClient --clipboard
 $ VBoxClient --display
-$ VBoxClient --seamless
-$ VBoxClient --vmsvga</screen>
+$ VBoxClient --seamless</screen>
 
       <para>
         If a particular desktop service is not working correctly, it is

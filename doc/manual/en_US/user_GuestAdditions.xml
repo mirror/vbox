@@ -199,8 +199,7 @@
       virtual machine, set the value of its
       <literal>/VirtualBox/GuestAdd/CheckHostVersion</literal> guest
       property to <literal>0</literal>. See
-      <xref
-    linkend="guestadd-guestprops" />.
+      <xref linkend="guestadd-guestprops" />.
     </para>
 
   </sect1>
@@ -985,9 +984,7 @@
         &product-name; also ships with a set of drivers that improve
         running OS/2 in a virtual machine. Due to restrictions of OS/2
         itself, this variant of the Guest Additions has a limited
-        feature set. See <xref
-      linkend="KnownIssues" /> for
-        details.
+        feature set. See <xref linkend="KnownIssues" /> for details.
       </para>
 
       <para>
@@ -1094,7 +1091,7 @@
       <listitem>
         <para>
           Transient shares, that are added at runtime and disappear when
-          the VM is powered off. These can be created using a checkbox
+          the VM is powered off. These can be created using a check box
           in the VirtualBox Manager, or by using the
           <option>--transient</option> option of the <command>VBoxManage
           sharedfolder add</command> command.
@@ -1107,7 +1104,7 @@
       Shared folders can either be read-write or read-only. This means
       that the guest is either allowed to both read and write, or just
       read files on the host. By default, shared folders are read-write.
-      Read-only folders can be created using a checkbox in the
+      Read-only folders can be created using a check box in the
       VirtualBox Manager, or with the <option>--readonly</option> option
       of the <command>VBoxManage sharedfolder add</command> command.
     </para>
@@ -1164,7 +1161,7 @@
             therefore visible in Windows Explorer. To attach the host's
             shared folder to your Windows guest, open Windows Explorer
             and look for the folder in <emphasis role="bold">My
-            Networking Place</emphasis>s, <emphasis role="bold">Entire
+            Networking Places</emphasis>, <emphasis role="bold">Entire
             Network</emphasis>, <emphasis role="bold">&product-name;
             Shared Folders</emphasis>. By right-clicking on a shared
             folder and selecting <emphasis role="bold">Map Network
@@ -1395,10 +1392,11 @@ VBoxControl sharedfolder list</screen>
     <para>
       In the context of using drag and drop, the origin of the data is
       called the <emphasis>source</emphasis>. That is, where the actual
-      data comes from and is specified. The <emphasis>destination</emphasis>
-      specifies where the data from the source should go to.
-      Transferring data from the source to the destination can be done in
-      various ways, such as copying, moving, or linking.
+      data comes from and is specified. The
+      <emphasis>destination</emphasis> specifies where the data from the
+      source should go to. Transferring data from the source to the
+      destination can be done in various ways, such as copying, moving,
+      or linking.
     </para>
 
     <note>
@@ -1412,7 +1410,8 @@ VBoxControl sharedfolder list</screen>
       When transferring data from the host to the guest OS, the host in
       this case is the source, whereas the guest OS is the destination.
       However, when transferring data from the guest OS to the host, the
-      guest OS this time became the source and the host is the destination.
+      guest OS this time became the source and the host is the
+      destination.
     </para>
 
     <para>
@@ -1495,9 +1494,9 @@ VBoxControl sharedfolder list</screen>
       <para>
         As &product-name; can run on a variety of host operating systems
         and also supports a wide range of guests, certain data formats
-        must be translated after transfer. This is so that the destination
-        operating system, which receiving the data, is able to handle
-        them in an appropriate manner.
+        must be translated after transfer. This is so that the
+        destination operating system, which receives the data, is able
+        to handle them in an appropriate manner.
       </para>
 
       <note>
@@ -1561,11 +1560,10 @@ VBoxControl sharedfolder list</screen>
 
       <para>
         On Linux hosts and guests, programs can query for drag and drop
-        data while the drag operation still is in progress (e.g. on LXDE
-        using the PCManFM file manager). This currently is not supported.
-
-        As a workaround, a different file manager (e.g. Nautilus) can
-        be used instead.
+        data while the drag operation is still in progress. For example,
+        on LXDE using the PCManFM file manager. This currently is not
+        supported. As a workaround, a different file manager, such as
+        Nautilus, can be used instead.
       </para>
 
     </sect2>
@@ -2146,10 +2144,10 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     </para>
 
     <para>
-      The Guest Additions for Windows and Linux allow for automatic updating.
-      This applies for already installed Guest Additions versions. Also,
-      copying files from/to the host as well as various other file system
-      operations are available.
+      The Guest Additions for Windows allow for automatic updating. This
+      applies for already installed Guest Additions versions. Also,
+      copying files from host to the guest as well as remotely creating
+      guest directories is available.
     </para>
 
     <para>
@@ -2402,13 +2400,15 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
       <title>X11/Wayland Desktop Environments</title>
 
       <para>
-        The Guest Additions provide necessary services to enable controlling
-        the guest system's monitor topology. My monitor topology the resolution
-        of each virtual monitor and its state are meant (disabled/enabled). The
-        resolution of a virtual monitor can be modified from the host side either
-        by resizing the window that hosts the virtual monitor or thru the view menu.
-        On guest operating systems with X11/Wayland desktops this is achieved by
-        either of two following services:
+        The Guest Additions provide services for controlling the guest
+        system's monitor topology. Monitor topology means the resolution
+        of each virtual monitor and its state (disabled/enabled). The
+        resolution of a virtual monitor can be modified from the host
+        side either by resizing the window that hosts the virtual monitor,
+        through the view menu or through
+        <code>VBoxManage controlvm "vmname" setscreenlayout</code>.
+        On guest operating systems with X11/Wayland desktops this is
+        put into effect by either of two following services:
       </para>
 
       <screen>
@@ -2417,7 +2417,8 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
       </screen>
 
       <para>
-        Here are some details about guest screen resolution control functionality:
+        Here are some details about guest screen resolution control
+        functionality:
       </para>
 
       <itemizedlist>
@@ -2425,32 +2426,32 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
         <listitem>
           <para>
             On X11/Wayland desktops the resizing service is started during
-            desktop session initialization, that is desktop login. On X11 desktops
-            VBoxClient --vmsvga service handles screen topology thru xrandr calls.
-            On Wayland clients VBoxDRMClient is used. The decision of choosing either
-            of these clients is done automatically at each desktop session start.
+            desktop session initialization, that is desktop login. On X11
+            desktops <code>VBoxClient --vmsvga</code> handles screen
+            topology through the RandR extension.
+            On Wayland clients <code>VBoxDRMClient</code> is used. The
+            decision is made automatically at each desktop session start.
           </para>
         </listitem>
         <listitem>
           <para>
-            On 32 bit guest OSs VBoxDRMClient, which is run during desktop
-            session start, is used. The guest OS bitness check and choice
-            of the service is done automatically.
+            On 32 bit guest operating systems <code>VBoxDRMClient</code>
+            is always used, in order to work around bugs.
           </para>
         </listitem>
         <listitem>
           <para>
-            Since the mentioned monitor topology control services are initialized during
-            the desktop session start, display managers' (gdm, lightdm, etc.) resolution
-            cannot be controlled. This default behavior can be changed by setting the
-            following guest property of the virtual machine to any value.
-            <screen>
-              /VirtualBox/GuestAdd/DRMResize
-            </screen>
-            Please refer to <xref linkend="guestadd-guestprops" /> for how to set/delete
-            guest properties. When this guest property is set then VBoxDRMClient is started
-            during the guest OS boot and stays active for both display manager's login screen
-            and desktop session.
+            Since the mentioned monitor topology control services are
+            initialized during the desktop session start, it is impossible
+            to control the monitor resolution of display managers such as
+            gdm, lightdm. This default behavior can be changed by setting
+            the guest property <code>/VirtualBox/GuestAdd/DRMResize</code>
+            of the virtual machine to any value. Please refer to
+            <xref linkend="guestadd-guestprops" /> for updating guest
+            properties. When this guest property is set then
+            <code>VBoxDRMClient</code> is started during the guest OS boot
+            and stays active all the time, for both ithe display manager
+            login screen and the desktop session.
           </para>
         </listitem>
 
@@ -2460,10 +2461,12 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
 
         <title>Known Limitations</title>
         <para>
-          VBoxDRMClient is not able to handle arbitrary guest monitor topologies. Specifically,
-          disabling a guest monitor (except the last one) invalidates the monitor topology. That
-          is, when the guest is configured to have 4 monitors, disabling 2nd or 3rd monitor is not
-          recommended.
+          <code>VBoxDRMClient</code> is not able to handle arbitrary guest
+          monitor topologies. Specifically, disabling a guest monitor
+          (except the last one) invalidates the monitor topology due to
+          limitations in the Linux kernel module <code>vmwgfx.ko</code>.
+          iFor example, when the guest is configured to have 4 monitors
+          it is not recommended to disable the 2nd or 3rd monitor.
         </para>
 
       </sect3>

@@ -53,319 +53,226 @@
 
     <para>
       Because &product-name; is designed to provide a generic
-      virtualization environment for x86 systems, it can run operating
-      systems (OSes) of any kind. However, &product-name; focuses on the
-      following guest systems:
+      virtualization environment for x86 systems, it can run guest
+      operating systems (OSes) of any kind.
+    </para>
+
+    <para>
+      The following guest OS platforms are supported:
     </para>
 
     <itemizedlist>
 
       <listitem>
         <para>
-          <emphasis role="bold">Windows NT 4.0:</emphasis>
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              Fully supports all versions, editions, and service packs.
-              Note that you might encounter issues with some older
-              service packs, so install at least service pack 6a.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Guest Additions are available with a limited feature set.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Windows 2000, Windows XP, Windows Server
-          2003, Windows Vista, Windows Server 2008, Windows 7, Windows
-          Server 2008 R2, Windows 8, Windows Server 2012, Windows 8.1,
-          Windows Server 2012 R2, Windows 10 (non-Insider Preview
-          releases), Windows Server 2016, Windows Server
-          2019:</emphasis>
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              Fully supports all versions, editions, and service packs,
-              including 64-bit versions.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Note that you must enable hardware virtualization when
-              running at least Windows 8.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Guest Additions are available.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">MS-DOS, Windows 3.x, Windows 95, Windows
-          98, Windows ME:</emphasis>
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              Limited testing has been performed.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Use beyond legacy installation mechanisms is not
-              recommended.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Guest Additions are not available.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Linux 2.4:</emphasis>
-        </para>
-
-        <para>
-          Limited support.
+          <emphasis role="bold">Platforms With Full Support.</emphasis>
+          These guest OS platforms qualify for Oracle Premier Support.
+          See <xref linkend="table-premier-support"/>.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Linux 2.6:</emphasis>
+          <emphasis role="bold">Platforms With Limited
+          Support.</emphasis> These legacy guest OS platforms can be
+          used with &product-name;, but only qualify for <emphasis>best
+          effort</emphasis> support. Therefore, resolution of customer
+          issues is not guaranteed. See
+          <xref linkend="table-limited-support"/>.
         </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              Fully supports all versions and editions, both 32-bit and
-              64-bit.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              For best performance, use at least Linux kernel version
-              2.6.13.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Guest Additions are available.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-
-        <note>
-          <para>
-            Certain Linux kernel releases have bugs that prevent them
-            from executing in a virtual environment. See
-            <xref linkend="ts_linux-buggy" />.
-          </para>
-        </note>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Linux 3.x and later:</emphasis>
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              Fully supports all versions and editions, both 32-bit and
-              64-bit.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Guest Additions are available.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold"> Oracle Solaris 10 and Oracle Solaris
-          11:</emphasis>
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              Fully supports all versions starting with Oracle Solaris
-              10 8/08 and Oracle Solaris 11.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Supports 64-bit prior to Oracle Solaris 11 11/11, and
-              32-bit.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Guest Additions are available.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">FreeBSD:</emphasis>
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              Limited support.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Note that you must enable hardware virtualization when
-              running FreeBSD.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Guest Additions are not available.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold"> OpenBSD:</emphasis>
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              Supports at least version 3.7.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Note that you must enable hardware virtualization when
-              running OpenBSD.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Guest Additions are not available.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">OS/2 Warp 4.5:</emphasis>
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              Only MCP2 is supported. Other OS/2 versions might not
-              work.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Note that you must enable hardware virtualization when
-              running OS/2 Warp 4.5.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Guest Additions are available with a limited feature set.
-              See <xref linkend="KnownIssues" />.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Mac OS X:</emphasis>
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              &product-name; 3.2 added experimental support for Mac OS X
-              guests, with restrictions. See
-              <xref linkend="intro-macosxguests"/> and
-              <xref linkend="KnownIssues" />.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Guest Additions are not available.
-            </para>
-          </listitem>
-
-        </itemizedlist>
       </listitem>
 
     </itemizedlist>
+
+    <table id="table-premier-support" tabstyle="oracle-all">
+      <title>Guest Operating Systems With Full Support</title>
+      <tgroup cols="2">
+        <thead>
+          <row>
+            <entry><para>
+                <emphasis role="bold">Operating System</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">Comments</emphasis>
+              </para></entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><para>
+                Windows 10 (32-bit and 64-bit)
+              </para></entry>
+            <entry><para>
+                Insider preview builds are not supported
+              </para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Windows 8 and 8.1 (32-bit and 64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Windows Server 2019 (64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Windows Server 2016 (64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Windows Server 2012 and 2012 R2 (64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Solaris 11 (32-bit and 64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Solaris 10 8/11 Update 10 and later (32-bit and 64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Oracle Linux 8 (64-bit)
+              </para></entry>
+            <entry><para>
+                Includes Red Hat Enterprise Linux 8, CentOS 8
+              </para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Oracle Linux 7 (64-bit)
+              </para></entry>
+            <entry><para>
+                Includes Red Hat Enterprise Linux 7, CentOS 7
+              </para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Oracle Linux 6 (32-bit and 64-bit)
+              </para></entry>
+            <entry><para>
+                Includes Red Hat Enterprise Linux 6, CentOS 6
+              </para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Ubuntu 16.04 LTS (Xenial Xerus) (32-bit and 64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Ubuntu 18.04 LTS (Bionic Beaver) (64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Ubuntu 20.04 LTS (Focal Fossa) (64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                SUSE Linux Enterprise Server 15 (64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                SUSE Linux Enterprise Server 12 (64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+
+    <table id="table-limited-support" tabstyle="oracle-all">
+      <title>Legacy Guest Operating Systems With Limited Support</title>
+      <tgroup cols="2">
+        <thead>
+          <row>
+            <entry><para>
+                <emphasis role="bold">Operating System</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">Comments</emphasis>
+              </para></entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><para>
+                Windows 7 (32-bit and 64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Windows Vista SP2 and later (32-bit and 64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Windows XP (32-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Windows Vista (32-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Windows Server 2008 and 2008 R2 (32-bit and 64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Windows Server 2003 (32-bit and 64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Oracle Linux 5 (32-bit and 64-bit)
+              </para></entry>
+            <entry><para>
+                Includes Red Hat Enterprise Linux 5, CentOS 5
+              </para></entry>
+          </row>
+          <row>
+            <entry><para>
+                Ubuntu 14.04.5 LTS (Trusty Tahr) (32-bit and 64-bit)
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+          <row>
+            <entry><para>
+                OS/2 Warp 4.5
+              </para></entry>
+            <entry><para></para></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
 
     <sect2 id="intro-macosxguests">
 
@@ -1808,7 +1715,7 @@
                      width="10cm" />
         </imageobject>
       </mediaobject>
-      </figure>
+    </figure>
 
     <para>
       Depending on the guest OS type that you selected when you created
@@ -1820,8 +1727,8 @@
       <listitem>
         <para>
           <emphasis role="bold">IDE controller.</emphasis> A virtual
-          CD/DVD drive is attached to the secondary master port of the
-          IDE controller.
+          CD/DVD drive is attached to device 0 on the secondary channel
+          of the IDE controller.
         </para>
       </listitem>
 
@@ -1918,11 +1825,10 @@
             <para>
               The <emphasis role="bold">device slot</emphasis> of the
               controller that the virtual disk is connected to. IDE
-              controllers have four slots which have traditionally been
-              called primary master, primary slave, secondary master,
-              and secondary slave. By contrast, SATA and SCSI
-              controllers offer you up to 30 slots for attaching virtual
-              devices.
+              controllers have four slots: primary device 0, primary
+              device 1, secondary device 0, and secondary device 1. By
+              contrast, SATA and SCSI controllers offer you up to 30
+              slots for attaching virtual devices.
             </para>
           </listitem>
 

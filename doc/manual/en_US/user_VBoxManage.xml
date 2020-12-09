@@ -696,8 +696,8 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
     <para>
       This command changes the properties of a registered virtual
       machine which is not running. Most of the properties that this
-      command makes available correspond to the VM settings that
-      &product-name; graphical user interface displays in each VM's
+      command makes available correspond to the VM settings that the
+      VirtualBox Manager displays in each VM's
       <emphasis role="bold">Settings</emphasis> dialog. These are
       described in <xref linkend="BasicConcepts" />. However, some of
       the more advanced settings are only available through the
@@ -6073,9 +6073,9 @@ Value: 2006.01.01</screen>
     <para>
       This command is used to change global settings which affect the
       entire &product-name; installation. Some of these correspond to
-      the settings in the <emphasis role="bold">Global
-      Settings</emphasis> dialog in the graphical user interface. The
-      following properties are available:
+      the settings in the <emphasis role="bold">Preferences</emphasis>
+      dialog in the VirtualBox Manager. The following properties are
+      available:
     </para>
 
     <variablelist>
@@ -9015,7 +9015,7 @@ Value: 2006.01.01</screen>
 
   <xi:include href="user_man_VBoxManage-signova.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_man_VBoxManage-updatecheck.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-updatecheck.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 <!-- TODO: Figure out how we can handle other manpages. The xml is bolted to
              sect1, so it's not possible to have them "in place" -->

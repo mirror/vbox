@@ -55,7 +55,7 @@
 
     <para>
       In a computing device, hard disks and CD/DVD drives are connected
-      to a device called hard disk controller which drives hard disk
+      to a device called a hard disk controller, which drives hard disk
       operation and data transfers. &product-name; can emulate the most
       common types of hard disk controllers typically found in computing
       devices: IDE, SATA (AHCI), SCSI, SAS, USB-based, NVMe and
@@ -72,20 +72,20 @@
           worked only with hard disks, but was later extended to also
           support CD-ROM drives and other types of removable media. In
           physical PCs, this standard uses flat ribbon parallel cables
-          with 40 or 80 wires. Each such cable can connect two devices
-          to a controller, which have traditionally been called
-          <emphasis>master</emphasis> and <emphasis>slave</emphasis>.
-          Typical PCs had two connectors for such cables. As a result,
-          support for up to four IDE devices was most common.
+          with 40 or 80 wires. Each such cable can connect two devices,
+          called device 0 and device 1, to a controller. Typical PCs had
+          two connectors for such cables. As a result, support for up to
+          four IDE devices was most common: primary device 0, primary
+          device 1, secondary device 0, and secondary device 1.
         </para>
 
         <para>
           In &product-name;, each virtual machine may have one IDE
           controller enabled, which gives you up to four virtual storage
           devices that you can attach to the machine. By default, one of
-          these virtual storage devices, the secondary master, is
-          preconfigured to be the virtual machine's virtual CD/DVD
-          drive. However, you can change the default setting.
+          these virtual storage devices, device 0 on the secondary
+          channel, is preconfigured to be the virtual machine's virtual
+          CD/DVD drive. However, you can change the default setting.
         </para>
 
         <para>
@@ -105,7 +105,7 @@
         <para>
           After you have created a new virtual machine with the
           <emphasis role="bold">New Virtual Machine</emphasis> wizard of
-          the graphical user interface, you will typically see one IDE
+          the VirtualBox Manager, you will typically see one IDE
           controller in the machine's
           <emphasis role="bold">Storage</emphasis> settings. The virtual
           CD/DVD drive will be attached to one of the four ports of this
@@ -313,16 +313,16 @@
           <emphasis role="bold">Virtual I/O Device SCSI</emphasis> is a
           standard to connect virtual storage devices like hard disks or
           optical drives to a VM. Recent Linux and Windows versions
-          support these devices (Windows needs additional drivers).
-          Currently the virtio-scsi controller is experimental.
+          support these devices, but Windows needs additional drivers.
+          Currently virtio-scsi controller support is experimental.
         </para>
 
         <warning>
           <para>
             The virtio-scsi controller will only be seen by OSes with
-            device support for it. In particular, <emphasis>there is
-            no built-in support in Windows</emphasis>. So Windows will
-            not see such disks unless you install additional drivers.
+            device support for it. In particular, <emphasis>there is no
+            built-in support in Windows</emphasis>. So Windows will not
+            see such disks unless you install additional drivers.
           </para>
         </warning>
       </listitem>
@@ -360,8 +360,8 @@
 
       <listitem>
         <para>
-          Up to 255 slots attached to the SAS controller, if enabled
-          and supported by the guest OS.
+          Up to 255 slots attached to the SAS controller, if enabled and
+          supported by the guest OS.
         </para>
       </listitem>
 
@@ -381,8 +381,8 @@
 
       <listitem>
         <para>
-          Up to 256 slots attached to the virtio-scsi controller, if enabled
-          and supported by the guest OS.
+          Up to 256 slots attached to the virtio-scsi controller, if
+          enabled and supported by the guest OS.
         </para>
       </listitem>
 
@@ -543,7 +543,7 @@
 
     <figure id="fig-virtual-media-manager">
       <title>The Virtual Media Manager</title>
-      <mediaobject>
+    <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/virtual-disk-manager.png"
                      width="12cm" />

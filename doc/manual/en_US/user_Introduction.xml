@@ -164,7 +164,7 @@
 
       <listitem>
         <para>
-          <emphasis role="strong">Host operating system (host
+          <emphasis role="bold">Host operating system (host
           OS).</emphasis> This is the OS of the physical computer on
           which &product-name; was installed. There are versions of
           &product-name; for Windows, Mac OS X, Linux, and Oracle
@@ -180,7 +180,7 @@
 
       <listitem>
         <para>
-          <emphasis role="strong">Guest operating system (guest
+          <emphasis role="bold">Guest operating system (guest
           OS).</emphasis> This is the OS that is running inside the
           virtual machine. Theoretically, &product-name; can run any x86
           OS such as DOS, Windows, OS/2, FreeBSD, and OpenBSD. But to
@@ -199,14 +199,13 @@
 
       <listitem>
         <para>
-          <emphasis role="strong">Virtual machine (VM).</emphasis> This
-          is the special environment that &product-name; creates for
-          your guest OS while it is running. In other words, you run
-          your guest OS <emphasis>in</emphasis> a VM. Normally, a VM is
-          shown as a window on your computer's desktop. Depending on
-          which of the various frontends of &product-name; you use, the
-          VM might be shown in full screen mode or remotely on another
-          computer.
+          <emphasis role="bold">Virtual machine (VM).</emphasis> This is
+          the special environment that &product-name; creates for your
+          guest OS while it is running. In other words, you run your
+          guest OS <emphasis>in</emphasis> a VM. Normally, a VM is shown
+          as a window on your computer's desktop. Depending on which of
+          the various frontends of &product-name; you use, the VM might
+          be shown in full screen mode or remotely on another computer.
         </para>
 
         <para>
@@ -227,8 +226,8 @@
 
       <listitem>
         <para>
-          <emphasis role="strong">Guest Additions.</emphasis> This
-          refers to special software packages which are shipped with
+          <emphasis role="bold">Guest Additions.</emphasis> This refers
+          to special software packages which are shipped with
           &product-name; but designed to be installed
           <emphasis>inside</emphasis> a VM to improve performance of the
           guest OS and to add extra features. See
@@ -671,7 +670,7 @@
 
           <listitem>
             <para>
-              Red Hat Enterprise Linux 6, 7 and 8
+              CentOS/Red Hat Enterprise Linux 6, 7 and 8
             </para>
           </listitem>
 
@@ -736,9 +735,7 @@
     </itemizedlist>
 
     <para>
-      Note that the above list is informal. Oracle support for customers
-      who have a support contract is limited to a subset of the listed
-      host OSes. Also, any feature which is marked as
+      Note that any feature which is marked as
       <emphasis>experimental</emphasis> is not supported. Feedback and
       suggestions about such features are welcome.
     </para>
@@ -790,12 +787,11 @@
           extension packs can be downloaded which extend the
           functionality of the &product-name; base package. Currently,
           Oracle provides a single extension pack, available from:
-          <ulink
-          url="http://www.virtualbox.org" />. The
-          extension pack provides the following added functionality:
+          <ulink url="http://www.virtualbox.org" />. The extension pack
+          provides the following added functionality:
         </para>
 
-        <orderedlist>
+        <itemizedlist>
 
           <listitem>
             <para>
@@ -807,8 +803,7 @@
           <listitem>
             <para>
               The virtual USB 3.0 (xHCI) device. See
-              <xref
-                linkend="settings-usb" />.
+              <xref linkend="settings-usb" />.
             </para>
           </listitem>
 
@@ -846,7 +841,13 @@
             </para>
           </listitem>
 
-        </orderedlist>
+          <listitem>
+            <para>
+              Cloud integration features. See <xref linkend="ovf"/>.
+            </para>
+          </listitem>
+
+        </itemizedlist>
 
         <para>
           &product-name; extension packages have a
@@ -929,7 +930,7 @@
 
     <figure id="fig-vbox-manager-initial">
       <title>VirtualBox Manager Window, After Initial Startup</title>
-      <mediaobject>
+    <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/virtualbox-main-empty.png"
                      width="10cm" />
@@ -964,7 +965,7 @@
 
     <figure id="fig-vbox-manager-populated">
       <title>VirtualBox Manager Window, After Creating Virtual Machines</title>
-      <mediaobject>
+    <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/virtualbox-main.png"
                      width="12cm" />
@@ -986,7 +987,7 @@
 
     <figure id="fig-new-vm-name">
       <title>Creating a New Virtual Machine: Name and Operating System</title>
-      <mediaobject>
+    <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/create-vm-1.png"
                      width="10cm" />
@@ -1110,7 +1111,7 @@
 
         <figure id="fig-new-vm-hard-disk">
           <title>Creating a New Virtual Machine: Hard Disk</title>
-         <mediaobject>
+        <mediaobject>
             <imageobject>
               <imagedata align="center" fileref="images/create-vm-2.png"
                            width="10cm" />
@@ -1215,7 +1216,7 @@
 
         <figure id="fig-new-vm-vdi">
           <title>Creating a New Virtual Machine: File Location and Size</title>
-          <mediaobject>
+        <mediaobject>
             <imageobject>
               <imagedata align="center" fileref="images/create-vdi-1.png"
                          width="10cm" />
@@ -1428,6 +1429,7 @@
                        width="7cm" />
           </imageobject>
         </mediaobject>
+
       </figure>
 
       <para>
@@ -1876,6 +1878,7 @@
             width="10cm" />
         </imageobject>
       </mediaobject>
+
     </figure>
 
     <para>
@@ -2566,35 +2569,7 @@
         <para>
           <emphasis role="bold">Cloud service formats.</emphasis> Export
           to and import from cloud services such as &oci; is supported.
-          See the following topics:
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              <xref linkend="cloud-export-oci"/>
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              <xref linkend="cloud-import-oci"/>
-            </para>
-          </listitem>
-
-        </itemizedlist>
-
-        <para>
-          Before using &product-name; with &oci; there are some initial
-          configuration steps you need to consider. See
-          <xref linkend="cloud-integration-steps"/>.
-        </para>
-
-        <para>
-          &product-name; can also be used to create new instances from a
-          custom image stored on &oci;. See
-          <xref linkend="cloud-new-vm"/>
+          See <xref linkend="cloud-integration"/>.
         </para>
       </listitem>
 
@@ -2724,6 +2699,7 @@
                      width="12cm" />
               </imageobject>
             </mediaobject>
+
           </figure>
 
           <para>
@@ -2937,52 +2913,73 @@
 
     </sect2>
 
+  </sect1>
+
+  <sect1 id="cloud-integration">
+
+    <title>Integrating with &oci;</title>
+
+    <para>
+      This section describes how to use the features of &product-name;
+      to integrate with &oci;.
+    </para>
+
+    <para>
+      Integrating with &oci; involves the following steps:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Prepare for &oci;
+          Integration.</emphasis> Before using &product-name; with &oci;
+          there are some initial configuration steps you may need to do.
+          See <xref linkend="cloud-integration-steps"/>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Use &product-name; with
+          &oci;.</emphasis> <xref linkend="cloud-vbox-oci-tasks"/>
+          describes how you can use &product-name; with &oci;.
+        </para>
+      </listitem>
+
+    </itemizedlist>
+
     <sect2 id="cloud-integration-steps">
 
       <title>Preparing for &oci; Integration</title>
 
       <para>
-        There are some common configuration steps you need to take
-        before using &product-name; to integrate with your &oci;
-        account.
+        Perform the following configuration steps before using
+        &product-name; to integrate with your &oci; account.
       </para>
 
-      <itemizedlist>
+      <orderedlist>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Install the Extension Pack.</emphasis>
+            Cloud integration features are only available when you
+            install the &product-name; Extension Pack. See
+            <xref linkend="intro-installing"/>.
+          </para>
+        </listitem>
 
         <listitem>
           <para>
             <emphasis role="bold">Create a key pair.</emphasis> Generate
             an API signing key pair that is used for API requests to
-            &oci;.
-          </para>
-
-          <itemizedlist>
-
-            <listitem>
-              <para>
-                The key pair is usually installed in the
-                <filename>.oci</filename> folder in your home directory.
-                For example, <filename>~/.oci</filename> on a Linux
-                system.
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                Upload the public key of the key pair to the cloud
-                service.
-              </para>
-            </listitem>
-
-          </itemizedlist>
-
-          <para>
-            For step-by-step instructions for creating and uploading an
-            API signing key for &oci;, see:
+            &oci;. See <xref linkend="cloud-create-api-keypair"/>.
           </para>
 
           <para>
-            <ulink url="https://docs.cloud.oracle.com/iaas/Content/API/Concepts/apisigningkey.htm#How" />
+            Upload the public key of the key pair from your client
+            device to the cloud service. See
+            <xref linkend="cloud-upload-public-key"/>.
           </para>
         </listitem>
 
@@ -2990,91 +2987,593 @@
           <para>
             <emphasis role="bold">Create a cloud profile.</emphasis> The
             cloud profile contains resource identifiers for your cloud
-            account, such as your user OCID, and the fingerprint for
-            your public key. You can create a cloud profile in the
-            following ways:
+            account, such as your user OCID, and details of your key
+            pair. See <xref linkend="cloud-create-cloud-profile"/>.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+    </sect2>
+
+    <sect2 id="cloud-create-api-keypair">
+
+      <title>Creating an API Signing Key Pair</title>
+
+      <para></para>
+
+      <para>
+        To use the cloud integration features of &product-name;, you
+        must generate an API signing key pair that is used for API
+        requests to &oci;.
+      </para>
+
+      <para>
+        Your API requests are signed with your private key, and &oci;
+        uses the public key to verify the authenticity of the request.
+        You must upload the public key to the &oci; Console.
+      </para>
+
+      <note>
+        <para>
+          This key pair is not the same SSH key that you use to access
+          compute instances on &oci;.
+        </para>
+      </note>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            (Optional) Create a <filename>.oci</filename> directory to
+            store the key pair.
+          </para>
+
+<screen>$ mkdir ~/.oci</screen>
+
+          <para>
+            The key pair is usually installed in the
+            <filename>.oci</filename> folder in your home directory. For
+            example, <filename>~/.oci</filename> on a Linux system.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Generate the private key.
+          </para>
+
+          <para>
+            Use the <command>openssl</command> command.
           </para>
 
           <itemizedlist>
 
             <listitem>
               <para>
-                Automatically, by using the <emphasis role="bold">Cloud
-                Profile Manager</emphasis>. See
-                <xref linkend="ovf-cloud-profile-manager"/>.
+                To generate a private key with a passphrase:
+              </para>
+
+<screen>$ openssl genrsa -out ~/.oci/oci_api_key.pem -aes128 2048 </screen>
+            </listitem>
+
+            <listitem>
+              <para>
+                To generate a private key without a passphrase:
+              </para>
+
+<screen>$ openssl genrsa -out ~/.oci/oci_api_key.pem 2048</screen>
+            </listitem>
+
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>
+            Change permissions for the private key.
+          </para>
+
+<screen>$ chmod 600 ~/.oci/oci_api_key.pem</screen>
+
+          <para>
+            Generate the public key.
+          </para>
+
+<screen>$ openssl rsa -pubout -in ~/.oci/oci_api_key.pem -out ~/.oci/oci_api_key_public.pem</screen>
+        </listitem>
+
+      </orderedlist>
+
+    </sect2>
+
+    <sect2 id="cloud-upload-public-key">
+
+      <title>Uploading the Public Key to &oci;</title>
+
+      <para>
+        Use the following steps to upload your public key to &oci;.
+      </para>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Log in to the &oci; Console.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Display the <emphasis role="bold">User Settings</emphasis>
+            page.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Profile</emphasis>,
+            <emphasis role="bold">User Settings</emphasis>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Display your current API signing keys.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Resources</emphasis>,
+            <emphasis role="bold">API Keys</emphasis>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Upload the public key.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Add Public Key</emphasis>.
+          </para>
+
+          <para>
+            The <emphasis role="bold">Add Public Key</emphasis> dialog
+            is displayed.
+          </para>
+
+          <figure id="fig-upload-key-oci">
+            <title>Upload Public Key Dialog in &oci; Console</title>
+            <mediaobject>
+              <imageobject>
+                <imagedata align="center" fileref="images/upload-key.png"
+                  width="12cm" />
+              </imageobject>
+            </mediaobject>
+
+          </figure>
+
+          <para>
+            Select one of the following options:
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                <emphasis role="bold">Choose Public Key File.</emphasis>
+                This option enables you to browse to the public key file
+                on your local hard disk.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                Automatically, by using the <command>VBoxManage
-                cloudprofile</command> command. See
-                <xref linkend="vboxmanage-cloudprofile"/>.
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                Manually, by creating an <filename>oci_config</filename>
-                file in your &product-name; global configuration
-                directory. For example, this is
-                <filename>$HOME/.config/VirtualBox/oci_config</filename>
-                on a Linux host.
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                Manually, by creating a <filename>config</filename> file
-                in your &oci; configuration directory. For example, this
-                is <filename>$HOME/.oci/config</filename> on a Linux
-                host.
-              </para>
-
-              <para>
-                This is the same file that is used by the &oci; command
-                line interface.
-              </para>
-
-              <para>
-                &product-name; automatically uses the
-                <filename>config</filename> file if no cloud profile
-                file is present in your global configuration directory.
-                Alternatively, you can import this file manually into
-                the Cloud Profile Manager.
+                <emphasis role="bold">Paste Public Keys.</emphasis> This
+                option enables you to paste the contents of the public
+                key file into the window in the dialog box.
               </para>
             </listitem>
 
           </itemizedlist>
 
           <para>
-            For more information about the cloud profile settings used
-            by &oci; see:
+            Click <emphasis role="bold">Add</emphasis> to upload the
+            public key.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+    </sect2>
+
+    <sect2 id="cloud-create-cloud-profile">
+
+      <title>Creating a Cloud Profile</title>
+
+      <para>
+        &product-name; uses a <emphasis>cloud profile</emphasis> to
+        connect to &oci;. A cloud profile is a text file that contains
+        details of your key files and Oracle Cloud Identifier (OCID)
+        resource identifiers for your cloud account, such as the
+        following:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Fingerprint of the public
+            key.</emphasis> To obtain the fingerprint, you can use the
+            <command>openssl</command> command:
           </para>
 
+<screen>$ openssl rsa -pubout -outform DER -in ~/.oci/oci_api_key.pem | openssl md5 -c</screen>
+        </listitem>
+
+        <listitem>
           <para>
-            <ulink url="https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm" />
+            <emphasis role="bold">Location of the private key on the
+            client device.</emphasis> Specify the full path to the
+            private key.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <emphasis role="bold">Custom Linux images.</emphasis> To
-            export a custom Linux image, prepare the VM as described
-            here:
-          </para>
-
-          <para>
-            <ulink url="https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/importingcustomimagelinux.htm" />
+            <emphasis role="bold">(Optional) Passphrase for the private
+            key.</emphasis>. This is only required if the key is
+            encrypted.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <emphasis role="bold">Subnets.</emphasis> When exporting a
-            VM to cloud, ensure that the subnets that are used by source
-            VMs are available in the target compartment on the cloud
-            service.
+            <emphasis role="bold">Region</emphasis>. Shown on the &oci;
+            Console. Click
+            <emphasis role="bold">Administration</emphasis>,
+            <emphasis role="bold">Tenancy Details</emphasis>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Tenancy OCID.</emphasis> Shown on the
+            &oci; Console. Click
+            <emphasis role="bold">Administration</emphasis>,
+            <emphasis role="bold">Tenancy Details</emphasis>.
+          </para>
+
+          <para>
+            A link enables you to copy the Tenancy OCID.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Compartment OCID.</emphasis> Shown on
+            the &oci; Console. Click
+            <emphasis role="bold">Identity</emphasis>,
+            <emphasis role="bold">Compartments</emphasis>.
+          </para>
+
+          <para>
+            A link enables you to copy the Compartment OCID.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">User OCID.</emphasis> Shown on the
+            &oci; Console. Click
+            <emphasis role="bold">Profile</emphasis>,
+            <emphasis role="bold">User Settings</emphasis>.
+          </para>
+
+          <para>
+            A link enables you to copy the User OCID.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>
+        You can create a cloud profile in the following ways:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            Automatically, by using the <emphasis role="bold">Cloud
+            Profile Manager</emphasis>. See
+            <xref linkend="cloud-using-cloud-profile-manager"/>.
+          </para>
+
+          <para>
+            The Cloud Profile Manager is a component of &product-name;
+            that enables you to create, edit, and manage cloud profiles
+            for your cloud service accounts.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Automatically, by using the <command>VBoxManage
+            cloudprofile</command> command. See
+            <xref linkend="vboxmanage-cloudprofile"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Manually, by creating an <filename>oci_config</filename>
+            file in your &product-name; global configuration directory.
+            For example, this is
+            <filename>$HOME/.config/VirtualBox/oci_config</filename> on
+            a Linux host.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Manually, by creating a <filename>config</filename> file in
+            your &oci; configuration directory. For example, this is
+            <filename>$HOME/.oci/config</filename> on a Linux host.
+          </para>
+
+          <para>
+            This is the same file that is used by the &oci; command line
+            interface.
+          </para>
+
+          <para>
+            &product-name; automatically uses the
+            <filename>config</filename> file if no cloud profile file is
+            present in your global configuration directory.
+            Alternatively, you can import this file manually into the
+            Cloud Profile Manager.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+    </sect2>
+
+    <sect2 id="cloud-using-cloud-profile-manager">
+
+      <title>Using the Cloud Profile Manager</title>
+
+      <para>
+        This section describes how to use the Cloud Profile Manager to
+        create a cloud profile.
+      </para>
+
+      <para>
+        To open the Cloud Profile Manager click
+        <emphasis role="bold">File</emphasis>,
+        <emphasis role="bold">Cloud Profile Manager</emphasis> in the
+        VirtualBox Manager window.
+      </para>
+
+      <figure id="fig-cloud-profile-manager">
+        <title>The Cloud Profile Manager</title>
+        <mediaobject>
+          <imageobject>
+            <imagedata align="center" fileref="images/cloud-profile-manager.png"
+              width="12cm" />
+          </imageobject>
+        </mediaobject>
+      </figure>
+
+      <para>
+        You can use the Cloud Profile Manager in the following ways:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            To create a new cloud profile automatically
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            To create a cloud profile by importing settings from your
+            &oci; configuration file.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>
+        Perform the following steps to create a new cloud profile
+        automatically, using the Cloud Profile Manager:
+      </para>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Click the <emphasis role="bold">Add</emphasis> icon and
+            specify a <emphasis role="bold">Name</emphasis> for the
+            profile.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Click <emphasis role="bold">Properties</emphasis> and
+            specify the following property values for the profile:
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                Compartment OCID
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Fingerprint of the public key
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Location of the private key on the client device
+              </para>
+            </listitem>
+
+<!--       <listitem>
+              <para>
+                (Optional) Passphrase for the private key, if the key is
+                encrypted
+              </para>
+            </listitem>-->
+
+            <listitem>
+              <para>
+                Region OCID
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Tenancy OCID
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                User OCID
+              </para>
+            </listitem>
+
+          </itemizedlist>
+
+          <para>
+            Some of these are settings for your &oci; account, which you
+            can view from the &oci; Console.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Click <emphasis role="bold">Apply</emphasis> to save your
+            changes.
+          </para>
+
+          <para>
+            The cloud profile settings are saved in the
+            <filename>oci_config</filename> file in your &product-name;
+            global settings directory.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+      <para>
+        Perform the following steps to import an existing &oci;
+        configuration file into the Cloud Profile Manager:
+      </para>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Ensure that a <filename>config</filename> file is present in
+            your &oci; configuration directory. For example, this is
+            <filename>$HOME/.oci/config</filename> on a Linux host.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Click the <emphasis role="bold">Import</emphasis> icon to
+            open a dialog that prompts you to import cloud profiles from
+            external files.
+          </para>
+
+          <warning>
+            <para>
+              This action overwrites any cloud profiles that are in your
+              &product-name; global settings directory.
+            </para>
+          </warning>
+        </listitem>
+
+        <listitem>
+          <para>
+            Click <emphasis role="bold">Import</emphasis>.
+          </para>
+
+          <para>
+            Your cloud profile settings are saved to the
+            <filename>oci_config</filename> file in your &product-name;
+            global settings directory.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Click <emphasis role="bold">Properties</emphasis> to show
+            the cloud profile settings.
+          </para>
+
+          <para>
+            Double-click on the appropriate field to change the value.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Click <emphasis role="bold">Apply</emphasis> to save your
+            changes.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+    </sect2>
+
+    <sect2 id="cloud-vbox-oci-tasks">
+
+      <title>Using &product-name; With &oci;</title>
+
+      <para>
+        This section describes how you can use &product-name; with &oci;
+        to do the following tasks:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            Export an &product-name; VM to &oci;. See
+            <xref linkend="cloud-export-oci"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Import a cloud instance into &product-name;. See
+            <xref linkend="cloud-import-oci"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Create a new cloud instance from a custom image stored on
+            &oci;. See <xref linkend="cloud-new-vm"/>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Use the <command>VBoxManage</command> commands to integrate
+            with &oci; and perform cloud operations. See
+            <xref linkend="cloud-using-cli"/>.
           </para>
         </listitem>
 
@@ -3088,19 +3587,20 @@
 
       <para>
         &product-name; supports the export of VMs to an &oci; service.
-        The exported VM is stored on &oci; as a custom image. You can
-        configure whether a cloud instance is created and started after
-        the export process has completed.
+        The exported VM is stored on &oci; as a custom Linux image. You
+        can configure whether a cloud instance is created and started
+        after the export process has completed.
       </para>
 
-      <para>
-        Before you can export a VM to &oci; ensure that you have done
-        the required preconfiguration tasks, as described in
-        <xref linkend="cloud-integration-steps"/>.
-      </para>
+      <note>
+        <para>
+          Before you export a VM to &oci;, you must prepare the VM as
+          described in <xref linkend="cloud-export-oci-prepare-vm"/>.
+        </para>
+      </note>
 
       <para>
-        Perform the following steps to export a VM to &oci;:
+        Use the following steps to export a VM to &oci;:
       </para>
 
       <orderedlist>
@@ -3128,12 +3628,7 @@
 
           <para>
             In the <emphasis role="bold">Account</emphasis> drop-down
-            list, select your &oci; account.
-          </para>
-
-          <para>
-            You can set up &oci; accounts by using the Cloud Profile
-            Manager.
+            list, select the cloud profile for your &oci; account.
           </para>
 
           <para>
@@ -3144,13 +3639,12 @@
           <figure id="fig-export-appliance-oci">
             <title>Appliance Settings Screen, Showing Cloud Profile and Machine Creation
               Settings</title>
-            <mediaobject>
+           <mediaobject>
               <imageobject>
                 <imagedata align="center" fileref="images/export-appliance-oci.png"
                   width="12cm" />
               </imageobject>
             </mediaobject>
-
           </figure>
 
           <para>
@@ -3195,7 +3689,7 @@
 
         <listitem>
           <para>
-            Optionally edit storage settings used for the exported
+            (Optional) Edit storage settings used for the exported
             virtual machine in &oci;. You can change the following
             settings:
           </para>
@@ -3240,10 +3734,11 @@
           </itemizedlist>
 
           <para>
-            Click <emphasis role="bold">Export</emphasis> to export the
-            VM to &oci;.
+            Click <emphasis role="bold">Export</emphasis> to continue.
           </para>
+        </listitem>
 
+        <listitem>
           <para>
             Depending on the selection in the
             <emphasis role="bold">Machine Creation</emphasis> field, the
@@ -3279,6 +3774,230 @@
         <xref linkend="vboxmanage-export-cloud"/>.
       </para>
 
+      <sect3 id="cloud-export-oci-prepare-vm">
+
+        <title>Preparing a VM for Export to &oci;</title>
+
+        <para>
+          &oci; provides the option to import a custom Linux image.
+          Before an &product-name; image can be exported to &oci;, the
+          custom image needs to be prepared to ensure that instances
+          launched from the custom image can boot correctly and that
+          network connections will work. This section provides advice on
+          how to prepare a Linux image for export from &product-name;.
+        </para>
+
+        <para>
+          The following list shows some tasks to consider when preparing
+          an Oracle Linux VM for export:
+        </para>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Use DHCP for network
+              addresses.</emphasis> Configure the VM to use a DHCP
+              server to allocate network addresses, rather than using a
+              static IP address. The &oci; instance will then be
+              allocated an IP address automatically.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Do not specify a MAC
+              address.</emphasis> The network interface configuration
+              for the VM must not specify the MAC address.
+            </para>
+
+            <para>
+              Remove the HWADDR setting from the
+              <filename>/etc/sysconfig/ifcfg-<replaceable>devicename</replaceable></filename>
+              network script.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Disable persistent network device
+              naming rules.</emphasis> This means that the &oci;
+              instance will use the same network device names as the VM.
+            </para>
+
+            <orderedlist>
+
+              <listitem>
+                <para>
+                  Change the GRUB kernel parameters.
+                </para>
+
+                <para>
+                  Add <literal>net.ifnames=0</literal> and
+                  <literal>biosdevname=0</literal> as kernel parameter
+                  values to the <literal>GRUB_CMDLINE_LINUX</literal>
+                  variable.
+                </para>
+              </listitem>
+
+              <listitem>
+                <para>
+                  Update the GRUB configuration.
+                </para>
+
+<screen># grub2-mkconfig -o /boot/grub2/grub.cfg</screen>
+              </listitem>
+
+              <listitem>
+                <para>
+                  Disable any <literal>udev</literal> rules for network
+                  device naming.
+                </para>
+
+                <para>
+                  For example, if an automated <literal>udev</literal>
+                  rule exists for <literal>net-persistence</literal>:
+                </para>
+
+<screen># cd /etc/udev/rules.d
+# rm -f 70-persistent-net.rules
+# ln -s /dev/null /etc/udev/rules.d/70-persistent-net.rules</screen>
+              </listitem>
+
+            </orderedlist>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Enable the serial
+              console.</emphasis> This enables you to troubleshoot the
+              instance when it is running on &oci;.
+            </para>
+
+            <orderedlist>
+
+              <listitem>
+                <para>
+                  Edit the <filename>/etc/default/grub</filename> file,
+                  as follows:
+                </para>
+
+                <itemizedlist>
+
+                  <listitem>
+                    <para>
+                      Remove the <literal>resume</literal> setting from
+                      the kernel parameters. This setting slows down
+                      boot time significantly.
+                    </para>
+                  </listitem>
+
+                  <listitem>
+                    <para>
+                      Replace <literal>GRUB_TERMINAL="gfxterm"</literal>
+                      with <literal>GRUB_TERMINAL="console
+                      serial"</literal>. This configures use of the
+                      serial console instead of a graphical terminal.
+                    </para>
+                  </listitem>
+
+                  <listitem>
+                    <para>
+                      Add <literal>GRUB_SERIAL_COMMAND="serial --unit=0
+                      --speed=115200"</literal>. This configures the
+                      serial connection.
+                    </para>
+                  </listitem>
+
+                  <listitem>
+                    <para>
+                      Add <literal>console=tty0
+                      console=ttyS0,115200</literal> to the
+                      <literal>GRUB_CMDLINE_LINUX</literal> variable.
+                      This adds the serial console to the Linux kernel
+                      boot parameters.
+                    </para>
+                  </listitem>
+
+                </itemizedlist>
+              </listitem>
+
+              <listitem>
+                <para>
+                  Regenerate the GRUB configuration.
+                </para>
+
+<screen># grub2-mkconfig -o /boot/grub2/grub.cfg</screen>
+              </listitem>
+
+              <listitem>
+                <para>
+                  To verify the changes, reboot the machine and run the
+                  <command>dmesg</command> command to look for the
+                  updated kernel parameters.
+                </para>
+
+<screen># dmesg |grep console=ttyS0</screen>
+              </listitem>
+
+            </orderedlist>
+          </listitem>
+
+          <listitem>
+            <para>
+              <emphasis role="bold">Enable paravirtualized device
+              support.</emphasis> You do this by adding the
+              <literal>virtio</literal> drivers to the
+              <literal>initrd</literal> for the VM.
+            </para>
+
+            <orderedlist>
+
+              <listitem>
+                <para>
+                  This procedure works only on machines with a Linux
+                  kernel of version 3.4 or later. Check that the VM is
+                  running a supported kernel:
+                </para>
+
+<screen># uname -a</screen>
+              </listitem>
+
+              <listitem>
+                <para>
+                  Use the <literal>dracut</literal> tool to rebuild
+                  <literal>initrd</literal>. Add the
+                  <literal>qemu</literal> module, as follows:
+                </para>
+
+<screen># dracut –-logfile /var/log/Dracut.log –-force –-add qemu</screen>
+              </listitem>
+
+              <listitem>
+                <para>
+                  Verify that the <literal>virtio</literal> drivers are
+                  now present in <literal>initrd</literal>.
+                </para>
+
+<screen> # lsinitrd |grep virtio</screen>
+              </listitem>
+
+            </orderedlist>
+          </listitem>
+
+        </itemizedlist>
+
+        <para>
+          For more information about importing a custom Linux image into
+          &oci;, see also:
+        </para>
+
+        <para>
+          <ulink url="https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/importingcustomimagelinux.htm" />
+        </para>
+
+      </sect3>
+
     </sect2>
 
     <sect2 id="cloud-import-oci">
@@ -3286,18 +4005,8 @@
       <title>Importing an Instance from &oci;</title>
 
       <para>
-        &product-name; supports the import of cloud instances from an
-        &oci; service.
-      </para>
-
-      <para>
-        Before you can import an instance from &oci; ensure that you
-        have done the required preconfiguration tasks, as described in
-        <xref linkend="cloud-integration-steps"/>.
-      </para>
-
-      <para>
-        Perform the following steps to import an instance from &oci;:
+        Perform the following steps to import a cloud instance from
+        &oci; into &product-name;:
       </para>
 
       <orderedlist>
@@ -3317,12 +4026,7 @@
 
           <para>
             In the <emphasis role="bold">Account</emphasis> drop-down
-            list, select your &oci; account.
-          </para>
-
-          <para>
-            You can set up &oci; accounts by using the Cloud Profile
-            Manager.
+            list, select the cloud profile for your &oci; account.
           </para>
 
           <para>
@@ -3337,14 +4041,14 @@
 
           <para>
             Click <emphasis role="bold">Next</emphasis> to make an API
-            request to the &oci; service and open the
+            request to the &oci; service and display the
             <emphasis role="bold">Appliance Settings</emphasis> screen.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Optionally edit settings for the new local virtual machine.
+            (Optional) Edit settings for the new local virtual machine.
           </para>
 
           <para>
@@ -3358,12 +4062,12 @@
                 <imagedata align="center" fileref="images/import-instance.png"
                   width="12cm" />
               </imageobject>
-           </mediaobject>
+            </mediaobject>
           </figure>
 
           <para>
             Click <emphasis role="bold">Import</emphasis> to import the
-            instance from the cloud service.
+            instance from &oci;.
           </para>
         </listitem>
 
@@ -3450,192 +4154,6 @@
 
     </sect2>
 
-    <sect2 id="ovf-cloud-profile-manager">
-
-      <title>The Cloud Profile Manager</title>
-
-      <para>
-        The Cloud Profile Manager is a component of &product-name; that
-        enables you to create, edit, and manage cloud profiles for your
-        cloud service accounts.
-      </para>
-
-      <figure id="fig-cloud-profile-manager">
-        <title>The Cloud Profile Manager</title>
-        <mediaobject>
-          <imageobject>
-            <imagedata align="center" fileref="images/cloud-profile-manager.png"
-              width="12cm" />
-          </imageobject>
-        </mediaobject>
-      </figure>
-
-      <para>
-        To open the Cloud Profile Manager select
-        <emphasis role="bold">File</emphasis>,
-        <emphasis role="bold">Cloud Profile Manager</emphasis> from the
-        VirtualBox Manager window.
-      </para>
-
-      <para>
-        You can use the Cloud Profile Manager to create a new cloud
-        profile automatically or to create a cloud profile by importing
-        settings from your &oci; configuration file.
-      </para>
-
-      <para>
-        Perform the following steps to create a new cloud profile
-        automatically:
-      </para>
-
-      <orderedlist>
-
-        <listitem>
-          <para>
-            Click the <emphasis role="bold">Add</emphasis> icon and
-            specify a <emphasis role="bold">Name</emphasis> for the
-            profile.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            Click <emphasis role="bold">Properties</emphasis> and
-            specify the following property values for the profile:
-          </para>
-
-          <itemizedlist>
-
-            <listitem>
-              <para>
-                Compartment OCID
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                Fingerprint of the public key
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                Location of the private key on the client device
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                (Optional) Passphrase for the private key, if the key is
-                encrypted
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                Region OCID
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                Tenancy OCID
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                User OCID
-              </para>
-            </listitem>
-
-          </itemizedlist>
-
-          <para>
-            Some of these are settings for your &oci; account, which you
-            can view from the &oci; Console.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            Click <emphasis role="bold">Apply</emphasis> to save your
-            changes.
-          </para>
-
-          <para>
-            The cloud profile settings are saved in the
-            <filename>oci_config</filename> file in your &product-name;
-            global settings directory.
-          </para>
-        </listitem>
-
-      </orderedlist>
-
-      <para>
-        Perform the following steps to import an existing &oci;
-        configuration file:
-      </para>
-
-      <orderedlist>
-
-        <listitem>
-          <para>
-            Ensure that a <filename>config</filename> file is present in
-            your &oci; configuration directory. For example, this is
-            <filename>$HOME/.oci/config</filename> on a Linux host.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            Click the <emphasis role="bold">Import</emphasis> icon to
-            open a dialog that prompts you to import cloud profiles from
-            external files.
-          </para>
-
-          <warning>
-            <para>
-              This action overwrites any cloud profiles that are in your
-              &product-name; global settings directory.
-            </para>
-          </warning>
-        </listitem>
-
-        <listitem>
-          <para>
-            Click <emphasis role="bold">Import</emphasis>.
-          </para>
-
-          <para>
-            Your cloud profile settings are saved to the
-            <filename>oci_config</filename> file in your &product-name;
-            global settings directory.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            Click <emphasis role="bold">Properties</emphasis> to show
-            the cloud profile settings.
-          </para>
-
-          <para>
-            Double-click on the appropriate field to change the value.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            Click <emphasis role="bold">Apply</emphasis> to save your
-            changes.
-          </para>
-        </listitem>
-
-      </orderedlist>
-
-    </sect2>
-
     <sect2 id="cloud-new-vm">
 
       <title>Creating New Cloud Instances from a Custom Image</title>
@@ -3651,12 +4169,6 @@
         custom image means that you can quickly create cloud instances
         without having to upload your image to the cloud service every
         time.
-      </para>
-
-      <para>
-        Before you can create a new cloud instance in &oci; ensure that
-        you have done the required preconfiguration tasks, as described
-        in <xref linkend="cloud-integration-steps"/>.
       </para>
 
       <para>
@@ -3684,12 +4196,7 @@
 
           <para>
             In the <emphasis role="bold">Account</emphasis> drop-down
-            list, select your &oci; account.
-          </para>
-
-          <para>
-            You can set up &oci; accounts by using the Cloud Profile
-            Manager.
+            list, select the cloud profile for your &oci; account.
           </para>
 
           <para>
@@ -3704,7 +4211,7 @@
 
           <figure id="fig-newcloudvm">
             <title>New Cloud VM Wizard, Showing List of Custom Images</title>
-           <mediaobject>
+            <mediaobject>
               <imageobject>
                 <imagedata align="center" fileref="images/newcloudvm.png"
                   width="12cm" />
@@ -3722,7 +4229,7 @@
 
         <listitem>
           <para>
-            Optionally edit settings used for the instance on &oci;.
+            (Optional) Edit settings used for the new instance on &oci;.
           </para>
 
           <para>
@@ -3749,6 +4256,111 @@
         You can also use the <command>VBoxManage cloud
         instance</command> command to create and manage instances on a
         cloud service. See <xref linkend="vboxmanage-cloud"/>.
+      </para>
+
+    </sect2>
+
+    <sect2 id="cloud-using-cli">
+
+      <title>Using VBoxManage Commands With &oci;</title>
+
+      <para>
+        This section includes some examples of how
+        <command>VBoxManage</command> commands can be used to integrate
+        with &oci; and perform common cloud operations.
+      </para>
+
+      <para>
+        <emphasis role="bold">Creating a Cloud Profile</emphasis>
+      </para>
+
+      <para>
+        To create a cloud profile called <literal>vbox-oci</literal>:
+      </para>
+
+<screen>VBoxManage cloudprofile --provider "OCI" --profile="vbox-oci" add \
+--clouduser="ocid1.user.oc1..."  --keyfile="/home/username/.oci/oci_api_key.pem" \
+--tenancy="ocid1.tenancy.oc1..."  --compartment="ocid1.compartment.oc1..."  --region="us-ashburn-1"
+</screen>
+
+      <para>
+        The new cloud profile is added to the
+        <filename>oci_config</filename> file in your &product-name;
+        global configuration directory. For example, this is
+        <filename>$HOME/.VirtualBox/oci_config</filename> on a Windows
+        host.
+      </para>
+
+      <para>
+        <emphasis role="bold">Listing Cloud Instances</emphasis>
+      </para>
+
+      <para>
+        To list the instances in your &oci; compartment:
+      </para>
+
+<screen>VBoxManage cloud --provider="OCI" --profile="vbox-oci" list instances
+</screen>
+
+      <para>
+        <emphasis role="bold">Exporting an &product-name; VM to the
+        Cloud</emphasis>
+      </para>
+
+      <para>
+        To export a VM called <literal>myVM</literal> and create a cloud
+        instance called <literal>myVM_Cloud</literal>:
+      </para>
+
+<screen>VBoxManage export myVM --output OCI:// --cloud 0 --vmname myVM_Cloud \
+--cloudprofile "vbox-oci" --cloudbucket myBucket \
+--cloudshape VM.Standard2.1 --clouddomain US-ASHBURN-AD-1 --clouddisksize 50  \
+--cloudocivcn ocid1.vcn.oc1... --cloudocisubnet ocid1.subnet.oc1... \
+--cloudkeepobject true --cloudlaunchinstance true --cloudpublicip true
+      </screen>
+
+      <para>
+        <emphasis role="bold">Importing a Cloud Instance Into
+        &product-name;</emphasis>
+      </para>
+
+      <para>
+        To import a cloud instance and create an &product-name; VM
+        called <literal>oci_Import</literal>:
+      </para>
+
+<screen>VBoxManage import OCI:// --cloud --vmname oci_Import --memory 4000
+--cpus 3 --ostype FreeBSD_64 --cloudprofile "vbox-oci"
+--cloudinstanceid ocid1.instance.oc1... --cloudbucket myBucket
+  </screen>
+
+      <para>
+        <emphasis role="bold">Creating a New Cloud Instance From a
+        Custom Image</emphasis>
+      </para>
+
+      <para>
+        To create a new cloud instance from a custom image on &oci;:
+      </para>
+
+<screen>VBoxManage cloud --provider="OCI" --profile="vbox-oci" instance create \
+--domain-name="oraclecloud.com" --image-id="ocid1.image.oc1..." --display-name="myInstance" \
+--shape="VM.Standard2.1" --subnet="ocid1.subnet.oc1..."</screen>
+
+      <para>
+        <emphasis role="bold">Terminating a Cloud Instance</emphasis>
+      </para>
+
+      <para>
+        To terminate an instance in your compartment on &oci;:
+      </para>
+
+<screen>VBoxManage cloud --provider="OCI" --profile="vbox-oci" instance terminate \
+--id="ocid1.instance.oc1..." </screen>
+
+      <para>
+        For more details about the available commands for cloud
+        operations, see <xref linkend="vboxmanage-cloud"/>.
       </para>
 
     </sect2>
@@ -3819,7 +4431,8 @@
       <listitem>
         <para>
           <emphasis role="bold">Network.</emphasis> Enables the user to
-          configure the details of Host Only Networks.
+          configure the details of NAT networks. See
+          <xref linkend="network_nat_service"/>.
         </para>
       </listitem>
 

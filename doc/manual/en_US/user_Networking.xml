@@ -474,13 +474,14 @@
 
     <note>
       <para>
-        Even though the NAT engine separates the VM from the host,
-        the VM has access to the host's loopback interface and the
-        network services running on it. The host's loopback interface
-        is accessible as IP address 10.0.2.2. This access to the host's
+        Even though the NAT engine separates the VM from the host, the
+        VM has access to the host's loopback interface and the network
+        services running on it. The host's loopback interface is
+        accessible as IP address 10.0.2.2. This access to the host's
         loopback interface can be extremely useful in some cases, for
         example when running a web application under development in the
-        VM and the database server on the loopback interface on the host.
+        VM and the database server on the loopback interface on the
+        host.
       </para>
     </note>
 
@@ -810,12 +811,20 @@
 
 <screen>VBoxManage list natnetworks</screen>
 
+    <para>
+      NAT networks can also be created, deleted, and configured using
+      the VirtualBox Manager. Click
+      <emphasis role="bold">File</emphasis>,<emphasis role="bold">
+      Preferences</emphasis> and select the
+      <emphasis role="bold">Network</emphasis> page.
+    </para>
+
     <note>
       <para>
-        Even though the NAT service separates the VM from the host,
-        the VM has access to the host's loopback interface and the
-        network services running on it. The host's loopback interface
-        is accessible as IP address 10.0.2.2 (assuming the default
+        Even though the NAT service separates the VM from the host, the
+        VM has access to the host's loopback interface and the network
+        services running on it. The host's loopback interface is
+        accessible as IP address 10.0.2.2 (assuming the default
         configuration, in other configurations it's the respective
         address in the configured IPv4 or IPv6 network range). This
         access to the host's loopback interface can be extremely useful
@@ -1003,10 +1012,10 @@
       <listitem>
         <para>
           Use the VM's <emphasis role="bold">Settings</emphasis> dialog
-          in the &product-name; graphical user interface. In the
-          <emphasis role="bold">Networking</emphasis> category of the
+          in the VirtualBox Manager. In the
+          <emphasis role="bold">Network</emphasis> category of the
           settings dialog, select <emphasis role="bold">Internal
-          Networking</emphasis> from the drop-down list of networking
+          Network</emphasis> from the drop-down list of networking
           modes. Select the name of an existing internal network from
           the drop-down list below, or enter a new name into the
           <emphasis role="bold">Name</emphasis> field.
@@ -1092,8 +1101,8 @@
     </para>
 
     <para>
-      To change a virtual machine's virtual network interface to Host
-      Only mode, do either of the following:
+      To enable a host-only network interface for a virtual machine, do
+      either of the following:
     </para>
 
     <itemizedlist>
@@ -1102,74 +1111,52 @@
         <para>
           Go to the <emphasis role="bold">Network</emphasis> page in the
           virtual machine's <emphasis role="bold">Settings</emphasis>
-          dialog and select <emphasis role="bold">Host-Only
-          Networking</emphasis>.
+          dialog and select an <emphasis role="bold">Adapter</emphasis>
+          tab. Ensure that the <emphasis role="bold">Enable Network
+          Adapter</emphasis> check box is selected and choose
+          <emphasis role="bold">Host-Only Adapter</emphasis> for the
+          <emphasis role="bold">Attached To</emphasis> field.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          On the command line, enter <command>VBoxManage modifyvm
+          On the command line, use <command>VBoxManage modifyvm
           <replaceable>"vmname</replaceable>
           --nic<replaceable>x</replaceable> hostonly</command>. See
-          <xref
-          linkend="vboxmanage-modifyvm" />.
+          <xref linkend="vboxmanage-modifyvm" />.
         </para>
       </listitem>
 
     </itemizedlist>
 
     <para>
-      Before you can attach a VM to a host-only network you have to
-      create at least one host-only interface. You can use the
-      VirtualBox Manager for this. Choose
-      <emphasis role="bold">File</emphasis>,
-      <emphasis role="bold">Preferences</emphasis>,
-      <emphasis role="bold">Network</emphasis>,
-      <emphasis role="bold">Host-Only Network</emphasis>,
-      <emphasis role="bold">(+)Add Host-Only Network</emphasis>.
-    </para>
-
-    <para>
-      Alternatively, you can use the command line:
-    </para>
-
-<screen>VBoxManage hostonlyif create</screen>
-
-    <para>
-      See <xref linkend="vboxmanage-hostonlyif" />.
-    </para>
-
-    <para>
       For host-only networking, as with internal networking, you may
       find the DHCP server useful that is built into &product-name;.
-      This can be enabled to then manage the IP addresses in the
-      host-only network since otherwise you would need to configure all
-      IP addresses statically.
+      This is enabled by default and manages the IP addresses in the
+      host-only network. Without the DHCP server you would need to
+      configure all IP addresses statically.
     </para>
 
     <itemizedlist>
 
       <listitem>
         <para>
-          In the &product-name; graphical user interface, you can
-          configure all these items in the global settings by choosing
-          <emphasis role="bold">File</emphasis>,
-          <emphasis role="bold">Preferences</emphasis>,
-          <emphasis role="bold">Network</emphasis>. This lists all
-          host-only networks which are presently in use. Click on the
-          network name and then on
-          <emphasis role="bold">Edit</emphasis>. You can then modify the
-          adapter and DHCP settings.
+          In the VirtualBox Manager you can configure the DHCP server by
+          choosing <emphasis role="bold">File</emphasis>,
+          <emphasis role="bold">Host Network Manager</emphasis>. The
+          Host Network Manager lists all host-only networks which are
+          presently in use. Select the network name and then use the
+          <emphasis role="bold">DHCP Server</emphasis> tab to configure
+          DHCP server settings.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          Alternatively, you can use <command>VBoxManage
-          dhcpserver</command> on the command line. See
-          <xref
-          linkend="vboxmanage-dhcpserver" />.
+          Alternatively, you can use the <command>VBoxManage
+          dhcpserver</command> command. See
+          <xref linkend="vboxmanage-dhcpserver" />.
         </para>
       </listitem>
 
@@ -1377,8 +1364,7 @@
     <para>
       For more information on setting up VDE networks, please see the
       documentation accompanying the software. See also
-      <ulink
-        url="http://wiki.virtualsquare.org/wiki/index.php/VDE_Basic_Networking" />.
+      <ulink url="http://wiki.virtualsquare.org" />.
     </para>
 
   </sect1>

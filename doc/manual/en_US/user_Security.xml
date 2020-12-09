@@ -21,8 +21,8 @@
 
       <listitem>
         <para>
-          <emphasis role="strong">Keep software up to date</emphasis>.
-          One of the principles of good security practise is to keep all
+          <emphasis role="bold">Keep software up to date</emphasis>. One
+          of the principles of good security practise is to keep all
           software versions and patches up to date. Activate the
           &product-name; update notification to get notified when a new
           &product-name; release is available. When updating
@@ -34,7 +34,7 @@
 
       <listitem>
         <para>
-          <emphasis role="strong">Restrict network access to critical
+          <emphasis role="bold">Restrict network access to critical
           services.</emphasis> Use proper means, for instance a
           firewall, to protect your computer and your guests from
           accesses from the outside. Choosing the proper networking mode
@@ -45,7 +45,7 @@
 
       <listitem>
         <para>
-          <emphasis role="strong">Follow the principle of least
+          <emphasis role="bold">Follow the principle of least
           privilege.</emphasis> The principle of least privilege states
           that users should be given the least amount of privilege
           necessary to perform their jobs. Always execute &product-name;
@@ -62,7 +62,7 @@
 
       <listitem>
         <para>
-          <emphasis role="strong">Monitor system activity.</emphasis>
+          <emphasis role="bold">Monitor system activity.</emphasis>
           System security builds on three pillars: good security
           protocols, proper system configuration and system monitoring.
           Auditing and reviewing audit records address the third
@@ -74,7 +74,7 @@
 
       <listitem>
         <para>
-          <emphasis role="strong">Keep up to date on latest security
+          <emphasis role="bold">Keep up to date on latest security
           information.</emphasis> Oracle continually improves its
           software and documentation. Check this note yearly for
           revisions.
@@ -96,10 +96,9 @@
       <para>
         The &product-name; base package should be downloaded only from a
         trusted source, for instance the official website
-        <ulink url="http://www.virtualbox.org" />.
-        The integrity of the package should be verified with the
-        provided SHA256 checksum which can be found on the official
-        website.
+        <ulink url="http://www.virtualbox.org" />. The integrity of the
+        package should be verified with the provided SHA256 checksum
+        which can be found on the official website.
       </para>
 
       <para>
@@ -507,13 +506,13 @@
         <listitem>
           <para>
             When using the &product-name; Extension Pack provided by
-            Oracle for disk encryption, the data stored in disk images can
-            optionally be encrypted. See <xref linkend="diskencryption" />.
-            This feature covers disk image content only. All other data
-            for a virtual machine is stored unencrypted, including the VM's
-            memory and device state which is stored as part of a saved
-            state, both when created explicitly or part of a snapshot of a
-            running VM.
+            Oracle for disk encryption, the data stored in disk images
+            can optionally be encrypted. See
+            <xref linkend="diskencryption" />. This feature covers disk
+            image content only. All other data for a virtual machine is
+            stored unencrypted, including the VM's memory and device
+            state which is stored as part of a saved state, both when
+            created explicitly or part of a snapshot of a running VM.
           </para>
         </listitem>
 
@@ -537,8 +536,8 @@
       This section contains security recommendations for specific
       issues. By default VirtualBox will configure the VMs to run in a
       secure manner, however this may not always be possible without
-      additional user actions (for example host OS / firmware configuration
-      changes).
+      additional user actions such as host OS or firmware configuration
+      changes.
     </para>
 
     <sect2 id="sec-rec-cve-2018-3646">
@@ -629,18 +628,18 @@
         <para>
           A more aggressive flushing option is provided via the
           <command>VBoxManage modifyvm</command>
-          <option>--l1d-flush-on-vm-entry</option> option. When
-          enabled the level 1 data cache will be flushed on every VM
-          entry. The performance impact is greater than with the default
-          option, though this of course depends on the workload.
-          Workloads producing a lot of VM exits (like networking, VGA
-          access, and similiar) will probably be most impacted.
+          <option>--l1d-flush-on-vm-entry</option> option. When enabled
+          the level 1 data cache will be flushed on every VM entry. The
+          performance impact is greater than with the default option,
+          though this of course depends on the workload. Workloads
+          producing a lot of VM exits (like networking, VGA access, and
+          similiar) will probably be most impacted.
         </para>
 
         <para>
           For users not concerned by this security issue, the default
-          mitigation can be disabled using the <command>VBoxManage modifyvm
-          name --l1d-flush-on-sched off</command> command.
+          mitigation can be disabled using the <command>VBoxManage
+          modifyvm name --l1d-flush-on-sched off</command> command.
         </para>
 
       </sect3>
@@ -705,20 +704,20 @@
         </para>
 
         <para>
-          The <command>VBoxManage modifyvm</command> command provides a more
-          aggressive flushing option is provided by means of the
-          <option>--mds-clear-on-vm-entry</option> option. When
-          enabled the affected buffers will be cleared on every VM
-          entry. The performance impact is greater than with the default
-          option, though this of course depends on the workload.
-          Workloads producing a lot of VM exits (like networking, VGA
-          access, and similiar) will probably be most impacted.
+          The <command>VBoxManage modifyvm</command> command provides a
+          more aggressive flushing option is provided by means of the
+          <option>--mds-clear-on-vm-entry</option> option. When enabled
+          the affected buffers will be cleared on every VM entry. The
+          performance impact is greater than with the default option,
+          though this of course depends on the workload. Workloads
+          producing a lot of VM exits (like networking, VGA access, and
+          similiar) will probably be most impacted.
         </para>
 
         <para>
           For users not concerned by this security issue, the default
-          mitigation can be disabled using the <command>VBoxManage modifyvm
-          name --mds-clear-on-sched off</command> command.
+          mitigation can be disabled using the <command>VBoxManage
+          modifyvm name --mds-clear-on-sched off</command> command.
         </para>
 
       </sect3>

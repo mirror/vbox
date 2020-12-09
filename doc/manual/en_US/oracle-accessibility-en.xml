@@ -7,9 +7,9 @@
 ]>
 <simplesect>
 
-<!-- 
-    Include this statement in the document Preface ONLY if your product 
-    and/or documentation has been tested for accessibility, is determined 
+<!--
+    Include this statement in the document Preface ONLY if your product
+    and/or documentation has been tested for accessibility, is determined
     to be accessible, and has a VPAT.
   -->
 
@@ -21,7 +21,7 @@
 
 <?fo-linebreak?>
 
-    <ulink url="http://www.oracle.com/pls/topic/lookup?ctx=acc&amp;id=docacc">http://www.oracle.com/pls/topic/lookup?ctx=acc&amp;id=docacc</ulink>.
+    <ulink url="https://www.oracle.com/corporate/accessibility/"/>.
   </para>
 
 </simplesect>
