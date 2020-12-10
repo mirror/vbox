@@ -1385,34 +1385,33 @@ static int clipCreateX11Targets(PSHCLX11CTX pCtx, Atom *atomTypeReturn,
 }
 
 /**
- * This is a wrapper around ShClX11RequestDataForX11Callback that will cache the
- * data returned.
+ * Helper for ShClX11RequestDataForX11Callback() that will cache the data returned.
  *
  * @returns VBox status code. VERR_NO_DATA if no data available.
  * @param   pCtx                The X11 clipboard context to use.
- * @param   Format              Clipboard format to read data in.
- * @param   ppv                 Where to store the allocated read data on success.
- *                              Needs to be free'd by the caller.
- * @param   pcb                 Where to return the size (in bytes) of the allocated read data on success.
+ * @param   uFmt                Clipboard format to read data in.
+ * @param   ppv                 Returns an allocated buffer with data read on success.
+ *                              Needs to be free'd with RTMemFree() by the caller.
+ * @param   pcb                 Returns the amount of data read (in bytes) on success.
  */
-static int clipReadVBoxShCl(PSHCLX11CTX pCtx, SHCLFORMAT Format,
-                            void **ppv, uint32_t *pcb)
+static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT uFmt,
+                                                  void **ppv, uint32_t *pcb)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(ppv,  VERR_INVALID_POINTER);
     AssertPtrReturn(pcb,  VERR_INVALID_POINTER);
 
-    LogFlowFunc(("pCtx=%p, Format=%02X\n", pCtx, Format));
+    LogFlowFunc(("pCtx=%p, uFmt=%#x\n", pCtx, uFmt));
 
     int rc = VINF_SUCCESS;
 
     void    *pv = NULL;
     uint32_t cb = 0;
 
-    if (Format == VBOX_SHCL_FMT_UNICODETEXT)
+    if (uFmt == VBOX_SHCL_FMT_UNICODETEXT)
     {
         if (pCtx->pvUnicodeCache == NULL) /** @todo r=andy Using string cache here? */
-            rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, Format,
+            rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, uFmt,
                                                   &pCtx->pvUnicodeCache,
                                                   &pCtx->cbUnicodeCache);
         if (RT_SUCCESS(rc))
@@ -1428,7 +1427,16 @@ static int clipReadVBoxShCl(PSHCLX11CTX pCtx, SHCLFORMAT Format,
     }
     else
     {
-        rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, Format, &pv, &cb);
+        rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, uFmt, &pv, &cb);
+    }
+
+
+    /* Safey net in case the callbacks above misbehave
+     * (must return VERR_NO_DATA if no data available). */
+    if (   RT_SUCCESS(rc)
+        && (pv == NULL || cb == 0))
+    {
+        rc = VERR_NO_DATA;
     }
 
     if (RT_SUCCESS(rc))
@@ -1584,7 +1592,7 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
                                 unsigned long *pcLenReturn,
                                 int *piFormatReturn)
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_NOT_SUPPORTED; /* Play safe by default. */
 
     SHCLX11FMTIDX idxFmtX11 = clipFindX11FormatByAtom(pCtx, *atomTarget);
     SHCLX11FMT    fmtX11    = clipRealFormatForX11Format(idxFmtX11);
@@ -1600,15 +1608,15 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
     RTStrFree(pszFmts);
 #endif
 
-    if (   ((fmtX11 == SHCLX11FMT_UTF8) || (fmtX11 == SHCLX11FMT_TEXT))
+    void    *pv = NULL;
+    uint32_t cb = 0;
+
+    if (   (   (fmtX11 == SHCLX11FMT_UTF8)
+            || (fmtX11 == SHCLX11FMT_TEXT)
+           )
         && (pCtx->vboxFormats & VBOX_SHCL_FMT_UNICODETEXT))
     {
-        void    *pv = NULL;
-        uint32_t cb = 0;
-        rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_UNICODETEXT, &pv, &cb);
-        if (RT_SUCCESS(rc) && (cb == 0))
-            rc = VERR_NO_DATA;
-
+        rc = shClX11RequestDataForX11CallbackHelper(pCtx, VBOX_SHCL_FMT_UNICODETEXT, &pv, &cb);
         if (   RT_SUCCESS(rc)
             && (   (fmtX11 == SHCLX11FMT_UTF8)
                 || (fmtX11 == SHCLX11FMT_TEXT)))
@@ -1627,19 +1635,14 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
     else if (   (fmtX11 == SHCLX11FMT_BMP)
              && (pCtx->vboxFormats & VBOX_SHCL_FMT_BITMAP))
     {
-        void    *pv = NULL;
-        uint32_t cb = 0;
-        rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_BITMAP, &pv, &cb);
-        if (RT_SUCCESS(rc) && (cb == 0))
-            rc = VERR_NO_DATA;
-        if (RT_SUCCESS(rc) && (fmtX11 == SHCLX11FMT_BMP))
+        rc = shClX11RequestDataForX11CallbackHelper(pCtx, VBOX_SHCL_FMT_BITMAP, &pv, &cb);
+        if (   RT_SUCCESS(rc)
+            && (fmtX11 == SHCLX11FMT_BMP))
         {
-            /* Create a full BMP from it */
+            /* Create a full BMP from it. */
             rc = ShClDibToBmp(pv, cb, (void **)pValReturn,
                               (size_t *)pcLenReturn);
         }
-        else
-            rc = VERR_NOT_SUPPORTED;
 
         if (RT_SUCCESS(rc))
         {
@@ -1652,11 +1655,7 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
     else if (  (fmtX11 == SHCLX11FMT_HTML)
             && (pCtx->vboxFormats & VBOX_SHCL_FMT_HTML))
     {
-        void    *pv = NULL;
-        uint32_t cb = 0;
-        rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_HTML, &pv, &cb);
-        if (RT_SUCCESS(rc) && (cb == 0))
-            rc = VERR_NO_DATA;
+        rc = shClX11RequestDataForX11CallbackHelper(pCtx, VBOX_SHCL_FMT_HTML, &pv, &cb);
         if (RT_SUCCESS(rc))
         {
             /**
@@ -1678,23 +1677,28 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
         }
     }
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    else if (pCtx->vboxFormats & VBOX_SHCL_FMT_URI_LIST)
+    else if (fmtX11 == SHCLX11FMT_URI_LIST)
     {
-        switch (fmtX11)
+        if (pCtx->vboxFormats & VBOX_SHCL_FMT_URI_LIST)
         {
-            case SHCLX11FMT_TEXT:
-                RT_FALL_THROUGH();
-            case SHCLX11FMT_UTF8:
-                RT_FALL_THROUGH();
-            case SHCLX11FMT_URI_LIST:
+            rc = shClX11RequestDataForX11CallbackHelper(pCtx, VBOX_SHCL_FMT_URI_LIST, &pv, &cb);
+            if (RT_SUCCESS(rc))
             {
-                break;
-            }
+                void *pvDst = (void *)XtMalloc(cb);
+                if (pvDst)
+                {
+                    memcpy(pvDst, pv, cb);
 
-            default:
-                rc = VERR_NOT_SUPPORTED;
-                break;
+                    *atomTypeReturn = *atomTarget;
+                    *pValReturn     = (XtPointer)pvDst;
+                    *pcLenReturn    = cb;
+                    *piFormatReturn = 8;
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
         }
+        /* else not supported yet. */
     }
 #endif
     else
@@ -1703,8 +1707,6 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
         *pValReturn     = (XtPointer)NULL;
         *pcLenReturn    = 0;
         *piFormatReturn = 0;
-
-        rc = VERR_NOT_SUPPORTED;
     }
 
     if (RT_FAILURE(rc))

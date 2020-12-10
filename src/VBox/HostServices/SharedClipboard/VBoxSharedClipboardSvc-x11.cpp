@@ -324,19 +324,19 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
 /**
  * Callback implementation for reading clipboard data from the guest.
  *
- * @note   Runs in Xt event thread.
+ * @note Runs in Xt event thread.
  *
  * @returns VBox status code. VERR_NO_DATA if no data available.
  * @param   pCtx                Pointer to the host clipboard structure.
- * @param   fFormat             The format in which the data should be transferred
+ * @param   uFmt                The format in which the data should be transferred
  *                              (VBOX_SHCL_FMT_XXX).
- * @param   ppv                 On success and if pcb > 0, this will point to a buffer
- *                              to be freed with RTMemFree containing the data read.
- * @param   pcb                 On success, this contains the number of bytes of data returned.
+ * @param   ppv                 Returns an allocated buffer with data read from the guest on success.
+ *                              Needs to be free'd with RTMemFree() by the caller.
+ * @param   pcb                 Returns the amount of data read (in bytes) on success.
  */
-DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT fFormat, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
 {
-    LogFlowFunc(("pCtx=%p, Format=0x%x\n", pCtx, fFormat));
+    LogFlowFunc(("pCtx=%p, uFmt=0x%x\n", pCtx, uFmt));
 
     if (pCtx->fShuttingDown)
     {
@@ -348,14 +348,19 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
     int rc;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    if (fFormat == VBOX_SHCL_FMT_URI_LIST)
-        rc = VINF_SUCCESS;
+    if (uFmt == VBOX_SHCL_FMT_URI_LIST)
+    {
+        *ppv = NULL;
+        *pcb = 0;
+
+        rc = VERR_NO_DATA;
+    }
     else
 #endif
     {
         /* Request data from the guest. */
         SHCLEVENTID idEvent;
-        rc = ShClSvcGuestDataRequest(pCtx->pClient, fFormat, &idEvent);
+        rc = ShClSvcGuestDataRequest(pCtx->pClient, uFmt, &idEvent);
         if (RT_SUCCESS(rc))
         {
             PSHCLEVENTPAYLOAD pPayload;
@@ -380,7 +385,7 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Requesting data in format %#x for X11 host failed with %Rrc\n", fFormat, rc));
+        LogRel(("Shared Clipboard: Requesting data in format %#x for X11 host failed with %Rrc\n", uFmt, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;

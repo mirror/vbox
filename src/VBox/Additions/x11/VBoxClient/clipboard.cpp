@@ -102,34 +102,34 @@ static DECLCALLBACK(void) vbclShClOnTransferErrorCallback(PSHCLTRANSFERCALLBACKD
  *
  * @returns VBox status code. VERR_NO_DATA if no data available.
  * @param   pCtx                Our context information.
- * @param   Format              The format of the data being requested.
- * @param   ppv                 On success and if pcb > 0, this will point to a buffer
- *                              to be freed with RTMemFree containing the data read.
- * @param   pcb                 On success, this contains the number of bytes of data returned.
+ * @param   uFmt                The format of the data being requested.
+ * @param   ppv                 Returns an allocated buffer with data read from the host on success.
+ *                              Needs to be free'd with RTMemFree() by the caller.
+ * @param   pcb                 Returns the amount of data read (in bytes) on success.
  */
-DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
 {
-    RT_NOREF(pCtx);
-
-    LogFlowFunc(("Format=0x%x\n", Format));
+    LogFlowFunc(("pCtx=%p, uFmt=%#x\n", pCtx, uFmt));
 
     int rc = VINF_SUCCESS;
 
-    uint32_t cbRead = 0;
-
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    if (Format == VBOX_SHCL_FMT_URI_LIST)
+    if (uFmt == VBOX_SHCL_FMT_URI_LIST)
     {
         //rc = VbglR3ClipboardRootListRead()
+
+        rc = VERR_NO_DATA;
     }
     else
 #endif
     {
+        uint32_t cbRead = 0;
+
         uint32_t cbData = _4K; /** @todo Make this dynamic. */
         void    *pvData = RTMemAlloc(cbData);
         if (pvData)
         {
-            rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, Format, pvData, cbData, &cbRead);
+            rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -147,7 +147,7 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
             pvData = RTMemRealloc(pvData, cbRead);
             if (pvData)
             {
-                rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, Format, pvData, cbData, &cbRead);
+                rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
                 if (rc == VINF_BUFFER_OVERFLOW)
                     rc = VERR_BUFFER_OVERFLOW;
             }
@@ -175,6 +175,9 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
         }
     }
 
+    if (RT_FAILURE(rc))
+        LogRel(("Requesting data in format %#x from host failed with %Rrc\n", uFmt, rc));
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -200,7 +203,7 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS f
 {
     RT_NOREF(pCtx);
 
-    LogFlowFunc(("Formats=0x%x\n", fFormats));
+    LogFlowFunc(("fFormats=%#x\n", fFormats));
 
     int rc2 = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, fFormats);
     RT_NOREF(rc2);

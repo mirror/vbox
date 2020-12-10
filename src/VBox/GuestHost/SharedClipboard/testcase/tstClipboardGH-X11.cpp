@@ -119,9 +119,9 @@ static int tstClipSetVBoxUtf16(PSHCLX11CTX pCtx, int retval,
 }
 
 /* Return the data in the simulated VBox clipboard. */
-DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, uint32_t Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, uint32_t uFmt, void **ppv, uint32_t *pcb)
 {
-    RT_NOREF(pCtx, Format);
+    RT_NOREF(pCtx, uFmt);
     *pcb = g_tst_cbDataVBox;
     if (g_tst_pvDataVBox != NULL)
     {
@@ -243,10 +243,10 @@ void tstClipRequestData(PSHCLX11CTX pCtx, SHCLX11FMTIDX target, void *closure)
 /* The formats currently on offer from X11 via the shared clipboard. */
 static uint32_t g_tst_uX11Formats = 0;
 
-DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS Formats)
+DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS fFormats)
 {
     RT_NOREF(pCtx);
-    g_tst_uX11Formats = Formats;
+    g_tst_uX11Formats = fFormats;
 }
 
 static uint32_t tstClipQueryFormats(void)
