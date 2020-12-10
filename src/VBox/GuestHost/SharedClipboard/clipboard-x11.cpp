@@ -1354,9 +1354,12 @@ static int clipCreateX11Targets(PSHCLX11CTX pCtx, Atom *atomTypeReturn,
                                 unsigned long *pcLenReturn,
                                 int *piFormatReturn)
 {
-    const unsigned cFixedTargets = 3;
+    const unsigned cFixedTargets = 3; /* See below. */
 
-    Atom *atomTargets = (Atom *)XtMalloc((SHCL_MAX_X11_FORMATS + cFixedTargets) * sizeof(Atom));
+    Atom *pAtomTargets = (Atom *)XtMalloc((SHCL_MAX_X11_FORMATS + cFixedTargets) * sizeof(Atom));
+    if (!pAtomTargets)
+        return VERR_NO_MEMORY;
+
     unsigned cTargets = 0;
     SHCLX11FMTIDX idxFmt = NIL_CLIPX11FORMAT;
     do
@@ -1364,18 +1367,18 @@ static int clipCreateX11Targets(PSHCLX11CTX pCtx, Atom *atomTypeReturn,
         idxFmt = clipEnumX11Formats(pCtx->vboxFormats, idxFmt);
         if (idxFmt != NIL_CLIPX11FORMAT)
         {
-            atomTargets[cTargets] = clipAtomForX11Format(pCtx, idxFmt);
+            pAtomTargets[cTargets] = clipAtomForX11Format(pCtx, idxFmt);
             ++cTargets;
         }
     } while (idxFmt != NIL_CLIPX11FORMAT);
 
     /* We always offer these fixed targets. */
-    atomTargets[cTargets]     = clipGetAtom(pCtx, "TARGETS");
-    atomTargets[cTargets + 1] = clipGetAtom(pCtx, "MULTIPLE");
-    atomTargets[cTargets + 2] = clipGetAtom(pCtx, "TIMESTAMP");
+    pAtomTargets[cTargets]     = clipGetAtom(pCtx, "TARGETS");
+    pAtomTargets[cTargets + 1] = clipGetAtom(pCtx, "MULTIPLE");
+    pAtomTargets[cTargets + 2] = clipGetAtom(pCtx, "TIMESTAMP");
 
     *atomTypeReturn = XA_ATOM;
-    *pValReturn = (XtPointer)atomTargets;
+    *pValReturn = (XtPointer)pAtomTargets;
     *pcLenReturn = cTargets + cFixedTargets;
     *piFormatReturn = 32;
 
