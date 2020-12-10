@@ -25,6 +25,7 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
+class QBoxLayout;
 class QCheckBox;
 class QLabel;
 class QRadioButton;
@@ -101,6 +102,7 @@ protected:
 private:
 
     bool checkISOFile() const;
+    void addLine(QBoxLayout *pLayout);
 
     /** Full path (including the file name) of the machine's configuration file. */
     QString m_strMachineFilePath;

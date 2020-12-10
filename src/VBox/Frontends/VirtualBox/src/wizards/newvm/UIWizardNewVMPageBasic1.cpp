@@ -277,6 +277,14 @@ bool UIWizardNewVMPage1::checkISOFile() const
     return true;
 }
 
+void UIWizardNewVMPage1::addLine(QBoxLayout *pLayout)
+{
+    QFrame *line = new QFrame;
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    pLayout->addWidget(line);
+}
+
 void UIWizardNewVMPage1::createNameOSTypeWidgets(QVBoxLayout *pLayout, bool fCreateLabels /* = true */)
 {
     AssertReturnVoid(pLayout);
@@ -291,6 +299,8 @@ void UIWizardNewVMPage1::createNameOSTypeWidgets(QVBoxLayout *pLayout, bool fCre
     m_pNameAndFolderEditor = new UINameAndSystemEditor(0, true, true, false);
     if (m_pNameAndFolderEditor)
         pLayout->addWidget(m_pNameAndFolderEditor);
+
+    addLine(pLayout);
 
     if (fCreateLabels)
     {
@@ -329,6 +339,7 @@ void UIWizardNewVMPage1::createNameOSTypeWidgets(QVBoxLayout *pLayout, bool fCre
         pUnattendedInstall->addWidget(m_pStartHeadlessCheckBox, 2, 1, 1, 1);
     }
     pLayout->addLayout(pUnattendedInstall);
+    addLine(pLayout);
     m_pSystemTypeEditor = new UINameAndSystemEditor(0, false, false, true);
     if (m_pSystemTypeEditor)
         pLayout->addWidget(m_pSystemTypeEditor);
