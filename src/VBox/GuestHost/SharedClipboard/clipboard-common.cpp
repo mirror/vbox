@@ -389,7 +389,7 @@ int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeo
         }
 
         if (RT_FAILURE(rc))
-            LogRel2(("Shared Clipboard: Waiting for even %RU32 failed, rc=%Rrc\n", uID, rc));
+            LogRel2(("Shared Clipboard: Waiting for event %RU32 failed, rc=%Rrc\n", uID, rc));
     }
     else
         rc = VERR_NOT_FOUND;
