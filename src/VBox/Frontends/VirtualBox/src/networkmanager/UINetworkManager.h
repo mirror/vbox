@@ -60,7 +60,7 @@ public:
       * @param  pActionPool   Brings the action-pool reference.
       * @param  fShowToolbar  Brings whether we should create/show toolbar. */
     UINetworkManagerWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                               bool fShowToolbar = true, QWidget *pParent = 0);
+                           bool fShowToolbar = true, QWidget *pParent = 0);
 
     /** Returns the menu. */
     QMenu *menu() const;
@@ -160,11 +160,11 @@ private:
     /** @name General variables.
       * @{ */
         /** Holds the widget embedding type. */
-        const EmbedTo m_enmEmbedding;
+        const EmbedTo  m_enmEmbedding;
         /** Holds the action-pool reference. */
-        UIActionPool *m_pActionPool;
+        UIActionPool  *m_pActionPool;
         /** Holds whether we should create/show toolbar. */
-        const bool    m_fShowToolbar;
+        const bool     m_fShowToolbar;
     /** @} */
 
     /** @name Toolbar and menu variables.
@@ -176,7 +176,7 @@ private:
     /** @name Splitter variables.
       * @{ */
         /** Holds the tree-widget instance. */
-        QITreeWidget *m_pTreeWidget;
+        QITreeWidget           *m_pTreeWidget;
         /** Holds the details-widget instance. */
         UINetworkDetailsWidget *m_pDetailsWidget;
     /** @} */

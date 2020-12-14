@@ -198,13 +198,12 @@ UINetworkManagerWidget::UINetworkManagerWidget(EmbedTo enmEmbedding, UIActionPoo
     , m_pTreeWidget(0)
     , m_pDetailsWidget(0)
 {
-    /* Prepare: */
     prepare();
-    uiCommon().setHelpKeyword(this, "networkingdetails");
 }
 
 QMenu *UINetworkManagerWidget::menu() const
 {
+    AssertPtrReturn(m_pActionPool, 0);
     return m_pActionPool->action(UIActionIndexMN_M_NetworkWindow)->menu();
 }
 
@@ -222,12 +221,15 @@ void UINetworkManagerWidget::retranslateUi()
 #endif
 
     /* Translate tree-widget: */
-    const QStringList fields = QStringList()
-                               << UINetworkManager::tr("Name")
-                               << UINetworkManager::tr("IPv4 Address/Mask")
-                               << UINetworkManager::tr("IPv6 Address/Mask")
-                               << UINetworkManager::tr("DHCP Server");
-    m_pTreeWidget->setHeaderLabels(fields);
+    if (m_pTreeWidget)
+    {
+        const QStringList fields = QStringList()
+                                   << UINetworkManager::tr("Name")
+                                   << UINetworkManager::tr("IPv4 Address/Mask")
+                                   << UINetworkManager::tr("IPv6 Address/Mask")
+                                   << UINetworkManager::tr("DHCP Server");
+        m_pTreeWidget->setHeaderLabels(fields);
+    }
 }
 
 void UINetworkManagerWidget::resizeEvent(QResizeEvent *pEvent)
@@ -250,15 +252,21 @@ void UINetworkManagerWidget::showEvent(QShowEvent *pEvent)
 
 void UINetworkManagerWidget::sltResetHostNetworkDetailsChanges()
 {
-    /* Just push the current item data there again: */
+    /* Just push current item data to details-widget again: */
     sltHandleCurrentItemChange();
 }
 
 void UINetworkManagerWidget::sltApplyHostNetworkDetailsChanges()
 {
+    /* Check tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidget, ("Tree-widget isn't created!\n"));
+
     /* Get network item: */
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
     AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
+
+    /* Check details-widget: */
+    AssertMsgReturnVoid(m_pDetailsWidget, ("Details-widget isn't created!\n"));
 
     /* Get item data: */
     UIDataHostNetwork oldData = *pItem;
@@ -430,6 +438,9 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
 
 void UINetworkManagerWidget::sltRemoveHostNetwork()
 {
+    /* Check tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidget, ("Tree-widget isn't created!\n"));
+
     /* Get network item: */
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
     AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
@@ -513,8 +524,9 @@ void UINetworkManagerWidget::sltToggleHostNetworkDetailsVisibility(bool fVisible
     /* Save the setting: */
     gEDataManager->setHostNetworkManagerDetailsExpanded(fVisible);
     /* Show/hide details area and Apply button: */
-    m_pDetailsWidget->setVisible(fVisible);
-    /* Notify external lsiteners: */
+    if (m_pDetailsWidget)
+        m_pDetailsWidget->setVisible(fVisible);
+    /* Notify external listeners: */
     emit sigHostNetworkDetailsVisibilityChanged(fVisible);
 }
 
@@ -526,26 +538,30 @@ void UINetworkManagerWidget::sltRefreshHostNetworks()
 
 void UINetworkManagerWidget::sltAdjustTreeWidget()
 {
-    /* Get the tree-widget abstract interface: */
-    QAbstractItemView *pItemView = m_pTreeWidget;
-    /* Get the tree-widget header-view: */
-    QHeaderView *pItemHeader = m_pTreeWidget->header();
+    /* Check tree-widget: */
+    if (m_pTreeWidget)
+    {
+        /* Get the tree-widget abstract interface: */
+        QAbstractItemView *pItemView = m_pTreeWidget;
+        /* Get the tree-widget header-view: */
+        QHeaderView *pItemHeader = m_pTreeWidget->header();
 
-    /* Calculate the total tree-widget width: */
-    const int iTotal = m_pTreeWidget->viewport()->width();
-    /* Look for a minimum width hints for non-important columns: */
-    const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(Column_IPv4), pItemHeader->sectionSizeHint(Column_IPv4));
-    const int iMinWidth2 = qMax(pItemView->sizeHintForColumn(Column_IPv6), pItemHeader->sectionSizeHint(Column_IPv6));
-    const int iMinWidth3 = qMax(pItemView->sizeHintForColumn(Column_DHCP), pItemHeader->sectionSizeHint(Column_DHCP));
-    /* Propose suitable width hints for non-important columns: */
-    const int iWidth1 = iMinWidth1 < iTotal / Column_Max ? iMinWidth1 : iTotal / Column_Max;
-    const int iWidth2 = iMinWidth2 < iTotal / Column_Max ? iMinWidth2 : iTotal / Column_Max;
-    const int iWidth3 = iMinWidth3 < iTotal / Column_Max ? iMinWidth3 : iTotal / Column_Max;
-    /* Apply the proposal: */
-    m_pTreeWidget->setColumnWidth(Column_IPv4, iWidth1);
-    m_pTreeWidget->setColumnWidth(Column_IPv6, iWidth2);
-    m_pTreeWidget->setColumnWidth(Column_DHCP, iWidth3);
-    m_pTreeWidget->setColumnWidth(Column_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
+        /* Calculate the total tree-widget width: */
+        const int iTotal = m_pTreeWidget->viewport()->width();
+        /* Look for a minimum width hints for non-important columns: */
+        const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(Column_IPv4), pItemHeader->sectionSizeHint(Column_IPv4));
+        const int iMinWidth2 = qMax(pItemView->sizeHintForColumn(Column_IPv6), pItemHeader->sectionSizeHint(Column_IPv6));
+        const int iMinWidth3 = qMax(pItemView->sizeHintForColumn(Column_DHCP), pItemHeader->sectionSizeHint(Column_DHCP));
+        /* Propose suitable width hints for non-important columns: */
+        const int iWidth1 = iMinWidth1 < iTotal / Column_Max ? iMinWidth1 : iTotal / Column_Max;
+        const int iWidth2 = iMinWidth2 < iTotal / Column_Max ? iMinWidth2 : iTotal / Column_Max;
+        const int iWidth3 = iMinWidth3 < iTotal / Column_Max ? iMinWidth3 : iTotal / Column_Max;
+        /* Apply the proposal: */
+        m_pTreeWidget->setColumnWidth(Column_IPv4, iWidth1);
+        m_pTreeWidget->setColumnWidth(Column_IPv6, iWidth2);
+        m_pTreeWidget->setColumnWidth(Column_DHCP, iWidth3);
+        m_pTreeWidget->setColumnWidth(Column_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
+    }
 }
 
 void UINetworkManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
@@ -634,12 +650,18 @@ void UINetworkManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
 
 void UINetworkManagerWidget::sltHandleCurrentItemChange()
 {
+    /* Check tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidget, ("Tree-widget isn't created!\n"));
+
     /* Get network item: */
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
 
     /* Update actions availability: */
     m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
     m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->setEnabled(pItem);
+
+    /* Check details-widget: */
+    AssertMsgReturnVoid(m_pDetailsWidget, ("Details-widget isn't created!\n"));
 
     /* If there is an item => update details data: */
     if (pItem)
@@ -654,6 +676,9 @@ void UINetworkManagerWidget::sltHandleCurrentItemChange()
 
 void UINetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
 {
+    /* Check tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidget, ("Tree-widget isn't created!\n"));
+
     /* Compose temporary context-menu: */
     QMenu menu;
     if (m_pTreeWidget->itemAt(position))
@@ -672,9 +697,11 @@ void UINetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
 
 void UINetworkManagerWidget::prepare()
 {
-    /* Prepare actions: */
+    /* Prepare self: */
+    uiCommon().setHelpKeyword(this, "networkingdetails");
+
+    /* Prepare stuff: */
     prepareActions();
-    /* Prepare widgets: */
     prepareWidgets();
 
     /* Load settings: */
@@ -710,7 +737,7 @@ void UINetworkManagerWidget::prepareWidgets()
 {
     /* Create main-layout: */
     new QVBoxLayout(this);
-    AssertPtrReturnVoid(layout());
+    if (layout())
     {
         /* Configure layout: */
         layout()->setContentsMargins(0, 0, 0, 0);
@@ -734,7 +761,7 @@ void UINetworkManagerWidget::prepareToolBar()
 {
     /* Create toolbar: */
     m_pToolBar = new QIToolBar(parentWidget());
-    AssertPtrReturnVoid(m_pToolBar);
+    if (m_pToolBar)
     {
         /* Configure toolbar: */
         const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
@@ -765,11 +792,10 @@ void UINetworkManagerWidget::prepareToolBar()
 
 void UINetworkManagerWidget::prepareTreeWidget()
 {
-    /* Create tree-widget: */
-    m_pTreeWidget = new QITreeWidget;
-    AssertPtrReturnVoid(m_pTreeWidget);
+    /* Prepare tree-widget: */
+    m_pTreeWidget = new QITreeWidget(this);
+    if (m_pTreeWidget)
     {
-        /* Configure tree-widget: */
         m_pTreeWidget->setRootIsDecorated(false);
         m_pTreeWidget->setAlternatingRowColors(true);
         m_pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -794,11 +820,10 @@ void UINetworkManagerWidget::prepareTreeWidget()
 
 void UINetworkManagerWidget::prepareDetailsWidget()
 {
-    /* Create details-widget: */
-    m_pDetailsWidget = new UINetworkDetailsWidget(m_enmEmbedding);
-    AssertPtrReturnVoid(m_pDetailsWidget);
+    /* Prepare details-widget: */
+    m_pDetailsWidget = new UINetworkDetailsWidget(m_enmEmbedding, this);
+    if (m_pDetailsWidget)
     {
-        /* Configure details-widget: */
         m_pDetailsWidget->setVisible(false);
         m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
         connect(m_pDetailsWidget, &UINetworkDetailsWidget::sigDataChanged,
@@ -816,12 +841,19 @@ void UINetworkManagerWidget::prepareDetailsWidget()
 void UINetworkManagerWidget::loadSettings()
 {
     /* Details action/widget: */
-    m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->setChecked(gEDataManager->hostNetworkManagerDetailsExpanded());
-    sltToggleHostNetworkDetailsVisibility(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->isChecked());
+    if (m_pActionPool)
+    {
+        m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->setChecked(gEDataManager->hostNetworkManagerDetailsExpanded());
+        sltToggleHostNetworkDetailsVisibility(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->isChecked());
+    }
 }
 
 void UINetworkManagerWidget::loadHostNetworks()
 {
+    /* Check tree-widget: */
+    if (!m_pTreeWidget)
+        return;
+
     /* Clear tree first of all: */
     m_pTreeWidget->clear();
 
@@ -916,7 +948,7 @@ void UINetworkManagerWidget::createItemForNetworkHost(const UIDataHostNetwork &d
 {
     /* Create new item: */
     UIItemHostNetwork *pItem = new UIItemHostNetwork;
-    AssertPtrReturnVoid(pItem);
+    if (pItem)
     {
         /* Configure item: */
         pItem->UIDataHostNetwork::operator=(data);
@@ -932,7 +964,7 @@ void UINetworkManagerWidget::createItemForNetworkHost(const UIDataHostNetwork &d
 void UINetworkManagerWidget::updateItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem)
 {
     /* Update passed item: */
-    AssertPtrReturnVoid(pItem);
+    if (pItem)
     {
         /* Configure item: */
         pItem->UIDataHostNetwork::operator=(data);
@@ -1015,11 +1047,10 @@ void UINetworkManager::configure()
 
 void UINetworkManager::configureCentralWidget()
 {
-    /* Create widget: */
+    /* Prepare widget: */
     UINetworkManagerWidget *pWidget = new UINetworkManagerWidget(EmbedTo_Dialog, m_pActionPool, true, this);
-    AssertPtrReturnVoid(pWidget);
+    if (pWidget)
     {
-        /* Configure widget: */
         setWidget(pWidget);
         setWidgetMenu(pWidget->menu());
 #ifdef VBOX_WS_MAC
