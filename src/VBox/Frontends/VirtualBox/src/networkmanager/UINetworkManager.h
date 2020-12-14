@@ -32,7 +32,9 @@
 class CHostNetworkInterface;
 class QAbstractButton;
 class QTreeWidgetItem;
+class QVBoxLayout;
 class QIDialogButtonBox;
+class QITabWidget;
 class QITreeWidget;
 class UIActionPool;
 class UINetworkDetailsWidget;
@@ -41,21 +43,21 @@ class QIToolBar;
 struct UIDataHostNetwork;
 
 
-/** QWidget extension providing GUI with the pane to control host network related functionality. */
+/** QWidget extension providing GUI with the pane to control network related functionality. */
 class UINetworkManagerWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 signals:
 
-    /** Notifies listeners about host network details-widget @a fVisible. */
-    void sigHostNetworkDetailsVisibilityChanged(bool fVisible);
-    /** Notifies listeners about host network details data @a fDiffers. */
-    void sigHostNetworkDetailsDataChanged(bool fDiffers);
+    /** Notifies listeners about network details-widget @a fVisible. */
+    void sigDetailsVisibilityChangedHostNetwork(bool fVisible);
+    /** Notifies listeners about network details data @a fDiffers. */
+    void sigDetailsDataChangedHostNetwork(bool fDiffers);
 
 public:
 
-    /** Constructs Host Network Manager widget.
+    /** Constructs Network Manager widget.
       * @param  enmEmbedding  Brings the type of widget embedding.
       * @param  pActionPool   Brings the action-pool reference.
       * @param  fShowToolbar  Brings whether we should create/show toolbar. */
@@ -88,10 +90,10 @@ public slots:
 
     /** @name Details-widget stuff.
       * @{ */
-        /** Handles command to reset host network details changes. */
-        void sltResetHostNetworkDetailsChanges();
-        /** Handles command to apply host network details changes. */
-        void sltApplyHostNetworkDetailsChanges();
+        /** Handles command to reset details changes. */
+        void sltResetDetailsChanges();
+        /** Handles command to apply details changes. */
+        void sltApplyDetailsChanges();
     /** @} */
 
 private slots:
@@ -103,7 +105,7 @@ private slots:
         /** Handles command to remove host network. */
         void sltRemoveHostNetwork();
         /** Handles command to make host network details @a fVisible. */
-        void sltToggleHostNetworkDetailsVisibility(bool fVisible);
+        void sltToggleDetailsVisibilityHostNetwork(bool fVisible);
         /** Handles command to refresh host networks. */
         void sltRefreshHostNetworks();
     /** @} */
@@ -111,14 +113,17 @@ private slots:
     /** @name Tree-widget stuff.
       * @{ */
         /** Handles command to adjust tree-widget. */
-        void sltAdjustTreeWidget();
+        void sltAdjustTreeWidgets();
 
-        /** Handles tree-widget @a pItem change. */
-        void sltHandleItemChange(QTreeWidgetItem *pItem);
-        /** Handles tree-widget current item change. */
-        void sltHandleCurrentItemChange();
-        /** Handles context menu request for tree-widget @a position. */
-        void sltHandleContextMenuRequest(const QPoint &position);
+        /** Handles host network tree-widget @a pItem change. */
+        void sltHandleItemChangeHostNetwork(QTreeWidgetItem *pItem);
+        /** Handles host network tree-widget current item change. */
+        void sltHandleCurrentItemChangeHostNetwork();
+        /** Handles host network context-menu request for tree-widget @a position. */
+        void sltHandleContextMenuRequestHostNetwork(const QPoint &position);
+
+        /** Handles command to apply host network details changes. */
+        void sltApplyDetailsChangesHostNetwork();
     /** @} */
 
 private:
@@ -133,10 +138,14 @@ private:
         void prepareWidgets();
         /** Prepares toolbar. */
         void prepareToolBar();
-        /** Prepares tree-widget. */
-        void prepareTreeWidget();
-        /** Prepares details-widget. */
-        void prepareDetailsWidget();
+        /** Prepares tab-widget. */
+        void prepareTabWidget();
+        /** Prepares host network tab. */
+        void prepareTabHostNetwork();
+        /** Prepares host network tree-widget. */
+        void prepareTreeWidgetHostNetwork();
+        /** Prepares host network details-widget. */
+        void prepareDetailsWidgetHostNetwork();
         /** Load settings: */
         void loadSettings();
     /** @} */
@@ -175,10 +184,17 @@ private:
 
     /** @name Splitter variables.
       * @{ */
-        /** Holds the tree-widget instance. */
-        QITreeWidget           *m_pTreeWidget;
-        /** Holds the details-widget instance. */
-        UINetworkDetailsWidget *m_pDetailsWidget;
+        /** Holds the tab-widget instance. */
+        QITabWidget            *m_pTabWidget;
+
+        /** Holds the host network tab. */
+        QWidget                *m_pTabHostNetwork;
+        /** Holds the host network layout. */
+        QVBoxLayout            *m_pLayoutHostNetwork;
+        /** Holds the host network tree-widget instance. */
+        QITreeWidget           *m_pTreeWidgetHostNetwork;
+        /** Holds the host network details-widget instance. */
+        UINetworkDetailsWidget *m_pDetailsWidgetHostNetwork;
     /** @} */
 };
 
