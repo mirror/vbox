@@ -140,13 +140,13 @@ template<> QString toString(const StorageSlot &storageSlot)
                 break;
             }
             if (storageSlot.port == 0 && storageSlot.device == 0)
-                strResult = QApplication::translate("UICommon", "IDE Primary Master", "StorageSlot");
+                strResult = QApplication::translate("UICommon", "IDE Primary Device 0", "StorageSlot");
             else if (storageSlot.port == 0 && storageSlot.device == 1)
-                strResult = QApplication::translate("UICommon", "IDE Primary Slave", "StorageSlot");
+                strResult = QApplication::translate("UICommon", "IDE Primary Device 1", "StorageSlot");
             else if (storageSlot.port == 1 && storageSlot.device == 0)
-                strResult = QApplication::translate("UICommon", "IDE Secondary Master", "StorageSlot");
+                strResult = QApplication::translate("UICommon", "IDE Secondary Device 0", "StorageSlot");
             else if (storageSlot.port == 1 && storageSlot.device == 1)
-                strResult = QApplication::translate("UICommon", "IDE Secondary Slave", "StorageSlot");
+                strResult = QApplication::translate("UICommon", "IDE Secondary Device 1", "StorageSlot");
             break;
         }
         case KStorageBus_SATA:
@@ -275,10 +275,10 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
 {
     /* Prepare a hash of known port templates: */
     QHash<int, QString> templates;
-    templates[0] = QApplication::translate("UICommon", "IDE Primary Master", "StorageSlot");
-    templates[1] = QApplication::translate("UICommon", "IDE Primary Slave", "StorageSlot");
-    templates[2] = QApplication::translate("UICommon", "IDE Secondary Master", "StorageSlot");
-    templates[3] = QApplication::translate("UICommon", "IDE Secondary Slave", "StorageSlot");
+    templates[0] = QApplication::translate("UICommon", "IDE Primary Device 0", "StorageSlot");
+    templates[1] = QApplication::translate("UICommon", "IDE Primary Device 1", "StorageSlot");
+    templates[2] = QApplication::translate("UICommon", "IDE Secondary Device 0", "StorageSlot");
+    templates[3] = QApplication::translate("UICommon", "IDE Secondary Device 1", "StorageSlot");
     templates[4] = QApplication::translate("UICommon", "SATA Port %1", "StorageSlot");
     templates[5] = QApplication::translate("UICommon", "SCSI Port %1", "StorageSlot");
     templates[6] = QApplication::translate("UICommon", "SAS Port %1", "StorageSlot");
