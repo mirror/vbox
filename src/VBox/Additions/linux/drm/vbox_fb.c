@@ -295,7 +295,7 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	if (ret)
 		return ret;
 
-	ret = vbox_bo_pin(bo, TTM_PL_FLAG_VRAM, NULL);
+	ret = vbox_bo_pin(bo, VBOX_MEM_TYPE_VRAM, NULL);
 	if (ret) {
 		vbox_bo_unreserve(bo);
 		return ret;

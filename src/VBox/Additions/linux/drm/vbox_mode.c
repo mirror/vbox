@@ -227,7 +227,7 @@ static int vbox_crtc_set_base(struct drm_crtc *crtc,
 	if (ret)
 		return ret;
 
-	ret = vbox_bo_pin(bo, TTM_PL_FLAG_VRAM, &gpu_addr);
+	ret = vbox_bo_pin(bo, VBOX_MEM_TYPE_VRAM, &gpu_addr);
 	vbox_bo_unreserve(bo);
 	if (ret)
 		return ret;

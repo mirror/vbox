@@ -175,6 +175,9 @@
 #include <drm/ttm/ttm_placement.h>
 #include <drm/ttm/ttm_memory.h>
 #include <drm/ttm/ttm_module.h>
+#if RTLNX_VER_MIN(5,10,0)
+# include <drm/ttm/ttm_resource.h>
+#endif
 
 #include "vboxvideo_guest.h"
 #include "vboxvideo_vbe.h"
@@ -444,7 +447,10 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 int vbox_gem_create(struct drm_device *dev,
 		    u32 size, bool iskernel, struct drm_gem_object **obj);
 
-int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr);
+#define VBOX_MEM_TYPE_VRAM   0x1
+#define VBOX_MEM_TYPE_SYSTEM 0x2
+
+int vbox_bo_pin(struct vbox_bo *bo, u32 mem_type, u64 *gpu_addr);
 int vbox_bo_unpin(struct vbox_bo *bo);
 
 static inline int vbox_bo_reserve(struct vbox_bo *bo, bool no_wait)
@@ -469,7 +475,7 @@ static inline void vbox_bo_unreserve(struct vbox_bo *bo)
 	ttm_bo_unreserve(&bo->bo);
 }
 
-void vbox_ttm_placement(struct vbox_bo *bo, int domain);
+void vbox_ttm_placement(struct vbox_bo *bo, u32 mem_type);
 int vbox_bo_push_sysram(struct vbox_bo *bo);
 int vbox_mmap(struct file *filp, struct vm_area_struct *vma);
 
