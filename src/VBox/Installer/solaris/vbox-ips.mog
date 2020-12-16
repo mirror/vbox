@@ -6,6 +6,12 @@ set name=pkg.description value="A powerful PC virtualization solution"
 set name=variant.arch value=@UNAME_P@
 set name=variant.opensolaris.zone value=global value=nonglobal
 set name=info.classification value=org.opensolaris.category.2008:System/Virtualization
+license LICENSE license="GPLv2 (virtualbox)"
+# The data-xkb was renamed to xkeyboard-config in S11.4, so adjust this when
+# we have moved our builds away from S11.3.
+depend fmri=pkg:/x11/keyboard/data-xkb type=require
+depend fmri=pkg:/system/font/xorg/xorg-core type=require
+depend fmri=pkg:/system/font/truetype/dejavu type=require
 
 # Drop system directories to not have conflicting permissions
 <transform dir path=etc$ -> drop>
@@ -53,7 +59,3 @@ $(HARDENED_ONLY)<transform file path=opt/VirtualBox/amd64/(VirtualBoxVM|VBoxHead
 # Handle SMF manifests
 <transform dir file path=var/svc/manifest/.*$ -> set group sys>
 <transform file path=var/svc/manifest/.*\.xml$ -> default restart_fmri svc:/system/manifest-import:default>
-
-# todo:
-# resolve dependencies properly for python
-<transform file path=opt/VirtualBox/vboxshell\.py$ -> drop>

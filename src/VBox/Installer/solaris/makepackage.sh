@@ -65,16 +65,10 @@ if [ -n "$IPS_PACKAGE" ] ; then
 else
     VBOX_PKGNAME=SUNWvbox
 fi
-# need GNU grep because Solaris egrep does not support word matching
-VBOX_GGREP=/usr/gnu/bin/grep
+# any egrep should do the job, the one from /usr/xpg4/bin isn't required
+VBOX_EGREP=/usr/bin/egrep
 # need dynamic regex support which isn't available in S11 /usr/bin/awk
 VBOX_AWK=/usr/xpg4/bin/awk
-
-# check for GNU grep we use which might not ship with all Solaris
-if [ ! -f "$VBOX_GGREP" ] && [ ! -h "$VBOX_GGREP" ]; then
-    echo "## GNU grep not found in $VBOX_GGREP."
-    exit 1
-fi
 
 # bail out on non-zero exit status
 set -e
@@ -138,7 +132,7 @@ package_create()
     # Convert into package archive
     rm -f "$1/$2"
     pkgrecv -a -s "$1/vbox-repo" -d "$1/$2" -m latest "$3"
-    #rm -rf "$1/vbox-repo"
+    rm -rf "$1/vbox-repo"
 }
 
 else
@@ -167,7 +161,7 @@ package_spec_append_content()
 {
     cd "$1"
     # Exclude directories to not cause install-time conflicts with existing system directories
-    find . ! -type d | "$VBOX_GGREP" -v -wE 'prototype|makepackage\.sh|vbox\.pkginfo|postinstall\.sh|checkinstall\.sh|preremove\.sh|vbox\.space|vbox-ips.mog|virtualbox\.p5m.*|vbox-repo' | LC_COLLATE=C sort | pkgproto >> "$PACKAGE_SPEC"
+    find . ! -type d | "$VBOX_EGREP" -v '^\./(LICENSE|prototype|makepackage\.sh|vbox\.pkginfo|postinstall\.sh|checkinstall\.sh|preremove\.sh|vbox\.space|vbox-ips.mog|virtualbox\.p5m.*)$' | LC_COLLATE=C sort | pkgproto >> "$PACKAGE_SPEC"
     cd -
     "$VBOX_AWK" 'NF == 3 && $1 == "s" && $2 == "none" { $3="/"$3 } { print }' "$PACKAGE_SPEC" > "$PACKAGE_SPEC.tmp"
     mv -f "$PACKAGE_SPEC.tmp" "$PACKAGE_SPEC"
@@ -177,7 +171,7 @@ package_spec_append_content()
     cd "$1"
     # Include opt/VirtualBox and subdirectories as we want uninstall to clean up directory structure.
     # Include var/svc for manifest class action script does not create them.
-    find . -type d | "$VBOX_GGREP" -E 'opt/VirtualBox|var/svc/manifest/application/virtualbox' | LC_COLLATE=C sort | pkgproto >> "$PACKAGE_SPEC"
+    find . -type d | "$VBOX_EGREP" 'opt/VirtualBox|var/svc/manifest/application/virtualbox' | LC_COLLATE=C sort | pkgproto >> "$PACKAGE_SPEC"
     cd -
     "$VBOX_AWK" 'NF == 6 && $1 == "d" && $2 == "none" { $3="/"$3 } { print }' "$PACKAGE_SPEC" > "$PACKAGE_SPEC.tmp"
     mv -f "$PACKAGE_SPEC.tmp" "$PACKAGE_SPEC"
