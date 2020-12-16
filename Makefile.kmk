@@ -214,7 +214,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  			,$(NLTAB)install_name_tool \
  			$(if-expr "$(suffix $2)" == "", -id "$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Framework,@rpath)/$(notdir $(2)).framework/Version/5/$(notdir $(2))",) \
  			$(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
- 				$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT)/, \
+ 				$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT5)/, \
  				-change "$(prefix)$(qtmod).framework/Versions/5/$(qtmod)" \
  					"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/5/$(qtmod)" ) ) \
  			"$(2)",) # HACK ALERT! Using $(source_type_prefix) to detect EXEC_SOURCES.
