@@ -3655,22 +3655,22 @@
         <translation type="unfinished">ПБ</translation>
     </message>
     <message>
-        <source>IDE Primary Master</source>
+        <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE примарно главно</translation>
     </message>
     <message>
-        <source>IDE Primary Slave</source>
+        <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE примарно роб</translation>
     </message>
     <message>
-        <source>IDE Secondary Master</source>
+        <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE други главни</translation>
     </message>
     <message>
-        <source>IDE Secondary Slave</source>
+        <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE други роб</translation>
     </message>

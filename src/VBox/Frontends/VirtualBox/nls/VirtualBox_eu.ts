@@ -4455,28 +4455,28 @@
     <message>
         <location line="+29"/>
         <location line="+135"/>
-        <source>IDE Primary Master</source>
+        <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE Lehen Nagusia</translation>
     </message>
     <message>
         <location line="-133"/>
         <location line="+134"/>
-        <source>IDE Primary Slave</source>
+        <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE Lehen Esklabua</translation>
     </message>
     <message>
         <location line="-132"/>
         <location line="+133"/>
-        <source>IDE Secondary Master</source>
+        <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE Bigarren Nagusia</translation>
     </message>
     <message>
         <location line="-131"/>
         <location line="+132"/>
-        <source>IDE Secondary Slave</source>
+        <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE Bigarren Esklabua</translation>
     </message>

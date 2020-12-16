@@ -4280,24 +4280,24 @@
         <translation>ПБ</translation>
     </message>
     <message>
-        <source>IDE Primary Master</source>
+        <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>Первичный мастер IDE</translation>
+        <translation type="unfinished">Первичный мастер IDE</translation>
     </message>
     <message>
-        <source>IDE Primary Slave</source>
+        <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>Первичный слэйв IDE</translation>
+        <translation type="unfinished">Первичный слэйв IDE</translation>
     </message>
     <message>
-        <source>IDE Secondary Master</source>
+        <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>Вторичный мастер IDE</translation>
+        <translation type="unfinished">Вторичный мастер IDE</translation>
     </message>
     <message>
-        <source>IDE Secondary Slave</source>
+        <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>Вторичный слэйв IDE</translation>
+        <translation type="unfinished">Вторичный слэйв IDE</translation>
     </message>
     <message>
         <source>SATA Port %1</source>

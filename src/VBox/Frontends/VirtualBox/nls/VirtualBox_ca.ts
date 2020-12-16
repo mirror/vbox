@@ -3069,24 +3069,24 @@
         <translation>PB</translation>
     </message>
     <message>
-        <source>IDE Primary Master</source>
+        <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>IDE primari mestre</translation>
+        <translation type="unfinished">IDE primari mestre</translation>
     </message>
     <message>
-        <source>IDE Primary Slave</source>
+        <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>IDE primari esclau</translation>
+        <translation type="unfinished">IDE primari esclau</translation>
     </message>
     <message>
-        <source>IDE Secondary Master</source>
+        <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>IDE secundari mestre</translation>
+        <translation type="unfinished">IDE secundari mestre</translation>
     </message>
     <message>
-        <source>IDE Secondary Slave</source>
+        <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>IDE secundari esclau</translation>
+        <translation type="unfinished">IDE secundari esclau</translation>
     </message>
     <message>
         <source>SATA Port %1</source>

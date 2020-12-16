@@ -4177,24 +4177,24 @@
         <translation>PB</translation>
     </message>
     <message>
-        <source>IDE Primary Master</source>
+        <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>IDE プライマリマスター</translation>
+        <translation type="unfinished">IDE プライマリマスター</translation>
     </message>
     <message>
-        <source>IDE Primary Slave</source>
+        <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>IDE プライマリスレーブ</translation>
+        <translation type="unfinished">IDE プライマリスレーブ</translation>
     </message>
     <message>
-        <source>IDE Secondary Master</source>
+        <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>IDE セカンダリマスター</translation>
+        <translation type="unfinished">IDE セカンダリマスター</translation>
     </message>
     <message>
-        <source>IDE Secondary Slave</source>
+        <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>IDE セカンダリスレーブ</translation>
+        <translation type="unfinished">IDE セカンダリスレーブ</translation>
     </message>
     <message>
         <source>SATA Port %1</source>

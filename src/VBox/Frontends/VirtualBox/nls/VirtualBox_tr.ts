@@ -4310,24 +4310,24 @@
         <translation>PB</translation>
     </message>
     <message>
-        <source>IDE Primary Master</source>
+        <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>IDE Primary Master</translation>
+        <translation type="unfinished">IDE Primary Device 0</translation>
     </message>
     <message>
-        <source>IDE Primary Slave</source>
+        <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>IDE Primary Slave</translation>
+        <translation type="unfinished">IDE Primary Device 1</translation>
     </message>
     <message>
-        <source>IDE Secondary Master</source>
+        <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>IDE Secondary Master</translation>
+        <translation type="unfinished">IDE Secondary Device 0</translation>
     </message>
     <message>
-        <source>IDE Secondary Slave</source>
+        <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>IDE Secondary Slave</translation>
+        <translation type="unfinished">IDE Secondary Device 1</translation>
     </message>
     <message>
         <source>SATA Port %1</source>

@@ -4216,22 +4216,22 @@
         <translation type="unfinished">PB</translation>
     </message>
     <message>
-        <source>IDE Primary Master</source>
+        <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE 프라이머리 마스터</translation>
     </message>
     <message>
-        <source>IDE Primary Slave</source>
+        <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE 프라이머리 슬레이브</translation>
     </message>
     <message>
-        <source>IDE Secondary Master</source>
+        <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE 세컨더리 마스터</translation>
     </message>
     <message>
-        <source>IDE Secondary Slave</source>
+        <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
         <translation type="unfinished">IDE 세컨더리 슬레이브</translation>
     </message>

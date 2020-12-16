@@ -4414,24 +4414,24 @@
         <translation>PB</translation>
     </message>
     <message>
-        <source>IDE Primary Master</source>
+        <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>IDE primario maestro</translation>
+        <translation type="unfinished">IDE primario maestro</translation>
     </message>
     <message>
-        <source>IDE Primary Slave</source>
+        <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>IDE primario esclavo</translation>
+        <translation type="unfinished">IDE primario esclavo</translation>
     </message>
     <message>
-        <source>IDE Secondary Master</source>
+        <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>IDE secundario maestro</translation>
+        <translation type="unfinished">IDE secundario maestro</translation>
     </message>
     <message>
-        <source>IDE Secondary Slave</source>
+        <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>IDE secundario esclavo</translation>
+        <translation type="unfinished">IDE secundario esclavo</translation>
     </message>
     <message>
         <source>SATA Port %1</source>

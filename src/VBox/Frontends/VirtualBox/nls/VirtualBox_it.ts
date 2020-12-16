@@ -4633,24 +4633,24 @@
         <translation>PB</translation>
     </message>
     <message>
-        <source>IDE Primary Master</source>
+        <source>IDE Primary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>IDE master primario</translation>
+        <translation type="unfinished">IDE master primario</translation>
     </message>
     <message>
-        <source>IDE Primary Slave</source>
+        <source>IDE Primary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>IDE slave primario</translation>
+        <translation type="unfinished">IDE slave primario</translation>
     </message>
     <message>
-        <source>IDE Secondary Master</source>
+        <source>IDE Secondary Device 0</source>
         <comment>StorageSlot</comment>
-        <translation>IDE master secondario</translation>
+        <translation type="unfinished">IDE master secondario</translation>
     </message>
     <message>
-        <source>IDE Secondary Slave</source>
+        <source>IDE Secondary Device 1</source>
         <comment>StorageSlot</comment>
-        <translation>IDE slave secondario</translation>
+        <translation type="unfinished">IDE slave secondario</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
