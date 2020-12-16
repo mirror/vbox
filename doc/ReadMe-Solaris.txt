@@ -1,5 +1,5 @@
 
-@VBOX_PRODUCT@ for Solaris (TM) Operating System
+@VBOX_PRODUCT@ for Oracle Solaris (TM) Operating System
 --------------------------------------------------------
 
 Upgrading:
@@ -44,8 +44,4 @@ To remove VirtualBox from your system, perform the following steps:
 
 2. To remove VirtualBox, run the command:
         pkgrm SUNWvbox
-
-3. To remove the VirtualBox kernel interface module, run the command:
-        pkgrm SUNWvboxkern
-    * Only required if you're uninstalling VirtualBox versions 3.0.x or lower.
 
