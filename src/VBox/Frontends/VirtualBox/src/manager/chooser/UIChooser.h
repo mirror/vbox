@@ -171,6 +171,8 @@ public:
         void setMachineSearchWidgetVisibility(bool fVisible);
         /** Changes current machine to the one with certain @a uId. */
         void setCurrentMachine(const QUuid &uId);
+        /** Set global tools to be the current item. */
+        void setCurrentGlobal();
     /** @} */
 
 public slots:

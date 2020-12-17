@@ -232,6 +232,8 @@ public:
         void sortSelectedGroupItem();
         /** Changes current machine item to the one with certain @a uId. */
         void setCurrentMachineItem(const QUuid &uId);
+        /** Sets global tools item to be the current one. */
+        void setCurrentGlobalItem();
 
         /** Defines current @a pDragObject. */
         void setCurrentDragObject(QDrag *pDragObject);

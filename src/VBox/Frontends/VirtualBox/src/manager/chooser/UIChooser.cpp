@@ -189,6 +189,12 @@ void UIChooser::setCurrentMachine(const QUuid &uId)
     model()->setCurrentMachineItem(uId);
 }
 
+void UIChooser::setCurrentGlobal()
+{
+    AssertPtrReturnVoid(model());
+    model()->setCurrentGlobalItem();
+}
+
 void UIChooser::setGlobalItemHeightHint(int iHeight)
 {
     AssertPtrReturnVoid(model());

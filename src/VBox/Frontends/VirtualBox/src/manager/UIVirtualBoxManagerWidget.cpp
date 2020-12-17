@@ -509,9 +509,9 @@ void UIVirtualBoxManagerWidget::sltSwitchToMachinePerformancePane(const QUuid &u
 
 void UIVirtualBoxManagerWidget::sltSwitchToResourcesPane()
 {
+    AssertPtrReturnVoid(m_pPaneChooser);
     AssertPtrReturnVoid(m_pPaneTools);
-    m_pPaneToolsGlobal->setActive(true);
-    switchToGlobalTool(UIToolType_Resources);
+    m_pPaneChooser->setCurrentGlobal();
     m_pPaneTools->setToolsType(UIToolType_Resources);
 }
 

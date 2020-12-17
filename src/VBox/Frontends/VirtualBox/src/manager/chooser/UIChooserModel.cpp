@@ -1006,6 +1006,17 @@ void UIChooserModel::setCurrentMachineItem(const QUuid &uId)
         setSelectedItem(pItem);
 }
 
+void UIChooserModel::setCurrentGlobalItem()
+{
+    /* Look whether we have such item at all: */
+    UIChooserItem *pItem = root()->searchForItem(QString(),
+                                                 UIChooserItemSearchFlag_Global);
+
+    /* Select item if exists: */
+    if (pItem)
+        setSelectedItem(pItem);
+}
+
 void UIChooserModel::setCurrentDragObject(QDrag *pDragObject)
 {
     /* Make sure real focus unset: */
