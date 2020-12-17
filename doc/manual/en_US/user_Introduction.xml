@@ -4802,15 +4802,15 @@
 
     <title>Configuration Details and Runtime Information of Virtual Machines</title>
     <para>
-      &product-name; GUI offers several possibilities for obtaining configuration
-      and runtime information of virtual machines.
+      &product-name; GUI offers several possibilities for obtaining
+      configuration and runtime information of virtual machines.
     </para>
 
     <sect2 id="vm-details-tool">
       <title>Virtual Machine Details Widget</title>
       <para>
-        The VM details widget is an interactive tool through which settings of the
-        guest system can be viewed and modified.
+        The VM details widget is an interactive tool through which
+        settings of the guest system can be viewed and modified.
       </para>
     </sect2>
     <sect2 id="resource-monitor">
@@ -4818,12 +4818,17 @@
       <title>Resource Monitor</title>
 
       <para>
-        &product-name; has a widget that shows several performance metrics
-        of running virtual machines. This enables users to have a quick overview
-        of system resources of individual virtual machines and that of host system.
-        The widget display several performance metrics of each running virtual machine.
-        It is possible to configure the set of metrics to be shown and select a metric
-        with respect to which the list of virtual machines are sorted.
+        The Resource Monitor widget shows several performance metrics
+        of running virtual machines. This enables users to have a quick
+        overview of system resources of individual virtual machines and
+        those of host system. The widget displays several performance
+        metrics of each running virtual machine. It is possible to
+        configure the set of metrics to be shown and select a metric
+        with respect to which the list of virtual machines is sorted.
+        It is also possible to open the virtual machine's performance
+        monitor (See <xref linkend="vm-session-information"/>) by activating
+        To Performance action which is located in the tool bar and
+        in the context menu.
       </para>
       <figure id="fig-resource-monitor">
         <title>Resource Monitor</title>
@@ -4840,33 +4845,36 @@
     <sect2 id="vm-session-information">
       <title>Session Information Dialog</title>
       <para>
-        The guest VM window includes a multi tabbed dialog which conveys important
-        configuration and runtime information of the guest system. The tabs of the
-        dialog are:
+        The guest VM window includes a multi tabbed dialog which conveys
+        important configuration and runtime information of the guest
+        system. The tabs of the dialog are:
       </para>
 
       <itemizedlist>
       <listitem>
         <para>
-          <emphasis role="bold">Configuration Details</emphasis> tab displays
-          system configuration of the virtual machine in a tabular format. The
-          displayed information includes storage configuration, audio settings,
-          etc.
+          <emphasis role="bold">Configuration Details</emphasis> tab
+          displays system configuration of the virtual machine in a
+          tabular format. The displayed information includes storage
+          configuration, audio settings, etc.
         </para>
       </listitem>
       <listitem>
         <para>
-          <emphasis role="bold">Runtime Information</emphasis> tab shows the information
-          that can change between the guest sessions in tabular format similar to the
-          Configuration Details tab.
+          <emphasis role="bold">Runtime Information</emphasis> tab
+          shows the information that can change between the guest
+          sessions in tabular format similar to the Configuration
+          Details tab.
         </para>
       </listitem>
       <listitem>
         <para>
-          <emphasis role="bold">Performance Monitor</emphasis> tab has several time series charts
-          which monitors guests resource usage including CPU, RAM, Disk I/O, and Network. Note
-          that RAM chart requires guest additions to be running on the guest system to work. The
-          Performance Monitor is also avaible from the manager UI machine menu.
+          <emphasis role="bold">Performance Monitor</emphasis> tab
+          has several time series charts which monitors guests resource
+          usage including CPU, RAM, Disk I/O, and Network. Note that
+          RAM chart requires the guest additions to be running on the guest
+          system to work. The Performance Monitor is also available from
+          the manager UI machine menu.
         </para>
       </listitem>
       </itemizedlist>
