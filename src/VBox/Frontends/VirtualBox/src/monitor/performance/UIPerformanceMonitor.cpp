@@ -1095,10 +1095,15 @@ void UIPerformanceMonitor::prepareToolBar()
 
 void UIPerformanceMonitor::prepareActions()
 {
-    QAction *pAction =
+    QAction *pExportAction =
         m_pActionPool->action(UIActionIndex_M_Performance_S_Export);
-    if (pAction)
-        connect(pAction, &QAction::triggered, this, &UIPerformanceMonitor::sltExportMetricsToFile);
+    if (pExportAction)
+        connect(pExportAction, &QAction::triggered, this, &UIPerformanceMonitor::sltExportMetricsToFile);
+
+    QAction *pToResourcesAction =
+        m_pActionPool->action(UIActionIndex_M_Performance_S_ToResources);
+    if (pToResourcesAction)
+        connect(pToResourcesAction, &QAction::triggered, this, &UIPerformanceMonitor::sigSwitchToResourcesPane);
 }
 
 bool UIPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)

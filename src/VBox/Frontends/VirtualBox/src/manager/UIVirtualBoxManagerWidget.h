@@ -270,6 +270,8 @@ private slots:
 
         /** Handles signal requesting switch to Performance pane of machine with @a uMachineId. */
         void sltSwitchToMachinePerformancePane(const QUuid &uMachineId);
+        /** Handles signal requesting switch to Resources pane. */
+        void sltSwitchToResourcesPane();
     /** @} */
 
 private:

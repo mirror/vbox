@@ -507,6 +507,14 @@ void UIVirtualBoxManagerWidget::sltSwitchToMachinePerformancePane(const QUuid &u
     m_pPaneTools->setToolsType(UIToolType_Performance);
 }
 
+void UIVirtualBoxManagerWidget::sltSwitchToResourcesPane()
+{
+    AssertPtrReturnVoid(m_pPaneTools);
+    m_pPaneToolsGlobal->setActive(true);
+    switchToGlobalTool(UIToolType_Resources);
+    m_pPaneTools->setToolsType(UIToolType_Resources);
+}
+
 void UIVirtualBoxManagerWidget::prepare()
 {
     /* Prepare everything: */
@@ -617,6 +625,8 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                                 m_pPaneToolsMachine->setActive(true);
                             connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigCurrentSnapshotItemChange,
                                     this, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange);
+                            connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigSwitchToResourcesPane,
+                                    this, &UIVirtualBoxManagerWidget::sltSwitchToResourcesPane);
 
                             /* Add into stack: */
                             m_pStackedWidget->addWidget(m_pPaneToolsMachine);
@@ -900,6 +910,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 case UIToolType_Performance:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Performance_S_Export));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Performance_S_ToResources));
                     m_pToolBar->addSeparator();
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));

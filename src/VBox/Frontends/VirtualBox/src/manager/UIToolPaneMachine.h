@@ -61,6 +61,9 @@ signals:
     /** Notifies listeners about current Snapshot pane item change. */
     void sigCurrentSnapshotItemChange();
 
+    /** Notifies listeners about request to switch to Resources pane. */
+    void sigSwitchToResourcesPane();
+
 public:
 
     /** Constructs tools pane passing @a pParent to the base-class. */

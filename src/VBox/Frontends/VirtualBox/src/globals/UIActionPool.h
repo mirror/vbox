@@ -100,6 +100,7 @@ enum UIActionIndex
     /* 'Performance' menu actions: */
     UIActionIndex_M_Performance,
     UIActionIndex_M_Performance_S_Export,
+    UIActionIndex_M_Performance_S_ToResources,
 
     /* File Manager actions: */
     UIActionIndex_M_FileManager,

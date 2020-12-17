@@ -2263,6 +2263,41 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'To Resources' action class. */
+class UIActionMenuSelectorPerformanceToResources : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorPerformanceToResources(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/resources_monitor_24px.png", ":/resource_monitor_16px.png",
+                         ":/resource_monitor_disabled_24px.png", ":/resource_monitor_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToResources");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&To Resurces..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Performance Monitor"));
+        setStatusTip(QApplication::translate("UIActionPool", "Navigate to the resources widget"));
+        setToolTip(  QApplication::translate("UIActionPool", "Navigate to Resources Widget")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
 
 /*********************************************************************************************************************************
 *   Class UIActionPool implementation.                                                                                           *
@@ -2508,6 +2543,7 @@ void UIActionPool::preparePool()
     /* Create 'Performance Monitor' actions: */
     m_pool[UIActionIndex_M_Performance] = new UIActionMenuSelectorPerformance(this);
     m_pool[UIActionIndex_M_Performance_S_Export] = new UIActionMenuSelectorPerformancePerformExport(this);
+    m_pool[UIActionIndex_M_Performance_S_ToResources] = new UIActionMenuSelectorPerformanceToResources(this);
 
     /* Create 'File Manager' actions: */
     m_pool[UIActionIndex_M_FileManager] = new UIActionMenuFileManager(this);
@@ -2938,6 +2974,7 @@ void UIActionPool::updateMenuPerformanceMonitor()
 
     /* 'Export' action: */
     pMenu->addAction(action(UIActionIndex_M_Performance_S_Export));
+    pMenu->addAction(action(UIActionIndex_M_Performance_S_ToResources));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndex_M_Performance);

@@ -111,6 +111,10 @@ class  SHARED_LIBRARY_STUFF UIPerformanceMonitor : public QIWithRetranslateUI<QW
 {
     Q_OBJECT;
 
+ signals:
+
+    void sigSwitchToResourcesPane();
+
 public:
 
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.

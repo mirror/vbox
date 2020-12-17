@@ -207,6 +207,8 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
                 m_pLayout->addWidget(m_pPanePerformanceMonitor);
                 m_pLayout->setCurrentWidget(m_pPanePerformanceMonitor);
 
+                connect(m_pPanePerformanceMonitor, &UIPerformanceMonitor::sigSwitchToResourcesPane,
+                        this, &UIToolPaneMachine::sigSwitchToResourcesPane);
                 break;
             }
             default:
