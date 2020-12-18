@@ -19,6 +19,7 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIDetails.h"
 #include "UIDetailsModel.h"
 #include "UIDetailsView.h"
@@ -89,4 +90,7 @@ void UIDetails::prepare()
     /* Setup details-view connections: */
     connect(m_pDetailsView, &UIDetailsView::sigResized,
             m_pDetailsModel, &UIDetailsModel::sltHandleViewResize);
+
+    /* For context sensitive help: */
+    uiCommon().setHelpKeyword(this, "vm-details-tool");
 }

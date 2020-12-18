@@ -765,6 +765,7 @@ UIPerformanceMonitor::UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParen
     retranslateUi();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIPerformanceMonitor::sltMachineStateChange);
     setMachine(machine);
+    uiCommon().setHelpKeyword(this, "vm-session-information");
 }
 
 UIPerformanceMonitor::~UIPerformanceMonitor()

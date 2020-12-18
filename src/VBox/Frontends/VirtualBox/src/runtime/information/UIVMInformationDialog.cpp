@@ -262,7 +262,7 @@ void UIVMInformationDialog::prepareButtonBox()
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Close | QDialogButtonBox::Help);
         m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
         m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
-        uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), "guestadd-guestprops");
+        uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), "vm-session-information");
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMInformationDialog::close);
         connect(m_pButtonBox->button(QDialogButtonBox::Help), &QPushButton::pressed,
                 &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);

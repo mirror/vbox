@@ -4874,7 +4874,7 @@
           usage including CPU, RAM, Disk I/O, and Network. Note that
           RAM chart requires the guest additions to be running on the guest
           system to work. The Performance Monitor is also available from
-          the manager UI machine menu.
+          the machine menu in the manager UI.
         </para>
       </listitem>
       </itemizedlist>

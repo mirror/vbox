@@ -511,8 +511,8 @@ void UIVirtualBoxManagerWidget::sltSwitchToResourcesPane()
 {
     AssertPtrReturnVoid(m_pPaneChooser);
     AssertPtrReturnVoid(m_pPaneTools);
-    m_pPaneChooser->setCurrentGlobal();
     m_pPaneTools->setToolsType(UIToolType_Resources);
+    m_pPaneChooser->setCurrentGlobal();
 }
 
 void UIVirtualBoxManagerWidget::prepare()

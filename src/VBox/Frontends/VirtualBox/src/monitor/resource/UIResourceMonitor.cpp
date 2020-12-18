@@ -1357,6 +1357,7 @@ void UIResourceMonitorWidget::prepare()
     prepareActions();
     retranslateUi();
     updateModelColumVisibilityCache();
+    uiCommon().setHelpKeyword(this, "resource-monitor");
 }
 
 void UIResourceMonitorWidget::prepareWidgets()
