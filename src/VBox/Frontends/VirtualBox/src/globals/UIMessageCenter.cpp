@@ -3238,7 +3238,7 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
     AssertRC(rc);
     QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
 # else /* #ifndef VBOX_OSE */
-    vboxGlobal().openURL("file://" + strLocation);
+    uiCommon().openURL("file://" + strLocation);
 # endif /* #ifdef VBOX_OSE */
 #elif defined (VBOX_WS_MAC)
     uiCommon().openURL("file://" + strLocation);
