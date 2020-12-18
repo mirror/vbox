@@ -2068,21 +2068,21 @@ static int vgaR3ResizeGraphic(PVGASTATE pThis, PVGASTATER3 pThisCC, int cx, int 
 # ifdef VBOX_WITH_VMSVGA
 
 #  if 0 /* unused? */
-int vgaR3UpdateDisplay(VGAState *s, unsigned xStart, unsigned yStart, unsigned cx, unsigned cy)
+int vgaR3UpdateDisplay(PVGASTATE pThis, PVGASTATER3 pThisCC, unsigned xStart, unsigned yStart, unsigned cx, unsigned cy, PDMIDISPLAYCONNECTOR *pDrv)
 {
     uint32_t v;
     vga_draw_line_func *vga_draw_line;
 
-    if (!s->fRenderVRAM)
+    if (!pThis->fRenderVRAM)
     {
-        s->pDrv->pfnUpdateRect(s->pDrv, xStart, yStart, cx, cy);
+        pDrv->pfnUpdateRect(pDrv, xStart, yStart, cx, cy);
         return VINF_SUCCESS;
     }
     /** @todo might crash if a blit follows a resolution change very quickly (seen this many times!) */
 
-    if (    s->svga.uWidth  == VMSVGA_VAL_UNINITIALIZED
-        ||  s->svga.uHeight == VMSVGA_VAL_UNINITIALIZED
-        ||  s->svga.uBpp    == VMSVGA_VAL_UNINITIALIZED)
+    if (    pThis->svga.uWidth  == VMSVGA_VAL_UNINITIALIZED
+        ||  pThis->svga.uHeight == VMSVGA_VAL_UNINITIALIZED
+        ||  pThis->svga.uBpp    == VMSVGA_VAL_UNINITIALIZED)
     {
         /* Intermediate state; skip redraws. */
         AssertFailed();
@@ -2090,7 +2090,7 @@ int vgaR3UpdateDisplay(VGAState *s, unsigned xStart, unsigned yStart, unsigned c
     }
 
     uint32_t cBits;
-    switch (s->svga.uBpp) {
+    switch (pThis->svga.uBpp) {
     default:
     case 0:
     case 8:
@@ -2113,22 +2113,22 @@ int vgaR3UpdateDisplay(VGAState *s, unsigned xStart, unsigned yStart, unsigned c
         cBits = 32;
         break;
     }
-    vga_draw_line = vga_draw_line_table[v * 4 + vgaR3GetDepthIndex(s->pDrv->cBits)];
+    vga_draw_line = vga_draw_line_table[v * 4 + vgaR3GetDepthIndex(pDrv->cBits)];
 
-    uint32_t offSrc = (xStart * cBits) / 8 + s->svga.cbScanline * yStart;
-    uint32_t offDst = (xStart * RT_ALIGN(s->pDrv->cBits, 8)) / 8 + s->pDrv->cbScanline * yStart;
+    uint32_t offSrc = (xStart * cBits) / 8 + pThis->svga.cbScanline * yStart;
+    uint32_t offDst = (xStart * RT_ALIGN(pDrv->cBits, 8)) / 8 + pDrv->cbScanline * yStart;
 
-    uint8_t       *pbDst = s->pDrv->pbData       + offDst;
-    uint8_t const *pbSrc = s->CTX_SUFF(vram_ptr) + offSrc;
+    uint8_t       *pbDst = pDrv->pbData     + offDst;
+    uint8_t const *pbSrc = pThisCC->pbVRam  + offSrc;
 
     for (unsigned y = yStart; y < yStart + cy; y++)
     {
-        vga_draw_line(s, pbDst, pbSrc, cx);
+        vga_draw_line(pThis, pThisCC, pbDst, pbSrc, cx);
 
-        pbDst += s->pDrv->cbScanline;
-        pbSrc += s->svga.cbScanline;
+        pbDst += pDrv->cbScanline;
+        pbSrc += pThis->svga.cbScanline;
     }
-    s->pDrv->pfnUpdateRect(s->pDrv, xStart, yStart, cx, cy);
+    pDrv->pfnUpdateRect(pDrv, xStart, yStart, cx, cy);
 
     return VINF_SUCCESS;
 }
@@ -6601,9 +6601,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                            "VRam", (void **)&pThisCC->pbVRam, &pThis->hMmio2VRam);
     AssertLogRelRCReturn(rc, PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                                  N_("Failed to allocate %u bytes of VRAM"), pThis->vram_size));
-# ifndef VGA_WITH_PARTIAL_RING0_MAPPING
-    pThis->vram_ptrR0 = (RTR0PTR)pThisCC->pbVRam;
-# endif
 
     /*
      * Register access handler types for tracking dirty VRAM pages.

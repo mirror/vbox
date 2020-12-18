@@ -192,7 +192,6 @@ typedef struct vga_retrace_s {
 
 #ifndef VBOX
 #define VGA_STATE_COMMON                                                \
-    uint8_t *vram_ptr;                                                  \
     unsigned long vram_offset;                                          \
     unsigned int vram_size;                                             \
     uint32_t latch;                                                     \
