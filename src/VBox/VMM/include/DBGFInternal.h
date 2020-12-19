@@ -57,6 +57,8 @@
 #ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
 /** @name Global breakpoint table handling defines.
  * @{ */
+/** Maximum number of breakpoint owners supported (power of two). */
+#define DBGF_BP_OWNER_COUNT_MAX             _32K
 /** Maximum number of breakpoints supported (power of two). */
 #define DBGF_BP_COUNT_MAX                   _1M
 /** Size of a single breakpoint structure in bytes. */
@@ -828,6 +830,44 @@ typedef DBGFBPSEARCHOPT *PDBGFBPSEARCHOPT;
 #define DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(a_GCPtr)  ((uint16_t)((a_GCPtr) & UINT16_C(0xffff)))
 
 /**
+ * The internal breakpoint owner state, shared part.
+ */
+typedef struct DBGFBPOWNERINT
+{
+    /** Reference counter indicating how man breakpoints use this owner currently. */
+    volatile uint32_t           cRefs;
+    /** Padding. */
+    uint32_t                    u32Pad0;
+    /** Callback to call when a breakpoint has hit, Ring-3 Ptr. */
+    R3PTRTYPE(PFNDBGFBPHIT)     pfnBpHitR3;
+} DBGFBPOWNERINT;
+AssertCompileSize(DBGFBPOWNERINT, 16);
+/** Pointer to an internal breakpoint owner state, shared part. */
+typedef DBGFBPOWNERINT *PDBGFBPOWNERINT;
+/** Pointer to a constant internal breakpoint owner state, shared part. */
+typedef const DBGFBPOWNERINT *PCDBGFBPOWNERINT;
+
+
+/**
+ * The internal breakpoint owner state, Ring-0 part.
+ */
+typedef struct DBGFBPOWNERINTR0
+{
+    /** Reference counter indicating how man breakpoints use this owner currently. */
+    volatile uint32_t           cRefs;
+    /** Padding. */
+    uint32_t                    u32Pad0;
+    /** Callback to call when a breakpoint has hit, Ring-0 Ptr. */
+    R0PTRTYPE(PFNDBGFBPHIT)     pfnBpHitR0;
+} DBGFBPOWNERINTR0;
+AssertCompileSize(DBGFBPOWNERINTR0, 16);
+/** Pointer to an internal breakpoint owner state, shared part. */
+typedef DBGFBPOWNERINTR0 *PDBGFBPOWNERINTR0;
+/** Pointer to a constant internal breakpoint owner state, shared part. */
+typedef const DBGFBPOWNERINTR0 *PCDBGFBPOWNERINTR0;
+
+
+/**
  * The internal breakpoint state, shared part.
  */
 typedef struct DBGFBPINT
@@ -1284,6 +1324,13 @@ typedef struct DBGFR0PERVM
 #ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
     /** @name Breakpoint handling related state, Ring-0 only part.
      * @{ */
+    /** The breakpoint owner table memory object. */
+    RTR0MEMOBJ                          hMemObjBpOwners;
+    /** The breakpoint owner table mapping object. */
+    RTR0MEMOBJ                          hMapObjBpOwners;
+    /** Base pointer to the breakpoint owners table. */
+    R0PTRTYPE(PDBGFBPOWNERINTR0)        paBpOwnersR0;
+
     /** Global breakpoint table chunk array. */
     DBGFBPCHUNKR0                       aBpChunks[DBGF_BP_CHUNK_COUNT];
     /** Breakpoint L2 lookup table chunk array. */
@@ -1375,6 +1422,11 @@ typedef struct DBGFUSERPERVM
 #ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
     /** @name Breakpoint handling related state.
      * @{ */
+    /** Base pointer to the breakpoint owners table. */
+    R3PTRTYPE(PDBGFBPOWNERINT)      paBpOwnersR3;
+    /** Pointer to the bitmap denoting occupied owner entries. */
+    R3PTRTYPE(volatile void *)      pbmBpOwnersAllocR3;
+
     /** Global breakpoint table chunk array. */
     DBGFBPCHUNKR3                   aBpChunks[DBGF_BP_CHUNK_COUNT];
     /** Breakpoint L2 lookup table chunk array. */

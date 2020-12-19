@@ -436,6 +436,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_DBGF_BP_CHUNK_ALLOC,
     /** Call DBGFR0BpL2TblChunkAllocReqHandler(). */
     VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC,
+    /** Call DBGFR0BpOwnerInitReqHandler(). */
+    VMMR0_DO_DBGF_BP_OWNER_INIT,
 
     /** The usual 32-bit type blow up. */
     VMMR0_DO_32BIT_HACK = 0x7fffffff

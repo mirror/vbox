@@ -51,6 +51,10 @@
  */
 DECLHIDDEN(void) dbgfR0BpInit(PGVM pGVM)
 {
+    pGVM->dbgfr0.s.hMemObjBpOwners = NIL_RTR0MEMOBJ;
+    pGVM->dbgfr0.s.hMapObjBpOwners = NIL_RTR0MEMOBJ;
+    //pGVM->dbgfr0.s.paBpOwnersR0    = NULL;
+
     for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->dbgfr0.s.aBpChunks); i++)
     {
         PDBGFBPCHUNKR0 pBpChunk = &pGVM->dbgfr0.s.aBpChunks[i];
@@ -86,6 +90,20 @@ DECLHIDDEN(void) dbgfR0BpInit(PGVM pGVM)
  */
 DECLHIDDEN(void) dbgfR0BpDestroy(PGVM pGVM)
 {
+    if (pGVM->dbgfr0.s.hMemObjBpOwners != NIL_RTR0MEMOBJ)
+    {
+        Assert(pGVM->dbgfr0.s.hMapObjBpOwners != NIL_RTR0MEMOBJ);
+        AssertPtr(pGVM->dbgfr0.s.paBpOwnersR0);
+
+        RTR0MEMOBJ hMemObj = pGVM->dbgfr0.s.hMapObjBpOwners;
+        pGVM->dbgfr0.s.hMapObjBpOwners = NIL_RTR0MEMOBJ;
+        RTR0MemObjFree(hMemObj, true);
+
+        hMemObj = pGVM->dbgfr0.s.hMemObjBpOwners;
+        pGVM->dbgfr0.s.hMemObjBpOwners = NIL_RTR0MEMOBJ;
+        RTR0MemObjFree(hMemObj, true);
+    }
+
     if (pGVM->dbgfr0.s.fInit)
     {
         Assert(pGVM->dbgfr0.s.hMemObjBpLocL1 != NIL_RTR0MEMOBJ);
@@ -207,6 +225,51 @@ static int dbgfR0BpInitWorker(PGVM pGVM, R3PTRTYPE(volatile uint32_t *) *ppaBpLo
          */
         *ppaBpLocL1R3 = RTR0MemObjAddressR3(hMapObj);
         pGVM->dbgfr0.s.fInit = true;
+        return rc;
+    }
+
+    RTR0MemObjFree(hMemObj, true);
+    return rc;
+}
+
+
+/**
+ * Worker for DBGFR0BpOwnerInitReqHandler() that does the actual initialization.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @param   ppaBpOwnerR3    Where to return the ring-3 breakpoint owner table base address on success.
+ * @thread  EMT(0)
+ */
+static int dbgfR0BpOwnerInitWorker(PGVM pGVM, R3PTRTYPE(void *) *ppaBpOwnerR3)
+{
+    /*
+     * Figure out how much memory we need for the L1 lookup table and allocate it.
+     */
+    uint32_t const cbBpOwnerR0 = RT_ALIGN_32(DBGF_BP_OWNER_COUNT_MAX * sizeof(DBGFBPOWNERINTR0), PAGE_SIZE);
+    uint32_t const cbBpOwnerR3 = RT_ALIGN_32(DBGF_BP_OWNER_COUNT_MAX * sizeof(DBGFBPOWNERINT), PAGE_SIZE);
+    uint32_t const cbTotal     = RT_ALIGN_32(cbBpOwnerR0 + cbBpOwnerR3, PAGE_SIZE);
+
+    RTR0MEMOBJ hMemObj;
+    int rc = RTR0MemObjAllocPage(&hMemObj, cbTotal, false /*fExecutable*/);
+    if (RT_FAILURE(rc))
+        return rc;
+    RT_BZERO(RTR0MemObjAddress(hMemObj), cbTotal);
+
+    /* Map it. */
+    RTR0MEMOBJ hMapObj;
+    rc = RTR0MemObjMapUserEx(&hMapObj, hMemObj, (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, RTR0ProcHandleSelf(),
+                             cbBpOwnerR0 /*offSub*/, cbBpOwnerR3);
+    if (RT_SUCCESS(rc))
+    {
+        pGVM->dbgfr0.s.hMemObjBpOwners = hMemObj;
+        pGVM->dbgfr0.s.hMapObjBpOwners = hMapObj;
+        pGVM->dbgfr0.s.paBpOwnersR0    = (PDBGFBPOWNERINTR0)RTR0MemObjAddress(hMemObj);
+
+        /*
+         * We're done.
+         */
+        *ppaBpOwnerR3 = RTR0MemObjAddressR3(hMapObj);
         return rc;
     }
 
@@ -344,6 +407,32 @@ VMMR0_INT_DECL(int) DBGFR0BpInitReqHandler(PGVM pGVM, PDBGFBPINITREQ pReq)
     AssertReturn(!pGVM->dbgfr0.s.fInit, VERR_WRONG_ORDER);
 
     return dbgfR0BpInitWorker(pGVM, &pReq->paBpLocL1R3);
+}
+
+
+/**
+ * Used by ring-3 DBGF to initialize the breakpoint owner table for operation.
+ *
+ * @returns VBox status code.
+ * @param   pGVM    The global (ring-0) VM structure.
+ * @param   pReq    Pointer to the request buffer.
+ * @thread  EMT(0)
+ */
+VMMR0_INT_DECL(int) DBGFR0BpOwnerInitReqHandler(PGVM pGVM, PDBGFBPOWNERINITREQ pReq)
+{
+    LogFlow(("DBGFR0BpOwnerInitReqHandler:\n"));
+
+    /*
+     * Validate the request.
+     */
+    AssertReturn(pReq->Hdr.cbReq == sizeof(*pReq), VERR_INVALID_PARAMETER);
+
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
+    AssertRCReturn(rc, rc);
+
+    AssertReturn(!pGVM->dbgfr0.s.paBpOwnersR0, VERR_WRONG_ORDER);
+
+    return dbgfR0BpOwnerInitWorker(pGVM, &pReq->paBpOwnerR3);
 }
 
 

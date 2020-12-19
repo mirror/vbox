@@ -181,6 +181,9 @@ DECLHIDDEN(int) dbgfR3BpInit(PUVM pUVM)
 {
     PVM pVM = pUVM->pVM;
 
+    //pUVM->dbgf.s.paBpOwnersR3       = NULL;
+    //pUVM->dbgf.s.pbmBpOwnersAllocR3 = NULL;
+
     /* Init hardware breakpoint states. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); i++)
     {
@@ -226,6 +229,12 @@ DECLHIDDEN(int) dbgfR3BpInit(PUVM pUVM)
  */
 DECLHIDDEN(int) dbgfR3BpTerm(PUVM pUVM)
 {
+    if (pUVM->dbgf.s.pbmBpOwnersAllocR3)
+    {
+        RTMemFree((void *)pUVM->dbgf.s.pbmBpOwnersAllocR3);
+        pUVM->dbgf.s.pbmBpOwnersAllocR3 = NULL;
+    }
+
     /* Free all allocated chunk bitmaps (the chunks itself are destroyed during ring-0 VM destruction). */
     for (uint32_t i = 0; i < RT_ELEMENTS(pUVM->dbgf.s.aBpChunks); i++)
     {
@@ -313,6 +322,139 @@ static int dbgfR3BpEnsureInit(PUVM pUVM)
 
     /* Gather all EMTs and call into ring-0 to initialize the breakpoint manager. */
     return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpInitEmtWorker, NULL /*pvUser*/);
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpOwnerInitEmtWorker(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    RT_NOREF(pvUser);
+
+    VMCPU_ASSERT_EMT(pVCpu);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    /*
+     * The initialization will be done on EMT(0). It is possible that multiple
+     * initialization attempts are done because dbgfR3BpOwnerEnsureInit() can be called
+     * from racing non EMT threads when trying to create a breakpoint owner for the first time.
+     * Just fake success if the pointers are initialized already, meaning that a previous rendezvous
+     * successfully initialized the breakpoint owner table.
+     */
+    int rc = VINF_SUCCESS;
+    PUVM pUVM = pVM->pUVM;
+    if (   pVCpu->idCpu == 0
+        && !pUVM->dbgf.s.pbmBpOwnersAllocR3)
+    {
+        pUVM->dbgf.s.pbmBpOwnersAllocR3 = (volatile void *)RTMemAllocZ(DBGF_BP_OWNER_COUNT_MAX / 8);
+        if (pUVM->dbgf.s.pbmBpOwnersAllocR3)
+        {
+            DBGFBPOWNERINITREQ Req;
+            Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+            Req.Hdr.cbReq    = sizeof(Req);
+            Req.paBpOwnerR3  = NULL;
+            rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_OWNER_INIT, 0 /*u64Arg*/, &Req.Hdr);
+            AssertLogRelMsgRC(rc, ("VMMR0_DO_DBGF_BP_OWNER_INIT failed: %Rrc\n", rc));
+            if (RT_SUCCESS(rc))
+            {
+                pUVM->dbgf.s.paBpOwnersR3 = (PDBGFBPOWNERINT)Req.paBpOwnerR3;
+                return VINF_SUCCESS;
+            }
+
+            RTMemFree((void *)pUVM->dbgf.s.pbmBpOwnersAllocR3);
+            pUVM->dbgf.s.pbmBpOwnersAllocR3 = NULL;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Ensures that the breakpoint manager is fully initialized.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ *
+ * @thread Any thread.
+ */
+static int dbgfR3BpOwnerEnsureInit(PUVM pUVM)
+{
+    /* If the allocation bitmap is allocated initialization succeeded before. */
+    if (RT_LIKELY(pUVM->dbgf.s.pbmBpOwnersAllocR3))
+        return VINF_SUCCESS;
+
+    /* Gather all EMTs and call into ring-0 to initialize the breakpoint manager. */
+    return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpOwnerInitEmtWorker, NULL /*pvUser*/);
+}
+
+
+/**
+ * Returns the internal breakpoint owner state for the given handle.
+ *
+ * @returns Pointer to the internal breakpoint owner state or NULL if the handle is invalid.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBpOwner            The breakpoint owner handle to resolve.
+ */
+DECLINLINE(PDBGFBPOWNERINT) dbgfR3BpOwnerGetByHnd(PUVM pUVM, DBGFBPOWNER hBpOwner)
+{
+    AssertReturn(hBpOwner < DBGF_BP_OWNER_COUNT_MAX, NULL);
+    AssertPtrReturn(pUVM->dbgf.s.pbmBpOwnersAllocR3, NULL);
+
+    AssertReturn(ASMBitTest(pUVM->dbgf.s.pbmBpOwnersAllocR3, hBpOwner), NULL);
+    return &pUVM->dbgf.s.paBpOwnersR3[hBpOwner];
+}
+
+
+/**
+ * Retains the given breakpoint owner handle for use.
+ *
+ * @returns VBox status code.
+ * @retval VERR_INVALID_HANDLE if the given breakpoint owner handle is invalid.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBpOwner            The breakpoint owner handle to retain, NIL_DBGFOWNER is accepted without doing anything.
+ */
+DECLINLINE(int) dbgfR3BpOwnerRetain(PUVM pUVM, DBGFBPOWNER hBpOwner)
+{
+    if (hBpOwner == NIL_DBGFBPOWNER)
+        return VINF_SUCCESS;
+
+    PDBGFBPOWNERINT pBpOwner = dbgfR3BpOwnerGetByHnd(pUVM, hBpOwner);
+    if (pBpOwner)
+    {
+        ASMAtomicIncU32(&pBpOwner->cRefs);
+        return VINF_SUCCESS;
+    }
+
+    return VERR_INVALID_HANDLE;
+}
+
+
+/**
+ * Releases the given breakpoint owner handle.
+ *
+ * @returns VBox status code.
+ * @retval VERR_INVALID_HANDLE if the given breakpoint owner handle is invalid.
+ * @param   pUVM                The user mode VM handle.
+ * @param   hBpOwner            The breakpoint owner handle to retain, NIL_DBGFOWNER is accepted without doing anything.
+ */
+DECLINLINE(int) dbgfR3BpOwnerRelease(PUVM pUVM, DBGFBPOWNER hBpOwner)
+{
+    if (hBpOwner == NIL_DBGFBPOWNER)
+        return VINF_SUCCESS;
+
+    PDBGFBPOWNERINT pBpOwner = dbgfR3BpOwnerGetByHnd(pUVM, hBpOwner);
+    if (pBpOwner)
+    {
+        Assert(pBpOwner->cRefs > 1);
+        ASMAtomicDecU32(&pBpOwner->cRefs);
+        return VINF_SUCCESS;
+    }
+
+    return VERR_INVALID_HANDLE;
 }
 
 
@@ -437,6 +579,10 @@ static int dbgfR3BpAlloc(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser, DBGFBPTYPE
                          uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp,
                          PDBGFBPINT *ppBp)
 {
+    int rc = dbgfR3BpOwnerRetain(pUVM, hOwner);
+    if (RT_FAILURE(rc))
+        return rc;
+
     /*
      * Search for a chunk having a free entry, allocating new chunks
      * if the encountered ones are full.
@@ -451,7 +597,7 @@ static int dbgfR3BpAlloc(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser, DBGFBPTYPE
         uint32_t idChunk  = ASMAtomicReadU32(&pBpChunk->idChunk);
         if (idChunk == DBGF_BP_CHUNK_ID_INVALID)
         {
-            int rc = dbgfR3BpChunkAlloc(pUVM, i);
+            rc = dbgfR3BpChunkAlloc(pUVM, i);
             if (RT_FAILURE(rc))
             {
                 LogRel(("DBGF/Bp: Allocating new breakpoint table chunk failed with %Rrc\n", rc));
@@ -508,6 +654,7 @@ static int dbgfR3BpAlloc(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser, DBGFBPTYPE
         }
     }
 
+    rc = dbgfR3BpOwnerRelease(pUVM, hOwner); AssertRC(rc);
     return VERR_DBGF_NO_MORE_BP_SLOTS;
 }
 
@@ -533,7 +680,7 @@ static void dbgfR3BpFree(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
     AssertReturnVoid(ASMBitTest(pBpChunk->pbmAlloc, idxEntry));
 
     /** @todo Need a trip to Ring-0 if an owner is assigned with a Ring-0 part to clear the breakpoint. */
-    /** @todo Release owner. */
+    int rc = dbgfR3BpOwnerRelease(pUVM, pBp->Pub.hOwner); AssertRC(rc); RT_NOREF(rc);
     memset(pBp, 0, sizeof(*pBp));
 
     ASMAtomicBitClear(pBpChunk->pbmAlloc, idxEntry);
@@ -1548,9 +1695,12 @@ static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
  * Creates a new breakpoint owner returning a handle which can be used when setting breakpoints.
  *
  * @returns VBox status code.
+ * @retval  VERR_DBGF_BP_OWNER_NO_MORE_HANDLES if there are no more free owner handles available.
  * @param   pUVM                The user mode VM handle.
  * @param   pfnBpHit            The R3 callback which is called when a breakpoint with the owner handle is hit.
  * @param   phBpOwner           Where to store the owner handle on success.
+ *
+ * @thread Any thread but might defer work to EMT on the first call.
  */
 VMMR3DECL(int) DBGFR3BpOwnerCreate(PUVM pUVM, PFNDBGFBPHIT pfnBpHit, PDBGFBPOWNER phBpOwner)
 {
@@ -1561,7 +1711,39 @@ VMMR3DECL(int) DBGFR3BpOwnerCreate(PUVM pUVM, PFNDBGFBPHIT pfnBpHit, PDBGFBPOWNE
     AssertPtrReturn(pfnBpHit, VERR_INVALID_PARAMETER);
     AssertPtrReturn(phBpOwner, VERR_INVALID_POINTER);
 
-    return VERR_NOT_IMPLEMENTED;
+    int rc = dbgfR3BpOwnerEnsureInit(pUVM);
+    AssertRCReturn(rc ,rc);
+
+    /* Try to find a free entry in the owner table. */
+    for (;;)
+    {
+        /* Scan the associated bitmap for a free entry. */
+        int32_t iClr = ASMBitFirstClear(pUVM->dbgf.s.pbmBpOwnersAllocR3, DBGF_BP_OWNER_COUNT_MAX);
+        if (iClr != -1)
+        {
+            /*
+             * Try to allocate, we could get raced here as well. In that case
+             * we try again.
+             */
+            if (!ASMAtomicBitTestAndSet(pUVM->dbgf.s.pbmBpOwnersAllocR3, iClr))
+            {
+                PDBGFBPOWNERINT pBpOwner = &pUVM->dbgf.s.paBpOwnersR3[iClr];
+                pBpOwner->cRefs      = 1;
+                pBpOwner->pfnBpHitR3 = pfnBpHit;
+
+                *phBpOwner = (DBGFBPOWNER)iClr;
+                return VINF_SUCCESS;
+            }
+            /* else Retry with another spot. */
+        }
+        else /* no free entry in bitmap, out of entries. */
+        {
+            rc = VERR_DBGF_BP_OWNER_NO_MORE_HANDLES;
+            break;
+        }
+    }
+
+    return rc;
 }
 
 
@@ -1569,6 +1751,7 @@ VMMR3DECL(int) DBGFR3BpOwnerCreate(PUVM pUVM, PFNDBGFBPHIT pfnBpHit, PDBGFBPOWNE
  * Destroys the owner identified by the given handle.
  *
  * @returns VBox status code.
+ * @retval  VERR_INVALID_HANDLE if the given owner handle is invalid.
  * @retval  VERR_DBGF_OWNER_BUSY if there are still breakpoints set with the given owner handle.
  * @param   pUVM                The user mode VM handle.
  * @param   hBpOwner            The breakpoint owner handle to destroy.
@@ -1581,7 +1764,25 @@ VMMR3DECL(int) DBGFR3BpOwnerDestroy(PUVM pUVM, DBGFBPOWNER hBpOwner)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(hBpOwner != NIL_DBGFBPOWNER, VERR_INVALID_HANDLE);
 
-    return VERR_NOT_IMPLEMENTED;
+    int rc = dbgfR3BpOwnerEnsureInit(pUVM);
+    AssertRCReturn(rc ,rc);
+
+    PDBGFBPOWNERINT pBpOwner = dbgfR3BpOwnerGetByHnd(pUVM, hBpOwner);
+    if (RT_LIKELY(pBpOwner))
+    {
+        if (ASMAtomicReadU32(&pBpOwner->cRefs) == 1)
+        {
+            pBpOwner->pfnBpHitR3 = NULL;
+            ASMAtomicDecU32(&pBpOwner->cRefs);
+            ASMAtomicBitClear(pUVM->dbgf.s.pbmBpOwnersAllocR3, hBpOwner);
+        }
+        else
+            rc = VERR_DBGF_OWNER_BUSY;
+    }
+    else
+        rc = VERR_INVALID_HANDLE;
+
+    return rc;
 }
 
 

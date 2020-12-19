@@ -354,6 +354,8 @@
 #define VERR_DBGF_BP_L1_LOOKUP_FAILED       (-1236)
 /** Level 2 lookup failed because the L2 lookup table is corrupted. */
 #define VERR_DBGF_BP_L2_LOOKUP_FAILED       (-1237)
+/** The DBGF has no more free breakpoint owner handles. */
+#define VERR_DBGF_BP_OWNER_NO_MORE_HANDLES  (-1238)
 /** @} */
 
 

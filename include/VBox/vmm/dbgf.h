@@ -94,6 +94,22 @@ typedef DBGFBPINITREQ *PDBGFBPINITREQ;
 VMMR0_INT_DECL(int) DBGFR0BpInitReqHandler(PGVM pGVM, PDBGFBPINITREQ pReq);
 
 /**
+ * Request buffer for DBGFR0BpOwnerInitReqHandler / VMMR0_DO_DBGF_BP_OWNER_INIT.
+ * @see DBGFR0BpOwnerInitReqHandler.
+ */
+typedef struct DBGFBPOWNERINITREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR                  Hdr;
+    /** Out: Ring-3 pointer of the breakpoint owner table on success. */
+    R3PTRTYPE(void *)               paBpOwnerR3;
+} DBGFBPOWNERINITREQ;
+/** Pointer to a DBGFR0BpOwnerInitReqHandler / VMMR0_DO_DBGF_BP_INIT request buffer. */
+typedef DBGFBPOWNERINITREQ *PDBGFBPOWNERINITREQ;
+
+VMMR0_INT_DECL(int) DBGFR0BpOwnerInitReqHandler(PGVM pGVM, PDBGFBPOWNERINITREQ pReq);
+
+/**
  * Request buffer for DBGFR0BpChunkAllocReqHandler / VMMR0_DO_DBGF_CHUNK_ALLOC.
  * @see DBGFR0BpChunkAllocReqHandler.
  */
