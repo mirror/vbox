@@ -1455,9 +1455,9 @@ static const struct E1kRegMap_st
     { 0x02430, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "RDFPC"   , "Receive Data FIFO Packet Count" },
     { 0x02800, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "RDBAL"   , "Receive Descriptor Base Low" },
     { 0x02804, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "RDBAH"   , "Receive Descriptor Base High" },
-    { 0x02808, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "RDLEN"   , "Receive Descriptor Length" },
-    { 0x02810, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "RDH"     , "Receive Descriptor Head" },
-    { 0x02818, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteRDT          , "RDT"     , "Receive Descriptor Tail" },
+    { 0x02808, 0x00004, 0x000FFF80, 0x000FFF80, e1kRegReadDefault      , e1kRegWriteDefault      , "RDLEN"   , "Receive Descriptor Length" },
+    { 0x02810, 0x00004, 0x0000FFFF, 0x0000FFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "RDH"     , "Receive Descriptor Head" },
+    { 0x02818, 0x00004, 0x0000FFFF, 0x0000FFFF, e1kRegReadDefault      , e1kRegWriteRDT          , "RDT"     , "Receive Descriptor Tail" },
     { 0x02820, 0x00004, 0x0000FFFF, 0x0000FFFF, e1kRegReadDefault      , e1kRegWriteRDTR         , "RDTR"    , "Receive Delay Timer" },
     { 0x02828, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "RXDCTL"  , "Receive Descriptor Control" },
     { 0x0282c, 0x00004, 0x0000FFFF, 0x0000FFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "RADV"    , "Receive Interrupt Absolute Delay Timer" },
@@ -1470,7 +1470,7 @@ static const struct E1kRegMap_st
     { 0x03430, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "TDFPC"   , "Transmit Data FIFO Packet Count" },
     { 0x03800, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "TDBAL"   , "Transmit Descriptor Base Low" },
     { 0x03804, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "TDBAH"   , "Transmit Descriptor Base High" },
-    { 0x03808, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "TDLEN"   , "Transmit Descriptor Length" },
+    { 0x03808, 0x00004, 0x000FFF80, 0x000FFF80, e1kRegReadDefault      , e1kRegWriteDefault      , "TDLEN"   , "Transmit Descriptor Length" },
     { 0x03810, 0x00004, 0x0000FFFF, 0x0000FFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "TDH"     , "Transmit Descriptor Head" },
     { 0x03818, 0x00004, 0x0000FFFF, 0x0000FFFF, e1kRegReadDefault      , e1kRegWriteTDT          , "TDT"     , "Transmit Descriptor Tail" },
     { 0x03820, 0x00004, 0x0000FFFF, 0x0000FFFF, e1kRegReadDefault      , e1kRegWriteDefault      , "TIDV"    , "Transmit Interrupt Delay Value" },
@@ -1664,8 +1664,88 @@ DECLINLINE(void) e1kCancelTimer(PPDMDEVINS pDevIns, PE1KSTATE pThis, TMTIMERHAND
 #else /* E1K_WITH_TX_CS */
 # define e1kCsTxEnter(ps, rc) PDMDevHlpCritSectEnter(pDevIns, &ps->csTx, rc)
 # define e1kCsTxLeave(ps) PDMDevHlpCritSectLeave(pDevIns, &ps->csTx)
+# define e1kCsTxIsOwner(ps) PDMDevHlpCritSectIsOwner(pDevIns, &ps->csTx)
 #endif /* E1K_WITH_TX_CS */
 
+
+#ifdef E1K_WITH_TXD_CACHE
+/*
+ * Transmit Descriptor Register Context
+ */
+struct E1kTxDContext
+{
+    uint32_t tdlen;
+    uint32_t tdh;
+    uint32_t tdt;
+};
+typedef struct E1kTxDContext E1KTXDC, *PE1KTXDC;
+
+DECLINLINE(bool) e1kUpdateTxDContext(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KTXDC pContext)
+{
+    Assert(e1kCsTxIsOwner(pThis));
+    if (!e1kCsTxIsOwner(pThis))
+        return false;
+    pContext->tdlen = TDLEN;
+    pContext->tdh   = TDH;
+    pContext->tdt   = TDT;
+    uint32_t cTxRingSize = pContext->tdlen / sizeof(E1KTXDESC);
+#ifdef DEBUG
+    if (pContext->tdh >= cTxRingSize)
+    {
+        Log(("%s e1kUpdateTxDContext: will return false because TDH too big (%u >= %u)\n",
+             pThis->szPrf, pContext->tdh, cTxRingSize));
+        return VINF_SUCCESS;
+    }
+    if (pContext->tdt >= cTxRingSize)
+    {
+        Log(("%s e1kUpdateTxDContext: will return false because TDT too big (%u >= %u)\n",
+             pThis->szPrf, pContext->tdt, cTxRingSize));
+        return VINF_SUCCESS;
+    }
+#endif /* DEBUG */
+    return pContext->tdh < cTxRingSize && pContext->tdt < cTxRingSize;
+}
+#endif /* E1K_WITH_TXD_CACHE */
+#ifdef E1K_WITH_RXD_CACHE
+/*
+ * Receive Descriptor Register Context
+ */
+struct E1kRxDContext
+{
+    uint32_t rdlen;
+    uint32_t rdh;
+    uint32_t rdt;
+};
+typedef struct E1kRxDContext E1KRXDC, *PE1KRXDC;
+
+DECLINLINE(bool) e1kUpdateRxDContext(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KRXDC pContext, const char *pcszCallee)
+{
+    Assert(e1kCsRxIsOwner(pThis));
+    if (!e1kCsRxIsOwner(pThis))
+        return false;
+    pContext->rdlen = RDLEN;
+    pContext->rdh   = RDH;
+    pContext->rdt   = RDT;
+    uint32_t cRxRingSize = pContext->rdlen / sizeof(E1KRXDESC);
+#ifdef DEBUG
+    if (pContext->rdh >= cRxRingSize)
+    {
+        Log(("%s e1kUpdateRxDContext: called from %s, will return false because RDH too big (%u >= %u)\n",
+             pThis->szPrf, pcszCallee, pContext->rdh, cRxRingSize));
+        return VINF_SUCCESS;
+    }
+    if (pContext->rdt >= cRxRingSize)
+    {
+        Log(("%s e1kUpdateRxDContext: called from %s, will return false because RDT too big (%u >= %u)\n",
+             pThis->szPrf, pcszCallee, pContext->rdt, cRxRingSize));
+        return VINF_SUCCESS;
+    }
+#else /* !DEBUG */
+    RT_NOREF(pcszCallee);
+#endif /* !DEBUG */
+    return pContext->rdh < cRxRingSize && pContext->rdt < cRxRingSize; // && (RCTL & RCTL_EN);
+}
+#endif /* E1K_WITH_RXD_CACHE */
 
 /**
  * Wakeup the RX thread.
@@ -1858,17 +1938,17 @@ DECLINLINE(int) e1kGetDescType(E1KTXDESC *pDesc)
  * Return the number of RX descriptor that belong to the hardware.
  *
  * @returns the number of available descriptors in RX ring.
- * @param   pThis       The device state structure.
+ * @param   pRxdc       The receive descriptor register context.
  * @thread  ???
  */
-DECLINLINE(uint32_t) e1kGetRxLen(PE1KSTATE pThis)
+DECLINLINE(uint32_t) e1kGetRxLen(PE1KRXDC pRxdc)
 {
     /**
      *  Make sure RDT won't change during computation. EMT may modify RDT at
      *  any moment.
      */
-    uint32_t rdt = RDT;
-    return (RDH > rdt ? RDLEN/sizeof(E1KRXDESC) : 0) + rdt - RDH;
+    uint32_t rdt = pRxdc->rdt;
+    return (pRxdc->rdh > rdt ? pRxdc->rdlen/sizeof(E1KRXDESC) : 0) + rdt - pRxdc->rdh;
 }
 
 DECLINLINE(unsigned) e1kRxDInCache(PE1KSTATE pThis)
@@ -1894,16 +1974,19 @@ DECLINLINE(unsigned) e1kRxDIsCacheEmpty(PE1KSTATE pThis)
  * @param   pThis       The device state structure.
  * @thread  EMT, RX
  */
-DECLINLINE(unsigned) e1kRxDPrefetch(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+DECLINLINE(unsigned) e1kRxDPrefetch(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KRXDC pRxdc)
 {
+    E1kLog3(("%s e1kRxDPrefetch: RDH=%x RDT=%x RDLEN=%x "
+                 "iRxDCurrent=%x nRxDFetched=%x\n",
+                 pThis->szPrf, pRxdc->rdh, pRxdc->rdt, pRxdc->rdlen, pThis->iRxDCurrent, pThis->nRxDFetched));
     /* We've already loaded pThis->nRxDFetched descriptors past RDH. */
-    unsigned nDescsAvailable    = e1kGetRxLen(pThis) - e1kRxDInCache(pThis);
+    unsigned nDescsAvailable    = e1kGetRxLen(pRxdc) - e1kRxDInCache(pThis);
     unsigned nDescsToFetch      = RT_MIN(nDescsAvailable, E1K_RXD_CACHE_SIZE - pThis->nRxDFetched);
-    unsigned nDescsTotal        = RDLEN / sizeof(E1KRXDESC);
+    unsigned nDescsTotal        = pRxdc->rdlen / sizeof(E1KRXDESC);
     Assert(nDescsTotal != 0);
     if (nDescsTotal == 0)
         return 0;
-    unsigned nFirstNotLoaded    = (RDH + e1kRxDInCache(pThis)) % nDescsTotal;
+    unsigned nFirstNotLoaded    = (pRxdc->rdh + e1kRxDInCache(pThis)) % nDescsTotal;
     unsigned nDescsInSingleRead = RT_MIN(nDescsToFetch, nDescsTotal - nFirstNotLoaded);
     E1kLog3(("%s e1kRxDPrefetch: nDescsAvailable=%u nDescsToFetch=%u "
              "nDescsTotal=%u nFirstNotLoaded=0x%x nDescsInSingleRead=%u\n",
@@ -1924,8 +2007,8 @@ DECLINLINE(unsigned) e1kRxDPrefetch(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     // }
     E1kLog3(("%s Fetched %u RX descriptors at %08x%08x(0x%x), RDLEN=%08x, RDH=%08x, RDT=%08x\n",
              pThis->szPrf, nDescsInSingleRead,
-             RDBAH, RDBAL + RDH * sizeof(E1KRXDESC),
-             nFirstNotLoaded, RDLEN, RDH, RDT));
+             RDBAH, RDBAL + pRxdc->rdh * sizeof(E1KRXDESC),
+             nFirstNotLoaded, pRxdc->rdlen, pRxdc->rdh, pRxdc->rdt));
     if (nDescsToFetch > nDescsInSingleRead)
     {
         PDMDevHlpPCIPhysRead(pDevIns,
@@ -2164,12 +2247,13 @@ DECLINLINE(RTGCPHYS) e1kDescAddr(uint32_t baseHigh, uint32_t baseLow, uint32_t i
  * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
  */
-DECLINLINE(void) e1kAdvanceRDH(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+DECLINLINE(void) e1kAdvanceRDH(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KRXDC pRxdc)
 {
     Assert(e1kCsRxIsOwner(pThis));
     //e1kCsEnter(pThis, RT_SRC_POS);
-    if (++RDH * sizeof(E1KRXDESC) >= RDLEN)
-        RDH = 0;
+    if (++pRxdc->rdh * sizeof(E1KRXDESC) >= pRxdc->rdlen)
+        pRxdc->rdh = 0;
+    RDH = pRxdc->rdh; /* Sync the actual register and RXDC */
 #ifdef E1K_WITH_RXD_CACHE
     /*
      * We need to fetch descriptors now as the guest may advance RDT all the way
@@ -2186,15 +2270,15 @@ DECLINLINE(void) e1kAdvanceRDH(PPDMDEVINS pDevIns, PE1KSTATE pThis)
         pThis->iRxDCurrent = pThis->nRxDFetched = 0;
         E1kLog3(("%s e1kAdvanceRDH: Rx cache is empty, RDH=%x RDT=%x "
                  "iRxDCurrent=%x nRxDFetched=%x\n",
-                 pThis->szPrf, RDH, RDT, pThis->iRxDCurrent, pThis->nRxDFetched));
-        e1kRxDPrefetch(pDevIns, pThis);
+                 pThis->szPrf, pRxdc->rdh, pRxdc->rdt, pThis->iRxDCurrent, pThis->nRxDFetched));
+        e1kRxDPrefetch(pDevIns, pThis, pRxdc);
     }
 #endif /* E1K_WITH_RXD_CACHE */
     /*
      * Compute current receive queue length and fire RXDMT0 interrupt
      * if we are low on receive buffers
      */
-    uint32_t uRQueueLen = RDH>RDT ? RDLEN/sizeof(E1KRXDESC)-RDH+RDT : RDT-RDH;
+    uint32_t uRQueueLen = pRxdc->rdh>pRxdc->rdt ? pRxdc->rdlen/sizeof(E1KRXDESC)-pRxdc->rdh+pRxdc->rdt : pRxdc->rdt-pRxdc->rdh;
     /*
      * The minimum threshold is controlled by RDMTS bits of RCTL:
      * 00 = 1/2 of RDLEN
@@ -2202,17 +2286,17 @@ DECLINLINE(void) e1kAdvanceRDH(PPDMDEVINS pDevIns, PE1KSTATE pThis)
      * 10 = 1/8 of RDLEN
      * 11 = reserved
      */
-    uint32_t uMinRQThreshold = RDLEN / sizeof(E1KRXDESC) / (2 << GET_BITS(RCTL, RDMTS));
+    uint32_t uMinRQThreshold = pRxdc->rdlen / sizeof(E1KRXDESC) / (2 << GET_BITS(RCTL, RDMTS));
     if (uRQueueLen <= uMinRQThreshold)
     {
-        E1kLogRel(("E1000: low on RX descriptors, RDH=%x RDT=%x len=%x threshold=%x\n", RDH, RDT, uRQueueLen, uMinRQThreshold));
+        E1kLogRel(("E1000: low on RX descriptors, RDH=%x RDT=%x len=%x threshold=%x\n", pRxdc->rdh, pRxdc->rdt, uRQueueLen, uMinRQThreshold));
         E1kLog2(("%s Low on RX descriptors, RDH=%x RDT=%x len=%x threshold=%x, raise an interrupt\n",
-                 pThis->szPrf, RDH, RDT, uRQueueLen, uMinRQThreshold));
+                 pThis->szPrf, pRxdc->rdh, pRxdc->rdt, uRQueueLen, uMinRQThreshold));
         E1K_INC_ISTAT_CNT(pThis->uStatIntRXDMT0);
         e1kRaiseInterrupt(pDevIns, pThis, VERR_SEM_BUSY, ICR_RXDMT0);
     }
     E1kLog2(("%s e1kAdvanceRDH: at exit RDH=%x RDT=%x len=%x\n",
-             pThis->szPrf, RDH, RDT, uRQueueLen));
+             pThis->szPrf, pRxdc->rdh, pRxdc->rdt, uRQueueLen));
     //e1kCsLeave(pThis);
 }
 #endif /* IN_RING3 */
@@ -2233,7 +2317,7 @@ DECLINLINE(void) e1kAdvanceRDH(PPDMDEVINS pDevIns, PE1KSTATE pThis)
  * @param   pThis       The device state structure.
  * @thread  RX
  */
-DECLINLINE(E1KRXDESC *) e1kRxDGet(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+DECLINLINE(E1KRXDESC *) e1kRxDGet(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KRXDC pRxdc)
 {
     Assert(e1kCsRxIsOwner(pThis));
     /* Check the cache first. */
@@ -2241,7 +2325,7 @@ DECLINLINE(E1KRXDESC *) e1kRxDGet(PPDMDEVINS pDevIns, PE1KSTATE pThis)
         return &pThis->aRxDescriptors[pThis->iRxDCurrent];
     /* Cache is empty, reset it and check if we can fetch more. */
     pThis->iRxDCurrent = pThis->nRxDFetched = 0;
-    if (e1kRxDPrefetch(pDevIns, pThis))
+    if (e1kRxDPrefetch(pDevIns, pThis, pRxdc))
         return &pThis->aRxDescriptors[pThis->iRxDCurrent];
     /* Out of Rx descriptors. */
     return NULL;
@@ -2257,7 +2341,7 @@ DECLINLINE(E1KRXDESC *) e1kRxDGet(PPDMDEVINS pDevIns, PE1KSTATE pThis)
  * @param   pDesc       The descriptor being "returned" to the RX ring.
  * @thread  RX
  */
-DECLINLINE(void) e1kRxDPut(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KRXDESC* pDesc)
+DECLINLINE(void) e1kRxDPut(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KRXDESC* pDesc, PE1KRXDC pRxdc)
 {
     Assert(e1kCsRxIsOwner(pThis));
     pThis->iRxDCurrent++;
@@ -2266,13 +2350,13 @@ DECLINLINE(void) e1kRxDPut(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KRXDESC* pDesc
     // uint64_t addr = e1kDescAddr(RDBAH, RDBAL, RDH);
     // uint32_t rdh = RDH;
     // Assert(pThis->aRxDescAddr[pDesc - pThis->aRxDescriptors] == addr);
-    PDMDevHlpPCIPhysWrite(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), pDesc, sizeof(E1KRXDESC));
+    PDMDevHlpPCIPhysWrite(pDevIns, e1kDescAddr(RDBAH, RDBAL, pRxdc->rdh), pDesc, sizeof(E1KRXDESC));
     /*
      * We need to print the descriptor before advancing RDH as it may fetch new
      * descriptors into the cache.
      */
     e1kPrintRDesc(pThis, pDesc);
-    e1kAdvanceRDH(pDevIns, pThis);
+    e1kAdvanceRDH(pDevIns, pThis, pRxdc);
 }
 
 /**
@@ -2447,10 +2531,21 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
 #if defined(IN_RING3) /** @todo Remove this extra copying, it's gonna make us run out of kernel / hypervisor stack! */
     uint8_t   rxPacket[E1K_MAX_RX_PKT_SIZE];
     uint8_t  *ptr = rxPacket;
+# ifdef E1K_WITH_RXD_CACHE
+    E1KRXDC   rxdc;
+# endif /* E1K_WITH_RXD_CACHE */
 
     int rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
+# ifdef E1K_WITH_RXD_CACHE
+    if (RT_UNLIKELY(!e1kUpdateRxDContext(pDevIns, pThis, &rxdc, "e1kHandleRxPacket")))
+    {
+        e1kCsRxLeave(pThis);
+        E1kLog(("%s e1kHandleRxPacket: failed to update Rx context, returning VINF_SUCCESS\n",  pThis->szPrf));
+        return VINF_SUCCESS;
+    }
+# endif /* E1K_WITH_RXD_CACHE */
 
     if (cb > 70) /* unqualified guess */
         pThis->led.Asserted.s.fReading = pThis->led.Actual.s.fReading = 1;
@@ -2532,13 +2627,13 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
 # ifdef E1K_WITH_RXD_CACHE
     while (cb > 0)
     {
-        E1KRXDESC *pDesc = e1kRxDGet(pDevIns, pThis);
+        E1KRXDESC *pDesc = e1kRxDGet(pDevIns, pThis, &rxdc);
 
         if (pDesc == NULL)
         {
             E1kLog(("%s Out of receive buffers, dropping the packet "
                     "(cb=%u, in_cache=%u, RDH=%x RDT=%x)\n",
-                    pThis->szPrf, cb, e1kRxDInCache(pThis), RDH, RDT));
+                    pThis->szPrf, cb, e1kRxDInCache(pThis), rxdc.rdh, rxdc.rdt));
             break;
         }
 # else /* !E1K_WITH_RXD_CACHE */
@@ -2579,6 +2674,14 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
                 rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
                 if (RT_UNLIKELY(rc != VINF_SUCCESS))
                     return rc;
+# ifdef E1K_WITH_RXD_CACHE
+                if (RT_UNLIKELY(!e1kUpdateRxDContext(pDevIns, pThis, &rxdc, "e1kHandleRxPacket")))
+                {
+                    e1kCsRxLeave(pThis);
+                    E1kLog(("%s e1kHandleRxPacket: failed to update Rx context, returning VINF_SUCCESS\n",  pThis->szPrf));
+                    return VINF_SUCCESS;
+                }
+# endif /* E1K_WITH_RXD_CACHE */
                 ptr += u16RxBufferSize;
                 cb -= u16RxBufferSize;
             }
@@ -2591,6 +2694,12 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
                 rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
                 if (RT_UNLIKELY(rc != VINF_SUCCESS))
                     return rc;
+                if (RT_UNLIKELY(!e1kUpdateRxDContext(pDevIns, pThis, &rxdc, "e1kHandleRxPacket")))
+                {
+                    e1kCsRxLeave(pThis);
+                    E1kLog(("%s e1kHandleRxPacket: failed to update Rx context, returning VINF_SUCCESS\n",  pThis->szPrf));
+                    return VINF_SUCCESS;
+                }
                 cb = 0;
 # else /* !E1K_WITH_RXD_CACHE */
                 pThis->led.Actual.s.fReading = 0;
@@ -2605,7 +2714,7 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
 # ifdef E1K_WITH_RXD_CACHE
         /* Write back the descriptor. */
         pDesc->status.fDD = true;
-        e1kRxDPut(pDevIns, pThis, pDesc);
+        e1kRxDPut(pDevIns, pThis, pDesc, &rxdc);
 # else /* !E1K_WITH_RXD_CACHE */
         else
         {
@@ -3316,6 +3425,13 @@ static int e1kRegWriteRDT(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
 #endif /* !E1K_WITH_RXD_CACHE */
         rc = e1kRegWriteDefault(pDevIns, pThis, offset, index, value);
 #ifdef E1K_WITH_RXD_CACHE
+        E1KRXDC rxdc;
+        if (RT_UNLIKELY(!e1kUpdateRxDContext(pDevIns, pThis, &rxdc, "e1kRegWriteRDT")))
+        {
+            e1kCsRxLeave(pThis);
+            E1kLog(("%s e1kRegWriteRDT: failed to update Rx context, returning VINF_SUCCESS\n",  pThis->szPrf));
+            return VINF_SUCCESS;
+        }
         /*
          * We need to fetch descriptors now as RDT may go whole circle
          * before we attempt to store a received packet. For example,
@@ -3336,7 +3452,7 @@ static int e1kRegWriteRDT(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
          * a later point in e1kRxDGet().
          */
         if (e1kRxDIsCacheEmpty(pThis) && (RCTL & RCTL_EN))
-            e1kRxDPrefetch(pDevIns, pThis);
+            e1kRxDPrefetch(pDevIns, pThis, &rxdc);
 #endif /* E1K_WITH_RXD_CACHE */
         e1kCsRxLeave(pThis);
         if (RT_SUCCESS(rc))
@@ -3375,14 +3491,14 @@ static int e1kRegWriteRDTR(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
     return VINF_SUCCESS;
 }
 
-DECLINLINE(uint32_t) e1kGetTxLen(PE1KSTATE pThis)
+DECLINLINE(uint32_t) e1kGetTxLen(PE1KTXDC pTxdc)
 {
     /**
      *  Make sure TDT won't change during computation. EMT may modify TDT at
      *  any moment.
      */
-    uint32_t tdt = TDT;
-    return (TDH>tdt ? TDLEN/sizeof(E1KTXDESC) : 0) + tdt - TDH;
+    uint32_t tdt = pTxdc->tdt;
+    return (pTxdc->tdh > tdt ? pTxdc->tdlen/sizeof(E1KTXDESC) : 0) + tdt - pTxdc->tdh;
 }
 
 #ifdef IN_RING3
@@ -3938,19 +4054,19 @@ DECLINLINE(void) e1kLoadDesc(PPDMDEVINS pDevIns, E1KTXDESC *pDesc, RTGCPHYS addr
  * @param   pThis       The device state structure.
  * @thread  E1000_TX
  */
-DECLINLINE(unsigned) e1kTxDLoadMore(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+DECLINLINE(unsigned) e1kTxDLoadMore(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KTXDC pTxdc)
 {
     Assert(pThis->iTxDCurrent == 0);
     /* We've already loaded pThis->nTxDFetched descriptors past TDH. */
-    unsigned nDescsAvailable    = e1kGetTxLen(pThis) - pThis->nTxDFetched;
+    unsigned nDescsAvailable    = e1kGetTxLen(pTxdc) - pThis->nTxDFetched;
     /* The following two lines ensure that pThis->nTxDFetched never overflows. */
     AssertCompile(E1K_TXD_CACHE_SIZE < (256 * sizeof(pThis->nTxDFetched)));
     unsigned nDescsToFetch      = RT_MIN(nDescsAvailable, E1K_TXD_CACHE_SIZE - pThis->nTxDFetched);
-    unsigned nDescsTotal        = TDLEN / sizeof(E1KTXDESC);
+    unsigned nDescsTotal        = pTxdc->tdlen / sizeof(E1KTXDESC);
     Assert(nDescsTotal != 0);
     if (nDescsTotal == 0)
         return 0;
-    unsigned nFirstNotLoaded    = (TDH + pThis->nTxDFetched) % nDescsTotal;
+    unsigned nFirstNotLoaded    = (pTxdc->tdh + pThis->nTxDFetched) % nDescsTotal;
     unsigned nDescsInSingleRead = RT_MIN(nDescsToFetch, nDescsTotal - nFirstNotLoaded);
     E1kLog3(("%s e1kTxDLoadMore: nDescsAvailable=%u nDescsToFetch=%u nDescsTotal=%u nFirstNotLoaded=0x%x nDescsInSingleRead=%u\n",
              pThis->szPrf, nDescsAvailable, nDescsToFetch, nDescsTotal,
@@ -3963,8 +4079,8 @@ DECLINLINE(unsigned) e1kTxDLoadMore(PPDMDEVINS pDevIns, PE1KSTATE pThis)
                          pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KTXDESC));
     E1kLog3(("%s Fetched %u TX descriptors at %08x%08x(0x%x), TDLEN=%08x, TDH=%08x, TDT=%08x\n",
              pThis->szPrf, nDescsInSingleRead,
-             TDBAH, TDBAL + TDH * sizeof(E1KTXDESC),
-             nFirstNotLoaded, TDLEN, TDH, TDT));
+             TDBAH, TDBAL + pTxdc->tdh * sizeof(E1KTXDESC),
+             nFirstNotLoaded, pTxdc->tdlen, pTxdc->tdh, pTxdc->tdt));
     if (nDescsToFetch > nDescsInSingleRead)
     {
         PDMDevHlpPCIPhysRead(pDevIns,
@@ -3988,10 +4104,10 @@ DECLINLINE(unsigned) e1kTxDLoadMore(PPDMDEVINS pDevIns, PE1KSTATE pThis)
  * @param   pThis       The device state structure.
  * @thread  E1000_TX
  */
-DECLINLINE(bool) e1kTxDLazyLoad(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+DECLINLINE(bool) e1kTxDLazyLoad(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KTXDC pTxdc)
 {
     if (pThis->nTxDFetched == 0)
-        return e1kTxDLoadMore(pDevIns, pThis) != 0;
+        return e1kTxDLoadMore(pDevIns, pThis, pTxdc) != 0;
     return true;
 }
 #endif /* E1K_WITH_TXD_CACHE */
@@ -5333,7 +5449,7 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
     return false;
 }
 
-static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread)
+static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread, PE1KTXDC pTxdc)
 {
     PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     int rc = VINF_SUCCESS;
@@ -5345,17 +5461,18 @@ static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThre
     {
         E1KTXDESC *pDesc = &pThis->aTxDescriptors[pThis->iTxDCurrent];
         E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
-                 pThis->szPrf, TDBAH, TDBAL + TDH * sizeof(E1KTXDESC), TDLEN, TDH, TDT));
-        rc = e1kXmitDesc(pDevIns, pThis, pThisCC, pDesc, e1kDescAddr(TDBAH, TDBAL, TDH), fOnWorkerThread);
+                 pThis->szPrf, TDBAH, TDBAL + pTxdc->tdh * sizeof(E1KTXDESC), pTxdc->tdlen, pTxdc->tdh, pTxdc->tdt));
+        rc = e1kXmitDesc(pDevIns, pThis, pThisCC, pDesc, e1kDescAddr(TDBAH, TDBAL, pTxdc->tdh), fOnWorkerThread);
         if (RT_FAILURE(rc))
             break;
-        if (++TDH * sizeof(E1KTXDESC) >= TDLEN)
-            TDH = 0;
+        if (++pTxdc->tdh * sizeof(E1KTXDESC) >= pTxdc->tdlen)
+            pTxdc->tdh = 0;
+        TDH = pTxdc->tdh; /* Sync the actual register and TXDC */
         uint32_t uLowThreshold = GET_BITS(TXDCTL, LWTHRESH)*8;
-        if (uLowThreshold != 0 && e1kGetTxLen(pThis) <= uLowThreshold)
+        if (uLowThreshold != 0 && e1kGetTxLen(pTxdc) <= uLowThreshold)
         {
             E1kLog2(("%s Low on transmit descriptors, raise ICR.TXD_LOW, len=%x thresh=%x\n",
-                     pThis->szPrf, e1kGetTxLen(pThis), GET_BITS(TXDCTL, LWTHRESH)*8));
+                     pThis->szPrf, e1kGetTxLen(pTxdc), GET_BITS(TXDCTL, LWTHRESH)*8));
             e1kRaiseInterrupt(pDevIns, pThis, VERR_SEM_BUSY, ICR_TXD_LOW);
         }
         ++pThis->iTxDCurrent;
@@ -5447,10 +5564,10 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
 
 #else /* E1K_WITH_TXD_CACHE */
 
-static void e1kDumpTxDCache(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+static void e1kDumpTxDCache(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KTXDC pTxdc)
 {
-    unsigned i, cDescs = TDLEN / sizeof(E1KTXDESC);
-    uint32_t tdh = TDH;
+    unsigned i, cDescs = pTxdc->tdlen / sizeof(E1KTXDESC);
+    uint32_t tdh = pTxdc->tdh;
     LogRel(("E1000: -- Transmit Descriptors (%d total) --\n", cDescs));
     for (i = 0; i < cDescs; ++i)
     {
@@ -5461,7 +5578,7 @@ static void e1kDumpTxDCache(PPDMDEVINS pDevIns, PE1KSTATE pThis)
         LogRel(("E1000: %RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, i), &desc));
     }
     LogRel(("E1000: -- Transmit Descriptors in Cache (at %d (TDH %d)/ fetched %d / max %d) --\n",
-            pThis->iTxDCurrent, TDH, pThis->nTxDFetched, E1K_TXD_CACHE_SIZE));
+            pThis->iTxDCurrent, pTxdc->tdh, pThis->nTxDFetched, E1K_TXD_CACHE_SIZE));
     if (tdh > pThis->iTxDCurrent)
         tdh -= pThis->iTxDCurrent;
     else
@@ -5510,8 +5627,10 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
      * Note! Do not process descriptors in locked state
      */
     rc = e1kCsTxEnter(pThis, VERR_SEM_BUSY);
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+    if (RT_LIKELY(rc == VINF_SUCCESS && (TCTL & TCTL_EN)))
     {
+        E1KTXDC txdc;
+        bool fTxContextValid = e1kUpdateTxDContext(pDevIns, pThis, &txdc);
         STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatTransmit), a);
         /*
          * fIncomplete is set whenever we try to fetch additional descriptors
@@ -5520,7 +5639,7 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
          * stuck in this loop forever.
          */
         bool fIncomplete = false;
-        while (!pThis->fLocked && e1kTxDLazyLoad(pDevIns, pThis))
+        while (fTxContextValid && !pThis->fLocked && e1kTxDLazyLoad(pDevIns, pThis, &txdc))
         {
             while (e1kLocateTxPacket(pThis))
             {
@@ -5531,7 +5650,7 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
                 if (RT_FAILURE(rc))
                     goto out;
                 /* Copy the packet to allocated buffer and send it. */
-                rc = e1kXmitPacket(pDevIns, pThis, fOnWorkerThread);
+                rc = e1kXmitPacket(pDevIns, pThis, fOnWorkerThread, &txdc);
                 /* If we're out of bandwidth we'll come back later. */
                 if (RT_FAILURE(rc))
                     goto out;
@@ -5550,11 +5669,11 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
                       pThis->szPrf,
                       u8Remain == E1K_TXD_CACHE_SIZE ? " full" : "",
                       pThis->nTxDFetched, pThis->iTxDCurrent,
-                      e1kGetTxLen(pThis)));
+                      e1kGetTxLen(&txdc)));
                 if (!fTxDCacheDumped)
                 {
                     fTxDCacheDumped = true;
-                    e1kDumpTxDCache(pDevIns, pThis);
+                    e1kDumpTxDCache(pDevIns, pThis, &txdc);
                 }
                 pThis->iTxDCurrent = pThis->nTxDFetched = 0;
                 /*
@@ -5573,7 +5692,7 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
                 Log4(("%s Incomplete packet at %d. Already fetched %d, "
                       "%d more are available\n",
                       pThis->szPrf, pThis->iTxDCurrent, u8Remain,
-                      e1kGetTxLen(pThis) - u8Remain));
+                      e1kGetTxLen(&txdc) - u8Remain));
 
                 /*
                  * A packet was partially fetched. Move incomplete packet to
@@ -5584,7 +5703,7 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
                         u8Remain * sizeof(E1KTXDESC));
                 pThis->iTxDCurrent = 0;
                 pThis->nTxDFetched = u8Remain;
-                e1kTxDLoadMore(pDevIns, pThis);
+                e1kTxDLoadMore(pDevIns, pThis, &txdc);
                 fIncomplete = true;
             }
             else
@@ -5667,12 +5786,18 @@ static int e1kRegWriteTDT(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
     E1kLog2(("%s e1kRegWriteTDT: TDBAL=%08x, TDBAH=%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
             pThis->szPrf, TDBAL, TDBAH, TDLEN, TDH, TDT));
 
+    /* Compose a temporary TX context, breaking TX CS rule, for debugging purposes. */
+    /* If we decide to transmit, the TX critical section will be entered later in e1kXmitPending(). */
+    E1KTXDC txdc;
+    txdc.tdlen = TDLEN;
+    txdc.tdh   = TDH;
+    txdc.tdt   = TDT;
     /* Ignore TDT writes when the link is down. */
-    if (TDH != TDT && (STATUS & STATUS_LU))
+    if (txdc.tdh != txdc.tdt && (STATUS & STATUS_LU))
     {
-        Log5(("E1000: TDT write: TDH=%08x, TDT=%08x, %d descriptors to process\n", TDH, TDT, e1kGetTxLen(pThis)));
+        Log5(("E1000: TDT write: TDH=%08x, TDT=%08x, %d descriptors to process\n", txdc.tdh, txdc.tdt, e1kGetTxLen(&txdc)));
         E1kLog(("%s e1kRegWriteTDT: %d descriptors to process\n",
-                 pThis->szPrf, e1kGetTxLen(pThis)));
+                 pThis->szPrf, e1kGetTxLen(&txdc)));
 
         /* Transmit pending packets if possible, defer it if we cannot do it
            in the current context. */
@@ -6258,7 +6383,7 @@ static DECLCALLBACK(VBOXSTRICTRC) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, 
         {
             case 0x00: /* IOADDR */
                 *pu32 = pThis->uSelectedReg;
-                E1kLog2(("%s e1kIOPortIn: IOADDR(0), selecting register %#010x, val=%#010x\n", pThis->szPrf, pThis->uSelectedReg, *pu32));
+                Log9(("%s e1kIOPortIn: IOADDR(0), selecting register %#010x, val=%#010x\n", pThis->szPrf, pThis->uSelectedReg, *pu32));
                 rc = VINF_SUCCESS;
                 break;
 
@@ -6269,7 +6394,7 @@ static DECLCALLBACK(VBOXSTRICTRC) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, 
                     rc = e1kRegReadUnaligned(pDevIns, pThis, pThis->uSelectedReg, pu32, cb);
                 if (rc == VINF_IOM_R3_MMIO_READ)
                     rc = VINF_IOM_R3_IOPORT_READ;
-                E1kLog2(("%s e1kIOPortIn: IODATA(4), reading from selected register %#010x, val=%#010x\n", pThis->szPrf, pThis->uSelectedReg, *pu32));
+                Log9(("%s e1kIOPortIn: IODATA(4), reading from selected register %#010x, val=%#010x\n", pThis->szPrf, pThis->uSelectedReg, *pu32));
                 break;
 
             default:
@@ -6300,19 +6425,19 @@ static DECLCALLBACK(VBOXSTRICTRC) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     RT_NOREF_PV(pvUser);
 
-    E1kLog2(("%s e1kIOPortOut: offPort=%RTiop value=%08x\n", pThis->szPrf, offPort, u32));
+    Log9(("%s e1kIOPortOut: offPort=%RTiop value=%08x\n", pThis->szPrf, offPort, u32));
     if (RT_LIKELY(cb == 4))
     {
         switch (offPort)
         {
             case 0x00: /* IOADDR */
                 pThis->uSelectedReg = u32;
-                E1kLog2(("%s e1kIOPortOut: IOADDR(0), selected register %08x\n", pThis->szPrf, pThis->uSelectedReg));
+                Log9(("%s e1kIOPortOut: IOADDR(0), selected register %08x\n", pThis->szPrf, pThis->uSelectedReg));
                 rc = VINF_SUCCESS;
                 break;
 
             case 0x04: /* IODATA */
-                E1kLog2(("%s e1kIOPortOut: IODATA(4), writing to selected register %#010x, value=%#010x\n", pThis->szPrf, pThis->uSelectedReg, u32));
+                Log9(("%s e1kIOPortOut: IODATA(4), writing to selected register %#010x, value=%#010x\n", pThis->szPrf, pThis->uSelectedReg, u32));
                 if (RT_LIKELY(!(pThis->uSelectedReg & 3)))
                 {
                     rc = e1kRegWriteAlignedU32(pDevIns, pThis, pThis->uSelectedReg, u32);
@@ -6442,22 +6567,29 @@ static int e1kCanReceive(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 
     if (RT_UNLIKELY(e1kCsRxEnter(pThis, VERR_SEM_BUSY) != VINF_SUCCESS))
         return VERR_NET_NO_BUFFER_SPACE;
+    E1KRXDC rxdc;
+    if (RT_UNLIKELY(!e1kUpdateRxDContext(pDevIns, pThis, &rxdc, "e1kCanReceive")))
+    {
+        e1kCsRxLeave(pThis);
+        E1kLog(("%s e1kCanReceive: failed to update Rx context, returning VERR_NET_NO_BUFFER_SPACE\n",  pThis->szPrf));
+        return VERR_NET_NO_BUFFER_SPACE;
+    }
 
-    if (RT_UNLIKELY(RDLEN == sizeof(E1KRXDESC)))
+    if (RT_UNLIKELY(rxdc.rdlen == sizeof(E1KRXDESC)))
     {
         E1KRXDESC desc;
-        PDMDevHlpPCIPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), &desc, sizeof(desc));
+        PDMDevHlpPCIPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, rxdc.rdh), &desc, sizeof(desc));
         if (desc.status.fDD)
             rc = VERR_NET_NO_BUFFER_SPACE;
     }
-    else if (e1kRxDIsCacheEmpty(pThis) && RDH == RDT)
+    else if (e1kRxDIsCacheEmpty(pThis) && rxdc.rdh == rxdc.rdt)
     {
         /* Cache is empty, so is the RX ring. */
         rc = VERR_NET_NO_BUFFER_SPACE;
     }
     E1kLog2(("%s e1kCanReceive: at exit in_cache=%d RDH=%d RDT=%d RDLEN=%d"
              " u16RxBSize=%d rc=%Rrc\n", pThis->szPrf,
-             e1kRxDInCache(pThis), RDH, RDT, RDLEN, pThis->u16RxBSize, rc));
+             e1kRxDInCache(pThis), rxdc.rdh, rxdc.rdt, rxdc.rdlen, pThis->u16RxBSize, rc));
 
     e1kCsRxLeave(pThis);
     return rc;
