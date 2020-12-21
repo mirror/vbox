@@ -1684,7 +1684,10 @@ DECLINLINE(bool) e1kUpdateTxDContext(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KTX
 {
     Assert(e1kCsTxIsOwner(pThis));
     if (!e1kCsTxIsOwner(pThis))
+    {
+        memset(pContext, 0, sizeof(E1KTXDC));
         return false;
+    }
     pContext->tdlen = TDLEN;
     pContext->tdh   = TDH;
     pContext->tdt   = TDT;
