@@ -91,7 +91,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
         vmsvga3dSurfaceDestroy(pThisCC, sid);
 
     RT_ZERO(*pSurface);
-    pSurface->id                    = sid;
+    pSurface->id = SVGA3D_INVALID_ID; /* Keep this value until the surface init completes */
 #ifdef VMSVGA3D_OPENGL
     pSurface->idWeakContextAssociation = SVGA3D_INVALID_ID;
     pSurface->oglId.buffer          = OPENGL_INVALID_ID;
@@ -203,6 +203,8 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
     /** @todo cbMemRemaining = value of SVGA_REG_MOB_MAX_SIZE */
     uint32_t cbMemRemaining = SVGA3D_MAX_SURFACE_MEM_SIZE; /* Do not allow more than this for a surface. */
     SVGA3dSize mipmapSize = *pMipLevel0Size;
+    int rc = VINF_SUCCESS;
+
     for (uint32_t i = 0; i < numMipLevels; ++i)
     {
         for (uint32_t iFace = 0; iFace < pSurface->cFaces; ++iFace)
@@ -229,22 +231,22 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
                     ++cBlocksY;
             }
 
-            AssertReturn(cBlocksX > 0 && cBlocksY > 0 && mipmapSize.depth > 0, VERR_INVALID_PARAMETER);
+            AssertBreakStmt(cBlocksX > 0 && cBlocksY > 0 && mipmapSize.depth > 0, rc = VERR_INVALID_PARAMETER);
 
             const uint32_t cMaxBlocksX = cbMemRemaining / pSurface->cbBlock;
-            if (cBlocksX > cMaxBlocksX)
-                return VERR_INVALID_PARAMETER;
+            AssertBreakStmt(cBlocksX < cMaxBlocksX, rc = VERR_INVALID_PARAMETER);
+
             const uint32_t cbSurfacePitch = pSurface->cbBlock * cBlocksX;
             LogFunc(("cbSurfacePitch=0x%x\n", cbSurfacePitch));
 
             const uint32_t cMaxBlocksY = cbMemRemaining / cbSurfacePitch;
-            if (cBlocksY > cMaxBlocksY)
-                return VERR_INVALID_PARAMETER;
+            AssertBreakStmt(cBlocksY < cMaxBlocksY, rc = VERR_INVALID_PARAMETER);
+
             const uint32_t cbSurfacePlane = cbSurfacePitch * cBlocksY;
 
             const uint32_t cMaxDepth = cbMemRemaining / cbSurfacePlane;
-            if (mipmapSize.depth > cMaxDepth)
-                return VERR_INVALID_PARAMETER;
+            AssertBreakStmt(mipmapSize.depth < cMaxDepth, rc = VERR_INVALID_PARAMETER);
+
             const uint32_t cbSurface = cbSurfacePlane * mipmapSize.depth;
 
             PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iMipmap];
@@ -260,6 +262,8 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
             cbMemRemaining -= cbSurface;
         }
 
+        AssertRCBreak(rc);
+
         mipmapSize.width >>= 1;
         if (mipmapSize.width == 0) mipmapSize.width = 1;
         mipmapSize.height >>= 1;
@@ -267,6 +271,8 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
         mipmapSize.depth >>= 1;
         if (mipmapSize.depth == 0) mipmapSize.depth = 1;
     }
+
+    AssertLogRelRCReturnStmt(rc, RTMemFree(pSurface->paMipmapLevels), rc);
 
 #ifdef VMSVGA3D_DIRECT3D
     /* Translate the format and usage flags to D3D. */
@@ -314,6 +320,8 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
         pMipmapLevel->pSurfaceData = RTMemAllocZ(pMipmapLevel->cbSurface);
         AssertReturn(pMipmapLevel->pSurfaceData, VERR_NO_MEMORY);
     }
+
+    pSurface->id = sid;
     return VINF_SUCCESS;
 }
 
