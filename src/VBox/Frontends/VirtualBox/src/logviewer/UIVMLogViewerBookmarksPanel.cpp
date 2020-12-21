@@ -85,7 +85,7 @@ void UIVMLogViewerBookmarksPanel::disableEnableBookmarking(bool flag)
 
 QString UIVMLogViewerBookmarksPanel::panelName() const
 {
-    return "FilterPanel";
+    return "BookmarksPanel";
 }
 
 void UIVMLogViewerBookmarksPanel::setBookmarkIndex(int index)
