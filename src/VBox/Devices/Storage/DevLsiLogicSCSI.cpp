@@ -2326,6 +2326,8 @@ static int lsilogicR3ProcessSCSIIORequest(PPDMDEVINS pDevIns, PLSILOGICSCSI pThi
     IOCReply.SCSIIOError.u8Function          = pGuestReq->SCSIIO.u8Function;
     IOCReply.SCSIIOError.u8CDBLength         = pGuestReq->SCSIIO.u8CDBLength;
     IOCReply.SCSIIOError.u8SenseBufferLength = pGuestReq->SCSIIO.u8SenseBufferLength;
+    IOCReply.SCSIIOError.u8Reserved          = 0;
+    IOCReply.SCSIIOError.u8MessageFlags      = 0;
     IOCReply.SCSIIOError.u32MessageContext   = pGuestReq->SCSIIO.u32MessageContext;
     IOCReply.SCSIIOError.u8SCSIStatus        = SCSI_STATUS_OK;
     IOCReply.SCSIIOError.u8SCSIState         = MPT_SCSI_IO_ERROR_SCSI_STATE_TERMINATED;
