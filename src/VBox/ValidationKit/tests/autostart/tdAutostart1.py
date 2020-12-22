@@ -77,6 +77,7 @@ class tdAutostartOs(vboxtestvms.BaseTestVm):
     """
     Base autostart helper class to provide common methods.
     """
+    # pylint: disable=too-many-arguments
     def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
                  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
         vboxtestvms.BaseTestVm.__init__(self, sVmName, oSet = oSet, sKind = sKind);
@@ -88,6 +89,7 @@ class tdAutostartOs(vboxtestvms.BaseTestVm):
         self.fPae = fPae;
         self.sGuestAdditionsIso = sGuestAdditionsIso;
         self._asTestBuildDirs = [];
+        self.sTestBuild = None;
         self.sVBoxInstaller = "";
         self.asVirtModesSup = ['hwvirt-np',];
         self.asParavirtModesSup = ['default',];
@@ -615,6 +617,7 @@ class tdAutostartOsLinux(tdAutostartOs):
     """
     Autostart support methods for Linux guests.
     """
+    # pylint: disable=too-many-arguments
     def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
                  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
         tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
@@ -858,6 +861,7 @@ class tdAutostartOsDarwin(tdAutostartOs):
     """
     Autostart support methods for Darwin guests.
     """
+    # pylint: disable=too-many-arguments
     def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
                  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
         tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
@@ -867,6 +871,7 @@ class tdAutostartOsSolaris(tdAutostartOs):
     """
     Autostart support methods for Solaris guests.
     """
+    # pylint: disable=too-many-arguments
     def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
                  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
         tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
@@ -876,6 +881,7 @@ class tdAutostartOsWin(tdAutostartOs):
     """
     Autostart support methods for Windows guests.
     """
+    # pylint: disable=too-many-arguments
     def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
                  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
         tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
