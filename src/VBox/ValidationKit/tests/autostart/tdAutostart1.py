@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 Autostart testcase using.
 """
 #from pykickstart.commands import repo
-
 __copyright__ = \
 """
 Copyright (C) 2013-2020 Oracle Corporation
-
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
 you can redistribute it and/or modify it under the terms of the GNU
@@ -17,101 +14,97 @@ General Public License (GPL) as published by the Free Software
 Foundation, in version 2 as it comes in the "COPYING" file of the
 VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-
 The contents of this file may alternatively be used under the terms
 of the Common Development and Distribution License Version 1.0
 (CDDL) only, as it comes in the "COPYING.CDDL" file of the
 VirtualBox OSE distribution, in which case the provisions of the
 CDDL are applicable instead of those of the GPL.
-
 You may elect to license modified versions of this file under the
 terms and conditions of either the GPL or the CDDL or both.
 """
 __version__ = "$Id$"
-
-
 # Standard Python imports.
 import os;
 import sys;
 import re;
-
 # Only the main script needs to modify the path.
 try:    __file__
 except: __file__ = sys.argv[0];
 g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))));
 sys.path.append(g_ksValidationKitDir);
-
 # Validation Kit imports.
 from testdriver import reporter;
 from testdriver import base;
 from testdriver import vbox;
 from testdriver import vboxcon;
+from testdriver import vboxtestvms;
 from testdriver import vboxwrappers;
-
-
 class VBoxManageStdOutWrapper(object):
     """ Parser for VBoxManage list runningvms """
     def __init__(self):
         self.sVmRunning = '';
-
     def __del__(self):
         self.close();
-
     def close(self):
         """file.close"""
         return;
-
     def read(self, cb):
         """file.read"""
         _ = cb;
         return "";
-
     def write(self, sText):
         """VBoxManage stdout write"""
         if sText is None:
             return None;
-
         try:    sText = str(sText); # pylint: disable=redefined-variable-type
         except: pass;
-
         asLines = sText.splitlines();
         for sLine in asLines:
             sLine = sLine.strip();
-
             reporter.log('Logging: ' + sLine);
-
                 # Extract the value
             idxVmNameStart = sLine.find('"');
             if idxVmNameStart == -1:
                 raise Exception('VBoxManageStdOutWrapper: Invalid output');
-
             idxVmNameStart += 1;
             idxVmNameEnd = idxVmNameStart;
             while sLine[idxVmNameEnd] != '"':
                 idxVmNameEnd += 1;
-
             self.sVmRunning = sLine[idxVmNameStart:idxVmNameEnd];
             reporter.log('Logging: ' + self.sVmRunning);
-
         return None;
-
-
-class tdAutostartOs(object):
+class tdAutostartOs(vboxtestvms.BaseTestVm):
     """
     Base autostart helper class to provide common methods.
     """
-
-    def __init__(self, oTstDrv, fpApiVer, sGuestAdditionsIso):
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
+                 cCpus = 1, fPae = None, sGuestAdditionsIso = None):
+        vboxtestvms.BaseTestVm.__init__(self, sVmName, oSet = oSet, sKind = sKind);
         self.oTstDrv = oTstDrv;
-        self.fpApiVer = fpApiVer;
+        self.sHdd = sHdd;
+        self.eNic0Type = eNic0Type;
+        self.cMbRam = cMbRam;
+        self.cCpus = cCpus;
+        self.fPae = fPae;
         self.sGuestAdditionsIso = sGuestAdditionsIso;
-
+        self._asTestBuildDirs = [];
+        self.sVBoxInstaller = "";
+        self.asVirtModesSup = ['hwvirt-np',];
+        self.asParavirtModesSup = ['default',];
+    @property
+    def asTestBuildDirs(self):
+        return self._asTestBuildDirs;
+    @asTestBuildDirs.setter
+    def asTestBuildDirs(self, value):
+        self._asTestBuildDirs = value;
+        self.sTestBuild = self._findFile(self.sVBoxInstaller, value);
+        if not self.sTestBuild:
+            raise base.GenError("VirtualBox install package not found");
     def _findFile(self, sRegExp, asTestBuildDirs):
         """
         Returns a filepath based on the given regex and paths to look into
         or None if no matching file is found.
         """
-
         oRegExp = re.compile(sRegExp);
         for sTestBuildDir in asTestBuildDirs:
             try:
@@ -127,25 +120,18 @@ class tdAutostartOs(object):
                     return sTestBuildDir + '/' + asFiles[0];
             except:
                 pass;
-
         reporter.error('Failed to find a file matching "%s" in %s.' % (sRegExp, ','.join(asTestBuildDirs)));
         return None;
-
     def _createAutostartCfg(self, sDefaultPolicy = 'allow', asUserAllow = (), asUserDeny = ()):
         """
         Creates a autostart config for VirtualBox
         """
-
         sVBoxCfg = 'default_policy=' + sDefaultPolicy + '\n';
-
         for sUserAllow in asUserAllow:
             sVBoxCfg = sVBoxCfg + sUserAllow + ' = {\n allow = true\n }\n';
-
         for sUserDeny in asUserDeny:
             sVBoxCfg = sVBoxCfg + sUserDeny + ' = {\n allow = false\n }\n';
-
         return sVBoxCfg;
-
     def _waitAdditionsIsRunning(self, oGuest, fWaitTrayControl):
         """
         Check is the additions running
@@ -165,11 +151,9 @@ class tdAutostartOs(object):
                     fRc = eServiceStatus == vboxcon.AdditionsFacilityStatus_Active;
                     if fRc:
                         break;
-
             self.oTstDrv.sleep(10);
             cAttempt += 1;
         return fRc;
-
     def createSession(self, oSession, sName, sUser, sPassword, cMsTimeout = 10 * 1000, fIsError = True):
         """
         Creates (opens) a guest session.
@@ -178,7 +162,6 @@ class tdAutostartOs(object):
         oGuest = oSession.o.console.guest;
         if sName is None:
             sName = "<untitled>";
-
         reporter.log('Creating session "%s" ...' % (sName,));
         try:
             oGuestSession = oGuest.createSession(sUser, sPassword, '', sName);
@@ -187,12 +170,10 @@ class tdAutostartOs(object):
             reporter.maybeErrXcpt(fIsError, 'Creating a guest session "%s" failed; sUser="%s", pw="%s"'
                                   % (sName, sUser, sPassword));
             return (False, None);
-
         reporter.log('Waiting for session "%s" to start within %dms...' % (sName, cMsTimeout));
         aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start, ];
         try:
             waitResult = oGuestSession.waitForArray(aeWaitFor, cMsTimeout);
-
             #
             # Be nice to Guest Additions < 4.3: They don't support session handling and
             # therefore return WaitFlagNotSupported.
@@ -208,7 +189,6 @@ class tdAutostartOs(object):
                                   % (sName, sUser, sPassword,));
             return (False, None);
         return (True, oGuestSession);
-
     def closeSession(self, oGuestSession, fIsError = True):
         """
         Closes the guest session.
@@ -218,7 +198,6 @@ class tdAutostartOs(object):
                 sName = oGuestSession.name;
             except:
                 return reporter.errorXcpt();
-
             reporter.log('Closing session "%s" ...' % (sName,));
             try:
                 oGuestSession.close();
@@ -228,7 +207,6 @@ class tdAutostartOs(object):
                 reporter.maybeErrXcpt(fIsError, 'Closing guest session "%s" failed:' % (sName,));
                 return False;
         return True;
-
     def guestProcessExecute(self, oGuestSession, sTestName, cMsTimeout, sExecName, asArgs = (),
                             fGetStdOut = True, fIsError = True):
         """
@@ -237,10 +215,8 @@ class tdAutostartOs(object):
         """
         _ = sTestName;
         fRc = True; # Be optimistic.
-
         reporter.log2('Using session user=%s, name=%s, timeout=%d'
                       % (oGuestSession.user, oGuestSession.name, oGuestSession.timeout,));
-
         #
         # Start the process:
         #
@@ -252,16 +228,14 @@ class tdAutostartOs(object):
                           vboxcon.ProcessCreateFlag_WaitForStdErr];
         try:
             oProcess = oGuestSession.processCreate(sExecName,
-                                                   asArgs if self.fpApiVer >= 5.0 else asArgs[1:],
+                                                   asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                    [], fTaskFlags, cMsTimeout);
         except:
             reporter.maybeErrXcpt(fIsError, 'asArgs=%s' % (asArgs,));
             return (False, 0, 0, None);
         if oProcess is None:
             return (reporter.error('oProcess is None! (%s)' % (asArgs,)), 0, 0, None);
-
         #time.sleep(5); # try this if you want to see races here.
-
         # Wait for the process to start properly:
         reporter.log2('Process start requested, waiting for start (%dms) ...' % (cMsTimeout,));
         iPid = -1;
@@ -280,7 +254,6 @@ class tdAutostartOs(object):
                 fRc = reporter.errorXcpt('asArgs=%s' % (asArgs,));
             else:
                 reporter.log2('Wait result returned: %d, current process status is: %d' % (eWaitResult, eStatus,));
-
                 #
                 # Wait for the process to run to completion if necessary.
                 #
@@ -288,12 +261,10 @@ class tdAutostartOs(object):
                 #       (mostly) reflect the process status anyway.
                 #
                 if eStatus == vboxcon.ProcessStatus_Started:
-
                     # What to wait for:
                     aeWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate,
                                   vboxcon.ProcessWaitForFlag_StdOut,
                                   vboxcon.ProcessWaitForFlag_StdErr];
-
                     reporter.log2('Process (PID %d) started, waiting for termination (%dms), aeWaitFor=%s ...'
                                   % (iPid, cMsTimeout, aeWaitFor));
                     acbFdOut = [0,0,0];
@@ -309,7 +280,6 @@ class tdAutostartOs(object):
                             fRc = reporter.errorXcpt('asArgs=%s' % (asArgs,));
                             break;
                         reporter.log2('Wait returned: %d' % (eWaitResult,));
-
                         # Process output:
                         for eFdResult, iFd, sFdNm in [ (vboxcon.ProcessWaitResult_StdOut, 1, 'stdout'),
                                                        (vboxcon.ProcessWaitResult_StdErr, 2, 'stderr'), ]:
@@ -338,11 +308,9 @@ class tdAutostartOs(object):
                                             aBuf += sBuf;
                                         else:
                                             aBuf = sBuf;
-
                         ## Process input (todo):
                         #if eWaitResult in (vboxcon.ProcessWaitResult_StdIn, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
                         #    reporter.log2('Process (PID %d) needs stdin data' % (iPid,));
-
                         # Termination or error?
                         if eWaitResult in (vboxcon.ProcessWaitResult_Terminate,
                                            vboxcon.ProcessWaitResult_Error,
@@ -352,15 +320,12 @@ class tdAutostartOs(object):
                             reporter.log2('Process (PID %d) reported terminate/error/timeout: %d, status: %d'
                                           % (iPid, eWaitResult, eStatus,));
                             break;
-
                     # End of the wait loop.
                     _, cbStdOut, cbStdErr = acbFdOut;
-
                     try:    eStatus = oProcess.status;
                     except: fRc = reporter.errorXcpt('asArgs=%s' % (asArgs,));
                     reporter.log2('Final process status (PID %d) is: %d' % (iPid, eStatus));
                     reporter.log2('Process (PID %d) %d stdout, %d stderr' % (iPid, cbStdOut, cbStdErr));
-
         #
         # Get the final status and exit code of the process.
         #
@@ -370,9 +335,7 @@ class tdAutostartOs(object):
         except:
             fRc = reporter.errorXcpt('asArgs=%s' % (asArgs,));
         reporter.log2('Process (PID %d) has exit code: %d; status: %d ' % (iPid, iExitCode, uExitStatus));
-
         return (fRc, uExitStatus, iExitCode, aBuf);
-
     def uploadString(self, oGuestSession, sSrcString, sDst):
         """
         Upload the string into guest.
@@ -392,16 +355,14 @@ class tdAutostartOs(object):
             oFile.close();
         except:
             fRc = reporter.errorXcpt('Upload string failed. Could not close the file %s' % sDst);
-
         return fRc;
-
     def uploadFile(self, oGuestSession, sSrc, sDst):
         """
         Upload the string into guest.
         """
         fRc = True;
         try:
-            if self.fpApiVer >= 5.0:
+            if self.oTstDrv.fpApiVer >= 5.0:
                 oCurProgress = oGuestSession.fileCopyToGuest(sSrc, sDst, [0]);
             else:
                 oCurProgress = oGuestSession.copyTo(sSrc, sDst, [0]);
@@ -418,16 +379,14 @@ class tdAutostartOs(object):
                     fRc = False;
             else:
                 fRc = reporter.error('No progress object returned');
-
         return fRc;
-
     def downloadFile(self, oGuestSession, sSrc, sDst, fIgnoreErrors = False):
         """
         Get a file (sSrc) from the guest storing it on the host (sDst).
         """
         fRc = True;
         try:
-            if self.fpApiVer >= 5.0:
+            if self.oTstDrv.fpApiVer >= 5.0:
                 oCurProgress = oGuestSession.fileCopyFromGuest(sSrc, sDst, [0]);
             else:
                 oCurProgress = oGuestSession.copyFrom(sSrc, sDst, [0]);
@@ -451,16 +410,12 @@ class tdAutostartOs(object):
                 else:
                     reporter.log('warning: No progress object returned');
                 fRc = False;
-
         return fRc;
-
     def downloadFiles(self, oGuestSession, asFiles, fIgnoreErrors = False):
         """
         Convenience function to get files from the guest and stores it
         into the scratch directory for later (manual) review.
-
         Returns True on success.
-
         Returns False on failure, logged.
         """
         fRc = True;
@@ -484,19 +439,12 @@ class tdAutostartOs(object):
                     return fRc;
                 reporter.log('warning: file "%s" was not downloaded, ignoring.' % (sGstFile,));
         return True;
-
-
-class tdAutostartOsLinux(tdAutostartOs):
-    """
-    Autostart support methods for Linux guests.
-    """
-
-    def __init__(self, oTstDrv, asTestBuildDirs, fpApiVer, sGuestAdditionsIso):
-        tdAutostartOs.__init__(self, oTstDrv, fpApiVer, sGuestAdditionsIso);
-        self.sTestBuild = self._findFile('^VirtualBox-.*\\.run$', asTestBuildDirs);
-        if not self.sTestBuild:
-            raise base.GenError("VirtualBox install package not found");
-
+    def _checkVmIsReady(self, oGuestSession):
+        (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Start a guest process',
+                                                  30 * 1000, '/sbin/ifconfig',
+                                                  ['ifconfig',],
+                                                  False, False);
+        return fRc;
     def waitVmIsReady(self, oSession, fWaitTrayControl):
         """
         Waits the VM is ready after start or reboot.
@@ -505,13 +453,10 @@ class tdAutostartOsLinux(tdAutostartOs):
         _ = fWaitTrayControl;
         # Give the VM a time to reboot
         self.oTstDrv.sleep(30);
-
         # Waiting the VM is ready.
         # To do it, one will try to open the guest session and start the guest process in loop
-
         if not self._waitAdditionsIsRunning(oSession.o.console.guest, False):
             return (False, None);
-
         cAttempt = 0;
         oGuestSession = None;
         fRc = False;
@@ -519,72 +464,168 @@ class tdAutostartOsLinux(tdAutostartOs):
             fRc, oGuestSession = self.createSession(oSession, 'Session for user: vbox',
                                                     'vbox', 'password', 10 * 1000, False);
             if fRc:
-                (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Start a guest process',
-                                                          30 * 1000, '/sbin/ifconfig',
-                                                          ['ifconfig',],
-                                                          False, False);
+                fRc = self._checkVmIsReady(oGuestSession);
                 if fRc:
                     break;
-
                 self.closeSession(oGuestSession, False);
-
             self.oTstDrv.sleep(10);
             cAttempt += 1;
-
         return (fRc, oGuestSession);
-
-    def rebootVMAndCheckReady(self, oSession, oGuestSession):
-        """
-        Reboot the VM and wait the VM is ready.
-        Returns result and guest session obtained after reboot
-        """
-        reporter.testStart('Reboot VM and wait for readiness');
+    def _rebootVM(self, oGuestSession):
         (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Reboot the VM',
                                                   30 * 1000, '/usr/bin/sudo',
                                                   ['sudo', 'reboot'],
                                                   False, True);
         if not fRc:
             reporter.error('Calling the reboot utility failed');
+        return fRc;
+    def rebootVMAndCheckReady(self, oSession, oGuestSession):
+        """
+        Reboot the VM and wait the VM is ready.
+        Returns result and guest session obtained after reboot
+        """
+        reporter.testStart('Reboot VM and wait for readiness');
+        fRc = self._rebootVM(oGuestSession);
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
         if fRc:
             (fRc, oGuestSession) = self.waitVmIsReady(oSession, False);
-
         if not fRc:
             reporter.error('VM is not ready after reboot');
         reporter.testDone();
         return (fRc, oGuestSession);
-
-    def powerDownVM(self, oGuestSession):
-        """
-        Power down the VM by calling guest process without wating
-        the VM is really powered off. Also, closes the guest session.
-        It helps the terminateBySession to stop the VM without aborting.
-        """
-
-        if oGuestSession is None:
-            return False;
-
-        reporter.testStart('Power down the VM');
-
+    def _powerDownVM(self, oGuestSession):
         (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Power down the VM',
                                                   30 * 1000, '/usr/bin/sudo',
                                                   ['sudo', 'poweroff'],
                                                   False, True);
         if not fRc:
             reporter.error('Calling the poweroff utility failed');
+        return fRc;
+    def powerDownVM(self, oGuestSession):
+        """
+        Power down the VM by calling guest process without wating
+        the VM is really powered off. Also, closes the guest session.
+        It helps the terminateBySession to stop the VM without aborting.
+        """
+        if oGuestSession is None:
+            return False;
+        reporter.testStart('Power down the VM');
+        fRc = self._powerDownVM(oGuestSession);
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
-
         if not fRc:
             reporter.error('Power down the VM failed');
         reporter.testDone();
         return fRc;
-
+    def installAdditions(self, oSession, oGuestSession, oVM):
+        """
+        Installs the Windows guest additions using the test execution service.
+        """
+        _ = oSession;
+        _ = oGuestSession;
+        _ = oVM;
+        reporter.error('Not implemented');
+        return False;
+    def installVirtualBox(self, oGuestSession):
+        """
+        Install VirtualBox in the guest.
+        """
+        _ = oGuestSession;
+        reporter.error('Not implemented');
+        return False;
+    def configureAutostart(self, oGuestSession, sDefaultPolicy = 'allow', asUserAllow = (), asUserDeny = ()):
+        """
+        Configures the autostart feature in the guest.
+        """
+        _ = oGuestSession;
+        _ = sDefaultPolicy;
+        _ = asUserAllow;
+        _ = asUserDeny;
+        reporter.error('Not implemented');
+        return False;
+    def createUser(self, oGuestSession, sUser):
+        """
+        Create a new user with the given name
+        """
+        _ = oGuestSession;
+        _ = sUser;
+        reporter.error('Not implemented');
+        return False;
+    def checkForRunningVM(self, oSession, oGuestSession, sUser, sVmName):
+        """
+        Check for VM running in the guest after autostart.
+        Due to the sUser is created whithout password,
+        all calls will be perfomed using 'sudo -u sUser'
+        """
+        _ = oSession;
+        _ = oGuestSession;
+        _ = sUser;
+        _ = sVmName;
+        reporter.error('Not implemented');
+        return False;
+    def getResourceSet(self):
+        asRet = [];
+        if not os.path.isabs(self.sHdd):
+            asRet.append(self.sHdd);
+        return asRet;
+    def _createVmDoIt(self, oTestDrv, eNic0AttachType, sDvdImage):
+        """
+        Creates the VM.
+        Returns Wrapped VM object on success, None on failure.
+        """
+        _ = eNic0AttachType;
+        _ = sDvdImage;
+        return oTestDrv.createTestVM(self.sVmName, self.iGroup, self.sHdd, sKind = self.sKind, \
+                                     fIoApic = True, eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
+                                     eNic0Type = self.eNic0Type, cMbRam = self.cMbRam, \
+                                     sHddControllerType = "SATA Controller", fPae = self.fPae, \
+                                     cCpus = self.cCpus, sDvdImage = self.sGuestAdditionsIso);
+    def _createVmPost(self, oTestDrv, oVM, eNic0AttachType, sDvdImage):
+        _ = eNic0AttachType;
+        _ = sDvdImage;
+        fRc = True;
+        oSession = oTestDrv.openSession(oVM);
+        if oSession is not None:
+            fRc = fRc and oSession.enableVirtEx(True);
+            fRc = fRc and oSession.enableNestedPaging(True);
+            fRc = fRc and oSession.enableNestedHwVirt(True);
+            # disable 3D until the error is fixed.
+            fRc = fRc and oSession.setAccelerate3DEnabled(False);
+            fRc = fRc and oSession.setVRamSize(256);
+            fRc = fRc and oSession.setVideoControllerType(vboxcon.GraphicsControllerType_VBoxSVGA);
+            fRc = fRc and oSession.enableUsbOhci(True);
+            fRc = fRc and oSession.enableUsbHid(True);
+            fRc = fRc and oSession.saveSettings();
+            fRc = oSession.close() and fRc and True; # pychecker hack.
+            oSession = None;
+        else:
+            fRc = False;
+        return oVM if fRc else None;
+    def getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode = None):
+        #
+        # Current test uses precofigured VMs. This override disables any changes in the machine.
+        #
+        _ = cCpus;
+        _ = sVirtMode;
+        _ = sParavirtMode;
+        oVM = oTestDrv.getVmByName(self.sVmName);
+        if oVM is None:
+            return (False, None);
+        return (True, oVM);
+class tdAutostartOsLinux(tdAutostartOs):
+    """
+    Autostart support methods for Linux guests.
+    """
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
+                 cCpus = 1, fPae = None, sGuestAdditionsIso = None):
+        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+                               cCpus, fPae, sGuestAdditionsIso);
+        self.sVBoxInstaller = '^VirtualBox-.*\\.run$';
+        return;
     def installAdditions(self, oSession, oGuestSession, oVM):
         """
         Install guest additions in the guest.
         """
         reporter.testStart('Install Guest Additions');
-
         fRc = False;
         # Install Kernel headers, which are required for actually installing the Linux Additions.
         if   oVM.OSTypeId.startswith('Debian') \
@@ -603,7 +644,6 @@ class tdAutostartOsLinux(tdAutostartOs):
                                                            'perl'], False, True);
                 if not fRc:
                     reporter.error('Error installing additional installer dependencies');
-
         elif oVM.OSTypeId.startswith('OL') \
           or oVM.OSTypeId.startswith('Oracle') \
           or oVM.OSTypeId.startswith('RHEL') \
@@ -622,17 +662,14 @@ class tdAutostartOsLinux(tdAutostartOs):
                                                            'kernel-devel', 'dkms', 'bzip2', 'perl'], False, True);
                 if not fRc:
                     reporter.error('Error installing additional installer dependencies');
-
         else:
             reporter.error('Installing Linux Additions for the "%s" is not supported yet' % oVM.OSTypeId);
             fRc = False;
-
         if fRc:
             #
             # The actual install.
             # Also tell the installer to produce the appropriate log files.
             #
-
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing guest additions',
                                                       10 * 60 *1000, '/usr/bin/sudo',
                                                       ['/usr/bin/sudo', '/bin/sh',
@@ -644,7 +681,6 @@ class tdAutostartOsLinux(tdAutostartOs):
                 fRc = self.closeSession(oGuestSession);
                 if fRc:
                     (fRc, oGuestSession) = self.waitVmIsReady(oSession, False);
-
                 # Download log files.
                 # Ignore errors as all files above might not be present for whatever reason.
                 #
@@ -654,24 +690,20 @@ class tdAutostartOsLinux(tdAutostartOs):
                     self.downloadFiles(oGuestSession, asLogFile, fIgnoreErrors = True);
             else:
                 reporter.error('Installing guest additions failed: Error occured during vbox installer execution')
-
         if fRc:
             (fRc, oGuestSession) = self.rebootVMAndCheckReady(oSession, oGuestSession);
             if not fRc:
                 reporter.error('Reboot after installing GuestAdditions failed');
         reporter.testDone();
         return (fRc, oGuestSession);
-
     def installVirtualBox(self, oGuestSession):
         """
         Install VirtualBox in the guest.
         """
         if self.sTestBuild is None:
             return False;
-
         reporter.testStart('Install Virtualbox into the guest VM');
         reporter.log("Virtualbox install file: %s" % os.path.basename(self.sTestBuild));
-
         fRc = self.uploadFile(oGuestSession, self.sTestBuild,
                               '/tmp/' + os.path.basename(self.sTestBuild));
         if not fRc:
@@ -695,7 +727,6 @@ class tdAutostartOsLinux(tdAutostartOs):
                 reporter.error('Installing VBox failed');
         reporter.testDone();
         return fRc;
-
     def configureAutostart(self, oGuestSession, sDefaultPolicy = 'allow', asUserAllow = (), asUserDeny = ()):
         """
         Configures the autostart feature in the guest.
@@ -731,13 +762,11 @@ class tdAutostartOsLinux(tdAutostartOs):
                                                       False, True);
             if not fRc:
                 reporter.error('Setting permissions for the virtualbox failed');
-
         if fRc:
             sVBoxCfg = self._createAutostartCfg(sDefaultPolicy, asUserAllow, asUserDeny);
             fRc = self.uploadString(oGuestSession, sVBoxCfg, '/tmp/autostart.cfg');
             if not fRc:
                 reporter.error('Upload to /tmp/autostart.cfg failed');
-
         if fRc:
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Moving to destination',
                                                       30 * 1000, '/usr/bin/sudo',
@@ -756,7 +785,6 @@ class tdAutostartOsLinux(tdAutostartOs):
                 reporter.error('Setting permissions for the autostart.cfg failed');
         reporter.testDone();
         return fRc;
-
     def createUser(self, oGuestSession, sUser):
         """
         Create a new user with the given name
@@ -770,20 +798,15 @@ class tdAutostartOsLinux(tdAutostartOs):
             reporter.error('Create user %s failed' % sUser);
         reporter.testDone();
         return fRc;
-
     # pylint: enable=too-many-arguments
-
     def createTestVM(self, oSession, oGuestSession, sUser, sVmName):
         """
         Create a test VM in the guest and enable autostart.
         Due to the sUser is created whithout password,
         all calls will be perfomed using 'sudo -u sUser'
         """
-
         _ = oSession;
-
         reporter.testStart('Create test VM for user %s' % sUser);
-
         (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Configuring autostart database',
                                                   30 * 1000, '/usr/bin/sudo',
                                                   ['/usr/bin/sudo', '-u', sUser, '-H', '/opt/VirtualBox/VBoxManage',
@@ -809,18 +832,14 @@ class tdAutostartOsLinux(tdAutostartOs):
                 reporter.error('Enabling autostart for %s failed' % sVmName);
         reporter.testDone();
         return fRc;
-
     def checkForRunningVM(self, oSession, oGuestSession, sUser, sVmName):
         """
         Check for VM running in the guest after autostart.
         Due to the sUser is created whithout password,
         all calls will be perfomed using 'sudo -u sUser'
         """
-
         self.oTstDrv.sleep(30);
-
         _ = oSession;
-
         reporter.testStart('Check the VM %s is running for user %s' % (sVmName, sUser));
         (fRc, _, _, aBuf) = self.guestProcessExecute(oGuestSession, 'Check for running VM',
                                                      30 * 1000, '/usr/bin/sudo',
@@ -833,81 +852,43 @@ class tdAutostartOsLinux(tdAutostartOs):
             bufWrapper = VBoxManageStdOutWrapper();
             bufWrapper.write(aBuf);
             fRc = bufWrapper.sVmRunning == sVmName;
-
         reporter.testDone();
         return fRc;
-
-
 class tdAutostartOsDarwin(tdAutostartOs):
     """
     Autostart support methods for Darwin guests.
     """
-
-    def __init__(self, oTstDrv, sTestBuildDir, fpApiVer, sGuestAdditionsIso):
-        _ = sTestBuildDir;
-        tdAutostartOs.__init__(self, oTstDrv, fpApiVer, sGuestAdditionsIso);
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
+                 cCpus = 1, fPae = None, sGuestAdditionsIso = None):
+        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+                               cCpus, fPae, sGuestAdditionsIso);
         raise base.GenError('Testing the autostart functionality for Darwin is not implemented');
-
-
 class tdAutostartOsSolaris(tdAutostartOs):
     """
     Autostart support methods for Solaris guests.
     """
-
-    def __init__(self, oTstDrv, sTestBuildDir, fpApiVer, sGuestAdditionsIso):
-        _ = sTestBuildDir;
-        tdAutostartOs.__init__(self, oTstDrv, fpApiVer, sGuestAdditionsIso);
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
+                 cCpus = 1, fPae = None, sGuestAdditionsIso = None):
+        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+                               cCpus, fPae, sGuestAdditionsIso);
         raise base.GenError('Testing the autostart functionality for Solaris is not implemented');
-
-
 class tdAutostartOsWin(tdAutostartOs):
     """
     Autostart support methods for Windows guests.
     """
-
-    def __init__(self, oTstDrv, asTestBuildDirs, fpApiVer, sGuestAdditionsIso):
-        tdAutostartOs.__init__(self, oTstDrv, fpApiVer, sGuestAdditionsIso);
-        self.sTestBuild = self._findFile('^VirtualBox-.*\\.(exe|msi)$', asTestBuildDirs);
-        if not self.sTestBuild:
-            raise base.GenError("VirtualBox install package not found");
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
+                 cCpus = 1, fPae = None, sGuestAdditionsIso = None):
+        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+                               cCpus, fPae, sGuestAdditionsIso);
+        self.sVBoxInstaller = '^VirtualBox-.*\\.(exe|msi)$';
         return;
-
-    def waitVmIsReady(self, oSession, fWaitTrayControl, fWaitFacility = True):
-        """
-        Waits the VM is ready after start or reboot.
-        """
-        # Give the VM a time to reboot
-        self.oTstDrv.sleep(30);
-
-        # Waiting the VM is ready.
-        # To do it, one will try to open the guest session and start the guest process in loop
-
-        if fWaitFacility and not self._waitAdditionsIsRunning(oSession.o.console.guest, fWaitTrayControl):
-            return (False, None);
-
-        cAttempt = 0;
-        oGuestSession = None;
-        while cAttempt < 10:
-            fRc, oGuestSession = self.createSession(oSession, 'Session for user: vbox', 'vbox', 'password', 10 * 1000, False);
-            if fRc:
-                (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Start a guest process',
-                                                          30 * 1000, 'C:\\Windows\\System32\\ipconfig.exe',
-                                                          ['C:\\Windows\\System32\\ipconfig.exe',],
-                                                          False, False);
-                if fRc:
-                    break;
-                self.closeSession(oGuestSession, False);
-
-            self.oTstDrv.sleep(10);
-            cAttempt += 1;
-
-        return (fRc, oGuestSession);
-
-    def rebootVMAndCheckReady(self, oSession, oGuestSession):
-        """
-        Reboot the VM and wait the VM is ready.
-        """
-        reporter.testStart('Reboot VM and wait for readiness');
+    def _checkVmIsReady(self, oGuestSession):
+        (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Start a guest process',
+                                                  30 * 1000, 'C:\\Windows\\System32\\ipconfig.exe',
+                                                  ['C:\\Windows\\System32\\ipconfig.exe',],
+                                                  False, False);
+        return fRc;
+    def _rebootVM(self, oGuestSession):
         (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Reboot the VM',
                                                   30 * 1000, 'C:\\Windows\\System32\\shutdown.exe',
                                                   ['C:\\Windows\\System32\\shutdown.exe', '/f',
@@ -915,25 +896,8 @@ class tdAutostartOsWin(tdAutostartOs):
                                                   False, True);
         if not fRc:
             reporter.error('Calling the shutdown utility failed');
-        fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
-        if fRc:
-            (fRc, oGuestSession) = self.waitVmIsReady(oSession, True);
-        if not fRc:
-            reporter.error('VM is not ready after reboot');
-        reporter.testDone();
-        return (fRc, oGuestSession);
-
-    def powerDownVM(self, oGuestSession):
-        """
-        Power down the VM by calling guest process without wating
-        the VM is really powered off. Also, closes the guest session.
-        It helps the terminateBySession to stop the VM without aborting.
-        """
-
-        if oGuestSession is None:
-            return False;
-
-        reporter.testStart('Power down the VM');
+        return fRc;
+    def _powerDownVM(self, oGuestSession):
         (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Power down the VM',
                                                   30 * 1000, 'C:\\Windows\\System32\\shutdown.exe',
                                                   ['C:\\Windows\\System32\\shutdown.exe', '/f',
@@ -941,12 +905,7 @@ class tdAutostartOsWin(tdAutostartOs):
                                                   False, True);
         if not fRc:
             reporter.error('Calling the shutdown utility failed');
-        fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
-        if not fRc:
-            reporter.error('Power down the VM failed');
-        reporter.testDone();
         return fRc;
-
     def installAdditions(self, oSession, oGuestSession, oVM):
         """
         Installs the Windows guest additions using the test execution service.
@@ -954,9 +913,7 @@ class tdAutostartOsWin(tdAutostartOs):
         _ = oVM;
         reporter.testStart('Install Guest Additions');
         asLogFiles = [];
-
         fRc = self.closeSession(oGuestSession, True); # pychecker hack.
-
         try:
             oCurProgress = oSession.o.console.guest.updateGuestAdditions(self.sGuestAdditionsIso, ['/l',], None);
         except:
@@ -973,7 +930,6 @@ class tdAutostartOsWin(tdAutostartOs):
                     fRc = False;
             else:
                 fRc = reporter.error('No progress object returned');
-
         #---------------------------------------
         #
         ##
@@ -1015,7 +971,6 @@ class tdAutostartOsWin(tdAutostartOs):
         #    if fRc:
         #        (fRc, oGuestSession) = self.waitVmIsReady(oSession, False, False);
         #---------------------------------------
-
         # Store the result and try download logs anyway.
         fGaRc = fRc;
         fRc, oGuestSession = self.createSession(oSession, 'Session for user: vbox',
@@ -1029,7 +984,6 @@ class tdAutostartOsWin(tdAutostartOs):
                 asLogFiles.append(sGuestAddsDir + 'install.log');
                 # Note: There won't be a install_ui.log because of the silent installation.
                 asLogFiles.append(sGuestAddsDir + 'install_drivers.log');
-
                 # Download log files.
                 # Ignore errors as all files above might not be present (or in different locations)
                 # on different Windows guests.
@@ -1041,12 +995,10 @@ class tdAutostartOsWin(tdAutostartOs):
             reporter.error('Create session for user vbox after GA updating failed');
         reporter.testDone();
         return (fRc and fGaRc, oGuestSession);
-
     def installVirtualBox(self, oGuestSession):
         """
         Install VirtualBox in the guest.
         """
-
         if self.sTestBuild is None:
             return False;
         reporter.testStart('Install Virtualbox into the guest VM');
@@ -1085,19 +1037,15 @@ class tdAutostartOsWin(tdAutostartOs):
                                                                True, True);
                     reporter.log('Content of  VirtualBxox folder:');
                     reporter.log(str(aBuf));
-
             asLogFiles = [sLogFile,];
             self.downloadFiles(oGuestSession, asLogFiles, fIgnoreErrors = True);
-
         reporter.testDone();
         return fRc;
-
     def configureAutostart(self, oGuestSession, sDefaultPolicy = 'allow', asUserAllow = (), asUserDeny = ()):
         """
         Configures the autostart feature in the guest.
         """
         reporter.testStart('Configure autostart');
-
         # Create autostart database directory writeable for everyone
         (fRc, _, _, _) = \
             self.guestProcessExecute(oGuestSession, 'Setting the autostart environment variable',
@@ -1114,18 +1062,14 @@ class tdAutostartOsWin(tdAutostartOs):
                 reporter.error('Upload the autostart.cfg failed');
         else:
             reporter.error('Setting the autostart environment variable failed');
-
         reporter.testDone();
         return fRc;
-
     def createTestVM(self, oSession, oGuestSession, sUser, sVmName):
         """
         Create a test VM in the guest and enable autostart.
         """
         _ = oGuestSession;
-
         reporter.testStart('Create test VM for user %s' % sUser);
-
         fRc, oGuestSession = self.createSession(oSession, 'Session for user: %s' % (sUser,),
                                                 sUser, 'password', 10 * 1000, True);
         if not fRc:
@@ -1166,25 +1110,18 @@ class tdAutostartOsWin(tdAutostartOs):
             fRc = fRc1 and fRc and True; # pychecker hack.
         reporter.testDone();
         return fRc;
-
     def checkForRunningVM(self, oSession, oGuestSession, sUser, sVmName):
         """
         Check for VM running in the guest after autostart.
         """
-
         self.oTstDrv.sleep(30);
-
         _ = oGuestSession;
-
         reporter.testStart('Check the VM %s is running for user %s' % (sVmName, sUser));
-
         fRc, oGuestSession = self.createSession(oSession, 'Session for user: %s' % (sUser,),
                                                 sUser, 'password', 10 * 1000, True);
         if not fRc:
             reporter.error('Create session for user %s failed' % sUser);
         else:
-
-
             (fRc, _, _, aBuf) = self.guestProcessExecute(oGuestSession, 'Check for running VM',
                                                          60 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
                                                          [ 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
@@ -1192,18 +1129,15 @@ class tdAutostartOsWin(tdAutostartOs):
             if not fRc:
                 reporter.error('Checking the VM %s is running for user %s failed' % (sVmName, sUser));
             else:
-
                 bufWrapper = VBoxManageStdOutWrapper();
                 bufWrapper.write(aBuf);
                 fRc = bufWrapper.sVmRunning == sVmName;
-
             fRc1 = self.closeSession(oGuestSession, True);
             if not fRc1:
                 reporter.error('Closing session for user %s failed' % sUser);
             fRc = fRc1 and fRc and True; # pychecker hack.
         reporter.testDone();
         return fRc;
-
     def createUser(self, oGuestSession, sUser):
         """
         Create a new user with the given name
@@ -1222,7 +1156,6 @@ class tdAutostartOsWin(tdAutostartOs):
                                                       ['net', 'localgroup', 'Administrators', sUser, '/add' ], False, True);
             if not fRc:
                 reporter.error('Adding the user %s to Administrators group failed' % sUser);
-
         #Allow the user to logon as service
         if fRc:
             sSecPolicyEditor = """
@@ -1276,19 +1209,15 @@ Remove-Item -Path $sImportFile
             fRc = reporter.errorXcpt('Removing policy script failed');
         reporter.testDone();
         return fRc;
-
-
 class tdAutostart(vbox.TestDriver):                                      # pylint: disable=too-many-instance-attributes
     """
     Autostart testcase.
     """
-
     ksOsLinux   = 'tst-linux'
     ksOsWindows = 'tst-win'
     ksOsDarwin  = 'tst-darwin'
     ksOsSolaris = 'tst-solaris'
     ksOsFreeBSD = 'tst-freebsd'
-
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.asRsrcs            = None;
@@ -1299,7 +1228,18 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         ## is not an acceptable test practice as we don't know wtf you're testing.  See defect for more.
         self.asTestBuildDirs    = None; #'D:/AlexD/TestBox/TestAdditionalFiles';
         self.sGuestAdditionsIso = None; #'D:/AlexD/TestBox/TestAdditionalFiles/VBoxGuestAdditions_6.1.2.iso';
-
+        oSet = vboxtestvms.TestVmSet(self.oTestVmManager, acCpus = [2], fIgnoreSkippedVm = True);
+        # pylint: disable=line-too-long
+        oSet.aoTestVms.extend([
+            tdAutostartOsWin(oSet, self, self.ksOsWindows, 'Windows7_64', \
+                             '6.0/windows7piglit/windows7piglit.vdi', eNic0Type = None, cMbRam = 2048,  \
+                             cCpus = 2, fPae = True, sGuestAdditionsIso = self.getGuestAdditionsIso()),
+            tdAutostartOsLinux(oSet, self, self.ksOsLinux, 'Ubuntu_64', \
+                               '6.0/ub1804piglit/ub1804piglit.vdi', eNic0Type = None, \
+                               cMbRam = 2048, cCpus = 2, fPae = None, sGuestAdditionsIso = self.getGuestAdditionsIso())
+        ]);
+        # pylint: enable=line-too-long
+        self.oTestVmSet = oSet;
     #
     # Overridden methods.
     #
@@ -1311,38 +1251,17 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         reporter.log('      The list of directories with VirtualBox distros. The option is mandatory');
         reporter.log('      without any default value. The test raises an exception if the');
         reporter.log('      option is not specified. At least, one directory should be pointed.');
-        reporter.log('  --test-vms      <vm1[:vm2[:...]]>');
-        reporter.log('      Test the specified VMs in the given order. Use this to change');
-        reporter.log('      the execution order or limit the choice of VMs');
-        reporter.log('      Default: %s  (all)' % (':'.join(self.asTestVMsDef)));
-        reporter.log('  --skip-vms      <vm1[:vm2[:...]]>');
-        reporter.log('      Skip the specified VMs when testing.');
         return rc;
-
     def parseOption(self, asArgs, iArg): # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--test-build-dirs':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--test-build-dirs" takes a paths argument');
             self.asTestBuildDirs = asArgs[iArg].split(',');
-        elif asArgs[iArg] == '--test-vms':
-            iArg += 1;
-            if iArg >= len(asArgs): raise base.InvalidOption('The "--test-vms" takes colon separated list');
-            self.asTestVMs = asArgs[iArg].split(':');
-            for s in self.asTestVMs:
-                if s not in self.asTestVMsDef:
-                    raise base.InvalidOption('The "--test-vms" value "%s" is not valid; valid values are: %s' \
-                        % (s, ' '.join(self.asTestVMsDef)));
-        elif asArgs[iArg] == '--skip-vms':
-            iArg += 1;
-            if iArg >= len(asArgs): raise base.InvalidOption('The "--skip-vms" takes colon separated list');
-            self.asSkipVMs = asArgs[iArg].split(':');
-            for s in self.asSkipVMs:
-                if s not in self.asTestVMsDef:
-                    reporter.log('warning: The "--test-vms" value "%s" does not specify any of our test VMs.' % (s));
+            for oTestVm in self.oTestVmSet.aoTestVms:
+                oTestVm.asTestBuildDirs = self.asTestBuildDirs;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
-
     def completeOptions(self):
         # Remove skipped VMs from the test list.
         if self.asTestBuildDirs is None:
@@ -1350,140 +1269,54 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         for sVM in self.asSkipVMs:
             try:    self.asTestVMs.remove(sVM);
             except: pass;
-
         return vbox.TestDriver.completeOptions(self);
-
-    def getResourceSet(self):
-        # Construct the resource list the first time it's queried.
-        if self.asRsrcs is None:
-            self.asRsrcs = [];
-            if self.ksOsLinux in self.asTestVMs:
-                self.asRsrcs.append('6.0/ub1804piglit/ub1804piglit.vdi');
-            if self.ksOsWindows in self.asTestVMs:
-                self.asRsrcs.append('6.0/windows7piglit/windows7piglit.vdi');
-            #disabled
-            #if self.ksOsSolaris in self.asTestVMs:
-            #    self.asRsrcs.append('4.2/autostart/tst-solaris.vdi');
-
-        return self.asRsrcs;
-
     def actionConfig(self):
-
-        # Make sure vboxapi has been imported so we can use the constants.
-        if not self.importVBoxApi():
+        if not self.importVBoxApi(): # So we can use the constant below.
             return False;
-        #
-        # Configure the VMs we're going to use.
-        #
-
-        fRc = True;
-
-        # Linux VMs
-        if self.ksOsLinux in self.asTestVMs:
-            # ub1804piglit is created with 2 CPUs.
-            oVM = self.createTestVM(self.ksOsLinux, 1, '6.0/ub1804piglit/ub1804piglit.vdi', sKind = 'Ubuntu_64', \
-                                    fIoApic = True, eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
-                                    eNic0Type = vboxcon.NetworkAdapterType_Am79C973, cMbRam = 2048, \
-                                    cCpus = 2, sDvdImage = self.getGuestAdditionsIso());
-            if oVM is None:
-                return False;
-        # Windows VMs
-        if self.ksOsWindows in self.asTestVMs:
-            # windows7piglit is created with PAE enabled and 2 CPUs.
-            # changed cMbRam to 2GB due to #9618
-            oVM = self.createTestVM(self.ksOsWindows, 1, '6.0/windows7piglit/windows7piglit.vdi', sKind = 'Windows7_64', \
-                                    fIoApic = True, eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
-                                    sHddControllerType = "SATA Controller", cMbRam = 2048, fPae = True, cCpus = 2, \
-                                    sDvdImage = self.getGuestAdditionsIso());
-            if oVM is None:
-                return False;
-
-            # additional options used during the windows7piglit creation
-            oSession = self.openSession(oVM);
-            if oSession is not None:
-                fRc = fRc and oSession.setVRamSize(256);
-                fRc = fRc and oSession.setVideoControllerType(vboxcon.GraphicsControllerType_VBoxSVGA)
-                fRc = fRc and oSession.setAccelerate3DEnabled(False);
-                fRc = fRc and oSession.enableUsbOhci(True);
-                fRc = fRc and oSession.enableUsbHid(True);
-                fRc = fRc and oSession.saveSettings();
-                fRc = oSession.close() and fRc and True; # pychecker hack.
-                oSession = None;
-            else:
-                fRc = False;
-
-        # disabled
-        # Solaris VMs
-        #if self.ksOsSolaris in self.asTestVMs:
-        #    oVM = self.createTestVM(self.ksOsSolaris, 1, '4.2/autostart/tst-solaris.vdi', sKind = 'Solaris_64', \
-        #                            fIoApic = True, eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
-        #                            sHddControllerType = "SATA Controller");
-        #    if oVM is None:
-        #        return False;
-
-        return fRc;
-
+        return self.oTestVmSet.actionConfig(self);
     def actionExecute(self):
         """
         Execute the testcase.
         """
-        fRc = self.testAutostart();
-        return fRc;
-
+        return self.oTestVmSet.actionExecute(self, self.testAutostartOneVfg)
     #
     # Test execution helpers.
     #
-    def testAutostartRunProgs(self, oSession, sVmName, oVM):
-        """
-        Test VirtualBoxs autostart feature in a VM.
-        """
-        reporter.testStart('Autostart ' + sVmName);
-
-        oGuestOsHlp = None              # type: tdAutostartOs
-        if sVmName == self.ksOsLinux:
-            oGuestOsHlp = tdAutostartOsLinux(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
-                                             self.getGuestAdditionsIso());
-        elif sVmName == self.ksOsSolaris:
-            oGuestOsHlp = tdAutostartOsSolaris(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
-                                               self.getGuestAdditionsIso());
-        elif sVmName == self.ksOsDarwin:
-            oGuestOsHlp = tdAutostartOsDarwin(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
-                                              self.getGuestAdditionsIso());
-        elif sVmName == self.ksOsWindows:
-            oGuestOsHlp = tdAutostartOsWin(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
-                                           self.getGuestAdditionsIso());
-
-        sTestUserAllow = 'test1';
-        sTestUserDeny = 'test2';
-        sTestVmName = 'TestVM';
-
-        if oGuestOsHlp is not None:
+    def testAutostartOneVfg(self, oVM, oTestVm):
+        # Reconfigure the VM
+        fRc = True;
+        self.logVmInfo(oVM);
+        oSession = self.startVmByName(oTestVm.sVmName);
+        if oSession is not None:
+            sTestUserAllow = 'test1';
+            sTestUserDeny = 'test2';
+            sTestVmName = 'TestVM';
             #wait the VM is ready after starting
-            (fRc, oGuestSession) = oGuestOsHlp.waitVmIsReady(oSession, True);
+            (fRc, oGuestSession) = oTestVm.waitVmIsReady(oSession, True);
             #install fresh guest additions
             if fRc:
-                (fRc, oGuestSession) = oGuestOsHlp.installAdditions(oSession, oGuestSession, oVM);
+                (fRc, oGuestSession) = oTestVm.installAdditions(oSession, oGuestSession, oVM);
             # Create two new users
-            fRc = fRc and oGuestOsHlp.createUser(oGuestSession, sTestUserAllow);
-            fRc = fRc and oGuestOsHlp.createUser(oGuestSession, sTestUserDeny);
+            fRc = fRc and oTestVm.createUser(oGuestSession, sTestUserAllow);
+            fRc = fRc and oTestVm.createUser(oGuestSession, sTestUserDeny);
             if fRc is True:
                 # Install VBox first
-                fRc = oGuestOsHlp.installVirtualBox(oGuestSession);
+                fRc = oTestVm.installVirtualBox(oGuestSession);
                 if fRc is True:
-                    fRc = oGuestOsHlp.configureAutostart(oGuestSession, 'allow', (sTestUserAllow,), (sTestUserDeny,));
+                    fRc = oTestVm.configureAutostart(oGuestSession, 'allow', (sTestUserAllow,), (sTestUserDeny,));
                     if fRc is True:
                         # Create a VM with autostart enabled in the guest for both users
-                        fRc = oGuestOsHlp.createTestVM(oSession, oGuestSession, sTestUserAllow, sTestVmName);
-                        fRc = fRc and oGuestOsHlp.createTestVM(oSession, oGuestSession, sTestUserDeny, sTestVmName);
+                        fRc = oTestVm.createTestVM(oSession, oGuestSession, sTestUserAllow, sTestVmName);
+                        fRc = fRc and oTestVm.createTestVM(oSession, oGuestSession, sTestUserDeny, sTestVmName);
                         if fRc is True:
                             # Reboot the guest
-                            (fRc, oGuestSession) = oGuestOsHlp.rebootVMAndCheckReady(oSession, oGuestSession);
+                            (fRc, oGuestSession) = oTestVm.rebootVMAndCheckReady(oSession, oGuestSession);
                             if fRc is True:
                                 # Fudge factor - Allow the guest VMs to finish starting up.
                                 self.sleep(60);
-                                fRc = oGuestOsHlp.checkForRunningVM(oSession, oGuestSession, sTestUserAllow, sTestVmName);
+                                fRc = oTestVm.checkForRunningVM(oSession, oGuestSession, sTestUserAllow, sTestVmName);
                                 if fRc is True:
-                                    fRc = oGuestOsHlp.checkForRunningVM(oSession, oGuestSession, sTestUserDeny, sTestVmName);
+                                    fRc = oTestVm.checkForRunningVM(oSession, oGuestSession, sTestUserDeny, sTestVmName);
                                     if fRc is True:
                                         reporter.error('Test VM is running inside the guest for denied user');
                                     fRc = not fRc;
@@ -1499,80 +1332,15 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
                     reporter.error('Installing VirtualBox in the guest failed');
             else:
                 reporter.error('Creating test users failed');
-
             if oGuestSession is not None:
-                try:    oGuestOsHlp.powerDownVM(oGuestSession);
+                try:    oTestVm.powerDownVM(oGuestSession);
                 except: pass;
-        else:
-            reporter.error('Guest OS helper not created for VM %s' % (sVmName));
-            fRc = False;
-
-        reporter.testDone();
-        return fRc;
-
-    def testAutostartOneCfg(self, sVmName):
-        """
-        Runs the specified VM thru test #1.
-
-        Returns a success indicator on the general test execution. This is not
-        the actual test result.
-        """
-        oVM = self.getVmByName(sVmName);
-
-        # Reconfigure the VM
-        fRc = True;
-        oSession = self.openSession(oVM);
-        if oSession is not None:
-            fRc = fRc and oSession.enableVirtEx(True);
-            fRc = fRc and oSession.enableNestedPaging(True);
-            fRc = fRc and oSession.enableNestedHwVirt(True);
-            # disable 3D until the error is fixed.
-            fRc = fRc and oSession.setAccelerate3DEnabled(False);
-            fRc = fRc and oSession.saveSettings();
+            try:    self.terminateVmBySession(oSession);
+            except: pass;
             fRc = oSession.close() and fRc and True; # pychecker hack.
             oSession = None;
         else:
             fRc = False;
-
-        # Start up.
-        if fRc is True:
-            self.logVmInfo(oVM);
-            oSession = self.startVmByName(sVmName);
-            if oSession is not None:
-                fRc = self.testAutostartRunProgs(oSession, sVmName, oVM);
-                try:    self.terminateVmBySession(oSession);
-                except: pass;
-            else:
-                fRc = False;
         return fRc;
-
-    def testAutostartForOneVM(self, sVmName):
-        """
-        Runs one VM thru the various configurations.
-        """
-        reporter.testStart(sVmName);
-        fRc = True;
-        self.testAutostartOneCfg(sVmName);
-        reporter.testDone();
-        return fRc;
-
-    def testAutostart(self):
-        """
-        Executes autostart test.
-        """
-
-        # Loop thru the test VMs.
-        for sVM in self.asTestVMs:
-            # run test on the VM.
-            if not self.testAutostartForOneVM(sVM):
-                fRc = False;
-            else:
-                fRc = True;
-
-        return fRc;
-
-
-
 if __name__ == '__main__':
     sys.exit(tdAutostart().main(sys.argv));
-
