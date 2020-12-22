@@ -540,7 +540,7 @@ class tdAutostartOs(vboxtestvms.BaseTestVm):
         """
         _ = oGuestSession;
         _ = sDefaultPolicy;
-        _ = asUserAllow;
+        _ = asUserAllow; # pylint: disable=redefined-variable-type
         _ = asUserDeny;
         reporter.error('Not implemented');
         return False;
