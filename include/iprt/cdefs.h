@@ -63,6 +63,8 @@
 # define RT_ARCH_X86
 # define RT_ARCH_SPARC
 # define RT_ARCH_SPARC64
+# define RT_ARCH_ARM32
+# define RT_ARCH_ARM64
 # define IN_RING0
 # define IN_RING3
 # define IN_RC
@@ -104,11 +106,21 @@
 /** @def RT_ARCH_SPARC64
  * Indicates that we're compiling for the SPARC V9 architecture (64-bit).
  */
+
+/** @def RT_ARCH_ARM32
+ * Indicates that we're compiling for the 32-bit ARM architecture.
+ */
+
+/** @def RT_ARCH_ARM64
+ * Indicates that we're compiling for the 64-bit ARM architecture.
+ */
+
 #if !defined(RT_ARCH_X86) \
  && !defined(RT_ARCH_AMD64) \
  && !defined(RT_ARCH_SPARC) \
  && !defined(RT_ARCH_SPARC64) \
- && !defined(RT_ARCH_ARM)
+ && !defined(RT_ARCH_ARM32) \
+ && !defined(RT_ARCH_ARM64)
 # if defined(__amd64__) || defined(__x86_64__) || defined(_M_X64) || defined(__AMD64__)
 #  define RT_ARCH_AMD64
 # elif defined(__i386__) || defined(_M_IX86) || defined(__X86__)
@@ -117,8 +129,10 @@
 #  define RT_ARCH_SPARC64
 # elif defined(__sparc__)
 #  define RT_ARCH_SPARC
+# elif defined(__arm64__) || defined(__aarch64__)
+#  define RT_ARCH_ARM64
 # elif defined(__arm__) || defined(__arm32__)
-#  define RT_ARCH_ARM
+#  define RT_ARCH_ARM32
 # else /* PORTME: append test for new archs. */
 #  error "Check what predefined macros your compiler uses to indicate architecture."
 # endif
@@ -135,14 +149,27 @@
 # error "Both RT_ARCH_AMD64 and RT_ARCH_SPARC64 cannot be defined at the same time!"
 #elif defined(RT_ARCH_SPARC) && defined(RT_ARCH_SPARC64)
 # error "Both RT_ARCH_SPARC and RT_ARCH_SPARC64 cannot be defined at the same time!"
-#elif defined(RT_ARCH_ARM) && defined(RT_ARCH_AMD64)
-# error "Both RT_ARCH_ARM and RT_ARCH_AMD64 cannot be defined at the same time!"
-#elif defined(RT_ARCH_ARM) && defined(RT_ARCH_X86)
-# error "Both RT_ARCH_ARM and RT_ARCH_X86 cannot be defined at the same time!"
-#elif defined(RT_ARCH_ARM) && defined(RT_ARCH_SPARC64)
-# error "Both RT_ARCH_ARM and RT_ARCH_SPARC64 cannot be defined at the same time!"
-#elif defined(RT_ARCH_ARM) && defined(RT_ARCH_SPARC)
-# error "Both RT_ARCH_ARM and RT_ARCH_SPARC cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM32) && defined(RT_ARCH_AMD64)
+# error "Both RT_ARCH_ARM32 and RT_ARCH_AMD64 cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM32) && defined(RT_ARCH_X86)
+# error "Both RT_ARCH_ARM32 and RT_ARCH_X86 cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM32) && defined(RT_ARCH_SPARC64)
+# error "Both RT_ARCH_ARM32 and RT_ARCH_SPARC64 cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM32) && defined(RT_ARCH_SPARC)
+# error "Both RT_ARCH_ARM32 and RT_ARCH_SPARC cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM64) && defined(RT_ARCH_AMD64)
+# error "Both RT_ARCH_ARM64 and RT_ARCH_AMD64 cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM64) && defined(RT_ARCH_X86)
+# error "Both RT_ARCH_ARM64 and RT_ARCH_X86 cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM64) && defined(RT_ARCH_SPARC64)
+# error "Both RT_ARCH_ARM64 and RT_ARCH_SPARC64 cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM64) && defined(RT_ARCH_SPARC)
+# error "Both RT_ARCH_ARM64 and RT_ARCH_SPARC cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM64) && defined(RT_ARCH_ARM32)
+# error "Both RT_ARCH_ARM64 and RT_ARCH_ARM32 cannot be defined at the same time!"
+#endif
+#ifdef RT_ARCH_ARM
+# error "RT_ARCH_ARM is now RT_ARCH_ARM32!"
 #endif
 
 /* Final check (PORTME). */
@@ -150,7 +177,8 @@
      + (defined(RT_ARCH_AMD64) != 0) \
      + (defined(RT_ARCH_SPARC) != 0) \
      + (defined(RT_ARCH_SPARC64) != 0) \
-     + (defined(RT_ARCH_ARM) != 0) \
+     + (defined(RT_ARCH_ARM32) != 0) \
+     + (defined(RT_ARCH_ARM64) != 0) \
   != 1
 # error "Exactly one RT_ARCH_XXX macro shall be defined"
 #endif
@@ -294,7 +322,7 @@
  * Defined if the architecture is big endian.  */
 /** @def RT_LITTLE_ENDIAN
  * Defined if the architecture is little endian.  */
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(RT_ARCH_ARM)
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
 # define RT_LITTLE_ENDIAN
 #elif defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
 # define RT_BIG_ENDIAN
@@ -334,7 +362,7 @@
  * Defines the bit count of the current context.
  */
 #if !defined(ARCH_BITS) || defined(DOXYGEN_RUNNING)
-# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64) || defined(DOXYGEN_RUNNING)
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64) || defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
 #  define ARCH_BITS 64
 # elif !defined(__I86__) || !defined(__WATCOMC__)
 #  define ARCH_BITS 32
@@ -345,23 +373,23 @@
 
 /* ARCH_BITS validation (PORTME). */
 #if ARCH_BITS == 64
- #if defined(RT_ARCH_X86) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_ARM)
+ #if defined(RT_ARCH_X86) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_ARM32)
  # error "ARCH_BITS=64 but non-64-bit RT_ARCH_XXX defined."
  #endif
- #if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_SPARC64)
+ #if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_SPARC64) && !defined(RT_ARCH_ARM64)
  # error "ARCH_BITS=64 but no 64-bit RT_ARCH_XXX defined."
  #endif
 
 #elif ARCH_BITS == 32
- #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64)
+ #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64) || defined(RT_ARCH_ARM64)
  # error "ARCH_BITS=32 but non-32-bit RT_ARCH_XXX defined."
  #endif
- #if !defined(RT_ARCH_X86) && !defined(RT_ARCH_SPARC) && !defined(RT_ARCH_ARM)
+ #if !defined(RT_ARCH_X86) && !defined(RT_ARCH_SPARC) && !defined(RT_ARCH_ARM32)
  # error "ARCH_BITS=32 but no 32-bit RT_ARCH_XXX defined."
  #endif
 
 #elif ARCH_BITS == 16
- #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64) || defined(RT_ARCH_ARM)
+ #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64) || defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
  # error "ARCH_BITS=16 but non-16-bit RT_ARCH_XX defined."
  #endif
  #if !defined(RT_ARCH_X86)
@@ -3819,6 +3847,8 @@
 #  define RT_BREAKPOINT()       __asm__ __volatile__("illtrap 0\n\t")   /** @todo Sparc64: this is just a wild guess. */
 # elif defined(RT_ARCH_SPARC)
 #  define RT_BREAKPOINT()       __asm__ __volatile__("unimp 0\n\t")     /** @todo Sparc: this is just a wild guess (same as Sparc64, just different name). */
+# elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+#  define RT_BREAKPOINT()       __asm__ __volatile__("brk #0x1\n\t")
 # endif
 #endif
 #ifdef _MSC_VER
@@ -4300,7 +4330,7 @@
 #  endif
 # endif /* !IN_RING3 */
 
-#elif defined(RT_ARCH_ARM)
+#elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
 /* ASSUMES that at least the last and first 4K are out of bounds. */
 # define RT_VALID_PTR(ptr)      ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
 

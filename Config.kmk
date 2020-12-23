@@ -318,10 +318,11 @@ VBOX_SUPPORTED_HOST_ARCHS := amd64
 
 # Select new Xcode based on host OS X version.
 ifeq ($(KBUILD_HOST),darwin)
-# if !defined(VBOX_WITH_EVEN_NEWER_XCODE) && !defined(VBOX_WITHOUT_EVEN_NEWER_XCODE) && !defined(VBOX_WITH_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 16 # (OS X 10.12 Sierra)
+ if "$(KBUILD_TARGET_ARCH)" == "arm64"
+VBOX_WITH_EVEN_NEWER_XCODE := 1
+# else if !defined(VBOX_WITH_EVEN_NEWER_XCODE) && !defined(VBOX_WITHOUT_EVEN_NEWER_XCODE) && !defined(VBOX_WITH_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 16 # (OS X 10.12 Sierra)
 #VBOX_WITH_EVEN_NEWER_XCODE := 1
-# else
- if !defined(VBOX_WITH_NEW_XCODE) && !defined(VBOX_WITHOUT_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 13 # (OS X 10.9 Mavericks)
+ else if !defined(VBOX_WITH_NEW_XCODE) && !defined(VBOX_WITHOUT_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 13 # (OS X 10.9 Mavericks)
 VBOX_WITH_NEW_XCODE := 1
  endif
 endif
@@ -1850,7 +1851,7 @@ endif
 #
 # ARCH_BITS_DEFS.
 #
-if1of ($(KBUILD_TARGET_ARCH),amd64 sparc64)
+if1of ($(KBUILD_TARGET_ARCH),amd64 sparc64 arm64)
  VBOX_HC_ARCH_BITS := 64
  ARCH_BITS_DEFS    := HC_ARCH_BITS=64
 else if1of ($(KBUILD_TARGET_ARCH),x86 sparc32)
@@ -2315,6 +2316,8 @@ ifeq ($(KBUILD_TARGET),darwin)
    VBOX_DEF_MACOSX_VERSION_MIN := 10.6#  Snow Leopard
   else if1of ($(VBOX_GCC_TOOL), VBoxXcode62)
    VBOX_DEF_MACOSX_VERSION_MIN := 10.9#  Mavericks
+  else ifeq ($(KBUILD_TARGET_ARCH),arm64)
+   VBOX_DEF_MACOSX_VERSION_MIN := 11.0# The Jack Kerouac novel.
   else
    VBOX_DEF_MACOSX_VERSION_MIN := 10.13# High Sierra
   endif
