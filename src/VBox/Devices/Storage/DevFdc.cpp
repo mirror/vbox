@@ -1639,13 +1639,20 @@ static uint32_t fdctrl_read_data(fdctrl_t *fdctrl)
     }
     pos = fdctrl->data_pos % FD_SECTOR_LEN;
     if (fdctrl->msr & FD_MSR_NONDMA) {
-        if (pos == 0) {
+        if (cur_drv->pDrvMedia == NULL)
+        {
+            if (fdctrl->data_dir == FD_DIR_WRITE)
+                fdctrl_stop_transfer_now(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, 0x00, 0x00);
+            else
+                fdctrl_stop_transfer_now(fdctrl, FD_SR0_ABNTERM, 0x00, 0x00);
+        } else if (pos == 0) {
             if (fdctrl->data_pos != 0)
                 if (!fdctrl_seek_to_next_sect(fdctrl, cur_drv)) {
                     FLOPPY_DPRINTF("error seeking to next sector %d\n",
                                    fd_sector(cur_drv));
                     return 0;
                 }
+
             rc = blk_read(cur_drv, fd_sector(cur_drv), fdctrl->fifo, 1);
             if (RT_FAILURE(rc))
             {
@@ -2156,7 +2163,14 @@ static void fdctrl_write_data(fdctrl_t *fdctrl, uint32_t value)
         pos = fdctrl->data_pos++;
         pos %= FD_SECTOR_LEN;
         fdctrl->fifo[pos] = value;
-        if (pos == FD_SECTOR_LEN - 1 ||
+
+        if (cur_drv->pDrvMedia == NULL)
+        {
+            if (fdctrl->data_dir == FD_DIR_WRITE)
+                fdctrl_stop_transfer_now(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, 0x00, 0x00);
+            else
+                fdctrl_stop_transfer_now(fdctrl, FD_SR0_ABNTERM, 0x00, 0x00);
+        } else if (pos == FD_SECTOR_LEN - 1 ||
             fdctrl->data_pos == fdctrl->data_len) {
             blk_write(cur_drv, fd_sector(cur_drv), fdctrl->fifo, 1);
         }
