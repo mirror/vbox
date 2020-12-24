@@ -133,11 +133,13 @@ VMMR3_INT_DECL(int) PDMR3CritSectBothTerm(PVM pVM)
  * @param   pCritSect       The critical section.
  * @param   pvKey           The owner key.
  * @param   SRC_POS         The source position.
+ * @param   fUniqueClass    Whether to create a unique lock validator class for
+ *                          it or not.
  * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   va              Arguments for the format string.
  */
-static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey, RT_SRC_POS_DECL,
+static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey, RT_SRC_POS_DECL, bool fUniqueClass,
                                 const char *pszNameFmt, va_list va)
 {
     VM_ASSERT_EMT(pVM);
@@ -160,7 +162,9 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
 #else
             rc = RTLockValidatorRecExclCreate(&pCritSect->Core.pValidatorRec,
 # ifdef RT_LOCK_STRICT_ORDER
-                                              RTLockValidatorClassForSrcPos(RT_SRC_POS_ARGS, "%s", pszName),
+                                              fUniqueClass
+                                              ? RTLockValidatorClassCreateUnique(RT_SRC_POS_ARGS, "%s", pszName)
+                                              : RTLockValidatorClassForSrcPos(RT_SRC_POS_ARGS, "%s", pszName),
 # else
                                               NIL_RTLOCKVALCLASS,
 # endif
@@ -338,7 +342,7 @@ VMMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, RT_SRC_POS_DEC
     Assert(RT_ALIGN_P(pCritSect, sizeof(uintptr_t)) == pCritSect);
     va_list va;
     va_start(va, pszNameFmt);
-    int rc = pdmR3CritSectInitOne(pVM, &pCritSect->s, pCritSect, RT_SRC_POS_ARGS, pszNameFmt, va);
+    int rc = pdmR3CritSectInitOne(pVM, &pCritSect->s, pCritSect, RT_SRC_POS_ARGS, false /*fUniqueClass*/, pszNameFmt, va);
     va_end(va);
     return rc;
 }
@@ -388,7 +392,7 @@ VMMR3DECL(int) PDMR3CritSectRwInit(PVM pVM, PPDMCRITSECTRW pCritSect, RT_SRC_POS
 int pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
                             const char *pszNameFmt, va_list va)
 {
-    return pdmR3CritSectInitOne(pVM, &pCritSect->s, pDevIns, RT_SRC_POS_ARGS, pszNameFmt, va);
+    return pdmR3CritSectInitOne(pVM, &pCritSect->s, pDevIns, RT_SRC_POS_ARGS, false /*fUniqueClass*/, pszNameFmt, va);
 }
 
 
@@ -428,7 +432,7 @@ int pdmR3CritSectInitDeviceAuto(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritS
 {
     va_list va;
     va_start(va, pszNameFmt);
-    int rc = pdmR3CritSectInitOne(pVM, &pCritSect->s, pDevIns, RT_SRC_POS_ARGS, pszNameFmt, va);
+    int rc = pdmR3CritSectInitOne(pVM, &pCritSect->s, pDevIns, RT_SRC_POS_ARGS, true /*fUniqueClass*/, pszNameFmt, va);
     if (RT_SUCCESS(rc))
         pCritSect->s.fAutomaticDefaultCritsect = true;
     va_end(va);
@@ -453,7 +457,7 @@ int pdmR3CritSectInitDriver(PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
 {
     va_list va;
     va_start(va, pszNameFmt);
-    int rc = pdmR3CritSectInitOne(pVM, &pCritSect->s, pDrvIns, RT_SRC_POS_ARGS, pszNameFmt, va);
+    int rc = pdmR3CritSectInitOne(pVM, &pCritSect->s, pDrvIns, RT_SRC_POS_ARGS, false /*fUniqueClass*/, pszNameFmt, va);
     va_end(va);
     return rc;
 }
