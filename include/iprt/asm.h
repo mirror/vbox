@@ -1525,7 +1525,7 @@ DECLINLINE(void) ASMSerializeInstructionRdTscp(void) RT_NOTHROW_DEF
 
 
 /**
- * Serialize Instruction.
+ * Serialize Instruction (both data store and instruction flush).
  */
 #if (defined(RT_ARCH_X86) && ARCH_BITS == 16) || defined(IN_GUEST)
 # define ASMSerializeInstruction() ASMSerializeInstructionIRet()
@@ -1533,6 +1533,12 @@ DECLINLINE(void) ASMSerializeInstructionRdTscp(void) RT_NOTHROW_DEF
 # define ASMSerializeInstruction() ASMSerializeInstructionCpuId()
 #elif defined(RT_ARCH_SPARC64)
 RTDECL(void) ASMSerializeInstruction(void) RT_NOTHROW_PROTO;
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+DECLINLINE(void) ASMSerializeInstruction(void) RT_NOTHROW_DEF
+{
+    /* Note! Only armv7 and later. */
+    __asm__ __volatile__ ("dsb\n\t" ::: "memory");
+}
 #else
 # error "Port me"
 #endif
@@ -1556,6 +1562,9 @@ DECLINLINE(void) ASMMemoryFence(void) RT_NOTHROW_DEF
         _emit   0xf0
     }
 # endif
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* Note! Only armv7 and later. */
+    __asm__ __volatile__ ("dsb\n\t");
 #elif ARCH_BITS == 16
     uint16_t volatile u16;
     ASMAtomicXchgU16(&u16, 0);
@@ -1584,6 +1593,9 @@ DECLINLINE(void) ASMWriteFence(void) RT_NOTHROW_DEF
         _emit   0xf8
     }
 # endif
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* Note! Only armv7 and later. */
+    __asm__ __volatile__ ("dmb\n\t");
 #else
     ASMMemoryFence();
 #endif
@@ -1608,6 +1620,9 @@ DECLINLINE(void) ASMReadFence(void) RT_NOTHROW_DEF
         _emit   0xe8
     }
 # endif
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* Note! Only armv7 and later. */
+    __asm__ __volatile__ ("dmb\n\t");
 #else
     ASMMemoryFence();
 #endif
