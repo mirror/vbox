@@ -156,7 +156,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
         char *pszName = RTStrAPrintf2V(pszNameFmt, va); /** @todo plug the "leak"... */
         if (pszName)
         {
-            RT_SRC_POS_NOREF();
+            RT_SRC_POS_NOREF(); RT_NOREF(fUniqueClass);
 #ifndef PDMCRITSECT_STRICT
             pCritSect->Core.pValidatorRec = NULL;
 #else
