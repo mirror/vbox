@@ -886,7 +886,8 @@ static void usbMsdReqFree(PUSBMSD pThis, PUSBMSDREQ pReq)
 static void usbMsdReqPrepare(PUSBMSDREQ pReq, PCUSBCBW pCbw)
 {
     /* Copy the CBW */
-    size_t cbCopy = RT_UOFFSETOF_DYN(USBCBW, CBWCB[pCbw->bCBWCBLength]);
+    uint8_t bCBWLen = RT_MIN(pCbw->bCBWCBLength, sizeof(pCbw->CBWCB));
+    size_t cbCopy = RT_UOFFSETOF_DYN(USBCBW, CBWCB[bCBWLen]);
     memcpy(&pReq->Cbw, pCbw, cbCopy);
     memset((uint8_t *)&pReq->Cbw + cbCopy, 0, sizeof(pReq->Cbw) - cbCopy);
 
@@ -1621,7 +1622,7 @@ static int usbMsdHandleBulkHostToDev(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
                 Log(("usbMsd: CBW: Bad bCBWLun value: %#x\n", pCbw->bCBWLun));
                 return usbMsdCompleteStall(pThis, NULL, pUrb, "Bad CBW");
             }
-            if (pCbw->bCBWCBLength == 0)
+            if ((pCbw->bCBWCBLength == 0) || (pCbw->bCBWCBLength > sizeof(pCbw->CBWCB)))
             {
                 Log(("usbMsd: CBW: Bad bCBWCBLength value: %#x\n", pCbw->bCBWCBLength));
                 return usbMsdCompleteStall(pThis, NULL, pUrb, "Bad CBW");
