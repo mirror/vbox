@@ -1668,6 +1668,7 @@ static void ataR3SetSector(PATADEVSTATE s, uint64_t iLBA)
     else
     {
         /* CHS */
+        AssertMsgReturnVoid(s->PCHSGeometry.cHeads && s->PCHSGeometry.cSectors, ("Device geometry not set!\n"));
         cyl = iLBA / (s->PCHSGeometry.cHeads * s->PCHSGeometry.cSectors);
         r = iLBA % (s->PCHSGeometry.cHeads * s->PCHSGeometry.cSectors);
         s->uATARegHCyl = cyl >> 8;
@@ -4427,6 +4428,8 @@ static void ataR3ParseCmd(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
             ataR3StartTransfer(pDevIns, pCtl, s, ataR3GetNSectors(s) * s->cbSector, PDMMEDIATXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
             break;
         case ATA_READ_NATIVE_MAX_ADDRESS_EXT:
+            if (!pDevR3->pDrvMedia || s->fATAPI)
+                goto abort_cmd;
             s->fLBA48 = true;
             ataR3SetSector(s, s->cTotalSectors - 1);
             ataR3CmdOK(pCtl, s, 0);
@@ -4437,6 +4440,8 @@ static void ataR3ParseCmd(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
             ataHCSetIRQ(pDevIns, pCtl, s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_READ_NATIVE_MAX_ADDRESS:
+            if (!pDevR3->pDrvMedia || s->fATAPI)
+                goto abort_cmd;
             ataR3SetSector(s, RT_MIN(s->cTotalSectors, 1 << 28) - 1);
             ataR3CmdOK(pCtl, s, 0);
             ataHCSetIRQ(pDevIns, pCtl, s); /* Shortcut, do not use AIO thread. */
