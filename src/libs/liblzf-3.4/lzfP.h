@@ -79,7 +79,9 @@
  * Unconditionally aligning does not cost very much, so do it if unsure
  */
 #ifndef STRICT_ALIGN
-# define STRICT_ALIGN !(defined(__i386) || defined (__amd64))
+# if !(defined(__i386) || defined (__amd64)) /* bird: clang warnings */
+#  define STRICT_ALIGN 1
+# endif
 #endif
 
 /*
