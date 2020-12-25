@@ -389,9 +389,6 @@ int errno_func(const char *file, int line);
 # define ETH_ALEN        6
 # define ETH_HLEN        14
 
-# define ARPOP_REQUEST   1               /* ARP request                  */
-# define ARPOP_REPLY     2               /* ARP reply                    */
-
 struct ethhdr
 {
     unsigned char   h_dest[ETH_ALEN];           /* destination eth addr */
