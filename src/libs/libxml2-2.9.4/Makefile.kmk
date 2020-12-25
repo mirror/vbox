@@ -41,7 +41,7 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  VBox-libxml2_CFLAGS.win   += -wd4477 # timsort.h(326): warning C4477: 'fprintf' : format string '%lu' requires an argument of type 'unsigned long', but variadic argument 1 has type 'size_t'
 endif
 ifn1of ($(KBUILD_TARGET), win)
- VBox-libxml2_CFLAGS        = -Wno-format-security -Wno-strict-prototypes -Wno-format-extra-args
+ VBox-libxml2_CFLAGS        = -Wno-format-security -Wno-strict-prototypes -Wno-format-extra-args $(VBOX_GCC_Wno-tautological-pointer-compare)
 endif
 VBox-libxml2_INCS           = include
 VBox-libxml2_SOURCES        = \

@@ -3019,6 +3019,7 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-import-preprocessor-directive-pedantic ?= $(call VBOX_GCC_CHECK_CXX,-Wno-import-preprocessor-directive-pedantic,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-undefined-var-template ?= $(call VBOX_GCC_CHECK_CXX,-Wno-undefined-var-template,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-c11-extensions ?= $(call VBOX_GCC_CHECK_CXX,-Wno-c11-extensions,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-tautological-pointer-compare ?= $(call VBOX_GCC_CHECK_CC,-Wno-tautological-pointer-compare,)'
 ifeq ($(KBUILD_TARGET),solaris)
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_msave-args            ?= $(call VBOX_GCC_CHECK_CXX,-msave-args,)'
 # Detect the solaris assembler. It is used by the the 4.x gcc compilers,
