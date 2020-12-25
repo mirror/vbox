@@ -3126,7 +3126,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMARegister(PPDMDEVINS pDevIns, unsigned uC
              pDevIns->pReg->szName, pDevIns->iInstance, uChannel, pfnTransferHandler, pvUser));
     int rc = VINF_SUCCESS;
     if (pVM->pdm.s.pDmac)
-        pVM->pdm.s.pDmac->Reg.pfnRegister(pVM->pdm.s.pDmac->pDevIns, uChannel, pfnTransferHandler, pvUser);
+        pVM->pdm.s.pDmac->Reg.pfnRegister(pVM->pdm.s.pDmac->pDevIns, uChannel, pDevIns, pfnTransferHandler, pvUser);
     else
     {
         AssertMsgFailed(("Configuration error: No DMAC controller available. This could be related to init order too!\n"));

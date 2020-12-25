@@ -2051,13 +2051,14 @@ typedef R3PTRTYPE(const PDMPCIRAWHLPR3 *) PCPDMPCIRAWHLPR3;
 /**
  * DMA Transfer Handler.
  *
- * @returns             Number of bytes transferred.
- * @param   pDevIns     Device instance of the DMA.
+ * @returns Number of bytes transferred.
+ * @param   pDevIns     The device instance that registered the handler.
  * @param   pvUser      User pointer.
  * @param   uChannel    Channel number.
  * @param   off         DMA position.
  * @param   cb          Block size.
- * @remarks The device lock is not taken, however, the DMA device lock is held.
+ * @remarks The device lock is take before the callback (in fact, the locks of
+ *          DMA devices and the DMA controller itself are taken).
  */
 typedef DECLCALLBACKTYPE(uint32_t, FNDMATRANSFERHANDLER,(PPDMDEVINS pDevIns, void *pvUser, unsigned uChannel,
                                                          uint32_t off, uint32_t cb));
@@ -2086,11 +2087,14 @@ typedef struct PDMDMAREG
      *
      * @param pDevIns               Device instance of the DMAC.
      * @param uChannel              Channel number.
+     * @param pDevInsHandler        The device instance of the device making the
+     *                              regstration (will be passed to the callback).
      * @param pfnTransferHandler    Device specific transfer function.
      * @param pvUser                User pointer to be passed to the callback.
      * @remarks No locks held, called on an EMT.
      */
-    DECLR3CALLBACKMEMBER(void, pfnRegister,(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser));
+    DECLR3CALLBACKMEMBER(void, pfnRegister,(PPDMDEVINS pDevIns, unsigned uChannel, PPDMDEVINS pDevInsHandler,
+                                            PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser));
 
     /**
      * Read memory
@@ -2143,7 +2147,7 @@ typedef struct PDMDMAREG
 typedef PDMDMACREG *PPDMDMACREG;
 
 /** Current PDMDMACREG version number. */
-#define PDM_DMACREG_VERSION                     PDM_VERSION_MAKE(0xffeb, 1, 0)
+#define PDM_DMACREG_VERSION                     PDM_VERSION_MAKE(0xffeb, 2, 0)
 
 
 /**

@@ -102,6 +102,7 @@
 
 /* State information for a single DMA channel. */
 typedef struct {
+    PPDMDEVINS                          pDevInsHandler; /**< The device instance the channel is associated with. */
     RTR3PTR                             pvUser;         /* User specific context. */
     R3PTRTYPE(PFNDMATRANSFERHANDLER)    pfnXferHandler; /* Transfer handler for channel. */
     uint16_t                            u16BaseAddr;    /* Base address for transfers. */
@@ -590,13 +591,14 @@ static void dmaR3RunChannel(DMAState *pThis, int ctlidx, int chidx)
     opmode = (ch->u8Mode >> 6) & 3;
 
     Log3(("DMA address %screment, mode %d\n", IS_MODE_DEC(ch->u8Mode) ? "de" : "in", ch->u8Mode >> 6));
+    AssertReturnVoid(ch->pfnXferHandler);
 
     /* Addresses and counts are shifted for 16-bit channels. */
     start_cnt = ch->u16CurCount << dc->is16bit;
     /* NB: The device is responsible for examining the DMA mode and not
      * transferring more than it should if auto-init is not in use.
      */
-    end_cnt = ch->pfnXferHandler(pThis->pDevIns, ch->pvUser, (ctlidx * 4) + chidx,
+    end_cnt = ch->pfnXferHandler(ch->pDevInsHandler, ch->pvUser, (ctlidx * 4) + chidx,
                                  start_cnt, (ch->u16BaseCount + 1) << dc->is16bit);
     ch->u16CurCount = end_cnt >> dc->is16bit;
     /* Set the TC (Terminal Count) bit if transfer was completed. */
@@ -623,7 +625,19 @@ static DECLCALLBACK(bool) dmaR3Run(PPDMDEVINS pDevIns)
     DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
     DMAControl  *dc;
     int          chidx, mask;
+
     STAM_PROFILE_START(&pThis->StatRun, a);
+
+    /* We must first lock all the devices then the DMAC or we end up with a
+       lock order validation when the callback helpers (PDMDMACREG) are being
+       invoked from I/O port and MMIO callbacks in channel devices.  While this
+       may sound a little brutish, it's actually in line with the bus locking
+       the original DMAC did back in the days. Besides, we've only got the FDC
+       and SB16 as potential customers here at present, so hardly a problem. */
+    for (unsigned idxCtl = 0; idxCtl < RT_ELEMENTS(pThis->DMAC); idxCtl++)
+        for (unsigned idxCh = 0; idxCh < RT_ELEMENTS(pThis->DMAC[idxCtl].ChState); idxCh++)
+            if (pThis->DMAC[idxCtl].ChState[idxCh].pDevInsHandler)
+                PDMDevHlpCritSectEnter(pDevIns, pThis->DMAC[idxCtl].ChState[idxCh].pDevInsHandler->pCritSectRoR3, VERR_IGNORED);
     PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
 
     /* Run all controllers and channels. */
@@ -643,7 +657,13 @@ static DECLCALLBACK(bool) dmaR3Run(PPDMDEVINS pDevIns)
         }
     }
 
+    /* Unlock everything (order is mostly irrelevant). */
+    for (unsigned idxCtl = 0; idxCtl < RT_ELEMENTS(pThis->DMAC); idxCtl++)
+        for (unsigned idxCh = 0; idxCh < RT_ELEMENTS(pThis->DMAC[idxCtl].ChState); idxCh++)
+            if (pThis->DMAC[idxCtl].ChState[idxCh].pDevInsHandler)
+                PDMDevHlpCritSectLeave(pDevIns, pThis->DMAC[idxCtl].ChState[idxCh].pDevInsHandler->pCritSectRoR3);
     PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
+
     STAM_PROFILE_STOP(&pThis->StatRun, a);
     return 0;
 }
@@ -651,7 +671,7 @@ static DECLCALLBACK(bool) dmaR3Run(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDMAREG,pfnRegister}
  */
-static DECLCALLBACK(void) dmaR3Register(PPDMDEVINS pDevIns, unsigned uChannel,
+static DECLCALLBACK(void) dmaR3Register(PPDMDEVINS pDevIns, unsigned uChannel, PPDMDEVINS pDevInsHandler,
                                         PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser)
 {
     DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
@@ -660,6 +680,7 @@ static DECLCALLBACK(void) dmaR3Register(PPDMDEVINS pDevIns, unsigned uChannel,
     LogFlow(("dmaR3Register: pThis=%p uChannel=%u pfnTransferHandler=%p pvUser=%p\n", pThis, uChannel, pfnTransferHandler, pvUser));
 
     PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    ch->pDevInsHandler = pDevInsHandler;
     ch->pfnXferHandler = pfnTransferHandler;
     ch->pvUser = pvUser;
     PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
