@@ -838,7 +838,11 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
                 break;
 
             case VINF_EM_DBG_BREAKPOINT:
+#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+                rc = DBGFR3BpHit(pVM, pVCpu);
+#else
                 rc = DBGFR3EventBreakpoint(pVM, DBGFEVENT_BREAKPOINT);
+#endif
                 break;
 
             case VINF_EM_DBG_STOP:

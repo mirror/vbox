@@ -20,7 +20,10 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF
+#define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/iem.h>
+#include <VBox/vmm/pgm.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/log.h>
 #include "DBGFInternal.h"
@@ -116,6 +119,29 @@ DECLINLINE(PCDBGFBPL2ENTRY) dbgfBpL2GetByIdx(PVMCC pVM, uint32_t idxL2)
 }
 
 
+# ifdef IN_RING0
+/**
+ * Returns the internal breakpoint owner state for the given handle.
+ *
+ * @returns Pointer to the internal ring-0 breakpoint owner state or NULL if the handle is invalid.
+ * @param   pVM                 The cross context VM structure.
+ * @param   hBpOwner            The breakpoint owner handle to resolve.
+ */
+DECLINLINE(PCDBGFBPOWNERINTR0) dbgfR0BpOwnerGetByHnd(PVMCC pVM, DBGFBPOWNER hBpOwner)
+{
+    if (hBpOwner == NIL_DBGFBPOWNER)
+        return NULL;
+
+    AssertReturn(hBpOwner < DBGF_BP_OWNER_COUNT_MAX, NULL);
+
+    PCDBGFBPOWNERINTR0 pBpOwnerR0 = &pVM->dbgfr0.s.paBpOwnersR0[hBpOwner];
+    AssertReturn(pBpOwnerR0->cRefs > 1, NULL);
+
+    return pBpOwnerR0;
+}
+# endif
+
+
 /**
  * Executes the actions associated with the given breakpoint.
  *
@@ -136,17 +162,58 @@ DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
 # endif
 {
     uint64_t cHits = ASMAtomicIncU64(&pBp->Pub.cHits);
-    pVCpu->dbgf.s.hBpActive = hBp;
 
-    /** @todo Owner handling. */
-    RT_NOREF(pVM, pRegFrame);
-#ifdef IN_RING0
-    RT_NOREF(pBpR0);
-#endif
-
+    RT_NOREF(pRegFrame);
     LogFlow(("dbgfBpHit: hit breakpoint %u at %04x:%RGv cHits=0x%RX64\n",
              hBp, pRegFrame->cs.Sel, pRegFrame->rip, cHits));
-    return VINF_EM_DBG_BREAKPOINT;
+
+    int rc = VINF_EM_DBG_BREAKPOINT;
+# ifdef IN_RING0
+    PCDBGFBPOWNERINTR0 pBpOwnerR0 = dbgfR0BpOwnerGetByHnd(pVM,
+                                                            pBpR0->fInUse
+                                                          ? pBpR0->hOwner
+                                                          : NIL_DBGFBPOWNER);
+    if (pBpOwnerR0)
+    {
+        VBOXSTRICTRC rcStrict = pBpOwnerR0->pfnBpHitR0(pVM, pVCpu->idCpu, pBpR0->pvUserR0, hBp, &pBp->Pub);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            uint8_t abInstr[DBGF_BP_INSN_MAX];
+            RTGCPTR const GCPtrInstr = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, &abInstr[0], GCPtrInstr, sizeof(abInstr));
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                /* Replace the int3 with the original instruction byte. */
+                abInstr[0] = pBp->Pub.u.Int3.bOrg;
+                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, &abInstr[0], sizeof(abInstr));
+                rc = VBOXSTRICTRC_VAL(rcStrict);
+            }
+        }
+        else if (   rcStrict == VINF_DBGF_BP_HALT
+                 || rcStrict == VINF_DBGF_R3_BP_OWNER_DEFER)
+        {
+            pVCpu->dbgf.s.hBpActive = hBp;
+            if (rcStrict == VINF_DBGF_R3_BP_OWNER_DEFER)
+                pVCpu->dbgf.s.fBpInvokeOwnerCallback = true;
+            else
+                pVCpu->dbgf.s.fBpInvokeOwnerCallback = false;
+        }
+        else /* Guru meditation. */
+            rc = VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
+    }
+    else
+    {
+        pVCpu->dbgf.s.fBpInvokeOwnerCallback = true; /* Need to check this for ring-3 only owners. */
+        pVCpu->dbgf.s.hBpActive              = hBp;
+    }
+# else
+    RT_NOREF(pVM);
+    pVCpu->dbgf.s.fBpInvokeOwnerCallback = true;
+    pVCpu->dbgf.s.hBpActive = hBp;
+# endif
+
+    return rc;
 }
 
 

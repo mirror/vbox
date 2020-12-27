@@ -981,6 +981,7 @@ typedef const DBGFBPPUB *PCDBGFBPPUB;
  * @returns Strict VBox status code.
  * @retval  VINF_SUCCESS if the breakpoint was handled and guest execution can resume.
  * @retval  VINF_DBGF_BP_HALT if guest execution should be stopped and the debugger should be invoked.
+ * @retval  VINF_DBGF_R3_BP_OWNER_DEFER return to ring-3 and invoke the owner callback there again.
  *
  * @param   pVM         The cross-context VM structure pointer.
  * @param   idCpu       ID of the vCPU triggering the breakpoint.
@@ -1044,6 +1045,8 @@ typedef DECLCALLBACKTYPE(int, FNDBGFBPENUM,(PUVM pUVM, void *pvUser, DBGFBP hBp,
 typedef FNDBGFBPENUM *PFNDBGFBPENUM;
 
 VMMR3DECL(int) DBGFR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void *pvUser);
+
+VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu);
 /** @} */
 #endif /* !IN_RING3 */
 

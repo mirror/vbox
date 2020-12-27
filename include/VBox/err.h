@@ -356,6 +356,10 @@
 #define VERR_DBGF_BP_L2_LOOKUP_FAILED       (-1237)
 /** The DBGF has no more free breakpoint owner handles. */
 #define VERR_DBGF_BP_OWNER_NO_MORE_HANDLES  (-1238)
+/** Reason for leaving RZ: Defer the owner callback invocation to Ring-3. */
+#define VINF_DBGF_R3_BP_OWNER_DEFER         1239
+/** The breakpoint owner callback returned an invalid status code. */
+#define VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS (-1240)
 /** @} */
 
 

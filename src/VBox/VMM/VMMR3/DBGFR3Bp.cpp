@@ -141,6 +141,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF
+#define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/iem.h>
@@ -2323,5 +2324,52 @@ VMMR3DECL(int) DBGFR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void *pvUser)
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Called whenever a breakpoint event needs to be serviced in ring-3 to decide what to do.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The vCPU the breakpoint event happened on.
+ *
+ * @thread EMT
+ */
+VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu)
+{
+    /* Send it straight into the debugger?. */
+    if (pVCpu->dbgf.s.fBpInvokeOwnerCallback)
+    {
+        DBGFBP hBp = pVCpu->dbgf.s.hBpActive;
+        PDBGFBPINT pBp = dbgfR3BpGetByHnd(pVM->pUVM, pVCpu->dbgf.s.hBpActive);
+        AssertReturn(pBp, VERR_DBGF_BP_IPE_9);
+
+        /* Resolve owner (can be NIL_DBGFBPOWNER) and invoke callback if there is one. */
+        PCDBGFBPOWNERINT pBpOwner = dbgfR3BpOwnerGetByHnd(pVM->pUVM, pBp->Pub.hOwner);
+        if (pBpOwner)
+        {
+            VBOXSTRICTRC rcStrict = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                uint8_t abInstr[DBGF_BP_INSN_MAX];
+                RTGCPTR const GCPtrInstr = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
+                int rc = PGMPhysSimpleReadGCPtr(pVCpu, &abInstr[0], GCPtrInstr, sizeof(abInstr));
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Replace the int3 with the original instruction byte. */
+                    abInstr[0] = pBp->Pub.u.Int3.bOrg;
+                    rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, &abInstr[0], sizeof(abInstr));
+                    return VBOXSTRICTRC_VAL(rcStrict);
+                }
+            }
+            else if (rcStrict != VINF_DBGF_BP_HALT) /* Guru meditation. */
+                return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
+            /* else: Halt in the debugger. */
+        }
+    }
+
+    return DBGFR3EventBreakpoint(pVM, DBGFEVENT_BREAKPOINT);
 }
 

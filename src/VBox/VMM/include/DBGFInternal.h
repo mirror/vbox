@@ -67,6 +67,8 @@
 #define DBGF_BP_COUNT_PER_CHUNK             _64K
 /** Number of chunks required to support all breakpoints. */
 #define DBGF_BP_CHUNK_COUNT                 (DBGF_BP_COUNT_MAX / DBGF_BP_COUNT_PER_CHUNK)
+/** Maximum number of instruction bytes when executing breakpointed instructions. */
+#define DBGF_BP_INSN_MAX                    16
 /** @} */
 
 /** @name L2 lookup table limit defines.
@@ -1262,6 +1264,8 @@ typedef struct DBGFCPU
      *
      * @todo drop this in favor of aEvents!  */
     DBGFBP                  hBpActive;
+    /** Flag whether the to invoke any owner handlers in ring-3 before dropping into the debugger. */
+    bool                    fBpInvokeOwnerCallback;
 #endif
     /** Set if we're singlestepping in raw mode.
      * This is checked and cleared in the \#DB handler. */
