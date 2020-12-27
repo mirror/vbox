@@ -161,7 +161,7 @@ DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
                           DBGFBP hBp, PDBGFBPINT pBp)
 # endif
 {
-    uint64_t cHits = ASMAtomicIncU64(&pBp->Pub.cHits);
+    uint64_t cHits = ASMAtomicIncU64(&pBp->Pub.cHits); RT_NOREF(cHits);
 
     RT_NOREF(pRegFrame);
     LogFlow(("dbgfBpHit: hit breakpoint %u at %04x:%RGv cHits=0x%RX64\n",
