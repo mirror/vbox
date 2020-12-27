@@ -447,7 +447,7 @@ if1of ($(KBUILD_TARGET), darwin linux win)
  VBOX_WITH_RAM_IN_KERNEL := 1
 endif
 # Enables the new breakpoint handling code, see @bugref{9837}
-# VBOX_WITH_LOTS_OF_DBGF_BPS = 1
+VBOX_WITH_LOTS_OF_DBGF_BPS = 1
 ## @}
 
 
