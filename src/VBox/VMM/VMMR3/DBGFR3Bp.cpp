@@ -1185,7 +1185,7 @@ static int dbgfR3BpInt3BstNodeRemove(PUVM pUVM, uint32_t idxL1, uint32_t idxL2Ro
     uint32_t idxL2Left  = DBGF_BP_L2_ENTRY_GET_IDX_LEFT(pL2Nd->u64LeftRightIdxDepthBpHnd2);
     uint32_t idxL2Right = DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(pL2Nd->u64LeftRightIdxDepthBpHnd2);
 
-    Assert(idxL2NdParent != DBGF_BP_L2_ENTRY_IDX_END || !pL2NdParent);
+    Assert(idxL2NdParent != DBGF_BP_L2_ENTRY_IDX_END || !pL2NdParent); RT_NOREF(idxL2NdParent);
     uint32_t idxL2ParentNew = DBGF_BP_L2_ENTRY_IDX_END;
     if (idxL2Right == DBGF_BP_L2_ENTRY_IDX_END)
         idxL2ParentNew = idxL2Left;
@@ -1280,7 +1280,7 @@ static int dbgfR3BpInt3L2BstRemove(PUVM pUVM, uint32_t idxL1, uint32_t idxL2Root
         RTGCUINTPTR GCPtrL2Entry = DBGF_BP_L2_ENTRY_GET_GCPTR(pL2Entry->u64GCPtrKeyAndBpHnd1);
         if (GCPtrL2Entry == GCPtr)
         {
-            Assert(DBGF_BP_L2_ENTRY_GET_BP_HND(pL2Entry->u64GCPtrKeyAndBpHnd1, pL2Entry->u64LeftRightIdxDepthBpHnd2) == hBp);
+            Assert(DBGF_BP_L2_ENTRY_GET_BP_HND(pL2Entry->u64GCPtrKeyAndBpHnd1, pL2Entry->u64LeftRightIdxDepthBpHnd2) == hBp); RT_NOREF(hBp);
 
             rc = dbgfR3BpInt3BstNodeRemove(pUVM, idxL1, idxL2Root, idxL2Cur, pL2Entry,
                                            idxL2Parent, pL2EntryParent, fLeftChild);
