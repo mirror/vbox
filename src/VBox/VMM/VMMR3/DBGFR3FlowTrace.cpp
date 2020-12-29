@@ -258,7 +258,7 @@ static PDBGFFLOWTRACERECORDINT dbgfR3FlowTraceRecordCreate(PDBGFFLOWTRACEMODPROB
 
         if (pProbeCmn)
         {
-            uint32_t offValCmn = pProbe->cbProbe - pProbe->cEntries * sizeof(DBGFFLOWTRACEPROBEVAL);
+            size_t offValCmn = pProbe->cbProbe - pProbe->cEntries * sizeof(DBGFFLOWTRACEPROBEVAL);
             pRecord->paValCmn = (PDBGFFLOWTRACEPROBEVAL)(*ppbBuf + offValCmn);
             *ppbBufCmn = (uint8_t *)&pRecord->paValCmn[pProbeCmn->cEntries];
         }
@@ -272,7 +272,7 @@ static PDBGFFLOWTRACERECORDINT dbgfR3FlowTraceRecordCreate(PDBGFFLOWTRACEMODPROB
  * Destroys the given record.
  *
  * @returns nothing.
- * @param   pReport                 The report to destroy.
+ * @param   pRecord                 The record to destroy.
  */
 static void dbgfR3FlowTraceRecordDestroy(PDBGFFLOWTRACERECORDINT pRecord)
 {
@@ -292,7 +292,7 @@ static void dbgfR3FlowTraceRecordDestroy(PDBGFFLOWTRACERECORDINT pRecord)
 static PDBGFFLOWTRACEREPORTINT dbgfR3FlowTraceReportCreate(PUVM pUVM, uint32_t cRecords)
 {
     PDBGFFLOWTRACEREPORTINT pReport = (PDBGFFLOWTRACEREPORTINT)MMR3HeapAllocZU(pUVM, MM_TAG_DBGF_FLOWTRACE,
-                                                                               RT_OFFSETOF(DBGFFLOWTRACEREPORTINT, apRec[cRecords]));
+                                                                               RT_UOFFSETOF_DYN(DBGFFLOWTRACEREPORTINT, apRec[cRecords]));
     if (RT_LIKELY(pReport))
     {
         pReport->pUVM     = pUVM;
@@ -693,7 +693,7 @@ static bool dbgfR3FlowTraceDoesRecordMatchFilter(PDBGFFLOWTRACERECORDINT pRecord
  * Collects all the data specified in the given probe.
  *
  * @returns nothing.
- * @param   pVM                     The VM instance data.
+ * @param   pUVM                    The user mode VM handle.
  * @param   idCpu                   The virtual CPU ID.
  * @param   pTraceMod               The trace module instance.
  * @param   pAddrProbe              Location of the probe, NULL if a common probe.
@@ -1002,7 +1002,7 @@ static void dbgfR3FlowTraceProbeDestroy(PDBGFFLOWTRACEPROBEINT pProbe)
  * increasing the size if necessary.
  *
  * @returns VBox status code.
- * @param   VERR_NO_MEMORY if increasing the size failed due to an out of memory condition.
+ * @retval  VERR_NO_MEMORY if increasing the size failed due to an out of memory condition.
  * @param   pProbe                  The probe insatnce.
  * @param   cEntriesAdd             Number of additional entries required.
  */
@@ -1664,7 +1664,7 @@ VMMR3DECL(uint32_t) DBGFR3FlowTraceReportRelease(DBGFFLOWTRACEREPORT hFlowTraceR
 VMMR3DECL(uint32_t) DBGFR3FlowTraceReportGetRecordCount(DBGFFLOWTRACEREPORT hFlowTraceReport)
 {
     PDBGFFLOWTRACEREPORTINT pReport = hFlowTraceReport;
-    AssertPtrReturn(pReport, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pReport, 0);
 
     return pReport->cRecords;
 }
