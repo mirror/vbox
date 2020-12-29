@@ -874,7 +874,7 @@ typedef enum DBGFBPTYPE
 #define DBGFBPIOACCESS_VALID_MASK_MMIO      UINT32_C(0x00001f1f)
 /** @} */
 
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
+#if defined(VBOX_WITH_LOTS_OF_DBGF_BPS) || defined(DOXYGEN_RUNNING)
 /**
  * The visible breakpoint state (read-only).
  */
