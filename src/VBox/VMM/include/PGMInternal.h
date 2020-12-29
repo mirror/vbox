@@ -295,13 +295,8 @@
  *          ring-0 on 32-bit darwin and in RC.
  * @remark  There is no need to assert on the result.
  */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-# define PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys, ppv) \
-     pgmRZDynMapGCPageV2Inlined(pVM, pVCpu, GCPhys, (void **)(ppv) RTLOG_COMMA_SRC_POS)
-#else
-# define PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys, ppv) \
-     pgmPhysGCPhys2R3Ptr(pVM, GCPhys, (PRTR3PTR)(ppv)) /** @todo this isn't asserting! */
-#endif
+#define PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys, ppv) \
+    pgmPhysGCPhys2R3Ptr(pVM, GCPhys, (PRTR3PTR)(ppv)) /** @todo this isn't asserting! */
 
 /** @def PGM_GCPHYS_2_PTR
  * Maps a GC physical page address to a virtual address.
@@ -343,13 +338,8 @@
  *          ring-0 on 32-bit darwin and in RC.
  * @remark  There is no need to assert on the result.
  */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-# define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) \
-     pgmRZDynMapGCPageOffInlined(VMMGetCpu(pVM), GCPhys, (void **)(ppv) RTLOG_COMMA_SRC_POS)
-#else
-# define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) \
-     pgmPhysGCPhys2R3Ptr(pVM, GCPhys, (PRTR3PTR)(ppv)) /** @todo this isn't asserting! */
-#endif
+#define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) \
+    pgmPhysGCPhys2R3Ptr(pVM, GCPhys, (PRTR3PTR)(ppv)) /** @todo this isn't asserting! */
 
 /** @def PGM_DYNMAP_UNUSED_HINT
  * Hints to the dynamic mapping code in RC and R0/darwin that the specified page
@@ -360,15 +350,7 @@
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pvPage  The pool page.
  */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-# ifdef LOG_ENABLED
-#  define PGM_DYNMAP_UNUSED_HINT(pVCpu, pvPage)  pgmRZDynMapUnusedHint(pVCpu, pvPage, RT_SRC_POS)
-# else
-#  define PGM_DYNMAP_UNUSED_HINT(pVCpu, pvPage)  pgmRZDynMapUnusedHint(pVCpu, pvPage)
-# endif
-#else
-# define PGM_DYNMAP_UNUSED_HINT(pVCpu, pvPage)  do {} while (0)
-#endif
+#define PGM_DYNMAP_UNUSED_HINT(pVCpu, pvPage)  do {} while (0)
 
 /** @def PGM_DYNMAP_UNUSED_HINT_VM
  * Hints to the dynamic mapping code in RC and R0/darwin that the specified page
@@ -2432,9 +2414,7 @@ AssertCompileMemberAlignment(PGMPOOL, aPages, 8);
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-# define PGMPOOL_PAGE_2_PTR(a_pVM, a_pPage)     pgmPoolMapPageInlined((a_pVM), (a_pPage) RTLOG_COMMA_SRC_POS)
-#elif defined(VBOX_STRICT) || 1 /* temporarily going strict here */
+#if defined(VBOX_STRICT) || 1 /* temporarily going strict here */
 # define PGMPOOL_PAGE_2_PTR(a_pVM, a_pPage)     pgmPoolMapPageStrict(a_pPage, __FUNCTION__)
 DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCaller)
 {
@@ -2462,11 +2442,7 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCal
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-# define PGMPOOL_PAGE_2_PTR_V2(a_pVM, a_pVCpu, a_pPage)     pgmPoolMapPageV2Inlined((a_pVM), (a_pVCpu), (a_pPage) RTLOG_COMMA_SRC_POS)
-#else
-# define PGMPOOL_PAGE_2_PTR_V2(a_pVM, a_pVCpu, a_pPage)     PGMPOOL_PAGE_2_PTR((a_pVM), (a_pPage))
-#endif
+#define PGMPOOL_PAGE_2_PTR_V2(a_pVM, a_pVCpu, a_pPage)     PGMPOOL_PAGE_2_PTR((a_pVM), (a_pPage))
 
 
 /** @name Per guest page tracking data.
@@ -4013,15 +3989,6 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 void            pgmR3PoolWriteProtectPages(PVM pVM);
 
 #endif /* IN_RING3 */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-int             pgmRZDynMapHCPageCommon(PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL);
-int             pgmRZDynMapGCPageCommon(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL);
-# ifdef LOG_ENABLED
-void            pgmRZDynMapUnusedHint(PVMCPU pVCpu, void *pvHint, RT_SRC_POS_DECL);
-# else
-void            pgmRZDynMapUnusedHint(PVMCPU pVCpu, void *pvHint);
-# endif
-#endif
 int             pgmPoolAlloc(PVMCC pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, bool fA20Enabled,
                              uint16_t iUser, uint32_t iUserTable, bool fLockPage, PPPGMPOOLPAGE ppPage);
 void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable);

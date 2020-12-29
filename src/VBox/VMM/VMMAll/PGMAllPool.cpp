@@ -829,13 +829,7 @@ DECLINLINE(int) pgmRZPoolAccessPfHandlerSTOSD(PVMCC pVM, PPGMPOOL pPool, PPGMPOO
     RTGCUINTPTR pu32 = (RTGCUINTPTR)pvFault;
     while (pRegFrame->rcx)
     {
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        uint32_t iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, NULL, uIncrement);
-        PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
-# else
-        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, NULL, uIncrement);
-# endif
         PGMPhysSimpleWriteGCPhys(pVM, GCPhysFault, &pRegFrame->rax, uIncrement);
         pu32           += uIncrement;
         GCPhysFault    += uIncrement;
@@ -880,10 +874,6 @@ DECLINLINE(int) pgmRZPoolAccessPfHandlerSimple(PVMCC pVM, PVMCPUCC pVCpu, PPGMPO
     /*
      * Clear all the pages. ASSUMES that pvFault is readable.
      */
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    uint32_t iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
-# endif
-
     uint32_t cbWrite = DISGetParamSize(pDis, &pDis->Param1);
     if (cbWrite <= 8)
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, NULL, cbWrite);
@@ -898,10 +888,6 @@ DECLINLINE(int) pgmRZPoolAccessPfHandlerSimple(PVMCC pVM, PVMCPUCC pVCpu, PPGMPO
         for (uint32_t off = 0; off < cbWrite; off += 8)
             pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault + off, NULL, RT_MIN(8, cbWrite - off));
     }
-
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
-# endif
 
     /*
      * Interpret the instruction.
@@ -1657,11 +1643,6 @@ static void pgmPoolFlushDirtyPage(PVMCC pVM, PPGMPOOL pPool, unsigned idxSlot, b
     AssertMsg(pPage->fDirty, ("Page %RGp (slot=%d) not marked dirty!", pPage->GCPhys, idxSlot));
     Log(("Flush dirty page %RGp cMods=%d\n", pPage->GCPhys, pPage->cModifications));
 
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PVMCPU   pVCpu = VMMGetCpu(pVM);
-    uint32_t iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
-# endif
-
     /* First write protect the page again to catch all write accesses. (before checking for changes -> SMP) */
     int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys & PAGE_BASE_GC_MASK);
     Assert(rc == VINF_SUCCESS);
@@ -1722,10 +1703,6 @@ static void pgmPoolFlushDirtyPage(PVMCC pVM, PPGMPOOL pPool, unsigned idxSlot, b
     }
     else
         Log(("Removed dirty page %RGp cMods=%d cChanges=%d\n", pPage->GCPhys, pPage->cModifications, cChanges));
-
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
-# endif
 }
 
 
@@ -3537,12 +3514,6 @@ int pgmPoolTrackUpdateGCPhys(PVMCC pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage,
             rc = VINF_PGM_GCPHYS_ALIASED;
         else
         {
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 /** @todo we can drop this now. */
-            /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow and
-               pgmPoolTrackFlushGCPhysPTs will/may kill the pool otherwise. */
-            uint32_t iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
-# endif
-
             if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
             {
                 Assert(PGMPOOL_TD_GET_CREFS(u16) == 1);
@@ -3556,10 +3527,6 @@ int pgmPoolTrackUpdateGCPhys(PVMCC pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage,
             else
                 rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPhysPage);
             *pfFlushTLBs = true;
-
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
-# endif
         }
     }
 
@@ -4863,12 +4830,6 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
         return VINF_SUCCESS;
     }
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    /* Start a subset so we won't run out of mapping space. */
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-    uint32_t iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
-#endif
-
     /*
      * Mark the page as being in need of an ASMMemZeroPage().
      */
@@ -4895,11 +4856,6 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
      * Flush it from the cache.
      */
     pgmPoolCacheFlushPage(pPool, pPage);
-
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    /* Heavy stuff done. */
-    PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
-#endif
 
     /*
      * Deregistering the monitoring.

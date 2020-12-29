@@ -1122,7 +1122,7 @@ typedef enum PGMROMPROT
  */
 typedef struct PGMPAGEMAPLOCK
 {
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC)
     /** The locked page. */
     void       *pvPage;
     /** Pointer to the CPU that made the mapping.

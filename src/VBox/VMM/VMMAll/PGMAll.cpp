@@ -2185,8 +2185,6 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_
 }
 
 
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-
 /**
  * Performs the lazy mapping of the 32-bit guest PD.
  *
@@ -2346,10 +2344,8 @@ int pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
         }
 # else
         RTHCPTR     HCPtr       = NIL_RTHCPTR;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, &HCPtr);
         AssertRC(rc);
-#  endif
         if (RT_SUCCESS(rc))
         {
             pVCpu->pgm.s.apGstPaePDsR3[iPdpt]          = (R3PTRTYPE(PX86PDPAE))HCPtr;
@@ -2432,8 +2428,6 @@ int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
     *ppPml4 = NULL;
     return rc;
 }
-
-#endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
 
 /**
@@ -3559,52 +3553,7 @@ void pgmUnlock(PVM pVM)
         pVM->pgm.s.cDeprecatedPageLocks = cDeprecatedPageLocks;
 }
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 
-/**
- * Common worker for pgmRZDynMapGCPageOffInlined and pgmRZDynMapGCPageV2Inlined.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   GCPhys      The guest physical address of the page to map.  The
- *                      offset bits are not ignored.
- * @param   ppv         Where to return the address corresponding to @a GCPhys.
- * @param   SRC_POS     The source position of the caller (RT_SRC_POS).
- */
-int pgmRZDynMapGCPageCommon(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL)
-{
-    pgmLock(pVM);
-
-    /*
-     * Convert it to a writable page and it on to the dynamic mapper.
-     */
-    int rc;
-    PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
-    if (RT_LIKELY(pPage))
-    {
-        rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
-        if (RT_SUCCESS(rc))
-        {
-            void *pv;
-            rc = pgmRZDynMapHCPageInlined(pVCpu, PGM_PAGE_GET_HCPHYS(pPage), &pv RTLOG_COMMA_SRC_POS_ARGS);
-            if (RT_SUCCESS(rc))
-                *ppv = (void *)((uintptr_t)pv | ((uintptr_t)GCPhys & PAGE_OFFSET_MASK));
-        }
-        else
-            AssertRC(rc);
-    }
-    else
-    {
-        AssertMsgFailed(("Invalid physical address %RGp!\n", GCPhys));
-        rc = VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-    }
-
-    pgmUnlock(pVM);
-    return rc;
-}
-
-#endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 #if !defined(IN_R0) || defined(LOG_ENABLED)
 
 /** Format handler for PGMPAGE.

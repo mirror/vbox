@@ -10588,10 +10588,6 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
     }
 #endif
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PGMRZDynMapFlushAutoSet(pVCpu);
-#endif
-
     /*
      * Check and process force flag actions, some of which might require us to go back to ring-3.
      */

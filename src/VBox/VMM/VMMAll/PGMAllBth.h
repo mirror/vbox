@@ -4317,12 +4317,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
     PPGMPAGE    pPageCR3 = pgmPhysGetPage(pVM, GCPhysCR3);
     AssertReturn(pPageCR3, VERR_PGM_INVALID_CR3_ADDR);
     /** @todo this needs some reworking wrt. locking?  */
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    HCPtrGuestCR3 = NIL_RTHCPTR;
-    int rc = VINF_SUCCESS;
-# else
     int rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPageCR3, GCPhysCR3 & GST_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3); /** @todo r=bird: This GCPhysCR3 masking isn't necessary. */
-# endif
     pgmUnlock(pVM);
     if (RT_SUCCESS(rc))
     {
@@ -4372,12 +4367,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
                 pgmLock(pVM);
                 PPGMPAGE    pPage  = pgmPhysGetPage(pVM, GCPhys);
                 AssertReturn(pPage, VERR_PGM_INVALID_PDPE_ADDR);
-#  ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-                HCPtr = NIL_RTHCPTR;
-                int rc2 = VINF_SUCCESS;
-#  else
                 int rc2 = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)&HCPtr);
-#  endif
                 pgmUnlock(pVM);
                 if (RT_SUCCESS(rc2))
                 {
