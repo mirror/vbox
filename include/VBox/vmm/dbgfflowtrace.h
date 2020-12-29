@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2016 Oracle Corporation
+ * Copyright (C) 2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -384,3 +384,4 @@ VMMR3DECL(VMCPUID)                 DBGFR3FlowTraceRecordGetCpuId(DBGFFLOWTRACERE
 RT_C_DECLS_END
 
 #endif
+
