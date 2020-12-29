@@ -69,6 +69,7 @@ VBOX_HDRS_R3_ONLY := \
 	VBox/vd-filter-backend.h \
 	VBox/vddbg.h \
 	VBox/vmm/uvm.h \
+	VBox/vmm/dbgfflowtrace.h \
 	VBox/vscsi.h \
 	VBox/ExtPack/% \
 	VBox/GuestHost/SharedClipboard-transfers.h \
