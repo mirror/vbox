@@ -177,6 +177,34 @@ EXPORTS
     DBGFR3FlowBranchTblItDestroy
     DBGFR3FlowBranchTblItNext
     DBGFR3FlowBranchTblItReset
+    DBGFR3FlowTraceModCreate
+    DBGFR3FlowTraceModCreateFromFlowGraph
+    DBGFR3FlowTraceModRetain
+    DBGFR3FlowTraceModRelease
+    DBGFR3FlowTraceModEnable
+    DBGFR3FlowTraceModDisable
+    DBGFR3FlowTraceModQueryReport
+    DBGFR3FlowTraceModClear
+    DBGFR3FlowTraceModAddProbe
+    DBGFR3FlowTraceProbeCreate
+    DBGFR3FlowTraceProbeRetain
+    DBGFR3FlowTraceProbeRelease
+    DBGFR3FlowTraceProbeEntriesAdd
+    DBGFR3FlowTraceReportRetain
+    DBGFR3FlowTraceReportRelease
+    DBGFR3FlowTraceReportGetRecordCount
+    DBGFR3FlowTraceReportQueryFiltered
+    DBGFR3FlowTraceReportEnumRecords
+    DBGFR3FlowTraceRecordRetain
+    DBGFR3FlowTraceRecordRelease
+    DBGFR3FlowTraceRecordGetSeqNo
+    DBGFR3FlowTraceRecordGetTimestamp
+    DBGFR3FlowTraceRecordGetAddr
+    DBGFR3FlowTraceRecordGetProbe
+    DBGFR3FlowTraceRecordGetValCount
+    DBGFR3FlowTraceRecordGetVals
+    DBGFR3FlowTraceRecordGetValsCommon
+    DBGFR3FlowTraceRecordGetCpuId
     DBGFR3PlugInLoad
     DBGFR3PlugInUnload
     DBGFR3PlugInLoadAll

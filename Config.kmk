@@ -448,6 +448,8 @@ if1of ($(KBUILD_TARGET), darwin linux win)
 endif
 # Enables the new breakpoint handling code, see @bugref{9837}
 VBOX_WITH_LOTS_OF_DBGF_BPS = 1
+# Enables the new breakpoint handling code, see @bugref{8650}
+VBOX_WITH_DBGF_FLOW_TRACING = 1
 ## @}
 
 
