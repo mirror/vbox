@@ -383,5 +383,5 @@ VMMR3DECL(VMCPUID)                 DBGFR3FlowTraceRecordGetCpuId(DBGFFLOWTRACERE
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_dbgfflowtrace_h */
 
