@@ -38,6 +38,8 @@
 /* cputype */
 #define CPU_ARCH_MASK               INT32_C(0xff000000)
 #define CPU_ARCH_ABI64              INT32_C(0x01000000)
+#define CPU_ARCH_ABI64_32           INT32_C(0x02000000) /**< LP32 on 64-bit hardware */
+
 #define CPU_TYPE_ANY                INT32_C(-1)
 #define CPU_TYPE_VAX                INT32_C(1)
 #define CPU_TYPE_MC680x0            INT32_C(6)
@@ -46,6 +48,10 @@
 #define CPU_TYPE_X86_64             (CPU_TYPE_X86 | CPU_ARCH_ABI64)
 #define CPU_TYPE_MC98000            INT32_C(10)
 #define CPU_TYPE_HPPA               INT32_C(11)
+#define CPU_TYPE_ARM                INT32_C(12)
+#define CPU_TYPE_ARM32              CPU_TYPE_ARM
+#define CPU_TYPE_ARM64              (CPU_TYPE_ARM | CPU_ARCH_ABI64)
+#define CPU_TYPE_ARM64_32           (CPU_TYPE_ARM | CPU_ARCH_ABI64_32)
 #define CPU_TYPE_MC88000            INT32_C(13)
 #define CPU_TYPE_SPARC              INT32_C(14)
 #define CPU_TYPE_I860               INT32_C(15)
@@ -123,6 +129,30 @@
 #define CPU_SUBTYPE_HPPA_ALL        INT32_C(0)
 #define CPU_SUBTYPE_HPPA_7100       INT32_C(0)
 #define CPU_SUBTYPE_HPPA_7100LC     INT32_C(1)
+
+#define CPU_SUBTYPE_ARM_ALL         INT32_C(0)
+#define CPU_SUBTYPE_ARM_V4T         INT32_C(5)
+#define CPU_SUBTYPE_ARM_V6          INT32_C(6)
+#define CPU_SUBTYPE_ARM_V5TEJ       INT32_C(7)
+#define CPU_SUBTYPE_ARM_XSCALE      INT32_C(8)
+#define CPU_SUBTYPE_ARM_V7          INT32_C(9)
+#define CPU_SUBTYPE_ARM_V7F         INT32_C(10)
+#define CPU_SUBTYPE_ARM_V7S         INT32_C(11)
+#define CPU_SUBTYPE_ARM_V7K         INT32_C(12)
+#define CPU_SUBTYPE_ARM_V8          INT32_C(13)
+#define CPU_SUBTYPE_ARM_V6M         INT32_C(14)
+#define CPU_SUBTYPE_ARM_V7M         INT32_C(15)
+#define CPU_SUBTYPE_ARM_V7EM        INT32_C(16)
+#define CPU_SUBTYPE_ARM_V8M         INT32_C(17)
+
+#define CPU_SUBTYPE_ARM64_ALL       INT32_C(0)
+#define CPU_SUBTYPE_ARM64_V8        INT32_C(1)
+#define CPU_SUBTYPE_ARM64E          INT32_C(2)
+#define CPU_SUBTYPE_ARM64_PTR_AUTH_MASK         UINT32_C(0x0f000000)
+#define CPU_SUBTYPE_ARM64_PTR_AUTH_VERSION(a)   ( ((a) & CPU_SUBTYPE_ARM64_PTR_AUTH_MASK) >> 24 )
+
+#define CPU_SUBTYPE_ARM64_32_ALL    INT32_C(0)
+#define CPU_SUBTYPE_ARM64_32_V8     INT32_C(1)
 
 #define CPU_SUBTYPE_MC88000_ALL     INT32_C(0)
 #define CPU_SUBTYPE_MC88100         INT32_C(1)
