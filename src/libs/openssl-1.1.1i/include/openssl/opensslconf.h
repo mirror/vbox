@@ -245,7 +245,8 @@ extern "C" {
 #if !defined(OPENSSL_SYS_UEFI)
 # undef BN_LLONG
 /* Only one for the following should be defined */
-# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64)
+# include <iprt/cdefs.h>
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64) || defined(RT_ARCH_ARM64)
 #  ifdef _MSC_VER
 #   undef SIXTY_FOUR_BIT_LONG
 #   define SIXTY_FOUR_BIT
@@ -255,7 +256,7 @@ extern "C" {
 #   undef SIXTY_FOUR_BIT
 #   undef THIRTY_TWO_BIT
 #  endif
-# elif defined(RT_ARCH_X86) || defined(RT_ARCH_SPARC)
+# elif defined(RT_ARCH_X86) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_ARM32)
 #   undef SIXTY_FOUR_BIT_LONG
 #   undef SIXTY_FOUR_BIT
 #   define THIRTY_TWO_BIT
