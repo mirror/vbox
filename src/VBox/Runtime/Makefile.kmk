@@ -531,7 +531,6 @@ RuntimeR3_SOURCES       = \
 	common/misc/thread.cpp \
 	common/misc/term.cpp \
 	common/misc/uri.cpp \
-	common/misc/zero.asm \
 	common/net/netaddrstr2.cpp \
 	common/net/macstr.cpp \
 	common/path/rtPathRootSpecLen.cpp \
@@ -759,21 +758,29 @@ RuntimeR3_SOURCES       = \
 
 RuntimeR3_SOURCES.x86 += \
 	generic/RTMpGetDescription-generic.cpp \
+	common/misc/zero.asm \
 	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
 	common/string/RTStrMemFind32.asm
 RuntimeR3_SOURCES.amd64 += \
 	generic/RTMpGetDescription-generic.cpp \
+	common/misc/zero.asm \
 	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
 	common/string/RTStrMemFind32.asm
+RuntimeR3_SOURCES.arm32 := \
+	common/misc/zero-alt.S
+RuntimeR3_SOURCES.arm64 := \
+	common/misc/zero-alt.S
 RuntimeR3_SOURCES.sparc32 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
 	generic/RTSystemIsInsideVM-generic.cpp \
 	common/asm/asm-fake.cpp \
+	common/misc/zero-alt.S \
 	common/string/RTStrMemFind32.cpp
 RuntimeR3_SOURCES.sparc64 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
 	generic/RTSystemIsInsideVM-generic.cpp \
 	common/asm/asm-fake.cpp \
+	common/misc/zero-alt.S \
 	common/string/RTStrMemFind32.cpp
 
 ifdef IPRT_WITH_LZJB
@@ -860,12 +867,6 @@ endif
 if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
 RuntimeR3_SOURCES += \
 	$(if $(VBOX_WITH_DBUS),VBox/dbus.cpp,)
-endif
-
-if1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
-RuntimeR3_SOURCES := \
-	$(filter-out common/misc/zero.asm, $(RuntimeR3_SOURCES)) \
-	common/misc/zero.cpp
 endif
 
 VBOX_WITH_NT_DIRENUM = 1
@@ -1787,7 +1788,6 @@ RuntimeBldProg_SOURCES         = \
 	common/misc/sg.cpp \
 	common/misc/term.cpp \
 	common/misc/thread.cpp \
-	common/misc/zero.asm \
 	common/net/macstr.cpp \
 	common/net/netaddrstr2.cpp \
 	common/path/comparepaths.cpp \
@@ -1932,6 +1932,23 @@ ifneq ($(KBUILD_HOST),win)
  RuntimeBldProg_SOURCES        += \
  	common/err/errmsgxpcom.cpp
 endif
+RuntimeBldProg_SOURCES.amd64 = \
+	common/misc/zero.asm
+RuntimeBldProg_SOURCES.x86 = \
+	common/misc/zero.asm
+RuntimeBldProg_SOURCES.arm64 = \
+	common/misc/zero-alt.S \
+	common/string/RTStrEnd.cpp
+RuntimeBldProg_SOURCES.arm32 = \
+	common/misc/zero-alt.S \
+	common/string/RTStrEnd.cpp
+RuntimeBldProg_SOURCES.sparc32 = \
+	common/misc/zero-alt.S \
+	common/string/RTStrEnd.cpp
+RuntimeBldProg_SOURCES.sparc64 = \
+	common/misc/zero-alt.S \
+	common/string/RTStrEnd.cpp
+
 RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	generic/cdrom-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -2472,6 +2489,7 @@ endif
 
 
 if1of ($(KBUILD_TARGET),win linux darwin) # remove later
+if1of ($(KBUILD_TARGET_ARCH),x86 amd64) ## @todo bugref:9898
 if1of (VBoxRT,$(DLLS))
  #
  # VBoxRTImpCheck - Import library check.
@@ -2512,6 +2530,7 @@ $$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
        	$(if-expr "$(KBUILD_TARGET)" == "darwin",, -e "/only-darwin/d") \
 		-f "$<" $(filter %.def, $^)
 endif
+endif ## @todo bugref:9898
 endif # remove later
 
 

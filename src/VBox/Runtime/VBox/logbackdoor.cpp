@@ -30,7 +30,9 @@
 *********************************************************************************************************************************/
 #include <VBox/log.h>
 #include "internal/iprt.h"
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/string.h>
 #ifdef IN_GUEST_R3
 # include <VBox/VBoxGuestLib.h>
@@ -83,11 +85,16 @@ RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
 #ifdef IN_GUEST_R3
     VbglR3WriteLog(pch, cb);
 #else  /* !IN_GUEST_R3 */
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     const uint8_t *pau8 = (const uint8_t *)pch;
     if (cb > 1)
         ASMOutStrU8(RTLOG_DEBUG_PORT, pau8, cb);
     else if (cb)
         ASMOutU8(RTLOG_DEBUG_PORT, *pau8);
+# else
+    /** @todo port me */
+    RT_BREAKPOINT();
+# endif
 #endif /* !IN_GUEST_R3 */
 }
 

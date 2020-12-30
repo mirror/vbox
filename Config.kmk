@@ -846,26 +846,36 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 #VBOX_WITH_NATIVE_SOLARIS_LOADING = 1
 # Set this to enable user mode dtrace probes.
 if1of ($(KBUILD_TARGET), darwin linux solaris)
- VBOX_WITH_DTRACE_R3 = 1
- VBOX_WITH_DTRACE_R3_MAIN = 1
+ if1of ($(KBUILD_TARGET_ARCH), x86 amd64) ## @todo bugref:9898
+VBOX_WITH_DTRACE_R3 := 1
+VBOX_WITH_DTRACE_R3_MAIN := 1
+ endif
 endif
 # Set this to enable kernel driver dtrace probes.
 if1of ($(KBUILD_TARGET), darwin solaris)
- VBOX_WITH_DTRACE_R0DRV = 1
+ if1of ($(KBUILD_TARGET_ARCH), x86 amd64) ## @todo bugref:9898
+VBOX_WITH_DTRACE_R0DRV := 1
+ endif
 endif
 # Set this to enable dtrace probes in platform agnostic kernel code.
 ifn1of ($(KBUILD_TARGET), os2)
- VBOX_WITH_DTRACE_R0 = 1
+ if1of ($(KBUILD_TARGET_ARCH), x86 amd64) ## @todo bugref:9898
+VBOX_WITH_DTRACE_R0 := 1
+ endif
 endif
 # Set this to enable dtrace probes raw-mode context code.
 if1of ($(KBUILD_TARGET), linux solaris)
- VBOX_WITH_DTRACE_RC = 1
+ if1of ($(KBUILD_TARGET_ARCH), x86 amd64) ## @todo bugref:9898
+VBOX_WITH_DTRACE_RC := 1
+ endif
 endif
 # Set this to enable support for dtrace probes in guest code.
 #VBOX_WITH_DTRACE_GST = 1
 # Set this to indicate that the host ships with DTrace.
 if1of ($(KBUILD_TARGET), darwin solaris)
- VBOX_WITH_NATIVE_DTRACE = 1
+ if1of ($(KBUILD_TARGET_ARCH), x86 amd64) ## @todo bugref:9898
+VBOX_WITH_NATIVE_DTRACE := 1
+ endif
 endif
 # Makes it possible to run some of the testcases and tools on older
 # windows versions (only define when buildling win.x86).
@@ -1504,89 +1514,99 @@ VBOX_LDR_FMT64 ?= $(VBOX_LDR_FMT)
 # This is a bit complicated since we have to support two different assmblers
 # (yasm/nasm) and possibly two different formats (32-bit/64-bit).
 #
-ifeq ($(VBOX_LDR_FMT),elf)
- ifeq ($(KBUILD_TARGET_ARCH),x86)
+if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+ ifeq ($(VBOX_LDR_FMT),elf)
+  ifeq ($(KBUILD_TARGET_ARCH),x86)
 VBOX_ASFLAGS_FMT = -f elf32 -DASM_FORMAT_ELF
- else
+  else
 VBOX_ASFLAGS_FMT = -f elf64 -DASM_FORMAT_ELF
+  endif
+VBOX_ASFLAGS_DBFINFO = -g dwarf2
  endif
- VBOX_ASFLAGS_DBFINFO = -g dwarf2
-endif
-ifeq ($(VBOX_LDR_FMT),lx)
- VBOX_ASFLAGS_FMT = -f obj -DASM_FORMAT_OMF
- VBOX_ASFLAGS_DBFINFO = -g stabs
-endif
-ifeq ($(VBOX_LDR_FMT),macho)
- ifeq ($(KBUILD_TARGET_ARCH),x86)
-  VBOX_ASFLAGS_FMT = -f macho32 -DASM_FORMAT_MACHO
- else
-  VBOX_ASFLAGS_FMT = -f macho64 -DASM_FORMAT_MACHO
+ ifeq ($(VBOX_LDR_FMT),lx)
+VBOX_ASFLAGS_FMT = -f obj -DASM_FORMAT_OMF
+VBOX_ASFLAGS_DBFINFO = -g stabs
  endif
- VBOX_ASFLAGS_DBFINFO = -g dwarf2
-endif
-ifeq ($(VBOX_LDR_FMT),pe)
- ifeq ($(KBUILD_TARGET_ARCH),x86)
+ ifeq ($(VBOX_LDR_FMT),macho)
+  ifeq ($(KBUILD_TARGET_ARCH),x86)
+VBOX_ASFLAGS_FMT = -f macho32 -DASM_FORMAT_MACHO
+  else
+VBOX_ASFLAGS_FMT = -f macho64 -DASM_FORMAT_MACHO
+  endif
+VBOX_ASFLAGS_DBFINFO = -g dwarf2
+ endif
+ ifeq ($(VBOX_LDR_FMT),pe)
+  ifeq ($(KBUILD_TARGET_ARCH),x86)
 VBOX_ASFLAGS_FMT = -f win32 -DASM_FORMAT_PE
- else
+  else
 VBOX_ASFLAGS_FMT = -f win64 -DASM_FORMAT_PE
- endif
+  endif
 VBOX_ASFLAGS_DBFINFO = -g cv8
-endif
-ifndef VBOX_ASFLAGS_FMT
- $(error VBOX_ASFLAGS_FMT is not defined. VBOX_LDR_FMT=$(VBOX_LDR_FMT))
-endif
+ endif
+ ifndef VBOX_ASFLAGS_FMT
+  $(error VBOX_ASFLAGS_FMT is not defined. VBOX_LDR_FMT=$(VBOX_LDR_FMT))
+ endif
 
-ifeq ($(VBOX_LDR_FMT32),elf)
- VBOX_ASFLAGS_FMT32 = -f elf32 -DASM_FORMAT_ELF
- VBOX_ASFLAGS_DBFINFO32 = -g dwarf2
-endif
-ifeq ($(VBOX_LDR_FMT32),lx)
- VBOX_ASFLAGS_FMT32 = -f obj -DASM_FORMAT_OMF
- VBOX_ASFLAGS_DBFINFO32 = -g stabs
-endif
-ifeq ($(VBOX_LDR_FMT32),macho)
- VBOX_ASFLAGS_FMT32 = -f macho32 -DASM_FORMAT_MACHO
- VBOX_ASFLAGS_DBFINFO32 = -g dwarf2
-endif
-ifeq ($(VBOX_LDR_FMT32),pe)
- VBOX_ASFLAGS_FMT32 = -f win32 -DASM_FORMAT_PE
- VBOX_ASFLAGS_DBFINFO32 = -g cv8
-endif
-ifndef VBOX_ASFLAGS_FMT32
- $(error VBOX_ASFLAGS_FMT32 is not defined. VBOX_LDR_FMT32=$(VBOX_LDR_FMT32))
-endif
+ ifeq ($(VBOX_LDR_FMT32),elf)
+VBOX_ASFLAGS_FMT32 = -f elf32 -DASM_FORMAT_ELF
+VBOX_ASFLAGS_DBFINFO32 = -g dwarf2
+ endif
+ ifeq ($(VBOX_LDR_FMT32),lx)
+VBOX_ASFLAGS_FMT32 = -f obj -DASM_FORMAT_OMF
+VBOX_ASFLAGS_DBFINFO32 = -g stabs
+ endif
+ ifeq ($(VBOX_LDR_FMT32),macho)
+VBOX_ASFLAGS_FMT32 = -f macho32 -DASM_FORMAT_MACHO
+VBOX_ASFLAGS_DBFINFO32 = -g dwarf2
+ endif
+ ifeq ($(VBOX_LDR_FMT32),pe)
+VBOX_ASFLAGS_FMT32 = -f win32 -DASM_FORMAT_PE
+VBOX_ASFLAGS_DBFINFO32 = -g cv8
+ endif
+ ifndef VBOX_ASFLAGS_FMT32
+  $(error VBOX_ASFLAGS_FMT32 is not defined. VBOX_LDR_FMT32=$(VBOX_LDR_FMT32))
+ endif
 
-ifeq ($(VBOX_LDR_FMT64),elf)
- VBOX_ASFLAGS_FMT64 = -f elf64 -DASM_FORMAT_ELF
- VBOX_ASFLAGS_DBFINFO64 = -g dwarf2
-endif
-ifeq ($(VBOX_LDR_FMT64),macho)
- VBOX_ASFLAGS_FMT64 = -f macho64 -DASM_FORMAT_MACHO
- VBOX_ASFLAGS_DBFINFO64 = -g dwarf2
-endif
-ifeq ($(VBOX_LDR_FMT64),pe)
- VBOX_ASFLAGS_FMT64 = -f win64 -DASM_FORMAT_PE
- VBOX_ASFLAGS_DBFINFO64 = -g cv8
-endif
-ifndef VBOX_ASFLAGS_FMT64
- $(error VBOX_ASFLAGS_FMT64 is not defined. VBOX_LDR_FMT64=$(VBOX_LDR_FMT64))
-endif
+ ifeq ($(VBOX_LDR_FMT64),elf)
+VBOX_ASFLAGS_FMT64 = -f elf64 -DASM_FORMAT_ELF
+VBOX_ASFLAGS_DBFINFO64 = -g dwarf2
+ endif
+ ifeq ($(VBOX_LDR_FMT64),macho)
+VBOX_ASFLAGS_FMT64 = -f macho64 -DASM_FORMAT_MACHO
+VBOX_ASFLAGS_DBFINFO64 = -g dwarf2
+ endif
+ ifeq ($(VBOX_LDR_FMT64),pe)
+VBOX_ASFLAGS_FMT64 = -f win64 -DASM_FORMAT_PE
+VBOX_ASFLAGS_DBFINFO64 = -g cv8
+ endif
+ ifndef VBOX_ASFLAGS_FMT64
+  $(error VBOX_ASFLAGS_FMT64 is not defined. VBOX_LDR_FMT64=$(VBOX_LDR_FMT64))
+ endif
 
-ifndef DONT_USE_YASM
- VBOX_ASTOOL    = YASM
- VBOX_LDR_FMT_2_YASM_DBGINFO.elf   = -g dwarf2
- VBOX_LDR_FMT_2_YASM_DBGINFO.lx    = -g stabs
- VBOX_LDR_FMT_2_YASM_DBGINFO.macho =
- VBOX_LDR_FMT_2_YASM_DBGINFO.pe    = -g cv8
- VBOX_ASFLAGS   = $(VBOX_ASFLAGS_FMT)   -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit) $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT))
- VBOX_ASFLAGS32 = $(VBOX_ASFLAGS_FMT32) -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit) $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT32))
- VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit) $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT64))
-else
- VBOX_ASTOOL    = NASM
- VBOX_ASFLAGS   = $(subst elf32,elf,$(VBOX_ASFLAGS_FMT))   -D__NASM__ -w+orphan-labels -g
- VBOX_ASFLAGS32 = $(subst elf32,elf,$(VBOX_ASFLAGS_FMT32)) -D__NASM__ -w+orphan-labels -g
- VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__NASM__ -w+orphan-labels -g
-endif
+ ifndef DONT_USE_YASM
+VBOX_ASTOOL    = YASM
+VBOX_LDR_FMT_2_YASM_DBGINFO.elf   = -g dwarf2
+VBOX_LDR_FMT_2_YASM_DBGINFO.lx    = -g stabs
+VBOX_LDR_FMT_2_YASM_DBGINFO.macho =
+VBOX_LDR_FMT_2_YASM_DBGINFO.pe    = -g cv8
+VBOX_ASFLAGS   = $(VBOX_ASFLAGS_FMT)   -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit) $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT))
+VBOX_ASFLAGS32 = $(VBOX_ASFLAGS_FMT32) -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit) $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT32))
+VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit) $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT64))
+ else
+VBOX_ASTOOL    = NASM
+VBOX_ASFLAGS   = $(subst elf32,elf,$(VBOX_ASFLAGS_FMT))   -D__NASM__ -w+orphan-labels -g
+VBOX_ASFLAGS32 = $(subst elf32,elf,$(VBOX_ASFLAGS_FMT32)) -D__NASM__ -w+orphan-labels -g
+VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__NASM__ -w+orphan-labels -g
+ endif
+else  # ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+VBOX_ASTOOL =# No tool, just use the compiler one.
+VBOX_LDR_FMT_2_FLAGS.elf   := -DASM_FORMAT_ELF
+VBOX_LDR_FMT_2_FLAGS.macho := -DASM_FORMAT_MACHO
+VBOX_LDR_FMT_2_FLAGS.pe    := -DASM_FORMAT_PE
+VBOX_ASFLAGS   := -g $(VBOX_LDR_FMT_2_FLAGS.$(VBOX_LDR_FMT))
+VBOX_ASFLAGS32 := -g $(VBOX_LDR_FMT_2_FLAGS.$(VBOX_LDR_FMT32))
+VBOX_ASFLAGS64 := -g $(VBOX_LDR_FMT_2_FLAGS.$(VBOX_LDR_FMT64))
+endif # ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 
 #
 # Windows only has mingw handy. On *nix we have to deal with cross compiling
@@ -1689,7 +1709,7 @@ endif
 TOOL = $(VBOX_GCC_TOOL)
 TOOL.win.x86 = $(VBOX_VCC_TOOL_STEM)X86
 TOOL.win.amd64 = $(VBOX_VCC_TOOL_STEM)AMD64
-ASTOOL = $(VBOX_ASTOOL)
+ASTOOL := $(VBOX_ASTOOL)
 
 
 #
@@ -4489,7 +4509,7 @@ ifdef VBOX_WITH_RAW_MODE
  #     -wd4505: 'iemRaisePageFaultJmp' : unreferenced local function has been removed
  #
  TEMPLATE_VBoxRc = VBox Raw-Mode Context
- TEMPLATE_VBoxRc_ASTOOL              = $(VBOX_ASTOOL)
+ TEMPLATE_VBoxRc_ASTOOL             := $(VBOX_ASTOOL)
  TEMPLATE_VBoxRc_ASFLAGS             = $(VBOX_ASFLAGS32)
  TEMPLATE_VBoxRc_DEFS                = IN_RC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES $(ARCH_BITS_DEFS)
  TEMPLATE_VBoxRc_INCS                = $(PATH_ROOT)/include/iprt/nocrt
@@ -4633,7 +4653,7 @@ endif # VBOX_WITH_RAW_MODE
 #      -wd4505: 'iemRaisePageFaultJmp' : unreferenced local function has been removed
 #
 TEMPLATE_VBoxR0 = VBox Ring 0
-TEMPLATE_VBoxR0_ASTOOL              = $(VBOX_ASTOOL)
+TEMPLATE_VBoxR0_ASTOOL             := $(VBOX_ASTOOL)
 TEMPLATE_VBoxR0_ASFLAGS             = $(VBOX_ASFLAGS)
 TEMPLATE_VBoxR0_DEFS                = IN_RING0 IN_RING0_AGNOSTIC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES $(ARCH_BITS_DEFS)
 TEMPLATE_VBoxR0_INCS                = $(PATH_ROOT)/include/iprt/nocrt
@@ -4782,7 +4802,7 @@ endif
 #     -wd4100: 'identifier' : unreferenced formal parameter [level 4] --- TODO: Enable this one!
 #
 TEMPLATE_VBOXR0DRV                     = VBox SUPDRV Ring 0
-TEMPLATE_VBOXR0DRV_ASTOOL              = $(VBOX_ASTOOL)
+TEMPLATE_VBOXR0DRV_ASTOOL             := $(VBOX_ASTOOL)
 TEMPLATE_VBOXR0DRV_ASFLAGS             = $(VBOX_ASFLAGS)
 TEMPLATE_VBOXR0DRV_DEFS                = IN_RING0 IN_RT_R0 $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXR0DRV_USES               += dtrace
@@ -5313,9 +5333,12 @@ TEMPLATE_VBoxR0DrvInfCat_IFFLAGS = --no-hard-link-files-when-possible
 #      -wd4996: deprecated / insecure.
 #
 TEMPLATE_VBOXR3EXE                     = VBox Ring 3 Exe
-TEMPLATE_VBOXR3EXE_ASTOOL              = $(VBOX_ASTOOL)
+TEMPLATE_VBOXR3EXE_ASTOOL             := $(VBOX_ASTOOL)
 TEMPLATE_VBOXR3EXE_ASFLAGS.x86         = $(VBOX_ASFLAGS32)
+TEMPLATE_VBOXR3EXE_ASFLAGS.sparc32     = $(VBOX_ASFLAGS32)
 TEMPLATE_VBOXR3EXE_ASFLAGS.amd64       = $(VBOX_ASFLAGS64)
+TEMPLATE_VBOXR3EXE_ASFLAGS.arm64       = $(VBOX_ASFLAGS64)
+TEMPLATE_VBOXR3EXE_ASFLAGS.sparc64     = $(VBOX_ASFLAGS64)
 TEMPLATE_VBOXR3EXE_DEFS                = IN_RING3 $(VBOX_GC_ARCH_BITS_DEFS)
 TEMPLATE_VBOXR3EXE_DEFS.x86            = HC_ARCH_BITS=32
 TEMPLATE_VBOXR3EXE_DEFS.arm32          = HC_ARCH_BITS=32
@@ -6263,7 +6286,7 @@ else if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64)
  if $(VBOX_GCC_VERSION_CC) < 30400
   TEMPLATE_VBoxNoCrtGccLib_DEFS           += RT_WITHOUT_PRAGMA_ONCE
  endif
- TEMPLATE_VBoxNoCrtGccLib_ASTOOL           = $(VBOX_ASTOOL)
+ TEMPLATE_VBoxNoCrtGccLib_ASTOOL          := $(VBOX_ASTOOL)
  TEMPLATE_VBoxNoCrtGccLib_ASFLAGS          = $(VBOX_ASFLAGS)
  TEMPLATE_VBoxNoCrtGccLib_LDTOOL           = $(VBOX_VCC_TOOL)
  TEMPLATE_VBoxNoCrtGccLib_LDFLAGS          = -Incremental:NO -MapInfo:Exports -NoD -Ignore:4197
@@ -6279,7 +6302,7 @@ else
  if $(VBOX_GCC_VERSION_CC) < 30400
   TEMPLATE_VBoxNoCrtGccLib_DEFS           += RT_WITHOUT_PRAGMA_ONCE
  endif
- TEMPLATE_VBoxNoCrtGccLib_ASTOOL           = $(VBOX_ASTOOL)
+ TEMPLATE_VBoxNoCrtGccLib_ASTOOL          := $(VBOX_ASTOOL)
  TEMPLATE_VBoxNoCrtGccLib_ASFLAGS          = $(VBOX_ASFLAGS)
  TEMPLATE_VBoxNoCrtGccLib_CFLAGS          += $(VBOX_GCC_fno-stack-protector)
  TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS        += $(VBOX_GCC_fno-stack-protector)
@@ -6322,7 +6345,7 @@ TEMPLATE_VBOXNOCRTGAS_ASFLAGS.amd64 = -m64
 # (COM/XPCOM interface to VirtualBox).
 #
 TEMPLATE_VBOXMAINEXE         = VBox Main Executable
-TEMPLATE_VBOXMAINEXE_ASTOOL              = $(VBOX_ASTOOL)
+TEMPLATE_VBOXMAINEXE_ASTOOL             := $(VBOX_ASTOOL)
 TEMPLATE_VBOXMAINEXE_ASFLAGS             = $(VBOX_ASFLAGS)
 TEMPLATE_VBOXMAINEXE_DEFS                = IN_RING3 UNICODE NDEBUG=1
 TEMPLATE_VBOXMAINEXE_DEFS.win            = _UNICODE
@@ -7225,24 +7248,28 @@ TEMPLATE_VBoxBldProg_BLD_TRG_CPU        := $(KBUILD_HOST_CPU)
 TEMPLATE_VBoxBldProg_DEFS               := IN_RING3 LOG_DISABLED IN_BLD_PROG
 TEMPLATE_VBoxBldProg_DEFS.win           := _CRT_SECURE_NO_DEPRECATE
 ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
- TEMPLATE_VBoxBldProg_ASTOOL            := $(VBOX_ASTOOL)
- TEMPLATE_VBoxBldProg_ASFLAGS.x86       := $(VBOX_ASFLAGS32)
- TEMPLATE_VBoxBldProg_ASFLAGS.amd64     := $(VBOX_ASFLAGS64)
-else
- TEMPLATE_VBoxBldProg_ASTOOL            := YASM
- TEMPLATE_VBoxBldProg_ASFLAGS           := -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit)
+TEMPLATE_VBoxBldProg_ASTOOL             := $(VBOX_ASTOOL)
+TEMPLATE_VBoxBldProg_ASFLAGS.x86        := $(VBOX_ASFLAGS32)
+TEMPLATE_VBoxBldProg_ASFLAGS.arm32      := $(VBOX_ASFLAGS32)
+TEMPLATE_VBoxBldProg_ASFLAGS.sparc32    := $(VBOX_ASFLAGS32)
+TEMPLATE_VBoxBldProg_ASFLAGS.amd64      := $(VBOX_ASFLAGS64)
+TEMPLATE_VBoxBldProg_ASFLAGS.arm64      := $(VBOX_ASFLAGS64)
+TEMPLATE_VBoxBldProg_ASFLAGS.sparc64    := $(VBOX_ASFLAGS64)
+else if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+TEMPLATE_VBoxBldProg_ASTOOL             := YASM
+TEMPLATE_VBoxBldProg_ASFLAGS            := -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit)
  if1of ($(KBUILD_HOST),win)
-  TEMPLATE_VBoxBldProg_ASFLAGS          += -g cv8 -DASM_FORMAT_ELF
-  TEMPLATE_VBoxBldProg_ASFLAGS.x86      := -f win32
-  TEMPLATE_VBoxBldProg_ASFLAGS.amd64    := -f win64
+TEMPLATE_VBoxBldProg_ASFLAGS            += -g cv8 -DASM_FORMAT_ELF
+TEMPLATE_VBoxBldProg_ASFLAGS.x86        := -f win32
+TEMPLATE_VBoxBldProg_ASFLAGS.amd64      := -f win64
  else if1of ($(KBUILD_HOST),darwin)
-  TEMPLATE_VBoxBldProg_ASFLAGS          += -DASM_FORMAT_MACHO
-  TEMPLATE_VBoxBldProg_ASFLAGS.x86      := -f macho32
-  TEMPLATE_VBoxBldProg_ASFLAGS.amd64    := -f macho64
+TEMPLATE_VBoxBldProg_ASFLAGS            += -DASM_FORMAT_MACHO
+TEMPLATE_VBoxBldProg_ASFLAGS.x86        := -f macho32
+TEMPLATE_VBoxBldProg_ASFLAGS.amd64      := -f macho64
  else
-  TEMPLATE_VBoxBldProg_ASFLAGS          += -g dwarf2 -DASM_FORMAT_ELF
-  TEMPLATE_VBoxBldProg_ASFLAGS.x86      := -f elf32
-  TEMPLATE_VBoxBldProg_ASFLAGS.amd64    := -f elf64
+TEMPLATE_VBoxBldProg_ASFLAGS            += -g dwarf2 -DASM_FORMAT_ELF
+TEMPLATE_VBoxBldProg_ASFLAGS.x86        := -f elf32
+TEMPLATE_VBoxBldProg_ASFLAGS.amd64      := -f elf64
  endif
 endif
 ifeq ($(KBUILD_HOST),win)
