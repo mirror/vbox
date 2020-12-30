@@ -102,6 +102,15 @@ RT_C_DECLS_END
 # define MY_SECTION             section_64_t
 # define MY_NLIST               macho_nlist_64_t
 
+#elif defined(RT_ARCH_ARM64)
+# define MY_CPU_TYPE            CPU_TYPE_ARM64
+# define MY_CPU_SUBTYPE_ALL     CPU_SUBTYPE_ARM64_ALL
+# define MY_MACHO_HEADER        mach_header_64_t
+# define MY_MACHO_MAGIC         IMAGE_MACHO64_SIGNATURE
+# define MY_SEGMENT_COMMAND     segment_command_64_t
+# define MY_SECTION             section_64_t
+# define MY_NLIST               macho_nlist_64_t
+
 #else
 # error "Port me!"
 #endif
