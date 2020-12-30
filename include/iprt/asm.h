@@ -1595,7 +1595,7 @@ DECLINLINE(void) ASMWriteFence(void) RT_NOTHROW_DEF
 # endif
 #elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     /* Note! Only armv7 and later. */
-    __asm__ __volatile__ ("dmb\n\t");
+    __asm__ __volatile__ ("dmb sy\n\t");
 #else
     ASMMemoryFence();
 #endif
@@ -1622,7 +1622,7 @@ DECLINLINE(void) ASMReadFence(void) RT_NOTHROW_DEF
 # endif
 #elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     /* Note! Only armv7 and later. */
-    __asm__ __volatile__ ("dmb\n\t");
+    __asm__ __volatile__ ("dmb sy\n\t");
 #else
     ASMMemoryFence();
 #endif
@@ -3803,6 +3803,13 @@ DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
 # if defined(PAGE_SIZE) && !defined(NT_INCLUDED)
 #  if PAGE_SIZE != 0x2000
 #   error "PAGE_SIZE is not 0x2000!"
+#  endif
+# endif
+#elif defined(RT_ARCH_ARM64)
+# define RT_ASM_PAGE_SIZE   0x4000
+# if defined(PAGE_SIZE) && !defined(NT_INCLUDED) && !defined(_MACH_ARM_VM_PARAM_H_)
+#  if PAGE_SIZE != 0x4000
+#   error "PAGE_SIZE is not 0x4000!"
 #  endif
 # endif
 #else

@@ -51,6 +51,8 @@
  */
 #if defined(RT_ARCH_SPARC64)
 # define PAGE_SIZE          8192
+#elif defined(RT_ARCH_ARM64)
+# define PAGE_SIZE          16384
 #else
 # define PAGE_SIZE          4096
 #endif
@@ -61,6 +63,8 @@
  */
 #if defined(RT_ARCH_SPARC64)
 # define PAGE_SHIFT         13
+#elif defined(RT_ARCH_ARM64)
+# define PAGE_SHIFT         14
 #else
 # define PAGE_SHIFT         12
 #endif
@@ -73,6 +77,8 @@
  */
 #if defined(RT_ARCH_SPARC64)
 # define PAGE_OFFSET_MASK    0x1fff
+#elif defined(RT_ARCH_ARM64)
+# define PAGE_OFFSET_MASK    0x3fff
 #else
 # define PAGE_OFFSET_MASK    0xfff
 #endif
