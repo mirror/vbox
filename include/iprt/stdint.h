@@ -118,7 +118,9 @@
 # endif
 
     /* x-bit types */
-#  if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+#  if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) \
+   || defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64) \
+   || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
 #   if !defined(_INT8_T_DECLARED)   && !defined(_INT8_T)
 typedef signed char         int8_t;
 #   endif
