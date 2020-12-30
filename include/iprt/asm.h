@@ -1564,7 +1564,7 @@ DECLINLINE(void) ASMMemoryFence(void) RT_NOTHROW_DEF
 # endif
 #elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     /* Note! Only armv7 and later. */
-    __asm__ __volatile__ ("dsb\n\t");
+    __asm__ __volatile__ ("dsb sy\n\t");
 #elif ARCH_BITS == 16
     uint16_t volatile u16;
     ASMAtomicXchgU16(&u16, 0);
