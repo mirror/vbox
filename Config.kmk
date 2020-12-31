@@ -3644,7 +3644,8 @@ ifdef VBOX_SIGNING_MODE
    VBOX_CERTIFICATE_FINGERPRINT ?= 6f 47 42 06 bc bb 39 1b b8 2b a9 e5 dc 03 02 de f3 7a eb be
    #VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/VeriSign Class 3 Public Primary Certification Authority - G5.cer
    VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/DigiCert Assured ID Root CA.crt
-   VBOX_TSA_URL ?= http://timestamp.verisign.com/scripts/timstamp.dll
+   #VBOX_TSA_URL ?= http://timestamp.verisign.com/scripts/timstamp.dll - Appears to be broken between 2020-12-25 and 2020-12-30 (bugref:9849).
+   VBOX_TSA_URL ?= http://timestamp.digicert.com
   endif
   if !defined(VBOX_CROSS_CERTIFICATE_FILE_ARGS) && defined(VBOX_CROSS_CERTIFICATE_FILE)
    VBOX_CROSS_CERTIFICATE_FILE_ARGS = /ac "$(VBOX_CROSS_CERTIFICATE_FILE)"
