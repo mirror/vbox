@@ -1932,22 +1932,6 @@ ifneq ($(KBUILD_HOST),win)
  RuntimeBldProg_SOURCES        += \
  	common/err/errmsgxpcom.cpp
 endif
-RuntimeBldProg_SOURCES.amd64 = \
-	common/misc/zero.asm
-RuntimeBldProg_SOURCES.x86 = \
-	common/misc/zero.asm
-RuntimeBldProg_SOURCES.arm64 = \
-	common/misc/zero-alt.S \
-	common/string/RTStrEnd.cpp
-RuntimeBldProg_SOURCES.arm32 = \
-	common/misc/zero-alt.S \
-	common/string/RTStrEnd.cpp
-RuntimeBldProg_SOURCES.sparc32 = \
-	common/misc/zero-alt.S \
-	common/string/RTStrEnd.cpp
-RuntimeBldProg_SOURCES.sparc64 = \
-	common/misc/zero-alt.S \
-	common/string/RTStrEnd.cpp
 
 RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	generic/cdrom-generic.cpp \
