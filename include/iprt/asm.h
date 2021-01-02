@@ -302,16 +302,16 @@ DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t uOld;
     uint32_t rcSpill;
-    __asm__ __volatile__("try_again%=:\n\t"
+    __asm__ __volatile__(".Ltry_again%=:\n\t"
 #  if defined(RT_ARCH_ARM64)
                          "ldaxrb    %w0, [%3]\n\t"
                          "stlxrb    %w1, %w2, [%3]\n\t"
-                         "cbnz      %w1, try_again%=\n\t"
+                         "cbnz      %w1, .Ltry_again%=\n\t"
 #  else
                          "ldrexb    %0, [%3]\n\t"      /* ARMv6+ */
                          "strexb    %1, %2, [%3]\n\t"
                          "cmp       %1, #0\n\t"
-                         "bne       try_again%=\n\t"
+                         "bne       .Ltry_again%=\n\t"
 #  endif
                          : "=&r" (uOld),
                            "=&r" (rcSpill)
@@ -398,16 +398,16 @@ DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t uOld;
     uint32_t rcSpill;
-    __asm__ __volatile__("try_again%=:\n\t"
+    __asm__ __volatile__(".Ltry_again%=:\n\t"
 #  if defined(RT_ARCH_ARM64)
                          "ldaxrh    %w0, [%3]\n\t"
                          "stlxrh    %w1, %w2, [%3]\n\t"
-                         "cbnz      %w1, try_again%=\n\t"
+                         "cbnz      %w1, .Ltry_again%=\n\t"
 #  else
                          "ldrexh    %0, [%3]\n\t"      /* ARMv6+ */
                          "strexh    %1, %2, [%3]\n\t"
                          "cmp       %1, #0\n\t"
-                         "bne       try_again%=\n\t"
+                         "bne       .Ltry_again%=\n\t"
 #  endif
                          : "=&r" (uOld),
                            "=&r" (rcSpill)
@@ -483,16 +483,16 @@ DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t uOld;
     uint32_t rcSpill;
-    __asm__ __volatile__("try_again%=:\n\t"
+    __asm__ __volatile__(".Ltry_again%=:\n\t"
 #  if defined(RT_ARCH_ARM64)
                          "ldaxr     %w0, [%3]\n\t"
                          "stlxr     %w1, %w2, [%3]\n\t"
-                         "cbnz      %w1, try_again%=\n\t"
+                         "cbnz      %w1, .Ltry_again%=\n\t"
 #  else
                          "ldrex     %0, [%3]\n\t"      /* ARMv6+ */
                          "strex     %1, %2, [%3]\n\t"
                          "cmp       %1, #0\n\t"
-                         "bne       try_again%=\n\t"
+                         "bne       .Ltry_again%=\n\t"
 #  endif
                          : "=&r" (uOld),
                            "=&r" (rcSpill)
@@ -602,16 +602,16 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
 
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t rcSpill;
-    __asm__ __volatile__("try_again%=:\n\t"
+    __asm__ __volatile__(".Ltry_again%=:\n\t"
 #  if defined(RT_ARCH_ARM64)
                          "ldaxr     %0, [%3]\n\t"
                          "stlxr     %w1, %2, [%3]\n\t"
-                         "cbnz      %w1, try_again%=\n\t"
+                         "cbnz      %w1, .Ltry_again%=\n\t"
 #  else
                          "ldrexd    %H0, [%3]\n\t"      /* ARMv6+ */
                          "strexd    %1, %H2, [%3]\n\t"
                          "cmp       %1, #0\n\t"
-                         "bne       try_again%=\n\t"
+                         "bne       .Ltry_again%=\n\t"
 #  endif
                          : "=&r" (u64),
                            "=&r" (rcSpill)
@@ -619,6 +619,7 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
                            "r" (pu64)
                          : "memory",
                            "cc");
+
 # else
 #  error "Port me"
 # endif
@@ -853,16 +854,16 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
     return (bool)u8Ret;
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    uint32_t fXchg;
+    union { uint32_t u; bool f; } fXchg;
     uint32_t u32Spill;
     uint32_t rcSpill;
-    __asm__ __volatile__("try_again%=:\n\t"
+    __asm__ __volatile__(".Ltry_again%=:\n\t"
 #  if defined(RT_ARCH_ARM64)
                          "ldaxrb    %w0, [%5]\n\t"
                          "cmp       %w0, %w3\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "stlxrb    %w1, %w4, [%5]\n\t"
-                         "cbnz      %w1, try_again%=\n\t"
+                         "cbnz      %w1, .Ltry_again%=\n\t"
                          "mov       %w2, #1\n\t"
 #  else
                          "ldrexb    %0, [%5]\n\t"
@@ -870,23 +871,24 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
                          "strexbeq  %1, %4, [%5]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "cmp       %1, #0\n\t"
-                         "bne       try_again%=\n\t"
+                         "bne       .Ltry_again%=\n\t"
                          "mov       %2, #1\n\t"
 #  endif
                          "1:\n\t"
                          : "=&r" (u32Spill),
                            "=&r" (rcSpill),
-                           "=&r" (fXchg)
+                           "=&r" (fXchg.u)
                          : "r" ((uint32_t)u8Old),
                            "r" ((uint32_t)u8New),
                            "r" (pu8),
                            "2" (0) /*fXchg*/
                          : "memory",
                            "cc");
-    return (bool)fXchg;
+    return fXchg.f;
+
 # else
 #  error "Port me"
-# endif /* RT_ARCH_ARM */
+# endif
 }
 #endif
 
@@ -984,16 +986,16 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    uint32_t fXchg;
+    union { uint32_t u; bool f; } fXchg;
     uint32_t u32Spill;
     uint32_t rcSpill;
-    __asm__ __volatile__("try_again%=:\n\t"
+    __asm__ __volatile__(".Ltry_again%=:\n\t"
 #  if defined(RT_ARCH_ARM64)
                          "ldaxr     %w0, [%5]\n\t"
                          "cmp       %w0, %w3\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "stlxr     %w1, %w4, [%5]\n\t"
-                         "cbnz      %w1, try_again%=\n\t"
+                         "cbnz      %w1, .Ltry_again%=\n\t"
                          "mov       %w2, #1\n\t"
 #  else
                          "ldrex     %0, [%5]\n\t"
@@ -1001,23 +1003,24 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
                          "strexeq   %1, %4, [%5]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "cmp       %1, #0\n\t"
-                         "bne       try_again%=\n\t"
+                         "bne       .Ltry_again%=\n\t"
                          "mov       %2, #1\n\t"
 #  endif
                          "1:\n\t"
                          : "=&r" (u32Spill),
                            "=&r" (rcSpill),
-                           "=&r" (fXchg)
+                           "=&r" (fXchg.u)
                          : "r" (u32Old),
                            "r" (u32New),
                            "r" (pu32),
                            "2" (0) /*fXchg*/
                          : "memory",
                            "cc");
-    return (bool)fXchg;
+    return fXchg.f;
+
 # else
 #  error "Port me"
-# endif /* RT_ARCH_ARM */
+# endif
 }
 #endif
 
@@ -1052,7 +1055,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS32(volatile int32_t RT_FAR *pi32, const int32_
  *
  * @remarks x86: Requires a Pentium or later.
  */
-#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
+#if (RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN) \
  || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, const uint64_t u64New, const uint64_t u64Old) RT_NOTHROW_PROTO;
 #else
@@ -1086,7 +1089,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
     }
     return fRet;
 #  endif
-# else /* !RT_ARCH_AMD64 */
+
+# elif defined(RT_ARCH_X86)
     uint32_t u32Ret;
 #  if RT_INLINE_ASM_GNU_STYLE
 #   if defined(PIC) || defined(__PIC__)
@@ -1136,7 +1140,44 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
     }
     return !!u32Ret;
 #  endif
-# endif /* !RT_ARCH_AMD64 */
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    union { uint32_t u; bool f; } fXchg;
+    uint64_t u64Spill;
+    uint32_t rcSpill;
+    __asm__ __volatile__(".Ltry_again%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxr     %0, [%5]\n\t"
+                         "cmp       %0, %3\n\t"
+                         "bne       1f\n\t"   /* stop here if not equal */
+                         "stlxr     %w1, %4, [%5]\n\t"
+                         "cbnz      %w1, .Ltry_again%=\n\t"
+                         "mov       %w2, #1\n\t"
+#  else
+                         "ldrexd    %0, %H0, [%5]\n\t"
+                         "teq       %0, %3\n\t"
+                         "teqeq     %H0, %H3\n\t"
+                         "strexdeq  %1, %4, %H4, [%5]\n\t"
+                         "bne       1f\n\t"   /* stop here if not equal */
+                         "cmp       %1, #0\n\t"
+                         "bne       .Ltry_again%=\n\t"
+                         "mov       %2, #1\n\t"
+#  endif
+                         "1:\n\t"
+                         : "=&r" (u64Spill),
+                           "=&r" (rcSpill),
+                           "=&r" (fXchg.u)
+                         : "r" (u64Old),
+                           "r" (u64New),
+                           "r" (pu64),
+                           "2" (0) /*fXchg*/
+                         : "memory",
+                           "cc");
+    return fXchg.f;
+
+# else
+#  error "Port me"
+# endif
 }
 #endif
 
@@ -1280,12 +1321,13 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void RT_FAR * volatile RT_FAR *ppv, con
  *
  * @remarks x86: Requires a 486 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, const uint32_t u32Old, uint32_t RT_FAR *pu32Old) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, const uint32_t u32Old, uint32_t RT_FAR *pu32Old) RT_NOTHROW_DEF
 {
-# if RT_INLINE_ASM_GNU_STYLE
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     uint8_t u8Ret;
     __asm__ __volatile__("lock; cmpxchgl %3, %0\n\t"
                          "setz  %1\n\t"
@@ -1297,34 +1339,72 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
                            "m" (*pu32));
     return (bool)u8Ret;
 
-# elif RT_INLINE_ASM_USES_INTRIN
-    return (*pu32Old =_InterlockedCompareExchange((long RT_FAR *)pu32, u32New, u32Old)) == u32Old;
+#  elif RT_INLINE_ASM_USES_INTRIN
+    return (*pu32Old = _InterlockedCompareExchange((long RT_FAR *)pu32, u32New, u32Old)) == u32Old;
 
-# else
+#  else
     uint32_t u32Ret;
     __asm
     {
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
-#  else
+#   else
         mov     edx, [pu32]
-#  endif
+#   endif
         mov     eax, [u32Old]
         mov     ecx, [u32New]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         lock cmpxchg [rdx], ecx
         mov     rdx, [pu32Old]
         mov     [rdx], eax
-#  else
+#   else
         lock cmpxchg [edx], ecx
         mov     edx, [pu32Old]
         mov     [edx], eax
-#  endif
+#   endif
         setz    al
         movzx   eax, al
         mov     [u32Ret], eax
     }
     return !!u32Ret;
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    union { uint32_t u; bool f; } fXchg;
+    uint32_t u32ActualOld;
+    uint32_t rcSpill;
+    __asm__ __volatile__(".Ltry_again%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxr     %w0, [%5]\n\t"
+                         "cmp       %w0, %w3\n\t"
+                         "bne       1f\n\t"   /* stop here if not equal */
+                         "stlxr     %w1, %w4, [%5]\n\t"
+                         "cbnz      %w1, .Ltry_again%=\n\t"
+                         "mov       %w2, #1\n\t"
+#  else
+                         "ldrex     %0, [%5]\n\t"
+                         "teq       %0, %3\n\t"
+                         "strexeq   %1, %4, [%5]\n\t"
+                         "bne       1f\n\t"   /* stop here if not equal */
+                         "cmp       %1, #0\n\t"
+                         "bne       .Ltry_again%=\n\t"
+                         "mov       %2, #1\n\t"
+#  endif
+                         "1:\n\t"
+                         : "=&r" (u32ActualOld),
+                           "=&r" (rcSpill),
+                           "=&r" (fXchg.u)
+                         : "r" (u32Old),
+                           "r" (u32New),
+                           "r" (pu32),
+                           "2" (0) /*fXchg*/
+                         : "memory",
+                           "cc");
+    *pu32Old = u32ActualOld;
+    return fXchg.f;
+
+# else
+#  error "Port me"
 # endif
 }
 #endif
@@ -1364,7 +1444,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS32(volatile int32_t RT_FAR *pi32, const int3
  *
  * @remarks x86: Requires a Pentium or later.
  */
-#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
+#if (RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN) \
  || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uint64_t u64New, const uint64_t u64Old, uint64_t RT_FAR *pu64Old) RT_NOTHROW_PROTO;
 #else
@@ -1400,7 +1480,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
     }
     return fRet;
 #  endif
-# else /* !RT_ARCH_AMD64 */
+
+# elif defined(RT_ARCH_X86)
 #  if RT_INLINE_ASM_GNU_STYLE
     uint64_t u64Ret;
 #   if defined(PIC) || defined(__PIC__)
@@ -1448,7 +1529,45 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
     }
     return !!u32Ret;
 #  endif
-# endif /* !RT_ARCH_AMD64 */
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    union { uint32_t u; bool f; } fXchg;
+    uint64_t u64ActualOld;
+    uint32_t rcSpill;
+    __asm__ __volatile__(".Ltry_again%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxr     %0, [%5]\n\t"
+                         "cmp       %0, %3\n\t"
+                         "bne       1f\n\t"   /* stop here if not equal */
+                         "stlxr     %w1, %4, [%5]\n\t"
+                         "cbnz      %w1, .Ltry_again%=\n\t"
+                         "mov       %w2, #1\n\t"
+#  else
+                         "ldrexd    %0, %H0, [%5]\n\t"
+                         "teq       %0, %3\n\t"
+                         "teqeq     %H0, %H3\n\t"
+                         "strexdeq  %1, %4, %H4, [%5]\n\t"
+                         "bne       1f\n\t"   /* stop here if not equal */
+                         "cmp       %1, #0\n\t"
+                         "bne       .Ltry_again%=\n\t"
+                         "mov       %2, #1\n\t"
+#  endif
+                         "1:\n\t"
+                         : "=&r" (u64ActualOld),
+                           "=&r" (rcSpill),
+                           "=&r" (fXchg.u)
+                         : "r" (u64Old),
+                           "r" (u64New),
+                           "r" (pu64),
+                           "2" (0) /*fXchg*/
+                         : "memory",
+                           "cc");
+    *pu64Old = u64ActualOld;
+    return fXchg.f;
+
+# else
+#  error "Port me"
+# endif
 }
 #endif
 
@@ -1593,7 +1712,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExPtrVoid(void RT_FAR * volatile RT_FAR *ppv, c
 /**
  * Virtualization unfriendly serializing instruction, always exits.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSerializeInstructionCpuId(void) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMSerializeInstructionCpuId(void) RT_NOTHROW_DEF
@@ -1639,7 +1758,7 @@ DECLINLINE(void) ASMSerializeInstructionCpuId(void) RT_NOTHROW_DEF
 /**
  * Virtualization friendly serializing instruction, though more expensive.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSerializeInstructionIRet(void) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMSerializeInstructionIRet(void) RT_NOTHROW_DEF
@@ -1684,7 +1803,7 @@ DECLINLINE(void) ASMSerializeInstructionIRet(void) RT_NOTHROW_DEF
 /**
  * Virtualization friendlier serializing instruction, may still cause exits.
  */
-#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
+#if (RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSerializeInstructionRdTscp(void) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMSerializeInstructionRdTscp(void) RT_NOTHROW_DEF
@@ -1728,7 +1847,7 @@ RTDECL(void) ASMSerializeInstruction(void) RT_NOTHROW_PROTO;
 DECLINLINE(void) ASMSerializeInstruction(void) RT_NOTHROW_DEF
 {
     /* Note! Only armv7 and later. */
-    __asm__ __volatile__ ("dsb\n\t" ::: "memory");
+    __asm__ __volatile__ ("dsb sy\n\t" ::: "memory");
 }
 #else
 # error "Port me"
@@ -1755,7 +1874,7 @@ DECLINLINE(void) ASMMemoryFence(void) RT_NOTHROW_DEF
 # endif
 #elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     /* Note! Only armv7 and later. */
-    __asm__ __volatile__ ("dsb sy\n\t");
+    __asm__ __volatile__ ("dsb sy\n\t" ::: "memory");
 #elif ARCH_BITS == 16
     uint16_t volatile u16;
     ASMAtomicXchgU16(&u16, 0);
@@ -1786,7 +1905,7 @@ DECLINLINE(void) ASMWriteFence(void) RT_NOTHROW_DEF
 # endif
 #elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     /* Note! Only armv7 and later. */
-    __asm__ __volatile__ ("dmb sy\n\t");
+    __asm__ __volatile__ ("dmb sy\n\t" ::: "memory");
 #else
     ASMMemoryFence();
 #endif
@@ -1813,7 +1932,7 @@ DECLINLINE(void) ASMReadFence(void) RT_NOTHROW_DEF
 # endif
 #elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     /* Note! Only armv7 and later. */
-    __asm__ __volatile__ ("dmb sy\n\t");
+    __asm__ __volatile__ ("dmb sy\n\t";
 #else
     ASMMemoryFence();
 #endif
