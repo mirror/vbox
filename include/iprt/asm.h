@@ -168,6 +168,15 @@
 #endif
 
 
+/** @def RT_INLINE_ASM_EXTERNAL_TMP_ARM
+ * Temporary version of RT_INLINE_ASM_EXTERNAL that excludes ARM. */
+#if RT_INLINE_ASM_EXTERNAL && !(defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32))
+# define RT_INLINE_ASM_EXTERNAL_TMP_ARM 1
+#else
+# define RT_INLINE_ASM_EXTERNAL_TMP_ARM 0
+#endif
+
+
 /** @def ASMReturnAddress
  * Gets the return address of the current (or calling if you like) function or method.
  */
@@ -242,6 +251,10 @@ DECLINLINE(void) ASMNopPause(void) RT_NOTHROW_DEF
         _emit 090h
     }
 #  endif
+
+# elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("yield\n\t"); /* ARMv6K+ */
+
 # else
     /* dummy */
 # endif
@@ -256,34 +269,60 @@ DECLINLINE(void) ASMNopPause(void) RT_NOTHROW_DEF
  * @param   pu8    Pointer to the 8-bit variable to update.
  * @param   u8     The 8-bit value to assign to *pu8.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 RT_ASM_DECL_PRAGMA_WATCOM(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT_NOTHROW_DEF
 {
-# if RT_INLINE_ASM_GNU_STYLE
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("xchgb %0, %1\n\t"
                          : "=m" (*pu8),
                            "=q" (u8) /* =r - busted on g++ (GCC) 3.4.4 20050721 (Red Hat 3.4.4-2) */
                          : "1" (u8),
                            "m" (*pu8));
-# else
+#  else
     __asm
     {
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rdx, [pu8]
         mov     al, [u8]
         xchg    [rdx], al
         mov     [u8], al
-#  else
+#   else
         mov     edx, [pu8]
         mov     al, [u8]
         xchg    [edx], al
         mov     [u8], al
-#  endif
+#   endif
     }
-# endif
+#  endif
     return u8;
+
+# elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+    RTCCUINTREG uOld;
+    RTCCUINTREG rcSpill;
+    __asm__ __volatile__("try_again%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxrb %w0, [%3]\n\t"
+                         "stlxrb %w1, %w2, [%3]\n\t"
+                         "cbnz %w1, try_again%=\n\t"
+#  else
+                         "ldrexb %0, [%3]\n\t"      /* ARMv6+ */
+                         "strex %1, %2, [%3]\n\t"
+                         "cmp %1, #0\n\t"
+                         "bne try_again%=\n\t"
+#  endif
+                         : "=&r" (uOld),
+                           "=&r" (rcSpill)
+                         : "r" ((RTCCUINTREG)u8),
+                           "r" (pu8)
+                         : "memory");
+    return (uint8_t)uOld;
+
+# else
+#  error "Port me"
+# endif
 }
 #endif
 
