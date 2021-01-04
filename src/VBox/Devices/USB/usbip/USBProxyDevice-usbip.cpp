@@ -997,7 +997,7 @@ static int usbProxyUsbIpRecvPdu(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPROXYURBUS
                                     {
                                         if (RT_LIKELY(pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->cbData >= cbRet))
                                         {
-                                            pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->cbData = cbRet;
+                                            pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->cbData = (uint32_t)cbRet;
                                             usbProxyUsbIpRecvStateAdvance(pProxyDevUsbIp, USBPROXYUSBIPRECVSTATE_URB_BUFFER,
                                                                           pbData, pProxyDevUsbIp->BufRet.RetSubmit.u32ActualLength);
                                         }
@@ -1807,4 +1807,3 @@ extern const USBPROXYBACK g_USBProxyDeviceUsbIp =
     usbProxyUsbIpWakeup,
     0
 };
-
