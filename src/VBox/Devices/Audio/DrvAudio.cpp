@@ -447,15 +447,35 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     if (!pThis->pHostDrvAudio) /* If not lower driver is configured, bail out. */
         return VINF_SUCCESS;
 
-    LogRel2(("Audio: %s stream '%s'\n", DrvAudioHlpStreamCmdToStr(enmStreamCmd), pStream->szName));
-
     int rc = VINF_SUCCESS;
 
+    /*
+     * Whether to propagate commands down to the backend.
+     *
+     * This is needed for critical operations like recording audio if audio input is disabled on a per-driver level.
+     *
+     * Note that not all commands will be covered by this, such as operations like stopping, draining and droppping,
+     * which are considered uncritical and sometimes even are required for certain backends (like DirectSound on Windows).
+     *
+     * The actual stream state will be untouched to not make the state machine handling more complicated than
+     * it already is.
+     *
+     * See #9882.
+     */
+    const bool fEnabled =    (   pStream->enmDir == PDMAUDIODIR_IN
+                              && pThis->In.fEnabled)
+                          || (   pStream->enmDir == PDMAUDIODIR_OUT
+                              && pThis->Out.fEnabled);
+
+    LogRel2(("Audio: %s stream '%s' in backend (%s is %s)\n", DrvAudioHlpStreamCmdToStr(enmStreamCmd), pStream->szName,
+                                                              DrvAudioHlpAudDirToStr(pStream->enmDir),
+                                                              fEnabled ? "enabled" : "disabled"));
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
-            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_ENABLE);
+            if (fEnabled)
+                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_ENABLE);
             break;
         }
 
@@ -467,13 +487,15 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
-            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_PAUSE);
+            if (fEnabled) /* Needed, as resume below also is being checked for. */
+                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_PAUSE);
             break;
         }
 
         case PDMAUDIOSTREAMCMD_RESUME:
         {
-            rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_RESUME);
+            if (fEnabled)
+                rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_RESUME);
             break;
         }
 
@@ -938,10 +960,16 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 
     do
     {
-        if (   !pThis->Out.fEnabled
-            || !DrvAudioHlpStreamStatusIsReady(pStream->fStatus))
+        if (!DrvAudioHlpStreamStatusIsReady(pStream->fStatus))
         {
             rc = VERR_AUDIO_STREAM_NOT_READY;
+            break;
+        }
+
+        /* If output is disabled on a per-driver level, send data to the bit bucket instead. See #9882. */
+        if (!pThis->Out.fEnabled)
+        {
+            fToBitBucket = true;
             break;
         }
 
@@ -2389,54 +2417,56 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 
     do
     {
-        if (   !pThis->In.fEnabled
-            || !DrvAudioHlpStreamStatusCanRead(pStream->fStatus))
-        {
-            rc = VERR_AUDIO_STREAM_NOT_READY;
-            break;
-        }
-
-        /*
-         * Read from the parent buffer (that is, the guest buffer) which
-         * should have the audio data in the format the guest needs.
-         */
         uint32_t cfReadTotal = 0;
 
         const uint32_t cfBuf = AUDIOMIXBUF_B2F(&pStream->Guest.MixBuf, cbBuf);
 
-        uint32_t cfToRead = RT_MIN(cfBuf, AudioMixBufLive(&pStream->Guest.MixBuf));
-        while (cfToRead)
+        if (pThis->In.fEnabled) /* Input for this audio driver enabled? See #9822. */
         {
-            uint32_t cfRead;
-            rc = AudioMixBufAcquireReadBlock(&pStream->Guest.MixBuf,
-                                             (uint8_t *)pvBuf + AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal),
-                                             AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfToRead), &cfRead);
-            if (RT_FAILURE(rc))
+            if (!DrvAudioHlpStreamStatusCanRead(pStream->fStatus))
+            {
+                rc = VERR_AUDIO_STREAM_NOT_READY;
                 break;
+            }
+
+            /*
+             * Read from the parent buffer (that is, the guest buffer) which
+             * should have the audio data in the format the guest needs.
+             */
+            uint32_t cfToRead = RT_MIN(cfBuf, AudioMixBufLive(&pStream->Guest.MixBuf));
+            while (cfToRead)
+            {
+                uint32_t cfRead;
+                rc = AudioMixBufAcquireReadBlock(&pStream->Guest.MixBuf,
+                                                 (uint8_t *)pvBuf + AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal),
+                                                 AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfToRead), &cfRead);
+                if (RT_FAILURE(rc))
+                    break;
 
 #ifdef VBOX_WITH_STATISTICS
-            const uint32_t cbRead = AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfRead);
+                const uint32_t cbRead = AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfRead);
 
-            STAM_COUNTER_ADD(&pThis->Stats.TotalBytesRead,       cbRead);
+                STAM_COUNTER_ADD(&pThis->Stats.TotalBytesRead,       cbRead);
 
-            STAM_COUNTER_ADD(&pStream->In.Stats.TotalFramesRead, cfRead);
-            STAM_COUNTER_INC(&pStream->In.Stats.TotalTimesRead);
+                STAM_COUNTER_ADD(&pStream->In.Stats.TotalFramesRead, cfRead);
+                STAM_COUNTER_INC(&pStream->In.Stats.TotalTimesRead);
 #endif
-            Assert(cfToRead >= cfRead);
-            cfToRead -= cfRead;
+                Assert(cfToRead >= cfRead);
+                cfToRead -= cfRead;
 
-            cfReadTotal += cfRead;
+                cfReadTotal += cfRead;
 
-            AudioMixBufReleaseReadBlock(&pStream->Guest.MixBuf, cfRead);
-        }
+                AudioMixBufReleaseReadBlock(&pStream->Guest.MixBuf, cfRead);
+            }
 
-        if (cfReadTotal)
-        {
-            if (pThis->In.Cfg.Dbg.fEnabled)
-                DrvAudioHlpFileWrite(pStream->In.Dbg.pFileStreamRead,
-                                     pvBuf, AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal), 0 /* fFlags */);
+            if (cfReadTotal)
+            {
+                if (pThis->In.Cfg.Dbg.fEnabled)
+                    DrvAudioHlpFileWrite(pStream->In.Dbg.pFileStreamRead,
+                                         pvBuf, AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal), 0 /* fFlags */);
 
-            AudioMixBufFinish(&pStream->Guest.MixBuf, cfReadTotal);
+                AudioMixBufFinish(&pStream->Guest.MixBuf, cfReadTotal);
+            }
         }
 
         /* If we were not able to read as much data as requested, fill up the returned
@@ -2718,14 +2748,27 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
         LogRel(("Audio: %s %s for driver '%s'\n",
                 fEnable ? "Enabling" : "Disabling", enmDir == PDMAUDIODIR_IN ? "input" : "output", pThis->szName));
 
+        /* Update the status first, as this will be checked for in drvAudioStreamControlInternalBackend() below. */
+        *pfEnabled = fEnable;
+
         PPDMAUDIOSTREAM pStream;
         RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, Node)
         {
             if (pStream->enmDir != enmDir) /* Skip unwanted streams. */
                 continue;
 
-            int rc2 = drvAudioStreamControlInternal(pThis, pStream,
-                                                    fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
+            /* Note: Only enable / disable the backend, do *not* change the stream's internal status.
+             *       Callers (device emulation, mixer, ...) from outside will not see any status or behavior change,
+             *       to not confuse the rest of the state machine.
+             *
+             *       When disabling:
+             *          - playing back audo data would go to /dev/null
+             *          - recording audio data would return silence instead
+             *
+             * See #9882.
+             */
+            int rc2 = drvAudioStreamControlInternalBackend(pThis, pStream,
+                                                           fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
             if (RT_FAILURE(rc2))
             {
                 if (rc2 == VERR_AUDIO_STREAM_NOT_READY)
@@ -2742,8 +2785,6 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
 
             /* Keep going. */
         }
-
-        *pfEnabled = fEnable;
     }
 
     int rc3 = RTCritSectLeave(&pThis->CritSect);
@@ -2863,8 +2904,13 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
 
     uint32_t cbReadable = 0;
 
+    /* All input streams for this driver disabled? See #9882. */
+    const bool fDisabled = !pThis->In.fEnabled;
+
     if (   pThis->pHostDrvAudio
-        && DrvAudioHlpStreamStatusCanRead(pStream->fStatus))
+        && (   DrvAudioHlpStreamStatusCanRead(pStream->fStatus)
+            || fDisabled)
+       )
     {
         const uint32_t cfReadable = AudioMixBufLive(&pStream->Guest.MixBuf);
 
@@ -2880,12 +2926,13 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
              * situations, but the device emulation needs input data to keep the DMA transfers moving.
              * Reading the actual data from a stream then will return silence then.
              */
-            if (!DrvAudioHlpStreamStatusCanRead(
-                pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStream->pvBackend)))
+            if (  !DrvAudioHlpStreamStatusCanRead(
+                      pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStream->pvBackend)
+                || fDisabled))
             {
                 cbReadable = DrvAudioHlpNanoToBytes(RTTimeNanoTS() - pStream->tsLastReadWrittenNs,
                                                     &pStream->Host.Cfg.Props);
-                Log3Func(("[%s] Backend stream not ready, returning silence\n", pStream->szName));
+                Log3Func(("[%s] Backend stream not ready or driver has disabled audio input, returning silence\n", pStream->szName));
             }
         }
 

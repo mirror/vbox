@@ -1531,11 +1531,24 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
 
     int rc;
 
-    if (pSink->In.pStreamRecSource) /* First, disable old recording source, if any set. */
+    /*
+     * Warning: Do *not* use pfnConn->pfnEnable() for enabling/disabling streams here, as this will unconditionally (re-)enable
+     *          streams, which would violate / run against the (global) VM settings. See #9882.
+     */
+
+    /* Get pointers of current recording source to make code easier to read below. */
+    PAUDMIXSTREAM       pCurRecSrc       = pSink->In.pStreamRecSource; /* Can be NULL. */
+    PPDMIAUDIOCONNECTOR pCurRecSrcConn   = NULL;
+    PPDMAUDIOSTREAM     pCurRecSrcStream = NULL;
+
+    if (pCurRecSrc) /* First, disable old recording source, if any is set. */
     {
-        const PPDMIAUDIOCONNECTOR pConn = pSink->In.pStreamRecSource->pConn;
-        AssertPtr(pConn);
-        rc = pConn->pfnEnable(pConn, PDMAUDIODIR_IN, false /* Disable */);
+        pCurRecSrcConn   = pSink->In.pStreamRecSource->pConn;
+        AssertPtrReturn(pCurRecSrcConn, VERR_INVALID_POINTER);
+        pCurRecSrcStream = pCurRecSrc->pStream;
+        AssertPtrReturn(pCurRecSrcStream, VERR_INVALID_POINTER);
+
+        rc = pCurRecSrcConn->pfnStreamControl(pCurRecSrcConn, pCurRecSrcStream, PDMAUDIOSTREAMCMD_DISABLE);
     }
     else
         rc = VINF_SUCCESS;
@@ -1547,19 +1560,22 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
             AssertPtr(pStream->pStream);
             AssertMsg(pStream->pStream->enmDir == PDMAUDIODIR_IN, ("Specified stream is not an input stream\n"));
             AssertPtr(pStream->pConn);
-            rc = pStream->pConn->pfnEnable(pStream->pConn, PDMAUDIODIR_IN, true /* Enable */);
+            rc = pStream->pConn->pfnStreamControl(pStream->pConn, pStream->pStream, PDMAUDIOSTREAMCMD_ENABLE);
             if (RT_SUCCESS(rc))
-                pSink->In.pStreamRecSource = pStream;
-            else if (pSink->In.pStreamRecSource) /* Stay with the current recording source (if any) and re-enable it. */
             {
-                const PPDMIAUDIOCONNECTOR pConn = pSink->In.pStreamRecSource->pConn;
-                AssertPtr(pConn);
-                rc = pConn->pfnEnable(pConn, PDMAUDIODIR_IN, true /* Enable */);
+                pCurRecSrc = pStream;
+            }
+            else if (pCurRecSrc) /* Stay with the current recording source (if any) and re-enable it. */
+            {
+                rc = pCurRecSrcConn->pfnStreamControl(pCurRecSrcConn, pCurRecSrcStream, PDMAUDIOSTREAMCMD_ENABLE);
             }
         }
         else
-            pSink->In.pStreamRecSource = NULL; /* Unsetting, see audioMixerSinkRemoveStreamInternal. */
+            pCurRecSrc = NULL; /* Unsetting, see audioMixerSinkRemoveStreamInternal. */
     }
+
+    /* Invalidate pointers. */
+    pSink->In.pStreamRecSource = pCurRecSrc;
 
     LogFunc(("[%s] Recording source is now '%s', rc=%Rrc\n",
              pSink->pszName, pSink->In.pStreamRecSource ? pSink->In.pStreamRecSource->pszName : "<None>", rc));

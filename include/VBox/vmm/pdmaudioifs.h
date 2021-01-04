@@ -1391,6 +1391,8 @@ typedef struct PDMIAUDIOCONNECTOR
      * When disabled, assiociated output streams consume written audio without passing them further down to the backends.
      * Associated input streams then return silence when read from those.
      *
+     * Warning: Use this function carefully, as this could violate / run against the (global) VM settings. See #9882.
+     *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   enmDir          Audio direction to enable or disable driver for.
