@@ -2693,7 +2693,7 @@ static int buslogicRegisterWrite(PPDMDEVINS pDevIns, PBUSLOGIC pThis, unsigned i
                         AssertMsgFailed(("Invalid operation code %#x\n", uVal));
                 }
             }
-            else
+            else if (pThis->cbCommandParametersLeft)
             {
 #ifndef IN_RING3
                 /* This command must be executed in R3 as it rehooks the ISA I/O port. */
