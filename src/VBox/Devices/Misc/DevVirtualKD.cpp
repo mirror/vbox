@@ -26,6 +26,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/path.h>
 
 #include "VBoxDD.h"
@@ -42,14 +43,15 @@
 *********************************************************************************************************************************/
 typedef struct VKDREQUESTHDR
 {
-    unsigned cbData;
-    unsigned cbReplyMax;
+    uint32_t cbData;
+    uint32_t cbReplyMax;
 } VKDREQUESTHDR;
+AssertCompileSize(VKDREQUESTHDR, 8);
 
 #pragma pack(1)
 typedef struct VKDREPLYHDR
 {
-    unsigned cbData;
+    uint32_t cbData;
     char chOne;
     char chSpace;
 } VKDREPLYHDR;
@@ -59,7 +61,7 @@ AssertCompileSize(VKDREPLYHDR, 6);
 class IKDClient
 {
 public:
-    virtual unsigned OnRequest(const char *pRequestIncludingRpcHeader, unsigned RequestSizeWithRpcHeader, char **ppReply)=0;
+    virtual unsigned OnRequest(const char *pRequestIncludingRpcHeader, unsigned RequestSizeWithRpcHeader, char **ppReply) = 0;
     virtual ~IKDClient() {}
 };
 
@@ -71,8 +73,13 @@ typedef struct VIRTUALKD
     bool fChannelDetectSuccessful;
     RTLDRMOD hLib;
     IKDClient *pKDClient;
-    char abCmdBody[_256K];
+    char *pbCmdBody;
+    bool fFencedCmdBody;    /**< Set if pbCmdBody was allocated using RTMemPageAlloc rather than RTMemAlloc. */
 } VIRTUALKD;
+
+#define VIRTUALKB_CMDBODY_SIZE          _256K           /**< Size of buffer pointed to by VIRTUALKB::pbCmdBody */
+#define VIRTUALKB_CMDBODY_PRE_FENCE     (PAGE_SIZE * 4) /**< Size of the eletrict fence before the command body. */
+#define VIRTUALKB_CMDBODY_POST_FENCE    (PAGE_SIZE * 8) /**< Size of the eletrict fence after the command body. */
 
 
 
@@ -101,43 +108,55 @@ static DECLCALLBACK(VBOXSTRICTRC) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser,
 
     if (offPort == 1)
     {
+        /*
+         * Read the request and request body.  Ignore empty requests.
+         */
         RTGCPHYS GCPhys = u32;
-        VKDREQUESTHDR RequestHeader = {0, };
+        VKDREQUESTHDR RequestHeader = { 0, 0 };
         int rc = PDMDevHlpPhysRead(pDevIns, GCPhys, &RequestHeader, sizeof(RequestHeader));
-        if (   !RT_SUCCESS(rc)
-            || !RequestHeader.cbData)
-            return VINF_SUCCESS;
-
-        unsigned cbData = RT_MIN(RequestHeader.cbData, sizeof(pThis->abCmdBody));
-        rc = PDMDevHlpPhysRead(pDevIns, GCPhys + sizeof(RequestHeader), pThis->abCmdBody, cbData);
-        if (!RT_SUCCESS(rc))
-            return VINF_SUCCESS;
-
-        char *pReply = NULL;
-        unsigned cbReply = pThis->pKDClient->OnRequest(pThis->abCmdBody, cbData, &pReply);
-
-        if (!pReply)
-            cbReply = 0;
-
-        /** @todo r=bird: RequestHeader.cbReplyMax is not taking into account here. */
-        VKDREPLYHDR ReplyHeader;
-        ReplyHeader.cbData = cbReply + 2;
-        ReplyHeader.chOne = '1';
-        ReplyHeader.chSpace = ' ';
-        rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, &ReplyHeader, sizeof(ReplyHeader));
-        if (!RT_SUCCESS(rc))
-            return VINF_SUCCESS;
-        if (cbReply)
+        if (   RT_SUCCESS(rc)
+            && RequestHeader.cbData > 0)
         {
-            rc = PDMDevHlpPhysWrite(pDevIns, GCPhys + sizeof(ReplyHeader), pReply, cbReply);
-            if (!RT_SUCCESS(rc))
-                return VINF_SUCCESS;
+            uint32_t cbData = RT_MIN(RequestHeader.cbData, VIRTUALKB_CMDBODY_SIZE);
+            rc = PDMDevHlpPhysRead(pDevIns, GCPhys + sizeof(RequestHeader), pThis->pbCmdBody, cbData);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Call the plugin module.
+                 */
+                char    *pbReply = NULL;
+                unsigned cbReply;
+                try
+                {
+                    cbReply = pThis->pKDClient->OnRequest(pThis->pbCmdBody, cbData, &pbReply);
+                    if (!pbReply)
+                        cbReply = 0;
+                }
+                catch (...)
+                {
+                    LogRel(("DevVirtualKB: OnRequest threw exception. sigh.\n"));
+                    cbReply = 0;
+                    pbReply = NULL;
+                }
+
+                /*
+                 * Write the reply to guest memory (overwriting the request):
+                 */
+                /** @todo r=bird: RequestHeader.cbReplyMax is not taken into account here! */
+                VKDREPLYHDR ReplyHeader;
+                ReplyHeader.cbData = cbReply + 2;
+                ReplyHeader.chOne = '1';
+                ReplyHeader.chSpace = ' ';
+                rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, &ReplyHeader, sizeof(ReplyHeader));
+                if (cbReply && RT_SUCCESS(rc))
+                    rc = PDMDevHlpPhysWrite(pDevIns, GCPhys + sizeof(ReplyHeader), pbReply, cbReply);
+            }
         }
     }
     else
     {
         Assert(offPort == 0);
-        if (u32 == 0x564D5868)
+        if (u32 == UINT32_C(0x564D5868) /* 'VMXh' */)
             pThis->fOpenChannelDetected = true;
         else
             pThis->fOpenChannelDetected = false;
@@ -157,6 +176,9 @@ static DECLCALLBACK(int) vkdDestruct(PPDMDEVINS pDevIns)
 
     if (pThis->pKDClient)
     {
+        /** @todo r=bird: This interface is not safe as the object doesn't overload the
+         *        delete operator, thus making our runtime free it rather than that of
+         *        the plug-in module IIRC. */
         delete pThis->pKDClient;
         pThis->pKDClient = NULL;
     }
@@ -165,6 +187,18 @@ static DECLCALLBACK(int) vkdDestruct(PPDMDEVINS pDevIns)
     {
         RTLdrClose(pThis->hLib);
         pThis->hLib = NIL_RTLDRMOD;
+    }
+
+    if (pThis->pbCmdBody)
+    {
+        if (pThis->fFencedCmdBody)
+            RTMemPageFree((uint8_t *)pThis->pbCmdBody - RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, PAGE_SIZE),
+                            RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE,  PAGE_SIZE)
+                          + RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE,       PAGE_SIZE)
+                          + RT_ALIGN_Z(VIRTUALKB_CMDBODY_POST_FENCE, PAGE_SIZE));
+        else
+            RTMemFree(pThis->pbCmdBody);
+        pThis->pbCmdBody = NULL;
     }
 
     return VINF_SUCCESS;
@@ -184,7 +218,8 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pThis->fChannelDetectSuccessful = false;
     pThis->hLib = NIL_RTLDRMOD;
     pThis->pKDClient = NULL;
-
+    pThis->pbCmdBody = NULL;
+    pThis->fFencedCmdBody = false;
 
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Path", "");
 
@@ -196,7 +231,7 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"Path\" value"));
 
-    rc = RTPathAppend(szPath, sizeof(szPath), HC_ARCH_BITS == 64 ?  "kdclient64.dll" : "kdclient.dll");
+    rc = RTPathAppend(szPath, sizeof(szPath), HC_ARCH_BITS == 64 ? "kdclient64.dll" : "kdclient.dll");
     AssertRCReturn(rc, rc);
     rc = RTLdrLoad(szPath, &pThis->hLib);
     if (RT_SUCCESS(rc))
@@ -208,6 +243,31 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             pThis->pKDClient = pfnInit(IKDClient_InterfaceVersion);
             if (pThis->pKDClient)
             {
+                /* We allocate a fenced buffer for reasons of paranoia. */
+                uint8_t *pbCmdBody = (uint8_t *)RTMemPageAlloc(  RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE,  PAGE_SIZE)
+                                                               + RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE,       PAGE_SIZE)
+                                                               + RT_ALIGN_Z(VIRTUALKB_CMDBODY_POST_FENCE, PAGE_SIZE));
+                if (pbCmdBody)
+                {
+                    rc = RTMemProtect(pbCmdBody, RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, PAGE_SIZE), RTMEM_PROT_NONE);
+                    pbCmdBody += RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, PAGE_SIZE);
+
+                    pThis->fFencedCmdBody = true;
+                    pThis->pbCmdBody = (char *)pbCmdBody;
+                    rc = RTMemProtect(pbCmdBody, RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE, PAGE_SIZE), RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                    AssertLogRelRC(rc);
+                    pbCmdBody += RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE, PAGE_SIZE);
+
+                    rc = RTMemProtect(pbCmdBody, RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, PAGE_SIZE), RTMEM_PROT_NONE);
+                    AssertLogRelRC(rc);
+                }
+                else
+                {
+                    LogRel(("VirtualKB: RTMemPageAlloc failed, falling back on regular alloc.\n"));
+                    pThis->pbCmdBody = (char *)RTMemAllocZ(VIRTUALKB_CMDBODY_SIZE);
+                    AssertLogRelReturn(pThis->pbCmdBody, VERR_NO_MEMORY);
+                }
+
                 IOMIOPORTHANDLE hIoPorts;
                 rc = PDMDevHlpIoPortCreateAndMap(pDevIns, 0x5658 /*uPort*/, 2 /*cPorts*/, vkdPortWrite, vkdPortRead,
                                                  "VirtualKD",  NULL /*paExtDescs*/, &hIoPorts);
