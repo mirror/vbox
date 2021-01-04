@@ -57,7 +57,7 @@
 #include "QIToolButton.h"
 #include "UIActionPool.h"
 #include "UIExtraDataManager.h"
-#include "UIHelpBrowserViewer.h"
+#include "UIHelpViewer.h"
 #include "UIHelpBrowserWidget.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
@@ -323,10 +323,10 @@ void UIFindInPageWidget::retranslateUi()
 
 
 /*********************************************************************************************************************************
-*   UIHelpBrowserViewer implementation.                                                                                          *
+*   UIHelpViewer implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* = 0 */)
+UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QTextBrowser>(pParent)
     , m_pHelpEngine(pHelpEngine)
     , m_pFindInPageWidget(new UIFindInPageWidget(this))
@@ -338,22 +338,22 @@ UIHelpBrowserViewer::UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget
     m_iInitialFontPointSize = font().pointSize();
     setUndoRedoEnabled(true);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigDragging,
-            this, &UIHelpBrowserViewer::sltHandleFindWidgetDrag);
+            this, &UIHelpViewer::sltHandleFindWidgetDrag);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSearchTextChanged,
-            this, &UIHelpBrowserViewer::sltHandleFindInPageSearchTextChange);
+            this, &UIHelpViewer::sltHandleFindInPageSearchTextChange);
 
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSelectPreviousMatch,
-            this, &UIHelpBrowserViewer::sltSelectPreviousMatch);
+            this, &UIHelpViewer::sltSelectPreviousMatch);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigSelectNextMatch,
-            this, &UIHelpBrowserViewer::sltSelectNextMatch);
+            this, &UIHelpViewer::sltSelectNextMatch);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigClose,
-            this, &UIHelpBrowserViewer::sigCloseFindInPageWidget);
+            this, &UIHelpViewer::sigCloseFindInPageWidget);
 
     m_pFindInPageWidget->setVisible(false);
     retranslateUi();
 }
 
-QVariant UIHelpBrowserViewer::loadResource(int type, const QUrl &name)
+QVariant UIHelpViewer::loadResource(int type, const QUrl &name)
 {
     if (name.scheme() == "qthelp" && m_pHelpEngine)
         return QVariant(m_pHelpEngine->fileData(name));
@@ -361,13 +361,13 @@ QVariant UIHelpBrowserViewer::loadResource(int type, const QUrl &name)
         return QTextBrowser::loadResource(type, name);
 }
 
-void UIHelpBrowserViewer::emitHistoryChangedSignal()
+void UIHelpViewer::emitHistoryChangedSignal()
 {
     emit historyChanged();
     emit backwardAvailable(true);
 }
 
-void UIHelpBrowserViewer::setSource(const QUrl &url)
+void UIHelpViewer::setSource(const QUrl &url)
 {
     QTextBrowser::setSource(url);
     QTextDocument *pDocument = document();
@@ -382,7 +382,7 @@ void UIHelpBrowserViewer::setSource(const QUrl &url)
     }
 }
 
-void UIHelpBrowserViewer::toggleFindInPageWidget(bool fVisible)
+void UIHelpViewer::toggleFindInPageWidget(bool fVisible)
 {
     if (!m_pFindInPageWidget)
         return;
@@ -402,12 +402,12 @@ void UIHelpBrowserViewer::toggleFindInPageWidget(bool fVisible)
         m_pFindInPageWidget->setFocus();
 }
 
-int UIHelpBrowserViewer::initialFontPointSize() const
+int UIHelpViewer::initialFontPointSize() const
 {
     return m_iInitialFontPointSize;
 }
 
-void UIHelpBrowserViewer::setFont(const QFont &font)
+void UIHelpViewer::setFont(const QFont &font)
 {
     QIWithRetranslateUI<QTextBrowser>::setFont(font);
     /* Make sure the font size of the find in widget stays constant: */
@@ -419,7 +419,7 @@ void UIHelpBrowserViewer::setFont(const QFont &font)
     }
 }
 
-void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
+void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu pMenu;
 
@@ -428,25 +428,25 @@ void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
     pNavigationActions->setForwardAvailable(isForwardAvailable());
 
     connect(pNavigationActions, &UIContextMenuNavigationAction::sigGoBackward,
-            this, &UIHelpBrowserViewer::sigGoBackward);
+            this, &UIHelpViewer::sigGoBackward);
     connect(pNavigationActions, &UIContextMenuNavigationAction::sigGoForward,
-            this, &UIHelpBrowserViewer::sigGoForward);
+            this, &UIHelpViewer::sigGoForward);
     connect(pNavigationActions, &UIContextMenuNavigationAction::sigGoHome,
-            this, &UIHelpBrowserViewer::sigGoHome);
+            this, &UIHelpViewer::sigGoHome);
     connect(pNavigationActions, &UIContextMenuNavigationAction::sigAddBookmark,
-            this, &UIHelpBrowserViewer::sigAddBookmark);
+            this, &UIHelpViewer::sigAddBookmark);
 
     QAction *pOpenLinkAction = new QAction(UIHelpBrowserWidget::tr("Open Link"));
     connect(pOpenLinkAction, &QAction::triggered,
-            this, &UIHelpBrowserViewer::sltHandleOpenLink);
+            this, &UIHelpViewer::sltHandleOpenLink);
 
     QAction *pOpenInNewTabAction = new QAction(UIHelpBrowserWidget::tr("Open Link in New Tab"));
     connect(pOpenInNewTabAction, &QAction::triggered,
-            this, &UIHelpBrowserViewer::sltHandleOpenLinkInNewTab);
+            this, &UIHelpViewer::sltHandleOpenLinkInNewTab);
 
     QAction *pCopyLink = new QAction(UIHelpBrowserWidget::tr("Copy Link"));
     connect(pCopyLink, &QAction::triggered,
-            this, &UIHelpBrowserViewer::sltHandleCopyLink);
+            this, &UIHelpViewer::sltHandleCopyLink);
 
     pMenu.addAction(pNavigationActions);
     pMenu.addAction(pOpenLinkAction);
@@ -470,7 +470,7 @@ void UIHelpBrowserViewer::contextMenuEvent(QContextMenuEvent *event)
     pMenu.exec(event->globalPos());
 }
 
-void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
+void UIHelpViewer::resizeEvent(QResizeEvent *pEvent)
 {
     /* Make sure the widget stays inside the parent during parent resize: */
     if (m_pFindInPageWidget)
@@ -481,7 +481,7 @@ void UIHelpBrowserViewer::resizeEvent(QResizeEvent *pEvent)
     QIWithRetranslateUI<QTextBrowser>::resizeEvent(pEvent);
 }
 
-void UIHelpBrowserViewer::wheelEvent(QWheelEvent *pEvent)
+void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
 {
     int iPreviousSize = font().pointSize();
     QTextBrowser::wheelEvent(pEvent);
@@ -497,11 +497,11 @@ void UIHelpBrowserViewer::wheelEvent(QWheelEvent *pEvent)
         emit sigFontPointSizeChanged(font().pointSize());
 }
 
-void UIHelpBrowserViewer::retranslateUi()
+void UIHelpViewer::retranslateUi()
 {
 }
 
-void UIHelpBrowserViewer::moveFindWidgetIn(int iMargin)
+void UIHelpViewer::moveFindWidgetIn(int iMargin)
 {
     if (!m_pFindInPageWidget)
         return;
@@ -520,7 +520,7 @@ void UIHelpBrowserViewer::moveFindWidgetIn(int iMargin)
     m_pFindInPageWidget->update();
 }
 
-bool UIHelpBrowserViewer::isRectInside(const QRect &rect, int iMargin) const
+bool UIHelpViewer::isRectInside(const QRect &rect, int iMargin) const
 {
     if (rect.left() < iMargin || rect.top() < iMargin)
         return false;
@@ -529,7 +529,7 @@ bool UIHelpBrowserViewer::isRectInside(const QRect &rect, int iMargin) const
     return true;
 }
 
-void UIHelpBrowserViewer::findAllMatches(const QString &searchString)
+void UIHelpViewer::findAllMatches(const QString &searchString)
 {
     QTextDocument *pDocument = document();
     AssertReturnVoid(pDocument);
@@ -551,7 +551,7 @@ void UIHelpBrowserViewer::findAllMatches(const QString &searchString)
     }
 }
 
-void UIHelpBrowserViewer::highlightFinds(int iSearchTermLength)
+void UIHelpViewer::highlightFinds(int iSearchTermLength)
 {
     QTextDocument* pDocument = document();
     AssertReturnVoid(pDocument);
@@ -575,7 +575,7 @@ void UIHelpBrowserViewer::highlightFinds(int iSearchTermLength)
     cursor.endEditBlock();
 }
 
-void UIHelpBrowserViewer::selectMatch(int iMatchIndex, int iSearchStringLength)
+void UIHelpViewer::selectMatch(int iMatchIndex, int iSearchStringLength)
 {
     QTextCursor cursor = textCursor();
     /* Move the cursor to the beginning of the matched string: */
@@ -586,7 +586,7 @@ void UIHelpBrowserViewer::selectMatch(int iMatchIndex, int iSearchStringLength)
     setTextCursor(cursor);
 }
 
-void UIHelpBrowserViewer::sltHandleOpenLinkInNewTab()
+void UIHelpViewer::sltHandleOpenLinkInNewTab()
 {
     QAction *pSender = qobject_cast<QAction*>(sender());
     if (!pSender)
@@ -596,7 +596,7 @@ void UIHelpBrowserViewer::sltHandleOpenLinkInNewTab()
         emit sigOpenLinkInNewTab(url);
 }
 
-void UIHelpBrowserViewer::sltHandleOpenLink()
+void UIHelpViewer::sltHandleOpenLink()
 {
     QAction *pSender = qobject_cast<QAction*>(sender());
     if (!pSender)
@@ -606,7 +606,7 @@ void UIHelpBrowserViewer::sltHandleOpenLink()
         QTextBrowser::setSource(url);
 }
 
-void UIHelpBrowserViewer::sltHandleCopyLink()
+void UIHelpViewer::sltHandleCopyLink()
 {
     QAction *pSender = qobject_cast<QAction*>(sender());
     if (!pSender)
@@ -620,7 +620,7 @@ void UIHelpBrowserViewer::sltHandleCopyLink()
     }
 }
 
-void UIHelpBrowserViewer::sltHandleFindWidgetDrag(const QPoint &delta)
+void UIHelpViewer::sltHandleFindWidgetDrag(const QPoint &delta)
 {
     if (!m_pFindInPageWidget)
         return;
@@ -634,7 +634,7 @@ void UIHelpBrowserViewer::sltHandleFindWidgetDrag(const QPoint &delta)
     update();
 }
 
-void UIHelpBrowserViewer::sltHandleFindInPageSearchTextChange(const QString &strSearchText)
+void UIHelpViewer::sltHandleFindInPageSearchTextChange(const QString &strSearchText)
 {
     m_iSearchTermLength = strSearchText.length();
     findAllMatches(strSearchText);
@@ -645,7 +645,7 @@ void UIHelpBrowserViewer::sltHandleFindInPageSearchTextChange(const QString &str
         m_pFindInPageWidget->setMatchCountAndCurrentIndex(m_matchedCursorPosition.size(), 0);
 }
 
-void UIHelpBrowserViewer::sltSelectPreviousMatch()
+void UIHelpViewer::sltSelectPreviousMatch()
 {
     m_iSelectedMatchIndex = m_iSelectedMatchIndex <= 0 ? m_matchedCursorPosition.size() - 1 : (m_iSelectedMatchIndex - 1);
     selectMatch(m_iSelectedMatchIndex, m_iSearchTermLength);
@@ -653,7 +653,7 @@ void UIHelpBrowserViewer::sltSelectPreviousMatch()
         m_pFindInPageWidget->setMatchCountAndCurrentIndex(m_matchedCursorPosition.size(), m_iSelectedMatchIndex);
 }
 
-void UIHelpBrowserViewer::sltSelectNextMatch()
+void UIHelpViewer::sltSelectNextMatch()
 {
     m_iSelectedMatchIndex = m_iSelectedMatchIndex >= m_matchedCursorPosition.size() - 1 ? 0 : (m_iSelectedMatchIndex + 1);
     selectMatch(m_iSelectedMatchIndex, m_iSearchTermLength);
@@ -661,6 +661,6 @@ void UIHelpBrowserViewer::sltSelectNextMatch()
         m_pFindInPageWidget->setMatchCountAndCurrentIndex(m_matchedCursorPosition.size(), m_iSelectedMatchIndex);
 }
 
-#include "UIHelpBrowserViewer.moc"
+#include "UIHelpViewer.moc"
 
 #endif /*#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))*/

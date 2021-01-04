@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserViewer_h
-#define FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserViewer_h
+#ifndef FEQT_INCLUDED_SRC_helpbrowser_UIHelpViewer_h
+#define FEQT_INCLUDED_SRC_helpbrowser_UIHelpViewer_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -59,7 +59,7 @@ class UIFindInPageWidget;
 class UIHelpBrowserTabManager;
 
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-class UIHelpBrowserViewer : public QIWithRetranslateUI<QTextBrowser>
+class UIHelpViewer : public QIWithRetranslateUI<QTextBrowser>
 {
     Q_OBJECT;
 
@@ -75,7 +75,7 @@ signals:
 
 public:
 
-    UIHelpBrowserViewer(const QHelpEngine *pHelpEngine, QWidget *pParent = 0);
+    UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent = 0);
     virtual QVariant loadResource(int type, const QUrl &name) /* override */;
     void emitHistoryChangedSignal();
     void setSource(const QUrl &url) /* override */;
@@ -123,4 +123,4 @@ private:
 };
 
 #endif /* #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
-#endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserViewer_h */
+#endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpViewer_h */

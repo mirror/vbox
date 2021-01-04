@@ -57,7 +57,7 @@
 #include "QIToolButton.h"
 #include "UIActionPool.h"
 #include "UIExtraDataManager.h"
-#include "UIHelpBrowserViewer.h"
+#include "UIHelpViewer.h"
 #include "UIHelpBrowserWidget.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
@@ -249,7 +249,7 @@ private:
     QVBoxLayout *m_pMainLayout;
     QIToolBar   *m_pToolBar;
     QComboBox   *m_pAddressBar;
-    UIHelpBrowserViewer *m_pContentViewer;
+    UIHelpViewer *m_pContentViewer;
     const QHelpEngine* m_pHelpEngine;
     QUrl m_homeUrl;
 };
@@ -656,34 +656,34 @@ void UIHelpBrowserTab::prepare(const QUrl &initialUrl)
 
 void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
 {
-    m_pContentViewer = new UIHelpBrowserViewer(m_pHelpEngine);
+    m_pContentViewer = new UIHelpViewer(m_pHelpEngine);
     AssertReturnVoid(m_pContentViewer);
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
     m_pMainLayout->setSpacing(0);
 
     m_pMainLayout->addWidget(m_pContentViewer);
     m_pContentViewer->setOpenExternalLinks(false);
-    connect(m_pContentViewer, &UIHelpBrowserViewer::sourceChanged,
+    connect(m_pContentViewer, &UIHelpViewer::sourceChanged,
         this, &UIHelpBrowserTab::sigSourceChanged);
-    connect(m_pContentViewer, &UIHelpBrowserViewer::historyChanged,
+    connect(m_pContentViewer, &UIHelpViewer::historyChanged,
         this, &UIHelpBrowserTab::sltHandleHistoryChanged);
-    connect(m_pContentViewer, &UIHelpBrowserViewer::anchorClicked,
+    connect(m_pContentViewer, &UIHelpViewer::anchorClicked,
         this, &UIHelpBrowserTab::sltAnchorClicked);
-    connect(m_pContentViewer, &UIHelpBrowserViewer::sigOpenLinkInNewTab,
+    connect(m_pContentViewer, &UIHelpViewer::sigOpenLinkInNewTab,
         this, &UIHelpBrowserTab::sigOpenLinkInNewTab);
-    connect(m_pContentViewer, &UIHelpBrowserViewer::sigCloseFindInPageWidget,
+    connect(m_pContentViewer, &UIHelpViewer::sigCloseFindInPageWidget,
             this, &UIHelpBrowserTab::sltCloseFindInPageWidget);
-    connect(m_pContentViewer, &UIHelpBrowserViewer::sigFontPointSizeChanged,
+    connect(m_pContentViewer, &UIHelpViewer::sigFontPointSizeChanged,
             this, &UIHelpBrowserTab::sigFontPointSizeChanged);
-    connect(m_pContentViewer, &UIHelpBrowserViewer::sigGoBackward,
+    connect(m_pContentViewer, &UIHelpViewer::sigGoBackward,
             this, &UIHelpBrowserTab::sltHandleBackwardAction);
-    connect(m_pContentViewer, &UIHelpBrowserViewer::sigGoForward,
+    connect(m_pContentViewer, &UIHelpViewer::sigGoForward,
             this, &UIHelpBrowserTab::sltHandleForwardAction);
-    connect(m_pContentViewer, &UIHelpBrowserViewer::sigGoHome,
+    connect(m_pContentViewer, &UIHelpViewer::sigGoHome,
             this, &UIHelpBrowserTab::sltHandleHomeAction);
-    connect(m_pContentViewer, &UIHelpBrowserViewer::sigAddBookmark,
+    connect(m_pContentViewer, &UIHelpViewer::sigAddBookmark,
             this, &UIHelpBrowserTab::sltHandleAddBookmarkAction);
-    connect(m_pContentViewer, static_cast<void(UIHelpBrowserViewer::*)(const QString&)>(&UIHelpBrowserViewer::highlighted),
+    connect(m_pContentViewer, static_cast<void(UIHelpViewer::*)(const QString&)>(&UIHelpViewer::highlighted),
             this, &UIHelpBrowserTab::sigLinkHighlighted);
 
     m_pContentViewer->setSource(initialUrl);
