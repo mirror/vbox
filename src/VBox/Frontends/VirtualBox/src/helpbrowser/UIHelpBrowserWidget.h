@@ -22,22 +22,15 @@
 #endif
 
 /* Qt includes: */
-
-#include <QKeySequence>
 #include <QPair>
 #include <QWidget>
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
-
-/* COM includes: */
-#include "COMEnums.h"
 
 /* Forward declarations: */
 class QHBoxLayout;
-class QItemSelection;
 class QVBoxLayout;
 class QHelpEngine;
 class QHelpContentModel;
@@ -46,14 +39,11 @@ class QHelpIndexWidget;
 class QHelpSearchEngine;
 class QHelpSearchQueryWidget;
 class QHelpSearchResultWidget;
-class QListWidget;
-class QPlainTextEdit;
 class QSplitter;
 class QITabWidget;
 class QIToolBar;
 class UIActionPool;
 class UIBookmarksListContainer;
-class UIDialogPanel;
 class UIHelpBrowserTabManager;
 
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))

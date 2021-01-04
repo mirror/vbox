@@ -18,10 +18,7 @@
 /* Qt includes: */
 #include <QClipboard>
 #include <QComboBox>
-#include <QDateTime>
-#include <QDir>
-#include <QFont>
-#include <QHBoxLayout>
+#include <QtGlobal>
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
  #include <QtHelp/QHelpEngine>
  #include <QtHelp/QHelpContentWidget>
@@ -34,24 +31,16 @@
 #include <QListWidget>
 #include <QMenu>
 #include <QMouseEvent>
-#include <QPainter>
-#include <QPixmap>
 #include <QtPrintSupport/QPrintDialog>
 #include <QtPrintSupport/QPrinter>
-#include <QPushButton>
-#include <QSpacerItem>
 #include <QSplitter>
-#include <QTextBrowser>
 #include <QVBoxLayout>
-#include <QWidgetAction>
 #ifdef RT_OS_SOLARIS
 # include <QFontDatabase>
 #endif
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "QIAdvancedSlider.h"
-#include "QIFileDialog.h"
 #include "QITabWidget.h"
 #include "QIToolBar.h"
 #include "QIToolButton.h"
@@ -60,8 +49,6 @@
 #include "UIHelpViewer.h"
 #include "UIHelpBrowserWidget.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
-#include "UISearchLineEdit.h"
 
 
 /* COM includes: */
