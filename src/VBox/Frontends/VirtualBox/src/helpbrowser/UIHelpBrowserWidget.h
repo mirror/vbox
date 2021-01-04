@@ -77,6 +77,7 @@ public:
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
+    static const QPair<float, float> fontScaleMinMax;
 
 protected:
 
