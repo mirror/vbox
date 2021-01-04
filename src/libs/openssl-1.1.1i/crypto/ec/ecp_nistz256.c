@@ -1070,9 +1070,11 @@ __owur static int ecp_nistz256_points_mul(const EC_GROUP *group,
              */
             infty = (p.p.X[0] | p.p.X[1] | p.p.X[2] | p.p.X[3] |
                      p.p.Y[0] | p.p.Y[1] | p.p.Y[2] | p.p.Y[3]);
+#if !defined(_MSC_VER) || P256_LIMBS != 4 /* vbox: VC++ 2010 complains about out of bounds accesses here in debug builds. */
             if (P256_LIMBS == 8)
                 infty |= (p.p.X[4] | p.p.X[5] | p.p.X[6] | p.p.X[7] |
                           p.p.Y[4] | p.p.Y[5] | p.p.Y[6] | p.p.Y[7]);
+#endif
 
             infty = 0 - is_zero(infty);
             infty = ~infty;
@@ -1081,12 +1083,14 @@ __owur static int ecp_nistz256_points_mul(const EC_GROUP *group,
             p.p.Z[1] = ONE[1] & infty;
             p.p.Z[2] = ONE[2] & infty;
             p.p.Z[3] = ONE[3] & infty;
+#if !defined(_MSC_VER) || P256_LIMBS != 4 /* vbox: VC++ 2010 complains about out of bounds accesses here in debug builds. */
             if (P256_LIMBS == 8) {
                 p.p.Z[4] = ONE[4] & infty;
                 p.p.Z[5] = ONE[5] & infty;
                 p.p.Z[6] = ONE[6] & infty;
                 p.p.Z[7] = ONE[7] & infty;
             }
+#endif
 
             for (i = 1; i < 37; i++) {
                 unsigned int off = (idx - 1) / 8;
