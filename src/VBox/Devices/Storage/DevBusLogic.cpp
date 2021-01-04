@@ -1984,7 +1984,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             if (pThis->iParameter == 1)
             {
                 /* First pass - set the number of following parameter bytes. */
-                pThis->cbCommandParametersLeft = pThis->aCommandBuffer[0];
+                pThis->cbCommandParametersLeft = RT_MIN(pThis->aCommandBuffer[0], sizeof(pThis->aCommandBuffer) - 1);
                 Log(("Set HA options: %u bytes follow\n", pThis->cbCommandParametersLeft));
             }
             else
@@ -2003,7 +2003,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             if (pThis->iParameter == 12)
             {
                 /* First pass - set the number of following CDB bytes. */
-                pThis->cbCommandParametersLeft = pThis->aCommandBuffer[11];
+                pThis->cbCommandParametersLeft = RT_MIN(pThis->aCommandBuffer[11], sizeof(pThis->aCommandBuffer) - 12);
                 Log(("Execute SCSI cmd: %u more bytes follow\n", pThis->cbCommandParametersLeft));
             }
             else
