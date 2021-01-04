@@ -1874,7 +1874,7 @@ DECLINLINE(void) ASMMemoryFence(void) RT_NOTHROW_DEF
 # endif
 #elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     /* Note! Only armv7 and later. */
-    __asm__ __volatile__ ("dsb sy\n\t" ::: "memory");
+    __asm__ __volatile__ ("dsb sy\n\t" ::: "memory"); /** @todo dmb? */
 #elif ARCH_BITS == 16
     uint16_t volatile u16;
     ASMAtomicXchgU16(&u16, 0);
@@ -1905,7 +1905,7 @@ DECLINLINE(void) ASMWriteFence(void) RT_NOTHROW_DEF
 # endif
 #elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     /* Note! Only armv7 and later. */
-    __asm__ __volatile__ ("dmb sy\n\t" ::: "memory");
+    __asm__ __volatile__ ("dmb st\n\t" ::: "memory");
 #else
     ASMMemoryFence();
 #endif
@@ -1932,7 +1932,7 @@ DECLINLINE(void) ASMReadFence(void) RT_NOTHROW_DEF
 # endif
 #elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     /* Note! Only armv7 and later. */
-    __asm__ __volatile__ ("dmb sy\n\t";
+    __asm__ __volatile__ ("dmb ld\n\t" ::: "memory");
 #else
     ASMMemoryFence();
 #endif
@@ -1997,8 +1997,8 @@ DECLINLINE(int8_t) ASMAtomicUoReadS8(volatile int8_t RT_FAR *pi8) RT_NOTHROW_DEF
  */
 DECLINLINE(uint16_t) ASMAtomicReadU16(volatile uint16_t RT_FAR *pu16) RT_NOTHROW_DEF
 {
-    ASMMemoryFence();
     Assert(!((uintptr_t)pu16 & 1));
+    ASMMemoryFence();
     return *pu16;
 }
 
@@ -2024,8 +2024,8 @@ DECLINLINE(uint16_t) ASMAtomicUoReadU16(volatile uint16_t RT_FAR *pu16) RT_NOTHR
  */
 DECLINLINE(int16_t) ASMAtomicReadS16(volatile int16_t RT_FAR *pi16) RT_NOTHROW_DEF
 {
-    ASMMemoryFence();
     Assert(!((uintptr_t)pi16 & 1));
+    ASMMemoryFence();
     return *pi16;
 }
 
@@ -2051,8 +2051,8 @@ DECLINLINE(int16_t) ASMAtomicUoReadS16(volatile int16_t RT_FAR *pi16) RT_NOTHROW
  */
 DECLINLINE(uint32_t) ASMAtomicReadU32(volatile uint32_t RT_FAR *pu32) RT_NOTHROW_DEF
 {
-    ASMMemoryFence();
     Assert(!((uintptr_t)pu32 & 3));
+    ASMMemoryFence();
 #if ARCH_BITS == 16
     AssertFailed();  /** @todo 16-bit */
 #endif
@@ -2084,8 +2084,8 @@ DECLINLINE(uint32_t) ASMAtomicUoReadU32(volatile uint32_t RT_FAR *pu32) RT_NOTHR
  */
 DECLINLINE(int32_t) ASMAtomicReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW_DEF
 {
-    ASMMemoryFence();
     Assert(!((uintptr_t)pi32 & 3));
+    ASMMemoryFence();
 #if ARCH_BITS == 16
     AssertFailed();  /** @todo 16-bit */
 #endif
@@ -2119,7 +2119,7 @@ DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW
  * @remarks This may fault if the memory is read-only!
  * @remarks x86: Requires a Pentium or later.
  */
-#if (RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)) \
+#if (RT_INLINE_ASM_EXTERNAL_TMP_ARM && !defined(RT_ARCH_AMD64)) \
  || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
 RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW_PROTO;
 #else
@@ -2144,7 +2144,8 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW
 #  endif*/
     ASMMemoryFence();
     u64 = *pu64;
-# else /* !RT_ARCH_AMD64 */
+
+# elif defined(RT_ARCH_X86)
 #  if RT_INLINE_ASM_GNU_STYLE
 #   if defined(PIC) || defined(__PIC__)
     uint32_t u32EBX = 0;
@@ -2184,7 +2185,23 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW
         mov     dword ptr [u64 + 4], edx
     }
 #  endif
-# endif /* !RT_ARCH_AMD64 */
+
+# elif defined(RT_ARCH_ARM64)
+    Assert(!((uintptr_t)pu64 & 7));
+    ASMMemoryFence();
+    u64 = *pu64;
+
+# elif defined(RT_ARCH_ARM32)
+    Assert(!((uintptr_t)pu64 & 7));
+    __asm__ __volatile__("dsb sy\n\t" /** @todo dmb? */
+                         "ldrexd    %0, %H0, [%1]\n\t"
+                         : "=&r" (u64)
+                         : "r" (pu64)
+                         : "memory");
+
+# else
+#  error "Port me"
+# endif
     return u64;
 }
 #endif
@@ -2201,7 +2218,7 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW
  * @remarks x86: Requires a Pentium or later.
  */
 #if !defined(RT_ARCH_AMD64) \
-  && (   (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
+  && (   (RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN) \
       || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC)
 RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW_PROTO;
 #else
@@ -2224,7 +2241,8 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHR
     }
 #  endif */
     u64 = *pu64;
-# else /* !RT_ARCH_AMD64 */
+
+# elif defined(RT_ARCH_X86)
 #  if RT_INLINE_ASM_GNU_STYLE
 #   if defined(PIC) || defined(__PIC__)
     uint32_t u32EBX = 0;
@@ -2267,7 +2285,21 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHR
         mov     dword ptr [u64 + 4], edx
     }
 #  endif
-# endif /* !RT_ARCH_AMD64 */
+
+# elif defined(RT_ARCH_ARM64)
+    Assert(!((uintptr_t)pu64 & 7));
+    u64 = *pu64;
+
+# elif defined(RT_ARCH_ARM32)
+    Assert(!((uintptr_t)pu64 & 7));
+    __asm__ __volatile__("ldrexd    %0, %H0, [%1]\n\t"
+                         : "=&r" (u64)
+                         : "r" (pu64)
+                         : );
+
+# else
+#  error "Port me"
+# endif
     return u64;
 }
 #endif
@@ -2555,6 +2587,7 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool RT_FAR *pf) RT_NOTHROW_DEF
  */
 DECLINLINE(void) ASMAtomicWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT_NOTHROW_DEF
 {
+    /** @todo Any possible ARM32/ARM64 optimizations here? */
     ASMAtomicXchgU8(pu8, u8);
 }
 
@@ -2579,6 +2612,7 @@ DECLINLINE(void) ASMAtomicUoWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT
  */
 DECLINLINE(void) ASMAtomicWriteS8(volatile int8_t RT_FAR *pi8, int8_t i8) RT_NOTHROW_DEF
 {
+    /** @todo Any possible ARM32/ARM64 optimizations here? */
     ASMAtomicXchgS8(pi8, i8);
 }
 
@@ -2603,6 +2637,7 @@ DECLINLINE(void) ASMAtomicUoWriteS8(volatile int8_t RT_FAR *pi8, int8_t i8) RT_N
  */
 DECLINLINE(void) ASMAtomicWriteU16(volatile uint16_t RT_FAR *pu16, uint16_t u16) RT_NOTHROW_DEF
 {
+    /** @todo Any possible ARM32/ARM64 optimizations here? */
     ASMAtomicXchgU16(pu16, u16);
 }
 
@@ -2628,6 +2663,7 @@ DECLINLINE(void) ASMAtomicUoWriteU16(volatile uint16_t RT_FAR *pu16, uint16_t u1
  */
 DECLINLINE(void) ASMAtomicWriteS16(volatile int16_t RT_FAR *pi16, int16_t i16) RT_NOTHROW_DEF
 {
+    /** @todo Any possible ARM32/ARM64 optimizations here? */
     ASMAtomicXchgS16(pi16, i16);
 }
 
@@ -2653,6 +2689,7 @@ DECLINLINE(void) ASMAtomicUoWriteS16(volatile int16_t RT_FAR *pi16, int16_t i16)
  */
 DECLINLINE(void) ASMAtomicWriteU32(volatile uint32_t RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
+    /** @todo Any possible ARM32/ARM64 optimizations here? */
     ASMAtomicXchgU32(pu32, u32);
 }
 
@@ -2711,6 +2748,7 @@ DECLINLINE(void) ASMAtomicUoWriteS32(volatile int32_t RT_FAR *pi32, int32_t i32)
  */
 DECLINLINE(void) ASMAtomicWriteU64(volatile uint64_t RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
+    /** @todo Any possible ARM32/ARM64 optimizations here? */
     ASMAtomicXchgU64(pu64, u64);
 }
 
@@ -2740,6 +2778,7 @@ DECLINLINE(void) ASMAtomicUoWriteU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
  */
 DECLINLINE(void) ASMAtomicWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
+    /** @todo Any possible ARM32/ARM64 optimizations here? */
     ASMAtomicXchgS64(pi64, i64);
 }
 
@@ -3061,7 +3100,7 @@ RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMAtomicAddU16(uint16_t volatile RT_FAR *pu
  *
  * @remarks x86: Requires a 486 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
@@ -3070,7 +3109,8 @@ DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u3
     u32 = _InterlockedExchangeAdd((long RT_FAR *)pu32, u32);
     return u32;
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; xaddl %0, %1\n\t"
                          : "=r" (u32),
                            "=m" (*pu32)
@@ -3078,20 +3118,50 @@ DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u3
                            "m" (*pu32)
                          : "memory");
     return u32;
-# else
+#  else
     __asm
     {
         mov     eax, [u32]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         lock xadd [rdx], eax
-#  else
+#   else
         mov     edx, [pu32]
         lock xadd [edx], eax
-#  endif
+#   endif
         mov     [u32], eax
     }
     return u32;
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint32_t u32Ret;
+    uint32_t rcSpill;
+    uint32_t u32Spill;
+    __asm__ __volatile__(".Ltry_again_add_u32_%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxr     %w0, [%4]\n\t"
+                         "add       %w1, %w0, %w3\n\t"
+                         "stlxr     %w2, %w1, [%4]\n\t"
+                         "cbnz      %w2, .Ltry_again_add_u32_%=\n\t"
+#  else
+                         "ldrex     %0, [%4]\n\t"
+                         "add       %1, %0, %3\n\t"
+                         "strex     %2, %1, [%4]\n\t"
+                         "cmp       %2, #0\n\t"
+                         "bne       .Ltry_again_add_u32_%=\n\t"
+#  endif
+                         : "=&r" (u32Ret),
+                           "=&r" (u32Spill),
+                           "=&r" (rcSpill)
+                         : "r" (u32),
+                           "r" (pu32)
+                         : "memory",
+                           "cc");
+    return u32Ret;
+
+# else
+#  error "Port me"
 # endif
 }
 #endif
@@ -3121,7 +3191,7 @@ DECLINLINE(int32_t) ASMAtomicAddS32(int32_t volatile RT_FAR *pi32, int32_t i32) 
  *
  * @remarks x86: Requires a Pentium or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(uint64_t) ASMAtomicAddU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint64_t) ASMAtomicAddU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
@@ -3138,6 +3208,34 @@ DECLINLINE(uint64_t) ASMAtomicAddU64(uint64_t volatile RT_FAR *pu64, uint64_t u6
                            "m" (*pu64)
                          : "memory");
     return u64;
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint64_t u64Ret;
+    uint32_t rcSpill;
+    uint64_t u64Spill;
+    __asm__ __volatile__(".Ltry_again_add_u64_%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxr     %0, [%4]\n\t"
+                         "add       %1, %0, %3\n\t"
+                         "stlxr     %w2, %1, [%4]\n\t"
+                         "cbnz      %w2, .Ltry_again_add_u64_%=\n\t"
+#  else
+                         "ldrexd    %0, %H0, [%4]\n\t"
+                         "add       %1, %0, %3\n\t"
+                         "adc       %H1, %H0, %H3\n\t"
+                         "strexd    %2, %1, %H1, [%4]\n\t"
+                         "cmp       %2, #0\n\t"
+                         "bne       .Ltry_again_add_u64_%=\n\t"
+#  endif
+                         : "=&r" (u64Ret),
+                           "=&r" (u64Spill),
+                           "=&r" (rcSpill)
+                         : "r" (u64),
+                           "r" (pu64)
+                         : "memory",
+                           "cc");
+    return u64Ret;
+
 # else
     uint64_t u64Old;
     for (;;)
@@ -3368,17 +3466,17 @@ RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMAtomicIncU16(uint16_t volatile RT_FAR *pu
  *
  * @remarks x86: Requires a 486 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_DEF
 {
-    uint32_t u32;
 # if RT_INLINE_ASM_USES_INTRIN
-    u32 = _InterlockedIncrement((long RT_FAR *)pu32);
-    return u32;
+    return (uint32_t)_InterlockedIncrement((long RT_FAR *)pu32);
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
+    uint32_t u32;
     __asm__ __volatile__("lock; xaddl %0, %1\n\t"
                          : "=r" (u32),
                            "=m" (*pu32)
@@ -3386,20 +3484,47 @@ DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_
                            "m" (*pu32)
                          : "memory");
     return u32+1;
-# else
+#  else
     __asm
     {
         mov     eax, 1
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         lock xadd [rdx], eax
-#  else
+#   else
         mov     edx, [pu32]
         lock xadd [edx], eax
-#  endif
+#   endif
         mov     u32, eax
     }
     return u32+1;
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint32_t u32Ret;
+    uint32_t rcSpill;
+    __asm__ __volatile__(".Ltry_again_inc_u32_%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxr     %w0, [%2]\n\t"
+                         "add       %w0, %w0, #1\n\t"
+                         "stlxr     %w1, %w0, [%2]\n\t"
+                         "cbnz      %w1, .Ltry_again_inc_u32_%=\n\t"
+#  else
+                         "ldrex     %0, [%2]\n\t"
+                         "add       %0, %0, #1\n\t" /* arm6 / thumb2+ */
+                         "strex     %1, %0, [%2]\n\t"
+                         "cmp       %1, #0\n\t"
+                         "bne       .Ltry_again_inc_u32_%=\n\t"
+#  endif
+                         : "=&r" (u32Ret),
+                           "=&r" (rcSpill)
+                         : "r" (pu32)
+                         : "memory",
+                           "cc");
+    return u32Ret;
+
+# else
+    return ASMAtomicAddU32(pu32, 1) + 1;
 # endif
 }
 #endif
@@ -3427,15 +3552,13 @@ DECLINLINE(int32_t) ASMAtomicIncS32(int32_t volatile RT_FAR *pi32) RT_NOTHROW_DE
  *
  * @remarks x86: Requires a Pentium or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(uint64_t) ASMAtomicIncU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint64_t) ASMAtomicIncU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
-    uint64_t u64;
-    u64 = _InterlockedIncrement64((__int64 RT_FAR *)pu64);
-    return u64;
+    return (uint64_t)_InterlockedIncrement64((__int64 RT_FAR *)pu64);
 
 # elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     uint64_t u64;
@@ -3446,6 +3569,34 @@ DECLINLINE(uint64_t) ASMAtomicIncU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_
                            "m" (*pu64)
                          : "memory");
     return u64 + 1;
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint64_t u64Ret;
+    uint32_t rcSpill;
+    __asm__ __volatile__(".Ltry_again_inc_u64_%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxr     %0, [%2]\n\t"
+                         "add       %0, %0, #1\n\t"
+                         "stlxr     %w1, %0, [%2]\n\t"
+                         "cbnz      %w1, .Ltry_again_inc_u64_%=\n\t"
+#  else
+                         "ldrexd    %0, %H0, [%2]\n\t"
+                         "add       %0, %0, #1\n\t" /* arm6 / thumb2+ */
+                         "adc       %H0, %H0, %3\n\t"
+                         "strexd    %1, %0, %H0, [%2]\n\t"
+                         "cmp       %1, #0\n\t"
+                         "bne       .Ltry_again_inc_u64_%=\n\t"
+#  endif
+                         : "=&r" (u64Ret),
+                           "=&r" (rcSpill)
+                         : "r" (pu64)
+#  if !defined(RT_ARCH_ARM64)
+                         , "r" (0)
+#  endif
+                         : "memory",
+                           "cc");
+    return u64Ret;
+
 # else
     return ASMAtomicAddU64(pu64, 1) + 1;
 # endif
@@ -3510,17 +3661,17 @@ RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicDecU16(uint16_t volatile RT_FAR *pu
  *
  * @remarks x86: Requires a 486 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_DEF
 {
-    uint32_t u32;
 # if RT_INLINE_ASM_USES_INTRIN
-    u32 = _InterlockedDecrement((long RT_FAR *)pu32);
-    return u32;
+    return (uint32_t)_InterlockedDecrement((long RT_FAR *)pu32);
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+#  if RT_INLINE_ASM_GNU_STYLE
+    uint32_t u32;
     __asm__ __volatile__("lock; xaddl %0, %1\n\t"
                          : "=r" (u32),
                            "=m" (*pu32)
@@ -3529,6 +3680,7 @@ DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_
                          : "memory");
     return u32-1;
 # else
+    uint32_t u32;
     __asm
     {
         mov     eax, -1
@@ -3542,6 +3694,33 @@ DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_
         mov     u32, eax
     }
     return u32-1;
+# endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint32_t u32Ret;
+    uint32_t rcSpill;
+    __asm__ __volatile__(".Ltry_again_dec_u32_%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxr     %w0, [%2]\n\t"
+                         "sub       %w0, %w0, #1\n\t"
+                         "stlxr     %w1, %w0, [%2]\n\t"
+                         "cbnz      %w1, .Ltry_again_dec_u32_%=\n\t"
+#  else
+                         "ldrex     %0, [%2]\n\t"
+                         "sub       %0, %0, #1\n\t" /* arm6 / thumb2+ */
+                         "strex     %1, %0, [%2]\n\t"
+                         "cmp       %1, #0\n\t"
+                         "bne       .Ltry_again_dec_u32_%=\n\t"
+#  endif
+                         : "=&r" (u32Ret),
+                           "=&r" (rcSpill)
+                         : "r" (pu32)
+                         : "memory",
+                           "cc");
+    return u32Ret;
+
+# else
+    return ASMAtomicSubU32(pu32, 1) - (uint32_t)1;
 # endif
 }
 #endif
@@ -3569,14 +3748,13 @@ DECLINLINE(int32_t) ASMAtomicDecS32(int32_t volatile RT_FAR *pi32) RT_NOTHROW_DE
  *
  * @remarks x86: Requires a Pentium or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicDecU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint64_t) ASMAtomicDecU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
-    uint64_t u64 = _InterlockedDecrement64((__int64 volatile RT_FAR *)pu64);
-    return u64;
+    return (uint64_t)_InterlockedDecrement64((__int64 volatile RT_FAR *)pu64);
 
 # elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     uint64_t u64;
@@ -3587,6 +3765,34 @@ DECLINLINE(uint64_t) ASMAtomicDecU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_
                            "m" (*pu64)
                          : "memory");
     return u64-1;
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint64_t u64Ret;
+    uint32_t rcSpill;
+    __asm__ __volatile__(".Ltry_again_dec_u64_%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxr     %0, [%2]\n\t"
+                         "sub       %0, %0, #1\n\t"
+                         "stlxr     %w1, %0, [%2]\n\t"
+                         "cbnz      %w1, .Ltry_again_dec_u64_%=\n\t"
+#  else
+                         "ldrexd    %0, %H0, [%2]\n\t"
+                         "sub       %0, %0, #1\n\t" /* arm6 / thumb2+ */
+                         "sbc       %H0, %H0, %3\n\t"
+                         "strexd    %1, %0, %H0, [%2]\n\t"
+                         "cmp       %1, #0\n\t"
+                         "bne       .Ltry_again_dec_u64_%=\n\t"
+#  endif
+                         : "=&r" (u64Ret),
+                           "=&r" (rcSpill)
+                         : "r" (pu64)
+#  if !defined(RT_ARCH_ARM64)
+                         , "r" (0)
+#  endif
+                         : "memory",
+                           "cc");
+    return u64Ret;
+
 # else
     return ASMAtomicAddU64(pu64, UINT64_MAX) - 1;
 # endif
