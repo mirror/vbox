@@ -52,6 +52,7 @@
 
 
 /* COM includes: */
+#include "COMEnums.h"
 #include "CSystemProperties.h"
 
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
