@@ -3134,8 +3134,6 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         pCfgReq->Backend.cFramesPeriod = DrvAudioHlpMilliToFrames(50 /* ms */, &pCfgReq->Props);
         RTStrPrintf(szWhat, sizeof(szWhat), "default");
     }
-    else
-        RTStrPrintf(szWhat, sizeof(szWhat), "device-specific");
 
     LogRel2(("Audio: Using %s period size (%RU64ms, %RU32 frames) for stream '%s'\n",
              szWhat,
@@ -3155,8 +3153,6 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         pCfgReq->Backend.cFramesBufferSize = DrvAudioHlpMilliToFrames(250 /* ms */, &pCfgReq->Props);
         RTStrPrintf(szWhat, sizeof(szWhat), "default");
     }
-    else
-        RTStrPrintf(szWhat, sizeof(szWhat), "device-specific");
 
     LogRel2(("Audio: Using %s buffer size (%RU64ms, %RU32 frames) for stream '%s'\n",
              szWhat,
@@ -3178,8 +3174,6 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
             pCfgReq->Backend.cFramesPreBuffering = pCfgReq->Backend.cFramesBufferSize;
             RTStrPrintf(szWhat, sizeof(szWhat), "default");
         }
-        else
-            RTStrPrintf(szWhat, sizeof(szWhat), "device-specific");
     }
 
     LogRel2(("Audio: Using %s pre-buffering size (%RU64ms, %RU32 frames) for stream '%s'\n",
