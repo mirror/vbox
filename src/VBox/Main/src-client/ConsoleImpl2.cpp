@@ -3561,12 +3561,42 @@ int Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVir
             InsertConfigString(pCfg, "DebugPathOut",  strDebugPathOut.c_str());
         }
 
-        InsertConfigInteger(pCfg, "PeriodSizeMs",
-                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PeriodSizeMs", 0 /* Default */));
-        InsertConfigInteger(pCfg, "BufferSizeMs",
-                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "BufferSizeMs", 0 /* Default */));
-        InsertConfigInteger(pCfg, "PreBufferSizeMs",
-                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PreBufferSizeMs", UINT32_MAX /* Default */));
+
+        /*
+         * PCM input parameters (playback + recording).
+         */
+
+        /* Inserts an audio input / output stream's configuration into the CFGM tree. */
+#define AUDIO_INSERT_DRV_STREAM_CONFIG(a_InOut) \
+        /* \
+         * PCM output parameters (playback). \
+         */ \
+        InsertConfigInteger(pCfg, "PCMSampleBit"        #a_InOut, \
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PCMSampleBit"        #a_InOut, 0 /* Default */)); \
+        InsertConfigInteger(pCfg, "PCMSampleHz"         #a_InOut, \
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PCMSampleHz"         #a_InOut, 0 /* Default */)); \
+        InsertConfigInteger(pCfg, "PCMSampleSigned"     #a_InOut, \
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PCMSampleSigned"     #a_InOut, UINT8_MAX /* Default */)); \
+        InsertConfigInteger(pCfg, "PCMSampleSwapEndian" #a_InOut, \
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PCMSampleSwapEndian" #a_InOut, UINT8_MAX /* Default */)); \
+        InsertConfigInteger(pCfg, "PCMSampleChannels"   #a_InOut, \
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PCMSampleChannels"   #a_InOut, 0 /* Default */)); \
+        \
+        /* \
+         * Buffering stuff. \
+         */ \
+        \
+        InsertConfigInteger(pCfg, "PeriodSizeMs"        #a_InOut, \
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PeriodSizeMs"        #a_InOut, 0 /* Default */)); \
+        InsertConfigInteger(pCfg, "BufferSizeMs"        #a_InOut, \
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "BufferSizeMs"        #a_InOut, 0 /* Default */)); \
+        InsertConfigInteger(pCfg, "PreBufferSizeMs"     #a_InOut, \
+                            i_getAudioDriverValU32(pVirtualBox, pMachine, pszDrvName, "PreBufferSizeMs"     #a_InOut, UINT32_MAX /* Default */));
+
+        AUDIO_INSERT_DRV_STREAM_CONFIG(In);
+        AUDIO_INSERT_DRV_STREAM_CONFIG(Out);
+
+#undef AUDIO_INSERT_DRV_STREAM_CONFIG
 
     PCFGMNODE pLunL1;
     InsertConfigNode(pLUN, "AttachedDriver", &pLunL1);

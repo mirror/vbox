@@ -2310,12 +2310,13 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
  *
  * @return VBox status code.
  * @param  pThis                Driver instance to be called.
- * @param  pCfg                 Where to store the retrieved audio configuration to.
  * @param  pNode                Where to get the audio configuration from.
+ * @param  enmDir               Type of audio configuration to retrieve (input / output).
+ * @param  pCfg                 Where to store the retrieved audio configuration to.
  */
-static int drvAudioGetCfgFromCFGM(PDRVAUDIO pThis, PDRVAUDIOCFG pCfg, PCFGMNODE pNode)
+static int drvAudioGetCfgFromCFGM(PDRVAUDIO pThis, PCFGMNODE pNode, PDMAUDIODIR enmDir, PDRVAUDIOCFG pCfg)
 {
-    RT_NOREF(pThis);
+    RT_NOREF(pThis, enmDir);
 
     /* Debug stuff. */
     CFGMR3QueryBoolDef(pNode, "DebugEnabled",      &pCfg->Dbg.fEnabled,  false);
@@ -2329,13 +2330,32 @@ static int drvAudioGetCfgFromCFGM(PDRVAUDIO pThis, PDRVAUDIOCFG pCfg, PCFGMNODE 
     if (pCfg->Dbg.fEnabled)
         LogRel(("Audio: Debugging for driver '%s' enabled (audio data written to '%s')\n", pThis->szName, pCfg->Dbg.szPathOut));
 
-    /* Buffering stuff. */
-    CFGMR3QueryU32Def(pNode, "PeriodSizeMs",    &pCfg->uPeriodSizeMs, 0);
-    CFGMR3QueryU32Def(pNode, "BufferSizeMs",    &pCfg->uBufferSizeMs, 0);
-    CFGMR3QueryU32Def(pNode, "PreBufferSizeMs", &pCfg->uPreBufSizeMs, UINT32_MAX /* No custom value set */);
+    /* Queries an audio input / output stream's configuration from the CFGM tree. */
+#define QUERY_CONFIG(a_InOut) \
+    /* PCM stuff. */ \
+    CFGMR3QueryU8Def (pNode, "PCMSampleBit"         #a_InOut, &pCfg->Props.cbSample,  0); \
+    CFGMR3QueryU32Def(pNode, "PCMSampleHz"          #a_InOut, &pCfg->Props.uHz,       0); \
+    CFGMR3QueryU8Def (pNode, "PCMSampleSigned"      #a_InOut, &pCfg->uSigned,         UINT8_MAX /* No custom value set */); \
+    CFGMR3QueryU8Def (pNode, "PCMSampleSwapEndian"  #a_InOut, &pCfg->uSwapEndian,     UINT8_MAX /* No custom value set */); \
+    CFGMR3QueryU8Def (pNode, "PCMSampleChannels"    #a_InOut, &pCfg->Props.cChannels, 0); \
+    \
+    /* Buffering stuff. */ \
+    CFGMR3QueryU32Def(pNode, "PeriodSizeMs"         #a_InOut, &pCfg->uPeriodSizeMs, 0); \
+    CFGMR3QueryU32Def(pNode, "BufferSizeMs"         #a_InOut, &pCfg->uBufferSizeMs, 0); \
+    CFGMR3QueryU32Def(pNode, "PreBufferSizeMs"      #a_InOut, &pCfg->uPreBufSizeMs, UINT32_MAX /* No custom value set */);
 
-    LogFunc(("pCfg=%p, uPeriodSizeMs=%RU32, uBufferSizeMs=%RU32, uPreBufSizeMs=%RU32\n",
-             pCfg, pCfg->uPeriodSizeMs, pCfg->uBufferSizeMs, pCfg->uPreBufSizeMs));
+    if (enmDir == PDMAUDIODIR_IN)
+    {
+        QUERY_CONFIG(In);
+    }
+    else
+    {
+        QUERY_CONFIG(Out);
+    }
+
+#undef QUERY_CONFIG
+
+    pCfg->Props.cbSample /= 8; /* Convert bit to bytes. */
 
     return VINF_SUCCESS;
 }
@@ -2383,9 +2403,9 @@ static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     /*
      * Load configurations.
      */
-    rc = drvAudioGetCfgFromCFGM(pThis, &pThis->In.Cfg, pThis->pCFGMNode);
+    rc = drvAudioGetCfgFromCFGM(pThis, pThis->pCFGMNode, PDMAUDIODIR_IN, &pThis->In.Cfg);
     if (RT_SUCCESS(rc))
-        rc = drvAudioGetCfgFromCFGM(pThis, &pThis->Out.Cfg, pThis->pCFGMNode);
+        rc = drvAudioGetCfgFromCFGM(pThis, pThis->pCFGMNode, PDMAUDIODIR_OUT, &pThis->Out.Cfg);
 
     LogFunc(("[%s] rc=%Rrc\n", pThis->szName, rc));
     return rc;
@@ -3121,12 +3141,57 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     char szWhat[64]; /* Log where a value came from. */
 
     /*
+     * PCM
+     */
+    if (pDrvCfg->Props.cbSample) /* Anything set via custom extra-data? */
+    {
+        pCfgReq->Props.cbSample = pDrvCfg->Props.cbSample;
+        LogRel2(("Audio: Using custom sample size of %RU8 bytes for stream '%s'\n", pCfgReq->Props.cbSample, pStream->szName));
+    }
+
+    if (pDrvCfg->Props.uHz) /* Anything set via custom extra-data? */
+    {
+        pCfgReq->Props.uHz = pDrvCfg->Props.uHz;
+        LogRel2(("Audio: Using custom Hz rate %RU32 for stream '%s'\n", pCfgReq->Props.uHz, pStream->szName));
+    }
+
+    if (pDrvCfg->uSigned != UINT8_MAX) /* Anything set via custom extra-data? */
+    {
+        pCfgReq->Props.fSigned = RT_BOOL(pDrvCfg->uSigned);
+        LogRel2(("Audio: Using custom %s sample format for stream '%s'\n",
+                 pCfgReq->Props.fSigned ? "signed" : "unsigned", pStream->szName));
+    }
+
+    if (pDrvCfg->uSwapEndian != UINT8_MAX) /* Anything set via custom extra-data? */
+    {
+        pCfgReq->Props.fSwapEndian = RT_BOOL(pDrvCfg->uSwapEndian);
+        LogRel2(("Audio: Using custom %s endianess for samples of stream '%s'\n",
+                 pCfgReq->Props.fSwapEndian ? "swapped" : "original", pStream->szName));
+    }
+
+    if (pDrvCfg->Props.cChannels) /* Anything set via custom extra-data? */
+    {
+        pCfgReq->Props.cChannels = pDrvCfg->Props.cChannels;
+        LogRel2(("Audio: Using custom %RU8 channel(s) for stream '%s'\n", pCfgReq->Props.cChannels, pStream->szName));
+    }
+
+    /* Make sure to (re-)set the host buffer's shift size. */
+    pCfgReq->Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgReq->Props.cbSample, pCfgReq->Props.cChannels);
+
+    /* Validate PCM properties. */
+    if (!DrvAudioHlpPCMPropsAreValid(&pCfgReq->Props))
+    {
+        LogRel(("Audio: Invalid custom PCM properties set for stream '%s', cannot create stream\n", pStream->szName));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /*
      * Period size
      */
     if (pDrvCfg->uPeriodSizeMs)
     {
         pCfgReq->Backend.cFramesPeriod = DrvAudioHlpMilliToFrames(pDrvCfg->uPeriodSizeMs, &pCfgReq->Props);
-        RTStrPrintf(szWhat, sizeof(szWhat), "global / per-VM");
+        RTStrPrintf(szWhat, sizeof(szWhat), "custom");
     }
 
     if (!pCfgReq->Backend.cFramesPeriod) /* Set default period size if nothing explicitly is set. */
@@ -3145,7 +3210,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     if (pDrvCfg->uBufferSizeMs)
     {
         pCfgReq->Backend.cFramesBufferSize = DrvAudioHlpMilliToFrames(pDrvCfg->uBufferSizeMs, &pCfgReq->Props);
-        RTStrPrintf(szWhat, sizeof(szWhat), "global / per-VM");
+        RTStrPrintf(szWhat, sizeof(szWhat), "custom");
     }
 
     if (!pCfgReq->Backend.cFramesBufferSize) /* Set default buffer size if nothing explicitly is set. */
@@ -3164,7 +3229,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     if (pDrvCfg->uPreBufSizeMs != UINT32_MAX) /* Anything set via global / per-VM extra-data? */
     {
         pCfgReq->Backend.cFramesPreBuffering = DrvAudioHlpMilliToFrames(pDrvCfg->uPreBufSizeMs, &pCfgReq->Props);
-        RTStrPrintf(szWhat, sizeof(szWhat), "global / per-VM");
+        RTStrPrintf(szWhat, sizeof(szWhat), "custom");
     }
     else /* No, then either use the default or device-specific settings (if any). */
     {
