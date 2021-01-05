@@ -277,10 +277,10 @@ DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("xchgb %0, %1\n\t"
-                         : "=m" (*pu8),
-                           "=q" (u8) /* =r - busted on g++ (GCC) 3.4.4 20050721 (Red Hat 3.4.4-2) */
-                         : "1" (u8),
-                           "m" (*pu8));
+                         : "=m" (*pu8)
+                         , "=q" (u8) /* =r - busted on g++ (GCC) 3.4.4 20050721 (Red Hat 3.4.4-2) */
+                         : "1" (u8)
+                         , "m" (*pu8));
 #  else
     __asm
     {
@@ -374,10 +374,10 @@ DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("xchgw %0, %1\n\t"
-                         : "=m" (*pu16),
-                           "=r" (u16)
-                         : "1" (u16),
-                           "m" (*pu16));
+                         : "=m" (*pu16)
+                         , "=r" (u16)
+                         : "1" (u16)
+                         , "m" (*pu16));
 #  else
     __asm
     {
@@ -456,10 +456,10 @@ DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("xchgl %0, %1\n\t"
-                         : "=m" (*pu32),
-                           "=r" (u32)
-                         : "1" (u32),
-                           "m" (*pu32));
+                         : "=m" (*pu32)
+                         , "=r" (u32)
+                         : "1" (u32)
+                         , "m" (*pu32));
 
 #  elif RT_INLINE_ASM_USES_INTRIN
    u32 = _InterlockedExchange((long RT_FAR *)pu32, u32);
@@ -546,10 +546,10 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
 
 #  elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("xchgq %0, %1\n\t"
-                         : "=m" (*pu64),
-                           "=r" (u64)
-                         : "1" (u64),
-                           "m" (*pu64));
+                         : "=m" (*pu64)
+                         , "=r" (u64)
+                         : "1" (u64)
+                         , "m" (*pu64));
 #  else
     __asm
     {
@@ -571,21 +571,23 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
                          "jnz 1b\n\t"
                          "movl %3, %%ebx\n\t"
                          /*"xchgl %%esi, %5\n\t"*/
-                         : "=A" (u64),
-                           "=m" (*pu64)
-                         : "0" (*pu64),
-                           "m" ( u32EBX ),
-                           "c" ( (uint32_t)(u64 >> 32) ),
-                           "S" (pu64));
+                         : "=A" (u64)
+                         , "=m" (*pu64)
+                         : "0" (*pu64)
+                         , "m" ( u32EBX )
+                         , "c" ( (uint32_t)(u64 >> 32) )
+                         , "S" (pu64)
+                         : "cc");
 #   else /* !PIC */
     __asm__ __volatile__("1:\n\t"
                          "lock; cmpxchg8b %1\n\t"
                          "jnz 1b\n\t"
-                         : "=A" (u64),
-                           "=m" (*pu64)
-                         : "0" (*pu64),
-                           "b" ( (uint32_t)u64 ),
-                           "c" ( (uint32_t)(u64 >> 32) ));
+                         : "=A" (u64)
+                         , "=m" (*pu64)
+                         : "0" (*pu64)
+                         , "b" ( (uint32_t)u64 )
+                         , "c" ( (uint32_t)(u64 >> 32) )
+                         : "cc");
 #   endif
 #  else
     __asm
@@ -849,12 +851,13 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
     uint8_t u8Ret;
     __asm__ __volatile__("lock; cmpxchgb %3, %0\n\t"
                          "setz  %1\n\t"
-                         : "=m" (*pu8),
-                           "=qm" (u8Ret),
-                           "=a" (u8Old)
-                         : "q" (u8New),
-                           "2" (u8Old),
-                           "m" (*pu8));
+                         : "=m" (*pu8)
+                         , "=qm" (u8Ret)
+                         , "=a" (u8Old)
+                         : "q" (u8New)
+                         , "2" (u8Old)
+                         , "m" (*pu8)
+                         : "cc");
     return (bool)u8Ret;
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
@@ -956,12 +959,13 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
     uint8_t u8Ret;
     __asm__ __volatile__("lock; cmpxchgl %3, %0\n\t"
                          "setz  %1\n\t"
-                         : "=m" (*pu32),
-                           "=qm" (u8Ret),
-                           "=a" (u32Old)
-                         : "r" (u32New),
-                           "2" (u32Old),
-                           "m" (*pu32));
+                         : "=m" (*pu32)
+                         , "=qm" (u8Ret)
+                         , "=a" (u32Old)
+                         : "r" (u32New)
+                         , "2" (u32Old)
+                         , "m" (*pu32)
+                         : "cc");
     return (bool)u8Ret;
 
 #  elif RT_INLINE_ASM_USES_INTRIN
@@ -1075,12 +1079,13 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
     uint8_t u8Ret;
     __asm__ __volatile__("lock; cmpxchgq %3, %0\n\t"
                          "setz  %1\n\t"
-                         : "=m" (*pu64),
-                           "=qm" (u8Ret),
-                           "=a" (u64Old)
-                         : "r" (u64New),
-                           "2" (u64Old),
-                           "m" (*pu64));
+                         : "=m" (*pu64)
+                         , "=qm" (u8Ret)
+                         , "=a" (u64Old)
+                         : "r" (u64New)
+                         , "2" (u64Old)
+                         , "m" (*pu64)
+                         : "cc");
     return (bool)u8Ret;
 #  else
     bool fRet;
@@ -1107,28 +1112,30 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
                          "setz  %%al\n\t"
                          "movl  %4, %%ebx\n\t"
                          "movzbl %%al, %%eax\n\t"
-                         : "=a" (u32Ret),
-                           "=d" (u32Spill),
+                         : "=a" (u32Ret)
+                         , "=d" (u32Spill)
 #    if RT_GNUC_PREREQ(4, 3)
-                           "+m" (*pu64)
+                         , "+m" (*pu64)
 #    else
-                           "=m" (*pu64)
+                         , "=m" (*pu64)
 #    endif
                          : "A" (u64Old),
-                           "m" ( u32EBX ),
-                           "c" ( (uint32_t)(u64New >> 32) ),
-                           "S" (pu64));
+                         , "m" ( u32EBX )
+                         , "c" ( (uint32_t)(u64New >> 32) )
+                         , "S" (pu64)
+                         : "cc");
 #   else /* !PIC */
     uint32_t u32Spill;
     __asm__ __volatile__("lock; cmpxchg8b %2\n\t"
                          "setz  %%al\n\t"
                          "movzbl %%al, %%eax\n\t"
-                         : "=a" (u32Ret),
-                           "=d" (u32Spill),
-                           "+m" (*pu64)
-                         : "A" (u64Old),
-                           "b" ( (uint32_t)u64New ),
-                           "c" ( (uint32_t)(u64New >> 32) ));
+                         : "=a" (u32Ret)
+                         , "=d" (u32Spill)
+                         , "+m" (*pu64)
+                         : "A" (u64Old)
+                         , "b" ( (uint32_t)u64New )
+                         , "c" ( (uint32_t)(u64New >> 32) )
+                         : "cc");
 #   endif
     return (bool)u32Ret;
 #  else
@@ -1338,12 +1345,13 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
     uint8_t u8Ret;
     __asm__ __volatile__("lock; cmpxchgl %3, %0\n\t"
                          "setz  %1\n\t"
-                         : "=m" (*pu32),
-                           "=qm" (u8Ret),
-                           "=a" (*pu32Old)
-                         : "r" (u32New),
-                           "a" (u32Old),
-                           "m" (*pu32));
+                         : "=m" (*pu32)
+                         , "=qm" (u8Ret)
+                         , "=a" (*pu32Old)
+                         : "r" (u32New)
+                         , "a" (u32Old)
+                         , "m" (*pu32)
+                         : "cc");
     return (bool)u8Ret;
 
 #  elif RT_INLINE_ASM_USES_INTRIN
@@ -1466,12 +1474,13 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
     uint8_t u8Ret;
     __asm__ __volatile__("lock; cmpxchgq %3, %0\n\t"
                          "setz  %1\n\t"
-                         : "=m" (*pu64),
-                           "=qm" (u8Ret),
-                           "=a" (*pu64Old)
-                         : "r" (u64New),
-                           "a" (u64Old),
-                           "m" (*pu64));
+                         : "=m" (*pu64)
+                         , "=qm" (u8Ret)
+                         , "=a" (*pu64Old)
+                         : "r" (u64New)
+                         , "a" (u64Old)
+                         , "m" (*pu64)
+                         : "cc");
     return (bool)u8Ret;
 #  else
     bool fRet;
@@ -1501,19 +1510,21 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
                          "lock; cmpxchg8b %3\n\t"
                          "xchgl %%ebx, %1\n\t"
                          : "=A" (u64Ret)
-                         : "DS" ((uint32_t)u64New),
-                           "c" ((uint32_t)(u64New >> 32)),
-                           "m" (*pu64),
-                           "0" (u64Old)
-                         : "memory" );
+                         : "DS" ((uint32_t)u64New)
+                         , "c" ((uint32_t)(u64New >> 32))
+                         , "m" (*pu64)
+                         , "0" (u64Old)
+                         : "memory"
+                         , "cc" );
 #   else /* !PIC */
     __asm__ __volatile__("lock; cmpxchg8b %4\n\t"
-                         : "=A" (u64Ret),
-                           "=m" (*pu64)
-                         : "b" ((uint32_t)u64New),
-                           "c" ((uint32_t)(u64New >> 32)),
-                           "m" (*pu64),
-                           "0" (u64Old));
+                         : "=A" (u64Ret)
+                         , "=m" (*pu64)
+                         : "b" ((uint32_t)u64New)
+                         , "c" ((uint32_t)(u64New >> 32))
+                         , "m" (*pu64)
+                         , "0" (u64Old)
+                         : "cc");
 #   endif
     *pu64Old = u64Ret;
     return u64Ret == u64Old;
@@ -1786,7 +1797,7 @@ DECLINLINE(void) ASMSerializeInstructionIRet(void) RT_NOTHROW_DEF
                           "pushq %%rax\n\t"
                           "iretq\n\t"
                           "1:\n\t"
-                          ::: "rax", "r10", "memory");
+                          ::: "rax", "r10", "memory", "cc");
 #  else
     __asm__ __volatile__ ("pushfl\n\t"
                           "pushl %%cs\n\t"
@@ -2162,23 +2173,25 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW
     __asm__ __volatile__("xchgl %%ebx, %3\n\t"
                          "lock; cmpxchg8b (%5)\n\t"
                          "movl %3, %%ebx\n\t"
-                         : "=A" (u64),
+                         : "=A" (u64)
 #    if RT_GNUC_PREREQ(4, 3)
-                           "+m" (*pu64)
+                         , "+m" (*pu64)
 #    else
-                           "=m" (*pu64)
+                         , "=m" (*pu64)
 #    endif
-                         : "0" (0ULL),
-                           "m" (u32EBX),
-                           "c" (0),
-                           "S" (pu64));
+                         : "0" (0ULL)
+                         , "m" (u32EBX)
+                         , "c" (0)
+                         , "S" (pu64)
+                         : "cc");
 #   else /* !PIC */
     __asm__ __volatile__("lock; cmpxchg8b %1\n\t"
-                         : "=A" (u64),
-                           "+m" (*pu64)
-                         : "0" (0ULL),
-                           "b" (0),
-                           "c" (0));
+                         : "=A" (u64)
+                         , "+m" (*pu64)
+                         : "0" (0ULL)
+                         , "b" (0)
+                         , "c" (0)
+                         : "cc");
 #   endif
 #  else
     Assert(!((uintptr_t)pu64 & 7));
@@ -2263,22 +2276,24 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHR
                          "xchgl %%ebx, %3\n\t"
                          "lock; cmpxchg8b (%4)\n\t"
                          "movl %3, %%ebx\n\t"
-                         : "=A" (u64),
+                         : "=A" (u64)
 #    if RT_GNUC_PREREQ(4, 3)
-                           "+m" (*pu64),
+                         , "+m" (*pu64)
 #    else
-                           "=m" (*pu64),
+                         , "=m" (*pu64)
 #    endif
-                           "=c" (u32Spill)
-                         : "m" (u32EBX),
-                           "S" (pu64));
+                         , "=c" (u32Spill)
+                         : "m" (u32EBX)
+                         , "S" (pu64)
+                         : "cc");
 #   else /* !PIC */
     __asm__ __volatile__("lock; cmpxchg8b %1\n\t"
-                         : "=A" (u64),
-                           "+m" (*pu64)
-                         : "0" (0ULL),
-                           "b" (0),
-                           "c" (0));
+                         : "=A" (u64)
+                         , "+m" (*pu64)
+                         : "0" (0ULL)
+                         , "b" (0)
+                         , "c" (0)
+                         : "cc");
 #   endif
 #  else
     Assert(!((uintptr_t)pu64 & 7));
@@ -3121,11 +3136,12 @@ DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u3
 # elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; xaddl %0, %1\n\t"
-                         : "=r" (u32),
-                           "=m" (*pu32)
-                         : "0" (u32),
-                           "m" (*pu32)
-                         : "memory");
+                         : "=r" (u32)
+                         , "=m" (*pu32)
+                         : "0" (u32)
+                         , "m" (*pu32)
+                         : "memory"
+                         , "cc");
     return u32;
 #  else
     __asm
@@ -3212,11 +3228,12 @@ DECLINLINE(uint64_t) ASMAtomicAddU64(uint64_t volatile RT_FAR *pu64, uint64_t u6
 
 # elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("lock; xaddq %0, %1\n\t"
-                         : "=r" (u64),
-                           "=m" (*pu64)
-                         : "0" (u64),
-                           "m" (*pu64)
-                         : "memory");
+                         : "=r" (u64)
+                         , "=m" (*pu64)
+                         : "0" (u64)
+                         , "m" (*pu64)
+                         : "memory"
+                         , "cc");
     return u64;
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
@@ -3489,11 +3506,12 @@ DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_
 #  if RT_INLINE_ASM_GNU_STYLE
     uint32_t u32;
     __asm__ __volatile__("lock; xaddl %0, %1\n\t"
-                         : "=r" (u32),
-                           "=m" (*pu32)
-                         : "0" (1),
-                           "m" (*pu32)
-                         : "memory");
+                         : "=r" (u32)
+                         , "=m" (*pu32)
+                         : "0" (1)
+                         , "m" (*pu32)
+                         : "memory"
+                         , "cc");
     return u32+1;
 #  else
     __asm
@@ -3575,11 +3593,12 @@ DECLINLINE(uint64_t) ASMAtomicIncU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_
 # elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     uint64_t u64;
     __asm__ __volatile__("lock; xaddq %0, %1\n\t"
-                         : "=r" (u64),
-                           "=m" (*pu64)
-                         : "0" (1),
-                           "m" (*pu64)
-                         : "memory");
+                         : "=r" (u64)
+                         , "=m" (*pu64)
+                         : "0" (1)
+                         , "m" (*pu64)
+                         : "memory"
+                         , "cc");
     return u64 + 1;
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
@@ -3686,11 +3705,12 @@ DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_
 #  if RT_INLINE_ASM_GNU_STYLE
     uint32_t u32;
     __asm__ __volatile__("lock; xaddl %0, %1\n\t"
-                         : "=r" (u32),
-                           "=m" (*pu32)
-                         : "0" (-1),
-                           "m" (*pu32)
-                         : "memory");
+                         : "=r" (u32)
+                         , "=m" (*pu32)
+                         : "0" (-1)
+                         , "m" (*pu32)
+                         : "memory"
+                         , "cc");
     return u32-1;
 # else
     uint32_t u32;
@@ -3773,11 +3793,12 @@ DECLINLINE(uint64_t) ASMAtomicDecU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_
 # elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     uint64_t u64;
     __asm__ __volatile__("lock; xaddq %q0, %1\n\t"
-                         : "=r" (u64),
-                           "=m" (*pu64)
-                         : "0" (~(uint64_t)0),
-                           "m" (*pu64)
-                         : "memory");
+                         : "=r" (u64)
+                         , "=m" (*pu64)
+                         : "0" (~(uint64_t)0)
+                         , "m" (*pu64)
+                         : "memory"
+                         , "cc");
     return u64-1;
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
@@ -3870,8 +3891,9 @@ DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; orl %1, %0\n\t"
                          : "=m" (*pu32)
-                         : "ir" (u32),
-                           "m" (*pu32));
+                         : "ir" (u32)
+                         , "m" (*pu32)
+                         : "cc");
 # else
     __asm
     {
@@ -3922,8 +3944,9 @@ DECLINLINE(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT
 # elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("lock; orq %1, %q0\n\t"
                          : "=m" (*pu64)
-                         : "r" (u64),
-                           "m" (*pu64));
+                         : "r" (u64)
+                         , "m" (*pu64)
+                         : "cc");
 # else
     for (;;)
     {
@@ -3971,8 +3994,9 @@ DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) R
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; andl %1, %0\n\t"
                          : "=m" (*pu32)
-                         : "ir" (u32),
-                           "m" (*pu32));
+                         : "ir" (u32)
+                         , "m" (*pu32)
+                         : "cc");
 # else
     __asm
     {
@@ -4023,8 +4047,9 @@ DECLINLINE(void) ASMAtomicAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) R
 # elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("lock; andq %1, %0\n\t"
                          : "=m" (*pu64)
-                         : "r" (u64),
-                           "m" (*pu64));
+                         : "r" (u64)
+                         , "m" (*pu64)
+                         : "cc");
 # else
     for (;;)
     {
@@ -4069,8 +4094,9 @@ DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) 
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("orl %1, %0\n\t"
                          : "=m" (*pu32)
-                         : "ir" (u32),
-                           "m" (*pu32));
+                         : "ir" (u32)
+                         , "m" (*pu32)
+                         : "cc");
 # else
     __asm
     {
@@ -4118,8 +4144,9 @@ DECLINLINE(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) 
 # if RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("orq %1, %q0\n\t"
                          : "=m" (*pu64)
-                         : "r" (u64),
-                           "m" (*pu64));
+                         : "r" (u64)
+                         , "m" (*pu64)
+                         : "cc");
 # else
     for (;;)
     {
@@ -4164,8 +4191,9 @@ DECLINLINE(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("andl %1, %0\n\t"
                          : "=m" (*pu32)
-                         : "ir" (u32),
-                           "m" (*pu32));
+                         : "ir" (u32)
+                         , "m" (*pu32)
+                         : "cc");
 # else
     __asm
     {
@@ -4213,8 +4241,9 @@ DECLINLINE(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
 # if RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("andq %1, %0\n\t"
                          : "=m" (*pu64)
-                         : "r" (u64),
-                           "m" (*pu64));
+                         : "r" (u64)
+                         , "m" (*pu64)
+                         : "cc");
 # else
     for (;;)
     {
@@ -4259,11 +4288,12 @@ DECLINLINE(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
     uint32_t u32;
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("xaddl %0, %1\n\t"
-                         : "=r" (u32),
-                           "=m" (*pu32)
-                         : "0" (1),
-                           "m" (*pu32)
-                         : "memory");
+                         : "=r" (u32)
+                         , "=m" (*pu32)
+                         : "0" (1)
+                         , "m" (*pu32)
+                         : "memory" /** @todo why 'memory'? */
+                         , "cc");
     return u32 + 1;
 # else
     __asm
@@ -4300,11 +4330,12 @@ DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
     uint32_t u32;
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; xaddl %0, %1\n\t"
-                         : "=r" (u32),
-                           "=m" (*pu32)
-                         : "0" (-1),
-                           "m" (*pu32)
-                         : "memory");
+                         : "=r" (u32)
+                         , "=m" (*pu32)
+                         : "0" (-1)
+                         , "m" (*pu32)
+                         : "memory"
+                         , "cc");
     return u32 - 1;
 # else
     __asm
@@ -4569,17 +4600,18 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const RT_FAR *pvPage) RT_NOTHROW_DEF
                          "scasl\n\t"
 #  endif
                          "setnc %%al\n\t"
-                         : "=&c" (xCX),
-                           "=&D" (xDI),
-                           "=&a" (uAX.r)
-                         : "mr" (pvPage),
+                         : "=&c" (xCX)
+                         , "=&D" (xDI)
+                         , "=&a" (uAX.r)
+                         : "mr" (pvPage)
 #  ifdef RT_ARCH_AMD64
-                         "0" (RT_ASM_PAGE_SIZE/8),
+                         , "0" (RT_ASM_PAGE_SIZE/8)
 #  else
-                         "0" (RT_ASM_PAGE_SIZE/4),
+                         , "0" (RT_ASM_PAGE_SIZE/4)
 #  endif
-                         "1" (pvPage),
-                         "2" (0));
+                         , "1" (pvPage)
+                         , "2" (0)
+                         : "cc");
     return uAX.f;
 # else
    uintptr_t const RT_FAR *puPtr = (uintptr_t const RT_FAR *)pvPage;
@@ -4700,7 +4732,6 @@ RT_ASM_DECL_PRAGMA_WATCOM(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte) R
 #else
 DECLINLINE(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte) RT_NOTHROW_DEF
 {
-    /** @todo verify that the compiler actually doesn't optimize this away. (intel & gcc) */
     uint8_t u8;
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("movb (%1), %0\n\t"
@@ -4783,9 +4814,10 @@ DECLINLINE(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTH
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("btsl %1, %0"
                          : "=m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "memory");
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -4824,9 +4856,10 @@ DECLINLINE(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) R
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; btsl %1, %0"
                          : "=m" (*(volatile long *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long *)pvBitmap)
-                         : "memory");
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -4866,9 +4899,10 @@ DECLINLINE(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NO
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("btrl %1, %0"
                          : "=m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "memory");
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -4906,9 +4940,10 @@ DECLINLINE(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit)
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; btrl %1, %0"
                          : "=m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "memory");
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -4947,9 +4982,10 @@ DECLINLINE(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_N
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("btcl %1, %0"
                          : "=m" (*(volatile long *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long *)pvBitmap)
-                         : "memory");
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -4986,9 +5022,10 @@ DECLINLINE(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; btcl %1, %0"
                          : "=m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "memory");
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -5033,11 +5070,12 @@ DECLINLINE(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) 
     __asm__ __volatile__("btsl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
-                         : "=q" (rc.u32),
-                           "=m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "memory");
+                         : "=q" (rc.u32)
+                         , "=m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -5084,11 +5122,12 @@ DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t 
     __asm__ __volatile__("lock; btsl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
-                         : "=q" (rc.u32),
-                           "=m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "memory");
+                         : "=q" (rc.u32)
+                         , "=m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -5136,11 +5175,12 @@ DECLINLINE(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit
     __asm__ __volatile__("btrl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
-                         : "=q" (rc.u32),
-                           "=m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "memory");
+                         : "=q" (rc.u32)
+                         , "=m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -5189,11 +5229,12 @@ DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_
     __asm__ __volatile__("lock; btrl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
-                         : "=q" (rc.u32),
-                           "=m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "memory");
+                         : "=q" (rc.u32)
+                         , "=m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -5241,11 +5282,12 @@ DECLINLINE(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBi
     __asm__ __volatile__("btcl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
-                         : "=q" (rc.u32),
-                           "=m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "memory");
+                         : "=q" (rc.u32)
+                         , "=m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -5290,11 +5332,12 @@ DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32
     __asm__ __volatile__("lock; btcl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
-                         : "=q" (rc.u32),
-                           "=m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "Ir" (iBit),
-                           "m" (*(volatile long RT_FAR *)pvBitmap)
-                         : "memory");
+                         : "=q" (rc.u32)
+                         , "=m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "Ir" (iBit)
+                         , "m" (*(volatile long RT_FAR *)pvBitmap)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -5343,9 +5386,10 @@ DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) 
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
                          : "=q" (rc.u32)
-                         : "m" (*(const volatile long RT_FAR *)pvBitmap),
-                           "Ir" (iBit)
-                         : "memory");
+                         : "m" (*(const volatile long RT_FAR *)pvBitmap)
+                         , "Ir" (iBit)
+                         : "memory"
+                         , "cc");
 # else
     __asm
     {
@@ -5483,15 +5527,16 @@ DECLINLINE(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint3
                              "bsfl  %%eax, %%edx\n\t"
                              "addl  %%edi, %%edx\n\t"
                              "1:\t\n"
-                             : "=d" (iBit),
-                               "=&c" (uECX),
-                               "=&D" (uEDI),
-                               "=&a" (uEAX)
-                             : "0" (0xffffffff),
-                               "mr" (pvBitmap),
-                               "1" (cBits >> 5),
-                               "2" (pvBitmap),
-                               "3" (0xffffffff));
+                             : "=d" (iBit)
+                             , "=&c" (uECX)
+                             , "=&D" (uEDI)
+                             , "=&a" (uEAX)
+                             : "0" (0xffffffff)
+                             , "mr" (pvBitmap)
+                             , "1" (cBits >> 5)
+                             , "2" (pvBitmap)
+                             , "3" (0xffffffff)
+                             : "cc");
 # else
         cBits = RT_ALIGN_32(cBits, 32);
         __asm
@@ -5565,10 +5610,11 @@ DECLINLINE(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t c
 #  if RT_INLINE_ASM_GNU_STYLE
         __asm__ __volatile__("bsf %1, %0\n\t"
                              "jnz 1f\n\t"
-                             "movl $-1, %0\n\t"
+                             "movl $-1, %0\n\t" /** @todo use conditional move for 64-bit? */
                              "1:\n\t"
                              : "=r" (iBit)
-                             : "r" (u32));
+                             : "r" (u32)
+                             : "cc");
 #  else
         __asm
         {
@@ -5638,15 +5684,16 @@ DECLINLINE(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_
                              "bsfl  %%eax, %%edx\n\t"
                              "addl  %%edi, %%edx\n\t"
                              "1:\t\n"
-                             : "=d" (iBit),
-                               "=&c" (uECX),
-                               "=&D" (uEDI),
-                               "=&a" (uEAX)
-                             : "0" (0xffffffff),
-                               "mr" (pvBitmap),
-                               "1" (cBits >> 5),
-                               "2" (pvBitmap),
-                               "3" (0));
+                             : "=d" (iBit)
+                             , "=&c" (uECX)
+                             , "=&D" (uEDI)
+                             , "=&a" (uEAX)
+                             : "0" (0xffffffff)
+                             , "mr" (pvBitmap)
+                             , "1" (cBits >> 5)
+                             , "2" (pvBitmap)
+                             , "3" (0)
+                             : "cc");
 # else
         cBits = RT_ALIGN_32(cBits, 32);
         __asm
@@ -5718,11 +5765,12 @@ DECLINLINE(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBi
 # else
 #  if RT_INLINE_ASM_GNU_STYLE
         __asm__ __volatile__("bsf %1, %0\n\t"
-                             "jnz 1f\n\t"
+                             "jnz 1f\n\t"      /** @todo use conditional move for 64-bit? */
                              "movl $-1, %0\n\t"
                              "1:\n\t"
                              : "=r" (iBit)
-                             : "r" (u32));
+                             : "r" (u32)
+                             : "cc");
 #  else
         __asm
         {
@@ -5788,7 +5836,8 @@ DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32) RT_NOTHROW_DEF
                          "incl %0\n"
                          "2:\n\t"
                          : "=r" (iBit)
-                         : "rm" (u32));
+                         : "rm" (u32)
+                         : "cc");
 # else
     uint32_t iBit;
     _asm
@@ -5863,7 +5912,8 @@ DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64) RT_NOTHROW_DEF
                          "incl %k0\n"
                          "2:\n\t"
                          : "=r" (iBit)
-                         : "rm" (u64));
+                         : "rm" (u64)
+                         : "cc");
 # else
     unsigned iBit = ASMBitFirstSetU32((uint32_t)u64);
     if (!iBit)
@@ -5928,7 +5978,8 @@ DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32) RT_NOTHROW_DEF
                          "incl %0\n"
                          "2:\n\t"
                          : "=r" (iBit)
-                         : "rm" (u32));
+                         : "rm" (u32)
+                         : "cc");
 # else
     uint32_t iBit;
     _asm
@@ -6003,7 +6054,8 @@ DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64) RT_NOTHROW_DEF
                          "incl %k0\n"
                          "2:\n\t"
                          : "=r" (iBit)
-                         : "rm" (u64));
+                         : "rm" (u64)
+                         : "cc");
 # else
     unsigned iBit = ASMBitLastSetU32((uint32_t)(u64 >> 32));
     if (iBit)
@@ -6050,7 +6102,7 @@ DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16) RT_NOTHROW_DEF
 # if RT_INLINE_ASM_USES_INTRIN
     u16 = _byteswap_ushort(u16);
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ ("rorw $8, %0" : "=r" (u16) : "0" (u16));
+    __asm__ ("rorw $8, %0" : "=r" (u16) : "0" (u16) : "cc");
 # else
     _asm
     {
@@ -6125,7 +6177,7 @@ DECLINLINE(uint32_t) ASMRotateLeftU32(uint32_t u32, uint32_t cShift) RT_NOTHROW_
 # if RT_INLINE_ASM_USES_INTRIN
     return _rotl(u32, cShift);
 # elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-    __asm__ __volatile__("roll %b1, %0" : "=g" (u32) : "Ic" (cShift), "0" (u32));
+    __asm__ __volatile__("roll %b1, %0" : "=g" (u32) : "Ic" (cShift), "0" (u32) : "cc");
     return u32;
 # else
     cShift &= 31;
@@ -6150,7 +6202,7 @@ DECLINLINE(uint32_t) ASMRotateRightU32(uint32_t u32, uint32_t cShift) RT_NOTHROW
 # if RT_INLINE_ASM_USES_INTRIN
     return _rotr(u32, cShift);
 # elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-    __asm__ __volatile__("rorl %b1, %0" : "=g" (u32) : "Ic" (cShift), "0" (u32));
+    __asm__ __volatile__("rorl %b1, %0" : "=g" (u32) : "Ic" (cShift), "0" (u32) : "cc");
     return u32;
 # else
     cShift &= 31;
@@ -6172,7 +6224,7 @@ DECLINLINE(uint64_t) ASMRotateLeftU64(uint64_t u64, uint32_t cShift) RT_NOTHROW_
 #if RT_INLINE_ASM_USES_INTRIN
     return _rotl64(u64, cShift);
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
-    __asm__ __volatile__("rolq %b1, %0" : "=g" (u64) : "Jc" (cShift), "0" (u64));
+    __asm__ __volatile__("rolq %b1, %0" : "=g" (u64) : "Jc" (cShift), "0" (u64) : "cc");
     return u64;
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_X86)
     uint32_t uSpill;
@@ -6186,9 +6238,12 @@ DECLINLINE(uint64_t) ASMRotateLeftU64(uint64_t u64, uint32_t cShift) RT_NOTHROW_
                          "shldl %%cl,%%eax,%%edx\n\t"   /*   shift the hi value left, feeding MSBits from the low value. */
                          "shldl %%cl,%2,%%eax\n\t"      /*   shift the lo value left, feeding MSBits from the saved hi value. */
                          "2:\n\t"                       /* } */
-                         : "=A" (u64), "=c" (cShift), "=r" (uSpill)
-                         : "0" (u64),
-                           "1" (cShift));
+                         : "=A" (u64)
+                         , "=c" (cShift)
+                         , "=r" (uSpill)
+                         : "0" (u64)
+                         , "1" (cShift)
+                         : "cc");
     return u64;
 #else
     cShift &= 63;
@@ -6209,7 +6264,7 @@ DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift) RT_NOTHROW
 #if RT_INLINE_ASM_USES_INTRIN
     return _rotr64(u64, cShift);
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
-    __asm__ __volatile__("rorq %b1, %0" : "=g" (u64) : "Jc" (cShift), "0" (u64));
+    __asm__ __volatile__("rorq %b1, %0" : "=g" (u64) : "Jc" (cShift), "0" (u64) : "cc");
     return u64;
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_X86)
     uint32_t uSpill;
@@ -6223,9 +6278,12 @@ DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift) RT_NOTHROW
                          "shrdl %%cl,%%eax,%%edx\n\t"   /*   shift the hi value right, feeding LSBits from the low value. */
                          "shrdl %%cl,%2,%%eax\n\t"      /*   shift the lo value right, feeding LSBits from the saved hi value. */
                          "2:\n\t"                       /* } */
-                         : "=A" (u64), "=c" (cShift), "=r" (uSpill)
-                         : "0" (u64),
-                           "1" (cShift));
+                         : "=A" (u64)
+                         , "=c" (cShift)
+                         , "=r" (uSpill)
+                         : "0" (u64)
+                         , "1" (cShift)
+                         : "cc");
     return u64;
 #else
     cShift &= 63;
