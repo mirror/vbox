@@ -1533,7 +1533,7 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
 
     /*
      * Warning: Do *not* use pfnConn->pfnEnable() for enabling/disabling streams here, as this will unconditionally (re-)enable
-     *          streams, which would violate / run against the (global) VM settings. See #9882.
+     *          streams, which would violate / run against the (global) VM settings. See @bugref{9882}.
      */
 
     /* Get pointers of current recording source to make code easier to read below. */

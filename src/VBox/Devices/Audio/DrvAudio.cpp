@@ -460,7 +460,7 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
      * The actual stream state will be untouched to not make the state machine handling more complicated than
      * it already is.
      *
-     * See #9882.
+     * See @bugref{9882}.
      */
     const bool fEnabled =    (   pStream->enmDir == PDMAUDIODIR_IN
                               && pThis->In.fEnabled)
@@ -966,7 +966,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             break;
         }
 
-        /* If output is disabled on a per-driver level, send data to the bit bucket instead. See #9882. */
+        /* If output is disabled on a per-driver level, send data to the bit bucket instead. See @bugref{9882}. */
         if (!pThis->Out.fEnabled)
         {
             fToBitBucket = true;
@@ -2765,7 +2765,7 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
              *          - playing back audo data would go to /dev/null
              *          - recording audio data would return silence instead
              *
-             * See #9882.
+             * See @bugref{9882}.
              */
             int rc2 = drvAudioStreamControlInternalBackend(pThis, pStream,
                                                            fEnable ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
@@ -2904,7 +2904,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
 
     uint32_t cbReadable = 0;
 
-    /* All input streams for this driver disabled? See #9882. */
+    /* All input streams for this driver disabled? See @bugref{9882}. */
     const bool fDisabled = !pThis->In.fEnabled;
 
     if (   pThis->pHostDrvAudio
