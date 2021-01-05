@@ -108,7 +108,8 @@
  */
 
 /** @def RT_ARCH_ARM32
- * Indicates that we're compiling for the 32-bit ARM architecture.
+ * Indicates that we're compiling for the 32-bit ARM architecture, the value
+ * is the version (i.e. 6 for ARMv6).
  */
 
 /** @def RT_ARCH_ARM64
@@ -130,9 +131,11 @@
 # elif defined(__sparc__)
 #  define RT_ARCH_SPARC
 # elif defined(__arm64__) || defined(__aarch64__)
-#  define RT_ARCH_ARM64
-# elif defined(__arm__) || defined(__arm32__)
-#  define RT_ARCH_ARM32
+#  define RT_ARCH_ARM64 __ARM_ARCH
+# elif defined(__arm__)
+#  define RT_ARCH_ARM32 __ARM_ARCH
+# elif defined(__arm32__)
+#  define RT_ARCH_ARM32 __ARM_ARCH
 # else /* PORTME: append test for new archs. */
 #  error "Check what predefined macros your compiler uses to indicate architecture."
 # endif
