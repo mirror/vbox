@@ -97,20 +97,24 @@
 /** @defgroup grp_rt_asm    ASM - Assembly Routines
  * @ingroup grp_rt
  *
- * @remarks The difference between ordered and unordered atomic operations are that
- *          the former will complete outstanding reads and writes before continuing
- *          while the latter doesn't make any promises about the order. Ordered
- *          operations doesn't, it seems, make any 100% promise wrt to whether
- *          the operation will complete before any subsequent memory access.
- *          (please, correct if wrong.)
+ * @remarks The difference between ordered and unordered atomic operations are
+ *          that the former will complete outstanding reads and writes before
+ *          continuing while the latter doesn't make any promises about the
+ *          order.  Ordered operations doesn't, it seems, make any 100% promise
+ *          wrt to whether the operation will complete before any subsequent
+ *          memory access.  (please, correct if wrong.)
  *
- *          ASMAtomicSomething operations are all ordered, while ASMAtomicUoSomething
- *          are unordered (note the Uo).
+ *          ASMAtomicSomething operations are all ordered, while
+ *          ASMAtomicUoSomething are unordered (note the Uo).
  *
- * @remarks Some remarks about __volatile__: Without this keyword gcc is allowed to reorder
- *          or even optimize assembler instructions away. For instance, in the following code
- *          the second rdmsr instruction is optimized away because gcc treats that instruction
- *          as deterministic:
+ *          Please note that ordered operations does not necessarily imply a
+ *          compiler (memory) barrier.   The user has to use the
+ *          ASMCompilerBarrier() macro when that is deemed necessary.
+ *
+ * @remarks Some remarks about __volatile__: Without this keyword gcc is allowed
+ *          to reorder or even optimize assembler instructions away.  For
+ *          instance, in the following code the second rdmsr instruction is
+ *          optimized away because gcc treats that instruction as deterministic:
  *
  *            @code
  *            static inline uint64_t rdmsr_low(int idx)
@@ -125,9 +129,10 @@
  *            bar(msr1);
  *            @endcode
  *
- *          The input parameter of rdmsr_low is the same for both calls and therefore gcc will
- *          use the result of the first call as input parameter for bar() as well. For rdmsr this
- *          is not acceptable as this instruction is _not_ deterministic. This applies to reading
+ *          The input parameter of rdmsr_low is the same for both calls and
+ *          therefore gcc will use the result of the first call as input
+ *          parameter for bar() as well. For rdmsr this is not acceptable as
+ *          this instruction is _not_ deterministic. This applies to reading
  *          machine status information in general.
  *
  * @{
@@ -1119,7 +1124,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
 #    else
                          , "=m" (*pu64)
 #    endif
-                         : "A" (u64Old),
+                         : "A" (u64Old)
                          , "m" ( u32EBX )
                          , "c" ( (uint32_t)(u64New >> 32) )
                          , "S" (pu64)
