@@ -438,7 +438,7 @@ DECLINLINE(void) ASMCompilerBarrier(void) RT_NOTHROW_DEF
  * x86 & AMD64: The PAUSE variant of NOP for helping hyperthreaded CPUs detecting
  * spin locks.
  */
-#if RT_INLINE_ASM_EXTERNAL && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMNopPause(void) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMNopPause(void) RT_NOTHROW_DEF
@@ -2481,7 +2481,7 @@ DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW
 {
     Assert(!((uintptr_t)pi32 & 3));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    Assert(!((uintptr_t)pu64 & 7));
+    Assert(!((uintptr_t)pi32 & 7));
     int32_t i32;
     __asm__ __volatile__(".Lstart_ASMAtomicUoReadS32_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
@@ -4143,7 +4143,7 @@ DECLINLINE(size_t) ASMAtomicDecZ(size_t volatile RT_FAR *pcb) RT_NOTHROW_DEF
  *
  * @remarks x86: Requires a 386 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
@@ -4151,24 +4151,36 @@ DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT
 # if RT_INLINE_ASM_USES_INTRIN
     _InterlockedOr((long volatile RT_FAR *)pu32, (long)u32);
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; orl %1, %0\n\t"
                          : "=m" (*pu32)
                          : "ir" (u32)
                          , "m" (*pu32)
                          : "cc");
-# else
+#  else
     __asm
     {
         mov     eax, [u32]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         lock    or [rdx], eax
-#  else
+#   else
         mov     edx, [pu32]
         lock    or [edx], eax
-#  endif
+#   endif
     }
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /* For more on Orr see https://en.wikipedia.org/wiki/Orr_(Catch-22) ;-) */
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicOr32, pu32, DMB_SY,
+                                           "orr %w[uNew], %w[uNew], %w[uVal]\n\t",
+                                           "orr %[uNew], %[uNew], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+
+# else
+#  error "Port me"
 # endif
 }
 #endif
@@ -4196,7 +4208,7 @@ DECLINLINE(void) ASMAtomicOrS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_N
  *
  * @remarks x86: Requires a Pentium or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
@@ -4210,6 +4222,15 @@ DECLINLINE(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT
                          : "r" (u64)
                          , "m" (*pu64)
                          : "cc");
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(ASMAtomicOrU64, pu64, DMB_SY,
+                                           "orr %[uNew], %[uNew], %[uVal]\n\t"
+                                           ,
+                                           "orr %[uNew], %[uNew], %[uVal]\n\t"
+                                           "orr %H[uNew], %H[uNew], %H[uVal]\n\t",
+                                           [uVal] "r" (u64));
+
 # else
     for (;;)
     {
@@ -4246,7 +4267,7 @@ DECLINLINE(void) ASMAtomicOrS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_N
  *
  * @remarks x86: Requires a 386 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
@@ -4254,24 +4275,35 @@ DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) R
 # if RT_INLINE_ASM_USES_INTRIN
     _InterlockedAnd((long volatile RT_FAR *)pu32, u32);
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; andl %1, %0\n\t"
                          : "=m" (*pu32)
                          : "ir" (u32)
                          , "m" (*pu32)
                          : "cc");
-# else
+#  else
     __asm
     {
         mov     eax, [u32]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         lock and [rdx], eax
-#  else
+#   else
         mov     edx, [pu32]
         lock and [edx], eax
-#  endif
+#   endif
     }
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicAnd32, pu32, DMB_SY,
+                                           "and %w[uNew], %w[uNew], %w[uVal]\n\t",
+                                           "and %[uNew], %[uNew], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+
+# else
+#  error "Port me"
 # endif
 }
 #endif
@@ -4299,7 +4331,7 @@ DECLINLINE(void) ASMAtomicAndS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_
  *
  * @remarks x86: Requires a Pentium or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(void) ASMAtomicAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
@@ -4313,6 +4345,15 @@ DECLINLINE(void) ASMAtomicAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) R
                          : "r" (u64)
                          , "m" (*pu64)
                          : "cc");
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(ASMAtomicAndU64, pu64, DMB_SY,
+                                           "and %[uNew], %[uNew], %[uVal]\n\t"
+                                           ,
+                                           "and %[uNew], %[uNew], %[uVal]\n\t"
+                                           "and %H[uNew], %H[uNew], %H[uVal]\n\t",
+                                           [uVal] "r" (u64));
+
 # else
     for (;;)
     {
@@ -4349,29 +4390,40 @@ DECLINLINE(void) ASMAtomicAndS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_
  *
  * @remarks x86: Requires a 386 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
-# if RT_INLINE_ASM_GNU_STYLE
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("orl %1, %0\n\t"
                          : "=m" (*pu32)
                          : "ir" (u32)
                          , "m" (*pu32)
                          : "cc");
-# else
+#  else
     __asm
     {
         mov     eax, [u32]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         or      [rdx], eax
-#  else
+#   else
         mov     edx, [pu32]
         or      [edx], eax
-#  endif
+#   endif
     }
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoOr32, pu32, NO_BARRIER,
+                                           "orr %w[uNew], %w[uNew], %w[uVal]\n\t",
+                                           "orr %[uNew], %[uNew], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+
+# else
+#  error "Port me"
 # endif
 }
 #endif
@@ -4399,7 +4451,7 @@ DECLINLINE(void) ASMAtomicUoOrS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT
  *
  * @remarks x86: Requires a Pentium or later.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 DECLASM(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
@@ -4410,6 +4462,15 @@ DECLINLINE(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) 
                          : "r" (u64)
                          , "m" (*pu64)
                          : "cc");
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(ASMAtomicUoOrU64, pu64, NO_BARRIER,
+                                           "orr %[uNew], %[uNew], %[uVal]\n\t"
+                                           ,
+                                           "orr %[uNew], %[uNew], %[uVal]\n\t"
+                                           "orr %H[uNew], %H[uNew], %H[uVal]\n\t",
+                                           [uVal] "r" (u64));
+
 # else
     for (;;)
     {
@@ -4446,29 +4507,40 @@ DECLINLINE(void) ASMAtomicUoOrS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT
  *
  * @remarks x86: Requires a 386 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
-# if RT_INLINE_ASM_GNU_STYLE
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("andl %1, %0\n\t"
                          : "=m" (*pu32)
                          : "ir" (u32)
                          , "m" (*pu32)
                          : "cc");
-# else
+#  else
     __asm
     {
         mov     eax, [u32]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         and     [rdx], eax
-#  else
+#   else
         mov     edx, [pu32]
         and     [edx], eax
-#  endif
+#   endif
     }
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoAnd32, pu32, NO_BARRIER,
+                                           "and %w[uNew], %w[uNew], %w[uVal]\n\t",
+                                           "and %[uNew], %[uNew], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+
+# else
+#  error "Port me"
 # endif
 }
 #endif
@@ -4496,7 +4568,7 @@ DECLINLINE(void) ASMAtomicUoAndS32(int32_t volatile RT_FAR *pi32, int32_t i32) R
  *
  * @remarks x86: Requires a Pentium or later.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 DECLASM(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
@@ -4507,6 +4579,15 @@ DECLINLINE(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
                          : "r" (u64)
                          , "m" (*pu64)
                          : "cc");
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(ASMAtomicUoAndU64, pu64, NO_BARRIER,
+                                           "and %[uNew], %[uNew], %[uVal]\n\t"
+                                           ,
+                                           "and %[uNew], %[uNew], %[uVal]\n\t"
+                                           "and %H[uNew], %H[uNew], %H[uVal]\n\t",
+                                           [uVal] "r" (u64));
+
 # else
     for (;;)
     {
@@ -4543,13 +4624,14 @@ DECLINLINE(void) ASMAtomicUoAndS64(int64_t volatile RT_FAR *pi64, int64_t i64) R
  *
  * @remarks x86: Requires a 486 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_DEF
 {
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     uint32_t u32;
-# if RT_INLINE_ASM_GNU_STYLE
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("xaddl %0, %1\n\t"
                          : "=r" (u32)
                          , "=m" (*pu32)
@@ -4558,20 +4640,31 @@ DECLINLINE(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
                          : "memory" /** @todo why 'memory'? */
                          , "cc");
     return u32 + 1;
-# else
+#  else
     __asm
     {
         mov     eax, 1
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         xadd    [rdx], eax
-#  else
+#   else
         mov     edx, [pu32]
         xadd    [edx], eax
-#  endif
+#   endif
         mov     u32, eax
     }
     return u32 + 1;
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoIncU32, pu32, NO_BARRIER,
+                                           "add %w[uNew], %w[uNew], #1\n\t",
+                                           "add %[uNew], %[uNew], #1\n\t" /* arm6 / thumb2+ */,
+                                           "X" (0) /* dummy */);
+    return u32NewRet;
+
+# else
+#  error "Port me"
 # endif
 }
 #endif
@@ -4585,13 +4678,14 @@ DECLINLINE(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
  *
  * @remarks x86: Requires a 486 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_DEF
 {
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     uint32_t u32;
-# if RT_INLINE_ASM_GNU_STYLE
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; xaddl %0, %1\n\t"
                          : "=r" (u32)
                          , "=m" (*pu32)
@@ -4600,20 +4694,31 @@ DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
                          : "memory"
                          , "cc");
     return u32 - 1;
-# else
+#  else
     __asm
     {
         mov     eax, -1
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         xadd    [rdx], eax
-#  else
+#   else
         mov     edx, [pu32]
         xadd    [edx], eax
-#  endif
+#   endif
         mov     u32, eax
     }
     return u32 - 1;
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoDecU32, pu32, NO_BARRIER,
+                                           "sub %w[uNew], %w[uNew], #1\n\t",
+                                           "sub %[uNew], %[uNew], #1\n\t" /* arm6 / thumb2+ */,
+                                           "X" (0) /* dummy */);
+    return u32NewRet;
+
+# else
+#  error "Port me"
 # endif
 }
 #endif
@@ -4651,7 +4756,7 @@ DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
  *
  * @param   pv  Pointer to the memory block. This must be page aligned.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_PROTO;
 # else
 DECLINLINE(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_DEF
@@ -4708,7 +4813,7 @@ DECLINLINE(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_DEF
  * @param   pv  Pointer to the memory block.
  * @param   cb  Number of bytes in the block. This MUST be aligned on 32-bit!
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
@@ -4756,7 +4861,7 @@ DECLINLINE(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_DE
  * @param   cb  Number of bytes in the block. This MUST be aligned on 32-bit!
  * @param   u32 The value to fill with.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_DEF
@@ -4990,30 +5095,47 @@ DECLINLINE(uint32_t RT_FAR *) ASMMemFirstMismatchingU32(void const RT_FAR *pv, s
  *
  * @param   pvByte      Pointer to the byte.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 RT_ASM_DECL_PRAGMA_WATCOM(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte) RT_NOTHROW_DEF
 {
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     uint8_t u8;
-# if RT_INLINE_ASM_GNU_STYLE
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("movb (%1), %0\n\t"
                          : "=r" (u8)
                          : "r" (pvByte));
-# else
+#  else
     __asm
     {
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvByte]
         mov     al, [rax]
-#  else
+#   else
         mov     eax, [pvByte]
         mov     al, [eax]
-#  endif
+#   endif
         mov     [u8], al
     }
-# endif
+#  endif
     return u8;
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint32_t u32;
+    __asm__ __volatile__(".Lstart_ASMProbeReadByte_%=:\n\t"
+#  if defined(RT_ARCH_ARM64)
+                         "ldxrb     %w[uDst], %[pMem]\n\t"
+#  else
+                         "ldrexb    %[uDst], %[pMem]\n\t"
+#  endif
+                         : [uDst] "=&r" (u32)
+                         : [pMem] "m" (*(uint8_t const *)pvByte));
+    return (uint8_t)u32;
+
+# else
+#  error "Port me"
+# endif
 }
 #endif
 
