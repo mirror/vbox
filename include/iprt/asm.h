@@ -751,6 +751,7 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
                          , "=r" (u64)
                          : "1" (u64)
                          , "m" (*pu64));
+    return u64;
 #  else
     __asm
     {
@@ -759,8 +760,8 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
         xchg    [rdx], rax
         mov     [u64], rax
     }
-#  endif
     return u64;
+#  endif
 
 # elif defined(RT_ARCH_X86)
 #  if RT_INLINE_ASM_GNU_STYLE
