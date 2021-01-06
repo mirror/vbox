@@ -767,8 +767,10 @@ RuntimeR3_SOURCES.amd64 += \
 	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
 	common/string/RTStrMemFind32.asm
 RuntimeR3_SOURCES.arm32 := \
+	common/asm/ASMMemZeroPage-generic.cpp \
 	common/misc/zero-alt.S
 RuntimeR3_SOURCES.arm64 := \
+	common/asm/ASMMemZeroPage-generic.cpp \
 	common/misc/zero-alt.S
 RuntimeR3_SOURCES.sparc32 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
