@@ -4756,7 +4756,7 @@ DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
  *
  * @param   pv  Pointer to the memory block. This must be page aligned.
  */
-#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_PROTO;
 # else
 DECLINLINE(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_DEF
@@ -4813,7 +4813,7 @@ DECLINLINE(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_DEF
  * @param   pv  Pointer to the memory block.
  * @param   cb  Number of bytes in the block. This MUST be aligned on 32-bit!
  */
-#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
@@ -4861,7 +4861,7 @@ DECLINLINE(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_DE
  * @param   cb  Number of bytes in the block. This MUST be aligned on 32-bit!
  * @param   u32 The value to fill with.
  */
-#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_DEF
@@ -4910,16 +4910,13 @@ DECLINLINE(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32)
  *
  * @param   pv      Pointer to the memory block.
  * @param   cb      Number of bytes in the block.
- *
- * @todo Fix name, it is a predicate function but it's not returning boolean!
  */
-#if    !defined(RDESKTOP) && (!defined(RT_OS_LINUX) || !defined(__KERNEL__)) \
-    && !defined(RT_ARCH_SPARC64) \
-    && !defined(RT_ARCH_SPARC)
+#if !defined(RDESKTOP) && (!defined(RT_OS_LINUX) || !defined(__KERNEL__))
 DECLASM(void RT_FAR *) ASMMemFirstNonZero(void const RT_FAR *pv, size_t cb) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void RT_FAR *) ASMMemFirstNonZero(void const RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
 {
+/** @todo replace with ASMMemFirstNonZero-generic.cpp in kernel modules. */
     uint8_t const *pb = (uint8_t const RT_FAR *)pv;
     for (; cb; cb--, pb++)
         if (RT_LIKELY(*pb == 0))
@@ -5023,13 +5020,12 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const RT_FAR *pvPage) RT_NOTHROW_DEF
  * @remarks No alignment requirements.
  */
 #if    (!defined(RT_OS_LINUX) || !defined(__KERNEL__)) \
-    && (!defined(RT_OS_FREEBSD) || !defined(_KERNEL)) \
-    && !defined(RT_ARCH_SPARC64) \
-    && !defined(RT_ARCH_SPARC)
+    && (!defined(RT_OS_FREEBSD) || !defined(_KERNEL))
 DECLASM(void *) ASMMemFirstMismatchingU8(void const RT_FAR *pv, size_t cb, uint8_t u8) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void *) ASMMemFirstMismatchingU8(void const RT_FAR *pv, size_t cb, uint8_t u8) RT_NOTHROW_DEF
 {
+/** @todo replace with ASMMemFirstMismatchingU8-generic.cpp in kernel modules. */
     uint8_t const *pb = (uint8_t const RT_FAR *)pv;
     for (; cb; cb--, pb++)
         if (RT_LIKELY(*pb == u8))
