@@ -768,9 +768,15 @@ RuntimeR3_SOURCES.amd64 += \
 	common/string/RTStrMemFind32.asm
 RuntimeR3_SOURCES.arm32 := \
 	common/asm/ASMMemZeroPage-generic.cpp \
+	common/asm/ASMMemZero32-generic.cpp \
+	common/asm/ASMMemFill32-generic.cpp \
+	common/asm/ASMMemFirstMismatchingU8-generic.cpp \
 	common/misc/zero-alt.S
 RuntimeR3_SOURCES.arm64 := \
 	common/asm/ASMMemZeroPage-generic.cpp \
+	common/asm/ASMMemZero32-generic.cpp \
+	common/asm/ASMMemFill32-generic.cpp \
+	common/asm/ASMMemFirstMismatchingU8-generic.cpp \
 	common/misc/zero-alt.S
 RuntimeR3_SOURCES.sparc32 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
