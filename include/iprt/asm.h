@@ -4418,7 +4418,7 @@ DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) 
 #  endif
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoOr32, pu32, NO_BARRIER,
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoOrU32, pu32, NO_BARRIER,
                                            "orr %w[uNew], %w[uNew], %w[uVal]\n\t",
                                            "orr %[uNew], %[uNew], %[uVal]\n\t",
                                            [uVal] "r" (u32));
@@ -5185,7 +5185,7 @@ DECLINLINE(void) ASMProbeReadBuffer(const void RT_FAR *pvBuf, size_t cbBuf) RT_N
  *          However, doing so will yield better performance as well as avoiding
  *          traps accessing the last bits in the bitmap.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
@@ -5193,26 +5193,33 @@ DECLINLINE(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTH
 # if RT_INLINE_ASM_USES_INTRIN
     _bittestandset((long RT_FAR *)pvBitmap, iBit);
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("btsl %1, %0"
                          : "=m" (*(volatile long RT_FAR *)pvBitmap)
                          : "Ir" (iBit)
                          , "m" (*(volatile long RT_FAR *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         bts     [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         mov     edx, [iBit]
         bts     [eax], edx
-#  endif
+#   endif
     }
+#  endif
+
+# else
+    int32_t offBitmap = iBit / 32;
+    AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
+    ASMAtomicUoOrU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_BIT_32(iBit & 31));
 # endif
 }
 #endif
@@ -5227,7 +5234,7 @@ DECLINLINE(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTH
  *
  * @remarks x86: Requires a 386 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
@@ -5235,26 +5242,31 @@ DECLINLINE(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) R
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
 # if RT_INLINE_ASM_USES_INTRIN
     _interlockedbittestandset((long RT_FAR *)pvBitmap, iBit);
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; btsl %1, %0"
                          : "=m" (*(volatile long *)pvBitmap)
                          : "Ir" (iBit)
                          , "m" (*(volatile long *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         lock bts [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         mov     edx, [iBit]
         lock bts [eax], edx
-#  endif
+#   endif
     }
+#  endif
+
+# else
+    ASMAtomicOrU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_BIT_32(iBit & 31));
 # endif
 }
 #endif
@@ -5270,7 +5282,7 @@ DECLINLINE(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) R
  *          However, doing so will yield better performance as well as avoiding
  *          traps accessing the last bits in the bitmap.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
@@ -5278,26 +5290,33 @@ DECLINLINE(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NO
 # if RT_INLINE_ASM_USES_INTRIN
     _bittestandreset((long RT_FAR *)pvBitmap, iBit);
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("btrl %1, %0"
                          : "=m" (*(volatile long RT_FAR *)pvBitmap)
                          : "Ir" (iBit)
                          , "m" (*(volatile long RT_FAR *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         btr     [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         mov     edx, [iBit]
         btr     [eax], edx
-#  endif
+#   endif
     }
+#  endif
+
+# else
+    int32_t offBitmap = iBit / 32;
+    AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
+    ASMAtomicUoAndU32(&((uint32_t volatile *)pvBitmap)[offBitmap], ~RT_BIT_32(iBit & 31));
 # endif
 }
 #endif
@@ -5313,32 +5332,36 @@ DECLINLINE(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NO
  * @remarks No memory barrier, take care on smp.
  * @remarks x86: Requires a 386 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
-# if RT_INLINE_ASM_GNU_STYLE
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; btrl %1, %0"
                          : "=m" (*(volatile long RT_FAR *)pvBitmap)
                          : "Ir" (iBit)
                          , "m" (*(volatile long RT_FAR *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         lock btr [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         mov     edx, [iBit]
         lock btr [eax], edx
-#  endif
+#   endif
     }
+#  endif
+# else
+    ASMAtomicAndU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], ~RT_BIT_32(iBit & 31));
 # endif
 }
 #endif
