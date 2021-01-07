@@ -1908,14 +1908,14 @@ DECLINLINE(int) ohciR3InFlightFindFree(POHCICC pThisCC, const int iStart)
     unsigned i = iStart;
     while (i < RT_ELEMENTS(pThisCC->aInFlight))
     {
-        if (pThisCC->aInFlight[i].GCPhysTD == 0)
+        if (pThisCC->aInFlight[i].pUrb == NULL)
             return i;
         i++;
     }
     i = iStart;
     while (i-- > 0)
     {
-        if (pThisCC->aInFlight[i].GCPhysTD == 0)
+        if (pThisCC->aInFlight[i].pUrb == NULL)
             return i;
     }
     return -1;
@@ -1978,9 +1978,9 @@ static int ohciR3InFlightFind(POHCICC pThisCC, uint32_t GCPhysTD)
     const int iLast = i;
     while (i < RT_ELEMENTS(pThisCC->aInFlight))
     {
-        if (pThisCC->aInFlight[i].GCPhysTD == GCPhysTD)
+        if (pThisCC->aInFlight[i].GCPhysTD == GCPhysTD && pThisCC->aInFlight[i].pUrb)
             return i;
-        if (pThisCC->aInFlight[i].GCPhysTD)
+        if (pThisCC->aInFlight[i].pUrb)
             if (cLeft-- <= 1)
                 return -1;
         i++;
@@ -1988,9 +1988,9 @@ static int ohciR3InFlightFind(POHCICC pThisCC, uint32_t GCPhysTD)
     i = iLast;
     while (i-- > 0)
     {
-        if (pThisCC->aInFlight[i].GCPhysTD == GCPhysTD)
+        if (pThisCC->aInFlight[i].GCPhysTD == GCPhysTD && pThisCC->aInFlight[i].pUrb)
             return i;
-        if (pThisCC->aInFlight[i].GCPhysTD)
+        if (pThisCC->aInFlight[i].pUrb)
             if (cLeft-- <= 1)
                 return -1;
     }
