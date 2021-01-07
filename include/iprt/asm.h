@@ -5456,7 +5456,8 @@ DECLINLINE(void) ASMProbeReadBuffer(const void RT_FAR *pvBuf, size_t cbBuf) RT_N
 /**
  * Sets a bit in a bitmap.
  *
- * @param   pvBitmap    Pointer to the bitmap. This should be 32-bit aligned.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).  This should be
+ *                      32-bit aligned.
  * @param   iBit        The bit to set.
  *
  * @remarks The 32-bit aligning of pvBitmap is not a strict requirement.
@@ -5497,7 +5498,7 @@ DECLINLINE(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTH
 # else
     int32_t offBitmap = iBit / 32;
     AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
-    ASMAtomicUoOrU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_BIT_32(iBit & 31));
+    ASMAtomicUoOrU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_H2LE_U32(RT_BIT_32(iBit & 31)));
 # endif
 }
 #endif
@@ -5506,8 +5507,8 @@ DECLINLINE(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTH
 /**
  * Atomically sets a bit in a bitmap, ordered.
  *
- * @param   pvBitmap    Pointer to the bitmap. Must be 32-bit aligned, otherwise
- *                      the memory access isn't atomic!
+ * @param   pvBitmap    Pointer to the bitmap (little endian).  Must be 32-bit
+ *                      aligned, otherwise the memory access isn't atomic!
  * @param   iBit        The bit to set.
  *
  * @remarks x86: Requires a 386 or later.
@@ -5544,7 +5545,7 @@ DECLINLINE(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) R
 #  endif
 
 # else
-    ASMAtomicOrU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_BIT_32(iBit & 31));
+    ASMAtomicOrU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_H2LE_U32(RT_BIT_32(iBit & 31)));
 # endif
 }
 #endif
@@ -5553,7 +5554,7 @@ DECLINLINE(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) R
 /**
  * Clears a bit in a bitmap.
  *
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   iBit        The bit to clear.
  *
  * @remarks The 32-bit aligning of pvBitmap is not a strict requirement.
@@ -5594,7 +5595,7 @@ DECLINLINE(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NO
 # else
     int32_t offBitmap = iBit / 32;
     AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
-    ASMAtomicUoAndU32(&((uint32_t volatile *)pvBitmap)[offBitmap], ~RT_BIT_32(iBit & 31));
+    ASMAtomicUoAndU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_H2LE_U32(~RT_BIT_32(iBit & 31)));
 # endif
 }
 #endif
@@ -5603,8 +5604,8 @@ DECLINLINE(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NO
 /**
  * Atomically clears a bit in a bitmap, ordered.
  *
- * @param   pvBitmap    Pointer to the bitmap. Must be 32-bit aligned, otherwise
- *                      the memory access isn't atomic!
+ * @param   pvBitmap    Pointer to the bitmap (little endian).  Must be 32-bit
+ *                      aligned, otherwise the memory access isn't atomic!
  * @param   iBit        The bit to toggle set.
  *
  * @remarks No memory barrier, take care on smp.
@@ -5639,7 +5640,7 @@ DECLINLINE(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit)
     }
 #  endif
 # else
-    ASMAtomicAndU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], ~RT_BIT_32(iBit & 31));
+    ASMAtomicAndU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_H2LE_U32(~RT_BIT_32(iBit & 31)));
 # endif
 }
 #endif
@@ -5648,7 +5649,7 @@ DECLINLINE(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit)
 /**
  * Toggles a bit in a bitmap.
  *
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   iBit        The bit to toggle.
  *
  * @remarks The 32-bit aligning of pvBitmap is not a strict requirement.
@@ -5687,7 +5688,7 @@ DECLINLINE(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_N
 # else
     int32_t offBitmap = iBit / 32;
     AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
-    ASMAtomicUoXorU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_BIT_32(iBit & 31));
+    ASMAtomicUoXorU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_H2LE_U32(RT_BIT_32(iBit & 31)));
 # endif
 }
 #endif
@@ -5696,8 +5697,8 @@ DECLINLINE(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_N
 /**
  * Atomically toggles a bit in a bitmap, ordered.
  *
- * @param   pvBitmap    Pointer to the bitmap. Must be 32-bit aligned, otherwise
- *                      the memory access isn't atomic!
+ * @param   pvBitmap    Pointer to the bitmap (little endian).  Must be 32-bit
+ *                      aligned, otherwise the memory access isn't atomic!
  * @param   iBit        The bit to test and set.
  *
  * @remarks x86: Requires a 386 or later.
@@ -5731,7 +5732,7 @@ DECLINLINE(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit
     }
 #  endif
 # else
-    ASMAtomicXorU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_BIT_32(iBit & 31));
+    ASMAtomicXorU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_H2LE_U32(RT_BIT_32(iBit & 31)));
 # endif
 }
 #endif
@@ -5743,7 +5744,7 @@ DECLINLINE(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
  *
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   iBit        The bit to test and set.
  *
  * @remarks The 32-bit aligning of pvBitmap is not a strict requirement.
@@ -5790,7 +5791,9 @@ DECLINLINE(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) 
 # else
     int32_t offBitmap = iBit / 32;
     AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
-    rc.u32 = ASMAtomicUoOrExU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_BIT_32(iBit & 31)) >> (iBit & 31);
+    rc.u32 = RT_LE2H_U32(ASMAtomicUoOrExU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_H2LE_U32(RT_BIT_32(iBit & 31))))
+          >> (iBit & 31);
+    rc.u32 &= 1;
 # endif
     return rc.f;
 }
@@ -5803,8 +5806,8 @@ DECLINLINE(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) 
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
  *
- * @param   pvBitmap    Pointer to the bitmap. Must be 32-bit aligned, otherwise
- *                      the memory access isn't atomic!
+ * @param   pvBitmap    Pointer to the bitmap (little endian).  Must be 32-bit
+ *                      aligned, otherwise the memory access isn't atomic!
  * @param   iBit        The bit to set.
  *
  * @remarks x86: Requires a 386 or later.
@@ -5847,7 +5850,9 @@ DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t 
 #  endif
 
 # else
-    rc.u32 = ASMAtomicOrExU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_BIT_32(iBit & 31)) >> (iBit & 31);
+    rc.u32 = RT_LE2H_U32(ASMAtomicOrExU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_H2LE_U32(RT_BIT_32(iBit & 31))))
+          >> (iBit & 31);
+    rc.u32 &= 1;
 # endif
     return rc.f;
 }
@@ -5860,7 +5865,7 @@ DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t 
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
  *
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   iBit        The bit to test and clear.
  *
  * @remarks The 32-bit aligning of pvBitmap is not a strict requirement.
@@ -5907,7 +5912,9 @@ DECLINLINE(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit
 # else
     int32_t offBitmap = iBit / 32;
     AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
-    rc.u32 = ASMAtomicUoAndExU32(&((uint32_t volatile *)pvBitmap)[offBitmap], ~RT_BIT_32(iBit & 31)) >> (iBit & 31);
+    rc.u32 = RT_LE2H_U32(ASMAtomicUoAndExU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_H2LE_U32(~RT_BIT_32(iBit & 31))))
+          >> (iBit & 31);
+    rc.u32 &= 1;
 # endif
     return rc.f;
 }
@@ -5920,8 +5927,8 @@ DECLINLINE(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
  *
- * @param   pvBitmap    Pointer to the bitmap. Must be 32-bit aligned, otherwise
- *                      the memory access isn't atomic!
+ * @param   pvBitmap    Pointer to the bitmap (little endian).  Must be 32-bit
+ *                      aligned, otherwise the memory access isn't atomic!
  * @param   iBit        The bit to test and clear.
  *
  * @remarks No memory barrier, take care on smp.
@@ -5966,7 +5973,9 @@ DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_
 #  endif
 
 # else
-    rc.u32 = ASMAtomicAndExU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], ~RT_BIT_32(iBit & 31)) >> (iBit & 31);
+    rc.u32 = RT_LE2H_U32(ASMAtomicAndExU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_H2LE_U32(~RT_BIT_32(iBit & 31))))
+          >> (iBit & 31);
+    rc.u32 &= 1;
 # endif
     return rc.f;
 }
@@ -5979,7 +5988,7 @@ DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
  *
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   iBit        The bit to test and toggle.
  *
  * @remarks The 32-bit aligning of pvBitmap is not a strict requirement.
@@ -6026,7 +6035,9 @@ DECLINLINE(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBi
 # else
     int32_t offBitmap = iBit / 32;
     AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
-    rc.u32 = ASMAtomicUoXorExU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_BIT_32(iBit & 31)) >> (iBit & 31);
+    rc.u32 = RT_LE2H_U32(ASMAtomicUoXorExU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_H2LE_U32(RT_BIT_32(iBit & 31))))
+          >> (iBit & 31);
+    rc.u32 &= 1;
 # endif
     return rc.f;
 }
@@ -6039,8 +6050,8 @@ DECLINLINE(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBi
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
  *
- * @param   pvBitmap    Pointer to the bitmap. Must be 32-bit aligned, otherwise
- *                      the memory access isn't atomic!
+ * @param   pvBitmap    Pointer to the bitmap (little endian).  Must be 32-bit
+ *                      aligned, otherwise the memory access isn't atomic!
  * @param   iBit        The bit to test and toggle.
  *
  * @remarks x86: Requires a 386 or later.
@@ -6081,7 +6092,9 @@ DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32
 #  endif
 
 # else
-    rc.u32 = ASMAtomicXorExU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_BIT_32(iBit & 31)) >> (iBit & 31);
+    rc.u32 = RT_H2LE_U32(ASMAtomicXorExU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_LE2H_U32(RT_BIT_32(iBit & 31))))
+          >> (iBit & 31);
+    rc.u32 &= 1;
 # endif
     return rc.f;
 }
@@ -6094,7 +6107,7 @@ DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32
  * @returns true if the bit is set.
  * @returns false if the bit is clear.
  *
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   iBit        The bit to test.
  *
  * @remarks The 32-bit aligning of pvBitmap is not a strict requirement.
@@ -6141,7 +6154,8 @@ DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) 
 # else
     int32_t offBitmap = iBit / 32;
     AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
-    rc.u32 = ASMAtomicUoReadU32(&((uint32_t volatile *)pvBitmap)[offBitmap]) >> (iBit & 31);
+    rc.u32 = RT_LE2H_U32(ASMAtomicUoReadU32(&((uint32_t volatile *)pvBitmap)[offBitmap])) >> (iBit & 31);
+    rc.u32 &= 1;
 # endif
     return rc.f;
 }
@@ -6151,7 +6165,7 @@ DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) 
 /**
  * Clears a bit range within a bitmap.
  *
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   iBitStart   The First bit to clear.
  * @param   iBitEnd     The first bit not to clear.
  */
@@ -6163,13 +6177,13 @@ DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitSt
         int32_t iStart = iBitStart & ~31;
         int32_t iEnd   = iBitEnd & ~31;
         if (iStart == iEnd)
-            *pu32 &= ((UINT32_C(1) << (iBitStart & 31)) - 1) | ~((UINT32_C(1) << (iBitEnd & 31)) - 1);
+            *pu32 &= RT_H2LE_U32(((UINT32_C(1) << (iBitStart & 31)) - 1) | ~((UINT32_C(1) << (iBitEnd & 31)) - 1));
         else
         {
             /* bits in first dword. */
             if (iBitStart & 31)
             {
-                *pu32 &= (UINT32_C(1) << (iBitStart & 31)) - 1;
+                *pu32 &= RT_H2LE_U32((UINT32_C(1) << (iBitStart & 31)) - 1);
                 pu32++;
                 iBitStart = iStart + 32;
             }
@@ -6182,7 +6196,7 @@ DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitSt
             if (iBitEnd & 31)
             {
                 pu32 = (volatile uint32_t *)pvBitmap + (iBitEnd >> 5);
-                *pu32 &= ~((UINT32_C(1) << (iBitEnd & 31)) - 1);
+                *pu32 &= RT_H2LE_U32(~((UINT32_C(1) << (iBitEnd & 31)) - 1));
             }
         }
     }
@@ -6192,7 +6206,7 @@ DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitSt
 /**
  * Sets a bit range within a bitmap.
  *
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   iBitStart   The First bit to set.
  * @param   iBitEnd     The first bit not to set.
  */
@@ -6204,13 +6218,13 @@ DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, int32_t iBitStar
         int32_t iStart = iBitStart & ~31;
         int32_t iEnd   = iBitEnd & ~31;
         if (iStart == iEnd)
-            *pu32 |= ((UINT32_C(1) << (iBitEnd - iBitStart)) - 1) << (iBitStart & 31);
+            *pu32 |= RT_H2LE_U32(((UINT32_C(1) << (iBitEnd - iBitStart)) - 1) << (iBitStart & 31));
         else
         {
             /* bits in first dword. */
             if (iBitStart & 31)
             {
-                *pu32 |= ~((UINT32_C(1) << (iBitStart & 31)) - 1);
+                *pu32 |= RT_H2LE_U32(~((UINT32_C(1) << (iBitStart & 31)) - 1));
                 pu32++;
                 iBitStart = iStart + 32;
             }
@@ -6222,7 +6236,7 @@ DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, int32_t iBitStar
             /* bits in last dword. */
             if (iBitEnd & 31)
             {
-                pu32 = (volatile uint32_t RT_FAR *)pvBitmap + (iBitEnd >> 5);
+                pu32 = RT_H2LE_U32((volatile uint32_t RT_FAR *)pvBitmap + (iBitEnd >> 5));
                 *pu32 |= (UINT32_C(1) << (iBitEnd & 31)) - 1;
             }
         }
@@ -6235,10 +6249,10 @@ DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, int32_t iBitStar
  *
  * @returns Index of the first zero bit.
  * @returns -1 if no clear bit was found.
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   cBits       The number of bits in the bitmap. Multiple of 32.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 DECLASM(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_DEF
@@ -6320,12 +6334,12 @@ DECLINLINE(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint3
  *
  * @returns Index of the first zero bit.
  * @returns -1 if no clear bit was found.
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   cBits       The number of bits in the bitmap. Multiple of 32.
  * @param   iBitPrev    The bit returned from the last search.
  *                      The search will start at iBitPrev + 1.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 DECLASM(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev) RT_NOTHROW_DEF
@@ -6392,10 +6406,10 @@ DECLINLINE(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t c
  *
  * @returns Index of the first set bit.
  * @returns -1 if no clear bit was found.
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   cBits       The number of bits in the bitmap. Multiple of 32.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 DECLASM(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_DEF
@@ -6476,12 +6490,12 @@ DECLINLINE(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_
  *
  * @returns Index of the next set bit.
  * @returns -1 if no set bit was found.
- * @param   pvBitmap    Pointer to the bitmap.
+ * @param   pvBitmap    Pointer to the bitmap (little endian).
  * @param   cBits       The number of bits in the bitmap. Multiple of 32.
  * @param   iBitPrev    The bit returned from the last search.
  *                      The search will start at iBitPrev + 1.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 DECLASM(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev) RT_NOTHROW_DEF

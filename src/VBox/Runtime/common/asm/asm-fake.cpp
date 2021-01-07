@@ -296,32 +296,6 @@ RTDECL(bool) ASMBitTest(const volatile void *pvBitmap, int32_t iBit)
     return  pau8Bitmap[iBit / 8] & (uint8_t)RT_BIT_32(iBit & 7) ? true : false;
 }
 
-RTDECL(int) ASMBitFirstClear(const volatile void *pvBitmap, uint32_t cBits)
-{
-    uint32_t           iBit = 0;
-    uint8_t volatile *pu8 = (uint8_t volatile *)pvBitmap;
-
-    while (iBit < cBits)
-    {
-        uint8_t u8 = *pu8;
-        if (u8 != UINT8_MAX)
-        {
-            while (u8 & 1)
-            {
-                u8 >>= 1;
-                iBit++;
-            }
-            if (iBit >= cBits)
-                return -1;
-            return iBit;
-        }
-
-        iBit += 8;
-        pu8++;
-    }
-    return -1;
-}
-
 RTDECL(int) ASMBitNextClear(const volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
 {
     const volatile uint8_t *pau8Bitmap = (const volatile uint8_t *)pvBitmap;
