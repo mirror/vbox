@@ -62,6 +62,7 @@
 # pragma intrinsic(_interlockedbittestandreset)
 # pragma intrinsic(_InterlockedAnd)
 # pragma intrinsic(_InterlockedOr)
+# pragma intrinsic(_InterlockedXor)
 # pragma intrinsic(_InterlockedIncrement)
 # pragma intrinsic(_InterlockedDecrement)
 # pragma intrinsic(_InterlockedExchange)
@@ -4188,6 +4189,34 @@ DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT
 
 
 /**
+ * Atomically OR an unsigned 32-bit value, ordered, extended version (for bitmap
+ * fallback).
+ *
+ * @returns Old value.
+ * @param   pu32   Pointer to the variable to OR @a u32 with.
+ * @param   u32    The value to OR @a *pu32 with.
+ */
+DECLINLINE(uint32_t) ASMAtomicOrExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
+{
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicOrEx32, pu32, DMB_SY,
+                                           "orr %w[uNew], %w[uOld], %w[uVal]\n\t",
+                                           "orr %[uNew], %[uOld], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+    return u32OldRet;
+
+#else
+    uint32_t u32RetOld = ASMAtomicUoReadU32(pu32);
+    uint32_t u32New;
+    do
+        u32New = u32RetOld | u32;
+    while (!ASMAtomicCmpXchgExU32(pu32, u32New, u32RetOld, &u32RetOld));
+    return u32RetOld;
+#endif
+}
+
+
+/**
  * Atomically Or a signed 32-bit value, ordered.
  *
  * @param   pi32   Pointer to the pointer variable to OR u32 with.
@@ -4311,6 +4340,33 @@ DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) R
 
 
 /**
+ * Atomically AND an unsigned 32-bit value, ordered, extended version.
+ *
+ * @returns Old value.
+ * @param   pu32   Pointer to the variable to AND @a u32 with.
+ * @param   u32    The value to AND @a *pu32 with.
+ */
+DECLINLINE(uint32_t) ASMAtomicAndExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
+{
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicAndEx32, pu32, DMB_SY,
+                                           "and %w[uNew], %w[uOld], %w[uVal]\n\t",
+                                           "and %[uNew], %[uOld], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+    return u32OldRet;
+
+#else
+    uint32_t u32RetOld = ASMAtomicUoReadU32(pu32);
+    uint32_t u32New;
+    do
+        u32New = u32RetOld & u32;
+    while (!ASMAtomicCmpXchgExU32(pu32, u32New, u32RetOld, &u32RetOld));
+    return u32RetOld;
+#endif
+}
+
+
+/**
  * Atomically And a signed 32-bit value, ordered.
  *
  * @param   pi32   Pointer to the pointer variable to AND i32 with.
@@ -4384,6 +4440,98 @@ DECLINLINE(void) ASMAtomicAndS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_
 
 
 /**
+ * Atomically XOR an unsigned 32-bit value and a memory location, ordered.
+ *
+ * @param   pu32   Pointer to the variable to XOR @a u32 with.
+ * @param   u32    The value to XOR @a *pu32 with.
+ *
+ * @remarks x86: Requires a 386 or later.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicXorU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(void) ASMAtomicXorU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    _InterlockedXor((long volatile RT_FAR *)pu32, u32);
+
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("lock; xor %1, %0\n\t"
+                         : "=m" (*pu32)
+                         : "ir" (u32)
+                         , "m" (*pu32)
+                         : "cc");
+#  else
+    __asm
+    {
+        mov     eax, [u32]
+#   ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+        lock xor [rdx], eax
+#   else
+        mov     edx, [pu32]
+        lock xor [edx], eax
+#   endif
+    }
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicXor32, pu32, DMB_SY,
+                                           "eor %w[uNew], %w[uNew], %w[uVal]\n\t",
+                                           "eor %[uNew], %[uNew], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+
+# else
+#  error "Port me"
+# endif
+}
+#endif
+
+
+/**
+ * Atomically XOR an unsigned 32-bit value and a memory location, ordered,
+ * extended version (for bitmaps).
+ *
+ * @returns Old value.
+ * @param   pu32   Pointer to the variable to XOR @a u32 with.
+ * @param   u32    The value to XOR @a *pu32 with.
+ */
+DECLINLINE(uint32_t) ASMAtomicXorExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
+{
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicXorEx32, pu32, DMB_SY,
+                                           "eor %w[uNew], %w[uOld], %w[uVal]\n\t",
+                                           "eor %[uNew], %[uOld], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+    return u32OldRet;
+
+#else
+    uint32_t u32RetOld = ASMAtomicUoReadU32(pu32);
+    uint32_t u32New;
+    do
+        u32New = u32RetOld ^ u32;
+    while (!ASMAtomicCmpXchgExU32(pu32, u32New, u32RetOld, &u32RetOld));
+    return u32RetOld;
+#endif
+}
+
+
+/**
+ * Atomically XOR a signed 32-bit value, ordered.
+ *
+ * @param   pi32   Pointer to the variable to XOR i32 with.
+ * @param   i32    The value to XOR *pi32 with.
+ *
+ * @remarks x86: Requires a 386 or later.
+ */
+DECLINLINE(void) ASMAtomicXorS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
+{
+    ASMAtomicXorU32((uint32_t volatile RT_FAR *)pi32, (uint32_t)i32);
+}
+
+
+/**
  * Atomically OR an unsigned 32-bit value, unordered but interrupt safe.
  *
  * @param   pu32   Pointer to the pointer variable to OR u32 with.
@@ -4428,6 +4576,29 @@ DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) 
 # endif
 }
 #endif
+
+
+/**
+ * Atomically OR an unsigned 32-bit value, unordered but interrupt safe,
+ * extended version (for bitmap fallback).
+ *
+ * @returns Old value.
+ * @param   pu32   Pointer to the variable to OR @a u32 with.
+ * @param   u32    The value to OR @a *pu32 with.
+ */
+DECLINLINE(uint32_t) ASMAtomicUoOrExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
+{
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicUoOrExU32, pu32, NO_BARRIER,
+                                           "orr %w[uNew], %w[uOld], %w[uVal]\n\t",
+                                           "orr %[uNew], %[uOld], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+    return u32OldRet;
+
+#else
+    return ASMAtomicOrExU32(pu32, u32); /* (we have no unordered cmpxchg primitive atm.) */
+#endif
+}
 
 
 /**
@@ -4548,6 +4719,29 @@ DECLINLINE(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
 
 
 /**
+ * Atomically AND an unsigned 32-bit value, unordered, extended version (for
+ * bitmap fallback).
+ *
+ * @returns Old value.
+ * @param   pu32   Pointer to the pointer to AND @a u32 with.
+ * @param   u32    The value to AND @a *pu32 with.
+ */
+DECLINLINE(uint32_t) ASMAtomicUoAndExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
+{
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicUoAndEx32, pu32, NO_BARRIER,
+                                           "and %w[uNew], %w[uOld], %w[uVal]\n\t",
+                                           "and %[uNew], %[uOld], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+    return u32OldRet;
+
+#else
+    return ASMAtomicAndExU32(pu32, u32); /* (we have no unordered cmpxchg primitive atm.) */
+#endif
+}
+
+
+/**
  * Atomically And a signed 32-bit value, unordered.
  *
  * @param   pi32   Pointer to the pointer variable to AND i32 with.
@@ -4614,6 +4808,90 @@ DECLINLINE(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
 DECLINLINE(void) ASMAtomicUoAndS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
     ASMAtomicUoAndU64((uint64_t volatile RT_FAR *)pi64, (uint64_t)i64);
+}
+
+
+/**
+ * Atomically XOR an unsigned 32-bit value, unordered but interrupt safe.
+ *
+ * @param   pu32   Pointer to the variable to XOR @a u32 with.
+ * @param   u32    The value to OR @a *pu32 with.
+ *
+ * @remarks x86: Requires a 386 or later.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicUoXorU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(void) ASMAtomicUoXorU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
+{
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("xorl %1, %0\n\t"
+                         : "=m" (*pu32)
+                         : "ir" (u32)
+                         , "m" (*pu32)
+                         : "cc");
+#  else
+    __asm
+    {
+        mov     eax, [u32]
+#   ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+        xor     [rdx], eax
+#   else
+        mov     edx, [pu32]
+        xor     [edx], eax
+#   endif
+    }
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(ASMAtomicUoXorU32, pu32, NO_BARRIER,
+                                           "eor %w[uNew], %w[uNew], %w[uVal]\n\t",
+                                           "eor %[uNew], %[uNew], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+
+# else
+#  error "Port me"
+# endif
+}
+#endif
+
+
+/**
+ * Atomically XOR an unsigned 32-bit value, unordered but interrupt safe,
+ * extended version (for bitmap fallback).
+ *
+ * @returns Old value.
+ * @param   pu32   Pointer to the variable to XOR @a u32 with.
+ * @param   u32    The value to OR @a *pu32 with.
+ */
+DECLINLINE(uint32_t) ASMAtomicUoXorExU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
+{
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    RTASM_ARM_LOAD_MODIFY_STORE_RET_OLD_32(ASMAtomicUoXorExU32, pu32, NO_BARRIER,
+                                           "eor %w[uNew], %w[uOld], %w[uVal]\n\t",
+                                           "eor %[uNew], %[uOld], %[uVal]\n\t",
+                                           [uVal] "r" (u32));
+    return u32OldRet;
+
+#else
+    return ASMAtomicXorExU32(pu32, u32); /* (we have no unordered cmpxchg primitive atm.) */
+#endif
+}
+
+
+/**
+ * Atomically XOR a signed 32-bit value, unordered.
+ *
+ * @param   pi32   Pointer to the variable to XOR @a u32 with.
+ * @param   i32    The value to XOR @a *pu32 with.
+ *
+ * @remarks x86: Requires a 386 or later.
+ */
+DECLINLINE(void) ASMAtomicUoXorS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
+{
+    ASMAtomicUoXorU32((uint32_t volatile RT_FAR *)pi32, (uint32_t)i32);
 }
 
 
@@ -5377,33 +5655,39 @@ DECLINLINE(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit)
  *          However, doing so will yield better performance as well as avoiding
  *          traps accessing the last bits in the bitmap.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     _bittestandcomplement((long RT_FAR *)pvBitmap, iBit);
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("btcl %1, %0"
                          : "=m" (*(volatile long *)pvBitmap)
                          : "Ir" (iBit)
                          , "m" (*(volatile long *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         btc     [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         mov     edx, [iBit]
         btc     [eax], edx
-#  endif
+#   endif
     }
+#  endif
+# else
+    int32_t offBitmap = iBit / 32;
+    AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
+    ASMAtomicUoXorU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_BIT_32(iBit & 31));
 # endif
 }
 #endif
@@ -5418,32 +5702,36 @@ DECLINLINE(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_N
  *
  * @remarks x86: Requires a 386 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
-# if RT_INLINE_ASM_GNU_STYLE
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; btcl %1, %0"
                          : "=m" (*(volatile long RT_FAR *)pvBitmap)
                          : "Ir" (iBit)
                          , "m" (*(volatile long RT_FAR *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         lock btc [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         mov     edx, [iBit]
         lock btc [eax], edx
-#  endif
+#   endif
     }
+#  endif
+# else
+    ASMAtomicXorU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_BIT_32(iBit & 31));
 # endif
 }
 #endif
@@ -5462,7 +5750,7 @@ DECLINLINE(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit
  *          However, doing so will yield better performance as well as avoiding
  *          traps accessing the last bits in the bitmap.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
@@ -5471,7 +5759,8 @@ DECLINLINE(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) 
 # if RT_INLINE_ASM_USES_INTRIN
     rc.u8 = _bittestandset((long RT_FAR *)pvBitmap, iBit);
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("btsl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
@@ -5481,21 +5770,27 @@ DECLINLINE(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) 
                          , "m" (*(volatile long RT_FAR *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
         mov     edx, [iBit]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         bts     [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         bts     [eax], edx
-#  endif
+#   endif
         setc    al
         and     eax, 1
         mov     [rc.u32], eax
     }
+#  endif
+
+# else
+    int32_t offBitmap = iBit / 32;
+    AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
+    rc.u32 = ASMAtomicUoOrExU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_BIT_32(iBit & 31)) >> (iBit & 31);
 # endif
     return rc.f;
 }
@@ -5514,7 +5809,7 @@ DECLINLINE(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) 
  *
  * @remarks x86: Requires a 386 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
@@ -5523,7 +5818,8 @@ DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t 
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
 # if RT_INLINE_ASM_USES_INTRIN
     rc.u8 = _interlockedbittestandset((long RT_FAR *)pvBitmap, iBit);
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; btsl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
@@ -5533,21 +5829,25 @@ DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t 
                          , "m" (*(volatile long RT_FAR *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
         mov     edx, [iBit]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         lock bts [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         lock bts [eax], edx
-#  endif
+#   endif
         setc    al
         and     eax, 1
         mov     [rc.u32], eax
     }
+#  endif
+
+# else
+    rc.u32 = ASMAtomicOrExU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_BIT_32(iBit & 31)) >> (iBit & 31);
 # endif
     return rc.f;
 }
@@ -5567,7 +5867,7 @@ DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t 
  *          However, doing so will yield better performance as well as avoiding
  *          traps accessing the last bits in the bitmap.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
@@ -5576,7 +5876,8 @@ DECLINLINE(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit
 # if RT_INLINE_ASM_USES_INTRIN
     rc.u8 = _bittestandreset((long RT_FAR *)pvBitmap, iBit);
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("btrl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
@@ -5586,21 +5887,27 @@ DECLINLINE(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit
                          , "m" (*(volatile long RT_FAR *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
         mov     edx, [iBit]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         btr     [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         btr     [eax], edx
-#  endif
+#   endif
         setc    al
         and     eax, 1
         mov     [rc.u32], eax
     }
+#  endif
+
+# else
+    int32_t offBitmap = iBit / 32;
+    AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
+    rc.u32 = ASMAtomicUoAndExU32(&((uint32_t volatile *)pvBitmap)[offBitmap], ~RT_BIT_32(iBit & 31)) >> (iBit & 31);
 # endif
     return rc.f;
 }
@@ -5620,7 +5927,7 @@ DECLINLINE(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit
  * @remarks No memory barrier, take care on smp.
  * @remarks x86: Requires a 386 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
@@ -5630,7 +5937,8 @@ DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_
 # if RT_INLINE_ASM_USES_INTRIN
     rc.u8 = _interlockedbittestandreset((long RT_FAR *)pvBitmap, iBit);
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; btrl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
@@ -5640,21 +5948,25 @@ DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_
                          , "m" (*(volatile long RT_FAR *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
         mov     edx, [iBit]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         lock btr [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         lock btr [eax], edx
-#  endif
+#   endif
         setc    al
         and     eax, 1
         mov     [rc.u32], eax
     }
+#  endif
+
+# else
+    rc.u32 = ASMAtomicAndExU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], ~RT_BIT_32(iBit & 31)) >> (iBit & 31);
 # endif
     return rc.f;
 }
@@ -5674,7 +5986,7 @@ DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_
  *          However, doing so will yield better performance as well as avoiding
  *          traps accessing the last bits in the bitmap.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
@@ -5683,7 +5995,8 @@ DECLINLINE(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBi
 # if RT_INLINE_ASM_USES_INTRIN
     rc.u8 = _bittestandcomplement((long RT_FAR *)pvBitmap, iBit);
 
-# elif RT_INLINE_ASM_GNU_STYLE
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("btcl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
@@ -5693,21 +6006,27 @@ DECLINLINE(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBi
                          , "m" (*(volatile long RT_FAR *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
         mov   edx, [iBit]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov   rax, [pvBitmap]
         btc   [rax], edx
-#  else
+#   else
         mov   eax, [pvBitmap]
         btc   [eax], edx
-#  endif
+#   endif
         setc  al
         and   eax, 1
         mov   [rc.u32], eax
     }
+#  endif
+
+# else
+    int32_t offBitmap = iBit / 32;
+    AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
+    rc.u32 = ASMAtomicUoXorExU32(&((uint32_t volatile *)pvBitmap)[offBitmap], RT_BIT_32(iBit & 31)) >> (iBit & 31);
 # endif
     return rc.f;
 }
@@ -5726,14 +6045,15 @@ DECLINLINE(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBi
  *
  * @remarks x86: Requires a 386 or later.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     union { bool f; uint32_t u32; uint8_t u8; } rc;
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
-# if RT_INLINE_ASM_GNU_STYLE
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; btcl %2, %1\n\t"
                          "setc %b0\n\t"
                          "andl $1, %0\n\t"
@@ -5743,21 +6063,25 @@ DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32
                          , "m" (*(volatile long RT_FAR *)pvBitmap)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
         mov     edx, [iBit]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         lock btc [rax], edx
-#  else
+#   else
         mov     eax, [pvBitmap]
         lock btc [eax], edx
-#  endif
+#   endif
         setc    al
         and     eax, 1
         mov     [rc.u32], eax
     }
+#  endif
+
+# else
+    rc.u32 = ASMAtomicXorExU32(&((uint32_t volatile *)pvBitmap)[iBit / 32], RT_BIT_32(iBit & 31)) >> (iBit & 31);
 # endif
     return rc.f;
 }
@@ -5777,7 +6101,7 @@ DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32
  *          However, doing so will yield better performance as well as avoiding
  *          traps accessing the last bits in the bitmap.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
@@ -5785,7 +6109,9 @@ DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) 
     union { bool f; uint32_t u32; uint8_t u8; } rc;
 # if RT_INLINE_ASM_USES_INTRIN
     rc.u32 = _bittest((long *)pvBitmap, iBit);
-# elif RT_INLINE_ASM_GNU_STYLE
+
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
 
     __asm__ __volatile__("btl %2, %1\n\t"
                          "setc %b0\n\t"
@@ -5795,21 +6121,27 @@ DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) 
                          , "Ir" (iBit)
                          : "memory"
                          , "cc");
-# else
+#  else
     __asm
     {
         mov   edx, [iBit]
-#  ifdef RT_ARCH_AMD64
+#   ifdef RT_ARCH_AMD64
         mov   rax, [pvBitmap]
         bt    [rax], edx
-#  else
+#   else
         mov   eax, [pvBitmap]
         bt    [eax], edx
-#  endif
+#   endif
         setc  al
         and   eax, 1
         mov   [rc.u32], eax
     }
+#  endif
+
+# else
+    int32_t offBitmap = iBit / 32;
+    AssertStmt(!((uintptr_t)pvBitmap & 3), offBitmap += (uintptr_t)pvBitmap & 3; iBit += ((uintptr_t)pvBitmap & 3) * 8);
+    rc.u32 = ASMAtomicUoReadU32(&((uint32_t volatile *)pvBitmap)[offBitmap]) >> (iBit & 31);
 # endif
     return rc.f;
 }
