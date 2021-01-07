@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - ASMBitFirstClear - generic C implementation.
+ * IPRT - ASMBitFirstSet - generic C implementation.
  */
 
 /*
@@ -34,7 +34,7 @@
 #include <iprt/assert.h>
 
 
-DECLASM(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_DEF
+DECLASM(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_DEF
 {
     const volatile size_t RT_FAR *pu = (const volatile size_t RT_FAR *)pvBitmap;
     Assert(!(cBits & 31));
@@ -48,7 +48,7 @@ DECLASM(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint32_t
         if (u32 != UINT32_MAX)
         {
             size_t const iBaseBit = ((uintptr_t)pu - (uintptr_t)pvBitmap) * 8;
-            return iBaseBit + ASMBitFirstSetU32(~RT_LE2H_U32(u32)) - 1;
+            return iBaseBit + ASMBitFirstSetU32(RT_LE2H_U32(u32)) - 1;
         }
         pu     = (const volatile size_t RT_FAR *)((uintptr_t)pu + sizeof(uint32_t));
         cBits -= 32;
@@ -59,15 +59,15 @@ DECLASM(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint32_t
     while (cBits >= sizeof(size_t) * 8)
     {
         size_t u = *pu;
-        if (u == ~(size_t)0)
+        if (u == 0)
         { }
         else
         {
             size_t const iBaseBit = ((uintptr_t)pu - (uintptr_t)pvBitmap) * 8;
 #if ARCH_BITS == 32
-            return iBaseBit + ASMBitFirstSetU32(~RT_LE2H_U32(u)) - 1;
+            return iBaseBit + ASMBitFirstSetU32(RT_LE2H_U32(u)) - 1;
 #elif ARCH_BITS == 64
-            return iBaseBit + ASMBitFirstSetU64(~RT_LE2H_U64(u)) - 1;
+            return iBaseBit + ASMBitFirstSetU64(RT_LE2H_U64(u)) - 1;
 #else
 # error "ARCH_BITS is not supported"
 #endif
@@ -87,7 +87,7 @@ DECLASM(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint32_t
         if (u32 != UINT32_MAX)
         {
             size_t const iBaseBit = ((uintptr_t)pu - (uintptr_t)pvBitmap) * 8;
-            return iBaseBit + ASMBitFirstSetU32(~RT_LE2H_U32(u32)) - 1;
+            return iBaseBit + ASMBitFirstSetU32(RT_LE2H_U32(u32)) - 1;
         }
     }
 #endif
