@@ -770,6 +770,7 @@ RuntimeR3_SOURCES.arm32 := \
 	common/asm/ASMBitFirstClear-generic.cpp \
 	common/asm/ASMBitNextClear-generic.cpp \
 	common/asm/ASMBitFirstSet-generic.cpp \
+	common/asm/ASMBitNextSet-generic.cpp \
 	common/asm/ASMMemZeroPage-generic.cpp \
 	common/asm/ASMMemZero32-generic.cpp \
 	common/asm/ASMMemFill32-generic.cpp \
@@ -778,8 +779,9 @@ RuntimeR3_SOURCES.arm32 := \
 	common/misc/zero-alt.S
 RuntimeR3_SOURCES.arm64 := \
 	common/asm/ASMBitFirstClear-generic.cpp \
-	common/asm/ASMBitFirstSet-generic.cpp \
 	common/asm/ASMBitNextClear-generic.cpp \
+	common/asm/ASMBitFirstSet-generic.cpp \
+	common/asm/ASMBitNextSet-generic.cpp \
 	common/asm/ASMMemZeroPage-generic.cpp \
 	common/asm/ASMMemZero32-generic.cpp \
 	common/asm/ASMMemFill32-generic.cpp \
@@ -790,8 +792,9 @@ RuntimeR3_SOURCES.sparc32 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
 	generic/RTSystemIsInsideVM-generic.cpp \
 	common/asm/ASMBitFirstClear-generic.cpp \
-	common/asm/ASMBitFirstSet-generic.cpp \
 	common/asm/ASMBitNextClear-generic.cpp \
+	common/asm/ASMBitFirstSet-generic.cpp \
+	common/asm/ASMBitNextSet-generic.cpp \
 	common/asm/ASMMemZeroPage-generic.cpp \
 	common/asm/ASMMemZero32-generic.cpp \
 	common/asm/ASMMemFill32-generic.cpp \
@@ -804,8 +807,9 @@ RuntimeR3_SOURCES.sparc64 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
 	generic/RTSystemIsInsideVM-generic.cpp \
 	common/asm/ASMBitFirstClear-generic.cpp \
-	common/asm/ASMBitFirstSet-generic.cpp \
 	common/asm/ASMBitNextClear-generic.cpp \
+	common/asm/ASMBitFirstSet-generic.cpp \
+	common/asm/ASMBitNextSet-generic.cpp \
 	common/asm/ASMMemZeroPage-generic.cpp \
 	common/asm/ASMMemZero32-generic.cpp \
 	common/asm/ASMMemFill32-generic.cpp \

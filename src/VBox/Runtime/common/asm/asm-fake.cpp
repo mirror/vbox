@@ -296,45 +296,6 @@ RTDECL(bool) ASMBitTest(const volatile void *pvBitmap, int32_t iBit)
     return  pau8Bitmap[iBit / 8] & (uint8_t)RT_BIT_32(iBit & 7) ? true : false;
 }
 
-RTDECL(int) ASMBitNextSet(const volatile void *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
-{
-    const volatile uint8_t *pau8Bitmap = (const volatile uint8_t *)pvBitmap;
-    int                      iBit = ++iBitPrev & 7;
-    if (iBit)
-    {
-        /*
-         * Inspect the byte containing the unaligned bit.
-         */
-        uint8_t u8 = pau8Bitmap[iBitPrev / 8] >> iBit;
-        if (u8)
-        {
-            iBit = 0;
-            while (!(u8 & 1))
-            {
-                u8 >>= 1;
-                iBit++;
-            }
-            return iBitPrev + iBit;
-        }
-
-        /*
-         * Skip ahead and see if there is anything left to search.
-         */
-        iBitPrev |= 7;
-        iBitPrev++;
-        if (cBits <= iBitPrev)
-            return -1;
-    }
-
-    /*
-     * Byte search, let ASMBitFirstSet do the dirty work.
-     */
-    iBit = ASMBitFirstSet(&pau8Bitmap[iBitPrev / 8], cBits - iBitPrev);
-    if (iBit >= 0)
-        iBit += iBitPrev;
-    return iBit;
-}
-
 RTDECL(unsigned) ASMBitFirstSetU32(uint32_t u32)
 {
     uint32_t iBit;

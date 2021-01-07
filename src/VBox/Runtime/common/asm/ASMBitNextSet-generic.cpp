@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - ASMBitNextClear - generic C implementation.
+ * IPRT - ASMBitNextSet - generic C implementation.
  */
 
 /*
@@ -34,7 +34,7 @@
 #include <iprt/assert.h>
 
 
-DECLASM(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev) RT_NOTHROW_DEF
+DECLASM(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev) RT_NOTHROW_DEF
 {
     const volatile uint32_t RT_FAR *pau32Bitmap = (const volatile uint32_t RT_FAR *)pvBitmap;
     int                             iBit = ++iBitPrev & 31;
@@ -45,7 +45,7 @@ DECLASM(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t cBit
         /*
          * Inspect the 32-bit word containing the unaligned bit.
          */
-        uint32_t u32 = ~RT_LE2H_U32(pau32Bitmap[iBitPrev / 32]) >> iBit;
+        uint32_t u32 = RT_LE2H_U32(pau32Bitmap[iBitPrev / 32]) >> iBit;
         if (u32)
             return iBitPrev + ASMBitFirstSetU32(u32) - 1;
 
@@ -59,9 +59,9 @@ DECLASM(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t cBit
     }
 
     /*
-     * 32-bit aligned search, let ASMBitFirstClear do the dirty work.
+     * 32-bit aligned search, let ASMBitFirstSet do the dirty work.
      */
-    iBit = ASMBitFirstClear(&pau32Bitmap[iBitPrev / 32], cBits - iBitPrev);
+    iBit = ASMBitFirstSet(&pau32Bitmap[iBitPrev / 32], cBits - iBitPrev);
     if (iBit >= 0)
         iBit += iBitPrev;
     return iBit;
