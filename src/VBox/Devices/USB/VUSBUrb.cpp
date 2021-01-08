@@ -943,27 +943,43 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
              * will be no status stage.
              */
             uint8_t *pbData = (uint8_t *)(pExtra->pMsg + 1);
-            if (&pExtra->pbCur[pUrb->cbData] > &pbData[pSetup->wLength])
+            if ((uintptr_t)&pExtra->pbCur[pUrb->cbData] > (uintptr_t)&pbData[pSetup->wLength])
             {
-                if (!pSetup->wLength) /* happens during iPhone detection with iTunes (correct?) */
+                /* In the device -> host direction, the device never returns more data than
+                   what was requested (wLength).  So, we can just cap cbData. */
+                ssize_t const cbLeft = &pbData[pSetup->wLength] - pExtra->pbCur;
+                if (pSetup->bmRequestType & VUSB_DIR_TO_HOST)
                 {
-                    Log(("%s: vusbUrbSubmitCtrl: pSetup->wLength == 0!! (iPhone)\n", pUrb->pszDesc));
-                    pSetup->wLength = pUrb->cbData;
+                    LogFlow(("%s: vusbUrbSubmitCtrl: Adjusting DATA request: %d -> %d\n", pUrb->pszDesc, pUrb->cbData, cbLeft));
+                    pUrb->cbData = cbLeft >= 0 ? (uint32_t)cbLeft : 0;
                 }
+                /* In the host -> direction it's undefined what happens if the host provides
+                   more data than what wLength inidicated.  However, in 2007, iPhone detection
+                   via iTunes would issue wLength=0 but provide a data URB which we needed to
+                   pass on to the device anyway, so we'll just quietly adjust wLength if it's
+                   zero and get on with the work.
 
-                /* Variable length data transfers */
-                if (    (pSetup->bmRequestType & VUSB_DIR_TO_HOST)
-                    ||  pSetup->wLength == 0
-                    ||  (pUrb->cbData % pSetup->wLength) == 0)  /* magic which need explaining... */
+                   What confuses me (bird) here, though, is that we've already sent the SETUP
+                   URB to the device when we received it, and all we end up doing is an
+                   unnecessary memcpy and completing the URB, but never actually sending the
+                   data to the device.  So, I guess this stuff is still a little iffy.
+
+                   Note! We currently won't be doing any resizing, as we've disabled resizing
+                         in general.
+                   P.S.  We used to have a very strange (pUrb->cbData % pSetup->wLength) == 0
+                         thing too that joined the pUrb->cbData adjusting above. */
+                else if (   pSetup->wLength == 0
+                         && pUrb->cbData <= pExtra->cbMax)
                 {
-                    uint8_t *pbEnd = pbData + pSetup->wLength;
-                    int cbLeft = pbEnd - pExtra->pbCur;
-                    LogFlow(("%s: vusbUrbSubmitCtrl: Var DATA, pUrb->cbData %d -> %d\n", pUrb->pszDesc, pUrb->cbData, cbLeft));
-                    pUrb->cbData = cbLeft;
+                    Log(("%s: vusbUrbSubmitCtrl: pAdjusting wLength: %u -> %u (iPhone hack)\n",
+                         pUrb->pszDesc, pSetup->wLength, pUrb->cbData));
+                    pSetup->wLength = pUrb->cbData;
+                    Assert(cbLeft >= (ssize_t)pUrb->cbData);
                 }
                 else
                 {
-                    Log(("%s: vusbUrbSubmitCtrl: Stall at data stage!!\n", pUrb->pszDesc));
+                    Log(("%s: vusbUrbSubmitCtrl: Stall at data stage!! wLength=%u cbData=%d cbMax=%d cbLeft=%dz\n",
+                         pUrb->pszDesc, pSetup->wLength, pUrb->cbData, pExtra->cbMax, cbLeft));
                     vusbMsgStall(pUrb);
                     break;
                 }
@@ -991,6 +1007,8 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
             else
             {
                 /* get data for sending when completed. */
+                AssertStmt((ssize_t)pUrb->cbData <= pExtra->cbMax - (pExtra->pbCur - pbData), /* paranoia: checked above */
+                           pUrb->cbData = pExtra->cbMax - (uint32_t)RT_MIN(pExtra->pbCur - pbData, pExtra->cbMax));
                 memcpy(pExtra->pbCur, pUrb->abData, pUrb->cbData);
 
                 /* advance */
