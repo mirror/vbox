@@ -53,12 +53,12 @@
 #define INT_MAX         0x7fffffff
 #define INT_MIN         (-0x7fffffff - 1)
 
-#if defined(RT_ARCH_X86) || defined(RT_OS_WINDOWS) || defined(RT_ARCH_SPARC)
+#if defined(RT_ARCH_X86) || defined(RT_OS_WINDOWS) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_ARM32)
 # define LONG_BIT       32
 # define ULONG_MAX      0xffffffffU
 # define LONG_MAX       0x7fffffff
 # define LONG_MIN       (-0x7fffffff - 1)
-#elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64)
+#elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64) || defined(RT_ARCH_ARM64)
 # define LONG_BIT       64
 # define ULONG_MAX      UINT64_C(0xffffffffffffffff)
 # define LONG_MAX       INT64_C(0x7fffffffffffffff)
