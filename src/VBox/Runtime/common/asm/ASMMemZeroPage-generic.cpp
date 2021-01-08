@@ -34,7 +34,7 @@
 #include <iprt/string.h>
 
 
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_DEF
+RTDECL(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_DEF
 {
     memset((void *)pv, 0, RT_ASM_PAGE_SIZE);
 }

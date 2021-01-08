@@ -34,7 +34,7 @@
 #include <iprt/string.h>
 
 
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
+RTDECL(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
 {
     memset((void *)pv, 0, cb);
 }

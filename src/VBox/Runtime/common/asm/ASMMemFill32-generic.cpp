@@ -35,7 +35,7 @@
 #include <iprt/assert.h>
 
 
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_DEF
+RTDECL(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_DEF
 {
     Assert(!(cb & 3));
     size_t cFills = cb / sizeof(uint32_t);
