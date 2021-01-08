@@ -1288,8 +1288,12 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/utf8-posix.cpp
 RuntimeR3_SOURCES.darwin.x86   += common/string/memrchr.asm
 RuntimeR3_SOURCES.darwin.amd64 += common/string/memrchr.asm
-RuntimeR3_SOURCES.darwin.arm32 += common/string/memrchr.cpp
-RuntimeR3_SOURCES.darwin.arm64 += common/string/memrchr.cpp
+RuntimeR3_SOURCES.darwin.arm32 += \
+	common/string/memrchr.cpp \
+	r3/darwin/RTMpGetDescription-generic.cpp
+RuntimeR3_SOURCES.darwin.arm64 += \
+	common/string/memrchr.cpp \
+	r3/darwin/RTMpGetDescription-generic.cpp
 
 ## @todo Make BSD sched, implement RTMP*.
 RuntimeR3_SOURCES.freebsd = \

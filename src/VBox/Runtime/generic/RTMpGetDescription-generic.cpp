@@ -93,6 +93,9 @@ RTDECL(int) RTMpGetDescription(RTCPUID idCpu, char *pszBuf, size_t cbBuf)
         ((uint32_t *)&szString[0])[2] = uECX;
     }
 
+#elif defined(RT_ARCH_ARM64)
+    RTCCINTREG uFreq;
+
 #else
 # error "PORTME or use RTMpGetDescription-generic-stub.cpp."
 #endif
