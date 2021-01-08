@@ -29,6 +29,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QHBoxLayout>
+#include <QScrollBar>
 #include <QWidgetAction>
 #ifdef RT_OS_SOLARIS
 # include <QFontDatabase>
@@ -109,6 +110,7 @@ public:
 protected:
 
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
 
 private:
 
@@ -250,6 +252,28 @@ bool UIFindInPageWidget::eventFilter(QObject *pObject, QEvent *pEvent)
     return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
 }
 
+void UIFindInPageWidget::keyPressEvent(QKeyEvent *pEvent)
+{
+    switch (pEvent->key())
+    {
+        case  Qt::Key_Escape:
+            emit sigClose();
+            return;
+            break;
+        case Qt::Key_Down:
+            emit sigSelectNextMatch();
+            return;
+            break;
+        case Qt::Key_Up:
+            emit sigSelectPreviousMatch();
+            return;
+            break;
+        default:
+            QIWithRetranslateUI<QWidget>::keyPressEvent(pEvent);
+            break;
+    }
+}
+
 void UIFindInPageWidget::prepare()
 {
     setAutoFillBackground(true);
@@ -364,6 +388,8 @@ void UIHelpViewer::toggleFindInPageWidget(bool fVisible)
 {
     if (!m_pFindInPageWidget)
         return;
+    /* Closing the find in page widget causes QTextBrowser to jump to the top of the document. This hack puts it back into position: */
+    int iPosition = verticalScrollBar()->value();
     /* Try to position the widget somewhere meaningful initially: */
     if (!m_fFindWidgetDragged)
         m_pFindInPageWidget->move(width() - m_iMarginForFindWidget - m_pFindInPageWidget->width(),
@@ -375,6 +401,7 @@ void UIHelpViewer::toggleFindInPageWidget(bool fVisible)
     {
         document()->undo();
         m_pFindInPageWidget->clearSearchField();
+        verticalScrollBar()->setValue(iPosition);
     }
     else
         m_pFindInPageWidget->setFocus();
