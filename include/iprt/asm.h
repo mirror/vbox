@@ -6566,7 +6566,7 @@ DECLINLINE(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBi
  * @param   u32     Integer to search for set bits.
  * @remarks Similar to ffs() in BSD.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU32(uint32_t u32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32) RT_NOTHROW_DEF
@@ -6577,7 +6577,9 @@ DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32) RT_NOTHROW_DEF
         iBit++;
     else
         iBit = 0;
-# elif RT_INLINE_ASM_GNU_STYLE
+
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     uint32_t iBit;
     __asm__ __volatile__("bsf  %1, %0\n\t"
                          "jnz  1f\n\t"
@@ -6589,7 +6591,7 @@ DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32) RT_NOTHROW_DEF
                          : "=r" (iBit)
                          : "rm" (u32)
                          : "cc");
-# else
+#  else
     uint32_t iBit;
     _asm
     {
@@ -6602,6 +6604,34 @@ DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32) RT_NOTHROW_DEF
     done:
         mov     [iBit], eax
     }
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    /*
+     * Using the "count leading zeros (clz)" instruction here because there
+     * is no dedicated instruction to get the first set bit.
+     * Need to reverse the bits in the value with "rbit" first because
+     * "clz" starts counting from the most significant bit.
+     */
+    uint32_t iBit;
+    __asm__ __volatile__(
+#  if defined(RT_ARCH_ARM64)
+                         "rbit %w[uVal], %w[uVal]\n\t"
+                         "clz  %w[iBit], %w[uVal]\n\t"
+#  else
+                         "rbit %[uVal], %[uVal]\n\t"
+                         "clz  %[iBit], %[uVal]\n\t"
+#  endif
+                         : [uVal] "=r" (u32)
+                         , [iBit] "=r" (iBit)
+                         : "[uVal]" (u32));
+    if (iBit != 32)
+        iBit++;
+    else
+        iBit = 0; /* No bit set. */
+
+# else
+#  error "Port me"
 # endif
     return iBit;
 }
@@ -6633,7 +6663,7 @@ DECLINLINE(unsigned) ASMBitFirstSetS32(int32_t i32) RT_NOTHROW_DEF
  * @param   u64     Integer to search for set bits.
  * @remarks Similar to ffs() in BSD.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU64(uint64_t u64) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64) RT_NOTHROW_DEF
@@ -6653,7 +6683,8 @@ DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64) RT_NOTHROW_DEF
     else
         iBit = 0;
 #  endif
-# elif RT_INLINE_ASM_GNU_STYLE && ARCH_BITS == 64
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     uint64_t iBit;
     __asm__ __volatile__("bsfq %1, %0\n\t"
                          "jnz  1f\n\t"
@@ -6665,6 +6696,19 @@ DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64) RT_NOTHROW_DEF
                          : "=r" (iBit)
                          : "rm" (u64)
                          : "cc");
+
+# elif defined(RT_ARCH_ARM64)
+    uint64_t iBit;
+    __asm__ __volatile__("rbit %[uVal], %[uVal]\n\t"
+                         "clz  %[iBit], %[uVal]\n\t"
+                         : [uVal] "=r" (u64)
+                         , [iBit] "=r" (iBit)
+                         : "[uVal]" (u64));
+    if (iBit != 64)
+        iBit++;
+    else
+        iBit = 0; /* No bit set. */
+
 # else
     unsigned iBit = ASMBitFirstSetU32((uint32_t)u64);
     if (!iBit)
@@ -6689,7 +6733,7 @@ DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64) RT_NOTHROW_DEF
  * @param   u16     Integer to search for set bits.
  * @remarks For 16-bit bs3kit code.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU16(uint16_t u16) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(unsigned) ASMBitFirstSetU16(uint16_t u16) RT_NOTHROW_DEF
@@ -6708,7 +6752,7 @@ DECLINLINE(unsigned) ASMBitFirstSetU16(uint16_t u16) RT_NOTHROW_DEF
  * @param   u32     Integer to search for set bits.
  * @remark  Similar to fls() in BSD.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU32(uint32_t u32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32) RT_NOTHROW_DEF
@@ -6719,7 +6763,9 @@ DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32) RT_NOTHROW_DEF
         iBit++;
     else
         iBit = 0;
-# elif RT_INLINE_ASM_GNU_STYLE
+
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     uint32_t iBit;
     __asm__ __volatile__("bsrl %1, %0\n\t"
                          "jnz   1f\n\t"
@@ -6731,7 +6777,7 @@ DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32) RT_NOTHROW_DEF
                          : "=r" (iBit)
                          : "rm" (u32)
                          : "cc");
-# else
+#  else
     uint32_t iBit;
     _asm
     {
@@ -6744,6 +6790,22 @@ DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32) RT_NOTHROW_DEF
     done:
         mov     [iBit], eax
     }
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint32_t iBit;
+    __asm__ __volatile__(
+#  if defined(RT_ARCH_ARM64)
+                         "clz  %w[iBit], %w[uVal]\n\t"
+#  else
+                         "clz  %[iBit], %[uVal]\n\t"
+#  endif
+                         : [iBit] "=r" (iBit)
+                         : [uVal] "r" (u32));
+    iBit = 32 - iBit;
+
+# else
+#  error "Port me"
 # endif
     return iBit;
 }
@@ -6775,7 +6837,7 @@ DECLINLINE(unsigned) ASMBitLastSetS32(int32_t i32) RT_NOTHROW_DEF
  * @param   u64     Integer to search for set bits.
  * @remark  Similar to fls() in BSD.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU64(uint64_t u64) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64) RT_NOTHROW_DEF
@@ -6795,7 +6857,8 @@ DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64) RT_NOTHROW_DEF
     else
         iBit = 0;
 #  endif
-# elif RT_INLINE_ASM_GNU_STYLE && ARCH_BITS == 64
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     uint64_t iBit;
     __asm__ __volatile__("bsrq %1, %0\n\t"
                          "jnz  1f\n\t"
@@ -6807,13 +6870,21 @@ DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64) RT_NOTHROW_DEF
                          : "=r" (iBit)
                          : "rm" (u64)
                          : "cc");
+
+# elif defined(RT_ARCH_ARM64)
+    uint64_t iBit;
+    __asm__ __volatile__("clz  %[iBit], %[uVal]\n\t"
+                         : [iBit] "=r" (iBit)
+                         : [uVal] "r" (u64));
+    iBit = 64 - iBit;
+
 # else
     unsigned iBit = ASMBitLastSetU32((uint32_t)(u64 >> 32));
     if (iBit)
         iBit += 32;
     else
         iBit = ASMBitLastSetU32((uint32_t)u64);
-#endif
+# endif
     return (unsigned)iBit;
 }
 #endif
@@ -6829,7 +6900,7 @@ DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64) RT_NOTHROW_DEF
  * @param   u16     Integer to search for set bits.
  * @remarks For 16-bit bs3kit code.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU16(uint16_t u16) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(unsigned) ASMBitLastSetU16(uint16_t u16) RT_NOTHROW_DEF
@@ -6845,24 +6916,42 @@ DECLINLINE(unsigned) ASMBitLastSetU16(uint16_t u16) RT_NOTHROW_DEF
  * @returns Revert
  * @param   u16     16-bit integer value.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMByteSwapU16(uint16_t u16) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
-    u16 = _byteswap_ushort(u16);
-# elif RT_INLINE_ASM_GNU_STYLE
+    return _byteswap_ushort(u16);
+
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ ("rorw $8, %0" : "=r" (u16) : "0" (u16) : "cc");
-# else
+#  else
     _asm
     {
         mov     ax, [u16]
         ror     ax, 8
         mov     [u16], ax
     }
-# endif
+#  endif
     return u16;
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint32_t u32Ret;
+    __asm__ __volatile__(
+#  if defined(RT_ARCH_ARM64)
+                         "rev16     %w[uRet], %w[uVal]\n\t"
+#  else
+                         "rev16     %[uRet], %[uVal]\n\t"
+#  endif
+                         : [uRet] "=r" (u32Ret)
+                         : [uVal] "r" (u16));
+    return (uint16_t)u32Ret;
+
+# else
+#  error "Port me"
+# endif
 }
 #endif
 
@@ -6873,24 +6962,43 @@ DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16) RT_NOTHROW_DEF
  * @returns Revert
  * @param   u32     32-bit integer value.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMByteSwapU32(uint32_t u32) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
-    u32 = _byteswap_ulong(u32);
-# elif RT_INLINE_ASM_GNU_STYLE
+    return _byteswap_ulong(u32);
+
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
     __asm__ ("bswapl %0" : "=r" (u32) : "0" (u32));
-# else
+#  else
     _asm
     {
         mov     eax, [u32]
         bswap   eax
         mov     [u32], eax
     }
-# endif
+#  endif
     return u32;
+
+# elif defined(RT_ARCH_ARM64)
+    uint64_t u64Ret;
+    __asm__ __volatile__("rev32     %[uRet], %[uVal]\n\t"
+                         : [uRet] "=r" (u64Ret)
+                         : [uVal] "r" ((uint64_t)u32));
+    return (uint32_t)u64Ret;
+
+# elif defined(RT_ARCH_ARM32)
+    __asm__ __volatile__("rev       %[uRet], %[uVal]\n\t"
+                         : [uRet] "=r" (u32)
+                         : [uVal] "[uRet]" (u32));
+    return u32;
+
+# else
+#  error "Port me"
+# endif
 }
 #endif
 
@@ -6904,12 +7012,22 @@ DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32) RT_NOTHROW_DEF
 DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_AMD64) && RT_INLINE_ASM_USES_INTRIN
-    u64 = _byteswap_uint64(u64);
-#else
-    u64 = (uint64_t)ASMByteSwapU32((uint32_t)u64) << 32
-        | (uint64_t)ASMByteSwapU32((uint32_t)(u64 >> 32));
-#endif
+    return _byteswap_uint64(u64);
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    __asm__ ("bswapq %0" : "=r" (u64) : "0" (u64));
     return u64;
+
+# elif defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("rev       %[uRet], %[uVal]\n\t"
+                         : [uRet] "=r" (u64)
+                         : [uVal] "[uRet]" (u64));
+    return u64;
+
+#else
+    return = (uint64_t)ASMByteSwapU32((uint32_t)u64) << 32
+           | (uint64_t)ASMByteSwapU32((uint32_t)(u64 >> 32));
+#endif
 }
 
 
@@ -6927,9 +7045,23 @@ DECLINLINE(uint32_t) ASMRotateLeftU32(uint32_t u32, uint32_t cShift) RT_NOTHROW_
 {
 # if RT_INLINE_ASM_USES_INTRIN
     return _rotl(u32, cShift);
+
 # elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     __asm__ __volatile__("roll %b1, %0" : "=g" (u32) : "Ic" (cShift), "0" (u32) : "cc");
     return u32;
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    __asm__ __volatile__(
+#  if defined(RT_ARCH_ARM64)
+                         "ror       %w[uRet], %w[uVal], %w[cShift]\n\t"
+#  else
+                         "ror       %[uRet], %[uVal], %[cShift]\n\t"
+#  endif
+                         : [uRet] "=r" (u32)
+                         : [uVal] "[uRet]" (u32)
+                         , [cShift] "r" (32 - (cShift & 31))); /** @todo there is an immediate form here */
+    return u32;
+
 # else
     cShift &= 31;
     return (u32 << cShift) | (u32 >> (32 - cShift));
@@ -6952,9 +7084,23 @@ DECLINLINE(uint32_t) ASMRotateRightU32(uint32_t u32, uint32_t cShift) RT_NOTHROW
 {
 # if RT_INLINE_ASM_USES_INTRIN
     return _rotr(u32, cShift);
+
 # elif RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     __asm__ __volatile__("rorl %b1, %0" : "=g" (u32) : "Ic" (cShift), "0" (u32) : "cc");
     return u32;
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    __asm__ __volatile__(
+#  if defined(RT_ARCH_ARM64)
+                         "ror       %w[uRet], %w[uVal], %w[cShift]\n\t"
+#  else
+                         "ror       %[uRet], %[uVal], %[cShift]\n\t"
+#  endif
+                         : [uRet] "=r" (u32)
+                         : [uVal] "[uRet]" (u32)
+                         , [cShift] "r" (cShift & 31)); /** @todo there is an immediate form here */
+    return u32;
+
 # else
     cShift &= 31;
     return (u32 >> cShift) | (u32 << (32 - cShift));
@@ -6974,9 +7120,11 @@ DECLINLINE(uint64_t) ASMRotateLeftU64(uint64_t u64, uint32_t cShift) RT_NOTHROW_
 {
 #if RT_INLINE_ASM_USES_INTRIN
     return _rotl64(u64, cShift);
+
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("rolq %b1, %0" : "=g" (u64) : "Jc" (cShift), "0" (u64) : "cc");
     return u64;
+
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_X86)
     uint32_t uSpill;
     __asm__ __volatile__("testb $0x20, %%cl\n\t"        /* if (cShift >= 0x20) { swap(u64.hi, u64lo); cShift -= 0x20; } */
@@ -6996,6 +7144,14 @@ DECLINLINE(uint64_t) ASMRotateLeftU64(uint64_t u64, uint32_t cShift) RT_NOTHROW_
                          , "1" (cShift)
                          : "cc");
     return u64;
+
+# elif defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("ror       %[uRet], %[uVal], %[cShift]\n\t"
+                         : [uRet] "=r" (u64)
+                         : [uVal] "[uRet]" (u64)
+                         , [cShift] "r" ((uint64_t)(64 - (cShift & 63)))); /** @todo there is an immediate form here */
+    return u64;
+
 #else
     cShift &= 63;
     return (u64 << cShift) | (u64 >> (64 - cShift));
@@ -7014,9 +7170,11 @@ DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift) RT_NOTHROW
 {
 #if RT_INLINE_ASM_USES_INTRIN
     return _rotr64(u64, cShift);
+
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("rorq %b1, %0" : "=g" (u64) : "Jc" (cShift), "0" (u64) : "cc");
     return u64;
+
 #elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_X86)
     uint32_t uSpill;
     __asm__ __volatile__("testb $0x20, %%cl\n\t"        /* if (cShift >= 0x20) { swap(u64.hi, u64lo); cShift -= 0x20; } */
@@ -7036,6 +7194,14 @@ DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift) RT_NOTHROW
                          , "1" (cShift)
                          : "cc");
     return u64;
+
+# elif defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("ror       %[uRet], %[uVal], %[cShift]\n\t"
+                         : [uRet] "=r" (u64)
+                         : [uVal] "[uRet]" (u64)
+                         , [cShift] "r" ((uint64_t)(cShift & 63))); /** @todo there is an immediate form here */
+    return u64;
+
 #else
     cShift &= 63;
     return (u64 >> cShift) | (u64 << (64 - cShift));
