@@ -2483,7 +2483,6 @@ DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW
 {
     Assert(!((uintptr_t)pi32 & 3));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    Assert(!((uintptr_t)pi32 & 7));
     int32_t i32;
     __asm__ __volatile__(".Lstart_ASMAtomicUoReadS32_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
