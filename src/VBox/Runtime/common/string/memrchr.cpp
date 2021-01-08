@@ -35,15 +35,15 @@
  * Search for a given byte starting at the end of the block.
  *
  * @returns Pointer on a match or NULL otherwise.
- * @param   pb      Pointer to the block.
+ * @param   pv      Pointer to the block.
  * @param   ch      The char to search for.
  * @param   cb      The size of the block.
  */
-void *memrchr(const char *pb, int ch, size_t cb)
+void *memrchr(const void *pv, int ch, size_t cb)
 {
     if (cb)
     {
-        const char *pbCur = pb + cb - 1;
+        const char *pbCur = (const char *)pv + cb - 1;
 
         while (cb)
         {
