@@ -142,6 +142,12 @@ VBOX_HDRS_OMIT += \
 	VBox/vmm/cpumctx-v1_6.h \
 	VBox/vmm/dbgfcorefmt.h
 endif
+# ARM only headers.
+ifn1of ($(KBUILD_TARGET_ARCH), arm32 arm64)
+VBOX_HDRS_OMIT += \
+	iprt/asm-arm.h
+endif
+
 
 # We omit a few headers which have platform specific issues or are templates.
 VBOX_HDRS_ALL := $(filter-out $(VBOX_HDRS_OMIT), \
