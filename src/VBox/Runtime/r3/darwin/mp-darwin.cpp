@@ -114,7 +114,26 @@ static RTCPUID rtMpDarwinOnlinePhysicalCpus(void)
 }
 
 
-/** @todo RTmpCpuId(). */
+#if defined(RT_ARCH_ARM64)
+RTDECL(RTCPUID) RTMpCpuId(void)
+{
+    /* xnu-7195.50.7.100.1/osfmk/arm64/start.s and machine_routines.c sets TPIDRRO_EL0
+       to the cpu_data_t::cpu_id value. */
+    uint64_t u64Ret;
+    __asm__ __volatile__("mrs %0,TPIDRRO_EL0\n\t" : "=r" (u64Ret));
+    return (RTCPUID)u64Ret;
+}
+#elif defined(RT_ARCH_ARM32)
+RTDECL(RTCPUID) RTMpCpuId(void)
+{
+    /* xnu-7195.50.7.100.1/osfmk/arm/start.s and machine_routines.c sets TPIDRURO
+       to the cpu_data_t::cpu_id value. */
+    uint32_t u32Ret;
+    __asm__ __volatile__("mrs p15, 0, %0, c13, c0, 3\n\t" : "=r" (u32Ret));
+    return (RTCPUID)u32Ret;
+}
+#endif
+
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
