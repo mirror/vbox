@@ -4460,7 +4460,7 @@
  * The ASM* functions will then be implemented in external .asm files.
  */
 #if (defined(_MSC_VER) && defined(RT_ARCH_AMD64)) \
- || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)) \
+ || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86) && !defined(RT_ARCH_ARM64) && !defined(RT_ARCH_ARM32)) \
  || defined(__WATCOMC__)
 # define RT_INLINE_ASM_EXTERNAL 1
 #else
