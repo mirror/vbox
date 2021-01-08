@@ -7025,8 +7025,8 @@ DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64) RT_NOTHROW_DEF
     return u64;
 
 #else
-    return = (uint64_t)ASMByteSwapU32((uint32_t)u64) << 32
-           | (uint64_t)ASMByteSwapU32((uint32_t)(u64 >> 32));
+    return (uint64_t)ASMByteSwapU32((uint32_t)u64) << 32
+         | (uint64_t)ASMByteSwapU32((uint32_t)(u64 >> 32));
 #endif
 }
 
