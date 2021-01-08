@@ -93,6 +93,7 @@ RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
         ASMOutU8(RTLOG_DEBUG_PORT, *pau8);
 # else
     /** @todo port me */
+    RT_NOREF(pch, cb);
     RT_BREAKPOINT();
 # endif
 #endif /* !IN_GUEST_R3 */
