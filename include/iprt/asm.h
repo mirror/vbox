@@ -1047,6 +1047,7 @@ DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile RT_FAR *ppvR3, RTR3PTR p
  * @param   u8Old       The old value to *pu8 compare with.
  *
  * @remarks x86: Requires a 486 or later.
+ * @todo Rename ASMAtomicCmpWriteU8
  */
 #if RT_INLINE_ASM_EXTERNAL_TMP_ARM || !RT_INLINE_ASM_GNU_STYLE
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t u8New, const uint8_t u8Old) RT_NOTHROW_PROTO;
@@ -1118,6 +1119,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
  * @param   i8Old       The old value to *pi8 compare with.
  *
  * @remarks x86: Requires a 486 or later.
+ * @todo Rename ASMAtomicCmpWriteS8
  */
 DECLINLINE(bool) ASMAtomicCmpXchgS8(volatile int8_t RT_FAR *pi8, const int8_t i8New, const int8_t i8Old) RT_NOTHROW_DEF
 {
@@ -1136,6 +1138,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS8(volatile int8_t RT_FAR *pi8, const int8_t i8
  * @param   fOld        The old value to *pf compare with.
  *
  * @remarks x86: Requires a 486 or later.
+ * @todo Rename ASMAtomicCmpWriteBool
  */
 DECLINLINE(bool) ASMAtomicCmpXchgBool(volatile bool RT_FAR *pf, const bool fNew, const bool fOld) RT_NOTHROW_DEF
 {
@@ -1154,6 +1157,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgBool(volatile bool RT_FAR *pf, const bool fNew,
  * @param   u32Old      The old value to *pu32 compare with.
  *
  * @remarks x86: Requires a 486 or later.
+ * @todo Rename ASMAtomicCmpWriteU32
  */
 #if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
 RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, const uint32_t u32Old) RT_NOTHROW_PROTO;
@@ -1252,6 +1256,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
  * @param   i32Old      The old value to *pi32 compare with.
  *
  * @remarks x86: Requires a 486 or later.
+ * @todo Rename ASMAtomicCmpWriteS32
  */
 DECLINLINE(bool) ASMAtomicCmpXchgS32(volatile int32_t RT_FAR *pi32, const int32_t i32New, const int32_t i32Old) RT_NOTHROW_DEF
 {
@@ -1270,6 +1275,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS32(volatile int32_t RT_FAR *pi32, const int32_
  * @param   u64Old  The value to compare with.
  *
  * @remarks x86: Requires a Pentium or later.
+ * @todo Rename ASMAtomicCmpWriteU64
  */
 #if (RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN) \
  || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
@@ -1413,6 +1419,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
  * @param   i64Old  The value to compare with.
  *
  * @remarks x86: Requires a Pentium or later.
+ * @todo Rename ASMAtomicCmpWriteS64
  */
 DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t RT_FAR *pi64, const int64_t i64, const int64_t i64Old) RT_NOTHROW_DEF
 {
@@ -1431,6 +1438,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t RT_FAR *pi64, const int64_
  * @param   pvOld       The old value to *ppv compare with.
  *
  * @remarks x86: Requires a 486 or later.
+ * @todo Rename ASMAtomicCmpWritePtrVoid
  */
 DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void RT_FAR * volatile RT_FAR *ppv, const void RT_FAR *pvNew, const void RT_FAR *pvOld) RT_NOTHROW_DEF
 {
@@ -1456,6 +1464,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void RT_FAR * volatile RT_FAR *ppv, con
  *
  * @remarks This is relatively type safe on GCC platforms.
  * @remarks x86: Requires a 486 or later.
+ * @todo Rename ASMAtomicCmpWritePtr
  */
 #ifdef __GNUC__
 # define ASMAtomicCmpXchgPtr(ppv, pvNew, pvOld) \
@@ -1484,6 +1493,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void RT_FAR * volatile RT_FAR *ppv, con
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  * @remarks x86: Requires a 486 or later.
+ * @todo Rename ASMAtomicCmpWriteHandle
  */
 #if HC_ARCH_BITS == 32 || ARCH_BITS == 16
 # define ASMAtomicCmpXchgHandle(ph, hNew, hOld, fRc) \
@@ -1512,6 +1522,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void RT_FAR * volatile RT_FAR *ppv, con
  * @param   fRc         Where to store the result.
  *
  * @remarks x86: Requires a 486 or later.
+ * @todo Rename ASMAtomicCmpWriteSize
  */
 #define ASMAtomicCmpXchgSize(pu, uNew, uOld, fRc) \
     do { \
@@ -1833,14 +1844,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t RT_FAR *pi64, const int6
     do { \
         AssertCompile(sizeof(*ph)       == sizeof(uint32_t)); \
         AssertCompile(sizeof(*phOldVal) == sizeof(uint32_t)); \
-        (fRc) = ASMAtomicCmpXchgExU32((volatile uint32_t RT_FAR *)(pu), (uint32_t)(uNew), (uint32_t)(uOld), (uint32_t RT_FAR *)(puOldVal)); \
+        (fRc) = ASMAtomicCmpXchgExU32((volatile uint32_t RT_FAR *)(ph), (uint32_t)(hNew), (uint32_t)(hOld), (uint32_t RT_FAR *)(phOldVal)); \
     } while (0)
 #elif HC_ARCH_BITS == 64
 # define ASMAtomicCmpXchgExHandle(ph, hNew, hOld, fRc, phOldVal) \
     do { \
         AssertCompile(sizeof(*(ph))       == sizeof(uint64_t)); \
         AssertCompile(sizeof(*(phOldVal)) == sizeof(uint64_t)); \
-        (fRc) = ASMAtomicCmpXchgExU64((volatile uint64_t RT_FAR *)(pu), (uint64_t)(uNew), (uint64_t)(uOld), (uint64_t RT_FAR *)(puOldVal)); \
+        (fRc) = ASMAtomicCmpXchgExU64((volatile uint64_t RT_FAR *)(ph), (uint64_t)(hNew), (uint64_t)(hOld), (uint64_t RT_FAR *)(phOldVal)); \
     } while (0)
 #else
 # error HC_ARCH_BITS
@@ -3222,6 +3233,28 @@ DECLINLINE(void) ASMAtomicWriteZ(volatile size_t RT_FAR *pcb, size_t cb) RT_NOTH
 
 
 /**
+ * Atomically writes a size_t value, unordered.
+ *
+ * @returns nothing.
+ * @param   pcb     Pointer to the size_t variable to write.
+ * @param   cb      The value to assign to *pcb.
+ */
+DECLINLINE(void) ASMAtomicUoWriteZ(volatile size_t RT_FAR *pcb, size_t cb) RT_NOTHROW_DEF
+{
+#if ARCH_BITS == 64
+    ASMAtomicUoWriteU64((uint64_t volatile *)pcb, cb);
+#elif ARCH_BITS == 32
+    ASMAtomicUoWriteU32((uint32_t volatile *)pcb, cb);
+#elif ARCH_BITS == 16
+    AssertCompileSize(size_t, 2);
+    ASMAtomicUoWriteU16((uint16_t volatile *)pcb, cb);
+#else
+# error "Unsupported ARCH_BITS value"
+#endif
+}
+
+
+/**
  * Atomically writes a boolean value, unordered.
  *
  * @param   pf      Pointer to the boolean variable to write.
@@ -3257,6 +3290,24 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void RT_FAR * volatile RT_FAR *ppv, const
     ASMAtomicWriteU32((volatile uint32_t RT_FAR *)(void RT_FAR *)ppv, (uint32_t)pv);
 #elif ARCH_BITS == 64
     ASMAtomicWriteU64((volatile uint64_t RT_FAR *)(void RT_FAR *)ppv, (uint64_t)pv);
+#else
+# error "ARCH_BITS is bogus"
+#endif
+}
+
+
+/**
+ * Atomically writes a pointer value, unordered.
+ *
+ * @param   ppv     Pointer to the pointer variable to write.
+ * @param   pv      The pointer value to assign to *ppv.
+ */
+DECLINLINE(void) ASMAtomicUoWritePtrVoid(void RT_FAR * volatile RT_FAR *ppv, const void *pv) RT_NOTHROW_DEF
+{
+#if ARCH_BITS == 32 || ARCH_BITS == 16
+    ASMAtomicUoWriteU32((volatile uint32_t RT_FAR *)(void RT_FAR *)ppv, (uint32_t)pv);
+#elif ARCH_BITS == 64
+    ASMAtomicUoWriteU64((volatile uint64_t RT_FAR *)(void RT_FAR *)ppv, (uint64_t)pv);
 #else
 # error "ARCH_BITS is bogus"
 #endif

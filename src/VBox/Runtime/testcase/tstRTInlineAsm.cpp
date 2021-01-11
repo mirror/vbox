@@ -79,6 +79,26 @@
         } \
     } while (0)
 
+#define CHECK_OP_AND_VAL(a_Type, a_Fmt, a_pVar, a_Operation, a_ExpectRetVal, a_ExpectVarVal) \
+    do { \
+        CHECKOP(a_Operation, a_ExpectRetVal, a_Fmt, a_Type); \
+        CHECKVAL(*a_pVar, a_ExpectVarVal, a_Fmt); \
+    } while (0)
+
+#define CHECK_OP_AND_VAL_EX(a_TypeRet, a_FmtRet, a_FmtVar, a_pVar, a_Operation, a_ExpectRetVal, a_ExpectVarVal) \
+    do { \
+        CHECKOP(a_Operation, a_ExpectRetVal, a_FmtRet, a_TypeRet); \
+        CHECKVAL(*a_pVar, a_ExpectVarVal, a_FmtVar); \
+    } while (0)
+
+#define CHECK_OP_AND_VAL_EX2(a_TypeRet, a_FmtRet, a_FmtVar, a_pVar, a_uVar2, a_Operation, a_ExpectRetVal, a_ExpectVarVal, a_ExpectVarVal2) \
+    do { \
+        CHECKOP(a_Operation, a_ExpectRetVal, a_FmtRet, a_TypeRet); \
+        CHECKVAL(*a_pVar, a_ExpectVarVal, a_FmtVar); \
+        CHECKVAL(a_uVar2, a_ExpectVarVal2, a_FmtVar); \
+    } while (0)
+
+
 /**
  * Calls a worker function with different worker variable storage types.
  */
@@ -696,118 +716,644 @@ static void bruteForceCpuId(void)
 
 #endif /* AMD64 || X86 */
 
-DECLINLINE(void) tstASMAtomicXchgU8Worker(uint8_t volatile *pu8)
+#define TEST_READ(a_pVar, a_Type, a_Fmt, a_Function, a_Val)  \
+    do { *a_pVar = a_Val; CHECKOP(a_Function(a_pVar), a_Val, a_Fmt, a_Type); CHECKVAL(*a_pVar, a_Val, a_Fmt); } while (0)
+
+DECLINLINE(void) tstASMAtomicReadU8Worker(uint8_t volatile *pu8)
 {
-    *pu8 = 0;
-    CHECKOP(ASMAtomicXchgU8(pu8, 1), 0, "%#x", uint8_t);
-    CHECKVAL(*pu8, 1, "%#x");
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 0);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 1);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 2);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 16);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 32);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 32);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 127);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 128);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 169);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 239);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 254);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicReadU8, 255);
 
-    CHECKOP(ASMAtomicXchgU8(pu8, 0), 1, "%#x", uint8_t);
-    CHECKVAL(*pu8, 0, "%#x");
+    int8_t volatile *pi8 = (int8_t volatile *)pu8;
+    TEST_READ(pi8, uint8_t, "%d", ASMAtomicReadS8, INT8_MAX);
+    TEST_READ(pi8, uint8_t, "%d", ASMAtomicReadS8, INT8_MIN);
+    TEST_READ(pi8, uint8_t, "%d", ASMAtomicReadS8, 42);
+    TEST_READ(pi8, uint8_t, "%d", ASMAtomicReadS8, -21);
 
-    CHECKOP(ASMAtomicXchgU8(pu8, UINT8_C(0xff)), 0, "%#x", uint8_t);
-    CHECKVAL(*pu8, 0xff, "%#x");
-
-    CHECKOP(ASMAtomicXchgU8(pu8, UINT8_C(0x87)), UINT8_C(0xff), "%#x", uint8_t);
-    CHECKVAL(*pu8, 0x87, "%#x");
+    bool volatile *pf = (bool volatile *)pu8;
+    TEST_READ(pf, bool, "%d", ASMAtomicReadBool, true);
+    TEST_READ(pf, bool, "%d", ASMAtomicReadBool, false);
 }
 
 
-static void tstASMAtomicXchgU8(void)
+DECLINLINE(void) tstASMAtomicUoReadU8Worker(uint8_t volatile *pu8)
 {
-    DO_SIMPLE_TEST(ASMAtomicXchgU8, uint8_t);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 0);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 1);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 2);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 16);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 32);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 32);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 127);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 128);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 169);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 239);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 254);
+    TEST_READ(pu8, uint8_t, "%#x", ASMAtomicUoReadU8, 255);
+
+    int8_t volatile *pi8 = (int8_t volatile *)pu8;
+    TEST_READ(pi8, uint8_t, "%d", ASMAtomicUoReadS8, INT8_MAX);
+    TEST_READ(pi8, uint8_t, "%d", ASMAtomicUoReadS8, INT8_MIN);
+    TEST_READ(pi8, uint8_t, "%d", ASMAtomicUoReadS8, 42);
+    TEST_READ(pi8, uint8_t, "%d", ASMAtomicUoReadS8, -21);
+
+    bool volatile *pf = (bool volatile *)pu8;
+    TEST_READ(pf, bool, "%d", ASMAtomicUoReadBool, true);
+    TEST_READ(pf, bool, "%d", ASMAtomicUoReadBool, false);
+}
+
+
+DECLINLINE(void) tstASMAtomicReadU16Worker(uint16_t volatile *pu16)
+{
+    TEST_READ(pu16, uint16_t, "%#x", ASMAtomicReadU16, 0);
+    TEST_READ(pu16, uint16_t, "%#x", ASMAtomicReadU16, 19983);
+    TEST_READ(pu16, uint16_t, "%#x", ASMAtomicReadU16, INT16_MAX);
+    TEST_READ(pu16, uint16_t, "%#x", ASMAtomicReadU16, UINT16_MAX);
+
+    int16_t volatile *pi16 = (int16_t volatile *)pu16;
+    TEST_READ(pi16, uint16_t, "%d", ASMAtomicReadS16, INT16_MAX);
+    TEST_READ(pi16, uint16_t, "%d", ASMAtomicReadS16, INT16_MIN);
+    TEST_READ(pi16, uint16_t, "%d", ASMAtomicReadS16, 42);
+    TEST_READ(pi16, uint16_t, "%d", ASMAtomicReadS16, -21);
+}
+
+
+DECLINLINE(void) tstASMAtomicUoReadU16Worker(uint16_t volatile *pu16)
+{
+    TEST_READ(pu16, uint16_t, "%#x", ASMAtomicUoReadU16, 0);
+    TEST_READ(pu16, uint16_t, "%#x", ASMAtomicUoReadU16, 19983);
+    TEST_READ(pu16, uint16_t, "%#x", ASMAtomicUoReadU16, INT16_MAX);
+    TEST_READ(pu16, uint16_t, "%#x", ASMAtomicUoReadU16, UINT16_MAX);
+
+    int16_t volatile *pi16 = (int16_t volatile *)pu16;
+    TEST_READ(pi16, uint16_t, "%d", ASMAtomicUoReadS16, INT16_MAX);
+    TEST_READ(pi16, uint16_t, "%d", ASMAtomicUoReadS16, INT16_MIN);
+    TEST_READ(pi16, uint16_t, "%d", ASMAtomicUoReadS16, 42);
+    TEST_READ(pi16, uint16_t, "%d", ASMAtomicUoReadS16, -21);
+}
+
+
+DECLINLINE(void) tstASMAtomicReadU32Worker(uint32_t volatile *pu32)
+{
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicReadU32, 0);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicReadU32, 19983);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicReadU32, INT16_MAX);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicReadU32, UINT16_MAX);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicReadU32, _1M-1);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicReadU32, _1M+1);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicReadU32, _1G-1);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicReadU32, _1G+1);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicReadU32, INT32_MAX);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicReadU32, UINT32_MAX);
+
+    int32_t volatile *pi32 = (int32_t volatile *)pu32;
+    TEST_READ(pi32, uint32_t, "%d", ASMAtomicReadS32, INT32_MAX);
+    TEST_READ(pi32, uint32_t, "%d", ASMAtomicReadS32, INT32_MIN);
+    TEST_READ(pi32, uint32_t, "%d", ASMAtomicReadS32, 42);
+    TEST_READ(pi32, uint32_t, "%d", ASMAtomicReadS32, -21);
+
+#if ARCH_BITS == 32
+    size_t volatile *pcb = (size_t volatile *)pu32;
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicReadZ, 0);
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicReadZ, ~(size_t)2);
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicReadZ, ~(size_t)0 / 4);
+
+    void * volatile *ppv = (void * volatile *)pu32;
+    TEST_READ(ppv, void *, "%p", ASMAtomicReadPtr, NULL);
+    TEST_READ(ppv, void *, "%p", ASMAtomicReadPtr, (void *)~(uintptr_t)42);
+
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)pu32;
+    RTSEMEVENT hEvt = ASMAtomicReadPtrT(phEvt, RTSEMEVENT);
+    CHECKVAL(hEvt, (RTSEMEVENT)~(uintptr_t)42, "%p");
+
+    ASMAtomicReadHandle(phEvt, &hEvt);
+    CHECKVAL(hEvt, (RTSEMEVENT)~(uintptr_t)42, "%p");
+#endif
+}
+
+
+DECLINLINE(void) tstASMAtomicUoReadU32Worker(uint32_t volatile *pu32)
+{
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicUoReadU32, 0);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicUoReadU32, 19983);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicUoReadU32, INT16_MAX);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicUoReadU32, UINT16_MAX);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicUoReadU32, _1M-1);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicUoReadU32, _1M+1);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicUoReadU32, _1G-1);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicUoReadU32, _1G+1);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicUoReadU32, INT32_MAX);
+    TEST_READ(pu32, uint32_t, "%#x", ASMAtomicUoReadU32, UINT32_MAX);
+
+    int32_t volatile *pi32 = (int32_t volatile *)pu32;
+    TEST_READ(pi32, uint32_t, "%d", ASMAtomicUoReadS32, INT32_MAX);
+    TEST_READ(pi32, uint32_t, "%d", ASMAtomicUoReadS32, INT32_MIN);
+    TEST_READ(pi32, uint32_t, "%d", ASMAtomicUoReadS32, 42);
+    TEST_READ(pi32, uint32_t, "%d", ASMAtomicUoReadS32, -21);
+
+#if ARCH_BITS == 32
+    size_t volatile *pcb = (size_t volatile *)pu32;
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicUoReadZ, 0);
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicUoReadZ, ~(size_t)2);
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicUoReadZ, ~(size_t)0 / 4);
+
+    void * volatile *ppv = (void * volatile *)pu32;
+    TEST_READ(ppv, void *, "%p", ASMAtomicUoReadPtr, NULL);
+    TEST_READ(ppv, void *, "%p", ASMAtomicUoReadPtr, (void *)~(uintptr_t)42);
+
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)pu32;
+    RTSEMEVENT hEvt = ASMAtomicUoReadPtrT(phEvt, RTSEMEVENT);
+    CHECKVAL(hEvt, (RTSEMEVENT)~(uintptr_t)42, "%p");
+
+    ASMAtomicUoReadHandle(phEvt, &hEvt);
+    CHECKVAL(hEvt, (RTSEMEVENT)~(uintptr_t)42, "%p");
+#endif
+}
+
+
+DECLINLINE(void) tstASMAtomicReadU64Worker(uint64_t volatile *pu64)
+{
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, 0);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, 19983);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, INT16_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, UINT16_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, _1M-1);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, _1M+1);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, _1G-1);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, _1G+1);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, INT32_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, UINT32_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, INT64_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, UINT64_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicReadU64, UINT64_C(0x450872549687134));
+
+    int64_t volatile *pi64 = (int64_t volatile *)pu64;
+    TEST_READ(pi64, uint64_t, "%d", ASMAtomicReadS64, INT64_MAX);
+    TEST_READ(pi64, uint64_t, "%d", ASMAtomicReadS64, INT64_MIN);
+    TEST_READ(pi64, uint64_t, "%d", ASMAtomicReadS64, 42);
+    TEST_READ(pi64, uint64_t, "%d", ASMAtomicReadS64, -21);
+
+#if ARCH_BITS == 64
+    size_t volatile *pcb = (size_t volatile *)pu64;
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicReadZ, 0);
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicReadZ, ~(size_t)2);
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicReadZ, ~(size_t)0 / 4);
+
+    void * volatile *ppv = (void * volatile *)pu64;
+    TEST_READ(ppv, void *, "%p", ASMAtomicReadPtr, NULL);
+    TEST_READ(ppv, void *, "%p", ASMAtomicReadPtr, (void *)~(uintptr_t)42);
+
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)pu64;
+    RTSEMEVENT hEvt = ASMAtomicReadPtrT(phEvt, RTSEMEVENT);
+    CHECKVAL(hEvt, (RTSEMEVENT)~(uintptr_t)42, "%p");
+
+    ASMAtomicReadHandle(phEvt, &hEvt);
+    CHECKVAL(hEvt, (RTSEMEVENT)~(uintptr_t)42, "%p");
+#endif
+}
+
+
+DECLINLINE(void) tstASMAtomicUoReadU64Worker(uint64_t volatile *pu64)
+{
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, 0);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, 19983);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, INT16_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, UINT16_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, _1M-1);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, _1M+1);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, _1G-1);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, _1G+1);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, INT32_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, UINT32_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, INT64_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, UINT64_MAX);
+    TEST_READ(pu64, uint64_t, "%#llx", ASMAtomicUoReadU64, UINT64_C(0x450872549687134));
+
+    int64_t volatile *pi64 = (int64_t volatile *)pu64;
+    TEST_READ(pi64, uint64_t, "%d", ASMAtomicUoReadS64, INT64_MAX);
+    TEST_READ(pi64, uint64_t, "%d", ASMAtomicUoReadS64, INT64_MIN);
+    TEST_READ(pi64, uint64_t, "%d", ASMAtomicUoReadS64, 42);
+    TEST_READ(pi64, uint64_t, "%d", ASMAtomicUoReadS64, -21);
+
+#if ARCH_BITS == 64
+    size_t volatile *pcb = (size_t volatile *)pu64;
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicUoReadZ, 0);
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicUoReadZ, ~(size_t)2);
+    TEST_READ(pcb, size_t, "%#llz", ASMAtomicUoReadZ, ~(size_t)0 / 4);
+
+    void * volatile *ppv = (void * volatile *)pu64;
+    TEST_READ(ppv, void *, "%p", ASMAtomicUoReadPtr, NULL);
+    TEST_READ(ppv, void *, "%p", ASMAtomicUoReadPtr, (void *)~(uintptr_t)42);
+
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)pu64;
+    RTSEMEVENT hEvt = ASMAtomicUoReadPtrT(phEvt, RTSEMEVENT);
+    CHECKVAL(hEvt, (RTSEMEVENT)~(uintptr_t)42, "%p");
+
+    ASMAtomicUoReadHandle(phEvt, &hEvt);
+    CHECKVAL(hEvt, (RTSEMEVENT)~(uintptr_t)42, "%p");
+#endif
+}
+
+
+static void tstASMAtomicRead(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicReadU8, uint8_t);
+    DO_SIMPLE_TEST(ASMAtomicUoReadU8, uint8_t);
+
+    DO_SIMPLE_TEST(ASMAtomicReadU16, uint16_t);
+    DO_SIMPLE_TEST(ASMAtomicUoReadU16, uint16_t);
+
+    DO_SIMPLE_TEST(ASMAtomicReadU32, uint32_t);
+    DO_SIMPLE_TEST(ASMAtomicUoReadU32, uint32_t);
+
+    DO_SIMPLE_TEST(ASMAtomicReadU64, uint64_t);
+    DO_SIMPLE_TEST(ASMAtomicUoReadU64, uint64_t);
+}
+
+
+#define TEST_WRITE(a_pVar, a_Type, a_Fmt, a_Function, a_Val)  \
+    do { a_Function(a_pVar, a_Val); CHECKVAL(*a_pVar, a_Val, a_Fmt); } while (0)
+
+DECLINLINE(void) tstASMAtomicWriteU8Worker(uint8_t volatile *pu8)
+{
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 0);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 1);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 2);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 16);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 32);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 32);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 127);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 128);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 169);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 239);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 254);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicWriteU8, 255);
+
+    volatile int8_t *pi8 = (volatile int8_t *)pu8;
+    TEST_WRITE(pi8, int8_t, "%d", ASMAtomicWriteS8, INT8_MIN);
+    TEST_WRITE(pi8, int8_t, "%d", ASMAtomicWriteS8, INT8_MAX);
+    TEST_WRITE(pi8, int8_t, "%d", ASMAtomicWriteS8, 42);
+    TEST_WRITE(pi8, int8_t, "%d", ASMAtomicWriteS8, -41);
+
+    volatile bool *pf = (volatile bool *)pu8;
+    TEST_WRITE(pf, bool, "%d", ASMAtomicWriteBool, true);
+    TEST_WRITE(pf, bool, "%d", ASMAtomicWriteBool, false);
+}
+
+
+DECLINLINE(void) tstASMAtomicUoWriteU8Worker(uint8_t volatile *pu8)
+{
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 0);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 1);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 2);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 16);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 32);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 32);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 127);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 128);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 169);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 239);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 254);
+    TEST_WRITE(pu8, uint8_t, "%#x", ASMAtomicUoWriteU8, 255);
+
+    volatile int8_t *pi8 = (volatile int8_t *)pu8;
+    TEST_WRITE(pi8, int8_t, "%d", ASMAtomicUoWriteS8, INT8_MIN);
+    TEST_WRITE(pi8, int8_t, "%d", ASMAtomicUoWriteS8, INT8_MAX);
+    TEST_WRITE(pi8, int8_t, "%d", ASMAtomicUoWriteS8, 42);
+    TEST_WRITE(pi8, int8_t, "%d", ASMAtomicUoWriteS8, -41);
+
+    volatile bool *pf = (volatile bool *)pu8;
+    TEST_WRITE(pf, bool, "%d", ASMAtomicUoWriteBool, true);
+    TEST_WRITE(pf, bool, "%d", ASMAtomicUoWriteBool, false);
+}
+
+
+DECLINLINE(void) tstASMAtomicWriteU16Worker(uint16_t volatile *pu16)
+{
+    TEST_WRITE(pu16, uint16_t, "%#x", ASMAtomicWriteU16, 0);
+    TEST_WRITE(pu16, uint16_t, "%#x", ASMAtomicWriteU16, 19983);
+    TEST_WRITE(pu16, uint16_t, "%#x", ASMAtomicWriteU16, INT16_MAX);
+    TEST_WRITE(pu16, uint16_t, "%#x", ASMAtomicWriteU16, UINT16_MAX);
+
+    volatile int16_t *pi16 = (volatile int16_t *)pu16;
+    TEST_WRITE(pi16, int16_t, "%d", ASMAtomicWriteS16, INT16_MIN);
+    TEST_WRITE(pi16, int16_t, "%d", ASMAtomicWriteS16, INT16_MAX);
+    TEST_WRITE(pi16, int16_t, "%d", ASMAtomicWriteS16, 42);
+    TEST_WRITE(pi16, int16_t, "%d", ASMAtomicWriteS16, -41);
+}
+
+
+DECLINLINE(void) tstASMAtomicUoWriteU16Worker(uint16_t volatile *pu16)
+{
+    TEST_WRITE(pu16, uint16_t, "%#x", ASMAtomicUoWriteU16, 0);
+    TEST_WRITE(pu16, uint16_t, "%#x", ASMAtomicUoWriteU16, 19983);
+    TEST_WRITE(pu16, uint16_t, "%#x", ASMAtomicUoWriteU16, INT16_MAX);
+    TEST_WRITE(pu16, uint16_t, "%#x", ASMAtomicUoWriteU16, UINT16_MAX);
+
+    volatile int16_t *pi16 = (volatile int16_t *)pu16;
+    TEST_WRITE(pi16, int16_t, "%d", ASMAtomicUoWriteS16, INT16_MIN);
+    TEST_WRITE(pi16, int16_t, "%d", ASMAtomicUoWriteS16, INT16_MAX);
+    TEST_WRITE(pi16, int16_t, "%d", ASMAtomicUoWriteS16, 42);
+    TEST_WRITE(pi16, int16_t, "%d", ASMAtomicUoWriteS16, -41);
+}
+
+
+DECLINLINE(void) tstASMAtomicWriteU32Worker(uint32_t volatile *pu32)
+{
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicWriteU32, 0);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicWriteU32, 19983);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicWriteU32, INT16_MAX);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicWriteU32, UINT16_MAX);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicWriteU32, _1M-1);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicWriteU32, _1M+1);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicWriteU32, _1G-1);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicWriteU32, _1G+1);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicWriteU32, INT32_MAX);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicWriteU32, UINT32_MAX);
+
+    volatile int32_t *pi32 = (volatile int32_t *)pu32;
+    TEST_WRITE(pi32, int32_t, "%d", ASMAtomicWriteS32, INT32_MIN);
+    TEST_WRITE(pi32, int32_t, "%d", ASMAtomicWriteS32, INT32_MAX);
+    TEST_WRITE(pi32, int32_t, "%d", ASMAtomicWriteS32, 42);
+    TEST_WRITE(pi32, int32_t, "%d", ASMAtomicWriteS32, -41);
+
+#if ARCH_BITS == 32
+    size_t volatile *pcb = (size_t volatile *)pu32;
+    TEST_WRITE(pcb, size_t, "%#zx", ASMAtomicWriteZ, ~(size_t)42);
+    TEST_WRITE(pcb, size_t, "%#zx", ASMAtomicWriteZ, 42);
+
+    void * volatile *ppv = (void * volatile *)pu32;
+    TEST_WRITE(ppv, void *, "%#zx", ASMAtomicWritePtrVoid, NULL);
+    TEST_WRITE(ppv, void *, "%#zx", ASMAtomicWritePtrVoid, (void *)~(uintptr_t)12938754);
+
+    ASMAtomicWriteNullPtr(ppv); CHECKVAL(*ppv, NULL, "%p");
+    ASMAtomicWritePtr(ppv, (void *)~(intptr_t)2322434); CHECKVAL(*ppv, (void *)~(intptr_t)2322434, "%p");
+
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)pu32;
+    ASMAtomicWriteHandle(phEvt, (RTSEMEVENT)(uintptr_t)99753456);  CHECKVAL(*phEvt, (RTSEMEVENT)(uintptr_t)99753456, "%p");
+#endif
+}
+
+
+DECLINLINE(void) tstASMAtomicUoWriteU32Worker(uint32_t volatile *pu32)
+{
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicUoWriteU32, 0);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicUoWriteU32, 19983);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicUoWriteU32, INT16_MAX);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicUoWriteU32, UINT16_MAX);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicUoWriteU32, _1M-1);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicUoWriteU32, _1M+1);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicUoWriteU32, _1G-1);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicUoWriteU32, _1G+1);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicUoWriteU32, INT32_MAX);
+    TEST_WRITE(pu32, uint32_t, "%#x", ASMAtomicUoWriteU32, UINT32_MAX);
+
+    volatile int32_t *pi32 = (volatile int32_t *)pu32;
+    TEST_WRITE(pi32, int32_t, "%d", ASMAtomicUoWriteS32, INT32_MIN);
+    TEST_WRITE(pi32, int32_t, "%d", ASMAtomicUoWriteS32, INT32_MAX);
+    TEST_WRITE(pi32, int32_t, "%d", ASMAtomicUoWriteS32, 42);
+    TEST_WRITE(pi32, int32_t, "%d", ASMAtomicUoWriteS32, -41);
+
+#if ARCH_BITS == 32
+    size_t volatile *pcb = (size_t volatile *)pu32;
+    TEST_WRITE(pcb, size_t, "%#zx", ASMAtomicUoWriteZ, ~(size_t)42);
+    TEST_WRITE(pcb, size_t, "%#zx", ASMAtomicUoWriteZ, 42);
+
+    void * volatile *ppv = (void * volatile *)pu32;
+    TEST_WRITE(ppv, void *, "%#zx", ASMAtomicUoWritePtrVoid, NULL);
+    TEST_WRITE(ppv, void *, "%#zx", ASMAtomicUoWritePtrVoid, (void *)~(uintptr_t)12938754);
+
+    ASMAtomicUoWriteNullPtr(ppv); CHECKVAL(*ppv, NULL, "%p");
+    ASMAtomicUoWritePtr(ppv, (void *)~(intptr_t)2322434); CHECKVAL(*ppv, (void *)~(intptr_t)2322434, "%p");
+
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)pu32;
+    ASMAtomicUoWriteHandle(phEvt, (RTSEMEVENT)(uintptr_t)99753456);  CHECKVAL(*phEvt, (RTSEMEVENT)(uintptr_t)99753456, "%p");
+#endif
+}
+
+
+DECLINLINE(void) tstASMAtomicWriteU64Worker(uint64_t volatile *pu64)
+{
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, 0);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, 19983);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, INT16_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, UINT16_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, _1M-1);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, _1M+1);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, _1G-1);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, _1G+1);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, INT32_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, UINT32_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, INT64_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, UINT64_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicWriteU64, UINT64_C(0x450872549687134));
+
+    volatile int64_t *pi64 = (volatile int64_t *)pu64;
+    TEST_WRITE(pi64, int64_t, "%d", ASMAtomicWriteS64, INT64_MIN);
+    TEST_WRITE(pi64, int64_t, "%d", ASMAtomicWriteS64, INT64_MAX);
+    TEST_WRITE(pi64, int64_t, "%d", ASMAtomicWriteS64, 42);
+
+#if ARCH_BITS == 64
+    size_t volatile *pcb = (size_t volatile *)pu64;
+    TEST_WRITE(pcb, size_t, "%#zx", ASMAtomicWriteZ, ~(size_t)42);
+    TEST_WRITE(pcb, size_t, "%#zx", ASMAtomicWriteZ, 42);
+
+    void * volatile *ppv = (void * volatile *)pu64;
+    TEST_WRITE(ppv, void *, "%#zx", ASMAtomicWritePtrVoid, NULL);
+    TEST_WRITE(ppv, void *, "%#zx", ASMAtomicWritePtrVoid, (void *)~(uintptr_t)12938754);
+
+    ASMAtomicWriteNullPtr(ppv); CHECKVAL(*ppv, NULL, "%p");
+    ASMAtomicWritePtr(ppv, (void *)~(intptr_t)2322434); CHECKVAL(*ppv, (void *)~(intptr_t)2322434, "%p");
+
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)pu64;
+    ASMAtomicWriteHandle(phEvt, (RTSEMEVENT)(uintptr_t)99753456);  CHECKVAL(*phEvt, (RTSEMEVENT)(uintptr_t)99753456, "%p");
+#endif
+}
+
+
+DECLINLINE(void) tstASMAtomicUoWriteU64Worker(uint64_t volatile *pu64)
+{
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, 0);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, 19983);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, INT16_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, UINT16_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, _1M-1);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, _1M+1);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, _1G-1);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, _1G+1);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, INT32_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, UINT32_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, INT64_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, UINT64_MAX);
+    TEST_WRITE(pu64, uint64_t, "%#llx", ASMAtomicUoWriteU64, UINT64_C(0x450872549687134));
+
+    volatile int64_t *pi64 = (volatile int64_t *)pu64;
+    TEST_WRITE(pi64, int64_t, "%d", ASMAtomicUoWriteS64, INT64_MIN);
+    TEST_WRITE(pi64, int64_t, "%d", ASMAtomicUoWriteS64, INT64_MAX);
+    TEST_WRITE(pi64, int64_t, "%d", ASMAtomicUoWriteS64, 42);
+
+#if ARCH_BITS == 64
+    size_t volatile *pcb = (size_t volatile *)pu64;
+    TEST_WRITE(pcb, size_t, "%#zx", ASMAtomicUoWriteZ, ~(size_t)42);
+    TEST_WRITE(pcb, size_t, "%#zx", ASMAtomicUoWriteZ, 42);
+
+    void * volatile *ppv = (void * volatile *)pu64;
+    TEST_WRITE(ppv, void *, "%#zx", ASMAtomicUoWritePtrVoid, NULL);
+    TEST_WRITE(ppv, void *, "%#zx", ASMAtomicUoWritePtrVoid, (void *)~(uintptr_t)12938754);
+
+    ASMAtomicUoWriteNullPtr(ppv); CHECKVAL(*ppv, NULL, "%p");
+    ASMAtomicUoWritePtr(ppv, (void *)~(intptr_t)2322434); CHECKVAL(*ppv, (void *)~(intptr_t)2322434, "%p");
+
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)pu64;
+    ASMAtomicUoWriteHandle(phEvt, (RTSEMEVENT)(uintptr_t)99753456);  CHECKVAL(*phEvt, (RTSEMEVENT)(uintptr_t)99753456, "%p");
+#endif
+}
+
+static void tstASMAtomicWrite(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicWriteU8, uint8_t);
+    DO_SIMPLE_TEST(ASMAtomicUoWriteU8, uint8_t);
+
+    DO_SIMPLE_TEST(ASMAtomicWriteU16, uint16_t);
+    DO_SIMPLE_TEST(ASMAtomicUoWriteU16, uint16_t);
+
+    DO_SIMPLE_TEST(ASMAtomicWriteU32, uint32_t);
+    DO_SIMPLE_TEST(ASMAtomicUoWriteU32, uint32_t);
+
+    DO_SIMPLE_TEST(ASMAtomicWriteU64, uint64_t);
+    DO_SIMPLE_TEST(ASMAtomicUoWriteU64, uint64_t);
+}
+
+
+DECLINLINE(void) tstASMAtomicXchgU8Worker(uint8_t volatile *pu8)
+{
+    *pu8 = 0;
+    CHECK_OP_AND_VAL(uint8_t, "%#x", pu8, ASMAtomicXchgU8(pu8, 1), 0, 1);
+    CHECK_OP_AND_VAL(uint8_t, "%#x", pu8, ASMAtomicXchgU8(pu8, UINT8_C(0xff)), 1, UINT8_C(0xff));
+    CHECK_OP_AND_VAL(uint8_t, "%#x", pu8, ASMAtomicXchgU8(pu8, UINT8_C(0x87)), UINT8_C(0xff), UINT8_C(0x87));
+    CHECK_OP_AND_VAL(uint8_t, "%#x", pu8, ASMAtomicXchgU8(pu8, UINT8_C(0xfe)), UINT8_C(0x87), UINT8_C(0xfe));
+
+    int8_t volatile *pi8 = (int8_t volatile *)pu8;
+    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_C(-4)), UINT8_C(-2), UINT8_C(-4));
+    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_C(4)), UINT8_C(-4), UINT8_C(4));
+    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_MAX), UINT8_C(4), INT8_MAX);
+    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_MIN), INT8_MAX, INT8_MIN);
+    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, 1), INT8_MIN, 1);
+
+    bool volatile *pf = (bool volatile *)pu8;
+    CHECK_OP_AND_VAL(bool, "%d", pf, ASMAtomicXchgBool(pf, false), true, false);
+    CHECK_OP_AND_VAL(bool, "%d", pf, ASMAtomicXchgBool(pf, false), false, false);
+    CHECK_OP_AND_VAL(bool, "%d", pf, ASMAtomicXchgBool(pf, true), false, true);
 }
 
 
 DECLINLINE(void) tstASMAtomicXchgU16Worker(uint16_t volatile *pu16)
 {
     *pu16 = 0;
+    CHECK_OP_AND_VAL(uint16_t, "%#x", pu16, ASMAtomicXchgU16(pu16, 1), 0, 1);
+    CHECK_OP_AND_VAL(uint16_t, "%#x", pu16, ASMAtomicXchgU16(pu16, 0), 1, 0);
+    CHECK_OP_AND_VAL(uint16_t, "%#x", pu16, ASMAtomicXchgU16(pu16, UINT16_MAX), 0, UINT16_MAX);
+    CHECK_OP_AND_VAL(uint16_t, "%#x", pu16, ASMAtomicXchgU16(pu16, UINT16_C(0x7fff)), UINT16_MAX, UINT16_C(0x7fff));
+    CHECK_OP_AND_VAL(uint16_t, "%#x", pu16, ASMAtomicXchgU16(pu16, UINT16_C(0x8765)), UINT16_C(0x7fff), UINT16_C(0x8765));
+    CHECK_OP_AND_VAL(uint16_t, "%#x", pu16, ASMAtomicXchgU16(pu16, UINT16_C(0xfffe)), UINT16_C(0x8765), UINT16_C(0xfffe));
 
-    CHECKOP(ASMAtomicXchgU16(pu16, 1), 0, "%#x", uint16_t);
-    CHECKVAL(*pu16, 1, "%#x");
-
-    CHECKOP(ASMAtomicXchgU16(pu16, 0), 1, "%#x", uint16_t);
-    CHECKVAL(*pu16, 0, "%#x");
-
-    CHECKOP(ASMAtomicXchgU16(pu16, 0xffff), 0, "%#x", uint16_t);
-    CHECKVAL(*pu16, 0xffff, "%#x");
-
-    CHECKOP(ASMAtomicXchgU16(pu16, 0x8765), 0xffff, "%#x", uint16_t);
-    CHECKVAL(*pu16, 0x8765, "%#x");
-}
-
-
-static void tstASMAtomicXchgU16(void)
-{
-    DO_SIMPLE_TEST(ASMAtomicXchgU16, uint16_t);
+    int16_t volatile *pi16 = (int16_t volatile *)pu16;
+    CHECK_OP_AND_VAL(int16_t, "%d", pi16, ASMAtomicXchgS16(pi16, INT16_MIN), INT16_C(-2), INT16_MIN);
+    CHECK_OP_AND_VAL(int16_t, "%d", pi16, ASMAtomicXchgS16(pi16, INT16_MAX), INT16_MIN, INT16_MAX);
+    CHECK_OP_AND_VAL(int16_t, "%d", pi16, ASMAtomicXchgS16(pi16, -8), INT16_MAX, -8);
+    CHECK_OP_AND_VAL(int16_t, "%d", pi16, ASMAtomicXchgS16(pi16, 8), -8, 8);
 }
 
 
 DECLINLINE(void) tstASMAtomicXchgU32Worker(uint32_t volatile *pu32)
 {
     *pu32 = 0;
+    CHECK_OP_AND_VAL(uint32_t, "%#x", pu32, ASMAtomicXchgU32(pu32, 1), 0, 1);
+    CHECK_OP_AND_VAL(uint32_t, "%#x", pu32, ASMAtomicXchgU32(pu32, 0), 1, 0);
+    CHECK_OP_AND_VAL(uint32_t, "%#x", pu32, ASMAtomicXchgU32(pu32, UINT32_MAX), 0, UINT32_MAX);
+    CHECK_OP_AND_VAL(uint32_t, "%#x", pu32, ASMAtomicXchgU32(pu32, UINT32_C(0x87654321)), UINT32_MAX, UINT32_C(0x87654321));
+    CHECK_OP_AND_VAL(uint32_t, "%#x", pu32, ASMAtomicXchgU32(pu32, UINT32_C(0xfffffffe)), UINT32_C(0x87654321), UINT32_C(0xfffffffe));
 
-    CHECKOP(ASMAtomicXchgU32(pu32, 1), 0, "%#x", uint32_t);
-    CHECKVAL(*pu32, 1, "%#x");
+    int32_t volatile *pi32 = (int32_t volatile *)pu32;
+    CHECK_OP_AND_VAL(int32_t, "%d", pi32, ASMAtomicXchgS32(pi32, INT32_MIN), INT32_C(-2), INT32_MIN);
+    CHECK_OP_AND_VAL(int32_t, "%d", pi32, ASMAtomicXchgS32(pi32, INT32_MAX), INT32_MIN, INT32_MAX);
+    CHECK_OP_AND_VAL(int32_t, "%d", pi32, ASMAtomicXchgS32(pi32, -16), INT32_MAX, -16);
+    CHECK_OP_AND_VAL(int32_t, "%d", pi32, ASMAtomicXchgS32(pi32, 16), -16, 16);
 
-    CHECKOP(ASMAtomicXchgU32(pu32, 0), 1, "%#x", uint32_t);
-    CHECKVAL(*pu32, 0, "%#x");
+#if ARCH_BITS == 32
+    size_t volatile *pcb = (size_t volatile *)pu32;
+    CHECK_OP_AND_VAL(size_t, "%#zx", pcb, ASMAtomicXchgZ(pcb, UINT32_C(0x9481239b)), 0x10, UINT32_C(0x9481239b));
+    CHECK_OP_AND_VAL(size_t, "%#zx", pcb, ASMAtomicXchgZ(pcb, UINT32_C(0xcdef1234)), UINT32_C(0x9481239b), UINT32_C(0xcdef1234));
+#endif
 
-    CHECKOP(ASMAtomicXchgU32(pu32, ~UINT32_C(0)), 0, "%#x", uint32_t);
-    CHECKVAL(*pu32, ~UINT32_C(0), "%#x");
-
-    CHECKOP(ASMAtomicXchgU32(pu32, 0x87654321), ~UINT32_C(0), "%#x", uint32_t);
-    CHECKVAL(*pu32, 0x87654321, "%#x");
-}
-
-
-static void tstASMAtomicXchgU32(void)
-{
-    DO_SIMPLE_TEST(ASMAtomicXchgU32, uint32_t);
+#if R0_ARCH_BITS == 32
+    RTR0PTR volatile *pR0Ptr = (RTR0PTR volatile *)pu32;
+    CHECK_OP_AND_VAL(size_t, "%#llx", pcb, ASMAtomicXchgR0Ptr(pR0Ptr, UINT32_C(0x80341237)), UINT32_C(0xcdef1234), UINT32_C(0x80341237));
+#endif
 }
 
 
 DECLINLINE(void) tstASMAtomicXchgU64Worker(uint64_t volatile *pu64)
 {
     *pu64 = 0;
+    CHECK_OP_AND_VAL(uint64_t, "%#llx", pu64, ASMAtomicXchgU64(pu64, 1), 0, 1);
+    CHECK_OP_AND_VAL(uint64_t, "%#llx", pu64, ASMAtomicXchgU64(pu64, 0), 1, 0);
+    CHECK_OP_AND_VAL(uint64_t, "%#llx", pu64, ASMAtomicXchgU64(pu64, UINT64_MAX), 0, UINT64_MAX);
+    CHECK_OP_AND_VAL(uint64_t, "%#llx", pu64, ASMAtomicXchgU64(pu64, UINT64_C(0xfedcba0987654321)), UINT64_MAX, UINT64_C(0xfedcba0987654321));
+    CHECK_OP_AND_VAL(uint64_t, "%#llx", pu64, ASMAtomicXchgU64(pu64, UINT64_C(0xfffffffffffffffe)), UINT64_C(0xfedcba0987654321), UINT64_C(0xfffffffffffffffe));
 
-    CHECKOP(ASMAtomicXchgU64(pu64, 1), UINT64_C(0), "%#llx", uint64_t);
-    CHECKVAL(*pu64, UINT64_C(1), "%#llx");
+    int64_t volatile *pi64 = (int64_t volatile *)pu64;
+    CHECK_OP_AND_VAL(int64_t, "%lld", pi64, ASMAtomicXchgS64(pi64, INT64_MAX), -2, INT64_MAX);
+    CHECK_OP_AND_VAL(int64_t, "%lld", pi64, ASMAtomicXchgS64(pi64, INT64_MIN), INT64_MAX, INT64_MIN);
+    CHECK_OP_AND_VAL(int64_t, "%lld", pi64, ASMAtomicXchgS64(pi64, -32), INT64_MIN, -32);
+    CHECK_OP_AND_VAL(int64_t, "%lld", pi64, ASMAtomicXchgS64(pi64, 32), -32, 32);
 
-    CHECKOP(ASMAtomicXchgU64(pu64, 0), UINT64_C(1), "%#llx", uint64_t);
-    CHECKVAL(*pu64, UINT64_C(0), "%#llx");
+#if ARCH_BITS == 64
+    size_t volatile *pcb = (size_t volatile *)pu64;
+    CHECK_OP_AND_VAL(size_t, "%#zx", pcb, ASMAtomicXchgZ(pcb, UINT64_C(0x94812396759)), 0x20, UINT64_C(0x94812396759));
+    CHECK_OP_AND_VAL(size_t, "%#zx", pcb, ASMAtomicXchgZ(pcb, UINT64_C(0xcdef1234abdf7896)), UINT64_C(0x94812396759), UINT64_C(0xcdef1234abdf7896));
+#endif
 
-    CHECKOP(ASMAtomicXchgU64(pu64, ~UINT64_C(0)), UINT64_C(0), "%#llx", uint64_t);
-    CHECKVAL(*pu64, ~UINT64_C(0), "%#llx");
-
-    CHECKOP(ASMAtomicXchgU64(pu64, UINT64_C(0xfedcba0987654321)),  ~UINT64_C(0), "%#llx", uint64_t);
-    CHECKVAL(*pu64, UINT64_C(0xfedcba0987654321), "%#llx");
-}
-
-
-static void tstASMAtomicXchgU64(void)
-{
-    DO_SIMPLE_TEST(ASMAtomicXchgU64, uint64_t);
+#if R0_ARCH_BITS == 64
+    RTR0PTR volatile *pR0Ptr = (RTR0PTR volatile *)pu64;
+    CHECK_OP_AND_VAL(size_t, "%#llx", pcb, ASMAtomicXchgR0Ptr(pR0Ptr, UINT64_C(0xfedc1234567890ab)), UINT64_C(0xcdef1234abdf7896), UINT64_C(0xfedc1234567890ab));
+#endif
 }
 
 
 DECLINLINE(void) tstASMAtomicXchgPtrWorker(void * volatile *ppv)
 {
     *ppv = NULL;
+    CHECK_OP_AND_VAL(void *, "%p", ppv, ASMAtomicXchgPtr(ppv, (void *)(~(uintptr_t)0)), NULL, (void *)(~(uintptr_t)0));
+    CHECK_OP_AND_VAL(void *, "%p", ppv, ASMAtomicXchgPtr(ppv, (void *)(~(uintptr_t)0x87654321)), (void *)(~(uintptr_t)0), (void *)(~(uintptr_t)0x87654321));
+    CHECK_OP_AND_VAL(void *, "%p", ppv, ASMAtomicXchgPtr(ppv, NULL), (void *)(~(uintptr_t)0x87654321), NULL);
 
-    CHECKOP(ASMAtomicXchgPtr(ppv, (void *)(~(uintptr_t)0)), NULL, "%p", void *);
-    CHECKVAL(*ppv, (void *)(~(uintptr_t)0), "%p");
+    CHECK_OP_AND_VAL(void *, "%p", ppv, ASMAtomicXchgR3Ptr(ppv, (void *)ppv), NULL, (void *)ppv);
 
-    CHECKOP(ASMAtomicXchgPtr(ppv, (void *)(uintptr_t)0x87654321), (void *)(~(uintptr_t)0), "%p", void *);
-    CHECKVAL(*ppv, (void *)(uintptr_t)0x87654321, "%p");
-
-    CHECKOP(ASMAtomicXchgPtr(ppv, NULL), (void *)(uintptr_t)0x87654321, "%p", void *);
-    CHECKVAL(*ppv, NULL, "%p");
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)ppv;
+    RTSEMEVENT hRet;
+    ASMAtomicXchgHandle(phEvt, (RTSEMEVENT)(~(uintptr_t)12345), &hRet);
+    CHECKVAL(hRet, (RTSEMEVENT)ppv, "%p");
+    CHECKVAL(*phEvt, (RTSEMEVENT)(~(uintptr_t)12345), "%p");
 }
 
 
-static void tstASMAtomicXchgPtr(void)
+static void tstASMAtomicXchg(void)
 {
+    DO_SIMPLE_TEST(ASMAtomicXchgU8, uint8_t);
+    DO_SIMPLE_TEST(ASMAtomicXchgU16, uint16_t);
+    DO_SIMPLE_TEST(ASMAtomicXchgU32, uint32_t);
+    DO_SIMPLE_TEST(ASMAtomicXchgU64, uint64_t);
     DO_SIMPLE_TEST(ASMAtomicXchgPtr, void *);
 }
 
@@ -815,75 +1361,110 @@ static void tstASMAtomicXchgPtr(void)
 DECLINLINE(void) tstASMAtomicCmpXchgU8Worker(uint8_t volatile *pu8)
 {
     *pu8 = 0xff;
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#x", pu8, ASMAtomicCmpXchgU8(pu8, 0, 0), false, 0xff);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#x", pu8, ASMAtomicCmpXchgU8(pu8, 0, 0xff), true, 0);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#x", pu8, ASMAtomicCmpXchgU8(pu8, 0x97, 0), true, 0x97);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#x", pu8, ASMAtomicCmpXchgU8(pu8, 0x97, 0), false, 0x97);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#x", pu8, ASMAtomicCmpXchgU8(pu8, 0x7f, 0x97), true, 0x7f);
 
-    CHECKOP(ASMAtomicCmpXchgU8(pu8, 0, 0), false, "%d", bool);
-    CHECKVAL(*pu8, 0xff, "%x");
+    int8_t volatile *pi8 = (int8_t volatile *)pu8;
+    CHECK_OP_AND_VAL(bool, "%d", pi8, ASMAtomicCmpXchgS8(pi8, -2, 0x7f), true, -2);
+    CHECK_OP_AND_VAL(bool, "%d", pi8, ASMAtomicCmpXchgS8(pi8, INT8_MAX, -2), true, INT8_MAX);
+    CHECK_OP_AND_VAL(bool, "%d", pi8, ASMAtomicCmpXchgS8(pi8, INT8_MAX, INT8_MIN), false, INT8_MAX);
+    CHECK_OP_AND_VAL(bool, "%d", pi8, ASMAtomicCmpXchgS8(pi8, INT8_MIN, INT8_MAX), true, INT8_MIN);
+    CHECK_OP_AND_VAL(bool, "%d", pi8, ASMAtomicCmpXchgS8(pi8, 1, INT8_MIN), true, 1);
 
-    CHECKOP(ASMAtomicCmpXchgU8(pu8, 0, 0xff), true, "%d", bool);
-    CHECKVAL(*pu8, 0, "%x");
-
-    CHECKOP(ASMAtomicCmpXchgU8(pu8, 0x79, 0xff), false, "%d", bool);
-    CHECKVAL(*pu8, 0, "%x");
-
-    CHECKOP(ASMAtomicCmpXchgU8(pu8, 0x97, 0), true, "%d", bool);
-    CHECKVAL(*pu8, 0x97, "%x");
-}
-
-
-static void tstASMAtomicCmpXchgU8(void)
-{
-    DO_SIMPLE_TEST(ASMAtomicCmpXchgU8, uint8_t);
+    bool volatile *pf = (bool volatile *)pu8;
+    CHECK_OP_AND_VAL(bool, "%d", pf, ASMAtomicCmpXchgBool(pf, true, true), true, true);
+    CHECK_OP_AND_VAL(bool, "%d", pf, ASMAtomicCmpXchgBool(pf, false, true), true, false);
+    CHECK_OP_AND_VAL(bool, "%d", pf, ASMAtomicCmpXchgBool(pf, false, true), false, false);
+    CHECK_OP_AND_VAL(bool, "%d", pf, ASMAtomicCmpXchgBool(pf, false, false), true, false);
 }
 
 
 DECLINLINE(void) tstASMAtomicCmpXchgU32Worker(uint32_t volatile *pu32)
 {
     *pu32 = UINT32_C(0xffffffff);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#x", pu32, ASMAtomicCmpXchgU32(pu32, 0, 0), false, UINT32_C(0xffffffff));
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#x", pu32, ASMAtomicCmpXchgU32(pu32, 0, UINT32_C(0xffffffff)), true, 0);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#x", pu32, ASMAtomicCmpXchgU32(pu32, UINT32_C(0x80088efd), UINT32_C(0x12345678)), false, 0);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#x", pu32, ASMAtomicCmpXchgU32(pu32, UINT32_C(0x80088efd), 0), true, UINT32_C(0x80088efd));
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#x", pu32, ASMAtomicCmpXchgU32(pu32, UINT32_C(0xfffffffe), UINT32_C(0x80088efd)), true, UINT32_C(0xfffffffe));
 
-    CHECKOP(ASMAtomicCmpXchgU32(pu32, 0, 0), false, "%d", bool);
-    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%x");
+    int32_t volatile *pi32 = (int32_t volatile *)pu32;
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%d", pi32, ASMAtomicCmpXchgS32(pi32, INT32_MIN, 2), false, -2);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%d", pi32, ASMAtomicCmpXchgS32(pi32, INT32_MIN, -2), true, INT32_MIN);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%d", pi32, ASMAtomicCmpXchgS32(pi32, -19, -2), false, INT32_MIN);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%d", pi32, ASMAtomicCmpXchgS32(pi32, -19, INT32_MIN), true, -19);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%d", pi32, ASMAtomicCmpXchgS32(pi32, -19, INT32_MIN), false, -19);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%d", pi32, ASMAtomicCmpXchgS32(pi32, 19, -19), true, 19);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%d", pi32, ASMAtomicCmpXchgS32(pi32, INT32_MAX, -234), false, 19);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%d", pi32, ASMAtomicCmpXchgS32(pi32, INT32_MAX, 19), true, INT32_MAX);
 
-    CHECKOP(ASMAtomicCmpXchgU32(pu32, 0, UINT32_C(0xffffffff)), true, "%d", bool);
-    CHECKVAL(*pu32, 0, "%x");
+#if ARCH_BITS == 32
+    void * volatile *ppv = (void * volatile *)pu64;
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%p", ppv, ASMAtomicCmpXchgPtrVoid(ppv, NULL, (void *)(intptr_t)-29), false, (void *)(intptr_t)29);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%p", ppv, ASMAtomicCmpXchgPtrVoid(ppv, NULL, (void *)(intptr_t)29), true, NULL);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%p", ppv, ASMAtomicCmpXchgPtrVoid(ppv, NULL, (void *)(intptr_t)29), false, NULL);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%p", ppv, ASMAtomicCmpXchgPtrVoid(ppv, (void *)~(uintptr_t)42, NULL), true, (void *)~(uintptr_t)42);
 
-    CHECKOP(ASMAtomicCmpXchgU32(pu32, UINT32_C(0x8008efd), UINT32_C(0xffffffff)), false, "%d", bool);
-    CHECKVAL(*pu32, 0, "%x");
+    bool fRc;
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)pu64;
+    ASMAtomicCmpXchgHandle(phEvt, (RTSEMEVENT)~(uintptr_t)0x12356389, (RTSEMEVENT)NULL, fRc);
+    CHECKVAL(fRc, false, "%d");
+    CHECKVAL(*phEvt, (RTSEMEVENT)~(uintptr_t)42, "%p");
 
-    CHECKOP(ASMAtomicCmpXchgU32(pu32, UINT32_C(0x8008efd), 0), true, "%d", bool);
-    CHECKVAL(*pu32, UINT32_C(0x8008efd), "%x");
+    ASMAtomicCmpXchgHandle(phEvt, (RTSEMEVENT)~(uintptr_t)0x12356389, (RTSEMEVENT)~(uintptr_t)42, fRc);
+    CHECKVAL(fRc, true, "%d");
+    CHECKVAL(*phEvt, (RTSEMEVENT)~(uintptr_t)0x12356389, "%p");
+#endif
 }
-
-
-static void tstASMAtomicCmpXchgU32(void)
-{
-    DO_SIMPLE_TEST(ASMAtomicCmpXchgU32, uint32_t);
-}
-
 
 
 DECLINLINE(void) tstASMAtomicCmpXchgU64Worker(uint64_t volatile *pu64)
 {
     *pu64 = UINT64_C(0xffffffffffffff);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#llx", pu64, ASMAtomicCmpXchgU64(pu64, 0, 0), false, UINT64_C(0xffffffffffffff));
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#llx", pu64, ASMAtomicCmpXchgU64(pu64, 0, UINT64_C(0xffffffffffffff)), true, 0);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#llx", pu64, ASMAtomicCmpXchgU64(pu64, UINT64_C(0x80040008008efd), 1), false, 0);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#llx", pu64, ASMAtomicCmpXchgU64(pu64, UINT64_C(0x80040008008efd), 0), true, UINT64_C(0x80040008008efd));
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#llx", pu64, ASMAtomicCmpXchgU64(pu64, UINT64_C(0x80040008008efd), 0), false, UINT64_C(0x80040008008efd));
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#llx", pu64, ASMAtomicCmpXchgU64(pu64, UINT64_C(0xfffffffffffffffd), UINT64_C(0x80040008008efd)), true, UINT64_C(0xfffffffffffffffd));
 
-    CHECKOP(ASMAtomicCmpXchgU64(pu64, 0, 0), false, "%d", bool);
-    CHECKVAL(*pu64, UINT64_C(0xffffffffffffff), "%#llx");
+    int64_t volatile *pi64 = (int64_t volatile *)pu64;
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#lld", pi64, ASMAtomicCmpXchgS64(pi64, INT64_MAX, 0), false, -3);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#lld", pi64, ASMAtomicCmpXchgS64(pi64, INT64_MAX, -3), true, INT64_MAX);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#lld", pi64, ASMAtomicCmpXchgS64(pi64, INT64_MIN, INT64_MIN), false, INT64_MAX);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#lld", pi64, ASMAtomicCmpXchgS64(pi64, INT64_MIN, INT64_MAX), true, INT64_MIN);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#lld", pi64, ASMAtomicCmpXchgS64(pi64, -29, -29), false, INT64_MIN);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#lld", pi64, ASMAtomicCmpXchgS64(pi64, -29, INT64_MIN), true, -29);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#lld", pi64, ASMAtomicCmpXchgS64(pi64, -29, INT64_MIN), false, -29);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%#lld", pi64, ASMAtomicCmpXchgS64(pi64, 29, -29), true, 29);
 
-    CHECKOP(ASMAtomicCmpXchgU64(pu64, 0, UINT64_C(0xffffffffffffff)), true, "%d", bool);
-    CHECKVAL(*pu64, 0, "%x");
+#if ARCH_BITS == 64
+    void * volatile *ppv = (void * volatile *)pu64;
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%p", ppv, ASMAtomicCmpXchgPtrVoid(ppv, NULL, (void *)(intptr_t)-29), false, (void *)(intptr_t)29);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%p", ppv, ASMAtomicCmpXchgPtrVoid(ppv, NULL, (void *)(intptr_t)29), true, NULL);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%p", ppv, ASMAtomicCmpXchgPtrVoid(ppv, NULL, (void *)(intptr_t)29), false, NULL);
+    CHECK_OP_AND_VAL_EX(bool, "%d", "%p", ppv, ASMAtomicCmpXchgPtrVoid(ppv, (void *)~(uintptr_t)42, NULL), true, (void *)~(uintptr_t)42);
 
-    CHECKOP(ASMAtomicCmpXchgU64(pu64, UINT64_C(0x80040008008efd), UINT64_C(0xffffffff)), false, "%d", bool);
-    CHECKVAL(*pu64, 0, "%x");
+    bool fRc;
+    RTSEMEVENT volatile *phEvt = (RTSEMEVENT volatile *)pu64;
+    ASMAtomicCmpXchgHandle(phEvt, (RTSEMEVENT)~(uintptr_t)0x12356389, (RTSEMEVENT)NULL, fRc);
+    CHECKVAL(fRc, false, "%d");
+    CHECKVAL(*phEvt, (RTSEMEVENT)~(uintptr_t)42, "%p");
 
-    CHECKOP(ASMAtomicCmpXchgU64(pu64, UINT64_C(0x80040008008efd), UINT64_C(0xffffffff00000000)), false, "%d", bool);
-    CHECKVAL(*pu64, 0, "%x");
-
-    CHECKOP(ASMAtomicCmpXchgU64(pu64, UINT64_C(0x80040008008efd), 0), true, "%d", bool);
-    CHECKVAL(*pu64, UINT64_C(0x80040008008efd), "%#llx");
+    ASMAtomicCmpXchgHandle(phEvt, (RTSEMEVENT)~(uintptr_t)0x12356389, (RTSEMEVENT)~(uintptr_t)42, fRc);
+    CHECKVAL(fRc, true, "%d");
+    CHECKVAL(*phEvt, (RTSEMEVENT)~(uintptr_t)0x12356389, "%p");
+#endif
 }
 
 
-static void tstASMAtomicCmpXchgU64(void)
+static void tstASMAtomicCmpXchg(void)
 {
+    DO_SIMPLE_TEST(ASMAtomicCmpXchgU8, uint8_t);
+    DO_SIMPLE_TEST(ASMAtomicCmpXchgU32, uint32_t);
     DO_SIMPLE_TEST(ASMAtomicCmpXchgU64, uint64_t);
 }
 
@@ -892,32 +1473,37 @@ DECLINLINE(void) tstASMAtomicCmpXchgExU32Worker(uint32_t volatile *pu32)
 {
     *pu32           = UINT32_C(0xffffffff);
     uint32_t u32Old = UINT32_C(0x80005111);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu32, u32Old, ASMAtomicCmpXchgExU32(pu32, 0, 0, &u32Old), false, UINT32_C(0xffffffff), UINT32_C(0xffffffff));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu32, u32Old, ASMAtomicCmpXchgExU32(pu32, 0, UINT32_C(0xffffffff), &u32Old), true,  0, UINT32_C(0xffffffff));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu32, u32Old, ASMAtomicCmpXchgExU32(pu32, 0, UINT32_C(0xffffffff), &u32Old), false, 0, UINT32_C(0x00000000));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu32, u32Old, ASMAtomicCmpXchgExU32(pu32, UINT32_C(0x80088efd), 0, &u32Old), true,  UINT32_C(0x80088efd), 0);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu32, u32Old, ASMAtomicCmpXchgExU32(pu32, UINT32_C(0x80088efd), 0, &u32Old), false, UINT32_C(0x80088efd), UINT32_C(0x80088efd));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu32, u32Old, ASMAtomicCmpXchgExU32(pu32, UINT32_C(0xffffffe0), UINT32_C(0x80088efd), &u32Old), true,  UINT32_C(0xffffffe0), UINT32_C(0x80088efd));
 
-    CHECKOP(ASMAtomicCmpXchgExU32(pu32, 0, 0, &u32Old), false, "%d", bool);
-    CHECKVAL(*pu32,  UINT32_C(0xffffffff), "%x");
-    CHECKVAL(u32Old, UINT32_C(0xffffffff), "%x");
+    int32_t volatile *pi32   = (int32_t volatile *)pu32;
+    int32_t           i32Old = 0;
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi32, i32Old, ASMAtomicCmpXchgExS32(pi32, 32, 32, &i32Old), false, -32, -32);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi32, i32Old, ASMAtomicCmpXchgExS32(pi32, 32, -32, &i32Old), true, 32, -32);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi32, i32Old, ASMAtomicCmpXchgExS32(pi32, INT32_MIN, 32, &i32Old), true, INT32_MIN, 32);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi32, i32Old, ASMAtomicCmpXchgExS32(pi32, INT32_MIN, 32, &i32Old), false, INT32_MIN, INT32_MIN);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi32, i32Old, ASMAtomicCmpXchgExS32(pi32, INT32_MAX, INT32_MAX, &i32Old), false, INT32_MIN, INT32_MIN);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi32, i32Old, ASMAtomicCmpXchgExS32(pi32, INT32_MAX, INT32_MIN, &i32Old), true, INT32_MAX, INT32_MIN);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi32, i32Old, ASMAtomicCmpXchgExS32(pi32, 42, INT32_MAX, &i32Old), true, 42, INT32_MAX);
 
-    CHECKOP(ASMAtomicCmpXchgExU32(pu32, 0, UINT32_C(0xffffffff), &u32Old), true, "%d", bool);
-    CHECKVAL(*pu32, 0, "%x");
-    CHECKVAL(u32Old, UINT32_C(0xffffffff), "%x");
+#if ARCH_BITS == 32
+    RTSEMEVENT volatile *phEvt   = (RTSEMEVENT volatile *)pu32;
+    RTSEMEVENT           hEvtOld = (RTSEMEVENT)~(uintptr_t)31;
+    bool                 fRc     = true;
+    ASMAtomicCmpXchgExHandle(phEvt, (RTSEMEVENT)~(uintptr_t)0x12380964, (RTSEMEVENT)~(uintptr_t)0, fRc, &hEvtOld);
+    CHECKVAL(fRc, false, "%d");
+    CHECKVAL(*phEvt, (RTSEMEVENT)(uintptr_t)42, "%p");
+    CHECKVAL(hEvtOld, (RTSEMEVENT)(uintptr_t)42, "%p");
 
-    CHECKOP(ASMAtomicCmpXchgExU32(pu32, UINT32_C(0x8008efd), UINT32_C(0xffffffff), &u32Old), false, "%d", bool);
-    CHECKVAL(*pu32, 0, "%x");
-    CHECKVAL(u32Old, 0, "%x");
-
-    CHECKOP(ASMAtomicCmpXchgExU32(pu32, UINT32_C(0x8008efd), 0, &u32Old), true, "%d", bool);
-    CHECKVAL(*pu32, UINT32_C(0x8008efd), "%x");
-    CHECKVAL(u32Old, 0, "%x");
-
-    CHECKOP(ASMAtomicCmpXchgExU32(pu32, 0, UINT32_C(0x8008efd), &u32Old), true, "%d", bool);
-    CHECKVAL(*pu32, 0, "%x");
-    CHECKVAL(u32Old, UINT32_C(0x8008efd), "%x");
-}
-
-
-static void tstASMAtomicCmpXchgExU32(void)
-{
-    DO_SIMPLE_TEST(ASMAtomicCmpXchgExU32, uint32_t);
+    ASMAtomicCmpXchgExHandle(phEvt, (RTSEMEVENT)~(uintptr_t)0x12380964, (RTSEMEVENT)(uintptr_t)42, fRc, &hEvtOld);
+    CHECKVAL(fRc, true, "%d");
+    CHECKVAL(*phEvt, (RTSEMEVENT)~(uintptr_t)0x12380964, "%p");
+    CHECKVAL(hEvtOld, (RTSEMEVENT)(uintptr_t)42, "%p");
+#endif
 }
 
 
@@ -925,82 +1511,51 @@ DECLINLINE(void) tstASMAtomicCmpXchgExU64Worker(uint64_t volatile *pu64)
 {
     *pu64 = UINT64_C(0xffffffffffffffff);
     uint64_t u64Old = UINT64_C(0x8000000051111111);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#llx", pu64, u64Old, ASMAtomicCmpXchgExU64(pu64, 0, 0, &u64Old), false, UINT64_C(0xffffffffffffffff), UINT64_C(0xffffffffffffffff));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#llx", pu64, u64Old, ASMAtomicCmpXchgExU64(pu64, 0, UINT64_C(0xffffffffffffffff), &u64Old), true, 0, UINT64_C(0xffffffffffffffff));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#llx", pu64, u64Old, ASMAtomicCmpXchgExU64(pu64, UINT64_C(0x0080040008008efd), 0x342, &u64Old), false, 0, 0);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#llx", pu64, u64Old, ASMAtomicCmpXchgExU64(pu64, UINT64_C(0x0080040008008efd), 0, &u64Old), true, UINT64_C(0x0080040008008efd), 0);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#llx", pu64, u64Old, ASMAtomicCmpXchgExU64(pu64, UINT64_C(0xffffffffffffffc0), UINT64_C(0x0080040008008efd), &u64Old), true, UINT64_C(0xffffffffffffffc0), UINT64_C(0x0080040008008efd));
 
-    CHECKOP(ASMAtomicCmpXchgExU64(pu64, 0, 0, &u64Old), false, "%d", bool);
-    CHECKVAL(*pu64, UINT64_C(0xffffffffffffffff), "%llx");
-    CHECKVAL(u64Old, UINT64_C(0xffffffffffffffff), "%llx");
+    int64_t volatile *pi64 = (int64_t volatile *)pu64;
+    int64_t           i64Old = -3;
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#lld", pi64, i64Old, ASMAtomicCmpXchgExS64(pi64, 64, 64, &i64Old), false, -64, -64);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#lld", pi64, i64Old, ASMAtomicCmpXchgExS64(pi64, 64, -64, &i64Old), true, 64, -64);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#lld", pi64, i64Old, ASMAtomicCmpXchgExS64(pi64, 64, -64, &i64Old), false, 64, 64);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#lld", pi64, i64Old, ASMAtomicCmpXchgExS64(pi64, INT64_MIN, -64, &i64Old), false, 64, 64);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#lld", pi64, i64Old, ASMAtomicCmpXchgExS64(pi64, INT64_MIN, 64, &i64Old), true, INT64_MIN, 64);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#lld", pi64, i64Old, ASMAtomicCmpXchgExS64(pi64, INT64_MAX, INT64_MIN, &i64Old), true, INT64_MAX, INT64_MIN);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#lld", pi64, i64Old, ASMAtomicCmpXchgExS64(pi64, 42, INT64_MAX, &i64Old), true, 42, INT64_MAX);
 
-    CHECKOP(ASMAtomicCmpXchgExU64(pu64, 0, UINT64_C(0xffffffffffffffff), &u64Old), true, "%d", bool);
-    CHECKVAL(*pu64, UINT64_C(0), "%llx");
-    CHECKVAL(u64Old, UINT64_C(0xffffffffffffffff), "%llx");
+#if ARCH_BITS == 64
+    RTSEMEVENT volatile *phEvt   = (RTSEMEVENT volatile *)pu64;
+    RTSEMEVENT           hEvtOld = (RTSEMEVENT)~(uintptr_t)31;
+    bool                 fRc     = true;
+    ASMAtomicCmpXchgExHandle(phEvt, (RTSEMEVENT)~(uintptr_t)0x12380964, (RTSEMEVENT)~(uintptr_t)0, fRc, &hEvtOld);
+    CHECKVAL(fRc, false, "%d");
+    CHECKVAL(*phEvt, (RTSEMEVENT)(uintptr_t)42, "%p");
+    CHECKVAL(hEvtOld, (RTSEMEVENT)(uintptr_t)42, "%p");
 
-    CHECKOP(ASMAtomicCmpXchgExU64(pu64, UINT64_C(0x80040008008efd), 0xffffffff, &u64Old), false, "%d", bool);
-    CHECKVAL(*pu64, UINT64_C(0), "%llx");
-    CHECKVAL(u64Old, UINT64_C(0), "%llx");
+    ASMAtomicCmpXchgExHandle(phEvt, (RTSEMEVENT)~(uintptr_t)0x12380964, (RTSEMEVENT)(uintptr_t)42, fRc, &hEvtOld);
+    CHECKVAL(fRc, true, "%d");
+    CHECKVAL(*phEvt, (RTSEMEVENT)~(uintptr_t)0x12380964, "%p");
+    CHECKVAL(hEvtOld, (RTSEMEVENT)(uintptr_t)42, "%p");
 
-    CHECKOP(ASMAtomicCmpXchgExU64(pu64, UINT64_C(0x80040008008efd), UINT64_C(0xffffffff00000000), &u64Old), false, "%d", bool);
-    CHECKVAL(*pu64, UINT64_C(0), "%llx");
-    CHECKVAL(u64Old, UINT64_C(0), "%llx");
+    void * volatile *ppv = (void * volatile *)pu64;
+    void            *pvOld;
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%p", ppv, pvOld, ASMAtomicCmpXchgExPtrVoid(ppv, (void *)(intptr_t)12345678, NULL, &pvOld), false, (void *)~(uintptr_t)0x12380964, (void *)~(uintptr_t)0x12380964);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%p", ppv, pvOld, ASMAtomicCmpXchgExPtrVoid(ppv, (void *)(intptr_t)12345678, (void *)~(uintptr_t)0x12380964, &pvOld), true, (void *)(intptr_t)12345678, (void *)~(uintptr_t)0x12380964);
 
-    CHECKOP(ASMAtomicCmpXchgExU64(pu64, UINT64_C(0x80040008008efd), 0, &u64Old), true, "%d", bool);
-    CHECKVAL(*pu64, UINT64_C(0x80040008008efd), "%llx");
-    CHECKVAL(u64Old, UINT64_C(0), "%llx");
-
-    CHECKOP(ASMAtomicCmpXchgExU64(pu64, 0, UINT64_C(0x80040008008efd), &u64Old), true, "%d", bool);
-    CHECKVAL(*pu64, UINT64_C(0), "%llx");
-    CHECKVAL(u64Old, UINT64_C(0x80040008008efd), "%llx");
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%p", ppv, pvOld, ASMAtomicCmpXchgExPtr(ppv, (void *)~(uintptr_t)99, (void *)~(uintptr_t)99, &pvOld), false, (void *)(intptr_t)12345678, (void *)(intptr_t)12345678);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%p", ppv, pvOld, ASMAtomicCmpXchgExPtr(ppv, (void *)~(uintptr_t)99, (void *)(intptr_t)12345678, &pvOld), true, (void *)~(intptr_t)99, (void *)(intptr_t)12345678);
+#endif
 }
 
 
-static void tstASMAtomicCmpXchgExU64(void)
+static void tstASMAtomicCmpXchgEx(void)
 {
+    DO_SIMPLE_TEST(ASMAtomicCmpXchgExU32, uint32_t);
     DO_SIMPLE_TEST(ASMAtomicCmpXchgExU64, uint64_t);
-}
-
-
-DECLINLINE(void) tstASMAtomicReadU64Worker(uint64_t volatile *pu64)
-{
-    *pu64 = 0;
-
-    CHECKOP(ASMAtomicReadU64(pu64), UINT64_C(0), "%#llx", uint64_t);
-    CHECKVAL(*pu64, UINT64_C(0), "%#llx");
-
-    *pu64 = ~UINT64_C(0);
-    CHECKOP(ASMAtomicReadU64(pu64), ~UINT64_C(0), "%#llx", uint64_t);
-    CHECKVAL(*pu64, ~UINT64_C(0), "%#llx");
-
-    *pu64 = UINT64_C(0xfedcba0987654321);
-    CHECKOP(ASMAtomicReadU64(pu64), UINT64_C(0xfedcba0987654321), "%#llx", uint64_t);
-    CHECKVAL(*pu64, UINT64_C(0xfedcba0987654321), "%#llx");
-}
-
-
-static void tstASMAtomicReadU64(void)
-{
-    DO_SIMPLE_TEST(ASMAtomicReadU64, uint64_t);
-}
-
-
-DECLINLINE(void) tstASMAtomicUoReadU64Worker(uint64_t volatile *pu64)
-{
-    *pu64 = 0;
-
-    CHECKOP(ASMAtomicUoReadU64(pu64), UINT64_C(0), "%#llx", uint64_t);
-    CHECKVAL(*pu64, UINT64_C(0), "%#llx");
-
-    *pu64 = ~UINT64_C(0);
-    CHECKOP(ASMAtomicUoReadU64(pu64), ~UINT64_C(0), "%#llx", uint64_t);
-    CHECKVAL(*pu64, ~UINT64_C(0), "%#llx");
-
-    *pu64 = UINT64_C(0xfedcba0987654321);
-    CHECKOP(ASMAtomicUoReadU64(pu64), UINT64_C(0xfedcba0987654321), "%#llx", uint64_t);
-    CHECKVAL(*pu64, UINT64_C(0xfedcba0987654321), "%#llx");
-}
-
-
-static void tstASMAtomicUoReadU64(void)
-{
-    DO_SIMPLE_TEST(ASMAtomicUoReadU64, uint64_t);
 }
 
 
@@ -1624,6 +2179,19 @@ void tstASMMemFill32(void)
 }
 
 
+void tstASMMisc(void)
+{
+    RTTestSub(g_hTest, "Misc");
+    for (uint32_t i = 0; i < 20; i++)
+    {
+        ASMWriteFence();
+        ASMCompilerBarrier();
+        ASMReadFence();
+        ASMNopPause();
+        ASMSerializeInstruction();
+        ASMMemoryFence();
+    }
+}
 
 void tstASMMath(void)
 {
@@ -1915,6 +2483,11 @@ void tstASMBench(void)
     BENCH_TSC(ASMSerializeInstructionCpuId(),    "ASMSerializeInstructionCpuId");
     BENCH_TSC(ASMSerializeInstructionIRet(),     "ASMSerializeInstructionIRet");
 #endif
+    BENCH(ASMReadFence(),                        "ASMReadFence");
+    BENCH(ASMWriteFence(),                       "ASMWriteFence");
+    BENCH(ASMMemoryFence(),                      "ASMMemoryFence");
+    BENCH(ASMSerializeInstruction(),             "ASMSerializeInstruction");
+    BENCH(ASMNopPause(),                         "ASMNopPause");
 
     /* The Darwin gcc does not like this ... */
 #if !defined(RT_OS_DARWIN) && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
@@ -1969,18 +2542,11 @@ int main(int argc, char **argv)
     //bruteForceCpuId();
 #endif
 #if 1
-    tstASMAtomicXchgU8();
-    tstASMAtomicXchgU16();
-    tstASMAtomicXchgU32();
-    tstASMAtomicXchgU64();
-    tstASMAtomicXchgPtr();
-    tstASMAtomicCmpXchgU8();
-    tstASMAtomicCmpXchgU32();
-    tstASMAtomicCmpXchgU64();
-    tstASMAtomicCmpXchgExU32();
-    tstASMAtomicCmpXchgExU64();
-    tstASMAtomicReadU64();
-    tstASMAtomicUoReadU64();
+    tstASMAtomicRead();
+    tstASMAtomicWrite();
+    tstASMAtomicXchg();
+    tstASMAtomicCmpXchg();
+    tstASMAtomicCmpXchgEx();
 
     tstASMAtomicAddS32();
     tstASMAtomicAddS64();
@@ -1998,6 +2564,8 @@ int main(int argc, char **argv)
     tstASMMemFirstMismatchingU8(g_hTest);
     tstASMMemZero32();
     tstASMMemFill32();
+
+    tstASMMisc();
 
     tstASMMath();
 
