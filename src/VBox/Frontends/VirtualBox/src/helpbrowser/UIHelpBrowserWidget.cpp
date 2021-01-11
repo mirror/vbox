@@ -159,14 +159,13 @@ public:
 public:
 
     void sltDeleteSelectedBookmark();
+    void sltDeleteAllBookmarks();
 
 protected:
 
     void retranslateUi() /* override */;
 
 private slots:
-
-    void sltHandleContextMenuRequest(const QPoint &listWidgetLocalPos);
 
 private:
 
@@ -497,10 +496,13 @@ void UIBookmarksListContainer::sltDeleteSelectedBookmark()
     if (!m_pListWidget || !m_pListWidget->currentItem())
         return;
     QListWidgetItem *pCurrentItem = m_pListWidget->takeItem(m_pListWidget->currentRow());
-
     delete pCurrentItem;
+}
 
-
+void UIBookmarksListContainer::sltDeleteAllBookmarks()
+{
+    if (m_pListWidget)
+        m_pListWidget->clear();
 }
 
 void UIBookmarksListContainer::retranslateUi()
@@ -520,14 +522,7 @@ void UIBookmarksListContainer::prepare()
     connect(m_pListWidget, &UIBookmarksListWidget::sigBookmarkDoubleClick,
             this, &UIBookmarksListContainer::sigBookmarkDoubleClick);
     connect(m_pListWidget, &UIBookmarksListWidget::customContextMenuRequested,
-            this, &UIBookmarksListContainer::sltHandleContextMenuRequest);
-}
-
-void UIBookmarksListContainer::sltHandleContextMenuRequest(const QPoint &listWidgetLocalPos)
-{
-    if (!m_pListWidget || !m_pListWidget->currentItem())
-        return;
-    emit sigListWidgetContextMenuRequest(listWidgetLocalPos);
+            this, &UIBookmarksListContainer::sigListWidgetContextMenuRequest);
 }
 
 int UIBookmarksListContainer::itemIndex(const QUrl &url)
@@ -1749,8 +1744,7 @@ void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
     else
         return;
 
-    if (!url.isValid())
-        return;
+    bool fURLValid = url.isValid();
 
     QMenu menu;
     QAction *pOpen = menu.addAction(tr("Open in Link"));
@@ -1761,6 +1755,10 @@ void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
     pOpenInNewTab->setData(url);
     pCopyLink->setData(url);
 
+    pOpen->setEnabled(fURLValid);
+    pOpenInNewTab->setEnabled(fURLValid);
+    pCopyLink->setEnabled(fURLValid);
+
     connect(pOpenInNewTab, &QAction::triggered, this, &UIHelpBrowserWidget::sltOpenLinkInNewTab);
     connect(pOpen, &QAction::triggered, this, &UIHelpBrowserWidget::sltOpenLink);
     connect(pCopyLink, &QAction::triggered, this, &UIHelpBrowserWidget::sltCopyLink);
@@ -1769,7 +1767,11 @@ void UIHelpBrowserWidget::sltShowLinksContextMenu(const QPoint &pos)
     {
         menu.addSeparator();
         QAction *pDeleteBookmark = menu.addAction(tr("Delete Bookmark"));
+        QAction *pDeleteAllBookmarks = menu.addAction(tr("Delete All Bookmarks"));
+        pDeleteBookmark->setEnabled(fURLValid);
+
         connect(pDeleteBookmark, &QAction::triggered, m_pBookmarksWidget, &UIBookmarksListContainer::sltDeleteSelectedBookmark);
+        connect(pDeleteAllBookmarks, &QAction::triggered, m_pBookmarksWidget, &UIBookmarksListContainer::sltDeleteAllBookmarks);
     }
 
     menu.exec(pSender->mapToGlobal(pos));
