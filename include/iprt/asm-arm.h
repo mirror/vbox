@@ -23,8 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_asm_arm_h
-#define ___iprt_asm_arm_h
+#ifndef IPRT_INCLUDED_asm_arm_h
+#define IPRT_INCLUDED_asm_arm_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #if !defined(RT_ARCH_ARM64) && !defined(RT_ARCH_ARM32)
@@ -285,5 +288,5 @@ DECLINLINE(void) ASMInvalidateInternalCaches(void)
 
 
 /** @} */
-#endif
+#endif /* !IPRT_INCLUDED_asm_arm_h */
 
