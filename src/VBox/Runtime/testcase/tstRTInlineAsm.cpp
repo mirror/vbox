@@ -1244,9 +1244,9 @@ DECLINLINE(void) tstASMAtomicXchgU8Worker(uint8_t volatile *pu8)
     CHECK_OP_AND_VAL(uint8_t, "%#x", pu8, ASMAtomicXchgU8(pu8, UINT8_C(0xfe)), UINT8_C(0x87), UINT8_C(0xfe));
 
     int8_t volatile *pi8 = (int8_t volatile *)pu8;
-    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_C(-4)), UINT8_C(-2), UINT8_C(-4));
-    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_C(4)), UINT8_C(-4), UINT8_C(4));
-    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_MAX), UINT8_C(4), INT8_MAX);
+    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_C(-4)), INT8_C(-2), INT8_C(-4));
+    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_C(4)), INT8_C(-4), INT8_C(4));
+    CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_MAX), INT8_C(4), INT8_MAX);
     CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, INT8_MIN), INT8_MAX, INT8_MIN);
     CHECK_OP_AND_VAL(int8_t,  "%d",  pi8, ASMAtomicXchgS8(pi8, 1), INT8_MIN, 1);
 
