@@ -188,7 +188,7 @@ signals:
 
     void sigSourceChanged(const QUrl &url);
     void sigTitleUpdate(const QString &strTitle);
-    void sigOpenLinkInNewTab(const QUrl &url);
+    void sigOpenLinkInNewTab(const QUrl &url, bool fBackground);
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
     void sigFontPointSizeChanged(int iFontPointSize);
     void sigLinkHighlighted(const QString &strLink);
@@ -291,7 +291,7 @@ protected:
 private slots:
 
     void sltHandletabTitleChange(const QString &strTitle);
-    void sltHandleOpenLinkInNewTab(const QUrl &url);
+    void sltHandleOpenLinkInNewTab(const QUrl &url, bool fBackground);
     void sltHandleTabClose(int iTabIndex);
     void sltHandleContextMenuTabClose();
     void sltHandleCurrentChanged(int iTabIndex);
@@ -303,7 +303,7 @@ private:
 
     void prepare();
     void clearAndDeleteTabs();
-    void addNewTab(const QUrl &initialUrl);
+    void addNewTab(const QUrl &initialUrl, bool fBackground);
     /** Check if lists of tab url/title has changed. if so emit a signal. */
     void updateTabUrlTitleList();
     /** Closes all tabs other than the one with index @param iTabIndex. */
@@ -840,7 +840,7 @@ UIHelpBrowserTabManager::UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine
     prepare();
 }
 
-void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl)
+void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl, bool fBackground)
 {
    UIHelpBrowserTab *pTabWidget = new  UIHelpBrowserTab(m_pHelpEngine, m_homeUrl, initialUrl);
    AssertReturnVoid(pTabWidget);
@@ -859,7 +859,7 @@ void UIHelpBrowserTabManager::addNewTab(const QUrl &initialUrl)
    connect(pTabWidget, &UIHelpBrowserTab::sigLinkHighlighted,
            this, &UIHelpBrowserTabManager::sigLinkHighlighted);
 
-   if (m_fSwitchToNewTab)
+   if (!fBackground)
        setCurrentIndex(index);
 
    if (!m_pFontScaleWidget)
@@ -904,11 +904,11 @@ void UIHelpBrowserTabManager::initializeTabs()
     clearAndDeleteTabs();
     /* Start with a single tab showing the home URL: */
     if (m_savedUrlList.isEmpty())
-        addNewTab(QUrl());
+        addNewTab(QUrl(), false);
     /* Start with saved tab(s): */
     else
         for (int i = 0; i < m_savedUrlList.size(); ++i)
-            addNewTab(m_savedUrlList[i]);
+            addNewTab(m_savedUrlList[i], false);
     updateTabUrlTitleList();
 }
 
@@ -930,7 +930,7 @@ void UIHelpBrowserTabManager::setSource(const QUrl &url, bool fNewTab /* = false
         pTab->setSource(url);
     }
     else
-        addNewTab(url);
+        addNewTab(url, false);
 
     updateTabUrlTitleList();
 }
@@ -1051,10 +1051,10 @@ void UIHelpBrowserTabManager::sltHandletabTitleChange(const QString &strTitle)
     updateTabUrlTitleList();
 }
 
-void UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab(const QUrl &url)
+void UIHelpBrowserTabManager::sltHandleOpenLinkInNewTab(const QUrl &url, bool fBackground)
 {
     if (url.isValid())
-        addNewTab(url);
+        addNewTab(url, fBackground);
     updateTabUrlTitleList();
 }
 

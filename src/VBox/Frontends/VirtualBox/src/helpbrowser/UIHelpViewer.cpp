@@ -519,6 +519,17 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
         emit sigFontPointSizeChanged(font().pointSize());
 }
 
+void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
+{
+    QString strAnchor = anchorAt(pEvent->pos());
+    if (!strAnchor.isEmpty())
+    {
+        QString strLink = source().resolved(strAnchor).toString();
+        emit sigOpenLinkInNewTab(strLink, true);
+    }
+    QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
+}
+
 void UIHelpViewer::retranslateUi()
 {
 }
@@ -615,7 +626,7 @@ void UIHelpViewer::sltHandleOpenLinkInNewTab()
         return;
     QUrl url = pSender->data().toUrl();
     if (url.isValid())
-        emit sigOpenLinkInNewTab(url);
+        emit sigOpenLinkInNewTab(url, false);
 }
 
 void UIHelpViewer::sltHandleOpenLink()

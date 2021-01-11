@@ -38,7 +38,7 @@ class UIHelpViewer : public QIWithRetranslateUI<QTextBrowser>
 
 signals:
 
-    void sigOpenLinkInNewTab(const QUrl &url);
+    void sigOpenLinkInNewTab(const QUrl &url, bool fBackground);
     void sigCloseFindInPageWidget();
     void sigFontPointSizeChanged(int iFontPointSize);
     void sigGoBackward();
@@ -65,6 +65,7 @@ protected:
     virtual void contextMenuEvent(QContextMenuEvent *event) /* override */;
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     virtual void wheelEvent(QWheelEvent *pEvent) /* override */;
+    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
 
 private slots:
 
