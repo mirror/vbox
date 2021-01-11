@@ -52,12 +52,12 @@ public:
     virtual QVariant loadResource(int type, const QUrl &name) /* override */;
     void emitHistoryChangedSignal();
     void setSource(const QUrl &url) /* override */;
-    void toggleFindInPageWidget(bool fVisible);
     int initialFontPointSize() const;
     void setFont(const QFont &);
+    bool isFindInPageWidgetVisible() const;
 
 public slots:
-
+    void sltToggleFindInPageWidget(bool fVisible);
 
 protected:
 

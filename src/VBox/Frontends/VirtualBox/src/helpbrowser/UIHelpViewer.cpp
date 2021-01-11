@@ -384,7 +384,7 @@ void UIHelpViewer::setSource(const QUrl &url)
     }
 }
 
-void UIHelpViewer::toggleFindInPageWidget(bool fVisible)
+void UIHelpViewer::sltToggleFindInPageWidget(bool fVisible)
 {
     if (!m_pFindInPageWidget)
         return;
@@ -424,6 +424,13 @@ void UIHelpViewer::setFont(const QFont &font)
     }
 }
 
+bool UIHelpViewer::isFindInPageWidgetVisible() const
+{
+    if (m_pFindInPageWidget)
+        return m_pFindInPageWidget->isVisible();
+    return false;
+}
+
 void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu pMenu;
@@ -453,10 +460,18 @@ void UIHelpViewer::contextMenuEvent(QContextMenuEvent *event)
     connect(pCopyLink, &QAction::triggered,
             this, &UIHelpViewer::sltHandleCopyLink);
 
+
+    QAction *pFindInPage = new QAction(UIHelpBrowserWidget::tr("Find in Page"));
+    pFindInPage->setCheckable(true);
+    if (m_pFindInPageWidget)
+        pFindInPage->setChecked(m_pFindInPageWidget->isVisible());
+    connect(pFindInPage, &QAction::toggled, this, &UIHelpViewer::sltToggleFindInPageWidget);
+
     pMenu.addAction(pNavigationActions);
     pMenu.addAction(pOpenLinkAction);
     pMenu.addAction(pOpenInNewTabAction);
     pMenu.addAction(pCopyLink);
+    pMenu.addAction(pFindInPage);
 
     QString strAnchor = anchorAt(event->pos());
     if (!strAnchor.isEmpty())

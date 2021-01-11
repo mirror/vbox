@@ -763,7 +763,7 @@ void UIHelpBrowserTab::sltHandleBackwardAction()
 void UIHelpBrowserTab::sltHandleFindInPageAction(bool fToggled)
 {
     if (m_pContentViewer)
-        m_pContentViewer->toggleFindInPageWidget(fToggled);
+        m_pContentViewer->sltToggleFindInPageWidget(fToggled);
 }
 
 void UIHelpBrowserTab::sltHandleHistoryChanged()
