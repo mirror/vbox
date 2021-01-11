@@ -61,6 +61,26 @@
 #include <unistd.h>
 #include <errno.h>
 #endif
+#ifdef RT_OS_DARWIN
+# include <sys/stat.h>
+# include <sys/disk.h>
+# include <errno.h>
+/* The following structure and IOCTLs are defined in znu bsd/sys/disk.h but
+   inside KERNEL ifdefs and thus stripped from the SDK edition of the header.
+   While we could try include the header from the Kernel.framework, it's a lot
+   easier to just add the structure and 4 defines here. */
+typedef struct
+{
+    uint64_t offset;
+    uint64_t length;
+    uint8_t  reserved0128[12];
+    dev_t    dev;
+} dk_physical_extent_t;
+# define DKIOCGETBASE               _IOR( 'd', 73, uint64_t)
+# define DKIOCLOCKPHYSICALEXTENTS   _IO(  'd', 81)
+# define DKIOCGETPHYSICALEXTENT     _IOWR('d', 82, dk_physical_extent_t)
+# define DKIOCUNLOCKPHYSICALEXTENTS _IO(  'd', 83)
+#endif /* RT_OS_DARWIN */
 #include "VDBackends.h"
 
 
@@ -3761,6 +3781,74 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
                            N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Size %RI64, expected %RU64"),
                            pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cbSize, pPartDesc->cbData);
     }
+
+#elif defined(RT_OS_DARWIN)
+    /* Stat the drive get its device number. */
+    struct stat StDrive;
+    if (fstat((int)RTFileToNative(hRawDrive), &StDrive) != 0)
+        rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. fstat failed on '%s' (errno=%d)"), pImage->pszFilename, pszRawDrive, errno);
+    else
+    {
+        if (ioctl(RTFileToNative(hRawPart), DKIOCLOCKPHYSICALEXTENTS, NULL) == -1)
+            rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                           N_("VMDK: Image path: '%s'. Partition #%u number ('%s') verification failed on '%s': Unable to lock the partition (errno=%d)"),
+                           pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, errno);
+        else
+        {
+            uint32_t cbBlockSize = 0;
+            uint64_t cbOffset = 0;
+            uint64_t cbSize = 0;
+            if (ioctl(RTFileToNative(hRawPart), DKIOCGETBLOCKSIZE, (caddr_t)&cbBlockSize) == -1)
+                rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'. Partition #%u number ('%s') verification failed on '%s': Unable to obtain the sector size of the partition (errno=%d)"),
+                               pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, errno);
+            else if (ioctl(RTFileToNative(hRawPart), DKIOCGETBASE, (caddr_t)&cbOffset) == -1)
+                rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'. Partition #%u number ('%s') verification failed on '%s': Unable to obtain the start offset of the partition (errno=%d)"),
+                               pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, errno);
+            else if (ioctl(RTFileToNative(hRawPart), DKIOCGETBLOCKCOUNT, (caddr_t)&cbSize) == -1)
+                rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'. Partition #%u number ('%s') verification failed on '%s': Unable to obtain the size of the partition (errno=%d)"),
+                               pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, errno);
+            else
+            {
+                cbSize *= (uint64_t)cbBlockSize;
+                dk_physical_extent_t dkPartExtent = {0};
+                dkPartExtent.offset = 0;
+                dkPartExtent.length = cbSize;
+                if (ioctl(RTFileToNative(hRawPart), DKIOCGETPHYSICALEXTENT, (caddr_t)&dkPartExtent) == -1)
+                    rc = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                   N_("VMDK: Image path: '%s'. Partition #%u number ('%s') verification failed on '%s': Unable to obtain partition info (errno=%d)"),
+                                   pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, errno);
+                else
+                {
+                    if (dkPartExtent.dev != StDrive.st_rdev)
+                        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Drive does not contain the partition"),
+                                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive);
+                    else if (cbOffset != pPartDesc->offStartInVDisk)
+                        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Start offset %RU64, expected %RU64"),
+                                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cbOffset, pPartDesc->offStartInVDisk);
+                    else if (cbSize != pPartDesc->cbData)
+                        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': Size %RU64, expected %RU64"),
+                                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cbSize, pPartDesc->cbData);
+                }
+            }
+
+            if (ioctl(RTFileToNative(hRawPart), DKIOCUNLOCKPHYSICALEXTENTS, NULL) == -1)
+            {
+                int rc2 = vdIfError(pImage->pIfError, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                    N_("VMDK: Image path: '%s'. Partition #%u number ('%s') verification failed on '%s': Unable to unlock the partition (errno=%d)"),
+                                    pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, errno);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+        }
+    }
+
 #else
     RT_NOREF(hVol); /* PORTME */
 #endif
