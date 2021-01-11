@@ -390,6 +390,8 @@ void UIHelpViewer::sltToggleFindInPageWidget(bool fVisible)
         return;
     /* Closing the find in page widget causes QTextBrowser to jump to the top of the document. This hack puts it back into position: */
     int iPosition = verticalScrollBar()->value();
+    m_iMarginForFindWidget = verticalScrollBar()->width() +
+        qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
     /* Try to position the widget somewhere meaningful initially: */
     if (!m_fFindWidgetDragged)
         m_pFindInPageWidget->move(width() - m_iMarginForFindWidget - m_pFindInPageWidget->width(),

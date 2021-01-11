@@ -57,6 +57,7 @@ public:
     bool isFindInPageWidgetVisible() const;
 
 public slots:
+
     void sltToggleFindInPageWidget(bool fVisible);
 
 protected:
@@ -87,7 +88,7 @@ private:
     UIFindInPageWidget *m_pFindInPageWidget;
     /* Initilized as false and set to true once the user drag moves the find widget. */
     bool m_fFindWidgetDragged;
-    const int m_iMarginForFindWidget;
+    int m_iMarginForFindWidget;
     /** Document positions of the cursors within the document for all matches. */
     QVector<int>   m_matchedCursorPosition;
     int m_iSelectedMatchIndex;
