@@ -50,9 +50,9 @@ class UINetworkManagerWidget : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    /** Notifies listeners about network details-widget @a fVisible. */
+    /** Notifies listeners about host network details-widget @a fVisible. */
     void sigDetailsVisibilityChangedHostNetwork(bool fVisible);
-    /** Notifies listeners about network details data @a fDiffers. */
+    /** Notifies listeners about host network details data @a fDiffers. */
     void sigDetailsDataChangedHostNetwork(bool fDiffers);
 
 public:
@@ -121,7 +121,6 @@ private slots:
         void sltHandleCurrentItemChangeHostNetwork();
         /** Handles host network context-menu request for tree-widget @a position. */
         void sltHandleContextMenuRequestHostNetwork(const QPoint &position);
-
         /** Handles command to apply host network details changes. */
         void sltApplyDetailsChangesHostNetwork();
     /** @} */
@@ -160,9 +159,9 @@ private:
 
     /** @name Tree-widget stuff.
       * @{ */
-        /** Creates a new tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
+        /** Creates a new host network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void createItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem);
-        /** Updates the passed tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
+        /** Updates passed host network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void updateItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem);
     /** @} */
 
@@ -219,7 +218,7 @@ protected:
 };
 
 
-/** QIManagerDialog extension providing GUI with the dialog to control host network related functionality. */
+/** QIManagerDialog extension providing GUI with the dialog to control network related functionality. */
 class UINetworkManager : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
