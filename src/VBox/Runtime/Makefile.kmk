@@ -832,6 +832,7 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMAtomicUoXorU32.asm \
 	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
@@ -856,6 +857,7 @@ RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMAtomicUoXorU32.asm \
 	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
@@ -2808,6 +2810,7 @@ RuntimeR0_SOURCES.x86 += \
 	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMAtomicUoXorU32.asm \
 	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMGetXcr0.asm \
 	common/asm/ASMSetXcr0.asm \
@@ -2826,6 +2829,7 @@ RuntimeR0_SOURCES.amd64 += \
 	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
+	common/asm/ASMAtomicUoXorU32.asm \
 	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMGetXcr0.asm \
 	common/asm/ASMSetXcr0.asm \
