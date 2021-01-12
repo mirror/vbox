@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UINetworkDetailsWidget class declaration.
+ * VBox Qt GUI - UIDetailsWidgetHostNetwork class declaration.
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_networkmanager_UINetworkDetailsWidget_h
-#define FEQT_INCLUDED_SRC_networkmanager_UINetworkDetailsWidget_h
+#ifndef FEQT_INCLUDED_SRC_networkmanager_UIDetailsWidgetHostNetwork_h
+#define FEQT_INCLUDED_SRC_networkmanager_UIDetailsWidgetHostNetwork_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -72,19 +72,19 @@ struct UIDataHostNetworkInterface
     bool operator!=(const UIDataHostNetworkInterface &other) const { return !equal(other); }
 
     /** Holds interface name. */
-    QString m_strName;
+    QString  m_strName;
     /** Holds whether DHCP is enabled for that interface. */
-    bool m_fDHCPEnabled;
+    bool     m_fDHCPEnabled;
     /** Holds IPv4 interface address. */
-    QString m_strAddress;
+    QString  m_strAddress;
     /** Holds IPv4 interface mask. */
-    QString m_strMask;
+    QString  m_strMask;
     /** Holds whether IPv6 protocol supported. */
-    bool m_fSupportedIPv6;
+    bool     m_fSupportedIPv6;
     /** Holds IPv6 interface address. */
-    QString m_strAddress6;
+    QString  m_strAddress6;
     /** Holds IPv6 interface prefix length. */
-    QString m_strPrefixLength6;
+    QString  m_strPrefixLength6;
 };
 
 
@@ -118,15 +118,15 @@ struct UIDataDHCPServer
     bool operator!=(const UIDataDHCPServer &other) const { return !equal(other); }
 
     /** Holds whether DHCP server enabled. */
-    bool m_fEnabled;
+    bool     m_fEnabled;
     /** Holds DHCP server address. */
-    QString m_strAddress;
+    QString  m_strAddress;
     /** Holds DHCP server mask. */
-    QString m_strMask;
+    QString  m_strMask;
     /** Holds DHCP server lower address. */
-    QString m_strLowerAddress;
+    QString  m_strLowerAddress;
     /** Holds DHCP server upper address. */
-    QString m_strUpperAddress;
+    QString  m_strUpperAddress;
 };
 
 
@@ -154,14 +154,14 @@ struct UIDataHostNetwork
     bool operator!=(const UIDataHostNetwork &other) const { return !equal(other); }
 
     /** Holds the interface data. */
-    UIDataHostNetworkInterface m_interface;
+    UIDataHostNetworkInterface  m_interface;
     /** Holds the DHCP server data. */
-    UIDataDHCPServer m_dhcpserver;
+    UIDataDHCPServer            m_dhcpserver;
 };
 
 
 /** Host Network Manager: Host network details-widget. */
-class UINetworkDetailsWidget : public QIWithRetranslateUI<QWidget>
+class UIDetailsWidgetHostNetwork : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -179,7 +179,7 @@ public:
 
     /** Constructs medium details dialog passing @a pParent to the base-class.
       * @param  enmEmbedding  Brings embedding type. */
-    UINetworkDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent = 0);
+    UIDetailsWidgetHostNetwork(EmbedTo enmEmbedding, QWidget *pParent = 0);
 
     /** Returns the host network data. */
     const UIDataHostNetwork &data() const { return m_newData; }
@@ -353,5 +353,5 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_networkmanager_UINetworkDetailsWidget_h */
+#endif /* !FEQT_INCLUDED_SRC_networkmanager_UIDetailsWidgetHostNetwork_h */
 

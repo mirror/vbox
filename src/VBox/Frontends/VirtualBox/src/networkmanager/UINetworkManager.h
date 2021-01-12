@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,7 +37,7 @@ class QIDialogButtonBox;
 class QITabWidget;
 class QITreeWidget;
 class UIActionPool;
-class UINetworkDetailsWidget;
+class UIDetailsWidgetHostNetwork;
 class UIItemHostNetwork;
 class QIToolBar;
 struct UIDataHostNetwork;
@@ -187,13 +187,13 @@ private:
         QITabWidget            *m_pTabWidget;
 
         /** Holds the host network tab. */
-        QWidget                *m_pTabHostNetwork;
+        QWidget                    *m_pTabHostNetwork;
         /** Holds the host network layout. */
-        QVBoxLayout            *m_pLayoutHostNetwork;
+        QVBoxLayout                *m_pLayoutHostNetwork;
         /** Holds the host network tree-widget instance. */
-        QITreeWidget           *m_pTreeWidgetHostNetwork;
+        QITreeWidget               *m_pTreeWidgetHostNetwork;
         /** Holds the host network details-widget instance. */
-        UINetworkDetailsWidget *m_pDetailsWidgetHostNetwork;
+        UIDetailsWidgetHostNetwork *m_pDetailsWidgetHostNetwork;
     /** @} */
 };
 

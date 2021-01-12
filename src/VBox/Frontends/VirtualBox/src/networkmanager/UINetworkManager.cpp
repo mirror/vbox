@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,10 +26,10 @@
 #include "QITabWidget.h"
 #include "QITreeWidget.h"
 #include "UIActionPoolManager.h"
+#include "UIDetailsWidgetHostNetwork.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
-#include "UINetworkDetailsWidget.h"
 #include "UINetworkManager.h"
 #include "UINetworkManagerUtils.h"
 #include "QIToolBar.h"
@@ -889,16 +889,16 @@ void UINetworkManagerWidget::prepareTreeWidgetHostNetwork()
 void UINetworkManagerWidget::prepareDetailsWidgetHostNetwork()
 {
     /* Prepare host network details-widget: */
-    m_pDetailsWidgetHostNetwork = new UINetworkDetailsWidget(m_enmEmbedding, m_pTabHostNetwork);
+    m_pDetailsWidgetHostNetwork = new UIDetailsWidgetHostNetwork(m_enmEmbedding, m_pTabHostNetwork);
     if (m_pDetailsWidgetHostNetwork)
     {
         m_pDetailsWidgetHostNetwork->setVisible(false);
         m_pDetailsWidgetHostNetwork->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-        connect(m_pDetailsWidgetHostNetwork, &UINetworkDetailsWidget::sigDataChanged,
+        connect(m_pDetailsWidgetHostNetwork, &UIDetailsWidgetHostNetwork::sigDataChanged,
                 this, &UINetworkManagerWidget::sigDetailsDataChangedHostNetwork);
-        connect(m_pDetailsWidgetHostNetwork, &UINetworkDetailsWidget::sigDataChangeRejected,
+        connect(m_pDetailsWidgetHostNetwork, &UIDetailsWidgetHostNetwork::sigDataChangeRejected,
                 this, &UINetworkManagerWidget::sltHandleCurrentItemChangeHostNetwork);
-        connect(m_pDetailsWidgetHostNetwork, &UINetworkDetailsWidget::sigDataChangeAccepted,
+        connect(m_pDetailsWidgetHostNetwork, &UIDetailsWidgetHostNetwork::sigDataChangeAccepted,
                 this, &UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork);
 
         /* Add into layout: */
