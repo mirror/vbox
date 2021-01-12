@@ -45,7 +45,7 @@ RTDECL(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cB
     if (!((uintptr_t)pvBitmap & 7) && cBits >= 32)
     {
         uint32_t u32 = *(const volatile uint32_t RT_FAR *)pu;
-        if (u32 != UINT32_MAX)
+        if (u32 != 0)
         {
             size_t const iBaseBit = ((uintptr_t)pu - (uintptr_t)pvBitmap) * 8;
             return iBaseBit + ASMBitFirstSetU32(RT_LE2H_U32(u32)) - 1;
@@ -84,7 +84,7 @@ RTDECL(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cB
     else
     {
         uint32_t u32 = *(const volatile uint32_t RT_FAR *)pu;
-        if (u32 != UINT32_MAX)
+        if (u32 != 0)
         {
             size_t const iBaseBit = ((uintptr_t)pu - (uintptr_t)pvBitmap) * 8;
             return iBaseBit + ASMBitFirstSetU32(RT_LE2H_U32(u32)) - 1;

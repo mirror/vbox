@@ -153,6 +153,13 @@ int main()
 #define CHECK_BIT(expr,  b1)            do { if (!(expr)) { RTTestFailed(hTest, "line %d, b1=%d: %s", __LINE__, b1, #expr); } CHECK_GUARD(s); } while (0)
 #define CHECK_BIT2(expr, b1, b2)        do { if (!(expr)) { RTTestFailed(hTest, "line %d, b1=%d b2=%d: %s", __LINE__, b1, b2, #expr); } CHECK_GUARD(s); } while (0)
 #define CHECK_BIT3(expr, b1, b2, b3)    do { if (!(expr)) { RTTestFailed(hTest, "line %d, b1=%d b2=%d b3=%d: %s", __LINE__, b1, b2, b3, #expr); } CHECK_GUARD(s); } while (0)
+#define CHECK_VAL(a_RetType, a_Fmt, a_ValueExpr, a_Expect) \
+                        do { a_RetType rcCheckRet = (a_ValueExpr); \
+                             if (RT_LIKELY((rcCheckRet) == (a_Expect))) {} \
+                             else RTTestFailed(hTest, "line %d: %s -> " a_Fmt ", expected " a_Fmt "", \
+                                               __LINE__, #a_ValueExpr, rcCheckRet, a_Expect); \
+                             CHECK_GUARD(s); \
+                        } while (0)
 
 #define GUARD_MAP(p)    do {  } while (0)
 #define CHECK_GUARD(p)  do {  } while (0)
@@ -162,6 +169,105 @@ int main()
     /* self check. */
     MAP_CLEAR(p);
     CHECK_GUARD(p);
+
+    /*
+     * Check the primitives first:
+     */
+    CHECK_VAL(unsigned, "%u", ASMBitLastSetU32(0), 0);
+    CHECK(ASMBitLastSetU32(1) == 1);
+    CHECK(ASMBitLastSetU32(0x80000000) == 32);
+    CHECK(ASMBitLastSetU32(0xffffffff) == 32);
+    CHECK(ASMBitLastSetU32(RT_BIT(23) | RT_BIT(11)) == 24);
+    for (i = 0; i < 32; i++)
+        CHECK(ASMBitLastSetU32(1 << i) == (unsigned)i + 1);
+
+    CHECK(ASMBitFirstSetU32(0) == 0);
+    CHECK(ASMBitFirstSetU32(1) == 1);
+    CHECK(ASMBitFirstSetU32(0x80000000) == 32);
+    CHECK(ASMBitFirstSetU32(0xffffffff) == 1);
+    CHECK(ASMBitFirstSetU32(RT_BIT(23) | RT_BIT(11)) == 12);
+    for (i = 0; i < 32; i++)
+        CHECK(ASMBitFirstSetU32(1 << i) == (unsigned)i + 1);
+
+    CHECK(ASMBitLastSetU64(UINT64_C(0)) == 0);
+    CHECK(ASMBitLastSetU64(UINT64_C(1)) == 1);
+    CHECK(ASMBitLastSetU64(UINT64_C(0x80000000)) == 32);
+    CHECK(ASMBitLastSetU64(UINT64_C(0xffffffff)) == 32);
+    CHECK(ASMBitLastSetU64(RT_BIT_64(33) | RT_BIT_64(11)) == 34);
+    for (i = 0; i < 64; i++)
+        CHECK(ASMBitLastSetU64(UINT64_C(1) << i) == (unsigned)i + 1);
+
+    CHECK(ASMBitFirstSetU64(UINT64_C(0)) == 0);
+    CHECK(ASMBitFirstSetU64(UINT64_C(1)) == 1);
+    CHECK(ASMBitFirstSetU64(UINT64_C(0x80000000)) == 32);
+    CHECK(ASMBitFirstSetU64(UINT64_C(0x800000000000)) == 48);
+    CHECK(ASMBitFirstSetU64(UINT64_C(0x8000000000000000)) == 64);
+    CHECK(ASMBitFirstSetU64(UINT64_C(0xffffffff)) == 1);
+    CHECK(ASMBitFirstSetU64(UINT64_C(0xffffffffffffffff)) == 1);
+    CHECK(ASMBitFirstSetU64(RT_BIT_64(33) | RT_BIT_64(11)) == 12);
+    for (i = 0; i < 64; i++)
+        CHECK(ASMBitFirstSetU64(UINT64_C(1) << i) == (unsigned)i + 1);
+
+    CHECK_VAL(unsigned, "%u", ASMBitFirstSetU32(0), 0);
+    CHECK_VAL(unsigned, "%u", ASMBitFirstSetU32(UINT32_C(0x84210000)), 16+1);
+    CHECK_VAL(unsigned, "%u", ASMBitFirstSetU32(UINT32_C(0xffffffff)),  0+1);
+    CHECK_VAL(unsigned, "%u", ASMBitFirstSetU32(UINT32_C(0x80000000)), 31+1);
+
+    CHECK_VAL(unsigned, "%u", ASMBitFirstSetU64(0), 0);
+    CHECK_VAL(unsigned, "%u", ASMBitFirstSetU64(UINT64_C(0xffffeeee84210000)), 16+1);
+    CHECK_VAL(unsigned, "%u", ASMBitFirstSetU64(UINT64_C(0xffffeeee00000000)), 33+1);
+    CHECK_VAL(unsigned, "%u", ASMBitFirstSetU64(UINT64_C(0x8000000000000000)), 63+1);
+    CHECK_VAL(unsigned, "%u", ASMBitFirstSetU64(UINT64_C(0xffffffffffffffff)),  0+1);
+
+    CHECK_VAL(unsigned, "%u", ASMBitLastSetU32(0), 0);
+    CHECK_VAL(unsigned, "%u", ASMBitLastSetU32(UINT32_C(0xffffffff)), 31+1);
+    CHECK_VAL(unsigned, "%u", ASMBitLastSetU32(UINT32_C(0x00000001)),  0+1);
+    CHECK_VAL(unsigned, "%u", ASMBitLastSetU32(UINT32_C(0x0001ffff)), 16+1);
+    CHECK_VAL(unsigned, "%u", ASMBitLastSetU32(UINT32_C(0x01234567)), 24+1);
+
+    CHECK_VAL(unsigned, "%u", ASMBitLastSetU64(0), 0);
+    CHECK_VAL(unsigned, "%u", ASMBitLastSetU64(UINT64_C(0x0000807060504030)), 47+1);
+
+    CHECK_VAL(uint16_t, "%#x", ASMByteSwapU16(UINT16_C(0x1234)), UINT16_C(0x3412));
+
+    CHECK_VAL(uint32_t, "%#x", ASMByteSwapU32(UINT32_C(0x12345678)), UINT32_C(0x78563412));
+
+    CHECK_VAL(uint64_t, "%#llx", ASMByteSwapU64(UINT64_C(0x1122334455667788)), UINT64_C(0x8877665544332211));
+
+    CHECK_VAL(uint32_t, "%#x", ASMRotateLeftU32(UINT32_C(0x12345678),  4), UINT32_C(0x23456781));
+    CHECK_VAL(uint32_t, "%#x", ASMRotateLeftU32(UINT32_C(0x12345678), 16), UINT32_C(0x56781234));
+    CHECK_VAL(uint32_t, "%#x", ASMRotateLeftU32(UINT32_C(0x82868080), 29), UINT32_C(0x1050d010));
+    CHECK_VAL(uint32_t, "%#x", ASMRotateLeftU32(UINT32_C(0xfedcba89),  1), UINT32_C(0xfdb97513));
+
+    CHECK_VAL(uint32_t, "%#x", ASMRotateRightU32(UINT32_C(0x12345678),  4), UINT32_C(0x81234567));
+    CHECK_VAL(uint32_t, "%#x", ASMRotateRightU32(UINT32_C(0x12345678), 16), UINT32_C(0x56781234));
+    CHECK_VAL(uint32_t, "%#x", ASMRotateRightU32(UINT32_C(0x82868080), 29), UINT32_C(0x14340404));
+    CHECK_VAL(uint32_t, "%#x", ASMRotateRightU32(UINT32_C(0xfedcba89),  1), UINT32_C(0xff6e5d44));
+
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateLeftU64(UINT64_C(0x123456789abcdef0),  4), UINT64_C(0x23456789abcdef01));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateLeftU64(UINT64_C(0x123456789abcdef0), 16), UINT64_C(0x56789abcdef01234));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateLeftU64(UINT64_C(0x123456789abcdef0), 32), UINT64_C(0x9abcdef012345678));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateLeftU64(UINT64_C(0x123456789abcdef0), 48), UINT64_C(0xdef0123456789abc));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateLeftU64(UINT64_C(0x123456789abcdef0), 56), UINT64_C(0xf0123456789abcde));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateLeftU64(UINT64_C(0x123456789abcdef0), 60), UINT64_C(0x0123456789abcdef));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateLeftU64(UINT64_C(0x8182838485868788), 63), UINT64_C(0x40c141c242c343c4));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateLeftU64(UINT64_C(0x8182838485868788),  1), UINT64_C(0x030507090b0d0f11));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateLeftU64(UINT64_C(0x8182838485868788), 29), UINT64_C(0x90b0d0f110305070));
+
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateRightU64(UINT64_C(0x123456789abcdef0),  4), UINT64_C(0x0123456789abcdef));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateRightU64(UINT64_C(0x123456789abcdef0), 16), UINT64_C(0xdef0123456789abc));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateRightU64(UINT64_C(0x123456789abcdef0), 32), UINT64_C(0x9abcdef012345678));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateRightU64(UINT64_C(0x123456789abcdef0), 48), UINT64_C(0x56789abcdef01234));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateRightU64(UINT64_C(0x123456789abcdef0), 56), UINT64_C(0x3456789abcdef012));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateRightU64(UINT64_C(0x123456789abcdef0), 60), UINT64_C(0x23456789abcdef01));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateRightU64(UINT64_C(0x8182838485868788), 63), UINT64_C(0x030507090b0d0f11));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateRightU64(UINT64_C(0x8182838485868788),  1), UINT64_C(0x40c141c242c343c4));
+    CHECK_VAL(uint64_t, "%#llx", ASMRotateRightU64(UINT64_C(0x8182838485868788), 29), UINT64_C(0x2c343c440c141c24));
+
+
+    /*
+     * Variable sized bitmaps:
+     */
 
     /* bit set */
     MAP_CLEAR(p);
@@ -262,17 +368,17 @@ int main()
 
     /* bit searching */
     MAP_SET(p);
-    CHECK(ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8) == -1);
-    CHECK(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == 0);
+    CHECK_VAL(int32_t, "%d", ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8), -1);
+    CHECK_VAL(int32_t, "%d", ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8), 0);
 
     ASMBitClear(&p->au32[0], 1);
-    CHECK(ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8) == 1);
-    CHECK(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == 0);
+    CHECK_VAL(int32_t, "%d", ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8), 1);
+    CHECK_VAL(int32_t, "%d", ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8), 0);
 
     MAP_SET(p);
     ASMBitClear(&p->au32[0], 95);
-    CHECK(ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8) == 95);
-    CHECK(ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8) == 0);
+    CHECK_VAL(int32_t, "%d", ASMBitFirstClear(&p->au32[0], sizeof(p->au32) * 8), 95);
+    CHECK_VAL(int32_t, "%d", ASMBitFirstSet(&p->au32[0], sizeof(p->au32) * 8), 0);
 
     MAP_SET(p);
     ASMBitClear(&p->au32[0], 127);
@@ -409,39 +515,6 @@ int main()
         for (j = i; j < 128; j++)
             CHECK_BIT(ASMBitNextSet(&p->au32[0], sizeof(p->au32) * 8, j) == -1, i);
     }
-
-
-    CHECK(ASMBitLastSetU32(0) == 0);
-    CHECK(ASMBitLastSetU32(1) == 1);
-    CHECK(ASMBitLastSetU32(0x80000000) == 32);
-    CHECK(ASMBitLastSetU32(0xffffffff) == 32);
-    CHECK(ASMBitLastSetU32(RT_BIT(23) | RT_BIT(11)) == 24);
-    for (i = 0; i < 32; i++)
-        CHECK(ASMBitLastSetU32(1 << i) == (unsigned)i + 1);
-
-    CHECK(ASMBitFirstSetU32(0) == 0);
-    CHECK(ASMBitFirstSetU32(1) == 1);
-    CHECK(ASMBitFirstSetU32(0x80000000) == 32);
-    CHECK(ASMBitFirstSetU32(0xffffffff) == 1);
-    CHECK(ASMBitFirstSetU32(RT_BIT(23) | RT_BIT(11)) == 12);
-    for (i = 0; i < 32; i++)
-        CHECK(ASMBitFirstSetU32(1 << i) == (unsigned)i + 1);
-
-    CHECK(ASMBitLastSetU64(UINT64_C(0)) == 0);
-    CHECK(ASMBitLastSetU64(UINT64_C(1)) == 1);
-    CHECK(ASMBitLastSetU64(UINT64_C(0x80000000)) == 32);
-    CHECK(ASMBitLastSetU64(UINT64_C(0xffffffff)) == 32);
-    CHECK(ASMBitLastSetU64(RT_BIT_64(33) | RT_BIT_64(11)) == 34);
-    for (i = 0; i < 64; i++)
-        CHECK(ASMBitLastSetU64(UINT64_C(1) << i) == (unsigned)i + 1);
-
-    CHECK(ASMBitFirstSetU64(UINT64_C(0)) == 0);
-    CHECK(ASMBitFirstSetU64(UINT64_C(1)) == 1);
-    CHECK(ASMBitFirstSetU64(UINT64_C(0x80000000)) == 32);
-    CHECK(ASMBitFirstSetU64(UINT64_C(0xffffffff)) == 1);
-    CHECK(ASMBitFirstSetU64(RT_BIT_64(33) | RT_BIT_64(11)) == 12);
-    for (i = 0; i < 64; i++)
-        CHECK(ASMBitFirstSetU64(UINT64_C(1) << i) == (unsigned)i + 1);
 
     /*
      * Special tests.
