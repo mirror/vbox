@@ -4507,7 +4507,7 @@ DECLINLINE(void) ASMAtomicXorU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) R
 
 # elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("lock; xor %1, %0\n\t"
+    __asm__ __volatile__("lock; xorl %1, %0\n\t"
                          : "=m" (*pu32)
                          : "ir" (u32)
                          , "m" (*pu32)
