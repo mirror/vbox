@@ -121,6 +121,7 @@
 # define ASMAtomicUoOrU64_EndProc                       RT_MANGLER(ASMAtomicUoOrU64_EndProc)
 # define ASMAtomicUoReadU64                             RT_MANGLER(ASMAtomicUoReadU64)
 # define ASMAtomicUoReadU64_EndProc                     RT_MANGLER(ASMAtomicUoReadU64_EndProc)
+# define ASMAtomicUoXorU32                              RT_MANGLER(ASMAtomicUoXorU32)
 # define ASMAtomicXchgU16                               RT_MANGLER(ASMAtomicXchgU16)
 # define ASMAtomicXchgU16_EndProc                       RT_MANGLER(ASMAtomicXchgU16_EndProc)
 # define ASMAtomicXchgU32                               RT_MANGLER(ASMAtomicXchgU32)
