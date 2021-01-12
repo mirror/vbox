@@ -1559,343 +1559,554 @@ static void tstASMAtomicCmpXchgEx(void)
 }
 
 
+#define TEST_RET_OLD(a_Type, a_Fmt, a_pVar, a_Function, a_uVal, a_VarExpect) do { \
+        a_Type const uOldExpect = *(a_pVar); \
+        a_Type uOldRet = a_Function(a_pVar, a_uVal); \
+        if (RT_LIKELY( uOldRet == (uOldExpect) && *(a_pVar) == (a_VarExpect) )) { } \
+        else RTTestFailed(g_hTest, "%s, %d: FAILURE: %s(%s," a_Fmt ") -> " a_Fmt ", expected " a_Fmt "; %s=" a_Fmt ", expected " a_Fmt "\n", \
+                          __FUNCTION__, __LINE__, #a_Function, #a_pVar, a_uVal, uOldRet, uOldExpect, #a_pVar, *(a_pVar), (a_VarExpect)); \
+    } while (0)
+
+
+DECLINLINE(void) tstASMAtomicAddU32Worker(uint32_t *pu32)
+{
+    *pu32 = 10;
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAddU32, 1,                     11);
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAddU32, UINT32_C(0xfffffffe),  9);
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAddU32, UINT32_C(0xfffffff7),  0);
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAddU32, UINT32_C(0x7fffffff),  UINT32_C(0x7fffffff));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAddU32, 1,                     UINT32_C(0x80000000));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAddU32, 1,                     UINT32_C(0x80000001));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAddU32, UINT32_C(0x7fffffff),  0);
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAddU32, 0,                     0);
+
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicSubU32, 0,                     0);
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicSubU32, 32,                    UINT32_C(0xffffffe0));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicSubU32, UINT32_C(0x7fffffff),  UINT32_C(0x7fffffe1));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicSubU32, UINT32_C(0x7fffffde),  UINT32_C(0x00000003));
+}
+
+
 DECLINLINE(void) tstASMAtomicAddS32Worker(int32_t *pi32)
 {
-    int32_t i32Rc;
     *pi32 = 10;
-#define MYCHECK(op, rc, val) \
-    do { \
-        i32Rc = op; \
-        if (i32Rc != (rc)) \
-            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s -> %d expected %d\n", __FUNCTION__, __LINE__, #op, i32Rc, rc); \
-        if (*pi32 != (val)) \
-            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s => *pi32=%d expected %d\n", __FUNCTION__, __LINE__, #op, *pi32, val); \
-    } while (0)
-    MYCHECK(ASMAtomicAddS32(pi32, 1),               10,             11);
-    MYCHECK(ASMAtomicAddS32(pi32, -2),              11,             9);
-    MYCHECK(ASMAtomicAddS32(pi32, -9),              9,              0);
-    MYCHECK(ASMAtomicAddS32(pi32, -0x7fffffff),     0,              -0x7fffffff);
-    MYCHECK(ASMAtomicAddS32(pi32, 0),               -0x7fffffff,    -0x7fffffff);
-    MYCHECK(ASMAtomicAddS32(pi32, 0x7fffffff),      -0x7fffffff,    0);
-    MYCHECK(ASMAtomicAddS32(pi32, 0),               0,              0);
-#undef MYCHECK
+    TEST_RET_OLD(int32_t, "%d", pi32, ASMAtomicAddS32, 1,               11);
+    TEST_RET_OLD(int32_t, "%d", pi32, ASMAtomicAddS32, -2,              9);
+    TEST_RET_OLD(int32_t, "%d", pi32, ASMAtomicAddS32, -9,              0);
+    TEST_RET_OLD(int32_t, "%d", pi32, ASMAtomicAddS32, -0x7fffffff,     -0x7fffffff);
+    TEST_RET_OLD(int32_t, "%d", pi32, ASMAtomicAddS32, 0,               -0x7fffffff);
+    TEST_RET_OLD(int32_t, "%d", pi32, ASMAtomicAddS32, 0x7fffffff,      0);
+    TEST_RET_OLD(int32_t, "%d", pi32, ASMAtomicAddS32, 0,               0);
+
+    TEST_RET_OLD(int32_t, "%d", pi32, ASMAtomicSubS32, 0,               0);
+    TEST_RET_OLD(int32_t, "%d", pi32, ASMAtomicSubS32, 1,               -1);
+    TEST_RET_OLD(int32_t, "%d", pi32, ASMAtomicSubS32, INT32_MIN,       INT32_MAX);
 }
 
 
-static void tstASMAtomicAddS32(void)
+DECLINLINE(void) tstASMAtomicAddU64Worker(uint64_t volatile *pu64)
 {
-    DO_SIMPLE_TEST(ASMAtomicAddS32, int32_t);
-}
+    *pu64 = 10;
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicAddU64, 1,               11);
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicAddU64, UINT64_C(0xfffffffffffffffe), UINT64_C(0x0000000000000009));
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicAddU64, UINT64_C(0xfffffffffffffff7), UINT64_C(0x0000000000000000));
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicAddU64, UINT64_C(0x7ffffffffffffff0), UINT64_C(0x7ffffffffffffff0));
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicAddU64, UINT64_C(0x7ffffffffffffff0), UINT64_C(0xffffffffffffffe0));
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicAddU64, UINT64_C(0x0000000000000000), UINT64_C(0xffffffffffffffe0));
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicAddU64, UINT64_C(0x000000000000001f), UINT64_C(0xffffffffffffffff));
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicAddU64, UINT64_C(0x0000000000000001), UINT64_C(0x0000000000000000));
 
-
-DECLINLINE(void) tstASMAtomicUoIncU32Worker(uint32_t volatile *pu32)
-{
-    *pu32 = 0;
-
-    CHECKOP(ASMAtomicUoIncU32(pu32), UINT32_C(1), "%#x", uint32_t);
-    CHECKVAL(*pu32, UINT32_C(1), "%#x");
-
-    *pu32 = ~UINT32_C(0);
-    CHECKOP(ASMAtomicUoIncU32(pu32), 0, "%#x", uint32_t);
-    CHECKVAL(*pu32, 0, "%#x");
-
-    *pu32 = UINT32_C(0x7fffffff);
-    CHECKOP(ASMAtomicUoIncU32(pu32), UINT32_C(0x80000000), "%#x", uint32_t);
-    CHECKVAL(*pu32, UINT32_C(0x80000000), "%#x");
-}
-
-
-static void tstASMAtomicUoIncU32(void)
-{
-    DO_SIMPLE_TEST(ASMAtomicUoIncU32, uint32_t);
-}
-
-
-DECLINLINE(void) tstASMAtomicUoDecU32Worker(uint32_t volatile *pu32)
-{
-    *pu32 = 0;
-
-    CHECKOP(ASMAtomicUoDecU32(pu32), ~UINT32_C(0), "%#x", uint32_t);
-    CHECKVAL(*pu32, ~UINT32_C(0), "%#x");
-
-    *pu32 = ~UINT32_C(0);
-    CHECKOP(ASMAtomicUoDecU32(pu32), UINT32_C(0xfffffffe), "%#x", uint32_t);
-    CHECKVAL(*pu32, UINT32_C(0xfffffffe), "%#x");
-
-    *pu32 = UINT32_C(0x80000000);
-    CHECKOP(ASMAtomicUoDecU32(pu32), UINT32_C(0x7fffffff), "%#x", uint32_t);
-    CHECKVAL(*pu32, UINT32_C(0x7fffffff), "%#x");
-}
-
-
-static void tstASMAtomicUoDecU32(void)
-{
-    DO_SIMPLE_TEST(ASMAtomicUoDecU32, uint32_t);
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicSubU64, UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000000));
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicSubU64, UINT64_C(0x0000000000000020), UINT64_C(0xffffffffffffffe0));
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicSubU64, UINT64_C(0x7fffffffffffffff), UINT64_C(0x7fffffffffffffe1));
+    TEST_RET_OLD(uint64_t, "%llx", pu64, ASMAtomicSubU64, UINT64_C(0x7fffffffffffffdd), UINT64_C(0x0000000000000004));
 }
 
 
 DECLINLINE(void) tstASMAtomicAddS64Worker(int64_t volatile *pi64)
 {
-    int64_t i64Rc;
     *pi64 = 10;
-#define MYCHECK(op, rc, val) \
-    do { \
-        i64Rc = op; \
-        if (i64Rc != (rc)) \
-            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s -> %llx expected %llx\n", __FUNCTION__, __LINE__, #op, i64Rc, (int64_t)rc); \
-        if (*pi64 != (val)) \
-            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s => *pi64=%llx expected %llx\n", __FUNCTION__, __LINE__, #op, *pi64, (int64_t)(val)); \
-    } while (0)
-    MYCHECK(ASMAtomicAddS64(pi64, 1),               10,             11);
-    MYCHECK(ASMAtomicAddS64(pi64, -2),              11,             9);
-    MYCHECK(ASMAtomicAddS64(pi64, -9),              9,              0);
-    MYCHECK(ASMAtomicAddS64(pi64, -INT64_MAX),      0,              -INT64_MAX);
-    MYCHECK(ASMAtomicAddS64(pi64, 0),               -INT64_MAX,     -INT64_MAX);
-    MYCHECK(ASMAtomicAddS64(pi64, -1),              -INT64_MAX,     INT64_MIN);
-    MYCHECK(ASMAtomicAddS64(pi64, INT64_MAX),       INT64_MIN,      -1);
-    MYCHECK(ASMAtomicAddS64(pi64, 1),               -1,             0);
-    MYCHECK(ASMAtomicAddS64(pi64, 0),               0,              0);
-#undef MYCHECK
+    TEST_RET_OLD(int64_t, "%lld", pi64, ASMAtomicAddS64, 1,               11);
+    TEST_RET_OLD(int64_t, "%lld", pi64, ASMAtomicAddS64, -2,              9);
+    TEST_RET_OLD(int64_t, "%lld", pi64, ASMAtomicAddS64, -9,              0);
+    TEST_RET_OLD(int64_t, "%lld", pi64, ASMAtomicAddS64, -INT64_MAX,      -INT64_MAX);
+    TEST_RET_OLD(int64_t, "%lld", pi64, ASMAtomicAddS64, 0,               -INT64_MAX);
+    TEST_RET_OLD(int64_t, "%lld", pi64, ASMAtomicAddS64, -1,              INT64_MIN);
+    TEST_RET_OLD(int64_t, "%lld", pi64, ASMAtomicAddS64, INT64_MAX,       -1);
+    TEST_RET_OLD(int64_t, "%lld", pi64, ASMAtomicAddS64, 1,               0);
+    TEST_RET_OLD(int64_t, "%lld", pi64, ASMAtomicAddS64, 0,               0);
+
+    TEST_RET_OLD(int64_t, "%d",   pi64, ASMAtomicSubS64, 0,               0);
+    TEST_RET_OLD(int64_t, "%d",   pi64, ASMAtomicSubS64, 1,               -1);
+    TEST_RET_OLD(int64_t, "%d",   pi64, ASMAtomicSubS64, INT64_MIN,       INT64_MAX);
 }
 
 
-static void tstASMAtomicAddS64(void)
+
+DECLINLINE(void) tstASMAtomicAddZWorker(size_t volatile *pcb)
 {
+    *pcb = 10;
+    TEST_RET_OLD(size_t, "%zx", pcb, ASMAtomicAddZ, 1,             11);
+    TEST_RET_OLD(size_t, "%zx", pcb, ASMAtomicAddZ, ~(size_t)1,     9);
+    TEST_RET_OLD(size_t, "%zx", pcb, ASMAtomicAddZ, ~(size_t)8,     0);
+
+    TEST_RET_OLD(size_t, "%zx", pcb, ASMAtomicSubZ, 0,              0);
+    TEST_RET_OLD(size_t, "%zx", pcb, ASMAtomicSubZ, 10,             ~(size_t)9);
+}
+
+static void tstASMAtomicAdd(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicAddU32, uint32_t);
+    DO_SIMPLE_TEST(ASMAtomicAddS32, int32_t);
+    DO_SIMPLE_TEST(ASMAtomicAddU64, uint64_t);
     DO_SIMPLE_TEST(ASMAtomicAddS64, int64_t);
+    DO_SIMPLE_TEST(ASMAtomicAddZ, size_t);
+}
+
+
+#define TEST_RET_NEW_NV(a_Type, a_Fmt, a_pVar, a_Function, a_VarExpect) do { \
+        a_Type uNewRet = a_Function(a_pVar); \
+        if (RT_LIKELY( uNewRet == (a_VarExpect) && *(a_pVar) == (a_VarExpect) )) { } \
+        else RTTestFailed(g_hTest, "%s, %d: FAILURE: %s(%s) -> " a_Fmt " and %s=" a_Fmt ", expected both " a_Fmt "\n", \
+                          __FUNCTION__, __LINE__, #a_Function, #a_pVar, uNewRet, #a_pVar, *(a_pVar), (a_VarExpect)); \
+    } while (0)
+
+
+DECLINLINE(void) tstASMAtomicDecIncU32Worker(uint32_t volatile *pu32)
+{
+    *pu32 = 3;
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicDecU32, 2);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicDecU32, 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicDecU32, 0);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicDecU32, UINT32_MAX);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicDecU32, UINT32_MAX - 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicDecU32, UINT32_MAX - 2);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicIncU32, UINT32_MAX - 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicIncU32, UINT32_MAX);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicIncU32, 0);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicIncU32, 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicIncU32, 2);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicDecU32, 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicIncU32, 2);
+    *pu32 = _1M;
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicDecU32, _1M - 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicIncU32, _1M);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicIncU32, _1M + 1);
+}
+
+DECLINLINE(void) tstASMAtomicUoDecIncU32Worker(uint32_t volatile *pu32)
+{
+    *pu32 = 3;
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoDecU32, 2);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoDecU32, 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoDecU32, 0);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoDecU32, UINT32_MAX);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoDecU32, UINT32_MAX - 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoDecU32, UINT32_MAX - 2);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoIncU32, UINT32_MAX - 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoIncU32, UINT32_MAX);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoIncU32, 0);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoIncU32, 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoIncU32, 2);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoDecU32, 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoIncU32, 2);
+    *pu32 = _1M;
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoDecU32, _1M - 1);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoIncU32, _1M);
+    TEST_RET_NEW_NV(uint32_t, "%#x", pu32, ASMAtomicUoIncU32, _1M + 1);
 }
 
 
 DECLINLINE(void) tstASMAtomicDecIncS32Worker(int32_t volatile *pi32)
 {
-    int32_t i32Rc;
     *pi32 = 10;
-#define MYCHECK(op, rc) \
-    do { \
-        i32Rc = op; \
-        if (i32Rc != (rc)) \
-            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s -> %d expected %d\n", __FUNCTION__, __LINE__, #op, i32Rc, rc); \
-        if (*pi32 != (rc)) \
-            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s => *pi32=%d expected %d\n", __FUNCTION__, __LINE__, #op, *pi32, rc); \
-    } while (0)
-    MYCHECK(ASMAtomicDecS32(pi32), 9);
-    MYCHECK(ASMAtomicDecS32(pi32), 8);
-    MYCHECK(ASMAtomicDecS32(pi32), 7);
-    MYCHECK(ASMAtomicDecS32(pi32), 6);
-    MYCHECK(ASMAtomicDecS32(pi32), 5);
-    MYCHECK(ASMAtomicDecS32(pi32), 4);
-    MYCHECK(ASMAtomicDecS32(pi32), 3);
-    MYCHECK(ASMAtomicDecS32(pi32), 2);
-    MYCHECK(ASMAtomicDecS32(pi32), 1);
-    MYCHECK(ASMAtomicDecS32(pi32), 0);
-    MYCHECK(ASMAtomicDecS32(pi32), -1);
-    MYCHECK(ASMAtomicDecS32(pi32), -2);
-    MYCHECK(ASMAtomicIncS32(pi32), -1);
-    MYCHECK(ASMAtomicIncS32(pi32), 0);
-    MYCHECK(ASMAtomicIncS32(pi32), 1);
-    MYCHECK(ASMAtomicIncS32(pi32), 2);
-    MYCHECK(ASMAtomicIncS32(pi32), 3);
-    MYCHECK(ASMAtomicDecS32(pi32), 2);
-    MYCHECK(ASMAtomicIncS32(pi32), 3);
-    MYCHECK(ASMAtomicDecS32(pi32), 2);
-    MYCHECK(ASMAtomicIncS32(pi32), 3);
-#undef MYCHECK
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 9);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 8);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 7);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 6);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 5);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 4);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 3);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 2);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 1);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 0);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, -1);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, -2);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicIncS32, -1);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicIncS32, 0);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicIncS32, 1);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicIncS32, 2);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicIncS32, 3);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 2);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicIncS32, 3);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, 2);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicIncS32, 3);
+    *pi32 = INT32_MAX;
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicDecS32, INT32_MAX - 1);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicIncS32, INT32_MAX);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicIncS32, INT32_MIN);
 }
 
 
-static void tstASMAtomicDecIncS32(void)
+#if 0
+DECLINLINE(void) tstASMAtomicUoDecIncS32Worker(int32_t volatile *pi32)
 {
-    DO_SIMPLE_TEST(ASMAtomicDecIncS32, int32_t);
+    *pi32 = 10;
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 9);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 8);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 7);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 6);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 5);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 4);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 3);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 2);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 1);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 0);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, -1);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, -2);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoIncS32, -1);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoIncS32, 0);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoIncS32, 1);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoIncS32, 2);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoIncS32, 3);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 2);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoIncS32, 3);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, 2);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoIncS32, 3);
+    *pi32 = INT32_MAX;
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoDecS32, INT32_MAX - 1);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoIncS32, INT32_MAX);
+    TEST_RET_NEW_NV(int32_t, "%d", pi32, ASMAtomicUoIncS32, INT32_MIN);
 }
+#endif
+
+
+DECLINLINE(void) tstASMAtomicDecIncU64Worker(uint64_t volatile *pu64)
+{
+    *pu64 = 3;
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicDecU64, 2);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicDecU64, 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicDecU64, 0);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicDecU64, UINT64_MAX);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicDecU64, UINT64_MAX - 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicDecU64, UINT64_MAX - 2);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicIncU64, UINT64_MAX - 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicIncU64, UINT64_MAX);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicIncU64, 0);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicIncU64, 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicIncU64, 2);
+    *pu64 = _4G - 1;
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicDecU64, _4G - 2);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicIncU64, _4G - 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicIncU64, _4G);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicIncU64, _4G + 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicDecU64, _4G);
+}
+
+
+#if 0
+DECLINLINE(void) tstASMAtomicUoDecIncU64Worker(uint64_t volatile *pu64)
+{
+    *pu64 = 3;
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoDecU64, 2);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoDecU64, 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoDecU64, 0);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoDecU64, UINT64_MAX);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoDecU64, UINT64_MAX - 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoDecU64, UINT64_MAX - 2);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoIncU64, UINT64_MAX - 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoIncU64, UINT64_MAX);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoIncU64, 0);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoIncU64, 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoIncU64, 2);
+    *pu64 = _4G - 1;
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoDecU64, _4G - 2);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoIncU64, _4G - 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoIncU64, _4G);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoIncU64, _4G + 1);
+    TEST_RET_NEW_NV(uint64_t, "%lld", pu64, ASMAtomicUoDecU64, _4G);
+}
+#endif
 
 
 DECLINLINE(void) tstASMAtomicDecIncS64Worker(int64_t volatile *pi64)
 {
-    int64_t i64Rc;
     *pi64 = 10;
-#define MYCHECK(op, rc) \
-    do { \
-        i64Rc = op; \
-        if (i64Rc != (rc)) \
-            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s -> %lld expected %lld\n", __FUNCTION__, __LINE__, #op, i64Rc, rc); \
-        if (*pi64 != (rc)) \
-            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s => *pi64=%lld expected %lld\n", __FUNCTION__, __LINE__, #op, *pi64, rc); \
-    } while (0)
-    MYCHECK(ASMAtomicDecS64(pi64), 9);
-    MYCHECK(ASMAtomicDecS64(pi64), 8);
-    MYCHECK(ASMAtomicDecS64(pi64), 7);
-    MYCHECK(ASMAtomicDecS64(pi64), 6);
-    MYCHECK(ASMAtomicDecS64(pi64), 5);
-    MYCHECK(ASMAtomicDecS64(pi64), 4);
-    MYCHECK(ASMAtomicDecS64(pi64), 3);
-    MYCHECK(ASMAtomicDecS64(pi64), 2);
-    MYCHECK(ASMAtomicDecS64(pi64), 1);
-    MYCHECK(ASMAtomicDecS64(pi64), 0);
-    MYCHECK(ASMAtomicDecS64(pi64), -1);
-    MYCHECK(ASMAtomicDecS64(pi64), -2);
-    MYCHECK(ASMAtomicIncS64(pi64), -1);
-    MYCHECK(ASMAtomicIncS64(pi64), 0);
-    MYCHECK(ASMAtomicIncS64(pi64), 1);
-    MYCHECK(ASMAtomicIncS64(pi64), 2);
-    MYCHECK(ASMAtomicIncS64(pi64), 3);
-    MYCHECK(ASMAtomicDecS64(pi64), 2);
-    MYCHECK(ASMAtomicIncS64(pi64), 3);
-    MYCHECK(ASMAtomicDecS64(pi64), 2);
-    MYCHECK(ASMAtomicIncS64(pi64), 3);
-#undef MYCHECK
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 9);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 8);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 7);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 6);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 5);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 4);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 3);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 2);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 1);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 0);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, -1);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, -2);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicIncS64, -1);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicIncS64, 0);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicIncS64, 1);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicIncS64, 2);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicIncS64, 3);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 2);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicIncS64, 3);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, 2);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicIncS64, 3);
+    *pi64 = INT64_MAX;
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicDecS64, INT64_MAX - 1);
 }
 
 
-static void tstASMAtomicDecIncS64(void)
+#if 0
+DECLINLINE(void) tstASMAtomicUoDecIncS64Worker(int64_t volatile *pi64)
 {
-    DO_SIMPLE_TEST(ASMAtomicDecIncS64, int64_t);
+    *pi64 = 10;
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 9);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 8);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 7);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 6);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 5);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 4);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 3);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 2);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 1);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 0);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, -1);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, -2);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoIncS64, -1);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoIncS64, 0);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoIncS64, 1);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoIncS64, 2);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoIncS64, 3);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 2);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoIncS64, 3);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, 2);
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoIncS64, 3);
+    *pi64 = INT64_MAX;
+    TEST_RET_NEW_NV(int64_t, "%lld", pi64, ASMAtomicUoDecS64, INT64_MAX - 1);
+}
+#endif
+
+
+DECLINLINE(void) tstASMAtomicDecIncZWorker(size_t volatile *pcb)
+{
+    size_t const uBaseVal = ~(size_t)0 >> 7;
+    *pcb = uBaseVal;
+    TEST_RET_NEW_NV(size_t, "%zx", pcb, ASMAtomicDecZ, uBaseVal - 1);
+    TEST_RET_NEW_NV(size_t, "%zx", pcb, ASMAtomicDecZ, uBaseVal - 2);
+    TEST_RET_NEW_NV(size_t, "%zx", pcb, ASMAtomicDecZ, uBaseVal - 3);
+    TEST_RET_NEW_NV(size_t, "%zx", pcb, ASMAtomicIncZ, uBaseVal - 2);
+    TEST_RET_NEW_NV(size_t, "%zx", pcb, ASMAtomicIncZ, uBaseVal - 1);
+    TEST_RET_NEW_NV(size_t, "%zx", pcb, ASMAtomicIncZ, uBaseVal);
+    TEST_RET_NEW_NV(size_t, "%zx", pcb, ASMAtomicIncZ, uBaseVal + 1);
+    TEST_RET_NEW_NV(size_t, "%zx", pcb, ASMAtomicDecZ, uBaseVal);
+    TEST_RET_NEW_NV(size_t, "%zx", pcb, ASMAtomicDecZ, uBaseVal - 1);
+    TEST_RET_NEW_NV(size_t, "%zx", pcb, ASMAtomicIncZ, uBaseVal);
 }
 
 
-DECLINLINE(void) tstASMAtomicAndOrU32Worker(uint32_t volatile *pu32)
+static void tstASMAtomicDecInc(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicDecIncU32, uint32_t);
+    DO_SIMPLE_TEST(ASMAtomicUoDecIncU32, uint32_t);
+    DO_SIMPLE_TEST(ASMAtomicDecIncS32, int32_t);
+    //DO_SIMPLE_TEST(ASMAtomicUoDecIncS32, int32_t);
+    DO_SIMPLE_TEST(ASMAtomicDecIncU64, uint64_t);
+    //DO_SIMPLE_TEST(ASMAtomicUoDecIncU64, uint64_t);
+    DO_SIMPLE_TEST(ASMAtomicDecIncS64, int64_t);
+    //DO_SIMPLE_TEST(ASMAtomicUoDecIncS64, int64_t);
+    DO_SIMPLE_TEST(ASMAtomicDecIncZ, size_t);
+}
+
+
+#define TEST_RET_VOID(a_Type, a_Fmt, a_pVar, a_Function, a_uVal, a_VarExpect) do { \
+        a_Function(a_pVar, a_uVal); \
+        if (RT_LIKELY( *(a_pVar) == (a_VarExpect) )) { } \
+        else RTTestFailed(g_hTest, "%s, %d: FAILURE: %s(%s, " a_Fmt ") -> %s=" a_Fmt ", expected " a_Fmt "\n", \
+                          __FUNCTION__, __LINE__, #a_Function, #a_pVar, a_uVal, #a_pVar, *(a_pVar), (a_VarExpect)); \
+    } while (0)
+
+#define TEST_RET_NEW(a_Type, a_Fmt, a_pVar, a_Function, a_uVal, a_VarExpect) do { \
+        a_Type uNewRet = a_Function(a_pVar, a_uVal); \
+        if (RT_LIKELY( uNewRet == (a_VarExpect) && *(a_pVar) == (a_VarExpect) )) { } \
+        else RTTestFailed(g_hTest, "%s, %d: FAILURE: %s(%s, " a_Fmt ") -> " a_Fmt " and %s=" a_Fmt ", expected both " a_Fmt "\n", \
+                          __FUNCTION__, __LINE__, #a_Function, #a_pVar, a_uVal, uNewRet, #a_pVar, *(a_pVar), (a_VarExpect)); \
+    } while (0)
+
+
+DECLINLINE(void) tstASMAtomicAndOrXorU32Worker(uint32_t volatile *pu32)
 {
     *pu32 = UINT32_C(0xffffffff);
-
-    ASMAtomicOrU32(pu32, UINT32_C(0xffffffff));
-    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%x");
-
-    ASMAtomicAndU32(pu32, UINT32_C(0xffffffff));
-    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%x");
-
-    ASMAtomicAndU32(pu32, UINT32_C(0x8f8f8f8f));
-    CHECKVAL(*pu32, UINT32_C(0x8f8f8f8f), "%x");
-
-    ASMAtomicOrU32(pu32, UINT32_C(0x70707070));
-    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%x");
-
-    ASMAtomicAndU32(pu32, UINT32_C(1));
-    CHECKVAL(*pu32, UINT32_C(1), "%x");
-
-    ASMAtomicOrU32(pu32, UINT32_C(0x80000000));
-    CHECKVAL(*pu32, UINT32_C(0x80000001), "%x");
-
-    ASMAtomicAndU32(pu32, UINT32_C(0x80000000));
-    CHECKVAL(*pu32, UINT32_C(0x80000000), "%x");
-
-    ASMAtomicAndU32(pu32, UINT32_C(0));
-    CHECKVAL(*pu32, UINT32_C(0), "%x");
-
-    ASMAtomicOrU32(pu32, UINT32_C(0x42424242));
-    CHECKVAL(*pu32, UINT32_C(0x42424242), "%x");
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicOrU32,  UINT32_C(0xffffffff),  UINT32_C(0xffffffff));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicAndU32, UINT32_C(0xffffffff),  UINT32_C(0xffffffff));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicAndU32, UINT32_C(0x8f8f8f8f),  UINT32_C(0x8f8f8f8f));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicOrU32,  UINT32_C(0x70707070),  UINT32_C(0xffffffff));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicAndU32, UINT32_C(1),           UINT32_C(1));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicOrU32,  UINT32_C(0x80000000),  UINT32_C(0x80000001));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicAndU32, UINT32_C(0x80000000),  UINT32_C(0x80000000));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicAndU32, UINT32_C(0),           UINT32_C(0));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicOrU32,  UINT32_C(0x42424242),  UINT32_C(0x42424242));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicAndU32, UINT32_C(0x00ff0f00),  UINT32_C(0x00420200));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicXorU32, UINT32_C(0x42004042),  UINT32_C(0x42424242));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicXorU32, UINT32_C(0xff024200),  UINT32_C(0xbd400042));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicXorU32, UINT32_C(0x00000000),  UINT32_C(0xbd400042));
 }
 
 
-static void tstASMAtomicAndOrU32(void)
+DECLINLINE(void) tstASMAtomicUoAndOrXorU32Worker(uint32_t volatile *pu32)
 {
-    DO_SIMPLE_TEST(ASMAtomicAndOrU32, uint32_t);
+    *pu32 = UINT32_C(0xffffffff);
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoOrU32,  UINT32_C(0xffffffff),  UINT32_C(0xffffffff));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoAndU32, UINT32_C(0xffffffff),  UINT32_C(0xffffffff));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoAndU32, UINT32_C(0x8f8f8f8f),  UINT32_C(0x8f8f8f8f));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoOrU32,  UINT32_C(0x70707070),  UINT32_C(0xffffffff));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoAndU32, UINT32_C(1),           UINT32_C(1));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoOrU32,  UINT32_C(0x80000000),  UINT32_C(0x80000001));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoAndU32, UINT32_C(0x80000000),  UINT32_C(0x80000000));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoAndU32, UINT32_C(0),           UINT32_C(0));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoOrU32,  UINT32_C(0x42424242),  UINT32_C(0x42424242));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoAndU32, UINT32_C(0x00ff0f00),  UINT32_C(0x00420200));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoXorU32, UINT32_C(0x42004042),  UINT32_C(0x42424242));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoXorU32, UINT32_C(0xff024200),  UINT32_C(0xbd400042));
+    TEST_RET_VOID(uint32_t, "%#x", pu32, ASMAtomicUoXorU32, UINT32_C(0x00000000),  UINT32_C(0xbd400042));
 }
 
 
-DECLINLINE(void) tstASMAtomicAndOrU64Worker(uint64_t volatile *pu64)
+DECLINLINE(void) tstASMAtomicAndOrXorExU32Worker(uint32_t volatile *pu32)
+{
+    *pu32 = UINT32_C(0xffffffff);
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicOrExU32,  UINT32_C(0xffffffff),  UINT32_C(0xffffffff));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAndExU32, UINT32_C(0xffffffff),  UINT32_C(0xffffffff));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAndExU32, UINT32_C(0x8f8f8f8f),  UINT32_C(0x8f8f8f8f));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicOrExU32,  UINT32_C(0x70707070),  UINT32_C(0xffffffff));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAndExU32, UINT32_C(1),           UINT32_C(1));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicOrExU32,  UINT32_C(0x80000000),  UINT32_C(0x80000001));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAndExU32, UINT32_C(0x80000000),  UINT32_C(0x80000000));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAndExU32, UINT32_C(0),           UINT32_C(0));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicOrExU32,  UINT32_C(0x42424242),  UINT32_C(0x42424242));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicAndExU32, UINT32_C(0x00ff0f00),  UINT32_C(0x00420200));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicXorExU32, UINT32_C(0x42004042),  UINT32_C(0x42424242));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicXorExU32, UINT32_C(0xff024200),  UINT32_C(0xbd400042));
+    TEST_RET_OLD(uint32_t, "%#x", pu32, ASMAtomicXorExU32, UINT32_C(0x00000000),  UINT32_C(0xbd400042));
+}
+
+
+DECLINLINE(void) tstASMAtomicAndOrXorU64Worker(uint64_t volatile *pu64)
 {
     *pu64 = UINT64_C(0xffffffff);
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicOrU64,  UINT64_C(0xffffffff),  UINT64_C(0xffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0xffffffff),  UINT64_C(0xffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0x8f8f8f8f),  UINT64_C(0x8f8f8f8f));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicOrU64,  UINT64_C(0x70707070),  UINT64_C(0xffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(1),           UINT64_C(1));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicOrU64,  UINT64_C(0x80000000),  UINT64_C(0x80000001));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0x80000000),  UINT64_C(0x80000000));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0),           UINT64_C(0));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicOrU64,  UINT64_C(0x42424242),  UINT64_C(0x42424242));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0x00ff0f00),  UINT64_C(0x00420200));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicXorU64, UINT64_C(0x42004042),  UINT64_C(0x42424242));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicXorU64, UINT64_C(0xff024200),  UINT64_C(0xbd400042));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicXorU64, UINT64_C(0x00000000),  UINT64_C(0xbd400042));
 
-    ASMAtomicOrU64(pu64, UINT64_C(0xffffffff));
-    CHECKVAL(*pu64, UINT64_C(0xffffffff), "%x");
-
-    ASMAtomicAndU64(pu64, UINT64_C(0xffffffff));
-    CHECKVAL(*pu64, UINT64_C(0xffffffff), "%x");
-
-    ASMAtomicAndU64(pu64, UINT64_C(0x8f8f8f8f));
-    CHECKVAL(*pu64, UINT64_C(0x8f8f8f8f), "%x");
-
-    ASMAtomicOrU64(pu64, UINT64_C(0x70707070));
-    CHECKVAL(*pu64, UINT64_C(0xffffffff), "%x");
-
-    ASMAtomicAndU64(pu64, UINT64_C(1));
-    CHECKVAL(*pu64, UINT64_C(1), "%x");
-
-    ASMAtomicOrU64(pu64, UINT64_C(0x80000000));
-    CHECKVAL(*pu64, UINT64_C(0x80000001), "%x");
-
-    ASMAtomicAndU64(pu64, UINT64_C(0x80000000));
-    CHECKVAL(*pu64, UINT64_C(0x80000000), "%x");
-
-    ASMAtomicAndU64(pu64, UINT64_C(0));
-    CHECKVAL(*pu64, UINT64_C(0), "%x");
-
-    ASMAtomicOrU64(pu64, UINT64_C(0x42424242));
-    CHECKVAL(*pu64, UINT64_C(0x42424242), "%x");
-
-    // Same as above, but now 64-bit wide.
-    ASMAtomicAndU64(pu64, UINT64_C(0));
-    CHECKVAL(*pu64, UINT64_C(0), "%x");
-
-    ASMAtomicOrU64(pu64, UINT64_C(0xffffffffffffffff));
-    CHECKVAL(*pu64, UINT64_C(0xffffffffffffffff), "%x");
-
-    ASMAtomicAndU64(pu64, UINT64_C(0xffffffffffffffff));
-    CHECKVAL(*pu64, UINT64_C(0xffffffffffffffff), "%x");
-
-    ASMAtomicAndU64(pu64, UINT64_C(0x8f8f8f8f8f8f8f8f));
-    CHECKVAL(*pu64, UINT64_C(0x8f8f8f8f8f8f8f8f), "%x");
-
-    ASMAtomicOrU64(pu64, UINT64_C(0x7070707070707070));
-    CHECKVAL(*pu64, UINT64_C(0xffffffffffffffff), "%x");
-
-    ASMAtomicAndU64(pu64, UINT64_C(1));
-    CHECKVAL(*pu64, UINT64_C(1), "%x");
-
-    ASMAtomicOrU64(pu64, UINT64_C(0x8000000000000000));
-    CHECKVAL(*pu64, UINT64_C(0x8000000000000001), "%x");
-
-    ASMAtomicAndU64(pu64, UINT64_C(0x8000000000000000));
-    CHECKVAL(*pu64, UINT64_C(0x8000000000000000), "%x");
-
-    ASMAtomicAndU64(pu64, UINT64_C(0));
-    CHECKVAL(*pu64, UINT64_C(0), "%x");
-
-    ASMAtomicOrU64(pu64, UINT64_C(0x4242424242424242));
-    CHECKVAL(*pu64, UINT64_C(0x4242424242424242), "%x");
+    /* full 64-bit */
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0x0000000000000000),  UINT64_C(0x0000000000000000));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicOrU64,  UINT64_C(0xffffffffffffffff),  UINT64_C(0xffffffffffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0xffffffffffffffff),  UINT64_C(0xffffffffffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0x8f8f8f8f8f8f8f8f),  UINT64_C(0x8f8f8f8f8f8f8f8f));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicOrU64,  UINT64_C(0x7070707070707070),  UINT64_C(0xffffffffffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0x0000000000000001),  UINT64_C(0x0000000000000001));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicOrU64,  UINT64_C(0x8000000000000000),  UINT64_C(0x8000000000000001));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0x8000000000000000),  UINT64_C(0x8000000000000000));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0),                   UINT64_C(0));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicOrU64,  UINT64_C(0x4242424242424242),  UINT64_C(0x4242424242424242));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicAndU64, UINT64_C(0x00ff0f00ff0f0000),  UINT64_C(0x0042020042020000));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicXorU64, UINT64_C(0x4200404242040000),  UINT64_C(0x4242424242420000));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicXorU64, UINT64_C(0xff02420000ff2127),  UINT64_C(0xbd40004242bd2127));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicXorU64, UINT64_C(0x0000000000000000),  UINT64_C(0xbd40004242bd2127));
 }
 
 
-static void tstASMAtomicAndOrU64(void)
+DECLINLINE(void) tstASMAtomicUoAndOrXorU64Worker(uint64_t volatile *pu64)
 {
-    DO_SIMPLE_TEST(ASMAtomicAndOrU64, uint64_t);
+    *pu64 = UINT64_C(0xffffffff);
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoOrU64,  UINT64_C(0xffffffff),  UINT64_C(0xffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0xffffffff),  UINT64_C(0xffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0x8f8f8f8f),  UINT64_C(0x8f8f8f8f));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoOrU64,  UINT64_C(0x70707070),  UINT64_C(0xffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(1),           UINT64_C(1));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoOrU64,  UINT64_C(0x80000000),  UINT64_C(0x80000001));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0x80000000),  UINT64_C(0x80000000));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0),           UINT64_C(0));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoOrU64,  UINT64_C(0x42424242),  UINT64_C(0x42424242));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0x00ff0f00),  UINT64_C(0x00420200));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoXorU64, UINT64_C(0x42004042),  UINT64_C(0x42424242));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoXorU64, UINT64_C(0xff024200),  UINT64_C(0xbd400042));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoXorU64, UINT64_C(0x00000000),  UINT64_C(0xbd400042));
+
+    /* full 64-bit */
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0x0000000000000000),  UINT64_C(0x0000000000000000));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoOrU64,  UINT64_C(0xffffffffffffffff),  UINT64_C(0xffffffffffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0xffffffffffffffff),  UINT64_C(0xffffffffffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0x8f8f8f8f8f8f8f8f),  UINT64_C(0x8f8f8f8f8f8f8f8f));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoOrU64,  UINT64_C(0x7070707070707070),  UINT64_C(0xffffffffffffffff));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0x0000000000000001),  UINT64_C(0x0000000000000001));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoOrU64,  UINT64_C(0x8000000000000000),  UINT64_C(0x8000000000000001));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0x8000000000000000),  UINT64_C(0x8000000000000000));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0),                   UINT64_C(0));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoOrU64,  UINT64_C(0x4242424242424242),  UINT64_C(0x4242424242424242));
+    TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoAndU64, UINT64_C(0x00ff0f00ff0f0000),  UINT64_C(0x0042020042020000));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoXorU64, UINT64_C(0x4200404242040000),  UINT64_C(0x4242424242420000));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoXorU64, UINT64_C(0xff02420000ff2127),  UINT64_C(0xbd40004242bd2127));
+    //TEST_RET_VOID(uint64_t, "%#llx", pu64, ASMAtomicUoXorU64, UINT64_C(0x0000000000000000),  UINT64_C(0xbd40004242bd2127));
 }
 
 
-DECLINLINE(void) tstASMAtomicUoAndOrU32Worker(uint32_t volatile *pu32)
+#if 0
+DECLINLINE(void) tstASMAtomicAndOrXorExU64Worker(uint64_t volatile *pu64)
 {
-    *pu32 = UINT32_C(0xffffffff);
+    *pu64 = UINT64_C(0xffffffff);
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicOrExU64,  UINT64_C(0xffffffff),  UINT64_C(0xffffffff));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0xffffffff),  UINT64_C(0xffffffff));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0x8f8f8f8f),  UINT64_C(0x8f8f8f8f));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicOrExU64,  UINT64_C(0x70707070),  UINT64_C(0xffffffff));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(1),           UINT64_C(1));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicOrExU64,  UINT64_C(0x80000000),  UINT64_C(0x80000001));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0x80000000),  UINT64_C(0x80000000));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0),           UINT64_C(0));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicOrExU64,  UINT64_C(0x42424242),  UINT64_C(0x42424242));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0x00ff0f00),  UINT64_C(0x00420200));
+    //TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicXorExU64, UINT64_C(0x42004042),  UINT64_C(0x42424242));
+    //TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicXorExU64, UINT64_C(0xff024200),  UINT64_C(0xbd400042));
+    //TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicXorExU64, UINT64_C(0x00000000),  UINT64_C(0xbd400042));
 
-    ASMAtomicUoOrU32(pu32, UINT32_C(0xffffffff));
-    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%#x");
-
-    ASMAtomicUoAndU32(pu32, UINT32_C(0xffffffff));
-    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%#x");
-
-    ASMAtomicUoAndU32(pu32, UINT32_C(0x8f8f8f8f));
-    CHECKVAL(*pu32, UINT32_C(0x8f8f8f8f), "%#x");
-
-    ASMAtomicUoOrU32(pu32, UINT32_C(0x70707070));
-    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%#x");
-
-    ASMAtomicUoAndU32(pu32, UINT32_C(1));
-    CHECKVAL(*pu32, UINT32_C(1), "%#x");
-
-    ASMAtomicUoOrU32(pu32, UINT32_C(0x80000000));
-    CHECKVAL(*pu32, UINT32_C(0x80000001), "%#x");
-
-    ASMAtomicUoAndU32(pu32, UINT32_C(0x80000000));
-    CHECKVAL(*pu32, UINT32_C(0x80000000), "%#x");
-
-    ASMAtomicUoAndU32(pu32, UINT32_C(0));
-    CHECKVAL(*pu32, UINT32_C(0), "%#x");
-
-    ASMAtomicUoOrU32(pu32, UINT32_C(0x42424242));
-    CHECKVAL(*pu32, UINT32_C(0x42424242), "%#x");
+    /* full 64-bit */
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0x0000000000000000),  UINT64_C(0x0000000000000000));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicOrExU64,  UINT64_C(0xffffffffffffffff),  UINT64_C(0xffffffffffffffff));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0xffffffffffffffff),  UINT64_C(0xffffffffffffffff));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0x8f8f8f8f8f8f8f8f),  UINT64_C(0x8f8f8f8f8f8f8f8f));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicOrExU64,  UINT64_C(0x7070707070707070),  UINT64_C(0xffffffffffffffff));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0x0000000000000001),  UINT64_C(0x0000000000000001));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicOrExU64,  UINT64_C(0x8000000000000000),  UINT64_C(0x8000000000000001));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0x8000000000000000),  UINT64_C(0x8000000000000000));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0),                   UINT64_C(0));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicOrExU64,  UINT64_C(0x4242424242424242),  UINT64_C(0x4242424242424242));
+    TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicAndExU64, UINT64_C(0x00ff0f00ff0f0000),  UINT64_C(0x0042020042020000));
+    //TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicXorExU64, UINT64_C(0x4200404242040000),  UINT64_C(0x4242424242420000));
+    //TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicXorExU64, UINT64_C(0xff02420000ff2127),  UINT64_C(0xbd40004242bd2127));
+    //TEST_RET_OLD(uint64_t, "%#llx", pu64, ASMAtomicXorExU64, UINT64_C(0x0000000000000000),  UINT64_C(0xbd40004242bd2127));
 }
+#endif
 
 
-static void tstASMAtomicUoAndOrU32(void)
+static void tstASMAtomicAndOrXor(void)
 {
-    DO_SIMPLE_TEST(ASMAtomicUoAndOrU32, uint32_t);
+    DO_SIMPLE_TEST(ASMAtomicAndOrXorU32, uint32_t);
+    DO_SIMPLE_TEST(ASMAtomicUoAndOrXorU32, uint32_t);
+    DO_SIMPLE_TEST(ASMAtomicAndOrXorExU32, uint32_t);
+    DO_SIMPLE_TEST(ASMAtomicAndOrXorU64, uint64_t);
+    DO_SIMPLE_TEST(ASMAtomicUoAndOrXorU64, uint64_t);
+    //DO_SIMPLE_TEST(ASMAtomicAndOrXorExU64, uint64_t);
 }
 
 
@@ -2548,16 +2759,9 @@ int main(int argc, char **argv)
     tstASMAtomicCmpXchg();
     tstASMAtomicCmpXchgEx();
 
-    tstASMAtomicAddS32();
-    tstASMAtomicAddS64();
-    tstASMAtomicDecIncS32();
-    tstASMAtomicDecIncS64();
-    tstASMAtomicAndOrU32();
-    tstASMAtomicAndOrU64();
-
-    tstASMAtomicUoIncU32();
-    tstASMAtomicUoDecU32();
-    tstASMAtomicUoAndOrU32();
+    tstASMAtomicAdd();
+    tstASMAtomicDecInc();
+    tstASMAtomicAndOrXor();
 
     tstASMMemZeroPage();
     tstASMMemIsZeroPage(g_hTest);
