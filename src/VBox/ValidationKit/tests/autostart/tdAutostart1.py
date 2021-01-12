@@ -1352,7 +1352,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
             self.asTestBuildDirs = asArgs[iArg].split(',');
             for oTestVm in self.oTestVmSet.aoTestVms:
                 oTestVm.asTestBuildDirs = self.asTestBuildDirs;
-        elif asArgs[iArg] in [ '--vbox-%s-build' % sKey for sKey in self.asTestVmClasses.keys()]:
+        elif asArgs[iArg] in [ '--vbox-%s-build' % sKey for sKey in self.asTestVmClasses]:
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "%s" take a path argument' % (asArgs[iArg - 1],));
             oMatch = re.match("--vbox-([^-]+)-build", asArgs[iArg - 1]);
