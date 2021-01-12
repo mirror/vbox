@@ -47,14 +47,14 @@
 #include <iprt/cidr.h>
 
 
-/** Tree-widget column tags. */
-enum
+/** Host network tree-widget column indexes. */
+enum HostNetworkColumn
 {
-    Column_Name,
-    Column_IPv4,
-    Column_IPv6,
-    Column_DHCP,
-    Column_Max,
+    HostNetworkColumn_Name,
+    HostNetworkColumn_IPv4,
+    HostNetworkColumn_IPv6,
+    HostNetworkColumn_DHCP,
+    HostNetworkColumn_Max,
 };
 
 
@@ -85,13 +85,13 @@ private:
 void UIItemHostNetwork::updateFields()
 {
     /* Compose item fields: */
-    setText(Column_Name, m_interface.m_strName);
-    setText(Column_IPv4, m_interface.m_strAddress.isEmpty() ? QString() :
-                         QString("%1/%2").arg(m_interface.m_strAddress).arg(maskToCidr(m_interface.m_strMask)));
-    setText(Column_IPv6, m_interface.m_strAddress6.isEmpty() || !m_interface.m_fSupportedIPv6 ? QString() :
-                         QString("%1/%2").arg(m_interface.m_strAddress6).arg(m_interface.m_strPrefixLength6.toInt()));
-    setText(Column_DHCP, tr("Enable", "DHCP Server"));
-    setCheckState(Column_DHCP, m_dhcpserver.m_fEnabled ? Qt::Checked : Qt::Unchecked);
+    setText(HostNetworkColumn_Name, m_interface.m_strName);
+    setText(HostNetworkColumn_IPv4, m_interface.m_strAddress.isEmpty() ? QString() :
+                                    QString("%1/%2").arg(m_interface.m_strAddress).arg(maskToCidr(m_interface.m_strMask)));
+    setText(HostNetworkColumn_IPv6, m_interface.m_strAddress6.isEmpty() || !m_interface.m_fSupportedIPv6 ? QString() :
+                                    QString("%1/%2").arg(m_interface.m_strAddress6).arg(m_interface.m_strPrefixLength6.toInt()));
+    setText(HostNetworkColumn_DHCP, tr("Enable", "DHCP Server"));
+    setCheckState(HostNetworkColumn_DHCP, m_dhcpserver.m_fEnabled ? Qt::Checked : Qt::Unchecked);
 
     /* Compose item tool-tip: */
     const QString strTable("<table cellspacing=5>%1</table>");
@@ -150,7 +150,7 @@ void UIItemHostNetwork::updateFields()
     }
 
     /* Assign tool-tip finally: */
-    setToolTip(Column_Name, strTable.arg(strToolTip));
+    setToolTip(HostNetworkColumn_Name, strTable.arg(strToolTip));
 }
 
 /* static */
@@ -301,19 +301,19 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
 
     /* Create interface: */
     CHostNetworkInterface comInterface;
-    CProgress progress = comHost.CreateHostOnlyNetworkInterface(comInterface);
+    CProgress comProgress = comHost.CreateHostOnlyNetworkInterface(comInterface);
 
     /* Show error message if necessary: */
-    if (!comHost.isOk() || progress.isNull())
+    if (!comHost.isOk() || comProgress.isNull())
         msgCenter().cannotCreateHostNetworkInterface(comHost, this);
     else
     {
         /* Show interface creation progress: */
-        msgCenter().showModalProgressDialog(progress, UINetworkManager::tr("Adding network ..."), ":/progress_network_interface_90px.png", this, 0);
+        msgCenter().showModalProgressDialog(comProgress, UINetworkManager::tr("Adding network ..."), ":/progress_network_interface_90px.png", this, 0);
 
         /* Show error message if necessary: */
-        if (!progress.isOk() || progress.GetResultCode() != 0)
-            msgCenter().cannotCreateHostNetworkInterface(progress, this);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotCreateHostNetworkInterface(comProgress, this);
         else
         {
             /* Get network name for further activities: */
@@ -405,19 +405,19 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
             }
 
             /* Remove interface finally: */
-            CProgress progress = comHost.RemoveHostOnlyNetworkInterface(uInterfaceId);
+            CProgress comProgress = comHost.RemoveHostOnlyNetworkInterface(uInterfaceId);
 
             /* Show error message if necessary: */
-            if (!comHost.isOk() || progress.isNull())
+            if (!comHost.isOk() || comProgress.isNull())
                 msgCenter().cannotRemoveHostNetworkInterface(comHost, strInterfaceName, this);
             else
             {
                 /* Show interface removal progress: */
-                msgCenter().showModalProgressDialog(progress, UINetworkManager::tr("Removing network ..."), ":/progress_network_interface_90px.png", this, 0);
+                msgCenter().showModalProgressDialog(comProgress, UINetworkManager::tr("Removing network ..."), ":/progress_network_interface_90px.png", this, 0);
 
                 /* Show error message if necessary: */
-                if (!progress.isOk() || progress.GetResultCode() != 0)
-                    return msgCenter().cannotRemoveHostNetworkInterface(progress, strInterfaceName, this);
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                    return msgCenter().cannotRemoveHostNetworkInterface(comProgress, strInterfaceName, this);
                 else
                 {
                     /* Remove interface from the tree: */
@@ -431,7 +431,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
     }
 }
 
-void UINetworkManagerWidget::sltToggleDetailsVisibilityHostNetwork(bool fVisible)
+void UINetworkManagerWidget::sltToggleDetailsVisibility(bool fVisible)
 {
     /* Save the setting: */
     gEDataManager->setHostNetworkManagerDetailsExpanded(fVisible);
@@ -439,13 +439,7 @@ void UINetworkManagerWidget::sltToggleDetailsVisibilityHostNetwork(bool fVisible
     if (m_pDetailsWidgetHostNetwork)
         m_pDetailsWidgetHostNetwork->setVisible(fVisible);
     /* Notify external listeners: */
-    emit sigDetailsVisibilityChangedHostNetwork(fVisible);
-}
-
-void UINetworkManagerWidget::sltRefreshHostNetworks()
-{
-    // Not implemented.
-    AssertMsgFailed(("Not implemented!"));
+    emit sigDetailsVisibilityChanged(fVisible);
 }
 
 void UINetworkManagerWidget::sltAdjustTreeWidgets()
@@ -461,18 +455,18 @@ void UINetworkManagerWidget::sltAdjustTreeWidgets()
         /* Calculate the total tree-widget width: */
         const int iTotal = m_pTreeWidgetHostNetwork->viewport()->width();
         /* Look for a minimum width hints for non-important columns: */
-        const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(Column_IPv4), pItemHeader->sectionSizeHint(Column_IPv4));
-        const int iMinWidth2 = qMax(pItemView->sizeHintForColumn(Column_IPv6), pItemHeader->sectionSizeHint(Column_IPv6));
-        const int iMinWidth3 = qMax(pItemView->sizeHintForColumn(Column_DHCP), pItemHeader->sectionSizeHint(Column_DHCP));
+        const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(HostNetworkColumn_IPv4), pItemHeader->sectionSizeHint(HostNetworkColumn_IPv4));
+        const int iMinWidth2 = qMax(pItemView->sizeHintForColumn(HostNetworkColumn_IPv6), pItemHeader->sectionSizeHint(HostNetworkColumn_IPv6));
+        const int iMinWidth3 = qMax(pItemView->sizeHintForColumn(HostNetworkColumn_DHCP), pItemHeader->sectionSizeHint(HostNetworkColumn_DHCP));
         /* Propose suitable width hints for non-important columns: */
-        const int iWidth1 = iMinWidth1 < iTotal / Column_Max ? iMinWidth1 : iTotal / Column_Max;
-        const int iWidth2 = iMinWidth2 < iTotal / Column_Max ? iMinWidth2 : iTotal / Column_Max;
-        const int iWidth3 = iMinWidth3 < iTotal / Column_Max ? iMinWidth3 : iTotal / Column_Max;
+        const int iWidth1 = iMinWidth1 < iTotal / HostNetworkColumn_Max ? iMinWidth1 : iTotal / HostNetworkColumn_Max;
+        const int iWidth2 = iMinWidth2 < iTotal / HostNetworkColumn_Max ? iMinWidth2 : iTotal / HostNetworkColumn_Max;
+        const int iWidth3 = iMinWidth3 < iTotal / HostNetworkColumn_Max ? iMinWidth3 : iTotal / HostNetworkColumn_Max;
         /* Apply the proposal: */
-        m_pTreeWidgetHostNetwork->setColumnWidth(Column_IPv4, iWidth1);
-        m_pTreeWidgetHostNetwork->setColumnWidth(Column_IPv6, iWidth2);
-        m_pTreeWidgetHostNetwork->setColumnWidth(Column_DHCP, iWidth3);
-        m_pTreeWidgetHostNetwork->setColumnWidth(Column_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
+        m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_IPv4, iWidth1);
+        m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_IPv6, iWidth2);
+        m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_DHCP, iWidth3);
+        m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
     }
 }
 
@@ -487,9 +481,9 @@ void UINetworkManagerWidget::sltHandleItemChangeHostNetwork(QTreeWidgetItem *pIt
 
     /* Make sure dhcp server status changed: */
     if (   (   oldData.m_dhcpserver.m_fEnabled
-            && pChangedItem->checkState(Column_DHCP) == Qt::Checked)
+            && pChangedItem->checkState(HostNetworkColumn_DHCP) == Qt::Checked)
         || (   !oldData.m_dhcpserver.m_fEnabled
-            && pChangedItem->checkState(Column_DHCP) == Qt::Unchecked))
+            && pChangedItem->checkState(HostNetworkColumn_DHCP) == Qt::Unchecked))
         return;
 
     /* Get host for further activities: */
@@ -582,7 +576,7 @@ void UINetworkManagerWidget::sltHandleCurrentItemChangeHostNetwork()
     {
         /* Otherwise => clear details and close the area: */
         m_pDetailsWidgetHostNetwork->setData(UIDataHostNetwork());
-        sltToggleDetailsVisibilityHostNetwork(false);
+        sltToggleDetailsVisibility(false);
     }
 }
 
@@ -766,9 +760,7 @@ void UINetworkManagerWidget::prepareActions()
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove), &QAction::triggered,
             this, &UINetworkManagerWidget::sltRemoveHostNetwork);
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::toggled,
-            this, &UINetworkManagerWidget::sltToggleDetailsVisibilityHostNetwork);
-    connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Refresh), &QAction::triggered,
-            this, &UINetworkManagerWidget::sltRefreshHostNetworks);
+            this, &UINetworkManagerWidget::sltToggleDetailsVisibility);
 }
 
 void UINetworkManagerWidget::prepareWidgets()
@@ -809,8 +801,6 @@ void UINetworkManagerWidget::prepareToolBar()
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details));
-//        m_pToolBar->addSeparator();
-//        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Refresh));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -868,9 +858,9 @@ void UINetworkManagerWidget::prepareTreeWidgetHostNetwork()
         m_pTreeWidgetHostNetwork->setAlternatingRowColors(true);
         m_pTreeWidgetHostNetwork->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pTreeWidgetHostNetwork->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        m_pTreeWidgetHostNetwork->setColumnCount(Column_Max);
+        m_pTreeWidgetHostNetwork->setColumnCount(HostNetworkColumn_Max);
         m_pTreeWidgetHostNetwork->setSortingEnabled(true);
-        m_pTreeWidgetHostNetwork->sortByColumn(Column_Name, Qt::AscendingOrder);
+        m_pTreeWidgetHostNetwork->sortByColumn(HostNetworkColumn_Name, Qt::AscendingOrder);
         m_pTreeWidgetHostNetwork->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
         connect(m_pTreeWidgetHostNetwork, &QITreeWidget::currentItemChanged,
                 this, &UINetworkManagerWidget::sltHandleCurrentItemChangeHostNetwork);
@@ -912,7 +902,7 @@ void UINetworkManagerWidget::loadSettings()
     if (m_pActionPool)
     {
         m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->setChecked(gEDataManager->hostNetworkManagerDetailsExpanded());
-        sltToggleDetailsVisibilityHostNetwork(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->isChecked());
+        sltToggleDetailsVisibility(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->isChecked());
     }
 }
 
@@ -1137,9 +1127,9 @@ void UINetworkManager::configureCentralWidget()
 void UINetworkManager::configureButtonBox()
 {
     /* Configure button-box: */
-    connect(widget(), &UINetworkManagerWidget::sigDetailsVisibilityChangedHostNetwork,
+    connect(widget(), &UINetworkManagerWidget::sigDetailsVisibilityChanged,
             button(ButtonType_Apply), &QPushButton::setVisible);
-    connect(widget(), &UINetworkManagerWidget::sigDetailsVisibilityChangedHostNetwork,
+    connect(widget(), &UINetworkManagerWidget::sigDetailsVisibilityChanged,
             button(ButtonType_Reset), &QPushButton::setVisible);
     connect(widget(), &UINetworkManagerWidget::sigDetailsDataChangedHostNetwork,
             button(ButtonType_Apply), &QPushButton::setEnabled);
