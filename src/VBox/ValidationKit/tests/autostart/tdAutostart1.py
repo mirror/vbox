@@ -3,7 +3,7 @@
 """
 Autostart testcase using.
 """
-#from pykickstart.commands import repo
+
 __copyright__ = \
 """
 Copyright (C) 2013-2020 Oracle Corporation
@@ -101,9 +101,9 @@ class tdAutostartOs(vboxtestvms.BaseTestVm):
         self.cCpus = cCpus;
         self.fPae = fPae;
         self.sGuestAdditionsIso = sGuestAdditionsIso;
-        self._asTestBuildDirs = [];
-        self.sTestBuild = None;
-        self.sVBoxInstaller = "";
+        self._asTestBuildDirs = oTstDrv.asTestBuildDirs;
+        self._sTestBuild = None;
+        self._sVBoxInstaller = "";
         self.asVirtModesSup = ['hwvirt-np',];
         self.asParavirtModesSup = ['default',];
 
@@ -114,9 +114,19 @@ class tdAutostartOs(vboxtestvms.BaseTestVm):
     @asTestBuildDirs.setter
     def asTestBuildDirs(self, value):
         self._asTestBuildDirs = value;
-        self.sTestBuild = self._findFile(self.sVBoxInstaller, value);
+        self.sTestBuild = self._findFile(self._sVBoxInstaller, value);
         if not self.sTestBuild:
             raise base.GenError("VirtualBox install package not found");
+
+    @property
+    def sTestBuild(self):
+        return self._sTestBuild;
+
+    @sTestBuild.setter
+    def sTestBuild(self, value):
+        if not os.path.exists(value):
+            raise base.GenError("The %s does not exist" % (value,));
+        self._sTestBuild = value;
 
     def _findFile(self, sRegExp, asTestBuildDirs):
         """
@@ -663,7 +673,7 @@ class tdAutostartOsLinux(tdAutostartOs):
                  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
         tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
                                cCpus, fPae, sGuestAdditionsIso);
-        self.sVBoxInstaller = '^VirtualBox-.*\\.run$';
+        self._sVBoxInstaller = '^VirtualBox-.*\\.run$';
         return;
 
     def installAdditions(self, oSession, oGuestSession, oVM):
@@ -936,7 +946,7 @@ class tdAutostartOsWin(tdAutostartOs):
                  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
         tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
                                cCpus, fPae, sGuestAdditionsIso);
-        self.sVBoxInstaller = '^VirtualBox-.*\\.(exe|msi)$';
+        self._sVBoxInstaller = '^VirtualBox-.*\\.(exe|msi)$';
         return;
 
     def _checkVmIsReady(self, oGuestSession):
@@ -1284,6 +1294,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
     ksOsDarwin  = 'tst-darwin'
     ksOsSolaris = 'tst-solaris'
     ksOsFreeBSD = 'tst-freebsd'
+
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.asRsrcs            = None;
@@ -1292,18 +1303,27 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         self.asSkipVMs          = [];
         ## @todo r=bird: The --test-build-dirs option as primary way to get the installation files to test
         ## is not an acceptable test practice as we don't know wtf you're testing.  See defect for more.
-        self.asTestBuildDirs    = None; #'D:/AlexD/TestBox/TestAdditionalFiles';
+        self.asTestBuildDirs    = os.path.join(self.sScratchPath, 'bin');
         self.sGuestAdditionsIso = None; #'D:/AlexD/TestBox/TestAdditionalFiles/VBoxGuestAdditions_6.1.2.iso';
-        oSet = vboxtestvms.TestVmSet(self.oTestVmManager, acCpus = [2], fIgnoreSkippedVm = True);
+        oSet = vboxtestvms.TestVmSet(self.oTestVmManager, acCpus = [2], asVirtModes = ['hwvirt-np',], fIgnoreSkippedVm = True);
         # pylint: disable=line-too-long
-        oSet.aoTestVms.extend([
-            tdAutostartOsWin(oSet, self, self.ksOsWindows, 'Windows7_64', \
+        self.asTestVmClasses = {
+            'win'     : tdAutostartOsWin(oSet, self, self.ksOsWindows, 'Windows7_64', \
                              '6.0/windows7piglit/windows7piglit.vdi', eNic0Type = None, cMbRam = 2048,  \
                              cCpus = 2, fPae = True, sGuestAdditionsIso = self.getGuestAdditionsIso()),
-            tdAutostartOsLinux(oSet, self, self.ksOsLinux, 'Ubuntu_64', \
+            'linux'   : tdAutostartOsLinux(oSet, self, self.ksOsLinux, 'Ubuntu_64', \
                                '6.0/ub1804piglit/ub1804piglit.vdi', eNic0Type = None, \
-                               cMbRam = 2048, cCpus = 2, fPae = None, sGuestAdditionsIso = self.getGuestAdditionsIso())
-        ]);
+                               cMbRam = 2048, cCpus = 2, fPae = None, sGuestAdditionsIso = self.getGuestAdditionsIso()),
+            'solaris' : None, #'tdAutostartOsSolaris',
+            'darwin'  : None  #'tdAutostartOsDarwin'
+        };
+        oSet.aoTestVms.extend([oTestVm for oTestVm in self.asTestVmClasses.values() if oTestVm is not None]);
+        sOs = self.getBuildOs();
+        if sOs in self.asTestVmClasses.keys():
+            for oTestVM in oSet.aoTestVms:
+                if oTestVM is not None:
+                    oTestVM.fSkip = oTestVM != self.asTestVmClasses[sOs];
+
         # pylint: enable=line-too-long
         self.oTestVmSet = oSet;
 
@@ -1316,30 +1336,35 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         reporter.log('');
         reporter.log('tdAutostart Options:');
         reporter.log('  --test-build-dirs <path1[,path2[,...]]>');
-        reporter.log('      The list of directories with VirtualBox distros. The option is mandatory');
-        reporter.log('      without any default value. The test raises an exception if the');
-        reporter.log('      option is not specified. At least, one directory should be pointed.');
+        reporter.log('      The list of directories with VirtualBox distros. Overrides default path.');
+        reporter.log('      Default path is $TESTBOX_SCRATCH_PATH/bin.');
+        reporter.log('  --vbox-<os>-build <path>');
+        reporter.log('      The path to vbox build for the specified OS.');
+        reporter.log('      The OS can be one of "win", "linux", "solaris" and "darwin".');
+        reporter.log('      This option alse enables corresponding VM for testing.');
+        reporter.log('      (Default behaviour is testing only VM having host-like OS.)');
         return rc;
 
     def parseOption(self, asArgs, iArg): # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--test-build-dirs':
             iArg += 1;
-            if iArg >= len(asArgs): raise base.InvalidOption('The "--test-build-dirs" takes a paths argument');
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--test-build-dirs" takes a path argument');
             self.asTestBuildDirs = asArgs[iArg].split(',');
             for oTestVm in self.oTestVmSet.aoTestVms:
                 oTestVm.asTestBuildDirs = self.asTestBuildDirs;
+        elif asArgs[iArg] in [ '--vbox-%s-build' % os for os in self.asTestVmClasses.keys()]:
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "%s" take a path argument' % (asArgs[iArg - 1],));
+            oMatch = re.match("--vbox-([^-]+)-build", asArgs[iArg - 1]);
+            if oMatch is not None:
+                sOs = oMatch.group(1);
+                oTestVm = self.asTestVmClasses.get(sOs);
+                if oTestVm is not None:
+                    oTestVm.sTestBuild = asArgs[iArg];
+                    oTestVm.fSkip = False;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
-
-    def completeOptions(self):
-        # Remove skipped VMs from the test list.
-        if self.asTestBuildDirs is None:
-            raise base.InvalidOption('--test-build-dirs is not specified')
-        for sVM in self.asSkipVMs:
-            try:    self.asTestVMs.remove(sVM);
-            except: pass;
-        return vbox.TestDriver.completeOptions(self);
 
     def actionConfig(self):
         if not self.importVBoxApi(): # So we can use the constant below.
