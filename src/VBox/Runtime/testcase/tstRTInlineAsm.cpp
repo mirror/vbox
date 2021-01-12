@@ -98,6 +98,34 @@
         CHECKVAL(a_uVar2, a_ExpectVarVal2, a_FmtVar); \
     } while (0)
 
+/**
+ * Calls a worker function with different worker variable storage types.
+ */
+#define DO_SIMPLE_TEST_NO_SUB_NO_STACK(a_WorkerFunction, type) \
+    do \
+    { \
+        type *pVar = (type *)RTTestGuardedAllocHead(g_hTest, sizeof(type)); \
+        RTTEST_CHECK_BREAK(g_hTest, pVar); \
+        a_WorkerFunction(pVar); \
+        RTTestGuardedFree(g_hTest, pVar); \
+        \
+        pVar = (type *)RTTestGuardedAllocTail(g_hTest, sizeof(type)); \
+        RTTEST_CHECK_BREAK(g_hTest, pVar); \
+        a_WorkerFunction(pVar); \
+        RTTestGuardedFree(g_hTest, pVar); \
+    } while (0)
+
+
+/**
+ * Calls a worker function with different worker variable storage types.
+ */
+#define DO_SIMPLE_TEST_NO_SUB(a_WorkerFunction, type) \
+    do \
+    { \
+        type StackVar; \
+        a_WorkerFunction(&StackVar); \
+        DO_SIMPLE_TEST_NO_SUB_NO_STACK(a_WorkerFunction, type); \
+    } while (0)
 
 /**
  * Calls a worker function with different worker variable storage types.
@@ -106,18 +134,7 @@
     do \
     { \
         RTTestISub(#name); \
-        type StackVar; \
-        tst ## name ## Worker(&StackVar); \
-        \
-        type *pVar = (type *)RTTestGuardedAllocHead(g_hTest, sizeof(type)); \
-        RTTEST_CHECK_BREAK(g_hTest, pVar); \
-        tst ## name ## Worker(pVar); \
-        RTTestGuardedFree(g_hTest, pVar); \
-        \
-        pVar = (type *)RTTestGuardedAllocTail(g_hTest, sizeof(type)); \
-        RTTEST_CHECK_BREAK(g_hTest, pVar); \
-        tst ## name ## Worker(pVar); \
-        RTTestGuardedFree(g_hTest, pVar); \
+        DO_SIMPLE_TEST_NO_SUB(tst ## name ## Worker, type); \
     } while (0)
 
 
@@ -2125,13 +2142,18 @@ DECLINLINE(void) tstASMMemZeroPageWorker(TSTPAGE *pPage)
         for (unsigned i = 0; i < sizeof(pPage->ab); i++)
             if (pPage->ab[i])
                 RTTestFailed(g_hTest, "ASMMemZeroPage didn't clear byte at offset %#x!\n", i);
+        if (ASMMemIsZeroPage(pPage) != true)
+            RTTestFailed(g_hTest, "ASMMemIsZeroPage returns false after ASMMemZeroPage!\n");
+        if (ASMMemFirstMismatchingU32(pPage, sizeof(pPage), 0) != NULL)
+            RTTestFailed(g_hTest, "ASMMemFirstMismatchingU32(,,0) returns non-NULL after ASMMemZeroPage!\n");
     }
 }
 
 
 static void tstASMMemZeroPage(void)
 {
-    DO_SIMPLE_TEST(ASMMemZeroPage, TSTPAGE);
+    RTTestISub("ASMMemZeroPage");
+    DO_SIMPLE_TEST_NO_SUB_NO_STACK(tstASMMemZeroPageWorker, TSTPAGE);
 }
 
 
@@ -2292,9 +2314,34 @@ void tstASMMemFirstMismatchingU8(RTTEST hTest)
 }
 
 
+typedef struct TSTBUF32 { uint32_t au32[384]; } TSTBUF32;
+
+DECLINLINE(void) tstASMMemZero32Worker(TSTBUF32 *pBuf)
+{
+    ASMMemZero32(pBuf, sizeof(*pBuf));
+    for (unsigned i = 0; i < RT_ELEMENTS(pBuf->au32); i++)
+        if (pBuf->au32[i])
+            RTTestFailed(g_hTest, "ASMMemZero32 didn't clear dword at index %#x!\n", i);
+    if (ASMMemFirstNonZero(pBuf, sizeof(*pBuf)) != NULL)
+        RTTestFailed(g_hTest, "ASMMemFirstNonZero return non-NULL after ASMMemZero32\n");
+    if (!ASMMemIsZero(pBuf, sizeof(*pBuf)))
+        RTTestFailed(g_hTest, "ASMMemIsZero return false after ASMMemZero32\n");
+
+    memset(pBuf, 0xfe, sizeof(*pBuf));
+    ASMMemZero32(pBuf, sizeof(*pBuf));
+    for (unsigned i = 0; i < RT_ELEMENTS(pBuf->au32); i++)
+        if (pBuf->au32[i])
+            RTTestFailed(g_hTest, "ASMMemZero32 didn't clear dword at index %#x!\n", i);
+    if (ASMMemFirstNonZero(pBuf, sizeof(*pBuf)) != NULL)
+        RTTestFailed(g_hTest, "ASMMemFirstNonZero return non-NULL after ASMMemZero32\n");
+    if (!ASMMemIsZero(pBuf, sizeof(*pBuf)))
+        RTTestFailed(g_hTest, "ASMMemIsZero return false after ASMMemZero32\n");
+}
+
+
 void tstASMMemZero32(void)
 {
-    RTTestSub(g_hTest, "ASMMemFill32");
+    RTTestSub(g_hTest, "ASMMemZero32");
 
     struct
     {
@@ -2333,8 +2380,28 @@ void tstASMMemZero32(void)
     for (unsigned i = 0; i < RT_ELEMENTS(Buf3.abPage); i++)
         if (Buf3.abPage[i])
             RTTestFailed(g_hTest, "ASMMemZero32 didn't clear byte at offset %#x!\n", i);
+
+    DO_SIMPLE_TEST_NO_SUB(tstASMMemZero32Worker, TSTBUF32);
 }
 
+
+DECLINLINE(void) tstASMMemFill32Worker(TSTBUF32 *pBuf)
+{
+    ASMMemFill32(pBuf, sizeof(*pBuf), UINT32_C(0xf629bce1));
+    for (unsigned i = 0; i < RT_ELEMENTS(pBuf->au32); i++)
+        if (pBuf->au32[i] != UINT32_C(0xf629bce1))
+            RTTestFailed(g_hTest, "ASMMemFill32 didn't set dword at index %#x correctly!\n", i);
+    if (ASMMemFirstMismatchingU32(pBuf, sizeof(*pBuf), UINT32_C(0xf629bce1)) != NULL)
+        RTTestFailed(g_hTest, "ASMMemFirstMismatchingU32(,,UINT32_C(0xf629bce1)) returns non-NULL after ASMMemFill32!\n");
+
+    memset(pBuf, 0xfe, sizeof(*pBuf));
+    ASMMemFill32(pBuf, sizeof(*pBuf), UINT32_C(0x12345678));
+    for (unsigned i = 0; i < RT_ELEMENTS(pBuf->au32); i++)
+        if (pBuf->au32[i] != UINT32_C(0x12345678))
+            RTTestFailed(g_hTest, "ASMMemFill32 didn't set dword at index %#x correctly!\n", i);
+    if (ASMMemFirstMismatchingU32(pBuf, sizeof(*pBuf), UINT32_C(0x12345678)) != NULL)
+        RTTestFailed(g_hTest, "ASMMemFirstMismatchingU32(,,UINT32_C(0x12345678)) returns non-NULL after ASMMemFill32!\n");
+}
 
 void tstASMMemFill32(void)
 {
@@ -2387,6 +2454,36 @@ void tstASMMemFill32(void)
     for (unsigned i = 0; i < RT_ELEMENTS(Buf3.au32Page); i++)
         if (Buf3.au32Page[i] != 0xf00dd00f)
             RTTestFailed(g_hTest, "ASMMemFill32 %#x: %#x exepcted %#x\n", i, Buf3.au32Page[i], 0xf00dd00f);
+
+    DO_SIMPLE_TEST_NO_SUB(tstASMMemFill32Worker, TSTBUF32);
+}
+
+
+void tstASMProbe(RTTEST hTest)
+{
+    RTTestSub(hTest, "ASMProbeReadByte/Buffer");
+
+    uint8_t b = 42;
+    RTTESTI_CHECK(ASMProbeReadByte(&b) == 42);
+    ASMProbeReadBuffer(&b, sizeof(b));
+
+    for (uint32_t cPages = 1; cPages < 16; cPages++)
+    {
+        uint8_t *pbBuf1 = (uint8_t *)RTTestGuardedAllocHead(hTest, cPages * PAGE_SIZE);
+        uint8_t *pbBuf2 = (uint8_t *)RTTestGuardedAllocTail(hTest, cPages * PAGE_SIZE);
+        RTTESTI_CHECK_RETV(pbBuf1 && pbBuf2);
+
+        memset(pbBuf1, 0xf6, cPages * PAGE_SIZE);
+        memset(pbBuf2, 0x42, cPages * PAGE_SIZE);
+
+        RTTESTI_CHECK(ASMProbeReadByte(&pbBuf1[cPages * PAGE_SIZE - 1]) == 0xf6);
+        RTTESTI_CHECK(ASMProbeReadByte(&pbBuf2[cPages * PAGE_SIZE - 1]) == 0x42);
+        RTTESTI_CHECK(ASMProbeReadByte(&pbBuf1[0]) == 0xf6);
+        RTTESTI_CHECK(ASMProbeReadByte(&pbBuf2[0]) == 0x42);
+
+        ASMProbeReadBuffer(pbBuf1, cPages * PAGE_SIZE);
+        ASMProbeReadBuffer(pbBuf2, cPages * PAGE_SIZE);
+    }
 }
 
 
@@ -2573,7 +2670,7 @@ void tstASMBench(void)
     static uint64_t volatile s_u64;
     static int64_t  volatile s_i64;
     unsigned i;
-    const unsigned cRounds = _2M;       /* Must be multiple of 8 */
+    const unsigned cRounds = _16M;       /* Must be multiple of 8 */
     uint64_t u64Elapsed;
 
     RTTestSub(g_hTest, "Benchmarking");
@@ -2768,6 +2865,7 @@ int main(int argc, char **argv)
     tstASMMemFirstMismatchingU8(g_hTest);
     tstASMMemZero32();
     tstASMMemFill32();
+    tstASMProbe(g_hTest);
 
     tstASMMisc();
 
