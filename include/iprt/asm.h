@@ -5428,9 +5428,9 @@ DECLINLINE(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte) RT_NOTHROW_DEF
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     uint8_t u8;
 #  if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("movb (%1), %0\n\t"
-                         : "=r" (u8)
-                         : "r" (pvByte));
+    __asm__ __volatile__("movb %1, %0\n\t"
+                         : "=q" (u8)
+                         : "m" (*(const uint8_t *)pvByte));
 #  else
     __asm
     {
