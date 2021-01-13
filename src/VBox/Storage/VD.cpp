@@ -7214,7 +7214,7 @@ VBOXDDU_DECL(int) VDMerge(PVDISK pDisk, unsigned nImageFrom,
                 pTmp = pImg->pPrev;
             vdRemoveImageFromList(pDisk, pImg);
             pImg->Backend->pfnClose(pImg->pBackendData, true);
-            RTMemFree(pImg->pszFilename);
+            RTStrFree(pImg->pszFilename);
             RTMemFree(pImg);
             pImg = pTmp;
         }
