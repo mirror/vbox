@@ -101,32 +101,10 @@ class tdAutostartOs(vboxtestvms.BaseTestVm):
         self.cCpus = cCpus;
         self.fPae = fPae;
         self.sGuestAdditionsIso = sGuestAdditionsIso;
-        self._asTestBuildDirs = oTstDrv.asTestBuildDirs;
-        self._sTestBuild = None;
-        self._sVBoxInstaller = "";
+        self.asTestBuildDirs = oTstDrv.asTestBuildDirs;
+        self.sVBoxInstaller = "";
         self.asVirtModesSup = ['hwvirt-np',];
         self.asParavirtModesSup = ['default',];
-
-    @property
-    def asTestBuildDirs(self):
-        return self._asTestBuildDirs;
-
-    @asTestBuildDirs.setter
-    def asTestBuildDirs(self, value):
-        self._asTestBuildDirs = value;
-        self.sTestBuild = self._findFile(self._sVBoxInstaller, value);
-        if not self.sTestBuild:
-            raise base.GenError("VirtualBox install package not found");
-
-    @property
-    def sTestBuild(self):
-        return self._sTestBuild;
-
-    @sTestBuild.setter
-    def sTestBuild(self, value):
-        if not os.path.exists(value):
-            raise base.GenError("The %s does not exist" % (value,));
-        self._sTestBuild = value;
 
     def _findFile(self, sRegExp, asTestBuildDirs):
         """
@@ -673,7 +651,8 @@ class tdAutostartOsLinux(tdAutostartOs):
                  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
         tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
                                cCpus, fPae, sGuestAdditionsIso);
-        self._sVBoxInstaller = '^VirtualBox-.*\\.run$';
+        try:    self.sVBoxInstaller = '^VirtualBox-.*\\.run$';
+        except: pass;
         return;
 
     def installAdditions(self, oSession, oGuestSession, oVM):
@@ -756,12 +735,16 @@ class tdAutostartOsLinux(tdAutostartOs):
         """
         Install VirtualBox in the guest.
         """
-        if self.sTestBuild is None:
-            return False;
         reporter.testStart('Install Virtualbox into the guest VM');
-        reporter.log("Virtualbox install file: %s" % os.path.basename(self.sTestBuild));
-        fRc = self.uploadFile(oGuestSession, self.sTestBuild,
-                              '/tmp/' + os.path.basename(self.sTestBuild));
+        sTestBuild = self._findFile(self.sVBoxInstaller, self.asTestBuildDirs);
+        reporter.log("Virtualbox install file: %s" % os.path.basename(sTestBuild));
+        fRc = sTestBuild is not None;
+        if fRc:
+            fRc = self.uploadFile(oGuestSession, sTestBuild,
+                                  '/tmp/' + os.path.basename(sTestBuild));
+        else:
+            reporter.error("VirtualBox install package is not defined");
+
         if not fRc:
             reporter.error('Upload the vbox installer into guest VM failed');
         else:
@@ -769,7 +752,7 @@ class tdAutostartOsLinux(tdAutostartOs):
                                                       'Allowing execution for the vbox installer',
                                                       30 * 1000, '/usr/bin/sudo',
                                                       ['/usr/bin/sudo', '/bin/chmod', '755',
-                                                       '/tmp/' + os.path.basename(self.sTestBuild)],
+                                                       '/tmp/' + os.path.basename(sTestBuild)],
                                                       False, True);
             if not fRc:
                 reporter.error('Allowing execution for the vbox installer failed');
@@ -777,7 +760,7 @@ class tdAutostartOsLinux(tdAutostartOs):
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing VBox',
                                                       240 * 1000, '/usr/bin/sudo',
                                                       ['/usr/bin/sudo',
-                                                       '/tmp/' + os.path.basename(self.sTestBuild),],
+                                                       '/tmp/' + os.path.basename(sTestBuild),],
                                                       False, True);
             if not fRc:
                 reporter.error('Installing VBox failed');
@@ -946,7 +929,8 @@ class tdAutostartOsWin(tdAutostartOs):
                  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
         tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
                                cCpus, fPae, sGuestAdditionsIso);
-        self._sVBoxInstaller = '^VirtualBox-.*\\.(exe|msi)$';
+        try:    self.sVBoxInstaller = '^VirtualBox-.*\\.(exe|msi)$';
+        except: pass;
         return;
 
     def _checkVmIsReady(self, oGuestSession):
@@ -1070,22 +1054,26 @@ class tdAutostartOsWin(tdAutostartOs):
         """
         Install VirtualBox in the guest.
         """
-        if self.sTestBuild is None:
-            return False;
         reporter.testStart('Install Virtualbox into the guest VM');
-        reporter.log("Virtualbox install file: %s" % os.path.basename(self.sTestBuild));
         # Used windows image already contains the C:\Temp
-        fRc = self.uploadFile(oGuestSession, self.sTestBuild,
-                              'C:\\Temp\\' + os.path.basename(self.sTestBuild));
+        sTestBuild = self._findFile(self.sVBoxInstaller, self.asTestBuildDirs);
+        reporter.log("Virtualbox install file: %s" % os.path.basename(sTestBuild));
+        fRc = sTestBuild is not None;
+        if fRc:
+            fRc = self.uploadFile(oGuestSession, sTestBuild,
+                              'C:\\Temp\\' + os.path.basename(sTestBuild));
+        else:
+            reporter.error("VirtualBox install package is not defined");
+
         if not fRc:
             reporter.error('Upload the installing into guest VM failed');
         else:
-            if self.sTestBuild.endswith('.msi'):
+            if sTestBuild.endswith('.msi'):
                 sLogFile = 'C:/Temp/VBoxInstallLog.txt';
                 (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing VBox',
                                                         600 * 1000, 'C:\\Windows\\System32\\msiexec.exe',
                                                         ['msiexec', '/quiet', '/norestart', '/i',
-                                                         'C:\\Temp\\' + os.path.basename(self.sTestBuild),
+                                                         'C:\\Temp\\' + os.path.basename(sTestBuild),
                                                         '/lv', sLogFile],
                                                         False, True);
                 if not fRc:
@@ -1093,8 +1081,8 @@ class tdAutostartOsWin(tdAutostartOs):
             else:
                 sLogFile = 'C:/Temp/Virtualbox/VBoxInstallLog.txt';
                 (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing VBox',
-                                                        600 * 1000, 'C:\\Temp\\' + os.path.basename(self.sTestBuild),
-                                                        ['C:\\Temp\\' + os.path.basename(self.sTestBuild), '-vvvv',
+                                                        600 * 1000, 'C:\\Temp\\' + os.path.basename(sTestBuild),
+                                                        ['C:\\Temp\\' + os.path.basename(sTestBuild), '-vvvv',
                                                          '--silent', '--logging',
                                                          '--msiparams', 'REBOOT=ReallySuppress'],
                                                         False, True);
@@ -1303,7 +1291,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         self.asSkipVMs          = [];
         ## @todo r=bird: The --test-build-dirs option as primary way to get the installation files to test
         ## is not an acceptable test practice as we don't know wtf you're testing.  See defect for more.
-        self.asTestBuildDirs    = os.path.join(self.sScratchPath, 'bin');
+        self.asTestBuildDirs    = [os.path.join(self.sScratchPath, 'bin'),];
         self.sGuestAdditionsIso = None; #'D:/AlexD/TestBox/TestAdditionalFiles/VBoxGuestAdditions_6.1.2.iso';
         oSet = vboxtestvms.TestVmSet(self.oTestVmManager, acCpus = [2], asVirtModes = ['hwvirt-np',], fIgnoreSkippedVm = True);
         # pylint: disable=line-too-long
