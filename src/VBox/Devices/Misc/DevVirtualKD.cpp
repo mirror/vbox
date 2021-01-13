@@ -142,14 +142,14 @@ static DECLCALLBACK(VBOXSTRICTRC) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                 /*
                  * Write the reply to guest memory (overwriting the request):
                  */
-                /** @todo r=bird: RequestHeader.cbReplyMax is not taken into account here! */
+                cbReply = RT_MIN(cbReply + 2, sRequestHeader.cbReplyMax);
                 VKDREPLYHDR ReplyHeader;
-                ReplyHeader.cbData = cbReply + 2;
+                ReplyHeader.cbData = cbReply; /* The '1' and ' ' bytes count towards reply size. */
                 ReplyHeader.chOne = '1';
                 ReplyHeader.chSpace = ' ';
-                rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, &ReplyHeader, sizeof(ReplyHeader));
-                if (cbReply && RT_SUCCESS(rc))
-                    rc = PDMDevHlpPhysWrite(pDevIns, GCPhys + sizeof(ReplyHeader), pbReply, cbReply);
+                rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, &ReplyHeader, sizeof(ReplyHeader.cbData) + RT_MIN(cbReply, 2));
+                if (cbReply > 2 && RT_SUCCESS(rc))
+                    rc = PDMDevHlpPhysWrite(pDevIns, GCPhys + sizeof(ReplyHeader), pbReply, cbReply - 2);
             }
         }
     }
