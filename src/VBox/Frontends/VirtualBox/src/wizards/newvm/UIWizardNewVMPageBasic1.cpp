@@ -285,9 +285,11 @@ QFrame *UIWizardNewVMPage1::horizontalLine()
     return line;
 }
 
-int UIWizardNewVMPage1::createNameOSTypeWidgets(QGridLayout *pLayout, bool fCreateLabels /* = true */)
+QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets(WizardMode mode, bool fCreateLabels /* = true */)
 {
-    AssertReturn(pLayout, 0);
+    Q_UNUSED(mode);
+    QWidget *pContainer = new QWidget;
+    QGridLayout *pLayout = new QGridLayout(pContainer);
     int iRow = 0;
     if (fCreateLabels)
     {
@@ -343,7 +345,7 @@ int UIWizardNewVMPage1::createNameOSTypeWidgets(QGridLayout *pLayout, bool fCrea
     m_pSystemTypeEditor = new UINameAndSystemEditor(0, false, false, true);
     if (m_pSystemTypeEditor)
         pLayout->addWidget(m_pSystemTypeEditor, iRow++, 0, 1, 4);
-    return iRow;
+    return pContainer;
 }
 
 bool UIWizardNewVMPage1::createMachineFolder()
@@ -516,10 +518,10 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
 
 void UIWizardNewVMPageBasic1::prepare()
 {
-    QGridLayout *pPageLayout = new QGridLayout(this);
-    int iRow = createNameOSTypeWidgets(pPageLayout, false);
-    pPageLayout->addItem(new QSpacerItem(20, 40, QSizePolicy::Expanding, QSizePolicy::Expanding),
-                         iRow, 0, 1, 4);
+    QVBoxLayout *pPageLayout = new QVBoxLayout(this);
+    pPageLayout->addWidget(createNameOSTypeWidgets(WizardMode_Basic, false));
+    pPageLayout->addStretch();
+
     createConnections();
     /* Register fields: */
     registerField("name*", m_pNameAndFolderEditor, "name", SIGNAL(sigNameChanged(const QString &)));
