@@ -39,9 +39,9 @@
  * The SUP_IOCTL_FLAG macro is used to separate requests from 32-bit
  * and 64-bit processes.
  */
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64)
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64) || defined(RT_ARCH_ARM64)
 # define SUP_IOCTL_FLAG     128
-#elif defined(RT_ARCH_X86) || defined(RT_ARCH_SPARC)
+#elif defined(RT_ARCH_X86) || defined(RT_ARCH_SPARC)   || defined(RT_ARCH_ARM32)
 # define SUP_IOCTL_FLAG     0
 #else
 # error "dunno which arch this is!"
@@ -141,7 +141,7 @@
 *******************************************************************************/
 #ifdef RT_ARCH_AMD64
 # pragma pack(8)                        /* paranoia. */
-#else
+#elif defined(RT_ARCH_X86)
 # pragma pack(4)                        /* paranoia. */
 #endif
 
@@ -1704,7 +1704,9 @@ typedef struct SUPGETHWVIRTMSRS
 /** @} */
 
 
-#pragma pack()                          /* paranoia */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# pragma pack()                         /* paranoia */
+#endif
 
 #endif /* !VBOX_INCLUDED_SRC_Support_SUPDrvIOC_h */
 

@@ -162,12 +162,15 @@ SUPR3_SOURCES       = \
 	SUPLib.cpp \
 	SUPLibLdr.cpp \
 	SUPLibSem.cpp \
-	SUPLibTracerA.asm \
 	SUPLibAll.cpp \
 	SUPR3HardenedIPRT.cpp \
 	SUPR3HardenedVerify.cpp \
 	$(KBUILD_TARGET)/SUPLib-$(KBUILD_TARGET).cpp \
  	$(VBOX_SUP_WIN_CERTS_FILE)
+SUPR3_SOURCES.amd64 = \
+	SUPLibTracerA.asm
+SUPR3_SOURCES.x86   = \
+	SUPLibTracerA.asm
 ifdef VBOX_WITH_HARDENING
  SUPR3_SOURCES.win  = \
  	win/SUPHardenedVerifyImage-win.cpp
