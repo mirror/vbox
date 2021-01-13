@@ -4756,20 +4756,25 @@ TEMPLATE_VBoxR0_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBoxR0_SDKS               += $(VBOX_DARWIN_DEF_SDK_SDKS)
 TEMPLATE_VBoxR0_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBoxR0_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) \
-	-fno-common -msoft-float -static -fno-rtti -fno-exceptions $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing \
-	-mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_std)
-TEMPLATE_VBoxR0_CXXFLAGS.amd64      = -m64 -mno-red-zone -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2  -mno-sse4a -fno-unwind-tables
-TEMPLATE_VBoxR0_CXXFLAGS.x86        = -m32
+	-fno-common -static -fno-rtti -fno-exceptions $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing \
+	 $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_std)
+TEMPLATE_VBoxR0_CXXFLAGS.amd64      = -m64 -msoft-float -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-red-zone -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2  -mno-sse4a -fno-unwind-tables
+TEMPLATE_VBoxR0_CXXFLAGS.x86        = -m32 -msoft-float -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+TEMPLATE_VBoxR0_CXXFLAGS.arm64      = -m64 -target arm64e-apple-macos11.0 # Assembly fixup issues w/o the -target bit. Why?
 TEMPLATE_VBoxR0_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC_Wno-variadic-macros) \
-	-fno-common -msoft-float -static -fno-exceptions $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing \
-	-mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_fno-stack-protector)
-TEMPLATE_VBoxR0_CFLAGS.amd64        = -m64 -mno-red-zone -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2  -mno-sse4a -fno-unwind-tables
-TEMPLATE_VBoxR0_CFLAGS.x86          = -m32
+	-fno-common -static -fno-exceptions $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing \
+	$(VBOX_GCC_fno-stack-protector)
+TEMPLATE_VBoxR0_CFLAGS.amd64        = -m64 -msoft-float -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-red-zone -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2  -mno-sse4a -fno-unwind-tables
+TEMPLATE_VBoxR0_CFLAGS.x86          = -m32 -msoft-float -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+TEMPLATE_VBoxR0_CFLAGS.arm64        = -m64 -target arm64e-apple-macos11.0
 TEMPLATE_VBoxR0_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -nostdlib
 TEMPLATE_VBoxR0_LDFLAGS.amd64       = -m64 -static
+TEMPLATE_VBoxR0_LDFLAGS.arm64       = -m64 -static
 TEMPLATE_VBoxR0_LDFLAGS.x86         = -m32
 TEMPLATE_VBoxR0_CXXFLAGS.amd64     += -mkernel
 TEMPLATE_VBoxR0_CFLAGS.amd64       += -mkernel
+TEMPLATE_VBoxR0_CXXFLAGS.arm64     += -mkernel
+TEMPLATE_VBoxR0_CFLAGS.arm64       += -mkernel
 TEMPLATE_VBoxR0_LDFLAGS            += -Wl,-kext -mkernel
 TEMPLATE_VBoxR0_POST_CMDS           = $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_VMM_MOD_FN,$(out),org.virtualbox.app.r0.$(target)))
 endif
@@ -5005,7 +5010,7 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -mkerne
 	-Wno-c++11-extensions -Wno-c99-extensions -Wno-extra-semi -Wno-zero-length-array \
 	-Wno-gnu-zero-variadic-macro-arguments -Wno-four-char-constants \
 	-fno-common -nostdinc -fno-builtin $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
-	-fno-exceptions -msoft-float -fapple-kext -fno-rtti -mkernel \
+	-fno-exceptions -fapple-kext -fno-rtti -mkernel \
 	-fmodules -fmodules-prune-interval=86400 -fmodules-prune-after=345600 -Wnon-modular-include-in-framework-module \
 	-Werror=non-modular-include-in-framework-module \
 	$(VBOX_GCC_Wno-nullability-extension) $(VBOX_GCC_Wno-gnu-statement-expression) \
@@ -5024,17 +5029,19 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -mkerne
 # -Wconditional-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants \
 # -Wno-conversion -Wconstant-conversion -Wint-conversion -Wbool-conversion -Wenum-conversion \
 # -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion
-TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -mno-red-zone
-TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32
+TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -msoft-float -mno-red-zone
+TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32 -msoft-float
+TEMPLATE_VBOXR0DRV_CXXFLAGS.arm64      = -m64 -fno-sanitize=vptr -target arm64e-apple-macos11.0
 TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) -mkernel \
 	-g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
 	-fno-common -nostdinc -fno-builtin $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
-	-fno-exceptions -msoft-float -fapple-kext -fno-rtti  \
+	-fno-exceptions -fapple-kext -fno-rtti  \
 	-fmodules -fmodules-prune-interval=86400 -fmodules-prune-after=345600 -Wnon-modular-include-in-framework-module \
 	-Werror=non-modular-include-in-framework-module $(VBOX_GCC_Wno-c11-extensions) \
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fasm-blocks -fno-strict-aliasing
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -msoft-float -mno-red-zone
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -msoft-float
+TEMPLATE_VBOXR0DRV_CFLAGS.arm64        = -m64 -fno-sanitize=vptr -target arm64e-apple-macos11.0
   if 1
    TEMPLATE_VBOXR0DRV_CFLAGS          += $(VBOX_GCC_WERR)
    TEMPLATE_VBOXR0DRV_CXXFLAGS        += $(VBOX_GCC_WERR)
@@ -5042,6 +5049,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32
 TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) \
 	-nostdlib -stdlib=libc++ -Wl,-kext -Wl,-keep_private_externs
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
+TEMPLATE_VBOXR0DRV_LDFLAGS.arm64       = -m64
 TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext
  endif
