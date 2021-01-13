@@ -142,7 +142,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                 /*
                  * Write the reply to guest memory (overwriting the request):
                  */
-                cbReply = RT_MIN(cbReply + 2, sRequestHeader.cbReplyMax);
+                cbReply = RT_MIN(cbReply + 2, RequestHeader.cbReplyMax);
                 VKDREPLYHDR ReplyHeader;
                 ReplyHeader.cbData = cbReply; /* The '1' and ' ' bytes count towards reply size. */
                 ReplyHeader.chOne = '1';
