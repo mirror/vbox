@@ -38,7 +38,7 @@ class QILineEdit;
 class QITabWidget;
 
 
-/** Host Network Manager: Host Network Interface data structure. */
+/** Network Manager: Host Network Interface data structure. */
 struct UIDataHostNetworkInterface
 {
     /** Constructs data. */
@@ -88,7 +88,7 @@ struct UIDataHostNetworkInterface
 };
 
 
-/** Host Network Manager: DHCP Server data structure. */
+/** Network Manager: DHCP Server data structure. */
 struct UIDataDHCPServer
 {
     /** Constructs data. */
@@ -130,7 +130,7 @@ struct UIDataDHCPServer
 };
 
 
-/** Host Network Manager: Host network data structure. */
+/** Network Manager: Host network data structure. */
 struct UIDataHostNetwork
 {
     /** Constructs data. */
@@ -160,7 +160,7 @@ struct UIDataHostNetwork
 };
 
 
-/** Host Network Manager: Host network details-widget. */
+/** Network Manager: Host network details-widget. */
 class UIDetailsWidgetHostNetwork : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;

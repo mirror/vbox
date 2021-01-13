@@ -160,9 +160,9 @@ private:
     /** @name Tree-widget stuff.
       * @{ */
         /** Creates a new host network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
-        void createItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem);
+        void createItemForHostNetwork(const UIDataHostNetwork &data, bool fChooseItem);
         /** Updates passed host network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
-        void updateItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem);
+        void updateItemForHostNetwork(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem);
     /** @} */
 
     /** @name General variables.

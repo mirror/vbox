@@ -47,6 +47,13 @@
 #include <iprt/cidr.h>
 
 
+/** Tab-widget indexes. */
+enum TabWidgetIndex
+{
+    TabWidgetIndex_HostNetwork,
+};
+
+
 /** Host network tree-widget column indexes. */
 enum HostNetworkColumn
 {
@@ -266,13 +273,8 @@ void UINetworkManagerWidget::sltResetDetailsChanges()
     /* Just push current item data to details-widget again: */
     switch (m_pTabWidget->currentIndex())
     {
-        case 0:
-        {
-            sltHandleCurrentItemChangeHostNetwork();
-            break;
-        }
-        default:
-            break;
+        case TabWidgetIndex_HostNetwork: sltHandleCurrentItemChangeHostNetwork(); break;
+        default: break;
     }
 }
 
@@ -284,18 +286,17 @@ void UINetworkManagerWidget::sltApplyDetailsChanges()
     /* Apply details-widget data changes: */
     switch (m_pTabWidget->currentIndex())
     {
-        case 0:
-        {
-            sltApplyDetailsChangesHostNetwork();
-            break;
-        }
-        default:
-            break;
+        case TabWidgetIndex_HostNetwork: sltApplyDetailsChangesHostNetwork(); break;
+        default: break;
     }
 }
 
 void UINetworkManagerWidget::sltCreateHostNetwork()
 {
+    /* For host networks only: */
+    if (m_pTabWidget->currentIndex() != TabWidgetIndex_HostNetwork)
+        return;
+
     /* Get host for further activities: */
     CHost comHost = uiCommon().host();
 
@@ -340,7 +341,7 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
             /* Add interface to the tree: */
             UIDataHostNetwork data;
             loadHostNetwork(comInterface, data);
-            createItemForNetworkHost(data, true);
+            createItemForHostNetwork(data, true);
 
             /* Adjust tree-widgets: */
             sltAdjustTreeWidgets();
@@ -350,6 +351,10 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
 
 void UINetworkManagerWidget::sltRemoveHostNetwork()
 {
+    /* For host networks only: */
+    if (m_pTabWidget->currentIndex() != TabWidgetIndex_HostNetwork)
+        return;
+
     /* Check host network tree-widget: */
     AssertMsgReturnVoid(m_pTreeWidgetHostNetwork, ("Host network tree-widget isn't created!\n"));
 
@@ -541,7 +546,7 @@ void UINetworkManagerWidget::sltHandleItemChangeHostNetwork(QTreeWidgetItem *pIt
                     /* Update interface in the tree: */
                     UIDataHostNetwork data;
                     loadHostNetwork(comInterface, data);
-                    updateItemForNetworkHost(data, true, pChangedItem);
+                    updateItemForHostNetwork(data, true, pChangedItem);
 
                     /* Make sure current item fetched: */
                     sltHandleCurrentItemChangeHostNetwork();
@@ -572,12 +577,9 @@ void UINetworkManagerWidget::sltHandleCurrentItemChangeHostNetwork()
     /* If there is an item => update details data: */
     if (pItem)
         m_pDetailsWidgetHostNetwork->setData(*pItem);
+    /* Otherwise => clear details: */
     else
-    {
-        /* Otherwise => clear details and close the area: */
         m_pDetailsWidgetHostNetwork->setData(UIDataHostNetwork());
-        sltToggleDetailsVisibility(false);
-    }
 }
 
 void UINetworkManagerWidget::sltHandleContextMenuRequestHostNetwork(const QPoint &position)
@@ -716,7 +718,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
             /* Update interface in the tree: */
             UIDataHostNetwork data;
             loadHostNetwork(comInterface, data);
-            updateItemForNetworkHost(data, true, pItem);
+            updateItemForHostNetwork(data, true, pItem);
 
             /* Make sure current item fetched: */
             sltHandleCurrentItemChangeHostNetwork();
@@ -844,7 +846,7 @@ void UINetworkManagerWidget::prepareTabHostNetwork()
         }
 
         /* Add into tab-widget: */
-        m_pTabWidget->addTab(m_pTabHostNetwork, QString());
+        m_pTabWidget->insertTab(TabWidgetIndex_HostNetwork, m_pTabHostNetwork, QString());
     }
 }
 
@@ -932,7 +934,7 @@ void UINetworkManagerWidget::loadHostNetworks()
             {
                 UIDataHostNetwork data;
                 loadHostNetwork(comInterface, data);
-                createItemForNetworkHost(data, false);
+                createItemForHostNetwork(data, false);
             }
 
         /* Choose the 1st item as current initially: */
@@ -1002,7 +1004,7 @@ void UINetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInt
     }
 }
 
-void UINetworkManagerWidget::createItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem)
+void UINetworkManagerWidget::createItemForHostNetwork(const UIDataHostNetwork &data, bool fChooseItem)
 {
     /* Create new item: */
     UIItemHostNetwork *pItem = new UIItemHostNetwork;
@@ -1019,7 +1021,7 @@ void UINetworkManagerWidget::createItemForNetworkHost(const UIDataHostNetwork &d
     }
 }
 
-void UINetworkManagerWidget::updateItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem)
+void UINetworkManagerWidget::updateItemForHostNetwork(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem)
 {
     /* Update passed item: */
     if (pItem)
