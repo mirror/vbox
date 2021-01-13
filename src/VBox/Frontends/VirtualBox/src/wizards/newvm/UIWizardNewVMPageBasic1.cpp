@@ -277,41 +277,40 @@ bool UIWizardNewVMPage1::checkISOFile() const
     return true;
 }
 
-void UIWizardNewVMPage1::addLine(QBoxLayout *pLayout)
+QFrame *UIWizardNewVMPage1::horizontalLine()
 {
     QFrame *line = new QFrame;
     line->setFrameShape(QFrame::HLine);
     line->setFrameShadow(QFrame::Sunken);
-    pLayout->addWidget(line);
+    return line;
 }
 
-void UIWizardNewVMPage1::createNameOSTypeWidgets(QVBoxLayout *pLayout, bool fCreateLabels /* = true */)
+int UIWizardNewVMPage1::createNameOSTypeWidgets(QGridLayout *pLayout, bool fCreateLabels /* = true */)
 {
-    AssertReturnVoid(pLayout);
-
+    AssertReturn(pLayout, 0);
+    int iRow = 0;
     if (fCreateLabels)
     {
         m_pNameOSTypeLabel = new QIRichTextLabel;
         if (m_pNameOSTypeLabel)
-            pLayout->addWidget(m_pNameOSTypeLabel);
+            pLayout->addWidget(m_pNameOSTypeLabel, iRow++, 0, 1, 4);
     }
 
     m_pNameAndFolderEditor = new UINameAndSystemEditor(0, true, true, false);
     if (m_pNameAndFolderEditor)
-        pLayout->addWidget(m_pNameAndFolderEditor);
+        pLayout->addWidget(m_pNameAndFolderEditor, iRow++, 0, 1, 4);
 
-    addLine(pLayout);
+    pLayout->addWidget(horizontalLine(), iRow++, 0, 1, 4);
 
     if (fCreateLabels)
     {
         m_pUnattendedLabel = new QIRichTextLabel;
         if (m_pUnattendedLabel)
-            pLayout->addWidget(m_pUnattendedLabel);
+            pLayout->addWidget(m_pUnattendedLabel, iRow++, 0, 1, 4);
     }
 
-    QGridLayout *pUnattendedInstall = new QGridLayout;
     m_pEnableUnattendedInstallCheckBox = new QCheckBox;
-    pUnattendedInstall->addWidget(m_pEnableUnattendedInstallCheckBox, 0, 0, 1, 4, Qt::AlignLeft);
+    pLayout->addWidget(m_pEnableUnattendedInstallCheckBox, iRow++, 0, 1, 2, Qt::AlignLeft);
 
     m_pISOSelectorLabel = new QLabel;
     if (m_pISOSelectorLabel)
@@ -319,7 +318,7 @@ void UIWizardNewVMPage1::createNameOSTypeWidgets(QVBoxLayout *pLayout, bool fCre
         m_pISOSelectorLabel->setAlignment(Qt::AlignRight);
         m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
         m_pISOSelectorLabel->setEnabled(false);
-        pUnattendedInstall->addWidget(m_pISOSelectorLabel, 1, 0, 1, 1, Qt::AlignRight);
+        pLayout->addWidget(m_pISOSelectorLabel, iRow, 0, 1, 1, Qt::AlignRight);
     }
     m_pISOFilePathSelector = new UIFilePathSelector;
     if (m_pISOFilePathSelector)
@@ -329,21 +328,22 @@ void UIWizardNewVMPage1::createNameOSTypeWidgets(QVBoxLayout *pLayout, bool fCre
         m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
         m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_pISOFilePathSelector->setEnabled(false);
-        pUnattendedInstall->addWidget(m_pISOFilePathSelector, 1, 1, 1, 4);
+        pLayout->addWidget(m_pISOFilePathSelector, iRow++, 1, 1, 3);
     }
 
     m_pStartHeadlessCheckBox = new QCheckBox;
     if (m_pStartHeadlessCheckBox)
     {
         m_pStartHeadlessCheckBox->setEnabled(false);
-        pUnattendedInstall->addWidget(m_pStartHeadlessCheckBox, 2, 1, 1, 1);
+        pLayout->addWidget(m_pStartHeadlessCheckBox, iRow++, 1, 1, 1);
     }
-    pLayout->addLayout(pUnattendedInstall);
-    addLine(pLayout);
+
+    pLayout->addWidget(horizontalLine(), iRow++, 0, 1, 4);
+
     m_pSystemTypeEditor = new UINameAndSystemEditor(0, false, false, true);
     if (m_pSystemTypeEditor)
-        pLayout->addWidget(m_pSystemTypeEditor);
-
+        pLayout->addWidget(m_pSystemTypeEditor, iRow++, 0, 1, 4);
+    return iRow;
 }
 
 bool UIWizardNewVMPage1::createMachineFolder()
@@ -516,9 +516,10 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
 
 void UIWizardNewVMPageBasic1::prepare()
 {
-    QVBoxLayout *pPageLayout = new QVBoxLayout(this);
-    createNameOSTypeWidgets(pPageLayout, false);
-    pPageLayout->addStretch();
+    QGridLayout *pPageLayout = new QGridLayout(this);
+    int iRow = createNameOSTypeWidgets(pPageLayout, false);
+    pPageLayout->addItem(new QSpacerItem(20, 40, QSizePolicy::Expanding, QSizePolicy::Expanding),
+                         iRow, 0, 1, 4);
     createConnections();
     /* Register fields: */
     registerField("name*", m_pNameAndFolderEditor, "name", SIGNAL(sigNameChanged(const QString &)));

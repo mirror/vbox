@@ -51,7 +51,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     {
         m_pToolBox = new QToolBox;
         m_pNameAndSystemContainer = new QWidget(this);
-        QVBoxLayout *pNameContainerLayout = new QVBoxLayout(m_pNameAndSystemContainer);
+        QGridLayout *pNameContainerLayout = new QGridLayout(m_pNameAndSystemContainer);
         createNameOSTypeWidgets(pNameContainerLayout, false);
         m_pGAInstallContainer = createGAInstallWidgets();
         m_pUsernameHostnameContainer = createUserNameHostNameWidgets();

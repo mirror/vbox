@@ -27,9 +27,10 @@
 /* Forward declarations: */
 class QBoxLayout;
 class QCheckBox;
+class QFrame;
 class QLabel;
 class QRadioButton;
-class QVBoxLayout;
+class QGridLayout;
 class QIRichTextLabel;
 class UIFilePathSelector;
 class UINameAndSystemEditor;
@@ -75,7 +76,7 @@ protected:
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
     void composeMachineFilePath();
     /** Creates the page widgets and adds them into the @p pGridLayout. */
-    void createNameOSTypeWidgets(QVBoxLayout *pLayout, bool fCreateLabels = true);
+    int createNameOSTypeWidgets(QGridLayout *pLayout, bool fCreateLabels = true);
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     /** Colors the widgets red if they cause isComplete to fail. */
     void markWidgets() const;
@@ -102,7 +103,7 @@ protected:
 private:
 
     bool checkISOFile() const;
-    void addLine(QBoxLayout *pLayout);
+    QFrame *horizontalLine();
 
     /** Full path (including the file name) of the machine's configuration file. */
     QString m_strMachineFilePath;
