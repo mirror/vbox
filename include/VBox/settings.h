@@ -1143,6 +1143,7 @@ struct Hardware
     KeyboardHIDType_T   keyboardHIDType;        // requires settings version 1.10 (VirtualBox 3.2)
 
     ChipsetType_T       chipsetType;            // requires settings version 1.11 (VirtualBox 4.0)
+    IommuType_T         iommuType;              // requires settings version 1.19 (VirtualBox 6.2)
     ParavirtProvider_T  paravirtProvider;       // requires settings version 1.15 (VirtualBox 4.4)
     com::Utf8Str        strParavirtDebug;       // requires settings version 1.16 (VirtualBox 5.1)
 

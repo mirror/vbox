@@ -1812,6 +1812,20 @@ HRESULT SystemProperties::getSupportedChipsetTypes(std::vector<ChipsetType_T> &a
     return S_OK;
 }
 
+HRESULT SystemProperties::getSupportedIommuTypes(std::vector<IommuType_T> &aSupportedIommuTypes)
+{
+    static const IommuType_T aIommuTypes[] =
+    {
+        IommuType_None,
+        IommuType_Automatic,
+        IommuType_AMD,
+        /** @todo Add Intel when it's supported. */
+    };
+    aSupportedIommuTypes.assign(aIommuTypes,
+                                aIommuTypes + RT_ELEMENTS(aIommuTypes));
+    return S_OK;
+}
+
 HRESULT SystemProperties::getSupportedVBoxUpdateTargetTypes(std::vector<VBoxUpdateTarget_T> &aSupportedVBoxUpdateTargetTypes)
 {
     static const VBoxUpdateTarget_T aVBoxUpdateTargetTypes[] =

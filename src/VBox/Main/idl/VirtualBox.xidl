@@ -609,9 +609,14 @@
           Machine changes: virtio-scsi storage controller, NVRAM device.
       -->
     </const>
-
+    <const name="v1_19" value="21">
+      <desc>Settings version "1.19", written by VirtualBox 6.2.x.</desc>
+      <!--
+          Machine changes: IOMMU device.
+      -->
+    </const>
     <const name="Future" value="99999">
-      <desc>Settings version greater than "1.15", written by a future VirtualBox version.</desc>
+      <desc>Settings version greater than "1.19", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
@@ -5967,9 +5972,31 @@
     </const>
   </enum>
 
+  <enum
+    name="IommuType"
+    uuid="f47339cb-b94e-48fe-b507-2900103d7b9f"
+    >
+    <desc>
+      The IOMMU type. This enumeration represents possible
+      values for the <link to="IMachine::iommuType"/> attribute.
+    </desc>
+    <const name="None"      value="0">
+      <desc>No IOMMU is present.</desc>
+    </const>
+    <const name="Automatic" value="1">
+      <desc>No IOMMU is present.</desc>
+    </const>
+    <const name="AMD"       value="2">
+      <desc>An AMD IOMMU.</desc>
+    </const>
+    <const name="Intel"     value="3">
+      <desc>An Intel IOMMU.</desc>
+    </const>
+  </enum>
+
   <interface
     name="IMachine" extends="$unknown"
-    uuid="85632c68-b5bb-4316-a900-5eb28d3413df"
+    uuid="621a4d3f-97a5-4f64-89eb-e0a9b2b79e23"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -6258,6 +6285,10 @@
 
     <attribute name="chipsetType" type="ChipsetType">
       <desc>Chipset type used in this VM.</desc>
+    </attribute>
+
+    <attribute name="iommuType" type="IommuType">
+      <desc>IOMMU type used in this VM.</desc>
     </attribute>
 
     <attribute name="snapshotFolder" type="wstring">
@@ -11165,7 +11196,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="81c55eb1-d584-41a7-aa0b-08b71cddd773"
+    uuid="31cdb11d-9bb0-455a-b2ca-a1a5b1177912"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -11723,6 +11754,13 @@
       </desc>
     </attribute>
 
+    <attribute name="supportedIommuTypes" type="IommuType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="IommuType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
     <method name="getMaxNetworkAdapters">
       <desc>
         Maximum total number of network adapters associated with every
@@ -11928,7 +11966,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="d0d6c6d8-e5db-4d2c-baaa-c71053a6236d"
+    uuid="7d8ba014-4562-448a-9c1b-b454b35fc3dd"
     wsmap="struct"
     reservedAttributes="16"
     >
@@ -12033,6 +12071,10 @@
 
     <attribute name="recommendedChipset" type="ChipsetType" readonly="yes">
       <desc>Recommended chipset type.</desc>
+    </attribute>
+
+    <attribute name="recommendedIommuType" type="IommuType" readonly="yes">
+      <desc>Recommended IOMMU type.</desc>
     </attribute>
 
     <attribute name="recommendedAudioController" type="AudioControllerType" readonly="yes">

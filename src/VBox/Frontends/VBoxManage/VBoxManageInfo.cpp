@@ -444,6 +444,38 @@ static HRESULT showSharedFolder(ComPtr<ISharedFolder> &sf, VMINFO_DETAILS detail
     return S_OK;
 }
 
+#ifdef VBOX_WITH_IOMMU_AMD
+static const char *iommuTypeToString(IommuType_T iommuType, VMINFO_DETAILS details)
+{
+    switch (iommuType)
+    {
+        case IommuType_None:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "none";
+            return "None";
+
+        case IommuType_Automatic:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "automatic";
+            return "Automatic";
+
+        case IommuType_AMD:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "amd";
+            return "AMD";
+
+        case IommuType_Intel:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "intel";
+            return "Intel";
+
+        default:
+            if (details == VMINFO_MACHINEREADABLE)
+                return "unknown";
+            return "Unknown";
+    }
+}
+#endif
 
 static const char *paravirtProviderToString(ParavirtProvider_T provider, VMINFO_DETAILS details)
 {
@@ -917,6 +949,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_VPID, &f),        "vtxvpid",      "VT-x VPID:");
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &f), "vtxux", "VT-x Unrestricted Exec.:");
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_VirtVmsaveVmload, &f),      "virtvmsavevmload", "AMD-V Virt. Vmsave/Vmload:");
+
+#ifdef VBOX_WITH_IOMMU_AMD
+    IommuType_T iommuType;
+    CHECK_ERROR2I_RET(machine, COMGETTER(IommuType)(&iommuType), hrcCheck);
+    const char *pszIommuType = iommuTypeToString(iommuType, details);
+    SHOW_UTF8_STRING("iommu", "IOMMU:", pszIommuType);
+#endif
 
     ParavirtProvider_T paravirtProvider;
     CHECK_ERROR2I_RET(machine, COMGETTER(ParavirtProvider)(&paravirtProvider), hrcCheck);

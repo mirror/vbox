@@ -78,6 +78,7 @@ private:
     HRESULT getRecommendedUSBTablet(BOOL *aRecommendedUSBTablet);
     HRESULT getRecommendedRTCUseUTC(BOOL *aRecommendedRTCUseUTC);
     HRESULT getRecommendedChipset(ChipsetType_T *aChipsetType);
+    HRESULT getRecommendedIommuType(IommuType_T *aIommuType);
     HRESULT getRecommendedAudioController(AudioControllerType_T *aAudioController);
     HRESULT getRecommendedAudioCodec(AudioCodecType_T *aAudioCodec);
     HRESULT getRecommendedFloppy(BOOL *aRecommendedFloppy);
@@ -104,6 +105,7 @@ private:
     const StorageControllerType_T mHDStorageControllerType;
     const StorageBus_T mHDStorageBusType;
     const ChipsetType_T mChipsetType;
+    const IommuType_T mIommuType;
     const AudioControllerType_T mAudioControllerType;
     const AudioCodecType_T mAudioCodecType;
 };

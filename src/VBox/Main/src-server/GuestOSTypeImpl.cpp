@@ -38,6 +38,7 @@ GuestOSType::GuestOSType()
     , mHDStorageControllerType(StorageControllerType_PIIX3)
     , mHDStorageBusType(StorageBus_IDE)
     , mChipsetType(ChipsetType_PIIX3)
+    , mIommuType(IommuType_None)
     , mAudioControllerType(AudioControllerType_AC97)
     , mAudioCodecType(AudioCodecType_STAC9700)
 {
@@ -102,6 +103,7 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)
     unconst(mHDStorageControllerType)   = ostype.hdStorageControllerType;
     unconst(mHDStorageBusType)          = ostype.hdStorageBusType;
     unconst(mChipsetType)               = ostype.chipsetType;
+    unconst(mIommuType)                 = ostype.iommuType;
     unconst(mAudioControllerType)       = ostype.audioControllerType;
     unconst(mAudioCodecType)            = ostype.audioCodecType;
 
@@ -345,6 +347,15 @@ HRESULT GuestOSType::getRecommendedChipset(ChipsetType_T *aChipsetType)
 {
     /* chipset type is constant during life time, no need to lock */
     *aChipsetType = mChipsetType;
+
+    return S_OK;
+}
+
+
+HRESULT GuestOSType::getRecommendedIommuType(IommuType_T *aIommuType)
+{
+    /* IOMMU type is constant during life time, no need to lock */
+    *aIommuType = mIommuType;
 
     return S_OK;
 }

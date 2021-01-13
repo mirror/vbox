@@ -410,7 +410,9 @@ SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion, const 
                 sv = SettingsVersion_v1_17;
             else if (uMinor == 18)
                 sv = SettingsVersion_v1_18;
-            else if (uMinor > 18)
+            else if (uMinor == 19)
+                sv = SettingsVersion_v1_19;
+            else if (uMinor > 19)
                 sv = SettingsVersion_Future;
         }
         else if (uMajor > 1)
@@ -1042,6 +1044,10 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.18";
             break;
 
+        case SettingsVersion_v1_19:
+            pcszVersion = "1.19";
+            break;
+
         default:
             // catch human error: the assertion below will trigger in debug
             // or dbgopt builds, so hopefully this will get noticed sooner in
@@ -1064,8 +1070,8 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
                 // for "forgotten settings" this may not be the best choice,
                 // but as it's an omission of someone who changed this file
                 // it's the only generic possibility.
-                pcszVersion = "1.18";
-                m->sv = SettingsVersion_v1_18;
+                pcszVersion = "1.19";
+                m->sv = SettingsVersion_v1_19;
             }
             break;
     }
@@ -3361,6 +3367,7 @@ Hardware::Hardware() :
     pointingHIDType(PointingHIDType_PS2Mouse),
     keyboardHIDType(KeyboardHIDType_PS2Keyboard),
     chipsetType(ChipsetType_PIIX3),
+    iommuType(IommuType_None),
     paravirtProvider(ParavirtProvider_Legacy), // default for old VMs, for new ones it's ParavirtProvider_Default
     strParavirtDebug(""),
     fEmulatedUSBCardReader(false),
@@ -3485,6 +3492,7 @@ bool Hardware::operator==(const Hardware& h) const
             && pointingHIDType                == h.pointingHIDType
             && keyboardHIDType                == h.keyboardHIDType
             && chipsetType                    == h.chipsetType
+            && iommuType                      == h.iommuType
             && paravirtProvider               == h.paravirtProvider
             && strParavirtDebug               == h.strParavirtDebug
             && fEmulatedUSBCardReader         == h.fEmulatedUSBCardReader
@@ -4600,6 +4608,24 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                                           pelmHwChild,
                                           N_("Invalid value '%s' in Chipset/@type"),
                                           strChipsetType.c_str());
+            }
+        }
+        else if (pelmHwChild->nameEquals("Iommu"))
+        {
+            Utf8Str strIommuType;
+            if (pelmHwChild->getAttributeValue("type", strIommuType))
+            {
+                if (strIommuType == "None")
+                    hw.iommuType = IommuType_None;
+                else if (strIommuType == "Automatic")
+                    hw.iommuType = IommuType_Automatic;
+                else if (strIommuType == "AMD")
+                    hw.iommuType = IommuType_AMD;
+                else
+                    throw ConfigFileError(this,
+                                          pelmHwChild,
+                                          N_("Invalid value '%s' in Iommu/@type"),
+                                          strIommuType.c_str());
             }
         }
         else if (pelmHwChild->nameEquals("Paravirt"))
@@ -6091,6 +6117,22 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         if (   m->sv >= SettingsVersion_v1_16
             && hw.strParavirtDebug.isNotEmpty())
             pelmParavirt->setAttribute("debug", hw.strParavirtDebug);
+    }
+
+    if (   m->sv >= SettingsVersion_v1_19
+        && hw.iommuType != IommuType_None)
+    {
+        const char *pcszIommuType;
+        switch (hw.iommuType)
+        {
+            case IommuType_None:         pcszIommuType = "None";        break;
+            case IommuType_Automatic:    pcszIommuType = "Automatic";   break;
+            case IommuType_AMD:          pcszIommuType = "AMD";         break;
+            default:     Assert(false);  pcszIommuType = "None";        break;
+        }
+
+        xml::ElementNode *pelmIommu = pelmHardware->createChild("Iommu");
+        pelmIommu->setAttribute("type", pcszIommuType);
     }
 
     if (!hw.areBootOrderDefaultSettings())
@@ -7630,6 +7672,16 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_19)
+    {
+        // VirtualBox 6.2 adds iommu device.
+        if (hardwareMachine.iommuType != IommuType_None)
+        {
+            m->sv = SettingsVersion_v1_19;
+            return;
+        }
+    }
+
     if (m->sv < SettingsVersion_v1_18)
     {
         if (!hardwareMachine.biosSettings.strNVRAMPath.isEmpty())

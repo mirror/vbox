@@ -222,6 +222,7 @@ Machine::HWData::HWData()
     mKeyboardHIDType = KeyboardHIDType_PS2Keyboard;
     mPointingHIDType = PointingHIDType_PS2Mouse;
     mChipsetType = ChipsetType_PIIX3;
+    mIommuType = IommuType_None;
     mParavirtProvider = ParavirtProvider_Default;
     mEmulatedUSBCardReaderEnabled = FALSE;
 
@@ -1230,6 +1231,32 @@ HRESULT Machine::setChipsetType(ChipsetType_T aChipsetType)
                 mNetworkAdapters[slot]->init(this, (ULONG)slot);
             }
         }
+    }
+
+    return S_OK;
+}
+
+HRESULT Machine::getIommuType(IommuType_T *aIommuType)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aIommuType = mHWData->mIommuType;
+
+    return S_OK;
+}
+
+HRESULT Machine::setIommuType(IommuType_T aIommuType)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    if (aIommuType != mHWData->mIommuType)
+    {
+        i_setModified(IsModified_MachineData);
+        mHWData.backup();
+        mHWData->mIommuType = aIommuType;
     }
 
     return S_OK;
@@ -8754,6 +8781,7 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         mHWData->mPointingHIDType = data.pointingHIDType;
         mHWData->mKeyboardHIDType = data.keyboardHIDType;
         mHWData->mChipsetType = data.chipsetType;
+        mHWData->mIommuType = data.iommuType;
         mHWData->mParavirtProvider = data.paravirtProvider;
         mHWData->mParavirtDebug = data.strParavirtDebug;
         mHWData->mEmulatedUSBCardReaderEnabled = data.fEmulatedUSBCardReader;
@@ -10091,6 +10119,9 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
 
         // chipset
         data.chipsetType = mHWData->mChipsetType;
+
+        // iommu
+        data.iommuType = mHWData->mIommuType;
 
         // paravirt
         data.paravirtProvider = mHWData->mParavirtProvider;
@@ -15113,6 +15144,14 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     if (FAILED(rc)) return rc;
 
     rc = osType->COMGETTER(RecommendedTFReset)(&mHWData->mTripleFaultReset);
+    if (FAILED(rc)) return rc;
+
+    /* Apply IOMMU defaults. */
+    IommuType_T enmIommuType;
+    rc = osType->COMGETTER(RecommendedIommuType)(&enmIommuType);
+    if (FAILED(rc)) return rc;
+
+    rc = COMSETTER(IommuType)(enmIommuType);
     if (FAILED(rc)) return rc;
 
     /* Apply network adapters defaults */

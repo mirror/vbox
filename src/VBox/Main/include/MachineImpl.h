@@ -318,6 +318,7 @@ public:
         KeyboardHIDType_T   mKeyboardHIDType;
         PointingHIDType_T   mPointingHIDType;
         ChipsetType_T       mChipsetType;
+        IommuType_T         mIommuType;
         ParavirtProvider_T  mParavirtProvider;
         Utf8Str             mParavirtDebug;
         BOOL                mEmulatedUSBCardReaderEnabled;
@@ -895,6 +896,8 @@ private:
     HRESULT setHPETEnabled(BOOL aHPETEnabled);
     HRESULT getChipsetType(ChipsetType_T *aChipsetType);
     HRESULT setChipsetType(ChipsetType_T aChipsetType);
+    HRESULT getIommuType(IommuType_T *aIommuType);
+    HRESULT setIommuType(IommuType_T aIommuType);
     HRESULT getSnapshotFolder(com::Utf8Str &aSnapshotFolder);
     HRESULT setSnapshotFolder(const com::Utf8Str &aSnapshotFolder);
     HRESULT getVRDEServer(ComPtr<IVRDEServer> &aVRDEServer);

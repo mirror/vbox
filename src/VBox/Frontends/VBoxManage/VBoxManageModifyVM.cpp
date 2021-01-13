@@ -234,6 +234,9 @@ enum
     MODIFYVM_RECORDING_OPTIONS,
 #endif
     MODIFYVM_CHIPSET,
+#ifdef VBOX_WITH_IOMMU_AMD
+    MODIFYVM_IOMMU,
+#endif
     MODIFYVM_DEFAULTFRONTEND,
     MODIFYVM_VMPROC_PRIORITY
 };
@@ -407,6 +410,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--iocache",                  MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocachesize",              MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
+#ifdef VBOX_WITH_IOMMU_AMD
+    { "--iommu",                    MODIFYVM_IOMMU,                     RTGETOPT_REQ_STRING },
+#endif
 #ifdef VBOX_WITH_RECORDING
     { "--recording",                MODIFYVM_RECORDING,                 RTGETOPT_REQ_BOOL_ONOFF },
     { "--recordingscreens",         MODIFYVM_RECORDING_SCREENS,         RTGETOPT_REQ_STRING },
@@ -2985,6 +2991,29 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 break;
             }
+#ifdef VBOX_WITH_IOMMU_AMD
+            case MODIFYVM_IOMMU:
+            {
+                if (   !RTStrICmp(ValueUnion.psz, "none")
+                    || !RTStrICmp(ValueUnion.psz, "disabled"))
+                    CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_None));
+                else if (!RTStrICmp(ValueUnion.psz, "amd"))
+                    CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_AMD));
+                /** @todo Add Intel when it's supported, remove warning from below. */
+                else if (!RTStrICmp(ValueUnion.psz, "automatic"))
+                {
+                    CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_Automatic));
+                    RTStrmPrintf(g_pStdErr,
+                                 "Warning: On Intel hosts, 'automatic' will not enable an IOMMU since the Intel IOMMU device is not supported yet.\n");
+                }
+                else
+                {
+                    errorArgument("Invalid --iommu argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                break;
+            }
+#endif
 #ifdef VBOX_WITH_RECORDING
             case MODIFYVM_RECORDING:
                 RT_FALL_THROUGH();
