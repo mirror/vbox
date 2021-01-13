@@ -2302,11 +2302,8 @@ VBoxRT_INCS                   := $(RuntimeR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)  := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_LIBS                    = \
-	$(SDK_VBOX_LZF_LIBS)
-if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
-VBoxRT_LIBS                   += \
+	$(SDK_VBOX_LZF_LIBS) \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
-endif
 ifndef SDK_VBOX_LIBXML2_LIBS
  VBoxRT_LIBS                  += \
 	$(PATH_STAGE_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)

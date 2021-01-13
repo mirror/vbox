@@ -43,7 +43,6 @@
 
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-
 /**
  * The slow case for SUPReadTsc where we need to apply deltas.
  *
@@ -217,6 +216,7 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(PSUPGLOBALINFOPAGE pGip)
     AssertMsgFailed(("iGipCpu=%d (%#x) cCpus=%d fGetGipCpu=%#x\n", iGipCpu, iGipCpu, pGip->cCpus, pGip->fGetGipCpu));
     return uTsc;
 }
+#endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
 
 
 /**
@@ -229,6 +229,7 @@ DECLINLINE(uint16_t) supGetGipCpuIndex(PSUPGLOBALINFOPAGE pGip)
 {
     uint16_t iGipCpu;
 #ifdef IN_RING3
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
     {
         /* Storing the IDTR is normally very fast. */
@@ -263,6 +264,15 @@ DECLINLINE(uint16_t) supGetGipCpuIndex(PSUPGLOBALINFOPAGE pGip)
         uint8_t idApic = ASMGetApicId();
         iGipCpu = pGip->aiCpuFromApicId[idApic];
     }
+
+# else
+    int iCpuSet = RTMpCpuIdToSetIndex(RTMpCpuId());
+    if (RT_LIKELY((unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+        iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+    else
+        iGipCpu = UINT16_MAX;
+# endif
+
 #elif defined(IN_RING0)
     /* Ring-0: Use use RTMpCpuId() (disables cli to avoid host OS assertions about unsafe CPU number usage). */
     RTCCUINTREG uFlags  = ASMIntDisableFlags();
@@ -280,6 +290,7 @@ DECLINLINE(uint16_t) supGetGipCpuIndex(PSUPGLOBALINFOPAGE pGip)
         iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
     else
         iGipCpu = UINT16_MAX;
+
 #else
 # error "IN_RING3, IN_RC or IN_RING0 must be defined!"
 #endif
@@ -323,6 +334,7 @@ SUPDECL(uint64_t) SUPGetCpuHzFromGipForAsyncMode(PSUPGLOBALINFOPAGE pGip)
     AssertFailed();
     return pGip->u64CpuHz;
 }
+
 
 
 /**
@@ -381,6 +393,4 @@ SUPDECL(bool) SUPIsTscFreqCompatible(uint64_t uCpuHz, uint64_t *puGipCpuHz, bool
         *puGipCpuHz = uGipCpuHz;
     return fCompat;
 }
-
-#endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
 
