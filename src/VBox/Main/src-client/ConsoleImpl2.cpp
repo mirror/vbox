@@ -801,12 +801,39 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     }
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo Get IOMMU from pMachine and pass info to createInstance() below. */
-    bool const fIommu = RT_BOOL(chipsetType == ChipsetType_ICH9);
+    IommuType_T iommuType;
+    hrc = pMachine->COMGETTER(IommuType)(&iommuType);                                       H();
+
+    /* Resolve 'automatic' type to an Intel or AMD IOMMU based on the host CPU. */
+    if (iommuType == IommuType_Automatic)
+    {
+        if (ASMIsAmdCpu())
+            iommuType = IommuType_AMD;
+        else if (ASMIsIntelCpu())
+        {
+            iommuType = IommuType_None;
+            LogRel(("WARNING! Intel IOMMU implemention is not yet supported. Disabled IOMMU.\n"));
+        }
+        else
+        {
+            /** @todo Should we handle other CPUs like Shanghai, VIA etc. here? */
+            LogRel(("WARNING! Unrecognized CPU type. Disabled IOMMU.\n"));
+            iommuType = IommuType_None;
+        }
+    }
+
+    /* Handle AMD IOMMU specifics. */
+    if (   iommuType == IommuType_AMD
+        && chipsetType != ChipsetType_ICH9)
+        return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                            N_("AMD IOMMU uses MSIs which requires the ICH9 chipset implementation."));
+
+    /** @todo Handle Intel IOMMU specifics. */
 #else
-    bool const fIommu = false;
+    IommuType_T const iommuType = IommuType_None;
 #endif
-    BusAssignmentManager *pBusMgr = mBusMgr = BusAssignmentManager::createInstance(chipsetType, fIommu);
+    Assert(iommuType != IommuType_Automatic);
+    BusAssignmentManager *pBusMgr = mBusMgr = BusAssignmentManager::createInstance(chipsetType, iommuType);
 
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                            H();
@@ -1505,7 +1532,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-            if (fIommu)
+            if (iommuType == IommuType_AMD)
             {
                 /* AMD IOMMU. */
                 InsertConfigNode(pDevices, "iommu-amd", &pDev);
@@ -3266,7 +3293,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 }
             }
 #ifdef VBOX_WITH_IOMMU_AMD
-            if (fIommu)
+            if (iommuType == IommuType_AMD)
             {
                 PCIBusAddress Address;
                 if (pBusMgr->findPCIAddress("iommu-amd", 0, Address))

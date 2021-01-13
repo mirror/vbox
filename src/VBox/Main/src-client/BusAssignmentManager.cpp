@@ -309,7 +309,7 @@ struct BusAssignmentManager::State
     volatile int32_t cRefCnt;
     ChipsetType_T    mChipsetType;
     const char *     mpszBridgeName;
-    bool             mfIommu;
+    IommuType_T      mIommuType;
     PCIMap           mPCIMap;
     ReversePCIMap    mReversePCIMap;
 
@@ -319,7 +319,7 @@ struct BusAssignmentManager::State
     ~State()
     {}
 
-    HRESULT init(ChipsetType_T chipsetType, bool fIommu);
+    HRESULT init(ChipsetType_T chipsetType, IommuType_T iommuType);
 
     HRESULT record(const char *pszName, PCIBusAddress& GuestAddress, PCIBusAddress HostAddress);
     HRESULT autoAssign(const char *pszName, PCIBusAddress& Address);
@@ -331,10 +331,13 @@ struct BusAssignmentManager::State
     void listAttachedPCIDevices(std::vector<PCIDeviceInfo> &aAttached);
 };
 
-HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType, bool fIommu)
+HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType, IommuType_T iommuType)
 {
+    /* Currently we only support AMD IOMMU. */
+    Assert(iommuType == IommuType_None || iommuType == IommuType_AMD);
+
     mChipsetType = chipsetType;
-    mfIommu = fIommu;
+    mIommuType   = iommuType;
     switch (chipsetType)
     {
         case ChipsetType_PIIX3:
@@ -400,7 +403,7 @@ void BusAssignmentManager::State::addMatchingRules(const char *pszName, PCIRules
         {
             aArrays[1] = g_aIch9Rules;
 #ifdef VBOX_WITH_IOMMU_AMD
-            if (mfIommu)
+            if (mIommuType == IommuType_AMD)
                 aArrays[2] = g_aIch9IommuLsiRules;
             else
 #endif
@@ -509,10 +512,10 @@ BusAssignmentManager::~BusAssignmentManager()
     }
 }
 
-BusAssignmentManager *BusAssignmentManager::createInstance(ChipsetType_T chipsetType, bool fIommu)
+BusAssignmentManager *BusAssignmentManager::createInstance(ChipsetType_T chipsetType, IommuType_T iommuType)
 {
     BusAssignmentManager *pInstance = new BusAssignmentManager();
-    pInstance->pState->init(chipsetType, fIommu);
+    pInstance->pState->init(chipsetType, iommuType);
     Assert(pInstance);
     return pInstance;
 }
