@@ -22,7 +22,9 @@
 #include <VBox/vd.h>
 #include <iprt/errcore.h>
 #include <VBox/log.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/dir.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
@@ -243,7 +245,11 @@ typedef RNDCTX *PRNDCTX;
 RTDECL(int) RTPRandInit(PRNDCTX pCtx, uint32_t u32Seed)
 {
     if (u32Seed == 0)
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
         u32Seed = (uint32_t)(ASMReadTSC() >> 8);
+#else
+        u32Seed = (uint32_t)(RTTimeNanoTS() >> 19);
+#endif
     /* Zero is not a good seed. */
     if (u32Seed == 0)
         u32Seed = 362436069;
