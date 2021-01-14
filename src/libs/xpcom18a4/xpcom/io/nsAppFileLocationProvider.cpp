@@ -149,7 +149,7 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
 
 #if (defined (XP_MAC) || defined(XP_MACOSX)) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
     short foundVRefNum;
-    long foundDirID;
+    SInt32 foundDirID;
     FSSpec fileSpec;
     nsCOMPtr<nsILocalFileMac> macFile;
 #endif
@@ -587,7 +587,7 @@ nsAppFileLocationProvider::GetFiles(const char *prop, nsISimpleEnumerator **_ret
 
         if (!keys) {
             OSErr err;
-            long response;
+            SInt32 response;
             err = ::Gestalt(gestaltSystemVersion, &response);
             keys = (!err && response >= 0x00001000) ? osXKeys : os9Keys;
         }

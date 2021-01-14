@@ -54,6 +54,10 @@
 #define _PR_SI_ARCHITECTURE "ppc"
 #elif defined(__amd64__)
 #define _PR_SI_ARCHITECTURE "amd64"
+#elif defined(__arm__)
+#define _PR_SI_ARCHITECTURE "arm"
+#elif defined(__arm64__)
+#define _PR_SI_ARCHITECTURE "arm64"
 #else
 #error "unknown architecture."
 #endif

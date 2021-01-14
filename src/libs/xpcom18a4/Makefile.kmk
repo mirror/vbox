@@ -515,6 +515,8 @@ VBox-xpcom-nspr_DEFS      += \
 	VBOX_USE_IPRT_IN_NSPR
 VBox-xpcom-nspr_DEFS.darwin.amd64 = \
 	VBOX_USE_MORE_IPRT_IN_NSPR
+VBox-xpcom-nspr_DEFS.darwin.arm64 = \
+	VBOX_USE_MORE_IPRT_IN_NSPR
 VBox-xpcom-nspr_DEFS.darwin = \
 	HAVE_BSD_FLOCK=1 \
 	HAVE_SOCKLEN_T=1 \
@@ -804,7 +806,7 @@ VBox-xpcom-io_SOURCES.darwin.x86 = \
 	xpcom/io/nsLocalFileOSX.cpp \
 	xpcom/MoreFiles/FSCopyObject.c \
 	xpcom/MoreFiles/MoreFilesX.c
-if1of ($(KBUILD_TARGET) $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd linux netbsd openbsd solaris darwin.amd64)
+if1of ($(KBUILD_TARGET) $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd linux netbsd openbsd solaris darwin.amd64 darwin.arm64)
 VBox-xpcom-io_SOURCES += \
 	xpcom/io/nsLocalFileUnix.cpp
 endif
@@ -874,6 +876,8 @@ VBox-xpcom-xptcall_SOURCES.os2           = xpcom/reflect/xptcall/src/md/os2/xptc
 VBox-xpcom-xptcall_SOURCES.solaris.x86   = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_solaris.cpp \
                                            xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_solaris.cpp
 VBox-xpcom-xptcall_SOURCES.amd64         = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_amd64_vbox.asm
+VBox-xpcom-xptcall_SOURCES.arm64         = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_arm64_vbox.cpp \
+                                           xpcom/reflect/xptcall/src/md/unix/xptcstubs_arm64_vbox.cpp
 VBox-xpcom-xptcall_SOURCES.darwin.amd64  = xpcom/reflect/xptcall/src/md/unix/xptcstubs_amd64_darwin.cpp # Underscore prefix.
 VBox-xpcom-xptcall_SOURCES.freebsd.amd64 = xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_64_linux.cpp
 VBox-xpcom-xptcall_SOURCES.linux.amd64   = xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_64_linux.cpp
