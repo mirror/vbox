@@ -21,6 +21,7 @@
 #include <QTabWidget>
 
 /* GUI includes: */
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIGlobalSettingsPortForwardingDlg.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
@@ -65,6 +66,9 @@ UIGlobalSettingsPortForwardingDlg::UIGlobalSettingsPortForwardingDlg(QWidget *pP
 
     /* Retranslate dialog: */
     retranslateUi();
+
+    /* Limit the minimum size to 33% of screen size: */
+    setMinimumSize(gpDesktop->screenGeometry(this).size() / 3);
 }
 
 const UIPortForwardingDataList UIGlobalSettingsPortForwardingDlg::ipv4rules() const

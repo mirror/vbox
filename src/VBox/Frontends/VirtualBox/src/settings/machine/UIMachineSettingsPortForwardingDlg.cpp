@@ -20,6 +20,7 @@
 #include <QPushButton>
 
 /* GUI includes: */
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIMachineSettingsPortForwardingDlg.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
@@ -60,6 +61,9 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
 
     /* Retranslate dialog: */
     retranslateUi();
+
+    /* Limit the minimum size to 33% of screen size: */
+    setMinimumSize(gpDesktop->screenGeometry(this).size() / 3);
 }
 
 const UIPortForwardingDataList UIMachineSettingsPortForwardingDlg::rules() const
