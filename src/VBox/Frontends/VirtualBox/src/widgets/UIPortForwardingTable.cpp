@@ -969,7 +969,9 @@ void UIPortForwardingTable::sltShowTableContexMenu(const QPoint &pos)
 
 void UIPortForwardingTable::sltAdjustTable()
 {
-    m_pTableView->horizontalHeader()->setStretchLastSection(false);
+    /* Make sure layout requests really processed first of all: */
+    QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+
     /* If table is NOT empty: */
     if (m_pTableModel->rowCount())
     {
@@ -988,7 +990,6 @@ void UIPortForwardingTable::sltAdjustTable()
         for (uint u = 0; u < UIPortForwardingDataType_Max; ++u)
             m_pTableView->horizontalHeader()->resizeSection(u, uFullWidth / UIPortForwardingDataType_Max);
     }
-    m_pTableView->horizontalHeader()->setStretchLastSection(true);
 }
 
 void UIPortForwardingTable::prepare()
@@ -1030,6 +1031,7 @@ void UIPortForwardingTable::prepareTableView()
     if (m_pTableView)
     {
         /* Configure table-view: */
+        m_pTableView->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
         m_pTableView->setTabKeyNavigation(false);
         m_pTableView->verticalHeader()->hide();
         m_pTableView->verticalHeader()->setDefaultSectionSize((int)(m_pTableView->verticalHeader()->minimumSectionSize() * 1.33));
