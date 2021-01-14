@@ -214,7 +214,9 @@ public:
     UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6, bool fAllowEmptyGuestIPs);
 
     /** Returns the list of port forwarding rules. */
-    const UIPortForwardingDataList rules() const;
+    UIPortForwardingDataList rules() const;
+    /** Defines the list of port forwarding @a newRules. */
+    void setRules(const UIPortForwardingDataList &newRules);
 
     /** Validates the table. */
     bool validate() const;
@@ -267,8 +269,8 @@ private:
     /** Prepares toolbar. */
     void prepareToolbar();
 
-    /** Holds the _initial_ list of Port Forwarding rules. */
-    const UIPortForwardingDataList &m_rules;
+    /** Holds the list of port forwarding rules. */
+    UIPortForwardingDataList  m_rules;
 
     /** Holds whether this table contains IPv6 rules, not IPv4. */
     bool  m_fIPv6               : 1;

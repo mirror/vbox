@@ -438,7 +438,9 @@ public:
     QITableViewRow *childItem(int iIndex) const;
 
     /** Returns the list of port forwarding rules. */
-    const UIPortForwardingDataList rules() const;
+    UIPortForwardingDataList rules() const;
+    /** Defines the list of port forwarding @a newRules. */
+    void setRules(const UIPortForwardingDataList &newRules);
     /** Adds empty port forwarding rule for certain @a index. */
     void addRule(const QModelIndex &index);
     /** Removes port forwarding rule with certain @a index. */
@@ -530,7 +532,7 @@ QITableViewRow *UIPortForwardingModel::childItem(int iIndex) const
     return m_dataList[iIndex];
 }
 
-const UIPortForwardingDataList UIPortForwardingModel::rules() const
+UIPortForwardingDataList UIPortForwardingModel::rules() const
 {
     /* Return the cached data: */
     UIPortForwardingDataList data;
@@ -539,6 +541,25 @@ const UIPortForwardingDataList UIPortForwardingModel::rules() const
                                          pRow->hostIp(), pRow->hostPort(),
                                          pRow->guestIp(), pRow->guestPort());
     return data;
+}
+
+void UIPortForwardingModel::setRules(const UIPortForwardingDataList &newRules)
+{
+    /* Clear old data first of all: */
+    beginRemoveRows(QModelIndex(), 0, m_dataList.size() - 1);
+    foreach (const UIPortForwardingRow *pRow, m_dataList)
+        delete pRow;
+    m_dataList.clear();
+    endRemoveRows();
+
+    /* Fetch incoming data: */
+    beginInsertRows(QModelIndex(), 0, newRules.size() - 1);
+    foreach (const UIDataPortForwardingRule &rule, newRules)
+        m_dataList << new UIPortForwardingRow(qobject_cast<QITableView*>(parent()),
+                                              rule.name, rule.protocol,
+                                              rule.hostIp, rule.hostPort,
+                                              rule.guestIp, rule.guestPort);
+    endInsertRows();
 }
 
 void UIPortForwardingModel::addRule(const QModelIndex &index)
@@ -768,9 +789,16 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
     prepare();
 }
 
-const UIPortForwardingDataList UIPortForwardingTable::rules() const
+UIPortForwardingDataList UIPortForwardingTable::rules() const
 {
     return m_pTableModel->rules();
+}
+
+void UIPortForwardingTable::setRules(const UIPortForwardingDataList &newRules)
+{
+    m_rules = newRules;
+    m_pTableModel->setRules(m_rules);
+    sltAdjustTable();
 }
 
 bool UIPortForwardingTable::validate() const
