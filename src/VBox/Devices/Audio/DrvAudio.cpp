@@ -3318,8 +3318,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         {
             pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesBufferSize;
             LogRel2(("Audio: Pre-buffering size bigger than buffer size for stream '%s', adjusting to %RU64ms (%RU32 frames)\n",
-                     pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cFramesPreBuffering, &pCfgAcq->Props), pCfgAcq->Backend.cFramesPreBuffering,
-                    pCfgAcq->Backend.cFramesPreBuffering));
+                     pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cFramesPreBuffering, &pCfgAcq->Props), pCfgAcq->Backend.cFramesPreBuffering));
         }
     }
     else if (pCfgReq->Backend.cFramesPreBuffering == 0) /* Was the pre-buffering requested as being disabeld? Tell the users. */
