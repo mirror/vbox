@@ -83,6 +83,8 @@ public:
     const UIUnattendedInstallData &unattendedInstallData() const;
     bool isUnattendedInstallEnabled() const;
     bool isGuestOSTypeWindows() const;
+    /** Increases the amoun of the left marign of @p pLayout. */
+    static void increaseLayoutLeftMargin(QLayout *pLayout, float mult = 2);
 
 protected:
 

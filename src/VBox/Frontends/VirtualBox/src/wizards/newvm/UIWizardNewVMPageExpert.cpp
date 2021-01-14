@@ -49,17 +49,19 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pToolBox = new QToolBox;
-
-        m_pToolBox->insertItem(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(WizardMode_Expert, false), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_Disk, createDiskWidgets(), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_UsernameHostname, createUserNameHostNameWidgets(), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_GAInstall, createGAInstallWidgets(), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_ProductKey, createProductKeyWidgets(), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(/* fIncreaseLeftIndent */ true,
+                                                                                         /* fCreateLabels */ false), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_Disk, createDiskWidgets(/* fIncreaseLeftIndent */ true), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_Hardware, createHardwareWidgets(/* fIncreaseLeftIndent */ true), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_UsernameHostname, createUserNameHostNameWidgets(/* fIncreaseLeftIndent */ true), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_GAInstall, createGAInstallWidgets(/* fIncreaseLeftIndent */ true), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_ProductKey, createProductKeyWidgets(/* fIncreaseLeftIndent */ true), "");
         pMainLayout->addWidget(m_pToolBox);
+
         pMainLayout->addStretch();
         updateVirtualDiskSource();
     }
+
 
     createConnections();
 

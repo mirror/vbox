@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QAbstractButton>
+#include <QLayout>
 
 /* GUI includes: */
 #include "UICommon.h"
@@ -561,4 +562,15 @@ bool UIWizardNewVM::isUnattendedInstallEnabled() const
 bool UIWizardNewVM::isGuestOSTypeWindows() const
 {
     return getStringFieldValue("guestOSFamiyId").contains("windows", Qt::CaseInsensitive);
+}
+
+void UIWizardNewVM::increaseLayoutLeftMargin(QLayout *pLayout, float mult /* = 2 */)
+{
+    if (!pLayout)
+        return;
+    QMargins margins = pLayout->contentsMargins();
+    pLayout->setContentsMargins(mult * margins.left(),
+                                margins.top(),
+                                margins.right(),
+                                margins.bottom());
 }

@@ -66,9 +66,9 @@ protected:
         ToolBoxItems_ProductKey
     };
 
-    QWidget *createUserNameHostNameWidgets();
-    QWidget *createGAInstallWidgets();
-    QWidget *createProductKeyWidgets();
+    QWidget *createUserNameHostNameWidgets(bool fIncreaseLeftIndent);
+    QWidget *createGAInstallWidgets(bool fIncreaseLeftIndent);
+    QWidget *createProductKeyWidgets(bool fIncreaseLeftIndent);
 
     bool checkGAISOFile() const;
     void markWidgets() const;

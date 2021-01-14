@@ -285,11 +285,14 @@ QFrame *UIWizardNewVMPage1::horizontalLine()
     return line;
 }
 
-QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets(WizardMode mode, bool fCreateLabels /* = true */)
+QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets(bool fIncreaseLeftIndent, bool fCreateLabels /* = true */)
 {
-    Q_UNUSED(mode);
+    Q_UNUSED(fIncreaseLeftIndent);
     QWidget *pContainer = new QWidget;
     QGridLayout *pLayout = new QGridLayout(pContainer);
+    if (fIncreaseLeftIndent)
+        UIWizardNewVM::increaseLayoutLeftMargin(pLayout);
+
     int iRow = 0;
     if (fCreateLabels)
     {
@@ -519,7 +522,7 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
 void UIWizardNewVMPageBasic1::prepare()
 {
     QVBoxLayout *pPageLayout = new QVBoxLayout(this);
-    pPageLayout->addWidget(createNameOSTypeWidgets(WizardMode_Basic, false));
+    pPageLayout->addWidget(createNameOSTypeWidgets(/* fIncreaseLeftIndent */ false, /* fCreateLabels */false));
     pPageLayout->addStretch();
 
     createConnections();

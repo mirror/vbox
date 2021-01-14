@@ -77,7 +77,7 @@ protected:
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
     void composeMachineFilePath();
 
-    QWidget *createNameOSTypeWidgets(WizardMode mode, bool fCreateLabels = true);
+    QWidget *createNameOSTypeWidgets(bool fIncreaseLeftIndent, bool fCreateLabels = true);
     int createNameOSTypeWidgets(QGridLayout *pLayout, bool fCreateLabels = true);
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     /** Colors the widgets red if they cause isComplete to fail. */

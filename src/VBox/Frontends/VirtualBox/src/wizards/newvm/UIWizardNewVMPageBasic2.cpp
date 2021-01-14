@@ -117,26 +117,35 @@ QString UIWizardNewVMPage2::productKey() const
     return m_pProductKeyLineEdit->text();
 }
 
-QWidget *UIWizardNewVMPage2::createUserNameHostNameWidgets()
+QWidget *UIWizardNewVMPage2::createUserNameHostNameWidgets(bool fIncreaseLeftIndent)
 {
     QWidget *pContainer = new QWidget;
     QGridLayout *pGridLayout = new QGridLayout(pContainer);
-    pGridLayout->setContentsMargins(0, 0, 0, 0);
+
+    if (fIncreaseLeftIndent)
+        UIWizardNewVM::increaseLayoutLeftMargin(pGridLayout);
 
     m_pUserNamePasswordEditor = new UIUserNamePasswordEditor;
-    pGridLayout->addWidget(m_pUserNamePasswordEditor, 0, 0, 3, 4);
+    pGridLayout->addWidget(m_pUserNamePasswordEditor, 0, 0, 1, 4);
+
     m_pHostnameLabel = new QLabel;
+    m_pHostnameLabel->setAlignment(Qt::AlignRight);
+    m_pHostnameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+
     m_pHostnameLineEdit = new QLineEdit;
-    pGridLayout->addWidget(m_pHostnameLabel, 3, 0, 1, 1, Qt::AlignRight);
-    pGridLayout->addWidget(m_pHostnameLineEdit, 3, 1, 1, 3);
+
+    pGridLayout->addWidget(m_pHostnameLabel,    1, 0, 1, 1);
+    pGridLayout->addWidget(m_pHostnameLineEdit, 1, 1, 1, 3);
+
     return pContainer;
 }
 
-QWidget *UIWizardNewVMPage2::createGAInstallWidgets()
+QWidget *UIWizardNewVMPage2::createGAInstallWidgets(bool fIncreaseLeftIndent)
 {
     QWidget *pContainer = new QWidget;
     QGridLayout *pContainerLayout = new QGridLayout(pContainer);
-    pContainerLayout->setContentsMargins(0, 0, 0, 0);
+    if (fIncreaseLeftIndent)
+        UIWizardNewVM::increaseLayoutLeftMargin(pContainerLayout);
 
     m_pInstallGACheckBox = new QCheckBox;
     m_pGAISOPathLabel = new QLabel;
@@ -159,16 +168,21 @@ QWidget *UIWizardNewVMPage2::createGAInstallWidgets()
     return pContainer;
 }
 
-QWidget *UIWizardNewVMPage2::createProductKeyWidgets()
+QWidget *UIWizardNewVMPage2::createProductKeyWidgets(bool fIncreaseLeftIndent)
 {
     QWidget *pContainer = new QWidget;
     QGridLayout *pGridLayout = new QGridLayout(pContainer);
-    pGridLayout->setContentsMargins(0, 0, 0, 0);
+    if (fIncreaseLeftIndent)
+        UIWizardNewVM::increaseLayoutLeftMargin(pGridLayout);
 
     m_pProductKeyLabel = new QLabel;
+    m_pProductKeyLabel->setAlignment(Qt::AlignRight);
+
+    m_pProductKeyLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+
     m_pProductKeyLineEdit = new QLineEdit;
     m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
-    pGridLayout->addWidget(m_pProductKeyLabel, 0, 0, 1, 1, Qt::AlignRight);
+    pGridLayout->addWidget(m_pProductKeyLabel, 0, 0, 1, 1);
     pGridLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 3);
     return pContainer;
 }
@@ -225,10 +239,9 @@ void UIWizardNewVMPageBasic2::prepare()
         pMainLayout->addStretch();
     }
 
-    m_pToolBox->insertItem(ToolBoxItems_UserNameHostname, createUserNameHostNameWidgets(), QString());
-    m_pToolBox->insertItem(ToolBoxItems_GAInstall, createGAInstallWidgets(), QString());
-    m_pToolBox->insertItem(ToolBoxItems_ProductKey, createProductKeyWidgets(), QString());
-    m_pToolBox->setStyleSheet("QToolBox::tab:selected { font: bold; }");
+    m_pToolBox->insertItem(ToolBoxItems_UserNameHostname, createUserNameHostNameWidgets(/* fIncreaseLeftIndent */ true), QString());
+    m_pToolBox->insertItem(ToolBoxItems_GAInstall, createGAInstallWidgets(/* fIncreaseLeftIndent */ true), QString());
+    m_pToolBox->insertItem(ToolBoxItems_ProductKey, createProductKeyWidgets(/* fIncreaseLeftIndent */ true), QString());
 
     registerField("userName", this, "userName");
     registerField("password", this, "password");
