@@ -279,6 +279,7 @@ template<> QString toString(const KPointingHIDType &type)
 {
     switch (type)
     {
+        case KPointingHIDType_None:          return QApplication::translate("UICommon", "None", "PointingHIDType");
         case KPointingHIDType_PS2Mouse:      return QApplication::translate("UICommon", "PS/2 Mouse", "PointingHIDType");
         case KPointingHIDType_USBMouse:      return QApplication::translate("UICommon", "USB Mouse", "PointingHIDType");
         case KPointingHIDType_USBTablet:     return QApplication::translate("UICommon", "USB Tablet", "PointingHIDType");
