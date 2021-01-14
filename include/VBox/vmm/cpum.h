@@ -31,7 +31,7 @@
 
 #include <iprt/x86.h>
 #include <VBox/types.h>
-#ifdef RT_ARCH_AMD64
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
 # include <VBox/vmm/cpumctx.h>
 #endif
 #include <VBox/vmm/stam.h>

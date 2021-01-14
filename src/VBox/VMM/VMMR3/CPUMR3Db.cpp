@@ -26,7 +26,9 @@
 #include <VBox/vmm/mm.h>
 
 #include <VBox/err.h>
-#include <iprt/asm-amd64-x86.h>
+#if !defined(RT_ARCH_ARM64)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
@@ -894,6 +896,7 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
     int                rc;
 
     if (!strcmp(pszName, "host"))
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     {
         /*
          * Create a CPU database entry for the host CPU.  This means getting
@@ -990,6 +993,9 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
         }
     }
     else
+#else
+        pszName = g_apCpumDbEntries[0]->pszName; /* Just pick the first entry for non-x86 hosts. */
+#endif
     {
         /*
          * We're supposed to be emulating a specific CPU that is included in
