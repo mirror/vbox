@@ -408,8 +408,17 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
         return;
     }
 
+    /* Get extension pack manager: */
+    CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
+    /* Return if extension pack manager is NOT available: */
+    if (extPackManager.isNull())
+    {
+        emit sigStepComplete();
+        return;
+    }
+
     /* Get extension pack: */
-    CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+    CExtPack extPack = extPackManager.Find(GUI_ExtPackName);
     /* Return if extension pack is NOT installed: */
     if (extPack.isNull())
     {

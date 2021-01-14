@@ -707,18 +707,19 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         UIValidationMessage message;
         message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(1));
 
-#ifdef VBOX_WITH_EXTPACK
         /* VRDE Extension Pack presence test: */
-        CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
-        if (m_pCheckboxRemoteDisplay->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
+        if (m_pCheckboxRemoteDisplay->isChecked())
         {
-            message.second << tr("Remote Display is currently enabled for this virtual machine. "
-                                 "However, this requires the <i>%1</i> to be installed. "
-                                 "Please install the Extension Pack from the VirtualBox download site as "
-                                 "otherwise your VM will be started with Remote Display disabled.")
-                                 .arg(GUI_ExtPackName);
+            CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
+            if (!extPackManager.isNull() && !extPackManager.IsExtPackUsable(GUI_ExtPackName))
+            {
+                message.second << tr("Remote Display is currently enabled for this virtual machine. "
+                                    "However, this requires the <i>%1</i> to be installed. "
+                                    "Please install the Extension Pack from the VirtualBox download site as "
+                                    "otherwise your VM will be started with Remote Display disabled.")
+                                    .arg(GUI_ExtPackName);
+            }
         }
-#endif /* VBOX_WITH_EXTPACK */
 
         /* Check VRDE server port: */
         if (m_pEditorRemoteDisplayPort->text().trimmed().isEmpty())

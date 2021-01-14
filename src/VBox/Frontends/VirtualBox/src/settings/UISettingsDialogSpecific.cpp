@@ -54,6 +54,7 @@
 #include "UIMachineSettingsUSB.h"
 
 /* COM includes: */
+#include "CExtPackManager.h"
 #include "CGraphicsAdapter.h"
 #include "CUSBController.h"
 
@@ -324,6 +325,8 @@ bool UISettingsDialogGlobal::isPageAvailable(int iPageId) const
 #endif
             break;
         }
+        case GlobalSettingsPageType_Extensions:
+            return !uiCommon().virtualBox().GetExtensionPackManager().isNull();
         default:
             break;
     }

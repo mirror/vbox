@@ -523,25 +523,25 @@ bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
     /* Pass by default: */
     bool fPass = true;
 
-#ifdef VBOX_WITH_EXTPACK
     /* USB 2.0/3.0 Extension Pack presence test: */
-    const CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
     if (   m_pCheckBoxUSB->isChecked()
-        && (m_pRadioButtonUSB2->isChecked() || m_pRadioButtonUSB3->isChecked())
-        && (extPack.isNull() || !extPack.GetUsable()))
+        && (m_pRadioButtonUSB2->isChecked() || m_pRadioButtonUSB3->isChecked()))
     {
-        /* Prepare message: */
-        UIValidationMessage message;
-        message.second << tr("USB 2.0/3.0 is currently enabled for this virtual machine. "
-                             "However, this requires the <i>%1</i> to be installed. "
-                             "Please install the Extension Pack from the VirtualBox download site "
-                             "or disable USB 2.0/3.0 to be able to start the machine.")
-                             .arg(GUI_ExtPackName);
-        /* Serialize message: */
-        if (!message.second.isEmpty())
-            messages << message;
+        CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
+        if (!extPackManager.isNull() && !extPackManager.IsExtPackUsable(GUI_ExtPackName))
+        {
+            /* Prepare message: */
+            UIValidationMessage message;
+            message.second << tr("USB 2.0/3.0 is currently enabled for this virtual machine. "
+                                "However, this requires the <i>%1</i> to be installed. "
+                                "Please install the Extension Pack from the VirtualBox download site "
+                                "or disable USB 2.0/3.0 to be able to start the machine.")
+                                .arg(GUI_ExtPackName);
+            /* Serialize message: */
+            if (!message.second.isEmpty())
+                messages << message;
+        }
     }
-#endif /* VBOX_WITH_EXTPACK */
 
     /* Return result: */
     return fPass;

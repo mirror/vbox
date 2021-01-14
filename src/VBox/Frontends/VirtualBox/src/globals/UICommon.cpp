@@ -3656,19 +3656,22 @@ QString UICommon::toolTip(const CHostVideoInputDevice &comWebcam)
 void UICommon::doExtPackInstallation(QString const &strFilePath, QString const &strDigest,
                                        QWidget *pParent, QString *pstrExtPackName) const
 {
+    /* If the extension pack manager isn't available, skip any attempts to install: */
+    CExtPackManager extPackManager = virtualBox().GetExtensionPackManager();
+    if (extPackManager.isNull())
+        return;
     /* Open the extpack tarball via IExtPackManager: */
-    CExtPackManager comManager = virtualBox().GetExtensionPackManager();
     CExtPackFile comExtPackFile;
     if (strDigest.isEmpty())
-        comExtPackFile = comManager.OpenExtPackFile(strFilePath);
+        comExtPackFile = extPackManager.OpenExtPackFile(strFilePath);
     else
     {
         QString strFileAndHash = QString("%1::SHA-256=%2").arg(strFilePath).arg(strDigest);
-        comExtPackFile = comManager.OpenExtPackFile(strFileAndHash);
+        comExtPackFile = extPackManager.OpenExtPackFile(strFileAndHash);
     }
-    if (!comManager.isOk())
+    if (!extPackManager.isOk())
     {
-        msgCenter().cannotOpenExtPack(strFilePath, comManager, pParent);
+        msgCenter().cannotOpenExtPack(strFilePath, extPackManager, pParent);
         return;
     }
 
@@ -3684,7 +3687,7 @@ void UICommon::doExtPackInstallation(QString const &strFilePath, QString const &
 
     /* Check if there is a version of the extension pack already
      * installed on the system and let the user decide what to do about it. */
-    CExtPack comExtPackCur = comManager.Find(strPackName);
+    CExtPack comExtPackCur = extPackManager.Find(strPackName);
     bool fReplaceIt = comExtPackCur.isOk();
     if (fReplaceIt)
     {
