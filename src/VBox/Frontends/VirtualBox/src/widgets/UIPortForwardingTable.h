@@ -200,6 +200,11 @@ class SHARED_LIBRARY_STUFF UIPortForwardingTable : public QIWithRetranslateUI<QW
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about table data changed. */
+    void sigDataChanged();
+
 public:
 
     /** Constructs Port Forwarding table.
@@ -238,7 +243,7 @@ private slots:
     void sltRemoveRule();
 
     /** Marks table data as changed. */
-    void sltTableDataChanged() { m_fTableDataChanged = true; }
+    void sltTableDataChanged();
 
     /** Handles current item change. */
     void sltCurrentChanged();

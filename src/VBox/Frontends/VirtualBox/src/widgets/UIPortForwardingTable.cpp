@@ -906,6 +906,12 @@ void UIPortForwardingTable::sltRemoveRule()
     sltAdjustTable();
 }
 
+void UIPortForwardingTable::sltTableDataChanged()
+{
+    m_fTableDataChanged = true;
+    emit sigDataChanged();
+}
+
 void UIPortForwardingTable::sltCurrentChanged()
 {
     bool fTableFocused = m_pTableView->hasFocus();
