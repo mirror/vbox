@@ -504,6 +504,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         { "--privateip",      'P', RTGETOPT_REQ_STRING },
         { "--launch",         'l', RTGETOPT_REQ_STRING },
         { "--public-ssh-key", 'k', RTGETOPT_REQ_STRING },
+        { "--cloud-init-script-path", 'c', RTGETOPT_REQ_STRING },
         { "help",             1001, RTGETOPT_REQ_NOTHING },
         { "--help",           1002, RTGETOPT_REQ_NOTHING }
     };
@@ -589,6 +590,10 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
             case 'k':
                 strPublicSSHKey = ValueUnion.psz;
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicSSHKey,
+                                     Bstr(ValueUnion.psz).raw(), NULL);
+                break;
+            case 'c':
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudInitScriptPath,
                                      Bstr(ValueUnion.psz).raw(), NULL);
                 break;
             case 1001:
@@ -774,7 +779,7 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
         Utf8Str strNotFound;
     };
 
-    const size_t vsdHReadableArraySize = 12;//the number of items in the vsdHReadableArray
+    const size_t vsdHReadableArraySize = 13;//the number of items in the vsdHReadableArray
     vsdHReadable vsdHReadableArray[vsdHReadableArraySize] = {
         {VirtualSystemDescriptionType_CloudDomain, "Availability domain = %ls\n", "Availability domain wasn't found\n"},
         {VirtualSystemDescriptionType_Name, "Instance displayed name = %ls\n", "Instance displayed name wasn't found\n"},
@@ -789,7 +794,8 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
         {VirtualSystemDescriptionType_Memory, "RAM = %ls MB\n", "Value for RAM wasn't found\n"},
         {VirtualSystemDescriptionType_CPU, "CPUs = %ls\n", "Numbers of CPUs weren't found\n"},
         {VirtualSystemDescriptionType_CloudPublicIP, "Instance public IP = %ls\n", "Public IP wasn't found\n"},
-        {VirtualSystemDescriptionType_Miscellaneous, "%ls\n", "Free-form tags or metadata weren't found\n"}
+        {VirtualSystemDescriptionType_Miscellaneous, "%ls\n", "Free-form tags or metadata weren't found\n"},
+        {VirtualSystemDescriptionType_CloudInitScriptPath, "%ls\n", "Cloud-init script wasn't found\n"}
     };
 
     com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
