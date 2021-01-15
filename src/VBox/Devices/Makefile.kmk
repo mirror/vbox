@@ -1116,10 +1116,16 @@ endif
  if defined(VBOX_WITH_EFI) && !defined(VBOX_WITH_EFIFW_PACKING)
   VBoxDD_DEFS           += VBOX_WITH_EFI_IN_DD2
   VBoxDD2_DEFS          += VBOX_WITH_EFI
-  VBoxDD2_SOURCES       += \
-  	EFI/DevEFI-binaries.asm
+  VBoxDD2_SOURCES.x86   += EFI/DevEFI-binaries.asm
+  VBoxDD2_SOURCES.amd64 += EFI/DevEFI-binaries.asm
   EFI/DevEFI-binaries.asm_ASINCS = $(PATH_STAGE)/$(INST_BIN)
   EFI/DevEFI-binaries.asm_DEPS   = \
+  	$(PATH_STAGE)/$(INST_BIN)VBoxEFI32.fd \
+  	$(PATH_STAGE)/$(INST_BIN)VBoxEFI64.fd
+
+  VBoxDD2_SOURCES.arm64 += EFI/DevEFI-binaries.S
+  EFI/DevEFI-binaries.S_ASINCS = $(PATH_STAGE)/$(INST_BIN)
+  EFI/DevEFI-binaries.S_DEPS   = \
   	$(PATH_STAGE)/$(INST_BIN)VBoxEFI32.fd \
   	$(PATH_STAGE)/$(INST_BIN)VBoxEFI64.fd
  endif
