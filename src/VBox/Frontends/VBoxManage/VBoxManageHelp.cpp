@@ -825,6 +825,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                                    [--cloudocisubnet <OCI subnet id>]\n"
                      "                                    [--cloudpublicip <true/false>]\n"
                      "                                    [--cloudprivateip <ip>]\n"
+                     "                                    [--cloudinitscriptpath <script path>]\n"
                      "\n", SEP);
 
     if (enmCommand == USAGE_STARTVM || enmCommand == USAGE_S_ALL)

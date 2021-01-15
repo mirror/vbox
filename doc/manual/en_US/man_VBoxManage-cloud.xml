@@ -72,6 +72,7 @@
        <arg rep="norepeat">--privateip=<replaceable>IP address</replaceable></arg>
        <arg rep="repeat">--public-ssh-key=<replaceable>key string</replaceable></arg>
        <arg rep="norepeat">--launch-mode=<replaceable>NATIVE/EMULATED/PARAVIRTUALIZED</replaceable></arg>
+       <arg rep="norepeat">--cloud-init-script-path=<replaceable>path to a script</replaceable></arg>
      </cmdsynopsis>
      <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-info" sepchar=" ">
        <command moreinfo="none">VBoxManage cloud</command>
@@ -332,6 +333,9 @@
         </varlistentry>
         <varlistentry>
           <term><option>--launch-mode</option></term><listitem><para>The most known values here may be EMULATED, NATIVE, PARAVIRTUALIZED. </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--cloud-init-script-path</option></term><listitem><para>Absolute path to the user cloud-init script.</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
