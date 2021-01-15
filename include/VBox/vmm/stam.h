@@ -36,6 +36,9 @@
 #  include <iprt/sanitized/intrin.h>
 # endif
 #endif
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+# include <iprt/asm-arm.h>
+#endif
 
 RT_C_DECLS_BEGIN
 
@@ -54,7 +57,9 @@ RT_C_DECLS_BEGIN
  *
  * @param   u64     The 64-bit variable which the timestamp shall be saved in.
  */
-#ifdef __GNUC__
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  define STAM_GET_TS(u64) do { (u64) = ASMReadTSC(); } while (0)
+#elif defined(__GNUC__)
 # if defined(RT_ARCH_X86)
    /* This produces optimal assembler code for x86 but does not work for AMD64 ('A' means 'either rax or rdx') */
 #  define STAM_GET_TS(u64) __asm__ __volatile__ ("rdtsc\n\t" : "=A" (u64))
