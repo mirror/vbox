@@ -31,11 +31,11 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#ifdef IN_RING0
+#if defined(IN_RING0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 # include <iprt/asm-amd64-x86.h>
 # include <iprt/once.h>
 #endif
-#if defined(RT_OS_DARWIN) && defined(IN_RING3)
+#if defined(RT_OS_DARWIN) && defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE) /* drags in bad PAGE_SIZE */
 # include "IOKit/IOKitLib.h"
 #endif
 
@@ -351,7 +351,8 @@ static const DEVSMCKEYDESC g_aSmcKeys[] =
 /** @todo MSSP, NTOK and more. */
 };
 
-#ifdef IN_RING0
+#if defined(IN_RING0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+
 /** Do once for the SMC ring-0 static data (g_abOsk0And1, g_fHaveOsk). */
 static RTONCE   g_SmcR0Once = RTONCE_INITIALIZER;
 /** Indicates whether we've successfully queried the OSK* keys. */
@@ -502,7 +503,7 @@ static DECLCALLBACK(int) devR0SmcReqHandler(PPDMDEVINS pDevIns, uint32_t uReq, u
     return rc;
 }
 
-#endif /* IN_RING0 */
+#endif /* IN_RING0 && (AMD64 || X86) */
 
 #if defined(IN_RING3) && defined(RT_OS_DARWIN)
 
@@ -1568,7 +1569,11 @@ const PDMDEVREG g_DeviceSmc =
     /* .pfnConstruct = */           smcRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     /* .pfnRequest = */             devR0SmcReqHandler,
+# else
+    /* .pfnRequest = */             NULL,
+# endif
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
