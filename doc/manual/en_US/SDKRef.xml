@@ -1580,8 +1580,8 @@ for m in mgr.getArray(vbox, 'machines'):
         <screen>    # cd VBOX_INSTALL_PATH/sdk/installer
     # PYTHON vboxapisetup.py install</screen>
 
-           <note>On Windows hosts, a Python distribution along with the
-             win32api bindings package need to be installed as a prerequisite.</note>
+           <note> <para>On Windows hosts, a Python distribution along with the
+             win32api bindings package need to be installed as a prerequisite. </para></note>
         </sect3>
 
       </sect2>
