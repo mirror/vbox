@@ -33,6 +33,7 @@
 class QAbstractButton;
 class QCheckBox;
 class QLabel;
+class QLineEdit;
 class QRadioButton;
 class QIDialogButtonBox;
 class QILineEdit;
