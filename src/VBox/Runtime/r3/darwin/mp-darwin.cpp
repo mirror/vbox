@@ -28,7 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP RTLOGGROUP_SYSTEM
+#define LOG_GROUP RTLOGGROUP_DEFAULT /*RTLOGGROUP_SYSTEM*/
 #include <iprt/types.h>
 
 #include <unistd.h>
@@ -39,9 +39,23 @@
 #include <errno.h>
 #include <mach/mach.h>
 
+#include <CoreFoundation/CFBase.h>
+#include <IOKit/IOKitLib.h>
+/*#include <IOKit/IOBSD.h>
+#include <IOKit/storage/IOStorageDeviceCharacteristics.h>
+#include <IOKit/storage/IOBlockStorageDevice.h>
+#include <IOKit/storage/IOMedia.h>
+#include <IOKit/storage/IOCDMedia.h>
+#include <IOKit/scsi/SCSITaskLib.h>
+#include <SystemConfiguration/SystemConfiguration.h>
+#include <mach/mach_error.h>
+#include <sys/param.h>
+#include <paths.h>*/
+
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 #include <iprt/assert.h>
+#include <iprt/log.h>
 #include <iprt/string.h>
 
 
@@ -245,6 +259,33 @@ RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
 }
 
 
+/**
+ * Worker for RTMpGetMaxFrequency.
+ * @returns Non-zero frequency in MHz on success, 0 on failure.
+ */
+static uint32_t rtMpDarwinGetMaxFrequencyFromIOService(io_service_t hCpu)
+{
+    io_struct_inband_t  Buf = {0};
+    uint32_t            cbActual = sizeof(Buf);
+    kern_return_t krc = IORegistryEntryGetProperty(hCpu, "clock-frequency", Buf, &cbActual);
+    Log2(("rtMpDarwinGetMaxFrequencyFromIOService: krc=%d; cbActual=%#x %.16Rhxs\n", krc, cbActual, Buf));
+    if (krc == kIOReturnSuccess)
+    {
+        switch (cbActual)
+        {
+            case sizeof(uint32_t):
+                return RT_BE2H_U32(*(uint32_t *)Buf) / 1000;
+            case sizeof(uint64_t):
+                AssertFailed();
+                return RT_BE2H_U64(*(uint64_t *)Buf) / 1000;
+            default:
+                AssertFailed();
+        }
+    }
+    return 0;
+}
+
+
 RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
 {
     if (!RTMpIsCpuOnline(idCpu))
@@ -270,6 +311,80 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
     rc = sysctl(aiMib, RT_ELEMENTS(aiMib), &cCpus, &cb, NULL, 0);
     if (rc != -1 && cCpus >= 1)
         return cCpus;
+
+    /*
+     * The above does not work for Apple M1 / xnu 20.1.0, so go look at the I/O registry instead.
+     *
+     * A sample ARM layout:
+     *  | +-o cpu1@1  <class IOPlatformDevice, id 0x100000110, registered, matched, active, busy 0 (182 ms), retain 8>
+     *  | | +-o AppleARMCPU  <class AppleARMCPU, id 0x10000021b, registered, matched, active, busy 0 (1 ms), retain 6>
+     *  | +-o cpu2@2  <class IOPlatformDevice, id 0x100000111, registered, matched, active, busy 0 (175 ms), retain 8>
+     *  | | +-o AppleARMCPU  <class AppleARMCPU, id 0x10000021c, registered, matched, active, busy 0 (3 ms), retain 6>
+     *  | +-o cpu3@3  <class IOPlatformDevice, id 0x100000112, registered, matched, active, busy 0 (171 ms), retain 8>
+     *  | | +-o AppleARMCPU  <class AppleARMCPU, id 0x10000021d, registered, matched, active, busy 0 (1 ms), retain 6>
+     *  | +-o cpu4@100  <class IOPlatformDevice, id 0x100000113, registered, matched, active, busy 0 (171 ms), retain 8>
+     *  | | +-o AppleARMCPU  <class AppleARMCPU, id 0x10000021e, registered, matched, active, busy 0 (1 ms), retain 6>
+     *  | +-o cpu5@101  <class IOPlatformDevice, id 0x100000114, registered, matched, active, busy 0 (179 ms), retain 8>
+     *  | | +-o AppleARMCPU  <class AppleARMCPU, id 0x10000021f, registered, matched, active, busy 0 (9 ms), retain 6>
+     *  | +-o cpu6@102  <class IOPlatformDevice, id 0x100000115, registered, matched, active, busy 0 (172 ms), retain 8>
+     *  | | +-o AppleARMCPU  <class AppleARMCPU, id 0x100000220, registered, matched, active, busy 0 (1 ms), retain 6>
+     *  | +-o cpu7@103  <class IOPlatformDevice, id 0x100000116, registered, matched, active, busy 0 (175 ms), retain 8>
+     *  | | +-o AppleARMCPU  <class AppleARMCPU, id 0x100000221, registered, matched, active, busy 0 (5 ms), retain 6>
+     *  | +-o cpus  <class IOPlatformDevice, id 0x10000010e, registered, matched, active, busy 0 (12 ms), retain 15>
+     *
+     */
+
+    /* Assume names on the form "cpu<N>" are only for CPUs. */
+    char szCpuName[32];
+    RTStrPrintf(szCpuName, sizeof(szCpuName), "cpu%u", idCpu);
+    CFMutableDictionaryRef hMatchingDict = IOServiceNameMatching(szCpuName);
+    AssertReturn(hMatchingDict, 0);
+
+    /* Just get the first one. */
+    io_object_t hCpu = IOServiceGetMatchingService(kIOMasterPortDefault, hMatchingDict);
+    if (hCpu != 0)
+    {
+        uint32_t uCpuFrequency = rtMpDarwinGetMaxFrequencyFromIOService(hCpu);
+        IOObjectRelease(hCpu);
+        if (uCpuFrequency)
+            return uCpuFrequency;
+    }
+
+#if 1 /* Just in case... */
+    /* Create a matching dictionary for searching for CPU services in the IOKit. */
+# if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    hMatchingDict = IOServiceMatching("AppleARMCPU");
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    hMatchingDict = IOServiceMatching("AppleACPICPU");
+# else
+#  error "Port me!"
+# endif
+    AssertReturn(hMatchingDict, 0);
+
+    /* Perform the search and get a collection of Apple CPU services. */
+    io_iterator_t hCpuServices = IO_OBJECT_NULL;
+    IOReturn irc = IOServiceGetMatchingServices(kIOMasterPortDefault, hMatchingDict, &hCpuServices);
+    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%d\n", irc), 0);
+    hMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
+
+    /* Enumerate the matching services. */
+    uint32_t    uCpuFrequency = 0;
+    io_object_t hCurCpu;
+    while (uCpuFrequency == 0 && (hCurCpu = IOIteratorNext(hCpuServices)) != IO_OBJECT_NULL)
+    {
+        io_object_t hParent = (io_object_t)0;
+        irc = IORegistryEntryGetParentEntry(hCurCpu, kIOServicePlane, &hParent);
+        if (irc == kIOReturnSuccess && hParent)
+        {
+            uCpuFrequency = rtMpDarwinGetMaxFrequencyFromIOService(hParent);
+            IOObjectRelease(hParent);
+        }
+        IOObjectRelease(hCurCpu);
+    }
+    IOObjectRelease(hCpuServices);
+#endif
+
     AssertFailed();
     return 0;
 }
+
