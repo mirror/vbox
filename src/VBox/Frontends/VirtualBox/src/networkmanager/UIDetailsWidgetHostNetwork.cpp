@@ -55,7 +55,6 @@ UIDetailsWidgetHostNetwork::UIDetailsWidgetHostNetwork(EmbedTo enmEmbedding, QWi
     , m_pLabelDHCPUpperAddress(0), m_pEditorDHCPUpperAddress(0), m_pErrorPaneDHCPUpperAddress(0)
     , m_pButtonBoxServer(0)
 {
-    /* Prepare: */
     prepare();
 }
 
@@ -272,11 +271,11 @@ void UIDetailsWidgetHostNetwork::prepare()
 void UIDetailsWidgetHostNetwork::prepareThis()
 {
     /* Create layout: */
-    QVBoxLayout *pLayout = new QVBoxLayout(this);
-    if (pLayout)
+    new QVBoxLayout(this);
+    if (layout())
     {
         /* Configure layout: */
-        pLayout->setContentsMargins(0, 0, 0, 0);
+        layout()->setContentsMargins(0, 0, 0, 0);
 
         /* Prepare tab-widget: */
         prepareTabWidget();
@@ -286,7 +285,7 @@ void UIDetailsWidgetHostNetwork::prepareThis()
 void UIDetailsWidgetHostNetwork::prepareTabWidget()
 {
     /* Create tab-widget: */
-    m_pTabWidget = new QITabWidget;
+    m_pTabWidget = new QITabWidget(this);
     if (m_pTabWidget)
     {
         /* Prepare 'Interface' tab: */
@@ -301,16 +300,15 @@ void UIDetailsWidgetHostNetwork::prepareTabWidget()
 
 void UIDetailsWidgetHostNetwork::prepareTabInterface()
 {
-    /* Create 'Interface' tab: */
-    QWidget *pTabInterface = new QWidget;
+    /* Prepare 'Interface' tab: */
+    QWidget *pTabInterface = new QWidget(m_pTabWidget);
     if (pTabInterface)
     {
-        /* Create 'Interface' layout: */
+        /* Prepare 'Interface' layout: */
         QGridLayout *pLayoutInterface = new QGridLayout(pTabInterface);
         if (pLayoutInterface)
         {
 #ifdef VBOX_WS_MAC
-            /* Configure layout: */
             pLayoutInterface->setSpacing(10);
             pLayoutInterface->setContentsMargins(10, 10, 10, 10);
 #endif
@@ -318,242 +316,219 @@ void UIDetailsWidgetHostNetwork::prepareTabInterface()
             /* Get the required icon metric: */
             const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
 
-            /* Create automatic interface configuration layout: */
+            /* Prepare automatic interface configuration layout: */
             QHBoxLayout *pLayoutAutomatic = new QHBoxLayout;
             if (pLayoutAutomatic)
             {
-                /* Configure layout: */
                 pLayoutAutomatic->setContentsMargins(0, 0, 0, 0);
 
-                /* Create automatic interface configuration radio-button: */
-                m_pButtonAutomatic = new QRadioButton;
+                /* Prepare automatic interface configuration radio-button: */
+                m_pButtonAutomatic = new QRadioButton(pTabInterface);
                 if (m_pButtonAutomatic)
                 {
-                    /* Configure radio-button: */
                     connect(m_pButtonAutomatic, &QRadioButton::toggled,
                             this, &UIDetailsWidgetHostNetwork::sltToggledButtonAutomatic);
-                    /* Add into layout: */
                     pLayoutAutomatic->addWidget(m_pButtonAutomatic);
                 }
-                /* Create automatic interface configuration error pane: */
-                m_pErrorPaneAutomatic = new QLabel;
+                /* Prepare automatic interface configuration error pane: */
+                m_pErrorPaneAutomatic = new QLabel(pTabInterface);
                 if (m_pErrorPaneAutomatic)
                 {
-                    /* Configure label: */
                     m_pErrorPaneAutomatic->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
                     m_pErrorPaneAutomatic->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
                     m_pErrorPaneAutomatic->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                      .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
+
                     pLayoutAutomatic->addWidget(m_pErrorPaneAutomatic);
                 }
-                /* Add into layout: */
+
                 pLayoutInterface->addLayout(pLayoutAutomatic, 0, 0, 1, 3);
 #ifdef VBOX_WS_MAC
                 pLayoutInterface->setRowMinimumHeight(0, 22);
 #endif
             }
 
-            /* Create manual interface configuration layout: */
+            /* Prepare manual interface configuration layout: */
             QHBoxLayout *pLayoutManual = new QHBoxLayout;
             if (pLayoutManual)
             {
-                /* Configure layout: */
                 pLayoutManual->setContentsMargins(0, 0, 0, 0);
-                /* Create manual interface configuration radio-button: */
-                m_pButtonManual = new QRadioButton;
+
+                /* Prepare manual interface configuration radio-button: */
+                m_pButtonManual = new QRadioButton(pTabInterface);
                 if (m_pButtonManual)
                 {
-                    /* Configure radio-button: */
                     connect(m_pButtonManual, &QRadioButton::toggled,
                             this, &UIDetailsWidgetHostNetwork::sltToggledButtonManual);
-                    /* Add into layout: */
                     pLayoutManual->addWidget(m_pButtonManual);
                 }
-                /* Create manual interface configuration error pane: */
-                m_pErrorPaneManual = new QLabel;
+                /* Prepare manual interface configuration error pane: */
+                m_pErrorPaneManual = new QLabel(pTabInterface);
                 if (m_pErrorPaneManual)
                 {
-                    /* Configure label: */
                     m_pErrorPaneManual->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
                     m_pErrorPaneManual->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
                     m_pErrorPaneManual->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                   .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
+
                     pLayoutManual->addWidget(m_pErrorPaneManual);
                 }
-                /* Add into layout: */
+
                 pLayoutInterface->addLayout(pLayoutManual, 1, 0, 1, 3);
 #ifdef VBOX_WS_MAC
                 pLayoutInterface->setRowMinimumHeight(1, 22);
 #endif
             }
 
-            /* Create IPv4 address label: */
-            m_pLabelIPv4 = new QLabel;
+            /* Prepare IPv4 address label: */
+            m_pLabelIPv4 = new QLabel(pTabInterface);
             if (m_pLabelIPv4)
             {
-                /* Configure label: */
                 m_pLabelIPv4->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                /* Add into layout: */
                 pLayoutInterface->addWidget(m_pLabelIPv4, 2, 1);
             }
-            /* Create IPv4 layout: */
+            /* Prepare IPv4 layout: */
             QHBoxLayout *pLayoutIPv4 = new QHBoxLayout;
             if (pLayoutIPv4)
             {
-                /* Configure layout: */
                 pLayoutIPv4->setContentsMargins(0, 0, 0, 0);
-                /* Create IPv4 address editor: */
-                m_pEditorIPv4 = new QILineEdit;
+
+                /* Prepare IPv4 address editor: */
+                m_pEditorIPv4 = new QILineEdit(pTabInterface);
                 if (m_pEditorIPv4)
                 {
-                    /* Configure editor: */
                     m_pLabelIPv4->setBuddy(m_pEditorIPv4);
                     connect(m_pEditorIPv4, &QLineEdit::textChanged,
                             this, &UIDetailsWidgetHostNetwork::sltTextChangedIPv4);
-                    /* Add into layout: */
+
                     pLayoutIPv4->addWidget(m_pEditorIPv4);
                 }
-                /* Create IPv4 error pane: */
-                m_pErrorPaneIPv4 = new QLabel;
+                /* Prepare IPv4 error pane: */
+                m_pErrorPaneIPv4 = new QLabel(pTabInterface);
                 if (m_pErrorPaneIPv4)
                 {
-                    /* Configure label: */
                     m_pErrorPaneIPv4->setAlignment(Qt::AlignCenter);
                     m_pErrorPaneIPv4->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                 .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
+
                     pLayoutIPv4->addWidget(m_pErrorPaneIPv4);
                 }
-                /* Add into layout: */
+
                 pLayoutInterface->addLayout(pLayoutIPv4, 2, 2);
             }
 
-            /* Create NMv4 network mask label: */
-            m_pLabelNMv4 = new QLabel;
+            /* Prepare NMv4 network mask label: */
+            m_pLabelNMv4 = new QLabel(pTabInterface);
             if (m_pLabelNMv4)
             {
-                /* Configure label: */
                 m_pLabelNMv4->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                /* Add into layout: */
                 pLayoutInterface->addWidget(m_pLabelNMv4, 3, 1);
             }
-            /* Create NMv4 layout: */
+            /* Prepare NMv4 layout: */
             QHBoxLayout *pLayoutNMv4 = new QHBoxLayout;
             if (pLayoutNMv4)
             {
-                /* Configure layout: */
                 pLayoutNMv4->setContentsMargins(0, 0, 0, 0);
-                /* Create NMv4 network mask editor: */
-                m_pEditorNMv4 = new QILineEdit;
+
+                /* Prepare NMv4 network mask editor: */
+                m_pEditorNMv4 = new QILineEdit(pTabInterface);
                 if (m_pEditorNMv4)
                 {
-                    /* Configure editor: */
                     m_pLabelNMv4->setBuddy(m_pEditorNMv4);
                     connect(m_pEditorNMv4, &QLineEdit::textChanged,
                             this, &UIDetailsWidgetHostNetwork::sltTextChangedNMv4);
-                    /* Add into layout: */
+
                     pLayoutNMv4->addWidget(m_pEditorNMv4);
                 }
-                /* Create NMv4 error pane: */
-                m_pErrorPaneNMv4 = new QLabel;
+                /* Prepare NMv4 error pane: */
+                m_pErrorPaneNMv4 = new QLabel(pTabInterface);
                 if (m_pErrorPaneNMv4)
                 {
-                    /* Configure label: */
                     m_pErrorPaneNMv4->setAlignment(Qt::AlignCenter);
                     m_pErrorPaneNMv4->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                 .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
+
                     pLayoutNMv4->addWidget(m_pErrorPaneNMv4);
                 }
-                /* Add into layout: */
+
                 pLayoutInterface->addLayout(pLayoutNMv4, 3, 2);
             }
 
-            /* Create IPv6 address label: */
-            m_pLabelIPv6 = new QLabel;
+            /* Prepare IPv6 address label: */
+            m_pLabelIPv6 = new QLabel(pTabInterface);
             if (m_pLabelIPv6)
             {
-                /* Configure label: */
                 m_pLabelIPv6->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                /* Add into layout: */
                 pLayoutInterface->addWidget(m_pLabelIPv6, 4, 1);
             }
-            /* Create IPv6 layout: */
+            /* Prepare IPv6 layout: */
             QHBoxLayout *pLayoutIPv6 = new QHBoxLayout;
             if (pLayoutIPv6)
             {
-                /* Configure layout: */
                 pLayoutIPv6->setContentsMargins(0, 0, 0, 0);
-                /* Create IPv6 address editor: */
-                m_pEditorIPv6 = new QILineEdit;
+
+                /* Prepare IPv6 address editor: */
+                m_pEditorIPv6 = new QILineEdit(pTabInterface);
                 if (m_pEditorIPv6)
                 {
-                    /* Configure editor: */
                     m_pLabelIPv6->setBuddy(m_pEditorIPv6);
                     connect(m_pEditorIPv6, &QLineEdit::textChanged,
                             this, &UIDetailsWidgetHostNetwork::sltTextChangedIPv6);
-                    /* Add into layout: */
+
                     pLayoutIPv6->addWidget(m_pEditorIPv6);
                 }
-                /* Create IPv4 error pane: */
-                m_pErrorPaneIPv6 = new QLabel;
+                /* Prepare IPv4 error pane: */
+                m_pErrorPaneIPv6 = new QLabel(pTabInterface);
                 if (m_pErrorPaneIPv6)
                 {
-                    /* Configure label: */
                     m_pErrorPaneIPv6->setAlignment(Qt::AlignCenter);
                     m_pErrorPaneIPv6->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                 .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
+
                     pLayoutIPv6->addWidget(m_pErrorPaneIPv6);
                 }
-                /* Add into layout: */
+
                 pLayoutInterface->addLayout(pLayoutIPv6, 4, 2);
             }
 
-            /* Create NMv6 network mask label: */
-            m_pLabelNMv6 = new QLabel;
+            /* Prepare NMv6 network mask label: */
+            m_pLabelNMv6 = new QLabel(pTabInterface);
             if (m_pLabelNMv6)
             {
-                /* Configure label: */
                 m_pLabelNMv6->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                /* Add into layout: */
                 pLayoutInterface->addWidget(m_pLabelNMv6, 5, 1);
             }
-            /* Create NMv6 layout: */
+            /* Prepare NMv6 layout: */
             QHBoxLayout *pLayoutNMv6 = new QHBoxLayout;
             if (pLayoutNMv6)
             {
-                /* Configure layout: */
                 pLayoutNMv6->setContentsMargins(0, 0, 0, 0);
-                /* Create NMv6 network mask editor: */
-                m_pEditorNMv6 = new QILineEdit;
+
+                /* Prepare NMv6 network mask editor: */
+                m_pEditorNMv6 = new QILineEdit(pTabInterface);
                 if (m_pEditorNMv6)
                 {
-                    /* Configure editor: */
                     m_pLabelNMv6->setBuddy(m_pEditorNMv6);
                     connect(m_pEditorNMv6, &QLineEdit::textChanged,
                             this, &UIDetailsWidgetHostNetwork::sltTextChangedNMv6);
-                    /* Add into layout: */
+
                     pLayoutNMv6->addWidget(m_pEditorNMv6);
                 }
-                /* Create NMv6 error pane: */
-                m_pErrorPaneNMv6 = new QLabel;
+                /* Prepare NMv6 error pane: */
+                m_pErrorPaneNMv6 = new QLabel(pTabInterface);
                 if (m_pErrorPaneNMv6)
                 {
-                    /* Configure label: */
                     m_pErrorPaneNMv6->setAlignment(Qt::AlignCenter);
                     m_pErrorPaneNMv6->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                 .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
+
                     pLayoutNMv6->addWidget(m_pErrorPaneNMv6);
                 }
-                /* Add into layout: */
+
                 pLayoutInterface->addLayout(pLayoutNMv6, 5, 2);
             }
 
-            /* Create indent: */
+            /* Prepare indent: */
             QStyleOption options;
             options.initFrom(m_pButtonManual);
             const int iWidth = m_pButtonManual->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pButtonManual) +
@@ -561,51 +536,42 @@ void UIDetailsWidgetHostNetwork::prepareTabInterface()
                                pLayoutInterface->spacing() - 1;
             QSpacerItem *pSpacer1 = new QSpacerItem(iWidth, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
             if (pSpacer1)
-            {
-                /* Add into layout: */
                 pLayoutInterface->addItem(pSpacer1, 2, 0, 4);
-            }
-            /* Create stretch: */
+            /* Prepare stretch: */
             QSpacerItem *pSpacer2 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
             if (pSpacer2)
-            {
-                /* Add into layout: */
                 pLayoutInterface->addItem(pSpacer2, 6, 0, 1, 3);
-            }
 
             /* If parent embedded into stack: */
             if (m_enmEmbedding == EmbedTo_Stack)
             {
-                /* Create button-box: */
-                m_pButtonBoxInterface = new QIDialogButtonBox;
+                /* Prepare button-box: */
+                m_pButtonBoxInterface = new QIDialogButtonBox(pTabInterface);
                 if (m_pButtonBoxInterface)
                 {
-                    /* Configure button-box: */
                     m_pButtonBoxInterface->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
                     connect(m_pButtonBoxInterface, &QIDialogButtonBox::clicked, this, &UIDetailsWidgetHostNetwork::sltHandleButtonBoxClick);
 
-                    /* Add into layout: */
                     pLayoutInterface->addWidget(m_pButtonBoxInterface, 7, 0, 1, 3);
                 }
             }
         }
-        /* Add to tab-widget: */
+
         m_pTabWidget->addTab(pTabInterface, QString());
     }
 }
 
 void UIDetailsWidgetHostNetwork::prepareTabDHCPServer()
 {
-    /* Create 'DHCP server' tab: */
-    QWidget *pTabDHCPServer = new QWidget;
+    /* Prepare 'DHCP server' tab: */
+    QWidget *pTabDHCPServer = new QWidget(m_pTabWidget);
     if (pTabDHCPServer)
     {
-        /* Create 'DHCP server' layout: */
+        /* Prepare 'DHCP server' layout: */
         QGridLayout *pLayoutDHCPServer = new QGridLayout(pTabDHCPServer);
         if (pLayoutDHCPServer)
         {
 #ifdef VBOX_WS_MAC
-            /* Configure layout: */
             pLayoutDHCPServer->setSpacing(10);
             pLayoutDHCPServer->setContentsMargins(10, 10, 10, 10);
 #endif
@@ -613,185 +579,167 @@ void UIDetailsWidgetHostNetwork::prepareTabDHCPServer()
             /* Get the required icon metric: */
             const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
 
-            /* Create DHCP server status check-box: */
-            m_pCheckBoxDHCP = new QCheckBox;
+            /* Prepare DHCP server status check-box: */
+            m_pCheckBoxDHCP = new QCheckBox(pTabDHCPServer);
             if (m_pCheckBoxDHCP)
             {
-                /* Configure check-box: */
                 connect(m_pCheckBoxDHCP, &QCheckBox::stateChanged,
                         this, &UIDetailsWidgetHostNetwork::sltStatusChangedServer);
-                /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pCheckBoxDHCP, 0, 0, 1, 2);
 #ifdef VBOX_WS_MAC
                 pLayoutDHCPServer->setRowMinimumHeight(0, 22);
 #endif
             }
 
-            /* Create DHCP address label: */
-            m_pLabelDHCPAddress = new QLabel;
+            /* Prepare DHCP address label: */
+            m_pLabelDHCPAddress = new QLabel(pTabDHCPServer);
             if (m_pLabelDHCPAddress)
             {
-                /* Configure label: */
                 m_pLabelDHCPAddress->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPAddress, 1, 1);
             }
-            /* Create DHCP address layout: */
+            /* Prepare DHCP address layout: */
             QHBoxLayout *pLayoutDHCPAddress = new QHBoxLayout;
             if (pLayoutDHCPAddress)
             {
-                /* Configure layout: */
                 pLayoutDHCPAddress->setContentsMargins(0, 0, 0, 0);
-                /* Create DHCP address editor: */
-                m_pEditorDHCPAddress = new QILineEdit;
+
+                /* Prepare DHCP address editor: */
+                m_pEditorDHCPAddress = new QILineEdit(pTabDHCPServer);
                 if (m_pEditorDHCPAddress)
                 {
-                    /* Configure editor: */
                     m_pLabelDHCPAddress->setBuddy(m_pEditorDHCPAddress);
                     connect(m_pEditorDHCPAddress, &QLineEdit::textChanged,
                             this, &UIDetailsWidgetHostNetwork::sltTextChangedAddress);
-                    /* Add into layout: */
+
                     pLayoutDHCPAddress->addWidget(m_pEditorDHCPAddress);
                 }
-                /* Create DHCP address error pane: */
-                m_pErrorPaneDHCPAddress = new QLabel;
+                /* Prepare DHCP address error pane: */
+                m_pErrorPaneDHCPAddress = new QLabel(pTabDHCPServer);
                 if (m_pErrorPaneDHCPAddress)
                 {
-                    /* Configure label: */
                     m_pErrorPaneDHCPAddress->setAlignment(Qt::AlignCenter);
                     m_pErrorPaneDHCPAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                        .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
+
                     pLayoutDHCPAddress->addWidget(m_pErrorPaneDHCPAddress);
                 }
-                /* Add into layout: */
+
                 pLayoutDHCPServer->addLayout(pLayoutDHCPAddress, 1, 2);
             }
 
-            /* Create DHCP network mask label: */
-            m_pLabelDHCPMask = new QLabel;
+            /* Prepare DHCP network mask label: */
+            m_pLabelDHCPMask = new QLabel(pTabDHCPServer);
             if (m_pLabelDHCPMask)
             {
-                /* Configure label: */
                 m_pLabelDHCPMask->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPMask, 2, 1);
             }
-            /* Create DHCP mask layout: */
+            /* Prepare DHCP mask layout: */
             QHBoxLayout *pLayoutDHCPMask = new QHBoxLayout;
             if (pLayoutDHCPMask)
             {
-                /* Configure layout: */
                 pLayoutDHCPMask->setContentsMargins(0, 0, 0, 0);
-                /* Create DHCP network mask editor: */
-                m_pEditorDHCPMask = new QILineEdit;
+
+                /* Prepare DHCP network mask editor: */
+                m_pEditorDHCPMask = new QILineEdit(pTabDHCPServer);
                 if (m_pEditorDHCPMask)
                 {
-                    /* Configure editor: */
                     m_pLabelDHCPMask->setBuddy(m_pEditorDHCPMask);
                     connect(m_pEditorDHCPMask, &QLineEdit::textChanged,
                             this, &UIDetailsWidgetHostNetwork::sltTextChangedMask);
-                    /* Add into layout: */
+
                     pLayoutDHCPMask->addWidget(m_pEditorDHCPMask);
                 }
-                /* Create DHCP mask error pane: */
-                m_pErrorPaneDHCPMask = new QLabel;
+                /* Prepare DHCP mask error pane: */
+                m_pErrorPaneDHCPMask = new QLabel(pTabDHCPServer);
                 if (m_pErrorPaneDHCPMask)
                 {
-                    /* Configure label: */
                     m_pErrorPaneDHCPMask->setAlignment(Qt::AlignCenter);
                     m_pErrorPaneDHCPMask->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                     .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
+
                     pLayoutDHCPMask->addWidget(m_pErrorPaneDHCPMask);
                 }
-                /* Add into layout: */
+
                 pLayoutDHCPServer->addLayout(pLayoutDHCPMask, 2, 2);
             }
 
-            /* Create DHCP lower address label: */
-            m_pLabelDHCPLowerAddress = new QLabel;
+            /* Prepare DHCP lower address label: */
+            m_pLabelDHCPLowerAddress = new QLabel(pTabDHCPServer);
             if (m_pLabelDHCPLowerAddress)
             {
-                /* Configure label: */
                 m_pLabelDHCPLowerAddress->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPLowerAddress, 3, 1);
             }
-            /* Create DHCP lower address layout: */
+            /* Prepare DHCP lower address layout: */
             QHBoxLayout *pLayoutDHCPLowerAddress = new QHBoxLayout;
             if (pLayoutDHCPLowerAddress)
             {
-                /* Configure layout: */
                 pLayoutDHCPLowerAddress->setContentsMargins(0, 0, 0, 0);
-                /* Create DHCP lower address editor: */
-                m_pEditorDHCPLowerAddress = new QILineEdit;
+
+                /* Prepare DHCP lower address editor: */
+                m_pEditorDHCPLowerAddress = new QILineEdit(pTabDHCPServer);
                 if (m_pEditorDHCPLowerAddress)
                 {
-                    /* Configure editor: */
                     m_pLabelDHCPLowerAddress->setBuddy(m_pEditorDHCPLowerAddress);
                     connect(m_pEditorDHCPLowerAddress, &QLineEdit::textChanged,
                             this, &UIDetailsWidgetHostNetwork::sltTextChangedLowerAddress);
-                    /* Add into layout: */
+
                     pLayoutDHCPLowerAddress->addWidget(m_pEditorDHCPLowerAddress);
                 }
-                /* Create DHCP lower address error pane: */
-                m_pErrorPaneDHCPLowerAddress = new QLabel;
+                /* Prepare DHCP lower address error pane: */
+                m_pErrorPaneDHCPLowerAddress = new QLabel(pTabDHCPServer);
                 if (m_pErrorPaneDHCPLowerAddress)
                 {
-                    /* Configure label: */
                     m_pErrorPaneDHCPLowerAddress->setAlignment(Qt::AlignCenter);
                     m_pErrorPaneDHCPLowerAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                             .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
+
                     pLayoutDHCPLowerAddress->addWidget(m_pErrorPaneDHCPLowerAddress);
                 }
-                /* Add into layout: */
+
                 pLayoutDHCPServer->addLayout(pLayoutDHCPLowerAddress, 3, 2);
             }
 
-            /* Create DHCP upper address label: */
-            m_pLabelDHCPUpperAddress = new QLabel;
+            /* Prepare DHCP upper address label: */
+            m_pLabelDHCPUpperAddress = new QLabel(pTabDHCPServer);
             if (m_pLabelDHCPUpperAddress)
             {
-                /* Configure label: */
                 m_pLabelDHCPUpperAddress->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPUpperAddress, 4, 1);
             }
-            /* Create DHCP upper address layout: */
+            /* Prepare DHCP upper address layout: */
             QHBoxLayout *pLayoutDHCPUpperAddress = new QHBoxLayout;
             if (pLayoutDHCPUpperAddress)
             {
-                /* Configure layout: */
                 pLayoutDHCPUpperAddress->setContentsMargins(0, 0, 0, 0);
-                /* Create DHCP upper address editor: */
-                m_pEditorDHCPUpperAddress = new QILineEdit;
+
+                /* Prepare DHCP upper address editor: */
+                m_pEditorDHCPUpperAddress = new QILineEdit(pTabDHCPServer);
                 if (m_pEditorDHCPUpperAddress)
                 {
-                    /* Configure editor: */
                     m_pLabelDHCPUpperAddress->setBuddy(m_pEditorDHCPUpperAddress);
                     connect(m_pEditorDHCPUpperAddress, &QLineEdit::textChanged,
                             this, &UIDetailsWidgetHostNetwork::sltTextChangedUpperAddress);
-                    /* Add into layout: */
+
                     pLayoutDHCPUpperAddress->addWidget(m_pEditorDHCPUpperAddress);
                 }
-                /* Create DHCP upper address error pane: */
-                m_pErrorPaneDHCPUpperAddress = new QLabel;
+                /* Prepare DHCP upper address error pane: */
+                m_pErrorPaneDHCPUpperAddress = new QLabel(pTabDHCPServer);
                 if (m_pErrorPaneDHCPUpperAddress)
                 {
-                    /* Configure label: */
                     m_pErrorPaneDHCPUpperAddress->setAlignment(Qt::AlignCenter);
                     m_pErrorPaneDHCPUpperAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                             .pixmap(QSize(iIconMetric, iIconMetric)));
-                    /* Add into layout: */
+
                     pLayoutDHCPUpperAddress->addWidget(m_pErrorPaneDHCPUpperAddress);
                 }
-                /* Add into layout: */
+
                 pLayoutDHCPServer->addLayout(pLayoutDHCPUpperAddress, 4, 2);
             }
 
-            /* Create indent: */
+            /* Prepare indent: */
             QStyleOption options;
             options.initFrom(m_pCheckBoxDHCP);
             const int iWidth = m_pCheckBoxDHCP->style()->pixelMetric(QStyle::PM_IndicatorWidth, &options, m_pCheckBoxDHCP) +
@@ -799,35 +747,27 @@ void UIDetailsWidgetHostNetwork::prepareTabDHCPServer()
                                pLayoutDHCPServer->spacing() - 1;
             QSpacerItem *pSpacer1 = new QSpacerItem(iWidth, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
             if (pSpacer1)
-            {
-                /* Add into layout: */
                 pLayoutDHCPServer->addItem(pSpacer1, 1, 0, 4);
-            }
-            /* Create stretch: */
+            /* Prepare stretch: */
             QSpacerItem *pSpacer2 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
             if (pSpacer2)
-            {
-                /* Add into layout: */
                 pLayoutDHCPServer->addItem(pSpacer2, 5, 0, 1, 3);
-            }
 
             /* If parent embedded into stack: */
             if (m_enmEmbedding == EmbedTo_Stack)
             {
-                /* Create button-box: */
-                m_pButtonBoxServer = new QIDialogButtonBox;
+                /* Prepare button-box: */
+                m_pButtonBoxServer = new QIDialogButtonBox(pTabDHCPServer);
                 if (m_pButtonBoxServer)
                 {
-                    /* Configure button-box: */
                     m_pButtonBoxServer->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
                     connect(m_pButtonBoxServer, &QIDialogButtonBox::clicked, this, &UIDetailsWidgetHostNetwork::sltHandleButtonBoxClick);
 
-                    /* Add into layout: */
                     pLayoutDHCPServer->addWidget(m_pButtonBoxServer, 6, 0, 1, 3);
                 }
             }
         }
-        /* Add to tab-widget: */
+
         m_pTabWidget->addTab(pTabDHCPServer, QString());
     }
 }
