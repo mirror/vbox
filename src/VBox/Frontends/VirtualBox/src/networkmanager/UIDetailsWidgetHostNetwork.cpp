@@ -774,16 +774,25 @@ void UIDetailsWidgetHostNetwork::prepareTabDHCPServer()
 
 void UIDetailsWidgetHostNetwork::loadDataForInterface()
 {
-    /* Toggle IPv4 & IPv6 interface fields availability: */
+    /* Check whether interface exists and configurable: */
+    const bool fIsInterfaceExists = m_newData.m_interface.m_fExists;
     const bool fIsInterfaceConfigurable = !m_newData.m_interface.m_fDHCPEnabled;
+
+    /* Toggle radio-buttons availability: */
+    if (m_pButtonAutomatic)
+        m_pButtonAutomatic->setEnabled(fIsInterfaceExists);
+    if (m_pButtonManual)
+        m_pButtonManual->setEnabled(fIsInterfaceExists);
+
+    /* Toggle IPv4 & IPv6 interface fields availability: */
     if (m_pLabelIPv4)
-        m_pLabelIPv4->setEnabled(fIsInterfaceConfigurable);
+        m_pLabelIPv4->setEnabled(fIsInterfaceExists && fIsInterfaceConfigurable);
     if (m_pLabelNMv4)
-        m_pLabelNMv4->setEnabled(fIsInterfaceConfigurable);
+        m_pLabelNMv4->setEnabled(fIsInterfaceExists && fIsInterfaceConfigurable);
     if (m_pEditorIPv4)
-        m_pEditorIPv4->setEnabled(fIsInterfaceConfigurable);
+        m_pEditorIPv4->setEnabled(fIsInterfaceExists && fIsInterfaceConfigurable);
     if (m_pEditorNMv4)
-        m_pEditorNMv4->setEnabled(fIsInterfaceConfigurable);
+        m_pEditorNMv4->setEnabled(fIsInterfaceExists && fIsInterfaceConfigurable);
 
     /* Load IPv4 interface fields: */
     if (m_pButtonAutomatic)
@@ -798,13 +807,13 @@ void UIDetailsWidgetHostNetwork::loadDataForInterface()
     /* Toggle IPv6 interface fields availability: */
     const bool fIsIpv6Configurable = fIsInterfaceConfigurable && m_newData.m_interface.m_fSupportedIPv6;
     if (m_pLabelIPv6)
-        m_pLabelIPv6->setEnabled(fIsIpv6Configurable);
+        m_pLabelIPv6->setEnabled(fIsInterfaceExists && fIsIpv6Configurable);
     if (m_pLabelNMv6)
-        m_pLabelNMv6->setEnabled(fIsIpv6Configurable);
+        m_pLabelNMv6->setEnabled(fIsInterfaceExists && fIsIpv6Configurable);
     if (m_pEditorIPv6)
-        m_pEditorIPv6->setEnabled(fIsIpv6Configurable);
+        m_pEditorIPv6->setEnabled(fIsInterfaceExists && fIsIpv6Configurable);
     if (m_pEditorNMv6)
-        m_pEditorNMv6->setEnabled(fIsIpv6Configurable);
+        m_pEditorNMv6->setEnabled(fIsInterfaceExists && fIsIpv6Configurable);
 
     /* Load IPv6 interface fields: */
     if (m_pEditorIPv6)
@@ -815,24 +824,30 @@ void UIDetailsWidgetHostNetwork::loadDataForInterface()
 
 void UIDetailsWidgetHostNetwork::loadDataForDHCPServer()
 {
-    /* Toggle DHCP server fields availability: */
+    /* Check whether interface exists and DHCP server available: */
+    const bool fIsInterfaceExists = m_newData.m_interface.m_fExists;
     const bool fIsDHCPServerEnabled = m_newData.m_dhcpserver.m_fEnabled;
+
+    /* Toggle check-box availability: */
+    m_pCheckBoxDHCP->setEnabled(fIsInterfaceExists);
+
+    /* Toggle DHCP server fields availability: */
     if (m_pLabelDHCPAddress)
-        m_pLabelDHCPAddress->setEnabled(fIsDHCPServerEnabled);
+        m_pLabelDHCPAddress->setEnabled(fIsInterfaceExists && fIsDHCPServerEnabled);
     if (m_pLabelDHCPMask)
-        m_pLabelDHCPMask->setEnabled(fIsDHCPServerEnabled);
+        m_pLabelDHCPMask->setEnabled(fIsInterfaceExists && fIsDHCPServerEnabled);
     if (m_pLabelDHCPLowerAddress)
-        m_pLabelDHCPLowerAddress->setEnabled(fIsDHCPServerEnabled);
+        m_pLabelDHCPLowerAddress->setEnabled(fIsInterfaceExists && fIsDHCPServerEnabled);
     if (m_pLabelDHCPUpperAddress)
-        m_pLabelDHCPUpperAddress->setEnabled(fIsDHCPServerEnabled);
+        m_pLabelDHCPUpperAddress->setEnabled(fIsInterfaceExists && fIsDHCPServerEnabled);
     if (m_pEditorDHCPAddress)
-        m_pEditorDHCPAddress->setEnabled(fIsDHCPServerEnabled);
+        m_pEditorDHCPAddress->setEnabled(fIsInterfaceExists && fIsDHCPServerEnabled);
     if (m_pEditorDHCPMask)
-        m_pEditorDHCPMask->setEnabled(fIsDHCPServerEnabled);
+        m_pEditorDHCPMask->setEnabled(fIsInterfaceExists && fIsDHCPServerEnabled);
     if (m_pEditorDHCPLowerAddress)
-        m_pEditorDHCPLowerAddress->setEnabled(fIsDHCPServerEnabled);
+        m_pEditorDHCPLowerAddress->setEnabled(fIsInterfaceExists && fIsDHCPServerEnabled);
     if (m_pEditorDHCPUpperAddress)
-        m_pEditorDHCPUpperAddress->setEnabled(fIsDHCPServerEnabled);
+        m_pEditorDHCPUpperAddress->setEnabled(fIsInterfaceExists && fIsDHCPServerEnabled);
 
     /* Load DHCP server fields: */
     if (m_pCheckBoxDHCP)
