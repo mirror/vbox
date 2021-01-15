@@ -39,6 +39,10 @@ VBox-libpng_SOURCES = \
 	pngmem.c \
 	pngerror.c \
 	pngpread.c
+VBox-libpng_SOURCES.arm64 = \
+	arm/arm_init.c \
+	arm/filter_neon_intrinsics.c \
+	arm/palette_neon_intrinsics.c
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
