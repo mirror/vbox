@@ -1493,9 +1493,8 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             Log3Func(("[SD%RU8] Warning: Lagging behind (%RU64 ticks elapsed, maximum allowed is %RU64)\n",
                      uSD, cTicksElapsed, cTicksToNext));
 
-            LogRelMax2(64, ("HDA: Stream #%RU8 interrupt lagging behind (expected %uus, got %uus), trying to catch up ...\n", uSD,
-                            (PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer) / pThis->uTimerHz) / 1000,
-                            (tsNow - pStreamShared->State.tsTransferLast) / 1000));
+            LogRelMax2(128, ("HDA: Stream #%RU8 interrupt lagging behind (expected %RU64us, got %RU64us, %RU8 pending interrupts), trying to catch up ...\n",
+                             uSD, cTicksToNext / 1000,  cTicksElapsed / 1000, pStreamShared->State.cTransferPendingInterrupts));
 
             cTicksToNext = 0;
         }
