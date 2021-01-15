@@ -190,7 +190,7 @@
 #define CSR_PROM(S)      !!((S)->aCSR[15] & 0x8000) /**< Promiscuous Mode */
 /** @} */
 
-#if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)
+#if defined(RT_BIG_ENDIAN) || !defined(RT_LITTLE_ENDIAN)
 # error fix macros (and more in this file) for big-endian machines
 #endif
 
