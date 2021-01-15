@@ -969,9 +969,6 @@ void UIPortForwardingTable::sltShowTableContexMenu(const QPoint &pos)
 
 void UIPortForwardingTable::sltAdjustTable()
 {
-    /* Make sure layout requests really processed first of all: */
-    QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
-
     /* If table is NOT empty: */
     if (m_pTableModel->rowCount())
     {
