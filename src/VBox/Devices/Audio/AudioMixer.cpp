@@ -1711,7 +1711,7 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
     while (cbToWriteToStreams)
     {
         uint32_t cfChunk;
-        rc  = AudioMixBufAcquireReadBlock(&pSink->MixBuf, pSink->pabScratchBuf, RT_MIN(cbToWriteToStreams, pSink->cbScratchBuf),
+        rc  = AudioMixBufAcquireReadBlock(&pSink->MixBuf, pSink->pabScratchBuf, RT_MIN(cbToWriteToStreams, (uint32_t)pSink->cbScratchBuf),
                                           &cfChunk);
         if (RT_FAILURE(rc))
             break;
