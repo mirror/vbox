@@ -30,6 +30,7 @@
 
 /* Forward declarations: */
 class CHostNetworkInterface;
+class CNATNetwork;
 class QAbstractButton;
 class QTreeWidgetItem;
 class QVBoxLayout;
@@ -38,9 +39,12 @@ class QITabWidget;
 class QITreeWidget;
 class UIActionPool;
 class UIDetailsWidgetHostNetwork;
+class UIDetailsWidgetNATNetwork;
 class UIItemHostNetwork;
+class UIItemNATNetwork;
 class QIToolBar;
 struct UIDataHostNetwork;
+struct UIDataNATNetwork;
 
 
 /** QWidget extension providing GUI with the pane to control network related functionality. */
@@ -55,6 +59,9 @@ signals:
 
     /** Notifies listeners about host network details data @a fDiffers. */
     void sigDetailsDataChangedHostNetwork(bool fDiffers);
+
+    /** Notifies listeners about NAT network details data @a fDiffers. */
+    void sigDetailsDataChangedNATNetwork(bool fDiffers);
 
 public:
 
@@ -106,6 +113,11 @@ private slots:
         /** Handles command to remove host network. */
         void sltRemoveHostNetwork();
 
+        /** Handles command to create NAT network. */
+        void sltCreateNATNetwork();
+        /** Handles command to remove NAT network. */
+        void sltRemoveNATNetwork();
+
         /** Handles command to make details @a fVisible. */
         void sltToggleDetailsVisibility(bool fVisible);
     /** @} */
@@ -126,6 +138,15 @@ private slots:
         void sltHandleContextMenuRequestHostNetwork(const QPoint &position);
         /** Handles command to apply host network details changes. */
         void sltApplyDetailsChangesHostNetwork();
+
+        /** Handles NAT network tree-widget @a pItem change. */
+        void sltHandleItemChangeNATNetwork(QTreeWidgetItem *pItem);
+        /** Handles NAT network tree-widget current item change. */
+        void sltHandleCurrentItemChangeNATNetwork();
+        /** Handles NAT network context-menu request for tree-widget @a position. */
+        void sltHandleContextMenuRequestNATNetwork(const QPoint &position);
+        /** Handles command to apply NAT network details changes. */
+        void sltApplyDetailsChangesNATNetwork();
     /** @} */
 
 private:
@@ -148,6 +169,12 @@ private:
         void prepareTreeWidgetHostNetwork();
         /** Prepares host network details-widget. */
         void prepareDetailsWidgetHostNetwork();
+        /** Prepares NAT network tab. */
+        void prepareTabNATNetwork();
+        /** Prepares NAT network tree-widget. */
+        void prepareTreeWidgetNATNetwork();
+        /** Prepares NAT network details-widget. */
+        void prepareDetailsWidgetNATNetwork();
         /** Load settings: */
         void loadSettings();
     /** @} */
@@ -158,6 +185,11 @@ private:
         void loadHostNetworks();
         /** Loads host @a comInterface data to passed @a data container. */
         void loadHostNetwork(const CHostNetworkInterface &comInterface, UIDataHostNetwork &data);
+
+        /** Loads NAT networks. */
+        void loadNATNetworks();
+        /** Loads NAT @a comNetwork data to passed @a data container. */
+        void loadNATNetwork(const CNATNetwork &comNetwork, UIDataNATNetwork &data);
     /** @} */
 
     /** @name Tree-widget stuff.
@@ -166,6 +198,11 @@ private:
         void createItemForHostNetwork(const UIDataHostNetwork &data, bool fChooseItem);
         /** Updates passed host network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void updateItemForHostNetwork(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem);
+
+        /** Creates a new NAT network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
+        void createItemForNATNetwork(const UIDataNATNetwork &data, bool fChooseItem);
+        /** Updates passed NAT network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
+        void updateItemForNATNetwork(const UIDataNATNetwork &data, bool fChooseItem, UIItemNATNetwork *pItem);
     /** @} */
 
     /** @name General variables.
@@ -197,6 +234,15 @@ private:
         QITreeWidget               *m_pTreeWidgetHostNetwork;
         /** Holds the host network details-widget instance. */
         UIDetailsWidgetHostNetwork *m_pDetailsWidgetHostNetwork;
+
+        /** Holds the NAT network tab. */
+        QWidget                   *m_pTabNATNetwork;
+        /** Holds the NAT network tab layout. */
+        QVBoxLayout               *m_pLayoutNATNetwork;
+        /** Holds the NAT network tree-widget instance. */
+        QITreeWidget              *m_pTreeWidgetNATNetwork;
+        /** Holds the NAT network details-widget instance. */
+        UIDetailsWidgetNATNetwork *m_pDetailsWidgetNATNetwork;
     /** @} */
 };
 

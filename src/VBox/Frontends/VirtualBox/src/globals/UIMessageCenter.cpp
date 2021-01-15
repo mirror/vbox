@@ -1865,6 +1865,50 @@ void UIMessageCenter::cannotSaveDHCPServerParameter(const CDHCPServer &comServer
           UIErrorString::formatErrorInfo(comServer));
 }
 
+void UIMessageCenter::cannotAcquireNATNetworks(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire NAT networks."),
+          UIErrorString::formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire NAT network parameter."),
+          UIErrorString::formatErrorInfo(comNetwork));
+}
+
+void UIMessageCenter::cannotCreateNATNetwork(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create a NAT network."),
+          UIErrorString::formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotSaveNATNetworkParameter(const CNATNetwork &comNetwork, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to save NAT network parameter."),
+          UIErrorString::formatErrorInfo(comNetwork));
+}
+
+void UIMessageCenter::cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Unable to find the NAT network <b>%1</b>.")
+             .arg(strNetworkName),
+          UIErrorString::formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotRemoveNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to remove the NAT network <b>%1</b>.")
+             .arg(strNetworkName),
+          UIErrorString::formatErrorInfo(comVBox));
+}
+
 void UIMessageCenter::cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,

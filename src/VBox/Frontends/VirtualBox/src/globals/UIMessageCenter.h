@@ -379,7 +379,7 @@ public:
     void cannotAcquireMediumAttribute(const CMedium &comMedium, QWidget *pParent = 0) const;
     void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0) const;
 
-    /* API: Host Network Manager warnings: */
+    /* API: Network Manager warnings: */
     bool confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
     void cannotAcquireHostNetworkInterfaces(const CHost &comHost, QWidget *pParent = 0) const;
     void cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent = 0) const;
@@ -393,6 +393,12 @@ public:
     void cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent = 0) const;
     void cannotAcquireDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent = 0) const;
     void cannotSaveDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent = 0) const;
+    void cannotAcquireNATNetworks(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
+    void cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork, QWidget *pParent = 0) const;
+    void cannotCreateNATNetwork(const CVirtualBox &comVBox, QWidget *pParent = 0);
+    void cannotSaveNATNetworkParameter(const CNATNetwork &comNetwork, QWidget *pParent = 0) const;
+    void cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName, QWidget *pParent = 0) const;
+    void cannotRemoveNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName, QWidget *pParent = 0) const;
 
     /* API: Cloud Profile Manager warnings: */
     void cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent = 0) const;

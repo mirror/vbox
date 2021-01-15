@@ -26,7 +26,9 @@
 #include "QITabWidget.h"
 #include "QITreeWidget.h"
 #include "UIActionPoolManager.h"
+#include "UIConverter.h"
 #include "UIDetailsWidgetHostNetwork.h"
+#include "UIDetailsWidgetNATNetwork.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
@@ -42,6 +44,7 @@
 #include "CDHCPServer.h"
 #include "CHost.h"
 #include "CHostNetworkInterface.h"
+#include "CNATNetwork.h"
 
 /* Other VBox includes: */
 #include <iprt/cidr.h>
@@ -51,6 +54,7 @@
 enum TabWidgetIndex
 {
     TabWidgetIndex_HostNetwork,
+    TabWidgetIndex_NATNetwork,
 };
 
 
@@ -62,6 +66,15 @@ enum HostNetworkColumn
     HostNetworkColumn_IPv6,
     HostNetworkColumn_DHCP,
     HostNetworkColumn_Max,
+};
+
+
+/** NAT network tree-widget column indexes. */
+enum NATNetworkColumn
+{
+    NATNetworkColumn_Availability,
+    NATNetworkColumn_Name,
+    NATNetworkColumn_Max,
 };
 
 
@@ -82,6 +95,21 @@ private:
 
     /** Returns CIDR for a passed @a strMask. */
     static int maskToCidr(const QString &strMask);
+};
+
+
+/** Network Manager: NAT Network tree-widget item. */
+class UIItemNATNetwork : public QITreeWidgetItem, public UIDataNATNetwork
+{
+    Q_OBJECT;
+
+public:
+
+    /** Updates item fields from data. */
+    void updateFields();
+
+    /** Returns item name. */
+    QString name() const { return m_strName; }
 };
 
 
@@ -193,6 +221,35 @@ int UIItemHostNetwork::maskToCidr(const QString &strMask)
 
 
 /*********************************************************************************************************************************
+*   Class UIItemNATNetwork implementation.                                                                                       *
+*********************************************************************************************************************************/
+
+void UIItemNATNetwork::updateFields()
+{
+    /* Compose item fields: */
+    setCheckState(NATNetworkColumn_Availability, m_fEnabled ? Qt::Checked : Qt::Unchecked);
+    setText(NATNetworkColumn_Name, m_strName);
+
+    /* Compose tool-tip: */
+    const QString strTable("<table cellspacing=5>%1</table>");
+    const QString strHeader("<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
+    const QString strSubHeader("<tr><td><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
+    QString strToolTip;
+
+    /* Network information: */
+    strToolTip += strHeader.arg(tr("Network Name"), m_strName);
+    strToolTip += strHeader.arg(tr("Network CIDR"), m_strCIDR);
+    strToolTip += strHeader.arg(tr("Supports DHCP"), m_fSupportsDHCP ? tr("yes") : tr("no"));
+    strToolTip += strHeader.arg(tr("Supports IPv6"), m_fSupportsIPv6 ? tr("yes") : tr("no"));
+    if (m_fSupportsIPv6 && m_fAdvertiseDefaultIPv6Route)
+        strToolTip += strSubHeader.arg(tr("Default IPv6 route"), tr("yes"));
+
+    /* Assign tool-tip finally: */
+    setToolTip(NATNetworkColumn_Name, strTable.arg(strToolTip));
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINetworkManagerWidget implementation.                                                                                 *
 *********************************************************************************************************************************/
 
@@ -208,6 +265,10 @@ UINetworkManagerWidget::UINetworkManagerWidget(EmbedTo enmEmbedding, UIActionPoo
     , m_pLayoutHostNetwork(0)
     , m_pTreeWidgetHostNetwork(0)
     , m_pDetailsWidgetHostNetwork(0)
+    , m_pTabNATNetwork(0)
+    , m_pLayoutNATNetwork(0)
+    , m_pTreeWidgetNATNetwork(0)
+    , m_pDetailsWidgetNATNetwork(0)
 {
     prepare();
 }
@@ -233,7 +294,10 @@ void UINetworkManagerWidget::retranslateUi()
 
     /* Translate tab-widget: */
     if (m_pTabWidget)
+    {
         m_pTabWidget->setTabText(0, UINetworkManager::tr("Host-only Networks"));
+        m_pTabWidget->setTabText(1, UINetworkManager::tr("NAT Networks"));
+    }
 
     /* Translate host network tree-widget: */
     if (m_pTreeWidgetHostNetwork)
@@ -244,6 +308,15 @@ void UINetworkManagerWidget::retranslateUi()
                                    << UINetworkManager::tr("IPv6 Address/Mask")
                                    << UINetworkManager::tr("DHCP Server");
         m_pTreeWidgetHostNetwork->setHeaderLabels(fields);
+    }
+
+    /* Translate NAT network tree-widget: */
+    if (m_pTreeWidgetNATNetwork)
+    {
+        const QStringList fields = QStringList()
+                                   << UINetworkManager::tr("Active")
+                                   << UINetworkManager::tr("Name");
+        m_pTreeWidgetNATNetwork->setHeaderLabels(fields);
     }
 }
 
@@ -274,6 +347,7 @@ void UINetworkManagerWidget::sltResetDetailsChanges()
     switch (m_pTabWidget->currentIndex())
     {
         case TabWidgetIndex_HostNetwork: sltHandleCurrentItemChangeHostNetwork(); break;
+        case TabWidgetIndex_NATNetwork: sltHandleCurrentItemChangeNATNetwork(); break;
         default: break;
     }
 }
@@ -287,6 +361,7 @@ void UINetworkManagerWidget::sltApplyDetailsChanges()
     switch (m_pTabWidget->currentIndex())
     {
         case TabWidgetIndex_HostNetwork: sltApplyDetailsChangesHostNetwork(); break;
+        case TabWidgetIndex_NATNetwork: sltApplyDetailsChangesNATNetwork(); break;
         default: break;
     }
 }
@@ -436,6 +511,136 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
     }
 }
 
+void UINetworkManagerWidget::sltCreateNATNetwork()
+{
+    /* For NAT networks only: */
+    if (m_pTabWidget->currentIndex() != TabWidgetIndex_NATNetwork)
+        return;
+
+    /* Compose a set of busy names: */
+    QSet<QString> names;
+    for (int i = 0; i < m_pTreeWidgetNATNetwork->topLevelItemCount(); ++i)
+        names << qobject_cast<UIItemNATNetwork*>(m_pTreeWidgetNATNetwork->childItem(i))->name();
+    /* Compose a map of busy indexes: */
+    QMap<int, bool> presence;
+    const QString strNameTemplate("NatNetwork%1");
+    const QRegExp regExp(strNameTemplate.arg("([\\d]*)"));
+    foreach (const QString &strName, names)
+        if (regExp.indexIn(strName) != -1)
+            presence[regExp.cap(1).toInt()] = true;
+    /* Search for a minimum index: */
+    int iMinimumIndex = 0;
+    for (int i = 0; !presence.isEmpty() && i <= presence.lastKey() + 1; ++i)
+        if (!presence.contains(i))
+        {
+            iMinimumIndex = i;
+            break;
+        }
+    /* Compose resulting index and name: */
+    const QString strNetworkName = strNameTemplate.arg(iMinimumIndex == 0 ? QString() : QString::number(iMinimumIndex));
+
+    /* Compose new item data: */
+    UIDataNATNetwork oldData;
+    oldData.m_fExists = true;
+    oldData.m_fEnabled = true;
+    oldData.m_strName = strNetworkName;
+    oldData.m_strCIDR = "10.0.2.0/24";
+    oldData.m_fSupportsDHCP = true;
+    oldData.m_fSupportsIPv6 = false;
+    oldData.m_fAdvertiseDefaultIPv6Route = false;
+
+    /* Get VirtualBox for further activities: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Create network: */
+    CNATNetwork comNetwork = comVBox.CreateNATNetwork(oldData.m_strName);
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        msgCenter().cannotCreateNATNetwork(comVBox, this);
+    else
+    {
+        /* Save whether NAT network is enabled: */
+        if (comNetwork.isOk())
+            comNetwork.SetEnabled(oldData.m_fEnabled);
+        /* Save NAT network name: */
+        if (comNetwork.isOk())
+            comNetwork.SetNetworkName(oldData.m_strName);
+        /* Save NAT network CIDR: */
+        if (comNetwork.isOk())
+            comNetwork.SetNetwork(oldData.m_strCIDR);
+        /* Save whether NAT network needs DHCP server: */
+        if (comNetwork.isOk())
+            comNetwork.SetNeedDhcpServer(oldData.m_fSupportsDHCP);
+        /* Save whether NAT network supports IPv6: */
+        if (comNetwork.isOk())
+            comNetwork.SetIPv6Enabled(oldData.m_fSupportsIPv6);
+        /* Save whether NAT network should advertise default IPv6 route: */
+        if (comNetwork.isOk())
+            comNetwork.SetAdvertiseDefaultIPv6RouteEnabled(oldData.m_fAdvertiseDefaultIPv6Route);
+
+        /* Show error message if necessary: */
+        if (!comNetwork.isOk())
+            msgCenter().cannotSaveNATNetworkParameter(comNetwork, this);
+
+        /* Add network to the tree: */
+        UIDataNATNetwork newData;
+        loadNATNetwork(comNetwork, newData);
+        createItemForNATNetwork(newData, true);
+
+        /* Adjust tree-widgets: */
+        sltAdjustTreeWidgets();
+    }
+}
+
+void UINetworkManagerWidget::sltRemoveNATNetwork()
+{
+    /* For NAT networks only: */
+    if (m_pTabWidget->currentIndex() != TabWidgetIndex_NATNetwork)
+        return;
+
+    /* Check NAT network tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidgetNATNetwork, ("NAT network tree-widget isn't created!\n"));
+
+    /* Get network item: */
+    UIItemNATNetwork *pItem = static_cast<UIItemNATNetwork*>(m_pTreeWidgetNATNetwork->currentItem());
+    AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
+
+    /* Get network name: */
+    const QString strNetworkName(pItem->name());
+
+    /* Confirm host network removal: */
+    if (!msgCenter().confirmNATNetworkRemoval(strNetworkName, this))
+        return;
+
+    /* Get VirtualBox for further activities: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Find corresponding network: */
+    const CNATNetwork &comNetwork = comVBox.FindNATNetworkByName(strNetworkName);
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk() || comNetwork.isNull())
+        msgCenter().cannotFindNATNetwork(comVBox, strNetworkName, this);
+    else
+    {
+        /* Remove network finally: */
+        comVBox.RemoveNATNetwork(comNetwork);
+
+        /* Show error message if necessary: */
+        if (!comVBox.isOk())
+            msgCenter().cannotRemoveNATNetwork(comVBox, strNetworkName, this);
+        else
+        {
+            /* Remove interface from the tree: */
+            delete pItem;
+
+            /* Adjust tree-widgets: */
+            sltAdjustTreeWidgets();
+        }
+    }
+}
+
 void UINetworkManagerWidget::sltToggleDetailsVisibility(bool fVisible)
 {
     /* Save the setting: */
@@ -445,8 +650,18 @@ void UINetworkManagerWidget::sltToggleDetailsVisibility(bool fVisible)
     {
         case TabWidgetIndex_HostNetwork:
         {
+            if (m_pDetailsWidgetNATNetwork)
+                m_pDetailsWidgetNATNetwork->setVisible(false);
             if (m_pDetailsWidgetHostNetwork)
                 m_pDetailsWidgetHostNetwork->setVisible(fVisible);
+            break;
+        }
+        case TabWidgetIndex_NATNetwork:
+        {
+            if (m_pDetailsWidgetHostNetwork)
+                m_pDetailsWidgetHostNetwork->setVisible(false);
+            if (m_pDetailsWidgetNATNetwork)
+                m_pDetailsWidgetNATNetwork->setVisible(fVisible);
             break;
         }
     }
@@ -462,8 +677,18 @@ void UINetworkManagerWidget::sltHandleCurrentTabWidgetIndexChange()
     {
         case TabWidgetIndex_HostNetwork:
         {
+            if (m_pDetailsWidgetNATNetwork)
+                m_pDetailsWidgetNATNetwork->setVisible(false);
             if (m_pDetailsWidgetHostNetwork)
                 m_pDetailsWidgetHostNetwork->setVisible(fVisible);
+            break;
+        }
+        case TabWidgetIndex_NATNetwork:
+        {
+            if (m_pDetailsWidgetHostNetwork)
+                m_pDetailsWidgetHostNetwork->setVisible(false);
+            if (m_pDetailsWidgetNATNetwork)
+                m_pDetailsWidgetNATNetwork->setVisible(fVisible);
             break;
         }
     }
@@ -494,6 +719,25 @@ void UINetworkManagerWidget::sltAdjustTreeWidgets()
         m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_IPv6, iWidth2);
         m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_DHCP, iWidth3);
         m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
+    }
+
+    /* Check NAT network tree-widget: */
+    if (m_pTreeWidgetNATNetwork)
+    {
+        /* Get the tree-widget abstract interface: */
+        QAbstractItemView *pItemView = m_pTreeWidgetNATNetwork;
+        /* Get the tree-widget header-view: */
+        QHeaderView *pItemHeader = m_pTreeWidgetNATNetwork->header();
+
+        /* Calculate the total tree-widget width: */
+        const int iTotal = m_pTreeWidgetNATNetwork->viewport()->width();
+        /* Look for a minimum width hints for non-important columns: */
+        const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(NATNetworkColumn_Availability), pItemHeader->sectionSizeHint(NATNetworkColumn_Availability));
+        /* Propose suitable width hints for non-important columns: */
+        const int iWidth1 = iMinWidth1 < iTotal / NATNetworkColumn_Max ? iMinWidth1 : iTotal / NATNetworkColumn_Max;
+        /* Apply the proposal: */
+        m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_Availability, iWidth1);
+        m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_Name, iTotal - iWidth1);
     }
 }
 
@@ -751,6 +995,210 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
     }
 }
 
+void UINetworkManagerWidget::sltHandleItemChangeNATNetwork(QTreeWidgetItem *pItem)
+{
+    /* Get network item: */
+    UIItemNATNetwork *pChangedItem = static_cast<UIItemNATNetwork*>(pItem);
+    AssertMsgReturnVoid(pChangedItem, ("Changed item must not be null!\n"));
+
+    /* Get item data: */
+    UIDataNATNetwork oldData = *pChangedItem;
+
+    /* Make sure network availability status changed: */
+    if (   (   oldData.m_fEnabled
+            && pChangedItem->checkState(NATNetworkColumn_Availability) == Qt::Checked)
+        || (   !oldData.m_fEnabled
+            && pChangedItem->checkState(NATNetworkColumn_Availability) == Qt::Unchecked))
+        return;
+
+    /* Get VirtualBox for further activities: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Find corresponding network: */
+    CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldData.m_strName);
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk() || comNetwork.isNull())
+        msgCenter().cannotFindNATNetwork(comVBox, oldData.m_strName, this);
+    else
+    {
+        /* Save whether NAT network is enabled: */
+        if (comNetwork.isOk())
+            comNetwork.SetEnabled(!oldData.m_fEnabled);
+
+        /* Show error message if necessary: */
+        if (!comNetwork.isOk())
+            msgCenter().cannotSaveNATNetworkParameter(comNetwork, this);
+        else
+        {
+            /* Update network in the tree: */
+            UIDataNATNetwork data;
+            loadNATNetwork(comNetwork, data);
+            updateItemForNATNetwork(data, true, pChangedItem);
+
+            /* Make sure current item fetched: */
+            sltHandleCurrentItemChangeNATNetwork();
+
+            /* Adjust tree-widgets: */
+            sltAdjustTreeWidgets();
+        }
+    }
+}
+
+void UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetwork()
+{
+    /* Check NAT network tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidgetNATNetwork, ("NAT network tree-widget isn't created!\n"));
+
+    /* Get network item: */
+    UIItemNATNetwork *pItem = static_cast<UIItemNATNetwork*>(m_pTreeWidgetNATNetwork->currentItem());
+
+    /* Update actions availability: */
+    m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
+    m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->setEnabled(pItem);
+
+    /* Check NAT network details-widget: */
+    AssertMsgReturnVoid(m_pDetailsWidgetNATNetwork, ("NAT network details-widget isn't created!\n"));
+
+    /* If there is an item => update details data: */
+    if (pItem)
+        m_pDetailsWidgetNATNetwork->setData(*pItem);
+    /* Otherwise => clear details: */
+    else
+        m_pDetailsWidgetNATNetwork->setData(UIDataNATNetwork());
+}
+
+void UINetworkManagerWidget::sltHandleContextMenuRequestNATNetwork(const QPoint &position)
+{
+    /* Check NAT network tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidgetNATNetwork, ("NAT network tree-widget isn't created!\n"));
+
+    /* Compose temporary context-menu: */
+    QMenu menu;
+    if (m_pTreeWidgetNATNetwork->itemAt(position))
+    {
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details));
+    }
+    else
+    {
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create));
+//        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Refresh));
+    }
+    /* And show it: */
+    menu.exec(m_pTreeWidgetNATNetwork->mapToGlobal(position));
+}
+
+void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
+{
+    /* Check NAT network tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidgetNATNetwork, ("NAT network tree-widget isn't created!\n"));
+
+    /* Get NAT network item: */
+    UIItemNATNetwork *pItem = static_cast<UIItemNATNetwork*>(m_pTreeWidgetNATNetwork->currentItem());
+    AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
+
+    /* Check NAT network details-widget: */
+    AssertMsgReturnVoid(m_pDetailsWidgetNATNetwork, ("NAT network details-widget isn't created!\n"));
+
+    /* Get item data: */
+    UIDataNATNetwork oldData = *pItem;
+    UIDataNATNetwork newData = m_pDetailsWidgetNATNetwork->data();
+
+    /* Get VirtualBox for further activities: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Find corresponding network: */
+    CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldData.m_strName);
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk() || comNetwork.isNull())
+        msgCenter().cannotFindNATNetwork(comVBox, oldData.m_strName, this);
+    else
+    {
+        /* Save whether NAT network is enabled: */
+        if (comNetwork.isOk() && newData.m_fEnabled != oldData.m_fEnabled)
+            comNetwork.SetEnabled(newData.m_fEnabled);
+        /* Save NAT network name: */
+        if (comNetwork.isOk() && newData.m_strName != oldData.m_strName)
+            comNetwork.SetNetworkName(newData.m_strName);
+        /* Save NAT network CIDR: */
+        if (comNetwork.isOk() && newData.m_strCIDR != oldData.m_strCIDR)
+            comNetwork.SetNetwork(newData.m_strCIDR);
+        /* Save whether NAT network needs DHCP server: */
+        if (comNetwork.isOk() && newData.m_fSupportsDHCP != oldData.m_fSupportsDHCP)
+            comNetwork.SetNeedDhcpServer(newData.m_fSupportsDHCP);
+        /* Save whether NAT network supports IPv6: */
+        if (comNetwork.isOk() && newData.m_fSupportsIPv6 != oldData.m_fSupportsIPv6)
+            comNetwork.SetIPv6Enabled(newData.m_fSupportsIPv6);
+        /* Save whether NAT network should advertise default IPv6 route: */
+        if (comNetwork.isOk() && newData.m_fAdvertiseDefaultIPv6Route != oldData.m_fAdvertiseDefaultIPv6Route)
+            comNetwork.SetAdvertiseDefaultIPv6RouteEnabled(newData.m_fAdvertiseDefaultIPv6Route);
+
+        /* Save IPv4 forwarding rules: */
+        if (comNetwork.isOk() && newData.m_rules4 != oldData.m_rules4)
+        {
+            UIPortForwardingDataList oldRules = oldData.m_rules4;
+
+            /* Remove rules to be removed: */
+            foreach (const UIDataPortForwardingRule &oldRule, oldData.m_rules4)
+                if (comNetwork.isOk() && !newData.m_rules4.contains(oldRule))
+                {
+                    comNetwork.RemovePortForwardRule(false /* IPv6? */, oldRule.name);
+                    oldRules.removeAll(oldRule);
+                }
+            /* Add rules to be added: */
+            foreach (const UIDataPortForwardingRule &newRule, newData.m_rules4)
+                if (comNetwork.isOk() && !oldRules.contains(newRule))
+                {
+                    comNetwork.AddPortForwardRule(false /* IPv6? */, newRule.name, newRule.protocol,
+                                                  newRule.hostIp, newRule.hostPort.value(),
+                                                  newRule.guestIp, newRule.guestPort.value());
+                    oldRules.append(newRule);
+                }
+        }
+        /* Save IPv6 forwarding rules: */
+        if (comNetwork.isOk() && newData.m_rules6 != oldData.m_rules6)
+        {
+            UIPortForwardingDataList oldRules = oldData.m_rules6;
+
+            /* Remove rules to be removed: */
+            foreach (const UIDataPortForwardingRule &oldRule, oldData.m_rules6)
+                if (comNetwork.isOk() && !newData.m_rules6.contains(oldRule))
+                {
+                    comNetwork.RemovePortForwardRule(true /* IPv6? */, oldRule.name);
+                    oldRules.removeAll(oldRule);
+                }
+            /* Add rules to be added: */
+            foreach (const UIDataPortForwardingRule &newRule, newData.m_rules6)
+                if (comNetwork.isOk() && !oldRules.contains(newRule))
+                {
+                    comNetwork.AddPortForwardRule(true /* IPv6? */, newRule.name, newRule.protocol,
+                                                  newRule.hostIp, newRule.hostPort.value(),
+                                                  newRule.guestIp, newRule.guestPort.value());
+                    oldRules.append(newRule);
+                }
+        }
+
+        /* Show error message if necessary: */
+        if (!comNetwork.isOk())
+            msgCenter().cannotSaveNATNetworkParameter(comNetwork, this);
+        else
+        {
+            /* Update network in the tree: */
+            UIDataNATNetwork data;
+            loadNATNetwork(comNetwork, data);
+            updateItemForNATNetwork(data, true, pItem);
+
+            /* Make sure current item fetched: */
+            sltHandleCurrentItemChangeNATNetwork();
+
+            /* Adjust tree-widgets: */
+            sltAdjustTreeWidgets();
+        }
+    }
+}
+
 void UINetworkManagerWidget::prepare()
 {
     /* Prepare self: */
@@ -768,6 +1216,7 @@ void UINetworkManagerWidget::prepare()
 
     /* Load networks: */
     loadHostNetworks();
+    loadNATNetworks();
 }
 
 void UINetworkManagerWidget::prepareActions()
@@ -781,8 +1230,12 @@ void UINetworkManagerWidget::prepareActions()
     /* Connect actions: */
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create), &QAction::triggered,
             this, &UINetworkManagerWidget::sltCreateHostNetwork);
+    connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create), &QAction::triggered,
+            this, &UINetworkManagerWidget::sltCreateNATNetwork);
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove), &QAction::triggered,
             this, &UINetworkManagerWidget::sltRemoveHostNetwork);
+    connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove), &QAction::triggered,
+            this, &UINetworkManagerWidget::sltRemoveNATNetwork);
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::toggled,
             this, &UINetworkManagerWidget::sltToggleDetailsVisibility);
 }
@@ -810,6 +1263,7 @@ void UINetworkManagerWidget::prepareWidgets()
 
         /* Prepare details widgets: */
         prepareDetailsWidgetHostNetwork();
+        prepareDetailsWidgetNATNetwork();
     }
 }
 
@@ -851,6 +1305,7 @@ void UINetworkManagerWidget::prepareTabWidget()
                 this, &UINetworkManagerWidget::sltHandleCurrentTabWidgetIndexChange);
 
         prepareTabHostNetwork();
+        prepareTabNATNetwork();
 
         /* Add into layout: */
         layout()->addWidget(m_pTabWidget);
@@ -921,6 +1376,70 @@ void UINetworkManagerWidget::prepareDetailsWidgetHostNetwork()
     }
 }
 
+void UINetworkManagerWidget::prepareTabNATNetwork()
+{
+    /* Prepare NAT network tab: */
+    m_pTabNATNetwork = new QWidget(m_pTabWidget);
+    if (m_pTabNATNetwork)
+    {
+        /* Prepare NAT network layout: */
+        m_pLayoutNATNetwork = new QVBoxLayout(m_pTabNATNetwork);
+        if (m_pLayoutNATNetwork)
+            prepareTreeWidgetNATNetwork();
+
+        /* Add into tab-widget: */
+        m_pTabWidget->insertTab(TabWidgetIndex_NATNetwork, m_pTabNATNetwork, QString());
+    }
+}
+
+void UINetworkManagerWidget::prepareTreeWidgetNATNetwork()
+{
+    /* Prepare NAT network tree-widget: */
+    m_pTreeWidgetNATNetwork = new QITreeWidget(m_pTabNATNetwork);
+    if (m_pTreeWidgetNATNetwork)
+    {
+        m_pTreeWidgetNATNetwork->setRootIsDecorated(false);
+        m_pTreeWidgetNATNetwork->setAlternatingRowColors(true);
+        m_pTreeWidgetNATNetwork->setContextMenuPolicy(Qt::CustomContextMenu);
+        m_pTreeWidgetNATNetwork->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_pTreeWidgetNATNetwork->setColumnCount(NATNetworkColumn_Max);
+        m_pTreeWidgetNATNetwork->setSortingEnabled(true);
+        m_pTreeWidgetNATNetwork->sortByColumn(NATNetworkColumn_Name, Qt::AscendingOrder);
+        m_pTreeWidgetNATNetwork->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
+        connect(m_pTreeWidgetNATNetwork, &QITreeWidget::currentItemChanged,
+                this, &UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetwork);
+        connect(m_pTreeWidgetNATNetwork, &QITreeWidget::customContextMenuRequested,
+                this, &UINetworkManagerWidget::sltHandleContextMenuRequestNATNetwork);
+        connect(m_pTreeWidgetNATNetwork, &QITreeWidget::itemChanged,
+                this, &UINetworkManagerWidget::sltHandleItemChangeNATNetwork);
+        connect(m_pTreeWidgetNATNetwork, &QITreeWidget::itemDoubleClicked,
+                m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::setChecked);
+
+        /* Add into layout: */
+        m_pLayoutNATNetwork->addWidget(m_pTreeWidgetNATNetwork);
+    }
+}
+
+void UINetworkManagerWidget::prepareDetailsWidgetNATNetwork()
+{
+    /* Prepare NAT network details-widget: */
+    m_pDetailsWidgetNATNetwork = new UIDetailsWidgetNATNetwork(m_enmEmbedding, this);
+    if (m_pDetailsWidgetNATNetwork)
+    {
+        m_pDetailsWidgetNATNetwork->setVisible(false);
+        m_pDetailsWidgetNATNetwork->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        connect(m_pDetailsWidgetNATNetwork, &UIDetailsWidgetNATNetwork::sigDataChanged,
+                this, &UINetworkManagerWidget::sigDetailsDataChangedNATNetwork);
+        connect(m_pDetailsWidgetNATNetwork, &UIDetailsWidgetNATNetwork::sigDataChangeRejected,
+                this, &UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetwork);
+        connect(m_pDetailsWidgetNATNetwork, &UIDetailsWidgetNATNetwork::sigDataChangeAccepted,
+                this, &UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork);
+
+        /* Add into layout: */
+        layout()->addWidget(m_pDetailsWidgetNATNetwork);
+    }
+}
+
 void UINetworkManagerWidget::loadSettings()
 {
     /* Details action/widget: */
@@ -972,6 +1491,8 @@ void UINetworkManagerWidget::loadHostNetworks()
 void UINetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInterface, UIDataHostNetwork &data)
 {
     /* Gather interface settings: */
+    if (comInterface.isNotNull())
+        data.m_interface.m_fExists = true;
     if (comInterface.isOk())
         data.m_interface.m_strName = comInterface.GetName();
     if (comInterface.isOk())
@@ -1027,6 +1548,116 @@ void UINetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInt
     }
 }
 
+void UINetworkManagerWidget::loadNATNetworks()
+{
+    /* Check NAT network tree-widget: */
+    if (!m_pTreeWidgetNATNetwork)
+        return;
+
+    /* Clear tree first of all: */
+    m_pTreeWidgetNATNetwork->clear();
+
+    /* Get VirtualBox for further activities: */
+    const CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Get interfaces for further activities: */
+    const QVector<CNATNetwork> networks = comVBox.GetNATNetworks();
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        msgCenter().cannotAcquireNATNetworks(comVBox, this);
+    else
+    {
+        /* For each NAT network => load it to the tree: */
+        foreach (const CNATNetwork &comNetwork, networks)
+        {
+            UIDataNATNetwork data;
+            loadNATNetwork(comNetwork, data);
+            createItemForNATNetwork(data, false);
+        }
+
+        /* Choose the 1st item as current initially: */
+        m_pTreeWidgetNATNetwork->setCurrentItem(m_pTreeWidgetNATNetwork->topLevelItem(0));
+        sltHandleCurrentItemChangeNATNetwork();
+
+        /* Adjust tree-widgets: */
+        sltAdjustTreeWidgets();
+    }
+}
+
+void UINetworkManagerWidget::loadNATNetwork(const CNATNetwork &comNetwork, UIDataNATNetwork &data)
+{
+    /* Gather network settings: */
+    if (comNetwork.isNotNull())
+        data.m_fExists = true;
+    if (comNetwork.isOk())
+        data.m_fEnabled = comNetwork.GetEnabled();
+    if (comNetwork.isOk())
+        data.m_strName = comNetwork.GetNetworkName();
+    if (comNetwork.isOk())
+        data.m_strCIDR = comNetwork.GetNetwork();
+    if (comNetwork.isOk())
+        data.m_fSupportsDHCP = comNetwork.GetNeedDhcpServer();
+    if (comNetwork.isOk())
+        data.m_fSupportsIPv6 = comNetwork.GetIPv6Enabled();
+    if (comNetwork.isOk())
+        data.m_fAdvertiseDefaultIPv6Route = comNetwork.GetAdvertiseDefaultIPv6RouteEnabled();
+
+    /* Gather forwarding rules: */
+    if (comNetwork.isOk())
+    {
+        /* Load IPv4 rules: */
+        foreach (QString strIPv4Rule, comNetwork.GetPortForwardRules4())
+        {
+            /* Replace all ':' with ',' first: */
+            strIPv4Rule.replace(':', ',');
+            /* Parse rules: */
+            QStringList rules = strIPv4Rule.split(',');
+            Assert(rules.size() == 6);
+            if (rules.size() != 6)
+                continue;
+            data.m_rules4 << UIDataPortForwardingRule(rules.at(0),
+                                                      gpConverter->fromInternalString<KNATProtocol>(rules.at(1)),
+                                                      QString(rules.at(2)).remove('[').remove(']'),
+                                                      rules.at(3).toUInt(),
+                                                      QString(rules.at(4)).remove('[').remove(']'),
+                                                      rules.at(5).toUInt());
+        }
+
+        /* Load IPv6 rules: */
+        foreach (QString strIPv6Rule, comNetwork.GetPortForwardRules6())
+        {
+            /* Replace all ':' with ',' first: */
+            strIPv6Rule.replace(':', ',');
+            /* But replace ',' back with ':' for addresses: */
+            QRegExp re("\\[[0-9a-fA-F,]*,[0-9a-fA-F,]*\\]");
+            re.setMinimal(true);
+            while (re.indexIn(strIPv6Rule) != -1)
+            {
+                QString strCapOld = re.cap(0);
+                QString strCapNew = strCapOld;
+                strCapNew.replace(',', ':');
+                strIPv6Rule.replace(strCapOld, strCapNew);
+            }
+            /* Parse rules: */
+            QStringList rules = strIPv6Rule.split(',');
+            Assert(rules.size() == 6);
+            if (rules.size() != 6)
+                continue;
+            data.m_rules6 << UIDataPortForwardingRule(rules.at(0),
+                                                      gpConverter->fromInternalString<KNATProtocol>(rules.at(1)),
+                                                      QString(rules.at(2)).remove('[').remove(']'),
+                                                      rules.at(3).toUInt(),
+                                                      QString(rules.at(4)).remove('[').remove(']'),
+                                                      rules.at(5).toUInt());
+        }
+    }
+
+    /* Show error message if necessary: */
+    if (!comNetwork.isOk())
+        msgCenter().cannotAcquireNATNetworkParameter(comNetwork, this);
+}
+
 void UINetworkManagerWidget::createItemForHostNetwork(const UIDataHostNetwork &data, bool fChooseItem)
 {
     /* Create new item: */
@@ -1055,6 +1686,37 @@ void UINetworkManagerWidget::updateItemForHostNetwork(const UIDataHostNetwork &d
         /* And choose it as current if necessary: */
         if (fChooseItem)
             m_pTreeWidgetHostNetwork->setCurrentItem(pItem);
+    }
+}
+
+void UINetworkManagerWidget::createItemForNATNetwork(const UIDataNATNetwork &data, bool fChooseItem)
+{
+    /* Create new item: */
+    UIItemNATNetwork *pItem = new UIItemNATNetwork;
+    if (pItem)
+    {
+        /* Configure item: */
+        pItem->UIDataNATNetwork::operator=(data);
+        pItem->updateFields();
+        /* Add item to the tree: */
+        m_pTreeWidgetNATNetwork->addTopLevelItem(pItem);
+        /* And choose it as current if necessary: */
+        if (fChooseItem)
+            m_pTreeWidgetNATNetwork->setCurrentItem(pItem);
+    }
+}
+
+void UINetworkManagerWidget::updateItemForNATNetwork(const UIDataNATNetwork &data, bool fChooseItem, UIItemNATNetwork *pItem)
+{
+    /* Update passed item: */
+    if (pItem)
+    {
+        /* Configure item: */
+        pItem->UIDataNATNetwork::operator=(data);
+        pItem->updateFields();
+        /* And choose it as current if necessary: */
+        if (fChooseItem)
+            m_pTreeWidgetNATNetwork->setCurrentItem(pItem);
     }
 }
 
@@ -1159,6 +1821,10 @@ void UINetworkManager::configureButtonBox()
     connect(widget(), &UINetworkManagerWidget::sigDetailsDataChangedHostNetwork,
             button(ButtonType_Apply), &QPushButton::setEnabled);
     connect(widget(), &UINetworkManagerWidget::sigDetailsDataChangedHostNetwork,
+            button(ButtonType_Reset), &QPushButton::setEnabled);
+    connect(widget(), &UINetworkManagerWidget::sigDetailsDataChangedNATNetwork,
+            button(ButtonType_Apply), &QPushButton::setEnabled);
+    connect(widget(), &UINetworkManagerWidget::sigDetailsDataChangedNATNetwork,
             button(ButtonType_Reset), &QPushButton::setEnabled);
     connect(buttonBox(), &QIDialogButtonBox::clicked,
             this, &UINetworkManager::sltHandleButtonBoxClick);

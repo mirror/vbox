@@ -619,6 +619,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/medium/UIMediumManager.h \
 	src/monitor/resource/UIResourceMonitor.h \
 	src/networkmanager/UIDetailsWidgetHostNetwork.h \
+	src/networkmanager/UIDetailsWidgetNATNetwork.h \
 	src/networkmanager/UINetworkManager.h \
 	src/snapshots/UISnapshotDetailsWidget.h \
 	src/snapshots/UISnapshotPane.h \
@@ -1100,6 +1101,7 @@ VirtualBox_SOURCES = \
 	src/medium/UIMediumManager.cpp \
 	src/monitor/resource/UIResourceMonitor.cpp \
 	src/networkmanager/UIDetailsWidgetHostNetwork.cpp \
+	src/networkmanager/UIDetailsWidgetNATNetwork.cpp \
 	src/networkmanager/UINetworkManager.cpp \
 	src/networkmanager/UINetworkManagerUtils.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
