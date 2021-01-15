@@ -112,6 +112,9 @@ private slots:
 
     /** @name Tree-widget stuff.
       * @{ */
+        /** Handles current tab-widget's index change. */
+        void sltHandleCurrentTabWidgetIndexChange();
+
         /** Handles command to adjust tree-widget. */
         void sltAdjustTreeWidgets();
 

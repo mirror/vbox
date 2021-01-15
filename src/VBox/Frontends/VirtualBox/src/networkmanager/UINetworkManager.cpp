@@ -440,11 +440,33 @@ void UINetworkManagerWidget::sltToggleDetailsVisibility(bool fVisible)
 {
     /* Save the setting: */
     gEDataManager->setHostNetworkManagerDetailsExpanded(fVisible);
-    /* Show/hide details area and Apply button: */
-    if (m_pDetailsWidgetHostNetwork)
-        m_pDetailsWidgetHostNetwork->setVisible(fVisible);
+    /* Show/hide details area and Apply/Reset buttons: */
+    switch (m_pTabWidget->currentIndex())
+    {
+        case TabWidgetIndex_HostNetwork:
+        {
+            if (m_pDetailsWidgetHostNetwork)
+                m_pDetailsWidgetHostNetwork->setVisible(fVisible);
+            break;
+        }
+    }
     /* Notify external listeners: */
     emit sigDetailsVisibilityChanged(fVisible);
+}
+
+void UINetworkManagerWidget::sltHandleCurrentTabWidgetIndexChange()
+{
+    /* Show/hide details area and Apply/Reset buttons: */
+    const bool fVisible = m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->isChecked();
+    switch (m_pTabWidget->currentIndex())
+    {
+        case TabWidgetIndex_HostNetwork:
+        {
+            if (m_pDetailsWidgetHostNetwork)
+                m_pDetailsWidgetHostNetwork->setVisible(fVisible);
+            break;
+        }
+    }
 }
 
 void UINetworkManagerWidget::sltAdjustTreeWidgets()
@@ -542,6 +564,7 @@ void UINetworkManagerWidget::sltHandleItemChangeHostNetwork(QTreeWidgetItem *pIt
                 /* Show error message if necessary: */
                 if (!comServer.isOk())
                     msgCenter().cannotSaveDHCPServerParameter(comServer, this);
+                else
                 {
                     /* Update interface in the tree: */
                     UIDataHostNetwork data;
@@ -569,7 +592,6 @@ void UINetworkManagerWidget::sltHandleCurrentItemChangeHostNetwork()
 
     /* Update actions availability: */
     m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
-    m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->setEnabled(pItem);
 
     /* Check host network details-widget: */
     AssertMsgReturnVoid(m_pDetailsWidgetHostNetwork, ("Host network details-widget isn't created!\n"));
@@ -782,23 +804,24 @@ void UINetworkManagerWidget::prepareWidgets()
         /* Prepare toolbar, if requested: */
         if (m_fShowToolbar)
             prepareToolBar();
+
         /* Prepare tab-widget: */
         prepareTabWidget();
+
+        /* Prepare details widgets: */
+        prepareDetailsWidgetHostNetwork();
     }
 }
 
 void UINetworkManagerWidget::prepareToolBar()
 {
-    /* Create toolbar: */
+    /* Prepare toolbar: */
     m_pToolBar = new QIToolBar(parentWidget());
     if (m_pToolBar)
     {
-        /* Configure toolbar: */
         const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-
-        /* Add toolbar actions: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove));
@@ -824,6 +847,9 @@ void UINetworkManagerWidget::prepareTabWidget()
     m_pTabWidget = new QITabWidget(this);
     if (m_pTabWidget)
     {
+        connect(m_pTabWidget, &QITabWidget::currentChanged,
+                this, &UINetworkManagerWidget::sltHandleCurrentTabWidgetIndexChange);
+
         prepareTabHostNetwork();
 
         /* Add into layout: */
@@ -840,10 +866,7 @@ void UINetworkManagerWidget::prepareTabHostNetwork()
         /* Prepare host network layout: */
         m_pLayoutHostNetwork = new QVBoxLayout(m_pTabHostNetwork);
         if (m_pLayoutHostNetwork)
-        {
             prepareTreeWidgetHostNetwork();
-            prepareDetailsWidgetHostNetwork();
-        }
 
         /* Add into tab-widget: */
         m_pTabWidget->insertTab(TabWidgetIndex_HostNetwork, m_pTabHostNetwork, QString());
@@ -881,7 +904,7 @@ void UINetworkManagerWidget::prepareTreeWidgetHostNetwork()
 void UINetworkManagerWidget::prepareDetailsWidgetHostNetwork()
 {
     /* Prepare host network details-widget: */
-    m_pDetailsWidgetHostNetwork = new UIDetailsWidgetHostNetwork(m_enmEmbedding, m_pTabHostNetwork);
+    m_pDetailsWidgetHostNetwork = new UIDetailsWidgetHostNetwork(m_enmEmbedding, this);
     if (m_pDetailsWidgetHostNetwork)
     {
         m_pDetailsWidgetHostNetwork->setVisible(false);
@@ -894,7 +917,7 @@ void UINetworkManagerWidget::prepareDetailsWidgetHostNetwork()
                 this, &UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork);
 
         /* Add into layout: */
-        m_pLayoutHostNetwork->addWidget(m_pDetailsWidgetHostNetwork);
+        layout()->addWidget(m_pDetailsWidgetHostNetwork);
     }
 }
 
