@@ -138,7 +138,9 @@ typedef SOLARISFIXEDDISK *PSOLARISFIXEDDISK;
 # include "darwin/iokit.h"
 #endif
 
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #ifdef RT_OS_SOLARIS
 # include <iprt/ctype.h>
 #endif
@@ -328,6 +330,7 @@ HRESULT Host::init(VirtualBox *aParent)
     m->fVirtVmsaveVmload = false;
     m->fRecheckVTSupported = false;
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     if (ASMHasCpuId())
     {
         /* Note! This code is duplicated in SUPDrv.c and other places! */
@@ -347,12 +350,12 @@ HRESULT Host::init(VirtualBox *aParent)
             m->fLongModeSupported = ASMIsValidExtRange(uExtMaxId)
                                  && (fExtFeaturesEdx & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
 
-#if defined(RT_OS_DARWIN) && ARCH_BITS == 32 /* darwin.x86 has some optimizations of 64-bit on 32-bit. */
+# if defined(RT_OS_DARWIN) && ARCH_BITS == 32 /* darwin.x86 has some optimizations of 64-bit on 32-bit. */
             int     f64bitCapable = 0;
             size_t  cbParameter   = sizeof(f64bitCapable);
             if (sysctlbyname("hw.cpu64bit_capable", &f64bitCapable, &cbParameter, NULL, NULL) != -1)
                 m->fLongModeSupported = f64bitCapable != 0;
-#endif
+# endif
 
             /* VT-x? */
             if (   ASMIsIntelCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
@@ -397,6 +400,8 @@ HRESULT Host::init(VirtualBox *aParent)
             }
         }
     }
+#endif /* defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) */
+
 
     /* Check with SUPDrv if VT-x and AMD-V are really supported (may fail). */
     if (m->fVTSupported)
@@ -1309,12 +1314,19 @@ HRESULT Host::getProcessorCPUIDLeaf(ULONG aCpuId, ULONG aLeaf, ULONG aSubLeaf,
              ? setError(E_FAIL, tr("CPU no.%u is not present"), aCpuId)
              : setError(E_FAIL, tr("CPU no.%u is not online"), aCpuId);
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     uint32_t uEAX, uEBX, uECX, uEDX;
     ASMCpuId_Idx_ECX(aLeaf, aSubLeaf, &uEAX, &uEBX, &uECX, &uEDX);
     *aValEAX = uEAX;
     *aValEBX = uEBX;
     *aValECX = uECX;
     *aValEDX = uEDX;
+#else
+    *aValEAX = 0;
+    *aValEBX = 0;
+    *aValECX = 0;
+    *aValEDX = 0;
+#endif
 
     return S_OK;
 }
