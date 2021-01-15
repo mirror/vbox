@@ -26,7 +26,7 @@
 
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
-
+ifn1of ($(KBUILD_TARGET_ARCH), arm64)
 
 #
 # VBoxUSB.kext - The Darwin Kernel Extension.
@@ -89,5 +89,6 @@ tstOpenUSBDev_SOURCES = testcase/tstOpenUSBDev.cpp
 tstOpenUSBDev_LDFLAGS = -framework CoreFoundation -framework IOKit
 endif
 
+endif # ! arm64
 include $(FILE_KBUILD_SUB_FOOTER)
 
