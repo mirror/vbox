@@ -1337,7 +1337,7 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
                 "ExplicitlyLoad%.*s:\n"
                 "    .cfi_startproc\n"
                 "    ; Create frame.\n"
-                "    sub     sp, sp, #(16 + #96)\n"
+                "    sub     sp, sp, #(16 + 96)\n"
                 "    stp     x29, x30, [sp, #96]\n"
                 "    add     x29, sp, #96\n"
                 "    .cfi_def_cfa x29, 16\n"
