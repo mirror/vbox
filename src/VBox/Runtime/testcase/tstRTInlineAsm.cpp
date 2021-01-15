@@ -43,6 +43,9 @@
 #if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 # include <iprt/asm-amd64-x86.h>
 # include <iprt/x86.h>
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+# include <iprt/asm-arm.h>
+# include <iprt/time.h>
 #else
 # include <iprt/time.h>
 #endif
@@ -2675,7 +2678,7 @@ void tstASMBench(void)
 
     RTTestSub(g_hTest, "Benchmarking");
 
-#if 0 && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+#if 0 && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32))
 # define BENCH(op, str) \
     do { \
         RTThreadYield(); \
@@ -2705,7 +2708,7 @@ void tstASMBench(void)
         RTTestValue(g_hTest, str, u64Elapsed / cRounds, RTTESTUNIT_NS_PER_CALL); \
     } while (0)
 #endif
-#if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) && !defined(GCC44_32BIT_PIC)
+#if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)) && !defined(GCC44_32BIT_PIC)
 # define BENCH_TSC(op, str) \
     do { \
         RTThreadYield(); \
@@ -2803,6 +2806,9 @@ void tstASMBench(void)
     BENCH(s_u32 = ASMGetApicIdExt0B(),          "ASMGetApicIdExt0B");
     BENCH(s_u32 = ASMGetApicIdExt8000001E(),    "ASMGetApicIdExt8000001E");
 #endif
+#if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)  || defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32))
+    BENCH(s_u64 = ASMReadTSC(),                 "ASMReadTSC");
+#endif
 #if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     uint32_t uAux;
     if (   ASMHasCpuId()
@@ -2812,7 +2818,6 @@ void tstASMBench(void)
         BENCH_TSC(ASMSerializeInstructionRdTscp(), "ASMSerializeInstructionRdTscp");
         BENCH(s_u64 = ASMReadTscWithAux(&uAux),  "ASMReadTscWithAux");
     }
-    BENCH(s_u64 = ASMReadTSC(),                 "ASMReadTSC");
     union
     {
         uint64_t    u64[2];

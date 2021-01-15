@@ -86,25 +86,44 @@ DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
 
 #endif
 
-#if 0
+
 /**
- * Gets the content of the CPU timestamp counter register.
+ * Gets the content of the CNTVCT_EL0 (or CNTPCT) register.
  *
- * @returns TSC.
+ * @returns CNTVCT_EL0 value.
+ * @note    We call this TSC to better fit in with existing x86/amd64 based code.
  */
 #if RT_INLINE_ASM_EXTERNAL
 DECLASM(uint64_t) ASMReadTSC(void);
 #else
 DECLINLINE(uint64_t) ASMReadTSC(void)
 {
-    RTUINT64U u;
 # if RT_INLINE_ASM_GNU_STYLE
+    uint64_t u64;
+#  ifdef RT_ARCH_ARM64
+    __asm__ __volatile__("isb\n\t"
+                         "mrs %0, CNTVCT_EL0\n\t"
+                         : "=r" (u64));
+#  else
+    uint32_t u32Spill;
+    uint32_t u32Comp;
+    __asm__ __volatile__("isb\n"
+                         "Lagain:\n\t"
+                         "mrrc p15, 0, %[uSpill], %H[uRet],   c14\n\t"  /* CNTPCT high into uRet.hi */
+                         "mrrc p15, 0, %[uRet],   %[uSpill],  c14\n\t"  /* CNTPCT low  into uRet.lo */
+                         "mrrc p15, 0, %[uSpill], %[uHiComp], c14\n\t"  /* CNTPCT high into uHiComp */
+                         "cmp  %H[uRet], %[uHiComp]\n\t"
+                         "b.eq Lagain\n\t"                              /* Redo if high value changed. */
+                         : [uRet] "=r" (u64)
+                         , "=r" (uHiComp)
+                         , "=r" (uSpill));
+#  endif
+    return u64;
+
 # else
 #  error "Unsupported compiler"
 # endif
-    return u.u;
 }
-#endif
 #endif
 
 #if 0 /* port to arm64, armv7 and check */
