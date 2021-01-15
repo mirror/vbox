@@ -601,6 +601,8 @@ endif
   EFI/DevEFI.cpp_INCS       += EFI/Firmware/BaseTools/Source/C/Include
   EFI/DevEFI.cpp_INCS.x86   += EFI/Firmware/BaseTools/Source/C/Include/Ia32
   EFI/DevEFI.cpp_INCS.amd64 += EFI/Firmware/BaseTools/Source/C/Include/X64
+  EFI/DevEFI.cpp_INCS.arm32 += EFI/Firmware/BaseTools/Source/C/Include/Arm
+  EFI/DevEFI.cpp_INCS.arm64 += EFI/Firmware/BaseTools/Source/C/Include/Aarch64
  endif
 
  if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
