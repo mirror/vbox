@@ -1017,7 +1017,6 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     uint32_t cbProcessed = 0;
     uint32_t cbLeft      = cbToProcess;
 
-    uint8_t abChunk[HDA_FIFO_MAX + 1];
     while (cbLeft)
     {
         /* Limit the chunk to the stream's FIFO size and what's left to process. */
@@ -1039,6 +1038,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 
         uint32_t   cbDMA    = 0;
         PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
+        uint8_t   *pabFIFO  = pStreamShared->abFIFO;
 
         if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN) /* Input (SDI). */
         {
@@ -1058,7 +1058,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                     && !RTCircBufUsed(pCircBuf))
                     break;
 
-                memcpy(abChunk + cbDMAWritten, pvBuf, cbBuf);
+                memcpy(pabFIFO + cbDMAWritten, pvBuf, cbBuf);
 
                 RTCircBufReleaseReadBlock(pCircBuf, cbBuf);
 
@@ -1073,11 +1073,11 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                 LogRel2(("HDA: FIFO underflow for stream #%RU8 (%RU32 bytes outstanding)\n", uSD, cbDMAToWrite));
 
                 Assert(cbChunk == cbDMAWritten + cbDMAToWrite);
-                memset((uint8_t *)abChunk + cbDMAWritten, 0, cbDMAToWrite);
+                memset((uint8_t *)pabFIFO + cbDMAWritten, 0, cbDMAToWrite);
                 cbDMAWritten = cbChunk;
             }
 
-            rc = hdaR3DMAWrite(pDevIns, pThis, pStreamShared, pStreamR3, abChunk, cbDMAWritten, &cbDMA /* pcbWritten */);
+            rc = hdaR3DMAWrite(pDevIns, pThis, pStreamShared, pStreamR3, pabFIFO, cbDMAWritten, &cbDMA /* pcbWritten */);
             if (RT_FAILURE(rc))
                 LogRel(("HDA: Writing to stream #%RU8 DMA failed with %Rrc\n", uSD, rc));
 
@@ -1087,7 +1087,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
         {
             STAM_PROFILE_START(&pThis->StatOut, a);
 
-            rc = hdaR3DMARead(pDevIns, pThis, pStreamShared, pStreamR3, abChunk, cbChunk, &cbDMA /* pcbRead */);
+            rc = hdaR3DMARead(pDevIns, pThis, pStreamShared, pStreamR3, pabFIFO, cbChunk, &cbDMA /* pcbRead */);
             if (RT_SUCCESS(rc))
             {
                 const uint32_t cbFree = (uint32_t)RTCircBufFree(pCircBuf);
@@ -1111,7 +1111,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 
                         if (cbBuf)
                         {
-                            memcpy(pvBuf, abChunk + cbDMARead, cbBuf);
+                            memcpy(pvBuf, pabFIFO + cbDMARead, cbBuf);
                             cbDMARead += (uint32_t)cbBuf;
                             cbDMALeft -= (uint32_t)cbBuf;
                         }
@@ -1159,7 +1159,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                             continue;
                         }
 
-                        uint8_t *pbSrcBuf = abChunk;
+                        uint8_t *pbSrcBuf = pabFIFO;
                         size_t cbSrcOff   = pMap->offNext;
 
                         for (unsigned i = 0; i < cbDMA / cbFrame; i++)
@@ -1557,12 +1557,13 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 
             if (cbSinkReadable)
             {
-                uint8_t abFIFO[HDA_FIFO_MAX + 1];
+                uint8_t *pabFIFO = pStreamShared->abFIFO;
+
                 while (cbSinkReadable)
                 {
                     uint32_t cbRead;
                     rc2 = AudioMixerSinkRead(pSink, AUDMIXOP_COPY,
-                                             abFIFO, RT_MIN(cbSinkReadable, (uint32_t)sizeof(abFIFO)), &cbRead);
+                                             pabFIFO, RT_MIN(cbSinkReadable, (uint32_t)sizeof(pStreamShared->abFIFO)), &cbRead);
                     AssertRCBreak(rc2);
 
                     if (!cbRead)
@@ -1573,7 +1574,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 
                     /* Write (guest input) data to the stream which was read from stream's sink before. */
                     uint32_t cbWritten;
-                    rc2 = hdaR3StreamWrite(pStreamR3, abFIFO, cbRead, &cbWritten);
+                    rc2 = hdaR3StreamWrite(pStreamR3, pabFIFO, cbRead, &cbWritten);
                     AssertRCBreak(rc2);
                     AssertBreak(cbWritten > 0); /* Should never happen, as we know how much we can write. */
 

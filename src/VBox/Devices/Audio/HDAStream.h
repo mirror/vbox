@@ -210,6 +210,8 @@ typedef struct HDASTREAM
     uint16_t                    u16FIFOS;
     /** FIFO Watermark. */
     uint16_t                    u16FIFOW;
+    /** FIFO scratch buffer, to avoid intermediate (re-)allocations. */
+    uint8_t                     abFIFO[HDA_FIFO_MAX + 1];
     /** Last Valid Index (SDnLVI).
      *  Will be updated in hdaR3StreamInit(). */
     uint16_t                    u16LVI;
