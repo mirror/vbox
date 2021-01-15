@@ -89,7 +89,11 @@ DECL_NO_RETURN(static void) panic (char *fmt, ...)
 #  define MCLBYTES	(1 << MCLSHIFT)	/* size of an mbuf cluster */
 # endif /*MCLBYTES*/
 
-# define	MJUMPAGESIZE	PAGE_SIZE	/* jumbo cluster 4k */
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  define	MJUMPAGESIZE	PAGE_SIZE	/* jumbo cluster 4k */
+# else
+#  define	MJUMPAGESIZE	(4 * 1024)	/* jumbo cluster 4k */
+# endif
 # define	MJUM9BYTES	(9 * 1024)	/* jumbo cluster 9k */
 # define	MJUM16BYTES	(16 * 1024)	/* jumbo cluster 16k */
 #endif /* VBOX */
