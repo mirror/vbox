@@ -1583,13 +1583,9 @@ static VBOXSTRICTRC hdaRegWriteSDFIFOW(PPDMDEVINS pDevIns, PHDASTATE pThis, uint
             break;
     }
 
-    if (u32FIFOW) /** @todo r=bird: Logic error. it will never be zero, so why this check? */
-    {
-        pThis->aStreams[idxStream].u16FIFOW = hdaSDFIFOWToBytes(u32FIFOW);
-        LogFunc(("[SD%zu] Updating FIFOW to %u bytes\n", idxStream, pThis->aStreams[idxStream].u16FIFOW));
-        return hdaRegWriteU16(pDevIns, pThis, iReg, u32FIFOW);
-    }
-    return VINF_SUCCESS;
+    pThis->aStreams[idxStream].u16FIFOW = hdaSDFIFOWToBytes(u32FIFOW);
+    LogFunc(("[SD%zu] Updating FIFOW to %u bytes\n", idxStream, pThis->aStreams[idxStream].u16FIFOW));
+    return hdaRegWriteU16(pDevIns, pThis, iReg, u32FIFOW);
 }
 
 /**
