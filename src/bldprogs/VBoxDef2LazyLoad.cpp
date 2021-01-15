@@ -61,7 +61,7 @@ static bool         g_fSystemLibrary = false;
 #if   defined(RT_ARCH_AMD64)
 static RTLDRARCH    g_enmTarget = RTLDRARCH_AMD64;
 #elif defined(RT_ARCH_X86)
-static RTLDRARCH    g_enmTarget = RTLDRARCH_X86;
+static RTLDRARCH    g_enmTarget = RTLDRARCH_X86_32;
 #elif defined(RT_ARCH_ARM64)
 static RTLDRARCH    g_enmTarget = RTLDRARCH_ARM64;
 #else
