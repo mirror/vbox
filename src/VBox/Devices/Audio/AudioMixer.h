@@ -193,6 +193,10 @@ typedef struct AUDMIXSINK
     /** This sink's mixing buffer, acting as
      * a parent buffer for all streams this sink owns. */
     PDMAUDIOMIXBUF          MixBuf;
+    /** Scratch buffer for multiplexing / mixing. Might be NULL if not needed. */
+    uint8_t                *pabScratchBuf;
+    /** Size (in bytes) of pabScratchBuf. Might be 0 if not needed. */
+    size_t                  cbScratchBuf;
     /** Union for input/output specifics. */
     union
     {

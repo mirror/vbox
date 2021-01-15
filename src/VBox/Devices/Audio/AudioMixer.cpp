@@ -846,6 +846,12 @@ static int audioMixerSinkInit(PAUDMIXSINK pSink, PAUDIOMIXER pMixer, const char 
         pSink->VolumeCombined.fMuted = false;
         pSink->VolumeCombined.uLeft  = PDMAUDIO_VOLUME_MAX;
         pSink->VolumeCombined.uRight = PDMAUDIO_VOLUME_MAX;
+
+        const size_t cbScratchBuf = _1K; /** @todo Make this configurable? */
+
+        pSink->pabScratchBuf = (uint8_t *)RTMemAlloc(cbScratchBuf);
+        AssertPtrReturn(pSink->pabScratchBuf, VERR_NO_MEMORY);
+        pSink->cbScratchBuf  = cbScratchBuf;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -915,6 +921,16 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink)
     {
         RTStrFree(pSink->pszName);
         pSink->pszName = NULL;
+    }
+
+    if (pSink->pabScratchBuf)
+    {
+        Assert(pSink->cbScratchBuf);
+
+        RTMemFree(pSink->pabScratchBuf);
+        pSink->pabScratchBuf = NULL;
+
+        pSink->cbScratchBuf = 0;
     }
 
     AudioMixBufDestroy(&pSink->MixBuf);
@@ -1674,6 +1690,10 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         && pSink->In.pStreamRecSource == NULL)
         return rc;
 
+    /* Sanity. */
+    AssertPtr(pSink->pabScratchBuf);
+    Assert(pSink->cbScratchBuf);
+
     /* Update each mixing sink stream's status. */
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
@@ -1688,20 +1708,20 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
     /* Next, try to write (multiplex) as much audio data as possible to all connected mixer streams. */
     uint32_t cbToWriteToStreams = AudioMixBufUsedBytes(&pSink->MixBuf);
 
-    uint8_t arrChunkBuf[_1K]; /** @todo Hm ... some zero copy / shared buffers would be nice! */
     while (cbToWriteToStreams)
     {
         uint32_t cfChunk;
-        rc  = AudioMixBufAcquireReadBlock(&pSink->MixBuf, arrChunkBuf, RT_MIN(cbToWriteToStreams, sizeof(arrChunkBuf)), &cfChunk);
+        rc  = AudioMixBufAcquireReadBlock(&pSink->MixBuf, pSink->pabScratchBuf, RT_MIN(cbToWriteToStreams, pSink->cbScratchBuf),
+                                          &cfChunk);
         if (RT_FAILURE(rc))
             break;
 
         const uint32_t cbChunk = DrvAudioHlpFramesToBytes(cfChunk, &pSink->PCMProps);
-        Assert(cbChunk <= sizeof(arrChunkBuf));
+        Assert(cbChunk <= pSink->cbScratchBuf);
 
         /* Multiplex the current chunk in a synchronized fashion to all connected streams. */
         uint32_t cbChunkWrittenMin = 0;
-        rc = audioMixerSinkMultiplexSync(pSink, AUDMIXOP_COPY, arrChunkBuf, cbChunk, &cbChunkWrittenMin);
+        rc = audioMixerSinkMultiplexSync(pSink, AUDMIXOP_COPY, pSink->pabScratchBuf, cbChunk, &cbChunkWrittenMin);
         if (RT_SUCCESS(rc))
         {
             RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
