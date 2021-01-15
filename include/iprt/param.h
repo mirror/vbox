@@ -29,6 +29,8 @@
 # pragma once
 #endif
 
+#include <iprt/cdefs.h>
+
 /** @todo Much of the PAGE_* stuff here is obsolete and highly risky to have around.
  * As for component configs (MM_*), either we gather all in here or we move those bits away! */
 
