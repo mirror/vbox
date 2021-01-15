@@ -325,8 +325,8 @@ int hdaR3DMARead(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, 
 # ifdef HDA_DEBUG_SILENCE
     uint64_t   csSilence = 0;
 
-    pStreamCC->Dbg.cSilenceThreshold = 100;
-    pStreamCC->Dbg.cbSilenceReadMin  = _1M;
+    pStreamR3->Dbg.cSilenceThreshold = 100;
+    pStreamR3->Dbg.cbSilenceReadMin  = _1M;
 # endif
 
     RTGCPHYS GCPhysChunk = pBDLE->Desc.u64BufAddr + pBDLE->State.u32BufOff;
