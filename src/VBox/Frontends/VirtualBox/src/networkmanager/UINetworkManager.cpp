@@ -1106,6 +1106,10 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
     /* Check NAT network details-widget: */
     AssertMsgReturnVoid(m_pDetailsWidgetNATNetwork, ("NAT network details-widget isn't created!\n"));
 
+    /* Revalidate NAT network details: */
+    if (!m_pDetailsWidgetNATNetwork->revalidate())
+        return;
+
     /* Get item data: */
     UIDataNATNetwork oldData = *pItem;
     UIDataNATNetwork newData = m_pDetailsWidgetNATNetwork->data();

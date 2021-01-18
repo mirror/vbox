@@ -73,6 +73,11 @@ void UIDetailsWidgetNATNetwork::setData(const UIDataNATNetwork &data, bool fHold
     loadDataForForwarding();
 }
 
+bool UIDetailsWidgetNATNetwork::revalidate()
+{
+    return m_pForwardingTableIPv4->validate() && m_pForwardingTableIPv6->validate();
+}
+
 void UIDetailsWidgetNATNetwork::retranslateUi()
 {
     /* Translate tab-widget: */
@@ -146,65 +151,54 @@ void UIDetailsWidgetNATNetwork::retranslateUi()
         m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->
             setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
-
-    /* Retranslate validation: */
-    retranslateValidation();
 }
 
 void UIDetailsWidgetNATNetwork::sltNetworkAvailabilityChanged(bool fChecked)
 {
     m_newData.m_fEnabled = fChecked;
     loadDataForOptions();
-    revalidate();
     updateButtonStates();
 }
 
 void UIDetailsWidgetNATNetwork::sltNetworkNameChanged(const QString &strText)
 {
     m_newData.m_strName = strText;
-    revalidate();
     updateButtonStates();
 }
 
 void UIDetailsWidgetNATNetwork::sltNetworkCIDRChanged(const QString &strText)
 {
     m_newData.m_strCIDR = strText;
-    revalidate();
     updateButtonStates();
 }
 
 void UIDetailsWidgetNATNetwork::sltSupportsDHCPChanged(bool fChecked)
 {
     m_newData.m_fSupportsDHCP = fChecked;
-    revalidate();
     updateButtonStates();
 }
 
 void UIDetailsWidgetNATNetwork::sltSupportsIPv6Changed(bool fChecked)
 {
     m_newData.m_fSupportsIPv6 = fChecked;
-    revalidate();
     updateButtonStates();
 }
 
 void UIDetailsWidgetNATNetwork::sltAdvertiseDefaultIPv6RouteChanged(bool fChecked)
 {
     m_newData.m_fAdvertiseDefaultIPv6Route = fChecked;
-    revalidate();
     updateButtonStates();
 }
 
 void UIDetailsWidgetNATNetwork::sltForwardingRulesIPv4Changed()
 {
     m_newData.m_rules4 = m_pForwardingTableIPv4->rules();
-    revalidate();
     updateButtonStates();
 }
 
 void UIDetailsWidgetNATNetwork::sltForwardingRulesIPv6Changed()
 {
     m_newData.m_rules6 = m_pForwardingTableIPv6->rules();
-    revalidate();
     updateButtonStates();
 }
 
@@ -421,7 +415,9 @@ void UIDetailsWidgetNATNetwork::prepareTabForwarding()
             if (m_pTabWidgetForwarding)
             {
                 /* Prepare IPv4 forwarding table: */
-                m_pForwardingTableIPv4 = new UIPortForwardingTable(UIPortForwardingDataList(), false, true);
+                m_pForwardingTableIPv4 = new UIPortForwardingTable(UIPortForwardingDataList(),
+                                                                   false /* ip IPv6 protocol */,
+                                                                   false /* allow empty guest IPs */);
                 if (m_pForwardingTableIPv4)
                 {
                     connect(m_pForwardingTableIPv4, &UIPortForwardingTable::sigDataChanged,
@@ -429,7 +425,9 @@ void UIDetailsWidgetNATNetwork::prepareTabForwarding()
                     m_pTabWidgetForwarding->addTab(m_pForwardingTableIPv4, QString());
                 }
                 /* Prepare IPv6 forwarding table: */
-                m_pForwardingTableIPv6 = new UIPortForwardingTable(UIPortForwardingDataList(), true, true);
+                m_pForwardingTableIPv6 = new UIPortForwardingTable(UIPortForwardingDataList(),
+                                                                   true /* ip IPv6 protocol */,
+                                                                   false /* allow empty guest IPs */);
                 if (m_pForwardingTableIPv6)
                 {
                     connect(m_pForwardingTableIPv4, &UIPortForwardingTable::sigDataChanged,
@@ -499,129 +497,6 @@ void UIDetailsWidgetNATNetwork::loadDataForForwarding()
     m_pForwardingTableIPv4->setRules(m_newData.m_rules4, m_fHoldPosition);
     m_pForwardingTableIPv6->setRules(m_newData.m_rules6, m_fHoldPosition);
     m_fHoldPosition = false;
-}
-
-void UIDetailsWidgetNATNetwork::revalidate(QWidget * /*pWidget*/ /* = 0 */)
-{
-#if 0
-    /* Validate 'Interface' tab content: */
-    if (!pWidget || pWidget == m_pErrorPaneAutomatic)
-    {
-        const bool fError =    m_newData.m_interface.m_fDHCPEnabled
-                            && !m_newData.m_dhcpserver.m_fEnabled;
-        m_pErrorPaneAutomatic->setVisible(fError);
-    }
-    if (!pWidget || pWidget == m_pErrorPaneManual)
-    {
-        const bool fError = false;
-        m_pErrorPaneManual->setVisible(fError);
-    }
-    if (!pWidget || pWidget == m_pErrorPaneIPv4)
-    {
-        const bool fError =    !m_newData.m_interface.m_fDHCPEnabled
-                            && !m_newData.m_interface.m_strAddress.trimmed().isEmpty()
-                            && (   !RTNetIsIPv4AddrStr(m_newData.m_interface.m_strAddress.toUtf8().constData())
-                                || RTNetStrIsIPv4AddrAny(m_newData.m_interface.m_strAddress.toUtf8().constData()));
-        m_pErrorPaneIPv4->setVisible(fError);
-    }
-    if (!pWidget || pWidget == m_pErrorPaneNMv4)
-    {
-        const bool fError =    !m_newData.m_interface.m_fDHCPEnabled
-                            && !m_newData.m_interface.m_strMask.trimmed().isEmpty()
-                            && (   !RTNetIsIPv4AddrStr(m_newData.m_interface.m_strMask.toUtf8().constData())
-                                || RTNetStrIsIPv4AddrAny(m_newData.m_interface.m_strMask.toUtf8().constData()));
-        m_pErrorPaneNMv4->setVisible(fError);
-    }
-    if (!pWidget || pWidget == m_pErrorPaneIPv6)
-    {
-        const bool fError =    !m_newData.m_interface.m_fDHCPEnabled
-                            && m_newData.m_interface.m_fSupportedIPv6
-                            && !m_newData.m_interface.m_strAddress6.trimmed().isEmpty()
-                            && (   !RTNetIsIPv6AddrStr(m_newData.m_interface.m_strAddress6.toUtf8().constData())
-                                || RTNetStrIsIPv6AddrAny(m_newData.m_interface.m_strAddress6.toUtf8().constData()));
-        m_pErrorPaneIPv6->setVisible(fError);
-    }
-    if (!pWidget || pWidget == m_pErrorPaneNMv6)
-    {
-        bool fIsMaskPrefixLengthNumber = false;
-        const int iMaskPrefixLength = m_newData.m_interface.m_strPrefixLength6.trimmed().toInt(&fIsMaskPrefixLengthNumber);
-        const bool fError =    !m_newData.m_interface.m_fDHCPEnabled
-                            && m_newData.m_interface.m_fSupportedIPv6
-                            && (   !fIsMaskPrefixLengthNumber
-                                || iMaskPrefixLength < 0
-                                || iMaskPrefixLength > 128);
-        m_pErrorPaneNMv6->setVisible(fError);
-    }
-
-    /* Validate 'DHCP server' tab content: */
-    if (!pWidget || pWidget == m_pErrorPaneDHCPAddress)
-    {
-        const bool fError =    m_newData.m_dhcpserver.m_fEnabled
-                            && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strAddress.toUtf8().constData())
-                                || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strAddress.toUtf8().constData()));
-        m_pErrorPaneDHCPAddress->setVisible(fError);
-    }
-    if (!pWidget || pWidget == m_pErrorPaneDHCPMask)
-    {
-        const bool fError =    m_newData.m_dhcpserver.m_fEnabled
-                            && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strMask.toUtf8().constData())
-                                || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strMask.toUtf8().constData()));
-        m_pErrorPaneDHCPMask->setVisible(fError);
-    }
-    if (!pWidget || pWidget == m_pErrorPaneDHCPLowerAddress)
-    {
-        const bool fError =    m_newData.m_dhcpserver.m_fEnabled
-                            && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strLowerAddress.toUtf8().constData())
-                                || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strLowerAddress.toUtf8().constData()));
-        m_pErrorPaneDHCPLowerAddress->setVisible(fError);
-    }
-    if (!pWidget || pWidget == m_pErrorPaneDHCPUpperAddress)
-    {
-        const bool fError =    m_newData.m_dhcpserver.m_fEnabled
-                            && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData())
-                                || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData()));
-        m_pErrorPaneDHCPUpperAddress->setVisible(fError);
-    }
-
-    /* Retranslate validation: */
-    retranslateValidation(pWidget);
-#endif
-}
-
-void UIDetailsWidgetNATNetwork::retranslateValidation(QWidget * /*pWidget*/ /* = 0 */)
-{
-#if 0
-    /* Translate 'Interface' tab content: */
-    if (!pWidget || pWidget == m_pErrorPaneAutomatic)
-        m_pErrorPaneAutomatic->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> is set to obtain the address automatically "
-                                             "but the corresponding DHCP server is not enabled.").arg(m_newData.m_interface.m_strName));
-    if (!pWidget || pWidget == m_pErrorPaneIPv4)
-        m_pErrorPaneIPv4->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
-                                        "IPv4 address.").arg(m_newData.m_interface.m_strName));
-    if (!pWidget || pWidget == m_pErrorPaneNMv4)
-        m_pErrorPaneNMv4->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
-                                        "IPv4 network mask.").arg(m_newData.m_interface.m_strName));
-    if (!pWidget || pWidget == m_pErrorPaneIPv6)
-        m_pErrorPaneIPv6->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
-                                        "IPv6 address.").arg(m_newData.m_interface.m_strName));
-    if (!pWidget || pWidget == m_pErrorPaneNMv6)
-        m_pErrorPaneNMv6->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
-                                        "IPv6 prefix length.").arg(m_newData.m_interface.m_strName));
-
-    /* Translate 'DHCP server' tab content: */
-    if (!pWidget || pWidget == m_pErrorPaneDHCPAddress)
-        m_pErrorPaneDHCPAddress->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
-                                               "DHCP server address.").arg(m_newData.m_interface.m_strName));
-    if (!pWidget || pWidget == m_pErrorPaneDHCPMask)
-        m_pErrorPaneDHCPMask->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
-                                            "DHCP server mask.").arg(m_newData.m_interface.m_strName));
-    if (!pWidget || pWidget == m_pErrorPaneDHCPLowerAddress)
-        m_pErrorPaneDHCPLowerAddress->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
-                                                    "DHCP server lower address bound.").arg(m_newData.m_interface.m_strName));
-    if (!pWidget || pWidget == m_pErrorPaneDHCPUpperAddress)
-        m_pErrorPaneDHCPUpperAddress->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
-                                                    "DHCP server upper address bound.").arg(m_newData.m_interface.m_strName));
-#endif
 }
 
 void UIDetailsWidgetNATNetwork::updateButtonStates()

@@ -124,6 +124,9 @@ public:
       *                        port forwarding rule position intact. */
     void setData(const UIDataNATNetwork &data, bool fHoldPosition = false);
 
+    /** Revalidates changes. */
+    bool revalidate();
+
 protected:
 
     /** Handles translation event. */
@@ -181,10 +184,6 @@ private:
 
     /** @name Change handling stuff.
       * @{ */
-        /** Revalidates changes for passed @a pWidget. */
-        void revalidate(QWidget *pWidget = 0);
-        /** Retranslates validation for passed @a pWidget. */
-        void retranslateValidation(QWidget *pWidget = 0);
         /** Updates button states. */
         void updateButtonStates();
     /** @} */
