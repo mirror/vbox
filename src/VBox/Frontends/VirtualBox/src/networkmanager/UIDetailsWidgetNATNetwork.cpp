@@ -55,15 +55,17 @@ UIDetailsWidgetNATNetwork::UIDetailsWidgetNATNetwork(EmbedTo enmEmbedding, QWidg
     , m_pForwardingTableIPv4(0)
     , m_pForwardingTableIPv6(0)
     , m_pButtonBoxForwarding(0)
+    , m_fHoldPosition(false)
 {
     prepare();
 }
 
-void UIDetailsWidgetNATNetwork::setData(const UIDataNATNetwork &data)
+void UIDetailsWidgetNATNetwork::setData(const UIDataNATNetwork &data, bool fHoldPosition /* = false */)
 {
     /* Cache old/new data: */
     m_oldData = data;
     m_newData = m_oldData;
+    m_fHoldPosition = fHoldPosition;
 
     /* Load 'Options' data: */
     loadDataForOptions();
@@ -494,8 +496,9 @@ void UIDetailsWidgetNATNetwork::loadDataForForwarding()
     m_pForwardingTableIPv6->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
 
     /* Load 'Forwarding' fields: */
-    m_pForwardingTableIPv4->setRules(m_newData.m_rules4);
-    m_pForwardingTableIPv6->setRules(m_newData.m_rules6);
+    m_pForwardingTableIPv4->setRules(m_newData.m_rules4, m_fHoldPosition);
+    m_pForwardingTableIPv6->setRules(m_newData.m_rules6, m_fHoldPosition);
+    m_fHoldPosition = false;
 }
 
 void UIDetailsWidgetNATNetwork::revalidate(QWidget * /*pWidget*/ /* = 0 */)

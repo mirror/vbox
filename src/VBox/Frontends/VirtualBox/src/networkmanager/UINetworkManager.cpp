@@ -1036,8 +1036,8 @@ void UINetworkManagerWidget::sltHandleItemChangeNATNetwork(QTreeWidgetItem *pIte
             loadNATNetwork(comNetwork, data);
             updateItemForNATNetwork(data, true, pChangedItem);
 
-            /* Make sure current item fetched: */
-            sltHandleCurrentItemChangeNATNetwork();
+            /* Make sure current item fetched, trying to hold chosen position: */
+            sltHandleCurrentItemChangeNATNetworkHoldingPosition(true /* hold position? */);
 
             /* Adjust tree-widgets: */
             sltAdjustTreeWidgets();
@@ -1045,7 +1045,7 @@ void UINetworkManagerWidget::sltHandleItemChangeNATNetwork(QTreeWidgetItem *pIte
     }
 }
 
-void UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetwork()
+void UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetworkHoldingPosition(bool fHoldPosition)
 {
     /* Check NAT network tree-widget: */
     AssertMsgReturnVoid(m_pTreeWidgetNATNetwork, ("NAT network tree-widget isn't created!\n"));
@@ -1062,10 +1062,15 @@ void UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetwork()
 
     /* If there is an item => update details data: */
     if (pItem)
-        m_pDetailsWidgetNATNetwork->setData(*pItem);
+        m_pDetailsWidgetNATNetwork->setData(*pItem, fHoldPosition);
     /* Otherwise => clear details: */
     else
         m_pDetailsWidgetNATNetwork->setData(UIDataNATNetwork());
+}
+
+void UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetwork()
+{
+    sltHandleCurrentItemChangeNATNetworkHoldingPosition(false /* hold position? */);
 }
 
 void UINetworkManagerWidget::sltHandleContextMenuRequestNATNetwork(const QPoint &position)
@@ -1190,8 +1195,8 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
             loadNATNetwork(comNetwork, data);
             updateItemForNATNetwork(data, true, pItem);
 
-            /* Make sure current item fetched: */
-            sltHandleCurrentItemChangeNATNetwork();
+            /* Make sure current item fetched, trying to hold chosen position: */
+            sltHandleCurrentItemChangeNATNetworkHoldingPosition(true /* hold position? */);
 
             /* Adjust tree-widgets: */
             sltAdjustTreeWidgets();

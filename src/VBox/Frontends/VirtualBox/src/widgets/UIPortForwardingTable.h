@@ -215,8 +215,11 @@ public:
 
     /** Returns the list of port forwarding rules. */
     UIPortForwardingDataList rules() const;
-    /** Defines the list of port forwarding @a newRules. */
-    void setRules(const UIPortForwardingDataList &newRules);
+    /** Defines the list of port forwarding @a newRules.
+      * @param  fHoldPosition  Holds whether we should try to keep
+      *                        port forwarding rule position intact. */
+    void setRules(const UIPortForwardingDataList &newRules,
+                  bool fHoldPosition = false);
 
     /** Validates the table. */
     bool validate() const;

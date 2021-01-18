@@ -794,11 +794,30 @@ UIPortForwardingDataList UIPortForwardingTable::rules() const
     return m_pTableModel->rules();
 }
 
-void UIPortForwardingTable::setRules(const UIPortForwardingDataList &newRules)
+void UIPortForwardingTable::setRules(const UIPortForwardingDataList &newRules,
+                                     bool fHoldPosition /* = false */)
 {
+    /* Remember last chosen item: */
+    const QModelIndex currentIndex = m_pTableView->currentIndex();
+    QITableViewRow *pCurrentItem = currentIndex.isValid() ? m_pTableModel->childItem(currentIndex.row()) : 0;
+    const QString strCurrentName = pCurrentItem ? pCurrentItem->childItem(0)->text() : QString();
+
+    /* Update the list of rules: */
     m_rules = newRules;
     m_pTableModel->setRules(m_rules);
     sltAdjustTable();
+
+    /* Restore last chosen item: */
+    if (fHoldPosition && !strCurrentName.isEmpty())
+    {
+        for (int i = 0; i < m_pTableModel->childCount(); ++i)
+        {
+            QITableViewRow *pItem = m_pTableModel->childItem(i);
+            const QString strName = pItem ? pItem->childItem(0)->text() : QString();
+            if (strName == strCurrentName)
+                m_pTableView->setCurrentIndex(m_pTableModel->index(i, 0));
+        }
+    }
 }
 
 bool UIPortForwardingTable::validate() const
