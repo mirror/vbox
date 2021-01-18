@@ -160,28 +160,30 @@ static snd_pcm_format_t alsaAudioPropsToALSA(PPDMAUDIOPCMPROPS pProps)
 
 static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
 {
-    /** @todo r=bird: Why isn't this code setting fSwapEndian for every case? It
-     *        seems to make some UNDOCUMENT ASSUMPTIONS about pProps. */
     switch (fmt)
     {
         case SND_PCM_FORMAT_S8:
             pProps->cbSample    = 1;
             pProps->fSigned     = true;
+            pProps->fSwapEndian = false;
             break;
 
         case SND_PCM_FORMAT_U8:
             pProps->cbSample    = 1;
             pProps->fSigned     = false;
+            pProps->fSwapEndian = false;
             break;
 
         case SND_PCM_FORMAT_S16_LE:
             pProps->cbSample    = 2;
             pProps->fSigned     = true;
+            pProps->fSwapEndian = false;
             break;
 
         case SND_PCM_FORMAT_U16_LE:
             pProps->cbSample    = 2;
             pProps->fSigned     = false;
+            pProps->fSwapEndian = false;
             break;
 
         case SND_PCM_FORMAT_S16_BE:
@@ -203,11 +205,13 @@ static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
         case SND_PCM_FORMAT_S32_LE:
             pProps->cbSample    = 4;
             pProps->fSigned     = true;
+            pProps->fSwapEndian = false;
             break;
 
         case SND_PCM_FORMAT_U32_LE:
             pProps->cbSample    = 4;
             pProps->fSigned     = false;
+            pProps->fSwapEndian = false;
             break;
 
         case SND_PCM_FORMAT_S32_BE:
@@ -230,8 +234,9 @@ static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
             AssertMsgFailedReturn(("Format %d not supported\n", fmt), VERR_NOT_SUPPORTED);
     }
 
-    Assert(pProps->cbSample > 0);
-    Assert(pProps->cChannels > 0);
+    AssertReturn(pProps->cbSample > 0,  VERR_NOT_SUPPORTED);
+    AssertReturn(pProps->cChannels > 0, VERR_INVALID_PARAMETER);
+
     pProps->cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cbSample, pProps->cChannels);
 
     return VINF_SUCCESS;
