@@ -68,8 +68,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     /* Register classes: */
     qRegisterMetaType<CMedium>();
     /* Register fields: */
-    registerField("name*", m_pNameAndFolderEditor, "name", SIGNAL(sigNameChanged(const QString &)));
-    registerField("type", m_pSystemTypeEditor, "type", SIGNAL(sigOsTypeChanged()));
+    registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
+    registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
     registerField("machineFilePath", this, "machineFilePath");
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
@@ -90,12 +90,15 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("productKey", this, "productKey");
     registerField("VCPUCount", this, "VCPUCount");
 
+    const QPalette pal = palette();
+    QColor tabBackgroundColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(110);
+    QColor textColor = pal.color(QPalette::Active, QPalette::Text).lighter();
+    QColor disabledTextColor = pal.color(QPalette::Disabled, QPalette::Text).lighter();
+
     m_pToolBox->setStyleSheet(QString::fromUtf8("QToolBox::tab {\n"
-                                                "    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,\n"
-                                                "                                stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,\n"
-                                                "                                stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);\n"
+                                                "    background: %1; \n"
                                                 "    border-radius: 5px;\n"
-                                                "    color: black;\n"
+                                                "    color: %2;\n"
                                                 "}\n"
                                                 "\n"
                                                 "QToolBox::tab:selected {\n"
@@ -107,8 +110,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
                                                 "}\n"
                                                 "QToolBox::tab:disabled {\n"
                                                 "    font: italic;\n"
-                                                "    color: gray;\n"
-                                                "}"));
+                                                "    color: %3;\n"
+                                                "}").arg(tabBackgroundColor.name()).arg(textColor.name()).arg(disabledTextColor.name()));
 
     if (m_pEnableUnattendedInstallCheckBox)
         disableEnableUnattendedRelatedWidgets(m_pEnableUnattendedInstallCheckBox->isChecked());
@@ -136,7 +139,7 @@ void UIWizardNewVMPageExpert::sltOsTypeChanged()
     onOsTypeChanged();
 
     /* Fetch recommended RAM value: */
-    CGuestOSType type = m_pSystemTypeEditor->type();
+    CGuestOSType type = m_pNameAndSystemEditor->type();
     m_pBaseMemoryEditor->setValue(type.GetRecommendedRAM());
 
     /* Broadcast complete-change: */
@@ -212,18 +215,15 @@ void UIWizardNewVMPageExpert::retranslateUi()
 void UIWizardNewVMPageExpert::createConnections()
 {
     /* Connections for Name, OS Type, and unattended install stuff: */
-    if (m_pNameAndFolderEditor)
+    if (m_pNameAndSystemEditor)
     {
-        connect(m_pNameAndFolderEditor, &UINameAndSystemEditor::sigNameChanged,
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
                 this, &UIWizardNewVMPageExpert::sltNameChanged);
-        connect(m_pNameAndFolderEditor, &UINameAndSystemEditor::sigPathChanged,
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged,
                 this, &UIWizardNewVMPageExpert::sltPathChanged);
-    }
-    if (m_pSystemTypeEditor)
-    {
-        connect(m_pSystemTypeEditor, &UINameAndSystemEditor::sigOsTypeChanged,
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
                 this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
-        connect(m_pSystemTypeEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
                 this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
     }
     if (m_pEnableUnattendedInstallCheckBox)

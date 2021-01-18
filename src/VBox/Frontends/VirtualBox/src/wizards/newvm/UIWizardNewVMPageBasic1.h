@@ -94,8 +94,7 @@ protected:
        QCheckBox *m_pStartHeadlessCheckBox;
        /** We have two UINameAndSystemEditor instance since name/vm path fields and OS type fields
         * are separated. */
-       UINameAndSystemEditor *m_pNameAndFolderEditor;
-       UINameAndSystemEditor *m_pSystemTypeEditor;
+       UINameAndSystemEditor *m_pNameAndSystemEditor;
        QIRichTextLabel *m_pUnattendedLabel;
        QIRichTextLabel *m_pNameOSTypeLabel;
     /** @} */
