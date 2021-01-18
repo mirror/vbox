@@ -24,7 +24,6 @@
 #include <QRadioButton>
 #include <QSpacerItem>
 #include <QSpinBox>
-#include <QToolBox>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -36,6 +35,7 @@
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
 #include "UINameAndSystemEditor.h"
+#include "UIToolBox.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageExpert.h"
@@ -48,7 +48,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
-        m_pToolBox = new QToolBox;
+        m_pToolBox = new UIToolBox;
         m_pToolBox->insertItem(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(/* fIncreaseLeftIndent */ true,
                                                                                          /* fCreateLabels */ false), "");
         m_pToolBox->insertItem(ExpertToolboxItems_Disk, createDiskWidgets(/* fIncreaseLeftIndent */ true), "");
@@ -56,7 +56,10 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
         m_pToolBox->insertItem(ExpertToolboxItems_UsernameHostname, createUserNameHostNameWidgets(/* fIncreaseLeftIndent */ true), "");
         m_pToolBox->insertItem(ExpertToolboxItems_GAInstall, createGAInstallWidgets(/* fIncreaseLeftIndent */ true), "");
         m_pToolBox->insertItem(ExpertToolboxItems_ProductKey, createProductKeyWidgets(/* fIncreaseLeftIndent */ true), "");
+
+        m_pToolBox->setPageVisible(ExpertToolboxItems_NameAndOSType);
         pMainLayout->addWidget(m_pToolBox);
+
 
         pMainLayout->addStretch();
         updateVirtualDiskSource();

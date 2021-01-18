@@ -898,6 +898,7 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UISearchLineEdit.h \
+	src/widgets/UIToolBox.h \
 	src/widgets/UIWarningPane.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
@@ -1015,7 +1016,8 @@ UICommon_QT_MOCSRCS = \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
-	src/widgets/UIStatusBarEditorWindow.cpp
+	src/widgets/UIStatusBarEditorWindow.cpp \
+	src/widgets/UIToolBox.cpp
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_QT_MOCSRCS += \
@@ -1428,6 +1430,7 @@ UICommon_SOURCES = \
 	src/widgets/UISlidingToolBar.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
+	src/widgets/UIToolBox.cpp \
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
