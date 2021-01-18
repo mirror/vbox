@@ -43,7 +43,7 @@
 
 
 /**
- * Ensures that we've got a 'Content-Length' header.
+ * Ensures that we've got an 'X-Date' or 'Date' header.
  *
  * @returns IPRT status code.
  * @param   hHttp       The HTTP client handle.
