@@ -8207,7 +8207,9 @@ void Machine::uninitDataAndChildObjects()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
-    AssertReturnVoid(   getObjectState().getState() == ObjectState::InUninit
+    /* Machine object has state = ObjectState::InInit during registeredInit, even if it fails to get settings */
+    AssertReturnVoid(   getObjectState().getState() == ObjectState::InInit
+                     || getObjectState().getState() == ObjectState::InUninit
                      || getObjectState().getState() == ObjectState::Limited);
 
     /* tell all our other child objects we've been uninitialized */
