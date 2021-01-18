@@ -326,6 +326,8 @@ typedef struct IOMMU
     STAMCOUNTER             StatCmdPrefIommuPages;      /**< Number of Prefetch IOMMU Pages commands processed. */
     STAMCOUNTER             StatCmdCompletePprReq;      /**< Number of Complete PPR Requests commands processed. */
     STAMCOUNTER             StatCmdInvIommuAll;         /**< Number of Invalidate IOMMU All commands processed. */
+
+    STAMPROFILEADV          StatDteLookup;              /**< Profiling of device table entry lookup (uncached). */
     /** @} */
 #endif
 } IOMMU;
@@ -2649,6 +2651,7 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
                                      IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    STAM_PROFILE_ADV_START(&pThis->StatDteLookup, a);
 
     /* Read the device table entry from memory. */
     DTE_T Dte;
@@ -2662,6 +2665,7 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
         {
             /** @todo IOMMU: Add to IOLTB cache. */
             *pGCPhysSpa = uIova;
+            STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
             return VINF_SUCCESS;
         }
 
@@ -2677,6 +2681,7 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
             EVT_ILLEGAL_DTE_T Event;
             iommuAmdInitIllegalDteEvent(uDevId, uIova, true /* fRsvdNotZero */, enmOp, &Event);
             iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
+            STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
@@ -2688,6 +2693,7 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
         {
             /** @todo IOMMU: Add to IOLTB cache. */
             *pGCPhysSpa = uIova;
+            STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
             return VINF_SUCCESS;
         }
 
@@ -2738,14 +2744,17 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
                 LogFunc(("I/O page table walk failed. uIova=%#RX64 uBaseIova=%#RX64 fAccess=%u rc=%Rrc\n", uIova,
                      uBaseIova, fAccess, rc));
                 *pGCPhysSpa = NIL_RTGCPHYS;
+                STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
                 return rc;
             }
         }
 
+        STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
         return rc;
     }
 
     LogFunc(("Failed to read device table entry. uDevId=%#x rc=%Rrc\n", uDevId, rc));
+    STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
     return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
 }
 
@@ -4731,6 +4740,8 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdPrefIommuPages, STAMTYPE_COUNTER, "R3/Commands/PrefIommuPages", STAMUNIT_OCCURENCES, "Number of Prefetch IOMMU Pages commands processed.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdCompletePprReq, STAMTYPE_COUNTER, "R3/Commands/CompletePprReq", STAMUNIT_OCCURENCES, "Number of Complete PPR Requests commands processed.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdInvIommuAll, STAMTYPE_COUNTER, "R3/Commands/InvIommuAll", STAMUNIT_OCCURENCES, "Number of Invalidate IOMMU All commands processed.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatDteLookup, STAMTYPE_PROFILE, "DteLookup", STAMUNIT_TICKS_PER_CALL, "Profiling device table entry lookup (uncached).");
 # endif
 
     /*
