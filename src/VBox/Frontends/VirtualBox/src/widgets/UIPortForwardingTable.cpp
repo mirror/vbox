@@ -889,6 +889,8 @@ bool UIPortForwardingTable::eventFilter(QObject *pObject, QEvent *pEvent)
             case QEvent::Show:
             case QEvent::Resize:
             {
+                /* Make sure layout requests really processed first of all: */
+                QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
                 /* Adjust table: */
                 sltAdjustTable();
                 break;
