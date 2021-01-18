@@ -143,15 +143,19 @@ int RTCRestClientApiBase::ociSignRequest(RTHTTP a_hHttp, RTCString const &a_rStr
     int rc = ociSignRequestEnsureHost(a_hHttp, a_rStrFullUrl.c_str());
     if (RT_SUCCESS(rc))
     {
-        bool fHasBody = a_rStrXmitBody.isNotEmpty() || (a_fFlags & kDoCall_RequireBody);
-
-        if (   fHasBody
+        bool fHasBody
+            =  a_rStrXmitBody.isNotEmpty()
+               /* but sometimes we need an empty body signed too */
+            || (a_fFlags & kDoCall_RequireBody)
             || a_enmHttpMethod == RTHTTPMETHOD_POST
-            || a_enmHttpMethod == RTHTTPMETHOD_PUT)
+            || a_enmHttpMethod == RTHTTPMETHOD_PUT;
+
+        if (fHasBody)
+        {
             rc = ociSignRequestEnsureContentLength(a_hHttp, a_rStrXmitBody.length());
-        if (   RT_SUCCESS(rc)
-            && fHasBody)
-            rc = ociSignRequestEnsureXContentSha256(a_hHttp, a_rStrXmitBody.c_str(), a_rStrXmitBody.length());
+            if (RT_SUCCESS(rc))
+                rc = ociSignRequestEnsureXContentSha256(a_hHttp, a_rStrXmitBody.c_str(), a_rStrXmitBody.length());
+        }
         if (RT_SUCCESS(rc))
             rc = ociSignRequestEnsureDateOrXDate(a_hHttp);
         if (RT_SUCCESS(rc))
