@@ -75,21 +75,18 @@ RT_C_DECLS_END
 *   Structures                                                                                                                   *
 *********************************************************************************************************************************/
 
+/**
+ * Structure for maintaining an ALSA audio stream.
+ */
 typedef struct ALSAAUDIOSTREAM
 {
     /** The stream's acquired configuration. */
     PPDMAUDIOSTREAMCFG pCfg;
-    union
-    {
-        struct
-        {
-        } In;
-        struct
-        {
-        } Out;
-    };
+    /** Pointer to allocated ALSA PCM configuration to use. */
     snd_pcm_t          *phPCM;
+    /** Scratch buffer. */
     void               *pvBuf;
+    /** Size (in bytes) of allocated scratch buffer. */
     size_t              cbBuf;
 } ALSAAUDIOSTREAM, *PALSAAUDIOSTREAM;
 
@@ -115,6 +112,9 @@ typedef struct DRVHOSTALSAAUDIO
 /** Maximum number of tries to recover a broken pipe. */
 #define ALSA_RECOVERY_TRIES_MAX    5
 
+/**
+ * Structure for maintaining an ALSA audio stream configuration.
+ */
 typedef struct ALSAAUDIOSTREAMCFG
 {
     unsigned int        freq;
@@ -124,6 +124,7 @@ typedef struct ALSAAUDIOSTREAMCFG
     snd_pcm_access_t    access;
     /** Whether resampling should be performed by alsalib or not. */
     int                 resample;
+    /** Number of audio channels. */
     int                 nchannels;
     /** Buffer size (in audio frames). */
     unsigned long       buffer_size;
@@ -135,7 +136,12 @@ typedef struct ALSAAUDIOSTREAMCFG
 } ALSAAUDIOSTREAMCFG, *PALSAAUDIOSTREAMCFG;
 
 
-
+/**
+ * Converts internal audio PCM properties to an ALSA PCM format.
+ *
+ * @returns Converted ALSA PCM format.
+ * @param   pProps              Internal audio PCM configuration to convert.
+ */
 static snd_pcm_format_t alsaAudioPropsToALSA(PPDMAUDIOPCMPROPS pProps)
 {
     switch (pProps->cbSample)
@@ -158,6 +164,13 @@ static snd_pcm_format_t alsaAudioPropsToALSA(PPDMAUDIOPCMPROPS pProps)
 }
 
 
+/**
+ * Converts an ALSA PCM format to internal PCM properties.
+ *
+ * @returns VBox status code.
+ * @param   fmt                 ALSA PCM format to convert.
+ * @param   pProps              Where to store the converted PCM properties on success.
+ */
 static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
 {
     switch (fmt)
@@ -243,6 +256,15 @@ static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
 }
 
 
+/**
+ * Sets the software parameters of an ALSA stream.
+ *
+ * @returns VBox status code.
+ * @param   phPCM               ALSA stream to set software parameters for.
+ * @param   fIn                 Whether this is an input stream or not.
+ * @param   pCfgReq             Requested configuration to set.
+ * @param   pCfgObt             Obtained configuration on success. Might differ from requested configuration.
+ */
 static int alsaStreamSetSWParams(snd_pcm_t *phPCM, bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt)
 {
     if (fIn) /* For input streams there's nothing to do in here right now. */
@@ -305,6 +327,12 @@ static int alsaStreamSetSWParams(snd_pcm_t *phPCM, bool fIn, PALSAAUDIOSTREAMCFG
 }
 
 
+/**
+ * Closes an ALSA stream
+ *
+ * @returns VBox status code.
+ * @param   pphPCM              ALSA stream to close.
+ */
 static int alsaStreamClose(snd_pcm_t **pphPCM)
 {
     if (!pphPCM || !*pphPCM)
@@ -328,6 +356,15 @@ static int alsaStreamClose(snd_pcm_t **pphPCM)
 }
 
 
+/**
+ * Opens (creates) an ALSA stream.
+ *
+ * @returns VBox status code.
+ * @param   fIn                 Whether this is an input stream to create or not.
+ * @param   pCfgReq             Requested configuration to create stream with.
+ * @param   pCfgObt             Obtained configuration the stream got created on success.
+ * @param   pphPCM              Where to store the ALSA stream handle on success.
+ */
 static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt, snd_pcm_t **pphPCM)
 {
     snd_pcm_t *phPCM = NULL;
@@ -522,7 +559,13 @@ static void alsaDbgErrorHandler(const char *file, int line, const char *function
 }
 #endif
 
-
+/**
+ * Returns the available audio frames queued.
+ *
+ * @returns VBox status code.
+ * @param   phPCM               ALSA stream handle.
+ * @param   pFramesAvail        Where to store the available frames.
+ */
 static int alsaStreamGetAvail(snd_pcm_t *phPCM, snd_pcm_sframes_t *pFramesAvail)
 {
     AssertPtrReturn(phPCM, VERR_INVALID_POINTER);
@@ -555,7 +598,12 @@ static int alsaStreamGetAvail(snd_pcm_t *phPCM, snd_pcm_sframes_t *pFramesAvail)
     return rc;
 }
 
-
+/**
+ * Tries to recover an ALSA stream.
+ *
+ * @returns VBox status code.
+ * @param   phPCM               ALSA stream handle.
+ */
 static int alsaStreamRecover(snd_pcm_t *phPCM)
 {
     AssertPtrReturn(phPCM, VERR_INVALID_POINTER);
@@ -570,7 +618,12 @@ static int alsaStreamRecover(snd_pcm_t *phPCM)
     return VINF_SUCCESS;
 }
 
-
+/**
+ * Resumes an ALSA stream.
+ *
+ * @returns VBox status code.
+ * @param   phPCM               ALSA stream to resume.
+ */
 static int alsaStreamResume(snd_pcm_t *phPCM)
 {
     AssertPtrReturn(phPCM, VERR_INVALID_POINTER);
@@ -584,7 +637,6 @@ static int alsaStreamResume(snd_pcm_t *phPCM)
 
     return VINF_SUCCESS;
 }
-
 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
@@ -607,7 +659,6 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_Init(PPDMIHOSTAUDIO pInterface)
 
     return rc;
 }
-
 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
@@ -869,7 +920,12 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
     return rc;
 }
 
-
+/**
+ * Destroys an ALSA input stream.
+ *
+ * @returns VBox status code.
+ * @param   pStreamALSA         ALSA input stream to destroy.
+ */
 static int alsaDestroyStreamIn(PALSAAUDIOSTREAM pStreamALSA)
 {
     alsaStreamClose(&pStreamALSA->phPCM);
@@ -883,7 +939,12 @@ static int alsaDestroyStreamIn(PALSAAUDIOSTREAM pStreamALSA)
     return VINF_SUCCESS;
 }
 
-
+/**
+ * Destroys an ALSA output stream.
+ *
+ * @returns VBox status code.
+ * @param   pStreamALSA         ALSA output stream to destroy.
+ */
 static int alsaDestroyStreamOut(PALSAAUDIOSTREAM pStreamALSA)
 {
     alsaStreamClose(&pStreamALSA->phPCM);
@@ -897,7 +958,14 @@ static int alsaDestroyStreamOut(PALSAAUDIOSTREAM pStreamALSA)
     return VINF_SUCCESS;
 }
 
-
+/**
+ * Creates an ALSA output stream.
+ *
+ * @returns VBox status code.
+ * @param   pStreamALSA         ALSA output stream to create.
+ * @param   pCfgReq             Requested configuration to create stream with.
+ * @param   pCfgAcq             Obtained configuration the stream got created with on success.
+ */
 static int alsaCreateStreamOut(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     snd_pcm_t *phPCM = NULL;
@@ -950,7 +1018,14 @@ static int alsaCreateStreamOut(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG 
     return rc;
 }
 
-
+/**
+ * Creates an ALSA input stream.
+ *
+ * @returns VBox status code.
+ * @param   pStreamALSA         ALSA input stream to create.
+ * @param   pCfgReq             Requested configuration to create stream with.
+ * @param   pCfgAcq             Obtained configuration the stream got created with on success.
+ */
 static int alsaCreateStreamIn(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     int rc;
@@ -1003,7 +1078,13 @@ static int alsaCreateStreamIn(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG p
     return rc;
 }
 
-
+/**
+ * Controls an ALSA input stream.
+ *
+ * @returns VBox status code.
+ * @param   pStreamALSA         ALSA input stream to control.
+ * @param   enmStreamCmd        Stream command to issue.
+ */
 static int alsaControlStreamIn(PALSAAUDIOSTREAM pStreamALSA, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     int rc = VINF_SUCCESS;
@@ -1068,7 +1149,13 @@ static int alsaControlStreamIn(PALSAAUDIOSTREAM pStreamALSA, PDMAUDIOSTREAMCMD e
     return rc;
 }
 
-
+/**
+ * Controls an ALSA output stream.
+ *
+ * @returns VBox status code.
+ * @param   pStreamALSA         ALSA output stream to control.
+ * @param   enmStreamCmd        Stream command to issue.
+ */
 static int alsaControlStreamOut(PALSAAUDIOSTREAM pStreamALSA, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     int rc = VINF_SUCCESS;
