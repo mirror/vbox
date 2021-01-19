@@ -62,6 +62,8 @@ typedef struct VBOXPLAYGROUNDDEVICEFUNCTION
     IOMMMIOHANDLE   hMmio0;
     /** The MMIO region \#2 handle. */
     IOMMMIOHANDLE   hMmio2;
+    /** Backing storage. */
+    uint8_t         abBacking[4096];
 } VBOXPLAYGROUNDDEVICEFUNCTION;
 /** Pointer to a PCI function of the playground device. */
 typedef VBOXPLAYGROUNDDEVICEFUNCTION *PVBOXPLAYGROUNDDEVICEFUNCTION;
@@ -85,24 +87,48 @@ typedef VBOXPLAYGROUNDDEVICE *PVBOXPLAYGROUNDDEVICE;
 *   Device Functions                                                                                                             *
 *********************************************************************************************************************************/
 
+/**
+ * @callback_method_impl{FNIOMMMIONEWREAD}
+ */
 static DECLCALLBACK(VBOXSTRICTRC) devPlaygroundMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
+    PVBOXPLAYGROUNDDEVICEFUNCTION pFun = (PVBOXPLAYGROUNDDEVICEFUNCTION)pvUser;
     NOREF(pDevIns);
-    NOREF(pvUser);
-    NOREF(off);
-    NOREF(pv);
-    NOREF(cb);
+
+#ifdef LOG_ENABLED
+    unsigned const cbLog  = cb;
+    RTGCPHYS       offLog = off;
+#endif
+    uint8_t *pbDst = (uint8_t *)pv;
+    while (cb-- > 0)
+    {
+        *pbDst = pFun->abBacking[off % RT_ELEMENTS(pFun->abBacking)];
+        pbDst++;
+        off++;
+    }
+
+    Log(("DevPlayGr/[%u]: READ  off=%RGv cb=%u: %.*Rhxs\n", pFun->iFun, offLog, cbLog, cbLog, pv));
     return VINF_SUCCESS;
 }
 
 
+/**
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
+ */
 static DECLCALLBACK(VBOXSTRICTRC) devPlaygroundMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
+    PVBOXPLAYGROUNDDEVICEFUNCTION pFun = (PVBOXPLAYGROUNDDEVICEFUNCTION)pvUser;
     NOREF(pDevIns);
-    NOREF(pvUser);
-    NOREF(off);
-    NOREF(pv);
-    NOREF(cb);
+    Log(("DevPlayGr/[%u]: WRITE off=%RGv cb=%u: %.*Rhxs\n", pFun->iFun, off, cb, cb, pv));
+
+    uint8_t const *pbSrc = (uint8_t const *)pv;
+    while (cb-- > 0)
+    {
+        pFun->abBacking[off % RT_ELEMENTS(pFun->abBacking)] = *pbSrc;
+        pbSrc++;
+        off++;
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -142,7 +168,7 @@ static DECLCALLBACK(int) devPlaygroundSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pS
         return VERR_UNEXPECTED_EXCEPTION;
     }
 #else
-RT_NOREF(pSSM, pHlp);
+    pHlp->pfnSSMPutStrZ(pSSM, "playground");
 #endif
 
     return VINF_SUCCESS;
@@ -291,7 +317,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
         RTGCPHYS const cbFirst = iPciFun == 0 ? cbFirstBAR : iPciFun * _4K;
         RTStrPrintf(pFun->szMmio0, sizeof(pFun->szMmio0), "PG-F%d-BAR0", iPciFun);
         rc = PDMDevHlpMmioCreate(pDevIns, cbFirst, pPciDev, 0 /*iPciRegion*/,
-                                 devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pvUser*/,
+                                 devPlaygroundMMIOWrite, devPlaygroundMMIORead, pFun,
                                  IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, pFun->szMmio0, &pFun->hMmio0);
         AssertLogRelRCReturn(rc, rc);
 
@@ -305,7 +331,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
         RTGCPHYS const cbSecond = iPciFun == 0  ? cbSecondBAR : iPciFun * _32K;
         RTStrPrintf(pFun->szMmio2, sizeof(pFun->szMmio2), "PG-F%d-BAR2", iPciFun);
         rc = PDMDevHlpMmioCreate(pDevIns, cbSecond, pPciDev, 2 << 16 /*iPciRegion*/,
-                                 devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pvUser*/,
+                                 devPlaygroundMMIOWrite, devPlaygroundMMIORead, pFun,
                                  IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, pFun->szMmio2, &pFun->hMmio2);
         AssertLogRelRCReturn(rc, rc);
 
