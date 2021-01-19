@@ -38,36 +38,24 @@
 ; Use define because I'm too lazy to convert the struct.
 %define XMM_OFF_IN_X86FXSTATE   160
 
-;; Spectre filler for 32-bit mode.
-; Some user space address that points to a 4MB page boundrary in hope that it
-; will somehow make it less useful.
-%define SPECTRE_FILLER32        0x227fffff
 ;; Spectre filler for 64-bit mode.
 ; Choosen to be an invalid address (also with 5 level paging).
-%define SPECTRE_FILLER64        0x02204204207fffff
-;; Spectre filler for the current CPU mode.
-%ifdef RT_ARCH_AMD64
- %define SPECTRE_FILLER         SPECTRE_FILLER64
-%else
- %define SPECTRE_FILLER         SPECTRE_FILLER32
-%endif
+%define SPECTRE_FILLER          0x02204204207fffff
 
 ;;
 ; Determine skipping restoring of GDTR, IDTR, TR across VMX non-root operation.
 ;
-%ifdef RT_ARCH_AMD64
- %define VMX_SKIP_GDTR
- %define VMX_SKIP_TR
- %define VBOX_SKIP_RESTORE_SEG
- %ifdef RT_OS_DARWIN
-  ; Load the NULL selector into DS, ES, FS and GS on 64-bit darwin so we don't
-  ; risk loading a stale LDT value or something invalid.
-  %define HM_64_BIT_USE_NULL_SEL
-  ; Darwin (Mavericks) uses IDTR limit to store the CPU Id so we need to restore it always.
-  ; See @bugref{6875}.
- %else
-  %define VMX_SKIP_IDTR
- %endif
+%define VMX_SKIP_GDTR
+%define VMX_SKIP_TR
+%define VBOX_SKIP_RESTORE_SEG
+%ifdef RT_OS_DARWIN
+ ; Load the NULL selector into DS, ES, FS and GS on 64-bit darwin so we don't
+ ; risk loading a stale LDT value or something invalid.
+ %define HM_64_BIT_USE_NULL_SEL
+ ; Darwin (Mavericks) uses IDTR limit to store the CPU Id so we need to restore it always.
+ ; See @bugref{6875}.
+%else
+ %define VMX_SKIP_IDTR
 %endif
 
 ;; @def MYPUSHAD
@@ -87,14 +75,14 @@
 ; @param 2  16-bit register name for \a 1.
 
 %ifdef ASM_CALL64_GCC
- %macro MYPUSHAD64 0
+ %macro MYPUSHAD 0
    push    r15
    push    r14
    push    r13
    push    r12
    push    rbx
  %endmacro
- %macro MYPOPAD64 0
+ %macro MYPOPAD 0
    pop     rbx
    pop     r12
    pop     r13
@@ -103,7 +91,7 @@
  %endmacro
 
 %else ; ASM_CALL64_MSC
- %macro MYPUSHAD64 0
+ %macro MYPUSHAD 0
    push    r15
    push    r14
    push    r13
@@ -112,7 +100,7 @@
    push    rsi
    push    rdi
  %endmacro
- %macro MYPOPAD64 0
+ %macro MYPOPAD 0
    pop     rdi
    pop     rsi
    pop     rbx
@@ -124,14 +112,14 @@
 %endif
 
 %ifdef VBOX_SKIP_RESTORE_SEG
- %macro MYPUSHSEGS64 2
+ %macro MYPUSHSEGS 2
  %endmacro
 
- %macro MYPOPSEGS64 2
+ %macro MYPOPSEGS 2
  %endmacro
 %else       ; !VBOX_SKIP_RESTORE_SEG
  ; Trashes, rax, rdx & rcx.
- %macro MYPUSHSEGS64 2
+ %macro MYPUSHSEGS 2
   %ifndef HM_64_BIT_USE_NULL_SEL
    mov     %2, es
    push    %1
@@ -161,7 +149,7 @@
  %endmacro
 
  ; trashes, rax, rdx & rcx
- %macro MYPOPSEGS64 2
+ %macro MYPOPSEGS 2
    ; Note: do not step through this code with a debugger!
   %ifndef HM_64_BIT_USE_NULL_SEL
    xor     eax, eax
@@ -197,37 +185,6 @@
  %endmacro
 %endif ; VBOX_SKIP_RESTORE_SEG
 
-%macro MYPUSHAD32 0
-  pushad
-%endmacro
-%macro MYPOPAD32 0
-  popad
-%endmacro
-
-%macro MYPUSHSEGS32 2
-  push    ds
-  push    es
-  push    fs
-  push    gs
-%endmacro
-%macro MYPOPSEGS32 2
-  pop     gs
-  pop     fs
-  pop     es
-  pop     ds
-%endmacro
-
-%ifdef RT_ARCH_AMD64
- %define MYPUSHAD       MYPUSHAD64
- %define MYPOPAD        MYPOPAD64
- %define MYPUSHSEGS     MYPUSHSEGS64
- %define MYPOPSEGS      MYPOPSEGS64
-%else
- %define MYPUSHAD       MYPUSHAD32
- %define MYPOPAD        MYPOPAD32
- %define MYPUSHSEGS     MYPUSHSEGS32
- %define MYPOPSEGS      MYPOPSEGS32
-%endif
 
 ;;
 ; Creates an indirect branch prediction barrier on CPUs that need and supports that.
@@ -309,8 +266,7 @@ BEGINCODE
 ;
 ALIGNCODE(16)
 BEGINPROC VMXRestoreHostState
-%ifdef RT_ARCH_AMD64
- %ifndef ASM_CALL64_GCC
+%ifndef ASM_CALL64_GCC
     ; Use GCC's input registers since we'll be needing both rcx and rdx further
     ; down with the wrmsr instruction.  Use the R10 and R11 register for saving
     ; RDI and RSI since MSC preserve the two latter registers.
@@ -318,7 +274,7 @@ BEGINPROC VMXRestoreHostState
     mov         r11, rsi
     mov         rdi, rcx
     mov         rsi, rdx
- %endif
+%endif
 
     test        edi, VMX_RESTORE_HOST_GDTR
     jz          .test_idtr
@@ -412,13 +368,10 @@ BEGINPROC VMXRestoreHostState
 
 .restore_success:
     mov         eax, VINF_SUCCESS
- %ifndef ASM_CALL64_GCC
+%ifndef ASM_CALL64_GCC
     ; Restore RDI and RSI on MSC.
     mov         rdi, r10
     mov         rsi, r11
- %endif
-%else  ; RT_ARCH_X86
-    mov         eax, VERR_NOT_IMPLEMENTED
 %endif
     ret
 ENDPROC VMXRestoreHostState
@@ -799,7 +752,6 @@ ENDPROC   hmR0SVMRunWrapXMM
 %endif ; VBOX_WITH_KERNEL_USING_XMM
 
 
-%ifdef RT_ARCH_AMD64
 ;; @def RESTORE_STATE_VM64
 ; Macro restoring essential host state and updating guest state
 ; for 64-bit host, 64-bit guest for VT-x.
@@ -823,7 +775,7 @@ ENDPROC   hmR0SVMRunWrapXMM
  %endif
 
     mov     qword [xDI + CPUMCTX.eax], rax
-    mov     rax, SPECTRE_FILLER64
+    mov     rax, SPECTRE_FILLER
     mov     qword [xDI + CPUMCTX.ebx], rbx
     mov     rbx, rax
     mov     qword [xDI + CPUMCTX.ecx], rcx
@@ -1069,7 +1021,6 @@ ALIGNCODE(16)
     mov     eax, VERR_VMX_UNABLE_TO_START_VM
     jmp     .vmstart64_end
 ENDPROC VMXR0StartVM64
-%endif ; RT_ARCH_AMD64
 
 
 ;;
@@ -1084,7 +1035,6 @@ BEGINPROC hmR0MdsClear
 ENDPROC   hmR0MdsClear
 
 
-%ifdef RT_ARCH_AMD64
 ;;
 ; Prepares for and executes VMRUN (32-bit and 64-bit guests).
 ;
@@ -1210,7 +1160,7 @@ BEGINPROC SVMR0VMRun
     pop     rax
 
     mov     qword [rax + CPUMCTX.ebx], rbx
-    mov     rbx, SPECTRE_FILLER64
+    mov     rbx, SPECTRE_FILLER
     mov     qword [rax + CPUMCTX.ecx], rcx
     mov     rcx, rbx
     mov     qword [rax + CPUMCTX.edx], rdx
@@ -1260,5 +1210,4 @@ BEGINPROC SVMR0VMRun
     add     rsp, 6 * xCB
     ret
 ENDPROC SVMR0VMRun
-%endif ; RT_ARCH_AMD64
 
