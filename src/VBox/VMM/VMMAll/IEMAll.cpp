@@ -6991,6 +6991,9 @@ DECLINLINE(void) iemFpuActualizeSseStateForChange(PVMCPUCC pVCpu)
     CPUMRZFpuStateActualizeForChange(pVCpu);
 #endif
     IEM_CTX_IMPORT_NORET(pVCpu, CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE | CPUMCTX_EXTRN_XCRx);
+
+    /* Make sure any changes are loaded the next time around. */
+    pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->Hdr.bmXState |= XSAVE_C_SSE;
 }
 
 
@@ -7029,6 +7032,9 @@ DECLINLINE(void) iemFpuActualizeAvxStateForChange(PVMCPUCC pVCpu)
     CPUMRZFpuStateActualizeForChange(pVCpu);
 #endif
     IEM_CTX_IMPORT_NORET(pVCpu, CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE | CPUMCTX_EXTRN_XCRx);
+
+    /* Just assume we're going to make changes to the SSE and YMM_HI parts. */
+    pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->Hdr.bmXState |= XSAVE_C_YMM | XSAVE_C_SSE;
 }
 
 
