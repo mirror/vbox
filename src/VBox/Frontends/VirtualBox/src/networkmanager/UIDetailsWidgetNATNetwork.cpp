@@ -78,6 +78,33 @@ bool UIDetailsWidgetNATNetwork::revalidate()
     return m_pForwardingTableIPv4->validate() && m_pForwardingTableIPv6->validate();
 }
 
+void UIDetailsWidgetNATNetwork::updateButtonStates()
+{
+//    if (m_oldData != m_newData)
+//        printf("Network: %d, %s, %s, %d, %d, %d\n",
+//               m_newData.m_fEnabled,
+//               m_newData.m_strName.toUtf8().constData(),
+//               m_newData.m_strCIDR.toUtf8().constData(),
+//               m_newData.m_fSupportsDHCP,
+//               m_newData.m_fSupportsIPv6,
+//               m_newData.m_fAdvertiseDefaultIPv6Route);
+
+    /* Update 'Apply' / 'Reset' button states: */
+    if (m_pButtonBoxOptions)
+    {
+        m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
+        m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
+    }
+    if (m_pButtonBoxForwarding)
+    {
+        m_pButtonBoxForwarding->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
+        m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
+    }
+
+    /* Notify listeners as well: */
+    emit sigDataChanged(m_oldData != m_newData);
+}
+
 void UIDetailsWidgetNATNetwork::retranslateUi()
 {
     /* Translate tab-widget: */
@@ -497,31 +524,4 @@ void UIDetailsWidgetNATNetwork::loadDataForForwarding()
     m_pForwardingTableIPv4->setRules(m_newData.m_rules4, m_fHoldPosition);
     m_pForwardingTableIPv6->setRules(m_newData.m_rules6, m_fHoldPosition);
     m_fHoldPosition = false;
-}
-
-void UIDetailsWidgetNATNetwork::updateButtonStates()
-{
-//    if (m_oldData != m_newData)
-//        printf("Network: %d, %s, %s, %d, %d, %d\n",
-//               m_newData.m_fEnabled,
-//               m_newData.m_strName.toUtf8().constData(),
-//               m_newData.m_strCIDR.toUtf8().constData(),
-//               m_newData.m_fSupportsDHCP,
-//               m_newData.m_fSupportsIPv6,
-//               m_newData.m_fAdvertiseDefaultIPv6Route);
-
-    /* Update 'Apply' / 'Reset' button states: */
-    if (m_pButtonBoxOptions)
-    {
-        m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
-        m_pButtonBoxOptions->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
-    }
-    if (m_pButtonBoxForwarding)
-    {
-        m_pButtonBoxForwarding->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
-        m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
-    }
-
-    /* Notify listeners as well: */
-    emit sigDataChanged(m_oldData != m_newData);
 }

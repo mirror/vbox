@@ -1055,7 +1055,6 @@ void UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetworkHoldingPosition
 
     /* Update actions availability: */
     m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
-    m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->setEnabled(pItem);
 
     /* Check NAT network details-widget: */
     AssertMsgReturnVoid(m_pDetailsWidgetNATNetwork, ("NAT network details-widget isn't created!\n"));
@@ -1107,93 +1106,91 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
     AssertMsgReturnVoid(m_pDetailsWidgetNATNetwork, ("NAT network details-widget isn't created!\n"));
 
     /* Revalidate NAT network details: */
-    if (!m_pDetailsWidgetNATNetwork->revalidate())
-        return;
-
-    /* Get item data: */
-    UIDataNATNetwork oldData = *pItem;
-    UIDataNATNetwork newData = m_pDetailsWidgetNATNetwork->data();
-
-    /* Get VirtualBox for further activities: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
-
-    /* Find corresponding network: */
-    CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldData.m_strName);
-
-    /* Show error message if necessary: */
-    if (!comVBox.isOk() || comNetwork.isNull())
-        msgCenter().cannotFindNATNetwork(comVBox, oldData.m_strName, this);
-    else
+    if (m_pDetailsWidgetNATNetwork->revalidate())
     {
-        /* Save whether NAT network is enabled: */
-        if (comNetwork.isOk() && newData.m_fEnabled != oldData.m_fEnabled)
-            comNetwork.SetEnabled(newData.m_fEnabled);
-        /* Save NAT network name: */
-        if (comNetwork.isOk() && newData.m_strName != oldData.m_strName)
-            comNetwork.SetNetworkName(newData.m_strName);
-        /* Save NAT network CIDR: */
-        if (comNetwork.isOk() && newData.m_strCIDR != oldData.m_strCIDR)
-            comNetwork.SetNetwork(newData.m_strCIDR);
-        /* Save whether NAT network needs DHCP server: */
-        if (comNetwork.isOk() && newData.m_fSupportsDHCP != oldData.m_fSupportsDHCP)
-            comNetwork.SetNeedDhcpServer(newData.m_fSupportsDHCP);
-        /* Save whether NAT network supports IPv6: */
-        if (comNetwork.isOk() && newData.m_fSupportsIPv6 != oldData.m_fSupportsIPv6)
-            comNetwork.SetIPv6Enabled(newData.m_fSupportsIPv6);
-        /* Save whether NAT network should advertise default IPv6 route: */
-        if (comNetwork.isOk() && newData.m_fAdvertiseDefaultIPv6Route != oldData.m_fAdvertiseDefaultIPv6Route)
-            comNetwork.SetAdvertiseDefaultIPv6RouteEnabled(newData.m_fAdvertiseDefaultIPv6Route);
+        /* Get item data: */
+        UIDataNATNetwork oldData = *pItem;
+        UIDataNATNetwork newData = m_pDetailsWidgetNATNetwork->data();
 
-        /* Save IPv4 forwarding rules: */
-        if (comNetwork.isOk() && newData.m_rules4 != oldData.m_rules4)
-        {
-            UIPortForwardingDataList oldRules = oldData.m_rules4;
+        /* Get VirtualBox for further activities: */
+        CVirtualBox comVBox = uiCommon().virtualBox();
 
-            /* Remove rules to be removed: */
-            foreach (const UIDataPortForwardingRule &oldRule, oldData.m_rules4)
-                if (comNetwork.isOk() && !newData.m_rules4.contains(oldRule))
-                {
-                    comNetwork.RemovePortForwardRule(false /* IPv6? */, oldRule.name);
-                    oldRules.removeAll(oldRule);
-                }
-            /* Add rules to be added: */
-            foreach (const UIDataPortForwardingRule &newRule, newData.m_rules4)
-                if (comNetwork.isOk() && !oldRules.contains(newRule))
-                {
-                    comNetwork.AddPortForwardRule(false /* IPv6? */, newRule.name, newRule.protocol,
-                                                  newRule.hostIp, newRule.hostPort.value(),
-                                                  newRule.guestIp, newRule.guestPort.value());
-                    oldRules.append(newRule);
-                }
-        }
-        /* Save IPv6 forwarding rules: */
-        if (comNetwork.isOk() && newData.m_rules6 != oldData.m_rules6)
-        {
-            UIPortForwardingDataList oldRules = oldData.m_rules6;
-
-            /* Remove rules to be removed: */
-            foreach (const UIDataPortForwardingRule &oldRule, oldData.m_rules6)
-                if (comNetwork.isOk() && !newData.m_rules6.contains(oldRule))
-                {
-                    comNetwork.RemovePortForwardRule(true /* IPv6? */, oldRule.name);
-                    oldRules.removeAll(oldRule);
-                }
-            /* Add rules to be added: */
-            foreach (const UIDataPortForwardingRule &newRule, newData.m_rules6)
-                if (comNetwork.isOk() && !oldRules.contains(newRule))
-                {
-                    comNetwork.AddPortForwardRule(true /* IPv6? */, newRule.name, newRule.protocol,
-                                                  newRule.hostIp, newRule.hostPort.value(),
-                                                  newRule.guestIp, newRule.guestPort.value());
-                    oldRules.append(newRule);
-                }
-        }
+        /* Find corresponding network: */
+        CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldData.m_strName);
 
         /* Show error message if necessary: */
-        if (!comNetwork.isOk())
-            msgCenter().cannotSaveNATNetworkParameter(comNetwork, this);
+        if (!comVBox.isOk() || comNetwork.isNull())
+            msgCenter().cannotFindNATNetwork(comVBox, oldData.m_strName, this);
         else
         {
+            /* Save whether NAT network is enabled: */
+            if (comNetwork.isOk() && newData.m_fEnabled != oldData.m_fEnabled)
+                comNetwork.SetEnabled(newData.m_fEnabled);
+            /* Save NAT network name: */
+            if (comNetwork.isOk() && newData.m_strName != oldData.m_strName)
+                comNetwork.SetNetworkName(newData.m_strName);
+            /* Save NAT network CIDR: */
+            if (comNetwork.isOk() && newData.m_strCIDR != oldData.m_strCIDR)
+                comNetwork.SetNetwork(newData.m_strCIDR);
+            /* Save whether NAT network needs DHCP server: */
+            if (comNetwork.isOk() && newData.m_fSupportsDHCP != oldData.m_fSupportsDHCP)
+                comNetwork.SetNeedDhcpServer(newData.m_fSupportsDHCP);
+            /* Save whether NAT network supports IPv6: */
+            if (comNetwork.isOk() && newData.m_fSupportsIPv6 != oldData.m_fSupportsIPv6)
+                comNetwork.SetIPv6Enabled(newData.m_fSupportsIPv6);
+            /* Save whether NAT network should advertise default IPv6 route: */
+            if (comNetwork.isOk() && newData.m_fAdvertiseDefaultIPv6Route != oldData.m_fAdvertiseDefaultIPv6Route)
+                comNetwork.SetAdvertiseDefaultIPv6RouteEnabled(newData.m_fAdvertiseDefaultIPv6Route);
+
+            /* Save IPv4 forwarding rules: */
+            if (comNetwork.isOk() && newData.m_rules4 != oldData.m_rules4)
+            {
+                UIPortForwardingDataList oldRules = oldData.m_rules4;
+
+                /* Remove rules to be removed: */
+                foreach (const UIDataPortForwardingRule &oldRule, oldData.m_rules4)
+                    if (comNetwork.isOk() && !newData.m_rules4.contains(oldRule))
+                    {
+                        comNetwork.RemovePortForwardRule(false /* IPv6? */, oldRule.name);
+                        oldRules.removeAll(oldRule);
+                    }
+                /* Add rules to be added: */
+                foreach (const UIDataPortForwardingRule &newRule, newData.m_rules4)
+                    if (comNetwork.isOk() && !oldRules.contains(newRule))
+                    {
+                        comNetwork.AddPortForwardRule(false /* IPv6? */, newRule.name, newRule.protocol,
+                                                      newRule.hostIp, newRule.hostPort.value(),
+                                                      newRule.guestIp, newRule.guestPort.value());
+                        oldRules.append(newRule);
+                    }
+            }
+            /* Save IPv6 forwarding rules: */
+            if (comNetwork.isOk() && newData.m_rules6 != oldData.m_rules6)
+            {
+                UIPortForwardingDataList oldRules = oldData.m_rules6;
+
+                /* Remove rules to be removed: */
+                foreach (const UIDataPortForwardingRule &oldRule, oldData.m_rules6)
+                    if (comNetwork.isOk() && !newData.m_rules6.contains(oldRule))
+                    {
+                        comNetwork.RemovePortForwardRule(true /* IPv6? */, oldRule.name);
+                        oldRules.removeAll(oldRule);
+                    }
+                /* Add rules to be added: */
+                foreach (const UIDataPortForwardingRule &newRule, newData.m_rules6)
+                    if (comNetwork.isOk() && !oldRules.contains(newRule))
+                    {
+                        comNetwork.AddPortForwardRule(true /* IPv6? */, newRule.name, newRule.protocol,
+                                                      newRule.hostIp, newRule.hostPort.value(),
+                                                      newRule.guestIp, newRule.guestPort.value());
+                        oldRules.append(newRule);
+                    }
+            }
+
+            /* Show error message if necessary: */
+            if (!comNetwork.isOk())
+                msgCenter().cannotSaveNATNetworkParameter(comNetwork, this);
+
             /* Update network in the tree: */
             UIDataNATNetwork data;
             loadNATNetwork(comNetwork, data);
@@ -1206,6 +1203,9 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
             sltAdjustTreeWidgets();
         }
     }
+
+    /* Make sure button states updated: */
+    m_pDetailsWidgetNATNetwork->updateButtonStates();
 }
 
 void UINetworkManagerWidget::prepare()

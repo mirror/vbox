@@ -124,8 +124,14 @@ public:
       *                        port forwarding rule position intact. */
     void setData(const UIDataNATNetwork &data, bool fHoldPosition = false);
 
-    /** Revalidates changes. */
-    bool revalidate();
+    /** @name Change handling stuff.
+      * @{ */
+        /** Revalidates changes. */
+        bool revalidate();
+
+        /** Updates button states. */
+        void updateButtonStates();
+    /** @} */
 
 protected:
 
@@ -180,12 +186,6 @@ private:
         void loadDataForOptions();
         /** Loads 'Forwarding' data. */
         void loadDataForForwarding();
-    /** @} */
-
-    /** @name Change handling stuff.
-      * @{ */
-        /** Updates button states. */
-        void updateButtonStates();
     /** @} */
 
     /** @name General variables.
