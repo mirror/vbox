@@ -881,118 +881,125 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
     /* Check host network details-widget: */
     AssertMsgReturnVoid(m_pDetailsWidgetHostNetwork, ("Host network details-widget isn't created!\n"));
 
-    /* Get item data: */
-    UIDataHostNetwork oldData = *pItem;
-    UIDataHostNetwork newData = m_pDetailsWidgetHostNetwork->data();
-
-    /* Get host for further activities: */
-    CHost comHost = uiCommon().host();
-
-    /* Find corresponding interface: */
-    CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
-
-    /* Show error message if necessary: */
-    if (!comHost.isOk() || comInterface.isNull())
-        msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
-    else
+    /* Revalidate host network details: */
+    if (m_pDetailsWidgetHostNetwork->revalidate())
     {
-        /* Save automatic interface configuration: */
-        if (newData.m_interface.m_fDHCPEnabled)
-        {
-            if (   comInterface.isOk()
-                && !oldData.m_interface.m_fDHCPEnabled)
-                comInterface.EnableDynamicIPConfig();
-        }
-        /* Save manual interface configuration: */
-        else
-        {
-            /* Save IPv4 interface configuration: */
-            if (   comInterface.isOk()
-                && (   oldData.m_interface.m_fDHCPEnabled
-                    || newData.m_interface.m_strAddress != oldData.m_interface.m_strAddress
-                    || newData.m_interface.m_strMask != oldData.m_interface.m_strMask))
-                comInterface.EnableStaticIPConfig(newData.m_interface.m_strAddress, newData.m_interface.m_strMask);
-            /* Save IPv6 interface configuration: */
-            if (   comInterface.isOk()
-                && newData.m_interface.m_fSupportedIPv6
-                && (   oldData.m_interface.m_fDHCPEnabled
-                    || newData.m_interface.m_strAddress6 != oldData.m_interface.m_strAddress6
-                    || newData.m_interface.m_strPrefixLength6 != oldData.m_interface.m_strPrefixLength6))
-                comInterface.EnableStaticIPConfigV6(newData.m_interface.m_strAddress6, newData.m_interface.m_strPrefixLength6.toULong());
-        }
+        /* Get item data: */
+        UIDataHostNetwork oldData = *pItem;
+        UIDataHostNetwork newData = m_pDetailsWidgetHostNetwork->data();
+
+        /* Get host for further activities: */
+        CHost comHost = uiCommon().host();
+
+        /* Find corresponding interface: */
+        CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
 
         /* Show error message if necessary: */
-        if (!comInterface.isOk())
-            msgCenter().cannotSaveHostNetworkInterfaceParameter(comInterface, this);
+        if (!comHost.isOk() || comInterface.isNull())
+            msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
         else
         {
-            /* Get network name for further activities: */
-            const QString strNetworkName = comInterface.GetNetworkName();
+            /* Save automatic interface configuration: */
+            if (newData.m_interface.m_fDHCPEnabled)
+            {
+                if (   comInterface.isOk()
+                    && !oldData.m_interface.m_fDHCPEnabled)
+                    comInterface.EnableDynamicIPConfig();
+            }
+            /* Save manual interface configuration: */
+            else
+            {
+                /* Save IPv4 interface configuration: */
+                if (   comInterface.isOk()
+                    && (   oldData.m_interface.m_fDHCPEnabled
+                        || newData.m_interface.m_strAddress != oldData.m_interface.m_strAddress
+                        || newData.m_interface.m_strMask != oldData.m_interface.m_strMask))
+                    comInterface.EnableStaticIPConfig(newData.m_interface.m_strAddress, newData.m_interface.m_strMask);
+                /* Save IPv6 interface configuration: */
+                if (   comInterface.isOk()
+                    && newData.m_interface.m_fSupportedIPv6
+                    && (   oldData.m_interface.m_fDHCPEnabled
+                        || newData.m_interface.m_strAddress6 != oldData.m_interface.m_strAddress6
+                        || newData.m_interface.m_strPrefixLength6 != oldData.m_interface.m_strPrefixLength6))
+                    comInterface.EnableStaticIPConfigV6(newData.m_interface.m_strAddress6, newData.m_interface.m_strPrefixLength6.toULong());
+            }
 
             /* Show error message if necessary: */
             if (!comInterface.isOk())
-                msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
+                msgCenter().cannotSaveHostNetworkInterfaceParameter(comInterface, this);
             else
             {
-                /* Get VBox for further activities: */
-                CVirtualBox comVBox = uiCommon().virtualBox();
-
-                /* Find corresponding DHCP server (create if necessary): */
-                CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
-                if (!comVBox.isOk() || comServer.isNull())
-                    comServer = comVBox.CreateDHCPServer(strNetworkName);
+                /* Get network name for further activities: */
+                const QString strNetworkName = comInterface.GetNetworkName();
 
                 /* Show error message if necessary: */
-                if (!comVBox.isOk() || comServer.isNull())
-                    msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
+                if (!comInterface.isOk())
+                    msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
                 else
                 {
-                    /* Save whether DHCP server is enabled: */
-                    if (   comServer.isOk()
-                        && newData.m_dhcpserver.m_fEnabled != oldData.m_dhcpserver.m_fEnabled)
-                        comServer.SetEnabled(newData.m_dhcpserver.m_fEnabled);
-                    /* Save DHCP server configuration: */
-                    if (   comServer.isOk()
-                        && newData.m_dhcpserver.m_fEnabled
-                        && (   newData.m_dhcpserver.m_strAddress != oldData.m_dhcpserver.m_strAddress
-                            || newData.m_dhcpserver.m_strMask != oldData.m_dhcpserver.m_strMask
-                            || newData.m_dhcpserver.m_strLowerAddress != oldData.m_dhcpserver.m_strLowerAddress
-                            || newData.m_dhcpserver.m_strUpperAddress != oldData.m_dhcpserver.m_strUpperAddress))
-                        comServer.SetConfiguration(newData.m_dhcpserver.m_strAddress, newData.m_dhcpserver.m_strMask,
-                                                   newData.m_dhcpserver.m_strLowerAddress, newData.m_dhcpserver.m_strUpperAddress);
+                    /* Get VBox for further activities: */
+                    CVirtualBox comVBox = uiCommon().virtualBox();
+
+                    /* Find corresponding DHCP server (create if necessary): */
+                    CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
+                    if (!comVBox.isOk() || comServer.isNull())
+                        comServer = comVBox.CreateDHCPServer(strNetworkName);
 
                     /* Show error message if necessary: */
-                    if (!comServer.isOk())
-                        msgCenter().cannotSaveDHCPServerParameter(comServer, this);
+                    if (!comVBox.isOk() || comServer.isNull())
+                        msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
+                    else
+                    {
+                        /* Save whether DHCP server is enabled: */
+                        if (   comServer.isOk()
+                            && newData.m_dhcpserver.m_fEnabled != oldData.m_dhcpserver.m_fEnabled)
+                            comServer.SetEnabled(newData.m_dhcpserver.m_fEnabled);
+                        /* Save DHCP server configuration: */
+                        if (   comServer.isOk()
+                            && newData.m_dhcpserver.m_fEnabled
+                            && (   newData.m_dhcpserver.m_strAddress != oldData.m_dhcpserver.m_strAddress
+                                || newData.m_dhcpserver.m_strMask != oldData.m_dhcpserver.m_strMask
+                                || newData.m_dhcpserver.m_strLowerAddress != oldData.m_dhcpserver.m_strLowerAddress
+                                || newData.m_dhcpserver.m_strUpperAddress != oldData.m_dhcpserver.m_strUpperAddress))
+                            comServer.SetConfiguration(newData.m_dhcpserver.m_strAddress, newData.m_dhcpserver.m_strMask,
+                                                       newData.m_dhcpserver.m_strLowerAddress, newData.m_dhcpserver.m_strUpperAddress);
+
+                        /* Show error message if necessary: */
+                        if (!comServer.isOk())
+                            msgCenter().cannotSaveDHCPServerParameter(comServer, this);
+                    }
                 }
             }
-        }
 
-        /* Find corresponding interface again (if necessary): */
-        if (!comInterface.isOk())
-        {
-            comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
+            /* Find corresponding interface again (if necessary): */
+            if (!comInterface.isOk())
+            {
+                comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
 
-            /* Show error message if necessary: */
-            if (!comHost.isOk() || comInterface.isNull())
-                msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
-        }
+                /* Show error message if necessary: */
+                if (!comHost.isOk() || comInterface.isNull())
+                    msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
+            }
 
-        /* If interface is Ok now: */
-        if (comInterface.isNotNull() && comInterface.isOk())
-        {
-            /* Update interface in the tree: */
-            UIDataHostNetwork data;
-            loadHostNetwork(comInterface, data);
-            updateItemForHostNetwork(data, true, pItem);
+            /* If interface is Ok now: */
+            if (comInterface.isNotNull() && comInterface.isOk())
+            {
+                /* Update interface in the tree: */
+                UIDataHostNetwork data;
+                loadHostNetwork(comInterface, data);
+                updateItemForHostNetwork(data, true, pItem);
 
-            /* Make sure current item fetched: */
-            sltHandleCurrentItemChangeHostNetwork();
+                /* Make sure current item fetched: */
+                sltHandleCurrentItemChangeHostNetwork();
 
-            /* Adjust tree-widgets: */
-            sltAdjustTreeWidgets();
+                /* Adjust tree-widgets: */
+                sltAdjustTreeWidgets();
+            }
         }
     }
+
+    /* Make sure button states updated: */
+    m_pDetailsWidgetHostNetwork->updateButtonStates();
 }
 
 void UINetworkManagerWidget::sltHandleItemChangeNATNetwork(QTreeWidgetItem *pItem)

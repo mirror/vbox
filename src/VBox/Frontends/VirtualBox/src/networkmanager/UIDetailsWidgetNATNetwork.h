@@ -127,7 +127,7 @@ public:
     /** @name Change handling stuff.
       * @{ */
         /** Revalidates changes. */
-        bool revalidate();
+        bool revalidate() const;
 
         /** Updates button states. */
         void updateButtonStates();

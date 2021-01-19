@@ -393,6 +393,15 @@ public:
     void cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent = 0) const;
     void cannotAcquireDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent = 0) const;
     void cannotSaveDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent = 0) const;
+    void warnAboutDHCPServerIsNotEnabled(const QString &strName, QWidget *pParent = 0) const;
+    void warnAboutInvalidIPv4Address(const QString &strName, QWidget *pParent = 0) const;
+    void warnAboutInvalidIPv4Mask(const QString &strName, QWidget *pParent = 0) const;
+    void warnAboutInvalidIPv6Address(const QString &strName, QWidget *pParent = 0) const;
+    void warnAboutInvalidIPv6PrefixLength(const QString &strName, QWidget *pParent = 0) const;
+    void warnAboutInvalidDHCPServerAddress(const QString &strName, QWidget *pParent = 0) const;
+    void warnAboutInvalidDHCPServerMask(const QString &strName, QWidget *pParent = 0) const;
+    void warnAboutInvalidDHCPServerLowerAddress(const QString &strName, QWidget *pParent = 0) const;
+    void warnAboutInvalidDHCPServerUpperAddress(const QString &strName, QWidget *pParent = 0) const;
     void cannotAcquireNATNetworks(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
     void cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork, QWidget *pParent = 0) const;
     void cannotCreateNATNetwork(const CVirtualBox &comVBox, QWidget *pParent = 0);

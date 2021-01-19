@@ -73,7 +73,7 @@ void UIDetailsWidgetNATNetwork::setData(const UIDataNATNetwork &data, bool fHold
     loadDataForForwarding();
 }
 
-bool UIDetailsWidgetNATNetwork::revalidate()
+bool UIDetailsWidgetNATNetwork::revalidate() const
 {
     return m_pForwardingTableIPv4->validate() && m_pForwardingTableIPv6->validate();
 }

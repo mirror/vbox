@@ -190,6 +190,15 @@ public:
     /** Defines the host network @a data. */
     void setData(const UIDataHostNetwork &data);
 
+    /** @name Change handling stuff.
+      * @{ */
+        /** Revalidates changes for passed @a pWidget. */
+        bool revalidate() const;
+
+        /** Updates button states. */
+        void updateButtonStates();
+    /** @} */
+
 protected:
 
     /** Handles translation event. */
@@ -251,16 +260,6 @@ private:
         void loadDataForDHCPServer();
     /** @} */
 
-    /** @name Change handling stuff.
-      * @{ */
-        /** Revalidates changes for passed @a pWidget. */
-        void revalidate(QWidget *pWidget = 0);
-        /** Retranslates validation for passed @a pWidget. */
-        void retranslateValidation(QWidget *pWidget = 0);
-        /** Updates button states. */
-        void updateButtonStates();
-    /** @} */
-
     /** @name General variables.
       * @{ */
         /** Holds the parent widget embedding type. */
@@ -279,41 +278,29 @@ private:
       * @{ */
         /** Holds the automatic interface configuration button. */
         QRadioButton *m_pButtonAutomatic;
-        /** Holds the automatic interface configuration error pane. */
-        QLabel       *m_pErrorPaneAutomatic;
 
         /** Holds the manual interface configuration button. */
         QRadioButton *m_pButtonManual;
-        /** Holds the manual interface configuration error pane. */
-        QLabel       *m_pErrorPaneManual;
 
         /** Holds the IPv4 address label. */
         QLabel       *m_pLabelIPv4;
         /** Holds the IPv4 address editor. */
         QILineEdit   *m_pEditorIPv4;
-        /** Holds the IPv4 address error pane. */
-        QLabel       *m_pErrorPaneIPv4;
 
         /** Holds the IPv4 network mask label. */
         QLabel       *m_pLabelNMv4;
         /** Holds the IPv4 network mask editor. */
         QILineEdit   *m_pEditorNMv4;
-        /** Holds the IPv4 network mask error pane. */
-        QLabel       *m_pErrorPaneNMv4;
 
         /** Holds the IPv6 address label. */
         QLabel       *m_pLabelIPv6;
         /** Holds the IPv6 address editor. */
         QILineEdit   *m_pEditorIPv6;
-        /** Holds the IPv6 address error pane. */
-        QLabel       *m_pErrorPaneIPv6;
 
         /** Holds the IPv6 network mask label. */
         QLabel       *m_pLabelNMv6;
         /** Holds the IPv6 network mask editor. */
         QILineEdit   *m_pEditorNMv6;
-        /** Holds the IPv6 network mask error pane. */
-        QLabel       *m_pErrorPaneNMv6;
 
         /** Holds the interface button-box instance. */
         QIDialogButtonBox *m_pButtonBoxInterface;
@@ -328,29 +315,21 @@ private:
         QLabel     *m_pLabelDHCPAddress;
         /** Holds the DHCP address editor. */
         QILineEdit *m_pEditorDHCPAddress;
-        /** Holds the DHCP address error pane. */
-        QLabel     *m_pErrorPaneDHCPAddress;
 
         /** Holds the DHCP network mask label. */
         QLabel     *m_pLabelDHCPMask;
         /** Holds the DHCP network mask editor. */
         QILineEdit *m_pEditorDHCPMask;
-        /** Holds the DHCP network mask error pane. */
-        QLabel     *m_pErrorPaneDHCPMask;
 
         /** Holds the DHCP lower address label. */
         QLabel     *m_pLabelDHCPLowerAddress;
         /** Holds the DHCP lower address editor. */
         QILineEdit *m_pEditorDHCPLowerAddress;
-        /** Holds the DHCP lower address error pane. */
-        QLabel     *m_pErrorPaneDHCPLowerAddress;
 
         /** Holds the DHCP upper address label. */
         QLabel     *m_pLabelDHCPUpperAddress;
         /** Holds the DHCP upper address editor. */
         QILineEdit *m_pEditorDHCPUpperAddress;
-        /** Holds the DHCP upper address error pane. */
-        QLabel     *m_pErrorPaneDHCPUpperAddress;
 
         /** Holds the server button-box instance. */
         QIDialogButtonBox *m_pButtonBoxServer;
