@@ -695,6 +695,38 @@ typedef IRTE_T const *PCIRTE_T;
 #define IOMMU_MSI_DATA_IRTE_OFFSET_MASK     UINT32_C(0x000007ff)
 
 /**
+ * Interrupt Remapping Table Entry (IRTE) - Guest Virtual APIC Enabled.
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u1RemapEnable : 1;          /**< Bit  0       - RemapEn: Remap Enable. */
+        uint32_t    u1SuppressIoPf : 1;         /**< Bit  1       - SupIOPF: Supress I/O Page Fault. */
+        uint32_t    u1GALogIntr : 1;            /**< Bit  2       - GALogIntr: Guest APIC Log Interrupt. */
+        uint32_t    u3Rsvd : 3;                 /**< Bits 5:3     - Reserved. */
+        uint32_t    u1IsRunning : 1;            /**< Bit  6       - IsRun: Hint whether the guest is running. */
+        uint32_t    u1GuestMode : 1;            /**< Bit  7       - GuestMode. */
+        uint32_t    u8Dest : 8;                 /**< Bits 15:8    - Destination. */
+        uint32_t    u8Rsvd0 : 8;                /**< Bits 31:16   - Reserved. */
+        uint32_t    u32GATag : 32;              /**< Bits 63:31   - GATag: Tag used when writing to GA log. */
+        uint32_t    u8Vector : 8;               /**< Bits 71:64   - Vector: Interrupt vector. */
+        uint32_t    u4Reserved : 4;             /**< Bits 75:72   - Reserved or ignored depending on RemapEn. */
+        uint32_t    u20GATableRootPtrLo : 20;   /**< Bits 95:76   - Bits [31:12] of Guest vAPIC Table Root Pointer. */
+        uint32_t    u20GATableRootPtrHi : 20;   /**< Bits 115:76  - Bits [51:32] of Guest vAPIC Table Root Pointer. */
+        uint32_t    u12Rsvd : 12;               /**< Bits 127:116 - Reserved. */
+    } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t        u64[2];
+} IRTE_GVA_T;
+AssertCompileSize(IRTE_GVA_T, 16);
+/** Pointer to an IRTE_GVA_T struct. */
+typedef IRTE_GVA_T *PIRTE_GVA_T;
+/** Pointer to a const IRTE_GVA_T struct. */
+typedef IRTE_GVA_T const *PCIRTE_GVA_T;
+
+/**
  * Command: Generic Command Buffer Entry.
  * In accordance with the AMD spec.
  */
