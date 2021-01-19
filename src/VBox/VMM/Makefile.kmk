@@ -495,6 +495,7 @@ VMMR0_SOURCES   = \
 	VMMR0/EMR0.cpp \
 	VMMR0/HMR0.cpp \
 	VMMR0/HMR0A.asm \
+	VMMR0/HMR0UtilA.asm \
 	VMMR0/HMVMXR0.cpp \
 	VMMR0/HMSVMR0.cpp \
 	VMMR0/IOMR0.cpp \
