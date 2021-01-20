@@ -1087,18 +1087,12 @@ static uint64_t hdaR3WalClkGetMax(PHDASTATE pThis, PHDASTATER3 pThisCC)
 
 static VBOXSTRICTRC hdaRegReadWALCLK(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-#ifdef IN_RING3 /** @todo r=bird: No reason (except logging) for this to be ring-3 only! */
     RT_NOREF(pDevIns, iReg);
 
     const uint64_t u64WalClkCur = ASMAtomicReadU64(&pThis->u64WalClk);
     *pu32Value = RT_LO_U32(u64WalClkCur);
 
-    Log3Func(("%RU32 (max @ %RU64)\n", *pu32Value, hdaR3WalClkGetMax(pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3))));
     return VINF_SUCCESS;
-#else
-    RT_NOREF(pDevIns, pThis, iReg, pu32Value);
-    return VINF_IOM_R3_MMIO_READ;
-#endif
 }
 
 static VBOXSTRICTRC hdaRegWriteCORBRP(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
