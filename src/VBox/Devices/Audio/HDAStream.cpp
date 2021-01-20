@@ -241,7 +241,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                                             HDA_STREAM_REG(pThis, BDPU, uSD));
     const uint16_t u16LVI     = HDA_STREAM_REG(pThis, LVI, uSD);
     const uint32_t u32CBL     = HDA_STREAM_REG(pThis, CBL, uSD);
-    const uint16_t u16FIFOS   = HDA_STREAM_REG(pThis, FIFOS, uSD) + 1;
+    const uint8_t  u8FIFOS    = HDA_STREAM_REG(pThis, FIFOS, uSD) + 1;
+          uint8_t  u8FIFOW    = hdaSDFIFOWToBytes(HDA_STREAM_REG(pThis, FIFOW, uSD));
     const uint16_t u16FMT     = HDA_STREAM_REG(pThis, FMT, uSD);
 
     /* Is the bare minimum set of registers configured for the stream?
@@ -249,7 +250,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     if (   !u64BDLBase
         || !u16LVI
         || !u32CBL
-        || !u16FIFOS
+        || !u8FIFOS
+        || !u8FIFOW
         || !u16FMT)
     {
         LogFunc(("[SD%RU8] Registers not set up yet, skipping (re-)initialization\n", uSD));
@@ -325,12 +327,18 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         && u64BDLBase == pStreamShared->u64BDLBase
         && u16LVI     == pStreamShared->u16LVI
         && u32CBL     == pStreamShared->u32CBL
-        && u16FIFOS   == pStreamShared->u16FIFOS
+        && u8FIFOS    == pStreamShared->u8FIFOS
+        && u8FIFOW    == pStreamShared->u8FIFOW
         && u16FMT     == pStreamShared->u16FMT)
     {
         LogFunc(("[SD%RU8] No format change, skipping (re-)initialization\n", uSD));
         return VINF_NO_CHANGE;
     }
+
+    /* Make sure the guest behaves regarding the stream's FIFO. */
+    ASSERT_GUEST_LOGREL_MSG_STMT(u8FIFOW <= u8FIFOS,
+                                 ("Guest tried setting a bigger FIFOW (%RU8) than FIFOS (%RU8), limiting\n", u8FIFOW, u8FIFOS),
+                                 u8FIFOW = u8FIFOS /* ASSUMES that u8FIFOS has been validated. */);
 
     pStreamShared->u8SD       = uSD;
 
@@ -338,7 +346,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     pStreamShared->u64BDLBase = u64BDLBase;
     pStreamShared->u16LVI     = u16LVI;
     pStreamShared->u32CBL     = u32CBL;
-    pStreamShared->u16FIFOS   = u16FIFOS;
+    pStreamShared->u8FIFOS    = u8FIFOS;
+    pStreamShared->u8FIFOW    = u8FIFOW;
     pStreamShared->u16FMT     = u16FMT;
 
     PPDMAUDIOSTREAMCFG pCfg = &pStreamShared->State.Cfg;
@@ -386,8 +395,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     if (pStreamShared->State.uTimerHz)
         pCfg->Device.cMsSchedulingHint = 1000 /* ms */ / pStreamShared->State.uTimerHz;
 
-    LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16\n",
-             uSD, pStreamShared->u64BDLBase, pStreamShared->u32CBL, pStreamShared->u16LVI, pStreamShared->u16FIFOS));
+    LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU8\n",
+             uSD, pStreamShared->u64BDLBase, pStreamShared->u32CBL, pStreamShared->u16LVI, pStreamShared->u8FIFOS));
 
     if (RT_SUCCESS(rc))
     {
@@ -986,7 +995,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     Assert(uSD < HDA_MAX_STREAMS);
     Assert(pStreamShared->u64BDLBase);
     Assert(pStreamShared->u32CBL);
-    Assert(pStreamShared->u16FIFOS);
+    Assert(pStreamShared->u8FIFOS);
 
     /* State sanity checks. */
     Assert(ASMAtomicReadBool(&pStreamShared->State.fInReset) == false);
@@ -1020,7 +1029,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     while (cbLeft)
     {
         /* Limit the chunk to the stream's FIFO size and what's left to process. */
-        uint32_t cbChunk = RT_MIN(cbLeft, pStreamShared->u16FIFOS);
+        uint32_t cbChunk = RT_MIN(cbLeft, pStreamShared->u8FIFOS);
 
         /* Limit the chunk to the remaining data of the current BDLE. */
         cbChunk = RT_MIN(cbChunk, pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);
@@ -1237,6 +1246,11 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 
         if (cbDMA)
         {
+            const size_t cbCircBufUsed = RTCircBufUsed(pCircBuf);
+
+            Log3Func(("[SD%RU8] cbDMA=%RU32, cbUsed=%zu, uFIFOW=%RU8, uFIFOS=%RU8\n",
+                      uSD, cbDMA, cbCircBufUsed, pStreamShared->u8FIFOW, pStreamShared->u8FIFOS));
+
             /* We always increment the position of DMA buffer counter because we're always reading
              * into an intermediate DMA buffer. */
             pBDLE->State.u32BufOff += (uint32_t)cbDMA;
@@ -1252,16 +1266,21 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                 cbProcessed   += cbDMA;
             }
 
-            /*
-             * Update the stream's current position.
-             * Do this as accurate and close to the actual data transfer as possible.
-             * All guetsts rely on this, depending on the mechanism they use (LPIB register or DMA counters).
-             */
-            uint32_t cbStreamPos = hdaR3StreamGetPosition(pThis, pStreamShared);
-            if (cbStreamPos == pStreamShared->u32CBL)
-                cbStreamPos = 0;
+            /* Only set the new DMA position if we at least reached the stream's FIFO watermark.
+             * This by default is 32 bytes. */
+            if (cbCircBufUsed >= pStreamShared->u8FIFOW)
+            {
+                /*
+                 * Update the stream's current position.
+                 * Do this as accurate and close to the actual data transfer as possible.
+                 * All guetsts rely on this, depending on the mechanism they use (LPIB register or DMA counters).
+                 */
+                uint32_t cbStreamPos = hdaR3StreamGetPosition(pThis, pStreamShared);
+                if (cbStreamPos == pStreamShared->u32CBL)
+                    cbStreamPos = 0;
 
-            hdaR3StreamSetPosition(pStreamShared, pDevIns, pThis, cbStreamPos + cbDMA);
+                hdaR3StreamSetPosition(pStreamShared, pDevIns, pThis, cbStreamPos + cbDMA);
+            }
         }
 
         if (hdaR3BDLEIsComplete(pBDLE))

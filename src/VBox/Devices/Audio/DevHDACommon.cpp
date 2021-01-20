@@ -81,6 +81,29 @@ void hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis)
 }
 
 /**
+ * Retrieves the number of bytes of a FIFOW register.
+ *
+ * @return Number of bytes of a given FIFOW register.
+ * @param  u16RegFIFOS         FIFOW register to convert.
+ */
+uint8_t hdaSDFIFOWToBytes(uint16_t u16RegFIFOW)
+{
+    uint32_t cb;
+    switch (u16RegFIFOW)
+    {
+        case HDA_SDFIFOW_8B:  cb = 8;  break;
+        case HDA_SDFIFOW_16B: cb = 16; break;
+        case HDA_SDFIFOW_32B: cb = 32; break;
+        default:
+            AssertFailedStmt(cb = 32); /* Paranoia. */
+            break;
+    }
+
+    Assert(RT_IS_POWER_OF_TWO(cb));
+    return cb;
+}
+
+/**
  * Retrieves the currently set value for the wall clock.
  *
  * @return  IPRT status code.
@@ -333,7 +356,7 @@ int hdaR3DMARead(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, 
 
     while (cbLeft)
     {
-        uint32_t cbChunk = RT_MIN(cbLeft, pStreamShared->u16FIFOS);
+        uint32_t cbChunk = RT_MIN(cbLeft, pStreamShared->u8FIFOS);
 
         rc = PDMDevHlpPhysRead(pDevIns, GCPhysChunk, (uint8_t *)pvBuf + cbReadTotal, cbChunk);
         AssertRCBreak(rc);
@@ -408,7 +431,7 @@ int hdaR3DMAWrite(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared,
     RTGCPHYS    GCPhysChunk    = pBDLE->Desc.u64BufAddr + pBDLE->State.u32BufOff;
     while (cbLeft)
     {
-        uint32_t cbChunk = RT_MIN(cbLeft, pStreamShared->u16FIFOS);
+        uint32_t cbChunk = RT_MIN(cbLeft, pStreamShared->u8FIFOS);
 
         /* Sanity checks. */
         Assert(cbChunk <= pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);

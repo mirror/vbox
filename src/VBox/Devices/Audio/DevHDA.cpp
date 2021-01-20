@@ -535,28 +535,6 @@ static uint32_t const g_afMasks[5] =
 };
 
 
-
-
-/**
- * Retrieves the number of bytes of a FIFOW register.
- *
- * @return Number of bytes of a given FIFOW register.
- */
-DECLINLINE(uint8_t) hdaSDFIFOWToBytes(uint32_t u32RegFIFOW)
-{
-    uint32_t cb;
-    switch (u32RegFIFOW)
-    {
-        case HDA_SDFIFOW_8B:  cb = 8;  break;
-        case HDA_SDFIFOW_16B: cb = 16; break;
-        case HDA_SDFIFOW_32B: cb = 32; break;
-        default:              cb = 0;  break;
-    }
-
-    Assert(RT_IS_POWER_OF_TWO(cb));
-    return cb;
-}
-
 #ifdef IN_RING3
 /**
  * Reschedules pending interrupts for all audio streams which have complete
@@ -1562,24 +1540,24 @@ static VBOXSTRICTRC hdaRegWriteSDFIFOW(PPDMDEVINS pDevIns, PHDASTATE pThis, uint
 #endif
     }
 
-    uint32_t u32FIFOW = 0;
+    uint32_t u16FIFOW = 0;
     switch (u32Value)
     {
         case HDA_SDFIFOW_8B:
         case HDA_SDFIFOW_16B:
         case HDA_SDFIFOW_32B:
-            u32FIFOW = u32Value;
+            u16FIFOW = u32Value;
             break;
         default:
             ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing unsupported FIFOW (0x%zx) to stream #%RU8, defaulting to 32 bytes\n",
                                             u32Value, idxStream));
-            u32FIFOW = HDA_SDFIFOW_32B;
+            u16FIFOW = HDA_SDFIFOW_32B;
             break;
     }
 
-    pThis->aStreams[idxStream].u16FIFOW = hdaSDFIFOWToBytes(u32FIFOW);
-    LogFunc(("[SD%zu] Updating FIFOW to %u bytes\n", idxStream, pThis->aStreams[idxStream].u16FIFOW));
-    return hdaRegWriteU16(pDevIns, pThis, iReg, u32FIFOW);
+    pThis->aStreams[idxStream].u8FIFOW = hdaSDFIFOWToBytes(u16FIFOW);
+    LogFunc(("[SD%zu] Updating FIFOW to %RU8 bytes\n", idxStream, pThis->aStreams[idxStream].u8FIFOW));
+    return hdaRegWriteU16(pDevIns, pThis, iReg, u16FIFOW);
 }
 
 /**

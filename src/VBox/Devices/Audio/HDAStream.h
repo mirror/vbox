@@ -202,20 +202,20 @@ typedef struct HDASTREAM
     /** Format (SDnFMT).
      *  Will be updated in hdaR3StreamInit(). */
     uint16_t                    u16FMT;
-    /** FIFO Size (FIFOS).
+    /** FIFO Size (checked + translated in bytes, FIFOS).
      *  Maximum number of bytes that may have been DMA'd into
      *  memory but not yet transmitted on the link.
      *
      *  Will be updated in hdaR3StreamInit(). */
-    uint16_t                    u16FIFOS;
-    /** FIFO Watermark. */
-    uint16_t                    u16FIFOW;
+    uint8_t                     u8FIFOS;
+    /** FIFO Watermark (checked + translated in bytes, FIFOW). */
+    uint8_t                     u8FIFOW;
+    uint8_t                     abPadding1[2];
     /** FIFO scratch buffer, to avoid intermediate (re-)allocations. */
     uint8_t                     abFIFO[HDA_FIFO_MAX + 1];
     /** Last Valid Index (SDnLVI).
      *  Will be updated in hdaR3StreamInit(). */
     uint16_t                    u16LVI;
-    uint16_t                    au16Padding1[2];
     /** The timer for pumping data thru the attached LUN drivers. */
     TMTIMERHANDLE               hTimer;
     /** Internal state of this stream. */
