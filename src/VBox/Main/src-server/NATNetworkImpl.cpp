@@ -267,7 +267,9 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
         if (aIPv4NetworkCidr == m->s.strIPv4NetworkCidr)
             return S_OK;
 
-        /* silently ignore network cidr update for now.
+        /**
+         * @todo
+         * silently ignore network cidr update for now.
          * todo: keep internally guest address of port forward rule
          * as offset from network id.
          */
@@ -329,7 +331,9 @@ HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
         if (aIPv6Prefix == m->s.strIPv6Prefix)
             return S_OK;
 
-        /* silently ignore network IPv6 prefix update.
+        /**
+         * @todo
+         * silently ignore network IPv6 prefix update.
          * todo: see similar todo in NATNetwork::COMSETTER(Network)(IN_BSTR)
          */
         if (!m->s.mapPortForwardRules6.empty())
