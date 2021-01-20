@@ -165,11 +165,11 @@ struc HMCPU
     .fCtxChanged                    resq    1
 
     alignb 8
-%if HMCPUVMX_size > HMCPUSVM_size
+;%if HMCPUVMX_size > HMCPUSVM_size
     .u                              resb    HMCPUVMX_size
-%else
-    .u                              resb    HMCPUSVM_size
-%endif
+;%else
+;    .u                              resb    HMCPUSVM_size
+;%endif
 
     .Event.fPending                 resd    1
     .Event.u32ErrCode               resd    1
