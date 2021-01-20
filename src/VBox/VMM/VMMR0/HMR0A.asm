@@ -58,31 +58,31 @@
  %define VMX_SKIP_IDTR
 %endif
 
-;; @def MYPUSHAD
+;; @def PUSH_CALLEE_PRESERVED_REGISTERS
 ; Macro generating an equivalent to PUSHAD instruction.
 
-;; @def MYPOPAD
+;; @def POP_CALLEE_PRESERVED_REGISTERS
 ; Macro generating an equivalent to POPAD instruction.
 
-;; @def MYPUSHSEGS
+;; @def PUSH_RELEVANT_SEGMENT_REGISTERS
 ; Macro saving all segment registers on the stack.
 ; @param 1  Full width register name.
 ; @param 2  16-bit register name for \a 1.
 
-;; @def MYPOPSEGS
+;; @def POP_RELEVANT_SEGMENT_REGISTERS
 ; Macro restoring all segment registers on the stack.
 ; @param 1  Full width register name.
 ; @param 2  16-bit register name for \a 1.
 
 %ifdef ASM_CALL64_GCC
- %macro MYPUSHAD 0
+ %macro PUSH_CALLEE_PRESERVED_REGISTERS 0
    push    r15
    push    r14
    push    r13
    push    r12
    push    rbx
  %endmacro
- %macro MYPOPAD 0
+ %macro POP_CALLEE_PRESERVED_REGISTERS 0
    pop     rbx
    pop     r12
    pop     r13
@@ -91,7 +91,7 @@
  %endmacro
 
 %else ; ASM_CALL64_MSC
- %macro MYPUSHAD 0
+ %macro PUSH_CALLEE_PRESERVED_REGISTERS 0
    push    r15
    push    r14
    push    r13
@@ -100,7 +100,7 @@
    push    rsi
    push    rdi
  %endmacro
- %macro MYPOPAD 0
+ %macro POP_CALLEE_PRESERVED_REGISTERS 0
    pop     rdi
    pop     rsi
    pop     rbx
@@ -112,14 +112,14 @@
 %endif
 
 %ifdef VBOX_SKIP_RESTORE_SEG
- %macro MYPUSHSEGS 2
+ %macro PUSH_RELEVANT_SEGMENT_REGISTERS 2
  %endmacro
 
- %macro MYPOPSEGS 2
+ %macro POP_RELEVANT_SEGMENT_REGISTERS 2
  %endmacro
 %else       ; !VBOX_SKIP_RESTORE_SEG
  ; Trashes, rax, rdx & rcx.
- %macro MYPUSHSEGS 2
+ %macro PUSH_RELEVANT_SEGMENT_REGISTERS 2
   %ifndef HM_64_BIT_USE_NULL_SEL
    mov     %2, es
    push    %1
@@ -149,7 +149,7 @@
  %endmacro
 
  ; trashes, rax, rdx & rcx
- %macro MYPOPSEGS 2
+ %macro POP_RELEVANT_SEGMENT_REGISTERS 2
    ; Note: do not step through this code with a debugger!
   %ifndef HM_64_BIT_USE_NULL_SEL
    xor     eax, eax
@@ -835,7 +835,7 @@ ENDPROC   hmR0SVMRunWrapXMM
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
     ; Restore segment registers.
-    MYPOPSEGS xAX, ax
+    POP_RELEVANT_SEGMENT_REGISTERS xAX, ax
 
     ; Restore the host XCR0 if necessary.
     pop     xCX
@@ -847,7 +847,7 @@ ENDPROC   hmR0SVMRunWrapXMM
 %%xcr0_after_skip:
 
     ; Restore general purpose registers.
-    MYPOPAD
+    POP_CALLEE_PRESERVED_REGISTERS
 %endmacro
 
 
@@ -870,7 +870,7 @@ BEGINPROC VMXR0StartVM64
     cli
 
     ; Save all general purpose host registers.
-    MYPUSHAD
+    PUSH_CALLEE_PRESERVED_REGISTERS
 
     ; First we have to save some final CPU context registers.
     lea     r10, [.vmlaunch64_done wrt rip]
@@ -924,7 +924,7 @@ BEGINPROC VMXR0StartVM64
     ; Save segment registers.
     ; Note! Trashes rdx & rcx, so we moved it here (amd64 case).
     ;
-    MYPUSHSEGS xAX, ax
+    PUSH_RELEVANT_SEGMENT_REGISTERS xAX, ax
 
     ; Save the pCtx pointer.
     push    xSI
@@ -1077,7 +1077,7 @@ BEGINPROC SVMR0VMRun
     ;  - DR7 (reset to 0x400)
 
     ; Save all general purpose host registers.
-    MYPUSHAD
+    PUSH_CALLEE_PRESERVED_REGISTERS
 
     ; Load pCtx into xSI.
     mov     xSI, [rbp + xCB * 2 + RTHCPHYS_CB * 2]
@@ -1201,7 +1201,7 @@ BEGINPROC SVMR0VMRun
 .xcr0_after_skip:
 
     ; Restore host general purpose registers.
-    MYPOPAD
+    POP_CALLEE_PRESERVED_REGISTERS
 
     mov     eax, VINF_SUCCESS
 
