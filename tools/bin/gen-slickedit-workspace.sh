@@ -663,6 +663,10 @@ EOF
 #define VBOX_WITH_HGCM                  1
 #define VBOXCALL
 
+#define HM_NAMELESS_UNION_TAG(a_Tag)
+#define HM_UNION_NM(a_Nm)
+#define HM_STRUCT_NM(a_Nm)
+
 #define PGM_ALL_CB_DECL(type)           type
 #define PGM_ALL_CB2_DECL(type)          type
 #define PGM_CTX(a,b)                    b
