@@ -4278,9 +4278,8 @@ DECLINLINE(int) hmR0SvmRunGuest(PVMCPUCC pVCpu, RTHCPHYS HCPhysVmcb)
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
     return hmR0SVMRunWrapXMM(pVM, pVCpu, HCPhysVmcb, pVCpu->hm.s.svm.pfnVMRun);
-        //pVCpu->hm.s.svm.HCPhysVmcbHost, HCPhysVmcb, pVM, pVCpu, pVCpu->hm.s.svm.pfnVMRun);
 #else
-    return pVCpu->hm.s.svm.pfnVMRun(pVM, pvCpu, HCPhysVmcb);
+    return pVCpu->hm.s.svm.pfnVMRun(pVM, pVCpu, HCPhysVmcb);
 #endif
 }
 
