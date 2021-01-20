@@ -134,7 +134,7 @@ typedef struct IOWALKRESULT
     /** The I/O permissions allowed by the translation (IOMMU_IO_PERM_XXX). */
     uint8_t         fIoPerm;
     /** Padding. */
-    uint16_t        abPadding[2];
+    uint8_t         abPadding[2];
 } IOWALKRESULT;
 /** Pointer to an I/O walk result struct. */
 typedef IOWALKRESULT *PIOWALKRESULT;
