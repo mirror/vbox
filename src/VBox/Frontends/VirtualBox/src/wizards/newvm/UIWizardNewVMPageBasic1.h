@@ -77,7 +77,7 @@ protected:
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
     void composeMachineFilePath();
 
-    QWidget *createNameOSTypeWidgets(bool fIncreaseLeftIndent,  bool fCreateUnattendedWidgets, bool fCreateLabels);
+    QWidget *createNameOSTypeWidgets(bool fCreateUnattendedWidgets, bool fCreateLabels);
     int createNameOSTypeWidgets(QGridLayout *pLayout, bool fCreateLabels = true);
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     /** Colors the widgets red if they cause isComplete to fail. */
@@ -90,7 +90,6 @@ protected:
        QLabel *m_pISOSelectorLabel;
        /** Holds the ISO selector editor instance. */
        mutable UIFilePathSelector *m_pISOFilePathSelector;
-       QCheckBox *m_pEnableUnattendedInstallCheckBox;
        QCheckBox *m_pStartHeadlessCheckBox;
        /** We have two UINameAndSystemEditor instance since name/vm path fields and OS type fields
         * are separated. */
@@ -103,6 +102,7 @@ protected:
 
 private:
 
+    /** Return false if ISO path is not empty but points to an missing or unreadable file. */
     bool checkISOFile() const;
     QFrame *horizontalLine();
 
@@ -158,7 +158,6 @@ private slots:
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
     void sltISOPathChanged(const QString &strPath);
-    void sltUnattendedCheckBoxToggle(bool fEnable);
 
 private:
 

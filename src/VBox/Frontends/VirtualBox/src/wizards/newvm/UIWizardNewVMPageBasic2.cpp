@@ -36,7 +36,6 @@ UIWizardNewVMPage2::UIWizardNewVMPage2()
     : m_pUserNamePasswordEditor(0)
     , m_pHostnameLineEdit(0)
     , m_pHostnameLabel(0)
-    , m_pInstallGACheckBox(0)
     , m_pGAISOPathLabel(0)
     , m_pGAISOFilePathSelector(0)
     , m_pProductKeyLineEdit(0)
@@ -86,15 +85,9 @@ void UIWizardNewVMPage2::setHostname(const QString &strHostName)
 
 bool UIWizardNewVMPage2::installGuestAdditions() const
 {
-    if (!m_pInstallGACheckBox)
-        return true;
-    return m_pInstallGACheckBox->isChecked();
-}
-
-void UIWizardNewVMPage2::setInstallGuestAdditions(bool fInstallGA)
-{
-    if (m_pInstallGACheckBox)
-        m_pInstallGACheckBox->setChecked(fInstallGA);
+    if (!m_pGAISOFilePathSelector)
+        return false;
+    return m_pGAISOFilePathSelector->isValid();
 }
 
 QString UIWizardNewVMPage2::guestAdditionsISOPath() const
@@ -117,13 +110,10 @@ QString UIWizardNewVMPage2::productKey() const
     return m_pProductKeyLineEdit->text();
 }
 
-QWidget *UIWizardNewVMPage2::createUserNameHostNameWidgets(bool fIncreaseLeftIndent)
+QWidget *UIWizardNewVMPage2::createUserNameHostNameWidgets()
 {
     QWidget *pContainer = new QWidget;
     QGridLayout *pGridLayout = new QGridLayout(pContainer);
-
-    if (fIncreaseLeftIndent)
-        UIWizardNewVM::increaseLayoutLeftMargin(pGridLayout);
 
     m_pUserNamePasswordEditor = new UIUserNamePasswordEditor;
     pGridLayout->addWidget(m_pUserNamePasswordEditor, 0, 0, 1, 4);
@@ -140,14 +130,11 @@ QWidget *UIWizardNewVMPage2::createUserNameHostNameWidgets(bool fIncreaseLeftInd
     return pContainer;
 }
 
-QWidget *UIWizardNewVMPage2::createGAInstallWidgets(bool fIncreaseLeftIndent)
+QWidget *UIWizardNewVMPage2::createGAInstallWidgets()
 {
     QWidget *pContainer = new QWidget;
     QGridLayout *pContainerLayout = new QGridLayout(pContainer);
-    if (fIncreaseLeftIndent)
-        UIWizardNewVM::increaseLayoutLeftMargin(pContainerLayout);
 
-    m_pInstallGACheckBox = new QCheckBox;
     m_pGAISOPathLabel = new QLabel;
     {
         m_pGAISOPathLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -162,18 +149,15 @@ QWidget *UIWizardNewVMPage2::createGAInstallWidgets(bool fIncreaseLeftIndent)
         m_pGAISOFilePathSelector->setEnabled(false);
     }
 
-    pContainerLayout->addWidget(m_pInstallGACheckBox, 0, 0, 1, 5);
     pContainerLayout->addWidget(m_pGAISOPathLabel, 1, 1, 1, 1);
     pContainerLayout->addWidget(m_pGAISOFilePathSelector, 1, 2, 1, 4);
     return pContainer;
 }
 
-QWidget *UIWizardNewVMPage2::createProductKeyWidgets(bool fIncreaseLeftIndent)
+QWidget *UIWizardNewVMPage2::createProductKeyWidgets()
 {
     QWidget *pContainer = new QWidget;
     QGridLayout *pGridLayout = new QGridLayout(pContainer);
-    if (fIncreaseLeftIndent)
-        UIWizardNewVM::increaseLayoutLeftMargin(pGridLayout);
 
     m_pProductKeyLabel = new QLabel;
     m_pProductKeyLabel->setAlignment(Qt::AlignRight);
@@ -189,12 +173,12 @@ QWidget *UIWizardNewVMPage2::createProductKeyWidgets(bool fIncreaseLeftIndent)
 
 bool UIWizardNewVMPage2::checkGAISOFile() const
 {
-    if (m_pInstallGACheckBox && m_pInstallGACheckBox->isChecked())
-    {
-        QString strISOFilePath = m_pGAISOFilePathSelector ? m_pGAISOFilePathSelector->path() : QString();
-        if (!QFileInfo(strISOFilePath).exists())
-            return false;
-    }
+    const QString &strPath = m_pGAISOFilePathSelector->path();
+    if (strPath.isNull() || strPath.isEmpty())
+        return true;
+    QFile fileInfo(strPath);
+    if (!fileInfo.exists() || !fileInfo.isReadable())
+        return false;
     return true;
 }
 
@@ -208,10 +192,9 @@ void UIWizardNewVMPage2::retranslateWidgets()
 {
     if (m_pHostnameLabel)
         m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
-    if (m_pInstallGACheckBox)
-        m_pInstallGACheckBox->setText(UIWizardNewVM::tr("Install guest additions"));
+
     if (m_pGAISOPathLabel)
-        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("Installation medium:"));
+        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA Installation ISO:"));
     if (m_pGAISOFilePathSelector)
         m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
     if (m_pProductKeyLabel)
@@ -239,9 +222,9 @@ void UIWizardNewVMPageBasic2::prepare()
         pMainLayout->addStretch();
     }
 
-    m_pToolBox->insertItem(ToolBoxItems_UserNameHostname, createUserNameHostNameWidgets(/* fIncreaseLeftIndent */ true), QString());
-    m_pToolBox->insertItem(ToolBoxItems_GAInstall, createGAInstallWidgets(/* fIncreaseLeftIndent */ true), QString());
-    m_pToolBox->insertItem(ToolBoxItems_ProductKey, createProductKeyWidgets(/* fIncreaseLeftIndent */ true), QString());
+    m_pToolBox->insertItem(ToolBoxItems_UserNameHostname, createUserNameHostNameWidgets(), QString());
+    m_pToolBox->insertItem(ToolBoxItems_GAInstall, createGAInstallWidgets(), QString());
+    m_pToolBox->insertItem(ToolBoxItems_ProductKey, createProductKeyWidgets(), QString());
 
     registerField("userName", this, "userName");
     registerField("password", this, "password");
@@ -258,9 +241,6 @@ void UIWizardNewVMPageBasic2::createConnections()
     if (m_pUserNamePasswordEditor)
         connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
                 this, &UIWizardNewVMPageBasic2::completeChanged);
-    if (m_pInstallGACheckBox)
-        connect(m_pInstallGACheckBox, &QCheckBox::toggled, this,
-                &UIWizardNewVMPageBasic2::sltInstallGACheckBoxToggle);
     if (m_pGAISOFilePathSelector)
         connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
                 this, &UIWizardNewVMPageBasic2::sltGAISOPathChanged);
@@ -339,7 +319,7 @@ void UIWizardNewVMPageBasic2::sltGAISOPathChanged(const QString &strPath)
 bool UIWizardNewVMPageBasic2::isProductKeyWidgetEnabled() const
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-    if (!pWizard || !pWizard->isUnattendedInstallEnabled() || !pWizard->isGuestOSTypeWindows())
+    if (!pWizard || !pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
         return false;
     return true;
 }

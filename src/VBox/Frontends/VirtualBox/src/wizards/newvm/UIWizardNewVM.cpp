@@ -129,7 +129,7 @@ bool UIWizardNewVM::createVM()
          * 3. and if the unattended install is not enabled
          * Usually we are assigning extra-data values through UIExtraDataManager,
          * but in that special case VM was not registered yet, so UIExtraDataManager is unaware of it: */
-        if (!isUnattendedInstallEnabled() &&
+        if (!isUnattendedEnabled() &&
             (field("virtualDiskId").toString().isNull() || !field("virtualDisk").value<CMedium>().isNull()))
             m_machine.SetExtraData(GUI_FirstRun, "yes");
     }
@@ -524,7 +524,6 @@ void UIWizardNewVM::setFieldsFromDefaultUnttendedInstallData()
     setField("userName", m_unattendedInstallData.m_strUserName);
     setField("password", m_unattendedInstallData.m_strPassword);
     setField("hostname", m_unattendedInstallData.m_strHostname);
-    setField("installGuestAdditions", m_unattendedInstallData.m_fInstallGuestAdditions);
     setField("guestAdditionsISOPath", m_unattendedInstallData.m_strGuestAdditionsISOPath);
 }
 
@@ -551,7 +550,7 @@ const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
     return m_unattendedInstallData;
 }
 
-bool UIWizardNewVM::isUnattendedInstallEnabled() const
+bool UIWizardNewVM::isUnattendedEnabled() const
 {
     QVariant fieldValue = field("isUnattendedEnabled");
     if (fieldValue.isNull() || !fieldValue.isValid() || !fieldValue.canConvert(QMetaType::Bool))
@@ -562,15 +561,4 @@ bool UIWizardNewVM::isUnattendedInstallEnabled() const
 bool UIWizardNewVM::isGuestOSTypeWindows() const
 {
     return getStringFieldValue("guestOSFamiyId").contains("windows", Qt::CaseInsensitive);
-}
-
-void UIWizardNewVM::increaseLayoutLeftMargin(QLayout *pLayout, float mult /* = 2 */)
-{
-    if (!pLayout)
-        return;
-    QMargins margins = pLayout->contentsMargins();
-    pLayout->setContentsMargins(mult * margins.left(),
-                                margins.top(),
-                                margins.right(),
-                                margins.bottom());
 }

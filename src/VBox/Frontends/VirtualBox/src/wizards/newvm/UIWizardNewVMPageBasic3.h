@@ -76,8 +76,8 @@ protected:
        int VCPUCount() const;
     /** @} */
 
-    QWidget *createDiskWidgets(bool fIncreaseLeftIndent);
-    QWidget *createHardwareWidgets(bool fIncreaseLeftIndent);
+    QWidget *createDiskWidgets();
+    QWidget *createHardwareWidgets();
 
     /** Helpers. */
     void ensureNewVirtualDiskDeleted();

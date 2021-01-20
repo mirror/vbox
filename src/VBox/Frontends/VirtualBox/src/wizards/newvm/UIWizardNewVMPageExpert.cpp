@@ -49,12 +49,11 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pToolBox = new UIToolBox;
-        m_pToolBox->insertItem(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(/* fIncreaseLeftIndent */ true,
-                                                                                         /* fCreateUnattendedWidgets */ false,
+        m_pToolBox->insertItem(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(/* fCreateUnattendedWidgets */ false,
                                                                                          /* fCreateLabels */ false), "");
         m_pToolBox->insertItem(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "", false);
-        m_pToolBox->insertItem(ExpertToolboxItems_Disk, createDiskWidgets(/* fIncreaseLeftIndent */ true), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_Hardware, createHardwareWidgets(/* fIncreaseLeftIndent */ true), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_Disk, createDiskWidgets(), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
         // m_pToolBox->insertItem(ExpertToolboxItems_UsernameHostname, createUserNameHostNameWidgets(/* fIncreaseLeftIndent */ true), "");
         // m_pToolBox->insertItem(ExpertToolboxItems_GAInstall, createGAInstallWidgets(/* fIncreaseLeftIndent */ true), "");
         // m_pToolBox->insertItem(ExpertToolboxItems_ProductKey, createProductKeyWidgets(/* fIncreaseLeftIndent */ true), "");
@@ -118,8 +117,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
                                                 "    color: %3;\n"
                                                 "}").arg(tabBackgroundColor.name()).arg(textColor.name()).arg(disabledTextColor.name()));
 
-    if (m_pEnableUnattendedInstallCheckBox)
-        disableEnableUnattendedRelatedWidgets(m_pEnableUnattendedInstallCheckBox->isChecked());
+    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
 }
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
@@ -166,25 +164,11 @@ void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
     getWithFileOpenDialog();
 }
 
-void UIWizardNewVMPageExpert::sltUnattendedCheckBoxToggle(bool fEnabled)
-{
-    disableEnableUnattendedRelatedWidgets(fEnabled);
-    emit completeChanged();
-}
-
 void UIWizardNewVMPageExpert::sltISOPathChanged(const QString &strPath)
 {
     determineOSType(strPath);
     setTypeByISODetectedOSType(m_strDetectedOSTypeId);
-    emit completeChanged();
-}
-
-void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
-{
-    if (m_pGAISOPathLabel)
-        m_pGAISOPathLabel->setEnabled(fEnabled);
-    if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->setEnabled(fEnabled);
+    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     emit completeChanged();
 }
 
@@ -232,9 +216,7 @@ void UIWizardNewVMPageExpert::createConnections()
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
                 this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
     }
-    if (m_pEnableUnattendedInstallCheckBox)
-        connect(m_pEnableUnattendedInstallCheckBox, &QCheckBox::clicked,
-                this, &UIWizardNewVMPageExpert::sltUnattendedCheckBoxToggle);
+
     if (m_pISOFilePathSelector)
         connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged,
                 this, &UIWizardNewVMPageExpert::sltISOPathChanged);
@@ -243,9 +225,6 @@ void UIWizardNewVMPageExpert::createConnections()
     if (m_pUserNamePasswordEditor)
         connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
                 this, &UIWizardNewVMPageExpert::completeChanged);
-    if (m_pInstallGACheckBox)
-        connect(m_pInstallGACheckBox, &QCheckBox::toggled, this,
-                &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
     if (m_pGAISOFilePathSelector)
         connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
                 this, &UIWizardNewVMPageExpert::sltGAISOPathChanged);
@@ -303,8 +282,7 @@ void UIWizardNewVMPageExpert::initializePage()
     if (m_pDiskSelector)
         m_pDiskSelector->setCurrentIndex(0);
 
-    if (m_pEnableUnattendedInstallCheckBox)
-        disableEnableUnattendedRelatedWidgets(m_pEnableUnattendedInstallCheckBox->isChecked());
+    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     if (m_pProductKeyLabel)
         m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
     if (m_pProductKeyLineEdit)
@@ -353,11 +331,11 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
     if (m_pStartHeadlessCheckBox)
         pLayout->addWidget(m_pStartHeadlessCheckBox, iRow++, 0, 1, 5);
 
-    pLayout->addWidget(createUserNameHostNameWidgets(/* fIncreaseLeftIndent */ false), iRow, 0, 4, 5);
+    pLayout->addWidget(createUserNameHostNameWidgets(), iRow, 0, 4, 5);
     iRow += 4;
-    pLayout->addWidget(createGAInstallWidgets(/* fIncreaseLeftIndent */ false), iRow, 0, 2, 5);
+    pLayout->addWidget(createGAInstallWidgets(), iRow, 0, 2, 5);
     iRow += 2;
-    pLayout->addWidget(createProductKeyWidgets(/* fIncreaseLeftIndent */ false), iRow, 0, 1, 5);
+    pLayout->addWidget(createProductKeyWidgets(), iRow, 0, 1, 5);
 
 
     return pContainerWidget;
@@ -391,12 +369,12 @@ bool UIWizardNewVMPageExpert::isComplete() const
     if (isUnattendedEnabled())
     {
         /* Check the installation medium: */
-        if (!isISOFileSelectorComplete())
-        {
-            m_pToolBox->setItemIcon(ExpertToolboxItems_NameAndOSType,
-                                    UIIconPool::iconSet(":/status_error_16px.png"));
-            fIsComplete = false;
-        }
+        // if (!isISOFileSelectorComplete())
+        // {
+        //     m_pToolBox->setItemIcon(ExpertToolboxItems_NameAndOSType,
+        //                             UIIconPool::iconSet(":/status_error_16px.png"));
+        //     fIsComplete = false;
+        // }
         /* Check the GA installation medium: */
         if (!checkGAISOFile())
         {
@@ -458,23 +436,13 @@ bool UIWizardNewVMPageExpert::validatePage()
 bool UIWizardNewVMPageExpert::isProductKeyWidgetEnabled() const
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-    if (!pWizard || !pWizard->isUnattendedInstallEnabled() || !pWizard->isGuestOSTypeWindows())
+    if (!pWizard || !pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
         return false;
     return true;
 }
 
 void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnabled)
 {
-    if (m_pToolBox)
-    {
-        m_pToolBox->setItemEnabled(ExpertToolboxItems_UsernameHostname, fEnabled);
-        m_pToolBox->setItemEnabled(ExpertToolboxItems_GAInstall, fEnabled);
-        m_pToolBox->setItemEnabled(ExpertToolboxItems_ProductKey, fEnabled);
-    }
-    if (m_pISOSelectorLabel)
-        m_pISOSelectorLabel->setEnabled(fEnabled);
-    if (m_pISOFilePathSelector)
-        m_pISOFilePathSelector->setEnabled(fEnabled);
     if (m_pStartHeadlessCheckBox)
         m_pStartHeadlessCheckBox->setEnabled(fEnabled);
 }

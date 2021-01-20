@@ -52,7 +52,6 @@ public:
         QString hostname() const;
         void setHostname(const QString &strHostName);
         bool installGuestAdditions() const;
-        void setInstallGuestAdditions(bool fInstallGA);
         QString guestAdditionsISOPath() const;
         void setGuestAdditionsISOPath(const QString &strISOPath);
         QString productKey() const;
@@ -66,10 +65,11 @@ protected:
         ToolBoxItems_ProductKey
     };
 
-    QWidget *createUserNameHostNameWidgets(bool fIncreaseLeftIndent);
-    QWidget *createGAInstallWidgets(bool fIncreaseLeftIndent);
-    QWidget *createProductKeyWidgets(bool fIncreaseLeftIndent);
+    QWidget *createUserNameHostNameWidgets();
+    QWidget *createGAInstallWidgets();
+    QWidget *createProductKeyWidgets();
 
+    /** Returns false if ISO path selector is non empty but has invalid file path. */
     bool checkGAISOFile() const;
     void markWidgets() const;
     void retranslateWidgets();
@@ -79,8 +79,6 @@ protected:
         UIUserNamePasswordEditor *m_pUserNamePasswordEditor;
         QLineEdit *m_pHostnameLineEdit;
         QLabel  *m_pHostnameLabel;
-        /** Guest additions iso selection widgets. */
-        QCheckBox *m_pInstallGACheckBox;
         QLabel  *m_pGAISOPathLabel;
         UIFilePathSelector *m_pGAISOFilePathSelector;
         /** Product key stuff. */
@@ -96,7 +94,7 @@ class UIWizardNewVMPageBasic2 : public UIWizardPage, public UIWizardNewVMPage2
     Q_PROPERTY(QString userName READ userName WRITE setUserName);
     Q_PROPERTY(QString password READ password WRITE setPassword);
     Q_PROPERTY(QString hostname READ hostname WRITE setHostname);
-    Q_PROPERTY(bool installGuestAdditions READ installGuestAdditions WRITE setInstallGuestAdditions);
+    Q_PROPERTY(bool installGuestAdditions READ installGuestAdditions);
     Q_PROPERTY(QString guestAdditionsISOPath READ guestAdditionsISOPath WRITE setGuestAdditionsISOPath);
     Q_PROPERTY(QString productKey READ productKey);
 
