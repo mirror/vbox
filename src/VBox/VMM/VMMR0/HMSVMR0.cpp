@@ -4266,8 +4266,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransi
 DECLINLINE(int) hmR0SvmRunGuest(PVMCPUCC pVCpu, RTHCPHYS HCPhysVmcb)
 {
     /* Mark that HM is the keeper of all guest-CPU registers now that we're going to execute guest code. */
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    pCtx->fExtrn |= HMSVM_CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_HM;
+    pVCpu->cpum.GstCtx.fExtrn |= HMSVM_CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_HM;
 
     /*
      * 64-bit Windows uses XMM registers in the kernel as the Microsoft compiler expresses
@@ -4278,9 +4277,10 @@ DECLINLINE(int) hmR0SvmRunGuest(PVMCPUCC pVCpu, RTHCPHYS HCPhysVmcb)
      */
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    return hmR0SVMRunWrapXMM(pVCpu->hm.s.svm.HCPhysVmcbHost, HCPhysVmcb, pCtx, pVM, pVCpu, pVCpu->hm.s.svm.pfnVMRun);
+    return hmR0SVMRunWrapXMM(pVM, pVCpu, HCPhysVmcb, pVCpu->hm.s.svm.pfnVMRun);
+        //pVCpu->hm.s.svm.HCPhysVmcbHost, HCPhysVmcb, pVM, pVCpu, pVCpu->hm.s.svm.pfnVMRun);
 #else
-    return pVCpu->hm.s.svm.pfnVMRun(pVCpu->hm.s.svm.HCPhysVmcbHost, HCPhysVmcb, pCtx, pVM, pVCpu);
+    return pVCpu->hm.s.svm.pfnVMRun(pVM, pvCpu, HCPhysVmcb);
 #endif
 }
 

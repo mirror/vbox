@@ -402,15 +402,22 @@ typedef FNHMSWITCHERHC *PFNHMSWITCHERHC;
  * For compilers (like DTrace) that does not grok nameless structs (it is
  * non-standard C++), we have a little hack to make them palatable.
  */
+/** @def HM_NAMELESS_UNION_TAG
+ * For tagging a nameless union so tstASMStructs.cpp can find check the nested
+ * structures within the union.
+ */
 #ifdef VBOX_FOR_DTRACE_LIB
-# define HM_UNION_NM(a_Nm)  a_Nm
-# define HM_STRUCT_NM(a_Nm) a_Nm
+# define HM_UNION_NM(a_Nm)              a_Nm
+# define HM_STRUCT_NM(a_Nm)             a_Nm
+# define HM_NAMELESS_UNION_TAG(a_Tag)
 #elif defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS)
-# define HM_UNION_NM(a_Nm)  a_Nm
-# define HM_STRUCT_NM(a_Nm) a_Nm
+# define HM_UNION_NM(a_Nm)              a_Nm
+# define HM_STRUCT_NM(a_Nm)             a_Nm
+# define HM_NAMELESS_UNION_TAG(a_Tag)   a_Tag
 #else
 # define HM_UNION_NM(a_Nm)
 # define HM_STRUCT_NM(a_Nm)
+# define HM_NAMELESS_UNION_TAG(a_Tag)
 #endif
 
 /**
@@ -693,8 +700,8 @@ typedef DECLCALLBACKTYPE(int, FNHMVMXSTARTVM,(RTHCUINT fResume, PCPUMCTX pCtx, v
 /** Pointer to a VMX StartVM function. */
 typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
 
-/** SVM VMRun function. */
-typedef DECLCALLBACKTYPE(int, FNHMSVMVMRUN,(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVMCC pVM, PVMCPUCC pVCpu));
+/** SVM VMRun function, see SVMR0VMRun(). */
+typedef DECLCALLBACKTYPE(int, FNHMSVMVMRUN,(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB));
 /** Pointer to a SVM VMRun function. */
 typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
 
@@ -917,10 +924,10 @@ typedef struct HMCPU
     /** CPU-context changed flags (see HM_CHANGED_xxx). */
     uint64_t                    fCtxChanged;
 
-    union /* no tag! */
+    union HM_NAMELESS_UNION_TAG(HMCPUUNION) /* no tag! */
     {
         /** VT-x data.   */
-        struct
+        struct HM_NAMELESS_UNION_TAG(HMCPUVMX)
         {
             /** @name Guest information.
              * @{ */
@@ -985,7 +992,7 @@ typedef struct HMCPU
         } vmx;
 
         /** SVM data. */
-        struct
+        struct HM_NAMELESS_UNION_TAG(HMCPUSVM)
         {
             /** Ring 0 handlers for VT-x. */
             PFNHMSVMVMRUN               pfnVMRun;
@@ -994,7 +1001,8 @@ typedef struct HMCPU
             RTHCPHYS                    HCPhysVmcbHost;
             /** R0 memory object for the host VMCB which holds additional host-state. */
             RTR0MEMOBJ                  hMemObjVmcbHost;
-            /** Padding. */
+            /** Padding.
+             * @todo remove, pointless now  */
             R0PTRTYPE(void *)           pvPadding;
 
             /** Physical address of the guest VMCB. */
@@ -1224,8 +1232,7 @@ VMMR0_INT_DECL(void)        hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, con
 # ifdef VBOX_WITH_KERNEL_USING_XMM
 DECLASM(int)                hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu,
                                                   PFNHMVMXSTARTVM pfnStartVM);
-DECLASM(int)                hmR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVMCC pVM, PVMCPUCC pVCpu,
-                                              PFNHMSVMVMRUN pfnVMRun);
+DECLASM(int)                hmR0SVMRunWrapXMM(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB, PFNHMSVMVMRUN pfnVMRun);
 # endif
 DECLASM(void)               hmR0MdsClear(void);
 #endif /* IN_RING0 */

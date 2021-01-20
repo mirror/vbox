@@ -56,13 +56,11 @@ VMMR0DECL(int)          SVMR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt);
  * Prepares for and executes VMRUN (64-bit register context).
  *
  * @returns VBox status code.
- * @param   pVMCBHostPhys   Physical address of host VMCB.
- * @param   pVMCBPhys       Physical address of the VMCB.
- * @param   pCtx            Pointer to the guest CPU context.
  * @param   pVM             The cross context VM structure. (Not used.)
- * @param   pVCpu           The cross context virtual CPU structure. (Not used.)
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   HCPhyspVMCB     Physical address of the VMCB.
  */
-DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVMCC pVM, PVMCPUCC pVCpu);
+DECLASM(int) SVMR0VMRun(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
 
 /**
  * Executes INVLPGA.
