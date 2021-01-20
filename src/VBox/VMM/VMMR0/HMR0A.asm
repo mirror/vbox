@@ -75,6 +75,7 @@
 ; @param 2  16-bit register name for \a 1.
 
 %ifdef ASM_CALL64_GCC
+ %define CALLEE_PRESERVED_REGISTER_COUNT 5
  %macro PUSH_CALLEE_PRESERVED_REGISTERS 0
    push    r15
    push    r14
@@ -91,6 +92,7 @@
  %endmacro
 
 %else ; ASM_CALL64_MSC
+ %define CALLEE_PRESERVED_REGISTER_COUNT 7
  %macro PUSH_CALLEE_PRESERVED_REGISTERS 0
    push    r15
    push    r14
@@ -1054,6 +1056,13 @@ BEGINPROC SVMR0VMRun
     push    rbp
     mov     rbp, rsp
     pushf
+    sub     rsp, 30h - 8h                   ; The frame is 30h bytes, but the rbp-08h entry is the above pushf.
+                                            ; And we have CALLEE_PRESERVED_REGISTER_COUNT following it.
+%define frm_uHostXcr0       -18h            ; 128-bit
+%define frm_fNoRestoreXcr0  -20h            ; Non-zero if we should skip XCR0 restoring.
+%define frm_pVCpu           -28h            ; Where we stash pVCpu for use after the vmrun.
+%define frm_HCPhysVmcbHost  -30h            ; Where we stash HCPhysVmcbHost for the vmload after vmrun.
+%define cbFrame            ( 30h + CALLEE_PRESERVED_REGISTER_COUNT*8 )
 
     ; Manual save and restore:
     ;  - General purpose registers except RIP, RSP, RAX
@@ -1076,32 +1085,29 @@ BEGINPROC SVMR0VMRun
 %endif
 
     ; Save the host XCR0 and load the guest one if necessary.
+    mov     ecx, 3fh                        ; indicate that we need not restore XCR0 (in case we jump)
     test    byte [rsi + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
     jz      .xcr0_before_skip
 
     xor     ecx, ecx
     xgetbv                                  ; save the host XCR0 on the stack
-    push    rdx
-    push    rax
+    mov     [rbp + frm_uHostXcr0 + 8], rdx
+    mov     [rbp + frm_uHostXcr0    ], rax
 
     mov     eax, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.aXcr] ; load the guest XCR0
     mov     edx, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.aXcr + 4]
-    xor     ecx, ecx                        ; paranoia
+    xor     ecx, ecx                        ; paranoia; Also, indicates that we must restore XCR0 (moved into ecx, thus 0).
     xsetbv
 
-    push    0                               ; indicate that we must restore XCR0 (popped into ecx, thus 0)
-    jmp     .xcr0_before_done
-
 .xcr0_before_skip:
-    push    3fh                             ; indicate that we need not restore XCR0
-.xcr0_before_done:
+    mov     [rbp + frm_fNoRestoreXcr0], rcx
 
     ; Save pVCpu pointer for simplifying saving of the GPRs afterwards.
-    push    rsi
+    mov     qword [rbp + frm_pVCpu], rsi
 
     ; Save host fs, gs, sysenter msr etc.
     mov     rax, [rsi + VMCPU.hm + HMCPU.u + HMCPUSVM.HCPhysVmcbHost]
-    push    rax                             ; save for the vmload after vmrun
+    mov     qword [rbp + frm_HCPhysVmcbHost], rax          ; save for the vmload after vmrun
     vmsave
 
     ; Fight spectre (trashes rax, rdx and rcx).
@@ -1140,15 +1146,15 @@ BEGINPROC SVMR0VMRun
     vmsave
 
     ; Load host fs, gs, sysenter msr etc.
-    pop     rax                         ; load HCPhysVmcbHost (pushed above)
+    mov     rax, [rsp + cbFrame + frm_HCPhysVmcbHost] ; load HCPhysVmcbHost (rbp is not operational yet, thus rsp)
     vmload
 
     ; Set the global interrupt flag again, but execute cli to make sure IF=0.
     cli
     stgi
 
-    ; Pop pVCpu (pushed above) and save the guest GPRs (sans RSP and RAX).
-    pop     rax
+    ; Pop pVCpu (saved above) and save the guest GPRs (sans RSP and RAX).
+    mov     rax, [rsp + cbFrame + frm_pVCpu] ; (rbp still not operational)
 
     mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebx], rbx
     mov     rbx, SPECTRE_FILLER
@@ -1161,7 +1167,7 @@ BEGINPROC SVMR0VMRun
     mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edi], rdi
     mov     rdi, rbx
     mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebp], rbp
-    mov     rbp, rbx
+    lea     rbp, [rsp + cbFrame]
     mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r8],  r8
     mov     r8, rbx
     mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r9],  r9
@@ -1183,11 +1189,11 @@ BEGINPROC SVMR0VMRun
     INDIRECT_BRANCH_PREDICTION_BARRIER rax, CPUMCTX_WSF_IBPB_EXIT
 
     ; Restore the host xcr0 if necessary.
-    pop     rcx
+    mov     rcx, [rbp + frm_fNoRestoreXcr0]
     test    ecx, ecx
     jnz     .xcr0_after_skip
-    pop     rax
-    pop     rdx
+    mov     rdx, [rbp + frm_uHostXcr0 + 8]
+    mov     rax, [rbp + frm_uHostXcr0]
     xsetbv                              ; ecx is already zero
 .xcr0_after_skip:
 
@@ -1196,8 +1202,14 @@ BEGINPROC SVMR0VMRun
 
     mov     eax, VINF_SUCCESS
 
+    add     rsp, 30h - 8h
     popf
-    pop     rbp                         ; Do not use leave! rbp is trashed.
+    leave
     ret
+%undef frm_uHostXcr0
+%undef frm_fNoRestoreXcr0
+%undef frm_pVCpu
+%undef frm_HCPhysVmcbHost
+%undef cbFrame
 ENDPROC SVMR0VMRun
 
