@@ -30,6 +30,7 @@
 #include "QITabWidget.h"
 #include "UIIconPool.h"
 #include "UIDetailsWidgetNATNetwork.h"
+#include "UIMessageCenter.h"
 #include "UINetworkManagerUtils.h"
 
 /* Other VBox includes: */
@@ -60,11 +61,14 @@ UIDetailsWidgetNATNetwork::UIDetailsWidgetNATNetwork(EmbedTo enmEmbedding, QWidg
     prepare();
 }
 
-void UIDetailsWidgetNATNetwork::setData(const UIDataNATNetwork &data, bool fHoldPosition /* = false */)
+void UIDetailsWidgetNATNetwork::setData(const UIDataNATNetwork &data,
+                                        const QStringList &busyNames /* = QStringList() */,
+                                        bool fHoldPosition /* = false */)
 {
     /* Cache old/new data: */
     m_oldData = data;
     m_newData = m_oldData;
+    m_busyNames = busyNames;
     m_fHoldPosition = fHoldPosition;
 
     /* Load 'Options' data: */
@@ -75,6 +79,41 @@ void UIDetailsWidgetNATNetwork::setData(const UIDataNATNetwork &data, bool fHold
 
 bool UIDetailsWidgetNATNetwork::revalidate() const
 {
+    /* Make sure network name isn't empty: */
+    if (m_newData.m_strName.isEmpty())
+    {
+        msgCenter().warnAboutNoNameSpecified(m_oldData.m_strName);
+        return false;
+    }
+    else
+    {
+        /* Make sure item names are unique: */
+        if (m_busyNames.contains(m_newData.m_strName))
+        {
+            msgCenter().warnAboutNameAlreadyBusy(m_newData.m_strName);
+            return false;
+        }
+    }
+
+    /* Make sure network CIDR isn't empty: */
+    if (m_newData.m_strCIDR.isEmpty())
+    {
+        msgCenter().warnAboutNoCIDRSpecified(m_newData.m_strName);
+        return false;
+    }
+    else
+    {
+        /* Make sure network CIDR is valid: */
+        RTNETADDRIPV4 network, mask;
+        const int rc = RTCidrStrToIPv4(m_newData.m_strCIDR.toUtf8().constData(), &network, &mask);
+        if (RT_FAILURE(rc))
+        {
+            msgCenter().warnAboutInvalidCIDRSpecified(m_newData.m_strCIDR, m_newData.m_strName);
+            return false;
+        }
+    }
+
+    /* Validate 'Forwarding' tab content: */
     return m_pForwardingTableIPv4->validate() && m_pForwardingTableIPv6->validate();
 }
 

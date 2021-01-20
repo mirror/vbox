@@ -120,9 +120,13 @@ public:
     /** Returns the host network data. */
     const UIDataNATNetwork &data() const { return m_newData; }
     /** Defines the host network @a data.
+      * @param  busyNames      Holds the list of names busy by other
+      *                        NAT networks.
       * @param  fHoldPosition  Holds whether we should try to keep
       *                        port forwarding rule position intact. */
-    void setData(const UIDataNATNetwork &data, bool fHoldPosition = false);
+    void setData(const UIDataNATNetwork &data,
+                 const QStringList &busyNames = QStringList(),
+                 bool fHoldPosition = false);
 
     /** @name Change handling stuff.
       * @{ */
@@ -236,6 +240,9 @@ private:
         UIPortForwardingTable *m_pForwardingTableIPv6;
         /** Holds the 'Forwarding' button-box instance. */
         QIDialogButtonBox     *m_pButtonBoxForwarding;
+        /** Holds the list of names busy by other
+          * NAT networks. */
+        QStringList            m_busyNames;
         /** Holds whether we should try to keep
           * port forwarding rule position intact. */
         bool                   m_fHoldPosition;

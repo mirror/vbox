@@ -1068,7 +1068,11 @@ void UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetworkHoldingPosition
 
     /* If there is an item => update details data: */
     if (pItem)
-        m_pDetailsWidgetNATNetwork->setData(*pItem, fHoldPosition);
+    {
+        QStringList busyNamesForItem = busyNames();
+        busyNamesForItem.removeAll(pItem->name());
+        m_pDetailsWidgetNATNetwork->setData(*pItem, busyNamesForItem, fHoldPosition);
+    }
     /* Otherwise => clear details: */
     else
         m_pDetailsWidgetNATNetwork->setData(UIDataNATNetwork());
@@ -1734,6 +1738,19 @@ void UINetworkManagerWidget::updateItemForNATNetwork(const UIDataNATNetwork &dat
         if (fChooseItem)
             m_pTreeWidgetNATNetwork->setCurrentItem(pItem);
     }
+}
+
+QStringList UINetworkManagerWidget::busyNames() const
+{
+    QStringList names;
+    for (int i = 0; i < m_pTreeWidgetNATNetwork->topLevelItemCount(); ++i)
+    {
+        UIItemNATNetwork *pItem = qobject_cast<UIItemNATNetwork*>(m_pTreeWidgetNATNetwork->childItem(i));
+        const QString strItemName(pItem->name());
+        if (!strItemName.isEmpty() && !names.contains(strItemName))
+            names << strItemName;
+    }
+    return names;
 }
 
 

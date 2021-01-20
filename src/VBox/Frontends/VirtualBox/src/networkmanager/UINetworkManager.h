@@ -207,6 +207,9 @@ private:
         void createItemForNATNetwork(const UIDataNATNetwork &data, bool fChooseItem);
         /** Updates passed NAT network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void updateItemForNATNetwork(const UIDataNATNetwork &data, bool fChooseItem, UIItemNATNetwork *pItem);
+
+        /** Returns a list of busy NAT network names. */
+        QStringList busyNames() const;
     /** @} */
 
     /** @name General variables.
