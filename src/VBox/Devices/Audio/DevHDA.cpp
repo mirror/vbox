@@ -2049,21 +2049,10 @@ static VBOXSTRICTRC hdaRegWriteBase(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_
 
             /* Also make sure to handle the DMA position enable bit. */
             pThis->fDMAPosition = pThis->au32Regs[iRegMem] & RT_BIT_32(0);
-
-#ifndef IN_RING0
-            LogRel(("HDA: DP base (lower) set: %#RGp\n", pThis->u64DPBase));
-            LogRel(("HDA: DMA position buffer is %s\n", pThis->fDMAPosition ? "enabled" : "disabled"));
-#else
-            return VINF_IOM_R3_MMIO_WRITE; /* (Go to ring-3 for release logging.) */
-#endif
+            LogRel(("HDA: %s DMA position buffer\n", pThis->fDMAPosition ? "Enabled" : "Disabled"));
             break;
         case HDA_REG_DPUBASE:
-            pThis->u64DPBase = RT_MAKE_U64(RT_LO_U32(pThis->u64DPBase), pThis->au32Regs[iRegMem]);
-#ifndef IN_RING0
-            LogRel(("HDA: DP base (upper) set: %#RGp\n", pThis->u64DPBase));
-#else
-            return VINF_IOM_R3_MMIO_WRITE; /* (Go to ring-3 for release logging.) */
-#endif
+            pThis->u64DPBase = RT_MAKE_U64(RT_LO_U32(pThis->u64DPBase) & DPBASE_ADDR_MASK, pThis->au32Regs[iRegMem]);
             break;
         default:
             AssertMsgFailed(("Invalid index\n"));
