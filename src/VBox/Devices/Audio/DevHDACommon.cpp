@@ -84,7 +84,7 @@ void hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis)
  * Retrieves the number of bytes of a FIFOW register.
  *
  * @return Number of bytes of a given FIFOW register.
- * @param  u16RegFIFOS         FIFOW register to convert.
+ * @param  u16RegFIFOW          FIFOW register to convert.
  */
 uint8_t hdaSDFIFOWToBytes(uint16_t u16RegFIFOW)
 {
