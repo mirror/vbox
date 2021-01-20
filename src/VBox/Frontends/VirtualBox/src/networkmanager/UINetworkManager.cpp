@@ -110,6 +110,11 @@ public:
 
     /** Returns item name. */
     QString name() const { return m_strName; }
+
+protected:
+
+    /** Returns default text. */
+    virtual QString defaultText() const /* override */;
 };
 
 
@@ -246,6 +251,13 @@ void UIItemNATNetwork::updateFields()
 
     /* Assign tool-tip finally: */
     setToolTip(NATNetworkColumn_Name, strTable.arg(strToolTip));
+}
+
+QString UIItemNATNetwork::defaultText() const
+{
+    return   m_fEnabled
+           ? tr("%1, %2", "col.2 text, col.1 name").arg(text(1)).arg(parentTree()->headerItem()->text(0))
+           : tr("%1",     "col.2 text").arg(text(1));
 }
 
 
