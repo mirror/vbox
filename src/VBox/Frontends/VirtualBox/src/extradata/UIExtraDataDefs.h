@@ -823,7 +823,6 @@ enum GlobalSettingsPageType
 #endif
     GlobalSettingsPageType_Language,
     GlobalSettingsPageType_Display,
-    GlobalSettingsPageType_Network,
     GlobalSettingsPageType_Extensions,
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     GlobalSettingsPageType_Proxy,

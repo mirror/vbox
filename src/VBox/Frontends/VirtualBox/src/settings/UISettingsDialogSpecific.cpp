@@ -35,7 +35,6 @@
 #include "UIGlobalSettingsGeneral.h"
 #include "UIGlobalSettingsInput.h"
 #include "UIGlobalSettingsLanguage.h"
-#include "UIGlobalSettingsNetwork.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UIGlobalSettingsProxy.h"
 # include "UIGlobalSettingsUpdate.h"
@@ -99,9 +98,6 @@ void UISettingsDialogGlobal::retranslateUi()
 
     /* Display page: */
     m_pSelector->setItemText(GlobalSettingsPageType_Display, tr("Display"));
-
-    /* Network page: */
-    m_pSelector->setItemText(GlobalSettingsPageType_Network, tr("Network"));
 
     /* Extension page: */
     m_pSelector->setItemText(GlobalSettingsPageType_Extensions, tr("Extensions"));
@@ -238,15 +234,6 @@ void UISettingsDialogGlobal::prepare()
                     addPageHelpKeyword(iPageIndex, "globalsettings");
                     break;
                 }
-                /* Network page: */
-                case GlobalSettingsPageType_Network:
-                {
-                    pSettingsPage = new UIGlobalSettingsNetwork;
-                    addItem(":/nw_32px.png", ":/nw_24px.png", ":/nw_16px.png",
-                            iPageIndex, "#network", pSettingsPage);
-                    addPageHelpKeyword(iPageIndex, "globalsettings");
-                    break;
-                }
                 /* Extensions page: */
                 case GlobalSettingsPageType_Extensions:
                 {
@@ -318,13 +305,6 @@ bool UISettingsDialogGlobal::isPageAvailable(int iPageId) const
 {
     switch (iPageId)
     {
-        case GlobalSettingsPageType_Network:
-        {
-#ifndef VBOX_WITH_NETFLT
-            return false;
-#endif
-            break;
-        }
         case GlobalSettingsPageType_Extensions:
             return !uiCommon().virtualBox().GetExtensionPackManager().isNull();
         default:
