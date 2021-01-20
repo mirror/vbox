@@ -26,7 +26,6 @@
 #include <VBox/AssertGuest.h>
 
 #include <iprt/x86.h>
-#include <iprt/alloc.h>
 #include <iprt/string.h>
 
 #include "VBoxDD.h"
@@ -40,9 +39,18 @@
 #define IOMMU_LOG_PFX                               "AMD-IOMMU"
 /** The current saved state version. */
 #define IOMMU_SAVED_STATE_VERSION                   1
-/** The IOTLB entry magic. */
-#define IOMMU_IOTLBE_MAGIC                          0x10acce55
-
+/** The IOMMU device instance magic. */
+#define IOMMU_MAGIC                                 0x10acce55
+/** The maximum number of IOTLB entries in our cache implementation. */
+#define IOMMU_IOTLBE_MAX                            64
+/** Enable the IOTLBE cache. */
+#define IOMMU_WITH_IOTLBE_CACHE
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+/** The mask of bits for the domain ID of the IOTLBE key. */
+# define IOMMU_IOTLB_DOMAIN_ID_MASK                 UINT64_C(0xffffff0000000000)
+/** The number of bits to shift for the domain ID of the IOTLBE key. */
+# define IOMMU_IOTLB_DOMAIN_ID_SHIFT                40
+#endif
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -115,7 +123,7 @@ AssertCompileSize(IOMMUOP, 4);
 /**
  * I/O page walk result.
  */
-typedef struct
+typedef struct IOWALKRESULT
 {
     /** The translated system physical address. */
     RTGCPHYS        GCPhysSpa;
@@ -132,27 +140,42 @@ typedef IOWALKRESULT *PIOWALKRESULT;
 typedef IOWALKRESULT *PCIOWALKRESULT;
 
 /**
+ * IOMMU I/O Device ID mapping.
+ */
+#pragma pack(1)
+typedef struct IODOMAIN
+{
+    /** The domain ID assigned by software. */
+    uint16_t        uDomainId;
+    /** Whether the domain ID is valid (since all bits of domain ID are usable). */
+    bool            fValid;
+    bool            afAlignment[1];
+} IODOMAIN;
+#pragma pack()
+/** Pointer to an I/O domain struct. */
+typedef IODOMAIN *PIODOMAIN;
+/** Pointer to a const I/O domain struct. */
+typedef IODOMAIN *PCIODOMAIN;
+AssertCompileSize(IODOMAIN, 4);
+
+/**
  * IOMMU I/O TLB Entry.
  * Keep this as small and aligned as possible.
  */
-typedef struct
+typedef struct IOTLBE
 {
-    /** The translated system physical address (SPA) of the page. */
-    RTGCPHYS        GCPhysSpa;
-    /** The index of the 4K page within a large page. */
-    uint32_t        idxSubPage;
-    /** The I/O access permissions (IOMMU_IO_PERM_XXX). */
-    uint8_t         fIoPerm;
-    /** The number of offset bits in the translation indicating page size. */
-    uint8_t         cShift;
-    /** Alignment padding. */
-    uint8_t         afPadding[2];
-} IOTLBE_T;
-AssertCompileSize(IOTLBE_T, 16);
+    /** The AVL tree core. */
+    AVLU64NODECORE  Core;
+    /** List node for the LRU (Least Recently Used) list used for eviction. */
+    RTLISTNODE      NdLru;
+    /** The I/O walk result of the translation. */
+    IOWALKRESULT    WalkResult;
+} IOTLBE;
+AssertCompileSizeAlignment(IOTLBE, 8);
 /** Pointer to an IOMMU I/O TLB entry struct. */
-typedef IOTLBE_T *PIOTLBE_T;
+typedef IOTLBE *PIOTLBE;
 /** Pointer to a const IOMMU I/O TLB entry struct. */
-typedef IOTLBE_T const *PCIOTLBE_T;
+typedef IOTLBE const *PCIOTLBE;
 
 /**
  * The shared IOMMU device state.
@@ -161,8 +184,8 @@ typedef struct IOMMU
 {
     /** IOMMU device index (0 is at the top of the PCI tree hierarchy). */
     uint32_t                    idxIommu;
-    /** Alignment padding. */
-    uint32_t                    uPadding0;
+    /** IOMMU magic. */
+    uint32_t                    u32Magic;
 
     /** Whether the command thread is sleeping. */
     bool volatile               fCmdThreadSleeping;
@@ -177,6 +200,21 @@ typedef struct IOMMU
     SUPSEMEVENT                 hEvtCmdThread;
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
+
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+    /** L1 Cache - Maps [DeviceId] to [DomainId]. */
+    PIODOMAIN                   paDomainIds;
+    /** Pointer to array of allocated IOTLBEs. */
+    PIOTLBE                     paIotlbes;
+    /** L2 Cache - Maps [DomainId,Iova] to [IOTLBE]. */
+    AVLU64TREE                  TreeIotlbe;
+    /** LRU list anchor for IOTLB entries. */
+    RTLISTANCHOR                LstLruIotlbe;
+    /** Number of cached IOTLBEs. */
+    uint32_t                    cCachedIotlbes;
+    /** Padding. */
+    uint32_t                    uPadding1;
+#endif
 
     /** @name PCI: Base capability block registers.
      * @{ */
@@ -299,35 +337,35 @@ typedef struct IOMMU
 #ifdef VBOX_WITH_STATISTICS
     /** @name IOMMU: Stat counters.
      * @{ */
-    STAMCOUNTER             StatMmioReadR3;             /**< Number of MMIO reads in R3. */
-    STAMCOUNTER             StatMmioReadRZ;             /**< Number of MMIO reads in RZ. */
-    STAMCOUNTER             StatMmioWriteR3;            /**< Number of MMIO writes in R3. */
-    STAMCOUNTER             StatMmioWriteRZ;            /**< Number of MMIO writes in RZ. */
+    STAMCOUNTER                 StatMmioReadR3;             /**< Number of MMIO reads in R3. */
+    STAMCOUNTER                 StatMmioReadRZ;             /**< Number of MMIO reads in RZ. */
+    STAMCOUNTER                 StatMmioWriteR3;            /**< Number of MMIO writes in R3. */
+    STAMCOUNTER                 StatMmioWriteRZ;            /**< Number of MMIO writes in RZ. */
 
-    STAMCOUNTER             StatMsiRemapR3;             /**< Number of MSI remap requests in R3. */
-    STAMCOUNTER             StatMsiRemapRZ;             /**< Number of MSI remap requests in RZ. */
+    STAMCOUNTER                 StatMsiRemapR3;             /**< Number of MSI remap requests in R3. */
+    STAMCOUNTER                 StatMsiRemapRZ;             /**< Number of MSI remap requests in RZ. */
 
-    STAMCOUNTER             StatMemReadR3;              /**< Number of memory read translation requests in R3. */
-    STAMCOUNTER             StatMemReadRZ;              /**< Number of memory read translation requests in RZ. */
-    STAMCOUNTER             StatMemWriteR3;             /**< Number of memory write translation requests in R3. */
-    STAMCOUNTER             StatMemWriteRZ;             /**< Number of memory write translation requests in RZ. */
+    STAMCOUNTER                 StatMemReadR3;              /**< Number of memory read translation requests in R3. */
+    STAMCOUNTER                 StatMemReadRZ;              /**< Number of memory read translation requests in RZ. */
+    STAMCOUNTER                 StatMemWriteR3;             /**< Number of memory write translation requests in R3. */
+    STAMCOUNTER                 StatMemWriteRZ;             /**< Number of memory write translation requests in RZ. */
 
-    STAMCOUNTER             StatMemBulkReadR3;          /**< Number of memory read bulk translation requests in R3. */
-    STAMCOUNTER             StatMemBulkReadRZ;          /**< Number of memory read bulk translation requests in RZ. */
-    STAMCOUNTER             StatMemBulkWriteR3;         /**< Number of memory write bulk translation requests in R3. */
-    STAMCOUNTER             StatMemBulkWriteRZ;         /**< Number of memory write bulk translation requests in RZ. */
+    STAMCOUNTER                 StatMemBulkReadR3;          /**< Number of memory read bulk translation requests in R3. */
+    STAMCOUNTER                 StatMemBulkReadRZ;          /**< Number of memory read bulk translation requests in RZ. */
+    STAMCOUNTER                 StatMemBulkWriteR3;         /**< Number of memory write bulk translation requests in R3. */
+    STAMCOUNTER                 StatMemBulkWriteRZ;         /**< Number of memory write bulk translation requests in RZ. */
 
-    STAMCOUNTER             StatCmd;                    /**< Number of commands processed in total. */
-    STAMCOUNTER             StatCmdCompWait;            /**< Number of Completion Wait commands processed. */
-    STAMCOUNTER             StatCmdInvDte;              /**< Number of Invalidate DTE commands processed. */
-    STAMCOUNTER             StatCmdInvIommuPages;       /**< Number of Invalidate IOMMU pages commands processed. */
-    STAMCOUNTER             StatCmdInvIotlbPages;       /**< Number of Invalidate IOTLB pages commands processed. */
-    STAMCOUNTER             StatCmdInvIntrTable;        /**< Number of Invalidate Interrupt Table commands processed. */
-    STAMCOUNTER             StatCmdPrefIommuPages;      /**< Number of Prefetch IOMMU Pages commands processed. */
-    STAMCOUNTER             StatCmdCompletePprReq;      /**< Number of Complete PPR Requests commands processed. */
-    STAMCOUNTER             StatCmdInvIommuAll;         /**< Number of Invalidate IOMMU All commands processed. */
+    STAMCOUNTER                 StatCmd;                    /**< Number of commands processed in total. */
+    STAMCOUNTER                 StatCmdCompWait;            /**< Number of Completion Wait commands processed. */
+    STAMCOUNTER                 StatCmdInvDte;              /**< Number of Invalidate DTE commands processed. */
+    STAMCOUNTER                 StatCmdInvIommuPages;       /**< Number of Invalidate IOMMU pages commands processed. */
+    STAMCOUNTER                 StatCmdInvIotlbPages;       /**< Number of Invalidate IOTLB pages commands processed. */
+    STAMCOUNTER                 StatCmdInvIntrTable;        /**< Number of Invalidate Interrupt Table commands processed. */
+    STAMCOUNTER                 StatCmdPrefIommuPages;      /**< Number of Prefetch IOMMU Pages commands processed. */
+    STAMCOUNTER                 StatCmdCompletePprReq;      /**< Number of Complete PPR Requests commands processed. */
+    STAMCOUNTER                 StatCmdInvIommuAll;         /**< Number of Invalidate IOMMU All commands processed. */
 
-    STAMPROFILEADV          StatDteLookup;              /**< Profiling of device table entry lookup (uncached). */
+    STAMPROFILEADV              StatDteLookup;              /**< Profiling of device table entry lookup (uncached). */
     /** @} */
 #endif
 } IOMMU;
@@ -339,6 +377,12 @@ AssertCompileMemberAlignment(IOMMU, fCmdThreadSleeping, 4);
 AssertCompileMemberAlignment(IOMMU, fCmdThreadSignaled, 4);
 AssertCompileMemberAlignment(IOMMU, hEvtCmdThread, 8);
 AssertCompileMemberAlignment(IOMMU, hMmio, 8);
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+AssertCompileMemberAlignment(IOMMU, paDomainIds, 8);
+AssertCompileMemberAlignment(IOMMU, paIotlbes, 8);
+AssertCompileMemberAlignment(IOMMU, TreeIotlbe, 8);
+AssertCompileMemberAlignment(IOMMU, LstLruIotlbe, 8);
+#endif
 AssertCompileMemberAlignment(IOMMU, IommuBar, 8);
 AssertCompileMemberAlignment(IOMMU, aDevTabBaseAddrs, 8);
 AssertCompileMemberAlignment(IOMMU, CmdBufHeadPtr, 8);
@@ -495,6 +539,108 @@ static uint32_t iommuAmdGetCmdBufEntryCount(PIOMMU pThis)
     return cMaxCmds - idxHead + idxTail;
 }
 #endif
+
+
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+/**
+ * Constructs the key for an IOTLB entry suitable for using as part of the IOTLB
+ * cache.
+ *
+ * @returns The key for an IOTLB entry.
+ * @param   uDomainId   The domain ID.
+ * @param   uIova       The I/O virtual address.
+ */
+DECL_FORCE_INLINE(uint64_t) iommuAmdIotlbConstructKey(uint16_t uDomainId, uint64_t uIova)
+{
+    /*
+     * Address bits 63:52 of the IOVA are zero extended, so top 12 bits are free.
+     * Address bits 11:0 of the IOVA are offset into the minimum page size of 4K,
+     * so bottom 12 bits are free.
+     *
+     * Thus we use the top 24 bits of key to hold bits 15:0 of the domain ID.
+     * We use the bottom 40 bits of the key to hold bits 51:12 of the IOVA.
+     */
+    uIova &= IOMMU_IOTLB_DOMAIN_ID_MASK;
+    uIova >>= X86_PAGE_4K_SHIFT;
+    return ((uint64_t)uDomainId << IOMMU_IOTLB_DOMAIN_ID_SHIFT) | uIova;
+}
+
+
+/**
+ * Deconstructs the key of an IOTLB entry into the domain ID and IOVA.
+ *
+ * @param   uKey            The key for the IOTLB entry.
+ * @param   puDomainId      Where to store the domain ID.
+ * @param   puIova          Where to store the I/O virtual address.
+ */
+DECL_FORCE_INLINE(void) iommuAmdIotlbDeconstructKey(uint64_t uKey, uint16_t *puDomainId, uint64_t *puIova)
+{
+    *puDomainId = (uKey &  IOMMU_IOTLB_DOMAIN_ID_MASK) >> IOMMU_IOTLB_DOMAIN_ID_SHIFT;
+    *puIova     = (uKey & ~IOMMU_IOTLB_DOMAIN_ID_MASK) << X86_PAGE_4K_SHIFT;
+}
+
+
+/**
+ * Looks up an IOTLB entry from the IOTLB cache.
+ *
+ * @returns Pointer to the I/O walk result or NULL if the entry is not found.
+ * @param   pThis       The IOMMU device state.
+ * @param   uDomainId   The domain ID.
+ * @param   uIova       The I/O virtual address.
+ */
+static PIOWALKRESULT iommuAmdIotlbLookup(PIOMMU pThis, uint64_t uDomainId, uint64_t uIova)
+{
+    uint64_t const uKey = iommuAmdIotlbConstructKey(uDomainId, uIova);
+    PIOTLBE pIotlbe = (PIOTLBE)RTAvlU64Get(&pThis->TreeIotlbe, uKey);
+    if (pIotlbe)
+        return &pIotlbe->WalkResult;
+    return NULL;
+}
+
+
+/**
+ * Adds an IOTLB entry corresponding to the given I/O page walk result.
+ *
+ * @param   pThis           The IOMMU device state.
+ * @param   pWalkResult     The I/O page walk result to cache.
+ */
+static void iommuAmdIotlbAdd(PIOMMU pThis, PCIOWALKRESULT pWalkResult)
+{
+    /*
+     * If the cache is full, evict the last recently used entry.
+     * Otherwise, get a new IOTLB entry from the pre-allocated list.
+     */
+    PIOTLBE pIotlbe;
+    if (pThis->cCachedIotlbes == IOMMU_IOTLBE_MAX)
+    {
+        pIotlbe = RTListRemoveFirst(&pThis->LstLruIotlbe, IOTLBE, NdLru);
+        Assert(pIotlbe);
+        RTAvlU64Remove(&pThis->TreeIotlbe, pIotlbe->Core.Key);
+        --pThis->cCachedIotlbes;
+        /* Zero out IOTLB entry before reuse. */
+        RT_BZERO(pIotlbe, sizeof(IOTLBE));
+    }
+    else
+    {
+        pIotlbe = &pThis->paIotlbes[pThis->cCachedIotlbes];
+        ++pThis->cCachedIotlbes;
+        /* IOTLB entries have alredy been zero'ed during allocation. */
+    }
+
+    /* Update the entry with the results of the page walk. */
+    Assert(pIotlbe);
+    pIotlbe->WalkResult = *pWalkResult;
+
+    /* Add the entry to the IOTLB cache. */
+    RTAvlU64Insert(&pThis->TreeIotlbe, &pIotlbe->Core);
+
+    /*
+     * Add the entry to the -end- of last recently used list signifying that
+     * is the most recently used entry.
+     */
+    RTListAppend(&pThis->LstLruIotlbe, &pIotlbe->NdLru);
+}
+#endif  /* IOMMU_WITH_IOTLBE_CACHE */
 
 
 DECL_FORCE_INLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
@@ -4400,6 +4546,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDevTabs(PPDMDEVINS pDevIns, PCDBGFINF
 }
 #endif
 
+
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
@@ -4422,6 +4569,19 @@ static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     LogFlowFunc(("\n"));
     return VERR_NOT_IMPLEMENTED;
 }
+
+
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+/**
+ * @callback_method_impl{AVLU64CALLBACK}
+ */
+static DECLCALLBACK(int) iommuAmdR3DestroyIotlbe(PAVLU64NODECORE pCore, void *pvUser)
+{
+    RT_NOREF2(pCore, pvUser);
+    /* Nothing to do as we will destroy IOTLB entries wholesale later. */
+    return VINF_SUCCESS;
+}
+#endif
 
 
 /**
@@ -4531,6 +4691,25 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
         PDMDevHlpSUPSemEventClose(pDevIns, pThis->hEvtCmdThread);
         pThis->hEvtCmdThread = NIL_SUPSEMEVENT;
     }
+
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+    /* Destroy level 1 cache. */
+    if (pThis->paDomainIds)
+    {
+        PDMDevHlpMMHeapFree(pDevIns, pThis->paDomainIds);
+        pThis->paDomainIds = NULL;
+    }
+
+    /* Destroy level 2 cache. */
+    if (pThis->paIotlbes)
+    {
+        RTAvlU64Destroy(&pThis->TreeIotlbe, iommuAmdR3DestroyIotlbe, NULL /* pvParam */);
+        RTListInit(&pThis->LstLruIotlbe);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->paIotlbes);
+        pThis->paIotlbes = NULL;
+    }
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -4545,6 +4724,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    pThis->u32Magic = IOMMU_MAGIC;
     pThisCC->pDevInsR3 = pDevIns;
 
     LogFlowFunc(("iInstance=%d\n", iInstance));
@@ -4756,6 +4936,43 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEvtCmdThread);
     AssertLogRelRCReturn(rc, rc);
+
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+    /*
+     * Allocate the level 1 cache (device ID to domain ID mapping).
+     * PCI devices are hotpluggable, plus we don't have a way of querying the bus for all
+     * assigned PCI BDF slots. So while this wastes some memory, it should work regardless
+     * of how code, features and devices around the IOMMU changes.
+     */
+    size_t const cbDomains = sizeof(IODOMAIN) * UINT16_MAX;
+    pThis->paDomainIds = (PIODOMAIN)PDMDevHlpMMHeapAllocZ(pDevIns, cbDomains);
+    if (!pThis->paDomainIds)
+    {
+        return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
+                                   N_("Failed to allocate %zu bytes from the hyperheap for the IOMMU level 1 cache."),
+                                   cbDomains);
+    }
+
+    /*
+     * Allocate the level 2 cache (IOTLB entries).
+     * This is allocated upfront since we expect a relatively small number of entries,
+     * is more cache-line efficient and easier to track least recently used entries for
+     * eviction when the cache is full. This also prevents unpredictable behavior during
+     * the lifetime of the VM if the hyperheap gets full as allocation would fail upfront
+     * or not at all.
+     */
+    size_t const cbIotlbes = sizeof(IOTLBE) * IOMMU_IOTLBE_MAX;
+    pThis->paIotlbes = (PIOTLBE)PDMDevHlpMMHeapAllocZ(pDevIns, cbIotlbes);
+    if (!pThis->paIotlbes)
+    {
+        return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
+                                   N_("Failed to allocate %zu bytes from the hyperheap for the IOMMU level 2 cache."),
+                                   cbIotlbes);
+    }
+    RTListInit(&pThis->LstLruIotlbe);
+
+    LogRel(("%s: Allocated %zu bytes from the hyperheap for the IOTLB cache\n", IOMMU_LOG_PFX, cbDomains + cbIotlbes));
+#endif
 
     /*
      * Initialize read-only registers.
