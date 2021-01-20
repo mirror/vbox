@@ -44,15 +44,17 @@ signals:
 public:
 
     UIToolBox(QWidget *pParent = 0);
-    bool insertItem(int iIndex, QWidget *pWidget, const QString &strTitle);
+    bool insertItem(int iIndex, QWidget *pWidget, const QString &strTitle, bool fAddEnableCheckBox = false);
     void setItemEnabled(int iIndex, bool fEnabled);
     void setItemText(int iIndex, const QString &strTitle);
     void setItemIcon(int iIndex, const QIcon &icon);
-    void setPageVisible(int iIndex);
+    void setCurrentPage(int iIndex);
 
 protected:
 
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
+    //virtual QSize sizeHint() const /* override */;
+    //virtual QSize minimumSizeHint() const /* override */;
 
 private slots:
 
@@ -64,6 +66,8 @@ private:
 
     QVBoxLayout *m_pMainLayout;
     QMap<int, UIToolBoxPage*> m_pages;
+    int m_iCurrentPageIndex;
+    int m_iPageCount;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIToolBox_h */

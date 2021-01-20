@@ -267,7 +267,7 @@ void UIWizardNewVMPage1::composeMachineFilePath()
 
 bool UIWizardNewVMPage1::checkISOFile() const
 {
-    if (m_pEnableUnattendedInstallCheckBox && m_pEnableUnattendedInstallCheckBox->isChecked())
+    if (isUnattendedEnabled())
     {
         QString strISOFilePath = m_pISOFilePathSelector ? m_pISOFilePathSelector->path() : QString();
         if (!QFileInfo(strISOFilePath).exists())
@@ -284,7 +284,9 @@ QFrame *UIWizardNewVMPage1::horizontalLine()
     return line;
 }
 
-QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets(bool fIncreaseLeftIndent, bool fCreateLabels /* = true */)
+QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets(bool fIncreaseLeftIndent,
+                                                     bool fCreateUnattendedWidgets,
+                                                     bool fCreateLabels)
 {
     Q_UNUSED(fIncreaseLeftIndent);
     QWidget *pContainer = new QWidget;
@@ -313,36 +315,38 @@ QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets(bool fIncreaseLeftIndent, b
             pLayout->addWidget(m_pUnattendedLabel, iRow++, 0, 1, 6);
     }
 
-    m_pEnableUnattendedInstallCheckBox = new QCheckBox;
-    pLayout->addWidget(m_pEnableUnattendedInstallCheckBox, iRow++, 0, 1, 1);
-
-    m_pISOSelectorLabel = new QLabel;
-    if (m_pISOSelectorLabel)
+    if (fCreateUnattendedWidgets)
     {
-        m_pISOSelectorLabel->setAlignment(Qt::AlignRight);
-        m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-        m_pISOSelectorLabel->setEnabled(false);
-        pLayout->addWidget(m_pISOSelectorLabel, iRow, 1, 1, 1);
-    }
-    m_pISOFilePathSelector = new UIFilePathSelector;
-    if (m_pISOFilePathSelector)
-    {
-        m_pISOFilePathSelector->setResetEnabled(false);
-        m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-        m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-        m_pISOFilePathSelector->setEnabled(false);
-        pLayout->addWidget(m_pISOFilePathSelector, iRow++, 2, 1, 4);
-    }
+        m_pEnableUnattendedInstallCheckBox = new QCheckBox;
+        pLayout->addWidget(m_pEnableUnattendedInstallCheckBox, iRow++, 0, 1, 1);
 
-    m_pStartHeadlessCheckBox = new QCheckBox;
-    if (m_pStartHeadlessCheckBox)
-    {
-        m_pStartHeadlessCheckBox->setEnabled(false);
-        pLayout->addWidget(m_pStartHeadlessCheckBox, iRow++, 1, 1, 5);
+        m_pISOSelectorLabel = new QLabel;
+        if (m_pISOSelectorLabel)
+        {
+            m_pISOSelectorLabel->setAlignment(Qt::AlignRight);
+            m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+            m_pISOSelectorLabel->setEnabled(false);
+            pLayout->addWidget(m_pISOSelectorLabel, iRow, 1, 1, 1);
+        }
+        m_pISOFilePathSelector = new UIFilePathSelector;
+        if (m_pISOFilePathSelector)
+        {
+            m_pISOFilePathSelector->setResetEnabled(false);
+            m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+            m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+            m_pISOFilePathSelector->setEnabled(false);
+            pLayout->addWidget(m_pISOFilePathSelector, iRow++, 2, 1, 4);
+        }
+
+        m_pStartHeadlessCheckBox = new QCheckBox;
+        if (m_pStartHeadlessCheckBox)
+        {
+            m_pStartHeadlessCheckBox->setEnabled(false);
+            pLayout->addWidget(m_pStartHeadlessCheckBox, iRow++, 1, 1, 5);
+        }
+
+        pLayout->addWidget(horizontalLine(), iRow++, 0, 1, 4);
     }
-
-    pLayout->addWidget(horizontalLine(), iRow++, 0, 1, 4);
-
     return pContainer;
 }
 
@@ -517,7 +521,9 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
 void UIWizardNewVMPageBasic1::prepare()
 {
     QVBoxLayout *pPageLayout = new QVBoxLayout(this);
-    pPageLayout->addWidget(createNameOSTypeWidgets(/* fIncreaseLeftIndent */ false, /* fCreateLabels */false));
+    pPageLayout->addWidget(createNameOSTypeWidgets(/* fIncreaseLeftIndent */ false,
+                                                   /* fCreateUnattendedWidget */ false,
+                                                   /* fCreateLabels */false));
     pPageLayout->addStretch();
 
     createConnections();

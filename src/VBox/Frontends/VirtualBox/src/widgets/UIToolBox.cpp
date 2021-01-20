@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
 #include <QLabel>
 #include <QStyle>
 #include <QVBoxLayout>
@@ -38,30 +39,6 @@ public:
     ~UITest(){}
 };
 
-/*********************************************************************************************************************************
-*   UIToolTitleWidget definition.                                                                                    *
-*********************************************************************************************************************************/
-
-class UIToolBoxTitleWidget : public QWidget
-{
-
-    Q_OBJECT;
-
-signals:
-
-    void sigShowPageWidget();
-
-public:
-
-    UIToolBoxTitleWidget(QWidget *pParent = 0);
-    void setText(const QString &strText);
-
-private:
-
-    void prepare();
-    QHBoxLayout *m_pLayout;
-    QLabel      *m_pTitleLabel;
-};
 
 /*********************************************************************************************************************************
 *   UIToolBoxPage definition.                                                                                    *
@@ -78,7 +55,7 @@ signals:
 
 public:
 
-    UIToolBoxPage(QWidget *pParent = 0);
+    UIToolBoxPage(bool fEnableCheckBoxEnabled = false, QWidget *pParent = 0);
     void setTitle(const QString &strTitle);
     /* @p pWidget's ownership is transferred to the page. */
     void setWidget(QWidget *pWidget);
@@ -86,77 +63,79 @@ public:
     void setPageWidgetVisible(bool fVisible);
     int index() const;
     void setIndex(int iIndex);
+    int totalHeight() const;
+    int titleHeight() const;
+    int pageWidgetHeight() const;
 
 protected:
 
     virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) /* override */;
 
+private slots:
+
+    void sltHandleEnableToggle(int iState);
+
 private:
 
-    void prepare();
+    void prepare(bool fEnableCheckBoxEnabled);
+
     QVBoxLayout *m_pLayout;
-    UIToolBoxTitleWidget      *m_pTitleWidget;
+    QWidget     *m_pTitleContainerWidget;
+    QLabel      *m_pTitleLabel;
+    QCheckBox   *m_pEnableCheckBox;
+
     QWidget     *m_pWidget;
     int          m_iIndex;
 };
 
 /*********************************************************************************************************************************
-*   UIToolTitleWidget implementation.                                                                                    *
-*********************************************************************************************************************************/
-
-UIToolBoxTitleWidget::UIToolBoxTitleWidget(QWidget *pParent /* = 0 */)
-    :QWidget(pParent)
-{
-    prepare();
-}
-
-void UIToolBoxTitleWidget::setText(const QString &strText)
-{
-    if (m_pTitleLabel)
-        m_pTitleLabel->setText(strText);
-}
-
-void UIToolBoxTitleWidget::prepare()
-{
-    m_pLayout = new QHBoxLayout(this);
-    m_pLayout->setContentsMargins(1.f * qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin),
-                                  .4f * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
-                                  1.f * qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin),
-                                  .4f * qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin));
-
-    m_pTitleLabel = new QLabel;
-    m_pLayout->addWidget(m_pTitleLabel);
-}
-
-/*********************************************************************************************************************************
 *   UIToolBoxPage implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIToolBoxPage::UIToolBoxPage(QWidget *pParent /* = 0 */)
+UIToolBoxPage::UIToolBoxPage(bool fEnableCheckBoxEnabled /* = false */, QWidget *pParent /* = 0 */)
     :QWidget(pParent)
     , m_pLayout(0)
-    , m_pTitleWidget(0)
+    , m_pTitleContainerWidget(0)
+    , m_pTitleLabel(0)
+    , m_pEnableCheckBox(0)
     , m_pWidget(0)
     , m_iIndex(0)
-
 {
-    prepare();
+    prepare(fEnableCheckBoxEnabled);
 }
 
 void UIToolBoxPage::setTitle(const QString &strTitle)
 {
-    if (!m_pTitleWidget)
+    if (!m_pTitleLabel)
         return;
-    m_pTitleWidget->setText(strTitle);
+    m_pTitleLabel->setText(strTitle);
 }
 
-void UIToolBoxPage::prepare()
+void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
 {
     m_pLayout = new QVBoxLayout(this);
     m_pLayout->setContentsMargins(0, 0, 0, 0);
-    m_pTitleWidget = new UIToolBoxTitleWidget;
-    m_pTitleWidget->installEventFilter(this);
-    m_pLayout->addWidget(m_pTitleWidget);
+
+    m_pTitleContainerWidget = new QWidget;
+    QHBoxLayout *pTitleLayout = new QHBoxLayout(m_pTitleContainerWidget);
+    pTitleLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin),
+                                     .4f * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
+                                     qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin),
+                                     .4f * qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
+    if (fEnableCheckBoxEnabled)
+    {
+        m_pEnableCheckBox = new QCheckBox;
+        pTitleLayout->addWidget(m_pEnableCheckBox);
+        connect(m_pEnableCheckBox, &QCheckBox::stateChanged, this, &UIToolBoxPage::sltHandleEnableToggle);
+    }
+
+    m_pTitleLabel = new QLabel;
+    m_pTitleLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+    m_pTitleLabel->installEventFilter(this);
+    pTitleLayout->addWidget(m_pTitleLabel);
+    m_pTitleContainerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_pLayout->addWidget(m_pTitleContainerWidget);
 }
 
 void UIToolBoxPage::setWidget(QWidget *pWidget)
@@ -165,17 +144,21 @@ void UIToolBoxPage::setWidget(QWidget *pWidget)
         return;
     m_pWidget = pWidget;
     m_pLayout->addWidget(m_pWidget);
+
+    if (m_pEnableCheckBox)
+        m_pWidget->setEnabled(m_pEnableCheckBox->checkState() == Qt::Checked);
+
     m_pWidget->hide();
 }
 
 void UIToolBoxPage::setTitleBackgroundColor(const QColor &color)
 {
-    if (!m_pTitleWidget)
+    if (!m_pTitleLabel)
         return;
-    QPalette palette = m_pTitleWidget->palette();
+    QPalette palette = m_pTitleContainerWidget->palette();
     palette.setColor(QPalette::Window, color);
-    m_pTitleWidget->setPalette(palette);
-    m_pTitleWidget->setAutoFillBackground(true);
+    m_pTitleContainerWidget->setPalette(palette);
+    m_pTitleContainerWidget->setAutoFillBackground(true);
 }
 
 void UIToolBoxPage::setPageWidgetVisible(bool fVisible)
@@ -194,13 +177,39 @@ void UIToolBoxPage::setIndex(int iIndex)
     m_iIndex = iIndex;
 }
 
+int UIToolBoxPage::totalHeight() const
+{
+    return pageWidgetHeight() + titleHeight();
+}
+
+int UIToolBoxPage::titleHeight() const
+{
+    if (m_pTitleContainerWidget && m_pTitleContainerWidget->sizeHint().isValid())
+        return m_pTitleContainerWidget->sizeHint().height();
+    return 0;
+}
+
+int UIToolBoxPage::pageWidgetHeight() const
+{
+    if (m_pWidget && m_pWidget->isVisible() && m_pWidget->sizeHint().isValid())
+        return m_pWidget->sizeHint().height();
+    return 0;
+}
+
 bool UIToolBoxPage::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-    if (pWatched == m_pTitleWidget && pEvent->type() == QEvent::MouseButtonPress)
+    if (pWatched == m_pTitleLabel && pEvent->type() == QEvent::MouseButtonPress)
         emit sigShowPageWidget();
     return QWidget::eventFilter(pWatched, pEvent);
 
 }
+
+void UIToolBoxPage::sltHandleEnableToggle(int iState)
+{
+    if (m_pWidget)
+        m_pWidget->setEnabled(iState == Qt::Checked);
+}
+
 
 /*********************************************************************************************************************************
 *   UIToolBox implementation.                                                                                    *
@@ -208,15 +217,19 @@ bool UIToolBoxPage::eventFilter(QObject *pWatched, QEvent *pEvent)
 
 UIToolBox::UIToolBox(QWidget *pParent /*  = 0 */)
     : QIWithRetranslateUI<QFrame>(pParent)
+    , m_iCurrentPageIndex(-1)
+    , m_iPageCount(0)
 {
     prepare();
+    //setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 }
 
-bool UIToolBox::insertItem(int iIndex, QWidget *pWidget, const QString &strTitle)
+bool UIToolBox::insertItem(int iIndex, QWidget *pWidget, const QString &strTitle, bool fAddEnableCheckBox /* = false */)
 {
     if (m_pages.contains(iIndex))
         return false;
-    UIToolBoxPage *pNewPage = new UIToolBoxPage;
+    ++m_iPageCount;
+    UIToolBoxPage *pNewPage = new UIToolBoxPage(fAddEnableCheckBox, 0);;
 
     pNewPage->setWidget(pWidget);
     pNewPage->setIndex(iIndex);
@@ -231,6 +244,19 @@ bool UIToolBox::insertItem(int iIndex, QWidget *pWidget, const QString &strTitle
 
     connect(pNewPage, &UIToolBoxPage::sigShowPageWidget,
             this, &UIToolBox::sltHandleShowPageWidget);
+
+    static int iMaxPageHeight = 0;
+    int iTotalTitleHeight = 0;
+    foreach(UIToolBoxPage *pPage, m_pages)
+    {
+        if (pWidget && pWidget->sizeHint().isValid())
+            iMaxPageHeight = qMax(iMaxPageHeight, pWidget->sizeHint().height());
+        iTotalTitleHeight += pPage->titleHeight();
+    }
+    setMinimumHeight(m_iPageCount * (qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) +
+                                     qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin)) +
+                     iTotalTitleHeight +
+                     iMaxPageHeight);
 
     return iIndex;
 }
@@ -255,8 +281,9 @@ void UIToolBox::setItemIcon(int iIndex, const QIcon &icon)
     Q_UNUSED(icon);
 }
 
-void UIToolBox::setPageVisible(int iIndex)
+void UIToolBox::setCurrentPage(int iIndex)
 {
+    m_iCurrentPageIndex = iIndex;
     QMap<int, UIToolBoxPage*>::iterator iterator = m_pages.find(iIndex);
     if (iterator == m_pages.end())
         return;
@@ -273,6 +300,7 @@ void UIToolBox::retranslateUi()
 void UIToolBox::prepare()
 {
     m_pMainLayout = new QVBoxLayout(this);
+    m_pMainLayout->addStretch();
     //m_pMainLayout->setContentsMargins(0, 0, 0, 0);
 
     retranslateUi();
@@ -283,7 +311,8 @@ void UIToolBox::sltHandleShowPageWidget()
     UIToolBoxPage *pPage = qobject_cast<UIToolBoxPage*>(sender());
     if (!pPage)
         return;
-    setPageVisible(pPage->index());
+    setCurrentPage(pPage->index());
+    update();
 }
 
 #include "UIToolBox.moc"

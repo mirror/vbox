@@ -50,14 +50,16 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     {
         m_pToolBox = new UIToolBox;
         m_pToolBox->insertItem(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(/* fIncreaseLeftIndent */ true,
+                                                                                         /* fCreateUnattendedWidgets */ false,
                                                                                          /* fCreateLabels */ false), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "", false);
         m_pToolBox->insertItem(ExpertToolboxItems_Disk, createDiskWidgets(/* fIncreaseLeftIndent */ true), "");
         m_pToolBox->insertItem(ExpertToolboxItems_Hardware, createHardwareWidgets(/* fIncreaseLeftIndent */ true), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_UsernameHostname, createUserNameHostNameWidgets(/* fIncreaseLeftIndent */ true), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_GAInstall, createGAInstallWidgets(/* fIncreaseLeftIndent */ true), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_ProductKey, createProductKeyWidgets(/* fIncreaseLeftIndent */ true), "");
+        // m_pToolBox->insertItem(ExpertToolboxItems_UsernameHostname, createUserNameHostNameWidgets(/* fIncreaseLeftIndent */ true), "");
+        // m_pToolBox->insertItem(ExpertToolboxItems_GAInstall, createGAInstallWidgets(/* fIncreaseLeftIndent */ true), "");
+        // m_pToolBox->insertItem(ExpertToolboxItems_ProductKey, createProductKeyWidgets(/* fIncreaseLeftIndent */ true), "");
 
-        m_pToolBox->setPageVisible(ExpertToolboxItems_NameAndOSType);
+        m_pToolBox->setCurrentPage(ExpertToolboxItems_NameAndOSType);
         pMainLayout->addWidget(m_pToolBox);
 
 
@@ -208,6 +210,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
     {
         m_pToolBox->setItemText(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and operating system")));
         m_pToolBox->setItemText(ExpertToolboxItems_UsernameHostname, UIWizardNewVM::tr("Username and hostname"));
+        m_pToolBox->setItemText(ExpertToolboxItems_Unattended, UIWizardNewVM::tr("Unattended Install"));
         m_pToolBox->setItemText(ExpertToolboxItems_GAInstall, UIWizardNewVM::tr("Guest additions install"));
         m_pToolBox->setItemText(ExpertToolboxItems_ProductKey, UIWizardNewVM::tr("Product key"));
         m_pToolBox->setItemText(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard disk"));
@@ -302,8 +305,10 @@ void UIWizardNewVMPageExpert::initializePage()
 
     if (m_pEnableUnattendedInstallCheckBox)
         disableEnableUnattendedRelatedWidgets(m_pEnableUnattendedInstallCheckBox->isChecked());
-    m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
-    m_pProductKeyLineEdit->setEnabled(isProductKeyWidgetEnabled());
+    if (m_pProductKeyLabel)
+        m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
+    if (m_pProductKeyLineEdit)
+        m_pProductKeyLineEdit->setEnabled(isProductKeyWidgetEnabled());
 }
 
 void UIWizardNewVMPageExpert::cleanupPage()
@@ -321,6 +326,43 @@ void UIWizardNewVMPageExpert::markWidgets() const
         m_pGAISOFilePathSelector->mark(isUnattendedEnabled() && !checkGAISOFile());
 }
 
+QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
+{
+    QWidget *pContainerWidget = new QWidget;
+    QGridLayout *pLayout = new QGridLayout(pContainerWidget);
+    int iRow = 0;
+
+    m_pISOSelectorLabel = new QLabel;
+    if (m_pISOSelectorLabel)
+    {
+        m_pISOSelectorLabel->setAlignment(Qt::AlignRight);
+        m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+        pLayout->addWidget(m_pISOSelectorLabel, iRow, 0, 1, 1);
+    }
+
+    m_pISOFilePathSelector = new UIFilePathSelector;
+    if (m_pISOFilePathSelector)
+    {
+        m_pISOFilePathSelector->setResetEnabled(false);
+        m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+        m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+        pLayout->addWidget(m_pISOFilePathSelector, iRow++, 1, 1, 4);
+    }
+
+    m_pStartHeadlessCheckBox = new QCheckBox;
+    if (m_pStartHeadlessCheckBox)
+        pLayout->addWidget(m_pStartHeadlessCheckBox, iRow++, 0, 1, 5);
+
+    pLayout->addWidget(createUserNameHostNameWidgets(/* fIncreaseLeftIndent */ false), iRow, 0, 4, 5);
+    iRow += 4;
+    pLayout->addWidget(createGAInstallWidgets(/* fIncreaseLeftIndent */ false), iRow, 0, 2, 5);
+    iRow += 2;
+    pLayout->addWidget(createProductKeyWidgets(/* fIncreaseLeftIndent */ false), iRow, 0, 1, 5);
+
+
+    return pContainerWidget;
+}
+
 bool UIWizardNewVMPageExpert::isComplete() const
 {
     markWidgets();
@@ -331,7 +373,6 @@ bool UIWizardNewVMPageExpert::isComplete() const
     m_pToolBox->setItemIcon(ExpertToolboxItems_UsernameHostname, QIcon());
     m_pToolBox->setItemIcon(ExpertToolboxItems_GAInstall, QIcon());
     m_pToolBox->setItemIcon(ExpertToolboxItems_ProductKey, QIcon());
-
 
     if (!UIWizardPage::isComplete())
     {

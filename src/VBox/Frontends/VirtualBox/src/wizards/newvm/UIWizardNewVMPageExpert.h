@@ -85,9 +85,11 @@ private slots:
     void sltOSFamilyTypeChanged();
 
 private:
+
     enum ExpertToolboxItems
     {
         ExpertToolboxItems_NameAndOSType,
+        ExpertToolboxItems_Unattended,
         ExpertToolboxItems_Disk,
         ExpertToolboxItems_Hardware,
         ExpertToolboxItems_UsernameHostname,
@@ -109,6 +111,8 @@ private:
     bool isProductKeyWidgetEnabled() const;
     void disableEnableUnattendedRelatedWidgets(bool fEnabled);
     void markWidgets() const;
+    QWidget *createUnattendedWidgets();
+
 
     UIToolBox  *m_pToolBox;
 };
