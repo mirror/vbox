@@ -160,6 +160,16 @@ void UIFilePathSelector::setResetEnabled(bool fEnabled)
     retranslateUi();
 }
 
+bool UIFilePathSelector::isValid() const
+{
+    if (m_strPath.isNull() || m_strPath.isEmpty())
+        return false;
+    QFileInfo fileInfo(m_strPath);
+    if (!fileInfo.exists() || !fileInfo.isReadable())
+        return false;
+    return true;
+}
+
 void UIFilePathSelector::setToolTip(const QString &strToolTip)
 {
     /* Call to base-class: */

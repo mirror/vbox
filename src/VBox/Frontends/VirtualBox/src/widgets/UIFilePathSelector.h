@@ -110,6 +110,9 @@ public:
     /** Returns the path. */
     QString path() const { return m_strPath; }
 
+    /** Returns true if the selected path points to an existing/readable file. */
+    bool isValid() const;
+
     /** Sets overriden widget's @a strToolTip.
       * @note If nothing set it's generated automatically. */
     void setToolTip(const QString &strToolTip);
