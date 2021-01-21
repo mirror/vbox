@@ -2590,6 +2590,9 @@ VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVMCPU pVCpu);
  * These flags are used to keep track of which important register that
  * have been changed since last they were reset. The only one allowed
  * to clear them is REM!
+ *
+ * @todo This is obsolete, but remains as it will be refactored for coordinating
+ *       IEM and NEM/HM later. Probably.
  * @{
  */
 #define CPUM_CHANGED_FPU_REM                    RT_BIT(0)

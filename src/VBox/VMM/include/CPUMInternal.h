@@ -429,7 +429,8 @@ typedef struct CPUMCPU
      * These flags indicates to REM (and others) which important guest
      * registers which has been changed since last time the flags were cleared.
      * See the CPUM_CHANGED_* defines for what we keep track of.
-     */
+     *
+     * @todo Obsolete, but will probably refactored so keep it for reference. */
     uint32_t                fChanged;
 
     /** Temporary storage for the return code of the function called in the
