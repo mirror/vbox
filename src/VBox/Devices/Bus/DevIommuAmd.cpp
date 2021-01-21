@@ -45,9 +45,8 @@
 #define IOMMU_WITH_IOTLBE_CACHE
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
-# define IOMMU_IOTLBE_PAGE_SIZE_MAX                 _4M
-/** The maximum number of IOTLB entries in our cache implementation. */
-# define IOMMU_IOTLBE_MAX                           (IOMMU_IOTLBE_PAGE_SIZE_MAX / _4K)
+/** The maximum number of IOTLB entries. */
+# define IOMMU_IOTLBE_MAX                           512
 /** The mask of bits for the domain ID of the IOTLBE key. */
 # define IOMMU_IOTLB_DOMAIN_ID_MASK                 UINT64_C(0xffffff0000000000)
 /** The number of bits to shift for the domain ID of the IOTLBE key. */
@@ -168,11 +167,11 @@ AssertCompileSize(IODOMAIN, 4);
 typedef struct IOTLBE
 {
     /** The AVL tree core. */
-    AVLU64NODECORE  Core;
+    AVLRU64NODECORE     Core;
     /** List node for the LRU (Least Recently Used) list used for eviction. */
-    RTLISTNODE      NdLru;
+    RTLISTNODE          NdLru;
     /** The I/O walk result of the translation. */
-    IOWALKRESULT    WalkResult;
+    IOWALKRESULT        WalkResult;
 } IOTLBE;
 AssertCompileSizeAlignment(IOTLBE, 8);
 /** Pointer to an IOMMU I/O TLB entry struct. */
@@ -210,7 +209,7 @@ typedef struct IOMMU
     /** Pointer to array of allocated IOTLBEs. */
     PIOTLBE                     paIotlbes;
     /** L2 Cache - Maps [DomainId,Iova] to [IOTLBE]. */
-    AVLU64TREE                  TreeIotlbe;
+    AVLRU64TREE                 TreeIotlbe;
     /** LRU list anchor for IOTLB entries. */
     RTLISTANCHOR                LstLruIotlbe;
     /** Number of cached IOTLBEs. */
@@ -546,12 +545,12 @@ static uint32_t iommuAmdGetCmdBufEntryCount(PIOMMU pThis)
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
 /**
- * @callback_method_impl{AVLU64CALLBACK}
+ * @callback_method_impl{AVLRU64CALLBACK}
  */
-static DECLCALLBACK(int) iommuAmdR3DestroyIotlbe(PAVLU64NODECORE pCore, void *pvUser)
+static DECLCALLBACK(int) iommuAmdDestroyIotlbe(PAVLRU64NODECORE pCore, void *pvUser)
 {
     RT_NOREF2(pCore, pvUser);
-    /* Nothing to do as we will destroy IOTLB entries wholesale later. */
+    /* Nothing to do here as we will destroy IOTLB entries wholesale later when required. */
     return VINF_SUCCESS;
 }
 
@@ -604,10 +603,17 @@ DECL_FORCE_INLINE(void) iommuAmdIotlbDeconstructKey(uint64_t uKey, uint16_t *puD
  */
 static PIOWALKRESULT iommuAmdIotlbLookup(PIOMMU pThis, uint64_t uDomainId, uint64_t uIova)
 {
+    Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
+
     uint64_t const uKey = iommuAmdIotlbConstructKey(uDomainId, uIova);
-    PIOTLBE pIotlbe = (PIOTLBE)RTAvlU64Get(&pThis->TreeIotlbe, uKey);
+    PIOTLBE pIotlbe = (PIOTLBE)RTAvlrU64RangeGet(&pThis->TreeIotlbe, uKey);
     if (pIotlbe)
+    {
+        /* Mark the entry as the most recently used one. */
+        RTListNodeRemove(&pIotlbe->NdLru);
+        RTListAppend(&pThis->LstLruIotlbe, &pIotlbe->NdLru);
         return &pIotlbe->WalkResult;
+    }
     return NULL;
 }
 
@@ -616,12 +622,16 @@ static PIOWALKRESULT iommuAmdIotlbLookup(PIOMMU pThis, uint64_t uDomainId, uint6
  * Adds an IOTLB entry corresponding to the given I/O page walk result.
  *
  * @param   pThis           The IOMMU device state.
- * @param   pWalkResult     The I/O page walk result to cache.
+ * @param   uIova           The I/O virtual address being accessed.
+ * @param   pWalkResult     The I/O page walk result of the access.
  */
-static void iommuAmdIotlbAdd(PIOMMU pThis, PCIOWALKRESULT pWalkResult)
+static void iommuAmdIotlbAdd(PIOMMU pThis, uint64_t uIova, PCIOWALKRESULT pWalkResult)
 {
-    /** @todo Make sure somewhere we don't cache translations whose permissions are
-     *        IOMMU_IO_PERM_NONE. */
+    Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
+    Assert(pWalkResult);
+    Assert(pWalkResult->cShift < 63);
+    Assert(pWalkResult->fIoPerm != IOMMU_IO_PERM_NONE);
+
     /*
      * If the cache is full, evict the last recently used entry.
      * Otherwise, get a new IOTLB entry from the pre-allocated list.
@@ -631,7 +641,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, PCIOWALKRESULT pWalkResult)
     {
         pIotlbe = RTListRemoveFirst(&pThis->LstLruIotlbe, IOTLBE, NdLru);
         Assert(pIotlbe);
-        RTAvlU64Remove(&pThis->TreeIotlbe, pIotlbe->Core.Key);
+        RTAvlrU64Remove(&pThis->TreeIotlbe, pIotlbe->Core.Key);
         --pThis->cCachedIotlbes;
     }
     else
@@ -645,38 +655,16 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, PCIOWALKRESULT pWalkResult)
     Assert(pIotlbe);
     RT_ZERO(*pIotlbe);
 
-    /* Update the entry with the results of the page walk. */
-    pIotlbe->WalkResult = *pWalkResult;
+    /* Update the entry with the result of the page walk. */
+    pIotlbe->Core.Key     = uIova;
+    pIotlbe->Core.KeyLast = uIova + RT_BIT_64(pWalkResult->cShift) - 1;
+    pIotlbe->WalkResult   = *pWalkResult;
 
-    /* Add the entry to the IOTLB cache. */
-    RTAvlU64Insert(&pThis->TreeIotlbe, &pIotlbe->Core);
+    /* Add the entry to the cache. */
+    RTAvlrU64Insert(&pThis->TreeIotlbe, &pIotlbe->Core);
 
-    /*
-     * Add the entry to the -end- of last recently used list signifying that
-     * is the most recently used entry.
-     */
+    /* Mark the entry as the most recently used one. */
     RTListAppend(&pThis->LstLruIotlbe, &pIotlbe->NdLru);
-}
-
-
-/**
- * Removes the IOTLB entry corresponding to the given domain ID and I/O virtual
- * address.
- *
- * @param   pThis           The IOMMU device state.
- * @param   uDomainId       The domain ID.
- * @param   uIova           The I/O virtual address.
- */
-static void iommuAmdIotlbRemove(PIOMMU pThis, uint16_t uDomainId, uint64_t uIova)
-{
-    uint64_t const uKey = iommuAmdIotlbConstructKey(uDomainId, uIova);
-    PIOTLBE pIotlbe = (PIOTLBE)RTAvlU64Remove(&pThis->TreeIotlbe, uKey);
-    if (pIotlbe)
-    {
-        RTListNodeRemove(&pIotlbe->NdLru);
-        --pThis->cCachedIotlbes;
-        RT_BZERO(pIotlbe, sizeof(IOTLBE));
-    }
 }
 
 
@@ -687,9 +675,11 @@ static void iommuAmdIotlbRemove(PIOMMU pThis, uint16_t uDomainId, uint64_t uIova
  */
 static void iommuAmdIotlbRemoveAll(PIOMMU pThis)
 {
-    RTAvlU64Destroy(&pThis->TreeIotlbe, iommuAmdR3DestroyIotlbe, NULL /* pvParam */);
     RTListInit(&pThis->LstLruIotlbe);
+    RTAvlrU64Destroy(&pThis->TreeIotlbe, iommuAmdDestroyIotlbe, NULL /* pvParam */);
     pThis->cCachedIotlbes = 0;
+    size_t const cbIotlbes = sizeof(IOTLBE) * IOMMU_IOTLBE_MAX;
+    RT_BZERO(pThis->paIotlbes, cbIotlbes);
 }
 
 
@@ -705,39 +695,51 @@ static void iommuAmdIotlbRemoveAll(PIOMMU pThis)
  */
 static void iommuAmdIotlbRemoveRange(PIOMMU pThis, uint16_t uDomainId, uint64_t uIova, uint8_t cShift)
 {
+    Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
+
     /*
-     * Our cache is currently based on 4K pages. Pages larger than this are split into 4K pages
-     * before storing in the cache. So an 8K page will have 2 IOTLB entries, 16K will have 4 etc.
-     * However, our cache capacity is limited (see IOMMU_IOTLBE_MAX). Thus, if the guest uses pages
-     * larger than what our cache can split and hold, we will simply flush the entire cache when
-     * requested to flush a partial range since it exceeds the capacity anyway.
+     * Validate invalidation size.
+     * See AMD spec. 2.2.3 "I/O Page Tables for Host Translations".
      */
-    bool fFitsInCache;
-    /** @todo Find a more efficient way of checking split sizes? */
-    if (   cShift == 12 /* 4K  */
-        || cShift == 13 /* 8K  */
-        || cShift == 14 /* 16K */
-        || cShift == 20 /* 1M */)
-        fFitsInCache = true;
-    else
-        fFitsInCache = false;
-
-    if (fFitsInCache)
+    if (   cShift == 12 /* 4K  */ || cShift == 13 /* 8K  */
+        || cShift == 14 /* 16K */ || cShift == 20 /* 1M  */
+        || cShift == 22 /* 4M  */ || cShift == 32 /* 4G  */)
     {
-        /* Mask off 4K page offset from the address. */
-        uIova &= X86_PAGE_4K_OFFSET_MASK;
-
-        /* Remove pages in the given range. */
-        uint16_t const cPages = (1 << cShift) / X86_PAGE_4K_SHIFT;
-        Assert(cPages <= IOMMU_IOTLBE_MAX);
-        for (uint32_t i = 0; i < cPages; i++)
+        /*
+         * We remove all ranges (in our tree) containing the range of I/O virtual addresses requesting
+         * to be invalidated. E.g., if the guest is using 1M pages but requests to invalidate only 8K
+         * we invalidate the entire 1M page. On the other hand, we must handle cross-boundary requests
+         * that spans multiple pages. E.g., if the guest is using 4K pages but requests to invalid 8K,
+         * we would need to invalid two 4K pages.
+         */
+        uint64_t const uIovaLast = uIova + RT_BIT_64(cShift) - 1;
+        for (;;)
         {
-            iommuAmdIotlbRemove(pThis, uDomainId, uIova);
-            uIova += _4K;
+            uint64_t const uKey = iommuAmdIotlbConstructKey(uDomainId, uIova);
+            PIOTLBE pIotlbe = (PIOTLBE)RTAvlrU64RangeRemove(&pThis->TreeIotlbe, uKey);
+            if (pIotlbe)
+            {
+                uint64_t const uRangeIovaLast = pIotlbe->Core.KeyLast;
+                RTListNodeRemove(&pIotlbe->NdLru);
+                --pThis->cCachedIotlbes;
+                RT_ZERO(*pIotlbe);
+                if (uIovaLast > uRangeIovaLast)
+                    uIova = uRangeIovaLast + 1;
+                else
+                    break;
+            }
+            else
+                break;
         }
     }
     else
+    {
+        /*
+         * The guest provided size is either invalid or exceeds the largest, meaningful page size.
+         * In such situations, we flush the entire cache.
+         */
         iommuAmdIotlbRemoveAll(pThis);
+    }
 }
 #endif  /* IOMMU_WITH_IOTLBE_CACHE */
 
@@ -4789,8 +4791,7 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
     /* Destroy level 2 cache. */
     if (pThis->paIotlbes)
     {
-        RTAvlU64Destroy(&pThis->TreeIotlbe, iommuAmdR3DestroyIotlbe, NULL /* pvParam */);
-        RTListInit(&pThis->LstLruIotlbe);
+        iommuAmdIotlbRemoveAll(pThis);
         PDMDevHlpMMHeapFree(pDevIns, pThis->paIotlbes);
         pThis->paIotlbes = NULL;
     }
