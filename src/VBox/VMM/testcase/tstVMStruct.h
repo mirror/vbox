@@ -53,7 +53,7 @@
     GEN_CHECK_OFF(CPUMCPU, fApicDisVectors);
     GEN_CHECK_OFF(CPUMCPU, fX2Apic);
 #endif
-    GEN_CHECK_OFF(CPUMCPU, fRemEntered);
+    GEN_CHECK_OFF(CPUMCPU, fCpuIdApicFeatureVisible);
 
     GEN_CHECK_SIZE(CPUMHOSTCTX);
     GEN_CHECK_OFF(CPUMHOSTCTX, pXStateR3);

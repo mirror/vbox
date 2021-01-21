@@ -4476,59 +4476,6 @@ VMMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
 
 
 /**
- * Enters REM, gets and resets the changed flags (CPUM_CHANGED_*).
- *
- * Only REM should ever call this function!
- *
- * @returns The changed flags.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   puCpl       Where to return the current privilege level (CPL).
- */
-VMMR3DECL(uint32_t) CPUMR3RemEnter(PVMCPU pVCpu, uint32_t *puCpl)
-{
-    Assert(!pVCpu->cpum.s.fRemEntered);
-
-    /*
-     * Get the CPL first.
-     */
-    *puCpl = CPUMGetGuestCPL(pVCpu);
-
-    /*
-     * Get and reset the flags.
-     */
-    uint32_t fFlags = pVCpu->cpum.s.fChanged;
-    pVCpu->cpum.s.fChanged = 0;
-
-    /** @todo change the switcher to use the fChanged flags. */
-    if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_SINCE_REM)
-    {
-        fFlags |= CPUM_CHANGED_FPU_REM;
-        pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_FPU_SINCE_REM;
-    }
-
-    pVCpu->cpum.s.fRemEntered = true;
-    return fFlags;
-}
-
-
-/**
- * Leaves REM.
- *
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   fNoOutOfSyncSels    This is @c false if there are out of sync
- *                              registers.
- */
-VMMR3DECL(void) CPUMR3RemLeave(PVMCPU pVCpu, bool fNoOutOfSyncSels)
-{
-    Assert(pVCpu->cpum.s.fRemEntered);
-
-    RT_NOREF_PV(fNoOutOfSyncSels);
-
-    pVCpu->cpum.s.fRemEntered = false;
-}
-
-
-/**
  * Called when the ring-3 init phase completes.
  *
  * @returns VBox status code.

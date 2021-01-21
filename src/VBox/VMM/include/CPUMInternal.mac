@@ -273,10 +273,9 @@ struc CPUMCPU
     .abPadding3           resb    (4 + RTR0PTR_CB + 1)
 %endif
 
-    .fRemEntered                resb    1
     .fCpuIdApicFeatureVisible   resb    1
 
-    .abPadding2           resb    (64 - (RTR0PTR_CB + RTR3PTR_CB + 12 + 4 + RTR0PTR_CB + 1 + 2))
+    .abPadding2           resb    (64 - (RTR0PTR_CB + RTR3PTR_CB + 12 + 4 + RTR0PTR_CB + 1 + 1))
 
     ;
     ; Host context state
