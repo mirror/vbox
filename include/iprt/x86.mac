@@ -190,10 +190,12 @@
 %define X86_CPUID_STEXT_FEATURE_ECX_MAWAU             0x003e0000
 %define X86_CPUID_STEXT_FEATURE_ECX_RDPID             RT_BIT_32(2)
 %define X86_CPUID_STEXT_FEATURE_ECX_SGX_LC            RT_BIT_32(30)
+%define X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR          RT_BIT_32(10)
 %define X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB         RT_BIT_32(26)
 %define X86_CPUID_STEXT_FEATURE_EDX_STIBP             RT_BIT_32(27)
 %define X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD         RT_BIT_32(28)
 %define X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP           RT_BIT_32(29)
+%define X86_CPUID_STEXT_FEATURE_EDX_SSBD              RT_BIT_32(31)
 %define X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF     RT_BIT_32(0)
 %define X86_CPUID_EXT_FEATURE_EDX_SYSCALL       RT_BIT_32(11)
 %define X86_CPUID_EXT_FEATURE_EDX_NX            RT_BIT_32(20)
@@ -253,10 +255,20 @@
 %define X86_CPUID_AMD_ADVPOWER_EDX_EFRO      RT_BIT_32(10)
 %define X86_CPUID_AMD_ADVPOWER_EDX_PFI       RT_BIT_32(11)
 %define X86_CPUID_AMD_ADVPOWER_EDX_PA        RT_BIT_32(12)
-%define X86_CPUID_AMD_EFEID_EBX_CLZERO       RT_BIT_32(0)
-%define X86_CPUID_AMD_EFEID_EBX_IRPERF       RT_BIT_32(1)
-%define X86_CPUID_AMD_EFEID_EBX_XSAVE_ER_PTR RT_BIT_32(2)
-%define X86_CPUID_AMD_EFEID_EBX_IBPB         RT_BIT_32(12)
+%define X86_CPUID_AMD_EFEID_EBX_CLZERO                      RT_BIT_32(0)
+%define X86_CPUID_AMD_EFEID_EBX_IRPERF                      RT_BIT_32(1)
+%define X86_CPUID_AMD_EFEID_EBX_XSAVE_ER_PTR                RT_BIT_32(2)
+%define X86_CPUID_AMD_EFEID_EBX_RDPRU                       RT_BIT_32(4)
+%define X86_CPUID_AMD_EFEID_EBX_MCOMMIT                     RT_BIT_32(8)
+%define X86_CPUID_AMD_EFEID_EBX_IBPB                        RT_BIT_32(12)
+%define X86_CPUID_AMD_EFEID_EBX_IBRS                        RT_BIT_32(14)
+%define X86_CPUID_AMD_EFEID_EBX_STIBP                       RT_BIT_32(15)
+%define X86_CPUID_AMD_EFEID_EBX_IBRS_ALWAYS_ON              RT_BIT_32(16)
+%define X86_CPUID_AMD_EFEID_EBX_STIBP_ALWAYS_ON             RT_BIT_32(17)
+%define X86_CPUID_AMD_EFEID_EBX_IBRS_PREFERRED              RT_BIT_32(18)
+%define X86_CPUID_AMD_EFEID_EBX_SPEC_CTRL_SSBD              RT_BIT_32(24)
+%define X86_CPUID_AMD_EFEID_EBX_VIRT_SPEC_CTRL_SSBD         RT_BIT_32(25)
+%define X86_CPUID_AMD_EFEID_EBX_NO_SSBD_REQUIRED            RT_BIT_32(26)
 %define X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING             RT_BIT(0)
 %define X86_CPUID_SVM_FEATURE_EDX_LBR_VIRT                  RT_BIT(1)
 %define X86_CPUID_SVM_FEATURE_EDX_SVM_LOCK                  RT_BIT(2)
@@ -270,6 +282,7 @@
 %define X86_CPUID_SVM_FEATURE_EDX_AVIC                      RT_BIT(13)
 %define X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD        RT_BIT(15)
 %define X86_CPUID_SVM_FEATURE_EDX_VGIF                      RT_BIT(16)
+%define X86_CPUID_SVM_FEATURE_EDX_GMET                      RT_BIT(17)
 %define X86_CR0_PE                          RT_BIT_32(0)
 %define X86_CR0_PROTECTION_ENABLE           RT_BIT_32(0)
 %define X86_CR0_MP                          RT_BIT_32(1)
@@ -309,6 +322,7 @@
 %define X86_CR4_PCE                         RT_BIT_32(8)
 %define X86_CR4_OSFXSR                      RT_BIT_32(9)
 %define X86_CR4_OSXMMEEXCPT                 RT_BIT_32(10)
+%define X86_CR4_UMIP                        RT_BIT_32(11)
 %define X86_CR4_VMXE                        RT_BIT_32(13)
 %define X86_CR4_SMXE                        RT_BIT_32(14)
 %define X86_CR4_FSGSBASE                    RT_BIT_32(16)
@@ -317,6 +331,7 @@
 %define X86_CR4_SMEP                        RT_BIT_32(20)
 %define X86_CR4_SMAP                        RT_BIT_32(21)
 %define X86_CR4_PKE                         RT_BIT_32(22)
+%define X86_CR4_CET                         RT_BIT_32(23)
 %define X86_DR6_B0                          RT_BIT_32(0)
 %define X86_DR6_B1                          RT_BIT_32(1)
 %define X86_DR6_B2                          RT_BIT_32(2)
@@ -420,6 +435,7 @@
 %define MSR_IA32_SPEC_CTRL                  0x48
 %define MSR_IA32_SPEC_CTRL_F_IBRS           RT_BIT_32(0)
 %define MSR_IA32_SPEC_CTRL_F_STIBP          RT_BIT_32(1)
+%define MSR_IA32_SPEC_CTRL_F_SSBD           RT_BIT_32(2)
 %define MSR_IA32_PRED_CMD                   0x49
 %define MSR_IA32_PRED_CMD_F_IBPB            RT_BIT_32(0)
 %define MSR_IA32_BIOS_UPDT_TRIG             0x79
@@ -433,6 +449,10 @@
 %define MSR_IA32_PMC1                       0xC2
 %define MSR_IA32_PMC2                       0xC3
 %define MSR_IA32_PMC3                       0xC4
+%define MSR_IA32_PMC4                       0xC5
+%define MSR_IA32_PMC5                       0xC6
+%define MSR_IA32_PMC6                       0xC7
+%define MSR_IA32_PMC7                       0xC8
 %define MSR_IA32_PLATFORM_INFO              0xCE
 %define MSR_IA32_FSB_CLOCK_STS              0xCD
 %define MSR_PKG_CST_CONFIG_CONTROL          0x000000e2
@@ -444,6 +464,7 @@
 %define MSR_IA32_ARCH_CAP_F_IBRS_ALL        RT_BIT_32(1)
 %define MSR_IA32_ARCH_CAP_F_RSBO            RT_BIT_32(2)
 %define MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D RT_BIT_32(3)
+%define MSR_IA32_ARCH_CAP_F_MDS_NO          RT_BIT_32(4)
 %define MSR_IA32_FLUSH_CMD                  0x10b
 %define MSR_IA32_FLUSH_CMD_F_L1D            RT_BIT_32(0)
 %define MSR_BBL_CR_CTL3                     0x11e
@@ -459,10 +480,14 @@
 %define MSR_IA32_CR_PAT_INIT_VAL            0x0007040600070406
 %define MSR_IA32_PERFEVTSEL0                0x186
 %define MSR_IA32_PERFEVTSEL1                0x187
+%define MSR_IA32_PERFEVTSEL2                0x188
+%define MSR_IA32_PERFEVTSEL3                0x189
 %define MSR_FLEX_RATIO                      0x194
 %define MSR_IA32_PERF_STATUS                0x198
 %define MSR_IA32_PERF_CTL                   0x199
 %define MSR_IA32_THERM_STATUS               0x19c
+%define MSR_OFFCORE_RSP_0                   0x1a6
+%define MSR_OFFCORE_RSP_1                   0x1a7
 %define MSR_IA32_MISC_ENABLE                   0x1A0
 %define MSR_IA32_MISC_ENABLE_FAST_STRINGS      RT_BIT_64(0)
 %define MSR_IA32_MISC_ENABLE_TCC               RT_BIT_64(3)
@@ -495,42 +520,117 @@
                                              | MSR_IA32_DEBUGCTL_BTS_OFF_USER | MSR_IA32_DEBUGCTL_FREEZE_LBR_ON_PMI \
                                              | MSR_IA32_DEBUGCTL_FREEZE_PERFMON_ON_PMI | MSR_IA32_DEBUGCTL_FREEZE_WHILE_SMM_EM \
                                              | MSR_IA32_DEBUGCTL_RTM)
-%define MSR_P4_LASTBRANCH_TOS               0x000001da
-%define MSR_P4_LASTBRANCH_0                 0x000001db
-%define MSR_P4_LASTBRANCH_1                 0x000001dc
-%define MSR_P4_LASTBRANCH_2                 0x000001dd
-%define MSR_P4_LASTBRANCH_3                 0x000001de
-%define IA32_MTRR_PHYSBASE0                 0x200
-%define IA32_MTRR_PHYSMASK0                 0x201
-%define IA32_MTRR_PHYSBASE1                 0x202
-%define IA32_MTRR_PHYSMASK1                 0x203
-%define IA32_MTRR_PHYSBASE2                 0x204
-%define IA32_MTRR_PHYSMASK2                 0x205
-%define IA32_MTRR_PHYSBASE3                 0x206
-%define IA32_MTRR_PHYSMASK3                 0x207
-%define IA32_MTRR_PHYSBASE4                 0x208
-%define IA32_MTRR_PHYSMASK4                 0x209
-%define IA32_MTRR_PHYSBASE5                 0x20a
-%define IA32_MTRR_PHYSMASK5                 0x20b
-%define IA32_MTRR_PHYSBASE6                 0x20c
-%define IA32_MTRR_PHYSMASK6                 0x20d
-%define IA32_MTRR_PHYSBASE7                 0x20e
-%define IA32_MTRR_PHYSMASK7                 0x20f
-%define IA32_MTRR_PHYSBASE8                 0x210
-%define IA32_MTRR_PHYSMASK8                 0x211
-%define IA32_MTRR_PHYSBASE9                 0x212
-%define IA32_MTRR_PHYSMASK9                 0x213
-%define IA32_MTRR_FIX64K_00000              0x250
-%define IA32_MTRR_FIX16K_80000              0x258
-%define IA32_MTRR_FIX16K_A0000              0x259
-%define IA32_MTRR_FIX4K_C0000               0x268
-%define IA32_MTRR_FIX4K_C8000               0x269
-%define IA32_MTRR_FIX4K_D0000               0x26a
-%define IA32_MTRR_FIX4K_D8000               0x26b
-%define IA32_MTRR_FIX4K_E0000               0x26c
-%define IA32_MTRR_FIX4K_E8000               0x26d
-%define IA32_MTRR_FIX4K_F0000               0x26e
-%define IA32_MTRR_FIX4K_F8000               0x26f
+%define MSR_P4_LASTBRANCH_0                 0x1db
+%define MSR_P4_LASTBRANCH_1                 0x1dc
+%define MSR_P4_LASTBRANCH_2                 0x1dd
+%define MSR_P4_LASTBRANCH_3                 0x1de
+%define MSR_P4_LASTBRANCH_TOS               0x1da
+%define MSR_CORE2_LASTBRANCH_0_FROM_IP      0x40
+%define MSR_CORE2_LASTBRANCH_1_FROM_IP      0x41
+%define MSR_CORE2_LASTBRANCH_2_FROM_IP      0x42
+%define MSR_CORE2_LASTBRANCH_3_FROM_IP      0x43
+%define MSR_CORE2_LASTBRANCH_0_TO_IP        0x60
+%define MSR_CORE2_LASTBRANCH_1_TO_IP        0x61
+%define MSR_CORE2_LASTBRANCH_2_TO_IP        0x62
+%define MSR_CORE2_LASTBRANCH_3_TO_IP        0x63
+%define MSR_CORE2_LASTBRANCH_TOS            0x1c9
+%define MSR_LASTBRANCH_0_FROM_IP            0x680
+%define MSR_LASTBRANCH_1_FROM_IP            0x681
+%define MSR_LASTBRANCH_2_FROM_IP            0x682
+%define MSR_LASTBRANCH_3_FROM_IP            0x683
+%define MSR_LASTBRANCH_4_FROM_IP            0x684
+%define MSR_LASTBRANCH_5_FROM_IP            0x685
+%define MSR_LASTBRANCH_6_FROM_IP            0x686
+%define MSR_LASTBRANCH_7_FROM_IP            0x687
+%define MSR_LASTBRANCH_8_FROM_IP            0x688
+%define MSR_LASTBRANCH_9_FROM_IP            0x689
+%define MSR_LASTBRANCH_10_FROM_IP           0x68a
+%define MSR_LASTBRANCH_11_FROM_IP           0x68b
+%define MSR_LASTBRANCH_12_FROM_IP           0x68c
+%define MSR_LASTBRANCH_13_FROM_IP           0x68d
+%define MSR_LASTBRANCH_14_FROM_IP           0x68e
+%define MSR_LASTBRANCH_15_FROM_IP           0x68f
+%define MSR_LASTBRANCH_16_FROM_IP           0x690
+%define MSR_LASTBRANCH_17_FROM_IP           0x691
+%define MSR_LASTBRANCH_18_FROM_IP           0x692
+%define MSR_LASTBRANCH_19_FROM_IP           0x693
+%define MSR_LASTBRANCH_20_FROM_IP           0x694
+%define MSR_LASTBRANCH_21_FROM_IP           0x695
+%define MSR_LASTBRANCH_22_FROM_IP           0x696
+%define MSR_LASTBRANCH_23_FROM_IP           0x697
+%define MSR_LASTBRANCH_24_FROM_IP           0x698
+%define MSR_LASTBRANCH_25_FROM_IP           0x699
+%define MSR_LASTBRANCH_26_FROM_IP           0x69a
+%define MSR_LASTBRANCH_27_FROM_IP           0x69b
+%define MSR_LASTBRANCH_28_FROM_IP           0x69c
+%define MSR_LASTBRANCH_29_FROM_IP           0x69d
+%define MSR_LASTBRANCH_30_FROM_IP           0x69e
+%define MSR_LASTBRANCH_31_FROM_IP           0x69f
+%define MSR_LASTBRANCH_0_TO_IP              0x6c0
+%define MSR_LASTBRANCH_1_TO_IP              0x6c1
+%define MSR_LASTBRANCH_2_TO_IP              0x6c2
+%define MSR_LASTBRANCH_3_TO_IP              0x6c3
+%define MSR_LASTBRANCH_4_TO_IP              0x6c4
+%define MSR_LASTBRANCH_5_TO_IP              0x6c5
+%define MSR_LASTBRANCH_6_TO_IP              0x6c6
+%define MSR_LASTBRANCH_7_TO_IP              0x6c7
+%define MSR_LASTBRANCH_8_TO_IP              0x6c8
+%define MSR_LASTBRANCH_9_TO_IP              0x6c9
+%define MSR_LASTBRANCH_10_TO_IP             0x6ca
+%define MSR_LASTBRANCH_11_TO_IP             0x6cb
+%define MSR_LASTBRANCH_12_TO_IP             0x6cc
+%define MSR_LASTBRANCH_13_TO_IP             0x6cd
+%define MSR_LASTBRANCH_14_TO_IP             0x6ce
+%define MSR_LASTBRANCH_15_TO_IP             0x6cf
+%define MSR_LASTBRANCH_16_TO_IP             0x6d0
+%define MSR_LASTBRANCH_17_TO_IP             0x6d1
+%define MSR_LASTBRANCH_18_TO_IP             0x6d2
+%define MSR_LASTBRANCH_19_TO_IP             0x6d3
+%define MSR_LASTBRANCH_20_TO_IP             0x6d4
+%define MSR_LASTBRANCH_21_TO_IP             0x6d5
+%define MSR_LASTBRANCH_22_TO_IP             0x6d6
+%define MSR_LASTBRANCH_23_TO_IP             0x6d7
+%define MSR_LASTBRANCH_24_TO_IP             0x6d8
+%define MSR_LASTBRANCH_25_TO_IP             0x6d9
+%define MSR_LASTBRANCH_26_TO_IP             0x6da
+%define MSR_LASTBRANCH_27_TO_IP             0x6db
+%define MSR_LASTBRANCH_28_TO_IP             0x6dc
+%define MSR_LASTBRANCH_29_TO_IP             0x6dd
+%define MSR_LASTBRANCH_30_TO_IP             0x6de
+%define MSR_LASTBRANCH_31_TO_IP             0x6df
+%define MSR_LASTBRANCH_TOS                  0x1c9
+%define MSR_IA32_TSX_CTRL                   0x122
+%define MSR_IA32_MTRR_PHYSBASE0             0x200
+%define MSR_IA32_MTRR_PHYSMASK0             0x201
+%define MSR_IA32_MTRR_PHYSBASE1             0x202
+%define MSR_IA32_MTRR_PHYSMASK1             0x203
+%define MSR_IA32_MTRR_PHYSBASE2             0x204
+%define MSR_IA32_MTRR_PHYSMASK2             0x205
+%define MSR_IA32_MTRR_PHYSBASE3             0x206
+%define MSR_IA32_MTRR_PHYSMASK3             0x207
+%define MSR_IA32_MTRR_PHYSBASE4             0x208
+%define MSR_IA32_MTRR_PHYSMASK4             0x209
+%define MSR_IA32_MTRR_PHYSBASE5             0x20a
+%define MSR_IA32_MTRR_PHYSMASK5             0x20b
+%define MSR_IA32_MTRR_PHYSBASE6             0x20c
+%define MSR_IA32_MTRR_PHYSMASK6             0x20d
+%define MSR_IA32_MTRR_PHYSBASE7             0x20e
+%define MSR_IA32_MTRR_PHYSMASK7             0x20f
+%define MSR_IA32_MTRR_PHYSBASE8             0x210
+%define MSR_IA32_MTRR_PHYSMASK8             0x211
+%define MSR_IA32_MTRR_PHYSBASE9             0x212
+%define MSR_IA32_MTRR_PHYSMASK9             0x213
+%define MSR_IA32_MTRR_FIX64K_00000          0x250
+%define MSR_IA32_MTRR_FIX16K_80000          0x258
+%define MSR_IA32_MTRR_FIX16K_A0000          0x259
+%define MSR_IA32_MTRR_FIX4K_C0000           0x268
+%define MSR_IA32_MTRR_FIX4K_C8000           0x269
+%define MSR_IA32_MTRR_FIX4K_D0000           0x26a
+%define MSR_IA32_MTRR_FIX4K_D8000           0x26b
+%define MSR_IA32_MTRR_FIX4K_E0000           0x26c
+%define MSR_IA32_MTRR_FIX4K_E8000           0x26d
+%define MSR_IA32_MTRR_FIX4K_F0000           0x26e
+%define MSR_IA32_MTRR_FIX4K_F8000           0x26f
 %define MSR_IA32_MTRR_DEF_TYPE              0x2FF
 %define MSR_IA32_PERF_GLOBAL_STATUS         0x38E
 %define MSR_IA32_PERF_GLOBAL_CTRL           0x38F
@@ -559,6 +659,23 @@
 %define MSR_IA32_RTIT_CTL                   0x570
 %define MSR_IA32_DS_AREA                    0x600
 %define MSR_RAPL_POWER_UNIT                 0x606
+%define MSR_PKGC3_IRTL                      0x60a
+%define MSR_PKGC_IRTL1                      0x60b
+%define MSR_PKGC_IRTL2                      0x60c
+%define MSR_PKG_C2_RESIDENCY                0x60d
+%define MSR_PKG_POWER_LIMIT                 0x610
+%define MSR_PKG_ENERGY_STATUS               0x611
+%define MSR_PKG_PERF_STATUS                 0x613
+%define MSR_PKG_POWER_INFO                  0x614
+%define MSR_DRAM_POWER_LIMIT                0x618
+%define MSR_DRAM_ENERGY_STATUS              0x619
+%define MSR_DRAM_PERF_STATUS                0x61b
+%define MSR_DRAM_POWER_INFO                 0x61c
+%define MSR_PKG_C10_RESIDENCY               0x632
+%define MSR_PP0_ENERGY_STATUS               0x639
+%define MSR_PP1_ENERGY_STATUS               0x641
+%define MSR_TURBO_ACTIVATION_RATIO          0x64c
+%define MSR_CORE_PERF_LIMIT_REASONS         0x64f
 %define MSR_IA32_X2APIC_START               0x800
 %define MSR_IA32_X2APIC_ID                  0x802
 %define MSR_IA32_X2APIC_VERSION             0x803
@@ -604,7 +721,7 @@
 %define MSR_IA32_X2APIC_TIMER_CCR           0x839
 %define MSR_IA32_X2APIC_TIMER_DCR           0x83E
 %define MSR_IA32_X2APIC_SELF_IPI            0x83F
-%define MSR_IA32_X2APIC_END                 0xBFF
+%define MSR_IA32_X2APIC_END                 0x8FF
 %define MSR_IA32_X2APIC_LVT_START           MSR_IA32_X2APIC_LVT_TIMER
 %define MSR_IA32_X2APIC_LVT_END             MSR_IA32_X2APIC_LVT_ERROR
 %define MSR_K6_EFER                         0xc0000080
@@ -619,6 +736,7 @@
 %define  MSR_K6_EFER_LMSLE                   RT_BIT_32(13)
 %define  MSR_K6_EFER_FFXSR                   RT_BIT_32(14)
 %define  MSR_K6_EFER_TCE                     RT_BIT_32(15)
+%define  MSR_K6_EFER_MCOMMIT                 RT_BIT_32(17)
 %define MSR_K6_STAR                         0xc0000081
 %define  MSR_K6_STAR_SYSRET_CS_SS_SHIFT     48
 %define  MSR_K6_STAR_SYSCALL_CS_SS_SHIFT    32
@@ -651,6 +769,9 @@
 %define MSR_K8_IORRMASK1                    0xc0010019
 %define MSR_K8_TOP_MEM1                     0xc001001a
 %define MSR_K8_TOP_MEM2                     0xc001001d
+%define MSR_K7_SMBASE                       0xc0010111
+%define MSR_K7_SMM_ADDR                     0xc0010112
+%define MSR_K7_SMM_MASK                     0xc0010113
 %define MSR_K8_NB_CFG                       0xc001001f
 %define MSR_K8_INT_PENDING                  0xc0010055
 %define MSR_K8_VM_CR                        0xc0010114
@@ -662,6 +783,8 @@
 %define MSR_K8_IGNNE                        0xc0010115
 %define MSR_K8_SMM_CTL                      0xc0010116
 %define MSR_K8_VM_HSAVE_PA                  0xc0010117
+%define MSR_AMD_VIRT_SPEC_CTL               0xc001011f
+ %define MSR_AMD_VIRT_SPEC_CTL_F_SSBD       RT_BIT(2)
 %define X86_PG_ENTRIES                      1024
 %define X86_PG_PAE_ENTRIES                  512
 %define X86_PG_PAE_PDPE_ENTRIES             4
@@ -721,9 +844,13 @@
 %define X86_PTE_LM_MBZ_MASK_NO_NX           0x8000000000000000
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
+%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
+%endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
@@ -780,7 +907,11 @@
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
+%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
+%endif
 %ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
@@ -813,6 +944,8 @@
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
+%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
+%endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
@@ -833,6 +966,8 @@
 %define X86_PML4E_NX                        RT_BIT_64(63)
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
+%ifndef VBOX_WITHOUT_PAGING_BIT_FIELDS
+%endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
@@ -844,6 +979,8 @@
 %define X86_INVPCID_TYPE_ALL_CONTEXT_INCL_GLOBAL    2
 %define X86_INVPCID_TYPE_ALL_CONTEXT_EXCL_GLOBAL    3
 %define X86_INVPCID_TYPE_MAX_VALID                  X86_INVPCID_TYPE_ALL_CONTEXT_EXCL_GLOBAL
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
@@ -1138,6 +1275,7 @@
 %define X86_GREG_x13            13
 %define X86_GREG_x14            14
 %define X86_GREG_x15            15
+%define X86_GREG_COUNT          16
 %define X86_SREG_ES             0
 %define X86_SREG_CS             1
 %define X86_SREG_SS             2
