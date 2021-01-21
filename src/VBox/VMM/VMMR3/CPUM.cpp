@@ -2958,7 +2958,9 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
             /*
              * Restore a couple of flags and the MSRs.
              */
-            SSMR3GetU32(pSSM, &pVCpu->cpum.s.fUseFlags);
+            uint32_t fIgnoredUsedFlags = 0;
+            rc = SSMR3GetU32(pSSM, &fIgnoredUsedFlags); /* we're recalc the two relevant flags after loading state. */
+            AssertRCReturn(rc, rc);
             SSMR3GetU32(pSSM, &pVCpu->cpum.s.fChanged);
 
             rc = VINF_SUCCESS;
@@ -3114,6 +3116,9 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
         /* During init. this is done in CPUMR3InitCompleted(). */
         if (fSupportsLongMode)
             pVCpu->cpum.s.fUseFlags |= CPUM_USE_SUPPORTS_LONGMODE;
+
+        /* Recalc the CPUM_USE_DEBUG_REGS_HYPER value. */
+        CPUMRecalcHyperDRx(pVCpu, UINT8_MAX);
     }
     return VINF_SUCCESS;
 }
