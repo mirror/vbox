@@ -472,7 +472,9 @@ typedef struct CPUMCTX
 
     /** 0x2d4 - World switcher flags, CPUMCTX_WSF_XXX. */
     uint32_t                    fWorldSwitcher;
-    uint32_t                    fUnused;
+    /** 0x2d8 - Mirror of CPUMCPU::fUseFlags[CPUM_USED_FPU_GUEST]. */
+    bool                        fUsedFpuGuest;
+    uint8_t                     afUnused[3];
     /** 0x2d8 - Externalized state tracker, CPUMCTX_EXTRN_XXX.
      * Currently only used internally in NEM/win.  */
     uint64_t                    fExtrn;

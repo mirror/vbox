@@ -98,8 +98,10 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForRead(PVMCPUCC pVCpu)
 {
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
     {
+        Assert(pVCpu->cpum.s.Guest.fUsedFpuGuest);
         cpumRZSaveGuestFpuState(&pVCpu->cpum.s, false /*fLeaveFpuAccessible*/);
         pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU_GUEST;
+        pVCpu->cpum.s.Guest.fUsedFpuGuest = true;
         Log7(("CPUMRZFpuStateActualizeForRead\n"));
     }
 }
@@ -119,6 +121,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPUCC pVCpu)
 #else
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
     {
+        Assert(pVCpu->cpum.s.Guest.fUsedFpuGuest);
         cpumRZSaveGuestSseRegisters(&pVCpu->cpum.s);
         Log7(("CPUMRZFpuStateActualizeSseForRead\n"));
     }
@@ -137,6 +140,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeAvxForRead(PVMCPUCC pVCpu)
 {
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
     {
+        Assert(pVCpu->cpum.s.Guest.fUsedFpuGuest);
         cpumRZSaveGuestAvxRegisters(&pVCpu->cpum.s);
         Log7(("CPUMRZFpuStateActualizeAvxForRead\n"));
     }

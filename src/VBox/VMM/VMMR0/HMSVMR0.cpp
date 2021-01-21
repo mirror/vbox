@@ -717,7 +717,7 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVMCC pVM)
  * We currently ASSUME that neither CPUMCTX_WSF_IBPB_ENTRY nor
  * CPUMCTX_WSF_IBPB_EXIT cannot be changed at runtime.
  */
-static void hmR0SvmUpdateRunFunction(PVMCPUCC pVCpu)
+static void hmR0SvmUpdateVmRunFunction(PVMCPUCC pVCpu)
 {
     static const PFNHMSVMVMRUN s_apfnHmR0SvmVmRunFunctions[] =
     {
@@ -744,7 +744,7 @@ static void hmR0SvmUpdateRunFunction(PVMCPUCC pVCpu)
  */
 static DECLCALLBACK(int) hmR0SvmVMRunSelector(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhysVMCB)
 {
-    hmR0SvmUpdateRunFunction(pVCpu);
+    hmR0SvmUpdateVmRunFunction(pVCpu);
     return pVCpu->hm.s.svm.pfnVMRun(pVM, pVCpu, HCPhysVMCB);
 }
 
@@ -1671,7 +1671,7 @@ static int hmR0SvmExportGuestCR4(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     if (fLoadSaveGuestXcr0 != pVCpu->hm.s.fLoadSaveGuestXcr0)
     {
         pVCpu->hm.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
-        hmR0SvmUpdateRunFunction(pVCpu);
+        hmR0SvmUpdateVmRunFunction(pVCpu);
     }
 
     /* Avoid intercepting CR4 reads if the guest and shadow CR4 values are identical. */
@@ -6568,7 +6568,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXsetbv(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
         if (fLoadSaveGuestXcr0 != pVCpu->hm.s.fLoadSaveGuestXcr0)
         {
             pVCpu->hm.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
-            hmR0SvmUpdateRunFunction(pVCpu);
+            hmR0SvmUpdateVmRunFunction(pVCpu);
         }
     }
     else if (rcStrict == VINF_IEM_RAISED_XCPT)

@@ -1095,7 +1095,8 @@ ENDPROC   hmR0SVMRunWrapXMM
 ; @param    1   The suffix of the variation.
 ; @param    2   fLoadSaveGuestXcr0 value
 ; @param    3   The CPUMCTX_WSF_IBPB_ENTRY + CPUMCTX_WSF_IBPB_EXIT value.
-%macro hmR0SvmVmRunTemplate 3
+; @param    4   The SSE saving/restoring: 0 to do nothing, 1 to do it manually, 2 to use xsave/xrstor.
+%macro hmR0SvmVmRunTemplate 4
 
 ;;
 ; Prepares for and executes VMRUN (32-bit and 64-bit guests).
@@ -1108,6 +1109,21 @@ ENDPROC   hmR0SVMRunWrapXMM
 ALIGNCODE(64) ; This + immediate optimizations causes serious trouble for yasm and the SEH frames: prologue -28 bytes, must be <256
               ; So the SEH64_XXX stuff is currently not operational.
 BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
+ %ifdef VBOX_WITH_KERNEL_USING_XMM
+  %if %4 == 0 && 0
+        ;
+        ; The non-saving variant will currently check the two SSE preconditions and pick
+        ; the right variant to continue with.  Later we can see if we can't manage to
+        ; move these decisions into hmR0SvmUpdateVmRunFunction().
+        ;
+        test    byte [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fUsedFpuGuest], 1
+        jz      .save_xmm_no_need
+        cmp     dword [rdx + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask], 0
+        je      RT_CONCAT3(hmR0SvmVmRun,%1,_SseManual)
+        jmp     RT_CONCAT3(hmR0SvmVmRun,%1,_SseXSave)
+.save_xmm_no_need:
+  %endif
+ %endif
         push    rbp
         SEH64_PUSH_xBP
         mov     rbp, rsp
@@ -1148,7 +1164,9 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
  %endif
 
  %ifdef VBOX_STRICT
+        ;
         ; Verify template preconditions / parameters to ensure HMSVM.cpp didn't miss some state change.
+        ;
         cmp     byte [rsi + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], %2
         mov     eax, VERR_SVM_VMRUN_PRECOND_0
         jne     .failure_return
@@ -1158,6 +1176,16 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         cmp     eax, %3
         mov     eax, VERR_SVM_VMRUN_PRECOND_1
         jne     .failure_return
+
+  %ifdef VBOX_WITH_KERNEL_USING_XMM
+   %if   %4 == 0
+
+   %elif %4 == 1
+   %elif %4 == 2
+   %else
+    %error Invalid template parameter 4.
+   %endif
+  %endif
  %endif
 
  %if %2 != 0
@@ -1169,7 +1197,7 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
 
         mov     eax, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.aXcr] ; load the guest XCR0
         mov     edx, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.aXcr + 4]
-        xor     ecx, ecx                        ; paranoia; Also, indicates that we must restore XCR0 (moved into ecx, thus 0).
+        xor     ecx, ecx                        ; paranoia
         xsetbv
  %endif
 
@@ -1317,12 +1345,31 @@ ENDPROC RT_CONCAT(hmR0SvmVmRun,%1)
 ;
 ; Instantiate the hmR0SvmVmRun various variations.
 ;
-hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit, 0, 0
-hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit, 1, 0
-hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY
-hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY
-hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit, 0, CPUMCTX_WSF_IBPB_EXIT
-hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit, 1, CPUMCTX_WSF_IBPB_EXIT
-hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT
-hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit,           0, 0,                                              0
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit,           1, 0,                                              0
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit,           0, CPUMCTX_WSF_IBPB_ENTRY,                         0
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit,           1, CPUMCTX_WSF_IBPB_ENTRY,                         0
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit,           0, CPUMCTX_WSF_IBPB_EXIT,                          0
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit,           1, CPUMCTX_WSF_IBPB_EXIT,                          0
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit,           0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 0
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit,           1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 0
+;%ifdef VBOX_WITH_KERNEL_USING_XMM
+;hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit_SseManual, 0, 0,                                              1
+;hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit_SseManual, 1, 0,                                              1
+;hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_ENTRY,                         1
+;hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_ENTRY,                         1
+;hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_EXIT,                          1
+;hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_EXIT,                          1
+;hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 1
+;hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 1
+;
+;hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit_SseXSave,  0, 0,                                              2
+;hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit_SseXSave,  1, 0,                                              2
+;hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_ENTRY,                         2
+;hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_ENTRY,                         2
+;hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_EXIT,                          2
+;hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_EXIT,                          2
+;hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 2
+;hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 2
+;%endif
 

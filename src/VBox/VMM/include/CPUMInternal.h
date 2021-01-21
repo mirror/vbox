@@ -66,13 +66,14 @@ typedef uint64_t STAMCOUNTER;
 
 /** Use flags (CPUM::fUseFlags).
  * (Don't forget to sync this with CPUMInternal.mac !)
- * @note Part of saved state.
+ * @note Was part of saved state (6.1 and earlier).
  * @{ */
 /** Indicates that we've saved the host FPU, SSE, whatever state and that it
  * needs to be restored. */
 #define CPUM_USED_FPU_HOST              RT_BIT(0)
 /** Indicates that we've loaded the guest FPU, SSE, whatever state and that it
- * needs to be saved. */
+ * needs to be saved.
+ * @note Mirrored in CPUMCTX::fUsedFpuGuest for the HM switcher code. */
 #define CPUM_USED_FPU_GUEST             RT_BIT(10)
 /** Used the guest FPU, SSE or such stuff since last we were in REM.
  * REM syncing is clearing this, lazy FPU is setting it. */

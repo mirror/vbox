@@ -465,6 +465,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVMCC pVM, PVMCPUCC pVCpu)
     }
     Assert(   (pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM))
            ==                            (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM));
+    Assert(pVCpu->cpum.s.Guest.fUsedFpuGuest);
     return rc;
 }
 
@@ -484,6 +485,7 @@ VMMR0_INT_DECL(bool) CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu)
     if (pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST))
     {
         fSavedGuest = RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST);
+        Assert(fSavedGuest == pVCpu->cpum.s.Guest.fUsedFpuGuest);
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE))
             cpumR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
         else
@@ -508,6 +510,7 @@ VMMR0_INT_DECL(bool) CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu)
         fSavedGuest = false;
     Assert(!(  pVCpu->cpum.s.fUseFlags
              & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_USED_MANUAL_XMM_RESTORE)));
+    Assert(!pVCpu->cpum.s.Guest.fUsedFpuGuest);
     return fSavedGuest;
 }
 

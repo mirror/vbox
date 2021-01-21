@@ -254,6 +254,7 @@ struc CPUMCTX
     .pXStateR3      RTR3PTR_RES 1
     .aoffXState         resw    64
     .fWorldSwitcher     resd    1
+    .fUsedFpuGuest      resb    1
     alignb 8
     .fExtrn             resq    1
     alignb 8

@@ -180,6 +180,7 @@ SEH64_END_PROLOGUE
 %endif
 
         or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_SINCE_REM | CPUM_USED_FPU_HOST)
+        mov     byte [pCpumCpu + CPUMCPU.Guest.fUsedFpuGuest], 1
         popf
 
         mov     eax, ecx
@@ -294,6 +295,7 @@ SEH64_END_PROLOGUE
         mov     xCX, [pCpumCpu + CPUMCPU.Host.cr0Fpu]
         CPUMRZ_RESTORE_CR0_IF_TS_OR_EM_SET xCX
         and     dword [pCpumCpu + CPUMCPU.fUseFlags], ~(CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST)
+        mov     byte [pCpumCpu + CPUMCPU.Guest.fUsedFpuGuest], 0
 
         popf
 %ifdef RT_ARCH_X86

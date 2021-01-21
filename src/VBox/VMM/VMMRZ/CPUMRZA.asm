@@ -210,6 +210,7 @@ SEH64_END_PROLOGUE
  %endif
 
         and     dword [pCpumCpu + CPUMCPU.fUseFlags], ~CPUM_USED_FPU_GUEST
+        mov     byte [pCpumCpu + CPUMCPU.Guest.fUsedFpuGuest], 0
  %ifdef IN_RC
         test    byte [ebp + 0ch], 1     ; fLeaveFpuAccessible
         jz      .no_cr0_restore

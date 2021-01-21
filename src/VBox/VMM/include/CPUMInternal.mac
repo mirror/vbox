@@ -221,6 +221,7 @@ struc CPUMCPU
     alignb 8
     .Guest.aoffXState         resw    64
     .Guest.fWorldSwitcher     resd    1
+    .Guest.fUsedFpuGuest      resb    1
     alignb 8
     .Guest.fExtrn             resq    1
     alignb 8
