@@ -119,6 +119,8 @@ UIUserNamePasswordEditor::UIUserNamePasswordEditor(QWidget *pParent /*  = 0 */)
     , m_pPasswordLabel(0)
     , m_pPasswordRepeatLabel(0)
     , m_fForceUnmark(false)
+    , m_fShowPlaceholderText(true)
+    , m_fLabelsVisible(true)
 {
     prepare();
 }
@@ -187,24 +189,65 @@ void UIUserNamePasswordEditor::setForceUnmark(bool fForceUnmark)
     isPasswordComplete();
 }
 
+void UIUserNamePasswordEditor::setPlaceholderTextEnabled(bool fEnabled)
+{
+    if (m_fShowPlaceholderText == fEnabled)
+        return;
+    m_fShowPlaceholderText = fEnabled;
+    retranslateUi();
+}
+
+void UIUserNamePasswordEditor::setLabelsVisible(bool fVisible)
+{
+    if (m_fLabelsVisible == fVisible)
+        return;
+    m_fLabelsVisible = fVisible;
+    m_pUserNameLabel->setVisible(fVisible);
+    m_pPasswordLabel->setVisible(fVisible);
+    m_pPasswordRepeatLabel->setVisible(fVisible);
+
+}
+
 void UIUserNamePasswordEditor::retranslateUi()
 {
+    QString strPassword = UIWizardNewVM::tr("Password:");
+    QString strRepeatPassword = UIWizardNewVM::tr("Repeat Password:");
+    QString strUsername = UIWizardNewVM::tr("Username:");
     if (m_pUserNameLabel)
     {
-        m_pUserNameLabel->setText(UIWizardNewVM::tr("User Name:"));
+        m_pUserNameLabel->setText(strUsername);
         m_pUserNameLabel->setToolTip(UIWizardNewVM::tr("Type the user name which will be used in attended install:"));
 
     }
     if (m_pPasswordLabel)
     {
-        m_pPasswordLabel->setText(UIWizardNewVM::tr("Password:"));
+        m_pPasswordLabel->setText(strPassword);
         m_pPasswordLabel->setToolTip(UIWizardNewVM::tr("Type the password for the user name"));
 
     }
     if (m_pPasswordRepeatLabel)
     {
-        m_pPasswordRepeatLabel->setText(UIWizardNewVM::tr("Repeat Password:"));
+        m_pPasswordRepeatLabel->setText(strRepeatPassword);
         m_pPasswordRepeatLabel->setToolTip(UIWizardNewVM::tr("Retype the password:"));
+    }
+
+    if (m_fShowPlaceholderText)
+    {
+        if(m_pUserNameLineEdit)
+            m_pUserNameLineEdit->setPlaceholderText(strUsername);
+        if (m_pPasswordLineEdit)
+            m_pPasswordLineEdit->setPlaceholderText(strPassword);
+        if (m_pPasswordRepeatLineEdit)
+            m_pPasswordRepeatLineEdit->setPlaceholderText(strRepeatPassword);
+    }
+    else
+    {
+        if(m_pUserNameLineEdit)
+            m_pUserNameLineEdit->setPlaceholderText(QString());
+        if (m_pPasswordLineEdit)
+            m_pPasswordLineEdit->setPlaceholderText(QString());
+        if (m_pPasswordRepeatLineEdit)
+            m_pPasswordRepeatLineEdit->setPlaceholderText(QString());
     }
 }
 

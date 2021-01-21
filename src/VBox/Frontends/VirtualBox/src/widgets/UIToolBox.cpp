@@ -66,6 +66,7 @@ public:
     int totalHeight() const;
     int titleHeight() const;
     int pageWidgetHeight() const;
+    void setTitleIcon(const QIcon &icon);
 
 protected:
 
@@ -82,6 +83,7 @@ private:
     QVBoxLayout *m_pLayout;
     QWidget     *m_pTitleContainerWidget;
     QLabel      *m_pTitleLabel;
+    QLabel      *m_pIconLabel;
     QCheckBox   *m_pEnableCheckBox;
 
     QWidget     *m_pWidget;
@@ -97,6 +99,7 @@ UIToolBoxPage::UIToolBoxPage(bool fEnableCheckBoxEnabled /* = false */, QWidget 
     , m_pLayout(0)
     , m_pTitleContainerWidget(0)
     , m_pTitleLabel(0)
+    , m_pIconLabel(0)
     , m_pEnableCheckBox(0)
     , m_pWidget(0)
     , m_iIndex(0)
@@ -117,6 +120,7 @@ void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
     m_pLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pTitleContainerWidget = new QWidget;
+    m_pTitleContainerWidget->installEventFilter(this);
     QHBoxLayout *pTitleLayout = new QHBoxLayout(m_pTitleContainerWidget);
     pTitleLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin),
                                      .4f * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
@@ -132,8 +136,10 @@ void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
     m_pTitleLabel = new QLabel;
     m_pTitleLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-    m_pTitleLabel->installEventFilter(this);
     pTitleLayout->addWidget(m_pTitleLabel);
+    m_pIconLabel = new QLabel;
+    pTitleLayout->addWidget(m_pIconLabel, Qt::AlignLeft);
+    pTitleLayout->addStretch();
     m_pTitleContainerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_pLayout->addWidget(m_pTitleContainerWidget);
 }
@@ -182,6 +188,19 @@ int UIToolBoxPage::totalHeight() const
     return pageWidgetHeight() + titleHeight();
 }
 
+void UIToolBoxPage::setTitleIcon(const QIcon &icon)
+{
+    if (!m_pIconLabel)
+        return;
+    if (icon.isNull())
+    {
+        m_pIconLabel->setPixmap(QPixmap());
+        return;
+    }
+    const int iMetricSmall = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    m_pIconLabel->setPixmap(icon.pixmap(windowHandle(), QSize(iMetricSmall, iMetricSmall)));
+}
+
 int UIToolBoxPage::titleHeight() const
 {
     if (m_pTitleContainerWidget && m_pTitleContainerWidget->sizeHint().isValid())
@@ -198,8 +217,11 @@ int UIToolBoxPage::pageWidgetHeight() const
 
 bool UIToolBoxPage::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-    if (pWatched == m_pTitleLabel && pEvent->type() == QEvent::MouseButtonPress)
-        emit sigShowPageWidget();
+    if (pWatched == m_pTitleContainerWidget)
+    {
+        if (pEvent->type() == QEvent::MouseButtonPress)
+            emit sigShowPageWidget();
+    }
     return QWidget::eventFilter(pWatched, pEvent);
 
 }
@@ -236,7 +258,7 @@ bool UIToolBox::insertItem(int iIndex, QWidget *pWidget, const QString &strTitle
     pNewPage->setTitle(strTitle);
 
     const QPalette pal = palette();
-    QColor tabBackgroundColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(110);
+    QColor tabBackgroundColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(130);
     pNewPage->setTitleBackgroundColor(tabBackgroundColor);
 
     m_pages[iIndex] = pNewPage;
@@ -277,8 +299,10 @@ void UIToolBox::setItemText(int iIndex, const QString &strTitle)
 
 void UIToolBox::setItemIcon(int iIndex, const QIcon &icon)
 {
-    Q_UNUSED(iIndex);
-    Q_UNUSED(icon);
+    QMap<int, UIToolBoxPage*>::iterator iterator = m_pages.find(iIndex);
+    if (iterator == m_pages.end())
+        return;
+    iterator.value()->setTitleIcon(icon);
 }
 
 void UIToolBox::setCurrentPage(int iIndex)

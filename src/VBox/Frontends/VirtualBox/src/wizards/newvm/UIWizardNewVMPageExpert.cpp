@@ -19,6 +19,7 @@
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QRadioButton>
@@ -44,6 +45,10 @@
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     : UIWizardNewVMPage1(strGroup)
     , m_pToolBox(0)
+    , m_pInstallationISOContainer(0)
+    , m_pUserNameContainer(0)
+    , m_pAdditionalOptionsContainer(0)
+    , m_pGAInstallationISOContainer(0)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -180,8 +185,7 @@ void UIWizardNewVMPageExpert::sltGAISOPathChanged(const QString &strPath)
 
 void UIWizardNewVMPageExpert::sltOSFamilyTypeChanged()
 {
-    if (m_pToolBox)
-        m_pToolBox->setItemEnabled(ExpertToolboxItems_ProductKey, isProductKeyWidgetEnabled());
+    disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
 }
 
 void UIWizardNewVMPageExpert::retranslateUi()
@@ -189,14 +193,18 @@ void UIWizardNewVMPageExpert::retranslateUi()
     UIWizardNewVMPage1::retranslateWidgets();
     UIWizardNewVMPage2::retranslateWidgets();
     UIWizardNewVMPage3::retranslateWidgets();
-
+    if (m_pInstallationISOContainer)
+        m_pInstallationISOContainer->setTitle(UIWizardNewVM::tr("Installation medium (ISO)"));
+    if (m_pUserNameContainer)
+        m_pUserNameContainer->setTitle(UIWizardNewVM::tr("User name and password"));
+    if (m_pAdditionalOptionsContainer)
+        m_pAdditionalOptionsContainer->setTitle(UIWizardNewVM::tr("Additional options"));
+    if (m_pGAInstallationISOContainer)
+        m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("Guest Additions Installation Medium (ISO)"));
     if (m_pToolBox)
     {
         m_pToolBox->setItemText(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and operating system")));
-        m_pToolBox->setItemText(ExpertToolboxItems_UsernameHostname, UIWizardNewVM::tr("Username and hostname"));
         m_pToolBox->setItemText(ExpertToolboxItems_Unattended, UIWizardNewVM::tr("Unattended Install"));
-        m_pToolBox->setItemText(ExpertToolboxItems_GAInstall, UIWizardNewVM::tr("Guest additions install"));
-        m_pToolBox->setItemText(ExpertToolboxItems_ProductKey, UIWizardNewVM::tr("Product key"));
         m_pToolBox->setItemText(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard disk"));
         m_pToolBox->setItemText(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("Hardware"));
     }
@@ -310,34 +318,89 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
     QGridLayout *pLayout = new QGridLayout(pContainerWidget);
     int iRow = 0;
 
-    m_pISOSelectorLabel = new QLabel;
-    if (m_pISOSelectorLabel)
+    /* Installation medium selector etc: */
     {
-        m_pISOSelectorLabel->setAlignment(Qt::AlignRight);
-        m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-        pLayout->addWidget(m_pISOSelectorLabel, iRow, 0, 1, 1);
+        m_pInstallationISOContainer = new QGroupBox;
+        QHBoxLayout *pInstallationISOContainerLayout = new QHBoxLayout(m_pInstallationISOContainer);
+
+        m_pISOFilePathSelector = new UIFilePathSelector;
+        if (m_pISOFilePathSelector)
+        {
+            m_pISOFilePathSelector->setResetEnabled(false);
+            m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+            m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+            pInstallationISOContainerLayout->addWidget(m_pISOFilePathSelector);
+        }
+        pLayout->addWidget(m_pInstallationISOContainer, iRow++, 0, 1, 4);
     }
 
-    m_pISOFilePathSelector = new UIFilePathSelector;
-    if (m_pISOFilePathSelector)
+    /* Username selector: */
     {
-        m_pISOFilePathSelector->setResetEnabled(false);
-        m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-        m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-        pLayout->addWidget(m_pISOFilePathSelector, iRow++, 1, 1, 4);
+        m_pUserNameContainer = new QGroupBox;
+        QVBoxLayout *pUserNameContainerLayout = new QVBoxLayout(m_pUserNameContainer);
+        m_pUserNamePasswordEditor = new UIUserNamePasswordEditor;
+        if (m_pUserNamePasswordEditor)
+        {
+            m_pUserNamePasswordEditor->setLabelsVisible(true);
+            pUserNameContainerLayout->addWidget(m_pUserNamePasswordEditor);
+        }
+        pLayout->addWidget(m_pUserNameContainer, iRow, 0, 1, 2);
     }
 
-    m_pStartHeadlessCheckBox = new QCheckBox;
-    if (m_pStartHeadlessCheckBox)
-        pLayout->addWidget(m_pStartHeadlessCheckBox, iRow++, 0, 1, 5);
+    /* Additional options: */
+    {
+        m_pAdditionalOptionsContainer = new QGroupBox;
+        QGridLayout *pAdditionalOptionsContainerLayout = new QGridLayout(m_pAdditionalOptionsContainer);
+        m_pStartHeadlessCheckBox = new QCheckBox;
+        if (m_pStartHeadlessCheckBox)
+            pAdditionalOptionsContainerLayout->addWidget(m_pStartHeadlessCheckBox, 0, 0, 1, 4);
 
-    pLayout->addWidget(createUserNameHostNameWidgets(), iRow, 0, 4, 5);
-    iRow += 4;
-    pLayout->addWidget(createGAInstallWidgets(), iRow, 0, 2, 5);
-    iRow += 2;
-    pLayout->addWidget(createProductKeyWidgets(), iRow, 0, 1, 5);
+        m_pProductKeyLabel = new QLabel;
+        if (m_pProductKeyLabel)
+        {
+            m_pProductKeyLabel->setAlignment(Qt::AlignRight);
+            m_pProductKeyLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+            pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLabel, 1, 0, 1, 1);
+        }
+        m_pProductKeyLineEdit = new QLineEdit;
+        if (m_pProductKeyLineEdit)
+        {
+            m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
+            pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLineEdit, 1, 1, 1, 3);
+        }
 
+        m_pHostnameLabel = new QLabel;
+        if (m_pHostnameLabel)
+        {
+            m_pHostnameLabel->setAlignment(Qt::AlignRight);
+            m_pHostnameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+            pAdditionalOptionsContainerLayout->addWidget(m_pHostnameLabel, 2, 0, 1, 1);
+        }
 
+        m_pHostnameLineEdit = new QLineEdit;
+        if (m_pHostnameLineEdit)
+            pAdditionalOptionsContainerLayout->addWidget(m_pHostnameLineEdit, 2, 1, 1, 3);
+
+        // pAdditionalOptionsContainerLayout->addWidget(createHostNameWidgets());
+
+        // pAdditionalOptionsContainerLayout->addStretch();
+        pLayout->addWidget(m_pAdditionalOptionsContainer, iRow, 2, 1, 2);
+    }
+    ++iRow;
+    /* Guest additions installation: */
+    {
+        m_pGAInstallationISOContainer = new QGroupBox;
+        QHBoxLayout *pGAInstallationISOContainer = new QHBoxLayout(m_pGAInstallationISOContainer);
+        m_pGAISOFilePathSelector = new UIFilePathSelector;
+        {
+            m_pGAISOFilePathSelector->setResetEnabled(false);
+            m_pGAISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+            m_pGAISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+            m_pGAISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+            pGAInstallationISOContainer->addWidget(m_pGAISOFilePathSelector);
+        }
+        pLayout->addWidget(m_pGAInstallationISOContainer, iRow, 0, 1, 4);
+    }
     return pContainerWidget;
 }
 
@@ -346,11 +409,9 @@ bool UIWizardNewVMPageExpert::isComplete() const
     markWidgets();
     bool fIsComplete = true;
     m_pToolBox->setItemIcon(ExpertToolboxItems_NameAndOSType, QIcon());
+    m_pToolBox->setItemIcon(ExpertToolboxItems_Unattended, QIcon());
     m_pToolBox->setItemIcon(ExpertToolboxItems_Disk, QIcon());
     m_pToolBox->setItemIcon(ExpertToolboxItems_Hardware, QIcon());
-    m_pToolBox->setItemIcon(ExpertToolboxItems_UsernameHostname, QIcon());
-    m_pToolBox->setItemIcon(ExpertToolboxItems_GAInstall, QIcon());
-    m_pToolBox->setItemIcon(ExpertToolboxItems_ProductKey, QIcon());
 
     if (!UIWizardPage::isComplete())
     {
@@ -369,24 +430,24 @@ bool UIWizardNewVMPageExpert::isComplete() const
     if (isUnattendedEnabled())
     {
         /* Check the installation medium: */
-        // if (!isISOFileSelectorComplete())
-        // {
-        //     m_pToolBox->setItemIcon(ExpertToolboxItems_NameAndOSType,
-        //                             UIIconPool::iconSet(":/status_error_16px.png"));
-        //     fIsComplete = false;
-        // }
+        if (!isISOFileSelectorComplete())
+        {
+            m_pToolBox->setItemIcon(ExpertToolboxItems_Unattended,
+                                    UIIconPool::iconSet(":/status_error_16px.png"));
+            fIsComplete = false;
+        }
         /* Check the GA installation medium: */
         if (!checkGAISOFile())
         {
-            m_pToolBox->setItemIcon(ExpertToolboxItems_GAInstall,
-                                    UIIconPool::iconSet(":/status_error_16px.png"));
+            // m_pToolBox->setItemIcon(ExpertToolboxItems_Unattended,
+            //                         UIIconPool::iconSet(":/status_error_16px.png"));
             fIsComplete = false;
         }
         if (m_pUserNamePasswordEditor)
         {
             if (!m_pUserNamePasswordEditor->isComplete())
             {
-                m_pToolBox->setItemIcon(ExpertToolboxItems_UsernameHostname,
+                m_pToolBox->setItemIcon(ExpertToolboxItems_Unattended,
                                         UIIconPool::iconSet(":/status_error_16px.png"));
                 fIsComplete = false;
             }
@@ -443,6 +504,19 @@ bool UIWizardNewVMPageExpert::isProductKeyWidgetEnabled() const
 
 void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnabled)
 {
-    if (m_pStartHeadlessCheckBox)
-        m_pStartHeadlessCheckBox->setEnabled(fEnabled);
+    if (m_pUserNameContainer)
+        m_pUserNameContainer->setEnabled(fEnabled);
+    if (m_pAdditionalOptionsContainer)
+        m_pAdditionalOptionsContainer->setEnabled(fEnabled);
+    if (m_pGAInstallationISOContainer)
+        m_pGAInstallationISOContainer->setEnabled(fEnabled);
+    disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
+}
+
+void UIWizardNewVMPageExpert::disableEnableProductKeyWidgets(bool fEnabled)
+{
+    if (m_pProductKeyLabel)
+        m_pProductKeyLabel->setEnabled(fEnabled);
+    if (m_pProductKeyLineEdit)
+        m_pProductKeyLineEdit->setEnabled(fEnabled);
 }
