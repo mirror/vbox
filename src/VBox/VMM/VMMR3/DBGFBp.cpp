@@ -742,7 +742,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, 
             }
     }
 
-    return CPUMRecalcHyperDRx(pVCpu, UINT8_MAX, false);
+    return CPUMRecalcHyperDRx(pVCpu, UINT8_MAX);
 }
 
 

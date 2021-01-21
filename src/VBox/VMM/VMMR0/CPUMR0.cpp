@@ -687,7 +687,7 @@ VMMR0_INT_DECL(void) CPUMR0LoadHyperDebugState(PVMCPUCC pVCpu, bool fDr6)
     /*
      * Make sure the hypervisor values are up to date.
      */
-    CPUMRecalcHyperDRx(pVCpu, UINT8_MAX /* no loading, please */, true);
+    CPUMRecalcHyperDRx(pVCpu, UINT8_MAX /* no loading, please */);
 
     /*
      * Activate the guest state DR0-3.

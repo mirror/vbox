@@ -2577,7 +2577,7 @@ VMMDECL(void)           CPUMSetHyperDR2(PVMCPU pVCpu, RTGCUINTREG uDr2);
 VMMDECL(void)           CPUMSetHyperDR3(PVMCPU pVCpu, RTGCUINTREG uDr3);
 VMMDECL(void)           CPUMSetHyperDR6(PVMCPU pVCpu, RTGCUINTREG uDr6);
 VMMDECL(void)           CPUMSetHyperDR7(PVMCPU pVCpu, RTGCUINTREG uDr7);
-VMMDECL(int)            CPUMRecalcHyperDRx(PVMCPUCC pVCpu, uint8_t iGstReg, bool fForceHyper);
+VMMDECL(int)            CPUMRecalcHyperDRx(PVMCPUCC pVCpu, uint8_t iGstReg);
 /** @} */
 
 VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);

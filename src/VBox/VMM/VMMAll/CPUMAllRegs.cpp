@@ -1079,28 +1079,28 @@ VMMDECL(CPUMMICROARCH) CPUMGetGuestMicroarch(PCVM pVM)
 VMMDECL(int) CPUMSetGuestDR0(PVMCPUCC pVCpu, uint64_t uDr0)
 {
     pVCpu->cpum.s.Guest.dr[0] = uDr0;
-    return CPUMRecalcHyperDRx(pVCpu, 0, false);
+    return CPUMRecalcHyperDRx(pVCpu, 0);
 }
 
 
 VMMDECL(int) CPUMSetGuestDR1(PVMCPUCC pVCpu, uint64_t uDr1)
 {
     pVCpu->cpum.s.Guest.dr[1] = uDr1;
-    return CPUMRecalcHyperDRx(pVCpu, 1, false);
+    return CPUMRecalcHyperDRx(pVCpu, 1);
 }
 
 
 VMMDECL(int) CPUMSetGuestDR2(PVMCPUCC pVCpu, uint64_t uDr2)
 {
     pVCpu->cpum.s.Guest.dr[2] = uDr2;
-    return CPUMRecalcHyperDRx(pVCpu, 2, false);
+    return CPUMRecalcHyperDRx(pVCpu, 2);
 }
 
 
 VMMDECL(int) CPUMSetGuestDR3(PVMCPUCC pVCpu, uint64_t uDr3)
 {
     pVCpu->cpum.s.Guest.dr[3] = uDr3;
-    return CPUMRecalcHyperDRx(pVCpu, 3, false);
+    return CPUMRecalcHyperDRx(pVCpu, 3);
 }
 
 
@@ -1116,7 +1116,7 @@ VMMDECL(int) CPUMSetGuestDR7(PVMCPUCC pVCpu, uint64_t uDr7)
 {
     pVCpu->cpum.s.Guest.dr[7] = uDr7;
     pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_DR7;
-    return CPUMRecalcHyperDRx(pVCpu, 7, false);
+    return CPUMRecalcHyperDRx(pVCpu, 7);
 }
 
 
@@ -1127,7 +1127,7 @@ VMMDECL(int) CPUMSetGuestDRx(PVMCPUCC pVCpu, uint32_t iReg, uint64_t Value)
     if (iReg == 4 || iReg == 5)
         iReg += 2;
     pVCpu->cpum.s.Guest.dr[iReg] = Value;
-    return CPUMRecalcHyperDRx(pVCpu, iReg, false);
+    return CPUMRecalcHyperDRx(pVCpu, iReg);
 }
 
 
@@ -1158,10 +1158,8 @@ VMMDECL(int) CPUMSetGuestDRx(PVMCPUCC pVCpu, uint32_t iReg, uint64_t Value)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   iGstReg     The guest debug register number that was modified.
  *                      UINT8_MAX if not guest register.
- * @param   fForceHyper Used in HM to force hyper registers because of single
- *                      stepping.
  */
-VMMDECL(int) CPUMRecalcHyperDRx(PVMCPUCC pVCpu, uint8_t iGstReg, bool fForceHyper)
+VMMDECL(int) CPUMRecalcHyperDRx(PVMCPUCC pVCpu, uint8_t iGstReg)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 #ifndef IN_RING0
@@ -1186,13 +1184,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPUCC pVCpu, uint8_t iGstReg, bool fForceHype
         uGstDr7 &= ~X86_DR7_GE_ALL;
 
     const RTGCUINTREG uDbgfDr7 = DBGFBpGetDR7(pVM);
-
-    /** @todo r=bird: I'm totally confused by fForceHyper! */
-#ifdef IN_RING0
-    if (!fForceHyper && (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER))
-        fForceHyper = true;
-#endif
-    if ((!fForceHyper ? uDbgfDr7 : (uGstDr7 | uDbgfDr7)) & X86_DR7_ENABLED_MASK)
+    if ((uGstDr7 | uDbgfDr7) & X86_DR7_ENABLED_MASK)
     {
         Assert(!CPUMIsGuestDebugStateActive(pVCpu));
 
