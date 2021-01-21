@@ -423,7 +423,7 @@ private slots:
 
 private:
 
-    /** Constructs Host Network Manager dialog.
+    /** Constructs Medium Manager dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to.
       * @param  pActionPool    Brings the action-pool reference. */
     UIMediumManager(QWidget *pCenterWidget, UIActionPool *pActionPool);

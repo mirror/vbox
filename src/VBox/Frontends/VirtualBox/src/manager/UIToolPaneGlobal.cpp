@@ -142,7 +142,7 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
             }
             case UIToolType_Network:
             {
-                /* Create Host Network Manager: */
+                /* Create Network Manager: */
                 m_pPaneNetwork = new UINetworkManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
                 AssertPtrReturnVoid(m_pPaneNetwork);
                 {

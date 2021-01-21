@@ -159,10 +159,10 @@ private slots:
         /** Handles call to close Virtual Medium Manager window. */
         void sltCloseVirtualMediumManagerWindow();
 
-        /** Handles call to open Host Network Manager window. */
-        void sltOpenHostNetworkManagerWindow();
-        /** Handles call to close Host Network Manager window. */
-        void sltCloseHostNetworkManagerWindow();
+        /** Handles call to open Network Manager window. */
+        void sltOpenNetworkManagerWindow();
+        /** Handles call to close Network Manager window. */
+        void sltCloseNetworkManagerWindow();
 
         /** Handles call to open Cloud Profile Manager window. */
         void sltOpenCloudProfileManagerWindow();
@@ -465,7 +465,7 @@ private:
 
     /** Holds the Virtual Media Manager window instance. */
     QIManagerDialog *m_pManagerVirtualMedia;
-    /** Holds the Host Network Manager window instance. */
+    /** Holds the Network Manager window instance. */
     QIManagerDialog *m_pManagerHostNetwork;
     /** Holds the Cloud Profile Manager window instance. */
     QIManagerDialog *m_pManagerCloudProfile;

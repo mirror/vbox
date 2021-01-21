@@ -159,7 +159,7 @@ enum UIActionIndexMN
     UIActionIndexMN_M_Medium_T_Search,
     UIActionIndexMN_M_Medium_S_Refresh,
 
-    /* Host Network Manager actions: */
+    /* Network Manager actions: */
     UIActionIndexMN_M_NetworkWindow,
     UIActionIndexMN_M_Network,
     UIActionIndexMN_M_Network_S_Create,

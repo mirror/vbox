@@ -95,7 +95,7 @@ private:
     UIWelcomePane               *m_pPaneWelcome;
     /** Holds the Virtual Media Manager instance. */
     UIMediumManagerWidget       *m_pPaneMedia;
-    /** Holds the Host Network Manager instance. */
+    /** Holds the Network Manager instance. */
     UINetworkManagerWidget      *m_pPaneNetwork;
     /** Holds the Cloud Profile Manager instance. */
     UICloudProfileManagerWidget *m_pPaneCloud;

@@ -25,7 +25,7 @@
 #include <QStringList>
 
 
-/** Host Network Manager: Host network utilities. */
+/** Network Manager: Host network utilities. */
 namespace UINetworkManagerUtils
 {
     /** Converts IPv4 address from QString to quint32. */

@@ -703,7 +703,7 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     switch (m_pWidget->toolsType())
     {
         case UIToolType_Media:       sltCloseVirtualMediumManagerWindow(); break;
-        case UIToolType_Network:     sltCloseHostNetworkManagerWindow(); break;
+        case UIToolType_Network:     sltCloseNetworkManagerWindow(); break;
         case UIToolType_Cloud:       sltCloseCloudProfileManagerWindow(); break;
         case UIToolType_Logs:        sltCloseLogViewerWindow(); break;
         case UIToolType_Performance: sltClosePerformanceMonitorWindow(); break;
@@ -763,7 +763,7 @@ void UIVirtualBoxManager::sltCloseVirtualMediumManagerWindow()
         UIMediumManagerFactory().cleanup(m_pManagerVirtualMedia);
 }
 
-void UIVirtualBoxManager::sltOpenHostNetworkManagerWindow()
+void UIVirtualBoxManager::sltOpenNetworkManagerWindow()
 {
     /* First check if instance of widget opened the embedded way: */
     if (m_pWidget->isGlobalToolOpened(UIToolType_Network))
@@ -777,7 +777,7 @@ void UIVirtualBoxManager::sltOpenHostNetworkManagerWindow()
     {
         UINetworkManagerFactory(m_pActionPool).prepare(m_pManagerHostNetwork, this);
         connect(m_pManagerHostNetwork, &QIManagerDialog::sigClose,
-                this, &UIVirtualBoxManager::sltCloseHostNetworkManagerWindow);
+                this, &UIVirtualBoxManager::sltCloseNetworkManagerWindow);
     }
 
     /* Show instance: */
@@ -786,7 +786,7 @@ void UIVirtualBoxManager::sltOpenHostNetworkManagerWindow()
     m_pManagerHostNetwork->activateWindow();
 }
 
-void UIVirtualBoxManager::sltCloseHostNetworkManagerWindow()
+void UIVirtualBoxManager::sltCloseNetworkManagerWindow()
 {
     /* Destroy instance if still exists: */
     if (m_pManagerHostNetwork)
@@ -2315,7 +2315,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenHostNetworkManagerWindow);
+            this, &UIVirtualBoxManager::sltOpenNetworkManagerWindow);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenCloudProfileManagerWindow);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance), &UIAction::triggered,
@@ -2541,7 +2541,7 @@ void UIVirtualBoxManager::cleanup()
 {
     /* Close the sub-dialogs first: */
     sltCloseVirtualMediumManagerWindow();
-    sltCloseHostNetworkManagerWindow();
+    sltCloseNetworkManagerWindow();
     sltCloseCloudProfileManagerWindow();
     sltCloseCloudConsoleManagerWindow();
 

@@ -95,7 +95,7 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Host Network Manager' action class. */
+/** Simple action extension, used as 'Show Network Manager' action class. */
 class UIActionSimpleManagerFileShowHostNetworkManager : public UIActionSimple
 {
     Q_OBJECT;
@@ -124,8 +124,8 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Host Network Manager..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the Host Network Manager window"));
+        setName(QApplication::translate("UIActionPool", "&Network Manager..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the Network Manager window"));
     }
 };
 
@@ -1812,7 +1812,7 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Host Network Manager' action class. */
+/** Simple action extension, used as 'Show Network Manager' action class. */
 class UIActionSimpleManagerToolsGlobalShowHostNetworkManager : public UIActionSimple
 {
     Q_OBJECT;
@@ -1837,8 +1837,8 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Host Network Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the Host Network Manager"));
+        setName(QApplication::translate("UIActionPool", "&Network Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the Network Manager"));
     }
 };
 
@@ -3506,7 +3506,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Medium_T_Search] = new UIActionMenuManagerMediumToggleSearch(this);
     m_pool[UIActionIndexMN_M_Medium_S_Refresh] = new UIActionMenuManagerMediumPerformRefresh(this);
 
-    /* Host Network Manager actions: */
+    /* Network Manager actions: */
     m_pool[UIActionIndexMN_M_NetworkWindow] = new UIActionMenuManagerNetwork(this);
     m_pool[UIActionIndexMN_M_Network] = new UIActionMenuManagerNetwork(this);
     m_pool[UIActionIndexMN_M_Network_S_Create] = new UIActionMenuManagerNetworkPerformCreate(this);
@@ -3644,7 +3644,7 @@ void UIActionPoolManager::updateMenus()
     addMenu(m_mainMenus, action(UIActionIndexMN_M_Medium));
     updateMenuMediumWindow();
     updateMenuMedium();
-    /* 'Host Network Manager' menu: */
+    /* 'Network Manager' menu: */
     addMenu(m_mainMenus, action(UIActionIndexMN_M_Network));
     updateMenuNetworkWindow();
     updateMenuNetwork();
@@ -3652,7 +3652,6 @@ void UIActionPoolManager::updateMenus()
     addMenu(m_mainMenus, action(UIActionIndexMN_M_Cloud));
     updateMenuCloudWindow();
     updateMenuCloud();
-
     /* 'VM Resource Monitor' menu: */
     addMenu(m_mainMenus, action(UIActionIndexMN_M_VMResourceMonitor));
     updateMenuVMResourceMonitor();
@@ -3822,7 +3821,7 @@ void UIActionPoolManager::updateMenuFile()
 # endif
     /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
-    /* 'Show Host Network Manager' action goes to 'File' menu: */
+    /* 'Show Network Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
     /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
@@ -3845,7 +3844,7 @@ void UIActionPoolManager::updateMenuFile()
 # endif
     /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
-    /* 'Show Host Network Manager' action goes to 'File' menu: */
+    /* 'Show Network Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
     /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
