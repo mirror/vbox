@@ -260,11 +260,41 @@ HRESULT NATNetwork::getNetwork(com::Utf8Str &aNetwork)
 
 HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
 {
-    {
+    RTNETADDRIPV4 Addr, Mask;
+    int iPrefix;
+    int rc;
 
+    rc = RTNetStrToIPv4Cidr(aIPv4NetworkCidr.c_str(), &Addr, &iPrefix);
+    if (RT_FAILURE(rc))
+        return setError(E_FAIL, "%s is not a valid IPv4 CIDR notation",
+                        aIPv4NetworkCidr.c_str());
+
+    /*
+     * /32 is a single address, not a network, /31 is the degenerate
+     * point-to-point case, so reject these.  Larger values and
+     * non-positive values are already treated as errors by the
+     * conversion.
+     */
+    if (iPrefix > 30)
+        return setError(E_FAIL, "%s network is too small", aIPv4NetworkCidr.c_str());
+
+    rc = RTNetPrefixToMaskIPv4(iPrefix, &Mask);
+    AssertRCReturn(rc, setError(E_FAIL,
+        "%s: internal error: failed to convert prefix %d to netmask: %Rrc",
+        aIPv4NetworkCidr.c_str(), iPrefix, rc));
+
+    if ((Addr.u & ~Mask.u) != 0)
+        return setError(E_FAIL,
+            "%s: the specified address is longer than the specified prefix",
+            aIPv4NetworkCidr.c_str());
+
+    /* normalized CIDR notation */
+    com::Utf8StrFmt strCidr("%RTnaipv4/%d", Addr.u, iPrefix);
+
+    {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        if (aIPv4NetworkCidr == m->s.strIPv4NetworkCidr)
+        if (m->s.strIPv4NetworkCidr == strCidr)
             return S_OK;
 
         /**
@@ -277,13 +307,13 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
             return S_OK;
 
 
-        m->s.strIPv4NetworkCidr = aIPv4NetworkCidr;
+        m->s.strIPv4NetworkCidr = strCidr;
         i_recalculateIpv4AddressAssignments();
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pVirtualBox->i_saveSettings();
-    ComAssertComRCRetRC(rc);
+    HRESULT hrc = m->pVirtualBox->i_saveSettings();
+    ComAssertComRCRetRC(hrc);
     return S_OK;
 }
 
