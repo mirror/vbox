@@ -18,7 +18,7 @@
 ;*********************************************************************************************************************************
 ;*  Header Files                                                                                                                 *
 ;*********************************************************************************************************************************
-%define RT_ASM_WITH_SEH64
+;%define RT_ASM_WITH_SEH64  - trouble with SEH, alignment and (probably) 2nd pass optimizations.
 %include "VBox/asmdefs.mac"
 %include "VBox/err.mac"
 %include "VBox/vmm/hm_vmx.mac"
@@ -1090,6 +1090,14 @@ ENDPROC   hmR0SVMRunWrapXMM
 %endif ; VBOX_WITH_KERNEL_USING_XMM
 
 ;;
+; hmR0SvmVmRun template
+;
+; @param    1   The suffix of the variation.
+; @param    2   fLoadSaveGuestXcr0 value
+; @param    3   The CPUMCTX_WSF_IBPB_ENTRY + CPUMCTX_WSF_IBPB_EXIT value.
+%macro hmR0SvmVmRunTemplate 3
+
+;;
 ; Prepares for and executes VMRUN (32-bit and 64-bit guests).
 ;
 ; @returns  VBox status code
@@ -1097,22 +1105,23 @@ ENDPROC   hmR0SVMRunWrapXMM
 ; @param    pVCpu           msc:rdx,gcc:rsi     The cross context virtual CPU structure of the calling EMT.
 ; @param    HCPhysVmcb      msc:r8, gcc:rdx     Physical address of guest VMCB.
 ;
-ALIGNCODE(64)
-BEGINPROC SVMR0VMRun
+ALIGNCODE(64) ; This + immediate optimizations causes serious trouble for yasm and the SEH frames: prologue -28 bytes, must be <256
+              ; So the SEH64_XXX stuff is currently not operational.
+BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         push    rbp
         SEH64_PUSH_xBP
         mov     rbp, rsp
         SEH64_SET_FRAME_xBP 0
         pushf
-        sub     rsp, 30h - 8h                   ; The frame is 30h bytes, but the rbp-08h entry is the above pushf.
+        sub     rsp, 30h - 8h              ; The frame is 30h bytes, but the rbp-08h entry is the above pushf.
         SEH64_ALLOCATE_STACK 30h                ; And we have CALLEE_PRESERVED_REGISTER_COUNT following it.
 
-%define frm_fRFlags         -08h
-%define frm_uHostXcr0       -18h            ; 128-bit
-%define frm_fNoRestoreXcr0  -20h            ; Non-zero if we should skip XCR0 restoring.
-%define frm_pGstCtx         -28h            ; Where we stash guest CPU context for use after the vmrun.
-%define frm_HCPhysVmcbHost  -30h            ; Where we stash HCPhysVmcbHost for the vmload after vmrun.
-%assign cbFrame              30h
+ %define frm_fRFlags         -08h
+ %define frm_uHostXcr0       -18h               ; 128-bit
+ ;%define frm_fNoRestoreXcr0  -20h               ; Non-zero if we should skip XCR0 restoring.
+ %define frm_pGstCtx         -28h               ; Where we stash guest CPU context for use after the vmrun.
+ %define frm_HCPhysVmcbHost  -30h               ; Where we stash HCPhysVmcbHost for the vmload after vmrun.
+ %assign cbFrame              30h
 
         ; Manual save and restore:
         ;  - General purpose registers except RIP, RSP, RAX
@@ -1126,23 +1135,33 @@ BEGINPROC SVMR0VMRun
         ; Save all general purpose host registers.
         PUSH_CALLEE_PRESERVED_REGISTERS
         SEH64_END_PROLOGUE
-%if cbFrame != (30h + 8 * CALLEE_PRESERVED_REGISTER_COUNT)
- %error Bad cbFrame value
-%endif
+ %if cbFrame != (30h + 8 * CALLEE_PRESERVED_REGISTER_COUNT)
+  %error Bad cbFrame value
+ %endif
 
         ; Shuffle parameter registers so that r8=HCPhysVmcb and rsi=pVCpu.  (rdx & rcx will soon be trashed.)
-%ifdef ASM_CALL64_GCC
+ %ifdef ASM_CALL64_GCC
         mov     r8, rdx                         ; Put HCPhysVmcb in r8 like on MSC as rdx is trashed below.
-%else
+ %else
         mov     rsi, rdx                        ; Put pVCpu in rsi like on GCC as rdx is trashed below.
         ;mov     rdi, rcx                        ; Put pVM in rdi like on GCC as rcx is trashed below.
-%endif
+ %endif
 
+ %ifdef VBOX_STRICT
+        ; Verify template preconditions / parameters to ensure HMSVM.cpp didn't miss some state change.
+        cmp     byte [rsi + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], %2
+        mov     eax, VERR_SVM_VMRUN_PRECOND_0
+        jne     .failure_return
+
+        mov     eax, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fWorldSwitcher]
+        and     eax, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT
+        cmp     eax, %3
+        mov     eax, VERR_SVM_VMRUN_PRECOND_1
+        jne     .failure_return
+ %endif
+
+ %if %2 != 0
         ; Save the host XCR0 and load the guest one if necessary.
-        mov     ecx, 3fh                        ; indicate that we need not restore XCR0 (in case we jump)
-        test    byte [rsi + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
-        jz      .xcr0_before_skip
-
         xor     ecx, ecx
         xgetbv                                  ; save the host XCR0 on the stack
         mov     [rbp + frm_uHostXcr0 + 8], rdx
@@ -1152,19 +1171,22 @@ BEGINPROC SVMR0VMRun
         mov     edx, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.aXcr + 4]
         xor     ecx, ecx                        ; paranoia; Also, indicates that we must restore XCR0 (moved into ecx, thus 0).
         xsetbv
-
-.xcr0_before_skip:
-        mov     [rbp + frm_fNoRestoreXcr0], rcx
+ %endif
 
         ; Save host fs, gs, sysenter msr etc.
         mov     rax, [rsi + VMCPU.hm + HMCPU.u + HMCPUSVM.HCPhysVmcbHost]
-        mov     qword [rbp + frm_HCPhysVmcbHost], rax          ; save for the vmload after vmrun
+        mov     qword [rbp + frm_HCPhysVmcbHost], rax ; save for the vmload after vmrun
         lea     rsi, [rsi + VMCPU.cpum.GstCtx]
         mov     qword [rbp + frm_pGstCtx], rsi
         vmsave
 
+ %if %3 & CPUMCTX_WSF_IBPB_ENTRY
         ; Fight spectre (trashes rax, rdx and rcx).
-        INDIRECT_BRANCH_PREDICTION_BARRIER_CTX rsi, CPUMCTX_WSF_IBPB_ENTRY
+        mov     ecx, MSR_IA32_PRED_CMD
+        mov     eax, MSR_IA32_PRED_CMD_F_IBPB
+        xor     edx, edx
+        wrmsr
+ %endif
 
         ; Setup rax for VMLOAD.
         mov     rax, r8                         ; HCPhysVmcb (64 bits physical address; take low dword only)
@@ -1224,17 +1246,17 @@ BEGINPROC SVMR0VMRun
         mov     qword [rax + CPUMCTX.r11], r11
         mov     r11, rcx
         mov     qword [rax + CPUMCTX.edi], rdi
-%ifdef ASM_CALL64_MSC
+ %ifdef ASM_CALL64_MSC
         mov     rdi, [rbp + frm_saved_rdi]
-%else
+ %else
         mov     rdi, rcx
-%endif
+ %endif
         mov     qword [rax + CPUMCTX.esi], rsi
-%ifdef ASM_CALL64_MSC
+ %ifdef ASM_CALL64_MSC
         mov     rsi, [rbp + frm_saved_rsi]
-%else
+ %else
         mov     rsi, rcx
-%endif
+ %endif
         mov     qword [rax + CPUMCTX.ebx], rbx
         mov     rbx, [rbp + frm_saved_rbx]
         mov     qword [rax + CPUMCTX.r12], r12
@@ -1247,31 +1269,60 @@ BEGINPROC SVMR0VMRun
         mov     r15, [rbp + frm_saved_r15]
 
         ; Fight spectre.  Note! Trashes rax, rdx and rcx!
-        INDIRECT_BRANCH_PREDICTION_BARRIER_CTX rax, CPUMCTX_WSF_IBPB_EXIT
+ %if %3 & CPUMCTX_WSF_IBPB_EXIT
+        ; Fight spectre (trashes rax, rdx and rcx).
+        mov     ecx, MSR_IA32_PRED_CMD
+        mov     eax, MSR_IA32_PRED_CMD_F_IBPB
+        xor     edx, edx
+        wrmsr
+ %endif
 
-        ; Restore the host xcr0 if necessary.
-        mov     rcx, [rbp + frm_fNoRestoreXcr0]
-        test    ecx, ecx
-        jnz     .xcr0_after_skip
+ %if %2 != 0
+        ; Restore the host xcr0.
+        xor     ecx, ecx
         mov     rdx, [rbp + frm_uHostXcr0 + 8]
         mov     rax, [rbp + frm_uHostXcr0]
-        xsetbv                              ; ecx is already zero
-.xcr0_after_skip:
-nop
-;       POP_CALLEE_PRESERVED_REGISTERS
-;%if cbFrame != 30h
-; %error Bad cbFrame value
-;%endif
+        xsetbv
+ %endif
 
-        add     rsp, cbFrame - 8h
+        ; Epilogue (assumes we restored volatile registers above when saving the guest GPRs).
         mov     eax, VINF_SUCCESS
+        add     rsp, cbFrame - 8h
         popf
         leave
         ret
+
+ %ifdef VBOX_STRICT
+        ; Precondition checks failed.
+.failure_return:
+        POP_CALLEE_PRESERVED_REGISTERS
+ %if cbFrame != 30h
+  %error Bad cbFrame value
+ %endif
+        add     rsp, cbFrame - 8h
+        popf
+        leave
+        ret
+ %endif
+
 %undef frm_uHostXcr0
 %undef frm_fNoRestoreXcr0
 %undef frm_pVCpu
 %undef frm_HCPhysVmcbHost
 %undef cbFrame
-ENDPROC SVMR0VMRun
+ENDPROC RT_CONCAT(hmR0SvmVmRun,%1)
+
+%endmacro ; hmR0SvmVmRunTemplate
+
+;
+; Instantiate the hmR0SvmVmRun various variations.
+;
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit, 0, 0
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit, 1, 0
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit, 0, CPUMCTX_WSF_IBPB_EXIT
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit, 1, CPUMCTX_WSF_IBPB_EXIT
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT
 

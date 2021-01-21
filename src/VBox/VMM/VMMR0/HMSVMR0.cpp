@@ -704,6 +704,52 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVMCC pVM)
 
 
 /**
+ * Sets pfnVMRun to the best suited variant.
+ *
+ * This must be called whenever anything changes relative to the SVMR0VMRun
+ * variant selection:
+ *      - pVCpu->hm.s.fLoadSaveGuestXcr0
+ *      - CPUMCTX_WSF_IBPB_ENTRY in pVCpu->cpum.GstCtx.fWorldSwitcher
+ *      - CPUMCTX_WSF_IBPB_EXIT  in pVCpu->cpum.GstCtx.fWorldSwitcher
+ *      - CPUMIsGuestFPUStateActive() (windows only)
+ *      - CPUMCTX.fXStateMask (windows only)
+ *
+ * We currently ASSUME that neither CPUMCTX_WSF_IBPB_ENTRY nor
+ * CPUMCTX_WSF_IBPB_EXIT cannot be changed at runtime.
+ */
+static void hmR0SvmUpdateRunFunction(PVMCPUCC pVCpu)
+{
+    static const PFNHMSVMVMRUN s_apfnHmR0SvmVmRunFunctions[] =
+    {
+        hmR0SvmVmRun_SansXcr0_SansIbpbEntry_SansIbpbExit,
+        hmR0SvmVmRun_WithXcr0_SansIbpbEntry_SansIbpbExit,
+        hmR0SvmVmRun_SansXcr0_WithIbpbEntry_SansIbpbExit,
+        hmR0SvmVmRun_WithXcr0_WithIbpbEntry_SansIbpbExit,
+        hmR0SvmVmRun_SansXcr0_SansIbpbEntry_WithIbpbExit,
+        hmR0SvmVmRun_WithXcr0_SansIbpbEntry_WithIbpbExit,
+        hmR0SvmVmRun_SansXcr0_WithIbpbEntry_WithIbpbExit,
+        hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit,
+    };
+    uintptr_t const idx = (pVCpu->hm.s.fLoadSaveGuestXcr0                             ? 1 : 0)
+                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_ENTRY ? 2 : 0)
+                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_EXIT  ? 4 : 0);
+    PFNHMSVMVMRUN const pfnVMRun = s_apfnHmR0SvmVmRunFunctions[idx];
+    if (pVCpu->hm.s.svm.pfnVMRun != pfnVMRun)
+        pVCpu->hm.s.svm.pfnVMRun = pfnVMRun;
+}
+
+
+/**
+ * Selector FNHMSVMVMRUN implementation.
+ */
+static DECLCALLBACK(int) hmR0SvmVMRunSelector(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhysVMCB)
+{
+    hmR0SvmUpdateRunFunction(pVCpu);
+    return pVCpu->hm.s.svm.pfnVMRun(pVM, pVCpu, HCPhysVMCB);
+}
+
+
+/**
  * Does per-VM AMD-V initialization.
  *
  * @returns VBox status code.
@@ -744,7 +790,7 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
          * Initialize the hardware-assisted SVM guest-execution handler.
          * We now use a single handler for both 32-bit and 64-bit guests, see @bugref{6208#c73}.
          */
-        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun;
+        pVCpu->hm.s.svm.pfnVMRun = hmR0SvmVMRunSelector;
 
         /*
          * Allocate one page for the host-context VM control block (VMCB). This is used for additional host-state (such as
@@ -1621,7 +1667,12 @@ static int hmR0SvmExportGuestCR4(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     }
 
     /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+guest XCR0. */
-    pVCpu->hm.s.fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+    bool const fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+    if (fLoadSaveGuestXcr0 != pVCpu->hm.s.fLoadSaveGuestXcr0)
+    {
+        pVCpu->hm.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
+        hmR0SvmUpdateRunFunction(pVCpu);
+    }
 
     /* Avoid intercepting CR4 reads if the guest and shadow CR4 values are identical. */
     if (uShadowCr4 == pCtx->cr4)
@@ -6512,9 +6563,13 @@ HMSVM_EXIT_DECL hmR0SvmExitXsetbv(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
         PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-        pVCpu->hm.s.fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
-        Log4Func(("New XCR0=%#RX64 fLoadSaveGuestXcr0=%RTbool (cr4=%#RX64)\n", pCtx->aXcr[0], pVCpu->hm.s.fLoadSaveGuestXcr0,
-                  pCtx->cr4));
+        bool const fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+        Log4Func(("New XCR0=%#RX64 fLoadSaveGuestXcr0=%RTbool (cr4=%#RX64)\n", pCtx->aXcr[0], fLoadSaveGuestXcr0, pCtx->cr4));
+        if (fLoadSaveGuestXcr0 != pVCpu->hm.s.fLoadSaveGuestXcr0)
+        {
+            pVCpu->hm.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
+            hmR0SvmUpdateRunFunction(pVCpu);
+        }
     }
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
