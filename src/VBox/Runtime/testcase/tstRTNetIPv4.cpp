@@ -318,7 +318,6 @@ int main()
     BADCIDR("1.2.3.4/33");      /* prefix is too big */
     BADCIDR("1.2.3.4/-1");      /* prefix is negative */
     BADCIDR("1.2.3.4/");        /* prefix is missing */
-    BADCIDR("1.2.3.4/");        /* prefix is missing */
     BADCIDR("1.2.3.4/a");       /* prefix is not a number */
     BADCIDR("1.2.3.4/0xa");     /* prefix is not decimal */
 //  BADCIDR("1.2.3.0/024");     /* XXX: prefix is not decimal */
