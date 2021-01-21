@@ -81,6 +81,7 @@
 #include "CMediumAttachment.h"
 #include "CMediumFormat.h"
 #include "CAppliance.h"
+#include "CExtPack.h"
 #include "CExtPackManager.h"
 #include "CExtPackFile.h"
 #include "CHostNetworkInterface.h"
@@ -3169,6 +3170,28 @@ void UIMessageCenter::warnAboutExtPackInstalled(const QString &strPackName, QWid
     alert(pParent, MessageType_Info,
           tr("The extension pack <br><nobr><b>%1</b><nobr><br> was installed successfully.")
              .arg(strPackName));
+}
+
+void UIMessageCenter::cannotAcquireExtensionPackManager(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire Extension Pack Manager."),
+          UIErrorString::formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotAcquireExtensionPacks(const CExtPackManager &comEPManager, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire extension packs."),
+          UIErrorString::formatErrorInfo(comEPManager));
+}
+
+void UIMessageCenter::cannotAcquireExtensionPackParameter(const CExtPack &comPackage, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire parameter of the Extension Pack <b>%1</b>.")
+             .arg(CExtPack(comPackage).GetName()),
+          UIErrorString::formatErrorInfo(comPackage));
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP

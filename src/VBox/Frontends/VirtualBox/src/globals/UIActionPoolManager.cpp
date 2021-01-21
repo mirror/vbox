@@ -61,6 +61,34 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Show Extension Pack Manager' action class. */
+class UIActionSimpleManagerFileShowExtensionPackManager : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerFileShowExtensionPackManager(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/extension_pack_manager_16px.png", ":/extension_pack_manager_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ExtensionPackManager");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Extension Pack Manager..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the Extension Pack Manager window"));
+    }
+};
+
 /** Simple action extension, used as 'Show Virtual Media Manager' action class. */
 class UIActionSimpleManagerFileShowVirtualMediaManager : public UIActionSimple
 {
@@ -1782,6 +1810,36 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Show Extension Pack Manager' action class. */
+class UIActionSimpleManagerToolsGlobalShowExtensionPackManager : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerToolsGlobalShowExtensionPackManager(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/extension_pack_manager_24px.png", ":/extension_pack_manager_16px.png",
+                         ":/extension_pack_manager_disabled_24px.png", ":/extension_pack_manager_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsGlobalExtensionPackManager");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Extension Pack Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the Extension Pack Manager"));
+    }
+};
+
 /** Simple action extension, used as 'Show Virtual Media Manager' action class. */
 class UIActionSimpleManagerToolsGlobalShowVirtualMediaManager : public UIActionSimple
 {
@@ -2132,6 +2190,120 @@ protected:
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Clone selected virtual machine"));
         setToolTip(  QApplication::translate("UIActionPool", "Clone Virtual Machine")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+
+/** Menu action extension, used as 'Extension' menu class. */
+class UIActionMenuManagerExtension : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuManagerExtension(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ExtensionMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Extension"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Install' action class. */
+class UIActionSimpleManagerExtensionPerformInstall : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerExtensionPerformInstall(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+//                         ":/extension_pack_install_32px.png",          ":/extension_pack_install_16px.png",
+//                         ":/extension_pack_install_disabled_32px.png", ":/extension_pack_install_disabled_16px.png"
+                         ":/extension_pack_32px.png", ":/extension_pack_16px.png",
+                         ":/extension_pack_disabled_32px.png", ":/extension_pack_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("InstallExtension");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+I");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Install..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Extension Pack Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Install extension pack"));
+        setToolTip(  QApplication::translate("UIActionPool", "Install Extension Pack")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Perform Uninstall' action class. */
+class UIActionSimpleManagerExtensionPerformUninstall : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerExtensionPerformUninstall(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+//                         ":/extension_pack_uninstall_32px.png",          ":/extension_pack_uninstall_16px.png",
+//                         ":/extension_pack_uninstall_disabled_32px.png", ":/extension_pack_uninstall_disabled_16px.png"
+                         ":/extension_pack_32px.png", ":/extension_pack_16px.png",
+                         ":/extension_pack_disabled_32px.png", ":/extension_pack_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("UninstallExtension");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+U");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Uninstall..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Extension Pack Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Uninstall selected extension pack"));
+        setToolTip(  QApplication::translate("UIActionPool", "Uninstall Extension Pack")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -3382,6 +3554,7 @@ void UIActionPoolManager::preparePool()
 {
     /* 'File' actions: */
     m_pool[UIActionIndexMN_M_File] = new UIActionMenuManagerFile(this);
+    m_pool[UIActionIndexMN_M_File_S_ShowExtensionPackManager] = new UIActionSimpleManagerFileShowExtensionPackManager(this);
     m_pool[UIActionIndexMN_M_File_S_ShowVirtualMediumManager] = new UIActionSimpleManagerFileShowVirtualMediaManager(this);
     m_pool[UIActionIndexMN_M_File_S_ShowHostNetworkManager] = new UIActionSimpleManagerFileShowHostNetworkManager(this);
     m_pool[UIActionIndexMN_M_File_S_ShowCloudProfileManager] = new UIActionSimpleManagerFileShowCloudProfileManager(this);
@@ -3480,6 +3653,7 @@ void UIActionPoolManager::preparePool()
 
     /* Global Tools actions: */
     m_pool[UIActionIndexMN_M_Tools_M_Global] = new UIActionMenuManagerToolsGlobal(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global_S_ExtensionPackManager] = new UIActionSimpleManagerToolsGlobalShowExtensionPackManager(this);
     m_pool[UIActionIndexMN_M_Tools_M_Global_S_VirtualMediaManager] = new UIActionSimpleManagerToolsGlobalShowVirtualMediaManager(this);
     m_pool[UIActionIndexMN_M_Tools_M_Global_S_HostNetworkManager] = new UIActionSimpleManagerToolsGlobalShowHostNetworkManager(this);
     m_pool[UIActionIndexMN_M_Tools_M_Global_S_CloudProfileManager] = new UIActionSimpleManagerToolsGlobalShowCloudProfileManager(this);
@@ -3492,6 +3666,12 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Snapshot_S_Restore] = new UIActionMenuManagerSnapshotPerformRestore(this);
     m_pool[UIActionIndexMN_M_Snapshot_T_Properties] = new UIActionMenuManagerSnapshotToggleProperties(this);
     m_pool[UIActionIndexMN_M_Snapshot_S_Clone] = new UIActionMenuManagerSnapshotPerformClone(this);
+
+    /* Extension Pack Manager actions: */
+    m_pool[UIActionIndexMN_M_ExtensionWindow] = new UIActionMenuManagerExtension(this);
+    m_pool[UIActionIndexMN_M_Extension] = new UIActionMenuManagerExtension(this);
+    m_pool[UIActionIndexMN_M_Extension_S_Install] = new UIActionSimpleManagerExtensionPerformInstall(this);
+    m_pool[UIActionIndexMN_M_Extension_S_Uninstall] = new UIActionSimpleManagerExtensionPerformUninstall(this);
 
     /* Virtual Medium Manager actions: */
     m_pool[UIActionIndexMN_M_MediumWindow] = new UIActionMenuManagerMedium(this);
@@ -3567,6 +3747,8 @@ void UIActionPoolManager::preparePool()
     m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_Close].ptfm =       &UIActionPoolManager::updateMenuMachineClose;
     m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_Tools].ptfm =         &UIActionPoolManager::updateMenuGroupTools;
     m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_Tools].ptfm =       &UIActionPoolManager::updateMenuMachineTools;
+    m_menuUpdateHandlers[UIActionIndexMN_M_ExtensionWindow].ptfm =       &UIActionPoolManager::updateMenuExtensionWindow;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Extension].ptfm =             &UIActionPoolManager::updateMenuExtension;
     m_menuUpdateHandlers[UIActionIndexMN_M_MediumWindow].ptfm =          &UIActionPoolManager::updateMenuMediumWindow;
     m_menuUpdateHandlers[UIActionIndexMN_M_Medium].ptfm =                &UIActionPoolManager::updateMenuMedium;
     m_menuUpdateHandlers[UIActionIndexMN_M_NetworkWindow].ptfm =         &UIActionPoolManager::updateMenuNetworkWindow;
@@ -3640,6 +3822,10 @@ void UIActionPoolManager::updateMenus()
     /* 'Machine' / 'Tools' menu: */
     updateMenuMachineTools();
 
+    /* 'Extension Pack Manager' menu: */
+    addMenu(m_mainMenus, action(UIActionIndexMN_M_Extension));
+    updateMenuExtensionWindow();
+    updateMenuExtension();
     /* 'Virtual Media Manager' menu: */
     addMenu(m_mainMenus, action(UIActionIndexMN_M_Medium));
     updateMenuMediumWindow();
@@ -3819,6 +4005,8 @@ void UIActionPoolManager::updateMenuFile()
     /* 'Show Extra-data Manager' action goes to 'File' menu for Debug build: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowExtraDataManager));
 # endif
+    /* 'Show Extension Pack Manager' action goes to 'File' menu: */
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowExtensionPackManager));
     /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
     /* 'Show Network Manager' action goes to 'File' menu: */
@@ -3842,6 +4030,8 @@ void UIActionPoolManager::updateMenuFile()
     /* 'Extra-data Manager' action goes to 'File' menu for Debug build: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowExtraDataManager));
 # endif
+    /* 'Show Extension Pack Manager' action goes to 'File' menu: */
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowExtensionPackManager));
     /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
     /* 'Show Network Manager' action goes to 'File' menu: */
@@ -4077,6 +4267,35 @@ void UIActionPoolManager::updateMenuMachineTools()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexMN_M_Machine_M_Tools);
+}
+
+void UIActionPoolManager::updateMenuExtensionWindow()
+{
+    /* Update corresponding menu: */
+    updateMenuExtensionWrapper(action(UIActionIndexMN_M_ExtensionWindow)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexMN_M_ExtensionWindow);
+}
+
+void UIActionPoolManager::updateMenuExtension()
+{
+    /* Update corresponding menu: */
+    updateMenuExtensionWrapper(action(UIActionIndexMN_M_Extension)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexMN_M_Extension);
+}
+
+void UIActionPoolManager::updateMenuExtensionWrapper(UIMenu *pMenu)
+{
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* 'Add' action: */
+    addAction(pMenu, action(UIActionIndexMN_M_Extension_S_Install));
+    /* 'Remove' action: */
+    addAction(pMenu, action(UIActionIndexMN_M_Extension_S_Uninstall));
 }
 
 void UIActionPoolManager::updateMenuMediumWindow()

@@ -43,6 +43,7 @@
 #include "UIDesktopServices.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIErrorString.h"
+#include "UIExtensionPackManager.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
@@ -465,6 +466,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     : m_fPolished(false)
     , m_fFirstMediumEnumerationHandled(false)
     , m_pActionPool(0)
+    , m_pManagerExtensionPack(0)
     , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
     , m_pManagerCloudProfile(0)
@@ -702,6 +704,7 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     /* Make sure separate dialogs are closed when corresponding tools are opened: */
     switch (m_pWidget->toolsType())
     {
+        case UIToolType_Extensions:  sltCloseExtensionPackManagerWindow(); break;
         case UIToolType_Media:       sltCloseVirtualMediumManagerWindow(); break;
         case UIToolType_Network:     sltCloseNetworkManagerWindow(); break;
         case UIToolType_Cloud:       sltCloseCloudProfileManagerWindow(); break;
@@ -731,6 +734,36 @@ void UIVirtualBoxManager::sltHandleMenuPrepare(int iIndex, QMenu *pMenu)
     /* Update if there is update-handler: */
     if (m_menuUpdateHandlers.contains(iIndex))
         (this->*(m_menuUpdateHandlers.value(iIndex)))(pMenu);
+}
+
+void UIVirtualBoxManager::sltOpenExtensionPackManagerWindow()
+{
+    /* First check if instance of widget opened the embedded way: */
+    if (m_pWidget->isGlobalToolOpened(UIToolType_Extensions))
+    {
+        m_pWidget->setToolsType(UIToolType_Welcome);
+        m_pWidget->closeGlobalTool(UIToolType_Extensions);
+    }
+
+    /* Create instance if not yet created: */
+    if (!m_pManagerExtensionPack)
+    {
+        UIExtensionPackManagerFactory(m_pActionPool).prepare(m_pManagerExtensionPack, this);
+        connect(m_pManagerExtensionPack, &QIManagerDialog::sigClose,
+                this, &UIVirtualBoxManager::sltCloseExtensionPackManagerWindow);
+    }
+
+    /* Show instance: */
+    m_pManagerExtensionPack->show();
+    m_pManagerExtensionPack->setWindowState(m_pManagerExtensionPack->windowState() & ~Qt::WindowMinimized);
+    m_pManagerExtensionPack->activateWindow();
+}
+
+void UIVirtualBoxManager::sltCloseExtensionPackManagerWindow()
+{
+    /* Destroy instance if still exists: */
+    if (m_pManagerExtensionPack)
+        UIExtensionPackManagerFactory().cleanup(m_pManagerExtensionPack);
 }
 
 void UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow()
@@ -2312,6 +2345,8 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool(), &UIActionPool::sigNotifyAboutMenuPrepare, this, &UIVirtualBoxManager::sltHandleMenuPrepare);
 
     /* 'File' menu connections: */
+    connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowExtensionPackManager), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenExtensionPackManagerWindow);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager), &UIAction::triggered,
@@ -2540,6 +2575,7 @@ void UIVirtualBoxManager::cleanupMenuBar()
 void UIVirtualBoxManager::cleanup()
 {
     /* Close the sub-dialogs first: */
+    sltCloseExtensionPackManagerWindow();
     sltCloseVirtualMediumManagerWindow();
     sltCloseNetworkManagerWindow();
     sltCloseCloudProfileManagerWindow();
@@ -3125,6 +3161,9 @@ void UIVirtualBoxManager::updateActionsVisibility()
     actionPool()->action(UIActionIndexMN_M_Group)->setVisible(fGroupMenuShown);
     actionPool()->action(UIActionIndexMN_M_Machine)->setVisible(fMachineMenuShown);
 
+    /* Determine whether Extensions menu should be visible: */
+    const bool fExtensionsMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Extensions;
+    actionPool()->action(UIActionIndexMN_M_Extension)->setVisible(fExtensionsMenuShown);
     /* Determine whether Media menu should be visible: */
     const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Media;
     actionPool()->action(UIActionIndexMN_M_Medium)->setVisible(fMediumMenuShown);

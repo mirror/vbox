@@ -154,6 +154,11 @@ private slots:
 
     /** @name File menu stuff.
       * @{ */
+        /** Handles call to open Extension Pack Manager window. */
+        void sltOpenExtensionPackManagerWindow();
+        /** Handles call to close Extension Pack Manager window. */
+        void sltCloseExtensionPackManagerWindow();
+
         /** Handles call to open Virtual Medium Manager window. */
         void sltOpenVirtualMediumManagerWindow();
         /** Handles call to close Virtual Medium Manager window. */
@@ -463,6 +468,8 @@ private:
     /** Holds the map of menu update-handlers. */
     QMap<int, MenuUpdateHandler> m_menuUpdateHandlers;
 
+    /** Holds the Extension Pack window instance. */
+    QIManagerDialog *m_pManagerExtensionPack;
     /** Holds the Virtual Media Manager window instance. */
     QIManagerDialog *m_pManagerVirtualMedia;
     /** Holds the Network Manager window instance. */

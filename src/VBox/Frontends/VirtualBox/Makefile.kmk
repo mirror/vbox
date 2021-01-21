@@ -257,6 +257,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/cloud/machinesettings \
 	./src/cloud/profilemanager \
 	./src/converter \
+	./src/extensionpackmanager \
 	./src/extensions \
 	./src/extensions/graphics \
 	./src/extradata \
@@ -572,6 +573,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/cloud/machinesettings/UICloudMachineSettingsDialogPage.h \
 	src/cloud/profilemanager/UICloudProfileDetailsWidget.h \
 	src/cloud/profilemanager/UICloudProfileManager.h \
+	src/extensionpackmanager/UIExtensionPackManager.h \
 	src/globals/UIStarter.h \
 	src/manager/UIErrorPane.h \
 	src/manager/UIProgressTaskReadCloudMachineList.h \
@@ -936,6 +938,7 @@ UICommon_QT_MOCHDRS.darwin += \
 VirtualBox_QT_MOCSRCS = \
 	src/cloud/consolemanager/UICloudConsoleManager.cpp \
 	src/cloud/profilemanager/UICloudProfileManager.cpp \
+	src/extensionpackmanager/UIExtensionPackManager.cpp \
 	src/manager/UIVirtualBoxManager.cpp \
 	src/manager/UIVirtualMachineItemCloud.cpp \
 	src/manager/UIWelcomePane.cpp \
@@ -1051,6 +1054,7 @@ VirtualBox_SOURCES = \
 	src/cloud/machinesettings/UICloudMachineSettingsDialogPage.cpp \
 	src/cloud/profilemanager/UICloudProfileDetailsWidget.cpp \
 	src/cloud/profilemanager/UICloudProfileManager.cpp \
+	src/extensionpackmanager/UIExtensionPackManager.cpp \
 	src/globals/UIStarter.cpp \
 	src/manager/UICloudEntityKey.cpp \
 	src/manager/UIErrorPane.cpp \

@@ -792,6 +792,12 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Welcome_S_Add));
                     break;
                 }
+                case UIToolType_Extensions:
+                {
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Extension_S_Install));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Extension_S_Uninstall));
+                    break;
+                }
                 case UIToolType_Media:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Medium_S_Add));

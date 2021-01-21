@@ -26,6 +26,7 @@
 #include "UIActionPoolManager.h"
 #include "UICommon.h"
 #include "UICloudProfileManager.h"
+#include "UIExtensionPackManager.h"
 #include "UIMediumManager.h"
 #include "UINetworkManager.h"
 #include "UIToolPaneGlobal.h"
@@ -41,6 +42,7 @@ UIToolPaneGlobal::UIToolPaneGlobal(UIActionPool *pActionPool, QWidget *pParent /
     , m_pActionPool(pActionPool)
     , m_pLayout(0)
     , m_pPaneWelcome(0)
+    , m_pPaneExtensions(0)
     , m_pPaneMedia(0)
     , m_pPaneNetwork(0)
     , m_pPaneCloud(0)
@@ -117,6 +119,26 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneWelcome);
                     m_pLayout->setCurrentWidget(m_pPaneWelcome);
+                }
+                break;
+            }
+            case UIToolType_Extensions:
+            {
+                /* Create Extension Pack Manager: */
+                m_pPaneExtensions = new UIExtensionPackManagerWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
+                AssertPtrReturnVoid(m_pPaneExtensions);
+                {
+#ifndef VBOX_WS_MAC
+                    const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
+                    m_pPaneExtensions->setContentsMargins(iMargin, 0, iMargin, 0);
+#endif
+
+                    /* Configure pane: */
+                    m_pPaneExtensions->setProperty("ToolType", QVariant::fromValue(UIToolType_Extensions));
+
+                    /* Add into layout: */
+                    m_pLayout->addWidget(m_pPaneExtensions);
+                    m_pLayout->setCurrentWidget(m_pPaneExtensions);
                 }
                 break;
             }
@@ -226,10 +248,11 @@ void UIToolPaneGlobal::closeTool(UIToolType enmType)
         /* Forget corresponding widget: */
         switch (enmType)
         {
-            case UIToolType_Welcome: m_pPaneWelcome = 0; break;
-            case UIToolType_Media:   m_pPaneMedia = 0; break;
-            case UIToolType_Network: m_pPaneNetwork = 0; break;
-            case UIToolType_Cloud:   m_pPaneCloud = 0; break;
+            case UIToolType_Welcome:    m_pPaneWelcome = 0; break;
+            case UIToolType_Extensions: m_pPaneExtensions = 0; break;
+            case UIToolType_Media:      m_pPaneMedia = 0; break;
+            case UIToolType_Network:    m_pPaneNetwork = 0; break;
+            case UIToolType_Cloud:      m_pPaneCloud = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */
@@ -250,6 +273,9 @@ QString UIToolPaneGlobal::currentHelpKeyword() const
     {
         case UIToolType_Welcome:
             pCurrentToolWidget = m_pPaneWelcome;
+            break;
+        case UIToolType_Extensions:
+            pCurrentToolWidget = m_pPaneExtensions;
             break;
         case UIToolType_Media:
             pCurrentToolWidget = m_pPaneMedia;

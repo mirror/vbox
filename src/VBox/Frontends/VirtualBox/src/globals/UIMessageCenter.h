@@ -540,6 +540,9 @@ public:
     void cannotUninstallExtPack(const CExtPackManager &extPackManager, const QString &strPackName, QWidget *pParent = 0) const;
     void cannotUninstallExtPack(const CProgress &progress, const QString &strPackName, QWidget *pParent = 0) const;
     void warnAboutExtPackInstalled(const QString &strPackName, QWidget *pParent = 0) const;
+    void cannotAcquireExtensionPackManager(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
+    void cannotAcquireExtensionPacks(const CExtPackManager &comEPManager, QWidget *pParent = 0) const;
+    void cannotAcquireExtensionPackParameter(const CExtPack &comPackage, QWidget *pParent = 0) const;
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     /* API: Drag and drop warnings: */

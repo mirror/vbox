@@ -440,6 +440,7 @@ void UIToolsModel::retranslateUi()
         switch (pItem->itemType())
         {
             case UIToolType_Welcome:     pItem->reconfigure(tr("Welcome")); break;
+            case UIToolType_Extensions:  pItem->reconfigure(tr("Extensions")); break;
             case UIToolType_Media:       pItem->reconfigure(tr("Media")); break;
             case UIToolType_Network:     pItem->reconfigure(tr("Network")); break;
             case UIToolType_Cloud:       pItem->reconfigure(tr("Cloud")); break;
@@ -488,6 +489,10 @@ void UIToolsModel::prepareItems()
     /* Welcome: */
     m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Welcome, QString(),
                                UIIconPool::iconSet(":/welcome_screen_24px.png", ":/welcome_screen_24px.png"));
+
+    /* Extensions: */
+    m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Extensions, QString(),
+                               UIIconPool::iconSet(":/extension_pack_manager_24px.png", ":/extension_pack_manager_disabled_24px.png"));
 
     /* Media: */
     m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Media, QString(),

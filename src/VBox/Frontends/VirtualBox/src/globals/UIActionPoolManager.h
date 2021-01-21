@@ -36,6 +36,7 @@ enum UIActionIndexMN
 {
     /* 'File' menu actions: */
     UIActionIndexMN_M_File = UIActionIndex_Max + 1,
+    UIActionIndexMN_M_File_S_ShowExtensionPackManager,
     UIActionIndexMN_M_File_S_ShowVirtualMediumManager,
     UIActionIndexMN_M_File_S_ShowHostNetworkManager,
     UIActionIndexMN_M_File_S_ShowCloudProfileManager,
@@ -133,6 +134,7 @@ enum UIActionIndexMN
 
     /* Global Tools actions: */
     UIActionIndexMN_M_Tools_M_Global,
+    UIActionIndexMN_M_Tools_M_Global_S_ExtensionPackManager,
     UIActionIndexMN_M_Tools_M_Global_S_VirtualMediaManager,
     UIActionIndexMN_M_Tools_M_Global_S_HostNetworkManager,
     UIActionIndexMN_M_Tools_M_Global_S_CloudProfileManager,
@@ -145,6 +147,12 @@ enum UIActionIndexMN
     UIActionIndexMN_M_Snapshot_S_Restore,
     UIActionIndexMN_M_Snapshot_T_Properties,
     UIActionIndexMN_M_Snapshot_S_Clone,
+
+    /* Extension Pack Manager actions: */
+    UIActionIndexMN_M_ExtensionWindow,
+    UIActionIndexMN_M_Extension,
+    UIActionIndexMN_M_Extension_S_Install,
+    UIActionIndexMN_M_Extension_S_Uninstall,
 
     /* Virtual Media Manager actions: */
     UIActionIndexMN_M_MediumWindow,
@@ -256,6 +264,13 @@ private:
     void updateMenuGroupTools();
     /** Updates 'Machine' / 'Tools' menu. */
     void updateMenuMachineTools();
+
+    /** Updates 'Extension Pack' window menu. */
+    void updateMenuExtensionWindow();
+    /** Updates 'Extension Pack' menu. */
+    void updateMenuExtension();
+    /** Updates 'Extension Pack' @a pMenu. */
+    void updateMenuExtensionWrapper(UIMenu *pMenu);
 
     /** Updates 'Medium' window menu. */
     void updateMenuMediumWindow();

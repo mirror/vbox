@@ -33,6 +33,7 @@ class QStackedLayout;
 class QVBoxLayout;
 class UIActionPool;
 class UICloudProfileManagerWidget;
+class UIExtensionPackManagerWidget;
 class UIMediumManagerWidget;
 class UINetworkManagerWidget;
 class UIResourceMonitorWidget;
@@ -90,17 +91,19 @@ private:
     UIActionPool *m_pActionPool;
 
     /** Holds the stacked-layout instance. */
-    QStackedLayout              *m_pLayout;
+    QStackedLayout               *m_pLayout;
     /** Holds the Welcome pane instance. */
-    UIWelcomePane               *m_pPaneWelcome;
+    UIWelcomePane                *m_pPaneWelcome;
+    /** Holds the Extension Pack Manager instance. */
+    UIExtensionPackManagerWidget *m_pPaneExtensions;
     /** Holds the Virtual Media Manager instance. */
-    UIMediumManagerWidget       *m_pPaneMedia;
+    UIMediumManagerWidget        *m_pPaneMedia;
     /** Holds the Network Manager instance. */
-    UINetworkManagerWidget      *m_pPaneNetwork;
+    UINetworkManagerWidget       *m_pPaneNetwork;
     /** Holds the Cloud Profile Manager instance. */
-    UICloudProfileManagerWidget *m_pPaneCloud;
+    UICloudProfileManagerWidget  *m_pPaneCloud;
     /** Holds the VM Resource Monitor instance. */
-    UIResourceMonitorWidget     *m_pPaneResourceMonitor;
+    UIResourceMonitorWidget      *m_pPaneResourceMonitor;
 
     /** Holds whether this pane is active. */
     bool  m_fActive;
