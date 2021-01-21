@@ -40,13 +40,23 @@
 RT_C_DECLS_BEGIN
 
 /**
- * Parse a string which contains an IP address in CIDR (Classless Inter-Domain Routing) notation.
+ * Parse a string which contains an IP address in CIDR (Classless
+ * Inter-Domain Routing) notation.
+ *
+ * @warning The network address and the network mask are returned in
+ *      @b host(!) byte order.  This is different from all the other
+ *      RTNetStrTo* functions.
+ *
+ * @deprecated This function is superseded by RTNetStrToIPv4Cidr()
+ *      that provides a better API consistent with other functions
+ *      from that family.  It returns the prefix length, if you need a
+ *      netmask, you can obtain it with RTNetPrefixToMaskIPv4().
  *
  * @return iprt status code.
  *
  * @param   pszAddress  The IP address in CIDR specificaion.
- * @param   pNetwork    The determined IP address / network.
- * @param   pNetmask    The determined netmask.
+ * @param   pNetwork    The determined IP address / network in host byte order.
+ * @param   pNetmask    The determined netmask in host byte order.
  */
 RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTNETADDRIPV4 pNetwork, PRTNETADDRIPV4 pNetmask);
 
