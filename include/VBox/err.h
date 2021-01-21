@@ -2229,6 +2229,14 @@
 /** The requested nested-guest SVM intercept is not active or not in
  *  nested-guest execution mode. */
 #define VINF_SVM_INTERCEPT_NOT_ACTIVE               4069
+/** Precodition no 0 in hmR0SvmVmRun failed. */
+#define VERR_SVM_VMRUN_PRECOND_0                    (-4070)
+/** Precodition no 1 in hmR0SvmVmRun failed. */
+#define VERR_SVM_VMRUN_PRECOND_1                    (-4071)
+/** Precodition no 2 in hmR0SvmVmRun failed. */
+#define VERR_SVM_VMRUN_PRECOND_2                    (-4072)
+/** Precodition no 3 in hmR0SvmVmRun failed. */
+#define VERR_SVM_VMRUN_PRECOND_3                    (-4073)
 /** @} */
 
 
