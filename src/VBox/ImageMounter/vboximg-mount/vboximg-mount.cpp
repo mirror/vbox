@@ -146,7 +146,7 @@ static struct fuse_opt vboximgOptDefs[] = {
     OPTION("--image %s",         pszImageUuidOrPath,   0),
     OPTION("-i %s",              pszImageUuidOrPath,   0),
     OPTION("--rw",               fRW,                  1),
-    OPTION("--root",             fAllowRoot,           0),
+    OPTION("--root",             fAllowRoot,           1),
     OPTION("--vm %s",            pszVm,                0),
     OPTION("-l",                 fList,                1),
     OPTION("--list",             fList,                1),
