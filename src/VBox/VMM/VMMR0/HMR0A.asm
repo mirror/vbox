@@ -446,7 +446,6 @@ ENDPROC VMXDispatchHostNmi
 
 
 %ifdef VBOX_WITH_KERNEL_USING_XMM
-
 ;;
 ; Wrapper around vmx.pfnStartVM that preserves host XMM registers and
 ; load the guest ones when necessary.
@@ -627,178 +626,6 @@ ALIGNCODE(8)
         movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0f0h], xmm15
         jmp     .restore_non_volatile_host_xmm_regs
 ENDPROC   hmR0VMXStartVMWrapXMM
-
-;;
-; Wrapper around svm.pfnVMRun that preserves host XMM registers and
-; load the guest ones when necessary.
-;
-; @cproto       DECLASM(int) hmR0SVMRunWrapXMM(PVM pVM, PVMCPU pVCpu, RTHCPHYS HCPhysVmcb, PFNHMSVMVMRUN pfnVMRun);
-;
-; @returns      eax
-;
-; @param        pVM             msc:rcx
-; @param        pVCpu           msc:rdx        The cross context virtual CPU structure of the calling EMT.
-; @param        HCPhysVmcb      msc:r8
-; @param        pfnVMRun        msc:r9
-;
-; @remarks      This is essentially the same code as hmR0VMXStartVMWrapXMM, only the parameters differ a little bit.
-;
-; @remarks      Drivers shouldn't use AVX registers without saving+loading:
-;                   https://msdn.microsoft.com/en-us/library/windows/hardware/ff545910%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
-;               However the compiler docs have different idea:
-;                   https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
-;               We'll go with the former for now.
-;
-; ASSUMING 64-bit and windows for now.
-ALIGNCODE(64)
-BEGINPROC hmR0SVMRunWrapXMM
-        SEH64_END_PROLOGUE
-        push    xBP
-        mov     xBP, xSP
-        sub     xSP, 0b0h + 040h        ; don't bother optimizing the frame size
-
-%ifndef ASM_CALL64_MSC
- %error "MSC only"
-%endif
-        ; Spill input parameters.
-        mov     [xBP + 010h], rcx       ; pVM
-        mov     [xBP + 018h], rdx       ; pVCpu
-        mov     [xBP + 020h], r8        ; HCPhysVmcb
-        mov     [xBP + 028h], r9        ; pfnVMRun
-
-        ; Ask CPUM whether we've started using the FPU yet.
-;; @todo implement this in assembly, it's just checking a couple of things. Or have the C code do it.
-        mov     rcx, rdx                ; pVCpu
-        call    NAME(CPUMIsGuestFPUStateActive)
-        test    al, al
-
-        mov     rcx, [xBP + 010h]       ; pVM
-        mov     rdx, [xBP + 018h]       ; pVCpu
-        mov     r8,  [xBP + 020h]       ; HCPhysVmcb
-        mov     r9,  [xBP + 028h]       ; pfnVMRun
-
-        jnz     .guest_fpu_state_active
-
-        ; No need to mess with XMM registers just call the start routine and return.
-        call    r9
-
-        leave
-        ret
-
-ALIGNCODE(8)
-.guest_fpu_state_active:
-        ; Save the non-volatile host XMM registers.
-;; @todo change to rbp relative addressing as that saves a byte per instruction!
-        movdqa  [rsp + 040h + 000h], xmm6
-        movdqa  [rsp + 040h + 010h], xmm7
-        movdqa  [rsp + 040h + 020h], xmm8
-        movdqa  [rsp + 040h + 030h], xmm9
-        movdqa  [rsp + 040h + 040h], xmm10
-        movdqa  [rsp + 040h + 050h], xmm11
-        movdqa  [rsp + 040h + 060h], xmm12
-        movdqa  [rsp + 040h + 070h], xmm13
-        movdqa  [rsp + 040h + 080h], xmm14
-        movdqa  [rsp + 040h + 090h], xmm15
-        stmxcsr [rsp + 040h + 0a0h]
-
-        mov     r11, rdx                ; r11 = pVCpu (rdx may get trashed)
-        mov     eax, [rdx + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask]
-        test    eax, eax
-        jz      .guest_fpu_state_manually
-
-        ;
-        ; Using XSAVE.
-        ;
-        and     eax, CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS
-        xor     edx, edx
-        mov     r10, [r11 + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
-        xrstor  [r10]
-
-        ; Make the call (same as in the other case).
-        mov     rdx, r11                ; restore pVCpu to rdx
-        call    r9
-
-        mov     r10d, eax               ; save return value (xsave below uses eax)
-
-        ; Save the guest XMM registers.
-        mov     rcx, [xBP + 018h]       ; pVCpu
-        mov     eax, [rcx + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask]
-        and     eax, CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS
-        mov     rcx, [rcx + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
-        xor     edx, edx
-        xsave   [rcx]
-
-        mov     eax, r10d               ; restore return value
-
-.restore_non_volatile_host_xmm_regs:
-        ; Load the non-volatile host XMM registers.
-;; @todo change to rbp relative addressing as that saves a byte per instruction!
-        movdqa  xmm6,  [rsp + 040h + 000h]
-        movdqa  xmm7,  [rsp + 040h + 010h]
-        movdqa  xmm8,  [rsp + 040h + 020h]
-        movdqa  xmm9,  [rsp + 040h + 030h]
-        movdqa  xmm10, [rsp + 040h + 040h]
-        movdqa  xmm11, [rsp + 040h + 050h]
-        movdqa  xmm12, [rsp + 040h + 060h]
-        movdqa  xmm13, [rsp + 040h + 070h]
-        movdqa  xmm14, [rsp + 040h + 080h]
-        movdqa  xmm15, [rsp + 040h + 090h]
-        ldmxcsr [rsp + 040h + 0a0h]
-        leave
-        ret
-
-        ;
-        ; No XSAVE, load and save the guest XMM registers manually.
-        ;
-ALIGNCODE(8)
-.guest_fpu_state_manually:
-        ; Load the full guest XMM register state.
-        mov     rdx, [r11 + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
-        movdqa  xmm0,  [rdx + XMM_OFF_IN_X86FXSTATE + 000h]
-        movdqa  xmm1,  [rdx + XMM_OFF_IN_X86FXSTATE + 010h]
-        movdqa  xmm2,  [rdx + XMM_OFF_IN_X86FXSTATE + 020h]
-        movdqa  xmm3,  [rdx + XMM_OFF_IN_X86FXSTATE + 030h]
-        movdqa  xmm4,  [rdx + XMM_OFF_IN_X86FXSTATE + 040h]
-        movdqa  xmm5,  [rdx + XMM_OFF_IN_X86FXSTATE + 050h]
-        movdqa  xmm6,  [rdx + XMM_OFF_IN_X86FXSTATE + 060h]
-        movdqa  xmm7,  [rdx + XMM_OFF_IN_X86FXSTATE + 070h]
-        movdqa  xmm8,  [rdx + XMM_OFF_IN_X86FXSTATE + 080h]
-        movdqa  xmm9,  [rdx + XMM_OFF_IN_X86FXSTATE + 090h]
-        movdqa  xmm10, [rdx + XMM_OFF_IN_X86FXSTATE + 0a0h]
-        movdqa  xmm11, [rdx + XMM_OFF_IN_X86FXSTATE + 0b0h]
-        movdqa  xmm12, [rdx + XMM_OFF_IN_X86FXSTATE + 0c0h]
-        movdqa  xmm13, [rdx + XMM_OFF_IN_X86FXSTATE + 0d0h]
-        movdqa  xmm14, [rdx + XMM_OFF_IN_X86FXSTATE + 0e0h]
-        movdqa  xmm15, [rdx + XMM_OFF_IN_X86FXSTATE + 0f0h]
-        ldmxcsr        [rdx + X86FXSTATE.MXCSR]
-
-        ; Make the call (same as in the other case).
-        mov     rdx, r11                ; restore pVCpu to rdx
-        call    r9
-
-        ; Save the guest XMM registers.
-        mov     rdx, [xBP + 018h]       ; pVCpu
-        mov     rdx, [rdx + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
-        stmxcsr [rdx + X86FXSTATE.MXCSR]
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 000h], xmm0
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 010h], xmm1
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 020h], xmm2
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 030h], xmm3
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 040h], xmm4
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 050h], xmm5
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 060h], xmm6
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 070h], xmm7
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 080h], xmm8
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 090h], xmm9
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0a0h], xmm10
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0b0h], xmm11
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0c0h], xmm12
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0d0h], xmm13
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0e0h], xmm14
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0f0h], xmm15
-        jmp     .restore_non_volatile_host_xmm_regs
-ENDPROC   hmR0SVMRunWrapXMM
-
 %endif ; VBOX_WITH_KERNEL_USING_XMM
 
 
@@ -1087,6 +914,180 @@ BEGINPROC hmR0MdsClear
         ret
 ENDPROC   hmR0MdsClear
 
+
+%ifdef VBOX_WITH_KERNEL_USING_XMM
+;;
+; Wrapper around svm.pfnVMRun that preserves host XMM registers and
+; load the guest ones when necessary.
+;
+; @cproto       DECLASM(int) hmR0SVMRunWrapXMM(PVM pVM, PVMCPU pVCpu, RTHCPHYS HCPhysVmcb, PFNHMSVMVMRUN pfnVMRun);
+;
+; @returns      eax
+;
+; @param        pVM             msc:rcx
+; @param        pVCpu           msc:rdx        The cross context virtual CPU structure of the calling EMT.
+; @param        HCPhysVmcb      msc:r8
+; @param        pfnVMRun        msc:r9
+;
+; @remarks      This is essentially the same code as hmR0VMXStartVMWrapXMM, only the parameters differ a little bit.
+;
+; @remarks      Drivers shouldn't use AVX registers without saving+loading:
+;                   https://msdn.microsoft.com/en-us/library/windows/hardware/ff545910%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
+;               However the compiler docs have different idea:
+;                   https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
+;               We'll go with the former for now.
+;
+; ASSUMING 64-bit and windows for now.
+ALIGNCODE(64)
+BEGINPROC hmR0SVMRunWrapXMM
+        SEH64_END_PROLOGUE
+        push    xBP
+        mov     xBP, xSP
+        sub     xSP, 0b0h + 040h        ; don't bother optimizing the frame size
+
+%ifndef ASM_CALL64_MSC
+ %error "MSC only"
+%endif
+        ; Spill input parameters.
+        mov     [xBP + 010h], rcx       ; pVM
+        mov     [xBP + 018h], rdx       ; pVCpu
+        mov     [xBP + 020h], r8        ; HCPhysVmcb
+        mov     [xBP + 028h], r9        ; pfnVMRun
+
+        ; Ask CPUM whether we've started using the FPU yet.
+;; @todo implement this in assembly, it's just checking a couple of things. Or have the C code do it.
+        mov     rcx, rdx                ; pVCpu
+        call    NAME(CPUMIsGuestFPUStateActive)
+        test    al, al
+
+        mov     rcx, [xBP + 010h]       ; pVM
+        mov     rdx, [xBP + 018h]       ; pVCpu
+        mov     r8,  [xBP + 020h]       ; HCPhysVmcb
+        mov     r9,  [xBP + 028h]       ; pfnVMRun
+
+        jnz     .guest_fpu_state_active
+
+        ; No need to mess with XMM registers just call the start routine and return.
+        call    r9
+
+        leave
+        ret
+
+ALIGNCODE(8)
+.guest_fpu_state_active:
+        ; Save the non-volatile host XMM registers.
+;; @todo change to rbp relative addressing as that saves a byte per instruction!
+        movdqa  [rsp + 040h + 000h], xmm6
+        movdqa  [rsp + 040h + 010h], xmm7
+        movdqa  [rsp + 040h + 020h], xmm8
+        movdqa  [rsp + 040h + 030h], xmm9
+        movdqa  [rsp + 040h + 040h], xmm10
+        movdqa  [rsp + 040h + 050h], xmm11
+        movdqa  [rsp + 040h + 060h], xmm12
+        movdqa  [rsp + 040h + 070h], xmm13
+        movdqa  [rsp + 040h + 080h], xmm14
+        movdqa  [rsp + 040h + 090h], xmm15
+        stmxcsr [rsp + 040h + 0a0h]
+
+        mov     r11, rdx                ; r11 = pVCpu (rdx may get trashed)
+        mov     eax, [rdx + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask]
+        test    eax, eax
+        jz      .guest_fpu_state_manually
+
+        ;
+        ; Using XSAVE.
+        ;
+        and     eax, CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS
+        xor     edx, edx
+        mov     r10, [r11 + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
+        xrstor  [r10]
+
+        ; Make the call (same as in the other case).
+        mov     rdx, r11                ; restore pVCpu to rdx
+        call    r9
+
+        mov     r10d, eax               ; save return value (xsave below uses eax)
+
+        ; Save the guest XMM registers.
+        mov     rcx, [xBP + 018h]       ; pVCpu
+        mov     eax, [rcx + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask]
+        and     eax, CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS
+        mov     rcx, [rcx + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
+        xor     edx, edx
+        xsave   [rcx]
+
+        mov     eax, r10d               ; restore return value
+
+.restore_non_volatile_host_xmm_regs:
+        ; Load the non-volatile host XMM registers.
+;; @todo change to rbp relative addressing as that saves a byte per instruction!
+        movdqa  xmm6,  [rsp + 040h + 000h]
+        movdqa  xmm7,  [rsp + 040h + 010h]
+        movdqa  xmm8,  [rsp + 040h + 020h]
+        movdqa  xmm9,  [rsp + 040h + 030h]
+        movdqa  xmm10, [rsp + 040h + 040h]
+        movdqa  xmm11, [rsp + 040h + 050h]
+        movdqa  xmm12, [rsp + 040h + 060h]
+        movdqa  xmm13, [rsp + 040h + 070h]
+        movdqa  xmm14, [rsp + 040h + 080h]
+        movdqa  xmm15, [rsp + 040h + 090h]
+        ldmxcsr [rsp + 040h + 0a0h]
+        leave
+        ret
+
+        ;
+        ; No XSAVE, load and save the guest XMM registers manually.
+        ;
+ALIGNCODE(8)
+.guest_fpu_state_manually:
+        ; Load the full guest XMM register state.
+        mov     rdx, [r11 + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
+        movdqa  xmm0,  [rdx + XMM_OFF_IN_X86FXSTATE + 000h]
+        movdqa  xmm1,  [rdx + XMM_OFF_IN_X86FXSTATE + 010h]
+        movdqa  xmm2,  [rdx + XMM_OFF_IN_X86FXSTATE + 020h]
+        movdqa  xmm3,  [rdx + XMM_OFF_IN_X86FXSTATE + 030h]
+        movdqa  xmm4,  [rdx + XMM_OFF_IN_X86FXSTATE + 040h]
+        movdqa  xmm5,  [rdx + XMM_OFF_IN_X86FXSTATE + 050h]
+        movdqa  xmm6,  [rdx + XMM_OFF_IN_X86FXSTATE + 060h]
+        movdqa  xmm7,  [rdx + XMM_OFF_IN_X86FXSTATE + 070h]
+        movdqa  xmm8,  [rdx + XMM_OFF_IN_X86FXSTATE + 080h]
+        movdqa  xmm9,  [rdx + XMM_OFF_IN_X86FXSTATE + 090h]
+        movdqa  xmm10, [rdx + XMM_OFF_IN_X86FXSTATE + 0a0h]
+        movdqa  xmm11, [rdx + XMM_OFF_IN_X86FXSTATE + 0b0h]
+        movdqa  xmm12, [rdx + XMM_OFF_IN_X86FXSTATE + 0c0h]
+        movdqa  xmm13, [rdx + XMM_OFF_IN_X86FXSTATE + 0d0h]
+        movdqa  xmm14, [rdx + XMM_OFF_IN_X86FXSTATE + 0e0h]
+        movdqa  xmm15, [rdx + XMM_OFF_IN_X86FXSTATE + 0f0h]
+        ldmxcsr        [rdx + X86FXSTATE.MXCSR]
+
+        ; Make the call (same as in the other case).
+        mov     rdx, r11                ; restore pVCpu to rdx
+        call    r9
+
+        ; Save the guest XMM registers.
+        mov     rdx, [xBP + 018h]       ; pVCpu
+        mov     rdx, [rdx + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
+        stmxcsr [rdx + X86FXSTATE.MXCSR]
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 000h], xmm0
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 010h], xmm1
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 020h], xmm2
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 030h], xmm3
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 040h], xmm4
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 050h], xmm5
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 060h], xmm6
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 070h], xmm7
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 080h], xmm8
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 090h], xmm9
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0a0h], xmm10
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0b0h], xmm11
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0c0h], xmm12
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0d0h], xmm13
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0e0h], xmm14
+        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0f0h], xmm15
+        jmp     .restore_non_volatile_host_xmm_regs
+ENDPROC   hmR0SVMRunWrapXMM
+
+%endif ; VBOX_WITH_KERNEL_USING_XMM
 
 ;;
 ; Prepares for and executes VMRUN (32-bit and 64-bit guests).
