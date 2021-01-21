@@ -200,7 +200,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
     if (m_pAdditionalOptionsContainer)
         m_pAdditionalOptionsContainer->setTitle(UIWizardNewVM::tr("Additional options"));
     if (m_pGAInstallationISOContainer)
-        m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("Guest Additions Installation Medium (ISO)"));
+        m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("Guest Additions"));
     if (m_pToolBox)
     {
         m_pToolBox->setItemText(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and operating system")));
@@ -208,6 +208,12 @@ void UIWizardNewVMPageExpert::retranslateUi()
         m_pToolBox->setItemText(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard disk"));
         m_pToolBox->setItemText(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("Hardware"));
     }
+}
+
+void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
+{
+    disableEnableGAWidgets(fEnabled);
+    emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::createConnections()
@@ -236,6 +242,10 @@ void UIWizardNewVMPageExpert::createConnections()
     if (m_pGAISOFilePathSelector)
         connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
                 this, &UIWizardNewVMPageExpert::sltGAISOPathChanged);
+
+    if (m_pGAInstallCheckBox)
+        connect(m_pGAInstallCheckBox, &QCheckBox::toggled,
+                this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
 
     /* Connections for disk and hardware stuff: */
     if (m_pDiskSkip)
@@ -381,23 +391,27 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
         if (m_pHostnameLineEdit)
             pAdditionalOptionsContainerLayout->addWidget(m_pHostnameLineEdit, 2, 1, 1, 3);
 
-        // pAdditionalOptionsContainerLayout->addWidget(createHostNameWidgets());
-
-        // pAdditionalOptionsContainerLayout->addStretch();
         pLayout->addWidget(m_pAdditionalOptionsContainer, iRow, 2, 1, 2);
     }
     ++iRow;
     /* Guest additions installation: */
     {
         m_pGAInstallationISOContainer = new QGroupBox;
-        QHBoxLayout *pGAInstallationISOContainer = new QHBoxLayout(m_pGAInstallationISOContainer);
+        QGridLayout *pGAInstallationISOContainer = new QGridLayout(m_pGAInstallationISOContainer);
+        m_pGAInstallCheckBox = new QCheckBox;
+        if (m_pGAInstallCheckBox)
+            pGAInstallationISOContainer->addWidget(m_pGAInstallCheckBox, 0, 0, 1, 8);
+        m_pGAISOPathLabel = new QLabel;
+        if (m_pGAISOPathLabel)
+            pGAInstallationISOContainer->addWidget(m_pGAISOPathLabel, 1, 1, 1, 1);
+
         m_pGAISOFilePathSelector = new UIFilePathSelector;
         {
             m_pGAISOFilePathSelector->setResetEnabled(false);
             m_pGAISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
             m_pGAISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
             m_pGAISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-            pGAInstallationISOContainer->addWidget(m_pGAISOFilePathSelector);
+            pGAInstallationISOContainer->addWidget(m_pGAISOFilePathSelector, 1, 2, 1, 6);
         }
         pLayout->addWidget(m_pGAInstallationISOContainer, iRow, 0, 1, 4);
     }
@@ -439,8 +453,8 @@ bool UIWizardNewVMPageExpert::isComplete() const
         /* Check the GA installation medium: */
         if (!checkGAISOFile())
         {
-            // m_pToolBox->setItemIcon(ExpertToolboxItems_Unattended,
-            //                         UIIconPool::iconSet(":/status_error_16px.png"));
+            m_pToolBox->setItemIcon(ExpertToolboxItems_Unattended,
+                                    UIIconPool::iconSet(":/status_error_16px.png"));
             fIsComplete = false;
         }
         if (m_pUserNamePasswordEditor)
@@ -502,6 +516,14 @@ bool UIWizardNewVMPageExpert::isProductKeyWidgetEnabled() const
     return true;
 }
 
+bool UIWizardNewVMPageExpert::isGAInstallEnabled() const
+{
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (!pWizard || !isUnattendedEnabled() || !m_pGAInstallCheckBox->isChecked())
+        return false;
+    return true;
+}
+
 void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnabled)
 {
     if (m_pUserNameContainer)
@@ -511,6 +533,7 @@ void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnable
     if (m_pGAInstallationISOContainer)
         m_pGAInstallationISOContainer->setEnabled(fEnabled);
     disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
+    disableEnableGAWidgets(isGAInstallEnabled());
 }
 
 void UIWizardNewVMPageExpert::disableEnableProductKeyWidgets(bool fEnabled)

@@ -52,7 +52,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(QString userName READ userName WRITE setUserName);
     Q_PROPERTY(QString password READ password WRITE setPassword);
     Q_PROPERTY(QString hostname READ hostname WRITE setHostname);
-    Q_PROPERTY(bool installGuestAdditions READ installGuestAdditions);
+    Q_PROPERTY(bool installGuestAdditions READ installGuestAdditions WRITE setInstallGuestAdditions);
     Q_PROPERTY(QString guestAdditionsISOPath READ guestAdditionsISOPath WRITE setGuestAdditionsISOPath);
     Q_PROPERTY(QString productKey READ productKey);
     Q_PROPERTY(int VCPUCount READ VCPUCount);
@@ -82,6 +82,7 @@ private slots:
     void sltISOPathChanged(const QString &strPath);
     void sltGAISOPathChanged(const QString &strPath);
     void sltOSFamilyTypeChanged();
+    void sltInstallGACheckBoxToggle(bool fEnabled);
 
 private:
 
@@ -105,6 +106,7 @@ private:
     bool validatePage();
 
     bool isProductKeyWidgetEnabled() const;
+    bool isGAInstallEnabled() const;
     void disableEnableUnattendedRelatedWidgets(bool fEnabled);
     void disableEnableProductKeyWidgets(bool fEnabled);
     void markWidgets() const;

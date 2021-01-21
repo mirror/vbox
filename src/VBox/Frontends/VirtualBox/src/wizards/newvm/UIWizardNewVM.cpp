@@ -524,6 +524,7 @@ void UIWizardNewVM::setFieldsFromDefaultUnttendedInstallData()
     setField("userName", m_unattendedInstallData.m_strUserName);
     setField("password", m_unattendedInstallData.m_strPassword);
     setField("hostname", m_unattendedInstallData.m_strHostname);
+    setField("installGuestAdditions", m_unattendedInstallData.m_fInstallGuestAdditions);
     setField("guestAdditionsISOPath", m_unattendedInstallData.m_strGuestAdditionsISOPath);
 }
 

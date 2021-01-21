@@ -36,6 +36,7 @@ UIWizardNewVMPage2::UIWizardNewVMPage2()
     : m_pUserNamePasswordEditor(0)
     , m_pHostnameLineEdit(0)
     , m_pHostnameLabel(0)
+    , m_pGAInstallCheckBox(0)
     , m_pGAISOPathLabel(0)
     , m_pGAISOFilePathSelector(0)
     , m_pProductKeyLineEdit(0)
@@ -85,9 +86,15 @@ void UIWizardNewVMPage2::setHostname(const QString &strHostName)
 
 bool UIWizardNewVMPage2::installGuestAdditions() const
 {
-    if (!m_pGAISOFilePathSelector)
+    if (!m_pGAInstallCheckBox)
         return false;
-    return m_pGAISOFilePathSelector->isValid();
+    return m_pGAInstallCheckBox->isChecked();
+}
+
+void UIWizardNewVMPage2::setInstallGuestAdditions(bool fInstallGA)
+{
+    if (m_pGAInstallCheckBox)
+        m_pGAInstallCheckBox->setChecked(fInstallGA);
 }
 
 QString UIWizardNewVMPage2::guestAdditionsISOPath() const
@@ -174,10 +181,12 @@ QWidget *UIWizardNewVMPage2::createProductKeyWidgets()
 
 bool UIWizardNewVMPage2::checkGAISOFile() const
 {
+    if (!m_pGAISOFilePathSelector)
+        return false;
     const QString &strPath = m_pGAISOFilePathSelector->path();
     if (strPath.isNull() || strPath.isEmpty())
         return true;
-    QFile fileInfo(strPath);
+    QFileInfo fileInfo(strPath);
     if (!fileInfo.exists() || !fileInfo.isReadable())
         return false;
     return true;
@@ -198,8 +207,18 @@ void UIWizardNewVMPage2::retranslateWidgets()
         m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA Installation ISO:"));
     if (m_pGAISOFilePathSelector)
         m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
+    if (m_pGAInstallCheckBox)
+        m_pGAInstallCheckBox->setText(UIWizardNewVM::tr("Install Guest Additions"));
     if (m_pProductKeyLabel)
         m_pProductKeyLabel->setText(UIWizardNewVM::tr("Product Key:"));
+}
+
+void UIWizardNewVMPage2::disableEnableGAWidgets(bool fEnabled)
+{
+    if (m_pGAISOPathLabel)
+        m_pGAISOPathLabel->setEnabled(fEnabled);
+    if (m_pGAISOFilePathSelector)
+        m_pGAISOFilePathSelector->setEnabled(fEnabled);
 }
 
 UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
@@ -304,10 +323,7 @@ void UIWizardNewVMPageBasic2::showEvent(QShowEvent *pEvent)
 
 void UIWizardNewVMPageBasic2::sltInstallGACheckBoxToggle(bool fEnabled)
 {
-    if (m_pGAISOPathLabel)
-        m_pGAISOPathLabel->setEnabled(fEnabled);
-    if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->setEnabled(fEnabled);
+    disableEnableGAWidgets(fEnabled);
     emit completeChanged();
 }
 
