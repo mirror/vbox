@@ -18,6 +18,7 @@
 ;*********************************************************************************************************************************
 ;*  Header Files                                                                                                                 *
 ;*********************************************************************************************************************************
+%define RT_ASM_WITH_SEH64
 %include "VBox/asmdefs.mac"
 %include "VBox/err.mac"
 %include "VBox/vmm/hm_vmx.mac"
@@ -58,11 +59,88 @@
  %define VMX_SKIP_IDTR
 %endif
 
+
+;; @def CALLEE_PRESERVED_REGISTER_COUNT
+; Number of registers pushed by PUSH_CALLEE_PRESERVED_REGISTERS
+%ifdef ASM_CALL64_GCC
+ %define CALLEE_PRESERVED_REGISTER_COUNT 5
+%else
+ %define CALLEE_PRESERVED_REGISTER_COUNT 7
+%endif
+
 ;; @def PUSH_CALLEE_PRESERVED_REGISTERS
-; Macro generating an equivalent to PUSHAD instruction.
+; Macro for pushing all GPRs we must preserve for the caller.
+%macro PUSH_CALLEE_PRESERVED_REGISTERS 0
+        push    r15
+        SEH64_PUSH_GREG r15
+        %assign cbFrame         cbFrame + 8
+        %assign frm_saved_r15   -cbFrame
+
+        push    r14
+        SEH64_PUSH_GREG r14
+        %assign cbFrame         cbFrame + 8
+        %assign frm_saved_r14   -cbFrame
+
+        push    r13
+        SEH64_PUSH_GREG r13
+        %assign cbFrame         cbFrame + 8
+        %assign frm_saved_r13   -cbFrame
+
+        push    r12
+        SEH64_PUSH_GREG r12
+        %assign cbFrame         cbFrame + 8
+        %assign frm_saved_r12   -cbFrame
+
+        push    rbx
+        SEH64_PUSH_GREG rbx
+        %assign cbFrame         cbFrame + 8
+        %assign frm_saved_rbx   -cbFrame
+
+ %ifdef ASM_CALL64_MSC
+        push    rsi
+        SEH64_PUSH_GREG rsi
+        %assign cbFrame         cbFrame + 8
+        %assign frm_saved_rsi   -cbFrame
+
+        push    rdi
+        SEH64_PUSH_GREG rdi
+        %assign cbFrame         cbFrame + 8
+        %assign frm_saved_rdi   -cbFrame
+ %endif
+%endmacro
 
 ;; @def POP_CALLEE_PRESERVED_REGISTERS
-; Macro generating an equivalent to POPAD instruction.
+; Counterpart to PUSH_CALLEE_PRESERVED_REGISTERS for use in the epilogue.
+%macro POP_CALLEE_PRESERVED_REGISTERS 0
+ %ifdef ASM_CALL64_MSC
+        pop     rdi
+        %assign cbFrame         cbFrame - 8
+        %undef  frm_saved_rdi
+
+        pop     rsi
+        %assign cbFrame         cbFrame - 8
+        %undef  frm_saved_rsi
+ %endif
+        pop     rbx
+        %assign cbFrame         cbFrame - 8
+        %undef  frm_saved_rbx
+
+        pop     r12
+        %assign cbFrame         cbFrame - 8
+        %undef  frm_saved_r12
+
+        pop     r13
+        %assign cbFrame         cbFrame - 8
+        %undef  frm_saved_r13
+
+        pop     r14
+        %assign cbFrame         cbFrame - 8
+        %undef  frm_saved_r14
+
+        pop     r15
+        %assign cbFrame         cbFrame - 8
+        %undef  frm_saved_r15
+%endmacro
 
 ;; @def PUSH_RELEVANT_SEGMENT_REGISTERS
 ; Macro saving all segment registers on the stack.
@@ -73,46 +151,6 @@
 ; Macro restoring all segment registers on the stack.
 ; @param 1  Full width register name.
 ; @param 2  16-bit register name for \a 1.
-
-%ifdef ASM_CALL64_GCC
- %define CALLEE_PRESERVED_REGISTER_COUNT 5
- %macro PUSH_CALLEE_PRESERVED_REGISTERS 0
-   push    r15
-   push    r14
-   push    r13
-   push    r12
-   push    rbx
- %endmacro
- %macro POP_CALLEE_PRESERVED_REGISTERS 0
-   pop     rbx
-   pop     r12
-   pop     r13
-   pop     r14
-   pop     r15
- %endmacro
-
-%else ; ASM_CALL64_MSC
- %define CALLEE_PRESERVED_REGISTER_COUNT 7
- %macro PUSH_CALLEE_PRESERVED_REGISTERS 0
-   push    r15
-   push    r14
-   push    r13
-   push    r12
-   push    rbx
-   push    rsi
-   push    rdi
- %endmacro
- %macro POP_CALLEE_PRESERVED_REGISTERS 0
-   pop     rdi
-   pop     rsi
-   pop     rbx
-   pop     r12
-   pop     r13
-   pop     r14
-   pop     r15
- %endmacro
-%endif
-
 %ifdef VBOX_SKIP_RESTORE_SEG
  %macro PUSH_RELEVANT_SEGMENT_REGISTERS 2
  %endmacro
@@ -292,6 +330,7 @@ BEGINPROC VMXRestoreHostState
     mov         rdi, rcx
     mov         rsi, rdx
 %endif
+    SEH64_END_PROLOGUE
 
     test        edi, VMX_RESTORE_HOST_GDTR
     jz          .test_idtr
@@ -400,6 +439,7 @@ ENDPROC VMXRestoreHostState
 ALIGNCODE(16)
 BEGINPROC VMXDispatchHostNmi
     ; NMI is always vector 2. The IDT[2] IRQ handler cannot be anything else. See Intel spec. 6.3.1 "External Interrupts".
+    SEH64_END_PROLOGUE
     int 2
     ret
 ENDPROC VMXDispatchHostNmi
@@ -435,6 +475,7 @@ ENDPROC VMXDispatchHostNmi
 ;
 ALIGNCODE(16)
 BEGINPROC hmR0VMXStartVMWrapXMM
+        SEH64_END_PROLOGUE
         push    xBP
         mov     xBP, xSP
         sub     xSP, 0b0h + 040h ; Don't bother optimizing the frame size.
@@ -611,6 +652,7 @@ ENDPROC   hmR0VMXStartVMWrapXMM
 ; ASSUMING 64-bit and windows for now.
 ALIGNCODE(64)
 BEGINPROC hmR0SVMRunWrapXMM
+        SEH64_END_PROLOGUE
         push    xBP
         mov     xBP, xSP
         sub     xSP, 0b0h + 040h        ; don't bother optimizing the frame size
@@ -878,7 +920,9 @@ BEGINPROC VMXR0StartVM64
     cli
 
     ; Save all general purpose host registers.
+%assign cbFrame 0
     PUSH_CALLEE_PRESERVED_REGISTERS
+    SEH64_END_PROLOGUE
 
     ; First we have to save some final CPU context registers.
     lea     r10, [.vmlaunch64_done wrt rip]
@@ -1035,6 +1079,7 @@ ENDPROC VMXR0StartVM64
 ; Clears the MDS buffers using VERW.
 ALIGNCODE(16)
 BEGINPROC hmR0MdsClear
+        SEH64_END_PROLOGUE
         sub     xSP, xCB
         mov     [xSP], ds
         verw    [xSP]
@@ -1053,159 +1098,167 @@ ENDPROC   hmR0MdsClear
 ;
 ALIGNCODE(64)
 BEGINPROC SVMR0VMRun
-    push    rbp
-    mov     rbp, rsp
-    pushf
-    sub     rsp, 30h - 8h                   ; The frame is 30h bytes, but the rbp-08h entry is the above pushf.
-                                            ; And we have CALLEE_PRESERVED_REGISTER_COUNT following it.
+        push    rbp
+        SEH64_PUSH_xBP
+        mov     rbp, rsp
+        SEH64_SET_FRAME_xBP 0
+        pushf
+        sub     rsp, 30h - 8h                   ; The frame is 30h bytes, but the rbp-08h entry is the above pushf.
+        SEH64_ALLOCATE_STACK 30h                ; And we have CALLEE_PRESERVED_REGISTER_COUNT following it.
+
+%define frm_fRFlags         -08h
 %define frm_uHostXcr0       -18h            ; 128-bit
 %define frm_fNoRestoreXcr0  -20h            ; Non-zero if we should skip XCR0 restoring.
 %define frm_pVCpu           -28h            ; Where we stash pVCpu for use after the vmrun.
 %define frm_HCPhysVmcbHost  -30h            ; Where we stash HCPhysVmcbHost for the vmload after vmrun.
-%define cbFrame            ( 30h + CALLEE_PRESERVED_REGISTER_COUNT*8 )
+%assign cbFrame              30h
 
-    ; Manual save and restore:
-    ;  - General purpose registers except RIP, RSP, RAX
-    ;
-    ; Trashed:
-    ;  - CR2 (we don't care)
-    ;  - LDTR (reset to 0)
-    ;  - DRx (presumably not changed at all)
-    ;  - DR7 (reset to 0x400)
+        ; Manual save and restore:
+        ;  - General purpose registers except RIP, RSP, RAX
+        ;
+        ; Trashed:
+        ;  - CR2 (we don't care)
+        ;  - LDTR (reset to 0)
+        ;  - DRx (presumably not changed at all)
+        ;  - DR7 (reset to 0x400)
 
-    ; Save all general purpose host registers.
-    PUSH_CALLEE_PRESERVED_REGISTERS
-
-    ; Shuffle parameter registers so that r8=HCPhysVmcb and rsi=pVCpu.  (rdx & rcx will soon be trashed.)
-%ifdef ASM_CALL64_GCC
-    mov     r8, rdx                         ; Put HCPhysVmcb in r8 like on MSC as rdx is trashed below.
-%else
-    mov     rsi, rdx                        ; Put pVCpu in rsi like on GCC as rdx is trashed below.
-    ;mov     rdi, rcx                        ; Put pVM in rdi like on GCC as rcx is trashed below.
+        ; Save all general purpose host registers.
+        PUSH_CALLEE_PRESERVED_REGISTERS
+        SEH64_END_PROLOGUE
+%if cbFrame != (30h + 8 * CALLEE_PRESERVED_REGISTER_COUNT)
+ %error Bad cbFrame value
 %endif
 
-    ; Save the host XCR0 and load the guest one if necessary.
-    mov     ecx, 3fh                        ; indicate that we need not restore XCR0 (in case we jump)
-    test    byte [rsi + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
-    jz      .xcr0_before_skip
+        ; Shuffle parameter registers so that r8=HCPhysVmcb and rsi=pVCpu.  (rdx & rcx will soon be trashed.)
+%ifdef ASM_CALL64_GCC
+        mov     r8, rdx                         ; Put HCPhysVmcb in r8 like on MSC as rdx is trashed below.
+%else
+        mov     rsi, rdx                        ; Put pVCpu in rsi like on GCC as rdx is trashed below.
+        ;mov     rdi, rcx                        ; Put pVM in rdi like on GCC as rcx is trashed below.
+%endif
 
-    xor     ecx, ecx
-    xgetbv                                  ; save the host XCR0 on the stack
-    mov     [rbp + frm_uHostXcr0 + 8], rdx
-    mov     [rbp + frm_uHostXcr0    ], rax
+        ; Save the host XCR0 and load the guest one if necessary.
+        mov     ecx, 3fh                        ; indicate that we need not restore XCR0 (in case we jump)
+        test    byte [rsi + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
+        jz      .xcr0_before_skip
 
-    mov     eax, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.aXcr] ; load the guest XCR0
-    mov     edx, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.aXcr + 4]
-    xor     ecx, ecx                        ; paranoia; Also, indicates that we must restore XCR0 (moved into ecx, thus 0).
-    xsetbv
+        xor     ecx, ecx
+        xgetbv                                  ; save the host XCR0 on the stack
+        mov     [rbp + frm_uHostXcr0 + 8], rdx
+        mov     [rbp + frm_uHostXcr0    ], rax
+
+        mov     eax, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.aXcr] ; load the guest XCR0
+        mov     edx, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.aXcr + 4]
+        xor     ecx, ecx                        ; paranoia; Also, indicates that we must restore XCR0 (moved into ecx, thus 0).
+        xsetbv
 
 .xcr0_before_skip:
-    mov     [rbp + frm_fNoRestoreXcr0], rcx
+        mov     [rbp + frm_fNoRestoreXcr0], rcx
 
-    ; Save pVCpu pointer for simplifying saving of the GPRs afterwards.
-    mov     qword [rbp + frm_pVCpu], rsi
+        ; Save pVCpu pointer for simplifying saving of the GPRs afterwards.
+        mov     qword [rbp + frm_pVCpu], rsi
 
-    ; Save host fs, gs, sysenter msr etc.
-    mov     rax, [rsi + VMCPU.hm + HMCPU.u + HMCPUSVM.HCPhysVmcbHost]
-    mov     qword [rbp + frm_HCPhysVmcbHost], rax          ; save for the vmload after vmrun
-    vmsave
+        ; Save host fs, gs, sysenter msr etc.
+        mov     rax, [rsi + VMCPU.hm + HMCPU.u + HMCPUSVM.HCPhysVmcbHost]
+        mov     qword [rbp + frm_HCPhysVmcbHost], rax          ; save for the vmload after vmrun
+        vmsave
 
-    ; Fight spectre (trashes rax, rdx and rcx).
-    INDIRECT_BRANCH_PREDICTION_BARRIER rsi, CPUMCTX_WSF_IBPB_ENTRY
+        ; Fight spectre (trashes rax, rdx and rcx).
+        INDIRECT_BRANCH_PREDICTION_BARRIER rsi, CPUMCTX_WSF_IBPB_ENTRY
 
-    ; Setup rax for VMLOAD.
-    mov     rax, r8                         ; HCPhysVmcb (64 bits physical address; take low dword only)
+        ; Setup rax for VMLOAD.
+        mov     rax, r8                         ; HCPhysVmcb (64 bits physical address; take low dword only)
 
-    ; Load guest general purpose registers (rax is loaded from the VMCB by VMRUN).
-    mov     rbx, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.ebx]
-    mov     rcx, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.ecx]
-    mov     rdx, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.edx]
-    mov     rdi, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.edi]
-    mov     rbp, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.ebp]
-    mov     r8,  qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r8]
-    mov     r9,  qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r9]
-    mov     r10, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r10]
-    mov     r11, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r11]
-    mov     r12, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r12]
-    mov     r13, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r13]
-    mov     r14, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r14]
-    mov     r15, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r15]
-    mov     rsi, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.esi]
+        ; Load guest general purpose registers (rax is loaded from the VMCB by VMRUN).
+        mov     rbx, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.ebx]
+        mov     rcx, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.ecx]
+        mov     rdx, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.edx]
+        mov     rdi, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.edi]
+        mov     rbp, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.ebp]
+        mov     r8,  qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r8]
+        mov     r9,  qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r9]
+        mov     r10, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r10]
+        mov     r11, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r11]
+        mov     r12, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r12]
+        mov     r13, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r13]
+        mov     r14, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r14]
+        mov     r15, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r15]
+        mov     rsi, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.esi]
 
-    ; Clear the global interrupt flag & execute sti to make sure external interrupts cause a world switch.
-    clgi
-    sti
+        ; Clear the global interrupt flag & execute sti to make sure external interrupts cause a world switch.
+        clgi
+        sti
 
-    ; Load guest FS, GS, Sysenter MSRs etc.
-    vmload
+        ; Load guest FS, GS, Sysenter MSRs etc.
+        vmload
 
-    ; Run the VM.
-    vmrun
+        ; Run the VM.
+        vmrun
 
-    ; Save guest fs, gs, sysenter msr etc.
-    vmsave
+        ; Save guest fs, gs, sysenter msr etc.
+        vmsave
 
-    ; Load host fs, gs, sysenter msr etc.
-    mov     rax, [rsp + cbFrame + frm_HCPhysVmcbHost] ; load HCPhysVmcbHost (rbp is not operational yet, thus rsp)
-    vmload
+        ; Load host fs, gs, sysenter msr etc.
+        mov     rax, [rsp + cbFrame + frm_HCPhysVmcbHost] ; load HCPhysVmcbHost (rbp is not operational yet, thus rsp)
+        vmload
 
-    ; Set the global interrupt flag again, but execute cli to make sure IF=0.
-    cli
-    stgi
+        ; Set the global interrupt flag again, but execute cli to make sure IF=0.
+        cli
+        stgi
 
-    ; Pop pVCpu (saved above) and save the guest GPRs (sans RSP and RAX).
-    mov     rax, [rsp + cbFrame + frm_pVCpu] ; (rbp still not operational)
+        ; Pop pVCpu (saved above) and save the guest GPRs (sans RSP and RAX).
+        mov     rax, [rsp + cbFrame + frm_pVCpu] ; (rbp still not operational)
 
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebx], rbx
-    mov     rbx, SPECTRE_FILLER
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ecx], rcx
-    mov     rcx, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edx], rdx
-    mov     rdx, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.esi], rsi
-    mov     rsi, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edi], rdi
-    mov     rdi, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebp], rbp
-    lea     rbp, [rsp + cbFrame]
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r8],  r8
-    mov     r8, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r9],  r9
-    mov     r9, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r10], r10
-    mov     r10, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r11], r11
-    mov     r11, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r12], r12
-    mov     r12, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r13], r13
-    mov     r13, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r14], r14
-    mov     r14, rbx
-    mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r15], r15
-    mov     r15, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebx], rbx
+        mov     rbx, SPECTRE_FILLER
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ecx], rcx
+        mov     rcx, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edx], rdx
+        mov     rdx, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.esi], rsi
+        mov     rsi, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edi], rdi
+        mov     rdi, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebp], rbp
+        lea     rbp, [rsp + cbFrame]
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r8],  r8
+        mov     r8, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r9],  r9
+        mov     r9, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r10], r10
+        mov     r10, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r11], r11
+        mov     r11, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r12], r12
+        mov     r12, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r13], r13
+        mov     r13, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r14], r14
+        mov     r14, rbx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r15], r15
+        mov     r15, rbx
 
-    ; Fight spectre.  Note! Trashes rax, rdx and rcx!
-    INDIRECT_BRANCH_PREDICTION_BARRIER rax, CPUMCTX_WSF_IBPB_EXIT
+        ; Fight spectre.  Note! Trashes rax, rdx and rcx!
+        INDIRECT_BRANCH_PREDICTION_BARRIER rax, CPUMCTX_WSF_IBPB_EXIT
 
-    ; Restore the host xcr0 if necessary.
-    mov     rcx, [rbp + frm_fNoRestoreXcr0]
-    test    ecx, ecx
-    jnz     .xcr0_after_skip
-    mov     rdx, [rbp + frm_uHostXcr0 + 8]
-    mov     rax, [rbp + frm_uHostXcr0]
-    xsetbv                              ; ecx is already zero
+        ; Restore the host xcr0 if necessary.
+        mov     rcx, [rbp + frm_fNoRestoreXcr0]
+        test    ecx, ecx
+        jnz     .xcr0_after_skip
+        mov     rdx, [rbp + frm_uHostXcr0 + 8]
+        mov     rax, [rbp + frm_uHostXcr0]
+        xsetbv                              ; ecx is already zero
 .xcr0_after_skip:
 
-    ; Restore host general purpose registers.
-    POP_CALLEE_PRESERVED_REGISTERS
+        ; Restore host general purpose registers.
+        POP_CALLEE_PRESERVED_REGISTERS
 
-    mov     eax, VINF_SUCCESS
+        mov     eax, VINF_SUCCESS
 
-    add     rsp, 30h - 8h
-    popf
-    leave
-    ret
+        add     rsp, 30h - 8h
+        popf
+        leave
+        ret
 %undef frm_uHostXcr0
 %undef frm_fNoRestoreXcr0
 %undef frm_pVCpu
