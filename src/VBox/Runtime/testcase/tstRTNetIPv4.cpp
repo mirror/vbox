@@ -310,9 +310,26 @@ int main()
     GOODCIDR("1.2.3.4/32",      0x01020304, 32);
     GOODCIDR("1.2.3.4/24",      0x01020304, 24); /* address is not truncated to prefix */
 
+    GOODCIDR("1.2.3.0/0xffffff00",      0x01020300, 24);
+    GOODCIDR("1.2.3.4/0xffffff00",      0x01020304, 24);
+    GOODCIDR("1.2.3.4/0xffffffff",      0x01020304, 32);
+
+    GOODCIDR("1.2.3.0/255.255.255.0",   0x01020300, 24);
+    GOODCIDR("1.2.3.4/255.255.255.0",   0x01020304, 24);
+    GOODCIDR("1.2.3.4/255.255.255.255", 0x01020304, 32);
+
     GOODCIDR("\t " "1.2.3.4/24",       0x01020304, 24); /* leading spaces ok */
     GOODCIDR(      "1.2.3.4/24" " \t", 0x01020304, 24); /* trailing spaces ok */
     GOODCIDR("\t " "1.2.3.4/24" " \t", 0x01020304, 24); /* both are ok */
+
+    /* trailing space with netmask notation */
+    GOODCIDR("1.2.3.0/0xffffff00" " ",    0x01020300, 24);
+    GOODCIDR("1.2.3.0/255.255.255.0" " ", 0x01020300, 24);
+
+    BADCIDR("1.2.3.4/24.");
+    BADCIDR("1.2.3.4/24 .");
+    BADCIDR("1.2.3.4/240.");
+    BADCIDR("1.2.3.4/240.");
 
     BADCIDR("1.2.3.4/0");       /* prefix can't be zero */
     BADCIDR("1.2.3.4/33");      /* prefix is too big */
@@ -328,7 +345,8 @@ int main()
     BADCIDR("1.2.3.0/24" "x");  /* trailing chars */
     BADCIDR("1.2.3.0/24" " x"); /* trailing chars */
 
-
+    BADCIDR("1.2.3.0/0xffffff01");    /* non-contiguous mask */
+    BADCIDR("1.2.3.0/255.255.255.1"); /* non-contiguous mask */
 
     /* NB: RTNetIsIPv4AddrStr does NOT allow leading/trailing whitespace */
     IS_ADDR("1.2.3.4");
