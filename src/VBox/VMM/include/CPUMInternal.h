@@ -103,13 +103,6 @@ typedef uint64_t STAMCOUNTER;
  * DR7 (and AMD-V DR6) are handled via the VMCB. */
 #define CPUM_USED_DEBUG_REGS_GUEST      RT_BIT(9)
 
-/** Sync the FPU state on next entry (32->64 switcher only). */
-#define CPUM_SYNC_FPU_STATE             RT_BIT(16)
-/** Sync the debug state on next entry (32->64 switcher only). */
-#define CPUM_SYNC_DEBUG_REGS_GUEST      RT_BIT(17)
-/** Sync the debug state on next entry (32->64 switcher only).
- * Almost the same as CPUM_USE_DEBUG_REGS_HYPER in the raw-mode switchers. */
-#define CPUM_SYNC_DEBUG_REGS_HYPER      RT_BIT(18)
 /** Host CPU requires fxsave/fxrstor leaky bit handling. */
 #define CPUM_USE_FFXSR_LEAKY            RT_BIT(19)
 /** Set if the VM supports long-mode. */

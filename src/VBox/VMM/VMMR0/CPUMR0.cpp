@@ -438,7 +438,6 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVMCC pVM, PVMCPUCC pVCpu)
     int rc;
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST));
-    Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
 
     if (!pVM->cpum.s.HostFeatures.fLeakyFxSR)
     {
@@ -508,7 +507,7 @@ VMMR0_INT_DECL(bool) CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu)
     else
         fSavedGuest = false;
     Assert(!(  pVCpu->cpum.s.fUseFlags
-             & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_SYNC_FPU_STATE | CPUM_USED_MANUAL_XMM_RESTORE)));
+             & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_USED_MANUAL_XMM_RESTORE)));
     return fSavedGuest;
 }
 
@@ -579,8 +578,7 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu
         if (fDr6)
             pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
     }
-    ASMAtomicAndU32(&pVCpu->cpum.s.fUseFlags, ~(  CPUM_USED_DEBUG_REGS_GUEST | CPUM_USED_DEBUG_REGS_HYPER
-                                                | CPUM_SYNC_DEBUG_REGS_GUEST | CPUM_SYNC_DEBUG_REGS_HYPER));
+    ASMAtomicAndU32(&pVCpu->cpum.s.fUseFlags, ~(CPUM_USED_DEBUG_REGS_GUEST | CPUM_USED_DEBUG_REGS_HYPER));
 
     /*
      * Restore the host's debug state. DR0-3, DR6 and only then DR7!

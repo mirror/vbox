@@ -1612,17 +1612,18 @@ VMMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
 /**
  * Checks if we activated the FPU/XMM state of the guest OS.
  *
- * This differs from CPUMIsGuestFPUStateLoaded() in that it refers to the next
- * time we'll be executing guest code, so it may return true for 64-on-32 when
- * we still haven't actually loaded the FPU status, just scheduled it to be
- * loaded the next time we go thru the world switcher (CPUM_SYNC_FPU_STATE).
+ * Obsolete: This differs from CPUMIsGuestFPUStateLoaded() in that it refers to
+ * the next time we'll be executing guest code, so it may return true for
+ * 64-on-32 when we still haven't actually loaded the FPU status, just scheduled
+ * it to be loaded the next time we go thru the world switcher
+ * (CPUM_SYNC_FPU_STATE).
  *
  * @returns true / false.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
 {
-    return RT_BOOL(pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_SYNC_FPU_STATE));
+    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST);
 }
 
 
@@ -1663,19 +1664,6 @@ VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
 
 
 /**
- * Checks if the guest debug state is to be made active during the world-switch
- * (currently only used for the 32->64 switcher case).
- *
- * @returns boolean
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- */
-VMMDECL(bool) CPUMIsGuestDebugStateActivePending(PVMCPU pVCpu)
-{
-    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_DEBUG_REGS_GUEST);
-}
-
-
-/**
  * Checks if the hyper debug state is active.
  *
  * @returns boolean
@@ -1684,19 +1672,6 @@ VMMDECL(bool) CPUMIsGuestDebugStateActivePending(PVMCPU pVCpu)
 VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
 {
     return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER);
-}
-
-
-/**
- * Checks if the hyper debug state is to be made active during the world-switch
- * (currently only used for the 32->64 switcher case).
- *
- * @returns boolean
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- */
-VMMDECL(bool) CPUMIsHyperDebugStateActivePending(PVMCPU pVCpu)
-{
-    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_DEBUG_REGS_HYPER);
 }
 
 

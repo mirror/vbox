@@ -8213,8 +8213,8 @@ static int hmR0VmxLeave(PVMCPUCC pVCpu, bool fImportState)
         Assert(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_MOV_DR_EXIT);
 #endif
     CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */);
-    Assert(!CPUMIsGuestDebugStateActive(pVCpu) && !CPUMIsGuestDebugStateActivePending(pVCpu));
-    Assert(!CPUMIsHyperDebugStateActive(pVCpu) && !CPUMIsHyperDebugStateActivePending(pVCpu));
+    Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+    Assert(!CPUMIsHyperDebugStateActive(pVCpu));
 
     /* Restore host-state bits that VT-x only restores partially. */
     if (   (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED)
