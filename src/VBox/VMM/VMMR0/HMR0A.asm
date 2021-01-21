@@ -1209,34 +1209,42 @@ BEGINPROC SVMR0VMRun
         ; Pop pVCpu (saved above) and save the guest GPRs (sans RSP and RAX).
         mov     rax, [rsp + cbFrame + frm_pVCpu] ; (rbp still not operational)
 
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebx], rbx
-        mov     rbx, SPECTRE_FILLER
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ecx], rcx
-        mov     rcx, rbx
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edx], rdx
-        mov     rdx, rbx
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.esi], rsi
-        mov     rsi, rbx
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edi], rdi
-        mov     rdi, rbx
         mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebp], rbp
         lea     rbp, [rsp + cbFrame]
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ecx], rcx
+        mov     rcx, SPECTRE_FILLER
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edx], rdx
+        mov     rdx, rcx
         mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r8],  r8
-        mov     r8, rbx
+        mov     r8, rcx
         mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r9],  r9
-        mov     r9, rbx
+        mov     r9, rcx
         mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r10], r10
-        mov     r10, rbx
+        mov     r10, rcx
         mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r11], r11
-        mov     r11, rbx
+        mov     r11, rcx
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edi], rdi
+%ifdef ASM_CALL64_MSC
+        mov     rdi, [rbp + frm_saved_rdi]
+%else
+        mov     rdi, rcx
+%endif
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.esi], rsi
+%ifdef ASM_CALL64_MSC
+        mov     rsi, [rbp + frm_saved_rsi]
+%else
+        mov     rsi, rcx
+%endif
+        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebx], rbx
+        mov     rbx, [rbp + frm_saved_rbx]
         mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r12], r12
-        mov     r12, rbx
+        mov     r12, [rbp + frm_saved_r12]
         mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r13], r13
-        mov     r13, rbx
+        mov     r13, [rbp + frm_saved_r13]
         mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r14], r14
-        mov     r14, rbx
+        mov     r14, [rbp + frm_saved_r14]
         mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r15], r15
-        mov     r15, rbx
+        mov     r15, [rbp + frm_saved_r15]
 
         ; Fight spectre.  Note! Trashes rax, rdx and rcx!
         INDIRECT_BRANCH_PREDICTION_BARRIER rax, CPUMCTX_WSF_IBPB_EXIT
@@ -1249,13 +1257,14 @@ BEGINPROC SVMR0VMRun
         mov     rax, [rbp + frm_uHostXcr0]
         xsetbv                              ; ecx is already zero
 .xcr0_after_skip:
+nop
+;       POP_CALLEE_PRESERVED_REGISTERS
+;%if cbFrame != 30h
+; %error Bad cbFrame value
+;%endif
 
-        ; Restore host general purpose registers.
-        POP_CALLEE_PRESERVED_REGISTERS
-
+        add     rsp, cbFrame - 8h
         mov     eax, VINF_SUCCESS
-
-        add     rsp, 30h - 8h
         popf
         leave
         ret
