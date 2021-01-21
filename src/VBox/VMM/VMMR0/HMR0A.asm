@@ -231,7 +231,7 @@
 ; @clobbers eax, edx, ecx
 ; @param    1   How to address CPUMCTX.
 ; @param    2   Which flag to test for (CPUMCTX_WSF_IBPB_ENTRY or CPUMCTX_WSF_IBPB_EXIT)
-%macro INDIRECT_BRANCH_PREDICTION_BARRIER_OLD 2
+%macro INDIRECT_BRANCH_PREDICTION_BARRIER_CTX 2
     test    byte [%1 + CPUMCTX.fWorldSwitcher], %2
     jz      %%no_indirect_branch_barrier
     mov     ecx, MSR_IA32_PRED_CMD
@@ -859,7 +859,7 @@ ENDPROC   hmR0SVMRunWrapXMM
     mov     qword [xDI + CPUMCTX.edi], rax
 
     ; Fight spectre.
-    INDIRECT_BRANCH_PREDICTION_BARRIER_OLD xDI, CPUMCTX_WSF_IBPB_EXIT
+    INDIRECT_BRANCH_PREDICTION_BARRIER_CTX xDI, CPUMCTX_WSF_IBPB_EXIT
 
  %ifndef VMX_SKIP_TR
     ; Restore TSS selector; must mark it as not busy before using ltr!
@@ -1109,7 +1109,7 @@ BEGINPROC SVMR0VMRun
 %define frm_fRFlags         -08h
 %define frm_uHostXcr0       -18h            ; 128-bit
 %define frm_fNoRestoreXcr0  -20h            ; Non-zero if we should skip XCR0 restoring.
-%define frm_pVCpu           -28h            ; Where we stash pVCpu for use after the vmrun.
+%define frm_pGstCtx         -28h            ; Where we stash guest CPU context for use after the vmrun.
 %define frm_HCPhysVmcbHost  -30h            ; Where we stash HCPhysVmcbHost for the vmload after vmrun.
 %assign cbFrame              30h
 
@@ -1155,35 +1155,34 @@ BEGINPROC SVMR0VMRun
 .xcr0_before_skip:
         mov     [rbp + frm_fNoRestoreXcr0], rcx
 
-        ; Save pVCpu pointer for simplifying saving of the GPRs afterwards.
-        mov     qword [rbp + frm_pVCpu], rsi
-
         ; Save host fs, gs, sysenter msr etc.
         mov     rax, [rsi + VMCPU.hm + HMCPU.u + HMCPUSVM.HCPhysVmcbHost]
         mov     qword [rbp + frm_HCPhysVmcbHost], rax          ; save for the vmload after vmrun
+        lea     rsi, [rsi + VMCPU.cpum.GstCtx]
+        mov     qword [rbp + frm_pGstCtx], rsi
         vmsave
 
         ; Fight spectre (trashes rax, rdx and rcx).
-        INDIRECT_BRANCH_PREDICTION_BARRIER rsi, CPUMCTX_WSF_IBPB_ENTRY
+        INDIRECT_BRANCH_PREDICTION_BARRIER_CTX rsi, CPUMCTX_WSF_IBPB_ENTRY
 
         ; Setup rax for VMLOAD.
         mov     rax, r8                         ; HCPhysVmcb (64 bits physical address; take low dword only)
 
         ; Load guest general purpose registers (rax is loaded from the VMCB by VMRUN).
-        mov     rbx, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.ebx]
-        mov     rcx, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.ecx]
-        mov     rdx, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.edx]
-        mov     rdi, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.edi]
-        mov     rbp, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.ebp]
-        mov     r8,  qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r8]
-        mov     r9,  qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r9]
-        mov     r10, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r10]
-        mov     r11, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r11]
-        mov     r12, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r12]
-        mov     r13, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r13]
-        mov     r14, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r14]
-        mov     r15, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.r15]
-        mov     rsi, qword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.esi]
+        mov     rbx, qword [rsi + CPUMCTX.ebx]
+        mov     rcx, qword [rsi + CPUMCTX.ecx]
+        mov     rdx, qword [rsi + CPUMCTX.edx]
+        mov     rdi, qword [rsi + CPUMCTX.edi]
+        mov     rbp, qword [rsi + CPUMCTX.ebp]
+        mov     r8,  qword [rsi + CPUMCTX.r8]
+        mov     r9,  qword [rsi + CPUMCTX.r9]
+        mov     r10, qword [rsi + CPUMCTX.r10]
+        mov     r11, qword [rsi + CPUMCTX.r11]
+        mov     r12, qword [rsi + CPUMCTX.r12]
+        mov     r13, qword [rsi + CPUMCTX.r13]
+        mov     r14, qword [rsi + CPUMCTX.r14]
+        mov     r15, qword [rsi + CPUMCTX.r15]
+        mov     rsi, qword [rsi + CPUMCTX.esi]
 
         ; Clear the global interrupt flag & execute sti to make sure external interrupts cause a world switch.
         clgi
@@ -1207,47 +1206,47 @@ BEGINPROC SVMR0VMRun
         stgi
 
         ; Pop pVCpu (saved above) and save the guest GPRs (sans RSP and RAX).
-        mov     rax, [rsp + cbFrame + frm_pVCpu] ; (rbp still not operational)
+        mov     rax, [rsp + cbFrame + frm_pGstCtx] ; (rbp still not operational)
 
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebp], rbp
+        mov     qword [rax + CPUMCTX.ebp], rbp
         lea     rbp, [rsp + cbFrame]
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ecx], rcx
+        mov     qword [rax + CPUMCTX.ecx], rcx
         mov     rcx, SPECTRE_FILLER
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edx], rdx
+        mov     qword [rax + CPUMCTX.edx], rdx
         mov     rdx, rcx
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r8],  r8
+        mov     qword [rax + CPUMCTX.r8],  r8
         mov     r8, rcx
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r9],  r9
+        mov     qword [rax + CPUMCTX.r9],  r9
         mov     r9, rcx
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r10], r10
+        mov     qword [rax + CPUMCTX.r10], r10
         mov     r10, rcx
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r11], r11
+        mov     qword [rax + CPUMCTX.r11], r11
         mov     r11, rcx
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.edi], rdi
+        mov     qword [rax + CPUMCTX.edi], rdi
 %ifdef ASM_CALL64_MSC
         mov     rdi, [rbp + frm_saved_rdi]
 %else
         mov     rdi, rcx
 %endif
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.esi], rsi
+        mov     qword [rax + CPUMCTX.esi], rsi
 %ifdef ASM_CALL64_MSC
         mov     rsi, [rbp + frm_saved_rsi]
 %else
         mov     rsi, rcx
 %endif
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.ebx], rbx
+        mov     qword [rax + CPUMCTX.ebx], rbx
         mov     rbx, [rbp + frm_saved_rbx]
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r12], r12
+        mov     qword [rax + CPUMCTX.r12], r12
         mov     r12, [rbp + frm_saved_r12]
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r13], r13
+        mov     qword [rax + CPUMCTX.r13], r13
         mov     r13, [rbp + frm_saved_r13]
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r14], r14
+        mov     qword [rax + CPUMCTX.r14], r14
         mov     r14, [rbp + frm_saved_r14]
-        mov     qword [rax + VMCPU.cpum.GstCtx + CPUMCTX.r15], r15
+        mov     qword [rax + CPUMCTX.r15], r15
         mov     r15, [rbp + frm_saved_r15]
 
         ; Fight spectre.  Note! Trashes rax, rdx and rcx!
-        INDIRECT_BRANCH_PREDICTION_BARRIER rax, CPUMCTX_WSF_IBPB_EXIT
+        INDIRECT_BRANCH_PREDICTION_BARRIER_CTX rax, CPUMCTX_WSF_IBPB_EXIT
 
         ; Restore the host xcr0 if necessary.
         mov     rcx, [rbp + frm_fNoRestoreXcr0]
