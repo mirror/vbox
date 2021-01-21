@@ -822,6 +822,12 @@ typedef union
     uint64_t    au64[2];
 } CMD_INV_IOMMU_PAGES_T;
 AssertCompileSize(CMD_INV_IOMMU_PAGES_T, 16);
+/** Pointer to a invalidate iommu pages command. */
+typedef CMD_INV_IOMMU_PAGES_T *PCMD_INV_IOMMU_PAGES_T;
+/** Pointer to a const invalidate iommu pages command. */
+typedef CMD_INV_IOMMU_PAGES_T const *PCCMD_INV_IOMMU_PAGES_T;
+#define IOMMU_CMD_INV_IOMMU_PAGES_QWORD_0_VALID_MASK        UINT64_C(0xf000ffff000fffff)
+#define IOMMU_CMD_INV_IOMMU_PAGES_QWORD_1_VALID_MASK        UINT64_C(0xfffffffffffff007)
 
 /**
  * Command: INVALIDATE_IOTLB_PAGES.

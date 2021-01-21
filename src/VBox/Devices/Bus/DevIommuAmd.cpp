@@ -3596,10 +3596,35 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
 
         case IOMMU_CMD_INV_IOMMU_PAGES:
         {
-            /** @todo IOMMU: Implement this once we implement IOTLB. Pretend success until
-             *        then. */
             STAM_COUNTER_INC(&pThis->StatCmdInvIommuPages);
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+            PCCMD_INV_IOMMU_PAGES_T pCmdInvPages = (PCCMD_INV_IOMMU_PAGES_T)pCmd;
+            AssertCompile(sizeof(*pCmdInvPages) == sizeof(*pCmd));
+
+            /* Validate reserved bits in the command. */
+            if (   !(pCmdInvPages->au64[0] & ~IOMMU_CMD_INV_IOMMU_PAGES_QWORD_0_VALID_MASK)
+                && !(pCmdInvPages->au64[1] & ~IOMMU_CMD_INV_IOMMU_PAGES_QWORD_1_VALID_MASK))
+            {
+                uint64_t const uIova = RT_MAKE_U64(pCmdInvPages->n.u20AddrLo << X86_PAGE_4K_SHIFT, pCmdInvPages->n.u32AddrHi);
+                uint16_t const uDomainId = pCmdInvPages->n.u16DomainId;
+                uint8_t cShift = X86_PAGE_4K_SHIFT;
+                if (pCmdInvPages->n.u1Size != 0)
+                {
+                    /* Find the first clear bit starting from bit 12 to 64 of the I/O virtual address. */
+                    unsigned const uFirstZeroBit = ASMBitLastSetU64(~(uIova >> X86_PAGE_4K_SHIFT));
+                    cShift = X86_PAGE_4K_SHIFT + uFirstZeroBit;
+                }
+
+                IOMMU_LOCK(pDevIns);
+                iommuAmdIotlbRemoveRange(pThis, uDomainId, uIova, cShift);
+                IOMMU_UNLOCK(pDevIns);
+                return VINF_SUCCESS;
+            }
+            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            return VERR_IOMMU_CMD_INVALID_FORMAT;
+#else
             return VINF_SUCCESS;
+#endif
         }
 
         case IOMMU_CMD_INV_IOTLB_PAGES:
