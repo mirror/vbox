@@ -719,21 +719,21 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVMCC pVM)
  */
 static void hmR0SvmUpdateVmRunFunction(PVMCPUCC pVCpu)
 {
-    static const PFNHMSVMVMRUN s_apfnHmR0SvmVmRunFunctions[] =
+    static const struct CLANGWORKAROUND { PFNHMSVMVMRUN pfn; } s_aHmR0SvmVmRunFunctions[] =
     {
-        hmR0SvmVmRun_SansXcr0_SansIbpbEntry_SansIbpbExit,
-        hmR0SvmVmRun_WithXcr0_SansIbpbEntry_SansIbpbExit,
-        hmR0SvmVmRun_SansXcr0_WithIbpbEntry_SansIbpbExit,
-        hmR0SvmVmRun_WithXcr0_WithIbpbEntry_SansIbpbExit,
-        hmR0SvmVmRun_SansXcr0_SansIbpbEntry_WithIbpbExit,
-        hmR0SvmVmRun_WithXcr0_SansIbpbEntry_WithIbpbExit,
-        hmR0SvmVmRun_SansXcr0_WithIbpbEntry_WithIbpbExit,
-        hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit,
+        { hmR0SvmVmRun_SansXcr0_SansIbpbEntry_SansIbpbExit },
+        { hmR0SvmVmRun_WithXcr0_SansIbpbEntry_SansIbpbExit },
+        { hmR0SvmVmRun_SansXcr0_WithIbpbEntry_SansIbpbExit },
+        { hmR0SvmVmRun_WithXcr0_WithIbpbEntry_SansIbpbExit },
+        { hmR0SvmVmRun_SansXcr0_SansIbpbEntry_WithIbpbExit },
+        { hmR0SvmVmRun_WithXcr0_SansIbpbEntry_WithIbpbExit },
+        { hmR0SvmVmRun_SansXcr0_WithIbpbEntry_WithIbpbExit },
+        { hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit },
     };
     uintptr_t const idx = (pVCpu->hm.s.fLoadSaveGuestXcr0                             ? 1 : 0)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_ENTRY ? 2 : 0)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_EXIT  ? 4 : 0);
-    PFNHMSVMVMRUN const pfnVMRun = s_apfnHmR0SvmVmRunFunctions[idx];
+    PFNHMSVMVMRUN const pfnVMRun = s_aHmR0SvmVmRunFunctions[idx].pfn;
     if (pVCpu->hm.s.svm.pfnVMRun != pfnVMRun)
         pVCpu->hm.s.svm.pfnVMRun = pfnVMRun;
 }
