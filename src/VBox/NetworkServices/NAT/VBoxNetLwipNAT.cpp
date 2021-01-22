@@ -131,15 +131,17 @@ typedef VECNATSERVICEPF::const_iterator CITERATORNATSERVICEPF;
 
 static int fetchNatPortForwardRules(const ComNatPtr&, bool, VECNATSERVICEPF&);
 
-static int vboxNetNATLogInit(int argc, char **argv);
-
 
 class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
 {
     friend class NATNetworkListener;
+
   public:
     VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6);
     virtual ~VBoxNetLwipNAT();
+
+    static int logInit(int argc, char **argv);
+
     void usage(){                /** @todo should be implemented */ };
     int run();
     virtual int init(void);
@@ -1111,150 +1113,26 @@ int VBoxNetLwipNAT::run()
 
 
 /**
- *  Entry point.
+ * Create release logger.
+ *
+ * The NAT network name is sanitized so that it can be used in a path
+ * component.  By default the release log is written to the file
+ * ~/.VirtualBox/${netname}.log but its destiation and content can be
+ * overridden with VBOXNET_${netname}_RELEASE_LOG family of
+ * environment variables (also ..._DEST and ..._FLAGS).
  */
-extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
-{
-    int rc;
-
-    LogFlowFuncEnter();
-
-    NOREF(envp);
-
-#ifdef RT_OS_WINDOWS
-    WSADATA wsaData;
-    int err;
-
-    err = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (err)
-    {
-        fprintf(stderr, "wsastartup: failed (%d)\n", err);
-        return 1;
-    }
-#endif
-
-    SOCKET icmpsock4 = INVALID_SOCKET;
-    SOCKET icmpsock6 = INVALID_SOCKET;
-#ifndef RT_OS_DARWIN
-    const int icmpstype = SOCK_RAW;
-#else
-    /* on OS X it's not privileged */
-    const int icmpstype = SOCK_DGRAM;
-#endif
-
-    icmpsock4 = socket(AF_INET, icmpstype, IPPROTO_ICMP);
-    if (icmpsock4 == INVALID_SOCKET)
-    {
-        perror("IPPROTO_ICMP");
-#ifdef VBOX_RAWSOCK_DEBUG_HELPER
-        icmpsock4 = getrawsock(AF_INET);
-#endif
-    }
-
-    if (icmpsock4 != INVALID_SOCKET)
-    {
-#ifdef ICMP_FILTER              //  Linux specific
-        struct icmp_filter flt = {
-            ~(uint32_t)(
-                  (1U << ICMP_ECHOREPLY)
-                | (1U << ICMP_DEST_UNREACH)
-                | (1U << ICMP_TIME_EXCEEDED)
-            )
-        };
-
-        int status = setsockopt(icmpsock4, SOL_RAW, ICMP_FILTER,
-                                &flt, sizeof(flt));
-        if (status < 0)
-        {
-            perror("ICMP_FILTER");
-        }
-#endif
-    }
-
-    icmpsock6 = socket(AF_INET6, icmpstype, IPPROTO_ICMPV6);
-    if (icmpsock6 == INVALID_SOCKET)
-    {
-        perror("IPPROTO_ICMPV6");
-#ifdef VBOX_RAWSOCK_DEBUG_HELPER
-        icmpsock6 = getrawsock(AF_INET6);
-#endif
-    }
-
-    if (icmpsock6 != INVALID_SOCKET)
-    {
-#ifdef ICMP6_FILTER             // Windows doesn't support RFC 3542 API
-        /*
-         * XXX: We do this here for now, not in pxping.c, to avoid
-         * name clashes between lwIP and system headers.
-         */
-        struct icmp6_filter flt;
-        ICMP6_FILTER_SETBLOCKALL(&flt);
-
-        ICMP6_FILTER_SETPASS(ICMP6_ECHO_REPLY, &flt);
-
-        ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &flt);
-        ICMP6_FILTER_SETPASS(ICMP6_PACKET_TOO_BIG, &flt);
-        ICMP6_FILTER_SETPASS(ICMP6_TIME_EXCEEDED, &flt);
-        ICMP6_FILTER_SETPASS(ICMP6_PARAM_PROB, &flt);
-
-        int status = setsockopt(icmpsock6, IPPROTO_ICMPV6, ICMP6_FILTER,
-                                &flt, sizeof(flt));
-        if (status < 0)
-        {
-            perror("ICMP6_FILTER");
-        }
-#endif
-    }
-
-    HRESULT hrc = com::Initialize();
-    if (FAILED(hrc))
-    {
-#ifdef VBOX_WITH_XPCOM
-        if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
-        {
-            char szHome[RTPATH_MAX] = "";
-            int vrc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
-            if (RT_SUCCESS(vrc))
-            {
-                closesocket(icmpsock4);
-                closesocket(icmpsock6);
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                      "Failed to initialize COM: %s: %Rhrf",
-                                      szHome, hrc);
-            }
-        }
-#endif  // VBOX_WITH_XPCOM
-        closesocket(icmpsock4);
-        closesocket(icmpsock6);
-        return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                              "Failed to initialize COM: %Rhrf", hrc);
-    }
-
-    rc = vboxNetNATLogInit(argc, argv);
-    // shall we bail if we failed to init logging?
-
-    g_pLwipNat = new VBoxNetLwipNAT(icmpsock4, icmpsock6);
-
-    Log2(("NAT: initialization\n"));
-    rc = g_pLwipNat->parseArgs(argc - 1, argv + 1);
-    rc = (rc == 0) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /* XXX: FIXME */
-
-    if (RT_SUCCESS(rc))
-        rc = g_pLwipNat->init();
-
-    if (RT_SUCCESS(rc))
-        g_pLwipNat->run();
-
-    delete g_pLwipNat;
-    return 0;
-}
-
-
-static int vboxNetNATLogInit(int argc, char **argv)
+/* static */
+int VBoxNetLwipNAT::logInit(int argc, char **argv)
 {
     size_t cch;
     int rc;
 
+    /*
+     * NB: Contrary to what the "com" namespace might suggest, both
+     * this call, and the call below to create the release logger are
+     * NOT actually COM related in any way and can be used before COM
+     * is initialized.
+     */
     char szHome[RTPATH_MAX];
     rc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
     if (RT_FAILURE(rc))
@@ -1358,6 +1236,144 @@ static int vboxNetNATLogInit(int argc, char **argv)
     LOG_PING(LogRel12);
 
     return rc;
+}
+
+
+/**
+ *  Entry point.
+ */
+extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
+{
+    HRESULT hrc;
+    int rc;
+
+    LogFlowFuncEnter();
+
+    NOREF(envp);
+
+#ifdef RT_OS_WINDOWS
+    WSADATA wsaData;
+    int err;
+
+    err = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (err)
+    {
+        fprintf(stderr, "wsastartup: failed (%d)\n", err);
+        return 1;
+    }
+#endif
+
+    vboxNetNATLogInit(argc, argv);
+
+    hrc = com::Initialize();
+    if (FAILED(hrc))
+    {
+#ifdef VBOX_WITH_XPCOM
+        if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
+        {
+            char szHome[RTPATH_MAX] = "";
+            int vrc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
+            if (RT_SUCCESS(vrc))
+            {
+                return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                      "Failed to initialize COM: %s: %Rhrf",
+                                      szHome, hrc);
+            }
+        }
+#endif  // VBOX_WITH_XPCOM
+        return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                              "Failed to initialize COM: %Rhrf", hrc);
+    }
+
+
+    SOCKET icmpsock4 = INVALID_SOCKET;
+    SOCKET icmpsock6 = INVALID_SOCKET;
+#ifndef RT_OS_DARWIN
+    const int icmpstype = SOCK_RAW;
+#else
+    /* on OS X it's not privileged */
+    const int icmpstype = SOCK_DGRAM;
+#endif
+
+    icmpsock4 = socket(AF_INET, icmpstype, IPPROTO_ICMP);
+    if (icmpsock4 == INVALID_SOCKET)
+    {
+        perror("IPPROTO_ICMP");
+#ifdef VBOX_RAWSOCK_DEBUG_HELPER
+        icmpsock4 = getrawsock(AF_INET);
+#endif
+    }
+
+    if (icmpsock4 != INVALID_SOCKET)
+    {
+#ifdef ICMP_FILTER              //  Linux specific
+        struct icmp_filter flt = {
+            ~(uint32_t)(
+                  (1U << ICMP_ECHOREPLY)
+                | (1U << ICMP_DEST_UNREACH)
+                | (1U << ICMP_TIME_EXCEEDED)
+            )
+        };
+
+        int status = setsockopt(icmpsock4, SOL_RAW, ICMP_FILTER,
+                                &flt, sizeof(flt));
+        if (status < 0)
+        {
+            perror("ICMP_FILTER");
+        }
+#endif
+    }
+
+    icmpsock6 = socket(AF_INET6, icmpstype, IPPROTO_ICMPV6);
+    if (icmpsock6 == INVALID_SOCKET)
+    {
+        perror("IPPROTO_ICMPV6");
+#ifdef VBOX_RAWSOCK_DEBUG_HELPER
+        icmpsock6 = getrawsock(AF_INET6);
+#endif
+    }
+
+    if (icmpsock6 != INVALID_SOCKET)
+    {
+#ifdef ICMP6_FILTER             // Windows doesn't support RFC 3542 API
+        /*
+         * XXX: We do this here for now, not in pxping.c, to avoid
+         * name clashes between lwIP and system headers.
+         */
+        struct icmp6_filter flt;
+        ICMP6_FILTER_SETBLOCKALL(&flt);
+
+        ICMP6_FILTER_SETPASS(ICMP6_ECHO_REPLY, &flt);
+
+        ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_PACKET_TOO_BIG, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_TIME_EXCEEDED, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_PARAM_PROB, &flt);
+
+        int status = setsockopt(icmpsock6, IPPROTO_ICMPV6, ICMP6_FILTER,
+                                &flt, sizeof(flt));
+        if (status < 0)
+        {
+            perror("ICMP6_FILTER");
+        }
+#endif
+    }
+
+
+    g_pLwipNat = new VBoxNetLwipNAT(icmpsock4, icmpsock6);
+
+    Log2(("NAT: initialization\n"));
+    rc = g_pLwipNat->parseArgs(argc - 1, argv + 1);
+    rc = (rc == 0) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /* XXX: FIXME */
+
+    if (RT_SUCCESS(rc))
+        rc = g_pLwipNat->init();
+
+    if (RT_SUCCESS(rc))
+        g_pLwipNat->run();
+
+    delete g_pLwipNat;
+    return 0;
 }
 
 
