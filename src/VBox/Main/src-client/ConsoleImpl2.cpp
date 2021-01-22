@@ -2931,6 +2931,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             AudioCodecType_T enmAudioCodec;
             hrc = audioAdapter->COMGETTER(AudioCodec)(&enmAudioCodec);                      H();
 
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Device/TimerHz", &strTmp);
+            const uint64_t uTimerHz = strTmp.toUInt64();
+
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
             const bool fDebugEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
 
@@ -2963,6 +2966,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                             break;
                         default: AssertFailedBreak();
                     }
+                    if (uTimerHz)
+                        InsertConfigInteger(pCfg,   "TimerHz",              uTimerHz);
                     InsertConfigInteger(pCfg,       "DebugEnabled",         fDebugEnabled);
                     if (strDebugPathOut.isNotEmpty())
                         InsertConfigString(pCfg,    "DebugPathOut",         strDebugPathOut);
@@ -2982,6 +2987,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg,       "DMA16",                5);
                     InsertConfigInteger(pCfg,       "Port",                 0x220);
                     InsertConfigInteger(pCfg,       "Version",              0x0405);
+                    if (uTimerHz)
+                        InsertConfigInteger(pCfg,   "TimerHz",              uTimerHz);
                     break;
                 }
                 case AudioControllerType_HDA:
@@ -2994,6 +3001,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pInst,      "Trusted",              1); /* boolean */
                     hrc = pBusMgr->assignPCIDevice(pszAudioDevice, pInst);              H();
                     InsertConfigNode(pInst,         "Config",               &pCfg);
+                    if (uTimerHz)
+                        InsertConfigInteger(pCfg,   "TimerHz",              uTimerHz);
                     InsertConfigInteger(pCfg,       "DebugEnabled",         fDebugEnabled);
                     if (strDebugPathOut.isNotEmpty())
                         InsertConfigString(pCfg,    "DebugPathOut",         strDebugPathOut);
