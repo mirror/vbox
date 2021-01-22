@@ -36,6 +36,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPage2,
                                 public UIWizardNewVMPage3
 {
+
     Q_OBJECT;
     Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
     Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
@@ -93,6 +94,7 @@ private:
         ExpertToolboxItems_Disk,
         ExpertToolboxItems_Hardware,
     };
+
     /** Translation stuff. */
     void retranslateUi();
 
