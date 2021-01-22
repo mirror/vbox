@@ -1240,6 +1240,33 @@ VMM_INT_DECL(int)           hmEmulateSvmMovTpr(PVMCC pVM, PVMCPUCC pVCpu);
 
 VMM_INT_DECL(PVMXVMCSINFO)  hmGetVmxActiveVmcsInfo(PVMCPU pVCpu);
 
+/**
+ * Prepares for and executes VMRUN (64-bit register context).
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure. (Not used.)
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   HCPhyspVMCB     Physical address of the VMCB.
+ *
+ * @remarks With spectre mitigations and the usual need for speed (/ micro
+ *          optimizations), we have a bunch of variations of this code depending
+ *          on a few precoditions.  In release builds, the code is entirely
+ *          without conditionals.  Debug builds have a couple of assertions that
+ *          shouldn't ever be triggered.
+ *
+ * @{
+ */
+DECLASM(int) hmR0SvmVmRun_SansXcr0_SansIbpbEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
+DECLASM(int) hmR0SvmVmRun_WithXcr0_SansIbpbEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
+DECLASM(int) hmR0SvmVmRun_SansXcr0_WithIbpbEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
+DECLASM(int) hmR0SvmVmRun_WithXcr0_WithIbpbEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
+DECLASM(int) hmR0SvmVmRun_SansXcr0_SansIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
+DECLASM(int) hmR0SvmVmRun_WithXcr0_SansIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
+DECLASM(int) hmR0SvmVmRun_SansXcr0_WithIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
+DECLASM(int) hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
+/** @} */
+
+
 /** @} */
 
 RT_C_DECLS_END

@@ -711,8 +711,8 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVMCC pVM)
  *      - pVCpu->hm.s.fLoadSaveGuestXcr0
  *      - CPUMCTX_WSF_IBPB_ENTRY in pVCpu->cpum.GstCtx.fWorldSwitcher
  *      - CPUMCTX_WSF_IBPB_EXIT  in pVCpu->cpum.GstCtx.fWorldSwitcher
- *      - CPUMIsGuestFPUStateActive() (windows only)
- *      - CPUMCTX.fXStateMask (windows only)
+ *      - Perhaps: CPUMIsGuestFPUStateActive() (windows only)
+ *      - Perhaps: CPUMCTX.fXStateMask (windows only)
  *
  * We currently ASSUME that neither CPUMCTX_WSF_IBPB_ENTRY nor
  * CPUMCTX_WSF_IBPB_EXIT cannot be changed at runtime.

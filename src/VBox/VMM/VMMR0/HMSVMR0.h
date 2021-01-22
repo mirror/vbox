@@ -53,39 +53,12 @@ VMMR0DECL(int)          SVMR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 VMMR0DECL(int)          SVMR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt);
 
 /**
- * Prepares for and executes VMRUN (64-bit register context).
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure. (Not used.)
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   HCPhyspVMCB     Physical address of the VMCB.
- *
- * @remarks With spectre mitigations and the usual need for speed (/ micro
- *          optimizations), we have a bunch of variations of this code depending
- *          on a few precoditions.  In release builds, the code is entirely
- *          without conditionals.  Debug builds have a couple of assertions that
- *          shouldn't ever be triggered.
- *
- * @{
- */
-DECLASM(int) hmR0SvmVmRun_SansXcr0_SansIbpbEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
-DECLASM(int) hmR0SvmVmRun_WithXcr0_SansIbpbEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
-DECLASM(int) hmR0SvmVmRun_SansXcr0_WithIbpbEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
-DECLASM(int) hmR0SvmVmRun_WithXcr0_WithIbpbEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
-DECLASM(int) hmR0SvmVmRun_SansXcr0_SansIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
-DECLASM(int) hmR0SvmVmRun_WithXcr0_SansIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
-DECLASM(int) hmR0SvmVmRun_SansXcr0_WithIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
-DECLASM(int) hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
-/** @} */
-
-
-/**
  * Executes INVLPGA.
  *
- * @param   pPageGC         Virtual page to invalidate.
+ * @param   GCVirt          Virtual page to invalidate.
  * @param   u32ASID         Tagged TLB id.
  */
-DECLASM(void) SVMR0InvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
+DECLASM(void) SVMR0InvlpgA(RTGCPTR GCVirt, uint32_t u32ASID);
 
 #endif /* IN_RING0 */
 
