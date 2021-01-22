@@ -277,14 +277,6 @@ bool UIWizardNewVMPage1::checkISOFile() const
     return true;
 }
 
-QFrame *UIWizardNewVMPage1::horizontalLine()
-{
-    QFrame *line = new QFrame;
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-    return line;
-}
-
 QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets(bool fCreateUnattendedWidgets,
                                                      bool fCreateLabels)
 {
@@ -302,8 +294,6 @@ QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets(bool fCreateUnattendedWidge
     m_pNameAndSystemEditor = new UINameAndSystemEditor(0, true, true, true);
     if (m_pNameAndSystemEditor)
         pLayout->addWidget(m_pNameAndSystemEditor, iRow++, 0, 1, 6);
-
-    pLayout->addWidget(horizontalLine(), iRow++, 0, 1, 6);
 
     if (fCreateLabels)
     {
@@ -338,8 +328,6 @@ QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets(bool fCreateUnattendedWidge
             m_pStartHeadlessCheckBox->setEnabled(false);
             pLayout->addWidget(m_pStartHeadlessCheckBox, iRow++, 1, 1, 5);
         }
-
-        pLayout->addWidget(horizontalLine(), iRow++, 0, 1, 4);
     }
     return pContainer;
 }

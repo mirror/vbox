@@ -104,7 +104,6 @@ private:
 
     /** Return false if ISO path is not empty but points to an missing or unreadable file. */
     bool checkISOFile() const;
-    QFrame *horizontalLine();
 
     /** Full path (including the file name) of the machine's configuration file. */
     QString m_strMachineFilePath;
