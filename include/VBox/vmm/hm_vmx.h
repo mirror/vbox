@@ -52,8 +52,20 @@
 #define VMX_RESTORE_HOST_GDTR                                   RT_BIT(5)
 #define VMX_RESTORE_HOST_IDTR                                   RT_BIT(6)
 #define VMX_RESTORE_HOST_GDT_READ_ONLY                          RT_BIT(7)
-#define VMX_RESTORE_HOST_REQUIRED                               RT_BIT(8)
-#define VMX_RESTORE_HOST_GDT_NEED_WRITABLE                      RT_BIT(9)
+#define VMX_RESTORE_HOST_GDT_NEED_WRITABLE                      RT_BIT(8)
+/**
+ * This _must_ be the top most bit, so that we can easily that that it and
+ * something else is set w/o having to do two checks like this:
+ * @code
+ *     if (   (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED)
+ *         && (pVCpu->hm.s.vmx.fRestoreHostFlags & ~VMX_RESTORE_HOST_REQUIRED))
+ * @endcode
+ * Instead we can then do:
+ * @code
+ *     if (pVCpu->hm.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
+ * @endcode
+ */
+#define VMX_RESTORE_HOST_REQUIRED                               RT_BIT(9)
 /** @} */
 
 /**

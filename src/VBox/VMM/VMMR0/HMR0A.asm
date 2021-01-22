@@ -319,7 +319,7 @@ BEGINCODE
 ; @param   f32RestoreHost x86: [ebp + 08h]  msc: ecx  gcc: edi   RestoreHost flags.
 ; @param   pRestoreHost   x86: [ebp + 0ch]  msc: rdx  gcc: rsi   Pointer to the RestoreHost struct.
 ;
-ALIGNCODE(16)
+ALIGNCODE(64)
 BEGINPROC VMXRestoreHostState
 %ifndef ASM_CALL64_GCC
     ; Use GCC's input registers since we'll be needing both rcx and rdx further
