@@ -906,28 +906,27 @@ AssertCompileMemberAlignment(VMXVMCSINFO, hMemObj,         8);
  */
 typedef struct VMXRESTOREHOST
 {
-    RTSEL       uHostSelDS;     /* 0x00 */
-    RTSEL       uHostSelES;     /* 0x02 */
-    RTSEL       uHostSelFS;     /* 0x04 */
-    RTSEL       uHostSelGS;     /* 0x06 */
-    RTSEL       uHostSelTR;     /* 0x08 */
-    uint8_t     abPadding0[4];
-    X86XDTR64   HostGdtr;       /**< 0x0e - should be aligned by its 64-bit member. */
-    uint8_t     abPadding1[6];
-    X86XDTR64   HostGdtrRw;     /**< 0x1e - should be aligned by its 64-bit member. */
-    uint8_t     abPadding2[6];
-    X86XDTR64   HostIdtr;       /**< 0x2e - should be aligned by its 64-bit member. */
-    uint64_t    uHostFSBase;    /* 0x38 */
-    uint64_t    uHostGSBase;    /* 0x40 */
+    RTSEL       uHostSelDS;     /**< 0x00 */
+    RTSEL       uHostSelES;     /**< 0x02 */
+    RTSEL       uHostSelFS;     /**< 0x04 */
+    X86XDTR64   HostGdtr;       /**< 0x06 - should be aligned by its 64-bit member. */
+    RTSEL       uHostSelGS;     /**< 0x10 */
+    RTSEL       uHostSelTR;     /**< 0x12 */
+    uint8_t     abPadding0[2];  /**< 0x14 */
+    X86XDTR64   HostGdtrRw;     /**< 0x16 - should be aligned by its 64-bit member. */
+    uint8_t     abPadding1[6];  /**< 0x20 */
+    X86XDTR64   HostIdtr;       /**< 0x26 - should be aligned by its 64-bit member. */
+    uint64_t    uHostFSBase;    /**< 0x30 */
+    uint64_t    uHostGSBase;    /**< 0x38 */
 } VMXRESTOREHOST;
 /** Pointer to VMXRESTOREHOST. */
 typedef VMXRESTOREHOST *PVMXRESTOREHOST;
 AssertCompileSize(X86XDTR64, 10);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr.uAddr,   16);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtrRw.uAddr, 32);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr,   48);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,      56);
-AssertCompileSize(VMXRESTOREHOST, 72);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr.uAddr,   0x08);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtrRw.uAddr, 0x18);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr,   0x28);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,      0x30);
+AssertCompileSize(VMXRESTOREHOST, 64);
 AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 
 /** @} */

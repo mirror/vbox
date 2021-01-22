@@ -97,22 +97,17 @@ struc VMXRESTOREHOST
     .uHostSelDS                     resw    1
     .uHostSelES                     resw    1
     .uHostSelFS                     resw    1
+    .HostGdtr                       resb    10
     .uHostSelGS                     resw    1
     .uHostSelTR                     resw    1
-    .abPadding0                     resb    4
-    .HostGdtr                       resb    10
-    .abPadding1                     resb    6
+    .abPadding0                     resb    2
     .HostGdtrRw                     resb    10
-    .abPadding2                     resb    6
+    .abPadding1                     resb    6
     .HostIdtr                       resb    10
+    alignb 8
     .uHostFSBase                    resq    1
     .uHostGSBase                    resq    1
 endstruc
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr,     16-2)
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtrRw,   32-2)
-AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr,     48-2)
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    56)
-AssertCompileSize(VMXRESTOREHOST, 72)
 
 struc HMCPUVMX
     .VmcsInfo                       resb    VMXVMCSINFO_size
