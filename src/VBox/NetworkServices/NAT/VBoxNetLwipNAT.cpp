@@ -132,7 +132,9 @@ typedef VECNATSERVICEPF::const_iterator CITERATORNATSERVICEPF;
 static int fetchNatPortForwardRules(const ComNatPtr&, bool, VECNATSERVICEPF&);
 
 
-class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
+class VBoxNetLwipNAT
+  : public VBoxNetBaseService,
+    public NATNetworkEventAdapter
 {
     friend class NATNetworkListener;
 
@@ -195,9 +197,82 @@ class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
     static int natServiceProcessRegisteredPf(VECNATSERVICEPF& vecPf);
 };
 
+INTNETSEG VBoxNetLwipNAT::aXmitSeg[64];
 
 static VBoxNetLwipNAT *g_pLwipNat;
-INTNETSEG VBoxNetLwipNAT::aXmitSeg[64];
+
+
+
+VBoxNetLwipNAT::VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6)
+  : VBoxNetBaseService("VBoxNetNAT", "nat-network")
+{
+    LogFlowFuncEnter();
+
+    m_ProxyOptions.ipv6_enabled = 0;
+    m_ProxyOptions.ipv6_defroute = 0;
+    m_ProxyOptions.icmpsock4 = icmpsock4;
+    m_ProxyOptions.icmpsock6 = icmpsock6;
+    m_ProxyOptions.tftp_root = NULL;
+    m_ProxyOptions.src4 = NULL;
+    m_ProxyOptions.src6 = NULL;
+    RT_ZERO(m_src4);
+    RT_ZERO(m_src6);
+    m_src4.sin_family = AF_INET;
+    m_src6.sin6_family = AF_INET6;
+#if HAVE_SA_LEN
+    m_src4.sin_len = sizeof(m_src4);
+    m_src6.sin6_len = sizeof(m_src6);
+#endif
+    m_ProxyOptions.nameservers = NULL;
+
+    m_LwipNetIf.name[0] = 'N';
+    m_LwipNetIf.name[1] = 'T';
+
+    RTMAC mac;
+    mac.au8[0] = 0x52;
+    mac.au8[1] = 0x54;
+    mac.au8[2] = 0;
+    mac.au8[3] = 0x12;
+    mac.au8[4] = 0x35;
+    mac.au8[5] = 0;
+    setMacAddress(mac);
+
+    RTNETADDRIPV4 address;
+    address.u     = RT_MAKE_U32_FROM_U8( 10,  0,  2,  2); // NB: big-endian
+    setIpv4Address(address);
+
+    address.u     = RT_H2N_U32_C(0xffffff00);
+    setIpv4Netmask(address);
+
+    fDontLoadRulesOnStartup = false;
+
+    for (size_t i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
+        addCommandLineOption(&g_aGetOptDef[i]);
+
+    LogFlowFuncLeave();
+}
+
+
+VBoxNetLwipNAT::~VBoxNetLwipNAT()
+{
+    if (m_ProxyOptions.tftp_root)
+    {
+        RTStrFree((char *)m_ProxyOptions.tftp_root);
+        m_ProxyOptions.tftp_root = NULL;
+    }
+    if (m_ProxyOptions.nameservers)
+    {
+        const char **pv = m_ProxyOptions.nameservers;
+        while (*pv)
+        {
+            RTStrFree((char*)*pv);
+            pv++;
+        }
+        RTMemFree(m_ProxyOptions.nameservers);
+        m_ProxyOptions.nameservers = NULL;
+    }
+}
+
 
 /**
  * @note: this work on Event thread.
@@ -637,76 +712,6 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 
     LogFlowFunc(("LEAVE: %d\n", ERR_OK));
     return ERR_OK;
-}
-
-
-VBoxNetLwipNAT::VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6) : VBoxNetBaseService("VBoxNetNAT", "nat-network")
-{
-    LogFlowFuncEnter();
-
-    m_ProxyOptions.ipv6_enabled = 0;
-    m_ProxyOptions.ipv6_defroute = 0;
-    m_ProxyOptions.icmpsock4 = icmpsock4;
-    m_ProxyOptions.icmpsock6 = icmpsock6;
-    m_ProxyOptions.tftp_root = NULL;
-    m_ProxyOptions.src4 = NULL;
-    m_ProxyOptions.src6 = NULL;
-    RT_ZERO(m_src4);
-    RT_ZERO(m_src6);
-    m_src4.sin_family = AF_INET;
-    m_src6.sin6_family = AF_INET6;
-#if HAVE_SA_LEN
-    m_src4.sin_len = sizeof(m_src4);
-    m_src6.sin6_len = sizeof(m_src6);
-#endif
-    m_ProxyOptions.nameservers = NULL;
-
-    m_LwipNetIf.name[0] = 'N';
-    m_LwipNetIf.name[1] = 'T';
-
-    RTMAC mac;
-    mac.au8[0] = 0x52;
-    mac.au8[1] = 0x54;
-    mac.au8[2] = 0;
-    mac.au8[3] = 0x12;
-    mac.au8[4] = 0x35;
-    mac.au8[5] = 0;
-    setMacAddress(mac);
-
-    RTNETADDRIPV4 address;
-    address.u     = RT_MAKE_U32_FROM_U8( 10,  0,  2,  2); // NB: big-endian
-    setIpv4Address(address);
-
-    address.u     = RT_H2N_U32_C(0xffffff00);
-    setIpv4Netmask(address);
-
-    fDontLoadRulesOnStartup = false;
-
-    for(unsigned int i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
-        addCommandLineOption(&g_aGetOptDef[i]);
-
-    LogFlowFuncLeave();
-}
-
-
-VBoxNetLwipNAT::~VBoxNetLwipNAT()
-{
-    if (m_ProxyOptions.tftp_root)
-    {
-        RTStrFree((char *)m_ProxyOptions.tftp_root);
-        m_ProxyOptions.tftp_root = NULL;
-    }
-    if (m_ProxyOptions.nameservers)
-    {
-        const char **pv = m_ProxyOptions.nameservers;
-        while (*pv)
-        {
-            RTStrFree((char*)*pv);
-            pv++;
-        }
-        RTMemFree(m_ProxyOptions.nameservers);
-        m_ProxyOptions.nameservers = NULL;
-    }
 }
 
 
