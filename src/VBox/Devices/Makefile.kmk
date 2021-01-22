@@ -402,6 +402,9 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   VBoxDD_SOURCES.darwin += \
  	USB/USBProxyDevice.cpp \
  	USB/darwin/USBProxyDevice-darwin.cpp
+#  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.9)	# Hack, shouldn't be needed
+#   USB/darwin/USBProxyDevice-darwin.cpp_SDKS = MACOSX1010
+#  endif
 
   VBoxDD_DEFS.linux     += \
  	VUSB_HAVE_USBPROXY_DEVICE \

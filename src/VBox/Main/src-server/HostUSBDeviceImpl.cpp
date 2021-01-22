@@ -1205,7 +1205,7 @@ bool HostUSBDevice::i_updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMa
 /*
  * Defined on hosts where we have a driver that keeps proper device states.
  */
-# if defined(RT_OS_LINUX)
+# if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 #  define HOSTUSBDEVICE_FUZZY_STATE 1
 # else
 #  undef  HOSTUSBDEVICE_FUZZY_STATE

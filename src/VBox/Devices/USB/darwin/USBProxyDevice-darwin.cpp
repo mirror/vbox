@@ -1087,7 +1087,6 @@ static DECLCALLBACK(void) usbProxyDarwinPerformWakeup(void *pInfo)
 
 /* -=-=-=-=-=- The exported methods -=-=-=-=-=- */
 
-
 /**
  * Opens the USB Device.
  *
@@ -1233,6 +1232,9 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
              * If we fail, we'll try figure out who is using the device and
              * convince them to let go of it...
              */
+            irc = (*ppDevI)->USBDeviceReEnumerate(ppDevI, kUSBReEnumerateCaptureDeviceMask);
+            Log(("USBDeviceReEnumerate (capture) returned irc=%#x\n", irc));
+
             irc = (*ppDevI)->USBDeviceOpenSeize(ppDevI);
             if (irc == kIOReturnExclusiveAccess)
             {
@@ -1401,6 +1403,9 @@ static DECLCALLBACK(void) usbProxyDarwinClose(PUSBPROXYDEV pProxyDev)
         LogRel(("USB: USBDeviceClose -> %#x\n", irc));
         AssertMsgFailed(("irc=%#x\n", irc));
     }
+
+    irc = (*pDevOsX->ppDevI)->USBDeviceReEnumerate(pDevOsX->ppDevI, kUSBReEnumerateReleaseDeviceMask);
+    Log(("USBDeviceReEnumerate (release) returned irc=%#x\n", irc));
 
     (*pDevOsX->ppDevI)->Release(pDevOsX->ppDevI);
     pDevOsX->ppDevI = NULL;

@@ -40,7 +40,7 @@
  * Initialize data members.
  */
 USBProxyBackendDarwin::USBProxyBackendDarwin()
-    : USBProxyBackend(), mServiceRunLoopRef(NULL), mNotifyOpaque(NULL), mWaitABitNextTime(false), mUSBLibInitialized(false)
+    : USBProxyBackend(), mServiceRunLoopRef(NULL), mNotifyOpaque(NULL), mWaitABitNextTime(false)
 {
 }
 
@@ -59,15 +59,6 @@ int USBProxyBackendDarwin::init(USBProxyService *pUsbProxyService, const com::Ut
     USBProxyBackend::init(pUsbProxyService, strId, strAddress, fLoadingSettings);
 
     unconst(m_strBackend) = Utf8Str("host");
-
-    /*
-     * Initialize the USB library.
-     */
-    int rc = USBLibInit();
-    if (RT_FAILURE(rc))
-        return rc;
-
-    mUSBLibInitialized = true;
 
     /*
      * Start the poller thread.
@@ -90,28 +81,7 @@ void USBProxyBackendDarwin::uninit()
     if (isActive())
         stop();
 
-    /*
-     * Terminate the USB library - it'll
-     */
-    if (mUSBLibInitialized)
-    {
-        USBLibTerm();
-        mUSBLibInitialized = false;
-    }
-
     USBProxyBackend::uninit();
-}
-
-
-void *USBProxyBackendDarwin::insertFilter(PCUSBFILTER aFilter)
-{
-    return USBLibAddFilter(aFilter);
-}
-
-
-void USBProxyBackendDarwin::removeFilter(void *aId)
-{
-    USBLibRemoveFilter(aId);
 }
 
 
@@ -128,43 +98,9 @@ int USBProxyBackendDarwin::captureDevice(HostUSBDevice *aDevice)
 
     Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_Capturing);
 
-    /*
-     * Create a one-shot capture filter for the device (don't
-     * match on port) and trigger a re-enumeration of it.
-     */
-    USBFILTER Filter;
-    USBFilterInit(&Filter, USBFILTERTYPE_ONESHOT_CAPTURE);
-    initFilterFromDevice(&Filter, aDevice);
-
-    void *pvId = USBLibAddFilter(&Filter);
-    if (!pvId)
-        return VERR_GENERAL_FAILURE;
-
-    int rc = DarwinReEnumerateUSBDevice(aDevice->i_getUsbData());
-    if (RT_SUCCESS(rc))
-        aDevice->i_setBackendUserData(pvId);
-    else
-    {
-        USBLibRemoveFilter(pvId);
-        pvId = NULL;
-    }
-    LogFlowThisFunc(("returns %Rrc pvId=%p\n", rc, pvId));
-    return rc;
-}
-
-
-void USBProxyBackendDarwin::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
-{
-    AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
-
-    /*
-     * Remove the one-shot filter if necessary.
-     */
-    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->i_getBackendUserData()));
-    if (!aSuccess && aDevice->i_getBackendUserData())
-        USBLibRemoveFilter(aDevice->i_getBackendUserData());
-    aDevice->i_setBackendUserData(NULL);
-    USBProxyBackend::captureDeviceCompleted(aDevice, aSuccess);
+    devLock.release();
+    interruptWait();
+    return VINF_SUCCESS;
 }
 
 
@@ -181,53 +117,13 @@ int USBProxyBackendDarwin::releaseDevice(HostUSBDevice *aDevice)
 
     Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_ReleasingToHost);
 
-    /*
-     * Create a one-shot ignore filter for the device
-     * and trigger a re-enumeration of it.
-     */
-    USBFILTER Filter;
-    USBFilterInit(&Filter, USBFILTERTYPE_ONESHOT_IGNORE);
-    initFilterFromDevice(&Filter, aDevice);
-    Log(("USBFILTERIDX_PORT=%#x\n", USBFilterGetNum(&Filter, USBFILTERIDX_PORT)));
-    Log(("USBFILTERIDX_BUS=%#x\n", USBFilterGetNum(&Filter, USBFILTERIDX_BUS)));
-
-    void *pvId = USBLibAddFilter(&Filter);
-    if (!pvId)
-        return VERR_GENERAL_FAILURE;
-
-    int rc = DarwinReEnumerateUSBDevice(aDevice->i_getUsbData());
-    if (RT_SUCCESS(rc))
-        aDevice->i_setBackendUserData(pvId);
-    else
-    {
-        USBLibRemoveFilter(pvId);
-        pvId = NULL;
-    }
-    LogFlowThisFunc(("returns %Rrc pvId=%p\n", rc, pvId));
-    return rc;
+    devLock.release();
+    interruptWait();
+    return VINF_SUCCESS;
 }
 
 
-void USBProxyBackendDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
-{
-    AssertReturnVoid(aDevice->isWriteLockOnCurrentThread());
-
-    /*
-     * Remove the one-shot filter if necessary.
-     */
-    LogFlowThisFunc(("aDevice=%s aSuccess=%RTbool mOneShotId=%p\n", aDevice->i_getName().c_str(), aSuccess, aDevice->i_getBackendUserData()));
-    if (!aSuccess && aDevice->i_getBackendUserData())
-        USBLibRemoveFilter(aDevice->i_getBackendUserData());
-    aDevice->i_setBackendUserData(NULL);
-    USBProxyBackend::releaseDeviceCompleted(aDevice, aSuccess);
-}
-
-
-/**
- * Returns whether devices reported by this backend go through a de/re-attach
- * and device re-enumeration cycle when they are captured or released.
- */
-bool USBProxyBackendDarwin::i_isDevReEnumerationRequired()
+bool USBProxyBackendDarwin::isFakeUpdateRequired()
 {
     return true;
 }
