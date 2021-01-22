@@ -80,7 +80,7 @@
 #include "../NetLib/VBoxNetLib.h"
 #include "../NetLib/VBoxNetBaseService.h"
 #include "../NetLib/utils.h"
-#include "VBoxLwipCore.h"
+#include "../NetLib/VBoxPortForwardString.h"
 
 extern "C"
 {
@@ -99,19 +99,18 @@ extern "C"
 #include "portfwd.h"
 }
 
-
-#if defined(VBOX_RAWSOCK_DEBUG_HELPER)          \
-    && (defined(VBOX_WITH_HARDENING)            \
-        || defined(RT_OS_WINDOWS)               \
-        || defined(RT_OS_DARWIN))
-# error Have you forgotten to turn off VBOX_RAWSOCK_DEBUG_HELPER?
-#endif
+#include "VBoxLwipCore.h"
 
 #ifdef VBOX_RAWSOCK_DEBUG_HELPER
+#if    defined(VBOX_WITH_HARDENING) /* obviously */     \
+    || defined(RT_OS_WINDOWS)       /* not used */      \
+    || defined(RT_OS_DARWIN)        /* not necessary */
+# error Have you forgotten to turn off VBOX_RAWSOCK_DEBUG_HELPER?
+#endif
+/* ask the privileged helper to create a raw socket for us */
 extern "C" int getrawsock(int type);
 #endif
 
-#include "../NetLib/VBoxPortForwardString.h"
 
 static RTGETOPTDEF g_aGetOptDef[] =
 {
