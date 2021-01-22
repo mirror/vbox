@@ -1268,7 +1268,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 #endif
 
-    vboxNetNATLogInit(argc, argv);
+    VBoxNetLwipNAT::logInit(argc, argv);
 
     hrc = com::Initialize();
     if (FAILED(hrc))
