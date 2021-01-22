@@ -424,7 +424,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 /*static*/ DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpInit(void *arg)
 {
     AssertPtrReturnVoid(arg);
-    VBoxNetLwipNAT *pNat = static_cast<VBoxNetLwipNAT *>(arg);
+    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(arg);
 
     HRESULT hrc = com::Initialize();
     Assert(!FAILED(hrc)); NOREF(hrc);
@@ -437,8 +437,8 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 
     /* lwip thread */
     RTNETADDRIPV4 network;
-    RTNETADDRIPV4 address = g_pLwipNat->getIpv4Address();
-    RTNETADDRIPV4 netmask = g_pLwipNat->getIpv4Netmask();
+    RTNETADDRIPV4 address = self->getIpv4Address();
+    RTNETADDRIPV4 netmask = self->getIpv4Netmask();
     network.u = address.u & netmask.u;
 
     ip_addr LwipIpAddr, LwipIpNetMask, LwipIpNetwork;
@@ -447,11 +447,11 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
     memcpy(&LwipIpNetMask, &netmask, sizeof(ip_addr));
     memcpy(&LwipIpNetwork, &network, sizeof(ip_addr));
 
-    netif *pNetif = netif_add(&g_pLwipNat->m_LwipNetIf /* Lwip Interface */,
+    netif *pNetif = netif_add(&self->m_LwipNetIf /* Lwip Interface */,
                               &LwipIpAddr /* IP address*/,
                               &LwipIpNetMask /* Network mask */,
                               &LwipIpAddr /* gateway address, @todo: is self IP acceptable? */,
-                              g_pLwipNat /* state */,
+                              self /* state */,
                               VBoxNetLwipNAT::netifInit /* netif_init_fn */,
                               tcpip_input /* netif_input_fn */);
 
@@ -474,7 +474,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
     netif_set_up(pNetif);
     netif_set_link_up(pNetif);
 
-    if (pNat->m_ProxyOptions.ipv6_enabled) {
+    if (self->m_ProxyOptions.ipv6_enabled) {
         /*
          * XXX: lwIP currently only ever calls mld6_joingroup() in
          * nd6_tmr() for fresh tentative addresses, which is a wrong place
@@ -507,21 +507,22 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
         }
     }
 
-    proxy_init(&g_pLwipNat->m_LwipNetIf, &g_pLwipNat->m_ProxyOptions);
+    proxy_init(&self->m_LwipNetIf, &self->m_ProxyOptions);
 
-    natServiceProcessRegisteredPf(g_pLwipNat->m_vecPortForwardRule4);
-    natServiceProcessRegisteredPf(g_pLwipNat->m_vecPortForwardRule6);
+    natServiceProcessRegisteredPf(self->m_vecPortForwardRule4);
+    natServiceProcessRegisteredPf(self->m_vecPortForwardRule6);
 }
 
 
 /*static*/ DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpFini(void* arg)
 {
     AssertPtrReturnVoid(arg);
+    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(arg);
 
     /* XXX: proxy finalization */
-    netif_set_link_down(&g_pLwipNat->m_LwipNetIf);
-    netif_set_down(&g_pLwipNat->m_LwipNetIf);
-    netif_remove(&g_pLwipNat->m_LwipNetIf);
+    netif_set_link_down(&self->m_LwipNetIf);
+    netif_set_down(&self->m_LwipNetIf);
+    netif_remove(&self->m_LwipNetIf);
 
 }
 
@@ -534,8 +535,8 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 
     AssertPtrReturn(pNetif, ERR_ARG);
 
-    VBoxNetLwipNAT *pNat = static_cast<VBoxNetLwipNAT *>(pNetif->state);
-    AssertPtrReturn(pNat, ERR_ARG);
+    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(pNetif->state);
+    AssertPtrReturn(self, ERR_ARG);
 
     LogFlowFunc(("ENTER: pNetif[%c%c%d]\n", pNetif->name[0], pNetif->name[1], pNetif->num));
     /* validity */
@@ -544,11 +545,11 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 
 
     pNetif->hwaddr_len = sizeof(RTMAC);
-    RTMAC mac = g_pLwipNat->getMacAddress();
+    RTMAC mac = self->getMacAddress();
     memcpy(pNetif->hwaddr, &mac, sizeof(RTMAC));
 
-    pNat->m_u16Mtu = 1500; // XXX: FIXME
-    pNetif->mtu = pNat->m_u16Mtu;
+    self->m_u16Mtu = 1500; // XXX: FIXME
+    pNetif->mtu = self->m_u16Mtu;
 
     pNetif->flags = NETIF_FLAG_BROADCAST
       | NETIF_FLAG_ETHARP                /* Don't bother driver with ARP and let Lwip resolve ARP handling */
@@ -557,7 +558,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
     pNetif->linkoutput = netifLinkoutput; /* ether-level-pipe */
     pNetif->output = etharp_output;       /* ip-pipe */
 
-    if (pNat->m_ProxyOptions.ipv6_enabled) {
+    if (self->m_ProxyOptions.ipv6_enabled) {
         pNetif->output_ip6 = ethip6_output;
 
         /* IPv6 link-local address in slot 0 */
@@ -944,7 +945,7 @@ int VBoxNetLwipNAT::init()
 
     /* end of COM initialization */
 
-    rc = g_pLwipNat->tryGoOnline();
+    rc = tryGoOnline();
     if (RT_FAILURE(rc))
         return rc;
 
