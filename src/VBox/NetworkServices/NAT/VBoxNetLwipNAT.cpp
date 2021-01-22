@@ -118,13 +118,13 @@ static RTGETOPTDEF g_aGetOptDef[] =
     { "--port-forward6",           'P',   RTGETOPT_REQ_STRING }
 };
 
-typedef struct NATSEVICEPORTFORWARDRULE
+typedef struct NATSERVICEPORTFORWARDRULE
 {
     PORTFORWARDRULE Pfr;
     fwspec         FWSpec;
-} NATSEVICEPORTFORWARDRULE, *PNATSEVICEPORTFORWARDRULE;
+} NATSERVICEPORTFORWARDRULE, *PNATSERVICEPORTFORWARDRULE;
 
-typedef std::vector<NATSEVICEPORTFORWARDRULE> VECNATSERVICEPF;
+typedef std::vector<NATSERVICEPORTFORWARDRULE> VECNATSERVICEPF;
 typedef VECNATSERVICEPF::iterator ITERATORNATSERVICEPF;
 typedef VECNATSERVICEPF::const_iterator CITERATORNATSERVICEPF;
 
@@ -192,7 +192,7 @@ class VBoxNetLwipNAT
     VECNATSERVICEPF m_vecPortForwardRule4;
     VECNATSERVICEPF m_vecPortForwardRule6;
 
-    static int natServicePfRegister(NATSEVICEPORTFORWARDRULE& natServicePf);
+    static int natServicePfRegister(NATSERVICEPORTFORWARDRULE& natServicePf);
     static int natServiceProcessRegisteredPf(VECNATSERVICEPF& vecPf);
 };
 
@@ -352,7 +352,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
             VECNATSERVICEPF& rules = fIPv6FW ? m_vecPortForwardRule6
                                              : m_vecPortForwardRule4;
 
-            NATSEVICEPORTFORWARDRULE r;
+            NATSERVICEPORTFORWARDRULE r;
             RT_ZERO(r);
 
             r.Pfr.fPfrIPv6 = fIPv6FW;
@@ -424,7 +424,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
                 for (it = rules.begin(); it != rules.end(); ++it)
                 {
                     /* compare */
-                    NATSEVICEPORTFORWARDRULE &natFw = *it;
+                    NATSERVICEPORTFORWARDRULE &natFw = *it;
                     if (   natFw.Pfr.iPfrProto == r.Pfr.iPfrProto
                         && natFw.Pfr.u16PfrHostPort == r.Pfr.u16PfrHostPort
                         && strncmp(natFw.Pfr.szPfrHostAddr, r.Pfr.szPfrHostAddr, INET6_ADDRSTRLEN) == 0
@@ -714,7 +714,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 }
 
 
-/*static*/ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
+/*static*/ int VBoxNetLwipNAT::natServicePfRegister(NATSERVICEPORTFORWARDRULE& natPf)
 {
     int lrc;
 
@@ -772,7 +772,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
     ITERATORNATSERVICEPF it;
     for (it = vecRules.begin(); it != vecRules.end(); ++it)
     {
-        NATSEVICEPORTFORWARDRULE &natPf = *it;
+        NATSERVICEPORTFORWARDRULE &natPf = *it;
 
         LogRel(("Loading %s port-forwarding rule \"%s\": %s %s%s%s:%d -> %s%s%s:%d\n",
                 natPf.Pfr.fPfrIPv6 ? "IPv6" : "IPv4",
@@ -1008,7 +1008,7 @@ int VBoxNetLwipNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
         case 'p':
         case 'P':
         {
-            NATSEVICEPORTFORWARDRULE Rule;
+            NATSERVICEPORTFORWARDRULE Rule;
             VECNATSERVICEPF& rules = (rc == 'P'?
                                         m_vecPortForwardRule6
                                       : m_vecPortForwardRule4);
@@ -1391,7 +1391,7 @@ static int fetchNatPortForwardRules(const ComNatPtr& nat, bool fIsIPv6, VECNATSE
         hrc = nat->COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(rules));
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-    NATSEVICEPORTFORWARDRULE Rule;
+    NATSERVICEPORTFORWARDRULE Rule;
     for (size_t idxRules = 0; idxRules < rules.size(); ++idxRules)
     {
         Log(("%d-%s rule: %ls\n", idxRules, (fIsIPv6 ? "IPv6" : "IPv4"), rules[idxRules]));
