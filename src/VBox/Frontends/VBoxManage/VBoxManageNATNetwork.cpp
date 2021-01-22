@@ -102,7 +102,7 @@ static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet)
         if (fVal)
         {
             CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Prefix)(strVal.asOutParam()));
-            RTPrintf("IPv6 Prefix: %s\n", strVal.raw());
+            RTPrintf("IPv6 Prefix: %ls\n", strVal.raw());
         }
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(Enabled)(&fVal));
         RTPrintf("Enabled:     %s\n",  fVal ? "Yes" : "No");
