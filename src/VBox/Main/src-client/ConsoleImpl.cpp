@@ -421,14 +421,8 @@ HRESULT Console::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
 
-    RT_ZERO(mapStorageLeds);
-    RT_ZERO(mapNetworkLeds);
-    RT_ZERO(mapUSBLed);
-    RT_ZERO(mapSharedFolderLed);
-    RT_ZERO(mapCrOglLed);
-
-    for (unsigned i = 0; i < RT_ELEMENTS(maStorageDevType); ++i)
-        maStorageDevType[i] = DeviceType_Null;
+    mcLedSets = 0;
+    RT_ZERO(maLedSets);
 
     MYVMM2USERMETHODS *pVmm2UserMethods = (MYVMM2USERMETHODS *)RTMemAllocZ(sizeof(*mpVmm2UserMethods) + sizeof(Console *));
     if (!pVmm2UserMethods)
@@ -821,6 +815,16 @@ void Console::uninit()
 #ifdef VBOX_WITH_EXTPACK
     unconst(mptrExtPackManager).setNull();
 #endif
+
+    /* Release memory held by the LED sets. */
+    for (size_t idxSet = 0; idxSet < mcLedSets; idxSet++)
+    {
+        RTMemFree(maLedSets[idxSet].papLeds);
+        RTMemFree(maLedSets[idxSet].paSubTypes);
+        maLedSets[idxSet].papLeds = NULL;
+        maLedSets[idxSet].paSubTypes = NULL;
+    }
+    mcLedSets = 0;
 
     LogFlowThisFuncLeave();
 }
@@ -2688,7 +2692,7 @@ HRESULT Console::sleepButton()
 }
 
 /** read the value of a LED. */
-inline uint32_t readAndClearLed(PPDMLED pLed)
+DECLINLINE(uint32_t) readAndClearLed(PPDMLED pLed)
 {
     if (!pLed)
         return 0;
@@ -2705,57 +2709,55 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType,
      * readAndClearLed() should be thread safe.
      */
 
-    aActivity.resize(aType.size());
+    std::vector<bool> aWanted;
+    std::vector<PDMLEDCORE> aLED;
+    DeviceType_T maxWanted = (DeviceType_T) 0;
+    DeviceType_T enmType;
 
-    size_t iType;
-    for (iType = 0; iType < aType.size(); ++iType)
+    /* Make a roadmap of which DeviceType_T LED types are wanted */
+    for (size_t iType = 0; iType < aType.size(); ++iType)
     {
-        /* Get LED array to read */
-        PDMLEDCORE SumLed = {0};
-        switch (aType[iType])
+        enmType = aType[iType];
+        if (enmType > maxWanted)
         {
-            case DeviceType_Floppy:
-            case DeviceType_DVD:
-            case DeviceType_HardDisk:
-            {
-                for (unsigned i = 0; i < RT_ELEMENTS(mapStorageLeds); ++i)
-                    if (maStorageDevType[i] == aType[iType])
-                        SumLed.u32 |= readAndClearLed(mapStorageLeds[i]);
-                break;
-            }
-
-            case DeviceType_Network:
-            {
-                for (unsigned i = 0; i < RT_ELEMENTS(mapNetworkLeds); ++i)
-                    SumLed.u32 |= readAndClearLed(mapNetworkLeds[i]);
-                break;
-            }
-
-            case DeviceType_USB:
-            {
-                for (unsigned i = 0; i < RT_ELEMENTS(mapUSBLed); ++i)
-                    SumLed.u32 |= readAndClearLed(mapUSBLed[i]);
-                break;
-            }
-
-            case DeviceType_SharedFolder:
-            {
-                SumLed.u32 |= readAndClearLed(mapSharedFolderLed);
-                break;
-            }
-
-            case DeviceType_Graphics3D:
-            {
-                SumLed.u32 |= readAndClearLed(mapCrOglLed);
-                break;
-            }
-
-            default:
-                return setError(E_INVALIDARG, tr("Invalid device type: %d"), aType[iType]);
+            maxWanted = enmType;
+            aWanted.resize(maxWanted + 1);
         }
+        aWanted[enmType] = true;
+    }
+    aLED.resize(maxWanted + 1);
 
+    /* Collect all the LEDs in a single sweep through all drivers' sets */
+    for (uint32_t idxSet = 0; idxSet < mcLedSets; ++idxSet)
+    {
+        /* Look inside this driver's set of LEDs */
+        PLEDSET pLS = &maLedSets[idxSet];
+
+        /* Multi-type drivers (e.g. SCSI) have a subtype array which must be matched. */
+        if (pLS->paSubTypes)
+        {
+            for (uint32_t inSet = 0; inSet < pLS->cLeds; ++inSet)
+            {
+                enmType = pLS->paSubTypes[inSet];
+                if (enmType < maxWanted && aWanted[enmType])
+                    aLED[enmType].u32 |= readAndClearLed(pLS->papLeds[inSet]);
+            }
+        }
+        /* Single-type drivers (e.g. floppy) have the type in ->enmType */
+        else
+        {
+            enmType = pLS->enmType;
+            if (enmType < maxWanted && aWanted[enmType])
+                for (uint32_t inSet = 0; inSet < pLS->cLeds; ++inSet)
+                    aLED[enmType].u32 |= readAndClearLed(pLS->papLeds[inSet]);
+        }
+    }
+
+    aActivity.resize(aType.size());
+    for (size_t iType = 0; iType < aActivity.size(); ++iType)
+    {
         /* Compose the result */
-        switch (SumLed.u32 & (PDMLED_READING | PDMLED_WRITING))
+        switch (aLED[aType[iType]].u32 & (PDMLED_READING | PDMLED_WRITING))
         {
             case 0:
                 aActivity[iType] = DeviceActivity_Idle;
@@ -10863,9 +10865,23 @@ DECLCALLBACK(void) Console::i_drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterfac
     {
         PPDMLED pLed;
         int rc = pThis->pLedPorts->pfnQueryStatusLed(pThis->pLedPorts, iLUN, &pLed);
+        /*
+         * pLed now points directly to the per-unit struct PDMLED field
+         * inside the target device struct owned by the hardware driver.
+         */
         if (RT_FAILURE(rc))
             pLed = NULL;
         ASMAtomicWritePtr(&pThis->papLeds[iLUN - pThis->iFirstLUN], pLed);
+        /*
+         * papLeds[] points to the struct PDMLED of each of this driver's
+         * units.  The entries are initialized here, called out of a loop
+         * in Console::i_drvStatus_Construct(), which previously called
+         * Console::i_attachStatusDriver() to allocate the array itself.
+         *
+         * The arrays (and thus individual LEDs) are eventually read out
+         * by Console::getDeviceActivity(), which is itself called from
+         * src/VBox/Frontends/VirtualBox/src/runtime/UIIndicatorsPool.cpp
+         */
         Log(("drvStatus_UnitChanged: iLUN=%d pLed=%p\n", iLUN, pLed));
     }
 }

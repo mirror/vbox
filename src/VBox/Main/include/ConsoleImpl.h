@@ -762,8 +762,12 @@ private:
                                                      bool fForce);
 
     HRESULT i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *BusMgr, PCFGMNODE pDevices);
-    void i_attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
-                              uint64_t uFirst, uint64_t uLast,
+    struct LEDSET;
+    typedef struct LEDSET *PLEDSET;
+    PLEDSET i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, DeviceType_T **ppSubTypes);
+    void i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType,
+                              uint32_t uFirst, uint32_t uLast,
+                              DeviceType_T **ppaSubTypes,
                               Console::MediumAttachmentMap *pmapMediumAttachments,
                               const char *pcszDevice, unsigned uInstance);
 
@@ -990,32 +994,19 @@ private:
 #endif
     BusAssignmentManager*       mBusMgr;
 
-    enum
+    /** @name LEDs and their management
+     * @{ */
+    /** Number of LED sets in use in maLedSets. */
+    uint32_t          mcLedSets;
+    /** LED sets. */
+    struct LEDSET
     {
-        iLedFloppy  = 0,
-        cLedFloppy  = 2,
-        iLedIde     = iLedFloppy + cLedFloppy,
-        cLedIde     = 4,
-        iLedSata    = iLedIde + cLedIde,
-        cLedSata    = 30,
-        iLedScsi    = iLedSata + cLedSata,
-        cLedScsi    = 16,
-        iLedSas     = iLedScsi + cLedScsi,
-        cLedSas     = 8,
-        iLedUsb     = iLedSas + cLedSas,
-        cLedUsb     = 8,
-        iLedNvme    = iLedUsb + cLedUsb,
-        cLedNvme    = 30,
-        iLedVirtio  = iLedNvme + cLedNvme,
-        cLedVirtio  = 16,
-        cLedStorage = cLedFloppy + cLedIde + cLedSata + cLedScsi + cLedSas + cLedUsb + cLedNvme + cLedVirtio
-    };
-    DeviceType_T maStorageDevType[cLedStorage];
-    PPDMLED      mapStorageLeds[cLedStorage];
-    PPDMLED      mapNetworkLeds[36];    /**< @todo adapt this to the maximum network card count */
-    PPDMLED      mapSharedFolderLed;
-    PPDMLED      mapUSBLed[2];
-    PPDMLED      mapCrOglLed;
+        PPDMLED      *papLeds;
+        uint32_t      cLeds;
+        DeviceType_T  enmType;
+        DeviceType_T *paSubTypes; /**< Optionally, device types for each individual LED. Runs parallel to papLeds. */
+    }                 maLedSets[32];
+    /** @} */
 
     MediumAttachmentMap mapMediumAttachments;
 
