@@ -1282,17 +1282,19 @@ typedef struct PDMIOMMUREGR0
      * Translates the physical address for a memory transaction through the IOMMU.
      *
      * @returns VBox status code.
-     * @param   pDevIns     The IOMMU device instance.
-     * @param   uDevId      The device identifier (bus, device, function).
-     * @param   uIova       The I/O virtual address being accessed.
-     * @param   cbAccess    The number of bytes being accessed.
-     * @param   fFlags      Access flags, see PDMIOMMU_MEM_F_XXX.
-     * @param   pGCPhysSpa  Where to store the translated system physical address.
+     * @param   pDevIns         The IOMMU device instance.
+     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   uIova           The I/O virtual address being accessed.
+     * @param   cbAccess        The number of bytes being accessed.
+     * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
+     * @param   pGCPhysSpa      Where to store the translated system physical address.
+     * @param   pcbContiguous   Where to store the number of contiguous bytes translated
+     *                          and permission-checked.
      *
      * @thread  Any.
      */
     DECLR0CALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
-                                            uint32_t fFlags, PRTGCPHYS pGCPhysSpa));
+                                            uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous));
 
     /**
      * Translates in bulk physical page addresses for memory transactions through the
@@ -1332,7 +1334,7 @@ typedef struct PDMIOMMUREGR0
 typedef PDMIOMMUREGR0 *PPDMIOMMUREGR0;
 
 /** Current PDMIOMMUREG version number. */
-#define PDM_IOMMUREGR0_VERSION                      PDM_VERSION_MAKE(0xff10, 2, 0)
+#define PDM_IOMMUREGR0_VERSION                      PDM_VERSION_MAKE(0xff10, 3, 0)
 
 
 /**
@@ -1350,17 +1352,19 @@ typedef struct PDMIOMMUREGRC
      * Translates the physical address for a memory transaction through the IOMMU.
      *
      * @returns VBox status code.
-     * @param   pDevIns     The IOMMU device instance.
-     * @param   uDevId      The device identifier (bus, device, function).
-     * @param   uIova       The I/O virtual address being accessed.
-     * @param   cbAccess    The number of bytes being accessed.
-     * @param   fFlags      Access flags, see PDMIOMMU_MEM_F_XXX.
-     * @param   pGCPhysSpa  Where to store the translated system physical address.
+     * @param   pDevIns         The IOMMU device instance.
+     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   uIova           The I/O virtual address being accessed.
+     * @param   cbAccess        The number of bytes being accessed.
+     * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
+     * @param   pGCPhysSpa      Where to store the translated system physical address.
+     * @param   pcbContiguous   Where to store the number of contiguous bytes translated
+     *                          and permission-checked.
      *
      * @thread  Any.
      */
     DECLRCCALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
-                                            uint32_t fFlags, PRTGCPHYS pGCPhysSpa));
+                                            uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous));
 
     /**
      * Translates in bulk physical page addresses for memory transactions through the
@@ -1400,7 +1404,7 @@ typedef struct PDMIOMMUREGRC
 typedef PDMIOMMUREGRC *PPDMIOMMUREGRC;
 
 /** Current PDMIOMMUREG version number. */
-#define PDM_IOMMUREGRC_VERSION                      PDM_VERSION_MAKE(0xff11, 2, 0)
+#define PDM_IOMMUREGRC_VERSION                      PDM_VERSION_MAKE(0xff11, 3, 0)
 
 
 /**
@@ -1418,17 +1422,19 @@ typedef struct PDMIOMMUREGR3
      * Translates the physical address for a memory transaction through the IOMMU.
      *
      * @returns VBox status code.
-     * @param   pDevIns     The IOMMU device instance.
-     * @param   uDevId      The device identifier (bus, device, function).
-     * @param   uIova       The I/O virtual address being accessed.
-     * @param   cbAccess    The number of bytes being accessed.
-     * @param   fFlags      Access flags, see PDMIOMMU_MEM_F_XXX.
-     * @param   pGCPhysSpa  Where to store the translated system physical address.
+     * @param   pDevIns         The IOMMU device instance.
+     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   uIova           The I/O virtual address being accessed.
+     * @param   cbAccess        The number of bytes being accessed.
+     * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
+     * @param   pGCPhysSpa      Where to store the translated system physical address.
+     * @param   pcbContiguous   Where to store the number of contiguous bytes translated
+     *                          and permission-checked.
      *
      * @thread  Any.
      */
     DECLR3CALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
-                                            uint32_t fFlags, PRTGCPHYS pGCPhysSpa));
+                                            uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous));
 
     /**
      * Translates in bulk physical page addresses for memory transactions through the
@@ -1468,7 +1474,7 @@ typedef struct PDMIOMMUREGR3
 typedef PDMIOMMUREGR3 *PPDMIOMMUREGR3;
 
 /** Current PDMIOMMUREG version number. */
-#define PDM_IOMMUREGR3_VERSION                      PDM_VERSION_MAKE(0xff12, 2, 0)
+#define PDM_IOMMUREGR3_VERSION                      PDM_VERSION_MAKE(0xff12, 3, 0)
 
 /** IOMMU registration structure for the current context. */
 typedef CTX_SUFF(PDMIOMMUREG)  PDMIOMMUREGCC;

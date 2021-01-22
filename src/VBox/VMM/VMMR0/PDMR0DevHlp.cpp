@@ -161,18 +161,34 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV 
         size_t const idxBus = pPciDev->Int.s.idxPdmBus;
         Assert(idxBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
         PPDMPCIBUSR0 pBus = &pGVM->pdmr0.s.aPciBuses[idxBus];
-
-        RTGCPHYS GCPhysOut;
         uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut);
-        if (RT_SUCCESS(rc))
-            GCPhys = GCPhysOut;
-        else
+        int rc = VINF_SUCCESS;
+        while (cbRead > 0)
         {
-            Log(("pdmR0DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
-                 GCPhys, cbRead, rc));
-            return rc;
+            RTGCPHYS GCPhysOut;
+            size_t   cbContig;
+            rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut, &cbContig);
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo Handle strict return codes from PGMPhysRead. */
+                rc = pDevIns->pHlpR0->pfnPhysRead(pDevIns, GCPhysOut, pvBuf, cbRead, fFlags);
+                if (RT_SUCCESS(rc))
+                {
+                    cbRead -= cbContig;
+                    pvBuf   = (void *)((uintptr_t)pvBuf + cbContig);
+                    GCPhys += cbContig;
+                }
+                else
+                    break;
+            }
+            else
+            {
+                Log(("pdmR0DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
+                     GCPhys, cbRead, rc));
+                break;
+            }
         }
+        return rc;
     }
 #endif
 
@@ -206,27 +222,43 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV
 
 #ifdef VBOX_WITH_IOMMU_AMD
     /** @todo IOMMU: Optimize/re-organize things here later. */
-    PGVM        pGVM          = pDevIns->Internal.s.pGVM;
-    PPDMIOMMUR0 pIommu        = &pGVM->pdmr0.s.aIommus[0];
-    PPDMDEVINS   pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    PGVM        pGVM         = pDevIns->Internal.s.pGVM;
+    PPDMIOMMUR0 pIommu       = &pGVM->pdmr0.s.aIommus[0];
+    PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
     {
         size_t const idxBus = pPciDev->Int.s.idxPdmBus;
         Assert(idxBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
         PPDMPCIBUSR0 pBus = &pGVM->pdmr0.s.aPciBuses[idxBus];
-
-        RTGCPHYS GCPhysOut;
         uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut);
-        if (RT_SUCCESS(rc))
-            GCPhys = GCPhysOut;
-        else
+        int rc = VINF_SUCCESS;
+        while (cbWrite > 0)
         {
-            Log(("pdmR0DevHlp_PCIPhysWrite: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
-                 GCPhys, cbWrite, rc));
-            return rc;
+            RTGCPHYS GCPhysOut;
+            size_t   cbContig;
+            rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut, &cbContig);
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo Handle strict return codes from PGMPhysWrite. */
+                rc = pDevIns->pHlpR0->pfnPhysWrite(pDevIns, GCPhysOut, pvBuf, cbWrite, fFlags);
+                if (RT_SUCCESS(rc))
+                {
+                    cbWrite -= cbContig;
+                    pvBuf    = (const void *)((uintptr_t)pvBuf + cbContig);
+                    GCPhys  += cbContig;
+                }
+                else
+                    break;
+            }
+            else
+            {
+                Log(("pdmR0DevHlp_PCIPhysWrite: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
+                     GCPhys, cbWrite, rc));
+                break;
+            }
         }
+        return rc;
     }
 #endif
 

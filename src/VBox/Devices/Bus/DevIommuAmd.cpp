@@ -2881,21 +2881,23 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
  * Looks up an I/O virtual address from the device table.
  *
  * @returns VBox status code.
- * @param   pDevIns     The IOMMU instance data.
- * @param   uDevId      The device ID.
- * @param   uIova       The I/O virtual address to lookup.
- * @param   cbAccess    The size of the access.
- * @param   fAccess     The access permissions (IOMMU_IO_PERM_XXX). This is the
- *                      permissions for the access being made.
- * @param   enmOp       The IOMMU operation being performed.
- * @param   pGCPhysSpa  Where to store the translated system physical address. Only
- *                      valid when translation succeeds and VINF_SUCCESS is
- *                      returned!
+ * @param   pDevIns         The IOMMU instance data.
+ * @param   uDevId          The device ID.
+ * @param   uIova           The I/O virtual address to lookup.
+ * @param   cbAccess        The size of the access.
+ * @param   fAccess         The access permissions (IOMMU_IO_PERM_XXX). This is the
+ *                          permissions for the access being made.
+ * @param   enmOp           The IOMMU operation being performed.
+ * @param   pGCPhysSpa      Where to store the translated system physical address. Only
+ *                          valid when VINF_SUCCESS is returned!
+ * @param   pcbContiguous   Where to store the number of contiguous bytes translated
+ *                          and permission-checked. Only valid when VINF_SUCCESS is
+ *                          returned!
  *
  * @thread  Any.
  */
 static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fAccess,
-                                     IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa)
+                                     IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     STAM_PROFILE_ADV_START(&pThis->StatDteLookup, a);
@@ -2911,7 +2913,8 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
         else
         {
             /** @todo IOMMU: Add to IOLTB cache. */
-            *pGCPhysSpa = uIova;
+            *pGCPhysSpa    = uIova;
+            *pcbContiguous = cbAccess;
             STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
             return VINF_SUCCESS;
         }
@@ -2939,67 +2942,79 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
         else
         {
             /** @todo IOMMU: Add to IOLTB cache. */
-            *pGCPhysSpa = uIova;
+            *pGCPhysSpa    = uIova;
+            *pcbContiguous = cbAccess;
             STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
             return VINF_SUCCESS;
         }
 
-        /** @todo IOMMU: Perhaps do the <= 4K access case first, if the generic loop
-         *        below gets too expensive and when we have iommuAmdWalkIoPageDirectory. */
-
-        uint64_t uBaseIova   = uIova & X86_PAGE_4K_BASE_MASK;
+        RTGCPHYS GCPhysSpa   = NIL_RTGCPHYS;
+        size_t   cbRemaining = cbAccess;
+        uint64_t uIovaPage   = uIova & X86_PAGE_4K_BASE_MASK;
         uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
-        uint64_t cbRemaining = cbAccess;
+        uint64_t cbPages     = 0;
         for (;;)
         {
             /* Walk the I/O page tables to translate the IOVA and check permission for the access. */
             IOWALKRESULT WalkResult;
-            rc = iommuAmdWalkIoPageTable(pDevIns, uDevId, uBaseIova, fAccess, &Dte, enmOp, &WalkResult);
+            RT_ZERO(WalkResult);
+            rc = iommuAmdWalkIoPageTable(pDevIns, uDevId, uIovaPage, fAccess, &Dte, enmOp, &WalkResult);
             if (RT_SUCCESS(rc))
             {
-                /** @todo IOMMU: Split large pages into 4K IOTLB entries and add to IOTLB cache. */
-
                 /* If translation is disabled for this device (root paging mode is 0), we're done. */
                 if (WalkResult.cShift == 0)
                 {
-                    *pGCPhysSpa = uIova;
+                    GCPhysSpa   = uIova;
+                    cbRemaining = 0;
                     break;
                 }
 
-                /* Store the translated base address before continuing to check permissions for any more pages. */
+                /* Store the translated address before continuing to access more pages. */
                 Assert(WalkResult.cShift >= X86_PAGE_4K_SHIFT);
                 if (cbRemaining == cbAccess)
                 {
                     uint64_t const offMask = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
                     uint64_t const offSpa  = uIova & offMask;
-                    *pGCPhysSpa = WalkResult.GCPhysSpa | offSpa;
+                    GCPhysSpa = WalkResult.GCPhysSpa | offSpa;
                 }
-
-                /* If the access exceeds the page size, check permissions for the subsequent page. */
-                uint64_t const cbPhysPage = UINT64_C(1) << WalkResult.cShift;
-                if (cbRemaining > cbPhysPage - offIova)
-                {
-                    cbRemaining -= (cbPhysPage - offIova);
-                    uBaseIova   += cbPhysPage;      /** @todo r=ramshankar: Should we mask the offset based on page size here? */
-                    offIova      = 0;
-                }
+                /* Check if addresses translated so far are physically contiguous. */
+                else if ((GCPhysSpa & X86_PAGE_4K_BASE_MASK) + cbPages == WalkResult.GCPhysSpa)
+                { /* likely */ }
                 else
                     break;
+
+                /* Check if we need to access more pages. */
+                uint64_t const cbSpa = UINT64_C(1) << WalkResult.cShift;
+                if (cbRemaining > cbSpa - offIova)
+                {
+                    cbRemaining -= (cbSpa - offIova);   /* Calculate how much more we need to access. */
+                    cbPages     += cbSpa;               /* Update size of all pages read thus far. */
+                    uIovaPage   += cbSpa;               /* Update address of the next access. */
+                    offIova      = 0;                   /* After the first page, all pages are accessed from offset 0. */
+                }
+                else
+                {
+                    cbRemaining = 0;
+                    break;
+                }
             }
             else
             {
-                LogFunc(("I/O page table walk failed. uIova=%#RX64 uBaseIova=%#RX64 fAccess=%u rc=%Rrc\n", uIova,
-                     uBaseIova, fAccess, rc));
-                *pGCPhysSpa = NIL_RTGCPHYS;
-                STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
-                return rc;
+                GCPhysSpa   = NIL_RTGCPHYS;
+                cbRemaining = 0;
+                break;
             }
         }
 
+        *pGCPhysSpa    = GCPhysSpa;
+        *pcbContiguous = cbAccess - cbRemaining;
+        AssertMsg(*pcbContiguous > 0 && *pcbContiguous <= cbAccess, ("cbAccess=%zu pcbContig=%zu\n", cbAccess, *pcbContiguous));
         STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
         return rc;
     }
 
+    *pGCPhysSpa    = NIL_RTGCPHYS;
+    *pcbContiguous = 0;
     LogFunc(("Failed to read device table entry. uDevId=%#x rc=%Rrc\n", uDevId, rc));
     STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
     return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
@@ -3010,17 +3025,20 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
  * Memory access transaction from a device.
  *
  * @returns VBox status code.
- * @param   pDevIns     The IOMMU device instance.
- * @param   uDevId      The device ID (bus, device, function).
- * @param   uIova       The I/O virtual address being accessed.
- * @param   cbAccess    The number of bytes being accessed.
- * @param   fFlags      The access flags, see PDMIOMMU_MEM_F_XXX.
- * @param   pGCPhysSpa  Where to store the translated system physical address.
- *
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   uDevId          The device ID (bus, device, function).
+ * @param   uIova           The I/O virtual address being accessed.
+ * @param   cbAccess        The number of bytes being accessed.
+ * @param   fFlags          The access flags, see PDMIOMMU_MEM_F_XXX.
+ * @param   pGCPhysSpa      Where to store the translated system physical address. Only
+ *                          valid when VINF_SUCCESS is returned!
+ * @param   pcbContiguous   Where to store the number of contiguous bytes translated
+ *                          and permission-checked. Only valid when VINF_SUCCESS is
+ *                          returned!
  * @thread  Any.
  */
 static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
-                                                 uint32_t fFlags, PRTGCPHYS pGCPhysSpa)
+                                                 uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
     /* Validate. */
     AssertPtr(pDevIns);
@@ -3028,7 +3046,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uD
     Assert(cbAccess > 0);
     Assert(!(fFlags & ~PDMIOMMU_MEM_F_VALID_MASK));
 
-    PIOMMU  pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
     if (Ctrl.n.u1IommuEn)
     {
@@ -3058,7 +3076,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uD
         /** @todo IOMMU: IOTLB cache lookup. */
 
         /* Lookup the IOVA from the device table. */
-        int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbAccess, fAccess, enmOp, pGCPhysSpa);
+        int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbAccess, fAccess, enmOp, pGCPhysSpa, pcbContiguous);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
@@ -3068,7 +3086,8 @@ static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uD
     }
 
     /* Addresses are forwarded without translation when the IOMMU is disabled. */
-    *pGCPhysSpa = uIova;
+    *pGCPhysSpa    = uIova;
+    *pcbContiguous = cbAccess;
     return VINF_SUCCESS;
 }
 
@@ -3128,7 +3147,9 @@ static DECLCALLBACK(int) iommuAmdDeviceMemBulkAccess(PPDMDEVINS pDevIns, uint16_
         /* Lookup each IOVA from the device table. */
         for (size_t i = 0; i < cIovas; i++)
         {
-            int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, pauIovas[i], X86_PAGE_SIZE, fAccess, enmOp, &paGCPhysSpa[i]);
+            size_t cbContig;
+            int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, pauIovas[i], X86_PAGE_SIZE, fAccess, enmOp, &paGCPhysSpa[i],
+                                               &cbContig);
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else
@@ -3136,6 +3157,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemBulkAccess(PPDMDEVINS pDevIns, uint16_
                 LogFunc(("Failed! uDevId=%#x uIova=%#RX64 fAccess=%u rc=%Rrc\n", uDevId, pauIovas[i], fAccess, rc));
                 return rc;
             }
+            Assert(cbContig == X86_PAGE_SIZE);
         }
     }
     else

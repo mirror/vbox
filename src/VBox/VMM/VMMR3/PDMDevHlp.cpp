@@ -1830,18 +1830,35 @@ pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
         size_t const idxBus = pPciDev->Int.s.idxPdmBus;
         Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
         PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
-
-        RTGCPHYS GCPhysOut;
         uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut);
-        if (RT_SUCCESS(rc))
-            GCPhys = GCPhysOut;
-        else
+        int rc = VINF_SUCCESS;
+        while (cbRead > 0)
         {
-            Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
-                 cbRead, rc));
-            return rc;
+            RTGCPHYS GCPhysOut;
+            size_t   cbContig;
+            rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut, &cbContig);
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo Handle strict return codes from PGMPhysRead. */
+                rc = pDevIns->pHlpR3->pfnPhysRead(pDevIns, GCPhysOut, pvBuf, cbContig, fFlags);
+                if (RT_SUCCESS(rc))
+                {
+                    cbRead -= cbContig;
+                    pvBuf   = (void *)((uintptr_t)pvBuf + cbContig);
+                    GCPhys += cbContig;
+                }
+                else
+                    break;
+            }
+            else
+            {
+                AssertMsgFailed(("Here\n"));
+                Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
+                     cbRead, rc));
+                break;
+            }
         }
+        return rc;
     }
 #endif
 
@@ -1884,18 +1901,34 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys
         size_t const idxBus = pPciDev->Int.s.idxPdmBus;
         Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
         PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
-
-        RTGCPHYS GCPhysOut;
         uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut);
-        if (RT_SUCCESS(rc))
-            GCPhys = GCPhysOut;
-        else
+        int rc = VINF_SUCCESS;
+        while (cbWrite > 0)
         {
-            Log(("pdmR3DevHlp_PCIPhysWrite: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
-                 cbWrite, rc));
-            return rc;
+            RTGCPHYS GCPhysOut;
+            size_t   cbContig;
+            rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut, &cbContig);
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo Handle strict return codes from PGMPhysWrite. */
+                rc = pDevIns->pHlpR3->pfnPhysWrite(pDevIns, GCPhysOut, pvBuf, cbContig, fFlags);
+                if (RT_SUCCESS(rc))
+                {
+                    cbWrite -= cbContig;
+                    pvBuf    = (const void *)((uintptr_t)pvBuf + cbContig);
+                    GCPhys  += cbContig;
+                }
+                else
+                    break;
+            }
+            else
+            {
+                Log(("pdmR3DevHlp_PCIPhysWrite: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
+                     cbWrite, rc));
+                break;
+            }
         }
+        return rc;
     }
 #endif
 
@@ -1935,12 +1968,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysGCPhys2CCPtr(PPDMDEVINS pDevIns, PPD
         size_t const idxBus = pPciDev->Int.s.idxPdmBus;
         Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
         PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
-
-        RTGCPHYS GCPhysOut;
         uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, X86_PAGE_SIZE, PDMIOMMU_MEM_F_WRITE, &GCPhysOut);
+        RTGCPHYS GCPhysOut;
+        size_t cbContig;
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys & X86_PAGE_BASE_MASK, X86_PAGE_SIZE, PDMIOMMU_MEM_F_WRITE,
+                                      &GCPhysOut, &cbContig);
         if (RT_SUCCESS(rc))
+        {
             GCPhys = GCPhysOut;
+            Assert(cbContig == X86_PAGE_SIZE);
+        }
         else
         {
             LogFunc(("IOMMU translation failed. uDevId=%#x GCPhys=%#RGp rc=%Rrc\n", uDevId, GCPhys, rc));
@@ -1985,12 +2022,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDev
         size_t const idxBus = pPciDev->Int.s.idxPdmBus;
         Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
         PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
-
-        RTGCPHYS GCPhysOut;
         uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, X86_PAGE_SIZE, PDMIOMMU_MEM_F_READ, &GCPhysOut);
+        RTGCPHYS GCPhysOut;
+        size_t cbContig;
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys & X86_PAGE_BASE_MASK, X86_PAGE_SIZE, PDMIOMMU_MEM_F_READ,
+                                      &GCPhysOut, &cbContig);
         if (RT_SUCCESS(rc))
+        {
             GCPhys = GCPhysOut;
+            Assert(cbContig == X86_PAGE_SIZE);
+        }
         else
         {
             LogFunc(("IOMMU translation failed. uDevId=%#x GCPhys=%#RGp rc=%Rrc\n", uDevId, GCPhys, rc));
