@@ -23,6 +23,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/cpp/utils.h>
+#include <iprt/net.h>
 #include <iprt/cidr.h>
 #include <iprt/net.h>
 #include <VBox/com/array.h>
@@ -73,6 +74,8 @@ struct NATNetwork::Data
 
     uint32_t offGateway;
     uint32_t offDhcp;
+
+    void recalculatePortForwarding(const RTNETADDRIPV4 &AddrNew, const RTNETADDRIPV4 &MaskNew);
 };
 
 
@@ -260,11 +263,11 @@ HRESULT NATNetwork::getNetwork(com::Utf8Str &aNetwork)
 
 HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
 {
-    RTNETADDRIPV4 Addr, Mask;
+    RTNETADDRIPV4 Net, Mask;
     int iPrefix;
     int rc;
 
-    rc = RTNetStrToIPv4Cidr(aIPv4NetworkCidr.c_str(), &Addr, &iPrefix);
+    rc = RTNetStrToIPv4Cidr(aIPv4NetworkCidr.c_str(), &Net, &iPrefix);
     if (RT_FAILURE(rc))
         return setError(E_FAIL, "%s is not a valid IPv4 CIDR notation",
                         aIPv4NetworkCidr.c_str());
@@ -283,13 +286,13 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
         "%s: internal error: failed to convert prefix %d to netmask: %Rrc",
         aIPv4NetworkCidr.c_str(), iPrefix, rc));
 
-    if ((Addr.u & ~Mask.u) != 0)
+    if ((Net.u & ~Mask.u) != 0)
         return setError(E_FAIL,
             "%s: the specified address is longer than the specified prefix",
             aIPv4NetworkCidr.c_str());
 
     /* normalized CIDR notation */
-    com::Utf8StrFmt strCidr("%RTnaipv4/%d", Addr.u, iPrefix);
+    com::Utf8StrFmt strCidr("%RTnaipv4/%d", Net.u, iPrefix);
 
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -297,15 +300,7 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
         if (m->s.strIPv4NetworkCidr == strCidr)
             return S_OK;
 
-        /**
-         * @todo
-         * silently ignore network cidr update for now.
-         * todo: keep internally guest address of port forward rule
-         * as offset from network id.
-         */
-        if (!m->s.mapPortForwardRules4.empty())
-            return S_OK;
-
+        m->recalculatePortForwarding(Net, Mask);
 
         m->s.strIPv4NetworkCidr = strCidr;
         i_recalculateIpv4AddressAssignments();
@@ -315,6 +310,58 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
     HRESULT hrc = m->pVirtualBox->i_saveSettings();
     ComAssertComRCRetRC(hrc);
     return S_OK;
+}
+
+
+/**
+ * Do best effort attempt at converting existing port forwarding rules
+ * from the old prefix to the new one.  This might not be possible if
+ * the new prefix is longer (i.e. the network is smaller) or if a rule
+ * lists destination not from the network (though that rule wouldn't
+ * be terribly useful, at least currently).
+ */
+void NATNetwork::Data::recalculatePortForwarding(const RTNETADDRIPV4 &NetNew,
+                                                 const RTNETADDRIPV4 &MaskNew)
+{
+    RTNETADDRIPV4 NetOld, MaskOld;
+    int iPrefixOld;
+    int rc;
+
+    if (s.mapPortForwardRules4.empty())
+        return;                 /* nothing to do */
+
+    rc = RTNetStrToIPv4Cidr(s.strIPv4NetworkCidr.c_str(), &NetOld, &iPrefixOld);
+    if (RT_FAILURE(rc))
+        return;
+
+    rc = RTNetPrefixToMaskIPv4(iPrefixOld, &MaskOld);
+    if (RT_FAILURE(rc))
+        return;
+
+    for (settings::NATRulesMap::iterator it = s.mapPortForwardRules4.begin();
+         it != s.mapPortForwardRules4.end();
+         ++it)
+    {
+        settings::NATRule &rule = it->second;
+
+        /* parse the old destination address */
+        RTNETADDRIPV4 AddrOld;
+        rc = RTNetStrToIPv4Addr(rule.strGuestIP.c_str(), &AddrOld);
+        if (RT_FAILURE(rc))
+            continue;
+
+        /* is it in the old network? (likely) */
+        if ((AddrOld.u & MaskOld.u) != NetOld.u)
+            continue;
+
+        uint32_t u32Host = (AddrOld.u & ~MaskOld.u);
+
+        /* does it fit into the new network? */
+        if ((u32Host & MaskNew.u) != 0)
+            continue;
+
+        rule.strGuestIP.printf("%RTnaipv4", NetNew.u | u32Host);
+    }
 }
 
 
