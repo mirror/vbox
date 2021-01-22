@@ -31,5 +31,13 @@ tstPageFusion_DEFS.win     += _WIN32_WINNT=0x0501
 tstPageFusion_SOURCES       = \
 	tstPageFusion.cpp
 
+#
+# Install the LED test script to bin.
+#
+INSTALLS += lights-test-script
+lights-test-script_INST = $(INST_BIN)
+lights-test-script_MODE = a+rx,u+w
+lights-test-script_SOURCES = led-lights.sh
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
