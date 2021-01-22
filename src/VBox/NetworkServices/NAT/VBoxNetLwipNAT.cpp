@@ -427,7 +427,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
     VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(arg);
 
     HRESULT hrc = com::Initialize();
-    Assert(!FAILED(hrc)); NOREF(hrc);
+    AssertComRCReturnVoid(hrc);
 
     proxy_arp_hook = pxremap_proxy_arp;
     proxy_ip4_divert_hook = pxremap_ip4_divert;
