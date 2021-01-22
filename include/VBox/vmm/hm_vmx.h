@@ -39,66 +39,6 @@
  * @{
  */
 
-/** @name Host-state restoration flags.
- * @note If you change these values don't forget to update the assembly
- *       defines as well!
- * @{
- */
-#define VMX_RESTORE_HOST_SEL_DS                                 RT_BIT(0)
-#define VMX_RESTORE_HOST_SEL_ES                                 RT_BIT(1)
-#define VMX_RESTORE_HOST_SEL_FS                                 RT_BIT(2)
-#define VMX_RESTORE_HOST_SEL_GS                                 RT_BIT(3)
-#define VMX_RESTORE_HOST_SEL_TR                                 RT_BIT(4)
-#define VMX_RESTORE_HOST_GDTR                                   RT_BIT(5)
-#define VMX_RESTORE_HOST_IDTR                                   RT_BIT(6)
-#define VMX_RESTORE_HOST_GDT_READ_ONLY                          RT_BIT(7)
-#define VMX_RESTORE_HOST_GDT_NEED_WRITABLE                      RT_BIT(8)
-/**
- * This _must_ be the top most bit, so that we can easily that that it and
- * something else is set w/o having to do two checks like this:
- * @code
- *     if (   (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED)
- *         && (pVCpu->hm.s.vmx.fRestoreHostFlags & ~VMX_RESTORE_HOST_REQUIRED))
- * @endcode
- * Instead we can then do:
- * @code
- *     if (pVCpu->hm.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
- * @endcode
- */
-#define VMX_RESTORE_HOST_REQUIRED                               RT_BIT(9)
-/** @} */
-
-/**
- * Host-state restoration structure.
- * This holds host-state fields that require manual restoration.
- * Assembly version found in hm_vmx.mac (should be automatically verified).
- */
-typedef struct VMXRESTOREHOST
-{
-    RTSEL       uHostSelDS;     /* 0x00 */
-    RTSEL       uHostSelES;     /* 0x02 */
-    RTSEL       uHostSelFS;     /* 0x04 */
-    RTSEL       uHostSelGS;     /* 0x06 */
-    RTSEL       uHostSelTR;     /* 0x08 */
-    uint8_t     abPadding0[4];
-    X86XDTR64   HostGdtr;       /**< 0x0e - should be aligned by it's 64-bit member. */
-    uint8_t     abPadding1[6];
-    X86XDTR64   HostGdtrRw;     /**< 0x1e - should be aligned by it's 64-bit member. */
-    uint8_t     abPadding2[6];
-    X86XDTR64   HostIdtr;       /**< 0x2e - should be aligned by it's 64-bit member. */
-    uint64_t    uHostFSBase;    /* 0x38 */
-    uint64_t    uHostGSBase;    /* 0x40 */
-} VMXRESTOREHOST;
-/** Pointer to VMXRESTOREHOST. */
-typedef VMXRESTOREHOST *PVMXRESTOREHOST;
-AssertCompileSize(X86XDTR64, 10);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr.uAddr,   16);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtrRw.uAddr, 32);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr,   48);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,      56);
-AssertCompileSize(VMXRESTOREHOST, 72);
-AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
-
 /** @name Host-state MSR lazy-restoration flags.
  * @{
  */

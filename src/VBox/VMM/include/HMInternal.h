@@ -686,6 +686,17 @@ AssertCompileMemberAlignment(HM, vmx,                 8);
 AssertCompileMemberAlignment(HM, svm,                 8);
 
 
+/** @addtogroup grp_hm_int_svm  SVM Internal
+ * @{ */
+/** SVM VMRun function, see SVMR0VMRun(). */
+typedef DECLCALLBACKTYPE(int, FNHMSVMVMRUN,(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhysVMCB));
+/** Pointer to a SVM VMRun function. */
+typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
+/** @} */
+
+
+/** @addtogroup grp_hm_int_vmx  VMX Internal
+ * @{ */
 /**
  * VMX StartVM function.
  *
@@ -699,11 +710,6 @@ AssertCompileMemberAlignment(HM, svm,                 8);
 typedef DECLCALLBACKTYPE(int, FNHMVMXSTARTVM,(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu));
 /** Pointer to a VMX StartVM function. */
 typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
-
-/** SVM VMRun function, see SVMR0VMRun(). */
-typedef DECLCALLBACKTYPE(int, FNHMSVMVMRUN,(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhysVMCB));
-/** Pointer to a SVM VMRun function. */
-typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
 
 /**
  * VMX VMCS information.
@@ -844,7 +850,7 @@ typedef struct VMXVMCSINFO
     uint64_t                    u64LbrTosMsr;
     /** @} */
 } VMXVMCSINFO;
-/** Pointer to a VMXVMCSINFO struct. */
+/** Pointer to a VMXVMCSINFO struct.  */
 typedef VMXVMCSINFO *PVMXVMCSINFO;
 /** Pointer to a const VMXVMCSINFO struct. */
 typedef const VMXVMCSINFO *PCVMXVMCSINFO;
@@ -861,6 +867,70 @@ AssertCompileMemberAlignment(VMXVMCSINFO, pvGuestMsrStore, 8);
 AssertCompileMemberAlignment(VMXVMCSINFO, pvHostMsrLoad,   8);
 AssertCompileMemberAlignment(VMXVMCSINFO, HCPhysVmcs,      8);
 AssertCompileMemberAlignment(VMXVMCSINFO, hMemObj,         8);
+
+
+/** @name Host-state restoration flags.
+ * @note If you change these values don't forget to update the assembly
+ *       defines as well!
+ * @{
+ */
+#define VMX_RESTORE_HOST_SEL_DS                                 RT_BIT(0)
+#define VMX_RESTORE_HOST_SEL_ES                                 RT_BIT(1)
+#define VMX_RESTORE_HOST_SEL_FS                                 RT_BIT(2)
+#define VMX_RESTORE_HOST_SEL_GS                                 RT_BIT(3)
+#define VMX_RESTORE_HOST_SEL_TR                                 RT_BIT(4)
+#define VMX_RESTORE_HOST_GDTR                                   RT_BIT(5)
+#define VMX_RESTORE_HOST_IDTR                                   RT_BIT(6)
+#define VMX_RESTORE_HOST_GDT_READ_ONLY                          RT_BIT(7)
+#define VMX_RESTORE_HOST_GDT_NEED_WRITABLE                      RT_BIT(8)
+/**
+ * This _must_ be the top most bit, so that we can easily that that it and
+ * something else is set w/o having to do two checks like this:
+ * @code
+ *     if (   (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED)
+ *         && (pVCpu->hm.s.vmx.fRestoreHostFlags & ~VMX_RESTORE_HOST_REQUIRED))
+ * @endcode
+ * Instead we can then do:
+ * @code
+ *     if (pVCpu->hm.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
+ * @endcode
+ */
+#define VMX_RESTORE_HOST_REQUIRED                               RT_BIT(9)
+/** @} */
+
+/**
+ * Host-state restoration structure.
+ *
+ * This holds host-state fields that require manual restoration.
+ * Assembly version found in HMInternal.mac (should be automatically verified).
+ */
+typedef struct VMXRESTOREHOST
+{
+    RTSEL       uHostSelDS;     /* 0x00 */
+    RTSEL       uHostSelES;     /* 0x02 */
+    RTSEL       uHostSelFS;     /* 0x04 */
+    RTSEL       uHostSelGS;     /* 0x06 */
+    RTSEL       uHostSelTR;     /* 0x08 */
+    uint8_t     abPadding0[4];
+    X86XDTR64   HostGdtr;       /**< 0x0e - should be aligned by its 64-bit member. */
+    uint8_t     abPadding1[6];
+    X86XDTR64   HostGdtrRw;     /**< 0x1e - should be aligned by its 64-bit member. */
+    uint8_t     abPadding2[6];
+    X86XDTR64   HostIdtr;       /**< 0x2e - should be aligned by its 64-bit member. */
+    uint64_t    uHostFSBase;    /* 0x38 */
+    uint64_t    uHostGSBase;    /* 0x40 */
+} VMXRESTOREHOST;
+/** Pointer to VMXRESTOREHOST. */
+typedef VMXRESTOREHOST *PVMXRESTOREHOST;
+AssertCompileSize(X86XDTR64, 10);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr.uAddr,   16);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtrRw.uAddr, 32);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr,   48);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,      56);
+AssertCompileSize(VMXRESTOREHOST, 72);
+AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
+
+/** @} */
 
 /**
  * HM VMCPU Instance data.
@@ -1229,16 +1299,13 @@ VMMR0_INT_DECL(void)        hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags);
 VMMR0_INT_DECL(void)        hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
 # endif
 
-# ifdef VBOX_WITH_KERNEL_USING_XMM
-DECLASM(int)                hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu,
-                                                  PFNHMVMXSTARTVM pfnStartVM);
-# endif
 DECLASM(void)               hmR0MdsClear(void);
 #endif /* IN_RING0 */
 
-VMM_INT_DECL(int)           hmEmulateSvmMovTpr(PVMCC pVM, PVMCPUCC pVCpu);
 
-VMM_INT_DECL(PVMXVMCSINFO)  hmGetVmxActiveVmcsInfo(PVMCPU pVCpu);
+/** @addtogroup grp_hm_int_svm  SVM Internal
+ * @{ */
+VMM_INT_DECL(int)           hmEmulateSvmMovTpr(PVMCC pVM, PVMCPUCC pVCpu);
 
 /**
  * Prepares for and executes VMRUN (64-bit register context).
@@ -1266,6 +1333,28 @@ DECLASM(int) hmR0SvmVmRun_SansXcr0_WithIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUC
 DECLASM(int) hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB);
 /** @} */
 
+/** @} */
+
+
+/** @addtogroup grp_hm_int_vmx  VMX Internal
+ * @{ */
+VMM_INT_DECL(PVMXVMCSINFO)  hmGetVmxActiveVmcsInfo(PVMCPU pVCpu);
+
+/**
+ * Restores some host-state fields that need not be done on every VM-exit.
+ *
+ * @returns VBox status code.
+ * @param   fRestoreHostFlags   Flags of which host registers needs to be
+ *                              restored.
+ * @param   pRestoreHost        Pointer to the host-restore structure.
+ */
+DECLASM(int)                VMXRestoreHostState(uint32_t fRestoreHostFlags, PVMXRESTOREHOST pRestoreHost);
+
+# ifdef VBOX_WITH_KERNEL_USING_XMM
+DECLASM(int)                hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu,
+                                                  PFNHMVMXSTARTVM pfnStartVM);
+# endif
+/** @} */
 
 /** @} */
 

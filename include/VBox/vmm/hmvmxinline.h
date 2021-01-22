@@ -345,17 +345,6 @@ DECLINLINE(const char *) VMXGetIdtVectoringInfoTypeDesc(uint8_t uType)
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 
 /**
- * Restores some host-state fields that need not be done on every VM-exit.
- *
- * @returns VBox status code.
- * @param   fRestoreHostFlags   Flags of which host registers needs to be
- *                              restored.
- * @param   pRestoreHost        Pointer to the host-restore structure.
- */
-DECLASM(int) VMXRestoreHostState(uint32_t fRestoreHostFlags, PVMXRESTOREHOST pRestoreHost);
-
-
-/**
  * Dispatches an NMI to the host.
  */
 DECLASM(int) VMXDispatchHostNmi(void);

@@ -151,36 +151,3 @@
 %define VMX_VMCS_HOST_RSP                                       06C14h
 %define VMX_VMCS_HOST_RIP                                       06C16h
 
-%define VMX_RESTORE_HOST_SEL_DS                                 0001h   ;RT_BIT(0)
-%define VMX_RESTORE_HOST_SEL_ES                                 0002h   ;RT_BIT(1)
-%define VMX_RESTORE_HOST_SEL_FS                                 0004h   ;RT_BIT(2)
-%define VMX_RESTORE_HOST_SEL_GS                                 0008h   ;RT_BIT(3)
-%define VMX_RESTORE_HOST_SEL_TR                                 0010h   ;RT_BIT(4)
-%define VMX_RESTORE_HOST_GDTR                                   0020h   ;RT_BIT(5)
-%define VMX_RESTORE_HOST_IDTR                                   0040h   ;RT_BIT(6)
-%define VMX_RESTORE_HOST_GDT_READ_ONLY                          0080h   ;RT_BIT(7)
-%define VMX_RESTORE_HOST_GDT_NEED_WRITABLE                      0100h   ;RT_BIT(8)
-%define VMX_RESTORE_HOST_REQUIRED                               0200h   ;RT_BIT(9) - must be the highest bit!
-
-;; C version hm_vmx.h.
-struc VMXRESTOREHOST
-    .uHostSelDS         resw    1
-    .uHostSelES         resw    1
-    .uHostSelFS         resw    1
-    .uHostSelGS         resw    1
-    .uHostSelTR         resw    1
-    .abPadding0         resb    4
-    .HostGdtr           resb    10
-    .abPadding1         resb    6
-    .HostGdtrRw         resb    10
-    .abPadding2         resb    6
-    .HostIdtr           resb    10
-    .uHostFSBase        resq    1
-    .uHostGSBase        resq    1
-endstruc
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr,     16-2)
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtrRw,   32-2)
-AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr,     48-2)
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    56)
-AssertCompileSize(VMXRESTOREHOST, 72)
-
