@@ -312,9 +312,7 @@ void UIWizardNewVMPageExpert::cleanupPage()
 void UIWizardNewVMPageExpert::markWidgets() const
 {
     UIWizardNewVMPage1::markWidgets();
-
-    if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->mark(isUnattendedEnabled() && !checkGAISOFile());
+    UIWizardNewVMPage2::markWidgets();
 }
 
 QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
@@ -446,7 +444,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
             fIsComplete = false;
         }
         /* Check the GA installation medium: */
-        if (!checkGAISOFile())
+        if (m_pGAInstallCheckBox->isChecked() && !checkGAISOFile())
         {
             m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
                                     UIIconPool::iconSet(":/status_error_16px.png"));
