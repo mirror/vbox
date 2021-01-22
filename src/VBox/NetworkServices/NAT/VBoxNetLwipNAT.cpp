@@ -137,23 +137,6 @@ class VBoxNetLwipNAT
 {
     friend class NATNetworkListener;
 
-  public:
-    VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6);
-    virtual ~VBoxNetLwipNAT();
-
-    static int logInit(int argc, char **argv);
-
-    void usage(){                /** @todo should be implemented */ };
-    int run();
-    virtual int init(void);
-    virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
-    /* VBoxNetNAT always needs Main */
-    virtual bool isMainNeeded() const { return true; }
-    virtual int processFrame(void *, size_t);
-    virtual int processGSO(PCPDMNETWORKGSO, size_t);
-    virtual int processUDP(void *, size_t) { return VERR_IGNORED; }
-
-   private:
     struct proxy_options m_ProxyOptions;
     struct sockaddr_in m_src4;
     struct sockaddr_in6 m_src6;
@@ -173,24 +156,43 @@ class VBoxNetLwipNAT
     ComNatListenerPtr m_NatListener;
     ComNatListenerPtr m_VBoxListener;
     ComNatListenerPtr m_VBoxClientListener;
-    static INTNETSEG aXmitSeg[64];
-
-    HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent);
-
-    const char **getHostNameservers();
 
     /* Only for debug needs, by default NAT service should load rules from SVC
      * on startup, and then on sync them on events.
      */
     bool fDontLoadRulesOnStartup;
+
+    VECNATSERVICEPF m_vecPortForwardRule4;
+    VECNATSERVICEPF m_vecPortForwardRule6;
+
+    static INTNETSEG aXmitSeg[64];
+
+
+  public:
+    VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6);
+    virtual ~VBoxNetLwipNAT();
+
+    static int logInit(int argc, char **argv);
+
+    void usage(){                /** @todo should be implemented */ };
+    int run();
+    virtual int init(void);
+    virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
+    /* VBoxNetNAT always needs Main */
+    virtual bool isMainNeeded() const { return true; }
+    virtual int processFrame(void *, size_t);
+    virtual int processGSO(PCPDMNETWORKGSO, size_t);
+    virtual int processUDP(void *, size_t) { return VERR_IGNORED; }
+
+    HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent);
+
+    const char **getHostNameservers();
+
     static DECLCALLBACK(void) onLwipTcpIpInit(void *arg);
     static DECLCALLBACK(void) onLwipTcpIpFini(void *arg);
     static err_t netifInit(netif *pNetif) RT_NOTHROW_PROTO;
     static err_t netifLinkoutput(netif *pNetif, pbuf *pBuf) RT_NOTHROW_PROTO;
     /* static int intNetThreadRecv(RTTHREAD, void *); - unused */
-
-    VECNATSERVICEPF m_vecPortForwardRule4;
-    VECNATSERVICEPF m_vecPortForwardRule6;
 
     static int natServicePfRegister(NATSERVICEPORTFORWARDRULE& natServicePf);
     static int natServiceProcessRegisteredPf(VECNATSERVICEPF& vecPf);
