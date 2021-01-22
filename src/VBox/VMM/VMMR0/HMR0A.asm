@@ -915,180 +915,6 @@ BEGINPROC hmR0MdsClear
 ENDPROC   hmR0MdsClear
 
 
-%ifdef VBOX_WITH_KERNEL_USING_XMM
-;;
-; Wrapper around svm.pfnVMRun that preserves host XMM registers and
-; load the guest ones when necessary.
-;
-; @cproto       DECLASM(int) hmR0SVMRunWrapXMM(PVM pVM, PVMCPU pVCpu, RTHCPHYS HCPhysVmcb, PFNHMSVMVMRUN pfnVMRun);
-;
-; @returns      eax
-;
-; @param        pVM             msc:rcx
-; @param        pVCpu           msc:rdx        The cross context virtual CPU structure of the calling EMT.
-; @param        HCPhysVmcb      msc:r8
-; @param        pfnVMRun        msc:r9
-;
-; @remarks      This is essentially the same code as hmR0VMXStartVMWrapXMM, only the parameters differ a little bit.
-;
-; @remarks      Drivers shouldn't use AVX registers without saving+loading:
-;                   https://msdn.microsoft.com/en-us/library/windows/hardware/ff545910%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
-;               However the compiler docs have different idea:
-;                   https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
-;               We'll go with the former for now.
-;
-; ASSUMING 64-bit and windows for now.
-ALIGNCODE(64)
-BEGINPROC hmR0SVMRunWrapXMM
-        SEH64_END_PROLOGUE
-        push    xBP
-        mov     xBP, xSP
-        sub     xSP, 0b0h + 040h        ; don't bother optimizing the frame size
-
-%ifndef ASM_CALL64_MSC
- %error "MSC only"
-%endif
-        ; Spill input parameters.
-        mov     [xBP + 010h], rcx       ; pVM
-        mov     [xBP + 018h], rdx       ; pVCpu
-        mov     [xBP + 020h], r8        ; HCPhysVmcb
-        mov     [xBP + 028h], r9        ; pfnVMRun
-
-        ; Ask CPUM whether we've started using the FPU yet.
-;; @todo implement this in assembly, it's just checking a couple of things. Or have the C code do it.
-        mov     rcx, rdx                ; pVCpu
-        call    NAME(CPUMIsGuestFPUStateActive)
-        test    al, al
-
-        mov     rcx, [xBP + 010h]       ; pVM
-        mov     rdx, [xBP + 018h]       ; pVCpu
-        mov     r8,  [xBP + 020h]       ; HCPhysVmcb
-        mov     r9,  [xBP + 028h]       ; pfnVMRun
-
-        jnz     .guest_fpu_state_active
-
-        ; No need to mess with XMM registers just call the start routine and return.
-        call    r9
-
-        leave
-        ret
-
-ALIGNCODE(8)
-.guest_fpu_state_active:
-        ; Save the non-volatile host XMM registers.
-;; @todo change to rbp relative addressing as that saves a byte per instruction!
-        movdqa  [rsp + 040h + 000h], xmm6
-        movdqa  [rsp + 040h + 010h], xmm7
-        movdqa  [rsp + 040h + 020h], xmm8
-        movdqa  [rsp + 040h + 030h], xmm9
-        movdqa  [rsp + 040h + 040h], xmm10
-        movdqa  [rsp + 040h + 050h], xmm11
-        movdqa  [rsp + 040h + 060h], xmm12
-        movdqa  [rsp + 040h + 070h], xmm13
-        movdqa  [rsp + 040h + 080h], xmm14
-        movdqa  [rsp + 040h + 090h], xmm15
-        stmxcsr [rsp + 040h + 0a0h]
-
-        mov     r11, rdx                ; r11 = pVCpu (rdx may get trashed)
-        mov     eax, [rdx + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask]
-        test    eax, eax
-        jz      .guest_fpu_state_manually
-
-        ;
-        ; Using XSAVE.
-        ;
-        and     eax, CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS
-        xor     edx, edx
-        mov     r10, [r11 + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
-        xrstor  [r10]
-
-        ; Make the call (same as in the other case).
-        mov     rdx, r11                ; restore pVCpu to rdx
-        call    r9
-
-        mov     r10d, eax               ; save return value (xsave below uses eax)
-
-        ; Save the guest XMM registers.
-        mov     rcx, [xBP + 018h]       ; pVCpu
-        mov     eax, [rcx + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask]
-        and     eax, CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS
-        mov     rcx, [rcx + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
-        xor     edx, edx
-        xsave   [rcx]
-
-        mov     eax, r10d               ; restore return value
-
-.restore_non_volatile_host_xmm_regs:
-        ; Load the non-volatile host XMM registers.
-;; @todo change to rbp relative addressing as that saves a byte per instruction!
-        movdqa  xmm6,  [rsp + 040h + 000h]
-        movdqa  xmm7,  [rsp + 040h + 010h]
-        movdqa  xmm8,  [rsp + 040h + 020h]
-        movdqa  xmm9,  [rsp + 040h + 030h]
-        movdqa  xmm10, [rsp + 040h + 040h]
-        movdqa  xmm11, [rsp + 040h + 050h]
-        movdqa  xmm12, [rsp + 040h + 060h]
-        movdqa  xmm13, [rsp + 040h + 070h]
-        movdqa  xmm14, [rsp + 040h + 080h]
-        movdqa  xmm15, [rsp + 040h + 090h]
-        ldmxcsr [rsp + 040h + 0a0h]
-        leave
-        ret
-
-        ;
-        ; No XSAVE, load and save the guest XMM registers manually.
-        ;
-ALIGNCODE(8)
-.guest_fpu_state_manually:
-        ; Load the full guest XMM register state.
-        mov     rdx, [r11 + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
-        movdqa  xmm0,  [rdx + XMM_OFF_IN_X86FXSTATE + 000h]
-        movdqa  xmm1,  [rdx + XMM_OFF_IN_X86FXSTATE + 010h]
-        movdqa  xmm2,  [rdx + XMM_OFF_IN_X86FXSTATE + 020h]
-        movdqa  xmm3,  [rdx + XMM_OFF_IN_X86FXSTATE + 030h]
-        movdqa  xmm4,  [rdx + XMM_OFF_IN_X86FXSTATE + 040h]
-        movdqa  xmm5,  [rdx + XMM_OFF_IN_X86FXSTATE + 050h]
-        movdqa  xmm6,  [rdx + XMM_OFF_IN_X86FXSTATE + 060h]
-        movdqa  xmm7,  [rdx + XMM_OFF_IN_X86FXSTATE + 070h]
-        movdqa  xmm8,  [rdx + XMM_OFF_IN_X86FXSTATE + 080h]
-        movdqa  xmm9,  [rdx + XMM_OFF_IN_X86FXSTATE + 090h]
-        movdqa  xmm10, [rdx + XMM_OFF_IN_X86FXSTATE + 0a0h]
-        movdqa  xmm11, [rdx + XMM_OFF_IN_X86FXSTATE + 0b0h]
-        movdqa  xmm12, [rdx + XMM_OFF_IN_X86FXSTATE + 0c0h]
-        movdqa  xmm13, [rdx + XMM_OFF_IN_X86FXSTATE + 0d0h]
-        movdqa  xmm14, [rdx + XMM_OFF_IN_X86FXSTATE + 0e0h]
-        movdqa  xmm15, [rdx + XMM_OFF_IN_X86FXSTATE + 0f0h]
-        ldmxcsr        [rdx + X86FXSTATE.MXCSR]
-
-        ; Make the call (same as in the other case).
-        mov     rdx, r11                ; restore pVCpu to rdx
-        call    r9
-
-        ; Save the guest XMM registers.
-        mov     rdx, [xBP + 018h]       ; pVCpu
-        mov     rdx, [rdx + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
-        stmxcsr [rdx + X86FXSTATE.MXCSR]
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 000h], xmm0
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 010h], xmm1
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 020h], xmm2
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 030h], xmm3
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 040h], xmm4
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 050h], xmm5
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 060h], xmm6
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 070h], xmm7
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 080h], xmm8
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 090h], xmm9
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0a0h], xmm10
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0b0h], xmm11
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0c0h], xmm12
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0d0h], xmm13
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0e0h], xmm14
-        movdqa  [rdx + XMM_OFF_IN_X86FXSTATE + 0f0h], xmm15
-        jmp     .restore_non_volatile_host_xmm_regs
-ENDPROC   hmR0SVMRunWrapXMM
-
-%endif ; VBOX_WITH_KERNEL_USING_XMM
-
 ;;
 ; hmR0SvmVmRun template
 ;
@@ -1096,6 +922,12 @@ ENDPROC   hmR0SVMRunWrapXMM
 ; @param    2   fLoadSaveGuestXcr0 value
 ; @param    3   The CPUMCTX_WSF_IBPB_ENTRY + CPUMCTX_WSF_IBPB_EXIT value.
 ; @param    4   The SSE saving/restoring: 0 to do nothing, 1 to do it manually, 2 to use xsave/xrstor.
+;               Drivers shouldn't use AVX registers without saving+loading:
+;                   https://msdn.microsoft.com/en-us/library/windows/hardware/ff545910%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
+;               However the compiler docs have different idea:
+;                   https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
+;               We'll go with the former for now.
+;
 %macro hmR0SvmVmRunTemplate 4
 
 ;;
@@ -1110,15 +942,23 @@ ALIGNCODE(64) ; This + immediate optimizations causes serious trouble for yasm a
               ; So the SEH64_XXX stuff is currently not operational.
 BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
  %ifdef VBOX_WITH_KERNEL_USING_XMM
-  %if %4 == 0 && 0
+  %if %4 = 0
         ;
         ; The non-saving variant will currently check the two SSE preconditions and pick
         ; the right variant to continue with.  Later we can see if we can't manage to
         ; move these decisions into hmR0SvmUpdateVmRunFunction().
         ;
-        test    byte [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fUsedFpuGuest], 1
+   %ifdef ASM_CALL64_MSC
+        test    byte  [rdx + VMCPU.cpum.GstCtx + CPUMCTX.fUsedFpuGuest], 1
+   %else
+        test    byte  [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fUsedFpuGuest], 1
+   %endif
         jz      .save_xmm_no_need
+   %ifdef ASM_CALL64_MSC
         cmp     dword [rdx + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask], 0
+   %else
+        cmp     dword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask], 0
+   %endif
         je      RT_CONCAT3(hmR0SvmVmRun,%1,_SseManual)
         jmp     RT_CONCAT3(hmR0SvmVmRun,%1,_SseXSave)
 .save_xmm_no_need:
@@ -1129,15 +969,32 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         mov     rbp, rsp
         SEH64_SET_FRAME_xBP 0
         pushf
-        sub     rsp, 30h - 8h              ; The frame is 30h bytes, but the rbp-08h entry is the above pushf.
-        SEH64_ALLOCATE_STACK 30h                ; And we have CALLEE_PRESERVED_REGISTER_COUNT following it.
+  %assign cbFrame            30h
+ %if %4 != 0
+  %assign cbFrame            cbFrame + 16 * 11  ; Reserve space for 10x 128-bit XMM registers and MXCSR (32-bit)
+ %endif
+ %assign cbBaseFrame         cbFrame
+        sub     rsp, cbFrame - 8h               ; We subtract 8 bytes for the above pushf
+        SEH64_ALLOCATE_STACK cbFrame            ; And we have CALLEE_PRESERVED_REGISTER_COUNT following it.
 
- %define frm_fRFlags         -08h
- %define frm_uHostXcr0       -18h               ; 128-bit
- ;%define frm_fNoRestoreXcr0  -20h               ; Non-zero if we should skip XCR0 restoring.
- %define frm_pGstCtx         -28h               ; Where we stash guest CPU context for use after the vmrun.
- %define frm_HCPhysVmcbHost  -30h               ; Where we stash HCPhysVmcbHost for the vmload after vmrun.
- %assign cbFrame              30h
+ %define frm_fRFlags         -008h
+ %define frm_uHostXcr0       -018h              ; 128-bit
+ ;%define frm_fNoRestoreXcr0  -020h              ; Non-zero if we should skip XCR0 restoring.
+ %define frm_pGstCtx         -028h              ; Where we stash guest CPU context for use after the vmrun.
+ %define frm_HCPhysVmcbHost  -030h              ; Where we stash HCPhysVmcbHost for the vmload after vmrun.
+ %if %4 != 0
+  %define frm_saved_xmm6     -040h
+  %define frm_saved_xmm7     -050h
+  %define frm_saved_xmm8     -060h
+  %define frm_saved_xmm9     -070h
+  %define frm_saved_xmm10    -080h
+  %define frm_saved_xmm11    -090h
+  %define frm_saved_xmm12    -0a0h
+  %define frm_saved_xmm13    -0b0h
+  %define frm_saved_xmm14    -0c0h
+  %define frm_saved_xmm15    -0d0h
+  %define frm_saved_mxcsr    -0e0h
+ %endif
 
         ; Manual save and restore:
         ;  - General purpose registers except RIP, RSP, RAX
@@ -1151,7 +1008,7 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         ; Save all general purpose host registers.
         PUSH_CALLEE_PRESERVED_REGISTERS
         SEH64_END_PROLOGUE
- %if cbFrame != (30h + 8 * CALLEE_PRESERVED_REGISTER_COUNT)
+ %if cbFrame != (cbBaseFrame + 8 * CALLEE_PRESERVED_REGISTER_COUNT)
   %error Bad cbFrame value
  %endif
 
@@ -1178,13 +1035,67 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         jne     .failure_return
 
   %ifdef VBOX_WITH_KERNEL_USING_XMM
-   %if   %4 == 0
-
-   %elif %4 == 1
-   %elif %4 == 2
+        mov     eax, VERR_SVM_VMRUN_PRECOND_2
+        test    byte  [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fUsedFpuGuest], 1
+   %if   %4 = 0
+        ;jnz     .failure_return
    %else
-    %error Invalid template parameter 4.
+        jz      .failure_return
+
+        mov     eax, VERR_SVM_VMRUN_PRECOND_3
+        cmp     dword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask], 0
+    %if   %4 = 1
+        jne     .failure_return
+    %elif %4 = 2
+        je      .failure_return
+    %else
+      %error Invalid template parameter 4.
+    %endif
    %endif
+  %endif
+ %endif ; VBOX_STRICT
+
+ %if %4 != 0
+        ; Save the non-volatile SSE host register state.
+        movdqa  [rbp + frm_saved_xmm6 ], xmm6
+        movdqa  [rbp + frm_saved_xmm7 ], xmm7
+        movdqa  [rbp + frm_saved_xmm8 ], xmm8
+        movdqa  [rbp + frm_saved_xmm9 ], xmm9
+        movdqa  [rbp + frm_saved_xmm10], xmm10
+        movdqa  [rbp + frm_saved_xmm11], xmm11
+        movdqa  [rbp + frm_saved_xmm12], xmm12
+        movdqa  [rbp + frm_saved_xmm13], xmm13
+        movdqa  [rbp + frm_saved_xmm14], xmm14
+        movdqa  [rbp + frm_saved_xmm15], xmm15
+        stmxcsr [rbp + frm_saved_mxcsr]
+
+        ; Load the guest state related to the above non-volatile and volatile SSE registers. Trashes rcx, eax and edx.
+        mov     rcx, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
+  %if %4 = 1 ; manual
+        movdqa  xmm0,  [rcx + XMM_OFF_IN_X86FXSTATE + 000h]
+        movdqa  xmm1,  [rcx + XMM_OFF_IN_X86FXSTATE + 010h]
+        movdqa  xmm2,  [rcx + XMM_OFF_IN_X86FXSTATE + 020h]
+        movdqa  xmm3,  [rcx + XMM_OFF_IN_X86FXSTATE + 030h]
+        movdqa  xmm4,  [rcx + XMM_OFF_IN_X86FXSTATE + 040h]
+        movdqa  xmm5,  [rcx + XMM_OFF_IN_X86FXSTATE + 050h]
+        movdqa  xmm6,  [rcx + XMM_OFF_IN_X86FXSTATE + 060h]
+        movdqa  xmm7,  [rcx + XMM_OFF_IN_X86FXSTATE + 070h]
+        movdqa  xmm8,  [rcx + XMM_OFF_IN_X86FXSTATE + 080h]
+        movdqa  xmm9,  [rcx + XMM_OFF_IN_X86FXSTATE + 090h]
+        movdqa  xmm10, [rcx + XMM_OFF_IN_X86FXSTATE + 0a0h]
+        movdqa  xmm11, [rcx + XMM_OFF_IN_X86FXSTATE + 0b0h]
+        movdqa  xmm12, [rcx + XMM_OFF_IN_X86FXSTATE + 0c0h]
+        movdqa  xmm13, [rcx + XMM_OFF_IN_X86FXSTATE + 0d0h]
+        movdqa  xmm14, [rcx + XMM_OFF_IN_X86FXSTATE + 0e0h]
+        movdqa  xmm15, [rcx + XMM_OFF_IN_X86FXSTATE + 0f0h]
+        ldmxcsr        [rcx + X86FXSTATE.MXCSR]
+  %elif %4 = 2 ; use xrstor/xsave
+        mov     eax, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask]
+        and     eax, CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS
+        xor     edx, edx
+        xrstor  [rcx]
+  %else
+   %error invalid template parameter 4
   %endif
  %endif
 
@@ -1296,6 +1207,11 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         mov     qword [rax + CPUMCTX.r15], r15
         mov     r15, [rbp + frm_saved_r15]
 
+ %if %4 != 0
+        ; Set r8 = &pVCpu->cpum.GstCtx; for use below when saving and restoring SSE state.
+        mov     r8, rax
+ %endif
+
         ; Fight spectre.  Note! Trashes rax, rdx and rcx!
  %if %3 & CPUMCTX_WSF_IBPB_EXIT
         ; Fight spectre (trashes rax, rdx and rcx).
@@ -1313,6 +1229,50 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         xsetbv
  %endif
 
+ %if %4 != 0
+        ; Save the guest SSE state related to non-volatile and volatile SSE registers.
+        mov     rcx, [r8 + CPUMCTX.pXStateR0]
+  %if %4 = 1 ; manual
+        stmxcsr [rcx + X86FXSTATE.MXCSR]
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 000h], xmm0
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 010h], xmm1
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 020h], xmm2
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 030h], xmm3
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 040h], xmm4
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 050h], xmm5
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 060h], xmm6
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 070h], xmm7
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 080h], xmm8
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 090h], xmm9
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 0a0h], xmm10
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 0b0h], xmm11
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 0c0h], xmm12
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 0d0h], xmm13
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 0e0h], xmm14
+        movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 0f0h], xmm15
+  %elif %4 = 2 ; use xrstor/xsave
+        mov     eax, [r8 + CPUMCTX.fXStateMask]
+        and     eax, CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS
+        xor     edx, edx
+        xsave   [rcx]
+  %else
+   %error invalid template parameter 4
+  %endif
+
+        ; Restore the host non-volatile SSE register state.
+        ldmxcsr [rbp + frm_saved_mxcsr]
+        movdqa  [rbp + frm_saved_xmm6 ], xmm6
+        movdqa  [rbp + frm_saved_xmm7 ], xmm7
+        movdqa  [rbp + frm_saved_xmm8 ], xmm8
+        movdqa  [rbp + frm_saved_xmm9 ], xmm9
+        movdqa  [rbp + frm_saved_xmm10], xmm10
+        movdqa  [rbp + frm_saved_xmm11], xmm11
+        movdqa  [rbp + frm_saved_xmm12], xmm12
+        movdqa  [rbp + frm_saved_xmm13], xmm13
+        movdqa  [rbp + frm_saved_xmm14], xmm14
+        movdqa  [rbp + frm_saved_xmm15], xmm15
+ %endif  ; %4 != 0
+
         ; Epilogue (assumes we restored volatile registers above when saving the guest GPRs).
         mov     eax, VINF_SUCCESS
         add     rsp, cbFrame - 8h
@@ -1324,8 +1284,8 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         ; Precondition checks failed.
 .failure_return:
         POP_CALLEE_PRESERVED_REGISTERS
- %if cbFrame != 30h
-  %error Bad cbFrame value
+ %if cbFrame != cbBaseFrame
+  %error Bad frame size value: cbFrame
  %endif
         add     rsp, cbFrame - 8h
         popf
@@ -1353,23 +1313,23 @@ hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit,           0, CPUMCTX_
 hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit,           1, CPUMCTX_WSF_IBPB_EXIT,                          0
 hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit,           0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 0
 hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit,           1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 0
-;%ifdef VBOX_WITH_KERNEL_USING_XMM
-;hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit_SseManual, 0, 0,                                              1
-;hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit_SseManual, 1, 0,                                              1
-;hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_ENTRY,                         1
-;hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_ENTRY,                         1
-;hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_EXIT,                          1
-;hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_EXIT,                          1
-;hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 1
-;hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 1
-;
-;hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit_SseXSave,  0, 0,                                              2
-;hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit_SseXSave,  1, 0,                                              2
-;hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_ENTRY,                         2
-;hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_ENTRY,                         2
-;hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_EXIT,                          2
-;hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_EXIT,                          2
-;hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 2
-;hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 2
-;%endif
+%ifdef VBOX_WITH_KERNEL_USING_XMM
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit_SseManual, 0, 0,                                              1
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit_SseManual, 1, 0,                                              1
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_ENTRY,                         1
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_ENTRY,                         1
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_EXIT,                          1
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_EXIT,                          1
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 1
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 1
+
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit_SseXSave,  0, 0,                                              2
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit_SseXSave,  1, 0,                                              2
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_ENTRY,                         2
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_ENTRY,                         2
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_EXIT,                          2
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_EXIT,                          2
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 2
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 2
+%endif
 

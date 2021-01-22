@@ -1232,7 +1232,6 @@ VMMR0_INT_DECL(void)        hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, con
 # ifdef VBOX_WITH_KERNEL_USING_XMM
 DECLASM(int)                hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu,
                                                   PFNHMVMXSTARTVM pfnStartVM);
-DECLASM(int)                hmR0SVMRunWrapXMM(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhyspVMCB, PFNHMSVMVMRUN pfnVMRun);
 # endif
 DECLASM(void)               hmR0MdsClear(void);
 #endif /* IN_RING0 */
