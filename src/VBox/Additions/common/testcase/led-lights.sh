@@ -216,8 +216,6 @@ for shf in $(mount -t vboxsf | awk '{ print $3 }'); do
         done
         sync
         rm -f $shf/tmp.led-lights.$$
-        #find $shf -type f -print0 | xargs -0 wc -l
-        #drop_cache
     done >/dev/null 2>&1 &
     twiddle sharedfs:$shf
 done
