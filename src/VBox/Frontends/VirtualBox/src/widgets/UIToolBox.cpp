@@ -29,17 +29,6 @@
 #include "UIToolBox.h"
 #include "UIWizardNewVM.h"
 
-class UITest : public QWidget
-{
-    Q_OBJECT;
-public:
-    UITest(QWidget *pParent = 0)
-        :QWidget(pParent)
-    {}
-    ~UITest(){}
-};
-
-
 /*********************************************************************************************************************************
 *   UIToolBoxPage definition.                                                                                    *
 *********************************************************************************************************************************/
@@ -243,10 +232,9 @@ UIToolBox::UIToolBox(QWidget *pParent /*  = 0 */)
     , m_iPageCount(0)
 {
     prepare();
-    //setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 }
 
-bool UIToolBox::insertItem(int iIndex, QWidget *pWidget, const QString &strTitle, bool fAddEnableCheckBox /* = false */)
+bool UIToolBox::insertPage(int iIndex, QWidget *pWidget, const QString &strTitle, bool fAddEnableCheckBox /* = false */)
 {
     if (m_pages.contains(iIndex))
         return false;
@@ -283,13 +271,13 @@ bool UIToolBox::insertItem(int iIndex, QWidget *pWidget, const QString &strTitle
     return iIndex;
 }
 
-void UIToolBox::setItemEnabled(int iIndex, bool fEnabled)
+void UIToolBox::setPageEnabled(int iIndex, bool fEnabled)
 {
     Q_UNUSED(fEnabled);
     Q_UNUSED(iIndex);
 }
 
-void UIToolBox::setItemText(int iIndex, const QString &strTitle)
+void UIToolBox::setPageTitle(int iIndex, const QString &strTitle)
 {
     QMap<int, UIToolBoxPage*>::iterator iterator = m_pages.find(iIndex);
     if (iterator == m_pages.end())
@@ -297,7 +285,7 @@ void UIToolBox::setItemText(int iIndex, const QString &strTitle)
     iterator.value()->setTitle(strTitle);
 }
 
-void UIToolBox::setItemIcon(int iIndex, const QIcon &icon)
+void UIToolBox::setPageTitleIcon(int iIndex, const QIcon &icon)
 {
     QMap<int, UIToolBoxPage*>::iterator iterator = m_pages.find(iIndex);
     if (iterator == m_pages.end())

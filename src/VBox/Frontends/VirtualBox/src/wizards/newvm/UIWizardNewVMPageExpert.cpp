@@ -54,23 +54,18 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pToolBox = new UIToolBox;
-        m_pToolBox->insertItem(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(/* fCreateUnattendedWidgets */ false,
+        m_pToolBox->insertPage(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(/* fCreateUnattendedWidgets */ false,
                                                                                          /* fCreateLabels */ false), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "", false);
-        m_pToolBox->insertItem(ExpertToolboxItems_Disk, createDiskWidgets(), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
-        // m_pToolBox->insertItem(ExpertToolboxItems_UsernameHostname, createUserNameHostNameWidgets(/* fIncreaseLeftIndent */ true), "");
-        // m_pToolBox->insertItem(ExpertToolboxItems_GAInstall, createGAInstallWidgets(/* fIncreaseLeftIndent */ true), "");
-        // m_pToolBox->insertItem(ExpertToolboxItems_ProductKey, createProductKeyWidgets(/* fIncreaseLeftIndent */ true), "");
+        m_pToolBox->insertPage(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "", false);
+        m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
+        m_pToolBox->insertPage(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
 
         m_pToolBox->setCurrentPage(ExpertToolboxItems_NameAndOSType);
         pMainLayout->addWidget(m_pToolBox);
 
-
         pMainLayout->addStretch();
         updateVirtualDiskSource();
     }
-
 
     createConnections();
 
@@ -203,10 +198,10 @@ void UIWizardNewVMPageExpert::retranslateUi()
         m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("Guest Additions"));
     if (m_pToolBox)
     {
-        m_pToolBox->setItemText(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and operating system")));
-        m_pToolBox->setItemText(ExpertToolboxItems_Unattended, UIWizardNewVM::tr("Unattended Install"));
-        m_pToolBox->setItemText(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard disk"));
-        m_pToolBox->setItemText(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("Hardware"));
+        m_pToolBox->setPageTitle(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and operating system")));
+        m_pToolBox->setPageTitle(ExpertToolboxItems_Unattended, UIWizardNewVM::tr("Unattended Install"));
+        m_pToolBox->setPageTitle(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard disk"));
+        m_pToolBox->setPageTitle(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("Hardware"));
     }
 }
 
@@ -422,21 +417,21 @@ bool UIWizardNewVMPageExpert::isComplete() const
 {
     markWidgets();
     bool fIsComplete = true;
-    m_pToolBox->setItemIcon(ExpertToolboxItems_NameAndOSType, QIcon());
-    m_pToolBox->setItemIcon(ExpertToolboxItems_Unattended, QIcon());
-    m_pToolBox->setItemIcon(ExpertToolboxItems_Disk, QIcon());
-    m_pToolBox->setItemIcon(ExpertToolboxItems_Hardware, QIcon());
+    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType, QIcon());
+    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended, QIcon());
+    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk, QIcon());
+    m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Hardware, QIcon());
 
     if (!UIWizardPage::isComplete())
     {
-        m_pToolBox->setItemIcon(ExpertToolboxItems_NameAndOSType,
+        m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
                                 UIIconPool::iconSet(":/status_error_16px.png"));
         fIsComplete = false;
     }
 
     if (!m_pDiskSkip->isChecked() && !m_pDiskPresent->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
     {
-        m_pToolBox->setItemIcon(ExpertToolboxItems_Disk,
+        m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
                                 UIIconPool::iconSet(":/status_error_16px.png"));
         fIsComplete = false;
     }
@@ -446,14 +441,14 @@ bool UIWizardNewVMPageExpert::isComplete() const
         /* Check the installation medium: */
         if (!isISOFileSelectorComplete())
         {
-            m_pToolBox->setItemIcon(ExpertToolboxItems_Unattended,
+            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
                                     UIIconPool::iconSet(":/status_error_16px.png"));
             fIsComplete = false;
         }
         /* Check the GA installation medium: */
         if (!checkGAISOFile())
         {
-            m_pToolBox->setItemIcon(ExpertToolboxItems_Unattended,
+            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
                                     UIIconPool::iconSet(":/status_error_16px.png"));
             fIsComplete = false;
         }
@@ -461,7 +456,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
         {
             if (!m_pUserNamePasswordEditor->isComplete())
             {
-                m_pToolBox->setItemIcon(ExpertToolboxItems_Unattended,
+                m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
                                         UIIconPool::iconSet(":/status_error_16px.png"));
                 fIsComplete = false;
             }

@@ -44,17 +44,15 @@ signals:
 public:
 
     UIToolBox(QWidget *pParent = 0);
-    bool insertItem(int iIndex, QWidget *pWidget, const QString &strTitle, bool fAddEnableCheckBox = false);
-    void setItemEnabled(int iIndex, bool fEnabled);
-    void setItemText(int iIndex, const QString &strTitle);
-    void setItemIcon(int iIndex, const QIcon &icon);
+    bool insertPage(int iIndex, QWidget *pWidget, const QString &strTitle, bool fAddEnableCheckBox = false);
+    void setPageEnabled(int iIndex, bool fEnabled);
+    void setPageTitle(int iIndex, const QString &strTitle);
+    void setPageTitleIcon(int iIndex, const QIcon &icon);
     void setCurrentPage(int iIndex);
 
 protected:
 
     virtual void retranslateUi() /* override */;
-    //virtual QSize sizeHint() const /* override */;
-    //virtual QSize minimumSizeHint() const /* override */;
 
 private slots:
 
