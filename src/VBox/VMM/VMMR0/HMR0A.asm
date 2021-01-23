@@ -332,30 +332,31 @@ BEGINPROC VMXRestoreHostState
 %endif
     SEH64_END_PROLOGUE
 
+.restore_gdtr
     test        edi, VMX_RESTORE_HOST_GDTR
-    jz          .test_idtr
+    jz          .restore_idtr
     lgdt        [rsi + VMXRESTOREHOST.HostGdtr]
 
-.test_idtr:
+.restore_idtr:
     test        edi, VMX_RESTORE_HOST_IDTR
-    jz          .test_ds
+    jz          .restore_ds
     lidt        [rsi + VMXRESTOREHOST.HostIdtr]
 
-.test_ds:
+.restore_ds:
     test        edi, VMX_RESTORE_HOST_SEL_DS
-    jz          .test_es
+    jz          .restore_es
     mov         ax, [rsi + VMXRESTOREHOST.uHostSelDS]
     mov         ds, eax
 
-.test_es:
+.restore_es:
     test        edi, VMX_RESTORE_HOST_SEL_ES
-    jz          .test_tr
+    jz          .restore_tr
     mov         ax, [rsi + VMXRESTOREHOST.uHostSelES]
     mov         es, eax
 
-.test_tr:
+.restore_tr:
     test        edi, VMX_RESTORE_HOST_SEL_TR
-    jz          .test_fs
+    jz          .restore_fs
     ; When restoring the TR, we must first clear the busy flag or we'll end up faulting.
     mov         dx, [rsi + VMXRESTOREHOST.uHostSelTR]
     mov         ax, dx
@@ -365,7 +366,7 @@ BEGINPROC VMXRestoreHostState
     add         rax, qword [rsi + VMXRESTOREHOST.HostGdtr + 2]  ; xAX <- descriptor offset + GDTR.pGdt.
     and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
     ltr         dx
-    jmp short   .test_fs
+    jmp short   .restore_fs
 .gdt_readonly:
     test        edi, VMX_RESTORE_HOST_GDT_NEED_WRITABLE
     jnz         .gdt_readonly_need_writable
@@ -377,7 +378,7 @@ BEGINPROC VMXRestoreHostState
     and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
     ltr         dx
     mov         cr0, r9
-    jmp short   .test_fs
+    jmp short   .restore_fs
 .gdt_readonly_need_writable:
     add         rax, qword [rsi + VMXRESTOREHOST.HostGdtrRw + 2]  ; xAX <- descriptor offset + GDTR.pGdtRw
     and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
@@ -385,7 +386,7 @@ BEGINPROC VMXRestoreHostState
     ltr         dx
     lgdt        [rsi + VMXRESTOREHOST.HostGdtr]                 ; load the original GDT
 
-.test_fs:
+.restore_fs:
     ;
     ; When restoring the selector values for FS and GS, we'll temporarily trash
     ; the base address (at least the high 32-bit bits, but quite possibly the
@@ -400,22 +401,43 @@ BEGINPROC VMXRestoreHostState
     pushfq
     cli                                   ; (see above)
 
+    test        edi, VMX_RESTORE_HOST_CAN_USE_WRFSBASE_AND_WRGSBASE
+    jz          .restore_fs_using_wrmsr
+
+.restore_fs_using_wrfsbase:
     test        edi, VMX_RESTORE_HOST_SEL_FS
-    jz          .test_gs
-    mov         ax, word [rsi + VMXRESTOREHOST.uHostSelFS]
-    mov         fs, eax
+    jz          .restore_gs_using_wrgsbase
+    mov         rax, qword [rsi + VMXRESTOREHOST.uHostFSBase]
+    mov         cx, word [rsi + VMXRESTOREHOST.uHostSelFS]
+    mov         fs, ecx
+    wrfsbase    rax
+
+.restore_gs_using_wrgsbase:
+    test        edi, VMX_RESTORE_HOST_SEL_GS
+    jz          .restore_flags
+    mov         rax, qword [rsi + VMXRESTOREHOST.uHostGSBase]
+    mov         cx, word [rsi + VMXRESTOREHOST.uHostSelGS]
+    mov         gs, ecx
+    wrgsbase    rax
+    jmp         .restore_flags
+
+.restore_fs_using_wrmsr:
+    test        edi, VMX_RESTORE_HOST_SEL_FS
+    jz          .restore_gs_using_wrmsr
     mov         eax, dword [rsi + VMXRESTOREHOST.uHostFSBase]         ; uHostFSBase - Lo
     mov         edx, dword [rsi + VMXRESTOREHOST.uHostFSBase + 4h]    ; uHostFSBase - Hi
+    mov         cx, word [rsi + VMXRESTOREHOST.uHostSelFS]
+    mov         fs, ecx
     mov         ecx, MSR_K8_FS_BASE
     wrmsr
 
-.test_gs:
+.restore_gs_using_wrmsr:
     test        edi, VMX_RESTORE_HOST_SEL_GS
     jz          .restore_flags
-    mov         ax, word [rsi + VMXRESTOREHOST.uHostSelGS]
-    mov         gs, eax
     mov         eax, dword [rsi + VMXRESTOREHOST.uHostGSBase]         ; uHostGSBase - Lo
     mov         edx, dword [rsi + VMXRESTOREHOST.uHostGSBase + 4h]    ; uHostGSBase - Hi
+    mov         cx, word [rsi + VMXRESTOREHOST.uHostSelGS]
+    mov         gs, ecx
     mov         ecx, MSR_K8_GS_BASE
     wrmsr
 

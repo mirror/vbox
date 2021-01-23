@@ -883,6 +883,7 @@ AssertCompileMemberAlignment(VMXVMCSINFO, hMemObj,         8);
 #define VMX_RESTORE_HOST_IDTR                                   RT_BIT(6)
 #define VMX_RESTORE_HOST_GDT_READ_ONLY                          RT_BIT(7)
 #define VMX_RESTORE_HOST_GDT_NEED_WRITABLE                      RT_BIT(8)
+#define VMX_RESTORE_HOST_CAN_USE_WRFSBASE_AND_WRGSBASE          RT_BIT(9)
 /**
  * This _must_ be the top most bit, so that we can easily that that it and
  * something else is set w/o having to do two checks like this:
@@ -895,7 +896,7 @@ AssertCompileMemberAlignment(VMXVMCSINFO, hMemObj,         8);
  *     if (pVCpu->hm.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
  * @endcode
  */
-#define VMX_RESTORE_HOST_REQUIRED                               RT_BIT(9)
+#define VMX_RESTORE_HOST_REQUIRED                               RT_BIT(10)
 /** @} */
 
 /**
@@ -1036,7 +1037,8 @@ typedef struct HMCPU
             bool                        fUpdatedHostAutoMsrs;
             /** Alignment. */
             uint8_t                     au8Alignment0[3];
-            /** Which host-state bits to restore before being preempted. */
+            /** Which host-state bits to restore before being preempted, see
+             * VMX_RESTORE_HOST_XXX. */
             uint32_t                    fRestoreHostFlags;
             /** Alignment. */
             uint32_t                    u32Alignment0;

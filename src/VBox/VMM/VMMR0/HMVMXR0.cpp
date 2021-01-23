@@ -4501,12 +4501,15 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
 /**
  * Saves the host control registers (CR0, CR3, CR4) into the host-state area in
  * the VMCS.
+ * @returns CR4 for passing along to hmR0VmxExportHostSegmentRegs.
  */
-static void hmR0VmxExportHostControlRegs(void)
+static uint64_t hmR0VmxExportHostControlRegs(void)
 {
     int rc = VMXWriteVmcsNw(VMX_VMCS_HOST_CR0, ASMGetCR0());    AssertRC(rc);
     rc     = VMXWriteVmcsNw(VMX_VMCS_HOST_CR3, ASMGetCR3());    AssertRC(rc);
-    rc     = VMXWriteVmcsNw(VMX_VMCS_HOST_CR4, ASMGetCR4());    AssertRC(rc);
+    uint64_t uHostCr4 = ASMGetCR4();
+    rc     = VMXWriteVmcsNw(VMX_VMCS_HOST_CR4, uHostCr4);       AssertRC(rc);
+    return uHostCr4;
 }
 
 
@@ -4515,9 +4518,10 @@ static void hmR0VmxExportHostControlRegs(void)
  * the host-state area in the VMCS.
  *
  * @returns VBox status code.
- * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uHostCr4    The host CR4 value.
  */
-static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu)
+static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
 {
 /**
  * Macro for adjusting host segment selectors to satisfy VT-x's VM-entry
@@ -4526,13 +4530,9 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu)
 #define VMXLOCAL_ADJUST_HOST_SEG(a_Seg, a_selValue) \
     if ((a_selValue) & (X86_SEL_RPL | X86_SEL_LDT)) \
     { \
-        bool fValidSelector = true; \
-        if ((a_selValue) & X86_SEL_LDT) \
-        { \
-            uint32_t const uAttr = ASMGetSegAttr(a_selValue); \
-            fValidSelector = RT_BOOL(uAttr != UINT32_MAX && (uAttr & X86_DESC_P)); \
-        } \
-        if (fValidSelector) \
+        uint32_t fAttr; \
+        if (   !((a_selValue) & X86_SEL_LDT) /* likely */ \
+            || (((fAttr = ASMGetSegAttr(a_selValue)) & X86_DESC_P) && fAttr != UINT32_MAX)) \
         { \
             pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_##a_Seg; \
             pVCpu->hm.s.vmx.RestoreHost.uHostSel##a_Seg = (a_selValue); \
@@ -4554,7 +4554,9 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu)
                   pVCpu->idCpu));
         VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
     }
-    pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
+
+    /* ASSUME that if cr4.fsgsbase is set, the CPU supports wrfsbase & wrgsbase. */
+    pVCpu->hm.s.vmx.fRestoreHostFlags = (uHostCr4 & X86_CR4_FSGSBASE) ? VMX_RESTORE_HOST_CAN_USE_WRFSBASE_AND_WRGSBASE : 0 ;
 
     /*
      * Host segment registers.
@@ -4601,20 +4603,18 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu)
     /*
      * Host GDTR and IDTR.
      */
-    RTGDTR Gdtr;
-    RTIDTR Idtr;
-    RT_ZERO(Gdtr);
-    RT_ZERO(Idtr);
-    ASMGetGDTR(&Gdtr);
-    ASMGetIDTR(&Idtr);
-    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_GDTR_BASE, Gdtr.pGdt);    AssertRC(rc);
-    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_IDTR_BASE, Idtr.pIdt);    AssertRC(rc);
+    RTGDTRALIGNED Gdtr;
+    RTIDTRALIGNED Idtr;
+    ASMGetGDTR(&Gdtr.s.Gdtr);
+    ASMGetIDTR(&Idtr.s.Idtr);
+    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_GDTR_BASE, Gdtr.s.Gdtr.pGdt);    AssertRC(rc);
+    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_IDTR_BASE, Idtr.s.Idtr.pIdt);    AssertRC(rc);
 
     /*
      * Determine if we need to manually need to restore the GDTR and IDTR limits as VT-x zaps
      * them to the maximum limit (0xffff) on every VM-exit.
      */
-    if (Gdtr.cbGdt != 0xffff)
+    if (Gdtr.s.Gdtr.cbGdt != 0xffff)
         pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDTR;
 
     /*
@@ -4627,14 +4627,14 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu)
      * at 0xffff on hosts where we are sure it won't cause trouble.
      */
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-    if (Idtr.cbIdt <  0x0fff)
+    if (Idtr.s.Idtr.cbIdt <  0x0fff)
 #else
-    if (Idtr.cbIdt != 0xffff)
+    if (Idtr.s.Idtr.cbIdt != 0xffff)
 #endif
     {
         pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_IDTR;
-        AssertCompile(sizeof(Idtr) == sizeof(X86XDTR64));
-        memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostIdtr, &Idtr, sizeof(X86XDTR64));
+        pVCpu->hm.s.vmx.RestoreHost.HostIdtr.cb    = Idtr.s.Idtr.cbIdt;
+        pVCpu->hm.s.vmx.RestoreHost.HostIdtr.uAddr = Idtr.s.Idtr.pIdt;
     }
 
     /*
@@ -4642,10 +4642,10 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu)
      * and RPL bits is effectively what the CPU does for "scaling by 8". TI is always 0 and
      * RPL should be too in most cases.
      */
-    AssertMsgReturn((uSelTR | X86_SEL_RPL_LDT) <= Gdtr.cbGdt,
-                    ("TR selector exceeds limit. TR=%RTsel cbGdt=%#x\n", uSelTR, Gdtr.cbGdt), VERR_VMX_INVALID_HOST_STATE);
+    AssertMsgReturn((uSelTR | X86_SEL_RPL_LDT) <= Gdtr.s.Gdtr.cbGdt,
+                    ("TR selector exceeds limit. TR=%RTsel cbGdt=%#x\n", uSelTR, Gdtr.s.Gdtr.cbGdt), VERR_VMX_INVALID_HOST_STATE);
 
-    PCX86DESCHC pDesc = (PCX86DESCHC)(Gdtr.pGdt + (uSelTR & X86_SEL_MASK));
+    PCX86DESCHC pDesc = (PCX86DESCHC)(Gdtr.s.Gdtr.pGdt + (uSelTR & X86_SEL_MASK));
     uintptr_t const uTRBase = X86DESC64_BASE(pDesc);
 
     /*
@@ -4658,15 +4658,23 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu)
      * [1] See Intel spec. 3.5 "System Descriptor Types".
      * [2] See Intel spec. 7.2.3 "TSS Descriptor in 64-bit mode".
      */
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     Assert(pDesc->System.u4Type == 11);
     if (   pDesc->System.u16LimitLow != 0x67
         || pDesc->System.u4LimitHigh)
     {
         pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_TR;
         /* If the host has made GDT read-only, we would need to temporarily toggle CR0.WP before writing the GDT. */
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
         if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_READ_ONLY)
             pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_READ_ONLY;
+        if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_NEED_WRITABLE)
+        {
+            /* The GDT is read-only but the writable GDT is available. */
+            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_NEED_WRITABLE;
+            pVCpu->hm.s.vmx.RestoreHost.HostGdtrRw.cb = Gdtr.s.Gdtr.cbGdt;
+            rc = SUPR0GetCurrentGdtRw(&pVCpu->hm.s.vmx.RestoreHost.HostGdtrRw.uAddr);
+            AssertRCReturn(rc, rc);
+        }
         pVCpu->hm.s.vmx.RestoreHost.uHostSelTR = uSelTR;
     }
 
@@ -4675,16 +4683,8 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu)
      */
     if (pVCpu->hm.s.vmx.fRestoreHostFlags & (VMX_RESTORE_HOST_GDTR | VMX_RESTORE_HOST_SEL_TR))
     {
-        AssertCompile(sizeof(Gdtr) == sizeof(X86XDTR64));
-        memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostGdtr, &Gdtr, sizeof(X86XDTR64));
-        if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_NEED_WRITABLE)
-        {
-            /* The GDT is read-only but the writable GDT is available. */
-            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_NEED_WRITABLE;
-            pVCpu->hm.s.vmx.RestoreHost.HostGdtrRw.cb = Gdtr.cbGdt;
-            rc = SUPR0GetCurrentGdtRw(&pVCpu->hm.s.vmx.RestoreHost.HostGdtrRw.uAddr);
-            AssertRCReturn(rc, rc);
-        }
+        pVCpu->hm.s.vmx.RestoreHost.HostGdtr.cb    = Gdtr.s.Gdtr.cbGdt;
+        pVCpu->hm.s.vmx.RestoreHost.HostGdtr.uAddr = Gdtr.s.Gdtr.pGdt;
     }
 
     rc = VMXWriteVmcsNw(VMX_VMCS_HOST_TR_BASE, uTRBase);
@@ -4693,6 +4693,8 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu)
     /*
      * Host FS base and GS base.
      */
+    /** @todo Use RDFSBASE and RDGSBASE as these are probably a tiny bit cheaper.
+     *        Need inline assembly for it first, though. */
     uint64_t const u64FSBase = ASMRdMsr(MSR_K8_FS_BASE);
     uint64_t const u64GSBase = ASMRdMsr(MSR_K8_GS_BASE);
     rc = VMXWriteVmcsNw(VMX_VMCS_HOST_FS_BASE, u64FSBase);  AssertRC(rc);
@@ -9279,9 +9281,9 @@ static int hmR0VmxExportHostState(PVMCPUCC pVCpu)
     int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.fCtxChanged & HM_CHANGED_HOST_CONTEXT)
     {
-        hmR0VmxExportHostControlRegs();
+        uint64_t uHostCr4 = hmR0VmxExportHostControlRegs();
 
-        rc = hmR0VmxExportHostSegmentRegs(pVCpu);
+        rc = hmR0VmxExportHostSegmentRegs(pVCpu, uHostCr4);
         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
 
         hmR0VmxExportHostMsrs(pVCpu);
