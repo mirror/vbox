@@ -659,7 +659,7 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
  *
  * @param  cLeds        The number of LEDs in the set.
  * @param  enmType      The device type.
- * @param  ppSubTypes   When not NULL, subtypes for each LED and return the array pointer here.
+ * @param  ppaSubTypes  When not NULL, subtypes for each LED and return the array pointer here.
  * @throws HRESULT or ConfigError on trouble
  */
 Console::PLEDSET Console::i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, DeviceType_T **ppaSubTypes)
