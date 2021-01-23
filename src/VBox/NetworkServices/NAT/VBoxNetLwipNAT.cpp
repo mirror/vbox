@@ -921,53 +921,6 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 }
 
 
-/*static*/ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf) RT_NOTHROW_DEF
-{
-    AssertPtrReturn(pNetif, ERR_ARG);
-    AssertPtrReturn(pPBuf, ERR_ARG);
-
-    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(pNetif->state);
-    AssertPtrReturn(self, ERR_IF);
-    AssertReturn(self == g_pLwipNat, ERR_ARG);
-
-    LogFlowFunc(("ENTER: pNetif[%c%c%d], pPbuf:%p\n",
-                 pNetif->name[0],
-                 pNetif->name[1],
-                 pNetif->num,
-                 pPBuf));
-
-    RT_ZERO(VBoxNetLwipNAT::aXmitSeg);
-
-    size_t idx = 0;
-    for (struct pbuf *q = pPBuf; q != NULL; q = q->next, ++idx)
-    {
-        AssertReturn(idx < RT_ELEMENTS(VBoxNetLwipNAT::aXmitSeg), ERR_MEM);
-
-#if ETH_PAD_SIZE
-        if (q == pPBuf)
-        {
-            VBoxNetLwipNAT::aXmitSeg[idx].pv = (uint8_t *)q->payload + ETH_PAD_SIZE;
-            VBoxNetLwipNAT::aXmitSeg[idx].cb = q->len - ETH_PAD_SIZE;
-        }
-        else
-#endif
-        {
-            VBoxNetLwipNAT::aXmitSeg[idx].pv = q->payload;
-            VBoxNetLwipNAT::aXmitSeg[idx].cb = q->len;
-        }
-    }
-
-    int rc = self->sendBufferOnWire(VBoxNetLwipNAT::aXmitSeg, idx,
-                                    pPBuf->tot_len - ETH_PAD_SIZE);
-    AssertRCReturn(rc, ERR_IF);
-
-    self->flushWire();
-
-    LogFlowFunc(("LEAVE: %d\n", ERR_OK));
-    return ERR_OK;
-}
-
-
 /*static*/ int VBoxNetLwipNAT::natServicePfRegister(NATSERVICEPORTFORWARDRULE& natPf)
 {
     int lrc;
@@ -1088,6 +1041,9 @@ const char **VBoxNetLwipNAT::getHostNameservers()
 }
 
 
+/**
+ * Process an incoming frame received from the intnet.
+ */
 int VBoxNetLwipNAT::processFrame(void *pvFrame, size_t cbFrame)
 {
     AssertPtrReturn(pvFrame, VERR_INVALID_PARAMETER);
@@ -1127,6 +1083,9 @@ int VBoxNetLwipNAT::processFrame(void *pvFrame, size_t cbFrame)
 }
 
 
+/**
+ * Process an incoming GSO frame received from the intnet.
+ */
 int VBoxNetLwipNAT::processGSO(PCPDMNETWORKGSO pGso, size_t cbFrame)
 {
     if (!PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(PDMNETWORKGSO)))
@@ -1155,6 +1114,57 @@ int VBoxNetLwipNAT::processGSO(PCPDMNETWORKGSO pGso, size_t cbFrame)
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Send an outgoing frame from lwIP to intnet.
+ */
+/* static */
+err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf) RT_NOTHROW_DEF
+{
+    AssertPtrReturn(pNetif, ERR_ARG);
+    AssertPtrReturn(pPBuf, ERR_ARG);
+
+    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(pNetif->state);
+    AssertPtrReturn(self, ERR_IF);
+    AssertReturn(pNetif == &self->m_LwipNetIf, ERR_IF);
+
+    LogFlowFunc(("ENTER: pNetif[%c%c%d], pPbuf:%p\n",
+                 pNetif->name[0],
+                 pNetif->name[1],
+                 pNetif->num,
+                 pPBuf));
+
+    RT_ZERO(VBoxNetLwipNAT::aXmitSeg);
+
+    size_t idx = 0;
+    for (struct pbuf *q = pPBuf; q != NULL; q = q->next, ++idx)
+    {
+        AssertReturn(idx < RT_ELEMENTS(VBoxNetLwipNAT::aXmitSeg), ERR_MEM);
+
+#if ETH_PAD_SIZE
+        if (q == pPBuf)
+        {
+            VBoxNetLwipNAT::aXmitSeg[idx].pv = (uint8_t *)q->payload + ETH_PAD_SIZE;
+            VBoxNetLwipNAT::aXmitSeg[idx].cb = q->len - ETH_PAD_SIZE;
+        }
+        else
+#endif
+        {
+            VBoxNetLwipNAT::aXmitSeg[idx].pv = q->payload;
+            VBoxNetLwipNAT::aXmitSeg[idx].cb = q->len;
+        }
+    }
+
+    int rc = self->sendBufferOnWire(VBoxNetLwipNAT::aXmitSeg, idx,
+                                    pPBuf->tot_len - ETH_PAD_SIZE);
+    AssertRCReturn(rc, ERR_IF);
+
+    self->flushWire();
+
+    LogFlowFunc(("LEAVE: %d\n", ERR_OK));
+    return ERR_OK;
 }
 
 
