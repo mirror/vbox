@@ -177,26 +177,30 @@ class VBoxNetLwipNAT
     virtual void usage() { /** @todo should be implemented */ };
     virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
 
-    int run();
-    virtual int init(void);
-    /* VBoxNetNAT always needs Main */
     virtual bool isMainNeeded() const { return true; }
-    virtual int processFrame(void *, size_t);
-    virtual int processGSO(PCPDMNETWORKGSO, size_t);
-    virtual int processUDP(void *, size_t) { return VERR_IGNORED; }
+
+    virtual int init();
+
+    static DECLCALLBACK(void) onLwipTcpIpInit(void *arg);
+    static DECLCALLBACK(void) onLwipTcpIpFini(void *arg);
+    static err_t netifInit(netif *pNetif) RT_NOTHROW_PROTO;
+
+    virtual int run();
 
     HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent);
 
     const char **getHostNameservers();
 
-    static DECLCALLBACK(void) onLwipTcpIpInit(void *arg);
-    static DECLCALLBACK(void) onLwipTcpIpFini(void *arg);
-    static err_t netifInit(netif *pNetif) RT_NOTHROW_PROTO;
-    static err_t netifLinkoutput(netif *pNetif, pbuf *pBuf) RT_NOTHROW_PROTO;
-    /* static int intNetThreadRecv(RTTHREAD, void *); - unused */
-
     static int natServicePfRegister(NATSERVICEPORTFORWARDRULE& natServicePf);
     static int natServiceProcessRegisteredPf(VECNATSERVICEPF& vecPf);
+
+    /* input from intnet */
+    virtual int processFrame(void *, size_t);
+    virtual int processGSO(PCPDMNETWORKGSO, size_t);
+    virtual int processUDP(void *, size_t) { return VERR_IGNORED; }
+
+    /* output to intnet */
+    static err_t netifLinkoutput(netif *pNetif, pbuf *pBuf) RT_NOTHROW_PROTO;
 };
 
 INTNETSEG VBoxNetLwipNAT::aXmitSeg[64];
@@ -582,6 +586,78 @@ DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpInit(void *arg)
 
 
 /**
+ * lwIP's callback to configure the interface.
+ *
+ * Called from onLwipTcpIpInit() via netif_add().  Called after the
+ * initerface is mostly initialized, and its IPv4 address is already
+ * configured.  Here we still need to configure the MAC address and
+ * IPv6 addresses.  It's best to consult the source of netif_add() for
+ * the exact details.
+ */
+/* static */
+err_t VBoxNetLwipNAT::netifInit(netif *pNetif) RT_NOTHROW_DEF
+{
+    err_t rcLwip = ERR_OK;
+
+    AssertPtrReturn(pNetif, ERR_ARG);
+
+    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(pNetif->state);
+    AssertPtrReturn(self, ERR_ARG);
+
+    LogFlowFunc(("ENTER: pNetif[%c%c%d]\n", pNetif->name[0], pNetif->name[1], pNetif->num));
+    /* validity */
+    AssertReturn(   pNetif->name[0] == 'N'
+                 && pNetif->name[1] == 'T', ERR_ARG);
+
+
+    pNetif->hwaddr_len = sizeof(RTMAC);
+    RTMAC mac = self->getMacAddress();
+    memcpy(pNetif->hwaddr, &mac, sizeof(RTMAC));
+
+    self->m_u16Mtu = 1500; // XXX: FIXME
+    pNetif->mtu = self->m_u16Mtu;
+
+    pNetif->flags = NETIF_FLAG_BROADCAST
+      | NETIF_FLAG_ETHARP                /* Don't bother driver with ARP and let Lwip resolve ARP handling */
+      | NETIF_FLAG_ETHERNET;             /* Lwip works with ethernet too */
+
+    pNetif->linkoutput = netifLinkoutput; /* ether-level-pipe */
+    pNetif->output = etharp_output;       /* ip-pipe */
+
+    if (self->m_ProxyOptions.ipv6_enabled) {
+        pNetif->output_ip6 = ethip6_output;
+
+        /* IPv6 link-local address in slot 0 */
+        netif_create_ip6_linklocal_address(pNetif, /* :from_mac_48bit */ 1);
+        netif_ip6_addr_set_state(pNetif, 0, IP6_ADDR_PREFERRED); // skip DAD
+
+        /*
+         * RFC 4193 Locally Assigned Global ID (ULA) in slot 1
+         * [fd17:625c:f037:XXXX::1] where XXXX, 16 bit Subnet ID, are two
+         * bytes from the middle of the IPv4 address, e.g. :dead: for
+         * 10.222.173.1
+         */
+        u8_t nethi = ip4_addr2(&pNetif->ip_addr);
+        u8_t netlo = ip4_addr3(&pNetif->ip_addr);
+
+        ip6_addr_t *paddr = netif_ip6_addr(pNetif, 1);
+        IP6_ADDR(paddr, 0,   0xFD, 0x17,   0x62, 0x5C);
+        IP6_ADDR(paddr, 1,   0xF0, 0x37,  nethi, netlo);
+        IP6_ADDR(paddr, 2,   0x00, 0x00,   0x00, 0x00);
+        IP6_ADDR(paddr, 3,   0x00, 0x00,   0x00, 0x01);
+        netif_ip6_addr_set_state(pNetif, 1, IP6_ADDR_PREFERRED);
+
+#if LWIP_IPV6_SEND_ROUTER_SOLICIT
+        pNetif->rs_count = 0;
+#endif
+    }
+
+    LogFlowFunc(("LEAVE: %d\n", rcLwip));
+    return rcLwip;
+}
+
+
+/**
  * Run the pumps.
  *
  * Spawn the intnet pump thread that gets packets from the intnet and
@@ -602,6 +678,22 @@ int VBoxNetLwipNAT::run()
     destroyClientListener(m_VBoxClientListener, virtualboxClient);
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Run finalization on the lwIP "tcpip" thread.
+ */
+/* static */
+DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpFini(void *arg)
+{
+    AssertPtrReturnVoid(arg);
+    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(arg);
+
+    /* XXX: proxy finalization */
+    netif_set_link_down(&self->m_LwipNetIf);
+    netif_set_down(&self->m_LwipNetIf);
+    netif_remove(&self->m_LwipNetIf);
 }
 
 
@@ -826,83 +918,6 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
         default: break; /* Shut up MSC. */
     }
     return hrc;
-}
-
-
-/*static*/ DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpFini(void* arg)
-{
-    AssertPtrReturnVoid(arg);
-    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(arg);
-
-    /* XXX: proxy finalization */
-    netif_set_link_down(&self->m_LwipNetIf);
-    netif_set_down(&self->m_LwipNetIf);
-    netif_remove(&self->m_LwipNetIf);
-
-}
-
-/*
- * Callback for netif_add() to initialize the interface.
- */
-/*static*/ err_t VBoxNetLwipNAT::netifInit(netif *pNetif) RT_NOTHROW_DEF
-{
-    err_t rcLwip = ERR_OK;
-
-    AssertPtrReturn(pNetif, ERR_ARG);
-
-    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(pNetif->state);
-    AssertPtrReturn(self, ERR_ARG);
-
-    LogFlowFunc(("ENTER: pNetif[%c%c%d]\n", pNetif->name[0], pNetif->name[1], pNetif->num));
-    /* validity */
-    AssertReturn(   pNetif->name[0] == 'N'
-                 && pNetif->name[1] == 'T', ERR_ARG);
-
-
-    pNetif->hwaddr_len = sizeof(RTMAC);
-    RTMAC mac = self->getMacAddress();
-    memcpy(pNetif->hwaddr, &mac, sizeof(RTMAC));
-
-    self->m_u16Mtu = 1500; // XXX: FIXME
-    pNetif->mtu = self->m_u16Mtu;
-
-    pNetif->flags = NETIF_FLAG_BROADCAST
-      | NETIF_FLAG_ETHARP                /* Don't bother driver with ARP and let Lwip resolve ARP handling */
-      | NETIF_FLAG_ETHERNET;             /* Lwip works with ethernet too */
-
-    pNetif->linkoutput = netifLinkoutput; /* ether-level-pipe */
-    pNetif->output = etharp_output;       /* ip-pipe */
-
-    if (self->m_ProxyOptions.ipv6_enabled) {
-        pNetif->output_ip6 = ethip6_output;
-
-        /* IPv6 link-local address in slot 0 */
-        netif_create_ip6_linklocal_address(pNetif, /* :from_mac_48bit */ 1);
-        netif_ip6_addr_set_state(pNetif, 0, IP6_ADDR_PREFERRED); // skip DAD
-
-        /*
-         * RFC 4193 Locally Assigned Global ID (ULA) in slot 1
-         * [fd17:625c:f037:XXXX::1] where XXXX, 16 bit Subnet ID, are two
-         * bytes from the middle of the IPv4 address, e.g. :dead: for
-         * 10.222.173.1
-         */
-        u8_t nethi = ip4_addr2(&pNetif->ip_addr);
-        u8_t netlo = ip4_addr3(&pNetif->ip_addr);
-
-        ip6_addr_t *paddr = netif_ip6_addr(pNetif, 1);
-        IP6_ADDR(paddr, 0,   0xFD, 0x17,   0x62, 0x5C);
-        IP6_ADDR(paddr, 1,   0xF0, 0x37,  nethi, netlo);
-        IP6_ADDR(paddr, 2,   0x00, 0x00,   0x00, 0x00);
-        IP6_ADDR(paddr, 3,   0x00, 0x00,   0x00, 0x01);
-        netif_ip6_addr_set_state(pNetif, 1, IP6_ADDR_PREFERRED);
-
-#if LWIP_IPV6_SEND_ROUTER_SOLICIT
-        pNetif->rs_count = 0;
-#endif
-    }
-
-    LogFlowFunc(("LEAVE: %d\n", rcLwip));
-    return rcLwip;
 }
 
 
