@@ -83,6 +83,12 @@
 #  pragma intrinsic(__writeeflags) */
 #  pragma intrinsic(__rdtscp)
 # endif
+# if defined(RT_ARCH_AMD64) && RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2015 /*?*/
+#  pragma intrinsic(_readfsbase_u64)
+#  pragma intrinsic(_readgsbase_u64)
+#  pragma intrinsic(_writefsbase_u64)
+#  pragma intrinsic(_writegsbase_u64)
+# endif
 #endif
 
 
@@ -408,6 +414,46 @@ DECLINLINE(RTSEL) ASMGetFS(void)
 }
 # endif
 
+#ifdef RT_ARCH_AMD64
+
+/**
+ * Get the FS base register.
+ * @returns FS base address.
+ */
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2015 /*?*/
+DECLASM(uint64_t) ASMGetFSBase(void);
+#else
+DECLINLINE(uint64_t) ASMGetFSBase(void)
+{
+# if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2015
+    return (uint64_t)_readfsbase_u64();
+# elif RT_INLINE_ASM_GNU_STYLE
+    uint64_t uFSBase;
+    __asm__ __volatile__("rdfsbase %0\n\t" : "=r" (uFSBase));
+    return uFSBase;
+# endif
+}
+# endif
+
+
+/**
+ * Set the FS base register.
+ * @param   uNewBase    The new base value.
+ */
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2015 /*?*/
+DECLASM(void) ASMSetFSBase(uint64_t uNewBase);
+#else
+DECLINLINE(void) ASMSetFSBase(uint64_t uNewBase)
+{
+# if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2015
+    _writefsbase_u64(uNewBase);
+# elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("wrfsbase %0\n\t" : : "r" (uNewBase));
+# endif
+}
+# endif
+
+#endif /* RT_ARCH_AMD64 */
 
 /**
  * Get the GS register.
@@ -431,6 +477,47 @@ DECLINLINE(RTSEL) ASMGetGS(void)
     return SelGS;
 }
 #endif
+
+#ifdef RT_ARCH_AMD64
+
+/**
+ * Get the GS base register.
+ * @returns GS base address.
+ */
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2015 /*?*/
+DECLASM(uint64_t) ASMGetGSBase(void);
+#else
+DECLINLINE(uint64_t) ASMGetGSBase(void)
+{
+# if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2015
+    return (uint64_t)_readgsbase_u64();
+# elif RT_INLINE_ASM_GNU_STYLE
+    uint64_t uGSBase;
+    __asm__ __volatile__("rdgsbase %0\n\t" : "=r" (uGSBase));
+    return uGSBase;
+# endif
+}
+# endif
+
+
+/**
+ * Set the GS base register.
+ * @param   uNewBase    The new base value.
+ */
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2015 /*?*/
+DECLASM(void) ASMSetGSBase(uint64_t uNewBase);
+#else
+DECLINLINE(void) ASMSetGSBase(uint64_t uNewBase)
+{
+# if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2015
+    _writegsbase_u64(uNewBase);
+# elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("wrgsbase %0\n\t" : : "r" (uNewBase));
+# endif
+}
+# endif
+
+#endif /* RT_ARCH_AMD64 */
 
 
 /**

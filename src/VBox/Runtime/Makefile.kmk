@@ -238,7 +238,11 @@ RuntimeWin64ASM_SOURCES = \
 	common/asm/ASMSetGDTR.asm \
 	common/asm/ASMGetLDTR.asm \
 	common/asm/ASMGetSegAttr.asm \
-	common/asm/ASMGetTR.asm
+	common/asm/ASMGetFSBase.asm \
+	common/asm/ASMSetFSBase.asm \
+	common/asm/ASMGetGSBase.asm \
+	common/asm/ASMSetGSBase.asm \
+	common/asm/ASMGetTR.asm \
 
 #
 # Win32 assembly sources.
