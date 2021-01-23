@@ -310,6 +310,201 @@ int VBoxNetLwipNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
 
 
 /**
+ * Perform actual initialization.
+ *
+ * This code runs on the main thread.  Establish COM connection with
+ * VBoxSVC so that we can do API calls.  Starts the LWIP thread.
+ */
+int VBoxNetLwipNAT::init()
+{
+    LogFlowFuncEnter();
+
+    /* virtualbox initialized in the superclass */
+    int rc = ::VBoxNetBaseService::init();
+    AssertRCReturn(rc, rc);
+
+    std::string networkName = getNetworkName();
+    rc = findNatNetwork(virtualbox, networkName, m_net);
+    AssertRCReturn(rc, rc);
+
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnNATNetworkPortForward);
+        eventTypes.push_back(VBoxEventType_OnNATNetworkSetting);
+        rc = createNatListener(m_NatListener, virtualbox, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
+
+
+    // resolver changes are reported on vbox but are retrieved from
+    // host so stash a pointer for future lookups
+    HRESULT hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
+    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
+        eventTypes.push_back(VBoxEventType_OnNATNetworkStartStop);
+        rc = createNatListener(m_VBoxListener, virtualbox, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
+
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
+        rc = createClientListener(m_VBoxClientListener, virtualboxClient, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
+
+    BOOL fIPv6Enabled = FALSE;
+    hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
+    AssertComRCReturn(hrc, VERR_NOT_FOUND);
+
+    BOOL fIPv6DefaultRoute = FALSE;
+    if (fIPv6Enabled)
+    {
+        hrc = m_net->COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fIPv6DefaultRoute);
+        AssertComRCReturn(hrc, VERR_NOT_FOUND);
+    }
+
+    m_ProxyOptions.ipv6_enabled = fIPv6Enabled;
+    m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
+
+
+    /*
+     * Bind outgoing connections to the specified IP.
+     */
+    com::Bstr bstrSourceIpX;
+
+    /* IPv4 */
+    com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4", networkName.c_str());
+    hrc = virtualbox->GetExtraData(bstrSourceIp4Key.raw(), bstrSourceIpX.asOutParam());
+    if (SUCCEEDED(hrc) && bstrSourceIpX.isNotEmpty())
+    {
+        RTNETADDRIPV4 addr;
+        rc = RTNetStrToIPv4Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr);
+        if (RT_SUCCESS(rc))
+        {
+            m_src4.sin_addr.s_addr = addr.u;
+            m_ProxyOptions.src4 = &m_src4;
+
+            LogRel(("Will use %RTnaipv4 as IPv4 source address\n",
+                    m_src4.sin_addr.s_addr));
+        }
+        else
+        {
+            LogRel(("Failed to parse \"%s\" IPv4 source address specification\n",
+                    com::Utf8Str(bstrSourceIpX).c_str()));
+        }
+
+        bstrSourceIpX.setNull();
+    }
+
+    /* IPv6 */
+    com::Bstr bstrSourceIp6Key = com::BstrFmt("NAT/%s/SourceIp6", networkName.c_str());
+    hrc = virtualbox->GetExtraData(bstrSourceIp6Key.raw(), bstrSourceIpX.asOutParam());
+    if (SUCCEEDED(hrc) && bstrSourceIpX.isNotEmpty())
+    {
+        RTNETADDRIPV6 addr;
+        char *pszZone = NULL;
+        rc = RTNetStrToIPv6Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr, &pszZone);
+        if (RT_SUCCESS(rc))
+        {
+            memcpy(&m_src6.sin6_addr, &addr, sizeof(addr));
+            m_ProxyOptions.src6 = &m_src6;
+
+            LogRel(("Will use %RTnaipv6 as IPv6 source address\n",
+                    &m_src6.sin6_addr));
+        }
+        else
+        {
+            LogRel(("Failed to parse \"%s\" IPv6 source address specification\n",
+                    com::Utf8Str(bstrSourceIpX).c_str()));
+        }
+
+        bstrSourceIpX.setNull();
+    }
+
+
+    if (!fDontLoadRulesOnStartup)
+    {
+        fetchNatPortForwardRules(m_net, false, m_vecPortForwardRule4);
+        fetchNatPortForwardRules(m_net, true, m_vecPortForwardRule6);
+    } /* if (!fDontLoadRulesOnStartup) */
+
+    AddressToOffsetMapping tmp;
+    rc = localMappings(m_net, tmp);
+    if (RT_SUCCESS(rc) && !tmp.empty())
+    {
+        unsigned long i = 0;
+        for (AddressToOffsetMapping::iterator it = tmp.begin();
+             it != tmp.end() && i < RT_ELEMENTS(m_lo2off);
+             ++it, ++i)
+        {
+            ip4_addr_set_u32(&m_lo2off[i].loaddr, it->first.u);
+            m_lo2off[i].off = it->second;
+        }
+
+        m_loOptDescriptor.lomap = m_lo2off;
+        m_loOptDescriptor.num_lomap = i;
+        m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
+    }
+
+    com::Bstr bstr;
+    hrc = virtualbox->COMGETTER(HomeFolder)(bstr.asOutParam());
+    AssertComRCReturn(hrc, VERR_NOT_FOUND);
+    if (!bstr.isEmpty())
+    {
+        com::Utf8Str strTftpRoot(com::Utf8StrFmt("%ls%c%s",
+                                     bstr.raw(), RTPATH_DELIMITER, "TFTP"));
+        char *pszStrTemp;       // avoid const char ** vs char **
+        rc = RTStrUtf8ToCurrentCP(&pszStrTemp, strTftpRoot.c_str());
+        AssertRC(rc);
+        m_ProxyOptions.tftp_root = pszStrTemp;
+    }
+
+    m_ProxyOptions.nameservers = getHostNameservers();
+
+    /* end of COM initialization */
+
+    /* connect to the intnet */
+    rc = tryGoOnline();
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* start the LWIP thread */
+    vboxLwipCoreInitialize(VBoxNetLwipNAT::onLwipTcpIpInit, this);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+/*
+ * Run the pumps.
+ *
+ * Spawn the intnet pump thread that gets packets from the intnet and
+ * feeds them to lwIP.  Enter COM event loop here, on the main thread.
+ */
+int VBoxNetLwipNAT::run()
+{
+    VBoxNetBaseService::run();
+
+    /* event pump was told to shut down, we are done ... */
+    vboxLwipCoreFinalize(VBoxNetLwipNAT::onLwipTcpIpFini, this);
+
+    m_vecPortForwardRule4.clear();
+    m_vecPortForwardRule6.clear();
+
+    destroyNatListener(m_NatListener, virtualbox);
+    destroyNatListener(m_VBoxListener, virtualbox);
+    destroyClientListener(m_VBoxClientListener, virtualboxClient);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @note: this work on Event thread.
  */
 HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
@@ -832,173 +1027,6 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 }
 
 
-/**
- * Main thread. Starts also the LWIP thread.
- */
-int VBoxNetLwipNAT::init()
-{
-    LogFlowFuncEnter();
-
-    /* virtualbox initialized in super class */
-    int rc = ::VBoxNetBaseService::init();
-    AssertRCReturn(rc, rc);
-
-    std::string networkName = getNetworkName();
-    rc = findNatNetwork(virtualbox, networkName, m_net);
-    AssertRCReturn(rc, rc);
-
-    {
-        ComEventTypeArray eventTypes;
-        eventTypes.push_back(VBoxEventType_OnNATNetworkPortForward);
-        eventTypes.push_back(VBoxEventType_OnNATNetworkSetting);
-        rc = createNatListener(m_NatListener, virtualbox, this, eventTypes);
-        AssertRCReturn(rc, rc);
-    }
-
-
-    // resolver changes are reported on vbox but are retrieved from
-    // host so stash a pointer for future lookups
-    HRESULT hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-
-    {
-        ComEventTypeArray eventTypes;
-        eventTypes.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
-        eventTypes.push_back(VBoxEventType_OnNATNetworkStartStop);
-        rc = createNatListener(m_VBoxListener, virtualbox, this, eventTypes);
-        AssertRCReturn(rc, rc);
-    }
-
-    {
-        ComEventTypeArray eventTypes;
-        eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
-        rc = createClientListener(m_VBoxClientListener, virtualboxClient, this, eventTypes);
-        AssertRCReturn(rc, rc);
-    }
-
-    BOOL fIPv6Enabled = FALSE;
-    hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
-    AssertComRCReturn(hrc, VERR_NOT_FOUND);
-
-    BOOL fIPv6DefaultRoute = FALSE;
-    if (fIPv6Enabled)
-    {
-        hrc = m_net->COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fIPv6DefaultRoute);
-        AssertComRCReturn(hrc, VERR_NOT_FOUND);
-    }
-
-    m_ProxyOptions.ipv6_enabled = fIPv6Enabled;
-    m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
-
-
-    /*
-     * Bind outgoing connections to the specified IP.
-     */
-    com::Bstr bstrSourceIpX;
-
-    /* IPv4 */
-    com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4", networkName.c_str());
-    hrc = virtualbox->GetExtraData(bstrSourceIp4Key.raw(), bstrSourceIpX.asOutParam());
-    if (SUCCEEDED(hrc) && bstrSourceIpX.isNotEmpty())
-    {
-        RTNETADDRIPV4 addr;
-        rc = RTNetStrToIPv4Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr);
-        if (RT_SUCCESS(rc))
-        {
-            m_src4.sin_addr.s_addr = addr.u;
-            m_ProxyOptions.src4 = &m_src4;
-
-            LogRel(("Will use %RTnaipv4 as IPv4 source address\n",
-                    m_src4.sin_addr.s_addr));
-        }
-        else
-        {
-            LogRel(("Failed to parse \"%s\" IPv4 source address specification\n",
-                    com::Utf8Str(bstrSourceIpX).c_str()));
-        }
-
-        bstrSourceIpX.setNull();
-    }
-
-    /* IPv6 */
-    com::Bstr bstrSourceIp6Key = com::BstrFmt("NAT/%s/SourceIp6", networkName.c_str());
-    hrc = virtualbox->GetExtraData(bstrSourceIp6Key.raw(), bstrSourceIpX.asOutParam());
-    if (SUCCEEDED(hrc) && bstrSourceIpX.isNotEmpty())
-    {
-        RTNETADDRIPV6 addr;
-        char *pszZone = NULL;
-        rc = RTNetStrToIPv6Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr, &pszZone);
-        if (RT_SUCCESS(rc))
-        {
-            memcpy(&m_src6.sin6_addr, &addr, sizeof(addr));
-            m_ProxyOptions.src6 = &m_src6;
-
-            LogRel(("Will use %RTnaipv6 as IPv6 source address\n",
-                    &m_src6.sin6_addr));
-        }
-        else
-        {
-            LogRel(("Failed to parse \"%s\" IPv6 source address specification\n",
-                    com::Utf8Str(bstrSourceIpX).c_str()));
-        }
-
-        bstrSourceIpX.setNull();
-    }
-
-
-    if (!fDontLoadRulesOnStartup)
-    {
-        fetchNatPortForwardRules(m_net, false, m_vecPortForwardRule4);
-        fetchNatPortForwardRules(m_net, true, m_vecPortForwardRule6);
-    } /* if (!fDontLoadRulesOnStartup) */
-
-    AddressToOffsetMapping tmp;
-    rc = localMappings(m_net, tmp);
-    if (RT_SUCCESS(rc) && !tmp.empty())
-    {
-        unsigned long i = 0;
-        for (AddressToOffsetMapping::iterator it = tmp.begin();
-             it != tmp.end() && i < RT_ELEMENTS(m_lo2off);
-             ++it, ++i)
-        {
-            ip4_addr_set_u32(&m_lo2off[i].loaddr, it->first.u);
-            m_lo2off[i].off = it->second;
-        }
-
-        m_loOptDescriptor.lomap = m_lo2off;
-        m_loOptDescriptor.num_lomap = i;
-        m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
-    }
-
-    com::Bstr bstr;
-    hrc = virtualbox->COMGETTER(HomeFolder)(bstr.asOutParam());
-    AssertComRCReturn(hrc, VERR_NOT_FOUND);
-    if (!bstr.isEmpty())
-    {
-        com::Utf8Str strTftpRoot(com::Utf8StrFmt("%ls%c%s",
-                                     bstr.raw(), RTPATH_DELIMITER, "TFTP"));
-        char *pszStrTemp;       // avoid const char ** vs char **
-        rc = RTStrUtf8ToCurrentCP(&pszStrTemp, strTftpRoot.c_str());
-        AssertRC(rc);
-        m_ProxyOptions.tftp_root = pszStrTemp;
-    }
-
-    m_ProxyOptions.nameservers = getHostNameservers();
-
-    /* end of COM initialization */
-
-    rc = tryGoOnline();
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* this starts LWIP thread */
-    vboxLwipCoreInitialize(VBoxNetLwipNAT::onLwipTcpIpInit, this);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-
 const char **VBoxNetLwipNAT::getHostNameservers()
 {
     if (m_host.isNull())
@@ -1102,24 +1130,6 @@ int VBoxNetLwipNAT::processGSO(PCPDMNETWORKGSO pGso, size_t cbFrame)
             return rc;
         }
     }
-
-    return VINF_SUCCESS;
-}
-
-
-int VBoxNetLwipNAT::run()
-{
-    /* Father starts receiving thread and enter event loop. */
-    VBoxNetBaseService::run();
-
-    vboxLwipCoreFinalize(VBoxNetLwipNAT::onLwipTcpIpFini, this);
-
-    m_vecPortForwardRule4.clear();
-    m_vecPortForwardRule6.clear();
-
-    destroyNatListener(m_NatListener, virtualbox);
-    destroyNatListener(m_VBoxListener, virtualbox);
-    destroyClientListener(m_VBoxClientListener, virtualboxClient);
 
     return VINF_SUCCESS;
 }
