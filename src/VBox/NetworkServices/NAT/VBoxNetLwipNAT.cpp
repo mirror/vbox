@@ -174,10 +174,11 @@ class VBoxNetLwipNAT
 
     static int logInit(int argc, char **argv);
 
-    void usage(){                /** @todo should be implemented */ };
+    virtual void usage() { /** @todo should be implemented */ };
+    virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
+
     int run();
     virtual int init(void);
-    virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
     /* VBoxNetNAT always needs Main */
     virtual bool isMainNeeded() const { return true; }
     virtual int processFrame(void *, size_t);
@@ -272,6 +273,39 @@ VBoxNetLwipNAT::~VBoxNetLwipNAT()
         RTMemFree(m_ProxyOptions.nameservers);
         m_ProxyOptions.nameservers = NULL;
     }
+}
+
+
+/**
+ * Hook into the option processing.
+ *
+ * Called by VBoxNetBaseService::parseArgs() for options that are not
+ * recognized by the base class.
+ */
+int VBoxNetLwipNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
+{
+    switch (rc)
+    {
+        case 'p':
+        case 'P':
+        {
+            NATSERVICEPORTFORWARDRULE Rule;
+            VECNATSERVICEPF& rules = (rc == 'P'?
+                                        m_vecPortForwardRule6
+                                      : m_vecPortForwardRule4);
+
+            fDontLoadRulesOnStartup = true;
+
+            RT_ZERO(Rule);
+
+            int rc2 = netPfStrToPf(Val.psz, (rc == 'P'), &Rule.Pfr);
+            RT_NOREF_PV(rc2);
+            rules.push_back(Rule);
+            return VINF_SUCCESS;
+        }
+        default:;
+    }
+    return VERR_NOT_FOUND;
 }
 
 
@@ -1000,33 +1034,6 @@ const char **VBoxNetLwipNAT::getHostNameservers()
     }
 
     return ppcszNameServers;
-}
-
-
-int VBoxNetLwipNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
-{
-    switch (rc)
-    {
-        case 'p':
-        case 'P':
-        {
-            NATSERVICEPORTFORWARDRULE Rule;
-            VECNATSERVICEPF& rules = (rc == 'P'?
-                                        m_vecPortForwardRule6
-                                      : m_vecPortForwardRule4);
-
-            fDontLoadRulesOnStartup = true;
-
-            RT_ZERO(Rule);
-
-            int rc2 = netPfStrToPf(Val.psz, (rc == 'P'), &Rule.Pfr);
-            RT_NOREF_PV(rc2);
-            rules.push_back(Rule);
-            return VINF_SUCCESS;
-        }
-        default:;
-    }
-    return VERR_NOT_FOUND;
 }
 
 
