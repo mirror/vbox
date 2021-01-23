@@ -191,8 +191,8 @@ class VBoxNetLwipNAT
 
     const char **getHostNameservers();
 
-    static int natServicePfRegister(NATSERVICEPORTFORWARDRULE& natServicePf);
-    static int natServiceProcessRegisteredPf(VECNATSERVICEPF& vecPf);
+    static int natServiceProcessRegisteredPf(VECNATSERVICEPF &vecPf);
+    static int natServicePfRegister(NATSERVICEPORTFORWARDRULE &natServicePf);
 
     /* input from intnet */
     virtual int processFrame(void *, size_t);
@@ -921,7 +921,66 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 }
 
 
-/*static*/ int VBoxNetLwipNAT::natServicePfRegister(NATSERVICEPORTFORWARDRULE& natPf)
+static int fetchNatPortForwardRules(const ComNatPtr& nat, bool fIsIPv6, VECNATSERVICEPF& vec)
+{
+    HRESULT hrc;
+    com::SafeArray<BSTR> rules;
+    if (fIsIPv6)
+        hrc = nat->COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(rules));
+    else
+        hrc = nat->COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(rules));
+    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+    NATSERVICEPORTFORWARDRULE Rule;
+    for (size_t idxRules = 0; idxRules < rules.size(); ++idxRules)
+    {
+        Log(("%d-%s rule: %ls\n", idxRules, (fIsIPv6 ? "IPv6" : "IPv4"), rules[idxRules]));
+        RT_ZERO(Rule);
+
+        int rc = netPfStrToPf(com::Utf8Str(rules[idxRules]).c_str(), fIsIPv6,
+                              &Rule.Pfr);
+        if (RT_FAILURE(rc))
+            continue;
+
+        vec.push_back(Rule);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/* static */
+int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules)
+{
+    ITERATORNATSERVICEPF it;
+    for (it = vecRules.begin(); it != vecRules.end(); ++it)
+    {
+        NATSERVICEPORTFORWARDRULE &natPf = *it;
+
+        LogRel(("Loading %s port-forwarding rule \"%s\": %s %s%s%s:%d -> %s%s%s:%d\n",
+                natPf.Pfr.fPfrIPv6 ? "IPv6" : "IPv4",
+                natPf.Pfr.szPfrName,
+                natPf.Pfr.iPfrProto == IPPROTO_TCP ? "TCP" : "UDP",
+                /* from */
+                natPf.Pfr.fPfrIPv6 ? "[" : "",
+                natPf.Pfr.szPfrHostAddr,
+                natPf.Pfr.fPfrIPv6 ? "]" : "",
+                natPf.Pfr.u16PfrHostPort,
+                /* to */
+                natPf.Pfr.fPfrIPv6 ? "[" : "",
+                natPf.Pfr.szPfrGuestAddr,
+                natPf.Pfr.fPfrIPv6 ? "]" : "",
+                natPf.Pfr.u16PfrGuestPort));
+
+        natServicePfRegister(natPf);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/* static */
+int VBoxNetLwipNAT::natServicePfRegister(NATSERVICEPORTFORWARDRULE &natPf)
 {
     int lrc;
 
@@ -971,35 +1030,6 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
                 natPf.Pfr.fPfrIPv6 ? "IPv6" : "IPv4",
                 natPf.Pfr.szPfrName));
     return VERR_IGNORED;
-}
-
-
-/*static*/ int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules)
-{
-    ITERATORNATSERVICEPF it;
-    for (it = vecRules.begin(); it != vecRules.end(); ++it)
-    {
-        NATSERVICEPORTFORWARDRULE &natPf = *it;
-
-        LogRel(("Loading %s port-forwarding rule \"%s\": %s %s%s%s:%d -> %s%s%s:%d\n",
-                natPf.Pfr.fPfrIPv6 ? "IPv6" : "IPv4",
-                natPf.Pfr.szPfrName,
-                natPf.Pfr.iPfrProto == IPPROTO_TCP ? "TCP" : "UDP",
-                /* from */
-                natPf.Pfr.fPfrIPv6 ? "[" : "",
-                natPf.Pfr.szPfrHostAddr,
-                natPf.Pfr.fPfrIPv6 ? "]" : "",
-                natPf.Pfr.u16PfrHostPort,
-                /* to */
-                natPf.Pfr.fPfrIPv6 ? "[" : "",
-                natPf.Pfr.szPfrGuestAddr,
-                natPf.Pfr.fPfrIPv6 ? "]" : "",
-                natPf.Pfr.u16PfrGuestPort));
-
-        natServicePfRegister(natPf);
-    }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -1430,34 +1460,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     delete g_pLwipNat;
     return 0;
-}
-
-
-static int fetchNatPortForwardRules(const ComNatPtr& nat, bool fIsIPv6, VECNATSERVICEPF& vec)
-{
-    HRESULT hrc;
-    com::SafeArray<BSTR> rules;
-    if (fIsIPv6)
-        hrc = nat->COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(rules));
-    else
-        hrc = nat->COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(rules));
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
-
-    NATSERVICEPORTFORWARDRULE Rule;
-    for (size_t idxRules = 0; idxRules < rules.size(); ++idxRules)
-    {
-        Log(("%d-%s rule: %ls\n", idxRules, (fIsIPv6 ? "IPv6" : "IPv4"), rules[idxRules]));
-        RT_ZERO(Rule);
-
-        int rc = netPfStrToPf(com::Utf8Str(rules[idxRules]).c_str(), fIsIPv6,
-                              &Rule.Pfr);
-        if (RT_FAILURE(rc))
-            continue;
-
-        vec.push_back(Rule);
-    }
-
-    return VINF_SUCCESS;
 }
 
 
