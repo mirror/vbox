@@ -128,8 +128,6 @@ typedef std::vector<NATSERVICEPORTFORWARDRULE> VECNATSERVICEPF;
 typedef VECNATSERVICEPF::iterator ITERATORNATSERVICEPF;
 typedef VECNATSERVICEPF::const_iterator CITERATORNATSERVICEPF;
 
-static int fetchNatPortForwardRules(const ComNatPtr&, bool, VECNATSERVICEPF&);
-
 
 class VBoxNetLwipNAT
   : public VBoxNetBaseService,
@@ -191,6 +189,7 @@ class VBoxNetLwipNAT
 
     const char **getHostNameservers();
 
+    int fetchNatPortForwardRules(VECNATSERVICEPF &vec, bool fIsIPv6);
     static int natServiceProcessRegisteredPf(VECNATSERVICEPF &vecPf);
     static int natServicePfRegister(NATSERVICEPORTFORWARDRULE &natServicePf);
 
@@ -432,9 +431,9 @@ int VBoxNetLwipNAT::init()
 
     if (!fDontLoadRulesOnStartup)
     {
-        fetchNatPortForwardRules(m_net, false, m_vecPortForwardRule4);
-        fetchNatPortForwardRules(m_net, true, m_vecPortForwardRule6);
-    } /* if (!fDontLoadRulesOnStartup) */
+        fetchNatPortForwardRules(m_vecPortForwardRule4, /* :fIsIPv6 */ false);
+        fetchNatPortForwardRules(m_vecPortForwardRule6, /* :fIsIPv6 */ true);
+    }
 
     AddressToOffsetMapping tmp;
     rc = localMappings(m_net, tmp);
@@ -921,14 +920,22 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 }
 
 
-static int fetchNatPortForwardRules(const ComNatPtr& nat, bool fIsIPv6, VECNATSERVICEPF& vec)
+/**
+ * Fetch port-forwarding rules from the API.
+ *
+ * Reads the initial sets of rules from VBoxSVC.  The rules will be
+ * activated when all the initialization and plumbing is done.  See
+ * natServiceProcessRegisteredPf().
+ */
+int VBoxNetLwipNAT::fetchNatPortForwardRules(VECNATSERVICEPF &vec, bool fIsIPv6)
 {
     HRESULT hrc;
+
     com::SafeArray<BSTR> rules;
     if (fIsIPv6)
-        hrc = nat->COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(rules));
+        hrc = m_net->COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(rules));
     else
-        hrc = nat->COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(rules));
+        hrc = m_net->COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(rules));
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
     NATSERVICEPORTFORWARDRULE Rule;
@@ -949,6 +956,12 @@ static int fetchNatPortForwardRules(const ComNatPtr& nat, bool fIsIPv6, VECNATSE
 }
 
 
+/**
+ * Activate the initial set of port-forwarding rules.
+ *
+ * Happens after lwIP and lwIP proxy is initialized, right before lwIP
+ * thread starts processing messages.
+ */
 /* static */
 int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules)
 {
@@ -979,6 +992,13 @@ int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules)
 }
 
 
+/**
+ * Activate a single port-forwarding rule.
+ *
+ * This is used both when we activate all the initial rules on startup
+ * and when port-forwarding rules are changed and we are notified via
+ * an API event.
+ */
 /* static */
 int VBoxNetLwipNAT::natServicePfRegister(NATSERVICEPORTFORWARDRULE &natPf)
 {
