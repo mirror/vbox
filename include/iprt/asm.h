@@ -2040,7 +2040,7 @@ DECLINLINE(void) ASMSerializeInstructionIRet(void) RT_NOTHROW_DEF
 /**
  * Virtualization friendlier serializing instruction, may still cause exits.
  */
-#if (RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
+#if (RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2008) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSerializeInstructionRdTscp(void) RT_NOTHROW_PROTO;
 #else
 DECLINLINE(void) ASMSerializeInstructionRdTscp(void) RT_NOTHROW_DEF
@@ -2055,7 +2055,7 @@ DECLINLINE(void) ASMSerializeInstructionRdTscp(void) RT_NOTHROW_DEF
     __asm__ __volatile__(".byte 0x0f,0x01,0xf9\n\t" ::: "eax", "edx", "ecx", "memory");
 #  endif
 # else
-#  if RT_INLINE_ASM_USES_INTRIN >= 15
+#  if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2008
     uint32_t uIgnore;
     _ReadWriteBarrier();
     (void)__rdtscp(&uIgnore);

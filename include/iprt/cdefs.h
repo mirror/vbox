@@ -4477,22 +4477,41 @@
 #endif
 
 /** @def RT_INLINE_ASM_USES_INTRIN
- * Defined as the major MSC version if the compiler have and uses intrin.h.
- * Otherwise it is 0. */
+ * Defined as one of the RT_MSC_VER_XXX MSC version values if the compiler have
+ * and uses intrin.h.  Otherwise it is 0. */
 #ifdef _MSC_VER
-# if   _MSC_VER >= 1700 /* Visual C++ v11.0 / 2012 */
-#  define RT_INLINE_ASM_USES_INTRIN 17
-# elif _MSC_VER >= 1600 /* Visual C++ v10.0 / 2010 */
-#  define RT_INLINE_ASM_USES_INTRIN 16
-# elif _MSC_VER >= 1500 /* Visual C++ v9.0 / 2008 */
-#  define RT_INLINE_ASM_USES_INTRIN 15
-# elif _MSC_VER >= 1400 /* Visual C++ v8.0 / 2005 */
-#  define RT_INLINE_ASM_USES_INTRIN 14
+# if   _MSC_VER >= RT_MSC_VER_VS2019 /* Visual C++ v14.2 */
+#  define RT_INLINE_ASM_USES_INTRIN RT_MSC_VER_VS2019
+# elif _MSC_VER >= RT_MSC_VER_VS2017 /* Visual C++ v14.1 */
+#  define RT_INLINE_ASM_USES_INTRIN RT_MSC_VER_VS2017
+# elif _MSC_VER >= RT_MSC_VER_VS2015 /* Visual C++ v14.0 */
+#  define RT_INLINE_ASM_USES_INTRIN RT_MSC_VER_VS2015
+# elif _MSC_VER >= RT_MSC_VER_VS2013 /* Visual C++ v12.0 */
+#  define RT_INLINE_ASM_USES_INTRIN RT_MSC_VER_VS2013
+# elif _MSC_VER >= RT_MSC_VER_VS2012 /* Visual C++ v11.0 */
+#  define RT_INLINE_ASM_USES_INTRIN RT_MSC_VER_VS2012
+# elif _MSC_VER >= RT_MSC_VER_VS2010 /* Visual C++ v10.0 */
+#  define RT_INLINE_ASM_USES_INTRIN RT_MSC_VER_VS2010
+# elif _MSC_VER >= RT_MSC_VER_VS2008 /* Visual C++ v9.0 */
+#  define RT_INLINE_ASM_USES_INTRIN RT_MSC_VER_VS2008
+# elif _MSC_VER >= RT_MSC_VER_VS2005 /* Visual C++ v8.0 */
+#  define RT_INLINE_ASM_USES_INTRIN RT_MSC_VER_VS2005
 # endif
 #endif
 #ifndef RT_INLINE_ASM_USES_INTRIN
 # define RT_INLINE_ASM_USES_INTRIN 0
 #endif
+
+#define RT_MSC_VER_VS2012   (1700)              /**< Visual Studio 2012. */
+#define RT_MSC_VER_VC110    RT_MSC_VER_VS2012   /**< Visual C++ 11.0, aka Visual Studio 2012. */
+#define RT_MSC_VER_VS2013   (1800)              /**< Visual Studio 2013. */
+#define RT_MSC_VER_VC120    RT_MSC_VER_VS2013   /**< Visual C++ 12.0, aka Visual Studio 2013. */
+#define RT_MSC_VER_VS2015   (1900)              /**< Visual Studio 2015. */
+#define RT_MSC_VER_VC140    RT_MSC_VER_VS2015   /**< Visual C++ 14.0, aka Visual Studio 2015. */
+#define RT_MSC_VER_VS2017   (1910)              /**< Visual Studio 2017. */
+#define RT_MSC_VER_VC141    RT_MSC_VER_VS2017   /**< Visual C++ 14.1, aka Visual Studio 2017. */
+#define RT_MSC_VER_VS2019   (1920)              /**< Visual Studio 2017. */
+#define RT_MSC_VER_VC142    RT_MSC_VER_VS2019   /**< Visual C++ 14.2, aka Visual Studio 2019. */
 
 /** @def RT_COMPILER_SUPPORTS_LAMBDA
  * If the defined, the compiler supports lambda expressions.   These expressions

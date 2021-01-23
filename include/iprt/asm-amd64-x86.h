@@ -40,7 +40,7 @@
 # include <iprt/sanitized/intrin.h>
 # pragma intrinsic(_ReadWriteBarrier)
 # pragma intrinsic(__cpuid)
-# if RT_INLINE_ASM_USES_INTRIN >= 16 /*?*/
+# if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2010 /*?*/
 #  pragma intrinsic(__cpuidex)
 # endif
 # pragma intrinsic(_enable)
@@ -75,10 +75,10 @@
 #  pragma intrinsic(__readcr8)
 #  pragma intrinsic(__writecr8)
 # endif
-# if RT_INLINE_ASM_USES_INTRIN >= 14
+# if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2005
 #  pragma intrinsic(__halt)
 # endif
-# if RT_INLINE_ASM_USES_INTRIN >= 15
+# if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2008
 /*#  pragma intrinsic(__readeflags)  - buggy intrinsics in VC++ 2010, reordering/optimizers issues
 #  pragma intrinsic(__writeeflags) */
 #  pragma intrinsic(__rdtscp)
@@ -566,7 +566,7 @@ DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
                          "popl  %0\n\t"
                          : "=r" (uFlags));
 #  endif
-# elif RT_INLINE_ASM_USES_INTRIN >= 15
+# elif RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2008
     uFlags = __readeflags();
 # else
     __asm
@@ -604,7 +604,7 @@ DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
                          "popfl\n\t"
                          : : "g" (uFlags));
 #  endif
-# elif RT_INLINE_ASM_USES_INTRIN >= 15
+# elif RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2008
     __writeeflags(uFlags);
 # else
     __asm
@@ -656,7 +656,7 @@ DECLINLINE(RTCCUINTREG) ASMChangeFlags(RTCCUINTREG fAndEfl, RTCCUINTREG fOrEfl)
                          : "rn" (fAndEfl),
                            "rn" (fOrEfl) );
 #  endif
-# elif RT_INLINE_ASM_USES_INTRIN >= 15
+# elif RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2008
     fOldEfl = __readeflags();
     __writeeflags((fOldEfl & fAndEfl) | fOrEfl);
 # else
@@ -717,7 +717,7 @@ DECLINLINE(RTCCUINTREG) ASMAddFlags(RTCCUINTREG fOrEfl)
                          : "=&r" (fOldEfl)
                          : "rn" (fOrEfl) );
 #  endif
-# elif RT_INLINE_ASM_USES_INTRIN >= 15
+# elif RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2008
     fOldEfl = __readeflags();
     __writeeflags(fOldEfl | fOrEfl);
 # else
@@ -772,7 +772,7 @@ DECLINLINE(RTCCUINTREG) ASMClearFlags(RTCCUINTREG fAndEfl)
                          : "=&r" (fOldEfl)
                          : "rn" (fAndEfl) );
 #  endif
-# elif RT_INLINE_ASM_USES_INTRIN >= 15
+# elif RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2008
     fOldEfl = __readeflags();
     __writeeflags(fOldEfl & fAndEfl);
 # else
@@ -837,7 +837,7 @@ DECLINLINE(uint64_t) ASMReadTSC(void)
  * @returns TSC.
  * @param   puAux   Where to store the AUX value.
  */
-#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2008
 RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMReadTscWithAux(uint32_t RT_FAR *puAux);
 #else
 DECLINLINE(uint64_t) ASMReadTscWithAux(uint32_t RT_FAR *puAux)
@@ -848,7 +848,7 @@ DECLINLINE(uint64_t) ASMReadTscWithAux(uint32_t RT_FAR *puAux)
     /*__asm__ __volatile__("rdtscp\n\t" : "=a" (u.s.Lo), "=d" (u.s.Hi), "=c" (*puAux)); */
     __asm__ __volatile__(".byte 0x0f,0x01,0xf9\n\t" : "=a" (u.s.Lo), "=d" (u.s.Hi), "=c" (*puAux));
 # else
-#  if RT_INLINE_ASM_USES_INTRIN >= 15
+#  if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2008
     u.u = __rdtscp(puAux);
 #  else
     __asm
@@ -1388,7 +1388,7 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
  *
  * @returns the APIC ID.
  */
-#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 16 /*?*/
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2010 /*?*/
 RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMGetApicIdExt0B(void);
 #else
 DECLINLINE(uint32_t) ASMGetApicIdExt0B(void)
@@ -1427,7 +1427,7 @@ DECLINLINE(uint32_t) ASMGetApicIdExt0B(void)
 #  endif
     return (uint32_t)xDX;
 
-# elif RT_INLINE_ASM_USES_INTRIN >= 16 /*?*/
+# elif RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2010 /*?*/
 
     int aInfo[4];
     __cpuidex(aInfo, 0xb, 0);
@@ -2225,7 +2225,7 @@ DECLINLINE(bool) ASMIntAreEnabled(void)
 /**
  * Halts the CPU until interrupted.
  */
-#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 14
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2005
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMHalt(void);
 #else
 DECLINLINE(void) ASMHalt(void)

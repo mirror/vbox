@@ -34,7 +34,7 @@
 
 /* In Visual C++ versions prior to 2012, the vmx intrinsics are only available
    when targeting AMD64. */
-#if RT_INLINE_ASM_USES_INTRIN >= 16 && defined(RT_ARCH_AMD64)
+#if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2010 && defined(RT_ARCH_AMD64)
 # include <iprt/sanitized/intrin.h>
 /* We always want them as intrinsics, no functions. */
 # pragma intrinsic(__vmx_on)
