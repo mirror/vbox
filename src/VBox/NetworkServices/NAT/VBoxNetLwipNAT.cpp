@@ -480,7 +480,108 @@ int VBoxNetLwipNAT::init()
 }
 
 
-/*
+/**
+ * Perform lwIP initialization on the lwIP "tcpip" thread.
+ *
+ * The lwIP thread was created in init() and this function is run
+ * before the main lwIP loop is started.  It is responsible for
+ * setting up lwIP state, configuring interface(s), etc.
+ a*/
+/*static*/
+DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpInit(void *arg)
+{
+    AssertPtrReturnVoid(arg);
+    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(arg);
+
+    HRESULT hrc = com::Initialize();
+    AssertComRCReturnVoid(hrc);
+
+    proxy_arp_hook = pxremap_proxy_arp;
+    proxy_ip4_divert_hook = pxremap_ip4_divert;
+
+    proxy_na_hook = pxremap_proxy_na;
+    proxy_ip6_divert_hook = pxremap_ip6_divert;
+
+    /* lwip thread */
+    RTNETADDRIPV4 network;
+    RTNETADDRIPV4 address = self->getIpv4Address();
+    RTNETADDRIPV4 netmask = self->getIpv4Netmask();
+    network.u = address.u & netmask.u;
+
+    ip_addr LwipIpAddr, LwipIpNetMask, LwipIpNetwork;
+
+    memcpy(&LwipIpAddr, &address, sizeof(ip_addr));
+    memcpy(&LwipIpNetMask, &netmask, sizeof(ip_addr));
+    memcpy(&LwipIpNetwork, &network, sizeof(ip_addr));
+
+    netif *pNetif = netif_add(&self->m_LwipNetIf /* Lwip Interface */,
+                              &LwipIpAddr /* IP address*/,
+                              &LwipIpNetMask /* Network mask */,
+                              &LwipIpAddr /* gateway address, @todo: is self IP acceptable? */,
+                              self /* state */,
+                              VBoxNetLwipNAT::netifInit /* netif_init_fn */,
+                              tcpip_input /* netif_input_fn */);
+
+    AssertPtrReturnVoid(pNetif);
+
+    LogRel(("netif %c%c%d: mac %RTmac\n",
+            pNetif->name[0], pNetif->name[1], pNetif->num,
+            pNetif->hwaddr));
+    LogRel(("netif %c%c%d: inet %RTnaipv4 netmask %RTnaipv4\n",
+            pNetif->name[0], pNetif->name[1], pNetif->num,
+            pNetif->ip_addr, pNetif->netmask));
+    for (int i = 0; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
+        if (!ip6_addr_isinvalid(netif_ip6_addr_state(pNetif, i))) {
+            LogRel(("netif %c%c%d: inet6 %RTnaipv6\n",
+                    pNetif->name[0], pNetif->name[1], pNetif->num,
+                    netif_ip6_addr(pNetif, i)));
+        }
+    }
+
+    netif_set_up(pNetif);
+    netif_set_link_up(pNetif);
+
+    if (self->m_ProxyOptions.ipv6_enabled) {
+        /*
+         * XXX: lwIP currently only ever calls mld6_joingroup() in
+         * nd6_tmr() for fresh tentative addresses, which is a wrong place
+         * to do it - but I'm not keen on fixing this properly for now
+         * (with correct handling of interface up and down transitions,
+         * etc).  So stick it here as a kludge.
+         */
+        for (int i = 0; i <= 1; ++i) {
+            ip6_addr_t *paddr = netif_ip6_addr(pNetif, i);
+
+            ip6_addr_t solicited_node_multicast_address;
+            ip6_addr_set_solicitednode(&solicited_node_multicast_address,
+                                       paddr->addr[3]);
+            mld6_joingroup(paddr, &solicited_node_multicast_address);
+        }
+
+        /*
+         * XXX: We must join the solicited-node multicast for the
+         * addresses we do IPv6 NA-proxy for.  We map IPv6 loopback to
+         * proxy address + 1.  We only need the low 24 bits, and those are
+         * fixed.
+         */
+        {
+            ip6_addr_t solicited_node_multicast_address;
+
+            ip6_addr_set_solicitednode(&solicited_node_multicast_address,
+                                       /* last 24 bits of the address */
+                                       PP_HTONL(0x00000002));
+            mld6_netif_joingroup(pNetif,  &solicited_node_multicast_address);
+        }
+    }
+
+    proxy_init(&self->m_LwipNetIf, &self->m_ProxyOptions);
+
+    natServiceProcessRegisteredPf(self->m_vecPortForwardRule4);
+    natServiceProcessRegisteredPf(self->m_vecPortForwardRule6);
+}
+
+
+/**
  * Run the pumps.
  *
  * Spawn the intnet pump thread that gets packets from the intnet and
@@ -725,99 +826,6 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
         default: break; /* Shut up MSC. */
     }
     return hrc;
-}
-
-
-/*static*/ DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpInit(void *arg)
-{
-    AssertPtrReturnVoid(arg);
-    VBoxNetLwipNAT *self = static_cast<VBoxNetLwipNAT *>(arg);
-
-    HRESULT hrc = com::Initialize();
-    AssertComRCReturnVoid(hrc);
-
-    proxy_arp_hook = pxremap_proxy_arp;
-    proxy_ip4_divert_hook = pxremap_ip4_divert;
-
-    proxy_na_hook = pxremap_proxy_na;
-    proxy_ip6_divert_hook = pxremap_ip6_divert;
-
-    /* lwip thread */
-    RTNETADDRIPV4 network;
-    RTNETADDRIPV4 address = self->getIpv4Address();
-    RTNETADDRIPV4 netmask = self->getIpv4Netmask();
-    network.u = address.u & netmask.u;
-
-    ip_addr LwipIpAddr, LwipIpNetMask, LwipIpNetwork;
-
-    memcpy(&LwipIpAddr, &address, sizeof(ip_addr));
-    memcpy(&LwipIpNetMask, &netmask, sizeof(ip_addr));
-    memcpy(&LwipIpNetwork, &network, sizeof(ip_addr));
-
-    netif *pNetif = netif_add(&self->m_LwipNetIf /* Lwip Interface */,
-                              &LwipIpAddr /* IP address*/,
-                              &LwipIpNetMask /* Network mask */,
-                              &LwipIpAddr /* gateway address, @todo: is self IP acceptable? */,
-                              self /* state */,
-                              VBoxNetLwipNAT::netifInit /* netif_init_fn */,
-                              tcpip_input /* netif_input_fn */);
-
-    AssertPtrReturnVoid(pNetif);
-
-    LogRel(("netif %c%c%d: mac %RTmac\n",
-            pNetif->name[0], pNetif->name[1], pNetif->num,
-            pNetif->hwaddr));
-    LogRel(("netif %c%c%d: inet %RTnaipv4 netmask %RTnaipv4\n",
-            pNetif->name[0], pNetif->name[1], pNetif->num,
-            pNetif->ip_addr, pNetif->netmask));
-    for (int i = 0; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
-        if (!ip6_addr_isinvalid(netif_ip6_addr_state(pNetif, i))) {
-            LogRel(("netif %c%c%d: inet6 %RTnaipv6\n",
-                    pNetif->name[0], pNetif->name[1], pNetif->num,
-                    netif_ip6_addr(pNetif, i)));
-        }
-    }
-
-    netif_set_up(pNetif);
-    netif_set_link_up(pNetif);
-
-    if (self->m_ProxyOptions.ipv6_enabled) {
-        /*
-         * XXX: lwIP currently only ever calls mld6_joingroup() in
-         * nd6_tmr() for fresh tentative addresses, which is a wrong place
-         * to do it - but I'm not keen on fixing this properly for now
-         * (with correct handling of interface up and down transitions,
-         * etc).  So stick it here as a kludge.
-         */
-        for (int i = 0; i <= 1; ++i) {
-            ip6_addr_t *paddr = netif_ip6_addr(pNetif, i);
-
-            ip6_addr_t solicited_node_multicast_address;
-            ip6_addr_set_solicitednode(&solicited_node_multicast_address,
-                                       paddr->addr[3]);
-            mld6_joingroup(paddr, &solicited_node_multicast_address);
-        }
-
-        /*
-         * XXX: We must join the solicited-node multicast for the
-         * addresses we do IPv6 NA-proxy for.  We map IPv6 loopback to
-         * proxy address + 1.  We only need the low 24 bits, and those are
-         * fixed.
-         */
-        {
-            ip6_addr_t solicited_node_multicast_address;
-
-            ip6_addr_set_solicitednode(&solicited_node_multicast_address,
-                                       /* last 24 bits of the address */
-                                       PP_HTONL(0x00000002));
-            mld6_netif_joingroup(pNetif,  &solicited_node_multicast_address);
-        }
-    }
-
-    proxy_init(&self->m_LwipNetIf, &self->m_ProxyOptions);
-
-    natServiceProcessRegisteredPf(self->m_vecPortForwardRule4);
-    natServiceProcessRegisteredPf(self->m_vecPortForwardRule6);
 }
 
 
