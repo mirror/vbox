@@ -324,7 +324,7 @@ ALIGNCODE(64)
 BEGINPROC hmR0VmxExportHostSegmentRegsAsmHlp
 %ifdef ASM_CALL64_MSC
  %define pRestoreHost rcx
-%elifdef ASM_CALL64_MSC
+%elifdef ASM_CALL64_GCC
  %define pRestoreHost rdi
 %else
  %error Unknown calling convension.
