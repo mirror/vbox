@@ -4534,7 +4534,7 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
         if (   !((a_selValue) & X86_SEL_LDT) /* likely */ \
             || (((fAttr = ASMGetSegAttr(a_selValue)) & X86_DESC_P) && fAttr != UINT32_MAX)) \
         { \
-            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_##a_Seg; \
+            fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_##a_Seg; \
             pVCpu->hm.s.vmx.RestoreHost.uHostSel##a_Seg = (a_selValue); \
         } \
         (a_selValue) = 0; \
@@ -4553,10 +4553,9 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
         Log4Func(("Restoring Host State: fRestoreHostFlags=%#RX32 HostCpuId=%u\n", pVCpu->hm.s.vmx.fRestoreHostFlags,
                   pVCpu->idCpu));
         VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
+        pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
     }
-
-    /* ASSUME that if cr4.fsgsbase is set, the CPU supports wrfsbase & wrgsbase. */
-    pVCpu->hm.s.vmx.fRestoreHostFlags = (uHostCr4 & X86_CR4_FSGSBASE) ? VMX_RESTORE_HOST_CAN_USE_WRFSBASE_AND_WRGSBASE : 0 ;
+    uint32_t fRestoreHostFlags = 0;
 
     /*
      * Host segment registers.
@@ -4615,7 +4614,7 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
      * them to the maximum limit (0xffff) on every VM-exit.
      */
     if (Gdtr.s.Gdtr.cbGdt != 0xffff)
-        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDTR;
+        fRestoreHostFlags |= VMX_RESTORE_HOST_GDTR;
 
     /*
      * IDT limit is effectively capped at 0xfff. (See Intel spec. 6.14.1 "64-Bit Mode IDT" and
@@ -4632,7 +4631,7 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
     if (Idtr.s.Idtr.cbIdt != 0xffff)
 #endif
     {
-        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_IDTR;
+        fRestoreHostFlags |= VMX_RESTORE_HOST_IDTR;
         pVCpu->hm.s.vmx.RestoreHost.HostIdtr.cb    = Idtr.s.Idtr.cbIdt;
         pVCpu->hm.s.vmx.RestoreHost.HostIdtr.uAddr = Idtr.s.Idtr.pIdt;
     }
@@ -4662,15 +4661,16 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
     if (   pDesc->System.u16LimitLow != 0x67
         || pDesc->System.u4LimitHigh)
     {
-        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_TR;
+        fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_TR;
+
         /* If the host has made GDT read-only, we would need to temporarily toggle CR0.WP before writing the GDT. */
         PVM pVM = pVCpu->CTX_SUFF(pVM);
         if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_READ_ONLY)
-            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_READ_ONLY;
+            fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_READ_ONLY;
         if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_NEED_WRITABLE)
         {
             /* The GDT is read-only but the writable GDT is available. */
-            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_NEED_WRITABLE;
+            fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_NEED_WRITABLE;
             pVCpu->hm.s.vmx.RestoreHost.HostGdtrRw.cb = Gdtr.s.Gdtr.cbGdt;
             rc = SUPR0GetCurrentGdtRw(&pVCpu->hm.s.vmx.RestoreHost.HostGdtrRw.uAddr);
             AssertRCReturn(rc, rc);
@@ -4681,7 +4681,7 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
     /*
      * Store the GDTR as we need it when restoring the GDT and while restoring the TR.
      */
-    if (pVCpu->hm.s.vmx.fRestoreHostFlags & (VMX_RESTORE_HOST_GDTR | VMX_RESTORE_HOST_SEL_TR))
+    if (fRestoreHostFlags & (VMX_RESTORE_HOST_GDTR | VMX_RESTORE_HOST_SEL_TR))
     {
         pVCpu->hm.s.vmx.RestoreHost.HostGdtr.cb    = Gdtr.s.Gdtr.cbGdt;
         pVCpu->hm.s.vmx.RestoreHost.HostGdtr.uAddr = Gdtr.s.Gdtr.pGdt;
@@ -4692,19 +4692,31 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
 
     /*
      * Host FS base and GS base.
+     * ASSUME it is safe to use rdfsbase and friends if the CR4.FSGSBASE bit is set
+     * without also checking the cpuid bit.
      */
-    /** @todo Use RDFSBASE and RDGSBASE as these are probably a tiny bit cheaper.
-     *        Need inline assembly for it first, though. */
-    uint64_t const u64FSBase = ASMRdMsr(MSR_K8_FS_BASE);
-    uint64_t const u64GSBase = ASMRdMsr(MSR_K8_GS_BASE);
-    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_FS_BASE, u64FSBase);  AssertRC(rc);
-    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_GS_BASE, u64GSBase);  AssertRC(rc);
+    uint64_t GCPtrFSBase, GCPtrGSBase;
+    if (uHostCr4 & X86_CR4_FSGSBASE)
+    {
+        fRestoreHostFlags |= VMX_RESTORE_HOST_CAN_USE_WRFSBASE_AND_WRGSBASE;
+        GCPtrFSBase = ASMGetFSBase();
+        GCPtrGSBase = ASMGetGSBase();
+    }
+    else
+    {
+        GCPtrFSBase = ASMRdMsr(MSR_K8_FS_BASE);
+        GCPtrGSBase = ASMRdMsr(MSR_K8_GS_BASE);
+    }
+    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_FS_BASE, GCPtrFSBase);  AssertRC(rc);
+    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_GS_BASE, GCPtrGSBase);  AssertRC(rc);
 
     /* Store the base if we have to restore FS or GS manually as we need to restore the base as well. */
-    if (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_SEL_FS)
-        pVCpu->hm.s.vmx.RestoreHost.uHostFSBase = u64FSBase;
-    if (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_SEL_GS)
-        pVCpu->hm.s.vmx.RestoreHost.uHostGSBase = u64GSBase;
+    if (fRestoreHostFlags & VMX_RESTORE_HOST_SEL_FS)
+        pVCpu->hm.s.vmx.RestoreHost.uHostFSBase = GCPtrFSBase;
+    if (fRestoreHostFlags & VMX_RESTORE_HOST_SEL_GS)
+        pVCpu->hm.s.vmx.RestoreHost.uHostGSBase = GCPtrGSBase;
+
+    pVCpu->hm.s.vmx.fRestoreHostFlags = fRestoreHostFlags;
 
     return VINF_SUCCESS;
 #undef VMXLOCAL_ADJUST_HOST_SEG
