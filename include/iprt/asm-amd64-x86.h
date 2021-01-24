@@ -89,6 +89,12 @@
 #  pragma intrinsic(_writefsbase_u64)
 #  pragma intrinsic(_writegsbase_u64)
 # endif
+# if RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2013
+#  pragma intrinsic(__lidt)
+#  pragma intrinsic(__sidt)
+#  pragma intrinsic(_lgdt)
+#  pragma intrinsic(_sgdt)
+# endif
 #endif
 
 
@@ -191,12 +197,14 @@ typedef RTGDTRALIGNED RT_FAR *PRGDTRALIGNED;
  * Gets the content of the IDTR CPU register.
  * @param   pIdtr   Where to store the IDTR contents.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2013
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMGetIDTR(PRTIDTR pIdtr);
 #else
 DECLINLINE(void) ASMGetIDTR(PRTIDTR pIdtr)
 {
-# if RT_INLINE_ASM_GNU_STYLE
+# if  RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2013
+    __sidt(pIdtr);
+# elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("sidt %0" : "=m" (*pIdtr));
 # else
     __asm
@@ -218,13 +226,15 @@ DECLINLINE(void) ASMGetIDTR(PRTIDTR pIdtr)
  * Gets the content of the IDTR.LIMIT CPU register.
  * @returns IDTR limit.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2013
 RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMGetIdtrLimit(void);
 #else
 DECLINLINE(uint16_t) ASMGetIdtrLimit(void)
 {
     RTIDTRALIGNED TmpIdtr;
-# if RT_INLINE_ASM_GNU_STYLE
+# if  RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2013
+    __sidt(&TmpIdtr);
+# elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("sidt %0" : "=m" (TmpIdtr.s.Idtr));
 # else
     __asm
@@ -241,12 +251,14 @@ DECLINLINE(uint16_t) ASMGetIdtrLimit(void)
  * Sets the content of the IDTR CPU register.
  * @param   pIdtr   Where to load the IDTR contents from
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2013
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSetIDTR(const RTIDTR RT_FAR *pIdtr);
 #else
 DECLINLINE(void) ASMSetIDTR(const RTIDTR RT_FAR *pIdtr)
 {
-# if RT_INLINE_ASM_GNU_STYLE
+# if  RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2013
+    __lidt((void *)pIdtr);
+# elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lidt %0" : : "m" (*pIdtr));
 # else
     __asm
@@ -268,12 +280,14 @@ DECLINLINE(void) ASMSetIDTR(const RTIDTR RT_FAR *pIdtr)
  * Gets the content of the GDTR CPU register.
  * @param   pGdtr   Where to store the GDTR contents.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2013
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMGetGDTR(PRTGDTR pGdtr);
 #else
 DECLINLINE(void) ASMGetGDTR(PRTGDTR pGdtr)
 {
-# if RT_INLINE_ASM_GNU_STYLE
+# if  RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2013
+    _sgdt(pGdtr);
+# elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("sgdt %0" : "=m" (*pGdtr));
 # else
     __asm
@@ -295,12 +309,14 @@ DECLINLINE(void) ASMGetGDTR(PRTGDTR pGdtr)
  * Sets the content of the GDTR CPU register.
  * @param   pGdtr   Where to load the GDTR contents from
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < RT_MSC_VER_VS2013
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSetGDTR(const RTGDTR RT_FAR *pGdtr);
 #else
 DECLINLINE(void) ASMSetGDTR(const RTGDTR RT_FAR *pGdtr)
 {
-# if RT_INLINE_ASM_GNU_STYLE
+# if  RT_INLINE_ASM_USES_INTRIN >= RT_MSC_VER_VS2013
+    _lgdt((void *)pGdtr);
+# elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lgdt %0" : : "m" (*pGdtr));
 # else
     __asm
