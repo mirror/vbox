@@ -41,9 +41,14 @@ dim g_cntVerbose
 g_cntVerbose = 1
 
 
-'' Proforma. Does nothing here.
 sub LogPrint(str)
    if g_cntVerbose > 1 then
+      WScript.StdErr.WriteLine "debug: " & str
+   end if
+end sub
+
+sub DbgPrint(str)
+   if g_cntVerbose > 2 then
       WScript.StdErr.WriteLine "debug: " & str
    end if
 end sub
@@ -254,9 +259,10 @@ function Main()
       dim strDir, blnStop
       bldExitLoop = false
       for each str1 in arrArchitectures
-         for each strDir in GetSubdirsStartingWithRVerSorted(strPathDevTools & "\win." & str1 & "\sdk", "v")
-            if FileExists(strWinDbgDir & "\Debuggers\" & XlateArchitectureToWin(strHostArch) & "\windbg.exe") then
-               EnvPrependPathItem "Path", DosSlashes(strWinDbgDir & "\Debuggers\" & XlateArchitectureToWin(strHostArch)), ";"
+         strDir = strPathDevTools & "\win." & str1 & "\sdk"
+         for each strSubDir in GetSubdirsStartingWithRVerSorted(strDir, "v")
+            if FileExists(strDir & "\" & strSubDir & "\Debuggers\" & XlateArchitectureToWin(strHostArch) & "\windbg.exe") then
+               EnvPrependPathItem "Path", DosSlashes(strDir & "\" & strSubDir & "\Debuggers\" & XlateArchitectureToWin(strHostArch)), ";"
                bldExitLoop = true
                exit for
             end if
