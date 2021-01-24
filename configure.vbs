@@ -142,6 +142,13 @@ sub LogPrint(str)
    'Wscript.Echo "dbg: " & str
 end sub
 
+''
+' Debug output.
+sub DbgPrint(str)
+   'FileAppendLine g_strLogFile, str
+   'Wscript.Echo "dbg: " & str
+end sub
+
 
 ''
 ' Checks if the file exists and logs failures.

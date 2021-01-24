@@ -269,6 +269,7 @@ end sub
 ' Checks if the file exists.
 function FileExists(strFilename)
    FileExists = g_objFileSys.FileExists(DosSlashes(strFilename))
+   DbgPrint "FileExists(" & strFilename & ") -> " & FileExists
 end function
 
 
@@ -276,6 +277,7 @@ end function
 ' Checks if the directory exists.
 function DirExists(strDirectory)
    DirExists = g_objFileSys.FolderExists(DosSlashes(strDirectory))
+   DbgPrint "DirExists(" & strDirectory & ") -> " & DirExists
 end function
 
 
