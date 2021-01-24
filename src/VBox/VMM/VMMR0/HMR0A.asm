@@ -313,6 +313,91 @@ BEGINCODE
 
 
 ;;
+; Used on platforms with poor inline assembly support to retrieve all the
+; info from the CPU and put it in the @a pRestoreHost structure.
+;
+; @returns VBox status code
+; @param   pRestoreHost   msc: rcx  gcc: rdi    Pointer to the RestoreHost struct.
+; @param   fHaveFsGsBase  msc: dl   gcc: sil    Whether we can use rdfsbase or not.
+;
+ALIGNCODE(64)
+BEGINPROC hmR0VmxExportHostSegmentRegsAsmHlp
+%ifdef ASM_CALL64_MSC
+ %define pRestoreHost rcx
+%elifdef ASM_CALL64_MSC
+ %define pRestoreHost rdi
+%else
+ %error Unknown calling convension.
+%endif
+        SEH64_END_PROLOGUE
+
+        ; Start with the FS and GS base so we can trash DL/SIL.
+%ifdef ASM_CALL64_MSC
+        or      dl, dl
+%else
+        or      sil, sil
+%endif
+        jz      .use_rdmsr_for_fs_and_gs_base
+        rdfsbase rax
+        mov     [pRestoreHost + VMXRESTOREHOST.uHostFSBase], rax
+        rdgsbase rax
+        mov     [pRestoreHost + VMXRESTOREHOST.uHostGSBase], rax
+.done_fs_and_gs_base:
+
+        ; TR, GDTR and IDTR
+        str     [pRestoreHost + VMXRESTOREHOST.uHostSelTR]
+        sgdt    [pRestoreHost + VMXRESTOREHOST.HostGdtr]
+        sidt    [pRestoreHost + VMXRESTOREHOST.HostIdtr]
+
+        ; Segment registers.
+        xor     eax, eax
+        mov     eax, cs
+        mov     [pRestoreHost + VMXRESTOREHOST.uHostSelCS], ax
+
+        mov     eax, ss
+        mov     [pRestoreHost + VMXRESTOREHOST.uHostSelSS], ax
+
+        mov     eax, gs
+        mov     [pRestoreHost + VMXRESTOREHOST.uHostSelGS], ax
+
+        mov     eax, fs
+        mov     [pRestoreHost + VMXRESTOREHOST.uHostSelFS], ax
+
+        mov     eax, es
+        mov     [pRestoreHost + VMXRESTOREHOST.uHostSelES], ax
+
+        mov     eax, ds
+        mov     [pRestoreHost + VMXRESTOREHOST.uHostSelDS], ax
+
+        ret
+
+ALIGNCODE(16)
+.use_rdmsr_for_fs_and_gs_base:
+%ifdef ASM_CALL64_MSC
+        mov     r8, pRestoreHost
+%endif
+
+        mov     ecx, MSR_K8_FS_BASE
+        rdmsr
+        shl     rdx, 32
+        or      rdx, rax
+        mov     [r8 + VMXRESTOREHOST.uHostFSBase], rax
+
+        mov     ecx, MSR_K8_GS_BASE
+        rdmsr
+        shl     rdx, 32
+        or      rdx, rax
+        mov     [r8 + VMXRESTOREHOST.uHostGSBase], rax
+
+%ifdef ASM_CALL64_MSC
+        mov     pRestoreHost, r8
+%endif
+        jmp     .done_fs_and_gs_base
+%undef pRestoreHost
+ENDPROC hmR0VmxExportHostSegmentRegsAsmHlp
+
+
+;;
 ; Restores host-state fields.
 ;
 ; @returns VBox status code
@@ -332,7 +417,7 @@ BEGINPROC VMXRestoreHostState
 %endif
     SEH64_END_PROLOGUE
 
-.restore_gdtr
+.restore_gdtr:
     test        edi, VMX_RESTORE_HOST_GDTR
     jz          .restore_idtr
     lgdt        [rsi + VMXRESTOREHOST.HostGdtr]

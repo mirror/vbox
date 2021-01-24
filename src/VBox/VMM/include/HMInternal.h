@@ -913,9 +913,10 @@ typedef struct VMXRESTOREHOST
     X86XDTR64   HostGdtr;       /**< 0x06 - should be aligned by its 64-bit member. */
     RTSEL       uHostSelGS;     /**< 0x10 */
     RTSEL       uHostSelTR;     /**< 0x12 */
-    uint8_t     abPadding0[2];  /**< 0x14 */
+    RTSEL       uHostSelSS;     /**< 0x14 - not restored, just for fetching */
     X86XDTR64   HostGdtrRw;     /**< 0x16 - should be aligned by its 64-bit member. */
-    uint8_t     abPadding1[6];  /**< 0x20 */
+    RTSEL       uHostSelCS;     /**< 0x20 - not restored, just for fetching */
+    uint8_t     abPadding1[4];  /**< 0x22 */
     X86XDTR64   HostIdtr;       /**< 0x26 - should be aligned by its 64-bit member. */
     uint64_t    uHostFSBase;    /**< 0x30 */
     uint64_t    uHostGSBase;    /**< 0x38 */
@@ -1340,6 +1341,12 @@ DECLASM(int) hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUC
 /** @addtogroup grp_hm_int_vmx  VMX Internal
  * @{ */
 VMM_INT_DECL(PVMXVMCSINFO)  hmGetVmxActiveVmcsInfo(PVMCPU pVCpu);
+
+/**
+ * Used on platforms with poor inline assembly support to retrieve all the
+ * info from the CPU and put it in the @a pRestoreHost structure.
+ */
+DECLASM(void)               hmR0VmxExportHostSegmentRegsAsmHlp(PVMXRESTOREHOST pRestoreHost, bool fHaveFsGsBase);
 
 /**
  * Restores some host-state fields that need not be done on every VM-exit.

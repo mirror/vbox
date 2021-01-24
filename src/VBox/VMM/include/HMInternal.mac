@@ -101,9 +101,10 @@ struc VMXRESTOREHOST
     .HostGdtr                       resb    10
     .uHostSelGS                     resw    1
     .uHostSelTR                     resw    1
-    .abPadding0                     resb    2
+    .uHostSelSS                     resw    1
     .HostGdtrRw                     resb    10
-    .abPadding1                     resb    6
+    .uHostSelCS                     resw    1
+    .abPadding1                     resb    4
     .HostIdtr                       resb    10
     alignb 8
     .uHostFSBase                    resq    1
