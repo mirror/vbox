@@ -401,8 +401,8 @@ ENDPROC hmR0VmxExportHostSegmentRegsAsmHlp
 ; Restores host-state fields.
 ;
 ; @returns VBox status code
-; @param   f32RestoreHost x86: [ebp + 08h]  msc: ecx  gcc: edi   RestoreHost flags.
-; @param   pRestoreHost   x86: [ebp + 0ch]  msc: rdx  gcc: rsi   Pointer to the RestoreHost struct.
+; @param   f32RestoreHost   msc: ecx  gcc: edi   RestoreHost flags.
+; @param   pRestoreHost     msc: rdx  gcc: rsi   Pointer to the RestoreHost struct.
 ;
 ALIGNCODE(64)
 BEGINPROC VMXRestoreHostState
@@ -447,29 +447,10 @@ BEGINPROC VMXRestoreHostState
     mov         ax, dx
     and         eax, X86_SEL_MASK_OFF_RPL                       ; mask away TI and RPL bits leaving only the descriptor offset
     test        edi, VMX_RESTORE_HOST_GDT_READ_ONLY | VMX_RESTORE_HOST_GDT_NEED_WRITABLE
-    jnz         .gdt_readonly
+    jnz         .gdt_readonly_or_need_writable
     add         rax, qword [rsi + VMXRESTOREHOST.HostGdtr + 2]  ; xAX <- descriptor offset + GDTR.pGdt.
     and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
     ltr         dx
-    jmp short   .restore_fs
-.gdt_readonly:
-    test        edi, VMX_RESTORE_HOST_GDT_NEED_WRITABLE
-    jnz         .gdt_readonly_need_writable
-    mov         rcx, cr0
-    mov         r9, rcx
-    add         rax, qword [rsi + VMXRESTOREHOST.HostGdtr + 2]  ; xAX <- descriptor offset + GDTR.pGdt.
-    and         rcx, ~X86_CR0_WP
-    mov         cr0, rcx
-    and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
-    ltr         dx
-    mov         cr0, r9
-    jmp short   .restore_fs
-.gdt_readonly_need_writable:
-    add         rax, qword [rsi + VMXRESTOREHOST.HostGdtrRw + 2]  ; xAX <- descriptor offset + GDTR.pGdtRw
-    and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
-    lgdt        [rsi + VMXRESTOREHOST.HostGdtrRw]
-    ltr         dx
-    lgdt        [rsi + VMXRESTOREHOST.HostGdtr]                 ; load the original GDT
 
 .restore_fs:
     ;
@@ -504,8 +485,44 @@ BEGINPROC VMXRestoreHostState
     mov         cx, word [rsi + VMXRESTOREHOST.uHostSelGS]
     mov         gs, ecx
     wrgsbase    rax
-    jmp         .restore_flags
 
+.restore_flags:
+    popfq
+
+.restore_success:
+    mov         eax, VINF_SUCCESS
+%ifndef ASM_CALL64_GCC
+    ; Restore RDI and RSI on MSC.
+    mov         rdi, r10
+    mov         rsi, r11
+%endif
+    ret
+
+ALIGNCODE(8)
+.gdt_readonly_or_need_writable:
+    test        edi, VMX_RESTORE_HOST_GDT_NEED_WRITABLE
+    jnz         .gdt_readonly_need_writable
+.gdt_readonly:
+    mov         rcx, cr0
+    mov         r9, rcx
+    add         rax, qword [rsi + VMXRESTOREHOST.HostGdtr + 2]  ; xAX <- descriptor offset + GDTR.pGdt.
+    and         rcx, ~X86_CR0_WP
+    mov         cr0, rcx
+    and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
+    ltr         dx
+    mov         cr0, r9
+    jmp         .restore_fs
+
+ALIGNCODE(8)
+.gdt_readonly_need_writable:
+    add         rax, qword [rsi + VMXRESTOREHOST.HostGdtrRw + 2]  ; xAX <- descriptor offset + GDTR.pGdtRw
+    and         dword [rax + 4], ~RT_BIT(9)                     ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
+    lgdt        [rsi + VMXRESTOREHOST.HostGdtrRw]
+    ltr         dx
+    lgdt        [rsi + VMXRESTOREHOST.HostGdtr]                 ; load the original GDT
+    jmp         .restore_fs
+
+ALIGNCODE(8)
 .restore_fs_using_wrmsr:
     test        edi, VMX_RESTORE_HOST_SEL_FS
     jz          .restore_gs_using_wrmsr
@@ -525,18 +542,7 @@ BEGINPROC VMXRestoreHostState
     mov         gs, ecx
     mov         ecx, MSR_K8_GS_BASE
     wrmsr
-
-.restore_flags:
-    popfq
-
-.restore_success:
-    mov         eax, VINF_SUCCESS
-%ifndef ASM_CALL64_GCC
-    ; Restore RDI and RSI on MSC.
-    mov         rdi, r10
-    mov         rsi, r11
-%endif
-    ret
+    jmp         .restore_flags
 ENDPROC VMXRestoreHostState
 
 
