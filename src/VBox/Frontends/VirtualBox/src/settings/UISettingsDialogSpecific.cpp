@@ -31,7 +31,6 @@
 
 /* GUI includes: Global Preferences: */
 #include "UIGlobalSettingsDisplay.h"
-#include "UIGlobalSettingsExtension.h"
 #include "UIGlobalSettingsGeneral.h"
 #include "UIGlobalSettingsInput.h"
 #include "UIGlobalSettingsLanguage.h"
@@ -98,9 +97,6 @@ void UISettingsDialogGlobal::retranslateUi()
 
     /* Display page: */
     m_pSelector->setItemText(GlobalSettingsPageType_Display, tr("Display"));
-
-    /* Extension page: */
-    m_pSelector->setItemText(GlobalSettingsPageType_Extensions, tr("Extensions"));
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* Proxy page: */
@@ -234,15 +230,6 @@ void UISettingsDialogGlobal::prepare()
                     addPageHelpKeyword(iPageIndex, "globalsettings");
                     break;
                 }
-                /* Extensions page: */
-                case GlobalSettingsPageType_Extensions:
-                {
-                    pSettingsPage = new UIGlobalSettingsExtension;
-                    addItem(":/extension_pack_32px.png", ":/extension_pack_24px.png", ":/extension_pack_16px.png",
-                            iPageIndex, "#extensions", pSettingsPage);
-                    addPageHelpKeyword(iPageIndex, "globalsettings");
-                    break;
-                }
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
                 /* Proxy page: */
                 case GlobalSettingsPageType_Proxy:
@@ -301,15 +288,9 @@ void UISettingsDialogGlobal::prepare()
         m_pSelector->selectById(GlobalSettingsPageType_General);
 }
 
-bool UISettingsDialogGlobal::isPageAvailable(int iPageId) const
+bool UISettingsDialogGlobal::isPageAvailable(int) const
 {
-    switch (iPageId)
-    {
-        case GlobalSettingsPageType_Extensions:
-            return !uiCommon().virtualBox().GetExtensionPackManager().isNull();
-        default:
-            break;
-    }
+    /* Add restrictions here.. */
     return true;
 }
 

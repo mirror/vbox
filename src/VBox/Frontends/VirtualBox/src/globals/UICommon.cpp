@@ -3725,8 +3725,8 @@ void UICommon::doExtPackInstallation(QString const &strFilePath, QString const &
     {
         /* Show installation progress: */
         /** @todo move this tr into UIUpdateManager context */
-        msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIGlobalSettingsExtension",
-                                                                              "Extensions"),
+        msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIExtensionPackManagerWidget",
+                                                                                 "Extensions"),
                                             ":/progress_install_guest_additions_90px.png", pParent);
         if (!comProgress.GetCanceled())
         {

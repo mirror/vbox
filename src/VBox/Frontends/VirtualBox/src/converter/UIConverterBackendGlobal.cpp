@@ -1868,7 +1868,6 @@ template<> QString toInternalString(const GlobalSettingsPageType &globalSettings
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         case GlobalSettingsPageType_Language:   strResult = "Language"; break;
         case GlobalSettingsPageType_Display:    strResult = "Display"; break;
-        case GlobalSettingsPageType_Extensions: strResult = "Extensions"; break;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         case GlobalSettingsPageType_Proxy:      strResult = "Proxy"; break;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
@@ -1894,7 +1893,6 @@ template<> GlobalSettingsPageType fromInternalString<GlobalSettingsPageType>(con
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     keys << "Language";   values << GlobalSettingsPageType_Language;
     keys << "Display";    values << GlobalSettingsPageType_Display;
-    keys << "Extensions"; values << GlobalSettingsPageType_Extensions;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     keys << "Proxy";      values << GlobalSettingsPageType_Proxy;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
@@ -1917,7 +1915,6 @@ template<> QPixmap toWarningPixmap(const GlobalSettingsPageType &type)
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         case GlobalSettingsPageType_Language:   return UIIconPool::pixmap(":/site_warning_16px.png");
         case GlobalSettingsPageType_Display:    return UIIconPool::pixmap(":/vrdp_warning_16px.png");
-        case GlobalSettingsPageType_Extensions: return UIIconPool::pixmap(":/extension_pack_warning_16px.png");
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         case GlobalSettingsPageType_Proxy:      return UIIconPool::pixmap(":/proxy_warning_16px.png");
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
