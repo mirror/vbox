@@ -699,7 +699,7 @@ static void iommuAmdIotlbRemoveRange(PIOMMU pThis, uint16_t uDomainId, uint64_t 
 
     /*
      * Validate invalidation size.
-     * See AMD spec. 2.2.3 "I/O Page Tables for Host Translations".
+     * See AMD IOMMU spec. 2.2.3 "I/O Page Tables for Host Translations".
      */
     if (   cShift == 12 /* 4K  */ || cShift == 13 /* 8K  */
         || cShift == 14 /* 16K */ || cShift == 20 /* 1M  */
@@ -1140,7 +1140,7 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 
     /*
      * While this is not explicitly specified like the event log base address register,
-     * the AMD spec. does specify "CmdBufRun must be 0b to modify the command buffer registers properly".
+     * the AMD IOMMU spec. does specify "CmdBufRun must be 0b to modify the command buffer registers properly".
      * Inconsistent specs :/
      */
     IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
@@ -1162,7 +1162,7 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 
         /*
          * Writing the command buffer base address, clears the command buffer head and tail pointers.
-         * See AMD spec. 2.4 "Commands".
+         * See AMD IOMMU spec. 2.4 "Commands".
          */
         pThis->CmdBufHeadPtr.u64 = 0;
         pThis->CmdBufTailPtr.u64 = 0;
@@ -1206,7 +1206,7 @@ static VBOXSTRICTRC iommuAmdEvtLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 
         /*
          * Writing the event log base address, clears the event log head and tail pointers.
-         * See AMD spec. 2.5 "Event Logging".
+         * See AMD IOMMU spec. 2.5 "Event Logging".
          */
         pThis->EvtLogHeadPtr.u64 = 0;
         pThis->EvtLogTailPtr.u64 = 0;
@@ -2473,7 +2473,7 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
         {
             /*
              * For a translation request, the IOMMU doesn't signal an I/O page fault nor does it
-             * create an event log entry. See AMD spec. 2.1.3.2 "I/O Page Faults".
+             * create an event log entry. See AMD IOMMU spec. 2.1.3.2 "I/O Page Faults".
              */
             if (enmOp != IOMMUOP_TRANSLATE_REQ)
             {
@@ -2888,18 +2888,19 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
  * @param   fAccess         The access permissions (IOMMU_IO_PERM_XXX). This is the
  *                          permissions for the access being made.
  * @param   enmOp           The IOMMU operation being performed.
- * @param   pGCPhysSpa      Where to store the translated system physical address. Only
- *                          valid when VINF_SUCCESS is returned!
+ * @param   pGCPhysSpa      Where to store the translated system physical address.
  * @param   pcbContiguous   Where to store the number of contiguous bytes translated
- *                          and permission-checked. Only valid when VINF_SUCCESS is
- *                          returned!
+ *                          and permission-checked.
  *
  * @thread  Any.
  */
 static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fAccess,
                                      IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMU   pThis        = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    RTGCPHYS GCPhysSpa    = NIL_RTGCPHYS;
+    size_t   cbContiguous = 0;
+
     STAM_PROFILE_ADV_START(&pThis->StatDteLookup, a);
 
     /* Read the device table entry from memory. */
@@ -2909,115 +2910,117 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
     {
         /* If the DTE is not valid, addresses are forwarded without translation */
         if (Dte.n.u1Valid)
-        { /* likely */ }
-        else
         {
-            /** @todo IOMMU: Add to IOLTB cache. */
-            *pGCPhysSpa    = uIova;
-            *pcbContiguous = cbAccess;
-            STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
-            return VINF_SUCCESS;
-        }
-
-        /* Validate bits 127:0 of the device table entry when DTE.V is 1. */
-        uint64_t const fRsvd0 = Dte.au64[0] & ~(IOMMU_DTE_QWORD_0_VALID_MASK & ~IOMMU_DTE_QWORD_0_FEAT_MASK);
-        uint64_t const fRsvd1 = Dte.au64[1] & ~(IOMMU_DTE_QWORD_1_VALID_MASK & ~IOMMU_DTE_QWORD_1_FEAT_MASK);
-        if (RT_LIKELY(   !fRsvd0
-                      && !fRsvd1))
-        { /* likely */ }
-        else
-        {
-            LogFunc(("Invalid reserved bits in DTE (u64[0]=%#RX64 u64[1]=%#RX64) -> Illegal DTE\n", fRsvd0, fRsvd1));
-            EVT_ILLEGAL_DTE_T Event;
-            iommuAmdInitIllegalDteEvent(uDevId, uIova, true /* fRsvdNotZero */, enmOp, &Event);
-            iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
-            STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
-            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-        }
-
-        /* If the IOVA is subject to address exclusion, addresses are forwarded without translation. */
-        if (   !pThis->ExclRangeBaseAddr.n.u1ExclEnable         /** @todo lock or make atomic read? */
-            || !iommuAmdIsDvaInExclRange(pThis, &Dte, uIova))
-        { /* likely */ }
-        else
-        {
-            /** @todo IOMMU: Add to IOLTB cache. */
-            *pGCPhysSpa    = uIova;
-            *pcbContiguous = cbAccess;
-            STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
-            return VINF_SUCCESS;
-        }
-
-        RTGCPHYS GCPhysSpa   = NIL_RTGCPHYS;
-        size_t   cbRemaining = cbAccess;
-        uint64_t uIovaPage   = uIova & X86_PAGE_4K_BASE_MASK;
-        uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
-        uint64_t cbPages     = 0;
-        for (;;)
-        {
-            /* Walk the I/O page tables to translate the IOVA and check permission for the access. */
-            IOWALKRESULT WalkResult;
-            RT_ZERO(WalkResult);
-            rc = iommuAmdWalkIoPageTable(pDevIns, uDevId, uIovaPage, fAccess, &Dte, enmOp, &WalkResult);
-            if (RT_SUCCESS(rc))
+            /* Validate bits 127:0 of the device table entry when DTE.V is 1. */
+            uint64_t const fRsvd0 = Dte.au64[0] & ~(IOMMU_DTE_QWORD_0_VALID_MASK & ~IOMMU_DTE_QWORD_0_FEAT_MASK);
+            uint64_t const fRsvd1 = Dte.au64[1] & ~(IOMMU_DTE_QWORD_1_VALID_MASK & ~IOMMU_DTE_QWORD_1_FEAT_MASK);
+            if (RT_LIKELY(!fRsvd0 && !fRsvd1))
             {
-                /* If translation is disabled for this device (root paging mode is 0), we're done. */
-                if (WalkResult.cShift == 0)
+                /* If the IOVA is subject to address exclusion, addresses are forwarded without translation. */
+                if (   !pThis->ExclRangeBaseAddr.n.u1ExclEnable         /** @todo lock or make atomic read? */
+                    || !iommuAmdIsDvaInExclRange(pThis, &Dte, uIova))
                 {
-                    GCPhysSpa   = uIova;
-                    cbRemaining = 0;
-                    break;
-                }
+                    /* Walk the I/O page tables to translate the IOVA and check permission for each page in the access. */
+                    size_t   cbRemaining = cbAccess;
+                    uint64_t uIovaPage   = uIova & X86_PAGE_4K_BASE_MASK;
+                    uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
+                    uint64_t cbPages     = 0;
+                    for (;;)
+                    {
+                        IOWALKRESULT WalkResult;
+                        RT_ZERO(WalkResult);
+                        rc = iommuAmdWalkIoPageTable(pDevIns, uDevId, uIovaPage, fAccess, &Dte, enmOp, &WalkResult);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /* If translation is disabled for this device (root paging mode is 0), we're done. */
+                            if (WalkResult.cShift == 0)
+                            {
+                                GCPhysSpa   = uIova;
+                                cbRemaining = 0;
+                                break;
+                            }
 
-                /* Store the translated address before continuing to access more pages. */
-                Assert(WalkResult.cShift >= X86_PAGE_4K_SHIFT);
-                if (cbRemaining == cbAccess)
-                {
-                    uint64_t const offMask = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
-                    uint64_t const offSpa  = uIova & offMask;
-                    GCPhysSpa = WalkResult.GCPhysSpa | offSpa;
-                }
-                /* Check if addresses translated so far are physically contiguous. */
-                else if ((GCPhysSpa & X86_PAGE_4K_BASE_MASK) + cbPages == WalkResult.GCPhysSpa)
-                { /* likely */ }
-                else
-                    break;
+                            /* Store the translated address before continuing to access more pages. */
+                            Assert(WalkResult.cShift >= X86_PAGE_4K_SHIFT);
+                            if (cbRemaining == cbAccess)
+                            {
+                                uint64_t const offMask = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
+                                uint64_t const offSpa  = uIova & offMask;
+                                GCPhysSpa = WalkResult.GCPhysSpa | offSpa;
+                            }
+                            /* Check if addresses translated so far are physically contiguous. */
+                            else if ((GCPhysSpa & X86_PAGE_4K_BASE_MASK) + cbPages == WalkResult.GCPhysSpa)
+                            { /* likely */ }
+                            else
+                                break;
 
-                /* Check if we need to access more pages. */
-                uint64_t const cbSpa = UINT64_C(1) << WalkResult.cShift;
-                if (cbRemaining > cbSpa - offIova)
-                {
-                    cbRemaining -= (cbSpa - offIova);   /* Calculate how much more we need to access. */
-                    cbPages     += cbSpa;               /* Update size of all pages read thus far. */
-                    uIovaPage   += cbSpa;               /* Update address of the next access. */
-                    offIova      = 0;                   /* After the first page, all pages are accessed from offset 0. */
+                            /* Check if we need to access more pages. */
+                            uint64_t const cbPage = UINT64_C(1) << WalkResult.cShift;
+                            if (cbRemaining > cbPage - offIova)
+                            {
+                                cbRemaining -= (cbPage - offIova);  /* Calculate how much more we need to access. */
+                                cbPages     += cbPage;              /* Update size of all pages read thus far. */
+                                uIovaPage   += cbPage;              /* Update address of the next access. */
+                                offIova      = 0;                   /* After the first page, all pages are accessed from off 0. */
+                            }
+                            else
+                            {
+                                cbRemaining = 0;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            GCPhysSpa   = NIL_RTGCPHYS;
+                            cbRemaining = cbAccess;
+                            break;
+                        }
+                    }
+
+                    /* Calculate how much contiguous memory was accessed. */
+                    cbContiguous = cbAccess - cbRemaining;
                 }
                 else
                 {
-                    cbRemaining = 0;
-                    break;
+                    /* The IOVA is subject to address exclusion, forward untranslated. */
+                    /** @todo IOMMU: Add to IOLTB cache. */
+                    GCPhysSpa    = uIova;
+                    cbContiguous = cbAccess;
                 }
             }
             else
             {
-                GCPhysSpa   = NIL_RTGCPHYS;
-                cbRemaining = 0;
-                break;
+                /* Invalid reserved  bits in the DTE, raise an error event. */
+                LogFunc(("Invalid DTE reserved bits (u64[0]=%#RX64 u64[1]=%#RX64) -> Illegal DTE\n", fRsvd0, fRsvd1));
+                EVT_ILLEGAL_DTE_T Event;
+                iommuAmdInitIllegalDteEvent(uDevId, uIova, true /* fRsvdNotZero */, enmOp, &Event);
+                iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
+                rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
             }
         }
-
-        *pGCPhysSpa    = GCPhysSpa;
-        *pcbContiguous = cbAccess - cbRemaining;
-        AssertMsg(*pcbContiguous > 0 && *pcbContiguous <= cbAccess, ("cbAccess=%zu pcbContig=%zu\n", cbAccess, *pcbContiguous));
-        STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
-        return rc;
+        else
+        {
+            /*
+             * The DTE is not valid, forward addresses untranslated.
+             * See AMD IOMMU spec. "Table 5: Feature Enablement for Address Translation".
+             */
+            /** @todo IOMMU: Add to IOLTB cache. */
+            GCPhysSpa    = uIova;
+            cbContiguous = cbAccess;
+        }
+    }
+    else
+    {
+        LogFunc(("Failed to read device table entry. uDevId=%#x rc=%Rrc\n", uDevId, rc));
+        rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
-    *pGCPhysSpa    = NIL_RTGCPHYS;
-    *pcbContiguous = 0;
-    LogFunc(("Failed to read device table entry. uDevId=%#x rc=%Rrc\n", uDevId, rc));
+    *pGCPhysSpa    = GCPhysSpa;
+    *pcbContiguous = cbContiguous;
+    AssertMsg(rc != VINF_SUCCESS || cbContiguous > 0, ("cbContiguous=%zu\n", cbContiguous));
+
     STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
-    return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+    return rc;
 }
 
 
@@ -3030,11 +3033,10 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
  * @param   uIova           The I/O virtual address being accessed.
  * @param   cbAccess        The number of bytes being accessed.
  * @param   fFlags          The access flags, see PDMIOMMU_MEM_F_XXX.
- * @param   pGCPhysSpa      Where to store the translated system physical address. Only
- *                          valid when VINF_SUCCESS is returned!
+ * @param   pGCPhysSpa      Where to store the translated system physical address.
  * @param   pcbContiguous   Where to store the number of contiguous bytes translated
- *                          and permission-checked. Only valid when VINF_SUCCESS is
- *                          returned!
+ *                          and permission-checked.
+ *
  * @thread  Any.
  */
 static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
@@ -3629,8 +3631,10 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
             {
                 uint64_t const uIova = RT_MAKE_U64(pCmdInvPages->n.u20AddrLo << X86_PAGE_4K_SHIFT, pCmdInvPages->n.u32AddrHi);
                 uint16_t const uDomainId = pCmdInvPages->n.u16DomainId;
-                uint8_t cShift = X86_PAGE_4K_SHIFT;
-                if (pCmdInvPages->n.u1Size != 0)
+                uint8_t cShift;
+                if (!pCmdInvPages->n.u1Size)
+                    cShift = X86_PAGE_4K_SHIFT;
+                else
                 {
                     /* Find the first clear bit starting from bit 12 to 64 of the I/O virtual address. */
                     unsigned const uFirstZeroBit = ASMBitLastSetU64(~(uIova >> X86_PAGE_4K_SHIFT));
@@ -4945,7 +4949,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     MsiReg.cMsiVectors    = 1;
     MsiReg.iMsiCapOffset  = IOMMU_PCI_OFF_MSI_CAP_HDR;
     MsiReg.iMsiNextOffset = 0; /* IOMMU_PCI_OFF_MSI_MAP_CAP_HDR */
-    MsiReg.fMsi64bit      = 1; /* 64-bit addressing support is mandatory; See AMD spec. 2.8 "IOMMU Interrupt Support". */
+    MsiReg.fMsi64bit      = 1; /* 64-bit addressing support is mandatory; See AMD IOMMU spec. 2.8 "IOMMU Interrupt Support". */
 
     /* MSI Address (Lo, Hi) and MSI data are read-write PCI config registers handled by our generic PCI config space code. */
 #if 0
