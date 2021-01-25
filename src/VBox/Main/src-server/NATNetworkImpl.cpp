@@ -850,6 +850,7 @@ HRESULT  NATNetwork::start()
     if (!m->s.fEnabled) return S_OK;
     AssertReturn(!m->s.strNetworkName.isEmpty(), E_FAIL);
 
+    m->NATRunner.resetArguments();
     m->NATRunner.addArgPair(NetworkServiceRunner::kpszKeyNetwork, Utf8Str(m->s.strNetworkName).c_str());
     m->NATRunner.addArgPair(NetworkServiceRunner::kpszKeyTrunkType, Utf8Str(TRUNKTYPE_WHATEVER).c_str());
     m->NATRunner.addArgPair(NetworkServiceRunner::kpszIpAddress, Utf8Str(m->IPv4Gateway).c_str());
