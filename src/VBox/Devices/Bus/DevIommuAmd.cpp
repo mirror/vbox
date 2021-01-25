@@ -27,6 +27,9 @@
 
 #include <iprt/x86.h>
 #include <iprt/string.h>
+#ifdef IN_RING3
+# include <iprt/mem.h>
+#endif
 
 #include "VBoxDD.h"
 #include "DevIommuAmd.h"
@@ -488,6 +491,7 @@ static uint16_t const g_auDevTabSegMaxSizes[] = { 0x1ff, 0xff, 0x7f, 0x7f, 0x3f,
 DECLINLINE(uint32_t) iommuAmdGetBufMaxEntries(uint8_t uEncodedLen)
 {
     Assert(uEncodedLen > 7);
+    Assert(uEncodedLen < 16);
     return 2 << (uEncodedLen - 1);
 }
 
@@ -501,6 +505,7 @@ DECLINLINE(uint32_t) iommuAmdGetBufMaxEntries(uint8_t uEncodedLen)
 DECLINLINE(uint32_t) iommuAmdGetTotalBufLength(uint8_t uEncodedLen)
 {
     Assert(uEncodedLen > 7);
+    Assert(uEncodedLen < 16);
     return (2 << (uEncodedLen - 1)) << 4;
 }
 
@@ -3732,6 +3737,15 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
+    /*
+     * Pre-allocate the maximum command buffer size supported by the IOMMU.
+     * This avoid trashing the heap as well as not wasting time allocating
+     * and freeing buffers while processing commands.
+     */
+    size_t cbMaxCmds = sizeof(CMD_GENERIC_T) * iommuAmdGetBufMaxEntries(15);
+    void *pvCmds = RTMemAllocZ(cbMaxCmds);
+    AssertReturn(pvCmds, VERR_NO_MEMORY);
+
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         /*
@@ -3756,69 +3770,80 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
         /*
          * Fetch and process IOMMU commands.
          */
-        /** @todo r=ramshankar: This employs a simplistic method of fetching commands (one
-         *        at a time) and is expensive due to calls to PGM for fetching guest memory.
-         *        We could optimize by fetching a bunch of commands at a time reducing
-         *        number of calls to PGM. In the longer run we could lock the memory and
-         *        mappings and accessing them directly. */
+        /** @todo r=ramshankar: We currently copy all commands from guest memory into a
+         *        temporary host buffer before processing them as a batch. If we want to
+         *        save on host memory a bit we could, once PGM has the necessary APIs, lock
+         *        the page mappings and access them directly. */
         IOMMU_LOCK(pDevIns);
 
         IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
         if (Status.n.u1CmdBufRunning)
         {
-            /* Get the offset we need to read the command from memory (circular buffer offset). */
+            /* Get the offsets we need to read commands from memory (circular buffer offset). */
             uint32_t const cbCmdBuf = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
-            uint32_t offHead = pThis->CmdBufHeadPtr.n.off;
+            uint32_t const offTail  = pThis->CmdBufTailPtr.n.off;
+            uint32_t       offHead  = pThis->CmdBufHeadPtr.n.off;
+
+            /* Validate. */
             Assert(!(offHead & ~IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK));
             Assert(offHead < cbCmdBuf);
-            while (offHead != pThis->CmdBufTailPtr.n.off)
+            Assert(cbCmdBuf <= cbMaxCmds);
+
+            if (offHead != offTail)
             {
-                /* Read the command from memory. */
-                CMD_GENERIC_T Cmd;
-                RTGCPHYS const GCPhysCmd = (pThis->CmdBufBaseAddr.n.u40Base << X86_PAGE_4K_SHIFT) + offHead;
-                int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysCmd, &Cmd, sizeof(Cmd));
+                /* Read the entire command buffer from memory (avoids multiple PGM calls). */
+                RTGCPHYS const GCPhysCmdBufBase = pThis->CmdBufBaseAddr.n.u40Base << X86_PAGE_4K_SHIFT;
+                int rc = PDMDevHlpPhysRead(pDevIns, GCPhysCmdBufBase, pvCmds, cbCmdBuf);
                 if (RT_SUCCESS(rc))
                 {
-                    /* Increment the command buffer head pointer. */
-                    offHead = (offHead + sizeof(CMD_GENERIC_T)) % cbCmdBuf;
-                    pThis->CmdBufHeadPtr.n.off = offHead;
+                    /* Indicate to software we've fetched all commands from the buffer. */
+                    pThis->CmdBufHeadPtr.n.off = offTail;
 
-                    /* Process the fetched command. */
-                    EVT_GENERIC_T EvtError;
+                    /* Allow IOMMU to do other work while we process commands. */
                     IOMMU_UNLOCK(pDevIns);
-                    rc = iommuAmdR3ProcessCmd(pDevIns, &Cmd, GCPhysCmd, &EvtError);
-                    IOMMU_LOCK(pDevIns);
-                    if (RT_FAILURE(rc))
+
+                    /* Process the fetched commands. */
+                    EVT_GENERIC_T EvtError;
+                    do
                     {
-                        if (   rc == VERR_IOMMU_CMD_NOT_SUPPORTED
-                            || rc == VERR_IOMMU_CMD_INVALID_FORMAT)
+                        PCCMD_GENERIC_T pCmd = (PCCMD_GENERIC_T)((uintptr_t)pvCmds + offHead);
+                        rc = iommuAmdR3ProcessCmd(pDevIns, pCmd, GCPhysCmdBufBase + offHead, &EvtError);
+                        if (RT_FAILURE(rc))
                         {
-                            Assert(EvtError.n.u4EvtCode == IOMMU_EVT_ILLEGAL_CMD_ERROR);
-                            iommuAmdRaiseIllegalCmdEvent(pDevIns, (PCEVT_ILLEGAL_CMD_ERR_T)&EvtError);
+                            if (   rc == VERR_IOMMU_CMD_NOT_SUPPORTED
+                                || rc == VERR_IOMMU_CMD_INVALID_FORMAT)
+                            {
+                                Assert(EvtError.n.u4EvtCode == IOMMU_EVT_ILLEGAL_CMD_ERROR);
+                                iommuAmdRaiseIllegalCmdEvent(pDevIns, (PCEVT_ILLEGAL_CMD_ERR_T)&EvtError);
+                            }
+                            else if (rc == VERR_IOMMU_CMD_HW_ERROR)
+                            {
+                                Assert(EvtError.n.u4EvtCode == IOMMU_EVT_COMMAND_HW_ERROR);
+                                LogFunc(("Raising command hardware error. Cmd=%#x -> COMMAND_HW_ERROR\n", pCmd->n.u4Opcode));
+                                iommuAmdRaiseCmdHwErrorEvent(pDevIns, (PCEVT_CMD_HW_ERR_T)&EvtError);
+                            }
+                            break;
                         }
-                        else if (rc == VERR_IOMMU_CMD_HW_ERROR)
-                        {
-                            Assert(EvtError.n.u4EvtCode == IOMMU_EVT_COMMAND_HW_ERROR);
-                            LogFunc(("Raising command hardware error. Cmd=%#x -> COMMAND_HW_ERROR\n", Cmd.n.u4Opcode));
-                            iommuAmdRaiseCmdHwErrorEvent(pDevIns, (PCEVT_CMD_HW_ERR_T)&EvtError);
-                        }
-                        break;
-                    }
+                        offHead = (offHead + sizeof(CMD_GENERIC_T)) % cbCmdBuf;
+                    } while (offHead != offTail);
                 }
                 else
                 {
-                    LogFunc(("Failed to read command at %#RGp. rc=%Rrc -> COMMAND_HW_ERROR\n", GCPhysCmd, rc));
+                    LogFunc(("Failed to read command at %#RGp. rc=%Rrc -> COMMAND_HW_ERROR\n", GCPhysCmdBufBase, rc));
                     EVT_CMD_HW_ERR_T EvtCmdHwErr;
-                    iommuAmdInitCmdHwErrorEvent(GCPhysCmd, &EvtCmdHwErr);
+                    iommuAmdInitCmdHwErrorEvent(GCPhysCmdBufBase, &EvtCmdHwErr);
                     iommuAmdRaiseCmdHwErrorEvent(pDevIns, &EvtCmdHwErr);
-                    break;
+                    IOMMU_UNLOCK(pDevIns);
                 }
             }
+            else
+                IOMMU_UNLOCK(pDevIns);
         }
-
-        IOMMU_UNLOCK(pDevIns);
+        else
+            IOMMU_UNLOCK(pDevIns);
     }
 
+    RTMemFree(pvCmds);
     LogFlowFunc(("Command thread terminating\n"));
     return VINF_SUCCESS;
 }
