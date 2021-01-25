@@ -1489,7 +1489,7 @@ RTDECL(RTFOFF)      RTVfsFileTell(RTVFSFILE hVfsFile);
  *
  * @param   hVfsFile        The VFS file handle.
  * @param   offSeek         The seek offset.
- * @param   uMethod         The seek emthod.
+ * @param   uMethod         The seek method.
  * @param   poffActual      Where to optionally return the new file offset.
  *
  * @sa      RTFileSeek
