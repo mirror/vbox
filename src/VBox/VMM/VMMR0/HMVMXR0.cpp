@@ -4161,7 +4161,7 @@ static int hmR0VmxSetupVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstG
              * The host is always 64-bit since we no longer support 32-bit hosts.
              * Currently we have just a single handler for all guest modes as well, see @bugref{6208#c73}.
              */
-            pVmcsInfo->pfnStartVM = VMXR0StartVM64;
+            pVmcsInfo->pfnStartVM = hmR0VMXStartVM;
             if (!fIsNstGstVmcs)
             {
                 rc = hmR0VmxSetupVmcsPinCtls(pVCpu, pVmcsInfo);
@@ -6783,9 +6783,9 @@ DECLINLINE(int) hmR0VmxRunGuest(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
     bool const fResumeVM = RT_BOOL(pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    int rc = hmR0VMXStartVMWrapXMM(fResumeVM, pCtx, NULL /*pvUnused*/, pVM, pVCpu, pVmcsInfo->pfnStartVM);
+    int rc = hmR0VMXStartVMWrapXMM(pVM, pVCpu, fResumeVM, pVmcsInfo->pfnStartVM);
 #else
-    int rc = pVmcsInfo->pfnStartVM(fResumeVM, pCtx, NULL /*pvUnused*/, pVM, pVCpu);
+    int rc = pVmcsInfo->pfnStartVM(pVM, pVCpu, fResumeVM);
 #endif
     AssertMsg(rc <= VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;

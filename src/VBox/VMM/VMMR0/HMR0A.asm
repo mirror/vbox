@@ -568,6 +568,12 @@ ENDPROC VMXDispatchHostNmi
 ;
 ; @returns      eax
 ;
+; @param        pVM             msc:rcx
+; @param        pVCpu           msc:rdx         The cross context virtual CPU structure of the calling EMT.
+; @param        fResumeVM       msc:r8l
+; @param        pfnStartVM      msc:r9
+;
+; Old:
 ; @param        fResumeVM       msc:rcx
 ; @param        pCtx            msc:rdx
 ; @param        pvUnused        msc:r8
@@ -593,26 +599,23 @@ BEGINPROC hmR0VMXStartVMWrapXMM
         sub     xSP, 0b0h + 040h ; Don't bother optimizing the frame size.
 
         ; Spill input parameters.
-        mov     [xBP + 010h], rcx       ; fResumeVM
-        mov     [xBP + 018h], rdx       ; pCtx
-        mov     [xBP + 020h], r8        ; pvUnused
-        mov     [xBP + 028h], r9        ; pVM
+        mov     [xBP + 010h], rcx       ; pVM
+        mov     [xBP + 018h], rdx       ; pVCpu
+        mov     [xBP + 020h], r8        ; fResumeVM
+        mov     [xBP + 028h], r9        ; pfnStartVM
 
         ; Ask CPUM whether we've started using the FPU yet.
-        mov     rcx, [xBP + 30h]        ; pVCpu
+        mov     rcx, [xBP + 018h]       ; pVCpu
         call    NAME(CPUMIsGuestFPUStateActive)
         test    al, al
         jnz     .guest_fpu_state_active
 
         ; No need to mess with XMM registers just call the start routine and return.
-        mov     r11, [xBP + 38h]        ; pfnStartVM
-        mov     r10, [xBP + 30h]        ; pVCpu
-        mov     [xSP + 020h], r10
-        mov     rcx, [xBP + 010h]       ; fResumeVM
-        mov     rdx, [xBP + 018h]       ; pCtx
-        mov     r8,  [xBP + 020h]       ; pvUnused
-        mov     r9,  [xBP + 028h]       ; pVM
-        call    r11
+        mov     r9,  [xBP + 028h]       ; pfnStartVM
+        mov     rcx, [xBP + 010h]       ; pVM
+        mov     rdx, [xBP + 018h]       ; pVCpu
+        mov     r8,  [xBP + 020h]       ; fResume
+        call    r9
 
         leave
         ret
@@ -632,8 +635,8 @@ ALIGNCODE(8)
         movdqa  [rsp + 040h + 090h], xmm15
         stmxcsr [rsp + 040h + 0a0h]
 
-        mov     r10, [xBP + 018h]       ; pCtx
-        mov     eax, [r10 + CPUMCTX.fXStateMask]
+        mov     r10, [xBP + 018h]       ; pVCpu
+        mov     eax, [r10 + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask]
         test    eax, eax
         jz      .guest_fpu_state_manually
 
@@ -642,27 +645,24 @@ ALIGNCODE(8)
         ;
         and     eax, CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS
         xor     edx, edx
-        mov     r10, [r10 + CPUMCTX.pXStateR0]
+        mov     r10, [r10 + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
         xrstor  [r10]
 
         ; Make the call (same as in the other case).
-        mov     r11, [xBP + 38h]        ; pfnStartVM
-        mov     r10, [xBP + 30h]        ; pVCpu
-        mov     [xSP + 020h], r10
-        mov     rcx, [xBP + 010h]       ; fResumeVM
-        mov     rdx, [xBP + 018h]       ; pCtx
-        mov     r8,  [xBP + 020h]       ; pvUnused
-        mov     r9,  [xBP + 028h]       ; pVM
-        call    r11
+        mov     r9,  [xBP + 028h]       ; pfnStartVM
+        mov     rcx, [xBP + 010h]       ; pVM
+        mov     rdx, [xBP + 018h]       ; pVCpu
+        mov     r8,  [xBP + 020h]       ; fResume
+        call    r9
 
         mov     r11d, eax               ; save return value (xsave below uses eax)
 
         ; Save the guest XMM registers.
-        mov     r10, [xBP + 018h]       ; pCtx
-        mov     eax, [r10 + CPUMCTX.fXStateMask]
+        mov     r10, [xBP + 018h]       ; pVCpu
+        mov     eax, [r10 + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask]
         and     eax, CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS
         xor     edx, edx
-        mov     r10, [r10 + CPUMCTX.pXStateR0]
+        mov     r10, [r10 + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
         xsave  [r10]
 
         mov     eax, r11d               ; restore return value
@@ -688,7 +688,7 @@ ALIGNCODE(8)
         ;
 .guest_fpu_state_manually:
         ; Load the full guest XMM register state.
-        mov     r10, [r10 + CPUMCTX.pXStateR0]
+        mov     r10, [r10 + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
         movdqa  xmm0,  [r10 + XMM_OFF_IN_X86FXSTATE + 000h]
         movdqa  xmm1,  [r10 + XMM_OFF_IN_X86FXSTATE + 010h]
         movdqa  xmm2,  [r10 + XMM_OFF_IN_X86FXSTATE + 020h]
@@ -708,18 +708,15 @@ ALIGNCODE(8)
         ldmxcsr        [r10 + X86FXSTATE.MXCSR]
 
         ; Make the call (same as in the other case).
-        mov     r11, [xBP + 38h]        ; pfnStartVM
-        mov     r10, [xBP + 30h]        ; pVCpu
-        mov     [xSP + 020h], r10
-        mov     rcx, [xBP + 010h]       ; fResumeVM
-        mov     rdx, [xBP + 018h]       ; pCtx
-        mov     r8,  [xBP + 020h]       ; pvUnused
-        mov     r9,  [xBP + 028h]       ; pVM
-        call    r11
+        mov     r9,  [xBP + 028h]       ; pfnStartVM
+        mov     rcx, [xBP + 010h]       ; pVM
+        mov     rdx, [xBP + 018h]       ; pVCpu
+        mov     r8,  [xBP + 020h]       ; fResume
+        call    r9
 
         ; Save the guest XMM registers.
-        mov     r10, [xBP + 018h]       ; pCtx
-        mov     r10, [r10 + CPUMCTX.pXStateR0]
+        mov     r10, [xBP + 018h]       ; pVCpu
+        mov     r10, [r10 + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
         stmxcsr [r10 + X86FXSTATE.MXCSR]
         movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 000h], xmm0
         movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 010h], xmm1
@@ -757,6 +754,7 @@ ENDPROC   hmR0VMXStartVMWrapXMM
     add     xSP, xCB * 2
  %endif
 
+    ; Save the guest state.
     push    xDI
  %ifndef VMX_SKIP_TR
     mov     xDI, [xSP + xCB * 3]        ; pCtx (*3 to skip the saved xDI, TR, LDTR)
@@ -845,14 +843,12 @@ ENDPROC   hmR0VMXStartVMWrapXMM
 ; Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ;
 ; @returns VBox status code
-; @param    fResume    msc:rcx, gcc:rdi       Whether to use vmlauch/vmresume.
-; @param    pCtx       msc:rdx, gcc:rsi       Pointer to the guest-CPU context.
-; @param    pvUnused   msc:r8,  gcc:rdx       Unused argument.
-; @param    pVM        msc:r9,  gcc:rcx       The cross context VM structure.
-; @param    pVCpu      msc:[ebp+30], gcc:r8   The cross context virtual CPU structure of the calling EMT.
+; @param    pVM        msc:rcx, gcc:rdi       The cross context VM structure. (unused)
+; @param    pVCpu      msc:rdx, gcc:rsi       The cross context virtual CPU structure of the calling EMT.
+; @param    fResume    msc:r8l, gcc:dl        Whether to use vmlauch/vmresume.
 ;
-ALIGNCODE(16)
-BEGINPROC VMXR0StartVM64
+ALIGNCODE(64)
+BEGINPROC hmR0VMXStartVM
     push    xBP
     mov     xBP, xSP
 
@@ -860,7 +856,7 @@ BEGINPROC VMXR0StartVM64
     cli
 
     ; Save all general purpose host registers.
-%assign cbFrame 0
+%assign cbFrame 8
     PUSH_CALLEE_PRESERVED_REGISTERS
     SEH64_END_PROLOGUE
 
@@ -871,28 +867,21 @@ BEGINPROC VMXR0StartVM64
     ; Note: ASSUMES success!
 
     ;
-    ; Unify the input parameter registers.
+    ; Unify the input parameter registers: rsi=pVCpu, bl=fResume, rdi=&pVCpu->cpum.GstCtx;
     ;
 %ifdef ASM_CALL64_GCC
-    ; fResume already in rdi
-    ; pCtx    already in rsi
-    mov     rbx, rdx        ; pvUnused
+    mov     ebx, edx        ; fResume
 %else
-    mov     rdi, rcx        ; fResume
-    mov     rsi, rdx        ; pCtx
-    mov     rbx, r8         ; pvUnused
+    mov     rsi, rdx        ; pVCpu
+    mov     ebx, r8d        ; fResume
 %endif
+    lea     rdi, [rsi + VMCPU.cpum.GstCtx]
 
     ;
     ; Save the host XCR0 and load the guest one if necessary.
     ; Note! Trashes rdx and rcx.
     ;
-%ifdef ASM_CALL64_MSC
-    mov     rax, [xBP + 30h]            ; pVCpu
-%else
-    mov     rax, r8                     ; pVCpu
-%endif
-    test    byte [xAX + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
+    test    byte [rsi + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
     jz      .xcr0_before_skip
 
     xor     ecx, ecx
@@ -900,8 +889,8 @@ BEGINPROC VMXR0StartVM64
     push    xDX
     push    xAX
 
-    mov     eax, [xSI + CPUMCTX.aXcr]   ; load the guest one
-    mov     edx, [xSI + CPUMCTX.aXcr + 4]
+    mov     eax, [rdi + CPUMCTX.aXcr]   ; load the guest one
+    mov     edx, [rdi + CPUMCTX.aXcr + 4]
     xor     ecx, ecx                    ; paranoia
     xsetbv
 
@@ -919,7 +908,7 @@ BEGINPROC VMXR0StartVM64
     PUSH_RELEVANT_SEGMENT_REGISTERS xAX, ax
 
     ; Save the pCtx pointer.
-    push    xSI
+    push    rdi
 
     ; Save host LDTR.
     xor     eax, eax
@@ -943,11 +932,11 @@ BEGINPROC VMXR0StartVM64
 %endif
 
     ; Load CR2 if necessary (may be expensive as writing CR2 is a synchronizing instruction).
-    mov     rbx, qword [xSI + CPUMCTX.cr2]
+    mov     rcx, qword [rdi + CPUMCTX.cr2]
     mov     rdx, cr2
-    cmp     rbx, rdx
+    cmp     rcx, rdx
     je      .skip_cr2_write
-    mov     cr2, rbx
+    mov     cr2, rcx
 
 .skip_cr2_write:
     mov     eax, VMX_VMCS_HOST_RSP
@@ -956,44 +945,42 @@ BEGINPROC VMXR0StartVM64
     ; Don't mess with ESP anymore!!!
 
     ; Fight spectre and similar.
-    INDIRECT_BRANCH_PREDICTION_AND_L1_CACHE_BARRIER xSI, CPUMCTX_WSF_IBPB_ENTRY, CPUMCTX_WSF_L1D_ENTRY, CPUMCTX_WSF_MDS_ENTRY
-
-    ; Load guest general purpose registers.
-    mov     rax, qword [xSI + CPUMCTX.eax]
-    mov     rbx, qword [xSI + CPUMCTX.ebx]
-    mov     rcx, qword [xSI + CPUMCTX.ecx]
-    mov     rdx, qword [xSI + CPUMCTX.edx]
-    mov     rbp, qword [xSI + CPUMCTX.ebp]
-    mov     r8,  qword [xSI + CPUMCTX.r8]
-    mov     r9,  qword [xSI + CPUMCTX.r9]
-    mov     r10, qword [xSI + CPUMCTX.r10]
-    mov     r11, qword [xSI + CPUMCTX.r11]
-    mov     r12, qword [xSI + CPUMCTX.r12]
-    mov     r13, qword [xSI + CPUMCTX.r13]
-    mov     r14, qword [xSI + CPUMCTX.r14]
-    mov     r15, qword [xSI + CPUMCTX.r15]
+    INDIRECT_BRANCH_PREDICTION_AND_L1_CACHE_BARRIER rdi, CPUMCTX_WSF_IBPB_ENTRY, CPUMCTX_WSF_L1D_ENTRY, CPUMCTX_WSF_MDS_ENTRY
 
     ; Resume or start VM?
-    cmp     xDI, 0                  ; fResume
+    cmp     bl, 0                   ; fResume
 
-    ; Load guest rdi & rsi.
-    mov     rdi, qword [xSI + CPUMCTX.edi]
-    mov     rsi, qword [xSI + CPUMCTX.esi]
+    ; Load guest general purpose registers.
+    mov     rax, qword [rdi + CPUMCTX.eax]
+    mov     rbx, qword [rdi + CPUMCTX.ebx]
+    mov     rcx, qword [rdi + CPUMCTX.ecx]
+    mov     rdx, qword [rdi + CPUMCTX.edx]
+    mov     rbp, qword [rdi + CPUMCTX.ebp]
+    mov     rsi, qword [rdi + CPUMCTX.esi]
+    mov     r8,  qword [rdi + CPUMCTX.r8]
+    mov     r9,  qword [rdi + CPUMCTX.r9]
+    mov     r10, qword [rdi + CPUMCTX.r10]
+    mov     r11, qword [rdi + CPUMCTX.r11]
+    mov     r12, qword [rdi + CPUMCTX.r12]
+    mov     r13, qword [rdi + CPUMCTX.r13]
+    mov     r14, qword [rdi + CPUMCTX.r14]
+    mov     r15, qword [rdi + CPUMCTX.r15]
+    mov     rdi, qword [rdi + CPUMCTX.edi]
 
     je      .vmlaunch64_launch
 
     vmresume
     jc      near .vmxstart64_invalid_vmcs_ptr
     jz      near .vmxstart64_start_failed
-    jmp     .vmlaunch64_done;      ; here if vmresume detected a failure
+    jmp     .vmlaunch64_done        ; here if vmresume detected a failure
 
 .vmlaunch64_launch:
     vmlaunch
     jc      near .vmxstart64_invalid_vmcs_ptr
     jz      near .vmxstart64_start_failed
-    jmp     .vmlaunch64_done;      ; here if vmlaunch detected a failure
+    jmp     .vmlaunch64_done        ; here if vmlaunch detected a failure
 
-ALIGNCODE(16)
+ALIGNCODE(64)
 .vmlaunch64_done:
     RESTORE_STATE_VM64
     mov     eax, VINF_SUCCESS
@@ -1012,7 +999,7 @@ ALIGNCODE(16)
     RESTORE_STATE_VM64
     mov     eax, VERR_VMX_UNABLE_TO_START_VM
     jmp     .vmstart64_end
-ENDPROC VMXR0StartVM64
+ENDPROC hmR0VMXStartVM
 
 
 ;;

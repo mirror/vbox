@@ -701,13 +701,11 @@ typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
  * VMX StartVM function.
  *
  * @returns VBox status code (no informational stuff).
- * @param   fResume     Whether to use VMRESUME (true) or VMLAUNCH (false).
- * @param   pCtx        The CPU register context.
- * @param   pvUnused    Unused argument.
  * @param   pVM         Pointer to the cross context VM structure.
  * @param   pVCpu       Pointer to the cross context per-CPU structure.
+ * @param   fResume     Whether to use VMRESUME (true) or VMLAUNCH (false).
  */
-typedef DECLCALLBACKTYPE(int, FNHMVMXSTARTVM,(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu));
+typedef DECLCALLBACKTYPE(int, FNHMVMXSTARTVM,(PVMCC pVM, PVMCPUCC pVCpu, RTHCUINT fResume));
 /** Pointer to a VMX StartVM function. */
 typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
 
@@ -1359,9 +1357,10 @@ DECLASM(void)               hmR0VmxExportHostSegmentRegsAsmHlp(PVMXRESTOREHOST p
 DECLASM(int)                VMXRestoreHostState(uint32_t fRestoreHostFlags, PVMXRESTOREHOST pRestoreHost);
 
 # ifdef VBOX_WITH_KERNEL_USING_XMM
-DECLASM(int)                hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu,
-                                                  PFNHMVMXSTARTVM pfnStartVM);
+DECLASM(int)                hmR0VMXStartVMWrapXMM(PVMCC pVM, PVMCPUCC pVCpu, RTHCUINT fResume, PFNHMVMXSTARTVM pfnStartVM);
 # endif
+DECLASM(int)                hmR0VMXStartVM(PVMCC pVM, PVMCPUCC pVCpu, RTHCUINT fResume);
+
 /** @} */
 
 /** @} */
