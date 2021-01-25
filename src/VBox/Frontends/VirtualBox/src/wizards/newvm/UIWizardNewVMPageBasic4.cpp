@@ -19,7 +19,6 @@
 #include <QGridLayout>
 #include <QMetaType>
 #include <QRadioButton>
-#include <QToolBox>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -157,10 +156,14 @@ void UIWizardNewVMPage4::ensureNewVirtualDiskDeleted()
 
 void UIWizardNewVMPage4::retranslateWidgets()
 {
-    m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
-    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
-    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
-    m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+    if (m_pDiskSkip)
+        m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
+    if (m_pDiskCreate)
+        m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
+    if (m_pDiskPresent)
+        m_pDiskPresent->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
+    if (m_pVMMButton)
+        m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
 }
 
 QWidget *UIWizardNewVMPage4::createDiskWidgets()
@@ -207,7 +210,6 @@ QWidget *UIWizardNewVMPage4::createHardwareWidgets()
 
 UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
     : m_pLabel(0)
-    , m_pToolBox(0)
 {
     prepare();
     qRegisterMetaType<CMedium>();
@@ -222,15 +224,10 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
 void UIWizardNewVMPageBasic4::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    m_pToolBox = new QToolBox;
 
     m_pLabel = new QIRichTextLabel(this);
     pMainLayout->addWidget(m_pLabel);
-    pMainLayout->addWidget(m_pToolBox);
-
-    m_pToolBox->insertItem(ToolBoxItems_Disk, createDiskWidgets(), QString());
-    m_pToolBox->insertItem(ToolBoxItems_Hardware, createHardwareWidgets(), QString());
-    m_pToolBox->setStyleSheet("QToolBox::tab:selected { font: bold; }");
+    pMainLayout->addWidget(createDiskWidgets());
 
     pMainLayout->addStretch();
     updateVirtualDiskSource();
@@ -274,21 +271,15 @@ void UIWizardNewVMPageBasic4::retranslateUi()
     /* Translate widgets: */
     QString strRecommendedHDD = field("type").value<CGuestOSType>().isNull() ? QString() :
                                 UICommon::formatSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
-    m_pLabel->setText(UIWizardNewVM::tr("<p>If you wish you can add a virtual hard disk to the new machine. "
-                                        "You can either create a new hard disk file or select one from the list "
-                                        "or from another location using the folder icon. "
-                                        "If you need a more complex storage set-up you can skip this step "
-                                        "and make the changes to the machine settings once the machine is created. "
-                                        "The recommended size of the hard disk is <b>%1</b>."
-                                        "<p>You can also modify the virtual machine's hardware by modifying the amount of memory "
-                                        "and virtual processors.</p>")
-                                        .arg(strRecommendedHDD));
+    if (m_pLabel)
+        m_pLabel->setText(UIWizardNewVM::tr("<p>If you wish you can add a virtual hard disk to the new machine. "
+                                            "You can either create a new hard disk file or select one from the list "
+                                            "or from another location using the folder icon. "
+                                            "If you need a more complex storage set-up you can skip this step "
+                                            "and make the changes to the machine settings once the machine is created. "
+                                            "The recommended size of the hard disk is <b>%1</b>.")
+                          .arg(strRecommendedHDD));
     retranslateWidgets();
-    if (m_pToolBox)
-    {
-        m_pToolBox->setItemText(ToolBoxItems_Disk, UIWizardNewVM::tr("Hard Disk"));
-        m_pToolBox->setItemText(ToolBoxItems_Hardware, UIWizardNewVM::tr("Hardware"));
-    }
 }
 
 void UIWizardNewVMPageBasic4::initializePage()
@@ -301,7 +292,8 @@ void UIWizardNewVMPageBasic4::initializePage()
 
     CGuestOSType type = field("type").value<CGuestOSType>();
     ULONG recommendedRam = type.GetRecommendedRAM();
-    m_pBaseMemoryEditor->setValue(recommendedRam);
+    if (m_pBaseMemoryEditor)
+        m_pBaseMemoryEditor->setValue(recommendedRam);
 
 
     /* Prepare initial disk choice: */
@@ -337,9 +329,11 @@ void UIWizardNewVMPageBasic4::cleanupPage()
 bool UIWizardNewVMPageBasic4::isComplete() const
 {
     /* Make sure 'virtualDisk' field feats the rules: */
+    if (!m_pDiskSkip)
+        return false;
     return m_pDiskSkip->isChecked() ||
-           !m_pDiskPresent->isChecked() ||
-           !uiCommon().medium(m_pDiskSelector->id()).isNull();
+        !m_pDiskPresent->isChecked() ||
+        !uiCommon().medium(m_pDiskSelector->id()).isNull();
 }
 
 bool UIWizardNewVMPageBasic4::validatePage()

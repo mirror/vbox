@@ -33,7 +33,6 @@
 
 /* Forward declarations: */
 class QRadioButton;
-class QToolBox;
 class QIRichTextLabel;
 class QIToolButton;
 class UIBaseMemoryEditor;
@@ -45,13 +44,6 @@ class UIWizardNewVMPage4 : public UIWizardPageBase
 {
 
 protected:
-
-    enum
-    {
-        ToolBoxItems_Disk,
-        ToolBoxItems_Hardware
-    };
-
 
     /** Constructor. */
     UIWizardNewVMPage4();
@@ -154,7 +146,6 @@ private:
 
     /** Widgets. */
     QIRichTextLabel *m_pLabel;
-    QToolBox     *m_pToolBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic4_h */
