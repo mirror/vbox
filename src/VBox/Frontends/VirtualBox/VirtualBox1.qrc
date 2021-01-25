@@ -205,7 +205,6 @@
         <file alias="extension_pack_uninstall_32px.png">images/extension_pack_uninstall_32px.png</file>
         <file alias="extension_pack_uninstall_disabled_16px.png">images/extension_pack_uninstall_disabled_16px.png</file>
         <file alias="extension_pack_uninstall_disabled_32px.png">images/extension_pack_uninstall_disabled_32px.png</file>
-        <file alias="extension_pack_warning_16px.png">images/extension_pack_warning_16px.png</file>
         <file alias="eye_10px.png">images/eye_10px.png</file>
         <file alias="eye_closed_10px.png">images/eye_closed_10px.png</file>
         <file alias="favorite_24px.png">images/favorite_24px.png</file>

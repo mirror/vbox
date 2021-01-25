@@ -204,7 +204,6 @@
         <file alias="extension_pack_uninstall_32px_x4.png">images/x4/extension_pack_uninstall_32px_x4.png</file>
         <file alias="extension_pack_uninstall_disabled_16px_x4.png">images/x4/extension_pack_uninstall_disabled_16px_x4.png</file>
         <file alias="extension_pack_uninstall_disabled_32px_x4.png">images/x4/extension_pack_uninstall_disabled_32px_x4.png</file>
-        <file alias="extension_pack_warning_16px_x4.png">images/x4/extension_pack_warning_16px_x4.png</file>
         <file alias="eye_10px_x4.png">images/x4/eye_10px_x4.png</file>
         <file alias="eye_closed_10px_x4.png">images/x4/eye_closed_10px_x4.png</file>
         <file alias="favorite_24px_x4.png">images/x4/favorite_24px_x4.png</file>
