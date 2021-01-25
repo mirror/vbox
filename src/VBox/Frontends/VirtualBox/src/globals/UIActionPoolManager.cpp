@@ -2238,10 +2238,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleManagerExtensionPerformInstall(UIActionPool *pParent)
         : UIActionSimple(pParent,
-//                         ":/extension_pack_install_32px.png",          ":/extension_pack_install_16px.png",
-//                         ":/extension_pack_install_disabled_32px.png", ":/extension_pack_install_disabled_16px.png"
-                         ":/extension_pack_32px.png", ":/extension_pack_16px.png",
-                         ":/extension_pack_disabled_32px.png", ":/extension_pack_disabled_16px.png")
+                         ":/extension_pack_install_32px.png",          ":/extension_pack_install_16px.png",
+                         ":/extension_pack_install_disabled_32px.png", ":/extension_pack_install_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
@@ -2281,10 +2279,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleManagerExtensionPerformUninstall(UIActionPool *pParent)
         : UIActionSimple(pParent,
-//                         ":/extension_pack_uninstall_32px.png",          ":/extension_pack_uninstall_16px.png",
-//                         ":/extension_pack_uninstall_disabled_32px.png", ":/extension_pack_uninstall_disabled_16px.png"
-                         ":/extension_pack_32px.png", ":/extension_pack_16px.png",
-                         ":/extension_pack_disabled_32px.png", ":/extension_pack_disabled_16px.png")
+                         ":/extension_pack_uninstall_32px.png",          ":/extension_pack_uninstall_16px.png",
+                         ":/extension_pack_uninstall_disabled_32px.png", ":/extension_pack_uninstall_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }

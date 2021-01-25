@@ -194,9 +194,17 @@
         <file alias="extension_pack_24px.png">images/extension_pack_24px.png</file>
         <file alias="extension_pack_32px.png">images/extension_pack_32px.png</file>
         <file alias="extension_pack_install_16px.png">images/extension_pack_install_16px.png</file>
+        <file alias="extension_pack_install_32px.png">images/extension_pack_install_32px.png</file>
         <file alias="extension_pack_install_disabled_16px.png">images/extension_pack_install_disabled_16px.png</file>
+        <file alias="extension_pack_install_disabled_32px.png">images/extension_pack_install_disabled_32px.png</file>
+        <file alias="extension_pack_manager_16px.png">images/extension_pack_manager_16px.png</file>
+        <file alias="extension_pack_manager_24px.png">images/extension_pack_manager_24px.png</file>
+        <file alias="extension_pack_manager_disabled_16px.png">images/extension_pack_manager_disabled_16px.png</file>
+        <file alias="extension_pack_manager_disabled_24px.png">images/extension_pack_manager_disabled_24px.png</file>
         <file alias="extension_pack_uninstall_16px.png">images/extension_pack_uninstall_16px.png</file>
+        <file alias="extension_pack_uninstall_32px.png">images/extension_pack_uninstall_32px.png</file>
         <file alias="extension_pack_uninstall_disabled_16px.png">images/extension_pack_uninstall_disabled_16px.png</file>
+        <file alias="extension_pack_uninstall_disabled_32px.png">images/extension_pack_uninstall_disabled_32px.png</file>
         <file alias="extension_pack_warning_16px.png">images/extension_pack_warning_16px.png</file>
         <file alias="eye_10px.png">images/eye_10px.png</file>
         <file alias="eye_closed_10px.png">images/eye_closed_10px.png</file>
