@@ -29,6 +29,10 @@
 #include <mach/mach_error.h>
 #include <IOKit/usb/IOUSBLib.h>
 #include <IOKit/IOCFPlugIn.h>
+#ifndef __MAC_10_10 /* Quick hack: The following two masks appeared in 10.10. */
+# define kUSBReEnumerateReleaseDeviceMask   RT_BIT_32(29)
+# define kUSBReEnumerateCaptureDeviceMask   RT_BIT_32(30)
+#endif
 
 #include <VBox/log.h>
 #include <VBox/err.h>
