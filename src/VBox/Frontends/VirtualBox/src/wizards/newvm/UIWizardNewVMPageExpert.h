@@ -110,17 +110,12 @@ private:
     bool validatePage();
 
     bool isProductKeyWidgetEnabled() const;
-    bool isGAInstallEnabled() const;
     void disableEnableUnattendedRelatedWidgets(bool fEnabled);
-    void disableEnableProductKeyWidgets(bool fEnabled);
     void markWidgets() const;
     QWidget *createUnattendedWidgets();
 
     UIToolBox  *m_pToolBox;
     QGroupBox *m_pInstallationISOContainer;
-    QGroupBox *m_pUserNameContainer;
-    QGroupBox *m_pAdditionalOptionsContainer;
-    QGroupBox *m_pGAInstallationISOContainer;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageExpert_h */
