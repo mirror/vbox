@@ -81,10 +81,16 @@ protected:
         return QString("ExtensionPackManager");
     }
 
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+T");
+    }
+
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Extension Pack Manager..."));
+        setName(QApplication::translate("UIActionPool", "Ex&tension Pack Manager..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display the Extension Pack Manager window"));
     }
 };
