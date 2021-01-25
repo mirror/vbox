@@ -30,7 +30,6 @@ class QCheckBox;
 class QGridLayout;
 class QLabel;
 class QLineEdit;
-class QToolBox;
 class QIRichTextLabel;
 class UIFilePathSelector;
 class UIUserNamePasswordEditor;
@@ -43,78 +42,56 @@ public:
 
     UIWizardNewVMPage2();
 
-    /** @name Property getters/setters
-      * @{ */
-        QString userName() const;
-        void setUserName(const QString &strName);
-        QString password() const;
-        void setPassword(const QString &strPassword);
-        QString hostname() const;
-        void setHostname(const QString &strHostName);
-        bool installGuestAdditions() const;
-        void setInstallGuestAdditions(bool fInstallGA);
-        QString guestAdditionsISOPath() const;
-        void setGuestAdditionsISOPath(const QString &strISOPath);
-        QString productKey() const;
-    /** @} */
-
 protected:
-    enum
-    {
-        ToolBoxItems_UserNameHostname,
-        ToolBoxItems_GAInstall,
-        ToolBoxItems_ProductKey
-    };
 
-    QWidget *createUserNameHostNameWidgets();
-    QWidget *createGAInstallWidgets();
-    QWidget *createProductKeyWidgets();
-
-    /** Returns false if ISO path selector is non empty but has invalid file path. */
-    bool checkGAISOFile() const;
     void markWidgets() const;
     void retranslateWidgets();
-    void disableEnableGAWidgets(bool fEnabled);
+
+    QString ISOFilePath() const;
+    bool isUnattendedEnabled() const;
+    const QString &detectedOSTypeId() const;
+    bool determineOSType(const QString &strISOPath);
+    bool isISOFileSelectorComplete() const;
+    void setTypeByISODetectedOSType(const QString &strDetectedOSType);
+    /** Return false if ISO path is not empty but points to an missing or unreadable file. */
+    bool checkISOFile() const;
 
     /** @name Widgets
       * @{ */
-        UIUserNamePasswordEditor *m_pUserNamePasswordEditor;
-        QLineEdit *m_pHostnameLineEdit;
-        QLabel  *m_pHostnameLabel;
-        QCheckBox *m_pGAInstallCheckBox;
-        QLabel  *m_pGAISOPathLabel;
-        UIFilePathSelector *m_pGAISOFilePathSelector;
-        /** Product key stuff. */
-        QLineEdit *m_pProductKeyLineEdit;
-        QLabel  *m_pProductKeyLabel;
+        mutable UIFilePathSelector *m_pISOFilePathSelector;
+        QIRichTextLabel *m_pUnattendedLabel;
     /** @} */
+
+    QString m_strDetectedOSTypeId;
+
+private:
+
+    friend class UIWizardNewVM;
 };
 
 class UIWizardNewVMPageBasic2 : public UIWizardPage, public UIWizardNewVMPage2
 {
-    Q_OBJECT;
-    Q_PROPERTY(QString userName READ userName WRITE setUserName);
-    Q_PROPERTY(QString password READ password WRITE setPassword);
-    Q_PROPERTY(QString hostname READ hostname WRITE setHostname);
-    Q_PROPERTY(bool installGuestAdditions READ installGuestAdditions WRITE setInstallGuestAdditions);
-    Q_PROPERTY(QString guestAdditionsISOPath READ guestAdditionsISOPath WRITE setGuestAdditionsISOPath);
-    Q_PROPERTY(QString productKey READ productKey);
 
+    Q_OBJECT;
+    Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
+    Q_PROPERTY(bool isUnattendedEnabled READ isUnattendedEnabled);
+    Q_PROPERTY(QString detectedOSTypeId READ detectedOSTypeId);
 
 public:
 
     UIWizardNewVMPageBasic2();
+    virtual int nextId() const /* override */;
 
 protected:
 
     virtual void showEvent(QShowEvent *pEvent) /* override */;
     /** Don't reset the user entered values in case of "back" button press. */
     virtual void cleanupPage() /* override */;
+    virtual bool isComplete() const; /* override */
 
 private slots:
 
-    void sltInstallGACheckBoxToggle(bool fChecked);
-    void sltGAISOPathChanged(const QString &strPath);
+    void sltISOPathChanged(const QString &strPath);
 
 private:
 
@@ -122,12 +99,6 @@ private:
     void createConnections();
     void retranslateUi();
     void initializePage();
-    bool isComplete() const;
-    /** Returns true if we show the widgets for guest os product key. */
-    bool isProductKeyWidgetEnabled() const;
-
-    QIRichTextLabel *m_pLabel;
-    QToolBox *m_pToolBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic2_h */

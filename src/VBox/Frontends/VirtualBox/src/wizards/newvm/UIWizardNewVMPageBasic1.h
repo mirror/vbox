@@ -68,43 +68,25 @@ protected:
         void setMachineBaseName(const QString &strMachineBaseName);
 
         QString guestOSFamiyId() const;
-        QString ISOFilePath() const;
-        bool isUnattendedEnabled() const;
-        bool startHeadless() const;
-        const QString &detectedOSTypeId() const;
     /** @} */
 
-    bool determineOSType(const QString &strISOPath);
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
     void composeMachineFilePath();
 
-    QWidget *createNameOSTypeWidgets(bool fCreateUnattendedWidgets, bool fCreateLabels);
+    QWidget *createNameOSTypeWidgets(bool fCreateLabels);
     int createNameOSTypeWidgets(QGridLayout *pLayout, bool fCreateLabels = true);
-    void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     /** Colors the widgets red if they cause isComplete to fail. */
     void markWidgets() const;
-    bool isISOFileSelectorComplete() const;
     void retranslateWidgets();
 
     /** @name Widgets
      * @{ */
-       QLabel *m_pISOSelectorLabel;
-       /** Holds the ISO selector editor instance. */
-       mutable UIFilePathSelector *m_pISOFilePathSelector;
-       QCheckBox *m_pStartHeadlessCheckBox;
-       /** We have two UINameAndSystemEditor instance since name/vm path fields and OS type fields
-        * are separated. */
        UINameAndSystemEditor *m_pNameAndSystemEditor;
-       QIRichTextLabel *m_pUnattendedLabel;
        QIRichTextLabel *m_pNameOSTypeLabel;
     /** @} */
 
-    QString m_strDetectedOSTypeId;
 
 private:
-
-    /** Return false if ISO path is not empty but points to an missing or unreadable file. */
-    bool checkISOFile() const;
 
     /** Full path (including the file name) of the machine's configuration file. */
     QString m_strMachineFilePath;
@@ -132,16 +114,11 @@ class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
     Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
     Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
     Q_PROPERTY(QString guestOSFamiyId READ guestOSFamiyId);
-    Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
-    Q_PROPERTY(bool isUnattendedEnabled READ isUnattendedEnabled);
-    Q_PROPERTY(bool startHeadless READ startHeadless);
-    Q_PROPERTY(QString detectedOSTypeId READ detectedOSTypeId);
 
 public:
 
     /** Constructor. */
     UIWizardNewVMPageBasic1(const QString &strGroup);
-    virtual int nextId() const /* override */;
     virtual bool isComplete() const; /* override */
 
 protected:
@@ -155,7 +132,6 @@ private slots:
     void sltNameChanged(const QString &strNewText);
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
-    void sltISOPathChanged(const QString &strPath);
 
 private:
 

@@ -62,6 +62,7 @@ public:
         Page1,
         Page2,
         Page3,
+        Page4,
         PageMax
     };
 
@@ -97,7 +98,7 @@ protected:
     bool getBoolFieldValue(const QString &strFieldName) const;
 
     /* Who will be able to create virtual-machine: */
-    friend class UIWizardNewVMPageBasic3;
+    friend class UIWizardNewVMPageBasic4;
     friend class UIWizardNewVMPageExpert;
 
 private slots:

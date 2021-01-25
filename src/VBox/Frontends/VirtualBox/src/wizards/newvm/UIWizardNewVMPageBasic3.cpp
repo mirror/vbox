@@ -16,193 +16,229 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
+#include <QFileInfo>
 #include <QGridLayout>
-#include <QMetaType>
-#include <QRadioButton>
+#include <QLabel>
 #include <QToolBox>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
-#include "QIToolButton.h"
-#include "UIBaseMemoryEditor.h"
+#include "UICommon.h"
+#include "UIFilePathSelector.h"
 #include "UIIconPool.h"
-#include "UIMediaComboBox.h"
-#include "UIMedium.h"
-#include "UIMediumSelector.h"
-#include "UIMessageCenter.h"
-#include "UIVirtualCPUEditor.h"
-#include "UIWizardNewVD.h"
-#include "UIWizardNewVM.h"
+#include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVMPageBasic3.h"
+#include "UIWizardNewVM.h"
+
+/* COM includes: */
+#include "CHost.h"
+#include "CSystemProperties.h"
+#include "CUnattended.h"
 
 UIWizardNewVMPage3::UIWizardNewVMPage3()
-    : m_fRecommendedNoDisk(false)
-    , m_pDiskSkip(0)
-    , m_pDiskCreate(0)
-    , m_pDiskPresent(0)
-    , m_pDiskSelector(0)
-    , m_pVMMButton(0)
-    , m_pBaseMemoryEditor(0)
-    , m_pVirtualCPUEditor(0)
+    : m_pStartHeadlessCheckBox(0)
+    , m_pUserNamePasswordEditor(0)
+    , m_pHostnameLineEdit(0)
+    , m_pHostnameLabel(0)
+    , m_pGAInstallCheckBox(0)
+    , m_pGAISOPathLabel(0)
+    , m_pGAISOFilePathSelector(0)
+    , m_pProductKeyLineEdit(0)
+    , m_pProductKeyLabel(0)
+
 {
 }
 
-void UIWizardNewVMPage3::updateVirtualDiskSource()
+QString UIWizardNewVMPage3::userName() const
 {
-    if (!m_pDiskSelector || !m_pVMMButton)
-        return;
+    if (m_pUserNamePasswordEditor)
+        return m_pUserNamePasswordEditor->userName();
+    return QString();
+}
 
-    /* Enable/disable controls: */
-    m_pDiskSelector->setEnabled(m_pDiskPresent->isChecked());
-    m_pVMMButton->setEnabled(m_pDiskPresent->isChecked());
+void UIWizardNewVMPage3::setUserName(const QString &strName)
+{
+    if (m_pUserNamePasswordEditor)
+        m_pUserNamePasswordEditor->setUserName(strName);
+}
 
-    /* Fetch filed values: */
-    if (m_pDiskSkip->isChecked())
+QString UIWizardNewVMPage3::password() const
+{
+    if (m_pUserNamePasswordEditor)
+        return m_pUserNamePasswordEditor->password();
+    return QString();
+}
+
+void UIWizardNewVMPage3::setPassword(const QString &strPassword)
+{
+    if (m_pUserNamePasswordEditor)
+        return m_pUserNamePasswordEditor->setPassword(strPassword);
+}
+
+QString UIWizardNewVMPage3::hostname() const
+{
+    if (m_pHostnameLineEdit)
+        return m_pHostnameLineEdit->text();
+    return QString();
+}
+
+void UIWizardNewVMPage3::setHostname(const QString &strHostName)
+{
+    if (m_pHostnameLineEdit)
+        return m_pHostnameLineEdit->setText(strHostName);
+}
+
+bool UIWizardNewVMPage3::installGuestAdditions() const
+{
+    if (!m_pGAInstallCheckBox)
+        return false;
+    return m_pGAInstallCheckBox->isChecked();
+}
+
+void UIWizardNewVMPage3::setInstallGuestAdditions(bool fInstallGA)
+{
+    if (m_pGAInstallCheckBox)
+        m_pGAInstallCheckBox->setChecked(fInstallGA);
+}
+
+QString UIWizardNewVMPage3::guestAdditionsISOPath() const
+{
+    if (!m_pGAISOFilePathSelector)
+        return QString();
+    return m_pGAISOFilePathSelector->path();
+}
+
+void UIWizardNewVMPage3::setGuestAdditionsISOPath(const QString &strISOPath)
+{
+    if (m_pGAISOFilePathSelector)
+        m_pGAISOFilePathSelector->setPath(strISOPath);
+}
+
+QString UIWizardNewVMPage3::productKey() const
+{
+    if (!m_pProductKeyLineEdit || !m_pProductKeyLineEdit->hasAcceptableInput())
+        return QString();
+    return m_pProductKeyLineEdit->text();
+}
+
+QWidget *UIWizardNewVMPage3::createUserNameHostNameWidgets()
+{
+    QWidget *pContainer = new QWidget;
+    QGridLayout *pGridLayout = new QGridLayout(pContainer);
+    pGridLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_pUserNamePasswordEditor = new UIUserNamePasswordEditor;
+    pGridLayout->addWidget(m_pUserNamePasswordEditor, 0, 0, 1, 4);
+
+    m_pHostnameLabel = new QLabel;
+    m_pHostnameLabel->setAlignment(Qt::AlignRight);
+    m_pHostnameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+
+    m_pHostnameLineEdit = new QLineEdit;
+
+    pGridLayout->addWidget(m_pHostnameLabel,    1, 0, 1, 1);
+    pGridLayout->addWidget(m_pHostnameLineEdit, 1, 1, 1, 3);
+
+    return pContainer;
+}
+
+QWidget *UIWizardNewVMPage3::createGAInstallWidgets()
+{
+    QWidget *pContainer = new QWidget;
+    QGridLayout *pContainerLayout = new QGridLayout(pContainer);
+
+    m_pGAISOPathLabel = new QLabel;
     {
-        m_uVirtualDiskId = QUuid();
-        m_strVirtualDiskName = QString();
-        m_strVirtualDiskLocation = QString();
+        m_pGAISOPathLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        m_pGAISOPathLabel->setEnabled(false);
     }
-    else if (m_pDiskPresent->isChecked())
+    m_pGAISOFilePathSelector = new UIFilePathSelector;
     {
-        m_uVirtualDiskId = m_pDiskSelector->id();
-        m_strVirtualDiskName = m_pDiskSelector->currentText();
-        m_strVirtualDiskLocation = m_pDiskSelector->location();
+        m_pGAISOFilePathSelector->setResetEnabled(false);
+        m_pGAISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+        m_pGAISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+        m_pGAISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+        m_pGAISOFilePathSelector->setEnabled(false);
     }
+
+    pContainerLayout->addWidget(m_pGAISOPathLabel, 1, 1, 1, 1);
+    pContainerLayout->addWidget(m_pGAISOFilePathSelector, 1, 2, 1, 4);
+    return pContainer;
 }
 
-void UIWizardNewVMPage3::getWithFileOpenDialog()
+QWidget *UIWizardNewVMPage3::createProductKeyWidgets()
 {
-    /* Get opened medium id: */
-    QUuid uMediumId;
+    QWidget *pContainer = new QWidget;
+    QGridLayout *pGridLayout = new QGridLayout(pContainer);
+    pGridLayout->setContentsMargins(0, 0, 0, 0);
+    m_pProductKeyLabel = new QLabel;
+    m_pProductKeyLabel->setAlignment(Qt::AlignRight);
 
-    int returnCode = uiCommon().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_HardDisk,
-                                                           uMediumId,
-                                                           fieldImp("machineFolder").toString(),
-                                                           fieldImp("machineBaseName").toString(),
-                                                           fieldImp("type").value<CGuestOSType>().GetId(),
-                                                           false /* don't show/enable the create action: */);
+    m_pProductKeyLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
-    if (returnCode == static_cast<int>(UIMediumSelector::ReturnCode_Accepted) && !uMediumId.isNull())
-    {
-        /* Update medium-combo if necessary: */
-        m_pDiskSelector->setCurrentItem(uMediumId);
-        /* Update hard disk source: */
-        updateVirtualDiskSource();
-        /* Focus on hard disk combo: */
-        m_pDiskSelector->setFocus();
-    }
+    m_pProductKeyLineEdit = new QLineEdit;
+    m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
+    pGridLayout->addWidget(m_pProductKeyLabel, 0, 0, 1, 1);
+    pGridLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 3);
+    return pContainer;
 }
 
-bool UIWizardNewVMPage3::getWithNewVirtualDiskWizard()
+bool UIWizardNewVMPage3::checkGAISOFile() const
 {
-    /* Create New Virtual Hard Drive wizard: */
-    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(thisImp(),
-                                                         fieldImp("machineBaseName").toString(),
-                                                         fieldImp("machineFolder").toString(),
-                                                         fieldImp("type").value<CGuestOSType>().GetRecommendedHDD(),
-                                                         wizardImp()->mode());
-    pWizard->prepare();
-    bool fResult = false;
-    if (pWizard->exec() == QDialog::Accepted)
-    {
-        fResult = true;
-        m_virtualDisk = pWizard->virtualDisk();
-        m_pDiskSelector->setCurrentItem(m_virtualDisk.GetId());
-        m_pDiskPresent->click();
-    }
-    if (pWizard)
-        delete pWizard;
-    return fResult;
+    if (!m_pGAISOFilePathSelector)
+        return false;
+    /* GA ISO selector should not be empty since GA install check box is checked at this point: */
+    const QString &strPath = m_pGAISOFilePathSelector->path();
+    if (strPath.isNull() || strPath.isEmpty())
+        return false;
+    QFileInfo fileInfo(strPath);
+    if (!fileInfo.exists() || !fileInfo.isReadable())
+        return false;
+    return true;
 }
 
-int UIWizardNewVMPage3::baseMemory() const
+void UIWizardNewVMPage3::markWidgets() const
 {
-    if (!m_pBaseMemoryEditor)
-        return 0;
-    return m_pBaseMemoryEditor->value();
-}
-
-int UIWizardNewVMPage3::VCPUCount() const
-{
-    if (!m_pVirtualCPUEditor)
-        return 1;
-    return m_pVirtualCPUEditor->value();
-}
-
-void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
-{
-    /* Make sure virtual-disk valid: */
-    if (m_virtualDisk.isNull())
-        return;
-
-    /* Remember virtual-disk attributes: */
-    QString strLocation = m_virtualDisk.GetLocation();
-    /* Prepare delete storage progress: */
-    CProgress progress = m_virtualDisk.DeleteStorage();
-    if (m_virtualDisk.isOk())
-    {
-        /* Show delete storage progress: */
-        msgCenter().showModalProgressDialog(progress, thisImp()->windowTitle(), ":/progress_media_delete_90px.png", thisImp());
-        if (!progress.isOk() || progress.GetResultCode() != 0)
-            msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, thisImp());
-    }
-    else
-        msgCenter().cannotDeleteHardDiskStorage(m_virtualDisk, strLocation, thisImp());
-
-    /* Detach virtual-disk anyway: */
-    m_virtualDisk.detach();
+    if (m_pGAISOFilePathSelector && m_pGAInstallCheckBox && m_pGAInstallCheckBox->isChecked())
+        m_pGAISOFilePathSelector->mark(!checkGAISOFile());
 }
 
 void UIWizardNewVMPage3::retranslateWidgets()
 {
-    m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
-    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
-    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
-    m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+    if (m_pHostnameLabel)
+        m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
+
+    if (m_pGAISOPathLabel)
+        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA Installation ISO:"));
+    if (m_pGAISOFilePathSelector)
+        m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
+    if (m_pGAInstallCheckBox)
+        m_pGAInstallCheckBox->setText(UIWizardNewVM::tr("Install Guest Additions"));
+    if (m_pProductKeyLabel)
+        m_pProductKeyLabel->setText(UIWizardNewVM::tr("Product Key:"));
+    if (m_pStartHeadlessCheckBox)
+    {
+        m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("Start VM Headless"));
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked, the unattended install will start the virtual "
+                                                               "machine in headless mode after the guest OS install."));
+    }
 }
 
-QWidget *UIWizardNewVMPage3::createDiskWidgets()
+void UIWizardNewVMPage3::disableEnableGAWidgets(bool fEnabled)
 {
-    QWidget *pDiskContainer = new QWidget;
-    QGridLayout *pDiskLayout = new QGridLayout(pDiskContainer);
-
-    m_pDiskSkip = new QRadioButton;
-    m_pDiskCreate = new QRadioButton;
-    m_pDiskPresent = new QRadioButton;
-    QStyleOptionButton options;
-    options.initFrom(m_pDiskPresent);
-    int iWidth = m_pDiskPresent->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskPresent);
-    pDiskLayout->setColumnMinimumWidth(0, iWidth);
-    m_pDiskSelector = new UIMediaComboBox;
-    {
-        m_pDiskSelector->setType(UIMediumDeviceType_HardDisk);
-        m_pDiskSelector->repopulate();
-    }
-    m_pVMMButton = new QIToolButton;
-    {
-        m_pVMMButton->setAutoRaise(true);
-        m_pVMMButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
-    }
-    pDiskLayout->addWidget(m_pDiskSkip, 0, 0, 1, 3);
-    pDiskLayout->addWidget(m_pDiskCreate, 1, 0, 1, 3);
-    pDiskLayout->addWidget(m_pDiskPresent, 2, 0, 1, 3);
-    pDiskLayout->addWidget(m_pDiskSelector, 3, 1);
-    pDiskLayout->addWidget(m_pVMMButton, 3, 2);
-    return pDiskContainer;
+    if (m_pGAISOPathLabel)
+        m_pGAISOPathLabel->setEnabled(fEnabled);
+    if (m_pGAISOFilePathSelector)
+        m_pGAISOFilePathSelector->setEnabled(fEnabled);
 }
 
-QWidget *UIWizardNewVMPage3::createHardwareWidgets()
+bool UIWizardNewVMPage3::startHeadless() const
 {
-    QWidget *pHardwareContainer = new QWidget;
-    QGridLayout *pHardwareLayout = new QGridLayout(pHardwareContainer);
-
-    m_pBaseMemoryEditor = new UIBaseMemoryEditor(0, true);
-    m_pVirtualCPUEditor = new UIVirtualCPUEditor(0, true);
-    pHardwareLayout->addWidget(m_pBaseMemoryEditor, 0, 0, 1, 4);
-    pHardwareLayout->addWidget(m_pVirtualCPUEditor, 1, 0, 1, 4);
-    return pHardwareContainer;
+    if (!m_pStartHeadlessCheckBox)
+        return false;
+    return m_pStartHeadlessCheckBox->isChecked();
 }
 
 UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
@@ -210,171 +246,117 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
     , m_pToolBox(0)
 {
     prepare();
-    qRegisterMetaType<CMedium>();
-    registerField("virtualDisk", this, "virtualDisk");
-    registerField("virtualDiskId", this, "virtualDiskId");
-    registerField("virtualDiskName", this, "virtualDiskName");
-    registerField("virtualDiskLocation", this, "virtualDiskLocation");
-    registerField("baseMemory", this, "baseMemory");
-    registerField("VCPUCount", this, "VCPUCount");
 }
 
 void UIWizardNewVMPageBasic3::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     m_pToolBox = new QToolBox;
-
-    m_pLabel = new QIRichTextLabel(this);
-    pMainLayout->addWidget(m_pLabel);
     pMainLayout->addWidget(m_pToolBox);
 
-    m_pToolBox->insertItem(ToolBoxItems_Disk, createDiskWidgets(), QString());
-    m_pToolBox->insertItem(ToolBoxItems_Hardware, createHardwareWidgets(), QString());
-    m_pToolBox->setStyleSheet("QToolBox::tab:selected { font: bold; }");
+    {
+        m_pLabel = new QIRichTextLabel(this);
+        if (m_pLabel)
+            pMainLayout->addWidget(m_pLabel);
+        pMainLayout->addWidget(m_pToolBox);
+        pMainLayout->addStretch();
+    }
 
-    pMainLayout->addStretch();
-    updateVirtualDiskSource();
+    m_pToolBox->insertItem(ToolBoxItems_UserNameHostname, createUserNameHostNameWidgets(), QString());
+    m_pToolBox->insertItem(ToolBoxItems_GAInstall, createGAInstallWidgets(), QString());
+    m_pToolBox->insertItem(ToolBoxItems_ProductKey, createProductKeyWidgets(), QString());
+
+    registerField("userName", this, "userName");
+    registerField("password", this, "password");
+    registerField("hostname", this, "hostname");
+    registerField("installGuestAdditions", this, "installGuestAdditions");
+    registerField("guestAdditionsISOPath", this, "guestAdditionsISOPath");
+    registerField("productKey", this, "productKey");
+
     createConnections();
 }
 
 void UIWizardNewVMPageBasic3::createConnections()
 {
-    connect(m_pDiskSkip, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
-    connect(m_pDiskCreate, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
-    connect(m_pDiskPresent, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
-    connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
-    connect(m_pVMMButton, &QIToolButton::clicked,
-            this, &UIWizardNewVMPageBasic3::sltGetWithFileOpenDialog);
-}
-
-void UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged()
-{
-    /* Call to base-class: */
-    updateVirtualDiskSource();
-
-    /* Broadcast complete-change: */
-    emit completeChanged();
-}
-
-void UIWizardNewVMPageBasic3::sltGetWithFileOpenDialog()
-{
-    /* Call to base-class: */
-    getWithFileOpenDialog();
+    if (m_pUserNamePasswordEditor)
+        connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
+                this, &UIWizardNewVMPageBasic3::completeChanged);
+    if (m_pGAISOFilePathSelector)
+        connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
+                this, &UIWizardNewVMPageBasic3::sltGAISOPathChanged);
 }
 
 void UIWizardNewVMPageBasic3::retranslateUi()
 {
-    /* Translate page: */
-    setTitle(UIWizardNewVM::tr("Hard disk and Hardware"));
-
-    /* Translate widgets: */
-    QString strRecommendedHDD = field("type").value<CGuestOSType>().isNull() ? QString() :
-                                UICommon::formatSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
-    m_pLabel->setText(UIWizardNewVM::tr("<p>If you wish you can add a virtual hard disk to the new machine. "
-                                        "You can either create a new hard disk file or select one from the list "
-                                        "or from another location using the folder icon. "
-                                        "If you need a more complex storage set-up you can skip this step "
-                                        "and make the changes to the machine settings once the machine is created. "
-                                        "The recommended size of the hard disk is <b>%1</b>."
-                                        "<p>You can also modify the virtual machine's hardware by modifying the amount of memory "
-                                        "and virtual processors.</p>")
-                                        .arg(strRecommendedHDD));
+    setTitle(UIWizardNewVM::tr("Unattended Guest OS Install Setup"));
+    if (m_pLabel)
+        m_pLabel->setText(UIWizardNewVM::tr("<p>Here you can configure the unattended install by modifying username, password, and "
+                                            "hostname. You can additionally enable guest additions install. "
+                                            "For Microsoft Windows guests it is possible to provide a product key..</p>"));
     retranslateWidgets();
     if (m_pToolBox)
     {
-        m_pToolBox->setItemText(ToolBoxItems_Disk, UIWizardNewVM::tr("Hard Disk"));
-        m_pToolBox->setItemText(ToolBoxItems_Hardware, UIWizardNewVM::tr("Hardware"));
+        m_pToolBox->setItemText(ToolBoxItems_UserNameHostname, UIWizardNewVM::tr("Username and hostname"));
+        m_pToolBox->setItemText(ToolBoxItems_GAInstall, UIWizardNewVM::tr("Guest additions install"));
+        m_pToolBox->setItemText(ToolBoxItems_ProductKey, UIWizardNewVM::tr("Product key"));
     }
 }
 
 void UIWizardNewVMPageBasic3::initializePage()
 {
-    /* Translate page: */
     retranslateUi();
-
-    if (!field("type").canConvert<CGuestOSType>())
-        return;
-
-    CGuestOSType type = field("type").value<CGuestOSType>();
-    ULONG recommendedRam = type.GetRecommendedRAM();
-    m_pBaseMemoryEditor->setValue(recommendedRam);
-
-
-    /* Prepare initial disk choice: */
-    if (type.GetRecommendedHDD() != 0)
-    {
-        if (m_pDiskCreate)
-        {
-            m_pDiskCreate->setFocus();
-            m_pDiskCreate->setChecked(true);
-        }
-        m_fRecommendedNoDisk = false;
-    }
-    else
-    {
-        if (m_pDiskSkip)
-        {
-            m_pDiskSkip->setFocus();
-            m_pDiskSkip->setChecked(true);
-        }
-        m_fRecommendedNoDisk = true;
-    }
-    if (m_pDiskSelector)
-        m_pDiskSelector->setCurrentIndex(0);
-}
-
-void UIWizardNewVMPageBasic3::cleanupPage()
-{
-    /* Call to base-class: */
-    ensureNewVirtualDiskDeleted();
-    UIWizardPage::cleanupPage();
 }
 
 bool UIWizardNewVMPageBasic3::isComplete() const
 {
-    /* Make sure 'virtualDisk' field feats the rules: */
-    return m_pDiskSkip->isChecked() ||
-           !m_pDiskPresent->isChecked() ||
-           !uiCommon().medium(m_pDiskSelector->id()).isNull();
+    AssertReturn(m_pToolBox, false);
+
+    m_pToolBox->setItemIcon(ToolBoxItems_UserNameHostname, QIcon());
+    m_pToolBox->setItemIcon(ToolBoxItems_GAInstall, QIcon());
+    m_pToolBox->setItemIcon(ToolBoxItems_ProductKey, QIcon());
+
+    markWidgets();
+    bool fIsComplete = true;
+    if (!checkGAISOFile())
+    {
+        m_pToolBox->setItemIcon(ToolBoxItems_GAInstall, UIIconPool::iconSet(":/status_error_16px.png"));
+        fIsComplete = false;
+    }
+    if (m_pUserNamePasswordEditor && !m_pUserNamePasswordEditor->isComplete())
+    {
+        m_pToolBox->setItemIcon(ToolBoxItems_UserNameHostname, UIIconPool::iconSet(":/status_error_16px.png"));
+        fIsComplete = false;
+    }
+    return fIsComplete;
 }
 
-bool UIWizardNewVMPageBasic3::validatePage()
+void UIWizardNewVMPageBasic3::cleanupPage()
 {
-    /* Initial result: */
-    bool fResult = true;
+}
 
-    /* Ensure unused virtual-disk is deleted: */
-    if (m_pDiskSkip->isChecked() || m_pDiskCreate->isChecked() || (!m_virtualDisk.isNull() && m_uVirtualDiskId != m_virtualDisk.GetId()))
-        ensureNewVirtualDiskDeleted();
+void UIWizardNewVMPageBasic3::showEvent(QShowEvent *pEvent)
+{
+    if (m_pToolBox)
+        m_pToolBox->setItemEnabled(ToolBoxItems_ProductKey, isProductKeyWidgetEnabled());
+    UIWizardPage::showEvent(pEvent);
+}
 
-    if (m_pDiskSkip->isChecked())
-    {
-        /* Ask user about disk-less machine unless that's the recommendation: */
-        if (!m_fRecommendedNoDisk)
-            fResult = msgCenter().confirmHardDisklessMachine(thisImp());
-    }
-    else if (m_pDiskCreate->isChecked())
-    {
-        /* Show the New Virtual Hard Drive wizard: */
-        fResult = getWithNewVirtualDiskWizard();
-    }
+void UIWizardNewVMPageBasic3::sltInstallGACheckBoxToggle(bool fEnabled)
+{
+    disableEnableGAWidgets(fEnabled);
+    emit completeChanged();
+}
 
-    if (fResult)
-    {
-        /* Lock finish button: */
-        startProcessing();
+void UIWizardNewVMPageBasic3::sltGAISOPathChanged(const QString &strPath)
+{
+    Q_UNUSED(strPath);
+    emit completeChanged();
+}
 
-        /* Try to create VM: */
-        fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
-
-        /* Unlock finish button: */
-        endProcessing();
-    }
-
-    /* Return result: */
-    return fResult;
+bool UIWizardNewVMPageBasic3::isProductKeyWidgetEnabled() const
+{
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (!pWizard || !pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
+        return false;
+    return true;
 }

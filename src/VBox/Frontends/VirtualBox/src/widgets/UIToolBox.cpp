@@ -49,7 +49,7 @@ public:
     /* @p pWidget's ownership is transferred to the page. */
     void setWidget(QWidget *pWidget);
     void setTitleBackgroundColor(const QColor &color);
-    void setPageWidgetVisible(bool fVisible);
+    void setExpanded(bool fExpanded);
     int index() const;
     void setIndex(int iIndex);
     int totalHeight() const;
@@ -68,15 +68,20 @@ private slots:
 private:
 
     void prepare(bool fEnableCheckBoxEnabled);
+    void setExpandCollapseIcon();
 
+    bool         m_fExpanded;
     QVBoxLayout *m_pLayout;
     QWidget     *m_pTitleContainerWidget;
     QLabel      *m_pTitleLabel;
     QLabel      *m_pIconLabel;
+    QLabel      *m_pExpandCollapseIconLabel;
     QCheckBox   *m_pEnableCheckBox;
 
     QWidget     *m_pWidget;
     int          m_iIndex;
+    bool         m_fExpandCollapseIconVisible;
+    QIcon        m_expandCollapseIcon;
 };
 
 /*********************************************************************************************************************************
@@ -85,13 +90,16 @@ private:
 
 UIToolBoxPage::UIToolBoxPage(bool fEnableCheckBoxEnabled /* = false */, QWidget *pParent /* = 0 */)
     :QWidget(pParent)
+    , m_fExpanded(false)
     , m_pLayout(0)
     , m_pTitleContainerWidget(0)
     , m_pTitleLabel(0)
     , m_pIconLabel(0)
+    , m_pExpandCollapseIconLabel(0)
     , m_pEnableCheckBox(0)
     , m_pWidget(0)
     , m_iIndex(0)
+    , m_fExpandCollapseIconVisible(true)
 {
     prepare(fEnableCheckBoxEnabled);
 }
@@ -105,6 +113,8 @@ void UIToolBoxPage::setTitle(const QString &strTitle)
 
 void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
 {
+    m_expandCollapseIcon = UIIconPool::iconSet(":/expanding_collapsing_16px.png");
+
     m_pLayout = new QVBoxLayout(this);
     m_pLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -115,6 +125,11 @@ void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
                                      .4f * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin),
                                      qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin),
                                      .4f * qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
+
+    m_pExpandCollapseIconLabel = new QLabel;
+    if (m_pExpandCollapseIconLabel)
+        pTitleLayout->addWidget(m_pExpandCollapseIconLabel);
+
     if (fEnableCheckBoxEnabled)
     {
         m_pEnableCheckBox = new QCheckBox;
@@ -131,6 +146,8 @@ void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
     pTitleLayout->addStretch();
     m_pTitleContainerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_pLayout->addWidget(m_pTitleContainerWidget);
+
+    setExpandCollapseIcon();
 }
 
 void UIToolBoxPage::setWidget(QWidget *pWidget)
@@ -156,10 +173,12 @@ void UIToolBoxPage::setTitleBackgroundColor(const QColor &color)
     m_pTitleContainerWidget->setAutoFillBackground(true);
 }
 
-void UIToolBoxPage::setPageWidgetVisible(bool fVisible)
+void UIToolBoxPage::setExpanded(bool fVisible)
 {
     if (m_pWidget)
         m_pWidget->setVisible(fVisible);
+    m_fExpanded = fVisible;
+    setExpandCollapseIcon();
 }
 
 int UIToolBoxPage::index() const
@@ -186,8 +205,8 @@ void UIToolBoxPage::setTitleIcon(const QIcon &icon)
         m_pIconLabel->setPixmap(QPixmap());
         return;
     }
-    const int iMetricSmall = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-    m_pIconLabel->setPixmap(icon.pixmap(windowHandle(), QSize(iMetricSmall, iMetricSmall)));
+    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    m_pIconLabel->setPixmap(icon.pixmap(windowHandle(), QSize(iMetric, iMetric)));
 }
 
 int UIToolBoxPage::titleHeight() const
@@ -221,6 +240,27 @@ void UIToolBoxPage::sltHandleEnableToggle(int iState)
         m_pWidget->setEnabled(iState == Qt::Checked);
 }
 
+void UIToolBoxPage::setExpandCollapseIcon()
+{
+    if (!m_pExpandCollapseIconLabel)
+        return;
+    if (!m_fExpandCollapseIconVisible)
+    {
+        m_pExpandCollapseIconLabel->setVisible(false);
+        return;
+    }
+    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    if (m_fExpanded)
+    {
+        QTransform transform;
+        transform.rotate(90);
+        m_pExpandCollapseIconLabel->setPixmap(m_expandCollapseIcon.pixmap(windowHandle(), QSize(iMetric, iMetric)).transformed(transform));
+    }
+    else
+    {
+        m_pExpandCollapseIconLabel->setPixmap(m_expandCollapseIcon.pixmap(windowHandle(), QSize(iMetric, iMetric)));
+    }
+}
 
 /*********************************************************************************************************************************
 *   UIToolBox implementation.                                                                                    *
@@ -300,9 +340,9 @@ void UIToolBox::setCurrentPage(int iIndex)
     if (iterator == m_pages.end())
         return;
     foreach(UIToolBoxPage *pPage, m_pages)
-        pPage->setPageWidgetVisible(false);
+        pPage->setExpanded(false);
 
-    iterator.value()->setPageWidgetVisible(true);
+    iterator.value()->setExpanded(true);
 }
 
 void UIToolBox::retranslateUi()
