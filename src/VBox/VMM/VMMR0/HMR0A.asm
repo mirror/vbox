@@ -777,7 +777,7 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
  %define frm_uHostXcr0       -020h              ; 128-bit
  %define frm_saved_gdtr      -02ah              ; 16+64:  Only used when VMX_SKIP_GDTR isn't defined
  %define frm_saved_tr        -02ch              ; 16-bit: Only used when VMX_SKIP_TR isn't defined
- ;%define frm_fNoRestoreXcr0  -030h              ; 32-bit: Non-zero if we should skip XCR0 restoring.
+ %define frm_MDS_seg         -030h              ; 16-bit: Temporary storage for the MDS flushing.
  %define frm_saved_idtr      -03ah              ; 16+64:  Only used when VMX_SKIP_IDTR isn't defined
  %define frm_saved_ldtr      -03ch              ; 16-bit: always saved.
  %define frm_rcError         -040h              ; 32-bit: Error status code (not used in the success path)
@@ -887,9 +887,24 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
         jne     .write_host_rsp
 .wrote_host_rsp:
 
- %if %3 & CPUMCTX_WSF_IBPB_EXIT
+        ;
         ; Fight spectre and similar. Trashes rax, rcx, and rdx.
-        INDIRECT_BRANCH_PREDICTION_AND_L1_CACHE_BARRIER rdi, CPUMCTX_WSF_IBPB_ENTRY, CPUMCTX_WSF_L1D_ENTRY, CPUMCTX_WSF_MDS_ENTRY
+        ;
+ %if %3 & (CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY)  ; The eax:edx value is the same for the first two.
+        AssertCompile(MSR_IA32_PRED_CMD_F_IBPB == MSR_IA32_FLUSH_CMD_F_L1D)
+        mov     eax, MSR_IA32_PRED_CMD_F_IBPB
+        xor     edx, edx
+ %endif
+ %if %3 & CPUMCTX_WSF_IBPB_ENTRY        ; Indirect branch barrier.
+        mov     ecx, MSR_IA32_PRED_CMD
+        wrmsr
+ %endif
+ %if %3 & CPUMCTX_WSF_L1D_ENTRY         ; Level 1 data cache flush.
+        mov     ecx, MSR_IA32_FLUSH_CMD
+        wrmsr
+ %elif %3 & CPUMCTX_WSF_MDS_ENTRY       ; MDS flushing is included in L1D_FLUSH
+        mov     word [rbp + frm_MDS_seg], ds
+        verw    word [rbp + frm_MDS_seg]
  %endif
 
         ; Resume or start VM?
@@ -1017,10 +1032,13 @@ GLOBALNAME RT_CONCAT(hmR0VmxStartVmHostRIP,%1)
         mov     qword [rax + CPUMCTX.cr2], rdx
         mov     rdx, rcx
 
-  %if %1 = 0 ; Skip this in failure branch (=> guru)
-   %if %3 & CPUMCTX_WSF_IBPB_EXIT
-        ; Fight spectre.
-        INDIRECT_BRANCH_PREDICTION_BARRIER_CTX rax, CPUMCTX_WSF_IBPB_EXIT
+  %if %3 & CPUMCTX_WSF_IBPB_EXIT
+        ; Fight spectre (trashes rax, rdx and rcx).
+   %if %1 = 0 ; Skip this in failure branch (=> guru)
+        mov     ecx, MSR_IA32_PRED_CMD
+        mov     eax, MSR_IA32_PRED_CMD_F_IBPB
+        xor     edx, edx
+        wrmsr
    %endif
   %endif
 
@@ -1460,7 +1478,6 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         mov     r8, rax
  %endif
 
-        ; Fight spectre.  Note! Trashes rax, rdx and rcx!
  %if %3 & CPUMCTX_WSF_IBPB_EXIT
         ; Fight spectre (trashes rax, rdx and rcx).
         mov     ecx, MSR_IA32_PRED_CMD
