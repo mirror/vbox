@@ -48,51 +48,20 @@ protected:
     /** Constructor. */
     UIWizardNewVMPage4();
 
-    /** Handlers. */
-    void updateVirtualDiskSource();
-    void getWithFileOpenDialog();
-    bool getWithNewVirtualDiskWizard();
-
 
     /** @name Property getters/setters
      * @{ */
-       CMedium virtualDisk() const { return m_virtualDisk; }
-       void setVirtualDisk(const CMedium &virtualDisk) { m_virtualDisk = virtualDisk; }
-       QUuid virtualDiskId() const { return m_uVirtualDiskId; }
-       void setVirtualDiskId(const QUuid &uVirtualDiskId) { m_uVirtualDiskId = uVirtualDiskId; }
-       QString virtualDiskName() const { return m_strVirtualDiskName; }
-       void setVirtualDiskName(const QString &strVirtualDiskName) { m_strVirtualDiskName = strVirtualDiskName; }
-       QString virtualDiskLocation() const { return m_strVirtualDiskLocation; }
-       void setVirtualDiskLocation(const QString &strVirtualDiskLocation) { m_strVirtualDiskLocation = strVirtualDiskLocation; }
        int baseMemory() const;
        int VCPUCount() const;
     /** @} */
 
-    QWidget *createDiskWidgets();
     QWidget *createHardwareWidgets();
-
-    /** Helpers. */
-    void ensureNewVirtualDiskDeleted();
     void retranslateWidgets();
 
-    /** Input. */
-    bool m_fRecommendedNoDisk;
 
-    /** @name Variables
-     * @{ */
-       CMedium m_virtualDisk;
-       QUuid   m_uVirtualDiskId;
-       QString m_strVirtualDiskName;
-       QString m_strVirtualDiskLocation;
-    /** @} */
 
     /** @name Widgets
      * @{ */
-       QRadioButton *m_pDiskSkip;
-       QRadioButton *m_pDiskCreate;
-       QRadioButton *m_pDiskPresent;
-       UIMediaComboBox *m_pDiskSelector;
-       QIToolButton *m_pVMMButton;
        UIBaseMemoryEditor *m_pBaseMemoryEditor;
        UIVirtualCPUEditor *m_pVirtualCPUEditor;
     /** @} */
@@ -103,10 +72,6 @@ protected:
 class UIWizardNewVMPageBasic4 : public UIWizardPage, public UIWizardNewVMPage4
 {
     Q_OBJECT;
-    Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
-    Q_PROPERTY(QUuid virtualDiskId READ virtualDiskId WRITE setVirtualDiskId);
-    Q_PROPERTY(QString virtualDiskName READ virtualDiskName WRITE setVirtualDiskName);
-    Q_PROPERTY(QString virtualDiskLocation READ virtualDiskLocation WRITE setVirtualDiskLocation);
     Q_PROPERTY(int baseMemory READ baseMemory);
     Q_PROPERTY(int VCPUCount READ VCPUCount);
 
@@ -126,9 +91,6 @@ protected:
 
 private slots:
 
-    /** Handlers. */
-    void sltVirtualDiskSourceChanged();
-    void sltGetWithFileOpenDialog();
 
 private:
 
@@ -140,9 +102,7 @@ private:
     void initializePage();
     void cleanupPage();
 
-    /** Validation stuff. */
     bool isComplete() const;
-    bool validatePage();
 
     /** Widgets. */
     QIRichTextLabel *m_pLabel;

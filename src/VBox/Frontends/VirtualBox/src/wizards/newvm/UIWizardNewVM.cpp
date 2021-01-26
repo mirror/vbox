@@ -26,6 +26,7 @@
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVMPageBasic4.h"
+#include "UIWizardNewVMPageBasic5.h"
 #include "UIWizardNewVMPageExpert.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
@@ -83,6 +84,7 @@ void UIWizardNewVM::prepare()
             setPage(Page2, new UIWizardNewVMPageBasic2);
             setPage(Page3, new UIWizardNewVMPageBasic3);
             setPage(Page4, new UIWizardNewVMPageBasic4);
+            setPage(Page5, new UIWizardNewVMPageBasic5);
             setStartId(Page1);
             break;
         }
