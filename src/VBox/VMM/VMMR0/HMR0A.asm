@@ -46,6 +46,9 @@
 ;;
 ; Determine skipping restoring of GDTR, IDTR, TR across VMX non-root operation.
 ;
+; @note This is normally done by hmR0VmxExportHostSegmentRegs and VMXRestoreHostState,
+;       so much of this is untested code.
+; @{
 %define VMX_SKIP_GDTR
 %define VMX_SKIP_TR
 %define VBOX_SKIP_RESTORE_SEG
@@ -53,12 +56,13 @@
  ; Load the NULL selector into DS, ES, FS and GS on 64-bit darwin so we don't
  ; risk loading a stale LDT value or something invalid.
  %define HM_64_BIT_USE_NULL_SEL
- ; Darwin (Mavericks) uses IDTR limit to store the CPU Id so we need to restore it always.
+ ; Darwin (Mavericks) uses IDTR limit to store the CPU number so we need to always restore it.
  ; See @bugref{6875}.
+ %undef VMX_SKIP_IDTR
 %else
  %define VMX_SKIP_IDTR
 %endif
-
+;; @}
 
 ;; @def CALLEE_PRESERVED_REGISTER_COUNT
 ; Number of registers pushed by PUSH_CALLEE_PRESERVED_REGISTERS
@@ -142,24 +146,15 @@
         %undef  frm_saved_r15
 %endmacro
 
+
 ;; @def PUSH_RELEVANT_SEGMENT_REGISTERS
 ; Macro saving all segment registers on the stack.
 ; @param 1  Full width register name.
 ; @param 2  16-bit register name for \a 1.
-
-;; @def POP_RELEVANT_SEGMENT_REGISTERS
-; Macro restoring all segment registers on the stack.
-; @param 1  Full width register name.
-; @param 2  16-bit register name for \a 1.
-%ifdef VBOX_SKIP_RESTORE_SEG
- %macro PUSH_RELEVANT_SEGMENT_REGISTERS 2
- %endmacro
-
- %macro POP_RELEVANT_SEGMENT_REGISTERS 2
- %endmacro
-%else       ; !VBOX_SKIP_RESTORE_SEG
- ; Trashes, rax, rdx & rcx.
- %macro PUSH_RELEVANT_SEGMENT_REGISTERS 2
+; @cobbers rax, rdx, rcx
+%macro PUSH_RELEVANT_SEGMENT_REGISTERS 2
+ %ifndef VBOX_SKIP_RESTORE_SEG
+  %error untested code. probably does not work any more!
   %ifndef HM_64_BIT_USE_NULL_SEL
         mov     %2, es
         push    %1
@@ -186,10 +181,17 @@
   %ifndef HM_64_BIT_USE_NULL_SEL
         push    gs
   %endif
- %endmacro
+ %endif   ; !VBOX_SKIP_RESTORE_SEG
+%endmacro ; PUSH_RELEVANT_SEGMENT_REGISTERS
 
- ; trashes, rax, rdx & rcx
- %macro POP_RELEVANT_SEGMENT_REGISTERS 2
+;; @def POP_RELEVANT_SEGMENT_REGISTERS
+; Macro restoring all segment registers on the stack.
+; @param 1  Full width register name.
+; @param 2  16-bit register name for \a 1.
+; @cobbers rax, rdx, rcx
+%macro POP_RELEVANT_SEGMENT_REGISTERS 2
+ %ifndef VBOX_SKIP_RESTORE_SEG
+  %error untested code. probably does not work any more!
         ; Note: do not step through this code with a debugger!
   %ifndef HM_64_BIT_USE_NULL_SEL
         xor     eax, eax
@@ -222,8 +224,8 @@
         pop     %1
         mov     es, %2
   %endif
- %endmacro
-%endif ; VBOX_SKIP_RESTORE_SEG
+ %endif   ; !VBOX_SKIP_RESTORE_SEG
+%endmacro ; POP_RELEVANT_SEGMENT_REGISTERS
 
 
 ;;
@@ -739,106 +741,6 @@ ENDPROC   hmR0VMXStartVMWrapXMM
 %endif ; VBOX_WITH_KERNEL_USING_XMM
 
 
-;; @def RESTORE_STATE_VM64
-; Macro restoring essential host state and updating guest state
-; for 64-bit host, 64-bit guest for VT-x.
-;
-%macro RESTORE_STATE_VM64 0
-        ; Restore base and limit of the IDTR & GDTR.
- %ifndef VMX_SKIP_IDTR
-        lidt    [xSP]
-        add     xSP, xCB * 2
- %endif
- %ifndef VMX_SKIP_GDTR
-        lgdt    [xSP]
-        add     xSP, xCB * 2
- %endif
-
-        ; Save the guest state.
-        push    xDI
- %ifndef VMX_SKIP_TR
-        mov     xDI, [xSP + xCB * 3]        ; pCtx (*3 to skip the saved xDI, TR, LDTR)
- %else
-        mov     xDI, [xSP + xCB * 2]        ; pCtx (*2 to skip the saved xDI, LDTR)
- %endif
-
-        mov     qword [xDI + CPUMCTX.eax], rax
-        mov     rax, SPECTRE_FILLER
-        mov     qword [xDI + CPUMCTX.ebx], rbx
-        mov     rbx, rax
-        mov     qword [xDI + CPUMCTX.ecx], rcx
-        mov     rcx, rax
-        mov     qword [xDI + CPUMCTX.edx], rdx
-        mov     rdx, rax
-        mov     qword [xDI + CPUMCTX.esi], rsi
-        mov     rsi, rax
-        mov     qword [xDI + CPUMCTX.ebp], rbp
-        mov     rbp, rax
-        mov     qword [xDI + CPUMCTX.r8],  r8
-        mov     r8, rax
-        mov     qword [xDI + CPUMCTX.r9],  r9
-        mov     r9, rax
-        mov     qword [xDI + CPUMCTX.r10], r10
-        mov     r10, rax
-        mov     qword [xDI + CPUMCTX.r11], r11
-        mov     r11, rax
-        mov     qword [xDI + CPUMCTX.r12], r12
-        mov     r12, rax
-        mov     qword [xDI + CPUMCTX.r13], r13
-        mov     r13, rax
-        mov     qword [xDI + CPUMCTX.r14], r14
-        mov     r14, rax
-        mov     qword [xDI + CPUMCTX.r15], r15
-        mov     r15, rax
-        mov     rax, cr2
-        mov     qword [xDI + CPUMCTX.cr2], rax
-
-        pop     xAX                                 ; The guest rdi we pushed above
-        mov     qword [xDI + CPUMCTX.edi], rax
-
-        ; Fight spectre.
-        INDIRECT_BRANCH_PREDICTION_BARRIER_CTX xDI, CPUMCTX_WSF_IBPB_EXIT
-
- %ifndef VMX_SKIP_TR
-        ; Restore TSS selector; must mark it as not busy before using ltr!
-        ; ASSUME that this is supposed to be 'BUSY' (saves 20-30 ticks on the T42p).
-        ; @todo get rid of sgdt
-        pop     xBX         ; Saved TR
-        sub     xSP, xCB * 2
-        sgdt    [xSP]
-        mov     xAX, xBX
-        and     eax, X86_SEL_MASK_OFF_RPL           ; mask away TI and RPL bits leaving only the descriptor offset
-        add     xAX, [xSP + 2]                      ; eax <- GDTR.address + descriptor offset
-        and     dword [xAX + 4], ~RT_BIT(9)         ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
-        ltr     bx
-        add     xSP, xCB * 2
- %endif
-
-        pop     xAX         ; Saved LDTR
-        cmp     eax, 0
-        je      %%skip_ldt_write64
-        lldt    ax
-
-%%skip_ldt_write64:
-        pop     xSI         ; pCtx (needed in rsi by the macros below)
-
-        ; Restore segment registers.
-        POP_RELEVANT_SEGMENT_REGISTERS xAX, ax
-
-        ; Restore the host XCR0 if necessary.
-        pop     xCX
-        test    ecx, ecx
-        jnz     %%xcr0_after_skip
-        pop     xAX
-        pop     xDX
-        xsetbv                              ; ecx is already zero.
-%%xcr0_after_skip:
-
-        ; Restore general purpose registers.
-        POP_CALLEE_PRESERVED_REGISTERS
-%endmacro
-
-
 ;;
 ; Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ;
@@ -851,85 +753,75 @@ ALIGNCODE(64)
 BEGINPROC hmR0VMXStartVM
         push    xBP
         mov     xBP, xSP
-
+        SEH64_SET_FRAME_xBP 0
         pushf
         cli
 
-        ; Save all general purpose host registers.
-%assign cbFrame 8
-        PUSH_CALLEE_PRESERVED_REGISTERS
-        SEH64_END_PROLOGUE
+ %define frm_fRFlags         -008h
+ %define frm_pGstCtx         -010h              ; Where we stash guest CPU context for use after the vmrun.
+ %define frm_uHostXcr0       -020h              ; 128-bit
+ %define frm_saved_gdtr      -036h              ; 16+64:  Only used when VMX_SKIP_GDTR isn't defined
+ %define frm_saved_tr        -034h              ; 16-bit: Only used when VMX_SKIP_TR isn't defined
+ %define frm_fNoRestoreXcr0  -030h              ; 32-bit: Non-zero if we should skip XCR0 restoring.
+ %define frm_saved_idtr      -046h              ; 16+64:  Only used when VMX_SKIP_IDTR isn't defined
+ %define frm_saved_ldtr      -044h              ; 16-bit: always saved.
+ %define frm_rcError         -040h              ; 32-bit: Error status code (not used in the success path)
+ %define frm_guest_rax       -048h              ; Temporary storage slot for guest RAX.
+ %assign cbFrame              050h
+        sub     rsp, cbFrame - 8
 
-        ; First we have to save some final CPU context registers.
-        lea     r10, [.vmlaunch64_done wrt rip]
-        mov     rax, VMX_VMCS_HOST_RIP      ; return address (too difficult to continue after VMLAUNCH?)
-        vmwrite rax, r10
-        ; Note: ASSUMES success!
+        ; Save all general purpose host registers.
+        PUSH_CALLEE_PRESERVED_REGISTERS
+        ;PUSH_RELEVANT_SEGMENT_REGISTERS xAX, ax - currently broken
+        SEH64_END_PROLOGUE
 
         ;
         ; Unify the input parameter registers: rsi=pVCpu, bl=fResume, rdi=&pVCpu->cpum.GstCtx;
         ;
-%ifdef ASM_CALL64_GCC
+ %ifdef ASM_CALL64_GCC
         mov     ebx, edx        ; fResume
-%else
+ %else
         mov     rsi, rdx        ; pVCpu
         mov     ebx, r8d        ; fResume
-%endif
+ %endif
         lea     rdi, [rsi + VMCPU.cpum.GstCtx]
+        mov     [rbp + frm_pGstCtx], rdi
 
         ;
         ; Save the host XCR0 and load the guest one if necessary.
-        ; Note! Trashes rdx and rcx.
+        ; Note! Trashes rax, rdx and rcx.
         ;
+        mov     ecx, 3fh                    ; indicate that we need not restore XCR0
         test    byte [rsi + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
-        jz      .xcr0_before_skip
+        jz      .xcr0_before_done
 
         xor     ecx, ecx
         xgetbv                              ; save the host one on the stack
-        push    xDX
-        push    xAX
+        mov     [rbp + frm_uHostXcr0], eax
+        mov     [rbp + frm_uHostXcr0 + 4], edx
 
         mov     eax, [rdi + CPUMCTX.aXcr]   ; load the guest one
         mov     edx, [rdi + CPUMCTX.aXcr + 4]
-        xor     ecx, ecx                    ; paranoia
+        xor     ecx, ecx                    ; paranoia; indicate that we must restore XCR0 (popped into ecx, thus 0)
         xsetbv
-
-        push    0                           ; indicate that we must restore XCR0 (popped into ecx, thus 0)
-        jmp     .xcr0_before_done
-
-.xcr0_before_skip:
-        push    3fh                         ; indicate that we need not
 .xcr0_before_done:
-
-        ;
-        ; Save segment registers.
-        ; Note! Trashes rdx & rcx, so we moved it here (amd64 case).
-        ;
-        PUSH_RELEVANT_SEGMENT_REGISTERS xAX, ax
-
-        ; Save the pCtx pointer.
-        push    rdi
+        mov     [rbp + frm_fNoRestoreXcr0], ecx ; only 32-bit!
 
         ; Save host LDTR.
-        xor     eax, eax
-        sldt    ax
-        push    xAX
+        sldt    [rbp + frm_saved_tr]
 
-%ifndef VMX_SKIP_TR
+ %ifndef VMX_SKIP_TR
         ; The host TR limit is reset to 0x67; save & restore it manually.
-        str     eax
-        push    xAX
-%endif
+        str     word [rbp + frm_saved_tr]
+ %endif
 
-%ifndef VMX_SKIP_GDTR
+ %ifndef VMX_SKIP_GDTR
         ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
-        sub     xSP, xCB * 2
-        sgdt    [xSP]
-%endif
-%ifndef VMX_SKIP_IDTR
-        sub     xSP, xCB * 2
-        sidt    [xSP]
-%endif
+        sgdt    [rbp + frm_saved_gdtr]
+ %endif
+ %ifndef VMX_SKIP_IDTR
+        sidt    [rbp + frm_saved_idtr]
+ %endif
 
         ; Load CR2 if necessary (may be expensive as writing CR2 is a synchronizing instruction).
         mov     rcx, qword [rdi + CPUMCTX.cr2]
@@ -939,12 +831,20 @@ BEGINPROC hmR0VMXStartVM
         mov     cr2, rcx
 
 .skip_cr2_write:
-        mov     eax, VMX_VMCS_HOST_RSP
-        vmwrite xAX, xSP
-        ; Note: ASSUMES success!
-        ; Don't mess with ESP anymore!!!
+        ; Set the vmlaunch/vmresume "return" host RIP and RSP values.
+        lea     rcx, [hmR0VMXStartVMHostRIP wrt rip] ;; @todo It is only strictly necessary to write VMX_VMCS_HOST_RIP when
+        mov     eax, VMX_VMCS_HOST_RIP               ;;       the VMXVMCSINFO::pfnStartVM function changes (eventually
+        vmwrite rax, rcx                             ;;       take the Windows/SSE stuff into account then)...
+ %ifdef VBOX_STRICT
+        jna     hmR0VMXStartVMHostRIP.vmwrite_failed
+ %endif
+        mov     edx, VMX_VMCS_HOST_RSP               ;; @todo The HOST_RSP value is unlikely to change much, so if vmwrite
+        vmwrite rdx, rsp                             ;;       can be noticably more expensive than a memory read, we could
+ %ifdef VBOX_STRICT                                  ;;       easily optimize this one away almost completely by comparing
+        jna     hmR0VMXStartVMHostRIP.vmwrite_failed ;;       rsp with a shadow copy of VMX_VMCS_HOST_RSP.
+ %endif
 
-        ; Fight spectre and similar.
+        ; Fight spectre and similar. Trashes rax, rcx, and rdx.
         INDIRECT_BRANCH_PREDICTION_AND_L1_CACHE_BARRIER rdi, CPUMCTX_WSF_IBPB_ENTRY, CPUMCTX_WSF_L1D_ENTRY, CPUMCTX_WSF_MDS_ENTRY
 
         ; Resume or start VM?
@@ -970,35 +870,163 @@ BEGINPROC hmR0VMXStartVM
         je      .vmlaunch64_launch
 
         vmresume
-        jc      near .vmxstart64_invalid_vmcs_ptr
-        jz      near .vmxstart64_start_failed
-        jmp     .vmlaunch64_done        ; here if vmresume detected a failure
+        jc      hmR0VMXStartVMHostRIP.vmxstart64_invalid_vmcs_ptr
+        jz      hmR0VMXStartVMHostRIP.vmxstart64_start_failed
+        jmp     hmR0VMXStartVMHostRIP   ; here if vmresume detected a failure
 
 .vmlaunch64_launch:
         vmlaunch
-        jc      near .vmxstart64_invalid_vmcs_ptr
-        jz      near .vmxstart64_start_failed
-        jmp     .vmlaunch64_done        ; here if vmlaunch detected a failure
+        jc      hmR0VMXStartVMHostRIP.vmxstart64_invalid_vmcs_ptr
+        jz      hmR0VMXStartVMHostRIP.vmxstart64_start_failed
+        jmp     hmR0VMXStartVMHostRIP   ; here if vmlaunch detected a failure
 
 ALIGNCODE(64)
-.vmlaunch64_done:
-        RESTORE_STATE_VM64
+GLOBALNAME hmR0VMXStartVMHostRIP
+
+;;
+; Common restore logic for success and error paths.  We duplicate this because we
+; don't want to waste writing the VINF_SUCCESS return value to the stack in the
+; regular code path.
+;
+; @param    1   Zero if regular return, non-zero if error return.  Controls label emission.
+;
+; @note Important that this does not modify cbFrame or rsp.
+%macro RESTORE_STATE_VMX 1
+        ; Restore base and limit of the IDTR & GDTR.
+ %ifndef VMX_SKIP_IDTR
+        lidt    [rsp + cbFrame + frm_saved_idtr]
+ %endif
+ %ifndef VMX_SKIP_GDTR
+        lgdt    [rsp + cbFrame + frm_saved_gdtr]
+ %endif
+
+        ; Save the guest state and restore the non-volatile registers.  We use rax=pGstCtx here.
+        mov     [rsp + cbFrame + frm_guest_rax], rax
+        mov     rax, [rsp + cbFrame + frm_pGstCtx]
+
+        mov     qword [rax + CPUMCTX.ebp], rbp
+        lea     rbp, [rsp + cbFrame]    ; re-establish the frame pointer as early as possible.
+        mov     qword [rax + CPUMCTX.ecx], rcx
+        mov     rcx, SPECTRE_FILLER
+        mov     qword [rax + CPUMCTX.edx], rdx
+        mov     rdx, [rbp + frm_guest_rax]
+        mov     qword [rax + CPUMCTX.eax], rdx
+        mov     rdx, rcx
+        mov     qword [rax + CPUMCTX.r8],  r8
+        mov     r8, rcx
+        mov     qword [rax + CPUMCTX.r9],  r9
+        mov     r9, rcx
+        mov     qword [rax + CPUMCTX.r10], r10
+        mov     r10, rcx
+        mov     qword [rax + CPUMCTX.r11], r11
+        mov     r11, rcx
+        mov     qword [rax + CPUMCTX.esi], rsi
+ %ifdef ASM_CALL64_MSC
+        mov     rsi, [rbp + frm_saved_rsi]
+ %else
+        mov     rbx, rcx
+ %endif
+        mov     qword [rax + CPUMCTX.edi], rdi
+ %ifdef ASM_CALL64_MSC
+        mov     rdi, [rbp + frm_saved_rdi]
+ %else
+        mov     rbx, rcx
+ %endif
+        mov     qword [rax + CPUMCTX.ebx], rbx
+        mov     rbx, [rbp + frm_saved_rbx]
+        mov     qword [rax + CPUMCTX.r12], r12
+        mov     r12,  [rbp + frm_saved_r12]
+        mov     qword [rax + CPUMCTX.r13], r13
+        mov     r13,  [rbp + frm_saved_r13]
+        mov     qword [rax + CPUMCTX.r14], r14
+        mov     r14,  [rbp + frm_saved_r14]
+        mov     qword [rax + CPUMCTX.r15], r15
+        mov     r15,  [rbp + frm_saved_r15]
+
+        mov     rdx, cr2
+        mov     qword [rax + CPUMCTX.cr2], rdx
+        mov     rdx, rcx
+
+ %if %1 = 0 ; Skip this in failure branch (=> guru)
+        ; Fight spectre.
+        INDIRECT_BRANCH_PREDICTION_BARRIER_CTX rax, CPUMCTX_WSF_IBPB_EXIT
+ %endif
+
+ %ifndef VMX_SKIP_TR
+        ; Restore TSS selector; must mark it as not busy before using ltr!
+        ; ASSUME that this is supposed to be 'BUSY' (saves 20-30 ticks on the T42p).
+  %ifndef VMX_SKIP_GDTR
+        lgdt    [rbp + frm_saved_gdtr]
+  %endif
+        movzx   eax, word [rbp + frm_saved_tr]
+        mov     ecx, eax
+        and     eax, X86_SEL_MASK_OFF_RPL           ; mask away TI and RPL bits leaving only the descriptor offset
+        add     rax, [rbp + frm_saved_gdtr + 2]     ; eax <- GDTR.address + descriptor offset
+        and     dword [rax + 4], ~RT_BIT(9)         ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
+        ltr     cx
+ %endif
+        movzx   edx, word [rbp + frm_saved_ldtr]
+        test    edx, edx
+        jz      %%skip_ldt_write
+        lldt    dx
+%%skip_ldt_write:
+
+ %if %1 != 0
+.return_after_vmwrite_error:
+ %endif
+        ; Restore segment registers.
+        ;POP_RELEVANT_SEGMENT_REGISTERS rax, ax - currently broken.
+
+        ; Restore the host XCR0 if necessary.
+        mov     ecx, [rbp + frm_fNoRestoreXcr0]
+        test    ecx, ecx
+        jnz     %%xcr0_after_skip
+        mov     eax, [rbp + frm_uHostXcr0]
+        mov     edx, [rbp + frm_uHostXcr0 + 4]
+        xsetbv                              ; ecx is already zero.
+%%xcr0_after_skip:
+
+%endmacro ; RESTORE_STATE_VMX
+
+        RESTORE_STATE_VMX 0
         mov     eax, VINF_SUCCESS
 
 .vmstart64_end:
+        lea     rsp, [rbp + frm_fRFlags]
         popf
-        pop     xBP
+        leave
         ret
 
+        ;
+        ; Error returns.
+        ;
+ %ifdef VBOX_STRICT
+.vmwrite_failed:
+        mov     dword [rsp + cbFrame + frm_rcError], VERR_VMX_INVALID_VMCS_FIELD
+        jz      .return_after_vmwrite_error
+        mov     dword [rsp + cbFrame + frm_rcError], VERR_VMX_INVALID_VMCS_PTR
+        jmp     .return_after_vmwrite_error
+ %endif
 .vmxstart64_invalid_vmcs_ptr:
-        RESTORE_STATE_VM64
-        mov     eax, VERR_VMX_INVALID_VMCS_PTR_TO_START_VM
-        jmp     .vmstart64_end
-
+        mov     dword [rsp + cbFrame + frm_rcError], VERR_VMX_INVALID_VMCS_PTR_TO_START_VM
+        jmp     .vmstart64_error_return
 .vmxstart64_start_failed:
-        RESTORE_STATE_VM64
-        mov     eax, VERR_VMX_UNABLE_TO_START_VM
+        mov     dword [rsp + cbFrame + frm_rcError], VERR_VMX_UNABLE_TO_START_VM
+.vmstart64_error_return:
+        RESTORE_STATE_VMX 1
+        mov     eax, [rbp + frm_rcError]
         jmp     .vmstart64_end
+ %undef frm_fRFlags
+ %undef frm_pGstCtx
+ %undef frm_uHostXcr0
+ %undef frm_saved_gdtr
+ %undef frm_saved_tr
+ %undef frm_fNoRestoreXcr0
+ %undef frm_saved_idtr
+ %undef frm_saved_ldtr
+ %undef frm_rcError
+ %undef frm_guest_rax
+ %undef cbFrame
 ENDPROC hmR0VMXStartVM
 
 
