@@ -832,16 +832,16 @@ BEGINPROC hmR0VMXStartVM
 
 .skip_cr2_write:
         ; Set the vmlaunch/vmresume "return" host RIP and RSP values.
-        lea     rcx, [hmR0VMXStartVMHostRIP wrt rip] ;; @todo It is only strictly necessary to write VMX_VMCS_HOST_RIP when
-        mov     eax, VMX_VMCS_HOST_RIP               ;;       the VMXVMCSINFO::pfnStartVM function changes (eventually
-        vmwrite rax, rcx                             ;;       take the Windows/SSE stuff into account then)...
+        lea     rcx, [NAME(hmR0VMXStartVMHostRIP) wrt rip] ;; @todo It is only strictly necessary to write VMX_VMCS_HOST_RIP when
+        mov     eax, VMX_VMCS_HOST_RIP                     ;;       the VMXVMCSINFO::pfnStartVM function changes (eventually
+        vmwrite rax, rcx                                   ;;       take the Windows/SSE stuff into account then)...
  %ifdef VBOX_STRICT
-        jna     hmR0VMXStartVMHostRIP.vmwrite_failed
+        jna     NAME(hmR0VMXStartVMHostRIP.vmwrite_failed)
  %endif
-        mov     edx, VMX_VMCS_HOST_RSP               ;; @todo The HOST_RSP value is unlikely to change much, so if vmwrite
-        vmwrite rdx, rsp                             ;;       can be noticably more expensive than a memory read, we could
- %ifdef VBOX_STRICT                                  ;;       easily optimize this one away almost completely by comparing
-        jna     hmR0VMXStartVMHostRIP.vmwrite_failed ;;       rsp with a shadow copy of VMX_VMCS_HOST_RSP.
+        mov     edx, VMX_VMCS_HOST_RSP                     ;; @todo The HOST_RSP value is unlikely to change much, so if vmwrite
+        vmwrite rdx, rsp                                   ;;       can be noticably more expensive than a memory read, we could
+ %ifdef VBOX_STRICT                                        ;;       easily optimize this one away almost completely by comparing
+        jna     NAME(hmR0VMXStartVMHostRIP.vmwrite_failed) ;;       rsp with a shadow copy of VMX_VMCS_HOST_RSP.
  %endif
 
         ; Fight spectre and similar. Trashes rax, rcx, and rdx.
@@ -870,15 +870,15 @@ BEGINPROC hmR0VMXStartVM
         je      .vmlaunch64_launch
 
         vmresume
-        jc      hmR0VMXStartVMHostRIP.vmxstart64_invalid_vmcs_ptr
-        jz      hmR0VMXStartVMHostRIP.vmxstart64_start_failed
-        jmp     hmR0VMXStartVMHostRIP   ; here if vmresume detected a failure
+        jc      NAME(hmR0VMXStartVMHostRIP.vmxstart64_invalid_vmcs_ptr)
+        jz      NAME(hmR0VMXStartVMHostRIP.vmxstart64_start_failed)
+        jmp     NAME(hmR0VMXStartVMHostRIP) ; here if vmresume detected a failure
 
 .vmlaunch64_launch:
         vmlaunch
-        jc      hmR0VMXStartVMHostRIP.vmxstart64_invalid_vmcs_ptr
-        jz      hmR0VMXStartVMHostRIP.vmxstart64_start_failed
-        jmp     hmR0VMXStartVMHostRIP   ; here if vmlaunch detected a failure
+        jc      NAME(hmR0VMXStartVMHostRIP.vmxstart64_invalid_vmcs_ptr)
+        jz      NAME(hmR0VMXStartVMHostRIP.vmxstart64_start_failed)
+        jmp     NAME(hmR0VMXStartVMHostRIP) ; here if vmlaunch detected a failure
 
 ALIGNCODE(64)
 GLOBALNAME hmR0VMXStartVMHostRIP
