@@ -823,26 +823,24 @@ BEGINPROC hmR0VMXStartVM
         sidt    [rbp + frm_saved_idtr]
  %endif
 
-        ; Load CR2 if necessary (may be expensive as writing CR2 is a synchronizing instruction).
+        ; Load CR2 if necessary (expensive as writing CR2 is a synchronizing instruction - (bird: still expensive on 10980xe)).
         mov     rcx, qword [rdi + CPUMCTX.cr2]
         mov     rdx, cr2
         cmp     rcx, rdx
         je      .skip_cr2_write
         mov     cr2, rcx
-
 .skip_cr2_write:
-        ; Set the vmlaunch/vmresume "return" host RIP and RSP values.
-        lea     rcx, [NAME(hmR0VMXStartVMHostRIP) wrt rip] ;; @todo It is only strictly necessary to write VMX_VMCS_HOST_RIP when
-        mov     eax, VMX_VMCS_HOST_RIP                     ;;       the VMXVMCSINFO::pfnStartVM function changes (eventually
-        vmwrite rax, rcx                                   ;;       take the Windows/SSE stuff into account then)...
- %ifdef VBOX_STRICT
-        jna     NAME(hmR0VMXStartVMHostRIP.vmwrite_failed)
- %endif
-        mov     edx, VMX_VMCS_HOST_RSP                     ;; @todo The HOST_RSP value is unlikely to change much, so if vmwrite
-        vmwrite rdx, rsp                                   ;;       can be noticably more expensive than a memory read, we could
- %ifdef VBOX_STRICT                                        ;;       easily optimize this one away almost completely by comparing
-        jna     NAME(hmR0VMXStartVMHostRIP.vmwrite_failed) ;;       rsp with a shadow copy of VMX_VMCS_HOST_RSP.
- %endif
+
+        ; Set the vmlaunch/vmresume "return" host RIP and RSP values if they've changed (unlikly).
+        ; The vmwrite isn't quite for free (on an 10980xe at least), thus we check if anything changed
+        ; before writing here.
+        lea     rcx, [NAME(hmR0VMXStartVMHostRIP) wrt rip]
+        cmp     rcx, [rsi + VMCPU.hm + HMCPU.u + HMCPUVMX.uHostRIP]
+        jne     .write_host_rip
+.wrote_host_rip:
+        cmp     rsp, [rsi + VMCPU.hm + HMCPU.u + HMCPUVMX.uHostRSP]
+        jne     .write_host_rsp
+.wrote_host_rsp:
 
         ; Fight spectre and similar. Trashes rax, rcx, and rdx.
         INDIRECT_BRANCH_PREDICTION_AND_L1_CACHE_BARRIER rdi, CPUMCTX_WSF_IBPB_ENTRY, CPUMCTX_WSF_L1D_ENTRY, CPUMCTX_WSF_MDS_ENTRY
@@ -879,6 +877,28 @@ BEGINPROC hmR0VMXStartVM
         jc      NAME(hmR0VMXStartVMHostRIP.vmxstart64_invalid_vmcs_ptr)
         jz      NAME(hmR0VMXStartVMHostRIP.vmxstart64_start_failed)
         jmp     NAME(hmR0VMXStartVMHostRIP) ; here if vmlaunch detected a failure
+
+
+; Put these two outside the normal code path as they should rarely change.
+ALIGNCODE(8)
+.write_host_rip:
+        mov     [rsi + VMCPU.hm + HMCPU.u + HMCPUVMX.uHostRIP], rcx
+        mov     eax, VMX_VMCS_HOST_RIP                      ;; @todo It is only strictly necessary to write VMX_VMCS_HOST_RIP when
+        vmwrite rax, rcx                                    ;;       the VMXVMCSINFO::pfnStartVM function changes (eventually
+ %ifdef VBOX_STRICT                                         ;;       take the Windows/SSE stuff into account then)...
+        jna     NAME(hmR0VMXStartVMHostRIP.vmwrite_failed)
+ %endif
+        jmp     .wrote_host_rip
+
+ALIGNCODE(8)
+.write_host_rsp:
+        mov     [rsi + VMCPU.hm + HMCPU.u + HMCPUVMX.uHostRSP], rsp
+        mov     eax, VMX_VMCS_HOST_RSP
+        vmwrite rax, rsp
+ %ifdef VBOX_STRICT
+        jna     NAME(hmR0VMXStartVMHostRIP.vmwrite_failed)
+ %endif
+        jmp     .wrote_host_rsp
 
 ALIGNCODE(64)
 GLOBALNAME hmR0VMXStartVMHostRIP

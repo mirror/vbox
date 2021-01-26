@@ -131,6 +131,8 @@ struc HMCPUVMX
     alignb 4
     .fRestoreHostFlags              resd    1
     alignb 8
+    .uHostRIP                       resq    1
+    .uHostRSP                       resq    1
     .RestoreHost                    resb    VMXRESTOREHOST_size
 
     .LastError.idCurrentCpu         resd    1

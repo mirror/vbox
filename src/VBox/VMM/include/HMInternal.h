@@ -1041,6 +1041,10 @@ typedef struct HMCPU
             uint32_t                    fRestoreHostFlags;
             /** Alignment. */
             uint32_t                    u32Alignment0;
+            /** Current VMX_VMCS_HOST_RIP value (only used in HMR0A.asm). */
+            uint64_t                    uHostRIP;
+            /** Current VMX_VMCS_HOST_RSP value (only used in HMR0A.asm). */
+            uint64_t                    uHostRSP;
             /** The host-state restoration structure. */
             VMXRESTOREHOST              RestoreHost;
             /** @} */
