@@ -215,10 +215,10 @@ typedef struct IOMMU
     AVLRU64TREE                 TreeIotlbe;
     /** LRU list anchor for IOTLB entries. */
     RTLISTANCHOR                LstLruIotlbe;
-    /** Number of cached IOTLBEs. */
+    /** Index of the next unused IOTLB. */
+    uint32_t                    idxUnusedIotlbe;
+    /** Number of cached IOTLB entries in the tree. */
     uint32_t                    cCachedIotlbes;
-    /** Padding. */
-    uint32_t                    uPadding1;
 #endif
 
     /** @name PCI: Base capability block registers.
@@ -642,18 +642,18 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, uint64_t uIova, PCIOWALKRESULT pWalkR
      * Otherwise, get a new IOTLB entry from the pre-allocated list.
      */
     PIOTLBE pIotlbe;
-    if (pThis->cCachedIotlbes == IOMMU_IOTLBE_MAX)
+    if (pThis->idxUnusedIotlbe == IOMMU_IOTLBE_MAX)
     {
         pIotlbe = RTListRemoveFirst(&pThis->LstLruIotlbe, IOTLBE, NdLru);
         Assert(pIotlbe);
         RTAvlrU64Remove(&pThis->TreeIotlbe, pIotlbe->Core.Key);
+        Assert(pThis->cCachedIotlbes > 0);
         --pThis->cCachedIotlbes;
     }
     else
     {
-        pIotlbe = &pThis->paIotlbes[pThis->cCachedIotlbes];
-        ++pThis->cCachedIotlbes;
-        /* IOTLB entries have alredy been zero'ed during allocation. */
+        pIotlbe = &pThis->paIotlbes[pThis->idxUnusedIotlbe];
+        ++pThis->idxUnusedIotlbe;
     }
 
     /* Zero out IOTLB entry before reuse. */
@@ -667,6 +667,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, uint64_t uIova, PCIOWALKRESULT pWalkR
 
     /* Add the entry to the cache. */
     RTAvlrU64Insert(&pThis->TreeIotlbe, &pIotlbe->Core);
+    ++pThis->cCachedIotlbes;
 
     /* Mark the entry as the most recently used one. */
     RTListAppend(&pThis->LstLruIotlbe, &pIotlbe->NdLru);
@@ -682,7 +683,8 @@ static void iommuAmdIotlbRemoveAll(PIOMMU pThis)
 {
     RTListInit(&pThis->LstLruIotlbe);
     RTAvlrU64Destroy(&pThis->TreeIotlbe, iommuAmdDestroyIotlbe, NULL /* pvParam */);
-    pThis->cCachedIotlbes = 0;
+    pThis->cCachedIotlbes  = 0;
+    pThis->idxUnusedIotlbe = 0;
     size_t const cbIotlbes = sizeof(IOTLBE) * IOMMU_IOTLBE_MAX;
     RT_BZERO(pThis->paIotlbes, cbIotlbes);
 }
@@ -713,9 +715,9 @@ static void iommuAmdIotlbRemoveRange(PIOMMU pThis, uint16_t uDomainId, uint64_t 
         /*
          * We remove all ranges (in our tree) containing the range of I/O virtual addresses requesting
          * to be invalidated. E.g., if the guest is using 1M pages but requests to invalidate only 8K
-         * we invalidate the entire 1M page. On the other hand, we must handle cross-boundary requests
-         * that spans multiple pages. E.g., if the guest is using 4K pages but requests to invalid 8K,
-         * we would need to invalid two 4K pages.
+         * we must invalidate the entire 1M page. On the other hand, we must handle cross-boundary
+         * requests that spans multiple pages. E.g., if the guest is using 4K pages but requests to
+         * invalid 8K, we would need to invalid two 4K pages.
          */
         uint64_t const uIovaLast = uIova + RT_BIT_64(cShift) - 1;
         for (;;)
@@ -724,9 +726,10 @@ static void iommuAmdIotlbRemoveRange(PIOMMU pThis, uint16_t uDomainId, uint64_t 
             PIOTLBE pIotlbe = (PIOTLBE)RTAvlrU64RangeRemove(&pThis->TreeIotlbe, uKey);
             if (pIotlbe)
             {
+                --pThis->cCachedIotlbes;
                 uint64_t const uRangeIovaLast = pIotlbe->Core.KeyLast;
                 RTListNodeRemove(&pIotlbe->NdLru);
-                --pThis->cCachedIotlbes;
+                RTListPrepend(&pThis->LstLruIotlbe, &pIotlbe->NdLru);
                 RT_ZERO(*pIotlbe);
                 if (uIovaLast > uRangeIovaLast)
                     uIova = uRangeIovaLast + 1;
