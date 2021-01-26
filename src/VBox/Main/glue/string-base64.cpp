@@ -31,7 +31,7 @@ HRESULT Bstr::base64Encode(const void *pvData, size_t cbData, bool fLineBreaks /
     HRESULT hrc = reserveNoThrow(cwcEncoded + 1);
     if (SUCCEEDED(hrc))
     {
-        int vrc = RTBase64EncodeUtf16Ex(pvData, cbData, fFlags, mutableRaw(), cwcEncoded, &cwcEncoded);
+        int vrc = RTBase64EncodeUtf16Ex(pvData, cbData, fFlags, mutableRaw(), cwcEncoded + 1, &cwcEncoded);
         AssertRCReturnStmt(vrc, setNull(), E_FAIL);
         hrc = joltNoThrow(cwcEncoded);
     }
