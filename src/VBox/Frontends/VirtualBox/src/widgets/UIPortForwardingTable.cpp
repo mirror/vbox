@@ -446,6 +446,9 @@ public:
     /** Removes port forwarding rule with certain @a index. */
     void removeRule(const QModelIndex &index);
 
+    /** Defines guest address @a strHint. */
+    void setGuestAddressHint(const QString &strHint);
+
     /** Returns flags for item with certain @a index. */
     Qt::ItemFlags flags(const QModelIndex &index) const;
 
@@ -473,6 +476,9 @@ private:
 
     /** Holds the port forwarding row list.  */
     QList<UIPortForwardingRow*> m_dataList;
+
+    /** Holds the guest address hint. */
+    QString  m_strGuestAddressHint;
 };
 
 
@@ -582,7 +588,7 @@ void UIPortForwardingModel::addRule(const QModelIndex &index)
     else
         m_dataList << new UIPortForwardingRow(parentTable(),
                                               strTemplate.arg(++uMaxIndex), KNATProtocol_TCP,
-                                              QString(""), 0, QString(""), 0);
+                                              QString(""), 0, m_strGuestAddressHint, 0);
     endInsertRows();
 }
 
@@ -594,6 +600,11 @@ void UIPortForwardingModel::removeRule(const QModelIndex &index)
     delete m_dataList.at(index.row());
     m_dataList.removeAt(index.row());
     endRemoveRows();
+}
+
+void UIPortForwardingModel::setGuestAddressHint(const QString &strHint)
+{
+    m_strGuestAddressHint = strHint;
 }
 
 Qt::ItemFlags UIPortForwardingModel::flags(const QModelIndex &index) const
@@ -818,6 +829,12 @@ void UIPortForwardingTable::setRules(const UIPortForwardingDataList &newRules,
                 m_pTableView->setCurrentIndex(m_pTableModel->index(i, 0));
         }
     }
+}
+
+void UIPortForwardingTable::setGuestAddressHint(const QString &strHint)
+{
+    m_strGuestAddressHint = strHint;
+    m_pTableModel->setGuestAddressHint(m_strGuestAddressHint);
 }
 
 bool UIPortForwardingTable::validate() const

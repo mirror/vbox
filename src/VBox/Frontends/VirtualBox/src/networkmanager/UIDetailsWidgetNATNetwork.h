@@ -159,9 +159,9 @@ private slots:
         /** Handles network advertised as default IPv6 route choice change. */
         void sltAdvertiseDefaultIPv6RouteChanged(bool fChecked);
 
-        /** */
+        /** Handles IPv4 forwarding rules table change. */
         void sltForwardingRulesIPv4Changed();
-        /** */
+        /** Handles IPv6 forwarding rules table change. */
         void sltForwardingRulesIPv6Changed();
 
         /** Handles button-box button click. */

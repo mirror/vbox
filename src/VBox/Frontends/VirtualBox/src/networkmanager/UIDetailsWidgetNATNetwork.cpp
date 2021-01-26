@@ -548,6 +548,15 @@ void UIDetailsWidgetNATNetwork::loadDataForForwarding()
     m_pForwardingTableIPv4->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
     m_pForwardingTableIPv6->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
 
+    /* Calculate/load guest address hints: */
+    char szTmpIp[16];
+    RTNETADDRIPV4 rtNetwork4;
+    int iPrefix4;
+    const int rc = RTNetStrToIPv4Cidr(m_newData.m_strCIDR.toUtf8().constData(), &rtNetwork4, &iPrefix4);
+    RTStrPrintf(szTmpIp, sizeof(szTmpIp), "%RTnaipv4", rtNetwork4);
+    if (RT_SUCCESS(rc))
+        m_pForwardingTableIPv4->setGuestAddressHint(QString(szTmpIp));
+
     /* Load 'Forwarding' fields: */
     m_pForwardingTableIPv4->setRules(m_newData.m_rules4, m_fHoldPosition);
     m_pForwardingTableIPv6->setRules(m_newData.m_rules6, m_fHoldPosition);
