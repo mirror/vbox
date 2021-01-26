@@ -88,7 +88,7 @@ extern PYXPCOM_EXPORT void PyXPCOM_InterpreterState_Ensure();
 #   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_9")
 #   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_9)
 
-#  if   PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
+#  elif PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
 #   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython3_8")
 #   define initVBoxPython MANGLE_MODULE_INIT(PyInit_VBoxPython3_8)
 
