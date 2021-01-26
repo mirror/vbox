@@ -1121,9 +1121,12 @@ hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbp
 hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
 hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
 %endmacro
+
 hmR0VmxStartVmSseTemplate 0,,RT_NOTHING
+%ifdef VBOX_WITH_KERNEL_USING_XMM
 hmR0VmxStartVmSseTemplate 1,_SseManual,RT_NOTHING
 hmR0VmxStartVmSseTemplate 2,_SseXSave,RT_NOTHING
+%endif
 
 
 ;;
