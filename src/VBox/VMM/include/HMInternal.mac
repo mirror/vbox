@@ -21,7 +21,6 @@
 
 
 struc VMXVMCSINFO
-    .pfnStartVM                     RTR0PTR_RES  1
     .HCPhysEPTP                     RTHCPHYS_RES 1
     .fVmcsState                     resd    1
     .fShadowVmcsState               resd    1
@@ -112,6 +111,7 @@ struc VMXRESTOREHOST
 endstruc
 
 struc HMCPUVMX
+    .pfnStartVm                     RTR0PTR_RES  1
     .VmcsInfo                       resb    VMXVMCSINFO_size
     .VmcsInfoNstGst                 resb    VMXVMCSINFO_size
     .fSwitchedToNstGstVmcs          resb    1

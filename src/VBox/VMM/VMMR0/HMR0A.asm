@@ -742,6 +742,21 @@ ENDPROC   hmR0VMXStartVMWrapXMM
 
 
 ;;
+; hmR0VmxStartVm template
+;
+; @param    1   The suffix of the variation.
+; @param    2   fLoadSaveGuestXcr0 value
+; @param    3   The CPUMCTX_WSF_IBPB_ENTRY + CPUMCTX_WSF_IBPB_EXIT value.
+; @param    4   The SSE saving/restoring: 0 to do nothing, 1 to do it manually, 2 to use xsave/xrstor.
+;               Drivers shouldn't use AVX registers without saving+loading:
+;                   https://msdn.microsoft.com/en-us/library/windows/hardware/ff545910%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
+;               However the compiler docs have different idea:
+;                   https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
+;               We'll go with the former for now.
+;
+%macro hmR0VmxStartVmTemplate 4
+
+;;
 ; Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ;
 ; @returns VBox status code
@@ -750,7 +765,7 @@ ENDPROC   hmR0VMXStartVMWrapXMM
 ; @param    fResume    msc:r8l, gcc:dl        Whether to use vmlauch/vmresume.
 ;
 ALIGNCODE(64)
-BEGINPROC hmR0VMXStartVM
+BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
         push    xBP
         mov     xBP, xSP
         SEH64_SET_FRAME_xBP 0
@@ -760,14 +775,15 @@ BEGINPROC hmR0VMXStartVM
  %define frm_fRFlags         -008h
  %define frm_pGstCtx         -010h              ; Where we stash guest CPU context for use after the vmrun.
  %define frm_uHostXcr0       -020h              ; 128-bit
- %define frm_saved_gdtr      -036h              ; 16+64:  Only used when VMX_SKIP_GDTR isn't defined
- %define frm_saved_tr        -034h              ; 16-bit: Only used when VMX_SKIP_TR isn't defined
- %define frm_fNoRestoreXcr0  -030h              ; 32-bit: Non-zero if we should skip XCR0 restoring.
- %define frm_saved_idtr      -046h              ; 16+64:  Only used when VMX_SKIP_IDTR isn't defined
- %define frm_saved_ldtr      -044h              ; 16-bit: always saved.
+ %define frm_saved_gdtr      -02ah              ; 16+64:  Only used when VMX_SKIP_GDTR isn't defined
+ %define frm_saved_tr        -02ch              ; 16-bit: Only used when VMX_SKIP_TR isn't defined
+ ;%define frm_fNoRestoreXcr0  -030h              ; 32-bit: Non-zero if we should skip XCR0 restoring.
+ %define frm_saved_idtr      -03ah              ; 16+64:  Only used when VMX_SKIP_IDTR isn't defined
+ %define frm_saved_ldtr      -03ch              ; 16-bit: always saved.
  %define frm_rcError         -040h              ; 32-bit: Error status code (not used in the success path)
  %define frm_guest_rax       -048h              ; Temporary storage slot for guest RAX.
- %assign cbFrame              050h
+ %assign cbFrame              048h
+ %assign cbBaseFrame         cbFrame
         sub     rsp, cbFrame - 8
 
         ; Save all general purpose host registers.
@@ -787,14 +803,44 @@ BEGINPROC hmR0VMXStartVM
         lea     rdi, [rsi + VMCPU.cpum.GstCtx]
         mov     [rbp + frm_pGstCtx], rdi
 
+ %ifdef VBOX_STRICT
         ;
+        ; Verify template preconditions / parameters to ensure HMSVM.cpp didn't miss some state change.
+        ;
+        cmp     byte [rsi + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], %2
+        mov     eax, VERR_VMX_STARTVM_PRECOND_0
+        jne     NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).precond_failure_return)
+
+        mov     eax, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fWorldSwitcher]
+        and     eax, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT
+        cmp     eax, %3
+        mov     eax, VERR_VMX_STARTVM_PRECOND_1
+        jne     NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).precond_failure_return)
+
+;  %ifdef VBOX_WITH_KERNEL_USING_XMM
+;        mov     eax, VERR_VMX_STARTVM_PRECOND_2
+;        test    byte  [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fUsedFpuGuest], 1
+;   %if   %4 = 0
+;        ;jnz     NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).precond_failure_return)
+;   %else
+;        jz      NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).precond_failure_return)
+;
+;        mov     eax, VERR_VMX_STARTVM_PRECOND_3
+;        cmp     dword [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fXStateMask], 0
+;    %if   %4 = 1
+;        jne     NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).precond_failure_return)
+;    %elif %4 = 2
+;        je      NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).precond_failure_return)
+;    %else
+;      %error Invalid template parameter 4.
+;    %endif
+;   %endif
+;  %endif
+ %endif ; VBOX_STRICT
+
+ %if %2 != 0
         ; Save the host XCR0 and load the guest one if necessary.
         ; Note! Trashes rax, rdx and rcx.
-        ;
-        mov     ecx, 3fh                    ; indicate that we need not restore XCR0
-        test    byte [rsi + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
-        jz      .xcr0_before_done
-
         xor     ecx, ecx
         xgetbv                              ; save the host one on the stack
         mov     [rbp + frm_uHostXcr0], eax
@@ -804,11 +850,10 @@ BEGINPROC hmR0VMXStartVM
         mov     edx, [rdi + CPUMCTX.aXcr + 4]
         xor     ecx, ecx                    ; paranoia; indicate that we must restore XCR0 (popped into ecx, thus 0)
         xsetbv
-.xcr0_before_done:
-        mov     [rbp + frm_fNoRestoreXcr0], ecx ; only 32-bit!
+ %endif
 
         ; Save host LDTR.
-        sldt    [rbp + frm_saved_tr]
+        sldt    word [rbp + frm_saved_ldtr]
 
  %ifndef VMX_SKIP_TR
         ; The host TR limit is reset to 0x67; save & restore it manually.
@@ -834,7 +879,7 @@ BEGINPROC hmR0VMXStartVM
         ; Set the vmlaunch/vmresume "return" host RIP and RSP values if they've changed (unlikly).
         ; The vmwrite isn't quite for free (on an 10980xe at least), thus we check if anything changed
         ; before writing here.
-        lea     rcx, [NAME(hmR0VMXStartVMHostRIP) wrt rip]
+        lea     rcx, [NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1)) wrt rip]
         cmp     rcx, [rsi + VMCPU.hm + HMCPU.u + HMCPUVMX.uHostRIP]
         jne     .write_host_rip
 .wrote_host_rip:
@@ -842,8 +887,10 @@ BEGINPROC hmR0VMXStartVM
         jne     .write_host_rsp
 .wrote_host_rsp:
 
+ %if %3 & CPUMCTX_WSF_IBPB_EXIT
         ; Fight spectre and similar. Trashes rax, rcx, and rdx.
         INDIRECT_BRANCH_PREDICTION_AND_L1_CACHE_BARRIER rdi, CPUMCTX_WSF_IBPB_ENTRY, CPUMCTX_WSF_L1D_ENTRY, CPUMCTX_WSF_MDS_ENTRY
+ %endif
 
         ; Resume or start VM?
         cmp     bl, 0                   ; fResume
@@ -868,15 +915,15 @@ BEGINPROC hmR0VMXStartVM
         je      .vmlaunch64_launch
 
         vmresume
-        jc      NAME(hmR0VMXStartVMHostRIP.vmxstart64_invalid_vmcs_ptr)
-        jz      NAME(hmR0VMXStartVMHostRIP.vmxstart64_start_failed)
-        jmp     NAME(hmR0VMXStartVMHostRIP) ; here if vmresume detected a failure
+        jc      NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).vmxstart64_invalid_vmcs_ptr)
+        jz      NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).vmxstart64_start_failed)
+        jmp     NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1)) ; here if vmresume detected a failure
 
 .vmlaunch64_launch:
         vmlaunch
-        jc      NAME(hmR0VMXStartVMHostRIP.vmxstart64_invalid_vmcs_ptr)
-        jz      NAME(hmR0VMXStartVMHostRIP.vmxstart64_start_failed)
-        jmp     NAME(hmR0VMXStartVMHostRIP) ; here if vmlaunch detected a failure
+        jc      NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).vmxstart64_invalid_vmcs_ptr)
+        jz      NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).vmxstart64_start_failed)
+        jmp     NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1)) ; here if vmlaunch detected a failure
 
 
 ; Put these two outside the normal code path as they should rarely change.
@@ -886,7 +933,7 @@ ALIGNCODE(8)
         mov     eax, VMX_VMCS_HOST_RIP                      ;; @todo It is only strictly necessary to write VMX_VMCS_HOST_RIP when
         vmwrite rax, rcx                                    ;;       the VMXVMCSINFO::pfnStartVM function changes (eventually
  %ifdef VBOX_STRICT                                         ;;       take the Windows/SSE stuff into account then)...
-        jna     NAME(hmR0VMXStartVMHostRIP.vmwrite_failed)
+        jna     NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).vmwrite_failed)
  %endif
         jmp     .wrote_host_rip
 
@@ -896,29 +943,32 @@ ALIGNCODE(8)
         mov     eax, VMX_VMCS_HOST_RSP
         vmwrite rax, rsp
  %ifdef VBOX_STRICT
-        jna     NAME(hmR0VMXStartVMHostRIP.vmwrite_failed)
+        jna     NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).vmwrite_failed)
  %endif
         jmp     .wrote_host_rsp
 
 ALIGNCODE(64)
-GLOBALNAME hmR0VMXStartVMHostRIP
+GLOBALNAME RT_CONCAT(hmR0VmxStartVmHostRIP,%1)
 
-;;
-; Common restore logic for success and error paths.  We duplicate this because we
-; don't want to waste writing the VINF_SUCCESS return value to the stack in the
-; regular code path.
-;
-; @param    1   Zero if regular return, non-zero if error return.  Controls label emission.
-;
-; @note Important that this does not modify cbFrame or rsp.
-%macro RESTORE_STATE_VMX 1
+ ;;
+ ; Common restore logic for success and error paths.  We duplicate this because we
+ ; don't want to waste writing the VINF_SUCCESS return value to the stack in the
+ ; regular code path.
+ ;
+ ; @param    1   Zero if regular return, non-zero if error return.  Controls label emission.
+ ; @param    2   fLoadSaveGuestXcr0 value
+ ; @param    3   The (CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY) + CPUMCTX_WSF_IBPB_EXIT value.
+ ;               The entry values are either all set or not at all, as we're too lazy to flesh out all the variants.
+ ;
+ ; @note Important that this does not modify cbFrame or rsp.
+ %macro RESTORE_STATE_VMX 3
         ; Restore base and limit of the IDTR & GDTR.
- %ifndef VMX_SKIP_IDTR
+  %ifndef VMX_SKIP_IDTR
         lidt    [rsp + cbFrame + frm_saved_idtr]
- %endif
- %ifndef VMX_SKIP_GDTR
+  %endif
+  %ifndef VMX_SKIP_GDTR
         lgdt    [rsp + cbFrame + frm_saved_gdtr]
- %endif
+  %endif
 
         ; Save the guest state and restore the non-volatile registers.  We use rax=pGstCtx here.
         mov     [rsp + cbFrame + frm_guest_rax], rax
@@ -941,17 +991,17 @@ GLOBALNAME hmR0VMXStartVMHostRIP
         mov     qword [rax + CPUMCTX.r11], r11
         mov     r11, rcx
         mov     qword [rax + CPUMCTX.esi], rsi
- %ifdef ASM_CALL64_MSC
+  %ifdef ASM_CALL64_MSC
         mov     rsi, [rbp + frm_saved_rsi]
- %else
+  %else
         mov     rbx, rcx
- %endif
+  %endif
         mov     qword [rax + CPUMCTX.edi], rdi
- %ifdef ASM_CALL64_MSC
+  %ifdef ASM_CALL64_MSC
         mov     rdi, [rbp + frm_saved_rdi]
- %else
+  %else
         mov     rbx, rcx
- %endif
+  %endif
         mov     qword [rax + CPUMCTX.ebx], rbx
         mov     rbx, [rbp + frm_saved_rbx]
         mov     qword [rax + CPUMCTX.r12], r12
@@ -967,48 +1017,49 @@ GLOBALNAME hmR0VMXStartVMHostRIP
         mov     qword [rax + CPUMCTX.cr2], rdx
         mov     rdx, rcx
 
- %if %1 = 0 ; Skip this in failure branch (=> guru)
+  %if %1 = 0 ; Skip this in failure branch (=> guru)
+   %if %3 & CPUMCTX_WSF_IBPB_EXIT
         ; Fight spectre.
         INDIRECT_BRANCH_PREDICTION_BARRIER_CTX rax, CPUMCTX_WSF_IBPB_EXIT
- %endif
+   %endif
+  %endif
 
- %ifndef VMX_SKIP_TR
+  %ifndef VMX_SKIP_TR
         ; Restore TSS selector; must mark it as not busy before using ltr!
         ; ASSUME that this is supposed to be 'BUSY' (saves 20-30 ticks on the T42p).
-  %ifndef VMX_SKIP_GDTR
+   %ifndef VMX_SKIP_GDTR
         lgdt    [rbp + frm_saved_gdtr]
-  %endif
+   %endif
         movzx   eax, word [rbp + frm_saved_tr]
         mov     ecx, eax
         and     eax, X86_SEL_MASK_OFF_RPL           ; mask away TI and RPL bits leaving only the descriptor offset
         add     rax, [rbp + frm_saved_gdtr + 2]     ; eax <- GDTR.address + descriptor offset
         and     dword [rax + 4], ~RT_BIT(9)         ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
         ltr     cx
- %endif
+  %endif
         movzx   edx, word [rbp + frm_saved_ldtr]
         test    edx, edx
         jz      %%skip_ldt_write
         lldt    dx
 %%skip_ldt_write:
 
- %if %1 != 0
+  %if %1 != 0
 .return_after_vmwrite_error:
- %endif
+  %endif
         ; Restore segment registers.
         ;POP_RELEVANT_SEGMENT_REGISTERS rax, ax - currently broken.
 
-        ; Restore the host XCR0 if necessary.
-        mov     ecx, [rbp + frm_fNoRestoreXcr0]
-        test    ecx, ecx
-        jnz     %%xcr0_after_skip
+  %if %2 != 0
+        ; Restore the host XCR0.
+        xor     ecx, ecx
         mov     eax, [rbp + frm_uHostXcr0]
         mov     edx, [rbp + frm_uHostXcr0 + 4]
-        xsetbv                              ; ecx is already zero.
-%%xcr0_after_skip:
+        xsetbv
+  %endif
+ %endmacro ; RESTORE_STATE_VMX
 
-%endmacro ; RESTORE_STATE_VMX
 
-        RESTORE_STATE_VMX 0
+        RESTORE_STATE_VMX 0, %2, %3
         mov     eax, VINF_SUCCESS
 
 .vmstart64_end:
@@ -1033,9 +1084,20 @@ GLOBALNAME hmR0VMXStartVMHostRIP
 .vmxstart64_start_failed:
         mov     dword [rsp + cbFrame + frm_rcError], VERR_VMX_UNABLE_TO_START_VM
 .vmstart64_error_return:
-        RESTORE_STATE_VMX 1
+        RESTORE_STATE_VMX 1, %2, %3
         mov     eax, [rbp + frm_rcError]
         jmp     .vmstart64_end
+
+ %ifdef VBOX_STRICT
+        ; Precondition checks failed.
+.precond_failure_return:
+        POP_CALLEE_PRESERVED_REGISTERS
+  %if cbFrame != cbBaseFrame
+   %error Bad frame size value: cbFrame, expected cbBaseFrame
+  %endif
+        jmp     .vmstart64_end
+ %endif
+
  %undef frm_fRFlags
  %undef frm_pGstCtx
  %undef frm_uHostXcr0
@@ -1047,7 +1109,45 @@ GLOBALNAME hmR0VMXStartVMHostRIP
  %undef frm_rcError
  %undef frm_guest_rax
  %undef cbFrame
-ENDPROC hmR0VMXStartVM
+ENDPROC RT_CONCAT(hmR0VmxStartVm,%1)
+
+%endmacro ; hmR0VmxStartVmTemplate
+
+%macro hmR0VmxStartVmSseTemplate 1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit, 0, 0                      | 0                     | 0                     | 0                    , %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit, 1, 0                      | 0                     | 0                     | 0                    , %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY | 0                     | 0                     | 0                    , %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY | 0                     | 0                     | 0                    , %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit, 0, 0                      | CPUMCTX_WSF_L1D_ENTRY | 0                     | 0                    , %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit, 1, 0                      | CPUMCTX_WSF_L1D_ENTRY | 0                     | 0                    , %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | 0                     | 0                    , %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | 0                     | 0                    , %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit, 0, 0                      | 0                     | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit, 1, 0                      | 0                     | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY | 0                     | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY | 0                     | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit, 0, 0                      | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit, 1, 0                      | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit, 0, 0                      | 0                     | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit, 1, 0                      | 0                     | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY | 0                     | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY | 0                     | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit, 0, 0                      | CPUMCTX_WSF_L1D_ENTRY | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit, 1, 0                      | CPUMCTX_WSF_L1D_ENTRY | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit, 0, 0                      | 0                     | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit, 1, 0                      | 0                     | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY | 0                     | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY | 0                     | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit, 0, 0                      | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit, 1, 0                      | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
+%endmacro
+hmR0VmxStartVmSseTemplate 0
 
 
 ;;

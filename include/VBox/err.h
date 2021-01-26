@@ -2182,6 +2182,14 @@
 #define VINF_VMX_VMLAUNCH_VMRESUME                  4037
 /** VT-x VMCS launch state invalid. */
 #define VERR_VMX_INVALID_VMCS_LAUNCH_STATE          (-4038)
+/** Precodition no 0 in hmR0VMXStartVm failed. */
+#define VERR_VMX_STARTVM_PRECOND_0                  (-4039)
+/** Precodition no 1 in hmR0VMXStartVm failed. */
+#define VERR_VMX_STARTVM_PRECOND_1                  (-4040)
+/** Precodition no 2 in hmR0VMXStartVm failed. */
+#define VERR_VMX_STARTVM_PRECOND_2                  (-4041)
+/** Precodition no 3 in hmR0VMXStartVm failed. */
+#define VERR_VMX_STARTVM_PRECOND_3                  (-4042)
 /** @} */
 
 

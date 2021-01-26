@@ -4126,6 +4126,78 @@ static int hmR0VmxSetupVmcsCtlsNested(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 
 
 /**
+ * Sets pfnStartVm to the best suited variant.
+ *
+ * This must be called whenever anything changes relative to the hmR0VmXStartVm
+ * variant selection:
+ *      - pVCpu->hm.s.fLoadSaveGuestXcr0
+ *      - CPUMCTX_WSF_IBPB_ENTRY in pVCpu->cpum.GstCtx.fWorldSwitcher
+ *      - CPUMCTX_WSF_IBPB_EXIT  in pVCpu->cpum.GstCtx.fWorldSwitcher
+ *      - Perhaps: CPUMIsGuestFPUStateActive() (windows only)
+ *      - Perhaps: CPUMCTX.fXStateMask (windows only)
+ *
+ * We currently ASSUME that neither CPUMCTX_WSF_IBPB_ENTRY nor
+ * CPUMCTX_WSF_IBPB_EXIT cannot be changed at runtime.
+ */
+static void hmR0VmxUpdateStartVmFunction(PVMCPUCC pVCpu)
+{
+    static const struct CLANGWORKAROUND { PFNHMVMXSTARTVM pfn; } s_aHmR0VmxStartVmFunctions[] =
+    {
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
+        { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
+    };
+    uintptr_t const idx = (pVCpu->hm.s.fLoadSaveGuestXcr0                             ?  1 : 0)
+                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_ENTRY ?  2 : 0)
+                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_L1D_ENTRY  ?  4 : 0)
+                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_MDS_ENTRY  ?  8 : 0)
+                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_EXIT  ? 16 : 0);
+    PFNHMVMXSTARTVM const pfnStartVm = s_aHmR0VmxStartVmFunctions[idx].pfn;
+    if (pVCpu->hm.s.vmx.pfnStartVm != pfnStartVm)
+        pVCpu->hm.s.vmx.pfnStartVm = pfnStartVm;
+}
+
+
+/**
+ * Selector FNHMSVMVMRUN implementation.
+ */
+static DECLCALLBACK(int) hmR0VmxStartVmSelector(PVMCC pVM, PVMCPUCC pVCpu, bool fResume)
+{
+    hmR0VmxUpdateStartVmFunction(pVCpu);
+    return pVCpu->hm.s.vmx.pfnStartVm(pVM, pVCpu, fResume);
+}
+
+
+/**
  * Sets up the VMCS for executing a guest (or nested-guest) using hardware-assisted
  * VMX.
  *
@@ -4161,7 +4233,6 @@ static int hmR0VmxSetupVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstG
              * The host is always 64-bit since we no longer support 32-bit hosts.
              * Currently we have just a single handler for all guest modes as well, see @bugref{6208#c73}.
              */
-            pVmcsInfo->pfnStartVM = hmR0VMXStartVM;
             if (!fIsNstGstVmcs)
             {
                 rc = hmR0VmxSetupVmcsPinCtls(pVCpu, pVmcsInfo);
@@ -4469,6 +4540,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
     {
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
         Log4Func(("pVCpu=%p idCpu=%RU32\n", pVCpu, pVCpu->idCpu));
+
+        pVCpu->hm.s.vmx.pfnStartVm = hmR0VmxStartVmSelector;
 
         rc = hmR0VmxSetupVmcs(pVCpu, &pVCpu->hm.s.vmx.VmcsInfo,  false /* fIsNstGstVmcs */);
         if (RT_SUCCESS(rc))
@@ -5921,7 +5994,12 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
         rc = VMXWriteVmcsNw(VMX_VMCS_CTRL_CR4_READ_SHADOW, u64ShadowCr4);   AssertRC(rc);
 
         /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+guest XCR0. */
-        pVCpu->hm.s.fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+        bool const fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+        if (fLoadSaveGuestXcr0 != pVCpu->hm.s.fLoadSaveGuestXcr0)
+        {
+            pVCpu->hm.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
+            hmR0VmxUpdateStartVmFunction(pVCpu);
+        }
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_CR4);
 
@@ -6779,13 +6857,12 @@ DECLINLINE(int) hmR0VmxRunGuest(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
      *
      * See MSDN "Configuring Programs for 64-bit/x64 Software Conventions / Register Usage".
      */
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    bool const fResumeVM = RT_BOOL(pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
+    bool const fResumeVM = RT_BOOL(pVmxTransient->pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    int rc = hmR0VMXStartVMWrapXMM(pVM, pVCpu, fResumeVM, pVmcsInfo->pfnStartVM);
+    int rc = hmR0VMXStartVMWrapXMM(pVM, pVCpu, fResumeVM, pVCpu->hm.s.vmx.pfnStartVm);
 #else
-    int rc = pVmcsInfo->pfnStartVM(pVM, pVCpu, fResumeVM);
+    int rc = pVCpu->hm.s.vmx.pfnStartVm(pVM, pVCpu, fResumeVM);
 #endif
     AssertMsg(rc <= VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;
@@ -14907,7 +14984,12 @@ HMVMX_EXIT_DECL hmR0VmxExitXsetbv(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                                                                                 : HM_CHANGED_RAISED_XCPT_MASK);
 
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    pVCpu->hm.s.fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+    bool const fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+    if (fLoadSaveGuestXcr0 != pVCpu->hm.s.fLoadSaveGuestXcr0)
+    {
+        pVCpu->hm.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
+        hmR0VmxUpdateStartVmFunction(pVCpu);
+    }
 
     return rcStrict;
 }
