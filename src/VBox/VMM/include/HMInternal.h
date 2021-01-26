@@ -1359,10 +1359,6 @@ DECLASM(void)               hmR0VmxExportHostSegmentRegsAsmHlp(PVMXRESTOREHOST p
  */
 DECLASM(int)                VMXRestoreHostState(uint32_t fRestoreHostFlags, PVMXRESTOREHOST pRestoreHost);
 
-# ifdef VBOX_WITH_KERNEL_USING_XMM
-DECLASM(int)                hmR0VMXStartVMWrapXMM(PVMCC pVM, PVMCPUCC pVCpu, RTHCUINT fResume, PFNHMVMXSTARTVM pfnStartVM);
-# endif
-
 /**
  * VMX StartVM functions.
  *

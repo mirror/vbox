@@ -6859,11 +6859,7 @@ DECLINLINE(int) hmR0VmxRunGuest(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
      */
     bool const fResumeVM = RT_BOOL(pVmxTransient->pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-#ifdef VBOX_WITH_KERNEL_USING_XMM
-    int rc = hmR0VMXStartVMWrapXMM(pVM, pVCpu, fResumeVM, pVCpu->hm.s.vmx.pfnStartVm);
-#else
     int rc = pVCpu->hm.s.vmx.pfnStartVm(pVM, pVCpu, fResumeVM);
-#endif
     AssertMsg(rc <= VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;
 }
