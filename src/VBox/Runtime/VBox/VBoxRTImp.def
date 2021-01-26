@@ -2168,6 +2168,8 @@ EXPORTS
     RTVfsLockReleaseReadSlow
     RTVfsLockReleaseWriteSlow
     RTVfsLockRetain
+    RTVfsMemFileCreate
+    RTVfsMemIoStrmCreate
     RTVfsMemorizeIoStreamAsFile
     RTVfsNewBaseObj
     RTVfsNewFile
