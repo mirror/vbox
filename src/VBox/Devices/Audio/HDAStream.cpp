@@ -360,10 +360,10 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         pStreamR3->State.pCircBuf = NULL;
     }
 
-    const size_t cbCircBufDefault = DrvAudioHlpMilliToBytes(RT_MS_1SEC, &pCfg->Props);
+    const uint32_t cbCircBufDefault = DrvAudioHlpMilliToBytes(RT_MS_1SEC, &pCfg->Props);
 
-    size_t cbCircBuf = DrvAudioHlpMilliToBytes(  hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN
-                                               ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs, &pCfg->Props);
+    uint32_t cbCircBuf = DrvAudioHlpMilliToBytes(  hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN
+                                                 ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs, &pCfg->Props);
 
     ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf,
                                  ("Ring buffer size for stream #%RU8 is invalid (%zu), setting to default\n", uSD, cbCircBuf),
@@ -373,7 +373,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                                  cbCircBuf = cbCircBufDefault);
 
     if (cbCircBuf != cbCircBufDefault)
-        LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU64ms (%zu bytes)\n",
+        LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU64ms (%RU32 bytes)\n",
                  uSD, DrvAudioHlpBytesToMilli(cbCircBuf, &pCfg->Props), cbCircBuf));
 
     rc = RTCircBufCreate(&pStreamR3->State.pCircBuf, cbCircBuf);

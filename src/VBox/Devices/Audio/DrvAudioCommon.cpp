@@ -1180,7 +1180,7 @@ uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps)
  * @param   cbSize              Size (in bytes) to align.
  * @param   pProps              PCM properties to align size to.
  */
-uint32_t DrvAudioHlpBytesAlign(size_t cbSize, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1197,7 +1197,7 @@ uint32_t DrvAudioHlpBytesAlign(size_t cbSize, const PPDMAUDIOPCMPROPS pProps)
  * @param   cbSize              Size (in bytes) to check alignment for.
  * @param   pProps              PCM properties to use for checking the alignment.
  */
-bool DrvAudioHlpBytesIsAligned(size_t cbSize, const PPDMAUDIOPCMPROPS pProps)
+bool DrvAudioHlpBytesIsAligned(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
