@@ -360,9 +360,23 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         pStreamR3->State.pCircBuf = NULL;
     }
 
-    /* By default we allocate an internal buffer of 100ms. */
-    rc = RTCircBufCreate(&pStreamR3->State.pCircBuf,
-                         DrvAudioHlpMilliToBytes(100 /* ms */, &pCfg->Props)); /** @todo Make this configurable. */
+    const size_t cbCircBufDefault = DrvAudioHlpMilliToBytes(RT_MS_1SEC, &pCfg->Props);
+
+    size_t cbCircBuf = DrvAudioHlpMilliToBytes(  hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN
+                                               ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs, &pCfg->Props);
+
+    ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf,
+                                 ("Ring buffer size for stream #%RU8 is invalid (%zu), setting to default\n", uSD, cbCircBuf),
+                                 cbCircBuf = cbCircBufDefault);
+    ASSERT_GUEST_LOGREL_MSG_STMT(DrvAudioHlpBytesIsAligned(cbCircBuf, &pCfg->Props),
+                                 ("Ring buffer size for stream #%RU8 is misaligned (%zu), setting to default\n", uSD, cbCircBuf),
+                                 cbCircBuf = cbCircBufDefault);
+
+    if (cbCircBuf != cbCircBufDefault)
+        LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU64ms (%zu bytes)\n",
+                 uSD, DrvAudioHlpBytesToMilli(cbCircBuf, &pCfg->Props), cbCircBuf));
+
+    rc = RTCircBufCreate(&pStreamR3->State.pCircBuf, cbCircBuf);
     AssertRCReturn(rc, rc);
 
     /* Set the stream's direction. */

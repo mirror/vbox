@@ -2961,6 +2961,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Device/TimerHz", &strTmp);
             const uint64_t uTimerHz = strTmp.toUInt64();
 
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Device/BufSizeInMs", &strTmp);
+            const uint64_t uBufSizeInMs = strTmp.toUInt64();
+
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Device/BufSizeOutMs", &strTmp);
+            const uint64_t uBufSizeOutMs = strTmp.toUInt64();
+
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
             const bool fDebugEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
 
@@ -2995,6 +3001,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     }
                     if (uTimerHz)
                         InsertConfigInteger(pCfg,   "TimerHz",              uTimerHz);
+                    if (uBufSizeInMs)
+                        InsertConfigInteger(pCfg,   "BufSizeInMs",          uBufSizeInMs);
+                    if (uBufSizeOutMs)
+                        InsertConfigInteger(pCfg,   "BufSizeOutMs",         uBufSizeOutMs);
                     InsertConfigInteger(pCfg,       "DebugEnabled",         fDebugEnabled);
                     if (strDebugPathOut.isNotEmpty())
                         InsertConfigString(pCfg,    "DebugPathOut",         strDebugPathOut);
@@ -3030,6 +3040,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigNode(pInst,         "Config",               &pCfg);
                     if (uTimerHz)
                         InsertConfigInteger(pCfg,   "TimerHz",              uTimerHz);
+                    if (uBufSizeInMs)
+                        InsertConfigInteger(pCfg,   "BufSizeInMs",          uBufSizeInMs);
+                    if (uBufSizeOutMs)
+                        InsertConfigInteger(pCfg,   "BufSizeOutMs",         uBufSizeOutMs);
                     InsertConfigInteger(pCfg,       "DebugEnabled",         fDebugEnabled);
                     if (strDebugPathOut.isNotEmpty())
                         InsertConfigString(pCfg,    "DebugPathOut",         strDebugPathOut);

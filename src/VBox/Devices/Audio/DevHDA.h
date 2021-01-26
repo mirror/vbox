@@ -121,8 +121,14 @@ typedef struct HDASTATE
 #endif
     /** The device timer Hz rate. Defaults to HDA_TIMER_HZ_DEFAULT. */
     uint16_t                uTimerHz;
+    /** Buffer size (in ms) of the internal input FIFO buffer.
+     *  The actual buffer size in bytes will depend on the actual stream configuration. */
+    uint16_t                cbCircBufInMs;
+    /** Buffer size (in ms) of the internal output FIFO buffer.
+     *  The actual buffer size in bytes will depend on the actual stream configuration. */
+    uint16_t                cbCircBufOutMs;
     /** Padding for alignment. */
-    uint16_t                au16Padding3[3];
+    uint16_t                u16Padding3;
     /** Last updated wall clock (WALCLK) counter. */
     uint64_t                u64WalClk;
     /** The CORB buffer. */

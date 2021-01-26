@@ -1468,7 +1468,7 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             LogRelMax2(128, ("HDA: Stream #%RU8 interrupt lagging behind (expected %RU64us, got %RU64us, %RU8 pending interrupts), trying to catch up ...\n",
                              uSD, cTicksToNext / 1000,  cTicksElapsed / 1000, pStreamShared->State.cTransferPendingInterrupts));
 
-            cTicksToNext = 0;
+            cTicksToNext = pStreamShared->State.cTransferTicks;
         }
 
         Log3Func(("[SD%RU8] -> cTicksToNext=%RU64\n", uSD, cTicksToNext));
@@ -4595,9 +4595,21 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate and read configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "TimerHz|PosAdjustEnabled|PosAdjustFrames|DebugEnabled|DebugPathOut", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "BufSizeInMs|BufSizeOutMs|TimerHz|PosAdjustEnabled|PosAdjustFrames|DebugEnabled|DebugPathOut", "");
 
-    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, HDA_TIMER_HZ_DEFAULT /* Default value, if not set. */);
+    /* Note: Error checking of this value happens in hdaR3StreamSetUp(). */
+    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeInMs", &pThis->cbCircBufInMs, RT_MS_1SEC /* Default value, if not set. */);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("HDA configuration error: failed to read input buffer size (ms) as unsigned integer"));
+
+    /* Note: Error checking of this value happens in hdaR3StreamSetUp(). */
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeOutMs", &pThis->cbCircBufOutMs, RT_MS_1SEC /* Default value, if not set. */);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("HDA configuration error: failed to read output buffer size (ms) as unsigned integer"));
+
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, HDA_TIMER_HZ_DEFAULT /* Default value, if not set. */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
