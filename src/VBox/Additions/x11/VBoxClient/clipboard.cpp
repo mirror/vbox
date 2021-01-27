@@ -57,56 +57,7 @@ SHCLFUSECTX g_FuseCtx;
 #endif
 
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-static DECLCALLBACK(int) vbclShClOnTransferInitCallback(PSHCLTRANSFERCALLBACKDATA pData)
-{
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-    return ShClFuseOnTransferInitCallback(pData);
-# else
-    RT_NOREF(pData);
-    return VERR_NOT_IMPLEMENTED;
-# endif
-}
-
-static DECLCALLBACK(int)  vbclShClOnTransferStartCallback(PSHCLTRANSFERCALLBACKDATA pData)
-{
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-    return ShClFuseOnTransferStartCallback(pData);
-# else
-    RT_NOREF(pData);
-    return VERR_NOT_IMPLEMENTED;
-# endif
-}
-
-static DECLCALLBACK(void) vbclShClOnTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
-{
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-    return ShClFuseOnTransferCompleteCallback(pData, rc);
-# else
-    RT_NOREF(pData, rc);
-# endif
-}
-
-static DECLCALLBACK(void) vbclShClOnTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
-{
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-    return ShClFuseOnTransferErrorCallback(pData, rc);
-# else
-    RT_NOREF(pData, rc);
-# endif
-}
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-
-/**
- * Callback implementation for getting clipboard data from the host.
- *
- * @returns VBox status code. VERR_NO_DATA if no data available.
- * @param   pCtx                Our context information.
- * @param   uFmt                The format of the data being requested.
- * @param   ppv                 Returns an allocated buffer with data read from the host on success.
- *                              Needs to be free'd with RTMemFree() by the caller.
- * @param   pcb                 Returns the amount of data read (in bytes) on success.
- */
+/** @copydoc ShClX11RequestDataForX11Callback */
 DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
 {
     LogFlowFunc(("pCtx=%p, uFmt=%#x\n", pCtx, uFmt));
@@ -117,7 +68,6 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
     if (uFmt == VBOX_SHCL_FMT_URI_LIST)
     {
         //rc = VbglR3ClipboardRootListRead()
-
         rc = VERR_NO_DATA;
     }
     else
@@ -193,12 +143,7 @@ struct CLIPREADCBREQ
     SHCLFORMAT Format;
 };
 
-/**
- * Tell the host that new clipboard formats are available.
- *
- * @param   pCtx            Our context information.
- * @param   fFormats        The formats to report.
- */
+/** @copydoc ShClX11ReportFormatsCallback */
 DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS fFormats)
 {
     RT_NOREF(pCtx);
@@ -210,17 +155,7 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS f
     LogFlowFuncLeaveRC(rc2);
 }
 
-/**
- * This is called by the backend to tell us that a request for data from
- * X11 has completed.
- *
- * @param  pCtx                 Our context information.
- * @param  rcCompletion         The completion status of the request.
- * @param  pReq                 The request structure that we passed in when we started
- *                              the request.  We RTMemFree() this in this function.
- * @param  pv                   The clipboard data returned from X11 if the request succeeded (see @a rc).
- * @param  cb                   The size of the data in @a pv.
- */
+/** @copydoc ShClX11RequestFromX11CompleteCallback */
 DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx,
                                                          int rcCompletion, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
@@ -396,24 +331,7 @@ int vboxClipboardMain(void)
  */
 static DECLCALLBACK(int) vbclShClInit(void)
 {
-    int rc;
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /* Install callbacks. */
-    RT_ZERO(g_Ctx.CmdCtx.Transfers.Callbacks);
-
-    g_Ctx.CmdCtx.Transfers.Callbacks.pvUser = &g_Ctx; /* Assign context as user-provided callback data. */
-    g_Ctx.CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
-
-    g_Ctx.CmdCtx.Transfers.Callbacks.pfnTransferInitialize = vbclShClOnTransferInitCallback;
-    g_Ctx.CmdCtx.Transfers.Callbacks.pfnTransferStart      = vbclShClOnTransferStartCallback;
-    g_Ctx.CmdCtx.Transfers.Callbacks.pfnTransferComplete   = vbclShClOnTransferCompleteCallback;
-    g_Ctx.CmdCtx.Transfers.Callbacks.pfnTransferError      = vbclShClOnTransferErrorCallback;
-
-    rc = ShClTransferCtxInit(&g_Ctx.TransferCtx);
-#else
-    rc = VINF_SUCCESS;
-#endif
+    int rc = ShClTransferCtxInit(&g_Ctx.TransferCtx);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

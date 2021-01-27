@@ -1662,7 +1662,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjWriteSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDL
 *   Transfer interface implementations                                                                                           *
 *********************************************************************************************************************************/
 
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceGetRoots(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
 {
     LogFlowFuncEnter();
 
@@ -1675,7 +1675,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceGetRoots(PSHCLPROVIDERCTX p
     return rc;
 }
 
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
                                                               PSHCLLISTHANDLE phList)
 {
     LogFlowFuncEnter();
@@ -1689,7 +1689,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListOpen(PSHCLPROVIDERCTX p
     return rc;
 }
 
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
 {
     LogFlowFuncEnter();
 
@@ -1702,7 +1702,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListClose(PSHCLPROVIDERCTX 
     return rc;
 }
 
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListHdrRead(PSHCLTXPROVIDERCTX pCtx,
                                                                  SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
     LogFlowFuncEnter();
@@ -1725,7 +1725,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListHdrRead(PSHCLPROVIDERCT
     return rc;
 }
 
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListEntryRead(PSHCLTXPROVIDERCTX pCtx,
                                                                    SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry)
 {
     LogFlowFuncEnter();
@@ -1739,7 +1739,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListEntryRead(PSHCLPROVIDER
     return rc;
 }
 
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx,
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjOpen(PSHCLTXPROVIDERCTX pCtx,
                                                              PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
 {
     LogFlowFuncEnter();
@@ -1753,7 +1753,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjOpen(PSHCLPROVIDERCTX pC
     return rc;
 }
 
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
 {
     LogFlowFuncEnter();
 
@@ -1766,7 +1766,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjClose(PSHCLPROVIDERCTX p
     return rc;
 }
 
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx,
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjRead(PSHCLTXPROVIDERCTX pCtx,
                                                              SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
                                                              uint32_t fFlags, uint32_t *pcbRead)
 {
@@ -1802,19 +1802,17 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
     int rc = ShClTransferCreate(&pTransfer);
     if (RT_SUCCESS(rc))
     {
-        ShClTransferSetCallbacks(pTransfer, &pCmdCtx->Transfers.Callbacks);
-
-        rc = ShClTransferCtxTransferRegisterByIndex(pTransferCtx, pTransfer, uTransferID);
+        rc = ShClTransferInit(pTransfer, enmDir, enmSource);
         if (RT_SUCCESS(rc))
         {
-            rc = ShClTransferInit(pTransfer, uTransferID, enmDir, enmSource);
+            rc = ShClTransferCtxTransferRegisterById(pTransferCtx, pTransfer, uTransferID);
             if (RT_SUCCESS(rc))
             {
                 /* If this is a read transfer (reading data from host), set the interface to use
                  * our VbglR3 routines here. */
                 if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
                 {
-                    SHCLPROVIDERCREATIONCTX creationCtx;
+                    SHCLTXPROVIDERCREATIONCTX creationCtx;
                     RT_ZERO(creationCtx);
 
                     creationCtx.Interface.pfnRootsGet      = vbglR3ClipboardTransferIfaceGetRoots;
@@ -1830,7 +1828,7 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
 
                     creationCtx.pvUser = pCmdCtx;
 
-                    rc = ShClTransferSetInterface(pTransfer, &creationCtx);
+                    rc = ShClTransferSetProviderIface(pTransfer, &creationCtx);
                 }
 
                 if (RT_SUCCESS(rc))
@@ -1885,13 +1883,10 @@ static int vbglR3ClipboardTransferStop(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFERC
 {
     int rc;
 
-    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(pTransferCtx, uTransferID);
+    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx, uTransferID);
     if (pTransfer)
     {
-        rc = ShClTransferClose(pTransfer);
-        if (RT_SUCCESS(rc))
-            rc = ShClTransferCtxTransferUnregister(pTransferCtx, uTransferID);
-
+        rc = ShClTransferCtxTransferUnregister(pTransferCtx, uTransferID);
         if (RT_SUCCESS(rc))
         {
             LogRel2(("Shared Clipboard: Transfer ID=%RU32 successfully stopped\n", uTransferID));
@@ -2011,8 +2006,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
 
                 if (RT_SUCCESS(rc))
                 {
-                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(pTransferCtx,
-                                                                        VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
+                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
+                                                                             VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
                     AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                     SHCLROOTLISTHDR rootListHdr;
@@ -2034,8 +2029,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                 rc = VbglR3ClipboardRootListEntryReadReq(pCmdCtx, &uIndex, &fInfo);
                 if (RT_SUCCESS(rc))
                 {
-                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(pTransferCtx,
-                                                                         VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
+                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
+                                                                             VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
                     AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                     SHCLROOTLISTENTRY rootListEntry;
@@ -2055,8 +2050,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                     rc = VbglR3ClipboardListOpenRecv(pCmdCtx, &openParmsList);
                     if (RT_SUCCESS(rc))
                     {
-                        PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(pTransferCtx,
-                                                                             VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
+                        PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
+                                                                                 VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
                         AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                         LogFlowFunc(("pszPath=%s\n", openParmsList.pszPath));
@@ -2081,8 +2076,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                 rc = VbglR3ClipboardListCloseRecv(pCmdCtx, &hList);
                 if (RT_SUCCESS(rc))
                 {
-                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(pTransferCtx,
-                                                                         VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
+                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
+                                                                             VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
                     AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                     rc = ShClTransferListClose(pTransfer, hList);
@@ -2104,8 +2099,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                 rc = VbglR3ClipboardListHdrReadRecvReq(pCmdCtx, &hList, &fFlags);
                 if (RT_SUCCESS(rc))
                 {
-                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(pTransferCtx,
-                                                                         VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
+                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
+                                                                             VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
                     AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                     SHCLLISTHDR hdrList;
@@ -2134,8 +2129,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                     rc = VbglR3ClipboardListEntryReadRecvReq(pCmdCtx, &hList, &fInfo);
                     if (RT_SUCCESS(rc))
                     {
-                        PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(pTransferCtx,
-                                                                             VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
+                        PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
+                                                                                 VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
                         AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                         rc = ShClTransferListRead(pTransfer, hList, &entryList);
@@ -2167,8 +2162,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                     rc = VbglR3ClipboardObjOpenRecv(pCmdCtx, &openParms);
                     if (RT_SUCCESS(rc))
                     {
-                        PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(pTransferCtx,
-                                                                             VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
+                        PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
+                                                                                 VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
                         AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                         SHCLOBJHANDLE hObj;
@@ -2191,8 +2186,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                 rc = VbglR3ClipboardObjCloseRecv(pCmdCtx, &hObj);
                 if (RT_SUCCESS(rc))
                 {
-                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(pTransferCtx,
-                                                                         VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
+                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
+                                                                             VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
                     AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                     rc = ShClTransferObjClose(pTransfer, hObj);
@@ -2213,7 +2208,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                 rc = VbglR3ClipboardObjReadRecv(pCmdCtx, &hObj, &cbBuf, &fFlags);
                 if (RT_SUCCESS(rc))
                 {
-                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(pTransferCtx,
+                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
                                                                          VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
                     AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 

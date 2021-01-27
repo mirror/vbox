@@ -165,6 +165,20 @@ typedef struct _SHCLCLIENTCMDCTX
     uint64_t uContextID;
 } SHCLCLIENTCMDCTX, *PSHCLCLIENTCMDCTX;
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+/**
+ * Structure for keeping transfer-related data per HGCM client.
+ */
+typedef struct _SHCLIENTTRANSFERS
+{
+    /** Transfer context. */
+    SHCLTRANSFERCTX             Ctx;
+} SHCLIENTTRANSFERS, *PSHCLIENTTRANSFERS;
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
+
+/**
+ * Structure for keeping data per (connected) HGCM client.
+ */
 typedef struct _SHCLCLIENT
 {
     /** General client state data. */
@@ -181,8 +195,7 @@ typedef struct _SHCLCLIENT
      *  Needed for events which are not bound to a specific transfer. */
     SHCLEVENTSOURCE             EventSrc;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /** Transfer contextdata. */
-    SHCLTRANSFERCTX             TransferCtx;
+    SHCLIENTTRANSFERS           Transfers;
 #endif
     /** Structure for keeping the client's pending (deferred return) state.
      *  A client is in a deferred state when it asks for the next HGCM message,
@@ -255,6 +268,8 @@ int shClSvcMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg);
 
 int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID);
 void shClSvcClientDestroy(PSHCLCLIENT pClient);
+void shClSvcClientLock(PSHCLCLIENT pClient);
+void shClSvcClientUnlock(PSHCLCLIENT pClient);
 void shClSvcClientReset(PSHCLCLIENT pClient);
 
 int shClSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID);
@@ -358,7 +373,7 @@ int ShClBackendSync(PSHCLCLIENT pClient);
  * @{
  */
 /**
- * Called when a transfer gets created.
+ * Called after a transfer got created.
  *
  * @returns VBox status code.
  * @param   pClient             Shared Clipboard client context.
@@ -366,7 +381,7 @@ int ShClBackendSync(PSHCLCLIENT pClient);
  */
 int ShClBackendTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 /**
- * Called when a transfer gets destroyed.
+ * Called before a transfer gets destroyed.
  *
  * @returns VBox status code.
  * @param   pClient             Shared Clipboard client context.
@@ -396,36 +411,37 @@ int shClSvcTransferHostHandler(uint32_t u32Function, uint32_t cParms, VBOXHGCMSV
 /** @name Shared Clipboard transfer interface implementations for the host service.
  * @{
  */
-int shClSvcTransferIfaceOpen(PSHCLPROVIDERCTX pCtx);
-int shClSvcTransferIfaceClose(PSHCLPROVIDERCTX pCtx);
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
 
-int shClSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
 
-int shClSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
-int shClSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
-int shClSvcTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-int shClSvcTransferIfaceListHdrWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-int shClSvcTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
-int shClSvcTransferIfaceListEntryWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+int shClSvcTransferIfaceGetRoots(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
 
-int shClSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
+int shClSvcTransferIfaceListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
+int shClSvcTransferIfaceListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
+int shClSvcTransferIfaceListHdrRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+int shClSvcTransferIfaceListHdrWrite(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+int shClSvcTransferIfaceListEntryRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+int shClSvcTransferIfaceListEntryWrite(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+
+int shClSvcTransferIfaceObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
                                 PSHCLOBJHANDLE phObj);
-int shClSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
-int shClSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+int shClSvcTransferIfaceObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
+int shClSvcTransferIfaceObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                 void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
-int shClSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+int shClSvcTransferIfaceObjWrite(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                  void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
 /** @} */
 
 /** @name Shared Clipboard transfer callbacks for the host service.
  * @{
  */
-DECLCALLBACK(void) VBoxSvcClipboardTransferPrepareCallback(PSHCLTRANSFERCALLBACKDATA pData);
-DECLCALLBACK(void) VBoxSvcClipboardDataHeaderCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData);
-DECLCALLBACK(void) VBoxSvcClipboardDataCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData);
-DECLCALLBACK(void) VBoxSvcClipboardTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
-DECLCALLBACK(void) VBoxSvcClipboardTransferCanceledCallback(PSHCLTRANSFERCALLBACKDATA pData);
-DECLCALLBACK(void) VBoxSvcClipboardTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
+DECLCALLBACK(void) VBoxSvcClipboardTransferPrepareCallback(PSHCLTXPROVIDERCTX pCtx);
+DECLCALLBACK(void) VBoxSvcClipboardDataHeaderCompleteCallback(PSHCLTXPROVIDERCTX pCtx);
+DECLCALLBACK(void) VBoxSvcClipboardDataCompleteCallback(PSHCLTXPROVIDERCTX pCtx);
+DECLCALLBACK(void) VBoxSvcClipboardTransferCompleteCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
+DECLCALLBACK(void) VBoxSvcClipboardTransferCanceledCallback(PSHCLTXPROVIDERCTX pCtx);
+DECLCALLBACK(void) VBoxSvcClipboardTransferErrorCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
 /** @} */
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 

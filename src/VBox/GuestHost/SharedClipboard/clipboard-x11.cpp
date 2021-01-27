@@ -1161,6 +1161,10 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCONTEXT pParent, bool fHeadless)
     pCtx->fXtNeedsUpdate = false;
 #endif
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+    ShClTransferHttpServerInit(&pCtx->HttpCtx.HttpServer);
+#endif
+
 #ifdef TESTCASE
     if (RT_SUCCESS(rc))
     {

@@ -29,17 +29,20 @@
 #include <VBox/GuestHost/SharedClipboard-x11.h>
 #include <VBox/GuestHost/clipboard-helper.h>
 
+/** @copydoc ShClX11RequestDataForX11Callback */
 DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
 {
     RT_NOREF(pCtx, uFmt, ppv, pcb);
     return VERR_NO_DATA;
 }
 
+/** @copydoc ShClX11ReportFormatsCallback */
 DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS fFormats)
 {
     RT_NOREF(pCtx, fFormats);
 }
 
+/** @copydoc ShClX11RequestFromX11CompleteCallback */
 DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(pCtx, rc, pReq, pv, cb);

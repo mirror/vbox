@@ -84,10 +84,10 @@ static char s_szClipWndClassName[] = SHCL_WIN_WNDCLASS_NAME;
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-static DECLCALLBACK(int)  vboxClipboardOnTransferInitCallback(PSHCLTRANSFERCALLBACKDATA pData);
-static DECLCALLBACK(int)  vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLBACKDATA pData);
-static DECLCALLBACK(void) vboxClipboardOnTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
-static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
+static DECLCALLBACK(int)  vboxClipboardOnTransferInitCallback(PSHCLTXPROVIDERCTX pCtx);
+static DECLCALLBACK(int)  vboxClipboardOnTransferStartCallback(PSHCLTXPROVIDERCTX pCtx);
+static DECLCALLBACK(void) vboxClipboardOnTransferCompleteCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
+static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
 #endif
 
 
@@ -98,7 +98,7 @@ static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTRANSFERCALL
  *
  * @param   pData               Callback data to cleanup.
  */
-static void vboxClipboardTransferCallbackCleanup(PSHCLTRANSFERCALLBACKDATA pData)
+static void vboxClipboardTransferCallbackCleanup(PSHCLTXPROVIDERCTX pCtx)
 {
     LogFlowFuncEnter();
 
@@ -123,7 +123,7 @@ static void vboxClipboardTransferCallbackCleanup(PSHCLTRANSFERCALLBACKDATA pData
     pTransfer = NULL;
 }
 
-static DECLCALLBACK(int)  vboxClipboardOnTransferInitCallback(PSHCLTRANSFERCALLBACKDATA pData)
+static DECLCALLBACK(int)  vboxClipboardOnTransferInitCallback(PSHCLTXPROVIDERCTX pCtx)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pData->pvUser;
     AssertPtr(pCtx);
@@ -135,7 +135,7 @@ static DECLCALLBACK(int)  vboxClipboardOnTransferInitCallback(PSHCLTRANSFERCALLB
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLBACKDATA pData)
+static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTXPROVIDERCTX pCtx)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pData->pvUser;
     AssertPtr(pCtx);
@@ -191,7 +191,7 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     return rc;
 }
 
-static DECLCALLBACK(void) vboxClipboardOnTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
+static DECLCALLBACK(void) vboxClipboardOnTransferCompleteCallback(PSHCLTXPROVIDERCTX pCtx, int rc)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pData->pvUser;
     AssertPtr(pCtx);
@@ -205,7 +205,7 @@ static DECLCALLBACK(void) vboxClipboardOnTransferCompleteCallback(PSHCLTRANSFERC
     vboxClipboardTransferCallbackCleanup(pData);
 }
 
-static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
+static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTXPROVIDERCTX pCtx, int rc)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pData->pvUser;
     AssertPtr(pCtx);

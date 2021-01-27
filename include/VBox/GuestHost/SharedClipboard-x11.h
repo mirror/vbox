@@ -34,6 +34,9 @@
 #include <iprt/thread.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+# include <VBox/GuestHost/SharedClipboard-transfers.h>
+#endif
 
 /** Enables the Xt busy / update handling. */
 #define VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY      1
@@ -104,7 +107,11 @@ typedef struct _SHCLX11CTX
     SHCLX11FMTIDX idxFmtHTML;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** The best HTML format X11 has to offer, as an index into the formats table. */
-    SHCLX11FMTIDX idxFmtURI;
+    SHCLX11FMTIDX   idxFmtURI;
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+    /** HTTP transfer context data. */
+    SHCLHTTPCONTEXT HttpCtx;
+# endif
 #endif
     /** What kind of formats does VBox have to offer? */
     SHCLFORMATS vboxFormats;
@@ -147,9 +154,43 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormat, CLIPREADCBR
 /** @name Shared Clipboard callbacks which have to be implemented the X11 backend and host service.
  *  @{
  */
-DECLCALLBACK(int)  ShClX11RequestDataForX11Callback(SHCLCONTEXT *pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb);
-DECLCALLBACK(void) ShClX11ReportFormatsCallback(SHCLCONTEXT *pCtx, SHCLFORMATS fFormats);
-DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
+/**
+ * Callback for reading clipboard data from the guest.
+ * The function will be invoked for every single target the clipboard requests.
+ *
+ * @note Runs in Xt event thread.
+ *
+ * @returns VBox status code. VERR_NO_DATA if no data available.
+ * @param   pCtx                Pointer to the host clipboard structure.
+ * @param   uFmt                The format in which the data should be transferred
+ *                              (VBOX_SHCL_FMT_XXX).
+ * @param   ppv                 Returns an allocated buffer with data read from the guest on success.
+ *                              Needs to be free'd with RTMemFree() by the caller.
+ * @param   pcb                 Returns the amount of data read (in bytes) on success.
+ */
+DECLCALLBACK(int)  ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb);
+
+/**
+ * Reports formats available in the X11 clipboard to VBox.
+ *
+ * @note   Runs in Xt event thread.
+ *
+ * @param  pCtx                 Opaque context pointer for the glue code.
+ * @param  fFormats             The formats available.
+ */
+DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS fFormats);
+
+/**
+ * Called by the backend to tell us that a request for data from X11 has completed.
+ *
+ * @param  pCtx                 Our context information.
+ * @param  rcCompletion         The completion status of the request.
+ * @param  pReq                 The request structure that we passed in when we started
+ *                              the request.  We RTMemFree() this in this function.
+ * @param  pv                   The clipboard data returned from X11 if the request succeeded (see @a rcCompletion).
+ * @param  cb                   The size of the data in @a pv.
+ */
+DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
 /** @} */
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_x11_h */

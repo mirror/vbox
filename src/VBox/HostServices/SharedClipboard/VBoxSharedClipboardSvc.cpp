@@ -242,7 +242,7 @@ using namespace HGCM;
 *********************************************************************************************************************************/
 PVBOXHGCMSVCHELPERS g_pHelpers;
 
-static RTCRITSECT g_CritSect;
+static RTCRITSECT g_CritSect;               /** @todo r=andy Put this into some instance struct, avoid globals. */
 /** Global Shared Clipboard mode. */
 static uint32_t g_uMode  = VBOX_SHCL_MODE_OFF;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -323,11 +323,19 @@ static int shClSvcModeSet(uint32_t uMode)
     return rc;
 }
 
+/**
+ * Takes the global Shared Clipboard service lock.
+ *
+ * @returns \c true if locking was successful, or \c false if not.
+ */
 bool ShClSvcLock(void)
 {
     return RT_SUCCESS(RTCritSectEnter(&g_CritSect));
 }
 
+/**
+ * Unlocks the formerly locked global Shared Clipboard service lock.
+ */
 void ShClSvcUnlock(void)
 {
     int rc2 = RTCritSectLeave(&g_CritSect);
@@ -560,7 +568,7 @@ int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             if (RT_SUCCESS(rc))
-                rc = ShClTransferCtxInit(&pClient->TransferCtx);
+                rc = ShClTransferCtxInit(&pClient->Transfers.Ctx);
 #endif
         }
     }
@@ -616,6 +624,18 @@ void shClSvcClientDestroy(PSHCLCLIENT pClient)
         AssertFailed();
 
     LogFlowFuncLeave();
+}
+
+void shClSvcClientLock(PSHCLCLIENT pClient)
+{
+    int rc2 = RTCritSectEnter(&pClient->CritSect);
+    AssertRC(rc2);
+}
+
+void shClSvcClientUnlock(PSHCLCLIENT pClient)
+{
+    int rc2 = RTCritSectLeave(&pClient->CritSect);
+    AssertRC(rc2);
 }
 
 /**
@@ -1395,9 +1415,8 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_ENABLED))
     {
         fFormats &= ~VBOX_SHCL_FMT_URI_LIST;
+        LogRel2(("Shared Clipboard: File transfers are disabled, skipping reporting those to the guest\n"));
     }
-    else
-        LogRel2(("Shared Clipboard: Warning: File transfers are disabled, ignoring\n"));
 #endif
 
 #ifdef LOG_ENABLED
@@ -2025,32 +2044,32 @@ static DECLCALLBACK(void) svcCall(void *,
     AssertPtr(pClient);
 
 #ifdef LOG_ENABLED
-    LogFunc(("u32ClientID=%RU32, fn=%RU32 (%s), cParms=%RU32, paParms=%p\n",
-             u32ClientID, u32Function, ShClGuestMsgToStr(u32Function), cParms, paParms));
+    Log2Func(("u32ClientID=%RU32, fn=%RU32 (%s), cParms=%RU32, paParms=%p\n",
+              u32ClientID, u32Function, ShClGuestMsgToStr(u32Function), cParms, paParms));
     for (uint32_t i = 0; i < cParms; i++)
     {
         switch (paParms[i].type)
         {
             case VBOX_HGCM_SVC_PARM_32BIT:
-                LogFunc(("    paParms[%RU32]: type uint32_t - value %RU32\n", i, paParms[i].u.uint32));
+                Log3Func(("    paParms[%RU32]: type uint32_t - value %RU32\n", i, paParms[i].u.uint32));
                 break;
             case VBOX_HGCM_SVC_PARM_64BIT:
-                LogFunc(("    paParms[%RU32]: type uint64_t - value %RU64\n", i, paParms[i].u.uint64));
+                Log3Func(("    paParms[%RU32]: type uint64_t - value %RU64\n", i, paParms[i].u.uint64));
                 break;
             case VBOX_HGCM_SVC_PARM_PTR:
-                LogFunc(("    paParms[%RU32]: type ptr - value 0x%p (%RU32 bytes)\n",
-                         i, paParms[i].u.pointer.addr, paParms[i].u.pointer.size));
+                Log3Func(("    paParms[%RU32]: type ptr - value 0x%p (%RU32 bytes)\n",
+                          i, paParms[i].u.pointer.addr, paParms[i].u.pointer.size));
                 break;
             case VBOX_HGCM_SVC_PARM_PAGES:
-                LogFunc(("    paParms[%RU32]: type pages - cb=%RU32, cPages=%RU16\n",
-                         i, paParms[i].u.Pages.cb, paParms[i].u.Pages.cPages));
+                Log3Func(("    paParms[%RU32]: type pages - cb=%RU32, cPages=%RU16\n",
+                          i, paParms[i].u.Pages.cb, paParms[i].u.Pages.cPages));
                 break;
             default:
                 AssertFailed();
         }
     }
-    LogFunc(("Client state: fFlags=0x%x, fGuestFeatures0=0x%x, fGuestFeatures1=0x%x\n",
-             pClient->State.fFlags, pClient->State.fGuestFeatures0, pClient->State.fGuestFeatures1));
+    Log2Func(("Client state: fFlags=0x%x, fGuestFeatures0=0x%x, fGuestFeatures1=0x%x\n",
+              pClient->State.fFlags, pClient->State.fGuestFeatures0, pClient->State.fGuestFeatures1));
 #endif
 
     int rc;
@@ -2121,13 +2140,14 @@ static DECLCALLBACK(void) svcCall(void *,
             rc = shClSvcClientError(cParms,paParms, &rcGuest);
             if (RT_SUCCESS(rc))
             {
-                LogRel(("Shared Clipboard: Error from guest side: %Rrc\n", rcGuest));
+                LogRel(("Shared Clipboard: Error reported from guest side: %Rrc\n", rcGuest));
 
-                /* Reset client state and start over. */
-                shclSvcClientStateReset(&pClient->State);
+                shClSvcClientLock(pClient);
+
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                 shClSvcClientTransfersReset(pClient);
 #endif
+                shClSvcClientUnlock(pClient);
             }
             break;
         }

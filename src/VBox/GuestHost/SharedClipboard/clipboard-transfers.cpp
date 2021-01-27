@@ -32,7 +32,10 @@
 
 static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
 static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTimeoutMs);
-static PSHCLTRANSFER shClTransferCtxGetTransferInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
+
+static void shclTransferCtxTransferRemoveAndUnregister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer);
+static PSHCLTRANSFER shClTransferCtxGetTransferByIdInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uId);
+static PSHCLTRANSFER shClTransferCtxGetTransferByIndexInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
 static int shClConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen);
 static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPath, uint32_t fFlags, char **ppszResolved);
 
@@ -1171,13 +1174,15 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 
     pTransfer->pszPathRootAbs    = NULL;
 
-    pTransfer->uTimeoutMs     = 30 * 1000; /* 30s timeout by default. */
+#ifdef DEBUG_andy
+    pTransfer->uTimeoutMs     = RT_MS_5SEC;
+#else
+    pTransfer->uTimeoutMs     = RT_MS_30SEC;
+#endif
     pTransfer->cbMaxChunkSize = _64K; /** @todo Make this configurable. */
 
     pTransfer->pvUser = NULL;
     pTransfer->cbUser = 0;
-
-    RT_ZERO(pTransfer->Callbacks);
 
     RTListInit(&pTransfer->lstList);
     RTListInit(&pTransfer->lstObj);
@@ -1236,14 +1241,12 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to initialize.
- * @param   uID                 ID to use for the transfer. Can be set to 0 if not important.
  * @param   enmDir              Specifies the transfer direction of this transfer.
  * @param   enmSource           Specifies the data source of the transfer.
  */
-int ShClTransferInit(PSHCLTRANSFER pTransfer,
-                     SHCLTRANSFERID uID, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource)
+int ShClTransferInit(PSHCLTRANSFER pTransfer, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource)
 {
-    pTransfer->State.uID       = uID;
+    pTransfer->State.uID       = 0;
     pTransfer->State.enmDir    = enmDir;
     pTransfer->State.enmSource = enmSource;
 
@@ -1263,34 +1266,9 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer,
         pTransfer->cMaxObjHandles  = _4K; /** @todo Ditto. */
         pTransfer->uObjHandleNext  = 1;
 
-        if (pTransfer->Callbacks.pfnTransferInitialize)
-        {
-            SHCLTRANSFERCALLBACKDATA Data = { pTransfer, pTransfer->Callbacks.pvUser, pTransfer->Callbacks.cbUser };
-            rc = pTransfer->Callbacks.pfnTransferInitialize(&Data);
-        }
+        if (pTransfer->ProviderIface.pfnInitialize)
+            rc = pTransfer->ProviderIface.pfnInitialize(&pTransfer->ProviderCtx);
     }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-int ShClTransferOpen(PSHCLTRANSFER pTransfer)
-{
-    int rc = VINF_SUCCESS;
-
-    if (pTransfer->ProviderIface.pfnTransferOpen)
-        rc = pTransfer->ProviderIface.pfnTransferOpen(&pTransfer->ProviderCtx);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-int ShClTransferClose(PSHCLTRANSFER pTransfer)
-{
-    int rc = VINF_SUCCESS;
-
-    if (pTransfer->ProviderIface.pfnTransferClose)
-        rc = pTransfer->ProviderIface.pfnTransferClose(&pTransfer->ProviderCtx);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2043,8 +2021,8 @@ bool ShClTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList
  * @param   pTransfer           Transfer to create transfer provider for.
  * @param   pCreationCtx        Provider creation context to use for provider creation.
  */
-int ShClTransferSetInterface(PSHCLTRANSFER pTransfer,
-                             PSHCLPROVIDERCREATIONCTX pCreationCtx)
+int ShClTransferSetProviderIface(PSHCLTRANSFER pTransfer,
+                                 PSHCLTXPROVIDERCREATIONCTX pCreationCtx)
 {
     AssertPtrReturn(pTransfer,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCreationCtx, VERR_INVALID_POINTER);
@@ -2054,20 +2032,6 @@ int ShClTransferSetInterface(PSHCLTRANSFER pTransfer,
     int rc = VINF_SUCCESS;
 
     pTransfer->ProviderIface         = pCreationCtx->Interface;
-
-#ifdef DEBUG
-# define LOG_IFACE_PTR(a_Name) \
-    LogFlowFunc(( #a_Name "=%p\n", pTransfer->ProviderIface.a_Name));
-
-    LOG_IFACE_PTR(pfnTransferOpen);
-    LOG_IFACE_PTR(pfnTransferClose);
-    LOG_IFACE_PTR(pfnRootsGet);
-    LOG_IFACE_PTR(pfnListOpen);
-    LOG_IFACE_PTR(pfnListClose);
-
-# undef LOG_IFACE_PTR
-#endif
-
     pTransfer->ProviderCtx.pTransfer = pTransfer;
     pTransfer->ProviderCtx.pvUser    = pCreationCtx->pvUser;
 
@@ -2519,10 +2483,9 @@ int ShClTransferStart(PSHCLTRANSFER pTransfer)
 
     int rc;
 
-    if (pTransfer->Callbacks.pfnTransferStart)
+    if (pTransfer->ProviderIface.pfnStart)
     {
-        SHCLTRANSFERCALLBACKDATA Data = { pTransfer, pTransfer->Callbacks.pvUser, pTransfer->Callbacks.cbUser };
-        rc = pTransfer->Callbacks.pfnTransferStart(&Data);
+        rc = pTransfer->ProviderIface.pfnStart(&pTransfer->ProviderCtx);
     }
     else
         rc = VINF_SUCCESS;
@@ -2534,38 +2497,6 @@ int ShClTransferStart(PSHCLTRANSFER pTransfer)
 
     LogFlowFuncLeaveRC(rc);
     return rc;
-}
-
-/**
- * Sets or unsets the callback table to be used for a Shared Clipboard transfer.
- *
- * @returns VBox status code.
- * @param   pTransfer           Clipboard transfer to set callbacks for.
- * @param   pCallbacks          Pointer to callback table to set.
- */
-void ShClTransferSetCallbacks(PSHCLTRANSFER pTransfer,
-                              PSHCLTRANSFERCALLBACKS pCallbacks)
-{
-    AssertPtrReturnVoid(pTransfer);
-    AssertPtrReturnVoid(pCallbacks);
-
-    LogFlowFunc(("pCallbacks=%p\n", pCallbacks));
-
-#define SET_CALLBACK(a_pfnCallback)             \
-    if (pCallbacks->a_pfnCallback)              \
-        pTransfer->Callbacks.a_pfnCallback = pCallbacks->a_pfnCallback
-
-    SET_CALLBACK(pfnTransferInitialize);
-    SET_CALLBACK(pfnTransferStart);
-    SET_CALLBACK(pfnListHeaderComplete);
-    SET_CALLBACK(pfnListEntryComplete);
-    SET_CALLBACK(pfnTransferCanceled);
-    SET_CALLBACK(pfnTransferError);
-
-#undef SET_CALLBACK
-
-    pTransfer->Callbacks.pvUser = pCallbacks->pvUser;
-    pTransfer->Callbacks.cbUser = pCallbacks->cbUser;
 }
 
 /**
@@ -2675,7 +2606,8 @@ int ShClTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
  */
 void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
 {
-    AssertPtrReturnVoid(pTransferCtx);
+    if (!pTransferCtx)
+        return;
 
     LogFlowFunc(("pTransferCtx=%p\n", pTransferCtx));
 
@@ -2687,7 +2619,7 @@ void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
     {
         ShClTransferDestroy(pTransfer);
 
-        RTListNodeRemove(&pTransfer->Node);
+        shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
 
         RTMemFree(pTransfer);
         pTransfer = NULL;
@@ -2722,9 +2654,9 @@ void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
  *
  * @returns Shared Clipboard transfer, or NULL if not found.
  * @param   pTransferCtx                Transfer context to return transfer for.
- * @param   uID                 ID of the transfer to return.
+ * @param   uID                         ID of the transfer to return.
  */
-static PSHCLTRANSFER shClTransferCtxGetTransferInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
+static PSHCLTRANSFER shClTransferCtxGetTransferByIdInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
 {
     PSHCLTRANSFER pTransfer;
     RTListForEach(&pTransferCtx->List, pTransfer, SHCLTRANSFER, Node) /** @todo Slow, but works for now. */
@@ -2737,15 +2669,49 @@ static PSHCLTRANSFER shClTransferCtxGetTransferInternal(PSHCLTRANSFERCTX pTransf
 }
 
 /**
- * Returns a specific Shared Clipboard transfer.
+ * Returns a specific Shared Clipboard transfer by index, internal version.
  *
  * @returns Shared Clipboard transfer, or NULL if not found.
  * @param   pTransferCtx                Transfer context to return transfer for.
- * @param   uID                 ID of the transfer to return.
+ * @param   uIdx                        Index of the transfer to return.
  */
-PSHCLTRANSFER ShClTransferCtxGetTransfer(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
+static PSHCLTRANSFER shClTransferCtxGetTransferByIndexInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx)
 {
-    return shClTransferCtxGetTransferInternal(pTransferCtx, uID);
+    uint32_t idx = 0;
+
+    PSHCLTRANSFER pTransfer;
+    RTListForEach(&pTransferCtx->List, pTransfer, SHCLTRANSFER, Node) /** @todo Slow, but works for now. */
+    {
+        if (uIdx == idx)
+            return pTransfer;
+        idx++;
+    }
+
+    return NULL;
+}
+
+/**
+ * Returns a Shared Clipboard transfer for a specific transfer ID.
+ *
+ * @returns Shared Clipboard transfer, or NULL if not found.
+ * @param   pTransferCtx                Transfer context to return transfer for.
+ * @param   uID                         ID of the transfer to return.
+ */
+PSHCLTRANSFER ShClTransferCtxGetTransferById(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
+{
+    return shClTransferCtxGetTransferByIdInternal(pTransferCtx, uID);
+}
+
+/**
+ * Returns a Shared Clipboard transfer for a specific list index.
+ *
+ * @returns Shared Clipboard transfer, or NULL if not found.
+ * @param   pTransferCtx                Transfer context to return transfer for.
+ * @param   uIdx                        List index of the transfer to return.
+ */
+PSHCLTRANSFER ShClTransferCtxGetTransferByIndex(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx)
+{
+    return shClTransferCtxGetTransferByIndexInternal(pTransferCtx, uIdx);
 }
 
 /**
@@ -2784,7 +2750,7 @@ uint32_t ShClTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx)
  */
 int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID *pidTransfer)
 {
-    AssertPtrReturn(pTransferCtx,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pTransferCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     /* pidTransfer is optional. */
 
@@ -2815,29 +2781,24 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
 
     Log2Func(("pTransfer=%p, idTransfer=%RU32 (%RU16 transfers)\n", pTransfer, idTransfer, pTransferCtx->cTransfers));
 
+    pTransfer->State.uID = idTransfer;
+
     RTListAppend(&pTransferCtx->List, &pTransfer->Node);
 
     pTransferCtx->cTransfers++;
 
-    int rc = VINF_SUCCESS;
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-    if (!ShClTransferHttpServerIsRunning(&pTransferCtx->HttpServer)) /* Only one HTTP server per transfer context. */
-        rc = ShClTransferHttpServerCreate(&pTransferCtx->HttpServer, NULL /* puPort */);
-
-    if (RT_SUCCESS(rc))
-        rc = ShClTransferHttpServerRegisterTransfer(&pTransferCtx->HttpServer, pTransfer);
-#endif
+    if (pTransfer->ProviderIface.pfnRegistered)
+        pTransfer->ProviderIface.pfnRegistered(&pTransfer->ProviderCtx, pTransferCtx);
 
     if (pidTransfer)
         *pidTransfer = idTransfer;
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
 }
 
 /**
- * Registers a Shared Clipboard transfer with a transfer contextby specifying an ID for the transfer.
+ * Registers a Shared Clipboard transfer with a transfer context by specifying an ID for the transfer.
  *
  * @return  VBox status code.
  * @retval  VERR_ALREADY_EXISTS if a transfer with the given ID already exists.
@@ -2846,7 +2807,7 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
  * @param   pTransfer           Transfer to register.
  * @param   idTransfer          Transfer ID to use for registration.
  */
-int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID idTransfer)
+int ShClTransferCtxTransferRegisterById(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID idTransfer)
 {
     LogFlowFunc(("cTransfers=%RU16, idTransfer=%RU32\n", pTransferCtx->cTransfers, idTransfer));
 
@@ -2855,6 +2816,11 @@ int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLT
         if (!ASMBitTestAndSet(&pTransferCtx->bmTransferIds[0], idTransfer))
         {
             RTListAppend(&pTransferCtx->List, &pTransfer->Node);
+
+            pTransfer->State.uID = idTransfer;
+
+            if (pTransfer->ProviderIface.pfnRegistered)
+                pTransfer->ProviderIface.pfnRegistered(&pTransfer->ProviderCtx, pTransferCtx);
 
             pTransferCtx->cTransfers++;
             return VINF_SUCCESS;
@@ -2868,12 +2834,12 @@ int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLT
 }
 
 /**
- * Removes a transfer from a transfer context.
+ * Removes and unregisters a transfer from a transfer context.
  *
  * @param   pTransferCtx        Transfer context to remove transfer from.
  * @param   pTransfer           Transfer to remove.
  */
-static void shclTransferCtxTransferRemove(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer)
+static void shclTransferCtxTransferRemoveAndUnregister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer)
 {
     RTListNodeRemove(&pTransfer->Node);
 
@@ -2882,22 +2848,10 @@ static void shclTransferCtxTransferRemove(PSHCLTRANSFERCTX pTransferCtx, PSHCLTR
 
     Assert(pTransferCtx->cTransfers >= pTransferCtx->cRunning);
 
-    LogFlowFunc(("Now %RU32 transfers left\n", pTransferCtx->cTransfers));
+    if (pTransfer->ProviderIface.pfnUnregistered)
+        pTransfer->ProviderIface.pfnUnregistered(&pTransfer->ProviderCtx, pTransferCtx);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-    if (ShClTransferHttpServerIsRunning(&pTransferCtx->HttpServer))
-    {
-        /* Try unregistering transfer (if it was registered before). */
-        int rc2 = ShClTransferHttpServerUnregisterTransfer(&pTransferCtx->HttpServer, pTransfer);
-        if (RT_SUCCESS(rc2))
-        {
-            /* No more registered transfers left? Tear down the HTTP server instance then. */
-            if (pTransferCtx->cTransfers == 0)
-                rc2 = ShClTransferHttpServerDestroy(&pTransferCtx->HttpServer);
-        }
-        AssertRC(rc2);
-    }
-#endif
+    LogFlowFunc(("Now %RU32 transfers left\n", pTransferCtx->cTransfers));
 }
 
 /**
@@ -2915,10 +2869,10 @@ int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFE
 
     LogFlowFunc(("idTransfer=%RU32\n", idTransfer));
 
-    PSHCLTRANSFER pTransfer = shClTransferCtxGetTransferInternal(pTransferCtx, idTransfer);
+    PSHCLTRANSFER pTransfer = shClTransferCtxGetTransferByIdInternal(pTransferCtx, idTransfer);
     if (pTransfer)
     {
-        shclTransferCtxTransferRemove(pTransferCtx, pTransfer);
+        shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
     }
     else
         rc = VERR_NOT_FOUND;
@@ -2949,7 +2903,7 @@ void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
     {
         if (ShClTransferGetStatus(pTransfer) != SHCLTRANSFERSTATUS_STARTED)
         {
-            shclTransferCtxTransferRemove(pTransferCtx, pTransfer);
+            shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
 
             ShClTransferDestroy(pTransfer);
 
