@@ -561,6 +561,124 @@ ENDPROC VMXDispatchHostNmi
 
 
 ;;
+; Common restore logic for success and error paths.  We duplicate this because we
+; don't want to waste writing the VINF_SUCCESS return value to the stack in the
+; regular code path.
+;
+; @param    1   Zero if regular return, non-zero if error return.  Controls label emission.
+; @param    2   fLoadSaveGuestXcr0 value
+; @param    3   The (CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY) + CPUMCTX_WSF_IBPB_EXIT value.
+;               The entry values are either all set or not at all, as we're too lazy to flesh out all the variants.
+; @param    4   The SSE saving/restoring: 0 to do nothing, 1 to do it manually, 2 to use xsave/xrstor.
+;
+; @note Important that this does not modify cbFrame or rsp.
+%macro RESTORE_STATE_VMX 4
+        ; Restore base and limit of the IDTR & GDTR.
+ %ifndef VMX_SKIP_IDTR
+        lidt    [rsp + cbFrame + frm_saved_idtr]
+ %endif
+ %ifndef VMX_SKIP_GDTR
+        lgdt    [rsp + cbFrame + frm_saved_gdtr]
+ %endif
+
+        ; Save the guest state and restore the non-volatile registers.  We use rax=pGstCtx here.
+        mov     [rsp + cbFrame + frm_guest_rax], rax
+        mov     rax, [rsp + cbFrame + frm_pGstCtx]
+
+        mov     qword [rax + CPUMCTX.ebp], rbp
+        lea     rbp, [rsp + cbFrame]    ; re-establish the frame pointer as early as possible.
+        mov     qword [rax + CPUMCTX.ecx], rcx
+        mov     rcx, SPECTRE_FILLER
+        mov     qword [rax + CPUMCTX.edx], rdx
+        mov     rdx, [rbp + frm_guest_rax]
+        mov     qword [rax + CPUMCTX.eax], rdx
+        mov     rdx, rcx
+        mov     qword [rax + CPUMCTX.r8],  r8
+        mov     r8, rcx
+        mov     qword [rax + CPUMCTX.r9],  r9
+        mov     r9, rcx
+        mov     qword [rax + CPUMCTX.r10], r10
+        mov     r10, rcx
+        mov     qword [rax + CPUMCTX.r11], r11
+        mov     r11, rcx
+        mov     qword [rax + CPUMCTX.esi], rsi
+ %ifdef ASM_CALL64_MSC
+        mov     rsi, [rbp + frm_saved_rsi]
+ %else
+        mov     rbx, rcx
+ %endif
+        mov     qword [rax + CPUMCTX.edi], rdi
+ %ifdef ASM_CALL64_MSC
+        mov     rdi, [rbp + frm_saved_rdi]
+ %else
+        mov     rbx, rcx
+ %endif
+        mov     qword [rax + CPUMCTX.ebx], rbx
+        mov     rbx, [rbp + frm_saved_rbx]
+        mov     qword [rax + CPUMCTX.r12], r12
+        mov     r12,  [rbp + frm_saved_r12]
+        mov     qword [rax + CPUMCTX.r13], r13
+        mov     r13,  [rbp + frm_saved_r13]
+        mov     qword [rax + CPUMCTX.r14], r14
+        mov     r14,  [rbp + frm_saved_r14]
+        mov     qword [rax + CPUMCTX.r15], r15
+        mov     r15,  [rbp + frm_saved_r15]
+
+        mov     rdx, cr2
+        mov     qword [rax + CPUMCTX.cr2], rdx
+        mov     rdx, rcx
+
+ %if %4 != 0
+        ; Save the context pointer in r8 for the SSE save/restore.
+        mov     r8, rax
+ %endif
+
+ %if %3 & CPUMCTX_WSF_IBPB_EXIT
+        ; Fight spectre (trashes rax, rdx and rcx).
+  %if %1 = 0 ; Skip this in failure branch (=> guru)
+        mov     ecx, MSR_IA32_PRED_CMD
+        mov     eax, MSR_IA32_PRED_CMD_F_IBPB
+        xor     edx, edx
+        wrmsr
+  %endif
+ %endif
+
+ %ifndef VMX_SKIP_TR
+        ; Restore TSS selector; must mark it as not busy before using ltr!
+        ; ASSUME that this is supposed to be 'BUSY' (saves 20-30 ticks on the T42p).
+  %ifndef VMX_SKIP_GDTR
+        lgdt    [rbp + frm_saved_gdtr]
+  %endif
+        movzx   eax, word [rbp + frm_saved_tr]
+        mov     ecx, eax
+        and     eax, X86_SEL_MASK_OFF_RPL           ; mask away TI and RPL bits leaving only the descriptor offset
+        add     rax, [rbp + frm_saved_gdtr + 2]     ; eax <- GDTR.address + descriptor offset
+        and     dword [rax + 4], ~RT_BIT(9)         ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
+        ltr     cx
+ %endif
+        movzx   edx, word [rbp + frm_saved_ldtr]
+        test    edx, edx
+        jz      %%skip_ldt_write
+        lldt    dx
+%%skip_ldt_write:
+
+ %if %1 != 0
+.return_after_vmwrite_error:
+ %endif
+        ; Restore segment registers.
+        ;POP_RELEVANT_SEGMENT_REGISTERS rax, ax - currently broken.
+
+ %if %2 != 0
+        ; Restore the host XCR0.
+        xor     ecx, ecx
+        mov     eax, [rbp + frm_uHostXcr0]
+        mov     edx, [rbp + frm_uHostXcr0 + 4]
+        xsetbv
+ %endif
+%endmacro ; RESTORE_STATE_VMX
+
+
+;;
 ; hmR0VmxStartVm template
 ;
 ; @param    1   The suffix of the variation.
@@ -866,125 +984,6 @@ ALIGNCODE(8)
 
 ALIGNCODE(64)
 GLOBALNAME RT_CONCAT(hmR0VmxStartVmHostRIP,%1)
-
- ;;
- ; Common restore logic for success and error paths.  We duplicate this because we
- ; don't want to waste writing the VINF_SUCCESS return value to the stack in the
- ; regular code path.
- ;
- ; @param    1   Zero if regular return, non-zero if error return.  Controls label emission.
- ; @param    2   fLoadSaveGuestXcr0 value
- ; @param    3   The (CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY) + CPUMCTX_WSF_IBPB_EXIT value.
- ;               The entry values are either all set or not at all, as we're too lazy to flesh out all the variants.
- ; @param    4   The SSE saving/restoring: 0 to do nothing, 1 to do it manually, 2 to use xsave/xrstor.
- ;
- ; @note Important that this does not modify cbFrame or rsp.
- %macro RESTORE_STATE_VMX 4
-        ; Restore base and limit of the IDTR & GDTR.
-  %ifndef VMX_SKIP_IDTR
-        lidt    [rsp + cbFrame + frm_saved_idtr]
-  %endif
-  %ifndef VMX_SKIP_GDTR
-        lgdt    [rsp + cbFrame + frm_saved_gdtr]
-  %endif
-
-        ; Save the guest state and restore the non-volatile registers.  We use rax=pGstCtx here.
-        mov     [rsp + cbFrame + frm_guest_rax], rax
-        mov     rax, [rsp + cbFrame + frm_pGstCtx]
-
-        mov     qword [rax + CPUMCTX.ebp], rbp
-        lea     rbp, [rsp + cbFrame]    ; re-establish the frame pointer as early as possible.
-        mov     qword [rax + CPUMCTX.ecx], rcx
-        mov     rcx, SPECTRE_FILLER
-        mov     qword [rax + CPUMCTX.edx], rdx
-        mov     rdx, [rbp + frm_guest_rax]
-        mov     qword [rax + CPUMCTX.eax], rdx
-        mov     rdx, rcx
-        mov     qword [rax + CPUMCTX.r8],  r8
-        mov     r8, rcx
-        mov     qword [rax + CPUMCTX.r9],  r9
-        mov     r9, rcx
-        mov     qword [rax + CPUMCTX.r10], r10
-        mov     r10, rcx
-        mov     qword [rax + CPUMCTX.r11], r11
-        mov     r11, rcx
-        mov     qword [rax + CPUMCTX.esi], rsi
-  %ifdef ASM_CALL64_MSC
-        mov     rsi, [rbp + frm_saved_rsi]
-  %else
-        mov     rbx, rcx
-  %endif
-        mov     qword [rax + CPUMCTX.edi], rdi
-  %ifdef ASM_CALL64_MSC
-        mov     rdi, [rbp + frm_saved_rdi]
-  %else
-        mov     rbx, rcx
-  %endif
-        mov     qword [rax + CPUMCTX.ebx], rbx
-        mov     rbx, [rbp + frm_saved_rbx]
-        mov     qword [rax + CPUMCTX.r12], r12
-        mov     r12,  [rbp + frm_saved_r12]
-        mov     qword [rax + CPUMCTX.r13], r13
-        mov     r13,  [rbp + frm_saved_r13]
-        mov     qword [rax + CPUMCTX.r14], r14
-        mov     r14,  [rbp + frm_saved_r14]
-        mov     qword [rax + CPUMCTX.r15], r15
-        mov     r15,  [rbp + frm_saved_r15]
-
-        mov     rdx, cr2
-        mov     qword [rax + CPUMCTX.cr2], rdx
-        mov     rdx, rcx
-
-  %if %4 != 0
-        ; Save the context pointer in r8 for the SSE save/restore.
-        mov     r8, rax
-  %endif
-
-  %if %3 & CPUMCTX_WSF_IBPB_EXIT
-        ; Fight spectre (trashes rax, rdx and rcx).
-   %if %1 = 0 ; Skip this in failure branch (=> guru)
-        mov     ecx, MSR_IA32_PRED_CMD
-        mov     eax, MSR_IA32_PRED_CMD_F_IBPB
-        xor     edx, edx
-        wrmsr
-   %endif
-  %endif
-
-  %ifndef VMX_SKIP_TR
-        ; Restore TSS selector; must mark it as not busy before using ltr!
-        ; ASSUME that this is supposed to be 'BUSY' (saves 20-30 ticks on the T42p).
-   %ifndef VMX_SKIP_GDTR
-        lgdt    [rbp + frm_saved_gdtr]
-   %endif
-        movzx   eax, word [rbp + frm_saved_tr]
-        mov     ecx, eax
-        and     eax, X86_SEL_MASK_OFF_RPL           ; mask away TI and RPL bits leaving only the descriptor offset
-        add     rax, [rbp + frm_saved_gdtr + 2]     ; eax <- GDTR.address + descriptor offset
-        and     dword [rax + 4], ~RT_BIT(9)         ; clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit)
-        ltr     cx
-  %endif
-        movzx   edx, word [rbp + frm_saved_ldtr]
-        test    edx, edx
-        jz      %%skip_ldt_write
-        lldt    dx
-%%skip_ldt_write:
-
-  %if %1 != 0
-.return_after_vmwrite_error:
-  %endif
-        ; Restore segment registers.
-        ;POP_RELEVANT_SEGMENT_REGISTERS rax, ax - currently broken.
-
-  %if %2 != 0
-        ; Restore the host XCR0.
-        xor     ecx, ecx
-        mov     eax, [rbp + frm_uHostXcr0]
-        mov     edx, [rbp + frm_uHostXcr0 + 4]
-        xsetbv
-  %endif
- %endmacro ; RESTORE_STATE_VMX
-
-
         RESTORE_STATE_VMX 0, %2, %3, %4
         mov     eax, VINF_SUCCESS
 
