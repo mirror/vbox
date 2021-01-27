@@ -155,7 +155,6 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS f
     LogFlowFuncLeaveRC(rc2);
 }
 
-/** @copydoc ShClX11RequestFromX11CompleteCallback */
 DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx,
                                                          int rcCompletion, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
