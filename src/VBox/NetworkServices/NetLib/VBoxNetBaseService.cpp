@@ -107,7 +107,7 @@ struct VBoxNetBaseService::Data
     INTNETIFHANDLE      m_hIf;          /**< The handle to the network interface. */
     PINTNETBUF          m_pIfBuf;       /**< Interface buffer. */
 
-    std::vector<PRTGETOPTDEF> m_vecOptionDefs;
+    std::vector<PCRTGETOPTDEF> m_vecOptionDefs;
 
     int32_t             m_cVerbosity;
 
@@ -681,7 +681,7 @@ void VBoxNetBaseService::setVerbosityLevel(int32_t aVerbosity)
 }
 
 
-void VBoxNetBaseService::addCommandLineOption(const PRTGETOPTDEF optDef)
+void VBoxNetBaseService::addCommandLineOption(PCRTGETOPTDEF optDef)
 {
     m->m_vecOptionDefs.push_back(optDef);
 }
@@ -842,7 +842,7 @@ PRTGETOPTDEF VBoxNetBaseService::getOptionsPtr()
         return NULL;
     for (unsigned int i = 0; i < m->m_vecOptionDefs.size(); ++i)
     {
-        PRTGETOPTDEF pOpt = m->m_vecOptionDefs[i];
+        PCRTGETOPTDEF pOpt = m->m_vecOptionDefs[i];
         memcpy(&pOptArray[i], pOpt, sizeof(*pOpt));
     }
     return pOptArray;

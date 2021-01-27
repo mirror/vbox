@@ -114,7 +114,7 @@ protected:
     int32_t getVerbosityLevel() const;
     void setVerbosityLevel(int32_t);
 
-    void addCommandLineOption(const PRTGETOPTDEF);
+    void addCommandLineOption(PCRTGETOPTDEF);
 
     /**
      * Print debug message depending on the m_cVerbosity level.

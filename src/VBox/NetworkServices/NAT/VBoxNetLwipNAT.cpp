@@ -112,11 +112,6 @@ extern "C" int getrawsock(int type);
 #endif
 
 
-static RTGETOPTDEF g_aGetOptDef[] =
-{
-    { "--port-forward4",           'p',   RTGETOPT_REQ_STRING },
-    { "--port-forward6",           'P',   RTGETOPT_REQ_STRING }
-};
 
 typedef struct NATSERVICEPORTFORWARDRULE
 {
@@ -155,16 +150,12 @@ class VBoxNetLwipNAT
     ComNatListenerPtr m_VBoxListener;
     ComNatListenerPtr m_VBoxClientListener;
 
-    /* Only for debug needs, by default NAT service should load rules from SVC
-     * on startup, and then on sync them on events.
-     */
-    bool fDontLoadRulesOnStartup;
-
     VECNATSERVICEPF m_vecPortForwardRule4;
     VECNATSERVICEPF m_vecPortForwardRule6;
 
     static INTNETSEG aXmitSeg[64];
 
+    static RTGETOPTDEF s_aGetOptDef[];
 
 public:
     VBoxNetLwipNAT();
@@ -173,7 +164,7 @@ public:
     static int logInit(int argc, char **argv);
 
     virtual void usage() { /** @todo should be implemented */ };
-    virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
+    virtual int parseOpt(int c, const RTGETOPTUNION &Value);
 
     virtual bool isMainNeeded() const { return true; }
 
@@ -206,6 +197,22 @@ private:
 };
 
 INTNETSEG VBoxNetLwipNAT::aXmitSeg[64];
+
+/**
+ * Additional command line options.
+ *
+ * Our parseOpt() will be called by the base class if any of these are
+ * supplied.
+ */
+RTGETOPTDEF VBoxNetLwipNAT::s_aGetOptDef[] =
+{
+    /*
+     * Currently there are no extra options and since arrays can't be
+     * empty use a sentinel entry instead, so that the placeholder
+     * code to process the options can be supplied nonetheless.
+     */
+    {}                          /* sentinel */
+};
 
 
 
@@ -250,10 +257,9 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
     address.u     = RT_H2N_U32_C(0xffffff00);
     setIpv4Netmask(address);
 
-    fDontLoadRulesOnStartup = false;
-
-    for (size_t i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
-        addCommandLineOption(&g_aGetOptDef[i]);
+    /* tell the base class about our command line options */
+    for (PCRTGETOPTDEF pcOpt = &s_aGetOptDef[0]; pcOpt->iShort != 0; ++pcOpt)
+        addCommandLineOption(pcOpt);
 
     LogFlowFuncLeave();
 }
@@ -284,32 +290,12 @@ VBoxNetLwipNAT::~VBoxNetLwipNAT()
  * Hook into the option processing.
  *
  * Called by VBoxNetBaseService::parseArgs() for options that are not
- * recognized by the base class.
+ * recognized by the base class.  See s_aGetOptDef[].
  */
-int VBoxNetLwipNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
+int VBoxNetLwipNAT::parseOpt(int c, const RTGETOPTUNION &Value)
 {
-    switch (rc)
-    {
-        case 'p':
-        case 'P':
-        {
-            NATSERVICEPORTFORWARDRULE Rule;
-            VECNATSERVICEPF& rules = (rc == 'P'?
-                                        m_vecPortForwardRule6
-                                      : m_vecPortForwardRule4);
-
-            fDontLoadRulesOnStartup = true;
-
-            RT_ZERO(Rule);
-
-            int rc2 = netPfStrToPf(Val.psz, (rc == 'P'), &Rule.Pfr);
-            RT_NOREF_PV(rc2);
-            rules.push_back(Rule);
-            return VINF_SUCCESS;
-        }
-        default:;
-    }
-    return VERR_NOT_FOUND;
+    RT_NOREF(c, Value);
+    return VERR_NOT_FOUND;      /* not recognized */
 }
 
 
@@ -435,11 +421,9 @@ int VBoxNetLwipNAT::init()
         createRawSock6();
 
 
-    if (!fDontLoadRulesOnStartup)
-    {
-        fetchNatPortForwardRules(m_vecPortForwardRule4, /* :fIsIPv6 */ false);
+    fetchNatPortForwardRules(m_vecPortForwardRule4, /* :fIsIPv6 */ false);
+    if (fIPv6Enabled)
         fetchNatPortForwardRules(m_vecPortForwardRule6, /* :fIsIPv6 */ true);
-    }
 
     AddressToOffsetMapping tmp;
     rc = localMappings(m_net, tmp);
