@@ -166,8 +166,8 @@ class VBoxNetLwipNAT
     static INTNETSEG aXmitSeg[64];
 
 
-  public:
-    VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6);
+public:
+    VBoxNetLwipNAT();
     virtual ~VBoxNetLwipNAT();
 
     static int logInit(int argc, char **argv);
@@ -178,12 +178,15 @@ class VBoxNetLwipNAT
     virtual bool isMainNeeded() const { return true; }
 
     virtual int init();
+    virtual int run();
+
+private:
+    void createRawSock4();
+    void createRawSock6();
 
     static DECLCALLBACK(void) onLwipTcpIpInit(void *arg);
     static DECLCALLBACK(void) onLwipTcpIpFini(void *arg);
     static err_t netifInit(netif *pNetif) RT_NOTHROW_PROTO;
-
-    virtual int run();
 
     HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent);
 
@@ -204,19 +207,17 @@ class VBoxNetLwipNAT
 
 INTNETSEG VBoxNetLwipNAT::aXmitSeg[64];
 
-static VBoxNetLwipNAT *g_pLwipNat;
 
 
-
-VBoxNetLwipNAT::VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6)
+VBoxNetLwipNAT::VBoxNetLwipNAT()
   : VBoxNetBaseService("VBoxNetNAT", "nat-network")
 {
     LogFlowFuncEnter();
 
     m_ProxyOptions.ipv6_enabled = 0;
     m_ProxyOptions.ipv6_defroute = 0;
-    m_ProxyOptions.icmpsock4 = icmpsock4;
-    m_ProxyOptions.icmpsock6 = icmpsock6;
+    m_ProxyOptions.icmpsock4 = INVALID_SOCKET;
+    m_ProxyOptions.icmpsock6 = INVALID_SOCKET;
     m_ProxyOptions.tftp_root = NULL;
     m_ProxyOptions.src4 = NULL;
     m_ProxyOptions.src6 = NULL;
@@ -375,17 +376,15 @@ int VBoxNetLwipNAT::init()
 
 
     /*
-     * Bind outgoing connections to the specified IP.
+     * IPv4 source address, if configured.
      */
-    com::Bstr bstrSourceIpX;
-
-    /* IPv4 */
+    com::Bstr bstrSourceIp4;
     com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4", networkName.c_str());
-    hrc = virtualbox->GetExtraData(bstrSourceIp4Key.raw(), bstrSourceIpX.asOutParam());
-    if (SUCCEEDED(hrc) && bstrSourceIpX.isNotEmpty())
+    hrc = virtualbox->GetExtraData(bstrSourceIp4Key.raw(), bstrSourceIp4.asOutParam());
+    if (SUCCEEDED(hrc) && bstrSourceIp4.isNotEmpty())
     {
         RTNETADDRIPV4 addr;
-        rc = RTNetStrToIPv4Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr);
+        rc = RTNetStrToIPv4Addr(com::Utf8Str(bstrSourceIp4).c_str(), &addr);
         if (RT_SUCCESS(rc))
         {
             m_src4.sin_addr.s_addr = addr.u;
@@ -397,36 +396,43 @@ int VBoxNetLwipNAT::init()
         else
         {
             LogRel(("Failed to parse \"%s\" IPv4 source address specification\n",
-                    com::Utf8Str(bstrSourceIpX).c_str()));
+                    com::Utf8Str(bstrSourceIp4).c_str()));
         }
-
-        bstrSourceIpX.setNull();
     }
 
-    /* IPv6 */
-    com::Bstr bstrSourceIp6Key = com::BstrFmt("NAT/%s/SourceIp6", networkName.c_str());
-    hrc = virtualbox->GetExtraData(bstrSourceIp6Key.raw(), bstrSourceIpX.asOutParam());
-    if (SUCCEEDED(hrc) && bstrSourceIpX.isNotEmpty())
+    /*
+     * IPv6 source address, if configured.
+     */
+    if (fIPv6Enabled)
     {
-        RTNETADDRIPV6 addr;
-        char *pszZone = NULL;
-        rc = RTNetStrToIPv6Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr, &pszZone);
-        if (RT_SUCCESS(rc))
+        com::Bstr bstrSourceIp6;
+        com::Bstr bstrSourceIp6Key = com::BstrFmt("NAT/%s/SourceIp6", networkName.c_str());
+        hrc = virtualbox->GetExtraData(bstrSourceIp6Key.raw(), bstrSourceIp6.asOutParam());
+        if (SUCCEEDED(hrc) && bstrSourceIp6.isNotEmpty())
         {
-            memcpy(&m_src6.sin6_addr, &addr, sizeof(addr));
-            m_ProxyOptions.src6 = &m_src6;
+            RTNETADDRIPV6 addr;
+            char *pszZone = NULL;
+            rc = RTNetStrToIPv6Addr(com::Utf8Str(bstrSourceIp6).c_str(), &addr, &pszZone);
+            if (RT_SUCCESS(rc))
+            {
+                memcpy(&m_src6.sin6_addr, &addr, sizeof(addr));
+                m_ProxyOptions.src6 = &m_src6;
 
-            LogRel(("Will use %RTnaipv6 as IPv6 source address\n",
-                    &m_src6.sin6_addr));
+                LogRel(("Will use %RTnaipv6 as IPv6 source address\n",
+                        &m_src6.sin6_addr));
+            }
+            else
+            {
+                LogRel(("Failed to parse \"%s\" IPv6 source address specification\n",
+                        com::Utf8Str(bstrSourceIp6).c_str()));
+            }
         }
-        else
-        {
-            LogRel(("Failed to parse \"%s\" IPv6 source address specification\n",
-                    com::Utf8Str(bstrSourceIpX).c_str()));
-        }
-
-        bstrSourceIpX.setNull();
     }
+
+
+    createRawSock4();
+    if (fIPv6Enabled)
+        createRawSock6();
 
 
     if (!fDontLoadRulesOnStartup)
@@ -480,6 +486,106 @@ int VBoxNetLwipNAT::init()
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+
+/**
+ * Create raw IPv4 socket for sending and snooping ICMP.
+ */
+void VBoxNetLwipNAT::createRawSock4()
+{
+    SOCKET icmpsock4 = INVALID_SOCKET;
+
+#ifndef RT_OS_DARWIN
+    const int icmpstype = SOCK_RAW;
+#else
+    /* on OS X it's not privileged */
+    const int icmpstype = SOCK_DGRAM;
+#endif
+
+    icmpsock4 = socket(AF_INET, icmpstype, IPPROTO_ICMP);
+    if (icmpsock4 == INVALID_SOCKET)
+    {
+        perror("IPPROTO_ICMP");
+#ifdef VBOX_RAWSOCK_DEBUG_HELPER
+        icmpsock4 = getrawsock(AF_INET);
+#endif
+    }
+
+    if (icmpsock4 != INVALID_SOCKET)
+    {
+#ifdef ICMP_FILTER              //  Linux specific
+        struct icmp_filter flt = {
+            ~(uint32_t)(
+                  (1U << ICMP_ECHOREPLY)
+                | (1U << ICMP_DEST_UNREACH)
+                | (1U << ICMP_TIME_EXCEEDED)
+            )
+        };
+
+        int status = setsockopt(icmpsock4, SOL_RAW, ICMP_FILTER,
+                                &flt, sizeof(flt));
+        if (status < 0)
+        {
+            perror("ICMP_FILTER");
+        }
+#endif
+    }
+
+    m_ProxyOptions.icmpsock4 = icmpsock4;
+}
+
+
+/**
+ * Create raw IPv6 socket for sending and snooping ICMP6.
+ */
+void VBoxNetLwipNAT::createRawSock6()
+{
+    SOCKET icmpsock6 = INVALID_SOCKET;
+
+#ifndef RT_OS_DARWIN
+    const int icmpstype = SOCK_RAW;
+#else
+    /* on OS X it's not privileged */
+    const int icmpstype = SOCK_DGRAM;
+#endif
+
+    icmpsock6 = socket(AF_INET6, icmpstype, IPPROTO_ICMPV6);
+    if (icmpsock6 == INVALID_SOCKET)
+    {
+        perror("IPPROTO_ICMPV6");
+#ifdef VBOX_RAWSOCK_DEBUG_HELPER
+        icmpsock6 = getrawsock(AF_INET6);
+#endif
+    }
+
+    if (icmpsock6 != INVALID_SOCKET)
+    {
+#ifdef ICMP6_FILTER             // Windows doesn't support RFC 3542 API
+        /*
+         * XXX: We do this here for now, not in pxping.c, to avoid
+         * name clashes between lwIP and system headers.
+         */
+        struct icmp6_filter flt;
+        ICMP6_FILTER_SETBLOCKALL(&flt);
+
+        ICMP6_FILTER_SETPASS(ICMP6_ECHO_REPLY, &flt);
+
+        ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_PACKET_TOO_BIG, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_TIME_EXCEEDED, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_PARAM_PROB, &flt);
+
+        int status = setsockopt(icmpsock6, IPPROTO_ICMPV6, ICMP6_FILTER,
+                                &flt, sizeof(flt));
+        if (status < 0)
+        {
+            perror("ICMP6_FILTER");
+        }
+#endif
+    }
+
+    m_ProxyOptions.icmpsock6 = icmpsock6;
 }
 
 
@@ -921,7 +1027,51 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 
 
 /**
- * Fetch port-forwarding rules from the API.
+ * Read the list of host's resolvers via the API.
+ *
+ * Called during initialization and in response to the
+ * VBoxEventType_OnHostNameResolutionConfigurationChange event.
+ */
+const char **VBoxNetLwipNAT::getHostNameservers()
+{
+    if (m_host.isNull())
+        return NULL;
+
+    com::SafeArray<BSTR> aNameServers;
+    HRESULT hrc = m_host->COMGETTER(NameServers)(ComSafeArrayAsOutParam(aNameServers));
+    if (FAILED(hrc))
+        return NULL;
+
+    const size_t cNameServers = aNameServers.size();
+    if (cNameServers == 0)
+        return NULL;
+
+    const char **ppcszNameServers =
+        (const char **)RTMemAllocZ(sizeof(char *) * (cNameServers + 1));
+    if (ppcszNameServers == NULL)
+        return NULL;
+
+    size_t idxLast = 0;
+    for (size_t i = 0; i < cNameServers; ++i)
+    {
+        com::Utf8Str strNameServer(aNameServers[i]);
+        ppcszNameServers[idxLast] = RTStrDup(strNameServer.c_str());
+        if (ppcszNameServers[idxLast] != NULL)
+            ++idxLast;
+    }
+
+    if (idxLast == 0)
+    {
+        RTMemFree(ppcszNameServers);
+        return NULL;
+    }
+
+    return ppcszNameServers;
+}
+
+
+/**
+ * Fetch port-forwarding rules via the API.
  *
  * Reads the initial sets of rules from VBoxSVC.  The rules will be
  * activated when all the initialization and plumbing is done.  See
@@ -1050,44 +1200,6 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSERVICEPORTFORWARDRULE &natPf)
                 natPf.Pfr.fPfrIPv6 ? "IPv6" : "IPv4",
                 natPf.Pfr.szPfrName));
     return VERR_IGNORED;
-}
-
-
-const char **VBoxNetLwipNAT::getHostNameservers()
-{
-    if (m_host.isNull())
-        return NULL;
-
-    com::SafeArray<BSTR> aNameServers;
-    HRESULT hrc = m_host->COMGETTER(NameServers)(ComSafeArrayAsOutParam(aNameServers));
-    if (FAILED(hrc))
-        return NULL;
-
-    const size_t cNameServers = aNameServers.size();
-    if (cNameServers == 0)
-        return NULL;
-
-    const char **ppcszNameServers =
-        (const char **)RTMemAllocZ(sizeof(char *) * (cNameServers + 1));
-    if (ppcszNameServers == NULL)
-        return NULL;
-
-    size_t idxLast = 0;
-    for (size_t i = 0; i < cNameServers; ++i)
-    {
-        com::Utf8Str strNameServer(aNameServers[i]);
-        ppcszNameServers[idxLast] = RTStrDup(strNameServer.c_str());
-        if (ppcszNameServers[idxLast] != NULL)
-            ++idxLast;
-    }
-
-    if (idxLast == 0)
-    {
-        RTMemFree(ppcszNameServers);
-        return NULL;
-    }
-
-    return ppcszNameServers;
 }
 
 
@@ -1365,7 +1477,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (err)
     {
         fprintf(stderr, "wsastartup: failed (%d)\n", err);
-        return 1;
+        return RTEXITCODE_INIT;
     }
 #endif
 
@@ -1381,105 +1493,29 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             int vrc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
             if (RT_SUCCESS(vrc))
             {
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                return RTMsgErrorExit(RTEXITCODE_INIT,
                                       "Failed to initialize COM: %s: %Rhrf",
                                       szHome, hrc);
             }
         }
 #endif  // VBOX_WITH_XPCOM
-        return RTMsgErrorExit(RTEXITCODE_FAILURE,
+        return RTMsgErrorExit(RTEXITCODE_INIT,
                               "Failed to initialize COM: %Rhrf", hrc);
     }
 
-
-    SOCKET icmpsock4 = INVALID_SOCKET;
-    SOCKET icmpsock6 = INVALID_SOCKET;
-#ifndef RT_OS_DARWIN
-    const int icmpstype = SOCK_RAW;
-#else
-    /* on OS X it's not privileged */
-    const int icmpstype = SOCK_DGRAM;
-#endif
-
-    icmpsock4 = socket(AF_INET, icmpstype, IPPROTO_ICMP);
-    if (icmpsock4 == INVALID_SOCKET)
-    {
-        perror("IPPROTO_ICMP");
-#ifdef VBOX_RAWSOCK_DEBUG_HELPER
-        icmpsock4 = getrawsock(AF_INET);
-#endif
-    }
-
-    if (icmpsock4 != INVALID_SOCKET)
-    {
-#ifdef ICMP_FILTER              //  Linux specific
-        struct icmp_filter flt = {
-            ~(uint32_t)(
-                  (1U << ICMP_ECHOREPLY)
-                | (1U << ICMP_DEST_UNREACH)
-                | (1U << ICMP_TIME_EXCEEDED)
-            )
-        };
-
-        int status = setsockopt(icmpsock4, SOL_RAW, ICMP_FILTER,
-                                &flt, sizeof(flt));
-        if (status < 0)
-        {
-            perror("ICMP_FILTER");
-        }
-#endif
-    }
-
-    icmpsock6 = socket(AF_INET6, icmpstype, IPPROTO_ICMPV6);
-    if (icmpsock6 == INVALID_SOCKET)
-    {
-        perror("IPPROTO_ICMPV6");
-#ifdef VBOX_RAWSOCK_DEBUG_HELPER
-        icmpsock6 = getrawsock(AF_INET6);
-#endif
-    }
-
-    if (icmpsock6 != INVALID_SOCKET)
-    {
-#ifdef ICMP6_FILTER             // Windows doesn't support RFC 3542 API
-        /*
-         * XXX: We do this here for now, not in pxping.c, to avoid
-         * name clashes between lwIP and system headers.
-         */
-        struct icmp6_filter flt;
-        ICMP6_FILTER_SETBLOCKALL(&flt);
-
-        ICMP6_FILTER_SETPASS(ICMP6_ECHO_REPLY, &flt);
-
-        ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &flt);
-        ICMP6_FILTER_SETPASS(ICMP6_PACKET_TOO_BIG, &flt);
-        ICMP6_FILTER_SETPASS(ICMP6_TIME_EXCEEDED, &flt);
-        ICMP6_FILTER_SETPASS(ICMP6_PARAM_PROB, &flt);
-
-        int status = setsockopt(icmpsock6, IPPROTO_ICMPV6, ICMP6_FILTER,
-                                &flt, sizeof(flt));
-        if (status < 0)
-        {
-            perror("ICMP6_FILTER");
-        }
-#endif
-    }
-
-
-    g_pLwipNat = new VBoxNetLwipNAT(icmpsock4, icmpsock6);
+    VBoxNetLwipNAT NAT;
 
     Log2(("NAT: initialization\n"));
-    rc = g_pLwipNat->parseArgs(argc - 1, argv + 1);
+    rc = NAT.parseArgs(argc - 1, argv + 1);
     rc = (rc == 0) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /* XXX: FIXME */
 
     if (RT_SUCCESS(rc))
-        rc = g_pLwipNat->init();
+        rc = NAT.init();
 
     if (RT_SUCCESS(rc))
-        g_pLwipNat->run();
+        NAT.run();
 
-    delete g_pLwipNat;
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
 
