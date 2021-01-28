@@ -40,6 +40,9 @@ public:
       * @param  strText  Brings the line-edit text. */
     QILineEdit(const QString &strText, QWidget *pParent = 0);
 
+    /** Defines whether this is @a fAllowed to copy contents when disabled. */
+    void setAllowToCopyContentsWhenDisabled(bool fAllowed);
+
     /** Forces line-edit to adjust minimum width acording to passed @a strText. */
     void setMinimumWidthByText(const QString &strText);
     /** Forces line-edit to adjust fixed width acording to passed @a strText. */
@@ -47,6 +50,16 @@ public:
 
     /** Sets the color to some reddish color when @p fError is true. Usually used to indicate some error. */
     void mark(bool fError);
+
+protected:
+
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
+
+private slots:
+
+    /** Copies text into clipboard. */
+    void copy();
 
 private:
 
@@ -58,6 +71,11 @@ private:
 
     /** The original background base color. Used when marking/unmarking the combo box. */
     QColor  m_originalBaseColor;
+
+    /** Holds whether this is allowed to copy contents when disabled. */
+    bool     m_fAllowToCopyContentsWhenDisabled;
+    /** Holds the copy to clipboard action. */
+    QAction *m_pCopyAction;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QILineEdit_h */

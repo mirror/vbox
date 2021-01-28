@@ -16,6 +16,10 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
+#include <QClipboard>
+#include <QContextMenuEvent>
+#include <QMenu>
 #include <QPalette>
 #include <QStyleOptionFrame>
 
@@ -25,14 +29,23 @@
 
 QILineEdit::QILineEdit(QWidget *pParent /* = 0 */)
     : QLineEdit(pParent)
+    , m_fAllowToCopyContentsWhenDisabled(false)
+    , m_pCopyAction(0)
 {
     prepare();
 }
 
 QILineEdit::QILineEdit(const QString &strText, QWidget *pParent /* = 0 */)
     : QLineEdit(strText, pParent)
+    , m_fAllowToCopyContentsWhenDisabled(false)
+    , m_pCopyAction(0)
 {
     prepare();
+}
+
+void QILineEdit::setAllowToCopyContentsWhenDisabled(bool fAllow)
+{
+    m_fAllowToCopyContentsWhenDisabled = fAllow;
 }
 
 void QILineEdit::setMinimumWidthByText(const QString &strText)
@@ -55,10 +68,52 @@ void QILineEdit::mark(bool fError)
     setPalette(newPalette);
 }
 
+bool QILineEdit::event(QEvent *pEvent)
+{
+    switch (pEvent->type())
+    {
+        case QEvent::ContextMenu:
+        {
+            /* For disabled widget if requested: */
+            if (!isEnabled() && m_fAllowToCopyContentsWhenDisabled)
+            {
+                /* Create a context menu for the copy to clipboard action: */
+                QContextMenuEvent *pContextMenuEvent = static_cast<QContextMenuEvent*>(pEvent);
+                QMenu menu;
+                m_pCopyAction->setText(tr("&Copy"));
+                menu.addAction(m_pCopyAction);
+                menu.exec(pContextMenuEvent->globalPos());
+                pEvent->accept();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return QLineEdit::event(pEvent);
+}
+
+void QILineEdit::copy()
+{
+    /* Copy the current text to the global and selection clipboards: */
+    QApplication::clipboard()->setText(text(), QClipboard::Clipboard);
+    QApplication::clipboard()->setText(text(), QClipboard::Selection);
+}
+
 void QILineEdit::prepare()
 {
     /* Prepare original base color: */
     m_originalBaseColor = palette().color(QPalette::Base);
+
+    /* Prepare invisible copy action: */
+    m_pCopyAction = new QAction(this);
+    if (m_pCopyAction)
+    {
+        m_pCopyAction->setShortcut(QKeySequence(QKeySequence::Copy));
+        m_pCopyAction->setShortcutContext(Qt::WidgetShortcut);
+        connect(m_pCopyAction, &QAction::triggered, this, &QILineEdit::copy);
+        addAction(m_pCopyAction);
+    }
 }
 
 QSize QILineEdit::featTextWidth(const QString &strText) const
