@@ -64,12 +64,10 @@
 #  include <sys/mntent.h>
 #  include <sys/mnttab.h>
 #  include <sys/vfs.h>
-RT_C_DECLS_BEGIN /* Only needed for old code.*/
-#  include "../../linux/sharedfolders/vbsfmount.h"
-RT_C_DECLS_END
 # elif defined(RT_OS_LINUX)
 #  include <mntent.h>
 #  include <paths.h>
+#  include <sys/utsname.h>
 RT_C_DECLS_BEGIN
 #  include "../../linux/sharedfolders/vbsfmount.h"
 RT_C_DECLS_END
@@ -312,19 +310,21 @@ static int vbsvcAutoMountUnmountOld(const char *pszMountPoint)
  * @returns VBox status code
  * @param   pszMountPoint   The mount point.
  * @param   pszShareName    Unused.
- * @param   pOpts           For getting the group ID.
+ * @param   gidGroup        The group ID.
  */
-static int vbsvcAutoMountPrepareMountPointOld(const char *pszMountPoint, const char *pszShareName, vbsf_mount_opts *pOpts)
+static int vbsvcAutoMountPrepareMountPointOld(const char *pszMountPoint, const char *pszShareName, RTGID gidGroup)
 {
-    AssertPtrReturn(pOpts, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszMountPoint, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszShareName, VERR_INVALID_PARAMETER);
+
+    /** @todo r=bird: There is no reason why gidGroup should have write access?
+     *        Seriously, what kind of non-sense is this? */
 
     RTFMODE fMode = RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXG; /* Owner (=root) and the group (=vboxsf) have full access. */
     int rc = RTDirCreateFullPath(pszMountPoint, fMode);
     if (RT_SUCCESS(rc))
     {
-        rc = RTPathSetOwnerEx(pszMountPoint, NIL_RTUID /* Owner, unchanged */, pOpts->gid, RTPATH_F_ON_LINK);
+        rc = RTPathSetOwnerEx(pszMountPoint, NIL_RTUID /* Owner, unchanged */, gidGroup, RTPATH_F_ON_LINK);
         if (RT_SUCCESS(rc))
         {
             rc = RTPathSetMode(pszMountPoint, fMode);
@@ -373,43 +373,16 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
         return VINF_SUCCESS;
     }
 
-    struct vbsf_mount_opts Opts =
-    {
-        -1,                    /* ttl */
-        -1,                    /* msDirCacheTTL */
-        -1,                    /* msInodeTTL */
-        0,                     /* cMaxIoPages */
-        0,                     /* cbDirBuf */
-        kVbsfCacheMode_Default,
-        0,                     /* uid */
-        (int)grp_vboxsf->gr_gid, /* gid */
-        0770,                  /* dmode, owner and group "vboxsf" have full access */
-        0770,                  /* fmode, owner and group "vboxsf" have full access */
-        0,                     /* dmask */
-        0,                     /* fmask */
-        0,                     /* ronly */
-        0,                     /* sloppy */
-        0,                     /* noexec */
-        0,                     /* nodev */
-        0,                     /* nosuid */
-        0,                     /* remount */
-        "\0",                  /* nls_name */
-        NULL,                  /* convertcp */
-    };
-
-    int rc = vbsvcAutoMountPrepareMountPointOld(pszMountPoint, pszShareName, &Opts);
+    int rc = vbsvcAutoMountPrepareMountPointOld(pszMountPoint, pszShareName, grp_vboxsf->gr_gid);
     if (RT_SUCCESS(rc))
     {
 # ifdef RT_OS_SOLARIS
-        int fFlags = 0;
-        if (Opts.ronly)
-            fFlags |= MS_RDONLY;
+        int const fFlags = MS_OPTIONSTR;
         char szOptBuf[MAX_MNTOPT_STR] = { '\0', };
-        RTStrPrintf(szOptBuf, sizeof(szOptBuf), "uid=%d,gid=%d,dmode=%0o,fmode=%0o,dmask=%0o,fmask=%0o",
-                    Opts.uid, Opts.gid, Opts.dmode, Opts.fmode, Opts.dmask, Opts.fmask);
+        RTStrPrintf(szOptBuf, sizeof(szOptBuf), "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000", grp_vboxsf->gr_gid);
         int r = mount(pszShareName,
                       pszMountPoint,
-                      fFlags | MS_OPTIONSTR,
+                      fFlags,
                       "vboxfs",
                       NULL,                     /* char *dataptr */
                       0,                        /* int datalen */
@@ -422,61 +395,46 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
                        pszShareName, pszMountPoint, strerror(errno));
 
 # else /* RT_OS_LINUX */
-        unsigned long fFlags = MS_NODEV;
+        struct utsname uts;
+        AssertStmt(uname(&uts) != -1, strcpy(uts.release, "4.4.0"));
 
-        /*const char *szOptions = { "rw" }; - ??? */
-        struct vbsf_mount_info_new mntinf;
-        RT_ZERO(mntinf);
-
-        mntinf.nullchar     = '\0';
-        mntinf.signature[0] = VBSF_MOUNT_SIGNATURE_BYTE_0;
-        mntinf.signature[1] = VBSF_MOUNT_SIGNATURE_BYTE_1;
-        mntinf.signature[2] = VBSF_MOUNT_SIGNATURE_BYTE_2;
-        mntinf.length       = sizeof(mntinf);
-
-        mntinf.uid   = Opts.uid;
-        mntinf.gid   = Opts.gid;
-        mntinf.ttl   = Opts.ttl;
-        mntinf.dmode = Opts.dmode;
-        mntinf.fmode = Opts.fmode;
-        mntinf.dmask = Opts.dmask;
-        mntinf.fmask = Opts.fmask;
-        mntinf.cMaxIoPages = Opts.cMaxIoPages;
-        mntinf.szTag[0] = '\0';
-
-        strcpy(mntinf.name, pszShareName);
-        strcpy(mntinf.nls_name, "\0");
+        unsigned long const fFlags = MS_NODEV;
+        char szOpts[MAX_MNTOPT_STR] = { '\0' };
+        ssize_t cchOpts = RTStrPrintf2(szOpts, sizeof(szOpts), "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000",
+                                       grp_vboxsf->gr_gid);
+        if (cchOpts > 0 && RTStrVersionCompare(uts.release, "2.6.0") < 0)
+            cchOpts = RTStrPrintf2(&szOpts[cchOpts], sizeof(szOpts) - cchOpts, ",sf_name=%s", pszShareName);
+        if (cchOpts <= 0)
+        {
+            VGSvcError("vbsvcAutomounterMountIt: szOpts overflow! %zd (share %s)\n", cchOpts, pszShareName);
+            return VERR_BUFFER_OVERFLOW;
+        }
 
         int r = mount(pszShareName,
                       pszMountPoint,
                       "vboxsf",
                       fFlags,
-                      &mntinf);
+                      szOpts);
         if (r == 0)
         {
             VGSvcVerbose(0, "vbsvcAutoMountWorker: Shared folder '%s' was mounted to '%s'\n", pszShareName, pszMountPoint);
 
-            r = vbsfmount_complete(pszShareName, pszMountPoint, fFlags, &Opts);
+            r = vbsfmount_complete(pszShareName, pszMountPoint, fFlags, szOpts);
             switch (r)
             {
                 case 0: /* Success. */
                     errno = 0; /* Clear all errors/warnings. */
                     break;
-
                 case 1:
-                    VGSvcError("vbsvcAutoMountWorker: Could not update mount table (failed to create memstream): %s\n",
-                               strerror(errno));
+                    VGSvcError("vbsvcAutoMountWorker: Could not update mount table (malloc failure)\n");
                     break;
-
                 case 2:
                     VGSvcError("vbsvcAutoMountWorker: Could not open mount table for update: %s\n", strerror(errno));
                     break;
-
                 case 3:
                     /* VGSvcError("vbsvcAutoMountWorker: Could not add an entry to the mount table: %s\n", strerror(errno)); */
                     errno = 0;
                     break;
-
                 default:
                     VGSvcError("vbsvcAutoMountWorker: Unknown error while completing mount operation: %d\n", r);
                     break;
@@ -484,52 +442,22 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
         }
         else /* r == -1, we got some error in errno.  */
         {
-            if (errno == EPROTO)
+            switch (errno)
             {
-                VGSvcVerbose(3, "vbsvcAutoMountWorker: Messed up share name, re-trying ...\n");
-
-                /** @todo r=bird: What on earth is going on here?????  Why can't you
-                 *        strcpy(mntinf.name, pszShareName) to fix it again? */
-
-                /* Sometimes the mount utility messes up the share name.  Try to
-                 * un-mangle it again. */
-                char szCWD[RTPATH_MAX];
-                size_t cchCWD;
-                if (!getcwd(szCWD, sizeof(szCWD)))
-                {
-                    VGSvcError("vbsvcAutoMountWorker: Failed to get the current working directory\n");
-                    szCWD[0] = '\0';
-                }
-                cchCWD = strlen(szCWD);
-                if (!strncmp(pszMountPoint, szCWD, cchCWD))
-                {
-                    while (pszMountPoint[cchCWD] == '/')
-                        ++cchCWD;
-                    /* We checked before that we have enough space */
-                    strcpy(mntinf.name, pszMountPoint + cchCWD);
-                }
-                r = mount(mntinf.name, pszMountPoint, "vboxsf", fFlags, &mntinf);
-            }
-            if (r == -1) /* Was there some error from one of the tries above? */
-            {
-                switch (errno)
-                {
-                    /* If we get EINVAL here, the system already has mounted the Shared Folder to another
-                     * mount point. */
-                    case EINVAL:
-                        VGSvcVerbose(0, "vbsvcAutoMountWorker: Shared folder '%s' already is mounted!\n", pszShareName);
-                        /* Ignore this error! */
-                        break;
-                    case EBUSY:
-                        /* Ignore these errors! */
-                        break;
-
-                    default:
-                        VGSvcError("vbsvcAutoMountWorker: Could not mount shared folder '%s' to '%s': %s (%d)\n",
-                                         pszShareName, pszMountPoint, strerror(errno), errno);
-                        rc = RTErrConvertFromErrno(errno);
-                        break;
-                }
+                /* If we get EINVAL here, the system already has mounted the Shared Folder to another
+                 * mount point. */
+                case EINVAL:
+                    VGSvcVerbose(0, "vbsvcAutoMountWorker: Shared folder '%s' is already mounted!\n", pszShareName);
+                    /* Ignore this error! */
+                    break;
+                case EBUSY:
+                    /* Ignore these errors! */
+                    break;
+                default:
+                    VGSvcError("vbsvcAutoMountWorker: Could not mount shared folder '%s' to '%s': %s (%d)\n",
+                               pszShareName, pszMountPoint, strerror(errno), errno);
+                    rc = RTErrConvertFromErrno(errno);
+                    break;
             }
         }
 # endif
@@ -1530,51 +1458,49 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     /*
      * Linux a bit more work...
      */
-    struct vbsf_mount_info_new MntInfo;
-    RT_ZERO(MntInfo);
-    struct vbsf_mount_opts MntOpts;
-    RT_ZERO(MntOpts);
-    MntInfo.nullchar     = '\0';
-    MntInfo.signature[0] = VBSF_MOUNT_SIGNATURE_BYTE_0;
-    MntInfo.signature[1] = VBSF_MOUNT_SIGNATURE_BYTE_1;
-    MntInfo.signature[2] = VBSF_MOUNT_SIGNATURE_BYTE_2;
-    MntInfo.length       = sizeof(MntInfo);
-    MntInfo.ttl          = MntOpts.ttl              = -1 /*default*/;
-    MntInfo.msDirCacheTTL= MntOpts.msDirCacheTTL    = -1 /*default*/;
-    MntInfo.msInodeTTL   = MntOpts.msInodeTTL       = -1 /*default*/;
-    MntInfo.cMaxIoPages  = MntOpts.cMaxIoPages      = 0 /*default*/;
-    MntInfo.cbDirBuf     = MntOpts.cbDirBuf         = 0 /*default*/;
-    MntInfo.enmCacheMode = MntOpts.enmCacheMode     = kVbsfCacheMode_Default;
-    MntInfo.uid          = MntOpts.uid   = 0;
-    MntInfo.gid          = MntOpts.gid   = gidMount;
-    MntInfo.dmode        = MntOpts.dmode = 0770;
-    MntInfo.fmode        = MntOpts.fmode = 0770;
-    MntInfo.dmask        = MntOpts.dmask = 0000;
-    MntInfo.fmask        = MntOpts.fmask = 0000;
-    memcpy(MntInfo.szTag, g_szTag, sizeof(g_szTag)); AssertCompile(sizeof(MntInfo.szTag) >= sizeof(g_szTag));
-    rc = RTStrCopy(MntInfo.name, sizeof(MntInfo.name), pEntry->pszName);
-    if (RT_FAILURE(rc))
+    struct utsname uts;
+    AssertStmt(uname(&uts) != -1, strcpy(uts.release, "4.4.0"));
+
+    /* Built mount option string.  Need st_name for pre 2.6.0 kernels. */
+    unsigned long const fFlags = MS_NODEV;
+    char szOpts[MAX_MNTOPT_STR] = { '\0' };
+    ssize_t cchOpts = RTStrPrintf2(szOpts, sizeof(szOpts),
+                                   "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000,tag=%s", gidMount, g_szTag);
+    if (RTStrVersionCompare(uts.release, "2.6.0") < 0 && cchOpts > 0)
+        cchOpts += RTStrPrintf2(&szOpts[cchOpts], sizeof(szOpts) - cchOpts, ",sf_name=%s", pEntry->pszName);
+    if (cchOpts <= 0)
     {
-        VGSvcError("vbsvcAutomounterMountIt: Share name '%s' is too long for the MntInfo.name field!\n", pEntry->pszName);
-        return rc;
+        VGSvcError("vbsvcAutomounterMountIt: szOpts overflow! %zd\n", cchOpts);
+        return VERR_BUFFER_OVERFLOW;
     }
 
+    /* Do the mounting. The fallback w/o tag is for the Linux vboxsf fork
+       which lagged a lot behind when it first appeared in 5.6. */
     errno = 0;
-    unsigned long fFlags = MS_NODEV;
-    rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, "vboxsf", fFlags, &MntInfo);
+    rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, "vboxsf", fFlags, szOpts);
+    if (rc != 0 && errno == EINVAL && RTStrVersionCompare(uts.release, "5.6.0") >= 0)
+    {
+        VGSvcVerbose(2, "vbsvcAutomounterMountIt: mount returned EINVAL, retrying without the tag.\n");
+        *strstr(szOpts, ",tag=") = '\0';
+        errno = 0;
+        rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, "vboxsf", fFlags, szOpts);
+        if (rc == 0)
+            VGSvcVerbose(0, "vbsvcAutomounterMountIt: Running outdated vboxsf module without support for the 'tag' option?\n");
+    }
     if (rc == 0)
     {
         VGSvcVerbose(0, "vbsvcAutomounterMountIt: Successfully mounted '%s' on '%s'\n",
                      pEntry->pszName, pEntry->pszActualMountPoint);
 
         errno = 0;
-        rc = vbsfmount_complete(pEntry->pszName, pEntry->pszActualMountPoint, fFlags, &MntOpts);
+        rc = vbsfmount_complete(pEntry->pszName, pEntry->pszActualMountPoint, fFlags, szOpts);
         if (rc != 0) /* Ignorable. /etc/mtab is probably a link to /proc/mounts. */
             VGSvcVerbose(1, "vbsvcAutomounterMountIt: vbsfmount_complete failed: %s (%d/%d)\n",
-                         rc == 1 ? "open_memstream" : rc == 2 ? "setmntent" : rc == 3 ? "addmntent" : "unknown", rc, errno);
+                         rc == 1 ? "malloc" : rc == 2 ? "setmntent" : rc == 3 ? "addmntent" : "unknown", rc, errno);
         return VINF_SUCCESS;
     }
-    else if (errno == EINVAL)
+
+    if (errno == EINVAL)
         VGSvcError("vbsvcAutomounterMountIt: Failed to mount '%s' on '%s' because it is probably mounted elsewhere arleady! (%d,%d)\n",
                    pEntry->pszName, pEntry->pszActualMountPoint, rc, errno);
     else

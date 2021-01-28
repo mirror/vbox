@@ -43,13 +43,51 @@
 #include <mntent.h>
 #include <limits.h>
 #include <iconv.h>
+#include <sys/utsname.h>
+#include <linux/version.h>
 
 #include "vbsfmount.h"
 
-#include <iprt/assert.h>
+#include <iprt/assertcompile.h>
+#include <iprt/param.h>  /* PAGE_SIZE (used by MAX_MNTOPT_STR) */
+#include <iprt/string.h>
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define PANIC_ATTR __attribute ((noreturn, __format__ (__printf__, 1, 2)))
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+struct vbsf_mount_opts
+{
+    unsigned long fFlags; /**< MS_XXX */
+
+    /** @name Preformatted option=value or empty if not specified.
+     * Helps eliminate duplicate options as well as simplifying concatting.
+     * @{ */
+    char          szTTL[32];
+    char          szMsDirCacheTTL[32];
+    char          szMsInodeTTL[32];
+    char          szMaxIoPages[32];
+    char          szDirBuf[32];
+    char          szCacheMode[32];
+    char          szUid[32];
+    char          szGid[32];
+    char          szDMode[32];
+    char          szFMode[32];
+    char          szDMask[32];
+    char          szFMask[32];
+    char          szIoCharset[32];
+    /** @} */
+
+    bool          fSloppy;
+    char         *pszConvertCp;
+};
+
 
 static void PANIC_ATTR
 panic(const char *fmt, ...)
@@ -133,6 +171,7 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
         HO_DMASK,
         HO_FMASK,
         HO_IOCHARSET,
+        HO_NLS,
         HO_CONVERTCP,
         HO_NOEXEC,
         HO_EXEC,
@@ -163,6 +202,7 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
         {"dirbuf",      HO_DIR_BUF,         1, "directory buffer size (0 for default)"},
         {"cache",       HO_CACHE,           1, "cache mode: none, strict (default), read, readwrite"},
         {"iocharset",   HO_IOCHARSET,       1, "i/o charset (default utf8)"},
+        {"nls",         HO_NLS,             1, "i/o charset (default utf8)"},
         {"convertcp",   HO_CONVERTCP,       1, "convert share name from given charset to utf8"},
         {"dmode",       HO_DMODE,           1, "mode of all directories"},
         {"fmode",       HO_FMODE,           1, "mode of all regular files"},
@@ -229,66 +269,71 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
                     if (!(val && *val))
                     {
                         panic("%.*s requires an argument (i.e. %.*s=<arg>)\n",
-                               (int)len, s, (int)len, s);
+                              (int)len, s, (int)len, s);
                     }
                 }
 
                 switch (handler->opt)
                 {
                     case HO_RW:
-                        opts->ronly = 0;
+                        opts->fFlags &= ~MS_RDONLY;
                         break;
                     case HO_RO:
-                        opts->ronly = 1;
+                        opts->fFlags |= MS_RDONLY;
                         break;
                     case HO_NOEXEC:
-                        opts->noexec = 1;
+                        opts->fFlags |= MS_NOEXEC;
                         break;
                     case HO_EXEC:
-                        opts->noexec = 0;
+                        opts->fFlags &= ~MS_NOEXEC;
                         break;
                     case HO_NODEV:
-                        opts->nodev = 1;
+                        opts->fFlags |= MS_NODEV;
                         break;
                     case HO_DEV:
-                        opts->nodev = 0;
+                        opts->fFlags &= ~MS_NODEV;
                         break;
                     case HO_NOSUID:
-                        opts->nosuid = 1;
+                        opts->fFlags |= MS_NOSUID;
                         break;
                     case HO_SUID:
-                        opts->nosuid = 0;
+                        opts->fFlags &= ~MS_NOSUID;
                         break;
                     case HO_REMOUNT:
-                        opts->remount = 1;
+                        opts->fFlags |= MS_REMOUNT;
                         break;
                     case HO_TTL:
-                        opts->ttl = safe_atoi(val, val_len, 10);
+                        snprintf(opts->szTTL, sizeof(opts->szTTL),
+                                 "ttl=%d", safe_atoi(val, val_len, 10));
                         break;
                     case HO_DENTRY_TTL:
-                        opts->msDirCacheTTL = safe_atoi(val, val_len, 10);
+                        snprintf(opts->szMsDirCacheTTL, sizeof(opts->szMsDirCacheTTL),
+                                 "dcachettl=%d", safe_atoi(val, val_len, 10));
                         break;
                     case HO_INODE_TTL:
-                        opts->msInodeTTL = safe_atoi(val, val_len, 10);
+                        snprintf(opts->szMsInodeTTL, sizeof(opts->szMsInodeTTL),
+                                 "inodettl=%d", safe_atoi(val, val_len, 10));
                         break;
                     case HO_MAX_IO_PAGES:
-                        opts->cMaxIoPages = safe_atoiu(val, val_len, 10);
+                        snprintf(opts->szMaxIoPages, sizeof(opts->szMaxIoPages),
+                                 "maxiopages=%d", safe_atoiu(val, val_len, 10));
                         break;
                     case HO_DIR_BUF:
-                        opts->cbDirBuf = safe_atoiu(val, val_len, 10);
+                        snprintf(opts->szDirBuf, sizeof(opts->szDirBuf),
+                                 "dirbuf=%d", safe_atoiu(val, val_len, 10));
                         break;
                     case HO_CACHE:
 #define IS_EQUAL(a_sz) (val_len == sizeof(a_sz) - 1U && strncmp(val, a_sz, sizeof(a_sz) - 1U) == 0)
                         if (IS_EQUAL("default"))
-                            opts->enmCacheMode = kVbsfCacheMode_Default;
+                            strcpy(opts->szCacheMode, "cache=default");
                         else if (IS_EQUAL("none"))
-                            opts->enmCacheMode = kVbsfCacheMode_None;
+                            strcpy(opts->szCacheMode, "cache=none");
                         else if (IS_EQUAL("strict"))
-                            opts->enmCacheMode = kVbsfCacheMode_Strict;
+                            strcpy(opts->szCacheMode, "cache=strict");
                         else if (IS_EQUAL("read"))
-                            opts->enmCacheMode = kVbsfCacheMode_Read;
+                            strcpy(opts->szCacheMode, "cache=read");
                         else if (IS_EQUAL("readwrite"))
-                            opts->enmCacheMode = kVbsfCacheMode_ReadWrite;
+                            strcpy(opts->szCacheMode, "cache=readwrite");
                         else
                             panic("invalid cache mode '%.*s'\n"
                                   "Valid cache modes are: default, none, strict, read, readwrite\n",
@@ -296,43 +341,50 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
                         break;
                     case HO_UID:
                         /** @todo convert string to id. */
-                        opts->uid = safe_atoi(val, val_len, 10);
+                        snprintf(opts->szUid, sizeof(opts->szUid),
+                                 "uid=%d", safe_atoi(val, val_len, 10));
                         break;
                     case HO_GID:
                         /** @todo convert string to id. */
-                        opts->gid = safe_atoi(val, val_len, 10);
+                        snprintf(opts->szGid, sizeof(opts->szGid),
+                                 "gid=%d", safe_atoi(val, val_len, 10));
                         break;
                     case HO_DMODE:
-                        opts->dmode = safe_atoi(val, val_len, 8);
+                        snprintf(opts->szDMode, sizeof(opts->szDMode),
+                                 "dmode=0%o", safe_atoi(val, val_len, 8));
                         break;
                     case HO_FMODE:
-                        opts->fmode = safe_atoi(val, val_len, 8);
+                        snprintf(opts->szFMode, sizeof(opts->szFMode),
+                                 "fmode=0%o", safe_atoi(val, val_len, 8));
                         break;
                     case HO_UMASK:
-                        opts->dmask = opts->fmask = safe_atoi(val, val_len, 8);
+                    {
+                        int fMask = safe_atoi(val, val_len, 8);
+                        snprintf(opts->szDMask, sizeof(opts->szDMask), "dmask=0%o", fMask);
+                        snprintf(opts->szFMask, sizeof(opts->szFMask), "fmask=0%o", fMask);
                         break;
+                    }
                     case HO_DMASK:
-                        opts->dmask = safe_atoi(val, val_len, 8);
+                        snprintf(opts->szDMask, sizeof(opts->szDMask),
+                                 "dmask=0%o", safe_atoi(val, val_len, 8));
                         break;
                     case HO_FMASK:
-                        opts->fmask = safe_atoi(val, val_len, 8);
+                        snprintf(opts->szFMask, sizeof(opts->szFMask),
+                                 "fmask=0%o", safe_atoi(val, val_len, 8));
                         break;
                     case HO_IOCHARSET:
-                        if (val_len + 1 > sizeof(opts->nls_name))
-                        {
-                            panic("iocharset name too long\n");
-                        }
-                        memcpy(opts->nls_name, val, val_len);
-                        opts->nls_name[val_len] = 0;
+                    case HO_NLS:
+                        if (val_len >= MAX_NLS_NAME)
+                            panic("the character set name for I/O is too long: %*.*s\n", (int)val_len, (int)val_len, val);
+                        snprintf(opts->szIoCharset, sizeof(opts->szIoCharset),
+                                 "%s=%*.*s", handler->opt == HO_IOCHARSET ? "iocharset" : "nls", (int)val_len, (int)val_len, val);
                         break;
                     case HO_CONVERTCP:
-                        opts->convertcp = malloc(val_len + 1);
-                        if (!opts->convertcp)
-                        {
+                        opts->pszConvertCp = malloc(val_len + 1);
+                        if (!opts->pszConvertCp)
                             panic_err("could not allocate memory");
-                        }
-                        memcpy(opts->convertcp, val, val_len);
-                        opts->convertcp[val_len] = 0;
+                        memcpy(opts->pszConvertCp, val, val_len);
+                        opts->pszConvertCp[val_len] = '\0';
                         break;
                     case HO_NOAUTO:
                     case HO_NIGNORE:
@@ -344,7 +396,7 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
         }
 
         if (   !handler->name
-            && !opts->sloppy)
+            && !opts->fSloppy)
         {
             fprintf(stderr, "unknown mount option `%.*s'\n", (int)len, s);
             fprintf(stderr, "valid options:\n");
@@ -353,24 +405,44 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
             {
                 if (handler->desc)
                     fprintf(stderr, "  %-10s%s %s\n", handler->name,
-                         handler->has_arg ? "=<arg>" : "", handler->desc);
+                            handler->has_arg ? "=<arg>" : "", handler->desc);
             }
             exit(EXIT_FAILURE);
         }
     }
 }
 
-static void
-convertcp(char *in_codeset, char *host_name, struct vbsf_mount_info_new *info)
+/** Appends @a pszOptVal to pszOpts if not empty. */
+static size_t append_option(char *pszOpts, size_t cbOpts, size_t offOpts, const char *pszOptVal)
 {
-    char *i = host_name;
-    char *o = info->name;
-    size_t ib = strlen(host_name);
-    size_t ob = sizeof(info->name) - 1;
+    if (*pszOptVal != '\0')
+    {
+        size_t cchOptVal = strlen(pszOptVal);
+        if (offOpts + (offOpts > 0) + cchOptVal < cbOpts)
+        {
+            if (offOpts)
+                pszOpts[offOpts++] = ',';
+            memcpy(&pszOpts[offOpts], pszOptVal, cchOptVal);
+            offOpts += cchOptVal;
+            pszOpts[offOpts] = '\0';
+        }
+        else
+            panic("Too many options!");
+    }
+    return offOpts;
+}
+
+static void
+convertcp(char *in_codeset, char *pszSharedFolder, char *pszDst)
+{
+    char *i = pszSharedFolder;
+    char *o = pszDst;
+    size_t ib = strlen(pszSharedFolder);
+    size_t ob = MAX_HOST_NAME - 1;
     iconv_t cd;
 
     cd = iconv_open("UTF-8", in_codeset);
-    if (cd == (iconv_t) -1)
+    if (cd == (iconv_t)-1)
     {
         panic_err("could not convert share name, iconv_open `%s' failed",
                    in_codeset);
@@ -379,10 +451,10 @@ convertcp(char *in_codeset, char *host_name, struct vbsf_mount_info_new *info)
     while (ib)
     {
         size_t c = iconv(cd, &i, &ib, &o, &ob);
-        if (c == (size_t) -1)
+        if (c == (size_t)-1)
         {
             panic_err("could not convert share name(%s) at %d",
-                      host_name, (int)(strlen (host_name) - ib));
+                      pszSharedFolder, (int)(strlen(pszSharedFolder) - ib));
         }
     }
     *o = 0;
@@ -453,43 +525,36 @@ main(int argc, char **argv)
     int err;
     int saved_errno;
     int nomtab = 0;
-    unsigned long flags = MS_NODEV;
-    char *host_name;
-    char *mount_point;
-    struct vbsf_mount_info_new mntinf;
+    char *pszSharedFolder;
+    char *pszMountPoint;
+    struct utsname uts;
+    int major, minor, patch;
+    size_t offOpts;
+    static const char s_szSfNameOpt[] = "sf_name=";
+    char szSharedFolderIconved[sizeof(s_szSfNameOpt) - 1 + MAX_HOST_NAME];
+    char szOpts[MAX_MNTOPT_STR];
     struct vbsf_mount_opts opts =
     {
-        -1,    /* ttl */
-        -1,    /* msDirCacheTTL */
-        -1,    /* msInodeTTL */
-        0,     /* cMaxIoPages */
-        0,     /* cbDirBuf */
-        kVbsfCacheMode_Default,
-        0,     /* uid */
-        0,     /* gid */
-       ~0U,    /* dmode */
-       ~0U,    /* fmode*/
-        0,     /* dmask */
-        0,     /* fmask */
-        0,     /* ronly */
-        0,     /* sloppy */
-        0,     /* noexec */
-        0,     /* nodev */
-        0,     /* nosuid */
-        0,     /* remount */
-        "\0",  /* nls_name */
-        NULL,  /* convertcp */
+        MS_NODEV,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        false, /*fSloppy*/
+        NULL,
     };
+
     AssertCompile(sizeof(uid_t) == sizeof(int));
     AssertCompile(sizeof(gid_t) == sizeof(int));
-
-    memset(&mntinf, 0, sizeof(mntinf));
-    mntinf.nullchar = '\0';
-    mntinf.signature[0] = VBSF_MOUNT_SIGNATURE_BYTE_0;
-    mntinf.signature[1] = VBSF_MOUNT_SIGNATURE_BYTE_1;
-    mntinf.signature[2] = VBSF_MOUNT_SIGNATURE_BYTE_2;
-    mntinf.length       = sizeof(mntinf);
-    mntinf.szTag[0] = '\0';
 
     if (getuid())
         panic("Only root can mount shared folders from the host.\n");
@@ -497,6 +562,9 @@ main(int argc, char **argv)
     if (!argv[0])
         argv[0] = "mount.vboxsf";
 
+    /*
+     * Parse options.
+     */
     while ((c = getopt(argc, argv, "rwsno:h")) != -1)
     {
         switch (c)
@@ -509,15 +577,15 @@ main(int argc, char **argv)
                 return usage(argv[0]);
 
             case 'r':
-                opts.ronly = 1;
+                opts.fFlags |= MS_RDONLY;
                 break;
 
             case 'w':
-                opts.ronly = 0;
+                opts.fFlags &= ~MS_RDONLY;
                 break;
 
             case 's':
-                opts.sloppy = 1;
+                opts.fSloppy = true;
                 break;
 
             case 'o':
@@ -533,100 +601,76 @@ main(int argc, char **argv)
     if (argc - optind < 2)
         return usage(argv[0]);
 
-    host_name = argv[optind];
-    mount_point = argv[optind + 1];
-
-    if (opts.convertcp)
-        convertcp(opts.convertcp, host_name, &mntinf);
-    else
+    pszSharedFolder = argv[optind];
+    pszMountPoint   = argv[optind + 1];
+    if (opts.pszConvertCp)
     {
-        if (strlen(host_name) > MAX_HOST_NAME - 1)
-            panic("host name is too big\n");
-
-        strcpy(mntinf.name, host_name);
+        convertcp(opts.pszConvertCp, pszSharedFolder, &szSharedFolderIconved[sizeof(s_szSfNameOpt) - 1]);
+        pszSharedFolder = &szSharedFolderIconved[sizeof(s_szSfNameOpt) - 1];
     }
-
-    if (strlen(opts.nls_name) > MAX_NLS_NAME - 1)
-        panic("%s: the character set name for I/O is too long.\n", argv[0]);
-
-    strcpy(mntinf.nls_name, opts.nls_name);
-
-    if (opts.ronly)
-        flags |= MS_RDONLY;
-    if (opts.noexec)
-        flags |= MS_NOEXEC;
-    if (opts.nodev)
-        flags |= MS_NODEV;
-    if (opts.remount)
-        flags |= MS_REMOUNT;
-
-    mntinf.ttl              = opts.ttl;
-    mntinf.msDirCacheTTL    = opts.msDirCacheTTL;
-    mntinf.msInodeTTL       = opts.msInodeTTL;
-    mntinf.cMaxIoPages      = opts.cMaxIoPages;
-    mntinf.cbDirBuf         = opts.cbDirBuf;
-    mntinf.enmCacheMode     = opts.enmCacheMode;
-
-    mntinf.uid   = opts.uid;
-    mntinf.gid   = opts.gid;
-    mntinf.dmode = opts.dmode;
-    mntinf.fmode = opts.fmode;
-    mntinf.dmask = opts.dmask;
-    mntinf.fmask = opts.fmask;
 
     /*
-     * Note: When adding and/or modifying parameters of the vboxsf mounting
-     *       options you also would have to adjust VBoxServiceAutoMount.cpp
-     *       to keep this code here slick without having VbglR3.
+     * Concat option strings.
      */
-    err = mount(host_name, mount_point, "vboxsf", flags, &mntinf);
+    offOpts   = 0;
+    szOpts[0] = '\0';
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szTTL);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szMsDirCacheTTL);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szMsInodeTTL);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szMaxIoPages);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szDirBuf);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szCacheMode);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szUid);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szGid);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szDMode);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szFMode);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szDMask);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szFMask);
+    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szIoCharset);
+
+    /* For pre-2.6 kernels we have to supply the shared folder name as a
+       string option because the kernel hides the device name from us. */
+    RT_ZERO(uts);
+    if (   uname(&uts) == -1
+        || sscanf(uts.release, "%d.%d.%d", &major, &minor, &patch) != 3)
+        major = minor = patch = 5;
+
+    if (KERNEL_VERSION(major, minor, patch) < KERNEL_VERSION(2,6,0))
+    {
+        memcpy(szSharedFolderIconved, s_szSfNameOpt, sizeof(s_szSfNameOpt) - 1);
+        if (!opts.pszConvertCp)
+        {
+            if (strlen(pszSharedFolder) >= MAX_HOST_NAME)
+                panic("%s: shared folder name is too long (max %d)", argv[0], (int)MAX_HOST_NAME - 1);
+            strcpy(&szSharedFolderIconved[sizeof(s_szSfNameOpt) - 1], pszSharedFolder);
+        }
+        offOpts = append_option(szOpts, sizeof(szOpts), offOpts, szSharedFolderIconved);
+    }
+
+    /*
+     * Do the actual mounting.
+     */
+    err = mount(pszSharedFolder, pszMountPoint, "vboxsf", opts.fFlags, szOpts);
     saved_errno = errno;
 
-    /* Some versions of the mount utility (unknown which, if any) will turn the
-       shared folder name into an absolute path.  So, we check if it starts with
-       the CWD and removes it.  We must do this after failing, because there is
-       not actual restrictions on the shared folder name wrt to slashes and such. */
-    if (err == -1 && errno == ENXIO && host_name[0] == '/')
-    {
-        char szCWD[4096];
-        if (getcwd(szCWD, sizeof(szCWD)) != NULL)
-        {
-            size_t cchCWD = strlen(szCWD);
-            if (!strncmp(host_name, szCWD, cchCWD))
-            {
-                while (host_name[cchCWD] == '/')
-                    ++cchCWD;
-                if (host_name[cchCWD])
-                {
-                    /* We checked before that we have enough space. */
-                    strcpy(mntinf.name, host_name + cchCWD);
-                    err = mount(host_name, mount_point, "vboxsf", flags, &mntinf);
-                    saved_errno = errno;
-                }
-            }
-        }
-        else
-            fprintf(stderr, "%s: failed to get the current working directory: %s", argv[0], strerror(errno));
-        errno = saved_errno;
-    }
     if (err)
     {
         if (saved_errno == ENXIO)
-            panic("%s: shared folder '%s' was not found (check VM settings / spelling)\n", argv[0], host_name);
+            panic("%s: shared folder '%s' was not found (check VM settings / spelling)\n", argv[0], pszSharedFolder);
         else
             panic_err("%s: mounting failed with the error", argv[0]);
     }
 
     if (!nomtab)
     {
-        err = vbsfmount_complete(host_name, mount_point, flags, &opts);
+        err = vbsfmount_complete(pszSharedFolder, pszMountPoint, opts.fFlags, szOpts);
         switch (err)
         {
             case 0: /* Success. */
                 break;
 
             case 1:
-                panic_err("%s: Could not update mount table (failed to create memstream).", argv[0]);
+                panic_err("%s: Could not update mount table (out of memory).", argv[0]);
                 break;
 
             case 2:

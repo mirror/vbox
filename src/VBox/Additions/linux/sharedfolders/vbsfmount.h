@@ -34,9 +34,10 @@
 # pragma once
 #endif
 
-/* Linux constraints the size of data mount argument to PAGE_SIZE - 1. */
-#define MAX_HOST_NAME  256
-#define MAX_NLS_NAME    32
+/* Linux constrains the size of data mount argument to PAGE_SIZE - 1. */
+#define MAX_MNTOPT_STR          PAGE_SIZE
+#define MAX_HOST_NAME           256
+#define MAX_NLS_NAME            32
 #define VBSF_DEFAULT_TTL_MS     200
 
 #define VBSF_MOUNT_SIGNATURE_BYTE_0 '\377'
@@ -134,34 +135,8 @@ struct vbsf_mount_info_new {
 AssertCompileSize(struct vbsf_mount_info_new, 2*4 + MAX_HOST_NAME + MAX_NLS_NAME + 7*4 + 32 + 5*4);
 #endif
 
-/**
- * For use with the vbsfmount_complete() helper.
- */
-struct vbsf_mount_opts {
-    int                     ttl;
-    int32_t                 msDirCacheTTL;
-    int32_t                 msInodeTTL;
-    uint32_t                cMaxIoPages;
-    uint32_t                cbDirBuf;
-    enum vbsf_cache_mode    enmCacheMode;
-    int uid;
-    int gid;
-    int dmode;
-    int fmode;
-    int dmask;
-    int fmask;
-    int ronly;
-    int sloppy;
-    int noexec;
-    int nodev;
-    int nosuid;
-    int remount;
-    char nls_name[MAX_NLS_NAME];
-    char *convertcp;
-};
-
 /** Completes the mount operation by adding the new mount point to mtab if required. */
-int vbsfmount_complete(const char *host_name, const char *mount_point,
-                       unsigned long flags, struct vbsf_mount_opts *opts);
+int vbsfmount_complete(const char *pszSharedFolder, const char *pszMountPoint,
+                       unsigned long fFlags, const char *pszOpts);
 
 #endif /* !GA_INCLUDED_SRC_linux_sharedfolders_vbsfmount_h */
