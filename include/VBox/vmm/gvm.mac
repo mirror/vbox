@@ -1,0 +1,94 @@
+;; @file
+; GVM - The Global VM Data.
+;
+
+;
+; Copyright (C) 2006-2021 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; The contents of this file may alternatively be used under the terms
+; of the Common Development and Distribution License Version 1.0
+; (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+; VirtualBox OSE distribution, in which case the provisions of the
+; CDDL are applicable instead of those of the GPL.
+;
+; You may elect to license modified versions of this file under the
+; terms and conditions of either the GPL or the CDDL or both.
+;
+
+%ifndef ___VBox_vmm_gvm_mac
+%define ___VBox_vmm_gvm_mac
+
+%include "VBox/vmm/vm.mac"
+
+struc GVMCPU
+        .s                  resb VMCPU_size
+        .idCpu              resd 1
+
+        alignb 8
+        .hEMT               RTR0PTR_RES 1
+        .pGVM               RTR0PTR_RES 1
+        .pVMR0              RTR0PTR_RES 1
+        .pVCpuR3            RTR3PTR_RES 1
+
+        alignb 64
+        .gvmm               resb 64
+        alignb 64
+        .hmr0               resb 512
+%ifdef VBOX_WITH_NEM_R0
+        .nemr0              resb 64
+%endif
+        alignb 4096
+endstruc
+
+
+struc GVM
+        .s                  resb VM_size
+        .u32Magic           resd 1
+        .hSelf              resd 1
+        alignb 8
+        .pSelf              RTR0PTR_RES 1
+        .pVMR3              RTR3PTR_RES 1
+        .pSession           RTR0PTR_RES 1
+        .cCpus              resd 1
+
+        alignb 64
+        .gvmm               resb 256
+        alignb 64
+        .gmm                resb 1024
+%ifdef VBOX_WITH_NEM_R0
+        alignb 64
+        .nemr0              resb 256
+%endif
+        alignb 64
+        .rawpci             resb 64
+        alignb 64
+        .pdmr0              resb 2176
+        alignb 64
+        .pgmr0              resb 640
+        alignb 64
+        .iomr0              resb 512
+        alignb 64
+        .apicr0             resb 64
+        alignb 64
+        .dbgfr0             resb 1024
+
+        times ((($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB + 4095) & ~4095) - ($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB)) resb 1
+        .apCpusR0           RTR0PTR_RES VMM_MAX_CPU_COUNT
+
+        alignb 4096
+        .aCpus              resb GVMCPU_size
+endstruc
+
+%define GVM_MAGIC       0x19330825
+
+
+%endif
+

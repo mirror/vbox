@@ -45,13 +45,13 @@
  * @{
  */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) && !defined(GVM_C_STYLE_STRUCTURES)
 typedef struct GVMCPU : public VMCPU
 #else
 typedef struct GVMCPU
 #endif
 {
-#ifndef __cplusplus
+#if !defined(__cplusplus) || defined(GVM_C_STYLE_STRUCTURES)
     VMCPU           s;
 #endif
 
@@ -83,6 +83,15 @@ typedef struct GVMCPU
         uint8_t             padding[64];
     } gvmm;
 
+    /** The HM per vcpu data. */
+    union
+    {
+#if defined(VMM_INCLUDED_SRC_include_HMInternal_h) && defined(IN_RING0)
+        struct HMR0PERVCPU  s;
+#endif
+        uint8_t             padding[512];
+    } hmr0;
+
 #ifdef VBOX_WITH_NEM_R0
     /** The NEM per vcpu data. */
     union
@@ -96,9 +105,9 @@ typedef struct GVMCPU
 
     /** Padding the structure size to page boundrary. */
 #ifdef VBOX_WITH_NEM_R0
-    uint8_t                 abPadding2[4096 - 64 - 64 - 64];
+    uint8_t                 abPadding2[4096 - 64 - 64 - 512 - 64];
 #else
-    uint8_t                 abPadding2[4096 - 64 - 64];
+    uint8_t                 abPadding2[4096 - 64 - 64 - 512];
 #endif
 } GVMCPU;
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
@@ -133,13 +142,13 @@ AssertCompileSizeAlignment(GVMCPU,           4096);
  * Unlike VM, there are no special alignment restrictions here. The
  * paddings are checked by compile time assertions.
  */
-#ifdef __cplusplus
+#if defined(__cplusplus) && !defined(GVM_C_STYLE_STRUCTURES)
 typedef struct GVM : public VM
 #else
 typedef struct GVM
 #endif
 {
-#ifndef __cplusplus
+#if !defined(__cplusplus) || defined(GVM_C_STYLE_STRUCTURES)
     VM              s;
 #endif
     /** Magic / eye-catcher (GVM_MAGIC). */

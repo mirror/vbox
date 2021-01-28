@@ -111,7 +111,6 @@ struc VMXRESTOREHOST
 endstruc
 
 struc HMCPUVMX
-    .pfnStartVm                     RTR0PTR_RES  1
     .VmcsInfo                       resb    VMXVMCSINFO_size
     .VmcsInfoNstGst                 resb    VMXVMCSINFO_size
     .fSwitchedToNstGstVmcs          resb    1
@@ -145,7 +144,6 @@ struc HMCPUVMX
 endstruc
 
 struc HMCPUSVM
-    .pfnVMRun                       RTR0PTR_RES  1
     .HCPhysVmcbHost                 RTHCPHYS_RES 1
 
     .hMemObjVmcbHost                RTR0PTR_RES  1
@@ -214,5 +212,22 @@ struc HMCPU
     .aPdpes                         resq    4
 
     ; The remainer is disassembly state and statistics.
+endstruc
+
+struc HMR0CPUVMX
+    .pfnStartVm                     RTR0PTR_RES  1
+endstruc
+
+struc HMR0CPUSVM
+    .pfnVMRun                       RTR0PTR_RES  1
+endstruc
+
+struc HMR0PERVCPU
+    alignb 8
+;%if HMR0CPUVMX_size > HMR0CPUSVM_size
+    .u                              resb    HMR0CPUVMX_size
+;%else
+;    .u                              resb    HMR0CPUSVM_size
+;%endif
 endstruc
 

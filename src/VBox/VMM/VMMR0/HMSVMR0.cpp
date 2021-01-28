@@ -734,8 +734,8 @@ static void hmR0SvmUpdateVmRunFunction(PVMCPUCC pVCpu)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_ENTRY ? 2 : 0)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_EXIT  ? 4 : 0);
     PFNHMSVMVMRUN const pfnVMRun = s_aHmR0SvmVmRunFunctions[idx].pfn;
-    if (pVCpu->hm.s.svm.pfnVMRun != pfnVMRun)
-        pVCpu->hm.s.svm.pfnVMRun = pfnVMRun;
+    if (pVCpu->hmr0.s.svm.pfnVMRun != pfnVMRun)
+        pVCpu->hmr0.s.svm.pfnVMRun = pfnVMRun;
 }
 
 
@@ -745,7 +745,7 @@ static void hmR0SvmUpdateVmRunFunction(PVMCPUCC pVCpu)
 static DECLCALLBACK(int) hmR0SvmVMRunSelector(PVMCC pVM, PVMCPUCC pVCpu, RTHCPHYS HCPhysVMCB)
 {
     hmR0SvmUpdateVmRunFunction(pVCpu);
-    return pVCpu->hm.s.svm.pfnVMRun(pVM, pVCpu, HCPhysVMCB);
+    return pVCpu->hmr0.s.svm.pfnVMRun(pVM, pVCpu, HCPhysVMCB);
 }
 
 
@@ -790,7 +790,7 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
          * Initialize the hardware-assisted SVM guest-execution handler.
          * We now use a single handler for both 32-bit and 64-bit guests, see @bugref{6208#c73}.
          */
-        pVCpu->hm.s.svm.pfnVMRun = hmR0SvmVMRunSelector;
+        pVCpu->hmr0.s.svm.pfnVMRun = hmR0SvmVMRunSelector;
 
         /*
          * Allocate one page for the host-context VM control block (VMCB). This is used for additional host-state (such as
@@ -4318,7 +4318,7 @@ DECLINLINE(int) hmR0SvmRunGuest(PVMCPUCC pVCpu, RTHCPHYS HCPhysVmcb)
 {
     /* Mark that HM is the keeper of all guest-CPU registers now that we're going to execute guest code. */
     pVCpu->cpum.GstCtx.fExtrn |= HMSVM_CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_HM;
-    return pVCpu->hm.s.svm.pfnVMRun(pVCpu->CTX_SUFF(pVM), pVCpu, HCPhysVmcb);
+    return pVCpu->hmr0.s.svm.pfnVMRun(pVCpu->CTX_SUFF(pVM), pVCpu, HCPhysVmcb);
 }
 
 

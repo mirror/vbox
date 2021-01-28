@@ -997,8 +997,6 @@ typedef struct HMCPU
         {
             /** @name Guest information.
              * @{ */
-            /** Ring-0 pointer to the hardware-assisted VMX execution function. */
-            PFNHMVMXSTARTVM             pfnStartVm;
             /** Guest VMCS information. */
             VMXVMCSINFO                 VmcsInfo;
             /** Nested-guest VMCS information. */
@@ -1067,9 +1065,6 @@ typedef struct HMCPU
         /** SVM data. */
         struct HM_NAMELESS_UNION_TAG(HMCPUSVM)
         {
-            /** Ring 0 handlers for VT-x. */
-            PFNHMSVMVMRUN               pfnVMRun;
-
             /** Physical address of the host VMCB which holds additional host-state. */
             RTHCPHYS                    HCPhysVmcbHost;
             /** R0 memory object for the host VMCB which holds additional host-state. */
@@ -1287,6 +1282,33 @@ AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.VmcsInfoNstGst, 8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.RestoreHost,    8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) svm, 8);
 AssertCompileMemberAlignment(HMCPU, Event, 8);
+
+
+/**
+ * HM per-VCpu ring-0 only instance data.
+ */
+typedef struct HMR0PERVCPU
+{
+    union HM_NAMELESS_UNION_TAG(HMR0CPUUNION) /* no tag! */
+    {
+        /** VT-x data.   */
+        struct HM_NAMELESS_UNION_TAG(HMR0CPUVMX)
+        {
+            /** Ring-0 pointer to the hardware-assisted VMX execution function. */
+            PFNHMVMXSTARTVM             pfnStartVm;
+        } vmx;
+
+        /** SVM data. */
+        struct HM_NAMELESS_UNION_TAG(HMR0CPUSVM)
+        {
+            /** Ring 0 handlers for VT-x. */
+            PFNHMSVMVMRUN               pfnVMRun;
+        } svm;
+    } HM_UNION_NM(u);
+} HMR0PERVCPU;
+/** Pointer to HM ring-0 VMCPU instance data. */
+typedef HMR0PERVCPU *PHMR0PERVCPU;
+
 
 #ifdef IN_RING0
 VMMR0_INT_DECL(PHMPHYSCPU)  hmR0GetCurrentCpu(void);

@@ -4182,8 +4182,8 @@ static void hmR0VmxUpdateStartVmFunction(PVMCPUCC pVCpu)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_MDS_ENTRY  ?  8 : 0)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_EXIT  ? 16 : 0);
     PFNHMVMXSTARTVM const pfnStartVm = s_aHmR0VmxStartVmFunctions[idx].pfn;
-    if (pVCpu->hm.s.vmx.pfnStartVm != pfnStartVm)
-        pVCpu->hm.s.vmx.pfnStartVm = pfnStartVm;
+    if (pVCpu->hmr0.s.vmx.pfnStartVm != pfnStartVm)
+        pVCpu->hmr0.s.vmx.pfnStartVm = pfnStartVm;
 }
 
 
@@ -4193,7 +4193,7 @@ static void hmR0VmxUpdateStartVmFunction(PVMCPUCC pVCpu)
 static DECLCALLBACK(int) hmR0VmxStartVmSelector(PVMCC pVM, PVMCPUCC pVCpu, bool fResume)
 {
     hmR0VmxUpdateStartVmFunction(pVCpu);
-    return pVCpu->hm.s.vmx.pfnStartVm(pVM, pVCpu, fResume);
+    return pVCpu->hmr0.s.vmx.pfnStartVm(pVM, pVCpu, fResume);
 }
 
 
@@ -4541,7 +4541,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
         Log4Func(("pVCpu=%p idCpu=%RU32\n", pVCpu, pVCpu->idCpu));
 
-        pVCpu->hm.s.vmx.pfnStartVm = hmR0VmxStartVmSelector;
+        pVCpu->hmr0.s.vmx.pfnStartVm = hmR0VmxStartVmSelector;
 
         rc = hmR0VmxSetupVmcs(pVCpu, &pVCpu->hm.s.vmx.VmcsInfo,  false /* fIsNstGstVmcs */);
         if (RT_SUCCESS(rc))
@@ -6849,7 +6849,7 @@ DECLINLINE(int) hmR0VmxRunGuest(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 
     /** @todo Add stats for VMRESUME vs VMLAUNCH. */
     bool const fResumeVM = RT_BOOL(pVmxTransient->pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
-    int rc = pVCpu->hm.s.vmx.pfnStartVm(NULL /*pVCpu->CTX_SUFF(pVM) - unused*/, pVCpu, fResumeVM);
+    int rc = pVCpu->hmr0.s.vmx.pfnStartVm(NULL /*pVCpu->CTX_SUFF(pVM) - unused*/, pVCpu, fResumeVM);
     AssertMsg(rc <= VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;
 }

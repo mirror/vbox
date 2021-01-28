@@ -27,6 +27,7 @@ BITS 64
 %include "VMMInternal.mac"
 %include "VBox/vmm/cpum.mac"
 %include "VBox/vmm/vm.mac"
+%include "VBox/vmm/gvm.mac"
 %include "VBox/sup.mac"
 %ifdef DO_GLOBALS
  %include "tstAsmStructsAsm.mac"
