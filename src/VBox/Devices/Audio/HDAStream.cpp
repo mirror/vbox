@@ -1260,7 +1260,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 
         if (cbDMA)
         {
-            const size_t cbCircBufUsed = RTCircBufUsed(pCircBuf);
+            const size_t cbCircBufUsed = RTCircBufUsed(pCircBuf); RT_NOREF(cbCircBufUsed);
 
             Log3Func(("[SD%RU8] cbDMA=%RU32, cbUsed=%zu, uFIFOW=%RU8, uFIFOS=%RU8\n",
                       uSD, cbDMA, cbCircBufUsed, pStreamShared->u8FIFOW, pStreamShared->u8FIFOS));
