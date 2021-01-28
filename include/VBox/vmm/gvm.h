@@ -119,7 +119,7 @@ typedef struct GVMCPU
 AssertCompileMemberAlignment(GVMCPU, idCpu,  4096);
 AssertCompileMemberAlignment(GVMCPU, gvmm,   64);
 #ifdef VBOX_WITH_NEM_R0
-AssertCompileMemberAlignment(GVMCPU, nem,    64);
+AssertCompileMemberAlignment(GVMCPU, nemr0,  64);
 #endif
 AssertCompileSizeAlignment(GVMCPU,           4096);
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
@@ -269,7 +269,7 @@ AssertCompileMemberAlignment(GVM, u32Magic, 64);
 AssertCompileMemberAlignment(GVM, gvmm,     64);
 AssertCompileMemberAlignment(GVM, gmm,      64);
 #ifdef VBOX_WITH_NEM_R0
-AssertCompileMemberAlignment(GVM, nem,      64);
+AssertCompileMemberAlignment(GVM, nemr0,    64);
 #endif
 AssertCompileMemberAlignment(GVM, rawpci,   64);
 AssertCompileMemberAlignment(GVM, pdmr0,    64);
