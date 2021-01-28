@@ -790,8 +790,8 @@ VMM_INT_DECL(void) HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShado
      */
     if (enmGuestMode == PGMMODE_REAL)
     {
-        PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
-        pVmcsInfo->fWasInRealMode = true;
+        PVMXVMCSINFOSHARED pVmcsInfoShared = hmGetVmxActiveVmcsInfoShared(pVCpu);
+        pVmcsInfoShared->fWasInRealMode = true;
     }
 
 #ifdef IN_RING0

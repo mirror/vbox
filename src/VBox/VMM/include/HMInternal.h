@@ -710,7 +710,59 @@ typedef DECLCALLBACKTYPE(int, FNHMVMXSTARTVM,(PVMCC pVM, PVMCPUCC pVCpu, bool fR
 typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
 
 /**
- * VMX VMCS information.
+ * VMX VMCS information, shared.
+ *
+ * This structure provides information maintained for and during the executing of a
+ * guest (or nested-guest) VMCS (VM control structure) using hardware-assisted VMX.
+ *
+ * Note! The members here are ordered and aligned based on estimated frequency of
+ * usage and grouped to fit within a cache line in hot code paths. Even subtle
+ * changes here have a noticeable effect in the bootsector benchmarks. Modify with
+ * care.
+ */
+typedef struct VMXVMCSINFOSHARED
+{
+    /** @name Real-mode emulation state.
+     * @{ */
+    /** Set if guest was executing in real mode (extra checks). */
+    bool                        fWasInRealMode;
+    /** Set if the guest switched to 64-bit mode on a 32-bit host. */
+    bool                        fSwitchedTo64on32Obsolete;
+    /** Padding. */
+    bool                        afPadding0[6];
+    struct
+    {
+        X86DESCATTR             AttrCS;
+        X86DESCATTR             AttrDS;
+        X86DESCATTR             AttrES;
+        X86DESCATTR             AttrFS;
+        X86DESCATTR             AttrGS;
+        X86DESCATTR             AttrSS;
+        X86EFLAGS               Eflags;
+        bool                    fRealOnV86Active;
+        bool                    afPadding1[3];
+    } RealMode;
+    /** @} */
+
+    /** @name LBR MSR data.
+     *  @{ */
+    /** List of LastBranch-From-IP MSRs. */
+    uint64_t                    au64LbrFromIpMsr[32];
+    /** List of LastBranch-To-IP MSRs. */
+    uint64_t                    au64LbrToIpMsr[32];
+    /** The MSR containing the index to the most recent branch record.  */
+    uint64_t                    u64LbrTosMsr;
+    /** @} */
+} VMXVMCSINFOSHARED;
+/** Pointer to a VMXVMCSINFOSHARED struct.  */
+typedef VMXVMCSINFOSHARED *PVMXVMCSINFOSHARED;
+/** Pointer to a const VMXVMCSINFOSHARED struct. */
+typedef const VMXVMCSINFOSHARED *PCVMXVMCSINFOSHARED;
+AssertCompileSizeAlignment(VMXVMCSINFOSHARED, 8);
+
+
+/**
+ * VMX VMCS information, ring-0 only.
  *
  * This structure provides information maintained for and during the executing of a
  * guest (or nested-guest) VMCS (VM control structure) using hardware-assisted VMX.
@@ -722,6 +774,9 @@ typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
  */
 typedef struct VMXVMCSINFO
 {
+    /** Pointer to the bits we share with ring-3. */
+    R0PTRTYPE(PVMXVMCSINFOSHARED) pShared;
+
     /** @name Auxiliary information.
      * @{ */
     /** Host-physical address of the EPTP. */
@@ -790,28 +845,6 @@ typedef struct VMXVMCSINFO
     R0PTRTYPE(void *)           pvHostMsrLoad;
     /** @} */
 
-    /** @name Real-mode emulation state.
-     * @{ */
-    /** Set if guest was executing in real mode (extra checks). */
-    bool                        fWasInRealMode;
-    /** Set if the guest switched to 64-bit mode on a 32-bit host. */
-    bool                        fSwitchedTo64on32Obsolete;
-    /** Padding. */
-    bool                        afPadding0[6];
-    struct
-    {
-        X86DESCATTR             AttrCS;
-        X86DESCATTR             AttrDS;
-        X86DESCATTR             AttrES;
-        X86DESCATTR             AttrFS;
-        X86DESCATTR             AttrGS;
-        X86DESCATTR             AttrSS;
-        X86EFLAGS               Eflags;
-        bool                    fRealOnV86Active;
-        bool                    afPadding1[3];
-    } RealMode;
-    /** @} */
-
     /** @name Host-physical address of VMCS and related data structures.
      *  @{ */
     /** The VMCS. */
@@ -835,18 +868,8 @@ typedef struct VMXVMCSINFO
     /** R0-memory object for VMCS and related data structures. */
     RTR0MEMOBJ                  hMemObj;
     /** @} */
-
-    /** @name LBR MSR data.
-     *  @{ */
-    /** List of LastBranch-From-IP MSRs. */
-    uint64_t                    au64LbrFromIpMsr[32];
-    /** List of LastBranch-To-IP MSRs. */
-    uint64_t                    au64LbrToIpMsr[32];
-    /** The MSR containing the index to the most recent branch record.  */
-    uint64_t                    u64LbrTosMsr;
-    /** @} */
 } VMXVMCSINFO;
-/** Pointer to a VMXVMCSINFO struct.  */
+/** Pointer to a VMXVMCSINFOR0 struct.  */
 typedef VMXVMCSINFO *PVMXVMCSINFO;
 /** Pointer to a const VMXVMCSINFO struct. */
 typedef const VMXVMCSINFO *PCVMXVMCSINFO;
@@ -997,10 +1020,10 @@ typedef struct HMCPU
         {
             /** @name Guest information.
              * @{ */
-            /** Guest VMCS information. */
-            VMXVMCSINFO                 VmcsInfo;
-            /** Nested-guest VMCS information. */
-            VMXVMCSINFO                 VmcsInfoNstGst;
+            /** Guest VMCS information shared with ring-3. */
+            VMXVMCSINFOSHARED           VmcsInfo;
+            /** Nested-guest VMCS information shared with ring-3. */
+            VMXVMCSINFOSHARED           VmcsInfoNstGst;
             /** Whether the nested-guest VMCS was the last current VMCS. */
             bool                        fSwitchedToNstGstVmcs;
             /** Whether the static guest VMCS controls has been merged with the
@@ -1267,6 +1290,14 @@ typedef struct HMR0PERVCPU
             /** Ring-0 pointer to the hardware-assisted VMX execution function. */
             PFNHMVMXSTARTVM             pfnStartVm;
 
+            /** @name Guest information.
+             * @{ */
+            /** Guest VMCS information. */
+            VMXVMCSINFO                 VmcsInfo;
+            /** Nested-guest VMCS information. */
+            VMXVMCSINFO                 VmcsInfoNstGst;
+            /** @} */
+
             /** @name Host information.
              * @{ */
             /** Host LSTAR MSR to restore lazily while leaving VT-x. */
@@ -1288,9 +1319,11 @@ typedef struct HMR0PERVCPU
             uint32_t                    fRestoreHostFlags;
             /** Alignment. */
             uint32_t                    u32Alignment0;
-            /** Current VMX_VMCS_HOST_RIP value (only used in HMR0A.asm). */
+            /** Current VMX_VMCS_HOST_RIP value (only used in HMR0A.asm).
+             *  @todo move to VMXVMCSINFO */
             uint64_t                    uHostRIP;
-            /** Current VMX_VMCS_HOST_RSP value (only used in HMR0A.asm). */
+            /** Current VMX_VMCS_HOST_RSP value (only used in HMR0A.asm).
+             *  @todo move to VMXVMCSINFO */
             uint64_t                    uHostRSP;
             /** The host-state restoration structure. */
             VMXRESTOREHOST              RestoreHost;
@@ -1363,7 +1396,7 @@ DECLASM(int) hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUC
 
 /** @addtogroup grp_hm_int_vmx  VMX Internal
  * @{ */
-VMM_INT_DECL(PVMXVMCSINFO)  hmGetVmxActiveVmcsInfo(PVMCPU pVCpu);
+VMM_INT_DECL(PVMXVMCSINFOSHARED) hmGetVmxActiveVmcsInfoShared(PVMCPU pVCpu);
 
 /**
  * Used on platforms with poor inline assembly support to retrieve all the

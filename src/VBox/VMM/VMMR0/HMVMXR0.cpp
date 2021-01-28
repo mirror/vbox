@@ -233,7 +233,7 @@ typedef struct VMXTRANSIENT
    uint64_t            uExitQual;
 
    /** The VMCS info. object. */
-   PVMXVMCSINFO        pVmcsInfo;
+   PVMXVMCSINFO         pVmcsInfo;
 
    /** The VM-exit interruption-information field. */
    uint32_t            uExitIntInfo;
@@ -1006,6 +1006,31 @@ static uint64_t hmR0VmxGetFixedCr4Mask(PCVMCPUCC pVCpu)
 
 
 /**
+ * Gets the active (in use) VMCS info. object for the specified VCPU.
+ *
+ * This is either the guest or nested-guest VMCS info. and need not necessarily
+ * pertain to the "current" VMCS (in the VMX definition of the term). For instance,
+ * if the VM-entry failed due to an invalid-guest state, we may have "cleared" the
+ * current VMCS while returning to ring-3. However, the VMCS info. object for that
+ * VMCS would still be active and returned here so that we could dump the VMCS
+ * fields to ring-3 for diagnostics. This function is thus only used to
+ * distinguish between the nested-guest or guest VMCS.
+ *
+ * @returns The active VMCS information.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ *
+ * @thread  EMT.
+ * @remarks This function may be called with preemption or interrupts disabled!
+ */
+DECLINLINE(PVMXVMCSINFO) hmGetVmxActiveVmcsInfo(PVMCPUCC pVCpu)
+{
+    if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
+        return &pVCpu->hmr0.s.vmx.VmcsInfo;
+    return &pVCpu->hmr0.s.vmx.VmcsInfoNstGst;
+}
+
+
+/**
  * Returns whether the the VM-exit MSR-store area differs from the VM-exit MSR-load
  * area.
  *
@@ -1097,7 +1122,7 @@ static void hmR0VmxSetTscOffsetVmcs(PVMXVMCSINFO pVmcsInfo, uint64_t uTscOffset)
 static void hmR0VmxAddXcptInterceptMask(PCVMXTRANSIENT pVmxTransient, uint32_t uXcptMask)
 {
     PVMXVMCSINFO pVmcsInfo   = pVmxTransient->pVmcsInfo;
-    uint32_t     uXcptBitmap = pVmcsInfo->u32XcptBitmap;
+    uint32_t       uXcptBitmap = pVmcsInfo->u32XcptBitmap;
     if ((uXcptBitmap & uXcptMask) != uXcptMask)
     {
         uXcptBitmap |= uXcptMask;
@@ -1136,7 +1161,7 @@ static void hmR0VmxAddXcptIntercept(PCVMXTRANSIENT pVmxTransient, uint8_t uXcpt)
 static int hmR0VmxRemoveXcptInterceptMask(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t uXcptMask)
 {
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    uint32_t u32XcptBitmap = pVmcsInfo->u32XcptBitmap;
+    uint32_t   u32XcptBitmap = pVmcsInfo->u32XcptBitmap;
     if (u32XcptBitmap & uXcptMask)
     {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
@@ -1354,13 +1379,13 @@ static int hmR0VmxSwitchToGstOrNstGstVmcs(PVMCPUCC pVCpu, bool fSwitchToNstGstVm
     PVMXVMCSINFO pVmcsInfoTo;
     if (fSwitchToNstGstVmcs)
     {
-        pVmcsInfoFrom = &pVCpu->hm.s.vmx.VmcsInfo;
-        pVmcsInfoTo   = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
+        pVmcsInfoFrom = &pVCpu->hmr0.s.vmx.VmcsInfo;
+        pVmcsInfoTo   = &pVCpu->hmr0.s.vmx.VmcsInfoNstGst;
     }
     else
     {
-        pVmcsInfoFrom = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
-        pVmcsInfoTo   = &pVCpu->hm.s.vmx.VmcsInfo;
+        pVmcsInfoFrom = &pVCpu->hmr0.s.vmx.VmcsInfoNstGst;
+        pVmcsInfoTo   = &pVCpu->hmr0.s.vmx.VmcsInfo;
     }
 
     /*
@@ -1828,12 +1853,15 @@ DECL_FORCE_INLINE(void) hmR0VmxPagesFree(RTR0MEMOBJ hMemObj)
 /**
  * Initializes a VMCS info. object.
  *
- * @param   pVmcsInfo   The VMCS info. object.
+ * @param   pVmcsInfo           The VMCS info. object.
+ * @param   pVmcsInfoShared     The VMCS info. object shared with ring-3.
  */
-static void hmR0VmxVmcsInfoInit(PVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxVmcsInfoInit(PVMXVMCSINFO pVmcsInfo, PVMXVMCSINFOSHARED pVmcsInfoShared)
 {
-    memset(pVmcsInfo, 0, sizeof(*pVmcsInfo));
+    RT_ZERO(*pVmcsInfo);
+    RT_ZERO(*pVmcsInfoShared);
 
+    pVmcsInfo->pShared             = pVmcsInfoShared;
     Assert(pVmcsInfo->hMemObj == NIL_RTR0MEMOBJ);
     pVmcsInfo->HCPhysVmcs          = NIL_RTHCPHYS;
     pVmcsInfo->HCPhysShadowVmcs    = NIL_RTHCPHYS;
@@ -1852,14 +1880,15 @@ static void hmR0VmxVmcsInfoInit(PVMXVMCSINFO pVmcsInfo)
 /**
  * Frees the VT-x structures for a VMCS info. object.
  *
- * @param   pVmcsInfo   The VMCS info. object.
+ * @param   pVmcsInfo           The VMCS info. object.
+ * @param   pVmcsInfoShared     The VMCS info. object shared with ring-3.
  */
-static void hmR0VmxVmcsInfoFree(PVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxVmcsInfoFree(PVMXVMCSINFO pVmcsInfo, PVMXVMCSINFOSHARED pVmcsInfoShared)
 {
     if (pVmcsInfo->hMemObj != NIL_RTR0MEMOBJ)
     {
         hmR0VmxPagesFree(pVmcsInfo->hMemObj);
-        hmR0VmxVmcsInfoInit(pVmcsInfo);
+        hmR0VmxVmcsInfoInit(pVmcsInfo, pVmcsInfoShared);
     }
 }
 
@@ -1952,10 +1981,10 @@ static void hmR0VmxStructsFree(PVMCC pVM)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-        hmR0VmxVmcsInfoFree(&pVCpu->hm.s.vmx.VmcsInfo);
+        hmR0VmxVmcsInfoFree(&pVCpu->hmr0.s.vmx.VmcsInfo, &pVCpu->hm.s.vmx.VmcsInfo);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         if (pVM->cpum.ro.GuestFeatures.fVmx)
-            hmR0VmxVmcsInfoFree(&pVCpu->hm.s.vmx.VmcsInfoNstGst);
+            hmR0VmxVmcsInfoFree(&pVCpu->hmr0.s.vmx.VmcsInfoNstGst, &pVCpu->hm.s.vmx.VmcsInfoNstGst);
 #endif
     }
 }
@@ -2030,7 +2059,7 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
     {
         /* Allocate the guest VMCS structures. */
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-        rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hm.s.vmx.VmcsInfo, false /* fIsNstGstVmcs */);
+        rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hmr0.s.vmx.VmcsInfo, false /* fIsNstGstVmcs */);
         if (RT_FAILURE(rc))
             goto cleanup;
 
@@ -2038,7 +2067,7 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
         /* Allocate the nested-guest VMCS structures, when the VMX feature is exposed to the guest. */
         if (pVM->cpum.ro.GuestFeatures.fVmx)
         {
-            rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hm.s.vmx.VmcsInfoNstGst, true /* fIsNstGstVmcs */);
+            rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hmr0.s.vmx.VmcsInfoNstGst, true /* fIsNstGstVmcs */);
             if (RT_FAILURE(rc))
                 goto cleanup;
         }
@@ -2079,8 +2108,8 @@ static void hmR0VmxStructsInit(PVMCC pVM)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-        hmR0VmxVmcsInfoInit(&pVCpu->hm.s.vmx.VmcsInfo);
-        hmR0VmxVmcsInfoInit(&pVCpu->hm.s.vmx.VmcsInfoNstGst);
+        hmR0VmxVmcsInfoInit(&pVCpu->hmr0.s.vmx.VmcsInfo,       &pVCpu->hm.s.vmx.VmcsInfo);
+        hmR0VmxVmcsInfoInit(&pVCpu->hmr0.s.vmx.VmcsInfoNstGst, &pVCpu->hm.s.vmx.VmcsInfoNstGst);
     }
 }
 
@@ -2251,11 +2280,11 @@ static int hmR0VmxSetAutoLoadStoreMsrCount(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
 static int hmR0VmxAddAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t idMsr, uint64_t uGuestMsrValue,
                                       bool fSetReadWrite, bool fUpdateHostMsr)
 {
-    PVMXVMCSINFO pVmcsInfo     = pVmxTransient->pVmcsInfo;
-    bool const   fIsNstGstVmcs = pVmxTransient->fIsNestedGuest;
-    PVMXAUTOMSR  pGuestMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
-    uint32_t     cMsrs         = pVmcsInfo->cEntryMsrLoad;
-    uint32_t     i;
+    PVMXVMCSINFO  pVmcsInfo     = pVmxTransient->pVmcsInfo;
+    bool const      fIsNstGstVmcs = pVmxTransient->fIsNestedGuest;
+    PVMXAUTOMSR     pGuestMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
+    uint32_t        cMsrs         = pVmcsInfo->cEntryMsrLoad;
+    uint32_t        i;
 
     /* Paranoia. */
     Assert(pGuestMsrLoad);
@@ -2340,10 +2369,10 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
  */
 static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t idMsr)
 {
-    PVMXVMCSINFO pVmcsInfo     = pVmxTransient->pVmcsInfo;
-    bool const   fIsNstGstVmcs = pVmxTransient->fIsNestedGuest;
-    PVMXAUTOMSR  pGuestMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
-    uint32_t     cMsrs         = pVmcsInfo->cEntryMsrLoad;
+    PVMXVMCSINFO  pVmcsInfo     = pVmxTransient->pVmcsInfo;
+    bool const      fIsNstGstVmcs = pVmxTransient->fIsNestedGuest;
+    PVMXAUTOMSR     pGuestMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
+    uint32_t        cMsrs         = pVmcsInfo->cEntryMsrLoad;
 
     LogFlowFunc(("pVCpu=%p idMsr=%#RX32\n", pVCpu, idMsr));
 
@@ -2671,8 +2700,8 @@ static int hmR0VmxCheckCachedVmcsCtls(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, b
     return VINF_SUCCESS;
 }
 
-
 #ifdef VBOX_STRICT
+
 /**
  * Verifies that our cached host EFER MSR value has not changed since we cached it.
  *
@@ -2815,8 +2844,8 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInf
         pGuestMsrStore++;
     }
 }
-#endif /* VBOX_STRICT */
 
+#endif /* VBOX_STRICT */
 
 /**
  * Flushes the TLB using EPT.
@@ -4543,13 +4572,13 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
 
         pVCpu->hmr0.s.vmx.pfnStartVm = hmR0VmxStartVmSelector;
 
-        rc = hmR0VmxSetupVmcs(pVCpu, &pVCpu->hm.s.vmx.VmcsInfo,  false /* fIsNstGstVmcs */);
+        rc = hmR0VmxSetupVmcs(pVCpu, &pVCpu->hmr0.s.vmx.VmcsInfo,  false /* fIsNstGstVmcs */);
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             if (pVM->cpum.ro.GuestFeatures.fVmx)
             {
-                rc = hmR0VmxSetupVmcs(pVCpu, &pVCpu->hm.s.vmx.VmcsInfoNstGst, true /* fIsNstGstVmcs */);
+                rc = hmR0VmxSetupVmcs(pVCpu, &pVCpu->hmr0.s.vmx.VmcsInfoNstGst, true /* fIsNstGstVmcs */);
                 if (RT_SUCCESS(rc))
                 { /* likely */ }
                 else
@@ -5346,7 +5375,7 @@ static void hmR0VmxExportGuestRflags(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransien
          * we can restore them on VM-exit. Modify the real-mode guest's eflags so that VT-x
          * can run the real-mode guest code under Virtual 8086 mode.
          */
-        PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+        PVMXVMCSINFOSHARED pVmcsInfo = pVmxTransient->pVmcsInfo->pShared;
         if (pVmcsInfo->RealMode.fRealOnV86Active)
         {
             Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.pRealModeTSS);
@@ -5674,7 +5703,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
              * Update exception intercepts.
              */
             uint32_t uXcptBitmap = pVmcsInfo->u32XcptBitmap;
-            if (pVmcsInfo->RealMode.fRealOnV86Active)
+            if (pVmcsInfo->pShared->RealMode.fRealOnV86Active)
             {
                 Assert(PDMVmmDevHeapIsEnabled(pVM));
                 Assert(pVM->hm.s.vmx.pRealModeTSS);
@@ -5926,7 +5955,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
          *
          * See Intel spec. 20.2 "Software Interrupt Handling Methods While in Virtual-8086 Mode".
          */
-        if (pVmcsInfo->RealMode.fRealOnV86Active)
+        if (pVmcsInfo->pShared->RealMode.fRealOnV86Active)
         {
             Assert(pVM->hm.s.vmx.pRealModeTSS);
             Assert(PDMVmmDevHeapIsEnabled(pVM));
@@ -6310,7 +6339,7 @@ static void hmR0VmxValidateSegmentRegs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
         /* Real and v86 mode checks. */
         /* hmR0VmxExportGuestSegReg() writes the modified in VMCS. We want what we're feeding to VT-x. */
         uint32_t u32CSAttr, u32SSAttr, u32DSAttr, u32ESAttr, u32FSAttr, u32GSAttr;
-        if (pVmcsInfo->RealMode.fRealOnV86Active)
+        if (pVmcsInfo->pShared->RealMode.fRealOnV86Active)
         {
             u32CSAttr = 0xf3; u32SSAttr = 0xf3; u32DSAttr = 0xf3;
             u32ESAttr = 0xf3; u32FSAttr = 0xf3; u32GSAttr = 0xf3;
@@ -6371,7 +6400,7 @@ static int hmR0VmxExportGuestSegReg(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, uin
     Assert(iSegReg < X86_SREG_COUNT);
 
     uint32_t u32Access = pSelReg->Attr.u;
-    if (!pVmcsInfo->RealMode.fRealOnV86Active)
+    if (!pVmcsInfo->pShared->RealMode.fRealOnV86Active)
     {
         /*
          * The way to differentiate between whether this is really a null selector or was just
@@ -6427,10 +6456,11 @@ static int hmR0VmxExportGuestSegReg(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, uin
  */
 static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
-    int   rc  = VERR_INTERNAL_ERROR_5;
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    PCCPUMCTX    pCtx      = &pVCpu->cpum.GstCtx;
-    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    int                 rc              = VERR_INTERNAL_ERROR_5;
+    PVMCC               pVM             = pVCpu->CTX_SUFF(pVM);
+    PCCPUMCTX           pCtx            = &pVCpu->cpum.GstCtx;
+    PVMXVMCSINFO        pVmcsInfo       = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFOSHARED  pVmcsInfoShared = pVmcsInfo->pShared;
 
     /*
      * Guest Segment registers: CS, SS, DS, ES, FS, GS.
@@ -6440,8 +6470,8 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CS)
         {
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CS);
-            if (pVmcsInfo->RealMode.fRealOnV86Active)
-                pVmcsInfo->RealMode.AttrCS.u = pCtx->cs.Attr.u;
+            if (pVmcsInfoShared->RealMode.fRealOnV86Active)
+                pVmcsInfoShared->RealMode.AttrCS.u = pCtx->cs.Attr.u;
             rc = hmR0VmxExportGuestSegReg(pVCpu, pVmcsInfo, X86_SREG_CS, &pCtx->cs);
             AssertRC(rc);
             ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_CS);
@@ -6450,8 +6480,8 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_SS)
         {
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SS);
-            if (pVmcsInfo->RealMode.fRealOnV86Active)
-                pVmcsInfo->RealMode.AttrSS.u = pCtx->ss.Attr.u;
+            if (pVmcsInfoShared->RealMode.fRealOnV86Active)
+                pVmcsInfoShared->RealMode.AttrSS.u = pCtx->ss.Attr.u;
             rc = hmR0VmxExportGuestSegReg(pVCpu, pVmcsInfo, X86_SREG_SS, &pCtx->ss);
             AssertRC(rc);
             ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_SS);
@@ -6460,8 +6490,8 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_DS)
         {
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DS);
-            if (pVmcsInfo->RealMode.fRealOnV86Active)
-                pVmcsInfo->RealMode.AttrDS.u = pCtx->ds.Attr.u;
+            if (pVmcsInfoShared->RealMode.fRealOnV86Active)
+                pVmcsInfoShared->RealMode.AttrDS.u = pCtx->ds.Attr.u;
             rc = hmR0VmxExportGuestSegReg(pVCpu, pVmcsInfo, X86_SREG_DS, &pCtx->ds);
             AssertRC(rc);
             ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_DS);
@@ -6470,8 +6500,8 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_ES)
         {
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_ES);
-            if (pVmcsInfo->RealMode.fRealOnV86Active)
-                pVmcsInfo->RealMode.AttrES.u = pCtx->es.Attr.u;
+            if (pVmcsInfoShared->RealMode.fRealOnV86Active)
+                pVmcsInfoShared->RealMode.AttrES.u = pCtx->es.Attr.u;
             rc = hmR0VmxExportGuestSegReg(pVCpu, pVmcsInfo, X86_SREG_ES, &pCtx->es);
             AssertRC(rc);
             ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_ES);
@@ -6480,8 +6510,8 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_FS)
         {
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_FS);
-            if (pVmcsInfo->RealMode.fRealOnV86Active)
-                pVmcsInfo->RealMode.AttrFS.u = pCtx->fs.Attr.u;
+            if (pVmcsInfoShared->RealMode.fRealOnV86Active)
+                pVmcsInfoShared->RealMode.AttrFS.u = pCtx->fs.Attr.u;
             rc = hmR0VmxExportGuestSegReg(pVCpu, pVmcsInfo, X86_SREG_FS, &pCtx->fs);
             AssertRC(rc);
             ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_FS);
@@ -6490,8 +6520,8 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_GS)
         {
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_GS);
-            if (pVmcsInfo->RealMode.fRealOnV86Active)
-                pVmcsInfo->RealMode.AttrGS.u = pCtx->gs.Attr.u;
+            if (pVmcsInfoShared->RealMode.fRealOnV86Active)
+                pVmcsInfoShared->RealMode.AttrGS.u = pCtx->gs.Attr.u;
             rc = hmR0VmxExportGuestSegReg(pVCpu, pVmcsInfo, X86_SREG_GS, &pCtx->gs);
             AssertRC(rc);
             ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_GS);
@@ -6520,7 +6550,7 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
         uint32_t u32Limit;
         uint64_t u64Base;
         uint32_t u32AccessRights;
-        if (!pVmcsInfo->RealMode.fRealOnV86Active)
+        if (!pVmcsInfoShared->RealMode.fRealOnV86Active)
         {
             u16Sel          = pCtx->tr.Sel;
             u32Limit        = pCtx->tr.u32Limit;
@@ -6798,6 +6828,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
         /* Last Branch Record. */
         if (pVM->hm.s.vmx.fLbr)
         {
+            PVMXVMCSINFOSHARED const pVmcsInfoShared = pVmxTransient->pVmcsInfo->pShared;
             uint32_t const idFromIpMsrStart = pVM->hm.s.vmx.idLbrFromIpMsrFirst;
             uint32_t const idToIpMsrStart   = pVM->hm.s.vmx.idLbrToIpMsrFirst;
             uint32_t const cLbrStack        = pVM->hm.s.vmx.idLbrFromIpMsrLast - pVM->hm.s.vmx.idLbrFromIpMsrFirst + 1;
@@ -6805,7 +6836,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
             for (uint32_t i = 0; i < cLbrStack; i++)
             {
                 int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, idFromIpMsrStart + i,
-                                                    pVmxTransient->pVmcsInfo->au64LbrFromIpMsr[i],
+                                                    pVmcsInfoShared->au64LbrFromIpMsr[i],
                                                     false /* fSetReadWrite */, false /* fUpdateHostMsr */);
                 AssertRCReturn(rc, rc);
 
@@ -6813,7 +6844,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
                 if (idToIpMsrStart != 0)
                 {
                     rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, idToIpMsrStart + i,
-                                                    pVmxTransient->pVmcsInfo->au64LbrToIpMsr[i],
+                                                    pVmcsInfoShared->au64LbrToIpMsr[i],
                                                     false /* fSetReadWrite */, false /* fUpdateHostMsr */);
                     AssertRCReturn(rc, rc);
                 }
@@ -6821,7 +6852,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 
             /* Add LBR top-of-stack MSR (which contains the index to the most recent record). */
             int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, pVM->hm.s.vmx.idLbrTosMsr,
-                                                pVmxTransient->pVmcsInfo->u64LbrTosMsr, false /* fSetReadWrite */,
+                                                pVmcsInfoShared->u64LbrTosMsr, false /* fSetReadWrite */,
                                                 false /* fUpdateHostMsr */);
             AssertRCReturn(rc, rc);
         }
@@ -7503,10 +7534,11 @@ static void hmR0VmxImportGuestRFlags(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         AssertRC(rc);
 
         pCtx->rflags.u64 = u64Val;
-        if (pVmcsInfo->RealMode.fRealOnV86Active)
+        PCVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
+        if (pVmcsInfoShared->RealMode.fRealOnV86Active)
         {
             pCtx->eflags.Bits.u1VM   = 0;
-            pCtx->eflags.Bits.u2IOPL = pVmcsInfo->RealMode.Eflags.Bits.u2IOPL;
+            pCtx->eflags.Bits.u2IOPL = pVmcsInfoShared->RealMode.Eflags.Bits.u2IOPL;
         }
         pCtx->fExtrn &= ~CPUMCTX_EXTRN_RFLAGS;
     }
@@ -7615,44 +7647,45 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
 
             if (fWhat & CPUMCTX_EXTRN_SREG_MASK)
             {
-                bool const fRealOnV86Active = pVmcsInfo->RealMode.fRealOnV86Active;
+                PVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
+                bool const fRealOnV86Active = pVmcsInfoShared->RealMode.fRealOnV86Active;
                 if (fWhat & CPUMCTX_EXTRN_CS)
                 {
                     hmR0VmxImportGuestSegReg(pVCpu, X86_SREG_CS);
                     hmR0VmxImportGuestRip(pVCpu);
                     if (fRealOnV86Active)
-                        pCtx->cs.Attr.u = pVmcsInfo->RealMode.AttrCS.u;
+                        pCtx->cs.Attr.u = pVmcsInfoShared->RealMode.AttrCS.u;
                     EMR0HistoryUpdatePC(pVCpu, pCtx->cs.u64Base + pCtx->rip, true /* fFlattened */);
                 }
                 if (fWhat & CPUMCTX_EXTRN_SS)
                 {
                     hmR0VmxImportGuestSegReg(pVCpu, X86_SREG_SS);
                     if (fRealOnV86Active)
-                        pCtx->ss.Attr.u = pVmcsInfo->RealMode.AttrSS.u;
+                        pCtx->ss.Attr.u = pVmcsInfoShared->RealMode.AttrSS.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_DS)
                 {
                     hmR0VmxImportGuestSegReg(pVCpu, X86_SREG_DS);
                     if (fRealOnV86Active)
-                        pCtx->ds.Attr.u = pVmcsInfo->RealMode.AttrDS.u;
+                        pCtx->ds.Attr.u = pVmcsInfoShared->RealMode.AttrDS.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_ES)
                 {
                     hmR0VmxImportGuestSegReg(pVCpu, X86_SREG_ES);
                     if (fRealOnV86Active)
-                        pCtx->es.Attr.u = pVmcsInfo->RealMode.AttrES.u;
+                        pCtx->es.Attr.u = pVmcsInfoShared->RealMode.AttrES.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_FS)
                 {
                     hmR0VmxImportGuestSegReg(pVCpu, X86_SREG_FS);
                     if (fRealOnV86Active)
-                        pCtx->fs.Attr.u = pVmcsInfo->RealMode.AttrFS.u;
+                        pCtx->fs.Attr.u = pVmcsInfoShared->RealMode.AttrFS.u;
                 }
                 if (fWhat & CPUMCTX_EXTRN_GS)
                 {
                     hmR0VmxImportGuestSegReg(pVCpu, X86_SREG_GS);
                     if (fRealOnV86Active)
-                        pCtx->gs.Attr.u = pVmcsInfo->RealMode.AttrGS.u;
+                        pCtx->gs.Attr.u = pVmcsInfoShared->RealMode.AttrGS.u;
                 }
             }
 
@@ -7681,7 +7714,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                 {
                     /* Real-mode emulation using virtual-8086 mode has the fake TSS (pRealModeTSS) in TR,
                        don't need to import that one. */
-                    if (!pVmcsInfo->RealMode.fRealOnV86Active)
+                    if (!pVmcsInfo->pShared->RealMode.fRealOnV86Active)
                         hmR0VmxImportGuestTr(pVCpu);
                 }
             }
@@ -7720,8 +7753,9 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
 
             if (fWhat & (CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS))
             {
-                PCVMXAUTOMSR   pMsrs = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
-                uint32_t const cMsrs = pVmcsInfo->cExitMsrStore;
+                PVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
+                PCVMXAUTOMSR       pMsrs           = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
+                uint32_t const     cMsrs           = pVmcsInfo->cExitMsrStore;
                 Assert(pMsrs);
                 Assert(cMsrs <= VMX_MISC_MAX_MSRS(pVM->hm.s.vmx.Msrs.u64Misc));
                 Assert(sizeof(*pMsrs) * cMsrs <= X86_PAGE_4K_SIZE);
@@ -7740,19 +7774,19 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                             {
                                 if (hmR0VmxIsLbrBranchFromMsr(pVM, idMsr, &idxLbrMsr))
                                 {
-                                    Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfo->au64LbrFromIpMsr));
-                                    pVmcsInfo->au64LbrFromIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
+                                    Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr));
+                                    pVmcsInfoShared->au64LbrFromIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
                                     break;
                                 }
-                                else if (hmR0VmxIsLbrBranchToMsr(pVM, idMsr, &idxLbrMsr))
+                                if (hmR0VmxIsLbrBranchToMsr(pVM, idMsr, &idxLbrMsr))
                                 {
-                                    Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfo->au64LbrFromIpMsr));
-                                    pVmcsInfo->au64LbrToIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
+                                    Assert(idxLbrMsr < RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr));
+                                    pVmcsInfoShared->au64LbrToIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
                                     break;
                                 }
-                                else if (idMsr == pVM->hm.s.vmx.idLbrTosMsr)
+                                if (idMsr == pVM->hm.s.vmx.idLbrTosMsr)
                                 {
-                                    pVmcsInfo->u64LbrTosMsr = pMsrs[i].u64Value;
+                                    pVmcsInfoShared->u64LbrTosMsr = pMsrs[i].u64Value;
                                     break;
                                 }
                                 /* Fallthru (no break) */
@@ -7791,7 +7825,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                          * the nested-guest using hardware-assisted VMX. Accordingly we need to
                          * re-construct CR0. See @bugref{9180#c95} for details.
                          */
-                        PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hm.s.vmx.VmcsInfo;
+                        PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
                         PCVMXVVMCS    pVmcsNstGst  = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
                         u64Cr0 = (u64Cr0                     & ~pVmcsInfo->u64Cr0Mask)
                                | (pVmcsNstGst->u64GuestCr0.u &  pVmcsNstGst->u64Cr0Mask.u)
@@ -7825,7 +7859,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                          * the nested-guest using hardware-assisted VMX. Accordingly we need to
                          * re-construct CR4. See @bugref{9180#c95} for details.
                          */
-                        PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hm.s.vmx.VmcsInfo;
+                        PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
                         PCVMXVVMCS    pVmcsNstGst  = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
                         u64Cr4 = (u64Cr4                     & ~pVmcsInfo->u64Cr4Mask)
                                | (pVmcsNstGst->u64GuestCr4.u &  pVmcsNstGst->u64Cr4Mask.u)
@@ -9243,9 +9277,9 @@ VMMR0DECL(int) VMXR0Enter(PVMCPUCC pVCpu)
     PVMXVMCSINFO pVmcsInfo;
     bool const fInNestedGuestMode = CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx);
     if (!fInNestedGuestMode)
-        pVmcsInfo = &pVCpu->hm.s.vmx.VmcsInfo;
+        pVmcsInfo = &pVCpu->hmr0.s.vmx.VmcsInfo;
     else
-        pVmcsInfo = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
+        pVmcsInfo = &pVCpu->hmr0.s.vmx.VmcsInfoNstGst;
     int rc = hmR0VmxLoadVmcs(pVmcsInfo);
     if (RT_SUCCESS(rc))
     {
@@ -9436,14 +9470,14 @@ static VBOXSTRICTRC hmR0VmxExportGuestState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
      * Determine real-on-v86 mode.
      * Used when the guest is in real-mode and unrestricted guest execution is not used.
      */
-    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFOSHARED pVmcsInfoShared = pVmxTransient->pVmcsInfo->pShared;
     if (    pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest
         || !CPUMIsGuestInRealModeEx(&pVCpu->cpum.GstCtx))
-        pVmcsInfo->RealMode.fRealOnV86Active = false;
+        pVmcsInfoShared->RealMode.fRealOnV86Active = false;
     else
     {
         Assert(!pVmxTransient->fIsNestedGuest);
-        pVmcsInfo->RealMode.fRealOnV86Active = true;
+        pVmcsInfoShared->RealMode.fRealOnV86Active = true;
     }
 
     /*
@@ -9946,7 +9980,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         {
             /* V86 mode checks. */
             uint32_t u32CSAttr, u32SSAttr, u32DSAttr, u32ESAttr, u32FSAttr, u32GSAttr;
-            if (pVmcsInfo->RealMode.fRealOnV86Active)
+            if (pVmcsInfo->pShared->RealMode.fRealOnV86Active)
             {
                 u32CSAttr = 0xf3;   u32SSAttr = 0xf3;
                 u32DSAttr = 0xf3;   u32ESAttr = 0xf3;
@@ -10340,7 +10374,7 @@ static void hmR0VmxMergeMsrBitmapNested(PCVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfoN
 static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hm.s.vmx.VmcsInfo;
+    PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
     PCVMXVVMCS    pVmcsNstGst  = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcsNstGst);
 
@@ -10552,7 +10586,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
     /*
      * Validate basic assumptions.
      */
-    PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
+    PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hmr0.s.vmx.VmcsInfoNstGst;
     Assert(pVM->hm.s.vmx.fUnrestrictedGuest);
     Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS);
     Assert(hmGetVmxActiveVmcsInfo(pVCpu) == pVmcsInfoNstGst);
@@ -11266,7 +11300,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
     VmxTransient.pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
 
     /* Paranoia. */
-    Assert(VmxTransient.pVmcsInfo == &pVCpu->hm.s.vmx.VmcsInfo);
+    Assert(VmxTransient.pVmcsInfo == &pVCpu->hmr0.s.vmx.VmcsInfo);
 
     VBOXSTRICTRC rcStrict = VERR_INTERNAL_ERROR_5;
     for (;;)
@@ -11378,7 +11412,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
     VmxTransient.fIsNestedGuest = true;
 
     /* Paranoia. */
-    Assert(VmxTransient.pVmcsInfo == &pVCpu->hm.s.vmx.VmcsInfoNstGst);
+    Assert(VmxTransient.pVmcsInfo == &pVCpu->hmr0.s.vmx.VmcsInfoNstGst);
 
     VBOXSTRICTRC rcStrict = VERR_INTERNAL_ERROR_5;
     for (;;)
@@ -14236,9 +14270,10 @@ static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
 
-    PCPUMCTX     pCtx      = &pVCpu->cpum.GstCtx;
-    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    if (pVmcsInfo->RealMode.fRealOnV86Active)
+    PCPUMCTX            pCtx            = &pVCpu->cpum.GstCtx;
+    PVMXVMCSINFO        pVmcsInfo       = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFOSHARED  pVmcsInfoShared = pVmcsInfo->pShared;
+    if (pVmcsInfoShared->RealMode.fRealOnV86Active)
     { /* likely */ }
     else
     {
@@ -14280,7 +14315,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
              * The guest is no longer in real-mode, check if we can continue executing the
              * guest using hardware-assisted VMX. Otherwise, fall back to emulation.
              */
-            pVmcsInfo->RealMode.fRealOnV86Active = false;
+            pVmcsInfoShared->RealMode.fRealOnV86Active = false;
             if (HMCanExecuteVmxGuest(pVCpu->pVMR0, pVCpu, pCtx))
             {
                 Log4Func(("Mode changed but guest still suitable for executing using hardware-assisted VMX\n"));
@@ -14318,8 +14353,9 @@ static VBOXSTRICTRC hmR0VmxExitXcptOthers(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    AssertMsg(pVCpu->hm.s.fUsingDebugLoop || pVmcsInfo->RealMode.fRealOnV86Active || pVmxTransient->fIsNestedGuest,
+    PCVMXVMCSINFO       pVmcsInfo       = pVmxTransient->pVmcsInfo;
+    PCVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
+    AssertMsg(pVCpu->hm.s.fUsingDebugLoop || pVmcsInfoShared->RealMode.fRealOnV86Active || pVmxTransient->fIsNestedGuest,
               ("uVector=%#x u32XcptBitmap=%#X32\n",
                VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo), pVmcsInfo->u32XcptBitmap));
     NOREF(pVmcsInfo);

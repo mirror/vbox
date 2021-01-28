@@ -666,7 +666,7 @@ VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCt
                  * handle the CPU state right after a switch from real to protected mode
                  * (all sorts of RPL & DPL assumptions).
                  */
-                PCVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
+                PCVMXVMCSINFOSHARED pVmcsInfo = hmGetVmxActiveVmcsInfoShared(pVCpu);
                 if (pVmcsInfo->fWasInRealMode)
                 {
                     if (!CPUMIsGuestInV86ModeEx(pCtx))
@@ -1102,7 +1102,7 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
  * @thread  EMT.
  * @remarks This function may be called with preemption or interrupts disabled!
  */
-VMM_INT_DECL(PVMXVMCSINFO) hmGetVmxActiveVmcsInfo(PVMCPU pVCpu)
+VMM_INT_DECL(PVMXVMCSINFOSHARED) hmGetVmxActiveVmcsInfoShared(PVMCPU pVCpu)
 {
     if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
         return &pVCpu->hm.s.vmx.VmcsInfo;

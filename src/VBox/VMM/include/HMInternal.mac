@@ -19,8 +19,29 @@
  %include "VBox/vmm/hm_vmx.mac"  ; For VMXRESTOREHOST
 %endif
 
+struc VMXVMCSINFOSHARED
+    .fWasInRealMode                 resb    1
+    .fSwitchedTo64on32Obsolete      resb    1
+    alignb 8
+    .RealMode.AttrCS                resd    1
+    .RealMode.AttrDS                resd    1
+    .RealMode.AttrES                resd    1
+    .RealMode.AttrFS                resd    1
+    .RealMode.AttrGS                resd    1
+    .RealMode.AttrSS                resd    1
+    .RealMode.Eflags                resd    1   ; should be EFlags?
+    .RealMode.fRealOnV86Active      resb    1
+
+    alignb 8
+    .au64LbrFromIpMsr               resq    32
+    .au64LbrToIpMsr                 resq    32
+    .u64LbrTosMsr                   resq    1
+endstruc
+
 
 struc VMXVMCSINFO
+    .pShared                        RTR0PTR_RES 1
+
     .HCPhysEPTP                     RTHCPHYS_RES 1
     .fVmcsState                     resd    1
     .fShadowVmcsState               resd    1
@@ -53,18 +74,6 @@ struc VMXVMCSINFO
     .pvGuestMsrStore                RTR0PTR_RES 1
     .pvHostMsrLoad                  RTR0PTR_RES 1
 
-    .fWasInRealMode                 resb    1
-    .fSwitchedTo64on32Obsolete      resb    1
-    alignb 8
-    .RealMode.AttrCS                resd    1
-    .RealMode.AttrDS                resd    1
-    .RealMode.AttrES                resd    1
-    .RealMode.AttrFS                resd    1
-    .RealMode.AttrGS                resd    1
-    .RealMode.AttrSS                resd    1
-    .RealMode.Eflags                resd    1   ; should be EFlags?
-    .RealMode.fRealOnV86Active      resb    1
-
     alignb 8
     .HCPhysVmcs                     RTHCPHYS_RES 1
     .HCPhysShadowVmcs               RTHCPHYS_RES 1
@@ -75,11 +84,6 @@ struc VMXVMCSINFO
     .HCPhysHostMsrLoad              RTHCPHYS_RES 1
 
     .hMemObj                        RTR0PTR_RES  1
-
-    alignb 8
-    .au64LbrFromIpMsr               resq    32
-    .au64LbrToIpMsr                 resq    32
-    .u64LbrTosMsr                   resq    1
 endstruc
 
 %define VMX_RESTORE_HOST_SEL_DS                                 0001h   ;RT_BIT(0)
@@ -111,8 +115,8 @@ struc VMXRESTOREHOST
 endstruc
 
 struc HMCPUVMX
-    .VmcsInfo                       resb    VMXVMCSINFO_size
-    .VmcsInfoNstGst                 resb    VMXVMCSINFO_size
+    .VmcsInfo                       resb    VMXVMCSINFOSHARED_size
+    .VmcsInfoNstGst                 resb    VMXVMCSINFOSHARED_size
     .fSwitchedToNstGstVmcs          resb    1
     .fMergedNstGstCtls              resb    1
     .fCopiedNstGstToShadowVmcs      resb    1
@@ -203,6 +207,9 @@ endstruc
 
 struc HMR0CPUVMX
     .pfnStartVm                     RTR0PTR_RES  1
+
+    .VmcsInfo                       resb    VMXVMCSINFO_size
+    .VmcsInfoNstGst                 resb    VMXVMCSINFO_size
 
     .u64HostMsrLStar                resq    1
     .u64HostMsrStar                 resq    1

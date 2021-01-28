@@ -1552,9 +1552,10 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     hmR3VmxReportCrFixedMsrs(&pVM->hm.s.vmx.Msrs);
 
     LogRel(("HM: APIC-access page physaddr         = %#RHp\n",  pVM->hm.s.vmx.HCPhysApicAccess));
+#ifdef TODO_9217_VMCSINFO
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PCVMXVMCSINFO pVmcsInfo = &pVM->apCpusR3[idCpu]->hm.s.vmx.VmcsInfo;
+        PCVMXVMCSINFOSHARED pVmcsInfo = &pVM->apCpusR3[idCpu]->hm.s.vmx.VmcsInfo;
         LogRel(("HM: VCPU%3d: MSR bitmap physaddr      = %#RHp\n", idCpu, pVmcsInfo->HCPhysMsrBitmap));
         LogRel(("HM: VCPU%3d: VMCS physaddr            = %#RHp\n", idCpu, pVmcsInfo->HCPhysVmcs));
     }
@@ -1564,12 +1565,13 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         LogRel(("HM: Nested-guest:\n"));
         for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PCVMXVMCSINFO pVmcsInfoNstGst = &pVM->apCpusR3[idCpu]->hm.s.vmx.VmcsInfoNstGst;
+            PCVMXVMCSINFOSHARED pVmcsInfoNstGst = &pVM->apCpusR3[idCpu]->hm.s.vmx.VmcsInfoNstGst;
             LogRel(("HM: VCPU%3d: MSR bitmap physaddr      = %#RHp\n", idCpu, pVmcsInfoNstGst->HCPhysMsrBitmap));
             LogRel(("HM: VCPU%3d: VMCS physaddr            = %#RHp\n", idCpu, pVmcsInfoNstGst->HCPhysVmcs));
         }
     }
 #endif
+#endif /* TODO_9217_VMCSINFO */
 
     /*
      * EPT and unrestricted guest execution are determined in HMR3Init, verify the sanity of that.
@@ -2886,6 +2888,7 @@ VMMR3_INT_DECL(bool) HMR3IsVmxPreemptionTimerUsed(PVM pVM)
 }
 
 
+#ifdef TODO_9217_VMCSINFO
 /**
  * Helper for HMR3CheckError to log VMCS controls to the release log.
  *
@@ -2990,6 +2993,7 @@ static void hmR3CheckErrorLogVmcsCtls(VMCPUID idCpu, PCVMXVMCSINFO pVmcsInfo)
         HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_CLEAR_RTIT_CTL_MSR    );
     }
 }
+#endif
 
 
 /**
@@ -3005,17 +3009,21 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
     {
         /** @todo r=ramshankar: Are all EMTs out of ring-0 at this point!? If not, we
          *  might be getting inaccurate values for non-guru'ing EMTs. */
-        PVMCPU        pVCpu = pVM->apCpusR3[idCpu];
-        PCVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
-        bool const    fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs;
+        PVMCPU              pVCpu             = pVM->apCpusR3[idCpu];
+#ifdef TODO_9217_VMCSINFO
+        PCVMXVMCSINFOSHARED pVmcsInfo         = hmGetVmxActiveVmcsInfoShared(pVCpu);
+#endif
+        bool const          fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs;
         switch (iStatusCode)
         {
             case VERR_VMX_INVALID_VMCS_PTR:
             {
                 LogRel(("HM: VERR_VMX_INVALID_VMCS_PTR:\n"));
                 LogRel(("HM: CPU[%u] %s VMCS active\n", idCpu, fNstGstVmcsActive ? "Nested-guest" : "Guest"));
+#ifdef TODO_9217_VMCSINFO
                 LogRel(("HM: CPU[%u] Current pointer      %#RHp vs %#RHp\n", idCpu, pVCpu->hm.s.vmx.LastError.HCPhysCurrentVmcs,
                                                                                 pVmcsInfo->HCPhysVmcs));
+#endif
                 LogRel(("HM: CPU[%u] Current VMCS version %#x\n", idCpu, pVCpu->hm.s.vmx.LastError.u32VmcsRev));
                 LogRel(("HM: CPU[%u] Entered Host Cpu     %u\n",  idCpu, pVCpu->hm.s.vmx.LastError.idEnteredCpu));
                 LogRel(("HM: CPU[%u] Current Host Cpu     %u\n",  idCpu, pVCpu->hm.s.vmx.LastError.idCurrentCpu));
@@ -3037,6 +3045,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 }
                 else if (pVCpu->hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMENTRY_INVALID_CTLS)
                 {
+#ifdef TODO_9217_VMCSINFO
                     hmR3CheckErrorLogVmcsCtls(idCpu, pVmcsInfo);
                     LogRel(("HM: CPU[%u] HCPhysMsrBitmap      %#RHp\n",  idCpu, pVmcsInfo->HCPhysMsrBitmap));
                     LogRel(("HM: CPU[%u] HCPhysGuestMsrLoad   %#RHp\n",  idCpu, pVmcsInfo->HCPhysGuestMsrLoad));
@@ -3045,6 +3054,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                     LogRel(("HM: CPU[%u] cEntryMsrLoad        %u\n",     idCpu, pVmcsInfo->cEntryMsrLoad));
                     LogRel(("HM: CPU[%u] cExitMsrStore        %u\n",     idCpu, pVmcsInfo->cExitMsrStore));
                     LogRel(("HM: CPU[%u] cExitMsrLoad         %u\n",     idCpu, pVmcsInfo->cExitMsrLoad));
+#endif
                 }
                 /** @todo Log VM-entry event injection control fields
                  *        VMX_VMCS_CTRL_ENTRY_IRQ_INFO, VMX_VMCS_CTRL_ENTRY_EXCEPTION_ERRCODE
@@ -3057,7 +3067,9 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 LogRel(("HM: VERR_VMX_INVALID_GUEST_STATE:\n"));
                 LogRel(("HM: CPU[%u] HM error = %#RX32\n", idCpu, pVCpu->hm.s.u32HMError));
                 LogRel(("HM: CPU[%u] Guest-intr. state = %#RX32\n", idCpu, pVCpu->hm.s.vmx.LastError.u32GuestIntrState));
+#ifdef TODO_9217_VMCSINFO
                 hmR3CheckErrorLogVmcsCtls(idCpu, pVmcsInfo);
+#endif
                 break;
             }
 
@@ -3303,21 +3315,21 @@ static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
         pHlp->pfnPrintf(pHlp, "  rcLastExitToR3     = %Rrc\n", pVCpu->hm.s.rcLastExitToR3);
         if (pVM->hm.s.vmx.fSupported)
         {
-            PCVMXVMCSINFO pVmcsInfo         = hmGetVmxActiveVmcsInfo(pVCpu);
-            bool const    fRealOnV86Active  = pVmcsInfo->RealMode.fRealOnV86Active;
-            bool const    fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs;
+            PCVMXVMCSINFOSHARED pVmcsInfoShared   = hmGetVmxActiveVmcsInfoShared(pVCpu);
+            bool const          fRealOnV86Active  = pVmcsInfoShared->RealMode.fRealOnV86Active;
+            bool const          fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs;
 
             pHlp->pfnPrintf(pHlp, "  %s VMCS active\n", fNstGstVmcsActive ? "Nested-guest" : "Guest");
             pHlp->pfnPrintf(pHlp, "    Real-on-v86 active = %RTbool\n", fRealOnV86Active);
             if (fRealOnV86Active)
             {
-                pHlp->pfnPrintf(pHlp, "      EFlags  = %#x\n", pVmcsInfo->RealMode.Eflags.u32);
-                pHlp->pfnPrintf(pHlp, "      Attr CS = %#x\n", pVmcsInfo->RealMode.AttrCS.u);
-                pHlp->pfnPrintf(pHlp, "      Attr SS = %#x\n", pVmcsInfo->RealMode.AttrSS.u);
-                pHlp->pfnPrintf(pHlp, "      Attr DS = %#x\n", pVmcsInfo->RealMode.AttrDS.u);
-                pHlp->pfnPrintf(pHlp, "      Attr ES = %#x\n", pVmcsInfo->RealMode.AttrES.u);
-                pHlp->pfnPrintf(pHlp, "      Attr FS = %#x\n", pVmcsInfo->RealMode.AttrFS.u);
-                pHlp->pfnPrintf(pHlp, "      Attr GS = %#x\n", pVmcsInfo->RealMode.AttrGS.u);
+                pHlp->pfnPrintf(pHlp, "      EFlags  = %#x\n", pVmcsInfoShared->RealMode.Eflags.u32);
+                pHlp->pfnPrintf(pHlp, "      Attr CS = %#x\n", pVmcsInfoShared->RealMode.AttrCS.u);
+                pHlp->pfnPrintf(pHlp, "      Attr SS = %#x\n", pVmcsInfoShared->RealMode.AttrSS.u);
+                pHlp->pfnPrintf(pHlp, "      Attr DS = %#x\n", pVmcsInfoShared->RealMode.AttrDS.u);
+                pHlp->pfnPrintf(pHlp, "      Attr ES = %#x\n", pVmcsInfoShared->RealMode.AttrES.u);
+                pHlp->pfnPrintf(pHlp, "      Attr FS = %#x\n", pVmcsInfoShared->RealMode.AttrFS.u);
+                pHlp->pfnPrintf(pHlp, "      Attr GS = %#x\n", pVmcsInfoShared->RealMode.AttrGS.u);
             }
         }
     }
@@ -3347,17 +3359,17 @@ static DECLCALLBACK(void) hmR3InfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
     {
         if (pVM->hm.s.vmx.fLbr)
         {
-            PCVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
-            uint32_t const cLbrStack = pVM->hm.s.vmx.idLbrFromIpMsrLast - pVM->hm.s.vmx.idLbrFromIpMsrFirst + 1;
+            PCVMXVMCSINFOSHARED pVmcsInfoShared = hmGetVmxActiveVmcsInfoShared(pVCpu);
+            uint32_t const      cLbrStack       = pVM->hm.s.vmx.idLbrFromIpMsrLast - pVM->hm.s.vmx.idLbrFromIpMsrFirst + 1;
 
             /** @todo r=ramshankar: The index technically varies depending on the CPU, but
              *        0xf should cover everything we support thus far. Fix if necessary
              *        later. */
-            uint32_t const idxTopOfStack = pVmcsInfo->u64LbrTosMsr & 0xf;
+            uint32_t const idxTopOfStack = pVmcsInfoShared->u64LbrTosMsr & 0xf;
             if (idxTopOfStack > cLbrStack)
             {
                 pHlp->pfnPrintf(pHlp, "Top-of-stack LBR MSR seems corrupt (index=%u, msr=%#RX64) expected index < %u\n",
-                                idxTopOfStack, pVmcsInfo->u64LbrTosMsr, cLbrStack);
+                                idxTopOfStack, pVmcsInfoShared->u64LbrTosMsr, cLbrStack);
                 return;
             }
 
@@ -3367,17 +3379,17 @@ static DECLCALLBACK(void) hmR3InfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
             pHlp->pfnPrintf(pHlp, "CPU[%u]: LBRs (most-recent first)\n", pVCpu->idCpu);
             uint32_t idxCurrent = idxTopOfStack;
             Assert(idxTopOfStack < cLbrStack);
-            Assert(RT_ELEMENTS(pVmcsInfo->au64LbrFromIpMsr) <= cLbrStack);
-            Assert(RT_ELEMENTS(pVmcsInfo->au64LbrToIpMsr) <= cLbrStack);
+            Assert(RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr) <= cLbrStack);
+            Assert(RT_ELEMENTS(pVmcsInfoShared->au64LbrToIpMsr) <= cLbrStack);
             for (;;)
             {
                 if (pVM->hm.s.vmx.idLbrToIpMsrFirst)
                 {
                     pHlp->pfnPrintf(pHlp, "  Branch (%2u): From IP=%#016RX64 - To IP=%#016RX64\n", idxCurrent,
-                                    pVmcsInfo->au64LbrFromIpMsr[idxCurrent], pVmcsInfo->au64LbrToIpMsr[idxCurrent]);
+                                    pVmcsInfoShared->au64LbrFromIpMsr[idxCurrent], pVmcsInfoShared->au64LbrToIpMsr[idxCurrent]);
                 }
                 else
-                    pHlp->pfnPrintf(pHlp, "  Branch (%2u): LBR=%#RX64\n", idxCurrent, pVmcsInfo->au64LbrFromIpMsr[idxCurrent]);
+                    pHlp->pfnPrintf(pHlp, "  Branch (%2u): LBR=%#RX64\n", idxCurrent, pVmcsInfoShared->au64LbrFromIpMsr[idxCurrent]);
 
                 idxCurrent = (idxCurrent - 1) % cLbrStack;
                 if (idxCurrent == idxTopOfStack)
