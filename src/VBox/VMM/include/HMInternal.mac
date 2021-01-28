@@ -121,19 +121,6 @@ struc HMCPUVMX
     alignb 8
     .u64GstMsrApicBase              resq    1
 
-    .u64HostMsrLStar                resq    1
-    .u64HostMsrStar                 resq    1
-    .u64HostMsrSfMask               resq    1
-    .u64HostMsrKernelGsBase         resq    1
-    .fLazyMsrs                      resd    1
-    .fUpdatedHostAutoMsrs           resb    1
-    alignb 4
-    .fRestoreHostFlags              resd    1
-    alignb 8
-    .uHostRIP                       resq    1
-    .uHostRSP                       resq    1
-    .RestoreHost                    resb    VMXRESTOREHOST_size
-
     .LastError.idCurrentCpu         resd    1
     .LastError.idEnteredCpu         resd    1
     .LastError.HCPhysCurrentVmcs    resq    1
@@ -216,6 +203,19 @@ endstruc
 
 struc HMR0CPUVMX
     .pfnStartVm                     RTR0PTR_RES  1
+
+    .u64HostMsrLStar                resq    1
+    .u64HostMsrStar                 resq    1
+    .u64HostMsrSfMask               resq    1
+    .u64HostMsrKernelGsBase         resq    1
+    .fLazyMsrs                      resd    1
+    .fUpdatedHostAutoMsrs           resb    1
+    alignb 4
+    .fRestoreHostFlags              resd    1
+    alignb 8
+    .uHostRIP                       resq    1
+    .uHostRSP                       resq    1
+    .RestoreHost                    resb    VMXRESTOREHOST_size
 endstruc
 
 struc HMR0CPUSVM

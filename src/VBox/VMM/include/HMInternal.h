@@ -1017,35 +1017,6 @@ typedef struct HMCPU
             uint64_t                    u64GstMsrApicBase;
             /** @} */
 
-            /** @name Host information.
-             * @{ */
-            /** Host LSTAR MSR to restore lazily while leaving VT-x. */
-            uint64_t                    u64HostMsrLStar;
-            /** Host STAR MSR to restore lazily while leaving VT-x. */
-            uint64_t                    u64HostMsrStar;
-            /** Host SF_MASK MSR to restore lazily while leaving VT-x. */
-            uint64_t                    u64HostMsrSfMask;
-            /** Host KernelGS-Base MSR to restore lazily while leaving VT-x. */
-            uint64_t                    u64HostMsrKernelGsBase;
-            /** The mask of lazy MSRs swap/restore state, see VMX_LAZY_MSRS_XXX. */
-            uint32_t                    fLazyMsrs;
-            /** Whether the host MSR values are up-to-date in the auto-load/store MSR area. */
-            bool                        fUpdatedHostAutoMsrs;
-            /** Alignment. */
-            uint8_t                     au8Alignment0[3];
-            /** Which host-state bits to restore before being preempted, see
-             * VMX_RESTORE_HOST_XXX. */
-            uint32_t                    fRestoreHostFlags;
-            /** Alignment. */
-            uint32_t                    u32Alignment0;
-            /** Current VMX_VMCS_HOST_RIP value (only used in HMR0A.asm). */
-            uint64_t                    uHostRIP;
-            /** Current VMX_VMCS_HOST_RSP value (only used in HMR0A.asm). */
-            uint64_t                    uHostRSP;
-            /** The host-state restoration structure. */
-            VMXRESTOREHOST              RestoreHost;
-            /** @} */
-
             /** @name Error reporting and diagnostics.
              * @{ */
             /** VT-x error-reporting (mainly for ring-3 propagation). */
@@ -1279,7 +1250,6 @@ AssertCompileMemberAlignment(HMCPU, fCtxChanged,       8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx, 8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.VmcsInfo,       8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.VmcsInfoNstGst, 8);
-AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.RestoreHost,    8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) svm, 8);
 AssertCompileMemberAlignment(HMCPU, Event, 8);
 
@@ -1296,6 +1266,35 @@ typedef struct HMR0PERVCPU
         {
             /** Ring-0 pointer to the hardware-assisted VMX execution function. */
             PFNHMVMXSTARTVM             pfnStartVm;
+
+            /** @name Host information.
+             * @{ */
+            /** Host LSTAR MSR to restore lazily while leaving VT-x. */
+            uint64_t                    u64HostMsrLStar;
+            /** Host STAR MSR to restore lazily while leaving VT-x. */
+            uint64_t                    u64HostMsrStar;
+            /** Host SF_MASK MSR to restore lazily while leaving VT-x. */
+            uint64_t                    u64HostMsrSfMask;
+            /** Host KernelGS-Base MSR to restore lazily while leaving VT-x. */
+            uint64_t                    u64HostMsrKernelGsBase;
+            /** The mask of lazy MSRs swap/restore state, see VMX_LAZY_MSRS_XXX. */
+            uint32_t                    fLazyMsrs;
+            /** Whether the host MSR values are up-to-date in the auto-load/store MSR area. */
+            bool                        fUpdatedHostAutoMsrs;
+            /** Alignment. */
+            uint8_t                     au8Alignment0[3];
+            /** Which host-state bits to restore before being preempted, see
+             * VMX_RESTORE_HOST_XXX. */
+            uint32_t                    fRestoreHostFlags;
+            /** Alignment. */
+            uint32_t                    u32Alignment0;
+            /** Current VMX_VMCS_HOST_RIP value (only used in HMR0A.asm). */
+            uint64_t                    uHostRIP;
+            /** Current VMX_VMCS_HOST_RSP value (only used in HMR0A.asm). */
+            uint64_t                    uHostRSP;
+            /** The host-state restoration structure. */
+            VMXRESTOREHOST              RestoreHost;
+            /** @} */
         } vmx;
 
         /** SVM data. */
@@ -1308,6 +1307,7 @@ typedef struct HMR0PERVCPU
 } HMR0PERVCPU;
 /** Pointer to HM ring-0 VMCPU instance data. */
 typedef HMR0PERVCPU *PHMR0PERVCPU;
+AssertCompileMemberAlignment(HMR0PERVCPU, HM_UNION_NM(u.) vmx.RestoreHost,    8);
 
 
 #ifdef IN_RING0

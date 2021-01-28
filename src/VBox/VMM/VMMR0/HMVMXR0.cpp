@@ -1398,7 +1398,7 @@ static int hmR0VmxSwitchToGstOrNstGstVmcs(PVMCPUCC pVCpu, bool fSwitchToNstGstVm
          * future to share the VM-exit MSR-store area page between the guest and nested-guest,
          * if its content differs, we would have to update the host MSRs anyway.
          */
-        pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs = false;
+        pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs = false;
     }
     else
         ASMSetFlags(fEFlags);
@@ -2322,7 +2322,7 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
         else
         {
             /* Someone else can do the work. */
-            pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs = false;
+            pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs = false;
         }
     }
     return VINF_SUCCESS;
@@ -2470,17 +2470,17 @@ static void hmR0VmxLazySaveHostMsrs(PVMCPUCC pVCpu)
     /*
      * Note: If you're adding MSRs here, make sure to update the MSR-bitmap accesses in hmR0VmxSetupVmcsProcCtls().
      */
-    if (!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST))
+    if (!(pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST))
     {
-        Assert(!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST));  /* Guest MSRs better not be loaded now. */
+        Assert(!(pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST));  /* Guest MSRs better not be loaded now. */
         if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
         {
-            pVCpu->hm.s.vmx.u64HostMsrLStar        = ASMRdMsr(MSR_K8_LSTAR);
-            pVCpu->hm.s.vmx.u64HostMsrStar         = ASMRdMsr(MSR_K6_STAR);
-            pVCpu->hm.s.vmx.u64HostMsrSfMask       = ASMRdMsr(MSR_K8_SF_MASK);
-            pVCpu->hm.s.vmx.u64HostMsrKernelGsBase = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
+            pVCpu->hmr0.s.vmx.u64HostMsrLStar        = ASMRdMsr(MSR_K8_LSTAR);
+            pVCpu->hmr0.s.vmx.u64HostMsrStar         = ASMRdMsr(MSR_K6_STAR);
+            pVCpu->hmr0.s.vmx.u64HostMsrSfMask       = ASMRdMsr(MSR_K8_SF_MASK);
+            pVCpu->hmr0.s.vmx.u64HostMsrKernelGsBase = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
         }
-        pVCpu->hm.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_SAVED_HOST;
+        pVCpu->hmr0.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_SAVED_HOST;
     }
 }
 
@@ -2527,7 +2527,7 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPUCC pVCpu)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    Assert(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
+    Assert(pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
     if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
     {
         /*
@@ -2541,11 +2541,11 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPUCC pVCpu)
          * CPU, see @bugref{8728}.
          */
         PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-        if (   !(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
-            && pCtx->msrKERNELGSBASE == pVCpu->hm.s.vmx.u64HostMsrKernelGsBase
-            && pCtx->msrLSTAR        == pVCpu->hm.s.vmx.u64HostMsrLStar
-            && pCtx->msrSTAR         == pVCpu->hm.s.vmx.u64HostMsrStar
-            && pCtx->msrSFMASK       == pVCpu->hm.s.vmx.u64HostMsrSfMask)
+        if (   !(pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
+            && pCtx->msrKERNELGSBASE == pVCpu->hmr0.s.vmx.u64HostMsrKernelGsBase
+            && pCtx->msrLSTAR        == pVCpu->hmr0.s.vmx.u64HostMsrLStar
+            && pCtx->msrSTAR         == pVCpu->hmr0.s.vmx.u64HostMsrStar
+            && pCtx->msrSFMASK       == pVCpu->hmr0.s.vmx.u64HostMsrSfMask)
         {
 #ifdef VBOX_STRICT
             Assert(ASMRdMsr(MSR_K8_KERNEL_GS_BASE) == pCtx->msrKERNELGSBASE);
@@ -2562,7 +2562,7 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPUCC pVCpu)
             ASMWrMsr(MSR_K8_SF_MASK,        pCtx->msrSFMASK);
         }
     }
-    pVCpu->hm.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_LOADED_GUEST;
+    pVCpu->hmr0.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_LOADED_GUEST;
 }
 
 
@@ -2581,18 +2581,18 @@ static void hmR0VmxLazyRestoreHostMsrs(PVMCPUCC pVCpu)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    if (pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
+    if (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
     {
-        Assert(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
+        Assert(pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
         if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
         {
-            ASMWrMsr(MSR_K8_LSTAR,          pVCpu->hm.s.vmx.u64HostMsrLStar);
-            ASMWrMsr(MSR_K6_STAR,           pVCpu->hm.s.vmx.u64HostMsrStar);
-            ASMWrMsr(MSR_K8_SF_MASK,        pVCpu->hm.s.vmx.u64HostMsrSfMask);
-            ASMWrMsr(MSR_K8_KERNEL_GS_BASE, pVCpu->hm.s.vmx.u64HostMsrKernelGsBase);
+            ASMWrMsr(MSR_K8_LSTAR,          pVCpu->hmr0.s.vmx.u64HostMsrLStar);
+            ASMWrMsr(MSR_K6_STAR,           pVCpu->hmr0.s.vmx.u64HostMsrStar);
+            ASMWrMsr(MSR_K8_SF_MASK,        pVCpu->hmr0.s.vmx.u64HostMsrSfMask);
+            ASMWrMsr(MSR_K8_KERNEL_GS_BASE, pVCpu->hmr0.s.vmx.u64HostMsrKernelGsBase);
         }
     }
-    pVCpu->hm.s.vmx.fLazyMsrs &= ~(VMX_LAZY_MSRS_LOADED_GUEST | VMX_LAZY_MSRS_SAVED_HOST);
+    pVCpu->hmr0.s.vmx.fLazyMsrs &= ~(VMX_LAZY_MSRS_LOADED_GUEST | VMX_LAZY_MSRS_SAVED_HOST);
 }
 
 
@@ -4604,12 +4604,12 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
      * This apparently can happen (most likely the FPU changes), deal with it rather than
      * asserting. Was observed booting Solaris 10u10 32-bit guest.
      */
-    if (pVCpu->hm.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
+    if (pVCpu->hmr0.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
     {
-        Log4Func(("Restoring Host State: fRestoreHostFlags=%#RX32 HostCpuId=%u\n", pVCpu->hm.s.vmx.fRestoreHostFlags,
+        Log4Func(("Restoring Host State: fRestoreHostFlags=%#RX32 HostCpuId=%u\n", pVCpu->hmr0.s.vmx.fRestoreHostFlags,
                   pVCpu->idCpu));
-        VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
-        pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
+        VMXRestoreHostState(pVCpu->hmr0.s.vmx.fRestoreHostFlags, &pVCpu->hmr0.s.vmx.RestoreHost);
+        pVCpu->hmr0.s.vmx.fRestoreHostFlags = 0;
     }
 
     /*
@@ -4621,41 +4621,41 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
 #if RT_INLINE_ASM_EXTERNAL
     if (uHostCr4 & X86_CR4_FSGSBASE)
     {
-        hmR0VmxExportHostSegmentRegsAsmHlp(&pVCpu->hm.s.vmx.RestoreHost, true /*fHaveFsGsBase*/);
+        hmR0VmxExportHostSegmentRegsAsmHlp(&pVCpu->hmr0.s.vmx.RestoreHost, true /*fHaveFsGsBase*/);
         fRestoreHostFlags = VMX_RESTORE_HOST_CAN_USE_WRFSBASE_AND_WRGSBASE;
     }
     else
     {
-        hmR0VmxExportHostSegmentRegsAsmHlp(&pVCpu->hm.s.vmx.RestoreHost, false /*fHaveFsGsBase*/);
+        hmR0VmxExportHostSegmentRegsAsmHlp(&pVCpu->hmr0.s.vmx.RestoreHost, false /*fHaveFsGsBase*/);
         fRestoreHostFlags = 0;
     }
-    RTSEL uSelES = pVCpu->hm.s.vmx.RestoreHost.uHostSelES;
-    RTSEL uSelDS = pVCpu->hm.s.vmx.RestoreHost.uHostSelDS;
-    RTSEL uSelFS = pVCpu->hm.s.vmx.RestoreHost.uHostSelFS;
-    RTSEL uSelGS = pVCpu->hm.s.vmx.RestoreHost.uHostSelGS;
+    RTSEL uSelES = pVCpu->hmr0.s.vmx.RestoreHost.uHostSelES;
+    RTSEL uSelDS = pVCpu->hmr0.s.vmx.RestoreHost.uHostSelDS;
+    RTSEL uSelFS = pVCpu->hmr0.s.vmx.RestoreHost.uHostSelFS;
+    RTSEL uSelGS = pVCpu->hmr0.s.vmx.RestoreHost.uHostSelGS;
 #else
-    pVCpu->hm.s.vmx.RestoreHost.uHostSelTR = ASMGetTR();
-    pVCpu->hm.s.vmx.RestoreHost.uHostSelSS = ASMGetSS();
-    pVCpu->hm.s.vmx.RestoreHost.uHostSelCS = ASMGetCS();
-    ASMGetGDTR((PRTGDTR)&pVCpu->hm.s.vmx.RestoreHost.HostGdtr);
-    ASMGetIDTR((PRTIDTR)&pVCpu->hm.s.vmx.RestoreHost.HostIdtr);
+    pVCpu->hmr0.s.vmx.RestoreHost.uHostSelTR = ASMGetTR();
+    pVCpu->hmr0.s.vmx.RestoreHost.uHostSelSS = ASMGetSS();
+    pVCpu->hmr0.s.vmx.RestoreHost.uHostSelCS = ASMGetCS();
+    ASMGetGDTR((PRTGDTR)&pVCpu->hmr0.s.vmx.RestoreHost.HostGdtr);
+    ASMGetIDTR((PRTIDTR)&pVCpu->hmr0.s.vmx.RestoreHost.HostIdtr);
     if (uHostCr4 & X86_CR4_FSGSBASE)
     {
-        pVCpu->hm.s.vmx.RestoreHost.uHostFSBase = ASMGetFSBase();
-        pVCpu->hm.s.vmx.RestoreHost.uHostGSBase = ASMGetGSBase();
+        pVCpu->hmr0.s.vmx.RestoreHost.uHostFSBase = ASMGetFSBase();
+        pVCpu->hmr0.s.vmx.RestoreHost.uHostGSBase = ASMGetGSBase();
         fRestoreHostFlags = VMX_RESTORE_HOST_CAN_USE_WRFSBASE_AND_WRGSBASE;
     }
     else
     {
-        pVCpu->hm.s.vmx.RestoreHost.uHostFSBase = ASMRdMsr(MSR_K8_FS_BASE);
-        pVCpu->hm.s.vmx.RestoreHost.uHostGSBase = ASMRdMsr(MSR_K8_GS_BASE);
+        pVCpu->hmr0.s.vmx.RestoreHost.uHostFSBase = ASMRdMsr(MSR_K8_FS_BASE);
+        pVCpu->hmr0.s.vmx.RestoreHost.uHostGSBase = ASMRdMsr(MSR_K8_GS_BASE);
         fRestoreHostFlags = 0;
     }
     RTSEL uSelES, uSelDS, uSelFS, uSelGS;
-    pVCpu->hm.s.vmx.RestoreHost.uHostSelDS = uSelDS = ASMGetDS();
-    pVCpu->hm.s.vmx.RestoreHost.uHostSelES = uSelES = ASMGetES();
-    pVCpu->hm.s.vmx.RestoreHost.uHostSelFS = uSelFS = ASMGetFS();
-    pVCpu->hm.s.vmx.RestoreHost.uHostSelGS = uSelGS = ASMGetGS();
+    pVCpu->hmr0.s.vmx.RestoreHost.uHostSelDS = uSelDS = ASMGetDS();
+    pVCpu->hmr0.s.vmx.RestoreHost.uHostSelES = uSelES = ASMGetES();
+    pVCpu->hmr0.s.vmx.RestoreHost.uHostSelFS = uSelFS = ASMGetFS();
+    pVCpu->hmr0.s.vmx.RestoreHost.uHostSelGS = uSelGS = ASMGetGS();
 #endif
 
     /*
@@ -4671,7 +4671,7 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
         {
 #define VMXLOCAL_ADJUST_HOST_SEG(a_Seg, a_uVmcsVar) \
                 do { \
-                    (a_uVmcsVar) = pVCpu->hm.s.vmx.RestoreHost.uHostSel##a_Seg; \
+                    (a_uVmcsVar) = pVCpu->hmr0.s.vmx.RestoreHost.uHostSel##a_Seg; \
                     if ((a_uVmcsVar) & X86_SEL_RPL) \
                     { \
                         fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_##a_Seg; \
@@ -4688,7 +4688,7 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
         {
 #define VMXLOCAL_ADJUST_HOST_SEG(a_Seg, a_uVmcsVar) \
                 do { \
-                    (a_uVmcsVar) = pVCpu->hm.s.vmx.RestoreHost.uHostSel##a_Seg; \
+                    (a_uVmcsVar) = pVCpu->hmr0.s.vmx.RestoreHost.uHostSel##a_Seg; \
                     if ((a_uVmcsVar) & (X86_SEL_RPL | X86_SEL_LDT)) \
                     { \
                         if (!((a_uVmcsVar) & X86_SEL_LDT)) \
@@ -4711,9 +4711,9 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
     }
 
     /* Verification based on Intel spec. 26.2.3 "Checks on Host Segment and Descriptor-Table Registers"  */
-    Assert(!(pVCpu->hm.s.vmx.RestoreHost.uHostSelTR & X86_SEL_RPL)); Assert(!(pVCpu->hm.s.vmx.RestoreHost.uHostSelTR & X86_SEL_LDT)); Assert(pVCpu->hm.s.vmx.RestoreHost.uHostSelTR);
-    Assert(!(pVCpu->hm.s.vmx.RestoreHost.uHostSelCS & X86_SEL_RPL)); Assert(!(pVCpu->hm.s.vmx.RestoreHost.uHostSelCS & X86_SEL_LDT)); Assert(pVCpu->hm.s.vmx.RestoreHost.uHostSelCS);
-    Assert(!(pVCpu->hm.s.vmx.RestoreHost.uHostSelSS & X86_SEL_RPL)); Assert(!(pVCpu->hm.s.vmx.RestoreHost.uHostSelSS & X86_SEL_LDT));
+    Assert(!(pVCpu->hmr0.s.vmx.RestoreHost.uHostSelTR & X86_SEL_RPL)); Assert(!(pVCpu->hmr0.s.vmx.RestoreHost.uHostSelTR & X86_SEL_LDT)); Assert(pVCpu->hmr0.s.vmx.RestoreHost.uHostSelTR);
+    Assert(!(pVCpu->hmr0.s.vmx.RestoreHost.uHostSelCS & X86_SEL_RPL)); Assert(!(pVCpu->hmr0.s.vmx.RestoreHost.uHostSelCS & X86_SEL_LDT)); Assert(pVCpu->hmr0.s.vmx.RestoreHost.uHostSelCS);
+    Assert(!(pVCpu->hmr0.s.vmx.RestoreHost.uHostSelSS & X86_SEL_RPL)); Assert(!(pVCpu->hmr0.s.vmx.RestoreHost.uHostSelSS & X86_SEL_LDT));
     Assert(!(uSelDS & X86_SEL_RPL)); Assert(!(uSelDS & X86_SEL_LDT));
     Assert(!(uSelES & X86_SEL_RPL)); Assert(!(uSelES & X86_SEL_LDT));
     Assert(!(uSelFS & X86_SEL_RPL)); Assert(!(uSelFS & X86_SEL_LDT));
@@ -4723,7 +4723,7 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
      * Determine if we need to manually need to restore the GDTR and IDTR limits as VT-x zaps
      * them to the maximum limit (0xffff) on every VM-exit.
      */
-    if (pVCpu->hm.s.vmx.RestoreHost.HostGdtr.cb != 0xffff)
+    if (pVCpu->hmr0.s.vmx.RestoreHost.HostGdtr.cb != 0xffff)
         fRestoreHostFlags |= VMX_RESTORE_HOST_GDTR;
 
     /*
@@ -4736,9 +4736,9 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
      * at 0xffff on hosts where we are sure it won't cause trouble.
      */
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-    if (pVCpu->hm.s.vmx.RestoreHost.HostIdtr.cb <  0x0fff)
+    if (pVCpu->hmr0.s.vmx.RestoreHost.HostIdtr.cb <  0x0fff)
 #else
-    if (pVCpu->hm.s.vmx.RestoreHost.HostIdtr.cb != 0xffff)
+    if (pVCpu->hmr0.s.vmx.RestoreHost.HostIdtr.cb != 0xffff)
 #endif
         fRestoreHostFlags |= VMX_RESTORE_HOST_IDTR;
 
@@ -4747,12 +4747,12 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
      * and RPL bits is effectively what the CPU does for "scaling by 8". TI is always 0 and
      * RPL should be too in most cases.
      */
-    RTSEL const uSelTR = pVCpu->hm.s.vmx.RestoreHost.uHostSelTR;
-    AssertMsgReturn((uSelTR | X86_SEL_RPL_LDT) <= pVCpu->hm.s.vmx.RestoreHost.HostGdtr.cb,
-                    ("TR selector exceeds limit. TR=%RTsel cbGdt=%#x\n", uSelTR, pVCpu->hm.s.vmx.RestoreHost.HostGdtr.cb),
+    RTSEL const uSelTR = pVCpu->hmr0.s.vmx.RestoreHost.uHostSelTR;
+    AssertMsgReturn((uSelTR | X86_SEL_RPL_LDT) <= pVCpu->hmr0.s.vmx.RestoreHost.HostGdtr.cb,
+                    ("TR selector exceeds limit. TR=%RTsel cbGdt=%#x\n", uSelTR, pVCpu->hmr0.s.vmx.RestoreHost.HostGdtr.cb),
                     VERR_VMX_INVALID_HOST_STATE);
 
-    PCX86DESCHC pDesc = (PCX86DESCHC)(pVCpu->hm.s.vmx.RestoreHost.HostGdtr.uAddr + (uSelTR & X86_SEL_MASK));
+    PCX86DESCHC pDesc = (PCX86DESCHC)(pVCpu->hmr0.s.vmx.RestoreHost.HostGdtr.uAddr + (uSelTR & X86_SEL_MASK));
     uintptr_t const uTRBase = X86DESC64_BASE(pDesc);
 
     /*
@@ -4779,30 +4779,30 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
         {
             /* The GDT is read-only but the writable GDT is available. */
             fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_NEED_WRITABLE;
-            pVCpu->hm.s.vmx.RestoreHost.HostGdtrRw.cb = pVCpu->hm.s.vmx.RestoreHost.HostGdtr.cb;
-            int rc = SUPR0GetCurrentGdtRw(&pVCpu->hm.s.vmx.RestoreHost.HostGdtrRw.uAddr);
+            pVCpu->hmr0.s.vmx.RestoreHost.HostGdtrRw.cb = pVCpu->hmr0.s.vmx.RestoreHost.HostGdtr.cb;
+            int rc = SUPR0GetCurrentGdtRw(&pVCpu->hmr0.s.vmx.RestoreHost.HostGdtrRw.uAddr);
             AssertRCReturn(rc, rc);
         }
     }
 
-    pVCpu->hm.s.vmx.fRestoreHostFlags = fRestoreHostFlags;
+    pVCpu->hmr0.s.vmx.fRestoreHostFlags = fRestoreHostFlags;
 
     /*
      * Do all the VMCS updates in one block to assist nested virtualization.
      */
     int rc;
-    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_CS_SEL,  pVCpu->hm.s.vmx.RestoreHost.uHostSelCS);       AssertRC(rc);
-    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_SS_SEL,  pVCpu->hm.s.vmx.RestoreHost.uHostSelSS);       AssertRC(rc);
+    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_CS_SEL,  pVCpu->hmr0.s.vmx.RestoreHost.uHostSelCS);       AssertRC(rc);
+    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_SS_SEL,  pVCpu->hmr0.s.vmx.RestoreHost.uHostSelSS);       AssertRC(rc);
     rc = VMXWriteVmcs16(VMX_VMCS16_HOST_DS_SEL,  uSelDS);                                       AssertRC(rc);
     rc = VMXWriteVmcs16(VMX_VMCS16_HOST_ES_SEL,  uSelES);                                       AssertRC(rc);
     rc = VMXWriteVmcs16(VMX_VMCS16_HOST_FS_SEL,  uSelFS);                                       AssertRC(rc);
     rc = VMXWriteVmcs16(VMX_VMCS16_HOST_GS_SEL,  uSelGS);                                       AssertRC(rc);
-    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_TR_SEL,  pVCpu->hm.s.vmx.RestoreHost.uHostSelTR);       AssertRC(rc);
-    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_GDTR_BASE, pVCpu->hm.s.vmx.RestoreHost.HostGdtr.uAddr);   AssertRC(rc);
-    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_IDTR_BASE, pVCpu->hm.s.vmx.RestoreHost.HostIdtr.uAddr);   AssertRC(rc);
+    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_TR_SEL,  pVCpu->hmr0.s.vmx.RestoreHost.uHostSelTR);       AssertRC(rc);
+    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_GDTR_BASE, pVCpu->hmr0.s.vmx.RestoreHost.HostGdtr.uAddr);   AssertRC(rc);
+    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_IDTR_BASE, pVCpu->hmr0.s.vmx.RestoreHost.HostIdtr.uAddr);   AssertRC(rc);
     rc = VMXWriteVmcsNw(VMX_VMCS_HOST_TR_BASE,   uTRBase);                                      AssertRC(rc);
-    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_FS_BASE,   pVCpu->hm.s.vmx.RestoreHost.uHostFSBase);      AssertRC(rc);
-    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_GS_BASE,   pVCpu->hm.s.vmx.RestoreHost.uHostGSBase);      AssertRC(rc);
+    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_FS_BASE,   pVCpu->hmr0.s.vmx.RestoreHost.uHostFSBase);      AssertRC(rc);
+    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_GS_BASE,   pVCpu->hmr0.s.vmx.RestoreHost.uHostGSBase);      AssertRC(rc);
 
     return VINF_SUCCESS;
 }
@@ -7703,14 +7703,14 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
             if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
             {
                 if (   pVM->hm.s.fAllow64BitGuests
-                    && (pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
+                    && (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
                     pCtx->msrKERNELGSBASE = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
             }
 
             if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
             {
                 if (   pVM->hm.s.fAllow64BitGuests
-                    && (pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
+                    && (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
                 {
                     pCtx->msrLSTAR  = ASMRdMsr(MSR_K8_LSTAR);
                     pCtx->msrSTAR   = ASMRdMsr(MSR_K6_STAR);
@@ -8305,15 +8305,15 @@ static int hmR0VmxLeave(PVMCPUCC pVCpu, bool fImportState)
     Assert(!CPUMIsHyperDebugStateActive(pVCpu));
 
     /* Restore host-state bits that VT-x only restores partially. */
-    if (pVCpu->hm.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
+    if (pVCpu->hmr0.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
     {
-        Log4Func(("Restoring Host State: fRestoreHostFlags=%#RX32 HostCpuId=%u\n", pVCpu->hm.s.vmx.fRestoreHostFlags, idCpu));
-        VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
+        Log4Func(("Restoring Host State: fRestoreHostFlags=%#RX32 HostCpuId=%u\n", pVCpu->hmr0.s.vmx.fRestoreHostFlags, idCpu));
+        VMXRestoreHostState(pVCpu->hmr0.s.vmx.fRestoreHostFlags, &pVCpu->hmr0.s.vmx.RestoreHost);
     }
-    pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
+    pVCpu->hmr0.s.vmx.fRestoreHostFlags = 0;
 
     /* Restore the lazy host MSRs as we're leaving VT-x context. */
-    if (pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
+    if (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
     {
         /* We shouldn't restore the host MSRs without saving the guest MSRs first. */
         if (!fImportState)
@@ -8322,13 +8322,13 @@ static int hmR0VmxLeave(PVMCPUCC pVCpu, bool fImportState)
             AssertRCReturn(rc, rc);
         }
         hmR0VmxLazyRestoreHostMsrs(pVCpu);
-        Assert(!pVCpu->hm.s.vmx.fLazyMsrs);
+        Assert(!pVCpu->hmr0.s.vmx.fLazyMsrs);
     }
     else
-        pVCpu->hm.s.vmx.fLazyMsrs = 0;
+        pVCpu->hmr0.s.vmx.fLazyMsrs = 0;
 
     /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
-    pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs = false;
+    pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs = false;
 
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatImportGuestState);
@@ -8595,16 +8595,16 @@ VMMR0DECL(int) VMXR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation)
         CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */);
 
         /* Restore host-state bits that VT-x only restores partially. */
-        if (pVCpu->hm.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
-            VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
-        pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
+        if (pVCpu->hmr0.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
+            VMXRestoreHostState(pVCpu->hmr0.s.vmx.fRestoreHostFlags, &pVCpu->hmr0.s.vmx.RestoreHost);
+        pVCpu->hmr0.s.vmx.fRestoreHostFlags = 0;
 
         /* Restore the lazy host MSRs as we're leaving VT-x context. */
-        if (pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
+        if (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
             hmR0VmxLazyRestoreHostMsrs(pVCpu);
 
         /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
-        pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs = false;
+        pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs = false;
         VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
 
         /* Clear the current VMCS data back to memory (shadow VMCS if any would have been
@@ -10972,11 +10972,11 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     /*
      * Update the host MSRs values in the VM-exit MSR-load area.
      */
-    if (!pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs)
+    if (!pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs)
     {
         if (pVmcsInfo->cExitMsrLoad > 0)
             hmR0VmxUpdateAutoLoadHostMsrs(pVCpu, pVmcsInfo);
-        pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs = true;
+        pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs = true;
     }
 
     /*
@@ -11031,7 +11031,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     }
 
 #ifdef VBOX_STRICT
-    Assert(pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs);
+    Assert(pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs);
     hmR0VmxCheckAutoLoadStoreMsrs(pVCpu, pVmcsInfo, pVmxTransient->fIsNestedGuest);
     hmR0VmxCheckHostEferMsr(pVCpu, pVmcsInfo);
     AssertRC(hmR0VmxCheckCachedVmcsCtls(pVCpu, pVmcsInfo, pVmxTransient->fIsNestedGuest));
@@ -11089,7 +11089,7 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
     TMNotifyEndOfExecution(pVCpu->CTX_SUFF(pVM), pVCpu);                /* Notify TM that the guest is no longer running. */
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
-    pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;     /* Some host state messed up by VMX needs restoring. */
+    pVCpu->hmr0.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;     /* Some host state messed up by VMX needs restoring. */
     pVmcsInfo->fVmcsState |= VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;          /* Use VMRESUME instead of VMLAUNCH in the next run. */
 #ifdef VBOX_STRICT
     hmR0VmxCheckHostEferMsr(pVCpu, pVmcsInfo);                          /* Verify that the host EFER MSR wasn't modified. */

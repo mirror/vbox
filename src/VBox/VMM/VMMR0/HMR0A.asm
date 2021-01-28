@@ -24,7 +24,7 @@
 %include "VBox/err.mac"
 %include "VBox/vmm/hm_vmx.mac"
 %include "VBox/vmm/cpum.mac"
-%include "VBox/vmm/vm.mac"
+%include "VBox/vmm/gvm.mac"
 %include "iprt/x86.mac"
 %include "HMInternal.mac"
 
@@ -902,10 +902,10 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
         ; The vmwrite isn't quite for free (on an 10980xe at least), thus we check if anything changed
         ; before writing here.
         lea     rcx, [NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1)) wrt rip]
-        cmp     rcx, [rsi + VMCPU.hm + HMCPU.u + HMCPUVMX.uHostRIP]
+        cmp     rcx, [rsi + GVMCPU.hmr0 + HMR0PERVCPU.u + HMR0CPUVMX.uHostRIP]
         jne     .write_host_rip
 .wrote_host_rip:
-        cmp     rsp, [rsi + VMCPU.hm + HMCPU.u + HMCPUVMX.uHostRSP]
+        cmp     rsp, [rsi + GVMCPU.hmr0 + HMR0PERVCPU.u + HMR0CPUVMX.uHostRSP]
         jne     .write_host_rsp
 .wrote_host_rsp:
 
@@ -966,7 +966,7 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
 ; Put these two outside the normal code path as they should rarely change.
 ALIGNCODE(8)
 .write_host_rip:
-        mov     [rsi + VMCPU.hm + HMCPU.u + HMCPUVMX.uHostRIP], rcx
+        mov     [rsi + GVMCPU.hmr0 + HMR0PERVCPU.u + HMR0CPUVMX.uHostRIP], rcx
         mov     eax, VMX_VMCS_HOST_RIP                      ;; @todo It is only strictly necessary to write VMX_VMCS_HOST_RIP when
         vmwrite rax, rcx                                    ;;       the VMXVMCSINFO::pfnStartVM function changes (eventually
  %ifdef VBOX_STRICT                                         ;;       take the Windows/SSE stuff into account then)...
@@ -976,7 +976,7 @@ ALIGNCODE(8)
 
 ALIGNCODE(8)
 .write_host_rsp:
-        mov     [rsi + VMCPU.hm + HMCPU.u + HMCPUVMX.uHostRSP], rsp
+        mov     [rsi + GVMCPU.hmr0 + HMR0PERVCPU.u + HMR0CPUVMX.uHostRSP], rsp
         mov     eax, VMX_VMCS_HOST_RSP
         vmwrite rax, rsp
  %ifdef VBOX_STRICT
