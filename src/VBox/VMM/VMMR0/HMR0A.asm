@@ -606,13 +606,13 @@ ENDPROC VMXDispatchHostNmi
  %ifdef ASM_CALL64_MSC
         mov     rsi, [rbp + frm_saved_rsi]
  %else
-        mov     rbx, rcx
+        mov     rsi, rcx
  %endif
         mov     qword [rax + CPUMCTX.edi], rdi
  %ifdef ASM_CALL64_MSC
         mov     rdi, [rbp + frm_saved_rdi]
  %else
-        mov     rbx, rcx
+        mov     rdi, rcx
  %endif
         mov     qword [rax + CPUMCTX.ebx], rbx
         mov     rbx, [rbp + frm_saved_rbx]
