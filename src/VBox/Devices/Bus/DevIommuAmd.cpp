@@ -1792,7 +1792,7 @@ AssertCompile(RT_ELEMENTS(g_aRegAccess2) == (IOMMU_MMIO_OFF_QWORD_TABLE_2_END - 
  * @returns The register access structure, or NULL if the offset is invalid.
  * @param   off     The MMIO offset of the register being accessed.
  */
-static PCIOMMUREGACC iommuAmdGetRegAccessForOffset(uint32_t off)
+static PCIOMMUREGACC iommuAmdGetRegAccess(uint32_t off)
 {
     /* Figure out which table the register belongs to and validate its index. */
     PCIOMMUREGACC pReg;
@@ -1818,7 +1818,6 @@ static PCIOMMUREGACC iommuAmdGetRegAccessForOffset(uint32_t off)
     }
     else
         return NULL;
-
     return pReg;
 }
 
@@ -1834,7 +1833,7 @@ static PCIOMMUREGACC iommuAmdGetRegAccessForOffset(uint32_t off)
  *
  * @thread  EMT.
  */
-static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint8_t cb, uint64_t uValue)
+static VBOXSTRICTRC iommuAmdRegisterWrite(PPDMDEVINS pDevIns, uint32_t off, uint8_t cb, uint64_t uValue)
 {
     /*
      * Validate the access in case of IOM bug or incorrect assumption.
@@ -1846,7 +1845,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
     Log4Func(("off=%#x cb=%u uValue=%#RX64\n", off, cb, uValue));
 
     PIOMMU        pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PCIOMMUREGACC pReg  = iommuAmdGetRegAccessForOffset(off);
+    PCIOMMUREGACC pReg  = iommuAmdGetRegAccess(off);
     if (pReg)
     { /* likely */ }
     else
@@ -1946,18 +1945,18 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
  *
  * @thread  EMT.
  */
-static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint64_t *puResult)
+static VBOXSTRICTRC iommuAmdRegisterRead(PPDMDEVINS pDevIns, uint32_t off, uint64_t *puResult)
 {
     Assert(off < IOMMU_MMIO_REGION_SIZE);
     Assert(!(off & 7) || !(off & 3));
+
+    Log4Func(("off=%#x\n", off));
 
     PIOMMU      pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev); NOREF(pPciDev);
 
-    Log4Func(("off=%#x\n", off));
-
-    PCIOMMUREGACC pReg = iommuAmdGetRegAccessForOffset(off);
+    PCIOMMUREGACC pReg = iommuAmdGetRegAccess(off);
     if (pReg)
     { /* likely */ }
     else
@@ -2010,7 +2009,7 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
  * @thread  Any.
  * @remarks The IOMMU lock may or may not be held.
  */
-static void iommuAmdRaiseMsiInterrupt(PPDMDEVINS pDevIns)
+static void iommuAmdMsiInterruptRaise(PPDMDEVINS pDevIns)
 {
     LogFlowFunc(("\n"));
     if (iommuAmdIsMsiEnabled(pDevIns))
@@ -2029,7 +2028,7 @@ static void iommuAmdRaiseMsiInterrupt(PPDMDEVINS pDevIns)
  * @thread  Any.
  * @remarks The IOMMU lock may or may not be held.
  */
-static void iommuAmdClearMsiInterrupt(PPDMDEVINS pDevIns)
+static void iommuAmdMsiInterruptClear(PPDMDEVINS pDevIns)
 {
     if (iommuAmdIsMsiEnabled(pDevIns))
         PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
@@ -2045,7 +2044,7 @@ static void iommuAmdClearMsiInterrupt(PPDMDEVINS pDevIns)
  *
  * @thread  Any.
  */
-static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
+static int iommuAmdEvtLogEntryWrite(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
@@ -2084,7 +2083,7 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
             /* Check and signal an interrupt if software wants to receive one when an event log entry is written. */
             IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
             if (Ctrl.n.u1EvtIntrEn)
-                iommuAmdRaiseMsiInterrupt(pDevIns);
+                iommuAmdMsiInterruptRaise(pDevIns);
         }
         else
         {
@@ -2094,7 +2093,7 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
             /* Check and signal an interrupt if software wants to receive one when the event log has overflowed. */
             IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
             if (Ctrl.n.u1EvtIntrEn)
-                iommuAmdRaiseMsiInterrupt(pDevIns);
+                iommuAmdMsiInterruptRaise(pDevIns);
         }
     }
 
@@ -2110,7 +2109,7 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
  *
  * @thread  Any.
  */
-static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
+static void iommuAmdHwErrorSet(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 {
     IOMMU_ASSERT_LOCKED(pDevIns);
 
@@ -2139,7 +2138,7 @@ static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtPageTabHwErr    Where to store the initialized event.
  */
-static void iommuAmdInitPageTabHwErrorEvent(uint16_t uDevId, uint16_t uDomainId, RTGCPHYS GCPhysPtEntity, IOMMUOP enmOp,
+static void iommuAmdPageTabHwErrorEventInit(uint16_t uDevId, uint16_t uDomainId, RTGCPHYS GCPhysPtEntity, IOMMUOP enmOp,
                                             PEVT_PAGE_TAB_HW_ERR_T pEvtPageTabHwErr)
 {
     memset(pEvtPageTabHwErr, 0, sizeof(*pEvtPageTabHwErr));
@@ -2164,15 +2163,15 @@ static void iommuAmdInitPageTabHwErrorEvent(uint16_t uDevId, uint16_t uDomainId,
  *
  * @thread  Any.
  */
-static void iommuAmdRaisePageTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_PAGE_TAB_HW_ERR_T pEvtPageTabHwErr)
+static void iommuAmdPageTabHwErrorEventRaise(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_PAGE_TAB_HW_ERR_T pEvtPageTabHwErr)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_PAGE_TAB_HW_ERR_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtPageTabHwErr;
 
     IOMMU_LOCK_NORET(pDevIns);
 
-    iommuAmdSetHwError(pDevIns, (PCEVT_GENERIC_T)pEvent);
-    iommuAmdWriteEvtLogEntry(pDevIns, (PCEVT_GENERIC_T)pEvent);
+    iommuAmdHwErrorSet(pDevIns, (PCEVT_GENERIC_T)pEvent);
+    iommuAmdEvtLogEntryWrite(pDevIns, (PCEVT_GENERIC_T)pEvent);
     if (enmOp != IOMMUOP_CMD)
         iommuAmdSetPciTargetAbort(pDevIns);
 
@@ -2191,7 +2190,7 @@ static void iommuAmdRaisePageTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, 
  * @param   GCPhysAddr      The system physical address the IOMMU attempted to access.
  * @param   pEvtCmdHwErr    Where to store the initialized event.
  */
-static void iommuAmdInitCmdHwErrorEvent(RTGCPHYS GCPhysAddr, PEVT_CMD_HW_ERR_T pEvtCmdHwErr)
+static void iommuAmdCmdHwErrorEventInit(RTGCPHYS GCPhysAddr, PEVT_CMD_HW_ERR_T pEvtCmdHwErr)
 {
     memset(pEvtCmdHwErr, 0, sizeof(*pEvtCmdHwErr));
     pEvtCmdHwErr->n.u2Type    = HWEVTTYPE_DATA_ERROR;
@@ -2208,7 +2207,7 @@ static void iommuAmdInitCmdHwErrorEvent(RTGCPHYS GCPhysAddr, PEVT_CMD_HW_ERR_T p
  *
  * @thread  Any.
  */
-static void iommuAmdRaiseCmdHwErrorEvent(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T pEvtCmdHwErr)
+static void iommuAmdCmdHwErrorEventRaise(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T pEvtCmdHwErr)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_CMD_HW_ERR_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtCmdHwErr;
@@ -2216,8 +2215,8 @@ static void iommuAmdRaiseCmdHwErrorEvent(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T 
 
     IOMMU_LOCK_NORET(pDevIns);
 
-    iommuAmdSetHwError(pDevIns, (PCEVT_GENERIC_T)pEvent);
-    iommuAmdWriteEvtLogEntry(pDevIns, (PCEVT_GENERIC_T)pEvent);
+    iommuAmdHwErrorSet(pDevIns, (PCEVT_GENERIC_T)pEvent);
+    iommuAmdEvtLogEntryWrite(pDevIns, (PCEVT_GENERIC_T)pEvent);
     ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
 
     IOMMU_UNLOCK(pDevIns);
@@ -2236,7 +2235,7 @@ static void iommuAmdRaiseCmdHwErrorEvent(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T 
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtDevTabHwErr     Where to store the initialized event.
  */
-static void iommuAmdInitDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDte, IOMMUOP enmOp,
+static void iommuAmdDevTabHwErrorEventInit(uint16_t uDevId, RTGCPHYS GCPhysDte, IOMMUOP enmOp,
                                            PEVT_DEV_TAB_HW_ERROR_T pEvtDevTabHwErr)
 {
     memset(pEvtDevTabHwErr, 0, sizeof(*pEvtDevTabHwErr));
@@ -2260,15 +2259,15 @@ static void iommuAmdInitDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDte, 
  *
  * @thread  Any.
  */
-static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_DEV_TAB_HW_ERROR_T pEvtDevTabHwErr)
+static void iommuAmdDevTabHwErrorEventRaise(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_DEV_TAB_HW_ERROR_T pEvtDevTabHwErr)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_DEV_TAB_HW_ERROR_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtDevTabHwErr;
 
     IOMMU_LOCK_NORET(pDevIns);
 
-    iommuAmdSetHwError(pDevIns, (PCEVT_GENERIC_T)pEvent);
-    iommuAmdWriteEvtLogEntry(pDevIns, (PCEVT_GENERIC_T)pEvent);
+    iommuAmdHwErrorSet(pDevIns, (PCEVT_GENERIC_T)pEvent);
+    iommuAmdEvtLogEntryWrite(pDevIns, (PCEVT_GENERIC_T)pEvent);
     if (enmOp != IOMMUOP_CMD)
         iommuAmdSetPciTargetAbort(pDevIns);
 
@@ -2287,7 +2286,7 @@ static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, P
  *                          access.
  * @param   pEvtIllegalCmd  Where to store the initialized event.
  */
-static void iommuAmdInitIllegalCmdEvent(RTGCPHYS GCPhysCmd, PEVT_ILLEGAL_CMD_ERR_T pEvtIllegalCmd)
+static void iommuAmdIllegalCmdEventInit(RTGCPHYS GCPhysCmd, PEVT_ILLEGAL_CMD_ERR_T pEvtIllegalCmd)
 {
     Assert(!(GCPhysCmd & UINT64_C(0xf)));
     memset(pEvtIllegalCmd, 0, sizeof(*pEvtIllegalCmd));
@@ -2302,7 +2301,7 @@ static void iommuAmdInitIllegalCmdEvent(RTGCPHYS GCPhysCmd, PEVT_ILLEGAL_CMD_ERR
  * @param   pDevIns         The IOMMU device instance.
  * @param   pEvtIllegalCmd  The illegal command error event.
  */
-static void iommuAmdRaiseIllegalCmdEvent(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_ERR_T pEvtIllegalCmd)
+static void iommuAmdIllegalCmdEventRaise(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_ERR_T pEvtIllegalCmd)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_ILLEGAL_DTE_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtIllegalCmd;
@@ -2310,7 +2309,7 @@ static void iommuAmdRaiseIllegalCmdEvent(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_E
 
     IOMMU_LOCK_NORET(pDevIns);
 
-    iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
+    iommuAmdEvtLogEntryWrite(pDevIns, pEvent);
     ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
 
     IOMMU_UNLOCK(pDevIns);
@@ -2331,7 +2330,7 @@ static void iommuAmdRaiseIllegalCmdEvent(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_E
  * @param   enmOp           The IOMMU operation being performed.
  * @param   pEvtIllegalDte  Where to store the initialized event.
  */
-static void iommuAmdInitIllegalDteEvent(uint16_t uDevId, uint64_t uIova, bool fRsvdNotZero, IOMMUOP enmOp,
+static void iommuAmdIllegalDteEventInit(uint16_t uDevId, uint64_t uIova, bool fRsvdNotZero, IOMMUOP enmOp,
                                         PEVT_ILLEGAL_DTE_T pEvtIllegalDte)
 {
     memset(pEvtIllegalDte, 0, sizeof(*pEvtIllegalDte));
@@ -2358,7 +2357,7 @@ static void iommuAmdInitIllegalDteEvent(uint16_t uDevId, uint64_t uIova, bool fR
  *
  * @thread  Any.
  */
-static void iommuAmdRaiseIllegalDteEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PCEVT_ILLEGAL_DTE_T pEvtIllegalDte,
+static void iommuAmdIllegalDteEventRaise(PPDMDEVINS pDevIns, IOMMUOP enmOp, PCEVT_ILLEGAL_DTE_T pEvtIllegalDte,
                                          EVT_ILLEGAL_DTE_TYPE_T enmEvtType)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_ILLEGAL_DTE_T));
@@ -2366,7 +2365,7 @@ static void iommuAmdRaiseIllegalDteEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PCEV
 
     IOMMU_LOCK_NORET(pDevIns);
 
-    iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
+    iommuAmdEvtLogEntryWrite(pDevIns, pEvent);
     if (enmOp != IOMMUOP_CMD)
         iommuAmdSetPciTargetAbort(pDevIns);
 
@@ -2394,7 +2393,7 @@ static void iommuAmdRaiseIllegalDteEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PCEV
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtIoPageFault     Where to store the initialized event.
  */
-static void iommuAmdInitIoPageFaultEvent(uint16_t uDevId, uint16_t uDomainId, uint64_t uIova, bool fPresent, bool fRsvdNotZero,
+static void iommuAmdIoPageFaultEventInit(uint16_t uDevId, uint16_t uDomainId, uint64_t uIova, bool fPresent, bool fRsvdNotZero,
                                          bool fPermDenied, IOMMUOP enmOp, PEVT_IO_PAGE_FAULT_T pEvtIoPageFault)
 {
     Assert(!fPermDenied || fPresent);
@@ -2430,7 +2429,7 @@ static void iommuAmdInitIoPageFaultEvent(uint16_t uDevId, uint16_t uDomainId, ui
  *
  * @thread  Any.
  */
-static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIRTE_T pIrte, IOMMUOP enmOp,
+static void iommuAmdIoPageFaultEventRaise(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIRTE_T pIrte, IOMMUOP enmOp,
                                           PCEVT_IO_PAGE_FAULT_T pEvtIoPageFault, EVT_IO_PAGE_FAULT_TYPE_T enmEvtType)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_IO_PAGE_FAULT_T));
@@ -2487,7 +2486,7 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
             if (enmOp != IOMMUOP_TRANSLATE_REQ)
             {
                 if (!fSuppressEvtLogging)
-                    iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
+                    iommuAmdEvtLogEntryWrite(pDevIns, pEvent);
                 if (enmOp != IOMMUOP_CMD)
                     iommuAmdSetPciTargetAbort(pDevIns);
             }
@@ -2498,7 +2497,7 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
         {
             /* Access is blocked and only creates an event log entry. */
             if (!fSuppressEvtLogging)
-                iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
+                iommuAmdEvtLogEntryWrite(pDevIns, pEvent);
             break;
         }
 
@@ -2512,7 +2511,7 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
             /* Only trigerred by interrupt requests. */
             Assert(enmOp == IOMMUOP_INTR_REQ);
             if (!fSuppressEvtLogging)
-                iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
+                iommuAmdEvtLogEntryWrite(pDevIns, pEvent);
             iommuAmdSetPciTargetAbort(pDevIns);
             break;
         }
@@ -2530,7 +2529,7 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
             Assert(enmOp != IOMMUOP_CMD);
             Assert(enmOp != IOMMUOP_TRANSLATE_REQ); /** @todo IOMMU: We don't support translation requests yet. */
             if (!fSuppressEvtLogging)
-                iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
+                iommuAmdEvtLogEntryWrite(pDevIns, pEvent);
             if (   enmOp == IOMMUOP_MEM_READ
                 || enmOp == IOMMUOP_MEM_WRITE)
                 iommuAmdSetPciTargetAbort(pDevIns);
@@ -2575,7 +2574,7 @@ static bool iommuAmdIsDvaInExclRange(PCIOMMU pThis, PCDTE_T pDte, uint64_t uIova
 
 
 /**
- * Reads a device table entry from guest memory given the device ID.
+ * Reads a device table entry for the given the device ID.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
@@ -2585,7 +2584,7 @@ static bool iommuAmdIsDvaInExclRange(PCIOMMU pThis, PCDTE_T pDte, uint64_t uIova
  *
  * @thread  Any.
  */
-static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PDTE_T pDte)
+static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PDTE_T pDte)
 {
     PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
@@ -2616,16 +2615,16 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
         LogFunc(("Failed to read device table entry at %#RGp. rc=%Rrc -> DevTabHwError\n", GCPhysDte, rc));
 
         EVT_DEV_TAB_HW_ERROR_T EvtDevTabHwErr;
-        iommuAmdInitDevTabHwErrorEvent(uDevId, GCPhysDte, enmOp, &EvtDevTabHwErr);
-        iommuAmdRaiseDevTabHwErrorEvent(pDevIns, enmOp, &EvtDevTabHwErr);
+        iommuAmdDevTabHwErrorEventInit(uDevId, GCPhysDte, enmOp, &EvtDevTabHwErr);
+        iommuAmdDevTabHwErrorEventRaise(pDevIns, enmOp, &EvtDevTabHwErr);
         return VERR_IOMMU_DTE_READ_FAILED;
     }
 
     /* Raise an I/O page fault for out-of-bounds acccess. */
     EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-    iommuAmdInitIoPageFaultEvent(uDevId, 0 /* uDomainId */, 0 /* uIova */, false /* fPresent */, false /* fRsvdNotZero */,
+    iommuAmdIoPageFaultEventInit(uDevId, 0 /* uDomainId */, 0 /* uIova */, false /* fPresent */, false /* fRsvdNotZero */,
                                  false /* fPermDenied */, enmOp, &EvtIoPageFault);
-    iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_DevId_Invalid);
+    iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_DevId_Invalid);
     return VERR_IOMMU_DTE_BAD_OFFSET;
 }
 
@@ -2647,7 +2646,7 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
  *
  * @thread  Any.
  */
-static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fAccess, PCDTE_T pDte,
+static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fAccess, PCDTE_T pDte,
                                    IOMMUOP enmOp, PIOWALKRESULT pWalkResult)
 {
     Assert(pDte->n.u1Valid);
@@ -2665,9 +2664,9 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
          *        returning an invalid translation rather than skipping translation. */
         LogFunc(("Translation valid bit not set -> IOPF\n"));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
+        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
-        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                       kIoPageFaultType_DteTranslationDisabled);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
@@ -2700,9 +2699,9 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
          *        I'm just going with I/O page fault. */
         LogFunc(("Invalid root page table level %#x (uDevId=%#x) -> IOPF\n", uMaxLevel, uDevId));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
-        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                       kIoPageFaultType_PteInvalidLvlEncoding);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
@@ -2715,9 +2714,9 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
     {
         LogFunc(("Permission denied (fAccess=%#x fRootPtePerm=%#x) -> IOPF\n", fAccess, fRootPtePerm));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      true /* fPermDenied */, enmOp, &EvtIoPageFault);
-        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_PermDenied);
+        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_PermDenied);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
@@ -2760,8 +2759,8 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
             {
                 LogFunc(("Failed to read page table entry at %#RGp. rc=%Rrc -> PageTabHwError\n", GCPhysPtEntity, rc));
                 EVT_PAGE_TAB_HW_ERR_T EvtPageTabHwErr;
-                iommuAmdInitPageTabHwErrorEvent(uDevId, pDte->n.u16DomainId, GCPhysPtEntity, enmOp, &EvtPageTabHwErr);
-                iommuAmdRaisePageTabHwErrorEvent(pDevIns, enmOp, &EvtPageTabHwErr);
+                iommuAmdPageTabHwErrorEventInit(uDevId, pDte->n.u16DomainId, GCPhysPtEntity, enmOp, &EvtPageTabHwErr);
+                iommuAmdPageTabHwErrorEventRaise(pDevIns, enmOp, &EvtPageTabHwErr);
                 return VERR_IOMMU_IPE_2;
             }
         }
@@ -2773,9 +2772,9 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         {
             LogFunc(("Page table entry not present (uDevId=%#x) -> IOPF\n", uDevId));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
-            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_PermDenied);
+            iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_PermDenied);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
@@ -2787,9 +2786,9 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         {
             LogFunc(("Page table entry access denied (uDevId=%#x fAccess=%#x fPtePerm=%#x) -> IOPF\n", uDevId, fAccess, fPtePerm));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          true /* fPermDenied */, enmOp, &EvtIoPageFault);
-            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_PermDenied);
+            iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_PermDenied);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
@@ -2824,9 +2823,9 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
 
             LogFunc(("Page size invalid cShift=%#x -> IOPF\n", cShift));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
-            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+            iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                           kIoPageFaultType_PteInvalidPageSize);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
@@ -2839,9 +2838,9 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         {
             LogFunc(("Next level of PDE invalid uNextLevel=%#x -> IOPF\n", uNextLevel));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
-            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+            iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                           kIoPageFaultType_PteInvalidLvlEncoding);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
@@ -2856,9 +2855,9 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         {
             LogFunc(("Next level (%#x) must be less than the current level (%#x) -> IOPF\n", uNextLevel, uLevel));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
-            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+            iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                           kIoPageFaultType_PteInvalidLvlEncoding);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
@@ -2874,9 +2873,9 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         {
             LogFunc(("IOVA of skipped levels are not zero %#RX64 (SkipMask=%#RX64) -> IOPF\n", uIova, uIovaSkipMask));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
-            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+            iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                           kIoPageFaultType_SkippedLevelIovaNotZero);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
@@ -2903,8 +2902,8 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
  *
  * @thread  Any.
  */
-static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fAccess,
-                                     IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
+static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fAccess,
+                             IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
     PIOMMU   pThis        = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     RTGCPHYS GCPhysSpa    = NIL_RTGCPHYS;
@@ -2914,7 +2913,7 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
 
     /* Read the device table entry from memory. */
     DTE_T Dte;
-    int rc = iommuAmdReadDte(pDevIns, uDevId, enmOp, &Dte);
+    int rc = iommuAmdDteRead(pDevIns, uDevId, enmOp, &Dte);
     if (RT_SUCCESS(rc))
     {
         /* If the DTE is not valid, addresses are forwarded without translation */
@@ -2938,7 +2937,7 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
                     {
                         IOWALKRESULT WalkResult;
                         RT_ZERO(WalkResult);
-                        rc = iommuAmdWalkIoPageTable(pDevIns, uDevId, uIovaPage, fAccess, &Dte, enmOp, &WalkResult);
+                        rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fAccess, &Dte, enmOp, &WalkResult);
                         if (RT_SUCCESS(rc))
                         {
                             /* If translation is disabled for this device (root paging mode is 0), we're done. */
@@ -3002,8 +3001,8 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
                 /* Invalid reserved  bits in the DTE, raise an error event. */
                 LogFunc(("Invalid DTE reserved bits (u64[0]=%#RX64 u64[1]=%#RX64) -> Illegal DTE\n", fRsvd0, fRsvd1));
                 EVT_ILLEGAL_DTE_T Event;
-                iommuAmdInitIllegalDteEvent(uDevId, uIova, true /* fRsvdNotZero */, enmOp, &Event);
-                iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
+                iommuAmdIllegalDteEventInit(uDevId, uIova, true /* fRsvdNotZero */, enmOp, &Event);
+                iommuAmdIllegalDteEventRaise(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
                 rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
             }
         }
@@ -3087,7 +3086,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uD
         /** @todo IOMMU: IOTLB cache lookup. */
 
         /* Lookup the IOVA from the device table. */
-        int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbAccess, fAccess, enmOp, pGCPhysSpa, pcbContiguous);
+        int rc = iommuAmdDteLookup(pDevIns, uDevId, uIova, cbAccess, fAccess, enmOp, pGCPhysSpa, pcbContiguous);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
@@ -3159,8 +3158,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemBulkAccess(PPDMDEVINS pDevIns, uint16_
         for (size_t i = 0; i < cIovas; i++)
         {
             size_t cbContig;
-            int rc = iommuAmdLookupDeviceTable(pDevIns, uDevId, pauIovas[i], X86_PAGE_SIZE, fAccess, enmOp, &paGCPhysSpa[i],
-                                               &cbContig);
+            int rc = iommuAmdDteLookup(pDevIns, uDevId, pauIovas[i], X86_PAGE_SIZE, fAccess, enmOp, &paGCPhysSpa[i], &cbContig);
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else
@@ -3197,7 +3195,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemBulkAccess(PPDMDEVINS pDevIns, uint16_
  *
  * @thread  Any.
  */
-static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, RTGCPHYS GCPhysIn, uint32_t uDataIn,
+static int iommuAmdIrteRead(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, RTGCPHYS GCPhysIn, uint32_t uDataIn,
                             IOMMUOP enmOp, PIRTE_T pIrte)
 {
     /* Ensure the IRTE length is valid. */
@@ -3217,9 +3215,9 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
                  GCPhysIntrTable, cbIntrTable, offIrte, uDataIn));
 
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, GCPhysIn, false /* fPresent */, false /* fRsvdNotZero */,
+        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, GCPhysIn, false /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
-        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteAddrInvalid);
+        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteAddrInvalid);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
@@ -3251,13 +3249,13 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
  *
  * @thread  Any.
  */
-static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, IOMMUOP enmOp, PCMSIMSG pMsiIn,
+static int iommuAmdIntrRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, IOMMUOP enmOp, PCMSIMSG pMsiIn,
                              PMSIMSG pMsiOut)
 {
     Assert(pDte->n.u2IntrCtrl == IOMMU_INTR_CTRL_REMAP);
 
     IRTE_T Irte;
-    int rc = iommuAmdReadIrte(pDevIns, uDevId, pDte, pMsiIn->Addr.u64, pMsiIn->Data.u32, enmOp, &Irte);
+    int rc = iommuAmdIrteRead(pDevIns, uDevId, pDte, pMsiIn->Addr.u64, pMsiIn->Data.u32, enmOp, &Irte);
     if (RT_SUCCESS(rc))
     {
         if (Irte.n.u1RemapEnable)
@@ -3280,25 +3278,25 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
 
                 LogFunc(("Interrupt type (%#x) invalid -> IOPF\n", Irte.n.u3IntrType));
                 EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-                iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
+                iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
                                              true /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
-                iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRsvdIntType);
+                iommuAmdIoPageFaultEventRaise(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRsvdIntType);
                 return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
             }
 
             LogFunc(("Guest mode not supported -> IOPF\n"));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
+            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
                                          true /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
-            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRsvdNotZero);
+            iommuAmdIoPageFaultEventRaise(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRsvdNotZero);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
         LogFunc(("Remapping disabled -> IOPF\n"));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
+        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
                                      false /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
-        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRemapEn);
+        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRemapEn);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
@@ -3318,7 +3316,7 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
  *
  * @thread  Any.
  */
-static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     /* Read the device table entry from memory. */
     LogFlowFunc(("uDevId=%#x (%#x:%#x:%#x) enmOp=%u\n", uDevId,
@@ -3326,7 +3324,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                  ((uDevId >> VBOX_PCI_DEVFN_DEV_SHIFT) & VBOX_PCI_DEVFN_DEV_MASK), (uDevId & VBOX_PCI_DEVFN_FUN_MASK), enmOp));
 
     DTE_T Dte;
-    int rc = iommuAmdReadDte(pDevIns, uDevId, enmOp, &Dte);
+    int rc = iommuAmdDteRead(pDevIns, uDevId, enmOp, &Dte);
     if (RT_SUCCESS(rc))
     {
         /* If the DTE is not valid, all interrupts are forwarded without remapping. */
@@ -3343,8 +3341,8 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                 LogFunc(("Invalid reserved bits in DTE (u64[2]=%#RX64 u64[3]=%#RX64) -> Illegal DTE\n", fRsvd0,
                      fRsvd1));
                 EVT_ILLEGAL_DTE_T Event;
-                iommuAmdInitIllegalDteEvent(uDevId, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
-                iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
+                iommuAmdIllegalDteEventInit(uDevId, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
+                iommuAmdIllegalDteEventRaise(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
                 return VERR_IOMMU_INTR_REMAP_FAILED;
             }
 
@@ -3396,13 +3394,13 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                                 Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
                                 NOREF(pThis);
 
-                                return iommuAmdRemapIntr(pDevIns, uDevId, &Dte, enmOp, pMsiIn, pMsiOut);
+                                return iommuAmdIntrRemap(pDevIns, uDevId, &Dte, enmOp, pMsiIn, pMsiOut);
                             }
 
                             LogFunc(("Invalid interrupt table length %#x -> Illegal DTE\n", uIntrTabLen));
                             EVT_ILLEGAL_DTE_T Event;
-                            iommuAmdInitIllegalDteEvent(uDevId, pMsiIn->Addr.u64, false /* fRsvdNotZero */, enmOp, &Event);
-                            iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntTabLen);
+                            iommuAmdIllegalDteEventInit(uDevId, pMsiIn->Addr.u64, false /* fRsvdNotZero */, enmOp, &Event);
+                            iommuAmdIllegalDteEventRaise(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntTabLen);
                             return VERR_IOMMU_INTR_REMAP_FAILED;
                         }
 
@@ -3423,8 +3421,8 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                         Assert(uIntrCtrl == IOMMU_INTR_CTRL_RSVD); /* Paranoia. */
                         LogFunc(("IntCtl mode invalid %#x -> Illegal DTE\n", uIntrCtrl));
                         EVT_ILLEGAL_DTE_T Event;
-                        iommuAmdInitIllegalDteEvent(uDevId, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
-                        iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntCtl);
+                        iommuAmdIllegalDteEventInit(uDevId, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
+                        iommuAmdIllegalDteEventRaise(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntCtl);
                         return VERR_IOMMU_INTR_REMAP_FAILED;
                     }
 
@@ -3506,7 +3504,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDe
         STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap));
         /** @todo Cache? */
 
-        return iommuAmdLookupIntrTable(pDevIns, uDevId, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
+        return iommuAmdIntrTableLookup(pDevIns, uDevId, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
     }
 
     *pMsiOut = *pMsiIn;
@@ -3527,7 +3525,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioWrite(PPDMDEVINS pDevIns, void *pv
     STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioWrite)); NOREF(pThis);
 
     uint64_t const uValue = cb == 8 ? *(uint64_t const *)pv : *(uint32_t const *)pv;
-    return iommuAmdWriteRegister(pDevIns, off, cb, uValue);
+    return iommuAmdRegisterWrite(pDevIns, off, cb, uValue);
 }
 
 
@@ -3544,7 +3542,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
     STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioRead)); NOREF(pThis);
 
     uint64_t uResult;
-    VBOXSTRICTRC rcStrict = iommuAmdReadRegister(pDevIns, off, &uResult);
+    VBOXSTRICTRC rcStrict = iommuAmdRegisterRead(pDevIns, off, &uResult);
     if (cb == 8)
         *(uint64_t *)pv = uResult;
     else
@@ -3566,7 +3564,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
  *
  * @thread  Command thread.
  */
-static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPHYS GCPhysCmd, PEVT_GENERIC_T pEvtError)
+static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPHYS GCPhysCmd, PEVT_GENERIC_T pEvtError)
 {
     IOMMU_ASSERT_NOT_LOCKED(pDevIns);
 
@@ -3596,7 +3594,7 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                     {
                         LogFunc(("Cmd(%#x): Failed to write StoreData (%#RX64) to %#RGp, rc=%Rrc\n", bCmd, u64Data,
                              GCPhysStore, rc));
-                        iommuAmdInitCmdHwErrorEvent(GCPhysStore, (PEVT_CMD_HW_ERR_T)pEvtError);
+                        iommuAmdCmdHwErrorEventInit(GCPhysStore, (PEVT_CMD_HW_ERR_T)pEvtError);
                         return VERR_IOMMU_CMD_HW_ERROR;
                     }
                 }
@@ -3611,11 +3609,11 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                     IOMMU_UNLOCK(pDevIns);
 
                     if (fRaiseInt)
-                        iommuAmdRaiseMsiInterrupt(pDevIns);
+                        iommuAmdMsiInterruptRaise(pDevIns);
                 }
                 return VINF_SUCCESS;
             }
-            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            iommuAmdIllegalCmdEventInit(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
             return VERR_IOMMU_CMD_INVALID_FORMAT;
         }
 
@@ -3655,7 +3653,7 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                 IOMMU_UNLOCK(pDevIns);
                 return VINF_SUCCESS;
             }
-            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            iommuAmdIllegalCmdEventInit(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
             return VERR_IOMMU_CMD_INVALID_FORMAT;
 #else
             return VINF_SUCCESS;
@@ -3672,7 +3670,7 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                 /** @todo IOMMU: Implement remote IOTLB invalidation. */
                 return VERR_NOT_IMPLEMENTED;
             }
-            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            iommuAmdIllegalCmdEventInit(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
             return VERR_IOMMU_CMD_NOT_SUPPORTED;
         }
 
@@ -3692,7 +3690,7 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                 /** @todo IOMMU: Implement prefetch. Pretend success until then. */
                 return VINF_SUCCESS;
             }
-            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            iommuAmdIllegalCmdEventInit(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
             return VERR_IOMMU_CMD_NOT_SUPPORTED;
         }
 
@@ -3702,7 +3700,7 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
 
             /* We don't support PPR requests yet. */
             Assert(!pThis->ExtFeat.n.u1PprSup);
-            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            iommuAmdIllegalCmdEventInit(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
             return VERR_IOMMU_CMD_NOT_SUPPORTED;
         }
 
@@ -3715,14 +3713,14 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                 /** @todo IOMMU: Invalidate all. Pretend success until then. */
                 return VINF_SUCCESS;
             }
-            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            iommuAmdIllegalCmdEventInit(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
             return VERR_IOMMU_CMD_NOT_SUPPORTED;
         }
     }
 
     STAM_COUNTER_DEC(&pThis->StatCmd);
     LogFunc(("Cmd(%#x): Unrecognized\n", bCmd));
-    iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+    iommuAmdIllegalCmdEventInit(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
     return VERR_IOMMU_CMD_NOT_SUPPORTED;
 }
 
@@ -3811,20 +3809,20 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                     do
                     {
                         PCCMD_GENERIC_T pCmd = (PCCMD_GENERIC_T)((uintptr_t)pvCmds + offHead);
-                        rc = iommuAmdR3ProcessCmd(pDevIns, pCmd, GCPhysCmdBufBase + offHead, &EvtError);
+                        rc = iommuAmdR3CmdProcess(pDevIns, pCmd, GCPhysCmdBufBase + offHead, &EvtError);
                         if (RT_FAILURE(rc))
                         {
                             if (   rc == VERR_IOMMU_CMD_NOT_SUPPORTED
                                 || rc == VERR_IOMMU_CMD_INVALID_FORMAT)
                             {
                                 Assert(EvtError.n.u4EvtCode == IOMMU_EVT_ILLEGAL_CMD_ERROR);
-                                iommuAmdRaiseIllegalCmdEvent(pDevIns, (PCEVT_ILLEGAL_CMD_ERR_T)&EvtError);
+                                iommuAmdIllegalCmdEventRaise(pDevIns, (PCEVT_ILLEGAL_CMD_ERR_T)&EvtError);
                             }
                             else if (rc == VERR_IOMMU_CMD_HW_ERROR)
                             {
                                 Assert(EvtError.n.u4EvtCode == IOMMU_EVT_COMMAND_HW_ERROR);
                                 LogFunc(("Raising command hardware error. Cmd=%#x -> COMMAND_HW_ERROR\n", pCmd->n.u4Opcode));
-                                iommuAmdRaiseCmdHwErrorEvent(pDevIns, (PCEVT_CMD_HW_ERR_T)&EvtError);
+                                iommuAmdCmdHwErrorEventRaise(pDevIns, (PCEVT_CMD_HW_ERR_T)&EvtError);
                             }
                             break;
                         }
@@ -3835,8 +3833,8 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                 {
                     LogFunc(("Failed to read command at %#RGp. rc=%Rrc -> COMMAND_HW_ERROR\n", GCPhysCmdBufBase, rc));
                     EVT_CMD_HW_ERR_T EvtCmdHwErr;
-                    iommuAmdInitCmdHwErrorEvent(GCPhysCmdBufBase, &EvtCmdHwErr);
-                    iommuAmdRaiseCmdHwErrorEvent(pDevIns, &EvtCmdHwErr);
+                    iommuAmdCmdHwErrorEventInit(GCPhysCmdBufBase, &EvtCmdHwErr);
+                    iommuAmdCmdHwErrorEventRaise(pDevIns, &EvtCmdHwErr);
                     IOMMU_UNLOCK(pDevIns);
                 }
             }
@@ -4637,7 +4635,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDte(PPDMDEVINS pDevIns, PCDBGFINFOHLP
         if (RT_SUCCESS(rc))
         {
             DTE_T Dte;
-            rc = iommuAmdReadDte(pDevIns, uDevId, IOMMUOP_TRANSLATE_REQ,  &Dte);
+            rc = iommuAmdDteRead(pDevIns, uDevId, IOMMUOP_TRANSLATE_REQ,  &Dte);
             if (RT_SUCCESS(rc))
             {
                 pHlp->pfnPrintf(pHlp, "DTE for device %#x\n", uDevId);
