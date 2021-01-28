@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2020 Oracle Corporation
+ * Copyright (C) 2008-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,13 +34,11 @@ class SHARED_LIBRARY_STUFF QILineEdit : public QLineEdit
 
 public:
 
-    /** Constructs label-separator passing @a pParent to the base-class. */
+    /** Constructs line-edit passing @a pParent to the base-class. */
     QILineEdit(QWidget *pParent = 0);
-
-    /** Constructs label-separator passing @a pParent to the base-class.
-      * @param  strContents  Brings the line-edit text. */
-    QILineEdit(const QString &strContents, QWidget *pParent = 0)
-        : QLineEdit(strContents, pParent) {}
+    /** Constructs line-edit passing @a pParent to the base-class.
+      * @param  strText  Brings the line-edit text. */
+    QILineEdit(const QString &strText, QWidget *pParent = 0);
 
     /** Forces line-edit to adjust minimum width acording to passed @a strText. */
     void setMinimumWidthByText(const QString &strText);
@@ -52,10 +50,14 @@ public:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+
     /** Calculates suitable @a strText size. */
     QSize featTextWidth(const QString &strText) const;
+
     /** The original background base color. Used when marking/unmarking the combo box. */
-    QColor m_originalBaseColor;
+    QColor  m_originalBaseColor;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QILineEdit_h */

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2020 Oracle Corporation
+ * Copyright (C) 2008-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,17 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* GUI includes: */
-#include "QILineEdit.h"
-
 /* Qt includes: */
 #include <QPalette>
 #include <QStyleOptionFrame>
 
+/* GUI includes: */
+#include "QILineEdit.h"
+
+
 QILineEdit::QILineEdit(QWidget *pParent /* = 0 */)
     : QLineEdit(pParent)
 {
-    m_originalBaseColor = palette().color(QPalette::Base);
+    prepare();
+}
+
+QILineEdit::QILineEdit(const QString &strText, QWidget *pParent /* = 0 */)
+    : QLineEdit(strText, pParent)
+{
+    prepare();
 }
 
 void QILineEdit::setMinimumWidthByText(const QString &strText)
@@ -36,6 +43,22 @@ void QILineEdit::setMinimumWidthByText(const QString &strText)
 void QILineEdit::setFixedWidthByText(const QString &strText)
 {
     setFixedWidth(featTextWidth(strText).width());
+}
+
+void QILineEdit::mark(bool fError)
+{
+    QPalette newPalette = palette();
+    if (fError)
+        newPalette.setColor(QPalette::Base, QColor(255, 180, 180));
+    else
+        newPalette.setColor(QPalette::Base, m_originalBaseColor);
+    setPalette(newPalette);
+}
+
+void QILineEdit::prepare()
+{
+    /* Prepare original base color: */
+    m_originalBaseColor = palette().color(QPalette::Base);
 }
 
 QSize QILineEdit::featTextWidth(const QString &strText) const
@@ -56,14 +79,4 @@ QSize QILineEdit::featTextWidth(const QString &strText) const
     const QSize sa = style()->sizeFromContents(QStyle::CT_LineEdit, &sof, sc, this);
 
     return sa;
-}
-
-void QILineEdit::mark(bool fError)
-{
-    QPalette newPalette = palette();
-    if (fError)
-        newPalette.setColor(QPalette::Base, QColor(255, 180, 180));
-    else
-        newPalette.setColor(QPalette::Base, m_originalBaseColor);
-    setPalette(newPalette);
 }
