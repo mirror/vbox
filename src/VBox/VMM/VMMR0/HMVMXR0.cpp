@@ -6845,21 +6845,11 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 DECLINLINE(int) hmR0VmxRunGuest(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     /* Mark that HM is the keeper of all guest-CPU registers now that we're going to execute guest code. */
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    pCtx->fExtrn |= HMVMX_CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_HM;
+    pVCpu->cpum.GstCtx.fExtrn |= HMVMX_CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_HM;
 
     /** @todo Add stats for VMRESUME vs VMLAUNCH. */
-
-    /*
-     * 64-bit Windows uses XMM registers in the kernel as the Microsoft compiler expresses
-     * floating-point operations using SSE instructions. Some XMM registers (XMM6-XMM15) are
-     * callee-saved and thus the need for this XMM wrapper.
-     *
-     * See MSDN "Configuring Programs for 64-bit/x64 Software Conventions / Register Usage".
-     */
     bool const fResumeVM = RT_BOOL(pVmxTransient->pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    int rc = pVCpu->hm.s.vmx.pfnStartVm(pVM, pVCpu, fResumeVM);
+    int rc = pVCpu->hm.s.vmx.pfnStartVm(NULL /*pVCpu->CTX_SUFF(pVM) - unused*/, pVCpu, fResumeVM);
     AssertMsg(rc <= VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;
 }

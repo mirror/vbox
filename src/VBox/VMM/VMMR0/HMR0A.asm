@@ -698,7 +698,7 @@ ENDPROC VMXDispatchHostNmi
 ; Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ;
 ; @returns VBox status code
-; @param    pVM        msc:rcx, gcc:rdi       The cross context VM structure. (unused)
+; @param    NULL       msc:rcx, gcc:rdi       The cross context VM structure. (unused, passing NULL now)
 ; @param    pVCpu      msc:rdx, gcc:rsi       The cross context virtual CPU structure of the calling EMT.
 ; @param    fResume    msc:r8l, gcc:dl        Whether to use vmlauch/vmresume.
 ;
