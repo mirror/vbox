@@ -1540,13 +1540,13 @@ static VBOXSTRICTRC hdaRegWriteSDFIFOW(PPDMDEVINS pDevIns, PHDASTATE pThis, uint
 #endif
     }
 
-    uint32_t u16FIFOW = 0;
+    uint16_t u16FIFOW = 0;
     switch (u32Value)
     {
         case HDA_SDFIFOW_8B:
         case HDA_SDFIFOW_16B:
         case HDA_SDFIFOW_32B:
-            u16FIFOW = u32Value;
+            u16FIFOW = RT_LO_U16(u32Value); /* Only bits 2:0 are used; see ICH-6, 18.2.38. */
             break;
         default:
             ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing unsupported FIFOW (0x%zx) to stream #%RU8, defaulting to 32 bytes\n",

@@ -1280,21 +1280,16 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                 cbProcessed   += cbDMA;
             }
 
-            /* Only set the new DMA position if we at least reached the stream's FIFO watermark.
-             * This by default is 32 bytes. */
-            if (cbCircBufUsed >= pStreamShared->u8FIFOW)
-            {
-                /*
-                 * Update the stream's current position.
-                 * Do this as accurate and close to the actual data transfer as possible.
-                 * All guetsts rely on this, depending on the mechanism they use (LPIB register or DMA counters).
-                 */
-                uint32_t cbStreamPos = hdaR3StreamGetPosition(pThis, pStreamShared);
-                if (cbStreamPos == pStreamShared->u32CBL)
-                    cbStreamPos = 0;
+            /*
+             * Update the stream's current position.
+             * Do this as accurate and close to the actual data transfer as possible.
+             * All guetsts rely on this, depending on the mechanism they use (LPIB register or DMA counters).
+             */
+            uint32_t cbStreamPos = hdaR3StreamGetPosition(pThis, pStreamShared);
+            if (cbStreamPos == pStreamShared->u32CBL)
+                cbStreamPos = 0;
 
-                hdaR3StreamSetPosition(pStreamShared, pDevIns, pThis, cbStreamPos + cbDMA);
-            }
+            hdaR3StreamSetPosition(pStreamShared, pDevIns, pThis, cbStreamPos + cbDMA);
         }
 
         if (hdaR3BDLEIsComplete(pBDLE))
