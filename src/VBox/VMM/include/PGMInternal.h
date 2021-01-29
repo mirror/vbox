@@ -3759,10 +3759,12 @@ typedef struct PGMCPU
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     R0PTRTYPE(PX86PDPAE)            apGstPaePDsR0[4];
 #endif
-    /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC.
-     * @todo Remove this and use aGstPaePdpeRegs instead? */
+    /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC. */
     RTGCPHYS                        aGCPhysGstPaePDs[4];
-    /** The values of the 4 PDPE CPU registers (PAE). */
+    /** The values of the 4 PDPE CPU registers (PAE).
+     * @todo Not really maintained by PGM atm, only by VT-x in EPT mode. Should
+     *       load on cr3 load and use instead of guest memory version like real
+     *       HW. */
     X86PDPE                         aGstPaePdpeRegs[4];
     /** The physical addresses of the monitored guest page directories (PAE). */
     RTGCPHYS                        aGCPhysGstPaePDsMonitored[4];
