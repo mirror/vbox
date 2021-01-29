@@ -683,9 +683,9 @@ typedef struct PDMDRV
 
 
 /**
- * PDM registered IOMMU device.
+ * PDM IOMMU, shared ring-3.
  */
-typedef struct PDMIOMMU
+typedef struct PDMIOMMUR3
 {
     /** IOMMU index. */
     uint32_t                    idxIommu;
@@ -701,15 +701,15 @@ typedef struct PDMIOMMU
                                                   uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
     /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
     DECLR3CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
-} PDMIOMMU;
+} PDMIOMMUR3;
 /** Pointer to a PDM IOMMU instance. */
-typedef PDMIOMMU *PPDMIOMMU;
+typedef PDMIOMMUR3 *PPDMIOMMUR3;
 /** Pointer to a const PDM IOMMU instance. */
-typedef const PDMIOMMU *PCPDMIOMMU;
+typedef const PDMIOMMUR3 *PCPDMIOMMUR3;
 
 
 /**
- * Ring-0 PDM IOMMU instance data.
+ * PDM IOMMU, ring-0.
  */
 typedef struct PDMIOMMUR0
 {
@@ -732,6 +732,13 @@ typedef struct PDMIOMMUR0
 typedef PDMIOMMUR0 *PPDMIOMMUR0;
 /** Pointer to a const ring-0 IOMMU data. */
 typedef const PDMIOMMUR0 *PCPDMIOMMUR0;
+
+/** Pointer to a PDM IOMMU for the current context. */
+#ifdef IN_RING3
+typedef PPDMIOMMUR3     PPDMIOMMU;
+#else
+typedef PPDMIOMMUR0     PPDMIOMMU;
+#endif
 
 
 /**
@@ -1355,7 +1362,7 @@ typedef struct PDM
     /** PCI Buses. */
     PDMPCIBUS                       aPciBuses[PDM_PCI_BUSSES_MAX];
     /** IOMMU devices. */
-    PDMIOMMU                        aIommus[PDM_IOMMUS_MAX];
+    PDMIOMMUR3                      aIommus[PDM_IOMMUS_MAX];
     /** The register PIC device. */
     PDMPIC                          Pic;
     /** The registered APIC device. */

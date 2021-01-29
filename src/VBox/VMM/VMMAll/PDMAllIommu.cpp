@@ -29,6 +29,19 @@
 #endif
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/**
+ * Gets the PDM IOMMU for the current context from the PDM device instance.
+ */
+#ifdef IN_RING0
+#define PDMDEVINS_TO_IOMMU(a_pDevIns)   &(a_pDevIns)->Internal.s.pGVM->pdmr0.s.aIommus[0];
+#else
+#define PDMDEVINS_TO_IOMMU(a_pDevIns)   &(a_pDevIns)->Internal.s.pVMR3->pdm.s.aIommus[0];
+#endif
+
+
 /**
  * Gets the PCI device ID (Bus:Dev:Fn) for the given PCI device.
  *
@@ -52,22 +65,6 @@ DECL_FORCE_INLINE(uint16_t) pdmIommuGetPciDeviceId(PPDMDEVINS pDevIns, PPDMPCIDE
 }
 
 
-#if 0
-/* Hmpf. We have no PPDMIOMMUR3 ... */
-DECL_FORCE_INLINE(PPDMDEVINS) pdmIommuGetInstance(PPDMDEVINS pDevIns)
-{
-#if defined(IN_RING0)
-    PGVM        pGVM   = pDevIns->Internal.s.pGVM;
-    PPDMIOMMUR0 pIommu = &pGVM->pdmr0.s.aIommus[0];
-#else
-    PVM        pVM     = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu  = &pVM->pdm.s.aIommus[0];
-#endif
-    return pIommu->CTX_SUFF(pDevIns);
-}
-#endif
-
-
 /**
  * Bus master physical memory read after translating the physical address using the
  * IOMMU.
@@ -86,48 +83,7 @@ DECL_FORCE_INLINE(PPDMDEVINS) pdmIommuGetInstance(PPDMDEVINS pDevIns)
  */
 int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags)
 {
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-#if defined(IN_RING0)
-    PGVM        pGVM         = pDevIns->Internal.s.pGVM;
-    PPDMIOMMUR0 pIommu       = &pGVM->pdmr0.s.aIommus[0];
-    PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        uint16_t const uDeviceId = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
-        int rc = VINF_SUCCESS;
-        while (cbRead > 0)
-        {
-            RTGCPHYS GCPhysOut;
-            size_t   cbContig;
-            rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut, &cbContig);
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Handle strict return codes from PGMPhysRead. */
-                rc = pDevIns->pHlpR0->pfnPhysRead(pDevIns, GCPhysOut, pvBuf, cbRead, fFlags);
-                if (RT_SUCCESS(rc))
-                {
-                    cbRead -= cbContig;
-                    pvBuf   = (void *)((uintptr_t)pvBuf + cbContig);
-                    GCPhys += cbContig;
-                }
-                else
-                    break;
-            }
-            else
-            {
-                LogFunc(("R0: IOMMU memory read failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId, GCPhys, cbRead,
-                         rc));
-                break;
-            }
-        }
-        return rc;
-    }
-
-    return VERR_IOMMU_NOT_PRESENT;
-#elif defined(IN_RING3)
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
@@ -142,7 +98,7 @@ int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhy
             if (RT_SUCCESS(rc))
             {
                 /** @todo Handle strict return codes from PGMPhysRead. */
-                rc = pDevIns->pHlpR3->pfnPhysRead(pDevIns, GCPhysOut, pvBuf, cbRead, fFlags);
+                rc = pDevIns->CTX_SUFF(pHlp)->pfnPhysRead(pDevIns, GCPhysOut, pvBuf, cbRead, fFlags);
                 if (RT_SUCCESS(rc))
                 {
                     cbRead -= cbContig;
@@ -154,18 +110,13 @@ int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhy
             }
             else
             {
-                LogFunc(("R3: IOMMU memory read failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId, GCPhys, cbRead,
-                         rc));
+                LogFunc(("IOMMU memory read failed. uDeviceId=%#x GCPhys=%#RGp cb=%zu rc=%Rrc\n", uDeviceId, GCPhys, cbRead, rc));
                 break;
             }
         }
         return rc;
     }
-
     return VERR_IOMMU_NOT_PRESENT;
-#else
-# error "Implement me."
-#endif
 }
 
 
@@ -188,48 +139,7 @@ int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhy
 int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite,
                            uint32_t fFlags)
 {
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-#if defined(IN_RING0)
-    PGVM        pGVM         = pDevIns->Internal.s.pGVM;
-    PPDMIOMMUR0 pIommu       = &pGVM->pdmr0.s.aIommus[0];
-    PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        uint16_t const uDeviceId = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
-        int rc = VINF_SUCCESS;
-        while (cbWrite > 0)
-        {
-            RTGCPHYS GCPhysOut;
-            size_t   cbContig;
-            rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut, &cbContig);
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Handle strict return codes from PGMPhysWrite. */
-                rc = pDevIns->pHlpR0->pfnPhysWrite(pDevIns, GCPhysOut, pvBuf, cbWrite, fFlags);
-                if (RT_SUCCESS(rc))
-                {
-                    cbWrite -= cbContig;
-                    pvBuf    = (const void *)((uintptr_t)pvBuf + cbContig);
-                    GCPhys  += cbContig;
-                }
-                else
-                    break;
-            }
-            else
-            {
-                LogFunc(("R0: IOMMU memory write failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId, GCPhys, cbWrite,
-                         rc));
-                break;
-            }
-        }
-        return rc;
-    }
-
-    return VERR_IOMMU_NOT_PRESENT;
-#elif defined(IN_RING3)
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
@@ -244,7 +154,7 @@ int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPh
             if (RT_SUCCESS(rc))
             {
                 /** @todo Handle strict return codes from PGMPhysWrite. */
-                rc = pDevIns->pHlpR3->pfnPhysWrite(pDevIns, GCPhysOut, pvBuf, cbContig, fFlags);
+                rc = pDevIns->CTX_SUFF(pHlp)->pfnPhysWrite(pDevIns, GCPhysOut, pvBuf, cbWrite, fFlags);
                 if (RT_SUCCESS(rc))
                 {
                     cbWrite -= cbContig;
@@ -256,18 +166,14 @@ int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPh
             }
             else
             {
-                LogFunc(("R3: IOMMU memory write failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId, GCPhys, cbWrite,
+                LogFunc(("IOMMU memory write failed. uDeviceId=%#x GCPhys=%#RGp cb=%zu rc=%Rrc\n", uDeviceId, GCPhys, cbWrite,
                          rc));
                 break;
             }
         }
         return rc;
     }
-
     return VERR_IOMMU_NOT_PRESENT;
-#else
-# error "Implement me."
-#endif
 }
 
 
@@ -293,8 +199,7 @@ int pdmIommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
                                PPGMPAGEMAPLOCK pLock)
 {
 #if defined(IN_RING3)
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
@@ -314,7 +219,6 @@ int pdmIommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
         LogFunc(("IOMMU memory read for pointer access failed. uDeviceId=%#x GCPhys=%#RGp rc=%Rrc\n", uDeviceId, GCPhys, rc));
         return rc;
     }
-
     return VERR_IOMMU_NOT_PRESENT;
 #else
     RT_NOREF6(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
@@ -345,8 +249,7 @@ int pdmIommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
                                 PPGMPAGEMAPLOCK pLock)
 {
 #if defined(IN_RING3)
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
@@ -366,7 +269,6 @@ int pdmIommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
         LogFunc(("IOMMU memory write for pointer access failed. uDeviceId=%#x GCPhys=%#RGp rc=%Rrc\n", uDeviceId, GCPhys, rc));
         return rc;
     }
-
     return VERR_IOMMU_NOT_PRESENT;
 #else
     RT_NOREF6(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
@@ -400,8 +302,7 @@ int pdmIommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint3
                                    uint32_t fFlags, const void **papvPages, PPGMPAGEMAPLOCK paLocks)
 {
 #ifdef IN_RING3
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
@@ -436,7 +337,6 @@ int pdmIommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint3
         RTMemFree(paGCPhysOut);
         return rc;
     }
-
     return VERR_IOMMU_NOT_PRESENT;
 #else
     RT_NOREF7(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
@@ -470,8 +370,7 @@ int pdmIommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint
                                     uint32_t fFlags, void **papvPages, PPGMPAGEMAPLOCK paLocks)
 {
 #ifdef IN_RING3
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
@@ -506,7 +405,6 @@ int pdmIommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint
         RTMemFree(paGCPhysOut);
         return rc;
     }
-
     return VERR_IOMMU_NOT_PRESENT;
 #else
     RT_NOREF7(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
@@ -518,26 +416,7 @@ int pdmIommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint
 /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
 int pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
-#if defined(IN_RING0)
-    PGVM        pGVM         = pDevIns->Internal.s.pGVM;
-    PPDMIOMMUR0 pIommu       = &pGVM->pdmr0.s.aIommus[0];
-    PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        int rc = pIommu->pfnMsiRemap(pDevInsIommu, uDeviceId, pMsiIn, pMsiOut);
-        if (RT_FAILURE(rc))
-        {
-            LogFunc(("R0: MSI remap failed. uDeviceId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n", uDeviceId, pMsiIn->Addr.u64,
-                     pMsiIn->Data.u32, rc));
-        }
-        return rc;
-    }
-
-    return VERR_IOMMU_NOT_PRESENT;
-#elif defined(IN_RING3)
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+    PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
@@ -545,15 +424,11 @@ int pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PM
         int rc = pIommu->pfnMsiRemap(pDevInsIommu, uDeviceId, pMsiIn, pMsiOut);
         if (RT_FAILURE(rc))
         {
-            LogFunc(("R3: MSI remap failed. uDeviceId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n", uDeviceId, pMsiIn->Addr.u64,
+            LogFunc(("MSI remap failed. uDeviceId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n", uDeviceId, pMsiIn->Addr.u64,
                      pMsiIn->Data.u32, rc));
         }
         return rc;
     }
-
     return VERR_IOMMU_NOT_PRESENT;
-#else
-# error "Implement me."
-#endif
 }
 

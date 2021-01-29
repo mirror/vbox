@@ -1460,8 +1460,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
 
 #ifdef VBOX_WITH_IOMMU_AMD
         /** @todo IOMMU: Restrict this to the AMD flavor of IOMMU only at runtime. */
-        PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
-        PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+        PPDMIOMMUR3 pIommu       = &pVM->pdm.s.aIommus[0];
+        PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
         if (pDevInsIommu)
         {
             /*
@@ -3473,7 +3473,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
                     ("%s/%u: Only one IOMMU device is supported!\n", pDevIns->pReg->szName, pDevIns->iInstance),
                     VERR_ALREADY_EXISTS);
 #endif
-    PPDMIOMMU pIommu = &pVM->pdm.s.aIommus[idxIommu];
+    PPDMIOMMUR3 pIommu = &pVM->pdm.s.aIommus[idxIommu];
 
     /*
      * Init the R3 bits.

@@ -1027,7 +1027,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_IommuSetUpContext(PPDMDEVINS pDevIns, PPDMI
     uint32_t const idxIommu = pIommuReg->idxIommu;
     ASMCompilerBarrier();
     AssertLogRelMsgReturn(idxIommu < RT_ELEMENTS(pGVM->pdm.s.aIommus), ("idxIommu=%#x\n", idxIommu), VERR_OUT_OF_RANGE);
-    PPDMIOMMU pIommuShared = &pGVM->pdm.s.aIommus[idxIommu];
+    PPDMIOMMUR3 pIommuShared = &pGVM->pdm.s.aIommus[idxIommu];
     AssertLogRelMsgReturn(pIommuShared->idxIommu == idxIommu, ("%u vs %u\n", pIommuShared->idxIommu, idxIommu), VERR_INVALID_PARAMETER);
     AssertLogRelMsgReturn(pIommuShared->pDevInsR3 == pDevIns->pDevInsForR3,
                           ("%p vs %p (idxIommu=%u)\n", pIommuShared->pDevInsR3, pDevIns->pDevInsForR3, idxIommu), VERR_NOT_OWNER);
