@@ -488,7 +488,10 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 #define VMCPU_FF_HM_UPDATE_CR3              RT_BIT_64(VMCPU_FF_HM_UPDATE_CR3_BIT)
 #define VMCPU_FF_HM_UPDATE_CR3_BIT          12
 /** This action forces the VM to service any pending updates to PAE PDPEs (used
- *  only by HM). */
+ *  only by HM)
+ * @todo r=bird: This description is very unhelpful.  From the looks of things,
+ *       when this flag is set the actual PDPE values live in HMCPU::aPdpes
+ *       and PGM should fetch them from there before use. */
 #define VMCPU_FF_HM_UPDATE_PAE_PDPES        RT_BIT_64(VMCPU_FF_HM_UPDATE_PAE_PDPES_BIT)
 #define VMCPU_FF_HM_UPDATE_PAE_PDPES_BIT    13
 /** This action forces the VM to resync the page tables before going
