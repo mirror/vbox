@@ -466,11 +466,6 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     : m_fPolished(false)
     , m_fFirstMediumEnumerationHandled(false)
     , m_pActionPool(0)
-    , m_pManagerExtensionPack(0)
-    , m_pManagerVirtualMedia(0)
-    , m_pManagerHostNetwork(0)
-    , m_pManagerCloudProfile(0)
-    , m_pManagerCloudConsole(0)
 {
     s_pInstance = this;
 }
@@ -698,20 +693,28 @@ void UIVirtualBoxManager::sltHandleCloudUpdateProgressChange()
 
 void UIVirtualBoxManager::sltHandleToolTypeChange()
 {
+    /* Update actions stuff: */
     updateActionsVisibility();
     updateActionsAppearance();
 
-    /* Make sure separate dialogs are closed when corresponding tools are opened: */
+    /* Make sure separate dialog closed when corresponding tool opened: */
     switch (m_pWidget->toolsType())
     {
-        case UIToolType_Extensions:   sltCloseExtensionPackManagerWindow(); break;
-        case UIToolType_Media:        sltCloseVirtualMediumManagerWindow(); break;
-        case UIToolType_Network:      sltCloseNetworkManagerWindow(); break;
-        case UIToolType_Cloud:        sltCloseCloudProfileManagerWindow(); break;
-        case UIToolType_CloudConsole: sltCloseCloudConsoleManagerWindow(); break;
-        case UIToolType_Logs:         sltCloseLogViewerWindow(); break;
-        case UIToolType_Performance:  sltClosePerformanceMonitorWindow(); break;
-        default: break;
+        case UIToolType_Extensions:
+        case UIToolType_Media:
+        case UIToolType_Network:
+        case UIToolType_Cloud:
+        case UIToolType_CloudConsole:
+            sltCloseManagerWindow(m_pWidget->toolsType());
+            break;
+        case UIToolType_Logs:
+            sltCloseLogViewerWindow();
+            break;
+        case UIToolType_Performance:
+            sltClosePerformanceMonitorWindow();
+            break;
+        default:
+            break;
     }
 }
 
@@ -737,154 +740,85 @@ void UIVirtualBoxManager::sltHandleMenuPrepare(int iIndex, QMenu *pMenu)
         (this->*(m_menuUpdateHandlers.value(iIndex)))(pMenu);
 }
 
-void UIVirtualBoxManager::sltOpenExtensionPackManagerWindow()
+void UIVirtualBoxManager::sltOpenManagerWindow(UIToolType enmType /* = UIToolType_Invalid */)
 {
+    /* Determine actual tool type if possible: */
+    if (enmType == UIToolType_Invalid)
+    {
+        if (   sender()
+            && sender()->inherits("UIAction"))
+        {
+            UIAction *pAction = qobject_cast<UIAction*>(sender());
+            AssertPtrReturnVoid(pAction);
+            enmType = pAction->property("toolType").value<UIToolType>();
+        }
+    }
+
+    /* Make sure type is valid: */
+    AssertReturnVoid(enmType != UIToolType_Invalid);
+
     /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isGlobalToolOpened(UIToolType_Extensions))
+    if (m_pWidget->isGlobalToolOpened(enmType))
     {
         m_pWidget->setToolsType(UIToolType_Welcome);
-        m_pWidget->closeGlobalTool(UIToolType_Extensions);
+        m_pWidget->closeGlobalTool(enmType);
     }
 
     /* Create instance if not yet created: */
-    if (!m_pManagerExtensionPack)
+    if (!m_managers.contains(enmType))
     {
-        UIExtensionPackManagerFactory(m_pActionPool).prepare(m_pManagerExtensionPack, this);
-        connect(m_pManagerExtensionPack, &QIManagerDialog::sigClose,
-                this, &UIVirtualBoxManager::sltCloseExtensionPackManagerWindow);
+        switch (enmType)
+        {
+            case UIToolType_Extensions: UIExtensionPackManagerFactory(m_pActionPool).prepare(m_managers[enmType], this); break;
+            case UIToolType_Media: UIMediumManagerFactory(m_pActionPool).prepare(m_managers[enmType], this); break;
+            case UIToolType_Network: UINetworkManagerFactory(m_pActionPool).prepare(m_managers[enmType], this); break;
+            case UIToolType_Cloud: UICloudProfileManagerFactory(m_pActionPool).prepare(m_managers[enmType], this); break;
+            case UIToolType_CloudConsole: UICloudConsoleManagerFactory(m_pActionPool).prepare(m_managers[enmType], this); break;
+            default: break;
+        }
+
+        connect(m_managers[enmType], &QIManagerDialog::sigClose,
+                this, &UIVirtualBoxManager::sltCloseManagerWindowDefault);
     }
 
     /* Show instance: */
-    m_pManagerExtensionPack->show();
-    m_pManagerExtensionPack->setWindowState(m_pManagerExtensionPack->windowState() & ~Qt::WindowMinimized);
-    m_pManagerExtensionPack->activateWindow();
+    m_managers.value(enmType)->show();
+    m_managers.value(enmType)->setWindowState(m_managers.value(enmType)->windowState() & ~Qt::WindowMinimized);
+    m_managers.value(enmType)->activateWindow();
 }
 
-void UIVirtualBoxManager::sltCloseExtensionPackManagerWindow()
+void UIVirtualBoxManager::sltCloseManagerWindow(UIToolType enmType /* = UIToolType_Invalid */)
 {
+    /* Determine actual tool type if possible: */
+    if (enmType == UIToolType_Invalid)
+    {
+        if (   sender()
+            && sender()->inherits("QIManagerDialog"))
+        {
+            QIManagerDialog *pManager = qobject_cast<QIManagerDialog*>(sender());
+            AssertPtrReturnVoid(pManager);
+            enmType = m_managers.key(pManager);
+        }
+    }
+
+    /* Make sure type is valid: */
+    AssertReturnVoid(enmType != UIToolType_Invalid);
+
     /* Destroy instance if still exists: */
-    if (m_pManagerExtensionPack)
-        UIExtensionPackManagerFactory().cleanup(m_pManagerExtensionPack);
-}
-
-void UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow()
-{
-    /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isGlobalToolOpened(UIToolType_Media))
+    if (m_managers.contains(enmType))
     {
-        m_pWidget->setToolsType(UIToolType_Welcome);
-        m_pWidget->closeGlobalTool(UIToolType_Media);
+        switch (enmType)
+        {
+            case UIToolType_Extensions: UIExtensionPackManagerFactory().cleanup(m_managers[enmType]); break;
+            case UIToolType_Media: UIMediumManagerFactory().cleanup(m_managers[enmType]); break;
+            case UIToolType_Network: UINetworkManagerFactory().cleanup(m_managers[enmType]); break;
+            case UIToolType_Cloud: UICloudProfileManagerFactory().cleanup(m_managers[enmType]); break;
+            case UIToolType_CloudConsole: UICloudConsoleManagerFactory().cleanup(m_managers[enmType]); break;
+            default: break;
+        }
+
+        m_managers.remove(enmType);
     }
-
-    /* Create instance if not yet created: */
-    if (!m_pManagerVirtualMedia)
-    {
-        UIMediumManagerFactory(m_pActionPool).prepare(m_pManagerVirtualMedia, this);
-        connect(m_pManagerVirtualMedia, &QIManagerDialog::sigClose,
-                this, &UIVirtualBoxManager::sltCloseVirtualMediumManagerWindow);
-    }
-
-    /* Show instance: */
-    m_pManagerVirtualMedia->show();
-    m_pManagerVirtualMedia->setWindowState(m_pManagerVirtualMedia->windowState() & ~Qt::WindowMinimized);
-    m_pManagerVirtualMedia->activateWindow();
-}
-
-void UIVirtualBoxManager::sltCloseVirtualMediumManagerWindow()
-{
-    /* Destroy instance if still exists: */
-    if (m_pManagerVirtualMedia)
-        UIMediumManagerFactory().cleanup(m_pManagerVirtualMedia);
-}
-
-void UIVirtualBoxManager::sltOpenNetworkManagerWindow()
-{
-    /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isGlobalToolOpened(UIToolType_Network))
-    {
-        m_pWidget->setToolsType(UIToolType_Welcome);
-        m_pWidget->closeGlobalTool(UIToolType_Network);
-    }
-
-    /* Create instance if not yet created: */
-    if (!m_pManagerHostNetwork)
-    {
-        UINetworkManagerFactory(m_pActionPool).prepare(m_pManagerHostNetwork, this);
-        connect(m_pManagerHostNetwork, &QIManagerDialog::sigClose,
-                this, &UIVirtualBoxManager::sltCloseNetworkManagerWindow);
-    }
-
-    /* Show instance: */
-    m_pManagerHostNetwork->show();
-    m_pManagerHostNetwork->setWindowState(m_pManagerHostNetwork->windowState() & ~Qt::WindowMinimized);
-    m_pManagerHostNetwork->activateWindow();
-}
-
-void UIVirtualBoxManager::sltCloseNetworkManagerWindow()
-{
-    /* Destroy instance if still exists: */
-    if (m_pManagerHostNetwork)
-        UINetworkManagerFactory().cleanup(m_pManagerHostNetwork);
-}
-
-void UIVirtualBoxManager::sltOpenCloudProfileManagerWindow()
-{
-    /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isGlobalToolOpened(UIToolType_Cloud))
-    {
-        m_pWidget->setToolsType(UIToolType_Welcome);
-        m_pWidget->closeGlobalTool(UIToolType_Cloud);
-    }
-
-    /* Create instance if not yet created: */
-    if (!m_pManagerCloudProfile)
-    {
-        UICloudProfileManagerFactory(m_pActionPool).prepare(m_pManagerCloudProfile, this);
-        connect(m_pManagerCloudProfile, &QIManagerDialog::sigClose,
-                this, &UIVirtualBoxManager::sltCloseCloudProfileManagerWindow);
-    }
-
-    /* Show instance: */
-    m_pManagerCloudProfile->show();
-    m_pManagerCloudProfile->setWindowState(m_pManagerCloudProfile->windowState() & ~Qt::WindowMinimized);
-    m_pManagerCloudProfile->activateWindow();
-}
-
-void UIVirtualBoxManager::sltCloseCloudProfileManagerWindow()
-{
-    /* Destroy instance if still exists: */
-    if (m_pManagerCloudProfile)
-        UINetworkManagerFactory().cleanup(m_pManagerCloudProfile);
-}
-
-void UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow()
-{
-    /* First check if instance of widget opened the embedded way: */
-    if (m_pWidget->isGlobalToolOpened(UIToolType_CloudConsole))
-    {
-        m_pWidget->setToolsType(UIToolType_Welcome);
-        m_pWidget->closeGlobalTool(UIToolType_CloudConsole);
-    }
-
-    /* Create instance if not yet created: */
-    if (!m_pManagerCloudConsole)
-    {
-        UICloudConsoleManagerFactory(m_pActionPool).prepare(m_pManagerCloudConsole, this);
-        connect(m_pManagerCloudConsole, &QIManagerDialog::sigClose,
-                this, &UIVirtualBoxManager::sltCloseCloudConsoleManagerWindow);
-    }
-
-    /* Show instance: */
-    m_pManagerCloudConsole->show();
-    m_pManagerCloudConsole->setWindowState(m_pManagerCloudConsole->windowState() & ~Qt::WindowMinimized);
-    m_pManagerCloudConsole->activateWindow();
-}
-
-void UIVirtualBoxManager::sltCloseCloudConsoleManagerWindow()
-{
-    /* Destroy instance if still exists: */
-    if (m_pManagerCloudConsole)
-        UINetworkManagerFactory().cleanup(m_pManagerCloudConsole);
 }
 
 void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)
@@ -2295,6 +2229,14 @@ void UIVirtualBoxManager::prepareMenuBar()
 
     /* Setup menu-bar policy: */
     menuBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    /* Assign actions with corresponding tool types: */
+    actionPool()->action(UIActionIndexMN_M_File_S_ShowExtensionPackManager)->setProperty("toolType", QVariant::fromValue(UIToolType_Extensions));
+    actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager)->setProperty("toolType", QVariant::fromValue(UIToolType_Media));
+    actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager)->setProperty("toolType", QVariant::fromValue(UIToolType_Network));
+    actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager)->setProperty("toolType", QVariant::fromValue(UIToolType_Cloud));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications)->setProperty("toolType", QVariant::fromValue(UIToolType_CloudConsole));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications)->setProperty("toolType", QVariant::fromValue(UIToolType_CloudConsole));
 }
 
 void UIVirtualBoxManager::prepareStatusBar()
@@ -2354,13 +2296,13 @@ void UIVirtualBoxManager::prepareConnections()
 
     /* 'File' menu connections: */
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowExtensionPackManager), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenExtensionPackManagerWindow);
+            this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow);
+            this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenNetworkManagerWindow);
+            this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenCloudProfileManagerWindow);
+            this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenImportApplianceWizardDefault);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ExportAppliance), &UIAction::triggered,
@@ -2474,7 +2416,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_DeleteConnection), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForGroup);
     connect(actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow);
+            this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
 
     /* 'Machine/Console' menu connections: */
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CreateConnection), &UIAction::triggered,
@@ -2490,7 +2432,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCopyCommandVNCWindows);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow);
+            this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
 
     /* 'Group/Close' menu connections: */
     connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Detach), &UIAction::triggered,
@@ -2583,11 +2525,11 @@ void UIVirtualBoxManager::cleanupMenuBar()
 void UIVirtualBoxManager::cleanup()
 {
     /* Close the sub-dialogs first: */
-    sltCloseExtensionPackManagerWindow();
-    sltCloseVirtualMediumManagerWindow();
-    sltCloseNetworkManagerWindow();
-    sltCloseCloudProfileManagerWindow();
-    sltCloseCloudConsoleManagerWindow();
+    sltCloseManagerWindow(UIToolType_Extensions);
+    sltCloseManagerWindow(UIToolType_Media);
+    sltCloseManagerWindow(UIToolType_Network);
+    sltCloseManagerWindow(UIToolType_Cloud);
+    sltCloseManagerWindow(UIToolType_CloudConsole);
 
     /* Save settings: */
     saveSettings();

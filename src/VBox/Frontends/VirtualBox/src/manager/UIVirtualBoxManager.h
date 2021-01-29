@@ -29,6 +29,7 @@
 #include "QIWithRestorableGeometry.h"
 #include "QIWithRetranslateUI.h"
 #include "UICommon.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
 class QMenu;
@@ -70,7 +71,7 @@ public:
     UIActionPool *actionPool() const { return m_pActionPool; }
 
     /** Opens Cloud Profile Manager. */
-    void openCloudProfileManager() { sltOpenCloudProfileManagerWindow(); }
+    void openCloudProfileManager() { sltOpenManagerWindow(UIToolType_Cloud); }
 
 protected:
 
@@ -154,30 +155,14 @@ private slots:
 
     /** @name File menu stuff.
       * @{ */
-        /** Handles call to open Extension Pack Manager window. */
-        void sltOpenExtensionPackManagerWindow();
-        /** Handles call to close Extension Pack Manager window. */
-        void sltCloseExtensionPackManagerWindow();
-
-        /** Handles call to open Virtual Medium Manager window. */
-        void sltOpenVirtualMediumManagerWindow();
-        /** Handles call to close Virtual Medium Manager window. */
-        void sltCloseVirtualMediumManagerWindow();
-
-        /** Handles call to open Network Manager window. */
-        void sltOpenNetworkManagerWindow();
-        /** Handles call to close Network Manager window. */
-        void sltCloseNetworkManagerWindow();
-
-        /** Handles call to open Cloud Profile Manager window. */
-        void sltOpenCloudProfileManagerWindow();
-        /** Handles call to close Cloud Profile Manager window. */
-        void sltCloseCloudProfileManagerWindow();
-
-        /** Handles call to open Cloud Console Manager window. */
-        void sltOpenCloudConsoleManagerWindow();
-        /** Handles call to close Cloud Console Manager window. */
-        void sltCloseCloudConsoleManagerWindow();
+        /** Handles call to open Manager window of certain @a enmType. */
+        void sltOpenManagerWindow(UIToolType enmType = UIToolType_Invalid);
+        /** Handles call to open Manager window by default. */
+        void sltOpenManagerWindowDefault() { sltOpenManagerWindow(); }
+        /** Handles call to close Manager window of certain @a enmType. */
+        void sltCloseManagerWindow(UIToolType enmType = UIToolType_Invalid);
+        /** Handles call to close Manager window by default. */
+        void sltCloseManagerWindowDefault() { sltCloseManagerWindow(); }
 
         /** Handles call to open Import Appliance wizard.
           * @param strFileName can bring the name of file to import appliance from. */
@@ -468,16 +453,9 @@ private:
     /** Holds the map of menu update-handlers. */
     QMap<int, MenuUpdateHandler> m_menuUpdateHandlers;
 
-    /** Holds the Extension Pack window instance. */
-    QIManagerDialog *m_pManagerExtensionPack;
-    /** Holds the Virtual Media Manager window instance. */
-    QIManagerDialog *m_pManagerVirtualMedia;
-    /** Holds the Network Manager window instance. */
-    QIManagerDialog *m_pManagerHostNetwork;
-    /** Holds the Cloud Profile Manager window instance. */
-    QIManagerDialog *m_pManagerCloudProfile;
-    /** Holds the Cloud Console Manager window instance. */
-    QIManagerDialog *m_pManagerCloudConsole;
+    /** Holds the map of various global managers. */
+    QMap<UIToolType, QIManagerDialog*>  m_managers;
+
     /** Holds a map of (machineUUID, UIVMLogViewerDialog). */
     VMLogViewerMap   m_logViewers;
 
