@@ -129,9 +129,9 @@
 /** Assert that we haven't migrated CPUs when thread-context hooks are not
  *  used. */
 #define HMSVM_ASSERT_CPU_SAFE(a_pVCpu)                  AssertMsg(   VMMR0ThreadCtxHookIsEnabled((a_pVCpu)) \
-                                                                  || (a_pVCpu)->hm.s.idEnteredCpu == RTMpCpuId(), \
+                                                                  || (a_pVCpu)->hmr0.s.idEnteredCpu == RTMpCpuId(), \
                                                                   ("Illegal migration! Entered on CPU %u Current %u\n", \
-                                                                   (a_pVCpu)->hm.s.idEnteredCpu, RTMpCpuId()));
+                                                                   (a_pVCpu)->hmr0.s.idEnteredCpu, RTMpCpuId()));
 
 /** Assert that we're not executing a nested-guest. */
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -1282,7 +1282,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
      */
     bool fNewAsid = false;
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
-    if (   pVCpu->hm.s.idLastCpu   != pHostCpu->idCpu
+    if (   pVCpu->hmr0.s.idLastCpu   != pHostCpu->idCpu
         || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         || CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx)
@@ -1312,9 +1312,9 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
     if (pVM->hm.s.svm.fAlwaysFlushTLB)
     {
         pHostCpu->uCurrentAsid           = 1;
-        pVCpu->hm.s.uCurrentAsid         = 1;
+        pVCpu->hmr0.s.uCurrentAsid       = 1;
         pVCpu->hm.s.cTlbFlushes          = pHostCpu->cTlbFlushes;
-        pVCpu->hm.s.idLastCpu            = pHostCpu->idCpu;
+        pVCpu->hmr0.s.idLastCpu          = pHostCpu->idCpu;
         pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
 
         /* Clear the VMCB Clean Bit for NP while flushing the TLB. See @bugref{7152}. */
@@ -1347,9 +1347,9 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
                     pHostCpu->fFlushAsidBeforeUse = false;
                 }
 
-                pVCpu->hm.s.uCurrentAsid = pHostCpu->uCurrentAsid;
-                pVCpu->hm.s.idLastCpu    = pHostCpu->idCpu;
-                pVCpu->hm.s.cTlbFlushes  = pHostCpu->cTlbFlushes;
+                pVCpu->hmr0.s.uCurrentAsid = pHostCpu->uCurrentAsid;
+                pVCpu->hmr0.s.idLastCpu    = pHostCpu->idCpu;
+                pVCpu->hm.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
             }
             else
             {
@@ -1364,20 +1364,20 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
     }
 
     /* Update VMCB with the ASID. */
-    if (pVmcb->ctrl.TLBCtrl.n.u32ASID != pVCpu->hm.s.uCurrentAsid)
+    if (pVmcb->ctrl.TLBCtrl.n.u32ASID != pVCpu->hmr0.s.uCurrentAsid)
     {
-        pVmcb->ctrl.TLBCtrl.n.u32ASID = pVCpu->hm.s.uCurrentAsid;
+        pVmcb->ctrl.TLBCtrl.n.u32ASID = pVCpu->hmr0.s.uCurrentAsid;
         pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_ASID;
     }
 
-    AssertMsg(pVCpu->hm.s.idLastCpu == pHostCpu->idCpu,
-              ("vcpu idLastCpu=%u hostcpu idCpu=%u\n", pVCpu->hm.s.idLastCpu, pHostCpu->idCpu));
+    AssertMsg(pVCpu->hmr0.s.idLastCpu == pHostCpu->idCpu,
+              ("vcpu idLastCpu=%u hostcpu idCpu=%u\n", pVCpu->hmr0.s.idLastCpu, pHostCpu->idCpu));
     AssertMsg(pVCpu->hm.s.cTlbFlushes == pHostCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %u (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pHostCpu->cTlbFlushes));
     AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("cpu%d uCurrentAsid = %x\n", pHostCpu->idCpu, pHostCpu->uCurrentAsid));
-    AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
-              ("cpu%d VM uCurrentAsid = %x\n", pHostCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
+    AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("cpu%d VM uCurrentAsid = %x\n", pHostCpu->idCpu, pVCpu->hmr0.s.uCurrentAsid));
 
 #ifdef VBOX_WITH_STATISTICS
     if (pVmcb->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_NOTHING)
@@ -4221,7 +4221,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransi
 
     PHMPHYSCPU    pHostCpu         = hmR0GetCurrentCpu();
     RTCPUID const idHostCpu        = pHostCpu->idCpu;
-    bool const    fMigratedHostCpu = idHostCpu != pVCpu->hm.s.idLastCpu;
+    bool const    fMigratedHostCpu = idHostCpu != pVCpu->hmr0.s.idLastCpu;
 
     /* Setup TSC offsetting. */
     if (   pSvmTransient->fUpdateTscOffsetting
@@ -4264,7 +4264,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransi
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
     /* Flush the appropriate tagged-TLB entries. */
     hmR0SvmFlushTaggedTlb(pHostCpu,  pVCpu, pVmcb);
-    Assert(pVCpu->hm.s.idLastCpu == idHostCpu);
+    Assert(pVCpu->hmr0.s.idLastCpu == idHostCpu);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 
@@ -4553,8 +4553,8 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeStep(PVMCPUCC pVCpu, uint32_t *pcLoops)
     for (;;)
     {
         Assert(!HMR0SuspendPending());
-        AssertMsg(pVCpu->hm.s.idEnteredCpu == RTMpCpuId(),
-                  ("Illegal migration! Entered on CPU %u Current %u cLoops=%u\n", (unsigned)pVCpu->hm.s.idEnteredCpu,
+        AssertMsg(pVCpu->hmr0.s.idEnteredCpu == RTMpCpuId(),
+                  ("Illegal migration! Entered on CPU %u Current %u cLoops=%u\n", (unsigned)pVCpu->hmr0.s.idEnteredCpu,
                   (unsigned)RTMpCpuId(), *pcLoops));
 
         /* Preparatory work for running nested-guest code, this may force us to return to

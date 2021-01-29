@@ -161,9 +161,9 @@
 /** Assert that we haven't migrated CPUs when thread-context hooks are not
  *  used. */
 #define HMVMX_ASSERT_CPU_SAFE(a_pVCpu)              AssertMsg(   VMMR0ThreadCtxHookIsEnabled((a_pVCpu)) \
-                                                              || (a_pVCpu)->hm.s.idEnteredCpu == RTMpCpuId(), \
+                                                              || (a_pVCpu)->hmr0.s.idEnteredCpu == RTMpCpuId(), \
                                                               ("Illegal migration! Entered on CPU %u Current %u\n", \
-                                                              (a_pVCpu)->hm.s.idEnteredCpu, RTMpCpuId()))
+                                                              (a_pVCpu)->hmr0.s.idEnteredCpu, RTMpCpuId()))
 
 /** Asserts that the given CPUMCTX_EXTRN_XXX bits are present in the guest-CPU
  *  context. */
@@ -2909,15 +2909,15 @@ static void hmR0VmxFlushVpid(PVMCPUCC pVCpu, VMXTLBFLUSHVPID enmTlbFlush, RTGCPT
     else
     {
         AssertPtr(pVCpu);
-        AssertMsg(pVCpu->hm.s.uCurrentAsid != 0, ("VMXR0InvVPID: invalid ASID %lu\n", pVCpu->hm.s.uCurrentAsid));
-        AssertMsg(pVCpu->hm.s.uCurrentAsid <= UINT16_MAX, ("VMXR0InvVPID: invalid ASID %lu\n", pVCpu->hm.s.uCurrentAsid));
-        au64Descriptor[0] = pVCpu->hm.s.uCurrentAsid;
+        AssertMsg(pVCpu->hmr0.s.uCurrentAsid != 0, ("VMXR0InvVPID: invalid ASID %lu\n", pVCpu->hmr0.s.uCurrentAsid));
+        AssertMsg(pVCpu->hmr0.s.uCurrentAsid <= UINT16_MAX, ("VMXR0InvVPID: invalid ASID %lu\n", pVCpu->hmr0.s.uCurrentAsid));
+        au64Descriptor[0] = pVCpu->hmr0.s.uCurrentAsid;
         au64Descriptor[1] = GCPtr;
     }
 
     int rc = VMXR0InvVPID(enmTlbFlush, &au64Descriptor[0]);
     AssertMsg(rc == VINF_SUCCESS,
-              ("VMXR0InvVPID %#x %u %RGv failed with %Rrc\n", enmTlbFlush, pVCpu ? pVCpu->hm.s.uCurrentAsid : 0, GCPtr, rc));
+              ("VMXR0InvVPID %#x %u %RGv failed with %Rrc\n", enmTlbFlush, pVCpu ? pVCpu->hmr0.s.uCurrentAsid : 0, GCPtr, rc));
 
     if (   RT_SUCCESS(rc)
         && pVCpu)
@@ -2985,7 +2985,7 @@ static void hmR0VmxFlushTaggedTlbNone(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
-    pVCpu->hm.s.idLastCpu      = pHostCpu->idCpu;
+    pVCpu->hmr0.s.idLastCpu    = pHostCpu->idCpu;
     pVCpu->hm.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
     pVCpu->hm.s.fForceTLBFlush = false;
     return;
@@ -3034,7 +3034,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
      * limit while flushing the TLB or the host CPU is online after a suspend/resume, so we
      * cannot reuse the current ASID anymore.
      */
-    if (   pVCpu->hm.s.idLastCpu   != pHostCpu->idCpu
+    if (   pVCpu->hmr0.s.idLastCpu != pHostCpu->idCpu
         || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
         ++pHostCpu->uCurrentAsid;
@@ -3045,9 +3045,9 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
             pHostCpu->fFlushAsidBeforeUse = true;  /* All VCPUs that run on this host CPU must flush their new VPID before use. */
         }
 
-        pVCpu->hm.s.uCurrentAsid = pHostCpu->uCurrentAsid;
-        pVCpu->hm.s.idLastCpu    = pHostCpu->idCpu;
-        pVCpu->hm.s.cTlbFlushes  = pHostCpu->cTlbFlushes;
+        pVCpu->hmr0.s.uCurrentAsid = pHostCpu->uCurrentAsid;
+        pVCpu->hmr0.s.idLastCpu    = pHostCpu->idCpu;
+        pVCpu->hm.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
 
         /*
          * Flush by EPT when we get rescheduled to a new host CPU to ensure EPT-only tagged mappings are also
@@ -3091,18 +3091,18 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
     pVCpu->hm.s.fForceTLBFlush = false;
     HMVMX_UPDATE_FLUSH_SKIPPED_STAT();
 
-    Assert(pVCpu->hm.s.idLastCpu == pHostCpu->idCpu);
+    Assert(pVCpu->hmr0.s.idLastCpu == pHostCpu->idCpu);
     Assert(pVCpu->hm.s.cTlbFlushes == pHostCpu->cTlbFlushes);
     AssertMsg(pVCpu->hm.s.cTlbFlushes == pHostCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %d (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pHostCpu->cTlbFlushes));
     AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("Cpu[%u] uCurrentAsid=%u cTlbFlushes=%u pVCpu->idLastCpu=%u pVCpu->cTlbFlushes=%u\n", pHostCpu->idCpu,
-               pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hm.s.idLastCpu, pVCpu->hm.s.cTlbFlushes));
-    AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
-              ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
+               pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hmr0.s.idLastCpu, pVCpu->hm.s.cTlbFlushes));
+    AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hmr0.s.uCurrentAsid));
 
     /* Update VMCS with the VPID. */
-    int rc  = VMXWriteVmcs16(VMX_VMCS16_VPID, pVCpu->hm.s.uCurrentAsid);
+    int rc  = VMXWriteVmcs16(VMX_VMCS16_VPID, pVCpu->hmr0.s.uCurrentAsid);
     AssertRC(rc);
 
 #undef HMVMX_SET_TAGGED_TLB_FLUSHED
@@ -3130,7 +3130,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMXV
      * Force a TLB flush for the first world-switch if the current CPU differs from the one we ran on last.
      * A change in the TLB flush count implies the host CPU is online after a suspend/resume.
      */
-    if (   pVCpu->hm.s.idLastCpu   != pHostCpu->idCpu
+    if (   pVCpu->hmr0.s.idLastCpu   != pHostCpu->idCpu
         || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
@@ -3152,7 +3152,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMXV
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbNstGst);
     }
 
-    pVCpu->hm.s.idLastCpu   = pHostCpu->idCpu;
+    pVCpu->hmr0.s.idLastCpu = pHostCpu->idCpu;
     pVCpu->hm.s.cTlbFlushes = pHostCpu->cTlbFlushes;
 
     if (pVCpu->hm.s.fForceTLBFlush)
@@ -3185,7 +3185,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
      * limit while flushing the TLB or the host CPU is online after a suspend/resume, so we
      * cannot reuse the current ASID anymore.
      */
-    if (   pVCpu->hm.s.idLastCpu   != pHostCpu->idCpu
+    if (   pVCpu->hmr0.s.idLastCpu != pHostCpu->idCpu
         || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
@@ -3214,7 +3214,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
     }
 
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    pVCpu->hm.s.idLastCpu = pHostCpu->idCpu;
+    pVCpu->hmr0.s.idLastCpu = pHostCpu->idCpu;
     if (pVCpu->hm.s.fForceTLBFlush)
     {
         ++pHostCpu->uCurrentAsid;
@@ -3227,7 +3227,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
 
         pVCpu->hm.s.fForceTLBFlush = false;
         pVCpu->hm.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
-        pVCpu->hm.s.uCurrentAsid   = pHostCpu->uCurrentAsid;
+        pVCpu->hmr0.s.uCurrentAsid   = pHostCpu->uCurrentAsid;
         if (pHostCpu->fFlushAsidBeforeUse)
         {
             if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
@@ -3249,11 +3249,11 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
               ("Flush count mismatch for cpu %d (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pHostCpu->cTlbFlushes));
     AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("Cpu[%u] uCurrentAsid=%u cTlbFlushes=%u pVCpu->idLastCpu=%u pVCpu->cTlbFlushes=%u\n", pHostCpu->idCpu,
-               pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hm.s.idLastCpu, pVCpu->hm.s.cTlbFlushes));
-    AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
-              ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
+               pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hmr0.s.idLastCpu, pVCpu->hm.s.cTlbFlushes));
+    AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hmr0.s.uCurrentAsid));
 
-    int rc  = VMXWriteVmcs16(VMX_VMCS16_VPID, pVCpu->hm.s.uCurrentAsid);
+    int rc  = VMXWriteVmcs16(VMX_VMCS16_VPID, pVCpu->hmr0.s.uCurrentAsid);
     AssertRC(rc);
 }
 
@@ -6914,7 +6914,7 @@ static void hmR0VmxReportWorldSwitchError(PVMCPUCC pVCpu, int rcVMRun, PVMXTRANS
             AssertRC(rc);
             hmR0VmxReadExitQualVmcs(pVmxTransient);
 
-            pVCpu->hm.s.vmx.LastError.idEnteredCpu = pVCpu->hm.s.idEnteredCpu;
+            pVCpu->hm.s.vmx.LastError.idEnteredCpu = pVCpu->hmr0.s.idEnteredCpu;
             /* LastError.idCurrentCpu was already updated in hmR0VmxPreRunGuestCommitted().
                Cannot do it here as we may have been long preempted. */
 
@@ -8493,7 +8493,7 @@ static int hmR0VmxExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
     {
         VMXGetCurrentVmcs(&pVCpu->hm.s.vmx.LastError.HCPhysCurrentVmcs);
         pVCpu->hm.s.vmx.LastError.u32VmcsRev   = *(uint32_t *)pVmcsInfo->pvVmcs;
-        pVCpu->hm.s.vmx.LastError.idEnteredCpu = pVCpu->hm.s.idEnteredCpu;
+        pVCpu->hm.s.vmx.LastError.idEnteredCpu = pVCpu->hmr0.s.idEnteredCpu;
         /* LastError.idCurrentCpu was updated in hmR0VmxPreRunGuestCommitted(). */
     }
 
@@ -11018,7 +11018,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
      * VMX-preemption timer based on the next virtual sync clock deadline.
      */
     if (   !pVmxTransient->fUpdatedTscOffsettingAndPreemptTimer
-        || idCurrentCpu != pVCpu->hm.s.idLastCpu)
+        || idCurrentCpu != pVCpu->hmr0.s.idLastCpu)
     {
         hmR0VmxUpdateTscOffsettingAndPreemptTimer(pVCpu, pVmxTransient);
         pVmxTransient->fUpdatedTscOffsettingAndPreemptTimer = true;
@@ -11033,7 +11033,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
     hmR0VmxFlushTaggedTlb(pHostCpu, pVCpu, pVmcsInfo);          /* Invalidate the appropriate guest entries from the TLB. */
-    Assert(idCurrentCpu == pVCpu->hm.s.idLastCpu);
+    Assert(idCurrentCpu == pVCpu->hmr0.s.idLastCpu);
     pVCpu->hm.s.vmx.LastError.idCurrentCpu = idCurrentCpu;      /* Record the error reporting info. with the current host CPU. */
     pVmcsInfo->idHostCpuState = idCurrentCpu;                   /* Record the CPU for which the host-state has been exported. */
     pVmcsInfo->idHostCpuExec  = idCurrentCpu;                   /* Record the CPU on which we shall execute. */
@@ -14353,9 +14353,8 @@ static VBOXSTRICTRC hmR0VmxExitXcptOthers(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
-    PCVMXVMCSINFO       pVmcsInfo       = pVmxTransient->pVmcsInfo;
-    PCVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
-    AssertMsg(pVCpu->hm.s.fUsingDebugLoop || pVmcsInfoShared->RealMode.fRealOnV86Active || pVmxTransient->fIsNestedGuest,
+    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    AssertMsg(pVCpu->hm.s.fUsingDebugLoop || pVmcsInfo->pShared->RealMode.fRealOnV86Active || pVmxTransient->fIsNestedGuest,
               ("uVector=%#x u32XcptBitmap=%#X32\n",
                VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo), pVmcsInfo->u32XcptBitmap));
     NOREF(pVmcsInfo);

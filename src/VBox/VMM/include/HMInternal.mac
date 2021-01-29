@@ -175,9 +175,7 @@ struc HMCPU
     alignb 8
 
     .cWorldSwitchExits              resd    1
-    .idLastCpu                      resd    1
     .cTlbFlushes                    resd    1
-    .uCurrentAsid                   resd    1
     .u32HMError                     resd    1
     .rcLastExitToR3                 resd    1
     alignb 8
@@ -197,7 +195,6 @@ struc HMCPU
     .Event.u64IntInfo               resq    1
     .Event.GCPtrFaultAddress        RTGCPTR_RES 1
 
-    .idEnteredCpu                   resd    1
     .enmShadowMode                  resd    1
     alignb 8
     .aPdpes                         resq    4
@@ -230,6 +227,10 @@ struc HMR0CPUSVM
 endstruc
 
 struc HMR0PERVCPU
+    .uCurrentAsid                   resd    1
+    .idLastCpu                      resd    1
+    .idEnteredCpu                   resd    1
+
     alignb 8
 ;%if HMR0CPUVMX_size > HMR0CPUSVM_size
     .u                              resb    HMR0CPUVMX_size

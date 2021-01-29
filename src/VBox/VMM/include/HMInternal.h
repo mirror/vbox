@@ -1000,12 +1000,8 @@ typedef struct HMCPU
 
     /** World switch exit counter. */
     uint32_t volatile           cWorldSwitchExits;
-    /** The last CPU we were executing code on (NIL_RTCPUID for the first time). */
-    RTCPUID                     idLastCpu;
     /** TLB flush count. */
     uint32_t                    cTlbFlushes;
-    /** Current ASID in use by the VM. */
-    uint32_t                    uCurrentAsid;
     /** An additional error code used for some gurus. */
     uint32_t                    u32HMError;
     /** The last exit-to-ring-3 reason. */
@@ -1103,12 +1099,9 @@ typedef struct HMCPU
     /** Event injection state. */
     HMEVENT                 Event;
 
-    /** The CPU ID of the CPU currently owning the VMCS. Set in
-     * HMR0Enter and cleared in HMR0Leave. */
-    RTCPUID                 idEnteredCpu;
-
     /** Current shadow paging mode for updating CR4. */
     PGMMODE                 enmShadowMode;
+    uint32_t                u32TemporaryPadding;
 
     /** The PAE PDPEs used with Nested Paging (only valid when
      *  VMCPU_FF_HM_UPDATE_PAE_PDPES is set). */
@@ -1282,6 +1275,16 @@ AssertCompileMemberAlignment(HMCPU, Event, 8);
  */
 typedef struct HMR0PERVCPU
 {
+    /** Current ASID in use by the VM. */
+    uint32_t                    uCurrentAsid;
+    /** The last CPU we were executing code on (NIL_RTCPUID for the first time). */
+    RTCPUID                     idLastCpu;
+    /** The CPU ID of the CPU currently owning the VMCS. Set in
+     * HMR0Enter and cleared in HMR0Leave. */
+    RTCPUID                     idEnteredCpu;
+
+    uint32_t                    u32Padding0;
+
     union HM_NAMELESS_UNION_TAG(HMR0CPUUNION) /* no tag! */
     {
         /** VT-x data.   */

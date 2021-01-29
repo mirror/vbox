@@ -1197,11 +1197,11 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-        pVCpu->hm.s.idEnteredCpu   = NIL_RTCPUID;
-        pVCpu->hm.s.idLastCpu      = NIL_RTCPUID;
+        pVCpu->hmr0.s.idEnteredCpu  = NIL_RTCPUID;
+        pVCpu->hmr0.s.idLastCpu     = NIL_RTCPUID;
 
         /* We'll aways increment this the first time (host uses ASID 0). */
-        AssertReturn(!pVCpu->hm.s.uCurrentAsid, VERR_HM_IPE_3);
+        AssertReturn(!pVCpu->hmr0.s.uCurrentAsid, VERR_HM_IPE_3);
     }
 
     /*
@@ -1346,7 +1346,7 @@ VMMR0_INT_DECL(int) hmR0EnterCpu(PVMCPUCC pVCpu)
         pVCpu->hm.s.fCtxChanged |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE;
 
     Assert(pHostCpu->idCpu == idCpu && pHostCpu->idCpu != NIL_RTCPUID);
-    pVCpu->hm.s.idEnteredCpu = idCpu;
+    pVCpu->hmr0.s.idEnteredCpu = idCpu;
     return rc;
 }
 
@@ -1387,12 +1387,12 @@ VMMR0_INT_DECL(int) HMR0Enter(PVMCPUCC pVCpu)
 
         /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
         rc = g_HmR0.pfnEnterSession(pVCpu);
-        AssertMsgRCReturnStmt(rc, ("rc=%Rrc pVCpu=%p\n", rc, pVCpu),  pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID, rc);
+        AssertMsgRCReturnStmt(rc, ("rc=%Rrc pVCpu=%p\n", rc, pVCpu),  pVCpu->hmr0.s.idEnteredCpu = NIL_RTCPUID, rc);
 
         /* Exports the host-state as we may be resuming code after a longjmp and quite
            possibly now be scheduled on a different CPU. */
         rc = g_HmR0.pfnExportHostState(pVCpu);
-        AssertMsgRCReturnStmt(rc, ("rc=%Rrc pVCpu=%p\n", rc, pVCpu),  pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID, rc);
+        AssertMsgRCReturnStmt(rc, ("rc=%Rrc pVCpu=%p\n", rc, pVCpu),  pVCpu->hmr0.s.idEnteredCpu = NIL_RTCPUID, rc);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         if (fStartedSet)
@@ -1429,11 +1429,11 @@ VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPUCC pVCpu)
         Assert(pHostCpu->idCpu == NIL_RTCPUID);
 
         /* For obtaining a non-zero ASID/VPID on next re-entry. */
-        pVCpu->hm.s.idLastCpu = NIL_RTCPUID;
+        pVCpu->hmr0.s.idLastCpu = NIL_RTCPUID;
     }
 
     /* Clear it while leaving HM context, hmPokeCpuForTlbFlush() relies on this. */
-    pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
+    pVCpu->hmr0.s.idEnteredCpu = NIL_RTCPUID;
 
     /* De-register the longjmp-to-ring 3 callback now that we have reliquished hardware resources. */
     VMMRZCallRing3RemoveNotification(pVCpu);

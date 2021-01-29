@@ -492,7 +492,7 @@ VMM_INT_DECL(int) HMFlushTlb(PVMCPU pVCpu)
  * @param   fAccountFlushStat   Whether to account the call to
  *                              StatTlbShootdownFlush or StatTlbShootdown.
  */
-static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
+static void hmPokeCpuForTlbFlush(PVMCPUCC pVCpu, bool fAccountFlushStat)
 {
     if (ASMAtomicUoReadBool(&pVCpu->hm.s.fCheckedTLBFlush))
     {
@@ -501,7 +501,7 @@ static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
         else
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
 #ifdef IN_RING0
-        RTCPUID idHostCpu = pVCpu->hm.s.idEnteredCpu;
+        RTCPUID idHostCpu = pVCpu->hmr0.s.idEnteredCpu;
         if (idHostCpu != NIL_RTCPUID)
             hmR0PokeCpu(pVCpu, idHostCpu);
 #else
