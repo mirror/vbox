@@ -698,18 +698,6 @@ typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
 /** @addtogroup grp_hm_int_vmx  VMX Internal
  * @{ */
 /**
- * VMX StartVM function.
- *
- * @returns VBox status code (no informational stuff).
- * @param   pVM         Pointer to the cross context VM structure.
- * @param   pVCpu       Pointer to the cross context per-CPU structure.
- * @param   fResume     Whether to use VMRESUME (true) or VMLAUNCH (false).
- */
-typedef DECLCALLBACKTYPE(int, FNHMVMXSTARTVM,(PVMCC pVM, PVMCPUCC pVCpu, bool fResume));
-/** Pointer to a VMX StartVM function. */
-typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
-
-/**
  * VMX VMCS information, shared.
  *
  * This structure provides information maintained for and during the executing of a
@@ -825,6 +813,10 @@ typedef struct VMXVMCSINFO
     uint64_t                    u64Cr0Mask;
     /** CR4 guest/host mask. */
     uint64_t                    u64Cr4Mask;
+    /** Current VMX_VMCS_HOST_RIP value (only used in HMR0A.asm). */
+    uint64_t                    uHostRip;
+    /** Current VMX_VMCS_HOST_RSP value (only used in HMR0A.asm). */
+    uint64_t                    uHostRsp;
     /** @} */
 
     /** @name Host-virtual address of VMCS and related data structures.
@@ -949,6 +941,17 @@ AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,      0x30);
 AssertCompileSize(VMXRESTOREHOST, 64);
 AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 
+/**
+ * VMX StartVM function.
+ *
+ * @returns VBox status code (no informational stuff).
+ * @param   pVmcsInfo   Pointer to the VMCS info (for cached host RIP and RSP).
+ * @param   pVCpu       Pointer to the cross context per-CPU structure.
+ * @param   fResume     Whether to use VMRESUME (true) or VMLAUNCH (false).
+ */
+typedef DECLCALLBACKTYPE(int, FNHMVMXSTARTVM,(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume));
+/** Pointer to a VMX StartVM function. */
+typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
 /** @} */
 
 /**
@@ -1334,12 +1337,6 @@ typedef struct HMR0PERVCPU
             uint32_t                    fRestoreHostFlags;
             /** Alignment. */
             uint32_t                    u32Alignment0;
-            /** Current VMX_VMCS_HOST_RIP value (only used in HMR0A.asm).
-             *  @todo move to VMXVMCSINFO */
-            uint64_t                    uHostRIP;
-            /** Current VMX_VMCS_HOST_RSP value (only used in HMR0A.asm).
-             *  @todo move to VMXVMCSINFO */
-            uint64_t                    uHostRSP;
             /** The host-state restoration structure. */
             VMXRESTOREHOST              RestoreHost;
             /** @} */
@@ -1447,38 +1444,38 @@ DECLASM(int)                VMXRestoreHostState(uint32_t fRestoreHostFlags, PVMX
  *
  * @{
  */
-DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
-DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit(PVMCC pVM, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
+DECLASM(int) hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume);
 /** @} */
 
 /** @} */

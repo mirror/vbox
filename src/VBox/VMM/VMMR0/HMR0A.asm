@@ -698,7 +698,7 @@ ENDPROC VMXDispatchHostNmi
 ; Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ;
 ; @returns VBox status code
-; @param    NULL       msc:rcx, gcc:rdi       The cross context VM structure. (unused, passing NULL now)
+; @param    pVmcsInfo  msc:rcx, gcc:rdi       Pointer to the VMCS info (for cached host RIP and RSP).
 ; @param    pVCpu      msc:rdx, gcc:rsi       The cross context virtual CPU structure of the calling EMT.
 ; @param    fResume    msc:r8l, gcc:dl        Whether to use vmlauch/vmresume.
 ;
@@ -770,13 +770,15 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
         SEH64_END_PROLOGUE
 
         ;
-        ; Unify the input parameter registers: rsi=pVCpu, bl=fResume, rdi=&pVCpu->cpum.GstCtx;
+        ; Unify the input parameter registers: r9=pVmcsInfo, rsi=pVCpu, bl=fResume, rdi=&pVCpu->cpum.GstCtx;
         ;
  %ifdef ASM_CALL64_GCC
-        mov     ebx, edx        ; fResume
+        mov     r9,  rdi                ; pVmcsInfo
+        mov     ebx, edx                ; fResume
  %else
-        mov     rsi, rdx        ; pVCpu
-        mov     ebx, r8d        ; fResume
+        mov     r9,  rcx                ; pVmcsInfo
+        mov     rsi, rdx                ; pVCpu
+        mov     ebx, r8d                ; fResume
  %endif
         lea     rdi, [rsi + VMCPU.cpum.GstCtx]
         mov     [rbp + frm_pGstCtx], rdi
@@ -902,10 +904,10 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
         ; The vmwrite isn't quite for free (on an 10980xe at least), thus we check if anything changed
         ; before writing here.
         lea     rcx, [NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1)) wrt rip]
-        cmp     rcx, [rsi + GVMCPU.hmr0 + HMR0PERVCPU.u + HMR0CPUVMX.uHostRIP]
+        cmp     rcx, [r9 + VMXVMCSINFO.uHostRip]
         jne     .write_host_rip
 .wrote_host_rip:
-        cmp     rsp, [rsi + GVMCPU.hmr0 + HMR0PERVCPU.u + HMR0CPUVMX.uHostRSP]
+        cmp     rsp, [r9 + VMXVMCSINFO.uHostRsp]
         jne     .write_host_rsp
 .wrote_host_rsp:
 
@@ -966,7 +968,7 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
 ; Put these two outside the normal code path as they should rarely change.
 ALIGNCODE(8)
 .write_host_rip:
-        mov     [rsi + GVMCPU.hmr0 + HMR0PERVCPU.u + HMR0CPUVMX.uHostRIP], rcx
+        mov     [r9 + VMXVMCSINFO.uHostRip], rcx
         mov     eax, VMX_VMCS_HOST_RIP                      ;; @todo It is only strictly necessary to write VMX_VMCS_HOST_RIP when
         vmwrite rax, rcx                                    ;;       the VMXVMCSINFO::pfnStartVM function changes (eventually
  %ifdef VBOX_STRICT                                         ;;       take the Windows/SSE stuff into account then)...
@@ -976,7 +978,7 @@ ALIGNCODE(8)
 
 ALIGNCODE(8)
 .write_host_rsp:
-        mov     [rsi + GVMCPU.hmr0 + HMR0PERVCPU.u + HMR0CPUVMX.uHostRSP], rsp
+        mov     [r9 + VMXVMCSINFO.uHostRsp], rsp
         mov     eax, VMX_VMCS_HOST_RSP
         vmwrite rax, rsp
  %ifdef VBOX_STRICT

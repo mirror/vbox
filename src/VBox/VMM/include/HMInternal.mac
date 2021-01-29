@@ -65,6 +65,8 @@ struc VMXVMCSINFO
     .u64VmcsLinkPtr                 resq    1
     .u64Cr0Mask                     resq    1
     .u64Cr4Mask                     resq    1
+    .uHostRip                       resq    1
+    .uHostRsp                       resq    1
 
     .pvVmcs                         RTR0PTR_RES 1
     .pvShadowVmcs                   RTR0PTR_RES 1
@@ -210,8 +212,6 @@ struc HMR0CPUVMX
     alignb 4
     .fRestoreHostFlags              resd    1
     alignb 8
-    .uHostRIP                       resq    1
-    .uHostRSP                       resq    1
     .RestoreHost                    resb    VMXRESTOREHOST_size
 endstruc
 

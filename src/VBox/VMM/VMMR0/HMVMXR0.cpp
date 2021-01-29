@@ -4220,10 +4220,10 @@ static void hmR0VmxUpdateStartVmFunction(PVMCPUCC pVCpu)
 /**
  * Selector FNHMSVMVMRUN implementation.
  */
-static DECLCALLBACK(int) hmR0VmxStartVmSelector(PVMCC pVM, PVMCPUCC pVCpu, bool fResume)
+static DECLCALLBACK(int) hmR0VmxStartVmSelector(PVMXVMCSINFO pVmcsInfo, PVMCPUCC pVCpu, bool fResume)
 {
     hmR0VmxUpdateStartVmFunction(pVCpu);
-    return pVCpu->hmr0.s.vmx.pfnStartVm(pVM, pVCpu, fResume);
+    return pVCpu->hmr0.s.vmx.pfnStartVm(pVmcsInfo, pVCpu, fResume);
 }
 
 
@@ -6880,8 +6880,9 @@ DECLINLINE(int) hmR0VmxRunGuest(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
     pVCpu->cpum.GstCtx.fExtrn |= HMVMX_CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_HM;
 
     /** @todo Add stats for VMRESUME vs VMLAUNCH. */
-    bool const fResumeVM = RT_BOOL(pVmxTransient->pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
-    int rc = pVCpu->hmr0.s.vmx.pfnStartVm(NULL /*pVCpu->CTX_SUFF(pVM) - unused*/, pVCpu, fResumeVM);
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    bool const   fResumeVM = RT_BOOL(pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
+    int rc = pVCpu->hmr0.s.vmx.pfnStartVm(pVmcsInfo, pVCpu, fResumeVM);
     AssertMsg(rc <= VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;
 }
