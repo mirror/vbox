@@ -131,7 +131,7 @@ int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhy
  * @param   pPciDev     The PCI device structure. Cannot be NULL.
  * @param   GCPhys      The guest-physical address to write.
  * @param   pvBuf       The data to write.
- * @param   cbRead      How many bytes to write.
+ * @param   cbWrite     How many bytes to write.
  * @param   fFlags      Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
  *
  * @thread  Any.

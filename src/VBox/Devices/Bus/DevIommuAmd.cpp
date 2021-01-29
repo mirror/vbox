@@ -2639,8 +2639,6 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
  * @param   fAccess         The access permissions (IOMMU_IO_PERM_XXX). This is the
  *                          permissions for the access being made.
  * @param   pDte            The device table entry.
- * @param   fRootPage       Whether to check the root of the access (required only
- *                          for the first page of an access).
  * @param   enmOp           The IOMMU operation being performed.
  * @param   pWalkResult     Where to store the results of the I/O page walk. This is
  *                          only updated when VINF_SUCCESS is returned.
