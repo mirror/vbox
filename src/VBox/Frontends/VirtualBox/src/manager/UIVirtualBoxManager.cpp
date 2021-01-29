@@ -704,12 +704,13 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     /* Make sure separate dialogs are closed when corresponding tools are opened: */
     switch (m_pWidget->toolsType())
     {
-        case UIToolType_Extensions:  sltCloseExtensionPackManagerWindow(); break;
-        case UIToolType_Media:       sltCloseVirtualMediumManagerWindow(); break;
-        case UIToolType_Network:     sltCloseNetworkManagerWindow(); break;
-        case UIToolType_Cloud:       sltCloseCloudProfileManagerWindow(); break;
-        case UIToolType_Logs:        sltCloseLogViewerWindow(); break;
-        case UIToolType_Performance: sltClosePerformanceMonitorWindow(); break;
+        case UIToolType_Extensions:   sltCloseExtensionPackManagerWindow(); break;
+        case UIToolType_Media:        sltCloseVirtualMediumManagerWindow(); break;
+        case UIToolType_Network:      sltCloseNetworkManagerWindow(); break;
+        case UIToolType_Cloud:        sltCloseCloudProfileManagerWindow(); break;
+        case UIToolType_CloudConsole: sltCloseCloudConsoleManagerWindow(); break;
+        case UIToolType_Logs:         sltCloseLogViewerWindow(); break;
+        case UIToolType_Performance:  sltClosePerformanceMonitorWindow(); break;
         default: break;
     }
 }
@@ -858,6 +859,13 @@ void UIVirtualBoxManager::sltCloseCloudProfileManagerWindow()
 
 void UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow()
 {
+    /* First check if instance of widget opened the embedded way: */
+    if (m_pWidget->isGlobalToolOpened(UIToolType_CloudConsole))
+    {
+        m_pWidget->setToolsType(UIToolType_Welcome);
+        m_pWidget->closeGlobalTool(UIToolType_CloudConsole);
+    }
+
     /* Create instance if not yet created: */
     if (!m_pManagerCloudConsole)
     {
