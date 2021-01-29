@@ -1319,13 +1319,13 @@ typedef struct PDMIOMMUREGR0
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
-     * @param   uDevId      The device identifier (bus, device, function).
+     * @param   uDeviceId   The device identifier (bus, device, function).
      * @param   pMsiIn      The source MSI.
      * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @thread  Any.
      */
-    DECLR0CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
+    DECLR0CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
@@ -1389,13 +1389,13 @@ typedef struct PDMIOMMUREGRC
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
-     * @param   uDevId      The device identifier (bus, device, function).
+     * @param   uDeviceId   The device identifier (bus, device, function).
      * @param   pMsiIn      The source MSI.
      * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @thread  Any.
      */
-    DECLRCCALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
+    DECLRCCALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
@@ -1459,13 +1459,13 @@ typedef struct PDMIOMMUREGR3
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
-     * @param   uDevId      The device identifier (bus, device, function).
+     * @param   uDeviceId   The device identifier (bus, device, function).
      * @param   pMsiIn      The source MSI.
      * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
+    DECLR3CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
@@ -1833,13 +1833,13 @@ typedef struct PDMIOAPICHLP
      *
      * @returns status code.
      * @param   pDevIns     Device instance of the IOAPIC.
-     * @param   uDevId      The device ID (bus, device, function) for the source MSI.
+     * @param   uDeviceId   The device identifier (bus, device, function).
      * @param   pMsiIn      The source MSI.
      * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @sa      iommuAmdDeviceMsiRemap().
      */
-    DECLCALLBACKMEMBER(int, pfnIommuMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevIt, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
+    DECLCALLBACKMEMBER(int, pfnIommuMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;

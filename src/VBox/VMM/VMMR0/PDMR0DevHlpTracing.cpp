@@ -312,45 +312,9 @@ pdmR0DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PGVM        pGVM         = pDevIns->Internal.s.pGVM;
-    PPDMIOMMUR0 pIommu       = &pGVM->pdmr0.s.aIommus[0];
-    PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
-        Assert(idxBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
-        PPDMPCIBUSR0 pBus = &pGVM->pdmr0.s.aPciBuses[idxBus];
-        uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = VINF_SUCCESS;
-        while (cbRead > 0)
-        {
-            RTGCPHYS GCPhysOut;
-            size_t   cbContig;
-            rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut, &cbContig);
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Handle strict return codes from PGMPhysRead. */
-                rc = pDevIns->pHlpR0->pfnPhysRead(pDevIns, GCPhysOut, pvBuf, cbRead, fFlags);
-                if (RT_SUCCESS(rc))
-                {
-                    cbRead -= cbContig;
-                    pvBuf   = (void *)((uintptr_t)pvBuf + cbContig);
-                    GCPhys += cbContig;
-                }
-                else
-                    break;
-            }
-            else
-            {
-                Log(("pdmR0DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
-                     GCPhys, cbRead, rc));
-                break;
-            }
-        }
+    int rc = pdmIommuMemAccessRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead, fFlags);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
-    }
 #endif
 
     return pDevIns->pHlpR0->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead, fFlags);
@@ -382,44 +346,9 @@ pdmR0DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PGVM        pGVM          = pDevIns->Internal.s.pGVM;
-    PPDMIOMMUR0 pIommu        = &pGVM->pdmr0.s.aIommus[0];
-    PPDMDEVINS   pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
-        Assert(idxBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
-        PPDMPCIBUSR0 pBus = &pGVM->pdmr0.s.aPciBuses[idxBus];
-        uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = VINF_SUCCESS;
-        while (cbWrite > 0)
-        {
-            RTGCPHYS GCPhysOut;
-            size_t   cbContig;
-            rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut, &cbContig);
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Handle strict return codes from PGMPhysWrite. */
-                rc = pDevIns->pHlpR0->pfnPhysWrite(pDevIns, GCPhysOut, pvBuf, cbWrite, fFlags);
-                if (RT_SUCCESS(rc))
-                {
-                    cbWrite -= cbContig;
-                    pvBuf    = (const void *)((uintptr_t)pvBuf + cbContig);
-                    GCPhys  += cbContig;
-                }
-                else
-                    break;
-            }
-            else
-            {
-                LogFunc(("IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId, GCPhys, cbWrite, rc));
-                break;
-            }
-        }
+    int rc = pdmIommuMemAccessWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, fFlags);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
-    }
 #endif
 
     return pDevIns->pHlpR0->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite, fFlags);

@@ -1820,46 +1820,9 @@ pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
-    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
-        Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
-        PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
-        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = VINF_SUCCESS;
-        while (cbRead > 0)
-        {
-            RTGCPHYS GCPhysOut;
-            size_t   cbContig;
-            rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut, &cbContig);
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Handle strict return codes from PGMPhysRead. */
-                rc = pDevIns->pHlpR3->pfnPhysRead(pDevIns, GCPhysOut, pvBuf, cbContig, fFlags);
-                if (RT_SUCCESS(rc))
-                {
-                    cbRead -= cbContig;
-                    pvBuf   = (void *)((uintptr_t)pvBuf + cbContig);
-                    GCPhys += cbContig;
-                }
-                else
-                    break;
-            }
-            else
-            {
-                AssertMsgFailed(("Here\n"));
-                Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
-                     cbRead, rc));
-                break;
-            }
-        }
+    int rc = pdmIommuMemAccessRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead, fFlags);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
-    }
 #endif
 
     return pDevIns->pHlpR3->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead, fFlags);
@@ -1891,45 +1854,9 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
-    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
-        Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
-        PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
-        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = VINF_SUCCESS;
-        while (cbWrite > 0)
-        {
-            RTGCPHYS GCPhysOut;
-            size_t   cbContig;
-            rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut, &cbContig);
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Handle strict return codes from PGMPhysWrite. */
-                rc = pDevIns->pHlpR3->pfnPhysWrite(pDevIns, GCPhysOut, pvBuf, cbContig, fFlags);
-                if (RT_SUCCESS(rc))
-                {
-                    cbWrite -= cbContig;
-                    pvBuf    = (const void *)((uintptr_t)pvBuf + cbContig);
-                    GCPhys  += cbContig;
-                }
-                else
-                    break;
-            }
-            else
-            {
-                Log(("pdmR3DevHlp_PCIPhysWrite: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
-                     cbWrite, rc));
-                break;
-            }
-        }
+    int rc = pdmIommuMemAccessWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, fFlags);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
-    }
 #endif
 
     return pDevIns->pHlpR3->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite, fFlags);
@@ -1958,32 +1885,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysGCPhys2CCPtr(PPDMDEVINS pDevIns, PPD
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
-    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
-        Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
-        PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
-        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        RTGCPHYS GCPhysOut;
-        size_t cbContig;
-        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys & X86_PAGE_BASE_MASK, X86_PAGE_SIZE, PDMIOMMU_MEM_F_WRITE,
-                                      &GCPhysOut, &cbContig);
-        if (RT_SUCCESS(rc))
-        {
-            GCPhys = GCPhysOut;
-            Assert(cbContig == X86_PAGE_SIZE);
-        }
-        else
-        {
-            LogFunc(("IOMMU translation failed. uDevId=%#x GCPhys=%#RGp rc=%Rrc\n", uDevId, GCPhys, rc));
-            return rc;
-        }
-    }
+    int rc = pdmIommuMemAccessWriteCCPtr(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+        return rc;
 #endif
 
     return pDevIns->pHlpR3->pfnPhysGCPhys2CCPtr(pDevIns, GCPhys, fFlags, ppv, pLock);
@@ -2012,32 +1916,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDev
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
-    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
-        Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
-        PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
-        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        RTGCPHYS GCPhysOut;
-        size_t cbContig;
-        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDevId, GCPhys & X86_PAGE_BASE_MASK, X86_PAGE_SIZE, PDMIOMMU_MEM_F_READ,
-                                      &GCPhysOut, &cbContig);
-        if (RT_SUCCESS(rc))
-        {
-            GCPhys = GCPhysOut;
-            Assert(cbContig == X86_PAGE_SIZE);
-        }
-        else
-        {
-            LogFunc(("IOMMU translation failed. uDevId=%#x GCPhys=%#RGp rc=%Rrc\n", uDevId, GCPhys, rc));
-            return rc;
-        }
-    }
+    int rc = pdmIommuMemAccessReadCCPtr(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+        return rc;
 #endif
 
     return pDevIns->pHlpR3->pfnPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhys, fFlags, ppv, pLock);
@@ -2067,48 +1948,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtr(PPDMDEVINS pDevIns,
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
-    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
-        Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
-        PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
-
-        /* Allocate space of translated addresses. */
-        size_t const cbIovas  = cPages * sizeof(uint64_t);
-        PRTGCPHYS paGCPhysSpa = (PRTGCPHYS)RTMemAllocZ(cbIovas);
-        if (paGCPhysSpa)
-        { /* likely */ }
-        else
-        {
-            LogFunc(("caller='%s'/%d: returns %Rrc - Failed to alloc %zu bytes for IOVA addresses\n",
-                     pDevIns->pReg->szName, pDevIns->iInstance, VERR_NO_MEMORY, cbIovas));
-            return VERR_NO_MEMORY;
-        }
-
-        /* Ask the IOMMU for corresponding translated physical addresses. */
-        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        AssertCompile(sizeof(RTGCPHYS) == sizeof(uint64_t));
-        int rc = pIommu->pfnMemBulkAccess(pDevInsIommu, uDevId, cPages, (uint64_t const *)paGCPhysPages, PDMIOMMU_MEM_F_WRITE,
-                                          paGCPhysSpa);
-        if (RT_SUCCESS(rc))
-        {
-            /* Perform the bulk mapping but with the translated addresses. */
-            rc = pDevIns->pHlpR3->pfnPhysBulkGCPhys2CCPtr(pDevIns, cPages, paGCPhysSpa, fFlags, papvPages, paLocks);
-            if (RT_FAILURE(rc))
-                LogFunc(("Bulk mapping of addresses failed. cPages=%zu fFlags=%#x rc=%Rrc\n", rc, cPages, fFlags));
-        }
-        else
-            LogFunc(("IOMMU bulk translation failed. uDevId=%#x cPages=%zu rc=%Rrc\n", uDevId, cPages, rc));
-
-        /* Free the translated addresses and return result of the address translation or mapping operation. */
-        RTMemFree(paGCPhysSpa);
+    int rc = pdmIommuMemAccessBulkWriteCCPtr(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
-    }
 #endif
 
     return pDevIns->pHlpR3->pfnPhysBulkGCPhys2CCPtr(pDevIns, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
@@ -2138,48 +1980,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtrReadOnly(PPDMDEVINS 
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
-    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
-        Assert(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
-        PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
-
-        /* Allocate space of translated addresses. */
-        size_t const cbIovas  = cPages * sizeof(uint64_t);
-        PRTGCPHYS paGCPhysSpa = (PRTGCPHYS)RTMemAllocZ(cbIovas);
-        if (paGCPhysSpa)
-        { /* likely */ }
-        else
-        {
-            LogFunc(("caller='%s'/%d: returns %Rrc - Failed to alloc %zu bytes for IOVA addresses\n",
-                     pDevIns->pReg->szName, pDevIns->iInstance, VERR_NO_MEMORY, cbIovas));
-            return VERR_NO_MEMORY;
-        }
-
-        /* Ask the IOMMU for corresponding translated physical addresses. */
-        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        AssertCompile(sizeof(RTGCPHYS) == sizeof(uint64_t));
-        int rc = pIommu->pfnMemBulkAccess(pDevInsIommu, uDevId, cPages, (uint64_t const *)paGCPhysPages, PDMIOMMU_MEM_F_READ,
-                                          paGCPhysSpa);
-        if (RT_SUCCESS(rc))
-        {
-            /* Perform the bulk mapping but with the translated addresses. */
-            rc = pDevIns->pHlpR3->pfnPhysBulkGCPhys2CCPtrReadOnly(pDevIns, cPages, paGCPhysSpa, fFlags, papvPages, paLocks);
-            if (RT_FAILURE(rc))
-                LogFunc(("Bulk mapping of addresses failed. cPages=%zu fFlags=%#x rc=%Rrc\n", rc, cPages, fFlags));
-        }
-        else
-            LogFunc(("IOMMU bulk translation failed. uDevId=%#x cPages=%zu rc=%Rrc\n", uDevId, cPages, rc));
-
-        /* Free the translated addresses and return result of the address translation or mapping operation. */
-        RTMemFree(paGCPhysSpa);
+    int rc = pdmIommuMemAccessBulkReadCCPtr(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
-    }
 #endif
 
     return pDevIns->pHlpR3->pfnPhysBulkGCPhys2CCPtrReadOnly(pDevIns, cPages, paGCPhysPages, fFlags, papvPages, paLocks);

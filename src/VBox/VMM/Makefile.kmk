@@ -192,6 +192,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/PDMAllCritSect.cpp \
 	VMMAll/PDMAllCritSectRw.cpp \
 	VMMAll/PDMAllCritSectBoth.cpp \
+	$(if-expr defined(VBOX_WITH_IOMMU_AMD), VMMAll/PDMAllIommu.cpp,) \
 	VMMAll/PDMAllQueue.cpp \
 	VMMAll/PDMAllTask.cpp \
 	VMMAll/PGMAll.cpp \
@@ -537,6 +538,7 @@ VMMR0_SOURCES   = \
 	VMMAll/PDMAllCritSect.cpp \
 	VMMAll/PDMAllCritSectRw.cpp \
 	VMMAll/PDMAllCritSectBoth.cpp \
+	$(if-expr defined(VBOX_WITH_IOMMU_AMD), VMMAll/PDMAllIommu.cpp,) \
 	VMMAll/PDMAllQueue.cpp \
 	VMMAll/PDMAllTask.cpp \
 	VMMAll/PGMAll.cpp \

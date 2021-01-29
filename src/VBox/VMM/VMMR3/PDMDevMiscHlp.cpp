@@ -141,31 +141,20 @@ static DECLCALLBACK(void) pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 /** @interface_method_impl{PDMIOAPICHLP,pfnIommuMsiRemap} */
-static DECLCALLBACK(int) pdmR3IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+static DECLCALLBACK(int) pdmR3IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3IoApicHlp_IommuRemapMsi: caller='%s'/%d: pMsiIn=(%#RX64, %#RU32)\n", pDevIns->pReg->szName,
              pDevIns->iInstance, pMsiIn->Addr.u64, pMsiIn->Data.u32));
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PVM        pVM          = pDevIns->Internal.s.pVMR3;
-    PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
-    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        int rc = pIommu->pfnMsiRemap(pDevInsIommu, uDevId, pMsiIn, pMsiOut);
-        if (RT_SUCCESS(rc))
-            return rc;
-
-        Log(("pdmR3IoApicHlp_IommuRemapMsi: IOMMU MSI remap failed. uDevId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n",
-             uDevId, pMsiIn->Addr.u64, pMsiIn->Data.u32, rc));
+    int rc = pdmIommuMsiRemap(pDevIns, uDeviceId, pMsiIn, pMsiOut);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
-    }
 #else
-    RT_NOREF(pDevIns, uDevId);
+    RT_NOREF(pDevIns, uDeviceId);
 #endif
+
     *pMsiOut = *pMsiIn;
     return VINF_SUCCESS;
 }

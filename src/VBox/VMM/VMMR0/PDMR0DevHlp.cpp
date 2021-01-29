@@ -143,53 +143,17 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV 
     { /* likely */ }
     else
     {
-        Log(("pdmRCDevHlp_PCIPhysRead: caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbRead=%#zx\n",
-             pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbRead));
+        LogFunc(("caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbRead=%#zx\n", pDevIns, pDevIns->iInstance,
+                 VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbRead));
         memset(pvBuf, 0xff, cbRead);
         return VERR_PDM_NOT_PCI_BUS_MASTER;
     }
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PGVM        pGVM         = pDevIns->Internal.s.pGVM;
-    PPDMIOMMUR0 pIommu       = &pGVM->pdmr0.s.aIommus[0];
-    PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
-        Assert(idxBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
-        PPDMPCIBUSR0 pBus = &pGVM->pdmr0.s.aPciBuses[idxBus];
-        uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = VINF_SUCCESS;
-        while (cbRead > 0)
-        {
-            RTGCPHYS GCPhysOut;
-            size_t   cbContig;
-            rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut, &cbContig);
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Handle strict return codes from PGMPhysRead. */
-                rc = pDevIns->pHlpR0->pfnPhysRead(pDevIns, GCPhysOut, pvBuf, cbRead, fFlags);
-                if (RT_SUCCESS(rc))
-                {
-                    cbRead -= cbContig;
-                    pvBuf   = (void *)((uintptr_t)pvBuf + cbContig);
-                    GCPhys += cbContig;
-                }
-                else
-                    break;
-            }
-            else
-            {
-                Log(("pdmR0DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
-                     GCPhys, cbRead, rc));
-                break;
-            }
-        }
+    int rc = pdmIommuMemAccessRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead, fFlags);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
-    }
 #endif
 
     return pDevIns->pHlpR0->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead, fFlags);
@@ -214,52 +178,16 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV
     { /* likely */ }
     else
     {
-        Log(("pdmRCDevHlp_PCIPhysWrite: caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbWrite=%#zx\n",
-             pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbWrite));
+        LogFunc(("caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbWrite=%#zx\n", pDevIns, pDevIns->iInstance,
+                 VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbWrite));
         return VERR_PDM_NOT_PCI_BUS_MASTER;
     }
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PGVM        pGVM         = pDevIns->Internal.s.pGVM;
-    PPDMIOMMUR0 pIommu       = &pGVM->pdmr0.s.aIommus[0];
-    PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
-        Assert(idxBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
-        PPDMPCIBUSR0 pBus = &pGVM->pdmr0.s.aPciBuses[idxBus];
-        uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
-        int rc = VINF_SUCCESS;
-        while (cbWrite > 0)
-        {
-            RTGCPHYS GCPhysOut;
-            size_t   cbContig;
-            rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut, &cbContig);
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Handle strict return codes from PGMPhysWrite. */
-                rc = pDevIns->pHlpR0->pfnPhysWrite(pDevIns, GCPhysOut, pvBuf, cbWrite, fFlags);
-                if (RT_SUCCESS(rc))
-                {
-                    cbWrite -= cbContig;
-                    pvBuf    = (const void *)((uintptr_t)pvBuf + cbContig);
-                    GCPhys  += cbContig;
-                }
-                else
-                    break;
-            }
-            else
-            {
-                Log(("pdmR0DevHlp_PCIPhysWrite: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
-                     GCPhys, cbWrite, rc));
-                break;
-            }
-        }
+    int rc = pdmIommuMemAccessWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, fFlags);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
-    }
 #endif
 
     return pDevIns->pHlpR0->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite, fFlags);
@@ -1587,31 +1515,18 @@ static DECLCALLBACK(void) pdmR0IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 /** @interface_method_impl{PDMIOAPICHLP,pfnIommuMsiRemap} */
-static DECLCALLBACK(int) pdmR0IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+static DECLCALLBACK(int) pdmR0IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0IoApicHlp_IommuMsiRemap: caller='%s'/%d: pMsiIn=(%#RX64, %#RU32)\n", pDevIns->pReg->szName,
              pDevIns->iInstance, pMsiIn->Addr.u64, pMsiIn->Data.u32));
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /** @todo IOMMU: Optimize/re-organize things here later. */
-    PGVM        pGVM         = pDevIns->Internal.s.pGVM;
-    PPDMIOMMUR0 pIommu       = &pGVM->pdmr0.s.aIommus[0];
-    PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        AssertMsgReturn(VALID_PTR(pIommu->pfnMsiRemap),
-                        ("pdmR0IoApicHlp_IommuMsiRemap: pfnMsiRemap invalid!\n"), VERR_INVALID_POINTER);
-        int rc = pIommu->pfnMsiRemap(pDevInsIommu, uDevId, pMsiIn, pMsiOut);
-        if (RT_SUCCESS(rc))
-            return rc;
-
-        Log(("pdmR0IoApicHlp_IommuMsiRemap: IOMMU MSI remap failed. uDevId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n",
-             uDevId, pMsiIn->Addr.u64, pMsiIn->Data.u32, rc));
-    }
+    int rc = pdmIommuMsiRemap(pDevIns, uDeviceId, pMsiIn, pMsiOut);
+    if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
+        return rc;
 #else
-    RT_NOREF(pDevIns, uDevId);
+    RT_NOREF(pDevIns, uDeviceId);
 #endif
 
     *pMsiOut = *pMsiIn;

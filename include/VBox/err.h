@@ -3052,6 +3052,8 @@
 #define VERR_IOMMU_CMD_INVALID_FORMAT               (-7212)
 /** Command hardware failure. */
 #define VERR_IOMMU_CMD_HW_ERROR                     (-7213)
+/** IOMMU device is not present. */
+#define VERR_IOMMU_NOT_PRESENT                      (-7214)
 /** @} */
 
 /* SED-END */

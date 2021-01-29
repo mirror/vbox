@@ -108,10 +108,6 @@ typedef struct PDMLUN *PPDMLUN;
 /** Pointer to a pointer to a PDM Logical Unit. */
 typedef PPDMLUN *PPPDMLUN;
 
-/** Pointer to a PDM PCI Bus instance. */
-typedef struct PDMPCIBUS *PPDMPCIBUS;
-/** Pointer to a PDM IOMMU instance. */
-typedef struct PDMIOMMU *PPDMIOMMU;
 /** Pointer to a DMAC instance. */
 typedef struct PDMDMAC *PPDMDMAC;
 /** Pointer to a RTC instance. */
@@ -706,6 +702,10 @@ typedef struct PDMIOMMU
     /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
     DECLR3CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 } PDMIOMMU;
+/** Pointer to a PDM IOMMU instance. */
+typedef PDMIOMMU *PPDMIOMMU;
+/** Pointer to a const PDM IOMMU instance. */
+typedef const PDMIOMMU *PCPDMIOMMU;
 
 
 /**
@@ -867,6 +867,10 @@ typedef struct PDMPCIBUS
     DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnConfigRead,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
                                                       uint32_t uAddress, unsigned cb, uint32_t *pu32Value));
 } PDMPCIBUS;
+/** Pointer to a PDM PCI Bus instance. */
+typedef PDMPCIBUS *PPDMPCIBUS;
+/** Pointer to a const PDM PCI Bus instance. */
+typedef const PDMPCIBUS *PCPDMPCIBUS;
 
 
 /**
@@ -884,6 +888,8 @@ typedef struct PDMPCIBUSR0
 } PDMPCIBUSR0;
 /** Pointer to the ring-0 PCI bus data. */
 typedef PDMPCIBUSR0 *PPDMPCIBUSR0;
+/** Pointer to the const ring-0 PCI bus data. */
+typedef const PDMPCIBUSR0 *PCPDMPCIBUSR0;
 
 
 #ifdef IN_RING3
@@ -1656,6 +1662,16 @@ int         pdmR3BlkCacheResume(PVM pVM);
 void        pdmLock(PVMCC pVM);
 int         pdmLockEx(PVMCC pVM, int rc);
 void        pdmUnlock(PVMCC pVM);
+
+#ifdef VBOX_WITH_IOMMU_AMD
+int         pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
+int         pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
+int         pdmIommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv, PPGMPAGEMAPLOCK pLock);
+int         pdmIommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv, PPGMPAGEMAPLOCK pLock);
+int         pdmIommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages, PCRTGCPHYS paGCPhysPages, uint32_t fFlags, const void **papvPages, PPGMPAGEMAPLOCK paLocks);
+int         pdmIommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages, PCRTGCPHYS paGCPhysPages, uint32_t fFlags, void **papvPages, PPGMPAGEMAPLOCK paLocks);
+int         pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut);
+#endif
 
 #if defined(IN_RING3) || defined(IN_RING0)
 void        pdmCritSectRwLeaveSharedQueued(PPDMCRITSECTRW pThis);
