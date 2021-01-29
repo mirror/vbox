@@ -966,27 +966,20 @@ typedef struct HMCPU
 {
     /** Set when the TLB has been checked until we return from the world switch. */
     bool volatile               fCheckedTLBFlush;
-    /** Set when we're using VT-x or AMD-V at that moment. */
+    /** Set when we're using VT-x or AMD-V at that moment.
+     * @todo r=bird: Misleading description.  For AMD-V this will be set the first
+     *       time HMCanExecuteGuest() is called and only cleared again by
+     *       HMR3ResetCpu().  For VT-x it will be set by HMCanExecuteGuest when we
+     *       can execute something in VT-x mode, and cleared if we cannot.
+     *
+     *       The field is much more about recording the last HMCanExecuteGuest
+     *       return value than anything about any "moment". */
     bool                        fActive;
-    /** Whether we've completed the inner HM leave function. */
-    bool                        fLeaveDone;
-    /** Whether we're using the hyper DR7 or guest DR7. */
-    bool                        fUsingHyperDR7;
 
-    /** Set if we need to flush the TLB during the world switch. */
-    bool                        fForceTLBFlush;
     /** Whether we should use the debug loop because of single stepping or special
      *  debug breakpoints / events are armed. */
     bool                        fUseDebugLoop;
-    /** Whether we are currently executing in the debug loop.
-     *  Mainly for assertions. */
-    bool                        fUsingDebugLoop;
-    /** Set if we using the debug loop and wish to intercept RDTSC. */
-    bool                        fDebugWantRdTscExit;
 
-    /** Set if XCR0 needs to be saved/restored when entering/exiting guest code
-     *  execution. */
-    bool                        fLoadSaveGuestXcr0;
     /** Whether \#UD needs to be intercepted (required by certain GIM providers). */
     bool                        fGIMTrapXcptUD;
     /** Whether \#GP needs to be intercepted for mesa driver workaround. */
@@ -994,9 +987,7 @@ typedef struct HMCPU
     /** Whether we're executing a single instruction. */
     bool                        fSingleInstruction;
 
-    /** Set if we need to clear the trap flag because of single stepping. */
-    bool                        fClearTrapFlag;
-    bool                        afAlignment0[3];
+    bool                        afAlignment0[2];
 
     /** An additional error code used for some gurus. */
     uint32_t                    u32HMError;
@@ -1095,7 +1086,8 @@ typedef struct HMCPU
     /** Event injection state. */
     HMEVENT                 Event;
 
-    /** Current shadow paging mode for updating CR4. */
+    /** Current shadow paging mode for updating CR4.
+     * @todo move later (@bugref{9217}).  */
     PGMMODE                 enmShadowMode;
     uint32_t                u32TemporaryPadding;
 
@@ -1256,7 +1248,6 @@ typedef struct HMCPU
 /** Pointer to HM VMCPU instance data. */
 typedef HMCPU *PHMCPU;
 AssertCompileMemberAlignment(HMCPU, fCheckedTLBFlush,  4);
-AssertCompileMemberAlignment(HMCPU, fForceTLBFlush,    4);
 AssertCompileMemberAlignment(HMCPU, fCtxChanged,       8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx, 8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.VmcsInfo,       8);
@@ -1282,7 +1273,24 @@ typedef struct HMR0PERVCPU
     /** Current ASID in use by the VM. */
     uint32_t                    uCurrentAsid;
 
-    uint32_t                    u32Padding0;
+    /** Set if we need to flush the TLB during the world switch. */
+    bool                        fForceTLBFlush;
+    /** Whether we've completed the inner HM leave function. */
+    bool                        fLeaveDone;
+    /** Whether we're using the hyper DR7 or guest DR7. */
+    bool                        fUsingHyperDR7;
+    /** Whether we are currently executing in the debug loop.
+     *  Mainly for assertions. */
+    bool                        fUsingDebugLoop;
+    /** Set if we using the debug loop and wish to intercept RDTSC. */
+    bool                        fDebugWantRdTscExit;
+    /** Set if XCR0 needs to be saved/restored when entering/exiting guest code
+     *  execution. */
+    bool                        fLoadSaveGuestXcr0;
+    /** Set if we need to clear the trap flag because of single stepping. */
+    bool                        fClearTrapFlag;
+
+    bool                        afPadding1[5];
 
     union HM_NAMELESS_UNION_TAG(HMR0CPUUNION) /* no tag! */
     {
@@ -1343,6 +1351,7 @@ typedef struct HMR0PERVCPU
 /** Pointer to HM ring-0 VMCPU instance data. */
 typedef HMR0PERVCPU *PHMR0PERVCPU;
 AssertCompileMemberAlignment(HMR0PERVCPU, cWorldSwitchExits, 4);
+AssertCompileMemberAlignment(HMR0PERVCPU, fForceTLBFlush,    4);
 AssertCompileMemberAlignment(HMR0PERVCPU, HM_UNION_NM(u.) vmx.RestoreHost,    8);
 
 

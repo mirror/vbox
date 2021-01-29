@@ -2987,7 +2987,7 @@ static void hmR0VmxFlushTaggedTlbNone(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
     pVCpu->hmr0.s.idLastCpu     = pHostCpu->idCpu;
     pVCpu->hmr0.s.cTlbFlushes   = pHostCpu->cTlbFlushes;
-    pVCpu->hm.s.fForceTLBFlush  = false;
+    pVCpu->hmr0.s.fForceTLBFlush  = false;
     return;
 }
 
@@ -3088,7 +3088,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
     }
 
 
-    pVCpu->hm.s.fForceTLBFlush = false;
+    pVCpu->hmr0.s.fForceTLBFlush = false;
     HMVMX_UPDATE_FLUSH_SKIPPED_STAT();
 
     Assert(pVCpu->hmr0.s.idLastCpu == pHostCpu->idCpu);
@@ -3133,21 +3133,21 @@ static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMXV
     if (   pVCpu->hmr0.s.idLastCpu   != pHostCpu->idCpu
         || pVCpu->hmr0.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
-        pVCpu->hm.s.fForceTLBFlush = true;
+        pVCpu->hmr0.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
     }
 
     /* Check for explicit TLB flushes. */
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
-        pVCpu->hm.s.fForceTLBFlush = true;
+        pVCpu->hmr0.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
     }
 
     /* Check for TLB flushes while switching to/from a nested-guest. */
     if (pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb)
     {
-        pVCpu->hm.s.fForceTLBFlush = true;
+        pVCpu->hmr0.s.fForceTLBFlush = true;
         pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb = false;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbNstGst);
     }
@@ -3155,10 +3155,10 @@ static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMXV
     pVCpu->hmr0.s.idLastCpu = pHostCpu->idCpu;
     pVCpu->hmr0.s.cTlbFlushes = pHostCpu->cTlbFlushes;
 
-    if (pVCpu->hm.s.fForceTLBFlush)
+    if (pVCpu->hmr0.s.fForceTLBFlush)
     {
         hmR0VmxFlushEpt(pVCpu, pVmcsInfo, pVCpu->CTX_SUFF(pVM)->hm.s.vmx.enmTlbFlushEpt);
-        pVCpu->hm.s.fForceTLBFlush = false;
+        pVCpu->hmr0.s.fForceTLBFlush = false;
     }
 }
 
@@ -3188,7 +3188,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
     if (   pVCpu->hmr0.s.idLastCpu != pHostCpu->idCpu
         || pVCpu->hmr0.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
-        pVCpu->hm.s.fForceTLBFlush = true;
+        pVCpu->hmr0.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
     }
 
@@ -3201,21 +3201,21 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
          * fExplicitFlush = true here and change the pHostCpu->fFlushAsidBeforeUse check below to
          * include fExplicitFlush's too) - an obscure corner case.
          */
-        pVCpu->hm.s.fForceTLBFlush = true;
+        pVCpu->hmr0.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
     }
 
     /* Check for TLB flushes while switching to/from a nested-guest. */
     if (pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb)
     {
-        pVCpu->hm.s.fForceTLBFlush = true;
+        pVCpu->hmr0.s.fForceTLBFlush = true;
         pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb = false;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbNstGst);
     }
 
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     pVCpu->hmr0.s.idLastCpu = pHostCpu->idCpu;
-    if (pVCpu->hm.s.fForceTLBFlush)
+    if (pVCpu->hmr0.s.fForceTLBFlush)
     {
         ++pHostCpu->uCurrentAsid;
         if (pHostCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
@@ -3225,7 +3225,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
             pHostCpu->fFlushAsidBeforeUse = true;  /* All VCPUs that run on this host CPU must flush their new VPID before use. */
         }
 
-        pVCpu->hm.s.fForceTLBFlush = false;
+        pVCpu->hmr0.s.fForceTLBFlush = false;
         pVCpu->hmr0.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
         pVCpu->hmr0.s.uCurrentAsid   = pHostCpu->uCurrentAsid;
         if (pHostCpu->fFlushAsidBeforeUse)
@@ -4205,7 +4205,7 @@ static void hmR0VmxUpdateStartVmFunction(PVMCPUCC pVCpu)
         { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
         { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
     };
-    uintptr_t const idx = (pVCpu->hm.s.fLoadSaveGuestXcr0                             ?  1 : 0)
+    uintptr_t const idx = (pVCpu->hmr0.s.fLoadSaveGuestXcr0                           ?  1 : 0)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_ENTRY ?  2 : 0)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_L1D_ENTRY  ?  4 : 0)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_MDS_ENTRY  ?  8 : 0)
@@ -6024,9 +6024,9 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
 
         /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+guest XCR0. */
         bool const fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
-        if (fLoadSaveGuestXcr0 != pVCpu->hm.s.fLoadSaveGuestXcr0)
+        if (fLoadSaveGuestXcr0 != pVCpu->hmr0.s.fLoadSaveGuestXcr0)
         {
-            pVCpu->hm.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
+            pVCpu->hmr0.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
             hmR0VmxUpdateStartVmFunction(pVCpu);
         }
 
@@ -6095,7 +6095,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
         {
             pVCpu->cpum.GstCtx.eflags.u32 |= X86_EFL_TF;
             pVCpu->hm.s.fCtxChanged |= HM_CHANGED_GUEST_RFLAGS;
-            pVCpu->hm.s.fClearTrapFlag = true;
+            pVCpu->hmr0.s.fClearTrapFlag = true;
             fSteppingDB = true;
         }
     }
@@ -6120,7 +6120,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
 
         /* Update DR7 with the hypervisor value (other DRx registers are handled by CPUM one way or another). */
         u64GuestDr7 = CPUMGetHyperDR7(pVCpu);
-        pVCpu->hm.s.fUsingHyperDR7 = true;
+        pVCpu->hmr0.s.fUsingHyperDR7 = true;
         fInterceptMovDRx = true;
     }
     else
@@ -6154,7 +6154,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
 
         /* Update DR7 with the actual guest value. */
         u64GuestDr7 = pVCpu->cpum.GstCtx.dr[7];
-        pVCpu->hm.s.fUsingHyperDR7 = false;
+        pVCpu->hmr0.s.fUsingHyperDR7 = false;
     }
 
     if (fInterceptMovDRx)
@@ -7137,7 +7137,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSI
     }
 
     if (   fOffsettedTsc
-        && RT_LIKELY(!pVCpu->hm.s.fDebugWantRdTscExit))
+        && RT_LIKELY(!pVCpu->hmr0.s.fDebugWantRdTscExit))
     {
         if (pVmxTransient->fIsNestedGuest)
             uTscOffset = CPUMApplyNestedGuestTscOffset(pVCpu, uTscOffset);
@@ -7721,7 +7721,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
 
             if (fWhat & CPUMCTX_EXTRN_DR7)
             {
-                if (!pVCpu->hm.s.fUsingHyperDR7)
+                if (!pVCpu->hmr0.s.fUsingHyperDR7)
                     rc = VMXReadVmcsNw(VMX_VMCS_GUEST_DR7, &pCtx->dr[7]);   AssertRC(rc);
             }
 
@@ -8431,11 +8431,11 @@ static int hmR0VmxLeaveSession(PVMCPUCC pVCpu)
 
     /* When thread-context hooks are used, we can avoid doing the leave again if we had been preempted before
        and done this from the VMXR0ThreadCtxCallback(). */
-    if (!pVCpu->hm.s.fLeaveDone)
+    if (!pVCpu->hmr0.s.fLeaveDone)
     {
         int rc2 = hmR0VmxLeave(pVCpu, true /* fImportState */);
         AssertRCReturnStmt(rc2, HM_RESTORE_PREEMPT(), rc2);
-        pVCpu->hm.s.fLeaveDone = true;
+        pVCpu->hmr0.s.fLeaveDone = true;
     }
     Assert(!pVCpu->cpum.GstCtx.fExtrn);
 
@@ -8583,7 +8583,7 @@ static int hmR0VmxExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
         && CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx))
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 
-    Assert(!pVCpu->hm.s.fClearTrapFlag);
+    Assert(!pVCpu->hmr0.s.fClearTrapFlag);
 
     /* Update the exit-to-ring 3 reason. */
     pVCpu->hm.s.rcLastExitToR3 = VBOXSTRICTRC_VAL(rcExit);
@@ -9284,7 +9284,7 @@ VMMR0DECL(int) VMXR0Enter(PVMCPUCC pVCpu)
     if (RT_SUCCESS(rc))
     {
         pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs = fInNestedGuestMode;
-        pVCpu->hm.s.fLeaveDone = false;
+        pVCpu->hmr0.s.fLeaveDone = false;
         Log4Func(("Loaded Vmcs. HostCpuId=%u\n", RTMpCpuId()));
 
         /*
@@ -9325,14 +9325,14 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu
             Log4Func(("Preempting: HostCpuId=%u\n", RTMpCpuId()));
 
             /* Restore host-state (FPU, debug etc.) */
-            if (!pVCpu->hm.s.fLeaveDone)
+            if (!pVCpu->hmr0.s.fLeaveDone)
             {
                 /*
                  * Do -not- import the guest-state here as we might already be in the middle of importing
                  * it, esp. bad if we're holding the PGM lock, see comment in hmR0VmxImportGuestState().
                  */
                 hmR0VmxLeave(pVCpu, false /* fImportState */);
-                pVCpu->hm.s.fLeaveDone = true;
+                pVCpu->hmr0.s.fLeaveDone = true;
             }
 
             /* Leave HM context, takes care of local init (term). */
@@ -9367,7 +9367,7 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu
             rc = hmR0VmxLoadVmcs(pVmcsInfo);
             AssertRC(rc);
             Log4Func(("Resumed: Loaded Vmcs. HostCpuId=%u\n", RTMpCpuId()));
-            pVCpu->hm.s.fLeaveDone = false;
+            pVCpu->hmr0.s.fLeaveDone = false;
 
             /* Do the EMT scheduled L1D flush if needed. */
             if (pVCpu->CTX_SUFF(pVM)->hm.s.fL1dFlushOnSched)
@@ -11977,9 +11977,9 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
         pDbgState->fCpe1Extra   |= VMX_PROC_CTLS_USE_SECONDARY_CTLS;
     pDbgState->fCpe1Extra       &= pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1;
     pDbgState->fCpe1Unwanted    &= ~pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed0;
-    if (pVCpu->hm.s.fDebugWantRdTscExit != RT_BOOL(pDbgState->fCpe1Extra & VMX_PROC_CTLS_RDTSC_EXIT))
+    if (pVCpu->hmr0.s.fDebugWantRdTscExit != RT_BOOL(pDbgState->fCpe1Extra & VMX_PROC_CTLS_RDTSC_EXIT))
     {
-        pVCpu->hm.s.fDebugWantRdTscExit ^= true;
+        pVCpu->hmr0.s.fDebugWantRdTscExit ^= true;
         pVmxTransient->fUpdatedTscOffsettingAndPreemptTimer = false;
     }
 
@@ -12557,8 +12557,8 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
     /* Set HMCPU indicators.  */
     bool const fSavedSingleInstruction = pVCpu->hm.s.fSingleInstruction;
     pVCpu->hm.s.fSingleInstruction     = pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu);
-    pVCpu->hm.s.fDebugWantRdTscExit    = false;
-    pVCpu->hm.s.fUsingDebugLoop        = true;
+    pVCpu->hmr0.s.fDebugWantRdTscExit    = false;
+    pVCpu->hmr0.s.fUsingDebugLoop        = true;
 
     /* State we keep to help modify and later restore the VMCS fields we alter, and for detecting steps.  */
     VMXRUNDBGSTATE DbgState;
@@ -12667,11 +12667,11 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
     /*
      * Clear the X86_EFL_TF if necessary.
      */
-    if (pVCpu->hm.s.fClearTrapFlag)
+    if (pVCpu->hmr0.s.fClearTrapFlag)
     {
         int rc = hmR0VmxImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
         AssertRC(rc);
-        pVCpu->hm.s.fClearTrapFlag = false;
+        pVCpu->hmr0.s.fClearTrapFlag = false;
         pVCpu->cpum.GstCtx.eflags.Bits.u1TF = 0;
     }
     /** @todo there seems to be issues with the resume flag when the monitor trap
@@ -12679,8 +12679,8 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
      *        accessing APIC page in protected mode. */
 
     /* Restore HMCPU indicators. */
-    pVCpu->hm.s.fUsingDebugLoop     = false;
-    pVCpu->hm.s.fDebugWantRdTscExit = false;
+    pVCpu->hmr0.s.fUsingDebugLoop     = false;
+    pVCpu->hmr0.s.fDebugWantRdTscExit = false;
     pVCpu->hm.s.fSingleInstruction  = fSavedSingleInstruction;
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
@@ -13893,7 +13893,7 @@ static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, 
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR4);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR4Write);
             Log4Func(("CR4 write. rc=%Rrc CR4=%#RX64 fLoadSaveGuestXcr0=%u\n", VBOXSTRICTRC_VAL(rcStrict),
-                      pVCpu->cpum.GstCtx.cr4, pVCpu->hm.s.fLoadSaveGuestXcr0));
+                      pVCpu->cpum.GstCtx.cr4, pVCpu->hmr0.s.fLoadSaveGuestXcr0));
             break;
 
         case 8:
@@ -13932,7 +13932,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     else
     {
 #if !defined(HMVMX_ALWAYS_TRAP_ALL_XCPTS) && !defined(HMVMX_ALWAYS_TRAP_PF)
-        Assert(pVmxTransient->fIsNestedGuest || pVCpu->hm.s.fUsingDebugLoop);
+        Assert(pVmxTransient->fIsNestedGuest || pVCpu->hmr0.s.fUsingDebugLoop);
 #endif
         pVCpu->hm.s.Event.fPending = false;                  /* In case it's a contributory or vectoring #PF. */
         if (!pVmxTransient->fVectoringDoublePF)
@@ -14278,7 +14278,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     else
     {
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
-        Assert(pVCpu->hm.s.fUsingDebugLoop || pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv || pVmxTransient->fIsNestedGuest);
+        Assert(pVCpu->hmr0.s.fUsingDebugLoop || pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv || pVmxTransient->fIsNestedGuest);
 #endif
         /*
          * If the guest is not in real-mode or we have unrestricted guest execution support, or if we are
@@ -14354,7 +14354,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptOthers(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
 
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
     PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    AssertMsg(pVCpu->hm.s.fUsingDebugLoop || pVmcsInfo->pShared->RealMode.fRealOnV86Active || pVmxTransient->fIsNestedGuest,
+    AssertMsg(pVCpu->hmr0.s.fUsingDebugLoop || pVmcsInfo->pShared->RealMode.fRealOnV86Active || pVmxTransient->fIsNestedGuest,
               ("uVector=%#x u32XcptBitmap=%#X32\n",
                VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo), pVmcsInfo->u32XcptBitmap));
     NOREF(pVmcsInfo);
@@ -14852,7 +14852,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging || pVCpu->hm.s.fUsingDebugLoop);
+    Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging || pVCpu->hmr0.s.fUsingDebugLoop);
 
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     hmR0VmxReadExitQualVmcs(pVmxTransient);
@@ -15006,9 +15006,9 @@ HMVMX_EXIT_DECL hmR0VmxExitXsetbv(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     bool const fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
-    if (fLoadSaveGuestXcr0 != pVCpu->hm.s.fLoadSaveGuestXcr0)
+    if (fLoadSaveGuestXcr0 != pVCpu->hmr0.s.fLoadSaveGuestXcr0)
     {
-        pVCpu->hm.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
+        pVCpu->hmr0.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
         hmR0VmxUpdateStartVmFunction(pVCpu);
     }
 
@@ -15491,7 +15491,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             Assert(   iCrReg != 3
                    || !pVM->hm.s.fNestedPaging
                    || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
-                   || pVCpu->hm.s.fUsingDebugLoop);
+                   || pVCpu->hmr0.s.fUsingDebugLoop);
 
             /* MOV to CR8 writes only cause VM-exits when TPR shadow is not used. */
             Assert(   iCrReg != 8
@@ -15543,7 +15543,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             Assert(   iCrReg != 3
                    || !pVM->hm.s.fNestedPaging
                    || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
-                   || pVCpu->hm.s.fUsingDebugLoop);
+                   || pVCpu->hmr0.s.fLeaveDone);
 
             /* MOV from CR8 reads only cause a VM-exit when the TPR shadow feature isn't enabled. */
             Assert(   iCrReg != 8

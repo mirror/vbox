@@ -730,7 +730,7 @@ static void hmR0SvmUpdateVmRunFunction(PVMCPUCC pVCpu)
         { hmR0SvmVmRun_SansXcr0_WithIbpbEntry_WithIbpbExit },
         { hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit },
     };
-    uintptr_t const idx = (pVCpu->hm.s.fLoadSaveGuestXcr0                             ? 1 : 0)
+    uintptr_t const idx = (pVCpu->hmr0.s.fLoadSaveGuestXcr0                           ? 1 : 0)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_ENTRY ? 2 : 0)
                         | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_EXIT  ? 4 : 0);
     PFNHMSVMVMRUN const pfnVMRun = s_aHmR0SvmVmRunFunctions[idx].pfn;
@@ -1290,7 +1290,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
         )
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
-        pVCpu->hm.s.fForceTLBFlush = true;
+        pVCpu->hmr0.s.fForceTLBFlush = true;
         fNewAsid = true;
     }
 
@@ -1300,7 +1300,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
     /* Check for explicit TLB flushes. */
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
-        pVCpu->hm.s.fForceTLBFlush = true;
+        pVCpu->hmr0.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
     }
 
@@ -1323,7 +1323,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
     else
     {
         pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
-        if (pVCpu->hm.s.fForceTLBFlush)
+        if (pVCpu->hmr0.s.fForceTLBFlush)
         {
             /* Clear the VMCB Clean Bit for NP while flushing the TLB. See @bugref{7152}. */
             pVmcb->ctrl.u32VmcbCleanBits    &= ~HMSVM_VMCB_CLEAN_NP;
@@ -1359,7 +1359,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
                     pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
             }
 
-            pVCpu->hm.s.fForceTLBFlush = false;
+            pVCpu->hmr0.s.fForceTLBFlush = false;
         }
     }
 
@@ -1668,9 +1668,9 @@ static int hmR0SvmExportGuestCR4(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 
     /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+guest XCR0. */
     bool const fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
-    if (fLoadSaveGuestXcr0 != pVCpu->hm.s.fLoadSaveGuestXcr0)
+    if (fLoadSaveGuestXcr0 != pVCpu->hmr0.s.fLoadSaveGuestXcr0)
     {
-        pVCpu->hm.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
+        pVCpu->hmr0.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
         hmR0SvmUpdateVmRunFunction(pVCpu);
     }
 
@@ -1917,7 +1917,7 @@ static void hmR0SvmExportSharedDebugState(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     bool const fStepping = pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu);
     if (fStepping)
     {
-        pVCpu->hm.s.fClearTrapFlag = true;
+        pVCpu->hmr0.s.fClearTrapFlag = true;
         pVmcb->guest.u64RFlags |= X86_EFL_TF;
         fInterceptMovDRx = true; /* Need clean DR6, no guest mess. */
     }
@@ -1951,7 +1951,7 @@ static void hmR0SvmExportSharedDebugState(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
         /** @todo If we cared, we could optimize to allow the guest to read registers
          *        with the same values. */
         fInterceptMovDRx = true;
-        pVCpu->hm.s.fUsingHyperDR7 = true;
+        pVCpu->hmr0.s.fUsingHyperDR7 = true;
         Log5(("hmR0SvmExportSharedDebugState: Loaded hyper DRx\n"));
     }
     else
@@ -1966,7 +1966,7 @@ static void hmR0SvmExportSharedDebugState(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
             pVmcb->guest.u64DR6 = pCtx->dr[6];
             pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
         }
-        pVCpu->hm.s.fUsingHyperDR7 = false;
+        pVCpu->hmr0.s.fUsingHyperDR7 = false;
 
         /*
          * If the guest has enabled debug registers, we need to load them prior to
@@ -2279,7 +2279,7 @@ VMMR0DECL(int) SVMR0Enter(PVMCPUCC pVCpu)
     Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE))
                                    == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE));
 
-    pVCpu->hm.s.fLeaveDone = false;
+    pVCpu->hmr0.s.fLeaveDone = false;
     return VINF_SUCCESS;
 }
 
@@ -2307,10 +2307,10 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu
             /* No longjmps (log-flush, locks) in this fragile context. */
             VMMRZCallRing3Disable(pVCpu);
 
-            if (!pVCpu->hm.s.fLeaveDone)
+            if (!pVCpu->hmr0.s.fLeaveDone)
             {
                 hmR0SvmLeave(pVCpu, false /* fImportState */);
-                pVCpu->hm.s.fLeaveDone = true;
+                pVCpu->hmr0.s.fLeaveDone = true;
             }
 
             /* Leave HM context, takes care of local init (term). */
@@ -2341,7 +2341,7 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu
             Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE))
                                            == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE));
 
-            pVCpu->hm.s.fLeaveDone = false;
+            pVCpu->hmr0.s.fLeaveDone = false;
 
             /* Restore longjmp state. */
             VMMRZCallRing3Enable(pVCpu);
@@ -2817,7 +2817,7 @@ static void hmR0SvmImportGuestState(PVMCPUCC pVCpu, uint64_t fWhat)
         {
             if (fWhat & CPUMCTX_EXTRN_DR6)
             {
-                if (!pVCpu->hm.s.fUsingHyperDR7)
+                if (!pVCpu->hmr0.s.fUsingHyperDR7)
                     pCtx->dr[6] = pVmcbGuest->u64DR6;
                 else
                     CPUMSetHyperDR6(pVCpu, pVmcbGuest->u64DR6);
@@ -2825,7 +2825,7 @@ static void hmR0SvmImportGuestState(PVMCPUCC pVCpu, uint64_t fWhat)
 
             if (fWhat & CPUMCTX_EXTRN_DR7)
             {
-                if (!pVCpu->hm.s.fUsingHyperDR7)
+                if (!pVCpu->hmr0.s.fUsingHyperDR7)
                     pCtx->dr[7] = pVmcbGuest->u64DR7;
                 else
                     Assert(pVmcbGuest->u64DR7 == CPUMGetHyperDR7(pVCpu));
@@ -2993,10 +2993,10 @@ static int hmR0SvmLeaveSession(PVMCPUCC pVCpu)
 
     /* When thread-context hooks are used, we can avoid doing the leave again if we had been preempted before
        and done this from the SVMR0ThreadCtxCallback(). */
-    if (!pVCpu->hm.s.fLeaveDone)
+    if (!pVCpu->hmr0.s.fLeaveDone)
     {
         hmR0SvmLeave(pVCpu, true /* fImportState */);
-        pVCpu->hm.s.fLeaveDone = true;
+        pVCpu->hmr0.s.fLeaveDone = true;
     }
 
     /*
@@ -4619,9 +4619,9 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeStep(PVMCPUCC pVCpu, uint32_t *pcLoops)
     /*
      * Clear the X86_EFL_TF if necessary.
      */
-    if (pVCpu->hm.s.fClearTrapFlag)
+    if (pVCpu->hmr0.s.fClearTrapFlag)
     {
-        pVCpu->hm.s.fClearTrapFlag = false;
+        pVCpu->hmr0.s.fClearTrapFlag = false;
         pCtx->eflags.Bits.u1TF = 0;
     }
 
@@ -6552,9 +6552,9 @@ HMSVM_EXIT_DECL hmR0SvmExitXsetbv(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
         PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
         bool const fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
         Log4Func(("New XCR0=%#RX64 fLoadSaveGuestXcr0=%RTbool (cr4=%#RX64)\n", pCtx->aXcr[0], fLoadSaveGuestXcr0, pCtx->cr4));
-        if (fLoadSaveGuestXcr0 != pVCpu->hm.s.fLoadSaveGuestXcr0)
+        if (fLoadSaveGuestXcr0 != pVCpu->hmr0.s.fLoadSaveGuestXcr0)
         {
-            pVCpu->hm.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
+            pVCpu->hmr0.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
             hmR0SvmUpdateVmRunFunction(pVCpu);
         }
     }

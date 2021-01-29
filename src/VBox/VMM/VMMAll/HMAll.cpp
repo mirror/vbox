@@ -484,6 +484,7 @@ VMM_INT_DECL(int) HMFlushTlb(PVMCPU pVCpu)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Poke an EMT so it can perform the appropriate TLB shootdowns.
  *
