@@ -2630,6 +2630,106 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
 
 
 /**
+ * Performs pre-translation checks for the given device table entry.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   uIova           The I/O virtual address to translate.
+ * @param   uDevId          The device ID.
+ * @param   fAccess         The access permissions (IOMMU_IO_PERM_XXX). This is the
+ *                          permissions for the access being made.
+ * @param   pDte            The device table entry.
+ * @param   fRootPage       Whether to check the root of the access (required only
+ *                          for the first page of an access).
+ * @param   enmOp           The IOMMU operation being performed.
+ * @param   pWalkResult     Where to store the results of the I/O page walk. This is
+ *                          only updated when VINF_SUCCESS is returned.
+ *
+ * @thread  Any.
+ */
+static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fAccess, PCDTE_T pDte,
+                                      IOMMUOP enmOp, PIOWALKRESULT pWalkResult)
+{
+    /*
+     * Check if the translation is valid, otherwise raise an I/O page fault.
+     */
+    if (pDte->n.u1TranslationValid)
+    { /* likely */ }
+    else
+    {
+        /** @todo r=ramshankar: The AMD IOMMU spec. says page walk is terminated but
+         *        doesn't explicitly say whether an I/O page fault is raised. From other
+         *        places in the spec. it seems early page walk terminations (starting with
+         *        the DTE) return the state computed so far and raises an I/O page fault. So
+         *        returning an invalid translation rather than skipping translation. */
+        LogFunc(("Translation valid bit not set -> IOPF\n"));
+        EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
+                                     false /* fPermDenied */, enmOp, &EvtIoPageFault);
+        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+                                      kIoPageFaultType_DteTranslationDisabled);
+        return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+    }
+
+    /*
+     * Check permissions bits in the DTE.
+     * Note: This MUST be checked prior to checking the root page table level below!
+     */
+    uint8_t const fDtePerm  = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
+    if ((fAccess & fDtePerm) == fAccess)
+    { /* likely */ }
+    else
+    {
+        LogFunc(("Permission denied by DTE (fAccess=%#x fDtePerm=%#x) -> IOPF\n", fAccess, fDtePerm));
+        EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+                                     true /* fPermDenied */, enmOp, &EvtIoPageFault);
+        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_PermDenied);
+        return VERR_IOMMU_ADDR_ACCESS_DENIED;
+    }
+
+    /*
+     * If the root page table level is 0, translation is disabled and GPA=SPA and
+     * the DTE.IR and DTE.IW bits control permissions (verified above).
+     */
+    uint8_t const uMaxLevel = pDte->n.u3Mode;
+    if (uMaxLevel != 0)
+    { /* likely */ }
+    else
+    {
+        Assert((fAccess & fDtePerm) == fAccess);    /* Verify we've checked permissions. */
+        pWalkResult->GCPhysSpa = uIova;
+        pWalkResult->cShift    = 0;
+        pWalkResult->fIoPerm   = fDtePerm;
+        return VINF_IOMMU_ADDR_TRANSLATION_DISABLED;
+    }
+
+    /*
+     * If the root page table level exceeds the allowed host-address translation level,
+     * page walk is terminated and translation fails.
+     */
+    if (uMaxLevel <= IOMMU_MAX_HOST_PT_LEVEL)
+    { /* likely */ }
+    else
+    {
+        /** @todo r=ramshankar: I cannot make out from the AMD IOMMU spec. if I should be
+         *        raising an ILLEGAL_DEV_TABLE_ENTRY event or an IO_PAGE_FAULT event here.
+         *        I'm just going with I/O page fault. */
+        LogFunc(("Invalid root page table level %#x (uDevId=%#x) -> IOPF\n", uMaxLevel, uDevId));
+        EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+                                     false /* fPermDenied */, enmOp, &EvtIoPageFault);
+        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+                                      kIoPageFaultType_PteInvalidLvlEncoding);
+        return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+    }
+
+    /* The DTE allows translations for this device. */
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Walks the I/O page table to translate the I/O virtual address to a system
  * physical address.
  *
@@ -2651,80 +2751,6 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
 {
     Assert(pDte->n.u1Valid);
     Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
-
-    /* If the translation is not valid, raise an I/O page fault. */
-    if (pDte->n.u1TranslationValid)
-    { /* likely */ }
-    else
-    {
-        /** @todo r=ramshankar: The AMD IOMMU spec. says page walk is terminated but
-         *        doesn't explicitly say whether an I/O page fault is raised. From other
-         *        places in the spec. it seems early page walk terminations (starting with
-         *        the DTE) return the state computed so far and raises an I/O page fault. So
-         *        returning an invalid translation rather than skipping translation. */
-        LogFunc(("Translation valid bit not set -> IOPF\n"));
-        EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
-                                     false /* fPermDenied */, enmOp, &EvtIoPageFault);
-        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
-                                      kIoPageFaultType_DteTranslationDisabled);
-        return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-    }
-
-    /* If the root page table level is 0, translation is skipped and access is controlled by the permission bits. */
-    uint8_t const uMaxLevel = pDte->n.u3Mode;
-    if (uMaxLevel != 0)
-    { /* likely */ }
-    else
-    {
-        uint8_t const fDtePerm = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
-        if ((fAccess & fDtePerm) != fAccess)
-        {
-            LogFunc(("Access denied for IOVA %#RX64. uDevId=%#x fAccess=%#x fDtePerm=%#x\n", uIova, uDevId, fAccess, fDtePerm));
-            return VERR_IOMMU_ADDR_ACCESS_DENIED;
-        }
-        pWalkResult->GCPhysSpa = uIova;
-        pWalkResult->cShift    = 0;
-        pWalkResult->fIoPerm   = fDtePerm;
-        return VINF_SUCCESS;
-    }
-
-    /* If the root page table level exceeds the allowed host-address translation level, page walk is terminated. */
-    if (uMaxLevel <= IOMMU_MAX_HOST_PT_LEVEL)
-    { /* likely */ }
-    else
-    {
-        /** @todo r=ramshankar: I cannot make out from the AMD IOMMU spec. if I should be
-         *        raising an ILLEGAL_DEV_TABLE_ENTRY event or an IO_PAGE_FAULT event here.
-         *        I'm just going with I/O page fault. */
-        LogFunc(("Invalid root page table level %#x (uDevId=%#x) -> IOPF\n", uMaxLevel, uDevId));
-        EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
-                                     false /* fPermDenied */, enmOp, &EvtIoPageFault);
-        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
-                                      kIoPageFaultType_PteInvalidLvlEncoding);
-        return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-    }
-
-    /* Check permissions bits of the root page table. */
-    uint8_t const fRootPtePerm  = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
-    if ((fAccess & fRootPtePerm) == fAccess)
-    { /* likely */ }
-    else
-    {
-        LogFunc(("Permission denied (fAccess=%#x fRootPtePerm=%#x) -> IOPF\n", fAccess, fRootPtePerm));
-        EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
-                                     true /* fPermDenied */, enmOp, &EvtIoPageFault);
-        iommuAmdIoPageFaultEventRaise(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, kIoPageFaultType_PermDenied);
-        return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-    }
-
-    /** @todo r=ramshankar: IOMMU: Consider splitting the rest of this into a separate
-     *        function called iommuAmdWalkIoPageDirectory() and call it for multi-page
-     *        accesses from the 2nd page. We can avoid re-checking the DTE root-page
-     *        table entry every time. Not sure if it's worth optimizing that case now
-     *        or if at all. */
 
     /* The virtual address bits indexing table. */
     static uint8_t const  s_acIovaLevelShifts[] = { 0, 12, 21, 30, 39, 48, 57, 0 };
@@ -2925,68 +2951,86 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
             if (RT_LIKELY(!fRsvd0 && !fRsvd1))
             {
                 /* If the IOVA is subject to address exclusion, addresses are forwarded without translation. */
-                if (   !pThis->ExclRangeBaseAddr.n.u1ExclEnable         /** @todo lock or make atomic read? */
+                if (   !pThis->ExclRangeBaseAddr.n.u1ExclEnable         /** @todo lock or make atomic read! */
                     || !iommuAmdIsDvaInExclRange(pThis, &Dte, uIova))
                 {
-                    /* Walk the I/O page tables to translate the IOVA and check permission for each page in the access. */
-                    size_t   cbRemaining = cbAccess;
-                    uint64_t uIovaPage   = uIova & X86_PAGE_4K_BASE_MASK;
-                    uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
-                    uint64_t cbPages     = 0;
-                    for (;;)
+                    IOWALKRESULT WalkResult;
+                    RT_ZERO(WalkResult);
+                    rc = iommuAmdPreTranslateChecks(pDevIns, uDevId, uIova, fAccess, &Dte, enmOp, &WalkResult);
+                    if (rc == VINF_SUCCESS)
                     {
-                        IOWALKRESULT WalkResult;
-                        RT_ZERO(WalkResult);
-                        rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fAccess, &Dte, enmOp, &WalkResult);
-                        if (RT_SUCCESS(rc))
+                        /* Walk the I/O page tables to translate the IOVA and check permissions for the
+                           remaining pages in the access. */
+                        size_t   cbRemaining = cbAccess;
+                        uint64_t uIovaPage   = uIova & X86_PAGE_4K_BASE_MASK;
+                        uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
+                        uint64_t cbPages     = 0;
+                        for (;;)
                         {
-                            /* If translation is disabled for this device (root paging mode is 0), we're done. */
-                            if (WalkResult.cShift == 0)
+                            rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fAccess, &Dte, enmOp, &WalkResult);
+                            if (RT_SUCCESS(rc))
                             {
-                                GCPhysSpa   = uIova;
-                                cbRemaining = 0;
-                                break;
-                            }
+                                /* Store the translated address before continuing to access more pages. */
+                                Assert(WalkResult.cShift >= X86_PAGE_4K_SHIFT);
+                                if (cbRemaining == cbAccess)
+                                {
+                                    uint64_t const offMask = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
+                                    uint64_t const offSpa  = uIova & offMask;
+                                    GCPhysSpa = WalkResult.GCPhysSpa | offSpa;
+                                }
+                                /* Check if addresses translated so far result in a physically contiguous region. */
+                                else if ((GCPhysSpa & X86_PAGE_4K_BASE_MASK) + cbPages == WalkResult.GCPhysSpa)
+                                { /* likely */ }
+                                else
+                                    break;
 
-                            /* Store the translated address before continuing to access more pages. */
-                            Assert(WalkResult.cShift >= X86_PAGE_4K_SHIFT);
-                            if (cbRemaining == cbAccess)
-                            {
-                                uint64_t const offMask = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
-                                uint64_t const offSpa  = uIova & offMask;
-                                GCPhysSpa = WalkResult.GCPhysSpa | offSpa;
-                            }
-                            /* Check if addresses translated so far are physically contiguous. */
-                            else if ((GCPhysSpa & X86_PAGE_4K_BASE_MASK) + cbPages == WalkResult.GCPhysSpa)
-                            { /* likely */ }
-                            else
-                                break;
-
-                            /* Check if we need to access more pages. */
-                            uint64_t const cbPage = UINT64_C(1) << WalkResult.cShift;
-                            if (cbRemaining > cbPage - offIova)
-                            {
-                                cbRemaining -= (cbPage - offIova);  /* Calculate how much more we need to access. */
-                                cbPages     += cbPage;              /* Update size of all pages read thus far. */
-                                uIovaPage   += cbPage;              /* Update address of the next access. */
-                                offIova      = 0;                   /* After the first page, all pages are accessed from off 0. */
+                                /* Check if we need to access more pages. */
+                                uint64_t const cbPage = UINT64_C(1) << WalkResult.cShift;
+                                if (cbRemaining > cbPage - offIova)
+                                {
+                                    cbRemaining -= (cbPage - offIova);  /* Calculate how much more we need to access. */
+                                    cbPages     += cbPage;              /* Update size of all pages read thus far. */
+                                    uIovaPage   += cbPage;              /* Update address of the next access. */
+                                    offIova      = 0;                   /* After first page, all pages are accessed from off 0. */
+                                }
+                                else
+                                {
+                                    cbRemaining = 0;
+                                    break;
+                                }
                             }
                             else
                             {
-                                cbRemaining = 0;
+                                /* Translation failed. */
+                                GCPhysSpa   = NIL_RTGCPHYS;
+                                cbRemaining = cbAccess;
                                 break;
                             }
                         }
-                        else
-                        {
-                            GCPhysSpa   = NIL_RTGCPHYS;
-                            cbRemaining = cbAccess;
-                            break;
-                        }
+
+                        /* Update how much contiguous memory was accessed. */
+                        cbContiguous = cbAccess - cbRemaining;
                     }
+                    else if (rc == VINF_IOMMU_ADDR_TRANSLATION_DISABLED)
+                    {
+                        /* Translation is disabled for this device (root paging mode is 0). */
+                        GCPhysSpa    =  uIova;
+                        cbContiguous = cbAccess;
+                        rc = VINF_SUCCESS;
 
-                    /* Calculate how much contiguous memory was accessed. */
-                    cbContiguous = cbAccess - cbRemaining;
+                        /* Paranoia. */
+                        Assert(WalkResult.cShift   == 0);
+                        Assert(WalkResult.GCPhysSpa == uIova);
+                        Assert((WalkResult.fIoPerm & fAccess) == fAccess);
+                        /** @todo IOMMU: Add to IOLTB cache. */
+                    }
+                    else
+                    {
+                        /* Translation failed or access is denied. */
+                        GCPhysSpa    = NIL_RTGCPHYS;
+                        cbContiguous = 0;
+                        Assert(RT_FAILURE(rc));
+                    }
                 }
                 else
                 {
