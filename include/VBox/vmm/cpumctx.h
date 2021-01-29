@@ -411,6 +411,7 @@ typedef struct CPUMCTX
     uint64_t            cr0;
     uint64_t            cr2;
     uint64_t            cr3;
+    /** @todo the 4 PAE PDPE registers. See PGMCPU::aGstPaePdpeRegs. */
     uint64_t            cr4;
     /** @} */
 
