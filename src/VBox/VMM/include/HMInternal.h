@@ -1007,8 +1007,9 @@ typedef struct HMCPU
             VMXVMCSINFOSHARED           VmcsInfo;
             /** Nested-guest VMCS information shared with ring-3. */
             VMXVMCSINFOSHARED           VmcsInfoNstGst;
-            /** Whether the nested-guest VMCS was the last current VMCS. */
-            bool                        fSwitchedToNstGstVmcs;
+            /** Whether the nested-guest VMCS was the last current VMCS (shadow copy for ring-3).
+             * @see HMR0PERVCPU::vmx.fSwitchedToNstGstVmcs  */
+            bool                        fSwitchedToNstGstVmcsShadow;
             /** Whether the static guest VMCS controls has been merged with the
              *  nested-guest VMCS controls. */
             bool                        fMergedNstGstCtls;
@@ -1306,6 +1307,10 @@ typedef struct HMR0PERVCPU
             VMXVMCSINFO                 VmcsInfo;
             /** Nested-guest VMCS information. */
             VMXVMCSINFO                 VmcsInfoNstGst;
+            /* Whether the nested-guest VMCS was the last current VMCS (authoritative copy).
+             * @see HMCPU::vmx.fSwitchedToNstGstVmcsShadow  */
+            bool                        fSwitchedToNstGstVmcs;
+            bool                        afAlignment0[7];
             /** @} */
 
             /** @name Host information.
@@ -1408,7 +1413,7 @@ DECLASM(int) hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit(PVMCC pVM, PVMCPUC
 
 /** @addtogroup grp_hm_int_vmx  VMX Internal
  * @{ */
-VMM_INT_DECL(PVMXVMCSINFOSHARED) hmGetVmxActiveVmcsInfoShared(PVMCPU pVCpu);
+VMM_INT_DECL(PVMXVMCSINFOSHARED) hmGetVmxActiveVmcsInfoShared(PVMCPUCC pVCpu);
 
 /**
  * Used on platforms with poor inline assembly support to retrieve all the

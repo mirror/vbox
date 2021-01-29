@@ -120,7 +120,7 @@ VMM_INT_DECL(const char *)      HMGetVmxDiagDesc(VMXVDIAG enmDiag);
 VMM_INT_DECL(const char *)      HMGetVmxExitName(uint32_t uExit);
 VMM_INT_DECL(const char *)      HMGetSvmExitName(uint32_t uExit);
 VMM_INT_DECL(void)              HMDumpHwvirtVmxState(PVMCPU pVCpu);
-VMM_INT_DECL(void)              HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
+VMM_INT_DECL(void)              HMHCChangedPagingMode(PVM pVM, PVMCPUCC pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 VMM_INT_DECL(void)              HMGetVmxMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs, PVMXMSRS pVmxMsrs);
 VMM_INT_DECL(void)              HMGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs, PSVMMSRS pSvmMsrs);
 /** @} */

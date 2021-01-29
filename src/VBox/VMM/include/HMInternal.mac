@@ -117,7 +117,7 @@ endstruc
 struc HMCPUVMX
     .VmcsInfo                       resb    VMXVMCSINFOSHARED_size
     .VmcsInfoNstGst                 resb    VMXVMCSINFOSHARED_size
-    .fSwitchedToNstGstVmcs          resb    1
+    .fSwitchedToNstGstVmcsShadow    resb    1
     .fMergedNstGstCtls              resb    1
     .fCopiedNstGstToShadowVmcs      resb    1
     .fSwitchedNstGstFlushTlb        resb    1
@@ -198,7 +198,9 @@ struc HMR0CPUVMX
 
     .VmcsInfo                       resb    VMXVMCSINFO_size
     .VmcsInfoNstGst                 resb    VMXVMCSINFO_size
+    .fSwitchedToNstGstVmcs          resb    1
 
+    alignb 8
     .u64HostMsrLStar                resq    1
     .u64HostMsrStar                 resq    1
     .u64HostMsrSfMask               resq    1

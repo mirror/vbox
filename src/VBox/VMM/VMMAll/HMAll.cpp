@@ -775,7 +775,7 @@ VMM_INT_DECL(bool) HMSetSingleInstruction(PVMCC pVM, PVMCPUCC pVCpu, bool fEnabl
  * @param   enmShadowMode   New shadow paging mode.
  * @param   enmGuestMode    New guest paging mode.
  */
-VMM_INT_DECL(void) HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
+VMM_INT_DECL(void) HMHCChangedPagingMode(PVM pVM, PVMCPUCC pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
 {
 #ifdef IN_RING3
     /* Ignore page mode changes during state loading. */

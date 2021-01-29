@@ -1024,7 +1024,7 @@ static uint64_t hmR0VmxGetFixedCr4Mask(PCVMCPUCC pVCpu)
  */
 DECLINLINE(PVMXVMCSINFO) hmGetVmxActiveVmcsInfo(PVMCPUCC pVCpu)
 {
-    if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
+    if (!pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs)
         return &pVCpu->hmr0.s.vmx.VmcsInfo;
     return &pVCpu->hmr0.s.vmx.VmcsInfoNstGst;
 }
@@ -1397,7 +1397,8 @@ static int hmR0VmxSwitchToGstOrNstGstVmcs(PVMCPUCC pVCpu, bool fSwitchToNstGstVm
     int rc = hmR0VmxSwitchVmcs(pVmcsInfoFrom, pVmcsInfoTo);
     if (RT_SUCCESS(rc))
     {
-        pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs = fSwitchToNstGstVmcs;
+        pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs     = fSwitchToNstGstVmcs;
+        pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsShadow = fSwitchToNstGstVmcs;
 
         /*
          * If we are switching to a VMCS that was executed on a different host CPU or was
@@ -9283,7 +9284,8 @@ VMMR0DECL(int) VMXR0Enter(PVMCPUCC pVCpu)
     int rc = hmR0VmxLoadVmcs(pVmcsInfo);
     if (RT_SUCCESS(rc))
     {
-        pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs = fInNestedGuestMode;
+        pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs     = fInNestedGuestMode;
+        pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsShadow = fInNestedGuestMode;
         pVCpu->hmr0.s.fLeaveDone = false;
         Log4Func(("Loaded Vmcs. HostCpuId=%u\n", RTMpCpuId()));
 
@@ -11282,7 +11284,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
      * without leaving ring-0. Otherwise, if we came from ring-3 we would have loaded the
      * guest VMCS while entering the VMX ring-0 session.
      */
-    if (pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
+    if (pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs)
     {
         int rc = hmR0VmxSwitchToGstOrNstGstVmcs(pVCpu, false /* fSwitchToNstGstVmcs */);
         if (RT_SUCCESS(rc))
@@ -11394,7 +11396,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
      * guest without leaving ring-0. Otherwise, if we came from ring-3 we would have
      * loaded the nested-guest VMCS while entering the VMX ring-0 session.
      */
-    if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
+    if (!pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs)
     {
         int rc = hmR0VmxSwitchToGstOrNstGstVmcs(pVCpu, true /* fSwitchToNstGstVmcs */);
         if (RT_SUCCESS(rc))

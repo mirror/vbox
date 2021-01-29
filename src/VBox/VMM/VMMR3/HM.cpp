@@ -3013,7 +3013,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 #ifdef TODO_9217_VMCSINFO
         PCVMXVMCSINFOSHARED pVmcsInfo         = hmGetVmxActiveVmcsInfoShared(pVCpu);
 #endif
-        bool const          fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs;
+        bool const          fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsShadow;
         switch (iStatusCode)
         {
             case VERR_VMX_INVALID_VMCS_PTR:
@@ -3317,7 +3317,7 @@ static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
         {
             PCVMXVMCSINFOSHARED pVmcsInfoShared   = hmGetVmxActiveVmcsInfoShared(pVCpu);
             bool const          fRealOnV86Active  = pVmcsInfoShared->RealMode.fRealOnV86Active;
-            bool const          fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs;
+            bool const          fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsShadow;
 
             pHlp->pfnPrintf(pHlp, "  %s VMCS active\n", fNstGstVmcsActive ? "Nested-guest" : "Guest");
             pHlp->pfnPrintf(pHlp, "    Real-on-v86 active = %RTbool\n", fRealOnV86Active);
