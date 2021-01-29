@@ -1063,7 +1063,7 @@ void HostConfig::initFromXml(const xml::ElementNode *pElmConfig, bool fStrict, C
 
     /* Name - optional: */
     if (!pElmConfig->getAttributeValue("name", m_strName))
-        m_strName.printf("MAC:%RTmac", m_MACAddress);
+        m_strName.printf("MAC:%RTmac", &m_MACAddress);
 
     /* Fixed IP address assignment - optional: */
     const char *pszFixedAddress = pElmConfig->findAttributeValue("fixedAddress");
