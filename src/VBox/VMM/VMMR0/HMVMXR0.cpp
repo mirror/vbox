@@ -2985,9 +2985,9 @@ static void hmR0VmxFlushTaggedTlbNone(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
-    pVCpu->hmr0.s.idLastCpu    = pHostCpu->idCpu;
-    pVCpu->hm.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
-    pVCpu->hm.s.fForceTLBFlush = false;
+    pVCpu->hmr0.s.idLastCpu     = pHostCpu->idCpu;
+    pVCpu->hmr0.s.cTlbFlushes   = pHostCpu->cTlbFlushes;
+    pVCpu->hm.s.fForceTLBFlush  = false;
     return;
 }
 
@@ -3034,8 +3034,8 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
      * limit while flushing the TLB or the host CPU is online after a suspend/resume, so we
      * cannot reuse the current ASID anymore.
      */
-    if (   pVCpu->hmr0.s.idLastCpu != pHostCpu->idCpu
-        || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes)
+    if (   pVCpu->hmr0.s.idLastCpu   != pHostCpu->idCpu
+        || pVCpu->hmr0.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
         ++pHostCpu->uCurrentAsid;
         if (pHostCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
@@ -3047,7 +3047,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
 
         pVCpu->hmr0.s.uCurrentAsid = pHostCpu->uCurrentAsid;
         pVCpu->hmr0.s.idLastCpu    = pHostCpu->idCpu;
-        pVCpu->hm.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
+        pVCpu->hmr0.s.cTlbFlushes  = pHostCpu->cTlbFlushes;
 
         /*
          * Flush by EPT when we get rescheduled to a new host CPU to ensure EPT-only tagged mappings are also
@@ -3092,12 +3092,12 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
     HMVMX_UPDATE_FLUSH_SKIPPED_STAT();
 
     Assert(pVCpu->hmr0.s.idLastCpu == pHostCpu->idCpu);
-    Assert(pVCpu->hm.s.cTlbFlushes == pHostCpu->cTlbFlushes);
-    AssertMsg(pVCpu->hm.s.cTlbFlushes == pHostCpu->cTlbFlushes,
-              ("Flush count mismatch for cpu %d (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pHostCpu->cTlbFlushes));
+    Assert(pVCpu->hmr0.s.cTlbFlushes == pHostCpu->cTlbFlushes);
+    AssertMsg(pVCpu->hmr0.s.cTlbFlushes == pHostCpu->cTlbFlushes,
+              ("Flush count mismatch for cpu %d (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hmr0.s.cTlbFlushes, pHostCpu->cTlbFlushes));
     AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("Cpu[%u] uCurrentAsid=%u cTlbFlushes=%u pVCpu->idLastCpu=%u pVCpu->cTlbFlushes=%u\n", pHostCpu->idCpu,
-               pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hmr0.s.idLastCpu, pVCpu->hm.s.cTlbFlushes));
+               pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hmr0.s.idLastCpu, pVCpu->hmr0.s.cTlbFlushes));
     AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hmr0.s.uCurrentAsid));
 
@@ -3131,7 +3131,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMXV
      * A change in the TLB flush count implies the host CPU is online after a suspend/resume.
      */
     if (   pVCpu->hmr0.s.idLastCpu   != pHostCpu->idCpu
-        || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes)
+        || pVCpu->hmr0.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
@@ -3153,7 +3153,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMXV
     }
 
     pVCpu->hmr0.s.idLastCpu = pHostCpu->idCpu;
-    pVCpu->hm.s.cTlbFlushes = pHostCpu->cTlbFlushes;
+    pVCpu->hmr0.s.cTlbFlushes = pHostCpu->cTlbFlushes;
 
     if (pVCpu->hm.s.fForceTLBFlush)
     {
@@ -3186,7 +3186,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
      * cannot reuse the current ASID anymore.
      */
     if (   pVCpu->hmr0.s.idLastCpu != pHostCpu->idCpu
-        || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes)
+        || pVCpu->hmr0.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
@@ -3226,7 +3226,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
         }
 
         pVCpu->hm.s.fForceTLBFlush = false;
-        pVCpu->hm.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
+        pVCpu->hmr0.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
         pVCpu->hmr0.s.uCurrentAsid   = pHostCpu->uCurrentAsid;
         if (pHostCpu->fFlushAsidBeforeUse)
         {
@@ -3245,11 +3245,11 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
         }
     }
 
-    AssertMsg(pVCpu->hm.s.cTlbFlushes == pHostCpu->cTlbFlushes,
-              ("Flush count mismatch for cpu %d (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pHostCpu->cTlbFlushes));
+    AssertMsg(pVCpu->hmr0.s.cTlbFlushes == pHostCpu->cTlbFlushes,
+              ("Flush count mismatch for cpu %d (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hmr0.s.cTlbFlushes, pHostCpu->cTlbFlushes));
     AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("Cpu[%u] uCurrentAsid=%u cTlbFlushes=%u pVCpu->idLastCpu=%u pVCpu->cTlbFlushes=%u\n", pHostCpu->idCpu,
-               pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hmr0.s.idLastCpu, pVCpu->hm.s.cTlbFlushes));
+               pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hmr0.s.idLastCpu, pVCpu->hmr0.s.cTlbFlushes));
     AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hmr0.s.uCurrentAsid));
 
@@ -11099,7 +11099,7 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
     uint64_t const uHostTsc = ASMReadTSC();                     /** @todo We can do a lot better here, see @bugref{9180#c38}. */
 
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB flushing. */
-    ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for EMT poking. */
+    ASMAtomicIncU32(&pVCpu->hmr0.s.cWorldSwitchExits);          /* Initialized in vmR3CreateUVM(): used for EMT poking. */
     pVCpu->hm.s.fCtxChanged            = 0;                     /* Exits/longjmps to ring-3 requires saving the guest state. */
     pVmxTransient->fVmcsFieldsRead     = 0;                     /* Transient fields need to be read from the VMCS. */
     pVmxTransient->fVectoringPF        = false;                 /* Vectoring page-fault needs to be determined later. */

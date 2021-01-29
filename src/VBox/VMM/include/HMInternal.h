@@ -998,10 +998,6 @@ typedef struct HMCPU
     bool                        fClearTrapFlag;
     bool                        afAlignment0[3];
 
-    /** World switch exit counter. */
-    uint32_t volatile           cWorldSwitchExits;
-    /** TLB flush count. */
-    uint32_t                    cTlbFlushes;
     /** An additional error code used for some gurus. */
     uint32_t                    u32HMError;
     /** The last exit-to-ring-3 reason. */
@@ -1261,7 +1257,6 @@ typedef struct HMCPU
 typedef HMCPU *PHMCPU;
 AssertCompileMemberAlignment(HMCPU, fCheckedTLBFlush,  4);
 AssertCompileMemberAlignment(HMCPU, fForceTLBFlush,    4);
-AssertCompileMemberAlignment(HMCPU, cWorldSwitchExits, 4);
 AssertCompileMemberAlignment(HMCPU, fCtxChanged,       8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx, 8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.VmcsInfo,       8);
@@ -1275,13 +1270,17 @@ AssertCompileMemberAlignment(HMCPU, Event, 8);
  */
 typedef struct HMR0PERVCPU
 {
-    /** Current ASID in use by the VM. */
-    uint32_t                    uCurrentAsid;
+    /** World switch exit counter. */
+    uint32_t volatile           cWorldSwitchExits;
+    /** TLB flush count. */
+    uint32_t                    cTlbFlushes;
     /** The last CPU we were executing code on (NIL_RTCPUID for the first time). */
     RTCPUID                     idLastCpu;
     /** The CPU ID of the CPU currently owning the VMCS. Set in
      * HMR0Enter and cleared in HMR0Leave. */
     RTCPUID                     idEnteredCpu;
+    /** Current ASID in use by the VM. */
+    uint32_t                    uCurrentAsid;
 
     uint32_t                    u32Padding0;
 
@@ -1343,6 +1342,7 @@ typedef struct HMR0PERVCPU
 } HMR0PERVCPU;
 /** Pointer to HM ring-0 VMCPU instance data. */
 typedef HMR0PERVCPU *PHMR0PERVCPU;
+AssertCompileMemberAlignment(HMR0PERVCPU, cWorldSwitchExits, 4);
 AssertCompileMemberAlignment(HMR0PERVCPU, HM_UNION_NM(u.) vmx.RestoreHost,    8);
 
 

@@ -428,9 +428,9 @@ static DECLCALLBACK(void) hmFlushHandler(RTCPUID idCpu, void *pvUser1, void *pvU
 /**
  * Wrapper for RTMpPokeCpu to deal with VERR_NOT_SUPPORTED.
  */
-static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
+static void hmR0PokeCpu(PVMCPUCC pVCpu, RTCPUID idHostCpu)
 {
-    uint32_t cWorldSwitchExits = ASMAtomicUoReadU32(&pVCpu->hm.s.cWorldSwitchExits);
+    uint32_t cWorldSwitchExits = ASMAtomicUoReadU32(&pVCpu->hmr0.s.cWorldSwitchExits);
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatPoke, x);
     int rc = RTMpPokeCpu(idHostCpu);
@@ -459,7 +459,7 @@ static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
  *        then. */
         /* Spin until the VCPU has switched back (poking is async). */
         while (   ASMAtomicUoReadBool(&pVCpu->hm.s.fCheckedTLBFlush)
-               && cWorldSwitchExits == ASMAtomicUoReadU32(&pVCpu->hm.s.cWorldSwitchExits))
+               && cWorldSwitchExits == ASMAtomicUoReadU32(&pVCpu->hmr0.s.cWorldSwitchExits))
             ASMNopPause();
 
         if (rc == VINF_SUCCESS)

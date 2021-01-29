@@ -174,8 +174,6 @@ struc HMCPU
     .fClearTrapFlag                 resb    1
     alignb 8
 
-    .cWorldSwitchExits              resd    1
-    .cTlbFlushes                    resd    1
     .u32HMError                     resd    1
     .rcLastExitToR3                 resd    1
     alignb 8
@@ -227,9 +225,11 @@ struc HMR0CPUSVM
 endstruc
 
 struc HMR0PERVCPU
-    .uCurrentAsid                   resd    1
+    .cWorldSwitchExits              resd    1
+    .cTlbFlushes                    resd    1
     .idLastCpu                      resd    1
     .idEnteredCpu                   resd    1
+    .uCurrentAsid                   resd    1
 
     alignb 8
 ;%if HMR0CPUVMX_size > HMR0CPUSVM_size

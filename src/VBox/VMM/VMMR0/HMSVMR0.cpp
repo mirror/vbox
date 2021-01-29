@@ -1283,7 +1283,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
     bool fNewAsid = false;
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
     if (   pVCpu->hmr0.s.idLastCpu   != pHostCpu->idCpu
-        || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes
+        || pVCpu->hmr0.s.cTlbFlushes != pHostCpu->cTlbFlushes
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         || CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx)
 #endif
@@ -1313,7 +1313,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
     {
         pHostCpu->uCurrentAsid           = 1;
         pVCpu->hmr0.s.uCurrentAsid       = 1;
-        pVCpu->hm.s.cTlbFlushes          = pHostCpu->cTlbFlushes;
+        pVCpu->hmr0.s.cTlbFlushes        = pHostCpu->cTlbFlushes;
         pVCpu->hmr0.s.idLastCpu          = pHostCpu->idCpu;
         pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
 
@@ -1337,7 +1337,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
                 {
                     pHostCpu->uCurrentAsid = 1;      /* Wraparound at 1; host uses 0 */
                     pHostCpu->cTlbFlushes++;         /* All VCPUs that run on this host CPU must use a new ASID. */
-                    fHitASIDLimit      = true;
+                    fHitASIDLimit          = true;
                 }
 
                 if (   fHitASIDLimit
@@ -1349,7 +1349,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
 
                 pVCpu->hmr0.s.uCurrentAsid = pHostCpu->uCurrentAsid;
                 pVCpu->hmr0.s.idLastCpu    = pHostCpu->idCpu;
-                pVCpu->hm.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
+                pVCpu->hmr0.s.cTlbFlushes  = pHostCpu->cTlbFlushes;
             }
             else
             {
@@ -1372,8 +1372,8 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
 
     AssertMsg(pVCpu->hmr0.s.idLastCpu == pHostCpu->idCpu,
               ("vcpu idLastCpu=%u hostcpu idCpu=%u\n", pVCpu->hmr0.s.idLastCpu, pHostCpu->idCpu));
-    AssertMsg(pVCpu->hm.s.cTlbFlushes == pHostCpu->cTlbFlushes,
-              ("Flush count mismatch for cpu %u (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pHostCpu->cTlbFlushes));
+    AssertMsg(pVCpu->hmr0.s.cTlbFlushes == pHostCpu->cTlbFlushes,
+              ("Flush count mismatch for cpu %u (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hmr0.s.cTlbFlushes, pHostCpu->cTlbFlushes));
     AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("cpu%d uCurrentAsid = %x\n", pHostCpu->idCpu, pHostCpu->uCurrentAsid));
     AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
@@ -4340,7 +4340,7 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
 
     uint64_t const uHostTsc = ASMReadTSC();                     /* Read the TSC as soon as possible. */
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB flushing. */
-    ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for EMT poking. */
+    ASMAtomicIncU32(&pVCpu->hmr0.s.cWorldSwitchExits);          /* Initialized in vmR3CreateUVM(): used for EMT poking. */
 
     PSVMVMCB     pVmcb     = pSvmTransient->pVmcb;
     PSVMVMCBCTRL pVmcbCtrl = &pVmcb->ctrl;
