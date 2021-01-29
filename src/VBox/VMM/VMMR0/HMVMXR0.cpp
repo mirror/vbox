@@ -1397,8 +1397,8 @@ static int hmR0VmxSwitchToGstOrNstGstVmcs(PVMCPUCC pVCpu, bool fSwitchToNstGstVm
     int rc = hmR0VmxSwitchVmcs(pVmcsInfoFrom, pVmcsInfoTo);
     if (RT_SUCCESS(rc))
     {
-        pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs     = fSwitchToNstGstVmcs;
-        pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsShadow = fSwitchToNstGstVmcs;
+        pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs           = fSwitchToNstGstVmcs;
+        pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsCopyForRing3 = fSwitchToNstGstVmcs;
 
         /*
          * If we are switching to a VMCS that was executed on a different host CPU or was
@@ -9284,8 +9284,8 @@ VMMR0DECL(int) VMXR0Enter(PVMCPUCC pVCpu)
     int rc = hmR0VmxLoadVmcs(pVmcsInfo);
     if (RT_SUCCESS(rc))
     {
-        pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs     = fInNestedGuestMode;
-        pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsShadow = fInNestedGuestMode;
+        pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs           = fInNestedGuestMode;
+        pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsCopyForRing3 = fInNestedGuestMode;
         pVCpu->hmr0.s.fLeaveDone = false;
         Log4Func(("Loaded Vmcs. HostCpuId=%u\n", RTMpCpuId()));
 

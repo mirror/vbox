@@ -1107,7 +1107,7 @@ VMM_INT_DECL(PVMXVMCSINFOSHARED) hmGetVmxActiveVmcsInfoShared(PVMCPUCC pVCpu)
 #ifdef IN_RING0
     if (!pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs)
 #else
-    if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsShadow)
+    if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsCopyForRing3)
 #endif
         return &pVCpu->hm.s.vmx.VmcsInfo;
     return &pVCpu->hm.s.vmx.VmcsInfoNstGst;

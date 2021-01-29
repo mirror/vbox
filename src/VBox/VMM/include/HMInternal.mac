@@ -117,7 +117,7 @@ endstruc
 struc HMCPUVMX
     .VmcsInfo                       resb    VMXVMCSINFOSHARED_size
     .VmcsInfoNstGst                 resb    VMXVMCSINFOSHARED_size
-    .fSwitchedToNstGstVmcsShadow    resb    1
+    .fSwitchedToNstGstVmcsCopyForRing3 resb 1
     .fMergedNstGstCtls              resb    1
     .fCopiedNstGstToShadowVmcs      resb    1
     .fSwitchedNstGstFlushTlb        resb    1
