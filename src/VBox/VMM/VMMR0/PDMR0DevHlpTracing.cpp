@@ -375,8 +375,8 @@ pdmR0DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
     { /* likely */ }
     else
     {
-        Log(("pdmRCDevHlp_PCIPhysWrite: caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbWrite=%#zx\n",
-             pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbWrite));
+        LogFunc(("caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbWrite=%#zx\n", pDevIns, pDevIns->iInstance,
+                 VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbWrite));
         return VERR_PDM_NOT_PCI_BUS_MASTER;
     }
 #endif
@@ -414,8 +414,7 @@ pdmR0DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
             }
             else
             {
-                Log(("pdmR0DevHlp_PCIPhysWrite: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
-                     GCPhys, cbWrite, rc));
+                LogFunc(("IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId, GCPhys, cbWrite, rc));
                 break;
             }
         }

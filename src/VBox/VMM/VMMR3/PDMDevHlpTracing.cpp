@@ -410,8 +410,8 @@ pdmR3DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
     { /* likely */ }
     else
     {
-        Log(("pdmR3DevHlp_PCIPhysRead: caller='%s'/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbRead=%#zx\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbRead));
+        LogFunc(("caller='%s'/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbRead=%#zx\n", pDevIns->pReg->szName,
+                 pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbRead));
         memset(pvBuf, 0xff, cbRead);
         return VERR_PDM_NOT_PCI_BUS_MASTER;
     }
@@ -450,8 +450,7 @@ pdmR3DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
             }
             else
             {
-                Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
-                     cbRead, rc));
+                LogFunc(("IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys, cbRead, rc));
                 break;
             }
         }
