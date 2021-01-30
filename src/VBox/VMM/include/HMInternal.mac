@@ -192,8 +192,6 @@ struc HMCPU
     alignb 8
     .aPdpes                         resq    4
 
-    .DisState                       resb    0d8h
-
     .StatVmxWriteHostRip            resq    1
     .StatVmxWriteHostRsp            resq    1
 
@@ -222,6 +220,8 @@ endstruc
 
 struc HMR0CPUSVM
     .pfnVMRun                       RTR0PTR_RES  1
+
+    .DisState                       resb    0d8h
 endstruc
 
 struc HMR0PERVCPU

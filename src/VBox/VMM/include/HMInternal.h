@@ -1099,10 +1099,6 @@ typedef struct HMCPU
      *  VMCPU_FF_HM_UPDATE_PAE_PDPES is set). */
     X86PDPE                 aPdpes[4];
 
-    /** For saving stack space, the disassembler state is allocated here instead of
-     * on the stack. */
-    DISCPUSTATE             DisState;
-
     /* These two comes because they are accessed from assembly and we don't
        want to detail all the stats in the assembly version of this structure. */
     STAMCOUNTER             StatVmxWriteHostRip;
@@ -1354,6 +1350,10 @@ typedef struct HMR0PERVCPU
         {
             /** Ring 0 handlers for VT-x. */
             PFNHMSVMVMRUN               pfnVMRun;
+
+            /** For saving stack space, the disassembler state is allocated here
+             * instead of on the stack. */
+            DISCPUSTATE                 DisState;
         } svm;
     } HM_UNION_NM(u);
 } HMR0PERVCPU;

@@ -6351,7 +6351,7 @@ static VBOXSTRICTRC hmR0SvmExitWriteMsr(PVMCPUCC pVCpu, PSVMVMCB pVmcb, PSVMTRAN
             cbInstr = pVmcb->ctrl.u64NextRIP - pVCpu->cpum.GstCtx.rip;
         else
         {
-            PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
+            PDISCPUSTATE pDis = &pVCpu->hmr0.s.svm.DisState;
             int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, &cbInstr);
             if (   rc == VINF_SUCCESS
                 && pDis->pCurInstr->uOpcode == OP_WRMSR)
@@ -7049,7 +7049,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
         }
         else
         {
-            PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
+            PDISCPUSTATE pDis = &pVCpu->hmr0.s.svm.DisState;
             int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, &cbInstr);
             if (   rc == VINF_SUCCESS
                 && pDis->pCurInstr->uOpcode == OP_VMMCALL)
@@ -7093,7 +7093,7 @@ HMSVM_EXIT_DECL hmR0SvmExitPause(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     }
     else
     {
-        PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
+        PDISCPUSTATE pDis = &pVCpu->hmr0.s.svm.DisState;
         int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, &cbInstr);
         if (   rc == VINF_SUCCESS
             && pDis->pCurInstr->uOpcode == OP_PAUSE)
@@ -7406,8 +7406,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 
     if (!(pCtx->cr0 & X86_CR0_NE))
     {
-        PVMCC       pVM  = pVCpu->CTX_SUFF(pVM);
-        PDISSTATE pDis = &pVCpu->hm.s.DisState;
+        PVMCC     pVM  = pVCpu->CTX_SUFF(pVM);
+        PDISSTATE pDis = &pVCpu->hmr0.s.svm.DisState;
         unsigned  cbInstr;
         int rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbInstr);
         if (RT_SUCCESS(rc))

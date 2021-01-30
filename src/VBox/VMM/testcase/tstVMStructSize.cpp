@@ -383,7 +383,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(HMR0PERVCPU, svm.pfnVMRun, 8);
     CHECK_MEMBER_ALIGNMENT(HMCPU, Event, 8);
     CHECK_MEMBER_ALIGNMENT(HMCPU, Event.u64IntInfo, 8);
-    CHECK_MEMBER_ALIGNMENT(HMCPU, DisState, 8);
+    CHECK_MEMBER_ALIGNMENT(HMR0PERVCPU, svm.DisState, 8);
     CHECK_MEMBER_ALIGNMENT(HMCPU, StatEntry, 8);
 
     /* Make sure the set is large enough and has the correct size. */
