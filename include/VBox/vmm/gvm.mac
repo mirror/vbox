@@ -41,7 +41,7 @@ struc GVMCPU
         alignb 64
         .gvmm               resb 64
         alignb 64
-        .hmr0               resb 512
+        .hmr0               resb 1024
 %ifdef VBOX_WITH_NEM_R0
         .nemr0              resb 64
 %endif
