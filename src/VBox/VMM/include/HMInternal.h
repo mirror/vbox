@@ -1103,6 +1103,13 @@ typedef struct HMCPU
      * on the stack. */
     DISCPUSTATE             DisState;
 
+    /* These two comes because they are accessed from assembly and we don't
+       want to detail all the stats in the assembly version of this structure. */
+    STAMCOUNTER             StatVmxWriteHostRip;
+    STAMCOUNTER             StatVmxWriteHostRsp;
+    STAMCOUNTER             StatVmxVmLaunch;
+    STAMCOUNTER             StatVmxVmResume;
+
     STAMPROFILEADV          StatEntry;
     STAMPROFILEADV          StatPreExit;
     STAMPROFILEADV          StatExitHandling;

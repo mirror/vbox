@@ -6879,9 +6879,14 @@ DECLINLINE(int) hmR0VmxRunGuest(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
     /* Mark that HM is the keeper of all guest-CPU registers now that we're going to execute guest code. */
     pVCpu->cpum.GstCtx.fExtrn |= HMVMX_CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_HM;
 
-    /** @todo Add stats for VMRESUME vs VMLAUNCH. */
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     bool const   fResumeVM = RT_BOOL(pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
+#ifdef VBOX_WITH_STATISTICS
+    if (fResumeVM)
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxVmResume);
+    else
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxVmLaunch);
+#endif
     int rc = pVCpu->hmr0.s.vmx.pfnStartVm(pVmcsInfo, pVCpu, fResumeVM);
     AssertMsg(rc <= VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;

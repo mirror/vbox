@@ -192,6 +192,11 @@ struc HMCPU
     alignb 8
     .aPdpes                         resq    4
 
+    .DisState                       resb    0d8h
+
+    .StatVmxWriteHostRip            resq    1
+    .StatVmxWriteHostRsp            resq    1
+
     ; The remainer is disassembly state and statistics.
 endstruc
 

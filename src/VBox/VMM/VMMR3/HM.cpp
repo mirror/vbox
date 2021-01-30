@@ -673,6 +673,9 @@ static int hmR3InitFinalizeR3(PVM pVM)
     /*
      * Statistics.
      */
+#ifdef VBOX_WITH_STATISTICS
+    bool const fCpuSupportsVmx = ASMIsIntelCpu() || ASMIsViaCentaurCpu() || ASMIsShanghaiCpu();
+#endif
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu  = pVM->apCpusR3[idCpu];
@@ -817,6 +820,14 @@ static int hmR3InitFinalizeR3(PVM pVM)
         HM_REG_COUNTER(&pHmCpu->StatLoadGuestFpu,           "/HM/CPU%u/Export/GuestFpu", "VM-entry loading the guest-FPU state.");
         HM_REG_COUNTER(&pHmCpu->StatExportHostState,        "/HM/CPU%u/Export/HostState", "VM-entry exporting host-state.");
 
+        if (fCpuSupportsVmx)
+        {
+            HM_REG_COUNTER(&pHmCpu->StatVmxWriteHostRip,    "/HM/CPU%u/WriteHostRIP", "Number of VMX_VMCS_HOST_RIP instructions.");
+            HM_REG_COUNTER(&pHmCpu->StatVmxWriteHostRsp,    "/HM/CPU%u/WriteHostRSP", "Number of VMX_VMCS_HOST_RSP instructions.");
+            HM_REG_COUNTER(&pHmCpu->StatVmxVmLaunch,        "/HM/CPU%u/VMLaunch", "Number of VMLAUNCH instructions.");
+            HM_REG_COUNTER(&pHmCpu->StatVmxVmResume,        "/HM/CPU%u/VMResume", "Number of VMRESUME instructions.");
+        }
+
         HM_REG_COUNTER(&pHmCpu->StatVmxCheckBadRmSelBase,   "/HM/CPU%u/VMXCheck/RMSelBase", "Could not use VMX due to unsuitable real-mode selector base.");
         HM_REG_COUNTER(&pHmCpu->StatVmxCheckBadRmSelLimit,  "/HM/CPU%u/VMXCheck/RMSelLimit", "Could not use VMX due to unsuitable real-mode selector limit.");
         HM_REG_COUNTER(&pHmCpu->StatVmxCheckBadRmSelAttr,   "/HM/CPU%u/VMXCheck/RMSelAttrs", "Could not use VMX due to unsuitable real-mode selector attributes.");
@@ -829,8 +840,6 @@ static int hmR3InitFinalizeR3(PVM pVM)
         HM_REG_COUNTER(&pHmCpu->StatVmxCheckBadSel,         "/HM/CPU%u/VMXCheck/Selector", "Could not use VMX due to unsuitable selector.");
         HM_REG_COUNTER(&pHmCpu->StatVmxCheckBadRpl,         "/HM/CPU%u/VMXCheck/RPL", "Could not use VMX due to unsuitable RPL.");
         HM_REG_COUNTER(&pHmCpu->StatVmxCheckPmOk,           "/HM/CPU%u/VMXCheck/VMX_PM", "VMX execution in protected mode OK.");
-
-        bool const fCpuSupportsVmx = ASMIsIntelCpu() || ASMIsViaCentaurCpu() || ASMIsShanghaiCpu();
 
         /*
          * Guest Exit reason stats.

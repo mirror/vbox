@@ -968,6 +968,9 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
 ; Put these two outside the normal code path as they should rarely change.
 ALIGNCODE(8)
 .write_host_rip:
+ %ifdef VBOX_WITH_STATISTICS
+        inc     qword [rsi + VMCPU.hm + HMCPU.StatVmxWriteHostRip]
+ %endif
         mov     [r9 + VMXVMCSINFO.uHostRip], rcx
         mov     eax, VMX_VMCS_HOST_RIP                      ;; @todo It is only strictly necessary to write VMX_VMCS_HOST_RIP when
         vmwrite rax, rcx                                    ;;       the VMXVMCSINFO::pfnStartVM function changes (eventually
@@ -978,6 +981,9 @@ ALIGNCODE(8)
 
 ALIGNCODE(8)
 .write_host_rsp:
+ %ifdef VBOX_WITH_STATISTICS
+        inc     qword [rsi + VMCPU.hm + HMCPU.StatVmxWriteHostRsp]
+ %endif
         mov     [r9 + VMXVMCSINFO.uHostRsp], rsp
         mov     eax, VMX_VMCS_HOST_RSP
         vmwrite rax, rsp
