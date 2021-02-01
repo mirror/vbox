@@ -436,8 +436,6 @@ static int vmmR0InitVM(PGVM pGVM, uint32_t uSvnRev, uint32_t uBuildType)
         pR0Logger->fRegistered = true;
     }
 #endif /* LOG_ENABLED */
-SUPR0Printf("VMMR0InitVM: eflags=%x fKernelFeatures=%#x (SUPKERNELFEATURES_SMAP=%d)\n",
-            ASMGetFlags(), fKernelFeatures, RT_BOOL(fKernelFeatures & SUPKERNELFEATURES_SMAP));
 
     /*
      * Check if the host supports high resolution timers or not.
