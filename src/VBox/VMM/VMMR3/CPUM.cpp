@@ -2088,15 +2088,11 @@ static int cpumR3GetHostHwvirtMsrs(PCPUMMSRS pMsrs)
             LogRel(("CPUM: Querying hardware-virtualization MSRs failed. rc=%Rrc\n", rc));
             return rc;
         }
-        else
-        {
-            LogRel(("CPUM: Querying hardware-virtualization capability succeeded but did not find VT-x or AMD-V\n"));
-            return VERR_INTERNAL_ERROR_5;
-        }
-    }
-    else
-        LogRel(("CPUM: No hardware-virtualization capability detected\n"));
 
+        LogRel(("CPUM: Querying hardware-virtualization capability succeeded but did not find VT-x or AMD-V\n"));
+        return VERR_INTERNAL_ERROR_5;
+    }
+    LogRel(("CPUM: No hardware-virtualization capability detected\n"));
     return VINF_SUCCESS;
 }
 

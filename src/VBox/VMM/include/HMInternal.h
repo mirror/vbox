@@ -433,14 +433,14 @@ typedef struct HM
      * Config value that is copied to HMR0PERVM::fNestedPaging on setup. */
     bool                        fNestedPagingCfg;
     /** Set when we've finalized the VMX / SVM initialization in ring-3
-     *  (hmR3InitFinalizeR0Intel / hmR3InitFinalizeR0Amd). */
+     * (hmR3InitFinalizeR0Intel / hmR3InitFinalizeR0Amd). */
     bool                        fInitialized;
     /** Set if large pages are enabled (requires nested paging).
      * Config only, passed on the PGM where it really belongs.
      * @todo move to PGM */
     bool                        fLargePages;
     /** Set if we can support 64-bit guests or not.
-     *  Config value that is copied to HMR0PERVM::fAllow64BitGuests on setup. */
+     * Config value that is copied to HMR0PERVM::fAllow64BitGuests on setup. */
     bool                        fAllow64BitGuestsCfg;
     /** Set when we initialize VT-x or AMD-V once for all CPUs. */
     bool                        fGlobalInit;
@@ -457,6 +457,7 @@ typedef struct HM
     /** Set if posted interrupt processing is enabled.
      * @todo Not really used by HM, move to APIC where it's actually used.  */
     bool                        fPostedIntrs;
+
     /** @name Processed into HMR0PERVCPU::fWorldSwitcher by ring-0 on VM init.
      * @{ */
     /** Set if indirect branch prediction barrier on VM exit. */
@@ -475,6 +476,7 @@ typedef struct HM
      * @todo doesn't do anything ...  */
     bool                        fSpecCtrlByHost;
     /** @} */
+
     /** Alignment padding. */
     bool                        afPaddingMinus1[3];
 

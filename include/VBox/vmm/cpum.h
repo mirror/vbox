@@ -987,7 +987,6 @@ typedef CPUMMSRRANGE const *PCCPUMMSRRANGE;
 
 
 /**
- * MSRs.
  * MSRs which are required while exploding features.
  */
 typedef struct CPUMMSRS
