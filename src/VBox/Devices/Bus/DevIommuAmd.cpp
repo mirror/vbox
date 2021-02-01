@@ -2911,7 +2911,8 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
 
 
 /**
- * Checks whether two I/O walk results are physically contiguous.
+ * Checks whether two consecutive I/O page walk results translates to a physically
+ * contiguous region.
  *
  * @returns @c true if they are physically contiguous, @c false otherwise.
  * @param   pWalkResultPrev     The I/O walk result of the previous page.
@@ -2936,14 +2937,16 @@ DECL_FORCE_INLINE(bool) iommuAmdDteLookupIsAddrPhysContig(PCIOWALKRESULT pWalkRe
 
 
 /**
- * Checks whether two I/O walk results form a "contiguous" access.
+ * Checks whether two consecutive I/O page walk results are part of a "contiguous"
+ * access.
  *
- * When IOTLB caching is used, in addition to the translated system-physical
- * addresses being physically contiguous, this function also verifies that the two
- * pages are identical in terms of their page size and permissions.
+ * A "contiguous" access is when some range of I/O virtual addresses translate to a
+ * physically contiguous region of memory.
  *
- * This is required to simplify IOTLB lookups for for large accesses (e.g. ATA
- * device doing 65k transfers on Ubuntu 18.04 guests).
+ * When IOTLB caching is used, in addition to the translated addresses being
+ * physically contiguous, all pages in the access must have identical page sizes and
+ * I/O permissions. This is required to simplify IOTLB lookups for large accesses
+ * (e.g., ATA device doing 52k transfers on Ubuntu 18.04 guests).
  *
  * @returns @c true if they are contiguous, @c false otherwise.
  * @param   pWalkResultPrev     The I/O walk result of the previous page.
