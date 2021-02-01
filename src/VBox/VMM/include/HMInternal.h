@@ -624,20 +624,16 @@ typedef struct HM
         uint32_t                    u32Alignment0;
     } svm;
 
-    /**
-     * AVL tree with all patches (active or disabled) sorted by guest instruction
-     * address.
-     */
+    /** AVL tree with all patches (active or disabled) sorted by guest instruction address.
+     * @todo For @bugref{9217} this AVL tree must be eliminated and instead
+     *       sort aPatches by address and do a safe binary search on it. */
     AVLOU32TREE                 PatchTree;
     uint32_t                    cPatches;
     HMTPRPATCH                  aPatches[64];
 
     /** Last recorded error code during HM ring-0 init. */
     int32_t                     rcInit;
-
-    /** HMR0Init was run */
-    bool                        fHMR0Init;
-    bool                        u8Alignment1[3];
+    uint32_t                    u32Alignment2;
 
     STAMCOUNTER                 StatTprPatchSuccess;
     STAMCOUNTER                 StatTprPatchFailure;
