@@ -273,6 +273,183 @@ protected:
     }
 };
 
+/** Menu action extension, used as 'Global Tools' menu class. */
+class UIActionMenuManagerToolsGlobal : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuManagerToolsGlobal(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsGlobalMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Global Tools Menu"));
+    }
+};
+
+/** Simple action extension, used as 'Show Extension Pack Manager' action class. */
+class UIActionSimpleManagerToolsGlobalShowExtensionPackManager : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerToolsGlobalShowExtensionPackManager(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/extension_pack_manager_24px.png", ":/extension_pack_manager_16px.png",
+                         ":/extension_pack_manager_disabled_24px.png", ":/extension_pack_manager_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsGlobalExtensionPackManager");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Extension Pack Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the Extension Pack Manager"));
+    }
+};
+
+/** Simple action extension, used as 'Show Virtual Media Manager' action class. */
+class UIActionSimpleManagerToolsGlobalShowVirtualMediaManager : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerToolsGlobalShowVirtualMediaManager(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/media_manager_24px.png", ":/media_manager_16px.png",
+                         ":/media_manager_disabled_24px.png", ":/media_manager_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsGlobalVirtualMediaManager");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Virtual Media Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the Virtual Media Manager"));
+    }
+};
+
+/** Simple action extension, used as 'Show Network Manager' action class. */
+class UIActionSimpleManagerToolsGlobalShowHostNetworkManager : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerToolsGlobalShowHostNetworkManager(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png",
+                         ":/host_iface_manager_disabled_24px.png", ":/host_iface_manager_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsGlobalHostNetworkManager");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Network Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the Network Manager"));
+    }
+};
+
+/** Simple action extension, used as 'Show Cloud Profile Manager' action class. */
+class UIActionSimpleManagerToolsGlobalShowCloudProfileManager : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerToolsGlobalShowCloudProfileManager(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_16px.png",
+                         ":/cloud_profile_manager_disabled_24px.png", ":/cloud_profile_manager_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsGlobalCloudProfileManager");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Cloud Profile Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the Cloud Profile Manager"));
+    }
+};
+
+/** Simple action extension, used as 'Show VM Resource Monitor' action class. */
+class UIActionSimpleManagerToolsGlobalShowVMResourceMonitor : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerToolsGlobalShowVMResourceMonitor(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/resouces_monitor_24px.png", ":/resouces_monitor_16px.png",
+                         ":/resouces_monitor_disabled_24px.png", ":/resouces_monitor_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsGlobalVMResourceMonitor");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&VM Resource Monitor"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the VM Resource Monitor"));
+    }
+};
+
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 /** Simple action extension, used as 'Show Extra-data Manager' action class. */
 class UIActionSimpleManagerFileShowExtraDataManager : public UIActionSimple
@@ -1786,183 +1963,6 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Performance"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the machine performance pane"));
-    }
-};
-
-/** Menu action extension, used as 'Global Tools' menu class. */
-class UIActionMenuManagerToolsGlobal : public UIActionMenu
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuManagerToolsGlobal(UIActionPool *pParent)
-        : UIActionMenu(pParent)
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToolsGlobalMenu");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Global Tools Menu"));
-    }
-};
-
-/** Simple action extension, used as 'Show Extension Pack Manager' action class. */
-class UIActionSimpleManagerToolsGlobalShowExtensionPackManager : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowExtensionPackManager(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/extension_pack_manager_24px.png", ":/extension_pack_manager_16px.png",
-                         ":/extension_pack_manager_disabled_24px.png", ":/extension_pack_manager_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToolsGlobalExtensionPackManager");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Extension Pack Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the Extension Pack Manager"));
-    }
-};
-
-/** Simple action extension, used as 'Show Virtual Media Manager' action class. */
-class UIActionSimpleManagerToolsGlobalShowVirtualMediaManager : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowVirtualMediaManager(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/media_manager_24px.png", ":/media_manager_16px.png",
-                         ":/media_manager_disabled_24px.png", ":/media_manager_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToolsGlobalVirtualMediaManager");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Virtual Media Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the Virtual Media Manager"));
-    }
-};
-
-/** Simple action extension, used as 'Show Network Manager' action class. */
-class UIActionSimpleManagerToolsGlobalShowHostNetworkManager : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowHostNetworkManager(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png",
-                         ":/host_iface_manager_disabled_24px.png", ":/host_iface_manager_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToolsGlobalHostNetworkManager");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Network Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the Network Manager"));
-    }
-};
-
-/** Simple action extension, used as 'Show Cloud Profile Manager' action class. */
-class UIActionSimpleManagerToolsGlobalShowCloudProfileManager : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowCloudProfileManager(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_16px.png",
-                         ":/cloud_profile_manager_disabled_24px.png", ":/cloud_profile_manager_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToolsGlobalCloudProfileManager");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Cloud Profile Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the Cloud Profile Manager"));
-    }
-};
-
-/** Simple action extension, used as 'Show VM Resource Monitor' action class. */
-class UIActionSimpleManagerToolsGlobalShowVMResourceMonitor : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowVMResourceMonitor(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/resouces_monitor_24px.png", ":/resouces_monitor_16px.png",
-                         ":/resouces_monitor_disabled_24px.png", ":/resouces_monitor_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToolsGlobalVMResourceMonitor");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&VM Resource Monitor"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the VM Resource Monitor"));
     }
 };
 
@@ -3562,6 +3562,12 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_File_S_ShowCloudProfileManager] = new UIActionSimpleManagerFileShowCloudProfileManager(this);
     m_pool[UIActionIndexMN_M_File_S_ImportAppliance] = new UIActionSimpleManagerFileShowImportApplianceWizard(this);
     m_pool[UIActionIndexMN_M_File_S_ExportAppliance] = new UIActionSimpleManagerFileShowExportApplianceWizard(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools] = new UIActionMenuManagerToolsGlobal(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_S_ExtensionPackManager] = new UIActionSimpleManagerToolsGlobalShowExtensionPackManager(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_S_VirtualMediaManager] = new UIActionSimpleManagerToolsGlobalShowVirtualMediaManager(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_S_NetworkManager] = new UIActionSimpleManagerToolsGlobalShowHostNetworkManager(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_S_CloudProfileManager] = new UIActionSimpleManagerToolsGlobalShowCloudProfileManager(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_S_VMResourceMonitor] = new UIActionSimpleManagerToolsGlobalShowVMResourceMonitor(this);
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     m_pool[UIActionIndexMN_M_File_S_ShowExtraDataManager] = new UIActionSimpleManagerFileShowExtraDataManager(this);
 #endif
@@ -3652,14 +3658,6 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Machine_S_CreateShortcut] = new UIActionSimpleManagerCommonPerformCreateShortcut(this);
     m_pool[UIActionIndexMN_M_Machine_S_SortParent] = new UIActionSimpleManagerMachinePerformSortParent(this);
     m_pool[UIActionIndexMN_M_Machine_T_Search] = new UIActionToggleManagerCommonToggleSearch(this);
-
-    /* Global Tools actions: */
-    m_pool[UIActionIndexMN_M_Tools_M_Global] = new UIActionMenuManagerToolsGlobal(this);
-    m_pool[UIActionIndexMN_M_Tools_M_Global_S_ExtensionPackManager] = new UIActionSimpleManagerToolsGlobalShowExtensionPackManager(this);
-    m_pool[UIActionIndexMN_M_Tools_M_Global_S_VirtualMediaManager] = new UIActionSimpleManagerToolsGlobalShowVirtualMediaManager(this);
-    m_pool[UIActionIndexMN_M_Tools_M_Global_S_HostNetworkManager] = new UIActionSimpleManagerToolsGlobalShowHostNetworkManager(this);
-    m_pool[UIActionIndexMN_M_Tools_M_Global_S_CloudProfileManager] = new UIActionSimpleManagerToolsGlobalShowCloudProfileManager(this);
-    m_pool[UIActionIndexMN_M_Tools_M_Global_S_VMResourceMonitor] = new UIActionSimpleManagerToolsGlobalShowVMResourceMonitor(this);
 
     /* Snapshot Pane actions: */
     m_pool[UIActionIndexMN_M_Snapshot] = new UIActionMenuManagerSnapshot(this);

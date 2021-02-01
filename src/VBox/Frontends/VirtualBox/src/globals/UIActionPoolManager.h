@@ -42,6 +42,12 @@ enum UIActionIndexMN
     UIActionIndexMN_M_File_S_ShowCloudProfileManager,
     UIActionIndexMN_M_File_S_ImportAppliance,
     UIActionIndexMN_M_File_S_ExportAppliance,
+    UIActionIndexMN_M_File_M_Tools,
+    UIActionIndexMN_M_File_M_Tools_S_ExtensionPackManager,
+    UIActionIndexMN_M_File_M_Tools_S_VirtualMediaManager,
+    UIActionIndexMN_M_File_M_Tools_S_NetworkManager,
+    UIActionIndexMN_M_File_M_Tools_S_CloudProfileManager,
+    UIActionIndexMN_M_File_M_Tools_S_VMResourceMonitor,
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     UIActionIndexMN_M_File_S_ShowExtraDataManager,
 #endif
@@ -131,14 +137,6 @@ enum UIActionIndexMN
     UIActionIndexMN_M_Machine_S_CreateShortcut,
     UIActionIndexMN_M_Machine_S_SortParent,
     UIActionIndexMN_M_Machine_T_Search,
-
-    /* Global Tools actions: */
-    UIActionIndexMN_M_Tools_M_Global,
-    UIActionIndexMN_M_Tools_M_Global_S_ExtensionPackManager,
-    UIActionIndexMN_M_Tools_M_Global_S_VirtualMediaManager,
-    UIActionIndexMN_M_Tools_M_Global_S_HostNetworkManager,
-    UIActionIndexMN_M_Tools_M_Global_S_CloudProfileManager,
-    UIActionIndexMN_M_Tools_M_Global_S_VMResourceMonitor,
 
     /* Snapshot Pane actions: */
     UIActionIndexMN_M_Snapshot,
