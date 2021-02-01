@@ -1061,67 +1061,6 @@ typedef SVMMSRS *PSVMMSRS;
 typedef const SVMMSRS *PCSVMMSRS;
 
 /**
- * SVM nested-guest VMCB cache.
- *
- * Contains VMCB fields from the nested-guest VMCB before they're modified by
- * SVM R0 code for hardware-assisted SVM execution of a nested-guest.
- *
- * A VMCB field needs to be cached when it needs to be modified for execution using
- * hardware-assisted SVM and any of the following are true:
- *   - If the original field needs to be inspected during execution of the
- *     nested-guest or \#VMEXIT processing.
- *   - If the field is written back to memory on \#VMEXIT by the physical CPU.
- *
- * A VMCB field needs to be restored only when the field is written back to
- * memory on \#VMEXIT by the physical CPU and thus would be visible to the
- * guest.
- *
- * @remarks Please update hmR3InfoSvmNstGstVmcbCache() when changes are made to
- *          this structure.
- * @todo r=bird: Why is this structure here? Looks 100% internal to me.
- */
-typedef struct SVMNESTEDVMCBCACHE
-{
-    /** Cache of CRX read intercepts. */
-    uint16_t            u16InterceptRdCRx;
-    /** Cache of CRX write intercepts. */
-    uint16_t            u16InterceptWrCRx;
-    /** Cache of DRX read intercepts. */
-    uint16_t            u16InterceptRdDRx;
-    /** Cache of DRX write intercepts. */
-    uint16_t            u16InterceptWrDRx;
-
-    /** Cache of the pause-filter threshold. */
-    uint16_t            u16PauseFilterThreshold;
-    /** Cache of the pause-filter count. */
-    uint16_t            u16PauseFilterCount;
-
-    /** Cache of exception intercepts. */
-    uint32_t            u32InterceptXcpt;
-    /** Cache of control intercepts. */
-    uint64_t            u64InterceptCtrl;
-
-    /** Cache of the TSC offset. */
-    uint64_t            u64TSCOffset;
-
-    /** Cache of V_INTR_MASKING bit. */
-    bool                fVIntrMasking;
-    /** Cache of the nested-paging bit. */
-    bool                fNestedPaging;
-    /** Cache of the LBR virtualization bit. */
-    bool                fLbrVirt;
-    /** Whether the VMCB is cached by HM.  */
-    bool                fCacheValid;
-    /** Alignment. */
-    bool                afPadding0[4];
-} SVMNESTEDVMCBCACHE;
-/** Pointer to the SVMNESTEDVMCBCACHE structure. */
-typedef SVMNESTEDVMCBCACHE *PSVMNESTEDVMCBCACHE;
-/** Pointer to a const SVMNESTEDVMCBCACHE structure. */
-typedef const SVMNESTEDVMCBCACHE *PCSVMNESTEDVMCBCACHE;
-AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
-
-/**
  * Segment attribute conversion between CPU and AMD-V VMCB format.
  *
  * The CPU format of the segment attribute is described in X86DESCATTRBITS
