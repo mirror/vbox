@@ -136,19 +136,6 @@ struc HMCPUVMX
 endstruc
 
 struc HMCPUSVM
-    .HCPhysVmcbHost                 RTHCPHYS_RES 1
-
-    .hMemObjVmcbHost                RTR0PTR_RES  1
-    .pvPadding                      RTR0PTR_RES  1 ; pointless padding
-
-    .HCPhysVmcb                     RTHCPHYS_RES 1
-    .hMemObjVmcb                    RTR0PTR_RES  1
-    .pVmcb                          RTR0PTR_RES  1
-
-    .HCPhysMsrBitmap                RTHCPHYS_RES 1
-    .hMemObjMsrBitmap               RTR0PTR_RES  1
-    .pvMsrBitmap                    RTR0PTR_RES  1
-
     .fSyncVTpr                      resb    1
     .fEmulateLongModeSysEnterExit   resb    1
 
@@ -217,6 +204,22 @@ endstruc
 
 struc HMR0CPUSVM
     .pfnVMRun                       RTR0PTR_RES  1
+
+    alignb 8
+    .HCPhysVmcbHost                 RTHCPHYS_RES 1
+
+    alignb 8
+    .hMemObjVmcbHost                RTR0PTR_RES  1
+
+    alignb 8
+    .HCPhysVmcb                     RTHCPHYS_RES 1
+    .hMemObjVmcb                    RTR0PTR_RES  1
+    .pVmcb                          RTR0PTR_RES  1
+
+    alignb 8
+    .HCPhysMsrBitmap                RTHCPHYS_RES 1
+    .hMemObjMsrBitmap               RTR0PTR_RES  1
+    .pvMsrBitmap                    RTR0PTR_RES  1
 
     .DisState                       resb    0d8h
 endstruc

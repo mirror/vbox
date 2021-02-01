@@ -1017,28 +1017,6 @@ typedef struct HMCPU
     /** SVM data. */
     struct HMCPUSVM
     {
-        /** Physical address of the host VMCB which holds additional host-state. */
-        RTHCPHYS                    HCPhysVmcbHost;
-        /** R0 memory object for the host VMCB which holds additional host-state. */
-        RTR0MEMOBJ                  hMemObjVmcbHost;
-        /** Padding.
-         * @todo remove, pointless now  */
-        R0PTRTYPE(void *)           pvPadding;
-
-        /** Physical address of the guest VMCB. */
-        RTHCPHYS                    HCPhysVmcb;
-        /** R0 memory object for the guest VMCB. */
-        RTR0MEMOBJ                  hMemObjVmcb;
-        /** Pointer to the guest VMCB. */
-        R0PTRTYPE(PSVMVMCB)         pVmcb;
-
-        /** Physical address of the MSR bitmap (8 KB). */
-        RTHCPHYS                    HCPhysMsrBitmap;
-        /** R0 memory object for the MSR bitmap (8 KB). */
-        RTR0MEMOBJ                  hMemObjMsrBitmap;
-        /** Pointer to the MSR bitmap. */
-        R0PTRTYPE(void *)           pvMsrBitmap;
-
         /** Whether VTPR with V_INTR_MASKING set is in effect, indicating
          *  we should check if the VTPR changed on every VM-exit. */
         bool                        fSyncVTpr;
@@ -1318,6 +1296,25 @@ typedef struct HMR0PERVCPU
     {
         /** Ring 0 handlers for VT-x. */
         PFNHMSVMVMRUN               pfnVMRun;
+
+        /** Physical address of the host VMCB which holds additional host-state. */
+        RTHCPHYS                    HCPhysVmcbHost;
+        /** R0 memory object for the host VMCB which holds additional host-state. */
+        RTR0MEMOBJ                  hMemObjVmcbHost;
+
+        /** Physical address of the guest VMCB. */
+        RTHCPHYS                    HCPhysVmcb;
+        /** R0 memory object for the guest VMCB. */
+        RTR0MEMOBJ                  hMemObjVmcb;
+        /** Pointer to the guest VMCB. */
+        R0PTRTYPE(PSVMVMCB)         pVmcb;
+
+        /** Physical address of the MSR bitmap (8 KB). */
+        RTHCPHYS                    HCPhysMsrBitmap;
+        /** R0 memory object for the MSR bitmap (8 KB). */
+        RTR0MEMOBJ                  hMemObjMsrBitmap;
+        /** Pointer to the MSR bitmap. */
+        R0PTRTYPE(void *)           pvMsrBitmap;
 
         /** For saving stack space, the disassembler state is allocated here
          * instead of on the stack. */

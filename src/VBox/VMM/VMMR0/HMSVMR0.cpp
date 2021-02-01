@@ -677,27 +677,27 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVMCC pVM)
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
         AssertPtr(pVCpu);
 
-        if (pVCpu->hm.s.svm.hMemObjVmcbHost != NIL_RTR0MEMOBJ)
+        if (pVCpu->hmr0.s.svm.hMemObjVmcbHost != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjVmcbHost, false);
-            pVCpu->hm.s.svm.HCPhysVmcbHost   = 0;
-            pVCpu->hm.s.svm.hMemObjVmcbHost  = NIL_RTR0MEMOBJ;
+            RTR0MemObjFree(pVCpu->hmr0.s.svm.hMemObjVmcbHost, false);
+            pVCpu->hmr0.s.svm.HCPhysVmcbHost   = 0;
+            pVCpu->hmr0.s.svm.hMemObjVmcbHost  = NIL_RTR0MEMOBJ;
         }
 
-        if (pVCpu->hm.s.svm.hMemObjVmcb != NIL_RTR0MEMOBJ)
+        if (pVCpu->hmr0.s.svm.hMemObjVmcb != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjVmcb, false);
-            pVCpu->hm.s.svm.pVmcb            = NULL;
-            pVCpu->hm.s.svm.HCPhysVmcb       = 0;
-            pVCpu->hm.s.svm.hMemObjVmcb      = NIL_RTR0MEMOBJ;
+            RTR0MemObjFree(pVCpu->hmr0.s.svm.hMemObjVmcb, false);
+            pVCpu->hmr0.s.svm.pVmcb            = NULL;
+            pVCpu->hmr0.s.svm.HCPhysVmcb       = 0;
+            pVCpu->hmr0.s.svm.hMemObjVmcb      = NIL_RTR0MEMOBJ;
         }
 
-        if (pVCpu->hm.s.svm.hMemObjMsrBitmap != NIL_RTR0MEMOBJ)
+        if (pVCpu->hmr0.s.svm.hMemObjMsrBitmap != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjMsrBitmap, false);
-            pVCpu->hm.s.svm.pvMsrBitmap      = NULL;
-            pVCpu->hm.s.svm.HCPhysMsrBitmap  = 0;
-            pVCpu->hm.s.svm.hMemObjMsrBitmap = NIL_RTR0MEMOBJ;
+            RTR0MemObjFree(pVCpu->hmr0.s.svm.hMemObjMsrBitmap, false);
+            pVCpu->hmr0.s.svm.pvMsrBitmap      = NULL;
+            pVCpu->hmr0.s.svm.HCPhysMsrBitmap  = 0;
+            pVCpu->hmr0.s.svm.hMemObjMsrBitmap = NIL_RTR0MEMOBJ;
         }
     }
 }
@@ -777,9 +777,9 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-        pVCpu->hm.s.svm.hMemObjVmcbHost  = NIL_RTR0MEMOBJ;
-        pVCpu->hm.s.svm.hMemObjVmcb      = NIL_RTR0MEMOBJ;
-        pVCpu->hm.s.svm.hMemObjMsrBitmap = NIL_RTR0MEMOBJ;
+        pVCpu->hmr0.s.svm.hMemObjVmcbHost  = NIL_RTR0MEMOBJ;
+        pVCpu->hmr0.s.svm.hMemObjVmcb      = NIL_RTR0MEMOBJ;
+        pVCpu->hmr0.s.svm.hMemObjMsrBitmap = NIL_RTR0MEMOBJ;
     }
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
@@ -796,40 +796,43 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
          * Allocate one page for the host-context VM control block (VMCB). This is used for additional host-state (such as
          * FS, GS, Kernel GS Base, etc.) apart from the host-state save area specified in MSR_K8_VM_HSAVE_PA.
          */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjVmcbHost, SVM_VMCB_PAGES << PAGE_SHIFT, false /* fExecutable */);
+/** @todo Does this need to be below 4G? */
+        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjVmcbHost, SVM_VMCB_PAGES << PAGE_SHIFT, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
-        void *pvVmcbHost               = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcbHost);
-        pVCpu->hm.s.svm.HCPhysVmcbHost = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcbHost, 0 /* iPage */);
-        Assert(pVCpu->hm.s.svm.HCPhysVmcbHost < _4G);
+        void *pvVmcbHost                    = RTR0MemObjAddress(pVCpu->hmr0.s.svm.hMemObjVmcbHost);
+        pVCpu->hmr0.s.svm.HCPhysVmcbHost    = RTR0MemObjGetPagePhysAddr(pVCpu->hmr0.s.svm.hMemObjVmcbHost, 0 /* iPage */);
+        Assert(pVCpu->hmr0.s.svm.HCPhysVmcbHost < _4G);
         ASMMemZeroPage(pvVmcbHost);
 
         /*
          * Allocate one page for the guest-state VMCB.
          */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjVmcb, SVM_VMCB_PAGES << PAGE_SHIFT, false /* fExecutable */);
+/** @todo Does this need to be below 4G? */
+        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjVmcb, SVM_VMCB_PAGES << PAGE_SHIFT, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
-        pVCpu->hm.s.svm.pVmcb           = (PSVMVMCB)RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcb);
-        pVCpu->hm.s.svm.HCPhysVmcb      = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcb, 0 /* iPage */);
-        Assert(pVCpu->hm.s.svm.HCPhysVmcb < _4G);
-        ASMMemZeroPage(pVCpu->hm.s.svm.pVmcb);
+        pVCpu->hmr0.s.svm.pVmcb             = (PSVMVMCB)RTR0MemObjAddress(pVCpu->hmr0.s.svm.hMemObjVmcb);
+        pVCpu->hmr0.s.svm.HCPhysVmcb        = RTR0MemObjGetPagePhysAddr(pVCpu->hmr0.s.svm.hMemObjVmcb, 0 /* iPage */);
+        Assert(pVCpu->hmr0.s.svm.HCPhysVmcb < _4G);
+        ASMMemZeroPage(pVCpu->hmr0.s.svm.pVmcb);
 
         /*
          * Allocate two pages (8 KB) for the MSR permission bitmap. There doesn't seem to be a way to convince
          * SVM to not require one.
          */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT,
+/** @todo Does this need to be below 4G? */
+        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT,
                                  false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
-        pVCpu->hm.s.svm.pvMsrBitmap     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjMsrBitmap);
-        pVCpu->hm.s.svm.HCPhysMsrBitmap = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjMsrBitmap, 0 /* iPage */);
+        pVCpu->hmr0.s.svm.pvMsrBitmap       = RTR0MemObjAddress(pVCpu->hmr0.s.svm.hMemObjMsrBitmap);
+        pVCpu->hmr0.s.svm.HCPhysMsrBitmap   = RTR0MemObjGetPagePhysAddr(pVCpu->hmr0.s.svm.hMemObjMsrBitmap, 0 /* iPage */);
         /* Set all bits to intercept all MSR accesses (changed later on). */
-        ASMMemFill32(pVCpu->hm.s.svm.pvMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT, UINT32_C(0xffffffff));
+        ASMMemFill32(pVCpu->hmr0.s.svm.pvMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT, UINT32_C(0xffffffff));
    }
 
     return VINF_SUCCESS;
@@ -1006,7 +1009,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
 #endif
 
     PVMCPUCC     pVCpu0 = VMCC_GET_CPU_0(pVM);
-    PSVMVMCB     pVmcb0 = pVCpu0->hm.s.svm.pVmcb;
+    PSVMVMCB     pVmcb0 = pVCpu0->hmr0.s.svm.pVmcb;
     AssertMsgReturn(RT_VALID_PTR(pVmcb0), ("Invalid pVmcb (%p) for vcpu[0]\n", pVmcb0), VERR_SVM_INVALID_PVMCB);
     PSVMVMCBCTRL pVmcbCtrl0 = &pVmcb0->ctrl;
 
@@ -1141,7 +1144,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
      * The following MSRs are saved/restored automatically during the world-switch.
      * Don't intercept guest read/write accesses to these MSRs.
      */
-    uint8_t *pbMsrBitmap0 = (uint8_t *)pVCpu0->hm.s.svm.pvMsrBitmap;
+    uint8_t *pbMsrBitmap0 = (uint8_t *)pVCpu0->hmr0.s.svm.pvMsrBitmap;
     hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_K8_LSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
     hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_K8_CSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
     hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_K6_STAR,           SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
@@ -1161,7 +1164,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
         hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
         hmR0SvmSetMsrPermission(pVCpu0, pbMsrBitmap0, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
     }
-    pVmcbCtrl0->u64MSRPMPhysAddr = pVCpu0->hm.s.svm.HCPhysMsrBitmap;
+    pVmcbCtrl0->u64MSRPMPhysAddr = pVCpu0->hmr0.s.svm.HCPhysMsrBitmap;
 
     /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
     Assert(pVmcbCtrl0->u32VmcbCleanBits == 0);
@@ -1169,7 +1172,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
     for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPUCC     pVCpuCur = VMCC_GET_CPU(pVM, idCpu);
-        PSVMVMCB     pVmcbCur = pVCpuCur->hm.s.svm.pVmcb;
+        PSVMVMCB     pVmcbCur = pVCpuCur->hmr0.s.svm.pVmcb;
         AssertMsgReturn(RT_VALID_PTR(pVmcbCur), ("Invalid pVmcb (%p) for vcpu[%u]\n", pVmcbCur, idCpu), VERR_SVM_INVALID_PVMCB);
         PSVMVMCBCTRL pVmcbCtrlCur = &pVmcbCur->ctrl;
 
@@ -1177,9 +1180,9 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
         memcpy(pVmcbCtrlCur, pVmcbCtrl0, sizeof(*pVmcbCtrlCur));
 
         /* Copy the MSR bitmap and setup the VCPU-specific host physical address. */
-        uint8_t *pbMsrBitmapCur = (uint8_t *)pVCpuCur->hm.s.svm.pvMsrBitmap;
+        uint8_t *pbMsrBitmapCur = (uint8_t *)pVCpuCur->hmr0.s.svm.pvMsrBitmap;
         memcpy(pbMsrBitmapCur, pbMsrBitmap0, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
-        pVmcbCtrlCur->u64MSRPMPhysAddr = pVCpuCur->hm.s.svm.HCPhysMsrBitmap;
+        pVmcbCtrlCur->u64MSRPMPhysAddr = pVCpuCur->hmr0.s.svm.HCPhysMsrBitmap;
 
         /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
         Assert(pVmcbCtrlCur->u32VmcbCleanBits == 0);
@@ -1210,7 +1213,7 @@ DECLINLINE(PSVMVMCB) hmR0SvmGetCurrentVmcb(PVMCPUCC pVCpu)
     if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
         return pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb);
 #endif
-    return pVCpu->hm.s.svm.pVmcb;
+    return pVCpu->hmr0.s.svm.pVmcb;
 }
 
 
@@ -2126,7 +2129,7 @@ static int hmR0SvmExportGuestApicTpr(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
             {
                 /* 32-bit guests uses LSTAR MSR for patching guest code which touches the TPR. */
                 pVmcb->guest.u64LSTAR = u8Tpr;
-                uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
+                uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hmr0.s.svm.pvMsrBitmap;
 
                 /* If there are interrupts pending, intercept LSTAR writes, otherwise don't intercept reads or writes. */
                 if (fPendingIntr)
@@ -2192,8 +2195,8 @@ static void hmR0SvmExportGuestXcptIntercepts(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
  */
 static void hmR0SvmMergeVmcbCtrlsNested(PVMCPUCC pVCpu)
 {
-    PVMCC          pVM             = pVCpu->CTX_SUFF(pVM);
-    PCSVMVMCB    pVmcb           = pVCpu->hm.s.svm.pVmcb;
+    PVMCC        pVM             = pVCpu->CTX_SUFF(pVM);
+    PCSVMVMCB    pVmcb           = pVCpu->hmr0.s.svm.pVmcb;
     PSVMVMCB     pVmcbNstGst     = pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb);
     PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
 
@@ -2469,7 +2472,7 @@ static int hmR0SvmExportGuestState(PVMCPUCC pVCpu, PCSVMTRANSIENT pSvmTransient)
  */
 DECLINLINE(void) hmR0SvmMergeMsrpmNested(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
 {
-    uint64_t const *pu64GstMsrpm    = (uint64_t const *)pVCpu->hm.s.svm.pvMsrBitmap;
+    uint64_t const *pu64GstMsrpm    = (uint64_t const *)pVCpu->hmr0.s.svm.pvMsrBitmap;
     uint64_t const *pu64NstGstMsrpm = (uint64_t const *)pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvMsrBitmap);
     uint64_t       *pu64DstMsrpm    = (uint64_t *)pHostCpu->n.svm.pvNstGstMsrpm;
 
@@ -2955,7 +2958,7 @@ static void hmR0SvmLeave(PVMCPUCC pVCpu, bool fImportState)
 #ifdef VBOX_STRICT
     if (CPUMIsHyperDebugStateActive(pVCpu))
     {
-        PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb; /** @todo nested-guest. */
+        PSVMVMCB pVmcb = pVCpu->hmr0.s.svm.pVmcb; /** @todo nested-guest. */
         Assert(pVmcb->ctrl.u16InterceptRdDRx == 0xffff);
         Assert(pVmcb->ctrl.u16InterceptWrDRx == 0xffff);
     }
@@ -4128,7 +4131,7 @@ static VBOXSTRICTRC hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransie
     if (pVCpu->hm.s.svm.fSyncVTpr)
     {
         Assert(!pSvmTransient->fIsNestedGuest);
-        PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+        PCSVMVMCB pVmcb = pVCpu->hmr0.s.svm.pVmcb;
         if (pVM->hm.s.fTPRPatchingActive)
             pSvmTransient->u8GuestTpr = pVmcb->guest.u64LSTAR;
         else
@@ -4248,7 +4251,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransi
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     uint8_t *pbMsrBitmap;
     if (!pSvmTransient->fIsNestedGuest)
-        pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
+        pbMsrBitmap = (uint8_t *)pVCpu->hmr0.s.svm.pvMsrBitmap;
     else
     {
         hmR0SvmMergeMsrpmNested(pHostCpu, pVCpu);
@@ -4468,7 +4471,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
     SVMTRANSIENT SvmTransient;
     RT_ZERO(SvmTransient);
     SvmTransient.fUpdateTscOffsetting = true;
-    SvmTransient.pVmcb = pVCpu->hm.s.svm.pVmcb;
+    SvmTransient.pVmcb = pVCpu->hmr0.s.svm.pVmcb;
 
     VBOXSTRICTRC rc = VERR_INTERNAL_ERROR_5;
     for (;;)
@@ -4490,7 +4493,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
          * better than a kernel panic. This also disables flushing of the R0-logger instance.
          */
         hmR0SvmPreRunGuestCommitted(pVCpu, &SvmTransient);
-        rc = hmR0SvmRunGuest(pVCpu, pVCpu->hm.s.svm.HCPhysVmcb);
+        rc = hmR0SvmRunGuest(pVCpu, pVCpu->hmr0.s.svm.HCPhysVmcb);
 
         /* Restore any residual host-state and save any bits shared between host and guest
            into the guest-CPU state.  Re-enables interrupts! */
@@ -4509,7 +4512,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
         /* Handle the #VMEXIT. */
         HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatPreExit, &pVCpu->hm.s.StatExitHandling, x);
-        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, &pVCpu->cpum.GstCtx, SvmTransient.u64ExitCode, pVCpu->hm.s.svm.pVmcb);
+        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, &pVCpu->cpum.GstCtx, SvmTransient.u64ExitCode, pVCpu->hmr0.s.svm.pVmcb);
         rc = hmR0SvmHandleExit(pVCpu, &SvmTransient);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitHandling, x);
         if (rc != VINF_SUCCESS)
@@ -4543,7 +4546,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeStep(PVMCPUCC pVCpu, uint32_t *pcLoops)
     SVMTRANSIENT SvmTransient;
     RT_ZERO(SvmTransient);
     SvmTransient.fUpdateTscOffsetting = true;
-    SvmTransient.pVmcb = pVCpu->hm.s.svm.pVmcb;
+    SvmTransient.pVmcb = pVCpu->hmr0.s.svm.pVmcb;
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     uint16_t uCsStart  = pCtx->cs.Sel;
@@ -4572,7 +4575,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeStep(PVMCPUCC pVCpu, uint32_t *pcLoops)
          */
         hmR0SvmPreRunGuestCommitted(pVCpu, &SvmTransient);
 
-        rc = hmR0SvmRunGuest(pVCpu, pVCpu->hm.s.svm.HCPhysVmcb);
+        rc = hmR0SvmRunGuest(pVCpu, pVCpu->hmr0.s.svm.HCPhysVmcb);
 
         /* Restore any residual host-state and save any bits shared between host and guest
            into the guest-CPU state.  Re-enables interrupts! */
@@ -4591,7 +4594,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeStep(PVMCPUCC pVCpu, uint32_t *pcLoops)
         /* Handle the #VMEXIT. */
         HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatPreExit, &pVCpu->hm.s.StatExitHandling, x);
-        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pVCpu->hm.s.svm.pVmcb);
+        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pVCpu->hmr0.s.svm.pVmcb);
         rc = hmR0SvmHandleExit(pVCpu, &SvmTransient);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitHandling, x);
         if (rc != VINF_SUCCESS)
@@ -6483,7 +6486,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
             Log5(("hmR0SvmExitReadDRx: Lazy loading guest debug registers\n"));
 
             /* Don't intercept DRx read and writes. */
-            PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+            PSVMVMCB pVmcb = pVCpu->hmr0.s.svm.pVmcb;
             pVmcb->ctrl.u16InterceptRdDRx = 0;
             pVmcb->ctrl.u16InterceptWrDRx = 0;
             pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
@@ -7295,7 +7298,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
 
     /* Paranoia; Ensure we cannot be called as a result of event delivery. */
-    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+    PSVMVMCB pVmcb = pVCpu->hmr0.s.svm.pVmcb;
     Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid);  NOREF(pVmcb);
 
     /** @todo if we accumulate more optional stuff here, we ought to combine the
@@ -7452,7 +7455,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
      * handler expects. See AMD spec. 15.12.2 "#DB (Debug)".
      */
     PVMCC      pVM   = pVCpu->CTX_SUFF(pVM);
-    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+    PSVMVMCB pVmcb = pVCpu->hmr0.s.svm.pVmcb;
     PCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
     int rc = DBGFTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pVmcb->guest.u64DR6, pVCpu->hm.s.fSingleInstruction);
     if (rc == VINF_EM_RAW_GUEST_TRAP)

@@ -1349,7 +1349,7 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
  %endif
 
         ; Save host fs, gs, sysenter msr etc.
-        mov     rax, [rsi + VMCPU.hm + HMCPU.svm + HMCPUSVM.HCPhysVmcbHost]
+        mov     rax, [rsi + GVMCPU.hmr0 + HMR0PERVCPU.svm + HMR0CPUSVM.HCPhysVmcbHost]
         mov     qword [rbp + frm_HCPhysVmcbHost], rax ; save for the vmload after vmrun
         lea     rsi, [rsi + VMCPU.cpum.GstCtx]
         mov     qword [rbp + frm_pGstCtx], rsi
