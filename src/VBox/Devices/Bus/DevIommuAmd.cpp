@@ -2565,8 +2565,8 @@ static bool iommuAmdIsDvaInExclRange(PCIOMMU pThis, PCDTE_T pDte, uint64_t uIova
     if (uIovaExclLast - uIova >= uIovaExclFirst)
     {
         /* Check if device access to addresses in the exclusion range can be forwarded untranslated. */
-        if (    pThis->ExclRangeBaseAddr.n.u1AllowAll
-            ||  pDte->n.u1AllowExclusion)
+        if (   pThis->ExclRangeBaseAddr.n.u1AllowAll
+            || pDte->n.u1AllowExclusion)
             return true;
     }
     return false;
@@ -3786,9 +3786,9 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
      * This avoid trashing the heap as well as not wasting time allocating
      * and freeing buffers while processing commands.
      */
-    size_t cbMaxCmds = sizeof(CMD_GENERIC_T) * iommuAmdGetBufMaxEntries(15);
-    void *pvCmds = RTMemAllocZ(cbMaxCmds);
-    AssertReturn(pvCmds, VERR_NO_MEMORY);
+    size_t const cbMaxCmdBuf = sizeof(CMD_GENERIC_T) * iommuAmdGetBufMaxEntries(15);
+    void *pvCmds = RTMemAllocZ(cbMaxCmdBuf);
+    AssertPtrReturn(pvCmds, VERR_NO_MEMORY);
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
@@ -3816,8 +3816,8 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
          */
         /** @todo r=ramshankar: We currently copy all commands from guest memory into a
          *        temporary host buffer before processing them as a batch. If we want to
-         *        save on host memory a bit we could, once PGM has the necessary APIs, lock
-         *        the page mappings and access them directly. */
+         *        save on host memory a bit, we could (once PGM has the necessary APIs)
+         *        lock the page mappings page mappings and access them directly. */
         IOMMU_LOCK(pDevIns);
 
         IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
@@ -3831,7 +3831,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
             /* Validate. */
             Assert(!(offHead & ~IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK));
             Assert(offHead < cbCmdBuf);
-            Assert(cbCmdBuf <= cbMaxCmds);
+            Assert(cbCmdBuf <= cbMaxCmdBuf);
 
             if (offHead != offTail)
             {
@@ -3868,6 +3868,8 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                             }
                             break;
                         }
+
+                        /* Move to the next command in the circular buffer. */
                         offHead = (offHead + sizeof(CMD_GENERIC_T)) % cbCmdBuf;
                     } while (offHead != offTail);
                 }
@@ -3877,6 +3879,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                     EVT_CMD_HW_ERR_T EvtCmdHwErr;
                     iommuAmdCmdHwErrorEventInit(GCPhysCmdBufBase, &EvtCmdHwErr);
                     iommuAmdCmdHwErrorEventRaise(pDevIns, &EvtCmdHwErr);
+
                     IOMMU_UNLOCK(pDevIns);
                 }
             }
