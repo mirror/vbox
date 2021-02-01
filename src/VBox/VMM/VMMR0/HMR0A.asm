@@ -229,81 +229,6 @@
 %endmacro ; POP_RELEVANT_SEGMENT_REGISTERS
 
 
-;;
-; Creates an indirect branch prediction barrier on CPUs that need and supports that.
-; @clobbers eax, edx, ecx
-; @param    1   How to address CPUMCTX.
-; @param    2   Which flag to test for (CPUMCTX_WSF_IBPB_ENTRY or CPUMCTX_WSF_IBPB_EXIT)
-%macro INDIRECT_BRANCH_PREDICTION_BARRIER_CTX 2
-        test    byte [%1 + CPUMCTX.fWorldSwitcher], %2
-        jz      %%no_indirect_branch_barrier
-        mov     ecx, MSR_IA32_PRED_CMD
-        mov     eax, MSR_IA32_PRED_CMD_F_IBPB
-        xor     edx, edx
-        wrmsr
-%%no_indirect_branch_barrier:
-%endmacro
-
-;;
-; Creates an indirect branch prediction barrier on CPUs that need and supports that.
-; @clobbers eax, edx, ecx
-; @param    1   How to address VMCPU.
-; @param    2   Which flag to test for (CPUMCTX_WSF_IBPB_ENTRY or CPUMCTX_WSF_IBPB_EXIT)
-%macro INDIRECT_BRANCH_PREDICTION_BARRIER 2
-        test    byte [%1 + VMCPU.cpum.GstCtx + CPUMCTX.fWorldSwitcher], %2
-        jz      %%no_indirect_branch_barrier
-        mov     ecx, MSR_IA32_PRED_CMD
-        mov     eax, MSR_IA32_PRED_CMD_F_IBPB
-        xor     edx, edx
-        wrmsr
-%%no_indirect_branch_barrier:
-%endmacro
-
-;;
-; Creates an indirect branch prediction and L1D barrier on CPUs that need and supports that.
-; @clobbers eax, edx, ecx
-; @param    1   How to address CPUMCTX.
-; @param    2   Which IBPB flag to test for (CPUMCTX_WSF_IBPB_ENTRY or CPUMCTX_WSF_IBPB_EXIT)
-; @param    3   Which FLUSH flag to test for (CPUMCTX_WSF_L1D_ENTRY)
-; @param    4   Which MDS flag to test for (CPUMCTX_WSF_MDS_ENTRY)
-%macro INDIRECT_BRANCH_PREDICTION_AND_L1_CACHE_BARRIER 4
-        ; Only one test+jmp when disabled CPUs.
-        test    byte [%1 + CPUMCTX.fWorldSwitcher], (%2 | %3 | %4)
-        jz      %%no_barrier_needed
-
-        ; The eax:edx value is the same for both.
-        AssertCompile(MSR_IA32_PRED_CMD_F_IBPB == MSR_IA32_FLUSH_CMD_F_L1D)
-        mov     eax, MSR_IA32_PRED_CMD_F_IBPB
-        xor     edx, edx
-
-        ; Indirect branch barrier.
-        test    byte [%1 + CPUMCTX.fWorldSwitcher], %2
-        jz      %%no_indirect_branch_barrier
-        mov     ecx, MSR_IA32_PRED_CMD
-        wrmsr
-%%no_indirect_branch_barrier:
-
-        ; Level 1 data cache flush.
-        test    byte [%1 + CPUMCTX.fWorldSwitcher], %3
-        jz      %%no_cache_flush_barrier
-        mov     ecx, MSR_IA32_FLUSH_CMD
-        wrmsr
-        jmp     %%no_mds_buffer_flushing    ; MDS flushing is included in L1D_FLUSH
-%%no_cache_flush_barrier:
-
-        ; MDS buffer flushing.
-        test    byte [%1 + CPUMCTX.fWorldSwitcher], %4
-        jz      %%no_mds_buffer_flushing
-        sub     xSP, xSP
-        mov     [xSP], ds
-        verw    [xSP]
-        add     xSP, xSP
-%%no_mds_buffer_flushing:
-
-%%no_barrier_needed:
-%endmacro
-
-
 ;*********************************************************************************************************************************
 ;*  External Symbols                                                                                                             *
 ;*********************************************************************************************************************************
@@ -568,7 +493,7 @@ ENDPROC VMXDispatchHostNmi
 ;
 ; @param    1   Zero if regular return, non-zero if error return.  Controls label emission.
 ; @param    2   fLoadSaveGuestXcr0 value
-; @param    3   The (CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY) + CPUMCTX_WSF_IBPB_EXIT value.
+; @param    3   The (HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY | HM_WSF_MDS_ENTRY) + HM_WSF_IBPB_EXIT value.
 ;               The entry values are either all set or not at all, as we're too lazy to flesh out all the variants.
 ; @param    4   The SSE saving/restoring: 0 to do nothing, 1 to do it manually, 2 to use xsave/xrstor.
 ;
@@ -634,7 +559,7 @@ ENDPROC VMXDispatchHostNmi
         mov     r8, rax
  %endif
 
- %if %3 & CPUMCTX_WSF_IBPB_EXIT
+ %if %3 & HM_WSF_IBPB_EXIT
         ; Fight spectre (trashes rax, rdx and rcx).
   %if %1 = 0 ; Skip this in failure branch (=> guru)
         mov     ecx, MSR_IA32_PRED_CMD
@@ -684,7 +609,7 @@ ENDPROC VMXDispatchHostNmi
 ;
 ; @param    1   The suffix of the variation.
 ; @param    2   fLoadSaveGuestXcr0 value
-; @param    3   The CPUMCTX_WSF_IBPB_ENTRY + CPUMCTX_WSF_IBPB_EXIT value.
+; @param    3   The HM_WSF_IBPB_ENTRY + HM_WSF_IBPB_EXIT value.
 ; @param    4   The SSE saving/restoring: 0 to do nothing, 1 to do it manually, 2 to use xsave/xrstor.
 ;               Drivers shouldn't use AVX registers without saving+loading:
 ;                   https://msdn.microsoft.com/en-us/library/windows/hardware/ff545910%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
@@ -791,8 +716,8 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
         mov     eax, VERR_VMX_STARTVM_PRECOND_0
         jne     NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).precond_failure_return)
 
-        mov     eax, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fWorldSwitcher]
-        and     eax, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT
+        mov     eax, [rsi + GVMCPU.hmr0 + HMR0PERVCPU.fWorldSwitcher]
+        and     eax, HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY | HM_WSF_MDS_ENTRY | HM_WSF_IBPB_EXIT
         cmp     eax, %3
         mov     eax, VERR_VMX_STARTVM_PRECOND_1
         jne     NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1).precond_failure_return)
@@ -914,19 +839,19 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
         ;
         ; Fight spectre and similar. Trashes rax, rcx, and rdx.
         ;
- %if %3 & (CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY)  ; The eax:edx value is the same for the first two.
+ %if %3 & (HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY)  ; The eax:edx value is the same for the first two.
         AssertCompile(MSR_IA32_PRED_CMD_F_IBPB == MSR_IA32_FLUSH_CMD_F_L1D)
         mov     eax, MSR_IA32_PRED_CMD_F_IBPB
         xor     edx, edx
  %endif
- %if %3 & CPUMCTX_WSF_IBPB_ENTRY        ; Indirect branch barrier.
+ %if %3 & HM_WSF_IBPB_ENTRY             ; Indirect branch barrier.
         mov     ecx, MSR_IA32_PRED_CMD
         wrmsr
  %endif
- %if %3 & CPUMCTX_WSF_L1D_ENTRY         ; Level 1 data cache flush.
+ %if %3 & HM_WSF_L1D_ENTRY              ; Level 1 data cache flush.
         mov     ecx, MSR_IA32_FLUSH_CMD
         wrmsr
- %elif %3 & CPUMCTX_WSF_MDS_ENTRY       ; MDS flushing is included in L1D_FLUSH
+ %elif %3 & HM_WSF_MDS_ENTRY            ; MDS flushing is included in L1D_FLUSH
         mov     word [rbp + frm_MDS_seg], ds
         verw    word [rbp + frm_MDS_seg]
  %endif
@@ -1097,38 +1022,38 @@ ENDPROC RT_CONCAT(hmR0VmxStartVm,%1)
 %endmacro ; hmR0VmxStartVmTemplate
 
 %macro hmR0VmxStartVmSseTemplate 3
-hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 0, 0                      | 0                     | 0                     | 0                    , %1
-hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 1, 0                      | 0                     | 0                     | 0                    , %1
-hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 0, CPUMCTX_WSF_IBPB_ENTRY | 0                     | 0                     | 0                    , %1
-hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 1, CPUMCTX_WSF_IBPB_ENTRY | 0                     | 0                     | 0                    , %1
-hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 0, 0                      | CPUMCTX_WSF_L1D_ENTRY | 0                     | 0                    , %1
-hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 1, 0                      | CPUMCTX_WSF_L1D_ENTRY | 0                     | 0                    , %1
-hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | 0                     | 0                    , %1
-hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | 0                     | 0                    , %1
-hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 0, 0                      | 0                     | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
-hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 1, 0                      | 0                     | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
-hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 0, CPUMCTX_WSF_IBPB_ENTRY | 0                     | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
-hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 1, CPUMCTX_WSF_IBPB_ENTRY | 0                     | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
-hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 0, 0                      | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
-hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 1, 0                      | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
-hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
-hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | 0                    , %1
-hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 0, 0                      | 0                     | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 1, 0                      | 0                     | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 0, CPUMCTX_WSF_IBPB_ENTRY | 0                     | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 1, CPUMCTX_WSF_IBPB_ENTRY | 0                     | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 0, 0                      | CPUMCTX_WSF_L1D_ENTRY | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 1, 0                      | CPUMCTX_WSF_L1D_ENTRY | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | 0                     | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 0, 0                      | 0                     | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 1, 0                      | 0                     | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 0, CPUMCTX_WSF_IBPB_ENTRY | 0                     | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 1, CPUMCTX_WSF_IBPB_ENTRY | 0                     | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 0, 0                      | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 1, 0                      | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
-hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_L1D_ENTRY | CPUMCTX_WSF_MDS_ENTRY | CPUMCTX_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 0, 0                 | 0                | 0                | 0               , %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 1, 0                 | 0                | 0                | 0               , %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 0, HM_WSF_IBPB_ENTRY | 0                | 0                | 0               , %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 1, HM_WSF_IBPB_ENTRY | 0                | 0                | 0               , %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 0, 0                 | HM_WSF_L1D_ENTRY | 0                | 0               , %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 1, 0                 | HM_WSF_L1D_ENTRY | 0                | 0               , %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 0, HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY | 0                | 0               , %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_SansIbpbExit %+ %2, 1, HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY | 0                | 0               , %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 0, 0                 | 0                | HM_WSF_MDS_ENTRY | 0               , %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 1, 0                 | 0                | HM_WSF_MDS_ENTRY | 0               , %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 0, HM_WSF_IBPB_ENTRY | 0                | HM_WSF_MDS_ENTRY | 0               , %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 1, HM_WSF_IBPB_ENTRY | 0                | HM_WSF_MDS_ENTRY | 0               , %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 0, 0                 | HM_WSF_L1D_ENTRY | HM_WSF_MDS_ENTRY | 0               , %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 1, 0                 | HM_WSF_L1D_ENTRY | HM_WSF_MDS_ENTRY | 0               , %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 0, HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY | HM_WSF_MDS_ENTRY | 0               , %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_SansIbpbExit %+ %2, 1, HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY | HM_WSF_MDS_ENTRY | 0               , %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 0, 0                 | 0                | 0                | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 1, 0                 | 0                | 0                | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 0, HM_WSF_IBPB_ENTRY | 0                | 0                | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 1, HM_WSF_IBPB_ENTRY | 0                | 0                | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 0, 0                 | HM_WSF_L1D_ENTRY | 0                | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 1, 0                 | HM_WSF_L1D_ENTRY | 0                | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 0, HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY | 0                | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_SansMdsEntry_WithIbpbExit %+ %2, 1, HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY | 0                | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 0, 0                 | 0                | HM_WSF_MDS_ENTRY | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 1, 0                 | 0                | HM_WSF_MDS_ENTRY | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 0, HM_WSF_IBPB_ENTRY | 0                | HM_WSF_MDS_ENTRY | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_SansL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 1, HM_WSF_IBPB_ENTRY | 0                | HM_WSF_MDS_ENTRY | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 0, 0                 | HM_WSF_L1D_ENTRY | HM_WSF_MDS_ENTRY | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_SansIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 1, 0                 | HM_WSF_L1D_ENTRY | HM_WSF_MDS_ENTRY | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 0, HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY | HM_WSF_MDS_ENTRY | HM_WSF_IBPB_EXIT, %1
+hmR0VmxStartVmTemplate _WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit %+ %2, 1, HM_WSF_IBPB_ENTRY | HM_WSF_L1D_ENTRY | HM_WSF_MDS_ENTRY | HM_WSF_IBPB_EXIT, %1
 %endmacro
 
 hmR0VmxStartVmSseTemplate 0,,RT_NOTHING
@@ -1156,7 +1081,7 @@ ENDPROC   hmR0MdsClear
 ;
 ; @param    1   The suffix of the variation.
 ; @param    2   fLoadSaveGuestXcr0 value
-; @param    3   The CPUMCTX_WSF_IBPB_ENTRY + CPUMCTX_WSF_IBPB_EXIT value.
+; @param    3   The HM_WSF_IBPB_ENTRY + HM_WSF_IBPB_EXIT value.
 ; @param    4   The SSE saving/restoring: 0 to do nothing, 1 to do it manually, 2 to use xsave/xrstor.
 ;               Drivers shouldn't use AVX registers without saving+loading:
 ;                   https://msdn.microsoft.com/en-us/library/windows/hardware/ff545910%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
@@ -1264,8 +1189,8 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         mov     eax, VERR_SVM_VMRUN_PRECOND_0
         jne     .failure_return
 
-        mov     eax, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.fWorldSwitcher]
-        and     eax, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT
+        mov     eax, [rsi + GVMCPU.hmr0 + HMR0PERVCPU.fWorldSwitcher]
+        and     eax, HM_WSF_IBPB_ENTRY | HM_WSF_IBPB_EXIT
         cmp     eax, %3
         mov     eax, VERR_SVM_VMRUN_PRECOND_1
         jne     .failure_return
@@ -1355,7 +1280,7 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         mov     qword [rbp + frm_pGstCtx], rsi
         vmsave
 
- %if %3 & CPUMCTX_WSF_IBPB_ENTRY
+ %if %3 & HM_WSF_IBPB_ENTRY
         ; Fight spectre (trashes rax, rdx and rcx).
         mov     ecx, MSR_IA32_PRED_CMD
         mov     eax, MSR_IA32_PRED_CMD_F_IBPB
@@ -1448,7 +1373,7 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         mov     r8, rax
  %endif
 
- %if %3 & CPUMCTX_WSF_IBPB_EXIT
+ %if %3 & HM_WSF_IBPB_EXIT
         ; Fight spectre (trashes rax, rdx and rcx).
         mov     ecx, MSR_IA32_PRED_CMD
         mov     eax, MSR_IA32_PRED_CMD_F_IBPB
@@ -1540,31 +1465,31 @@ ENDPROC RT_CONCAT(hmR0SvmVmRun,%1)
 ;
 ; Instantiate the hmR0SvmVmRun various variations.
 ;
-hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit,           0, 0,                                              0
-hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit,           1, 0,                                              0
-hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit,           0, CPUMCTX_WSF_IBPB_ENTRY,                         0
-hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit,           1, CPUMCTX_WSF_IBPB_ENTRY,                         0
-hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit,           0, CPUMCTX_WSF_IBPB_EXIT,                          0
-hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit,           1, CPUMCTX_WSF_IBPB_EXIT,                          0
-hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit,           0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 0
-hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit,           1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 0
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit,           0, 0,                                    0
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit,           1, 0,                                    0
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit,           0, HM_WSF_IBPB_ENTRY,                    0
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit,           1, HM_WSF_IBPB_ENTRY,                    0
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit,           0, HM_WSF_IBPB_EXIT,                     0
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit,           1, HM_WSF_IBPB_EXIT,                     0
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit,           0, HM_WSF_IBPB_ENTRY | HM_WSF_IBPB_EXIT, 0
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit,           1, HM_WSF_IBPB_ENTRY | HM_WSF_IBPB_EXIT, 0
 %ifdef VBOX_WITH_KERNEL_USING_XMM
-hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit_SseManual, 0, 0,                                              1
-hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit_SseManual, 1, 0,                                              1
-hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_ENTRY,                         1
-hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_ENTRY,                         1
-hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_EXIT,                          1
-hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_EXIT,                          1
-hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit_SseManual, 0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 1
-hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit_SseManual, 1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 1
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit_SseManual, 0, 0,                                    1
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit_SseManual, 1, 0,                                    1
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit_SseManual, 0, HM_WSF_IBPB_ENTRY,                    1
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit_SseManual, 1, HM_WSF_IBPB_ENTRY,                    1
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit_SseManual, 0, HM_WSF_IBPB_EXIT,                     1
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit_SseManual, 1, HM_WSF_IBPB_EXIT,                     1
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit_SseManual, 0, HM_WSF_IBPB_ENTRY | HM_WSF_IBPB_EXIT, 1
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit_SseManual, 1, HM_WSF_IBPB_ENTRY | HM_WSF_IBPB_EXIT, 1
 
-hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit_SseXSave,  0, 0,                                              2
-hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit_SseXSave,  1, 0,                                              2
-hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_ENTRY,                         2
-hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_ENTRY,                         2
-hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_EXIT,                          2
-hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_EXIT,                          2
-hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit_SseXSave,  0, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 2
-hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit_SseXSave,  1, CPUMCTX_WSF_IBPB_ENTRY | CPUMCTX_WSF_IBPB_EXIT, 2
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_SansIbpbExit_SseXSave,  0, 0,                                    2
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_SansIbpbExit_SseXSave,  1, 0,                                    2
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_SansIbpbExit_SseXSave,  0, HM_WSF_IBPB_ENTRY,                    2
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_SansIbpbExit_SseXSave,  1, HM_WSF_IBPB_ENTRY,                    2
+hmR0SvmVmRunTemplate _SansXcr0_SansIbpbEntry_WithIbpbExit_SseXSave,  0, HM_WSF_IBPB_EXIT,                     2
+hmR0SvmVmRunTemplate _WithXcr0_SansIbpbEntry_WithIbpbExit_SseXSave,  1, HM_WSF_IBPB_EXIT,                     2
+hmR0SvmVmRunTemplate _SansXcr0_WithIbpbEntry_WithIbpbExit_SseXSave,  0, HM_WSF_IBPB_ENTRY | HM_WSF_IBPB_EXIT, 2
+hmR0SvmVmRunTemplate _WithXcr0_WithIbpbEntry_WithIbpbExit_SseXSave,  1, HM_WSF_IBPB_ENTRY | HM_WSF_IBPB_EXIT, 2
 %endif
 

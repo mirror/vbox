@@ -1224,6 +1224,36 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
     pVM->hmr0.s.fHostKernelFeatures = SUPR0GetKernelFeatures();
 
     /*
+     * Configure defences against spectre and other CPU bugs.
+     */
+    uint32_t fWorldSwitcher = 0;
+    uint32_t cLastStdLeaf   = ASMCpuId_EAX(0);
+    if (cLastStdLeaf >= 0x00000007 && ASMIsValidStdRange(cLastStdLeaf))
+    {
+        uint32_t uEdx = 0;
+        ASMCpuIdExSlow(0x00000007, 0, 0, 0, NULL, NULL, NULL, &uEdx);
+
+        if ((pVM->hm.s.fIbpbOnVmExit || pVM->hm.s.fIbpbOnVmEntry) && (uEdx & X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB))
+        {
+            if (pVM->hm.s.fIbpbOnVmExit)
+                fWorldSwitcher |= HM_WSF_IBPB_EXIT;
+            if (pVM->hm.s.fIbpbOnVmEntry)
+                fWorldSwitcher |= HM_WSF_IBPB_ENTRY;
+        }
+        if (pVM->hm.s.fL1dFlushOnVmEntry && (uEdx & X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD))
+            fWorldSwitcher |= HM_WSF_L1D_ENTRY;
+        if (pVM->hm.s.fMdsClearOnVmEntry && (uEdx & X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR))
+            fWorldSwitcher |= HM_WSF_MDS_ENTRY;
+    }
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
+        pVCpu->hmr0.s.fWorldSwitcher = fWorldSwitcher;
+    }
+    pVM->hm.s.fWorldSwitcherForLog = fWorldSwitcher;
+
+
+    /*
      * Call the hardware specific initialization method.
      */
     return g_HmR0.pfnInitVM(pVM);

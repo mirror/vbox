@@ -4159,13 +4159,13 @@ static int hmR0VmxSetupVmcsCtlsNested(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
  * This must be called whenever anything changes relative to the hmR0VmXStartVm
  * variant selection:
  *      - pVCpu->hm.s.fLoadSaveGuestXcr0
- *      - CPUMCTX_WSF_IBPB_ENTRY in pVCpu->cpum.GstCtx.fWorldSwitcher
- *      - CPUMCTX_WSF_IBPB_EXIT  in pVCpu->cpum.GstCtx.fWorldSwitcher
+ *      - HM_WSF_IBPB_ENTRY in pVCpu->hmr0.s.fWorldSwitcher
+ *      - HM_WSF_IBPB_EXIT  in pVCpu->hmr0.s.fWorldSwitcher
  *      - Perhaps: CPUMIsGuestFPUStateActive() (windows only)
  *      - Perhaps: CPUMCTX.fXStateMask (windows only)
  *
- * We currently ASSUME that neither CPUMCTX_WSF_IBPB_ENTRY nor
- * CPUMCTX_WSF_IBPB_EXIT cannot be changed at runtime.
+ * We currently ASSUME that neither HM_WSF_IBPB_ENTRY nor HM_WSF_IBPB_EXIT
+ * cannot be changed at runtime.
  */
 static void hmR0VmxUpdateStartVmFunction(PVMCPUCC pVCpu)
 {
@@ -4204,11 +4204,11 @@ static void hmR0VmxUpdateStartVmFunction(PVMCPUCC pVCpu)
         { hmR0VmxStartVm_SansXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
         { hmR0VmxStartVm_WithXcr0_WithIbpbEntry_WithL1dEntry_WithMdsEntry_WithIbpbExit },
     };
-    uintptr_t const idx = (pVCpu->hmr0.s.fLoadSaveGuestXcr0                           ?  1 : 0)
-                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_ENTRY ?  2 : 0)
-                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_L1D_ENTRY  ?  4 : 0)
-                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_MDS_ENTRY  ?  8 : 0)
-                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_EXIT  ? 16 : 0);
+    uintptr_t const idx = (pVCpu->hmr0.s.fLoadSaveGuestXcr0                 ?  1 : 0)
+                        | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_IBPB_ENTRY ?  2 : 0)
+                        | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_L1D_ENTRY  ?  4 : 0)
+                        | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_MDS_ENTRY  ?  8 : 0)
+                        | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_IBPB_EXIT  ? 16 : 0);
     PFNHMVMXSTARTVM const pfnStartVm = s_aHmR0VmxStartVmFunctions[idx].pfn;
     if (pVCpu->hmr0.s.vmx.pfnStartVm != pfnStartVm)
         pVCpu->hmr0.s.vmx.pfnStartVm = pfnStartVm;

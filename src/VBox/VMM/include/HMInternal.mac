@@ -242,9 +242,17 @@ struc HMR0PERVCPU
     .fLoadSaveGuestXcr0             resb    1
     .fClearTrapFlag                 resb    1
 
+    alignb 4
+    .fWorldSwitcher                 resd    1
+
     alignb 8
     .vmx                            resb    HMR0CPUVMX_size
     alignb 8
     .svm                            resb    HMR0CPUSVM_size
 endstruc
+
+%define HM_WSF_IBPB_EXIT            RT_BIT_32(0)
+%define HM_WSF_IBPB_ENTRY           RT_BIT_32(1)
+%define HM_WSF_L1D_ENTRY            RT_BIT_32(2)
+%define HM_WSF_MDS_ENTRY            RT_BIT_32(3)
 

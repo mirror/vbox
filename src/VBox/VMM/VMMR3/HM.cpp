@@ -662,6 +662,39 @@ static int hmR3InitFinalizeR3(PVM pVM)
         pVCpu->hm.s.fGIMTrapXcptUD = GIMShouldTrapXcptUD(pVCpu);    /* Is safe to call now since GIMR3Init() has completed. */
     }
 
+    /*
+     * Check if L1D flush is needed/possible.
+     */
+    if (   !pVM->cpum.ro.HostFeatures.fFlushCmd
+        || pVM->cpum.ro.HostFeatures.enmMicroarch <  kCpumMicroarch_Intel_Core7_Nehalem
+        || pVM->cpum.ro.HostFeatures.enmMicroarch >= kCpumMicroarch_Intel_Core7_End
+        || pVM->cpum.ro.HostFeatures.fArchVmmNeedNotFlushL1d
+        || pVM->cpum.ro.HostFeatures.fArchRdclNo)
+        pVM->hm.s.fL1dFlushOnSched = pVM->hm.s.fL1dFlushOnVmEntry = false;
+
+    /*
+     * Check if MDS flush is needed/possible.
+     * On atoms and knight family CPUs, we will only allow clearing on scheduling.
+     */
+    if (   !pVM->cpum.ro.HostFeatures.fMdsClear
+        || pVM->cpum.ro.HostFeatures.fArchMdsNo)
+        pVM->hm.s.fMdsClearOnSched = pVM->hm.s.fMdsClearOnVmEntry = false;
+    else if (   (   pVM->cpum.ro.HostFeatures.enmMicroarch >=  kCpumMicroarch_Intel_Atom_Airmount
+                 && pVM->cpum.ro.HostFeatures.enmMicroarch <   kCpumMicroarch_Intel_Atom_End)
+             || (   pVM->cpum.ro.HostFeatures.enmMicroarch >=  kCpumMicroarch_Intel_Phi_KnightsLanding
+                 && pVM->cpum.ro.HostFeatures.enmMicroarch <   kCpumMicroarch_Intel_Phi_End))
+    {
+        if (!pVM->hm.s.fMdsClearOnSched)
+             pVM->hm.s.fMdsClearOnSched = pVM->hm.s.fMdsClearOnVmEntry;
+        pVM->hm.s.fMdsClearOnVmEntry = false;
+    }
+    else if (   pVM->cpum.ro.HostFeatures.enmMicroarch <  kCpumMicroarch_Intel_Core7_Nehalem
+             || pVM->cpum.ro.HostFeatures.enmMicroarch >= kCpumMicroarch_Intel_Core7_End)
+        pVM->hm.s.fMdsClearOnSched = pVM->hm.s.fMdsClearOnVmEntry = false;
+
+    /*
+     * Statistics.
+     */
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM, &pVM->hm.s.StatTprPatchSuccess,      STAMTYPE_COUNTER, "/HM/TPR/Patch/Success",      STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
     STAM_REG(pVM, &pVM->hm.s.StatTprPatchFailure,      STAMTYPE_COUNTER, "/HM/TPR/Patch/Failed",       STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
@@ -670,9 +703,6 @@ static int hmR3InitFinalizeR3(PVM pVM)
     STAM_REG(pVM, &pVM->hm.s.StatTprReplaceFailure,    STAMTYPE_COUNTER, "/HM/TPR/Replace/Failed",     STAMUNIT_OCCURENCES, "Number of unsuccessful replace attempts.");
 #endif
 
-    /*
-     * Statistics.
-     */
 #ifdef VBOX_WITH_STATISTICS
     bool const fCpuSupportsVmx = ASMIsIntelCpu() || ASMIsViaCentaurCpu() || ASMIsShanghaiCpu();
 #endif
@@ -1091,62 +1121,9 @@ static int hmR3InitFinalizeR0(PVM pVM)
         pVM->hm.s.fTprPatchingAllowed = false;
     }
 
-    /*
-     * Check if L1D flush is needed/possible.
-     */
-    if (   !pVM->cpum.ro.HostFeatures.fFlushCmd
-        || pVM->cpum.ro.HostFeatures.enmMicroarch <  kCpumMicroarch_Intel_Core7_Nehalem
-        || pVM->cpum.ro.HostFeatures.enmMicroarch >= kCpumMicroarch_Intel_Core7_End
-        || pVM->cpum.ro.HostFeatures.fArchVmmNeedNotFlushL1d
-        || pVM->cpum.ro.HostFeatures.fArchRdclNo)
-        pVM->hm.s.fL1dFlushOnSched = pVM->hm.s.fL1dFlushOnVmEntry = false;
-
-    /*
-     * Check if MDS flush is needed/possible.
-     * On atoms and knight family CPUs, we will only allow clearing on scheduling.
-     */
-    if (   !pVM->cpum.ro.HostFeatures.fMdsClear
-        || pVM->cpum.ro.HostFeatures.fArchMdsNo)
-        pVM->hm.s.fMdsClearOnSched = pVM->hm.s.fMdsClearOnVmEntry = false;
-    else if (   (   pVM->cpum.ro.HostFeatures.enmMicroarch >=  kCpumMicroarch_Intel_Atom_Airmount
-                 && pVM->cpum.ro.HostFeatures.enmMicroarch <   kCpumMicroarch_Intel_Atom_End)
-             || (   pVM->cpum.ro.HostFeatures.enmMicroarch >=  kCpumMicroarch_Intel_Phi_KnightsLanding
-                 && pVM->cpum.ro.HostFeatures.enmMicroarch <   kCpumMicroarch_Intel_Phi_End))
-    {
-        if (!pVM->hm.s.fMdsClearOnSched)
-             pVM->hm.s.fMdsClearOnSched = pVM->hm.s.fMdsClearOnVmEntry;
-        pVM->hm.s.fMdsClearOnVmEntry = false;
-    }
-    else if (   pVM->cpum.ro.HostFeatures.enmMicroarch <  kCpumMicroarch_Intel_Core7_Nehalem
-             || pVM->cpum.ro.HostFeatures.enmMicroarch >= kCpumMicroarch_Intel_Core7_End)
-        pVM->hm.s.fMdsClearOnSched = pVM->hm.s.fMdsClearOnVmEntry = false;
-
-    /*
-     * Sync options.
-     */
-    /** @todo Move this out of of CPUMCTX and into some ring-0 only HM structure.
-     *        That will require a little bit of work, of course. */
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        PVMCPU   pVCpu   = pVM->apCpusR3[idCpu];
-        PCPUMCTX pCpuCtx = &pVCpu->cpum.GstCtx;
-        pCpuCtx->fWorldSwitcher &= ~(CPUMCTX_WSF_IBPB_EXIT | CPUMCTX_WSF_IBPB_ENTRY);
-        if (pVM->cpum.ro.HostFeatures.fIbpb)
-        {
-            if (pVM->hm.s.fIbpbOnVmExit)
-                pCpuCtx->fWorldSwitcher |= CPUMCTX_WSF_IBPB_EXIT;
-            if (pVM->hm.s.fIbpbOnVmEntry)
-                pCpuCtx->fWorldSwitcher |= CPUMCTX_WSF_IBPB_ENTRY;
-        }
-        if (pVM->cpum.ro.HostFeatures.fFlushCmd && pVM->hm.s.fL1dFlushOnVmEntry)
-            pCpuCtx->fWorldSwitcher |= CPUMCTX_WSF_L1D_ENTRY;
-        if (pVM->cpum.ro.HostFeatures.fMdsClear && pVM->hm.s.fMdsClearOnVmEntry)
-            pCpuCtx->fWorldSwitcher |= CPUMCTX_WSF_MDS_ENTRY;
-        if (idCpu == 0)
-            LogRel(("HM: fWorldSwitcher=%#x (fIbpbOnVmExit=%RTbool fIbpbOnVmEntry=%RTbool fL1dFlushOnVmEntry=%RTbool); fL1dFlushOnSched=%RTbool fMdsClearOnVmEntry=%RTbool\n",
-                    pCpuCtx->fWorldSwitcher, pVM->hm.s.fIbpbOnVmExit, pVM->hm.s.fIbpbOnVmEntry, pVM->hm.s.fL1dFlushOnVmEntry,
-                    pVM->hm.s.fL1dFlushOnSched, pVM->hm.s.fMdsClearOnVmEntry));
-    }
+    LogRel(("HM: fWorldSwitcher=%#x (fIbpbOnVmExit=%RTbool fIbpbOnVmEntry=%RTbool fL1dFlushOnVmEntry=%RTbool); fL1dFlushOnSched=%RTbool fMdsClearOnVmEntry=%RTbool\n",
+            pVM->hm.s.fWorldSwitcherForLog, pVM->hm.s.fIbpbOnVmExit, pVM->hm.s.fIbpbOnVmEntry, pVM->hm.s.fL1dFlushOnVmEntry,
+            pVM->hm.s.fL1dFlushOnSched, pVM->hm.s.fMdsClearOnVmEntry));
 
     /*
      * Do the vendor specific initialization

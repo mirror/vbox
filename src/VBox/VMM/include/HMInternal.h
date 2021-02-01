@@ -457,25 +457,24 @@ typedef struct HM
     /** Set if posted interrupt processing is enabled.
      * @todo Not really used by HM, move to APIC where it's actually used.  */
     bool                        fPostedIntrs;
-    /** Set if indirect branch prediction barrier on VM exit.
-     *  @todo 9217: copy to ring-0 and validate capability */
+    /** @name Processed into HMR0PERVCPU::fWorldSwitcher by ring-0 on VM init.
+     * @{ */
+    /** Set if indirect branch prediction barrier on VM exit. */
     bool                        fIbpbOnVmExit;
-    /** Set if indirect branch prediction barrier on VM entry.
-     *  @todo 9217: copy to ring-0 and validate capability */
+    /** Set if indirect branch prediction barrier on VM entry. */
     bool                        fIbpbOnVmEntry;
-    /** Set if level 1 data cache should be flushed on VM entry.
-     *  @todo 9217: copy to ring-0 and validate capability */
+    /** Set if level 1 data cache should be flushed on VM entry. */
     bool                        fL1dFlushOnVmEntry;
-    /** Set if level 1 data cache should be flushed on EMT scheduling.
-     *  @todo 9217: copy to ring-0 and validate capability */
+    /** Set if level 1 data cache should be flushed on EMT scheduling. */
     bool                        fL1dFlushOnSched;
-    /** Set if host manages speculation control settings.
-     * @todo doesn't do anything ...  */
-    bool                        fSpecCtrlByHost;
     /** Set if MDS related buffers should be cleared on VM entry. */
     bool                        fMdsClearOnVmEntry;
     /** Set if MDS related buffers should be cleared on EMT scheduling. */
     bool                        fMdsClearOnSched;
+    /** Set if host manages speculation control settings.
+     * @todo doesn't do anything ...  */
+    bool                        fSpecCtrlByHost;
+    /** @} */
     /** Alignment padding. */
     bool                        afPaddingMinus1[3];
 
@@ -643,7 +642,8 @@ typedef struct HM
     /** Maximum ASID allowed.
      * This is mainly for the release log.  */
     uint32_t                    uMaxAsidForLog;
-    uint32_t                    u32Alignment2;
+    /** World switcher flags (HM_WSF_XXX) for the release log. */
+    uint32_t                    fWorldSwitcherForLog;
 
     STAMCOUNTER                 StatTprPatchSuccess;
     STAMCOUNTER                 StatTprPatchFailure;
@@ -1329,7 +1329,9 @@ typedef struct HMR0PERVCPU
     /** Set if we need to clear the trap flag because of single stepping. */
     bool                        fClearTrapFlag;
 
-    bool                        afPadding1[5];
+    bool                        afPadding1[1];
+    /** World switcher flags (HM_WSF_XXX - was CPUMCTX::fWorldSwitcher in 6.1). */
+    uint32_t                    fWorldSwitcher;
 
     /** VT-x data.   */
     struct HMR0CPUVMX
@@ -1418,6 +1420,19 @@ typedef HMR0PERVCPU *PHMR0PERVCPU;
 AssertCompileMemberAlignment(HMR0PERVCPU, cWorldSwitchExits, 4);
 AssertCompileMemberAlignment(HMR0PERVCPU, fForceTLBFlush,    4);
 AssertCompileMemberAlignment(HMR0PERVCPU, vmx.RestoreHost,   8);
+
+
+/** @name HM_WSF_XXX - @bugref{9453}, @bugref{9087}
+ * @{ */
+/** Touch IA32_PRED_CMD.IBPB on VM exit.   */
+#define HM_WSF_IBPB_EXIT            RT_BIT_32(0)
+/** Touch IA32_PRED_CMD.IBPB on VM entry. */
+#define HM_WSF_IBPB_ENTRY           RT_BIT_32(1)
+/** Touch IA32_FLUSH_CMD.L1D on VM entry. */
+#define HM_WSF_L1D_ENTRY            RT_BIT_32(2)
+/** Flush MDS buffers on VM entry. */
+#define HM_WSF_MDS_ENTRY            RT_BIT_32(3)
+/** @} */
 
 
 #ifdef IN_RING0

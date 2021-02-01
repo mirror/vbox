@@ -730,9 +730,9 @@ static void hmR0SvmUpdateVmRunFunction(PVMCPUCC pVCpu)
         { hmR0SvmVmRun_SansXcr0_WithIbpbEntry_WithIbpbExit },
         { hmR0SvmVmRun_WithXcr0_WithIbpbEntry_WithIbpbExit },
     };
-    uintptr_t const idx = (pVCpu->hmr0.s.fLoadSaveGuestXcr0                           ? 1 : 0)
-                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_ENTRY ? 2 : 0)
-                        | (pVCpu->cpum.GstCtx.fWorldSwitcher & CPUMCTX_WSF_IBPB_EXIT  ? 4 : 0);
+    uintptr_t const idx = (pVCpu->hmr0.s.fLoadSaveGuestXcr0                 ? 1 : 0)
+                        | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_IBPB_ENTRY ? 2 : 0)
+                        | (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_IBPB_EXIT  ? 4 : 0);
     PFNHMSVMVMRUN const pfnVMRun = s_aHmR0SvmVmRunFunctions[idx].pfn;
     if (pVCpu->hmr0.s.svm.pfnVMRun != pfnVMRun)
         pVCpu->hmr0.s.svm.pfnVMRun = pfnVMRun;

@@ -471,11 +471,9 @@ typedef struct CPUMCTX
     /** State component offsets into pXState, UINT16_MAX if not present. */
     uint16_t                    aoffXState[64];
 
-    /** 0x2d4 - World switcher flags, CPUMCTX_WSF_XXX. */
-    uint32_t                    fWorldSwitcher;
-    /** 0x2d8 - Mirror of CPUMCPU::fUseFlags[CPUM_USED_FPU_GUEST]. */
+    /** 0x2d4 - Mirror of CPUMCPU::fUseFlags[CPUM_USED_FPU_GUEST]. */
     bool                        fUsedFpuGuest;
-    uint8_t                     afUnused[3];
+    uint8_t                     afUnused[7];
     /** 0x2d8 - Externalized state tracker, CPUMCTX_EXTRN_XXX.
      * Currently only used internally in NEM/win.  */
     uint64_t                    fExtrn;
@@ -899,18 +897,6 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMC
 
 #endif /* !VBOX_FOR_DTRACE_LIB */
 
-
-/** @name CPUMCTX_WSF_XXX
- * @{ */
-/** Touch IA32_PRED_CMD.IBPB on VM exit. */
-#define CPUMCTX_WSF_IBPB_EXIT           RT_BIT_32(0)
-/** Touch IA32_PRED_CMD.IBPB on VM entry. */
-#define CPUMCTX_WSF_IBPB_ENTRY          RT_BIT_32(1)
-/** Touch IA32_FLUSH_CMD.L1D on VM entry. */
-#define CPUMCTX_WSF_L1D_ENTRY           RT_BIT_32(2)
-/** Flush MDS buffers on VM entry. */
-#define CPUMCTX_WSF_MDS_ENTRY           RT_BIT_32(3)
-/** @} */
 
 /** @name CPUMCTX_EXTRN_XXX
  * Used for parts of the CPUM state that is externalized and needs fetching

@@ -253,7 +253,6 @@ struc CPUMCTX
     alignb 8
     .pXStateR3      RTR3PTR_RES 1
     .aoffXState         resw    64
-    .fWorldSwitcher     resd    1
     .fUsedFpuGuest      resb    1
     alignb 8
     .fExtrn             resq    1
@@ -286,11 +285,6 @@ struc CPUMCTX
     .hwvirt.fLocalForcedActions        resd          1
     alignb 64
 endstruc
-
-%define CPUMCTX_WSF_IBPB_EXIT           RT_BIT_32(0)
-%define CPUMCTX_WSF_IBPB_ENTRY          RT_BIT_32(1)
-%define CPUMCTX_WSF_L1D_ENTRY           RT_BIT_32(2)
-%define CPUMCTX_WSF_MDS_ENTRY           RT_BIT_32(3)
 
 
 %define CPUMSELREG_FLAGS_VALID      0x0001
