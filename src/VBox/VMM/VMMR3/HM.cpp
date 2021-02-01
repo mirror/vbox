@@ -1800,7 +1800,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     LogRel(("HM: AMD HWCR MSR                      = %#RX64\n", pVM->hm.s.svm.u64MsrHwcr));
     LogRel(("HM: AMD-V revision                    = %#x\n",    pVM->hm.s.svm.u32Rev));
     LogRel(("HM: AMD-V max ASID                    = %RU32\n",  pVM->hm.s.uMaxAsid));
-    LogRel(("HM: AMD-V features                    = %#x\n",    pVM->hm.s.svm.u32Features));
+    LogRel(("HM: AMD-V features                    = %#x\n",    pVM->hm.s.svm.fFeaturesForRing3));
 
     /*
      * Enumerate AMD-V features.
@@ -1825,7 +1825,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
 #undef HMSVM_REPORT_FEATURE
     };
 
-    uint32_t fSvmFeatures = pVM->hm.s.svm.u32Features;
+    uint32_t fSvmFeatures = pVM->hm.s.svm.fFeaturesForRing3;
     for (unsigned i = 0; i < RT_ELEMENTS(s_aSvmFeatures); i++)
         if (fSvmFeatures & s_aSvmFeatures[i].fFlag)
         {
@@ -1841,7 +1841,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
      * Nested paging is determined in HMR3Init, verify the sanity of that.
      */
     AssertLogRelReturn(   !pVM->hm.s.fNestedPaging
-                       || (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING),
+                       || (pVM->hm.s.svm.fFeaturesForRing3 & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING),
                        VERR_HM_IPE_1);
 
 #if 0

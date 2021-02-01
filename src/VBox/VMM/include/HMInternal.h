@@ -594,14 +594,12 @@ typedef struct HM
 
     struct
     {
-        /** Set by the ring-0 side of HM to indicate SVM is supported by the
-         *  CPU. */
+        /** Set by the ring-0 side of HM to indicate SVM is supported by the CPU. */
         bool                        fSupported;
         /** Set when we've enabled SVM. */
         bool                        fEnabled;
-        /** Set if erratum 170 affects the AMD cpu. */
-        bool                        fAlwaysFlushTLB;
-        /** Set when the hack to ignore VERR_SVM_IN_USE is active. */
+        /** Set when the hack to ignore VERR_SVM_IN_USE is active.
+         * @todo Safe?  */
         bool                        fIgnoreInUseError;
         /** Whether to use virtualized VMSAVE/VMLOAD feature. */
         bool                        fVirtVmsaveVmload;
@@ -609,22 +607,15 @@ typedef struct HM
         bool                        fVGif;
         /** Whether to use LBR virtualization feature. */
         bool                        fLbrVirt;
-        uint8_t                     u8Alignment0[1];
-
-        /** Physical address of the IO bitmap (12kb). */
-        RTHCPHYS                    HCPhysIOBitmap;
-        /** R0 memory object for the IO bitmap (12kb). */
-        RTR0MEMOBJ                  hMemObjIOBitmap;
-        /** Virtual address of the IO bitmap. */
-        R0PTRTYPE(void *)           pvIOBitmap;
+        uint8_t                     u8Alignment0[2];
 
         /* HWCR MSR (for diagnostics) */
         uint64_t                    u64MsrHwcr;
 
         /** SVM revision. */
         uint32_t                    u32Rev;
-        /** SVM feature bits from cpuid 0x8000000a */
-        uint32_t                    u32Features;
+        /** SVM feature bits from cpuid 0x8000000a, ring-3 copy. */
+        uint32_t                    fFeaturesForRing3;
 
         /** Pause filter counter. */
         uint16_t                    cPauseFilter;
@@ -659,6 +650,25 @@ typedef HM *PHM;
 AssertCompileMemberAlignment(HM, StatTprPatchSuccess, 8);
 AssertCompileMemberAlignment(HM, vmx,                 8);
 AssertCompileMemberAlignment(HM, svm,                 8);
+
+
+/**
+ * Per-VM ring-0 instance data for HM.
+ */
+typedef struct HMR0PERVM
+{
+    /** SVM specific data. */
+    struct HMR0SVMVM
+    {
+        /** Set if erratum 170 affects the AMD cpu. */
+        bool                        fAlwaysFlushTLB;
+        bool                        afAlignment0[3];
+        /** SVM feature bits from cpuid 0x8000000a, safe ring-0 copy. */
+        uint32_t                    fFeatures;
+    } svm;
+} HMR0PERVM;
+/** Pointer to HM's per-VM ring-0 instance data. */
+typedef HMR0PERVM *PHMR0PERVM;
 
 
 /** @addtogroup grp_hm_int_svm  SVM Internal

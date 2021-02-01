@@ -63,6 +63,8 @@ struc GVM
         .gvmm               resb 256
         alignb 64
         .gmm                resb 1024
+        alignb 64
+        .hmr0               resb 256
 %ifdef VBOX_WITH_NEM_R0
         alignb 64
         .nemr0              resb 256

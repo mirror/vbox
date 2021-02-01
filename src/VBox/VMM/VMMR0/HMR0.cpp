@@ -1172,9 +1172,9 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
     }
     else if (pVM->hm.s.svm.fSupported)
     {
-        pVM->hm.s.svm.u32Rev      = g_HmR0.hwvirt.u.svm.u32Rev;
-        pVM->hm.s.svm.u32Features = g_HmR0.hwvirt.u.svm.u32Features;
-        pVM->hm.s.svm.u64MsrHwcr  = g_HmR0.hwvirt.Msrs.u.svm.u64MsrHwcr;
+        pVM->hm.s.svm.u32Rev            = g_HmR0.hwvirt.u.svm.u32Rev;
+        pVM->hm.s.svm.fFeaturesForRing3 = pVM->hmr0.s.svm.fFeatures = g_HmR0.hwvirt.u.svm.u32Features;
+        pVM->hm.s.svm.u64MsrHwcr        = g_HmR0.hwvirt.Msrs.u.svm.u64MsrHwcr;
         /* If you need to tweak host MSRs for testing SVM R0 code, do it here. */
     }
     pVM->hm.s.rcInit              = g_HmR0.rcInit;

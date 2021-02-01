@@ -180,11 +180,14 @@ VMM_INT_DECL(void) HMNotifySvmNstGstVmexit(PVMCPUCC pVCpu, PCPUMCTX pCtx)
  * @remarks This value returned by this functions is expected by the callers not
  *          to change throughout the lifetime of the VM.
  */
-VMM_INT_DECL(bool) HMIsSvmVGifActive(PCVM pVM)
+VMM_INT_DECL(bool) HMIsSvmVGifActive(PCVMCC pVM)
 {
-    bool const fVGif    = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);
-    bool const fUseVGif = fVGif && pVM->hm.s.svm.fVGif;
-    return fVGif && fUseVGif;
+#ifdef IN_RING0
+    bool const fVGif    = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_VGIF);
+#else
+    bool const fVGif    = RT_BOOL(pVM->hm.s.svm.fFeaturesForRing3 & X86_CPUID_SVM_FEATURE_EDX_VGIF);
+#endif
+    return fVGif && pVM->hm.s.svm.fVGif;
 }
 
 
