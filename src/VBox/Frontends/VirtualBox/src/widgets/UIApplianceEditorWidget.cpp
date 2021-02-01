@@ -314,6 +314,7 @@ void UIVirtualSystemItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &
 {
     /* Resize the vectors */
     unsigned long iCount = m_comDescription.GetCount();
+    AssertReturnVoid(iCount > 0);
     finalStates.resize(iCount);
     finalValues.resize(iCount);
     finalExtraValues.resize(iCount);
