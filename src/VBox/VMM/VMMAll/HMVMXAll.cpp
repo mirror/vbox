@@ -729,8 +729,10 @@ VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCt
         {
             if (!CPUMIsGuestInLongModeEx(pCtx))
             {
-                if (   !pVM->hm.s.fNestedPaging        /* Requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap */
-                    ||  CPUMIsGuestInRealModeEx(pCtx)) /* Requires a fake TSS for real mode - stored in the VMM device heap */
+                if (/* Requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap: */
+                       !CTX_EXPR(pVM->hm.s.fNestedPagingCfg, pVM->hmr0.s.fNestedPaging, RT_NOTHING)
+                    /* Requires a fake TSS for real mode - stored in the VMM device heap: */
+                    || CPUMIsGuestInRealModeEx(pCtx))
                     return false;
 
                 /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */

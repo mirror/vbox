@@ -987,8 +987,20 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
-    Assert(pVM->hm.s.svm.fSupported);
 
+    /*
+     * Validate some parameters.
+     */
+    AssertReturn(pVM->hm.s.svm.fSupported, VERR_INCOMPATIBLE_CONFIG);
+    bool const fNestedPaging = pVM->hm.s.fNestedPagingCfg;
+    AssertReturn(   !fNestedPaging
+                 || (pVM->hm.s.svm.fFeaturesForRing3 & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING),
+                 VERR_INCOMPATIBLE_CONFIG);
+    pVM->hmr0.s.fNestedPaging = fNestedPaging;
+
+    /*
+     * Determin some configuration parameters.
+     */
     bool const fPauseFilter          = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER);
     bool const fPauseFilterThreshold = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD);
     bool const fUsePauseFilter       = fPauseFilter && pVM->hm.s.svm.cPauseFilter;
@@ -998,7 +1010,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     bool const fVirtVmsaveVmload     = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD);
-    bool const fUseVirtVmsaveVmload  = fVirtVmsaveVmload && pVM->hm.s.svm.fVirtVmsaveVmload && pVM->hm.s.fNestedPaging;
+    bool const fUseVirtVmsaveVmload  = fVirtVmsaveVmload && pVM->hm.s.svm.fVirtVmsaveVmload && fNestedPaging;
 
     bool const fVGif                 = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_VGIF);
     bool const fUseVGif              = fVGif && pVM->hm.s.svm.fVGif;
@@ -1108,10 +1120,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
     pVmcbCtrl0->TLBCtrl.n.u32ASID = 1;
 
     /* Setup Nested Paging. This doesn't change throughout the execution time of the VM. */
-    pVmcbCtrl0->NestedPagingCtrl.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
+    pVmcbCtrl0->NestedPagingCtrl.n.u1NestedPaging = fNestedPaging;
 
     /* Without Nested Paging, we need additionally intercepts. */
-    if (!pVM->hm.s.fNestedPaging)
+    if (!fNestedPaging)
     {
         /* CR3 reads/writes must be intercepted; our shadow values differ from the guest values. */
         pVmcbCtrl0->u16InterceptRdCRx |= RT_BIT(3);
@@ -1529,7 +1541,7 @@ static void hmR0SvmExportGuestCR0(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     uShadowCr0 &= ~(X86_CR0_CD | X86_CR0_NW);
 
     /* When Nested Paging is not available use shadow page tables and intercept #PFs (latter done in SVMR0SetupVM()). */
-    if (!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
+    if (!pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging)
     {
         uShadowCr0 |= X86_CR0_PG      /* Use shadow page tables. */
                    |  X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF #VMEXIT. */
@@ -1604,9 +1616,9 @@ static void hmR0SvmExportGuestCR3(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    PVMCC      pVM  = pVCpu->CTX_SUFF(pVM);
+    PVMCC    pVM  = pVCpu->CTX_SUFF(pVM);
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    if (pVM->hm.s.fNestedPaging)
+    if (pVM->hmr0.s.fNestedPaging)
     {
         pVmcb->ctrl.u64NestedPagingCR3 = PGMGetHyperCR3(pVCpu);
         pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_NP;
@@ -1634,7 +1646,7 @@ static int hmR0SvmExportGuestCR4(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     uint64_t uShadowCr4 = pCtx->cr4;
-    if (!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
+    if (!pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging)
     {
         switch (pVCpu->hm.s.enmShadowMode)
         {
@@ -2204,7 +2216,7 @@ static void hmR0SvmMergeVmcbCtrlsNested(PVMCPUCC pVCpu)
     pVmcbNstGstCtrl->u16InterceptWrCRx |= RT_BIT(4);
 
     /* Without nested paging, intercept CR3 reads and writes as we load shadow page tables. */
-    if (!pVM->hm.s.fNestedPaging)
+    if (!pVM->hmr0.s.fNestedPaging)
     {
         pVmcbNstGstCtrl->u16InterceptRdCRx |= RT_BIT(3);
         pVmcbNstGstCtrl->u16InterceptWrCRx |= RT_BIT(3);
@@ -2557,7 +2569,7 @@ static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
          * nested-paging suddenly while executing a VM (see assertion at the end of
          * Trap0eHandler() in PGMAllBth.h).
          */
-        pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
+        pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging;
 
         /* Always enable V_INTR_MASKING as we do not want to allow access to the physical APIC TPR. */
         pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking = 1;
@@ -2599,7 +2611,8 @@ static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
     {
         Assert(!pVCpu->hmr0.s.svm.fSyncVTpr);
         Assert(pVmcbNstGstCtrl->u64IOPMPhysAddr == g_HCPhysIOBitmap);
-        Assert(RT_BOOL(pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+        Assert(RT_BOOL(pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
+        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPagingCfg == pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
     }
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
@@ -3129,7 +3142,7 @@ static VBOXSTRICTRC hmR0SvmExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
                              | CPUM_CHANGED_IDTR
                              | CPUM_CHANGED_TR
                              | CPUM_CHANGED_HIDDEN_SEL_REGS);
-    if (   pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging
+    if (   pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging
         && CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx))
     {
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
@@ -4948,7 +4961,7 @@ static VBOXSTRICTRC hmR0SvmHandleExitNested(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTr
         case SVM_EXIT_XCPT_PF:
         {
             PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-            if (pVM->hm.s.fNestedPaging)
+            if (pVM->hmr0.s.fNestedPaging)
             {
                 uint32_t const u32ErrCode    = pVmcbNstGstCtrl->u64ExitInfo1;
                 uint64_t const uFaultAddress = pVmcbNstGstCtrl->u64ExitInfo2;
@@ -5250,7 +5263,7 @@ static VBOXSTRICTRC hmR0SvmHandleExitNested(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTr
 
                 case SVM_EXIT_NPF:
                 {
-                    Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+                    Assert(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
                     return hmR0SvmExitNestedPF(pVCpu, pSvmTransient);
                 }
 
@@ -5961,7 +5974,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdpmc(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
-    Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+    Assert(!pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
 
     VBOXSTRICTRC rcStrict;
     bool const fSupportsDecodeAssists = hmR0SvmSupportsDecodeAssists(pVCpu);
@@ -6818,7 +6831,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 
     PVMCC      pVM  = pVCpu->CTX_SUFF(pVM);
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    Assert(pVM->hm.s.fNestedPaging);
+    Assert(pVM->hmr0.s.fNestedPaging);
 
     /* See AMD spec. 15.25.6 "Nested versus Guest Page Faults, Fault Ordering" for VMCB details for #NPF. */
     PSVMVMCB pVmcb           = hmR0SvmGetCurrentVmcb(pVCpu);
@@ -6997,7 +7010,7 @@ HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransien
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY(pVCpu, pSvmTransient);
 
 #ifndef HMSVM_ALWAYS_TRAP_TASK_SWITCH
-    Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+    Assert(!pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
 #endif
 
     /* Check if this task-switch occurred while delivering an event through the guest IDT. */
@@ -7160,7 +7173,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     uint64_t const  uFaultAddress = pVmcb->ctrl.u64ExitInfo2;
 
 #if defined(HMSVM_ALWAYS_TRAP_ALL_XCPTS) || defined(HMSVM_ALWAYS_TRAP_PF)
-    if (pVM->hm.s.fNestedPaging)
+    if (pVM->hmr0.s.fNestedPaging)
     {
         pVCpu->hm.s.Event.fPending = false;     /* In case it's a contributory or vectoring #PF. */
         if (   !pSvmTransient->fVectoringDoublePF
@@ -7182,7 +7195,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     }
 #endif
 
-    Assert(!pVM->hm.s.fNestedPaging);
+    Assert(!pVM->hmr0.s.fNestedPaging);
 
     /*
      * TPR patching shortcut for APIC TPR reads and writes; only applicable to 32-bit guests.

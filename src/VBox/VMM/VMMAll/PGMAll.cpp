@@ -2927,7 +2927,7 @@ DECLINLINE(unsigned) pgmModeToType(PGMMODE pgmMode)
  * @param   enmHostMode     The host mode.
  * @param   enmShadowMode   The current shadow mode.
  */
-static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode)
+static PGMMODE pgmCalcShadowMode(PVMCC pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode)
 {
     switch (enmGuestMode)
     {

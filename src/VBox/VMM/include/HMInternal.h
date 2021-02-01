@@ -429,8 +429,9 @@ AssertCompileSizeAlignment(HMEVENT, 8);
  */
 typedef struct HM
 {
-    /** Set if nested paging is enabled. */
-    bool                        fNestedPaging;
+    /** Set if nested paging is enabled.
+     * Config value that is copied to HMR0PERVM::fNestedPaging on setup. */
+    bool                        fNestedPagingCfg;
     /** Set when we've initialized VMX or SVM. */
     bool                        fInitialized;
     /** Set if large pages are enabled (requires nested paging). */
@@ -465,23 +466,17 @@ typedef struct HM
     /** Set if MDS related buffers should be cleared on EMT scheduling. */
     bool                        fMdsClearOnSched;
     /** Alignment padding. */
-    bool                        afPaddingMinus1[7];
+    bool                        afPaddingMinus1[3];
 
-    /** Maximum ASID allowed. */
-    uint32_t                    uMaxAsid;
     /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
      * This number is set much higher when RTThreadPreemptIsPending is reliable. */
     uint32_t                    cMaxResumeLoops;
 
+    /** Maximum ASID allowed. */
+    uint32_t                    uMaxAsid;
+
     /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
     uint32_t                    fHostKernelFeatures;
-
-    /** Size of the guest patch memory block. */
-    uint32_t                    cbGuestPatchMem;
-    /** Guest allocated memory for patching purposes. */
-    RTGCPTR                     pGuestPatchMem;
-    /** Current free pointer inside the patch block. */
-    RTGCPTR                     pFreeGuestPatchMem;
 
     struct
     {
@@ -631,9 +626,15 @@ typedef struct HM
     uint32_t                    cPatches;
     HMTPRPATCH                  aPatches[64];
 
+    /** Guest allocated memory for patching purposes. */
+    RTGCPTR                     pGuestPatchMem;
+    /** Current free pointer inside the patch block. */
+    RTGCPTR                     pFreeGuestPatchMem;
+    /** Size of the guest patch memory block. */
+    uint32_t                    cbGuestPatchMem;
+
     /** Last recorded error code during HM ring-0 init. */
     int32_t                     rcInit;
-    uint32_t                    u32Alignment2;
 
     STAMCOUNTER                 StatTprPatchSuccess;
     STAMCOUNTER                 StatTprPatchFailure;
@@ -653,6 +654,11 @@ AssertCompileMemberAlignment(HM, svm,                 8);
  */
 typedef struct HMR0PERVM
 {
+    /** Set if nested paging is enabled. */
+    bool                        fNestedPaging;
+
+    bool                        afAlignment0[7];
+
     /** SVM specific data. */
     struct HMR0SVMVM
     {

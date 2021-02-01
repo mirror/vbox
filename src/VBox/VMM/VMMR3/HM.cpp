@@ -572,7 +572,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             if (   fAllowNestedPaging
                 && (fCaps & SUPVTCAPS_NESTED_PAGING))
             {
-                pVM->hm.s.fNestedPaging = true;
+                pVM->hm.s.fNestedPagingCfg = true;
                 if (fCaps & SUPVTCAPS_VT_X)
                 {
                     if (   fAllowUnrestricted
@@ -583,7 +583,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                 }
             }
             else
-                Assert(!pVM->hm.s.fNestedPaging);
+                Assert(!pVM->hm.s.fNestedPagingCfg);
         }
         else
         {
@@ -1585,12 +1585,12 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     /*
      * EPT and unrestricted guest execution are determined in HMR3Init, verify the sanity of that.
      */
-    AssertLogRelReturn(   !pVM->hm.s.fNestedPaging
+    AssertLogRelReturn(   !pVM->hm.s.fNestedPagingCfg
                        || (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_EPT),
                        VERR_HM_IPE_1);
     AssertLogRelReturn(   !pVM->hm.s.vmx.fUnrestrictedGuest
                        || (   (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
-                           && pVM->hm.s.fNestedPaging),
+                           && pVM->hm.s.fNestedPagingCfg),
                        VERR_HM_IPE_1);
 
     /*
@@ -1716,7 +1716,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     /*
      * Log configuration details.
      */
-    if (pVM->hm.s.fNestedPaging)
+    if (pVM->hm.s.fNestedPagingCfg)
     {
         LogRel(("HM: Enabled nested paging\n"));
         if (pVM->hm.s.vmx.enmTlbFlushEpt == VMXTLBFLUSHEPT_SINGLE_CONTEXT)
@@ -1840,7 +1840,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     /*
      * Nested paging is determined in HMR3Init, verify the sanity of that.
      */
-    AssertLogRelReturn(   !pVM->hm.s.fNestedPaging
+    AssertLogRelReturn(   !pVM->hm.s.fNestedPagingCfg
                        || (pVM->hm.s.svm.fFeaturesForRing3 & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING),
                        VERR_HM_IPE_1);
 
@@ -1894,7 +1894,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     LogRel(("HM: Enabled SVM\n"));
     pVM->hm.s.svm.fEnabled = true;
 
-    if (pVM->hm.s.fNestedPaging)
+    if (pVM->hm.s.fNestedPagingCfg)
     {
         LogRel(("HM:   Enabled nested paging\n"));
 
@@ -2804,7 +2804,7 @@ VMMR3DECL(bool) HMR3IsNestedPagingActive(PUVM pUVM)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, false);
-    return pVM->hm.s.fNestedPaging;
+    return pVM->hm.s.fNestedPagingCfg;
 }
 
 

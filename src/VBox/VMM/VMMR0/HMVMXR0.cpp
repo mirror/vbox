@@ -946,7 +946,7 @@ static uint64_t hmR0VmxGetFixedCr0Mask(PCVMCPUCC pVCpu)
     PCVMCC pVM = pVCpu->CTX_SUFF(pVM);
     return (  X86_CR0_PE
             | X86_CR0_NE
-            | (pVM->hm.s.fNestedPaging ? 0 : X86_CR0_WP)
+            | (pVM->hmr0.s.fNestedPaging ? 0 : X86_CR0_WP)
             | X86_CR0_PG
             | VMX_EXIT_HOST_CR0_IGNORE_MASK);
 }
@@ -1190,7 +1190,7 @@ static int hmR0VmxRemoveXcptInterceptMask(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTra
         if (uXcptMask)
         {
             /* Validate we are not removing any essential exception intercepts. */
-            Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging || !(uXcptMask & RT_BIT(X86_XCPT_PF)));
+            Assert(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging || !(uXcptMask & RT_BIT(X86_XCPT_PF)));
             NOREF(pVCpu);
             Assert(!(uXcptMask & RT_BIT(X86_XCPT_DB)));
             Assert(!(uXcptMask & RT_BIT(X86_XCPT_AC)));
@@ -2961,7 +2961,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt)
             else
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
         }
-        else if (pVM->hm.s.fNestedPaging)
+        else if (pVM->hmr0.s.fNestedPaging)
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     }
 
@@ -3025,9 +3025,9 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
 
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    AssertMsg(pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid,
+    AssertMsg(pVM->hmr0.s.fNestedPaging && pVM->hm.s.vmx.fVpid,
               ("hmR0VmxFlushTaggedTlbBoth cannot be invoked unless NestedPaging & VPID are enabled."
-               "fNestedPaging=%RTbool fVpid=%RTbool", pVM->hm.s.fNestedPaging, pVM->hm.s.vmx.fVpid));
+               "fNestedPaging=%RTbool fVpid=%RTbool", pVM->hmr0.s.fNestedPaging, pVM->hm.s.vmx.fVpid));
 
     /*
      * Force a TLB flush for the first world-switch if the current CPU differs from the one we
@@ -3124,7 +3124,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMXV
     AssertPtr(pVCpu);
     AssertPtr(pHostCpu);
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
-    AssertMsg(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked without NestedPaging."));
+    AssertMsg(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked without NestedPaging."));
     AssertMsg(!pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fVpid, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked with VPID."));
 
     /*
@@ -3178,7 +3178,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
     AssertPtr(pHostCpu);
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
     AssertMsg(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fVpid, ("hmR0VmxFlushTlbVpid cannot be invoked without VPID."));
-    AssertMsg(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging, ("hmR0VmxFlushTlbVpid cannot be invoked with NestedPaging"));
+    AssertMsg(!pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging, ("hmR0VmxFlushTlbVpid cannot be invoked with NestedPaging"));
 
     /*
      * Force a TLB flush for the first world switch if the current CPU differs from the one we
@@ -3302,7 +3302,7 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
      * We cannot ignore EPT if no suitable flush-types is supported by the CPU as we've already setup
      * unrestricted guest execution (see hmR3InitFinalizeR0()).
      */
-    if (pVM->hm.s.fNestedPaging)
+    if (pVM->hmr0.s.fNestedPaging)
     {
         if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT)
         {
@@ -3377,9 +3377,9 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
     /*
      * Setup the handler for flushing tagged-TLBs.
      */
-    if (pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid)
+    if (pVM->hmr0.s.fNestedPaging && pVM->hm.s.vmx.fVpid)
         pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_EPT_VPID;
-    else if (pVM->hm.s.fNestedPaging)
+    else if (pVM->hmr0.s.fNestedPaging)
         pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_EPT;
     else if (pVM->hm.s.vmx.fVpid)
         pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_VPID;
@@ -3863,7 +3863,7 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
         fVal |= VMX_PROC_CTLS2_WBINVD_EXIT;
 
     /* Enable EPT (aka nested-paging). */
-    if (pVM->hm.s.fNestedPaging)
+    if (pVM->hmr0.s.fNestedPaging)
         fVal |= VMX_PROC_CTLS2_EPT;
 
     /* Enable the INVPCID instruction if we expose it to the guest and is supported
@@ -3967,7 +3967,7 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     }
 
     /* Without nested paging, INVLPG (also affects INVPCID) and MOV CR3 instructions should cause VM-exits. */
-    if (!pVM->hm.s.fNestedPaging)
+    if (!pVM->hmr0.s.fNestedPaging)
     {
         Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
         fVal |= VMX_PROC_CTLS_INVLPG_EXIT
@@ -4109,7 +4109,7 @@ static void hmR0VmxSetupVmcsXcptBitmap(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
      *       recursive #DBs can cause a CPU hang.
      * #PF - To sync our shadow page tables when nested-paging is not used.
      */
-    bool const fNestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
+    bool const fNestedPaging = pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging;
     uint32_t const uXcptBitmap = RT_BIT(X86_XCPT_AC)
                                | RT_BIT(X86_XCPT_DB)
                                | (fNestedPaging ? 0 : RT_BIT(X86_XCPT_PF));
@@ -4527,6 +4527,16 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
         LogRelFunc(("Invalid real-on-v86 state.\n"));
         return VERR_INTERNAL_ERROR;
     }
+
+    /*
+     * Check that nested paging is supported if enabled and copy over the flag to the
+     * ring-0 only structure.
+     */
+    bool const fNestedPaging = pVM->hm.s.fNestedPagingCfg;
+    AssertReturn(   !fNestedPaging
+                 || (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_EPT), /** @todo use a ring-0 copy of ProcCtls2.n.allowed1 */
+                 VERR_INCOMPATIBLE_CONFIG);
+    pVM->hmr0.s.fNestedPaging = fNestedPaging;
 
     /* Initialize these always, see hmR3InitFinalizeR0().*/
     pVM->hm.s.vmx.enmTlbFlushEpt  = VMXTLBFLUSHEPT_NONE;
@@ -4950,10 +4960,11 @@ static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
          * shadow paging mode which is/will be placed in the VMCS (which is what will
          * actually be used while executing the guest and not the CR4 shadow value).
          */
-        AssertMsg(pVM->hm.s.fNestedPaging || (   pVCpu->hm.s.enmShadowMode == PGMMODE_PAE
-                                              || pVCpu->hm.s.enmShadowMode == PGMMODE_PAE_NX
-                                              || pVCpu->hm.s.enmShadowMode == PGMMODE_AMD64
-                                              || pVCpu->hm.s.enmShadowMode == PGMMODE_AMD64_NX),
+        AssertMsg(   pVM->hmr0.s.fNestedPaging
+                  || pVCpu->hm.s.enmShadowMode == PGMMODE_PAE
+                  || pVCpu->hm.s.enmShadowMode == PGMMODE_PAE_NX
+                  || pVCpu->hm.s.enmShadowMode == PGMMODE_AMD64
+                  || pVCpu->hm.s.enmShadowMode == PGMMODE_AMD64_NX,
                   ("enmShadowMode=%u\n", pVCpu->hm.s.enmShadowMode));
         if ((u64GuestEfer & MSR_K6_EFER_NXE) != (u64HostEfer & MSR_K6_EFER_NXE))
         {
@@ -5661,7 +5672,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
              * Setup VT-x's view of the guest CR0.
              */
             uint32_t uProcCtls = pVmcsInfo->u32ProcCtls;
-            if (pVM->hm.s.fNestedPaging)
+            if (pVM->hmr0.s.fNestedPaging)
             {
                 if (CPUMIsGuestPagingEnabled(pVCpu))
                 {
@@ -5737,7 +5748,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 #endif
             if (pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv)
                 uXcptBitmap |= RT_BIT(X86_XCPT_GP);
-            Assert(pVM->hm.s.fNestedPaging || (uXcptBitmap & RT_BIT(X86_XCPT_PF)));
+            Assert(pVM->hmr0.s.fNestedPaging || (uXcptBitmap & RT_BIT(X86_XCPT_PF)));
 
             /* Apply the hardware specified CR0 fixed bits and enable caching. */
             u64GuestCr0 |= fSetCr0;
@@ -5829,7 +5840,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
     {
         HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
 
-        if (pVM->hm.s.fNestedPaging)
+        if (pVM->hmr0.s.fNestedPaging)
         {
             PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
             pVmcsInfo->HCPhysEPTP = PGMGetHyperCR3(pVCpu);
@@ -5963,7 +5974,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
             u64GuestCr4 &= ~(uint64_t)X86_CR4_VME;
         }
 
-        if (pVM->hm.s.fNestedPaging)
+        if (pVM->hmr0.s.fNestedPaging)
         {
             if (   !CPUMIsGuestPagingEnabledEx(pCtx)
                 && !pVM->hm.s.vmx.fUnrestrictedGuest)
@@ -7011,7 +7022,7 @@ static void hmR0VmxReportWorldSwitchError(PVMCPUCC pVCpu, int rcVMRun, PVMXTRANS
                         PVMCC pVM = pVCpu->CTX_SUFF(pVM);
                         switch (uVmcsField)
                         {
-                            case VMX_VMCS64_CTRL_EPTP_FULL:  fSupported = pVM->hm.s.fNestedPaging;      break;
+                            case VMX_VMCS64_CTRL_EPTP_FULL:  fSupported = pVM->hmr0.s.fNestedPaging;    break;
                             case VMX_VMCS16_VPID:            fSupported = pVM->hm.s.vmx.fVpid;          break;
                             case VMX_VMCS32_CTRL_PROC_EXEC2:
                                 fSupported = RT_BOOL(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS);
@@ -7880,7 +7891,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                 {
                     /* CR0.PG bit changes are always intercepted, so it's up to date. */
                     if (   pVM->hm.s.vmx.fUnrestrictedGuest
-                        || (   pVM->hm.s.fNestedPaging
+                        || (   pVM->hmr0.s.fNestedPaging
                             && CPUMIsGuestPagingEnabledEx(pCtx)))
                     {
                         uint64_t u64Cr3;
@@ -8586,7 +8597,7 @@ static int hmR0VmxExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
                              | CPUM_CHANGED_IDTR
                              | CPUM_CHANGED_TR
                              | CPUM_CHANGED_HIDDEN_SEL_REGS);
-    if (   pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging
+    if (   pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging
         && CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx))
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 
@@ -10179,7 +10190,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 
         /** @todo Checks on Guest Page-Directory-Pointer-Table Entries when guest is
          *        not using nested paging? */
-        if (   pVM->hm.s.fNestedPaging
+        if (   pVM->hmr0.s.fNestedPaging
             && !fLongModeGuest
             && CPUMIsGuestInPAEModeEx(pCtx))
         {
@@ -13935,7 +13946,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     hmR0VmxReadExitQualVmcs(pVmxTransient);
 
-    if (!pVM->hm.s.fNestedPaging)
+    if (!pVM->hmr0.s.fNestedPaging)
     { /* likely */ }
     else
     {
@@ -14860,7 +14871,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging || pVCpu->hmr0.s.fUsingDebugLoop);
+    Assert(!pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging || pVCpu->hmr0.s.fUsingDebugLoop);
 
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     hmR0VmxReadExitQualVmcs(pVmxTransient);
@@ -15108,7 +15119,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPUCC pVCpu, PVMXTRANSIE
     Log4(("VMX_VMCS_CTRL_CR4_MASK                     %#RX64\n", u64Val));
     rc = VMXReadVmcsNw(VMX_VMCS_CTRL_CR4_READ_SHADOW, &u64Val);             AssertRC(rc);
     Log4(("VMX_VMCS_CTRL_CR4_READ_SHADOW              %#RX64\n", u64Val));
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
+    if (pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging)
     {
         rc = VMXReadVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, &u64Val);             AssertRC(rc);
         Log4(("VMX_VMCS64_CTRL_EPTP_FULL                  %#RX64\n", u64Val));
@@ -15497,7 +15508,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
              *   - We are executing in the VM debug loop.
              */
             Assert(   iCrReg != 3
-                   || !pVM->hm.s.fNestedPaging
+                   || !pVM->hmr0.s.fNestedPaging
                    || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
                    || pVCpu->hmr0.s.fUsingDebugLoop);
 
@@ -15549,7 +15560,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
              *   - We are executing in the VM debug loop.
              */
             Assert(   iCrReg != 3
-                   || !pVM->hm.s.fNestedPaging
+                   || !pVM->hmr0.s.fNestedPaging
                    || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
                    || pVCpu->hmr0.s.fLeaveDone);
 
@@ -16091,7 +16102,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+    Assert(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
 
     hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
@@ -16199,7 +16210,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+    Assert(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
 
     hmR0VmxReadExitQualVmcs(pVmxTransient);
     hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
@@ -16716,7 +16727,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
             }
 
             /* Nested paging is currently a requirement, otherwise we would need to handle shadow #PFs in hmR0VmxExitXcptPF. */
-            Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+            Assert(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
             return hmR0VmxExitXcpt(pVCpu, pVmxTransient);
         }
 
