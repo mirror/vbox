@@ -300,6 +300,34 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Show Welcome Screen' action class. */
+class UIActionSimpleManagerToolsGlobalShowWelcomeScreen : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleManagerToolsGlobalShowWelcomeScreen(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/welcome_screen_24px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsGlobalWelcomeScreen");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Welcome Screen"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the Welcome Screen"));
+    }
+};
+
 /** Simple action extension, used as 'Show Extension Pack Manager' action class. */
 class UIActionSimpleManagerToolsGlobalShowExtensionPackManager : public UIActionSimple
 {
@@ -3563,6 +3591,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_File_S_ImportAppliance] = new UIActionSimpleManagerFileShowImportApplianceWizard(this);
     m_pool[UIActionIndexMN_M_File_S_ExportAppliance] = new UIActionSimpleManagerFileShowExportApplianceWizard(this);
     m_pool[UIActionIndexMN_M_File_M_Tools] = new UIActionMenuManagerToolsGlobal(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_S_WelcomePane] = new UIActionSimpleManagerToolsGlobalShowWelcomeScreen(this);
     m_pool[UIActionIndexMN_M_File_M_Tools_S_ExtensionPackManager] = new UIActionSimpleManagerToolsGlobalShowExtensionPackManager(this);
     m_pool[UIActionIndexMN_M_File_M_Tools_S_VirtualMediaManager] = new UIActionSimpleManagerToolsGlobalShowVirtualMediaManager(this);
     m_pool[UIActionIndexMN_M_File_M_Tools_S_NetworkManager] = new UIActionSimpleManagerToolsGlobalShowHostNetworkManager(this);

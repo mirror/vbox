@@ -43,6 +43,7 @@ enum UIActionIndexMN
     UIActionIndexMN_M_File_S_ImportAppliance,
     UIActionIndexMN_M_File_S_ExportAppliance,
     UIActionIndexMN_M_File_M_Tools,
+    UIActionIndexMN_M_File_M_Tools_S_WelcomePane,
     UIActionIndexMN_M_File_M_Tools_S_ExtensionPackManager,
     UIActionIndexMN_M_File_M_Tools_S_VirtualMediaManager,
     UIActionIndexMN_M_File_M_Tools_S_NetworkManager,
