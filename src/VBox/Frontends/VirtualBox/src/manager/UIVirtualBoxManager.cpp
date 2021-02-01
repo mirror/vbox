@@ -750,7 +750,7 @@ void UIVirtualBoxManager::sltOpenManagerWindow(UIToolType enmType /* = UIToolTyp
         {
             UIAction *pAction = qobject_cast<UIAction*>(sender());
             AssertPtrReturnVoid(pAction);
-            enmType = pAction->property("toolType").value<UIToolType>();
+            enmType = pAction->property("UIToolType").value<UIToolType>();
         }
     }
 
@@ -2229,14 +2229,6 @@ void UIVirtualBoxManager::prepareMenuBar()
 
     /* Setup menu-bar policy: */
     menuBar()->setContextMenuPolicy(Qt::CustomContextMenu);
-
-    /* Assign actions with corresponding tool types: */
-    actionPool()->action(UIActionIndexMN_M_File_S_ShowExtensionPackManager)->setProperty("toolType", QVariant::fromValue(UIToolType_Extensions));
-    actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager)->setProperty("toolType", QVariant::fromValue(UIToolType_Media));
-    actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager)->setProperty("toolType", QVariant::fromValue(UIToolType_Network));
-    actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager)->setProperty("toolType", QVariant::fromValue(UIToolType_Cloud));
-    actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications)->setProperty("toolType", QVariant::fromValue(UIToolType_CloudConsole));
-    actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications)->setProperty("toolType", QVariant::fromValue(UIToolType_CloudConsole));
 }
 
 void UIVirtualBoxManager::prepareStatusBar()

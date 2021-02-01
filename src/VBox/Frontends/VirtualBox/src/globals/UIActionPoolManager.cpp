@@ -71,7 +71,9 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleManagerFileShowExtensionPackManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/extension_pack_manager_16px.png", ":/extension_pack_manager_disabled_16px.png")
-    {}
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Extensions));
+    }
 
 protected:
 
@@ -105,7 +107,9 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleManagerFileShowVirtualMediaManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/media_manager_16px.png", ":/media_manager_disabled_16px.png")
-    {}
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Media));
+    }
 
 protected:
 
@@ -139,7 +143,9 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleManagerFileShowHostNetworkManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/host_iface_manager_16px.png", ":/host_iface_manager_disabled_16px.png")
-    {}
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Network));
+    }
 
 protected:
 
@@ -173,7 +179,9 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleManagerFileShowCloudProfileManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/cloud_profile_manager_16px.png", ":/cloud_profile_manager_disabled_16px.png")
-    {}
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Cloud));
+    }
 
 protected:
 
@@ -1612,7 +1620,9 @@ public:
         : UIActionSimple(pParent,
                          ":/cloud_machine_console_configure_external_terminal_16px.png",
                          ":/cloud_machine_console_configure_external_terminal_disabled_16px.png")
-    {}
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_CloudConsole));
+    }
 
 protected:
 
@@ -4117,7 +4127,7 @@ void UIActionPoolManager::updateMenuWelcome()
     /* Clear contents: */
     pMenu->clear();
 
-    /* Populate Welcome menu: */
+    /* Populate 'Welcome' menu: */
     pMenu->addAction(action(UIActionIndexMN_M_Welcome_S_New));
     pMenu->addAction(action(UIActionIndexMN_M_Welcome_S_Add));
 
