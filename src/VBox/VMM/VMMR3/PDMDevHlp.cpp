@@ -1885,7 +1885,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysGCPhys2CCPtr(PPDMDEVINS pDevIns, PPD
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    int rc = pdmIommuMemAccessWriteCCPtr(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
+    int rc = pdmR3IommuMemAccessWriteCCPtr(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
     if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
 #endif
@@ -1916,7 +1916,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDev
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    int rc = pdmIommuMemAccessReadCCPtr(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
+    int rc = pdmR3IommuMemAccessReadCCPtr(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
     if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
 #endif
@@ -1948,7 +1948,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtr(PPDMDEVINS pDevIns,
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    int rc = pdmIommuMemAccessBulkWriteCCPtr(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
+    int rc = pdmR3IommuMemAccessBulkWriteCCPtr(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
     if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
 #endif
@@ -1980,7 +1980,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysBulkGCPhys2CCPtrReadOnly(PPDMDEVINS 
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    int rc = pdmIommuMemAccessBulkReadCCPtr(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
+    int rc = pdmR3IommuMemAccessBulkReadCCPtr(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
     if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
 #endif

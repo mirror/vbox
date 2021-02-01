@@ -1671,13 +1671,15 @@ int         pdmLockEx(PVMCC pVM, int rc);
 void        pdmUnlock(PVMCC pVM);
 
 #ifdef VBOX_WITH_IOMMU_AMD
+int         pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut);
 int         pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
 int         pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
-int         pdmIommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv, PPGMPAGEMAPLOCK pLock);
-int         pdmIommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv, PPGMPAGEMAPLOCK pLock);
-int         pdmIommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages, PCRTGCPHYS paGCPhysPages, uint32_t fFlags, const void **papvPages, PPGMPAGEMAPLOCK paLocks);
-int         pdmIommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages, PCRTGCPHYS paGCPhysPages, uint32_t fFlags, void **papvPages, PPGMPAGEMAPLOCK paLocks);
-int         pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut);
+# ifdef IN_RING3
+int         pdmR3IommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv, PPGMPAGEMAPLOCK pLock);
+int         pdmR3IommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv, PPGMPAGEMAPLOCK pLock);
+int         pdmR3IommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages, PCRTGCPHYS paGCPhysPages, uint32_t fFlags, const void **papvPages, PPGMPAGEMAPLOCK paLocks);
+int         pdmR3IommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages, PCRTGCPHYS paGCPhysPages, uint32_t fFlags, void **papvPages, PPGMPAGEMAPLOCK paLocks);
+# endif
 #endif
 
 #if defined(IN_RING3) || defined(IN_RING0)

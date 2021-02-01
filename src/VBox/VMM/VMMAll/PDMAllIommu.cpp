@@ -65,6 +65,26 @@ DECL_FORCE_INLINE(uint16_t) pdmIommuGetPciDeviceId(PPDMDEVINS pDevIns, PPDMPCIDE
 }
 
 
+/** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
+int pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+{
+    PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
+    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    if (   pDevInsIommu
+        && pDevInsIommu != pDevIns)
+    {
+        int rc = pIommu->pfnMsiRemap(pDevInsIommu, uDeviceId, pMsiIn, pMsiOut);
+        if (RT_FAILURE(rc))
+        {
+            LogFunc(("MSI remap failed. uDeviceId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n", uDeviceId, pMsiIn->Addr.u64,
+                     pMsiIn->Data.u32, rc));
+        }
+        return rc;
+    }
+    return VERR_IOMMU_NOT_PRESENT;
+}
+
+
 /**
  * Bus master physical memory read after translating the physical address using the
  * IOMMU.
@@ -177,6 +197,7 @@ int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPh
 }
 
 
+#ifdef IN_RING3
 /**
  * Requests the mapping of a guest page into ring-3 in preparation for a bus master
  * physical memory read operation.
@@ -195,10 +216,9 @@ int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPh
  * @param   pLock       Where to store the lock information that
  *                      pfnPhysReleasePageMappingLock needs.
  */
-int pdmIommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv,
-                               PPGMPAGEMAPLOCK pLock)
+int pdmR3IommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv,
+                                 PPGMPAGEMAPLOCK pLock)
 {
-#if defined(IN_RING3)
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
@@ -220,10 +240,6 @@ int pdmIommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
         return rc;
     }
     return VERR_IOMMU_NOT_PRESENT;
-#else
-    RT_NOREF6(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
-    return VERR_NOT_IMPLEMENTED;
-#endif
 }
 
 
@@ -245,10 +261,9 @@ int pdmIommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
  * @param   pLock       Where to store the lock information that
  *                      pfnPhysReleasePageMappingLock needs.
  */
-int pdmIommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv,
-                                PPGMPAGEMAPLOCK pLock)
+int pdmR3IommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv,
+                                  PPGMPAGEMAPLOCK pLock)
 {
-#if defined(IN_RING3)
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
@@ -270,10 +285,6 @@ int pdmIommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
         return rc;
     }
     return VERR_IOMMU_NOT_PRESENT;
-#else
-    RT_NOREF6(pDevIns, pPciDev, GCPhys, fFlags, ppv, pLock);
-    return VERR_NOT_IMPLEMENTED;
-#endif
 }
 
 
@@ -298,10 +309,9 @@ int pdmIommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
  *                              pfnPhysBulkReleasePageMappingLock needs (@a cPages
  *                              in length).
  */
-int pdmIommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages, PCRTGCPHYS paGCPhysPages,
-                                   uint32_t fFlags, const void **papvPages, PPGMPAGEMAPLOCK paLocks)
+int pdmR3IommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages, PCRTGCPHYS paGCPhysPages,
+                                     uint32_t fFlags, const void **papvPages, PPGMPAGEMAPLOCK paLocks)
 {
-#ifdef IN_RING3
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
@@ -338,10 +348,6 @@ int pdmIommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint3
         return rc;
     }
     return VERR_IOMMU_NOT_PRESENT;
-#else
-    RT_NOREF7(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
-    return VERR_NOT_IMPLEMENTED;
-#endif
 }
 
 
@@ -366,10 +372,9 @@ int pdmIommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint3
  *                              pfnPhysBulkReleasePageMappingLock needs (@a cPages
  *                              in length).
  */
-int pdmIommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages, PCRTGCPHYS paGCPhysPages,
-                                    uint32_t fFlags, void **papvPages, PPGMPAGEMAPLOCK paLocks)
+int pdmR3IommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t cPages, PCRTGCPHYS paGCPhysPages,
+                                      uint32_t fFlags, void **papvPages, PPGMPAGEMAPLOCK paLocks)
 {
-#ifdef IN_RING3
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
@@ -406,29 +411,6 @@ int pdmIommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint
         return rc;
     }
     return VERR_IOMMU_NOT_PRESENT;
-#else
-    RT_NOREF7(pDevIns, pPciDev, cPages, paGCPhysPages, fFlags, papvPages, paLocks);
-    return VERR_NOT_IMPLEMENTED;
-#endif
 }
-
-
-/** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
-int pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
-{
-    PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
-    PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
-    if (   pDevInsIommu
-        && pDevInsIommu != pDevIns)
-    {
-        int rc = pIommu->pfnMsiRemap(pDevInsIommu, uDeviceId, pMsiIn, pMsiOut);
-        if (RT_FAILURE(rc))
-        {
-            LogFunc(("MSI remap failed. uDeviceId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n", uDeviceId, pMsiIn->Addr.u64,
-                     pMsiIn->Data.u32, rc));
-        }
-        return rc;
-    }
-    return VERR_IOMMU_NOT_PRESENT;
-}
+#endif /* IN_RING3 */
 
