@@ -442,28 +442,35 @@ typedef struct HM
     /** Set if we can support 64-bit guests or not.
      *  Config value that is copied to HMR0PERVM::fAllow64BitGuests on setup. */
     bool                        fAllow64BitGuestsCfg;
-    /** Set when TPR patching is allowed. */
-    bool                        fTprPatchingAllowed;
     /** Set when we initialize VT-x or AMD-V once for all CPUs. */
     bool                        fGlobalInit;
+    /** Set when TPR patching is allowed. */
+    bool                        fTprPatchingAllowed;
     /** Set when TPR patching is active. */
     bool                        fTPRPatchingActive;
     /** Set when the debug facility has breakpoints/events enabled that requires
      *  us to use the debug execution loop in ring-0. */
     bool                        fUseDebugLoop;
-    /** Set if hardware APIC virtualization is enabled. */
+    /** Set if hardware APIC virtualization is enabled.
+     * @todo Not really used by HM, move to APIC where it's actually used.  */
     bool                        fVirtApicRegs;
-    /** Set if posted interrupt processing is enabled. */
+    /** Set if posted interrupt processing is enabled.
+     * @todo Not really used by HM, move to APIC where it's actually used.  */
     bool                        fPostedIntrs;
-    /** Set if indirect branch prediction barrier on VM exit. */
+    /** Set if indirect branch prediction barrier on VM exit.
+     *  @todo 9217: copy to ring-0 and validate capability */
     bool                        fIbpbOnVmExit;
-    /** Set if indirect branch prediction barrier on VM entry. */
+    /** Set if indirect branch prediction barrier on VM entry.
+     *  @todo 9217: copy to ring-0 and validate capability */
     bool                        fIbpbOnVmEntry;
-    /** Set if level 1 data cache should be flushed on VM entry. */
+    /** Set if level 1 data cache should be flushed on VM entry.
+     *  @todo 9217: copy to ring-0 and validate capability */
     bool                        fL1dFlushOnVmEntry;
-    /** Set if level 1 data cache should be flushed on EMT scheduling. */
+    /** Set if level 1 data cache should be flushed on EMT scheduling.
+     *  @todo 9217: copy to ring-0 and validate capability */
     bool                        fL1dFlushOnSched;
-    /** Set if host manages speculation control settings. */
+    /** Set if host manages speculation control settings.
+     * @todo doesn't do anything ...  */
     bool                        fSpecCtrlByHost;
     /** Set if MDS related buffers should be cleared on VM entry. */
     bool                        fMdsClearOnVmEntry;
@@ -474,7 +481,7 @@ typedef struct HM
 
     /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
      * This number is set much higher when RTThreadPreemptIsPending is reliable. */
-    uint32_t                    cMaxResumeLoops;
+    uint32_t                    cMaxResumeLoopsCfg;
 
     /** Maximum ASID allowed. */
     uint32_t                    uMaxAsid;
@@ -663,7 +670,11 @@ typedef struct HMR0PERVM
     /** Set if we can support 64-bit guests or not. */
     bool                        fAllow64BitGuests;
 
-    bool                        afAlignment0[6];
+    bool                        afAlignment0[2];
+
+    /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
+     * This number is set much higher when RTThreadPreemptIsPending is reliable. */
+    uint32_t                    cMaxResumeLoops;
 
     /** SVM specific data. */
     struct HMR0SVMVM

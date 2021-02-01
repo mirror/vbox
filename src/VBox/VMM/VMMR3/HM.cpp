@@ -444,7 +444,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * The number of times to resume guest execution before we forcibly return to
      * ring-3.  The return value of RTThreadPreemptIsPendingTrusty in ring-0
      * determines the default value. */
-    rc = CFGMR3QueryU32Def(pCfgHm, "MaxResumeLoops", &pVM->hm.s.cMaxResumeLoops, 0 /* set by R0 later */);
+    rc = CFGMR3QueryU32Def(pCfgHm, "MaxResumeLoops", &pVM->hm.s.cMaxResumeLoopsCfg, 0 /* set by R0 later */);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/HM/UseVmxPreemptTimer, bool}
@@ -1527,7 +1527,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     AssertLogRelReturn(pVM->hm.s.vmx.Msrs.u64FeatCtrl != 0, VERR_HM_IPE_4);
 
     LogRel(("HM: Using VT-x implementation 3.0\n"));
-    LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoops));
+    LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoopsCfg));
     LogRel(("HM: Host CR4                          = %#RX64\n", pVM->hm.s.vmx.u64HostCr4));
     LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.vmx.u64HostMsrEfer));
     LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.vmx.u64HostSmmMonitorCtl));
@@ -1796,7 +1796,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     uint32_t u32Stepping;
     if (HMIsSubjectToSvmErratum170(&u32Family, &u32Model, &u32Stepping))
         LogRel(("HM: AMD Cpu with erratum 170 family %#x model %#x stepping %#x\n", u32Family, u32Model, u32Stepping));
-    LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoops));
+    LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoopsCfg));
     LogRel(("HM: AMD HWCR MSR                      = %#RX64\n", pVM->hm.s.svm.u64MsrHwcr));
     LogRel(("HM: AMD-V revision                    = %#x\n",    pVM->hm.s.svm.u32Rev));
     LogRel(("HM: AMD-V max ASID                    = %RU32\n",  pVM->hm.s.uMaxAsid));
@@ -2809,7 +2809,7 @@ VMMR3DECL(bool) HMR3IsNestedPagingActive(PUVM pUVM)
 
 
 /**
- * Checks if virtualized APIC registers is enabled.
+ * Checks if virtualized APIC registers are enabled.
  *
  * When enabled this feature allows the hardware to access most of the
  * APIC registers in the virtual-APIC page without causing VM-exits. See
@@ -2819,7 +2819,7 @@ VMMR3DECL(bool) HMR3IsNestedPagingActive(PUVM pUVM)
  *          false.
  * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(bool) HMR3IsVirtApicRegsEnabled(PUVM pUVM)
+VMMR3DECL(bool) HMR3AreVirtApicRegsEnabled(PUVM pUVM)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
     PVM pVM = pUVM->pVM;

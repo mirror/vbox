@@ -1184,12 +1184,18 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
      * Set default maximum inner loops in ring-0 before returning to ring-3.
      * Can be overriden using CFGM.
      */
-    if (!pVM->hm.s.cMaxResumeLoops)
+    uint32_t cMaxResumeLoops = pVM->hm.s.cMaxResumeLoopsCfg;
+    if (!cMaxResumeLoops)
     {
-        pVM->hm.s.cMaxResumeLoops       = 1024;
+        cMaxResumeLoops     = 1024;
         if (RTThreadPreemptIsPendingTrusty())
-            pVM->hm.s.cMaxResumeLoops   = 8192;
+            cMaxResumeLoops = 8192;
     }
+    else if (cMaxResumeLoops > 16384)
+        cMaxResumeLoops = 16384;
+    else if (cMaxResumeLoops < 32)
+        cMaxResumeLoops = 32;
+    pVM->hm.s.cMaxResumeLoopsCfg = pVM->hmr0.s.cMaxResumeLoops = cMaxResumeLoops;
 
     /*
      * Initialize some per-VCPU fields.

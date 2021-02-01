@@ -4474,7 +4474,7 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
  */
 static VBOXSTRICTRC hmR0SvmRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
 {
-    uint32_t const cMaxResumeLoops = pVCpu->CTX_SUFF(pVM)->hm.s.cMaxResumeLoops;
+    uint32_t const cMaxResumeLoops = pVCpu->CTX_SUFF(pVM)->hmr0.s.cMaxResumeLoops;
     Assert(pcLoops);
     Assert(*pcLoops <= cMaxResumeLoops);
 
@@ -4549,7 +4549,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
  */
 static VBOXSTRICTRC hmR0SvmRunGuestCodeStep(PVMCPUCC pVCpu, uint32_t *pcLoops)
 {
-    uint32_t const cMaxResumeLoops = pVCpu->CTX_SUFF(pVM)->hm.s.cMaxResumeLoops;
+    uint32_t const cMaxResumeLoops = pVCpu->CTX_SUFF(pVM)->hmr0.s.cMaxResumeLoops;
     Assert(pcLoops);
     Assert(*pcLoops <= cMaxResumeLoops);
 
@@ -4657,7 +4657,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
     Assert(pcLoops);
-    Assert(*pcLoops <= pVCpu->CTX_SUFF(pVM)->hm.s.cMaxResumeLoops);
+    Assert(*pcLoops <= pVCpu->CTX_SUFF(pVM)->hmr0.s.cMaxResumeLoops);
 
     SVMTRANSIENT SvmTransient;
     RT_ZERO(SvmTransient);
@@ -4724,7 +4724,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
             }
             else
             {
-                if (++(*pcLoops) <= pVCpu->CTX_SUFF(pVM)->hm.s.cMaxResumeLoops)
+                if (++(*pcLoops) <= pVCpu->CTX_SUFF(pVM)->hmr0.s.cMaxResumeLoops)
                     continue;
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
                 rc = VINF_EM_RAW_INTERRUPT;
@@ -6356,8 +6356,8 @@ static VBOXSTRICTRC hmR0SvmExitWriteMsr(PVMCPUCC pVCpu, PSVMVMCB pVmcb, PSVMTRAN
      * We utilitize the LSTAR MSR for patching.
      */
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
-    if (   pVCpu->CTX_SUFF(pVM)->hm.s.fTPRPatchingActive
-        && idMsr == MSR_K8_LSTAR)
+    if (   idMsr == MSR_K8_LSTAR
+        && pVCpu->CTX_SUFF(pVM)->hm.s.fTPRPatchingActive)
     {
         unsigned cbInstr;
         if (fSupportsNextRipSave)
