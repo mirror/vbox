@@ -43,12 +43,12 @@ enum UIActionIndexMN
     UIActionIndexMN_M_File_S_ImportAppliance,
     UIActionIndexMN_M_File_S_ExportAppliance,
     UIActionIndexMN_M_File_M_Tools,
-    UIActionIndexMN_M_File_M_Tools_S_WelcomePane,
-    UIActionIndexMN_M_File_M_Tools_S_ExtensionPackManager,
-    UIActionIndexMN_M_File_M_Tools_S_VirtualMediaManager,
-    UIActionIndexMN_M_File_M_Tools_S_NetworkManager,
-    UIActionIndexMN_M_File_M_Tools_S_CloudProfileManager,
-    UIActionIndexMN_M_File_M_Tools_S_VMResourceMonitor,
+    UIActionIndexMN_M_File_M_Tools_T_WelcomeScreen,
+    UIActionIndexMN_M_File_M_Tools_T_ExtensionPackManager,
+    UIActionIndexMN_M_File_M_Tools_T_VirtualMediaManager,
+    UIActionIndexMN_M_File_M_Tools_T_NetworkManager,
+    UIActionIndexMN_M_File_M_Tools_T_CloudProfileManager,
+    UIActionIndexMN_M_File_M_Tools_T_VMResourceMonitor,
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     UIActionIndexMN_M_File_S_ShowExtraDataManager,
 #endif

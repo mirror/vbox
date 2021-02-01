@@ -282,7 +282,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuManagerToolsGlobal(UIActionPool *pParent)
-        : UIActionMenu(pParent)
+        : UIActionMenu(pParent, ":/tools_menu_24px.png") /// @todo replace with 16px icon
     {}
 
 protected:
@@ -296,21 +296,26 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Global Tools Menu"));
+        setName(QApplication::translate("UIActionPool", "Tools"));
     }
 };
 
 /** Simple action extension, used as 'Show Welcome Screen' action class. */
-class UIActionSimpleManagerToolsGlobalShowWelcomeScreen : public UIActionSimple
+class UIActionToggleManagerToolsGlobalShowWelcomeScreen : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowWelcomeScreen(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/welcome_screen_24px.png")
-    {}
+    UIActionToggleManagerToolsGlobalShowWelcomeScreen(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Welcome));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/welcome_screen_24px.png", ":/welcome_screen_24px.png",
+                                        ":/welcome_screen_24px.png", ":/welcome_screen_24px.png"));
+    }
 
 protected:
 
@@ -329,18 +334,21 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Extension Pack Manager' action class. */
-class UIActionSimpleManagerToolsGlobalShowExtensionPackManager : public UIActionSimple
+class UIActionToggleManagerToolsGlobalShowExtensionPackManager : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowExtensionPackManager(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/extension_pack_manager_24px.png", ":/extension_pack_manager_16px.png",
-                         ":/extension_pack_manager_disabled_24px.png", ":/extension_pack_manager_disabled_16px.png")
-    {}
+    UIActionToggleManagerToolsGlobalShowExtensionPackManager(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Extensions));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/extension_pack_manager_24px.png", ":/extension_pack_manager_16px.png",
+                                        ":/extension_pack_manager_disabled_24px.png", ":/extension_pack_manager_disabled_16px.png"));
+    }
 
 protected:
 
@@ -359,18 +367,21 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Virtual Media Manager' action class. */
-class UIActionSimpleManagerToolsGlobalShowVirtualMediaManager : public UIActionSimple
+class UIActionToggleManagerToolsGlobalShowVirtualMediaManager : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowVirtualMediaManager(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/media_manager_24px.png", ":/media_manager_16px.png",
-                         ":/media_manager_disabled_24px.png", ":/media_manager_disabled_16px.png")
-    {}
+    UIActionToggleManagerToolsGlobalShowVirtualMediaManager(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Media));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/media_manager_24px.png", ":/media_manager_16px.png",
+                                        ":/media_manager_disabled_24px.png", ":/media_manager_disabled_16px.png"));
+    }
 
 protected:
 
@@ -389,18 +400,21 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Network Manager' action class. */
-class UIActionSimpleManagerToolsGlobalShowHostNetworkManager : public UIActionSimple
+class UIActionToggleManagerToolsGlobalShowNetworkManager : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowHostNetworkManager(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png",
-                         ":/host_iface_manager_disabled_24px.png", ":/host_iface_manager_disabled_16px.png")
-    {}
+    UIActionToggleManagerToolsGlobalShowNetworkManager(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Network));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png",
+                                        ":/host_iface_manager_disabled_24px.png", ":/host_iface_manager_disabled_16px.png"));
+    }
 
 protected:
 
@@ -419,18 +433,21 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Cloud Profile Manager' action class. */
-class UIActionSimpleManagerToolsGlobalShowCloudProfileManager : public UIActionSimple
+class UIActionToggleManagerToolsGlobalShowCloudProfileManager : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowCloudProfileManager(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_16px.png",
-                         ":/cloud_profile_manager_disabled_24px.png", ":/cloud_profile_manager_disabled_16px.png")
-    {}
+    UIActionToggleManagerToolsGlobalShowCloudProfileManager(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Cloud));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_16px.png",
+                                        ":/cloud_profile_manager_disabled_24px.png", ":/cloud_profile_manager_disabled_16px.png"));
+    }
 
 protected:
 
@@ -449,18 +466,21 @@ protected:
 };
 
 /** Simple action extension, used as 'Show VM Resource Monitor' action class. */
-class UIActionSimpleManagerToolsGlobalShowVMResourceMonitor : public UIActionSimple
+class UIActionToggleManagerToolsGlobalShowVMResourceMonitor : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerToolsGlobalShowVMResourceMonitor(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/resouces_monitor_24px.png", ":/resouces_monitor_16px.png",
-                         ":/resouces_monitor_disabled_24px.png", ":/resouces_monitor_disabled_16px.png")
-    {}
+    UIActionToggleManagerToolsGlobalShowVMResourceMonitor(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Resources));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/resources_monitor_24px.png", ":/resources_monitor_16px.png",
+                                        ":/resources_monitor_disabled_24px.png", ":/resources_monitor_disabled_16px.png"));
+    }
 
 protected:
 
@@ -3591,12 +3611,12 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_File_S_ImportAppliance] = new UIActionSimpleManagerFileShowImportApplianceWizard(this);
     m_pool[UIActionIndexMN_M_File_S_ExportAppliance] = new UIActionSimpleManagerFileShowExportApplianceWizard(this);
     m_pool[UIActionIndexMN_M_File_M_Tools] = new UIActionMenuManagerToolsGlobal(this);
-    m_pool[UIActionIndexMN_M_File_M_Tools_S_WelcomePane] = new UIActionSimpleManagerToolsGlobalShowWelcomeScreen(this);
-    m_pool[UIActionIndexMN_M_File_M_Tools_S_ExtensionPackManager] = new UIActionSimpleManagerToolsGlobalShowExtensionPackManager(this);
-    m_pool[UIActionIndexMN_M_File_M_Tools_S_VirtualMediaManager] = new UIActionSimpleManagerToolsGlobalShowVirtualMediaManager(this);
-    m_pool[UIActionIndexMN_M_File_M_Tools_S_NetworkManager] = new UIActionSimpleManagerToolsGlobalShowHostNetworkManager(this);
-    m_pool[UIActionIndexMN_M_File_M_Tools_S_CloudProfileManager] = new UIActionSimpleManagerToolsGlobalShowCloudProfileManager(this);
-    m_pool[UIActionIndexMN_M_File_M_Tools_S_VMResourceMonitor] = new UIActionSimpleManagerToolsGlobalShowVMResourceMonitor(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_T_WelcomeScreen] = new UIActionToggleManagerToolsGlobalShowWelcomeScreen(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_T_ExtensionPackManager] = new UIActionToggleManagerToolsGlobalShowExtensionPackManager(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_T_VirtualMediaManager] = new UIActionToggleManagerToolsGlobalShowVirtualMediaManager(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_T_NetworkManager] = new UIActionToggleManagerToolsGlobalShowNetworkManager(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_T_CloudProfileManager] = new UIActionToggleManagerToolsGlobalShowCloudProfileManager(this);
+    m_pool[UIActionIndexMN_M_File_M_Tools_T_VMResourceMonitor] = new UIActionToggleManagerToolsGlobalShowVMResourceMonitor(this);
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     m_pool[UIActionIndexMN_M_File_S_ShowExtraDataManager] = new UIActionSimpleManagerFileShowExtraDataManager(this);
 #endif
