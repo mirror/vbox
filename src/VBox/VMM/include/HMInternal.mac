@@ -21,7 +21,6 @@
 
 struc VMXVMCSINFOSHARED
     .fWasInRealMode                 resb    1
-    .fSwitchedTo64on32Obsolete      resb    1
     alignb 8
     .RealMode.AttrCS                resd    1
     .RealMode.AttrDS                resd    1

@@ -689,10 +689,8 @@ typedef struct VMXVMCSINFOSHARED
      * @{ */
     /** Set if guest was executing in real mode (extra checks). */
     bool                        fWasInRealMode;
-    /** Set if the guest switched to 64-bit mode on a 32-bit host. */
-    bool                        fSwitchedTo64on32Obsolete;
     /** Padding. */
-    bool                        afPadding0[6];
+    bool                        afPadding0[7];
     struct
     {
         X86DESCATTR             AttrCS;
