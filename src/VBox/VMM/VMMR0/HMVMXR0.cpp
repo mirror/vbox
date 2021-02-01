@@ -2503,7 +2503,7 @@ static void hmR0VmxLazySaveHostMsrs(PVMCPUCC pVCpu)
     if (!(pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST))
     {
         Assert(!(pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST));  /* Guest MSRs better not be loaded now. */
-        if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+        if (pVCpu->CTX_SUFF(pVM)->hmr0.s.fAllow64BitGuests)
         {
             pVCpu->hmr0.s.vmx.u64HostMsrLStar        = ASMRdMsr(MSR_K8_LSTAR);
             pVCpu->hmr0.s.vmx.u64HostMsrStar         = ASMRdMsr(MSR_K6_STAR);
@@ -2525,7 +2525,7 @@ static void hmR0VmxLazySaveHostMsrs(PVMCPUCC pVCpu)
  */
 static bool hmR0VmxIsLazyGuestMsr(PCVMCPUCC pVCpu, uint32_t idMsr)
 {
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+    if (pVCpu->CTX_SUFF(pVM)->hmr0.s.fAllow64BitGuests)
     {
         switch (idMsr)
         {
@@ -2558,7 +2558,7 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPUCC pVCpu)
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
     Assert(pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+    if (pVCpu->CTX_SUFF(pVM)->hmr0.s.fAllow64BitGuests)
     {
         /*
          * If the guest MSRs are not loaded -and- if all the guest MSRs are identical
@@ -2614,7 +2614,7 @@ static void hmR0VmxLazyRestoreHostMsrs(PVMCPUCC pVCpu)
     if (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
     {
         Assert(pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
-        if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+        if (pVCpu->CTX_SUFF(pVM)->hmr0.s.fAllow64BitGuests)
         {
             ASMWrMsr(MSR_K8_LSTAR,          pVCpu->hmr0.s.vmx.u64HostMsrLStar);
             ASMWrMsr(MSR_K6_STAR,           pVCpu->hmr0.s.vmx.u64HostMsrStar);
@@ -3773,7 +3773,7 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
      * Allow full read/write access for the following MSRs (mandatory for VT-x)
      * required for 64-bit guests.
      */
-    if (pVM->hm.s.fAllow64BitGuests)
+    if (pVM->hmr0.s.fAllow64BitGuests)
     {
         hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_K8_LSTAR,          VMXMSRPM_ALLOW_RD_WR);
         hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_K6_STAR,           VMXMSRPM_ALLOW_RD_WR);
@@ -3989,11 +3989,9 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     {
         /* Some 32-bit CPUs do not support CR8 load/store exiting as MOV CR8 is
            invalid on 32-bit Intel CPUs. Set this control only for 64-bit guests. */
-        if (pVM->hm.s.fAllow64BitGuests)
-        {
+        if (pVM->hmr0.s.fAllow64BitGuests)
             fVal |= VMX_PROC_CTLS_CR8_STORE_EXIT             /* CR8 reads cause a VM-exit. */
                  |  VMX_PROC_CTLS_CR8_LOAD_EXIT;             /* CR8 writes cause a VM-exit. */
-        }
     }
 
     /* Use MSR-bitmaps if supported by the CPU. */
@@ -4537,6 +4535,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
                  || (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_EPT), /** @todo use a ring-0 copy of ProcCtls2.n.allowed1 */
                  VERR_INCOMPATIBLE_CONFIG);
     pVM->hmr0.s.fNestedPaging = fNestedPaging;
+    pVM->hmr0.s.fAllow64BitGuests = pVM->hm.s.fAllow64BitGuestsCfg;
 
     /* Initialize these always, see hmR3InitFinalizeR0().*/
     pVM->hm.s.vmx.enmTlbFlushEpt  = VMXTLBFLUSHEPT_NONE;
@@ -7753,14 +7752,14 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
 
             if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
             {
-                if (   pVM->hm.s.fAllow64BitGuests
+                if (   pVM->hmr0.s.fAllow64BitGuests
                     && (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
                     pCtx->msrKERNELGSBASE = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
             }
 
             if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
             {
-                if (   pVM->hm.s.fAllow64BitGuests
+                if (   pVM->hmr0.s.fAllow64BitGuests
                     && (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
                 {
                     pCtx->msrLSTAR  = ASMRdMsr(MSR_K8_LSTAR);
@@ -10595,11 +10594,9 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
          * used by the nested hypervisor. Preventing MMIO accesses to the physical APIC will
          * be taken care of by EPT/shadow paging.
          */
-        if (pVM->hm.s.fAllow64BitGuests)
-        {
+        if (pVM->hmr0.s.fAllow64BitGuests)
             u32ProcCtls |= VMX_PROC_CTLS_CR8_STORE_EXIT
                         |  VMX_PROC_CTLS_CR8_LOAD_EXIT;
-        }
     }
 
     /*

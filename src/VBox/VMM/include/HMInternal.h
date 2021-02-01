@@ -432,12 +432,16 @@ typedef struct HM
     /** Set if nested paging is enabled.
      * Config value that is copied to HMR0PERVM::fNestedPaging on setup. */
     bool                        fNestedPagingCfg;
-    /** Set when we've initialized VMX or SVM. */
+    /** Set when we've finalized the VMX / SVM initialization in ring-3
+     *  (hmR3InitFinalizeR0Intel / hmR3InitFinalizeR0Amd). */
     bool                        fInitialized;
-    /** Set if large pages are enabled (requires nested paging). */
+    /** Set if large pages are enabled (requires nested paging).
+     * Config only, passed on the PGM where it really belongs.
+     * @todo move to PGM */
     bool                        fLargePages;
-    /** Set if we can support 64-bit guests or not. */
-    bool                        fAllow64BitGuests;
+    /** Set if we can support 64-bit guests or not.
+     *  Config value that is copied to HMR0PERVM::fAllow64BitGuests on setup. */
+    bool                        fAllow64BitGuestsCfg;
     /** Set when TPR patching is allowed. */
     bool                        fTprPatchingAllowed;
     /** Set when we initialize VT-x or AMD-V once for all CPUs. */
@@ -656,8 +660,10 @@ typedef struct HMR0PERVM
 {
     /** Set if nested paging is enabled. */
     bool                        fNestedPaging;
+    /** Set if we can support 64-bit guests or not. */
+    bool                        fAllow64BitGuests;
 
-    bool                        afAlignment0[7];
+    bool                        afAlignment0[6];
 
     /** SVM specific data. */
     struct HMR0SVMVM

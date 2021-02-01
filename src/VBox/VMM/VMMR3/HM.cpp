@@ -345,10 +345,10 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * On 32-bit hosts this isn't default and require host CPU support. 64-bit hosts
      * already have the support. */
 #ifdef VBOX_WITH_64_BITS_GUESTS
-    rc = CFGMR3QueryBoolDef(pCfgHm, "64bitEnabled", &pVM->hm.s.fAllow64BitGuests, HC_ARCH_BITS == 64);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "64bitEnabled", &pVM->hm.s.fAllow64BitGuestsCfg, HC_ARCH_BITS == 64);
     AssertLogRelRCReturn(rc, rc);
 #else
-    pVM->hm.s.fAllow64BitGuests = false;
+    pVM->hm.s.fAllow64BitGuestsCfg = false;
 #endif
 
     /** @cfgm{/HM/VmxPleGap, uint32_t, 0}
@@ -1664,8 +1664,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         }
     }
 
-    LogRel((pVM->hm.s.fAllow64BitGuests ? "HM: Guest support: 32-bit and 64-bit\n"
-                                        : "HM: Guest support: 32-bit only\n"));
+    LogRel((pVM->hm.s.fAllow64BitGuestsCfg ? "HM: Guest support: 32-bit and 64-bit\n"
+                                          : "HM: Guest support: 32-bit only\n"));
 
     /*
      * Call ring-0 to set up the VM.
@@ -1694,7 +1694,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
      * Change the CPU features.
      */
     CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-    if (pVM->hm.s.fAllow64BitGuests)
+    if (pVM->hm.s.fAllow64BitGuestsCfg)
     {
         CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
         CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
@@ -1868,7 +1868,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
                 {
                     case CPUMCPUVENDOR_AMD:
                     case CPUMCPUVENDOR_HYGON:
-                        if (pVM->hm.s.fAllow64BitGuests)
+                        if (pVM->hm.s.fAllow64BitGuestsCfg)
                         {
                             LogRel(("HM: Intercepting #UD for emulating SYSENTER/SYSEXIT in long mode.\n"));
                             for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
@@ -1921,7 +1921,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
      */
     CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
     CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
-    if (pVM->hm.s.fAllow64BitGuests)
+    if (pVM->hm.s.fAllow64BitGuestsCfg)
     {
         CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
         CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
@@ -1935,8 +1935,8 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     LogRel((pVM->hm.s.fTprPatchingAllowed ? "HM: Enabled TPR patching\n"
                                           : "HM: Disabled TPR patching\n"));
 
-    LogRel((pVM->hm.s.fAllow64BitGuests ? "HM: Guest support: 32-bit and 64-bit\n"
-                                        : "HM: Guest support: 32-bit only\n"));
+    LogRel((pVM->hm.s.fAllow64BitGuestsCfg ? "HM: Guest support: 32-bit and 64-bit\n"
+                                           : "HM: Guest support: 32-bit only\n"));
     return VINF_SUCCESS;
 }
 

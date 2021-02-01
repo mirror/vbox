@@ -155,7 +155,7 @@ VMM_INT_DECL(int)               HMFlushTlbOnAllVCpus(PVMCC pVM);
 VMM_INT_DECL(int)               HMInvalidatePageOnAllVCpus(PVMCC pVM, RTGCPTR GCVirt);
 VMM_INT_DECL(int)               HMInvalidatePhysPage(PVMCC pVM, RTGCPHYS GCPhys);
 VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVMCC pVM);
-VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
+VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVMCC pVM);
 VMM_INT_DECL(bool)              HMIsNestedPagingActive(PVMCC pVM);
 VMM_INT_DECL(bool)              HMIsMsrBitmapActive(PVM pVM);
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX
