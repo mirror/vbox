@@ -36,10 +36,6 @@ enum UIActionIndexMN
 {
     /* 'File' menu actions: */
     UIActionIndexMN_M_File = UIActionIndex_Max + 1,
-    UIActionIndexMN_M_File_S_ShowExtensionPackManager,
-    UIActionIndexMN_M_File_S_ShowVirtualMediumManager,
-    UIActionIndexMN_M_File_S_ShowHostNetworkManager,
-    UIActionIndexMN_M_File_S_ShowCloudProfileManager,
     UIActionIndexMN_M_File_S_ImportAppliance,
     UIActionIndexMN_M_File_S_ExportAppliance,
     UIActionIndexMN_M_File_M_Tools,
@@ -237,6 +233,8 @@ private:
 
     /** Updates 'File' menu. */
     void updateMenuFile();
+    /** Updates 'File' / 'Tools' menu. */
+    void updateMenuFileTools();
     /** Updates 'Welcome' menu. */
     void updateMenuWelcome();
     /** Updates 'Group' menu. */

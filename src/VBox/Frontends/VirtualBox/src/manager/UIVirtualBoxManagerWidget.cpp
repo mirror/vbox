@@ -137,6 +137,12 @@ bool UIVirtualBoxManagerWidget::isCloudProfileUpdateInProgress() const
     return m_pPaneChooser->isCloudProfileUpdateInProgress();
 }
 
+void UIVirtualBoxManagerWidget::switchToGlobalItem()
+{
+    AssertPtrReturnVoid(m_pPaneChooser);
+    m_pPaneChooser->setCurrentGlobal();
+}
+
 void UIVirtualBoxManagerWidget::openGroupNameEditor()
 {
     m_pPaneChooser->openGroupNameEditor();

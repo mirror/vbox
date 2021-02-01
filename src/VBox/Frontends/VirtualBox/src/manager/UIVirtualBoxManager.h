@@ -270,6 +270,8 @@ private slots:
         /** Handles call to power machine off. */
         void sltPerformPowerOffMachine();
 
+        /** Handles call to show global tool corresponding to passed @a pAction. */
+        void sltPerformShowGlobalTool(QAction *pAction);
         /** Handles call to show machine tool corresponding to passed @a pAction. */
         void sltPerformShowMachineTool(QAction *pAction);
 

@@ -1942,6 +1942,14 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     }
 }
 
+void UIVirtualBoxManager::sltPerformShowGlobalTool(QAction *pAction)
+{
+    AssertPtrReturnVoid(pAction);
+    AssertPtrReturnVoid(m_pWidget);
+    m_pWidget->switchToGlobalItem();
+    m_pWidget->setToolsType(pAction->property("UIToolType").value<UIToolType>());
+}
+
 void UIVirtualBoxManager::sltPerformShowMachineTool(QAction *pAction)
 {
     AssertPtrReturnVoid(pAction);
@@ -2287,14 +2295,6 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool(), &UIActionPool::sigNotifyAboutMenuPrepare, this, &UIVirtualBoxManager::sltHandleMenuPrepare);
 
     /* 'File' menu connections: */
-    connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowExtensionPackManager), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
-    connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
-    connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
-    connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenImportApplianceWizardDefault);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ExportAppliance), &UIAction::triggered,
@@ -2307,6 +2307,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltOpenPreferencesDialog);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_Close), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformExit);
+    connect(actionPool()->actionGroup(UIActionIndexMN_M_File_M_Tools), &QActionGroup::triggered,
+            this, &UIVirtualBoxManager::sltPerformShowGlobalTool);
 
     /* 'Welcome' menu connections: */
     connect(actionPool()->action(UIActionIndexMN_M_Welcome_S_New), &UIAction::triggered,

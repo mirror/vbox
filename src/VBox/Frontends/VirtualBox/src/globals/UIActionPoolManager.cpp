@@ -61,150 +61,6 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Extension Pack Manager' action class. */
-class UIActionSimpleManagerFileShowExtensionPackManager : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerFileShowExtensionPackManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/extension_pack_manager_16px.png", ":/extension_pack_manager_disabled_16px.png")
-    {
-        setProperty("UIToolType", QVariant::fromValue(UIToolType_Extensions));
-    }
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ExtensionPackManager");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+T");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "Ex&tension Pack Manager..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the Extension Pack Manager window"));
-    }
-};
-
-/** Simple action extension, used as 'Show Virtual Media Manager' action class. */
-class UIActionSimpleManagerFileShowVirtualMediaManager : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerFileShowVirtualMediaManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/media_manager_16px.png", ":/media_manager_disabled_16px.png")
-    {
-        setProperty("UIToolType", QVariant::fromValue(UIToolType_Media));
-    }
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("VirtualMediaManager");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+D");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Virtual Media Manager..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the Virtual Media Manager window"));
-    }
-};
-
-/** Simple action extension, used as 'Show Network Manager' action class. */
-class UIActionSimpleManagerFileShowHostNetworkManager : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerFileShowHostNetworkManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/host_iface_manager_16px.png", ":/host_iface_manager_disabled_16px.png")
-    {
-        setProperty("UIToolType", QVariant::fromValue(UIToolType_Network));
-    }
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("HostNetworkManager");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+H");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Network Manager..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the Network Manager window"));
-    }
-};
-
-/** Simple action extension, used as 'Show Cloud Profile Manager' action class. */
-class UIActionSimpleManagerFileShowCloudProfileManager : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleManagerFileShowCloudProfileManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/cloud_profile_manager_16px.png", ":/cloud_profile_manager_disabled_16px.png")
-    {
-        setProperty("UIToolType", QVariant::fromValue(UIToolType_Cloud));
-    }
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("CloudProfileManager");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+P");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Cloud Profile Manager..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the Cloud Profile Manager window"));
-    }
-};
-
 /** Simple action extension, used as 'Show Import Appliance Wizard' action class. */
 class UIActionSimpleManagerFileShowImportApplianceWizard : public UIActionSimple
 {
@@ -330,7 +186,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ToolsGlobalWelcomeScreen");
+        return QString("WelcomeScreen");
     }
 
     /** Handles translation event. */
@@ -363,7 +219,13 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ToolsGlobalExtensionPackManager");
+        return QString("ExtensionPackManager");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+T");
     }
 
     /** Handles translation event. */
@@ -396,7 +258,13 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ToolsGlobalVirtualMediaManager");
+        return QString("VirtualMediaManager");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+D");
     }
 
     /** Handles translation event. */
@@ -429,7 +297,13 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ToolsGlobalHostNetworkManager");
+        return QString("HostNetworkManager");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+H");
     }
 
     /** Handles translation event. */
@@ -462,7 +336,13 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ToolsGlobalCloudProfileManager");
+        return QString("CloudProfileManager");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+P");
     }
 
     /** Handles translation event. */
@@ -3614,10 +3494,6 @@ void UIActionPoolManager::preparePool()
 {
     /* 'File' actions: */
     m_pool[UIActionIndexMN_M_File] = new UIActionMenuManagerFile(this);
-    m_pool[UIActionIndexMN_M_File_S_ShowExtensionPackManager] = new UIActionSimpleManagerFileShowExtensionPackManager(this);
-    m_pool[UIActionIndexMN_M_File_S_ShowVirtualMediumManager] = new UIActionSimpleManagerFileShowVirtualMediaManager(this);
-    m_pool[UIActionIndexMN_M_File_S_ShowHostNetworkManager] = new UIActionSimpleManagerFileShowHostNetworkManager(this);
-    m_pool[UIActionIndexMN_M_File_S_ShowCloudProfileManager] = new UIActionSimpleManagerFileShowCloudProfileManager(this);
     m_pool[UIActionIndexMN_M_File_S_ImportAppliance] = new UIActionSimpleManagerFileShowImportApplianceWizard(this);
     m_pool[UIActionIndexMN_M_File_S_ExportAppliance] = new UIActionSimpleManagerFileShowExportApplianceWizard(this);
     m_pool[UIActionIndexMN_M_File_M_Tools] = new UIActionMenuManagerToolsGlobal(this);
@@ -3777,6 +3653,15 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_VMResourceMonitor_M_Columns] = new UIActionMenuManagerVMResourceMonitorColumns(this);
     m_pool[UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance] = new UIActionMenuManagerVMResourceMonitorSwitchToMachinePerformance(this);
 
+    /* 'File' action groups: */
+    m_groupPool[UIActionIndexMN_M_File_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexMN_M_File_M_Tools));
+    m_groupPool[UIActionIndexMN_M_File_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_File_M_Tools_T_WelcomeScreen));
+    m_groupPool[UIActionIndexMN_M_File_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_File_M_Tools_T_ExtensionPackManager));
+    m_groupPool[UIActionIndexMN_M_File_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_File_M_Tools_T_VirtualMediaManager));
+    m_groupPool[UIActionIndexMN_M_File_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_File_M_Tools_T_NetworkManager));
+    m_groupPool[UIActionIndexMN_M_File_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_File_M_Tools_T_CloudProfileManager));
+    m_groupPool[UIActionIndexMN_M_File_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_File_M_Tools_T_VMResourceMonitor));
+
     /* 'Group' action groups: */
     m_groupPool[UIActionIndexMN_M_Group_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexMN_M_Group_M_Tools));
     m_groupPool[UIActionIndexMN_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Group_M_Tools_T_Details));
@@ -3793,6 +3678,7 @@ void UIActionPoolManager::preparePool()
 
     /* Prepare update-handlers for known menus: */
     m_menuUpdateHandlers[UIActionIndexMN_M_File].ptfm =                  &UIActionPoolManager::updateMenuFile;
+    m_menuUpdateHandlers[UIActionIndexMN_M_File_M_Tools].ptfm =          &UIActionPoolManager::updateMenuFileTools;
     m_menuUpdateHandlers[UIActionIndexMN_M_Welcome].ptfm =               &UIActionPoolManager::updateMenuWelcome;
     m_menuUpdateHandlers[UIActionIndexMN_M_Group].ptfm =                 &UIActionPoolManager::updateMenuGroup;
     m_menuUpdateHandlers[UIActionIndexMN_M_Machine].ptfm =               &UIActionPoolManager::updateMenuMachine;
@@ -3855,6 +3741,9 @@ void UIActionPoolManager::updateMenus()
     /* 'File' menu: */
     addMenu(m_mainMenus, action(UIActionIndexMN_M_File));
     updateMenuFile();
+
+    /* 'File' / 'Tools' menu: */
+    updateMenuFileTools();
 
     /* 'Welcome' menu: */
     addMenu(m_mainMenus, action(UIActionIndexMN_M_Welcome));
@@ -4064,15 +3953,10 @@ void UIActionPoolManager::updateMenuFile()
     /* 'Show Extra-data Manager' action goes to 'File' menu for Debug build: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowExtraDataManager));
 # endif
-    /* 'Show Extension Pack Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowExtensionPackManager));
-    /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
-    /* 'Show Network Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
-    /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
-
+    /* Separator after Import/Export actions of the 'File' menu: */
+    pMenu->addSeparator();
+    /* 'Tools' submenu goes to 'File' menu: */
+    pMenu->addMenu(action(UIActionIndexMN_M_File_M_Tools)->menu());
 #else /* !VBOX_WS_MAC */
 
     /* 'Preferences' action goes to 'File' menu: */
@@ -4088,15 +3972,13 @@ void UIActionPoolManager::updateMenuFile()
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /* 'Extra-data Manager' action goes to 'File' menu for Debug build: */
     pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowExtraDataManager));
+    /* Separator after 'Extra-data Manager' action of the 'File' menu: */
+    pMenu->addSeparator();
 # endif
-    /* 'Show Extension Pack Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowExtensionPackManager));
-    /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
-    /* 'Show Network Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
-    /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
+    /* 'Tools' submenu goes to 'File' menu: */
+    pMenu->addMenu(action(UIActionIndexMN_M_File_M_Tools)->menu());
+    /* Separator after 'Tools' submenu of the 'File' menu: */
+    pMenu->addSeparator();
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Access Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndex_M_Application_S_NetworkAccessManager));
@@ -4117,6 +3999,25 @@ void UIActionPoolManager::updateMenuFile()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexMN_M_File);
+}
+
+void UIActionPoolManager::updateMenuFileTools()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndexMN_M_File_M_Tools)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Populate 'File' / 'Tools' menu: */
+    pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_ExtensionPackManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_VirtualMediaManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_NetworkManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_CloudProfileManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_VMResourceMonitor));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexMN_M_File_M_Tools);
 }
 
 void UIActionPoolManager::updateMenuWelcome()

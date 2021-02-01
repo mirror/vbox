@@ -151,6 +151,8 @@ public:
         /** Returns whether at least one cloud profile currently being updated. */
         bool isCloudProfileUpdateInProgress() const;
 
+        /** Switches to global item. */
+        void switchToGlobalItem();
         /** Opens group name editor. */
         void openGroupNameEditor();
         /** Disbands group. */
