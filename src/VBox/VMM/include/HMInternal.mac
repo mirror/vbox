@@ -136,12 +136,9 @@ struc HMCPUVMX
 endstruc
 
 struc HMCPUSVM
-    .fSyncVTpr                      resb    1
     .fEmulateLongModeSysEnterExit   resb    1
 
     alignb 8
-    .u64HostTscAux                  resq    1
-
     .NstGstVmcbCache                resb    40
 endstruc
 
@@ -221,6 +218,12 @@ struc HMR0CPUSVM
     .hMemObjMsrBitmap               RTR0PTR_RES  1
     .pvMsrBitmap                    RTR0PTR_RES  1
 
+    .fSyncVTpr                      resb    1
+
+    alignb 8
+    .u64HostTscAux                  resq    1
+
+    alignb 8
     .DisState                       resb    0d8h
 endstruc
 

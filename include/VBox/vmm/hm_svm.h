@@ -1078,8 +1078,8 @@ typedef const SVMMSRS *PCSVMMSRS;
  *
  * @remarks Please update hmR3InfoSvmNstGstVmcbCache() when changes are made to
  *          this structure.
+ * @todo r=bird: Why is this structure here? Looks 100% internal to me.
  */
-#pragma pack(1)
 typedef struct SVMNESTEDVMCBCACHE
 {
     /** Cache of CRX read intercepts. */
@@ -1115,7 +1115,6 @@ typedef struct SVMNESTEDVMCBCACHE
     /** Alignment. */
     bool                afPadding0[4];
 } SVMNESTEDVMCBCACHE;
-#pragma pack()
 /** Pointer to the SVMNESTEDVMCBCACHE structure. */
 typedef SVMNESTEDVMCBCACHE *PSVMNESTEDVMCBCACHE;
 /** Pointer to a const SVMNESTEDVMCBCACHE structure. */

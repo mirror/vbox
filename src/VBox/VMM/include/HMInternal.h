@@ -1017,18 +1017,12 @@ typedef struct HMCPU
     /** SVM data. */
     struct HMCPUSVM
     {
-        /** Whether VTPR with V_INTR_MASKING set is in effect, indicating
-         *  we should check if the VTPR changed on every VM-exit. */
-        bool                        fSyncVTpr;
         /** Whether to emulate long mode support for sysenter/sysexit like intel CPUs
          *  does.   This means intercepting \#UD to emulate the instructions in
          *  long-mode and to intercept reads and writes to the SYSENTER MSRs in order to
          *  preserve the upper 32 bits written to them (AMD will ignore and discard). */
         bool                        fEmulateLongModeSysEnterExit;
-        uint8_t                     au8Alignment0[6];
-
-        /** Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
-        uint64_t                    u64HostTscAux;
+        uint8_t                     au8Alignment0[7];
 
         /** Cache of the nested-guest's VMCB fields that we modify in order to run the
          *  nested-guest using AMD-V. This will be restored on \#VMEXIT. */
@@ -1315,6 +1309,14 @@ typedef struct HMR0PERVCPU
         RTR0MEMOBJ                  hMemObjMsrBitmap;
         /** Pointer to the MSR bitmap. */
         R0PTRTYPE(void *)           pvMsrBitmap;
+
+        /** Whether VTPR with V_INTR_MASKING set is in effect, indicating
+         *  we should check if the VTPR changed on every VM-exit. */
+        bool                        fSyncVTpr;
+        bool                        afAlignment[7];
+
+        /** Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
+        uint64_t                    u64HostTscAux;
 
         /** For saving stack space, the disassembler state is allocated here
          * instead of on the stack. */

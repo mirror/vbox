@@ -2106,7 +2106,7 @@ static int hmR0SvmExportGuestApicTpr(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
             /* Assume that we need to trap all TPR accesses and thus need not check on
                every #VMEXIT if we should update the TPR. */
             Assert(pVmcb->ctrl.IntCtrl.n.u1VIntrMasking);
-            pVCpu->hm.s.svm.fSyncVTpr = false;
+            pVCpu->hmr0.s.svm.fSyncVTpr = false;
 
             if (!pVM->hm.s.fTPRPatchingActive)
             {
@@ -2120,7 +2120,7 @@ static int hmR0SvmExportGuestApicTpr(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
                 else
                 {
                     pVmcb->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
-                    pVCpu->hm.s.svm.fSyncVTpr = true;
+                    pVCpu->hmr0.s.svm.fSyncVTpr = true;
                 }
 
                 pVmcb->ctrl.u32VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_INT_CTRL);
@@ -2137,7 +2137,7 @@ static int hmR0SvmExportGuestApicTpr(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
                 else
                 {
                     hmR0SvmSetMsrPermission(pVCpu, pbMsrBitmap, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-                    pVCpu->hm.s.svm.fSyncVTpr = true;
+                    pVCpu->hmr0.s.svm.fSyncVTpr = true;
                 }
                 pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
             }
@@ -2570,7 +2570,7 @@ static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
          * Turn off TPR syncing on #VMEXIT for nested-guests as CR8 intercepts are subject
          * to the nested-guest intercepts and we always run with V_INTR_MASKING.
          */
-        pVCpu->hm.s.svm.fSyncVTpr = false;
+        pVCpu->hmr0.s.svm.fSyncVTpr = false;
 
 #ifdef DEBUG_ramshankar
         /* For debugging purposes - copy the LBR info. from outer guest VMCB. */
@@ -2601,7 +2601,7 @@ static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
     }
     else
     {
-        Assert(!pVCpu->hm.s.svm.fSyncVTpr);
+        Assert(!pVCpu->hmr0.s.svm.fSyncVTpr);
         Assert(pVmcbNstGstCtrl->u64IOPMPhysAddr == g_HCPhysIOBitmap);
         Assert(RT_BOOL(pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
     }
@@ -4128,7 +4128,7 @@ static VBOXSTRICTRC hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransie
      * If we're not intercepting TPR changes in the guest, save the guest TPR before the
      * world-switch so we can update it on the way back if the guest changed the TPR.
      */
-    if (pVCpu->hm.s.svm.fSyncVTpr)
+    if (pVCpu->hmr0.s.svm.fSyncVTpr)
     {
         Assert(!pSvmTransient->fIsNestedGuest);
         PCSVMVMCB pVmcb = pVCpu->hmr0.s.svm.pVmcb;
@@ -4284,8 +4284,8 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransi
         && !(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP))
     {
         uint64_t const uGuestTscAux = CPUMGetGuestTscAux(pVCpu);
-        pVCpu->hm.s.svm.u64HostTscAux   = ASMRdMsr(MSR_K8_TSC_AUX);
-        if (uGuestTscAux != pVCpu->hm.s.svm.u64HostTscAux)
+        pVCpu->hmr0.s.svm.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
+        if (uGuestTscAux != pVCpu->hmr0.s.svm.u64HostTscAux)
             ASMWrMsr(MSR_K8_TSC_AUX, uGuestTscAux);
         hmR0SvmSetMsrPermission(pVCpu, pbMsrBitmap, MSR_K8_TSC_AUX, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
         pSvmTransient->fRestoreTscAuxMsr = true;
@@ -4367,8 +4367,8 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
     {
         uint64_t u64GuestTscAuxMsr = ASMRdMsr(MSR_K8_TSC_AUX);
         CPUMSetGuestTscAux(pVCpu, u64GuestTscAuxMsr);
-        if (u64GuestTscAuxMsr != pVCpu->hm.s.svm.u64HostTscAux)
-            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.svm.u64HostTscAux);
+        if (u64GuestTscAuxMsr != pVCpu->hmr0.s.svm.u64HostTscAux)
+            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hmr0.s.svm.u64HostTscAux);
     }
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatPreExit, x);
@@ -4420,7 +4420,7 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
 #endif
 
     if (   pSvmTransient->u64ExitCode != SVM_EXIT_INVALID
-        && pVCpu->hm.s.svm.fSyncVTpr)
+        && pVCpu->hmr0.s.svm.fSyncVTpr)
     {
         Assert(!pSvmTransient->fIsNestedGuest);
         /* TPR patching (for 32-bit guests) uses LSTAR MSR for holding the TPR value, otherwise uses the VTPR. */
