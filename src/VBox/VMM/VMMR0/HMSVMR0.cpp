@@ -1345,7 +1345,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
                 ++pHostCpu->uCurrentAsid;
 
                 bool fHitASIDLimit = false;
-                if (pHostCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
+                if (pHostCpu->uCurrentAsid >= g_uHmMaxAsid)
                 {
                     pHostCpu->uCurrentAsid = 1;      /* Wraparound at 1; host uses 0 */
                     pHostCpu->cTlbFlushes++;         /* All VCPUs that run on this host CPU must use a new ASID. */
@@ -1386,9 +1386,9 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
               ("vcpu idLastCpu=%u hostcpu idCpu=%u\n", pVCpu->hmr0.s.idLastCpu, pHostCpu->idCpu));
     AssertMsg(pVCpu->hmr0.s.cTlbFlushes == pHostCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %u (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hmr0.s.cTlbFlushes, pHostCpu->cTlbFlushes));
-    AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
+    AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < g_uHmMaxAsid,
               ("cpu%d uCurrentAsid = %x\n", pHostCpu->idCpu, pHostCpu->uCurrentAsid));
-    AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
+    AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < g_uHmMaxAsid,
               ("cpu%d VM uCurrentAsid = %x\n", pHostCpu->idCpu, pVCpu->hmr0.s.uCurrentAsid));
 
 #ifdef VBOX_WITH_STATISTICS

@@ -143,8 +143,6 @@ static struct
                 bool                        fSupported;
             } svm;
         } u;
-        /** Maximum allowed ASID/VPID (inclusive). */
-        uint32_t                    uMaxAsid;
         /** MSRs. */
         SUPHWVIRTMSRS               Msrs;
     } hwvirt;
@@ -167,6 +165,12 @@ static struct
     /** Serialize initialization in HMR0EnableAllCpus. */
     RTONCE                          EnableAllCpusOnce;
 } g_HmR0;
+
+/** Maximum allowed ASID/VPID (inclusive).
+ * @todo r=bird: This is exclusive for VT-x according to source code comment.
+ *       Couldn't immediately find any docs on AMD-V, but suspect it is
+ *       exclusive there as well given how hmR0SvmFlushTaggedTlb() use it. */
+uint32_t    g_uHmMaxAsid;
 
 
 /**
@@ -344,7 +348,7 @@ static int hmR0InitIntel(void)
             g_HmR0.hwvirt.u.vmx.u64HostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
 
         /* Initialize VPID - 16 bits ASID. */
-        g_HmR0.hwvirt.uMaxAsid = 0x10000; /* exclusive */
+        g_uHmMaxAsid = 0x10000; /* exclusive */
 
         /*
          * If the host OS has not enabled VT-x for us, try enter VMX root mode
@@ -486,7 +490,7 @@ static int hmR0InitAmd(void)
 
     /* Query AMD features. */
     uint32_t u32Dummy;
-    ASMCpuId(0x8000000a, &g_HmR0.hwvirt.u.svm.u32Rev, &g_HmR0.hwvirt.uMaxAsid, &u32Dummy, &g_HmR0.hwvirt.u.svm.u32Features);
+    ASMCpuId(0x8000000a, &g_HmR0.hwvirt.u.svm.u32Rev, &g_uHmMaxAsid, &u32Dummy, &g_HmR0.hwvirt.u.svm.u32Features);
 
     /*
      * We need to check if AMD-V has been properly initialized on all CPUs.
@@ -1178,7 +1182,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
         /* If you need to tweak host MSRs for testing SVM R0 code, do it here. */
     }
     pVM->hm.s.rcInit              = g_HmR0.rcInit;
-    pVM->hm.s.uMaxAsid            = g_HmR0.hwvirt.uMaxAsid;
+    pVM->hm.s.uMaxAsidForLog      = g_uHmMaxAsid;
 
     /*
      * Set default maximum inner loops in ring-0 before returning to ring-3.
@@ -1217,7 +1221,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
      * Technically, we could do this as part of the pre-init VM procedure
      * but it shouldn't be done later than this point so we do it here.
      */
-    pVM->hm.s.fHostKernelFeatures = SUPR0GetKernelFeatures();
+    pVM->hmr0.s.fHostKernelFeatures = SUPR0GetKernelFeatures();
 
     /*
      * Call the hardware specific initialization method.

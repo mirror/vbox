@@ -3039,7 +3039,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
         || pVCpu->hmr0.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
         ++pHostCpu->uCurrentAsid;
-        if (pHostCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
+        if (pHostCpu->uCurrentAsid >= g_uHmMaxAsid)
         {
             pHostCpu->uCurrentAsid = 1;            /* Wraparound to 1; host uses 0. */
             pHostCpu->cTlbFlushes++;               /* All VCPUs that run on this host CPU must use a new VPID. */
@@ -3096,10 +3096,10 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
     Assert(pVCpu->hmr0.s.cTlbFlushes == pHostCpu->cTlbFlushes);
     AssertMsg(pVCpu->hmr0.s.cTlbFlushes == pHostCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %d (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hmr0.s.cTlbFlushes, pHostCpu->cTlbFlushes));
-    AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
+    AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < g_uHmMaxAsid,
               ("Cpu[%u] uCurrentAsid=%u cTlbFlushes=%u pVCpu->idLastCpu=%u pVCpu->cTlbFlushes=%u\n", pHostCpu->idCpu,
                pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hmr0.s.idLastCpu, pVCpu->hmr0.s.cTlbFlushes));
-    AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
+    AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < g_uHmMaxAsid,
               ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hmr0.s.uCurrentAsid));
 
     /* Update VMCS with the VPID. */
@@ -3219,7 +3219,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
     if (pVCpu->hmr0.s.fForceTLBFlush)
     {
         ++pHostCpu->uCurrentAsid;
-        if (pHostCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
+        if (pHostCpu->uCurrentAsid >= g_uHmMaxAsid)
         {
             pHostCpu->uCurrentAsid        = 1;     /* Wraparound to 1; host uses 0 */
             pHostCpu->cTlbFlushes++;               /* All VCPUs that run on this host CPU must use a new VPID. */
@@ -3248,10 +3248,10 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
 
     AssertMsg(pVCpu->hmr0.s.cTlbFlushes == pHostCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %d (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hmr0.s.cTlbFlushes, pHostCpu->cTlbFlushes));
-    AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
+    AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < g_uHmMaxAsid,
               ("Cpu[%u] uCurrentAsid=%u cTlbFlushes=%u pVCpu->idLastCpu=%u pVCpu->cTlbFlushes=%u\n", pHostCpu->idCpu,
                pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hmr0.s.idLastCpu, pVCpu->hmr0.s.cTlbFlushes));
-    AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
+    AssertMsg(pVCpu->hmr0.s.uCurrentAsid >= 1 && pVCpu->hmr0.s.uCurrentAsid < g_uHmMaxAsid,
               ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hmr0.s.uCurrentAsid));
 
     int rc  = VMXWriteVmcs16(VMX_VMCS16_VPID, pVCpu->hmr0.s.uCurrentAsid);
@@ -4811,10 +4811,10 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
         fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_TR;
 
         /* If the host has made GDT read-only, we would need to temporarily toggle CR0.WP before writing the GDT. */
-        PVM pVM = pVCpu->CTX_SUFF(pVM);
-        if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_READ_ONLY)
+        PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+        if (pVM->hmr0.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_READ_ONLY)
             fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_READ_ONLY;
-        if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_NEED_WRITABLE)
+        if (pVM->hmr0.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_NEED_WRITABLE)
         {
             /* The GDT is read-only but the writable GDT is available. */
             fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_NEED_WRITABLE;

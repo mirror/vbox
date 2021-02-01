@@ -483,12 +483,6 @@ typedef struct HM
      * This number is set much higher when RTThreadPreemptIsPending is reliable. */
     uint32_t                    cMaxResumeLoopsCfg;
 
-    /** Maximum ASID allowed. */
-    uint32_t                    uMaxAsid;
-
-    /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
-    uint32_t                    fHostKernelFeatures;
-
     struct
     {
         /** Set by the ring-0 side of HM to indicate VMX is supported by the
@@ -646,6 +640,10 @@ typedef struct HM
 
     /** Last recorded error code during HM ring-0 init. */
     int32_t                     rcInit;
+    /** Maximum ASID allowed.
+     * This is mainly for the release log.  */
+    uint32_t                    uMaxAsidForLog;
+    uint32_t                    u32Alignment2;
 
     STAMCOUNTER                 StatTprPatchSuccess;
     STAMCOUNTER                 StatTprPatchFailure;
@@ -669,12 +667,14 @@ typedef struct HMR0PERVM
     bool                        fNestedPaging;
     /** Set if we can support 64-bit guests or not. */
     bool                        fAllow64BitGuests;
-
-    bool                        afAlignment0[2];
+    bool                        afAlignment0[2+4];
 
     /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
      * This number is set much higher when RTThreadPreemptIsPending is reliable. */
     uint32_t                    cMaxResumeLoops;
+
+    /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
+    uint32_t                    fHostKernelFeatures;
 
     /** SVM specific data. */
     struct HMR0SVMVM
@@ -1421,6 +1421,8 @@ AssertCompileMemberAlignment(HMR0PERVCPU, vmx.RestoreHost,   8);
 
 
 #ifdef IN_RING0
+extern uint32_t g_uHmMaxAsid;
+
 VMMR0_INT_DECL(PHMPHYSCPU)  hmR0GetCurrentCpu(void);
 VMMR0_INT_DECL(int)         hmR0EnterCpu(PVMCPUCC pVCpu);
 

@@ -367,7 +367,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(MMHYPERHEAP, Lock, sizeof(uintptr_t));
 
     /* hm - 32-bit gcc won't align uint64_t naturally, so check. */
-    CHECK_MEMBER_ALIGNMENT(HM, uMaxAsid, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, uMaxAsidForLog, 8);
     CHECK_MEMBER_ALIGNMENT(HM, vmx, 8);
     CHECK_MEMBER_ALIGNMENT(HM, vmx.Msrs, 8);
     CHECK_MEMBER_ALIGNMENT(HM, svm, 8);
