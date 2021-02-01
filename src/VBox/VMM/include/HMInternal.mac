@@ -175,11 +175,9 @@ struc HMCPU
     .fCtxChanged                    resq    1
 
     alignb 8
-;%if HMCPUVMX_size > HMCPUSVM_size
-    .u                              resb    HMCPUVMX_size
-;%else
-;    .u                              resb    HMCPUSVM_size
-;%endif
+    .vmx                            resb    HMCPUVMX_size
+    alignb 8
+    .svm                            resb    HMCPUSVM_size
 
     .Event.fPending                 resd    1
     .Event.u32ErrCode               resd    1
@@ -240,10 +238,8 @@ struc HMR0PERVCPU
     .fClearTrapFlag                 resb    1
 
     alignb 8
-;%if HMR0CPUVMX_size > HMR0CPUSVM_size
-    .u                              resb    HMR0CPUVMX_size
-;%else
-;    .u                              resb    HMR0CPUSVM_size
-;%endif
+    .vmx                            resb    HMR0CPUVMX_size
+    alignb 8
+    .svm                            resb    HMR0CPUSVM_size
 endstruc
 

@@ -394,31 +394,6 @@ typedef DECLCALLBACKTYPE(int, FNHMSWITCHERHC,(PVM pVM, uint32_t offCpumVCpu));
 /** Pointer to switcher function. */
 typedef FNHMSWITCHERHC *PFNHMSWITCHERHC;
 
-/** @def HM_UNION_NM
- * For compilers (like DTrace) that does not grok nameless unions, we have a
- * little hack to make them palatable.
- */
-/** @def HM_STRUCT_NM
- * For compilers (like DTrace) that does not grok nameless structs (it is
- * non-standard C++), we have a little hack to make them palatable.
- */
-/** @def HM_NAMELESS_UNION_TAG
- * For tagging a nameless union so tstASMStructs.cpp can find check the nested
- * structures within the union.
- */
-#ifdef VBOX_FOR_DTRACE_LIB
-# define HM_UNION_NM(a_Nm)              a_Nm
-# define HM_STRUCT_NM(a_Nm)             a_Nm
-# define HM_NAMELESS_UNION_TAG(a_Tag)
-#elif defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS)
-# define HM_UNION_NM(a_Nm)              a_Nm
-# define HM_STRUCT_NM(a_Nm)             a_Nm
-# define HM_NAMELESS_UNION_TAG(a_Tag)   a_Tag
-#else
-# define HM_UNION_NM(a_Nm)
-# define HM_STRUCT_NM(a_Nm)
-# define HM_NAMELESS_UNION_TAG(a_Tag)
-#endif
 
 /**
  * HM event.
@@ -999,93 +974,90 @@ typedef struct HMCPU
     /** CPU-context changed flags (see HM_CHANGED_xxx). */
     uint64_t                    fCtxChanged;
 
-    union HM_NAMELESS_UNION_TAG(HMCPUUNION) /* no tag! */
+    /** VT-x data.   */
+    struct HMCPUVMX
     {
-        /** VT-x data.   */
-        struct HM_NAMELESS_UNION_TAG(HMCPUVMX)
+        /** @name Guest information.
+         * @{ */
+        /** Guest VMCS information shared with ring-3. */
+        VMXVMCSINFOSHARED           VmcsInfo;
+        /** Nested-guest VMCS information shared with ring-3. */
+        VMXVMCSINFOSHARED           VmcsInfoNstGst;
+        /** Whether the nested-guest VMCS was the last current VMCS (shadow copy for ring-3).
+         * @see HMR0PERVCPU::vmx.fSwitchedToNstGstVmcs  */
+        bool                        fSwitchedToNstGstVmcsCopyForRing3;
+        /** Whether the static guest VMCS controls has been merged with the
+         *  nested-guest VMCS controls. */
+        bool                        fMergedNstGstCtls;
+        /** Whether the nested-guest VMCS has been copied to the shadow VMCS. */
+        bool                        fCopiedNstGstToShadowVmcs;
+        /** Whether flushing the TLB is required due to switching to/from the
+         *  nested-guest. */
+        bool                        fSwitchedNstGstFlushTlb;
+        /** Alignment. */
+        bool                        afAlignment0[4];
+        /** Cached guest APIC-base MSR for identifying when to map the APIC-access page. */
+        uint64_t                    u64GstMsrApicBase;
+        /** @} */
+
+        /** @name Error reporting and diagnostics.
+         * @{ */
+        /** VT-x error-reporting (mainly for ring-3 propagation). */
+        struct
         {
-            /** @name Guest information.
-             * @{ */
-            /** Guest VMCS information shared with ring-3. */
-            VMXVMCSINFOSHARED           VmcsInfo;
-            /** Nested-guest VMCS information shared with ring-3. */
-            VMXVMCSINFOSHARED           VmcsInfoNstGst;
-            /** Whether the nested-guest VMCS was the last current VMCS (shadow copy for ring-3).
-             * @see HMR0PERVCPU::vmx.fSwitchedToNstGstVmcs  */
-            bool                        fSwitchedToNstGstVmcsCopyForRing3;
-            /** Whether the static guest VMCS controls has been merged with the
-             *  nested-guest VMCS controls. */
-            bool                        fMergedNstGstCtls;
-            /** Whether the nested-guest VMCS has been copied to the shadow VMCS. */
-            bool                        fCopiedNstGstToShadowVmcs;
-            /** Whether flushing the TLB is required due to switching to/from the
-             *  nested-guest. */
-            bool                        fSwitchedNstGstFlushTlb;
-            /** Alignment. */
-            bool                        afAlignment0[4];
-            /** Cached guest APIC-base MSR for identifying when to map the APIC-access page. */
-            uint64_t                    u64GstMsrApicBase;
-            /** @} */
+            RTCPUID                 idCurrentCpu;
+            RTCPUID                 idEnteredCpu;
+            RTHCPHYS                HCPhysCurrentVmcs;
+            uint32_t                u32VmcsRev;
+            uint32_t                u32InstrError;
+            uint32_t                u32ExitReason;
+            uint32_t                u32GuestIntrState;
+        } LastError;
+        /** @} */
+    } vmx;
 
-            /** @name Error reporting and diagnostics.
-             * @{ */
-            /** VT-x error-reporting (mainly for ring-3 propagation). */
-            struct
-            {
-                RTCPUID                 idCurrentCpu;
-                RTCPUID                 idEnteredCpu;
-                RTHCPHYS                HCPhysCurrentVmcs;
-                uint32_t                u32VmcsRev;
-                uint32_t                u32InstrError;
-                uint32_t                u32ExitReason;
-                uint32_t                u32GuestIntrState;
-            } LastError;
-            /** @} */
-        } vmx;
+    /** SVM data. */
+    struct HMCPUSVM
+    {
+        /** Physical address of the host VMCB which holds additional host-state. */
+        RTHCPHYS                    HCPhysVmcbHost;
+        /** R0 memory object for the host VMCB which holds additional host-state. */
+        RTR0MEMOBJ                  hMemObjVmcbHost;
+        /** Padding.
+         * @todo remove, pointless now  */
+        R0PTRTYPE(void *)           pvPadding;
 
-        /** SVM data. */
-        struct HM_NAMELESS_UNION_TAG(HMCPUSVM)
-        {
-            /** Physical address of the host VMCB which holds additional host-state. */
-            RTHCPHYS                    HCPhysVmcbHost;
-            /** R0 memory object for the host VMCB which holds additional host-state. */
-            RTR0MEMOBJ                  hMemObjVmcbHost;
-            /** Padding.
-             * @todo remove, pointless now  */
-            R0PTRTYPE(void *)           pvPadding;
+        /** Physical address of the guest VMCB. */
+        RTHCPHYS                    HCPhysVmcb;
+        /** R0 memory object for the guest VMCB. */
+        RTR0MEMOBJ                  hMemObjVmcb;
+        /** Pointer to the guest VMCB. */
+        R0PTRTYPE(PSVMVMCB)         pVmcb;
 
-            /** Physical address of the guest VMCB. */
-            RTHCPHYS                    HCPhysVmcb;
-            /** R0 memory object for the guest VMCB. */
-            RTR0MEMOBJ                  hMemObjVmcb;
-            /** Pointer to the guest VMCB. */
-            R0PTRTYPE(PSVMVMCB)         pVmcb;
+        /** Physical address of the MSR bitmap (8 KB). */
+        RTHCPHYS                    HCPhysMsrBitmap;
+        /** R0 memory object for the MSR bitmap (8 KB). */
+        RTR0MEMOBJ                  hMemObjMsrBitmap;
+        /** Pointer to the MSR bitmap. */
+        R0PTRTYPE(void *)           pvMsrBitmap;
 
-            /** Physical address of the MSR bitmap (8 KB). */
-            RTHCPHYS                    HCPhysMsrBitmap;
-            /** R0 memory object for the MSR bitmap (8 KB). */
-            RTR0MEMOBJ                  hMemObjMsrBitmap;
-            /** Pointer to the MSR bitmap. */
-            R0PTRTYPE(void *)           pvMsrBitmap;
+        /** Whether VTPR with V_INTR_MASKING set is in effect, indicating
+         *  we should check if the VTPR changed on every VM-exit. */
+        bool                        fSyncVTpr;
+        /** Whether to emulate long mode support for sysenter/sysexit like intel CPUs
+         *  does.   This means intercepting \#UD to emulate the instructions in
+         *  long-mode and to intercept reads and writes to the SYSENTER MSRs in order to
+         *  preserve the upper 32 bits written to them (AMD will ignore and discard). */
+        bool                        fEmulateLongModeSysEnterExit;
+        uint8_t                     au8Alignment0[6];
 
-            /** Whether VTPR with V_INTR_MASKING set is in effect, indicating
-             *  we should check if the VTPR changed on every VM-exit. */
-            bool                        fSyncVTpr;
-            /** Whether to emulate long mode support for sysenter/sysexit like intel CPUs
-             *  does.   This means intercepting \#UD to emulate the instructions in
-             *  long-mode and to intercept reads and writes to the SYSENTER MSRs in order to
-             *  preserve the upper 32 bits written to them (AMD will ignore and discard). */
-            bool                        fEmulateLongModeSysEnterExit;
-            uint8_t                     au8Alignment0[6];
+        /** Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
+        uint64_t                    u64HostTscAux;
 
-            /** Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
-            uint64_t                    u64HostTscAux;
-
-            /** Cache of the nested-guest's VMCB fields that we modify in order to run the
-             *  nested-guest using AMD-V. This will be restored on \#VMEXIT. */
-            SVMNESTEDVMCBCACHE          NstGstVmcbCache;
-        } svm;
-    } HM_UNION_NM(u);
+        /** Cache of the nested-guest's VMCB fields that we modify in order to run the
+         *  nested-guest using AMD-V. This will be restored on \#VMEXIT. */
+        SVMNESTEDVMCBCACHE          NstGstVmcbCache;
+    } svm;
 
     /** Event injection state. */
     HMEVENT                 Event;
@@ -1256,10 +1228,10 @@ typedef struct HMCPU
 typedef HMCPU *PHMCPU;
 AssertCompileMemberAlignment(HMCPU, fCheckedTLBFlush,  4);
 AssertCompileMemberAlignment(HMCPU, fCtxChanged,       8);
-AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx, 8);
-AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.VmcsInfo,       8);
-AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.VmcsInfoNstGst, 8);
-AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) svm, 8);
+AssertCompileMemberAlignment(HMCPU, vmx, 8);
+AssertCompileMemberAlignment(HMCPU, vmx.VmcsInfo,       8);
+AssertCompileMemberAlignment(HMCPU, vmx.VmcsInfoNstGst, 8);
+AssertCompileMemberAlignment(HMCPU, svm, 8);
 AssertCompileMemberAlignment(HMCPU, Event, 8);
 
 
@@ -1299,69 +1271,66 @@ typedef struct HMR0PERVCPU
 
     bool                        afPadding1[5];
 
-    union HM_NAMELESS_UNION_TAG(HMR0CPUUNION) /* no tag! */
+    /** VT-x data.   */
+    struct HMR0CPUVMX
     {
-        /** VT-x data.   */
-        struct HM_NAMELESS_UNION_TAG(HMR0CPUVMX)
-        {
-            /** Ring-0 pointer to the hardware-assisted VMX execution function. */
-            PFNHMVMXSTARTVM             pfnStartVm;
+        /** Ring-0 pointer to the hardware-assisted VMX execution function. */
+        PFNHMVMXSTARTVM             pfnStartVm;
 
-            /** @name Guest information.
-             * @{ */
-            /** Guest VMCS information. */
-            VMXVMCSINFO                 VmcsInfo;
-            /** Nested-guest VMCS information. */
-            VMXVMCSINFO                 VmcsInfoNstGst;
-            /* Whether the nested-guest VMCS was the last current VMCS (authoritative copy).
-             * @see HMCPU::vmx.fSwitchedToNstGstVmcsCopyForRing3  */
-            bool                        fSwitchedToNstGstVmcs;
-            bool                        afAlignment0[7];
-            /** @} */
+        /** @name Guest information.
+         * @{ */
+        /** Guest VMCS information. */
+        VMXVMCSINFO                 VmcsInfo;
+        /** Nested-guest VMCS information. */
+        VMXVMCSINFO                 VmcsInfoNstGst;
+        /* Whether the nested-guest VMCS was the last current VMCS (authoritative copy).
+         * @see HMCPU::vmx.fSwitchedToNstGstVmcsCopyForRing3  */
+        bool                        fSwitchedToNstGstVmcs;
+        bool                        afAlignment0[7];
+        /** @} */
 
-            /** @name Host information.
-             * @{ */
-            /** Host LSTAR MSR to restore lazily while leaving VT-x. */
-            uint64_t                    u64HostMsrLStar;
-            /** Host STAR MSR to restore lazily while leaving VT-x. */
-            uint64_t                    u64HostMsrStar;
-            /** Host SF_MASK MSR to restore lazily while leaving VT-x. */
-            uint64_t                    u64HostMsrSfMask;
-            /** Host KernelGS-Base MSR to restore lazily while leaving VT-x. */
-            uint64_t                    u64HostMsrKernelGsBase;
-            /** The mask of lazy MSRs swap/restore state, see VMX_LAZY_MSRS_XXX. */
-            uint32_t                    fLazyMsrs;
-            /** Whether the host MSR values are up-to-date in the auto-load/store MSR area. */
-            bool                        fUpdatedHostAutoMsrs;
-            /** Alignment. */
-            uint8_t                     au8Alignment0[3];
-            /** Which host-state bits to restore before being preempted, see
-             * VMX_RESTORE_HOST_XXX. */
-            uint32_t                    fRestoreHostFlags;
-            /** Alignment. */
-            uint32_t                    u32Alignment0;
-            /** The host-state restoration structure. */
-            VMXRESTOREHOST              RestoreHost;
-            /** @} */
-        } vmx;
+        /** @name Host information.
+         * @{ */
+        /** Host LSTAR MSR to restore lazily while leaving VT-x. */
+        uint64_t                    u64HostMsrLStar;
+        /** Host STAR MSR to restore lazily while leaving VT-x. */
+        uint64_t                    u64HostMsrStar;
+        /** Host SF_MASK MSR to restore lazily while leaving VT-x. */
+        uint64_t                    u64HostMsrSfMask;
+        /** Host KernelGS-Base MSR to restore lazily while leaving VT-x. */
+        uint64_t                    u64HostMsrKernelGsBase;
+        /** The mask of lazy MSRs swap/restore state, see VMX_LAZY_MSRS_XXX. */
+        uint32_t                    fLazyMsrs;
+        /** Whether the host MSR values are up-to-date in the auto-load/store MSR area. */
+        bool                        fUpdatedHostAutoMsrs;
+        /** Alignment. */
+        uint8_t                     au8Alignment0[3];
+        /** Which host-state bits to restore before being preempted, see
+         * VMX_RESTORE_HOST_XXX. */
+        uint32_t                    fRestoreHostFlags;
+        /** Alignment. */
+        uint32_t                    u32Alignment0;
+        /** The host-state restoration structure. */
+        VMXRESTOREHOST              RestoreHost;
+        /** @} */
+    } vmx;
 
-        /** SVM data. */
-        struct HM_NAMELESS_UNION_TAG(HMR0CPUSVM)
-        {
-            /** Ring 0 handlers for VT-x. */
-            PFNHMSVMVMRUN               pfnVMRun;
+    /** SVM data. */
+    struct HMR0CPUSVM
+    {
+        /** Ring 0 handlers for VT-x. */
+        PFNHMSVMVMRUN               pfnVMRun;
 
-            /** For saving stack space, the disassembler state is allocated here
-             * instead of on the stack. */
-            DISCPUSTATE                 DisState;
-        } svm;
-    } HM_UNION_NM(u);
+        /** For saving stack space, the disassembler state is allocated here
+         * instead of on the stack. */
+        DISCPUSTATE                 DisState;
+    } svm;
 } HMR0PERVCPU;
 /** Pointer to HM ring-0 VMCPU instance data. */
 typedef HMR0PERVCPU *PHMR0PERVCPU;
 AssertCompileMemberAlignment(HMR0PERVCPU, cWorldSwitchExits, 4);
 AssertCompileMemberAlignment(HMR0PERVCPU, fForceTLBFlush,    4);
-AssertCompileMemberAlignment(HMR0PERVCPU, HM_UNION_NM(u.) vmx.RestoreHost,    8);
+AssertCompileMemberAlignment(HMR0PERVCPU, vmx.RestoreHost,   8);
 
 
 #ifdef IN_RING0
