@@ -370,6 +370,7 @@ typedef struct IOMMU
     STAMCOUNTER                 StatCmdCompletePprReq;      /**< Number of Complete PPR Requests commands processed. */
     STAMCOUNTER                 StatCmdInvIommuAll;         /**< Number of Invalidate IOMMU All commands processed. */
 
+    STAMCOUNTER                 StatDteLookupNonContig;     /**< Number of non-contiguous address region translations. */
     STAMPROFILEADV              StatDteLookup;              /**< Profiling of device table entry lookup (uncached). */
     /** @} */
 #endif
@@ -2963,6 +2964,10 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                         uint64_t uIovaPage   = uIova & X86_PAGE_4K_BASE_MASK;
                         uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
                         uint64_t cbPages     = 0;
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+                        IOWALKRESULT WalkResultPrev;
+                        RT_ZERO(WalkResultPrev);
+#endif
                         for (;;)
                         {
                             rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fAccess, &Dte, enmOp, &WalkResult);
@@ -2975,15 +2980,37 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                                     uint64_t const offMask = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
                                     uint64_t const offSpa  = uIova & offMask;
                                     GCPhysSpa = WalkResult.GCPhysSpa | offSpa;
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+                                    /* Store the walk result from the first page. */
+                                    WalkResultPrev = WalkResult;
+#endif
                                 }
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+                                /* Check if addresses translated so far result in a physically contiguous region
+                                   and that permissions and page sizes are identical for all pages in the access. */
+                                else if (   (GCPhysSpa & X86_PAGE_4K_BASE_MASK) + cbPages == WalkResult.GCPhysSpa
+                                         && WalkResultPrev.cShift  == WalkResult.cShift
+                                         && WalkResultPrev.fIoPerm == WalkResult.fIoPerm)
+                                {
+                                    /* Paranoia. */
+                                    Assert((WalkResultPrev.GCPhysSpa & X86_PAGE_4K_BASE_MASK)
+                                           + RT_BIT_64(WalkResultPrev.cShift) == WalkResult.GCPhysSpa);
+                                    /* Store the walk result before moving on to the next page. */
+                                    WalkResultPrev = WalkResult;
+                                }
+#else
                                 /* Check if addresses translated so far result in a physically contiguous region. */
-                                else if ((GCPhysSpa & X86_PAGE_4K_BASE_MASK) + cbPages == WalkResult.GCPhysSpa)
+                                else if (   (GCPhysSpa & X86_PAGE_4K_BASE_MASK) + cbPages == WalkResult.GCPhysSpa)
                                 { /* likely */ }
+#endif
                                 else
+                                {
+                                    STAM_COUNTER_INC(&pThis->StatDteLookupNonContig);
                                     break;
+                                }
 
                                 /* Check if we need to access more pages. */
-                                uint64_t const cbPage = UINT64_C(1) << WalkResult.cShift;
+                                uint64_t const cbPage = RT_BIT_64(WalkResult.cShift);
                                 if (cbRemaining > cbPage - offIova)
                                 {
                                     cbRemaining -= (cbPage - offIova);  /* Calculate how much more we need to access. */
@@ -3017,7 +3044,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                         rc = VINF_SUCCESS;
 
                         /* Paranoia. */
-                        Assert(WalkResult.cShift   == 0);
+                        Assert(WalkResult.cShift    == 0);
                         Assert(WalkResult.GCPhysSpa == uIova);
                         Assert((WalkResult.fIoPerm & fAccess) == fAccess);
                         /** @todo IOMMU: Add to IOLTB cache. */
@@ -5130,6 +5157,8 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdPrefIommuPages, STAMTYPE_COUNTER, "R3/Commands/PrefIommuPages", STAMUNIT_OCCURENCES, "Number of Prefetch IOMMU Pages commands processed.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdCompletePprReq, STAMTYPE_COUNTER, "R3/Commands/CompletePprReq", STAMUNIT_OCCURENCES, "Number of Complete PPR Requests commands processed.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdInvIommuAll, STAMTYPE_COUNTER, "R3/Commands/InvIommuAll", STAMUNIT_OCCURENCES, "Number of Invalidate IOMMU All commands processed.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatDteLookupNonContig, STAMTYPE_COUNTER, "DteLookupNonContig", STAMUNIT_OCCURENCES, "Number of non-contiguous translated regions.");
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatDteLookup, STAMTYPE_PROFILE, "DteLookup", STAMUNIT_TICKS_PER_CALL, "Profiling device table entry lookup (uncached).");
 # endif
