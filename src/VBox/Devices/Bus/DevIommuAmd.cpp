@@ -2911,6 +2911,59 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
 
 
 /**
+ * Checks whether two I/O walk results are physically contiguous.
+ *
+ * @returns @c true if they are physically contiguous, @c false otherwise.
+ * @param   pWalkResultPrev     The I/O walk result of the previous page.
+ * @param   pWalkResult         The I/O walk result of the current page.
+ */
+DECL_FORCE_INLINE(bool) iommuAmdDteLookupIsAddrPhysContig(PCIOWALKRESULT pWalkResultPrev, PCIOWALKRESULT pWalkResult)
+{
+    size_t const   cbPrev      = RT_BIT_64(pWalkResultPrev->cShift);
+    RTGCPHYS const GCPhysPrev  = pWalkResultPrev->GCPhysSpa;
+    RTGCPHYS const GCPhys      = pWalkResult->GCPhysSpa;
+    uint64_t const offMaskPrev = ~(UINT64_C(0xffffffffffffffff) << pWalkResultPrev->cShift);
+    uint64_t const offMask     = ~(UINT64_C(0xffffffffffffffff) << pWalkResult->cShift);
+
+    /* Paranoia: Ensure offset bits are 0. */
+    Assert(!(GCPhysPrev & offMaskPrev));
+    Assert(!(GCPhys     & offMask));
+
+    if ((GCPhysPrev & ~offMaskPrev) + cbPrev == (GCPhys & ~offMask))
+        return true;
+    return false;
+}
+
+
+/**
+ * Checks whether two I/O walk results form a "contiguous" access.
+ *
+ * When IOTLB caching is used, in addition to the translated system-physical
+ * addresses being physically contiguous, this function also verifies that the two
+ * pages are identical in terms of their page size and permissions.
+ *
+ * This is required to simplify IOTLB lookups for for large accesses (e.g. ATA
+ * device doing 65k transfers on Ubuntu 18.04 guests).
+ *
+ * @returns @c true if they are contiguous, @c false otherwise.
+ * @param   pWalkResultPrev     The I/O walk result of the previous page.
+ * @param   pWalkResult         The I/O walk result of the current page.
+ */
+DECL_FORCE_INLINE(bool) iommuAmdDteLookupIsAccessContig(PCIOWALKRESULT pWalkResultPrev, PCIOWALKRESULT pWalkResult)
+{
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+    if (   pWalkResultPrev->cShift  == pWalkResult->cShift
+        && pWalkResultPrev->fIoPerm == pWalkResult->fIoPerm
+        && iommuAmdDteLookupIsAddrPhysContig(pWalkResultPrev, pWalkResult))
+        return true;
+    return false;
+#else
+    return iommuAmdDteLookupIsAddrPhysContig(pWalkResultPrev, pWalkResult);
+#endif
+}
+
+
+/**
  * Looks up an I/O virtual address from the device table.
  *
  * @returns VBox status code.
@@ -2964,10 +3017,8 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                         uint64_t uIovaPage   = uIova & X86_PAGE_4K_BASE_MASK;
                         uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
                         uint64_t cbPages     = 0;
-#ifdef IOMMU_WITH_IOTLBE_CACHE
                         IOWALKRESULT WalkResultPrev;
                         RT_ZERO(WalkResultPrev);
-#endif
                         for (;;)
                         {
                             rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fAccess, &Dte, enmOp, &WalkResult);
@@ -2979,30 +3030,15 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                                 {
                                     uint64_t const offMask = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
                                     uint64_t const offSpa  = uIova & offMask;
+                                    Assert(!(WalkResult.GCPhysSpa & offMask));
                                     GCPhysSpa = WalkResult.GCPhysSpa | offSpa;
-#ifdef IOMMU_WITH_IOTLBE_CACHE
+
                                     /* Store the walk result from the first page. */
                                     WalkResultPrev = WalkResult;
-#endif
                                 }
-#ifdef IOMMU_WITH_IOTLBE_CACHE
-                                /* Check if addresses translated so far result in a physically contiguous region
-                                   and that permissions and page sizes are identical for all pages in the access. */
-                                else if (   (GCPhysSpa & X86_PAGE_4K_BASE_MASK) + cbPages == WalkResult.GCPhysSpa
-                                         && WalkResultPrev.cShift  == WalkResult.cShift
-                                         && WalkResultPrev.fIoPerm == WalkResult.fIoPerm)
-                                {
-                                    /* Paranoia. */
-                                    Assert((WalkResultPrev.GCPhysSpa & X86_PAGE_4K_BASE_MASK)
-                                           + RT_BIT_64(WalkResultPrev.cShift) == WalkResult.GCPhysSpa);
-                                    /* Store the walk result before moving on to the next page. */
-                                    WalkResultPrev = WalkResult;
-                                }
-#else
                                 /* Check if addresses translated so far result in a physically contiguous region. */
-                                else if (   (GCPhysSpa & X86_PAGE_4K_BASE_MASK) + cbPages == WalkResult.GCPhysSpa)
-                                { /* likely */ }
-#endif
+                                else if (iommuAmdDteLookupIsAccessContig(&WalkResultPrev, &WalkResult))
+                                    WalkResultPrev = WalkResult;
                                 else
                                 {
                                     STAM_COUNTER_INC(&pThis->StatDteLookupNonContig);
