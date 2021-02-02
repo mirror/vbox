@@ -3878,7 +3878,7 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
         fVal |= VMX_PROC_CTLS2_VPID;
 
     /* Enable unrestricted guest execution. */
-    if (pVM->hm.s.vmx.fUnrestrictedGuest)
+    if (pVM->hmr0.s.vmx.fUnrestrictedGuest)
         fVal |= VMX_PROC_CTLS2_UNRESTRICTED_GUEST;
 
 #if 0
@@ -3970,7 +3970,7 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     /* Without nested paging, INVLPG (also affects INVPCID) and MOV CR3 instructions should cause VM-exits. */
     if (!pVM->hmr0.s.fNestedPaging)
     {
-        Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
+        Assert(!pVM->hmr0.s.vmx.fUnrestrictedGuest);
         fVal |= VMX_PROC_CTLS_INVLPG_EXIT
              |  VMX_PROC_CTLS_CR3_LOAD_EXIT
              |  VMX_PROC_CTLS_CR3_STORE_EXIT;
@@ -4028,7 +4028,7 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
         return hmR0VmxSetupVmcsProcCtls2(pVCpu, pVmcsInfo);
 
     /* Sanity check, should not really happen. */
-    if (RT_LIKELY(!pVM->hm.s.vmx.fUnrestrictedGuest))
+    if (RT_LIKELY(!pVM->hmr0.s.vmx.fUnrestrictedGuest))
     { /* likely */ }
     else
     {
@@ -4511,19 +4511,6 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
         return VERR_VMX_NOT_IN_VMX_ROOT_MODE;
 
     /*
-     * Without unrestricted guest execution, pRealModeTSS and pNonPagingModeEPTPageTable *must*
-     * always be allocated. We no longer support the highly unlikely case of unrestricted guest
-     * without pRealModeTSS, see hmR3InitFinalizeR0Intel().
-     */
-    if (   !pVM->hm.s.vmx.fUnrestrictedGuest
-        &&  (   !pVM->hm.s.vmx.pNonPagingModeEPTPageTable
-             || !pVM->hm.s.vmx.pRealModeTSS))
-    {
-        LogRelFunc(("Invalid real-on-v86 state.\n"));
-        return VERR_INTERNAL_ERROR;
-    }
-
-    /*
      * Check that nested paging is supported if enabled and copy over the flag to the
      * ring-0 only structure.
      */
@@ -4533,6 +4520,25 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
                  VERR_INCOMPATIBLE_CONFIG);
     pVM->hmr0.s.fNestedPaging = fNestedPaging;
     pVM->hmr0.s.fAllow64BitGuests = pVM->hm.s.fAllow64BitGuestsCfg;
+
+    /*
+     * Without unrestricted guest execution, pRealModeTSS and pNonPagingModeEPTPageTable *must*
+     * always be allocated. We no longer support the highly unlikely case of unrestricted guest
+     * without pRealModeTSS, see hmR3InitFinalizeR0Intel().
+     */
+    bool const fUnrestrictedGuest = pVM->hm.s.vmx.fUnrestrictedGuestCfg;
+    AssertReturn(   !fUnrestrictedGuest
+                || (   (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
+                    && fNestedPaging),
+                    VERR_INCOMPATIBLE_CONFIG);
+    if (   !fUnrestrictedGuest
+        &&  (   !pVM->hm.s.vmx.pNonPagingModeEPTPageTable
+             || !pVM->hm.s.vmx.pRealModeTSS))
+    {
+        LogRelFunc(("Invalid real-on-v86 state.\n"));
+        return VERR_INTERNAL_ERROR;
+    }
+    pVM->hmr0.s.vmx.fUnrestrictedGuest = fUnrestrictedGuest;
 
     /* Initialize these always, see hmR3InitFinalizeR0().*/
     pVM->hm.s.vmx.enmTlbFlushEptForRing3  = pVM->hmr0.s.vmx.enmTlbFlushEpt  = VMXTLBFLUSHEPT_NONE;
@@ -5651,7 +5657,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 
         uint64_t       fSetCr0 = g_HmMsrs.u.vmx.u64Cr0Fixed0;
         uint64_t const fZapCr0 = g_HmMsrs.u.vmx.u64Cr0Fixed1;
-        if (pVM->hm.s.vmx.fUnrestrictedGuest)
+        if (pVM->hmr0.s.vmx.fUnrestrictedGuest)
             fSetCr0 &= ~(uint64_t)(X86_CR0_PE | X86_CR0_PG);
         else
             Assert((fSetCr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG));
@@ -5683,7 +5689,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
                 }
 
                 /* If we have unrestricted guest execution, we never have to intercept CR3 reads. */
-                if (pVM->hm.s.vmx.fUnrestrictedGuest)
+                if (pVM->hmr0.s.vmx.fUnrestrictedGuest)
                     uProcCtls &= ~VMX_PROC_CTLS_CR3_STORE_EXIT;
             }
             else
@@ -5862,7 +5868,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
 
             uint64_t  u64GuestCr3;
             PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-            if (   pVM->hm.s.vmx.fUnrestrictedGuest
+            if (   pVM->hmr0.s.vmx.fUnrestrictedGuest
                 || CPUMIsGuestPagingEnabledEx(pCtx))
             {
                 /* If the guest is in PAE mode, pass the PDPEs to VT-x using the VMCS fields. */
@@ -5972,7 +5978,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
         if (pVM->hmr0.s.fNestedPaging)
         {
             if (   !CPUMIsGuestPagingEnabledEx(pCtx)
-                && !pVM->hm.s.vmx.fUnrestrictedGuest)
+                && !pVM->hmr0.s.vmx.fUnrestrictedGuest)
             {
                 /* We use 4 MB pages in our identity mapping page table when the guest doesn't have paging. */
                 u64GuestCr4 |= X86_CR4_PSE;
@@ -6234,7 +6240,7 @@ static void hmR0VmxValidateSegmentRegs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_CR0);
-    if (   !pVM->hm.s.vmx.fUnrestrictedGuest
+    if (   !pVM->hmr0.s.vmx.fUnrestrictedGuest
         && (   !CPUMIsGuestInRealModeEx(pCtx)
             && !CPUMIsGuestInV86ModeEx(pCtx)))
     {
@@ -6340,7 +6346,7 @@ static void hmR0VmxValidateSegmentRegs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     }
     else if (   CPUMIsGuestInV86ModeEx(pCtx)
              || (   CPUMIsGuestInRealModeEx(pCtx)
-                 && !pVM->hm.s.vmx.fUnrestrictedGuest))
+                 && !pVM->hmr0.s.vmx.fUnrestrictedGuest))
     {
         /* Real and v86 mode checks. */
         /* hmR0VmxExportGuestSegReg() writes the modified in VMCS. We want what we're feeding to VT-x. */
@@ -6781,7 +6787,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
              * during VM-entry.
              */
             uint64_t uGuestEferMsr = pCtx->msrEFER;
-            if (!pVM->hm.s.vmx.fUnrestrictedGuest)
+            if (!pVM->hmr0.s.vmx.fUnrestrictedGuest)
             {
                 if (!(pCtx->msrEFER & MSR_K6_EFER_LMA))
                     uGuestEferMsr &= ~MSR_K6_EFER_LME;
@@ -7884,7 +7890,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                 if (fWhat & CPUMCTX_EXTRN_CR3)
                 {
                     /* CR0.PG bit changes are always intercepted, so it's up to date. */
-                    if (   pVM->hm.s.vmx.fUnrestrictedGuest
+                    if (   pVM->hmr0.s.vmx.fUnrestrictedGuest
                         || (   pVM->hmr0.s.fNestedPaging
                             && CPUMIsGuestPagingEnabledEx(pCtx)))
                     {
@@ -8797,7 +8803,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
      */
     if (CPUMIsGuestInRealModeEx(pCtx))     /* CR0.PE bit changes are always intercepted, so it's up to date. */
     {
-        if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest)
+        if (pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fUnrestrictedGuest)
         {
             /*
              * For CPUs with unrestricted guest execution enabled and with the guest
@@ -9484,7 +9490,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
      * Used when the guest is in real-mode and unrestricted guest execution is not used.
      */
     PVMXVMCSINFOSHARED pVmcsInfoShared = pVmxTransient->pVmcsInfo->pShared;
-    if (    pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest
+    if (    pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fUnrestrictedGuest
         || !CPUMIsGuestInRealModeEx(&pVCpu->cpum.GstCtx))
         pVmcsInfoShared->RealMode.fRealOnV86Active = false;
     else
@@ -9676,7 +9682,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
     PCPUMCTX pCtx   = &pVCpu->cpum.GstCtx;
     uint32_t uError = VMX_IGS_ERROR;
     uint32_t u32IntrState = 0;
-    bool const fUnrestrictedGuest = pVM->hm.s.vmx.fUnrestrictedGuest;
+    bool const fUnrestrictedGuest = pVM->hmr0.s.vmx.fUnrestrictedGuest;
     do
     {
         int rc;
@@ -9886,13 +9892,13 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
                 HMVMX_CHECK_BREAK(pCtx->cs.Attr.n.u2Dpl == pCtx->ss.Attr.n.u2Dpl, VMX_IGS_CS_SS_ATTR_DPL_UNEQUAL);
             else if (pCtx->cs.Attr.n.u4Type == 13 || pCtx->cs.Attr.n.u4Type == 15)
                 HMVMX_CHECK_BREAK(pCtx->cs.Attr.n.u2Dpl <= pCtx->ss.Attr.n.u2Dpl, VMX_IGS_CS_SS_ATTR_DPL_MISMATCH);
-            else if (pVM->hm.s.vmx.fUnrestrictedGuest && pCtx->cs.Attr.n.u4Type == 3)
+            else if (fUnrestrictedGuest && pCtx->cs.Attr.n.u4Type == 3)
                 HMVMX_CHECK_BREAK(pCtx->cs.Attr.n.u2Dpl == 0, VMX_IGS_CS_ATTR_DPL_INVALID);
             else
                 HMVMX_ERROR_BREAK(VMX_IGS_CS_ATTR_TYPE_INVALID);
 
             /* SS */
-            HMVMX_CHECK_BREAK(   pVM->hm.s.vmx.fUnrestrictedGuest
+            HMVMX_CHECK_BREAK(   fUnrestrictedGuest
                               || (pCtx->ss.Sel & X86_SEL_RPL) == (pCtx->cs.Sel & X86_SEL_RPL), VMX_IGS_SS_CS_RPL_UNEQUAL);
             HMVMX_CHECK_BREAK(pCtx->ss.Attr.n.u2Dpl == (pCtx->ss.Sel & X86_SEL_RPL), VMX_IGS_SS_ATTR_DPL_RPL_UNEQUAL);
             if (   !(pCtx->cr0 & X86_CR0_PE)
@@ -9916,7 +9922,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
             {
                 HMVMX_CHECK_BREAK(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED, VMX_IGS_DS_ATTR_A_INVALID);
                 HMVMX_CHECK_BREAK(pCtx->ds.Attr.n.u1Present, VMX_IGS_DS_ATTR_P_INVALID);
-                HMVMX_CHECK_BREAK(   pVM->hm.s.vmx.fUnrestrictedGuest
+                HMVMX_CHECK_BREAK(   fUnrestrictedGuest
                                   || pCtx->ds.Attr.n.u4Type > 11
                                   || pCtx->ds.Attr.n.u2Dpl >= (pCtx->ds.Sel & X86_SEL_RPL), VMX_IGS_DS_ATTR_DPL_RPL_UNEQUAL);
                 HMVMX_CHECK_BREAK(!(pCtx->ds.Attr.u & 0xf00), VMX_IGS_DS_ATTR_RESERVED);
@@ -9932,7 +9938,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
             {
                 HMVMX_CHECK_BREAK(pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED, VMX_IGS_ES_ATTR_A_INVALID);
                 HMVMX_CHECK_BREAK(pCtx->es.Attr.n.u1Present, VMX_IGS_ES_ATTR_P_INVALID);
-                HMVMX_CHECK_BREAK(   pVM->hm.s.vmx.fUnrestrictedGuest
+                HMVMX_CHECK_BREAK(   fUnrestrictedGuest
                                   || pCtx->es.Attr.n.u4Type > 11
                                   || pCtx->es.Attr.n.u2Dpl >= (pCtx->es.Sel & X86_SEL_RPL), VMX_IGS_DS_ATTR_DPL_RPL_UNEQUAL);
                 HMVMX_CHECK_BREAK(!(pCtx->es.Attr.u & 0xf00), VMX_IGS_ES_ATTR_RESERVED);
@@ -9948,7 +9954,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
             {
                 HMVMX_CHECK_BREAK(pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED, VMX_IGS_FS_ATTR_A_INVALID);
                 HMVMX_CHECK_BREAK(pCtx->fs.Attr.n.u1Present, VMX_IGS_FS_ATTR_P_INVALID);
-                HMVMX_CHECK_BREAK(   pVM->hm.s.vmx.fUnrestrictedGuest
+                HMVMX_CHECK_BREAK(   fUnrestrictedGuest
                                   || pCtx->fs.Attr.n.u4Type > 11
                                   || pCtx->fs.Attr.n.u2Dpl >= (pCtx->fs.Sel & X86_SEL_RPL), VMX_IGS_FS_ATTR_DPL_RPL_UNEQUAL);
                 HMVMX_CHECK_BREAK(!(pCtx->fs.Attr.u & 0xf00), VMX_IGS_FS_ATTR_RESERVED);
@@ -9964,7 +9970,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
             {
                 HMVMX_CHECK_BREAK(pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED, VMX_IGS_GS_ATTR_A_INVALID);
                 HMVMX_CHECK_BREAK(pCtx->gs.Attr.n.u1Present, VMX_IGS_GS_ATTR_P_INVALID);
-                HMVMX_CHECK_BREAK(   pVM->hm.s.vmx.fUnrestrictedGuest
+                HMVMX_CHECK_BREAK(   fUnrestrictedGuest
                                   || pCtx->gs.Attr.n.u4Type > 11
                                   || pCtx->gs.Attr.n.u2Dpl >= (pCtx->gs.Sel & X86_SEL_RPL), VMX_IGS_GS_ATTR_DPL_RPL_UNEQUAL);
                 HMVMX_CHECK_BREAK(!(pCtx->gs.Attr.u & 0xf00), VMX_IGS_GS_ATTR_RESERVED);
@@ -10598,7 +10604,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
      * Validate basic assumptions.
      */
     PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hmr0.s.vmx.VmcsInfoNstGst;
-    Assert(pVM->hm.s.vmx.fUnrestrictedGuest);
+    Assert(pVM->hmr0.s.vmx.fUnrestrictedGuest);
     Assert(g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS);
     Assert(hmGetVmxActiveVmcsInfo(pVCpu) == pVmcsInfoNstGst);
 
@@ -14311,7 +14317,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     }
 
     Assert(CPUMIsGuestInRealModeEx(pCtx));
-    Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest);
+    Assert(!pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fUnrestrictedGuest);
     Assert(!pVmxTransient->fIsNestedGuest);
 
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
@@ -15524,7 +15530,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
              */
             if (   iCrReg == 0
                 && rcStrict == VINF_SUCCESS
-                && !pVM->hm.s.vmx.fUnrestrictedGuest
+                && !pVM->hmr0.s.vmx.fUnrestrictedGuest
                 && CPUMIsGuestInRealModeEx(&pVCpu->cpum.GstCtx)
                 && (uOldCr0 & X86_CR0_PE)
                 && !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_PE))

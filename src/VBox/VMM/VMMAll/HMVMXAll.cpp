@@ -604,13 +604,14 @@ VMM_INT_DECL(bool) HMIsSubjectToVmxPreemptTimerErratum(void)
 VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCtx)
 {
     Assert(HMIsEnabled(pVM));
-    Assert(   ( pVM->hm.s.vmx.fUnrestrictedGuest && !pVM->hm.s.vmx.pRealModeTSS)
-           || (!pVM->hm.s.vmx.fUnrestrictedGuest && pVM->hm.s.vmx.pRealModeTSS));
+    bool const fUnrestrictedGuest = CTX_EXPR(pVM->hm.s.vmx.fUnrestrictedGuestCfg, pVM->hmr0.s.vmx.fUnrestrictedGuest, RT_NOTHING);
+    Assert(   ( fUnrestrictedGuest && !pVM->hm.s.vmx.pRealModeTSS)
+           || (!fUnrestrictedGuest && pVM->hm.s.vmx.pRealModeTSS));
 
     pVCpu->hm.s.fActive = false;
 
-    bool const fSupportsRealMode = pVM->hm.s.vmx.fUnrestrictedGuest || PDMVmmDevHeapIsEnabled(pVM);
-    if (!pVM->hm.s.vmx.fUnrestrictedGuest)
+    bool const fSupportsRealMode = fUnrestrictedGuest || PDMVmmDevHeapIsEnabled(pVM);
+    if (!fUnrestrictedGuest)
     {
         /*
          * The VMM device heap is a requirement for emulating real mode or protected mode without paging with the unrestricted

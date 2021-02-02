@@ -647,7 +647,7 @@ VMM_INT_DECL(bool) HMAreNestedPagingAndFullGuestExecEnabled(PVMCC pVM)
 {
     return HMIsEnabled(pVM)
         && CTX_EXPR(pVM->hm.s.fNestedPagingCfg, pVM->hmr0.s.fNestedPaging, RT_NOTHING)
-        && (   pVM->hm.s.vmx.fUnrestrictedGuest
+        && (   CTX_EXPR(pVM->hm.s.vmx.fUnrestrictedGuestCfg, pVM->hmr0.s.vmx.fUnrestrictedGuest, RT_NOTHING)
             || pVM->hm.s.svm.fSupported);
 }
 

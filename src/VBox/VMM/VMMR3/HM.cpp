@@ -577,9 +577,9 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                 {
                     if (   fAllowUnrestricted
                         && (fCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST))
-                        pVM->hm.s.vmx.fUnrestrictedGuest = true;
+                        pVM->hm.s.vmx.fUnrestrictedGuestCfg = true;
                     else
-                        Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
+                        Assert(!pVM->hm.s.vmx.fUnrestrictedGuestCfg);
                 }
             }
             else
@@ -1565,7 +1565,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     AssertLogRelReturn(   !pVM->hm.s.fNestedPagingCfg
                        || (pVM->hm.s.vmx.MsrsForRing3.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_EPT),
                        VERR_HM_IPE_1);
-    AssertLogRelReturn(   !pVM->hm.s.vmx.fUnrestrictedGuest
+    AssertLogRelReturn(   !pVM->hm.s.vmx.fUnrestrictedGuestCfg
                        || (   (pVM->hm.s.vmx.MsrsForRing3.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
                            && pVM->hm.s.fNestedPagingCfg),
                        VERR_HM_IPE_1);
@@ -1582,7 +1582,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         LogRel(("HM: Disabled RDTSCP\n"));
     }
 
-    if (!pVM->hm.s.vmx.fUnrestrictedGuest)
+    if (!pVM->hm.s.vmx.fUnrestrictedGuestCfg)
     {
         /* Allocate three pages for the TSS we need for real mode emulation. (2 pages for the IO bitmap) */
         rc = PDMR3VmmDevHeapAlloc(pVM, HM_VTX_TOTAL_DEVHEAP_MEM, hmR3VmmDevHeapNotify, (RTR3PTR *)&pVM->hm.s.vmx.pRealModeTSS);
@@ -1705,7 +1705,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         else
             LogRel(("HM:   EPT flush type                  = %#x\n", pVM->hm.s.vmx.enmTlbFlushEptForRing3));
 
-        if (pVM->hm.s.vmx.fUnrestrictedGuest)
+        if (pVM->hm.s.vmx.fUnrestrictedGuestCfg)
             LogRel(("HM: Enabled unrestricted guest execution\n"));
 
         if (pVM->hm.s.fLargePages)
@@ -1716,7 +1716,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         }
     }
     else
-        Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
+        Assert(!pVM->hm.s.vmx.fUnrestrictedGuestCfg);
 
     if (pVM->hm.s.vmx.fVpidForRing3)
     {
@@ -2637,7 +2637,7 @@ VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCCPUMCTX pCtx)
      * when the unrestricted guest execution feature is missing (VT-x only).
      */
     if (    pVM->hm.s.vmx.fEnabled
-        && !pVM->hm.s.vmx.fUnrestrictedGuest
+        && !pVM->hm.s.vmx.fUnrestrictedGuestCfg
         &&  CPUMIsGuestInRealModeEx(pCtx)
         && !PDMVmmDevHeapIsEnabled(pVM))
         return true;
@@ -2851,7 +2851,7 @@ VMMR3DECL(bool) HMR3IsUXActive(PUVM pUVM)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, false);
-    return pVM->hm.s.vmx.fUnrestrictedGuest
+    return pVM->hm.s.vmx.fUnrestrictedGuestCfg
         || pVM->hm.s.svm.fSupported;
 }
 

@@ -486,8 +486,7 @@ typedef struct HM
 
     struct
     {
-        /** Set by the ring-0 side of HM to indicate VMX is supported by the
-         *  CPU. */
+        /** Set by the ring-0 side of HM to indicate VMX is supported by the CPU. */
         bool                        fSupported;
         /** Set when we've enabled VMX. */
         bool                        fEnabled;
@@ -497,7 +496,7 @@ typedef struct HM
         bool                        fAllowVpid;
         /** Set if unrestricted guest execution is in use (real and protected mode
          *  without paging). */
-        bool                        fUnrestrictedGuest;
+        bool                        fUnrestrictedGuestCfg;
         /** Set if the preemption timer is in use or not. */
         bool                        fUsePreemptTimer;
         /** The shift mask employed by the VMX-Preemption timer. */
@@ -643,10 +642,12 @@ typedef struct HMR0PERVM
     /** VT-x specific data. */
     struct HMR0VMXVM
     {
+        /** Set if unrestricted guest execution is in use (real and protected mode
+         *  without paging). */
+        bool                        fUnrestrictedGuest;
+        bool                        afAlignment1[2];
         /** Set if VPID is supported (copy in HM::vmx::fVpidForRing3). */
         bool                        fVpid;
-        bool                        afAlignment1[3];
-
         /** Tagged-TLB flush type. */
         VMXTLBFLUSHTYPE             enmTlbFlushType;
         /** Flush type to use for INVEPT. */
