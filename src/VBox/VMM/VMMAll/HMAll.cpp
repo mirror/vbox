@@ -682,7 +682,8 @@ VMM_INT_DECL(bool) HMIsMsrBitmapActive(PVM pVM)
             return true;
 
         if (   pVM->hm.s.vmx.fSupported
-            && (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS))
+            && (  CTX_EXPR(pVM->hm.s.vmx.MsrsForRing3.ProcCtls.n.allowed1, g_HmMsrs.u.vmx.ProcCtls.n.allowed1, RT_NOTHING)
+                & VMX_PROC_CTLS_USE_MSR_BITMAPS))
             return true;
     }
     return false;

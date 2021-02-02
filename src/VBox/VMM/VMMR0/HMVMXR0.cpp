@@ -1914,7 +1914,7 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
-    bool const fMsrBitmaps = RT_BOOL(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS);
+    bool const fMsrBitmaps = RT_BOOL(g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS);
     bool const fShadowVmcs = !fIsNstGstVmcs ? pVM->hm.s.vmx.fUseVmcsShadowing : pVM->cpum.ro.GuestFeatures.fVmxVmcsShadowing;
     Assert(!pVM->cpum.ro.GuestFeatures.fVmxVmcsShadowing);  /* VMCS shadowing is not yet exposed to the guest. */
     VMXPAGEALLOCINFO aAllocInfo[] =
@@ -1942,7 +1942,7 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
     /*
      * Get the virtual-APIC page rather than allocating them again.
      */
-    if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW)
+    if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
         if (!fIsNstGstVmcs)
         {
@@ -2026,7 +2026,7 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
     /*
      * Allocate per-VM VT-x structures.
      */
-    bool const fVirtApicAccess   = RT_BOOL(pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
+    bool const fVirtApicAccess   = RT_BOOL(g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
     bool const fUseVmcsShadowing = pVM->hm.s.vmx.fUseVmcsShadowing;
     VMXPAGEALLOCINFO aAllocInfo[] =
     {
@@ -2234,7 +2234,7 @@ static void hmR0VmxSetMsrPermission(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool
 static int hmR0VmxSetAutoLoadStoreMsrCount(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint32_t cMsrs)
 {
     /* Shouldn't ever happen but there -is- a number. We're well within the recommended 512. */
-    uint32_t const cMaxSupportedMsrs = VMX_MISC_MAX_MSRS(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc);
+    uint32_t const cMaxSupportedMsrs = VMX_MISC_MAX_MSRS(g_HmMsrs.u.vmx.u64Misc);
     if (RT_LIKELY(cMsrs < cMaxSupportedMsrs))
     {
         /* Commit the MSR counts to the VMCS and update the cache. */
@@ -2748,7 +2748,7 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInf
     uint32_t const cMsrs = cExitLoadMsrs;
 
     /* Verify the MSR counts do not exceed the maximum count supported by the hardware. */
-    Assert(cMsrs < VMX_MISC_MAX_MSRS(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc));
+    Assert(cMsrs < VMX_MISC_MAX_MSRS(g_HmMsrs.u.vmx.u64Misc));
 
     /* Verify the MSR counts are within the allocated page size. */
     Assert(sizeof(VMXAUTOMSR) * cMsrs <= X86_PAGE_4K_SIZE);
@@ -3795,19 +3795,19 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
 static int hmR0VmxSetupVmcsPinCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    uint32_t       fVal = pVM->hm.s.vmx.Msrs.PinCtls.n.allowed0;      /* Bits set here must always be set. */
-    uint32_t const fZap = pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1;      /* Bits cleared here must always be cleared. */
+    uint32_t       fVal = g_HmMsrs.u.vmx.PinCtls.n.allowed0;      /* Bits set here must always be set. */
+    uint32_t const fZap = g_HmMsrs.u.vmx.PinCtls.n.allowed1;      /* Bits cleared here must always be cleared. */
 
     fVal |= VMX_PIN_CTLS_EXT_INT_EXIT                        /* External interrupts cause a VM-exit. */
          |  VMX_PIN_CTLS_NMI_EXIT;                           /* Non-maskable interrupts (NMIs) cause a VM-exit. */
 
-    if (pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1 & VMX_PIN_CTLS_VIRT_NMI)
+    if (g_HmMsrs.u.vmx.PinCtls.n.allowed1 & VMX_PIN_CTLS_VIRT_NMI)
         fVal |= VMX_PIN_CTLS_VIRT_NMI;                       /* Use virtual NMIs and virtual-NMI blocking features. */
 
     /* Enable the VMX-preemption timer. */
     if (pVM->hm.s.vmx.fUsePreemptTimer)
     {
-        Assert(pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1 & VMX_PIN_CTLS_PREEMPT_TIMER);
+        Assert(g_HmMsrs.u.vmx.PinCtls.n.allowed1 & VMX_PIN_CTLS_PREEMPT_TIMER);
         fVal |= VMX_PIN_CTLS_PREEMPT_TIMER;
     }
 
@@ -3815,8 +3815,8 @@ static int hmR0VmxSetupVmcsPinCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     /* Enable posted-interrupt processing. */
     if (pVM->hm.s.fPostedIntrs)
     {
-        Assert(pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1  & VMX_PIN_CTLS_POSTED_INT);
-        Assert(pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_ACK_EXT_INT);
+        Assert(g_HmMsrs.u.vmx.PinCtls.n.allowed1  & VMX_PIN_CTLS_POSTED_INT);
+        Assert(g_HmMsrs.u.vmx.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_ACK_EXT_INT);
         fVal |= VMX_PIN_CTLS_POSTED_INT;
     }
 #endif
@@ -3824,7 +3824,7 @@ static int hmR0VmxSetupVmcsPinCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     if ((fVal & fZap) != fVal)
     {
         LogRelFunc(("Invalid pin-based VM-execution controls combo! Cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
-                    pVM->hm.s.vmx.Msrs.PinCtls.n.allowed0, fVal, fZap));
+                    g_HmMsrs.u.vmx.PinCtls.n.allowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PIN_EXEC;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
@@ -3848,11 +3848,11 @@ static int hmR0VmxSetupVmcsPinCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    uint32_t       fVal = pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed0;    /* Bits set here must be set in the VMCS. */
-    uint32_t const fZap = pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1;    /* Bits cleared here must be cleared in the VMCS. */
+    uint32_t       fVal = g_HmMsrs.u.vmx.ProcCtls2.n.allowed0;    /* Bits set here must be set in the VMCS. */
+    uint32_t const fZap = g_HmMsrs.u.vmx.ProcCtls2.n.allowed1;    /* Bits cleared here must be cleared in the VMCS. */
 
     /* WBINVD causes a VM-exit. */
-    if (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_WBINVD_EXIT)
+    if (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_WBINVD_EXIT)
         fVal |= VMX_PROC_CTLS2_WBINVD_EXIT;
 
     /* Enable EPT (aka nested-paging). */
@@ -3862,7 +3862,7 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     /* Enable the INVPCID instruction if we expose it to the guest and is supported
        by the hardware. Without this, guest executing INVPCID would cause a #UD. */
     if (   pVM->cpum.ro.GuestFeatures.fInvpcid
-        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_INVPCID))
+        && (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_INVPCID))
         fVal |= VMX_PROC_CTLS2_INVPCID;
 
     /* Enable VPID. */
@@ -3877,11 +3877,11 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     if (pVM->hm.s.fVirtApicRegs)
     {
         /* Enable APIC-register virtualization. */
-        Assert(pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_APIC_REG_VIRT);
+        Assert(g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_APIC_REG_VIRT);
         fVal |= VMX_PROC_CTLS2_APIC_REG_VIRT;
 
         /* Enable virtual-interrupt delivery. */
-        Assert(pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_INTR_DELIVERY);
+        Assert(g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_INTR_DELIVERY);
         fVal |= VMX_PROC_CTLS2_VIRT_INTR_DELIVERY;
     }
 #endif
@@ -3890,7 +3890,7 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
        where the TPR shadow resides. */
     /** @todo VIRT_X2APIC support, it's mutually exclusive with this. So must be
      *        done dynamically. */
-    if (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+    if (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
     {
         fVal |= VMX_PROC_CTLS2_VIRT_APIC_ACCESS;
         hmR0VmxSetupVmcsApicAccessAddr(pVCpu);
@@ -3899,11 +3899,11 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     /* Enable the RDTSCP instruction if we expose it to the guest and is supported
        by the hardware. Without this, guest executing RDTSCP would cause a #UD. */
     if (   pVM->cpum.ro.GuestFeatures.fRdTscP
-        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_RDTSCP))
+        && (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_RDTSCP))
         fVal |= VMX_PROC_CTLS2_RDTSCP;
 
     /* Enable Pause-Loop exiting. */
-    if (   (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT)
+    if (   (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT)
         && pVM->hm.s.vmx.cPleGapTicks
         && pVM->hm.s.vmx.cPleWindowTicks)
     {
@@ -3916,7 +3916,7 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     if ((fVal & fZap) != fVal)
     {
         LogRelFunc(("Invalid secondary processor-based VM-execution controls combo! cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
-                    pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed0, fVal, fZap));
+                    g_HmMsrs.u.vmx.ProcCtls2.n.allowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC2;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
@@ -3940,8 +3940,8 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    uint32_t       fVal = pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
-    uint32_t const fZap = pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
+    uint32_t       fVal = g_HmMsrs.u.vmx.ProcCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
+    uint32_t const fZap = g_HmMsrs.u.vmx.ProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
     fVal |= VMX_PROC_CTLS_HLT_EXIT                                    /* HLT causes a VM-exit. */
          |  VMX_PROC_CTLS_USE_TSC_OFFSETTING                          /* Use TSC-offsetting. */
@@ -3952,8 +3952,8 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
          |  VMX_PROC_CTLS_MWAIT_EXIT;                                 /* MWAIT causes a VM-exit. */
 
     /* We toggle VMX_PROC_CTLS_MOV_DR_EXIT later, check if it's not -always- needed to be set or clear. */
-    if (   !(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_MOV_DR_EXIT)
-        ||  (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed0 & VMX_PROC_CTLS_MOV_DR_EXIT))
+    if (   !(g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_MOV_DR_EXIT)
+        ||  (g_HmMsrs.u.vmx.ProcCtls.n.allowed0 & VMX_PROC_CTLS_MOV_DR_EXIT))
     {
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_MOV_DRX_EXIT;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
@@ -3970,7 +3970,7 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 
     /* Use TPR shadowing if supported by the CPU. */
     if (   PDMHasApic(pVM)
-        && (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW))
+        && (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW))
     {
         fVal |= VMX_PROC_CTLS_USE_TPR_SHADOW;                /* CR8 reads from the Virtual-APIC page. */
                                                              /* CR8 writes cause a VM-exit based on TPR threshold. */
@@ -3988,20 +3988,20 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     }
 
     /* Use MSR-bitmaps if supported by the CPU. */
-    if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
+    if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
         fVal |= VMX_PROC_CTLS_USE_MSR_BITMAPS;
         hmR0VmxSetupVmcsMsrBitmapAddr(pVmcsInfo);
     }
 
     /* Use the secondary processor-based VM-execution controls if supported by the CPU. */
-    if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+    if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
         fVal |= VMX_PROC_CTLS_USE_SECONDARY_CTLS;
 
     if ((fVal & fZap) != fVal)
     {
         LogRelFunc(("Invalid processor-based VM-execution controls combo! cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
-                    pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed0, fVal, fZap));
+                    g_HmMsrs.u.vmx.ProcCtls.n.allowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
@@ -4131,7 +4131,7 @@ static int hmR0VmxSetupVmcsCtlsNested(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVmcsInfo);
     if (RT_SUCCESS(rc))
     {
-        if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
+        if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
             hmR0VmxSetupVmcsMsrBitmapAddr(pVmcsInfo);
 
         /* Paranoia - We've not yet initialized these, they shall be done while merging the VMCS. */
@@ -4521,7 +4521,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
      */
     bool const fNestedPaging = pVM->hm.s.fNestedPagingCfg;
     AssertReturn(   !fNestedPaging
-                 || (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_EPT), /** @todo use a ring-0 copy of ProcCtls2.n.allowed1 */
+                 || (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_EPT), /** @todo use a ring-0 copy of ProcCtls2.n.allowed1 */
                  VERR_INCOMPATIBLE_CONFIG);
     pVM->hmr0.s.fNestedPaging = fNestedPaging;
     pVM->hmr0.s.fAllow64BitGuests = pVM->hm.s.fAllow64BitGuestsCfg;
@@ -4990,8 +4990,8 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
          * VM-entry controls.
          */
         {
-            uint32_t       fVal = pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed0;    /* Bits set here must be set in the VMCS. */
-            uint32_t const fZap = pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed1;    /* Bits cleared here must be cleared in the VMCS. */
+            uint32_t       fVal = g_HmMsrs.u.vmx.EntryCtls.n.allowed0;    /* Bits set here must be set in the VMCS. */
+            uint32_t const fZap = g_HmMsrs.u.vmx.EntryCtls.n.allowed1;    /* Bits cleared here must be cleared in the VMCS. */
 
             /*
              * Load the guest debug controls (DR7 and IA32_DEBUGCTL MSR) on VM-entry.
@@ -5047,7 +5047,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
             else
             {
                 Log4Func(("Invalid VM-entry controls combo! Cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
-                          pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed0, fVal, fZap));
+                          g_HmMsrs.u.vmx.EntryCtls.n.allowed0, fVal, fZap));
                 pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_ENTRY;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
@@ -5065,8 +5065,8 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
          * VM-exit controls.
          */
         {
-            uint32_t       fVal = pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
-            uint32_t const fZap = pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
+            uint32_t       fVal = g_HmMsrs.u.vmx.ExitCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
+            uint32_t const fZap = g_HmMsrs.u.vmx.ExitCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
             /*
              * Save debug controls (DR7 & IA32_DEBUGCTL_MSR). The first VT-x CPUs only
@@ -5106,7 +5106,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
              * For nested-guests, currently not exposed/used.
              */
             if (    pVM->hm.s.vmx.fUsePreemptTimer
-                && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER))
+                && (g_HmMsrs.u.vmx.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER))
                 fVal |= VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER;
 
             /* Don't acknowledge external interrupts on VM-exit. We want to let the host do that. */
@@ -5121,7 +5121,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
             else
             {
                 Log4Func(("Invalid VM-exit controls combo! cpu=%#RX32 fVal=%#RX32 fZap=%R#X32\n",
-                          pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed0, fVal, fZap));
+                          g_HmMsrs.u.vmx.ExitCtls.n.allowed0, fVal, fZap));
                 pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_EXIT;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
@@ -6084,8 +6084,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
     if (pVCpu->hm.s.fSingleInstruction)
     {
         /* If the CPU supports the monitor trap flag, use it for single stepping in DBGF and avoid intercepting #DB. */
-        PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-        if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_MONITOR_TRAP_FLAG)
+        if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_MONITOR_TRAP_FLAG)
         {
             uProcCtls |= VMX_PROC_CTLS_MONITOR_TRAP_FLAG;
             Assert(fSteppingDB == false);
@@ -8232,7 +8231,7 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPUCC pVCpu)
  */
 static void hmR0VmxSetIntWindowExitVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_INT_WINDOW_EXIT)
+    if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_INT_WINDOW_EXIT)
     {
         if (!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT))
         {
@@ -8269,7 +8268,7 @@ DECLINLINE(void) hmR0VmxClearIntWindowExitVmcs(PVMXVMCSINFO pVmcsInfo)
  */
 static void hmR0VmxSetNmiWindowExitVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_NMI_WINDOW_EXIT)
+    if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_NMI_WINDOW_EXIT)
     {
         if (!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT))
         {
@@ -10521,7 +10520,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
     RTHCPHYS HCPhysApicAccess;
     if (u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
     {
-        Assert(pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
+        Assert(g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
         RTGCPHYS const GCPhysApicAccess = pVmcsNstGst->u64AddrApicAccess.u;
 
         /** @todo NSTVMX: This is not really correct but currently is required to make
@@ -10553,7 +10552,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
     uint32_t u32TprThreshold;
     if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
-        Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW);
+        Assert(g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW);
         RTGCPHYS const GCPhysVirtApic = pVmcsNstGst->u64AddrVirtApic.u;
 
         void          *pvPage;
@@ -10592,7 +10591,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
      */
     PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hmr0.s.vmx.VmcsInfoNstGst;
     Assert(pVM->hm.s.vmx.fUnrestrictedGuest);
-    Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS);
+    Assert(g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS);
     Assert(hmGetVmxActiveVmcsInfo(pVCpu) == pVmcsInfoNstGst);
 
     /*
@@ -10618,7 +10617,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
     if (   !(u32ProcCtls  & VMX_PROC_CTLS_PAUSE_EXIT)
         &&  (u32ProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT))
     {
-        Assert(pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT);
+        Assert(g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT);
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_GAP, cPleGapTicks);
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_WINDOW, cPleWindowTicks);
     }
@@ -10736,7 +10735,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
      */
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     if (   !pVCpu->hm.s.vmx.u64GstMsrApicBase
-        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+        && (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
         && PDMHasApic(pVM))
     {
         int rc = hmR0VmxMapHCApicAccessPage(pVCpu);
@@ -11976,11 +11975,11 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
     /*
      * Sanitize the control stuff.
      */
-    pDbgState->fCpe2Extra       &= pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1;
+    pDbgState->fCpe2Extra       &= g_HmMsrs.u.vmx.ProcCtls2.n.allowed1;
     if (pDbgState->fCpe2Extra)
         pDbgState->fCpe1Extra   |= VMX_PROC_CTLS_USE_SECONDARY_CTLS;
-    pDbgState->fCpe1Extra       &= pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1;
-    pDbgState->fCpe1Unwanted    &= ~pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed0;
+    pDbgState->fCpe1Extra       &= g_HmMsrs.u.vmx.ProcCtls.n.allowed1;
+    pDbgState->fCpe1Unwanted    &= ~g_HmMsrs.u.vmx.ProcCtls.n.allowed0;
     if (pVCpu->hmr0.s.fDebugWantRdTscExit != RT_BOOL(pDbgState->fCpe1Extra & VMX_PROC_CTLS_RDTSC_EXIT))
     {
         pVCpu->hmr0.s.fDebugWantRdTscExit ^= true;

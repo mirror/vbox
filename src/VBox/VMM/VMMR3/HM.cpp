@@ -1072,7 +1072,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
         && !pVM->hm.s.svm.fSupported)
     {
         LogRel(("HM: Failed to initialize VT-x / AMD-V: %Rrc\n", pVM->hm.s.rcInit));
-        LogRel(("HM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hm.s.vmx.Msrs.u64FeatCtrl));
+        LogRel(("HM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hm.s.vmx.MsrsForRing3.u64FeatCtrl));
         switch (pVM->hm.s.rcInit)
         {
             case VERR_VMX_IN_VMX_ROOT_MODE:
@@ -1501,7 +1501,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     int rc;
 
     LogFunc(("pVM->hm.s.vmx.fSupported = %d\n", pVM->hm.s.vmx.fSupported));
-    AssertLogRelReturn(pVM->hm.s.vmx.Msrs.u64FeatCtrl != 0, VERR_HM_IPE_4);
+    AssertLogRelReturn(pVM->hm.s.vmx.MsrsForRing3.u64FeatCtrl != 0, VERR_HM_IPE_4);
 
     LogRel(("HM: Using VT-x implementation 3.0\n"));
     LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoopsCfg));
@@ -1509,33 +1509,33 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.vmx.u64HostMsrEfer));
     LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.vmx.u64HostSmmMonitorCtl));
 
-    hmR3VmxReportFeatCtlMsr(pVM->hm.s.vmx.Msrs.u64FeatCtrl);
-    hmR3VmxReportBasicMsr(pVM->hm.s.vmx.Msrs.u64Basic);
+    hmR3VmxReportFeatCtlMsr(pVM->hm.s.vmx.MsrsForRing3.u64FeatCtrl);
+    hmR3VmxReportBasicMsr(pVM->hm.s.vmx.MsrsForRing3.u64Basic);
 
-    hmR3VmxReportPinBasedCtlsMsr(&pVM->hm.s.vmx.Msrs.PinCtls);
-    hmR3VmxReportProcBasedCtlsMsr(&pVM->hm.s.vmx.Msrs.ProcCtls);
-    if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
-        hmR3VmxReportProcBasedCtls2Msr(&pVM->hm.s.vmx.Msrs.ProcCtls2);
+    hmR3VmxReportPinBasedCtlsMsr(&pVM->hm.s.vmx.MsrsForRing3.PinCtls);
+    hmR3VmxReportProcBasedCtlsMsr(&pVM->hm.s.vmx.MsrsForRing3.ProcCtls);
+    if (pVM->hm.s.vmx.MsrsForRing3.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+        hmR3VmxReportProcBasedCtls2Msr(&pVM->hm.s.vmx.MsrsForRing3.ProcCtls2);
 
-    hmR3VmxReportEntryCtlsMsr(&pVM->hm.s.vmx.Msrs.EntryCtls);
-    hmR3VmxReportExitCtlsMsr(&pVM->hm.s.vmx.Msrs.ExitCtls);
+    hmR3VmxReportEntryCtlsMsr(&pVM->hm.s.vmx.MsrsForRing3.EntryCtls);
+    hmR3VmxReportExitCtlsMsr(&pVM->hm.s.vmx.MsrsForRing3.ExitCtls);
 
-    if (RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_TRUE_CTLS))
+    if (RT_BF_GET(pVM->hm.s.vmx.MsrsForRing3.u64Basic, VMX_BF_BASIC_TRUE_CTLS))
     {
         /* We don't extensively dump the true capability MSRs as we don't use them, see @bugref{9180#c5}. */
-        LogRel(("HM: MSR_IA32_VMX_TRUE_PINBASED_CTLS   = %#RX64\n", pVM->hm.s.vmx.Msrs.TruePinCtls));
-        LogRel(("HM: MSR_IA32_VMX_TRUE_PROCBASED_CTLS  = %#RX64\n", pVM->hm.s.vmx.Msrs.TrueProcCtls));
-        LogRel(("HM: MSR_IA32_VMX_TRUE_ENTRY_CTLS      = %#RX64\n", pVM->hm.s.vmx.Msrs.TrueEntryCtls));
-        LogRel(("HM: MSR_IA32_VMX_TRUE_EXIT_CTLS       = %#RX64\n", pVM->hm.s.vmx.Msrs.TrueExitCtls));
+        LogRel(("HM: MSR_IA32_VMX_TRUE_PINBASED_CTLS   = %#RX64\n", pVM->hm.s.vmx.MsrsForRing3.TruePinCtls));
+        LogRel(("HM: MSR_IA32_VMX_TRUE_PROCBASED_CTLS  = %#RX64\n", pVM->hm.s.vmx.MsrsForRing3.TrueProcCtls));
+        LogRel(("HM: MSR_IA32_VMX_TRUE_ENTRY_CTLS      = %#RX64\n", pVM->hm.s.vmx.MsrsForRing3.TrueEntryCtls));
+        LogRel(("HM: MSR_IA32_VMX_TRUE_EXIT_CTLS       = %#RX64\n", pVM->hm.s.vmx.MsrsForRing3.TrueExitCtls));
     }
 
-    hmR3VmxReportMiscMsr(pVM, pVM->hm.s.vmx.Msrs.u64Misc);
-    hmR3VmxReportVmcsEnumMsr(pVM->hm.s.vmx.Msrs.u64VmcsEnum);
-    if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps)
-        hmR3VmxReportEptVpidCapsMsr(pVM->hm.s.vmx.Msrs.u64EptVpidCaps);
-    if (pVM->hm.s.vmx.Msrs.u64VmFunc)
-        hmR3VmxReportVmFuncMsr(pVM->hm.s.vmx.Msrs.u64VmFunc);
-    hmR3VmxReportCrFixedMsrs(&pVM->hm.s.vmx.Msrs);
+    hmR3VmxReportMiscMsr(pVM, pVM->hm.s.vmx.MsrsForRing3.u64Misc);
+    hmR3VmxReportVmcsEnumMsr(pVM->hm.s.vmx.MsrsForRing3.u64VmcsEnum);
+    if (pVM->hm.s.vmx.MsrsForRing3.u64EptVpidCaps)
+        hmR3VmxReportEptVpidCapsMsr(pVM->hm.s.vmx.MsrsForRing3.u64EptVpidCaps);
+    if (pVM->hm.s.vmx.MsrsForRing3.u64VmFunc)
+        hmR3VmxReportVmFuncMsr(pVM->hm.s.vmx.MsrsForRing3.u64VmFunc);
+    hmR3VmxReportCrFixedMsrs(&pVM->hm.s.vmx.MsrsForRing3);
 
 #ifdef TODO_9217_VMCSINFO
     LogRel(("HM: APIC-access page physaddr         = %#RHp\n",  pVM->hm.s.vmx.HCPhysApicAccess));
@@ -1563,10 +1563,10 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
      * EPT and unrestricted guest execution are determined in HMR3Init, verify the sanity of that.
      */
     AssertLogRelReturn(   !pVM->hm.s.fNestedPagingCfg
-                       || (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_EPT),
+                       || (pVM->hm.s.vmx.MsrsForRing3.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_EPT),
                        VERR_HM_IPE_1);
     AssertLogRelReturn(   !pVM->hm.s.vmx.fUnrestrictedGuest
-                       || (   (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
+                       || (   (pVM->hm.s.vmx.MsrsForRing3.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
                            && pVM->hm.s.fNestedPagingCfg),
                        VERR_HM_IPE_1);
 
@@ -1575,7 +1575,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
      * RDTSCP would cause a #UD. There might be no CPUs out there where this happens, as RDTSCP was introduced
      * in Nehalems and secondary VM exec. controls should be supported in all of them, but nonetheless it's Intel...
      */
-    if (   !(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+    if (   !(pVM->hm.s.vmx.MsrsForRing3.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
         && CPUMR3GetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
     {
         CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP);
@@ -1748,7 +1748,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
 
     if (pVM->hm.s.vmx.fUseVmcsShadowing)
     {
-        bool const fFullVmcsShadow = RT_BOOL(pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL);
+        bool const fFullVmcsShadow = RT_BOOL(pVM->hm.s.vmx.MsrsForRing3.u64Misc & VMX_MISC_VMWRITE_ALL);
         LogRel(("HM: Enabled %s VMCS shadowing\n", fFullVmcsShadow ? "full" : "partial"));
     }
 
@@ -3071,8 +3071,8 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 
     if (iStatusCode == VERR_VMX_UNABLE_TO_START_VM)
     {
-        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed-1  %#RX32\n", pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed1));
-        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed-0  %#RX32\n", pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed0));
+        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed-1  %#RX32\n", pVM->hm.s.vmx.MsrsForRing3.EntryCtls.n.allowed1));
+        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed-0  %#RX32\n", pVM->hm.s.vmx.MsrsForRing3.EntryCtls.n.allowed0));
     }
     else if (iStatusCode == VERR_VMX_INVALID_VMXON_PTR)
         LogRel(("HM: HCPhysVmxEnableError         = %#RHp\n", pVM->hm.s.vmx.HCPhysVmxEnableError));

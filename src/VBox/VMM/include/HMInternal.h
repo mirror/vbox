@@ -551,7 +551,7 @@ typedef struct HM
         RTHCPHYS                    HCPhysVmxEnableError;
 
         /** VMX MSR values. */
-        VMXMSRS                     Msrs;
+        VMXMSRS                     MsrsForRing3;
 
         /** Virtual address of the TSS page used for real mode emulation. */
         R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
