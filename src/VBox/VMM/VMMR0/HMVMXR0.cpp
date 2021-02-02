@@ -1844,12 +1844,17 @@ static int hmR0VmxPagesAllocZ(PRTR0MEMOBJ phMemObj, PVMXPAGEALLOCINFO paAllocInf
 /**
  * Frees pages allocated using hmR0VmxPagesAllocZ.
  *
- * @param   hMemObj     The ring-0 memory object associated with the allocation.
+ * @param   phMemObj    Pointer to the memory object handle.  Will be set to
+ *                      NIL.
  */
-DECL_FORCE_INLINE(void) hmR0VmxPagesFree(RTR0MEMOBJ hMemObj)
+DECL_FORCE_INLINE(void) hmR0VmxPagesFree(PRTR0MEMOBJ phMemObj)
 {
     /* We can cleanup wholesale since it's all one allocation. */
-    RTR0MemObjFree(hMemObj, true /* fFreeMappings */);
+    if (*phMemObj != NIL_RTR0MEMOBJ)
+    {
+        RTR0MemObjFree(*phMemObj, true /* fFreeMappings */);
+        *phMemObj = NIL_RTR0MEMOBJ;
+    }
 }
 
 
@@ -1888,11 +1893,8 @@ static void hmR0VmxVmcsInfoInit(PVMXVMCSINFO pVmcsInfo, PVMXVMCSINFOSHARED pVmcs
  */
 static void hmR0VmxVmcsInfoFree(PVMXVMCSINFO pVmcsInfo, PVMXVMCSINFOSHARED pVmcsInfoShared)
 {
-    if (pVmcsInfo->hMemObj != NIL_RTR0MEMOBJ)
-    {
-        hmR0VmxPagesFree(pVmcsInfo->hMemObj);
-        hmR0VmxVmcsInfoInit(pVmcsInfo, pVmcsInfoShared);
-    }
+    hmR0VmxPagesFree(&pVmcsInfo->hMemObj);
+    hmR0VmxVmcsInfoInit(pVmcsInfo, pVmcsInfoShared);
 }
 
 
@@ -1973,12 +1975,14 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
  */
 static void hmR0VmxStructsFree(PVMCC pVM)
 {
-    hmR0VmxPagesFree(pVM->hm.s.vmx.hMemObj);
+    hmR0VmxPagesFree(&pVM->hmr0.s.vmx.hMemObj);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (pVM->hm.s.vmx.fUseVmcsShadowing)
     {
         RTMemFree(pVM->hm.s.vmx.paShadowVmcsFields);
+        pVM->hm.s.vmx.paShadowVmcsFields = NULL;
         RTMemFree(pVM->hm.s.vmx.paShadowVmcsRoFields);
+        pVM->hm.s.vmx.paShadowVmcsRoFields = NULL;
     }
 #endif
 
@@ -2034,7 +2038,7 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
 #endif
     };
 
-    int rc = hmR0VmxPagesAllocZ(&pVM->hm.s.vmx.hMemObj, &aAllocInfo[0], RT_ELEMENTS(aAllocInfo));
+    int rc = hmR0VmxPagesAllocZ(&pVM->hmr0.s.vmx.hMemObj, &aAllocInfo[0], RT_ELEMENTS(aAllocInfo));
     if (RT_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX

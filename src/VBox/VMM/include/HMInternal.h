@@ -588,9 +588,6 @@ typedef struct HM
         /** Virtual address of the identity page table used for real mode and protected
          *  mode without paging emulation in EPT mode. */
         R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
-
-        /** Ring-0 memory object for per-VM VMX structures. */
-        RTR0MEMOBJ                  hMemObj;
     } vmx;
 
     struct
@@ -678,7 +675,15 @@ typedef struct HMR0PERVM
     /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
     uint32_t                    fHostKernelFeatures;
 
-    /** SVM specific data. */
+    /** VT-x specific data. */
+    struct HMR0VMXVM
+    {
+        /** Ring-0 memory object for per-VM VMX structures. */
+        RTR0MEMOBJ                  hMemObj;
+
+    } vmx;
+
+    /** AMD-V specific data. */
     struct HMR0SVMVM
     {
         /** Set if erratum 170 affects the AMD cpu. */
