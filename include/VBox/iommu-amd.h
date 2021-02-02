@@ -1424,8 +1424,9 @@ typedef union
 {
     struct
     {
-        RT_GCC_EXTENSION uint64_t   u52ExclLimit : 52;  /**< Bits 51:0 - Exclusion Range Limit (last 12 bits are treated as 1s). */
-        RT_GCC_EXTENSION uint64_t   u12Rsvd1 : 12;      /**< Bits 63:52 - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;           /**< Bits 63:52 - Reserved. */
+        RT_GCC_EXTENSION uint64_t   u40ExclRangeLimit : 40;  /**< Bits 51:12 - Exclusion Range Limit Address. */
+        RT_GCC_EXTENSION uint64_t   u12Rsvd1 : 12;           /**< Bits 63:52 - Reserved (treated as 1s). */
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    u64;

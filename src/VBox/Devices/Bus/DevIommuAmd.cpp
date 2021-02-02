@@ -56,6 +56,16 @@
 # define IOMMU_IOTLB_DOMAIN_ID_SHIFT                40
 #endif
 
+/** @name IOMMU_DEV_LOOKUP_F_XXX: I/O device lookup flags.
+ *  @{ */
+/** The device lookup was successful. */
+#define IOMMU_DEV_LOOKUP_F_VALID                    RT_BIT(0)
+/** Translation required. */
+#define IOMMU_DEV_LOOKUP_F_TRANSLATE                RT_BIT(1)
+/** Only DTE permissions apply. */
+#define IOMMU_DEV_LOOKUP_F_ONLY_DTE_PERM            RT_BIT(2)
+/** @} */
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -150,20 +160,21 @@ typedef IOWALKRESULT *PCIOWALKRESULT;
  * IOMMU I/O Device ID mapping.
  */
 #pragma pack(1)
-typedef struct IODOMAIN
+typedef struct IODEVICE
 {
-    /** The domain ID assigned by software. */
+    /** The device lookup flags, see IOMMU_DEV_LOOKUP_F_XXX.   */
+    uint8_t         fFlags;
+    /** The DTE permission bits. */
+    uint8_t         fDtePerm;
+    /** The domain ID assigned for this device by software. */
     uint16_t        uDomainId;
-    /** Whether the device ID is valid (if not, lookups must re-read DTE). */
-    bool            fValid;
-    bool            afAlignment[1];
-} IODOMAIN;
+} IODEVICE;
 #pragma pack()
-/** Pointer to an I/O domain struct. */
-typedef IODOMAIN *PIODOMAIN;
-/** Pointer to a const I/O domain struct. */
-typedef IODOMAIN *PCIODOMAIN;
-AssertCompileSize(IODOMAIN, 4);
+/** Pointer to an I/O device struct. */
+typedef IODEVICE *PIODEVICE;
+/** Pointer to a const I/O device struct. */
+typedef IODEVICE *PCIODEVICE;
+AssertCompileSize(IODEVICE, 4);
 
 /**
  * IOMMU I/O TLB Entry.
@@ -210,7 +221,7 @@ typedef struct IOMMU
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
     /** L1 Cache - Maps [DeviceId] to [DomainId]. */
-    PIODOMAIN                   paDomainIds;
+    PIODEVICE                   paDevices;
     /** Pointer to array of allocated IOTLBEs. */
     PIOTLBE                     paIotlbes;
     /** L2 Cache - Maps [DomainId,Iova] to [IOTLBE]. */
@@ -386,7 +397,7 @@ AssertCompileMemberAlignment(IOMMU, fCmdThreadSignaled, 4);
 AssertCompileMemberAlignment(IOMMU, hEvtCmdThread, 8);
 AssertCompileMemberAlignment(IOMMU, hMmio, 8);
 #ifdef IOMMU_WITH_IOTLBE_CACHE
-AssertCompileMemberAlignment(IOMMU, paDomainIds, 8);
+AssertCompileMemberAlignment(IOMMU, paDevices, 8);
 AssertCompileMemberAlignment(IOMMU, paIotlbes, 8);
 AssertCompileMemberAlignment(IOMMU, TreeIotlbe, 8);
 AssertCompileMemberAlignment(IOMMU, LstLruIotlbe, 8);
@@ -770,7 +781,7 @@ static void iommuAmdIotlbRemoveRange(PIOMMU pThis, uint16_t uDomainId, uint64_t 
 #endif  /* IOMMU_WITH_IOTLBE_CACHE */
 
 
-DECL_FORCE_INLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
+DECLINLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
 {
     IOMMU_STATUS_T Status;
     Status.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Status.u64);
@@ -778,7 +789,7 @@ DECL_FORCE_INLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
 }
 
 
-DECL_FORCE_INLINE(IOMMU_CTRL_T) iommuAmdGetCtrl(PCIOMMU pThis)
+DECLINLINE(IOMMU_CTRL_T) iommuAmdGetCtrl(PCIOMMU pThis)
 {
     IOMMU_CTRL_T Ctrl;
     Ctrl.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Ctrl.u64);
@@ -2559,38 +2570,6 @@ static void iommuAmdIoPageFaultEventRaise(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
 
 
 /**
- * Returns whether the I/O virtual address is to be excluded from translation and
- * permission checks.
- *
- * @returns @c true if the DVA is excluded, @c false otherwise.
- * @param   pThis   The IOMMU device state.
- * @param   pDte    The device table entry.
- * @param   uIova   The I/O virtual address.
- *
- * @remarks Ensure the exclusion range is enabled prior to calling this function.
- *
- * @thread  Any.
- */
-static bool iommuAmdIsDvaInExclRange(PCIOMMU pThis, PCDTE_T pDte, uint64_t uIova)
-{
-    /* Ensure the exclusion range is enabled. */
-    Assert(pThis->ExclRangeBaseAddr.n.u1ExclEnable);
-
-    /* Check if the IOVA falls within the exclusion range. */
-    uint64_t const uIovaExclFirst = pThis->ExclRangeBaseAddr.n.u40ExclRangeBase << X86_PAGE_4K_SHIFT;
-    uint64_t const uIovaExclLast  = pThis->ExclRangeLimit.n.u52ExclLimit;
-    if (uIovaExclLast - uIova >= uIovaExclFirst)
-    {
-        /* Check if device access to addresses in the exclusion range can be forwarded untranslated. */
-        if (   pThis->ExclRangeBaseAddr.n.u1AllowAll
-            || pDte->n.u1AllowExclusion)
-            return true;
-    }
-    return false;
-}
-
-
-/**
  * Reads a device table entry for the given the device ID.
  *
  * @returns VBox status code.
@@ -2983,6 +2962,27 @@ DECL_FORCE_INLINE(bool) iommuAmdDteLookupIsAccessContig(PCIOWALKRESULT pWalkResu
 
 
 /**
+ * Updates the device lookup flags used for IOTLB caching.
+ * This is a NOP when IOTLB caching is disabled.
+ *
+ * @param   pIommu      The IOMMU device.
+ * @param   uDevId      The device ID.
+ * @param   pDte        The DTE.
+ * @param   fFlags      The device lookup flags, see IOMMU_DEV_LOOKUP_F_XXX.
+ */
+DECL_FORCE_INLINE(void) iommuAmdDteLookupUpdate(PIOMMU pIommu, uint16_t uDevId, PCDTE_T pDte, uint8_t fFlags)
+{
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+    pIommu->paDevices[uDevId].fFlags    = fFlags;
+    pIommu->paDevices[uDevId].uDomainId = pDte->n.u16DomainId;
+    pIommu->paDevices[uDevId].fDtePerm  = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
+#else
+    RT_NOREF3(pIommu, uDevId, fFlags);
+#endif
+}
+
+
+/**
  * Looks up an I/O virtual address from the device table.
  *
  * @returns VBox status code.
@@ -3021,103 +3021,101 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
             uint64_t const fRsvd1 = Dte.au64[1] & ~(IOMMU_DTE_QWORD_1_VALID_MASK & ~IOMMU_DTE_QWORD_1_FEAT_MASK);
             if (RT_LIKELY(!fRsvd0 && !fRsvd1))
             {
-                /* If the IOVA is subject to address exclusion, addresses are forwarded without translation. */
-                if (   !pThis->ExclRangeBaseAddr.n.u1ExclEnable         /** @todo lock or make atomic read! */
-                    || !iommuAmdIsDvaInExclRange(pThis, &Dte, uIova))
+                /* Note: Addresses are not subject to exclusion as we do -not- support remote IOTLBs. */
+                IOWALKRESULT WalkResult;
+                RT_ZERO(WalkResult);
+                rc = iommuAmdPreTranslateChecks(pDevIns, uDevId, uIova, fPerm, &Dte, enmOp, &WalkResult);
+                if (rc == VINF_SUCCESS)
                 {
-                    IOWALKRESULT WalkResult;
-                    RT_ZERO(WalkResult);
-                    rc = iommuAmdPreTranslateChecks(pDevIns, uDevId, uIova, fPerm, &Dte, enmOp, &WalkResult);
-                    if (rc == VINF_SUCCESS)
+                    /* Walk the I/O page tables to translate the IOVA and check permissions for the
+                       remaining pages in the access. */
+                    size_t   cbRemaining = cbAccess;
+                    uint64_t uIovaPage   = uIova & X86_PAGE_4K_BASE_MASK;
+                    uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
+                    uint64_t cbPages     = 0;
+                    IOWALKRESULT WalkResultPrev;
+                    RT_ZERO(WalkResultPrev);
+                    for (;;)
                     {
-                        /* Walk the I/O page tables to translate the IOVA and check permissions for the
-                           remaining pages in the access. */
-                        size_t   cbRemaining = cbAccess;
-                        uint64_t uIovaPage   = uIova & X86_PAGE_4K_BASE_MASK;
-                        uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
-                        uint64_t cbPages     = 0;
-                        IOWALKRESULT WalkResultPrev;
-                        RT_ZERO(WalkResultPrev);
-                        for (;;)
+                        rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fPerm, &Dte, enmOp, &WalkResult);
+                        if (RT_SUCCESS(rc))
                         {
-                            rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fPerm, &Dte, enmOp, &WalkResult);
-                            if (RT_SUCCESS(rc))
+                            /* Store the translated address before continuing to access more pages. */
+                            Assert(WalkResult.cShift >= X86_PAGE_4K_SHIFT);
+                            if (cbRemaining == cbAccess)
                             {
-                                /* Store the translated address before continuing to access more pages. */
-                                Assert(WalkResult.cShift >= X86_PAGE_4K_SHIFT);
-                                if (cbRemaining == cbAccess)
-                                {
-                                    uint64_t const offMask = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
-                                    uint64_t const offSpa  = uIova & offMask;
-                                    Assert(!(WalkResult.GCPhysSpa & offMask));
-                                    GCPhysSpa = WalkResult.GCPhysSpa | offSpa;
+                                uint64_t const offMask = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
+                                uint64_t const offSpa  = uIova & offMask;
+                                Assert(!(WalkResult.GCPhysSpa & offMask));
+                                GCPhysSpa = WalkResult.GCPhysSpa | offSpa;
 
-                                    /* Store the walk result from the first page. */
-                                    WalkResultPrev = WalkResult;
-                                }
-                                /* Check if addresses translated so far result in a physically contiguous region. */
-                                else if (iommuAmdDteLookupIsAccessContig(&WalkResultPrev, &WalkResult))
-                                    WalkResultPrev = WalkResult;
-                                else
-                                {
-                                    STAM_COUNTER_INC(&pThis->StatDteLookupNonContig);
-                                    break;
-                                }
+                                /* Store the walk result from the first page. */
+                                WalkResultPrev = WalkResult;
+                            }
+                            /* Check if addresses translated so far result in a physically contiguous region. */
+                            else if (iommuAmdDteLookupIsAccessContig(&WalkResultPrev, &WalkResult))
+                                WalkResultPrev = WalkResult;
+                            else
+                            {
+                                STAM_COUNTER_INC(&pThis->StatDteLookupNonContig);
+                                break;
+                            }
 
-                                /* Check if we need to access more pages. */
-                                uint64_t const cbPage = RT_BIT_64(WalkResult.cShift);
-                                if (cbRemaining > cbPage - offIova)
-                                {
-                                    cbRemaining -= (cbPage - offIova);  /* Calculate how much more we need to access. */
-                                    cbPages     += cbPage;              /* Update size of all pages read thus far. */
-                                    uIovaPage   += cbPage;              /* Update address of the next access. */
-                                    offIova      = 0;                   /* After first page, all pages are accessed from off 0. */
-                                }
-                                else
-                                {
-                                    cbRemaining = 0;
-                                    break;
-                                }
+                            /* Check if we need to access more pages. */
+                            uint64_t const cbPage = RT_BIT_64(WalkResult.cShift);
+                            if (cbRemaining > cbPage - offIova)
+                            {
+                                cbRemaining -= (cbPage - offIova);  /* Calculate how much more we need to access. */
+                                cbPages     += cbPage;              /* Update size of all pages read thus far. */
+                                uIovaPage   += cbPage;              /* Update address of the next access. */
+                                offIova      = 0;                   /* After first page, all pages are accessed from off 0. */
                             }
                             else
                             {
-                                /* Translation failed. */
-                                GCPhysSpa   = NIL_RTGCPHYS;
-                                cbRemaining = cbAccess;
+                                cbRemaining = 0;
                                 break;
                             }
                         }
+                        else
+                        {
+                            /* Translation failed. */
+                            GCPhysSpa   = NIL_RTGCPHYS;
+                            cbRemaining = cbAccess;
+                            break;
+                        }
+                    }
 
-                        /* Update how much contiguous memory was accessed. */
-                        cbContiguous = cbAccess - cbRemaining;
-                    }
-                    else if (rc == VINF_IOMMU_ADDR_TRANSLATION_DISABLED)
-                    {
-                        /* Translation is disabled for this device (root paging mode is 0). */
-                        GCPhysSpa    =  uIova;
-                        cbContiguous = cbAccess;
-                        rc = VINF_SUCCESS;
+                    /* Update how much contiguous memory was accessed. */
+                    cbContiguous = cbAccess - cbRemaining;
 
-                        /* Paranoia. */
-                        Assert(WalkResult.cShift    == 0);
-                        Assert(WalkResult.GCPhysSpa == uIova);
-                        Assert((WalkResult.fPerm & fPerm) == fPerm);
-                        /** @todo IOMMU: Add to IOLTB cache. */
-                    }
-                    else
-                    {
-                        /* Translation failed or access is denied. */
-                        GCPhysSpa    = NIL_RTGCPHYS;
-                        cbContiguous = 0;
-                        Assert(RT_FAILURE(rc));
-                    }
+                    /* Update that addresses requires translation (cumulative permissions of DTE and I/O page tables apply). */
+                    iommuAmdDteLookupUpdate(pThis, uDevId, &Dte, IOMMU_DEV_LOOKUP_F_VALID | IOMMU_DEV_LOOKUP_F_TRANSLATE);
+                }
+                else if (rc == VINF_IOMMU_ADDR_TRANSLATION_DISABLED)
+                {
+                    /*
+                     * Translation is disabled for this device (root paging mode is 0).
+                     * GPA=SPA, but the permission bits are important and controls accesses.
+                     */
+                    /* . */
+                    GCPhysSpa    =  uIova;
+                    cbContiguous = cbAccess;
+                    rc = VINF_SUCCESS;
+
+                    /* Paranoia. */
+                    Assert(WalkResult.cShift    == 0);
+                    Assert(WalkResult.GCPhysSpa == uIova);
+                    Assert((WalkResult.fPerm & fPerm) == fPerm);
+
+                    /* Update that addresses don't require translation (only permissions of DTE apply). */
+                    iommuAmdDteLookupUpdate(pThis, uDevId, &Dte, IOMMU_DEV_LOOKUP_F_VALID | IOMMU_DEV_LOOKUP_F_ONLY_DTE_PERM);
                 }
                 else
                 {
-                    /* The IOVA is subject to address exclusion, forward untranslated. */
-                    /** @todo IOMMU: Add to IOLTB cache. */
-                    GCPhysSpa    = uIova;
-                    cbContiguous = cbAccess;
+                    /* Translation failed or access is denied. */
+                    GCPhysSpa    = NIL_RTGCPHYS;
+                    cbContiguous = 0;
+                    Assert(RT_FAILURE(rc));
                 }
             }
             else
@@ -3136,9 +3134,11 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
              * The DTE is not valid, forward addresses untranslated.
              * See AMD IOMMU spec. "Table 5: Feature Enablement for Address Translation".
              */
-            /** @todo IOMMU: Add to IOLTB cache. */
             GCPhysSpa    = uIova;
             cbContiguous = cbAccess;
+
+            /* Update that addresses don't require translation (nor any permissions). */
+            iommuAmdDteLookupUpdate(pThis, uDevId, &Dte, IOMMU_DEV_LOOKUP_F_VALID);
         }
     }
     else
@@ -3311,7 +3311,6 @@ static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDev
 
     return VINF_SUCCESS;
 }
-
 
 
 /**
@@ -4247,7 +4246,10 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         IOMMU_EXCL_RANGE_LIMIT_T const ExclRangeLimit = pThis->ExclRangeLimit;
         pHlp->pfnPrintf(pHlp, "  Exclusion Range Limit                   = %#RX64\n", ExclRangeLimit.u64);
         if (fVerbose)
-            pHlp->pfnPrintf(pHlp, "    Range limit                             = %#RX64\n", ExclRangeLimit.n.u52ExclLimit);
+        {
+            pHlp->pfnPrintf(pHlp, "    Range limit                             = %#RX64\n",
+                            (ExclRangeLimit.n.u40ExclRangeLimit << X86_PAGE_4K_SHIFT) | X86_PAGE_4K_OFFSET_MASK);
+        }
     }
     /* Extended Feature Register. */
     {
@@ -4995,10 +4997,10 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
     /* Destroy level 1 cache. */
-    if (pThis->paDomainIds)
+    if (pThis->paDevices)
     {
-        PDMDevHlpMMHeapFree(pDevIns, pThis->paDomainIds);
-        pThis->paDomainIds = NULL;
+        PDMDevHlpMMHeapFree(pDevIns, pThis->paDevices);
+        pThis->paDevices = NULL;
     }
 
     /* Destroy level 2 cache. */
@@ -5246,13 +5248,12 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * assigned PCI BDF slots. So while this wastes some memory, it should work regardless
      * of how code, features and devices around the IOMMU changes.
      */
-    size_t const cbDomains = sizeof(IODOMAIN) * UINT16_MAX;
-    pThis->paDomainIds = (PIODOMAIN)PDMDevHlpMMHeapAllocZ(pDevIns, cbDomains);
-    if (!pThis->paDomainIds)
+    size_t const cbDevices = sizeof(IODEVICE) * UINT16_MAX;
+    pThis->paDevices = (PIODEVICE)PDMDevHlpMMHeapAllocZ(pDevIns, cbDevices);
+    if (!pThis->paDevices)
     {
         return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
-                                   N_("Failed to allocate %zu bytes from the hyperheap for the IOMMU level 1 cache."),
-                                   cbDomains);
+                                   N_("Failed to allocate %zu bytes from the hyperheap for the IOMMU level 1 cache."), cbDevices);
     }
 
     /*
@@ -5273,7 +5274,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     }
     RTListInit(&pThis->LstLruIotlbe);
 
-    LogRel(("%s: Allocated %zu bytes from the hyperheap for the IOTLB cache\n", IOMMU_LOG_PFX, cbDomains + cbIotlbes));
+    LogRel(("%s: Allocated %zu bytes from the hyperheap for the IOTLB cache\n", IOMMU_LOG_PFX, cbDevices + cbIotlbes));
 #endif
 
     /*
