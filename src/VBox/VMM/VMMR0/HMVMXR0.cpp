@@ -4127,10 +4127,9 @@ static void hmR0VmxSetupVmcsXcptBitmap(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
  * Sets up the VMCS for executing a nested-guest using hardware-assisted VMX.
  *
  * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-static int hmR0VmxSetupVmcsCtlsNested(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
+static int hmR0VmxSetupVmcsCtlsNested(PVMXVMCSINFO pVmcsInfo)
 {
     Assert(pVmcsInfo->u64VmcsLinkPtr == NIL_RTHCPHYS);
     int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, NIL_RTHCPHYS);
@@ -4147,8 +4146,7 @@ static int hmR0VmxSetupVmcsCtlsNested(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
         Assert(!pVmcsInfo->u64Cr4Mask);
         return VINF_SUCCESS;
     }
-    else
-        LogRelFunc(("Failed to set up the VMCS link pointer in the nested-guest VMCS. rc=%Rrc\n", rc));
+    LogRelFunc(("Failed to set up the VMCS link pointer in the nested-guest VMCS. rc=%Rrc\n", rc));
     return rc;
 }
 #endif
@@ -4305,7 +4303,7 @@ static int hmR0VmxSetupVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstG
             else
             {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                rc = hmR0VmxSetupVmcsCtlsNested(pVCpu, pVmcsInfo);
+                rc = hmR0VmxSetupVmcsCtlsNested(pVmcsInfo);
                 if (RT_SUCCESS(rc))
                 { /* likely */ }
                 else
@@ -8240,10 +8238,9 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPUCC pVCpu)
  * Sets the interrupt-window exiting control in the VMCS which instructs VT-x to
  * cause a VM-exit as soon as the guest is in a state to receive interrupts.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-static void hmR0VmxSetIntWindowExitVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxSetIntWindowExitVmcs(PVMXVMCSINFO pVmcsInfo)
 {
     if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_INT_WINDOW_EXIT)
     {
@@ -8277,10 +8274,9 @@ DECLINLINE(void) hmR0VmxClearIntWindowExitVmcs(PVMXVMCSINFO pVmcsInfo)
  * Sets the NMI-window exiting control in the VMCS which instructs VT-x to
  * cause a VM-exit as soon as the guest is in a state to receive NMIs.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-static void hmR0VmxSetNmiWindowExitVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxSetNmiWindowExitVmcs(PVMXVMCSINFO pVmcsInfo)
 {
     if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_NMI_WINDOW_EXIT)
     {
@@ -9034,7 +9030,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT p
                 return VINF_SUCCESS;
             }
             else if (!fIsNestedGuest)
-                hmR0VmxSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
+                hmR0VmxSetNmiWindowExitVmcs(pVmcsInfo);
         }
 
         /*
@@ -9106,8 +9102,8 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT p
                 /* We've injected the interrupt or taken necessary action, bail. */
                 return VINF_SUCCESS;
             }
-            else if (!fIsNestedGuest)
-                hmR0VmxSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
+            if (!fIsNestedGuest)
+                hmR0VmxSetIntWindowExitVmcs(pVmcsInfo);
         }
     }
     else if (!fIsNestedGuest)
@@ -9118,10 +9114,10 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT p
          * the pending event.
          */
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))
-            hmR0VmxSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
+            hmR0VmxSetNmiWindowExitVmcs(pVmcsInfo);
         else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
                  && !pVCpu->hm.s.fSingleInstruction)
-            hmR0VmxSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
+            hmR0VmxSetIntWindowExitVmcs(pVmcsInfo);
     }
     /* else: for nested-guests, NMI/interrupt-window exiting will be picked up when merging VMCS controls. */
 
