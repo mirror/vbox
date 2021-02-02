@@ -101,7 +101,8 @@ static bool volatile    g_fHmSuspended;
 /** If set, VT-x/AMD-V is enabled globally at init time, otherwise it's
  * enabled and disabled each time it's used to execute guest code. */
 static bool             g_fHmGlobalInit;
-
+/** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
+uint32_t                g_fHmHostKernelFeatures;
 /** Maximum allowed ASID/VPID (inclusive).
  * @todo r=bird: This is exclusive for VT-x according to source code comment.
  *       Couldn't immediately find any docs on AMD-V, but suspect it is
@@ -609,6 +610,12 @@ VMMR0_INT_DECL(int) HMR0Init(void)
     g_fHmVmxSupported  = false;
     g_fHmSvmSupported  = false;
     g_uHmMaxAsid       = 0;
+
+    /*
+     * Get host kernel features that HM might need to know in order
+     * to co-operate and function properly with the host OS (e.g. SMAP).
+     */
+    g_fHmHostKernelFeatures = SUPR0GetKernelFeatures();
 
     /*
      * Make sure aCpuInfo is big enough for all the CPUs on this system.
@@ -1234,15 +1241,6 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
         /* We'll aways increment this the first time (host uses ASID 0). */
         AssertReturn(!pVCpu->hmr0.s.uCurrentAsid, VERR_HM_IPE_3);
     }
-
-    /*
-     * Get host kernel features that HM might need to know in order
-     * to co-operate and function properly with the host OS (e.g. SMAP).
-     *
-     * Technically, we could do this as part of the pre-init VM procedure
-     * but it shouldn't be done later than this point so we do it here.
-     */
-    pVM->hmr0.s.fHostKernelFeatures = SUPR0GetKernelFeatures();
 
     /*
      * Configure defences against spectre and other CPU bugs.

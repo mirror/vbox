@@ -636,14 +636,11 @@ typedef struct HMR0PERVM
     bool                        fNestedPaging;
     /** Set if we can support 64-bit guests or not. */
     bool                        fAllow64BitGuests;
-    bool                        afAlignment0[2+4];
+    bool                        afAlignment0[2];
 
     /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
      * This number is set much higher when RTThreadPreemptIsPending is reliable. */
     uint32_t                    cMaxResumeLoops;
-
-    /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
-    uint32_t                    fHostKernelFeatures;
 
     /** VT-x specific data. */
     struct HMR0VMXVM
@@ -1441,6 +1438,7 @@ AssertCompileMemberAlignment(HMR0PERVCPU, vmx.RestoreHost,   8);
 
 #ifdef IN_RING0
 extern bool             g_fHmVmxSupported;
+extern uint32_t         g_fHmHostKernelFeatures;
 extern uint32_t         g_uHmMaxAsid;
 extern bool             g_fHmVmxUsePreemptTimer;
 extern uint8_t          g_cHmVmxPreemptTimerShift;
