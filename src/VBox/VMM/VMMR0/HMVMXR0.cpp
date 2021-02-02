@@ -1790,13 +1790,15 @@ static int hmR0VmxLeaveRootMode(PHMPHYSCPU pHostCpu)
  * The pages contents are zero'd after allocation.
  *
  * @returns VBox status code.
- * @param   hMemObj         The ring-0 memory object associated with the allocation.
+ * @param   phMemObj        Where to return the handle to the allocation.
  * @param   paAllocInfo     The pointer to the first element of the VMX
  *                          page-allocation info object array.
  * @param   cEntries        The number of elements in the @a paAllocInfo array.
  */
-static int hmR0VmxPagesAllocZ(RTR0MEMOBJ hMemObj, PVMXPAGEALLOCINFO paAllocInfo, uint32_t cEntries)
+static int hmR0VmxPagesAllocZ(PRTR0MEMOBJ phMemObj, PVMXPAGEALLOCINFO paAllocInfo, uint32_t cEntries)
 {
+    *phMemObj = NIL_RTR0MEMOBJ;
+
     /* Figure out how many pages to allocate. */
     uint32_t cPages = 0;
     for (uint32_t iPage = 0; iPage < cEntries; iPage++)
@@ -1805,20 +1807,20 @@ static int hmR0VmxPagesAllocZ(RTR0MEMOBJ hMemObj, PVMXPAGEALLOCINFO paAllocInfo,
     /* Allocate the pages. */
     if (cPages)
     {
-        size_t const cbPages = cPages << X86_PAGE_4K_SHIFT;
-        int rc = RTR0MemObjAllocPage(&hMemObj, cbPages, false /* fExecutable */);
+        size_t const cbPages = cPages << PAGE_SHIFT;
+        int rc = RTR0MemObjAllocPage(phMemObj, cbPages, false /* fExecutable */);
         if (RT_FAILURE(rc))
             return rc;
 
         /* Zero the contents and assign each page to the corresponding VMX page-allocation entry. */
-        void *pvFirstPage = RTR0MemObjAddress(hMemObj);
-        ASMMemZero32(pvFirstPage, cbPages);
+        void *pvFirstPage = RTR0MemObjAddress(*phMemObj);
+        RT_BZERO(pvFirstPage, cbPages);
 
         uint32_t iPage = 0;
         for (uint32_t i = 0; i < cEntries; i++)
             if (paAllocInfo[i].fValid)
             {
-                RTHCPHYS const HCPhysPage = RTR0MemObjGetPagePhysAddr(hMemObj, iPage);
+                RTHCPHYS const HCPhysPage = RTR0MemObjGetPagePhysAddr(*phMemObj, iPage);
                 void          *pvPage     = (void *)((uintptr_t)pvFirstPage + (iPage << X86_PAGE_4K_SHIFT));
                 Assert(HCPhysPage && HCPhysPage != NIL_RTHCPHYS);
                 AssertPtr(pvPage);
@@ -1913,7 +1915,8 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
     bool const fMsrBitmaps = RT_BOOL(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS);
     bool const fShadowVmcs = !fIsNstGstVmcs ? pVM->hm.s.vmx.fUseVmcsShadowing : pVM->cpum.ro.GuestFeatures.fVmxVmcsShadowing;
     Assert(!pVM->cpum.ro.GuestFeatures.fVmxVmcsShadowing);  /* VMCS shadowing is not yet exposed to the guest. */
-    VMXPAGEALLOCINFO aAllocInfo[] = {
+    VMXPAGEALLOCINFO aAllocInfo[] =
+    {
         { true,        0 /* Unused */, &pVmcsInfo->HCPhysVmcs,         &pVmcsInfo->pvVmcs         },
         { true,        0 /* Unused */, &pVmcsInfo->HCPhysGuestMsrLoad, &pVmcsInfo->pvGuestMsrLoad },
         { true,        0 /* Unused */, &pVmcsInfo->HCPhysHostMsrLoad,  &pVmcsInfo->pvHostMsrLoad  },
@@ -1921,7 +1924,7 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
         { fShadowVmcs, 0 /* Unused */, &pVmcsInfo->HCPhysShadowVmcs,   &pVmcsInfo->pvShadowVmcs   },
     };
 
-    int rc = hmR0VmxPagesAllocZ(pVmcsInfo->hMemObj, &aAllocInfo[0], RT_ELEMENTS(aAllocInfo));
+    int rc = hmR0VmxPagesAllocZ(&pVmcsInfo->hMemObj, &aAllocInfo[0], RT_ELEMENTS(aAllocInfo));
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2021,7 +2024,8 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
      */
     bool const fVirtApicAccess   = RT_BOOL(pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
     bool const fUseVmcsShadowing = pVM->hm.s.vmx.fUseVmcsShadowing;
-    VMXPAGEALLOCINFO aAllocInfo[] = {
+    VMXPAGEALLOCINFO aAllocInfo[] =
+    {
         { fVirtApicAccess,   0 /* Unused */, &pVM->hm.s.vmx.HCPhysApicAccess,    (PRTR0PTR)&pVM->hm.s.vmx.pbApicAccess },
         { fUseVmcsShadowing, 0 /* Unused */, &pVM->hm.s.vmx.HCPhysVmreadBitmap,  &pVM->hm.s.vmx.pvVmreadBitmap         },
         { fUseVmcsShadowing, 0 /* Unused */, &pVM->hm.s.vmx.HCPhysVmwriteBitmap, &pVM->hm.s.vmx.pvVmwriteBitmap        },
@@ -2030,56 +2034,41 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
 #endif
     };
 
-    int rc = hmR0VmxPagesAllocZ(pVM->hm.s.vmx.hMemObj, &aAllocInfo[0], RT_ELEMENTS(aAllocInfo));
-    if (RT_FAILURE(rc))
-        goto cleanup;
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /* Allocate the shadow VMCS-fields array. */
-    if (fUseVmcsShadowing)
+    int rc = hmR0VmxPagesAllocZ(&pVM->hm.s.vmx.hMemObj, &aAllocInfo[0], RT_ELEMENTS(aAllocInfo));
+    if (RT_SUCCESS(rc))
     {
-        Assert(!pVM->hm.s.vmx.cShadowVmcsFields);
-        Assert(!pVM->hm.s.vmx.cShadowVmcsRoFields);
-        pVM->hm.s.vmx.paShadowVmcsFields   = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
-        pVM->hm.s.vmx.paShadowVmcsRoFields = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
-        if (RT_LIKELY(   pVM->hm.s.vmx.paShadowVmcsFields
-                      && pVM->hm.s.vmx.paShadowVmcsRoFields))
-        { /* likely */ }
-        else
-        {
-            rc = VERR_NO_MEMORY;
-            goto cleanup;
-        }
-    }
-#endif
-
-    /*
-     * Allocate per-VCPU VT-x structures.
-     */
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        /* Allocate the guest VMCS structures. */
-        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-        rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hmr0.s.vmx.VmcsInfo, false /* fIsNstGstVmcs */);
-        if (RT_FAILURE(rc))
-            goto cleanup;
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-        /* Allocate the nested-guest VMCS structures, when the VMX feature is exposed to the guest. */
-        if (pVM->cpum.ro.GuestFeatures.fVmx)
+        /* Allocate the shadow VMCS-fields array. */
+        if (fUseVmcsShadowing)
         {
-            rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hmr0.s.vmx.VmcsInfoNstGst, true /* fIsNstGstVmcs */);
-            if (RT_FAILURE(rc))
-                goto cleanup;
+            Assert(!pVM->hm.s.vmx.cShadowVmcsFields);
+            Assert(!pVM->hm.s.vmx.cShadowVmcsRoFields);
+            pVM->hm.s.vmx.paShadowVmcsFields   = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
+            pVM->hm.s.vmx.paShadowVmcsRoFields = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
+            if (!pVM->hm.s.vmx.paShadowVmcsFields || !pVM->hm.s.vmx.paShadowVmcsRoFields)
+                rc = VERR_NO_MEMORY;
         }
 #endif
+
+        /*
+         * Allocate per-VCPU VT-x structures.
+         */
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus && RT_SUCCESS(rc); idCpu++)
+        {
+            /* Allocate the guest VMCS structures. */
+            PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
+            rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hmr0.s.vmx.VmcsInfo, false /* fIsNstGstVmcs */);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+            /* Allocate the nested-guest VMCS structures, when the VMX feature is exposed to the guest. */
+            if (pVM->cpum.ro.GuestFeatures.fVmx && RT_SUCCESS(rc))
+                rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hmr0.s.vmx.VmcsInfoNstGst, true /* fIsNstGstVmcs */);
+#endif
+        }
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
     }
-
-    return VINF_SUCCESS;
-
-cleanup:
     hmR0VmxStructsFree(pVM);
-    Assert(rc != VINF_SUCCESS);
     return rc;
 }
 
