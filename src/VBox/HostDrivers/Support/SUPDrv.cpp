@@ -4640,10 +4640,10 @@ SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fFo
         {
             Msrs.u.vmx.u64FeatCtrl  = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
             Msrs.u.vmx.u64Basic     = ASMRdMsr(MSR_IA32_VMX_BASIC);
-            Msrs.u.vmx.u64PinCtls   = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
-            Msrs.u.vmx.u64ProcCtls  = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-            Msrs.u.vmx.u64ExitCtls  = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
-            Msrs.u.vmx.u64EntryCtls = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
+            Msrs.u.vmx.PinCtls.u    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
+            Msrs.u.vmx.ProcCtls.u   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+            Msrs.u.vmx.ExitCtls.u   = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
+            Msrs.u.vmx.EntryCtls.u  = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
             Msrs.u.vmx.u64Misc      = ASMRdMsr(MSR_IA32_VMX_MISC);
             Msrs.u.vmx.u64Cr0Fixed0 = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
             Msrs.u.vmx.u64Cr0Fixed1 = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
@@ -4653,22 +4653,20 @@ SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fFo
 
             if (RT_BF_GET(Msrs.u.vmx.u64Basic, VMX_BF_BASIC_TRUE_CTLS))
             {
-                Msrs.u.vmx.u64TruePinCtls   = ASMRdMsr(MSR_IA32_VMX_TRUE_PINBASED_CTLS);
-                Msrs.u.vmx.u64TrueProcCtls  = ASMRdMsr(MSR_IA32_VMX_TRUE_PROCBASED_CTLS);
-                Msrs.u.vmx.u64TrueEntryCtls = ASMRdMsr(MSR_IA32_VMX_TRUE_ENTRY_CTLS);
-                Msrs.u.vmx.u64TrueExitCtls  = ASMRdMsr(MSR_IA32_VMX_TRUE_EXIT_CTLS);
+                Msrs.u.vmx.TruePinCtls.u    = ASMRdMsr(MSR_IA32_VMX_TRUE_PINBASED_CTLS);
+                Msrs.u.vmx.TrueProcCtls.u   = ASMRdMsr(MSR_IA32_VMX_TRUE_PROCBASED_CTLS);
+                Msrs.u.vmx.TrueEntryCtls.u  = ASMRdMsr(MSR_IA32_VMX_TRUE_ENTRY_CTLS);
+                Msrs.u.vmx.TrueExitCtls.u   = ASMRdMsr(MSR_IA32_VMX_TRUE_EXIT_CTLS);
             }
 
-            uint32_t const fProcCtlsAllowed1 = RT_HI_U32(Msrs.u.vmx.u64ProcCtls);
-            if (fProcCtlsAllowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+            if (Msrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
             {
-                Msrs.u.vmx.u64ProcCtls2 = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+                Msrs.u.vmx.ProcCtls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
 
-                uint32_t const fProcCtls2Allowed1 = RT_HI_U32(Msrs.u.vmx.u64ProcCtls2);
-                if (fProcCtls2Allowed1 & (VMX_PROC_CTLS2_EPT | VMX_PROC_CTLS2_VPID))
+                if (Msrs.u.vmx.ProcCtls2.n.allowed1 & (VMX_PROC_CTLS2_EPT | VMX_PROC_CTLS2_VPID))
                     Msrs.u.vmx.u64EptVpidCaps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
 
-                if (fProcCtls2Allowed1 & VMX_PROC_CTLS2_VMFUNC)
+                if (Msrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMFUNC)
                     Msrs.u.vmx.u64VmFunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
             }
         }

@@ -479,13 +479,10 @@ static int hmR0InitIntel(void)
                  * Check for the VMX-Preemption Timer and adjust for the "VMX-Preemption
                  * Timer Does Not Count Down at the Rate Specified" CPU erratum.
                  */
-                VMXCTLSMSR PinCtls;
-                PinCtls.u = g_HmMsrs.u.vmx.u64PinCtls;
-                if (PinCtls.n.allowed1 & VMX_PIN_CTLS_PREEMPT_TIMER)
+                if (g_HmMsrs.u.vmx.PinCtls.n.allowed1 & VMX_PIN_CTLS_PREEMPT_TIMER)
                 {
-                    uint64_t const uVmxMiscMsr = g_HmMsrs.u.vmx.u64Misc;
                     g_fHmVmxUsePreemptTimer   = true;
-                    g_cHmVmxPreemptTimerShift = RT_BF_GET(uVmxMiscMsr, VMX_BF_MISC_PREEMPT_TIMER_TSC);
+                    g_cHmVmxPreemptTimerShift = RT_BF_GET(g_HmMsrs.u.vmx.u64Misc, VMX_BF_MISC_PREEMPT_TIMER_TSC);
                     if (HMIsSubjectToVmxPreemptTimerErratum())
                         g_cHmVmxPreemptTimerShift = 0; /* This is about right most of the time here. */
                 }

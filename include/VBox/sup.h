@@ -109,6 +109,22 @@ typedef enum SUPPAGINGMODE
 #define SUPKERNELFEATURES_GDT_NEED_WRITABLE   RT_BIT(2)
 /** @} */
 
+/**
+ * An VT-x control MSR.
+ * @sa  VMXCTLSMSR.
+ */
+typedef union SUPVMXCTLSMSR
+{
+    uint64_t            u;
+    struct
+    {
+        /** Bits set here _must_ be set in the corresponding VM-execution controls. */
+        uint32_t        allowed0;
+        /** Bits cleared here _must_ be cleared in the corresponding VM-execution controls. */
+        uint32_t        allowed1;
+    } n;
+} SUPVMXCTLSMSR;
+AssertCompileSize(SUPVMXCTLSMSR, sizeof(uint64_t));
 
 /**
  * Hardware-virtualization MSRs.
@@ -117,19 +133,29 @@ typedef struct SUPHWVIRTMSRS
 {
     union
     {
+        /** @sa VMXMSRS */
         struct
         {
             uint64_t        u64FeatCtrl;
             uint64_t        u64Basic;
-            uint64_t        u64PinCtls;
-            uint64_t        u64ProcCtls;
-            uint64_t        u64ProcCtls2;
-            uint64_t        u64ExitCtls;
-            uint64_t        u64EntryCtls;
-            uint64_t        u64TruePinCtls;
-            uint64_t        u64TrueProcCtls;
-            uint64_t        u64TrueEntryCtls;
-            uint64_t        u64TrueExitCtls;
+            /** Pin-based VM-execution controls. */
+            SUPVMXCTLSMSR   PinCtls;
+            /** Processor-based VM-execution controls. */
+            SUPVMXCTLSMSR   ProcCtls;
+            /** Secondary processor-based VM-execution controls. */
+            SUPVMXCTLSMSR   ProcCtls2;
+            /** VM-exit controls. */
+            SUPVMXCTLSMSR   ExitCtls;
+            /** VM-entry controls. */
+            SUPVMXCTLSMSR   EntryCtls;
+            /** True pin-based VM-execution controls. */
+            SUPVMXCTLSMSR   TruePinCtls;
+            /** True processor-based VM-execution controls. */
+            SUPVMXCTLSMSR   TrueProcCtls;
+            /** True VM-entry controls. */
+            SUPVMXCTLSMSR   TrueEntryCtls;
+            /** True VM-exit controls. */
+            SUPVMXCTLSMSR   TrueExitCtls;
             uint64_t        u64Misc;
             uint64_t        u64Cr0Fixed0;
             uint64_t        u64Cr0Fixed1;
@@ -138,7 +164,7 @@ typedef struct SUPHWVIRTMSRS
             uint64_t        u64VmcsEnum;
             uint64_t        u64VmFunc;
             uint64_t        u64EptVpidCaps;
-            uint64_t        a_u64Reserved[9];
+            uint64_t        au64Reserved[9];
         } vmx;
         struct
         {
