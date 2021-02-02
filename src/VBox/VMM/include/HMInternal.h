@@ -688,8 +688,6 @@ typedef struct HMR0PERVM
         /** Set if erratum 170 affects the AMD cpu. */
         bool                        fAlwaysFlushTLB;
         bool                        afAlignment0[3];
-        /** SVM feature bits from cpuid 0x8000000a, safe ring-0 copy. */
-        uint32_t                    fFeatures;
     } svm;
 } HMR0PERVM;
 /** Pointer to HM's per-VM ring-0 instance data. */
@@ -1451,7 +1449,7 @@ extern uint64_t         g_uHmVmxHostMsrEfer;
 extern uint64_t         g_uHmVmxHostSmmMonitorCtl;
 extern bool             g_fHmSvmSupported;
 extern uint32_t         g_uHmSvmRev;
-extern uint32_t         g_uHmSvmFeatures;
+extern uint32_t         g_fHmSvmFeatures;
 
 extern SUPHWVIRTMSRS    g_HmMsrs;
 

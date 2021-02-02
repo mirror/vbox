@@ -133,7 +133,7 @@ bool                    g_fHmSvmSupported = false;
 /** SVM revision. */
 uint32_t                g_uHmSvmRev;
 /** SVM feature bits from cpuid 0x8000000a */
-uint32_t                g_uHmSvmFeatures;
+uint32_t                g_fHmSvmFeatures;
 
 
 /** MSRs. */
@@ -542,7 +542,7 @@ static int hmR0InitAmd(void)
 
         /* Query AMD features. */
         uint32_t u32Dummy;
-        ASMCpuId(0x8000000a, &g_uHmSvmRev, &g_uHmMaxAsid, &u32Dummy, &g_uHmSvmFeatures);
+        ASMCpuId(0x8000000a, &g_uHmSvmRev, &g_uHmMaxAsid, &u32Dummy, &g_fHmSvmFeatures);
 
         /*
          * We need to check if AMD-V has been properly initialized on all CPUs.
@@ -1198,7 +1198,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
     else if (pVM->hm.s.svm.fSupported)
     {
         pVM->hm.s.svm.u32Rev            = g_uHmSvmRev;
-        pVM->hm.s.svm.fFeaturesForRing3 = pVM->hmr0.s.svm.fFeatures = g_uHmSvmFeatures;
+        pVM->hm.s.svm.fFeaturesForRing3 = g_fHmSvmFeatures;
         pVM->hm.s.svm.u64MsrHwcr        = g_HmMsrs.u.svm.u64MsrHwcr;
         /* If you need to tweak host MSRs for testing SVM R0 code, do it here. */
     }

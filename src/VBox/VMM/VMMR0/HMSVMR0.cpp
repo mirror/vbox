@@ -866,7 +866,7 @@ VMMR0DECL(int) SVMR0TermVM(PVMCC pVM)
 DECL_FORCE_INLINE(bool) hmR0SvmSupportsVmcbCleanBits(PVMCPUCC pVCpu, bool fIsNestedGuest)
 {
     PCVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    bool const fHostVmcbCleanBits = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN);
+    bool const fHostVmcbCleanBits = RT_BOOL(g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN);
     if (!fIsNestedGuest)
         return fHostVmcbCleanBits;
     return fHostVmcbCleanBits && pVM->cpum.ro.GuestFeatures.fSvmVmcbClean;
@@ -884,10 +884,10 @@ DECLINLINE(bool) hmR0SvmSupportsDecodeAssists(PVMCPUCC pVCpu)
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
-        return (pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS)
+        return (g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS)
             &&  pVM->cpum.ro.GuestFeatures.fSvmDecodeAssists;
 #endif
-    return RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS);
+    return RT_BOOL(g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS);
 }
 
 
@@ -902,10 +902,10 @@ DECLINLINE(bool) hmR0SvmSupportsNextRipSave(PVMCPUCC pVCpu)
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
-        return (pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+        return (g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
             &&  pVM->cpum.ro.GuestFeatures.fSvmNextRipSave;
 #endif
-    return RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
+    return RT_BOOL(g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
 }
 
 
@@ -1002,18 +1002,18 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
     /*
      * Determin some configuration parameters.
      */
-    bool const fPauseFilter          = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER);
-    bool const fPauseFilterThreshold = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD);
+    bool const fPauseFilter          = RT_BOOL(g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER);
+    bool const fPauseFilterThreshold = RT_BOOL(g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD);
     bool const fUsePauseFilter       = fPauseFilter && pVM->hm.s.svm.cPauseFilter;
 
-    bool const fLbrVirt              = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_LBR_VIRT);
+    bool const fLbrVirt              = RT_BOOL(g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_LBR_VIRT);
     bool const fUseLbrVirt           = fLbrVirt && pVM->hm.s.svm.fLbrVirt; /** @todo IEM implementation etc. */
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    bool const fVirtVmsaveVmload     = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD);
+    bool const fVirtVmsaveVmload     = RT_BOOL(g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD);
     bool const fUseVirtVmsaveVmload  = fVirtVmsaveVmload && pVM->hm.s.svm.fVirtVmsaveVmload && fNestedPaging;
 
-    bool const fVGif                 = RT_BOOL(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_VGIF);
+    bool const fVGif                 = RT_BOOL(g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_VGIF);
     bool const fUseVGif              = fVGif && pVM->hm.s.svm.fVGif;
 #endif
 
@@ -1365,7 +1365,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
             }
             else
             {
-                if (pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                if (g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
                     pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
                 else
                     pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
@@ -2052,7 +2052,7 @@ static void hmR0SvmExportGuestHwvirtState(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
             PCVMCC    pVM  = pVCpu->CTX_SUFF(pVM);
 
             HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);                                /* Nested VGIF is not supported yet. */
-            Assert(pVM->hmr0.s.svm.fFeatures & X86_CPUID_SVM_FEATURE_EDX_VGIF);    /* Physical hardware supports VGIF. */
+            Assert(g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_VGIF);    /* Physical hardware supports VGIF. */
             Assert(HMIsSvmVGifActive(pVM));                                        /* Outer VM has enabled VGIF. */
             NOREF(pVM);
 
@@ -4105,7 +4105,7 @@ static VBOXSTRICTRC hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransie
      * NB: If we could continue a task switch exit we wouldn't need to do this.
      */
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    if (RT_UNLIKELY(   !pVM->hmr0.s.svm.fFeatures
+    if (RT_UNLIKELY(   !g_fHmSvmFeatures
                     &&  pVCpu->hm.s.Event.fPending
                     &&  SVM_EVENT_GET_TYPE(pVCpu->hm.s.Event.u64IntInfo) == SVM_EVENT_NMI))
         return VINF_EM_RAW_INJECT_TRPM_EVENT;
