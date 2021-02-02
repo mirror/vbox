@@ -134,8 +134,8 @@ typedef struct IOWALKRESULT
     RTGCPHYS        GCPhysSpa;
     /** The number of offset bits in the system physical address. */
     uint8_t         cShift;
-    /** The I/O permissions allowed by the translation (IOMMU_IO_PERM_XXX). */
-    uint8_t         fIoPerm;
+    /** The I/O permissions allowed for this translation (IOMMU_IO_PERM_XXX). */
+    uint8_t         fPerm;
     /** Padding. */
     uint8_t         abPadding[2];
 } IOWALKRESULT;
@@ -637,7 +637,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, uint16_t uDomainId, uint64_t uIova, P
     Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
     Assert(pWalkResult);
     Assert(pWalkResult->cShift < 63);
-    Assert(pWalkResult->fIoPerm != IOMMU_IO_PERM_NONE);
+    Assert(pWalkResult->fPerm != IOMMU_IO_PERM_NONE);
 
     /*
      * If the cache is full, evict the last recently used entry.
@@ -2699,7 +2699,7 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
         Assert((fAccess & fDtePerm) == fAccess);    /* Verify we've checked permissions. */
         pWalkResult->GCPhysSpa = uIova;
         pWalkResult->cShift    = 0;
-        pWalkResult->fIoPerm   = fDtePerm;
+        pWalkResult->fPerm     = fDtePerm;
         return VINF_IOMMU_ADDR_TRANSLATION_DISABLED;
     }
 
@@ -2824,7 +2824,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
             /* The page size of the translation is the default (4K). */
             pWalkResult->GCPhysSpa = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
             pWalkResult->cShift    = X86_PAGE_4K_SHIFT;
-            pWalkResult->fIoPerm   = fPtePerm;
+            pWalkResult->fPerm     = fPtePerm;
             return VINF_SUCCESS;
         }
         if (uNextLevel == 7)
@@ -2842,7 +2842,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
             {
                 pWalkResult->GCPhysSpa = GCPhysPte;
                 pWalkResult->cShift    = cShift;
-                pWalkResult->fIoPerm   = fPtePerm;
+                pWalkResult->fPerm     = fPtePerm;
                 return VINF_SUCCESS;
             }
 
@@ -2955,8 +2955,8 @@ DECL_FORCE_INLINE(bool) iommuAmdDteLookupIsAddrPhysContig(PCIOWALKRESULT pWalkRe
 DECL_FORCE_INLINE(bool) iommuAmdDteLookupIsAccessContig(PCIOWALKRESULT pWalkResultPrev, PCIOWALKRESULT pWalkResult)
 {
 #ifdef IOMMU_WITH_IOTLBE_CACHE
-    if (   pWalkResultPrev->cShift  == pWalkResult->cShift
-        && pWalkResultPrev->fIoPerm == pWalkResult->fIoPerm
+    if (   pWalkResultPrev->cShift == pWalkResult->cShift
+        && pWalkResultPrev->fPerm  == pWalkResult->fPerm
         && iommuAmdDteLookupIsAddrPhysContig(pWalkResultPrev, pWalkResult))
         return true;
     return false;
@@ -3085,7 +3085,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                         /* Paranoia. */
                         Assert(WalkResult.cShift    == 0);
                         Assert(WalkResult.GCPhysSpa == uIova);
-                        Assert((WalkResult.fIoPerm & fAccess) == fAccess);
+                        Assert((WalkResult.fPerm & fAccess) == fAccess);
                         /** @todo IOMMU: Add to IOLTB cache. */
                     }
                     else
