@@ -765,10 +765,8 @@ VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCt
 
     if (pVM->hm.s.vmx.fEnabled)
     {
-        uint32_t uCr0Mask;
-
         /* If bit N is set in cr0_fixed0, then it must be set in the guest's cr0. */
-        uCr0Mask = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr0Fixed0;
+        uint32_t uCr0Mask = (uint32_t)CTX_EXPR(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0, g_HmMsrs.u.vmx.u64Cr0Fixed0, RT_NOTHING);
 
         /* We ignore the NE bit here on purpose; see HMR0.cpp for details. */
         uCr0Mask &= ~X86_CR0_NE;
@@ -787,18 +785,18 @@ VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCt
             return false;
 
         /* If bit N is cleared in cr0_fixed1, then it must be zero in the guest's cr0. */
-        uCr0Mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
+        uCr0Mask = (uint32_t)~CTX_EXPR(pVM->hm.s.vmx.Msrs.u64Cr0Fixed1, g_HmMsrs.u.vmx.u64Cr0Fixed1, RT_NOTHING);
         if ((pCtx->cr0 & uCr0Mask) != 0)
             return false;
 
         /* If bit N is set in cr4_fixed0, then it must be set in the guest's cr4. */
-        uCr0Mask  = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr4Fixed0;
+        uCr0Mask  = (uint32_t)CTX_EXPR(pVM->hm.s.vmx.Msrs.u64Cr4Fixed0, g_HmMsrs.u.vmx.u64Cr4Fixed0, RT_NOTHING);
         uCr0Mask &= ~X86_CR4_VMXE;
         if ((pCtx->cr4 & uCr0Mask) != uCr0Mask)
             return false;
 
         /* If bit N is cleared in cr4_fixed1, then it must be zero in the guest's cr4. */
-        uCr0Mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
+        uCr0Mask = (uint32_t)~CTX_EXPR(pVM->hm.s.vmx.Msrs.u64Cr4Fixed1, g_HmMsrs.u.vmx.u64Cr4Fixed1, RT_NOTHING);
         if ((pCtx->cr4 & uCr0Mask) != 0)
             return false;
 

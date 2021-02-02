@@ -1716,7 +1716,7 @@ static int hmR0VmxEnterRootMode(PHMPHYSCPU pHostCpu, PVMCC pVM, RTHCPHYS HCPhysC
     if (pVM)
     {
         /* Write the VMCS revision identifier to the VMXON region. */
-        *(uint32_t *)pvCpuPage = RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_ID);
+        *(uint32_t *)pvCpuPage = RT_BF_GET(g_HmMsrs.u.vmx.u64Basic, VMX_BF_BASIC_VMCS_ID);
     }
 
     /* Paranoid: Disable interrupts as, in theory, interrupt handlers might mess with CR4. */
@@ -2014,7 +2014,7 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
      *
      * See Intel spec. Appendix A.1 "Basic VMX Information".
      */
-    uint32_t const cbVmcs = RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_SIZE);
+    uint32_t const cbVmcs = RT_BF_GET(g_HmMsrs.u.vmx.u64Basic, VMX_BF_BASIC_VMCS_SIZE);
     if (cbVmcs <= X86_PAGE_4K_SIZE)
     { /* likely */ }
     else
@@ -2945,7 +2945,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt)
         PVMCC pVM = pVCpu->CTX_SUFF(pVM);
         if (pVM->hm.s.vmx.fVpid)
         {
-            bool fVpidFlush = RT_BOOL(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
+            bool fVpidFlush = RT_BOOL(g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
             if (fVpidFlush)
             {
                 hmR0VmxFlushVpid(pVCpu, VMXTLBFLUSHVPID_INDIV_ADDR, GCVirt);
@@ -3297,11 +3297,11 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
      */
     if (pVM->hmr0.s.fNestedPaging)
     {
-        if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT)
+        if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT)
         {
-            if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT)
+            if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT)
                 pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_SINGLE_CONTEXT;
-            else if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
+            else if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
                 pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_ALL_CONTEXTS;
             else
             {
@@ -3312,7 +3312,7 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
             }
 
             /* Make sure the write-back cacheable memory type for EPT is supported. */
-            if (RT_UNLIKELY(!(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB)))
+            if (RT_UNLIKELY(!(g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB)))
             {
                 pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
                 VMCC_GET_CPU_0(pVM)->hm.s.u32HMError = VMX_UFC_EPT_MEM_TYPE_NOT_WB;
@@ -3320,7 +3320,7 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
             }
 
             /* EPT requires a page-walk length of 4. */
-            if (RT_UNLIKELY(!(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4)))
+            if (RT_UNLIKELY(!(g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4)))
             {
                 pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
                 VMCC_GET_CPU_0(pVM)->hm.s.u32HMError = VMX_UFC_EPT_PAGE_WALK_LENGTH_UNSUPPORTED;
@@ -3341,18 +3341,18 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
      */
     if (pVM->hm.s.vmx.fVpid)
     {
-        if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID)
+        if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID)
         {
-            if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT)
+            if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT)
                 pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_SINGLE_CONTEXT;
-            else if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS)
+            else if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS)
                 pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_ALL_CONTEXTS;
             else
             {
                 /* Neither SINGLE nor ALL-context flush types for VPID is supported by the CPU. Ignore VPID capability. */
-                if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
+                if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
                     LogRelFunc(("Only INDIV_ADDR supported. Ignoring VPID.\n"));
-                if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
+                if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
                     LogRelFunc(("Only SINGLE_CONTEXT_RETAIN_GLOBALS supported. Ignoring VPID.\n"));
                 pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NOT_SUPPORTED;
                 pVM->hm.s.vmx.fVpid = false;
@@ -3503,7 +3503,7 @@ static int hmR0VmxSetupShadowVmcsFieldsArrays(PVMCC pVM)
      */
     bool const fGstVmwriteAll = pVM->cpum.ro.GuestFeatures.fVmxVmwriteAll;
     if (   !fGstVmwriteAll
-        || (pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL))
+        || (g_HmMsrs.u.vmx.u64Misc & VMX_MISC_VMWRITE_ALL))
     { /* likely. */ }
     else
     {
@@ -3593,7 +3593,7 @@ static void hmR0VmxSetupVmreadVmwriteBitmaps(PVMCC pVM)
      * Skip intercepting VMREAD for guest read-only fields in the VMREAD bitmap
      * if the host supports VMWRITE to all supported VMCS fields.
      */
-    if (pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL)
+    if (g_HmMsrs.u.vmx.u64Misc & VMX_MISC_VMWRITE_ALL)
     {
         uint32_t const *paShadowVmcsRoFields = pVM->hmr0.s.vmx.paShadowVmcsRoFields;
         uint32_t const  cShadowVmcsRoFields  = pVM->hmr0.s.vmx.cShadowVmcsRoFields;
@@ -4233,8 +4233,7 @@ static int hmR0VmxSetupVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstG
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* Set the CPU specified revision identifier at the beginning of the VMCS structure. */
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    *(uint32_t *)pVmcsInfo->pvVmcs = RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_ID);
+    *(uint32_t *)pVmcsInfo->pvVmcs = RT_BF_GET(g_HmMsrs.u.vmx.u64Basic, VMX_BF_BASIC_VMCS_ID);
     const char * const pszVmcs     = fIsNstGstVmcs ? "nested-guest VMCS" : "guest VMCS";
 
     LogFlowFunc(("\n"));
@@ -4275,7 +4274,7 @@ static int hmR0VmxSetupVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstG
                             if (pVmcsInfo->pvShadowVmcs)
                             {
                                 VMXVMCSREVID VmcsRevId;
-                                VmcsRevId.u = RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_ID);
+                                VmcsRevId.u = RT_BF_GET(g_HmMsrs.u.vmx.u64Basic, VMX_BF_BASIC_VMCS_ID);
                                 VmcsRevId.n.fIsShadowVmcs = 1;
                                 *(uint32_t *)pVmcsInfo->pvShadowVmcs = VmcsRevId.u;
                                 rc = hmR0VmxClearShadowVmcs(pVmcsInfo);
@@ -5444,7 +5443,7 @@ static int hmR0VmxCopyNstGstToShadowVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
          * If the host CPU supports writing all VMCS fields, copy the guest read-only
          * VMCS fields, so the guest can VMREAD them without causing a VM-exit.
          */
-        if (pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL)
+        if (g_HmMsrs.u.vmx.u64Misc & VMX_MISC_VMWRITE_ALL)
         {
             uint32_t const cShadowVmcsRoFields = pVM->hmr0.s.vmx.cShadowVmcsRoFields;
             for (uint32_t i = 0; i < cShadowVmcsRoFields; i++)
@@ -5642,8 +5641,8 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
         PVMCC pVM = pVCpu->CTX_SUFF(pVM);
         PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
 
-        uint64_t       fSetCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed0;
-        uint64_t const fZapCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
+        uint64_t       fSetCr0 = g_HmMsrs.u.vmx.u64Cr0Fixed0;
+        uint64_t const fZapCr0 = g_HmMsrs.u.vmx.u64Cr0Fixed1;
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             fSetCr0 &= ~(uint64_t)(X86_CR0_PE | X86_CR0_PG);
         else
@@ -5847,7 +5846,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
                       && ((pVmcsInfo->HCPhysEPTP >> 7) & 0x1f) == 0,     /* Bits 7:11 MBZ. */
                          ("EPTP %#RX64\n", pVmcsInfo->HCPhysEPTP));
             AssertMsg(  !((pVmcsInfo->HCPhysEPTP >> 6) & 0x01)           /* Bit 6 (EPT accessed & dirty bit). */
-                      || (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY),
+                      || (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY),
                          ("EPTP accessed/dirty bit not supported by CPU but set %#RX64\n", pVmcsInfo->HCPhysEPTP));
 
             rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, pVmcsInfo->HCPhysEPTP);
@@ -5929,8 +5928,8 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
         PCPUMCTX     pCtx      = &pVCpu->cpum.GstCtx;
         PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
 
-        uint64_t const fSetCr4 = pVM->hm.s.vmx.Msrs.u64Cr4Fixed0;
-        uint64_t const fZapCr4 = pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
+        uint64_t const fSetCr4 = g_HmMsrs.u.vmx.u64Cr4Fixed0;
+        uint64_t const fZapCr4 = g_HmMsrs.u.vmx.u64Cr4Fixed1;
 
         /*
          * With nested-guests, we may have extended the guest/host mask here (since we
@@ -7763,7 +7762,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                 PCVMXAUTOMSR       pMsrs           = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
                 uint32_t const     cMsrs           = pVmcsInfo->cExitMsrStore;
                 Assert(pMsrs);
-                Assert(cMsrs <= VMX_MISC_MAX_MSRS(pVM->hm.s.vmx.Msrs.u64Misc));
+                Assert(cMsrs <= VMX_MISC_MAX_MSRS(g_HmMsrs.u.vmx.u64Misc));
                 Assert(sizeof(*pMsrs) * cMsrs <= X86_PAGE_4K_SIZE);
                 for (uint32_t i = 0; i < cMsrs; i++)
                 {
@@ -9692,8 +9691,8 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
          * CR0.
          */
         /** @todo Why do we need to OR and AND the fixed-0 and fixed-1 bits below? */
-        uint64_t       fSetCr0 = (pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
-        uint64_t const fZapCr0 = (pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
+        uint64_t       fSetCr0 = (g_HmMsrs.u.vmx.u64Cr0Fixed0 & g_HmMsrs.u.vmx.u64Cr0Fixed1);
+        uint64_t const fZapCr0 = (g_HmMsrs.u.vmx.u64Cr0Fixed0 | g_HmMsrs.u.vmx.u64Cr0Fixed1);
         /* Exceptions for unrestricted guest execution for CR0 fixed bits (PE, PG).
            See Intel spec. 26.3.1 "Checks on Guest Control Registers, Debug Registers and MSRs." */
         if (fUnrestrictedGuest)
@@ -9713,8 +9712,8 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
          * CR4.
          */
         /** @todo Why do we need to OR and AND the fixed-0 and fixed-1 bits below? */
-        uint64_t const fSetCr4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
-        uint64_t const fZapCr4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
+        uint64_t const fSetCr4 = (g_HmMsrs.u.vmx.u64Cr4Fixed0 & g_HmMsrs.u.vmx.u64Cr4Fixed1);
+        uint64_t const fZapCr4 = (g_HmMsrs.u.vmx.u64Cr4Fixed0 | g_HmMsrs.u.vmx.u64Cr4Fixed1);
 
         uint64_t u64GuestCr4;
         rc = VMXReadVmcsNw(VMX_VMCS_GUEST_CR4, &u64GuestCr4);
@@ -10087,7 +10086,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         rc = VMXReadVmcs32(VMX_VMCS32_GUEST_ACTIVITY_STATE, &u32ActivityState);
         AssertRC(rc);
         HMVMX_CHECK_BREAK(   !u32ActivityState
-                          || (u32ActivityState & RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Misc, VMX_BF_MISC_ACTIVITY_STATES)),
+                          || (u32ActivityState & RT_BF_GET(g_HmMsrs.u.vmx.u64Misc, VMX_BF_MISC_ACTIVITY_STATES)),
                              VMX_IGS_ACTIVITY_STATE_INVALID);
         HMVMX_CHECK_BREAK(   !(pCtx->ss.Attr.n.u2Dpl)
                           || u32ActivityState != VMX_VMCS_GUEST_ACTIVITY_HLT, VMX_IGS_ACTIVITY_STATE_HLT_INVALID);
@@ -10170,7 +10169,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
             Assert(pVmcsInfo->pvShadowVmcs);
             VMXVMCSREVID VmcsRevId;
             VmcsRevId.u = *(uint32_t *)pVmcsInfo->pvShadowVmcs;
-            HMVMX_CHECK_BREAK(VmcsRevId.n.u31RevisionId == RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_ID),
+            HMVMX_CHECK_BREAK(VmcsRevId.n.u31RevisionId == RT_BF_GET(g_HmMsrs.u.vmx.u64Basic, VMX_BF_BASIC_VMCS_ID),
                               VMX_IGS_VMCS_LINK_PTR_SHADOW_VMCS_ID_INVALID);
             HMVMX_CHECK_BREAK(VmcsRevId.n.fIsShadowVmcs == (uint32_t)!!(pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING),
                               VMX_IGS_VMCS_LINK_PTR_NOT_SHADOW);
@@ -15667,7 +15666,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
              */
             Log4Func(("cs:rip=%#04x:%#RX64 %#06x/%u %c str\n", pCtx->cs.Sel, pCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
             AssertReturn(pCtx->dx == uIOPort, VERR_VMX_IPE_2);
-            bool const fInsOutsInfo = RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS);
+            bool const fInsOutsInfo = RT_BF_GET(g_HmMsrs.u.vmx.u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS);
             if (fInsOutsInfo)
             {
                 hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
@@ -17139,7 +17138,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstrNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
             hmR0VmxReadGuestLinearAddrVmcs(pVmxTransient);
             if (fVmxInsOutsInfo)
             {
-                Assert(RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS)); /* Paranoia. */
+                Assert(RT_BF_GET(g_HmMsrs.u.vmx.u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS)); /* Paranoia. */
                 hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
             }
         }
