@@ -505,22 +505,6 @@ typedef struct HM
         /** Padding. */
         bool                        afPadding0;
 
-        /** Virtual address of the APIC-access page. */
-        R0PTRTYPE(uint8_t *)        pbApicAccess;
-        /** Pointer to the VMREAD bitmap. */
-        R0PTRTYPE(void *)           pvVmreadBitmap;
-        /** Pointer to the VMWRITE bitmap. */
-        R0PTRTYPE(void *)           pvVmwriteBitmap;
-
-        /** Pointer to the shadow VMCS read-only fields array. */
-        R0PTRTYPE(uint32_t *)       paShadowVmcsRoFields;
-        /** Pointer to the shadow VMCS read/write fields array. */
-        R0PTRTYPE(uint32_t *)       paShadowVmcsFields;
-        /** Number of elements in the shadow VMCS read-only fields array. */
-        uint32_t                    cShadowVmcsRoFields;
-        /** Number of elements in the shadow VMCS read-write fields array. */
-        uint32_t                    cShadowVmcsFields;
-
         /** Tagged-TLB flush type. */
         VMXTLBFLUSHTYPE             enmTlbFlushType;
         /** Flush type to use for INVEPT. */
@@ -563,26 +547,12 @@ typedef struct HM
         /** Padding. */
         uint32_t                    u32Alignment1;
 
+        /** Host-physical address for a failing VMXON instruction. */
+        RTHCPHYS                    HCPhysVmxEnableError;
+
         /** VMX MSR values. */
         VMXMSRS                     Msrs;
 
-        /** Host-physical address for a failing VMXON instruction. */
-        RTHCPHYS                    HCPhysVmxEnableError;
-        /** Host-physical address of the APIC-access page. */
-        RTHCPHYS                    HCPhysApicAccess;
-        /** Host-physical address of the VMREAD bitmap. */
-        RTHCPHYS                    HCPhysVmreadBitmap;
-        /** Host-physical address of the VMWRITE bitmap. */
-        RTHCPHYS                    HCPhysVmwriteBitmap;
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-        /** Host-physical address of the crash-dump scratch area. */
-        RTHCPHYS                    HCPhysScratch;
-#endif
-
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-        /** Pointer to the crash-dump scratch bitmap. */
-        R0PTRTYPE(uint8_t *)        pbScratch;
-#endif
         /** Virtual address of the TSS page used for real mode emulation. */
         R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
         /** Virtual address of the identity page table used for real mode and protected
@@ -678,9 +648,38 @@ typedef struct HMR0PERVM
     /** VT-x specific data. */
     struct HMR0VMXVM
     {
+        /** Virtual address of the APIC-access page. */
+        R0PTRTYPE(uint8_t *)        pbApicAccess;
+        /** Pointer to the VMREAD bitmap. */
+        R0PTRTYPE(void *)           pvVmreadBitmap;
+        /** Pointer to the VMWRITE bitmap. */
+        R0PTRTYPE(void *)           pvVmwriteBitmap;
+
+        /** Pointer to the shadow VMCS read-only fields array. */
+        R0PTRTYPE(uint32_t *)       paShadowVmcsRoFields;
+        /** Pointer to the shadow VMCS read/write fields array. */
+        R0PTRTYPE(uint32_t *)       paShadowVmcsFields;
+        /** Number of elements in the shadow VMCS read-only fields array. */
+        uint32_t                    cShadowVmcsRoFields;
+        /** Number of elements in the shadow VMCS read-write fields array. */
+        uint32_t                    cShadowVmcsFields;
+
+        /** Host-physical address of the APIC-access page. */
+        RTHCPHYS                    HCPhysApicAccess;
+        /** Host-physical address of the VMREAD bitmap. */
+        RTHCPHYS                    HCPhysVmreadBitmap;
+        /** Host-physical address of the VMWRITE bitmap. */
+        RTHCPHYS                    HCPhysVmwriteBitmap;
+
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+        /** Host-physical address of the crash-dump scratch area. */
+        RTHCPHYS                    HCPhysScratch;
+        /** Pointer to the crash-dump scratch bitmap. */
+        R0PTRTYPE(uint8_t *)        pbScratch;
+#endif
+
         /** Ring-0 memory object for per-VM VMX structures. */
         RTR0MEMOBJ                  hMemObj;
-
     } vmx;
 
     /** AMD-V specific data. */

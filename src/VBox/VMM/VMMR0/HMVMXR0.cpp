@@ -1979,10 +1979,10 @@ static void hmR0VmxStructsFree(PVMCC pVM)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (pVM->hm.s.vmx.fUseVmcsShadowing)
     {
-        RTMemFree(pVM->hm.s.vmx.paShadowVmcsFields);
-        pVM->hm.s.vmx.paShadowVmcsFields = NULL;
-        RTMemFree(pVM->hm.s.vmx.paShadowVmcsRoFields);
-        pVM->hm.s.vmx.paShadowVmcsRoFields = NULL;
+        RTMemFree(pVM->hmr0.s.vmx.paShadowVmcsFields);
+        pVM->hmr0.s.vmx.paShadowVmcsFields = NULL;
+        RTMemFree(pVM->hmr0.s.vmx.paShadowVmcsRoFields);
+        pVM->hmr0.s.vmx.paShadowVmcsRoFields = NULL;
     }
 #endif
 
@@ -2030,11 +2030,11 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
     bool const fUseVmcsShadowing = pVM->hm.s.vmx.fUseVmcsShadowing;
     VMXPAGEALLOCINFO aAllocInfo[] =
     {
-        { fVirtApicAccess,   0 /* Unused */, &pVM->hm.s.vmx.HCPhysApicAccess,    (PRTR0PTR)&pVM->hm.s.vmx.pbApicAccess },
-        { fUseVmcsShadowing, 0 /* Unused */, &pVM->hm.s.vmx.HCPhysVmreadBitmap,  &pVM->hm.s.vmx.pvVmreadBitmap         },
-        { fUseVmcsShadowing, 0 /* Unused */, &pVM->hm.s.vmx.HCPhysVmwriteBitmap, &pVM->hm.s.vmx.pvVmwriteBitmap        },
+        { fVirtApicAccess,   0 /* Unused */, &pVM->hmr0.s.vmx.HCPhysApicAccess,    (PRTR0PTR)&pVM->hmr0.s.vmx.pbApicAccess },
+        { fUseVmcsShadowing, 0 /* Unused */, &pVM->hmr0.s.vmx.HCPhysVmreadBitmap,  &pVM->hmr0.s.vmx.pvVmreadBitmap         },
+        { fUseVmcsShadowing, 0 /* Unused */, &pVM->hmr0.s.vmx.HCPhysVmwriteBitmap, &pVM->hmr0.s.vmx.pvVmwriteBitmap        },
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-        { true,              0 /* Unused */, &pVM->hm.s.vmx.HCPhysScratch,       &(PRTR0PTR)pVM->hm.s.vmx.pbScratch    },
+        { true,              0 /* Unused */, &pVM->hmr0.s.vmx.HCPhysScratch,       (PRTR0PTR)&pVM->hmr0.s.vmx.pbScratch    },
 #endif
     };
 
@@ -2045,11 +2045,11 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
         /* Allocate the shadow VMCS-fields array. */
         if (fUseVmcsShadowing)
         {
-            Assert(!pVM->hm.s.vmx.cShadowVmcsFields);
-            Assert(!pVM->hm.s.vmx.cShadowVmcsRoFields);
-            pVM->hm.s.vmx.paShadowVmcsFields   = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
-            pVM->hm.s.vmx.paShadowVmcsRoFields = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
-            if (!pVM->hm.s.vmx.paShadowVmcsFields || !pVM->hm.s.vmx.paShadowVmcsRoFields)
+            Assert(!pVM->hmr0.s.vmx.cShadowVmcsFields);
+            Assert(!pVM->hmr0.s.vmx.cShadowVmcsRoFields);
+            pVM->hmr0.s.vmx.paShadowVmcsFields   = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
+            pVM->hmr0.s.vmx.paShadowVmcsRoFields = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
+            if (!pVM->hmr0.s.vmx.paShadowVmcsFields || !pVM->hmr0.s.vmx.paShadowVmcsRoFields)
                 rc = VERR_NO_MEMORY;
         }
 #endif
@@ -2085,20 +2085,20 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
 static void hmR0VmxStructsInit(PVMCC pVM)
 {
     /* Paranoia. */
-    Assert(pVM->hm.s.vmx.pbApicAccess == NULL);
+    Assert(pVM->hmr0.s.vmx.pbApicAccess == NULL);
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    Assert(pVM->hm.s.vmx.pbScratch == NULL);
+    Assert(pVM->hmr0.s.vmx.pbScratch == NULL);
 #endif
 
     /*
      * Initialize members up-front so we can cleanup en masse on allocation failures.
      */
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    pVM->hm.s.vmx.HCPhysScratch = NIL_RTHCPHYS;
+    pVM->hmr0.s.vmx.HCPhysScratch       = NIL_RTHCPHYS;
 #endif
-    pVM->hm.s.vmx.HCPhysApicAccess    = NIL_RTHCPHYS;
-    pVM->hm.s.vmx.HCPhysVmreadBitmap  = NIL_RTHCPHYS;
-    pVM->hm.s.vmx.HCPhysVmwriteBitmap = NIL_RTHCPHYS;
+    pVM->hmr0.s.vmx.HCPhysApicAccess    = NIL_RTHCPHYS;
+    pVM->hmr0.s.vmx.HCPhysVmreadBitmap  = NIL_RTHCPHYS;
+    pVM->hmr0.s.vmx.HCPhysVmwriteBitmap = NIL_RTHCPHYS;
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
@@ -3543,15 +3543,15 @@ static int hmR0VmxSetupShadowVmcsFieldsArrays(PVMCC pVM)
              */
             if (   fGstVmwriteAll
                 || !VMXIsVmcsFieldReadOnly(VmcsField.u))
-                pVM->hm.s.vmx.paShadowVmcsFields[cRwFields++] = VmcsField.u;
+                pVM->hmr0.s.vmx.paShadowVmcsFields[cRwFields++] = VmcsField.u;
             else
-                pVM->hm.s.vmx.paShadowVmcsRoFields[cRoFields++] = VmcsField.u;
+                pVM->hmr0.s.vmx.paShadowVmcsRoFields[cRoFields++] = VmcsField.u;
         }
     }
 
     /* Update the counts. */
-    pVM->hm.s.vmx.cShadowVmcsFields   = cRwFields;
-    pVM->hm.s.vmx.cShadowVmcsRoFields = cRoFields;
+    pVM->hmr0.s.vmx.cShadowVmcsFields   = cRwFields;
+    pVM->hmr0.s.vmx.cShadowVmcsRoFields = cRoFields;
     return VINF_SUCCESS;
 }
 
@@ -3567,8 +3567,8 @@ static void hmR0VmxSetupVmreadVmwriteBitmaps(PVMCC pVM)
      * By default, ensure guest attempts to access any VMCS fields cause VM-exits.
      */
     uint32_t const cbBitmap        = X86_PAGE_4K_SIZE;
-    uint8_t       *pbVmreadBitmap  = (uint8_t *)pVM->hm.s.vmx.pvVmreadBitmap;
-    uint8_t       *pbVmwriteBitmap = (uint8_t *)pVM->hm.s.vmx.pvVmwriteBitmap;
+    uint8_t       *pbVmreadBitmap  = (uint8_t *)pVM->hmr0.s.vmx.pvVmreadBitmap;
+    uint8_t       *pbVmwriteBitmap = (uint8_t *)pVM->hmr0.s.vmx.pvVmwriteBitmap;
     ASMMemFill32(pbVmreadBitmap,  cbBitmap, UINT32_C(0xffffffff));
     ASMMemFill32(pbVmwriteBitmap, cbBitmap, UINT32_C(0xffffffff));
 
@@ -3577,8 +3577,8 @@ static void hmR0VmxSetupVmreadVmwriteBitmaps(PVMCC pVM)
      * VMREAD and VMWRITE bitmaps.
      */
     {
-        uint32_t const *paShadowVmcsFields = pVM->hm.s.vmx.paShadowVmcsFields;
-        uint32_t const  cShadowVmcsFields  = pVM->hm.s.vmx.cShadowVmcsFields;
+        uint32_t const *paShadowVmcsFields = pVM->hmr0.s.vmx.paShadowVmcsFields;
+        uint32_t const  cShadowVmcsFields  = pVM->hmr0.s.vmx.cShadowVmcsFields;
         for (uint32_t i = 0; i < cShadowVmcsFields; i++)
         {
             uint32_t const uVmcsField = paShadowVmcsFields[i];
@@ -3595,8 +3595,8 @@ static void hmR0VmxSetupVmreadVmwriteBitmaps(PVMCC pVM)
      */
     if (pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL)
     {
-        uint32_t const *paShadowVmcsRoFields = pVM->hm.s.vmx.paShadowVmcsRoFields;
-        uint32_t const  cShadowVmcsRoFields  = pVM->hm.s.vmx.cShadowVmcsRoFields;
+        uint32_t const *paShadowVmcsRoFields = pVM->hmr0.s.vmx.paShadowVmcsRoFields;
+        uint32_t const  cShadowVmcsRoFields  = pVM->hmr0.s.vmx.cShadowVmcsRoFields;
         for (uint32_t i = 0; i < cShadowVmcsRoFields; i++)
         {
             uint32_t const uVmcsField = paShadowVmcsRoFields[i];
@@ -3646,7 +3646,7 @@ DECLINLINE(void) hmR0VmxSetupVmcsMsrBitmapAddr(PCVMXVMCSINFO pVmcsInfo)
  */
 DECLINLINE(void) hmR0VmxSetupVmcsApicAccessAddr(PVMCPUCC pVCpu)
 {
-    RTHCPHYS const HCPhysApicAccess = pVCpu->CTX_SUFF(pVM)->hm.s.vmx.HCPhysApicAccess;
+    RTHCPHYS const HCPhysApicAccess = pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.HCPhysApicAccess;
     Assert(HCPhysApicAccess != NIL_RTHCPHYS);
     Assert(!(HCPhysApicAccess & 0xfff));                     /* Bits 11:0 MBZ. */
     int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL, HCPhysApicAccess);
@@ -3662,7 +3662,7 @@ DECLINLINE(void) hmR0VmxSetupVmcsApicAccessAddr(PVMCPUCC pVCpu)
  */
 DECLINLINE(void) hmR0VmxSetupVmcsVmreadBitmapAddr(PVMCPUCC pVCpu)
 {
-    RTHCPHYS const HCPhysVmreadBitmap = pVCpu->CTX_SUFF(pVM)->hm.s.vmx.HCPhysVmreadBitmap;
+    RTHCPHYS const HCPhysVmreadBitmap = pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.HCPhysVmreadBitmap;
     Assert(HCPhysVmreadBitmap != NIL_RTHCPHYS);
     Assert(!(HCPhysVmreadBitmap & 0xfff));                     /* Bits 11:0 MBZ. */
     int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_VMREAD_BITMAP_FULL, HCPhysVmreadBitmap);
@@ -3677,7 +3677,7 @@ DECLINLINE(void) hmR0VmxSetupVmcsVmreadBitmapAddr(PVMCPUCC pVCpu)
  */
 DECLINLINE(void) hmR0VmxSetupVmcsVmwriteBitmapAddr(PVMCPUCC pVCpu)
 {
-    RTHCPHYS const HCPhysVmwriteBitmap = pVCpu->CTX_SUFF(pVM)->hm.s.vmx.HCPhysVmwriteBitmap;
+    RTHCPHYS const HCPhysVmwriteBitmap = pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.HCPhysVmwriteBitmap;
     Assert(HCPhysVmwriteBitmap != NIL_RTHCPHYS);
     Assert(!(HCPhysVmwriteBitmap & 0xfff));                     /* Bits 11:0 MBZ. */
     int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_VMWRITE_BITMAP_FULL, HCPhysVmwriteBitmap);
@@ -4452,8 +4452,8 @@ VMMR0DECL(int) VMXR0InitVM(PVMCC pVM)
 
     /* Setup the crash dump page. */
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    strcpy((char *)pVM->hm.s.vmx.pbScratch, "SCRATCH Magic");
-    *(uint64_t *)(pVM->hm.s.vmx.pbScratch + 16) = UINT64_C(0xdeadbeefdeadbeef);
+    strcpy((char *)pVM->hmr0.s.vmx.pbScratch, "SCRATCH Magic");
+    *(uint64_t *)(pVM->hmr0.s.vmx.pbScratch + 16) = UINT64_C(0xdeadbeefdeadbeef);
 #endif
     return VINF_SUCCESS;
 }
@@ -4471,11 +4471,8 @@ VMMR0DECL(int) VMXR0TermVM(PVMCC pVM)
     LogFlowFunc(("pVM=%p\n", pVM));
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    if (pVM->hm.s.vmx.hMemObjScratch != NIL_RTR0MEMOBJ)
-    {
-        Assert(pVM->hm.s.vmx.pvScratch);
-        ASMMemZero32(pVM->hm.s.vmx.pvScratch, X86_PAGE_4K_SIZE);
-    }
+    if (pVM->hmr0.s.vmx.pbScratch)
+        RT_BZERO(pVM->hmr0.s.vmx.pbScratch, X86_PAGE_4K_SIZE);
 #endif
     hmR0VmxStructsFree(pVM);
     return VINF_SUCCESS;
@@ -5435,11 +5432,11 @@ static int hmR0VmxCopyNstGstToShadowVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
          * because they are not expected to fail, barring irrecoverable conditions
          * like hardware errors.
          */
-        uint32_t const cShadowVmcsFields = pVM->hm.s.vmx.cShadowVmcsFields;
+        uint32_t const cShadowVmcsFields = pVM->hmr0.s.vmx.cShadowVmcsFields;
         for (uint32_t i = 0; i < cShadowVmcsFields; i++)
         {
             uint64_t       u64Val;
-            uint32_t const uVmcsField = pVM->hm.s.vmx.paShadowVmcsFields[i];
+            uint32_t const uVmcsField = pVM->hmr0.s.vmx.paShadowVmcsFields[i];
             IEMReadVmxVmcsField(pVmcsNstGst, uVmcsField, &u64Val);
             VMXWriteVmcs64(uVmcsField, u64Val);
         }
@@ -5450,11 +5447,11 @@ static int hmR0VmxCopyNstGstToShadowVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
          */
         if (pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL)
         {
-            uint32_t const cShadowVmcsRoFields = pVM->hm.s.vmx.cShadowVmcsRoFields;
+            uint32_t const cShadowVmcsRoFields = pVM->hmr0.s.vmx.cShadowVmcsRoFields;
             for (uint32_t i = 0; i < cShadowVmcsRoFields; i++)
             {
                 uint64_t       u64Val;
-                uint32_t const uVmcsField = pVM->hm.s.vmx.paShadowVmcsRoFields[i];
+                uint32_t const uVmcsField = pVM->hmr0.s.vmx.paShadowVmcsRoFields[i];
                 IEMReadVmxVmcsField(pVmcsNstGst, uVmcsField, &u64Val);
                 VMXWriteVmcs64(uVmcsField, u64Val);
             }
@@ -5495,11 +5492,11 @@ static int hmR0VmxCopyShadowToNstGstVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
          * because they are not expected to fail, barring irrecoverable conditions
          * like hardware errors.
          */
-        uint32_t const cShadowVmcsFields = pVM->hm.s.vmx.cShadowVmcsFields;
+        uint32_t const cShadowVmcsFields = pVM->hmr0.s.vmx.cShadowVmcsFields;
         for (uint32_t i = 0; i < cShadowVmcsFields; i++)
         {
             uint64_t       u64Val;
-            uint32_t const uVmcsField = pVM->hm.s.vmx.paShadowVmcsFields[i];
+            uint32_t const uVmcsField = pVM->hmr0.s.vmx.paShadowVmcsFields[i];
             VMXReadVmcs64(uVmcsField, &u64Val);
             IEMWriteVmxVmcsField(pVmcsNstGst, uVmcsField, u64Val);
         }
@@ -10242,8 +10239,8 @@ static int hmR0VmxMapHCApicAccessPage(PVMCPUCC pVCpu)
     AssertRCReturn(rc, rc);
 
     /* Map the HC APIC-access page in place of the MMIO page, also updates the shadow page tables if necessary. */
-    Assert(pVM->hm.s.vmx.HCPhysApicAccess != NIL_RTHCPHYS);
-    rc = IOMR0MmioMapMmioHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
+    Assert(pVM->hmr0.s.vmx.HCPhysApicAccess != NIL_RTHCPHYS);
+    rc = IOMR0MmioMapMmioHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hmr0.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
     AssertRCReturn(rc, rc);
 
     /* Update the per-VCPU cache of the APIC base MSR. */

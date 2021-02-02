@@ -1537,8 +1537,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         hmR3VmxReportVmFuncMsr(pVM->hm.s.vmx.Msrs.u64VmFunc);
     hmR3VmxReportCrFixedMsrs(&pVM->hm.s.vmx.Msrs);
 
-    LogRel(("HM: APIC-access page physaddr         = %#RHp\n",  pVM->hm.s.vmx.HCPhysApicAccess));
 #ifdef TODO_9217_VMCSINFO
+    LogRel(("HM: APIC-access page physaddr         = %#RHp\n",  pVM->hm.s.vmx.HCPhysApicAccess));
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PCVMXVMCSINFOSHARED pVmcsInfo = &pVM->apCpusR3[idCpu]->hm.s.vmx.VmcsInfo;
