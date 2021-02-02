@@ -411,6 +411,7 @@ public:
     void warnAboutNoNameSpecified(const QString &strName, QWidget *pParent = 0);
     void warnAboutNameAlreadyBusy(const QString &strName, QWidget *pParent = 0);
     void warnAboutNoIPv4PrefixSpecified(const QString &strName, QWidget *pParent = 0);
+    void warnAboutNoIPv6PrefixSpecified(const QString &strName, QWidget *pParent = 0);
     void warnAboutInvalidCIDRSpecified(const QString &strCIDR, const QString &strName, QWidget *pParent = 0);
 
     /* API: Cloud Profile Manager warnings: */

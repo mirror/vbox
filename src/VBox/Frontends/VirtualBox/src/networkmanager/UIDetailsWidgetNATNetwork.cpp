@@ -47,6 +47,8 @@ UIDetailsWidgetNATNetwork::UIDetailsWidgetNATNetwork(EmbedTo enmEmbedding, QWidg
     , m_pEditorNetworkName(0)
     , m_pLabelNetworkIPv4Prefix(0)
     , m_pEditorNetworkIPv4Prefix(0)
+    , m_pLabelNetworkIPv6Prefix(0)
+    , m_pEditorNetworkIPv6Prefix(0)
     , m_pLabelExtended(0)
     , m_pCheckboxSupportsDHCP(0)
     , m_pCheckboxSupportsIPv6(0)
@@ -101,6 +103,12 @@ bool UIDetailsWidgetNATNetwork::revalidate() const
         msgCenter().warnAboutNoIPv4PrefixSpecified(m_newData.m_strName);
         return false;
     }
+    /* Make sure IPv6 prefix isn't empty if IPv6 is supported: */
+    if (m_newData.m_fSupportsIPv6 && m_newData.m_strPrefixIPv6.isEmpty())
+    {
+        msgCenter().warnAboutNoIPv4PrefixSpecified(m_newData.m_strName);
+        return false;
+    }
 
     /* Validate 'Forwarding' tab content: */
     return m_pForwardingTableIPv4->validate() && m_pForwardingTableIPv6->validate();
@@ -109,10 +117,11 @@ bool UIDetailsWidgetNATNetwork::revalidate() const
 void UIDetailsWidgetNATNetwork::updateButtonStates()
 {
 //    if (m_oldData != m_newData)
-//        printf("Network: %d, %s, %s, %d, %d, %d\n",
+//        printf("Network: %d, %s, %s, %s, %d, %d, %d\n",
 //               m_newData.m_fEnabled,
 //               m_newData.m_strName.toUtf8().constData(),
 //               m_newData.m_strPrefixIPv4.toUtf8().constData(),
+//               m_newData.m_strPrefixIPv6.toUtf8().constData(),
 //               m_newData.m_fSupportsDHCP,
 //               m_newData.m_fSupportsIPv6,
 //               m_newData.m_fAdvertiseDefaultIPv6Route);
@@ -156,6 +165,10 @@ void UIDetailsWidgetNATNetwork::retranslateUi()
         m_pLabelNetworkIPv4Prefix->setText(tr("IPv&4 Prefix:"));
     if (m_pEditorNetworkIPv4Prefix)
         m_pEditorNetworkIPv4Prefix->setToolTip(tr("Holds the IPv4 prefix for this network."));
+    if (m_pLabelNetworkIPv6Prefix)
+        m_pLabelNetworkIPv6Prefix->setText(tr("IPv&6 Prefix:"));
+    if (m_pEditorNetworkIPv6Prefix)
+        m_pEditorNetworkIPv6Prefix->setToolTip(tr("Holds the IPv6 prefix for this network."));
     if (m_pLabelExtended)
         m_pLabelExtended->setText(tr("Extended Features:"));
     if (m_pCheckboxSupportsDHCP)
@@ -224,6 +237,12 @@ void UIDetailsWidgetNATNetwork::sltNetworkNameChanged(const QString &strText)
 void UIDetailsWidgetNATNetwork::sltNetworkIPv4PrefixChanged(const QString &strText)
 {
     m_newData.m_strPrefixIPv4 = strText;
+    updateButtonStates();
+}
+
+void UIDetailsWidgetNATNetwork::sltNetworkIPv6PrefixChanged(const QString &strText)
+{
+    m_newData.m_strPrefixIPv6 = strText;
     updateButtonStates();
 }
 
@@ -395,12 +414,31 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
                     pLayoutSettings->addWidget(m_pEditorNetworkIPv4Prefix, 1, 1, 1, 3);
                 }
 
+                /* Prepare network IPv6 prefix label: */
+                m_pLabelNetworkIPv6Prefix = new QLabel(pTabOptions);
+                if (m_pLabelNetworkIPv6Prefix)
+                {
+                    m_pLabelNetworkIPv6Prefix->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutSettings->addWidget(m_pLabelNetworkIPv6Prefix, 2, 0);
+                }
+                /* Prepare network IPv6 prefix editor: */
+                m_pEditorNetworkIPv6Prefix = new QLineEdit(pTabOptions);
+                if (m_pEditorNetworkIPv6Prefix)
+                {
+                    if (m_pLabelNetworkIPv6Prefix)
+                        m_pLabelNetworkIPv6Prefix->setBuddy(m_pEditorNetworkIPv6Prefix);
+                    connect(m_pEditorNetworkIPv6Prefix, &QLineEdit::textEdited,
+                            this, &UIDetailsWidgetNATNetwork::sltNetworkIPv6PrefixChanged);
+
+                    pLayoutSettings->addWidget(m_pEditorNetworkIPv6Prefix, 2, 1, 1, 3);
+                }
+
                 /* Prepare extended label: */
                 m_pLabelExtended = new QLabel(pTabOptions);
                 if (m_pLabelExtended)
                 {
                     m_pLabelExtended->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutSettings->addWidget(m_pLabelExtended, 2, 0);
+                    pLayoutSettings->addWidget(m_pLabelExtended, 3, 0);
                 }
                 /* Prepare 'supports DHCP' check-box: */
                 m_pCheckboxSupportsDHCP = new QCheckBox(pTabOptions);
@@ -408,7 +446,7 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
                 {
                     connect(m_pCheckboxSupportsDHCP, &QCheckBox::toggled,
                             this, &UIDetailsWidgetNATNetwork::sltSupportsDHCPChanged);
-                    pLayoutSettings->addWidget(m_pCheckboxSupportsDHCP, 2, 1, 1, 2);
+                    pLayoutSettings->addWidget(m_pCheckboxSupportsDHCP, 3, 1, 1, 2);
                 }
                 /* Prepare 'supports IPv6' check-box: */
                 m_pCheckboxSupportsIPv6 = new QCheckBox(pTabOptions);
@@ -416,7 +454,7 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
                 {
                     connect(m_pCheckboxSupportsIPv6, &QCheckBox::toggled,
                             this, &UIDetailsWidgetNATNetwork::sltSupportsIPv6Changed);
-                    pLayoutSettings->addWidget(m_pCheckboxSupportsIPv6, 3, 1, 1, 2);
+                    pLayoutSettings->addWidget(m_pCheckboxSupportsIPv6, 4, 1, 1, 2);
                 }
                 /* Prepare 'advertise default IPv6 route' check-box: */
                 m_pCheckboxAdvertiseDefaultIPv6Route = new QCheckBox(pTabOptions);
@@ -424,7 +462,7 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
                 {
                     connect(m_pCheckboxAdvertiseDefaultIPv6Route, &QCheckBox::toggled,
                             this, &UIDetailsWidgetNATNetwork::sltAdvertiseDefaultIPv6RouteChanged);
-                    pLayoutSettings->addWidget(m_pCheckboxAdvertiseDefaultIPv6Route, 4, 1, 1, 2);
+                    pLayoutSettings->addWidget(m_pCheckboxAdvertiseDefaultIPv6Route, 5, 1, 1, 2);
                 }
 
                 pLayoutOptions->addLayout(pLayoutSettings, 1, 1);
@@ -524,6 +562,8 @@ void UIDetailsWidgetNATNetwork::loadDataForOptions()
     m_pEditorNetworkName->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
     m_pLabelNetworkIPv4Prefix->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
     m_pEditorNetworkIPv4Prefix->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
+    m_pLabelNetworkIPv6Prefix->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
+    m_pEditorNetworkIPv6Prefix->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
     m_pLabelExtended->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
     m_pCheckboxSupportsDHCP->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
     m_pCheckboxSupportsIPv6->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
@@ -533,6 +573,7 @@ void UIDetailsWidgetNATNetwork::loadDataForOptions()
     m_pCheckboxNetworkAvailable->setChecked(fIsNetworkEnabled);
     m_pEditorNetworkName->setText(m_newData.m_strName);
     m_pEditorNetworkIPv4Prefix->setText(m_newData.m_strPrefixIPv4);
+    m_pEditorNetworkIPv6Prefix->setText(m_newData.m_strPrefixIPv6);
     m_pCheckboxSupportsDHCP->setChecked(m_newData.m_fSupportsDHCP);
     m_pCheckboxSupportsIPv6->setChecked(m_newData.m_fSupportsIPv6);
     m_pCheckboxAdvertiseDefaultIPv6Route->setChecked(m_newData.m_fAdvertiseDefaultIPv6Route);

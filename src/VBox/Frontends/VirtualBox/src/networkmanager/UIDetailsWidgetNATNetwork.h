@@ -49,6 +49,7 @@ struct UIDataNATNetwork
         , m_fEnabled(false)
         , m_strName(QString())
         , m_strPrefixIPv4(QString())
+        , m_strPrefixIPv6(QString())
         , m_fSupportsDHCP(false)
         , m_fSupportsIPv6(false)
         , m_fAdvertiseDefaultIPv6Route(false)
@@ -62,6 +63,7 @@ struct UIDataNATNetwork
                && (m_fEnabled == other.m_fEnabled)
                && (m_strName == other.m_strName)
                && (m_strPrefixIPv4 == other.m_strPrefixIPv4)
+               && (m_strPrefixIPv6 == other.m_strPrefixIPv6)
                && (m_fSupportsDHCP == other.m_fSupportsDHCP)
                && (m_fSupportsIPv6 == other.m_fSupportsIPv6)
                && (m_fAdvertiseDefaultIPv6Route == other.m_fAdvertiseDefaultIPv6Route)
@@ -83,6 +85,8 @@ struct UIDataNATNetwork
     QString                   m_strName;
     /** Holds network IPv4 prefix. */
     QString                   m_strPrefixIPv4;
+    /** Holds network IPv6 prefix. */
+    QString                   m_strPrefixIPv6;
     /** Holds whether this network supports DHCP. */
     bool                      m_fSupportsDHCP;
     /** Holds whether this network supports IPv6. */
@@ -152,6 +156,8 @@ private slots:
         void sltNetworkNameChanged(const QString &strText);
         /** Handles network IPv4 prefix text change. */
         void sltNetworkIPv4PrefixChanged(const QString &strText);
+        /** Handles network IPv6 prefix text change. */
+        void sltNetworkIPv6PrefixChanged(const QString &strText);
         /** Handles network supports DHCP choice change. */
         void sltSupportsDHCPChanged(bool fChecked);
         /** Handles network supports IPv6 choice change. */
@@ -218,6 +224,10 @@ private:
         QLabel            *m_pLabelNetworkIPv4Prefix;
         /** Holds the network IPv4 prefix editor instance. */
         QLineEdit         *m_pEditorNetworkIPv4Prefix;
+        /** Holds the network IPv6 prefix label instance. */
+        QLabel            *m_pLabelNetworkIPv6Prefix;
+        /** Holds the network IPv6 prefix editor instance. */
+        QLineEdit         *m_pEditorNetworkIPv6Prefix;
         /** Holds the extended label instance. */
         QLabel            *m_pLabelExtended;
         /** Holds the 'supports DHCP' check-box instance. */
