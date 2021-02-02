@@ -547,7 +547,7 @@ typedef struct HM
         /** Padding. */
         uint32_t                    u32Alignment1;
 
-        /** Host-physical address for a failing VMXON instruction. */
+        /** Host-physical address for a failing VMXON instruction (diagnostics). */
         RTHCPHYS                    HCPhysVmxEnableError;
 
         /** VMX MSR values. */
@@ -577,7 +577,7 @@ typedef struct HM
         bool                        fLbrVirt;
         uint8_t                     u8Alignment0[2];
 
-        /* HWCR MSR (for diagnostics) */
+        /** HWCR MSR (for diagnostics). */
         uint64_t                    u64MsrHwcr;
 
         /** SVM revision. */
@@ -1442,6 +1442,8 @@ AssertCompileMemberAlignment(HMR0PERVCPU, vmx.RestoreHost,   8);
 
 
 #ifdef IN_RING0
+extern bool     g_fHmVmxSupported;
+extern bool     g_fHmSvmSupported;
 extern uint32_t g_uHmMaxAsid;
 
 VMMR0_INT_DECL(PHMPHYSCPU)  hmR0GetCurrentCpu(void);

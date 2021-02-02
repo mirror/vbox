@@ -117,8 +117,6 @@ static struct
                 uint32_t                    ulLastInstrError;
                 /** The shift mask employed by the VMX-Preemption timer. */
                 uint8_t                     cPreemptTimerShift;
-                /** Padding. */
-                uint8_t                     abPadding[3];
                 /** Whether we're using the preemption timer or not. */
                 bool                        fUsePreemptTimer;
                 /** Whether we're using SUPR0EnableVTx or not. */
@@ -126,8 +124,6 @@ static struct
                 /** Set if we've called SUPR0EnableVTx(true) and should disable it during
                  * module termination. */
                 bool                        fCalledSUPR0EnableVTx;
-                /** Set to by us to indicate VMX is supported by the CPU. */
-                bool                        fSupported;
             } vmx;
 
             /** AMD-V data. */
@@ -137,10 +133,6 @@ static struct
                 uint32_t                    u32Rev;
                 /** SVM feature bits from cpuid 0x8000000a */
                 uint32_t                    u32Features;
-                /** Padding. */
-                bool                        afPadding[3];
-                /** Set by us to indicate SVM is supported by the CPU. */
-                bool                        fSupported;
             } svm;
         } u;
         /** MSRs. */
@@ -166,6 +158,11 @@ static struct
     RTONCE                          EnableAllCpusOnce;
 } g_HmR0;
 
+
+/** Set if VT-x (VMX) is supported by the CPU. */
+bool        g_fHmVmxSupported = false;
+/** Set if AMD-V is supported by the CPU. */
+bool        g_fHmSvmSupported = false;
 /** Maximum allowed ASID/VPID (inclusive).
  * @todo r=bird: This is exclusive for VT-x according to source code comment.
  *       Couldn't immediately find any docs on AMD-V, but suspect it is
@@ -315,7 +312,7 @@ static int hmR0InitIntel(void)
         AssertLogRelMsg(rc == VINF_SUCCESS || rc == VERR_VMX_IN_VMX_ROOT_MODE || rc == VERR_VMX_NO_VMX, ("%Rrc\n", rc));
         if (RT_SUCCESS(rc))
         {
-            g_HmR0.hwvirt.u.vmx.fSupported = true;
+            g_fHmVmxSupported = true;
             rc = SUPR0EnableVTx(false /* fEnable */);
             AssertLogRelRC(rc);
         }
@@ -385,7 +382,7 @@ static int hmR0InitIntel(void)
             rc = VMXEnable(HCPhysScratchPage);
             if (RT_SUCCESS(rc))
             {
-                g_HmR0.hwvirt.u.vmx.fSupported = true;
+                g_fHmVmxSupported = true;
                 VMXDisable();
             }
             else
@@ -402,7 +399,7 @@ static int hmR0InitIntel(void)
                  * They should fix their code, but until they do we simply refuse to run.
                  */
                 g_HmR0.rcInit = VERR_VMX_IN_VMX_ROOT_MODE;
-                Assert(g_HmR0.hwvirt.u.vmx.fSupported == false);
+                Assert(g_fHmVmxSupported == false);
             }
 
             /* Restore CR4.VMXE if it wasn't set prior to us setting it above. */
@@ -415,7 +412,7 @@ static int hmR0InitIntel(void)
             RTR0MemObjFree(hScatchMemObj, false);
         }
 
-        if (g_HmR0.hwvirt.u.vmx.fSupported)
+        if (g_fHmVmxSupported)
         {
             rc = VMXR0GlobalInit();
             if (RT_FAILURE(rc))
@@ -509,7 +506,7 @@ static int hmR0InitAmd(void)
     if (RT_SUCCESS(rc))
     {
         SUPR0GetHwvirtMsrs(&g_HmR0.hwvirt.Msrs, SUPVTCAPS_AMD_V, false /* fForce */);
-        g_HmR0.hwvirt.u.svm.fSupported = true;
+        g_fHmSvmSupported = true;
     }
     else
     {
@@ -561,6 +558,10 @@ VMMR0_INT_DECL(int) HMR0Init(void)
 
     /* Default is global VT-x/AMD-V init. */
     g_HmR0.fGlobalInit         = true;
+
+    g_fHmVmxSupported  = false;
+    g_fHmSvmSupported  = false;
+    g_uHmMaxAsid       = 0;
 
     /*
      * Make sure aCpuInfo is big enough for all the CPUs on this system.
@@ -622,7 +623,7 @@ VMMR0_INT_DECL(int) HMR0Init(void)
 VMMR0_INT_DECL(int) HMR0Term(void)
 {
     int rc;
-    if (   g_HmR0.hwvirt.u.vmx.fSupported
+    if (   g_fHmVmxSupported
         && g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx)
     {
         /*
@@ -646,7 +647,7 @@ VMMR0_INT_DECL(int) HMR0Term(void)
     }
     else
     {
-        Assert(!g_HmR0.hwvirt.u.vmx.fSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
+        Assert(!g_fHmVmxSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
 
         /* Doesn't really matter if this fails. */
         rc = RTMpNotificationDeregister(hmR0MpEventCallback, NULL);  AssertRC(rc);
@@ -693,9 +694,9 @@ VMMR0_INT_DECL(int) HMR0Term(void)
      *        hmR0TermIntel()/hmR0TermAmd() and all the VT-x/AMD-V specific bits
      *        should move into their respective modules. */
     /* Finally, call global VT-x/AMD-V termination. */
-    if (g_HmR0.hwvirt.u.vmx.fSupported)
+    if (g_fHmVmxSupported)
         VMXR0GlobalTerm();
-    else if (g_HmR0.hwvirt.u.svm.fSupported)
+    else if (g_fHmSvmSupported)
         SVMR0GlobalTerm();
 
     return rc;
@@ -764,7 +765,7 @@ static int hmR0EnableCpu(PVMCC pVM, RTCPUID idCpu)
     /* Do NOT reset cTlbFlushes here, see @bugref{6255}. */
 
     int rc;
-    if (   g_HmR0.hwvirt.u.vmx.fSupported
+    if (   g_fHmVmxSupported
         && g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx)
         rc = g_HmR0.pfnEnableCpu(pHostCpu, pVM, NULL /* pvCpuPage */, NIL_RTHCPHYS, true, &g_HmR0.hwvirt.Msrs);
     else
@@ -837,7 +838,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
 #endif
 
     int rc;
-    if (   g_HmR0.hwvirt.u.vmx.fSupported
+    if (   g_fHmVmxSupported
         && g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx)
     {
         /*
@@ -941,7 +942,7 @@ static int hmR0DisableCpu(RTCPUID idCpu)
 {
     PHMPHYSCPU pHostCpu = &g_HmR0.aCpuInfo[idCpu];
 
-    Assert(!g_HmR0.hwvirt.u.vmx.fSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
+    Assert(!g_fHmVmxSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     Assert(idCpu < RT_ELEMENTS(g_HmR0.aCpuInfo));
@@ -1010,7 +1011,7 @@ static DECLCALLBACK(void) hmR0DisableCpuOnSpecificCallback(RTCPUID idCpu, void *
 static DECLCALLBACK(void) hmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvData)
 {
     NOREF(pvData);
-    Assert(!g_HmR0.hwvirt.u.vmx.fSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
+    Assert(!g_fHmVmxSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
 
     /*
      * We only care about uninitializing a CPU that is going offline. When a
@@ -1051,7 +1052,7 @@ static DECLCALLBACK(void) hmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu,
 static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
 {
     NOREF(pvUser);
-    Assert(!g_HmR0.hwvirt.u.vmx.fSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
+    Assert(!g_fHmVmxSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
 
 #ifdef LOG_ENABLED
     if (enmEvent == RTPOWEREVENT_SUSPEND)
@@ -1083,7 +1084,7 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
         {
             /* Reinit the CPUs from scratch as the suspend state might have
                messed with the MSRs. (lousy BIOSes as usual) */
-            if (g_HmR0.hwvirt.u.vmx.fSupported)
+            if (g_fHmVmxSupported)
                 rc = RTMpOnAll(hmR0InitIntelCpu, &FirstRc, NULL);
             else
                 rc = RTMpOnAll(hmR0InitAmdCpu, &FirstRc, NULL);
@@ -1312,7 +1313,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVMCC pVM)
     int rc;
     if (!g_HmR0.fGlobalInit)
     {
-        Assert(!g_HmR0.hwvirt.u.vmx.fSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
+        Assert(!g_fHmVmxSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
         rc = hmR0EnableCpu(pVM, idCpu);
         if (RT_FAILURE(rc))
         {
@@ -1327,7 +1328,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVMCC pVM)
     /* Disable VT-x or AMD-V if local init was done before. */
     if (!g_HmR0.fGlobalInit)
     {
-        Assert(!g_HmR0.hwvirt.u.vmx.fSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
+        Assert(!g_fHmVmxSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
         int rc2 = hmR0DisableCpu(idCpu);
         AssertRC(rc2);
     }
@@ -1380,7 +1381,7 @@ VMMR0_INT_DECL(int) hmR0EnterCpu(PVMCPUCC pVCpu)
     VMMRZCallRing3SetNotification(pVCpu, hmR0CallRing3Callback, NULL /* pvUser */);
 
     /* Reload host-state (back from ring-3/migrated CPUs) and shared guest/host bits. */
-    if (g_HmR0.hwvirt.u.vmx.fSupported)
+    if (g_fHmVmxSupported)
         pVCpu->hm.s.fCtxChanged |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE;
     else
         pVCpu->hm.s.fCtxChanged |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE;
@@ -1409,16 +1410,12 @@ VMMR0_INT_DECL(int) HMR0Enter(PVMCPUCC pVCpu)
     int rc = hmR0EnterCpu(pVCpu);
     if (RT_SUCCESS(rc))
     {
-        if (g_HmR0.hwvirt.u.vmx.fSupported)
-        {
-            Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE))
-                                           == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
-        }
+        if (g_fHmVmxSupported)
+            Assert(   (pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE))
+                   ==                            (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
         else
-        {
-            Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE))
-                                           == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE));
-        }
+            Assert(   (pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE))
+                   ==                            (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE));
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         AssertReturn(!VMMR0ThreadCtxHookIsEnabled(pVCpu), VERR_HM_IPE_5);
