@@ -95,15 +95,35 @@ typedef struct HMR0VTABLE
 /** The active ring-0 HM operations (copied from one of the table at init). */
 static HMR0VTABLE   g_HmR0Ops;
 
-/** Set if VT-x (VMX) is supported by the CPU. */
-bool                g_fHmVmxSupported = false;
-/** Set if AMD-V is supported by the CPU. */
-bool                g_fHmSvmSupported = false;
 /** Maximum allowed ASID/VPID (inclusive).
  * @todo r=bird: This is exclusive for VT-x according to source code comment.
  *       Couldn't immediately find any docs on AMD-V, but suspect it is
  *       exclusive there as well given how hmR0SvmFlushTaggedTlb() use it. */
 uint32_t            g_uHmMaxAsid;
+
+
+/** Set if VT-x (VMX) is supported by the CPU. */
+bool                g_fHmVmxSupported = false;
+/** Whether we're using the preemption timer or not. */
+bool                g_fHmVmxUsePreemptTimer;
+/** The shift mask employed by the VMX-Preemption timer. */
+uint8_t             g_cHmVmxPreemptTimerShift;
+/** Host CR4 value (set by ring-0 VMX init) */
+uint64_t            g_uHmVmxHostCr4;
+/** Host EFER value (set by ring-0 VMX init) */
+uint64_t            g_uHmVmxHostMsrEfer;
+/** Host SMM monitor control (used for logging/diagnostics) */
+uint64_t            g_uHmVmxHostSmmMonitorCtl;
+
+/** Set if AMD-V is supported by the CPU. */
+bool                g_fHmSvmSupported = false;
+/** SVM revision. */
+uint32_t            g_uHmSvmRev;
+/** SVM feature bits from cpuid 0x8000000a */
+uint32_t            g_uHmSvmFeatures;
+
+/** MSRs. */
+SUPHWVIRTMSRS       g_HmMsrs;
 
 
 /**
@@ -122,36 +142,15 @@ static struct
             /** VT-x data. */
             struct
             {
-                /** Host CR4 value (set by ring-0 VMX init) */
-                uint64_t                    u64HostCr4;
-                /** Host EFER value (set by ring-0 VMX init) */
-                uint64_t                    u64HostMsrEfer;
-                /** Host SMM monitor control (used for logging/diagnostics) */
-                uint64_t                    u64HostSmmMonitorCtl;
                 /** Last instruction error. */
                 uint32_t                    ulLastInstrError;
-                /** The shift mask employed by the VMX-Preemption timer. */
-                uint8_t                     cPreemptTimerShift;
-                /** Whether we're using the preemption timer or not. */
-                bool                        fUsePreemptTimer;
                 /** Whether we're using SUPR0EnableVTx or not. */
                 bool                        fUsingSUPR0EnableVTx;
                 /** Set if we've called SUPR0EnableVTx(true) and should disable it during
                  * module termination. */
                 bool                        fCalledSUPR0EnableVTx;
             } vmx;
-
-            /** AMD-V data. */
-            struct
-            {
-                /** SVM revision. */
-                uint32_t                    u32Rev;
-                /** SVM feature bits from cpuid 0x8000000a */
-                uint32_t                    u32Features;
-            } svm;
         } u;
-        /** MSRs. */
-        SUPHWVIRTMSRS               Msrs;
     } hwvirt;
 
     /** Last recorded error code during HM ring-0 init. */
@@ -370,7 +369,7 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
 static int hmR0InitIntel(void)
 {
     /* Read this MSR now as it may be useful for error reporting when initializing VT-x fails. */
-    g_HmR0.hwvirt.Msrs.u.vmx.u64FeatCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+    g_HmMsrs.u.vmx.u64FeatCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
     /*
      * First try use native kernel API for controlling VT-x.
@@ -402,20 +401,20 @@ static int hmR0InitIntel(void)
     if (RT_SUCCESS(rc))
     {
         /* Read CR4 and EFER for logging/diagnostic purposes. */
-        g_HmR0.hwvirt.u.vmx.u64HostCr4     = ASMGetCR4();
-        g_HmR0.hwvirt.u.vmx.u64HostMsrEfer = ASMRdMsr(MSR_K6_EFER);
+        g_uHmVmxHostCr4     = ASMGetCR4();
+        g_uHmVmxHostMsrEfer = ASMRdMsr(MSR_K6_EFER);
 
         /* Get VMX MSRs for determining VMX features we can ultimately use. */
-        SUPR0GetHwvirtMsrs(&g_HmR0.hwvirt.Msrs, SUPVTCAPS_VT_X, false /* fForce */);
+        SUPR0GetHwvirtMsrs(&g_HmMsrs, SUPVTCAPS_VT_X, false /* fForce */);
 
         /*
          * Nested KVM workaround: Intel SDM section 34.15.5 describes that
          * MSR_IA32_SMM_MONITOR_CTL depends on bit 49 of MSR_IA32_VMX_BASIC while
          * table 35-2 says that this MSR is available if either VMX or SMX is supported.
          */
-        uint64_t const uVmxBasicMsr = g_HmR0.hwvirt.Msrs.u.vmx.u64Basic;
+        uint64_t const uVmxBasicMsr = g_HmMsrs.u.vmx.u64Basic;
         if (RT_BF_GET(uVmxBasicMsr, VMX_BF_BASIC_DUAL_MON))
-            g_HmR0.hwvirt.u.vmx.u64HostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
+            g_uHmVmxHostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
 
         /* Initialize VPID - 16 bits ASID. */
         g_uHmMaxAsid = 0x10000; /* exclusive */
@@ -500,14 +499,14 @@ static int hmR0InitIntel(void)
                  * Timer Does Not Count Down at the Rate Specified" CPU erratum.
                  */
                 VMXCTLSMSR PinCtls;
-                PinCtls.u = g_HmR0.hwvirt.Msrs.u.vmx.u64PinCtls;
+                PinCtls.u = g_HmMsrs.u.vmx.u64PinCtls;
                 if (PinCtls.n.allowed1 & VMX_PIN_CTLS_PREEMPT_TIMER)
                 {
-                    uint64_t const uVmxMiscMsr = g_HmR0.hwvirt.Msrs.u.vmx.u64Misc;
-                    g_HmR0.hwvirt.u.vmx.fUsePreemptTimer   = true;
-                    g_HmR0.hwvirt.u.vmx.cPreemptTimerShift = RT_BF_GET(uVmxMiscMsr, VMX_BF_MISC_PREEMPT_TIMER_TSC);
+                    uint64_t const uVmxMiscMsr = g_HmMsrs.u.vmx.u64Misc;
+                    g_fHmVmxUsePreemptTimer   = true;
+                    g_cHmVmxPreemptTimerShift = RT_BF_GET(uVmxMiscMsr, VMX_BF_MISC_PREEMPT_TIMER_TSC);
                     if (HMIsSubjectToVmxPreemptTimerErratum())
-                        g_HmR0.hwvirt.u.vmx.cPreemptTimerShift = 0; /* This is about right most of the time here. */
+                        g_cHmVmxPreemptTimerShift = 0; /* This is about right most of the time here. */
                 }
             }
             else
@@ -563,7 +562,7 @@ static int hmR0InitAmd(void)
 
         /* Query AMD features. */
         uint32_t u32Dummy;
-        ASMCpuId(0x8000000a, &g_HmR0.hwvirt.u.svm.u32Rev, &g_uHmMaxAsid, &u32Dummy, &g_HmR0.hwvirt.u.svm.u32Features);
+        ASMCpuId(0x8000000a, &g_uHmSvmRev, &g_uHmMaxAsid, &u32Dummy, &g_uHmSvmFeatures);
 
         /*
          * We need to check if AMD-V has been properly initialized on all CPUs.
@@ -581,7 +580,7 @@ static int hmR0InitAmd(void)
 #endif
         if (RT_SUCCESS(rc))
         {
-            SUPR0GetHwvirtMsrs(&g_HmR0.hwvirt.Msrs, SUPVTCAPS_AMD_V, false /* fForce */);
+            SUPR0GetHwvirtMsrs(&g_HmMsrs, SUPVTCAPS_AMD_V, false /* fForce */);
             g_fHmSvmSupported = true;
         }
         else
@@ -810,11 +809,11 @@ static int hmR0EnableCpu(PVMCC pVM, RTCPUID idCpu)
     int rc;
     if (   g_fHmVmxSupported
         && g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx)
-        rc = g_HmR0Ops.pfnEnableCpu(pHostCpu, pVM, NULL /* pvCpuPage */, NIL_RTHCPHYS, true, &g_HmR0.hwvirt.Msrs);
+        rc = g_HmR0Ops.pfnEnableCpu(pHostCpu, pVM, NULL /* pvCpuPage */, NIL_RTHCPHYS, true, &g_HmMsrs);
     else
     {
         AssertLogRelMsgReturn(pHostCpu->hMemObj != NIL_RTR0MEMOBJ, ("hmR0EnableCpu failed idCpu=%u.\n", idCpu), VERR_HM_IPE_1);
-        rc = g_HmR0Ops.pfnEnableCpu(pHostCpu, pVM, pHostCpu->pvMemObj, pHostCpu->HCPhysMemObj, false, &g_HmR0.hwvirt.Msrs);
+        rc = g_HmR0Ops.pfnEnableCpu(pHostCpu, pVM, pHostCpu->pvMemObj, pHostCpu->HCPhysMemObj, false, &g_HmMsrs);
     }
     if (RT_SUCCESS(rc))
         pHostCpu->fConfigured = true;
@@ -1179,12 +1178,12 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
     Assert(!(pVM->hm.s.vmx.fSupported && pVM->hm.s.svm.fSupported));
     if (pVM->hm.s.vmx.fSupported)
     {
-        pVM->hm.s.vmx.fUsePreemptTimer     &= g_HmR0.hwvirt.u.vmx.fUsePreemptTimer; /* Can be overridden by CFGM in HMR3Init(). */
-        pVM->hm.s.vmx.cPreemptTimerShift    = g_HmR0.hwvirt.u.vmx.cPreemptTimerShift;
-        pVM->hm.s.vmx.u64HostCr4            = g_HmR0.hwvirt.u.vmx.u64HostCr4;
-        pVM->hm.s.vmx.u64HostMsrEfer        = g_HmR0.hwvirt.u.vmx.u64HostMsrEfer;
-        pVM->hm.s.vmx.u64HostSmmMonitorCtl  = g_HmR0.hwvirt.u.vmx.u64HostSmmMonitorCtl;
-        HMGetVmxMsrsFromHwvirtMsrs(&g_HmR0.hwvirt.Msrs, &pVM->hm.s.vmx.Msrs);
+        pVM->hm.s.vmx.fUsePreemptTimer     &= g_fHmVmxUsePreemptTimer; /* Can be overridden by CFGM in HMR3Init(). */
+        pVM->hm.s.vmx.cPreemptTimerShift    = g_cHmVmxPreemptTimerShift;
+        pVM->hm.s.vmx.u64HostCr4            = g_uHmVmxHostCr4;
+        pVM->hm.s.vmx.u64HostMsrEfer        = g_uHmVmxHostMsrEfer;
+        pVM->hm.s.vmx.u64HostSmmMonitorCtl  = g_uHmVmxHostSmmMonitorCtl;
+        HMGetVmxMsrsFromHwvirtMsrs(&g_HmMsrs, &pVM->hm.s.vmx.Msrs);
         /* If you need to tweak host MSRs for testing VMX R0 code, do it here. */
 
         /* Enable VPID if supported and configured. */
@@ -1220,9 +1219,9 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
     }
     else if (pVM->hm.s.svm.fSupported)
     {
-        pVM->hm.s.svm.u32Rev            = g_HmR0.hwvirt.u.svm.u32Rev;
-        pVM->hm.s.svm.fFeaturesForRing3 = pVM->hmr0.s.svm.fFeatures = g_HmR0.hwvirt.u.svm.u32Features;
-        pVM->hm.s.svm.u64MsrHwcr        = g_HmR0.hwvirt.Msrs.u.svm.u64MsrHwcr;
+        pVM->hm.s.svm.u32Rev            = g_uHmSvmRev;
+        pVM->hm.s.svm.fFeaturesForRing3 = pVM->hmr0.s.svm.fFeatures = g_uHmSvmFeatures;
+        pVM->hm.s.svm.u64MsrHwcr        = g_HmMsrs.u.svm.u64MsrHwcr;
         /* If you need to tweak host MSRs for testing SVM R0 code, do it here. */
     }
     pVM->hm.s.rcInit              = g_HmR0.rcInit;

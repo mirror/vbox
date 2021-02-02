@@ -1442,9 +1442,19 @@ AssertCompileMemberAlignment(HMR0PERVCPU, vmx.RestoreHost,   8);
 
 
 #ifdef IN_RING0
-extern bool     g_fHmVmxSupported;
-extern bool     g_fHmSvmSupported;
-extern uint32_t g_uHmMaxAsid;
+extern bool             g_fHmVmxSupported;
+extern uint32_t         g_uHmMaxAsid;
+extern bool             g_fHmVmxUsePreemptTimer;
+extern uint8_t          g_cHmVmxPreemptTimerShift;
+extern uint64_t         g_uHmVmxHostCr4;
+extern uint64_t         g_uHmVmxHostMsrEfer;
+extern uint64_t         g_uHmVmxHostSmmMonitorCtl;
+extern bool             g_fHmSvmSupported;
+extern uint32_t         g_uHmSvmRev;
+extern uint32_t         g_uHmSvmFeatures;
+
+extern SUPHWVIRTMSRS    g_HmMsrs;
+
 
 VMMR0_INT_DECL(PHMPHYSCPU)  hmR0GetCurrentCpu(void);
 VMMR0_INT_DECL(int)         hmR0EnterCpu(PVMCPUCC pVCpu);
