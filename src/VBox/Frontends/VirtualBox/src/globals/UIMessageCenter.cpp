@@ -1985,10 +1985,10 @@ void UIMessageCenter::warnAboutNameAlreadyBusy(const QString &strName, QWidget *
           tr("The name <b>%1</b> is being used for several NAT networks.").arg(strName));
 }
 
-void UIMessageCenter::warnAboutNoCIDRSpecified(const QString &strName, QWidget *pParent /* = 0 */)
+void UIMessageCenter::warnAboutNoIPv4PrefixSpecified(const QString &strName, QWidget *pParent /* = 0 */)
 {
     alert(pParent, MessageType_Error,
-          tr("No CIDR specified for the NAT network <b>%1</b>.").arg(strName));
+          tr("No IPv4 prefix specified for the NAT network <b>%1</b>.").arg(strName));
 }
 
 void UIMessageCenter::warnAboutInvalidCIDRSpecified(const QString &strCIDR, const QString &strName, QWidget *pParent /* = 0 */)

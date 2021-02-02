@@ -48,7 +48,7 @@ struct UIDataNATNetwork
         : m_fExists(false)
         , m_fEnabled(false)
         , m_strName(QString())
-        , m_strCIDR(QString())
+        , m_strPrefixIPv4(QString())
         , m_fSupportsDHCP(false)
         , m_fSupportsIPv6(false)
         , m_fAdvertiseDefaultIPv6Route(false)
@@ -61,7 +61,7 @@ struct UIDataNATNetwork
                && (m_fExists == other.m_fExists)
                && (m_fEnabled == other.m_fEnabled)
                && (m_strName == other.m_strName)
-               && (m_strCIDR == other.m_strCIDR)
+               && (m_strPrefixIPv4 == other.m_strPrefixIPv4)
                && (m_fSupportsDHCP == other.m_fSupportsDHCP)
                && (m_fSupportsIPv6 == other.m_fSupportsIPv6)
                && (m_fAdvertiseDefaultIPv6Route == other.m_fAdvertiseDefaultIPv6Route)
@@ -81,8 +81,8 @@ struct UIDataNATNetwork
     bool                      m_fEnabled;
     /** Holds network name. */
     QString                   m_strName;
-    /** Holds network CIDR. */
-    QString                   m_strCIDR;
+    /** Holds network IPv4 prefix. */
+    QString                   m_strPrefixIPv4;
     /** Holds whether this network supports DHCP. */
     bool                      m_fSupportsDHCP;
     /** Holds whether this network supports IPv6. */
@@ -150,8 +150,8 @@ private slots:
         void sltNetworkAvailabilityChanged(bool fChecked);
         /** Handles network name text change. */
         void sltNetworkNameChanged(const QString &strText);
-        /** Handles network CIDR text change. */
-        void sltNetworkCIDRChanged(const QString &strText);
+        /** Handles network IPv4 prefix text change. */
+        void sltNetworkIPv4PrefixChanged(const QString &strText);
         /** Handles network supports DHCP choice change. */
         void sltSupportsDHCPChanged(bool fChecked);
         /** Handles network supports IPv6 choice change. */
@@ -214,10 +214,10 @@ private:
         QLabel            *m_pLabelNetworkName;
         /** Holds the network name editor instance. */
         QLineEdit         *m_pEditorNetworkName;
-        /** Holds the network CIDR label instance. */
-        QLabel            *m_pLabelNetworkCIDR;
-        /** Holds the network CIDR editor instance. */
-        QLineEdit         *m_pEditorNetworkCIDR;
+        /** Holds the network IPv4 prefix label instance. */
+        QLabel            *m_pLabelNetworkIPv4Prefix;
+        /** Holds the network IPv4 prefix editor instance. */
+        QLineEdit         *m_pEditorNetworkIPv4Prefix;
         /** Holds the extended label instance. */
         QLabel            *m_pLabelExtended;
         /** Holds the 'supports DHCP' check-box instance. */

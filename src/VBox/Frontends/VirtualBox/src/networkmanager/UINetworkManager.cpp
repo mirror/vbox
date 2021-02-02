@@ -243,7 +243,7 @@ void UIItemNATNetwork::updateFields()
 
     /* Network information: */
     strToolTip += strHeader.arg(tr("Network Name"), m_strName);
-    strToolTip += strHeader.arg(tr("Network CIDR"), m_strCIDR);
+    strToolTip += strHeader.arg(tr("Network IPv4 Prefix"), m_strPrefixIPv4);
     strToolTip += strHeader.arg(tr("Supports DHCP"), m_fSupportsDHCP ? tr("yes") : tr("no"));
     strToolTip += strHeader.arg(tr("Supports IPv6"), m_fSupportsIPv6 ? tr("yes") : tr("no"));
     if (m_fSupportsIPv6 && m_fAdvertiseDefaultIPv6Route)
@@ -556,7 +556,7 @@ void UINetworkManagerWidget::sltCreateNATNetwork()
     oldData.m_fExists = true;
     oldData.m_fEnabled = true;
     oldData.m_strName = strNetworkName;
-    oldData.m_strCIDR = "10.0.2.0/24";
+    oldData.m_strPrefixIPv4 = "10.0.2.0/24";
     oldData.m_fSupportsDHCP = true;
     oldData.m_fSupportsIPv6 = false;
     oldData.m_fAdvertiseDefaultIPv6Route = false;
@@ -578,9 +578,9 @@ void UINetworkManagerWidget::sltCreateNATNetwork()
         /* Save NAT network name: */
         if (comNetwork.isOk())
             comNetwork.SetNetworkName(oldData.m_strName);
-        /* Save NAT network CIDR: */
+        /* Save NAT network IPv4 prefix: */
         if (comNetwork.isOk())
-            comNetwork.SetNetwork(oldData.m_strCIDR);
+            comNetwork.SetNetwork(oldData.m_strPrefixIPv4);
         /* Save whether NAT network needs DHCP server: */
         if (comNetwork.isOk())
             comNetwork.SetNeedDhcpServer(oldData.m_fSupportsDHCP);
@@ -1152,9 +1152,9 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
             /* Save NAT network name: */
             if (comNetwork.isOk() && newData.m_strName != oldData.m_strName)
                 comNetwork.SetNetworkName(newData.m_strName);
-            /* Save NAT network CIDR: */
-            if (comNetwork.isOk() && newData.m_strCIDR != oldData.m_strCIDR)
-                comNetwork.SetNetwork(newData.m_strCIDR);
+            /* Save NAT network IPv4: */
+            if (comNetwork.isOk() && newData.m_strPrefixIPv4 != oldData.m_strPrefixIPv4)
+                comNetwork.SetNetwork(newData.m_strPrefixIPv4);
             /* Save whether NAT network needs DHCP server: */
             if (comNetwork.isOk() && newData.m_fSupportsDHCP != oldData.m_fSupportsDHCP)
                 comNetwork.SetNeedDhcpServer(newData.m_fSupportsDHCP);
@@ -1627,7 +1627,7 @@ void UINetworkManagerWidget::loadNATNetwork(const CNATNetwork &comNetwork, UIDat
     if (comNetwork.isOk())
         data.m_strName = comNetwork.GetNetworkName();
     if (comNetwork.isOk())
-        data.m_strCIDR = comNetwork.GetNetwork();
+        data.m_strPrefixIPv4 = comNetwork.GetNetwork();
     if (comNetwork.isOk())
         data.m_fSupportsDHCP = comNetwork.GetNeedDhcpServer();
     if (comNetwork.isOk())

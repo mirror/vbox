@@ -45,8 +45,8 @@ UIDetailsWidgetNATNetwork::UIDetailsWidgetNATNetwork(EmbedTo enmEmbedding, QWidg
     , m_pCheckboxNetworkAvailable(0)
     , m_pLabelNetworkName(0)
     , m_pEditorNetworkName(0)
-    , m_pLabelNetworkCIDR(0)
-    , m_pEditorNetworkCIDR(0)
+    , m_pLabelNetworkIPv4Prefix(0)
+    , m_pEditorNetworkIPv4Prefix(0)
     , m_pLabelExtended(0)
     , m_pCheckboxSupportsDHCP(0)
     , m_pCheckboxSupportsIPv6(0)
@@ -95,10 +95,10 @@ bool UIDetailsWidgetNATNetwork::revalidate() const
         }
     }
 
-    /* Make sure network CIDR isn't empty: */
-    if (m_newData.m_strCIDR.isEmpty())
+    /* Make sure IPv4 prefix isn't empty: */
+    if (m_newData.m_strPrefixIPv4.isEmpty())
     {
-        msgCenter().warnAboutNoCIDRSpecified(m_newData.m_strName);
+        msgCenter().warnAboutNoIPv4PrefixSpecified(m_newData.m_strName);
         return false;
     }
 
@@ -112,7 +112,7 @@ void UIDetailsWidgetNATNetwork::updateButtonStates()
 //        printf("Network: %d, %s, %s, %d, %d, %d\n",
 //               m_newData.m_fEnabled,
 //               m_newData.m_strName.toUtf8().constData(),
-//               m_newData.m_strCIDR.toUtf8().constData(),
+//               m_newData.m_strPrefixIPv4.toUtf8().constData(),
 //               m_newData.m_fSupportsDHCP,
 //               m_newData.m_fSupportsIPv6,
 //               m_newData.m_fAdvertiseDefaultIPv6Route);
@@ -152,10 +152,10 @@ void UIDetailsWidgetNATNetwork::retranslateUi()
         m_pLabelNetworkName->setText(tr("&Name:"));
     if (m_pEditorNetworkName)
         m_pEditorNetworkName->setToolTip(tr("Holds the name for this network."));
-    if (m_pLabelNetworkCIDR)
-        m_pLabelNetworkCIDR->setText(tr("IPv&4 Prefix:"));
-    if (m_pEditorNetworkCIDR)
-        m_pEditorNetworkCIDR->setToolTip(tr("Holds the CIDR for this network."));
+    if (m_pLabelNetworkIPv4Prefix)
+        m_pLabelNetworkIPv4Prefix->setText(tr("IPv&4 Prefix:"));
+    if (m_pEditorNetworkIPv4Prefix)
+        m_pEditorNetworkIPv4Prefix->setToolTip(tr("Holds the IPv4 prefix for this network."));
     if (m_pLabelExtended)
         m_pLabelExtended->setText(tr("Extended Features:"));
     if (m_pCheckboxSupportsDHCP)
@@ -221,9 +221,9 @@ void UIDetailsWidgetNATNetwork::sltNetworkNameChanged(const QString &strText)
     updateButtonStates();
 }
 
-void UIDetailsWidgetNATNetwork::sltNetworkCIDRChanged(const QString &strText)
+void UIDetailsWidgetNATNetwork::sltNetworkIPv4PrefixChanged(const QString &strText)
 {
-    m_newData.m_strCIDR = strText;
+    m_newData.m_strPrefixIPv4 = strText;
     updateButtonStates();
 }
 
@@ -376,23 +376,23 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
                     pLayoutSettings->addWidget(m_pEditorNetworkName, 0, 1, 1, 3);
                 }
 
-                /* Prepare network CIDR label: */
-                m_pLabelNetworkCIDR = new QLabel(pTabOptions);
-                if (m_pLabelNetworkCIDR)
+                /* Prepare network IPv4 prefix label: */
+                m_pLabelNetworkIPv4Prefix = new QLabel(pTabOptions);
+                if (m_pLabelNetworkIPv4Prefix)
                 {
-                    m_pLabelNetworkCIDR->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutSettings->addWidget(m_pLabelNetworkCIDR, 1, 0);
+                    m_pLabelNetworkIPv4Prefix->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutSettings->addWidget(m_pLabelNetworkIPv4Prefix, 1, 0);
                 }
-                /* Prepare network CIDR editor: */
-                m_pEditorNetworkCIDR = new QLineEdit(pTabOptions);
-                if (m_pEditorNetworkCIDR)
+                /* Prepare network IPv4 prefix editor: */
+                m_pEditorNetworkIPv4Prefix = new QLineEdit(pTabOptions);
+                if (m_pEditorNetworkIPv4Prefix)
                 {
-                    if (m_pLabelNetworkCIDR)
-                        m_pLabelNetworkCIDR->setBuddy(m_pEditorNetworkCIDR);
-                    connect(m_pEditorNetworkCIDR, &QLineEdit::textEdited,
-                            this, &UIDetailsWidgetNATNetwork::sltNetworkCIDRChanged);
+                    if (m_pLabelNetworkIPv4Prefix)
+                        m_pLabelNetworkIPv4Prefix->setBuddy(m_pEditorNetworkIPv4Prefix);
+                    connect(m_pEditorNetworkIPv4Prefix, &QLineEdit::textEdited,
+                            this, &UIDetailsWidgetNATNetwork::sltNetworkIPv4PrefixChanged);
 
-                    pLayoutSettings->addWidget(m_pEditorNetworkCIDR, 1, 1, 1, 3);
+                    pLayoutSettings->addWidget(m_pEditorNetworkIPv4Prefix, 1, 1, 1, 3);
                 }
 
                 /* Prepare extended label: */
@@ -522,8 +522,8 @@ void UIDetailsWidgetNATNetwork::loadDataForOptions()
     m_pCheckboxNetworkAvailable->setEnabled(fIsNetworkExists);
     m_pLabelNetworkName->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
     m_pEditorNetworkName->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pLabelNetworkCIDR->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pEditorNetworkCIDR->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
+    m_pLabelNetworkIPv4Prefix->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
+    m_pEditorNetworkIPv4Prefix->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
     m_pLabelExtended->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
     m_pCheckboxSupportsDHCP->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
     m_pCheckboxSupportsIPv6->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
@@ -532,7 +532,7 @@ void UIDetailsWidgetNATNetwork::loadDataForOptions()
     /* Load 'Options' fields: */
     m_pCheckboxNetworkAvailable->setChecked(fIsNetworkEnabled);
     m_pEditorNetworkName->setText(m_newData.m_strName);
-    m_pEditorNetworkCIDR->setText(m_newData.m_strCIDR);
+    m_pEditorNetworkIPv4Prefix->setText(m_newData.m_strPrefixIPv4);
     m_pCheckboxSupportsDHCP->setChecked(m_newData.m_fSupportsDHCP);
     m_pCheckboxSupportsIPv6->setChecked(m_newData.m_fSupportsIPv6);
     m_pCheckboxAdvertiseDefaultIPv6Route->setChecked(m_newData.m_fAdvertiseDefaultIPv6Route);
@@ -552,7 +552,7 @@ void UIDetailsWidgetNATNetwork::loadDataForForwarding()
     char szTmpIp[16];
     RTNETADDRIPV4 rtNetwork4;
     int iPrefix4;
-    const int rc = RTNetStrToIPv4Cidr(m_newData.m_strCIDR.toUtf8().constData(), &rtNetwork4, &iPrefix4);
+    const int rc = RTNetStrToIPv4Cidr(m_newData.m_strPrefixIPv4.toUtf8().constData(), &rtNetwork4, &iPrefix4);
     RTStrPrintf(szTmpIp, sizeof(szTmpIp), "%RTnaipv4", rtNetwork4);
     if (RT_SUCCESS(rc))
         m_pForwardingTableIPv4->setGuestAddressHint(QString(szTmpIp));
