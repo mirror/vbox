@@ -2892,7 +2892,7 @@ static void hmR0VmxFlushEpt(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, VMXTLBFLUSH
  */
 static void hmR0VmxFlushVpid(PVMCPUCC pVCpu, VMXTLBFLUSHVPID enmTlbFlush, RTGCPTR GCPtr)
 {
-    Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fVpid);
+    Assert(pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fVpid);
 
     uint64_t au64Descriptor[2];
     if (enmTlbFlush == VMXTLBFLUSHVPID_ALL_CONTEXTS)
@@ -2943,10 +2943,9 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt)
          * as this function maybe called in a loop with individual addresses.
          */
         PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-        if (pVM->hm.s.vmx.fVpid)
+        if (pVM->hmr0.s.vmx.fVpid)
         {
-            bool fVpidFlush = RT_BOOL(g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
-            if (fVpidFlush)
+            if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
             {
                 hmR0VmxFlushVpid(pVCpu, VMXTLBFLUSHVPID_INDIV_ADDR, GCVirt);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgVirt);
@@ -3018,9 +3017,9 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
 
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    AssertMsg(pVM->hmr0.s.fNestedPaging && pVM->hm.s.vmx.fVpid,
+    AssertMsg(pVM->hmr0.s.fNestedPaging && pVM->hmr0.s.vmx.fVpid,
               ("hmR0VmxFlushTaggedTlbBoth cannot be invoked unless NestedPaging & VPID are enabled."
-               "fNestedPaging=%RTbool fVpid=%RTbool", pVM->hmr0.s.fNestedPaging, pVM->hm.s.vmx.fVpid));
+               "fNestedPaging=%RTbool fVpid=%RTbool", pVM->hmr0.s.fNestedPaging, pVM->hmr0.s.vmx.fVpid));
 
     /*
      * Force a TLB flush for the first world-switch if the current CPU differs from the one we
@@ -3047,7 +3046,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
          * Flush by EPT when we get rescheduled to a new host CPU to ensure EPT-only tagged mappings are also
          * invalidated. We don't need to flush-by-VPID here as flushing by EPT covers it. See @bugref{6568}.
          */
-        hmR0VmxFlushEpt(pVCpu, pVmcsInfo, pVM->hm.s.vmx.enmTlbFlushEpt);
+        hmR0VmxFlushEpt(pVCpu, pVmcsInfo, pVM->hmr0.s.vmx.enmTlbFlushEpt);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
         HMVMX_SET_TAGGED_TLB_FLUSHED();
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
@@ -3063,7 +3062,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
          *
          * See Intel spec. 28.3.2 "Creating and Using Cached Translation Information".
          */
-        hmR0VmxFlushEpt(pVCpu, pVmcsInfo, pVM->hm.s.vmx.enmTlbFlushEpt);
+        hmR0VmxFlushEpt(pVCpu, pVmcsInfo, pVM->hmr0.s.vmx.enmTlbFlushEpt);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
         HMVMX_SET_TAGGED_TLB_FLUSHED();
     }
@@ -3075,7 +3074,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMX
          *
          * See Intel spec. 28.3.3.4 "Guidelines for Use of the INVEPT Instruction".
          */
-        hmR0VmxFlushEpt(pVCpu, pVmcsInfo, pVM->hm.s.vmx.enmTlbFlushEpt);
+        hmR0VmxFlushEpt(pVCpu, pVmcsInfo, pVM->hmr0.s.vmx.enmTlbFlushEpt);
         pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb = false;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbNstGst);
         HMVMX_SET_TAGGED_TLB_FLUSHED();
@@ -3118,7 +3117,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMXV
     AssertPtr(pHostCpu);
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
     AssertMsg(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked without NestedPaging."));
-    AssertMsg(!pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fVpid, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked with VPID."));
+    AssertMsg(!pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fVpid, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked with VPID."));
 
     /*
      * Force a TLB flush for the first world-switch if the current CPU differs from the one we ran on last.
@@ -3151,7 +3150,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PCVMXV
 
     if (pVCpu->hmr0.s.fForceTLBFlush)
     {
-        hmR0VmxFlushEpt(pVCpu, pVmcsInfo, pVCpu->CTX_SUFF(pVM)->hm.s.vmx.enmTlbFlushEpt);
+        hmR0VmxFlushEpt(pVCpu, pVmcsInfo, pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.enmTlbFlushEpt);
         pVCpu->hmr0.s.fForceTLBFlush = false;
     }
 }
@@ -3170,7 +3169,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
     AssertPtr(pVCpu);
     AssertPtr(pHostCpu);
     Assert(pHostCpu->idCpu != NIL_RTCPUID);
-    AssertMsg(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fVpid, ("hmR0VmxFlushTlbVpid cannot be invoked without VPID."));
+    AssertMsg(pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fVpid, ("hmR0VmxFlushTlbVpid cannot be invoked without VPID."));
     AssertMsg(!pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging, ("hmR0VmxFlushTlbVpid cannot be invoked with NestedPaging"));
 
     /*
@@ -3224,9 +3223,9 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
         pVCpu->hmr0.s.uCurrentAsid   = pHostCpu->uCurrentAsid;
         if (pHostCpu->fFlushAsidBeforeUse)
         {
-            if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
+            if (pVM->hmr0.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
                 hmR0VmxFlushVpid(pVCpu, VMXTLBFLUSHVPID_SINGLE_CONTEXT, 0 /* GCPtr */);
-            else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_ALL_CONTEXTS)
+            else if (pVM->hmr0.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_ALL_CONTEXTS)
             {
                 hmR0VmxFlushVpid(pVCpu, VMXTLBFLUSHVPID_ALL_CONTEXTS, 0 /* GCPtr */);
                 pHostCpu->fFlushAsidBeforeUse = false;
@@ -3267,7 +3266,7 @@ static void hmR0VmxFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PVMXVMCSI
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
 #endif
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    switch (pVM->hm.s.vmx.enmTlbFlushType)
+    switch (pVM->hmr0.s.vmx.enmTlbFlushType)
     {
         case VMXTLBFLUSHTYPE_EPT_VPID: hmR0VmxFlushTaggedTlbBoth(pHostCpu, pVCpu, pVmcsInfo); break;
         case VMXTLBFLUSHTYPE_EPT:      hmR0VmxFlushTaggedTlbEpt(pHostCpu, pVCpu, pVmcsInfo);  break;
@@ -3300,13 +3299,13 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
         if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT)
         {
             if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT)
-                pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_SINGLE_CONTEXT;
+                pVM->hmr0.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_SINGLE_CONTEXT;
             else if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
-                pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_ALL_CONTEXTS;
+                pVM->hmr0.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_ALL_CONTEXTS;
             else
             {
                 /* Shouldn't happen. EPT is supported but no suitable flush-types supported. */
-                pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
+                pVM->hmr0.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
                 VMCC_GET_CPU_0(pVM)->hm.s.u32HMError = VMX_UFC_EPT_FLUSH_TYPE_UNSUPPORTED;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
@@ -3314,7 +3313,7 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
             /* Make sure the write-back cacheable memory type for EPT is supported. */
             if (RT_UNLIKELY(!(g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB)))
             {
-                pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
+                pVM->hmr0.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
                 VMCC_GET_CPU_0(pVM)->hm.s.u32HMError = VMX_UFC_EPT_MEM_TYPE_NOT_WB;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
@@ -3322,7 +3321,7 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
             /* EPT requires a page-walk length of 4. */
             if (RT_UNLIKELY(!(g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4)))
             {
-                pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
+                pVM->hmr0.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
                 VMCC_GET_CPU_0(pVM)->hm.s.u32HMError = VMX_UFC_EPT_PAGE_WALK_LENGTH_UNSUPPORTED;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
@@ -3330,7 +3329,7 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
         else
         {
             /* Shouldn't happen. EPT is supported but INVEPT instruction is not supported. */
-            pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
+            pVM->hmr0.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
             VMCC_GET_CPU_0(pVM)->hm.s.u32HMError = VMX_UFC_EPT_INVEPT_UNAVAILABLE;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
@@ -3339,14 +3338,14 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
     /*
      * Determine optimal flush type for VPID.
      */
-    if (pVM->hm.s.vmx.fVpid)
+    if (pVM->hmr0.s.vmx.fVpid)
     {
         if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID)
         {
             if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT)
-                pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_SINGLE_CONTEXT;
+                pVM->hmr0.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_SINGLE_CONTEXT;
             else if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS)
-                pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_ALL_CONTEXTS;
+                pVM->hmr0.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_ALL_CONTEXTS;
             else
             {
                 /* Neither SINGLE nor ALL-context flush types for VPID is supported by the CPU. Ignore VPID capability. */
@@ -3354,30 +3353,39 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
                     LogRelFunc(("Only INDIV_ADDR supported. Ignoring VPID.\n"));
                 if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
                     LogRelFunc(("Only SINGLE_CONTEXT_RETAIN_GLOBALS supported. Ignoring VPID.\n"));
-                pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NOT_SUPPORTED;
-                pVM->hm.s.vmx.fVpid = false;
+                pVM->hmr0.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NOT_SUPPORTED;
+                pVM->hm.s.vmx.fVpidForRing3 = pVM->hmr0.s.vmx.fVpid = false;
             }
         }
         else
         {
             /*  Shouldn't happen. VPID is supported but INVVPID is not supported by the CPU. Ignore VPID capability. */
             Log4Func(("VPID supported without INVEPT support. Ignoring VPID.\n"));
-            pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NOT_SUPPORTED;
-            pVM->hm.s.vmx.fVpid = false;
+            pVM->hmr0.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NOT_SUPPORTED;
+            pVM->hm.s.vmx.fVpidForRing3 = pVM->hmr0.s.vmx.fVpid = false;
         }
     }
 
     /*
      * Setup the handler for flushing tagged-TLBs.
      */
-    if (pVM->hmr0.s.fNestedPaging && pVM->hm.s.vmx.fVpid)
-        pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_EPT_VPID;
+    if (pVM->hmr0.s.fNestedPaging && pVM->hmr0.s.vmx.fVpid)
+        pVM->hmr0.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_EPT_VPID;
     else if (pVM->hmr0.s.fNestedPaging)
-        pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_EPT;
-    else if (pVM->hm.s.vmx.fVpid)
-        pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_VPID;
+        pVM->hmr0.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_EPT;
+    else if (pVM->hmr0.s.vmx.fVpid)
+        pVM->hmr0.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_VPID;
     else
-        pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_NONE;
+        pVM->hmr0.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_NONE;
+
+
+    /*
+     * Copy out the result to ring-3.
+     */
+    pVM->hm.s.vmx.fVpidForRing3           = pVM->hmr0.s.vmx.fVpid;
+    pVM->hm.s.vmx.enmTlbFlushTypeForRing3 = pVM->hmr0.s.vmx.enmTlbFlushType;
+    pVM->hm.s.vmx.enmTlbFlushEptForRing3  = pVM->hmr0.s.vmx.enmTlbFlushEpt;
+    pVM->hm.s.vmx.enmTlbFlushVpidForRing3 = pVM->hmr0.s.vmx.enmTlbFlushVpid;
     return VINF_SUCCESS;
 }
 
@@ -3866,7 +3874,7 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
         fVal |= VMX_PROC_CTLS2_INVPCID;
 
     /* Enable VPID. */
-    if (pVM->hm.s.vmx.fVpid)
+    if (pVM->hmr0.s.vmx.fVpid)
         fVal |= VMX_PROC_CTLS2_VPID;
 
     /* Enable unrestricted guest execution. */
@@ -4527,8 +4535,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
     pVM->hmr0.s.fAllow64BitGuests = pVM->hm.s.fAllow64BitGuestsCfg;
 
     /* Initialize these always, see hmR3InitFinalizeR0().*/
-    pVM->hm.s.vmx.enmTlbFlushEpt  = VMXTLBFLUSHEPT_NONE;
-    pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NONE;
+    pVM->hm.s.vmx.enmTlbFlushEptForRing3  = pVM->hmr0.s.vmx.enmTlbFlushEpt  = VMXTLBFLUSHEPT_NONE;
+    pVM->hm.s.vmx.enmTlbFlushVpidForRing3 = pVM->hmr0.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NONE;
 
     /* Setup the tagged-TLB flush handlers. */
     int rc = hmR0VmxSetupTaggedTlb(pVM);
@@ -7009,7 +7017,7 @@ static void hmR0VmxReportWorldSwitchError(PVMCPUCC pVCpu, int rcVMRun, PVMXTRANS
                         switch (uVmcsField)
                         {
                             case VMX_VMCS64_CTRL_EPTP_FULL:  fSupported = pVM->hmr0.s.fNestedPaging;    break;
-                            case VMX_VMCS16_VPID:            fSupported = pVM->hm.s.vmx.fVpid;          break;
+                            case VMX_VMCS16_VPID:            fSupported = pVM->hmr0.s.vmx.fVpid;          break;
                             case VMX_VMCS32_CTRL_PROC_EXEC2:
                                 fSupported = RT_BOOL(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS);
                                 break;

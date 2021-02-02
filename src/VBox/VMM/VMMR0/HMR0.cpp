@@ -1170,7 +1170,8 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
 
         /* Enable VPID if supported and configured. */
         if (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VPID)
-            pVM->hm.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid; /* Can be overridden by CFGM in HMR3Init(). */
+            pVM->hm.s.vmx.fVpidForRing3
+                = pVM->hmr0.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid; /* Can be overridden by CFGM in HMR3Init(). */
 
         /* Use VMCS shadowing if supported. */
         Assert(!pVM->hm.s.vmx.fUseVmcsShadowing);

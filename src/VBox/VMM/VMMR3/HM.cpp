@@ -1696,14 +1696,14 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     if (pVM->hm.s.fNestedPagingCfg)
     {
         LogRel(("HM: Enabled nested paging\n"));
-        if (pVM->hm.s.vmx.enmTlbFlushEpt == VMXTLBFLUSHEPT_SINGLE_CONTEXT)
+        if (pVM->hm.s.vmx.enmTlbFlushEptForRing3 == VMXTLBFLUSHEPT_SINGLE_CONTEXT)
             LogRel(("HM:   EPT flush type                  = Single context\n"));
-        else if (pVM->hm.s.vmx.enmTlbFlushEpt == VMXTLBFLUSHEPT_ALL_CONTEXTS)
+        else if (pVM->hm.s.vmx.enmTlbFlushEptForRing3 == VMXTLBFLUSHEPT_ALL_CONTEXTS)
             LogRel(("HM:   EPT flush type                  = All contexts\n"));
-        else if (pVM->hm.s.vmx.enmTlbFlushEpt == VMXTLBFLUSHEPT_NOT_SUPPORTED)
+        else if (pVM->hm.s.vmx.enmTlbFlushEptForRing3 == VMXTLBFLUSHEPT_NOT_SUPPORTED)
             LogRel(("HM:   EPT flush type                  = Not supported\n"));
         else
-            LogRel(("HM:   EPT flush type                  = %#x\n", pVM->hm.s.vmx.enmTlbFlushEpt));
+            LogRel(("HM:   EPT flush type                  = %#x\n", pVM->hm.s.vmx.enmTlbFlushEptForRing3));
 
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             LogRel(("HM: Enabled unrestricted guest execution\n"));
@@ -1718,21 +1718,21 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     else
         Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
 
-    if (pVM->hm.s.vmx.fVpid)
+    if (pVM->hm.s.vmx.fVpidForRing3)
     {
         LogRel(("HM: Enabled VPID\n"));
-        if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_INDIV_ADDR)
+        if (pVM->hm.s.vmx.enmTlbFlushVpidForRing3 == VMXTLBFLUSHVPID_INDIV_ADDR)
             LogRel(("HM:   VPID flush type                 = Individual addresses\n"));
-        else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
+        else if (pVM->hm.s.vmx.enmTlbFlushVpidForRing3 == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
             LogRel(("HM:   VPID flush type                 = Single context\n"));
-        else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_ALL_CONTEXTS)
+        else if (pVM->hm.s.vmx.enmTlbFlushVpidForRing3 == VMXTLBFLUSHVPID_ALL_CONTEXTS)
             LogRel(("HM:   VPID flush type                 = All contexts\n"));
-        else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
+        else if (pVM->hm.s.vmx.enmTlbFlushVpidForRing3 == VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
             LogRel(("HM:   VPID flush type                 = Single context retain globals\n"));
         else
-            LogRel(("HM:   VPID flush type                 = %#x\n", pVM->hm.s.vmx.enmTlbFlushVpid));
+            LogRel(("HM:   VPID flush type                 = %#x\n", pVM->hm.s.vmx.enmTlbFlushVpidForRing3));
     }
-    else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_NOT_SUPPORTED)
+    else if (pVM->hm.s.vmx.enmTlbFlushVpidForRing3 == VMXTLBFLUSHVPID_NOT_SUPPORTED)
         LogRel(("HM: Ignoring VPID capabilities of CPU\n"));
 
     if (pVM->hm.s.vmx.fUsePreemptTimer)
@@ -2835,7 +2835,7 @@ VMMR3DECL(bool) HMR3IsVpidActive(PUVM pUVM)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, false);
-    return pVM->hm.s.vmx.fVpid;
+    return pVM->hm.s.vmx.fVpidForRing3;
 }
 
 

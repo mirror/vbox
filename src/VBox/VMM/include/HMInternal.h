@@ -491,8 +491,8 @@ typedef struct HM
         bool                        fSupported;
         /** Set when we've enabled VMX. */
         bool                        fEnabled;
-        /** Set if VPID is supported. */
-        bool                        fVpid;
+        /** Set if VPID is supported (ring-3 copy). */
+        bool                        fVpidForRing3;
         /** Set if VT-x VPID is allowed. */
         bool                        fAllowVpid;
         /** Set if unrestricted guest execution is in use (real and protected mode
@@ -503,20 +503,12 @@ typedef struct HM
         /** The shift mask employed by the VMX-Preemption timer. */
         uint8_t                     cPreemptTimerShift;
         /** Padding. */
-        bool                        afPadding0;
-
-        /** Tagged-TLB flush type. */
-        VMXTLBFLUSHTYPE             enmTlbFlushType;
-        /** Flush type to use for INVEPT. */
-        VMXTLBFLUSHEPT              enmTlbFlushEpt;
-        /** Flush type to use for INVVPID. */
-        VMXTLBFLUSHVPID             enmTlbFlushVpid;
+        bool                        afPadding0[1];
 
         /** Pause-loop exiting (PLE) gap in ticks. */
         uint32_t                    cPleGapTicks;
         /** Pause-loop exiting (PLE) window in ticks. */
         uint32_t                    cPleWindowTicks;
-        uint32_t                    u32Alignment0;
 
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    u64HostCr4;
@@ -547,11 +539,17 @@ typedef struct HM
         /** Padding. */
         uint32_t                    u32Alignment1;
 
-        /** Host-physical address for a failing VMXON instruction (diagnostics). */
+        /** Host-physical address for a failing VMXON instruction (for diagnostics, ring-3). */
         RTHCPHYS                    HCPhysVmxEnableError;
-
-        /** VMX MSR values. */
+        /** VMX MSR values (only for ring-3 consumption). */
         VMXMSRS                     MsrsForRing3;
+        /** Tagged-TLB flush type (only for ring-3 consumption). */
+        VMXTLBFLUSHTYPE             enmTlbFlushTypeForRing3;
+        /** Flush type to use for INVEPT (only for ring-3 consumption). */
+        VMXTLBFLUSHEPT              enmTlbFlushEptForRing3;
+        /** Flush type to use for INVVPID (only for ring-3 consumption). */
+        VMXTLBFLUSHVPID             enmTlbFlushVpidForRing3;
+        uint32_t                    u32Alignment2;
 
         /** Virtual address of the TSS page used for real mode emulation. */
         R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
@@ -645,6 +643,17 @@ typedef struct HMR0PERVM
     /** VT-x specific data. */
     struct HMR0VMXVM
     {
+        /** Set if VPID is supported (copy in HM::vmx::fVpidForRing3). */
+        bool                        fVpid;
+        bool                        afAlignment1[3];
+
+        /** Tagged-TLB flush type. */
+        VMXTLBFLUSHTYPE             enmTlbFlushType;
+        /** Flush type to use for INVEPT. */
+        VMXTLBFLUSHEPT              enmTlbFlushEpt;
+        /** Flush type to use for INVVPID. */
+        VMXTLBFLUSHVPID             enmTlbFlushVpid;
+
         /** Virtual address of the APIC-access page. */
         R0PTRTYPE(uint8_t *)        pbApicAccess;
         /** Pointer to the VMREAD bitmap. */
