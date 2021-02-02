@@ -4626,9 +4626,6 @@ SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fFo
     /*
      * Query the MSRs from the hardware.
      */
-    /** @todo Cache MSR values so future accesses can avoid querying the hardware as
-     *        it may be expensive (esp. in nested virtualization scenarios). Do this
-     *        with proper locking and race safety. */
     SUPHWVIRTMSRS Msrs;
     RT_ZERO(Msrs);
 
