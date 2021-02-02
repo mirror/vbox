@@ -149,11 +149,11 @@ void UIDetailsWidgetNATNetwork::retranslateUi()
         m_pCheckboxNetworkAvailable->setToolTip(tr("When checked, this network will be enabled."));
     }
     if (m_pLabelNetworkName)
-        m_pLabelNetworkName->setText(tr("Network &Name:"));
+        m_pLabelNetworkName->setText(tr("&Name:"));
     if (m_pEditorNetworkName)
         m_pEditorNetworkName->setToolTip(tr("Holds the name for this network."));
     if (m_pLabelNetworkCIDR)
-        m_pLabelNetworkCIDR->setText(tr("Network &CIDR:"));
+        m_pLabelNetworkCIDR->setText(tr("IPv&4 Prefix:"));
     if (m_pEditorNetworkCIDR)
         m_pEditorNetworkCIDR->setToolTip(tr("Holds the CIDR for this network."));
     if (m_pLabelExtended)
@@ -190,8 +190,8 @@ void UIDetailsWidgetNATNetwork::retranslateUi()
     /* Translate 'Forwarding' tab content: */
     if (m_pTabWidgetForwarding)
     {
-        m_pTabWidgetForwarding->setTabText(0, tr("&IPv4"));
-        m_pTabWidgetForwarding->setTabText(1, tr("&IPv6"));
+        m_pTabWidgetForwarding->setTabText(0, tr("IPv&4"));
+        m_pTabWidgetForwarding->setTabText(1, tr("IPv&6"));
     }
     if (m_pButtonBoxForwarding)
     {
