@@ -1677,6 +1677,7 @@
 # define RTNetStrToIPv4Cidr                             RT_MANGLER(RTNetStrToIPv4Cidr)
 # define RTNetStrToIPv6Addr                             RT_MANGLER(RTNetStrToIPv6Addr)
 # define RTNetStrToIPv6AddrEx                           RT_MANGLER(RTNetStrToIPv6AddrEx)
+# define RTNetStrToIPv6Cidr                             RT_MANGLER(RTNetStrToIPv6Cidr)
 # define RTNetStrToMacAddr                              RT_MANGLER(RTNetStrToMacAddr)
 # define RTNetTCPChecksum                               RT_MANGLER(RTNetTCPChecksum)
 # define RTNetUDPChecksum                               RT_MANGLER(RTNetUDPChecksum)

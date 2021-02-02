@@ -678,3 +678,50 @@ RTDECL(int) RTNetPrefixToMaskIPv6(int iPrefix, PRTNETADDRIPV6 pMask)
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTNetPrefixToMaskIPv6);
+
+
+RTDECL(int) RTNetStrToIPv6Cidr(const char *pcszAddr, PRTNETADDRIPV6 pAddr, int *piPrefix)
+{
+    RTNETADDRIPV6 Addr;
+    uint8_t u8Prefix;
+    char *pszZone, *pszNext;
+    int rc;
+
+    AssertPtrReturn(pcszAddr, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pAddr, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(piPrefix, VERR_INVALID_PARAMETER);
+
+    pcszAddr = RTStrStripL(pcszAddr);
+    rc = rtNetStrToIPv6AddrEx(pcszAddr, &Addr, &pszZone, &pszNext);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    RT_NOREF(pszZone);
+
+    /*
+     * If the prefix is missing, treat is as exact (/128) address
+     * specification.
+     */
+    if (*pszNext == '\0' || rc == VWRN_TRAILING_SPACES)
+    {
+        *pAddr = Addr;
+        *piPrefix = 128;
+        return VINF_SUCCESS;
+    }
+
+    if (*pszNext != '/')
+        return VERR_INVALID_PARAMETER;
+
+    ++pszNext;
+    rc = RTStrToUInt8Ex(pszNext, &pszNext, 10, &u8Prefix);
+    if (RT_FAILURE(rc) || rc == VWRN_TRAILING_CHARS)
+        return VERR_INVALID_PARAMETER;
+
+    if (u8Prefix == 0 || u8Prefix > 128)
+        return VERR_INVALID_PARAMETER;
+
+    *pAddr = Addr;
+    *piPrefix = u8Prefix;
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTNetStrToIPv6Cidr);

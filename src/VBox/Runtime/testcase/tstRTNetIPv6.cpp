@@ -72,6 +72,41 @@
     CHECKADDR(String, VERR_INVALID_PARAMETER, 0, 0, 0, 0)
 
 
+#define CHECKCIDR(String, rcExpected, u32_0, u32_1, u32_2, u32_3, iExpectedPrefix)    \
+    do {                                                                \
+        RTNETADDRIPV6 Addr;                                             \
+        uint32_t ExpectedAddr[4] = {                                    \
+            RT_H2N_U32_C(u32_0), RT_H2N_U32_C(u32_1),                   \
+            RT_H2N_U32_C(u32_2), RT_H2N_U32_C(u32_3)                    \
+        };                                                              \
+        int iPrefix;                                                    \
+                                                                        \
+        int rc2 = RTNetStrToIPv6Cidr(String, &Addr, &iPrefix);          \
+        if ((rcExpected) && !rc2)                                       \
+        {                                                               \
+            RTTestIFailed("at line %d: '%s': expected %Rrc got %Rrc\n", \
+                          __LINE__, String, (rcExpected), rc2);         \
+        }                                                               \
+        else if (   (rcExpected) != rc2                                 \
+                 || (   rc2 == VINF_SUCCESS                             \
+                     && (   memcmp(ExpectedAddr, &Addr, sizeof(Addr)) != 0 \
+                         || iExpectedPrefix != iPrefix)))               \
+        {                                                               \
+            RTTestIFailed("at line %d: '%s': expected %Rrc got %Rrc,"   \
+                          " expected address %RTnaipv6/%d got %RTnaipv6/%d\n",\
+                          __LINE__, String, rcExpected, rc2,            \
+                          ExpectedAddr, iExpectedPrefix,                \
+                          &Addr, iPrefix);                              \
+        }                                                               \
+    } while (0)
+
+#define GOODCIDR(String, u32_0, u32_1, u32_2, u32_3, iExpectedPrefix) \
+    CHECKCIDR(String, VINF_SUCCESS, u32_0, u32_1, u32_2, u32_3, iExpectedPrefix)
+
+#define BADCIDR(String) \
+    CHECKCIDR(String, VERR_INVALID_PARAMETER, 0, 0, 0, 0, 0)
+
+
 #define CHECKANY(String, fExpected)                                     \
     do {                                                                \
         bool fRc = RTNetStrIsIPv6AddrAny(String);                       \
@@ -203,6 +238,20 @@ int main()
 
     GOODADDR(" ff01::1%net1.1\t", 0xff010000, 0, 0, 1);
 
+    /* just some light testing */
+    GOODCIDR("1:2:3:4:5:6:7:8", 0x00010002, 0x00030004, 0x00050006, 0x00070008, 128);
+    GOODCIDR("1:2:3:4::/64",    0x00010002, 0x00030004,          0,          0,  64);
+    GOODCIDR(" 1:2:3:4::/64 ",  0x00010002, 0x00030004,          0,          0,  64);
+
+    /* we currently ignore the zone */
+    GOODCIDR("1:2:3:4::%if/64", 0x00010002, 0x00030004,          0,          0,  64);
+
+    BADCIDR("1:2:3:4:: 64");
+    BADCIDR("1:2:3:4::/64x");
+    BADCIDR("1:2:3:4::/0");
+    BADCIDR("1:2:3:4::/-1");
+    BADCIDR("1:2:3:4::/129");
+    BADCIDR("1:2:3:4::/256");
 
     IS_ANY("::");
     IS_ANY("::0.0.0.0");
