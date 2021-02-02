@@ -108,7 +108,7 @@
     }  while (0)
 
 /**
- * IOMMU operations (transaction) types.
+ * IOMMU operation (transaction).
  */
 typedef enum IOMMUOP
 {
@@ -124,6 +124,8 @@ typedef enum IOMMUOP
     IOMMUOP_CMD
 } IOMMUOP;
 AssertCompileSize(IOMMUOP, 4);
+/** Pointer to a IOMMU operation. */
+typedef IOMMUOP *PIOMMUOP;
 
 /**
  * I/O page walk result.
@@ -134,7 +136,7 @@ typedef struct IOWALKRESULT
     RTGCPHYS        GCPhysSpa;
     /** The number of offset bits in the system physical address. */
     uint8_t         cShift;
-    /** The I/O permissions allowed for this translation (IOMMU_IO_PERM_XXX). */
+    /** The I/O permissions allowed for this translation, see IOMMU_IO_PERM_XXX. */
     uint8_t         fPerm;
     /** Padding. */
     uint8_t         abPadding[2];
@@ -480,6 +482,11 @@ static uint8_t const g_auDevTabSegShifts[] = { 0, 15, 14, 13 };
  * Indexed by the device table segment index.
  */
 static uint16_t const g_auDevTabSegMaxSizes[] = { 0x1ff, 0xff, 0x7f, 0x7f, 0x3f, 0x3f, 0x3f, 0x3f };
+
+/**
+ * The IOMMU I/O permission names.
+ */
+static const char * const g_aszPerm[] = { "none", "read", "write" };
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -2637,8 +2644,8 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
  * @param   pDevIns         The IOMMU device instance.
  * @param   uIova           The I/O virtual address to translate.
  * @param   uDevId          The device ID.
- * @param   fAccess         The access permissions (IOMMU_IO_PERM_XXX). This is the
- *                          permissions for the access being made.
+ * @param   fPerm           The I/O permissions for this access, see
+ *                          IOMMU_IO_PERM_XXX.
  * @param   pDte            The device table entry.
  * @param   enmOp           The IOMMU operation being performed.
  * @param   pWalkResult     Where to store the results of the I/O page walk. This is
@@ -2646,7 +2653,7 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
  *
  * @thread  Any.
  */
-static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fAccess, PCDTE_T pDte,
+static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fPerm, PCDTE_T pDte,
                                       IOMMUOP enmOp, PIOWALKRESULT pWalkResult)
 {
     /*
@@ -2675,11 +2682,11 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
      * Note: This MUST be checked prior to checking the root page table level below!
      */
     uint8_t const fDtePerm  = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
-    if ((fAccess & fDtePerm) == fAccess)
+    if ((fPerm & fDtePerm) == fPerm)
     { /* likely */ }
     else
     {
-        LogFunc(("Permission denied by DTE (fAccess=%#x fDtePerm=%#x) -> IOPF\n", fAccess, fDtePerm));
+        LogFunc(("Permission denied by DTE (fPerm=%#x fDtePerm=%#x) -> IOPF\n", fPerm, fDtePerm));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      true /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2696,7 +2703,7 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
     { /* likely */ }
     else
     {
-        Assert((fAccess & fDtePerm) == fAccess);    /* Verify we've checked permissions. */
+        Assert((fPerm & fDtePerm) == fPerm);   /* Verify we've checked permissions. */
         pWalkResult->GCPhysSpa = uIova;
         pWalkResult->cShift    = 0;
         pWalkResult->fPerm     = fDtePerm;
@@ -2736,8 +2743,8 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
  * @param   pDevIns         The IOMMU device instance.
  * @param   uIova           The I/O virtual address to translate. Must be 4K aligned.
  * @param   uDevId          The device ID.
- * @param   fAccess         The access permissions (IOMMU_IO_PERM_XXX). This is the
- *                          permissions for the access being made.
+ * @param   fPerm           The I/O permissions for this access, see
+ *                          IOMMU_IO_PERM_XXX.
  * @param   pDte            The device table entry.
  * @param   enmOp           The IOMMU operation being performed.
  * @param   pWalkResult     Where to store the results of the I/O page walk. This is
@@ -2745,7 +2752,7 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
  *
  * @thread  Any.
  */
-static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fAccess, PCDTE_T pDte,
+static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fPerm, PCDTE_T pDte,
                                    IOMMUOP enmOp, PIOWALKRESULT pWalkResult)
 {
     Assert(pDte->n.u1Valid);
@@ -2805,11 +2812,11 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
 
         /* Check permission bits. */
         uint8_t const fPtePerm  = (PtEntity.u64 >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
-        if ((fAccess & fPtePerm) == fAccess)
+        if ((fPerm & fPtePerm) == fPerm)
         { /* likely */ }
         else
         {
-            LogFunc(("Page table entry access denied (uDevId=%#x fAccess=%#x fPtePerm=%#x) -> IOPF\n", uDevId, fAccess, fPtePerm));
+            LogFunc(("Page table entry access denied (uDevId=%#x fPerm=%#x fPtePerm=%#x) -> IOPF\n", uDevId, fPerm, fPtePerm));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          true /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2974,8 +2981,8 @@ DECL_FORCE_INLINE(bool) iommuAmdDteLookupIsAccessContig(PCIOWALKRESULT pWalkResu
  * @param   uDevId          The device ID.
  * @param   uIova           The I/O virtual address to lookup.
  * @param   cbAccess        The size of the access.
- * @param   fAccess         The access permissions (IOMMU_IO_PERM_XXX). This is the
- *                          permissions for the access being made.
+ * @param   fPerm           The I/O permissions for this access, see
+ *                          IOMMU_IO_PERM_XXX.
  * @param   enmOp           The IOMMU operation being performed.
  * @param   pGCPhysSpa      Where to store the translated system physical address.
  * @param   pcbContiguous   Where to store the number of contiguous bytes translated
@@ -2983,8 +2990,8 @@ DECL_FORCE_INLINE(bool) iommuAmdDteLookupIsAccessContig(PCIOWALKRESULT pWalkResu
  *
  * @thread  Any.
  */
-static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fAccess,
-                             IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
+static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fPerm, IOMMUOP enmOp,
+                             PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
     PIOMMU   pThis        = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     RTGCPHYS GCPhysSpa    = NIL_RTGCPHYS;
@@ -3011,7 +3018,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                 {
                     IOWALKRESULT WalkResult;
                     RT_ZERO(WalkResult);
-                    rc = iommuAmdPreTranslateChecks(pDevIns, uDevId, uIova, fAccess, &Dte, enmOp, &WalkResult);
+                    rc = iommuAmdPreTranslateChecks(pDevIns, uDevId, uIova, fPerm, &Dte, enmOp, &WalkResult);
                     if (rc == VINF_SUCCESS)
                     {
                         /* Walk the I/O page tables to translate the IOVA and check permissions for the
@@ -3024,7 +3031,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                         RT_ZERO(WalkResultPrev);
                         for (;;)
                         {
-                            rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fAccess, &Dte, enmOp, &WalkResult);
+                            rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fPerm, &Dte, enmOp, &WalkResult);
                             if (RT_SUCCESS(rc))
                             {
                                 /* Store the translated address before continuing to access more pages. */
@@ -3085,7 +3092,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                         /* Paranoia. */
                         Assert(WalkResult.cShift    == 0);
                         Assert(WalkResult.GCPhysSpa == uIova);
-                        Assert((WalkResult.fPerm & fAccess) == fAccess);
+                        Assert((WalkResult.fPerm & fPerm) == fPerm);
                         /** @todo IOMMU: Add to IOLTB cache. */
                     }
                     else
@@ -3141,6 +3148,50 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
 
 
 /**
+ * Gets the I/O permission and IOMMU operation type for the given access flags.
+ *
+ * @param   fFlags      The PDM IOMMU flags, PDMIOMMU_MEM_F_XXX.
+ * @param   penmOp      Where to store the IOMMU operation.
+ * @param   pfPerm      Where to store the IOMMU I/O permission.
+ * @param   pStatRead   The stat counter to increment for a read operation.
+ * @param   pStatWrite  The stat counter to increment for a write operation.
+ */
+DECLINLINE(void) iommuAmdMemAccessGetPermAndOp(uint32_t fFlags, PIOMMUOP penmOp, uint8_t *pfPerm, PSTAMCOUNTER pStatRead,
+                                               PSTAMCOUNTER pStatWrite)
+{
+    if (fFlags & PDMIOMMU_MEM_F_WRITE)
+    {
+        *penmOp = IOMMUOP_MEM_WRITE;
+        *pfPerm = IOMMU_IO_PERM_WRITE;
+        STAM_COUNTER_INC(pStatWrite);
+    }
+    else
+    {
+        Assert(fFlags & PDMIOMMU_MEM_F_READ);
+        *penmOp = IOMMUOP_MEM_READ;
+        *pfPerm = IOMMU_IO_PERM_READ;
+        STAM_COUNTER_INC(pStatRead);
+    }
+}
+
+
+#ifdef LOG_ENABLED
+/**
+ * Gets the descriptive I/O permission name for a memory access.
+ *
+ * @returns The I/O permission name.
+ * @param   fPerm   The I/O permissions for the access, see IOMMU_IO_PERM_XXX.
+ */
+DECLINLINE(const char *) iommuAmdMemAccessGetPermName(uint8_t fPerm)
+{
+    /* We shouldn't construct an access with "none" or "read+write" (must be read or write) permissions. */
+    Assert(fPerm > 0 && fPerm < RT_ELEMENTS(g_aszPerm));
+    return g_aszPerm[fPerm];
+}
+#endif  /* LOG_ENABLED */
+
+
+/**
  * Memory access transaction from a device.
  *
  * @returns VBox status code.
@@ -3155,8 +3206,8 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
  *
  * @thread  Any.
  */
-static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
-                                                 uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
+static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint32_t fFlags,
+                                           PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
     /* Validate. */
     AssertPtr(pDevIns);
@@ -3169,36 +3220,18 @@ static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uD
     if (Ctrl.n.u1IommuEn)
     {
         IOMMUOP enmOp;
-        uint8_t fAccess;
-        if (fFlags & PDMIOMMU_MEM_F_READ)
-        {
-            enmOp   = IOMMUOP_MEM_READ;
-            fAccess = IOMMU_IO_PERM_READ;
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
-        }
-        else
-        {
-            Assert(fFlags & PDMIOMMU_MEM_F_WRITE);
-            enmOp   = IOMMUOP_MEM_WRITE;
-            fAccess = IOMMU_IO_PERM_WRITE;
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
-        }
-
-#ifdef VBOX_STRICT
-        static const char * const s_apszAccess[] = { "none", "read", "write" };
-        Assert(fAccess > 0 && fAccess < RT_ELEMENTS(s_apszAccess));
-        const char *pszAccess = s_apszAccess[fAccess];
-        LogFlowFunc(("uDevId=%#x uIova=%#RX64 szAccess=%s cbAccess=%zu\n", uDevId, uIova, pszAccess, cbAccess));
-#endif
+        uint8_t fPerm;
+        iommuAmdMemAccessGetPermAndOp(fFlags, &enmOp, &fPerm, &pThis->CTX_SUFF_Z(StatMemRead), &pThis->CTX_SUFF_Z(StatMemWrite));
+        LogFlowFunc(("%s: uDevId=%#x uIova=%#RX64 cb=%zu\n", iommuAmdMemAccessGetPermName(fPerm), uDevId, uIova, cbAccess));
 
         /** @todo IOMMU: IOTLB cache lookup. */
 
         /* Lookup the IOVA from the device table. */
-        int rc = iommuAmdDteLookup(pDevIns, uDevId, uIova, cbAccess, fAccess, enmOp, pGCPhysSpa, pcbContiguous);
+        int rc = iommuAmdDteLookup(pDevIns, uDevId, uIova, cbAccess, fPerm, enmOp, pGCPhysSpa, pcbContiguous);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
-            LogFunc(("DTE lookup failed! uDevId=%#x uIova=%#RX64 fAccess=%u cbAccess=%zu rc=%#Rrc\n", uDevId, uIova, fAccess,
+            LogFunc(("DTE lookup failed! uDevId=%#x uIova=%#RX64 fPerm=%u cbAccess=%zu rc=%#Rrc\n", uDevId, uIova, fPerm,
                      cbAccess, rc));
         return rc;
     }
@@ -3223,8 +3256,8 @@ static DECLCALLBACK(int) iommuAmdDeviceMemAccess(PPDMDEVINS pDevIns, uint16_t uD
  *
  * @thread  Any.
  */
-static DECLCALLBACK(int) iommuAmdDeviceMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas,
-                                                     uint64_t const *pauIovas, uint32_t fFlags, PRTGCPHYS paGCPhysSpa)
+static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+                                               uint32_t fFlags, PRTGCPHYS paGCPhysSpa)
 {
     /* Validate. */
     AssertPtr(pDevIns);
@@ -3238,27 +3271,10 @@ static DECLCALLBACK(int) iommuAmdDeviceMemBulkAccess(PPDMDEVINS pDevIns, uint16_
     if (Ctrl.n.u1IommuEn)
     {
         IOMMUOP enmOp;
-        uint8_t fAccess;
-        if (fFlags & PDMIOMMU_MEM_F_READ)
-        {
-            enmOp   = IOMMUOP_MEM_READ;
-            fAccess = IOMMU_IO_PERM_READ;
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkRead));
-        }
-        else
-        {
-            Assert(fFlags & PDMIOMMU_MEM_F_WRITE);
-            enmOp   = IOMMUOP_MEM_WRITE;
-            fAccess = IOMMU_IO_PERM_WRITE;
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkWrite));
-        }
-
-#ifdef VBOX_STRICT
-        static const char * const s_apszAccess[] = { "none", "read", "write" };
-        Assert(fAccess > 0 && fAccess < RT_ELEMENTS(s_apszAccess));
-        const char *pszAccess = s_apszAccess[fAccess];
-        LogFlowFunc(("uDevId=%#x cIovas=%zu szAccess=%s\n", uDevId, cIovas, pszAccess));
-#endif
+        uint8_t fPerm;
+        iommuAmdMemAccessGetPermAndOp(fFlags, &enmOp, &fPerm, &pThis->CTX_SUFF_Z(StatMemBulkRead),
+                                      &pThis->CTX_SUFF_Z(StatMemBulkWrite));
+        LogFlowFunc(("%s: uDevId=%#x cIovas=%zu\n", iommuAmdMemAccessGetPermName(fPerm), uDevId, cIovas));
 
         /** @todo IOMMU: IOTLB cache lookup. */
 
@@ -3266,12 +3282,12 @@ static DECLCALLBACK(int) iommuAmdDeviceMemBulkAccess(PPDMDEVINS pDevIns, uint16_
         for (size_t i = 0; i < cIovas; i++)
         {
             size_t cbContig;
-            int rc = iommuAmdDteLookup(pDevIns, uDevId, pauIovas[i], X86_PAGE_SIZE, fAccess, enmOp, &paGCPhysSpa[i], &cbContig);
+            int rc = iommuAmdDteLookup(pDevIns, uDevId, pauIovas[i], X86_PAGE_SIZE, fPerm, enmOp, &paGCPhysSpa[i], &cbContig);
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else
             {
-                LogFunc(("Failed! uDevId=%#x uIova=%#RX64 fAccess=%u rc=%Rrc\n", uDevId, pauIovas[i], fAccess, rc));
+                LogFunc(("Failed! uDevId=%#x uIova=%#RX64 fPerm=%u rc=%Rrc\n", uDevId, pauIovas[i], fPerm, rc));
                 return rc;
             }
             Assert(cbContig == X86_PAGE_SIZE);
@@ -3380,7 +3396,6 @@ static int iommuAmdIntrRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
 
                     pMsiOut->Data.n.u8Vector       = Irte.n.u8Vector;
                     pMsiOut->Data.n.u3DeliveryMode = Irte.n.u3IntrType;
-
                     return VINF_SUCCESS;
                 }
 
@@ -3596,7 +3611,7 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
  * @param   pMsiIn      The source MSI.
  * @param   pMsiOut     Where to store the remapped MSI.
  */
-static DECLCALLBACK(int) iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+static DECLCALLBACK(int) iommuAmdMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     /* Validate. */
     Assert(pDevIns);
@@ -5011,9 +5026,9 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMIOMMUREGR3 IommuReg;
     RT_ZERO(IommuReg);
     IommuReg.u32Version       = PDM_IOMMUREGCC_VERSION;
-    IommuReg.pfnMemAccess     = iommuAmdDeviceMemAccess;
-    IommuReg.pfnMemBulkAccess = iommuAmdDeviceMemBulkAccess;
-    IommuReg.pfnMsiRemap      = iommuAmdDeviceMsiRemap;
+    IommuReg.pfnMemAccess     = iommuAmdMemAccess;
+    IommuReg.pfnMemBulkAccess = iommuAmdMemBulkAccess;
+    IommuReg.pfnMsiRemap      = iommuAmdMsiRemap;
     IommuReg.u32TheEnd        = PDM_IOMMUREGCC_VERSION;
     int rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
     if (RT_FAILURE(rc))
@@ -5347,9 +5362,9 @@ static DECLCALLBACK(int) iommuAmdRZConstruct(PPDMDEVINS pDevIns)
     RT_ZERO(IommuReg);
     IommuReg.u32Version       = PDM_IOMMUREGCC_VERSION;
     IommuReg.idxIommu         = pThis->idxIommu;
-    IommuReg.pfnMemAccess     = iommuAmdDeviceMemAccess;
-    IommuReg.pfnMemBulkAccess = iommuAmdDeviceMemBulkAccess;
-    IommuReg.pfnMsiRemap      = iommuAmdDeviceMsiRemap;
+    IommuReg.pfnMemAccess     = iommuAmdMemAccess;
+    IommuReg.pfnMemBulkAccess = iommuAmdMemBulkAccess;
+    IommuReg.pfnMsiRemap      = iommuAmdMsiRemap;
     IommuReg.u32TheEnd        = PDM_IOMMUREGCC_VERSION;
     rc = PDMDevHlpIommuSetUpContext(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp));
     AssertRCReturn(rc, rc);
