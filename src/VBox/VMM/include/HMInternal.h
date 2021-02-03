@@ -490,8 +490,25 @@ typedef struct HM
         bool                        fSupported;
         /** Set when we've enabled VMX. */
         bool                        fEnabled;
-        /** Set if VPID is supported (ring-3 copy). */
-        bool                        fVpidForRing3;
+        /** The shift mask employed by the VMX-Preemption timer (set by ring-0). */
+        uint8_t                     cPreemptTimerShift;
+        bool                        afAlignment1[5];
+
+        /** Pause-loop exiting (PLE) gap in ticks. */
+        uint32_t                    cPleGapTicks;
+        /** Pause-loop exiting (PLE) window in ticks. */
+        uint32_t                    cPleWindowTicks;
+
+        /** Virtual address of the TSS page used for real mode emulation. */
+        R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
+        /** Virtual address of the identity page table used for real mode and protected
+         *  mode without paging emulation in EPT mode. */
+        R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
+
+        /** @name Configuration (gets copied if problematic)
+         * @{ */
+        /** Set if Last Branch Record (LBR) is enabled. */
+        bool                        fLbrCfg;
         /** Set if VT-x VPID is allowed. */
         bool                        fAllowVpid;
         /** Set if unrestricted guest execution is in use (real and protected mode
@@ -500,29 +517,25 @@ typedef struct HM
         /** Set if the preemption timer should be used if available.  Ring-0
          * quietly clears this if the hardware doesn't support the preemption timer. */
         bool                        fUsePreemptTimerCfg;
-        /** The shift mask employed by the VMX-Preemption timer (set by ring-0). */
-        uint8_t                     cPreemptTimerShift;
-        bool                        fAlignment1;
+        /** @} */
 
-        /** Pause-loop exiting (PLE) gap in ticks. */
-        uint32_t                    cPleGapTicks;
-        /** Pause-loop exiting (PLE) window in ticks. */
-        uint32_t                    cPleWindowTicks;
-
-        /** Host CR4 value (set by ring-0 VMX init, for logging). */
-        uint64_t                    u64HostCr4;
-        /** Host SMM monitor control (set by ring-0 VMX init, for logging). */
-        uint64_t                    u64HostSmmMonitorCtl;
-        /** Host EFER value (set by ring-0 VMX init, for logging and guest NX). */
-        uint64_t                    u64HostMsrEfer;
+        /** @name For ring-3 consumption
+         * @{ */
+        /** Set if VPID is supported (ring-3 copy). */
+        bool                        fVpidForRing3;
         /** Whether the CPU supports VMCS fields for swapping EFER (set by ring-0 VMX
          *  init, for logging). */
         bool                        fSupportsVmcsEferForRing3;
         /** Whether to use VMCS shadowing. */
         bool                        fUseVmcsShadowingForRing3;
-        /** Set if Last Branch Record (LBR) is enabled. */
-        bool                        fLbrCfg;
-        bool                        afAlignment2[5];
+        bool                        fAlignment2;
+
+        /** Host CR4 value (set by ring-0 VMX init, for logging). */
+        uint64_t                    u64HostCr4ForRing3;
+        /** Host SMM monitor control (set by ring-0 VMX init, for logging). */
+        uint64_t                    u64HostSmmMonitorCtlForRing3;
+        /** Host EFER value (set by ring-0 VMX init, for logging and guest NX). */
+        uint64_t                    u64HostMsrEferForRing3;
 
         /** The first valid host LBR branch-from-IP stack range. */
         uint32_t                    idLbrFromIpMsrFirstForRing3;
@@ -538,19 +551,14 @@ typedef struct HM
         RTHCPHYS                    HCPhysVmxEnableError;
         /** VMX MSR values (only for ring-3 consumption). */
         VMXMSRS                     MsrsForRing3;
+
         /** Tagged-TLB flush type (only for ring-3 consumption). */
         VMXTLBFLUSHTYPE             enmTlbFlushTypeForRing3;
         /** Flush type to use for INVEPT (only for ring-3 consumption). */
         VMXTLBFLUSHEPT              enmTlbFlushEptForRing3;
         /** Flush type to use for INVVPID (only for ring-3 consumption). */
         VMXTLBFLUSHVPID             enmTlbFlushVpidForRing3;
-        uint32_t                    u32Alignment2;
-
-        /** Virtual address of the TSS page used for real mode emulation. */
-        R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
-        /** Virtual address of the identity page table used for real mode and protected
-         *  mode without paging emulation in EPT mode. */
-        R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
+        /** @} */
     } vmx;
 
     struct
@@ -568,21 +576,23 @@ typedef struct HM
         bool                        fVGif;
         /** Whether to use LBR virtualization feature. */
         bool                        fLbrVirt;
-        uint8_t                     u8Alignment0[2];
-
-        /** HWCR MSR (for diagnostics). */
-        uint64_t                    u64MsrHwcr;
-
-        /** SVM revision. */
-        uint32_t                    u32Rev;
-        /** SVM feature bits from cpuid 0x8000000a, ring-3 copy. */
-        uint32_t                    fFeaturesForRing3;
+        bool                        afAlignment1[2];
 
         /** Pause filter counter. */
         uint16_t                    cPauseFilter;
         /** Pause filter treshold in ticks. */
         uint16_t                    cPauseFilterThresholdTicks;
-        uint32_t                    u32Alignment0;
+        uint32_t                    u32Alignment2;
+
+        /** @name For ring-3 consumption
+         * @{ */
+        /** SVM revision. */
+        uint32_t                    u32Rev;
+        /** SVM feature bits from cpuid 0x8000000a, ring-3 copy. */
+        uint32_t                    fFeaturesForRing3;
+        /** HWCR MSR (for diagnostics). */
+        uint64_t                    u64MsrHwcr;
+        /** @} */
     } svm;
 
     /** AVL tree with all patches (active or disabled) sorted by guest instruction address.

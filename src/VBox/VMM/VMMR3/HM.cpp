@@ -1505,9 +1505,9 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
 
     LogRel(("HM: Using VT-x implementation 3.0\n"));
     LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoopsCfg));
-    LogRel(("HM: Host CR4                          = %#RX64\n", pVM->hm.s.vmx.u64HostCr4));
-    LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.vmx.u64HostMsrEfer));
-    LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.vmx.u64HostSmmMonitorCtl));
+    LogRel(("HM: Host CR4                          = %#RX64\n", pVM->hm.s.vmx.u64HostCr4ForRing3));
+    LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.vmx.u64HostMsrEferForRing3));
+    LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.vmx.u64HostSmmMonitorCtlForRing3));
 
     hmR3VmxReportFeatCtlMsr(pVM->hm.s.vmx.MsrsForRing3.u64FeatCtrl);
     hmR3VmxReportBasicMsr(pVM->hm.s.vmx.MsrsForRing3.u64Basic);

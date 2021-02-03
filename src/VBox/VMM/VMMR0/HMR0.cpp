@@ -1171,12 +1171,12 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
     Assert(!(pVM->hm.s.vmx.fSupported && pVM->hm.s.svm.fSupported));
     if (pVM->hm.s.vmx.fSupported)
     {
-        pVM->hmr0.s.vmx.fUsePreemptTimer    = pVM->hm.s.vmx.fUsePreemptTimerCfg && g_fHmVmxUsePreemptTimer;
-        pVM->hm.s.vmx.fUsePreemptTimerCfg   = pVM->hmr0.s.vmx.fUsePreemptTimer;
-        pVM->hm.s.vmx.cPreemptTimerShift    = g_cHmVmxPreemptTimerShift;
-        pVM->hm.s.vmx.u64HostCr4            = g_uHmVmxHostCr4;
-        pVM->hm.s.vmx.u64HostMsrEfer        = g_uHmVmxHostMsrEfer;
-        pVM->hm.s.vmx.u64HostSmmMonitorCtl  = g_uHmVmxHostSmmMonitorCtl;
+        pVM->hmr0.s.vmx.fUsePreemptTimer            = pVM->hm.s.vmx.fUsePreemptTimerCfg && g_fHmVmxUsePreemptTimer;
+        pVM->hm.s.vmx.fUsePreemptTimerCfg           = pVM->hmr0.s.vmx.fUsePreemptTimer;
+        pVM->hm.s.vmx.cPreemptTimerShift            = g_cHmVmxPreemptTimerShift;
+        pVM->hm.s.vmx.u64HostCr4ForRing3            = g_uHmVmxHostCr4;
+        pVM->hm.s.vmx.u64HostMsrEferForRing3        = g_uHmVmxHostMsrEfer;
+        pVM->hm.s.vmx.u64HostSmmMonitorCtlForRing3  = g_uHmVmxHostSmmMonitorCtl;
         HMGetVmxMsrsFromHwvirtMsrs(&g_HmMsrs, &pVM->hm.s.vmx.MsrsForRing3);
         /* If you need to tweak host MSRs for testing VMX R0 code, do it here. */
 
