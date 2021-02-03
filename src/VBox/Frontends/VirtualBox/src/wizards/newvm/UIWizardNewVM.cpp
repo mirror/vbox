@@ -23,7 +23,6 @@
 #include "UICommon.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic1.h"
-#include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVMPageBasic4.h"
 #include "UIWizardNewVMPageBasic5.h"
@@ -81,7 +80,6 @@ void UIWizardNewVM::prepare()
         case WizardMode_Basic:
         {
             setPage(Page1, new UIWizardNewVMPageBasic1(m_strGroup));
-            setPage(Page2, new UIWizardNewVMPageBasic2);
             setPage(Page3, new UIWizardNewVMPageBasic3);
             setPage(Page4, new UIWizardNewVMPageBasic4);
             setPage(Page5, new UIWizardNewVMPageBasic5);
@@ -429,7 +427,7 @@ void UIWizardNewVM::sltHandleWizardCancel()
 
 void UIWizardNewVM::sltHandleDetectedOSTypeChange()
 {
-    UIWizardNewVMPageBasic2 *pPage = qobject_cast<UIWizardNewVMPageBasic2*>(page(Page1));
+    UIWizardNewVMPageBasic1 *pPage = qobject_cast<UIWizardNewVMPageBasic1*>(page(Page1));
     if (!pPage)
         return;
     pPage->setTypeByISODetectedOSType(getStringFieldValue("detectedOSTypeId"));

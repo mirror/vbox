@@ -86,6 +86,25 @@ protected:
     /** @} */
 
 
+
+    QString ISOFilePath() const;
+    bool isUnattendedEnabled() const;
+    const QString &detectedOSTypeId() const;
+    bool determineOSType(const QString &strISOPath);
+    bool isISOFileSelectorComplete() const;
+    void setTypeByISODetectedOSType(const QString &strDetectedOSType);
+    /** Return false if ISO path is not empty but points to an missing or unreadable file. */
+    bool checkISOFile() const;
+
+    /** @name Widgets
+      * @{ */
+        mutable UIFilePathSelector *m_pISOFilePathSelector;
+        QIRichTextLabel *m_pUnattendedLabel;
+    /** @} */
+
+    QString m_strDetectedOSTypeId;
+    QLabel *m_pISOPathSelectorLabel;
+
 private:
 
     /** Full path (including the file name) of the machine's configuration file. */
@@ -114,12 +133,17 @@ class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
     Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
     Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
     Q_PROPERTY(QString guestOSFamiyId READ guestOSFamiyId);
+    Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
+    Q_PROPERTY(bool isUnattendedEnabled READ isUnattendedEnabled);
+    Q_PROPERTY(QString detectedOSTypeId READ detectedOSTypeId);
+
 
 public:
 
     /** Constructor. */
     UIWizardNewVMPageBasic1(const QString &strGroup);
     virtual bool isComplete() const; /* override */
+    virtual int nextId() const /* override */;
 
 protected:
 
@@ -132,6 +156,7 @@ private slots:
     void sltNameChanged(const QString &strNewText);
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
+    void sltISOPathChanged(const QString &strPath);
 
 private:
 

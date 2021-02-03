@@ -181,6 +181,9 @@ static const osTypePattern gs_OSTypePattern[] =
 UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
     : m_pNameAndSystemEditor(0)
     , m_pNameOSTypeLabel(0)
+    , m_pISOFilePathSelector(0)
+    , m_pUnattendedLabel(0)
+    , m_pISOPathSelectorLabel(0)
     , m_strGroup(strGroup)
 {
     CHost host = uiCommon().host();
@@ -350,10 +353,71 @@ void UIWizardNewVMPage1::markWidgets() const
 {
     if (m_pNameAndSystemEditor)
         m_pNameAndSystemEditor->markNameLineEdit(m_pNameAndSystemEditor->name().isEmpty());
+    if (m_pISOFilePathSelector)
+        m_pISOFilePathSelector->mark(!checkISOFile());
 }
 
 void UIWizardNewVMPage1::retranslateWidgets()
 {
+}
+
+QString UIWizardNewVMPage1::ISOFilePath() const
+{
+    if (!m_pISOFilePathSelector)
+        return QString();
+    return m_pISOFilePathSelector->path();
+}
+
+bool UIWizardNewVMPage1::isUnattendedEnabled() const
+{
+    if (!m_pISOFilePathSelector)
+        return false;
+    const QString &strPath = m_pISOFilePathSelector->path();
+    if (strPath.isNull() || strPath.isEmpty())
+        return false;
+    return true;
+}
+
+const QString &UIWizardNewVMPage1::detectedOSTypeId() const
+{
+    return m_strDetectedOSTypeId;
+}
+
+bool UIWizardNewVMPage1::determineOSType(const QString &strISOPath)
+{
+    QFileInfo isoFileInfo(strISOPath);
+    if (!isoFileInfo.exists())
+    {
+        m_strDetectedOSTypeId.clear();
+        return false;
+    }
+
+    CUnattended comUnatteded = uiCommon().virtualBox().CreateUnattendedInstaller();
+    comUnatteded.SetIsoPath(strISOPath);
+    comUnatteded.DetectIsoOS();
+
+    m_strDetectedOSTypeId = comUnatteded.GetDetectedOSTypeId();
+    return true;
+}
+
+bool UIWizardNewVMPage1::checkISOFile() const
+{
+    if (!m_pISOFilePathSelector)
+        return true;
+    const QString &strPath = m_pISOFilePathSelector->path();
+    if (strPath.isNull() || strPath.isEmpty())
+        return true;
+    QFileInfo fileInfo(strPath);
+    if (!fileInfo.exists() || !fileInfo.isReadable())
+        return false;
+    return true;
+}
+
+void UIWizardNewVMPage1::setTypeByISODetectedOSType(const QString &strDetectedOSType)
+{
+    Q_UNUSED(strDetectedOSType);
+    // if (!strDetectedOSType.isEmpty())
+    //     onNameChanged(strDetectedOSType);
 }
 
 UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
@@ -366,7 +430,32 @@ void UIWizardNewVMPageBasic1::prepare()
 {
     QVBoxLayout *pPageLayout = new QVBoxLayout(this);
     pPageLayout->addWidget(createNameOSTypeWidgets(/* fCreateLabels */ true));
+
+    m_pUnattendedLabel = new QIRichTextLabel;
+    if (m_pUnattendedLabel)
+        pPageLayout->addWidget(m_pUnattendedLabel);
+
+    QHBoxLayout *pISOSelectorLayout = new QHBoxLayout;
+
+    m_pISOPathSelectorLabel = new QLabel;
+    pISOSelectorLayout->addWidget(m_pISOPathSelectorLabel);
+    m_pISOPathSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+
+    m_pISOFilePathSelector = new UIFilePathSelector;
+    if (m_pISOFilePathSelector)
+    {
+        m_pISOFilePathSelector->setResetEnabled(false);
+        m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+        m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+        m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        pISOSelectorLayout->addWidget(m_pISOFilePathSelector);
+    }
+
+    pPageLayout->addLayout(pISOSelectorLayout);
     pPageLayout->addStretch();
+
+
+
 
     createConnections();
     /* Register fields: */
@@ -377,13 +466,22 @@ void UIWizardNewVMPageBasic1::prepare()
     registerField("machineBaseName", this, "machineBaseName");
     registerField("guestOSFamiyId", this, "guestOSFamiyId");
     registerField("startHeadless", this, "startHeadless");
+    registerField("ISOFilePath", this, "ISOFilePath");
+    registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
+    registerField("detectedOSTypeId", this, "detectedOSTypeId");
 }
 
 void UIWizardNewVMPageBasic1::createConnections()
 {
-    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasic1::sltNameChanged);
-    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasic1::sltPathChanged);
-    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasic1::sltOsTypeChanged);
+    if (m_pNameAndSystemEditor)
+    {
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasic1::sltNameChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasic1::sltPathChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasic1::sltOsTypeChanged);
+    }
+    if (m_pISOFilePathSelector)
+        connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasic1::sltISOPathChanged);
+
 }
 
 bool UIWizardNewVMPageBasic1::isComplete() const
@@ -391,7 +489,14 @@ bool UIWizardNewVMPageBasic1::isComplete() const
     markWidgets();
     if (m_pNameAndSystemEditor->name().isEmpty())
         return false;
-    return true;
+    return checkISOFile();
+}
+
+int UIWizardNewVMPageBasic1::nextId() const
+{
+    if (isUnattendedEnabled())
+        return UIWizardNewVM::Page3;
+    return UIWizardNewVM::Page4;
 }
 
 void UIWizardNewVMPageBasic1::sltNameChanged(const QString &strNewName)
@@ -418,21 +523,21 @@ void UIWizardNewVMPageBasic1::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardNewVM::tr("Virtual machine name and operating system"));
 
+    if (m_pUnattendedLabel)
+        m_pUnattendedLabel->setText(UIWizardNewVM::tr("Please decide whether you want to start an unattended guest OS install "
+                                             "in which case you will have to select a valid installation medium. If not, "
+                                             "your virtual disk will have an empty virtual hard disk after vm creation."));
+
     if (m_pNameOSTypeLabel)
         m_pNameOSTypeLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine "
                                              "and select the type of operating system you intend to install on it. "
                                              "The name you choose will be used throughout VirtualBox "
                                              "to identify this machine."));
+    if (m_pISOPathSelectorLabel)
+        m_pISOPathSelectorLabel->setText(UIWizardNewVM::tr("Installation ISO:"));
 
-    // if (   m_pNameAndSystemEditor
-    //        && m_pSystemTypeEditor
-    //        && m_pISOSelectorLabel)
-    // {
-    //     int iMinWidthHint = 0;
-    //     iMinWidthHint = qMax(iMinWidthHint, m_pISOSelectorLabel->minimumSizeHint().width());
-    //     m_pNameAndSystemEditor->setMinimumLayoutIndent(iMinWidthHint);
-    //     m_pSystemTypeEditor->setMinimumLayoutIndent(iMinWidthHint);
-    // }
+    if (m_pNameAndSystemEditor && m_pISOPathSelectorLabel)
+        m_pNameAndSystemEditor->setMinimumLayoutIndent(m_pISOPathSelectorLabel->width());
 }
 
 void UIWizardNewVMPageBasic1::initializePage()
@@ -455,4 +560,12 @@ bool UIWizardNewVMPageBasic1::validatePage()
 {
     /* Try to create machine folder: */
     return createMachineFolder();
+}
+
+void UIWizardNewVMPageBasic1::sltISOPathChanged(const QString &strPath)
+{
+    determineOSType(strPath);
+    setTypeByISODetectedOSType(m_strDetectedOSTypeId);
+
+    emit completeChanged();
 }

@@ -182,7 +182,6 @@ void UIWizardNewVMPageExpert::sltOSFamilyTypeChanged()
 void UIWizardNewVMPageExpert::retranslateUi()
 {
     UIWizardNewVMPage1::retranslateWidgets();
-    UIWizardNewVMPage2::retranslateWidgets();
     UIWizardNewVMPage3::retranslateWidgets();
     UIWizardNewVMPage4::retranslateWidgets();
     UIWizardNewVMPage5::retranslateWidgets();
@@ -305,7 +304,6 @@ void UIWizardNewVMPageExpert::cleanupPage()
 void UIWizardNewVMPageExpert::markWidgets() const
 {
     UIWizardNewVMPage1::markWidgets();
-    UIWizardNewVMPage2::markWidgets();
     UIWizardNewVMPage3::markWidgets();
 }
 
