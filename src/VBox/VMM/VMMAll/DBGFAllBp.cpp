@@ -31,9 +31,7 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
-# include "DBGFInline.h"
-#endif
+#include "DBGFInline.h"
 
 
 #ifdef IN_RC
@@ -41,11 +39,6 @@
 #endif
 
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
 /**
  * Returns the internal breakpoint state for the given handle.
  *
@@ -55,11 +48,11 @@
  * @param   ppBpR0              Where to store the pointer to the ring-0 only part of the breakpoint
  *                              on success, optional.
  */
-# ifdef IN_RING0
+#ifdef IN_RING0
 DECLINLINE(PDBGFBPINT) dbgfBpGetByHnd(PVMCC pVM, DBGFBP hBp, PDBGFBPINTR0 *ppBpR0)
-# else
+#else
 DECLINLINE(PDBGFBPINT) dbgfBpGetByHnd(PVMCC pVM, DBGFBP hBp)
-# endif
+#endif
 {
     uint32_t idChunk  = DBGF_BP_HND_GET_CHUNK_ID(hBp);
     uint32_t idxEntry = DBGF_BP_HND_GET_ENTRY(hBp);
@@ -67,22 +60,24 @@ DECLINLINE(PDBGFBPINT) dbgfBpGetByHnd(PVMCC pVM, DBGFBP hBp)
     AssertReturn(idChunk < DBGF_BP_CHUNK_COUNT, NULL);
     AssertReturn(idxEntry < DBGF_BP_COUNT_PER_CHUNK, NULL);
 
-# ifdef IN_RING0
+#ifdef IN_RING0
     PDBGFBPCHUNKR0 pBpChunk = &pVM->dbgfr0.s.aBpChunks[idChunk];
     AssertPtrReturn(pBpChunk->CTX_SUFF(paBpBaseShared), NULL);
 
     if (ppBpR0)
         *ppBpR0 = &pBpChunk->paBpBaseR0Only[idxEntry];
     return &pBpChunk->CTX_SUFF(paBpBaseShared)[idxEntry];
-# elif defined(IN_RING3)
+
+#elif defined(IN_RING3)
     PUVM pUVM = pVM->pUVM;
     PDBGFBPCHUNKR3 pBpChunk = &pUVM->dbgf.s.aBpChunks[idChunk];
     AssertPtrReturn(pBpChunk->CTX_SUFF(pBpBase), NULL);
 
     return &pBpChunk->CTX_SUFF(pBpBase)[idxEntry];
-# else
-#  error "Unsupported host context"
-# endif
+
+#else
+# error "Unsupported context"
+#endif
 }
 
 
@@ -103,23 +98,23 @@ DECLINLINE(PCDBGFBPL2ENTRY) dbgfBpL2GetByIdx(PVMCC pVM, uint32_t idxL2)
     AssertReturn(idChunk < DBGF_BP_L2_TBL_CHUNK_COUNT, NULL);
     AssertReturn(idxEntry < DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK, NULL);
 
-# ifdef IN_RING0
+#ifdef IN_RING0
     PDBGFBPL2TBLCHUNKR0 pL2Chunk = &pVM->dbgfr0.s.aBpL2TblChunks[idChunk];
     AssertPtrReturn(pL2Chunk->CTX_SUFF(paBpL2TblBaseShared), NULL);
 
     return &pL2Chunk->CTX_SUFF(paBpL2TblBaseShared)[idxEntry];
-# elif defined(IN_RING3)
+#elif defined(IN_RING3)
     PUVM pUVM = pVM->pUVM;
     PDBGFBPL2TBLCHUNKR3 pL2Chunk = &pUVM->dbgf.s.aBpL2TblChunks[idChunk];
     AssertPtrReturn(pL2Chunk->pbmAlloc, NULL);
     AssertReturn(ASMBitTest(pL2Chunk->pbmAlloc, idxEntry), NULL);
 
     return &pL2Chunk->CTX_SUFF(pL2Base)[idxEntry];
-# endif
+#endif
 }
 
 
-# ifdef IN_RING0
+#ifdef IN_RING0
 /**
  * Returns the internal breakpoint owner state for the given handle.
  *
@@ -139,7 +134,7 @@ DECLINLINE(PCDBGFBPOWNERINTR0) dbgfR0BpOwnerGetByHnd(PVMCC pVM, DBGFBPOWNER hBpO
 
     return pBpOwnerR0;
 }
-# endif
+#endif
 
 
 /**
@@ -153,13 +148,11 @@ DECLINLINE(PCDBGFBPOWNERINTR0) dbgfR0BpOwnerGetByHnd(PVMCC pVM, DBGFBPOWNER hBpO
  * @param   pBp         The shared breakpoint state.
  * @param   pBpR0       The ring-0 only breakpoint state.
  */
-# ifdef IN_RING0
-DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
-                          DBGFBP hBp, PDBGFBPINT pBp, PDBGFBPINTR0 pBpR0)
-# else
-DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
-                          DBGFBP hBp, PDBGFBPINT pBp)
-# endif
+#ifdef IN_RING0
+DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, DBGFBP hBp, PDBGFBPINT pBp, PDBGFBPINTR0 pBpR0)
+#else
+DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, DBGFBP hBp, PDBGFBPINT pBp)
+#endif
 {
     uint64_t cHits = ASMAtomicIncU64(&pBp->Pub.cHits); RT_NOREF(cHits);
 
@@ -168,7 +161,7 @@ DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
              hBp, pRegFrame->cs.Sel, pRegFrame->rip, cHits));
 
     int rc = VINF_EM_DBG_BREAKPOINT;
-# ifdef IN_RING0
+#ifdef IN_RING0
     PCDBGFBPOWNERINTR0 pBpOwnerR0 = dbgfR0BpOwnerGetByHnd(pVM,
                                                             pBpR0->fInUse
                                                           ? pBpR0->hOwner
@@ -207,11 +200,11 @@ DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
         pVCpu->dbgf.s.fBpInvokeOwnerCallback = true; /* Need to check this for ring-3 only owners. */
         pVCpu->dbgf.s.hBpActive              = hBp;
     }
-# else
+#else
     RT_NOREF(pVM);
     pVCpu->dbgf.s.fBpInvokeOwnerCallback = true;
     pVCpu->dbgf.s.hBpActive = hBp;
-# endif
+#endif
 
     return rc;
 }
@@ -248,19 +241,19 @@ static int dbgfBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
             DBGFBP hBp = DBGF_BP_L2_ENTRY_GET_BP_HND(L2Entry.u64GCPtrKeyAndBpHnd1, L2Entry.u64LeftRightIdxDepthBpHnd2);
 
             /* Query the internal breakpoint state from the handle. */
-# ifdef IN_RING0
+#ifdef IN_RING3
+            PDBGFBPINT   pBp = dbgfBpGetByHnd(pVM, hBp);
+#else
             PDBGFBPINTR0 pBpR0 = NULL;
-            PDBGFBPINT pBp = dbgfBpGetByHnd(pVM, hBp, &pBpR0);
-# else
-            PDBGFBPINT pBp = dbgfBpGetByHnd(pVM, hBp);
-# endif
+            PDBGFBPINT   pBp = dbgfBpGetByHnd(pVM, hBp, &pBpR0);
+#endif
             if (   pBp
                 && DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3)
-                return dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp
-# ifdef IN_RING0
-                                 , pBpR0
-# endif
-                                 );
+#ifdef IN_RING3
+                return dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp);
+#else
+                return dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0);
+#endif
 
             /* The entry got corrupted, just abort. */
             return VERR_DBGF_BP_L2_LOOKUP_FAILED;
@@ -279,7 +272,6 @@ static int dbgfBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
 
     return VERR_DBGF_BP_L2_LOOKUP_FAILED;
 }
-#endif /* !VBOX_WITH_LOTS_OF_DBGF_BPS */
 
 
 /**
@@ -308,19 +300,6 @@ VMM_INT_DECL(int) DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         && pVM->dbgf.s.cEnabledHwBreakpoints > 0)
     {
         for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints); iBp++)
-        {
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-            if (    ((uint32_t)uDr6 & RT_BIT_32(iBp))
-                &&  pVM->dbgf.s.aHwBreakpoints[iBp].enmType == DBGFBPTYPE_REG)
-            {
-                pVCpu->dbgf.s.iActiveBp = pVM->dbgf.s.aHwBreakpoints[iBp].iBp;
-                pVCpu->dbgf.s.fSingleSteppingRaw = false;
-                LogFlow(("DBGFRZTrap03Handler: hit hw breakpoint %d at %04x:%RGv\n",
-                         pVM->dbgf.s.aHwBreakpoints[iBp].iBp, pRegFrame->cs.Sel, pRegFrame->rip));
-
-                return VINF_EM_DBG_BREAKPOINT;
-            }
-#else
             if (    ((uint32_t)uDr6 & RT_BIT_32(iBp))
                 &&  pVM->dbgf.s.aHwBreakpoints[iBp].hBp != NIL_DBGFBP)
             {
@@ -331,16 +310,14 @@ VMM_INT_DECL(int) DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
 
                 return VINF_EM_DBG_BREAKPOINT;
             }
-#endif
-        }
     }
 
     /*
      * Single step?
      * Are we single stepping or is it the guest?
      */
-    if (    (uDr6 & X86_DR6_BS)
-        &&  (pVCpu->dbgf.s.fSingleSteppingRaw || fAltStepping))
+    if (   (uDr6 & X86_DR6_BS)
+        && (pVCpu->dbgf.s.fSingleSteppingRaw || fAltStepping))
     {
         pVCpu->dbgf.s.fSingleSteppingRaw = false;
         LogFlow(("DBGFRZTrap01Handler: single step at %04x:%RGv\n", pRegFrame->cs.Sel, pRegFrame->rip));
@@ -365,46 +342,14 @@ VMM_INT_DECL(int) DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  */
 VMM_INT_DECL(int) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame)
 {
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-    /*
-     * Get the trap address and look it up in the breakpoint table.
-     * Don't bother if we don't have any breakpoints.
-     */
-    unsigned cToSearch = pVM->dbgf.s.Int3.cToSearch;
-    if (cToSearch > 0)
-    {
-        RTGCPTR pPc;
-        int rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss.Sel, pRegFrame->cs.Sel, &pRegFrame->cs,
-                                              pRegFrame->rip /* no -1 in R0 */,
-                                              &pPc);
-        AssertRCReturn(rc, rc);
-
-        unsigned iBp = pVM->dbgf.s.Int3.iStartSearch;
-        while (cToSearch-- > 0)
-        {
-            if (   pVM->dbgf.s.aBreakpoints[iBp].u.GCPtr == (RTGCUINTPTR)pPc
-                && pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_INT3)
-            {
-                pVM->dbgf.s.aBreakpoints[iBp].cHits++;
-                pVCpu->dbgf.s.iActiveBp = pVM->dbgf.s.aBreakpoints[iBp].iBp;
-
-                LogFlow(("DBGFRZTrap03Handler: hit breakpoint %d at %RGv (%04x:%RGv) cHits=0x%RX64\n",
-                         pVM->dbgf.s.aBreakpoints[iBp].iBp, pPc, pRegFrame->cs.Sel, pRegFrame->rip,
-                         pVM->dbgf.s.aBreakpoints[iBp].cHits));
-                return VINF_EM_DBG_BREAKPOINT;
-            }
-            iBp++;
-        }
-    }
-#else
-# if defined(IN_RING0)
+#if defined(IN_RING0)
     uint32_t volatile *paBpLocL1 = pVM->dbgfr0.s.CTX_SUFF(paBpLocL1);
-# elif defined(IN_RING3)
+#elif defined(IN_RING3)
     PUVM pUVM = pVM->pUVM;
     uint32_t volatile *paBpLocL1 = pUVM->dbgf.s.CTX_SUFF(paBpLocL1);
-# else
-#  error "Unsupported host context"
-# endif
+#else
+# error "Unsupported host context"
+#endif
     if (paBpLocL1)
     {
         RTGCPTR GCPtrBp;
@@ -426,23 +371,21 @@ VMM_INT_DECL(int) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pReg
                 DBGFBP hBp = DBGF_BP_INT3_L1_ENTRY_GET_BP_HND(u32L1Entry);
 
                 /* Query the internal breakpoint state from the handle. */
-#ifdef IN_RING0
+#ifdef IN_RING3
+                PDBGFBPINT   pBp = dbgfBpGetByHnd(pVM, hBp);
+#else
                 PDBGFBPINTR0 pBpR0 = NULL;
+                PDBGFBPINT   pBp = dbgfBpGetByHnd(pVM, hBp, &pBpR0);
 #endif
-                PDBGFBPINT pBp = dbgfBpGetByHnd(pVM, hBp
-#ifdef IN_RING0
-                                                , &pBpR0
-#endif
-                                                );
                 if (   pBp
                     && DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3)
                 {
                     if (pBp->Pub.u.Int3.GCPtr == (RTGCUINTPTR)GCPtrBp)
-                        rc = dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp
-#ifdef IN_RING0
-                                       , pBpR0
+#ifdef IN_RING3
+                        rc = dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp);
+#else
+                        rc = dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0);
 #endif
-                                       );
                     /* else: Genuine guest trap. */
                 }
                 else /* Invalid breakpoint handle or not an int3 breakpoint. */
@@ -458,7 +401,6 @@ VMM_INT_DECL(int) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pReg
 
         return rc;
     }
-#endif /* !VBOX_WITH_LOTS_OF_DBGF_BPS */
 
     return VINF_EM_RAW_GUEST_TRAP;
 }

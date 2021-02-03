@@ -54,7 +54,6 @@
 #define DBGF_TRACER_EVT_SZ               (DBGF_TRACER_EVT_HDR_SZ + DBGF_TRACER_EVT_PAYLOAD_SZ)
 
 
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
 /** @name Global breakpoint table handling defines.
  * @{ */
 /** Maximum number of breakpoint owners supported (power of two). */
@@ -80,7 +79,6 @@
 /** Number of chunks required tp support all L2 lookup table entries. */
 #define DBGF_BP_L2_TBL_CHUNK_COUNT          (DBGF_BP_L2_TBL_ENTRY_COUNT_MAX / DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK)
 /** @} */
-#endif
 
 
 /*******************************************************************************
@@ -774,23 +772,6 @@ typedef struct DBGFOS *PDBGFOS;
 typedef struct DBGFOS const *PCDBGFOS;
 
 
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-/**
- * Breakpoint search optimization.
- */
-typedef struct DBGFBPSEARCHOPT
-{
-    /** Where to start searching for hits.
-     * (First enabled is #DBGF::aBreakpoints[iStartSearch]). */
-    uint32_t volatile       iStartSearch;
-    /** The number of aBreakpoints entries to search.
-     * (Last enabled is #DBGF::aBreakpoints[iStartSearch + cToSearch - 1])  */
-    uint32_t volatile       cToSearch;
-} DBGFBPSEARCHOPT;
-/** Pointer to a breakpoint search optimziation structure. */
-typedef DBGFBPSEARCHOPT *PDBGFBPSEARCHOPT;
-#else
-
 /** An invalid breakpoint chunk ID. */
 #define DBGF_BP_CHUNK_ID_INVALID                    UINT32_MAX
 /** Generates a unique breakpoint handle from the given chunk ID and entry inside the chunk. */
@@ -1086,7 +1067,6 @@ typedef struct DBGFBPL2TBLCHUNKR0
 } DBGFBPL2TBLCHUNKR0;
 /** Pointer to a breakpoint L2 lookup table chunk - Ring-0 Ptr. */
 typedef R0PTRTYPE(DBGFBPL2TBLCHUNKR0 *) PDBGFBPL2TBLCHUNKR0;
-#endif
 
 
 
@@ -1116,16 +1096,9 @@ typedef struct DBGF
     uint8_t                     cEnabledHwBreakpoints;
     /** The number of enabled hardware I/O breakpoints. */
     uint8_t                     cEnabledHwIoBreakpoints;
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
+    uint8_t                     au8Alignment1[2]; /**< Alignment padding. */
     /** The number of enabled INT3 breakpoints. */
-    uint8_t                     cEnabledInt3Breakpoints;
-    uint8_t                     abPadding; /**< Unused padding space up for grabs. */
-    uint32_t                    uPadding;
-#else
-    uint16_t                    u16Pad; /**< Unused padding space up for grabs. */
-    /** The number of enabled INT3 breakpoints. */
-    volatile uint32_t           cEnabledInt3Breakpoints;
-#endif
+    uint32_t volatile           cEnabledInt3Breakpoints;
 
     /** Debugger Attached flag.
      * Set if a debugger is attached, elsewise it's clear.
@@ -1160,30 +1133,14 @@ typedef struct DBGF
 
     } SteppingFilter;
 
-    uint32_t                    u32Padding[2]; /**< Alignment padding. */
+    uint32_t                    au32Alignment2[2]; /**< Alignment padding. */
 
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-    /** Array of hardware breakpoints. (0..3)
-     * This is shared among all the CPUs because life is much simpler that way. */
-    DBGFBP                      aHwBreakpoints[4];
-    /** Array of int 3 and REM breakpoints. (4..)
-     * @remark This is currently a fixed size array for reasons of simplicity. */
-    DBGFBP                      aBreakpoints[32];
-
-    /** MMIO breakpoint search optimizations. */
-    DBGFBPSEARCHOPT             Mmio;
-    /** I/O port breakpoint search optimizations. */
-    DBGFBPSEARCHOPT             PortIo;
-    /** INT3 breakpoint search optimizations. */
-    DBGFBPSEARCHOPT             Int3;
-#else
     /** @name Breakpoint handling related state.
      * @{ */
     /** Array of hardware breakpoints (0..3).
      * This is shared among all the CPUs because life is much simpler that way. */
-    DBGFBPHW                        aHwBreakpoints[4];
+    DBGFBPHW                    aHwBreakpoints[4];
     /** @} */
-#endif
 
     /**
      * Bug check data.
@@ -1248,31 +1205,19 @@ typedef struct DBGFCPU
      * @see DBGFCPU_2_VM(). */
     uint32_t                offVM;
 
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-    /** Current active breakpoint (id).
-     * This is ~0U if not active. It is set when a execution engine
-     * encounters a breakpoint and returns VINF_EM_DBG_BREAKPOINT. This is
-     * currently not used for REM breakpoints because of the lazy coupling
-     * between VBox and REM.
-     *
-     * @todo drop this in favor of aEvents!  */
-    uint32_t                iActiveBp;
-#else
+    /** Flag whether the to invoke any owner handlers in ring-3 before dropping into the debugger. */
+    bool                    fBpInvokeOwnerCallback;
+    /** Set if we're singlestepping in raw mode.
+     * This is checked and cleared in the \#DB handler. */
+    bool                    fSingleSteppingRaw;
+    /** Alignment padding. */
+    bool                    afPadding[2];
     /** Current active breakpoint handle.
      * This is NIL_DBGFBP if not active. It is set when a execution engine
      * encounters a breakpoint and returns VINF_EM_DBG_BREAKPOINT.
      *
      * @todo drop this in favor of aEvents!  */
     DBGFBP                  hBpActive;
-    /** Flag whether the to invoke any owner handlers in ring-3 before dropping into the debugger. */
-    bool                    fBpInvokeOwnerCallback;
-#endif
-    /** Set if we're singlestepping in raw mode.
-     * This is checked and cleared in the \#DB handler. */
-    bool                    fSingleSteppingRaw;
-
-    /** Alignment padding. */
-    bool                    afPadding[3];
 
     /** The number of events on the stack (aEvents).
      * The pending event is the last one (aEvents[cEvents - 1]), but only when
@@ -1325,7 +1270,6 @@ typedef struct DBGFR0PERVM
     /** Pointer to the tracer instance if enabled. */
     R0PTRTYPE(struct DBGFTRACERINSR0 *) pTracerR0;
 
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
     /** @name Breakpoint handling related state, Ring-0 only part.
      * @{ */
     /** The breakpoint owner table memory object. */
@@ -1348,7 +1292,6 @@ typedef struct DBGFR0PERVM
     /** Flag whether the breakpoint manager was initialized (on demand). */
     bool                                fInit;
     /** @} */
-#endif
 } DBGFR0PERVM;
 
 /**
@@ -1423,7 +1366,6 @@ typedef struct DBGFUSERPERVM
     volatile uint32_t           idxDbgEvtRead;
     /** @} */
 
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
     /** @name Breakpoint handling related state.
      * @{ */
     /** Base pointer to the breakpoint owners table. */
@@ -1441,7 +1383,6 @@ typedef struct DBGFUSERPERVM
      * can still do read accesses without holding it while traversing the trees). */
     RTSEMFASTMUTEX                  hMtxBpL2Wr;
     /** @} */
-#endif
 
     /** The type database lock. */
     RTSEMRW                     hTypeDbLock;
@@ -1489,12 +1430,8 @@ typedef struct DBGFUSERPERVMCPU
 int  dbgfR3AsInit(PUVM pUVM);
 void dbgfR3AsTerm(PUVM pUVM);
 void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta);
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
 DECLHIDDEN(int) dbgfR3BpInit(PUVM pUVM);
 DECLHIDDEN(int) dbgfR3BpTerm(PUVM pUVM);
-#else
-int  dbgfR3BpInit(PVM pVM);
-#endif
 int  dbgfR3InfoInit(PUVM pUVM);
 int  dbgfR3InfoTerm(PUVM pUVM);
 int  dbgfR3OSInit(PUVM pUVM);

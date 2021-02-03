@@ -34,9 +34,6 @@ endif # VBOX_WITH_DEBUGGER
 #
 Debugger_TEMPLATE  = VBOXR3
 Debugger_DEFS      = IN_VMM_R3 IN_DBG_R3 IN_DIS
-ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
-Debugger_DEFS     += VBOX_WITH_LOTS_OF_DBGF_BPS
-endif
 ifneq ($(KBUILD_TYPE),release)
  Debugger_DEFS    += VBOX_WITH_DEBUGGER_TCP_BY_DEFAULT
 endif

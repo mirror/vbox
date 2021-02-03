@@ -2256,17 +2256,16 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
         {
             if (!pReqHdr || u64Arg)
                 return VERR_INVALID_PARAMETER;
-#if 0 /** @todo */
+# if 0 /** @todo */
             rc = DBGFR0TracerGenCallReqHandler(pGVM, (PDBGFTRACERGENCALLREQ)pReqHdr, idCpu);
-#else
+# else
             rc = VERR_NOT_IMPLEMENTED;
-#endif
+# endif
             VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
             break;
         }
 #endif
 
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
         case VMMR0_DO_DBGF_BP_INIT:
         {
             if (!pReqHdr || u64Arg || idCpu != 0)
@@ -2302,7 +2301,6 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
             VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
             break;
         }
-#endif
 
         /*
          * For profiling.
@@ -2406,12 +2404,9 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
             case VMMR0_DO_PDM_DEVICE_GEN_CALL:
             case VMMR0_DO_IOM_GROW_IO_PORTS:
             case VMMR0_DO_IOM_GROW_IO_PORT_STATS:
-
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
             case VMMR0_DO_DBGF_BP_INIT:
             case VMMR0_DO_DBGF_BP_CHUNK_ALLOC:
             case VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC:
-#endif
             {
                 PGVMCPU        pGVCpu        = &pGVM->aCpus[idCpu];
                 RTNATIVETHREAD hNativeThread = RTThreadNativeSelf();

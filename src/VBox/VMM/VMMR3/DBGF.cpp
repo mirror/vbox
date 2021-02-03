@@ -148,11 +148,7 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
                 rc = dbgfR3AsInit(pUVM);
                 if (RT_SUCCESS(rc))
                 {
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-                    rc = dbgfR3BpInit(pVM);
-#else
                     rc = dbgfR3BpInit(pUVM);
-#endif
                     if (RT_SUCCESS(rc))
                     {
                         rc = dbgfR3OSInit(pUVM);
@@ -177,9 +173,7 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
                             dbgfR3OSTermPart1(pUVM);
                             dbgfR3OSTermPart2(pUVM);
                         }
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
                         dbgfR3BpTerm(pUVM);
-#endif
                     }
                     dbgfR3AsTerm(pUVM);
                 }
@@ -209,9 +203,7 @@ VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
     dbgfR3OSTermPart1(pUVM);
     dbgfR3PlugInTerm(pUVM);
     dbgfR3OSTermPart2(pUVM);
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
     dbgfR3BpTerm(pUVM);
-#endif
     dbgfR3AsTerm(pUVM);
     dbgfR3RegTerm(pUVM);
     dbgfR3TraceTerm(pVM);
@@ -784,15 +776,6 @@ VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
      * Send the event and process the reply communication.
      */
     DBGFEVENT DbgEvent;
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-    RTUINT iBp = DbgEvent.u.Bp.hBp = pVCpu->dbgf.s.iActiveBp;
-    pVCpu->dbgf.s.iActiveBp = ~0U;
-    if (iBp != ~0U)
-    {
-        DbgEvent.enmCtx = DBGFEVENTCTX_RAW;
-        return dbgfR3SendEventWaitEx(pVM, pVCpu, enmEvent, DBGFEVENTCTX_RAW, &DbgEvent.u, sizeof(DbgEvent.u.Bp));
-    }
-#else
     DbgEvent.u.Bp.hBp = pVCpu->dbgf.s.hBpActive;
     pVCpu->dbgf.s.hBpActive = NIL_DBGFBP;
     if (DbgEvent.u.Bp.hBp != NIL_DBGFBP)
@@ -800,30 +783,8 @@ VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
         DbgEvent.enmCtx = DBGFEVENTCTX_RAW;
         return dbgfR3SendEventWaitEx(pVM, pVCpu, enmEvent, DBGFEVENTCTX_RAW, &DbgEvent.u, sizeof(DbgEvent.u.Bp));
     }
-#endif
 
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-    AssertFailed(); /** @todo this should be obsolete now...   */
-
-    /* REM breakpoints has be been searched for. */
-#if 0   /** @todo get flat PC api! */
-    uint32_t eip = CPUMGetGuestEIP(pVM);
-#else
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-    RTGCPTR  eip = pCtx->rip + pCtx->cs.u64Base;
-#endif
-    for (size_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); i++)
-        if (    pVM->dbgf.s.aBreakpoints[i].enmType == DBGFBPTYPE_REM
-            &&  pVM->dbgf.s.aBreakpoints[i].u.Rem.GCPtr == eip)
-        {
-            DbgEvent.u.Bp.hBp = pVM->dbgf.s.aBreakpoints[i].iBp;
-            break;
-        }
-    AssertMsg(DbgEvent.u.Bp.hBp != ~0U, ("eip=%08x\n", eip));
-    return dbgfR3SendEventWaitEx(pVM, pVCpu, enmEvent, DBGFEVENTCTX_REM, &DbgEvent.u, sizeof(DbgEvent.u.Bp));
-#else
     return VERR_DBGF_IPE_1;
-#endif
 }
 
 

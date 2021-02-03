@@ -76,7 +76,6 @@ typedef DBGFTRACERCREATEREQ *PDBGFTRACERCREATEREQ;
 
 VMMR0_INT_DECL(int) DBGFR0TracerCreateReqHandler(PGVM pGVM, PDBGFTRACERCREATEREQ pReq);
 
-#ifdef VBOX_WITH_LOTS_OF_DBGF_BPS
 /**
  * Request buffer for DBGFR0BpInitReqHandler / VMMR0_DO_DBGF_BP_INIT.
  * @see DBGFR0BpInitReqHandler.
@@ -146,7 +145,6 @@ typedef struct DBGFBPL2TBLCHUNKALLOCREQ
 typedef DBGFBPL2TBLCHUNKALLOCREQ *PDBGFBPL2TBLCHUNKALLOCREQ;
 
 VMMR0_INT_DECL(int) DBGFR0BpL2TblChunkAllocReqHandler(PGVM pGVM, PDBGFBPL2TBLCHUNKALLOCREQ pReq);
-#endif
 /** @} */
 
 
@@ -593,13 +591,8 @@ typedef struct DBGFEVENT
         /** Breakpoint. */
         struct DBGFEVENTBP
         {
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-            /** The identifier of the breakpoint which was hit. */
-            RTUINT                  hBp;
-#else
             /** The handle of the breakpoint which was hit. */
             DBGFBP                  hBp;
-#endif
         } Bp;
 
         /** Generic debug event. */
@@ -813,21 +806,12 @@ VMMR3DECL(int) DBGFR3InterruptSoftwareIsEnabled(PUVM pUVM, uint8_t iInterrupt);
 /** Breakpoint type. */
 typedef enum DBGFBPTYPE
 {
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-    /** Free breakpoint entry. */
-    DBGFBPTYPE_FREE = 0,
-#else
     /** Invalid breakpoint type. */
     DBGFBPTYPE_INVALID = 0,
-#endif
     /** Debug register. */
     DBGFBPTYPE_REG,
     /** INT 3 instruction. */
     DBGFBPTYPE_INT3,
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-    /** Recompiler. */
-    DBGFBPTYPE_REM,
-#endif
     /** Port I/O breakpoint. */
     DBGFBPTYPE_PORT_IO,
     /** Memory mapped I/O breakpoint. */
@@ -874,7 +858,6 @@ typedef enum DBGFBPTYPE
 #define DBGFBPIOACCESS_VALID_MASK_MMIO      UINT32_C(0x00001f1f)
 /** @} */
 
-#if defined(VBOX_WITH_LOTS_OF_DBGF_BPS) || defined(DOXYGEN_RUNNING)
 /**
  * The visible breakpoint state (read-only).
  */
@@ -959,12 +942,14 @@ typedef DBGFBPPUB *PDBGFBPPUB;
 /** Pointer to a const visible breakpoint state. */
 typedef const DBGFBPPUB *PCDBGFBPPUB;
 
-/** Sets the DBGFPUB::fFlagsAndType member. */
+/** Sets the DBGFPUB::fFlagsAndType member.
+ * @todo r=bird: Rename to DBGF_BP_PUB_MAKE_FLAGS_AND_TYPE, as this macro
+ *       isn't setting anything. */
 #define DBGF_BP_PUB_SET_FLAGS_AND_TYPE(a_enmType, a_fFlags) ((uint32_t)(a_enmType) | (a_fFlags))
 /** Returns the type of the DBGFPUB::fFlagsAndType member. */
-#define DBGF_BP_PUB_GET_TYPE(a_fFlagsAndType) ((DBGFBPTYPE)((a_fFlagsAndType) & (UINT32_C(0x7fffffff))))
+#define DBGF_BP_PUB_GET_TYPE(a_fFlagsAndType)               ((DBGFBPTYPE)((a_fFlagsAndType) & (UINT32_C(0x7fffffff))))
 /** Returns the enabled status of DBGFPUB::fFlagsAndType member. */
-#define DBGF_BP_PUB_IS_ENABLED(a_fFlagsAndType) RT_BOOL((DBGFBPTYPE)((a_fFlagsAndType) & DBGF_BP_F_ENABLED))
+#define DBGF_BP_PUB_IS_ENABLED(a_fFlagsAndType)             RT_BOOL((a_fFlagsAndType) & DBGF_BP_F_ENABLED)
 
 /** @name Possible DBGFBPPUB::fFlagsAndType flags.
  * @{ */
@@ -1064,129 +1049,6 @@ VMMR0_INT_DECL(int)  DBGFR0BpSetUpContext(PGVM pGVM, DBGFBP hBp, void *pvUser);
 VMMR0_INT_DECL(int)  DBGFR0BpDestroyContext(PGVM pGVM, DBGFBP hBp);
 /** @} */
 #endif /* IN_RING0 || DOXYGEN_RUNNING */
-
-#else /* !VBOX_WITH_LOTS_OF_DBGF_BPS */
-/**
- * A Breakpoint.
- */
-typedef struct DBGFBP
-{
-    /** The number of breakpoint hits. */
-    uint64_t        cHits;
-    /** The hit number which starts to trigger the breakpoint. */
-    uint64_t        iHitTrigger;
-    /** The hit number which stops triggering the breakpoint (disables it).
-     * Use ~(uint64_t)0 if it should never stop. */
-    uint64_t        iHitDisable;
-    /** The breakpoint id. */
-    uint16_t        iBp;
-    /** The breakpoint status - enabled or disabled. */
-    bool            fEnabled;
-    /** The breakpoint type. */
-    DBGFBPTYPE      enmType;
-
-    /** Union of type specific data. */
-    union
-    {
-        /** The flat GC address breakpoint address for REG, INT3 and REM breakpoints. */
-        RTGCUINTPTR         GCPtr;
-
-        /** Debug register data. */
-        struct DBGFBPREG
-        {
-            /** The flat GC address of the breakpoint. */
-            RTGCUINTPTR     GCPtr;
-            /** The debug register number. */
-            uint8_t         iReg;
-            /** The access type (one of the X86_DR7_RW_* value). */
-            uint8_t         fType;
-            /** The access size. */
-            uint8_t         cb;
-        } Reg;
-
-        /** INT3 breakpoint data. */
-        struct DBGFBPINT3
-        {
-            /** The flat GC address of the breakpoint. */
-            RTGCUINTPTR     GCPtr;
-            /** The physical address of the breakpoint. */
-            RTGCPHYS        PhysAddr;
-            /** The byte value we replaced by the INT 3 instruction. */
-            uint8_t         bOrg;
-        } Int3;
-
-        /** Recompiler breakpoint data. */
-        struct DBGFBPREM
-        {
-            /** The flat GC address of the breakpoint.
-             * (PC register value?) */
-            RTGCUINTPTR     GCPtr;
-        } Rem;
-
-        /** I/O port breakpoint data.   */
-        struct DBGFBPPORTIO
-        {
-            /** The first port. */
-            RTIOPORT        uPort;
-            /** The number of ports. */
-            RTIOPORT        cPorts;
-            /** Valid DBGFBPIOACCESS_XXX selection, max DWORD size. */
-            uint32_t        fAccess;
-        } PortIo;
-
-        /** Memory mapped I/O breakpoint data. */
-        struct DBGFBPMMIO
-        {
-            /** The first MMIO address. */
-            RTGCPHYS        PhysAddr;
-            /** The size of the MMIO range in bytes. */
-            uint32_t        cb;
-            /** Valid DBGFBPIOACCESS_XXX selection, max DWORD size. */
-            uint32_t        fAccess;
-        } Mmio;
-
-        /** Paddind to ensure that the size is identical on win32 and linux. */
-        uint64_t    u64Padding[3];
-    } u;
-} DBGFBP;
-AssertCompileMembersAtSameOffset(DBGFBP, u.GCPtr, DBGFBP, u.Reg.GCPtr);
-AssertCompileMembersAtSameOffset(DBGFBP, u.GCPtr, DBGFBP, u.Int3.GCPtr);
-AssertCompileMembersAtSameOffset(DBGFBP, u.GCPtr, DBGFBP, u.Rem.GCPtr);
-
-/** Pointer to a breakpoint. */
-typedef DBGFBP *PDBGFBP;
-/** Pointer to a const breakpoint. */
-typedef const DBGFBP *PCDBGFBP;
-
-# ifdef IN_RING3 /* The breakpoint management API is only available in ring-3. */
-VMMR3DECL(int)  DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idSrcCpu, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
-VMMR3DECL(int)  DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
-                               uint8_t fType, uint8_t cb, uint32_t *piBp);
-VMMR3DECL(int)  DBGFR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
-VMMR3DECL(int)  DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, uint32_t fAccess,
-                                  uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
-VMMR3DECL(int)  DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_t fAccess,
-                                uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
-VMMR3DECL(int)  DBGFR3BpClear(PUVM pUVM, uint32_t iBp);
-VMMR3DECL(int)  DBGFR3BpEnable(PUVM pUVM, uint32_t iBp);
-VMMR3DECL(int)  DBGFR3BpDisable(PUVM pUVM, uint32_t iBp);
-
-/**
- * Breakpoint enumeration callback function.
- *
- * @returns VBox status code.
- *          The enumeration stops on failure status and VINF_CALLBACK_RETURN.
- * @param   pUVM        The user mode VM handle.
- * @param   pvUser      The user argument.
- * @param   pBp         Pointer to the breakpoint information. (readonly)
- */
-typedef DECLCALLBACKTYPE(int, FNDBGFBPENUM,(PUVM pUVM, void *pvUser, PCDBGFBP pBp));
-/** Pointer to a breakpoint enumeration callback function. */
-typedef FNDBGFBPENUM *PFNDBGFBPENUM;
-
-VMMR3DECL(int)              DBGFR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void *pvUser);
-# endif /* IN_RING3 */
-#endif /* !VBOX_WITH_LOTS_OF_DBGF_BPS */
 
 VMM_INT_DECL(RTGCUINTREG)   DBGFBpGetDR7(PVM pVM);
 VMM_INT_DECL(RTGCUINTREG)   DBGFBpGetDR0(PVM pVM);

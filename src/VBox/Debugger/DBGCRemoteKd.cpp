@@ -1159,13 +1159,8 @@ typedef enum KDRECVSTATE
  */
 typedef struct KDCTXHWBP
 {
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-    /** The DBGF breakpoint handle if active, UINT32_MAX if not active. */
-    uint32_t                    hDbgfBp;
-#else
     /** The DBGF breakpoint handle if active, NIL_DBGFBP if not active. */
     DBGFBP                      hDbgfBp;
-#endif
     /** The linear address of the breakpoint if active. */
     RTGCPTR                     GCPtrBp;
     /** Access type of the breakpoint, see X86_DR7_RW_*. */
@@ -1244,15 +1239,10 @@ typedef PKDCTX *PPKDCTX;
 /** Returns the value of a possibly sign extended guest context pointer received for 32bit targets. */
 #define KD_PTR_GET(a_pThis, a_GCPtr) ((a_pThis)->f32Bit ? (a_GCPtr) & ~UINT64_C(0xffffffff00000000) : (a_GCPtr))
 
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
-# define NIL_DBGFBP              ((uint32_t)UINT32_MAX)
-#endif
-
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-
 static void dbgcKdCtxMsgSend(PKDCTX pThis, bool fWarning, const char *pszMsg);
 
 

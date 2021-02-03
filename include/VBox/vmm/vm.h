@@ -1394,15 +1394,9 @@ typedef struct VM
             uint8_t                     cEnabledHwBreakpoints;
             /** The number of enabled hardware I/O breakpoints. */
             uint8_t                     cEnabledHwIoBreakpoints;
-#ifndef VBOX_WITH_LOTS_OF_DBGF_BPS
+            uint8_t                     au8Alignment1[2]; /**< Alignment padding. */
             /** The number of enabled INT3 breakpoints. */
-            uint8_t                     cEnabledInt3Breakpoints;
-            uint8_t                     abPadding[1]; /**< Unused padding space up for grabs. */
-#else
-            uint16_t                    u16Pad; /**< Unused padding space up for grabs. */
-            /** The number of enabled INT3 breakpoints. */
-            volatile uint32_t           cEnabledInt3Breakpoints;
-#endif
+            uint32_t volatile           cEnabledInt3Breakpoints;
         } const     ro;
 #endif
         uint8_t     padding[2432];      /* multiple of 64 */
