@@ -172,6 +172,15 @@ public:
     virtual int run();
 
 private:
+    static void reportError(const char *a_pcszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+
+    static HRESULT reportComError(ComPtr<IUnknown> iface,
+                                  const com::Utf8Str &strContext,
+                                  HRESULT hrc);
+    static void reportErrorInfoList(const com::ErrorInfo &info,
+                                    const com::Utf8Str &strContext);
+    static void reportErrorInfo(const com::ErrorInfo &info);
+
     void createRawSock4();
     void createRawSock6();
 
@@ -307,15 +316,25 @@ int VBoxNetLwipNAT::parseOpt(int c, const RTGETOPTUNION &Value)
  */
 int VBoxNetLwipNAT::init()
 {
+    HRESULT hrc;
+    int rc;
+
     LogFlowFuncEnter();
 
     /* virtualbox initialized in the superclass */
-    int rc = ::VBoxNetBaseService::init();
-    AssertRCReturn(rc, rc);
+    rc = VBoxNetBaseService::init();
+    if (RT_FAILURE(rc))
+        return rc;
 
-    std::string networkName = getNetworkName();
-    rc = findNatNetwork(virtualbox, networkName, m_net);
-    AssertRCReturn(rc, rc);
+    const std::string &networkName = getNetworkName();
+    hrc = virtualbox->FindNATNetworkByName(com::Bstr(networkName.c_str()).raw(),
+                                           m_net.asOutParam());
+    if (FAILED(hrc))
+    {
+        reportComError(virtualbox, "FindNATNetworkByName", hrc);
+        return VERR_NOT_FOUND;
+    }
+
 
     {
         ComEventTypeArray eventTypes;
@@ -328,7 +347,7 @@ int VBoxNetLwipNAT::init()
 
     // resolver changes are reported on vbox but are retrieved from
     // host so stash a pointer for future lookups
-    HRESULT hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
+    hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
     {
@@ -1312,6 +1331,117 @@ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf) RT_NOTHROW_DEF
     LogFlowFunc(("LEAVE: %d\n", ERR_OK));
     return ERR_OK;
 }
+
+
+/* static */
+HRESULT VBoxNetLwipNAT::reportComError(ComPtr<IUnknown> iface,
+                                       const com::Utf8Str &strContext,
+                                       HRESULT hrc)
+{
+    const com::ErrorInfo info(iface, COM_IIDOF(IUnknown));
+    if (info.isFullAvailable() || info.isBasicAvailable())
+    {
+        reportErrorInfoList(info, strContext);
+    }
+    else
+    {
+        if (strContext.isNotEmpty())
+            reportError("%s: %Rhra", strContext.c_str(), hrc);
+        else
+            reportError("%Rhra", hrc);
+    }
+
+    return hrc;
+}
+
+
+/* static */
+void VBoxNetLwipNAT::reportErrorInfoList(const com::ErrorInfo &info,
+                                         const com::Utf8Str &strContext)
+{
+    if (strContext.isNotEmpty())
+        reportError("%s", strContext.c_str());
+
+    bool fFirst = true;
+    for (const com::ErrorInfo *pInfo = &info;
+         pInfo != NULL;
+         pInfo = pInfo->getNext())
+    {
+        if (fFirst)
+            fFirst = false;
+        else
+            reportError("--------");
+
+        reportErrorInfo(*pInfo);
+    }
+}
+
+
+/* static */
+void VBoxNetLwipNAT::reportErrorInfo(const com::ErrorInfo &info)
+{
+#if defined (RT_OS_WIN)
+    bool haveResultCode = info.isFullAvailable();
+    bool haveComponent = true;
+    bool haveInterfaceID = true;
+#else /* !RT_OS_WIN */
+    bool haveResultCode = true;
+    bool haveComponent = info.isFullAvailable();
+    bool haveInterfaceID = info.isFullAvailable();
+#endif
+    com::Utf8Str message;
+    if (info.getText().isNotEmpty())
+        message = info.getText();
+
+    const char *pcszDetails = "Details: ";
+    const char *pcszComma = ", ";
+    const char *pcszSeparator = pcszDetails;
+
+    if (haveResultCode)
+    {
+        message.appendPrintf("%s" "code %Rhrc (0x%RX32)",
+            pcszSeparator, info.getResultCode(), info.getResultCode());
+        pcszSeparator = pcszComma;
+    }
+
+    if (haveComponent)
+    {
+        message.appendPrintf("%s" "component %ls",
+            pcszSeparator, info.getComponent().raw());
+        pcszSeparator = pcszComma;
+    }
+
+    if (haveInterfaceID)
+    {
+        message.appendPrintf("%s" "interface %ls",
+            pcszSeparator, info.getInterfaceName().raw());
+        pcszSeparator = pcszComma;
+    }
+
+    if (info.getCalleeName().isNotEmpty())
+    {
+        message.appendPrintf("%s" "callee %ls",
+            pcszSeparator, info.getCalleeName().raw());
+        pcszSeparator = pcszComma;
+    }
+
+    reportError("%s", message.c_str());
+}
+
+
+/* static */
+void VBoxNetLwipNAT::reportError(const char *a_pcszFormat, ...)
+{
+    va_list ap;
+
+    va_start(ap, a_pcszFormat);
+    com::Utf8Str message(a_pcszFormat, ap);
+    va_end(ap);
+
+    RTMsgError("%s", message.c_str());
+    LogRel(("%s", message.c_str()));
+}
+
 
 
 /**
