@@ -161,8 +161,6 @@ public:
     VBoxNetLwipNAT();
     virtual ~VBoxNetLwipNAT();
 
-    static int logInit(int argc, char **argv);
-
     virtual void usage() { /** @todo should be implemented */ };
     virtual int parseOpt(int c, const RTGETOPTUNION &Value);
 
@@ -172,6 +170,8 @@ public:
     virtual int run();
 
 private:
+    int logInit();
+
     static void reportError(const char *a_pcszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
     static HRESULT reportComError(ComPtr<IUnknown> iface,
@@ -326,6 +326,10 @@ int VBoxNetLwipNAT::init()
     if (RT_FAILURE(rc))
         return rc;
 
+    /*
+     * We get the network name on the command line.  Get hold of our
+     * API object.
+     */
     const std::string &networkName = getNetworkName();
     hrc = virtualbox->FindNATNetworkByName(com::Bstr(networkName.c_str()).raw(),
                                            m_net.asOutParam());
@@ -334,6 +338,11 @@ int VBoxNetLwipNAT::init()
         reportComError(virtualbox, "FindNATNetworkByName", hrc);
         return VERR_NOT_FOUND;
     }
+
+    /*
+     * Now that we know the network name we can create the release log file.
+     */
+    logInit();
 
 
     {
@@ -1454,7 +1463,7 @@ void VBoxNetLwipNAT::reportError(const char *a_pcszFormat, ...)
  * environment variables (also ..._DEST and ..._FLAGS).
  */
 /* static */
-int VBoxNetLwipNAT::logInit(int argc, char **argv)
+int VBoxNetLwipNAT::logInit()
 {
     size_t cch;
     int rc;
@@ -1470,35 +1479,12 @@ int VBoxNetLwipNAT::logInit(int argc, char **argv)
     if (RT_FAILURE(rc))
         return rc;
 
-    const char *pcszNetwork = NULL;
-
-    // XXX: This duplicates information from VBoxNetBaseService.cpp.
-    // Perhaps option definitions should be exported as public static
-    // member of VBoxNetBaseService?
-    static const RTGETOPTDEF s_aOptions[] = {
-        { "--network", 'n', RTGETOPT_REQ_STRING }
-    };
-
-    RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1,
-                 RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-
-    RTGETOPTUNION ValueUnion;
-    int ch;
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
-    {
-        if (ch == 'n')
-        {
-            pcszNetwork = ValueUnion.psz;
-            break;
-        }
-    }
-
-    if (pcszNetwork == NULL)
+    const std::string &strNetworkName = getNetworkName();
+    if (strNetworkName.empty())
         return VERR_MISSING;
 
     char szNetwork[RTPATH_MAX];
-    rc = RTStrCopy(szNetwork, sizeof(szNetwork), pcszNetwork);
+    rc = RTStrCopy(szNetwork, sizeof(szNetwork), strNetworkName.c_str());
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1594,8 +1580,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return RTEXITCODE_INIT;
     }
 #endif
-
-    VBoxNetLwipNAT::logInit(argc, argv);
 
     hrc = com::Initialize();
     if (FAILED(hrc))
