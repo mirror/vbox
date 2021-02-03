@@ -220,14 +220,6 @@ RTR3DECL(uint64_t)  RTFileTell(RTFILE File)
 }
 
 
-/**
- * Determine the maximum file size.
- *
- * @returns The max size of the file.
- *          -1 on failure, the file position is undefined.
- * @param   File        Handle to the file.
- * @see     RTFileQueryMaxSizeEx.
- */
 RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File)
 {
     RTFOFF cbMax;
