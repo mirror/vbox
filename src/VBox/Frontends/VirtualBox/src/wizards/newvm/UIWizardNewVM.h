@@ -60,7 +60,7 @@ public:
     enum
     {
         Page1,
-        Page3,
+        Page2,
         Page4,
         Page5,
         PageMax

@@ -495,7 +495,7 @@ bool UIWizardNewVMPageBasic1::isComplete() const
 int UIWizardNewVMPageBasic1::nextId() const
 {
     if (isUnattendedEnabled())
-        return UIWizardNewVM::Page3;
+        return UIWizardNewVM::Page2;
     return UIWizardNewVM::Page4;
 }
 

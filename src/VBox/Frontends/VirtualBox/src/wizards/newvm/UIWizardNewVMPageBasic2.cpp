@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic3 class implementation.
+ * VBox Qt GUI - UIWizardNewVMPageBasic2 class implementation.
  */
 
 /*
@@ -30,7 +30,7 @@
 #include "UIFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIUserNamePasswordEditor.h"
-#include "UIWizardNewVMPageBasic3.h"
+#include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVM.h"
 
 /* COM includes: */
@@ -38,7 +38,7 @@
 #include "CSystemProperties.h"
 #include "CUnattended.h"
 
-UIWizardNewVMPage3::UIWizardNewVMPage3()
+UIWizardNewVMPage2::UIWizardNewVMPage2()
     : m_pUserNameContainer(0)
     , m_pAdditionalOptionsContainer(0)
     , m_pGAInstallationISOContainer(0)
@@ -55,79 +55,79 @@ UIWizardNewVMPage3::UIWizardNewVMPage3()
 {
 }
 
-QString UIWizardNewVMPage3::userName() const
+QString UIWizardNewVMPage2::userName() const
 {
     if (m_pUserNamePasswordEditor)
         return m_pUserNamePasswordEditor->userName();
     return QString();
 }
 
-void UIWizardNewVMPage3::setUserName(const QString &strName)
+void UIWizardNewVMPage2::setUserName(const QString &strName)
 {
     if (m_pUserNamePasswordEditor)
         m_pUserNamePasswordEditor->setUserName(strName);
 }
 
-QString UIWizardNewVMPage3::password() const
+QString UIWizardNewVMPage2::password() const
 {
     if (m_pUserNamePasswordEditor)
         return m_pUserNamePasswordEditor->password();
     return QString();
 }
 
-void UIWizardNewVMPage3::setPassword(const QString &strPassword)
+void UIWizardNewVMPage2::setPassword(const QString &strPassword)
 {
     if (m_pUserNamePasswordEditor)
         return m_pUserNamePasswordEditor->setPassword(strPassword);
 }
 
-QString UIWizardNewVMPage3::hostname() const
+QString UIWizardNewVMPage2::hostname() const
 {
     if (m_pHostnameLineEdit)
         return m_pHostnameLineEdit->text();
     return QString();
 }
 
-void UIWizardNewVMPage3::setHostname(const QString &strHostName)
+void UIWizardNewVMPage2::setHostname(const QString &strHostName)
 {
     if (m_pHostnameLineEdit)
         return m_pHostnameLineEdit->setText(strHostName);
 }
 
-bool UIWizardNewVMPage3::installGuestAdditions() const
+bool UIWizardNewVMPage2::installGuestAdditions() const
 {
     if (!m_pGAInstallCheckBox)
         return false;
     return m_pGAInstallCheckBox->isChecked();
 }
 
-void UIWizardNewVMPage3::setInstallGuestAdditions(bool fInstallGA)
+void UIWizardNewVMPage2::setInstallGuestAdditions(bool fInstallGA)
 {
     if (m_pGAInstallCheckBox)
         m_pGAInstallCheckBox->setChecked(fInstallGA);
 }
 
-QString UIWizardNewVMPage3::guestAdditionsISOPath() const
+QString UIWizardNewVMPage2::guestAdditionsISOPath() const
 {
     if (!m_pGAISOFilePathSelector)
         return QString();
     return m_pGAISOFilePathSelector->path();
 }
 
-void UIWizardNewVMPage3::setGuestAdditionsISOPath(const QString &strISOPath)
+void UIWizardNewVMPage2::setGuestAdditionsISOPath(const QString &strISOPath)
 {
     if (m_pGAISOFilePathSelector)
         m_pGAISOFilePathSelector->setPath(strISOPath);
 }
 
-QString UIWizardNewVMPage3::productKey() const
+QString UIWizardNewVMPage2::productKey() const
 {
     if (!m_pProductKeyLineEdit || !m_pProductKeyLineEdit->hasAcceptableInput())
         return QString();
     return m_pProductKeyLineEdit->text();
 }
 
-QWidget *UIWizardNewVMPage3::createGAInstallWidgets()
+QWidget *UIWizardNewVMPage2::createGAInstallWidgets()
 {
     if (m_pGAInstallationISOContainer)
         return m_pGAInstallationISOContainer;
@@ -153,7 +153,7 @@ QWidget *UIWizardNewVMPage3::createGAInstallWidgets()
     return m_pGAInstallationISOContainer;
 }
 
-bool UIWizardNewVMPage3::checkGAISOFile() const
+bool UIWizardNewVMPage2::checkGAISOFile() const
 {
     if (!m_pGAISOFilePathSelector)
         return false;
@@ -167,13 +167,13 @@ bool UIWizardNewVMPage3::checkGAISOFile() const
     return true;
 }
 
-void UIWizardNewVMPage3::markWidgets() const
+void UIWizardNewVMPage2::markWidgets() const
 {
     if (installGuestAdditions())
         m_pGAISOFilePathSelector->mark(!checkGAISOFile());
 }
 
-void UIWizardNewVMPage3::retranslateWidgets()
+void UIWizardNewVMPage2::retranslateWidgets()
 {
     if (m_pHostnameLabel)
         m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
@@ -200,7 +200,7 @@ void UIWizardNewVMPage3::retranslateWidgets()
     }
 }
 
-void UIWizardNewVMPage3::disableEnableGAWidgets(bool fEnabled)
+void UIWizardNewVMPage2::disableEnableGAWidgets(bool fEnabled)
 {
     if (m_pGAISOPathLabel)
         m_pGAISOPathLabel->setEnabled(fEnabled);
@@ -208,7 +208,7 @@ void UIWizardNewVMPage3::disableEnableGAWidgets(bool fEnabled)
         m_pGAISOFilePathSelector->setEnabled(fEnabled);
 }
 
-void UIWizardNewVMPage3::disableEnableProductKeyWidgets(bool fEnabled)
+void UIWizardNewVMPage2::disableEnableProductKeyWidgets(bool fEnabled)
 {
     if (m_pProductKeyLabel)
         m_pProductKeyLabel->setEnabled(fEnabled);
@@ -216,14 +216,14 @@ void UIWizardNewVMPage3::disableEnableProductKeyWidgets(bool fEnabled)
         m_pProductKeyLineEdit->setEnabled(fEnabled);
 }
 
-bool UIWizardNewVMPage3::startHeadless() const
+bool UIWizardNewVMPage2::startHeadless() const
 {
     if (!m_pStartHeadlessCheckBox)
         return false;
     return m_pStartHeadlessCheckBox->isChecked();
 }
 
-QWidget *UIWizardNewVMPage3::createUserNameWidgets()
+QWidget *UIWizardNewVMPage2::createUserNameWidgets()
 {
     if (m_pUserNameContainer)
         return m_pUserNameContainer;
@@ -239,7 +239,7 @@ QWidget *UIWizardNewVMPage3::createUserNameWidgets()
     return m_pUserNameContainer;
 }
 
-QWidget *UIWizardNewVMPage3::createAdditionalOptionsWidgets()
+QWidget *UIWizardNewVMPage2::createAdditionalOptionsWidgets()
 {
     if (m_pAdditionalOptionsContainer)
         return m_pAdditionalOptionsContainer;
@@ -279,20 +279,20 @@ QWidget *UIWizardNewVMPage3::createAdditionalOptionsWidgets()
     return m_pAdditionalOptionsContainer;
 }
 
-bool UIWizardNewVMPage3::isGAInstallEnabled() const
+bool UIWizardNewVMPage2::isGAInstallEnabled() const
 {
     if (m_pGAInstallCheckBox && m_pGAInstallCheckBox->isChecked())
         return true;
     return false;
 }
 
-UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
+UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
     : m_pLabel(0)
 {
     prepare();
 }
 
-void UIWizardNewVMPageBasic3::prepare()
+void UIWizardNewVMPageBasic2::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout(this);
 
@@ -318,21 +318,21 @@ void UIWizardNewVMPageBasic3::prepare()
     createConnections();
 }
 
-void UIWizardNewVMPageBasic3::createConnections()
+void UIWizardNewVMPageBasic2::createConnections()
 {
     if (m_pUserNamePasswordEditor)
         connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
-                this, &UIWizardNewVMPageBasic3::completeChanged);
+                this, &UIWizardNewVMPageBasic2::completeChanged);
     if (m_pGAISOFilePathSelector)
         connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
-                this, &UIWizardNewVMPageBasic3::sltGAISOPathChanged);
+                this, &UIWizardNewVMPageBasic2::sltGAISOPathChanged);
     if (m_pGAISOFilePathSelector)
         connect(m_pGAInstallCheckBox, &QCheckBox::toggled,
-                this, &UIWizardNewVMPageBasic3::sltInstallGACheckBoxToggle);
+                this, &UIWizardNewVMPageBasic2::sltInstallGACheckBoxToggle);
 }
 
 
-void UIWizardNewVMPageBasic3::retranslateUi()
+void UIWizardNewVMPageBasic2::retranslateUi()
 {
     setTitle(UIWizardNewVM::tr("Unattended Guest OS Install Setup"));
     if (m_pLabel)
@@ -342,14 +342,14 @@ void UIWizardNewVMPageBasic3::retranslateUi()
     retranslateWidgets();
 }
 
-void UIWizardNewVMPageBasic3::initializePage()
+void UIWizardNewVMPageBasic2::initializePage()
 {
     disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
     disableEnableGAWidgets(m_pGAInstallCheckBox ? m_pGAInstallCheckBox->isChecked() : false);
     retranslateUi();
 }
 
-bool UIWizardNewVMPageBasic3::isComplete() const
+bool UIWizardNewVMPageBasic2::isComplete() const
 {
     markWidgets();
     if (isGAInstallEnabled() && !checkGAISOFile())
@@ -370,30 +370,30 @@ bool UIWizardNewVMPageBasic3::isComplete() const
     return true;
 }
 
-void UIWizardNewVMPageBasic3::cleanupPage()
+void UIWizardNewVMPageBasic2::cleanupPage()
 {
 }
 
-void UIWizardNewVMPageBasic3::showEvent(QShowEvent *pEvent)
+void UIWizardNewVMPageBasic2::showEvent(QShowEvent *pEvent)
 {
     // if (m_pToolBox)
     //     m_pToolBox->setItemEnabled(ToolBoxItems_ProductKey, isProductKeyWidgetEnabled());
     UIWizardPage::showEvent(pEvent);
 }
 
-void UIWizardNewVMPageBasic3::sltInstallGACheckBoxToggle(bool fEnabled)
+void UIWizardNewVMPageBasic2::sltInstallGACheckBoxToggle(bool fEnabled)
 {
     disableEnableGAWidgets(fEnabled);
     emit completeChanged();
 }
 
-void UIWizardNewVMPageBasic3::sltGAISOPathChanged(const QString &strPath)
+void UIWizardNewVMPageBasic2::sltGAISOPathChanged(const QString &strPath)
 {
     Q_UNUSED(strPath);
     emit completeChanged();
 }
 
-bool UIWizardNewVMPageBasic3::isProductKeyWidgetEnabled() const
+bool UIWizardNewVMPageBasic2::isProductKeyWidgetEnabled() const
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     if (!pWizard || !pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
