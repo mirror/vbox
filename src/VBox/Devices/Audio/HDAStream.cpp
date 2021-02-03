@@ -29,7 +29,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
-#include <math.h> /* Needed for round(). */
+#include <math.h> /* Needed for roundl(). */
 
 #include "DrvAudio.h"
 
@@ -548,13 +548,13 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                 const double cTicksPerByte = cTicksPerHz / (double)pStreamShared->State.cbTransferChunk;
 
                 /* Calculate the timer ticks per byte for this stream. */
-                pStreamShared->State.cTicksPerByte = round(cTicksPerByte); /** @todo r=andy Do we have rounding in IPRT? */
+                pStreamShared->State.cTicksPerByte = roundl(cTicksPerByte); /** @todo r=andy Do we have rounding in IPRT? */
                 Assert(pStreamShared->State.cTicksPerByte);
 
                 const double cTransferTicks = pStreamShared->State.cbTransferChunk * cTicksPerByte;
 
                 /* Calculate timer ticks per transfer. */
-                pStreamShared->State.cTransferTicks = round(cTransferTicks);
+                pStreamShared->State.cTransferTicks = roundl(cTransferTicks);
                 Assert(pStreamShared->State.cTransferTicks);
 
                 LogRel2(("HDA: Stream #%RU8 is using %uHz device timer (%RU64 virtual ticks / Hz), stream Hz=%RU32, "
@@ -742,7 +742,7 @@ static uint32_t hdaR3StreamGetPosition(PHDASTATE pThis, PHDASTREAM pStreamShared
 }
 #endif
 
-/*
+/**
  * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
  * setting its associated LPIB register and DMA position buffer (if enabled) to an absolute value.
  *
@@ -771,7 +771,7 @@ static void hdaR3StreamSetPositionAbs(PHDASTREAM pStreamShared, PPDMDEVINS pDevI
     }
 }
 
-/*
+/**
  * Updates an HDA stream's current read or write buffer position (depending on the stream type) by
  * adding a value to its associated LPIB register and DMA position buffer (if enabled).
  *
@@ -984,100 +984,6 @@ static int hdaR3StreamRead(PHDASTREAMR3 pStreamR3, uint32_t cbToRead, uint32_t *
 
     if (pcbRead)
         *pcbRead = cbReadTotal;
-
-    return rc;
-}
-
-/*
- * Reads DMA data from a given HDA output stream.
- *
- * @return  IPRT status code.
- * @param   pDevIns             The device instance.
- * @param   pThis               The shared HDA device state (for stats).
- * @param   pStreamShared       HDA output stream to read DMA data from - shared bits.
- * @param   pStreamR3           HDA output stream to read DMA data from - shared ring-3.
- * @param   pvBuf               Where to store the read data.
- * @param   cbBuf               How much to read in bytes.
- * @param   pcbRead             Returns read bytes from DMA. Optional.
- */
-int hdaR3DMARead2(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3,
-                  void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
-{
-    RT_NOREF(pThis);
-    PHDABDLE pBDLE = &pStreamShared->State.BDLE;
-
-    int rc = VINF_SUCCESS;
-
-    uint32_t cbReadTotal = 0;
-    uint32_t cbLeft      = RT_MIN(cbBuf, pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);
-
-# ifdef HDA_DEBUG_SILENCE
-    uint64_t   csSilence = 0;
-
-    pStreamR3->Dbg.cSilenceThreshold = 100;
-    pStreamR3->Dbg.cbSilenceReadMin  = _1M;
-# endif
-
-    RTGCPHYS GCPhysChunk = pBDLE->Desc.u64BufAddr + pBDLE->State.u32BufOff;
-
-    while (cbLeft)
-    {
-        uint32_t cbChunk = RT_MIN(cbLeft, pStreamShared->u8FIFOS);
-
-        rc = PDMDevHlpPhysRead(pDevIns, GCPhysChunk, (uint8_t *)pvBuf + cbReadTotal, cbChunk);
-        AssertRCBreak(rc);
-
-# ifdef HDA_DEBUG_SILENCE
-        uint16_t *pu16Buf = (uint16_t *)pvBuf;
-        for (size_t i = 0; i < cbChunk / sizeof(uint16_t); i++)
-        {
-            if (*pu16Buf == 0)
-                csSilence++;
-            else
-                break;
-            pu16Buf++;
-        }
-# endif
-
-        /*
-         * Update the stream's current position.
-         * Do this as accurate and close to the actual data transfer as possible.
-         * All guetsts rely on this, depending on the mechanism they use (LPIB register or DMA counters).
-         */
-        hdaR3StreamSetPositionAdd(pStreamShared, pDevIns, pThis, /* cbChunk */ 0);
-
-        if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
-        { /* likely */ }
-        else
-            DrvAudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, (uint8_t *)pvBuf + cbReadTotal, cbChunk, 0 /* fFlags */);
-
-        STAM_COUNTER_ADD(&pThis->StatBytesRead, cbChunk);
-
-        /* advance */
-        Assert(cbLeft    >= cbChunk);
-        GCPhysChunk       = (GCPhysChunk + cbChunk) % pBDLE->Desc.u32BufSize;
-        cbReadTotal      += cbChunk;
-        cbLeft           -= cbChunk;
-    }
-
-# ifdef HDA_DEBUG_SILENCE
-    if (csSilence)
-        pStreamR3->Dbg.csSilence += csSilence;
-
-    if (   csSilence == 0
-        && pStreamR3->Dbg.csSilence   >  pStreamR3->Dbg.cSilenceThreshold
-        && pStreamR3->Dbg.cbReadTotal >= pStreamR3->Dbg.cbSilenceReadMin)
-    {
-        LogFunc(("Silent block detected: %RU64 audio samples\n", pStreamR3->Dbg.csSilence));
-        pStreamR3->Dbg.csSilence = 0;
-    }
-# endif
-
-    if (RT_SUCCESS(rc))
-    {
-        if (pcbRead)
-            *pcbRead = cbReadTotal;
-    }
 
     return rc;
 }
