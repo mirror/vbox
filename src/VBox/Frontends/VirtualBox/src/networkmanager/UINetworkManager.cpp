@@ -132,8 +132,7 @@ void UIItemHostNetwork::updateFields()
                                     QString("%1/%2").arg(m_interface.m_strAddress).arg(maskToCidr(m_interface.m_strMask)));
     setText(HostNetworkColumn_IPv6, m_interface.m_strAddress6.isEmpty() || !m_interface.m_fSupportedIPv6 ? QString() :
                                     QString("%1/%2").arg(m_interface.m_strAddress6).arg(m_interface.m_strPrefixLength6.toInt()));
-    setText(HostNetworkColumn_DHCP, tr("Enable", "DHCP Server"));
-    setCheckState(HostNetworkColumn_DHCP, m_dhcpserver.m_fEnabled ? Qt::Checked : Qt::Unchecked);
+    setText(HostNetworkColumn_DHCP, m_dhcpserver.m_fEnabled ? tr("Enabled", "DHCP Server") : tr("Disabled", "DHCP Server"));
 
     /* Compose item tool-tip: */
     const QString strTable("<table cellspacing=5>%1</table>");
@@ -319,8 +318,8 @@ void UINetworkManagerWidget::retranslateUi()
     {
         const QStringList fields = QStringList()
                                    << UINetworkManager::tr("Name")
-                                   << UINetworkManager::tr("IPv4 Address/Mask")
-                                   << UINetworkManager::tr("IPv6 Address/Mask")
+                                   << UINetworkManager::tr("IPv4 Prefix")
+                                   << UINetworkManager::tr("IPv6 Prefix")
                                    << UINetworkManager::tr("DHCP Server");
         m_pTreeWidgetHostNetwork->setHeaderLabels(fields);
     }
@@ -764,91 +763,6 @@ void UINetworkManagerWidget::sltAdjustTreeWidgets()
         m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_IPv6, iWidth2);
         m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_DHCP, iWidth3);
         m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
-    }
-}
-
-void UINetworkManagerWidget::sltHandleItemChangeHostNetwork(QTreeWidgetItem *pItem)
-{
-    /* Get network item: */
-    UIItemHostNetwork *pChangedItem = static_cast<UIItemHostNetwork*>(pItem);
-    AssertMsgReturnVoid(pChangedItem, ("Changed item must not be null!\n"));
-
-    /* Get item data: */
-    UIDataHostNetwork oldData = *pChangedItem;
-
-    /* Make sure dhcp server status changed: */
-    if (   (   oldData.m_dhcpserver.m_fEnabled
-            && pChangedItem->checkState(HostNetworkColumn_DHCP) == Qt::Checked)
-        || (   !oldData.m_dhcpserver.m_fEnabled
-            && pChangedItem->checkState(HostNetworkColumn_DHCP) == Qt::Unchecked))
-        return;
-
-    /* Get host for further activities: */
-    CHost comHost = uiCommon().host();
-
-    /* Find corresponding interface: */
-    CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
-
-    /* Show error message if necessary: */
-    if (!comHost.isOk() || comInterface.isNull())
-        msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
-    else
-    {
-        /* Get network name for further activities: */
-        const QString strNetworkName = comInterface.GetNetworkName();
-
-        /* Show error message if necessary: */
-        if (!comInterface.isOk())
-            msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
-        else
-        {
-            /* Get VBox for further activities: */
-            CVirtualBox comVBox = uiCommon().virtualBox();
-
-            /* Find corresponding DHCP server (create if necessary): */
-            CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
-            if (!comVBox.isOk() || comServer.isNull())
-                comServer = comVBox.CreateDHCPServer(strNetworkName);
-
-            /* Show error message if necessary: */
-            if (!comVBox.isOk() || comServer.isNull())
-                msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
-            else
-            {
-                /* Save whether DHCP server is enabled: */
-                if (comServer.isOk())
-                    comServer.SetEnabled(!oldData.m_dhcpserver.m_fEnabled);
-                /* Save default DHCP server configuration if current is invalid: */
-                if (   comServer.isOk()
-                    && !oldData.m_dhcpserver.m_fEnabled
-                    && (   oldData.m_dhcpserver.m_strAddress == "0.0.0.0"
-                        || oldData.m_dhcpserver.m_strMask == "0.0.0.0"
-                        || oldData.m_dhcpserver.m_strLowerAddress == "0.0.0.0"
-                        || oldData.m_dhcpserver.m_strUpperAddress == "0.0.0.0"))
-                {
-                    const QStringList &proposal = makeDhcpServerProposal(oldData.m_interface.m_strAddress,
-                                                                         oldData.m_interface.m_strMask);
-                    comServer.SetConfiguration(proposal.at(0), proposal.at(1), proposal.at(2), proposal.at(3));
-                }
-
-                /* Show error message if necessary: */
-                if (!comServer.isOk())
-                    msgCenter().cannotSaveDHCPServerParameter(comServer, this);
-                else
-                {
-                    /* Update interface in the tree: */
-                    UIDataHostNetwork data;
-                    loadHostNetwork(comInterface, data);
-                    updateItemForHostNetwork(data, true, pChangedItem);
-
-                    /* Make sure current item fetched: */
-                    sltHandleCurrentItemChangeHostNetwork();
-
-                    /* Adjust tree-widgets: */
-                    sltAdjustTreeWidgets();
-                }
-            }
-        }
     }
 }
 
@@ -1342,8 +1256,6 @@ void UINetworkManagerWidget::prepareTreeWidgetHostNetwork()
                 this, &UINetworkManagerWidget::sltHandleCurrentItemChangeHostNetwork);
         connect(m_pTreeWidgetHostNetwork, &QITreeWidget::customContextMenuRequested,
                 this, &UINetworkManagerWidget::sltHandleContextMenuRequestHostNetwork);
-        connect(m_pTreeWidgetHostNetwork, &QITreeWidget::itemChanged,
-                this, &UINetworkManagerWidget::sltHandleItemChangeHostNetwork);
         connect(m_pTreeWidgetHostNetwork, &QITreeWidget::itemDoubleClicked,
                 m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::setChecked);
 

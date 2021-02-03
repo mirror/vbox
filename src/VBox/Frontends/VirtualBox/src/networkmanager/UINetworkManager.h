@@ -130,8 +130,6 @@ private slots:
         /** Handles command to adjust tree-widget. */
         void sltAdjustTreeWidgets();
 
-        /** Handles host network tree-widget @a pItem change. */
-        void sltHandleItemChangeHostNetwork(QTreeWidgetItem *pItem);
         /** Handles host network tree-widget current item change. */
         void sltHandleCurrentItemChangeHostNetwork();
         /** Handles host network context-menu request for tree-widget @a position. */
