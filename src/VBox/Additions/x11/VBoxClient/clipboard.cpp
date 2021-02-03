@@ -57,7 +57,6 @@ SHCLFUSECTX g_FuseCtx;
 #endif
 
 
-/** @copydoc ShClX11RequestDataForX11Callback */
 DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
 {
     LogFlowFunc(("pCtx=%p, uFmt=%#x\n", pCtx, uFmt));
@@ -143,7 +142,6 @@ struct CLIPREADCBREQ
     SHCLFORMAT Format;
 };
 
-/** @copydoc ShClX11ReportFormatsCallback */
 DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS fFormats)
 {
     RT_NOREF(pCtx);
@@ -155,8 +153,8 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS f
     LogFlowFuncLeaveRC(rc2);
 }
 
-DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx,
-                                                         int rcCompletion, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
+                                                         CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     LogFlowFunc(("rcCompletion=%Rrc, Format=0x%x, pv=%p, cb=%RU32\n", rcCompletion, pReq->Format, pv, cb));
 

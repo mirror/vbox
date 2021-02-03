@@ -118,7 +118,6 @@ static int tstClipSetVBoxUtf16(PSHCLX11CTX pCtx, int retval,
     return VINF_SUCCESS;
 }
 
-/** @copydoc ShClX11RequestDataForX11Callback */
 DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, uint32_t uFmt, void **ppv, uint32_t *pcb)
 {
     RT_NOREF(pCtx, uFmt);
@@ -243,7 +242,6 @@ void tstClipRequestData(PSHCLX11CTX pCtx, SHCLX11FMTIDX target, void *closure)
 /* The formats currently on offer from X11 via the shared clipboard. */
 static uint32_t g_tst_uX11Formats = 0;
 
-/** @copydoc ShClX11ReportFormatsCallback */
 DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS fFormats)
 {
     RT_NOREF(pCtx);
@@ -399,13 +397,13 @@ static int g_tst_cbCompleted = 0;
 static CLIPREADCBREQ *g_tst_pCompletedReq = NULL;
 static char g_tst_abCompletedBuf[TESTCASE_MAX_BUF_SIZE];
 
-/** @copydoc ShClX11RequestFromX11CompleteCallback */
-void ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
+                                                         CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(pCtx);
     if (cb <= TESTCASE_MAX_BUF_SIZE)
     {
-        g_tst_rcCompleted = rc;
+        g_tst_rcCompleted = rcCompletion;
         if (cb != 0)
             memcpy(g_tst_abCompletedBuf, pv, cb);
     }

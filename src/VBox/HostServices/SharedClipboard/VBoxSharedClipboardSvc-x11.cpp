@@ -115,9 +115,9 @@ int ShClBackendSync(PSHCLCLIENT pClient)
     return ShClSvcHostReportFormats(pClient, VBOX_SHCL_FMT_NONE);
 }
 
-/**
+/*
  * Shut down the shared clipboard service and "disconnect" the guest.
- * @note  Host glue code
+ * Note!  Host glue code
  */
 int ShClBackendDisconnect(PSHCLCLIENT pClient)
 {
@@ -172,8 +172,8 @@ struct CLIPREADCBREQ
  *         freed in ClipCompleteDataRequestFromX11 when it is called back from
  *         the backend code.
  */
-int ShClBackendReadData(PSHCLCLIENT pClient,
-                        PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)
+int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat,
+                        void *pvData, uint32_t cbData, uint32_t *pcbActual)
 {
     AssertPtrReturn(pClient,   VERR_INVALID_POINTER);
     AssertPtrReturn(pCmdCtx,   VERR_INVALID_POINTER);
@@ -236,8 +236,7 @@ int ShClBackendReadData(PSHCLCLIENT pClient,
     return rc;
 }
 
-int ShClBackendWriteData(PSHCLCLIENT pClient,
-                         PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
+int ShClBackendWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
     RT_NOREF(pClient, pCmdCtx, uFormat, pvData, cbData);
 
@@ -249,7 +248,6 @@ int ShClBackendWriteData(PSHCLCLIENT pClient,
     return VINF_SUCCESS;
 }
 
-/** @copydoc ShClX11ReportFormatsCallback */
 DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats)
 {
     LogFlowFunc(("pCtx=%p, fFormats=%#x\n", pCtx, fFormats));
@@ -271,7 +269,6 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFor
     LogFlowFuncLeaveRC(rc);
 }
 
-/** @copydoc ShClX11RequestFromX11CompleteCallback */
 DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
                                                          CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
@@ -308,7 +305,6 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
     LogRel2(("Shared Clipboard: Request for clipboard data from X11 host completed with %Rrc\n", rcCompletion));
 }
 
-/** @copydoc ShClX11RequestDataForX11Callback */
 DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
 {
     LogFlowFunc(("pCtx=%p, uFmt=0x%x\n", pCtx, uFmt));

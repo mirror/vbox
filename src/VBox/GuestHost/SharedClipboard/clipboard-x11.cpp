@@ -1425,26 +1425,20 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
         {
             pv = RTMemDup(pCtx->pvUnicodeCache, pCtx->cbUnicodeCache);
             if (pv)
-            {
                 cb = pCtx->cbUnicodeCache;
-            }
             else
                 rc = VERR_NO_MEMORY;
         }
     }
     else
-    {
         rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, uFmt, &pv, &cb);
-    }
 
 
     /* Safey net in case the callbacks above misbehave
      * (must return VERR_NO_DATA if no data available). */
     if (   RT_SUCCESS(rc)
         && (pv == NULL || cb == 0))
-    {
         rc = VERR_NO_DATA;
-    }
 
     if (RT_SUCCESS(rc))
     {

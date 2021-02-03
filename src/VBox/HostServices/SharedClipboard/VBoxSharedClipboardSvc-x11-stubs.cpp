@@ -37,26 +37,23 @@
 #include "VBoxSharedClipboardSvc-internal.h"
 
 
-/** Initialise the host side of the shared clipboard - called by the hgcm layer. */
+/*
+ * Initialise the host side of the shared clipboard - called by the hgcm layer.
+ */
 int ShClBackendInit(void)
 {
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
-/** Terminate the host side of the shared clipboard - called by the hgcm layer. */
+/*
+ * Terminate the host side of the shared clipboard - called by the hgcm layer.
+ */
 void ShClBackendDestroy(void)
 {
     LogFlowFunc(("called, returning\n"));
 }
 
-/**
-  * Enable the shared clipboard - called by the hgcm clipboard subsystem.
-  *
-  * @returns RT status code
-  * @param   pClient            Structure containing context information about the guest system
-  * @param   fHeadless          Whether headless.
-  */
 int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless)
 {
     RT_NOREF(pClient, fHeadless);
@@ -64,7 +61,7 @@ int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless)
     return VINF_SUCCESS;
 }
 
-/**
+/*
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
@@ -75,23 +72,15 @@ int ShClBackendSync(PSHCLCLIENT pClient)
     return VINF_SUCCESS;
 }
 
-/**
- * Shut down the shared clipboard subsystem and "disconnect" the guest.
- *
- * @param   pClient         Structure containing context information about the guest system
- */
 int ShClBackendDisconnect(PSHCLCLIENT pClient)
 {
     RT_NOREF(pClient);
     return VINF_SUCCESS;
 }
 
-/**
- * The guest is taking possession of the shared clipboard.  Called by the HGCM clipboard
- * subsystem.
- *
- * @param pClient               Context data for the guest system.
- * @param fFormats              Clipboard formats the guest is offering.
+/*
+ * The guest is taking possession of the shared clipboard.
+ * Called by the HGCM clipboard subsystem.
  */
 int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
@@ -99,15 +88,8 @@ int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     return VINF_SUCCESS;
 }
 
-/**
+/*
  * Called by the HGCM clipboard subsystem when the guest wants to read the host clipboard.
- *
- * @param pClient       Context information about the guest VM
- * @param pCmdCtx       Command context to use.
- * @param uFormat       Clipboard format to read.
- * @param pvData        Where to return the read clipboard data.
- * @param cbData        Size (in bytes) of buffer where to return the clipboard data.
- * @param pcbActual     Where to store the actual amount of data available.
  */
 int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                         SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)

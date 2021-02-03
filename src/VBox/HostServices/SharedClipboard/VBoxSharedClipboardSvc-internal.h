@@ -307,10 +307,12 @@ void ShClSvcUnlock(void);
  * Called on initialization.
  */
 int ShClBackendInit(void);
+
 /**
  * Called on destruction.
  */
 void ShClBackendDestroy(void);
+
 /**
  * Called when a new HGCM client connects.
  *
@@ -319,6 +321,7 @@ void ShClBackendDestroy(void);
  * @param   fHeadless           Whether this is a headless connection or not.
  */
 int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless);
+
 /**
  * Called when a HGCM client disconnects.
  *
@@ -326,6 +329,7 @@ int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless);
  * @param   pClient             Shared Clipboard client context.
  */
 int ShClBackendDisconnect(PSHCLCLIENT pClient);
+
 /**
  * Called when the guest reported available clipboard formats to the host OS.
  *
@@ -335,7 +339,7 @@ int ShClBackendDisconnect(PSHCLCLIENT pClient);
  *                              VBOX_SHCL_FMT_XXX.
  */
 int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
-/** @todo Document: Can return VINF_HGCM_ASYNC_EXECUTE to defer returning read data.*/
+
 /**
  * Called when the guest wants to read host clipboard data.
  *
@@ -346,8 +350,13 @@ int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
  * @param   pvData              Where to return the read clipboard data.
  * @param   cbData              Size (in bytes) of buffer where to return the clipboard data.
  * @param   pcbActual           Where to return the amount of bytes read.
+ *
+ * @todo    Document: Can return VINF_HGCM_ASYNC_EXECUTE to defer returning read
+ *          data
  */
-int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual);
+int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat,
+                        void *pvData, uint32_t cbData, uint32_t *pcbActual);
+
 /**
  * Called when the guest writes clipboard data to the host.
  *
@@ -359,6 +368,7 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORM
  * @param   cbData              Size (in bytes) of buffer clipboard data to write.
  */
 int ShClBackendWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData);
+
 /**
  * Called when synchronization of the clipboard contents of the host clipboard with the guest is needed.
  *

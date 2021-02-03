@@ -141,7 +141,7 @@ typedef struct _SHCLX11CTX
 } SHCLX11CTX, *PSHCLX11CTX;
 
 /** @name Shared Clipboard APIs for X11.
- *  @{
+ * @{
  */
 int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCONTEXT pParent, bool fHeadless);
 void ShClX11Destroy(PSHCLX11CTX pCtx);
@@ -152,7 +152,7 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormat, CLIPREADCBR
 /** @} */
 
 /** @name Shared Clipboard callbacks which have to be implemented the X11 backend and host service.
- *  @{
+ * @{
  */
 /**
  * Callback for reading clipboard data from the guest.
@@ -190,7 +190,8 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS f
  * @param  pv                   The clipboard data returned from X11 if the request succeeded (see @a rcCompletion).
  * @param  cb                   The size of the data in @a pv.
  */
-DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
+DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
+                                                         CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
 /** @} */
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_x11_h */
