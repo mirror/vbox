@@ -21,6 +21,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
+#include <QSpacerItem>
 #include <QToolBox>
 #include <QVBoxLayout>
 
@@ -296,16 +297,13 @@ void UIWizardNewVMPageBasic2::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout(this);
 
-    // m_pToolBox = new QToolBox;
-    // pMainLayout->addWidget(m_pToolBox);
-
-    // {
     m_pLabel = new QIRichTextLabel(this);
     if (m_pLabel)
         pMainLayout->addWidget(m_pLabel, 0, 0, 1, 2);
     pMainLayout->addWidget(createUserNameWidgets(), 1, 0, 1, 1);
     pMainLayout->addWidget(createAdditionalOptionsWidgets(), 1, 1, 1, 1);
     pMainLayout->addWidget(createGAInstallWidgets(), 2, 0, 1, 2);
+    pMainLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding), 3, 0, 1, 2);
 
     registerField("userName", this, "userName");
     registerField("password", this, "password");
