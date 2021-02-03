@@ -2588,7 +2588,7 @@ VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPUCC pVCpu)
 
 #endif /* LOG_ENABLED */
 
-/**
+/*
  * Override RTLogRelGetDefaultInstanceEx so we can do LogRel to VBox.log from EMTs in ring-0.
  */
 DECLEXPORT(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
@@ -2623,7 +2623,7 @@ DECLEXPORT(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
 }
 
 
-/**
+/*
  * Jump back to ring-3 if we're the EMT and the longjmp is armed.
  *
  * @returns true if the breakpoint should be hit, false if it should be ignored.
@@ -2640,35 +2640,30 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
 
         if (pVCpu)
         {
-#ifdef RT_ARCH_X86
+# ifdef RT_ARCH_X86
             if (    pVCpu->vmm.s.CallRing3JmpBufR0.eip
                 &&  !pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
-#else
+# else
             if (    pVCpu->vmm.s.CallRing3JmpBufR0.rip
                 &&  !pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
-#endif
+# endif
             {
                 int rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_ASSERTION, 0);
                 return RT_FAILURE_NP(rc);
             }
         }
     }
-#ifdef RT_OS_LINUX
+# ifdef RT_OS_LINUX
     return true;
-#else
+# else
     return false;
-#endif
+# endif
 #endif
 }
 
 
-/**
+/*
  * Override this so we can push it up to ring-3.
- *
- * @param   pszExpr     Expression. Can be NULL.
- * @param   uLine       Location line number.
- * @param   pszFile     Location file name.
- * @param   pszFunction Location function name.
  */
 DECLEXPORT(void) RTCALL RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
@@ -2715,11 +2710,8 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
 }
 
 
-/**
+/*
  * Override this so we can push it up to ring-3.
- *
- * @param   pszFormat   The format string.
- * @param   va          Arguments.
  */
 DECLEXPORT(void) RTCALL RTAssertMsg2WeakV(const char *pszFormat, va_list va)
 {
