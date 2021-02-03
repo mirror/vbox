@@ -4909,7 +4909,6 @@ static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
     return true;
 #else
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     uint64_t const u64HostEfer  = g_uHmVmxHostMsrEfer;
     uint64_t const u64GuestEfer = pCtx->msrEFER;
 
@@ -4955,7 +4954,7 @@ static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
          * shadow paging mode which is/will be placed in the VMCS (which is what will
          * actually be used while executing the guest and not the CR4 shadow value).
          */
-        AssertMsg(   pVM->hmr0.s.fNestedPaging
+        AssertMsg(   pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging
                   || pVCpu->hm.s.enmShadowMode == PGMMODE_PAE
                   || pVCpu->hm.s.enmShadowMode == PGMMODE_PAE_NX
                   || pVCpu->hm.s.enmShadowMode == PGMMODE_AMD64
