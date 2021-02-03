@@ -3658,8 +3658,8 @@ DECLINLINE(void) hmR0VmxSetupVmcsApicAccessAddr(PVMCPUCC pVCpu)
     AssertRC(rc);
 }
 
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+
 /**
  * Sets up the VMREAD bitmap address for the VMCS.
  *
@@ -3688,8 +3688,8 @@ DECLINLINE(void) hmR0VmxSetupVmcsVmwriteBitmapAddr(PVMCPUCC pVCpu)
     int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_VMWRITE_BITMAP_FULL, HCPhysVmwriteBitmap);
     AssertRC(rc);
 }
-#endif
 
+#endif
 
 /**
  * Sets up the VM-entry MSR load, VM-exit MSR-store and VM-exit MSR-load addresses

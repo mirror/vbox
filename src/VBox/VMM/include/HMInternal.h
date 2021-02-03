@@ -649,15 +649,22 @@ AssertCompile(RTASSERT_OFFSET_OF(HM, PatchTree) <= 64); /* First cache line has 
  */
 typedef struct HMR0PERVM
 {
+    /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
+     * This number is set much higher when RTThreadPreemptIsPending is reliable. */
+    uint32_t                    cMaxResumeLoops;
+
     /** Set if nested paging is enabled. */
     bool                        fNestedPaging;
     /** Set if we can support 64-bit guests or not. */
     bool                        fAllow64BitGuests;
-    bool                        afAlignment0[2];
+    bool                        afAlignment1[1];
 
-    /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
-     * This number is set much higher when RTThreadPreemptIsPending is reliable. */
-    uint32_t                    cMaxResumeLoops;
+    /** AMD-V specific data. */
+    struct HMR0SVMVM
+    {
+        /** Set if erratum 170 affects the AMD cpu. */
+        bool                        fAlwaysFlushTLB;
+    } svm;
 
     /** VT-x specific data. */
     struct HMR0VMXVM
@@ -671,6 +678,8 @@ typedef struct HMR0PERVM
         bool                        fUseVmcsShadowing;
         /** Set if Last Branch Record (LBR) is enabled. */
         bool                        fLbr;
+        bool                        afAlignment2[3];
+
         /** Set if VPID is supported (copy in HM::vmx::fVpidForRing3). */
         bool                        fVpid;
         /** Tagged-TLB flush type. */
@@ -679,6 +688,9 @@ typedef struct HMR0PERVM
         VMXTLBFLUSHEPT              enmTlbFlushEpt;
         /** Flush type to use for INVVPID. */
         VMXTLBFLUSHVPID             enmTlbFlushVpid;
+
+        /** The host LBR TOS (top-of-stack) MSR id. */
+        uint32_t                    idLbrTosMsr;
 
         /** The first valid host LBR branch-from-IP stack range. */
         uint32_t                    idLbrFromIpMsrFirst;
@@ -690,12 +702,6 @@ typedef struct HMR0PERVM
         /** The last valid host LBR branch-to-IP stack range. */
         uint32_t                    idLbrToIpMsrLast;
 
-        /** The host LBR TOS (top-of-stack) MSR id. */
-        uint32_t                    idLbrTosMsr;
-        uint32_t                    u32Alignment1;
-
-        /** Virtual address of the APIC-access page. */
-        R0PTRTYPE(uint8_t *)        pbApicAccess;
         /** Pointer to the VMREAD bitmap. */
         R0PTRTYPE(void *)           pvVmreadBitmap;
         /** Pointer to the VMWRITE bitmap. */
@@ -726,15 +732,9 @@ typedef struct HMR0PERVM
 
         /** Ring-0 memory object for per-VM VMX structures. */
         RTR0MEMOBJ                  hMemObj;
+        /** Virtual address of the APIC-access page (not used). */
+        R0PTRTYPE(uint8_t *)        pbApicAccess;
     } vmx;
-
-    /** AMD-V specific data. */
-    struct HMR0SVMVM
-    {
-        /** Set if erratum 170 affects the AMD cpu. */
-        bool                        fAlwaysFlushTLB;
-        bool                        afAlignment0[3];
-    } svm;
 } HMR0PERVM;
 /** Pointer to HM's per-VM ring-0 instance data. */
 typedef HMR0PERVM *PHMR0PERVM;
