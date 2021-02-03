@@ -584,15 +584,6 @@ RTDECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
 RTDECL(int) RTFileQueryMaxSizeEx(RTFILE File, PRTFOFF pcbMax);
 
 /**
- * Determine the maximum file size depending on the file system the file is stored on.
- *
- * @returns The max size of the file.
- *          -1 on failure.
- * @param   File        Handle to the file.
- */
-RTDECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
-
-/**
  * Queries the sector size (/ logical block size) for a disk or similar.
  *
  * @returns IPRT status code.
