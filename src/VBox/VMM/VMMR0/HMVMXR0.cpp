@@ -2457,6 +2457,7 @@ static bool hmR0VmxIsAutoLoadGuestMsr(PCVMXVMCSINFO pVmcsInfo, uint32_t idMsr)
  */
 static void hmR0VmxUpdateAutoLoadHostMsrs(PCVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
+    RT_NOREF(pVCpu);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     PVMXAUTOMSR pHostMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvHostMsrLoad;
@@ -2702,7 +2703,7 @@ static int hmR0VmxCheckCachedVmcsCtls(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, b
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-static void hmR0VmxCheckHostEferMsr(PCVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxCheckHostEferMsr(PCVMXVMCSINFO pVmcsInfo)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -11080,7 +11081,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 #ifdef VBOX_STRICT
     Assert(pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs);
     hmR0VmxCheckAutoLoadStoreMsrs(pVCpu, pVmcsInfo, pVmxTransient->fIsNestedGuest);
-    hmR0VmxCheckHostEferMsr(pVCpu, pVmcsInfo);
+    hmR0VmxCheckHostEferMsr(pVmcsInfo);
     AssertRC(hmR0VmxCheckCachedVmcsCtls(pVCpu, pVmcsInfo, pVmxTransient->fIsNestedGuest));
 #endif
 
@@ -11136,10 +11137,10 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
     TMNotifyEndOfExecution(pVCpu->CTX_SUFF(pVM), pVCpu);                /* Notify TM that the guest is no longer running. */
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
-    pVCpu->hmr0.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;     /* Some host state messed up by VMX needs restoring. */
+    pVCpu->hmr0.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;   /* Some host state messed up by VMX needs restoring. */
     pVmcsInfo->fVmcsState |= VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;          /* Use VMRESUME instead of VMLAUNCH in the next run. */
 #ifdef VBOX_STRICT
-    hmR0VmxCheckHostEferMsr(pVCpu, pVmcsInfo);                          /* Verify that the host EFER MSR wasn't modified. */
+    hmR0VmxCheckHostEferMsr(pVmcsInfo);                                 /* Verify that the host EFER MSR wasn't modified. */
 #endif
     Assert(!ASMIntAreEnabled());
     ASMSetFlags(pVmxTransient->fEFlags);                                /* Enable interrupts. */
