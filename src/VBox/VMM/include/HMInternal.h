@@ -429,61 +429,18 @@ AssertCompileSizeAlignment(HMEVENT, 8);
  */
 typedef struct HM
 {
-    /** Set if nested paging is enabled.
-     * Config value that is copied to HMR0PERVM::fNestedPaging on setup. */
-    bool                        fNestedPagingCfg;
-    /** Set when we've finalized the VMX / SVM initialization in ring-3
-     * (hmR3InitFinalizeR0Intel / hmR3InitFinalizeR0Amd). */
-    bool                        fInitialized;
-    /** Set if large pages are enabled (requires nested paging).
-     * Config only, passed on the PGM where it really belongs.
-     * @todo move to PGM */
-    bool                        fLargePages;
-    /** Set if we can support 64-bit guests or not.
-     * Config value that is copied to HMR0PERVM::fAllow64BitGuests on setup. */
-    bool                        fAllow64BitGuestsCfg;
-    /** Set when we initialize VT-x or AMD-V once for all CPUs. */
-    bool                        fGlobalInit;
-    /** Set when TPR patching is allowed. */
-    bool                        fTprPatchingAllowed;
-    /** Set when TPR patching is active. */
-    bool                        fTPRPatchingActive;
     /** Set when the debug facility has breakpoints/events enabled that requires
      *  us to use the debug execution loop in ring-0. */
     bool                        fUseDebugLoop;
-    /** Set if hardware APIC virtualization is enabled.
-     * @todo Not really used by HM, move to APIC where it's actually used.  */
-    bool                        fVirtApicRegs;
-    /** Set if posted interrupt processing is enabled.
-     * @todo Not really used by HM, move to APIC where it's actually used.  */
-    bool                        fPostedIntrs;
-
-    /** @name Processed into HMR0PERVCPU::fWorldSwitcher by ring-0 on VM init.
-     * @{ */
-    /** Set if indirect branch prediction barrier on VM exit. */
-    bool                        fIbpbOnVmExit;
-    /** Set if indirect branch prediction barrier on VM entry. */
-    bool                        fIbpbOnVmEntry;
-    /** Set if level 1 data cache should be flushed on VM entry. */
-    bool                        fL1dFlushOnVmEntry;
-    /** Set if level 1 data cache should be flushed on EMT scheduling. */
-    bool                        fL1dFlushOnSched;
-    /** Set if MDS related buffers should be cleared on VM entry. */
-    bool                        fMdsClearOnVmEntry;
-    /** Set if MDS related buffers should be cleared on EMT scheduling. */
-    bool                        fMdsClearOnSched;
-    /** Set if host manages speculation control settings.
-     * @todo doesn't do anything ...  */
-    bool                        fSpecCtrlByHost;
-    /** @} */
-
+    /** Set when TPR patching is allowed. */
+    bool                        fTprPatchingAllowed;
+    /** Set when TPR patching is active. */
+    bool                        fTprPatchingActive;
     /** Alignment padding. */
-    bool                        afPaddingMinus1[3];
+    bool                        afAlignment1[5];
 
-    /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
-     * This number is set much higher when RTThreadPreemptIsPending is reliable. */
-    uint32_t                    cMaxResumeLoopsCfg;
-
+    /** @todo r=bird: for better cache locality for SVM, it would be good to split
+     *        out the non-esssential data (i.e config and for-ring3 bits). */
     struct
     {
         /** Set by the ring-0 side of HM to indicate VMX is supported by the CPU. */
@@ -611,11 +568,62 @@ typedef struct HM
 
     /** Last recorded error code during HM ring-0 init. */
     int32_t                     rcInit;
+
     /** Maximum ASID allowed.
      * This is mainly for the release log.  */
     uint32_t                    uMaxAsidForLog;
     /** World switcher flags (HM_WSF_XXX) for the release log. */
     uint32_t                    fWorldSwitcherForLog;
+
+    /** @name Configuration not used (much) after VM setup
+     * @{ */
+    /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
+     * This number is set much higher when RTThreadPreemptIsPending is reliable. */
+    uint32_t                    cMaxResumeLoopsCfg;
+    /** Set if nested paging is enabled.
+     * Config value that is copied to HMR0PERVM::fNestedPaging on setup. */
+    bool                        fNestedPagingCfg;
+    /** Set if large pages are enabled (requires nested paging).
+     * Config only, passed on the PGM where it really belongs.
+     * @todo move to PGM */
+    bool                        fLargePages;
+    /** Set if we can support 64-bit guests or not.
+     * Config value that is copied to HMR0PERVM::fAllow64BitGuests on setup. */
+    bool                        fAllow64BitGuestsCfg;
+    /** Set when we initialize VT-x or AMD-V once for all CPUs. */
+    bool                        fGlobalInit;
+    /** Set if hardware APIC virtualization is enabled.
+     * @todo Not really used by HM, move to APIC where it's actually used.  */
+    bool                        fVirtApicRegs;
+    /** Set if posted interrupt processing is enabled.
+     * @todo Not really used by HM, move to APIC where it's actually used.  */
+    bool                        fPostedIntrs;
+    /** @} */
+
+    /** @name Processed into HMR0PERVCPU::fWorldSwitcher by ring-0 on VM init.
+     * @{ */
+    /** Set if indirect branch prediction barrier on VM exit. */
+    bool                        fIbpbOnVmExit;
+    /** Set if indirect branch prediction barrier on VM entry. */
+    bool                        fIbpbOnVmEntry;
+    /** Set if level 1 data cache should be flushed on VM entry. */
+    bool                        fL1dFlushOnVmEntry;
+    /** Set if level 1 data cache should be flushed on EMT scheduling. */
+    bool                        fL1dFlushOnSched;
+    /** Set if MDS related buffers should be cleared on VM entry. */
+    bool                        fMdsClearOnVmEntry;
+    /** Set if MDS related buffers should be cleared on EMT scheduling. */
+    bool                        fMdsClearOnSched;
+    /** Set if host manages speculation control settings.
+     * @todo doesn't do anything ...  */
+    bool                        fSpecCtrlByHost;
+    /** @} */
+
+    /** Set when we've finalized the VMX / SVM initialization in ring-3
+     * (hmR3InitFinalizeR0Intel / hmR3InitFinalizeR0Amd). */
+    bool                        fInitialized;
+
+    bool                        afAlignment2[6];
 
     STAMCOUNTER                 StatTprPatchSuccess;
     STAMCOUNTER                 StatTprPatchFailure;

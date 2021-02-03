@@ -2117,7 +2117,7 @@ static int hmR0SvmExportGuestApicTpr(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
             Assert(pVmcb->ctrl.IntCtrl.n.u1VIntrMasking);
             pVCpu->hmr0.s.svm.fSyncVTpr = false;
 
-            if (!pVM->hm.s.fTPRPatchingActive)
+            if (!pVM->hm.s.fTprPatchingActive)
             {
                 /* Bits 3-0 of the VTPR field correspond to bits 7-4 of the TPR (which is the Task-Priority Class). */
                 pVmcb->ctrl.IntCtrl.n.u8VTPR = (u8Tpr >> 4);
@@ -4142,7 +4142,7 @@ static VBOXSTRICTRC hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransie
     {
         Assert(!pSvmTransient->fIsNestedGuest);
         PCSVMVMCB pVmcb = pVCpu->hmr0.s.svm.pVmcb;
-        if (pVM->hm.s.fTPRPatchingActive)
+        if (pVM->hm.s.fTprPatchingActive)
             pSvmTransient->u8GuestTpr = pVmcb->guest.u64LSTAR;
         else
             pSvmTransient->u8GuestTpr = pVmcb->ctrl.IntCtrl.n.u8VTPR;
@@ -4434,7 +4434,7 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
     {
         Assert(!pSvmTransient->fIsNestedGuest);
         /* TPR patching (for 32-bit guests) uses LSTAR MSR for holding the TPR value, otherwise uses the VTPR. */
-        if (   pVM->hm.s.fTPRPatchingActive
+        if (   pVM->hm.s.fTprPatchingActive
             && (pVmcb->guest.u64LSTAR & 0xff) != pSvmTransient->u8GuestTpr)
         {
             int rc = APICSetTpr(pVCpu, pVmcb->guest.u64LSTAR & 0xff);
@@ -6357,7 +6357,7 @@ static VBOXSTRICTRC hmR0SvmExitWriteMsr(PVMCPUCC pVCpu, PSVMVMCB pVmcb, PSVMTRAN
      */
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
     if (   idMsr == MSR_K8_LSTAR
-        && pVCpu->CTX_SUFF(pVM)->hm.s.fTPRPatchingActive)
+        && pVCpu->CTX_SUFF(pVM)->hm.s.fTprPatchingActive)
     {
         unsigned cbInstr;
         if (fSupportsNextRipSave)

@@ -2049,7 +2049,7 @@ VMMR3_INT_DECL(void) HMR3Reset(PVM pVM)
     pVM->hm.s.cbGuestPatchMem    = 0;
     pVM->hm.s.cPatches           = 0;
     pVM->hm.s.PatchTree          = 0;
-    pVM->hm.s.fTPRPatchingActive = false;
+    pVM->hm.s.fTprPatchingActive = false;
     ASMMemZero32(pVM->hm.s.aPatches, sizeof(pVM->hm.s.aPatches));
 }
 
@@ -2113,7 +2113,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void 
     pVM->hm.s.cPatches           = 0;
     pVM->hm.s.PatchTree          = 0;
     pVM->hm.s.pFreeGuestPatchMem = pVM->hm.s.pGuestPatchMem;
-    pVM->hm.s.fTPRPatchingActive = false;
+    pVM->hm.s.fTprPatchingActive = false;
     return VINF_SUCCESS;
 }
 
@@ -2187,7 +2187,7 @@ VMMR3_INT_DECL(int)  HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cb
     pVM->hm.s.pGuestPatchMem      = 0;
     pVM->hm.s.pFreeGuestPatchMem  = 0;
     pVM->hm.s.cbGuestPatchMem     = 0;
-    pVM->hm.s.fTPRPatchingActive  = false;
+    pVM->hm.s.fTprPatchingActive  = false;
     return VINF_SUCCESS;
 }
 
@@ -2574,7 +2574,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
             AssertRC(rc);
 
             pVM->hm.s.cPatches++;
-            pVM->hm.s.fTPRPatchingActive = true;
+            pVM->hm.s.fTprPatchingActive = true;
             STAM_COUNTER_INC(&pVM->hm.s.StatTprPatchSuccess);
             return VINF_SUCCESS;
         }
@@ -3238,8 +3238,8 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
             SSM_GET_ENUM32_RET(pSSM, pPatch->enmType, HMTPRINSTR);
 
             if (pPatch->enmType == HMTPRINSTR_JUMP_REPLACEMENT)
-                pVM->hm.s.fTPRPatchingActive = true;
-            Assert(pPatch->enmType == HMTPRINSTR_JUMP_REPLACEMENT || pVM->hm.s.fTPRPatchingActive == false);
+                pVM->hm.s.fTprPatchingActive = true;
+            Assert(pPatch->enmType == HMTPRINSTR_JUMP_REPLACEMENT || pVM->hm.s.fTprPatchingActive == false);
 
             SSMR3GetU32(pSSM, &pPatch->uSrcOperand);
             SSMR3GetU32(pSSM, &pPatch->uDstOperand);
