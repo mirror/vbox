@@ -41,54 +41,36 @@
 #include "SUPLibInternal.h"
 
 
-/**
- * @copydoc RTPathFilename
- */
 DECLHIDDEN(char *) supR3HardenedPathFilename(const char *pszPath)
 {
     return RTPathFilename(pszPath);
 }
 
 
-/**
- * @copydoc RTPathAppPrivateNoArch
- */
 DECLHIDDEN(int) supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPath)
 {
     return RTPathAppPrivateNoArch(pszPath, cchPath);
 }
 
 
-/**
- * @copydoc RTPathAppPrivateArch
- */
 DECLHIDDEN(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath)
 {
     return RTPathAppPrivateArch(pszPath, cchPath);
 }
 
 
-/**
- * @copydoc RTPathSharedLibs
- */
 DECLHIDDEN(int) supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath)
 {
     return RTPathSharedLibs(pszPath, cchPath);
 }
 
 
-/**
- * @copydoc RTPathAppDocs
- */
 DECLHIDDEN(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
 {
     return RTPathAppDocs(pszPath, cchPath);
 }
 
 
-/**
- * @copydoc RTPathExecDir
- */
 DECLHIDDEN(int) supR3HardenedPathAppBin(char *pszPath, size_t cchPath)
 {
     return RTPathExecDir(pszPath, cchPath);

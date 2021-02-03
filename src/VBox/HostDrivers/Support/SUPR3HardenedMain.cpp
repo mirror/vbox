@@ -1428,7 +1428,6 @@ static bool supR3HardenedMainIsProcSelfExeAccssible(void)
 
 
 /**
- * @copydoc RTPathExecDir
  * @remarks not quite like RTPathExecDir actually...
  */
 DECLHIDDEN(int) supR3HardenedPathAppBin(char *pszPath, size_t cchPath)
