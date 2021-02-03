@@ -139,8 +139,6 @@ private slots:
         /** Handles command to apply host network details changes. */
         void sltApplyDetailsChangesHostNetwork();
 
-        /** Handles NAT network tree-widget @a pItem change. */
-        void sltHandleItemChangeNATNetwork(QTreeWidgetItem *pItem);
         /** Handles NAT network tree-widget current item change.
           * @param  fHoldPosition  Holds whether we should try to keep
           *                        port forwarding rule position intact. */

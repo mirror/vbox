@@ -46,7 +46,6 @@ struct UIDataNATNetwork
     /** Constructs data. */
     UIDataNATNetwork()
         : m_fExists(false)
-        , m_fEnabled(false)
         , m_strName(QString())
         , m_strPrefixIPv4(QString())
         , m_strPrefixIPv6(QString())
@@ -60,7 +59,6 @@ struct UIDataNATNetwork
     {
         return true
                && (m_fExists == other.m_fExists)
-               && (m_fEnabled == other.m_fEnabled)
                && (m_strName == other.m_strName)
                && (m_strPrefixIPv4 == other.m_strPrefixIPv4)
                && (m_strPrefixIPv6 == other.m_strPrefixIPv6)
@@ -79,8 +77,6 @@ struct UIDataNATNetwork
 
     /** Holds whether this network is not NULL. */
     bool                      m_fExists;
-    /** Holds whether this network enabled. */
-    bool                      m_fEnabled;
     /** Holds network name. */
     QString                   m_strName;
     /** Holds network IPv4 prefix. */
@@ -150,8 +146,6 @@ private slots:
 
     /** @name Change handling stuff.
       * @{ */
-        /** Handles network availability choice change. */
-        void sltNetworkAvailabilityChanged(bool fChecked);
         /** Handles network name text change. */
         void sltNetworkNameChanged(const QString &strText);
         /** Handles network IPv4 prefix text change. */
@@ -214,8 +208,6 @@ private:
 
     /** @name Network variables.
       * @{ */
-        /** Holds the network availability check-box instance. */
-        QCheckBox         *m_pCheckboxNetworkAvailable;
         /** Holds the network name label instance. */
         QLabel            *m_pLabelNetworkName;
         /** Holds the network name editor instance. */

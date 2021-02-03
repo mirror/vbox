@@ -72,7 +72,6 @@ enum HostNetworkColumn
 /** NAT network tree-widget column indexes. */
 enum NATNetworkColumn
 {
-    NATNetworkColumn_Availability,
     NATNetworkColumn_Name,
     NATNetworkColumn_Max,
 };
@@ -232,7 +231,6 @@ int UIItemHostNetwork::maskToCidr(const QString &strMask)
 void UIItemNATNetwork::updateFields()
 {
     /* Compose item fields: */
-    setCheckState(NATNetworkColumn_Availability, m_fEnabled ? Qt::Checked : Qt::Unchecked);
     setText(NATNetworkColumn_Name, m_strName);
 
     /* Compose tool-tip: */
@@ -256,9 +254,7 @@ void UIItemNATNetwork::updateFields()
 
 QString UIItemNATNetwork::defaultText() const
 {
-    return   m_fEnabled
-           ? tr("%1, %2", "col.2 text, col.1 name").arg(text(1)).arg(parentTree()->headerItem()->text(0))
-           : tr("%1",     "col.2 text").arg(text(1));
+    return tr("%1, %2", "col.2 text, col.1 name").arg(text(1)).arg(parentTree()->headerItem()->text(0));
 }
 
 
@@ -327,7 +323,6 @@ void UINetworkManagerWidget::retranslateUi()
     if (m_pTreeWidgetNATNetwork)
     {
         const QStringList fields = QStringList()
-                                   << UINetworkManager::tr("Active")
                                    << UINetworkManager::tr("Name");
         m_pTreeWidgetNATNetwork->setHeaderLabels(fields);
     }
@@ -555,7 +550,6 @@ void UINetworkManagerWidget::sltCreateNATNetwork()
     /* Compose new item data: */
     UIDataNATNetwork oldData;
     oldData.m_fExists = true;
-    oldData.m_fEnabled = true;
     oldData.m_strName = strNetworkName;
     oldData.m_strPrefixIPv4 = "10.0.2.0/24";
     oldData.m_strPrefixIPv6 = ""; // do we need something here?
@@ -574,9 +568,6 @@ void UINetworkManagerWidget::sltCreateNATNetwork()
         msgCenter().cannotCreateNATNetwork(comVBox, this);
     else
     {
-        /* Save whether NAT network is enabled: */
-        if (comNetwork.isOk())
-            comNetwork.SetEnabled(oldData.m_fEnabled);
         /* Save NAT network name: */
         if (comNetwork.isOk())
             comNetwork.SetNetworkName(oldData.m_strName);
@@ -738,6 +729,7 @@ void UINetworkManagerWidget::sltAdjustTreeWidgets()
         m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
     }
 
+#if 0
     /* Check NAT network tree-widget: */
     if (m_pTreeWidgetNATNetwork)
     {
@@ -756,6 +748,7 @@ void UINetworkManagerWidget::sltAdjustTreeWidgets()
         m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_Availability, iWidth1);
         m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_Name, iTotal - iWidth1);
     }
+#endif
 }
 
 void UINetworkManagerWidget::sltHandleItemChangeHostNetwork(QTreeWidgetItem *pItem)
@@ -1019,56 +1012,6 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
     m_pDetailsWidgetHostNetwork->updateButtonStates();
 }
 
-void UINetworkManagerWidget::sltHandleItemChangeNATNetwork(QTreeWidgetItem *pItem)
-{
-    /* Get network item: */
-    UIItemNATNetwork *pChangedItem = static_cast<UIItemNATNetwork*>(pItem);
-    AssertMsgReturnVoid(pChangedItem, ("Changed item must not be null!\n"));
-
-    /* Get item data: */
-    UIDataNATNetwork oldData = *pChangedItem;
-
-    /* Make sure network availability status changed: */
-    if (   (   oldData.m_fEnabled
-            && pChangedItem->checkState(NATNetworkColumn_Availability) == Qt::Checked)
-        || (   !oldData.m_fEnabled
-            && pChangedItem->checkState(NATNetworkColumn_Availability) == Qt::Unchecked))
-        return;
-
-    /* Get VirtualBox for further activities: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
-
-    /* Find corresponding network: */
-    CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldData.m_strName);
-
-    /* Show error message if necessary: */
-    if (!comVBox.isOk() || comNetwork.isNull())
-        msgCenter().cannotFindNATNetwork(comVBox, oldData.m_strName, this);
-    else
-    {
-        /* Save whether NAT network is enabled: */
-        if (comNetwork.isOk())
-            comNetwork.SetEnabled(!oldData.m_fEnabled);
-
-        /* Show error message if necessary: */
-        if (!comNetwork.isOk())
-            msgCenter().cannotSaveNATNetworkParameter(comNetwork, this);
-        else
-        {
-            /* Update network in the tree: */
-            UIDataNATNetwork data;
-            loadNATNetwork(comNetwork, data);
-            updateItemForNATNetwork(data, true, pChangedItem);
-
-            /* Make sure current item fetched, trying to hold chosen position: */
-            sltHandleCurrentItemChangeNATNetworkHoldingPosition(true /* hold position? */);
-
-            /* Adjust tree-widgets: */
-            sltAdjustTreeWidgets();
-        }
-    }
-}
-
 void UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetworkHoldingPosition(bool fHoldPosition)
 {
     /* Check NAT network tree-widget: */
@@ -1151,9 +1094,6 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
             msgCenter().cannotFindNATNetwork(comVBox, oldData.m_strName, this);
         else
         {
-            /* Save whether NAT network is enabled: */
-            if (comNetwork.isOk() && newData.m_fEnabled != oldData.m_fEnabled)
-                comNetwork.SetEnabled(newData.m_fEnabled);
             /* Save NAT network name: */
             if (comNetwork.isOk() && newData.m_strName != oldData.m_strName)
                 comNetwork.SetNetworkName(newData.m_strName);
@@ -1450,8 +1390,6 @@ void UINetworkManagerWidget::prepareTreeWidgetNATNetwork()
                 this, &UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetwork);
         connect(m_pTreeWidgetNATNetwork, &QITreeWidget::customContextMenuRequested,
                 this, &UINetworkManagerWidget::sltHandleContextMenuRequestNATNetwork);
-        connect(m_pTreeWidgetNATNetwork, &QITreeWidget::itemChanged,
-                this, &UINetworkManagerWidget::sltHandleItemChangeNATNetwork);
         connect(m_pTreeWidgetNATNetwork, &QITreeWidget::itemDoubleClicked,
                 m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::setChecked);
 
@@ -1630,8 +1568,6 @@ void UINetworkManagerWidget::loadNATNetwork(const CNATNetwork &comNetwork, UIDat
     /* Gather network settings: */
     if (comNetwork.isNotNull())
         data.m_fExists = true;
-    if (comNetwork.isOk())
-        data.m_fEnabled = comNetwork.GetEnabled();
     if (comNetwork.isOk())
         data.m_strName = comNetwork.GetNetworkName();
     if (comNetwork.isOk())

@@ -42,7 +42,6 @@ UIDetailsWidgetNATNetwork::UIDetailsWidgetNATNetwork(EmbedTo enmEmbedding, QWidg
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pTabWidget(0)
-    , m_pCheckboxNetworkAvailable(0)
     , m_pLabelNetworkName(0)
     , m_pEditorNetworkName(0)
     , m_pLabelNetworkIPv4Prefix(0)
@@ -117,8 +116,7 @@ bool UIDetailsWidgetNATNetwork::revalidate() const
 void UIDetailsWidgetNATNetwork::updateButtonStates()
 {
 //    if (m_oldData != m_newData)
-//        printf("Network: %d, %s, %s, %s, %d, %d, %d\n",
-//               m_newData.m_fEnabled,
+//        printf("Network: %s, %s, %s, %d, %d, %d\n",
 //               m_newData.m_strName.toUtf8().constData(),
 //               m_newData.m_strPrefixIPv4.toUtf8().constData(),
 //               m_newData.m_strPrefixIPv6.toUtf8().constData(),
@@ -151,12 +149,6 @@ void UIDetailsWidgetNATNetwork::retranslateUi()
         m_pTabWidget->setTabText(1, tr("&Port Forwarding"));
     }
 
-    /* Translate 'Options' tab content: */
-    if (m_pCheckboxNetworkAvailable)
-    {
-        m_pCheckboxNetworkAvailable->setText(tr("&Enable Network"));
-        m_pCheckboxNetworkAvailable->setToolTip(tr("When checked, this network will be enabled."));
-    }
     if (m_pLabelNetworkName)
         m_pLabelNetworkName->setText(tr("&Name:"));
     if (m_pEditorNetworkName)
@@ -219,13 +211,6 @@ void UIDetailsWidgetNATNetwork::retranslateUi()
         m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->
             setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
-}
-
-void UIDetailsWidgetNATNetwork::sltNetworkAvailabilityChanged(bool fChecked)
-{
-    m_newData.m_fEnabled = fChecked;
-    loadDataForOptions();
-    updateButtonStates();
 }
 
 void UIDetailsWidgetNATNetwork::sltNetworkNameChanged(const QString &strText)
@@ -347,27 +332,13 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
     if (pTabOptions)
     {
         /* Prepare 'Options' layout: */
-        QGridLayout *pLayoutOptions = new QGridLayout(pTabOptions);
+        QVBoxLayout *pLayoutOptions = new QVBoxLayout(pTabOptions);
         if (pLayoutOptions)
         {
 #ifdef VBOX_WS_MAC
             pLayoutOptions->setSpacing(10);
             pLayoutOptions->setContentsMargins(10, 10, 10, 10);
 #endif
-
-            /* Prepare network availability check-box: */
-            m_pCheckboxNetworkAvailable = new QCheckBox(pTabOptions);
-            if (m_pCheckboxNetworkAvailable)
-            {
-                connect(m_pCheckboxNetworkAvailable, &QCheckBox::toggled,
-                        this, &UIDetailsWidgetNATNetwork::sltNetworkAvailabilityChanged);
-                pLayoutOptions->addWidget(m_pCheckboxNetworkAvailable, 0, 0, 1, 2);
-            }
-
-            /* Prepare 20-px shifting spacer: */
-            QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-            if (pSpacerItem)
-                pLayoutOptions->addItem(pSpacerItem, 1, 0);
 
             /* Prepare settings widget layout: */
             QGridLayout *pLayoutSettings = new QGridLayout;
@@ -465,7 +436,7 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
                     pLayoutSettings->addWidget(m_pCheckboxAdvertiseDefaultIPv6Route, 5, 1, 1, 2);
                 }
 
-                pLayoutOptions->addLayout(pLayoutSettings, 1, 1);
+                pLayoutOptions->addLayout(pLayoutSettings);
             }
 
             /* If parent embedded into stack: */
@@ -478,7 +449,7 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
                     m_pButtonBoxOptions->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
                     connect(m_pButtonBoxOptions, &QIDialogButtonBox::clicked, this, &UIDetailsWidgetNATNetwork::sltHandleButtonBoxClick);
 
-                    pLayoutOptions->addWidget(m_pButtonBoxOptions, 2, 0, 1, 2);
+                    pLayoutOptions->addWidget(m_pButtonBoxOptions);
                 }
             }
         }
@@ -554,23 +525,20 @@ void UIDetailsWidgetNATNetwork::loadDataForOptions()
 {
     /* Check whether network exists and enabled: */
     const bool fIsNetworkExists = m_newData.m_fExists;
-    const bool fIsNetworkEnabled = m_newData.m_fEnabled;
 
     /* Update 'Options' field availability: */
-    m_pCheckboxNetworkAvailable->setEnabled(fIsNetworkExists);
-    m_pLabelNetworkName->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pEditorNetworkName->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pLabelNetworkIPv4Prefix->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pEditorNetworkIPv4Prefix->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pLabelNetworkIPv6Prefix->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pEditorNetworkIPv6Prefix->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pLabelExtended->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pCheckboxSupportsDHCP->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pCheckboxSupportsIPv6->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pCheckboxAdvertiseDefaultIPv6Route->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
+    m_pLabelNetworkName->setEnabled(fIsNetworkExists);
+    m_pEditorNetworkName->setEnabled(fIsNetworkExists);
+    m_pLabelNetworkIPv4Prefix->setEnabled(fIsNetworkExists);
+    m_pEditorNetworkIPv4Prefix->setEnabled(fIsNetworkExists);
+    m_pLabelNetworkIPv6Prefix->setEnabled(fIsNetworkExists);
+    m_pEditorNetworkIPv6Prefix->setEnabled(fIsNetworkExists);
+    m_pLabelExtended->setEnabled(fIsNetworkExists);
+    m_pCheckboxSupportsDHCP->setEnabled(fIsNetworkExists);
+    m_pCheckboxSupportsIPv6->setEnabled(fIsNetworkExists);
+    m_pCheckboxAdvertiseDefaultIPv6Route->setEnabled(fIsNetworkExists);
 
     /* Load 'Options' fields: */
-    m_pCheckboxNetworkAvailable->setChecked(fIsNetworkEnabled);
     m_pEditorNetworkName->setText(m_newData.m_strName);
     m_pEditorNetworkIPv4Prefix->setText(m_newData.m_strPrefixIPv4);
     m_pEditorNetworkIPv6Prefix->setText(m_newData.m_strPrefixIPv6);
@@ -583,11 +551,10 @@ void UIDetailsWidgetNATNetwork::loadDataForForwarding()
 {
     /* Check whether network exists and enabled: */
     const bool fIsNetworkExists = m_newData.m_fExists;
-    const bool fIsNetworkEnabled = m_newData.m_fEnabled;
 
     /* Update 'Forwarding' field availability: */
-    m_pForwardingTableIPv4->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
-    m_pForwardingTableIPv6->setEnabled(fIsNetworkExists && fIsNetworkEnabled);
+    m_pForwardingTableIPv4->setEnabled(fIsNetworkExists);
+    m_pForwardingTableIPv6->setEnabled(fIsNetworkExists);
 
     /* Calculate/load guest address hints: */
     char szTmpIp[16];
