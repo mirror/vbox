@@ -1342,7 +1342,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                     AssertRC(rc2);
 
                     uint64_t const tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
-                    rc2 = hdaR3TimerSet(pDevIns, pStreamShared, tsNow + pStreamShared->State.cTransferTicks, false /* fForce */, tsNow);
+                    rc2 = hdaR3TimerSet(pDevIns, pStreamShared, tsNow + pStreamShared->State.cTransferTicks, true /* fForce */, tsNow);
                     AssertRC(rc2);
                 }
                 else
@@ -1447,16 +1447,10 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
         Assert(tsNow >= pStreamShared->State.tsTransferLast);
 
-        const uint64_t cTicksElapsed     = tsNow - pStreamShared->State.tsTransferLast;
-# ifdef LOG_ENABLED
-        const uint64_t cTicksTransferred = pStreamShared->State.cbTransferProcessed * pStreamShared->State.cTicksPerByte;
-# endif
+        const uint64_t cTicksElapsed = tsNow - pStreamShared->State.tsTransferLast;
 
-        Log3Func(("[SD%RU8] cTicksElapsed=%RU64, cTicksTransferred=%RU64, cTicksToNext=%RU64\n",
-                  uSD, cTicksElapsed, cTicksTransferred, cTicksToNext));
-
-        Log3Func(("[SD%RU8] cbTransferProcessed=%RU32, cbTransferChunk=%RU32, cbTransferSize=%RU32\n", uSD,
-                  pStreamShared->State.cbTransferProcessed, pStreamShared->State.cbTransferChunk, pStreamShared->State.cbTransferSize));
+        Log3Func(("[SD%RU8] cTicksElapsed=%RU64, cTicksToNext=%RU64\n",
+                  uSD, cTicksElapsed, cTicksToNext));
 
         if (cTicksElapsed <= cTicksToNext)
             cTicksToNext = cTicksToNext - cTicksElapsed;
@@ -1468,14 +1462,13 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             LogRelMax2(128, ("HDA: Stream #%RU8 interrupt lagging behind (expected %RU64us, got %RU64us, %RU8 pending interrupts), trying to catch up ...\n",
                              uSD, cTicksToNext / 1000,  cTicksElapsed / 1000, pStreamShared->State.cTransferPendingInterrupts));
 
-            cTicksToNext = 0;
+            cTicksToNext = pStreamShared->State.cbTransferSize * pStreamShared->State.cTicksPerByte;
         }
 
         Log3Func(("[SD%RU8] -> cTicksToNext=%RU64\n", uSD, cTicksToNext));
 
         /* Reset processed data counter. */
-        pStreamShared->State.cbTransferProcessed = 0;
-        pStreamShared->State.tsTransferNext      = tsNow + cTicksToNext;
+        pStreamShared->State.tsTransferNext = tsNow + cTicksToNext;
 
         /* Only re-arm the timer if there were pending transfer interrupts left
          *  -- it could happen that we land in here if a guest writes to SDnSTS
@@ -1485,7 +1478,7 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             pStreamShared->State.cTransferPendingInterrupts--;
 
             /* Re-arm the timer. */
-            LogFunc(("Timer set SD%RU8\n", uSD));
+            LogFunc(("[SD%RU8] Timer set\n", uSD));
             hdaR3TimerSet(pDevIns, pStreamShared, tsNow + cTicksToNext,
                           true /* fForce - we just set tsTransferNext*/, 0 /*tsNow*/);
         }
@@ -3917,7 +3910,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         if (cbCircBufSize) /* If 0, skip the buffer. */
         {
             /* Paranoia. */
-            AssertLogRelMsgReturn(cbCircBufSize <= _1M,
+            AssertLogRelMsgReturn(cbCircBufSize <= _32M,
                                   ("HDA: Saved state contains bogus DMA buffer size (%RU32) for stream #%RU8",
                                    cbCircBufSize, idStream),
                                   VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
@@ -4598,13 +4591,13 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "BufSizeInMs|BufSizeOutMs|TimerHz|PosAdjustEnabled|PosAdjustFrames|DebugEnabled|DebugPathOut", "");
 
     /* Note: Error checking of this value happens in hdaR3StreamSetUp(). */
-    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeInMs", &pThis->cbCircBufInMs, RT_MS_1SEC /* Default value, if not set. */);
+    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeInMs", &pThis->cbCircBufInMs, RT_MS_10SEC /* Default value, if not set. */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read input buffer size (ms) as unsigned integer"));
 
     /* Note: Error checking of this value happens in hdaR3StreamSetUp(). */
-    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeOutMs", &pThis->cbCircBufOutMs, RT_MS_1SEC /* Default value, if not set. */);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeOutMs", &pThis->cbCircBufOutMs, RT_MS_10SEC /* Default value, if not set. */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read output buffer size (ms) as unsigned integer"));

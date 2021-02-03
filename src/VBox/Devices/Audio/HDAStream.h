@@ -135,13 +135,10 @@ typedef struct HDASTREAMSTATE
     uint32_t                cbTransferSize;
     /** Transfer chunk size (in bytes) of a transfer period. */
     uint32_t                cbTransferChunk;
-    /** How many bytes already have been processed in within
-     *  the current transfer period. */
-    uint32_t                cbTransferProcessed;
     /** How many interrupts are pending due to
      *  BDLE interrupt-on-completion (IOC) bits set. */
     uint8_t                 cTransferPendingInterrupts;
-    uint8_t                 abPadding2[3];
+    uint8_t                 abPadding2[7];
     /** The stream's timer Hz rate.
      *  This value can can be different from the device's default Hz rate,
      *  depending on the rate the stream expects (e.g. for 5.1 speaker setups).
@@ -279,10 +276,7 @@ int                 hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDAST
 void                hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC,
                                      PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, uint8_t uSD);
 int                 hdaR3StreamEnable(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fEnable);
-/* uint32_t            hdaR3StreamGetPosition(PHDASTATE pThis, PHDASTREAMR3 pStreamShared); - only used in HDAStream.cpp */
-/*void                hdaR3StreamSetPosition(PHDASTREAM pStream, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t u32LPIB); - only used in HDAStream.cpp */
-/*uint32_t            hdaR3StreamGetFree(PHDASTREAM pStream); - only used in HDAStream.cpp */
-/*uint32_t            hdaR3StreamGetUsed(PHDASTREAM pStream); - only used in HDAStream.cpp */
+void                hdaR3StreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t uToAdd);
 bool                hdaR3StreamTransferIsScheduled(PHDASTREAM pStreamShared, uint64_t tsNow);
 uint64_t            hdaR3StreamTransferGetNext(PHDASTREAM pStreamShared);
 void                hdaR3StreamLock(PHDASTREAMR3 pStreamR3);

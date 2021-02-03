@@ -32,7 +32,11 @@
 #include "HDAStreamMap.h"
 #include "HDAStreamPeriod.h"
 
-
+#ifdef DEBUG_andy
+/** Enables strict mode, which checks for stuff which isn't supposed to happen.
+ *  Be prepared for assertions coming in! */
+# define HDA_STRICT
+#endif
 
 /**
  * HDA mixer sink definition (ring-3).
