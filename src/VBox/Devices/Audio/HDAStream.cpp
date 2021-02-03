@@ -29,6 +29,8 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
+#include <math.h> /* Needed for roundl(). */
+
 #include "DrvAudio.h"
 
 #include "DevHDA.h"
@@ -545,19 +547,15 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                 const double cTicksPerHz   = uTimerFreq  / pStreamShared->State.uTimerHz;
                 const double cTicksPerByte = cTicksPerHz / (double)pStreamShared->State.cbTransferChunk;
 
-#define HDA_ROUND_NEAREST(a_X) ((a_X) >= 0 ? (uint32_t)((a_X) + 0.5) : (uint32_t)((a_X) - 0.5)) /** @todo r=andy Do we have rounding in IPRT? */
-
                 /* Calculate the timer ticks per byte for this stream. */
-                pStreamShared->State.cTicksPerByte = HDA_ROUND_NEAREST(cTicksPerByte);
+                pStreamShared->State.cTicksPerByte = roundl(cTicksPerByte); /** @todo r=andy Do we have rounding in IPRT? */
                 Assert(pStreamShared->State.cTicksPerByte);
 
                 const double cTransferTicks = pStreamShared->State.cbTransferChunk * cTicksPerByte;
 
                 /* Calculate timer ticks per transfer. */
-                pStreamShared->State.cTransferTicks = HDA_ROUND_NEAREST(cTransferTicks);
+                pStreamShared->State.cTransferTicks = roundl(cTransferTicks);
                 Assert(pStreamShared->State.cTransferTicks);
-
-#undef HDA_ROUND_NEAREST
 
                 LogRel2(("HDA: Stream #%RU8 is using %uHz device timer (%RU64 virtual ticks / Hz), stream Hz=%RU32, "
                          "cTicksPerByte=%RU64, cTransferTicks=%RU64 -> cbTransferChunk=%RU32 (%RU64ms), cbTransferSize=%RU32 (%RU64ms)\n",
@@ -2111,3 +2109,4 @@ void hdaR3StreamAsyncIOEnable(PHDASTREAMR3 pStreamR3, bool fEnable)
 # endif /* VBOX_WITH_AUDIO_HDA_ASYNC_IO */
 
 #endif /* IN_RING3 */
+
