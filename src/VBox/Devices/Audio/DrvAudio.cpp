@@ -937,8 +937,8 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
               ("Stream '%s' is not an output stream and therefore cannot be written to (direction is '%s')\n",
                pStream->szName, DrvAudioHlpAudDirToStr(pStream->enmDir)));
 
-    AssertMsg(DrvAudioHlpBytesIsAligned(cbBuf, &pStream->Guest.Cfg.Props),
-              ("Stream '%s' got a non-frame-aligned write (%RU32 bytes)\n", pStream->szName, cbBuf));
+    /*AssertMsg(DrvAudioHlpBytesIsAligned(cbBuf, &pStream->Guest.Cfg.Props),
+              ("Stream '%s' got a non-frame-aligned write (%RU32 bytes)\n", pStream->szName, cbBuf));*/
 
     uint32_t cbWrittenTotal = 0;
 
@@ -1003,8 +1003,6 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         if (   RT_FAILURE(rc)
             || !cfGstWritten)
         {
-            AssertMsgFailed(("[%s] Write failed: cbToWrite=%RU32, cfWritten=%RU32, rc=%Rrc\n",
-                             pStream->szName, cbToWrite, cfGstWritten, rc));
             break;
         }
 
@@ -2333,16 +2331,16 @@ static int drvAudioGetCfgFromCFGM(PDRVAUDIO pThis, PCFGMNODE pNode, PDMAUDIODIR 
     /* Queries an audio input / output stream's configuration from the CFGM tree. */
 #define QUERY_CONFIG(a_InOut) \
     /* PCM stuff. */ \
-    CFGMR3QueryU8Def (pNode, "PCMSampleBit"         #a_InOut, &pCfg->Props.cbSample,  0); \
-    CFGMR3QueryU32Def(pNode, "PCMSampleHz"          #a_InOut, &pCfg->Props.uHz,       0); \
-    CFGMR3QueryU8Def (pNode, "PCMSampleSigned"      #a_InOut, &pCfg->uSigned,         UINT8_MAX /* No custom value set */); \
-    CFGMR3QueryU8Def (pNode, "PCMSampleSwapEndian"  #a_InOut, &pCfg->uSwapEndian,     UINT8_MAX /* No custom value set */); \
-    CFGMR3QueryU8Def (pNode, "PCMSampleChannels"    #a_InOut, &pCfg->Props.cChannels, 0); \
+    CFGMR3QueryU8Def (pNode, "xPCMSampleBit"         #a_InOut, &pCfg->Props.cbSample,  0); \
+    CFGMR3QueryU32Def(pNode, "xPCMSampleHz"          #a_InOut, &pCfg->Props.uHz,       0); \
+    CFGMR3QueryU8Def (pNode, "xPCMSampleSigned"      #a_InOut, &pCfg->uSigned,         UINT8_MAX /* No custom value set */); \
+    CFGMR3QueryU8Def (pNode, "xPCMSampleSwapEndian"  #a_InOut, &pCfg->uSwapEndian,     UINT8_MAX /* No custom value set */); \
+    CFGMR3QueryU8Def (pNode, "xPCMSampleChannels"    #a_InOut, &pCfg->Props.cChannels, 0); \
     \
     /* Buffering stuff. */ \
-    CFGMR3QueryU32Def(pNode, "PeriodSizeMs"         #a_InOut, &pCfg->uPeriodSizeMs, 0); \
-    CFGMR3QueryU32Def(pNode, "BufferSizeMs"         #a_InOut, &pCfg->uBufferSizeMs, 0); \
-    CFGMR3QueryU32Def(pNode, "PreBufferSizeMs"      #a_InOut, &pCfg->uPreBufSizeMs, UINT32_MAX /* No custom value set */);
+    CFGMR3QueryU32Def(pNode, "xPeriodSizeMs"         #a_InOut, &pCfg->uPeriodSizeMs, 0); \
+    CFGMR3QueryU32Def(pNode, "xBufferSizeMs"         #a_InOut, &pCfg->uBufferSizeMs, 0); \
+    CFGMR3QueryU32Def(pNode, "xPreBufferSizeMs"      #a_InOut, &pCfg->uPreBufSizeMs, UINT32_MAX /* No custom value set */);
 
     if (enmDir == PDMAUDIODIR_IN)
     {
