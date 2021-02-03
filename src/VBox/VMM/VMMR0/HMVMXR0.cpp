@@ -10500,6 +10500,9 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
     /*
      * Pause-Loop exiting.
      */
+    /** @todo r=bird: given that both pVM->hm.s.vmx.cPleGapTicks and
+     *        pVM->hm.s.vmx.cPleWindowTicks defaults to zero, I cannot see how
+     *        this will work... */
     uint32_t const cPleGapTicks    = RT_MIN(pVM->hm.s.vmx.cPleGapTicks,    pVmcsNstGst->u32PleGap);
     uint32_t const cPleWindowTicks = RT_MIN(pVM->hm.s.vmx.cPleWindowTicks, pVmcsNstGst->u32PleWindow);
 
