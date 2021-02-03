@@ -73,6 +73,9 @@ enum HostNetworkColumn
 enum NATNetworkColumn
 {
     NATNetworkColumn_Name,
+    NATNetworkColumn_IPv4,
+    NATNetworkColumn_IPv6,
+    NATNetworkColumn_DHCP,
     NATNetworkColumn_Max,
 };
 
@@ -232,8 +235,11 @@ void UIItemNATNetwork::updateFields()
 {
     /* Compose item fields: */
     setText(NATNetworkColumn_Name, m_strName);
+    setText(NATNetworkColumn_IPv4, m_strPrefixIPv4);
+    setText(NATNetworkColumn_IPv6, m_strPrefixIPv6);
+    setText(NATNetworkColumn_DHCP, m_fSupportsDHCP ? tr("Enabled", "DHCP Server") : tr("Disabled", "DHCP Server"));
 
-    /* Compose tool-tip: */
+    /* Compose item tool-tip: */
     const QString strTable("<table cellspacing=5>%1</table>");
     const QString strHeader("<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
     const QString strSubHeader("<tr><td><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
@@ -323,7 +329,10 @@ void UINetworkManagerWidget::retranslateUi()
     if (m_pTreeWidgetNATNetwork)
     {
         const QStringList fields = QStringList()
-                                   << UINetworkManager::tr("Name");
+                                   << UINetworkManager::tr("Name")
+                                   << UINetworkManager::tr("IPv4 Prefix")
+                                   << UINetworkManager::tr("IPv6 Prefix")
+                                   << UINetworkManager::tr("DHCP Server");
         m_pTreeWidgetNATNetwork->setHeaderLabels(fields);
     }
 }
@@ -679,6 +688,9 @@ void UINetworkManagerWidget::sltToggleDetailsVisibility(bool fVisible)
 
 void UINetworkManagerWidget::sltHandleCurrentTabWidgetIndexChange()
 {
+    /* Adjust tree-widgets first of all: */
+    sltAdjustTreeWidgets();
+
     /* Show/hide details area and Apply/Reset buttons: */
     const bool fVisible = m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->isChecked();
     switch (m_pTabWidget->currentIndex())
@@ -729,7 +741,6 @@ void UINetworkManagerWidget::sltAdjustTreeWidgets()
         m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
     }
 
-#if 0
     /* Check NAT network tree-widget: */
     if (m_pTreeWidgetNATNetwork)
     {
@@ -741,14 +752,19 @@ void UINetworkManagerWidget::sltAdjustTreeWidgets()
         /* Calculate the total tree-widget width: */
         const int iTotal = m_pTreeWidgetNATNetwork->viewport()->width();
         /* Look for a minimum width hints for non-important columns: */
-        const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(NATNetworkColumn_Availability), pItemHeader->sectionSizeHint(NATNetworkColumn_Availability));
+        const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(NATNetworkColumn_IPv4), pItemHeader->sectionSizeHint(NATNetworkColumn_IPv4));
+        const int iMinWidth2 = qMax(pItemView->sizeHintForColumn(NATNetworkColumn_IPv6), pItemHeader->sectionSizeHint(NATNetworkColumn_IPv6));
+        const int iMinWidth3 = qMax(pItemView->sizeHintForColumn(NATNetworkColumn_DHCP), pItemHeader->sectionSizeHint(NATNetworkColumn_DHCP));
         /* Propose suitable width hints for non-important columns: */
         const int iWidth1 = iMinWidth1 < iTotal / NATNetworkColumn_Max ? iMinWidth1 : iTotal / NATNetworkColumn_Max;
+        const int iWidth2 = iMinWidth2 < iTotal / NATNetworkColumn_Max ? iMinWidth2 : iTotal / NATNetworkColumn_Max;
+        const int iWidth3 = iMinWidth3 < iTotal / NATNetworkColumn_Max ? iMinWidth3 : iTotal / NATNetworkColumn_Max;
         /* Apply the proposal: */
-        m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_Availability, iWidth1);
-        m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_Name, iTotal - iWidth1);
+        m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_IPv4, iWidth1);
+        m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_IPv6, iWidth2);
+        m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_DHCP, iWidth3);
+        m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
     }
-#endif
 }
 
 void UINetworkManagerWidget::sltHandleItemChangeHostNetwork(QTreeWidgetItem *pItem)
