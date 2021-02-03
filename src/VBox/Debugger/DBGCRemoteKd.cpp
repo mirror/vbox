@@ -1833,7 +1833,7 @@ static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_FLOATING_POINT)
     {
-        /** @todo. */
+        /** @todo . */
     }
 
     if (   RT_SUCCESS(rc)
@@ -1914,7 +1914,7 @@ static int dbgcKdCtxQueryNtCtx32(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT32 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_FLOATING_POINT)
     {
-        /** @todo. */
+        /** @todo . */
     }
 
     if (   RT_SUCCESS(rc)

@@ -709,7 +709,8 @@ typedef IEMCPU const *PCIEMCPU;
 
 
 
-/** Gets the current IEMTARGETCPU value.
+/** @def IEM_GET_TARGET_CPU
+ * Gets the current IEMTARGETCPU value.
  * @returns IEMTARGETCPU value.
  * @param   a_pVCpu The cross context virtual CPU structure of the calling thread.
  */
@@ -719,7 +720,8 @@ typedef IEMCPU const *PCIEMCPU;
 # define IEM_GET_TARGET_CPU(a_pVCpu)    ((a_pVCpu)->iem.s.uTargetCpu)
 #endif
 
-/** @def Gets the instruction length. */
+/** @def IEM_GET_INSTR_LEN
+ * Gets the instruction length. */
 #ifdef IEM_WITH_CODE_TLB
 # define IEM_GET_INSTR_LEN(a_pVCpu)     ((a_pVCpu)->iem.s.offInstrNextByte - (uint32_t)(int32_t)(a_pVCpu)->iem.s.offCurInstrStart)
 #else

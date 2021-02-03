@@ -16,7 +16,7 @@
  */
 
 
-/** @page pg_dbgf_cfg    DBGFR3FlowTrace - Flow Trace Interface
+/** @page pg_dbgf_flow DBGFR3FlowTrace - Flow Trace Interface
  *
  * @todo
  */
