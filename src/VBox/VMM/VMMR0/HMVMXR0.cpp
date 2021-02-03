@@ -1452,7 +1452,7 @@ static void hmR0VmxUpdateErrorRecord(PVMCPUCC pVCpu, int rc)
         AssertPtrReturnVoid(pVCpu);
         VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.LastError.u32InstrError);
     }
-    pVCpu->CTX_SUFF(pVM)->hm.s.rcInit = rc;
+    pVCpu->CTX_SUFF(pVM)->hm.s.ForR3.rcInit = rc;
 }
 
 
@@ -1737,7 +1737,7 @@ static int hmR0VmxEnterRootMode(PHMPHYSCPU pHostCpu, PVMCC pVM, RTHCPHYS HCPhysC
             SUPR0ChangeCR4(0 /* fOrMask */, ~(uint64_t)X86_CR4_VMXE);
 
         if (pVM)
-            pVM->hm.s.vmx.HCPhysVmxEnableError = HCPhysCpuPage;
+            pVM->hm.s.ForR3.vmx.HCPhysVmxEnableError = HCPhysCpuPage;
     }
 
     /* Restore interrupts. */
@@ -3350,7 +3350,7 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
                 if (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
                     LogRelFunc(("Only SINGLE_CONTEXT_RETAIN_GLOBALS supported. Ignoring VPID.\n"));
                 pVM->hmr0.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NOT_SUPPORTED;
-                pVM->hm.s.vmx.fVpidForRing3 = pVM->hmr0.s.vmx.fVpid = false;
+                pVM->hmr0.s.vmx.fVpid           = false;
             }
         }
         else
@@ -3358,7 +3358,7 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
             /*  Shouldn't happen. VPID is supported but INVVPID is not supported by the CPU. Ignore VPID capability. */
             Log4Func(("VPID supported without INVEPT support. Ignoring VPID.\n"));
             pVM->hmr0.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NOT_SUPPORTED;
-            pVM->hm.s.vmx.fVpidForRing3 = pVM->hmr0.s.vmx.fVpid = false;
+            pVM->hmr0.s.vmx.fVpid           = false;
         }
     }
 
@@ -3378,10 +3378,10 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
     /*
      * Copy out the result to ring-3.
      */
-    pVM->hm.s.vmx.fVpidForRing3           = pVM->hmr0.s.vmx.fVpid;
-    pVM->hm.s.vmx.enmTlbFlushTypeForRing3 = pVM->hmr0.s.vmx.enmTlbFlushType;
-    pVM->hm.s.vmx.enmTlbFlushEptForRing3  = pVM->hmr0.s.vmx.enmTlbFlushEpt;
-    pVM->hm.s.vmx.enmTlbFlushVpidForRing3 = pVM->hmr0.s.vmx.enmTlbFlushVpid;
+    pVM->hm.s.ForR3.vmx.fVpid           = pVM->hmr0.s.vmx.fVpid;
+    pVM->hm.s.ForR3.vmx.enmTlbFlushType = pVM->hmr0.s.vmx.enmTlbFlushType;
+    pVM->hm.s.ForR3.vmx.enmTlbFlushEpt  = pVM->hmr0.s.vmx.enmTlbFlushEpt;
+    pVM->hm.s.ForR3.vmx.enmTlbFlushVpid = pVM->hmr0.s.vmx.enmTlbFlushVpid;
     return VINF_SUCCESS;
 }
 
@@ -3481,11 +3481,11 @@ static int hmR0VmxSetupLbrMsrRange(PVMCC pVM)
      */
     pVM->hmr0.s.vmx.idLbrTosMsr = idLbrTosMsr;
 
-    pVM->hm.s.vmx.idLbrFromIpMsrFirstForRing3 = pVM->hmr0.s.vmx.idLbrFromIpMsrFirst = idLbrFromIpMsrFirst;
-    pVM->hm.s.vmx.idLbrFromIpMsrLastForRing3  = pVM->hmr0.s.vmx.idLbrFromIpMsrLast  = idLbrFromIpMsrLast;
+    pVM->hm.s.ForR3.vmx.idLbrFromIpMsrFirst = pVM->hmr0.s.vmx.idLbrFromIpMsrFirst = idLbrFromIpMsrFirst;
+    pVM->hm.s.ForR3.vmx.idLbrFromIpMsrLast  = pVM->hmr0.s.vmx.idLbrFromIpMsrLast  = idLbrFromIpMsrLast;
 
-    pVM->hm.s.vmx.idLbrToIpMsrFirstForRing3   = pVM->hmr0.s.vmx.idLbrToIpMsrFirst   = idLbrToIpMsrFirst;
-    pVM->hm.s.vmx.idLbrToIpMsrLastForRing3    = pVM->hmr0.s.vmx.idLbrToIpMsrLast    = idLbrToIpMsrLast;
+    pVM->hm.s.ForR3.vmx.idLbrToIpMsrFirst   = pVM->hmr0.s.vmx.idLbrToIpMsrFirst   = idLbrToIpMsrFirst;
+    pVM->hm.s.ForR3.vmx.idLbrToIpMsrLast    = pVM->hmr0.s.vmx.idLbrToIpMsrLast    = idLbrToIpMsrLast;
     return VINF_SUCCESS;
 }
 
@@ -4536,8 +4536,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
     pVM->hmr0.s.vmx.fUnrestrictedGuest = fUnrestrictedGuest;
 
     /* Initialize these always, see hmR3InitFinalizeR0().*/
-    pVM->hm.s.vmx.enmTlbFlushEptForRing3  = pVM->hmr0.s.vmx.enmTlbFlushEpt  = VMXTLBFLUSHEPT_NONE;
-    pVM->hm.s.vmx.enmTlbFlushVpidForRing3 = pVM->hmr0.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NONE;
+    pVM->hm.s.ForR3.vmx.enmTlbFlushEpt  = pVM->hmr0.s.vmx.enmTlbFlushEpt  = VMXTLBFLUSHEPT_NONE;
+    pVM->hm.s.ForR3.vmx.enmTlbFlushVpid = pVM->hmr0.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NONE;
 
     /* Setup the tagged-TLB flush handlers. */
     int rc = hmR0VmxSetupTaggedTlb(pVM);

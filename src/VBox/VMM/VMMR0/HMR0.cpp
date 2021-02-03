@@ -1174,24 +1174,23 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
         pVM->hmr0.s.vmx.fUsePreemptTimer            = pVM->hm.s.vmx.fUsePreemptTimerCfg && g_fHmVmxUsePreemptTimer;
         pVM->hm.s.vmx.fUsePreemptTimerCfg           = pVM->hmr0.s.vmx.fUsePreemptTimer;
         pVM->hm.s.vmx.cPreemptTimerShift            = g_cHmVmxPreemptTimerShift;
-        pVM->hm.s.vmx.u64HostCr4ForRing3            = g_uHmVmxHostCr4;
-        pVM->hm.s.vmx.u64HostMsrEferForRing3        = g_uHmVmxHostMsrEfer;
-        pVM->hm.s.vmx.u64HostSmmMonitorCtlForRing3  = g_uHmVmxHostSmmMonitorCtl;
-        HMGetVmxMsrsFromHwvirtMsrs(&g_HmMsrs, &pVM->hm.s.vmx.MsrsForRing3);
+        pVM->hm.s.ForR3.vmx.u64HostCr4              = g_uHmVmxHostCr4;
+        pVM->hm.s.ForR3.vmx.u64HostMsrEfer          = g_uHmVmxHostMsrEfer;
+        pVM->hm.s.ForR3.vmx.u64HostSmmMonitorCtl    = g_uHmVmxHostSmmMonitorCtl;
+        HMGetVmxMsrsFromHwvirtMsrs(&g_HmMsrs, &pVM->hm.s.ForR3.vmx.Msrs);
         /* If you need to tweak host MSRs for testing VMX R0 code, do it here. */
 
         /* Enable VPID if supported and configured. */
         if (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VPID)
-            pVM->hm.s.vmx.fVpidForRing3
-                = pVM->hmr0.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid; /* Can be overridden by CFGM in HMR3Init(). */
+            pVM->hm.s.ForR3.vmx.fVpid = pVM->hmr0.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid; /* Can be overridden by CFGM in HMR3Init(). */
 
         /* Use VMCS shadowing if supported. */
         pVM->hmr0.s.vmx.fUseVmcsShadowing = pVM->cpum.ro.GuestFeatures.fVmx
                                          && (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING);
-        pVM->hm.s.vmx.fUseVmcsShadowingForRing3 = pVM->hmr0.s.vmx.fUseVmcsShadowing;
+        pVM->hm.s.ForR3.vmx.fUseVmcsShadowing = pVM->hmr0.s.vmx.fUseVmcsShadowing;
 
         /* Use the VMCS controls for swapping the EFER MSR if supported. */
-        pVM->hm.s.vmx.fSupportsVmcsEferForRing3 = g_fHmVmxSupportsVmcsEfer;
+        pVM->hm.s.ForR3.vmx.fSupportsVmcsEfer = g_fHmVmxSupportsVmcsEfer;
 
 #if 0
         /* Enable APIC register virtualization and virtual-interrupt delivery if supported. */
@@ -1209,13 +1208,13 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
     }
     else if (pVM->hm.s.svm.fSupported)
     {
-        pVM->hm.s.svm.u32Rev            = g_uHmSvmRev;
-        pVM->hm.s.svm.fFeaturesForRing3 = g_fHmSvmFeatures;
-        pVM->hm.s.svm.u64MsrHwcr        = g_HmMsrs.u.svm.u64MsrHwcr;
+        pVM->hm.s.ForR3.svm.u32Rev      = g_uHmSvmRev;
+        pVM->hm.s.ForR3.svm.fFeatures   = g_fHmSvmFeatures;
+        pVM->hm.s.ForR3.svm.u64MsrHwcr  = g_HmMsrs.u.svm.u64MsrHwcr;
         /* If you need to tweak host MSRs for testing SVM R0 code, do it here. */
     }
-    pVM->hm.s.rcInit              = g_rcHmInit;
-    pVM->hm.s.uMaxAsidForLog      = g_uHmMaxAsid;
+    pVM->hm.s.ForR3.rcInit      = g_rcHmInit;
+    pVM->hm.s.ForR3.uMaxAsid    = g_uHmMaxAsid;
 
     /*
      * Set default maximum inner loops in ring-0 before returning to ring-3.
@@ -1274,7 +1273,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
         pVCpu->hmr0.s.fWorldSwitcher = fWorldSwitcher;
     }
-    pVM->hm.s.fWorldSwitcherForLog = fWorldSwitcher;
+    pVM->hm.s.ForR3.fWorldSwitcher = fWorldSwitcher;
 
 
     /*

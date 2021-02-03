@@ -439,8 +439,6 @@ typedef struct HM
     /** Alignment padding. */
     bool                        afAlignment1[5];
 
-    /** @todo r=bird: for better cache locality for SVM, it would be good to split
-     *        out the non-esssential data (i.e config and for-ring3 bits). */
     struct
     {
         /** Set by the ring-0 side of HM to indicate VMX is supported by the CPU. */
@@ -449,18 +447,7 @@ typedef struct HM
         bool                        fEnabled;
         /** The shift mask employed by the VMX-Preemption timer (set by ring-0). */
         uint8_t                     cPreemptTimerShift;
-        bool                        afAlignment1[5];
-
-        /** Pause-loop exiting (PLE) gap in ticks. */
-        uint32_t                    cPleGapTicks;
-        /** Pause-loop exiting (PLE) window in ticks. */
-        uint32_t                    cPleWindowTicks;
-
-        /** Virtual address of the TSS page used for real mode emulation. */
-        R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
-        /** Virtual address of the identity page table used for real mode and protected
-         *  mode without paging emulation in EPT mode. */
-        R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
+        bool                        fAlignment1;
 
         /** @name Configuration (gets copied if problematic)
          * @{ */
@@ -476,46 +463,16 @@ typedef struct HM
         bool                        fUsePreemptTimerCfg;
         /** @} */
 
-        /** @name For ring-3 consumption
-         * @{ */
-        /** Set if VPID is supported (ring-3 copy). */
-        bool                        fVpidForRing3;
-        /** Whether the CPU supports VMCS fields for swapping EFER (set by ring-0 VMX
-         *  init, for logging). */
-        bool                        fSupportsVmcsEferForRing3;
-        /** Whether to use VMCS shadowing. */
-        bool                        fUseVmcsShadowingForRing3;
-        bool                        fAlignment2;
+        /** Pause-loop exiting (PLE) gap in ticks. */
+        uint32_t                    cPleGapTicks;
+        /** Pause-loop exiting (PLE) window in ticks. */
+        uint32_t                    cPleWindowTicks;
 
-        /** Host CR4 value (set by ring-0 VMX init, for logging). */
-        uint64_t                    u64HostCr4ForRing3;
-        /** Host SMM monitor control (set by ring-0 VMX init, for logging). */
-        uint64_t                    u64HostSmmMonitorCtlForRing3;
-        /** Host EFER value (set by ring-0 VMX init, for logging and guest NX). */
-        uint64_t                    u64HostMsrEferForRing3;
-
-        /** The first valid host LBR branch-from-IP stack range. */
-        uint32_t                    idLbrFromIpMsrFirstForRing3;
-        /** The last valid host LBR branch-from-IP stack range. */
-        uint32_t                    idLbrFromIpMsrLastForRing3;
-
-        /** The first valid host LBR branch-to-IP stack range. */
-        uint32_t                    idLbrToIpMsrFirstForRing3;
-        /** The last valid host LBR branch-to-IP stack range. */
-        uint32_t                    idLbrToIpMsrLastForRing3;
-
-        /** Host-physical address for a failing VMXON instruction (for diagnostics, ring-3). */
-        RTHCPHYS                    HCPhysVmxEnableError;
-        /** VMX MSR values (only for ring-3 consumption). */
-        VMXMSRS                     MsrsForRing3;
-
-        /** Tagged-TLB flush type (only for ring-3 consumption). */
-        VMXTLBFLUSHTYPE             enmTlbFlushTypeForRing3;
-        /** Flush type to use for INVEPT (only for ring-3 consumption). */
-        VMXTLBFLUSHEPT              enmTlbFlushEptForRing3;
-        /** Flush type to use for INVVPID (only for ring-3 consumption). */
-        VMXTLBFLUSHVPID             enmTlbFlushVpidForRing3;
-        /** @} */
+        /** Virtual address of the TSS page used for real mode emulation. */
+        R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
+        /** Virtual address of the identity page table used for real mode and protected
+         *  mode without paging emulation in EPT mode. */
+        R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
     } vmx;
 
     struct
@@ -540,16 +497,6 @@ typedef struct HM
         /** Pause filter treshold in ticks. */
         uint16_t                    cPauseFilterThresholdTicks;
         uint32_t                    u32Alignment2;
-
-        /** @name For ring-3 consumption
-         * @{ */
-        /** SVM revision. */
-        uint32_t                    u32Rev;
-        /** SVM feature bits from cpuid 0x8000000a, ring-3 copy. */
-        uint32_t                    fFeaturesForRing3;
-        /** HWCR MSR (for diagnostics). */
-        uint64_t                    u64MsrHwcr;
-        /** @} */
     } svm;
 
     /** AVL tree with all patches (active or disabled) sorted by guest instruction address.
@@ -565,15 +512,72 @@ typedef struct HM
     RTGCPTR                     pFreeGuestPatchMem;
     /** Size of the guest patch memory block. */
     uint32_t                    cbGuestPatchMem;
+    uint32_t                    u32Alignment2;
 
-    /** Last recorded error code during HM ring-0 init. */
-    int32_t                     rcInit;
+    /** For ring-3 use only. */
+    struct
+    {
+        /** Last recorded error code during HM ring-0 init. */
+        int32_t                     rcInit;
+        uint32_t                    u32Alignment3;
 
-    /** Maximum ASID allowed.
-     * This is mainly for the release log.  */
-    uint32_t                    uMaxAsidForLog;
-    /** World switcher flags (HM_WSF_XXX) for the release log. */
-    uint32_t                    fWorldSwitcherForLog;
+        /** Maximum ASID allowed.
+         * This is mainly for the release log.  */
+        uint32_t                    uMaxAsid;
+        /** World switcher flags (HM_WSF_XXX) for the release log. */
+        uint32_t                    fWorldSwitcher;
+
+        struct
+        {
+            /** Set if VPID is supported (ring-3 copy). */
+            bool                        fVpid;
+            /** Whether the CPU supports VMCS fields for swapping EFER (set by ring-0 VMX
+             *  init, for logging). */
+            bool                        fSupportsVmcsEfer;
+            /** Whether to use VMCS shadowing. */
+            bool                        fUseVmcsShadowing;
+            bool                        fAlignment2;
+
+            /** Host CR4 value (set by ring-0 VMX init, for logging). */
+            uint64_t                    u64HostCr4;
+            /** Host SMM monitor control (set by ring-0 VMX init, for logging). */
+            uint64_t                    u64HostSmmMonitorCtl;
+            /** Host EFER value (set by ring-0 VMX init, for logging and guest NX). */
+            uint64_t                    u64HostMsrEfer;
+
+            /** The first valid host LBR branch-from-IP stack range. */
+            uint32_t                    idLbrFromIpMsrFirst;
+            /** The last valid host LBR branch-from-IP stack range. */
+            uint32_t                    idLbrFromIpMsrLast;
+
+            /** The first valid host LBR branch-to-IP stack range. */
+            uint32_t                    idLbrToIpMsrFirst;
+            /** The last valid host LBR branch-to-IP stack range. */
+            uint32_t                    idLbrToIpMsrLast;
+
+            /** Host-physical address for a failing VMXON instruction (for diagnostics, ring-3). */
+            RTHCPHYS                    HCPhysVmxEnableError;
+            /** VMX MSR values (only for ring-3 consumption). */
+            VMXMSRS                     Msrs;
+
+            /** Tagged-TLB flush type (only for ring-3 consumption). */
+            VMXTLBFLUSHTYPE             enmTlbFlushType;
+            /** Flush type to use for INVEPT (only for ring-3 consumption). */
+            VMXTLBFLUSHEPT              enmTlbFlushEpt;
+            /** Flush type to use for INVVPID (only for ring-3 consumption). */
+            VMXTLBFLUSHVPID             enmTlbFlushVpid;
+        } vmx;
+
+        struct
+        {
+            /** SVM revision. */
+            uint32_t                    u32Rev;
+            /** SVM feature bits from cpuid 0x8000000a, ring-3 copy. */
+            uint32_t                    fFeatures;
+            /** HWCR MSR (for diagnostics). */
+            uint64_t                    u64MsrHwcr;
+        } svm;
+    } ForR3;
 
     /** @name Configuration not used (much) after VM setup
      * @{ */
@@ -636,6 +640,8 @@ typedef HM *PHM;
 AssertCompileMemberAlignment(HM, StatTprPatchSuccess, 8);
 AssertCompileMemberAlignment(HM, vmx,                 8);
 AssertCompileMemberAlignment(HM, svm,                 8);
+AssertCompileMemberAlignment(HM, StatTprPatchSuccess, 8);
+AssertCompile(RTASSERT_OFFSET_OF(HM, PatchTree) <= 64); /* First cache line has the essentials for both VT-x and SVM operation. */
 
 
 /**

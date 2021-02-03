@@ -993,9 +993,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
      */
     AssertReturn(pVM->hm.s.svm.fSupported, VERR_INCOMPATIBLE_CONFIG);
     bool const fNestedPaging = pVM->hm.s.fNestedPagingCfg;
-    AssertReturn(   !fNestedPaging
-                 || (pVM->hm.s.svm.fFeaturesForRing3 & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING),
-                 VERR_INCOMPATIBLE_CONFIG);
+    AssertReturn(!fNestedPaging || (g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING), VERR_INCOMPATIBLE_CONFIG);
     pVM->hmr0.s.fNestedPaging = fNestedPaging;
     pVM->hmr0.s.fAllow64BitGuests = pVM->hm.s.fAllow64BitGuestsCfg;
 
