@@ -372,7 +372,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     /** @cfgm{/HM/VmxLbr, bool, false}
      * Whether to enable LBR for the guest. This is disabled by default as it's only
      * useful while debugging and enabling it causes a noticeable performance hit. */
-    rc = CFGMR3QueryBoolDef(pCfgHm, "VmxLbr", &pVM->hm.s.vmx.fLbr, false);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "VmxLbr", &pVM->hm.s.vmx.fLbrCfg, false);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/SvmPauseFilterCount, uint16_t, 0}
@@ -3332,10 +3332,10 @@ static DECLCALLBACK(void) hmR3InfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
 
     if (HMIsVmxActive(pVM))
     {
-        if (pVM->hm.s.vmx.fLbr)
+        if (pVM->hm.s.vmx.fLbrCfg)
         {
             PCVMXVMCSINFOSHARED pVmcsInfoShared = hmGetVmxActiveVmcsInfoShared(pVCpu);
-            uint32_t const      cLbrStack       = pVM->hm.s.vmx.idLbrFromIpMsrLast - pVM->hm.s.vmx.idLbrFromIpMsrFirst + 1;
+            uint32_t const      cLbrStack       = pVM->hm.s.vmx.idLbrFromIpMsrLastForRing3 - pVM->hm.s.vmx.idLbrFromIpMsrFirstForRing3 + 1;
 
             /** @todo r=ramshankar: The index technically varies depending on the CPU, but
              *        0xf should cover everything we support thus far. Fix if necessary
@@ -3358,11 +3358,9 @@ static DECLCALLBACK(void) hmR3InfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
             Assert(RT_ELEMENTS(pVmcsInfoShared->au64LbrToIpMsr) <= cLbrStack);
             for (;;)
             {
-                if (pVM->hm.s.vmx.idLbrToIpMsrFirst)
-                {
+                if (pVM->hm.s.vmx.idLbrToIpMsrFirstForRing3)
                     pHlp->pfnPrintf(pHlp, "  Branch (%2u): From IP=%#016RX64 - To IP=%#016RX64\n", idxCurrent,
                                     pVmcsInfoShared->au64LbrFromIpMsr[idxCurrent], pVmcsInfoShared->au64LbrToIpMsr[idxCurrent]);
-                }
                 else
                     pHlp->pfnPrintf(pHlp, "  Branch (%2u): LBR=%#RX64\n", idxCurrent, pVmcsInfoShared->au64LbrFromIpMsr[idxCurrent]);
 

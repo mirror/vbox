@@ -521,21 +521,18 @@ typedef struct HM
         /** Whether to use VMCS shadowing. */
         bool                        fUseVmcsShadowingForRing3;
         /** Set if Last Branch Record (LBR) is enabled. */
-        bool                        fLbr;
-        bool                        fAlignment2;
-
-        /** The host LBR TOS (top-of-stack) MSR id. */
-        uint32_t                    idLbrTosMsr;
+        bool                        fLbrCfg;
+        bool                        afAlignment2[5];
 
         /** The first valid host LBR branch-from-IP stack range. */
-        uint32_t                    idLbrFromIpMsrFirst;
+        uint32_t                    idLbrFromIpMsrFirstForRing3;
         /** The last valid host LBR branch-from-IP stack range. */
-        uint32_t                    idLbrFromIpMsrLast;
+        uint32_t                    idLbrFromIpMsrLastForRing3;
 
         /** The first valid host LBR branch-to-IP stack range. */
-        uint32_t                    idLbrToIpMsrFirst;
+        uint32_t                    idLbrToIpMsrFirstForRing3;
         /** The last valid host LBR branch-to-IP stack range. */
-        uint32_t                    idLbrToIpMsrLast;
+        uint32_t                    idLbrToIpMsrLastForRing3;
 
         /** Host-physical address for a failing VMXON instruction (for diagnostics, ring-3). */
         RTHCPHYS                    HCPhysVmxEnableError;
@@ -648,7 +645,8 @@ typedef struct HMR0PERVM
         bool                        fUsePreemptTimer;
         /** Whether to use VMCS shadowing. */
         bool                        fUseVmcsShadowing;
-        bool                        afAlignment1[1];
+        /** Set if Last Branch Record (LBR) is enabled. */
+        bool                        fLbr;
         /** Set if VPID is supported (copy in HM::vmx::fVpidForRing3). */
         bool                        fVpid;
         /** Tagged-TLB flush type. */
@@ -657,6 +655,20 @@ typedef struct HMR0PERVM
         VMXTLBFLUSHEPT              enmTlbFlushEpt;
         /** Flush type to use for INVVPID. */
         VMXTLBFLUSHVPID             enmTlbFlushVpid;
+
+        /** The first valid host LBR branch-from-IP stack range. */
+        uint32_t                    idLbrFromIpMsrFirst;
+        /** The last valid host LBR branch-from-IP stack range. */
+        uint32_t                    idLbrFromIpMsrLast;
+
+        /** The first valid host LBR branch-to-IP stack range. */
+        uint32_t                    idLbrToIpMsrFirst;
+        /** The last valid host LBR branch-to-IP stack range. */
+        uint32_t                    idLbrToIpMsrLast;
+
+        /** The host LBR TOS (top-of-stack) MSR id. */
+        uint32_t                    idLbrTosMsr;
+        uint32_t                    u32Alignment1;
 
         /** Virtual address of the APIC-access page. */
         R0PTRTYPE(uint8_t *)        pbApicAccess;

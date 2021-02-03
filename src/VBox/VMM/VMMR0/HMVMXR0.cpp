@@ -874,12 +874,12 @@ static const char * const g_apszVmxInstrErrors[HMVMX_INSTR_ERROR_MAX + 1] =
  *
  * @remarks Must only be called when LBR is enabled.
  */
-DECL_FORCE_INLINE(bool) hmR0VmxIsLbrBranchFromMsr(PCVM pVM, uint32_t idMsr, uint32_t *pidxMsr)
+DECL_FORCE_INLINE(bool) hmR0VmxIsLbrBranchFromMsr(PCVMCC pVM, uint32_t idMsr, uint32_t *pidxMsr)
 {
-    Assert(pVM->hm.s.vmx.fLbr);
-    Assert(pVM->hm.s.vmx.idLbrFromIpMsrFirst);
-    uint32_t const cLbrStack = pVM->hm.s.vmx.idLbrFromIpMsrLast - pVM->hm.s.vmx.idLbrFromIpMsrFirst + 1;
-    uint32_t const idxMsr    = idMsr - pVM->hm.s.vmx.idLbrFromIpMsrFirst;
+    Assert(pVM->hmr0.s.vmx.fLbr);
+    Assert(pVM->hmr0.s.vmx.idLbrFromIpMsrFirst);
+    uint32_t const cLbrStack = pVM->hmr0.s.vmx.idLbrFromIpMsrLast - pVM->hmr0.s.vmx.idLbrFromIpMsrFirst + 1;
+    uint32_t const idxMsr    = idMsr - pVM->hmr0.s.vmx.idLbrFromIpMsrFirst;
     if (idxMsr < cLbrStack)
     {
         if (pidxMsr)
@@ -902,13 +902,13 @@ DECL_FORCE_INLINE(bool) hmR0VmxIsLbrBranchFromMsr(PCVM pVM, uint32_t idMsr, uint
  * @remarks Must only be called when LBR is enabled and when lastbranch-to-IP MSRs
  *          are supported by the CPU (see hmR0VmxSetupLbrMsrRange).
  */
-DECL_FORCE_INLINE(bool) hmR0VmxIsLbrBranchToMsr(PCVM pVM, uint32_t idMsr, uint32_t *pidxMsr)
+DECL_FORCE_INLINE(bool) hmR0VmxIsLbrBranchToMsr(PCVMCC pVM, uint32_t idMsr, uint32_t *pidxMsr)
 {
-    Assert(pVM->hm.s.vmx.fLbr);
-    if (pVM->hm.s.vmx.idLbrToIpMsrFirst)
+    Assert(pVM->hmr0.s.vmx.fLbr);
+    if (pVM->hmr0.s.vmx.idLbrToIpMsrFirst)
     {
-        uint32_t const cLbrStack = pVM->hm.s.vmx.idLbrToIpMsrLast - pVM->hm.s.vmx.idLbrToIpMsrFirst + 1;
-        uint32_t const idxMsr    = idMsr - pVM->hm.s.vmx.idLbrToIpMsrFirst;
+        uint32_t const cLbrStack = pVM->hmr0.s.vmx.idLbrToIpMsrLast - pVM->hmr0.s.vmx.idLbrToIpMsrFirst + 1;
+        uint32_t const idxMsr    = idMsr - pVM->hmr0.s.vmx.idLbrToIpMsrFirst;
         if (idxMsr < cLbrStack)
         {
             if (pidxMsr)
@@ -2795,11 +2795,11 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInf
             else
             {
                 /* Verify LBR MSRs (used only for debugging) are intercepted. We don't passthru these MSRs to the guest yet. */
-                PCVM pVM = pVCpu->CTX_SUFF(pVM);
-                if (   pVM->hm.s.vmx.fLbr
+                PCVMCC pVM = pVCpu->CTX_SUFF(pVM);
+                if (   pVM->hmr0.s.vmx.fLbr
                     && (   hmR0VmxIsLbrBranchFromMsr(pVM, pGuestMsrLoad->u32Msr, NULL /* pidxMsr */)
                         || hmR0VmxIsLbrBranchToMsr(pVM, pGuestMsrLoad->u32Msr, NULL /* pidxMsr */)
-                        || pGuestMsrLoad->u32Msr == pVM->hm.s.vmx.idLbrTosMsr))
+                        || pGuestMsrLoad->u32Msr == pVM->hmr0.s.vmx.idLbrTosMsr))
                 {
                     AssertMsgReturnVoid((fMsrpm & VMXMSRPM_MASK) == VMXMSRPM_EXIT_RD_WR,
                                         ("u32Msr=%#RX32 cMsrs=%u Passthru read/write for LBR MSRs!\n",
@@ -3395,7 +3395,7 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
  */
 static int hmR0VmxSetupLbrMsrRange(PVMCC pVM)
 {
-    Assert(pVM->hm.s.vmx.fLbr);
+    Assert(pVM->hmr0.s.vmx.fLbr);
     uint32_t idLbrFromIpMsrFirst;
     uint32_t idLbrFromIpMsrLast;
     uint32_t idLbrToIpMsrFirst;
@@ -3480,12 +3480,13 @@ static int hmR0VmxSetupLbrMsrRange(PVMCC pVM)
     /*
      * Update the LBR info. to the VM struct. for use later.
      */
-    pVM->hm.s.vmx.idLbrTosMsr         = idLbrTosMsr;
-    pVM->hm.s.vmx.idLbrFromIpMsrFirst = idLbrFromIpMsrFirst;
-    pVM->hm.s.vmx.idLbrFromIpMsrLast  = idLbrFromIpMsrLast;
+    pVM->hmr0.s.vmx.idLbrTosMsr = idLbrTosMsr;
 
-    pVM->hm.s.vmx.idLbrToIpMsrFirst   = idLbrToIpMsrFirst;
-    pVM->hm.s.vmx.idLbrToIpMsrLast    = idLbrToIpMsrLast;
+    pVM->hm.s.vmx.idLbrFromIpMsrFirstForRing3 = pVM->hmr0.s.vmx.idLbrFromIpMsrFirst = idLbrFromIpMsrFirst;
+    pVM->hm.s.vmx.idLbrFromIpMsrLastForRing3  = pVM->hmr0.s.vmx.idLbrFromIpMsrLast  = idLbrFromIpMsrLast;
+
+    pVM->hm.s.vmx.idLbrToIpMsrFirstForRing3   = pVM->hmr0.s.vmx.idLbrToIpMsrFirst   = idLbrToIpMsrFirst;
+    pVM->hm.s.vmx.idLbrToIpMsrLastForRing3    = pVM->hmr0.s.vmx.idLbrToIpMsrLast    = idLbrToIpMsrLast;
     return VINF_SUCCESS;
 }
 
@@ -4072,7 +4073,7 @@ static int hmR0VmxSetupVmcsMiscCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
         pVmcsInfo->u64Cr0Mask = u64Cr0Mask;
         pVmcsInfo->u64Cr4Mask = u64Cr4Mask;
 
-        if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fLbr)
+        if (pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fLbr)
         {
             rc = VMXWriteVmcsNw(VMX_VMCS64_GUEST_DEBUGCTL_FULL, MSR_IA32_DEBUGCTL_LBR);
             AssertRC(rc);
@@ -4548,7 +4549,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
     }
 
     /* Determine LBR capabilities. */
-    if (pVM->hm.s.vmx.fLbr)
+    pVM->hmr0.s.vmx.fLbr = pVM->hm.s.vmx.fLbrCfg;
+    if (pVM->hmr0.s.vmx.fLbr)
     {
         rc = hmR0VmxSetupLbrMsrRange(pVM);
         if (RT_FAILURE(rc))
@@ -6833,12 +6835,12 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
         }
 
         /* Last Branch Record. */
-        if (pVM->hm.s.vmx.fLbr)
+        if (pVM->hmr0.s.vmx.fLbr)
         {
             PVMXVMCSINFOSHARED const pVmcsInfoShared = pVmxTransient->pVmcsInfo->pShared;
-            uint32_t const idFromIpMsrStart = pVM->hm.s.vmx.idLbrFromIpMsrFirst;
-            uint32_t const idToIpMsrStart   = pVM->hm.s.vmx.idLbrToIpMsrFirst;
-            uint32_t const cLbrStack        = pVM->hm.s.vmx.idLbrFromIpMsrLast - pVM->hm.s.vmx.idLbrFromIpMsrFirst + 1;
+            uint32_t const idFromIpMsrStart = pVM->hmr0.s.vmx.idLbrFromIpMsrFirst;
+            uint32_t const idToIpMsrStart   = pVM->hmr0.s.vmx.idLbrToIpMsrFirst;
+            uint32_t const cLbrStack        = pVM->hmr0.s.vmx.idLbrFromIpMsrLast - pVM->hmr0.s.vmx.idLbrFromIpMsrFirst + 1;
             Assert(cLbrStack <= 32);
             for (uint32_t i = 0; i < cLbrStack; i++)
             {
@@ -6858,7 +6860,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
             }
 
             /* Add LBR top-of-stack MSR (which contains the index to the most recent record). */
-            int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, pVM->hm.s.vmx.idLbrTosMsr,
+            int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, pVM->hmr0.s.vmx.idLbrTosMsr,
                                                 pVmcsInfoShared->u64LbrTosMsr, false /* fSetReadWrite */,
                                                 false /* fUpdateHostMsr */);
             AssertRCReturn(rc, rc);
@@ -7783,7 +7785,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                         default:
                         {
                             uint32_t idxLbrMsr;
-                            if (pVM->hm.s.vmx.fLbr)
+                            if (pVM->hmr0.s.vmx.fLbr)
                             {
                                 if (hmR0VmxIsLbrBranchFromMsr(pVM, idMsr, &idxLbrMsr))
                                 {
@@ -7797,7 +7799,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                                     pVmcsInfoShared->au64LbrToIpMsr[idxLbrMsr] = pMsrs[i].u64Value;
                                     break;
                                 }
-                                if (idMsr == pVM->hm.s.vmx.idLbrTosMsr)
+                                if (idMsr == pVM->hmr0.s.vmx.idLbrTosMsr)
                                 {
                                     pVmcsInfoShared->u64LbrTosMsr = pMsrs[i].u64Value;
                                     break;
