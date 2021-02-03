@@ -630,8 +630,8 @@ check_yasm()
       yasm_min=`echo $yasm_ver|cut -d. -f2`
       yasm_rev=`echo $yasm_ver|cut -d. -f3`
       yasm_ver_mul=`expr $yasm_maj \* 10000 + $yasm_min \* 100 + $yasm_rev`
-      if [ $yasm_ver_mul -lt 501 ]; then
-        log_failure "found version $yasm_ver, expected at least 0.5.1"
+      if [ $yasm_ver_mul -lt 10300 ]; then
+        log_failure "found version $yasm_ver, expected at least 1.3.0"
         fail
       else
         log_success "found version $yasm_ver"
@@ -2798,8 +2798,7 @@ check_gcc
 if [ $ONLY_ADDITIONS -eq 0 ]; then
   check_open_watcom
   [ "$OS" != "darwin"  ] && check_iasl
-  # don't check for yasm for the time beeing as 0.40 and 0.50 both have known bugs
-  # [ "$OS" != "darwin" ] && check_yasm
+  [ $OSE -ge 1 ] && check_yasm
   [ "$OS" != "darwin"  ] && check_xsltproc
 fi
 
