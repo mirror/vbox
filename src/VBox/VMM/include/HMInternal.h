@@ -497,9 +497,10 @@ typedef struct HM
         /** Set if unrestricted guest execution is in use (real and protected mode
          *  without paging). */
         bool                        fUnrestrictedGuestCfg;
-        /** Set if the preemption timer is in use or not. */
-        bool                        fUsePreemptTimer;
-        /** The shift mask employed by the VMX-Preemption timer. */
+        /** Set if the preemption timer should be used if available.  Ring-0
+         * quietly clears this if the hardware doesn't support the preemption timer. */
+        bool                        fUsePreemptTimerCfg;
+        /** The shift mask employed by the VMX-Preemption timer (set by ring-0). */
         uint8_t                     cPreemptTimerShift;
         /** Padding. */
         bool                        afPadding0[1];
@@ -645,6 +646,8 @@ typedef struct HMR0PERVM
         /** Set if unrestricted guest execution is in use (real and protected mode
          *  without paging). */
         bool                        fUnrestrictedGuest;
+        /** Set if the preemption timer is in use. */
+        bool                        fUsePreemptTimer;
         bool                        afAlignment1[2];
         /** Set if VPID is supported (copy in HM::vmx::fVpidForRing3). */
         bool                        fVpid;

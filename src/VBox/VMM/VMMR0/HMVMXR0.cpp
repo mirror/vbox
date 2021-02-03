@@ -3813,7 +3813,7 @@ static int hmR0VmxSetupVmcsPinCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
         fVal |= VMX_PIN_CTLS_VIRT_NMI;                       /* Use virtual NMIs and virtual-NMI blocking features. */
 
     /* Enable the VMX-preemption timer. */
-    if (pVM->hm.s.vmx.fUsePreemptTimer)
+    if (pVM->hmr0.s.vmx.fUsePreemptTimer)
     {
         Assert(g_HmMsrs.u.vmx.PinCtls.n.allowed1 & VMX_PIN_CTLS_PREEMPT_TIMER);
         fVal |= VMX_PIN_CTLS_PREEMPT_TIMER;
@@ -5117,9 +5117,11 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
              * Enable saving of the VMX-preemption timer value on VM-exit.
              * For nested-guests, currently not exposed/used.
              */
-            if (    pVM->hm.s.vmx.fUsePreemptTimer
-                && (g_HmMsrs.u.vmx.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER))
+            if (pVM->hmr0.s.vmx.fUsePreemptTimer)
+            {
+                Assert(g_HmMsrs.u.vmx.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER);
                 fVal |= VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER;
+            }
 
             /* Don't acknowledge external interrupts on VM-exit. We want to let the host do that. */
             Assert(!(fVal & VMX_EXIT_CTLS_ACK_EXT_INT));
@@ -7121,7 +7123,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSI
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
 
-    if (pVM->hm.s.vmx.fUsePreemptTimer)
+    if (pVM->hmr0.s.vmx.fUsePreemptTimer)
     {
         uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVM, pVCpu, &uTscOffset, &fOffsettedTsc, &fParavirtTsc);
 

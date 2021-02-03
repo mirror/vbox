@@ -450,7 +450,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     /** @cfgm{/HM/UseVmxPreemptTimer, bool}
      * Whether to make use of the VMX-preemption timer feature of the CPU if it's
      * available. */
-    rc = CFGMR3QueryBoolDef(pCfgHm, "UseVmxPreemptTimer", &pVM->hm.s.vmx.fUsePreemptTimer, true);
+    rc = CFGMR3QueryBoolDef(pCfgHm, "UseVmxPreemptTimer", &pVM->hm.s.vmx.fUsePreemptTimerCfg, true);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/HM/IBPBOnVMExit, bool}
@@ -1735,7 +1735,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     else if (pVM->hm.s.vmx.enmTlbFlushVpidForRing3 == VMXTLBFLUSHVPID_NOT_SUPPORTED)
         LogRel(("HM: Ignoring VPID capabilities of CPU\n"));
 
-    if (pVM->hm.s.vmx.fUsePreemptTimer)
+    if (pVM->hm.s.vmx.fUsePreemptTimerCfg)
         LogRel(("HM: Enabled VMX-preemption timer (cPreemptTimerShift=%u)\n", pVM->hm.s.vmx.cPreemptTimerShift));
     else
         LogRel(("HM: Disabled VMX-preemption timer\n"));
@@ -2866,7 +2866,7 @@ VMMR3_INT_DECL(bool) HMR3IsVmxPreemptionTimerUsed(PVM pVM)
 {
     return HMIsEnabled(pVM)
         && pVM->hm.s.vmx.fEnabled
-        && pVM->hm.s.vmx.fUsePreemptTimer;
+        && pVM->hm.s.vmx.fUsePreemptTimerCfg;
 }
 
 

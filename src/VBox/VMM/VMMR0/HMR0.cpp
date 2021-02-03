@@ -1160,7 +1160,8 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
     Assert(!(pVM->hm.s.vmx.fSupported && pVM->hm.s.svm.fSupported));
     if (pVM->hm.s.vmx.fSupported)
     {
-        pVM->hm.s.vmx.fUsePreemptTimer     &= g_fHmVmxUsePreemptTimer; /* Can be overridden by CFGM in HMR3Init(). */
+        pVM->hmr0.s.vmx.fUsePreemptTimer    = pVM->hm.s.vmx.fUsePreemptTimerCfg && g_fHmVmxUsePreemptTimer;
+        pVM->hm.s.vmx.fUsePreemptTimerCfg   = pVM->hmr0.s.vmx.fUsePreemptTimer;
         pVM->hm.s.vmx.cPreemptTimerShift    = g_cHmVmxPreemptTimerShift;
         pVM->hm.s.vmx.u64HostCr4            = g_uHmVmxHostCr4;
         pVM->hm.s.vmx.u64HostMsrEfer        = g_uHmVmxHostMsrEfer;
