@@ -930,7 +930,7 @@ typedef struct DBGFBPPUB
         } Mmio;
 
         /** Padding to the anticipated size. */
-        uint64_t    u64Padding[2];
+        uint64_t    u64Padding[3];
     } u;
 } DBGFBPPUB;
 AssertCompileSize(DBGFBPPUB, 64 - 8);
