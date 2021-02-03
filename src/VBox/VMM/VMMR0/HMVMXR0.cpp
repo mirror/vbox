@@ -2700,7 +2700,6 @@ static int hmR0VmxCheckCachedVmcsCtls(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, b
 /**
  * Verifies that our cached host EFER MSR value has not changed since we cached it.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
 static void hmR0VmxCheckHostEferMsr(PCVMXVMCSINFO pVmcsInfo)

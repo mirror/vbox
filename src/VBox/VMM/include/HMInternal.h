@@ -1570,8 +1570,9 @@ DECLASM(int)                VMXRestoreHostState(uint32_t fRestoreHostFlags, PVMX
  * VMX StartVM functions.
  *
  * @returns VBox status code (no informational stuff).
- * @param   pVM         Pointer to the cross context VM structure.
- * @param   pVCpu       Pointer to the cross context per-CPU structure.
+ * @param   pVmcsInfo   Pointer to the VMCS info (for cached host RIP and RSP).
+ * @param   pVCpu       Pointer to the cross context per-CPU structure of the
+ *                      calling EMT.
  * @param   fResume     Whether to use VMRESUME (true) or VMLAUNCH (false).
  *
  * @remarks With spectre mitigations and the usual need for speed (/ micro
