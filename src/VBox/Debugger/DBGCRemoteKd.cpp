@@ -237,7 +237,7 @@ typedef struct NTCONTEXT64
     uint64_t                    u64RegVecCtrl;
     /** Debug control. */
     uint64_t                    u64DbgCtrl;
-    /** @todo */
+    /** @todo lbr */
     uint64_t                    u64LastBrToRip;
     uint64_t                    u64LastBrFromRip;
     uint64_t                    u64LastExcpToRip;
@@ -308,7 +308,7 @@ typedef struct NTKCONTEXT64
     uint32_t                    u32RegMxCsr;
     /** Debug control. */
     uint64_t                    u64DbgCtrl;
-    /** @todo */
+    /** @todo lbr */
     uint64_t                    u64LastBrToRip;
     uint64_t                    u64LastBrFromRip;
     uint64_t                    u64LastExcpToRip;
@@ -1114,20 +1114,20 @@ typedef const KDPACKETMANIPULATE64 *PCKDPACKETMANIPULATE64;
 #define KD_PACKET_MANIPULATE_REQ_CAUSE_BUGCHECK             UINT32_C(0x00003149)
 /** Cause a bugcheck request. */
 #define KD_PACKET_MANIPULATE_REQ_SWITCH_PROCESSOR           UINT32_C(0x00003150)
-/** @todo */
+/** @todo 0x3151-0x3155 */
 /** Search memory for a pattern request. */
 #define KD_PACKET_MANIPULATE_REQ_SEARCH_MEMORY              UINT32_C(0x00003156)
-/** @todo */
+/** @todo 0x3157-0x3159 */
 /** Clear all internal breakpoints request. */
 #define KD_PACKET_MANIPULATE_REQ_CLEAR_ALL_INTERNAL_BKPT    UINT32_C(0x0000315a)
 /** Fill memory. */
 #define KD_PACKET_MANIPULATE_REQ_FILL_MEMORY                UINT32_C(0x0000315b)
 /** Query memory properties. */
 #define KD_PACKET_MANIPULATE_REQ_QUERY_MEMORY               UINT32_C(0x0000315c)
-/** @todo */
+/** @todo 0x315d, 0x315e */
 /** Get context extended request. */
 #define KD_PACKET_MANIPULATE_REQ_GET_CONTEXT_EX             UINT32_C(0x0000315f)
-/** @todo */
+/** @todo 0x3160 */
 /** Maximum available request (exclusive). */
 #define KD_PACKET_MANIPULATE_REQ_MAX                        UINT32_C(0x00003161)
 /** @} */
@@ -1833,13 +1833,13 @@ static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_FLOATING_POINT)
     {
-        /** @todo . */
+        /** @todo NTCONTEXT_F_FLOATING_POINT. */
     }
 
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_DEBUG)
     {
-        /** @todo */
+        /** @todo NTCONTEXT_F_DEBUG */
     }
 
     return rc;
@@ -1914,7 +1914,7 @@ static int dbgcKdCtxQueryNtCtx32(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT32 pNtCt
     if (   RT_SUCCESS(rc)
         && fCtxFlags & NTCONTEXT_F_FLOATING_POINT)
     {
-        /** @todo . */
+        /** @todo NTCONTEXT_F_FLOATING_POINT. */
     }
 
     if (   RT_SUCCESS(rc)
@@ -2017,7 +2017,7 @@ static int dbgcKdCtxSetNtCtx64(PKDCTX pThis, VMCPUID idCpu, PCNTCONTEXT64 pNtCtx
 
     if (fCtxFlags & NTCONTEXT_F_FLOATING_POINT)
     {
-        /** @todo. */
+        /** @todo NTCONTEXT_F_FLOATING_POINT. */
     }
 
     if (fCtxFlags & NTCONTEXT_F_DEBUG)
@@ -4116,7 +4116,7 @@ static int dbgcKdCtxRecvTimeout(PKDCTX pThis)
         LogFlow(("DbgKd: Halting VM!\n"));
         rc = DBGFR3Halt(pThis->Dbgc.pUVM, VMCPUID_ALL);
     }
-    else /* Send a reset packet (@todo Figure out the semantics in this case exactly). */
+    else /* Send a reset packet */ /** @todo Figure out the semantics in this case exactly. */
         rc = dbgcKdCtxPktSendReset(pThis);
 
     dbgcKdCtxPktRecvReset(pThis);
