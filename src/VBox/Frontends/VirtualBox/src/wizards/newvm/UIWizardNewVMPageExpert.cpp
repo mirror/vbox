@@ -183,7 +183,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
 {
     UIWizardNewVMPage1::retranslateWidgets();
     UIWizardNewVMPage2::retranslateWidgets();
-    UIWizardNewVMPage4::retranslateWidgets();
+    UIWizardNewVMPage3::retranslateWidgets();
     UIWizardNewVMPage5::retranslateWidgets();
 
     if (m_pInstallationISOContainer)

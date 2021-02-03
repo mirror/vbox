@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic4 class implementation.
+ * VBox Qt GUI - UIWizardNewVMPageBasic3 class implementation.
  */
 
 /*
@@ -33,33 +33,33 @@
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVM.h"
-#include "UIWizardNewVMPageBasic4.h"
+#include "UIWizardNewVMPageBasic3.h"
 
-UIWizardNewVMPage4::UIWizardNewVMPage4()
+UIWizardNewVMPage3::UIWizardNewVMPage3()
     : m_pBaseMemoryEditor(0)
     , m_pVirtualCPUEditor(0)
 {
 }
 
-int UIWizardNewVMPage4::baseMemory() const
+int UIWizardNewVMPage3::baseMemory() const
 {
     if (!m_pBaseMemoryEditor)
         return 0;
     return m_pBaseMemoryEditor->value();
 }
 
-int UIWizardNewVMPage4::VCPUCount() const
+int UIWizardNewVMPage3::VCPUCount() const
 {
     if (!m_pVirtualCPUEditor)
         return 1;
     return m_pVirtualCPUEditor->value();
 }
 
-void UIWizardNewVMPage4::retranslateWidgets()
+void UIWizardNewVMPage3::retranslateWidgets()
 {
 }
 
-QWidget *UIWizardNewVMPage4::createHardwareWidgets()
+QWidget *UIWizardNewVMPage3::createHardwareWidgets()
 {
     QWidget *pHardwareContainer = new QWidget;
     QGridLayout *pHardwareLayout = new QGridLayout(pHardwareContainer);
@@ -71,7 +71,7 @@ QWidget *UIWizardNewVMPage4::createHardwareWidgets()
     return pHardwareContainer;
 }
 
-UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
+UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
     : m_pLabel(0)
 {
     prepare();
@@ -80,7 +80,7 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
     registerField("VCPUCount", this, "VCPUCount");
 }
 
-void UIWizardNewVMPageBasic4::prepare()
+void UIWizardNewVMPageBasic3::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
@@ -92,13 +92,13 @@ void UIWizardNewVMPageBasic4::prepare()
     createConnections();
 }
 
-void UIWizardNewVMPageBasic4::createConnections()
+void UIWizardNewVMPageBasic3::createConnections()
 {
 
 }
 
 
-void UIWizardNewVMPageBasic4::retranslateUi()
+void UIWizardNewVMPageBasic3::retranslateUi()
 {
     setTitle(UIWizardNewVM::tr("Hardware"));
 
@@ -109,7 +109,7 @@ void UIWizardNewVMPageBasic4::retranslateUi()
     retranslateWidgets();
 }
 
-void UIWizardNewVMPageBasic4::initializePage()
+void UIWizardNewVMPageBasic3::initializePage()
 {
     retranslateUi();
 
@@ -123,12 +123,12 @@ void UIWizardNewVMPageBasic4::initializePage()
 
 }
 
-void UIWizardNewVMPageBasic4::cleanupPage()
+void UIWizardNewVMPageBasic3::cleanupPage()
 {
     UIWizardPage::cleanupPage();
 }
 
-bool UIWizardNewVMPageBasic4::isComplete() const
+bool UIWizardNewVMPageBasic3::isComplete() const
 {
     return true;
 }

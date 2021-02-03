@@ -61,7 +61,7 @@ public:
     {
         Page1,
         Page2,
-        Page4,
+        Page3,
         Page5,
         PageMax
     };
