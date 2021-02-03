@@ -510,11 +510,11 @@ typedef struct HM
         /** Pause-loop exiting (PLE) window in ticks. */
         uint32_t                    cPleWindowTicks;
 
-        /** Host CR4 value (set by ring-0 VMX init) */
+        /** Host CR4 value (set by ring-0 VMX init, for logging). */
         uint64_t                    u64HostCr4;
-        /** Host SMM monitor control (set by ring-0 VMX init) */
+        /** Host SMM monitor control (set by ring-0 VMX init, for logging). */
         uint64_t                    u64HostSmmMonitorCtl;
-        /** Host EFER value (set by ring-0 VMX init) */
+        /** Host EFER value (set by ring-0 VMX init, for logging and guest NX). */
         uint64_t                    u64HostMsrEfer;
         /** Whether the CPU supports VMCS fields for swapping EFER. */
         bool                        fSupportsVmcsEfer;

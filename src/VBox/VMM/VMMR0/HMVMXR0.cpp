@@ -2471,7 +2471,7 @@ static void hmR0VmxUpdateAutoLoadHostMsrs(PCVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsIn
          * Strict builds will catch mismatches in hmR0VmxCheckAutoLoadStoreMsrs(). See @bugref{7368}.
          */
         if (pHostMsrLoad[i].u32Msr == MSR_K6_EFER)
-            pHostMsrLoad[i].u64Value = pVCpu->CTX_SUFF(pVM)->hm.s.vmx.u64HostMsrEfer;
+            pHostMsrLoad[i].u64Value = g_uHmVmxHostMsrEfer;
         else
             pHostMsrLoad[i].u64Value = ASMRdMsr(pHostMsrLoad[i].u32Msr);
     }
@@ -2709,7 +2709,7 @@ static void hmR0VmxCheckHostEferMsr(PCVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
     if (pVmcsInfo->u32ExitCtls & VMX_EXIT_CTLS_LOAD_EFER_MSR)
     {
         uint64_t const uHostEferMsr      = ASMRdMsr(MSR_K6_EFER);
-        uint64_t const uHostEferMsrCache = pVCpu->CTX_SUFF(pVM)->hm.s.vmx.u64HostMsrEfer;
+        uint64_t const uHostEferMsrCache = g_uHmVmxHostMsrEfer;
         uint64_t       uVmcsEferMsrVmcs;
         int rc = VMXReadVmcs64(VMX_VMCS64_HOST_EFER_FULL, &uVmcsEferMsrVmcs);
         AssertRC(rc);
@@ -2777,14 +2777,10 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInf
                             ("u32Msr=%#RX32 VMCS Value=%#RX64 ASMRdMsr=%#RX64 cMsrs=%u\n",
                              pHostMsrLoad->u32Msr, pHostMsrLoad->u64Value, u64HostMsr, cMsrs));
 
-        /* Verify that cached host EFER MSR matches what's loaded the CPU. */
+        /* Verify that cached host EFER MSR matches what's loaded on the CPU. */
         bool const fIsEferMsr = RT_BOOL(pHostMsrLoad->u32Msr == MSR_K6_EFER);
-        if (fIsEferMsr)
-        {
-            AssertMsgReturnVoid(u64HostMsr == pVCpu->CTX_SUFF(pVM)->hm.s.vmx.u64HostMsrEfer,
-                                ("Cached=%#RX64 ASMRdMsr=%#RX64 cMsrs=%u\n",
-                                 pVCpu->CTX_SUFF(pVM)->hm.s.vmx.u64HostMsrEfer, u64HostMsr, cMsrs));
-        }
+        AssertMsgReturnVoid(!fIsEferMsr || u64HostMsr == g_uHmVmxHostMsrEfer,
+                            ("Cached=%#RX64 ASMRdMsr=%#RX64 cMsrs=%u\n", g_uHmVmxHostMsrEfer, u64HostMsr, cMsrs));
 
         /* Verify that the accesses are as expected in the MSR bitmap for auto-load/store MSRs. */
         if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
@@ -4884,7 +4880,7 @@ static void hmR0VmxExportHostMsrs(PVMCPUCC pVCpu)
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->hm.s.vmx.fSupportsVmcsEfer)
     {
-        rc = VMXWriteVmcs64(VMX_VMCS64_HOST_EFER_FULL, pVM->hm.s.vmx.u64HostMsrEfer);
+        rc = VMXWriteVmcs64(VMX_VMCS64_HOST_EFER_FULL, g_uHmVmxHostMsrEfer);
         AssertRC(rc);
     }
 
@@ -4914,7 +4910,7 @@ static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
 #else
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    uint64_t const u64HostEfer  = pVM->hm.s.vmx.u64HostMsrEfer;
+    uint64_t const u64HostEfer  = g_uHmVmxHostMsrEfer;
     uint64_t const u64GuestEfer = pCtx->msrEFER;
 
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX
