@@ -4486,7 +4486,6 @@ static DECLCALLBACK(void) hdaR3PowerOff(PPDMDEVINS pDevIns)
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared HDA device state.
  * @param   pThisCC     The ring-3 HDA device state.
- * @param   pThis       Device instance.
  * @param   iLun        The logical unit which is being replaced.
  */
 static int hdaR3ReconfigLunWithNullAudio(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, unsigned iLun)

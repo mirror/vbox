@@ -1581,9 +1581,8 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 
 /**
  * Updates a HDA stream by doing its required data transfers.
- * The host sink(s) set the overall pace.
  *
- * This routine is called by both, the synchronous and the asynchronous, implementations.
+ * The host sink(s) set the overall pace.
  *
  * This routine is called by both, the synchronous and the asynchronous
  * (VBOX_WITH_AUDIO_HDA_ASYNC_IO), implementations.
@@ -1627,7 +1626,6 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
         if (fInTimer)
 # endif
         {
-
             uint32_t cbStreamFree = hdaR3StreamGetFree(pStreamR3);
             if (!cbStreamFree)
             {
@@ -1658,10 +1656,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 fDoRead = true;
                 pStreamShared->State.tsLastUpdateNs = tsNowNs;
             }
-
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         }
-# endif
         Log3Func(("[SD%RU8] fInTimer=%RTbool, tsLastUpdateNs=%RU64, fDoRead=%RTbool\n",
                   pStreamShared->u8SD, fInTimer, pStreamShared->State.tsLastUpdateNs, fDoRead));
 
@@ -1675,11 +1670,10 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (!fInTimer) /* In async I/O thread */
-        {
 # else
         if (fDoRead)
-        {
 # endif
+        {
             const uint32_t cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
             const uint32_t cbStreamReadable   = hdaR3StreamGetUsed(pStreamR3);
                   uint32_t cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
@@ -1705,8 +1699,8 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
     {
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (!fInTimer)
-        {
 # endif
+        {
             rc2 = AudioMixerSinkUpdate(pSink);
             AssertRC(rc2);
 
@@ -1750,12 +1744,11 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                     cbSinkReadable -= cbRead;
                 }
             }
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         }
+# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         else /* fInTimer */
-        {
 # endif
-
+        {
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             const uint64_t tsNowNs = RTTimeNanoTS();
             if (tsNowNs - pStreamShared->State.tsLastUpdateNs >= pStreamShared->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
@@ -1772,9 +1765,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 rc2 = hdaR3StreamTransfer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamUsed, fInTimer);
                 AssertRC(rc2);
             }
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         }
-# endif
     }
 }
 

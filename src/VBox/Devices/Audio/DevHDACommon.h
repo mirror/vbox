@@ -624,7 +624,8 @@ void          hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis);
 #endif
 /** @} */
 
-/** @name Register utility functions. */
+/** @name Register utility functions.
+ * @{  */
 uint8_t       hdaSDFIFOWToBytes(uint16_t u16RegFIFOW);
 /** @} */
 
