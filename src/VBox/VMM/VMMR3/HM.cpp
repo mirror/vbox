@@ -1661,7 +1661,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         return VMSetError(pVM, rc, RT_SRC_POS, "VT-x setup failed: %Rrc", rc);
     }
 
-    LogRel(("HM: Supports VMCS EFER fields         = %RTbool\n", pVM->hm.s.vmx.fSupportsVmcsEfer));
+    LogRel(("HM: Supports VMCS EFER fields         = %RTbool\n", pVM->hm.s.vmx.fSupportsVmcsEferForRing3));
     LogRel(("HM: Enabled VMX\n"));
     pVM->hm.s.vmx.fEnabled = true;
 

@@ -112,20 +112,22 @@ uint32_t                g_uHmMaxAsid;
 
 /** Set if VT-x (VMX) is supported by the CPU. */
 bool                    g_fHmVmxSupported = false;
-/** Whether we're using the preemption timer or not. */
+/** VMX: Whether we're using the preemption timer or not. */
 bool                    g_fHmVmxUsePreemptTimer;
-/** The shift mask employed by the VMX-Preemption timer. */
+/** VMX: The shift mask employed by the VMX-Preemption timer. */
 uint8_t                 g_cHmVmxPreemptTimerShift;
-/** Whether we're using SUPR0EnableVTx or not. */
+/** VMX: Set if swapping EFER is supported.  */
+bool                    g_fHmVmxSupportsVmcsEfer = false;
+/** VMX: Whether we're using SUPR0EnableVTx or not. */
 static bool             g_fHmVmxUsingSUPR0EnableVTx = false;
-/** Set if we've called SUPR0EnableVTx(true) and should disable it during
+/** VMX: Set if we've called SUPR0EnableVTx(true) and should disable it during
  * module termination. */
 static bool             g_fHmVmxCalledSUPR0EnableVTx = false;
-/** Host CR4 value (set by ring-0 VMX init) */
+/** VMX: Host CR4 value (set by ring-0 VMX init) */
 uint64_t                g_uHmVmxHostCr4;
-/** Host EFER value (set by ring-0 VMX init) */
+/** VMX: Host EFER value (set by ring-0 VMX init) */
 uint64_t                g_uHmVmxHostMsrEfer;
-/** Host SMM monitor control (used for logging/diagnostics) */
+/** VMX: Host SMM monitor control (used for logging/diagnostics) */
 uint64_t                g_uHmVmxHostSmmMonitorCtl;
 
 
@@ -486,6 +488,15 @@ static int hmR0InitIntel(void)
                     if (HMIsSubjectToVmxPreemptTimerErratum())
                         g_cHmVmxPreemptTimerShift = 0; /* This is about right most of the time here. */
                 }
+                else
+                    g_fHmVmxUsePreemptTimer   = false;
+
+                /*
+                 * Check for EFER swapping support.
+                 */
+                g_fHmVmxSupportsVmcsEfer = (g_HmMsrs.u.vmx.EntryCtls.n.allowed1 & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
+                                        && (g_HmMsrs.u.vmx.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_LOAD_EFER_MSR)
+                                        && (g_HmMsrs.u.vmx.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_SAVE_EFER_MSR);
             }
             else
             {
@@ -1181,11 +1192,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
             pVM->hm.s.vmx.fUseVmcsShadowing = true;
 
         /* Use the VMCS controls for swapping the EFER MSR if supported. */
-        Assert(!pVM->hm.s.vmx.fSupportsVmcsEfer);
-        if (   (g_HmMsrs.u.vmx.EntryCtls.n.allowed1 & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
-            && (g_HmMsrs.u.vmx.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_LOAD_EFER_MSR)
-            && (g_HmMsrs.u.vmx.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_SAVE_EFER_MSR))
-            pVM->hm.s.vmx.fSupportsVmcsEfer = true;
+        pVM->hm.s.vmx.fSupportsVmcsEferForRing3 = g_fHmVmxSupportsVmcsEfer;
 
 #if 0
         /* Enable APIC register virtualization and virtual-interrupt delivery if supported. */

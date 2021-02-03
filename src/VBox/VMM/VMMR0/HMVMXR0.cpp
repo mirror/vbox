@@ -4878,8 +4878,7 @@ static void hmR0VmxExportHostMsrs(PVMCPUCC pVCpu)
      * If the CPU supports the newer VMCS controls for managing EFER, use it. Otherwise it's
      * done as part of auto-load/store MSR area in the VMCS, see hmR0VmxExportGuestMsrs().
      */
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    if (pVM->hm.s.vmx.fSupportsVmcsEfer)
+    if (g_fHmVmxSupportsVmcsEfer)
     {
         rc = VMXWriteVmcs64(VMX_VMCS64_HOST_EFER_FULL, g_uHmVmxHostMsrEfer);
         AssertRC(rc);
@@ -5035,7 +5034,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
              * load whatever MSRs we require and we do not need to modify the guest visible copy
              * of the VM-entry MSR load area.
              */
-            if (   pVM->hm.s.vmx.fSupportsVmcsEfer
+            if (   g_fHmVmxSupportsVmcsEfer
                 && hmR0VmxShouldSwapEferMsr(pVCpu, pVmxTransient))
                 fVal |= VMX_ENTRY_CTLS_LOAD_EFER_MSR;
             else
@@ -5102,7 +5101,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
              * For nested-guests, we should use the "save IA32_EFER" control if we also
              * used the "load IA32_EFER" control while exporting VM-entry controls.
              */
-            if (   pVM->hm.s.vmx.fSupportsVmcsEfer
+            if (   g_fHmVmxSupportsVmcsEfer
                 && hmR0VmxShouldSwapEferMsr(pVCpu, pVmxTransient))
             {
                 fVal |= VMX_EXIT_CTLS_SAVE_EFER_MSR
@@ -6795,7 +6794,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
              * If the CPU supports VMCS controls for swapping EFER, use it. Otherwise, we have no option
              * but to use the auto-load store MSR area in the VMCS for swapping EFER. See @bugref{7368}.
              */
-            if (pVM->hm.s.vmx.fSupportsVmcsEfer)
+            if (g_fHmVmxSupportsVmcsEfer)
             {
                 int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_EFER_FULL, uGuestEferMsr);
                 AssertRC(rc);
@@ -6813,7 +6812,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 
             Log4Func(("efer=%#RX64 shadow=%#RX64\n", uGuestEferMsr, pCtx->msrEFER));
         }
-        else if (!pVM->hm.s.vmx.fSupportsVmcsEfer)
+        else if (!g_fHmVmxSupportsVmcsEfer)
             hmR0VmxRemoveAutoLoadStoreMsr(pVCpu, pVmxTransient, MSR_K6_EFER);
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_EFER_MSR);
@@ -9848,7 +9847,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
          */
         if (pVmcsInfo->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
         {
-            Assert(pVM->hm.s.vmx.fSupportsVmcsEfer);
+            Assert(g_fHmVmxSupportsVmcsEfer);
             rc = VMXReadVmcs64(VMX_VMCS64_GUEST_EFER_FULL, &u64Val);
             AssertRC(rc);
             HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xfffffffffffff2fe)),

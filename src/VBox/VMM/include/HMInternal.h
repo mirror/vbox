@@ -502,8 +502,7 @@ typedef struct HM
         bool                        fUsePreemptTimerCfg;
         /** The shift mask employed by the VMX-Preemption timer (set by ring-0). */
         uint8_t                     cPreemptTimerShift;
-        /** Padding. */
-        bool                        afPadding0[1];
+        bool                        fAlignment1;
 
         /** Pause-loop exiting (PLE) gap in ticks. */
         uint32_t                    cPleGapTicks;
@@ -516,13 +515,17 @@ typedef struct HM
         uint64_t                    u64HostSmmMonitorCtl;
         /** Host EFER value (set by ring-0 VMX init, for logging and guest NX). */
         uint64_t                    u64HostMsrEfer;
-        /** Whether the CPU supports VMCS fields for swapping EFER. */
-        bool                        fSupportsVmcsEfer;
+        /** Whether the CPU supports VMCS fields for swapping EFER (set by ring-0 VMX
+         *  init, for logging). */
+        bool                        fSupportsVmcsEferForRing3;
         /** Whether to use VMCS shadowing. */
         bool                        fUseVmcsShadowing;
         /** Set if Last Branch Record (LBR) is enabled. */
         bool                        fLbr;
-        uint8_t                     u8Alignment2[5];
+        bool                        fAlignment2;
+
+        /** The host LBR TOS (top-of-stack) MSR id. */
+        uint32_t                    idLbrTosMsr;
 
         /** The first valid host LBR branch-from-IP stack range. */
         uint32_t                    idLbrFromIpMsrFirst;
@@ -533,11 +536,6 @@ typedef struct HM
         uint32_t                    idLbrToIpMsrFirst;
         /** The last valid host LBR branch-to-IP stack range. */
         uint32_t                    idLbrToIpMsrLast;
-
-        /** The host LBR TOS (top-of-stack) MSR id. */
-        uint32_t                    idLbrTosMsr;
-        /** Padding. */
-        uint32_t                    u32Alignment1;
 
         /** Host-physical address for a failing VMXON instruction (for diagnostics, ring-3). */
         RTHCPHYS                    HCPhysVmxEnableError;
@@ -1455,6 +1453,7 @@ extern uint32_t         g_fHmHostKernelFeatures;
 extern uint32_t         g_uHmMaxAsid;
 extern bool             g_fHmVmxUsePreemptTimer;
 extern uint8_t          g_cHmVmxPreemptTimerShift;
+extern bool             g_fHmVmxSupportsVmcsEfer;
 extern uint64_t         g_uHmVmxHostCr4;
 extern uint64_t         g_uHmVmxHostMsrEfer;
 extern uint64_t         g_uHmVmxHostSmmMonitorCtl;
