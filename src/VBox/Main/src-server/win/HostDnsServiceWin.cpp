@@ -56,7 +56,7 @@ DECLINLINE(int) registerNotification(const HKEY &hKey, HANDLE &hEvent)
     return VINF_SUCCESS;
 }
 
-static void appendTokenizedStrings(std::vector<std::string> &vecStrings, const std::string &strToAppend, char chDelim /* = ' ' */)
+static void appendTokenizedStrings(std::vector<std::string> &vecStrings, const std::string &strToAppend, char chDelim = ' ')
 {
     if (strToAppend.empty())
         return;
