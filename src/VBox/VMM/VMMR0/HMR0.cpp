@@ -1186,10 +1186,9 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
                 = pVM->hmr0.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid; /* Can be overridden by CFGM in HMR3Init(). */
 
         /* Use VMCS shadowing if supported. */
-        Assert(!pVM->hm.s.vmx.fUseVmcsShadowing);
-        if (   pVM->cpum.ro.GuestFeatures.fVmx
-            && (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
-            pVM->hm.s.vmx.fUseVmcsShadowing = true;
+        pVM->hmr0.s.vmx.fUseVmcsShadowing = pVM->cpum.ro.GuestFeatures.fVmx
+                                         && (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING);
+        pVM->hm.s.vmx.fUseVmcsShadowingForRing3 = pVM->hmr0.s.vmx.fUseVmcsShadowing;
 
         /* Use the VMCS controls for swapping the EFER MSR if supported. */
         pVM->hm.s.vmx.fSupportsVmcsEferForRing3 = g_fHmVmxSupportsVmcsEfer;

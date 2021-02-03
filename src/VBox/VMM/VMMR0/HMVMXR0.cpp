@@ -1915,7 +1915,7 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
     bool const fMsrBitmaps = RT_BOOL(g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS);
-    bool const fShadowVmcs = !fIsNstGstVmcs ? pVM->hm.s.vmx.fUseVmcsShadowing : pVM->cpum.ro.GuestFeatures.fVmxVmcsShadowing;
+    bool const fShadowVmcs = !fIsNstGstVmcs ? pVM->hmr0.s.vmx.fUseVmcsShadowing : pVM->cpum.ro.GuestFeatures.fVmxVmcsShadowing;
     Assert(!pVM->cpum.ro.GuestFeatures.fVmxVmcsShadowing);  /* VMCS shadowing is not yet exposed to the guest. */
     VMXPAGEALLOCINFO aAllocInfo[] =
     {
@@ -1977,7 +1977,7 @@ static void hmR0VmxStructsFree(PVMCC pVM)
 {
     hmR0VmxPagesFree(&pVM->hmr0.s.vmx.hMemObj);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (pVM->hm.s.vmx.fUseVmcsShadowing)
+    if (pVM->hmr0.s.vmx.fUseVmcsShadowing)
     {
         RTMemFree(pVM->hmr0.s.vmx.paShadowVmcsFields);
         pVM->hmr0.s.vmx.paShadowVmcsFields = NULL;
@@ -2027,7 +2027,7 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
      * Allocate per-VM VT-x structures.
      */
     bool const fVirtApicAccess   = RT_BOOL(g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
-    bool const fUseVmcsShadowing = pVM->hm.s.vmx.fUseVmcsShadowing;
+    bool const fUseVmcsShadowing = pVM->hmr0.s.vmx.fUseVmcsShadowing;
     VMXPAGEALLOCINFO aAllocInfo[] =
     {
         { fVirtApicAccess,   0 /* Unused */, &pVM->hmr0.s.vmx.HCPhysApicAccess,    (PRTR0PTR)&pVM->hmr0.s.vmx.pbApicAccess },
@@ -4049,7 +4049,7 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxSetupVmcsMiscCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUseVmcsShadowing)
+    if (pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fUseVmcsShadowing)
     {
         hmR0VmxSetupVmcsVmreadBitmapAddr(pVCpu);
         hmR0VmxSetupVmcsVmwriteBitmapAddr(pVCpu);
@@ -4560,7 +4560,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /* Setup the shadow VMCS fields array and VMREAD/VMWRITE bitmaps. */
-    if (pVM->hm.s.vmx.fUseVmcsShadowing)
+    if (pVM->hmr0.s.vmx.fUseVmcsShadowing)
     {
         rc = hmR0VmxSetupShadowVmcsFieldsArrays(pVM);
         if (RT_SUCCESS(rc))
@@ -5588,7 +5588,7 @@ static int hmR0VmxExportGuestHwvirtState(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
          * Check if the VMX feature is exposed to the guest and if the host CPU supports
          * VMCS shadowing.
          */
-        if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUseVmcsShadowing)
+        if (pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fUseVmcsShadowing)
         {
             /*
              * If the nested hypervisor has loaded a current VMCS and is in VMX root mode,

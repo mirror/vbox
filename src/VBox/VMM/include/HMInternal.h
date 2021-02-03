@@ -519,7 +519,7 @@ typedef struct HM
          *  init, for logging). */
         bool                        fSupportsVmcsEferForRing3;
         /** Whether to use VMCS shadowing. */
-        bool                        fUseVmcsShadowing;
+        bool                        fUseVmcsShadowingForRing3;
         /** Set if Last Branch Record (LBR) is enabled. */
         bool                        fLbr;
         bool                        fAlignment2;
@@ -646,7 +646,9 @@ typedef struct HMR0PERVM
         bool                        fUnrestrictedGuest;
         /** Set if the preemption timer is in use. */
         bool                        fUsePreemptTimer;
-        bool                        afAlignment1[2];
+        /** Whether to use VMCS shadowing. */
+        bool                        fUseVmcsShadowing;
+        bool                        afAlignment1[1];
         /** Set if VPID is supported (copy in HM::vmx::fVpidForRing3). */
         bool                        fVpid;
         /** Tagged-TLB flush type. */
