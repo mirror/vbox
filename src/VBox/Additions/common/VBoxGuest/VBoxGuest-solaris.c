@@ -1085,13 +1085,6 @@ static uint_t vgdrvSolarisISR(caddr_t Arg)
 }
 
 
-/**
- * Poll notifier for mouse poll events.
- *
- * @param   pDevExt   Pointer to the device extension.
- *
- * @remarks This must be called without holding any spinlocks.
- */
 void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     LogFlow(("VGDrvNativeISRMousePollEvent:\n"));

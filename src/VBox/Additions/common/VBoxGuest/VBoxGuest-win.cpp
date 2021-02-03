@@ -3084,11 +3084,6 @@ static BOOLEAN NTAPI vgdrvNtIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceCon
 }
 
 
-/**
- * Overridden routine for mouse polling events.
- *
- * @param pDevExt     Device extension structure.
- */
 void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     NOREF(pDevExt);
