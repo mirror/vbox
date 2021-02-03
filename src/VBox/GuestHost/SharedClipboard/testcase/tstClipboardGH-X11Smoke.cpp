@@ -44,7 +44,7 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS f
 DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
                                                          CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
-    RT_NOREF(pCtx, rc, pReq, pv, cb);
+    RT_NOREF(pCtx, rcCompletion, pReq, pv, cb);
 }
 
 int main()
