@@ -184,7 +184,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
     UIWizardNewVMPage1::retranslateWidgets();
     UIWizardNewVMPage2::retranslateWidgets();
     UIWizardNewVMPage3::retranslateWidgets();
-    UIWizardNewVMPage5::retranslateWidgets();
+    UIWizardNewVMPage4::retranslateWidgets();
 
     if (m_pInstallationISOContainer)
         m_pInstallationISOContainer->setTitle(UIWizardNewVM::tr("Installation medium (ISO)"));

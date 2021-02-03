@@ -25,7 +25,7 @@
 #include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVMPageBasic3.h"
-#include "UIWizardNewVMPageBasic5.h"
+#include "UIWizardNewVMPageBasic4.h"
 
 /* Forward declarations: */
 class QGroupBox;
@@ -36,7 +36,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPage1,
                                 public UIWizardNewVMPage2,
                                 public UIWizardNewVMPage3,
-                                public UIWizardNewVMPage5
+                                public UIWizardNewVMPage4
 {
 
     Q_OBJECT;

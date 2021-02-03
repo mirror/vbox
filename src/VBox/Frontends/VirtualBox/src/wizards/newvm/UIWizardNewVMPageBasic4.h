@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic5 class declaration.
+ * VBox Qt GUI - UIWizardNewVMPageBasic4 class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic5_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic5_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic4_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic4_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -38,13 +38,13 @@ class QIToolButton;
 class UIMediaComboBox;
 
 /** 3rd page of the New Virtual Machine wizard (base part). */
-class UIWizardNewVMPage5 : public UIWizardPageBase
+class UIWizardNewVMPage4 : public UIWizardPageBase
 {
 
 protected:
 
     /** Constructor. */
-    UIWizardNewVMPage5();
+    UIWizardNewVMPage4();
 
     /** Handlers. */
     void updateVirtualDiskSource();
@@ -93,7 +93,7 @@ protected:
 };
 
 /** 3rd page of the New Virtual Machine wizard (basic extension). */
-class UIWizardNewVMPageBasic5 : public UIWizardPage, public UIWizardNewVMPage5
+class UIWizardNewVMPageBasic4 : public UIWizardPage, public UIWizardNewVMPage4
 {
     Q_OBJECT;
     Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
@@ -104,7 +104,7 @@ class UIWizardNewVMPageBasic5 : public UIWizardPage, public UIWizardNewVMPage5
 public:
 
     /** Constructor. */
-    UIWizardNewVMPageBasic5();
+    UIWizardNewVMPageBasic4();
 
 protected:
 
@@ -139,4 +139,4 @@ private:
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic5_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic4_h */
