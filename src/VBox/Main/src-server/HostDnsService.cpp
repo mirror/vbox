@@ -35,17 +35,35 @@
 #include "HostDnsService.h"
 
 
-static void dumpHostDnsInformation(const HostDnsInformation&);
-static void dumpHostDnsStrVector(const std::string &prefix, const std::vector<std::string> &v);
 
+static void dumpHostDnsStrVector(const std::string &prefix, const std::vector<std::string> &v)
+{
+    int i = 1;
+    for (std::vector<std::string>::const_iterator it = v.begin();
+         it != v.end();
+         ++it, ++i)
+        LogRel(("  %s %d: %s\n", prefix.c_str(), i, it->c_str()));
+    if (v.empty())
+        LogRel(("  no %s entries\n", prefix.c_str()));
+}
+
+static void dumpHostDnsInformation(const HostDnsInformation &info)
+{
+    dumpHostDnsStrVector("server", info.servers);
+
+    if (!info.domain.empty())
+        LogRel(("  domain: %s\n", info.domain.c_str()));
+    else
+        LogRel(("  no domain set\n"));
+
+    dumpHostDnsStrVector("search string", info.searchList);
+}
 
 bool HostDnsInformation::equals(const HostDnsInformation &info, uint32_t fLaxComparison) const
 {
     bool fSameServers;
     if ((fLaxComparison & IGNORE_SERVER_ORDER) == 0)
-    {
         fSameServers = (servers == info.servers);
-    }
     else
     {
         std::set<std::string> l(servers.begin(), servers.end());
@@ -61,9 +79,7 @@ bool HostDnsInformation::equals(const HostDnsInformation &info, uint32_t fLaxCom
         fSameSearchList = (searchList == info.searchList);
     }
     else
-    {
         fSameDomain = fSameSearchList = true;
-    }
 
     return fSameServers && fSameDomain && fSameSearchList;
 }
@@ -412,26 +428,3 @@ bool HostDnsMonitorProxy::updateInfo(const HostDnsInformation &info)
     return true;
 }
 
-static void dumpHostDnsInformation(const HostDnsInformation &info)
-{
-    dumpHostDnsStrVector("server", info.servers);
-
-    if (!info.domain.empty())
-        LogRel(("  domain: %s\n", info.domain.c_str()));
-    else
-        LogRel(("  no domain set\n"));
-
-    dumpHostDnsStrVector("search string", info.searchList);
-}
-
-
-static void dumpHostDnsStrVector(const std::string &prefix, const std::vector<std::string> &v)
-{
-    int i = 1;
-    for (std::vector<std::string>::const_iterator it = v.begin();
-         it != v.end();
-         ++it, ++i)
-        LogRel(("  %s %d: %s\n", prefix.c_str(), i, it->c_str()));
-    if (v.empty())
-        LogRel(("  no %s entries\n", prefix.c_str()));
-}

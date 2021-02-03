@@ -41,8 +41,41 @@
 #include <iprt/sanitized/string>
 #include <vector>
 
-static inline int registerNotification(const HKEY& hKey, HANDLE& hEvent);
-static void appendTokenizedStrings(std::vector<std::string> &vecStrings, const std::string &strToAppend, char chDelim = ' ');
+
+DECLINLINE(int) registerNotification(const HKEY &hKey, HANDLE &hEvent)
+{
+    LONG lrc = RegNotifyChangeKeyValue(hKey,
+                                       TRUE,
+                                       REG_NOTIFY_CHANGE_LAST_SET,
+                                       hEvent,
+                                       TRUE);
+    AssertMsgReturn(lrc == ERROR_SUCCESS,
+                    ("Failed to register event on the key. Please debug me!"),
+                    VERR_INTERNAL_ERROR);
+
+    return VINF_SUCCESS;
+}
+
+static void appendTokenizedStrings(std::vector<std::string> &vecStrings, const std::string &strToAppend, char chDelim /* = ' ' */)
+{
+    if (strToAppend.empty())
+        return;
+
+    std::istringstream stream(strToAppend);
+    std::string substr;
+
+    while (std::getline(stream, substr, chDelim))
+    {
+        if (substr.empty())
+            continue;
+
+        if (std::find(vecStrings.cbegin(), vecStrings.cend(), substr) != vecStrings.cend())
+            continue;
+
+        vecStrings.push_back(substr);
+    }
+}
+
 
 struct HostDnsServiceWin::Data
 {
@@ -441,39 +474,5 @@ HRESULT HostDnsServiceWin::updateInfo(void)
     HostDnsServiceBase::setInfo(info);
 
     return S_OK;
-}
-
-static inline int registerNotification(const HKEY& hKey, HANDLE& hEvent)
-{
-    LONG lrc = RegNotifyChangeKeyValue(hKey,
-                                       TRUE,
-                                       REG_NOTIFY_CHANGE_LAST_SET,
-                                       hEvent,
-                                       TRUE);
-    AssertMsgReturn(lrc == ERROR_SUCCESS,
-                    ("Failed to register event on the key. Please debug me!"),
-                    VERR_INTERNAL_ERROR);
-
-    return VINF_SUCCESS;
-}
-
-static void appendTokenizedStrings(std::vector<std::string> &vecStrings, const std::string &strToAppend, char chDelim /* = ' ' */)
-{
-    if (strToAppend.empty())
-        return;
-
-    std::istringstream stream(strToAppend);
-    std::string substr;
-
-    while (std::getline(stream, substr, chDelim))
-    {
-        if (substr.empty())
-            continue;
-
-        if (std::find(vecStrings.cbegin(), vecStrings.cend(), substr) != vecStrings.cend())
-            continue;
-
-        vecStrings.push_back(substr);
-    }
 }
 
