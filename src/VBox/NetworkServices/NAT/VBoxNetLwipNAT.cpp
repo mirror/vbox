@@ -130,6 +130,9 @@ class VBoxNetLwipNAT
 {
     friend class NATNetworkListener;
 
+    /** Home folder location; used as default directory for several paths. */
+    com::Utf8Str m_strHome;
+
     struct proxy_options m_ProxyOptions;
     struct sockaddr_in m_src4;
     struct sockaddr_in6 m_src6;
@@ -171,6 +174,7 @@ public:
 
 private:
     int comInit();
+    int homeInit();
     int logInit();
 
     static void reportError(const char *a_pcszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
@@ -327,6 +331,9 @@ int VBoxNetLwipNAT::init()
     if (RT_FAILURE(rc))
         return rc;
 
+    /* Get the home folder location.  It's ok if it fails. */
+    homeInit();
+
     /*
      * We get the network name on the command line.  Get hold of its
      * API object to get the rest of the configuration from.
@@ -473,13 +480,11 @@ int VBoxNetLwipNAT::init()
         m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
     }
 
-    com::Bstr bstr;
-    hrc = virtualbox->COMGETTER(HomeFolder)(bstr.asOutParam());
-    AssertComRCReturn(hrc, VERR_NOT_FOUND);
-    if (!bstr.isEmpty())
+
+    if (m_strHome.isNotEmpty())
     {
-        com::Utf8Str strTftpRoot(com::Utf8StrFmt("%ls%c%s",
-                                     bstr.raw(), RTPATH_DELIMITER, "TFTP"));
+        com::Utf8Str strTftpRoot(com::Utf8StrFmt("%s%c%s",
+                                     m_strHome.c_str(), RTPATH_DELIMITER, "TFTP"));
         char *pszStrTemp;       // avoid const char ** vs char **
         rc = RTStrUtf8ToCurrentCP(&pszStrTemp, strTftpRoot.c_str());
         AssertRC(rc);
@@ -555,6 +560,42 @@ int VBoxNetLwipNAT::comInit()
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Get the VirtualBox home folder.
+ *
+ * It is used as the base directory for the default release log file
+ * and for the TFTP root location.
+ */
+int VBoxNetLwipNAT::homeInit()
+{
+    HRESULT hrc;
+    int rc;
+
+    com::Bstr bstrHome;
+    hrc = virtualbox->COMGETTER(HomeFolder)(bstrHome.asOutParam());
+    if (SUCCEEDED(hrc))
+    {
+        m_strHome = bstrHome;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * In the unlikely event that we have failed to retrieve
+     * HomeFolder via the API, try the fallback method.  Note that
+     * despite "com" namespace it does not use COM.
+     */
+    char szHome[RTPATH_MAX] = "";
+    rc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
+    if (RT_SUCCESS(rc))
+    {
+        m_strHome = szHome;
+        return VINF_SUCCESS;
+    }
+
+    return rc;
 }
 
 
@@ -1525,17 +1566,6 @@ int VBoxNetLwipNAT::logInit()
     size_t cch;
     int rc;
 
-    /*
-     * NB: Contrary to what the "com" namespace might suggest, both
-     * this call, and the call below to create the release logger are
-     * NOT actually COM related in any way and can be used before COM
-     * is initialized.
-     */
-    char szHome[RTPATH_MAX];
-    rc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
-    if (RT_FAILURE(rc))
-        return rc;
-
     const std::string &strNetworkName = getNetworkName();
     if (strNetworkName.empty())
         return VERR_MISSING;
@@ -1552,12 +1582,14 @@ int VBoxNetLwipNAT::logInit()
             *p = '_';
     }
 
+    const char *pcszLogFile = NULL;
     char szLogFile[RTPATH_MAX];
-    cch = RTStrPrintf(szLogFile, sizeof(szLogFile),
-                      "%s%c%s.log", szHome, RTPATH_DELIMITER, szNetwork);
-    if (cch >= sizeof(szLogFile))
+    if (m_strHome.isNotEmpty())
     {
-        return VERR_BUFFER_OVERFLOW;
+        cch = RTStrPrintf(szLogFile, sizeof(szLogFile),
+                          "%s%c%s.log", m_strHome.c_str(), RTPATH_DELIMITER, szNetwork);
+        if (cch < sizeof(szLogFile))
+            pcszLogFile = szLogFile;
     }
 
     // sanitize network name some more to be usable as environment variable
@@ -1573,16 +1605,17 @@ int VBoxNetLwipNAT::logInit()
     }
 
     char szEnvVarBase[128];
+    const char *pcszEnvVarBase = szEnvVarBase;
     cch = RTStrPrintf(szEnvVarBase, sizeof(szEnvVarBase),
                       "VBOXNET_%s_RELEASE_LOG", szNetwork);
     if (cch >= sizeof(szEnvVarBase))
-        return VERR_BUFFER_OVERFLOW;
+        pcszEnvVarBase = NULL;
 
     rc = com::VBoxLogRelCreate("NAT Network",
-                               szLogFile,
+                               pcszLogFile,
                                RTLOGFLAGS_PREFIX_TIME_PROG,
                                "all all.restrict -default.restrict",
-                               szEnvVarBase,
+                               pcszEnvVarBase,
                                RTLOGDEST_FILE,
                                32768 /* cMaxEntriesPerGroup */,
                                0 /* cHistory */,
