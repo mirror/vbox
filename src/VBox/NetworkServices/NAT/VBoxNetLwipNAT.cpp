@@ -170,8 +170,8 @@ public:
     virtual int run();
 
 private:
-    int logInit();
     int comInit();
+    int logInit();
 
     static void reportError(const char *a_pcszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
