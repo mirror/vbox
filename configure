@@ -193,6 +193,7 @@ ECHO_N="printf"
 cleanup()
 {
   rm -f $ODIR.tmp_src.cc $ODIR.tmp_src.c $ODIR.tmp_out $ODIR.test_execute.log
+  [ "$OS" = "darwin" ] && rm -rf $ODIR.tmp_out.dSYM
 }
 
 fail()
@@ -634,6 +635,7 @@ check_yasm()
         log_failure "found version $yasm_ver, expected at least 1.3.0"
         fail
       else
+        [ "$YASM" != "yasm" ] && cnf_append "PATH_TOOL_YASM" "`dirname $YASM`"
         log_success "found version $yasm_ver"
       fi
     fi
@@ -2217,34 +2219,16 @@ check_gsoap()
 
 
 #
-# Check Xcode path
-#
-check_xcode_sdk_path()
-{
-    # Check if WITH_XCODE_DIR is set.
-    if [ -z "$WITH_XCODE_DIR" ]; then
-        echo "Please specify --with-xcode-dir option."
-        return 0
-    fi
-
-    # Check if specified path exists and is a directory containing Xcode.
-    if [ -d "$1" -a -f "$1/Contents/Developer/usr/bin/xcodebuild" ]; then
-        return 1
-    else
-        echo "Xcode path [$1] not found."
-        return 0
-    fi
-}
-
-#
 # Determines the Darwin version.
-# @todo This should really check the Xcode/SDK version.
 #
 check_darwinversion()
 {
   test_header "Darwin version"
   darwin_ver=`uname -r`
   case "$darwin_ver" in
+    20\.*)
+      darwin_ver="11.0" # Big Sur
+      ;;
     19\.*)
       darwin_ver="10.15" # Catalina
       ;;
@@ -2273,12 +2257,47 @@ check_darwinversion()
       ;;
   esac
 
-  check_xcode_sdk_path "$WITH_XCODE_DIR"
+  log_success "found version $darwin_ver"
+}
+
+#
+# Check Xcode path
+#
+check_xcode_path()
+{
+    # Check if WITH_XCODE_DIR is set.
+    if [ -z "$WITH_XCODE_DIR" ]; then
+        if [ -d "/Library/Developer/CommandLineTools" -a -f "/Library/Developer/CommandLineTools/usr/bin/clang" ]; then
+            return 1
+        else
+            echo "Please specify --with-xcode-dir option."
+            return 0
+        fi
+    fi
+
+    # Check if specified path exists and is a directory containing Xcode.
+    if [ -d "$1" -a -f "$1/Contents/Developer/usr/bin/xcodebuild" ]; then
+        return 1
+    else
+        echo "Xcode path [$1] not found."
+        return 0
+    fi
+}
+
+check_xcode()
+{
+  test_header "Xcode and SDK"
+  check_xcode_path "$WITH_XCODE_DIR"
   [ $? -eq 1 ] || fail
 
   # Pick the oldest SDK offered by Xcode, to get maximum compatibility
-  devel_subdir="$WITH_XCODE_DIR/Contents/Developer"
-  sdk_subdir="$devel_subdir/Platforms/MacOSX.platform/Developer/SDKs"
+  if [ -z "$WITH_XCODE_DIR" ]; then
+    devel_subdir="/Library/Developer/CommandLineTools"
+    sdk_subdir="$devel_subdir/SDKs"
+  else
+    devel_subdir="$WITH_XCODE_DIR/Contents/Developer"
+    sdk_subdir="$devel_subdir/Platforms/MacOSX.platform/Developer/SDKs"
+  fi
   sdk_tries="$sdk_subdir"/MacOSX10.?.sdk" $sdk_subdir"/MacOSX10.??.sdk" $sdk_subdir"/MacOSX.sdk
   for t in $sdk_tries; do
     if [ -f "$t/SDKSettings.plist" ]; then
@@ -2291,17 +2310,26 @@ check_darwinversion()
     echo "  failed to determine SDK directory. ($sdk_subdir/MacOSX*.sdk/SDKSettings.plist should exist)"
     fail
   fi
+  xcode_ver=`$devel_subdir/usr/bin/clang --version | sed -n 's/^.*version \([0-9]\{1,\}\.[0-9]\{1,\}\.[0-9]\{1,\}\).*$/\1/p'`
+  if [ $? -ne 0 -o -z "$xcode_ver" ]; then
+    echo "  failed to determine Xcode version."
+    fail
+  fi
 
-  cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
-  cnf_append "PATH_TOOL_VBoxXcode62" "$devel_subdir"
-  cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$devel_subdir"
+  if [ -z "$WITH_XCODE_DIR" ]; then
+    cnf_append "VBOX_WITH_EVEN_NEWER_XCODE" "1"
+  else
+    cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
+    cnf_append "PATH_TOOL_VBoxXcode62" "$devel_subdir"
+    cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$devel_subdir"
+  fi
   cnf_append "VBOX_PATH_MACOSX_SDK" "$sdk"
   if [ -n "$sdk_ver" ]; then
     cnf_append "VBOX_DEF_MACOSX_VERSION_MIN" "$sdk_ver"
     cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
   fi
 
-  log_success "found version $darwin_ver (SDK: $sdk)"
+  log_success "found version $xcode_ver (SDK: $sdk)"
 }
 
 
@@ -2372,6 +2400,7 @@ Paths:
   --with-g++=PATH          location of the g++ compiler [$CXX]
   --with-kbuild=DIR        kbuild directory [$KBUILDDIR]
   --with-iasl=PATH         location of the iasl compiler [$IASL]
+  --with-yasm=PATH         location of the iasl compiler [$YASM]
   --with-makeself=PATH     location of makeself [$MAKESELF]
 EOF
 [ "$OS"   = "darwin" ] && echo "  --with-xcode-dir=DIR     custom path to Xcode root directory; it is assumed that Xcode"
@@ -2503,9 +2532,11 @@ for option in "$@"; do
     --with-iasl=*)
       IASL=`echo $option | cut -d'=' -f2`
       ;;
+    --with-yasm=*)
+      YASM=`echo $option | cut -d'=' -f2`
+      ;;
     --with-xcode-dir=*)
       WITH_XCODE_DIR=`echo $option | cut -d'=' -f2`
-      echo $option
       ;;
     --with-linux=*)
       LINUX=`echo $option | cut -d'=' -f2`
@@ -2790,11 +2821,10 @@ if [ $WITH_LIBOPUS -eq 0 ]; then
 fi
 
 # Darwin-specific
-if [ "$OS" = "darwin" ]; then
-  check_darwinversion
-fi
+[ "$OS" = "darwin" ] && check_darwinversion
 # the tools
-check_gcc
+[ "$OS" != "darwin"  ] && check_gcc
+[ "$OS" = "darwin"  ] && check_xcode
 if [ $ONLY_ADDITIONS -eq 0 ]; then
   check_open_watcom
   [ "$OS" != "darwin"  ] && check_iasl
