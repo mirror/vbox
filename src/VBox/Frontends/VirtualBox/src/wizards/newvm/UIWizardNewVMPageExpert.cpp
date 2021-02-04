@@ -329,7 +329,7 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
             m_pISOFilePathSelector->setResetEnabled(false);
             m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
             m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-            m_pISOFilePathSelector->setHomeDir(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
+            m_pISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
             pInstallationISOContainerLayout->addWidget(m_pISOFilePathSelector);
         }
         pLayout->addWidget(m_pInstallationISOContainer, iRow++, 0, 1, 4);

@@ -224,7 +224,7 @@ void UIMachineSettingsSFDetails::prepareWidgets()
         if (m_pSelectorPath)
         {
             m_pSelectorPath->setResetEnabled(false);
-            m_pSelectorPath->setHomeDir(QDir::homePath());
+            m_pSelectorPath->setInitialPath(QDir::homePath());
 
             pLayoutMain->addWidget(m_pSelectorPath, 0, 1);
         }

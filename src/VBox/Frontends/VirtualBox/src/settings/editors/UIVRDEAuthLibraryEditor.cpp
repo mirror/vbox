@@ -92,7 +92,7 @@ void UIVRDEAuthLibraryEditor::prepare()
         {
             if (m_pLabel)
                 m_pLabel->setBuddy(m_pSelector);
-            m_pSelector->setHomeDir(uiCommon().homeFolder());
+            m_pSelector->setInitialPath(uiCommon().homeFolder());
             m_pSelector->setMode(UIFilePathSelector::Mode_File_Open);
             connect(m_pSelector, &UIFilePathSelector::pathChanged,
                     this, &UIVRDEAuthLibraryEditor::sltHandleSelectorPathChanged);

@@ -57,7 +57,7 @@ static int differFrom(const QString &str1, const QString &str2)
 UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QIComboBox>(pParent)
     , m_enmMode(Mode_Folder)
-    , m_strHomeDir(QDir::current().absolutePath())
+    , m_strInitialPath(QDir::current().absolutePath())
     , m_fEditable(true)
     , m_fModified(false)
     , m_fEditableMode(false)
@@ -378,7 +378,7 @@ void UIFilePathSelector::changePath(const QString &strPath,
 void UIFilePathSelector::selectPath()
 {
     /* Prepare initial directory: */
-    QString strInitDir;
+    QString strInitPath;
     /* If something already chosen: */
     if (!m_strPath.isEmpty())
     {
@@ -386,31 +386,31 @@ void UIFilePathSelector::selectPath()
         const QString strObjectName = QFileInfo(m_strPath).fileName();
         if (strObjectName == m_strPath)
         {
-            /* Use the home directory: */
-            strInitDir = m_strHomeDir;
+            /* Use the initial path: */
+            strInitPath = m_strInitialPath;
         }
         /* If that is full file/folder (object) path: */
         else
         {
             /* Use the first existing dir of m_strPath: */
-            strInitDir = QIFileDialog::getFirstExistingDir(m_strPath);
+            strInitPath = QIFileDialog::getFirstExistingDir(m_strPath);
         }
         /* Finally, append object name itself: */
-        strInitDir = QDir(strInitDir).absoluteFilePath(strObjectName);
+        strInitPath = QDir(strInitPath).absoluteFilePath(strObjectName);
     }
-    /* Use the home directory by default: */
-    if (strInitDir.isNull())
-        strInitDir = m_strHomeDir;
+    /* Use the initial path by default: */
+    if (strInitPath.isNull())
+        strInitPath = m_strInitialPath;
 
     /* Open the choose-file/folder dialog: */
     QString strSelPath;
     switch (m_enmMode)
     {
         case Mode_File_Open:
-            strSelPath = QIFileDialog::getOpenFileName(strInitDir, m_strFileDialogFilters, parentWidget(), m_strFileDialogTitle); break;
+            strSelPath = QIFileDialog::getOpenFileName(strInitPath, m_strFileDialogFilters, parentWidget(), m_strFileDialogTitle); break;
         case Mode_File_Save:
         {
-            strSelPath = QIFileDialog::getSaveFileName(strInitDir, m_strFileDialogFilters, parentWidget(), m_strFileDialogTitle);
+            strSelPath = QIFileDialog::getSaveFileName(strInitPath, m_strFileDialogFilters, parentWidget(), m_strFileDialogTitle);
             if (!strSelPath.isEmpty() && QFileInfo(strSelPath).suffix().isEmpty())
             {
                 if (m_strFileDialogDefaultSaveExtension.isEmpty())
@@ -421,7 +421,7 @@ void UIFilePathSelector::selectPath()
             break;
         }
         case Mode_Folder:
-            strSelPath = QIFileDialog::getExistingDirectory(strInitDir, parentWidget(), m_strFileDialogTitle); break;
+            strSelPath = QIFileDialog::getExistingDirectory(strInitPath, parentWidget(), m_strFileDialogTitle); break;
     }
 
     /* Do nothing if nothing chosen: */

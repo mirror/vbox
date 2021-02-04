@@ -527,7 +527,7 @@ void UIMachineSettingsDisplay::getFromCache()
 
     /* Load old 'Recording' data from the cache: */
     m_pCheckboxRecording->setChecked(oldDisplayData.m_fRecordingEnabled);
-    m_pEditorRecordingFilePath->setHomeDir(oldDisplayData.m_strRecordingFolder);
+    m_pEditorRecordingFilePath->setInitialPath(oldDisplayData.m_strRecordingFolder);
     m_pEditorRecordingFilePath->setPath(oldDisplayData.m_strRecordingFilePath);
     m_pSpinboxRecordingFrameWidth->setValue(oldDisplayData.m_iRecordingVideoFrameWidth);
     m_pSpinboxRecordingFrameHeight->setValue(oldDisplayData.m_iRecordingVideoFrameHeight);

@@ -448,7 +448,7 @@ void UIWizardNewVMPageBasic1::prepare()
         m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
         m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
         m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        m_pISOFilePathSelector->setHomeDir(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
+        m_pISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
         pISOSelectorLayout->addWidget(m_pISOFilePathSelector);
     }
 

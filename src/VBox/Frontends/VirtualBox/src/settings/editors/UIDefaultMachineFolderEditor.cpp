@@ -92,7 +92,7 @@ void UIDefaultMachineFolderEditor::prepare()
         {
             if (m_pLabel)
                 m_pLabel->setBuddy(m_pSelector);
-            m_pSelector->setHomeDir(uiCommon().homeFolder());
+            m_pSelector->setInitialPath(uiCommon().homeFolder());
             connect(m_pSelector, &UIFilePathSelector::pathChanged,
                     this, &UIDefaultMachineFolderEditor::sltHandleSelectorPathChanged);
 
