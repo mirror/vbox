@@ -1482,6 +1482,11 @@ AssertCompileMemberAlignment(HMR0PERVCPU, vmx.RestoreHost,   8);
 #define HM_WSF_L1D_ENTRY            RT_BIT_32(2)
 /** Flush MDS buffers on VM entry. */
 #define HM_WSF_MDS_ENTRY            RT_BIT_32(3)
+
+/** Touch IA32_FLUSH_CMD.L1D on VM scheduling. */
+#define HM_WSF_L1D_SCHED            RT_BIT_32(16)
+/** Flush MDS buffers on VM scheduling. */
+#define HM_WSF_MDS_SCHED            RT_BIT_32(17)
 /** @} */
 
 

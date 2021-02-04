@@ -9287,6 +9287,14 @@ VMMR0DECL(int) VMXR0Enter(PVMCPUCC pVCpu)
 #endif
 
     /*
+     * Do the EMT scheduled L1D and MDS flush here if needed.
+     */
+    if (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_L1D_SCHED)
+        ASMWrMsr(MSR_IA32_FLUSH_CMD, MSR_IA32_FLUSH_CMD_F_L1D);
+    else if (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_MDS_SCHED)
+        hmR0MdsClear();
+
+    /*
      * Load the appropriate VMCS as the current and active one.
      */
     PVMXVMCSINFO pVmcsInfo;
@@ -9302,14 +9310,6 @@ VMMR0DECL(int) VMXR0Enter(PVMCPUCC pVCpu)
         pVCpu->hm.s.vmx.fSwitchedToNstGstVmcsCopyForRing3 = fInNestedGuestMode;
         pVCpu->hmr0.s.fLeaveDone = false;
         Log4Func(("Loaded Vmcs. HostCpuId=%u\n", RTMpCpuId()));
-
-        /*
-         * Do the EMT scheduled L1D flush here if needed.
-         */
-        if (pVCpu->CTX_SUFF(pVM)->hm.s.fL1dFlushOnSched)
-            ASMWrMsr(MSR_IA32_FLUSH_CMD, MSR_IA32_FLUSH_CMD_F_L1D);
-        else if (pVCpu->CTX_SUFF(pVM)->hm.s.fMdsClearOnSched)
-            hmR0MdsClear();
     }
     return rc;
 }
@@ -9367,6 +9367,12 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu
             Assert(VMMR0ThreadCtxHookIsEnabled(pVCpu));
             VMCPU_ASSERT_EMT(pVCpu);
 
+            /* Do the EMT scheduled L1D and MDS flush here if needed. */
+            if (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_L1D_SCHED)
+                ASMWrMsr(MSR_IA32_FLUSH_CMD, MSR_IA32_FLUSH_CMD_F_L1D);
+            else if (pVCpu->hmr0.s.fWorldSwitcher & HM_WSF_MDS_SCHED)
+                hmR0MdsClear();
+
             /* No longjmps here, as we don't want to trigger preemption (& its hook) while resuming. */
             VMMRZCallRing3Disable(pVCpu);
             Log4Func(("Resumed: HostCpuId=%u\n", RTMpCpuId()));
@@ -9375,8 +9381,8 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu
                initializing VT-x if necessary (onlined CPUs, local init etc.) */
             int rc = hmR0EnterCpu(pVCpu);
             AssertRC(rc);
-            Assert((pVCpu->hm.s.fCtxChanged &  (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE))
-                                            == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
+            Assert(   (pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE))
+                   ==                            (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
 
             /* Load the active VMCS as the current one. */
             PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
@@ -9384,10 +9390,6 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu
             AssertRC(rc);
             Log4Func(("Resumed: Loaded Vmcs. HostCpuId=%u\n", RTMpCpuId()));
             pVCpu->hmr0.s.fLeaveDone = false;
-
-            /* Do the EMT scheduled L1D flush if needed. */
-            if (pVCpu->CTX_SUFF(pVM)->hm.s.fL1dFlushOnSched)
-                ASMWrMsr(MSR_IA32_FLUSH_CMD, MSR_IA32_FLUSH_CMD_F_L1D);
 
             /* Restore longjmp state. */
             VMMRZCallRing3Enable(pVCpu);

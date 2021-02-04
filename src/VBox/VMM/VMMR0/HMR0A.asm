@@ -475,6 +475,19 @@ ENDPROC VMXRestoreHostState
 
 
 ;;
+; Clears the MDS buffers using VERW.
+ALIGNCODE(16)
+BEGINPROC hmR0MdsClear
+        SEH64_END_PROLOGUE
+        sub     xSP, xCB
+        mov     [xSP], ds
+        verw    [xSP]
+        add     xSP, xCB
+        ret
+ENDPROC   hmR0MdsClear
+
+
+;;
 ; Dispatches an NMI to the host.
 ;
 ALIGNCODE(16)
@@ -1061,19 +1074,6 @@ hmR0VmxStartVmSseTemplate 0,,RT_NOTHING
 hmR0VmxStartVmSseTemplate 1,_SseManual,RT_NOTHING
 hmR0VmxStartVmSseTemplate 2,_SseXSave,RT_NOTHING
 %endif
-
-
-;;
-; Clears the MDS buffers using VERW.
-ALIGNCODE(16)
-BEGINPROC hmR0MdsClear
-        SEH64_END_PROLOGUE
-        sub     xSP, xCB
-        mov     [xSP], ds
-        verw    [xSP]
-        add     xSP, xCB
-        ret
-ENDPROC   hmR0MdsClear
 
 
 ;;
