@@ -176,6 +176,7 @@ private:
     int comInit();
     int homeInit();
     int logInit();
+    int eventsInit();
 
     static void reportError(const char *a_pcszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
@@ -193,7 +194,7 @@ private:
     static DECLCALLBACK(void) onLwipTcpIpFini(void *arg);
     static err_t netifInit(netif *pNetif) RT_NOTHROW_PROTO;
 
-    HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent);
+    virtual HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent);
 
     const char **getHostNameservers();
 
@@ -353,35 +354,11 @@ int VBoxNetLwipNAT::init()
      */
     logInit();
 
-
-    {
-        ComEventTypeArray eventTypes;
-        eventTypes.push_back(VBoxEventType_OnNATNetworkPortForward);
-        eventTypes.push_back(VBoxEventType_OnNATNetworkSetting);
-        rc = createNatListener(m_NatListener, virtualbox, this, eventTypes);
-        AssertRCReturn(rc, rc);
-    }
-
-
     // resolver changes are reported on vbox but are retrieved from
     // host so stash a pointer for future lookups
     hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-    {
-        ComEventTypeArray eventTypes;
-        eventTypes.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
-        eventTypes.push_back(VBoxEventType_OnNATNetworkStartStop);
-        rc = createNatListener(m_VBoxListener, virtualbox, this, eventTypes);
-        AssertRCReturn(rc, rc);
-    }
-
-    {
-        ComEventTypeArray eventTypes;
-        eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
-        rc = createClientListener(m_VBoxClientListener, virtualboxClient, this, eventTypes);
-        AssertRCReturn(rc, rc);
-    }
 
     BOOL fIPv6Enabled = FALSE;
     hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
@@ -493,6 +470,7 @@ int VBoxNetLwipNAT::init()
 
     m_ProxyOptions.nameservers = getHostNameservers();
 
+    eventsInit();
     /* end of COM initialization */
 
     /* connect to the intnet */
@@ -596,6 +574,40 @@ int VBoxNetLwipNAT::homeInit()
     }
 
     return rc;
+}
+
+
+/**
+ * Create and register event listeners.
+ */
+int VBoxNetLwipNAT::eventsInit()
+{
+    int rc;
+
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnNATNetworkPortForward);
+        eventTypes.push_back(VBoxEventType_OnNATNetworkSetting);
+        rc = createNatListener(m_NatListener, virtualbox, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
+
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
+        eventTypes.push_back(VBoxEventType_OnNATNetworkStartStop);
+        rc = createNatListener(m_VBoxListener, virtualbox, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
+
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
+        rc = createClientListener(m_VBoxClientListener, virtualboxClient, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
