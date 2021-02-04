@@ -392,7 +392,10 @@ void UIBaseMemoryEditor::prepare()
 void UIBaseMemoryEditor::revalidate()
 {
     if (m_pSlider)
+    {
         emit sigValidChanged(m_pSlider->value() < (int)m_pSlider->maxRAMAlw());
+        emit sigValueChanged(m_pSlider->value());
+    }
 }
 
 

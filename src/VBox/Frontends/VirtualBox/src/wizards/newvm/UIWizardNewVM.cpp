@@ -153,6 +153,9 @@ bool UIWizardNewVM::createVM()
     /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
     if (iVPUCount > 1)
         m_machine.GetBIOSSettings().SetIOAPICEnabled(true);
+
+    /* Set recommended firmware type: */
+    m_machine.SetFirmwareType(getBoolFieldValue("EFIEnabled") ? KFirmwareType_EFI : KFirmwareType_BIOS);
 #endif
 
     /* Register the VM prior to attaching hard disks: */
@@ -280,8 +283,7 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
     m_machine.SetCPUProperty(KCPUPropertyType_TripleFaultReset, comGuestType.GetRecommendedTFReset());
 
     /* Set recommended firmware type: */
-    KFirmwareType fwType = comGuestType.GetRecommendedFirmware();
-    m_machine.SetFirmwareType(fwType);
+    m_machine.SetFirmwareType(getBoolFieldValue("EFIEnabled") ? KFirmwareType_EFI : KFirmwareType_BIOS);
 
     /* Set recommended human interface device types: */
     if (comGuestType.GetRecommendedUSBHID())

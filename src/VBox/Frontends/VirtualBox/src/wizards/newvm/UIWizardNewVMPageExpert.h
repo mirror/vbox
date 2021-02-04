@@ -21,6 +21,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QSet>
+
 /* Local includes: */
 #include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasic2.h"
@@ -59,6 +62,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(QString guestAdditionsISOPath READ guestAdditionsISOPath WRITE setGuestAdditionsISOPath);
     Q_PROPERTY(QString productKey READ productKey);
     Q_PROPERTY(int VCPUCount READ VCPUCount);
+    Q_PROPERTY(bool EFIEnabled READ EFIEnabled);
 
 public:
 
@@ -87,6 +91,8 @@ private slots:
     void sltOSFamilyTypeChanged();
     void sltInstallGACheckBoxToggle(bool fEnabled);
 
+    void sltValueModified();
+
 private:
 
     enum ExpertToolboxItems
@@ -103,6 +109,11 @@ private:
     /** Prepare stuff. */
     void createConnections();
     void initializePage();
+    void initializeWidgets();
+    /** Set the values of the widget if they depend on OS
+      * type like recommended RAM size. The widgets whose values are
+      * are explicitly modified are exempt from this. */
+    void setOSTypeDependedValues();
     void cleanupPage();
 
     /** Validation stuff. */
@@ -116,6 +127,10 @@ private:
 
     UIToolBox  *m_pToolBox;
     QGroupBox *m_pInstallationISOContainer;
+
+    /** Set of widgets which user explicitly modified their values. They are exempt from
+      * adjusting when OS type changes. */
+    QSet<QWidget*> m_userSetWidgets;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageExpert_h */

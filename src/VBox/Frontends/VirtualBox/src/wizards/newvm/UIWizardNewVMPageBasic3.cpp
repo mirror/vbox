@@ -16,28 +16,25 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
 #include <QGridLayout>
 #include <QMetaType>
-#include <QRadioButton>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
-#include "QIToolButton.h"
 #include "UIBaseMemoryEditor.h"
-#include "UIIconPool.h"
-#include "UIMediaComboBox.h"
-#include "UIMedium.h"
-#include "UIMediumSelector.h"
-#include "UIMessageCenter.h"
 #include "UIVirtualCPUEditor.h"
-#include "UIWizardNewVD.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic3.h"
+
+/* COM includes: */
+#include "CGuestOSType.h"
 
 UIWizardNewVMPage3::UIWizardNewVMPage3()
     : m_pBaseMemoryEditor(0)
     , m_pVirtualCPUEditor(0)
+    , m_pEFICheckBox(0)
 {
 }
 
@@ -55,8 +52,22 @@ int UIWizardNewVMPage3::VCPUCount() const
     return m_pVirtualCPUEditor->value();
 }
 
+bool UIWizardNewVMPage3::EFIEnabled() const
+{
+    if (!m_pEFICheckBox)
+        return false;
+    return m_pEFICheckBox->isChecked();
+}
+
 void UIWizardNewVMPage3::retranslateWidgets()
 {
+    if (m_pEFICheckBox)
+    {
+        m_pEFICheckBox->setText(UIWizardNewVM::tr("Enable &EFI (special OSes only)"));
+        m_pEFICheckBox->setWhatsThis(UIWizardNewVM::tr("When checked, the guest will support the "
+                                                       "Extended Firmware Interface (EFI), which is required to boot certain "
+                                                       "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated."));
+    }
 }
 
 QWidget *UIWizardNewVMPage3::createHardwareWidgets()
@@ -66,8 +77,11 @@ QWidget *UIWizardNewVMPage3::createHardwareWidgets()
 
     m_pBaseMemoryEditor = new UIBaseMemoryEditor(0, true);
     m_pVirtualCPUEditor = new UIVirtualCPUEditor(0, true);
+    m_pEFICheckBox      = new QCheckBox;
     pHardwareLayout->addWidget(m_pBaseMemoryEditor, 0, 0, 1, 4);
     pHardwareLayout->addWidget(m_pVirtualCPUEditor, 1, 0, 1, 4);
+    pHardwareLayout->addWidget(m_pEFICheckBox, 2, 0, 1, 1);
+
     return pHardwareContainer;
 }
 
@@ -78,6 +92,7 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
     qRegisterMetaType<CMedium>();
     registerField("baseMemory", this, "baseMemory");
     registerField("VCPUCount", this, "VCPUCount");
+    registerField("EFIEnabled", this, "EFIEnabled");
 }
 
 void UIWizardNewVMPageBasic3::prepare()
@@ -94,9 +109,7 @@ void UIWizardNewVMPageBasic3::prepare()
 
 void UIWizardNewVMPageBasic3::createConnections()
 {
-
 }
-
 
 void UIWizardNewVMPageBasic3::retranslateUi()
 {
@@ -121,6 +134,9 @@ void UIWizardNewVMPageBasic3::initializePage()
     if (m_pBaseMemoryEditor)
         m_pBaseMemoryEditor->setValue(recommendedRam);
 
+    KFirmwareType fwType = type.GetRecommendedFirmware();
+    if (m_pEFICheckBox)
+        m_pEFICheckBox->setChecked(fwType != KFirmwareType_BIOS);
 }
 
 void UIWizardNewVMPageBasic3::cleanupPage()

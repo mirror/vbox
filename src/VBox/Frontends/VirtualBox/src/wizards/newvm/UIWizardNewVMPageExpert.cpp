@@ -88,6 +88,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("guestAdditionsISOPath", this, "guestAdditionsISOPath");
     registerField("productKey", this, "productKey");
     registerField("VCPUCount", this, "VCPUCount");
+    registerField("EFIEnabled", this, "EFIEnabled");
 
     const QPalette pal = palette();
     QColor tabBackgroundColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(110);
@@ -136,9 +137,7 @@ void UIWizardNewVMPageExpert::sltOsTypeChanged()
     /* Call to base-class: */
     onOsTypeChanged();
 
-    /* Fetch recommended RAM value: */
-    CGuestOSType type = m_pNameAndSystemEditor->type();
-    m_pBaseMemoryEditor->setValue(type.GetRecommendedRAM());
+    setOSTypeDependedValues();
 
     /* Broadcast complete-change: */
     emit completeChanged();
@@ -241,62 +240,103 @@ void UIWizardNewVMPageExpert::createConnections()
 
     /* Connections for disk and hardware stuff: */
     if (m_pDiskSkip)
+    {
         connect(m_pDiskSkip, &QRadioButton::toggled,
                 this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+        connect(m_pDiskSkip, &QRadioButton::toggled,
+                this, &UIWizardNewVMPageExpert::sltValueModified);
+    }
     if (m_pDiskCreate)
+    {
         connect(m_pDiskCreate, &QRadioButton::toggled,
                 this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+        connect(m_pDiskCreate, &QRadioButton::toggled,
+                this, &UIWizardNewVMPageExpert::sltValueModified);
+    }
     if (m_pDiskPresent)
+    {
         connect(m_pDiskPresent, &QRadioButton::toggled,
                 this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+        connect(m_pDiskPresent, &QRadioButton::toggled,
+                this, &UIWizardNewVMPageExpert::sltValueModified);
+    }
     if (m_pDiskSelector)
         connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
                 this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
     if (m_pVMMButton)
         connect(m_pVMMButton, &QIToolButton::clicked,
                 this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
+    if (m_pBaseMemoryEditor)
+        connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
+                this, &UIWizardNewVMPageExpert::sltValueModified);
+    if (m_pEFICheckBox)
+        connect(m_pEFICheckBox, &QCheckBox::toggled,
+                this, &UIWizardNewVMPageExpert::sltValueModified);
 }
 
-void UIWizardNewVMPageExpert::initializePage()
+void UIWizardNewVMPageExpert::setOSTypeDependedValues()
 {
-    /* Translate page: */
-    retranslateUi();
-
     if (!field("type").canConvert<CGuestOSType>())
         return;
 
     /* Get recommended 'ram' field value: */
     CGuestOSType type = field("type").value<CGuestOSType>();
     ULONG recommendedRam = type.GetRecommendedRAM();
-    m_pBaseMemoryEditor->setValue(recommendedRam);
+
+    if (m_pBaseMemoryEditor && !m_userSetWidgets.contains(m_pBaseMemoryEditor))
+    {
+        m_pBaseMemoryEditor->blockSignals(true);
+        m_pBaseMemoryEditor->setValue(recommendedRam);
+        m_pBaseMemoryEditor->blockSignals(false);
+    }
+
+    KFirmwareType fwType = type.GetRecommendedFirmware();
+    if (m_pEFICheckBox && !m_userSetWidgets.contains(m_pEFICheckBox))
+    {
+        m_pEFICheckBox->blockSignals(true);
+        m_pEFICheckBox->setChecked(fwType != KFirmwareType_BIOS);
+        m_pEFICheckBox->blockSignals(false);
+    }
 
     /* Prepare initial disk choice: */
-    if (type.GetRecommendedHDD() != 0)
+    if (!m_userSetWidgets.contains(m_pDiskCreate) &&
+        !m_userSetWidgets.contains(m_pDiskCreate) &&
+        !m_userSetWidgets.contains(m_pDiskPresent))
     {
-        if (m_pDiskCreate)
+        if (type.GetRecommendedHDD() != 0)
         {
-            m_pDiskCreate->setFocus();
-            m_pDiskCreate->setChecked(true);
+            if (m_pDiskCreate)
+            {
+                m_pDiskCreate->setFocus();
+                m_pDiskCreate->setChecked(true);
+            }
+            m_fRecommendedNoDisk = false;
         }
-        m_fRecommendedNoDisk = false;
-    }
-    else
-    {
-        if (m_pDiskSkip)
+        else
         {
-            m_pDiskSkip->setFocus();
-            m_pDiskSkip->setChecked(true);
+            if (m_pDiskSkip)
+            {
+                m_pDiskSkip->setFocus();
+                m_pDiskSkip->setChecked(true);
+            }
+            m_fRecommendedNoDisk = true;
         }
-        m_fRecommendedNoDisk = true;
+        if (m_pDiskSelector)
+            m_pDiskSelector->setCurrentIndex(0);
     }
-    if (m_pDiskSelector)
-        m_pDiskSelector->setCurrentIndex(0);
 
-    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     if (m_pProductKeyLabel)
         m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
     if (m_pProductKeyLineEdit)
         m_pProductKeyLineEdit->setEnabled(isProductKeyWidgetEnabled());
+}
+
+void UIWizardNewVMPageExpert::initializePage()
+{
+    /* Translate page: */
+    retranslateUi();
+    setOSTypeDependedValues();
+    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
 }
 
 void UIWizardNewVMPageExpert::cleanupPage()
@@ -456,4 +496,13 @@ void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnable
         m_pGAInstallationISOContainer->setEnabled(fEnabled);
     disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
     disableEnableGAWidgets(isGAInstallEnabled());
+}
+
+void UIWizardNewVMPageExpert::sltValueModified()
+{
+    QWidget *pSenderWidget = qobject_cast<QWidget*>(sender());
+    if (!pSenderWidget)
+        return;
+
+    m_userSetWidgets << pSenderWidget;
 }

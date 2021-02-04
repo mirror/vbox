@@ -42,6 +42,7 @@ signals:
 
     /** Notifies listeners about value has became @a fValid. */
     void sigValidChanged(bool fValid);
+    void sigValueChanged(int iValue);
 
 public:
 

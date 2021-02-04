@@ -33,10 +33,9 @@
 
 /* Forward declarations: */
 class QRadioButton;
+class QCheckBox;
 class QIRichTextLabel;
-class QIToolButton;
 class UIBaseMemoryEditor;
-class UIMediaComboBox;
 class UIVirtualCPUEditor;
 
 /** 3rd page of the New Virtual Machine wizard (base part). */
@@ -53,6 +52,7 @@ protected:
      * @{ */
        int baseMemory() const;
        int VCPUCount() const;
+       bool EFIEnabled() const;
     /** @} */
 
     QWidget *createHardwareWidgets();
@@ -64,6 +64,7 @@ protected:
      * @{ */
        UIBaseMemoryEditor *m_pBaseMemoryEditor;
        UIVirtualCPUEditor *m_pVirtualCPUEditor;
+       QCheckBox          *m_pEFICheckBox;
     /** @} */
 
 };
@@ -74,6 +75,7 @@ class UIWizardNewVMPageBasic3 : public UIWizardPage, public UIWizardNewVMPage3
     Q_OBJECT;
     Q_PROPERTY(int baseMemory READ baseMemory);
     Q_PROPERTY(int VCPUCount READ VCPUCount);
+    Q_PROPERTY(bool EFIEnabled READ EFIEnabled);
 
 public:
 
