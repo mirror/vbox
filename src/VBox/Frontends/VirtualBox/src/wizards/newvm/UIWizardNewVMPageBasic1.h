@@ -68,6 +68,9 @@ protected:
         void setMachineBaseName(const QString &strMachineBaseName);
 
         QString guestOSFamiyId() const;
+
+        bool isUnattendedEnabled() const;
+        const QString &detectedOSTypeId() const;
     /** @} */
 
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
@@ -78,32 +81,24 @@ protected:
     /** Colors the widgets red if they cause isComplete to fail. */
     void markWidgets() const;
     void retranslateWidgets();
-
-    /** @name Widgets
-     * @{ */
-       UINameAndSystemEditor *m_pNameAndSystemEditor;
-       QIRichTextLabel *m_pNameOSTypeLabel;
-    /** @} */
-
-
-
     QString ISOFilePath() const;
-    bool isUnattendedEnabled() const;
-    const QString &detectedOSTypeId() const;
     bool determineOSType(const QString &strISOPath);
     bool isISOFileSelectorComplete() const;
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     /** Return false if ISO path is not empty but points to an missing or unreadable file. */
     bool checkISOFile() const;
 
+
     /** @name Widgets
-      * @{ */
-        mutable UIFilePathSelector *m_pISOFilePathSelector;
-        QIRichTextLabel *m_pUnattendedLabel;
+     * @{ */
+       UINameAndSystemEditor *m_pNameAndSystemEditor;
+       QIRichTextLabel *m_pNameOSTypeLabel;
+       mutable UIFilePathSelector *m_pISOFilePathSelector;
+       QIRichTextLabel *m_pUnattendedLabel;
+       QLabel *m_pISOPathSelectorLabel;
     /** @} */
 
     QString m_strDetectedOSTypeId;
-    QLabel *m_pISOPathSelectorLabel;
 
 private:
 
