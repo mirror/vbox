@@ -171,6 +171,7 @@ public:
 
 private:
     int logInit();
+    int comInit();
 
     static void reportError(const char *a_pcszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
@@ -321,14 +322,14 @@ int VBoxNetLwipNAT::init()
 
     LogFlowFuncEnter();
 
-    /* virtualbox initialized in the superclass */
-    rc = VBoxNetBaseService::init();
+    /* Get the COM API set up. */
+    rc = comInit();
     if (RT_FAILURE(rc))
         return rc;
 
     /*
-     * We get the network name on the command line.  Get hold of our
-     * API object.
+     * We get the network name on the command line.  Get hold of its
+     * API object to get the rest of the configuration from.
      */
     const std::string &networkName = getNetworkName();
     hrc = virtualbox->FindNATNetworkByName(com::Bstr(networkName.c_str()).raw(),
@@ -340,7 +341,8 @@ int VBoxNetLwipNAT::init()
     }
 
     /*
-     * Now that we know the network name we can create the release log file.
+     * Now that we know the network name and have ensured that it
+     * indeed exists we can create the release log file.
      */
     logInit();
 
@@ -498,6 +500,61 @@ int VBoxNetLwipNAT::init()
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+
+/**
+ * Primary COM initialization performed on the main thread.
+ *
+ * This initializes COM and obtains VirtualBox Client and VirtualBox
+ * objects.
+ *
+ * @note The member variables for them are in the base class.  We
+ * currently do it here so that we can report errors properly, because
+ * the base class' VBoxNetBaseService::init() is a bit naive and
+ * fixing that would just create unnecessary churn for little
+ * immediate gain.  It's easier to ignore the base class code and do
+ * it ourselves and do the refactoring later.
+ */
+int VBoxNetLwipNAT::comInit()
+{
+    HRESULT hrc;
+
+    hrc = com::Initialize();
+    if (FAILED(hrc))
+    {
+#ifdef VBOX_WITH_XPCOM
+        if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
+        {
+            char szHome[RTPATH_MAX] = "";
+            int vrc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
+            if (RT_SUCCESS(vrc))
+            {
+                return RTMsgErrorExit(RTEXITCODE_INIT,
+                                      "Failed to initialize COM: %s: %Rhrf",
+                                      szHome, hrc);
+            }
+        }
+#endif  /* VBOX_WITH_XPCOM */
+        return RTMsgErrorExit(RTEXITCODE_INIT,
+                              "Failed to initialize COM: %Rhrf", hrc);
+    }
+
+    hrc = virtualboxClient.createInprocObject(CLSID_VirtualBoxClient);
+    if (FAILED(hrc))
+    {
+        reportError("Failed to create VirtualBox Client object: %Rhra", hrc);
+        return VERR_GENERAL_FAILURE;
+    }
+
+    hrc = virtualboxClient->COMGETTER(VirtualBox)(virtualbox.asOutParam());
+    if (FAILED(hrc))
+    {
+        reportError("Failed to obtain VirtualBox object: %Rhra", hrc);
+        return VERR_GENERAL_FAILURE;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1562,7 +1619,6 @@ int VBoxNetLwipNAT::logInit()
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
-    HRESULT hrc;
     int rc;
 
     LogFlowFuncEnter();
@@ -1581,38 +1637,19 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 #endif
 
-    hrc = com::Initialize();
-    if (FAILED(hrc))
-    {
-#ifdef VBOX_WITH_XPCOM
-        if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
-        {
-            char szHome[RTPATH_MAX] = "";
-            int vrc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
-            if (RT_SUCCESS(vrc))
-            {
-                return RTMsgErrorExit(RTEXITCODE_INIT,
-                                      "Failed to initialize COM: %s: %Rhrf",
-                                      szHome, hrc);
-            }
-        }
-#endif  // VBOX_WITH_XPCOM
-        return RTMsgErrorExit(RTEXITCODE_INIT,
-                              "Failed to initialize COM: %Rhrf", hrc);
-    }
-
     VBoxNetLwipNAT NAT;
 
-    Log2(("NAT: initialization\n"));
-    rc = NAT.parseArgs(argc - 1, argv + 1);
-    rc = (rc == 0) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /* XXX: FIXME */
+    int rcExit = NAT.parseArgs(argc - 1, argv + 1);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;          /* messages are already printed */
 
-    if (RT_SUCCESS(rc))
-        rc = NAT.init();
+    rc = NAT.init();
+    if (RT_FAILURE(rc))
+        return RTEXITCODE_INIT;
 
-    if (RT_SUCCESS(rc))
-        NAT.run();
+    NAT.run();
 
+    LogRel(("Terminating\n"));
     return RTEXITCODE_SUCCESS;
 }
 
