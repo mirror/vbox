@@ -244,7 +244,7 @@ static int dbgfR0BpInitWorker(PGVM pGVM, R3PTRTYPE(volatile uint32_t *) *ppaBpLo
 static int dbgfR0BpOwnerInitWorker(PGVM pGVM, R3PTRTYPE(void *) *ppaBpOwnerR3)
 {
     /*
-     * Figure out how much memory we need for the L1 lookup table and allocate it.
+     * Figure out how much memory we need for the owner tables and allocate it.
      */
     uint32_t const cbBpOwnerR0 = RT_ALIGN_32(DBGF_BP_OWNER_COUNT_MAX * sizeof(DBGFBPOWNERINTR0), PAGE_SIZE);
     uint32_t const cbBpOwnerR3 = RT_ALIGN_32(DBGF_BP_OWNER_COUNT_MAX * sizeof(DBGFBPOWNERINT), PAGE_SIZE);
