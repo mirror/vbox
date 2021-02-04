@@ -1329,7 +1329,6 @@ static int dbgfR3BpInt3Add(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
     while (cTries--)
     {
         uint32_t u32Entry = ASMAtomicReadU32(&pUVM->dbgf.s.paBpLocL1R3[idxL1]);
-
         if (u32Entry == DBGF_BP_INT3_L1_ENTRY_TYPE_NULL)
         {
             /*
@@ -1343,10 +1342,8 @@ static int dbgfR3BpInt3Add(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
         else
         {
             rc = dbgfR3BpInt3L2BstNodeAdd(pUVM, idxL1, hBp, pBp->Pub.u.Int3.GCPtr);
-            if (rc == VINF_TRY_AGAIN)
-                continue;
-
-            break;
+            if (rc != VINF_TRY_AGAIN)
+                break;
         }
     }
 
@@ -1562,7 +1559,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, 
  */
 static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
     PVM pVM = pUVM->pVM;
 
     Assert(!DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType));
@@ -1636,7 +1633,7 @@ static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
  */
 static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
     PVM pVM = pUVM->pVM;
 
     Assert(DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType));
@@ -2228,7 +2225,7 @@ VMMR3DECL(int) DBGFR3BpEnable(PUVM pUVM, DBGFBP hBp)
     PDBGFBPINT pBp = dbgfR3BpGetByHnd(pUVM, hBp);
     AssertPtrReturn(pBp, VERR_DBGF_BP_NOT_FOUND);
 
-    int rc = VINF_SUCCESS;
+    int rc;
     if (!DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
         rc = dbgfR3BpArm(pUVM, hBp, pBp);
     else
@@ -2258,7 +2255,7 @@ VMMR3DECL(int) DBGFR3BpDisable(PUVM pUVM, DBGFBP hBp)
     PDBGFBPINT pBp = dbgfR3BpGetByHnd(pUVM, hBp);
     AssertPtrReturn(pBp, VERR_DBGF_BP_NOT_FOUND);
 
-    int rc = VINF_SUCCESS;
+    int rc;
     if (DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
         rc = dbgfR3BpDisarm(pUVM, hBp, pBp);
     else
