@@ -96,17 +96,15 @@ static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTXPROVIDERCT
 /**
  * Cleanup helper function for transfer callbacks.
  *
- * @param   pData               Callback data to cleanup.
+ * @param   pTransferCtx        Pointer to transfer context that the transfer contains.
+ * @param   pTransfer           Pointer to transfer to cleanup.
  */
-static void vboxClipboardTransferCallbackCleanup(PSHCLTXPROVIDERCTX pCtx)
+static void vboxClipboardTransferCallbackCleanup(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer)
 {
     LogFlowFuncEnter();
 
-    PSHCLTRANSFERCTX pCtx = (PSHCLTRANSFERCTX)pData->pvUser;
-    AssertPtr(pCtx);
-
-    PSHCLTRANSFER pTransfer = pData->pTransfer;
-    AssertPtr(pTransfer);
+    if (!pTransferCtx || !pTransfer)
+        return;
 
     if (pTransfer->pvUser) /* SharedClipboardWinTransferCtx */
     {
@@ -114,7 +112,7 @@ static void vboxClipboardTransferCallbackCleanup(PSHCLTXPROVIDERCTX pCtx)
         pTransfer->pvUser = NULL;
     }
 
-    int rc2 = ShClTransferCtxTransferUnregister(pCtx, pTransfer->State.uID);
+    int rc2 = ShClTransferCtxTransferUnregister(pTransferCtx, pTransfer->State.uID);
     AssertRC(rc2);
 
     ShClTransferDestroy(pTransfer);
@@ -123,25 +121,26 @@ static void vboxClipboardTransferCallbackCleanup(PSHCLTXPROVIDERCTX pCtx)
     pTransfer = NULL;
 }
 
-static DECLCALLBACK(int)  vboxClipboardOnTransferInitCallback(PSHCLTXPROVIDERCTX pCtx)
+/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnInitialize */
+static DECLCALLBACK(int) vboxClipboardOnTransferInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
-    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pData->pvUser;
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
 
     LogFlowFunc(("pCtx=%p\n", pCtx));
 
-    RT_NOREF(pData, pCtx);
+    RT_NOREF(pCtx);
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTXPROVIDERCTX pCtx)
+/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnStart */
+static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
-    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pData->pvUser;
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
-    Assert(pData->cbUser == sizeof(SHCLCONTEXT));
 
-    PSHCLTRANSFER pTransfer = pData->pTransfer;
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
     AssertPtr(pTransfer);
 
     const SHCLTRANSFERDIR enmDir = ShClTransferGetDir(pTransfer);
@@ -191,32 +190,27 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTXPROVIDERCTX
     return rc;
 }
 
-static DECLCALLBACK(void) vboxClipboardOnTransferCompleteCallback(PSHCLTXPROVIDERCTX pCtx, int rc)
+/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnCompleted */
+static DECLCALLBACK(void) vboxClipboardOnTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcCompletion)
 {
-    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pData->pvUser;
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
 
-    RT_NOREF(pCtx, rc);
+    LogRel2(("Shared Clipboard: Transfer to destination %s\n",
+             rcCompletion == VERR_CANCELLED ? "canceled" : "complete"));
 
-    LogFlowFunc(("pCtx=%p, rc=%Rrc\n", pCtx, rc));
-
-    LogRel2(("Shared Clipboard: Transfer to destination complete\n"));
-
-    vboxClipboardTransferCallbackCleanup(pData);
+    vboxClipboardTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
 }
 
-static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTXPROVIDERCTX pCtx, int rc)
+/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnError */
+static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcError)
 {
-    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pData->pvUser;
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
 
-    RT_NOREF(pCtx, rc);
+    LogRel(("Shared Clipboard: Transfer to destination failed with %Rrc\n", rcError));
 
-    LogFlowFunc(("pCtx=%p, rc=%Rrc\n", pCtx, rc));
-
-    LogRel(("Shared Clipboard: Transfer to destination failed with %Rrc\n", rc));
-
-    vboxClipboardTransferCallbackCleanup(pData);
+    vboxClipboardTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
 }
 
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
@@ -882,16 +876,19 @@ DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /* Install callbacks. */
+    /*
+     * Set callbacks.
+     * Those will be registered within VbglR3 when a new transfer gets initialized.
+     */
     RT_ZERO(pCtx->CmdCtx.Transfers.Callbacks);
 
     pCtx->CmdCtx.Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
     pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
 
-    pCtx->CmdCtx.Transfers.Callbacks.pfnTransferInitialize = vboxClipboardOnTransferInitCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnTransferStart      = vboxClipboardOnTransferStartCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnTransferComplete   = vboxClipboardOnTransferCompleteCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnTransferError      = vboxClipboardOnTransferErrorCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialize = vboxClipboardOnTransferInitCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnStart      = vboxClipboardOnTransferStartCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted  = vboxClipboardOnTransferCompletedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnError      = vboxClipboardOnTransferErrorCallback;
 #endif
 
     if (RT_SUCCESS(rc))

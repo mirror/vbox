@@ -611,24 +611,12 @@ typedef struct SHCLTRANSFERCTX *PSHCLTRANSFERCTX;
 
 /**
  * Shared Clipboard transfer provider interface table.
+ *
+ * A transfer provider inteface implementation realizes all low level functions
+ * needed for making a Shared Clipboard transfer happen.
  */
 typedef struct _SHCLTXPROVIDERIFACE
 {
-    /** Called when the transfer gets initialized. */
-    DECLCALLBACKMEMBER(int,  pfnInitialize,(PSHCLTXPROVIDERCTX pCtx));
-    /** Called before the transfer will be started. */
-    DECLCALLBACKMEMBER(int,  pfnStart,(PSHCLTXPROVIDERCTX pCtx));
-    /** Called when the transfer has been complete. */
-    DECLCALLBACKMEMBER(void, pfnCompleted,(PSHCLTXPROVIDERCTX pCtx, int rc));
-    /** Called when the transfer has been canceled. */
-    DECLCALLBACKMEMBER(void, pfnCanceled,(PSHCLTXPROVIDERCTX pCtx));
-    /** Called when transfer resulted in an unrecoverable error. */
-    DECLCALLBACKMEMBER(void, pfnError,(PSHCLTXPROVIDERCTX pCtx, int rc));
-    /** Called when transfer got registered to a transfer context. */
-    DECLCALLBACKMEMBER(void, pfnRegistered,(PSHCLTXPROVIDERCTX pCtx, PSHCLTRANSFERCTX pTransferCtx));
-    /** Called when transfer got unregistered from a transfer context. */
-    DECLCALLBACKMEMBER(void, pfnUnregistered,(PSHCLTXPROVIDERCTX pCtx, PSHCLTRANSFERCTX pTransferCtx));
-
     DECLCALLBACKMEMBER(int, pfnRootsGet,(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList));
     DECLCALLBACKMEMBER(int, pfnListOpen,(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList));
     DECLCALLBACKMEMBER(int, pfnListClose,(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList));
@@ -660,6 +648,74 @@ typedef struct _SHCLTXPROVIDERCREATIONCTX
 } SHCLTXPROVIDERCREATIONCTX, *PSHCLTXPROVIDERCREATIONCTX;
 
 /**
+ * Structure maintaining clipboard transfer callback context data.
+ */
+typedef struct _SHCLTRANSFERCALLBACKCTX
+{
+    /** Pointer to the related Shared Clipboard transfer. */
+    PSHCLTRANSFER pTransfer;
+    /** User-defined data pointer. Can be NULL if not needed. */
+    void         *pvUser;
+    /** Size (in bytes) of data at user pointer. */
+    size_t        cbUser;
+} SHCLTRANSFERCALLBACKCTX, *PSHCLTRANSFERCALLBACKCTX;
+
+/**
+ * Shared Clipboard transfer callback table.
+ *
+ * All callbacks are optional and can provide additional information / feedback to a frontend.
+ */
+typedef struct _SHCLTRANSFERCALLBACKTABLE
+{
+    /**
+     * Called when the transfer gets initialized.
+     *
+     * @param   pCbCtx              Pointer to callback context to use.
+     */
+    DECLCALLBACKMEMBER(int,  pfnOnInitialize,(PSHCLTRANSFERCALLBACKCTX pCbCtx));
+    /**
+     * Called before the transfer will be started.
+     *
+     * @param   pCbCtx              Pointer to callback context to use.
+     */
+    DECLCALLBACKMEMBER(int,  pfnOnStart,(PSHCLTRANSFERCALLBACKCTX pCbCtx));
+    /**
+     * Called when the transfer has been complete.
+     *
+     * @param   pCbCtx              Pointer to callback context to use.
+     * @param   rcCompletion        Completion result.
+     *                              VERR_CANCELED if transfer has been canceled.
+     */
+    DECLCALLBACKMEMBER(void, pfnOnCompleted,(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcCompletion));
+    /**
+     * Called when transfer resulted in an unrecoverable error.
+     *
+     * @param   pCbCtx              Pointer to callback context to use.
+     * @param   rcError             Error reason, IPRT-style.
+     */
+    DECLCALLBACKMEMBER(void, pfnOnError,(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcError));
+    /**
+     * Called when transfer got registered to a transfer context.
+     *
+     * @param   pCbCtx              Pointer to callback context to use.
+     * @param   pTransferCtx        Transfer context transfer was registered to.
+     */
+    DECLCALLBACKMEMBER(void, pfnOnRegistered,(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx));
+    /**
+     * Called when transfer got unregistered from a transfer context.
+     *
+     * @param   pCbCtx              Pointer to callback context to use.
+     * @param   pTransferCtx        Transfer context transfer was unregistered from.
+     */
+    DECLCALLBACKMEMBER(void, pfnOnUnregistered,(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx));
+
+    /** User-provided callback data. Can be NULL if not used. */
+    void  *pvUser;
+    /** Size (in bytes) of data pointer at \a pvUser. */
+    size_t cbUser;
+} SHCLTRANSFERCALLBACKTABLE, *PSHCLTRANSFERCALLBACKTABLE;
+
+/**
  * Structure for thread-related members for a single Shared Clipboard transfer.
  */
 typedef struct _SHCLTRANSFERTHREAD
@@ -683,49 +739,53 @@ typedef struct _SHCLTRANSFERTHREAD
 typedef struct SHCLTRANSFER
 {
     /** The node member for using this struct in a RTList. */
-    RTLISTNODE               Node;
+    RTLISTNODE                Node;
     /** The transfer's state (for SSM, later). */
-    SHCLTRANSFERSTATE        State;
+    SHCLTRANSFERSTATE         State;
     /** Absolute path to root entries. */
-    char                    *pszPathRootAbs;
+    char                     *pszPathRootAbs;
     /** Timeout (in ms) for waiting of events. Default is 30s. */
-    RTMSINTERVAL             uTimeoutMs;
+    RTMSINTERVAL              uTimeoutMs;
     /** Maximum data chunk size (in bytes) to transfer. Default is 64K. */
-    uint32_t                 cbMaxChunkSize;
+    uint32_t                  cbMaxChunkSize;
     /** The transfer's own event source. */
-    SHCLEVENTSOURCE          Events;
+    SHCLEVENTSOURCE           Events;
     /** Current number of concurrent list handles. */
-    uint32_t                 cListHandles;
+    uint32_t                  cListHandles;
     /** Maximum number of concurrent list handles. */
-    uint32_t                 cMaxListHandles;
+    uint32_t                  cMaxListHandles;
     /** Next upcoming list handle. */
-    SHCLLISTHANDLE           uListHandleNext;
+    SHCLLISTHANDLE            uListHandleNext;
     /** List of all list handles elated to this transfer. */
-    RTLISTANCHOR             lstList;
+    RTLISTANCHOR              lstList;
     /** Number of root entries in list. */
-    uint64_t                 cRoots;
+    uint64_t                  cRoots;
     /** List of root entries of this transfer. */
-    RTLISTANCHOR             lstRoots;
+    RTLISTANCHOR              lstRoots;
     /** Current number of concurrent object handles. */
-    uint32_t                 cObjHandles;
+    uint32_t                  cObjHandles;
     /** Maximum number of concurrent object handles. */
-    uint32_t                 cMaxObjHandles;
+    uint32_t                  cMaxObjHandles;
     /** Next upcoming object handle. */
-    SHCLOBJHANDLE            uObjHandleNext;
+    SHCLOBJHANDLE             uObjHandleNext;
     /** Map of all objects handles related to this transfer. */
-    RTLISTANCHOR             lstObj;
+    RTLISTANCHOR              lstObj;
     /** The transfer's own provider context. */
-    SHCLTXPROVIDERCTX        ProviderCtx;
+    SHCLTXPROVIDERCTX         ProviderCtx;
     /** The transfer's provider interface. */
-    SHCLTXPROVIDERIFACE      ProviderIface;
+    SHCLTXPROVIDERIFACE       ProviderIface;
+    /** The transfer's callback context. */
+    SHCLTRANSFERCALLBACKCTX   CallbackCtx;
+    /** The transfer's callback table. */
+    SHCLTRANSFERCALLBACKTABLE Callbacks;
     /** Opaque pointer to implementation-specific parameters. */
-    void                    *pvUser;
+    void                     *pvUser;
     /** Size (in bytes) of implementation-specific parameters. */
-    size_t                   cbUser;
+    size_t                    cbUser;
     /** Contains thread-related attributes. */
-    SHCLTRANSFERTHREAD       Thread;
+    SHCLTRANSFERTHREAD        Thread;
     /** Critical section for serializing access. */
-    RTCRITSECT               CritSect;
+    RTCRITSECT                CritSect;
 } SHCLTRANSFER, *PSHCLTRANSFER;
 
 /**
@@ -862,6 +922,7 @@ int ShClTransferListEntryInit(PSHCLLISTENTRY pListEntry);
 void ShClTransferListEntryDestroy(PSHCLLISTENTRY pListEntry);
 bool ShClTransferListEntryIsValid(PSHCLLISTENTRY pListEntry);
 
+void ShClTransferSetCallbacks(PSHCLTRANSFER pTransfer, PSHCLTRANSFERCALLBACKTABLE pCallbacks);
 int ShClTransferSetProviderIface(PSHCLTRANSFER pTransfer, PSHCLTXPROVIDERCREATIONCTX pCreationCtx);
 int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
 void ShClTransferReset(PSHCLTRANSFER pTransfer);

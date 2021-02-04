@@ -588,6 +588,8 @@ typedef struct VBGLR3SHCLTRANSFERCMDCTX
     /** Max chunk size (in bytes).
      * This is set by VbglR3ClipboardConnectEx(). */
     uint32_t                    cbMaxChunkSize;
+    /** Optional callbacks to invoke. */
+    SHCLTRANSFERCALLBACKTABLE   Callbacks;
 } VBGLR3SHCLTRANSFERCTX;
 /** Pointer to a Shared Clipboard transfer context. */
 typedef VBGLR3SHCLTRANSFERCMDCTX *PVBGLR3SHCLTRANSFERCMDCTX;

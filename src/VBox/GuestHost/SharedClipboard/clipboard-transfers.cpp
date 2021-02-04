@@ -1266,8 +1266,8 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer, SHCLTRANSFERDIR enmDir, SHCLSOURCE
         pTransfer->cMaxObjHandles  = _4K; /** @todo Ditto. */
         pTransfer->uObjHandleNext  = 1;
 
-        if (pTransfer->ProviderIface.pfnInitialize)
-            rc = pTransfer->ProviderIface.pfnInitialize(&pTransfer->ProviderCtx);
+        if (pTransfer->Callbacks.pfnOnInitialize)
+            rc = pTransfer->Callbacks.pfnOnInitialize(&pTransfer->CallbackCtx);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -2015,6 +2015,38 @@ bool ShClTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList
 }
 
 /**
+ * Sets or unsets the callback table to be used for a Shared Clipboard transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to set callbacks for.
+ * @param   pCallbacks          Pointer to callback table to set.
+ */
+void ShClTransferSetCallbacks(PSHCLTRANSFER pTransfer,
+                              PSHCLTRANSFERCALLBACKTABLE pCallbacks)
+{
+    AssertPtrReturnVoid(pTransfer);
+    AssertPtrReturnVoid(pCallbacks);
+
+    LogFlowFunc(("pCallbacks=%p\n", pCallbacks));
+
+#define SET_CALLBACK(a_pfnCallback)             \
+    if (pCallbacks->a_pfnCallback)              \
+        pTransfer->Callbacks.a_pfnCallback = pCallbacks->a_pfnCallback
+
+    SET_CALLBACK(pfnOnInitialize);
+    SET_CALLBACK(pfnOnStart);
+    SET_CALLBACK(pfnOnCompleted);
+    SET_CALLBACK(pfnOnError);
+    SET_CALLBACK(pfnOnRegistered);
+    SET_CALLBACK(pfnOnUnregistered);
+
+#undef SET_CALLBACK
+
+    pTransfer->Callbacks.pvUser = pCallbacks->pvUser;
+    pTransfer->Callbacks.cbUser = pCallbacks->cbUser;
+}
+
+/**
  * Sets the transfer provider interface for a given transfer.
  *
  * @returns VBox status code.
@@ -2483,9 +2515,9 @@ int ShClTransferStart(PSHCLTRANSFER pTransfer)
 
     int rc;
 
-    if (pTransfer->ProviderIface.pfnStart)
+    if (pTransfer->Callbacks.pfnOnStart)
     {
-        rc = pTransfer->ProviderIface.pfnStart(&pTransfer->ProviderCtx);
+        rc = pTransfer->Callbacks.pfnOnStart(&pTransfer->CallbackCtx);
     }
     else
         rc = VINF_SUCCESS;
@@ -2787,8 +2819,8 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
 
     pTransferCtx->cTransfers++;
 
-    if (pTransfer->ProviderIface.pfnRegistered)
-        pTransfer->ProviderIface.pfnRegistered(&pTransfer->ProviderCtx, pTransferCtx);
+    if (pTransfer->Callbacks.pfnOnRegistered)
+        pTransfer->Callbacks.pfnOnRegistered(&pTransfer->CallbackCtx, pTransferCtx);
 
     if (pidTransfer)
         *pidTransfer = idTransfer;
@@ -2819,8 +2851,8 @@ int ShClTransferCtxTransferRegisterById(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRAN
 
             pTransfer->State.uID = idTransfer;
 
-            if (pTransfer->ProviderIface.pfnRegistered)
-                pTransfer->ProviderIface.pfnRegistered(&pTransfer->ProviderCtx, pTransferCtx);
+            if (pTransfer->Callbacks.pfnOnRegistered)
+                pTransfer->Callbacks.pfnOnRegistered(&pTransfer->CallbackCtx, pTransferCtx);
 
             pTransferCtx->cTransfers++;
             return VINF_SUCCESS;
@@ -2848,8 +2880,8 @@ static void shclTransferCtxTransferRemoveAndUnregister(PSHCLTRANSFERCTX pTransfe
 
     Assert(pTransferCtx->cTransfers >= pTransferCtx->cRunning);
 
-    if (pTransfer->ProviderIface.pfnUnregistered)
-        pTransfer->ProviderIface.pfnUnregistered(&pTransfer->ProviderCtx, pTransferCtx);
+    if (pTransfer->Callbacks.pfnOnUnregistered)
+        pTransfer->Callbacks.pfnOnUnregistered(&pTransfer->CallbackCtx, pTransferCtx);
 
     LogFlowFunc(("Now %RU32 transfers left\n", pTransferCtx->cTransfers));
 }

@@ -1802,6 +1802,8 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
     int rc = ShClTransferCreate(&pTransfer);
     if (RT_SUCCESS(rc))
     {
+        ShClTransferSetCallbacks(pTransfer, &pCmdCtx->Transfers.Callbacks);
+
         rc = ShClTransferInit(pTransfer, enmDir, enmSource);
         if (RT_SUCCESS(rc))
         {
