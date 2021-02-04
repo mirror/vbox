@@ -32,6 +32,7 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CBIOSSettings.h"
 #include "CGraphicsAdapter.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilters.h"
@@ -144,10 +145,14 @@ bool UIWizardNewVM::createVM()
     m_machine.ApplyDefaults(QString());
     /* Apply user preferences again. IMachine::applyDefaults may have overwritten the user setting: */
     m_machine.SetMemorySize(field("baseMemory").toUInt());
-    m_machine.SetCPUCount(field("VCPUCount").toUInt());
+    int iVPUCount = qMax((unsigned)1, field("VCPUCount").toUInt());
+    m_machine.SetCPUCount(iVPUCount);
     /* Correct the VRAM size since API does not take fullscreen memory requirements into account: */
     CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
     comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(strTypeId) / _1M)));
+    /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
+    if (iVPUCount > 1)
+        m_machine.GetBIOSSettings().SetIOAPICEnabled(true);
 #endif
 
     /* Register the VM prior to attaching hard disks: */
@@ -167,9 +172,14 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
 
     /* RAM size: */
     m_machine.SetMemorySize(field("baseMemory").toInt());
-    /* VCPU count: */
-    m_machine.SetCPUCount(field("VCPUCount").toUInt());
 
+    /* VCPU count: */
+    int iVPUCount = qMax((unsigned)1, field("VCPUCount").toUInt());
+    m_machine.SetCPUCount(iVPUCount);
+
+    /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
+    if (iVPUCount > 1)
+        m_machine.GetBIOSSettings().SetIOAPICEnabled(true);
 
     /* Graphics Controller type: */
     comGraphics.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
