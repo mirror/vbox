@@ -42,6 +42,208 @@
 
 
 
+/** Worker for ProduceKAllSyms. */
+static void PrintSymbolForKAllSyms(const char *pszModule, PCRTDBGSYMBOL pSymInfo, PCRTDBGSEGMENT pSegInfo,
+                                   RTUINTPTR uBaseAddr, bool fOneSeg)
+{
+    RTUINTPTR uAddr;
+    char chType = 't';
+    if (pSymInfo->iSeg < RTDBGSEGIDX_SPECIAL_FIRST)
+    {
+        uAddr = uBaseAddr + pSymInfo->offSeg;
+        if (!fOneSeg)
+            uAddr += pSegInfo->uRva;
+        if (pSegInfo->szName[0])
+        {
+            if (strstr(pSegInfo->szName, "rodata") != NULL)
+                chType = 'r';
+            else if (strstr(pSegInfo->szName, "bss") != NULL)
+                chType = 'b';
+            else if (strstr(pSegInfo->szName, "data") != NULL)
+                chType = 'd';
+        }
+    }
+    else if (pSymInfo->iSeg == RTDBGSEGIDX_ABS)
+    {
+        chType = 'a';
+        uAddr = pSymInfo->offSeg;
+    }
+    else if (pSymInfo->iSeg == RTDBGSEGIDX_RVA)
+    {
+        Assert(!fOneSeg);
+        uAddr = uBaseAddr + pSymInfo->offSeg;
+    }
+    else
+    {
+        RTMsgError("Unsupported special segment %#x for %s in %s!", pSymInfo->iSeg, pSymInfo->szName, pszModule);
+        return;
+    }
+
+    RTPrintf("%RTptr %c %s\t[%s]\n", uAddr, chType, pSymInfo->szName, pszModule);
+}
+
+
+/**
+ * Produces a /proc/kallsyms compatible symbol listing of @a hDbgAs on standard
+ * output.
+ *
+ * @returns Exit code.
+ * @param   hDbgAs              The address space to dump.
+ */
+static RTEXITCODE ProduceKAllSyms(RTDBGAS hDbgAs)
+{
+    /*
+     * Iterate modules.
+     */
+    uint32_t cModules = RTDbgAsModuleCount(hDbgAs);
+    for (uint32_t iModule = 0; iModule < cModules; iModule++)
+    {
+        RTDBGMOD const     hDbgMod   = RTDbgAsModuleByIndex(hDbgAs, iModule);
+        const char * const pszModule = RTDbgModName(hDbgMod);
+
+        /*
+         * Iterate mappings of the module.
+         */
+        RTDBGASMAPINFO  aMappings[128];
+        uint32_t        cMappings = RT_ELEMENTS(aMappings);
+        int rc = RTDbgAsModuleQueryMapByIndex(hDbgAs, iModule, &aMappings[0], &cMappings, 0 /*fFlags*/);
+        if (RT_SUCCESS(rc))
+        {
+            for (uint32_t iMapping = 0; iMapping < cMappings; iMapping++)
+            {
+                RTDBGSEGMENT SegInfo = {0};
+                if (aMappings[iMapping].iSeg == NIL_RTDBGSEGIDX)
+                {
+                    /*
+                     * Flat mapping of the entire module.
+                     */
+                    SegInfo.iSeg = NIL_RTDBGSEGIDX;
+                    uint32_t cSymbols = RTDbgModSymbolCount(hDbgMod);
+                    for (uint32_t iSymbol = 0; iSymbol < cSymbols; iSymbol++)
+                    {
+                        RTDBGSYMBOL SymInfo;
+                        rc = RTDbgModSymbolByOrdinal(hDbgMod, iSymbol, &SymInfo);
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (   SymInfo.iSeg != SegInfo.iSeg
+                                && SymInfo.iSeg < RTDBGSEGIDX_SPECIAL_FIRST)
+                            {
+                                rc = RTDbgModSegmentByIndex(hDbgMod, SymInfo.iSeg, &SegInfo);
+                                if (RT_FAILURE(rc))
+                                {
+                                    RTMsgError("RTDbgModSegmentByIndex(%s, %u) failed: %Rrc", pszModule, SymInfo.iSeg, rc);
+                                    continue;
+                                }
+                            }
+                            PrintSymbolForKAllSyms(pszModule, &SymInfo, &SegInfo, aMappings[iMapping].Address, false);
+                        }
+                        else
+                            RTMsgError("RTDbgModSymbolByOrdinal(%s, %u) failed: %Rrc", pszModule, iSymbol, rc);
+                    }
+                }
+                else
+                {
+                    /*
+                     * Just one segment.
+                     */
+                    rc = RTDbgModSegmentByIndex(hDbgMod, aMappings[iMapping].iSeg, &SegInfo);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /** @todo    */
+                    }
+                    else
+                        RTMsgError("RTDbgModSegmentByIndex(%s, %u) failed: %Rrc", pszModule, aMappings[iMapping].iSeg, rc);
+                }
+            }
+        }
+        else
+            RTMsgError("RTDbgAsModuleQueryMapByIndex failed: %Rrc", rc);
+        RTDbgModRelease(hDbgMod);
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Dumps the address space.
+ */
+static void DumpAddressSpace(RTDBGAS hDbgAs, unsigned cVerbosityLevel)
+{
+    RTPrintf("*** Address Space Dump ***\n");
+    uint32_t cModules = RTDbgAsModuleCount(hDbgAs);
+    for (uint32_t iModule = 0; iModule < cModules; iModule++)
+    {
+        RTDBGMOD        hDbgMod = RTDbgAsModuleByIndex(hDbgAs, iModule);
+        RTPrintf("Module #%u: %s\n", iModule, RTDbgModName(hDbgMod));
+
+        RTDBGASMAPINFO  aMappings[128];
+        uint32_t        cMappings = RT_ELEMENTS(aMappings);
+        int rc = RTDbgAsModuleQueryMapByIndex(hDbgAs, iModule, &aMappings[0], &cMappings, 0 /*fFlags*/);
+        if (RT_SUCCESS(rc))
+        {
+            for (uint32_t iMapping = 0; iMapping < cMappings; iMapping++)
+            {
+                if (aMappings[iMapping].iSeg == NIL_RTDBGSEGIDX)
+                {
+                    RTPrintf("  mapping #%u: %RTptr-%RTptr\n",
+                             iMapping,
+                             aMappings[iMapping].Address,
+                             aMappings[iMapping].Address + RTDbgModImageSize(hDbgMod) - 1);
+                    if (cVerbosityLevel > 2)
+                    {
+                        uint32_t cSegments = RTDbgModSegmentCount(hDbgMod);
+                        for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
+                        {
+                            RTDBGSEGMENT SegInfo;
+                            rc = RTDbgModSegmentByIndex(hDbgMod, iSeg, &SegInfo);
+                            if (RT_SUCCESS(rc))
+                                RTPrintf("      seg #%u: %RTptr LB %RTptr '%s'\n",
+                                         iSeg, SegInfo.uRva, SegInfo.cb, SegInfo.szName);
+                            else
+                                RTPrintf("      seg #%u: %Rrc\n", iSeg, rc);
+                        }
+                    }
+                }
+                else
+                {
+                    RTDBGSEGMENT SegInfo;
+                    rc = RTDbgModSegmentByIndex(hDbgMod, aMappings[iMapping].iSeg, &SegInfo);
+                    if (RT_SUCCESS(rc))
+                        RTPrintf("  mapping #%u: %RTptr-%RTptr (segment #%u - '%s')\n",
+                                 iMapping,
+                                 aMappings[iMapping].Address,
+                                 aMappings[iMapping].Address + SegInfo.cb,
+                                 SegInfo.iSeg, SegInfo.szName);
+                    else
+                        RTPrintf("  mapping #%u: %RTptr-???????? (segment #%u) rc=%Rrc\n",
+                                 iMapping, aMappings[iMapping].Address, aMappings[iMapping].iSeg, rc);
+                }
+
+                if (cVerbosityLevel > 1)
+                {
+                    uint32_t cSymbols = RTDbgModSymbolCount(hDbgMod);
+                    RTPrintf("    %u symbols\n", cSymbols);
+                    for (uint32_t iSymbol = 0; iSymbol < cSymbols; iSymbol++)
+                    {
+                        RTDBGSYMBOL SymInfo;
+                        rc = RTDbgModSymbolByOrdinal(hDbgMod, iSymbol, &SymInfo);
+                        if (RT_SUCCESS(rc))
+                            RTPrintf("    #%04u at %08x:%RTptr (%RTptr) %05llx %s\n",
+                                     SymInfo.iOrdinal, SymInfo.iSeg, SymInfo.offSeg, SymInfo.Value,
+                                     (uint64_t)SymInfo.cb, SymInfo.szName);
+                    }
+                }
+            }
+        }
+        else
+            RTMsgError("RTDbgAsModuleQueryMapByIndex failed: %Rrc", rc);
+        RTDbgModRelease(hDbgMod);
+    }
+    RTPrintf("*** End of Address Space Dump ***\n");
+}
+
+
 /**
  * Tries to parse out an address at the head of the string.
  *
@@ -151,6 +353,7 @@ int main(int argc, char **argv)
         { "--x86",          '8', RTGETOPT_REQ_NOTHING },
         { "--amd64",        '6', RTGETOPT_REQ_NOTHING },
         { "--whatever",     '*', RTGETOPT_REQ_NOTHING },
+        { "--kallsyms",     'k', RTGETOPT_REQ_NOTHING },
     };
 
     PRTSTREAM       pInput          = g_pStdIn;
@@ -162,6 +365,7 @@ int main(int argc, char **argv)
     }               enmOpenMethod   = kOpenMethod_FromImage;
     bool            fCacheFile      = false;
     RTLDRARCH       enmArch         = RTLDRARCH_WHATEVER;
+    bool            fKAllSyms       = false;
 
     RTGETOPTUNION   ValueUnion;
     RTGETOPTSTATE   GetState;
@@ -178,6 +382,10 @@ int main(int argc, char **argv)
 
             case 'c':
                 fCacheFile = true;
+                break;
+
+            case 'k':
+                fKAllSyms = true;
                 break;
 
             case 'l':
@@ -216,6 +424,8 @@ int main(int argc, char **argv)
                          "      Display the address space before doing the filtering.\n"
                          "  --amd64,--x86,--whatever\n"
                          "      Selects the desired architecture.\n"
+                         "  -k,--kallsyms\n"
+                         "      Produce a /proc/kallsyms compatible symbol listing and quit.\n"
                          "  -h, -?, --help\n"
                          "      Display this help text and exit successfully.\n"
                          "  -V, --version\n"
@@ -275,79 +485,13 @@ int main(int argc, char **argv)
      * Display the address space.
      */
     if (cVerbosityLevel)
-    {
-        RTPrintf("*** Address Space Dump ***\n");
-        uint32_t cModules = RTDbgAsModuleCount(hDbgAs);
-        for (uint32_t iModule = 0; iModule < cModules; iModule++)
-        {
-            RTDBGMOD        hDbgMod = RTDbgAsModuleByIndex(hDbgAs, iModule);
-            RTPrintf("Module #%u: %s\n", iModule, RTDbgModName(hDbgMod));
+        DumpAddressSpace(hDbgAs, cVerbosityLevel);
 
-            RTDBGASMAPINFO  aMappings[128];
-            uint32_t        cMappings = RT_ELEMENTS(aMappings);
-            rc = RTDbgAsModuleQueryMapByIndex(hDbgAs, iModule, &aMappings[0], &cMappings, 0 /*fFlags*/);
-            if (RT_SUCCESS(rc))
-            {
-                for (uint32_t iMapping = 0; iMapping < cMappings; iMapping++)
-                {
-                    if (aMappings[iMapping].iSeg == NIL_RTDBGSEGIDX)
-                    {
-                        RTPrintf("  mapping #%u: %RTptr-%RTptr\n",
-                                 iMapping,
-                                 aMappings[iMapping].Address,
-                                 aMappings[iMapping].Address + RTDbgModImageSize(hDbgMod) - 1);
-                        if (cVerbosityLevel > 2)
-                        {
-                            uint32_t cSegments = RTDbgModSegmentCount(hDbgMod);
-                            for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
-                            {
-                                RTDBGSEGMENT SegInfo;
-                                rc = RTDbgModSegmentByIndex(hDbgMod, iSeg, &SegInfo);
-                                if (RT_SUCCESS(rc))
-                                    RTPrintf("      seg #%u: %RTptr LB %RTptr '%s'\n",
-                                             iSeg, SegInfo.uRva, SegInfo.cb, SegInfo.szName);
-                                else
-                                    RTPrintf("      seg #%u: %Rrc\n", iSeg, rc);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        RTDBGSEGMENT SegInfo;
-                        rc = RTDbgModSegmentByIndex(hDbgMod, aMappings[iMapping].iSeg, &SegInfo);
-                        if (RT_SUCCESS(rc))
-                            RTPrintf("  mapping #%u: %RTptr-%RTptr (segment #%u - '%s')\n",
-                                     iMapping,
-                                     aMappings[iMapping].Address,
-                                     aMappings[iMapping].Address + SegInfo.cb,
-                                     SegInfo.iSeg, SegInfo.szName);
-                        else
-                            RTPrintf("  mapping #%u: %RTptr-???????? (segment #%u) rc=%Rrc\n",
-                                     iMapping, aMappings[iMapping].Address, aMappings[iMapping].iSeg, rc);
-                    }
-
-                    if (cVerbosityLevel > 1)
-                    {
-                        uint32_t cSymbols = RTDbgModSymbolCount(hDbgMod);
-                        RTPrintf("    %u symbols\n", cSymbols);
-                        for (uint32_t iSymbol = 0; iSymbol < cSymbols; iSymbol++)
-                        {
-                            RTDBGSYMBOL SymInfo;
-                            rc = RTDbgModSymbolByOrdinal(hDbgMod, iSymbol, &SymInfo);
-                            if (RT_SUCCESS(rc))
-                                RTPrintf("    #%04u at %08x:%RTptr (%RTptr) %05llx %s\n",
-                                         SymInfo.iOrdinal, SymInfo.iSeg, SymInfo.offSeg, SymInfo.Value,
-                                         (uint64_t)SymInfo.cb, SymInfo.szName);
-                        }
-                    }
-                }
-            }
-            else
-                RTMsgError("RTDbgAsModuleQueryMapByIndex failed: %Rrc", rc);
-            RTDbgModRelease(hDbgMod);
-        }
-        RTPrintf("*** End of Address Space Dump ***\n");
-    }
+    /*
+     * Produce the /proc/kallsyms output.
+     */
+    if (fKAllSyms)
+        return ProduceKAllSyms(hDbgAs);
 
     /*
      * Read text from standard input and see if there is anything we can translate.
@@ -437,7 +581,6 @@ int main(int argc, char **argv)
         if (pszStart != psz)
             RTStrmWrite(pOutput, pszStart, psz - pszStart);
         RTStrmPutCh(pOutput, '\n');
-
     }
 
     return RTEXITCODE_SUCCESS;
