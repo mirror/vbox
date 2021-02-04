@@ -300,7 +300,7 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
 
     /* Prepare initial disk choice: */
     if (!m_userSetWidgets.contains(m_pDiskCreate) &&
-        !m_userSetWidgets.contains(m_pDiskCreate) &&
+        !m_userSetWidgets.contains(m_pDiskSkip) &&
         !m_userSetWidgets.contains(m_pDiskPresent))
     {
         if (type.GetRecommendedHDD() != 0)
