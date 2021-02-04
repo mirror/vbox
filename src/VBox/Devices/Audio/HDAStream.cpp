@@ -284,6 +284,22 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                                     uSD, u32CBL, pStreamR3->State.Mapping.cbFrameSize),
                                    VERR_INVALID_PARAMETER);
 
+#ifndef VBOX_WITH_AUDIO_HDA_51_SURROUND
+    if (Props.cChannels > 2)
+    {
+        /*
+         * When not running with surround support enabled, override the audio channel count
+         * with stereo (2) channels so that we at least can properly work with those.
+         *
+         * Note: This also involves dealing with surround setups the guest might has set up for us.
+         */
+        LogRel2(("HDA: More than stereo (2) channels are not supported (%RU8 requested), "
+                 "falling back to stereo channels for stream #%RU8\n", Props.cChannels, uSD));
+        Props.cChannels = 2;
+        Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Props.cbSample, Props.cChannels);
+    }
+#endif
+
     /*
      * Set the stream's timer Hz rate, based on the stream channel count.
      * Currently this is just a rough guess and we might want to optimize this further.
@@ -301,22 +317,6 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     }
     else
         pStreamShared->State.uTimerHz = pThis->uTimerHz;
-
-#ifndef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    if (Props.cChannels > 2)
-    {
-        /*
-         * When not running with surround support enabled, override the audio channel count
-         * with stereo (2) channels so that we at least can properly work with those.
-         *
-         * Note: This also involves dealing with surround setups the guest might has set up for us.
-         */
-        LogRel2(("HDA: More than stereo (2) channels are not supported (%RU8 requested), "
-                 "falling back to stereo channels for stream #%RU8\n", Props.cChannels, uSD));
-        Props.cChannels = 2;
-        Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Props.cbSample, Props.cChannels);
-    }
-#endif
 
     /* Did some of the vital / critical parameters change?
      * If not, we can skip a lot of the (re-)initialization and just (re-)use the existing stuff.
