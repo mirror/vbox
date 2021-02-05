@@ -1174,6 +1174,7 @@
         <Publish Dialog="VBoxCustomizeDlg" Control="Back" Event="NewDialog" Value="VBoxCheckSerialDlg"><![CDATA[VBOX_SHOW_SERIAL_CHECK_DLG]]></Publish>
         <Publish Dialog="VBoxCustomizeDlg" Control="Back" Event="NewDialog" Value="VBoxLicenseAgreementDlg"><![CDATA[NOT VBOX_SHOW_SERIAL_CHECK_DLG]]></Publish>
 
+        <Publish Dialog="VBoxWarnDisconNetIfacesDlg" Control="Next" Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(NOT VBOX_SHOW_CUSTOMIZE2_DLG) AND (NOT VBOX_SHOW_WARN_PYTHONAPI_DLG)]]></Publish>
         <Publish Dialog="VBoxWarnDisconNetIfacesDlg" Control="Next" Event="NewDialog" Value="VBoxCustomize2Dlg"><![CDATA[VBOX_SHOW_CUSTOMIZE2_DLG AND (NOT VBOX_SHOW_WARN_PYTHONAPI_DLG)]]></Publish>
         <Publish Dialog="VBoxWarnDisconNetIfacesDlg" Control="Next" Event="NewDialog" Value="VBoxWarnPythonDlg"><![CDATA[VBOX_SHOW_WARN_PYTHONAPI_DLG]]></Publish>
         <!-- Note: VBoxWarnDisconNetIfacesDlg only has a "Cancel" button which aborts the installation. -->
