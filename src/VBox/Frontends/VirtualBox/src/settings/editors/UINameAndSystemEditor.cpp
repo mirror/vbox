@@ -271,12 +271,22 @@ void UINameAndSystemEditor::retranslateUi()
         m_pLabelType->setText(tr("&Version:"));
 
     if (m_pComboFamily)
+    {
         m_pComboFamily->setWhatsThis(tr("Selects the operating system family that "
                                         "you plan to install into this virtual machine."));
+        m_pComboFamily->setToolTip(tr("Selects the operating system family that "
+                                        "you plan to install into this virtual machine."));
+    }
+
     if (m_pComboType)
+    {
         m_pComboType->setWhatsThis(tr("Selects the operating system type that "
                                       "you plan to install into this virtual machine "
                                       "(called a guest operating system)."));
+        m_pComboType->setToolTip(tr("Selects the operating system type that "
+                                      "you plan to install into this virtual machine "
+                                      "(called a guest operating system)."));
+    }
 }
 
 void UINameAndSystemEditor::sltFamilyChanged(int iIndex)

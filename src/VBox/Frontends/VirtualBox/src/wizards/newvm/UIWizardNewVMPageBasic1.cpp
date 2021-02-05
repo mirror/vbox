@@ -416,8 +416,8 @@ bool UIWizardNewVMPage1::checkISOFile() const
 void UIWizardNewVMPage1::setTypeByISODetectedOSType(const QString &strDetectedOSType)
 {
     Q_UNUSED(strDetectedOSType);
-    // if (!strDetectedOSType.isEmpty())
-    //     onNameChanged(strDetectedOSType);
+    if (!strDetectedOSType.isEmpty())
+        onNameChanged(strDetectedOSType);
 }
 
 UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
