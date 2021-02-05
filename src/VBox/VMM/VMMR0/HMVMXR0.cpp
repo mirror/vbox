@@ -5116,6 +5116,8 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
              * Enable saving of the VMX-preemption timer value on VM-exit.
              * For nested-guests, currently not exposed/used.
              */
+            /** @todo r=bird: Measure performance hit because of this vs. always rewriting
+             *        the timer value. */
             if (pVM->hmr0.s.vmx.fUsePreemptTimer)
             {
                 Assert(g_HmMsrs.u.vmx.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER);
@@ -7128,7 +7130,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSI
 
         /* Make sure the returned values have sane upper and lower boundaries. */
         uint64_t u64CpuHz  = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
-        cTicksToDeadline   = RT_MIN(cTicksToDeadline, u64CpuHz / 64);      /* 1/64th of a second */
+        cTicksToDeadline   = RT_MIN(cTicksToDeadline, u64CpuHz / 64);      /* 1/64th of a second */ /** @todo r=bird: Once real+virtual timers move to separate thread, we can raise the upper limit (16ms isn't much). ASSUMES working poke cpu function. */
         cTicksToDeadline   = RT_MAX(cTicksToDeadline, u64CpuHz / 2048);    /* 1/2048th of a second */
         cTicksToDeadline >>= pVM->hm.s.vmx.cPreemptTimerShift;
 
