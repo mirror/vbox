@@ -233,7 +233,9 @@ int tmCpuTickPauseLocked(PVMCC pVM, PVMCPUCC pVCpu)
 }
 
 
-#ifdef VBOX_WITH_STATISTICS
+#ifdef IN_RING0 /* Only used in ring-0 at present (AMD-V and VT-x). */
+
+# ifdef VBOX_WITH_STATISTICS
 /**
  * Record why we refused to use offsetted TSC.
  *
@@ -268,10 +270,8 @@ DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
            STAM_COUNTER_INC(&pVM->tm.s.StatTSCWarp);
     }
 }
-#endif /* VBOX_WITH_STATISTICS */
+# endif /* VBOX_WITH_STATISTICS */
 
-
-#ifdef IN_RING0 /* Only used in ring-0 at present (AMD-V and VT-x). */
 /**
  * Checks if AMD-V / VT-x can use an offsetted hardware TSC or not.
  *
@@ -354,7 +354,7 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *p
 # endif
     return false;
 }
-#endif /* IN_RING0 - at the moment */
+
 
 /**
  * Calculates the number of host CPU ticks till the next virtual sync deadline.
@@ -370,12 +370,12 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *p
 DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(PVMCPU pVCpu, uint64_t cNsToDeadline)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL <= _4G);
-#ifdef IN_RING3
+# ifdef IN_RING3
     RT_NOREF_PV(pVCpu);
     uint64_t uCpuHz = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
-#else
+# else
     uint64_t uCpuHz = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
-#endif
+# endif
     if (RT_UNLIKELY(cNsToDeadline >= TMCLOCK_FREQ_VIRTUAL))
         return uCpuHz;
     AssertCompile(TMCLOCK_FREQ_VIRTUAL <= UINT32_MAX);
@@ -388,7 +388,6 @@ DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(PVMCPU pVCpu, uint64_t cNsToDeadli
 }
 
 
-#ifdef IN_RING0 /* Only used in ring-0 from VT-x code at the moment. */
 /**
  * Gets the next deadline in host CPU clock ticks and the TSC offset if we can
  * use the raw TSC.
@@ -465,8 +464,8 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCC pVM, PVMCPUCC pVCp
     *poffRealTsc     = 0;
     return tmCpuCalcTicksToDeadline(pVCpu, TMVirtualSyncGetNsToDeadline(pVM, puDeadlineVersion, puTscNow));
 }
-#endif /* IN_RING0 - at the moment */
 
+#endif /* IN_RING0 - at the moment */
 
 /**
  * Read the current CPU timestamp counter.
