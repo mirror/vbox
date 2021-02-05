@@ -64,7 +64,7 @@ DECLCALLBACK(DECLEXPORT(void)) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint6
  * fGetGipCpu feature the current worker relies upon becomes unavailable.  The
  * last two events may occur as CPUs are taken online.
  */
-DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData)
+DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra)
 {
     PVM pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
 
@@ -142,18 +142,18 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
      * Update the pfnVirtualGetRaw pointer and call the worker we selected.
      */
     ASMAtomicWritePtr((void * volatile *)&CTX_SUFF(pVM->tm.s.pfnVirtualGetRaw), (void *)(uintptr_t)pfnWorker);
-    return pfnWorker(pData);
+    return pfnWorker(pData, pExtra);
 }
 
 
 /**
  * @interface_method_impl{RTTIMENANOTSDATA,pfnBadCpuIndex}
  */
-DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet,
-                                                              uint16_t iGipCpu)
+DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra,
+                                                              uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu)
 {
     PVM pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
-    AssertFatalMsgFailed(("pVM=%p idApic=%#x iCpuSet=%#x iGipCpu=%#x\n", pVM, idApic, iCpuSet, iGipCpu));
+    AssertFatalMsgFailed(("pVM=%p idApic=%#x iCpuSet=%#x iGipCpu=%#x pExtra=%p\n", pVM, idApic, iCpuSet, iGipCpu, pExtra));
 #ifndef _MSC_VER
     return UINT64_MAX;
 #endif
@@ -166,10 +166,10 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA 
 DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVMCC pVM)
 {
 # ifdef IN_RING3
-    uint64_t u64 = CTXALLSUFF(pVM->tm.s.pfnVirtualGetRaw)(&CTXALLSUFF(pVM->tm.s.VirtualGetRawData));
+    uint64_t u64 = CTXALLSUFF(pVM->tm.s.pfnVirtualGetRaw)(&CTXALLSUFF(pVM->tm.s.VirtualGetRawData), NULL /*pExtra*/);
 # else  /* !IN_RING3 */
     uint32_t cPrevSteps = pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps;
-    uint64_t u64 = pVM->tm.s.CTX_SUFF(pfnVirtualGetRaw)(&pVM->tm.s.CTX_SUFF(VirtualGetRawData));
+    uint64_t u64 = pVM->tm.s.CTX_SUFF(pfnVirtualGetRaw)(&pVM->tm.s.CTX_SUFF(VirtualGetRawData), NULL /*pExtra*/);
     if (cPrevSteps != pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps)
         VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_TO_R3);
 # endif /* !IN_RING3 */

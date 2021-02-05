@@ -229,7 +229,6 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].enmClock            = TMCLOCK_TSC;
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].u64Expire           = INT64_MAX;
 
-
     /*
      * We directly use the GIP to calculate the virtual time. We map the
      * the GIP into the guest context so we can do this calculation there

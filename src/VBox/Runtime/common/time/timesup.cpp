@@ -49,9 +49,10 @@
 *********************************************************************************************************************************/
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 static DECLCALLBACK(void)     rtTimeNanoTSInternalBitch(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
-static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pData);
-static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA pData);
-static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalBadCpuIndex(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu);
+static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalBadCpuIndex(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra,
+                                                              uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu);
 #endif
 
 
@@ -128,12 +129,14 @@ static DECLCALLBACK(void) rtTimeNanoTSInternalBitch(PRTTIMENANOTSDATA pData, uin
 /**
  * @interface_method_impl{RTTIMENANOTSDATA,pfnBadCpuIndex}
  */
-static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalBadCpuIndex(PRTTIMENANOTSDATA pData, uint16_t idApic,
-                                                              uint16_t iCpuSet, uint16_t iGipCpu)
+static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalBadCpuIndex(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra,
+                                                              uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu)
 {
     RT_NOREF_PV(pData); RT_NOREF_PV(idApic); RT_NOREF_PV(iCpuSet); RT_NOREF_PV(iGipCpu);
 # ifndef IN_RC
     AssertMsgFailed(("idApic=%#x iCpuSet=%#x iGipCpu=%#x\n", idApic, iCpuSet, iGipCpu));
+    if (pExtra)
+        pExtra->uTSCValue = ASMReadTSC();
     return RTTimeSystemNanoTS();
 # else
     RTAssertReleasePanic();
@@ -145,7 +148,7 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalBadCpuIndex(PRTTIMENANOTSDATA 
 /**
  * Fallback function.
  */
-static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pData)
+static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra)
 {
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     if (    pGip
@@ -153,9 +156,11 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pDa
         &&  (   pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
              || pGip->u32Mode == SUPGIPMODE_SYNC_TSC
              || pGip->u32Mode == SUPGIPMODE_ASYNC_TSC))
-        return rtTimeNanoTSInternalRediscover(pData);
+        return rtTimeNanoTSInternalRediscover(pData, pExtra);
     NOREF(pData);
 # ifndef IN_RC
+    if (pExtra)
+        pExtra->uTSCValue = ASMReadTSC();
     return RTTimeSystemNanoTS();
 # else
     RTAssertReleasePanic();
@@ -168,7 +173,7 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pDa
  * Called the first time somebody asks for the time or when the GIP
  * is mapped/unmapped.
  */
-static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA pData)
+static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra)
 {
     PSUPGLOBALINFOPAGE      pGip = g_pSUPGlobalInfoPage;
 # ifdef IN_RC
@@ -297,10 +302,10 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
 
 # ifdef IN_RC
     ASMAtomicWriteU32((uint32_t volatile *)&g_iWorker, iWorker);
-    return g_apfnWorkers[iWorker](pData);
+    return g_apfnWorkers[iWorker](pData, pExtra);
 # else
     ASMAtomicWritePtr((void * volatile *)&g_pfnWorker, (void *)(uintptr_t)pfnWorker);
-    return pfnWorker(pData);
+    return pfnWorker(pData, pExtra);
 # endif
 }
 
@@ -314,9 +319,9 @@ DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
 {
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 # ifdef IN_RC
-    return g_apfnWorkers[g_iWorker](&g_TimeNanoTSData);
+    return g_apfnWorkers[g_iWorker](&g_TimeNanoTSData, NULL /*pExtra*/);
 # else
-    return g_pfnWorker(&g_TimeNanoTSData);
+    return g_pfnWorker(&g_TimeNanoTSData, NULL /*pExtra*/);
 # endif
 #else
     return RTTimeSystemNanoTS();

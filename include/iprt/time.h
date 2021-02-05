@@ -992,6 +992,16 @@ RTDECL(uint32_t) RTTimeDbgRaces(void);
 
 /** @name RTTimeNanoTS GIP worker functions, for TM.
  * @{ */
+
+/** Extra info optionally returned by the RTTimeNanoTS GIP workers. */
+typedef struct RTITMENANOTSEXTRA
+{
+    /** The TSC value used (delta adjusted). */
+    uint64_t    uTSCValue;
+} RTITMENANOTSEXTRA;
+/** Pointer to extra info optionally returned by the RTTimeNanoTS GIP workers. */
+typedef RTITMENANOTSEXTRA *PRTITMENANOTSEXTRA;
+
 /** Pointer to a RTTIMENANOTSDATA structure. */
 typedef struct RTTIMENANOTSDATA *PRTTIMENANOTSDATA;
 
@@ -1024,21 +1034,24 @@ typedef struct RTTIMENANOTSDATA
      *
      * @returns Nanosecond timestamp.
      * @param   pData           Pointer to this structure.
+     * @param   pExtra          Where to return extra time info. Optional.
      */
-    DECLCALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData));
+    DECLCALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra));
 
     /**
      * Callback for when some CPU index related stuff goes wrong.
      *
      * @returns Nanosecond timestamp.
      * @param   pData           Pointer to this structure.
+     * @param   pExtra          Where to return extra time info. Optional.
      * @param   idApic          The APIC ID if available, otherwise (UINT16_MAX-1).
      * @param   iCpuSet         The CPU set index if available, otherwise
      *                          (UINT16_MAX-1).
      * @param   iGipCpu         The GIP CPU array index if available, otherwise
      *                          (UINT16_MAX-1).
      */
-    DECLCALLBACKMEMBER(uint64_t, pfnBadCpuIndex,(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu));
+    DECLCALLBACKMEMBER(uint64_t, pfnBadCpuIndex,(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra,
+                                                 uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu));
 
     /** Number of 1ns steps because of overshooting the period. */
     uint32_t            c1nsSteps;
@@ -1058,8 +1071,9 @@ typedef struct RTTIMENANOTSDATAR3
 {
     R3PTRTYPE(uint64_t volatile  *) pu64Prev;
     DECLR3CALLBACKMEMBER(void, pfnBad,(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS));
-    DECLR3CALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData));
-    DECLR3CALLBACKMEMBER(uint64_t, pfnBadCpuIndex,(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnBadCpuIndex,(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra,
+                                                   uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu));
     uint32_t            c1nsSteps;
     uint32_t            cExpired;
     uint32_t            cBadPrev;
@@ -1077,8 +1091,9 @@ typedef struct RTTIMENANOTSDATAR0
 {
     R0PTRTYPE(uint64_t volatile  *) pu64Prev;
     DECLR0CALLBACKMEMBER(void, pfnBad,(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS));
-    DECLR0CALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData));
-    DECLR0CALLBACKMEMBER(uint64_t, pfnBadCpuIndex,(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu));
+    DECLR0CALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra));
+    DECLR0CALLBACKMEMBER(uint64_t, pfnBadCpuIndex,(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra,
+                                                   uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu));
     uint32_t            c1nsSteps;
     uint32_t            cExpired;
     uint32_t            cBadPrev;
@@ -1096,8 +1111,9 @@ typedef struct RTTIMENANOTSDATARC
 {
     RCPTRTYPE(uint64_t volatile  *) pu64Prev;
     DECLRCCALLBACKMEMBER(void, pfnBad,(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS));
-    DECLRCCALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData));
-    DECLRCCALLBACKMEMBER(uint64_t, pfnBadCpuIndex,(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu));
+    DECLRCCALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra));
+    DECLRCCALLBACKMEMBER(uint64_t, pfnBadCpuIndex,(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra,
+                                                   uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu));
     uint32_t            c1nsSteps;
     uint32_t            cExpired;
     uint32_t            cBadPrev;
@@ -1108,39 +1124,39 @@ typedef RTTIMENANOTSDATA RTTIMENANOTSDATARC;
 #endif
 
 /** Internal RTTimeNanoTS worker (assembly). */
-typedef DECLCALLBACKTYPE(uint64_t, FNTIMENANOTSINTERNAL,(PRTTIMENANOTSDATA pData));
+typedef DECLCALLBACKTYPE(uint64_t, FNTIMENANOTSINTERNAL,(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra));
 /** Pointer to an internal RTTimeNanoTS worker (assembly). */
 typedef FNTIMENANOTSINTERNAL *PFNTIMENANOTSINTERNAL;
-RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarNoDelta(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarNoDelta(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarNoDelta(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarNoDelta(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
 #ifdef IN_RING3
-RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseApicId(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseApicIdExt0B(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseApicIdExt8000001E(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseRdtscp(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseRdtscpGroupChNumCl(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseIdtrLim(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt0B(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt8000001E(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDeltaUseRdtscp(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseApicId(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseApicIdExt0B(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseApicIdExt8000001E(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseRdtscp(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseIdtrLim(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt0B(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt8000001E(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseApicId(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseApicIdExt0B(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseApicIdExt8000001E(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseRdtscp(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseRdtscpGroupChNumCl(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacyAsyncUseIdtrLim(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt0B(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt8000001E(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDeltaUseRdtscp(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseApicId(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseApicIdExt0B(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseApicIdExt8000001E(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseRdtscp(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceAsyncUseIdtrLim(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt0B(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt8000001E(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
 #else
-RTDECL(uint64_t) RTTimeNanoTSLegacyAsync(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDelta(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceAsync(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDelta(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLegacyAsync(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarWithDelta(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceAsync(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
+RTDECL(uint64_t) RTTimeNanoTSLFenceSyncInvarWithDelta(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
 #endif
 
 /** @} */
