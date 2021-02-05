@@ -219,6 +219,7 @@ DECLHIDDEN(void) vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
     {
         pSetup = pPipe->pCtrl->pMsg;
         if (pSetup->bRequest == VUSB_REQ_GET_DESCRIPTOR)
+        {
             /* HID report (0x22) and physical (0x23) descriptors do not use standard format
              * with descriptor length/type at the front. Don't try to dump them, we'll only
              * misinterpret them.
@@ -228,8 +229,9 @@ DECLHIDDEN(void) vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
             {
                 fDescriptors = false;
             }
-            else
-                fDescriptors = true;
+        }
+        else
+            fDescriptors = true;
     }
 
     /*
