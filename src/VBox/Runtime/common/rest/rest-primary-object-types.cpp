@@ -2266,6 +2266,12 @@ int RTCRestDataObject::deserializeMemberFromJson(RTCRestJsonCursor const &a_rCur
 
 int RTCRestDataObject::deserializeFromJson(RTCRestJsonCursor const &a_rCursor) RT_NOEXCEPT
 {
+    if (RTJsonValueGetType(a_rCursor.m_hValue) == RTJSONVALTYPE_NULL)
+    {
+        setNull();
+        return VINF_SUCCESS;
+    }
+
     /*
      * Make sure the object starts out with default values.
      */
