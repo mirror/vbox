@@ -178,6 +178,8 @@ private:
     int logInit();
     int eventsInit();
 
+    int getExtraData(com::Utf8Str &strValueOut, const char *pcszKey);
+
     static void reportError(const char *a_pcszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
     static HRESULT reportComError(ComPtr<IUnknown> iface,
@@ -378,10 +380,9 @@ int VBoxNetLwipNAT::init()
     /*
      * IPv4 source address, if configured.
      */
-    com::Bstr bstrSourceIp4;
-    com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4", networkName.c_str());
-    hrc = virtualbox->GetExtraData(bstrSourceIp4Key.raw(), bstrSourceIp4.asOutParam());
-    if (SUCCEEDED(hrc) && bstrSourceIp4.isNotEmpty())
+    com::Utf8Str strSourceIp4;
+    rc = getExtraData(strSourceIp4, "SourceIp4");
+    if (RT_SUCCESS(rc) && strSourceIp4.isNotEmpty())
     {
         RTNETADDRIPV4 addr;
         rc = RTNetStrToIPv4Addr(com::Utf8Str(bstrSourceIp4).c_str(), &addr);
@@ -405,10 +406,9 @@ int VBoxNetLwipNAT::init()
      */
     if (fIPv6Enabled)
     {
-        com::Bstr bstrSourceIp6;
-        com::Bstr bstrSourceIp6Key = com::BstrFmt("NAT/%s/SourceIp6", networkName.c_str());
-        hrc = virtualbox->GetExtraData(bstrSourceIp6Key.raw(), bstrSourceIp6.asOutParam());
-        if (SUCCEEDED(hrc) && bstrSourceIp6.isNotEmpty())
+        com::Utf8Str strSourceIp6;
+        rc = getExtraData(strSourceIp6, "SourceIp6");
+        if (RT_SUCCESS(rc) && strSourceIp6.isNotEmpty())
         {
             RTNETADDRIPV6 addr;
             char *pszZone = NULL;
@@ -1449,6 +1449,32 @@ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf) RT_NOTHROW_DEF
 
     LogFlowFunc(("LEAVE: %d\n", ERR_OK));
     return ERR_OK;
+}
+
+
+/**
+ * Retrieve network-specific extra data item.
+ */
+int VBoxNetLwipNAT::getExtraData(com::Utf8Str &strValueOut, const char *pcszKey)
+{
+    HRESULT hrc;
+
+    AssertReturn(!virtualbox.isNull(), E_FAIL);
+    AssertReturn(!getNetworkName().empty(), E_FAIL);
+    AssertReturn(pcszKey != NULL, E_FAIL);
+    AssertReturn(*pcszKey != '\0', E_FAIL);
+
+    com::BstrFmt bstrKey("NAT/%s/%s", networkName.c_str(), pcszKey);
+    com::Bstr bstrValue;
+    hrc = virtualbox->GetExtraData(bstrKey.raw(), bstrValue.asOutParam());
+    if (FAILED(hrc))
+    {
+        reportComError(virtualbox, "GetExtraData", hrc);
+        return VERR_GENERAL_FAILURE;
+    }
+
+    strValueOut = bstrValue;
+    return VINF_SUCCESS;
 }
 
 
