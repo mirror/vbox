@@ -17,6 +17,8 @@
 
 /* Qt includes: */
 #include <QCheckBox>
+#include <QFontMetrics>
+#include <QGroupBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QRadioButton>
@@ -44,13 +46,13 @@ UIDetailsWidgetNATNetwork::UIDetailsWidgetNATNetwork(EmbedTo enmEmbedding, QWidg
     , m_pTabWidget(0)
     , m_pLabelNetworkName(0)
     , m_pEditorNetworkName(0)
+    , m_pGroupBoxIPv4(0)
     , m_pLabelNetworkIPv4Prefix(0)
     , m_pEditorNetworkIPv4Prefix(0)
+    , m_pCheckboxSupportsDHCP(0)
+    , m_pGroupBoxIPv6(0)
     , m_pLabelNetworkIPv6Prefix(0)
     , m_pEditorNetworkIPv6Prefix(0)
-    , m_pLabelExtended(0)
-    , m_pCheckboxSupportsDHCP(0)
-    , m_pCheckboxSupportsIPv6(0)
     , m_pCheckboxAdvertiseDefaultIPv6Route(0)
     , m_pButtonBoxOptions(0)
     , m_pTabWidgetForwarding(0)
@@ -150,28 +152,28 @@ void UIDetailsWidgetNATNetwork::retranslateUi()
     }
 
     if (m_pLabelNetworkName)
-        m_pLabelNetworkName->setText(tr("&Name:"));
+        m_pLabelNetworkName->setText(tr("N&ame:"));
     if (m_pEditorNetworkName)
         m_pEditorNetworkName->setToolTip(tr("Holds the name for this network."));
     if (m_pLabelNetworkIPv4Prefix)
-        m_pLabelNetworkIPv4Prefix->setText(tr("IPv&4 Prefix:"));
+        m_pLabelNetworkIPv4Prefix->setText(tr("Pref&ix:"));
     if (m_pEditorNetworkIPv4Prefix)
         m_pEditorNetworkIPv4Prefix->setToolTip(tr("Holds the IPv4 prefix for this network."));
     if (m_pLabelNetworkIPv6Prefix)
-        m_pLabelNetworkIPv6Prefix->setText(tr("IPv&6 Prefix:"));
+        m_pLabelNetworkIPv6Prefix->setText(tr("Prefi&x:"));
     if (m_pEditorNetworkIPv6Prefix)
         m_pEditorNetworkIPv6Prefix->setToolTip(tr("Holds the IPv6 prefix for this network."));
-    if (m_pLabelExtended)
-        m_pLabelExtended->setText(tr("Extended Features:"));
     if (m_pCheckboxSupportsDHCP)
     {
-        m_pCheckboxSupportsDHCP->setText(tr("Supports &DHCP"));
+        m_pCheckboxSupportsDHCP->setText(tr("Enable &DHCP"));
         m_pCheckboxSupportsDHCP->setToolTip(tr("When checked, this network will support DHCP."));
     }
-    if (m_pCheckboxSupportsIPv6)
+    if (m_pGroupBoxIPv4)
+        m_pGroupBoxIPv4->setTitle(tr("IPv&4"));
+    if (m_pGroupBoxIPv6)
     {
-        m_pCheckboxSupportsIPv6->setText(tr("Supports &IPv6"));
-        m_pCheckboxSupportsIPv6->setToolTip(tr("When checked, this network will support IPv6."));
+        m_pGroupBoxIPv6->setTitle(tr("IPv&6"));
+        m_pGroupBoxIPv6->setToolTip(tr("When checked, this network will support IPv6."));
     }
     if (m_pCheckboxAdvertiseDefaultIPv6Route)
     {
@@ -211,6 +213,17 @@ void UIDetailsWidgetNATNetwork::retranslateUi()
         m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->
             setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxForwarding->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
+
+    // WORKAROUND:
+    // Adjust name layout indent:
+    int iLeft, iTop, iRight, iBottom;
+    // We assume that IPv4 group-box has the same margin as IPv6 one:
+    m_pGroupBoxIPv4->layout()->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+    // We assume that IPv4 label has the same text as IPv6 one:
+    QFontMetrics fm(m_pLabelNetworkIPv4Prefix->font());
+    const int iIndent = iLeft + 1 /* group-box frame width */
+                      + fm.width(m_pLabelNetworkIPv4Prefix->text().remove('&'));
+    m_pLayoutName->setColumnMinimumWidth(0, iIndent);
 }
 
 void UIDetailsWidgetNATNetwork::sltNetworkNameChanged(const QString &strText)
@@ -240,6 +253,7 @@ void UIDetailsWidgetNATNetwork::sltSupportsDHCPChanged(bool fChecked)
 void UIDetailsWidgetNATNetwork::sltSupportsIPv6Changed(bool fChecked)
 {
     m_newData.m_fSupportsIPv6 = fChecked;
+    loadDataForOptions();
     updateButtonStates();
 }
 
@@ -340,19 +354,16 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
             pLayoutOptions->setContentsMargins(10, 10, 10, 10);
 #endif
 
-            /* Prepare settings widget layout: */
-            QGridLayout *pLayoutSettings = new QGridLayout;
-            if (pLayoutSettings)
+            /* Prepare name widget layout: */
+            m_pLayoutName = new QGridLayout;
+            if (m_pLayoutName)
             {
-                pLayoutSettings->setContentsMargins(0, 0, 0, 0);
-                pLayoutSettings->setColumnStretch(3, 1);
-
                 /* Prepare network name label: */
                 m_pLabelNetworkName = new QLabel(pTabOptions);
                 if (m_pLabelNetworkName)
                 {
                     m_pLabelNetworkName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutSettings->addWidget(m_pLabelNetworkName, 0, 0);
+                    m_pLayoutName->addWidget(m_pLabelNetworkName, 0, 0);
                 }
                 /* Prepare network name editor: */
                 m_pEditorNetworkName = new QLineEdit(pTabOptions);
@@ -363,80 +374,98 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
                     connect(m_pEditorNetworkName, &QLineEdit::textEdited,
                             this, &UIDetailsWidgetNATNetwork::sltNetworkNameChanged);
 
-                    pLayoutSettings->addWidget(m_pEditorNetworkName, 0, 1, 1, 3);
+                    m_pLayoutName->addWidget(m_pEditorNetworkName, 0, 1);
                 }
 
-                /* Prepare network IPv4 prefix label: */
-                m_pLabelNetworkIPv4Prefix = new QLabel(pTabOptions);
-                if (m_pLabelNetworkIPv4Prefix)
+                pLayoutOptions->addLayout(m_pLayoutName);
+            }
+
+            /* Prepare IPv4 group-box: */
+            m_pGroupBoxIPv4 = new QGroupBox(pTabOptions);
+            if (m_pGroupBoxIPv4)
+            {
+                /* Prepare settings widget layout: */
+                QGridLayout *pLayoutSettings = new QGridLayout(m_pGroupBoxIPv4);
+                if (pLayoutSettings)
                 {
-                    m_pLabelNetworkIPv4Prefix->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutSettings->addWidget(m_pLabelNetworkIPv4Prefix, 1, 0);
-                }
-                /* Prepare network IPv4 prefix editor: */
-                m_pEditorNetworkIPv4Prefix = new QLineEdit(pTabOptions);
-                if (m_pEditorNetworkIPv4Prefix)
-                {
+                    pLayoutSettings->setColumnStretch(2, 1);
+
+                    /* Prepare network IPv4 prefix label: */
+                    m_pLabelNetworkIPv4Prefix = new QLabel(pTabOptions);
                     if (m_pLabelNetworkIPv4Prefix)
-                        m_pLabelNetworkIPv4Prefix->setBuddy(m_pEditorNetworkIPv4Prefix);
-                    connect(m_pEditorNetworkIPv4Prefix, &QLineEdit::textEdited,
-                            this, &UIDetailsWidgetNATNetwork::sltNetworkIPv4PrefixChanged);
+                    {
+                        m_pLabelNetworkIPv4Prefix->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutSettings->addWidget(m_pLabelNetworkIPv4Prefix, 1, 0);
+                    }
+                    /* Prepare network IPv4 prefix editor: */
+                    m_pEditorNetworkIPv4Prefix = new QLineEdit(pTabOptions);
+                    if (m_pEditorNetworkIPv4Prefix)
+                    {
+                        if (m_pLabelNetworkIPv4Prefix)
+                            m_pLabelNetworkIPv4Prefix->setBuddy(m_pEditorNetworkIPv4Prefix);
+                        connect(m_pEditorNetworkIPv4Prefix, &QLineEdit::textEdited,
+                                this, &UIDetailsWidgetNATNetwork::sltNetworkIPv4PrefixChanged);
 
-                    pLayoutSettings->addWidget(m_pEditorNetworkIPv4Prefix, 1, 1, 1, 3);
+                        pLayoutSettings->addWidget(m_pEditorNetworkIPv4Prefix, 1, 1, 1, 2);
+                    }
+
+                    /* Prepare 'supports DHCP' check-box: */
+                    m_pCheckboxSupportsDHCP = new QCheckBox(pTabOptions);
+                    if (m_pCheckboxSupportsDHCP)
+                    {
+                        connect(m_pCheckboxSupportsDHCP, &QCheckBox::toggled,
+                                this, &UIDetailsWidgetNATNetwork::sltSupportsDHCPChanged);
+                        pLayoutSettings->addWidget(m_pCheckboxSupportsDHCP, 2, 1);
+                    }
                 }
 
-                /* Prepare network IPv6 prefix label: */
-                m_pLabelNetworkIPv6Prefix = new QLabel(pTabOptions);
-                if (m_pLabelNetworkIPv6Prefix)
+                pLayoutOptions->addWidget(m_pGroupBoxIPv4);
+            }
+
+            /* Prepare IPv6 group-box: */
+            m_pGroupBoxIPv6 = new QGroupBox(pTabOptions);
+            if (m_pGroupBoxIPv6)
+            {
+                m_pGroupBoxIPv6->setCheckable(true);
+                connect(m_pGroupBoxIPv6, &QGroupBox::toggled,
+                        this, &UIDetailsWidgetNATNetwork::sltSupportsIPv6Changed);
+
+                /* Prepare settings widget layout: */
+                QGridLayout *pLayoutSettings = new QGridLayout(m_pGroupBoxIPv6);
+                if (pLayoutSettings)
                 {
-                    m_pLabelNetworkIPv6Prefix->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutSettings->addWidget(m_pLabelNetworkIPv6Prefix, 2, 0);
-                }
-                /* Prepare network IPv6 prefix editor: */
-                m_pEditorNetworkIPv6Prefix = new QLineEdit(pTabOptions);
-                if (m_pEditorNetworkIPv6Prefix)
-                {
+                    pLayoutSettings->setColumnStretch(2, 1);
+
+                    /* Prepare network IPv6 prefix label: */
+                    m_pLabelNetworkIPv6Prefix = new QLabel(pTabOptions);
                     if (m_pLabelNetworkIPv6Prefix)
-                        m_pLabelNetworkIPv6Prefix->setBuddy(m_pEditorNetworkIPv6Prefix);
-                    connect(m_pEditorNetworkIPv6Prefix, &QLineEdit::textEdited,
-                            this, &UIDetailsWidgetNATNetwork::sltNetworkIPv6PrefixChanged);
+                    {
+                        m_pLabelNetworkIPv6Prefix->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutSettings->addWidget(m_pLabelNetworkIPv6Prefix, 0, 0);
+                    }
+                    /* Prepare network IPv6 prefix editor: */
+                    m_pEditorNetworkIPv6Prefix = new QLineEdit(pTabOptions);
+                    if (m_pEditorNetworkIPv6Prefix)
+                    {
+                        if (m_pLabelNetworkIPv6Prefix)
+                            m_pLabelNetworkIPv6Prefix->setBuddy(m_pEditorNetworkIPv6Prefix);
+                        connect(m_pEditorNetworkIPv6Prefix, &QLineEdit::textEdited,
+                                this, &UIDetailsWidgetNATNetwork::sltNetworkIPv6PrefixChanged);
 
-                    pLayoutSettings->addWidget(m_pEditorNetworkIPv6Prefix, 2, 1, 1, 3);
-                }
+                        pLayoutSettings->addWidget(m_pEditorNetworkIPv6Prefix, 0, 1, 1, 2);
+                    }
 
-                /* Prepare extended label: */
-                m_pLabelExtended = new QLabel(pTabOptions);
-                if (m_pLabelExtended)
-                {
-                    m_pLabelExtended->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutSettings->addWidget(m_pLabelExtended, 3, 0);
-                }
-                /* Prepare 'supports DHCP' check-box: */
-                m_pCheckboxSupportsDHCP = new QCheckBox(pTabOptions);
-                if (m_pCheckboxSupportsDHCP)
-                {
-                    connect(m_pCheckboxSupportsDHCP, &QCheckBox::toggled,
-                            this, &UIDetailsWidgetNATNetwork::sltSupportsDHCPChanged);
-                    pLayoutSettings->addWidget(m_pCheckboxSupportsDHCP, 3, 1, 1, 2);
-                }
-                /* Prepare 'supports IPv6' check-box: */
-                m_pCheckboxSupportsIPv6 = new QCheckBox(pTabOptions);
-                if (m_pCheckboxSupportsIPv6)
-                {
-                    connect(m_pCheckboxSupportsIPv6, &QCheckBox::toggled,
-                            this, &UIDetailsWidgetNATNetwork::sltSupportsIPv6Changed);
-                    pLayoutSettings->addWidget(m_pCheckboxSupportsIPv6, 4, 1, 1, 2);
-                }
-                /* Prepare 'advertise default IPv6 route' check-box: */
-                m_pCheckboxAdvertiseDefaultIPv6Route = new QCheckBox(pTabOptions);
-                if (m_pCheckboxAdvertiseDefaultIPv6Route)
-                {
-                    connect(m_pCheckboxAdvertiseDefaultIPv6Route, &QCheckBox::toggled,
-                            this, &UIDetailsWidgetNATNetwork::sltAdvertiseDefaultIPv6RouteChanged);
-                    pLayoutSettings->addWidget(m_pCheckboxAdvertiseDefaultIPv6Route, 5, 1, 1, 2);
+                    /* Prepare 'advertise default IPv6 route' check-box: */
+                    m_pCheckboxAdvertiseDefaultIPv6Route = new QCheckBox(pTabOptions);
+                    if (m_pCheckboxAdvertiseDefaultIPv6Route)
+                    {
+                        connect(m_pCheckboxAdvertiseDefaultIPv6Route, &QCheckBox::toggled,
+                                this, &UIDetailsWidgetNATNetwork::sltAdvertiseDefaultIPv6RouteChanged);
+                        pLayoutSettings->addWidget(m_pCheckboxAdvertiseDefaultIPv6Route, 1, 1, 1, 2);
+                    }
                 }
 
-                pLayoutOptions->addLayout(pLayoutSettings);
+                pLayoutOptions->addWidget(m_pGroupBoxIPv6);
             }
 
             /* If parent embedded into stack: */
@@ -525,25 +554,26 @@ void UIDetailsWidgetNATNetwork::loadDataForOptions()
 {
     /* Check whether network exists and enabled: */
     const bool fIsNetworkExists = m_newData.m_fExists;
+    const bool fIsIPv6Supported = m_newData.m_fSupportsIPv6;
 
     /* Update 'Options' field availability: */
     m_pLabelNetworkName->setEnabled(fIsNetworkExists);
     m_pEditorNetworkName->setEnabled(fIsNetworkExists);
+    m_pGroupBoxIPv4->setEnabled(fIsNetworkExists);
     m_pLabelNetworkIPv4Prefix->setEnabled(fIsNetworkExists);
     m_pEditorNetworkIPv4Prefix->setEnabled(fIsNetworkExists);
-    m_pLabelNetworkIPv6Prefix->setEnabled(fIsNetworkExists);
-    m_pEditorNetworkIPv6Prefix->setEnabled(fIsNetworkExists);
-    m_pLabelExtended->setEnabled(fIsNetworkExists);
     m_pCheckboxSupportsDHCP->setEnabled(fIsNetworkExists);
-    m_pCheckboxSupportsIPv6->setEnabled(fIsNetworkExists);
-    m_pCheckboxAdvertiseDefaultIPv6Route->setEnabled(fIsNetworkExists);
+    m_pGroupBoxIPv6->setEnabled(fIsNetworkExists);
+    m_pLabelNetworkIPv6Prefix->setEnabled(fIsNetworkExists && fIsIPv6Supported);
+    m_pEditorNetworkIPv6Prefix->setEnabled(fIsNetworkExists && fIsIPv6Supported);
+    m_pCheckboxAdvertiseDefaultIPv6Route->setEnabled(fIsNetworkExists && fIsIPv6Supported);
 
     /* Load 'Options' fields: */
     m_pEditorNetworkName->setText(m_newData.m_strName);
     m_pEditorNetworkIPv4Prefix->setText(m_newData.m_strPrefixIPv4);
-    m_pEditorNetworkIPv6Prefix->setText(m_newData.m_strPrefixIPv6);
     m_pCheckboxSupportsDHCP->setChecked(m_newData.m_fSupportsDHCP);
-    m_pCheckboxSupportsIPv6->setChecked(m_newData.m_fSupportsIPv6);
+    m_pGroupBoxIPv6->setChecked(m_newData.m_fSupportsIPv6);
+    m_pEditorNetworkIPv6Prefix->setText(m_newData.m_strPrefixIPv6);
     m_pCheckboxAdvertiseDefaultIPv6Route->setChecked(m_newData.m_fAdvertiseDefaultIPv6Route);
 }
 

@@ -32,6 +32,8 @@
 /* Forward declarations: */
 class QAbstractButton;
 class QCheckBox;
+class QGridLayout;
+class QGroupBox;
 class QLabel;
 class QLineEdit;
 class QRadioButton;
@@ -208,24 +210,26 @@ private:
 
     /** @name Network variables.
       * @{ */
+        /** Holds the name layout instance. */
+        QGridLayout       *m_pLayoutName;
         /** Holds the network name label instance. */
         QLabel            *m_pLabelNetworkName;
         /** Holds the network name editor instance. */
         QLineEdit         *m_pEditorNetworkName;
+        /** Holds the IPv4 group-box instance. */
+        QGroupBox         *m_pGroupBoxIPv4;
         /** Holds the network IPv4 prefix label instance. */
         QLabel            *m_pLabelNetworkIPv4Prefix;
         /** Holds the network IPv4 prefix editor instance. */
         QLineEdit         *m_pEditorNetworkIPv4Prefix;
+        /** Holds the 'supports DHCP' check-box instance. */
+        QCheckBox         *m_pCheckboxSupportsDHCP;
+        /** Holds the IPv4 group-box instance. */
+        QGroupBox         *m_pGroupBoxIPv6;
         /** Holds the network IPv6 prefix label instance. */
         QLabel            *m_pLabelNetworkIPv6Prefix;
         /** Holds the network IPv6 prefix editor instance. */
         QLineEdit         *m_pEditorNetworkIPv6Prefix;
-        /** Holds the extended label instance. */
-        QLabel            *m_pLabelExtended;
-        /** Holds the 'supports DHCP' check-box instance. */
-        QCheckBox         *m_pCheckboxSupportsDHCP;
-        /** Holds the 'supports IPv6' check-box instance. */
-        QCheckBox         *m_pCheckboxSupportsIPv6;
         /** Holds the 'advertise default IPv6 route' check-box instance. */
         QCheckBox         *m_pCheckboxAdvertiseDefaultIPv6Route;
         /** Holds the 'Options' button-box instance. */
