@@ -176,6 +176,7 @@ private:
     int comInit();
     int homeInit();
     int logInit();
+    int ipv4Init();
     int eventsInit();
 
     int getExtraData(com::Utf8Str &strValueOut, const char *pcszKey);
@@ -238,6 +239,8 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
 {
     LogFlowFuncEnter();
 
+    RT_ZERO(m_ProxyOptions.ipv4_addr);
+    RT_ZERO(m_ProxyOptions.ipv4_mask);
     m_ProxyOptions.ipv6_enabled = 0;
     m_ProxyOptions.ipv6_defroute = 0;
     m_ProxyOptions.icmpsock4 = INVALID_SOCKET;
@@ -361,6 +364,13 @@ int VBoxNetLwipNAT::init()
     hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
+    /*
+     * Get the settings related to IPv4.
+     */
+    rc = ipv4Init();
+    if (RT_FAILURE(rc))
+        return rc;
+
 
     BOOL fIPv6Enabled = FALSE;
     hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
@@ -376,30 +386,6 @@ int VBoxNetLwipNAT::init()
     m_ProxyOptions.ipv6_enabled = fIPv6Enabled;
     m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
 
-
-    /*
-     * IPv4 source address, if configured.
-     */
-    com::Utf8Str strSourceIp4;
-    rc = getExtraData(strSourceIp4, "SourceIp4");
-    if (RT_SUCCESS(rc) && strSourceIp4.isNotEmpty())
-    {
-        RTNETADDRIPV4 addr;
-        rc = RTNetStrToIPv4Addr(strSourceIp4.c_str(), &addr);
-        if (RT_SUCCESS(rc))
-        {
-            m_src4.sin_addr.s_addr = addr.u;
-            m_ProxyOptions.src4 = &m_src4;
-
-            LogRel(("Will use %RTnaipv4 as IPv4 source address\n",
-                    m_src4.sin_addr.s_addr));
-        }
-        else
-        {
-            LogRel(("Failed to parse \"%s\" IPv4 source address specification\n",
-                    strSourceIp4.c_str()));
-        }
-    }
 
     /*
      * IPv6 source address, if configured.
@@ -430,7 +416,6 @@ int VBoxNetLwipNAT::init()
     }
 
 
-    createRawSock4();
     if (fIPv6Enabled)
         createRawSock6();
 
@@ -577,8 +562,102 @@ int VBoxNetLwipNAT::homeInit()
 }
 
 
+/*
+ * Read IPv4 related settings and do necessary initialization.  These
+ * settings will be picked up by the proxy on the lwIP thread.  See
+ * onLwipTcpIpInit().
+ */
+int VBoxNetLwipNAT::ipv4Init()
+{
+    HRESULT hrc;
+    int rc;
+
+    AssertReturn(m_net.isNotNull(), VERR_GENERAL_FAILURE);
+
+    /*
+     * IPv4 address and mask.
+     */
+    com::Bstr bstrIPv4Prefix;
+    hrc = m_net->COMGETTER(Network)(bstrIPv4Prefix.asOutParam());
+    if (FAILED(hrc))
+    {
+        reportComError(m_net, "Network", hrc);
+        return VERR_GENERAL_FAILURE;
+    }
+
+    RTNETADDRIPV4 Net4, Mask4;
+    int iPrefixLength;
+    rc = RTNetStrToIPv4Cidr(com::Utf8Str(bstrIPv4Prefix).c_str(),
+                            &Net4, &iPrefixLength);
+    if (RT_FAILURE(rc))
+    {
+        reportError("Failed to parse IPv4 prefix %ls\n", bstrIPv4Prefix.raw());
+        return rc;
+    }
+
+    if (iPrefixLength > 30)
+    {
+        reportError("IPv4 prefix length %d is too narrow\n", iPrefixLength);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    rc = RTNetPrefixToMaskIPv4(iPrefixLength, &Mask4);
+    AssertRCReturn(rc, rc);
+    AssertReturn(iPrefixLength > 0, VERR_INVALID_PARAMETER);
+
+    RTNETADDRIPV4 Addr4;
+    Addr4.u = Net4.u | RT_H2N_U32_C(0x00000001);
+
+    /* Transitional: check that old and new ways agree */
+    const RTNETADDRIPV4 &CmdLineAddr4 = getIpv4Address();
+    AssertReturn(CmdLineAddr4.u == 0 || CmdLineAddr4.u == Addr4.u,
+                 VERR_INVALID_PARAMETER);
+
+    const RTNETADDRIPV4 &CmdLineMask4 = getIpv4Netmask();
+    AssertReturn(CmdLineMask4.u == 0 || CmdLineMask4.u == Mask4.u,
+                 VERR_INVALID_PARAMETER);
+
+    memcpy(&m_ProxyOptions.ipv4_addr, &Addr4, sizeof(ip_addr));
+    memcpy(&m_ProxyOptions.ipv4_mask, &Mask4, sizeof(ip_addr));
+
+
+    /*
+     * Raw socket for ICMP.
+     */
+    createRawSock4();
+
+
+    /*
+     * IPv4 source address (host), if configured.
+     */
+    com::Utf8Str strSourceIp4;
+    rc = getExtraData(strSourceIp4, "SourceIp4");
+    if (RT_SUCCESS(rc) && strSourceIp4.isNotEmpty())
+    {
+        RTNETADDRIPV4 addr;
+        rc = RTNetStrToIPv4Addr(strSourceIp4.c_str(), &addr);
+        if (RT_SUCCESS(rc))
+        {
+            m_src4.sin_addr.s_addr = addr.u;
+            m_ProxyOptions.src4 = &m_src4;
+
+            LogRel(("Will use %RTnaipv4 as IPv4 source address\n",
+                    m_src4.sin_addr.s_addr));
+        }
+        else
+        {
+            LogRel(("Failed to parse \"%s\" IPv4 source address specification\n",
+                    strSourceIp4.c_str()));
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+
 /**
- * Create and register event listeners.
+ * Create and register API event listeners.
  */
 int VBoxNetLwipNAT::eventsInit()
 {
@@ -733,22 +812,10 @@ DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpInit(void *arg)
     proxy_na_hook = pxremap_proxy_na;
     proxy_ip6_divert_hook = pxremap_ip6_divert;
 
-    /* lwip thread */
-    RTNETADDRIPV4 network;
-    RTNETADDRIPV4 address = self->getIpv4Address();
-    RTNETADDRIPV4 netmask = self->getIpv4Netmask();
-    network.u = address.u & netmask.u;
-
-    ip_addr LwipIpAddr, LwipIpNetMask, LwipIpNetwork;
-
-    memcpy(&LwipIpAddr, &address, sizeof(ip_addr));
-    memcpy(&LwipIpNetMask, &netmask, sizeof(ip_addr));
-    memcpy(&LwipIpNetwork, &network, sizeof(ip_addr));
-
     netif *pNetif = netif_add(&self->m_LwipNetIf /* Lwip Interface */,
-                              &LwipIpAddr /* IP address*/,
-                              &LwipIpNetMask /* Network mask */,
-                              &LwipIpAddr /* gateway address, @todo: is self IP acceptable? */,
+                              &self->m_ProxyOptions.ipv4_addr, /* IP address*/
+                              &self->m_ProxyOptions.ipv4_mask, /* Network mask */
+                              &self->m_ProxyOptions.ipv4_addr, /* XXX: Gateway address */
                               self /* state */,
                               VBoxNetLwipNAT::netifInit /* netif_init_fn */,
                               tcpip_input /* netif_input_fn */);

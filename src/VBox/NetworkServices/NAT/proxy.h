@@ -50,6 +50,8 @@ struct ip4_lomap_desc
 };
 
 struct proxy_options {
+    ip_addr_t ipv4_addr;
+    ip_addr_t ipv4_mask;
     int ipv6_enabled;
     int ipv6_defroute;
     SOCKET icmpsock4;
