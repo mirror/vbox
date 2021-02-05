@@ -217,7 +217,7 @@ def create_toc(folder):
     return toc_string_list
 
 def usage(arg):
-    print 'test.py -d <helphtmlfolder> -o <outputfilename>'
+    print 'htmlhelp-qthelp.py -d <helphtmlfolder> -o <outputfilename>'
     sys.exit(arg)
 
 def main(argv):
