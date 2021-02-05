@@ -385,7 +385,7 @@ int VBoxNetLwipNAT::init()
     if (RT_SUCCESS(rc) && strSourceIp4.isNotEmpty())
     {
         RTNETADDRIPV4 addr;
-        rc = RTNetStrToIPv4Addr(com::Utf8Str(bstrSourceIp4).c_str(), &addr);
+        rc = RTNetStrToIPv4Addr(strSourceIp4.c_str(), &addr);
         if (RT_SUCCESS(rc))
         {
             m_src4.sin_addr.s_addr = addr.u;
@@ -397,7 +397,7 @@ int VBoxNetLwipNAT::init()
         else
         {
             LogRel(("Failed to parse \"%s\" IPv4 source address specification\n",
-                    com::Utf8Str(bstrSourceIp4).c_str()));
+                    strSourceIp4.c_str()));
         }
     }
 
@@ -412,7 +412,7 @@ int VBoxNetLwipNAT::init()
         {
             RTNETADDRIPV6 addr;
             char *pszZone = NULL;
-            rc = RTNetStrToIPv6Addr(com::Utf8Str(bstrSourceIp6).c_str(), &addr, &pszZone);
+            rc = RTNetStrToIPv6Addr(strSourceIp6.c_str(), &addr, &pszZone);
             if (RT_SUCCESS(rc))
             {
                 memcpy(&m_src6.sin6_addr, &addr, sizeof(addr));
@@ -424,7 +424,7 @@ int VBoxNetLwipNAT::init()
             else
             {
                 LogRel(("Failed to parse \"%s\" IPv6 source address specification\n",
-                        com::Utf8Str(bstrSourceIp6).c_str()));
+                        strSourceIp6.c_str()));
             }
         }
     }
@@ -1464,7 +1464,7 @@ int VBoxNetLwipNAT::getExtraData(com::Utf8Str &strValueOut, const char *pcszKey)
     AssertReturn(pcszKey != NULL, E_FAIL);
     AssertReturn(*pcszKey != '\0', E_FAIL);
 
-    com::BstrFmt bstrKey("NAT/%s/%s", networkName.c_str(), pcszKey);
+    com::BstrFmt bstrKey("NAT/%s/%s", getNetworkName().c_str(), pcszKey);
     com::Bstr bstrValue;
     hrc = virtualbox->GetExtraData(bstrKey.raw(), bstrValue.asOutParam());
     if (FAILED(hrc))
