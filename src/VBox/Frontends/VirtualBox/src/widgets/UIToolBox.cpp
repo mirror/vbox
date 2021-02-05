@@ -278,6 +278,11 @@ bool UIToolBox::insertPage(int iIndex, QWidget *pWidget, const QString &strTitle
 {
     if (m_pages.contains(iIndex))
         return false;
+
+    /* Remove the stretch from the end of the layout: */
+    QLayoutItem *pItem = m_pMainLayout->takeAt(m_pMainLayout->count() - 1);
+    delete pItem;
+
     ++m_iPageCount;
     UIToolBoxPage *pNewPage = new UIToolBoxPage(fAddEnableCheckBox, 0);;
 
@@ -307,7 +312,8 @@ bool UIToolBox::insertPage(int iIndex, QWidget *pWidget, const QString &strTitle
                                      qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin)) +
                      iTotalTitleHeight +
                      iMaxPageHeight);
-
+    /* Add stretch at the end: */
+    m_pMainLayout->addStretch();
     return iIndex;
 }
 
@@ -353,7 +359,6 @@ void UIToolBox::prepare()
 {
     m_pMainLayout = new QVBoxLayout(this);
     m_pMainLayout->addStretch();
-    //m_pMainLayout->setContentsMargins(0, 0, 0, 0);
 
     retranslateUi();
 }

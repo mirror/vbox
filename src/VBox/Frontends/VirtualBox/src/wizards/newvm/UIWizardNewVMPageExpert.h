@@ -99,8 +99,8 @@ private:
     {
         ExpertToolboxItems_NameAndOSType,
         ExpertToolboxItems_Unattended,
-        ExpertToolboxItems_Disk,
         ExpertToolboxItems_Hardware,
+        ExpertToolboxItems_Disk
     };
 
     /** Translation stuff. */
