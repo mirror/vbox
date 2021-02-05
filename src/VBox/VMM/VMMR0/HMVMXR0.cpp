@@ -2283,7 +2283,9 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
     /* Paranoia. */
     Assert(pGuestMsrLoad);
 
+#ifndef DEBUG_bird
     LogFlowFunc(("pVCpu=%p idMsr=%#RX32 uGuestMsrValue=%#RX64\n", pVCpu, idMsr, uGuestMsrValue));
+#endif
 
     /* Check if the MSR already exists in the VM-entry MSR-load area. */
     for (i = 0; i < cMsrs; i++)
@@ -2368,7 +2370,9 @@ static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
     PVMXAUTOMSR     pGuestMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
     uint32_t        cMsrs         = pVmcsInfo->cEntryMsrLoad;
 
+#ifndef DEBUG_bird
     LogFlowFunc(("pVCpu=%p idMsr=%#RX32\n", pVCpu, idMsr));
+#endif
 
     for (uint32_t i = 0; i < cMsrs; i++)
     {
@@ -7113,23 +7117,53 @@ static void hmR0VmxReportWorldSwitchError(PVMCPUCC pVCpu, int rcVMRun, PVMXTRANS
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   The VMX-transient structure.
+ * @param   idCurrentCpu    The current CPU number.
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, RTCPUID idCurrentCpu)
 {
     bool         fOffsettedTsc;
     bool         fParavirtTsc;
     uint64_t     uTscOffset;
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC        pVM       = pVCpu->CTX_SUFF(pVM);
     PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
 
     if (pVM->hmr0.s.vmx.fUsePreemptTimer)
     {
-        uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVM, pVCpu, &uTscOffset, &fOffsettedTsc, &fParavirtTsc);
+
+        /* The TMCpuTickGetDeadlineAndTscOffset function is expensive (calling it on
+           every entry slowed down the bs2-test1 CPUID testcase by ~33% (on an 10980xe). */
+        uint64_t cTicksToDeadline;
+        if (   idCurrentCpu == pVCpu->hmr0.s.idLastCpu
+            && TMVirtualSyncIsCurrentDeadlineVersion(pVM, pVCpu->hmr0.s.vmx.uTscDeadlineVersion))
+        {
+            STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatVmxPreemptionReusingDeadline);
+            fOffsettedTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &uTscOffset, &fParavirtTsc);
+            cTicksToDeadline = pVCpu->hmr0.s.vmx.uTscDeadline - SUPReadTsc();
+            if ((int64_t)cTicksToDeadline > 0)
+            { /* hopefully */ }
+            else
+            {
+                STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatVmxPreemptionReusingDeadlineExpired);
+                cTicksToDeadline = 0;
+            }
+        }
+        else
+        {
+            STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatVmxPreemptionRecalcingDeadline);
+            cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVM, pVCpu, &uTscOffset, &fOffsettedTsc, &fParavirtTsc,
+                                                                &pVCpu->hmr0.s.vmx.uTscDeadline,
+                                                                &pVCpu->hmr0.s.vmx.uTscDeadlineVersion);
+            pVCpu->hmr0.s.vmx.uTscDeadline += cTicksToDeadline;
+            if (cTicksToDeadline >= 128)
+            { /* hopefully */ }
+            else
+                STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatVmxPreemptionRecalcingDeadlineExpired);
+        }
 
         /* Make sure the returned values have sane upper and lower boundaries. */
-        uint64_t u64CpuHz  = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
+        uint64_t const u64CpuHz = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
         cTicksToDeadline   = RT_MIN(cTicksToDeadline, u64CpuHz / 64);      /* 1/64th of a second */ /** @todo r=bird: Once real+virtual timers move to separate thread, we can raise the upper limit (16ms isn't much). ASSUMES working poke cpu function. */
         cTicksToDeadline   = RT_MAX(cTicksToDeadline, u64CpuHz / 2048);    /* 1/2048th of a second */
         cTicksToDeadline >>= pVM->hm.s.vmx.cPreemptTimerShift;
@@ -11041,7 +11075,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     if (   !pVmxTransient->fUpdatedTscOffsettingAndPreemptTimer
         || idCurrentCpu != pVCpu->hmr0.s.idLastCpu)
     {
-        hmR0VmxUpdateTscOffsettingAndPreemptTimer(pVCpu, pVmxTransient);
+        hmR0VmxUpdateTscOffsettingAndPreemptTimer(pVCpu, pVmxTransient, idCurrentCpu);
         pVmxTransient->fUpdatedTscOffsettingAndPreemptTimer = true;
     }
 
@@ -15000,11 +15034,12 @@ HMVMX_EXIT_DECL hmR0VmxExitPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 
     /* If the VMX-preemption timer has expired, reinitialize the preemption timer on next VM-entry. */
     pVmxTransient->fUpdatedTscOffsettingAndPreemptTimer = false;
+Log12(("hmR0VmxExitPreemptTimer:\n"));
 
     /* If there are any timer events pending, fall back to ring-3, otherwise resume guest execution. */
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     bool fTimersPending = TMTimerPollBool(pVM, pVCpu);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPreemptTimer);
+    STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitPreemptTimer);
     return fTimersPending ? VINF_EM_RAW_TIMER_PENDING : VINF_SUCCESS;
 }
 

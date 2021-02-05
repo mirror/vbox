@@ -121,9 +121,12 @@ VMM_INT_DECL(uint32_t)  TMVirtualSyncGetCatchUpPct(PVMCC pVM);
 VMM_INT_DECL(uint64_t)  TMVirtualGetFreq(PVM pVM);
 VMM_INT_DECL(uint64_t)  TMVirtualSyncGet(PVMCC pVM);
 VMM_INT_DECL(uint64_t)  TMVirtualSyncGetNoCheck(PVMCC pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGetNoCheckWithTsc(PVMCC pVM, uint64_t *puTscNow);
 VMM_INT_DECL(uint64_t)  TMVirtualSyncGetEx(PVMCC pVM, bool fCheckTimers);
-VMM_INT_DECL(uint64_t)  TMVirtualSyncGetWithDeadlineNoCheck(PVMCC pVM, uint64_t *pcNsToDeadline);
-VMMDECL(uint64_t)       TMVirtualSyncGetNsToDeadline(PVMCC pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGetWithDeadlineNoCheck(PVMCC pVM, uint64_t *pcNsToDeadline,
+                                                            uint64_t *puDeadlineVersion, uint64_t *puTscNow);
+VMMDECL(uint64_t)       TMVirtualSyncGetNsToDeadline(PVMCC pVM, uint64_t *puDeadlineVersion, uint64_t *puTscNow);
+VMM_INT_DECL(bool)      TMVirtualSyncIsCurrentDeadlineVersion(PVMCC pVM, uint64_t uDeadlineVersion);
 VMM_INT_DECL(uint64_t)  TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks);
 VMM_INT_DECL(uint64_t)  TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks);
 VMM_INT_DECL(uint64_t)  TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks);
@@ -145,7 +148,9 @@ VMMR3DECL(uint64_t)     TMR3TimeVirtGetNano(PUVM pUVM);
 VMMDECL(uint64_t)       TMCpuTickGet(PVMCPUCC pVCpu);
 VMM_INT_DECL(uint64_t)  TMCpuTickGetNoCheck(PVMCPUCC pVCpu);
 VMM_INT_DECL(bool)      TMCpuTickCanUseRealTSC(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *poffRealTSC, bool *pfParavirtTsc);
-VMM_INT_DECL(uint64_t)  TMCpuTickGetDeadlineAndTscOffset(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *poffRealTSC, bool *pfOffsettedTsc, bool *pfParavirtTsc);
+VMM_INT_DECL(uint64_t)  TMCpuTickGetDeadlineAndTscOffset(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *poffRealTsc,
+                                                         bool *pfOffsettedTsc, bool *pfParavirtTsc,
+                                                         uint64_t *puTscNow, uint64_t *puDeadlineVersion);
 VMM_INT_DECL(int)       TMCpuTickSet(PVMCC pVM, PVMCPUCC pVCpu, uint64_t u64Tick);
 VMM_INT_DECL(int)       TMCpuTickSetLastSeen(PVMCPUCC pVCpu, uint64_t u64LastSeenTick);
 VMM_INT_DECL(uint64_t)  TMCpuTickGetLastSeen(PVMCPUCC pVCpu);

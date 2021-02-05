@@ -181,6 +181,9 @@ endstruc
 
 struc HMR0CPUVMX
     .pfnStartVm                     RTR0PTR_RES  1
+    .uTscDeadline                   resq    1
+    .uTscDeadlineVersion            resq    1
+
 
     .VmcsInfo                       resb    VMXVMCSINFO_size
     .VmcsInfoNstGst                 resb    VMXVMCSINFO_size

@@ -1281,7 +1281,8 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
                         /** @todo If this code is going to stay, we need to call into the halt/wait
                          *        code in VMEmt.cpp here, otherwise all kind of EMT interaction will
                          *        suffer when the guest is polling on a busy FIFO. */
-                        uint64_t cNsMaxWait = TMVirtualSyncGetNsToDeadline(PDMDevHlpGetVM(pDevIns));
+                        uint64_t uIgnored1, uIgnored2;
+                        uint64_t cNsMaxWait = TMVirtualSyncGetNsToDeadline(PDMDevHlpGetVM(pDevIns), &uIgnored1, &uIgnored2);
                         if (cNsMaxWait >= RT_NS_100US)
                             RTSemEventMultiWaitEx(pSVGAState->hBusyDelayedEmts,
                                                   RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_NORESUME,

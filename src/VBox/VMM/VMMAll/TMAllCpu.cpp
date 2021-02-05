@@ -271,6 +271,7 @@ DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
 #endif /* VBOX_WITH_STATISTICS */
 
 
+#ifdef IN_RING0 /* Only used in ring-0 at present (AMD-V and VT-x). */
 /**
  * Checks if AMD-V / VT-x can use an offsetted hardware TSC or not.
  *
@@ -307,11 +308,11 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *p
     {
         /** @todo We should negate both deltas!  It's soo weird that we do the
          *        exact opposite of what the hardware implements. */
-#ifdef IN_RING3
+# ifdef IN_RING3
         *poffRealTsc = (uint64_t)0 - pVCpu->tm.s.offTSCRawSrc - (uint64_t)SUPGetTscDelta();
-#else
+# else
         *poffRealTsc = (uint64_t)0 - pVCpu->tm.s.offTSCRawSrc - (uint64_t)SUPGetTscDeltaByCpuSetIndex(pVCpu->iHostCpuSet);
-#endif
+# endif
         return true;
     }
 
@@ -330,7 +331,8 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *p
         && !pVM->tm.s.fVirtualWarpDrive)
     {
         /* The source is the timer synchronous virtual clock. */
-        uint64_t u64Now = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
+        uint64_t uTscNow;
+        uint64_t u64Now = tmCpuTickCalcFromVirtual(pVM, TMVirtualSyncGetNoCheckWithTsc(pVM, &uTscNow))
                         - pVCpu->tm.s.offTSCRawSrc;
         /** @todo When we start collecting statistics on how much time we spend executing
          * guest code before exiting, we should check this against the next virtual sync
@@ -338,17 +340,21 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *p
          * the chance that we'll get interrupted right after the timer expired. */
         if (u64Now >= pVCpu->tm.s.u64TSCLastSeen)
         {
-            *poffRealTsc = u64Now - ASMReadTSC();
+# ifdef IN_RING3
+            *poffRealTsc = u64Now - (uTscNow + (uint64_t)SUPGetTscDelta();
+# else
+            *poffRealTsc = u64Now - (uTscNow + (uint64_t)SUPGetTscDeltaByCpuSetIndex(pVCpu->iHostCpuSet));
+# endif
             return true;    /** @todo count this? */
         }
     }
 
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
     tmCpuTickRecordOffsettedTscRefusal(pVM, pVCpu);
-#endif
+# endif
     return false;
 }
-
+#endif /* IN_RING0 - at the moment */
 
 /**
  * Calculates the number of host CPU ticks till the next virtual sync deadline.
@@ -382,23 +388,32 @@ DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(PVMCPU pVCpu, uint64_t cNsToDeadli
 }
 
 
+#ifdef IN_RING0 /* Only used in ring-0 from VT-x code at the moment. */
 /**
  * Gets the next deadline in host CPU clock ticks and the TSC offset if we can
  * use the raw TSC.
  *
  * @returns The number of host CPU clock ticks to the next timer deadline.
- * @param   pVM             The cross context VM structure.
- * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   poffRealTsc     The offset against the TSC of the current host CPU,
- *                          if pfOffsettedTsc is set to true.
- * @param   pfOffsettedTsc  Where to return whether TSC offsetting can be used.
- * @param   pfParavirtTsc   Where to return whether paravirt TSC is enabled.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
+ * @param   poffRealTsc         The offset against the TSC of the current host CPU,
+ *                              if pfOffsettedTsc is set to true.
+ * @param   pfOffsettedTsc      Where to return whether TSC offsetting can be used.
+ * @param   pfParavirtTsc       Where to return whether paravirt TSC is enabled.
+ * @param   puTscNow            Where to return the TSC value that the return
+ *                              value is relative to.   This is delta adjusted.
+ * @param   puDeadlineVersion   Where to return the deadline "version" number.
+ *                              Use with TMVirtualSyncIsCurrentDeadlineVersion()
+ *                              to check if the absolute deadline is still up to
+ *                              date and the caller can skip calling this
+ *                              function.
  *
  * @thread  EMT(pVCpu).
  * @see     TMCpuTickCanUseRealTSC().
  */
 VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *poffRealTsc,
-                                                        bool *pfOffsettedTsc, bool *pfParavirtTsc)
+                                                        bool *pfOffsettedTsc, bool *pfParavirtTsc,
+                                                        uint64_t *puTscNow, uint64_t *puDeadlineVersion)
 {
     Assert(pVCpu->tm.s.fTSCTicking || DBGFIsStepping(pVCpu));
 
@@ -411,13 +426,13 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCC pVM, PVMCPUCC pVCp
     {
         /** @todo We should negate both deltas!  It's soo weird that we do the
          *        exact opposite of what the hardware implements. */
-#ifdef IN_RING3
+# ifdef IN_RING3
         *poffRealTsc     = (uint64_t)0 - pVCpu->tm.s.offTSCRawSrc - (uint64_t)SUPGetTscDelta();
-#else
+# else
         *poffRealTsc     = (uint64_t)0 - pVCpu->tm.s.offTSCRawSrc - (uint64_t)SUPGetTscDeltaByCpuSetIndex(pVCpu->iHostCpuSet);
-#endif
+# endif
         *pfOffsettedTsc  = true;
-        return tmCpuCalcTicksToDeadline(pVCpu, TMVirtualSyncGetNsToDeadline(pVM));
+        return tmCpuCalcTicksToDeadline(pVCpu, TMVirtualSyncGetNsToDeadline(pVM, puDeadlineVersion, puTscNow));
     }
 
     /*
@@ -430,21 +445,27 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCC pVM, PVMCPUCC pVCp
     {
         /* The source is the timer synchronous virtual clock. */
         uint64_t cNsToDeadline;
-        uint64_t u64NowVirtSync = TMVirtualSyncGetWithDeadlineNoCheck(pVM, &cNsToDeadline);
+        uint64_t u64NowVirtSync = TMVirtualSyncGetWithDeadlineNoCheck(pVM, &cNsToDeadline, puDeadlineVersion, puTscNow);
         uint64_t u64Now = tmCpuTickCalcFromVirtual(pVM, u64NowVirtSync);
         u64Now -= pVCpu->tm.s.offTSCRawSrc;
-        *poffRealTsc     = u64Now - ASMReadTSC();
+
+# ifdef IN_RING3
+        *poffRealTsc     = u64Now - (*puTscNow + (uint64_t)SUPGetTscDelta()); /* undoing delta */
+# else
+        *poffRealTsc     = u64Now - (*puTscNow + (uint64_t)SUPGetTscDeltaByCpuSetIndex(pVCpu->iHostCpuSet)); /* undoing delta */
+# endif
         *pfOffsettedTsc  = u64Now >= pVCpu->tm.s.u64TSCLastSeen;
         return tmCpuCalcTicksToDeadline(pVCpu, cNsToDeadline);
     }
 
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
     tmCpuTickRecordOffsettedTscRefusal(pVM, pVCpu);
-#endif
+# endif
     *pfOffsettedTsc  = false;
     *poffRealTsc     = 0;
-    return tmCpuCalcTicksToDeadline(pVCpu, TMVirtualSyncGetNsToDeadline(pVM));
+    return tmCpuCalcTicksToDeadline(pVCpu, TMVirtualSyncGetNsToDeadline(pVM, puDeadlineVersion, puTscNow));
 }
+#endif /* IN_RING0 - at the moment */
 
 
 /**
