@@ -2224,7 +2224,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                     if (pvBuf)
                     {
                         uint32_t cbRead;
-                        rc = ShClTransferObjRead(pTransfer, hObj, pvBuf, cbToRead, fFlags, &cbRead);
+                        rc = ShClTransferObjRead(pTransfer, hObj, pvBuf, cbToRead, &cbRead, fFlags);
                         if (RT_SUCCESS(rc))
                             rc = VbglR3ClipboardObjWriteSend(pCmdCtx, hObj, pvBuf, cbRead, NULL /* pcbWritten */);
 
