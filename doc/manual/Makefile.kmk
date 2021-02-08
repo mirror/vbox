@@ -155,6 +155,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  endif
 
  ifdef VBOX_WITH_DOCS_QHELP
+  USES += qt5
   INSTALLS += VBox-docs-usermanual-qhc
   INSTALLS += VBox-docs-usermanual-qch
   VBOX_PATH_BIN_QHELP = $(PATH_STAGE_BIN)/UserManual.qch
