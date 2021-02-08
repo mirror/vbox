@@ -1537,9 +1537,8 @@ UICommon_QT_MODULES.solaris += X11Extras
 UICommon_QT_MODULES.freebsd += X11Extras
 UICommon_QT_MODULES.darwin  += MacExtras
 UICommon_QT_MODULES.win     += WinExtras
-ifdef VBOX_WITH_DOCS_QHELP
- UICommon_QT_MODULES.linux   += Help
-endif
+UICommon_QT_MODULES.linux   += Help
+
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  UICommon_QT_MODULES += OpenGL
 endif

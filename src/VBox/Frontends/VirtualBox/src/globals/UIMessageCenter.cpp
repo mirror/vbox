@@ -3389,7 +3389,7 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 #if defined (VBOX_WS_WIN)
     HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
 #elif defined (VBOX_WS_X11)
-# if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+# if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     showHelpBrowser(strLocation);
 # elif !defined(VBOX_OSE)
     char szViewerPath[RTPATH_MAX];
@@ -3616,14 +3616,14 @@ void UIMessageCenter::sltHelpBrowserClosed()
 
 void UIMessageCenter::sltHandleHelpRequest()
 {
-# if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+# if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     sltHandleHelpRequestWithKeyword(uiCommon().helpKeyword(sender()));
-#endif /* #if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
+#endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }
 
 void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword)
 {
-# if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+# if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     /* First open or show the help browser: */
     showHelpBrowser(uiCommon().helpFile());
     /* Show the help page for the @p strHelpKeyword: */
@@ -3631,5 +3631,5 @@ void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyw
         m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
 #else
     Q_UNUSED(strHelpKeyword);
-# endif /* #if defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
+# endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }

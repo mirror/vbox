@@ -31,7 +31,7 @@
 class QHelpEngine;
 class UIFindInPageWidget;
 
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+#if defined(RT_OS_LINUX) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
 class UIHelpViewer : public QIWithRetranslateUI<QTextBrowser>
 {
     Q_OBJECT;
@@ -97,5 +97,5 @@ private:
     int m_iInitialFontPointSize;
 };
 
-#endif /* #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
+#endif /* #if defined(RT_OS_LINUX) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpViewer_h */

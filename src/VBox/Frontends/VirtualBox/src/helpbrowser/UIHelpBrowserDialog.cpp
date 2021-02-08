@@ -58,7 +58,7 @@ UIHelpBrowserDialog::~UIHelpBrowserDialog()
 
 void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+#if defined(RT_OS_LINUX) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     if (m_pWidget)
         m_pWidget->showHelpForKeyword(strKeyword);
 #else
@@ -68,7 +68,7 @@ void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
 
 void UIHelpBrowserDialog::retranslateUi()
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+#if defined(RT_OS_LINUX) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     setWindowTitle(UIHelpBrowserWidget::tr("Oracle VM VirtualBox User Manual"));
 #endif
 }
@@ -76,7 +76,7 @@ void UIHelpBrowserDialog::retranslateUi()
 
 void UIHelpBrowserDialog::prepareCentralWidget()
 {
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DOCS_QHELP) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+#if defined(RT_OS_LINUX) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
     m_pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath);
     AssertPtrReturnVoid(m_pWidget);
 #ifdef VBOX_WS_MAC
