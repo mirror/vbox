@@ -98,6 +98,7 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuest
      * Intialize the context structure.
      */
     pCtx->idClient              = 0;
+    pCtx->fGuestFeatures        = fGuestFeatures;
     pCtx->fHostFeatures         = 0;
     pCtx->fGuestFeatures        = VBOX_SHCL_GF_NONE;
     pCtx->fUseLegacyProtocol    = true;
@@ -106,11 +107,11 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuest
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /* Indicate that this guest supports Shared Clipboard file transfers. */
-    pCtx->fGuestFeatures       |= VBOX_SHCL_GF_0_TRANSFERS;
+    pCtx->fGuestFeatures |= VBOX_SHCL_GF_0_TRANSFERS;
 # ifdef RT_OS_WINDOWS
     /* Indicate that on Windows guest OSes we have our own IDataObject implementation which
      * integrates nicely into the guest's Windows Explorer showing / handling the Shared Clipboard file transfers. */
-    pCtx->fGuestFeatures       |= VBOX_SHCL_GF_0_TRANSFERS_FRONTEND;
+    pCtx->fGuestFeatures |= VBOX_SHCL_GF_0_TRANSFERS_FRONTEND;
 # endif
     pCtx->Transfers.cbChunkSize    = VBOX_SHCL_DEFAULT_CHUNK_SIZE; /** @todo Make this configurable. */
     pCtx->Transfers.cbMaxChunkSize = VBOX_SHCL_MAX_CHUNK_SIZE;     /** @todo Ditto. */
@@ -125,11 +126,9 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuest
         /*
          * Next is reporting our features.  If this fails, assume older host.
          */
-        rc = VbglR3ClipboardReportFeatures(pCtx->idClient, fGuestFeatures, &pCtx->fHostFeatures);
+        rc = VbglR3ClipboardReportFeatures(pCtx->idClient, pCtx->fGuestFeatures, &pCtx->fHostFeatures);
         if (RT_SUCCESS(rc))
         {
-            pCtx->fGuestFeatures = fGuestFeatures;
-
             LogRel2(("Shared Clipboard: Guest features: %#RX64 - Host features: %#RX64\n",
                      pCtx->fGuestFeatures, pCtx->fHostFeatures));
 
@@ -2225,7 +2224,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                     if (pvBuf)
                     {
                         uint32_t cbRead;
-                        rc = ShClTransferObjRead(pTransfer, hObj, pvBuf, cbToRead, &cbRead, fFlags);
+                        rc = ShClTransferObjRead(pTransfer, hObj, pvBuf, cbToRead, fFlags, &cbRead);
                         if (RT_SUCCESS(rc))
                             rc = VbglR3ClipboardObjWriteSend(pCmdCtx, hObj, pvBuf, cbRead, NULL /* pcbWritten */);
 
