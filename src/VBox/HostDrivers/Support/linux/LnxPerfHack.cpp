@@ -51,10 +51,10 @@
 #define LNXPERF_RECORD_MISC_CPUMODE_MASK        UINT16_C(0x0007)
 #define LNXPERF_RECORD_MISC_CPUMODE_UNKNOWN     UINT16_C(0x0000)
 #define LNXPERF_RECORD_MISC_KERNEL              UINT16_C(0x0001)
-#define LNXPERF_RECORD_MISC_USER		UINT16_C(0x0002)
-#define LNXPERF_RECORD_MISC_HYPERVISOR		UINT16_C(0x0003)
-#define LNXPERF_RECORD_MISC_GUEST_KERNEL	UINT16_C(0x0004)
-#define LNXPERF_RECORD_MISC_GUEST_USER		UINT16_C(0x0005)
+#define LNXPERF_RECORD_MISC_USER                UINT16_C(0x0002)
+#define LNXPERF_RECORD_MISC_HYPERVISOR          UINT16_C(0x0003)
+#define LNXPERF_RECORD_MISC_GUEST_KERNEL        UINT16_C(0x0004)
+#define LNXPERF_RECORD_MISC_GUEST_USER          UINT16_C(0x0005)
 
 
 /*********************************************************************************************************************************
@@ -63,14 +63,14 @@
 /** The file header. */
 typedef struct LNXPERFFILEHDR
 {
-    uint64_t        uMagic; 	/**< LNXPERFILEHDR_MAGIC */
+    uint64_t        uMagic;     /**< LNXPERFILEHDR_MAGIC */
     uint64_t        cbHdr;
     uint64_t        cbAttr;
     struct LNXPERFFILESECTION
     {
-	uint64_t    off, cb;
+        uint64_t    off, cb;
     }               Attrs, Data, EventTypes;
-    uint64_t	    bmAddsFeatures[256/64];
+    uint64_t        bmAddsFeatures[256/64];
 } LNXPERFFILEHDR;
 typedef LNXPERFFILEHDR *PLNXPERFFILEHDR;
 
