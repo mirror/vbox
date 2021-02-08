@@ -990,6 +990,10 @@ RTDECL(uint32_t) RTTimeDbgBad(void);
  */
 RTDECL(uint32_t) RTTimeDbgRaces(void);
 
+
+RTDECL(const char *) RTTimeNanoTSWorkerName(void);
+
+
 /** @name RTTimeNanoTS GIP worker functions, for TM.
  * @{ */
 

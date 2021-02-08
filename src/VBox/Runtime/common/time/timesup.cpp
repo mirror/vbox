@@ -203,41 +203,39 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
                       : RTTimeNanoTSLFenceSyncInvarWithDelta;
 # else
             if (pGip->u32Mode == SUPGIPMODE_ASYNC_TSC)
-                pfnWorker = pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
-                          ? RTTimeNanoTSLFenceAsyncUseIdtrLim
-                          : pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
-                          ? RTTimeNanoTSLFenceAsyncUseRdtscp
-                          : pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
-                          ? RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl
-                          : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B
-                          ? RTTimeNanoTSLFenceAsyncUseApicIdExt0B
-                          : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E
-                          ? RTTimeNanoTSLFenceAsyncUseApicIdExt8000001E
-                          : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID
-                          ? RTTimeNanoTSLFenceAsyncUseApicId
-                          : rtTimeNanoTSInternalFallback;
-           else
-               pfnWorker = pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
-                         ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
-                           ? RTTimeNanoTSLFenceSyncInvarNoDelta
-                           : RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim
-                         : pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
-                         ?   pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
-                           ? RTTimeNanoTSLFenceSyncInvarNoDelta
-                           : RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp
-                         : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B
-                         ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
-                           ? RTTimeNanoTSLFenceSyncInvarNoDelta
-                           : RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt0B
-                         : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E
-                         ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
-                           ? RTTimeNanoTSLFenceSyncInvarNoDelta
-                           : RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt8000001E
-                         : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID
-                         ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
-                           ? RTTimeNanoTSLFenceSyncInvarNoDelta
-                           : RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId
-                         : rtTimeNanoTSInternalFallback;
+            {
+                if (     pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
+                    pfnWorker = RTTimeNanoTSLFenceAsyncUseIdtrLim;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
+                    pfnWorker = RTTimeNanoTSLFenceAsyncUseRdtscp;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL)
+                    pfnWorker = RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B)
+                    pfnWorker = RTTimeNanoTSLFenceAsyncUseApicIdExt0B;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E)
+                    pfnWorker = RTTimeNanoTSLFenceAsyncUseApicIdExt8000001E;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID)
+                    pfnWorker = RTTimeNanoTSLFenceAsyncUseApicId;
+                else
+                    pfnWorker = rtTimeNanoTSInternalFallback;
+            }
+            else
+            {
+                if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
+                    pfnWorker = RTTimeNanoTSLFenceSyncInvarNoDelta;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
+                    pfnWorker = RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
+                    pfnWorker = RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B)
+                    pfnWorker = RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt0B;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E)
+                    pfnWorker = RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt8000001E;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID)
+                    pfnWorker = RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId;
+                else
+                    pfnWorker = rtTimeNanoTSInternalFallback;
+            }
 # endif
         }
         else
@@ -246,7 +244,7 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
             iWorker = pGip->u32Mode == SUPGIPMODE_ASYNC_TSC
                     ? RTTIMENANO_WORKER_LEGACY_ASYNC
                     : pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
-                    ? RTTIMENANO_WORKER_LEGACY_SYNC_INVAR_NO_DELTA :  RTTIMENANO_WORKER_LEGACY_SYNC_INVAR_WITH_DELTA;
+                    ? RTTIMENANO_WORKER_LEGACY_SYNC_INVAR_NO_DELTA : RTTIMENANO_WORKER_LEGACY_SYNC_INVAR_WITH_DELTA;
 # elif defined(IN_RING0)
             pfnWorker = pGip->u32Mode == SUPGIPMODE_ASYNC_TSC
                       ? RTTimeNanoTSLegacyAsync
@@ -308,6 +306,61 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
     return pfnWorker(pData, pExtra);
 # endif
 }
+
+# if defined(IN_RING3) || defined(IN_RING0)
+RTDECL(const char *) RTTimeNanoTSWorkerName(void)
+{
+    static const struct { PFNTIMENANOTSINTERNAL pfnWorker; const char *pszName; } s_aWorkersAndNames[] =
+    {
+#  define ENTRY(a_fn) { a_fn, #a_fn }
+        ENTRY(RTTimeNanoTSLegacySyncInvarNoDelta),
+        ENTRY(RTTimeNanoTSLFenceSyncInvarNoDelta),
+#  ifdef IN_RING3
+        ENTRY(RTTimeNanoTSLegacyAsyncUseApicId),
+        ENTRY(RTTimeNanoTSLegacyAsyncUseApicIdExt0B),
+        ENTRY(RTTimeNanoTSLegacyAsyncUseApicIdExt8000001E),
+        ENTRY(RTTimeNanoTSLegacyAsyncUseRdtscp),
+        ENTRY(RTTimeNanoTSLegacyAsyncUseRdtscpGroupChNumCl),
+        ENTRY(RTTimeNanoTSLegacyAsyncUseIdtrLim),
+        ENTRY(RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId),
+        ENTRY(RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt0B),
+        ENTRY(RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt8000001E),
+        ENTRY(RTTimeNanoTSLegacySyncInvarWithDeltaUseRdtscp),
+        ENTRY(RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim),
+        ENTRY(RTTimeNanoTSLFenceAsyncUseApicId),
+        ENTRY(RTTimeNanoTSLFenceAsyncUseApicIdExt0B),
+        ENTRY(RTTimeNanoTSLFenceAsyncUseApicIdExt8000001E),
+        ENTRY(RTTimeNanoTSLFenceAsyncUseRdtscp),
+        ENTRY(RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl),
+        ENTRY(RTTimeNanoTSLFenceAsyncUseIdtrLim),
+        ENTRY(RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId),
+        ENTRY(RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt0B),
+        ENTRY(RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt8000001E),
+        ENTRY(RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp),
+        ENTRY(RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim),
+#  else
+        ENTRY(RTTimeNanoTSLegacyAsync),
+        ENTRY(RTTimeNanoTSLegacySyncInvarWithDelta),
+        ENTRY(RTTimeNanoTSLFenceAsync),
+        ENTRY(RTTimeNanoTSLFenceSyncInvarWithDelta),
+#  endif
+        ENTRY(rtTimeNanoTSInternalFallback),
+#  undef ENTRY
+    };
+    PFNTIMENANOTSINTERNAL pfnWorker = g_pfnWorker;
+    if (pfnWorker == rtTimeNanoTSInternalRediscover)
+    {
+        RTTimeNanoTS();
+        pfnWorker = g_pfnWorker;
+    }
+
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aWorkersAndNames); i++)
+        if (s_aWorkersAndNames[i].pfnWorker == pfnWorker)
+            return s_aWorkersAndNames[i].pszName;
+    AssertFailed();
+    return NULL;
+}
+# endif /* IN_RING3 || IN_RING0 */
 
 #endif /* !IN_GUEST && !RT_NO_GIP */
 

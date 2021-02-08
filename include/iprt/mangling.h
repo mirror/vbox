@@ -2573,6 +2573,7 @@
 # define RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp_EndProc  RT_MANGLER(RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp_EndProc)
 # define RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim         RT_MANGLER(RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim)
 # define RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim_EndProc RT_MANGLER(RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim_EndProc)
+# define RTTimeNanoTSWorkerName                         RT_MANGLER(RTTimeNanoTSWorkerName)
 # define RTTimeNormalize                                RT_MANGLER(RTTimeNormalize)
 # define RTTimeNow                                      RT_MANGLER(RTTimeNow)
 # define RTTimeProgramMicroTS                           RT_MANGLER(RTTimeProgramMicroTS)
