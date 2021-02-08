@@ -817,6 +817,14 @@ ifeq ($(KBUILD_TARGET), win)
  endif # signing
 endif # win
 
+#
+# Linux only.
+#
+PROGRAMS.linux += LnxPerfHack
+LnxPerfHack_TEMPLATE = VBoxR3Tool
+LnxPerfHack_SOURCES = linux/LnxPerfHack.cpp
+
+
 
 endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_VALIDATIONKIT
 include $(FILE_KBUILD_SUB_FOOTER)
