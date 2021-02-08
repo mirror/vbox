@@ -1085,7 +1085,14 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     uint32_t cbToProcess = RT_MIN(pStreamShared->State.cbTransferSize, pStreamShared->State.cbTransferChunk);
 
     Assert(cbToProcess);                                                     /* Nothing to process when there should be data. Accounting bug? */
-    AssertStmt(cbToProcess <= cbToProcessMax, cbToProcess = cbToProcessMax); /* More data to process than maximum allowed. */
+
+    /* More data to process than maximum allowed? */
+#ifdef HDA_STRICT
+    AssertStmt(cbToProcess <= cbToProcessMax, cbToProcess = cbToProcessMax);
+#else
+    if (cbToProcess > cbToProcessMax)
+        cbToProcess = cbToProcessMax;
+#endif
 
     uint32_t cbProcessed = 0;
     uint32_t cbLeft      = cbToProcess;
