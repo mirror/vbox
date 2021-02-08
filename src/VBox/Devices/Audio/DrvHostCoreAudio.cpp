@@ -786,6 +786,9 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
                         {
                             pDevDst->enmUsage           = PDMAUDIODIR_ANY;
                             pDevDst->cMaxOutputChannels = pDevSrcOut->cMaxOutputChannels;
+
+                            if (pDevSrcOut->fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
+                                pDevDst->fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
                             break;
                         }
                     }
