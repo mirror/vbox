@@ -177,6 +177,7 @@ private:
     int homeInit();
     int logInit();
     int ipv4Init();
+    int ipv6Init();
     int eventsInit();
 
     int getExtraData(com::Utf8Str &strValueOut, const char *pcszKey);
@@ -241,6 +242,7 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
 
     RT_ZERO(m_ProxyOptions.ipv4_addr);
     RT_ZERO(m_ProxyOptions.ipv4_mask);
+    RT_ZERO(m_ProxyOptions.ipv6_addr);
     m_ProxyOptions.ipv6_enabled = 0;
     m_ProxyOptions.ipv6_defroute = 0;
     m_ProxyOptions.icmpsock4 = INVALID_SOCKET;
@@ -364,64 +366,21 @@ int VBoxNetLwipNAT::init()
     hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-    /*
-     * Get the settings related to IPv4.
-     */
+
+    /* Get the settings related to IPv4. */
     rc = ipv4Init();
     if (RT_FAILURE(rc))
         return rc;
 
+    /* Get the settings related to IPv6. */
+    rc = ipv6Init();
+    if (RT_FAILURE(rc))
+        return rc;
 
-    BOOL fIPv6Enabled = FALSE;
-    hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
-    AssertComRCReturn(hrc, VERR_NOT_FOUND);
-
-    BOOL fIPv6DefaultRoute = FALSE;
-    if (fIPv6Enabled)
-    {
-        hrc = m_net->COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fIPv6DefaultRoute);
-        AssertComRCReturn(hrc, VERR_NOT_FOUND);
-    }
-
-    m_ProxyOptions.ipv6_enabled = fIPv6Enabled;
-    m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
-
-
-    /*
-     * IPv6 source address, if configured.
-     */
-    if (fIPv6Enabled)
-    {
-        com::Utf8Str strSourceIp6;
-        rc = getExtraData(strSourceIp6, "SourceIp6");
-        if (RT_SUCCESS(rc) && strSourceIp6.isNotEmpty())
-        {
-            RTNETADDRIPV6 addr;
-            char *pszZone = NULL;
-            rc = RTNetStrToIPv6Addr(strSourceIp6.c_str(), &addr, &pszZone);
-            if (RT_SUCCESS(rc))
-            {
-                memcpy(&m_src6.sin6_addr, &addr, sizeof(addr));
-                m_ProxyOptions.src6 = &m_src6;
-
-                LogRel(("Will use %RTnaipv6 as IPv6 source address\n",
-                        &m_src6.sin6_addr));
-            }
-            else
-            {
-                LogRel(("Failed to parse \"%s\" IPv6 source address specification\n",
-                        strSourceIp6.c_str()));
-            }
-        }
-    }
-
-
-    if (fIPv6Enabled)
-        createRawSock6();
 
 
     fetchNatPortForwardRules(m_vecPortForwardRule4, /* :fIsIPv6 */ false);
-    if (fIPv6Enabled)
+    if (m_ProxyOptions.ipv6_enabled)
         fetchNatPortForwardRules(m_vecPortForwardRule6, /* :fIsIPv6 */ true);
 
     AddressToOffsetMapping tmp;
@@ -574,6 +533,7 @@ int VBoxNetLwipNAT::ipv4Init()
 
     AssertReturn(m_net.isNotNull(), VERR_GENERAL_FAILURE);
 
+
     /*
      * IPv4 address and mask.
      */
@@ -621,15 +581,11 @@ int VBoxNetLwipNAT::ipv4Init()
     memcpy(&m_ProxyOptions.ipv4_mask, &Mask4, sizeof(ip_addr));
 
 
-    /*
-     * Raw socket for ICMP.
-     */
+    /* Raw socket for ICMP. */
     createRawSock4();
 
 
-    /*
-     * IPv4 source address (host), if configured.
-     */
+    /* IPv4 source address (host), if configured. */
     com::Utf8Str strSourceIp4;
     rc = getExtraData(strSourceIp4, "SourceIp4");
     if (RT_SUCCESS(rc) && strSourceIp4.isNotEmpty())
@@ -654,6 +610,136 @@ int VBoxNetLwipNAT::ipv4Init()
     return VINF_SUCCESS;
 }
 
+
+/*
+ * Read IPv6 related settings and do necessary initialization.  These
+ * settings will be picked up by the proxy on the lwIP thread.  See
+ * onLwipTcpIpInit().
+ */
+int VBoxNetLwipNAT::ipv6Init()
+{
+    HRESULT hrc;
+    int rc;
+
+    AssertReturn(m_net.isNotNull(), VERR_GENERAL_FAILURE);
+
+
+    /* Is IPv6 enabled for this network at all? */
+    BOOL fIPv6Enabled = FALSE;
+    hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
+    if (FAILED(hrc))
+    {
+        reportComError(m_net, "IPv6Enabled", hrc);
+        return VERR_GENERAL_FAILURE;
+    }
+
+    m_ProxyOptions.ipv6_enabled = !!fIPv6Enabled;
+    if (!fIPv6Enabled)
+        return VINF_SUCCESS;
+
+
+    /*
+     * IPv6 address.
+     */
+    com::Bstr bstrIPv6Prefix;
+    hrc = m_net->COMGETTER(IPv6Prefix)(bstrIPv6Prefix.asOutParam());
+    if (FAILED(hrc))
+    {
+        reportComError(m_net, "IPv6Prefix", hrc);
+        return VERR_GENERAL_FAILURE;
+    }
+
+    RTNETADDRIPV6 Net6;
+    int iPrefixLength;
+    rc = RTNetStrToIPv6Cidr(com::Utf8Str(bstrIPv6Prefix).c_str(),
+                            &Net6, &iPrefixLength);
+    if (RT_FAILURE(rc))
+    {
+        reportError("Failed to parse IPv6 prefix %ls\n", bstrIPv6Prefix.raw());
+        return rc;
+    }
+
+    /* Allow both addr:: and addr::/64 */
+    if (iPrefixLength == 128)   /* no length was specified after the address? */
+        iPrefixLength = 64;     /*   take it to mean /64 which we require anyway */
+    else if (iPrefixLength != 64)
+    {
+        reportError("Invalid IPv6 prefix length %d,"
+                    " must be 64.\n", iPrefixLength);
+        return rc;
+    }
+
+    /* Verify the address is unicast. */
+    if (   ((Net6.au8[0] & 0xe0) != 0x20)  /* global 2000::/3 */
+        && ((Net6.au8[0] & 0xfe) != 0xfc)) /* local  fc00::/7 */
+    {
+        reportError("IPv6 prefix %RTnaipv6 is not unicast.\n", &Net6);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Verify the interfaces ID part is zero */
+    if (Net6.au64[1] != 0)
+    {
+        reportError("Non-zero bits in the interface ID part"
+                    " of the IPv6 prefix %RTnaipv6/64.\n", &Net6);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Use ...::1 as our address */
+    RTNETADDRIPV6 Addr6 = Net6;
+    Addr6.au8[15] = 0x01;
+    memcpy(&m_ProxyOptions.ipv6_addr, &Addr6, sizeof(ip6_addr_t));
+
+
+    /*
+     * Should we advertise ourselves as default IPv6 route?  If the
+     * host doesn't have IPv6 connectivity, it's probably better not
+     * to, to prevent the guest from IPv6 connection attempts doomed
+     * to fail.
+     *
+     * We might want to make this modifiable while the natnet is
+     * running.
+     */
+    BOOL fIPv6DefaultRoute = FALSE;
+    hrc = m_net->COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fIPv6DefaultRoute);
+    if (FAILED(hrc))
+    {
+        reportComError(m_net, "AdvertiseDefaultIPv6RouteEnabled", hrc);
+        return VERR_GENERAL_FAILURE;
+    }
+
+    m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
+
+
+    /* Raw socket for ICMP. */
+    createRawSock6();
+
+
+    /* IPv6 source address, if configured. */
+    com::Utf8Str strSourceIp6;
+    rc = getExtraData(strSourceIp6, "SourceIp6");
+    if (RT_SUCCESS(rc) && strSourceIp6.isNotEmpty())
+    {
+        RTNETADDRIPV6 addr;
+        char *pszZone = NULL;
+        rc = RTNetStrToIPv6Addr(strSourceIp6.c_str(), &addr, &pszZone);
+        if (RT_SUCCESS(rc))
+        {
+            memcpy(&m_src6.sin6_addr, &addr, sizeof(addr));
+            m_ProxyOptions.src6 = &m_src6;
+
+            LogRel(("Will use %RTnaipv6 as IPv6 source address\n",
+                    &m_src6.sin6_addr));
+        }
+        else
+        {
+            LogRel(("Failed to parse \"%s\" IPv6 source address specification\n",
+                    strSourceIp6.c_str()));
+        }
+    }
+
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -925,20 +1011,9 @@ err_t VBoxNetLwipNAT::netifInit(netif *pNetif) RT_NOTHROW_DEF
         netif_create_ip6_linklocal_address(pNetif, /* :from_mac_48bit */ 1);
         netif_ip6_addr_set_state(pNetif, 0, IP6_ADDR_PREFERRED); // skip DAD
 
-        /*
-         * RFC 4193 Locally Assigned Global ID (ULA) in slot 1
-         * [fd17:625c:f037:XXXX::1] where XXXX, 16 bit Subnet ID, are two
-         * bytes from the middle of the IPv4 address, e.g. :dead: for
-         * 10.222.173.1
-         */
-        u8_t nethi = ip4_addr2(&pNetif->ip_addr);
-        u8_t netlo = ip4_addr3(&pNetif->ip_addr);
-
-        ip6_addr_t *paddr = netif_ip6_addr(pNetif, 1);
-        IP6_ADDR(paddr, 0,   0xFD, 0x17,   0x62, 0x5C);
-        IP6_ADDR(paddr, 1,   0xF0, 0x37,  nethi, netlo);
-        IP6_ADDR(paddr, 2,   0x00, 0x00,   0x00, 0x00);
-        IP6_ADDR(paddr, 3,   0x00, 0x00,   0x00, 0x01);
+        /* INATNetwork::IPv6Prefix in slot 1 */
+        memcpy(netif_ip6_addr(pNetif, 1),
+               &self->m_ProxyOptions.ipv6_addr, sizeof(ip6_addr_t));
         netif_ip6_addr_set_state(pNetif, 1, IP6_ADDR_PREFERRED);
 
 #if LWIP_IPV6_SEND_ROUTER_SOLICIT
