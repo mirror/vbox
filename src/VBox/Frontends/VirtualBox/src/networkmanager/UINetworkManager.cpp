@@ -570,6 +570,7 @@ void UINetworkManagerWidget::sltCreateNATNetwork()
 
     /* Create network: */
     CNATNetwork comNetwork = comVBox.CreateNATNetwork(oldData.m_strName);
+    CNATNetwork comNetworkBase = comNetwork;
 
     /* Show error message if necessary: */
     if (!comVBox.isOk())
@@ -601,7 +602,7 @@ void UINetworkManagerWidget::sltCreateNATNetwork()
 
         /* Add network to the tree: */
         UIDataNATNetwork newData;
-        loadNATNetwork(comNetwork, newData);
+        loadNATNetwork(comNetworkBase, newData);
         createItemForNATNetwork(newData, true);
 
         /* Adjust tree-widgets: */
@@ -1018,6 +1019,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
 
         /* Find corresponding network: */
         CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldData.m_strName);
+        CNATNetwork comNetworkBase = comNetwork;
 
         /* Show error message if necessary: */
         if (!comVBox.isOk() || comNetwork.isNull())
@@ -1094,7 +1096,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
 
             /* Update network in the tree: */
             UIDataNATNetwork data;
-            loadNATNetwork(comNetwork, data);
+            loadNATNetwork(comNetworkBase, data);
             updateItemForNATNetwork(data, true, pItem);
 
             /* Make sure current item fetched, trying to hold chosen position: */
