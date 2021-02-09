@@ -24,6 +24,7 @@
 #include "PDMInternal.h"
 
 #include <VBox/vmm/vmcc.h>
+#include <iprt/string.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
 #endif
@@ -121,6 +122,7 @@ int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhy
                 rc = pDevIns->CTX_SUFF(pHlp)->pfnPhysRead(pDevIns, GCPhysOut, pvBuf, cbRead, fFlags);
                 if (RT_SUCCESS(rc))
                 {
+                    Assert(cbContig <= cbRead);
                     cbRead -= cbContig;
                     pvBuf   = (void *)((uintptr_t)pvBuf + cbContig);
                     GCPhys += cbContig;
@@ -131,6 +133,13 @@ int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhy
             else
             {
                 LogFunc(("IOMMU memory read failed. uDeviceId=%#x GCPhys=%#RGp cb=%zu rc=%Rrc\n", uDeviceId, GCPhys, cbRead, rc));
+
+                /*
+                 * We should initialize the read buffer on failure for devices that don't check
+                 * return codes (but would verify the data). But we still want to propagate the
+                 * error code from the IOMMU to the device, see @bugref{9936#c3}.
+                 */
+                memset(pvBuf, 0xff, cbRead);
                 break;
             }
         }
@@ -177,6 +186,7 @@ int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPh
                 rc = pDevIns->CTX_SUFF(pHlp)->pfnPhysWrite(pDevIns, GCPhysOut, pvBuf, cbWrite, fFlags);
                 if (RT_SUCCESS(rc))
                 {
+                    Assert(cbContig <= cbWrite);
                     cbWrite -= cbContig;
                     pvBuf    = (const void *)((uintptr_t)pvBuf + cbContig);
                     GCPhys  += cbContig;
