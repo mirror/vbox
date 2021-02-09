@@ -1098,7 +1098,7 @@ static void iommuAmdIotlbRemoveDomainId(PIOMMU pThis, uint16_t uDomainId)
  * @param   pDevIns     The IOMMU instance data.
  * @param   uDomainId   The domain ID.
  * @param   uIova       The I/O virtual address.
- * @param   cbAcess     The size of the access (must be 4K aligned).
+ * @param   cbAccess    The size of the access (must be 4K aligned).
  * @param   GCPhysSpa   The translated system-physical address.
  * @param   fPerm       The I/O permissions for the access, see IOMMU_IO_PERM_XXX.
  */
@@ -3574,6 +3574,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
  * @param   cbAccess        The size of the access.
  * @param   fPerm           The I/O permissions for this access, see
  *                          IOMMU_IO_PERM_XXX.
+ * @param   enmOp           The IOMMU operation being performed.
  * @param   pGCPhysSpa      Where to store the translated system physical address.
  * @param   pcbContiguous   Where to store the number of contiguous bytes translated
  *                          and permission-checked.
