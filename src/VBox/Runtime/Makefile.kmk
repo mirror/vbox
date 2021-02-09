@@ -2771,6 +2771,7 @@ RuntimeR0_SOURCES      := \
 	common/table/avlroioport.cpp \
 	common/table/avlroogcptr.cpp \
 	common/table/avlu32.cpp \
+	common/table/avlu64.cpp \
 	common/table/avlou32.cpp \
 	common/time/timesup.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \

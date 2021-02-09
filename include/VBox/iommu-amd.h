@@ -503,9 +503,9 @@ typedef union
         RT_GCC_EXTENSION uint64_t  u1Rsvd0 : 1;                   /**< Bit  63      - Reserved. */
         RT_GCC_EXTENSION uint64_t  u16DomainId : 16;              /**< Bits 79:64   - Domain ID. */
         RT_GCC_EXTENSION uint64_t  u16GstCr3TableRootPtrMid : 16; /**< Bits 95:80   - GCR3 TRP: Guest CR3 Table Root Ptr (Mid). */
-        RT_GCC_EXTENSION uint64_t  u1IoTlbEnable : 1;             /**< Bit  96      - I: IOTLB Enable. */
-        RT_GCC_EXTENSION uint64_t  u1SuppressPfEvents : 1;        /**< Bit  97      - SE: Supress Page-fault events. */
-        RT_GCC_EXTENSION uint64_t  u1SuppressAllPfEvents : 1;     /**< Bit  98      - SA: Supress All Page-fault events. */
+        RT_GCC_EXTENSION uint64_t  u1IoTlbEnable : 1;             /**< Bit  96      - I: IOTLB Enable (remote). */
+        RT_GCC_EXTENSION uint64_t  u1SuppressPfEvents : 1;        /**< Bit  97      - SE: Suppress Page-fault events. */
+        RT_GCC_EXTENSION uint64_t  u1SuppressAllPfEvents : 1;     /**< Bit  98      - SA: Suppress All Page-fault events. */
         RT_GCC_EXTENSION uint64_t  u2IoCtl : 2;                   /**< Bits 100:99  - IoCtl: Port I/O Control. */
         RT_GCC_EXTENSION uint64_t  u1Cache : 1;                   /**< Bit  101     - Cache: IOTLB Cache Hint. */
         RT_GCC_EXTENSION uint64_t  u1SnoopDisable : 1;            /**< Bit  102     - SD: Snoop Disable. */
@@ -672,7 +672,7 @@ typedef union
     struct
     {
         uint32_t    u1RemapEnable : 1;      /**< Bit  0     - RemapEn: Remap Enable. */
-        uint32_t    u1SuppressIoPf : 1;     /**< Bit  1     - SupIOPF: Supress I/O Page Fault. */
+        uint32_t    u1SuppressIoPf : 1;     /**< Bit  1     - SupIOPF: Suppress I/O Page Fault. */
         uint32_t    u3IntrType : 3;         /**< Bits 4:2   - IntType: Interrupt Type. */
         uint32_t    u1ReqEoi : 1;           /**< Bit  5     - RqEoi: Request EOI. */
         uint32_t    u1DestMode : 1;         /**< Bit  6     - DM: Destination Mode. */
@@ -703,7 +703,7 @@ typedef union
     struct
     {
         uint32_t    u1RemapEnable : 1;          /**< Bit  0       - RemapEn: Remap Enable. */
-        uint32_t    u1SuppressIoPf : 1;         /**< Bit  1       - SupIOPF: Supress I/O Page Fault. */
+        uint32_t    u1SuppressIoPf : 1;         /**< Bit  1       - SupIOPF: Suppress I/O Page Fault. */
         uint32_t    u1GALogIntr : 1;            /**< Bit  2       - GALogIntr: Guest APIC Log Interrupt. */
         uint32_t    u3Rsvd : 3;                 /**< Bits 5:3     - Reserved. */
         uint32_t    u1IsRunning : 1;            /**< Bit  6       - IsRun: Hint whether the guest is running. */
@@ -787,16 +787,22 @@ typedef union
 {
     struct
     {
-        uint16_t                     u16DevId;          /**< Bits 15:0   - Device ID. */
-        uint16_t                     u16Rsvd0;          /**< Bits 31:16  - Reserved. */
-        uint32_t                     u28Rsvd0 : 28;     /**< Bits 59:32  - Reserved. */
-        uint32_t                     u4OpCode : 4;      /**< Bits 63:60  - Op Code (Command). */
-        uint64_t                     u64Rsvd0;          /**< Bits 127:64 - Reserved. */
+        uint16_t    u16DevId;               /**< Bits 15:0   - Device ID. */
+        uint16_t    u16Rsvd0;               /**< Bits 31:16  - Reserved. */
+        uint32_t    u28Rsvd0 : 28;          /**< Bits 59:32  - Reserved. */
+        uint32_t    u4OpCode : 4;           /**< Bits 63:60  - Op Code (Command). */
+        uint64_t    u64Rsvd0;               /**< Bits 127:64 - Reserved. */
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    au64[2];
 } CMD_INV_DTE_T;
 AssertCompileSize(CMD_INV_DTE_T, 16);
+/** Pointer to a invalidate DTE command. */
+typedef CMD_INV_DTE_T *PCMD_INV_DTE_T;
+/** Pointer to a const invalidate DTE command. */
+typedef CMD_INV_DTE_T const *PCCMD_INV_DTE_T;
+#define IOMMU_CMD_INV_DTE_QWORD_0_VALID_MASK        UINT64_C(0xf00000000000ffff)
+#define IOMMU_CMD_INV_DTE_QWORD_1_VALID_MASK        UINT64_C(0x0000000000000000)
 
 /**
  * Command: INVALIDATE_IOMMU_PAGES.
@@ -915,8 +921,14 @@ typedef union
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    au64[2];
-} CMD_IOMMU_ALL_T;
-AssertCompileSize(CMD_IOMMU_ALL_T, 16);
+} CMD_INV_IOMMU_ALL_T;
+AssertCompileSize(CMD_INV_IOMMU_ALL_T, 16);
+/** Pointer to a invalidate IOMMU all command. */
+typedef CMD_INV_IOMMU_ALL_T *PCMD_INV_IOMMU_ALL_T;
+/** Pointer to a const invalidate IOMMU all command. */
+typedef CMD_INV_IOMMU_ALL_T const *PCCMD_INV_IOMMU_ALL_T;
+#define IOMMU_CMD_INV_IOMMU_ALL_QWORD_0_VALID_MASK          UINT64_C(0xf000000000000000)
+#define IOMMU_CMD_INV_IOMMU_ALL_QWORD_1_VALID_MASK          UINT64_C(0x0000000000000000)
 
 /**
  * Event Log Entry: Generic.
