@@ -105,7 +105,6 @@ private:
     QIToolButton *m_pMinusButton;
     QIToolButton *m_pResetButton;
     QIToolButton *m_pPlusButton;
-    QIAdvancedSlider *m_pSlider;
     QLabel *m_pValueLabel;
     int m_iInitialFontPointSize;
     int m_iFontPointSize;
@@ -329,7 +328,6 @@ UIFontScaleWidget::UIFontScaleWidget(int iInitialFontPointSize, QWidget *pParent
     , m_pMinusButton(0)
     , m_pResetButton(0)
     , m_pPlusButton(0)
-    , m_pSlider(0)
     , m_pValueLabel(0)
     , m_iInitialFontPointSize(iInitialFontPointSize)
     , m_iFontPointSize(iInitialFontPointSize)
@@ -367,7 +365,6 @@ void UIFontScaleWidget::prepare()
     m_pMinusButton = new QIToolButton;
     m_pResetButton = new QIToolButton;
     m_pPlusButton = new QIToolButton;
-    //m_pSlider = new QIAdvancedSlider;
     m_pValueLabel = new QLabel;
     AssertReturnVoid(m_pMinusButton &&
                      m_pResetButton &&
@@ -386,7 +383,6 @@ void UIFontScaleWidget::prepare()
 
     m_pMainLayout->addWidget(m_pResetButton);
     m_pMainLayout->addWidget(m_pMinusButton);
-    //m_pMainLayout->addWidget(m_pSlider);
     m_pMainLayout->addWidget(m_pValueLabel);
     m_pMainLayout->addWidget(m_pPlusButton);
 }
@@ -837,6 +833,7 @@ UIHelpBrowserTabManager::UIHelpBrowserTabManager(const QHelpEngine  *pHelpEngine
     , m_fSwitchToNewTab(true)
     , m_fToolBarVisible(true)
 {
+    Q_UNUSED(m_fSwitchToNewTab);
     prepare();
 }
 
@@ -1634,12 +1631,14 @@ void UIHelpBrowserWidget::sltHandleWidgetVisibilityToggle(bool fToggled)
 
 void UIHelpBrowserWidget::sltShowPrintDialog()
 {
+#ifndef VBOX_WS_MAC
     if (!m_pTabManager)
         return;
     QPrinter printer;
     QPrintDialog printDialog(&printer, this);
     if (printDialog.exec() == QDialog::Accepted)
         m_pTabManager->printCurrent(printer);
+#endif
 }
 
 void UIHelpBrowserWidget::sltHandleHelpEngineSetupFinished()
