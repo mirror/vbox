@@ -925,6 +925,7 @@ int ShClTransferListEntryInit(PSHCLLISTENTRY pListEntry);
 void ShClTransferListEntryDestroy(PSHCLLISTENTRY pListEntry);
 bool ShClTransferListEntryIsValid(PSHCLLISTENTRY pListEntry);
 
+void ShClTransferCopyCallbacks(PSHCLTRANSFERCALLBACKTABLE pCallbacksDst, PSHCLTRANSFERCALLBACKTABLE pCallbacksSrc);
 void ShClTransferSetCallbacks(PSHCLTRANSFER pTransfer, PSHCLTRANSFERCALLBACKTABLE pCallbacks);
 int ShClTransferSetProviderIface(PSHCLTRANSFER pTransfer, PSHCLTXPROVIDERCREATIONCTX pCreationCtx);
 int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);

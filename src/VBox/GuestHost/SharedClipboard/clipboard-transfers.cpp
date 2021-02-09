@@ -2015,35 +2015,54 @@ bool ShClTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList
 }
 
 /**
+ * Copies a transfer callback table from source to destination.
+ *
+ * @param   pCallbacksDst       Callback destination.
+ * @param   pCallbacksSrc       Callback source. If set to NULL, the
+ *                              destination callback table will be unset.
+ */
+void ShClTransferCopyCallbacks(PSHCLTRANSFERCALLBACKTABLE pCallbacksDst,
+                               PSHCLTRANSFERCALLBACKTABLE pCallbacksSrc)
+{
+    AssertPtrReturnVoid(pCallbacksDst);
+
+    if (pCallbacksSrc) /* Set */
+    {
+#define SET_CALLBACK(a_pfnCallback) \
+        if (pCallbacksSrc->a_pfnCallback) \
+            pCallbacksDst->a_pfnCallback = pCallbacksSrc->a_pfnCallback
+
+        SET_CALLBACK(pfnOnInitialize);
+        SET_CALLBACK(pfnOnStart);
+        SET_CALLBACK(pfnOnCompleted);
+        SET_CALLBACK(pfnOnError);
+        SET_CALLBACK(pfnOnRegistered);
+        SET_CALLBACK(pfnOnUnregistered);
+
+#undef SET_CALLBACK
+
+        pCallbacksDst->pvUser = pCallbacksSrc->pvUser;
+        pCallbacksDst->cbUser = pCallbacksSrc->cbUser;
+    }
+    else /* Unset */
+        RT_BZERO(pCallbacksDst, sizeof(SHCLTRANSFERCALLBACKTABLE));
+}
+
+/**
  * Sets or unsets the callback table to be used for a Shared Clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to set callbacks for.
- * @param   pCallbacks          Pointer to callback table to set.
+ * @param   pCallbacks          Pointer to callback table to set. If set to NULL,
+ *                              existing callbacks for this transfer will be unset.
  */
 void ShClTransferSetCallbacks(PSHCLTRANSFER pTransfer,
                               PSHCLTRANSFERCALLBACKTABLE pCallbacks)
 {
     AssertPtrReturnVoid(pTransfer);
-    AssertPtrReturnVoid(pCallbacks);
+    /* pCallbacks can be NULL. */
 
-    LogFlowFunc(("pCallbacks=%p\n", pCallbacks));
-
-#define SET_CALLBACK(a_pfnCallback)             \
-    if (pCallbacks->a_pfnCallback)              \
-        pTransfer->Callbacks.a_pfnCallback = pCallbacks->a_pfnCallback
-
-    SET_CALLBACK(pfnOnInitialize);
-    SET_CALLBACK(pfnOnStart);
-    SET_CALLBACK(pfnOnCompleted);
-    SET_CALLBACK(pfnOnError);
-    SET_CALLBACK(pfnOnRegistered);
-    SET_CALLBACK(pfnOnUnregistered);
-
-#undef SET_CALLBACK
-
-    pTransfer->Callbacks.pvUser = pCallbacks->pvUser;
-    pTransfer->Callbacks.cbUser = pCallbacks->cbUser;
+    ShClTransferCopyCallbacks(&pTransfer->Callbacks, pCallbacks);
 }
 
 /**
