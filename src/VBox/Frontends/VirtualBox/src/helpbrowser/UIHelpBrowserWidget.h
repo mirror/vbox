@@ -46,7 +46,7 @@ class UIActionPool;
 class UIBookmarksListContainer;
 class UIHelpBrowserTabManager;
 
-#if defined(RT_OS_LINUX) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+#ifdef VBOX_WITH_QHELP_VIEWER
 class SHARED_LIBRARY_STUFF UIHelpBrowserWidget  : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -181,5 +181,5 @@ private:
     QStringList          m_keywordList;
 };
 
-#endif /* #if defined(RT_OS_LINUX) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
+#endif /* #ifdef VBOX_WITH_QHELP_VIEWER */
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h */

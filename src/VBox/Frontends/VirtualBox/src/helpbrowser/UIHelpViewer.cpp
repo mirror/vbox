@@ -18,7 +18,7 @@
 /* Qt includes: */
 #include <QClipboard>
 #include <QtGlobal>
-#if defined(RT_OS_LINUX) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+#ifdef VBOX_WITH_QHELP_VIEWER
  #include <QtHelp/QHelpEngine>
  #include <QtHelp/QHelpContentWidget>
  #include <QtHelp/QHelpIndexWidget>
@@ -46,8 +46,7 @@
 #include "COMEnums.h"
 #include "CSystemProperties.h"
 
-#if defined(RT_OS_LINUX) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-
+#ifdef VBOX_WITH_QHELP_VIEWER
 
 /*********************************************************************************************************************************
 *   UIContextMenuNavigationAction definition.                                                                                    *
@@ -696,4 +695,4 @@ void UIHelpViewer::sltSelectNextMatch()
 
 #include "UIHelpViewer.moc"
 
-#endif /*#if defined(RT_OS_LINUX) && (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))*/
+#endif /* #ifdef VBOX_WITH_QHELP_VIEWER */

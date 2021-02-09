@@ -228,7 +228,7 @@ UICommon_DEFS         += \
 	$(if $(VBOX_GUI_WITH_PIDFILE),VBOX_GUI_WITH_PIDFILE) \
 	$(if $(VBOX_GUI_WITH_CUSTOMIZATIONS1),VBOX_GUI_WITH_CUSTOMIZATIONS1) \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE) \
-	$(if $(VBOX_WITH_DOCS_QHELP),VBOX_WITH_DOCS_QHELP) \
+	$(if $(VBOX_WITH_QHELP_VIEWER),VBOX_WITH_QHELP_VIEWER) \
 	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)
 ifdef VBOX_WITH_DEBUGGER_GUI
  UICommon_DEFS        += VBOX_WITH_DEBUGGER_GUI
@@ -813,8 +813,6 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UIVirtualBoxClientEventHandler.h \
 	src/globals/VBoxUtils.h \
 	src/helpbrowser/UIHelpBrowserDialog.h \
-	src/helpbrowser/UIHelpViewer.h \
-	src/helpbrowser/UIHelpBrowserWidget.h \
 	src/logviewer/UIVMLogPage.h \
 	src/logviewer/UIVMLogViewerBookmarksPanel.h \
 	src/logviewer/UIVMLogViewerDialog.h \
@@ -907,6 +905,12 @@ UICommon_QT_MOCHDRS = \
 	src/wizards/newvd/UIWizardNewVDPageBasic3.h \
 	src/wizards/newvd/UIWizardNewVDPageExpert.h
 
+ifdef VBOX_WITH_QHELP_VIEWER
+ UICommon_QT_MOCHDRS += \
+	src/helpbrowser/UIHelpViewer.h \
+	src/helpbrowser/UIHelpBrowserWidget.h
+endif
+
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_QT_MOCHDRS += \
 	src/networking/UIDownloader.h \
@@ -992,8 +996,6 @@ UICommon_QT_MOCSRCS = \
 	src/globals/UIThreadPool.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/globals/UIVirtualBoxClientEventHandler.cpp \
-	src/helpbrowser/UIHelpViewer.cpp \
-	src/helpbrowser/UIHelpBrowserWidget.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/monitor/performance/UIPerformanceMonitor.cpp \
@@ -1016,6 +1018,12 @@ UICommon_QT_MOCSRCS = \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBox.cpp
+
+ifdef VBOX_WITH_QHELP_VIEWER
+ UICommon_QT_MOCSRCS += \
+	src/helpbrowser/UIHelpViewer.cpp \
+	src/helpbrowser/UIHelpBrowserWidget.cpp
+endif
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_QT_MOCSRCS += \
@@ -1337,8 +1345,6 @@ UICommon_SOURCES = \
 	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/globals/UIVirtualBoxClientEventHandler.cpp \
 	src/helpbrowser/UIHelpBrowserDialog.cpp \
-	src/helpbrowser/UIHelpViewer.cpp \
-	src/helpbrowser/UIHelpBrowserWidget.cpp \
 	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
 	src/logviewer/UIVMLogViewerDialog.cpp \
@@ -1435,6 +1441,12 @@ UICommon_SOURCES = \
 	src/wizards/newvd/UIWizardNewVDPageBasic2.cpp \
 	src/wizards/newvd/UIWizardNewVDPageBasic3.cpp \
 	src/wizards/newvd/UIWizardNewVDPageExpert.cpp
+
+ifdef VBOX_WITH_QHELP_VIEWER
+ UICommon_SOURCES += \
+	src/helpbrowser/UIHelpViewer.cpp \
+	src/helpbrowser/UIHelpBrowserWidget.cpp
+endif
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_SOURCES += \
@@ -1537,7 +1549,10 @@ UICommon_QT_MODULES.solaris += X11Extras
 UICommon_QT_MODULES.freebsd += X11Extras
 UICommon_QT_MODULES.darwin  += MacExtras
 UICommon_QT_MODULES.win     += WinExtras
-UICommon_QT_MODULES.linux   += Help
+
+ifdef VBOX_WITH_QHELP_VIEWER
+ UICommon_QT_MODULES   += Help
+endif
 
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  UICommon_QT_MODULES += OpenGL

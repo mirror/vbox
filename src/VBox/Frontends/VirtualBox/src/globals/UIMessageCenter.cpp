@@ -3345,6 +3345,9 @@ void UIMessageCenter::sltShowHelpAboutDialog()
 
 void UIMessageCenter::sltShowHelpHelpDialog()
 {
+    /* Currently I am sure how this logic should be changed. I will just disable it for now: */
+    sltShowUserManual(uiCommon().helpFile());
+#if 0
 #ifndef VBOX_OSE
     /* For non-OSE version we just open it: */
     sltShowUserManual(uiCommon().helpFile());
@@ -3375,6 +3378,7 @@ void UIMessageCenter::sltShowHelpHelpDialog()
         pDl->start();
     }
 #endif /* #ifdef VBOX_OSE */
+#endif
 }
 
 void UIMessageCenter::sltResetSuppressedMessages()
@@ -3386,12 +3390,16 @@ void UIMessageCenter::sltResetSuppressedMessages()
 void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 {
     Q_UNUSED(strLocation);
+#if defined (VBOX_WITH_QHELP_VIEWER)
+    showHelpBrowser(strLocation);
+    return;
+#endif
+
 #if defined (VBOX_WS_WIN)
     HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
-#elif defined (VBOX_WS_X11)
-# if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
-    showHelpBrowser(strLocation);
-# elif !defined(VBOX_OSE)
+#endif
+
+#if !defined(VBOX_OSE)
     char szViewerPath[RTPATH_MAX];
     int rc;
     rc = RTPathAppPrivateArch(szViewerPath, sizeof(szViewerPath));
@@ -3400,7 +3408,7 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 # else /* #ifndef VBOX_OSE */
     uiCommon().openURL("file://" + strLocation);
 # endif /* #ifdef VBOX_OSE */
-#elif defined (VBOX_WS_MAC)
+#if defined (VBOX_WS_MAC)
     uiCommon().openURL("file://" + strLocation);
 #endif
 }
@@ -3592,6 +3600,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
 void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, QWidget *pParent /* = 0 */)
 {
     Q_UNUSED(pParent);
+#if defined(VBOX_WITH_QHELP_VIEWER)
     if (!QFileInfo(strHelpFilePath).exists())
     {
         cannotFindHelpFile(strHelpFilePath);
@@ -3607,6 +3616,9 @@ void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, QWidget *p
     m_pHelpBrowserDialog->show();
     m_pHelpBrowserDialog->setWindowState(m_pHelpBrowserDialog->windowState() & ~Qt::WindowMinimized);
     m_pHelpBrowserDialog->activateWindow();
+#else
+    Q_UNUSED(strHelpFilePath);
+#endif
 }
 
 void UIMessageCenter::sltHelpBrowserClosed()
@@ -3616,14 +3628,14 @@ void UIMessageCenter::sltHelpBrowserClosed()
 
 void UIMessageCenter::sltHandleHelpRequest()
 {
-# if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+#if defined(VBOX_WITH_QHELP_VIEWER)
     sltHandleHelpRequestWithKeyword(uiCommon().helpKeyword(sender()));
 #endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }
 
 void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword)
 {
-# if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+#if defined(VBOX_WITH_QHELP_VIEWER)
     /* First open or show the help browser: */
     showHelpBrowser(uiCommon().helpFile());
     /* Show the help page for the @p strHelpKeyword: */
