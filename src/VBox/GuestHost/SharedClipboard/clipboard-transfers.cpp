@@ -962,10 +962,11 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
  * @param   hObj                Handle of transfer object to read from.
  * @param   pvBuf               Buffer for where to store the read data.
  * @param   cbBuf               Size (in bytes) of buffer.
- * @param   pcbRead             How much bytes were read on success. Optional.
+ * @param   fFlags              Read flags. Optional.
+ * @param   pcbRead             Where to return how much bytes were read on success. Optional.
  */
 int ShClTransferObjRead(PSHCLTRANSFER pTransfer,
-                        SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t fFlags)
+                        SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t fFlags, uint32_t *pcbRead)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,     VERR_INVALID_POINTER);
@@ -1026,11 +1027,11 @@ int ShClTransferObjRead(PSHCLTRANSFER pTransfer,
  * @param   hObj                Handle of transfer object to write to.
  * @param   pvBuf               Buffer of data to write.
  * @param   cbBuf               Size (in bytes) of buffer to write.
+ * @param   fFlags              Write flags. Optional.
  * @param   pcbWritten          How much bytes were writtenon success. Optional.
  */
 int ShClTransferObjWrite(PSHCLTRANSFER pTransfer,
-                         SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten,
-                         uint32_t fFlags)
+                         SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t fFlags, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,     VERR_INVALID_POINTER);

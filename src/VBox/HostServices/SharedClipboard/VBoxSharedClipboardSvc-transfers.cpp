@@ -1635,7 +1635,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 uint32_t cbRead;
-                rc = ShClTransferObjRead(pTransfer, hObj, pvBuf, cbToRead, &cbRead, 0 /* fFlags */);
+                rc = ShClTransferObjRead(pTransfer, hObj, pvBuf, cbToRead, 0 /* fFlags */, &cbRead);
                 if (RT_SUCCESS(rc))
                 {
                     HGCMSvcSetU32(&aParms[3], cbRead);

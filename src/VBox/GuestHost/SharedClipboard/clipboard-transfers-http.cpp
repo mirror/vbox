@@ -297,11 +297,12 @@ static DECLCALLBACK(int) shClTransferHttpRead(PRTHTTPCALLBACKDATA pData, void *p
     if (pSrvTx)
     {
         Assert(pSrvTx->hObj != SHCLOBJHANDLE_INVALID);
-//        rc = ShClTransferObjRead(pSrvTx->pTransfer, pSrvTx->hObj, );
-rc = 0;
+
+        uint32_t cbRead;
+        rc = ShClTransferObjRead(pSrvTx->pTransfer, pSrvTx->hObj, pvBuf, cbBuf, 0 /* fFlags */, &cbRead);
         if (RT_SUCCESS(rc))
         {
-
+            *pcbRead = (uint32_t)cbRead;
         }
 
         if (RT_FAILURE(rc))
