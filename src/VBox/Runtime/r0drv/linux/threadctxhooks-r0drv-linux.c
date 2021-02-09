@@ -323,6 +323,7 @@ RTDECL(bool) RTThreadCtxHookIsEnabled(RTTHREADCTXHOOK hCtxHook)
 
     return pThis->fEnabled;
 }
+RT_EXPORT_SYMBOL(RTThreadCtxHookIsEnabled);
 
 #else    /* Not supported / Not needed */
 # include "../generic/threadctxhooks-r0drv-generic.cpp"
