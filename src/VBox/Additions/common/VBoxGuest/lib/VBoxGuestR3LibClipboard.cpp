@@ -106,6 +106,8 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuest
     pCtx->idContext             = 0;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    /* Init callback table. */
+    RT_ZERO(pCtx->Transfers.Callbacks);
     /* Indicate that this guest supports Shared Clipboard file transfers. */
     pCtx->fGuestFeatures |= VBOX_SHCL_GF_0_TRANSFERS;
 # ifdef RT_OS_WINDOWS
@@ -1906,6 +1908,20 @@ static int vbglR3ClipboardTransferStop(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFERC
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Sets transfer callbacks of a Shared Clipboard command context.
+ *
+ * @param   pCmdCtx             Command context to set callbacks for.
+ * @param   pCallbacks          Pointer to callback table to set.
+ */
+VBGLR3DECL(void) VbglR3ClipboardTransferSetCallbacks(PVBGLR3SHCLCMDCTX pCmdCtx,  PSHCLTRANSFERCALLBACKTABLE pCallbacks)
+{
+    AssertPtrReturnVoid(pCmdCtx);
+    AssertPtrReturnVoid(pCallbacks);
+
+    ShClTransferCopyCallbacks(&pCmdCtx->Transfers.Callbacks, pCallbacks);
 }
 
 VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
