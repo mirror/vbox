@@ -80,9 +80,6 @@ void UIHelpBrowserDialog::prepareCentralWidget()
 #ifdef VBOX_WITH_QHELP_VIEWER
     m_pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath);
     AssertPtrReturnVoid(m_pWidget);
-#ifdef VBOX_WS_MAC
-    setWidgetToolbar(m_pWidget->toolbar());
-#endif
     setCentralWidget((m_pWidget));
 
     connect(m_pWidget, &UIHelpBrowserWidget::sigCloseDialog,
