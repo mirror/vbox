@@ -743,6 +743,9 @@ VBOX_WITH_SHARED_CLIPBOARD = 1
 # Enable shared clipboard (file) transfers
 #if1of ($(KBUILD_TARGET), win linux)
 # VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS = 1
+#  if1of ($(KBUILD_TARGET), linux)
+#   VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP = 1
+# endif
 #endif
 # Enable the host/guest information service (aka guest properties).
 VBOX_WITH_GUEST_PROPS = 1
