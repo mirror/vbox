@@ -6975,7 +6975,11 @@ ifdef VBOX_WITH_QTGUI
  ifdef VBOX_WITH_QHELP_VIEWER
   VBOX_QT_PLUGINS += \
    plugins/sqldrivers/libqsqlite.so
-  VBOX_QT_MOD += Qt5Help Qt5Network Qt5CLucene Qt5Sql
+   ifeq ($(KBUILD_TARGET), darwin)
+    VBOX_QT_MOD += QtHelp QtNetwork QtCLucene QtSql
+   else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
+    VBOX_QT_MOD += Qt5Help Qt5Network Qt5CLucene Qt5Sql
+   endif
  endif
 
  VBOX_QT_MOD_NAMES = $(foreach qtmod,$(VBOX_QT_MOD),$(qtmod)$(VBOX_QT_INFIX))
