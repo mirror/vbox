@@ -6973,8 +6973,6 @@ ifdef VBOX_WITH_QTGUI
  endif # linux freebsd netbsd openbsd solaris win
 
  ifdef VBOX_WITH_QHELP_VIEWER
-  VBOX_QT_PLUGINS += \
-   plugins/sqldrivers/libqsqlite.so
    ifeq ($(KBUILD_TARGET), darwin)
     VBOX_QT_MOD += QtHelp QtNetwork QtSql
    else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
