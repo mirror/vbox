@@ -396,10 +396,10 @@ int ShClTransferListOpenParmsInit(PSHCLLISTOPENPARMS pParms)
 
     RT_BZERO(pParms, sizeof(SHCLLISTOPENPARMS));
 
-    pParms->cbFilter  = 64; /** @todo Make this dynamic. */
+    pParms->cbFilter  = SHCL_TRANSFER_PATH_MAX; /** @todo Make this dynamic. */
     pParms->pszFilter = RTStrAlloc(pParms->cbFilter);
 
-    pParms->cbPath    = RTPATH_MAX;
+    pParms->cbPath    = SHCL_TRANSFER_PATH_MAX; /** @todo Make this dynamic. */
     pParms->pszPath   = RTStrAlloc(pParms->cbPath);
 
     LogFlowFuncLeave();

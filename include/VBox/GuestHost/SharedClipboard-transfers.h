@@ -56,6 +56,9 @@ typedef struct SHCLTRANSFER *PSHCLTRANSFER;
  *  @{
  */
 
+/** Defines the maximum length (in chars) a Shared Clipboard transfer path can have. */
+#define SHCL_TRANSFER_PATH_MAX          RTPATH_MAX
+
 /**
  * Defines the transfer status codes.
  */
