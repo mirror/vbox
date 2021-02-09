@@ -32,6 +32,7 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
+#include <iprt/assert.h>
 
 /*********************************************************************************************************************************
 *   Class UIHelpBrowserDialog implementation.                                                                                    *
