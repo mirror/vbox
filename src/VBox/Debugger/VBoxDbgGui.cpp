@@ -25,8 +25,8 @@
 #include <iprt/errcore.h>
 
 #include "VBoxDbgGui.h"
-#include <QDesktopWidget>
 #include <QApplication>
+#include <QScreen>
 
 
 
@@ -224,9 +224,9 @@ void
 VBoxDbgGui::updateDesktopSize()
 {
     QRect Rct(0, 0, 1600, 1200);
-    QDesktopWidget *pDesktop = QApplication::desktop();
-    if (pDesktop)
-        Rct = pDesktop->availableGeometry(QPoint(m_x, m_y));
+    QScreen *pScreen = QApplication::screenAt(QPoint(m_x, m_y));
+    if (pScreen)
+        Rct = pScreen->availableGeometry();
     m_xDesktop = Rct.x();
     m_yDesktop = Rct.y();
     m_cxDesktop = Rct.width();
