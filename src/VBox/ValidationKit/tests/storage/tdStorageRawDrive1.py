@@ -979,9 +979,10 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                 try:    aBuf = str(aBuf); # pylint: disable=redefined-variable-type
                 except: pass;
                 asLines = aBuf.splitlines();
-                oRegExp = re.compile("^\s*([^:]+)\s*:\s*(.+)\s*$");
+                oRegExp = re.compile(r'^\s*([^:]+)\s*:\s*(.+)\s*$');
 
-                class ParseState:
+                # pylint: disable=no-init
+                class ParseState(object):
                     Nothing   = 0;
                     Drive     = 1;
                     Partition = 2;
@@ -1019,7 +1020,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                             sPart = asHddData['Partitions']['Partitions'][idxPartition];
                             sPart = sPart.replace('$(' + str(idxPartition + 1) + ')',
                                                   str(asHddData['Partitions']['PartitionNumbers'][idxPartition]));
-                            if (sLine.strip() == sPart):
+                            if sLine.strip() == sPart:
                                 idxPartition += 1;
                         continue;
                 fRc = sDrive and not asKeysNotFound and idxPartition >= len(asHddData['Partitions']['Partitions']);
@@ -1044,7 +1045,8 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
            and asDescriptor[0] != '#Disk DescriptorFile':
             return reporter.error("VMDK descriptor has invalid format");
 
-        class DescriptorParseState:
+        # pylint: disable=no-init
+        class DescriptorParseState(object):
             Header   = 1,
             Extent   = 2,
             Database = 3
