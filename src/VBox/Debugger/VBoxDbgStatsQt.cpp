@@ -3056,7 +3056,7 @@ VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszPat/* = NULL*/,
     pLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
     m_pPatCB = new QComboBox();
-    m_pPatCB->setAutoCompletion(false);
+    m_pPatCB->setCompleter(nullptr);
     pHLayout->addWidget(m_pPatCB);
     if (!m_PatStr.isEmpty())
         m_pPatCB->addItem(m_PatStr);
