@@ -38,14 +38,6 @@ typedef std::vector<RTNETADDRIPV4> AddressList;
 typedef std::map<RTNETADDRIPV4, int> AddressToOffsetMapping;
 
 
-inline RTNETADDRIPV4 networkid(const RTNETADDRIPV4& addr, const RTNETADDRIPV4& netmask)
-{
-    RTNETADDRIPV4 netid;
-    netid.u = addr.u & netmask.u;
-    return netid;
-}
-
-
 int localMappings(const ComNatPtr&, AddressToOffsetMapping&);
 int hostDnsSearchList(const ComHostPtr&, std::vector<std::string>&);
 int hostDnsDomain(const ComHostPtr&, std::string& domainStr);
