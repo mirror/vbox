@@ -119,38 +119,6 @@ int localMappings(const ComNatPtr& nat, AddressToOffsetMapping& mapping)
 }
 
 
-int hostDnsSearchList(const ComHostPtr& host, std::vector<std::string>& strings)
-{
-    strings.clear();
-
-    ComBstrArray strs;
-    if (SUCCEEDED(host->COMGETTER(SearchStrings)(ComSafeArrayAsOutParam(strs))))
-    {
-        for (unsigned int i = 0; i < strs.size(); ++i)
-        {
-            strings.push_back(com::Utf8Str(strs[i]).c_str());
-        }
-    }
-    else
-        return VERR_NOT_FOUND;
-
-    return VINF_SUCCESS;
-}
-
-
-int hostDnsDomain(const ComHostPtr& host, std::string& domainStr)
-{
-    com::Bstr domain;
-    if (SUCCEEDED(host->COMGETTER(DomainName)(domain.asOutParam())))
-    {
-        domainStr = com::Utf8Str(domain).c_str();
-        return VINF_SUCCESS;
-    }
-
-    return VERR_NOT_FOUND;
-}
-
-
 int createNatListener(ComNatListenerPtr& listener, const ComVirtualBoxPtr& vboxptr,
                       NATNetworkEventAdapter *adapter, /* const */ ComEventTypeArray& events)
 {

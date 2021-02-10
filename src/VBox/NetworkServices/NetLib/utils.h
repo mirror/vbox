@@ -39,8 +39,6 @@ typedef std::map<RTNETADDRIPV4, int> AddressToOffsetMapping;
 
 
 int localMappings(const ComNatPtr&, AddressToOffsetMapping&);
-int hostDnsSearchList(const ComHostPtr&, std::vector<std::string>&);
-int hostDnsDomain(const ComHostPtr&, std::string& domainStr);
 
 
 class NATNetworkEventAdapter
