@@ -412,7 +412,7 @@ Config *Config::create(int argc, char **argv) RT_NOEXCEPT
     }
 
     /*
-     * Read the log file.
+     * Read the config file.
      */
     RTMsgInfo("reading config from '%s'...\n", pszConfig);
     std::unique_ptr<Config> ptrConfig;
