@@ -984,7 +984,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                 # pylint: disable=no-init
                 class ParseState(object):
                     kiNothing   = 0;
-                    kikDrive    = 1;
+                    kiDrive     = 1;
                     kiPartition = 2;
 
                 iParseState = ParseState.kiNothing;
