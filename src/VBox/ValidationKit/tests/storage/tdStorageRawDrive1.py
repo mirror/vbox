@@ -149,7 +149,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                 {
                     'action'     : 'whole drive',
                     'options'    : [],
-                    'data-crc'   : None,
+                    'data-crc'   : {},
                     'createType' : 'fullDevice',
                     'extents'    : { '6.1/storage/t-mbr.vdi' : ['RW 0 FLAT "$(disk)" 0',],
                                      '6.1/storage/t-gpt.vdi' : ['RW 0 FLAT "$(disk)" 0',],
@@ -1200,7 +1200,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                                 fRc = self.checkVMDKDescriptor(asDescriptor, sHdd, sRawDrive, action);
                                 if not fRc:
                                     reporter.error('Cheking vmdktest.vmdk from guest filed');
-                                elif action['data-crc'] is not None:
+                                elif action['data-crc']:
                                     sSrcFile = self.sVMDKPath + self.sPathDelimiter + 'vmdktest-pt.vmdk';
                                     sDstFile = os.path.join(self.oTstDrv.sScratchPath, 'guest-vmdktest-pt.vmdk');
                                     reporter.log2('Downloading file "%s" to "%s" ...' % (sSrcFile, sDstFile));
