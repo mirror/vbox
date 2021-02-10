@@ -1151,7 +1151,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
         reporter.testStart("Create VMDK disks");
         asHddData = self.asHdds[sHdd];
         fRc = True;
-        try:    oGuestSession.directoryCreate(self.sVMDKPath, 777, (vboxcon.DirectoryCreateFlag_Parents,));
+        try:    oGuestSession.directoryCreate(self.sVMDKPath, 0o777, (vboxcon.DirectoryCreateFlag_Parents,));
         except: fRc = reporter.errorXcpt('Create directory for VMDK files failed in the VM %s' % (self.sVmName));
         if fRc:
             sBootSectorGuestPath = self.sVMDKPath + self.sPathDelimiter + 't-bootsector.bin';
@@ -1568,10 +1568,10 @@ class tdStorageRawDrive(vbox.TestDriver):                                      #
         oSet = vboxtestvms.TestVmSet(self.oTestVmManager, acCpus = [2], asVirtModes = ['hwvirt-np',], fIgnoreSkippedVm = True);
         # pylint: disable=line-too-long
         self.asTestVmClasses = {
-            'win'     : tdStorageRawDriveOsWin(oSet, self, self.ksOsWindows, 'Windows7_64', \
-                             '6.0/windows7piglit/windows7piglit.vdi', eNic0Type = None, cMbRam = 2048,  \
-                             cCpus = 2, fPae = True, sGuestAdditionsIso = self.getGuestAdditionsIso(),
-                             sBootSector = self.ksBootSectorPath),
+            'win'     : None, #tdStorageRawDriveOsWin(oSet, self, self.ksOsWindows, 'Windows7_64', \
+                             #'6.0/windows7piglit/windows7piglit.vdi', eNic0Type = None, cMbRam = 2048,  \
+                             #cCpus = 2, fPae = True, sGuestAdditionsIso = self.getGuestAdditionsIso(),
+                             #sBootSector = self.ksBootSectorPath),
             'linux'   : tdStorageRawDriveOsLinux(oSet, self, self.ksOsLinux, 'Ubuntu_64', \
                                '6.0/ub1804piglit/ub1804piglit.vdi', eNic0Type = None, \
                                cMbRam = 2048, cCpus = 2, fPae = None, sGuestAdditionsIso = self.getGuestAdditionsIso(),
