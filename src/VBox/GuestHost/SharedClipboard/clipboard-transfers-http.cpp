@@ -84,7 +84,14 @@ static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv);
 *   Public Shared Clipboard HTTP transfer functions                                                                              *
 *********************************************************************************************************************************/
 
-int ShClHttpTransferCreate(PSHCLHTTPCONTEXT pCtx, PSHCLTRANSFER pTransfer)
+/**
+ * Registers a Shared Clipboard transfer to a HTTP context.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                HTTP context to register transfer for.
+ * @param   pTransfer           Transfer to register.
+ */
+int ShClHttpTransferRegister(PSHCLHTTPCONTEXT pCtx, PSHCLTRANSFER pTransfer)
 {
     int rc = VINF_SUCCESS;
 
@@ -98,7 +105,14 @@ int ShClHttpTransferCreate(PSHCLHTTPCONTEXT pCtx, PSHCLTRANSFER pTransfer)
     return rc;
 }
 
-int ShClHttpTransferDestroy(PSHCLHTTPCONTEXT pCtx, PSHCLTRANSFER pTransfer)
+/**
+ * Unregisters a formerly registered Shared Clipboard transfer.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                HTTP context to unregister transfer from.
+ * @param   pTransfer           Transfer to unregister.
+ */
+int ShClHttpTransferUnregister(PSHCLHTTPCONTEXT pCtx, PSHCLTRANSFER pTransfer)
 {
     int rc = VINF_SUCCESS;
 
