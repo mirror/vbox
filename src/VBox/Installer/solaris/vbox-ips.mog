@@ -37,6 +37,7 @@ depend fmri=pkg:/system/font/truetype/dejavu type=require
 <transform file path=opt/VirtualBox/amd64/legacy/.*$ -> drop>
 
 # Drop all API helper libraries for python 2.x other than 2.7
+<transform file path=opt/VirtualBox/64/VBoxPython\.so.*$ -> drop>
 <transform file path=opt/VirtualBox/64/VBoxPython2\.so.*$ -> drop>
 <transform file path=opt/VirtualBox/(64/)?VBoxPython2_[^7].*\.so.*$ -> drop>
 

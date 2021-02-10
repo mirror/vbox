@@ -623,7 +623,7 @@ $(VBOX_PATH_SI_SCRATCH)/dist-copy.ts: \
 	$(CHMOD) 0755 $(VBOX_PATH_SOL_INST_SRC)/vboxconfig.sh
 	$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/autoresponse
 	$(if-expr defined(VBOX_WITH_PYTHON) \
-	,$(SED) -e "s@^#!.*@#!/usr/bin/python2@" \
+	,$(SED) -e "s@^#!.*@#!/usr/bin/python2.7@" \
 		--output $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/vboxshell.py \
 		$(PATH_STAGE_BIN)/vboxshell.py,)
 
