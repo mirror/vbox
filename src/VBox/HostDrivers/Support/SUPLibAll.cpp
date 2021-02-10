@@ -220,7 +220,7 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(PSUPGLOBALINFOPAGE pGip)
     AssertMsgFailed(("iGipCpu=%d (%#x) cCpus=%d fGetGipCpu=%#x\n", iGipCpu, iGipCpu, pGip->cCpus, pGip->fGetGipCpu));
     return uTsc;
 }
-# ifdef IN_RING0
+# ifdef SUPR0_EXPORT_SYMBOL
 SUPR0_EXPORT_SYMBOL(SUPReadTscWithDelta);
 # endif
 #endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
