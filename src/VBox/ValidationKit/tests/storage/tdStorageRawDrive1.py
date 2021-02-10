@@ -983,11 +983,11 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
 
                 # pylint: disable=no-init
                 class ParseState(object):
-                    Nothing   = 0;
-                    Drive     = 1;
-                    Partition = 2;
+                    kiNothing   = 0;
+                    kikDrive    = 1;
+                    kiPartition = 2;
 
-                iParseState = ParseState.Nothing;
+                iParseState = ParseState.kiNothing;
                 asKeysNotFound = asHddData['Header'].keys();
                 idxPartition = 0;
                 for sLine in asLines:
@@ -1002,20 +1002,20 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                             if sDrive and not asKeysNotFound and idxPartition >= len(asHddData['Partitions']['Partitions']):
                                 break;
                             sDrive = sValue;
-                            iParseState = ParseState.Drive;
+                            iParseState = ParseState.kiDrive;
                             asKeysNotFound = asKeysNotFound = asHddData['Header'].keys();
                             idxPartition = 0;
                             continue;
-                    if iParseState == ParseState.Drive:
+                    if iParseState == ParseState.kiDrive:
                         if sLine.strip().startswith('Partitions:'):
-                            iParseState = ParseState.Partition;
+                            iParseState = ParseState.kiPartition;
                             continue;
                         if oMatch is None or sKey is None:
                             continue;
                         if sKey in asHddData['Header'].keys() and asHddData['Header'][sKey] == sValue:
                             asKeysNotFound.remove(sKey);
                         continue;
-                    if iParseState == ParseState.Partition:
+                    if iParseState == ParseState.kiPartition:
                         if idxPartition < len(asHddData['Partitions']['Partitions']):
                             sPart = asHddData['Partitions']['Partitions'][idxPartition];
                             sPart = sPart.replace('$(' + str(idxPartition + 1) + ')',
@@ -1047,12 +1047,12 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
 
         # pylint: disable=no-init
         class DescriptorParseState(object):
-            Header   = 1;
-            Extent   = 2;
-            Database = 3;
+            kiHeader   = 1;
+            kiExtent   = 2;
+            kiDatabase = 3;
 
         asHddData = self.asHdds[sHdd];
-        iParseState = DescriptorParseState.Header;
+        iParseState = DescriptorParseState.kiHeader;
 
         asHeader = { 'version'    : '1',
                      'CID'        : '*',
@@ -1075,13 +1075,13 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
             if not sLine or sLine.startswith('#') or sLine.startswith("\n"):
                 continue;
 
-            if iParseState == DescriptorParseState.Header:
+            if iParseState == DescriptorParseState.kiHeader:
                 if sLine.startswith('ddb.'):
                     return reporter.error("VMDK descriptor has invalid order of sections");
                 if    sLine.startswith("RW")     \
                    or sLine.startswith("RDONLY") \
                    or sLine.startswith("NOACCESS"):
-                    iParseState = DescriptorParseState.Extent;
+                    iParseState = DescriptorParseState.kiExtent;
                 else:
                     oMatch = oRegExp.match(sLine);
                     if oMatch is None:
@@ -1097,9 +1097,9 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                         return reporter.error("VMDK descriptor has value which was not expected");
                     continue;
 
-            if iParseState == DescriptorParseState.Extent:
+            if iParseState == DescriptorParseState.kiExtent:
                 if sLine.startswith('ddb.'):
-                    iParseState = DescriptorParseState.Database;
+                    iParseState = DescriptorParseState.kiDatabase;
                 else:
                     if     not sLine.startswith("RW")     \
                        and not sLine.startswith("RDONLY") \
@@ -1116,7 +1116,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                     iExtentIdx += 1;
                     continue;
 
-            if iParseState == DescriptorParseState.Database:
+            if iParseState == DescriptorParseState.kiDatabase:
                 if not sLine.startswith('ddb.'):
                     return reporter.error("VMDK descriptor has invalid order of sections");
                 oMatch = oRegExp.match(sLine);
@@ -1130,7 +1130,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                 if sDictValue != '*' and sDictValue != sValue:
                     return reporter.error("VMDK descriptor has value which was not expected");
                 continue;
-        return iParseState == DescriptorParseState.Database;
+        return iParseState == DescriptorParseState.kiDatabase;
 
     def _setPermissionsToVmdkFiles(self, oGuestSession):
         """
@@ -1151,7 +1151,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
         reporter.testStart("Create VMDK disks");
         asHddData = self.asHdds[sHdd];
         fRc = True;
-        try:    oGuestSession.directoryCreate(self.sVMDKPath, 0777, (vboxcon.DirectoryCreateFlag_Parents,));
+        try:    oGuestSession.directoryCreate(self.sVMDKPath, 777, (vboxcon.DirectoryCreateFlag_Parents,));
         except: fRc = reporter.errorXcpt('Create directory for VMDK files failed in the VM %s' % (self.sVmName));
         if fRc:
             sBootSectorGuestPath = self.sVMDKPath + self.sPathDelimiter + 't-bootsector.bin';
@@ -1554,8 +1554,8 @@ class tdStorageRawDrive(vbox.TestDriver):                                      #
     ksOsDarwin  = 'tst-darwin';
     ksOsSolaris = 'tst-solaris';
     ksOsFreeBSD = 'tst-freebsd';
-    BootSectorPath = '6.1/storage/t-bootsector.bin';
-    asHdds = ['6.1/storage/t-gpt.vdi', '6.1/storage/t-mbr.vdi'];
+    ksBootSectorPath = '6.1/storage/t-bootsector.bin';
+    kasHdds = ['6.1/storage/t-gpt.vdi', '6.1/storage/t-mbr.vdi'];
 
     def __init__(self):
         vbox.TestDriver.__init__(self);
@@ -1571,11 +1571,11 @@ class tdStorageRawDrive(vbox.TestDriver):                                      #
             'win'     : tdStorageRawDriveOsWin(oSet, self, self.ksOsWindows, 'Windows7_64', \
                              '6.0/windows7piglit/windows7piglit.vdi', eNic0Type = None, cMbRam = 2048,  \
                              cCpus = 2, fPae = True, sGuestAdditionsIso = self.getGuestAdditionsIso(),
-                             sBootSector = self.BootSectorPath),
+                             sBootSector = self.ksBootSectorPath),
             'linux'   : tdStorageRawDriveOsLinux(oSet, self, self.ksOsLinux, 'Ubuntu_64', \
                                '6.0/ub1804piglit/ub1804piglit.vdi', eNic0Type = None, \
                                cMbRam = 2048, cCpus = 2, fPae = None, sGuestAdditionsIso = self.getGuestAdditionsIso(),
-                               sBootSector = self.BootSectorPath),
+                               sBootSector = self.ksBootSectorPath),
             'solaris' : None, #'tdAutostartOsSolaris',
             'darwin'  : None  #'tdAutostartOsDarwin'
         };
@@ -1628,8 +1628,8 @@ class tdStorageRawDrive(vbox.TestDriver):                                      #
         return iArg + 1;
 
     def getResourceSet(self):
-        asRsrcs = self.asHdds[:];
-        asRsrcs.extend([self.BootSectorPath,]);
+        asRsrcs = self.kasHdds[:];
+        asRsrcs.extend([self.ksBootSectorPath,]);
         asRsrcs.extend(vbox.TestDriver.getResourceSet(self));
         return asRsrcs;
 
@@ -1651,9 +1651,9 @@ class tdStorageRawDrive(vbox.TestDriver):                                      #
         fRc = True;
         self.logVmInfo(oVM);
 
-        for sHdd in self.asHdds:
+        for sHdd in self.kasHdds:
             reporter.testStart('%s with %s disk' % ( oTestVm.sVmName, sHdd))
-            fRc = oTestVm.reattachHdd(oVM, sHdd, self.asHdds);
+            fRc = oTestVm.reattachHdd(oVM, sHdd, self.kasHdds);
             if fRc:
                 oSession = self.startVmByName(oTestVm.sVmName);
                 if oSession is not None:
