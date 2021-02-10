@@ -1047,9 +1047,9 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
 
         # pylint: disable=no-init
         class DescriptorParseState(object):
-            Header   = 1,
-            Extent   = 2,
-            Database = 3
+            Header   = 1;
+            Extent   = 2;
+            Database = 3;
 
         asHddData = self.asHdds[sHdd];
         iParseState = DescriptorParseState.Header;
@@ -1068,7 +1068,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                        'ddb.uuid.parentmodification' : '00000000-0000-0000-0000-000000000000'
                      };
 
-        oRegExp = re.compile('^\s*([^=]+)\s*=\s*\"*([^\"]+)\"*\s*$');
+        oRegExp = re.compile(r'^\s*([^=]+)\s*=\s*\"*([^\"]+)\"*\s*$');
         iExtentIdx = 0;
 
         for sLine in asDescriptor:
@@ -1554,7 +1554,6 @@ class tdStorageRawDrive(vbox.TestDriver):                                      #
     ksOsDarwin  = 'tst-darwin';
     ksOsSolaris = 'tst-solaris';
     ksOsFreeBSD = 'tst-freebsd';
-
     BootSectorPath = '6.1/storage/t-bootsector.bin';
     asHdds = ['6.1/storage/t-gpt.vdi', '6.1/storage/t-mbr.vdi'];
 
