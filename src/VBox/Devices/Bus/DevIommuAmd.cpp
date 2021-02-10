@@ -451,9 +451,10 @@ typedef struct IOMMU
     STAMCOUNTER                 StatIotlbeCacheHit;         /**< Number of IOTLB cache hits. */
     STAMCOUNTER                 StatIotlbeCacheMiss;        /**< Number of IOTLB cache misses. */
     STAMCOUNTER                 StatIotlbeLazyEvictReuse;   /**< Number of IOTLB entries re-used after lazy eviction. */
+    STAMPROFILEADV              StatIotlbeLookup;           /**< Profiling of IOTLB entry lookup (cached). */
 
     STAMCOUNTER                 StatDteLookupNonContig;     /**< Number of DTE lookups that result in non-contiguous regions. */
-    STAMPROFILEADV              StatDteLookup;              /**< Profiling of device table entry lookup (uncached). */
+    STAMPROFILEADV              StatIoPageWalkLookup;       /**< Profiling of I/O page walk (uncached). */
     /** @} */
 #endif
 } IOMMU;
@@ -3392,8 +3393,6 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
     RTGCPHYS GCPhysSpa    = NIL_RTGCPHYS;
     size_t   cbContiguous = 0;
 
-    STAM_PROFILE_ADV_START(&pThis->StatDteLookup, a);
-
     /* Read the device table entry from memory. */
     DTE_T Dte;
     int rc = iommuAmdDteRead(pDevIns, uDevId, enmOp, &Dte);
@@ -3424,7 +3423,9 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                          *        iommuAmdCacheLookup(). */
                         IOWALKRESULT WalkResult;
                         RT_ZERO(WalkResult);
+                        STAM_PROFILE_ADV_START(&pThis->StatIoPageWalkLookup, a);
                         rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fPerm, &Dte, enmOp, &WalkResult);
+                        STAM_PROFILE_ADV_STOP(&pThis->StatIoPageWalkLookup, a);
                         if (RT_SUCCESS(rc))
                         {
                             /* Store the translated address before continuing to access more pages. */
@@ -3551,7 +3552,6 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
     *pcbContiguous = cbContiguous;
     AssertMsg(rc != VINF_SUCCESS || cbContiguous > 0, ("cbContiguous=%zu\n", cbContiguous));
 
-    STAM_PROFILE_ADV_STOP(&pThis->StatDteLookup, a);
     return rc;
 }
 
@@ -3602,7 +3602,9 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
         RT_ZERO(WalkResultPrev);
         for (;;)
         {
+            STAM_PROFILE_ADV_START(&pThis->StatIotlbeLookup, b);
             PCIOTLBE pIotlbe = iommuAmdIotlbLookup(pThis, pDevice->uDomainId, uIovaPage);
+            STAM_PROFILE_ADV_STOP(&pThis->StatIotlbeLookup, b);
             if (pIotlbe)
             {
                 PCIOWALKRESULT pWalkResult = &pIotlbe->WalkResult;
@@ -5457,6 +5459,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDevTabs(PPDMDEVINS pDevIns, PCDBGFINF
     PCIOMMU    pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+    NOREF(pPciDev);
 
     uint8_t cSegments = 0;
     for (uint8_t i = 0; i < RT_ELEMENTS(pThis->aDevTabBaseAddrs); i++)
@@ -5891,9 +5894,10 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeCacheHit, STAMTYPE_COUNTER, "IOTLB/CacheHit", STAMUNIT_OCCURENCES, "Number of IOTLB cache hits.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeCacheMiss, STAMTYPE_COUNTER, "IOTLB/CacheMiss", STAMUNIT_OCCURENCES, "Number of IOTLB cache misses.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeLazyEvictReuse, STAMTYPE_COUNTER, "IOTLB/LazyEvictReuse", STAMUNIT_OCCURENCES, "Number of IOTLB entries reused after lazy eviction.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeLookup, STAMTYPE_PROFILE, "IOTLB/Lookup", STAMUNIT_TICKS_PER_CALL, "Profiling IOTLB entry lookup.");
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatDteLookupNonContig, STAMTYPE_COUNTER, "DTE/LookupNonContig", STAMUNIT_OCCURENCES, "DTE lookups that resulted in non-contiguous translated regions.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatDteLookup, STAMTYPE_PROFILE, "DTE/Lookup", STAMUNIT_TICKS_PER_CALL, "Profiling device table entry lookup (uncached).");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIoPageWalkLookup, STAMTYPE_PROFILE, "DTE/Lookup", STAMUNIT_TICKS_PER_CALL, "Profiling I/O page walk lookup.");
 # endif
 
     /*
