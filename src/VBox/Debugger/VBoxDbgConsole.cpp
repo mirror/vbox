@@ -389,7 +389,7 @@ VBoxDbgConsoleInput::VBoxDbgConsoleInput(QWidget *pParent/* = NULL*/, const char
 
     setEditable(true);
     setInsertPolicy(NoInsert);
-    setCompleter(nullptr);
+    setCompleter(0);
     setMaxCount(50);
     const QLineEdit *pEdit = lineEdit();
     if (pEdit)
