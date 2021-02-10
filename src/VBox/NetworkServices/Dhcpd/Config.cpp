@@ -429,7 +429,7 @@ Config *Config::create(int argc, char **argv) RT_NOEXCEPT
 
 /**
  *
- * @note The release log has is not operational when this method is called.
+ * @note The release log is not operational when this method is called.
  */
 Config *Config::i_read(const char *pszFileName, bool fStrict) RT_NOEXCEPT
 {
