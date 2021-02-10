@@ -3394,7 +3394,7 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
     showHelpBrowser(strLocation);
 #else
  #if defined (VBOX_WS_WIN)
-	HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
+        HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
  #endif
 
  #if !defined(VBOX_OSE)
