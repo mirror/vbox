@@ -1220,15 +1220,7 @@ static void iommuAmdDteCacheRemoveAll(PPDMDEVINS pDevIns)
 #endif  /* IOMMU_WITH_IOTLBE_CACHE */
 
 
-DECLINLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
-{
-    IOMMU_STATUS_T Status;
-    Status.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Status.u64);
-    return Status;
-}
-
-
-DECLINLINE(IOMMU_CTRL_T) iommuAmdGetCtrl(PCIOMMU pThis)
+DECL_FORCE_INLINE(IOMMU_CTRL_T) iommuAmdGetCtrlUnlocked(PCIOMMU pThis)
 {
     IOMMU_CTRL_T Ctrl;
     Ctrl.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Ctrl.u64);
@@ -1271,16 +1263,14 @@ static void iommuAmdSetPciTargetAbort(PPDMDEVINS pDevIns)
  *
  * @param   pDevIns     The IOMMU device instance.
  *
- * @remarks The IOMMU lock must be held.
+ * @remarks The IOMMU lock must be held while calling this!
  */
 static void iommuAmdCmdThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
 {
-    IOMMU_ASSERT_LOCKED(pDevIns);
     Log4Func(("\n"));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
-    if (Status.n.u1CmdBufRunning)
+    if (pThis->Status.n.u1CmdBufRunning)
     {
         Log4Func(("Signaling command thread\n"));
         PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
@@ -1621,8 +1611,7 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
      * the AMD IOMMU spec. does specify "CmdBufRun must be 0b to modify the command buffer registers properly".
      * Inconsistent specs :/
      */
-    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
-    if (Status.n.u1CmdBufRunning)
+    if (pThis->Status.n.u1CmdBufRunning)
     {
         LogFunc(("Setting CmdBufBar (%#RX64) when command buffer is running -> Ignored\n", u64Value));
         return VINF_SUCCESS;
@@ -1664,8 +1653,7 @@ static VBOXSTRICTRC iommuAmdEvtLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
      * In our emulation, we ignore the write entirely.
      * See AMD IOMMU spec. "Event Log Base Address Register".
      */
-    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
-    if (Status.n.u1EvtLogRunning)
+    if (pThis->Status.n.u1EvtLogRunning)
     {
         LogFunc(("Setting EvtLogBar (%#RX64) when event logging is running -> Ignored\n", u64Value));
         return VINF_SUCCESS;
@@ -1711,7 +1699,7 @@ static VBOXSTRICTRC iommuAmdCtrl_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t of
     /* Ensure the device table segments are within limits. */
     if (NewCtrl.n.u3DevTabSegEn <= pThis->ExtFeat.n.u2DevTabSegSup)
     {
-        IOMMU_CTRL_T const OldCtrl = iommuAmdGetCtrl(pThis);
+        IOMMU_CTRL_T const OldCtrl = pThis->Ctrl;
 
         /* Update the register. */
         ASMAtomicWriteU64(&pThis->Ctrl.u64, NewCtrl.u64);
@@ -1961,8 +1949,7 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * In our emulation, we ignore the write entirely.
      * See AMD IOMMU spec. 3.3.13 "Command and Event Log Pointer Registers".
      */
-    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
-    if (Status.n.u1CmdBufRunning)
+    if (pThis->Status.n.u1CmdBufRunning)
     {
         LogFunc(("Setting CmdBufHeadPtr (%#RX64) when command buffer is running -> Ignored\n", u64Value));
         return VINF_SUCCESS;
@@ -2074,8 +2061,7 @@ static VBOXSTRICTRC iommuAmdEvtLogTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * In our emulation, we ignore the write entirely.
      * See AMD IOMMU spec. 3.3.13 "Command and Event Log Pointer Registers".
      */
-    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
-    if (Status.n.u1EvtLogRunning)
+    if (pThis->Status.n.u1EvtLogRunning)
     {
         LogFunc(("Setting EvtLogTailPtr (%#RX64) when event log is running -> Ignored\n", u64Value));
         return VINF_SUCCESS;
@@ -2116,7 +2102,7 @@ static VBOXSTRICTRC iommuAmdStatus_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t 
      * Compute RW1C (read-only, write-1-to-clear) bits and preserve the rest (which are read-only).
      * Writing 0 to an RW1C bit has no effect. Writing 1 to an RW1C bit, clears the bit if it's already 1.
      */
-    IOMMU_STATUS_T const OldStatus = iommuAmdGetStatus(pThis);
+    IOMMU_STATUS_T const OldStatus = pThis->Status;
     uint64_t const fOldRw1cBits = (OldStatus.u64 &  IOMMU_STATUS_RW1C_MASK);
     uint64_t const fOldRoBits   = (OldStatus.u64 & ~IOMMU_STATUS_RW1C_MASK);
     uint64_t const fNewRw1cBits = (u64Value      &  IOMMU_STATUS_RW1C_MASK);
@@ -2522,7 +2508,7 @@ static int iommuAmdEvtLogEntryWrite(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
     IOMMU_LOCK_NORET(pDevIns, pThisCC);
 
     /* Check if event logging is active and the log has not overflowed. */
-    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
+    IOMMU_STATUS_T const Status = pThis->Status;
     if (   Status.n.u1EvtLogRunning
         && !Status.n.u1EvtOverflow)
     {
@@ -2552,8 +2538,7 @@ static int iommuAmdEvtLogEntryWrite(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
             ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_EVT_LOG_INTR);
 
             /* Check and signal an interrupt if software wants to receive one when an event log entry is written. */
-            IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
-            if (Ctrl.n.u1EvtIntrEn)
+            if (pThis->Ctrl.n.u1EvtIntrEn)
                 iommuAmdMsiInterruptRaise(pDevIns);
         }
         else
@@ -2562,8 +2547,7 @@ static int iommuAmdEvtLogEntryWrite(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
             ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_EVT_LOG_OVERFLOW);
 
             /* Check and signal an interrupt if software wants to receive one when the event log has overflowed. */
-            IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
-            if (Ctrl.n.u1EvtIntrEn)
+            if (pThis->Ctrl.n.u1EvtIntrEn)
                 iommuAmdMsiInterruptRaise(pDevIns);
         }
     }
@@ -3061,8 +3045,7 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
     IOMMU_LOCK(pDevIns, pThisCC);
 
     /* Figure out which device table segment is being accessed. */
-    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
-    uint8_t const idxSegsEn = Ctrl.n.u3DevTabSegEn;
+    uint8_t const idxSegsEn = pThis->Ctrl.n.u3DevTabSegEn;
     Assert(idxSegsEn < RT_ELEMENTS(g_auDevTabSegShifts));
 
     uint8_t const idxSeg = (uDevId & g_auDevTabSegMasks[idxSegsEn]) >> g_auDevTabSegShifts[idxSegsEn];
@@ -3775,7 +3758,7 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
     Assert(!(fFlags & ~PDMIOMMU_MEM_F_VALID_MASK));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrlUnlocked(pThis);
     if (Ctrl.n.u1IommuEn)
     {
         IOMMUOP enmOp;
@@ -3851,7 +3834,7 @@ static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDev
     Assert(!(fFlags & ~PDMIOMMU_MEM_F_VALID_MASK));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrlUnlocked(pThis);
     if (Ctrl.n.u1IommuEn)
     {
         IOMMUOP enmOp;
@@ -4206,7 +4189,7 @@ static DECLCALLBACK(int) iommuAmdMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, P
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
     /* Interrupts are forwarded with remapping when the IOMMU is disabled. */
-    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrlUnlocked(pThis);
     if (Ctrl.n.u1IommuEn)
     {
         STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap));
@@ -4312,8 +4295,7 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                 {
                     IOMMU_LOCK(pDevIns, pThisCC);
                     ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_COMPLETION_WAIT_INTR);
-                    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
-                    bool const fRaiseInt = Ctrl.n.u1CompWaitIntrEn;
+                    bool const fRaiseInt = pThis->Ctrl.n.u1CompWaitIntrEn;
                     IOMMU_UNLOCK(pDevIns, pThisCC);
 
                     if (fRaiseInt)
@@ -4546,8 +4528,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
          *        lock the page mappings page mappings and access them directly. */
         IOMMU_LOCK(pDevIns, pThisCC);
 
-        IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
-        if (Status.n.u1CmdBufRunning)
+        if (pThis->Status.n.u1CmdBufRunning)
         {
             /* Get the offsets we need to read commands from memory (circular buffer offset). */
             uint32_t const cbCmdBuf = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
@@ -5915,10 +5896,10 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeCacheHit, STAMTYPE_COUNTER, "IOTLB/CacheHit", STAMUNIT_OCCURENCES, "Number of IOTLB cache hits.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeCacheMiss, STAMTYPE_COUNTER, "IOTLB/CacheMiss", STAMUNIT_OCCURENCES, "Number of IOTLB cache misses.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeLazyEvictReuse, STAMTYPE_COUNTER, "IOTLB/LazyEvictReuse", STAMUNIT_OCCURENCES, "Number of IOTLB entries reused after lazy eviction.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeLookup, STAMTYPE_PROFILE, "IOTLB/Lookup", STAMUNIT_TICKS_PER_CALL, "Profiling IOTLB entry lookup.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeLookup, STAMTYPE_PROFILE, "Profile/IotlbeLookup", STAMUNIT_TICKS_PER_CALL, "Profiling IOTLB entry lookup.");
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatDteLookupNonContig, STAMTYPE_COUNTER, "DTE/LookupNonContig", STAMUNIT_OCCURENCES, "DTE lookups that resulted in non-contiguous translated regions.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIoPageWalkLookup, STAMTYPE_PROFILE, "DTE/Lookup", STAMUNIT_TICKS_PER_CALL, "Profiling I/O page walk lookup.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIoPageWalkLookup, STAMTYPE_PROFILE, "Profile/IoPageWalk", STAMUNIT_TICKS_PER_CALL, "Profiling I/O page walk lookup.");
 # endif
 
     /*
