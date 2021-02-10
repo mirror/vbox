@@ -38,37 +38,6 @@ typedef std::vector<RTNETADDRIPV4> AddressList;
 typedef std::map<RTNETADDRIPV4, int> AddressToOffsetMapping;
 
 
-inline bool isDhcpRequired(const ComNatPtr& nat)
-{
-    BOOL fNeedDhcpServer = false;
-    if (FAILED(nat->COMGETTER(NeedDhcpServer)(&fNeedDhcpServer)))
-        return false;
-
-    return RT_BOOL(fNeedDhcpServer);
-}
-
-
-inline int findDhcpServer(const ComVirtualBoxPtr& vbox, const std::string& name, ComDhcpServerPtr& dhcp)
-{
-    HRESULT hrc = vbox->FindDHCPServerByNetworkName(com::Bstr(name.c_str()).raw(),
-                                                          dhcp.asOutParam());
-    AssertComRCReturn(hrc, VERR_NOT_FOUND);
-
-    return VINF_SUCCESS;
-}
-
-
-inline int findNatNetwork(const ComVirtualBoxPtr& vbox, const std::string& name, ComNatPtr& nat)
-{
-    HRESULT hrc = vbox->FindNATNetworkByName(com::Bstr(name.c_str()).raw(),
-                                                   nat.asOutParam());
-
-    AssertComRCReturn(hrc, VERR_NOT_FOUND);
-
-    return VINF_SUCCESS;
-}
-
-
 inline RTNETADDRIPV4 networkid(const RTNETADDRIPV4& addr, const RTNETADDRIPV4& netmask)
 {
     RTNETADDRIPV4 netid;
