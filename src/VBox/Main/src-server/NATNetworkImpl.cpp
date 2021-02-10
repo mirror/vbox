@@ -888,9 +888,6 @@ HRESULT  NATNetwork::start()
 
     m->NATRunner.resetArguments();
     m->NATRunner.addArgPair(NetworkServiceRunner::kpszKeyNetwork, Utf8Str(m->s.strNetworkName).c_str());
-    m->NATRunner.addArgPair(NetworkServiceRunner::kpszKeyTrunkType, Utf8Str(TRUNKTYPE_WHATEVER).c_str());
-    m->NATRunner.addArgPair(NetworkServiceRunner::kpszIpAddress, Utf8Str(m->IPv4Gateway).c_str());
-    m->NATRunner.addArgPair(NetworkServiceRunner::kpszIpNetmask, Utf8Str(m->IPv4NetworkMask).c_str());
 
     /* No portforwarding rules from command-line, all will be fetched via API */
 
