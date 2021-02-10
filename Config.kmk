@@ -4732,7 +4732,7 @@ TEMPLATE_VBoxR0_CXXFLAGS.freebsd    = -ffreestanding
  ## @todo WTF doesn't the globals work? Debug info is supposed to be split everywhere. GRR
  TEMPLATE_VBoxR0_LD_DEBUG           = split
  endif
- if1of ($(KBUILD_TARGET), linux)
+ if "$(KBUILD_TARGET)" == "linux" && !defined(VBOX_WITH_KMOD_WRAPPED_R0_MODS)
 VBOX_WITH_VBOXR0_AS_DLL = 1
 TEMPLATE_VBoxR0_DLLSUFF             = .r0
 TEMPLATE_VBoxR0_CFLAGS             += -fPIC
@@ -4743,6 +4743,11 @@ TEMPLATE_VBoxR0_DTRACE_OBJ_FLAGS   += --pic
  else
 TEMPLATE_VBoxR0_CFLAGS.amd64       += -mcmodel=kernel
 TEMPLATE_VBoxR0_CXXFLAGS.amd64     += -mcmodel=kernel
+ endif
+ ifdef VBOX_WITH_KMOD_WRAPPED_R0_MODS
+TEMPLATE_VBoxR0_DEFS               += VBOX_WITH_KMOD_WRAPPED_R0_MODS
+TEMPLATE_VBoxR0_LDFLAGS.linux      += $(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/VBoxR0-wrapped.lds
+TEMPLATE_VBoxR0_LNK_DEPS.linux     += $(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/VBoxR0-wrapped.lds
  endif
  ifn1of ($(KBUILD_TARGET),solaris freebsd)
  TEMPLATE_VBoxR0_LIBS               = \

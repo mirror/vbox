@@ -1097,6 +1097,7 @@ SUPR0DECL(int) SUPR0TracerRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHd
 
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0TracerRegisterDrv);
 
 
 /**
@@ -1129,6 +1130,7 @@ SUPR0DECL(void) SUPR0TracerDeregisterDrv(PSUPDRVSESSION pSession)
      */
     supdrvTracerProcessZombies(pDevExt);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0TracerDeregisterDrv);
 
 
 /**
@@ -1175,6 +1177,7 @@ SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
 
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0TracerRegisterModule);
 
 
 /**
@@ -1274,6 +1277,7 @@ SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSU
     return rc;
 
 }
+SUPR0_EXPORT_SYMBOL(SUPR0TracerRegisterImpl);
 
 
 /**
@@ -1459,6 +1463,7 @@ SUPR0DECL(int) SUPR0TracerDeregisterImpl(void *hMod, PSUPDRVSESSION pSession)
 
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0TracerDeregisterImpl);
 
 
 /*
@@ -1505,6 +1510,7 @@ supdrvTracerProbeFireStub:                                              \n\
  )
 # endif
 #endif
+SUPR0_EXPORT_SYMBOL(SUPR0TracerFireProbe);
 
 
 /**
@@ -2229,6 +2235,7 @@ SUPR0DECL(void) SUPR0TracerUmodProbeFire(PSUPDRVSESSION pSession, PSUPDRVTRACERU
 
     supdrvTracerUmodProbeFire(pSession->pDevExt, pSession, pCtx);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0TracerUmodProbeFire);
 
 
 void  VBOXCALL  supdrvIOCtl_TracerUmodProbeFire(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVTRACERUSRCTX pCtx)

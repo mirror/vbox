@@ -340,6 +340,7 @@ typedef enum SUPR3HARDENEDMAINSTATE
 *******************************************************************************/
 extern DECL_HIDDEN_DATA(uint32_t)               g_u32Cookie;
 extern DECL_HIDDEN_DATA(uint32_t)               g_u32SessionCookie;
+extern DECL_HIDDEN_DATA(uint32_t)               g_uSupSessionVersion;
 extern DECL_HIDDEN_DATA(SUPLIBDATA)             g_supLibData;
 extern DECL_HIDDEN_DATA(uint32_t)               g_uSupFakeMode;
 extern DECL_HIDDEN_DATA(PSUPGLOBALINFOPAGE)     g_pSUPGlobalInfoPageR0;

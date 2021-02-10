@@ -2433,6 +2433,20 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 }
 
 
+void VBOXCALL   supdrvOSLdrRetainWrapperModule(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    RT_NOREF(pDevExt, pImage);
+    AssertFailed();
+}
+
+
+void VBOXCALL   supdrvOSLdrReleaseWrapperModule(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    RT_NOREF(pDevExt, pImage);
+    AssertFailed();
+}
+
+
 #ifdef SUPDRV_WITH_MSR_PROBER
 
 #if 1

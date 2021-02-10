@@ -46,7 +46,7 @@
 #include <iprt/string.h>
 #include <iprt/err.h>
 
-#ifdef SUPDRV_AGNOSTIC
+#if defined(SUPDRV_AGNOSTIC) && !defined(RT_OS_LINUX)
 /* do nothing */
 
 #elif defined(RT_OS_WINDOWS)
@@ -75,15 +75,23 @@
 #            define KBUILD_STR(s) #s
 #       endif
 #   endif
-#   include <linux/string.h>
-#   include <linux/spinlock.h>
-#   include <linux/slab.h>
-#   if RTLNX_VER_MIN(2,6,27)
-#       include <linux/semaphore.h>
-#   else /* older kernels */
-#       include <asm/semaphore.h>
-#   endif /* older kernels */
-#   include <linux/timer.h>
+#   ifndef SUPDRV_AGNOSTIC
+#       include <linux/string.h>
+#       include <linux/spinlock.h>
+#       include <linux/slab.h>
+#       if RTLNX_VER_MIN(2,6,27)
+#           include <linux/semaphore.h>
+#       else /* older kernels */
+#           include <asm/semaphore.h>
+#       endif /* older kernels */
+#       include <linux/timer.h>
+#   endif
+#   if RTLNX_VER_MIN(3,2,0)
+#       include <linux/export.h>
+#   else
+#       include <linux/module.h>
+#   endif
+#   define SUPR0_EXPORT_SYMBOL(a_Name) EXPORT_SYMBOL(a_Name)
 
 #elif defined(RT_OS_DARWIN)
 #   include <libkern/libkern.h>
@@ -151,6 +159,9 @@
 # define SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
 #endif
 
+#ifndef SUPR0_EXPORT_SYMBOL
+# define SUPR0_EXPORT_SYMBOL(a_Name) extern int g_supDrvExportSymbolDummyVariable
+#endif
 
 /**
  * OS debug print macro.
@@ -369,7 +380,7 @@ typedef struct SUPDRVLDRIMAGE
     /** The ldr image state. (IOCtl code of last operation.) */
     uint32_t                        uState;
     /** Usage count. */
-    uint32_t volatile               cUsage;
+    uint32_t volatile               cImgUsage;
     /** Pointer to the device extension. */
     struct SUPDRVDEVEXT            *pDevExt;
     /** Image (VMMR0.r0) containing functions/data that this one uses. */
@@ -389,6 +400,10 @@ typedef struct SUPDRVLDRIMAGE
 #ifdef RT_OS_LINUX
     /** Hack for seeing the module in perf, dtrace and other stack crawlers. */
     struct module                  *pLnxModHack;
+    /** The wrapper module.  */
+    struct module                  *pLnxWrapperModule;
+    /** Set if we're holding a reference to the wrapper module. */
+    bool                            fLnxWrapperRef;
 #endif
 #if defined(RT_OS_DARWIN) && defined(VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION)
     /** Load module handle. */
@@ -396,6 +411,10 @@ typedef struct SUPDRVLDRIMAGE
     /** Allocate object. */
     RTR0MEMOBJ                      hMemAlloc;
 #endif
+    /** This points to the module info if the image is a wrapped up in a native one. */
+    PCSUPLDRWRAPPEDMODULE           pWrappedModInfo;
+    /** OS specific information for wrapped modules. */
+    void                           *pvWrappedNative;
     /** Whether it's loaded by the native loader or not. */
     bool                            fNative;
     /** Image name. */
@@ -1007,6 +1026,25 @@ void VBOXCALL   supdrvOSLdrNotifyUnloaded(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
 int  VBOXCALL   supdrvOSLdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage,
                                        const char *pszSymbol, size_t cchSymbol, void **ppvSymbol);
 
+/**
+ * Retains a native wrapper module when it is first being used.
+ *
+ * This will be call when pImage->cImgUsage is incremented to 2.
+ *
+ * @param   pDevExt             The device globals.
+ * @param   pImage              The wrapped image.
+ */
+void VBOXCALL   supdrvOSLdrRetainWrapperModule(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
+
+/**
+ * Release a native wrapper module when it is no longer being used.
+ *
+ * This will be call when pImage->cImgUsage is decremented to 1.
+ *
+ * @param   pDevExt             The device globals.
+ * @param   pImage              The wrapped image.
+ */
+void VBOXCALL   supdrvOSLdrReleaseWrapperModule(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 
 #ifdef SUPDRV_WITH_MSR_PROBER
 
@@ -1081,6 +1119,10 @@ void VBOXCALL   supdrvBadContext(PSUPDRVDEVEXT pDevExt, const char *pszFile, uin
 int VBOXCALL    supdrvQueryVTCapsInternal(uint32_t *pfCaps);
 int VBOXCALL    supdrvLdrLoadError(int rc, PSUPLDRLOAD pReq, const char *pszFormat, ...);
 int VBOXCALL    supdrvLdrGetExportedSymbol(const char *pszSymbol, uintptr_t *puValue);
+int VBOXCALL    supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPPEDMODULE pWrappedModInfo,
+                                               void *pvNative, void **phMod);
+int VBOXCALL    supdrvLdrDeregisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPPEDMODULE pWrappedModInfo, void **phMod);
+
 
 /* SUPDrvGip.cpp */
 int  VBOXCALL   supdrvGipCreate(PSUPDRVDEVEXT pDevExt);

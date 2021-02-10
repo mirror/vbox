@@ -1681,6 +1681,20 @@ void VBOXCALL   supdrvOSLdrNotifyUnloaded(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
 }
 
 
+void VBOXCALL   supdrvOSLdrRetainWrapperModule(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    RT_NOREF(pDevExt, pImage);
+    AssertFailed();
+}
+
+
+void VBOXCALL   supdrvOSLdrReleaseWrapperModule(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    RT_NOREF(pDevExt, pImage);
+    AssertFailed();
+}
+
+
 #ifdef SUPDRV_WITH_MSR_PROBER
 
 typedef struct SUPDRVDARWINMSRARGS

@@ -605,7 +605,7 @@ typedef enum SUPGIPMODE
 #if defined(IN_SUP_R3) || defined(IN_SUP_R0)
 extern DECLEXPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
 
-#elif !defined(IN_RING0) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
+#elif !defined(IN_RING0) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(VBOX_WITH_KMOD_WRAPPED_R0_MODS)
 extern DECLIMPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
 
 #else /* IN_RING0 && !RT_OS_WINDOWS */
@@ -2005,6 +2005,89 @@ typedef DECLCALLBACKTYPE(void, FNSUPDRVDESTRUCTOR,(void *pvObj, void *pvUser1, v
 /** Pointer to a FNSUPDRVDESTRUCTOR(). */
 typedef FNSUPDRVDESTRUCTOR *PFNSUPDRVDESTRUCTOR;
 
+/**
+ * Service request callback function.
+ *
+ * @returns VBox status code.
+ * @param   pSession    The caller's session.
+ * @param   uOperation  The operation identifier.
+ * @param   u64Arg      64-bit integer argument.
+ * @param   pReqHdr     The request header. Input / Output. Optional.
+ */
+typedef DECLCALLBACKTYPE(int, FNSUPR0SERVICEREQHANDLER,(PSUPDRVSESSION pSession, uint32_t uOperation,
+                                                        uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr));
+/** Pointer to a FNR0SERVICEREQHANDLER(). */
+typedef R0PTRTYPE(FNSUPR0SERVICEREQHANDLER *) PFNSUPR0SERVICEREQHANDLER;
+
+/**
+ * Symbol entry for a wrapped module (SUPLDRWRAPPEDMODULE).
+ */
+typedef struct SUPLDRWRAPMODSYMBOL
+{
+    /** The symbol namel. */
+    const char *pszSymbol;
+    /** The symbol address/value. */
+    PFNRT       pfnValue;
+} SUPLDRWRAPMODSYMBOL;
+/** Pointer to a symbol entry for a wrapped module. */
+typedef SUPLDRWRAPMODSYMBOL const *PCSUPLDRWRAPMODSYMBOL;
+
+/**
+ * Registration structure for SUPR0LdrRegisterWrapperModule.
+ *
+ * This is used to register a .r0 module when loaded manually as a native kernel
+ * module/extension/driver/whatever.
+ */
+typedef struct SUPLDRWRAPPEDMODULE
+{
+    /** Magic value (SUPLDRWRAPPEDMODULE_MAGIC). */
+    uint32_t                    uMagic;
+    /** The structure version. */
+    uint16_t                    uVersion;
+    /** SUPLDRWRAPPEDMODULE_F_XXX.   */
+    uint16_t                    fFlags;
+
+    /** As close as possible to the start of the image. */
+    void                       *pvImageStart;
+    /** As close as possible to the end of the image. */
+    void                       *pvImageEnd;
+
+    /** @name Standar entry points
+     * @{ */
+    /** Pointer to the module initialization function (optional). */
+    DECLCALLBACKMEMBER(int,     pfnModuleInit,(void *hMod));
+    /** Pointer to the module termination function (optional). */
+    DECLCALLBACKMEMBER(void,    pfnModuleTerm,(void *hMod));
+    /** The VMMR0EntryFast entry point for VMMR0. */
+    PFNRT                       pfnVMMR0EntryFast;
+    /** The VMMR0EntryEx entry point for VMMR0. */
+    PFNRT                       pfnVMMR0EntryEx;
+    /** The service request handler entry point. */
+    PFNSUPR0SERVICEREQHANDLER   pfnServiceReqHandler;
+    /** @} */
+
+    /** The symbol table. */
+    PCSUPLDRWRAPMODSYMBOL       paSymbols;
+    /** Number of symbols. */
+    uint32_t                    cSymbols;
+
+    /** The normal VBox module name. */
+    char                        szName[32];
+    /** Repeating the magic value here (SUPLDRWRAPPEDMODULE_MAGIC). */
+    uint32_t                    uEndMagic;
+} SUPLDRWRAPPEDMODULE;
+/** Pointer to the wrapped module registration structure. */
+typedef SUPLDRWRAPPEDMODULE const *PCSUPLDRWRAPPEDMODULE;
+
+/** Magic value for the wrapped module structure (Doris lessing). */
+#define SUPLDRWRAPPEDMODULE_MAGIC       UINT32_C(0x19191117)
+/** Current SUPLDRWRAPPEDMODULE structure version. */
+#define SUPLDRWRAPPEDMODULE_VERSION     UINT16_C(0x0001)
+
+/** Set if this is the VMMR0 module.   */
+#define SUPLDRWRAPPEDMODULE_F_VMMR0     UINT16_C(0x0001)
+
+
 SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType, PFNSUPDRVDESTRUCTOR pfnDestructor, void *pvUser1, void *pvUser2);
 SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBlocking);
@@ -2035,6 +2118,10 @@ SUPR0DECL(bool) SUPR0LdrIsLockOwnerByMod(void *hMod, bool fWantToHear);
 SUPR0DECL(int) SUPR0LdrModByName(PSUPDRVSESSION pSession, const char *pszName, void **phMod);
 SUPR0DECL(int) SUPR0LdrModRetain(PSUPDRVSESSION pSession, void *hMod);
 SUPR0DECL(int) SUPR0LdrModRelease(PSUPDRVSESSION pSession, void *hMod);
+#ifdef RT_OS_LINUX
+SUPR0DECL(int) SUPDrvLinuxLdrRegisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrappedModInfo, void *pvLnxModule, void **phMod);
+SUPR0DECL(int) SUPDrvLinuxLdrDeregisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrappedModInfo, void **phMod);
+#endif
 SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps);
 SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fForce);
 SUPR0DECL(int) SUPR0GetSvmUsability(bool fInitSvm);
@@ -2455,21 +2542,6 @@ SUPR0DECL(void) SUPR0TracerFireProbe(struct VTGPROBELOC *pVtgProbeLoc, uintptr_t
                                      uintptr_t uArg3, uintptr_t uArg4);
 SUPR0DECL(void) SUPR0TracerUmodProbeFire(PSUPDRVSESSION pSession, PSUPDRVTRACERUSRCTX pCtx);
 /** @}  */
-
-
-/**
- * Service request callback function.
- *
- * @returns VBox status code.
- * @param   pSession    The caller's session.
- * @param   uOperation  The operation identifier.
- * @param   u64Arg      64-bit integer argument.
- * @param   pReqHdr     The request header. Input / Output. Optional.
- */
-typedef DECLCALLBACKTYPE(int, FNSUPR0SERVICEREQHANDLER,(PSUPDRVSESSION pSession, uint32_t uOperation,
-                                                        uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr));
-/** Pointer to a FNR0SERVICEREQHANDLER(). */
-typedef R0PTRTYPE(FNSUPR0SERVICEREQHANDLER *) PFNSUPR0SERVICEREQHANDLER;
 
 
 /** @defgroup   grp_sup_r0_idc  The IDC Interface

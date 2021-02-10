@@ -139,9 +139,8 @@ static int                  supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSE
 static int                  supdrvIOCtl_LdrLockDown(PSUPDRVDEVEXT pDevExt);
 static int                  supdrvIOCtl_LdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
 static int                  supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq);
-static int                  supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
-static void                 supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt);
-static int                  supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage, bool fRing3Usage);
+static int                  supdrvLdrAddUsage(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage, bool fRing3Usage);
+DECLINLINE(void)            supdrvLdrSubtractUsage(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, uint32_t cReference);
 static void                 supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 DECLINLINE(int)             supdrvLdrLock(PSUPDRVDEVEXT pDevExt);
 DECLINLINE(int)             supdrvLdrUnlock(PSUPDRVDEVEXT pDevExt);
@@ -1078,8 +1077,8 @@ static void supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
             void           *pvFree = pUsage;
             PSUPDRVLDRIMAGE pImage = pUsage->pImage;
             uint32_t        cUsage = pUsage->cRing0Usage + pUsage->cRing3Usage;
-            if (pImage->cUsage > cUsage)
-                pImage->cUsage -= cUsage;
+            if (pImage->cImgUsage > cUsage)
+                supdrvLdrSubtractUsage(pDevExt, pImage, cUsage);
             else
                 supdrvLdrFree(pDevExt, pImage);
             pUsage->pImage = NULL;
@@ -1732,10 +1731,14 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             /* validate */
             PSUPLDROPEN pReq = (PSUPLDROPEN)pReqHdr;
             REQ_CHECK_SIZES(SUP_IOCTL_LDR_OPEN);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithEverything > 0);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithEverything < 16*_1M);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits < pReq->u.In.cbImageWithEverything);
+            if (   pReq->u.In.cbImageWithEverything != 0
+                || pReq->u.In.cbImageBits != 0)
+            {
+                REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithEverything > 0);
+                REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithEverything < 16*_1M);
+                REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
+                REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits < pReq->u.In.cbImageWithEverything);
+            }
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.szName[0]);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, RTStrEnd(pReq->u.In.szName, sizeof(pReq->u.In.szName)));
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, supdrvIsLdrModuleNameValid(pReq->u.In.szName));
@@ -2800,7 +2803,7 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
  */
 SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType, PFNSUPDRVDESTRUCTOR pfnDestructor, void *pvUser1, void *pvUser2)
 {
-    PSUPDRVDEVEXT   pDevExt     = pSession->pDevExt;
+    PSUPDRVDEVEXT   pDevExt = pSession->pDevExt;
     PSUPDRVOBJ      pObj;
     PSUPDRVUSAGE    pUsage;
 
@@ -2869,6 +2872,7 @@ SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmTyp
     Log(("SUPR0ObjRegister: returns %p (pvUser1=%p, pvUser=%p)\n", pObj, pvUser1, pvUser2));
     return pObj;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ObjRegister);
 
 
 /**
@@ -2887,6 +2891,7 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
 {
     return SUPR0ObjAddRefEx(pvObj, pSession, false /* fNoBlocking */);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ObjAddRef);
 
 
 /**
@@ -3006,6 +3011,7 @@ SUPR0DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBl
 
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ObjAddRefEx);
 
 
 /**
@@ -3115,6 +3121,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     AssertMsg(pUsage, ("pvObj=%p\n", pvObj));
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ObjRelease);
 
 
 /**
@@ -3160,6 +3167,7 @@ SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const 
         return VINF_SUCCESS;
     return VERR_PERMISSION_DENIED;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ObjVerifyAccess);
 
 
 /**
@@ -3173,6 +3181,7 @@ SUPR0DECL(PVM) SUPR0GetSessionVM(PSUPDRVSESSION pSession)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), NULL);
     return pSession->pSessionVM;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetSessionVM);
 
 
 /**
@@ -3186,6 +3195,7 @@ SUPR0DECL(PGVM) SUPR0GetSessionGVM(PSUPDRVSESSION pSession)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), NULL);
     return pSession->pSessionGVM;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetSessionGVM);
 
 
 /**
@@ -3237,6 +3247,7 @@ SUPR0DECL(int) SUPR0SetSessionVM(PSUPDRVSESSION pSession, PGVM pGVM, PVM pVM)
     RTSpinlockRelease(pSession->pDevExt->Spinlock);
     return VINF_SUCCESS;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0SetSessionVM);
 
 
 /** @copydoc RTLogGetDefaultInstanceEx
@@ -3245,6 +3256,7 @@ SUPR0DECL(struct RTLOGGER *) SUPR0GetDefaultLogInstanceEx(uint32_t fFlagsAndGrou
 {
     return RTLogGetDefaultInstanceEx(fFlagsAndGroup);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetDefaultLogInstanceEx);
 
 
 /** @copydoc RTLogRelGetDefaultInstanceEx
@@ -3253,6 +3265,7 @@ SUPR0DECL(struct RTLOGGER *) SUPR0GetDefaultLogRelInstanceEx(uint32_t fFlagsAndG
 {
     return RTLogRelGetDefaultInstanceEx(fFlagsAndGroup);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetDefaultLogRelInstanceEx);
 
 
 /**
@@ -3316,6 +3329,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
 
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0LockMem);
 
 
 /**
@@ -3331,6 +3345,7 @@ SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvMemRelease(pSession, (RTHCUINTPTR)pvR3, MEMREF_TYPE_LOCKED);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0UnlockMem);
 
 
 /**
@@ -3397,6 +3412,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
 
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ContAlloc);
 
 
 /**
@@ -3412,6 +3428,7 @@ SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_CONT);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ContFree);
 
 
 /**
@@ -3485,6 +3502,7 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
 
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0LowAlloc);
 
 
 /**
@@ -3500,6 +3518,7 @@ SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_LOW);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0LowFree);
 
 
 
@@ -3561,6 +3580,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
 
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0MemAlloc);
 
 
 /**
@@ -3619,6 +3639,7 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
     Log(("Failed to find %p!!!\n", (void *)uPtr));
     return VERR_INVALID_PARAMETER;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0MemGetPhys);
 
 
 /**
@@ -3634,6 +3655,7 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_MEM);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0MemFree);
 
 
 /**
@@ -3717,6 +3739,7 @@ SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32
     }
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0PageAllocEx);
 
 
 /**
@@ -3802,6 +3825,7 @@ SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_
     }
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0PageMapKernel);
 
 
 /**
@@ -3891,6 +3915,7 @@ SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR p
     return rc;
 
 }
+SUPR0_EXPORT_SYMBOL(SUPR0PageProtect);
 
 
 /**
@@ -3907,6 +3932,7 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvMemRelease(pSession, (RTHCUINTPTR)pvR3, MEMREF_TYPE_PAGE);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0PageFree);
 
 
 /**
@@ -3967,6 +3993,7 @@ SUPR0DECL(void) SUPR0BadContext(PSUPDRVSESSION pSession, const char *pszFile, ui
 
     supdrvBadContext(pDevExt, pszFile, uLine, pszExtra);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0BadContext);
 
 
 /**
@@ -4048,6 +4075,7 @@ SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void)
     }
     return enmMode;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetPagingMode);
 
 
 /**
@@ -4076,6 +4104,7 @@ SUPR0DECL(RTCCUINTREG) SUPR0ChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask)
     return uOld;
 #endif
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ChangeCR4);
 
 
 /**
@@ -4096,6 +4125,7 @@ SUPR0DECL(int) SUPR0EnableVTx(bool fEnable)
     return VERR_NOT_SUPPORTED;
 #endif
 }
+SUPR0_EXPORT_SYMBOL(SUPR0EnableVTx);
 
 
 /**
@@ -4113,6 +4143,7 @@ SUPR0DECL(bool) SUPR0SuspendVTxOnCpu(void)
     return false;
 #endif
 }
+SUPR0_EXPORT_SYMBOL(SUPR0SuspendVTxOnCpu);
 
 
 /**
@@ -4131,6 +4162,7 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
     Assert(!fSuspended);
 #endif
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ResumeVTxOnCpu);
 
 
 SUPR0DECL(int) SUPR0GetCurrentGdtRw(RTHCUINTPTR *pGdtRw)
@@ -4142,6 +4174,7 @@ SUPR0DECL(int) SUPR0GetCurrentGdtRw(RTHCUINTPTR *pGdtRw)
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetCurrentGdtRw);
 
 
 /**
@@ -4208,6 +4241,7 @@ SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps)
     }
     return VERR_UNSUPPORTED_CPU;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetVTSupport);
 
 
 /**
@@ -4334,6 +4368,7 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
 
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetVmxUsability);
 
 
 /**
@@ -4381,6 +4416,7 @@ SUPR0DECL(int) SUPR0GetSvmUsability(bool fInitSvm)
         rc = VERR_SVM_DISABLED;
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetSvmUsability);
 
 
 /**
@@ -4501,6 +4537,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
      */
     return supdrvQueryVTCapsInternal(pfCaps);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0QueryVTCaps);
 
 
 /**
@@ -4570,6 +4607,7 @@ static int VBOXCALL supdrvQueryUcodeRev(uint32_t *puRevision)
     return rc;
 }
 
+
 /**
  * Queries the CPU microcode revision.
  *
@@ -4593,6 +4631,7 @@ SUPR0DECL(int) SUPR0QueryUcodeRev(PSUPDRVSESSION pSession, uint32_t *puRevision)
      */
     return supdrvQueryUcodeRev(puRevision);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0QueryUcodeRev);
 
 
 /**
@@ -4693,6 +4732,7 @@ SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fFo
 
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetHwvirtMsrs);
 
 
 /**
@@ -4774,6 +4814,7 @@ SUPR0DECL(int) SUPR0ComponentRegisterFactory(PSUPDRVSESSION pSession, PCSUPDRVFA
         rc = VERR_NO_MEMORY;
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ComponentRegisterFactory);
 
 
 /**
@@ -4837,6 +4878,7 @@ SUPR0DECL(int) SUPR0ComponentDeregisterFactory(PSUPDRVSESSION pSession, PCSUPDRV
     }
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ComponentDeregisterFactory);
 
 
 /**
@@ -4907,6 +4949,7 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
     }
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0ComponentQueryFactory);
 
 
 /**
@@ -5065,15 +5108,14 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (    pImage->szName[cchName] == '\0'
             &&  !memcmp(pImage->szName, pReq->u.In.szName, cchName))
         {
-            if (RT_LIKELY(pImage->cUsage < UINT32_MAX / 2U))
+            if (RT_LIKELY(pImage->cImgUsage < UINT32_MAX / 2U))
             {
                 /** @todo check cbImageBits and cbImageWithEverything here, if they differs
                  *        that indicates that the images are different. */
-                pImage->cUsage++;
                 pReq->u.Out.pvImageBase   = pImage->pvImage;
                 pReq->u.Out.fNeedsLoading = pImage->uState == SUP_IOCTL_LDR_OPEN;
                 pReq->u.Out.fNativeLoader = pImage->fNative;
-                supdrvLdrAddUsage(pSession, pImage, true /*fRing3Usage*/);
+                supdrvLdrAddUsage(pDevExt, pSession, pImage, true /*fRing3Usage*/);
                 supdrvLdrUnlock(pDevExt);
                 SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
                 return VINF_SUCCESS;
@@ -5093,16 +5135,24 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         return VERR_PERMISSION_DENIED;
     }
 
+    /* Stop if caller doesn't wish to prepare loading things. */
+    if (!pReq->u.In.cbImageBits)
+    {
+        supdrvLdrUnlock(pDevExt);
+        Log(("supdrvIOCtl_LdrOpen: Returning VERR_MODULE_NOT_FOUND for '%s'!\n", pReq->u.In.szName));
+        return VERR_MODULE_NOT_FOUND;
+    }
+
     /*
      * Allocate memory.
      */
     Assert(cchName < sizeof(pImage->szName));
-    pv = RTMemAlloc(sizeof(SUPDRVLDRIMAGE));
+    pv = RTMemAllocZ(sizeof(SUPDRVLDRIMAGE));
     if (!pv)
     {
         supdrvLdrUnlock(pDevExt);
-        Log(("supdrvIOCtl_LdrOpen: RTMemAlloc() failed\n"));
-        return /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_2;
+        Log(("supdrvIOCtl_LdrOpen: RTMemAllocZ() failed\n"));
+        return VERR_NO_MEMORY;
     }
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
 
@@ -5128,10 +5178,11 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pImage->pfnModuleTerm   = NULL;
     pImage->pfnServiceReqHandler = NULL;
     pImage->uState          = SUP_IOCTL_LDR_OPEN;
-    pImage->cUsage          = 1;
+    pImage->cImgUsage       = 0; /* Increased by supdrvLdrAddUsage later */
     pImage->pDevExt         = pDevExt;
     pImage->pImageImport    = NULL;
     pImage->uMagic          = SUPDRVLDRIMAGE_MAGIC;
+    pImage->pWrappedModInfo = NULL;
     memcpy(pImage->szName, pReq->u.In.szName, cchName + 1);
 
     /*
@@ -5157,6 +5208,8 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 #endif
         SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     }
+    if (RT_SUCCESS(rc))
+        rc = supdrvLdrAddUsage(pDevExt, pSession, pImage, true /*fRing3Usage*/);
     if (RT_FAILURE(rc))
     {
         supdrvLdrUnlock(pDevExt);
@@ -5172,8 +5225,6 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      */
     pImage->pNext           = pDevExt->pLdrImages;
     pDevExt->pLdrImages     = pImage;
-
-    supdrvLdrAddUsage(pSession, pImage, true /*fRing3Usage*/);
 
     pReq->u.Out.pvImageBase   = pImage->pvImage;
     pReq->u.Out.fNeedsLoading = true;
@@ -5402,6 +5453,13 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx,   false, pReq->u.In.abImage, "VMMR0EntryEx", pReq);
             if (RT_FAILURE(rc))
                 return rc;
+
+            /* Fail here if there is already a VMMR0 module. */
+            if (pDevExt->pvVMMR0 != NULL)
+            {
+                supdrvLdrUnlock(pDevExt);
+                return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq, "There is already a VMMR0 module loaded (%p)", pDevExt->pvVMMR0);
+            }
             break;
 
         case SUPLDRLOADEP_SERVICE:
@@ -5497,28 +5555,6 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
 
     /*
-     * Update any entry points.
-     */
-    if (RT_SUCCESS(rc))
-    {
-        switch (pReq->u.In.eEPType)
-        {
-            default:
-            case SUPLDRLOADEP_NOTHING:
-                rc = VINF_SUCCESS;
-                break;
-            case SUPLDRLOADEP_VMMR0:
-                rc = supdrvLdrSetVMMR0EPs(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0,
-                                          pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
-                break;
-            case SUPLDRLOADEP_SERVICE:
-                pImage->pfnServiceReqHandler = (PFNSUPR0SERVICEREQHANDLER)(uintptr_t)pReq->u.In.EP.Service.pfnServiceReq;
-                rc = VINF_SUCCESS;
-                break;
-        }
-    }
-
-    /*
      * On success call the module initialization.
      */
     LogFlow(("supdrvIOCtl_LdrLoad: pfnModuleInit=%p\n", pImage->pfnModuleInit));
@@ -5533,22 +5569,46 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pDevExt->pLdrInitImage  = NULL;
         pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
         if (RT_FAILURE(rc))
-        {
-            if (pDevExt->pvVMMR0 == pImage->pvImage)
-                supdrvLdrUnsetVMMR0EPs(pDevExt);
             supdrvLdrLoadError(rc, pReq, "ModuleInit failed: %Rrc", rc);
-        }
     }
     if (RT_SUCCESS(rc))
     {
-        /* Increase the usage counter of any import image. */
+        /*
+         * Publish any standard entry points.
+         */
+        switch (pReq->u.In.eEPType)
+        {
+            case SUPLDRLOADEP_VMMR0:
+                Assert(!pDevExt->pvVMMR0);
+                Assert(!pDevExt->pfnVMMR0EntryFast);
+                Assert(!pDevExt->pfnVMMR0EntryEx);
+                ASMAtomicWritePtrVoid(&pDevExt->pvVMMR0, pImage->pvImage);
+                ASMAtomicWritePtrVoid((void * volatile *)(uintptr_t)&pDevExt->pfnVMMR0EntryFast,
+                                      (void *)(uintptr_t)  pReq->u.In.EP.VMMR0.pvVMMR0EntryFast);
+                ASMAtomicWritePtrVoid((void * volatile *)(uintptr_t)&pDevExt->pfnVMMR0EntryEx,
+                                      (void *)(uintptr_t)  pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
+                break;
+            case SUPLDRLOADEP_SERVICE:
+                pImage->pfnServiceReqHandler = (PFNSUPR0SERVICEREQHANDLER)(uintptr_t)pReq->u.In.EP.Service.pfnServiceReq;
+                break;
+            default:
+                break;
+        }
+
+        /*
+         * Increase the usage counter of any imported image.
+         */
         if (pImageImport)
         {
-            pImageImport->cUsage++;
+            pImageImport->cImgUsage++;
+            if (pImageImport->cImgUsage == 2 && pImageImport->pWrappedModInfo)
+                supdrvOSLdrRetainWrapperModule(pDevExt, pImageImport);
             pImage->pImageImport = pImageImport;
         }
 
-        /* Done! */
+        /*
+         * Done!
+         */
         SUPR0Printf("vboxdrv: %RKv %s\n", pImage->pvImage, pImage->szName);
         pReq->u.Out.uErrorMagic = 0;
         pReq->u.Out.szError[0]  = '\0';
@@ -5573,6 +5633,250 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     supdrvLdrUnlock(pDevExt);
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     return rc;
+}
+
+
+/**
+ * Registers a .r0 module wrapped in a native one and manually loaded.
+ *
+ * @returns VINF_SUCCESS or error code (no info statuses).
+ * @param   pWrappedModInfo     The wrapped module info.
+ * @param   pvNative            OS specific information.
+ * @param   phMod               Where to store the module handle.
+ */
+int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPPEDMODULE pWrappedModInfo,
+                                            void *pvNative, void **phMod)
+{
+    size_t                  cchName;
+    PSUPDRVLDRIMAGE         pImage;
+    PCSUPLDRWRAPMODSYMBOL   paSymbols;
+    uint16_t                idx;
+    const char             *pszPrevSymbol;
+    int                     rc;
+    SUPDRV_CHECK_SMAP_SETUP();
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(phMod, VERR_INVALID_POINTER);
+    *phMod = NULL;
+    AssertPtrReturn(pDevExt, VERR_INTERNAL_ERROR_2);
+
+    AssertPtrReturn(pWrappedModInfo, VERR_INVALID_POINTER);
+    AssertMsgReturn(pWrappedModInfo->uMagic == SUPLDRWRAPPEDMODULE_MAGIC,
+                    ("uMagic=%#x, expected %#x\n", pWrappedModInfo->uMagic, SUPLDRWRAPPEDMODULE_MAGIC),
+                    VERR_INVALID_MAGIC);
+    AssertMsgReturn(pWrappedModInfo->uVersion == SUPLDRWRAPPEDMODULE_VERSION,
+                    ("Unsupported uVersion=%#x, current version %#x\n", pWrappedModInfo->uVersion, SUPLDRWRAPPEDMODULE_VERSION),
+                    VERR_VERSION_MISMATCH);
+    AssertMsgReturn(pWrappedModInfo->uEndMagic == SUPLDRWRAPPEDMODULE_MAGIC,
+                    ("uEndMagic=%#x, expected %#x\n", pWrappedModInfo->uEndMagic, SUPLDRWRAPPEDMODULE_MAGIC),
+                    VERR_INVALID_MAGIC);
+    AssertMsgReturn(pWrappedModInfo->fFlags <= SUPLDRWRAPPEDMODULE_F_VMMR0, ("Unknown flags in: %#x\n", pWrappedModInfo->fFlags),
+                    VERR_INVALID_FLAGS);
+
+    /* szName: */
+    AssertReturn(RTStrEnd(pWrappedModInfo->szName, sizeof(pWrappedModInfo->szName)) != NULL, VERR_INVALID_NAME);
+    AssertReturn(supdrvIsLdrModuleNameValid(pWrappedModInfo->szName), VERR_INVALID_NAME);
+    AssertCompile(sizeof(pImage->szName) == sizeof(pWrappedModInfo->szName));
+    cchName = strlen(pWrappedModInfo->szName);
+
+    /* Image range: */
+    AssertPtrReturn(pWrappedModInfo->pvImageStart, VERR_INVALID_POINTER);
+    AssertPtrReturn(pWrappedModInfo->pvImageEnd, VERR_INVALID_POINTER);
+    AssertReturn((uintptr_t)pWrappedModInfo->pvImageEnd > (uintptr_t)pWrappedModInfo->pvImageStart, VERR_INVALID_PARAMETER);
+
+    /* Symbol table: */
+    AssertMsgReturn(pWrappedModInfo->cSymbols <= _8K, ("Too many symbols: %u, max 8192\n", pWrappedModInfo->cSymbols),
+                    VERR_TOO_MANY_SYMLINKS);
+    pszPrevSymbol = "\x7f";
+    paSymbols = pWrappedModInfo->paSymbols;
+    idx = pWrappedModInfo->cSymbols;
+    while (idx-- > 0)
+    {
+        const char *pszSymbol = paSymbols[idx].pszSymbol;
+        AssertMsgReturn(RT_VALID_PTR(pszSymbol) && RT_VALID_PTR(paSymbols[idx].pfnValue),
+                        ("paSymbols[%u]: %p/%p\n", idx, pszSymbol, paSymbols[idx].pfnValue),
+                        VERR_INVALID_POINTER);
+        AssertReturn(*pszSymbol != '\0', VERR_EMPTY_STRING);
+        AssertMsgReturn(strcmp(pszSymbol, pszPrevSymbol) < 0,
+                        ("symbol table out of order at index %u: '%s' vs '%s'\n", idx, pszSymbol, pszPrevSymbol),
+                        VERR_WRONG_ORDER);
+        pszPrevSymbol = pszSymbol;
+    }
+
+    /* Standard entry points: */
+    AssertPtrNullReturn(pWrappedModInfo->pfnModuleInit, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pWrappedModInfo->pfnModuleTerm, VERR_INVALID_POINTER);
+    AssertReturn((uintptr_t)pWrappedModInfo->pfnModuleInit != (uintptr_t)pWrappedModInfo->pfnModuleTerm || pWrappedModInfo->pfnModuleInit == NULL,
+                 VERR_INVALID_PARAMETER);
+    if (pWrappedModInfo->fFlags & SUPLDRWRAPPEDMODULE_F_VMMR0)
+    {
+        AssertReturn(pWrappedModInfo->pfnServiceReqHandler == NULL, VERR_INVALID_PARAMETER);
+        AssertPtrReturn(pWrappedModInfo->pfnVMMR0EntryFast, VERR_INVALID_POINTER);
+        AssertPtrReturn(pWrappedModInfo->pfnVMMR0EntryEx, VERR_INVALID_POINTER);
+        AssertReturn(pWrappedModInfo->pfnVMMR0EntryFast != pWrappedModInfo->pfnVMMR0EntryEx, VERR_INVALID_PARAMETER);
+    }
+    else
+    {
+        AssertPtrNullReturn(pWrappedModInfo->pfnServiceReqHandler, VERR_INVALID_POINTER);
+        AssertReturn(pWrappedModInfo->pfnVMMR0EntryFast == NULL, VERR_INVALID_PARAMETER);
+        AssertReturn(pWrappedModInfo->pfnVMMR0EntryEx   == NULL, VERR_INVALID_PARAMETER);
+    }
+
+    /*
+     * Check if we got an instance of the image already.
+     */
+    supdrvLdrLock(pDevExt);
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+    for (pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext)
+    {
+        if (   pImage->szName[cchName] == '\0'
+            && !memcmp(pImage->szName, pWrappedModInfo->szName, cchName))
+        {
+            supdrvLdrUnlock(pDevExt);
+            Log(("supdrvLdrRegisterWrappedModule: '%s' already loaded!\n", pWrappedModInfo->szName));
+            return VERR_ALREADY_LOADED;
+        }
+    }
+    /* (not found - add it!) */
+
+    /* If the loader interface is locked down, make userland fail early */
+    if (pDevExt->fLdrLockedDown)
+    {
+        supdrvLdrUnlock(pDevExt);
+        Log(("supdrvLdrRegisterWrappedModule: Not adding '%s' to image list, loader interface is locked down!\n", pWrappedModInfo->szName));
+        return VERR_PERMISSION_DENIED;
+    }
+
+    /* Only one VMMR0: */
+    if (   pDevExt->pvVMMR0 != NULL
+        && (pWrappedModInfo->fFlags & SUPLDRWRAPPEDMODULE_F_VMMR0))
+    {
+        supdrvLdrUnlock(pDevExt);
+        Log(("supdrvLdrRegisterWrappedModule: Rejecting '%s' as we already got a VMMR0 module!\n",  pWrappedModInfo->szName));
+        return VERR_ALREADY_EXISTS;
+    }
+
+    /*
+     * Allocate memory.
+     */
+    Assert(cchName < sizeof(pImage->szName));
+    pImage = (PSUPDRVLDRIMAGE)RTMemAllocZ(sizeof(SUPDRVLDRIMAGE));
+    if (!pImage)
+    {
+        supdrvLdrUnlock(pDevExt);
+        Log(("supdrvLdrRegisterWrappedModule: RTMemAllocZ() failed\n"));
+        return VERR_NO_MEMORY;
+    }
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+
+    /*
+     * Setup and link in the LDR stuff.
+     */
+    pImage->pvImage         = (void *)pWrappedModInfo->pvImageStart;
+#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
+    pImage->hMemObjImage    = NIL_RTR0MEMOBJ;
+#else
+    pImage->pvImageAlloc    = NULL;
+#endif
+    pImage->cbImageWithEverything
+        = pImage->cbImageBits = (uintptr_t)pWrappedModInfo->pvImageEnd - (uintptr_t)pWrappedModInfo->pvImageStart;
+    pImage->cSymbols        = 0;
+    pImage->paSymbols       = NULL;
+    pImage->pachStrTab      = NULL;
+    pImage->cbStrTab        = 0;
+    pImage->cSegments       = 0;
+    pImage->paSegments      = NULL;
+    pImage->pfnModuleInit   = pWrappedModInfo->pfnModuleInit;
+    pImage->pfnModuleTerm   = pWrappedModInfo->pfnModuleTerm;
+    pImage->pfnServiceReqHandler = NULL;    /* Only setting this after module init  */
+    pImage->uState          = SUP_IOCTL_LDR_LOAD;
+    pImage->cImgUsage       = 1;            /* Held by the wrapper module till unload. */
+    pImage->pDevExt         = pDevExt;
+    pImage->pImageImport    = NULL;
+    pImage->uMagic          = SUPDRVLDRIMAGE_MAGIC;
+    pImage->pWrappedModInfo = pWrappedModInfo;
+    pImage->pvWrappedNative = pvNative;
+    pImage->fNative         = true;
+    memcpy(pImage->szName, pWrappedModInfo->szName, cchName + 1);
+
+    /*
+     * Link it.
+     */
+    pImage->pNext           = pDevExt->pLdrImages;
+    pDevExt->pLdrImages     = pImage;
+
+    /*
+     * Call module init function if found.
+     */
+    if (pImage->pfnModuleInit)
+    {
+        Log(("supdrvIOCtl_LdrLoad: calling pfnModuleInit=%p\n", pImage->pfnModuleInit));
+        pDevExt->pLdrInitImage  = pImage;
+        pDevExt->hLdrInitThread = RTThreadNativeSelf();
+        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+        rc = pImage->pfnModuleInit(pImage);
+        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+        pDevExt->pLdrInitImage  = NULL;
+        pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Update entry points.
+         */
+        if (pWrappedModInfo->fFlags & SUPLDRWRAPPEDMODULE_F_VMMR0)
+        {
+            Assert(!pDevExt->pvVMMR0);
+            Assert(!pDevExt->pfnVMMR0EntryFast);
+            Assert(!pDevExt->pfnVMMR0EntryEx);
+            ASMAtomicWritePtrVoid(&pDevExt->pvVMMR0, pImage->pvImage);
+            ASMAtomicWritePtrVoid((void * volatile *)(uintptr_t)&pDevExt->pfnVMMR0EntryFast,
+                                  (void *)(uintptr_t)    pWrappedModInfo->pfnVMMR0EntryFast);
+            ASMAtomicWritePtrVoid((void * volatile *)(uintptr_t)&pDevExt->pfnVMMR0EntryEx,
+                                  (void *)(uintptr_t)    pWrappedModInfo->pfnVMMR0EntryEx);
+        }
+        else
+            pImage->pfnServiceReqHandler = pWrappedModInfo->pfnServiceReqHandler;
+#ifdef IN_RING3
+# error "WTF?"
+#endif
+        *phMod = pImage;
+    }
+    else
+    {
+        /*
+         * Module init failed - bail, no module term callout.
+         */
+        SUPR0Printf("ModuleInit failed for '%s': %Rrc\n", pImage->szName, rc);
+
+        pImage->pfnModuleTerm = NULL;
+        pImage->uState        = SUP_IOCTL_LDR_OPEN;
+        supdrvLdrFree(pDevExt, pImage);
+    }
+
+    supdrvLdrUnlock(pDevExt);
+    SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Decrements SUPDRVLDRIMAGE::cImgUsage when two or greater.
+ *
+ * @param   pDevExt     Device globals.
+ * @param   pImage      The image.
+ * @param   cReference  Number of references being removed.
+ */
+DECLINLINE(void) supdrvLdrSubtractUsage(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, uint32_t cReference)
+{
+    Assert(cReference > 0);
+    Assert(pImage->cImgUsage > cReference);
+    pImage->cImgUsage -= cReference;
+    if (pImage->cImgUsage == 1 && pImage->pWrappedModInfo)
+        supdrvOSLdrReleaseWrapperModule(pDevExt, pImage);
 }
 
 
@@ -5621,9 +5925,9 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      */
     rc = VINF_SUCCESS;
     pImage = pUsage->pImage;
-    Log(("SUP_IOCTL_LDR_FREE: pImage=%p %s cUsage=%d r3=%d r0=%u\n",
-         pImage, pImage->szName, pImage->cUsage, pUsage->cRing3Usage, pUsage->cRing0Usage));
-    if (pImage->cUsage <= 1 || pUsage->cRing3Usage + pUsage->cRing0Usage <= 1)
+    Log(("SUP_IOCTL_LDR_FREE: pImage=%p %s cImgUsage=%d r3=%d r0=%u\n",
+         pImage, pImage->szName, pImage->cImgUsage, pUsage->cRing3Usage, pUsage->cRing0Usage));
+    if (pImage->cImgUsage <= 1 || pUsage->cRing3Usage + pUsage->cRing0Usage <= 1)
     {
         /*
          * Check if there are any objects with destructors in the image, if
@@ -5631,7 +5935,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
          * clean things up in the right order and not leave them all dangling.
          */
         RTSpinlockAcquire(pDevExt->Spinlock);
-        if (pImage->cUsage <= 1)
+        if (pImage->cImgUsage <= 1)
         {
             PSUPDRVOBJ pObj;
             for (pObj = pDevExt->pObjs; pObj; pObj = pObj->pNext)
@@ -5668,10 +5972,10 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             /*
              * Dereference the image.
              */
-            if (pImage->cUsage <= 1)
+            if (pImage->cImgUsage <= 1)
                 supdrvLdrFree(pDevExt, pImage);
             else
-                pImage->cUsage--;
+                supdrvLdrSubtractUsage(pDevExt, pImage, 1);
         }
         else
             Log(("supdrvIOCtl_LdrFree: Dangling objects in %p/%s!\n", pImage->pvImage, pImage->szName));
@@ -5681,12 +5985,86 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         /*
          * Dereference both image and usage.
          */
-        pImage->cUsage--;
         pUsage->cRing3Usage--;
+        supdrvLdrSubtractUsage(pDevExt, pImage, 1);
     }
 
     supdrvLdrUnlock(pDevExt);
     return rc;
+}
+
+
+/**
+ * Deregisters a wrapped .r0 module.
+ *
+ * @param   pWrappedModInfo     The wrapped module info.
+ * @param   phMod               Where to store the module is stored (NIL'ed on
+ *                              success).
+ */
+int VBOXCALL supdrvLdrDeregisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPPEDMODULE pWrappedModInfo, void **phMod)
+{
+    PSUPDRVLDRIMAGE pImage;
+    uint32_t        cSleeps;
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pWrappedModInfo, VERR_INVALID_POINTER);
+    AssertMsgReturn(pWrappedModInfo->uMagic == SUPLDRWRAPPEDMODULE_MAGIC,
+                    ("uMagic=%#x, expected %#x\n", pWrappedModInfo->uMagic, SUPLDRWRAPPEDMODULE_MAGIC),
+                    VERR_INVALID_MAGIC);
+    AssertMsgReturn(pWrappedModInfo->uEndMagic == SUPLDRWRAPPEDMODULE_MAGIC,
+                    ("uEndMagic=%#x, expected %#x\n", pWrappedModInfo->uEndMagic, SUPLDRWRAPPEDMODULE_MAGIC),
+                    VERR_INVALID_MAGIC);
+
+    AssertPtrReturn(phMod, VERR_INVALID_POINTER);
+    pImage = *(PSUPDRVLDRIMAGE *)phMod;
+    if (!pImage)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pImage, VERR_INVALID_POINTER);
+    AssertMsgReturn(pImage->uMagic == SUPDRVLDRIMAGE_MAGIC, ("pImage=%p uMagic=%#x\n", pImage, pImage->uMagic),
+                    VERR_INVALID_MAGIC);
+    AssertMsgReturn(pImage->pvImage == pWrappedModInfo->pvImageStart,
+                    ("pWrappedModInfo(%p)->pvImageStart=%p vs. pImage(=%p)->pvImage=%p\n",
+                     pWrappedModInfo, pWrappedModInfo->pvImageStart, pImage, pImage->pvImage),
+                    VERR_MISMATCH);
+
+    AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
+
+    /*
+     * Try free it, but first we have to wait for its usage count to reach 1 (our).
+     */
+    supdrvLdrLock(pDevExt);
+    for (cSleeps = 0; ; cSleeps++)
+    {
+        PSUPDRVLDRIMAGE pCur;
+
+        /* Check that the image is in the list. */
+        for (pCur = pDevExt->pLdrImages; pCur; pCur = pCur->pNext)
+            if (pCur == pImage)
+                break;
+        AssertBreak(pCur == pImage);
+
+        /* Anyone still using it? */
+        if (pImage->cImgUsage <= 1)
+            break;
+
+        /* Someone is using it, wait and check again. */
+        if (!(cSleeps % 60))
+            SUPR0Printf("supdrvLdrUnregisterWrappedModule: Still %u users of wrapped image '%s' ...\n",
+                        pImage->cImgUsage, pImage->szName);
+        supdrvLdrUnlock(pDevExt);
+        RTThreadSleep(1000);
+        supdrvLdrLock(pDevExt);
+    }
+
+    /* We're the last 'user', free it. */
+    supdrvLdrFree(pDevExt, pImage);
+
+    supdrvLdrUnlock(pDevExt);
+
+    *phMod = NULL;
+    return VINF_SUCCESS;
 }
 
 
@@ -5713,6 +6091,74 @@ static int supdrvIOCtl_LdrLockDown(PSUPDRVDEVEXT pDevExt)
 
 
 /**
+ * Worker for getting the address of a symbol in an image.
+ *
+ * @returns IPRT status code.
+ * @param   pDevExt     Device globals.
+ * @param   pImage      The image to search.
+ * @param   pszSymbol   The symbol name.
+ * @param   cchSymbol   The length of the symbol name.
+ * @param   ppvValue    Where to return the symbol
+ * @note    Caller owns the loader lock.
+ */
+static int supdrvLdrQuerySymbolWorker(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage,
+                                      const char *pszSymbol, size_t cchSymbol, void **ppvValue)
+{
+    int rc = VERR_SYMBOL_NOT_FOUND;
+    if (pImage->fNative && !pImage->pWrappedModInfo)
+        rc = supdrvOSLdrQuerySymbol(pDevExt, pImage, pszSymbol, cchSymbol, ppvValue);
+    else if (pImage->fNative && pImage->pWrappedModInfo)
+    {
+        PCSUPLDRWRAPMODSYMBOL   paSymbols = pImage->pWrappedModInfo->paSymbols;
+        uint32_t                iEnd      = pImage->pWrappedModInfo->cSymbols;
+        uint32_t                iStart    = 0;
+        while (iStart < iEnd)
+        {
+            uint32_t const i     = iStart + (iEnd - iStart) / 2;
+            int      const iDiff = strcmp(paSymbols[i].pszSymbol, pszSymbol);
+            if (iDiff < 0)
+                iStart = i + 1;
+            else if (iDiff > 0)
+                iEnd = i;
+            else
+            {
+                *ppvValue = (void *)(uintptr_t)paSymbols[i].pfnValue;
+                rc = VINF_SUCCESS;
+                break;
+            }
+        }
+#ifdef VBOX_STRICT
+        if (rc != VINF_SUCCESS)
+            for (iStart = 0, iEnd = pImage->pWrappedModInfo->cSymbols; iStart < iEnd; iStart++)
+                Assert(strcmp(paSymbols[iStart].pszSymbol, pszSymbol));
+#endif
+    }
+    else
+    {
+        const char *pchStrings = pImage->pachStrTab;
+        PSUPLDRSYM  paSyms     = pImage->paSymbols;
+        uint32_t    i;
+        Assert(!pImage->pWrappedModInfo);
+        for (i = 0; i < pImage->cSymbols; i++)
+        {
+            if (    paSyms[i].offName + cchSymbol + 1 <= pImage->cbStrTab
+                &&  !memcmp(pchStrings + paSyms[i].offName, pszSymbol, cchSymbol + 1))
+            {
+                /*
+                 * Note! The int32_t is for native loading on solaris where the data
+                 *       and text segments are in very different places.
+                 */
+                *ppvValue = (uint8_t *)pImage->pvImage + (int32_t)paSyms[i].offSymbol;
+                rc = VINF_SUCCESS;
+                break;
+            }
+        }
+    }
+    return rc;
+}
+
+
+/**
  * Queries the address of a symbol in an open image.
  *
  * @returns IPRT status code.
@@ -5724,60 +6170,43 @@ static int supdrvIOCtl_LdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
 {
     PSUPDRVLDRIMAGE pImage;
     PSUPDRVLDRUSAGE pUsage;
-    uint32_t        i;
-    PSUPLDRSYM      paSyms;
-    const char     *pchStrings;
-    const size_t    cbSymbol = strlen(pReq->u.In.szSymbol) + 1;
-    void           *pvSymbol = NULL;
-    int             rc = VERR_SYMBOL_NOT_FOUND;
+    const size_t    cchSymbol = strlen(pReq->u.In.szSymbol);
+    void           *pvSymbol  = NULL;
+    int             rc;
     Log3(("supdrvIOCtl_LdrQuerySymbol: pvImageBase=%p szSymbol=\"%s\"\n", pReq->u.In.pvImageBase, pReq->u.In.szSymbol));
 
     /*
      * Find the ldr image.
      */
     supdrvLdrLock(pDevExt);
+
     pUsage = pSession->pLdrUsage;
     while (pUsage && pUsage->pImage->pvImage != pReq->u.In.pvImageBase)
         pUsage = pUsage->pNext;
-    if (!pUsage)
+    if (pUsage)
     {
-        supdrvLdrUnlock(pDevExt);
-        Log(("SUP_IOCTL_LDR_GET_SYMBOL: couldn't find image!\n"));
-        return VERR_INVALID_HANDLE;
-    }
-    pImage = pUsage->pImage;
-    if (pImage->uState != SUP_IOCTL_LDR_LOAD)
-    {
-        unsigned uState = pImage->uState;
-        supdrvLdrUnlock(pDevExt);
-        Log(("SUP_IOCTL_LDR_GET_SYMBOL: invalid image state %d (%#x)!\n", uState, uState)); NOREF(uState);
-        return VERR_ALREADY_LOADED;
-    }
-
-    /*
-     * Search the image exports / symbol strings.
-     *
-     * Note! The int32_t is for native loading on solaris where the data
-     *       and text segments are in very different places.
-     */
-    if (pImage->fNative)
-        rc = supdrvOSLdrQuerySymbol(pDevExt, pImage, pReq->u.In.szSymbol, cbSymbol - 1, &pvSymbol);
-    else
-    {
-        pchStrings = pImage->pachStrTab;
-        paSyms     = pImage->paSymbols;
-        for (i = 0; i < pImage->cSymbols; i++)
+        pImage = pUsage->pImage;
+        if (pImage->uState == SUP_IOCTL_LDR_LOAD)
         {
-            if (    paSyms[i].offName + cbSymbol <= pImage->cbStrTab
-                &&  !memcmp(pchStrings + paSyms[i].offName, pReq->u.In.szSymbol, cbSymbol))
-            {
-                pvSymbol = (uint8_t *)pImage->pvImage + (int32_t)paSyms[i].offSymbol;
-                rc = VINF_SUCCESS;
-                break;
-            }
+            /*
+             * Search the image exports / symbol strings.
+             */
+            rc = supdrvLdrQuerySymbolWorker(pDevExt, pImage, pReq->u.In.szSymbol, cchSymbol, &pvSymbol);
+        }
+        else
+        {
+            Log(("SUP_IOCTL_LDR_GET_SYMBOL: invalid image state %d (%#x)!\n", pImage->uState, pImage->uState));
+            rc = VERR_WRONG_ORDER;
         }
     }
+    else
+    {
+        Log(("SUP_IOCTL_LDR_GET_SYMBOL: couldn't find image!\n"));
+        rc = VERR_INVALID_HANDLE;
+    }
+
     supdrvLdrUnlock(pDevExt);
+
     pReq->u.Out.pvSymbol = pvSymbol;
     return rc;
 }
@@ -5786,20 +6215,19 @@ static int supdrvIOCtl_LdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
 /**
  * Gets the address of a symbol in an open image or the support driver.
  *
- * @returns VINF_SUCCESS on success.
- * @returns
+ * @returns VBox status code.
  * @param   pDevExt     Device globals.
  * @param   pSession    Session data.
  * @param   pReq        The request buffer.
  */
 static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq)
 {
-    int             rc = VINF_SUCCESS;
     const char     *pszSymbol = pReq->u.In.pszSymbol;
     const char     *pszModule = pReq->u.In.pszModule;
-    size_t          cbSymbol;
+    size_t          cchSymbol;
     char const     *pszEnd;
     uint32_t        i;
+    int             rc;
 
     /*
      * Input validation.
@@ -5807,7 +6235,7 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
     AssertPtrReturn(pszSymbol, VERR_INVALID_POINTER);
     pszEnd = RTStrEnd(pszSymbol, 512);
     AssertReturn(pszEnd, VERR_INVALID_PARAMETER);
-    cbSymbol = pszEnd - pszSymbol + 1;
+    cchSymbol = pszEnd - pszSymbol;
 
     if (pszModule)
     {
@@ -5817,17 +6245,18 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
     }
     Log3(("supdrvIDC_LdrGetSymbol: pszModule=%p:{%s} pszSymbol=%p:{%s}\n", pszModule, pszModule, pszSymbol, pszSymbol));
 
-
     if (    !pszModule
         ||  !strcmp(pszModule, "SupDrv"))
     {
         /*
          * Search the support driver export table.
          */
+        rc = VERR_SYMBOL_NOT_FOUND;
         for (i = 0; i < RT_ELEMENTS(g_aFunctions); i++)
             if (!strcmp(g_aFunctions[i].szName, pszSymbol))
             {
                 pReq->u.Out.pfnSymbol = (PFNRT)(uintptr_t)g_aFunctions[i].pfn;
+                rc = VINF_SUCCESS;
                 break;
             }
     }
@@ -5846,33 +6275,11 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
         if (pImage && pImage->uState == SUP_IOCTL_LDR_LOAD)
         {
             /*
-             * Search the image exports / symbol strings.
+             * Search the image exports / symbol strings.  Do usage counting on the session.
              */
-            if (pImage->fNative)
-            {
-                rc = supdrvOSLdrQuerySymbol(pDevExt, pImage, pszSymbol, cbSymbol - 1, (void **)&pReq->u.Out.pfnSymbol);
-                if (RT_SUCCESS(rc))
-                    rc = supdrvLdrAddUsage(pSession, pImage, true /*fRing3Usage*/);
-            }
-            else
-            {
-                const char *pchStrings = pImage->pachStrTab;
-                PCSUPLDRSYM paSyms     = pImage->paSymbols;
-                rc = VERR_SYMBOL_NOT_FOUND;
-                for (i = 0; i < pImage->cSymbols; i++)
-                {
-                    if (    paSyms[i].offName + cbSymbol <= pImage->cbStrTab
-                        &&  !memcmp(pchStrings + paSyms[i].offName, pszSymbol, cbSymbol))
-                    {
-                        /*
-                         * Found it! Calc the symbol address and add a reference to the module.
-                         */
-                        pReq->u.Out.pfnSymbol = (PFNRT)((uintptr_t)pImage->pvImage + (int32_t)paSyms[i].offSymbol);
-                        rc = supdrvLdrAddUsage(pSession, pImage, true /*fRing3Usage*/);
-                        break;
-                    }
-                }
-            }
+            rc = supdrvLdrQuerySymbolWorker(pDevExt, pImage, pszSymbol, cchSymbol, (void **)&pReq->u.Out.pfnSymbol);
+            if (RT_SUCCESS(rc))
+                rc = supdrvLdrAddUsage(pDevExt, pSession, pImage, true /*fRing3Usage*/);
         }
         else
             rc = pImage ? VERR_WRONG_ORDER : VERR_MODULE_NOT_FOUND;
@@ -5911,72 +6318,17 @@ int VBOXCALL supdrvLdrGetExportedSymbol(const char *pszSymbol, uintptr_t *puValu
 
 
 /**
- * Updates the VMMR0 entry point pointers.
- *
- * @returns IPRT status code.
- * @param   pDevExt             Device globals.
- * @param   pvVMMR0             VMMR0 image handle.
- * @param   pvVMMR0EntryFast    VMMR0EntryFast address.
- * @param   pvVMMR0EntryEx      VMMR0EntryEx address.
- * @remark  Caller must own the loader mutex.
- */
-static int supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx)
-{
-    int rc = VINF_SUCCESS;
-    LogFlow(("supdrvLdrSetR0EP pvVMMR0=%p pvVMMR0EntryFast=%p\n", pvVMMR0, pvVMMR0EntryFast));
-
-
-    /*
-     * Check if not yet set.
-     */
-    if (!pDevExt->pvVMMR0)
-    {
-        pDevExt->pvVMMR0 = pvVMMR0;
-        *(void **)&pDevExt->pfnVMMR0EntryFast = pvVMMR0EntryFast;
-        *(void **)&pDevExt->pfnVMMR0EntryEx   = pvVMMR0EntryEx;
-        ASMCompilerBarrier(); /* the above isn't nice, so be careful... */
-    }
-    else
-    {
-        /*
-         * Return failure or success depending on whether the values match or not.
-         */
-        if (    pDevExt->pvVMMR0 != pvVMMR0
-            ||  (uintptr_t)pDevExt->pfnVMMR0EntryFast  != (uintptr_t)pvVMMR0EntryFast
-            ||  (uintptr_t)pDevExt->pfnVMMR0EntryEx    != (uintptr_t)pvVMMR0EntryEx)
-        {
-            AssertMsgFailed(("SUP_IOCTL_LDR_SETR0EP: Already set pointing to a different module!\n"));
-            rc = VERR_INVALID_PARAMETER;
-        }
-    }
-    return rc;
-}
-
-
-/**
- * Unsets the VMMR0 entry point installed by supdrvLdrSetR0EP.
- *
- * @param   pDevExt     Device globals.
- */
-static void supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt)
-{
-    pDevExt->pvVMMR0            = NULL;
-    pDevExt->pfnVMMR0EntryFast  = NULL;
-    pDevExt->pfnVMMR0EntryEx    = NULL;
-}
-
-
-/**
  * Adds a usage reference in the specified session of an image.
  *
  * Called while owning the loader semaphore.
  *
  * @returns VINF_SUCCESS on success and VERR_NO_MEMORY on failure.
+ * @param   pDevExt     Pointer to device extension.
  * @param   pSession    Session in question.
  * @param   pImage      Image which the session is using.
  * @param   fRing3Usage Set if it's ring-3 usage, clear if ring-0.
  */
-static int supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage, bool fRing3Usage)
+static int supdrvLdrAddUsage(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage, bool fRing3Usage)
 {
     PSUPDRVLDRUSAGE pUsage;
     LogFlow(("supdrvLdrAddUsage: pImage=%p %d\n", pImage, fRing3Usage));
@@ -5993,6 +6345,8 @@ static int supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage, bo
                 pUsage->cRing3Usage++;
             else
                 pUsage->cRing0Usage++;
+            Assert(pImage->cImgUsage > 1 || !pImage->pWrappedModInfo);
+            pImage->cImgUsage++;
             return VINF_SUCCESS;
         }
         pUsage = pUsage->pNext;
@@ -6002,12 +6356,20 @@ static int supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage, bo
      * Allocate new usage record.
      */
     pUsage = (PSUPDRVLDRUSAGE)RTMemAlloc(sizeof(*pUsage));
-    AssertReturn(pUsage, /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_5);
+    AssertReturn(pUsage, VERR_NO_MEMORY);
     pUsage->cRing3Usage = fRing3Usage ? 1 : 0;
     pUsage->cRing0Usage = fRing3Usage ? 0 : 1;
     pUsage->pImage      = pImage;
     pUsage->pNext       = pSession->pLdrUsage;
     pSession->pLdrUsage = pUsage;
+
+    /*
+     * Wrapped modules needs to retain a native module reference.
+     */
+    pImage->cImgUsage++;
+    if (pImage->cImgUsage == 2 && pImage->pWrappedModInfo)
+        supdrvOSLdrRetainWrapperModule(pDevExt, pImage);
+
     return VINF_SUCCESS;
 }
 
@@ -6056,7 +6418,11 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 
         /* check if this is VMMR0.r0 unset its entry point pointers. */
         if (pDevExt->pvVMMR0 == pImage->pvImage)
-            supdrvLdrUnsetVMMR0EPs(pDevExt);
+        {
+            pDevExt->pvVMMR0            = NULL;
+            pDevExt->pfnVMMR0EntryFast  = NULL;
+            pDevExt->pfnVMMR0EntryEx    = NULL;
+        }
 
         /* check for objects with destructors in this image. (Shouldn't happen.) */
         if (pDevExt->pObjs)
@@ -6095,11 +6461,11 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
         supdrvOSLdrNotifyUnloaded(pDevExt, pImage);
 
         /* free the image */
-        pImage->uMagic  = SUPDRVLDRIMAGE_MAGIC_DEAD;
-        pImage->cUsage  = 0;
-        pImage->pDevExt = NULL;
-        pImage->pNext   = NULL;
-        pImage->uState  = SUP_IOCTL_LDR_FREE;
+        pImage->uMagic       = SUPDRVLDRIMAGE_MAGIC_DEAD;
+        pImage->cImgUsage    = 0;
+        pImage->pDevExt      = NULL;
+        pImage->pNext        = NULL;
+        pImage->uState       = SUP_IOCTL_LDR_FREE;
 #ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
         RTR0MemObjFree(pImage->hMemObjImage, true /*fMappings*/);
         pImage->hMemObjImage = NIL_RTR0MEMOBJ;
@@ -6107,13 +6473,13 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
         RTMemExecFree(pImage->pvImageAlloc, pImage->cbImageBits + 31);
         pImage->pvImageAlloc = NULL;
 #endif
-        pImage->pvImage = NULL;
+        pImage->pvImage      = NULL;
         RTMemFree(pImage->pachStrTab);
-        pImage->pachStrTab = NULL;
+        pImage->pachStrTab   = NULL;
         RTMemFree(pImage->paSymbols);
-        pImage->paSymbols = NULL;
+        pImage->paSymbols    = NULL;
         RTMemFree(pImage->paSegments);
-        pImage->paSegments = NULL;
+        pImage->paSegments   = NULL;
 
         pImageImport = pImage->pImageImport;
         pImage->pImageImport = NULL;
@@ -6125,9 +6491,9 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
          */
         if (!pImageImport)
             break;
-        if (pImageImport->cUsage > 1)
+        if (pImageImport->cImgUsage > 1)
         {
-            pImageImport->cUsage--;
+            supdrvLdrSubtractUsage(pDevExt, pImageImport, 1);
             break;
         }
         pImage = pImageImport;
@@ -6186,6 +6552,7 @@ SUPR0DECL(int) SUPR0LdrLock(PSUPDRVSESSION pSession)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvLdrLock(pSession->pDevExt);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0LdrLock);
 
 
 /**
@@ -6203,6 +6570,7 @@ SUPR0DECL(int) SUPR0LdrUnlock(PSUPDRVSESSION pSession)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvLdrUnlock(pSession->pDevExt);
 }
+SUPR0_EXPORT_SYMBOL(SUPR0LdrUnlock);
 
 
 /**
@@ -6245,6 +6613,7 @@ SUPR0DECL(bool) SUPR0LdrIsLockOwnerByMod(void *hMod, bool fWantToHear)
     return fWantToHear;
 #endif
 }
+SUPR0_EXPORT_SYMBOL(SUPR0LdrIsLockOwnerByMod);
 
 
 /**
@@ -6293,10 +6662,9 @@ SUPR0DECL(int) SUPR0LdrModByName(PSUPDRVSESSION pSession, const char *pszName, v
                 uint32_t uState = pImage->uState;
                 if (uState == SUP_IOCTL_LDR_LOAD)
                 {
-                    if (RT_LIKELY(pImage->cUsage < UINT32_MAX / 2U))
+                    if (RT_LIKELY(pImage->cImgUsage < UINT32_MAX / 2U))
                     {
-                        pImage->cUsage++;
-                        supdrvLdrAddUsage(pSession, pImage, false /*fRing3Usage*/);
+                        supdrvLdrAddUsage(pDevExt, pSession, pImage, false /*fRing3Usage*/);
                         *phMod = pImage;
                         supdrvLdrUnlock(pDevExt);
                         return VINF_SUCCESS;
@@ -6316,6 +6684,7 @@ SUPR0DECL(int) SUPR0LdrModByName(PSUPDRVSESSION pSession, const char *pszName, v
     }
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0LdrModByName);
 
 
 /**
@@ -6347,15 +6716,8 @@ SUPR0DECL(int) SUPR0LdrModRetain(PSUPDRVSESSION pSession, void *hMod)
     {
         if (pImage->uMagic == SUPDRVLDRIMAGE_MAGIC)
         {
-            if (RT_LIKELY(pImage->cUsage < UINT32_MAX / 2U))
-            {
-                rc = supdrvLdrAddUsage(pSession, pImage, false /*fRing3Usage*/);
-                if (RT_SUCCESS(rc))
-                {
-                    pImage->cUsage++;
-                    rc = VINF_SUCCESS;
-                }
-            }
+            if (RT_LIKELY(pImage->cImgUsage < UINT32_MAX / 2U))
+                rc = supdrvLdrAddUsage(pDevExt, pSession, pImage, false /*fRing3Usage*/);
             else
                 AssertFailedStmt(rc = VERR_TOO_MANY_REFERENCES);
         }
@@ -6365,6 +6727,7 @@ SUPR0DECL(int) SUPR0LdrModRetain(PSUPDRVSESSION pSession, void *hMod)
     }
     return rc;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0LdrModRetain);
 
 
 /**
@@ -6414,17 +6777,18 @@ SUPR0DECL(int) SUPR0LdrModRelease(PSUPDRVSESSION pSession, void *hMod)
                     /*
                      * Drop a ring-0 reference:
                      */
-                    Assert(pImage->cUsage >= pUsage->cRing0Usage + pUsage->cRing3Usage);
+                    Assert(pImage->cImgUsage >= pUsage->cRing0Usage + pUsage->cRing3Usage);
                     if (pUsage->cRing0Usage > 0)
                     {
-                        if (pImage->cUsage > 1)
+                        if (pImage->cImgUsage > 1)
                         {
-                            pImage->cUsage      -= 1;
                             pUsage->cRing0Usage -= 1;
+                            supdrvLdrSubtractUsage(pDevExt, pImage, 1);
                             rc = VINF_SUCCESS;
                         }
                         else
                         {
+                            Assert(!pImage->pWrappedModInfo /* (The wrapper kmod has the last reference.) */);
                             supdrvLdrFree(pDevExt, pImage);
 
                             if (pPrevUsage)
@@ -6454,6 +6818,7 @@ SUPR0DECL(int) SUPR0LdrModRelease(PSUPDRVSESSION pSession, void *hMod)
     return rc;
 
 }
+SUPR0_EXPORT_SYMBOL(SUPR0LdrModRelease);
 
 
 /**

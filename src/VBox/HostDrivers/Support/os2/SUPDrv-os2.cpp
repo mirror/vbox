@@ -472,6 +472,19 @@ int  VBOXCALL   supdrvOSLdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pI
 }
 
 
+void VBOXCALL   supdrvOSLdrRetainWrapperModule(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    RT_NOREF(pDevExt, pImage);
+    AssertFailed();
+}
+
+
+void VBOXCALL   supdrvOSLdrReleaseWrapperModule(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    RT_NOREF(pDevExt, pImage);
+    AssertFailed();
+}
+
 #ifdef SUPDRV_WITH_MSR_PROBER
 
 int VBOXCALL    supdrvOSMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue)

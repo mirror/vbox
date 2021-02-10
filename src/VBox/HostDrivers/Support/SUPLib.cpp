@@ -125,6 +125,8 @@ static RTHCPHYS                     g_HCPhysSUPGlobalInfoPage = NIL_RTHCPHYS;
 DECL_HIDDEN_DATA(uint32_t)          g_u32Cookie = 0;
 /** The negotiated session cookie. */
 DECL_HIDDEN_DATA(uint32_t)          g_u32SessionCookie;
+/** The session version. */
+DECL_HIDDEN_DATA(uint32_t)          g_uSupSessionVersion = 0;
 /** Session handle. */
 DECL_HIDDEN_DATA(PSUPDRVSESSION)    g_pSession;
 /** R0 SUP Functions used for resolving referenced to the SUPR0 module. */
@@ -283,6 +285,7 @@ SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession)
         if (    RT_SUCCESS(rc)
             &&  RT_SUCCESS(CookieReq.Hdr.rc))
         {
+            g_uSupSessionVersion = CookieReq.u.Out.u32SessionVersion;
             if (    (CookieReq.u.Out.u32SessionVersion & 0xffff0000) == (SUPDRV_IOC_VERSION & 0xffff0000)
                 &&  CookieReq.u.Out.u32SessionVersion >= uMinVersion)
             {

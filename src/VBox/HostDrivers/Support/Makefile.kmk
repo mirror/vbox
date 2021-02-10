@@ -748,22 +748,22 @@ endif
 
 if1of ($(KBUILD_TARGET), linux freebsd)
  if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
- #
- # Targets for installing the linux sources.
- #
- vboxdrv-src_INST    = bin/src/vboxdrv/
- vboxdrv-src_SOURCES = \
- 	$(subst $(DQUOTE),,$(FILES_VBOXDRV_NOBIN)) \
- 	$(vboxdrv-src_0_OUTDIR)/Makefile
- vboxdrv-src_EXEC_SOURCES  = \
- 	$(subst $(DQUOTE),,$(FILES_VBOXDRV_BIN))
- vboxdrv-src_CLEAN   = \
- 	$(vboxdrv-src_0_OUTDIR)/Makefile \
- 	$(PATH_TARGET)/vboxdrv-src-1.dep \
+#
+# Targets for installing the linux sources.
+#
+vboxdrv-src_INST    = bin/src/vboxdrv/
+vboxdrv-src_SOURCES = \
+	$(subst $(DQUOTE),,$(FILES_VBOXDRV_NOBIN)) \
+	$(vboxdrv-src_0_OUTDIR)/Makefile
+vboxdrv-src_EXEC_SOURCES  = \
+	$(subst $(DQUOTE),,$(FILES_VBOXDRV_BIN))
+vboxdrv-src_CLEAN   = \
+	$(vboxdrv-src_0_OUTDIR)/Makefile \
+	$(PATH_TARGET)/vboxdrv-src-1.dep \
 
- # Scripts needed for building the kernel modules
- includedep $(PATH_TARGET)/vboxdrv-src-1.dep
- $$(vboxdrv-src_0_OUTDIR)/Makefile: \
+# Scripts needed for building the kernel modules
+includedep $(PATH_TARGET)/vboxdrv-src-1.dep
+$$(vboxdrv-src_0_OUTDIR)/Makefile: \
 		$(PATH_SUB_CURRENT)/$(KBUILD_TARGET)/Makefile \
 		$$(if $$(eq $$(Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		$$(if $$(eq $$(Support/$(KBUILD_TARGET)/Makefile_VBOX_RAM_IN_KERNEL),$$(VBOX_WITH_RAM_IN_KERNEL)),,FORCE) \
@@ -780,10 +780,38 @@ if1of ($(KBUILD_TARGET), linux freebsd)
 		'Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)' \
 		'Support/$(KBUILD_TARGET)/Makefile_VBOX_RAM_IN_KERNEL=$(VBOX_WITH_RAM_IN_KERNEL)'
 
- #
- # Build test for the linux host kernel modules.
- #
- $(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxdrv-src,,save_symvers)
+#
+# Build test for the linux host kernel modules.
+#
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxdrv-src,,save_symvers)
+
+  ifdef VBOX_WITH_KMOD_WRAPPED_R0_MODS
+#
+# The wrapper modules.
+#
+INSTALLS.linux += vbox_vmmr0-src
+vbox_vmmr0-src_INST = bin/src/vbox_vmmr0/
+vbox_vmmr0-src_SOURCES = \
+	linux/SUPWrapperMod-linux.c=>SUPWrapperMod-linux.c \
+	linux/Makefile-vbox_vmmr0.gmk=>Makefile \
+	linux/Makefile-wrapper.gmk=>Makefile-wrapper.gmk \
+       $(PATH_ROOT)/src/VBox/Installer/linux/Makefile-header.gmk=>Makefile-header.gmk \
+       $(PATH_ROOT)/src/VBox/Installer/linux/Makefile-footer.gmk=>Makefile-footer.gmk \
+	$(PATH_OBJ)/VMMR0/VMMR0.r0=>VMMR0.r0 \
+	$(PATH_OBJ)/VMMR0/VMMR0.debug=>VMMR0.debug \
+
+INSTALLS.linux += vbox_vboxddr0-src
+vbox_vboxddr0-src_INST = bin/src/vbox_vboxddr0/
+vbox_vboxddr0-src_SOURCES = \
+	linux/SUPWrapperMod-linux.c=>SUPWrapperMod-linux.c \
+	linux/Makefile-vbox_vboxddr0.gmk=>Makefile \
+	linux/Makefile-wrapper.gmk=>Makefile-wrapper.gmk \
+       $(PATH_ROOT)/src/VBox/Installer/linux/Makefile-header.gmk=>Makefile-header.gmk \
+       $(PATH_ROOT)/src/VBox/Installer/linux/Makefile-footer.gmk=>Makefile-footer.gmk \
+	$(PATH_OBJ)/VBoxDDR0/VBoxDDR0.r0=>VBoxDDR0.r0 \
+	$(PATH_OBJ)/VBoxDDR0/VBoxDDR0.debug=>VBoxDDR0.debug \
+
+  endif
  endif # supported host arch
 endif # linux freebsd
 

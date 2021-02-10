@@ -220,9 +220,9 @@ typedef SUPREQHDR *PSUPREQHDR;
  *  -# When increment the major number, execute all pending work.
  *
  * @todo Pending work on next major version change:
- *          - Nothing.
+ *          - Remove pvVMMR0 from SUPLDRLOAD.
  */
-#define SUPDRV_IOC_VERSION                              0x00300000
+#define SUPDRV_IOC_VERSION                              0x00300001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -314,9 +314,12 @@ typedef struct SUPLDROPEN
     {
         struct
         {
-            /** Size of the image we'll be loading (including all tables). */
+            /** Size of the image we'll be loading (including all tables).
+             * Zero if the caller does not wish to prepare loading anything, then
+             * cbImageBits must be zero too ofc. */
             uint32_t        cbImageWithEverything;
-            /** The size of the image bits. (Less or equal to cbImageWithTabs.) */
+            /** The size of the image bits. (Less or equal to cbImageWithTabs.)
+             * Zero if the caller does not wish to prepare loading anything. */
             uint32_t        cbImageBits;
             /** Image name.
              * This is the NAME of the image, not the file name. It is used

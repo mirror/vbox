@@ -750,8 +750,30 @@ int VBOXCALL SUPDrvLinuxIDC(uint32_t uReq, PSUPDRVIDCREQHDR pReq)
      */
     return supdrvIDC(uReq, &g_DevExt, pSession, pReq);
 }
-
 EXPORT_SYMBOL(SUPDrvLinuxIDC);
+
+
+/**
+ * Used by native wrapper modules, forwarding to supdrvLdrRegisterWrappedModule
+ * with device extension prepended to the argument list.
+ */
+SUPR0DECL(int)  SUPDrvLinuxLdrRegisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrappedModInfo, void *pvLnxModule, void **phMod)
+{
+    AssertPtrReturn(pvLnxModule, VERR_INVALID_POINTER);
+    return supdrvLdrRegisterWrappedModule(&g_DevExt, pWrappedModInfo, pvLnxModule, phMod);
+}
+EXPORT_SYMBOL(SUPDrvLinuxLdrRegisterWrappedModule);
+
+
+/**
+ * Used by native wrapper modules, forwarding to supdrvLdrDeregisterWrappedModule
+ * with device extension prepended to the argument list.
+ */
+SUPR0DECL(int) SUPDrvLinuxLdrDeregisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrappedModInfo, void **phMod)
+{
+    return supdrvLdrDeregisterWrappedModule(&g_DevExt, pWrappedModInfo, phMod);
+}
+EXPORT_SYMBOL(SUPDrvLinuxLdrDeregisterWrappedModule);
 
 
 RTCCUINTREG VBOXCALL supdrvOSChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask)
@@ -1243,6 +1265,28 @@ int  VBOXCALL   supdrvOSLdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pI
 }
 
 
+void VBOXCALL   supdrvOSLdrRetainWrapperModule(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    struct module *pLnxMod = (struct module *)pImage->pvWrappedNative;
+    Assert(!pImage->fLnxWrapperRef);
+    AssertReturnVoid(pLnxMod);
+    pImage->fLnxWrapperRef = try_module_get(pLnxMod);
+    RT_NOREF(pDevExt);
+}
+
+
+void VBOXCALL   supdrvOSLdrReleaseWrapperModule(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    if (pImage->fLnxWrapperRef)
+    {
+        struct module *pLnxMod = (struct module *)pImage->pvWrappedNative;
+        pImage->fLnxWrapperRef = false;
+        module_put(pLnxMod);
+    }
+    RT_NOREF(pDevExt);
+}
+
+
 #ifdef SUPDRV_WITH_MSR_PROBER
 
 int VBOXCALL    supdrvOSMsrProberRead(uint32_t uMsr, RTCPUID idCpu, uint64_t *puValue)
@@ -1411,6 +1455,7 @@ SUPR0DECL(int) SUPR0HCPhysToVirt(RTHCPHYS HCPhys, void **ppv)
     *ppv = phys_to_virt(HCPhys);
     return VINF_SUCCESS;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0HCPhysToVirt);
 
 
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
@@ -1429,6 +1474,7 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     IPRT_LINUX_RESTORE_EFL_AC();
     return 0;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0Printf);
 
 
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
@@ -1448,6 +1494,7 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 #endif
     return fFlags;
 }
+SUPR0_EXPORT_SYMBOL(SUPR0GetKernelFeatures);
 
 
 int VBOXCALL    supdrvOSGetCurrentGdtRw(RTHCUINTPTR *pGdtRw)
