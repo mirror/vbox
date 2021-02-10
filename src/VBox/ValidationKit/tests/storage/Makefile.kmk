@@ -35,6 +35,7 @@ ValidationKitTestsStorage_EXEC_SOURCES := \
 	$(PATH_SUB_CURRENT)/tdStorageBenchmark1.py \
 	$(PATH_SUB_CURRENT)/tdStorageSnapshotMerging1.py \
 	$(PATH_SUB_CURRENT)/tdStorageStress1.py \
+	$(PATH_SUB_CURRENT)/tdStorageRawDrive1.py \
 	$(PATH_SUB_CURRENT)/remoteexecutor.py \
 	$(PATH_SUB_CURRENT)/storagecfg.py
 
