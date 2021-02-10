@@ -5811,6 +5811,7 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
     /*
      * Call module init function if found.
      */
+    rc = VINF_SUCCESS;
     if (pImage->pfnModuleInit)
     {
         Log(("supdrvIOCtl_LdrLoad: calling pfnModuleInit=%p\n", pImage->pfnModuleInit));
