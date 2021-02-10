@@ -1491,6 +1491,24 @@ typedef struct PDMIOMMUHLPR0
 {
     /** Structure version. PDM_IOMMUHLP_VERSION defines the current version. */
     uint32_t                u32Version;
+
+    /**
+     * Acquires the PDM lock.
+     *
+     * @returns VINF_SUCCESS on success.
+     * @returns rc if we failed to acquire the lock.
+     * @param   pDevIns     The PCI device instance.
+     * @param   rc          What to return if we fail to acquire the lock.
+     */
+    DECLR0CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+
+    /**
+     * Releases the PDM lock.
+     *
+     * @param   pDevIns         The PCI device instance.
+     */
+    DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMIOMMUHLPR0;
@@ -1500,7 +1518,7 @@ typedef PDMIOMMUHLPR0 *PPDMIOMMUHLPR0;
 typedef const PDMIOMMUHLPR0 *PCPDMIOMMUHLPR0;
 
 /** Current PDMIOMMUHLPR0 version number. */
-#define PDM_IOMMUHLPR0_VERSION                      PDM_VERSION_MAKE(0xff13, 1, 0)
+#define PDM_IOMMUHLPR0_VERSION                      PDM_VERSION_MAKE(0xff13, 2, 0)
 
 
 /**
@@ -1510,6 +1528,24 @@ typedef struct PDMIOMMUHLPRC
 {
     /** Structure version. PDM_IOMMUHLP_VERSION defines the current version. */
     uint32_t                u32Version;
+
+    /**
+     * Acquires the PDM lock.
+     *
+     * @returns VINF_SUCCESS on success.
+     * @returns rc if we failed to acquire the lock.
+     * @param   pDevIns     The PCI device instance.
+     * @param   rc          What to return if we fail to acquire the lock.
+     */
+    DECLRCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+
+    /**
+     * Releases the PDM lock.
+     *
+     * @param   pDevIns         The PCI device instance.
+     */
+    DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMIOMMUHLPRC;
@@ -1519,7 +1555,7 @@ typedef PDMIOMMUHLPRC *PPDMIOMMUHLPRC;
 typedef const PDMIOMMUHLPRC *PCPDMIOMMUHLPRC;
 
 /** Current PDMIOMMUHLPRC version number. */
-#define PDM_IOMMUHLPRC_VERSION                      PDM_VERSION_MAKE(0xff14, 1, 0)
+#define PDM_IOMMUHLPRC_VERSION                      PDM_VERSION_MAKE(0xff14, 2, 0)
 
 
 /**
@@ -1529,6 +1565,24 @@ typedef struct PDMIOMMUHLPR3
 {
     /** Structure version. PDM_IOMMUHLP_VERSION defines the current version. */
     uint32_t                u32Version;
+
+    /**
+     * Acquires the PDM lock.
+     *
+     * @returns VINF_SUCCESS on success.
+     * @returns rc if we failed to acquire the lock.
+     * @param   pDevIns     The PCI device instance.
+     * @param   rc          What to return if we fail to acquire the lock.
+     */
+    DECLR3CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+
+    /**
+     * Releases the PDM lock.
+     *
+     * @param   pDevIns         The PCI device instance.
+     */
+    DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMIOMMUHLPR3;
@@ -1538,7 +1592,7 @@ typedef PDMIOMMUHLPR3 *PPDMIOMMUHLPR3;
 typedef const PDMIOMMUHLPR3 *PCPDMIOMMUHLPR3;
 
 /** Current PDMIOMMUHLPR3 version number. */
-#define PDM_IOMMUHLPR3_VERSION                      PDM_VERSION_MAKE(0xff15, 1, 0)
+#define PDM_IOMMUHLPR3_VERSION                      PDM_VERSION_MAKE(0xff15, 2, 0)
 
 
 /**
