@@ -1093,7 +1093,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                     sDictValue = asHeader[sKey];
                     if sDictValue == '$':
                         sDictValue = asAction[sKey];
-                    if sDictValue != '*' and sDictValue != sValue:
+                    if sDictValue not in ('*', sValue):
                         return reporter.error("VMDK descriptor has value which was not expected");
                     continue;
 
@@ -1127,7 +1127,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                 if sKey not in asDatabase.keys():
                     return reporter.error("VMDK descriptor has invalid format");
                 sDictValue = asDatabase[sKey];
-                if sDictValue != '*' and sDictValue != sValue:
+                if sDictValue not in ('*', sValue):
                     return reporter.error("VMDK descriptor has value which was not expected");
                 continue;
         return iParseState == DescriptorParseState.kiDatabase;
