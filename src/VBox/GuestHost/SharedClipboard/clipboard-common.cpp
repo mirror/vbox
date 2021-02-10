@@ -145,7 +145,6 @@ int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
     /* Choose a random event ID starting point. */
     pSource->idNextEvent  = RTRandU32Ex(1, VBOX_SHCL_MAX_EVENTS - 1);
 
-    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -526,7 +525,6 @@ int ShClConvUtf16CRLFToUtf8LF(PCRTUTF16 pcwszSrc, size_t cwcSrc,
         *pcbLen = cbLen;
     }
 
-    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -582,7 +580,6 @@ int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc,
         RTUtf16Free(pwcTmp);
     }
 
-    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -638,7 +635,6 @@ int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc,
     else
         RTMemFree(pwszDst);
 
-    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -705,7 +701,6 @@ int ShClConvUtf16ToUtf8HTML(PCRTUTF16 pcwszSrc, size_t cwcSrc, char **ppszDst, s
 
     RTMemFree(pchDst);
 
-    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -743,7 +738,6 @@ int ShClUtf16LFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
 
     *pchLen = cLen;
 
-    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -779,7 +773,6 @@ int ShClUtf16CRLFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
 
     *pchLen = cLen;
 
-    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -855,7 +848,6 @@ int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pu16Dst, s
         pu16Dst[j] = 0;
     }
 
-    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -905,7 +897,6 @@ int ShClConvUtf16CRLFToLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pu16Dst, s
     /* Add terminating zero. */
     pu16Dst[cwDstPos] = 0;
 
-    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -950,7 +941,6 @@ int ShClDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDest, size_t *pcbDes
     *ppvDest = pvDest;
     *pcbDest = cbDst;
 
-    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
