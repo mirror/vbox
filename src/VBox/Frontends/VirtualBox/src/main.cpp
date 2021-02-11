@@ -483,6 +483,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #ifdef VBOX_WS_MAC
         /* Disable menu icons on MacOS X host: */
         ::darwinDisableIconsInMenus();
+
+# if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
+        // WORKAROUND:
+        // Unable to detect fusion if app
+        // built with SDK less than 10.14
+        a.setStyle("fusion");
+# endif
 #endif /* VBOX_WS_MAC */
 
 #ifdef VBOX_WS_X11
