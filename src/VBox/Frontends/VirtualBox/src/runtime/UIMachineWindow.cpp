@@ -591,14 +591,14 @@ Qt::Alignment UIMachineWindow::viewAlignment(UIVisualStateType visualStateType)
 {
     switch (visualStateType)
     {
-        case UIVisualStateType_Normal: return 0;
+        case UIVisualStateType_Normal: return Qt::Alignment();
         case UIVisualStateType_Fullscreen: return Qt::AlignVCenter | Qt::AlignHCenter;
-        case UIVisualStateType_Seamless: return 0;
-        case UIVisualStateType_Scale: return 0;
+        case UIVisualStateType_Seamless: return Qt::Alignment();
+        case UIVisualStateType_Scale: return Qt::Alignment();
         case UIVisualStateType_Invalid: case UIVisualStateType_All: break; /* Shut up, MSC! */
     }
     AssertMsgFailed(("Incorrect visual state!"));
-    return 0;
+    return Qt::Alignment();
 }
 
 #ifdef VBOX_WS_MAC
