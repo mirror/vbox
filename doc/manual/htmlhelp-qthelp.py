@@ -12,7 +12,7 @@ import re
 import codecs
 import logging
 
-if sys.version_info.major >= 3:
+if sys.version_info >= (3, 0):
     from html.parser import HTMLParser
 else:
     from HTMLParser import HTMLParser
