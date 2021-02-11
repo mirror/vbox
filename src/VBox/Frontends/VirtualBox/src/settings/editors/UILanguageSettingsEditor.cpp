@@ -337,7 +337,7 @@ void UILanguageSettingsEditor::prepareWidgets()
         /* Prepare separator: */
         m_pLabelSeparator = new QILabelSeparator(this);
         if (m_pLabelSeparator)
-            pLayoutMain->addWidget(m_pLabelSeparator, 0, 0);
+            pLayoutMain->addWidget(m_pLabelSeparator);
 
         /* Prepare tree-widget: */
         m_pTreeWidget = new QITreeWidget(this);
@@ -352,7 +352,7 @@ void UILanguageSettingsEditor::prepareWidgets()
             m_pTreeWidget->hideColumn(3);
             m_pTreeWidget->setRootIsDecorated(false);
 
-            pLayoutMain->addWidget(m_pTreeWidget, 1, 0);
+            pLayoutMain->addWidget(m_pTreeWidget);
         }
 
         /* Prepare info label: */
@@ -362,7 +362,7 @@ void UILanguageSettingsEditor::prepareWidgets()
             m_pLabelInfo->setWordWrapMode(QTextOption::WordWrap);
             m_pLabelInfo->setMinimumHeight(QFontMetrics(m_pLabelInfo->font(), m_pLabelInfo).height() * 5);
 
-            pLayoutMain->addWidget(m_pLabelInfo, 2, 0);
+            pLayoutMain->addWidget(m_pLabelInfo);
         }
     }
 }
