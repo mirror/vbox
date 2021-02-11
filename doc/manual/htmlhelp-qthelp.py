@@ -1,17 +1,22 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # $Id$
 ## @file
-# A python 2.x script to create a .qhp file outof a given htmlhelp
+# A python script to create a .qhp file out of a given htmlhelp
 # folder. Lots of things about the said folder is assumed. Please
-# read the code and inlined comments.
+# see the code and inlined comments.
 
 import sys, getopt
 import os.path
 import re
 import codecs
 import logging
-from HTMLParser import HTMLParser
+
+if sys.version_info.major >= 3:
+    from html.parser import HTMLParser
+else:
+    from HTMLParser import HTMLParser
+
 
 __copyright__ = \
 """
@@ -26,31 +31,30 @@ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 """
 
-
 # number of opened and not yet closed section tags of toc section
 open_section_tags = 0
 
 html_files = []
-
-class html_parser(HTMLParser):
-  def __init__(self):
-    HTMLParser.__init__(self)
-    self.a_tag=[]
-
-  def handle_starttag(self, tag, attributes):
-    if tag != 'div' and tag != 'a':
-        return
-    if tag == 'a':
-        for a in attributes:
-            if a[0] == 'name':
-                self.a_tag.append(a[1])
 
 # use html_parser stuff to collect <a name tags
 def create_keywords_section(folder):
     keywords_section_lines = ['<keywords>']
     for html_file_name in html_files:
         full_html_path = os.path.join(folder, html_file_name)
-        file_content = open(full_html_path, 'r').read()
+        file_content = codecs.open(full_html_path, encoding='iso-8859-1').read()
+
+        class html_parser(HTMLParser):
+          def __init__(self):
+            HTMLParser.__init__(self)
+            self.a_tag=[]
+          def handle_starttag(self, tag, attributes):
+            if tag != 'div' and tag != 'a':
+              return
+            if tag == 'a':
+              for a in attributes:
+                if a[0] == 'name':
+                  self.a_tag.append(a[1])
+
         parser = html_parser()
         parser.feed(file_content)
         for k in parser.a_tag:
@@ -85,7 +89,8 @@ def create_html_list(folder):
         logging.error('Could not find the file "%s" in "%s"', file_name, folder)
         return html_file_lines
     full_path = os.path.join(folder, 'htmlhelp.hhp')
-    file = open(full_path, "r")
+    file = codecs.open(full_path, encoding='iso-8859-1')
+
     lines = file.readlines()
     file.close()
     # first search for the [FILES] marker then collect .html lines
@@ -134,7 +139,6 @@ def parse_object_tag(lines, index):
        not re.match(r'^\s*<param', lines[index + 2], re.IGNORECASE):
         logging.warning('Skipping the line "%s" since next two tags are supposed to be param tags',  lines[index])
         return result
-
     title = parse_param_tag(lines[index + 1])
     ref = parse_param_tag(lines[index + 2])
     global open_section_tags
@@ -174,7 +178,7 @@ def parse_line(lines, index):
     return result
 
 # parse toc.hhc file. assuming all the relevant information
-# is stored in tags and attributes. data "whatever is outside of
+# is stored in tags and attributes. whatever is outside of
 # <... > pairs is filtered out. we also assume < ..> are not nested
 # and each < matches to a >
 def create_toc(folder):
@@ -217,8 +221,8 @@ def create_toc(folder):
     return toc_string_list
 
 def usage(arg):
-    print 'htmlhelp-qthelp.py -d <helphtmlfolder> -o <outputfilename>'
-    sys.exit(arg)
+    print('htmlhelp-qthelp.py -d <helphtmlfolder> -o <outputfilename>')
+    sys.exit()
 
 def main(argv):
     helphtmlfolder = ''
@@ -226,7 +230,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(sys.argv[1:],"hd:o:")
     except getopt.GetoptError as err:
-        print err
+        print(err)
         usage(2)
     for opt, arg in opts:
         if opt == '-h':
@@ -259,7 +263,7 @@ def main(argv):
     out_xml_lines += create_keywords_section(helphtmlfolder)
     out_xml_lines += ['</filterSection>', '</QtHelpProject>']
 
-    out_file = open(output_filename, 'w')
+    out_file = open(output_filename, 'wb')
     out_file.write('\n'.join(out_xml_lines).encode('utf8'))
     out_file.close()
 
