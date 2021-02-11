@@ -203,9 +203,9 @@ typedef enum IOMMUOP
 typedef IOMMUOP *PIOMMUOP;
 
 /**
- * I/O page walk result.
+ * I/O page lookup.
  */
-typedef struct IOWALKRESULT
+typedef struct IOPAGELOOKUP
 {
     /** The translated system physical address. */
     RTGCPHYS        GCPhysSpa;
@@ -213,11 +213,11 @@ typedef struct IOWALKRESULT
     uint8_t         cShift;
     /** The I/O permissions for this translation, see IOMMU_IO_PERM_XXX. */
     uint8_t         fPerm;
-} IOWALKRESULT;
-/** Pointer to an I/O walk result struct. */
-typedef IOWALKRESULT *PIOWALKRESULT;
-/** Pointer to a const I/O walk result struct. */
-typedef IOWALKRESULT const *PCIOWALKRESULT;
+} IOPAGELOOKUP;
+/** Pointer to an I/O page lookup. */
+typedef IOPAGELOOKUP *PIOPAGELOOKUP;
+/** Pointer to a const I/O page lookup. */
+typedef IOPAGELOOKUP const *PCIOPAGELOOKUP;
 
 /**
  * IOMMU I/O Device.
@@ -247,8 +247,8 @@ typedef struct IOTLBE
     AVLU64NODECORE      Core;
     /** The least recently used (LRU) list node. */
     RTLISTNODE          NdLru;
-    /** The I/O walk result of the translation. */
-    IOWALKRESULT        WalkResult;
+    /** The I/O page lookup of the translation. */
+    IOPAGELOOKUP        PageLookup;
     /** Whether the entry needs to be evicted from the cache. */
     bool                fEvictPending;
 } IOTLBE;
@@ -455,10 +455,10 @@ typedef struct IOMMU
     STAMCOUNTER                 StatIotlbeCacheHit;         /**< Number of IOTLB cache hits. */
     STAMCOUNTER                 StatIotlbeCacheMiss;        /**< Number of IOTLB cache misses. */
     STAMCOUNTER                 StatIotlbeLazyEvictReuse;   /**< Number of IOTLB entries re-used after lazy eviction. */
-    STAMPROFILEADV              StatIotlbeLookup;           /**< Profiling of IOTLB entry lookup (cached). */
+    STAMPROFILEADV              StatIotlbeLookup;           /**< Profiling of IOTLB entry lookup (from cache). */
 
     STAMCOUNTER                 StatDteLookupNonContig;     /**< Number of DTE lookups that result in non-contiguous regions. */
-    STAMPROFILEADV              StatIoPageWalkLookup;       /**< Profiling of I/O page walk (uncached). */
+    STAMPROFILEADV              StatIoPageWalkLookup;       /**< Profiling of I/O page walk (from memory). */
     /** @} */
 #endif
 } IOMMU;
@@ -690,21 +690,21 @@ static uint32_t iommuAmdGetCmdBufEntryCount(PIOMMU pThis)
 
 
 /**
- * Checks whether two consecutive I/O page walk results translates to a physically
+ * Checks whether two consecutive I/O page lookup results translates to a physically
  * contiguous region.
  *
  * @returns @c true if they are contiguous, @c false otherwise.
- * @param   pWalkResultPrev     The I/O walk result of the previous page.
- * @param   pWalkResult         The I/O walk result of the current page.
+ * @param   pPageLookupPrev     The I/O page lookup result of the previous page.
+ * @param   pPageLookup         The I/O page lookup result of the current page.
  */
-static bool iommuAmdLookupIsAccessContig(PCIOWALKRESULT pWalkResultPrev, PCIOWALKRESULT pWalkResult)
+static bool iommuAmdLookupIsAccessContig(PCIOPAGELOOKUP pPageLookupPrev, PCIOPAGELOOKUP pPageLookup)
 {
-    Assert(pWalkResultPrev->fPerm  == pWalkResult->fPerm);
-    size_t const   cbPrev      = RT_BIT_64(pWalkResultPrev->cShift);
-    RTGCPHYS const GCPhysPrev  = pWalkResultPrev->GCPhysSpa;
-    RTGCPHYS const GCPhys      = pWalkResult->GCPhysSpa;
-    uint64_t const offMaskPrev = IOMMU_GET_PAGE_OFF_MASK(pWalkResultPrev->cShift);
-    uint64_t const offMask     = IOMMU_GET_PAGE_OFF_MASK(pWalkResult->cShift);
+    Assert(pPageLookupPrev->fPerm  == pPageLookup->fPerm);
+    size_t const   cbPrev      = RT_BIT_64(pPageLookupPrev->cShift);
+    RTGCPHYS const GCPhysPrev  = pPageLookupPrev->GCPhysSpa;
+    RTGCPHYS const GCPhys      = pPageLookup->GCPhysSpa;
+    uint64_t const offMaskPrev = IOMMU_GET_PAGE_OFF_MASK(pPageLookupPrev->cShift);
+    uint64_t const offMask     = IOMMU_GET_PAGE_OFF_MASK(pPageLookup->cShift);
 
     /* Paranoia: Ensure offset bits are 0. */
     Assert(!(GCPhysPrev & offMaskPrev));
@@ -807,10 +807,10 @@ static DECLCALLBACK(int) iommuAmdR3IotlbEntryInfo(PAVLU64NODECORE pNode, void *p
         PCIOTLBE pIotlbe = (PCIOTLBE)pNode;
         AVLU64KEY const  uKey          = pIotlbe->Core.Key;
         uint64_t const   uIova         = IOMMU_IOTLB_KEY_GET_IOVA(uKey);
-        RTGCPHYS const   GCPhysSpa     = pIotlbe->WalkResult.GCPhysSpa;
-        uint8_t const    cShift        = pIotlbe->WalkResult.cShift;
+        RTGCPHYS const   GCPhysSpa     = pIotlbe->PageLookup.GCPhysSpa;
+        uint8_t const    cShift        = pIotlbe->PageLookup.cShift;
         size_t const     cbPage        = RT_BIT_64(cShift);
-        uint8_t const    fPerm         = pIotlbe->WalkResult.fPerm;
+        uint8_t const    fPerm         = pIotlbe->PageLookup.fPerm;
         const char      *pszPerm       = iommuAmdMemAccessGetPermName(fPerm);
         bool const       fEvictPending = pIotlbe->fEvictPending;
 
@@ -861,14 +861,14 @@ static DECLCALLBACK(int) iommuAmdIotlbEntryRemoveDomainId(PAVLU64NODECORE pNode,
  * @param   pIotlbe         The IOTLB entry to initialize and insert.
  * @param   uDomainId       The domain ID.
  * @param   uIova           The I/O virtual address.
- * @param   pWalkResult     The I/O page walk result of the access.
+ * @param   pPageLookup     The I/O page lookup result of the access.
  */
 static void iommuAmdIotlbEntryInsert(PIOMMU pThis, PIOTLBE pIotlbe, uint16_t uDomainId, uint64_t uIova,
-                                     PCIOWALKRESULT pWalkResult)
+                                     PCIOPAGELOOKUP pPageLookup)
 {
     /* Initialize the IOTLB entry with results of the I/O page walk. */
     pIotlbe->Core.Key   = IOMMU_IOTLB_KEY_MAKE(uDomainId, uIova);
-    pIotlbe->WalkResult = *pWalkResult;
+    pIotlbe->PageLookup = *pPageLookup;
 
     /* Validate. */
     Assert(pIotlbe->Core.Key != IOMMU_IOTLB_KEY_NIL);
@@ -893,9 +893,9 @@ static void iommuAmdIotlbEntryInsert(PIOMMU pThis, PIOTLBE pIotlbe, uint16_t uDo
             pFound->fEvictPending = false;
             STAM_COUNTER_INC(&pThis->StatIotlbeLazyEvictReuse);
         }
-        Assert(pFound->WalkResult.cShift == pWalkResult->cShift);
-        pFound->WalkResult.fPerm     = pWalkResult->fPerm;
-        pFound->WalkResult.GCPhysSpa = pWalkResult->GCPhysSpa;
+        Assert(pFound->PageLookup.cShift == pPageLookup->cShift);
+        pFound->PageLookup.fPerm     = pPageLookup->fPerm;
+        pFound->PageLookup.GCPhysSpa = pPageLookup->GCPhysSpa;
     }
 }
 
@@ -917,7 +917,7 @@ static PIOTLBE iommuAmdIotlbEntryRemove(PIOMMU pThis, AVLU64KEY uKey)
             STAM_COUNTER_INC(&pThis->StatIotlbeLazyEvictReuse);
 
         RT_ZERO(pIotlbe->Core);
-        RT_ZERO(pIotlbe->WalkResult);
+        RT_ZERO(pIotlbe->PageLookup);
         /* We must not erase the LRU node connections here! */
         pIotlbe->fEvictPending = false;
         Assert(pIotlbe->Core.Key == IOMMU_IOTLB_KEY_NIL);
@@ -961,14 +961,14 @@ static PIOTLBE iommuAmdIotlbLookup(PIOMMU pThis, uint64_t uDomainId, uint64_t uI
  * @param   pThis           The IOMMU device state.
  * @param   uDomainId       The domain ID.
  * @param   uIova           The I/O virtual address.
- * @param   pWalkResult     The I/O page walk result of the access.
+ * @param   pPageLookup     The I/O page lookup result of the access.
  */
-static void iommuAmdIotlbAdd(PIOMMU pThis, uint16_t uDomainId, uint64_t uIova, PCIOWALKRESULT pWalkResult)
+static void iommuAmdIotlbAdd(PIOMMU pThis, uint16_t uDomainId, uint64_t uIova, PCIOPAGELOOKUP pPageLookup)
 {
     Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
-    Assert(pWalkResult);
-    Assert(pWalkResult->cShift <= 31);
-    Assert(pWalkResult->fPerm != IOMMU_IO_PERM_NONE);
+    Assert(pPageLookup);
+    Assert(pPageLookup->cShift <= 31);
+    Assert(pPageLookup->fPerm != IOMMU_IO_PERM_NONE);
 
     /*
      * If there are no unused IOTLB entries, evict the LRU entry.
@@ -985,7 +985,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, uint16_t uDomainId, uint64_t uIova, P
             iommuAmdIotlbEntryRemove(pThis, pIotlbe->Core.Key);
 
         /* Initialize and insert the IOTLB entry into the cache. */
-        iommuAmdIotlbEntryInsert(pThis, pIotlbe, uDomainId, uIova, pWalkResult);
+        iommuAmdIotlbEntryInsert(pThis, pIotlbe, uDomainId, uIova, pPageLookup);
 
         /* Move the entry to the most recently used slot. */
         iommuAmdIotlbEntryMoveToMru(pThis, pIotlbe);
@@ -997,7 +997,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, uint16_t uDomainId, uint64_t uIova, P
         ++pThis->idxUnusedIotlbe;
 
         /* Initialize and insert the IOTLB entry into the cache. */
-        iommuAmdIotlbEntryInsert(pThis, pIotlbe, uDomainId, uIova, pWalkResult);
+        iommuAmdIotlbEntryInsert(pThis, pIotlbe, uDomainId, uIova, pPageLookup);
 
         /* Add the entry to the most recently used slot. */
         RTListAppend(&pThis->LstLruIotlbe, &pIotlbe->NdLru);
@@ -1089,7 +1089,7 @@ static void iommuAmdIotlbRemoveDomainId(PPDMDEVINS pDevIns, uint16_t uDomainId)
 
 
 /**
- * Adds or updates an IOTLB entry for the given I/O page walk result.
+ * Adds or updates IOTLB entries for the given range of I/O virtual addresses.
  *
  * @param   pDevIns     The IOMMU instance data.
  * @param   uDomainId   The domain ID.
@@ -1098,8 +1098,8 @@ static void iommuAmdIotlbRemoveDomainId(PPDMDEVINS pDevIns, uint16_t uDomainId)
  * @param   GCPhysSpa   The translated system-physical address.
  * @param   fPerm       The I/O permissions for the access, see IOMMU_IO_PERM_XXX.
  */
-static void iommuAmdIotlbUpdate(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64_t uIova, size_t cbAccess, RTGCPHYS GCPhysSpa,
-                                uint8_t fPerm)
+static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64_t uIova, size_t cbAccess, RTGCPHYS GCPhysSpa,
+                                  uint8_t fPerm)
 {
     Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
     Assert(!(GCPhysSpa & X86_PAGE_4K_OFFSET_MASK));
@@ -1109,11 +1109,11 @@ static void iommuAmdIotlbUpdate(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64_t
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
     /* Add IOTLB entries for every page in the access. */
-    IOWALKRESULT WalkResult;
-    RT_ZERO(WalkResult);
-    WalkResult.cShift    = X86_PAGE_4K_SHIFT;
-    WalkResult.fPerm     = fPerm;
-    WalkResult.GCPhysSpa = GCPhysSpa;
+    IOPAGELOOKUP PageLookup;
+    RT_ZERO(PageLookup);
+    PageLookup.cShift    = X86_PAGE_4K_SHIFT;
+    PageLookup.fPerm     = fPerm;
+    PageLookup.GCPhysSpa = GCPhysSpa;
 
     size_t cPages = cbAccess / X86_PAGE_4K_SIZE;
     cPages = RT_MIN(cPages, IOMMU_IOTLBE_MAX);
@@ -1121,9 +1121,9 @@ static void iommuAmdIotlbUpdate(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64_t
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
     do
     {
-        iommuAmdIotlbAdd(pThis, uDomainId, uIova, &WalkResult);
+        iommuAmdIotlbAdd(pThis, uDomainId, uIova, &PageLookup);
         uIova                += X86_PAGE_4K_SIZE;
-        WalkResult.GCPhysSpa += X86_PAGE_4K_SIZE;
+        PageLookup.GCPhysSpa += X86_PAGE_4K_SIZE;
         --cPages;
     } while (cPages > 0);
     IOMMU_UNLOCK_CACHE(pDevIns, pThis);
@@ -3181,13 +3181,13 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
  *                          IOMMU_IO_PERM_XXX.
  * @param   pDte            The device table entry.
  * @param   enmOp           The IOMMU operation being performed.
- * @param   pWalkResult     Where to store the results of the I/O page walk. This is
- *                          only updated when VINF_SUCCESS is returned.
+ * @param   pPageLookup     Where to store the results of the I/O page lookup. This
+ *                          is only updated when VINF_SUCCESS is returned.
  *
  * @thread  Any.
  */
 static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fPerm, PCDTE_T pDte,
-                                   IOMMUOP enmOp, PIOWALKRESULT pWalkResult)
+                                   IOMMUOP enmOp, PIOPAGELOOKUP pPageLookup)
 {
     Assert(pDte->n.u1Valid);
     Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
@@ -3265,9 +3265,9 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         if (uNextLevel == 0)
         {
             /* The page size of the translation is the default (4K). */
-            pWalkResult->GCPhysSpa = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
-            pWalkResult->cShift    = X86_PAGE_4K_SHIFT;
-            pWalkResult->fPerm     = fPtePerm;
+            pPageLookup->GCPhysSpa = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
+            pPageLookup->cShift    = X86_PAGE_4K_SHIFT;
+            pPageLookup->fPerm     = fPtePerm;
             return VINF_SUCCESS;
         }
         if (uNextLevel == 7)
@@ -3283,9 +3283,9 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
             if (   cShift > s_acIovaLevelShifts[uLevel]
                 && cShift < s_acIovaLevelShifts[uLevel + 1])
             {
-                pWalkResult->GCPhysSpa = GCPhysPte;
-                pWalkResult->cShift    = cShift;
-                pWalkResult->fPerm     = fPtePerm;
+                pPageLookup->GCPhysSpa = GCPhysPte;
+                pPageLookup->cShift    = cShift;
+                pPageLookup->fPerm     = fPtePerm;
                 return VINF_SUCCESS;
             }
 
@@ -3399,40 +3399,40 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                     uint64_t uIovaPage   = uIova & X86_PAGE_4K_BASE_MASK;
                     uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
                     uint64_t cbPages     = 0;
-                    IOWALKRESULT WalkResultPrev;
-                    RT_ZERO(WalkResultPrev);
+                    IOPAGELOOKUP PageLookupPrev;
+                    RT_ZERO(PageLookupPrev);
                     for (;;)
                     {
                         /** @todo split this into a separate function and reuse from
                          *        iommuAmdCacheLookup(). */
-                        IOWALKRESULT WalkResult;
-                        RT_ZERO(WalkResult);
+                        IOPAGELOOKUP PageLookup;
+                        RT_ZERO(PageLookup);
                         STAM_PROFILE_ADV_START(&pThis->StatIoPageWalkLookup, a);
-                        rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fPerm, &Dte, enmOp, &WalkResult);
+                        rc = iommuAmdIoPageTableWalk(pDevIns, uDevId, uIovaPage, fPerm, &Dte, enmOp, &PageLookup);
                         STAM_PROFILE_ADV_STOP(&pThis->StatIoPageWalkLookup, a);
                         if (RT_SUCCESS(rc))
                         {
                             /* Store the translated address before continuing to access more pages. */
-                            Assert(WalkResult.cShift >= X86_PAGE_4K_SHIFT);
+                            Assert(PageLookup.cShift >= X86_PAGE_4K_SHIFT);
                             if (cbRemaining == cbAccess)
                             {
-                                uint64_t const offMask = IOMMU_GET_PAGE_OFF_MASK(WalkResult.cShift);
+                                uint64_t const offMask = IOMMU_GET_PAGE_OFF_MASK(PageLookup.cShift);
                                 uint64_t const offSpa  = uIova & offMask;
-                                Assert(!(WalkResult.GCPhysSpa & offMask));
-                                GCPhysSpa = WalkResult.GCPhysSpa | offSpa;
+                                Assert(!(PageLookup.GCPhysSpa & offMask));
+                                GCPhysSpa = PageLookup.GCPhysSpa | offSpa;
                             }
                             /* Check if addresses translated so far result in a physically contiguous region. */
-                            else if (!iommuAmdLookupIsAccessContig(&WalkResultPrev, &WalkResult))
+                            else if (!iommuAmdLookupIsAccessContig(&PageLookupPrev, &PageLookup))
                             {
                                 STAM_COUNTER_INC(&pThis->StatDteLookupNonContig);
                                 break;
                             }
 
-                            /* Store the walk result from the first/previous page. */
-                            WalkResultPrev = WalkResult;
+                            /* Store the page lookup result from the first/previous page. */
+                            PageLookupPrev = PageLookup;
 
                             /* Update size of all pages read thus far. */
-                            uint64_t const cbPage = RT_BIT_64(WalkResult.cShift);
+                            uint64_t const cbPage = RT_BIT_64(PageLookup.cShift);
                             cbPages += cbPage;
 
                             /* Check if we need to access more pages. */
@@ -3467,8 +3467,8 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                         iommuAmdDteCacheUpdate(pDevIns, uDevId, &Dte, IOMMU_DEV_F_PRESENT | IOMMU_DEV_F_ADDR_TRANSLATE);
 
                         /* Update IOTLB for the contiguous range of I/O virtual addresses. */
-                        iommuAmdIotlbUpdate(pDevIns, Dte.n.u16DomainId, uIova & X86_PAGE_4K_BASE_MASK, cbPages,
-                                            GCPhysSpa & X86_PAGE_4K_BASE_MASK, WalkResultPrev.fPerm);
+                        iommuAmdIotlbAddRange(pDevIns, Dte.n.u16DomainId, uIova & X86_PAGE_4K_BASE_MASK, cbPages,
+                                              GCPhysSpa & X86_PAGE_4K_BASE_MASK, PageLookupPrev.fPerm);
                     }
 #endif
                 }
@@ -3561,10 +3561,15 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
                                PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    int rc = VERR_NOT_FOUND;
+
+    /*
+     * We hold the cache lock across both the device and the IOTLB lookups (if any) because
+     * we don't want the device cache to be invalidate while we perform IOTBL lookups.
+     */
     IOMMU_LOCK_CACHE(pDevIns, pThis);
 
     /* Lookup the device from the level 1 cache. */
-    int rc = VERR_NOT_FOUND;
     PCIODEVICE pDevice = &pThis->paDevices[uDevId];
     if ((pDevice->fFlags & (IOMMU_DEV_F_PRESENT | IOMMU_DEV_F_VALID | IOMMU_DEV_F_ADDR_TRANSLATE))
                         == (IOMMU_DEV_F_PRESENT | IOMMU_DEV_F_VALID | IOMMU_DEV_F_ADDR_TRANSLATE))
@@ -3575,8 +3580,8 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
         size_t   cbRemaining  = cbAccess;
         uint64_t uIovaPage    = uIova & X86_PAGE_4K_BASE_MASK;
         uint64_t offIova      = uIova & X86_PAGE_4K_OFFSET_MASK;
-        IOWALKRESULT WalkResultPrev;
-        RT_ZERO(WalkResultPrev);
+        IOPAGELOOKUP PageLookupPrev;
+        RT_ZERO(PageLookupPrev);
         for (;;)
         {
             STAM_PROFILE_ADV_START(&pThis->StatIotlbeLookup, b);
@@ -3584,8 +3589,8 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
             STAM_PROFILE_ADV_STOP(&pThis->StatIotlbeLookup, b);
             if (pIotlbe)
             {
-                PCIOWALKRESULT pWalkResult = &pIotlbe->WalkResult;
-                if ((pWalkResult->fPerm & fPerm) == fPerm)
+                PCIOPAGELOOKUP pPageLookup = &pIotlbe->PageLookup;
+                if ((pPageLookup->fPerm & fPerm) == fPerm)
                 { /* likely */ }
                 else
                 {
@@ -3599,27 +3604,27 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
                 }
 
                 /* Store the translated address before continuing to translate more pages. */
-                Assert(pWalkResult->cShift >= X86_PAGE_4K_SHIFT);
+                Assert(pPageLookup->cShift >= X86_PAGE_4K_SHIFT);
                 if (cbRemaining == cbAccess)
                 {
-                    uint64_t const offMask = IOMMU_GET_PAGE_OFF_MASK(pWalkResult->cShift);
+                    uint64_t const offMask = IOMMU_GET_PAGE_OFF_MASK(pPageLookup->cShift);
                     uint64_t const offSpa  = uIova & offMask;
-                    Assert(!(pWalkResult->GCPhysSpa & offMask));
-                    GCPhysSpa = pWalkResult->GCPhysSpa | offSpa;
+                    Assert(!(pPageLookup->GCPhysSpa & offMask));
+                    GCPhysSpa = pPageLookup->GCPhysSpa | offSpa;
                 }
                 /* Check if addresses translated so far result in a physically contiguous region. */
-                else if (!iommuAmdLookupIsAccessContig(&WalkResultPrev, pWalkResult))
+                else if (!iommuAmdLookupIsAccessContig(&PageLookupPrev, pPageLookup))
                 {
                     STAM_COUNTER_INC(&pThis->StatIotlbeLookupNonContig);
                     rc = VERR_OUT_OF_RANGE;
                     break;
                 }
 
-                /* Store the walk result from the first/previous page. */
-                WalkResultPrev = *pWalkResult;
+                /* Store the page lookup result from the first/previous page. */
+                PageLookupPrev = *pPageLookup;
 
                 /* Check if we need to access more pages. */
-                uint64_t const cbPage = RT_BIT_64(pWalkResult->cShift);
+                uint64_t const cbPage = RT_BIT_64(pPageLookup->cShift);
                 if (cbRemaining > cbPage - offIova)
                 {
                     cbRemaining -= (cbPage - offIova);  /* Calculate how much more we need to access. */
@@ -5879,10 +5884,10 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeCacheHit, STAMTYPE_COUNTER, "IOTLB/CacheHit", STAMUNIT_OCCURENCES, "Number of IOTLB cache hits.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeCacheMiss, STAMTYPE_COUNTER, "IOTLB/CacheMiss", STAMUNIT_OCCURENCES, "Number of IOTLB cache misses.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeLazyEvictReuse, STAMTYPE_COUNTER, "IOTLB/LazyEvictReuse", STAMUNIT_OCCURENCES, "Number of IOTLB entries reused after lazy eviction.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeLookup, STAMTYPE_PROFILE, "Profile/IotlbeLookup", STAMUNIT_TICKS_PER_CALL, "Profiling IOTLB entry lookup.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIotlbeLookup, STAMTYPE_PROFILE, "Profile/IotlbeLookup", STAMUNIT_TICKS_PER_CALL, "Profiling IOTLB entry lookup (from cache).");
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatDteLookupNonContig, STAMTYPE_COUNTER, "DTE/LookupNonContig", STAMUNIT_OCCURENCES, "DTE lookups that resulted in non-contiguous translated regions.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIoPageWalkLookup, STAMTYPE_PROFILE, "Profile/IoPageWalk", STAMUNIT_TICKS_PER_CALL, "Profiling I/O page walk lookup.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIoPageWalkLookup, STAMTYPE_PROFILE, "Profile/IoPageWalk", STAMUNIT_TICKS_PER_CALL, "Profiling I/O page walk (from memory).");
 # endif
 
     /*
