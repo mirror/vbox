@@ -23,7 +23,7 @@
 #include "UICommon.h"
 
 
-QIDialog::QIDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = 0 */)
+QIDialog::QIDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
     : QDialog(pParent, enmFlags)
     , m_fPolished(false)
 {

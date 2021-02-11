@@ -82,8 +82,8 @@ class QIWithRetranslateUI2 : public Base
 {
 public:
 
-    /** Constructs translatable widget passing @a pParent and @a fFlags to the base-class. */
-    QIWithRetranslateUI2(QWidget *pParent = 0, Qt::WindowFlags fFlags = 0) : Base(pParent, fFlags)
+    /** Constructs translatable widget passing @a pParent and @a enmFlags to the base-class. */
+    QIWithRetranslateUI2(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags()) : Base(pParent, enmFlags)
     {
         qApp->installEventFilter(this);
     }

@@ -43,7 +43,7 @@ class SHARED_LIBRARY_STUFF QIInputDialog : public QDialog
 public:
 
     /** Constructs the dialog passing @a pParent and @a enmFlags to the base-class. */
-    QIInputDialog(QWidget *pParent = 0, Qt::WindowFlags enmFlags = 0);
+    QIInputDialog(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
 
     /** Returns label text. */
     QString labelText() const;

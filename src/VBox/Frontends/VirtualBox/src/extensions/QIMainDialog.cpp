@@ -36,9 +36,9 @@
 
 
 QIMainDialog::QIMainDialog(QWidget *pParent /* = 0 */,
-                           Qt::WindowFlags fFlags /* = Qt::Dialog */,
+                           Qt::WindowFlags enmFlags /* = Qt::Dialog */,
                            bool fIsAutoCentering /* = true */)
-    : QMainWindow(pParent, fFlags)
+    : QMainWindow(pParent, enmFlags)
     , m_fIsAutoCentering(fIsAutoCentering)
     , m_fPolished(false)
     , m_iResult(QDialog::Rejected)

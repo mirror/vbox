@@ -39,9 +39,9 @@ class SHARED_LIBRARY_STUFF QILabel : public QLabel
 public:
 
     /** Constructs label passing @a pParent and @a enmFlags to the base-class. */
-    QILabel(QWidget *pParent = 0, Qt::WindowFlags enmFlags = 0);
+    QILabel(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
     /** Constructs label passing @a strText, @a pParent and @a enmFlags to the base-class. */
-    QILabel(const QString &strText, QWidget *pParent = 0, Qt::WindowFlags enmFlags = 0);
+    QILabel(const QString &strText, QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
 
     /** Returns whether label full-size focusing selection is enabled. */
     bool fullSizeSelection() const { return m_fFullSizeSelection; }

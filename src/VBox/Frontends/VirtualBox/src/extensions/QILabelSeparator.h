@@ -39,11 +39,11 @@ class SHARED_LIBRARY_STUFF QILabelSeparator : public QWidget
 
 public:
 
-    /** Constructs label-separator passing @a pParent and @a fFlags to the base-class. */
-    QILabelSeparator(QWidget *pParent = 0, Qt::WindowFlags fFlags = 0);
-    /** Constructs label-separator passing @a pParent and @a fFlags to the base-class.
+    /** Constructs label-separator passing @a pParent and @a enmFlags to the base-class. */
+    QILabelSeparator(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
+    /** Constructs label-separator passing @a pParent and @a enmFlags to the base-class.
       * @param  strText  Brings the label text. */
-    QILabelSeparator(const QString &strText, QWidget *pParent = 0, Qt::WindowFlags fFlags = 0);
+    QILabelSeparator(const QString &strText, QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
 
     /** Returns the label text. */
     QString text() const;

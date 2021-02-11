@@ -23,15 +23,15 @@
 #include "QILabelSeparator.h"
 
 
-QILabelSeparator::QILabelSeparator(QWidget *pParent /* = 0 */, Qt::WindowFlags fFlags /* = 0 */)
-    : QWidget(pParent, fFlags)
+QILabelSeparator::QILabelSeparator(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
+    : QWidget(pParent, enmFlags)
     , m_pLabel(0)
 {
     prepare();
 }
 
-QILabelSeparator::QILabelSeparator(const QString &strText, QWidget *pParent /* = 0 */, Qt::WindowFlags fFlags /* = 0 */)
-    : QWidget(pParent, fFlags)
+QILabelSeparator::QILabelSeparator(const QString &strText, QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
+    : QWidget(pParent, enmFlags)
     , m_pLabel(0)
 {
     prepare();

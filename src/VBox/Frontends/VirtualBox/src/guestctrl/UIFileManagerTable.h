@@ -113,7 +113,7 @@ class UIPropertiesDialog : public QIDialog
 
 public:
 
-    UIPropertiesDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    UIPropertiesDialog(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
     void setPropertyText(const QString &strProperty);
     void addDirectoryStatistics(UIDirectoryStatistics statictics);
 

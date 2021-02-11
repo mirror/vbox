@@ -42,13 +42,13 @@
 const QRegExp QILabel::s_regExpCopy = QRegExp("<[^>]*>");
 QRegExp QILabel::s_regExpElide = QRegExp("(<compact\\s+elipsis=\"(start|middle|end)\"?>([^<]*)</compact>)");
 
-QILabel::QILabel(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = 0 */)
+QILabel::QILabel(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
     : QLabel(pParent, enmFlags)
 {
     init();
 }
 
-QILabel::QILabel(const QString &strText, QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = 0 */)
+QILabel::QILabel(const QString &strText, QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
     : QLabel(pParent, enmFlags)
 {
     init();

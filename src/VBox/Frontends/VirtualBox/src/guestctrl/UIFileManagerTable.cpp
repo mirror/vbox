@@ -195,7 +195,7 @@ class UIStringInputDialog : public QIDialog
 
 public:
 
-    UIStringInputDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    UIStringInputDialog(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
     QString getString() const;
 
 private:
@@ -216,7 +216,7 @@ class UIFileDeleteConfirmationDialog : public QIDialog
 
 public:
 
-    UIFileDeleteConfirmationDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    UIFileDeleteConfirmationDialog(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
     /** Returns whether m_pAskNextTimeCheckBox is checked or not. */
     bool askDeleteConfirmationNextTime() const;
 
@@ -540,8 +540,8 @@ void UIGuestControlFileView::selectionChanged(const QItemSelection & selected, c
 *   UIFileStringInputDialog implementation.                                                                                      *
 *********************************************************************************************************************************/
 
-UIStringInputDialog::UIStringInputDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags flags /* = 0 */)
-    :QIDialog(pParent, flags)
+UIStringInputDialog::UIStringInputDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
+    :QIDialog(pParent, enmFlags)
 {
     QVBoxLayout *layout = new QVBoxLayout(this);
     m_pLineEdit = new QILineEdit(this);
@@ -566,8 +566,8 @@ QString UIStringInputDialog::getString() const
 *   UIPropertiesDialog implementation.                                                                                           *
 *********************************************************************************************************************************/
 
-UIPropertiesDialog::UIPropertiesDialog(QWidget *pParent, Qt::WindowFlags flags)
-    :QIDialog(pParent, flags)
+UIPropertiesDialog::UIPropertiesDialog(QWidget *pParent, Qt::WindowFlags enmFlags)
+    :QIDialog(pParent, enmFlags)
     , m_pMainLayout(new QVBoxLayout)
     , m_pInfoEdit(new QTextEdit)
 {
@@ -638,8 +638,8 @@ UIDirectoryStatistics::UIDirectoryStatistics()
 +*   UIFileDeleteConfirmationDialog implementation.                                                                                *
 +*********************************************************************************************************************************/
 
-UIFileDeleteConfirmationDialog::UIFileDeleteConfirmationDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags flags /* = 0 */)
-    :QIDialog(pParent, flags)
+UIFileDeleteConfirmationDialog::UIFileDeleteConfirmationDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
+    :QIDialog(pParent, enmFlags)
     , m_pAskNextTimeCheckBox(0)
     , m_pQuestionLabel(0)
 {

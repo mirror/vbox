@@ -48,7 +48,7 @@ class QIWithRestorableGeometry : public Base
 public:
 
     /** Constructs main window passing @a pParent and @a enmFlags to base-class. */
-    QIWithRestorableGeometry(QWidget *pParent = 0, Qt::WindowFlags enmFlags = 0)
+    QIWithRestorableGeometry(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags())
         : Base(pParent, enmFlags)
     {}
 

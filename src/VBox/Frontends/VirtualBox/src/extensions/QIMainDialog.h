@@ -41,10 +41,10 @@ class SHARED_LIBRARY_STUFF QIMainDialog : public QMainWindow
 
 public:
 
-    /** Constructs main-dialog passing @a pParent and @a fFlags to the base-class.
+    /** Constructs main-dialog passing @a pParent and @a enmFlags to the base-class.
       * @param  fIsAutoCentering  Brigs whether this dialog should be centered according it's parent. */
     QIMainDialog(QWidget *pParent = 0,
-                 Qt::WindowFlags fFlags = Qt::Dialog,
+                 Qt::WindowFlags enmFlags = Qt::Dialog,
                  bool fIsAutoCentering = true);
 
     /** Returns the dialog's result code. */

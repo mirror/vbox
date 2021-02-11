@@ -95,10 +95,10 @@ void UIPopupStack::setParent(QWidget *pParent)
     m_iParentStatusBarHeight = parentStatusBarHeight(pParent);
 }
 
-void UIPopupStack::setParent(QWidget *pParent, Qt::WindowFlags flags)
+void UIPopupStack::setParent(QWidget *pParent, Qt::WindowFlags enmFlags)
 {
     /* Call to base-class: */
-    QWidget::setParent(pParent, flags);
+    QWidget::setParent(pParent, enmFlags);
     /* Recalculate parent menu-bar height: */
     m_iParentMenuBarHeight = parentMenuBarHeight(pParent);
     /* Recalculate parent status-bar height: */

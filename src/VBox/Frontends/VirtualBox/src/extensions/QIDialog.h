@@ -40,7 +40,7 @@ class SHARED_LIBRARY_STUFF QIDialog : public QDialog
 public:
 
     /** Constructs the dialog passing @a pParent and @a enmFlags to the base-class. */
-    QIDialog(QWidget *pParent = 0, Qt::WindowFlags enmFlags = 0);
+    QIDialog(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
 
     /** Defines whether the dialog is @a fVisible. */
     void setVisible(bool fVisible);

@@ -48,7 +48,7 @@ class UISessionProcessPropertiesDialog : public QIDialog
 
 public:
 
-    UISessionProcessPropertiesDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    UISessionProcessPropertiesDialog(QWidget *pParent = 0, Qt::WindowFlags enmFlags = Qt::WindowFlags());
     void setPropertyText(const QString &strProperty);
 
 private:
@@ -98,8 +98,8 @@ private:
 *   UISessionProcessPropertiesDialog implementation.                                                                             *
 *********************************************************************************************************************************/
 
-UISessionProcessPropertiesDialog::UISessionProcessPropertiesDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags flags /*= 0 */)
-    :QIDialog(pParent, flags)
+UISessionProcessPropertiesDialog::UISessionProcessPropertiesDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
+    :QIDialog(pParent, enmFlags)
     , m_pMainLayout(new QVBoxLayout)
     , m_pInfoEdit(new QTextEdit)
 {

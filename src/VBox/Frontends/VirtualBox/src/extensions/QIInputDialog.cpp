@@ -26,7 +26,7 @@
 #include "QIInputDialog.h"
 
 
-QIInputDialog::QIInputDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = 0 */)
+QIInputDialog::QIInputDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
     : QDialog(pParent, enmFlags)
     , m_fDefaultLabelTextRedefined(false)
     , m_pLabel(0)
