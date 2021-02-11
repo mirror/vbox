@@ -4544,7 +4544,11 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
             {
                 /* Read the entire command buffer from memory (avoids multiple PGM calls). */
                 RTGCPHYS const GCPhysCmdBufBase = pThis->CmdBufBaseAddr.n.u40Base << X86_PAGE_4K_SHIFT;
-                int rc = PDMDevHlpPhysRead(pDevIns, GCPhysCmdBufBase, pvCmds, cbCmdBuf);
+
+                IOMMU_UNLOCK(pDevIns, pThisCC);
+                int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysCmdBufBase, pvCmds, cbCmdBuf);
+                IOMMU_LOCK(pDevIns, pThisCC);
+
                 if (RT_SUCCESS(rc))
                 {
                     /* Indicate to software we've fetched all commands from the buffer. */
