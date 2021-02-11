@@ -901,27 +901,6 @@ static void iommuAmdIotlbEntryInsert(PIOMMU pThis, PIOTLBE pIotlbe, uint16_t uDo
 
 
 /**
- * Removes an IOTLB entry from the cache for the given key.
- *
- * @returns Pointer to the removed IOTLB entry, NULL if the entry wasn't found in
- *          the tree.
- * @param   pThis   The IOMMU device state.
- * @param   uKey    The key of the IOTLB entry to remove.
- */
-static PIOTLBE iommuAmdIotlbEntryRemove(PIOMMU pThis, AVLU64KEY uKey)
-{
-    PIOTLBE pIotlbe = (PIOTLBE)RTAvlU64Remove(&pThis->TreeIotlbe, uKey);
-    if (pIotlbe)
-    {
-        Assert(pThis->cCachedIotlbes > 0);
-        --pThis->cCachedIotlbes;
-        STAM_COUNTER_DEC(&pThis->StatIotlbeCached);
-    }
-    return pIotlbe;
-}
-
-
-/**
  * Destroys an IOTLB entry.
  *
  * @param   pIotlbe     The IOTLB entry to destroy.
@@ -938,6 +917,31 @@ static void iommuAmdIotlbEntryDestroy(PIOTLBE pIotlbe)
 
 
 /**
+ * Removes an IOTLB entry from the cache for the given key.
+ *
+ * @returns Pointer to the removed IOTLB entry, NULL if the entry wasn't found in
+ *          the tree.
+ * @param   pThis   The IOMMU device state.
+ * @param   uKey    The key of the IOTLB entry to remove.
+ */
+static PIOTLBE iommuAmdIotlbEntryRemove(PIOMMU pThis, AVLU64KEY uKey)
+{
+    PIOTLBE pIotlbe = (PIOTLBE)RTAvlU64Remove(&pThis->TreeIotlbe, uKey);
+    if (pIotlbe)
+    {
+        if (pIotlbe->fEvictPending)
+            STAM_COUNTER_INC(&pThis->StatIotlbeLazyEvictReuse);
+        iommuAmdIotlbEntryDestroy(pIotlbe);
+        Assert(!pIotlbe->fEvictPending);
+        Assert(pThis->cCachedIotlbes > 0);
+        --pThis->cCachedIotlbes;
+        STAM_COUNTER_DEC(&pThis->StatIotlbeCached);
+    }
+    return pIotlbe;
+}
+
+
+/**
  * Looks up an IOTLB from the cache.
  *
  * @returns Pointer to IOTLB entry if found, NULL otherwise.
@@ -949,22 +953,16 @@ static PIOTLBE iommuAmdIotlbLookup(PIOMMU pThis, uint64_t uDomainId, uint64_t uI
 {
     uint64_t const uKey = IOMMU_IOTLB_KEY_MAKE(uDomainId, uIova);
     PIOTLBE pIotlbe = (PIOTLBE)RTAvlU64Get(&pThis->TreeIotlbe, uKey);
-    if (   pIotlbe
-        && pIotlbe->fEvictPending)
-    {
-        /*
-         * Domain Id wildcard invalidations only marks entries for eviction later but doesn't remove
-         * them from the cache immediately. Here we found one such entry, so remove it and move it to
-         * the LRU list and return that the lookup failed as it should.
-         */
-        iommuAmdIotlbEntryRemove(pThis, pIotlbe->Core.Key);
-        iommuAmdIotlbEntryDestroy(pIotlbe);
-        Assert(!pIotlbe->fEvictPending);
-        STAM_COUNTER_INC(&pThis->StatIotlbeLazyEvictReuse);
-        iommuAmdIotlbEntryMoveToLru(pThis, pIotlbe);
-        return NULL;
-    }
-    return pIotlbe;
+    if (    pIotlbe
+        && !pIotlbe->fEvictPending)
+        return pIotlbe;
+
+    /*
+     * Domain Id wildcard invalidations only marks entries for eviction later but doesn't remove
+     * them from the cache immediately. We found an entry pending eviction, just return that
+     * nothing was found (rather than evicting now).
+     */
+    return NULL;
 }
 
 
@@ -995,12 +993,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, uint16_t uDomainId, uint64_t uIova, P
 
         /* If the entry is in the cache, remove it. */
         if (pIotlbe->Core.Key != IOMMU_IOTLB_KEY_NIL)
-        {
-            if (pIotlbe->fEvictPending)
-                STAM_COUNTER_INC(&pThis->StatIotlbeLazyEvictReuse);
             iommuAmdIotlbEntryRemove(pThis, pIotlbe->Core.Key);
-            iommuAmdIotlbEntryDestroy(pIotlbe);
-        }
 
         /* Initialize and insert the IOTLB entry into the cache. */
         iommuAmdIotlbEntryInsert(pThis, pIotlbe, uDomainId, uIova, pWalkResult);
@@ -1071,10 +1064,7 @@ static void iommuAmdIotlbRemoveRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uin
         uint64_t const uKey = IOMMU_IOTLB_KEY_MAKE(uDomainId, uIova);
         PIOTLBE pIotlbe = iommuAmdIotlbEntryRemove(pThis, uKey);
         if (pIotlbe)
-        {
-            iommuAmdIotlbEntryDestroy(pIotlbe);
             iommuAmdIotlbEntryMoveToLru(pThis, pIotlbe);
-        }
         uIova        += X86_PAGE_4K_SIZE;
         cbInvalidate -= X86_PAGE_4K_SIZE;
     } while (cbInvalidate > 0);
