@@ -177,6 +177,7 @@ private:
     int homeInit();
     int logInit();
     int ipv4Init();
+    int ipv4LoopbackMapInit();
     int ipv6Init();
     int eventsInit();
 
@@ -375,24 +376,6 @@ int VBoxNetLwipNAT::init()
     fetchNatPortForwardRules(m_vecPortForwardRule4, /* :fIsIPv6 */ false);
     if (m_ProxyOptions.ipv6_enabled)
         fetchNatPortForwardRules(m_vecPortForwardRule6, /* :fIsIPv6 */ true);
-
-    AddressToOffsetMapping tmp;
-    rc = localMappings(m_net, tmp);
-    if (RT_SUCCESS(rc) && !tmp.empty())
-    {
-        unsigned long i = 0;
-        for (AddressToOffsetMapping::iterator it = tmp.begin();
-             it != tmp.end() && i < RT_ELEMENTS(m_lo2off);
-             ++it, ++i)
-        {
-            ip4_addr_set_u32(&m_lo2off[i].loaddr, it->first.u);
-            m_lo2off[i].off = it->second;
-        }
-
-        m_loOptDescriptor.lomap = m_lo2off;
-        m_loOptDescriptor.num_lomap = i;
-        m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
-    }
 
 
     if (m_strHome.isNotEmpty())
@@ -608,6 +591,39 @@ int VBoxNetLwipNAT::ipv4Init()
             LogRel(("Failed to parse \"%s\" IPv4 source address specification\n",
                     strSourceIp4.c_str()));
         }
+    }
+
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Init mapping from the natnet's IPv4 addresses to host's IPv4
+ * loopbacks.  Plural "loopbacks" because it's now quite common to run
+ * services on loopback addresses other than 127.0.0.1.  E.g. a
+ * caching dns proxy on 127.0.1.1 or 127.0.0.53.
+ */
+int VBoxNetLwipNAT::ipv4LoopbackMapInit()
+{
+    int rc;
+
+    AddressToOffsetMapping tmp;
+    rc = localMappings(m_net, tmp);
+    if (RT_SUCCESS(rc) && !tmp.empty())
+    {
+        unsigned long i = 0;
+        for (AddressToOffsetMapping::iterator it = tmp.begin();
+             it != tmp.end() && i < RT_ELEMENTS(m_lo2off);
+             ++it, ++i)
+        {
+            ip4_addr_set_u32(&m_lo2off[i].loaddr, it->first.u);
+            m_lo2off[i].off = it->second;
+        }
+
+        m_loOptDescriptor.lomap = m_lo2off;
+        m_loOptDescriptor.num_lomap = i;
+        m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
     }
 
     return VINF_SUCCESS;
