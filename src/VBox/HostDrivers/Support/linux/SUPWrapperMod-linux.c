@@ -87,6 +87,11 @@
  * Define to select proprietary license instead of GPL. */
 # define WRAPPED_MODULE_LICENSE_PROPRIETARY
 #endif
+#ifdef DOXYGEN_RUNNING
+/** @def WRAPPED_MODULE_SYMBOL_INCLUDE
+ * The include with SYMBOL_ENTRY() invocations for all exported symbols.  */
+# define WRAPPED_MODULE_SYMBOL_INCLUDE      "iprt/cdefs.h"
+#endif
 
 
 /*********************************************************************************************************************************
