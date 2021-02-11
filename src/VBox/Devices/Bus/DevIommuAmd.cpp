@@ -52,7 +52,7 @@
 /** The maximum number of DTE entries. */
 # define IOMMU_DTE_CACHE_MAX                        UINT16_MAX
 /** The maximum number of IOTLB entries. */
-# define IOMMU_IOTLBE_MAX                           128
+# define IOMMU_IOTLBE_MAX                           96
 /** The mask of bits covering the domain ID in the IOTLBE key. */
 # define IOMMU_IOTLB_DOMAIN_ID_MASK                 UINT64_C(0xffffff0000000000)
 /** The mask of bits covering the IOVA in the IOTLBE key. */
@@ -901,22 +901,6 @@ static void iommuAmdIotlbEntryInsert(PIOMMU pThis, PIOTLBE pIotlbe, uint16_t uDo
 
 
 /**
- * Destroys an IOTLB entry.
- *
- * @param   pIotlbe     The IOTLB entry to destroy.
- * @remarks An entry must only be destroyed if it's not in the cache!
- */
-static void iommuAmdIotlbEntryDestroy(PIOTLBE pIotlbe)
-{
-    /* We must not erase the LRU node connections here! */
-    RT_ZERO(pIotlbe->Core);
-    RT_ZERO(pIotlbe->WalkResult);
-    pIotlbe->fEvictPending = false;
-    Assert(pIotlbe->Core.Key == IOMMU_IOTLB_KEY_NIL);
-}
-
-
-/**
  * Removes an IOTLB entry from the cache for the given key.
  *
  * @returns Pointer to the removed IOTLB entry, NULL if the entry wasn't found in
@@ -931,8 +915,13 @@ static PIOTLBE iommuAmdIotlbEntryRemove(PIOMMU pThis, AVLU64KEY uKey)
     {
         if (pIotlbe->fEvictPending)
             STAM_COUNTER_INC(&pThis->StatIotlbeLazyEvictReuse);
-        iommuAmdIotlbEntryDestroy(pIotlbe);
-        Assert(!pIotlbe->fEvictPending);
+
+        RT_ZERO(pIotlbe->Core);
+        RT_ZERO(pIotlbe->WalkResult);
+        /* We must not erase the LRU node connections here! */
+        pIotlbe->fEvictPending = false;
+        Assert(pIotlbe->Core.Key == IOMMU_IOTLB_KEY_NIL);
+
         Assert(pThis->cCachedIotlbes > 0);
         --pThis->cCachedIotlbes;
         STAM_COUNTER_DEC(&pThis->StatIotlbeCached);
