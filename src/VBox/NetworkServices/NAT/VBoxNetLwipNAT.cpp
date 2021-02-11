@@ -259,6 +259,7 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
     m_src4.sin_len = sizeof(m_src4);
     m_src6.sin6_len = sizeof(m_src6);
 #endif
+    m_ProxyOptions.lomap_desc = NULL;
     m_ProxyOptions.nameservers = NULL;
 
     m_LwipNetIf.name[0] = 'N';
@@ -276,6 +277,9 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
     /* tell the base class about our command line options */
     for (PCRTGETOPTDEF pcOpt = &s_aGetOptDef[0]; pcOpt->iShort != 0; ++pcOpt)
         addCommandLineOption(pcOpt);
+
+    m_loOptDescriptor.lomap = NULL;
+    m_loOptDescriptor.num_lomap = 0;
 
     LogFlowFuncLeave();
 }
@@ -593,6 +597,8 @@ int VBoxNetLwipNAT::ipv4Init()
         }
     }
 
+    /* Make host's loopback(s) available from inside the natnet */
+    ipv4LoopbackMapInit();
 
     return VINF_SUCCESS;
 }
@@ -606,24 +612,105 @@ int VBoxNetLwipNAT::ipv4Init()
  */
 int VBoxNetLwipNAT::ipv4LoopbackMapInit()
 {
+    HRESULT hrc;
     int rc;
 
-    AddressToOffsetMapping tmp;
-    rc = localMappings(m_net, tmp);
-    if (RT_SUCCESS(rc) && !tmp.empty())
+    com::SafeArray<BSTR> aStrLocalMappings;
+    hrc = m_net->COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(aStrLocalMappings));
+    if (FAILED(hrc))
     {
-        unsigned long i = 0;
-        for (AddressToOffsetMapping::iterator it = tmp.begin();
-             it != tmp.end() && i < RT_ELEMENTS(m_lo2off);
-             ++it, ++i)
+        reportComError(m_net, "LocalMappings", hrc);
+        return VERR_GENERAL_FAILURE;
+    }
+
+    if (aStrLocalMappings.size() == 0)
+        return VINF_SUCCESS;
+
+
+    /* netmask in host order, to verify the offsets */
+    uint32_t uMask = RT_N2H_U32(getIpv4Netmask().u);
+
+
+    /*
+     * Process mappings of the form "127.x.y.z=off"
+     */
+    size_t dst = 0;
+    for (size_t i = 0; i < aStrLocalMappings.size(); ++i)
+    {
+        com::Utf8Str strMapping(aStrLocalMappings[i]);
+        const char *pcszRule = strMapping.c_str();
+        LogRel(("IPv4 loopback mapping %zu: %s\n", i, pcszRule));
+
+        RTNETADDRIPV4 Loopback4;
+        char *pszNext;
+        rc = RTNetStrToIPv4AddrEx(pcszRule, &Loopback4, &pszNext);
+        if (RT_FAILURE(rc))
         {
-            ip4_addr_set_u32(&m_lo2off[i].loaddr, it->first.u);
-            m_lo2off[i].off = it->second;
+            LogRel(("Failed to parse IPv4 address: %Rra\n", rc));
+            continue;
         }
 
+        if (Loopback4.au8[0] != 127)
+        {
+            LogRel(("Not an IPv4 loopback address\n"));
+            continue;
+        }
+
+        if (rc != VWRN_TRAILING_CHARS)
+        {
+            LogRel(("Missing right hand side\n"));
+            continue;
+        }
+
+        pcszRule = RTStrStripL(pszNext);
+        if (*pcszRule != '=')
+        {
+            LogRel(("Invalid rule format\n"));
+            continue;
+        }
+
+        pcszRule = RTStrStripL(pcszRule+1);
+        if (*pszNext == '\0')
+        {
+            LogRel(("Empty right hand side\n"));
+            continue;
+        }
+
+        uint32_t u32Offset;
+        rc = RTStrToUInt32Ex(pcszRule, &pszNext, 10, &u32Offset);
+        if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_SPACES)
+        {
+            LogRel(("Invalid offset\n"));
+            continue;
+        }
+
+        if (u32Offset <= 1 || u32Offset == ~uMask)
+        {
+            LogRel(("Offset maps to a reserved address\n"));
+            continue;
+        }
+
+        if ((u32Offset & uMask) != 0)
+        {
+            LogRel(("Offset exceeds the network size\n"));
+            continue;
+        }
+
+        if (dst >= RT_ELEMENTS(m_lo2off))
+        {
+            LogRel(("Ignoring the mapping, too many mappings already\n"));
+            continue;
+        }
+
+        ip4_addr_set_u32(&m_lo2off[dst].loaddr, Loopback4.u);
+        m_lo2off[dst].off = u32Offset;
+        ++dst;
+    }
+
+    if (dst > 0)
+    {
         m_loOptDescriptor.lomap = m_lo2off;
-        m_loOptDescriptor.num_lomap = i;
-        m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
+        m_loOptDescriptor.num_lomap = dst;
     }
 
     return VINF_SUCCESS;

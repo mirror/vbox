@@ -34,12 +34,6 @@ typedef ComPtr<IHost> ComHostPtr;
 typedef ComPtr<INATNetwork> ComNatPtr;
 typedef com::SafeArray<BSTR> ComBstrArray;
 
-typedef std::vector<RTNETADDRIPV4> AddressList;
-typedef std::map<RTNETADDRIPV4, int> AddressToOffsetMapping;
-
-
-int localMappings(const ComNatPtr&, AddressToOffsetMapping&);
-
 
 class NATNetworkEventAdapter
 {
