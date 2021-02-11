@@ -22,10 +22,13 @@
 #endif
 
 /* Qt includes */
+#include <QIcon>
 #include <QLineEdit>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
+
+class QLabel;
 
 /** QLineEdit extension with advanced functionality. */
 class SHARED_LIBRARY_STUFF QILineEdit : public QLineEdit
@@ -55,6 +58,7 @@ protected:
 
     /** Handles any Qt @a pEvent. */
     virtual bool event(QEvent *pEvent) /* override */;
+    virtual void paintEvent(QPaintEvent *pPaintEvent) /* override */;
 
 private slots:
 
@@ -76,6 +80,10 @@ private:
     bool     m_fAllowToCopyContentsWhenDisabled;
     /** Holds the copy to clipboard action. */
     QAction *m_pCopyAction;
+
+    QLabel *m_pIconLabel;
+    QIcon m_markIcon;
+    bool m_fMarkForError;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QILineEdit_h */

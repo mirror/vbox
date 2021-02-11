@@ -437,7 +437,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
             {
                 m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
                                              UIIconPool::iconSet(":/status_error_16px.png"),
-                                             UIWizardNewVM::tr("Invalid username and password"));
+                                             UIWizardNewVM::tr("Invalid username and/or password"));
                 fIsComplete = false;
             }
         }

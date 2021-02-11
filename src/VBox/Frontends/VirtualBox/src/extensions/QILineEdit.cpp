@@ -19,18 +19,21 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QContextMenuEvent>
+#include <QLabel>
 #include <QMenu>
 #include <QPalette>
 #include <QStyleOptionFrame>
 
 /* GUI includes: */
 #include "QILineEdit.h"
-
+#include "UIIconPool.h"
 
 QILineEdit::QILineEdit(QWidget *pParent /* = 0 */)
     : QLineEdit(pParent)
     , m_fAllowToCopyContentsWhenDisabled(false)
     , m_pCopyAction(0)
+    , m_pIconLabel(0)
+    , m_fMarkForError(false)
 {
     prepare();
 }
@@ -39,6 +42,8 @@ QILineEdit::QILineEdit(const QString &strText, QWidget *pParent /* = 0 */)
     : QLineEdit(strText, pParent)
     , m_fAllowToCopyContentsWhenDisabled(false)
     , m_pCopyAction(0)
+    , m_pIconLabel(0)
+    , m_fMarkForError(false)
 {
     prepare();
 }
@@ -60,12 +65,10 @@ void QILineEdit::setFixedWidthByText(const QString &strText)
 
 void QILineEdit::mark(bool fError)
 {
-    QPalette newPalette = palette();
-    if (fError)
-        newPalette.setColor(QPalette::Base, QColor(255, 180, 180));
-    else
-        newPalette.setColor(QPalette::Base, m_originalBaseColor);
-    setPalette(newPalette);
+    if (fError == m_fMarkForError)
+        return;
+    m_fMarkForError = fError;
+    update();
 }
 
 bool QILineEdit::event(QEvent *pEvent)
@@ -93,6 +96,27 @@ bool QILineEdit::event(QEvent *pEvent)
     return QLineEdit::event(pEvent);
 }
 
+void QILineEdit::paintEvent(QPaintEvent *pPaintEvent)
+{
+    QLineEdit::paintEvent(pPaintEvent);
+
+    if (m_fMarkForError)
+    {
+        const int iIconMargin = 0.5 * QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+        int iIconSize = height() - 2 * iIconMargin;
+        if (!m_pIconLabel)
+            m_pIconLabel = new QLabel(this);
+        m_pIconLabel->setPixmap(m_markIcon.pixmap(windowHandle(), QSize(iIconSize, iIconSize)));
+        m_pIconLabel->move(width() - iIconSize - iIconMargin, iIconMargin);
+        m_pIconLabel->show();
+    }
+    else
+    {
+        if (m_pIconLabel)
+            m_pIconLabel->hide();
+    }
+}
+
 void QILineEdit::copy()
 {
     /* Copy the current text to the global and selection clipboards: */
@@ -102,6 +126,7 @@ void QILineEdit::copy()
 
 void QILineEdit::prepare()
 {
+    m_markIcon = UIIconPool::iconSet(":/status_error_16px.png");
     /* Prepare original base color: */
     m_originalBaseColor = palette().color(QPalette::Base);
 
