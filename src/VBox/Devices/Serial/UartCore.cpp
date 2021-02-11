@@ -858,18 +858,20 @@ static VBOXSTRICTRC uartXmit(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pT
 #ifdef IN_RING3
     if (fNotifyDrv)
     {
+        /* Leave the device critical section before calling into the lower driver. */
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+
         if (   pThisCC->pDrvSerial
             && !(pThis->uRegMcr & UART_REG_MCR_LOOP))
         {
-            /* Leave the device critical section before calling into the lower driver. */
-            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
             int rc2 = pThisCC->pDrvSerial->pfnDataAvailWrNotify(pThisCC->pDrvSerial);
             if (RT_FAILURE(rc2))
                 LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pDevIns->iInstance, rc2));
-            PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
         }
         else
             PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
+
+        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
     }
 #endif
 
@@ -1416,7 +1418,7 @@ DECLHIDDEN(VBOXSTRICTRC) uartRegWrite(PPDMDEVINS pDevIns, PUARTCORE pThis, PUART
                 rc = uartRegMcrWrite(pDevIns, pThis, pThisCC, uVal);
                 break;
             case UART_REG_SCR_INDEX:
-                pThis->uRegScr = u32;
+                pThis->uRegScr = uVal;
                 break;
             default:
                 break;
