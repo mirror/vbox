@@ -55,7 +55,7 @@ public:
     int totalHeight() const;
     int titleHeight() const;
     int pageWidgetHeight() const;
-    void setTitleIcon(const QIcon &icon);
+    void setTitleIcon(const QIcon &icon, const QString &strToolTip);
 
 protected:
 
@@ -196,7 +196,7 @@ int UIToolBoxPage::totalHeight() const
     return pageWidgetHeight() + titleHeight();
 }
 
-void UIToolBoxPage::setTitleIcon(const QIcon &icon)
+void UIToolBoxPage::setTitleIcon(const QIcon &icon, const QString &strToolTip)
 {
     if (!m_pIconLabel)
         return;
@@ -207,6 +207,7 @@ void UIToolBoxPage::setTitleIcon(const QIcon &icon)
     }
     const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
     m_pIconLabel->setPixmap(icon.pixmap(windowHandle(), QSize(iMetric, iMetric)));
+    m_pIconLabel->setToolTip(strToolTip);
 }
 
 int UIToolBoxPage::titleHeight() const
@@ -331,12 +332,12 @@ void UIToolBox::setPageTitle(int iIndex, const QString &strTitle)
     iterator.value()->setTitle(strTitle);
 }
 
-void UIToolBox::setPageTitleIcon(int iIndex, const QIcon &icon)
+void UIToolBox::setPageTitleIcon(int iIndex, const QIcon &icon, const QString &strIconToolTip /* = QString() */)
 {
     QMap<int, UIToolBoxPage*>::iterator iterator = m_pages.find(iIndex);
     if (iterator == m_pages.end())
         return;
-    iterator.value()->setTitleIcon(icon);
+    iterator.value()->setTitleIcon(icon, strIconToolTip);
 }
 
 void UIToolBox::setCurrentPage(int iIndex)

@@ -59,12 +59,12 @@ public:
       * then the next marched item is selected. */
     void    search(QITreeWidget* pTreeWidget, bool fGotoNext = true);
 
- protected:
+protected:
 
     void retranslateUi() /* override */;
     virtual void showEvent(QShowEvent *pEvent) /* override */;
 
- private slots:
+private slots:
 
     void sltShowNextMatchingItem();
     void sltShowPreviousMatchingItem();

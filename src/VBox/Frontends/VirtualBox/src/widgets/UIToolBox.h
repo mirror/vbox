@@ -47,7 +47,7 @@ public:
     bool insertPage(int iIndex, QWidget *pWidget, const QString &strTitle, bool fAddEnableCheckBox = false);
     void setPageEnabled(int iIndex, bool fEnabled);
     void setPageTitle(int iIndex, const QString &strTitle);
-    void setPageTitleIcon(int iIndex, const QIcon &icon);
+    void setPageTitleIcon(int iIndex, const QIcon &icon, const QString &strIconToolTip = QString());
     void setCurrentPage(int iIndex);
 
 protected:

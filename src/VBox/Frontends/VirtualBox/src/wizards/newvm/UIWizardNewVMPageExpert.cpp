@@ -400,7 +400,8 @@ bool UIWizardNewVMPageExpert::isComplete() const
     if (!UIWizardPage::isComplete())
     {
         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
-                                UIIconPool::iconSet(":/status_error_16px.png"));
+                                     UIIconPool::iconSet(":/status_error_16px.png"),
+                                     UIWizardNewVM::tr("A valid VM name is required"));
         fIsComplete = false;
     }
 
@@ -417,14 +418,17 @@ bool UIWizardNewVMPageExpert::isComplete() const
         if (!checkISOFile())
         {
             m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
-                                         UIIconPool::iconSet(":/status_error_16px.png"));
+                                         UIIconPool::iconSet(":/status_error_16px.png"),
+                                         UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
             fIsComplete = false;
         }
         /* Check the GA installation medium: */
         if (m_pGAInstallCheckBox->isChecked() && !checkGAISOFile())
         {
             m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
-                                    UIIconPool::iconSet(":/status_error_16px.png"));
+                                         UIIconPool::iconSet(":/status_error_16px.png"),
+                                         UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
+
             fIsComplete = false;
         }
         if (m_pUserNamePasswordEditor)
@@ -432,7 +436,8 @@ bool UIWizardNewVMPageExpert::isComplete() const
             if (!m_pUserNamePasswordEditor->isComplete())
             {
                 m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
-                                        UIIconPool::iconSet(":/status_error_16px.png"));
+                                             UIIconPool::iconSet(":/status_error_16px.png"),
+                                             UIWizardNewVM::tr("Invalid username and password"));
                 fIsComplete = false;
             }
         }
