@@ -86,11 +86,11 @@
 #       endif /* older kernels */
 #       include <linux/timer.h>
 #   endif
-#   if RTLNX_VER_MIN(3,2,0) && defined(SUPDRV_AGNOSTIC)
+#   if RTLNX_VER_MIN(3,2,0)
 #       include <linux/export.h>
 #   else
 #       include <linux/module.h>
-#       if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64) /* fix conflicts with iprt/x86.h */
+#       if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && defined(SUPDRV_AGNOSTIC) /* fix conflicts with iprt/x86.h */
 #           undef CS
 #           undef SS
 #           undef EFLAGS
