@@ -92,6 +92,10 @@
 #       include <linux/module.h>
 #       if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && defined(SUPDRV_AGNOSTIC) /* fix conflicts with iprt/x86.h */
 #           undef CS
+#           undef DS
+#           undef ES
+#           undef FS
+#           undef GS
 #           undef SS
 #           undef EFLAGS
 #           undef R15
