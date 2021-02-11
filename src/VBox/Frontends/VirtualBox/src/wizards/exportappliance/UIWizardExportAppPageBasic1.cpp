@@ -70,7 +70,7 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
         }
         QListWidgetItem *pItem = new UIVMListWidgetItem(pixIcon, strName, uUuid, fInSaveState, m_pVMSelector);
         if (!fEnabled)
-            pItem->setFlags(0);
+            pItem->setFlags(Qt::ItemFlags());
         m_pVMSelector->addItem(pItem);
     }
     m_pVMSelector->sortItems();

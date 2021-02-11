@@ -79,7 +79,7 @@ public:
     virtual QString text() const /* override */;
 
     /** Returns the item flags for the given @a iColumn. */
-    virtual Qt::ItemFlags itemFlags(int /* iColumn */) const { return 0; }
+    virtual Qt::ItemFlags itemFlags(int /* iColumn */) const { return Qt::ItemFlags(); }
 
     /** Defines the @a iRole data for the item at @a iColumn to @a value. */
     virtual bool setData(int /* iColumn */, const QVariant & /* value */, int /* iRole */) { return false; }
@@ -352,7 +352,7 @@ UIVirtualHardwareItem::UIVirtualHardwareItem(UIApplianceModel *pParent,
 
 Qt::ItemFlags UIVirtualHardwareItem::itemFlags(int iColumn) const
 {
-    Qt::ItemFlags enmFlags = 0;
+    Qt::ItemFlags enmFlags = Qt::ItemFlags();
     if (iColumn == ApplianceViewSection_ConfigValue)
     {
         /* Some items are checkable */
@@ -1417,7 +1417,7 @@ int UIApplianceModel::columnCount(const QModelIndex &parentIdx /* = QModelIndex(
 Qt::ItemFlags UIApplianceModel::flags(const QModelIndex &idx) const
 {
     if (!idx.isValid())
-        return 0;
+        return Qt::ItemFlags();
 
     UIApplianceModelItem *pItem = static_cast<UIApplianceModelItem*>(idx.internalPointer());
 
