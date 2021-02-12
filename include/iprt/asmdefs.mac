@@ -546,7 +546,7 @@ GLOBALNAME_EX %1 %+ _EndProc, function hidden
 %ifdef ASM_FORMAT_ELF
  %ifndef __NASM__ ; nasm does this in the global directive.
 size NAME(%1)               NAME(%1 %+ _EndProc) - NAME(%1)
-size NAME(%1 %+ _EndProc)   0
+size NAME(%1 %+ _EndProc)   4 ; make it non-zero to shut up warnigns from Linux's objtool.
  %endif
 %endif
     db  0xCC, 0xCC, 0xCC, 0xCC
