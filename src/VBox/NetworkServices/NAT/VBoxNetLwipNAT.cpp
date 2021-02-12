@@ -78,7 +78,6 @@
 #include <stdio.h>
 
 #include "../NetLib/VBoxNetBaseService.h"
-#include "../NetLib/utils.h"
 #include "../NetLib/VBoxPortForwardString.h"
 
 extern "C"
@@ -124,11 +123,8 @@ typedef VECNATSERVICEPF::const_iterator CITERATORNATSERVICEPF;
 
 
 class VBoxNetLwipNAT
-  : public VBoxNetBaseService,
-    public NATNetworkEventAdapter
+  : public VBoxNetBaseService
 {
-    friend class NATNetworkListener;
-
     /** Home folder location; used as default directory for several paths. */
     com::Utf8Str m_strHome;
 
@@ -148,12 +144,34 @@ class VBoxNetLwipNAT
     ComPtr<INATNetwork> m_net;
     ComPtr<IHost> m_host;
 
-    ComNatListenerPtr m_NatListener;
-    ComNatListenerPtr m_VBoxListener;
-    ComNatListenerPtr m_VBoxClientListener;
-
     VECNATSERVICEPF m_vecPortForwardRule4;
     VECNATSERVICEPF m_vecPortForwardRule6;
+
+    class Listener
+    {
+        class Adapter;
+        typedef ListenerImpl<Adapter, VBoxNetLwipNAT *> Impl;
+
+        ComObjPtr<Impl> m_pListenerImpl;
+        ComPtr<IEventSource> m_pEventSource;
+
+    public:
+        HRESULT init(VBoxNetLwipNAT *pNAT);
+        void uninit();
+
+        template <typename IEventful>
+        HRESULT listen(const ComPtr<IEventful> &pEventful,
+                       const VBoxEventType_T aEvents[]);
+        HRESULT unlisten();
+
+    private:
+        HRESULT doListen(const ComPtr<IEventSource> &pEventSource,
+                         const VBoxEventType_T aEvents[]);
+    };
+
+    Listener m_ListenerNATNet;
+    Listener m_ListenerVirtualBox;
+    Listener m_ListenerVBoxClient;
 
     static INTNETSEG aXmitSeg[64];
 
@@ -847,35 +865,177 @@ int VBoxNetLwipNAT::ipv6Init()
 }
 
 
+
+/**
+ * Adapter for the ListenerImpl template.  It has to be a separate
+ * object because ListenerImpl deletes it.  Just a small wrapper that
+ * delegates the real work back to VBoxNetLwipNAT.
+ */
+class VBoxNetLwipNAT::Listener::Adapter
+{
+    VBoxNetLwipNAT *m_pNAT;
+public:
+    Adapter() : m_pNAT(NULL) {}
+    HRESULT init() { return init(NULL); }
+    void uninit() { m_pNAT = NULL; }
+
+    HRESULT init(VBoxNetLwipNAT *pNAT)
+    {
+        m_pNAT = pNAT;
+        return S_OK;
+    }
+
+    HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
+    {
+        if (RT_LIKELY(m_pNAT != NULL))
+            return m_pNAT->HandleEvent(aEventType, pEvent);
+        else
+            return S_OK;
+    }
+};
+
+
+HRESULT
+VBoxNetLwipNAT::Listener::init(VBoxNetLwipNAT *pNAT)
+{
+    HRESULT hrc;
+
+    hrc = m_pListenerImpl.createObject();
+    if (FAILED(hrc))
+        return hrc;
+
+    hrc = m_pListenerImpl->init(new Adapter(), pNAT);
+    if (FAILED(hrc))
+    {
+        VBoxNetLwipNAT::reportComError(m_pListenerImpl, "init", hrc);
+        return hrc;
+    }
+
+    return hrc;
+}
+
+
+void
+VBoxNetLwipNAT::Listener::uninit()
+{
+    unlisten();
+    m_pListenerImpl.setNull();
+}
+
+
+/*
+ * There's no base interface that exposes "eventSource" so fake it
+ * with a template.
+ */
+template <typename IEventful>
+HRESULT
+VBoxNetLwipNAT::Listener::listen(const ComPtr<IEventful> &pEventful,
+                                         const VBoxEventType_T aEvents[])
+{
+    HRESULT hrc;
+
+    if (m_pListenerImpl.isNull())
+        return S_OK;
+
+    ComPtr<IEventSource> pEventSource;
+    hrc = pEventful->COMGETTER(EventSource)(pEventSource.asOutParam());
+    if (FAILED(hrc))
+    {
+        VBoxNetLwipNAT::reportComError(pEventful, "EventSource", hrc);
+        return hrc;
+    }
+
+    /* got a real interface, punt to the non-template code */
+    hrc = doListen(pEventSource, aEvents);
+    if (FAILED(hrc))
+        return hrc;
+
+    return hrc;
+}
+
+
+HRESULT
+VBoxNetLwipNAT::Listener::doListen(const ComPtr<IEventSource> &pEventSource,
+                                   const VBoxEventType_T aEvents[])
+{
+    HRESULT hrc;
+
+    com::SafeArray<VBoxEventType_T> aInteresting;
+    for (size_t i = 0; aEvents[i] != VBoxEventType_Invalid; ++i)
+        aInteresting.push_back(aEvents[i]);
+
+    BOOL fActive = true;
+    hrc = pEventSource->RegisterListener(m_pListenerImpl,
+                                         ComSafeArrayAsInParam(aInteresting),
+                                         fActive);
+    if (FAILED(hrc))
+    {
+        VBoxNetLwipNAT::reportComError(m_pEventSource, "RegisterListener", hrc);
+        return hrc;
+    }
+
+    m_pEventSource = pEventSource;
+    return hrc;
+}
+
+
+HRESULT
+VBoxNetLwipNAT::Listener::unlisten()
+{
+    HRESULT hrc;
+
+    if (m_pEventSource.isNull())
+        return S_OK;
+
+    const ComPtr<IEventSource> pEventSource = m_pEventSource;
+    m_pEventSource.setNull();
+
+    hrc = pEventSource->UnregisterListener(m_pListenerImpl);
+    if (FAILED(hrc))
+    {
+        VBoxNetLwipNAT::reportComError(pEventSource, "UnregisterListener", hrc);
+        return hrc;
+    }
+
+    return hrc;
+}
+
+
+
 /**
  * Create and register API event listeners.
  */
 int VBoxNetLwipNAT::eventsInit()
 {
-    int rc;
+    /**
+     * @todo r=uwe These events are reported on both IVirtualBox and
+     * INATNetwork objects.  We used to listen for them on our
+     * network, but it was changed later to listen on vbox.  Leave it
+     * that way for now.  Note that HandleEvent() has to do additional
+     * check for them to ignore events for other networks.
+     */
+    static const VBoxEventType_T s_aNATNetEvents[] = {
+        VBoxEventType_OnNATNetworkPortForward,
+        VBoxEventType_OnNATNetworkSetting,
+        VBoxEventType_Invalid
+    };
+    m_ListenerNATNet.init(this);
+    m_ListenerNATNet.listen(virtualbox, s_aNATNetEvents); // sic!
 
-    {
-        ComEventTypeArray eventTypes;
-        eventTypes.push_back(VBoxEventType_OnNATNetworkPortForward);
-        eventTypes.push_back(VBoxEventType_OnNATNetworkSetting);
-        rc = createNatListener(m_NatListener, virtualbox, this, eventTypes);
-        AssertRCReturn(rc, rc);
-    }
+    static const VBoxEventType_T s_aVirtualBoxEvents[] = {
+        VBoxEventType_OnHostNameResolutionConfigurationChange,
+        VBoxEventType_OnNATNetworkStartStop,
+        VBoxEventType_Invalid
+    };
+    m_ListenerVirtualBox.init(this);
+    m_ListenerVirtualBox.listen(virtualbox, s_aVirtualBoxEvents);
 
-    {
-        ComEventTypeArray eventTypes;
-        eventTypes.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
-        eventTypes.push_back(VBoxEventType_OnNATNetworkStartStop);
-        rc = createNatListener(m_VBoxListener, virtualbox, this, eventTypes);
-        AssertRCReturn(rc, rc);
-    }
-
-    {
-        ComEventTypeArray eventTypes;
-        eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
-        rc = createClientListener(m_VBoxClientListener, virtualboxClient, this, eventTypes);
-        AssertRCReturn(rc, rc);
-    }
+    static const VBoxEventType_T s_aVBoxClientEvents[] = {
+        VBoxEventType_OnVBoxSVCAvailabilityChanged,
+        VBoxEventType_Invalid
+    };
+    m_ListenerVBoxClient.init(this);
+    m_ListenerVBoxClient.listen(virtualboxClient, s_aVBoxClientEvents);
 
     return VINF_SUCCESS;
 }
@@ -1147,9 +1307,9 @@ int VBoxNetLwipNAT::run()
     m_vecPortForwardRule4.clear();
     m_vecPortForwardRule6.clear();
 
-    destroyNatListener(m_NatListener, virtualbox);
-    destroyNatListener(m_VBoxListener, virtualbox);
-    destroyClientListener(m_VBoxClientListener, virtualboxClient);
+    m_ListenerNATNet.unlisten();
+    m_ListenerVirtualBox.unlisten();
+    m_ListenerVBoxClient.unlisten();
 
     return VINF_SUCCESS;
 }

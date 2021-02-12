@@ -97,7 +97,6 @@ VBoxNetNAT_SOURCES = \
 	../NetLib/VBoxNetIntIf.cpp \
 	../NetLib/VBoxNetUDP.cpp \
 	../NetLib/VBoxNetARP.cpp \
-	../NetLib/ComHostUtils.cpp \
 	$(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES)) \
 	proxy_pollmgr.c \
 	proxy_rtadvd.c \
