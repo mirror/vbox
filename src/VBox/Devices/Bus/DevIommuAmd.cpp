@@ -4534,12 +4534,9 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
 
         case IOMMU_CMD_PREFETCH_IOMMU_PAGES:
         {
+            /* Linux doesn't use prefetching of IOMMU pages, so we don't bother for now. */
             STAM_COUNTER_INC(&pThis->StatCmdPrefIommuPages);
-            if (pThis->ExtFeat.n.u1PrefetchSup)
-            {
-                /** @todo IOMMU: Implement prefetch. Pretend success until then. */
-                return VINF_SUCCESS;
-            }
+            Assert(!pThis->ExtFeat.n.u1PrefetchSup);
             iommuAmdIllegalCmdEventInit(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
             return VERR_IOMMU_CMD_NOT_SUPPORTED;
         }
@@ -4995,7 +4992,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Extended Feature Register               = %#RX64\n", ExtFeat.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Prefetch support                        = %RTbool\n", ExtFeat.n.u1PrefetchSup);
+            pHlp->pfnPrintf(pHlp, "    Prefetch support                        = %RTbool\n",  ExtFeat.n.u1PrefetchSup);
             pHlp->pfnPrintf(pHlp, "    PPR support                             = %RTbool\n",  ExtFeat.n.u1PprSup);
             pHlp->pfnPrintf(pHlp, "    x2APIC support                          = %RTbool\n",  ExtFeat.n.u1X2ApicSup);
             pHlp->pfnPrintf(pHlp, "    NX and privilege level support          = %RTbool\n",  ExtFeat.n.u1NoExecuteSup);
@@ -6088,7 +6085,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      */
     /* Don't remove the commented lines below as it lets us see all features at a glance. */
     pThis->ExtFeat.u64 = 0;
-    //pThis->ExtFeat.n.u1PrefetchSup           = 0;
+    pThis->ExtFeat.n.u1PrefetchSup             = 0;
     //pThis->ExtFeat.n.u1PprSup                = 0;
     //pThis->ExtFeat.n.u1X2ApicSup             = 0;
     //pThis->ExtFeat.n.u1NoExecuteSup          = 0;
