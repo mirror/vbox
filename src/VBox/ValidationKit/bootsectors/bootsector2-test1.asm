@@ -34,6 +34,9 @@
 ;; The number of instructions to test.
 %define TEST_INSTRUCTION_COUNT_IO       2000000
 
+;; The number of CPUID instructions to test.
+%define TEST_INSTRUCTION_COUNT_CPUID    8000000
+
 ;; The number of RDTSC instructions to test.
 %define TEST_INSTRUCTION_COUNT_RDTSC    4000000
 

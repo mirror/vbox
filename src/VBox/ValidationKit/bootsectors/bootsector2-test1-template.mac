@@ -123,7 +123,7 @@ BITS TMPL_BITS
         call    TMPL_NM_CMN(GetNanoTS)
 
         ; Do the test.
-        mov     edi, TEST_INSTRUCTION_COUNT_IO / 4
+        mov     edi, TEST_INSTRUCTION_COUNT_CPUID / 4
 .again:
         mov     eax, 1
         cpuid
@@ -141,7 +141,7 @@ BITS TMPL_BITS
         call    TMPL_NM_CMN(GetElapsedNanoTS)
 
         mov     xCX, .s_szTestName
-        mov     edx, TEST_INSTRUCTION_COUNT_IO
+        mov     edx, TEST_INSTRUCTION_COUNT_CPUID
         mov     xAX, xSP
         call    TMPL_NM_CMN(ReportResult)
 
