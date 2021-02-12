@@ -1031,6 +1031,10 @@ GLOBALNAME RT_CONCAT(hmR0VmxStartVmHostRIP,%1)
  %undef frm_guest_rax
  %undef cbFrame
 ENDPROC RT_CONCAT(hmR0VmxStartVm,%1)
+ %ifdef ASM_FORMAT_ELF
+size NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1))  NAME(RT_CONCAT(hmR0VmxStartVm,%1) %+ _EndProc) - NAME(RT_CONCAT(hmR0VmxStartVmHostRIP,%1))
+ %endif
+
 
 %endmacro ; hmR0VmxStartVmTemplate
 
