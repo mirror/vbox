@@ -29,6 +29,6 @@ WRAPPED_MODULE_NAME  := VBoxDDR0
 WRAPPED_MODULE_FLAGS := 0
 WRAPPER_NEED_VMMR0   := yes
 
-include $(dir $(lastword $(MAKEFILE_LIST)))/Makefile-wrapper.gmk
+include $(dir $(lastword $(MAKEFILE_LIST)))Makefile-wrapper.gmk
 
 

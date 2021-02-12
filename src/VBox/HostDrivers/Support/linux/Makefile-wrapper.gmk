@@ -34,10 +34,12 @@ endif
 
 
 # Linux kbuild sets this to our source directory if we are called from there
-obj ?= $(CURDIR)
-include $(obj)/Makefile-header.gmk
-VBOXDRV_DIR     := $(abspath $(VBOX_MODULE_SRC_DIR)../vboxdrv/)/
-VBOX_VMMR0_DIR  := $(abspath $(VBOX_MODULE_SRC_DIR)../vbox_vmmr0/)/
+ifndef VBOX_MODULE_SRC_DIR
+ VBOX_MODULE_SRC_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))/
+endif
+VBOXDRV_DIR          := $(abspath $(VBOX_MODULE_SRC_DIR)../vboxdrv/)/
+VBOX_VMMR0_DIR       := $(abspath $(VBOX_MODULE_SRC_DIR)../vbox_vmmr0/)/
+include $(VBOXDRV_DIR)Makefile-header.gmk
 
 # All of these wrappers depend on
 ifndef KBUILD_EXTRA_SYMBOLS
@@ -46,7 +48,6 @@ KBUILD_EXTRA_SYMBOLS := $(VBOXDRV_DIR)Module.symvers
 KBUILD_EXTRA_SYMBOLS += $(VBOX_VMMR0_DIR)Module.symvers
  endif
 endif
-$(warning KBUILD_EXTRA_SYMBOLS=$(KBUILD_EXTRA_SYMBOLS) WRAPPER_NEED_VMMR0=$(WRAPPER_NEED_VMMR0))
 
 VBOXMOD_OBJS = \
 	SUPWrapperMod-linux.o \
@@ -65,8 +66,7 @@ VBOXMOD_DEFS += \
 	VBOX \
        \
 	WRAPPED_MODULE_NAME=\"$(WRAPPED_MODULE_NAME).r0\" \
-	WRAPPED_MODULE_SYMBOL_INCLUDE=\"$(WRAPPED_MODULE_NAME)-symbols.h\" \
-	WRAPPER_MODULE_KMOD_NAME=\"$(VBOXMOD_NAME)\"
+	WRAPPED_MODULE_SYMBOL_INCLUDE=\"$(WRAPPED_MODULE_NAME)-symbols.h\"
 ifdef WRAPPED_MODULE_FLAGS
 VBOXMOD_DEFS += WRAPPED_MODULE_FLAGS="$(WRAPPED_MODULE_FLAGS)"
 endif
@@ -86,13 +86,16 @@ endif
 ifdef WRAPPED_MODULE_NO_TERM
 VBOXMOD_DEFS += WRAPPED_MODULE_TERM=NULL
 endif
+ifdef WRAPPED_MODULE_LICENSE_PROPRIETARY
+VBOXMOD_DEFS += WRAPPED_MODULE_LICENSE_PROPRIETARY
+endif
 
 VBOXMOD_CFLAGS = -include $(VBOXDRV_DIR)include/VBox/SUPDrvMangling.h \
 	-fno-omit-frame-pointer -fno-pie -Wno-declaration-after-statement
 
 ## @todo cleanup
 
-include $(obj)/Makefile-footer.gmk
+include $(VBOXDRV_DIR)Makefile-footer.gmk
 
 
 #

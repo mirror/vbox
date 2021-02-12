@@ -167,29 +167,11 @@ static void *g_hWrappedRegistration = NULL;
  */
 static int __init VBoxWrapperModInit(void)
 {
-    /* Locate the module structure before we call SUPDrv to register.
-
-       Before Linux v5.9 this could be done by address (__module_address()
-       or __module_text_address()), but someone (guess who) apparently on
-       a mission to make life miserable for out-of-tree modules or something,
-       decided it was only used by build-in code and unexported both of them.
-
-       I could find no init callouts getting a struct module pointer either,
-       nor any module name hint anywhere I could see.  So, we're left with
-       hardcoding the module name via the compiler and call find_module.
-
-       Sigh^2. */
     /*printk("vboxwrap/" WRAPPED_MODULE_NAME ": VBoxWrapperModInit\n");*/
-    struct module *pLnxMod = find_module(WRAPPER_MODULE_KMOD_NAME);
-    if (pLnxMod)
-    {
-        int rc = SUPDrvLinuxLdrRegisterWrappedModule(&g_WrappedMod, pLnxMod, &g_hWrappedRegistration);
-        if (rc == 0)
-            return 0;
-        printk("vboxwrap/" WRAPPED_MODULE_NAME ": SUPDrvLinuxRegisterWrappedModule failed: %d\n", rc);
-    }
-    else
-        printk("vboxwrap/" WRAPPED_MODULE_NAME ": find_module(" WRAPPER_MODULE_KMOD_NAME ") failed\n");
+    int rc = SUPDrvLinuxLdrRegisterWrappedModule(&g_WrappedMod, KBUILD_MODNAME, &g_hWrappedRegistration);
+    if (rc == 0)
+        return 0;
+    printk("vboxwrap/" WRAPPED_MODULE_NAME ": SUPDrvLinuxRegisterWrappedModule failed: %d\n", rc);
     return -EINVAL;
 }
 

@@ -607,6 +607,19 @@ VMMR0PdbTypeHack_INCS           = $(VMMR0_INCS)
 VMMR0PdbTypeHack_INTERMEDIATES  = $(VMMR0_INTERMEDIATES)
  endif
 
+ ifdef VBOX_WITH_KMOD_WRAPPED_R0_MODS
+# Wrapper kmod for VMMR0.r0
+INSTALLS.linux += vbox_vmmr0-src
+vbox_vmmr0-src_INST = bin/src/vbox_vmmr0/
+vbox_vmmr0-src_SYMLINKS = \
+	SUPWrapperMod-linux.c=>../common/SUPWrapperMod-linux.c \
+	Makefile-wrapper.gmk=>../common/Makefile-wrapper.gmk
+vbox_vmmr0-src_SOURCES = \
+	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/Makefile-vbox_vmmr0.gmk=>Makefile \
+	$(VMMR0_0_OUTDIR)/VMMR0.r0=>VMMR0.r0 \
+	$(VMMR0_0_OUTDIR)/VMMR0.debug=>VMMR0.debug
+ endif
+
 endif # !VBOX_ONLY_EXTPACKS
 
 

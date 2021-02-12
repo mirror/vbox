@@ -29,22 +29,21 @@ ifneq ($(KERNELRELEASE),)
 # or inside a kernel source tree.
 
 obj-m = vboxdrv/
-ifneq ($(wildcard $(CURDIR)/vboxnetflt/Makefile),)
- obj-m += vboxnetflt/
-endif
-ifneq ($(wildcard $(CURDIR)/vboxnetadp/Makefile),)
- obj-m += vboxnetadp/
-endif
-ifneq ($(wildcard $(CURDIR)/vboxpci/Makefile),)
- obj-m += vboxpci/
-endif
+ ifneq ($(wildcard $(CURDIR)/vboxnetflt/Makefile),)
+obj-m += vboxnetflt/
+ endif
+ ifneq ($(wildcard $(CURDIR)/vboxnetadp/Makefile),)
+obj-m += vboxnetadp/
+ endif
+ ifneq ($(wildcard $(CURDIR)/vboxpci/Makefile),)
+obj-m += vboxpci/
+ endif
 
 else # ! KERNELRELEASE
 
 # convenience Makefile without KERNELRELEASE
 
 KBUILD_VERBOSE ?=
-KERN_VER ?= $(shell uname -r)
 .PHONY: all install clean check unload load \
     vboxdrv vboxnetflt vboxnetadp vboxpci \
     install-vboxdrv install-vboxnetflt install-vboxnetadp install-vboxpci \
@@ -53,7 +52,8 @@ KERN_VER ?= $(shell uname -r)
 all: vboxdrv vboxnetflt vboxnetadp vboxpci
 
 # We want to build on Linux 2.6.18 and later kernels.
-ifneq ($(filter-out 1.% 2.0.% 2.1.% 2.2.% 2.3.% 2.4.% 2.5.%,$(KERN_VER)),)
+KERN_VER ?= $(shell uname -r)
+ ifneq ($(filter-out 1.% 2.0.% 2.1.% 2.2.% 2.3.% 2.4.% 2.5.%,$(KERN_VER)),)
 
 vboxdrv:
 	@echo "=== Building 'vboxdrv' module ==="
@@ -114,15 +114,71 @@ install-vboxpci:
 
 install: install-vboxdrv install-vboxnetflt install-vboxnetadp install-vboxpci
 
-else
+# Look for wrapper modules, sorting them so vmmr0 is first.
+VBOX_WRAPPER_DIRS := $(notdir $(wildcard $(CURDIR)/vbox_*))
+  ifneq ($(VBOX_WRAPPER_DIRS),)
+VBOX_WRAPPER_DIRS := $(filter vbox_vmmr0,$(VBOX_WRAPPER_DIRS)) $(sort $(filter-out vbox_vmmr0,$(VBOX_WRAPPER_DIRS)))
+  endif
+  define wrapper_template
+$(wrapper): $(subst $(wrapper),,vbox_vmmr0)
+	$$(MAKE) KBUILD_VERBOSE=$$(KBUILD_VERBOSE) -C $(wrapper)/
+
+load-$(wrapper): $(if $(eq $(wrapper),vbox_vmmr0),,load-vbox_vmmr0)
+	@if ! grep -q "^$(wrapper) " /proc/modules; then \
+       	echo "Loading $(wrapper)..."; \
+		/sbin/insmod $(wrapper)/$(wrapper).ko; \
+	else \
+       	echo "Skipping loading $(wrapper) module (already loaded)."; \
+	fi
+
+unload-$(wrapper):
+	@if grep -q "^$(wrapper) " /proc/modules; then \
+       	echo "Unloading $(wrapper)..."; \
+		/sbin/rmmod $(wrapper)/$(wrapper).ko; \
+	fi
+  endef
+$(foreach wrapper,$(VBOX_WRAPPER_DIRS), $(eval $(wrapper_template)))
+
+wrappers: 	$(VBOX_WRAPPER_DIRS)
+load-wrappers: $(addprefix load-,$(VBOX_WRAPPER_DIRS))
+unload-wrappers:
+	@for module in $(filter-out vbox_vmmr0,$(VBOX_WRAPPER_DIRS)) $(filter vbox_vmmr0,$(VBOX_WRAPPER_DIRS)); \
+	do \
+		if grep -q "^$${module} " /proc/modules; then \
+			echo "Unloading $${module}..."; \
+		if \
+	done
+
+buildid:
+	@for module in $(foreach module,vboxdrv vboxnetflt vboxnetadp $(VBOX_WRAPPER_DIRS),$(module)/$(module).ko); \
+	do \
+		buildid=`readelf -n $${module} | sed -ne 's/^.*Build ID: *\([[:xdigit:]][[:xdigit:]]\)\(.*\)$$/\1\/\2/p' `; \
+		if [ -n "$${buildid}" ]; then \
+			mkdir -p ~/.debug/.build-id/`dirname $${buildid}`; \
+			ln -sfn -- "$(CURDIR)/$${module}" ~/.debug/.build-id/$${buildid}; \
+		else \
+			echo "warning: No build ID for $${module}}"; \
+		fi \
+	done
+
+.PHONY: wrappers load-wrappers unload-wrappers buildid $(VBOX_WRAPPER_DIRS) \
+	$(addprefix load-,$(VBOX_WRAPPER_DIRS)) $(addprefix unload-,$(VBOX_WRAPPER_DIRS))
+
+ else # Too old:
+
+VBOX_WRAPPER_DIRS :=
 
 vboxdrv:
 vboxnetflt:
 vboxnetadp:
 vboxpci:
 install:
+wrappers:
+load-wrappers:
+unload-wrappers:
+buildid-wrappers:
 
-endif
+ endif
 
 clean-vboxdrv:
 	+@$(MAKE) -C vboxdrv clean
@@ -168,3 +224,4 @@ load: unload
 	done
 
 endif # ! KERNELRELEASE
+

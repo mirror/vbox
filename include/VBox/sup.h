@@ -2119,7 +2119,7 @@ SUPR0DECL(int) SUPR0LdrModByName(PSUPDRVSESSION pSession, const char *pszName, v
 SUPR0DECL(int) SUPR0LdrModRetain(PSUPDRVSESSION pSession, void *hMod);
 SUPR0DECL(int) SUPR0LdrModRelease(PSUPDRVSESSION pSession, void *hMod);
 #ifdef RT_OS_LINUX
-SUPR0DECL(int) SUPDrvLinuxLdrRegisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrappedModInfo, void *pvLnxModule, void **phMod);
+SUPR0DECL(int) SUPDrvLinuxLdrRegisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrappedModInfo, const char *pszLnxModName, void **phMod);
 SUPR0DECL(int) SUPDrvLinuxLdrDeregisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrappedModInfo, void **phMod);
 #endif
 SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps);

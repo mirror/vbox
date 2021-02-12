@@ -1323,6 +1323,18 @@ endif
 
  $(call VBOX_SET_VER_INFO_R0,VBoxDDR0,VirtualBox VMM Devices and Drivers$(COMMA) ring-0) # (last!)
 
+ ifdef VBOX_WITH_KMOD_WRAPPED_R0_MODS
+  # Wrapper kmod for VBoxDDR0.r0
+  INSTALLS.linux += vbox_vboxddr0-src
+  vbox_vboxddr0-src_INST = bin/src/vbox_vboxddr0/
+  vbox_vboxddr0-src_SYMLINKS = \
+   	SUPWrapperMod-linux.c=>../common/SUPWrapperMod-linux.c \
+   	Makefile-wrapper.gmk=>../common/Makefile-wrapper.gmk
+  vbox_vboxddr0-src_SOURCES = \
+  	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/Makefile-vbox_vboxddr0.gmk=>Makefile \
+       $(VBoxDDR0_0_OUTDIR)/VBoxDDR0.r0=>VBoxDDR0.r0 \
+  	$(VBoxDDR0_0_OUTDIR)/VBoxDDR0.debug=>VBoxDDR0.debug
+ endif
 
  #
  # Ring-0 Services (library, linked into VMMR0.r0)
@@ -1445,6 +1457,17 @@ if defined(VBOX_WITH_EXTPACK) && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX
 	USB/DevEHCI.cpp \
 	USB/DevXHCI.cpp
   $(call VBOX_SET_VER_INFO_R0,VBoxEhciR0,PUEL Extension Pack - EHCI Device$(COMMA) ring-0)
+  ifdef VBOX_WITH_KMOD_WRAPPED_R0_MODS # Wrapper kmod for VBoxEhciR0.r0
+   INSTALLS.linux += vbox_vboxehcir0-src
+   vbox_vboxehcir0-src_INST = bin/src/vbox_vboxehcir0/
+   vbox_vboxehcir0-src_SYMLINKS = \
+   	SUPWrapperMod-linux.c=>../common/SUPWrapperMod-linux.c \
+   	Makefile-wrapper.gmk=>../common/Makefile-wrapper.gmk
+   vbox_vboxehcir0-src_SOURCES = \
+   	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/Makefile-vbox_vboxehcir0.gmk=>Makefile \
+   	$(VBoxEhciR0_0_OUTDIR)/VBoxEhciR0.r0=>VBoxEhciR0.r0 \
+   	$(VBoxEhciR0_0_OUTDIR)/VBoxEhciR0.debug=>VBoxEhciR0.debug
+  endif
 
   ifdef VBOX_WITH_RAW_MODE
    SYSMODS += VBoxEhciRC
@@ -1498,6 +1521,17 @@ if defined(VBOX_WITH_EXTPACK) && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX
   VBoxNvmeR0_SOURCES  = \
   	Storage/DevNVMe.cpp
   $(call VBOX_SET_VER_INFO_R0,VBoxNvmeR0,PUEL Extension Pack - NVMe Device$(COMMA) ring-0)
+  ifdef VBOX_WITH_KMOD_WRAPPED_R0_MODS # Wrapper kmod for VBoxEhciR0.r0
+   INSTALLS.linux += vbox_vboxnvmer0-src
+   vbox_vboxnvmer0-src_INST = bin/src/vbox_vboxnvmer0/
+   vbox_vboxnvmer0-src_SYMLINKS = \
+   	SUPWrapperMod-linux.c=>../common/SUPWrapperMod-linux.c \
+   	Makefile-wrapper.gmk=>../common/Makefile-wrapper.gmk
+   vbox_vboxnvmer0-src_SOURCES = \
+   	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/Makefile-vbox_vboxnvmer0.gmk=>Makefile \
+   	$(VBoxNvmeR0_0_OUTDIR)/VBoxNvmeR0.r0=>VBoxNvmeR0.r0 \
+   	$(VBoxNvmeR0_0_OUTDIR)/VBoxNvmeR0.debug=>VBoxNvmeR0.debug
+  endif
 
   ifdef VBOX_WITH_RAW_MODE
    SYSMODS += VBoxNvmeRC

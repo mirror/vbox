@@ -30,5 +30,5 @@ WRAPPED_MODULE_FLAGS           := SUPLDRWRAPPEDMODULE_F_VMMR0
 WRAPPED_MODULE_IS_VMMR0        := yes
 WRAPPED_MODULE_LINUX_EXPORTS   := yes
 
-include $(dir $(lastword $(MAKEFILE_LIST)))/Makefile-wrapper.gmk
+include $(dir $(lastword $(MAKEFILE_LIST)))Makefile-wrapper.gmk
 

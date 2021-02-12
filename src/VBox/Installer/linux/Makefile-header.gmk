@@ -267,10 +267,12 @@ VBOX_GCC_CHECK_CC = $(shell \
 # Guess the module directory ASSUMING that this file is located in that directory.
 # Note! The special MAKEFILE_LIST variable was introduced in GNU make 3.80.
 #
-ifdef MAKEFILE_LIST
- VBOX_MODULE_SRC_DIR := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
-else
- VBOX_MODULE_SRC_DIR := $(CURDIR)/
+ifndef VBOX_MODULE_SRC_DIR
+ ifdef MAKEFILE_LIST
+  VBOX_MODULE_SRC_DIR := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
+ else
+  VBOX_MODULE_SRC_DIR := $(CURDIR)/
+ endif
 endif
 
 

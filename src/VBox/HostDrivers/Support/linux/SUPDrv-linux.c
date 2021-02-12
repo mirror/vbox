@@ -757,10 +757,30 @@ EXPORT_SYMBOL(SUPDrvLinuxIDC);
  * Used by native wrapper modules, forwarding to supdrvLdrRegisterWrappedModule
  * with device extension prepended to the argument list.
  */
-SUPR0DECL(int)  SUPDrvLinuxLdrRegisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrappedModInfo, void *pvLnxModule, void **phMod)
+SUPR0DECL(int)  SUPDrvLinuxLdrRegisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrappedModInfo,
+                                                    const char *pszLnxModName, void **phMod)
 {
-    AssertPtrReturn(pvLnxModule, VERR_INVALID_POINTER);
-    return supdrvLdrRegisterWrappedModule(&g_DevExt, pWrappedModInfo, pvLnxModule, phMod);
+    /* Locate the module structure for the caller so can later reference
+       and dereference it to prevent unloading while it is being used.
+
+       Before Linux v5.9 this could be done by address (__module_address()
+       or __module_text_address()), but someone (guess who) apparently on
+       a mission to make life miserable for out-of-tree modules or something,
+       decided it was only used by build-in code and unexported both of them.
+
+       I could find no init callouts getting a struct module pointer either,
+       nor any module name hint anywhere I could see.  So, we're left with
+       hardcoding the module name via the compiler and pass it along to
+       SUPDrv so we can call find_module() here.
+
+       Sigh^2. */
+    AssertPtrReturn(pszLnxModName, VERR_INVALID_POINTER);
+    AssertReturn(*pszLnxModName, VERR_INVALID_NAME);
+    struct module *pLnxModule = find_module(pszLnxModName);
+    if (pLnxModule)
+        return supdrvLdrRegisterWrappedModule(&g_DevExt, pWrappedModInfo, pLnxModule, phMod);
+    printk("vboxdrv: find_module(%s) failed in SUPDrvLinuxLdrRegisterWrappedModule!\n", pszLnxModName);
+    return VERR_MODULE_NOT_FOUND;
 }
 EXPORT_SYMBOL(SUPDrvLinuxLdrRegisterWrappedModule);
 
