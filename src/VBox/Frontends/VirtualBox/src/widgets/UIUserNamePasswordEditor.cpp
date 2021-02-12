@@ -244,7 +244,7 @@ bool UIUserNamePasswordEditor::isUserNameComplete()
 {
     bool fComplete = (m_pUserNameLineEdit && !m_pUserNameLineEdit->text().isEmpty());
     if (m_pUserNameLineEdit)
-        m_pUserNameLineEdit->mark(!fComplete);
+        m_pUserNameLineEdit->mark(!fComplete, UIUserNamePasswordEditor::tr("Invalid username"));
     return fComplete;
 }
 

@@ -51,8 +51,8 @@ public:
     /** Forces line-edit to adjust fixed width acording to passed @a strText. */
     void setFixedWidthByText(const QString &strText);
 
-    /** Sets the color to some reddish color when @p fError is true. Usually used to indicate some error. */
-    void mark(bool fError);
+    /** Puts an icon to mark some error on the right hand side of the line edit. @p is used as tooltip of the icon. */
+    void mark(bool fError, const QString &strErrorMessage = QString());
 
 protected:
 
@@ -82,8 +82,9 @@ private:
     QAction *m_pCopyAction;
 
     QLabel *m_pIconLabel;
-    QIcon m_markIcon;
-    bool m_fMarkForError;
+    QIcon   m_markIcon;
+    bool    m_fMarkForError;
+    QString m_strErrorMessage;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QILineEdit_h */

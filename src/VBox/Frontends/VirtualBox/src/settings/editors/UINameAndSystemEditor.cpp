@@ -256,7 +256,7 @@ void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidator)
 void UINameAndSystemEditor::markNameLineEdit(bool fError)
 {
     if (m_pNameLineEdit)
-        m_pNameLineEdit->mark(fError);
+        m_pNameLineEdit->mark(fError, tr("Invalid name"));
 }
 
 void UINameAndSystemEditor::retranslateUi()
