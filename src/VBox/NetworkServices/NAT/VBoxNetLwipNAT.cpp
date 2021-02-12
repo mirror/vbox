@@ -77,7 +77,6 @@
 
 #include <stdio.h>
 
-#include "../NetLib/VBoxNetLib.h"
 #include "../NetLib/VBoxNetBaseService.h"
 #include "../NetLib/utils.h"
 #include "../NetLib/VBoxPortForwardString.h"
