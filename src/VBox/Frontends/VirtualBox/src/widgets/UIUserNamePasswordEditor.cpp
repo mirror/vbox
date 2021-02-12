@@ -23,6 +23,7 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QILineEdit.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UICommon.h"
@@ -242,7 +243,8 @@ void UIUserNamePasswordEditor::setPassword(const QString &strPassword)
 bool UIUserNamePasswordEditor::isUserNameComplete()
 {
     bool fComplete = (m_pUserNameLineEdit && !m_pUserNameLineEdit->text().isEmpty());
-    markLineEdit(m_pUserNameLineEdit, !fComplete);
+    if (m_pUserNameLineEdit)
+        m_pUserNameLineEdit->mark(!fComplete);
     return fComplete;
 }
 
@@ -364,18 +366,6 @@ void UIUserNamePasswordEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLine
     return;
 }
 
-void UIUserNamePasswordEditor::markLineEdit(QLineEdit *pLineEdit, bool fError)
-{
-    if (!pLineEdit)
-        return;
-    QPalette palette = pLineEdit->palette();
-    if (!fError || m_fForceUnmark)
-        palette.setColor(QPalette::Base, m_orginalLineEditBaseColor);
-    else
-        palette.setColor(QPalette::Base, QColor(255, 180, 180));
-    pLineEdit->setPalette(palette);
-}
-
 void UIUserNamePasswordEditor::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout;
@@ -384,7 +374,7 @@ void UIUserNamePasswordEditor::prepare()
         return;
     setLayout(pMainLayout);
     int iRow = 0;
-    addLineEdit<QLineEdit>(iRow, m_pUserNameLabel, m_pUserNameLineEdit, pMainLayout);
+    addLineEdit<QILineEdit>(iRow, m_pUserNameLabel, m_pUserNameLineEdit, pMainLayout);
     addLineEdit<UIPasswordLineEdit>(iRow, m_pPasswordLabel, m_pPasswordLineEdit, pMainLayout);
     addLineEdit<UIPasswordLineEdit>(iRow, m_pPasswordRepeatLabel, m_pPasswordRepeatLineEdit, pMainLayout);
 
