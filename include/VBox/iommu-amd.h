@@ -883,6 +883,41 @@ typedef union
 AssertCompileSize(CMD_INV_INTR_TABLE_T, 16);
 
 /**
+ * Command: PREFETCH_IOMMU_PAGES.
+ * In accordance with the AMD spec.
+ */
+typedef union
+{
+    struct
+    {
+        uint16_t    u16DevId;               /**< Bits 15:0   - Device ID. */
+        uint8_t     u8Rsvd0;                /**< Bits 23:16  - Reserved. */
+        uint8_t     u8PrefCount;            /**< Bits 31:24  - PFCount: Number of translations to prefetch. */
+        uint32_t    u20Pasid : 20;          /**< Bits 51:32  - PASID: Process Address-Space ID. */
+        uint32_t    u8Rsvd1 : 8;            /**< Bits 59:52  - Reserved. */
+        uint32_t    u4OpCode : 4;           /**< Bits 63:60  - Op Code (Command). */
+        uint32_t    u1Size : 1;             /**< Bit  64     - S: Size of the prefetched pages. */
+        uint32_t    u1Rsvd0 : 1;            /**< Bit  65     - Reserved. */
+        uint32_t    u1GuestOrNested : 1;    /**< Bit  66     - GN: Guest (GPA) or Nested (GVA). */
+        uint32_t    u1Rsvd1 : 1;            /**< Bit  67     - Reserved. */
+        uint32_t    u1Invalidate : 1;       /**< Bit  68     - Inval: Invalidate prior to prefetch. */
+        uint32_t    u7Rsvd0 : 7;            /**< Bits 75:69  - Reserved */
+        uint32_t    u20AddrLo : 7;          /**< Bits 95:76  - Address (Lo). */
+        uint32_t    u32AddrHi;              /**< Bits 127:96 - Address (Hi). */
+    } u;
+    /** The 64-bit unsigned integer view. */
+    uint64_t    au64[2];
+} CMD_PREF_IOMMU_PAGES_T;
+AssertCompileSize(CMD_PREF_IOMMU_PAGES_T, 16);
+/** Pointer to a invalidate iommu pages command. */
+typedef CMD_PREF_IOMMU_PAGES_T *PCMD_PREF_IOMMU_PAGES_T;
+/** Pointer to a const invalidate iommu pages command. */
+typedef CMD_PREF_IOMMU_PAGES_T const *PCCMD_PREF_IOMMU_PAGES_T;
+#define IOMMU_CMD_PREF_IOMMU_PAGES_QWORD_0_VALID_MASK       UINT64_C(0x780fffffff00ffff)
+#define IOMMU_CMD_PREF_IOMMU_PAGES_QWORD_1_VALID_MASK       UINT64_C(0xfffffffffffff015)
+
+
+/**
  * Command: COMPLETE_PPR_REQ.
  * In accordance with the AMD spec.
  */
