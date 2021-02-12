@@ -43,6 +43,14 @@ else # ! KERNELRELEASE
 
 # convenience Makefile without KERNELRELEASE
 
+ifndef SUDO
+ ifneq ($(shell id -u),0)
+SUDO := $(firstword $(wildcard /usr/bin/sudo /bin/sudo /usr/sbin/sudo))
+ else
+SUDO :=
+ endif
+endif
+
 KBUILD_VERBOSE ?=
 .PHONY: all install clean check unload load \
     vboxdrv vboxnetflt vboxnetadp vboxpci \
@@ -121,12 +129,12 @@ VBOX_WRAPPER_DIRS := $(filter vbox_vmmr0,$(VBOX_WRAPPER_DIRS)) $(sort $(filter-o
   endif
   define wrapper_template
 $(wrapper): $(subst $(wrapper),,vbox_vmmr0)
-	$$(MAKE) KBUILD_VERBOSE=$$(KBUILD_VERBOSE) -C $(wrapper)/
+	+$$(MAKE) KBUILD_VERBOSE=$$(KBUILD_VERBOSE) -C $(wrapper)/
 
-load-$(wrapper): $(if $(eq $(wrapper),vbox_vmmr0),,load-vbox_vmmr0)
+load-$(wrapper): $(subst load-$(wrapper),,load-vbox_vmmr0)
 	@if ! grep -q "^$(wrapper) " /proc/modules; then \
        	echo "Loading $(wrapper)..."; \
-		/sbin/insmod $(wrapper)/$(wrapper).ko; \
+		$(SUDO) /sbin/insmod $(wrapper)/$(wrapper).ko; \
 	else \
        	echo "Skipping loading $(wrapper) module (already loaded)."; \
 	fi
@@ -134,20 +142,23 @@ load-$(wrapper): $(if $(eq $(wrapper),vbox_vmmr0),,load-vbox_vmmr0)
 unload-$(wrapper):
 	@if grep -q "^$(wrapper) " /proc/modules; then \
        	echo "Unloading $(wrapper)..."; \
-		/sbin/rmmod $(wrapper)/$(wrapper).ko; \
+		$(SUDO) /sbin/rmmod $(wrapper)/$(wrapper).ko; \
 	fi
   endef
 $(foreach wrapper,$(VBOX_WRAPPER_DIRS), $(eval $(wrapper_template)))
 
 wrappers: 	$(VBOX_WRAPPER_DIRS)
-load-wrappers: $(addprefix load-,$(VBOX_WRAPPER_DIRS))
-unload-wrappers:
+wrappers-load: $(addprefix load-,$(VBOX_WRAPPER_DIRS))
+wrappers-unload:
 	@for module in $(filter-out vbox_vmmr0,$(VBOX_WRAPPER_DIRS)) $(filter vbox_vmmr0,$(VBOX_WRAPPER_DIRS)); \
 	do \
 		if grep -q "^$${module} " /proc/modules; then \
 			echo "Unloading $${module}..."; \
-		if \
+			$(SUDO) /sbin/rmmod "$${module}"; \
+		fi \
 	done
+wrappers-reload: wrappers-unload
+	+$(MAKE) -f $(lastword $(MAKEFILE_LIST)) --no-print-directory wrappers-load
 
 buildid:
 	@for module in $(foreach module,vboxdrv vboxnetflt vboxnetadp $(VBOX_WRAPPER_DIRS),$(module)/$(module).ko); \
@@ -157,11 +168,11 @@ buildid:
 			mkdir -p ~/.debug/.build-id/`dirname $${buildid}`; \
 			ln -sfn -- "$(CURDIR)/$${module}" ~/.debug/.build-id/$${buildid}; \
 		else \
-			echo "warning: No build ID for $${module}}"; \
+			echo "warning: No build ID for $${module}"; \
 		fi \
 	done
 
-.PHONY: wrappers load-wrappers unload-wrappers buildid $(VBOX_WRAPPER_DIRS) \
+.PHONY: wrappers wrappers-load wrappers-unload buildid $(VBOX_WRAPPER_DIRS) \
 	$(addprefix load-,$(VBOX_WRAPPER_DIRS)) $(addprefix unload-,$(VBOX_WRAPPER_DIRS))
 
  else # Too old:
@@ -174,9 +185,9 @@ vboxnetadp:
 vboxpci:
 install:
 wrappers:
-load-wrappers:
-unload-wrappers:
-buildid-wrappers:
+wrappers-load:
+wrappers-unload:
+buildid:
 
  endif
 
@@ -211,7 +222,7 @@ unload:
 	@for module in vboxpci vboxnetadp vboxnetflt vboxdrv; do \
 		if grep "^$$module " /proc/modules >/dev/null; then \
 			echo "Removing previously installed $$module module"; \
-			/sbin/rmmod $$module; \
+			$(SUDO) /sbin/rmmod $$module; \
 		fi; \
 	done
 
@@ -219,7 +230,7 @@ load: unload
 	@for module in vboxdrv vboxnetflt vboxnetadp vboxpci; do \
 		if test -f $$module.ko; then \
 			echo "Installing $$module module"; \
-			/sbin/insmod $$module.ko; \
+			$(SUDO) /sbin/insmod $$module.ko; \
 		fi; \
 	done
 
