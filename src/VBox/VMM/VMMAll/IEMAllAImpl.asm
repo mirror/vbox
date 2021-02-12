@@ -1349,7 +1349,7 @@ BEGINCODE
 ;;
 ; Worker function for negating a 32-bit number in T1:T0
 ; @uses None (T0,T1)
-iemAImpl_negate_T0_T1_u32:
+BEGINPROC   iemAImpl_negate_T0_T1_u32
         push    0
         push    0
         xchg    T0_32, [xSP]
@@ -1358,12 +1358,13 @@ iemAImpl_negate_T0_T1_u32:
         sbb     T1_32, [xSP + xCB]
         add     xSP, xCB*2
         ret
+ENDPROC     iemAImpl_negate_T0_T1_u32
 
 %ifdef RT_ARCH_AMD64
 ;;
 ; Worker function for negating a 64-bit number in T1:T0
 ; @uses None (T0,T1)
-iemAImpl_negate_T0_T1_u64:
+BEGINPROC   iemAImpl_negate_T0_T1_u64
         push    0
         push    0
         xchg    T0, [xSP]
@@ -1372,6 +1373,7 @@ iemAImpl_negate_T0_T1_u64:
         sbb     T1, [xSP + xCB]
         add     xSP, xCB*2
         ret
+ENDPROC     iemAImpl_negate_T0_T1_u64
 %endif
 
 
@@ -1552,7 +1554,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         js      .divisor_negative
         test    T1_32, T1_32
         jns     .both_positive
-        call    iemAImpl_negate_T0_T1_u32
+        call    NAME(iemAImpl_negate_T0_T1_u32)
 .one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
         push    T0                      ; Start off like unsigned below.
         shl     T1_32, 1
@@ -1571,7 +1573,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         neg     A2_32
         test    T1_32, T1_32
         jns     .one_of_each
-        call    iemAImpl_negate_T0_T1_u32
+        call    NAME(iemAImpl_negate_T0_T1_u32)
 .both_positive:                         ; Same as unsigned shifted by sign indicator bit.
         shl     T1_32, 1
         shr     T0_32, 31
@@ -1631,7 +1633,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         js      .divisor_negative
         test    T1, T1
         jns     .both_positive
-        call    iemAImpl_negate_T0_T1_u64
+        call    NAME(iemAImpl_negate_T0_T1_u64)
 .one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
         push    T0                      ; Start off like unsigned below.
         shl     T1, 1
@@ -1651,7 +1653,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         neg     A2
         test    T1, T1
         jns     .one_of_each
-        call    iemAImpl_negate_T0_T1_u64
+        call    NAME(iemAImpl_negate_T0_T1_u64)
 .both_positive:                         ; Same as unsigned shifted by sign indicator bit.
         shl     T1, 1
         shr     T0, 63
