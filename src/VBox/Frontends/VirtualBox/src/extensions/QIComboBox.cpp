@@ -22,6 +22,7 @@
 
 /* GUI includes: */
 #include "QIComboBox.h"
+#include "QILineEdit.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -302,16 +303,12 @@ void QIComboBox::setSizeAdjustPolicy(QComboBox::SizeAdjustPolicy enmPolicy)
     m_pComboBox->setSizeAdjustPolicy(enmPolicy);
 }
 
-void QIComboBox::mark(bool fError)
+void QIComboBox::mark(bool fError, const QString &strErrorMessage /* = QString() */)
 {
-    /* Redirect to combo-box: */
     AssertPtrReturnVoid(m_pComboBox);
-    QPalette palette = m_pComboBox->palette();
-    if (fError)
-        palette.setColor(QPalette::Base, QColor(255, 180, 180));
-    else
-        palette.setColor(QPalette::Base, m_originalBaseColor);
-    m_pComboBox->setPalette(palette);
+    QILineEdit *pLineEdit = qobject_cast<QILineEdit*>(m_pComboBox->lineEdit());
+    AssertPtrReturnVoid(pLineEdit);
+    pLineEdit->mark(fError, strErrorMessage);
 }
 
 void QIComboBox::clear()
@@ -387,8 +384,9 @@ void QIComboBox::prepare()
         m_pComboBox = new QComboBox;
         AssertPtrReturnVoid(m_pComboBox);
         {
-            /* Cache original base color: */
-            m_originalBaseColor = m_pComboBox->palette().color(QPalette::Base);
+            /* Replace the line edit of the combox box so that we can mark it for errors: */
+            QILineEdit *pLineEdit = new QILineEdit;
+            m_pComboBox->setLineEdit(pLineEdit);
             /* Configure combo-box: */
             setFocusProxy(m_pComboBox);
             connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
