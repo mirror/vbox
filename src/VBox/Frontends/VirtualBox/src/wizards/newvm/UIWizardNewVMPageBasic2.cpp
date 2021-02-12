@@ -21,6 +21,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
+#include <QLineEdit>
 #include <QSpacerItem>
 #include <QToolBox>
 #include <QVBoxLayout>

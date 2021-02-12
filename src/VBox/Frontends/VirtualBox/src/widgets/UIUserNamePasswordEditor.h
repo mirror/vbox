@@ -22,7 +22,7 @@
 #endif
 
 /* Qt includes: */
-#include <QLineEdit>
+#include <QIcon>
 #include <QWidget>
 
 /* Local includes: */
@@ -31,36 +31,8 @@
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
-class QIToolButton;
-
-class UIPasswordLineEdit : public QLineEdit
-{
-    Q_OBJECT;
-
-signals:
-
-    void sigTextVisibilityToggled(bool fTextVisible);
-
-public:
-
-    UIPasswordLineEdit(QWidget *pParent = 0);
-    void toggleTextVisibility(bool fTextVisible);
-
-protected:
-
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-
-private:
-
-    void prepare();
-    void adjustTextVisibilityButtonGeometry();
-
-    QIToolButton *m_pTextVisibilityButton;
-
-private slots:
-
-    void sltHandleTextVisibilityChange();
-};
+class QLineEdit;
+class UIPasswordLineEdit;
 
 class UIUserNamePasswordEditor : public QIWithRetranslateUI<QWidget>
 {
@@ -123,6 +95,8 @@ private:
     bool m_fForceUnmark;
     bool m_fShowPlaceholderText;
     bool m_fLabelsVisible;
+
+    QString m_strPasswordError;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIUserNamePasswordEditor_h */

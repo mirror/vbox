@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QGridLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QStyle>
 #include <QVBoxLayout>
 
@@ -29,9 +30,56 @@
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVM.h"
 
+/*********************************************************************************************************************************
+*   UIPasswordLineEdit definition.                                                                                        *
+*********************************************************************************************************************************/
+
+class UIPasswordLineEdit : public QLineEdit
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigTextVisibilityToggled(bool fTextVisible);
+
+public:
+
+    UIPasswordLineEdit(QWidget *pParent = 0);
+    void toggleTextVisibility(bool fTextVisible);
+    void mark(bool fError, const QString &strErrorToolTip);
+
+protected:
+
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual void paintEvent(QPaintEvent *pPaintEvent) /* override */;
+
+private slots:
+
+    void sltHandleTextVisibilityChange();
+
+private:
+
+    void prepare();
+    void adjustTextVisibilityButtonGeometry();
+
+    QIToolButton *m_pTextVisibilityButton;
+    QIcon m_markIcon;
+    QLabel *m_pErrorIconLabel;
+    QString m_strErrorToolTip;
+    /** When true the line edit is marked with some icon to indicate some error. */
+    bool m_fMarkForError;
+};
+
+
+/*********************************************************************************************************************************
+*   UIPasswordLineEdit implementation.                                                                                           *
+*********************************************************************************************************************************/
+
 UIPasswordLineEdit::UIPasswordLineEdit(QWidget *pParent /*= 0 */)
     : QLineEdit(pParent)
     , m_pTextVisibilityButton(0)
+    , m_pErrorIconLabel(0)
+    , m_fMarkForError(false)
 {
     prepare();
 }
@@ -54,8 +102,18 @@ void UIPasswordLineEdit::toggleTextVisibility(bool fTextVisible)
     }
 }
 
+void UIPasswordLineEdit::mark(bool fError, const QString &strErrorToolTip)
+{
+    if (m_fMarkForError == fError &&  m_strErrorToolTip == strErrorToolTip)
+        return;
+    m_fMarkForError = fError;
+    m_strErrorToolTip = strErrorToolTip;
+    update();
+}
+
 void UIPasswordLineEdit::prepare()
 {
+    m_markIcon = UIIconPool::iconSet(":/status_error_16px.png");
     /* Prepare text visibility button: */
     m_pTextVisibilityButton = new QIToolButton(this);
     if (m_pTextVisibilityButton)
@@ -66,7 +124,7 @@ void UIPasswordLineEdit::prepare()
         m_pTextVisibilityButton->show();
         connect(m_pTextVisibilityButton, &QToolButton::clicked, this, &UIPasswordLineEdit::sltHandleTextVisibilityChange);
     }
-
+    m_pErrorIconLabel = new QLabel(this);
     toggleTextVisibility(false);
     adjustTextVisibilityButtonGeometry();
 }
@@ -95,8 +153,31 @@ void UIPasswordLineEdit::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
     QLineEdit::resizeEvent(pEvent);
-
     adjustTextVisibilityButtonGeometry();
+}
+
+void UIPasswordLineEdit::paintEvent(QPaintEvent *pPaintEvent)
+{
+    QLineEdit::paintEvent(pPaintEvent);
+    if (m_fMarkForError)
+    {
+        const int iIconMargin = 0.5 * QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+        int iIconSize = height() - 2 * iIconMargin;
+        if (!m_pErrorIconLabel)
+            m_pErrorIconLabel = new QLabel(this);
+        m_pErrorIconLabel->setPixmap(m_markIcon.pixmap(windowHandle(), QSize(iIconSize, iIconSize)));
+        int iIconX = width() - iIconSize - iIconMargin;
+        if (m_pTextVisibilityButton)
+            iIconX -= m_pTextVisibilityButton->width() - iIconMargin;
+        m_pErrorIconLabel->move(iIconX, iIconMargin);
+        m_pErrorIconLabel->setToolTip(m_strErrorToolTip);
+        m_pErrorIconLabel->show();
+    }
+    else
+    {
+        if (m_pErrorIconLabel)
+            m_pErrorIconLabel->hide();
+    }
 }
 
 void UIPasswordLineEdit::sltHandleTextVisibilityChange()
@@ -109,6 +190,11 @@ void UIPasswordLineEdit::sltHandleTextVisibilityChange()
     toggleTextVisibility(fTextVisible);
     emit sigTextVisibilityToggled(fTextVisible);
 }
+
+
+/*********************************************************************************************************************************
+*   UIUserNamePasswordEditor implementation.                                                                                     *
+*********************************************************************************************************************************/
 
 UIUserNamePasswordEditor::UIUserNamePasswordEditor(QWidget *pParent /*  = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -169,9 +255,10 @@ bool UIUserNamePasswordEditor::isPasswordComplete()
             fPasswordOK = false;
         if (m_pPasswordLineEdit->text().isEmpty())
             fPasswordOK = false;
+
+        m_pPasswordLineEdit->mark(!fPasswordOK, m_strPasswordError);
+        m_pPasswordRepeatLineEdit->mark(!fPasswordOK, m_strPasswordError);
     }
-    markLineEdit(m_pPasswordLineEdit, !fPasswordOK);
-    markLineEdit(m_pPasswordRepeatLineEdit, !fPasswordOK);
     return fPasswordOK;
 }
 
@@ -210,25 +297,25 @@ void UIUserNamePasswordEditor::setLabelsVisible(bool fVisible)
 
 void UIUserNamePasswordEditor::retranslateUi()
 {
-    QString strPassword = UIWizardNewVM::tr("Password:");
-    QString strRepeatPassword = UIWizardNewVM::tr("Repeat Password:");
-    QString strUsername = UIWizardNewVM::tr("Username:");
+    QString strPassword = UIUserNamePasswordEditor::tr("Password");
+    QString strRepeatPassword = UIUserNamePasswordEditor::tr("Repeat Password");
+    QString strUsername = UIUserNamePasswordEditor::tr("Username");
     if (m_pUserNameLabel)
     {
-        m_pUserNameLabel->setText(strUsername);
-        m_pUserNameLabel->setToolTip(UIWizardNewVM::tr("Type the user name which will be used in attended install:"));
+        m_pUserNameLabel->setText(QString("%1%2").arg(strUsername).arg(":"));
+        m_pUserNameLabel->setToolTip(UIUserNamePasswordEditor::tr("Type the user name which will be used in attended install:"));
 
     }
     if (m_pPasswordLabel)
     {
-        m_pPasswordLabel->setText(strPassword);
-        m_pPasswordLabel->setToolTip(UIWizardNewVM::tr("Type the password for the user name"));
+        m_pPasswordLabel->setText(QString("%1%2").arg(strPassword).arg(":"));
+        m_pPasswordLabel->setToolTip(UIUserNamePasswordEditor::tr("Type the password for the user name"));
 
     }
     if (m_pPasswordRepeatLabel)
     {
-        m_pPasswordRepeatLabel->setText(strRepeatPassword);
-        m_pPasswordRepeatLabel->setToolTip(UIWizardNewVM::tr("Retype the password:"));
+        m_pPasswordRepeatLabel->setText(QString("%1%2").arg(strRepeatPassword).arg(":"));
+        m_pPasswordRepeatLabel->setToolTip(UIUserNamePasswordEditor::tr("Retype the password:"));
     }
 
     if (m_fShowPlaceholderText)
@@ -249,6 +336,7 @@ void UIUserNamePasswordEditor::retranslateUi()
         if (m_pPasswordRepeatLineEdit)
             m_pPasswordRepeatLineEdit->setPlaceholderText(QString());
     }
+    m_strPasswordError = UIUserNamePasswordEditor::tr("Invalid password pair");
 }
 
 template <class T>
@@ -325,3 +413,5 @@ void UIUserNamePasswordEditor::sltSomeTextChanged()
     isComplete();
     emit sigSomeTextChanged();
 }
+
+#include "UIUserNamePasswordEditor.moc"

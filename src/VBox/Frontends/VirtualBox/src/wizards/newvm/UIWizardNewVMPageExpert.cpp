@@ -22,6 +22,7 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QRadioButton>
 #include <QSpinBox>
 #include <QVBoxLayout>
