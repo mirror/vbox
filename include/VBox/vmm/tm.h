@@ -98,9 +98,9 @@ VMM_INT_DECL(uint32_t)  TMCalcHostTimerFrequency(PVMCC pVM, PVMCPUCC pVCpu);
 #ifdef IN_RING3
 VMMR3DECL(int)          TMR3GetCpuLoadTimes(PVM pVM, VMCPUID idCpu, uint64_t *pcNsTotal, uint64_t *pcNsExecuting,
                                             uint64_t *pcNsHalted, uint64_t *pcNsOther);
-#endif
 VMMR3DECL(int)          TMR3GetCpuLoadPercents(PUVM pVUM, VMCPUID idCpu, uint64_t *pcMsInterval, uint8_t *pcPctExecuting,
                                                uint8_t *pcPctHalted, uint8_t *pcPctOther);
+#endif
 
 
 /** @name Real Clock Methods
