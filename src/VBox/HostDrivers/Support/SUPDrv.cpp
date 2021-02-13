@@ -5108,6 +5108,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (    pImage->szName[cchName] == '\0'
             &&  !memcmp(pImage->szName, pReq->u.In.szName, cchName))
         {
+            /** @todo Add an _1M (or something) per session reference. */
             if (RT_LIKELY(pImage->cImgUsage < UINT32_MAX / 2U))
             {
                 /** @todo check cbImageBits and cbImageWithEverything here, if they differs
