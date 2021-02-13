@@ -146,8 +146,6 @@ private:
     void ifPump();
     int ifInput(void *pvSegFrame, uint32_t cbSegFrame);
 
-    int ifOutput(PCINTNETSEG paSegs, size_t cSegs, size_t cbFrame);
-
 
     /*
      * lwIP callbacks
