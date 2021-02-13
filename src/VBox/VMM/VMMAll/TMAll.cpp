@@ -187,11 +187,11 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
      * Calculate the elapsed tick count and convert it to nanoseconds.
      */
     /** @todo get TSC from caller (HMR0A.asm) */
-    uint64_t       cTicks            = SUPReadTsc() - pVCpu->tm.s.uTscStartExecuting;
+    uint64_t       cTicks = SUPReadTsc() - pVCpu->tm.s.uTscStartExecuting;
 # ifdef IN_RING3
-    uint64_t const uCpuHz            = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
+    uint64_t const uCpuHz = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
 # else
-    uint64_t const uCpuHz            = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
+    uint64_t const uCpuHz = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
 # endif
     AssertStmt(cTicks <= uCpuHz << 2, cTicks = uCpuHz << 2); /* max 4 sec */
 
@@ -208,10 +208,13 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
 
     /*
      * Update the data.
+     *
+     * Note! Using ASMAtomicUoIncU32 instead of ASMAtomicIncU32 here to
+     *       save a tiny bit of time here.  Currently, the only user
+     *       is tmR3CpuLoadTimer(), so nothing terribly important.
      */
     uint64_t const cNsExecutingNew = pVCpu->tm.s.cNsExecuting + cNsExecutingDelta;
-    /** @todo try relax ordering here */
-    uint32_t uGen = ASMAtomicIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
+    uint32_t uGen = ASMAtomicUoIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
     pVCpu->tm.s.fExecuting   = false;
     pVCpu->tm.s.cNsExecuting = cNsExecutingNew;
     pVCpu->tm.s.cPeriodsExecuting++;
