@@ -176,21 +176,22 @@ VMMDECL(void) TMNotifyStartOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
  *
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uTsc        TSC value when exiting guest context.
  */
-VMMDECL(void) TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
+VMMDECL(void) TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uTsc)
 {
     if (pVM->tm.s.fTSCTiedToExecution)
-        tmCpuTickPause(pVCpu);
+        tmCpuTickPause(pVCpu); /** @todo use uTsc here if we can. */
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     /*
      * Calculate the elapsed tick count and convert it to nanoseconds.
      */
-    /** @todo get TSC from caller (HMR0A.asm) */
-    uint64_t       cTicks = SUPReadTsc() - pVCpu->tm.s.uTscStartExecuting;
 # ifdef IN_RING3
+    uint64_t       cTicks = uTsc - pVCpu->tm.s.uTscStartExecuting - SUPGetTscDelta();
     uint64_t const uCpuHz = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
 # else
+    uint64_t       cTicks = uTsc - pVCpu->tm.s.uTscStartExecuting - SUPGetTscDeltaByCpuSetIndex(pVCpu->iHostCpuSet);
     uint64_t const uCpuHz = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
 # endif
     AssertStmt(cTicks <= uCpuHz << 2, cTicks = uCpuHz << 2); /* max 4 sec */

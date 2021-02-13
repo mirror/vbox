@@ -85,7 +85,7 @@ typedef enum TMCLOCK
 
 
 VMMDECL(void)           TMNotifyStartOfExecution(PVMCC pVM, PVMCPUCC pVCpu);
-VMMDECL(void)           TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu);
+VMMDECL(void)           TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uTsc);
 VMM_INT_DECL(void)      TMNotifyStartOfHalt(PVMCPUCC pVCpu);
 VMM_INT_DECL(void)      TMNotifyEndOfHalt(PVMCPUCC pVCpu);
 #ifdef IN_RING3

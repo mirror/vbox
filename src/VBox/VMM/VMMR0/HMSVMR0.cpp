@@ -4381,7 +4381,7 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatPreExit, x);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    TMNotifyEndOfExecution(pVM, pVCpu);                         /* Notify TM that the guest is no longer running. */
+    TMNotifyEndOfExecution(pVM, pVCpu, uHostTsc);               /* Notify TM that the guest is no longer running. */
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
     Assert(!(ASMGetFlags() & X86_EFL_IF));
