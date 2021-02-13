@@ -158,7 +158,8 @@ DECLINLINE(PPDMCRITSECT) tmRZTimerGetCritSect(PTMTIMER pTimer)
 VMMDECL(void) TMNotifyStartOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
 {
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
-    pVCpu->tm.s.u64NsTsStartExecuting = RTTimeNanoTS();
+    pVCpu->tm.s.uTscStartExecuting = SUPReadTsc();
+    pVCpu->tm.s.fExecuting         = true;
 #endif
     if (pVM->tm.s.fTSCTiedToExecution)
         tmCpuTickResume(pVM, pVCpu);
@@ -182,12 +183,43 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
         tmCpuTickPause(pVCpu);
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
-    uint64_t const u64NsTs           = RTTimeNanoTS();
-    uint64_t const cNsTotalNew       = u64NsTs - pVCpu->tm.s.u64NsTsStartTotal;
-    uint64_t const cNsExecutingDelta = u64NsTs - pVCpu->tm.s.u64NsTsStartExecuting;
-    uint64_t const cNsExecutingNew   = pVCpu->tm.s.cNsExecuting + cNsExecutingDelta;
-    uint64_t const cNsOtherNew       = cNsTotalNew - cNsExecutingNew - pVCpu->tm.s.cNsHalted;
+    /*
+     * Calculate the elapsed tick count and convert it to nanoseconds.
+     */
+    /** @todo get TSC from caller (HMR0A.asm) */
+    uint64_t       cTicks            = SUPReadTsc() - pVCpu->tm.s.uTscStartExecuting;
+# ifdef IN_RING3
+    uint64_t const uCpuHz            = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
+# else
+    uint64_t const uCpuHz            = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
+# endif
+    AssertStmt(cTicks <= uCpuHz << 2, cTicks = uCpuHz << 2); /* max 4 sec */
 
+    uint64_t cNsExecutingDelta;
+    if (uCpuHz < _4G)
+        cNsExecutingDelta = ASMMultU64ByU32DivByU32(cTicks, RT_NS_1SEC, uCpuHz);
+    else if (uCpuHz < 16*_1G64)
+        cNsExecutingDelta = ASMMultU64ByU32DivByU32(cTicks >> 2, RT_NS_1SEC, uCpuHz >> 2);
+    else
+    {
+        Assert(uCpuHz < 64 * _1G64);
+        cNsExecutingDelta = ASMMultU64ByU32DivByU32(cTicks >> 4, RT_NS_1SEC, uCpuHz >> 4);
+    }
+
+    /*
+     * Update the data.
+     */
+    uint64_t const cNsExecutingNew = pVCpu->tm.s.cNsExecuting + cNsExecutingDelta;
+    /** @todo try relax ordering here */
+    uint32_t uGen = ASMAtomicIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
+    pVCpu->tm.s.fExecuting   = false;
+    pVCpu->tm.s.cNsExecuting = cNsExecutingNew;
+    pVCpu->tm.s.cPeriodsExecuting++;
+    ASMAtomicWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
+
+    /*
+     * Update stats.
+     */
 # if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
     STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsExecuting, cNsExecutingDelta);
     if (cNsExecutingDelta < 5000)
@@ -196,18 +228,29 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
         STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsExecShort, cNsExecutingDelta);
     else
         STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsExecLong, cNsExecutingDelta);
-    STAM_REL_COUNTER_ADD(&pVCpu->tm.s.StatNsTotal, cNsTotalNew - pVCpu->tm.s.cNsTotal);
-    int64_t  const cNsOtherNewDelta  = cNsOtherNew - pVCpu->tm.s.cNsOther;
-    if (cNsOtherNewDelta > 0)
-        STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsOther, cNsOtherNewDelta); /* (the period before execution) */
 # endif
 
-    uint32_t uGen = ASMAtomicIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
-    pVCpu->tm.s.cNsExecuting = cNsExecutingNew;
-    pVCpu->tm.s.cNsTotal     = cNsTotalNew;
-    pVCpu->tm.s.cNsOther     = cNsOtherNew;
-    pVCpu->tm.s.cPeriodsExecuting++;
-    ASMAtomicWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
+    /* The timer triggers occational updating of the others and total stats: */
+    if (RT_LIKELY(!pVCpu->tm.s.fUpdateStats))
+    { /*likely*/ }
+    else
+    {
+        pVCpu->tm.s.fUpdateStats = false;
+
+        uint64_t const cNsTotalNew = RTTimeNanoTS() - pVCpu->tm.s.nsStartTotal;
+        uint64_t const cNsOtherNew = cNsTotalNew - cNsExecutingNew - pVCpu->tm.s.cNsHalted;
+
+# if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
+        STAM_REL_COUNTER_ADD(&pVCpu->tm.s.StatNsTotal, cNsTotalNew - pVCpu->tm.s.cNsTotalStat);
+        int64_t const cNsOtherNewDelta = cNsOtherNew - pVCpu->tm.s.cNsOtherStat;
+        if (cNsOtherNewDelta > 0)
+            STAM_REL_COUNTER_ADD(&pVCpu->tm.s.StatNsOther, (uint64_t)cNsOtherNewDelta);
+# endif
+
+        pVCpu->tm.s.cNsTotalStat = cNsTotalNew;
+        pVCpu->tm.s.cNsOtherStat = cNsOtherNew;
+    }
+
 #endif
 }
 
@@ -227,7 +270,8 @@ VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPUCC pVCpu)
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
-    pVCpu->tm.s.u64NsTsStartHalting = RTTimeNanoTS();
+    pVCpu->tm.s.nsStartHalting = RTTimeNanoTS();
+    pVCpu->tm.s.fHalting       = true;
 #endif
 
     if (    pVM->tm.s.fTSCTiedToExecution
@@ -256,25 +300,27 @@ VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPUCC pVCpu)
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     uint64_t const u64NsTs        = RTTimeNanoTS();
-    uint64_t const cNsTotalNew    = u64NsTs - pVCpu->tm.s.u64NsTsStartTotal;
-    uint64_t const cNsHaltedDelta = u64NsTs - pVCpu->tm.s.u64NsTsStartHalting;
+    uint64_t const cNsTotalNew    = u64NsTs - pVCpu->tm.s.nsStartTotal;
+    uint64_t const cNsHaltedDelta = u64NsTs - pVCpu->tm.s.nsStartHalting;
     uint64_t const cNsHaltedNew   = pVCpu->tm.s.cNsHalted + cNsHaltedDelta;
     uint64_t const cNsOtherNew    = cNsTotalNew - pVCpu->tm.s.cNsExecuting - cNsHaltedNew;
 
-# if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
-    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsHalted, cNsHaltedDelta);
-    STAM_REL_COUNTER_ADD(&pVCpu->tm.s.StatNsTotal, cNsTotalNew - pVCpu->tm.s.cNsTotal);
-    int64_t  const cNsOtherNewDelta  = cNsOtherNew - pVCpu->tm.s.cNsOther;
-    if (cNsOtherNewDelta > 0)
-        STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsOther, cNsOtherNewDelta); /* (the period before halting) */
-# endif
-
     uint32_t uGen = ASMAtomicIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
-    pVCpu->tm.s.cNsHalted = cNsHaltedNew;
-    pVCpu->tm.s.cNsTotal  = cNsTotalNew;
-    pVCpu->tm.s.cNsOther  = cNsOtherNew;
+    pVCpu->tm.s.fHalting     = false;
+    pVCpu->tm.s.fUpdateStats = false;
+    pVCpu->tm.s.cNsHalted    = cNsHaltedNew;
     pVCpu->tm.s.cPeriodsHalted++;
     ASMAtomicWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
+
+# if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
+    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsHalted, cNsHaltedDelta);
+    STAM_REL_COUNTER_ADD(&pVCpu->tm.s.StatNsTotal, cNsTotalNew - pVCpu->tm.s.cNsTotalStat);
+    int64_t const cNsOtherNewDelta = cNsOtherNew - pVCpu->tm.s.cNsOtherStat;
+    if (cNsOtherNewDelta > 0)
+        STAM_REL_COUNTER_ADD(&pVCpu->tm.s.StatNsOther, (uint64_t)cNsOtherNewDelta);
+# endif
+    pVCpu->tm.s.cNsTotalStat = cNsTotalNew;
+    pVCpu->tm.s.cNsOtherStat = cNsOtherNew;
 #endif
 }
 

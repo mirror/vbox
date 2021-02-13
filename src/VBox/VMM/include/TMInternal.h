@@ -715,72 +715,91 @@ typedef TM *PTM;
  */
 typedef struct TMCPU
 {
-    /** Offset to the VMCPU structure.
-     * See TMCPU2VM(). */
-    RTUINT                      offVMCPU;
-
     /** CPU timestamp ticking enabled indicator (bool). (RDTSC) */
     bool                        fTSCTicking;
-    bool                        afAlignment0[3]; /**< alignment padding */
-
+    bool                        afAlignment0[7]; /**< alignment padding */
     /** The offset between the host tick (TSC/virtual depending on the TSC mode) and
      *  the guest tick. */
     uint64_t                    offTSCRawSrc;
-
     /** The guest TSC when fTicking is cleared. */
     uint64_t                    u64TSC;
-
     /** The last seen TSC by the guest. */
     uint64_t                    u64TSCLastSeen;
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    /** Align  */
+    uint64_t                    au64Alignment[4];
+
+    /** @name Core accounting data.  Must be cache-line aligned.
+     * @{ */
+    /** The cNsXXX generation. */
+    uint32_t volatile           uTimesGen;
+    /** Set if executing (between TMNotifyStartOfExecution and
+     *  TMNotifyEndOfExecution). */
+    bool volatile               fExecuting;
+    /** Set if halting (between TMNotifyStartOfHalt and TMNotifyEndOfHalt). */
+    bool volatile               fHalting;
+    /** Set if we're suspended and u64NsTsStartTotal is to be cNsTotal. */
+    bool volatile               fSuspended;
+    /** Set by the timer callback to trigger updating of statistics in
+     *  TMNotifyEndOfExecution. */
+    bool volatile               fUpdateStats;
     /** The nanosecond timestamp of the CPU start or resume.
      * This is recalculated when the VM is started so that
      * cNsTotal = RTTimeNanoTS() - u64NsTsStartCpu. */
-    uint64_t                    u64NsTsStartTotal;
-    /** The nanosecond timestamp of the last start-execute notification. */
-    uint64_t                    u64NsTsStartExecuting;
-    /** The nanosecond timestamp of the last start-halt notification. */
-    uint64_t                    u64NsTsStartHalting;
-    /** The cNsXXX generation. */
-    uint32_t volatile           uTimesGen;
-    /** Explicit alignment padding.  */
-    uint32_t                    u32Alignment;
-    /** The number of nanoseconds total run time.
-     * @remarks This is updated when cNsExecuting and cNsHalted are updated. */
-    uint64_t                    cNsTotal;
+    uint64_t                    nsStartTotal;
+    /** The TSC of the last start-execute notification. */
+    uint64_t                    uTscStartExecuting;
     /** The number of nanoseconds spent executing. */
     uint64_t                    cNsExecuting;
-    /** The number of nanoseconds being halted. */
-    uint64_t                    cNsHalted;
-    /** The number of nanoseconds spent on other things.
-     * @remarks This is updated when cNsExecuting and cNsHalted are updated. */
-    uint64_t                    cNsOther;
-    /** The number of halts. */
-    uint64_t                    cPeriodsHalted;
     /** The number of guest execution runs. */
     uint64_t                    cPeriodsExecuting;
+    /** The nanosecond timestamp of the last start-halt notification. */
+    uint64_t                    nsStartHalting;
+    /** The number of nanoseconds being halted. */
+    uint64_t                    cNsHalted;
+    /** The number of halts. */
+    uint64_t                    cPeriodsHalted;
+    /** @} */
+
 # if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
-    /** Resettable version of cNsTotal. */
-    STAMCOUNTER                 StatNsTotal;
     /** Resettable version of cNsExecuting. */
     STAMPROFILE                 StatNsExecuting;
     /** Long execution intervals. */
     STAMPROFILE                 StatNsExecLong;
-    /** Short execution intervals . */
+    /** Short execution intervals. */
     STAMPROFILE                 StatNsExecShort;
-    /** Tiny execution intervals . */
+    /** Tiny execution intervals. */
     STAMPROFILE                 StatNsExecTiny;
     /** Resettable version of cNsHalted. */
     STAMPROFILE                 StatNsHalted;
-    /** Resettable version of cNsOther. */
-    STAMPROFILE                 StatNsOther;
+
+    /** Resettable copy of version of cNsOtherStat.
+    * @note Only updated after halting. */
+    STAMCOUNTER                 StatNsOther;
+    /** Resettable copy of cNsTotalStat.
+     * @note Only updated after halting. */
+    STAMCOUNTER                 StatNsTotal;
 # endif
+    /** The time not spent executing or halted.
+     * @note Only updated after halting and after the timer runs. */
+    uint64_t                    cNsOtherStat;
+    /** Reasonably up to date total run time value.
+     * @note Only updated after halting and after the timer runs. */
+    uint64_t                    cNsTotalStat;
 
     /** CPU load state for this virtual CPU (tmR3CpuLoadTimer). */
     TMCPULOADSTATE              CpuLoad;
 #endif
 } TMCPU;
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+AssertCompileMemberAlignment(TMCPU, uTimesGen, 64);
+# if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
+AssertCompileMemberAlignment(TMCPU, StatNsExecuting, 64);
+# else
+AssertCompileMemberAlignment(TMCPU, cNsOtherStat, 64);
+# endif
+#endif
 /** Pointer to TM VMCPU instance data. */
 typedef TMCPU *PTMCPU;
 
