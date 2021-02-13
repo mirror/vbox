@@ -11152,8 +11152,6 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
  */
 static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int rcVMRun)
 {
-    uint64_t const uHostTsc = ASMReadTSC();                     /** @todo We can do a lot better here, see @bugref{9180#c38}. */
-
     ASMAtomicUoWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false); /* See HMInvalidatePageOnAllVCpus(): used for TLB flushing. */
     ASMAtomicIncU32(&pVCpu->hmr0.s.cWorldSwitchExits);          /* Initialized in vmR3CreateUVM(): used for EMT poking. */
     pVCpu->hm.s.fCtxChanged            = 0;                     /* Exits/longjmps to ring-3 requires saving the guest state. */
@@ -11166,17 +11164,17 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
     {
         uint64_t uGstTsc;
         if (!pVmxTransient->fIsNestedGuest)
-            uGstTsc = uHostTsc + pVmcsInfo->u64TscOffset;
+            uGstTsc = pVCpu->hmr0.s.uTscExit + pVmcsInfo->u64TscOffset;
         else
         {
-            uint64_t const uNstGstTsc = uHostTsc + pVmcsInfo->u64TscOffset;
+            uint64_t const uNstGstTsc = pVCpu->hmr0.s.uTscExit + pVmcsInfo->u64TscOffset;
             uGstTsc = CPUMRemoveNestedGuestTscOffset(pVCpu, uNstGstTsc);
         }
         TMCpuTickSetLastSeen(pVCpu, uGstTsc);                           /* Update TM with the guest TSC. */
     }
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatPreExit, x);
-    TMNotifyEndOfExecution(pVCpu->CTX_SUFF(pVM), pVCpu, uHostTsc);      /* Notify TM that the guest is no longer running. */
+    TMNotifyEndOfExecution(pVCpu->CTX_SUFF(pVM), pVCpu, pVCpu->hmr0.s.uTscExit); /* Notify TM that the guest is no longer running. */
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
     pVCpu->hmr0.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;   /* Some host state messed up by VMX needs restoring. */
@@ -11257,7 +11255,7 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
          *       by amending the history entry added here.
          */
         EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_VMX, pVmxTransient->uExitReason & EMEXIT_F_TYPE_MASK),
-                         UINT64_MAX, uHostTsc);
+                         UINT64_MAX, pVCpu->hmr0.s.uTscExit);
 
         if (RT_LIKELY(!pVmxTransient->fVMEntryFailed))
         {

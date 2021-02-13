@@ -520,56 +520,59 @@ ENDPROC VMXDispatchHostNmi
         lgdt    [rsp + cbFrame + frm_saved_gdtr]
  %endif
 
-        ; Save the guest state and restore the non-volatile registers.  We use rax=pGstCtx here.
-        mov     [rsp + cbFrame + frm_guest_rax], rax
-        mov     rax, [rsp + cbFrame + frm_pGstCtx]
+        ; Save the guest state and restore the non-volatile registers.  We use rcx=pGstCtx (&pVCpu->cpum.GstCtx) here.
+        mov     [rsp + cbFrame + frm_guest_rcx], rcx
+        mov     rcx, [rsp + cbFrame + frm_pGstCtx]
 
-        mov     qword [rax + CPUMCTX.ebp], rbp
+        mov     qword [rcx + CPUMCTX.eax], rax
+        mov     qword [rcx + CPUMCTX.edx], rdx
+        rdtsc
+        mov     qword [rcx + CPUMCTX.ebp], rbp
         lea     rbp, [rsp + cbFrame]    ; re-establish the frame pointer as early as possible.
-        mov     qword [rax + CPUMCTX.ecx], rcx
-        mov     rcx, SPECTRE_FILLER
-        mov     qword [rax + CPUMCTX.edx], rdx
-        mov     rdx, [rbp + frm_guest_rax]
-        mov     qword [rax + CPUMCTX.eax], rdx
-        mov     rdx, rcx
-        mov     qword [rax + CPUMCTX.r8],  r8
-        mov     r8, rcx
-        mov     qword [rax + CPUMCTX.r9],  r9
-        mov     r9, rcx
-        mov     qword [rax + CPUMCTX.r10], r10
-        mov     r10, rcx
-        mov     qword [rax + CPUMCTX.r11], r11
-        mov     r11, rcx
-        mov     qword [rax + CPUMCTX.esi], rsi
+        shl     rdx, 20h
+        or      rax, rdx                ; TSC value in RAX
+        mov     rdx, [rbp + frm_guest_rcx]
+        mov     qword [rcx + CPUMCTX.ecx], rdx
+        mov     rdx, SPECTRE_FILLER     ; FILLER in RDX
+        mov     qword [rcx + GVMCPU.hmr0 + HMR0PERVCPU.uTscExit - VMCPU.cpum.GstCtx], rax
+        mov     qword [rcx + CPUMCTX.r8],  r8
+        mov     r8, rdx
+        mov     qword [rcx + CPUMCTX.r9],  r9
+        mov     r9, rdx
+        mov     qword [rcx + CPUMCTX.r10], r10
+        mov     r10, rdx
+        mov     qword [rcx + CPUMCTX.r11], r11
+        mov     r11, rdx
+        mov     qword [rcx + CPUMCTX.esi], rsi
  %ifdef ASM_CALL64_MSC
         mov     rsi, [rbp + frm_saved_rsi]
  %else
-        mov     rsi, rcx
+        mov     rsi, rdx
  %endif
-        mov     qword [rax + CPUMCTX.edi], rdi
+        mov     qword [rcx + CPUMCTX.edi], rdi
  %ifdef ASM_CALL64_MSC
         mov     rdi, [rbp + frm_saved_rdi]
  %else
-        mov     rdi, rcx
+        mov     rdi, rdx
  %endif
-        mov     qword [rax + CPUMCTX.ebx], rbx
+        mov     qword [rcx + CPUMCTX.ebx], rbx
         mov     rbx, [rbp + frm_saved_rbx]
-        mov     qword [rax + CPUMCTX.r12], r12
+        mov     qword [rcx + CPUMCTX.r12], r12
         mov     r12,  [rbp + frm_saved_r12]
-        mov     qword [rax + CPUMCTX.r13], r13
+        mov     qword [rcx + CPUMCTX.r13], r13
         mov     r13,  [rbp + frm_saved_r13]
-        mov     qword [rax + CPUMCTX.r14], r14
+        mov     qword [rcx + CPUMCTX.r14], r14
         mov     r14,  [rbp + frm_saved_r14]
-        mov     qword [rax + CPUMCTX.r15], r15
+        mov     qword [rcx + CPUMCTX.r15], r15
         mov     r15,  [rbp + frm_saved_r15]
 
-        mov     rdx, cr2
-        mov     qword [rax + CPUMCTX.cr2], rdx
-        mov     rdx, rcx
+        mov     rax, cr2
+        mov     qword [rcx + CPUMCTX.cr2], rax
+        mov     rax, rdx
 
  %if %4 != 0
         ; Save the context pointer in r8 for the SSE save/restore.
-        mov     r8, rax
+        mov     r8, rcx
  %endif
 
  %if %3 & HM_WSF_IBPB_EXIT
@@ -681,7 +684,7 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
  %define frm_saved_idtr      -03ah              ; 16+64:  Only used when VMX_SKIP_IDTR isn't defined
  %define frm_saved_ldtr      -03ch              ; 16-bit: always saved.
  %define frm_rcError         -040h              ; 32-bit: Error status code (not used in the success path)
- %define frm_guest_rax       -048h              ; Temporary storage slot for guest RAX.
+ %define frm_guest_rcx       -048h              ; Temporary storage slot for guest RCX.
  %if %4 = 0
   %assign cbFrame             048h
  %else

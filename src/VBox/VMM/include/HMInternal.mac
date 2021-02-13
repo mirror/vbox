@@ -247,6 +247,7 @@ struc HMR0PERVCPU
 
     alignb 4
     .fWorldSwitcher                 resd    1
+    .uTscExit                       resq    1
 
     alignb 8
     .vmx                            resb    HMR0CPUVMX_size

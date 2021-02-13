@@ -1387,6 +1387,8 @@ typedef struct HMR0PERVCPU
     bool                        afPadding1[1];
     /** World switcher flags (HM_WSF_XXX - was CPUMCTX::fWorldSwitcher in 6.1). */
     uint32_t                    fWorldSwitcher;
+    /** The raw host TSC value from the last VM exit (set by HMR0A.asm). */
+    uint64_t                    uTscExit;
 
     /** VT-x data.   */
     struct HMR0CPUVMX
