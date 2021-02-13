@@ -1305,7 +1305,7 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu, PSVMVMCB 
     }
 
     /* Set TLB flush state as checked until we return from the world switch. */
-    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);
+    ASMAtomicUoWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);
 
     /* Check for explicit TLB flushes. */
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
@@ -4272,7 +4272,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransi
     uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
 #endif
 
-    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
+    ASMAtomicUoWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);  /* Used for TLB flushing, set this across the world switch. */
     /* Flush the appropriate tagged-TLB entries. */
     hmR0SvmFlushTaggedTlb(pHostCpu,  pVCpu, pVmcb);
     Assert(pVCpu->hmr0.s.idLastCpu == idHostCpu);
@@ -4350,7 +4350,7 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
     uint64_t const uHostTsc = ASMReadTSC();                     /* Read the TSC as soon as possible. */
-    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB flushing. */
+    ASMAtomicUoWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false); /* See HMInvalidatePageOnAllVCpus(): used for TLB flushing. */
     ASMAtomicIncU32(&pVCpu->hmr0.s.cWorldSwitchExits);          /* Initialized in vmR3CreateUVM(): used for EMT poking. */
 
     PSVMVMCB     pVmcb     = pSvmTransient->pVmcb;
