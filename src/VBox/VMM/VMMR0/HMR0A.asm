@@ -1338,46 +1338,49 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         ; Pop pVCpu (saved above) and save the guest GPRs (sans RSP and RAX).
         mov     rax, [rsp + cbFrame + frm_pGstCtx] ; (rbp still not operational)
 
-        mov     qword [rax + CPUMCTX.ebp], rbp
-        lea     rbp, [rsp + cbFrame]
-        mov     qword [rax + CPUMCTX.ecx], rcx
-        mov     rcx, SPECTRE_FILLER
         mov     qword [rax + CPUMCTX.edx], rdx
-        mov     rdx, rcx
-        mov     qword [rax + CPUMCTX.r8],  r8
-        mov     r8, rcx
-        mov     qword [rax + CPUMCTX.r9],  r9
-        mov     r9, rcx
-        mov     qword [rax + CPUMCTX.r10], r10
-        mov     r10, rcx
-        mov     qword [rax + CPUMCTX.r11], r11
-        mov     r11, rcx
-        mov     qword [rax + CPUMCTX.edi], rdi
+        mov     qword [rax + CPUMCTX.ecx], rcx
+        mov     rcx, rax
+        rdtsc
+        mov     qword [rcx + CPUMCTX.ebp], rbp
+        lea     rbp, [rsp + cbFrame]
+        shl     rdx, 20h
+        or      rax, rdx                ; TSC value in RAX
+        mov     qword [rcx + CPUMCTX.r8],  r8
+        mov     r8, SPECTRE_FILLER      ; SPECTRE filler in R8
+        mov     qword [rcx + CPUMCTX.r9],  r9
+        mov     r9, r8
+        mov     qword [rcx + CPUMCTX.r10], r10
+        mov     r10, r8
+        mov     qword [rcx + GVMCPU.hmr0 + HMR0PERVCPU.uTscExit - VMCPU.cpum.GstCtx], rax
+        mov     qword [rcx + CPUMCTX.r11], r11
+        mov     r11, r8
+        mov     qword [rcx + CPUMCTX.edi], rdi
  %ifdef ASM_CALL64_MSC
         mov     rdi, [rbp + frm_saved_rdi]
  %else
-        mov     rdi, rcx
+        mov     rdi, r8
  %endif
-        mov     qword [rax + CPUMCTX.esi], rsi
+        mov     qword [rcx + CPUMCTX.esi], rsi
  %ifdef ASM_CALL64_MSC
         mov     rsi, [rbp + frm_saved_rsi]
  %else
-        mov     rsi, rcx
+        mov     rsi, r8
  %endif
-        mov     qword [rax + CPUMCTX.ebx], rbx
+        mov     qword [rcx + CPUMCTX.ebx], rbx
         mov     rbx, [rbp + frm_saved_rbx]
-        mov     qword [rax + CPUMCTX.r12], r12
+        mov     qword [rcx + CPUMCTX.r12], r12
         mov     r12, [rbp + frm_saved_r12]
-        mov     qword [rax + CPUMCTX.r13], r13
+        mov     qword [rcx + CPUMCTX.r13], r13
         mov     r13, [rbp + frm_saved_r13]
-        mov     qword [rax + CPUMCTX.r14], r14
+        mov     qword [rcx + CPUMCTX.r14], r14
         mov     r14, [rbp + frm_saved_r14]
-        mov     qword [rax + CPUMCTX.r15], r15
+        mov     qword [rcx + CPUMCTX.r15], r15
         mov     r15, [rbp + frm_saved_r15]
 
  %if %4 != 0
         ; Set r8 = &pVCpu->cpum.GstCtx; for use below when saving and restoring SSE state.
-        mov     r8, rax
+        mov     r8, rcx
  %endif
 
  %if %3 & HM_WSF_IBPB_EXIT

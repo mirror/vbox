@@ -4349,7 +4349,6 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    uint64_t const uHostTsc = ASMReadTSC();                     /* Read the TSC as soon as possible. */
     ASMAtomicUoWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false); /* See HMInvalidatePageOnAllVCpus(): used for TLB flushing. */
     ASMAtomicIncU32(&pVCpu->hmr0.s.cWorldSwitchExits);          /* Initialized in vmR3CreateUVM(): used for EMT poking. */
 
@@ -4360,12 +4359,12 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
     if (!(pVmcbCtrl->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSC))
     {
         if (!pSvmTransient->fIsNestedGuest)
-            TMCpuTickSetLastSeen(pVCpu, uHostTsc + pVmcbCtrl->u64TSCOffset);
+            TMCpuTickSetLastSeen(pVCpu, pVCpu->hmr0.s.uTscExit + pVmcbCtrl->u64TSCOffset);
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         else
         {
             /* The nested-guest VMCB TSC offset shall eventually be restored on #VMEXIT via HMNotifySvmNstGstVmexit(). */
-            uint64_t const uGstTsc = CPUMRemoveNestedGuestTscOffset(pVCpu, uHostTsc + pVmcbCtrl->u64TSCOffset);
+            uint64_t const uGstTsc = CPUMRemoveNestedGuestTscOffset(pVCpu, pVCpu->hmr0.s.uTscExit + pVmcbCtrl->u64TSCOffset);
             TMCpuTickSetLastSeen(pVCpu, uGstTsc);
         }
 #endif
@@ -4381,7 +4380,7 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatPreExit, x);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    TMNotifyEndOfExecution(pVM, pVCpu, uHostTsc);               /* Notify TM that the guest is no longer running. */
+    TMNotifyEndOfExecution(pVM, pVCpu, pVCpu->hmr0.s.uTscExit); /* Notify TM that the guest is no longer running. */
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
     Assert(!(ASMGetFlags() & X86_EFL_IF));
@@ -4459,7 +4458,7 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
 
     HMSVM_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
     EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_SVM, pSvmTransient->u64ExitCode & EMEXIT_F_TYPE_MASK),
-                     pVCpu->cpum.GstCtx.cs.u64Base + pVCpu->cpum.GstCtx.rip, uHostTsc);
+                     pVCpu->cpum.GstCtx.cs.u64Base + pVCpu->cpum.GstCtx.rip, pVCpu->hmr0.s.uTscExit);
 }
 
 
