@@ -209,16 +209,19 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
     /*
      * Update the data.
      *
-     * Note! Using ASMAtomicUoIncU32 instead of ASMAtomicIncU32 here to
-     *       save a tiny bit of time here.  Currently, the only user
-     *       is tmR3CpuLoadTimer(), so nothing terribly important.
+     * Note! We're not using strict memory ordering here to speed things us.
+     *       The data is in a single cache line and this thread is the only
+     *       one writing to that line, so I cannot quite imagine why we would
+     *       need any strict ordering here.
      */
     uint64_t const cNsExecutingNew = pVCpu->tm.s.cNsExecuting + cNsExecutingDelta;
     uint32_t uGen = ASMAtomicUoIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
+    ASMCompilerBarrier();
     pVCpu->tm.s.fExecuting   = false;
     pVCpu->tm.s.cNsExecuting = cNsExecutingNew;
     pVCpu->tm.s.cPeriodsExecuting++;
-    ASMAtomicWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
+    ASMCompilerBarrier();
+    ASMAtomicUoWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
 
     /*
      * Update stats.
@@ -308,12 +311,14 @@ VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPUCC pVCpu)
     uint64_t const cNsHaltedNew   = pVCpu->tm.s.cNsHalted + cNsHaltedDelta;
     uint64_t const cNsOtherNew    = cNsTotalNew - pVCpu->tm.s.cNsExecuting - cNsHaltedNew;
 
-    uint32_t uGen = ASMAtomicIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
+    uint32_t uGen = ASMAtomicUoIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
+    ASMCompilerBarrier();
     pVCpu->tm.s.fHalting     = false;
     pVCpu->tm.s.fUpdateStats = false;
     pVCpu->tm.s.cNsHalted    = cNsHaltedNew;
     pVCpu->tm.s.cPeriodsHalted++;
-    ASMAtomicWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
+    ASMCompilerBarrier();
+    ASMAtomicUoWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
 
 # if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
     STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsHalted, cNsHaltedDelta);

@@ -715,9 +715,6 @@ typedef TM *PTM;
  */
 typedef struct TMCPU
 {
-    /** CPU timestamp ticking enabled indicator (bool). (RDTSC) */
-    bool                        fTSCTicking;
-    bool                        afAlignment0[7]; /**< alignment padding */
     /** The offset between the host tick (TSC/virtual depending on the TSC mode) and
      *  the guest tick. */
     uint64_t                    offTSCRawSrc;
@@ -725,12 +722,35 @@ typedef struct TMCPU
     uint64_t                    u64TSC;
     /** The last seen TSC by the guest. */
     uint64_t                    u64TSCLastSeen;
+    /** CPU timestamp ticking enabled indicator (bool). (RDTSC) */
+    bool                        fTSCTicking;
+#ifdef VBOX_WITHOUT_NS_ACCOUNTING
+    bool                        afAlignment1[7]; /**< alignment padding */
+#else /* !VBOX_WITHOUT_NS_ACCOUNTING */
 
-#ifndef VBOX_WITHOUT_NS_ACCOUNTING
-    /** Align  */
-    uint64_t                    au64Alignment[4];
+    /** Set by the timer callback to trigger updating of statistics in
+     *  TMNotifyEndOfExecution. */
+    bool volatile               fUpdateStats;
+    bool                        afAlignment1[6];
+    /** The time not spent executing or halted.
+     * @note Only updated after halting and after the timer runs. */
+    uint64_t                    cNsOtherStat;
+    /** Reasonably up to date total run time value.
+     * @note Only updated after halting and after the timer runs. */
+    uint64_t                    cNsTotalStat;
+# if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
+    /** Resettable copy of version of cNsOtherStat.
+    * @note Only updated after halting. */
+    STAMCOUNTER                 StatNsOther;
+    /** Resettable copy of cNsTotalStat.
+     * @note Only updated after halting. */
+    STAMCOUNTER                 StatNsTotal;
+# else
+    uint64_t                    auAlignment2[2];
+# endif
 
-    /** @name Core accounting data.  Must be cache-line aligned.
+    /** @name Core accounting data.
+     * @note Must be cache-line aligned and only written to by the EMT owning it.
      * @{ */
     /** The cNsXXX generation. */
     uint32_t volatile           uTimesGen;
@@ -741,9 +761,7 @@ typedef struct TMCPU
     bool volatile               fHalting;
     /** Set if we're suspended and u64NsTsStartTotal is to be cNsTotal. */
     bool volatile               fSuspended;
-    /** Set by the timer callback to trigger updating of statistics in
-     *  TMNotifyEndOfExecution. */
-    bool volatile               fUpdateStats;
+    bool                        afAlignment;
     /** The nanosecond timestamp of the CPU start or resume.
      * This is recalculated when the VM is started so that
      * cNsTotal = RTTimeNanoTS() - u64NsTsStartCpu. */
@@ -773,20 +791,7 @@ typedef struct TMCPU
     STAMPROFILE                 StatNsExecTiny;
     /** Resettable version of cNsHalted. */
     STAMPROFILE                 StatNsHalted;
-
-    /** Resettable copy of version of cNsOtherStat.
-    * @note Only updated after halting. */
-    STAMCOUNTER                 StatNsOther;
-    /** Resettable copy of cNsTotalStat.
-     * @note Only updated after halting. */
-    STAMCOUNTER                 StatNsTotal;
 # endif
-    /** The time not spent executing or halted.
-     * @note Only updated after halting and after the timer runs. */
-    uint64_t                    cNsOtherStat;
-    /** Reasonably up to date total run time value.
-     * @note Only updated after halting and after the timer runs. */
-    uint64_t                    cNsTotalStat;
 
     /** CPU load state for this virtual CPU (tmR3CpuLoadTimer). */
     TMCPULOADSTATE              CpuLoad;
@@ -797,7 +802,7 @@ AssertCompileMemberAlignment(TMCPU, uTimesGen, 64);
 # if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
 AssertCompileMemberAlignment(TMCPU, StatNsExecuting, 64);
 # else
-AssertCompileMemberAlignment(TMCPU, cNsOtherStat, 64);
+AssertCompileMemberAlignment(TMCPU, CpuLoad, 64);
 # endif
 #endif
 /** Pointer to TM VMCPU instance data. */
