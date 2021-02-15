@@ -1514,6 +1514,8 @@ static const char *tmR3TimerClockName(PTMTIMERR3 pTimer)
 static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     VM_ASSERT_EMT(pVM);
+    AssertReturn((fFlags & (TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0)) != (TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0),
+                 VERR_INVALID_FLAGS);
 
     /*
      * Allocate the timer.

@@ -949,10 +949,14 @@ typedef struct PDMDRVHLPR3
      * @param   fFlags          Timer creation flags, see grp_tm_timer_flags.
      * @param   pszDesc         Pointer to description string which must stay around
      *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
-     * @param   ppTimer         Where to store the timer on success.
+     * @param   phTimer         Where to store the timer handle on success.
      * @thread  EMT
+     *
+     * @todo    Need to add a bunch of timer helpers for this to be useful again.
+     *          Will do when required.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer));
+    DECLR3CALLBACKMEMBER(int, pfnTimerCreate,(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser,
+                                              uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer));
 
     /**
      * Register a save state data unit.
@@ -1506,12 +1510,13 @@ DECLINLINE(uint64_t) PDMDrvHlpTMGetVirtualTime(PPDMDRVINS pDrvIns)
 }
 
 /**
- * @copydoc PDMDRVHLPR3::pfnTMTimerCreate
+ * @copydoc PDMDRVHLPR3::pfnTimerCreate
  */
 DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser,
-                                       uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
+                                       uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer)
+
 {
-    return pDrvIns->pHlpR3->pfnTMTimerCreate(pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
+    return pDrvIns->pHlpR3->pfnTimerCreate(pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, phTimer);
 }
 
 /**

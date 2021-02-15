@@ -1317,24 +1317,31 @@ static DECLCALLBACK(uint64_t) pdmR3DrvHlp_TMGetVirtualTime(PPDMDRVINS pDrvIns)
 }
 
 
-/** @interface_method_impl{PDMDRVHLPR3,pfnTMTimerCreate} */
-static DECLCALLBACK(int) pdmR3DrvHlp_TMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
+/** @interface_method_impl{PDMDRVHLPR3,pfnTimerCreate} */
+static DECLCALLBACK(int) pdmR3DrvHlp_TimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser,
+                                                 uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    LogFlow(("pdmR3DrvHlp_TMTimerCreate: caller='%s'/%d: enmClock=%d pfnCallback=%p pvUser=%p fFlags=%#x pszDesc=%p:{%s} ppTimer=%p\n",
-             pDrvIns->pReg->szName, pDrvIns->iInstance, enmClock, pfnCallback, pvUser, fFlags, pszDesc, pszDesc, ppTimer));
+    LogFlow(("pdmR3DrvHlp_TimerCreate: caller='%s'/%d: enmClock=%d pfnCallback=%p pvUser=%p fFlags=%#x pszDesc=%p:{%s} phTimer=%p\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, enmClock, pfnCallback, pvUser, fFlags, pszDesc, pszDesc, phTimer));
 
     /* Clear the ring-0 flag if the driver isn't configured for ring-0. */
     if (fFlags & TMTIMER_FLAGS_RING0)
     {
+        AssertReturn(!(fFlags & TMTIMER_FLAGS_NO_RING0), VERR_INVALID_FLAGS);
         Assert(pDrvIns->Internal.s.pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_R0);
         /** @todo if (!(pDrvIns->Internal.s.fIntFlags & PDMDRVINSINT_FLAGS_R0_ENABLED))   */
-            fFlags &= ~TMTIMER_FLAGS_RING0;
+            fFlags = (fFlags & ~TMTIMER_FLAGS_RING0) | TMTIMER_FLAGS_NO_RING0;
     }
+    else
+        fFlags |= TMTIMER_FLAGS_NO_RING0;
 
-    int rc = TMR3TimerCreateDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
+    PTMTIMERR3 pTimer = NULL;
+    int rc = TMR3TimerCreateDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, &pTimer);
+    if (RT_SUCCESS(rc))
+        *phTimer = (TMTIMERHANDLE)pTimer;
 
-    LogFlow(("pdmR3DrvHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc *ppTimer=%p\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc, *ppTimer));
+    LogFlow(("pdmR3DrvHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc *phTimer=%p\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc, *phTimer));
     return rc;
 }
 
@@ -1842,7 +1849,7 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_QueueCreate,
     pdmR3DrvHlp_TMGetVirtualFreq,
     pdmR3DrvHlp_TMGetVirtualTime,
-    pdmR3DrvHlp_TMTimerCreate,
+    pdmR3DrvHlp_TimerCreate,
     pdmR3DrvHlp_SSMRegister,
     pdmR3DrvHlp_SSMDeregister,
     pdmR3DrvHlp_DBGFInfoRegister,
