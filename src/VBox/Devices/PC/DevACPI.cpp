@@ -4387,7 +4387,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Create the PM timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiR3PmTimer, NULL /*pvUser*/,
-                              TMTIMER_FLAGS_NO_CRIT_SECT, "ACPI PM Timer", &pThis->hPmTimer);
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, "ACPI PM Timer", &pThis->hPmTimer);
     AssertRCReturn(rc, rc);
 
     PDMDevHlpTimerLockClock(pDevIns, pThis->hPmTimer, VERR_IGNORED);

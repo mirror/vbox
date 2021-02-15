@@ -411,30 +411,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, uint32_t uV
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnTMTimerCreate} */
-static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_TMTimerCreate: caller='%s'/%d: enmClock=%d pfnCallback=%p pvUser=%p fFlags=%#x pszDesc=%p:{%s} ppTimer=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, enmClock, pfnCallback, pvUser, fFlags, pszDesc, pszDesc, ppTimer));
-
-    if (pDevIns->iInstance > 0) /** @todo use a string cache here later. */
-    {
-         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s[%u]", pszDesc, pDevIns->iInstance);
-         if (pszDesc2)
-             pszDesc = pszDesc2;
-    }
-
-    int rc = TMR3TimerCreateDevice(pVM, pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
-
-    LogFlow(("pdmR3DevHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
-
 /** @interface_method_impl{PDMDEVHLPR3,pfnTimerCreate} */
 static DECLCALLBACK(int) pdmR3DevHlp_TimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback,
                                                  void *pvUser, uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer)
@@ -452,6 +428,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerCreate(PPDMDEVINS pDevIns, TMCLOCK enm
              pszDesc = pszDesc2;
     }
 
+    /* Clear the ring-0 flag if the device isn't configured for ring-0. */
+    if (fFlags & TMTIMER_FLAGS_RING0)
+    {
+        Assert(pDevIns->Internal.s.pDevR3->pReg->fFlags & PDM_DEVREG_FLAGS_R0);
+        if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED))
+            fFlags &= ~TMTIMER_FLAGS_RING0;
+    }
+    else
+        Assert(fFlags & TMTIMER_FLAGS_NO_RING0 /* just to make sure all devices has been considered */);
+
     PTMTIMER pTimer = NULL;
     int rc = TMR3TimerCreateDevice(pVM, pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, &pTimer);
     *phTimer = (uintptr_t)pTimer;
@@ -461,8 +447,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerCreate(PPDMDEVINS pDevIns, TMCLOCK enm
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnTimerToPtr} */
-static DECLCALLBACK(PTMTIMERR3) pdmR3DevHlp_TimerToPtr(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+/** Converts timer handle to pointer (used to exposed, will be replace soon.) */
+DECLINLINE(PTMTIMERR3) pdmR3DevHlp_TimerToPtr(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     RT_NOREF(pDevIns);
@@ -4188,9 +4174,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     SSMR3HandleRevision,
     SSMR3HandleVersion,
     SSMR3HandleHostOSAndArch,
-    pdmR3DevHlp_TMTimerCreate,
     pdmR3DevHlp_TimerCreate,
-    pdmR3DevHlp_TimerToPtr,
     pdmR3DevHlp_TimerFromMicro,
     pdmR3DevHlp_TimerFromMilli,
     pdmR3DevHlp_TimerFromNano,
@@ -4537,9 +4521,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     SSMR3HandleRevision,
     SSMR3HandleVersion,
     SSMR3HandleHostOSAndArch,
-    pdmR3DevHlp_TMTimerCreate,
     pdmR3DevHlp_TimerCreate,
-    pdmR3DevHlp_TimerToPtr,
     pdmR3DevHlp_TimerFromMicro,
     pdmR3DevHlp_TimerFromMilli,
     pdmR3DevHlp_TimerFromNano,
@@ -4775,7 +4757,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
     PDM_DEVHLPR3_VERSION /* the end */
 };
-#endif
+#endif /* VBOX_WITH_DBGF_TRACING */
 
 
 
@@ -5043,9 +5025,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     SSMR3HandleRevision,
     SSMR3HandleVersion,
     SSMR3HandleHostOSAndArch,
-    pdmR3DevHlp_TMTimerCreate,
     pdmR3DevHlp_TimerCreate,
-    pdmR3DevHlp_TimerToPtr,
     pdmR3DevHlp_TimerFromMicro,
     pdmR3DevHlp_TimerFromMilli,
     pdmR3DevHlp_TimerFromNano,

@@ -1829,6 +1829,8 @@ static DECLCALLBACK(int) pdmR3UsbHlp_TMTimerCreate(PPDMUSBINS pUsbIns, TMCLOCK e
     if (pszDesc2)
         pszDesc = pszDesc2;
 
+    AssertStmt(!(fFlags & TMTIMER_FLAGS_RING0), fFlags &= ~TMTIMER_FLAGS_RING0);
+
     int rc = TMR3TimerCreateUsb(pVM, pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
 
     LogFlow(("pdmR3UsbHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));

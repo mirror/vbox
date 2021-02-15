@@ -414,11 +414,11 @@ static DECLCALLBACK(VMCPUID) pdmR0DevHlp_GetCurrentCpuId(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR0,pfnTimerToPtr} */
-static DECLCALLBACK(PTMTIMERR0) pdmR0DevHlp_TimerToPtr(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+/** Converts a timer handle to a pointer (used to be exposed, will be
+ *  rewritten later). */
+DECLINLINE(PTMTIMERR0) pdmR0DevHlp_TimerToPtr(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns);
     return (PTMTIMERR0)MMHyperR3ToCC(pDevIns->Internal.s.pGVM, hTimer);
 }
 
@@ -1248,7 +1248,6 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_GetVM,
     pdmR0DevHlp_GetVMCPU,
     pdmR0DevHlp_GetCurrentCpuId,
-    pdmR0DevHlp_TimerToPtr,
     pdmR0DevHlp_TimerFromMicro,
     pdmR0DevHlp_TimerFromMilli,
     pdmR0DevHlp_TimerFromNano,
@@ -1346,7 +1345,6 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlpTracing =
     pdmR0DevHlp_GetVM,
     pdmR0DevHlp_GetVMCPU,
     pdmR0DevHlp_GetCurrentCpuId,
-    pdmR0DevHlp_TimerToPtr,
     pdmR0DevHlp_TimerFromMicro,
     pdmR0DevHlp_TimerFromMilli,
     pdmR0DevHlp_TimerFromNano,

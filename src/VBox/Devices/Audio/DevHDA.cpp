@@ -4921,16 +4921,18 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      *        on exact (virtual) DMA timing and uses DMA Position Buffers
      *        instead of the LPIB registers.
      */
+    /** @todo r=bird: The need to use virtual sync is perhaps because TM
+     *        doesn't schedule regular TMCLOCK_VIRTUAL timers as accurately as it
+     *        should (VT-x preemption timer, etc).  Hope to address that before
+     *        long. @bugref{9943}. */
     static const char * const s_apszNames[] =
-    {
-        "HDA SD0", "HDA SD1", "HDA SD2", "HDA SD3",
-        "HDA SD4", "HDA SD5", "HDA SD6", "HDA SD7",
-    };
+    { "HDA SD0", "HDA SD1", "HDA SD2", "HDA SD3", "HDA SD4", "HDA SD5", "HDA SD6", "HDA SD7", };
     AssertCompile(RT_ELEMENTS(s_apszNames) == HDA_MAX_STREAMS);
     for (size_t i = 0; i < HDA_MAX_STREAMS; i++)
     {
         rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaR3Timer, (void *)(uintptr_t)i,
-                                  TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->aStreams[i].hTimer);
+                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
+                                  s_apszNames[i], &pThis->aStreams[i].hTimer);
         AssertRCReturn(rc, rc);
 
         rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->aStreams[i].hTimer, &pThis->CritSect);

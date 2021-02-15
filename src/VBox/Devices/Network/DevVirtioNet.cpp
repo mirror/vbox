@@ -2247,13 +2247,15 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
 
     /* Create Link Up Timer */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetR3LinkUpTimer, NULL, TMTIMER_FLAGS_NO_CRIT_SECT,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetR3LinkUpTimer, NULL,
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
                               "VirtioNet Link Up Timer", &pThisCC->hLinkUpTimer);
     AssertRCReturn(rc, rc);
 
 # ifdef VNET_TX_DELAY
     /* Create Transmit Delay Timer */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetR3TxTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetR3TxTimer, pThis,
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
                               "VirtioNet TX Delay Timer", &pThis->hTxTimer);
     AssertRCReturn(rc, rc);
 

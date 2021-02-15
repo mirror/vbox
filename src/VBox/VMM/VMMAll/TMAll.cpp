@@ -1108,6 +1108,9 @@ VMM_INT_DECL(uint64_t) TMTimerPollGIP(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64D
  */
 VMMDECL(PTMTIMERR3) TMTimerR3Ptr(PTMTIMER pTimer)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     return (PTMTIMERR3)MMHyperCCToR3(pTimer->CTX_SUFF(pVM), pTimer);
 }
 
@@ -1120,6 +1123,9 @@ VMMDECL(PTMTIMERR3) TMTimerR3Ptr(PTMTIMER pTimer)
  */
 VMMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     return (PTMTIMERR0)MMHyperCCToR0(pTimer->CTX_SUFF(pVM), pTimer);
 }
 
@@ -1132,6 +1138,9 @@ VMMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer)
  */
 VMMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     return (PTMTIMERRC)MMHyperCCToRC(pTimer->CTX_SUFF(pVM), pTimer);
 }
 
@@ -1151,6 +1160,9 @@ VMMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
  */
 VMMDECL(int) TMTimerLock(PTMTIMER pTimer, int rcBusy)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     AssertPtr(pTimer);
     AssertReturn(pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC, VERR_NOT_SUPPORTED);
     return PDMCritSectEnter(&pTimer->CTX_SUFF(pVM)->tm.s.VirtualSyncLock, rcBusy);
@@ -1164,6 +1176,9 @@ VMMDECL(int) TMTimerLock(PTMTIMER pTimer, int rcBusy)
  */
 VMMDECL(void) TMTimerUnlock(PTMTIMER pTimer)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     AssertPtr(pTimer);
     AssertReturnVoid(pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC);
     PDMCritSectLeave(&pTimer->CTX_SUFF(pVM)->tm.s.VirtualSyncLock);
@@ -1178,6 +1193,9 @@ VMMDECL(void) TMTimerUnlock(PTMTIMER pTimer)
  */
 VMMDECL(bool) TMTimerIsLockOwner(PTMTIMER pTimer)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     AssertPtr(pTimer);
     AssertReturn(pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC, false);
     return PDMCritSectIsOwner(&pTimer->CTX_SUFF(pVM)->tm.s.VirtualSyncLock);
@@ -1305,6 +1323,9 @@ static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
  */
 VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     PVMCC pVM = pTimer->CTX_SUFF(pVM);
     STAM_COUNTER_INC(&pTimer->StatSetAbsolute);
 
@@ -1612,6 +1633,9 @@ static int tmTimerVirtualSyncSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cT
  */
 VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     PVMCC pVM = pTimer->CTX_SUFF(pVM);
     STAM_COUNTER_INC(&pTimer->StatSetRelative);
 
@@ -1840,6 +1864,9 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
  */
 VMMDECL(int) TMTimerSetFrequencyHint(PTMTIMER pTimer, uint32_t uHzHint)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     TMTIMER_ASSERT_CRITSECT(pTimer);
 
     uint32_t const uHzOldHint = pTimer->uHzHint;
@@ -1935,6 +1962,9 @@ static int tmTimerVirtualSyncStop(PVMCC pVM, PTMTIMER pTimer)
  */
 VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     PVMCC pVM = pTimer->CTX_SUFF(pVM);
     STAM_COUNTER_INC(&pTimer->StatStop);
 
@@ -2043,6 +2073,9 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
  */
 VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     PVMCC pVM = pTimer->CTX_SUFF(pVM);
     STAM_COUNTER_INC(&pTimer->StatGet);
 
@@ -2076,6 +2109,9 @@ VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
  */
 VMMDECL(uint64_t) TMTimerGetFreq(PTMTIMER pTimer)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2101,6 +2137,9 @@ VMMDECL(uint64_t) TMTimerGetFreq(PTMTIMER pTimer)
  */
 VMMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     TMTIMER_ASSERT_CRITSECT(pTimer);
     int cRetries = 1000;
     do
@@ -2163,6 +2202,9 @@ VMMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
  */
 VMMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     TMTIMERSTATE enmState = pTimer->enmState;
     switch (enmState)
     {
@@ -2340,6 +2382,9 @@ VMMDECL(uint64_t) TMTimerGetMilli(PTMTIMER pTimer)
  */
 VMMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2369,6 +2414,9 @@ VMMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
  */
 VMMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2398,6 +2446,9 @@ VMMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
  */
 VMMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2426,6 +2477,9 @@ VMMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
  */
 VMMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t cNanoSecs)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2454,6 +2508,9 @@ VMMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t cNanoSecs)
  */
 VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t cMicroSecs)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2482,6 +2539,9 @@ VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t cMicroSecs)
  */
 VMMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t cMilliSecs)
 {
+#ifdef IN_RING0
+    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
+#endif
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:

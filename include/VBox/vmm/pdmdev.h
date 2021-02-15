@@ -2350,7 +2350,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 45, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 46, 0)
 
 /**
  * PDM Device API.
@@ -2799,24 +2799,6 @@ typedef struct PDMDEVHLPR3
     /** @} */
 
     /**
-     * Creates a timer.
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance.
-     * @param   enmClock            The clock to use on this timer.
-     * @param   pfnCallback         Callback function.
-     * @param   pvUser              User argument for the callback.
-     * @param   fFlags              Flags, see TMTIMER_FLAGS_*.
-     * @param   pszDesc             Pointer to description string which must stay around
-     *                              until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
-     * @param   ppTimer             Where to store the timer on success.
-     * @remarks Caller enters the device critical section prior to invoking the
-     *          callback.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback,
-                                                void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer));
-
-    /**
      * Creates a timer w/ a cross context handle.
      *
      * @returns VBox status.
@@ -2833,15 +2815,6 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnTimerCreate,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback,
                                               void *pvUser, uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer));
-
-    /**
-     * Translates a timer handle to a pointer.
-     *
-     * @returns The time address.
-     * @param   pDevIns             The device instance.
-     * @param   hTimer              The timer handle.
-     */
-    DECLR3CALLBACKMEMBER(PTMTIMERR3, pfnTimerToPtr,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
 
     /** @name Timer handle method wrappers
      * @{ */
@@ -5224,15 +5197,6 @@ typedef struct PDMDEVHLPR0
      */
     DECLR0CALLBACKMEMBER(VMCPUID, pfnGetCurrentCpuId,(PPDMDEVINS pDevIns));
 
-    /**
-     * Translates a timer handle to a pointer.
-     *
-     * @returns The time address.
-     * @param   pDevIns             The device instance.
-     * @param   hTimer              The timer handle.
-     */
-    DECLR0CALLBACKMEMBER(PTMTIMERR0, pfnTimerToPtr,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
-
     /** @name Timer handle method wrappers
      * @{ */
     DECLR0CALLBACKMEMBER(uint64_t, pfnTimerFromMicro,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMicroSecs));
@@ -5488,7 +5452,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 18, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 19, 0)
 
 
 /**
@@ -6319,15 +6283,6 @@ DECLINLINE(int) PDMDevHlpSSMRegisterEx(PPDMDEVINS pDevIns, uint32_t uVersion, si
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnTMTimerCreate
- */
-DECLINLINE(int) PDMDevHlpTMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser,
-                                       uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
-{
-    return pDevIns->pHlpR3->pfnTMTimerCreate(pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
-}
-
-/**
  * @copydoc PDMDEVHLPR3::pfnTimerCreate
  */
 DECLINLINE(int) PDMDevHlpTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser,
@@ -6337,14 +6292,6 @@ DECLINLINE(int) PDMDevHlpTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTM
 }
 
 #endif /* IN_RING3 */
-
-/**
- * @copydoc PDMDEVHLPR3::pfnTimerToPtr
- */
-DECLINLINE(PTMTIMER) PDMDevHlpTimerToPtr(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
-{
-    return pDevIns->CTX_SUFF(pHlp)->pfnTimerToPtr(pDevIns, hTimer);
-}
 
 /**
  * @copydoc PDMDEVHLPR3::pfnTimerFromMicro

@@ -5444,7 +5444,7 @@ static DECLCALLBACK(void) vgaR3PortReportHostCursorPosition(PPDMIDISPLAYPORT pIn
 /**
  * @callback_method_impl{FNTMTIMERDEV, VGA Refresh Timer}
  */
-static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) vgaR3TimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
@@ -6782,8 +6782,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Create the refresh timer.
      */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_REAL, vgaTimerRefresh, NULL, TMTIMER_FLAGS_NO_CRIT_SECT,
-                              "VGA Refresh Timer", &pThis->hRefreshTimer);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_REAL, vgaR3TimerRefresh, NULL,
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "VGA Refresh Timer", &pThis->hRefreshTimer);
     AssertRCReturn(rc, rc);
 
     /*

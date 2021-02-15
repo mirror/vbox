@@ -81,6 +81,10 @@ typedef enum TMCLOCK
 /** No critical section needed or a custom one is set using
  *  TMR3TimerSetCritSect(). */
 #define TMTIMER_FLAGS_NO_CRIT_SECT      RT_BIT_32(0)
+/** Used in ring-0.  Must set this or TMTIMER_FLAGS_NO_RING0. */
+#define TMTIMER_FLAGS_RING0             RT_BIT_32(1)
+/** Not used in ring-0 (for refactoring and doc purposes). */
+#define TMTIMER_FLAGS_NO_RING0          RT_BIT_32(31)
 /** @} */
 
 

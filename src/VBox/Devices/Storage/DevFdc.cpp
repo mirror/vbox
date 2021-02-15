@@ -2923,21 +2923,24 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      * Create the FDC timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, fdcTimerCallback, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Timer", &pThis->hResultTimer);
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
+                              "FDC Timer", &pThis->hResultTimer);
     AssertRCReturn(rc, rc);
 
     /*
      * Create the transfer delay timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, fdcTransferDelayTimer, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Transfer Delay Timer", &pThis->hXferDelayTimer);
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
+                              "FDC Transfer Delay Timer", &pThis->hXferDelayTimer);
     AssertRCReturn(rc, rc);
 
     /*
      * Create the IRQ delay timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, fdcIrqDelayTimer, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC IRQ Delay Timer", &pThis->hIrqDelayTimer);
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
+                              "FDC IRQ Delay Timer", &pThis->hIrqDelayTimer);
     AssertRCReturn(rc, rc);
 
     pThis->uIrqDelayMsec = uIrqDelay;

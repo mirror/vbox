@@ -205,6 +205,11 @@ typedef struct TMTIMER
 #if HC_ARCH_BITS == 32
     uint32_t                padding0; /**< pad structure to multiple of 8 bytes. */
 #endif
+
+    /** TMTIMER_FLAGS_XXX.   */
+    uint32_t                fFlags;
+    uint32_t                u32Pading;
+
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE             StatTimer;
     STAMPROFILE             StatCritSectEnter;

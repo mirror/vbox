@@ -650,6 +650,10 @@ typedef AC97STATER3 *PAC97STATER3;
 
 /**
  * Acquires the TM lock and AC'97 lock, returns on failure.
+ *
+ * @todo r=bird: Isn't this overkill for ring-0, only ring-3 access the timer
+ *               from what I can tell (ichac97R3StreamTransferCalcNext,
+ *               ichac97R3TimerSet, timer callback and state load).
  */
 #define DEVAC97_LOCK_BOTH_RETURN(a_pDevIns, a_pThis, a_pStream, a_rcBusy) \
     do { \
@@ -4329,12 +4333,16 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
      *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
      *        instead of the LPIB registers.
      */
+    /** @todo r=bird: The need to use virtual sync is perhaps because TM
+     *        doesn't schedule regular TMCLOCK_VIRTUAL timers as accurately as it
+     *        should (VT-x preemption timer, etc).  Hope to address that before
+     *        long. @bugref{9943}. */
     static const char * const s_apszNames[] = { "AC97 PI", "AC97 PO", "AC97 MC" };
     AssertCompile(RT_ELEMENTS(s_apszNames) == AC97_MAX_STREAMS);
     for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
     {
         rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, ichac97R3Timer, &pThis->aStreams[i],
-                                  TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->aStreams[i].hTimer);
+                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, s_apszNames[i], &pThis->aStreams[i].hTimer);
         AssertRCReturn(rc, rc);
 
         rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->aStreams[i].hTimer, &pThis->CritSect);

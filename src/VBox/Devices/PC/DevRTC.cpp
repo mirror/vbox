@@ -587,7 +587,6 @@ static DECLCALLBACK(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
 {
     RT_NOREF2(pTimer, pvUser);
     PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
-    Assert(pTimer == PDMDevHlpTimerToPtr(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
@@ -666,13 +665,12 @@ static void rtc_next_second(struct my_tm *tm)
 /**
  * @callback_method_impl{FNTMTIMERDEV, Second timer.}
  */
-static DECLCALLBACK(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) rtcR3TimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
-    Assert(pTimer == PDMDevHlpTimerToPtr(pDevIns, pThis->hSecondTimer));
     RT_NOREF(pvUser, pTimer);
 
     /* if the oscillator is not in normal operation, we do not update */
@@ -699,7 +697,7 @@ static DECLCALLBACK(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 }
 
 
-/* Used by rtc_set_date and rtcTimerSecond2. */
+/* Used by rtc_set_date and rtcR3TimerSecond2. */
 static void rtc_copy_date(PRTCSTATE pThis)
 {
     const struct my_tm *tm = &pThis->current_tm;
@@ -729,13 +727,12 @@ static void rtc_copy_date(PRTCSTATE pThis)
 /**
  * @callback_method_impl{FNTMTIMERDEV, Second2 timer.}
  */
-static DECLCALLBACK(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) rtcR3TimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
-    Assert(pTimer == PDMDevHlpTimerToPtr(pDevIns, pThis->hSecondTimer2));
     RT_NOREF2(pTimer, pvUser);
 
     if (!(pThis->cmos_data[RTC_REG_B] & REG_B_SET))
@@ -1158,17 +1155,20 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     /* Periodic timer. */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerPeriodic, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "MC146818 RTC (CMOS) - Periodic", &pThis->hPeriodicTimer);
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_RING0,
+                              "MC146818 RTC (CMOS) - Periodic", &pThis->hPeriodicTimer);
     AssertRCReturn(rc, rc);
 
     /* Seconds timer. */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "MC146818 RTC (CMOS) - Second", &pThis->hSecondTimer);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcR3TimerSecond, pThis,
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_RING0,
+                              "MC146818 RTC (CMOS) - Second", &pThis->hSecondTimer);
     AssertRCReturn(rc, rc);
 
     /* The second2 timer, this is always active. */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond2, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "MC146818 RTC (CMOS) - Second2", &pThis->hSecondTimer2);
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcR3TimerSecond2, pThis,
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
+                              "MC146818 RTC (CMOS) - Second2", &pThis->hSecondTimer2);
     AssertRCReturn(rc, rc);
 
     pThis->next_second_time = PDMDevHlpTimerGet(pDevIns, pThis->hSecondTimer2)

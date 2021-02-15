@@ -5936,7 +5936,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Create the timer for command completion coalescing feature.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ahciCccTimer, pThis,
-                              TMTIMER_FLAGS_NO_CRIT_SECT, "AHCI CCC Timer", &pThis->hHbaCccTimer);
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, "AHCI CCC Timer", &pThis->hHbaCccTimer);
     AssertRCReturn(rc, rc);
 
     /*
