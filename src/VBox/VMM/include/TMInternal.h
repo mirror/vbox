@@ -56,9 +56,7 @@ typedef enum TMTIMERTYPE
     /** Driver timer. */
     TMTIMERTYPE_DRV,
     /** Internal timer . */
-    TMTIMERTYPE_INTERNAL,
-    /** External timer. */
-    TMTIMERTYPE_EXTERNAL
+    TMTIMERTYPE_INTERNAL
 } TMTIMERTYPE;
 
 /**
@@ -163,13 +161,6 @@ typedef struct TMTIMER
             /** Callback. */
             R3PTRTYPE(PFNTMTIMERINT)    pfnTimer;
         } Internal;
-
-        /** TMTIMERTYPE_EXTERNAL. */
-        struct
-        {
-            /** Callback. */
-            R3PTRTYPE(PFNTMTIMEREXT)    pfnTimer;
-        } External;
     } u;
 
     /** Timer state. */

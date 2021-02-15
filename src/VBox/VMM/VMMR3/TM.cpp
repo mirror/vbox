@@ -1744,38 +1744,6 @@ VMMR3DECL(int) TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock,
     return rc;
 }
 
-/**
- * Creates an external timer.
- *
- * @returns Timer handle on success.
- * @returns NULL on failure.
- * @param   pVM             The cross context VM structure.
- * @param   enmClock        The clock to use on this timer.
- * @param   pfnCallback     Callback function.
- * @param   pvUser          User argument.
- * @param   pszDesc         Pointer to description string which must stay around
- *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
- */
-VMMR3DECL(PTMTIMERR3) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock,
-                                              PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc)
-{
-    /*
-     * Allocate and init stuff.
-     */
-    PTMTIMERR3 pTimer;
-    int rc = tmr3TimerCreate(pVM, enmClock, 0 /*fFlags*/, pszDesc, &pTimer);
-    if (RT_SUCCESS(rc))
-    {
-        pTimer->enmType             = TMTIMERTYPE_EXTERNAL;
-        pTimer->u.External.pfnTimer = pfnCallback;
-        pTimer->pvUser              = pvUser;
-        Log(("TM: Created external timer %p clock %d callback %p '%s'\n", pTimer, enmClock, pfnCallback, pszDesc));
-        return pTimer;
-    }
-
-    return NULL;
-}
-
 
 /**
  * Destroy a timer
@@ -2315,7 +2283,6 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
                 case TMTIMERTYPE_USB:       pTimer->u.Usb.pfnTimer(pTimer->u.Usb.pUsbIns, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->pvUser); break;
-                case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->pvUser); break;
                 default:
                     AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
                     break;
@@ -2500,7 +2467,6 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             case TMTIMERTYPE_USB:       pTimer->u.Usb.pfnTimer(pTimer->u.Usb.pUsbIns, pTimer, pTimer->pvUser); break;
             case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer, pTimer->pvUser); break;
             case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->pvUser); break;
-            case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->pvUser); break;
             default:
                 AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
                 break;
