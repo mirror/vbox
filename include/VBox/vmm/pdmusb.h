@@ -614,10 +614,40 @@ typedef struct PDMUSBHLP
      * @param   fFlags              Flags, see TMTIMER_FLAGS_*.
      * @param   pszDesc             Pointer to description string which must stay around
      *                              until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
-     * @param   ppTimer             Where to store the timer on success.
+     * @param   phTimer             Where to store the timer handle on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback, void *pvUser,
-                                                uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer));
+    DECLR3CALLBACKMEMBER(int, pfnTimerCreate,(PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback, void *pvUser,
+                                              uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer));
+
+    /** @name Timer handle method wrappers
+     * @{ */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnTimerFromMicro,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMicroSecs));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnTimerFromMilli,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMilliSecs));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnTimerFromNano,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cNanoSecs));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnTimerGet,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnTimerGetFreq,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnTimerGetNano,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer));
+    DECLR3CALLBACKMEMBER(bool,     pfnTimerIsActive,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer));
+    DECLR3CALLBACKMEMBER(bool,     pfnTimerIsLockOwner,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerLockClock,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer));
+    /** Takes the clock lock then enters the specified critical section. */
+    DECLR3CALLBACKMEMBER(int,      pfnTimerLockClock2,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerSet,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t uExpire));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerSetFrequencyHint,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint32_t uHz));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerSetMicro,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMicrosToNext));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerSetMillies,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerSetNano,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cNanosToNext));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerSetRelative,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerStop,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer));
+    DECLR3CALLBACKMEMBER(void,     pfnTimerUnlockClock,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer));
+    DECLR3CALLBACKMEMBER(void,     pfnTimerUnlockClock2,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerSetCritSect,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerSave,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerLoad,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerDestroy,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer));
+    /** @sa TMR3TimerSkip */
+    DECLR3CALLBACKMEMBER(int,      pfnTimerSkipLoad,(PSSMHANDLE pSSM, bool *pfActive));
+    /** @} */
 
     /**
      * Set the VM error message
@@ -739,7 +769,7 @@ typedef PDMUSBHLP *PPDMUSBHLP;
 typedef const PDMUSBHLP *PCPDMUSBHLP;
 
 /** Current USBHLP version number. */
-#define PDM_USBHLP_VERSION                      PDM_VERSION_MAKE(0xeefe, 3, 0)
+#define PDM_USBHLP_VERSION                      PDM_VERSION_MAKE(0xeefe, 4, 0)
 
 #endif /* IN_RING3 */
 
@@ -1009,12 +1039,196 @@ DECLINLINE(int) PDMUsbHlpDBGFInfoRegisterArgv(PPDMUSBINS pUsbIns, const char *ps
 }
 
 /**
- * @copydoc PDMUSBHLP::pfnTMTimerCreate
+ * @copydoc PDMUSBHLP::pfnTimerCreate
  */
-DECLINLINE(int) PDMUsbHlpTMTimerCreate(PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback, void *pvUser,
-                                       uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
+DECLINLINE(int) PDMUsbHlpTimerCreate(PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback, void *pvUser,
+                                     uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer)
 {
-    return pUsbIns->pHlpR3->pfnTMTimerCreate(pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
+    return pUsbIns->pHlpR3->pfnTimerCreate(pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, phTimer);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerFromMicro
+ */
+DECLINLINE(uint64_t) PDMUsbHlpTimerFromMicro(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMicroSecs)
+{
+    return pUsbIns->pHlpR3->pfnTimerFromMicro(pUsbIns, hTimer, cMicroSecs);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerFromMilli
+ */
+DECLINLINE(uint64_t) PDMUsbHlpTimerFromMilli(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMilliSecs)
+{
+    return pUsbIns->pHlpR3->pfnTimerFromMilli(pUsbIns, hTimer, cMilliSecs);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerFromNano
+ */
+DECLINLINE(uint64_t) PDMUsbHlpTimerFromNano(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cNanoSecs)
+{
+    return pUsbIns->pHlpR3->pfnTimerFromNano(pUsbIns, hTimer, cNanoSecs);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerGet
+ */
+DECLINLINE(uint64_t) PDMUsbHlpTimerGet(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
+{
+    return pUsbIns->pHlpR3->pfnTimerGet(pUsbIns, hTimer);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerGetFreq
+ */
+DECLINLINE(uint64_t) PDMUsbHlpTimerGetFreq(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
+{
+    return pUsbIns->pHlpR3->pfnTimerGetFreq(pUsbIns, hTimer);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerGetNano
+ */
+DECLINLINE(uint64_t) PDMUsbHlpTimerGetNano(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
+{
+    return pUsbIns->pHlpR3->pfnTimerGetNano(pUsbIns, hTimer);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerIsActive
+ */
+DECLINLINE(bool)     PDMUsbHlpTimerIsActive(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
+{
+    return pUsbIns->pHlpR3->pfnTimerIsActive(pUsbIns, hTimer);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerIsLockOwner
+ */
+DECLINLINE(bool)     PDMUsbHlpTimerIsLockOwner(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
+{
+    return pUsbIns->pHlpR3->pfnTimerIsLockOwner(pUsbIns, hTimer);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerLockClock
+ */
+DECLINLINE(int) PDMUsbHlpTimerLockClock(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
+{
+    return pUsbIns->pHlpR3->pfnTimerLockClock(pUsbIns, hTimer);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerLockClock2
+ */
+DECLINLINE(int) PDMUsbHlpTimerLockClock2(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
+{
+    return pUsbIns->pHlpR3->pfnTimerLockClock2(pUsbIns, hTimer, pCritSect);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerSet
+ */
+DECLINLINE(int)      PDMUsbHlpTimerSet(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t uExpire)
+{
+    return pUsbIns->pHlpR3->pfnTimerSet(pUsbIns, hTimer, uExpire);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerSetFrequencyHint
+ */
+DECLINLINE(int)      PDMUsbHlpTimerSetFrequencyHint(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint32_t uHz)
+{
+    return pUsbIns->pHlpR3->pfnTimerSetFrequencyHint(pUsbIns, hTimer, uHz);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerSetMicro
+ */
+DECLINLINE(int)      PDMUsbHlpTimerSetMicro(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMicrosToNext)
+{
+    return pUsbIns->pHlpR3->pfnTimerSetMicro(pUsbIns, hTimer, cMicrosToNext);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerSetMillies
+ */
+DECLINLINE(int)      PDMUsbHlpTimerSetMillies(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext)
+{
+    return pUsbIns->pHlpR3->pfnTimerSetMillies(pUsbIns, hTimer, cMilliesToNext);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerSetNano
+ */
+DECLINLINE(int)      PDMUsbHlpTimerSetNano(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cNanosToNext)
+{
+    return pUsbIns->pHlpR3->pfnTimerSetNano(pUsbIns, hTimer, cNanosToNext);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerSetRelative
+ */
+DECLINLINE(int)      PDMUsbHlpTimerSetRelative(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+{
+    return pUsbIns->pHlpR3->pfnTimerSetRelative(pUsbIns, hTimer, cTicksToNext, pu64Now);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerStop
+ */
+DECLINLINE(int)      PDMUsbHlpTimerStop(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
+{
+    return pUsbIns->pHlpR3->pfnTimerStop(pUsbIns, hTimer);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerUnlockClock
+ */
+DECLINLINE(void)     PDMUsbHlpTimerUnlockClock(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
+{
+    pUsbIns->pHlpR3->pfnTimerUnlockClock(pUsbIns, hTimer);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerUnlockClock2
+ */
+DECLINLINE(void)     PDMUsbHlpTimerUnlockClock2(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
+{
+    pUsbIns->pHlpR3->pfnTimerUnlockClock2(pUsbIns, hTimer, pCritSect);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerSetCritSect
+ */
+DECLINLINE(int) PDMUsbHlpTimerSetCritSect(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
+{
+    return pUsbIns->pHlpR3->pfnTimerSetCritSect(pUsbIns, hTimer, pCritSect);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerSave
+ */
+DECLINLINE(int) PDMUsbHlpTimerSave(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
+{
+    return pUsbIns->pHlpR3->pfnTimerSave(pUsbIns, hTimer, pSSM);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerLoad
+ */
+DECLINLINE(int) PDMUsbHlpTimerLoad(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
+{
+    return pUsbIns->pHlpR3->pfnTimerLoad(pUsbIns, hTimer, pSSM);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnTimerDestroy
+ */
+DECLINLINE(int) PDMUsbHlpTimerDestroy(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
+{
+    return pUsbIns->pHlpR3->pfnTimerDestroy(pUsbIns, hTimer);
 }
 
 /**

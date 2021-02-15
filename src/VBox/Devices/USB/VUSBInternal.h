@@ -270,7 +270,7 @@ typedef struct VUSBDEV
     } Urb;
 
     /** The reset timer handle. */
-    PTMTIMER            pResetTimer;
+    TMTIMERHANDLE       hResetTimer;
     /** Reset handler arguments. */
     void               *pvArgs;
     /** URB submit and reap thread. */

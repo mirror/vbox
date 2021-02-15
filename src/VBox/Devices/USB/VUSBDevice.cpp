@@ -1299,8 +1299,10 @@ void vusbDevDestroy(PVUSBDEV pDev)
     LogFlow(("vusbDevDestroy: pDev=%p[%s] enmState=%d\n", pDev, pDev->pUsbIns->pszName, pDev->enmState));
 
     RTMemFree(pDev->paIfStates);
-    TMR3TimerDestroy(pDev->pResetTimer);
-    pDev->pResetTimer = NULL;
+
+    PDMUsbHlpTimerDestroy(pDev->pUsbIns, pDev->hResetTimer);
+    pDev->hResetTimer = NIL_TMTIMERHANDLE;
+
     for (unsigned i = 0; i < RT_ELEMENTS(pDev->aPipes); i++)
     {
         Assert(pDev->aPipes[i].pCtrl == NULL);
@@ -1401,9 +1403,11 @@ static DECLCALLBACK(void) vusbDevResetDoneTimer(PPDMUSBINS pUsbIns, PTMTIMER pTi
  */
 static DECLCALLBACK(int) vusbDevResetWorker(PVUSBDEV pDev, bool fResetOnLinux, bool fUseTimer, PVUSBRESETARGS pArgs)
 {
-    int rc = VINF_SUCCESS;
-    uint64_t u64EndTS = TMTimerGet(pDev->pResetTimer) + TMTimerFromMilli(pDev->pResetTimer, 10);
+    uint64_t const uTimerDeadline = !fUseTimer ? 0
+                                  :   PDMUsbHlpTimerGet(pDev->pUsbIns, pDev->hResetTimer)
+                                    + PDMUsbHlpTimerFromMilli(pDev->pUsbIns, pDev->hResetTimer, 10);
 
+    int rc = VINF_SUCCESS;
     if (pDev->pUsbIns->pReg->pfnUsbReset)
         rc = pDev->pUsbIns->pReg->pfnUsbReset(pDev->pUsbIns, fResetOnLinux);
 
@@ -1420,7 +1424,7 @@ static DECLCALLBACK(int) vusbDevResetWorker(PVUSBDEV pDev, bool fResetOnLinux, b
          * This avoids suspend + poweroff issues, and it should give
          * us more accurate scheduling than making this thread sleep.
          */
-        int rc2 = TMTimerSet(pDev->pResetTimer, u64EndTS);
+        int rc2 = PDMUsbHlpTimerSet(pDev->pUsbIns, pDev->hResetTimer, uTimerDeadline);
         AssertReleaseRC(rc2);
     }
 
@@ -1794,7 +1798,7 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
         int rc = RTCritSectInit(&pDev->aPipes[i].CritSectCtrl);
         AssertRCReturn(rc, rc);
     }
-    pDev->pResetTimer = NULL;
+    pDev->hResetTimer = NIL_TMTIMERHANDLE;
     pDev->hSniffer = VUSBSNIFFER_NIL;
 
     int rc = RTCritSectInit(&pDev->CritSectAsyncUrbs);
@@ -1811,8 +1815,8 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
     /*
      * Create the reset timer.
      */
-    rc = PDMUsbHlpTMTimerCreate(pDev->pUsbIns, TMCLOCK_VIRTUAL, vusbDevResetDoneTimer, pDev, 0 /*fFlags*/,
-                                "USB Device Reset Timer",  &pDev->pResetTimer);
+    rc = PDMUsbHlpTimerCreate(pDev->pUsbIns, TMCLOCK_VIRTUAL, vusbDevResetDoneTimer, pDev, 0 /*fFlags*/,
+                              "USB Device Reset Timer",  &pDev->hResetTimer);
     AssertRCReturn(rc, rc);
 
     if (pszCaptureFilename)
