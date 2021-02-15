@@ -2533,12 +2533,15 @@ VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t cMicroSecs)
  * Converts the specified millisecond timestamp to timer clock ticks.
  *
  * @returns timer clock ticks.
+ * @param   pVM             The cross context VM structure.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   cMilliSecs      The millisecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-VMMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t cMilliSecs)
+VMMDECL(uint64_t) TMTimerFromMilli(PVMCC pVM, PTMTIMER pTimer, uint64_t cMilliSecs)
 {
+    RT_NOREF(pVM);
+    Assert(pVM == pTimer->CTX_SUFF(pVM));
 #ifdef IN_RING0
     Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
 #endif

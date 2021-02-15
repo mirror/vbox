@@ -1861,7 +1861,8 @@ static DECLCALLBACK(uint64_t) pdmR3UsbHlp_TimerFromMicro(PPDMUSBINS pUsbIns, TMT
 /** @interface_method_impl{PDMUSBHLP,pfnTimerFromMilli} */
 static DECLCALLBACK(uint64_t) pdmR3UsbHlp_TimerFromMilli(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMilliSecs)
 {
-    return TMTimerFromMilli(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), cMilliSecs);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerFromMilli(pUsbIns->Internal.s.pVM, pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), cMilliSecs);
 }
 
 

@@ -256,7 +256,7 @@ VMMDECL(uint64_t)       TMTimerToMicro(PTMTIMER pTimer, uint64_t cTicks);
 VMMDECL(uint64_t)       TMTimerToMilli(PTMTIMER pTimer, uint64_t cTicks);
 VMMDECL(uint64_t)       TMTimerFromNano(PTMTIMER pTimer, uint64_t cNanoSecs);
 VMMDECL(uint64_t)       TMTimerFromMicro(PTMTIMER pTimer, uint64_t cMicroSecs);
-VMMDECL(uint64_t)       TMTimerFromMilli(PTMTIMER pTimer, uint64_t cMilliSecs);
+VMMDECL(uint64_t)       TMTimerFromMilli(PVMCC pVM, PTMTIMER pTimer, uint64_t cMilliSecs);
 
 VMMDECL(bool)           TMTimerPollBool(PVMCC pVM, PVMCPUCC pVCpu);
 VMM_INT_DECL(void)      TMTimerPollVoid(PVMCC pVM, PVMCPUCC pVCpu);
