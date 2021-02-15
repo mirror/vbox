@@ -3051,22 +3051,23 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     /*
                      * HDA-specific parameters.
                      */
-
                     uint64_t uTmp;
                     GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Device/PosAdjustEnabled", &strTmp);
                     if (strTmp.isNotEmpty())
-                    {
-                        uTmp = strTmp.toUInt64(); /* Returns 0 if not set / invalid -> means disabled. */
-                        InsertConfigInteger(pCfg,          "PosAdjustEnabled",     uTmp);
-                    }
+                        InsertConfigInteger(pCfg,          "PosAdjustEnabled",             strTmp.equalsIgnoreCase("true")
+                                                                                        || strTmp.equalsIgnoreCase("1"));
 
                     GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Device/PosAdjustFrames", &strTmp);
                     if (strTmp.isNotEmpty())
                     {
                         uTmp = strTmp.toUInt64(); /* Ditto. */
-                        InsertConfigInteger(pCfg,          "PosAdjustFrames",      uTmp);
+                        InsertConfigInteger(pCfg,          "PosAdjustFrames",           uTmp);
                     }
 
+                    GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Device/TransferHeuristicsEnabled", &strTmp);
+                    if (strTmp.isNotEmpty())
+                        InsertConfigInteger(pCfg,          "TransferHeuristicsEnabled",    strTmp.equalsIgnoreCase("true")
+                                                                                        || strTmp.equalsIgnoreCase("1"));
                     break;
                 }
                 default:
