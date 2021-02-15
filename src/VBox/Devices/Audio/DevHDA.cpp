@@ -1441,7 +1441,6 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
      * ...
      */
     uint64_t cTicksToNext = pStreamShared->State.cTransferTicks;
-    Assert(cTicksToNext == cTicksToNext);
     if (cTicksToNext) /* Only do any calculations if the stream currently is set up for transfers. */
     {
         const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
@@ -1859,6 +1858,13 @@ static int hdaR3RemoveStream(PHDASTATER3 pThisCC, PPDMAUDIOSTREAMCFG pCfg)
 
 static VBOXSTRICTRC hdaRegWriteSDFMT(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+#ifdef IN_RING3
+    PDMAUDIOPCMPROPS Props;
+    int rc2 = hdaR3SDFMTToPCMProps(RT_LO_U16(u32Value), &Props);
+    AssertRC(rc2);
+    LogFunc(("[SD%RU8] Set to %#x (%RU32Hz, %RU8bit, %RU8 channel(s))\n",
+             HDA_SD_NUM_FROM_REG(pThis, FMT, iReg), u32Value, Props.uHz, Props.cbSample * 8 /* Bit */, Props.cChannels));
+
     /*
      * Write the wanted stream format into the register in any case.
      *
@@ -1869,6 +1875,10 @@ static VBOXSTRICTRC hdaRegWriteSDFMT(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
      * and therefore disabling the device completely.
      */
     return hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
+#else
+    RT_NOREF(pDevIns, pThis, iReg, u32Value);
+    return VINF_IOM_R3_MMIO_WRITE;
+#endif
 }
 
 /**
@@ -2653,17 +2663,54 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *
     if (pStreamR3->pMixSink)
         fSinkActive = AudioMixerSinkIsActive(pStreamR3->pMixSink->pMixSink);
 
+#ifdef LOG_ENABLED
+    const uint8_t uSD = pStreamShared->u8SD;
+#endif
+
     if (fSinkActive)
     {
-        uint64_t const tsNow = PDMDevHlpTimerGet(pDevIns, hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
-        const bool fTimerScheduled = hdaR3StreamTransferIsScheduled(pStreamShared, tsNow);
-        Log3Func(("fSinksActive=%RTbool, fTimerScheduled=%RTbool\n", fSinkActive, fTimerScheduled));
+        const uint64_t tsNow           = PDMDevHlpTimerGet(pDevIns, hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
+        const bool     fTimerScheduled = hdaR3StreamTransferIsScheduled(pStreamShared, tsNow);
+
+        Log3Func(("[SD%RU8] fSinksActive=%RTbool, fTimerScheduled=%RTbool\n", uSD, fSinkActive, fTimerScheduled));
+
         if (!fTimerScheduled)
-            hdaR3TimerSet(pDevIns, pStreamShared, tsNow + PDMDevHlpTimerGetFreq(pDevIns, hTimer) / pThis->uTimerHz,
-                          true /*fForce*/, tsNow /*fixed*/ );
+        {
+            if (!pStreamShared->State.tsTransferLast) /* Never did a transfer before? Initialize with current time. */
+                pStreamShared->State.tsTransferLast = tsNow;
+
+            Assert(tsNow >= pStreamShared->State.tsTransferLast);
+
+            /* How many ticks have passed since the last transfer? */
+            const uint64_t cTicksElapsed = tsNow - pStreamShared->State.tsTransferLast;
+
+            uint64_t cTicksToNext;
+            if (cTicksElapsed == 0) /* We just ran in the same timing slot? */
+            {
+                /* Schedule a transfer at the next regular timing slot. */
+                cTicksToNext = pStreamShared->State.cTransferTicks;
+            }
+            else
+            {
+                /* Some time since the last transfer has passed already; take this into account. */
+                if (pStreamShared->State.cTransferTicks >= cTicksElapsed)
+                {
+                    cTicksToNext = pStreamShared->State.cTransferTicks - cTicksElapsed;
+                }
+                else /* Catch up as soon as possible. */
+                    cTicksToNext = 0;
+            }
+
+            Log3Func(("[SD%RU8] tsNow=%RU64, tsTransferLast=%RU64, cTicksElapsed=%RU64 -> cTicksToNext=%RU64\n",
+                      uSD, tsNow, pStreamShared->State.tsTransferLast, cTicksElapsed, cTicksToNext));
+
+            /* Note: cTicksToNext can be 0, which means we have to run *now*. */
+            hdaR3TimerSet(pDevIns, pStreamShared, tsNow + cTicksToNext,
+                          true /*fForce*/, 0 /* tsNow */);
+        }
     }
     else
-        Log3Func(("fSinksActive=%RTbool\n", fSinkActive));
+        Log3Func(("[SD%RU8] fSinksActive=%RTbool\n", uSD, fSinkActive));
 }
 
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
@@ -4587,16 +4634,16 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate and read configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "BufSizeInMs|BufSizeOutMs|TimerHz|PosAdjustEnabled|PosAdjustFrames|DebugEnabled|DebugPathOut", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "BufSizeInMs|BufSizeOutMs|TimerHz|PosAdjustEnabled|PosAdjustFrames|TransferHeuristicsEnabled|DebugEnabled|DebugPathOut", "");
 
     /* Note: Error checking of this value happens in hdaR3StreamSetUp(). */
-    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeInMs", &pThis->cbCircBufInMs, RT_MS_10SEC /* Default value, if not set. */);
+    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeInMs", &pThis->cbCircBufInMs, 0 /* Default value, if not set. */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read input buffer size (ms) as unsigned integer"));
 
     /* Note: Error checking of this value happens in hdaR3StreamSetUp(). */
-    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeOutMs", &pThis->cbCircBufOutMs, RT_MS_10SEC /* Default value, if not set. */);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeOutMs", &pThis->cbCircBufOutMs, 0 /* Default value, if not set. */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read output buffer size (ms) as unsigned integer"));
@@ -4624,6 +4671,14 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     if (pThis->cPosAdjustFrames)
         LogRel(("HDA: Using custom position adjustment (%RU16 audio frames)\n", pThis->cPosAdjustFrames));
+
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "TransferHeuristicsEnabled", &pThis->fTransferHeuristicsEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("HDA configuration error: failed to read data transfer heuristics enabled as boolean"));
+
+    if (!pThis->fTransferHeuristicsEnabled)
+        LogRel(("HDA: Data transfer heuristics are disabled\n"));
 
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "DebugEnabled", &pThisCC->Dbg.fEnabled, false);
     if (RT_FAILURE(rc))

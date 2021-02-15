@@ -946,8 +946,8 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
         case STAC9220_NID_AFG:
         {
             pNode->afg.node.au32F00_param[0x08] = CODEC_MAKE_F00_08(1, 0xd, 0xd);
-            /* We set the AFG's PCM capabitilies fixed to 44.1kHz, 16-bit signed. */
-            pNode->afg.node.au32F00_param[0x0A] = CODEC_F00_0A_44_1KHZ | CODEC_F00_0A_16_BIT;
+            /* We set the AFG's PCM capabitilies fixed to 16kHz, 22.5kHz + 44.1kHz, 16-bit signed. */
+            pNode->afg.node.au32F00_param[0x0A] = CODEC_F00_0A_44_1KHZ | CODEC_F00_0A_44_1KHZ_1_2X | CODEC_F00_0A_48KHZ_1_3X | CODEC_F00_0A_16_BIT;
             pNode->afg.node.au32F00_param[0x0B] = CODEC_F00_0B_PCM;
             pNode->afg.node.au32F00_param[0x0C] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_BALANCED_IO
@@ -989,7 +989,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
         case STAC9220_NID_DAC3: /* DAC3: PIN F */
         {
             pNode->dac.u32A_param = CODEC_MAKE_A(HDA_SDFMT_TYPE_PCM, HDA_SDFMT_BASE_44KHZ,
-                                                 HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_1X, HDA_SDFMT_16_BIT,
+                                                 HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_2X, HDA_SDFMT_16_BIT,
                                                  HDA_SDFMT_CHAN_STEREO);
 
             /* 7.3.4.6: Audio widget capabilities. */
@@ -1028,7 +1028,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
         adc_init:
 
             pNode->adc.u32A_param   = CODEC_MAKE_A(HDA_SDFMT_TYPE_PCM, HDA_SDFMT_BASE_44KHZ,
-                                                   HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_1X, HDA_SDFMT_16_BIT,
+                                                   HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_2X, HDA_SDFMT_16_BIT,
                                                    HDA_SDFMT_CHAN_STEREO);
 
             pNode->adc.u32F03_param = RT_BIT(0);
@@ -1050,7 +1050,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
         case STAC9220_NID_SPDIF_OUT:
         {
             pNode->spdifout.u32A_param   = CODEC_MAKE_A(HDA_SDFMT_TYPE_PCM, HDA_SDFMT_BASE_44KHZ,
-                                                        HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_1X, HDA_SDFMT_16_BIT,
+                                                        HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_2X, HDA_SDFMT_16_BIT,
                                                         HDA_SDFMT_CHAN_STEREO);
             pNode->spdifout.u32F06_param = 0;
             pNode->spdifout.u32F0d_param = 0;
@@ -1069,7 +1069,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
         case STAC9220_NID_SPDIF_IN:
         {
             pNode->spdifin.u32A_param = CODEC_MAKE_A(HDA_SDFMT_TYPE_PCM, HDA_SDFMT_BASE_44KHZ,
-                                                     HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_1X, HDA_SDFMT_16_BIT,
+                                                     HDA_SDFMT_MULT_1X, HDA_SDFMT_DIV_2X, HDA_SDFMT_16_BIT,
                                                      HDA_SDFMT_CHAN_STEREO);
 
             pNode->spdifin.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_INPUT, 4, 0)

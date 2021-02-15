@@ -125,9 +125,9 @@ typedef struct HDASTREAMSTATE
     uint8_t                 abPadding0[4];
     /** Current BDLE (Buffer Descriptor List Entry). */
     HDABDLE                 BDLE;
-    /** Timestamp of the last DMA data transfer. */
+    /** Timestamp (absolute, in timer ticks) of the last DMA data transfer. */
     uint64_t                tsTransferLast;
-    /** Timestamp of the next DMA data transfer.
+    /** Timestamp (absolute, in timer ticks) of the next DMA data transfer.
      *  Next for determining the next scheduling window.
      *  Can be 0 if no next transfer is scheduled. */
     uint64_t                tsTransferNext;
@@ -139,11 +139,8 @@ typedef struct HDASTREAMSTATE
      *  BDLE interrupt-on-completion (IOC) bits set. */
     uint8_t                 cTransferPendingInterrupts;
     uint8_t                 abPadding2[7];
-    /** The stream's timer Hz rate.
-     *  This value can can be different from the device's default Hz rate,
-     *  depending on the rate the stream expects (e.g. for 5.1 speaker setups).
-     *  Set in hdaR3StreamInit(). */
-    uint16_t                uTimerHz;
+    /** The stream's I/O timer Hz rate. */
+    uint16_t                uTimerIoHz;
     /** Number of audio data frames for the position adjustment.
      *  0 if no position adjustment is needed. */
     uint16_t                cfPosAdjustDefault;
@@ -162,8 +159,12 @@ typedef struct HDASTREAMSTATE
     /** The stream's current configuration.
      *  Should match SDFMT. */
     PDMAUDIOSTREAMCFG       Cfg;
-    /** Timestamp (in ns) of last stream update. */
-    uint64_t                tsLastUpdateNs;
+    /** Timestamp (real time, in ns) of last DMA transfer. */
+    uint64_t                tsLastTransferNs;
+    /** Timestamp (real time, in ns) of last stream read (to backends).
+     *  When running in async I/O mode, this differs from \a tsLastTransferNs,
+     *  because reading / processing will be done in a separate stream. */
+    uint64_t                tsLastReadNs;
 } HDASTREAMSTATE;
 AssertCompileSizeAlignment(HDASTREAMSTATE, 8);
 

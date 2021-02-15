@@ -111,6 +111,9 @@ typedef struct HDASTATE
     uint16_t                cPosAdjustFrames;
     /** Whether the position adjustment is enabled or not. */
     bool                    fPosAdjustEnabled;
+    /** Whether data transfer heuristics are enabled or not.
+     *  This tries to determine the approx. data rate a guest audio driver expects. */
+    bool                    fTransferHeuristicsEnabled;
     /** DMA position buffer enable bit. */
     bool                    fDMAPosition;
     /** Current IRQ level. */

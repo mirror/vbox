@@ -108,17 +108,18 @@ int hdaR3StreamPeriodInit(PHDASTREAMPERIOD pPeriod,
     if (cTotalPeriods <= 1)
         cTotalPeriods = 2; /* At least two periods *must* be present (LVI >= 1). */
 
-    uint32_t cFramesToTransfer = (u32CBL / 4 /** @todo Define frame size? */) / cTotalPeriods;
+    uint32_t cFramesToTransfer =
+        (u32CBL / (pStreamCfg->Props.cbSample * pStreamCfg->Props.cChannels /* Frame size */)) / cTotalPeriods;
 
-    pPeriod->u8SD              = u8SD;
-    pPeriod->u64StartWalClk    = 0;
-    pPeriod->u32Hz             = pStreamCfg->Props.uHz;
-    pPeriod->u64DurationWalClk = hdaR3StreamPeriodFramesToWalClk(pPeriod, cFramesToTransfer);
-    pPeriod->u64ElapsedWalClk  = 0;
-    pPeriod->i64DelayWalClk    = 0;
+    pPeriod->u8SD               = u8SD;
+    pPeriod->u64StartWalClk     = 0;
+    pPeriod->u32Hz              = pStreamCfg->Props.uHz;
+    pPeriod->u64DurationWalClk  = hdaR3StreamPeriodFramesToWalClk(pPeriod, cFramesToTransfer);
+    pPeriod->u64ElapsedWalClk   = 0;
+    pPeriod->i64DelayWalClk     = 0;
     pPeriod->cFramesToTransfer  = cFramesToTransfer;
     pPeriod->cFramesTransferred = 0;
-    pPeriod->cIntPending       = 0;
+    pPeriod->cIntPending        = 0;
 
     Log3Func(("[SD%RU8] %RU64 long, Hz=%RU32, CBL=%RU32, LVI=%RU16 -> %u periods, %RU32 frames each\n",
               pPeriod->u8SD, pPeriod->u64DurationWalClk, pPeriod->u32Hz, u32CBL, u16LVI,
