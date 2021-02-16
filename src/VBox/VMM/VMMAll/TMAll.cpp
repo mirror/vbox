@@ -77,7 +77,7 @@
                           || (enmState = (a_pVM)->enmVMState) == VMSTATE_CREATING \
                           || enmState == VMSTATE_RESETTING \
                           || enmState == VMSTATE_RESETTING_LS ),\
-                      ("pTimer=%p (%s) pCritSect=%p (%s)\n", a_pTimer, R3STRING(a_pTimer->pszDesc), \
+                      ("pTimer=%p (%s) pCritSect=%p (%s)\n", a_pTimer, (a_pTimer)->szName, \
                        (a_pTimer)->pCritSect, R3STRING(PDMR3CritSectName((a_pTimer)->pCritSect)) )); \
         } \
     } while (0)
@@ -111,7 +111,7 @@
                           || (enmState = (pVM)->enmVMState) == VMSTATE_CREATING \
                           || enmState == VMSTATE_RESETTING \
                           || enmState == VMSTATE_RESETTING_LS ),\
-                      ("pTimer=%p (%s) pCritSect=%p (%s)\n", pTimer, R3STRING(pTimer->pszDesc), \
+                      ("pTimer=%p (%s) pCritSect=%p (%s)\n", pTimer, pTimer->szName, \
                        (pTimer)->pCritSect, R3STRING(PDMR3CritSectName((pTimer)->pCritSect)) )); \
         } \
     } while (0)
@@ -477,7 +477,7 @@ DECL_FORCE_INLINE(void) tmTimerQueueLinkActive(PTMTIMERQUEUE pQueue, PTMTIMER pT
                 {
                     TMTIMER_SET_HEAD(pQueue, pTimer);
                     ASMAtomicWriteU64(&pQueue->u64Expire, u64Expire);
-                    DBGFTRACE_U64_TAG2(pTimer->CTX_SUFF(pVM), u64Expire, "tmTimerQueueLinkActive head", R3STRING(pTimer->pszDesc));
+                    DBGFTRACE_U64_TAG2(pTimer->CTX_SUFF(pVM), u64Expire, "tmTimerQueueLinkActive head", pTimer->szName);
                 }
                 TMTIMER_SET_PREV(pCur, pTimer);
                 return;
@@ -486,7 +486,7 @@ DECL_FORCE_INLINE(void) tmTimerQueueLinkActive(PTMTIMERQUEUE pQueue, PTMTIMER pT
             {
                 TMTIMER_SET_NEXT(pCur, pTimer);
                 TMTIMER_SET_PREV(pTimer, pCur);
-                DBGFTRACE_U64_TAG2(pTimer->CTX_SUFF(pVM), u64Expire, "tmTimerQueueLinkActive tail", R3STRING(pTimer->pszDesc));
+                DBGFTRACE_U64_TAG2(pTimer->CTX_SUFF(pVM), u64Expire, "tmTimerQueueLinkActive tail", pTimer->szName);
                 return;
             }
         }
@@ -495,7 +495,7 @@ DECL_FORCE_INLINE(void) tmTimerQueueLinkActive(PTMTIMERQUEUE pQueue, PTMTIMER pT
     {
         TMTIMER_SET_HEAD(pQueue, pTimer);
         ASMAtomicWriteU64(&pQueue->u64Expire, u64Expire);
-        DBGFTRACE_U64_TAG2(pTimer->CTX_SUFF(pVM), u64Expire, "tmTimerQueueLinkActive empty", R3STRING(pTimer->pszDesc));
+        DBGFTRACE_U64_TAG2(pTimer->CTX_SUFF(pVM), u64Expire, "tmTimerQueueLinkActive empty", pTimer->szName);
     }
 }
 
@@ -627,8 +627,8 @@ void tmTimerQueueSchedule(PVMCC pVM, PTMTIMERQUEUE pQueue)
         /*
          * Do the scheduling.
          */
-        Log2(("tmTimerQueueSchedule: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, .pszDesc=%s}\n",
-              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, R3STRING(pTimer->pszDesc)));
+        Log2(("tmTimerQueueSchedule: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, .szName=%s}\n",
+              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->szName));
         tmTimerQueueScheduleOne(pVM, pQueue, pTimer);
         Log2(("tmTimerQueueSchedule: %p: new %s\n", pTimer, tmTimerState(pTimer->enmState)));
     } /* foreach timer in current schedule batch. */
@@ -1185,7 +1185,7 @@ static int tmTimerSetOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire
                       u64Expire = u64Last);
     }
     ASMAtomicWriteU64(&pTimer->u64Expire, u64Expire);
-    Log2(("tmTimerSetOptimizedStart: %p:{.pszDesc='%s', .u64Expire=%'RU64}\n", pTimer, R3STRING(pTimer->pszDesc), u64Expire));
+    Log2(("tmTimerSetOptimizedStart: %p:{.pszDesc='%s', .u64Expire=%'RU64}\n", pTimer, pTimer->szName, u64Expire));
 
     /*
      * Link the timer into the active list.
@@ -1229,7 +1229,7 @@ static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
                 STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetVsStStopped);
 
             AssertMsg(u64Expire >= pVM->tm.s.u64VirtualSync,
-                      ("%'RU64 < %'RU64 %s\n", u64Expire, pVM->tm.s.u64VirtualSync, R3STRING(pTimer->pszDesc)));
+                      ("%'RU64 < %'RU64 %s\n", u64Expire, pVM->tm.s.u64VirtualSync, pTimer->szName));
             pTimer->u64Expire = u64Expire;
             TM_SET_STATE(pTimer, TMTIMERSTATE_ACTIVE);
             tmTimerQueueLinkActive(pQueue, pTimer, u64Expire);
@@ -1253,12 +1253,12 @@ static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
         case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
         case TMTIMERSTATE_DESTROY:
         case TMTIMERSTATE_FREE:
-            AssertLogRelMsgFailed(("Invalid timer state %s: %s\n", tmTimerState(enmState), R3STRING(pTimer->pszDesc)));
+            AssertLogRelMsgFailed(("Invalid timer state %s: %s\n", tmTimerState(enmState), pTimer->szName));
             rc = VERR_TM_INVALID_STATE;
             break;
 
         default:
-            AssertMsgFailed(("Unknown timer state %d: %s\n", enmState, R3STRING(pTimer->pszDesc)));
+            AssertMsgFailed(("Unknown timer state %d: %s\n", enmState, pTimer->szName));
             rc = VERR_TM_UNKNOWN_STATE;
             break;
     }
@@ -1290,7 +1290,7 @@ VMMDECL(int) TMTimerSet(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t u64Expire)
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
     TMTIMER_ASSERT_CRITSECT(pVM, pTimer);
 
-    DBGFTRACE_U64_TAG2(pVM, u64Expire, "TMTimerSet", R3STRING(pTimer->pszDesc));
+    DBGFTRACE_U64_TAG2(pVM, u64Expire, "TMTimerSet", pTimer->szName);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -1346,7 +1346,7 @@ VMMDECL(int) TMTimerSet(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t u64Expire)
          */
         TMTIMERSTATE enmState = pTimer->enmState;
         Log2(("TMTimerSet: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d u64Expire=%'RU64\n",
-              pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries, u64Expire));
+              pTimer, tmTimerState(enmState), pTimer->szName, cRetries, u64Expire));
         switch (enmState)
         {
             case TMTIMERSTATE_EXPIRED_DELIVER:
@@ -1416,15 +1416,15 @@ VMMDECL(int) TMTimerSet(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t u64Expire)
              */
             case TMTIMERSTATE_DESTROY:
             case TMTIMERSTATE_FREE:
-                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, pTimer->szName));
                 return VERR_TM_INVALID_STATE;
             default:
-                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, pTimer->szName));
                 return VERR_TM_UNKNOWN_STATE;
         }
     } while (cRetries-- > 0);
 
-    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
+    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName));
     STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
     return VERR_TM_TIMER_UNSTABLE_STATE;
 }
@@ -1485,12 +1485,12 @@ static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t
     TMCLOCK const   enmClock  = pTimer->enmClock;
     uint64_t const  u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
     pTimer->u64Expire         = u64Expire;
-    Log2(("tmTimerSetRelativeOptimizedStart: %p:{.pszDesc='%s', .u64Expire=%'RU64} cTicksToNext=%'RU64\n", pTimer, R3STRING(pTimer->pszDesc), u64Expire, cTicksToNext));
+    Log2(("tmTimerSetRelativeOptimizedStart: %p:{.pszDesc='%s', .u64Expire=%'RU64} cTicksToNext=%'RU64\n", pTimer, pTimer->szName, u64Expire, cTicksToNext));
 
     /*
      * Link the timer into the active list.
      */
-    DBGFTRACE_U64_TAG2(pVM, u64Expire, "tmTimerSetRelativeOptimizedStart", R3STRING(pTimer->pszDesc));
+    DBGFTRACE_U64_TAG2(pVM, u64Expire, "tmTimerSetRelativeOptimizedStart", pTimer->szName);
     tmTimerQueueLinkActive(&pVM->tm.s.CTX_SUFF(paTimerQueues)[enmClock], pTimer, u64Expire);
 
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeOpt);
@@ -1560,12 +1560,12 @@ static int tmTimerVirtualSyncSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cT
         case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
         case TMTIMERSTATE_DESTROY:
         case TMTIMERSTATE_FREE:
-            AssertLogRelMsgFailed(("Invalid timer state %s: %s\n", tmTimerState(enmState), R3STRING(pTimer->pszDesc)));
+            AssertLogRelMsgFailed(("Invalid timer state %s: %s\n", tmTimerState(enmState), pTimer->szName));
             rc = VERR_TM_INVALID_STATE;
             break;
 
         default:
-            AssertMsgFailed(("Unknown timer state %d: %s\n", enmState, R3STRING(pTimer->pszDesc)));
+            AssertMsgFailed(("Unknown timer state %d: %s\n", enmState, pTimer->szName));
             rc = VERR_TM_UNKNOWN_STATE;
             break;
     }
@@ -1597,7 +1597,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
     TMTIMER_ASSERT_CRITSECT(pVM, pTimer);
 
-    DBGFTRACE_U64_TAG2(pVM, cTicksToNext, "TMTimerSetRelative", R3STRING(pTimer->pszDesc));
+    DBGFTRACE_U64_TAG2(pVM, cTicksToNext, "TMTimerSetRelative", pTimer->szName);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -1680,7 +1680,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
                     Assert(!pTimer->offNext);
                     pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
                     Log2(("TMTimerSetRelative: %p:{.enmState=%s, .pszDesc='%s', .u64Expire=%'RU64} cRetries=%d [EXP/STOP]\n",
-                          pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), pTimer->u64Expire, cRetries));
+                          pTimer, tmTimerState(enmState), pTimer->szName, pTimer->u64Expire, cRetries));
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
                     tmSchedule(pVM, pTimer);
                     rc = VINF_SUCCESS;
@@ -1695,7 +1695,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
                 {
                     pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
                     Log2(("TMTimerSetRelative: %p:{.enmState=%s, .pszDesc='%s', .u64Expire=%'RU64} cRetries=%d [PEND_SCHED]\n",
-                          pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), pTimer->u64Expire, cRetries));
+                          pTimer, tmTimerState(enmState), pTimer->szName, pTimer->u64Expire, cRetries));
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
                     tmSchedule(pVM, pTimer);
                     rc = VINF_SUCCESS;
@@ -1710,7 +1710,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
                 {
                     pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
                     Log2(("TMTimerSetRelative: %p:{.enmState=%s, .pszDesc='%s', .u64Expire=%'RU64} cRetries=%d [ACTIVE]\n",
-                          pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), pTimer->u64Expire, cRetries));
+                          pTimer, tmTimerState(enmState), pTimer->szName, pTimer->u64Expire, cRetries));
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE);
                     tmSchedule(pVM, pTimer);
                     rc = VINF_SUCCESS;
@@ -1725,7 +1725,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
                 {
                     pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
                     Log2(("TMTimerSetRelative: %p:{.enmState=%s, .pszDesc='%s', .u64Expire=%'RU64} cRetries=%d [PEND_RESCH/STOP]\n",
-                          pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), pTimer->u64Expire, cRetries));
+                          pTimer, tmTimerState(enmState), pTimer->szName, pTimer->u64Expire, cRetries));
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE);
                     tmSchedule(pVM, pTimer);
                     rc = VINF_SUCCESS;
@@ -1752,12 +1752,12 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
              */
             case TMTIMERSTATE_DESTROY:
             case TMTIMERSTATE_FREE:
-                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, pTimer->szName));
                 rc = VERR_TM_INVALID_STATE;
                 break;
 
             default:
-                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, pTimer->szName));
                 rc = VERR_TM_UNKNOWN_STATE;
                 break;
         }
@@ -1773,7 +1773,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
         }
         if (cRetries <= 0)
         {
-            AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
+            AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName));
             rc = VERR_TM_TIMER_UNSTABLE_STATE;
             tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
             break;
@@ -1904,12 +1904,12 @@ static int tmTimerVirtualSyncStop(PVMCC pVM, PTMTIMER pTimer)
         case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
         case TMTIMERSTATE_DESTROY:
         case TMTIMERSTATE_FREE:
-            AssertLogRelMsgFailed(("Invalid timer state %s: %s\n", tmTimerState(enmState), R3STRING(pTimer->pszDesc)));
+            AssertLogRelMsgFailed(("Invalid timer state %s: %s\n", tmTimerState(enmState), pTimer->szName));
             rc = VERR_TM_INVALID_STATE;
             break;
 
         default:
-            AssertMsgFailed(("Unknown timer state %d: %s\n", enmState, R3STRING(pTimer->pszDesc)));
+            AssertMsgFailed(("Unknown timer state %d: %s\n", enmState, pTimer->szName));
             rc = VERR_TM_UNKNOWN_STATE;
             break;
     }
@@ -1960,7 +1960,7 @@ VMMDECL(int) TMTimerStop(PVMCC pVM, TMTIMERHANDLE hTimer)
          */
         TMTIMERSTATE    enmState = pTimer->enmState;
         Log2(("TMTimerStop: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
-              pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries));
+              pTimer, tmTimerState(enmState), pTimer->szName, cRetries));
         switch (enmState)
         {
             case TMTIMERSTATE_EXPIRED_DELIVER:
@@ -2016,15 +2016,15 @@ VMMDECL(int) TMTimerStop(PVMCC pVM, TMTIMERHANDLE hTimer)
              */
             case TMTIMERSTATE_DESTROY:
             case TMTIMERSTATE_FREE:
-                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, pTimer->szName));
                 return VERR_TM_INVALID_STATE;
             default:
-                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, pTimer->szName));
                 return VERR_TM_UNKNOWN_STATE;
         }
     } while (cRetries-- > 0);
 
-    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
+    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName));
     STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerStop), a);
     return VERR_TM_TIMER_UNSTABLE_STATE;
 }
@@ -2061,7 +2061,7 @@ VMMDECL(uint64_t) TMTimerGet(PVMCC pVM, TMTIMERHANDLE hTimer)
             return UINT64_MAX;
     }
     //Log2(("TMTimerGet: returns %'RU64 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-    //      u64, pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
+    //      u64, pTimer, tmTimerState(pTimer->enmState), pTimer->szName));
     return u64;
 }
 
@@ -2118,14 +2118,14 @@ VMMDECL(uint64_t) TMTimerGetExpire(PVMCC pVM, TMTIMERHANDLE hTimer)
             case TMTIMERSTATE_PENDING_STOP:
             case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
                 Log2(("TMTimerGetExpire: returns ~0 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                      pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
+                      pTimer, tmTimerState(pTimer->enmState), pTimer->szName));
                 return UINT64_MAX;
 
             case TMTIMERSTATE_ACTIVE:
             case TMTIMERSTATE_PENDING_RESCHEDULE:
             case TMTIMERSTATE_PENDING_SCHEDULE:
                 Log2(("TMTimerGetExpire: returns %'RU64 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                      pTimer->u64Expire, pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
+                      pTimer->u64Expire, pTimer, tmTimerState(pTimer->enmState), pTimer->szName));
                 return pTimer->u64Expire;
 
             case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
@@ -2141,19 +2141,19 @@ VMMDECL(uint64_t) TMTimerGetExpire(PVMCC pVM, TMTIMERHANDLE hTimer)
              */
             case TMTIMERSTATE_DESTROY:
             case TMTIMERSTATE_FREE:
-                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, pTimer->szName));
                 Log2(("TMTimerGetExpire: returns ~0 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                      pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
+                      pTimer, tmTimerState(pTimer->enmState), pTimer->szName));
                 return UINT64_MAX;
             default:
-                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, pTimer->szName));
                 return UINT64_MAX;
         }
     } while (cRetries-- > 0);
 
-    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
+    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName));
     Log2(("TMTimerGetExpire: returns ~0 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-          pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
+          pTimer, tmTimerState(pTimer->enmState), pTimer->szName));
     return UINT64_MAX;
 }
 
@@ -2179,7 +2179,7 @@ VMMDECL(bool) TMTimerIsActive(PVMCC pVM, TMTIMERHANDLE hTimer)
         case TMTIMERSTATE_PENDING_STOP:
         case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
             Log2(("TMTimerIsActive: returns false (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                  pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
+                  pTimer, tmTimerState(pTimer->enmState), pTimer->szName));
             return false;
 
         case TMTIMERSTATE_ACTIVE:
@@ -2188,7 +2188,7 @@ VMMDECL(bool) TMTimerIsActive(PVMCC pVM, TMTIMERHANDLE hTimer)
         case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
         case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
             Log2(("TMTimerIsActive: returns true (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                  pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
+                  pTimer, tmTimerState(pTimer->enmState), pTimer->szName));
             return true;
 
         /*
@@ -2196,12 +2196,12 @@ VMMDECL(bool) TMTimerIsActive(PVMCC pVM, TMTIMERHANDLE hTimer)
          */
         case TMTIMERSTATE_DESTROY:
         case TMTIMERSTATE_FREE:
-            AssertMsgFailed(("Invalid timer state %s (%s)\n", tmTimerState(enmState), R3STRING(pTimer->pszDesc)));
+            AssertMsgFailed(("Invalid timer state %s (%s)\n", tmTimerState(enmState), pTimer->szName));
             Log2(("TMTimerIsActive: returns false (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
-                  pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
+                  pTimer, tmTimerState(pTimer->enmState), pTimer->szName));
             return false;
         default:
-            AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+            AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, pTimer->szName));
             return false;
     }
 }

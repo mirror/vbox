@@ -2932,7 +2932,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, fdcTransferDelayTimer, pThis,
                               TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
-                              "FDC Transfer Delay Timer", &pThis->hXferDelayTimer);
+                              "FDC Transfer Delay", &pThis->hXferDelayTimer);
     AssertRCReturn(rc, rc);
 
     /*
@@ -2940,7 +2940,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, fdcIrqDelayTimer, pThis,
                               TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
-                              "FDC IRQ Delay Timer", &pThis->hIrqDelayTimer);
+                              "FDC IRQ Delay", &pThis->hIrqDelayTimer);
     AssertRCReturn(rc, rc);
 
     pThis->uIrqDelayMsec = uIrqDelay;

@@ -5847,7 +5847,7 @@ static DECLCALLBACK(int) ohciR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     if (pThisCC->pLoad)
     {
         int rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ohciR3LoadReattachDevices, NULL /*pvUser*/,
-                                      TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "OHCI reattach devices on load",
+                                      TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "OHCI reattach on load",
                                       &pThisCC->pLoad->hTimer);
         if (RT_SUCCESS(rc))
             rc = PDMDevHlpTimerSetMillies(pDevIns, pThisCC->pLoad->hTimer, 250);

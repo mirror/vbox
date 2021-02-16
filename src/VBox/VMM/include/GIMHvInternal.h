@@ -1272,9 +1272,6 @@ typedef struct GIMHVSTIMER
     uint64_t                    uStimerConfigMsr;
     /** Synthetic timer count MSR. */
     uint64_t                    uStimerCountMsr;
-    /** Timer description. */
-    char                        szTimerDesc[24];
-
 } GIMHVSTIMER;
 /** Pointer to per-VCPU Hyper-V synthetic timer. */
 typedef GIMHVSTIMER *PGIMHVSTIMER;

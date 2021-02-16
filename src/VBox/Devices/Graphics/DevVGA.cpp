@@ -6783,7 +6783,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Create the refresh timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_REAL, vgaR3TimerRefresh, NULL,
-                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "VGA Refresh Timer", &pThis->hRefreshTimer);
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "VGA Refresh", &pThis->hRefreshTimer);
     AssertRCReturn(rc, rc);
 
     /*

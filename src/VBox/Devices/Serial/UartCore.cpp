@@ -2070,7 +2070,7 @@ DECLHIDDEN(int) uartR3Init(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThi
      * Create the receive FIFO character timeout indicator timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, uartR3RcvFifoTimeoutTimer, pThisCC,
-                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, "UART Rcv FIFO Timer",
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, "UART Rcv FIFO",
                               &pThis->hTimerRcvFifoTimeout);
     AssertRCReturn(rc, rc);
 
@@ -2081,7 +2081,7 @@ DECLHIDDEN(int) uartR3Init(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThi
      * Create the transmit timer when no device is connected.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, uartR3TxUnconnectedTimer, pThisCC,
-                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "UART TX uncon. Timer",
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "UART TX unconnect",
                               &pThis->hTimerTxUnconnected);
     AssertRCReturn(rc, rc);
 

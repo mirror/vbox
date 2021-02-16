@@ -1827,10 +1827,14 @@ static DECLCALLBACK(int) pdmR3UsbHlp_TimerCreate(PPDMUSBINS pUsbIns, TMCLOCK enm
     AssertReturn(!(fFlags & TMTIMER_FLAGS_RING0), VERR_INVALID_FLAGS);
     fFlags |= TMTIMER_FLAGS_NO_RING0;
 
-    /** @todo use a string cache here later. */
-    char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_USB_DESC, "%s[%s:%u]", pszDesc, pUsbIns->Internal.s.pUsbDev->pReg->szName, pUsbIns->iInstance);
-    if (pszDesc2)
-        pszDesc = pszDesc2;
+    /* Mangle the timer name if there are more than one instance of this device. */
+    char szName[32];
+    AssertReturn(strlen(pszDesc) < sizeof(szName) - 8, VERR_INVALID_NAME);
+    if (pUsbIns->iInstance > 0)
+    {
+        RTStrPrintf(szName, sizeof(szName), "%s[%u:%s]", pszDesc, pUsbIns->iInstance, pUsbIns->Internal.s.pUsbDev->pReg->szName);
+        pszDesc = szName;
+    }
 
     int rc = TMR3TimerCreateUsb(pVM, pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, phTimer);
 

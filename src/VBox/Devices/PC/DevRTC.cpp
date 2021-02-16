@@ -1157,19 +1157,19 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /* Periodic timer. */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerPeriodic, pThis,
                               TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                              "MC146818 RTC (CMOS) - Periodic", &pThis->hPeriodicTimer);
+                              "MC146818 RTC Periodic", &pThis->hPeriodicTimer);
     AssertRCReturn(rc, rc);
 
     /* Seconds timer. */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcR3TimerSecond, pThis,
                               TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                              "MC146818 RTC (CMOS) - Second", &pThis->hSecondTimer);
+                              "MC146818 RTC Second", &pThis->hSecondTimer);
     AssertRCReturn(rc, rc);
 
     /* The second2 timer, this is always active. */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcR3TimerSecond2, pThis,
                               TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
-                              "MC146818 RTC (CMOS) - Second2", &pThis->hSecondTimer2);
+                              "MC146818 RTC Second2", &pThis->hSecondTimer2);
     AssertRCReturn(rc, rc);
 
     pThis->next_second_time = PDMDevHlpTimerGet(pDevIns, pThis->hSecondTimer2)

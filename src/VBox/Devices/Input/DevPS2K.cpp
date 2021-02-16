@@ -1401,7 +1401,7 @@ int PS2KR3Construct(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC, PCFGMNODE 
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kR3ThrottleTimer, pThis,
                               TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                              "PS2K Throttle Timer", &pThis->hThrottleTimer);
+                              "PS2K Throttle", &pThis->hThrottleTimer);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1409,14 +1409,15 @@ int PS2KR3Construct(PPDMDEVINS pDevIns, PPS2K pThis, PPS2KR3 pThisCC, PCFGMNODE 
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kR3TypematicTimer, pThis,
                               TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                              "PS2K Typematic Timer", &pThis->hKbdTypematicTimer);
+                              "PS2K Typematic", &pThis->hKbdTypematicTimer);
     AssertRCReturn(rc, rc);
 
     /*
      * Create the command delay timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kR3DelayTimer, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_RING0, "PS2K Delay Timer", &pThis->hKbdDelayTimer);
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_RING0,
+                              "PS2K Delay", &pThis->hKbdDelayTimer);
     AssertRCReturn(rc, rc);
 
     /*

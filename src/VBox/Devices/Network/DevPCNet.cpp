@@ -5328,7 +5328,7 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
 #else
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetR3Timer, NULL, TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                              "PCnet Poll Timer", &pThis->hTimerPoll);
+                              "PCnet Poll", &pThis->hTimerPoll);
     AssertRCReturn(rc, rc);
     rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->hTimerPoll, &pThis->CritSect);
     AssertRCReturn(rc, rc);
@@ -5337,13 +5337,13 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         /* Software Interrupt timer */
         rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetR3TimerSoftInt, NULL,
-                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, "PCnet SoftInt Timer", &pThis->hTimerSoftInt);
+                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, "PCnet SoftInt", &pThis->hTimerSoftInt);
         AssertRCReturn(rc, rc);
         rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->hTimerSoftInt, &pThis->CritSect);
         AssertRCReturn(rc, rc);
     }
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetR3TimerRestore, pThis,
-                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "PCnet Restore Timer", &pThis->hTimerRestore);
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "PCnet Restore", &pThis->hTimerRestore);
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpSSMRegisterEx(pDevIns, PCNET_SAVEDSTATE_VERSION, sizeof(*pThis), NULL,

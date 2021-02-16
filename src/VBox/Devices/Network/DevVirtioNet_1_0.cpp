@@ -3037,7 +3037,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     /* Create Link Up Timer */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, virtioNetR3LinkUpTimer, NULL,
                               TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
-                              "VirtioNet Link Up Timer", &pThisCC->hLinkUpTimer);
+                              "VirtioNet Link Up", &pThisCC->hLinkUpTimer);
 
     /*
      * Initialize queues.

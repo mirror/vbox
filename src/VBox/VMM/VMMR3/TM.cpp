@@ -1499,25 +1499,35 @@ static const char *tmR3TimerClockName(PTMTIMERR3 pTimer)
  * @param   pVM         The cross context VM structure.
  * @param   enmClock    The timer clock.
  * @param   fFlags      TMTIMER_FLAGS_XXX.
- * @param   pszDesc     The timer description.
+ * @param   pszName     The timer name.
  * @param   ppTimer     Where to store the timer pointer on success.
  */
-static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
+static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const char *pszName, PPTMTIMERR3 ppTimer)
 {
+    PTMTIMERR3 pTimer;
+
+    /*
+     * Validate input.
+     */
     VM_ASSERT_EMT(pVM);
     AssertReturn((fFlags & (TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0)) != (TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0),
                  VERR_INVALID_FLAGS);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    size_t const cchName = strlen(pszName);
+    AssertMsgReturn(cchName < sizeof(pTimer->szName), ("timer name too long: %s\n", pszName), VERR_INVALID_NAME);
+    AssertMsgReturn(cchName > 2,  ("Too short timer name: %s\n", pszName), VERR_INVALID_NAME);
 
     /*
      * Allocate the timer.
      */
-    PTMTIMERR3 pTimer = NULL;
     if (pVM->tm.s.pFree && VM_IS_EMT(pVM))
     {
         pTimer = pVM->tm.s.pFree;
         pVM->tm.s.pFree = pTimer->pBigNext;
         Log3(("TM: Recycling timer %p, new free head %p.\n", pTimer, pTimer->pBigNext));
     }
+    else
+        pTimer = NULL;
 
     if (!pTimer)
     {
@@ -1541,7 +1551,8 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
     pTimer->uHzHint         = 0;
     pTimer->pvUser          = NULL;
     pTimer->pCritSect       = NULL;
-    pTimer->pszDesc         = pszDesc;
+    memcpy(pTimer->szName, pszName, cchName);
+    pTimer->szName[cchName] = '\0';
 
     /* insert into the list of created timers. */
     TM_LOCK_TIMERS(pVM);
@@ -1555,23 +1566,22 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
 #endif
     TM_UNLOCK_TIMERS(pVM);
 
+#ifdef VBOX_WITH_STATISTICS
     /*
      * Register statistics.
      */
-#ifdef VBOX_WITH_STATISTICS
-
     STAMR3RegisterF(pVM, &pTimer->StatTimer,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
-                    tmR3TimerClockName(pTimer), "/TM/Timers/%s", pszDesc);
+                    tmR3TimerClockName(pTimer), "/TM/Timers/%s", pTimer->szName);
     STAMR3RegisterF(pVM, &pTimer->StatCritSectEnter, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
-                    "", "/TM/Timers/%s/CritSectEnter", pszDesc);
+                    "", "/TM/Timers/%s/CritSectEnter", pTimer->szName);
     STAMR3RegisterF(pVM, &pTimer->StatGet,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
-                    "", "/TM/Timers/%s/Get", pszDesc);
+                    "", "/TM/Timers/%s/Get", pTimer->szName);
     STAMR3RegisterF(pVM, &pTimer->StatSetAbsolute,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
-                    "", "/TM/Timers/%s/SetAbsolute", pszDesc);
+                    "", "/TM/Timers/%s/SetAbsolute", pTimer->szName);
     STAMR3RegisterF(pVM, &pTimer->StatSetRelative,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
-                    "", "/TM/Timers/%s/SetRelative", pszDesc);
+                    "", "/TM/Timers/%s/SetRelative", pTimer->szName);
     STAMR3RegisterF(pVM, &pTimer->StatStop,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
-                    "", "/TM/Timers/%s/Stop", pszDesc);
+                    "", "/TM/Timers/%s/Stop", pTimer->szName);
 #endif
 
     *ppTimer = pTimer;
@@ -1589,13 +1599,12 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
  * @param   pfnCallback     Callback function.
  * @param   pvUser          The user argument to the callback.
  * @param   fFlags          Timer creation flags, see grp_tm_timer_flags.
- * @param   pszDesc         Pointer to description string which must stay around
- *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
+ * @param   pszName         Timer name (will be copied).  Max 31 chars.
  * @param   phTimer         Where to store the timer handle on success.
  */
 VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock,
                                         PFNTMTIMERDEV pfnCallback, void *pvUser,
-                                        uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer)
+                                        uint32_t fFlags, const char *pszName, PTMTIMERHANDLE phTimer)
 {
     AssertReturn(!(fFlags & ~(TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0)),
                  VERR_INVALID_FLAGS);
@@ -1604,7 +1613,7 @@ VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enm
      * Allocate and init stuff.
      */
     PTMTIMER pTimer;
-    int rc = tmr3TimerCreate(pVM, enmClock, fFlags, pszDesc, &pTimer);
+    int rc = tmr3TimerCreate(pVM, enmClock, fFlags, pszName, &pTimer);
     if (RT_SUCCESS(rc))
     {
         pTimer->enmType         = TMTIMERTYPE_DEV;
@@ -1614,7 +1623,7 @@ VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enm
         if (!(fFlags & TMTIMER_FLAGS_NO_CRIT_SECT))
             pTimer->pCritSect = PDMR3DevGetCritSect(pVM, pDevIns);
         *phTimer = pTimer->hSelf;
-        Log(("TM: Created device timer %p clock %d callback %p '%s'\n", phTimer, enmClock, pfnCallback, pszDesc));
+        Log(("TM: Created device timer %p clock %d callback %p '%s'\n", phTimer, enmClock, pfnCallback, pszName));
     }
 
     return rc;
@@ -1633,13 +1642,12 @@ VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enm
  * @param   pfnCallback     Callback function.
  * @param   pvUser          The user argument to the callback.
  * @param   fFlags          Timer creation flags, see grp_tm_timer_flags.
- * @param   pszDesc         Pointer to description string which must stay around
- *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
+ * @param   pszName         Timer name (will be copied).  Max 31 chars.
  * @param   phTimer         Where to store the timer handle on success.
  */
 VMM_INT_DECL(int) TMR3TimerCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, TMCLOCK enmClock,
                                      PFNTMTIMERUSB pfnCallback, void *pvUser,
-                                     uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer)
+                                     uint32_t fFlags, const char *pszName, PTMTIMERHANDLE phTimer)
 {
     AssertReturn(!(fFlags & ~(TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0)), VERR_INVALID_PARAMETER);
 
@@ -1647,7 +1655,7 @@ VMM_INT_DECL(int) TMR3TimerCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, TMCLOCK enmClo
      * Allocate and init stuff.
      */
     PTMTIMER pTimer;
-    int rc = tmr3TimerCreate(pVM, enmClock, fFlags, pszDesc, &pTimer);
+    int rc = tmr3TimerCreate(pVM, enmClock, fFlags, pszName, &pTimer);
     if (RT_SUCCESS(rc))
     {
         pTimer->enmType         = TMTIMERTYPE_USB;
@@ -1662,7 +1670,7 @@ VMM_INT_DECL(int) TMR3TimerCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, TMCLOCK enmClo
         //        pTimer->pCritSect = IOMR3GetCritSect(pVM);
         //}
         *phTimer = pTimer->hSelf;
-        Log(("TM: Created USB device timer %p clock %d callback %p '%s'\n", *phTimer, enmClock, pfnCallback, pszDesc));
+        Log(("TM: Created USB device timer %p clock %d callback %p '%s'\n", *phTimer, enmClock, pfnCallback, pszName));
     }
 
     return rc;
@@ -1679,12 +1687,11 @@ VMM_INT_DECL(int) TMR3TimerCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, TMCLOCK enmClo
  * @param   pfnCallback     Callback function.
  * @param   pvUser          The user argument to the callback.
  * @param   fFlags          Timer creation flags, see grp_tm_timer_flags.
- * @param   pszDesc         Pointer to description string which must stay around
- *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
+ * @param   pszName         Timer name (will be copied).  Max 31 chars.
  * @param   phTimer         Where to store the timer handle on success.
  */
 VMM_INT_DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser,
-                                        uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer)
+                                        uint32_t fFlags, const char *pszName, PTMTIMERHANDLE phTimer)
 {
     AssertReturn(!(fFlags & ~(TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0)),
                  VERR_INVALID_FLAGS);
@@ -1693,7 +1700,7 @@ VMM_INT_DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enm
      * Allocate and init stuff.
      */
     PTMTIMER pTimer;
-    int rc = tmr3TimerCreate(pVM, enmClock, fFlags, pszDesc, &pTimer);
+    int rc = tmr3TimerCreate(pVM, enmClock, fFlags, pszName, &pTimer);
     if (RT_SUCCESS(rc))
     {
         pTimer->enmType         = TMTIMERTYPE_DRV;
@@ -1701,7 +1708,7 @@ VMM_INT_DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enm
         pTimer->u.Drv.pDrvIns   = pDrvIns;
         pTimer->pvUser          = pvUser;
         *phTimer = pTimer->hSelf;
-        Log(("TM: Created device timer %p clock %d callback %p '%s'\n", *phTimer, enmClock, pfnCallback, pszDesc));
+        Log(("TM: Created device timer %p clock %d callback %p '%s'\n", *phTimer, enmClock, pfnCallback, pszName));
     }
 
     return rc;
@@ -1717,12 +1724,11 @@ VMM_INT_DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enm
  * @param   pfnCallback     Callback function.
  * @param   pvUser          User argument to be passed to the callback.
  * @param   fFlags          Timer creation flags, see grp_tm_timer_flags.
- * @param   pszDesc         Pointer to description string which must stay around
- *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
+ * @param   pszName         Timer name (will be copied).  Max 31 chars.
  * @param   phTimer         Where to store the timer handle on success.
  */
 VMMR3DECL(int) TMR3TimerCreate(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser,
-                               uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer)
+                               uint32_t fFlags, const char *pszName, PTMTIMERHANDLE phTimer)
 {
     AssertReturn(fFlags & (TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0), VERR_INVALID_FLAGS);
     AssertReturn((fFlags & (TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0)) != (TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0),
@@ -1732,14 +1738,14 @@ VMMR3DECL(int) TMR3TimerCreate(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallb
      * Allocate and init  stuff.
      */
     PTMTIMER pTimer;
-    int rc = tmr3TimerCreate(pVM, enmClock, fFlags, pszDesc, &pTimer);
+    int rc = tmr3TimerCreate(pVM, enmClock, fFlags, pszName, &pTimer);
     if (RT_SUCCESS(rc))
     {
         pTimer->enmType             = TMTIMERTYPE_INTERNAL;
         pTimer->u.Internal.pfnTimer = pfnCallback;
         pTimer->pvUser              = pvUser;
         *phTimer = pTimer->hSelf;
-        Log(("TM: Created internal timer %p clock %d callback %p '%s'\n", pTimer, enmClock, pfnCallback, pszDesc));
+        Log(("TM: Created internal timer %p clock %d callback %p '%s'\n", pTimer, enmClock, pfnCallback, pszName));
     }
 
     return rc;
@@ -1763,7 +1769,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
 
     AssertMsg(   !pTimer->pCritSect
               || VMR3GetState(pVM) != VMSTATE_RUNNING
-              || PDMCritSectIsOwner(pTimer->pCritSect), ("%s\n", pTimer->pszDesc));
+              || PDMCritSectIsOwner(pTimer->pCritSect), ("%s\n", pTimer->szName));
 
     /*
      * The rest of the game happens behind the lock, just
@@ -1776,8 +1782,8 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
          * Change to the DESTROY state.
          */
         TMTIMERSTATE const enmState = pTimer->enmState;
-        Log2(("TMTimerDestroy: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
-              pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries));
+        Log2(("TMTimerDestroy: %p:{.enmState=%s, .szName='%s'} cRetries=%d\n",
+              pTimer, tmTimerState(enmState), pTimer->szName, cRetries));
         switch (enmState)
         {
             case TMTIMERSTATE_STOPPED:
@@ -1805,11 +1811,11 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
             case TMTIMERSTATE_EXPIRED_GET_UNLINK:
             case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
             case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
-                AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->pszDesc));
+                AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->szName));
                 TM_UNLOCK_TIMERS(pVM);
                 if (!RTThreadYield())
                     RTThreadSleep(1);
-                AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->pszDesc),
+                AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName),
                                 VERR_TM_UNSTABLE_STATE);
                 TM_LOCK_TIMERS(pVM);
                 continue;
@@ -1823,7 +1829,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
                 AssertLogRelMsgFailedReturn(("pTimer=%p %s\n", pTimer, tmTimerState(enmState)), VERR_TM_INVALID_STATE);
 
             default:
-                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+                AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, pTimer->szName));
                 TM_UNLOCK_TIMERS(pVM);
                 return VERR_TM_UNKNOWN_STATE;
         }
@@ -1836,9 +1842,9 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
         TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_DESTROY, enmState, fRc);
         if (fRc)
             break;
-        AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->pszDesc));
+        AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->szName));
         TM_UNLOCK_TIMERS(pVM);
-        AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->pszDesc),
+        AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName),
                         VERR_TM_UNSTABLE_STATE);
         TM_LOCK_TIMERS(pVM);
     }
@@ -1880,7 +1886,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
      */
 #ifdef VBOX_WITH_STATISTICS
     char szPrefix[128];
-    RTStrPrintf(szPrefix, sizeof(szPrefix), "/TM/Timers/%s", pTimer->pszDesc);
+    RTStrPrintf(szPrefix, sizeof(szPrefix), "/TM/Timers/%s", pTimer->szName);
     STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
 #endif
 
@@ -2265,8 +2271,8 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
             PDMCritSectEnter(pCritSect, VERR_IGNORED);
             STAM_PROFILE_STOP(&pTimer->StatCritSectEnter, Locking);
         }
-        Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
-              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
+        Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .szName='%s'}\n",
+              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->szName));
         bool fRc;
         TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_GET_UNLINK, TMTIMERSTATE_ACTIVE, fRc);
         if (fRc)
@@ -2297,7 +2303,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
                 case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer->hSelf, pTimer->pvUser); break;
                 case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer->hSelf, pTimer->pvUser); break;
                 default:
-                    AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
+                    AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->szName));
                     break;
             }
             STAM_PROFILE_STOP(&pTimer->StatTimer, PrfTimer);
@@ -2458,13 +2464,13 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             STAM_PROFILE_STOP(&pTimer->StatCritSectEnter, Locking);
         }
 
-        Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
-              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
+        Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .szName='%s'}\n",
+              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->szName));
 
         /* Advance the clock - don't permit timers to be out of order or armed
            in the 'past'. */
 #ifdef VBOX_STRICT
-        AssertMsg(pTimer->u64Expire >= u64Prev, ("%'RU64 < %'RU64 %s\n", pTimer->u64Expire, u64Prev, pTimer->pszDesc));
+        AssertMsg(pTimer->u64Expire >= u64Prev, ("%'RU64 < %'RU64 %s\n", pTimer->u64Expire, u64Prev, pTimer->szName));
         u64Prev = pTimer->u64Expire;
 #endif
         ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, pTimer->u64Expire);
@@ -2481,7 +2487,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer->hSelf, pTimer->pvUser); break;
             case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer->hSelf, pTimer->pvUser); break;
             default:
-                AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
+                AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->szName));
                 break;
         }
         STAM_PROFILE_STOP(&pTimer->StatTimer, PrfTimer);
@@ -2712,7 +2718,7 @@ VMMR3DECL(int) TMR3TimerSave(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
     VM_ASSERT_EMT(pVM);
     PTMTIMER pTimer;
     TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
-    LogFlow(("TMR3TimerSave: %p:{enmState=%s, .pszDesc={%s}} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->pszDesc, pSSM));
+    LogFlow(("TMR3TimerSave: %p:{enmState=%s, .szName='%s'} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->szName, pSSM));
 
     switch (pTimer->enmState)
     {
@@ -2723,7 +2729,7 @@ VMMR3DECL(int) TMR3TimerSave(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
 
         case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
         case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
-            AssertMsgFailed(("u64Expire is being updated! (%s)\n", pTimer->pszDesc));
+            AssertMsgFailed(("u64Expire is being updated! (%s)\n", pTimer->szName));
             if (!RTThreadYield())
                 RTThreadSleep(1);
             RT_FALL_THRU();
@@ -2737,11 +2743,11 @@ VMMR3DECL(int) TMR3TimerSave(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
         case TMTIMERSTATE_EXPIRED_DELIVER:
         case TMTIMERSTATE_DESTROY:
         case TMTIMERSTATE_FREE:
-            AssertMsgFailed(("Invalid timer state %d %s (%s)\n", pTimer->enmState, tmTimerState(pTimer->enmState), pTimer->pszDesc));
+            AssertMsgFailed(("Invalid timer state %d %s (%s)\n", pTimer->enmState, tmTimerState(pTimer->enmState), pTimer->szName));
             return SSMR3HandleSetStatus(pSSM, VERR_TM_INVALID_STATE);
     }
 
-    AssertMsgFailed(("Unknown timer state %d (%s)\n", pTimer->enmState, pTimer->pszDesc));
+    AssertMsgFailed(("Unknown timer state %d (%s)\n", pTimer->enmState, pTimer->szName));
     return SSMR3HandleSetStatus(pSSM, VERR_TM_UNKNOWN_STATE);
 }
 
@@ -2760,7 +2766,7 @@ VMMR3DECL(int) TMR3TimerLoad(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
     PTMTIMER pTimer;
     TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
     Assert(pSSM);
-    LogFlow(("TMR3TimerLoad: %p:{enmState=%s, .pszDesc={%s}} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->pszDesc, pSSM));
+    LogFlow(("TMR3TimerLoad: %p:{enmState=%s, .szName='%s'} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->szName, pSSM));
 
     /*
      * Load the state and validate it.
@@ -2913,7 +2919,7 @@ VMMR3DECL(int) TMR3TimerSetCritSect(PVM pVM, TMTIMERHANDLE hTimer, PPDMCRITSECT 
     AssertReturn(pszName, VERR_INVALID_PARAMETER);
     AssertReturn(!pTimer->pCritSect, VERR_ALREADY_EXISTS);
     AssertReturn(pTimer->enmState == TMTIMERSTATE_STOPPED, VERR_INVALID_STATE);
-    LogFlow(("pTimer=%p (%s) pCritSect=%p (%s)\n", pTimer, pTimer->pszDesc, pCritSect, pszName));
+    LogFlow(("pTimer=%p (%s) pCritSect=%p (%s)\n", pTimer, pTimer->szName, pCritSect, pszName));
 
     pTimer->pCritSect = pCritSect;
     return VINF_SUCCESS;
@@ -3699,7 +3705,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                         pTimer->u64Expire,
                         pTimer->uHzHint,
                         tmTimerState(pTimer->enmState),
-                        pTimer->pszDesc);
+                        pTimer->szName);
     }
     TM_UNLOCK_TIMERS(pVM);
 }
@@ -3745,7 +3751,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                             pTimer->u64Expire,
                             pTimer->uHzHint,
                             tmTimerState(pTimer->enmState),
-                            pTimer->pszDesc);
+                            pTimer->szName);
         }
         TM_UNLOCK_TIMERS(pVM);
     }

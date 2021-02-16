@@ -1085,14 +1085,14 @@ int PS2MR3Construct(PPDMDEVINS pDevIns, PPS2M pThis, PPS2MR3 pThisCC)
      */
     int rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_REAL, ps2mR3ThrottleTimer, pThis,
                                   TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
-                                  "PS2M Throttle Timer", &pThis->hThrottleTimer);
+                                  "PS2M Throttle", &pThis->hThrottleTimer);
     AssertRCReturn(rc, rc);
 
     /*
      * Create the command delay timer.
      */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2mR3DelayTimer, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_RING0, "PS2M Delay Timer", &pThis->hDelayTimer);
+                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT | TMTIMER_FLAGS_RING0, "PS2M Delay", &pThis->hDelayTimer);
     AssertRCReturn(rc, rc);
 
     /*

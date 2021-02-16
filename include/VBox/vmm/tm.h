@@ -272,13 +272,13 @@ VMM_INT_DECL(int)       TMR3Term(PVM pVM);
 VMM_INT_DECL(void)      TMR3Reset(PVM pVM);
 VMM_INT_DECL(int)       TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
 VMM_INT_DECL(int)       TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback,
-                                              void *pvUser, uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer);
+                                              void *pvUser, uint32_t fFlags, const char *pszName, PTMTIMERHANDLE phTimer);
 VMM_INT_DECL(int)       TMR3TimerCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback,
-                                           void *pvUser, uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer);
+                                           void *pvUser, uint32_t fFlags, const char *pszName, PTMTIMERHANDLE phTimer);
 VMM_INT_DECL(int)       TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback,
-                                              void *pvUser, uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer);
+                                              void *pvUser, uint32_t fFlags, const char *pszName, PTMTIMERHANDLE phTimer);
 VMMR3DECL(int)          TMR3TimerCreate(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, uint32_t fFlags,
-                                        const char *pszDesc, PTMTIMERHANDLE phTimer);
+                                        const char *pszName, PTMTIMERHANDLE phTimer);
 VMMR3DECL(int)          TMR3TimerDestroy(PVM pVM, TMTIMERHANDLE hTimer);
 VMM_INT_DECL(int)       TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
 VMM_INT_DECL(int)       TMR3TimerDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);

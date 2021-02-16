@@ -8031,8 +8031,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 #ifdef E1K_TX_DELAY
     /* Create Transmit Delay Timer */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3TxDelayTimer, pThis,
-                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                              "E1000 Transmit Delay Timer", &pThis->hTXDTimer);
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, "E1000 Xmit Delay", &pThis->hTXDTimer);
     AssertRCReturn(rc, rc);
     rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->hTXDTimer, &pThis->csTx);
     AssertRCReturn(rc, rc);
@@ -8043,15 +8042,13 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         /* Create Transmit Interrupt Delay Timer */
         rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3TxIntDelayTimer, pThis,
-                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                                  "E1000 Transmit Interrupt Delay Timer", &pThis->hTIDTimer);
+                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, "E1000 Xmit IRQ Delay", &pThis->hTIDTimer);
         AssertRCReturn(rc, rc);
 
 # ifndef E1K_NO_TAD
         /* Create Transmit Absolute Delay Timer */
         rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3TxAbsDelayTimer, pThis,
-                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                                  "E1000 Transmit Absolute Delay Timer", &pThis->hTADTimer);
+                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0, "E1000 Xmit Abs Delay", &pThis->hTADTimer);
         AssertRCReturn(rc, rc);
 # endif /* E1K_NO_TAD */
     }
@@ -8060,27 +8057,23 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 #ifdef E1K_USE_RX_TIMERS
     /* Create Receive Interrupt Delay Timer */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3RxIntDelayTimer, pThis,
-                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                              "E1000 Receive Interrupt Delay Timer", &pThis->hRIDTimer);
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,  "E1000 Recv IRQ Delay", &pThis->hRIDTimer);
     AssertRCReturn(rc, rc);
 
     /* Create Receive Absolute Delay Timer */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3RxAbsDelayTimer, pThis,
-                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                              "E1000 Receive Absolute Delay Timer", &pThis->hRADTimer);
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,  "E1000 Recv Abs Delay", &pThis->hRADTimer);
     AssertRCReturn(rc, rc);
 #endif /* E1K_USE_RX_TIMERS */
 
     /* Create Late Interrupt Timer */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3LateIntTimer, pThis,
-                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                              "E1000 Late Interrupt Timer", &pThis->hIntTimer);
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,  "E1000 Late IRQ", &pThis->hIntTimer);
     AssertRCReturn(rc, rc);
 
     /* Create Link Up Timer */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3LinkUpTimer, pThis,
-                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,
-                              "E1000 Link Up Timer", &pThis->hLUTimer);
+                              TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_RING0,  "E1000 Link Up", &pThis->hLUTimer);
     AssertRCReturn(rc, rc);
 
     /* Register the info item */

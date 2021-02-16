@@ -4509,11 +4509,10 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                 for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                 {
                     PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-                    /* The string cannot live on the stack. It should be safe to call MMR3HeapAPrintf here as
-                       MMR3HyperInitFinalize has already completed at this point. */
-                    char *pszTimerName = MMR3HeapAPrintf(pVM, MM_TAG_CPUM_CTX, "Nested Guest VMX-preempt. timer %u", idCpu);
+                    char szName[32];
+                    RTStrPrintf(szName, sizeof(szName), "Nested VMX-preemption %u", idCpu);
                     int rc = TMR3TimerCreate(pVM, TMCLOCK_VIRTUAL_SYNC, cpumR3VmxPreemptTimerCallback, pVCpu,
-                                             TMTIMER_FLAGS_RING0, pszTimerName, &pVCpu->cpum.s.hNestedVmxPreemptTimer);
+                                             TMTIMER_FLAGS_RING0, szName, &pVCpu->cpum.s.hNestedVmxPreemptTimer);
                     AssertLogRelRCReturn(rc, rc);
                 }
             }
