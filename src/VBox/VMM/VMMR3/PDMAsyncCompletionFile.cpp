@@ -865,11 +865,12 @@ static DECLCALLBACK(int) pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGl
         AssertRC(rc);
     }
 
-#ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
-    rc = TMR3TimerCreateInternal(pEpClassFile->Core.pVM, TMCLOCK_REAL, pdmacR3TimerCallback, pEpClassFile, "AC Delay", &pEpClassFile->pTimer);
+# ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
+    rc = TMR3TimerCreate(pEpClassFile->Core.pVM, TMCLOCK_REAL, pdmacR3TimerCallback, pEpClassFile,
+                         TMTIMER_FLAGS_NO_RING0, "AC Delay", &pEpClassFile->pTimer);
     AssertRC(rc);
     pEpClassFile->cMilliesNext = UINT64_MAX;
-#endif
+# endif
 #endif
 
     return rc;

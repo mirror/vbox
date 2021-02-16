@@ -508,8 +508,8 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
                 /* Create the timer and associate the context pointers. */
                 RTStrPrintf(&pHvStimer->szTimerDesc[0], sizeof(pHvStimer->szTimerDesc), "Hyper-V[%u] Timer%u", pVCpu->idCpu,
                             idxStimer);
-                rc = TMR3TimerCreateInternal(pVM, TMCLOCK_VIRTUAL_SYNC, gimR3HvTimerCallback, pHvStimer /* pvUser */,
-                                             pHvStimer->szTimerDesc, &pHvStimer->pTimerR3);
+                rc = TMR3TimerCreate(pVM, TMCLOCK_VIRTUAL_SYNC, gimR3HvTimerCallback, pHvStimer /* pvUser */,
+                                     TMTIMER_FLAGS_RING0, pHvStimer->szTimerDesc, &pHvStimer->pTimerR3);
                 AssertLogRelRCReturn(rc, rc);
                 pHvStimer->pTimerR0 = TMTimerR0Ptr(pHvStimer->pTimerR3);
             }

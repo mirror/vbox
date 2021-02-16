@@ -112,7 +112,7 @@ static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cM
      */
     if (cMilliesInterval)
     {
-        rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, pdmR3QueueTimer, pQueue, "Queue timer", &pQueue->pTimer);
+        rc = TMR3TimerCreate(pVM, TMCLOCK_REAL, pdmR3QueueTimer, pQueue, TMTIMER_FLAGS_NO_RING0, "Queue timer", &pQueue->pTimer);
         if (RT_SUCCESS(rc))
         {
             rc = TMTimerSetMillies(pQueue->pTimer, cMilliesInterval);

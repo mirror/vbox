@@ -1156,11 +1156,8 @@ int pdmR3BlkCacheInit(PVM pVM)
     {
         /* Create the commit timer */
         if (pBlkCacheGlobal->u32CommitTimeoutMs > 0)
-            rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL,
-                                         pdmBlkCacheCommitTimerCallback,
-                                         pBlkCacheGlobal,
-                                         "BlkCache-Commit",
-                                         &pBlkCacheGlobal->pTimerCommit);
+            rc = TMR3TimerCreate(pVM, TMCLOCK_REAL, pdmBlkCacheCommitTimerCallback, pBlkCacheGlobal,
+                                 TMTIMER_FLAGS_NO_RING0,  "BlkCache-Commit", &pBlkCacheGlobal->pTimerCommit);
 
         if (RT_SUCCESS(rc))
         {

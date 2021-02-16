@@ -1100,7 +1100,7 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
      * Create a timer for refreshing the CPU load stats.
      */
     PTMTIMER pTimer;
-    rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, tmR3CpuLoadTimer, NULL, "CPU Load Timer", &pTimer);
+    rc = TMR3TimerCreate(pVM, TMCLOCK_REAL, tmR3CpuLoadTimer, NULL, TMTIMER_FLAGS_NO_RING0, "CPU Load Timer", &pTimer);
     if (RT_SUCCESS(rc))
         rc = TMTimerSetMillies(pTimer, 1000);
 #endif
@@ -1720,18 +1720,23 @@ VMM_INT_DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enm
  * @param   enmClock        The clock to use on this timer.
  * @param   pfnCallback     Callback function.
  * @param   pvUser          User argument to be passed to the callback.
+ * @param   fFlags          Timer creation flags, see grp_tm_timer_flags.
  * @param   pszDesc         Pointer to description string which must stay around
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-VMMR3DECL(int) TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock,
-                                       PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERR3 ppTimer)
+VMMR3DECL(int) TMR3TimerCreate(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser,
+                               uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
+    AssertReturn(fFlags & (TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0), VERR_INVALID_FLAGS);
+    AssertReturn((fFlags & (TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0)) != (TMTIMER_FLAGS_RING0 | TMTIMER_FLAGS_NO_RING0),
+                 VERR_INVALID_FLAGS);
+
     /*
      * Allocate and init  stuff.
      */
     PTMTIMER pTimer;
-    int rc = tmr3TimerCreate(pVM, enmClock, 0 /*fFlags*/, pszDesc, &pTimer);
+    int rc = tmr3TimerCreate(pVM, enmClock, fFlags, pszDesc, &pTimer);
     if (RT_SUCCESS(rc))
     {
         pTimer->enmType             = TMTIMERTYPE_INTERNAL;

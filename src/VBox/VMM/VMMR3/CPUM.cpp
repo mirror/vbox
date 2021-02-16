@@ -4502,6 +4502,7 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             cpumR3MsrRegStats(pVM);
 
             /* Create VMX-preemption timer for nested guests if required. */
+/** @todo r=bird: this should be one in CPUMR3Init, not here.   */
             if (pVM->cpum.s.GuestFeatures.fVmx)
             {
                 for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
@@ -4510,8 +4511,8 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                     /* The string cannot live on the stack. It should be safe to call MMR3HeapAPrintf here as
                        MMR3HyperInitFinalize has already completed at this point. */
                     char *pszTimerName = MMR3HeapAPrintf(pVM, MM_TAG_CPUM_CTX, "Nested Guest VMX-preempt. timer %u", idCpu);
-                    int rc = TMR3TimerCreateInternal(pVM, TMCLOCK_VIRTUAL_SYNC, cpumR3VmxPreemptTimerCallback, pVCpu,
-                                                     pszTimerName, &pVCpu->cpum.s.pNestedVmxPreemptTimerR3);
+                    int rc = TMR3TimerCreate(pVM, TMCLOCK_VIRTUAL_SYNC, cpumR3VmxPreemptTimerCallback, pVCpu,
+                                             TMTIMER_FLAGS_RING0, pszTimerName, &pVCpu->cpum.s.pNestedVmxPreemptTimerR3);
                     AssertLogRelRCReturn(rc, rc);
                     pVCpu->cpum.s.pNestedVmxPreemptTimerR0 = TMTimerR0Ptr(pVCpu->cpum.s.pNestedVmxPreemptTimerR3);
                 }
