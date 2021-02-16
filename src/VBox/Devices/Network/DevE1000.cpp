@@ -2170,7 +2170,7 @@ DECLINLINE(void) e1kPostponeInterrupt(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint6
  *
  * @param   pThis       The device state structure.
  */
-static int e1kRaiseInterrupt(PPDMDEVINS pDevIns, PE1KSTATE pThis, int rcBusy, uint32_t u32IntCause = 0)
+static int e1kRaiseInterrupt(PPDMDEVINS pDevIns, PE1KSTATE pThis, int rcBusy, uint32_t u32IntCause)
 {
     int rc = e1kCsEnter(pThis, rcBusy);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -3542,7 +3542,7 @@ static DECLCALLBACK(void) e1kR3TxIntDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE
 #  ifndef E1K_NO_TAD
     e1kCancelTimer(pDevIns, pThis, pThis->hTADTimer);
 #  endif
-    e1kRaiseInterrupt(pDevIns, pThis, ICR_TXDW);
+    e1kRaiseInterrupt(pDevIns, pThis, VERR_IGNORED, ICR_TXDW);
 }
 
 /**
@@ -3556,7 +3556,7 @@ static DECLCALLBACK(void) e1kR3TxAbsDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE
     E1K_INC_ISTAT_CNT(pThis->uStatTAD);
     /* Cancel interrupt delay timer as we have already got attention */
     e1kCancelTimer(pDevIns, pThis, pThis->hTIDTimer);
-    e1kRaiseInterrupt(pDevIns, pThis, ICR_TXDW);
+    e1kRaiseInterrupt(pDevIns, pThis, VERR_IGNORED, ICR_TXDW);
 }
 
 //# endif /* E1K_USE_TX_TIMERS */
@@ -3573,7 +3573,7 @@ static DECLCALLBACK(void) e1kR3RxIntDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE
     E1K_INC_ISTAT_CNT(pThis->uStatRID);
     /* Cancel absolute delay timer as we have already got attention */
     e1kCancelTimer(pDevIns, pThis, pThis->hRADTimer);
-    e1kRaiseInterrupt(pDevIns, pThis, ICR_RXT0);
+    e1kRaiseInterrupt(pDevIns, pThis, VERR_IGNORED, ICR_RXT0);
 }
 
 /**
@@ -3587,7 +3587,7 @@ static DECLCALLBACK(void) e1kR3RxAbsDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE
     E1K_INC_ISTAT_CNT(pThis->uStatRAD);
     /* Cancel interrupt delay timer as we have already got attention */
     e1kCancelTimer(pDevIns, pThis, pThis->hRIDTimer);
-    e1kRaiseInterrupt(pDevIns, pThis, ICR_RXT0);
+    e1kRaiseInterrupt(pDevIns, pThis, VERR_IGNORED, ICR_RXT0);
 }
 
 # endif /* E1K_USE_RX_TIMERS */
