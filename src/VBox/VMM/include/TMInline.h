@@ -25,12 +25,13 @@
 /**
  * Used to unlink a timer from the active list.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pQueue      The timer queue.
  * @param   pTimer      The timer that needs linking.
  *
  * @remarks Called while owning the relevant queue lock.
  */
-DECL_FORCE_INLINE(void) tmTimerQueueUnlinkActive(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
+DECL_FORCE_INLINE(void) tmTimerQueueUnlinkActive(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 {
 #ifdef VBOX_STRICT
     TMTIMERSTATE const enmState = pTimer->enmState;
@@ -38,6 +39,7 @@ DECL_FORCE_INLINE(void) tmTimerQueueUnlinkActive(PTMTIMERQUEUE pQueue, PTMTIMER 
            ? enmState == TMTIMERSTATE_ACTIVE
            : enmState == TMTIMERSTATE_PENDING_SCHEDULE || enmState == TMTIMERSTATE_PENDING_STOP_SCHEDULE);
 #endif
+    RT_NOREF(pVM);
 
     const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
     const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
@@ -47,7 +49,7 @@ DECL_FORCE_INLINE(void) tmTimerQueueUnlinkActive(PTMTIMERQUEUE pQueue, PTMTIMER 
     {
         TMTIMER_SET_HEAD(pQueue, pNext);
         pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
-        DBGFTRACE_U64_TAG(pTimer->CTX_SUFF(pVM), pQueue->u64Expire, "tmTimerQueueUnlinkActive");
+        DBGFTRACE_U64_TAG(pVM, pQueue->u64Expire, "tmTimerQueueUnlinkActive");
     }
     if (pNext)
         TMTIMER_SET_PREV(pNext, pPrev);

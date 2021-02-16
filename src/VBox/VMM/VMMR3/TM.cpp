@@ -2477,7 +2477,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
 
         /* Unlink it, change the state and do the callout. */
-        tmTimerQueueUnlinkActive(pQueue, pTimer);
+        tmTimerQueueUnlinkActive(pVM, pQueue, pTimer);
         TM_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_DELIVER);
         STAM_PROFILE_START(&pTimer->StatTimer, PrfTimer);
         switch (pTimer->enmType)
