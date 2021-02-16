@@ -2213,11 +2213,11 @@ static void fdctrl_write_data(fdctrl_t *fdctrl, uint32_t value)
 /**
  * @callback_method_impl{FNTMTIMERDEV}
  */
-static DECLCALLBACK(void) fdcTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) fdcTimerCallback(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     fdctrl_t *fdctrl = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
     fdrive_t *cur_drv = get_cur_drv(fdctrl);
-    RT_NOREF(pTimer, pvUser);
+    RT_NOREF(hTimer, pvUser);
 
     /* Pretend we are spinning.
      * This is needed for Coherent, which uses READ ID to check for
@@ -2297,10 +2297,10 @@ static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort1Write(PPDMDEVINS pDevIns, void *pvUs
 /**
  * @callback_method_impl{FNTMTIMERDEV}
  */
-static DECLCALLBACK(void) fdcTransferDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) fdcTransferDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     fdctrl_t *fdctrl = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
-    RT_NOREF(pvUser, pTimer);
+    RT_NOREF(pvUser, hTimer);
     fdctrl_stop_transfer_now(fdctrl, fdctrl->st0, fdctrl->st1, fdctrl->st2);
 }
 
@@ -2308,10 +2308,10 @@ static DECLCALLBACK(void) fdcTransferDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTi
 /**
  * @callback_method_impl{FNTMTIMERDEV}
  */
-static DECLCALLBACK(void) fdcIrqDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) fdcIrqDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     fdctrl_t *fdctrl = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
-    RT_NOREF(pvUser, pTimer);
+    RT_NOREF(pvUser, hTimer);
     fdctrl_raise_irq_now(fdctrl, fdctrl->st0);
 }
 

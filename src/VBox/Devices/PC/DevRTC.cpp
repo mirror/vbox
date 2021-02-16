@@ -583,12 +583,13 @@ static DECLCALLBACK(void) rtcCmosClockInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
 /**
  * @callback_method_impl{FNTMTIMERDEV, periodic}
  */
-static DECLCALLBACK(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    RT_NOREF2(pTimer, pvUser);
     PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
-    Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pThis->hPeriodicTimer));
+    Assert(hTimer == pThis->hPeriodicTimer);
+    Assert(PDMDevHlpTimerIsLockOwner(pDevIns, hTimer));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
+    RT_NOREF2(hTimer, pvUser);
 
     rtc_timer_update(pDevIns, pThis, pThis->next_periodic_time);
     STAM_COUNTER_INC(&pThis->StatRTCTimerCB);
@@ -665,13 +666,13 @@ static void rtc_next_second(struct my_tm *tm)
 /**
  * @callback_method_impl{FNTMTIMERDEV, Second timer.}
  */
-static DECLCALLBACK(void) rtcR3TimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) rtcR3TimerSecond(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
-    RT_NOREF(pvUser, pTimer);
+    RT_NOREF(pvUser, hTimer);
 
     /* if the oscillator is not in normal operation, we do not update */
     if ((pThis->cmos_data[RTC_REG_A] & 0x70) != 0x20)
@@ -727,13 +728,13 @@ static void rtc_copy_date(PRTCSTATE pThis)
 /**
  * @callback_method_impl{FNTMTIMERDEV, Second2 timer.}
  */
-static DECLCALLBACK(void) rtcR3TimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) rtcR3TimerSecond2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
-    RT_NOREF2(pTimer, pvUser);
+    RT_NOREF2(hTimer, pvUser);
 
     if (!(pThis->cmos_data[RTC_REG_B] & REG_B_SET))
         rtc_copy_date(pThis);

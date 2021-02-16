@@ -624,11 +624,11 @@ static void vnetR3TempLinkDown(PPDMDEVINS pDevIns, PVNETSTATE pThis, PVNETSTATEC
 /**
  * @callback_method_impl{FNTMTIMERDEV, Link Up Timer handler.}
  */
-static DECLCALLBACK(void) vnetR3LinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) vnetR3LinkUpTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PVNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     PVNETSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVNETSTATECC);
-    RT_NOREF(pTimer, pvUser);
+    RT_NOREF(hTimer, pvUser);
 
     int rc = vnetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY);
     AssertRCReturnVoid(rc);
@@ -1508,11 +1508,11 @@ static DECLCALLBACK(void) vnetR3QueueTransmit(PPDMDEVINS pDevIns, PVQUEUE pQueue
 /**
  * @callback_method_impl{FNTMTIMERDEV, Transmit Delay Timer handler.}
  */
-static DECLCALLBACK(void) vnetR3TxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) vnetR3TxTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PVNETSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     PVNETSTATECC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVNETSTATECC);
-    RT_NOREF(pTimer, pvUser);
+    RT_NOREF(hTimer, pvUser);
 
     uint32_t u32MicroDiff = (uint32_t)((RTTimeNanoTS() - pThis->u64NanoTS) / 1000);
     if (u32MicroDiff < pThis->u32MinDiff)
@@ -1526,11 +1526,8 @@ static DECLCALLBACK(void) vnetR3TxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, voi
 
 //    Log3(("%s vnetR3TxTimer: Expired\n", INSTANCE(pThis)));
     vnetR3TransmitPendingPackets(pDevIns, pThis, pThisCC, pThisCC->pTxQueue, false /*fOnWorkerThread*/);
-    if (RT_FAILURE(vnetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY)))
-    {
-        LogRel(("vnetR3TxTimer: Failed to enter critical section!/n"));
-        return;
-    }
+    int rc = vnetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY)
+    AssertLogRelRCReturnVoid(rc);
     vringSetNotification(pDevIns, &pThisCC->pTxQueue->VRing, true);
     vnetR3CsLeave(pDevIns, pThis);
 }

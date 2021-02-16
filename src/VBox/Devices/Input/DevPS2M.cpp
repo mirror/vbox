@@ -723,11 +723,11 @@ static uint32_t ps2mR3HaveEvents(PPS2M pThis)
  * @callback_method_impl{FNTMTIMERDEV,
  * Event rate throttling timer to emulate the auxiliary device sampling rate.}
  */
-static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
     PPS2M       pThis = (PS2M *)pvUser;
     uint32_t    uHaveEvents;
+    Assert(hTimer == pThis->hThrottleTimer);
 
     /* Grab the lock to avoid races with PutEvent(). */
     int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
@@ -742,7 +742,7 @@ static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
         /* Report accumulated data, poke the KBC, and start the timer. */
         ps2mReportAccumulatedEvents(pThis, &pThis->evtQ.Hdr, RT_ELEMENTS(pThis->evtQ.abQueue), pThis->evtQ.abQueue, true);
         KBCUpdateInterrupts(pDevIns);
-        PDMDevHlpTimerSetMillies(pDevIns, pThis->hThrottleTimer, pThis->uThrottleDelay);
+        PDMDevHlpTimerSetMillies(pDevIns, hTimer, pThis->uThrottleDelay);
     }
     else
         pThis->fThrottleActive = false;
@@ -757,11 +757,11 @@ static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
  * We need to delay sending the result to the host for at least a tiny little
  * while.
  */
-static DECLCALLBACK(void) ps2mR3DelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) ps2mR3DelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PPS2M   pThis   = &PDMDEVINS_2_DATA(pDevIns, PKBDSTATE)->Aux;
     PPS2MR3 pThisCC = &PDMDEVINS_2_DATA_CC(pDevIns, PKBDSTATER3)->Aux;
-    RT_NOREF(pvUser, pTimer);
+    RT_NOREF(pvUser, hTimer);
 
     LogFlowFunc(("Delay timer: cmd %02X\n", pThis->u8CurrCmd));
 

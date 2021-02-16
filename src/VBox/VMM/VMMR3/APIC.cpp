@@ -1111,14 +1111,14 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  *          rely on this and is designed to work with being invoked on any
  *          thread.
  */
-static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PVMCPU      pVCpu    = (PVMCPU)pvUser;
     PAPICCPU    pApicCpu = VMCPU_TO_APICCPU(pVCpu);
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pApicCpu->hTimer));
     Assert(pVCpu);
     LogFlow(("APIC%u: apicR3TimerCallback\n", pVCpu->idCpu));
-    RT_NOREF(pDevIns, pTimer, pApicCpu);
+    RT_NOREF(pDevIns, hTimer, pApicCpu);
 
     PXAPICPAGE     pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     uint32_t const uLvtTimer  = pXApicPage->lvt_timer.all.u32LvtTimer;

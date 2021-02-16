@@ -903,7 +903,6 @@ static int                  ohciR3InFlightFind(POHCICC pThisCC, uint32_t GCPhysT
 # if defined(VBOX_STRICT) || defined(LOG_ENABLED)
 static int                  ohciR3InDoneQueueFind(POHCICC pThisCC, uint32_t GCPhysTD);
 # endif
-static DECLCALLBACK(void)   ohciR3LoadReattachDevices(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 #endif /* IN_RING3 */
 RT_C_DECLS_END
 
@@ -5803,6 +5802,33 @@ static DECLCALLBACK(int) ohciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 
 
 /**
+ * @callback_method_impl{FNTMTIMERDEV,
+ *      Reattaches devices after a saved state load.}
+ */
+static DECLCALLBACK(void) ohciR3LoadReattachDevices(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
+{
+    POHCICC      pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
+    POHCILOAD    pLoad   = pThisCC->pLoad;
+    LogFlow(("ohciR3LoadReattachDevices:\n"));
+    Assert(hTimer == pLoad->hTimer); RT_NOREF(pvUser);
+
+    /*
+     * Reattach devices.
+     */
+    for (unsigned i = 0; i < pLoad->cDevs; i++)
+        VUSBIRhAttachDevice(pThisCC->RootHub.pIRhConn, pLoad->apDevs[i]);
+
+    /*
+     * Cleanup.
+     */
+    PDMDevHlpTimerDestroy(pDevIns, hTimer);
+    pLoad->hTimer = NIL_TMTIMERHANDLE;
+    PDMDevHlpMMHeapFree(pDevIns, pLoad);
+    pThisCC->pLoad = NULL;
+}
+
+
+/**
  * Done state load operation.
  *
  * @returns VBox load code.
@@ -5829,33 +5855,6 @@ static DECLCALLBACK(int) ohciR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
 
     return VINF_SUCCESS;
-}
-
-
-/**
- * @callback_method_impl{FNTMTIMERDEV,
- *      Reattaches devices after a saved state load.}
- */
-static DECLCALLBACK(void) ohciR3LoadReattachDevices(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
-{
-    POHCICC      pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
-    POHCILOAD    pLoad   = pThisCC->pLoad;
-    LogFlow(("ohciR3LoadReattachDevices:\n"));
-    RT_NOREF(pTimer, pvUser);
-
-    /*
-     * Reattach devices.
-     */
-    for (unsigned i = 0; i < pLoad->cDevs; i++)
-        VUSBIRhAttachDevice(pThisCC->RootHub.pIRhConn, pLoad->apDevs[i]);
-
-    /*
-     * Cleanup.
-     */
-    PDMDevHlpTimerDestroy(pDevIns, pLoad->hTimer);
-    pLoad->hTimer = NIL_TMTIMERHANDLE;
-    PDMDevHlpMMHeapFree(pDevIns, pLoad);
-    pThisCC->pLoad = NULL;
 }
 
 

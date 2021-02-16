@@ -693,8 +693,6 @@ static void               ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE p
 
 static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns);
 
-static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
-
 static void               ichac97R3MixerRemoveDrvStreams(PAC97STATER3 pThisCC, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir,
                                                          PDMAUDIODSTSRCUNION dstSrc);
 
@@ -2748,14 +2746,14 @@ static void ichac97R3WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
  * @callback_method_impl{FNTMTIMERDEV,
  * Timer callback which handles the audio data transfers on a periodic basis.}
  */
-static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PAC97STATE      pThis     = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     STAM_PROFILE_START(&pThis->StatTimer, a);
     PAC97STATER3    pThisCC   = PDMDEVINS_2_DATA_CC(pDevIns, PAC97STATER3);
     PAC97STREAM     pStream   = (PAC97STREAM)pvUser;
     PAC97STREAMR3   pStreamCC = &RT_SAFE_SUBSCRIPT8(pThisCC->aStreams, pStream->u8SD);
-    RT_NOREF(pTimer);
+    Assert(hTimer == pStream->hTimer); RT_NOREF(hTimer);
 
     Assert(pStream - &pThis->aStreams[0] == pStream->u8SD);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));

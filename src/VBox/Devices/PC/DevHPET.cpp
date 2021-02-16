@@ -1103,21 +1103,18 @@ static void hpetR3TimerUpdateIrq(PPDMDEVINS pDevIns, PHPET pThis, PHPETTIMER pHp
     }
 }
 
+
 /**
- * Device timer callback function.
- *
- * @param   pDevIns         Device instance of the device which registered the timer.
- * @param   pTimer          The timer handle.
- * @param   pvUser          Pointer to the HPET timer state.
+ * @callback_method_impl{FNTMTIMERDEV, Device timer callback function.}
  */
-static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PHPET       pThis      = PDMDEVINS_2_DATA(pDevIns, PHPET);
     PHPETTIMER  pHpetTimer = (HPETTIMER *)pvUser;
     uint64_t    u64Period  = pHpetTimer->u64Period;
     uint64_t    u64CurTick = hpetGetTicks(pDevIns, pThis);
     uint64_t    u64Diff;
-    RT_NOREF(pTimer);
+    Assert(hTimer == pHpetTimer->hTimer);
 
     if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
     {
@@ -1132,7 +1129,7 @@ static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
             {
                 Log4(("HPET: periodic: next in %llu\n", hpetTicksToNs(pThis, u64Diff)));
                 STAM_REL_COUNTER_INC(&pHpetTimer->StatSetTimer);
-                PDMDevHlpTimerSetNano(pDevIns, pHpetTimer->hTimer, hpetTicksToNs(pThis, u64Diff));
+                PDMDevHlpTimerSetNano(pDevIns, hTimer, hpetTicksToNs(pThis, u64Diff));
             }
             else
             {
@@ -1146,7 +1143,7 @@ static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         if (pHpetTimer->u8Wrap)
         {
             u64Diff = hpetComputeDiff(pHpetTimer, u64CurTick);
-            PDMDevHlpTimerSetNano(pDevIns, pHpetTimer->hTimer, hpetTicksToNs(pThis, u64Diff));
+            PDMDevHlpTimerSetNano(pDevIns, hTimer, hpetTicksToNs(pThis, u64Diff));
             pHpetTimer->u8Wrap = 0;
         }
     }

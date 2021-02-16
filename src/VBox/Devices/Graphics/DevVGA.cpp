@@ -5444,11 +5444,11 @@ static DECLCALLBACK(void) vgaR3PortReportHostCursorPosition(PPDMIDISPLAYPORT pIn
 /**
  * @callback_method_impl{FNTMTIMERDEV, VGA Refresh Timer}
  */
-static DECLCALLBACK(void) vgaR3TimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) vgaR3TimerRefresh(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
-    RT_NOREF(pvUser, pTimer);
+    RT_NOREF(pvUser);
 
     if (pThis->fScanLineCfg & VBVASCANLINECFG_ENABLE_VSYNC_IRQ)
         VBVARaiseIrq(pDevIns, pThis, pThisCC, HGSMIHOSTFLAGS_VSYNC);
@@ -5457,7 +5457,7 @@ static DECLCALLBACK(void) vgaR3TimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer,
         pThisCC->pDrv->pfnRefresh(pThisCC->pDrv);
 
     if (pThis->cMilliesRefreshInterval)
-        PDMDevHlpTimerSetMillies(pDevIns, pThis->hRefreshTimer, pThis->cMilliesRefreshInterval);
+        PDMDevHlpTimerSetMillies(pDevIns, hTimer, pThis->cMilliesRefreshInterval);
 
 # ifdef VBOX_WITH_VIDEOHWACCEL
     vbvaTimerCb(pDevIns, pThis, pThisCC);

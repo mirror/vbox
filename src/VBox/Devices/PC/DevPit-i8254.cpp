@@ -1113,18 +1113,18 @@ static DECLCALLBACK(int) pitR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 /**
  * @callback_method_impl{FNTMTIMERDEV, User argument points to the PIT channel state.}
  */
-static DECLCALLBACK(void) pitR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) pitR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PPITSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     PPITCHANNEL pChan = (PPITCHANNEL)pvUser;
-    RT_NOREF(pTimer);
     STAM_PROFILE_ADV_START(&pThis->StatPITHandler, a);
+    Assert(hTimer == pChan->hTimer);
 
     Log(("pitR3Timer\n"));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
-    Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pChan->hTimer));
+    Assert(PDMDevHlpTimerIsLockOwner(pDevIns, hTimer));
 
-    pitR3IrqTimerUpdate(pDevIns, pThis, pChan, pChan->next_transition_time, PDMDevHlpTimerGet(pDevIns, pChan->hTimer), true);
+    pitR3IrqTimerUpdate(pDevIns, pThis, pChan, pChan->next_transition_time, PDMDevHlpTimerGet(pDevIns, hTimer), true);
 
     STAM_PROFILE_ADV_STOP(&pThis->StatPITHandler, a);
 }

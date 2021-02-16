@@ -510,13 +510,13 @@ static int vmmDevReqHandler_GuestHeartbeat(PPDMDEVINS pDevIns, PVMMDEV pThis)
  *
  * @remarks Does not take the VMMDev critsect.
  */
-static DECLCALLBACK(void) vmmDevHeartbeatFlatlinedTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) vmmDevHeartbeatFlatlinedTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
     PVMMDEV pThis = (PVMMDEV)pvUser;
+    Assert(hTimer == pThis->hFlatlinedTimer);
     if (pThis->fHeartbeatActive)
     {
-        uint64_t cNsElapsed = PDMDevHlpTimerGetNano(pDevIns, pThis->hFlatlinedTimer) - pThis->nsLastHeartbeatTS;
+        uint64_t cNsElapsed = PDMDevHlpTimerGetNano(pDevIns, hTimer) - pThis->nsLastHeartbeatTS;
         if (   !pThis->fFlatlined
             && cNsElapsed >= pThis->cNsHeartbeatInterval)
         {

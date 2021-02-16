@@ -299,10 +299,10 @@ static void sb16Control(PPDMDEVINS pDevIns, PSB16STATE pThis, int hold)
 /**
  * @callback_method_impl{PFNTMTIMERDEV}
  */
-static DECLCALLBACK(void) sb16TimerIRQ(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) sb16TimerIRQ(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
-    RT_NOREF(pvUser, pTimer);
+    RT_NOREF(pvUser, hTimer);
 
     pThis->can_write = 1;
     PDMDevHlpISASetIrq(pDevIns, pThis->irq, 1);
@@ -1688,12 +1688,12 @@ static void sb16TimerMaybeStop(PSB16STATE pThis)
 /**
  * @callback_method_impl{FNTMTIMERDEV}
  */
-static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
-    RT_NOREF(pTimer, pvUser);
+    Assert(hTimer == pThis->hTimerIO); RT_NOREF(pvUser);
 
-    uint64_t cTicksNow     = PDMDevHlpTimerGet(pDevIns, pThis->hTimerIO);
+    uint64_t cTicksNow     = PDMDevHlpTimerGet(pDevIns, hTimer);
     bool     fIsPlaying    = false; /* Whether one or more streams are still playing. */
     bool     fDoTransfer   = false;
 
@@ -1748,7 +1748,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         /* Arm the timer again. */
         uint64_t cTicks = pThis->cTicksTimerIOInterval;
         /** @todo adjust cTicks down by now much cbOutMin represents. */
-        PDMDevHlpTimerSet(pDevIns, pThis->hTimerIO, cTicksNow + cTicks);
+        PDMDevHlpTimerSet(pDevIns, hTimer, cTicksNow + cTicks);
     }
 }
 

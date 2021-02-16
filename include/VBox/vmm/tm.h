@@ -170,10 +170,10 @@ VMM_INT_DECL(bool)      TMCpuTickIsTicking(PVMCPUCC pVCpu);
  * Device timer callback function.
  *
  * @param   pDevIns         Device instance of the device which registered the timer.
- * @param   pTimer          The timer handle.
+ * @param   hTimer          The timer handle.
  * @param   pvUser          User argument specified upon timer creation.
  */
-typedef DECLCALLBACKTYPE(void, FNTMTIMERDEV,(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser));
+typedef DECLCALLBACKTYPE(void, FNTMTIMERDEV,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser));
 /** Pointer to a device timer callback function. */
 typedef FNTMTIMERDEV *PFNTMTIMERDEV;
 
@@ -182,10 +182,10 @@ typedef FNTMTIMERDEV *PFNTMTIMERDEV;
  *
  * @param   pUsbIns         The USB device instance the timer is associated
  *                          with.
- * @param   pTimer          The timer handle.
+ * @param   hTimer          The timer handle.
  * @param   pvUser          User argument specified upon timer creation.
  */
-typedef DECLCALLBACKTYPE(void, FNTMTIMERUSB,(PPDMUSBINS pUsbIns, PTMTIMER pTimer, void *pvUser));
+typedef DECLCALLBACKTYPE(void, FNTMTIMERUSB,(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, void *pvUser));
 /** Pointer to a timer callback for a USB device. */
 typedef FNTMTIMERUSB *PFNTMTIMERUSB;
 
@@ -193,10 +193,10 @@ typedef FNTMTIMERUSB *PFNTMTIMERUSB;
  * Driver timer callback function.
  *
  * @param   pDrvIns         Device instance of the device which registered the timer.
- * @param   pTimer          The timer handle.
+ * @param   hTimer          The timer handle.
  * @param   pvUser          User argument specified upon timer creation.
  */
-typedef DECLCALLBACKTYPE(void, FNTMTIMERDRV,(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser));
+typedef DECLCALLBACKTYPE(void, FNTMTIMERDRV,(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, void *pvUser));
 /** Pointer to a driver timer callback function. */
 typedef FNTMTIMERDRV *PFNTMTIMERDRV;
 
@@ -204,9 +204,9 @@ typedef FNTMTIMERDRV *PFNTMTIMERDRV;
  * Service timer callback function.
  *
  * @param   pSrvIns         Service instance of the device which registered the timer.
- * @param   pTimer          The timer handle.
+ * @param   hTimer          The timer handle.
  */
-typedef DECLCALLBACKTYPE(void, FNTMTIMERSRV,(PPDMSRVINS pSrvIns, PTMTIMER pTimer));
+typedef DECLCALLBACKTYPE(void, FNTMTIMERSRV,(PPDMSRVINS pSrvIns, TMTIMERHANDLE hTimer));
 /** Pointer to a service timer callback function. */
 typedef FNTMTIMERSRV *PFNTMTIMERSRV;
 

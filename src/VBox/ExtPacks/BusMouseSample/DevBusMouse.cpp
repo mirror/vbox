@@ -236,12 +236,13 @@ static void bmsR3MouseEvent(PBMSSTATE pThis, int dx, int dy, int dz, int dw, int
 /**
  * @callback_method_impl{FNTMTIMERDEV}
  */
-static DECLCALLBACK(void) bmsR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) bmsR3TimerCallback(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PBMSSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PBMSSTATE);
     PBMSSTATER3 pThisCC = PDMDEVINS_2_DATA(pDevIns, PBMSSTATER3);
     uint8_t     irq_bit;
-    RT_NOREF(pvUser, pTimer);
+    RT_NOREF(pvUser, hTimer);
+    Assert(hTimer == pThis->hMouseTimer);
 
     /* Toggle the IRQ line if interrupts are enabled. */
     irq_bit = BMS_IRQ_BIT(pThis->irq);
@@ -282,7 +283,7 @@ static DECLCALLBACK(void) bmsR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer
     }
 
     /* Re-arm the timer. */
-    PDMDevHlpTimerSetMillies(pDevIns, pThis->hMouseTimer, pThis->cTimerPeriodMs);
+    PDMDevHlpTimerSetMillies(pDevIns, hTimer, pThis->cTimerPeriodMs);
 }
 
 # endif /* IN_RING3 */

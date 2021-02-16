@@ -2190,7 +2190,7 @@ static int e1kRaiseInterrupt(PPDMDEVINS pDevIns, PE1KSTATE pThis, int rcBusy, ui
         {
             uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pThis->hIntTimer);
             if (!!ITR && tsNow - pThis->u64AckedAt < ITR * 256
-                     && pThis->fItrEnabled && (pThis->fItrRxEnabled || !(ICR & ICR_RXT0)))
+                && pThis->fItrEnabled && (pThis->fItrRxEnabled || !(ICR & ICR_RXT0)))
             {
                 E1K_INC_ISTAT_CNT(pThis->uStatIntEarly);
                 E1kLog2(("%s e1kRaiseInterrupt: Too early to raise again: %d ns < %d ns.\n",
@@ -3508,19 +3508,13 @@ DECLINLINE(uint32_t) e1kGetTxLen(PE1KTXDC pTxdc)
 
 # ifdef E1K_TX_DELAY
 /**
- * Transmit Delay Timer handler.
- *
- * @remarks We only get here when the timer expires.
- *
- * @param   pDevIns     Pointer to device instance structure.
- * @param   pTimer      Pointer to the timer.
- * @param   pvUser      NULL.
- * @thread  EMT
+ * @callback_method_impl{FNTMTIMERDEV, Transmit Delay Timer handler.}
  */
-static DECLCALLBACK(void) e1kR3TxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3TxDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PE1KSTATE pThis = (PE1KSTATE)pvUser;
     Assert(PDMCritSectIsOwner(&pThis->csTx));
+    RT_NOREF(hTimer);
 
     E1K_INC_ISTAT_CNT(pThis->uStatTxDelayExp);
 #  ifdef E1K_INT_STATS
@@ -3536,20 +3530,12 @@ static DECLCALLBACK(void) e1kR3TxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 //# ifdef E1K_USE_TX_TIMERS
 
 /**
- * Transmit Interrupt Delay Timer handler.
- *
- * @remarks We only get here when the timer expires.
- *
- * @param   pDevIns     Pointer to device instance structure.
- * @param   pTimer      Pointer to the timer.
- * @param   pvUser      NULL.
- * @thread  EMT
+ * @callback_method_impl{FNTMTIMERDEV, Transmit Interrupt Delay Timer handler.}
  */
-static DECLCALLBACK(void) e1kR3TxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3TxIntDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns);
-    RT_NOREF(pTimer);
     PE1KSTATE pThis = (PE1KSTATE)pvUser;
+    Assert(hTimer == pThis->hTIDTimer); RT_NOREF(hTimer);
 
     E1K_INC_ISTAT_CNT(pThis->uStatTID);
     /* Cancel absolute delay timer as we have already got attention */
@@ -3560,20 +3546,12 @@ static DECLCALLBACK(void) e1kR3TxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTim
 }
 
 /**
- * Transmit Absolute Delay Timer handler.
- *
- * @remarks We only get here when the timer expires.
- *
- * @param   pDevIns     Pointer to device instance structure.
- * @param   pTimer      Pointer to the timer.
- * @param   pvUser      NULL.
- * @thread  EMT
+ * @callback_method_impl{FNTMTIMERDEV, Transmit Absolute Delay Timer handler.}
  */
-static DECLCALLBACK(void) e1kR3TxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3TxAbsDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns);
-    RT_NOREF(pTimer);
     PE1KSTATE pThis = (PE1KSTATE)pvUser;
+    Assert(hTimer == pThis->hTADTimer); RT_NOREF(hTimer);
 
     E1K_INC_ISTAT_CNT(pThis->uStatTAD);
     /* Cancel interrupt delay timer as we have already got attention */
@@ -3585,18 +3563,12 @@ static DECLCALLBACK(void) e1kR3TxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTim
 # ifdef E1K_USE_RX_TIMERS
 
 /**
- * Receive Interrupt Delay Timer handler.
- *
- * @remarks We only get here when the timer expires.
- *
- * @param   pDevIns     Pointer to device instance structure.
- * @param   pTimer      Pointer to the timer.
- * @param   pvUser      NULL.
- * @thread  EMT
+ * @callback_method_impl{FNTMTIMERDEV, Receive Interrupt Delay Timer handler.}
  */
-static DECLCALLBACK(void) e1kR3RxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3RxIntDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PE1KSTATE pThis = (PE1KSTATE)pvUser;
+    Assert(hTimer == pThis->hRIDTimer); RT_NOREF(hTimer);
 
     E1K_INC_ISTAT_CNT(pThis->uStatRID);
     /* Cancel absolute delay timer as we have already got attention */
@@ -3605,18 +3577,12 @@ static DECLCALLBACK(void) e1kR3RxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTim
 }
 
 /**
- * Receive Absolute Delay Timer handler.
- *
- * @remarks We only get here when the timer expires.
- *
- * @param   pDevIns     Pointer to device instance structure.
- * @param   pTimer      Pointer to the timer.
- * @param   pvUser      NULL.
- * @thread  EMT
+ * @callback_method_impl{FNTMTIMERDEV, Receive Absolute Delay Timer handler.}
  */
-static DECLCALLBACK(void) e1kR3RxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3RxAbsDelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PE1KSTATE pThis = (PE1KSTATE)pvUser;
+    Assert(hTimer == pThis->hRADTimer); RT_NOREF(hTimer);
 
     E1K_INC_ISTAT_CNT(pThis->uStatRAD);
     /* Cancel interrupt delay timer as we have already got attention */
@@ -3627,17 +3593,13 @@ static DECLCALLBACK(void) e1kR3RxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTim
 # endif /* E1K_USE_RX_TIMERS */
 
 /**
- * Late Interrupt Timer handler.
- *
- * @param   pDevIns     Pointer to device instance structure.
- * @param   pTimer      Pointer to the timer.
- * @param   pvUser      NULL.
- * @thread  EMT
+ * @callback_method_impl{FNTMTIMERDEV, Late Interrupt Timer handler.}
  */
-static DECLCALLBACK(void) e1kR3LateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3LateIntTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
     PE1KSTATE pThis = (PE1KSTATE)pvUser;
+    Assert(hTimer == pThis->hIntTimer); RT_NOREF(hTimer);
+    RT_NOREF(hTimer);
 
     STAM_PROFILE_ADV_START(&pThis->StatLateIntTimer, a);
     STAM_COUNTER_INC(&pThis->StatLateInts);
@@ -3651,18 +3613,13 @@ static DECLCALLBACK(void) e1kR3LateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 }
 
 /**
- * Link Up Timer handler.
- *
- * @param   pDevIns     Pointer to device instance structure.
- * @param   pTimer      Pointer to the timer.
- * @param   pvUser      NULL.
- * @thread  EMT
+ * @callback_method_impl{FNTMTIMERDEV, Link Up Timer handler.}
  */
-static DECLCALLBACK(void) e1kR3LinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3LinkUpTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    RT_NOREF(pTimer);
     PE1KSTATE   pThis   = (PE1KSTATE)pvUser;
     PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    Assert(hTimer == pThis->hLUTimer); RT_NOREF(hTimer);
 
     /*
      * This can happen if we set the link status to down when the Link up timer was

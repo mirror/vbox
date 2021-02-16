@@ -956,11 +956,11 @@ static int ps2kR3ProcessKeyEvent(PPDMDEVINS pDevIns, PPS2K pThis, uint32_t u32Hi
  * response) scoming from PS/2 devices, both keyboard and auxiliary. That is not currently
  * done because it would needlessly slow things down.
  */
-static DECLCALLBACK(void) ps2kR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) ps2kR3ThrottleTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
     PPS2K       pThis = (PS2K *)pvUser;
     unsigned    uHaveData;
+    RT_NOREF(hTimer);
 
     /* Grab the lock to avoid races with event delivery or EMTs. */
     int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
@@ -984,10 +984,10 @@ static DECLCALLBACK(void) ps2kR3ThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
  *
  * @note    Note that only the last key held down repeats (if typematic).
  */
-static DECLCALLBACK(void) ps2kR3TypematicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) ps2kR3TypematicTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
     PPS2K pThis = (PS2K *)pvUser;
+    Assert(hTimer == pThis->hKbdTypematicTimer);
     LogFlowFunc(("Typematic state=%d, key %08X\n", pThis->enmTypematicState, pThis->u32TypematicKey));
 
     /* If the current typematic key is zero, the repeat was canceled just when
@@ -1001,7 +1001,7 @@ static DECLCALLBACK(void) ps2kR3TypematicTimer(PPDMDEVINS pDevIns, PTMTIMER pTim
         if (pThis->enmTypematicState == KBD_TMS_REPEAT)
         {
             ps2kR3ProcessKeyEvent(pDevIns, pThis, pThis->u32TypematicKey, true /* Key down */ );
-            PDMDevHlpTimerSetMillies(pDevIns, pThis->hKbdTypematicTimer, pThis->uTypematicRepeat);
+            PDMDevHlpTimerSetMillies(pDevIns, hTimer, pThis->uTypematicRepeat);
         }
     }
 }
@@ -1012,10 +1012,10 @@ static DECLCALLBACK(void) ps2kR3TypematicTimer(PPDMDEVINS pDevIns, PTMTIMER pTim
  * The keyboard BAT is specified to take several hundred milliseconds. We need
  * to delay sending the result to the host for at least a tiny little while.
  */
-static DECLCALLBACK(void) ps2kR3DelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) ps2kR3DelayTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
     PPS2K pThis = (PS2K *)pvUser;
+    RT_NOREF(hTimer);
 
     LogFlowFunc(("Delay timer: cmd %02X\n", pThis->u8CurrCmd));
 

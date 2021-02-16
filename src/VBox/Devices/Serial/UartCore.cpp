@@ -1498,12 +1498,12 @@ DECLHIDDEN(VBOXSTRICTRC) uartRegRead(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTC
 /**
  * @callback_method_impl{FNTMTIMERDEV, Fifo timer function.}
  */
-static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    LogFlowFunc(("pDevIns=%#p pTimer=%#p pvUser=%#p\n", pDevIns, pTimer, pvUser));
+    LogFlowFunc(("pDevIns=%#p hTimer=%#p pvUser=%#p\n", pDevIns, hTimer, pvUser));
     PUARTCORER3 pThisCC = (PUARTCORECC)pvUser;
     PUARTCORE   pThis   = pThisCC->pShared;
-    RT_NOREF(pTimer);
+    RT_NOREF(hTimer);
 
     if (pThis->FifoRecv.cbUsed < pThis->FifoRecv.cbItl)
     {
@@ -1513,17 +1513,18 @@ static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER
 }
 
 /**
- * @callback_method_impl{FNTMTIMERDEV, TX timer function when there is no driver connected for draining the THR/FIFO.}
+ * @callback_method_impl{FNTMTIMERDEV,
+ *      TX timer function when there is no driver connected for
+ *      draining the THR/FIFO.}
  */
-static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
-    LogFlowFunc(("pDevIns=%#p pTimer=%#p pvUser=%#p\n", pDevIns, pTimer, pvUser));
+    LogFlowFunc(("pDevIns=%#p hTimer=%#p pvUser=%#p\n", pDevIns, hTimer, pvUser));
     PUARTCORER3 pThisCC = (PUARTCORECC)pvUser;
     PUARTCORE   pThis   = pThisCC->pShared;
-    RT_NOREF(pTimer);
+    Assert(hTimer == pThis->hTimerTxUnconnected);
 
-    VBOXSTRICTRC rc1 = PDMDevHlpTimerLockClock2(pDevIns, pThis->hTimerTxUnconnected, &pThis->CritSect,
-                                                VINF_SUCCESS /* must get it */);
+    VBOXSTRICTRC rc1 = PDMDevHlpTimerLockClock2(pDevIns, hTimer, &pThis->CritSect, VINF_SUCCESS /* must get it */);
     AssertRCReturnVoid(VBOXSTRICTRC_VAL(rc1));
 
     uint8_t bVal = 0;
@@ -1565,14 +1566,14 @@ static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER 
     }
 
     if (cbRead == 1)
-        PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
+        PDMDevHlpTimerSetRelative(pDevIns, hTimer, pThis->cSymbolXferTicks, NULL);
     else
     {
         /* NO data left, set the transmitter holding register as empty. */
         UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_TEMT);
     }
 
-    PDMDevHlpTimerUnlockClock2(pDevIns, pThis->hTimerTxUnconnected, &pThis->CritSect);
+    PDMDevHlpTimerUnlockClock2(pDevIns, hTimer, &pThis->CritSect);
 }
 
 

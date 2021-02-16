@@ -4008,12 +4008,12 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioWrite(PPDMDEVINS pDevIns, void *pvU
 /**
  * @callback_method_impl{FNTMTIMERDEV, Poll timer}
  */
-static DECLCALLBACK(void) pcnetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) pcnetR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PPCNETSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     PPCNETSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
-    RT_NOREF(pvUser, pTimer);
+    Assert(hTimer == pThis->hTimerPoll); RT_NOREF(pvUser, hTimer);
 
     STAM_PROFILE_ADV_START(&pThis->StatTimer, a);
     pcnetPollTimer(pDevIns, pThis, pThisCC);
@@ -4025,11 +4025,11 @@ static DECLCALLBACK(void) pcnetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
  * @callback_method_impl{FNTMTIMERDEV,
  *      Software interrupt timer callback function.}
  */
-static DECLCALLBACK(void) pcnetR3TimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) pcnetR3TimerSoftInt(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
-    RT_NOREF(pvUser, pTimer);
+    Assert(hTimer == pThis->hTimerSoftInt); RT_NOREF(pvUser, hTimer);
 
     pThis->aCSR[7] |= 0x0800; /* STINT */
     pcnetUpdateIrq(pDevIns, pThis);
@@ -4044,10 +4044,10 @@ static DECLCALLBACK(void) pcnetR3TimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTime
  * disconnected the network link to inform the guest that network connections
  * should be considered lost.
  */
-static DECLCALLBACK(void) pcnetR3TimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) pcnetR3TimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
-    RT_NOREF(pTimer, pvUser);
+    Assert(hTimer == pThis->hTimerRestore); RT_NOREF(pvUser);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
@@ -4055,7 +4055,7 @@ static DECLCALLBACK(void) pcnetR3TimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTime
     rc = VERR_GENERAL_FAILURE;
     if (pThis->cLinkDownReported <= PCNET_MAX_LINKDOWN_REPORTED)
     {
-        rc = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerRestore, 1500);
+        rc = PDMDevHlpTimerSetMillies(pDevIns, hTimer, 1500);
         AssertRC(rc);
     }
     if (RT_FAILURE(rc))
