@@ -110,7 +110,7 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
     } while (!ASMAtomicCmpXchgPtr(&pQueue->CTX_SUFF(pPending), pItem, pNext));
 #endif
 
-    if (!pQueue->pTimer)
+    if (pQueue->hTimer == NIL_TMTIMERHANDLE)
         pdmQueueSetFF(pQueue);
     STAM_REL_COUNTER_INC(&pQueue->StatInsert);
     STAM_STATS({ ASMAtomicIncU32(&pQueue->cStatPending); });

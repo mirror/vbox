@@ -186,7 +186,7 @@ static int    gimR3HvInitHypercallSupport(PVM pVM);
 static void   gimR3HvTermHypercallSupport(PVM pVM);
 static int    gimR3HvInitDebugSupport(PVM pVM);
 static void   gimR3HvTermDebugSupport(PVM pVM);
-static DECLCALLBACK(void) gimR3HvTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUser);
+static DECLCALLBACK(void) gimR3HvTimerCallback(PVM pVM, TMTIMERHANDLE pTimer, void *pvUser);
 
 /**
  * Initializes the Hyper-V GIM provider.
@@ -201,6 +201,17 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     AssertReturn(pVM->gim.s.enmProviderId == GIMPROVIDERID_HYPERV, VERR_INTERNAL_ERROR_5);
 
     PGIMHV pHv = &pVM->gim.s.u.Hv;
+
+    /*
+     * Initialize timer handles and such.
+     */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU       pVCpu     = pVM->apCpusR3[idCpu];
+        PGIMHVCPU    pHvCpu    = &pVCpu->gim.s.u.HvCpu;
+        for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+            pHvCpu->aStimers[idxStimer].hTimer = NIL_TMTIMERHANDLE;
+    }
 
     /*
      * Read configuration.
@@ -509,9 +520,8 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
                 RTStrPrintf(&pHvStimer->szTimerDesc[0], sizeof(pHvStimer->szTimerDesc), "Hyper-V[%u] Timer%u", pVCpu->idCpu,
                             idxStimer);
                 rc = TMR3TimerCreate(pVM, TMCLOCK_VIRTUAL_SYNC, gimR3HvTimerCallback, pHvStimer /* pvUser */,
-                                     TMTIMER_FLAGS_RING0, pHvStimer->szTimerDesc, &pHvStimer->pTimerR3);
+                                     TMTIMER_FLAGS_RING0, pHvStimer->szTimerDesc, &pHvStimer->hTimer);
                 AssertLogRelRCReturn(rc, rc);
-                pHvStimer->pTimerR0 = TMTimerR0Ptr(pHvStimer->pTimerR3);
             }
         }
     }
@@ -604,7 +614,8 @@ VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
             for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
             {
                 PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
-                TMR3TimerDestroy(pHvStimer->pTimerR3);
+                TMR3TimerDestroy(pVM, pHvStimer->hTimer);
+                pHvStimer->hTimer = NIL_TMTIMERHANDLE;
             }
         }
     }
@@ -1081,18 +1092,16 @@ VMMR3_INT_DECL(int) gimR3HvDisableApicAssistPage(PVMCPU pVCpu)
 
 
 /**
- * Hyper-V synthetic timer callback.
- *
- * @param   pVM         The cross context VM structure.
- * @param   pTimer      Pointer to timer.
- * @param   pvUser      Pointer to the synthetic timer.
+ * @callback_method_impl{FNTMTIMERINT, Hyper-V synthetic timer callback.}
  */
-static DECLCALLBACK(void) gimR3HvTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) gimR3HvTimerCallback(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PGIMHVSTIMER pHvStimer = (PGIMHVSTIMER)pvUser;
     Assert(pHvStimer);
-    Assert(TMTimerIsLockOwner(pTimer)); RT_NOREF(pTimer);
+    Assert(TMTimerIsLockOwner(pVM, hTimer));
     Assert(pHvStimer->idCpu < pVM->cCpus);
+    Assert(pHvStimer->hTimer == hTimer);
+    RT_NOREF(hTimer);
 
     PVMCPU    pVCpu  = pVM->apCpusR3[pHvStimer->idCpu];
     PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;

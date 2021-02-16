@@ -1043,7 +1043,7 @@ typedef struct PDMQUEUE
      * If 0, the queue will use the VM_FF_PDM_QUEUE forced action. */
     uint32_t                        cMilliesInterval;
     /** Interval timer. Only used if cMilliesInterval is non-zero. */
-    PTMTIMERR3                      pTimer;
+    TMTIMERHANDLE                   hTimer;
     /** Pointer to the VM - R3. */
     PVMR3                           pVMR3;
     /** LIFO of pending items - R3. */

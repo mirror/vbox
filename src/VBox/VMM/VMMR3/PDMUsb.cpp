@@ -1832,29 +1832,18 @@ static DECLCALLBACK(int) pdmR3UsbHlp_TimerCreate(PPDMUSBINS pUsbIns, TMCLOCK enm
     if (pszDesc2)
         pszDesc = pszDesc2;
 
-    PTMTIMERR3 pTimer = NULL;
-    int rc = TMR3TimerCreateUsb(pVM, pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, &pTimer);
-    if (RT_SUCCESS(rc))
-        *phTimer = (TMTIMERHANDLE)pTimer;
+    int rc = TMR3TimerCreateUsb(pVM, pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, phTimer);
 
     LogFlow(("pdmR3UsbHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc *phTimer=%p\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc, *phTimer));
     return rc;
 }
 
 
-/** Converts timer handle to pointer (will be replace soon.) */
-DECLINLINE(PTMTIMERR3) pdmR3UsbHlp_TimerToPtr(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
-{
-    PDMUSB_ASSERT_USBINS(pUsbIns);
-    RT_NOREF(pUsbIns);
-    return (PTMTIMERR3)hTimer;
-}
-
-
 /** @interface_method_impl{PDMUSBHLP,pfnTimerFromMicro} */
 static DECLCALLBACK(uint64_t) pdmR3UsbHlp_TimerFromMicro(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMicroSecs)
 {
-    return TMTimerFromMicro(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), cMicroSecs);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerFromMicro(pUsbIns->Internal.s.pVM, hTimer, cMicroSecs);
 }
 
 
@@ -1862,69 +1851,77 @@ static DECLCALLBACK(uint64_t) pdmR3UsbHlp_TimerFromMicro(PPDMUSBINS pUsbIns, TMT
 static DECLCALLBACK(uint64_t) pdmR3UsbHlp_TimerFromMilli(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMilliSecs)
 {
     PDMUSB_ASSERT_USBINS(pUsbIns);
-    return TMTimerFromMilli(pUsbIns->Internal.s.pVM, pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), cMilliSecs);
+    return TMTimerFromMilli(pUsbIns->Internal.s.pVM, hTimer, cMilliSecs);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerFromNano} */
 static DECLCALLBACK(uint64_t) pdmR3UsbHlp_TimerFromNano(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cNanoSecs)
 {
-    return TMTimerFromNano(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), cNanoSecs);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerFromNano(pUsbIns->Internal.s.pVM, hTimer, cNanoSecs);
 }
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerGet} */
 static DECLCALLBACK(uint64_t) pdmR3UsbHlp_TimerGet(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerGet(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer));
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerGet(pUsbIns->Internal.s.pVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerGetFreq} */
 static DECLCALLBACK(uint64_t) pdmR3UsbHlp_TimerGetFreq(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerGetFreq(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer));
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerGetFreq(pUsbIns->Internal.s.pVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerGetNano} */
 static DECLCALLBACK(uint64_t) pdmR3UsbHlp_TimerGetNano(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerGetNano(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer));
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerGetNano(pUsbIns->Internal.s.pVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerIsActive} */
 static DECLCALLBACK(bool) pdmR3UsbHlp_TimerIsActive(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerIsActive(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer));
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerIsActive(pUsbIns->Internal.s.pVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerIsLockOwner} */
 static DECLCALLBACK(bool) pdmR3UsbHlp_TimerIsLockOwner(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerIsLockOwner(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer));
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerIsLockOwner(pUsbIns->Internal.s.pVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerLockClock} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerLockClock(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerLock(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), VERR_IGNORED);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerLock(pUsbIns->Internal.s.pVM, hTimer, VERR_IGNORED);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerLockClock2} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerLockClock2(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
 {
-    int rc = TMTimerLock(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), VERR_IGNORED);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    int rc = TMTimerLock(pUsbIns->Internal.s.pVM, hTimer, VERR_IGNORED);
     if (rc == VINF_SUCCESS)
     {
         rc = PDMCritSectEnter(pCritSect, VERR_IGNORED);
         if (rc == VINF_SUCCESS)
             return rc;
         AssertRC(rc);
-        TMTimerUnlock(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer));
+        TMTimerUnlock(pUsbIns->Internal.s.pVM, hTimer);
     }
     else
         AssertRC(rc);
@@ -1935,63 +1932,72 @@ static DECLCALLBACK(int) pdmR3UsbHlp_TimerLockClock2(PPDMUSBINS pUsbIns, TMTIMER
 /** @interface_method_impl{PDMUSBHLP,pfnTimerSet} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerSet(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t uExpire)
 {
-    return TMTimerSet(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), uExpire);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerSet(pUsbIns->Internal.s.pVM, hTimer, uExpire);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerSetFrequencyHint} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerSetFrequencyHint(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint32_t uHz)
 {
-    return TMTimerSetFrequencyHint(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), uHz);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerSetFrequencyHint(pUsbIns->Internal.s.pVM, hTimer, uHz);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerSetMicro} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerSetMicro(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMicrosToNext)
 {
-    return TMTimerSetMicro(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), cMicrosToNext);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerSetMicro(pUsbIns->Internal.s.pVM, hTimer, cMicrosToNext);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerSetMillies} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerSetMillies(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext)
 {
-    return TMTimerSetMillies(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), cMilliesToNext);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerSetMillies(pUsbIns->Internal.s.pVM, hTimer, cMilliesToNext);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerSetNano} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerSetNano(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cNanosToNext)
 {
-    return TMTimerSetNano(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), cNanosToNext);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerSetNano(pUsbIns->Internal.s.pVM, hTimer, cNanosToNext);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerSetRelative} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerSetRelative(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
 {
-    return TMTimerSetRelative(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), cTicksToNext, pu64Now);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerSetRelative(pUsbIns->Internal.s.pVM, hTimer, cTicksToNext, pu64Now);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerStop} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerStop(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerStop(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer));
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMTimerStop(pUsbIns->Internal.s.pVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerUnlockClock} */
 static DECLCALLBACK(void) pdmR3UsbHlp_TimerUnlockClock(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
 {
-    TMTimerUnlock(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer));
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    TMTimerUnlock(pUsbIns->Internal.s.pVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerUnlockClock2} */
 static DECLCALLBACK(void) pdmR3UsbHlp_TimerUnlockClock2(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
 {
-    TMTimerUnlock(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer));
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    TMTimerUnlock(pUsbIns->Internal.s.pVM, hTimer);
     int rc = PDMCritSectLeave(pCritSect);
     AssertRC(rc);
 }
@@ -2000,28 +2006,32 @@ static DECLCALLBACK(void) pdmR3UsbHlp_TimerUnlockClock2(PPDMUSBINS pUsbIns, TMTI
 /** @interface_method_impl{PDMUSBHLP,pfnTimerSetCritSect} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerSetCritSect(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
 {
-    return TMR3TimerSetCritSect(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), pCritSect);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMR3TimerSetCritSect(pUsbIns->Internal.s.pVM, hTimer, pCritSect);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerSave} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerSave(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
 {
-    return TMR3TimerSave(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), pSSM);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMR3TimerSave(pUsbIns->Internal.s.pVM, hTimer, pSSM);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerLoad} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerLoad(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
 {
-    return TMR3TimerLoad(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer), pSSM);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMR3TimerLoad(pUsbIns->Internal.s.pVM, hTimer, pSSM);
 }
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnTimerDestroy} */
 static DECLCALLBACK(int) pdmR3UsbHlp_TimerDestroy(PPDMUSBINS pUsbIns, TMTIMERHANDLE hTimer)
 {
-    return TMR3TimerDestroy(pdmR3UsbHlp_TimerToPtr(pUsbIns, hTimer));
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    return TMR3TimerDestroy(pUsbIns->Internal.s.pVM, hTimer);
 }
 
 

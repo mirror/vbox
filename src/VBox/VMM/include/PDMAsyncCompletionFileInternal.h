@@ -276,7 +276,7 @@ typedef struct PDMASYNCCOMPLETIONEPCLASSFILE
     bool                                fOutOfResourcesWarningPrinted;
 #ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
     /** Timer for delayed request completion. */
-    PTMTIMERR3                          pTimer;
+    TMTIMERHANDLE                       hTimer;
     /** Milliseconds until the next delay expires. */
     volatile uint64_t                   cMilliesNext;
 #endif

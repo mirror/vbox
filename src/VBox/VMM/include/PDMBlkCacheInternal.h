@@ -133,7 +133,7 @@ typedef struct PDMBLKCACHEGLOBAL
     /** Flag whether a commit is currently in progress. */
     volatile bool       fCommitInProgress;
     /** Commit interval timer */
-    PTMTIMERR3          pTimerCommit;
+    TMTIMERHANDLE       hTimerCommit;
     /** Number of endpoints using the cache. */
     uint32_t            cRefs;
     /** List of all users of this cache. */

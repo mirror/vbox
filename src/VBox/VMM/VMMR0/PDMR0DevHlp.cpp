@@ -414,18 +414,11 @@ static DECLCALLBACK(VMCPUID) pdmR0DevHlp_GetCurrentCpuId(PPDMDEVINS pDevIns)
 }
 
 
-/** Converts a timer handle to a pointer (used to be exposed, will be
- *  rewritten later). */
-DECLINLINE(PTMTIMERR0) pdmR0DevHlp_TimerToPtr(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    return (PTMTIMERR0)MMHyperR3ToCC(pDevIns->Internal.s.pGVM, hTimer);
-}
-
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerFromMicro} */
 static DECLCALLBACK(uint64_t) pdmR0DevHlp_TimerFromMicro(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMicroSecs)
 {
-    return TMTimerFromMicro(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), cMicroSecs);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerFromMicro(pDevIns->Internal.s.pGVM, hTimer, cMicroSecs);
 }
 
 
@@ -433,55 +426,62 @@ static DECLCALLBACK(uint64_t) pdmR0DevHlp_TimerFromMicro(PPDMDEVINS pDevIns, TMT
 static DECLCALLBACK(uint64_t) pdmR0DevHlp_TimerFromMilli(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMilliSecs)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    return TMTimerFromMilli(pDevIns->Internal.s.pGVM, pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), cMilliSecs);
+    return TMTimerFromMilli(pDevIns->Internal.s.pGVM, hTimer, cMilliSecs);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerFromNano} */
 static DECLCALLBACK(uint64_t) pdmR0DevHlp_TimerFromNano(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cNanoSecs)
 {
-    return TMTimerFromNano(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), cNanoSecs);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerFromNano(pDevIns->Internal.s.pGVM, hTimer, cNanoSecs);
 }
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerGet} */
 static DECLCALLBACK(uint64_t) pdmR0DevHlp_TimerGet(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerGet(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerGet(pDevIns->Internal.s.pGVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerGetFreq} */
 static DECLCALLBACK(uint64_t) pdmR0DevHlp_TimerGetFreq(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerGetFreq(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerGetFreq(pDevIns->Internal.s.pGVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerGetNano} */
 static DECLCALLBACK(uint64_t) pdmR0DevHlp_TimerGetNano(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerGetNano(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerGetNano(pDevIns->Internal.s.pGVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerIsActive} */
 static DECLCALLBACK(bool) pdmR0DevHlp_TimerIsActive(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerIsActive(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerIsActive(pDevIns->Internal.s.pGVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerIsLockOwner} */
 static DECLCALLBACK(bool) pdmR0DevHlp_TimerIsLockOwner(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerIsLockOwner(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerIsLockOwner(pDevIns->Internal.s.pGVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerLockClock} */
 static DECLCALLBACK(VBOXSTRICTRC) pdmR0DevHlp_TimerLockClock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy)
 {
-    return TMTimerLock(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), rcBusy);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerLock(pDevIns->Internal.s.pGVM, hTimer, rcBusy);
 }
 
 
@@ -489,14 +489,15 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR0DevHlp_TimerLockClock(PPDMDEVINS pDevIns,
 static DECLCALLBACK(VBOXSTRICTRC) pdmR0DevHlp_TimerLockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer,
                                                               PPDMCRITSECT pCritSect, int rcBusy)
 {
-    VBOXSTRICTRC rc = TMTimerLock(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), rcBusy);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VBOXSTRICTRC rc = TMTimerLock(pDevIns->Internal.s.pGVM, hTimer, rcBusy);
     if (rc == VINF_SUCCESS)
     {
         rc = PDMCritSectEnter(pCritSect, rcBusy);
         if (rc == VINF_SUCCESS)
             return rc;
         AssertRC(VBOXSTRICTRC_VAL(rc));
-        TMTimerUnlock(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+        TMTimerUnlock(pDevIns->Internal.s.pGVM, hTimer);
     }
     else
         AssertRC(VBOXSTRICTRC_VAL(rc));
@@ -507,63 +508,72 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR0DevHlp_TimerLockClock2(PPDMDEVINS pDevIns
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerSet} */
 static DECLCALLBACK(int) pdmR0DevHlp_TimerSet(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t uExpire)
 {
-    return TMTimerSet(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), uExpire);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerSet(pDevIns->Internal.s.pGVM, hTimer, uExpire);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerSetFrequencyHint} */
 static DECLCALLBACK(int) pdmR0DevHlp_TimerSetFrequencyHint(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint32_t uHz)
 {
-    return TMTimerSetFrequencyHint(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), uHz);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerSetFrequencyHint(pDevIns->Internal.s.pGVM, hTimer, uHz);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerSetMicro} */
 static DECLCALLBACK(int) pdmR0DevHlp_TimerSetMicro(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMicrosToNext)
 {
-    return TMTimerSetMicro(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), cMicrosToNext);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerSetMicro(pDevIns->Internal.s.pGVM, hTimer, cMicrosToNext);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerSetMillies} */
 static DECLCALLBACK(int) pdmR0DevHlp_TimerSetMillies(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext)
 {
-    return TMTimerSetMillies(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), cMilliesToNext);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerSetMillies(pDevIns->Internal.s.pGVM, hTimer, cMilliesToNext);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerSetNano} */
 static DECLCALLBACK(int) pdmR0DevHlp_TimerSetNano(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cNanosToNext)
 {
-    return TMTimerSetNano(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), cNanosToNext);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerSetNano(pDevIns->Internal.s.pGVM, hTimer, cNanosToNext);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerSetRelative} */
 static DECLCALLBACK(int) pdmR0DevHlp_TimerSetRelative(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
 {
-    return TMTimerSetRelative(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer), cTicksToNext, pu64Now);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerSetRelative(pDevIns->Internal.s.pGVM, hTimer, cTicksToNext, pu64Now);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerStop} */
 static DECLCALLBACK(int) pdmR0DevHlp_TimerStop(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
-    return TMTimerStop(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return TMTimerStop(pDevIns->Internal.s.pGVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerUnlockClock} */
 static DECLCALLBACK(void) pdmR0DevHlp_TimerUnlockClock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
 {
-    TMTimerUnlock(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    TMTimerUnlock(pDevIns->Internal.s.pGVM, hTimer);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerUnlockClock2} */
 static DECLCALLBACK(void) pdmR0DevHlp_TimerUnlockClock2(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
 {
-    TMTimerUnlock(pdmR0DevHlp_TimerToPtr(pDevIns, hTimer));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    TMTimerUnlock(pDevIns->Internal.s.pGVM, hTimer);
     int rc = PDMCritSectLeave(pCritSect);
     AssertRC(rc);
 }

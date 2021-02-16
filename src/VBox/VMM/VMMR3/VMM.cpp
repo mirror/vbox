@@ -168,7 +168,7 @@ static int                  vmmR3InitLoggers(PVM pVM);
 static void                 vmmR3InitRegisterStats(PVM pVM);
 static DECLCALLBACK(int)    vmmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-static DECLCALLBACK(void)   vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser);
+static DECLCALLBACK(void)   vmmR3YieldEMT(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser);
 static VBOXSTRICTRC         vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
                                                      uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser);
 static int                  vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu);
@@ -660,10 +660,10 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
              * Create the EMT yield timer.
              */
             rc = TMR3TimerCreate(pVM, TMCLOCK_REAL, vmmR3YieldEMT, NULL, TMTIMER_FLAGS_NO_RING0,
-                                 "EMT Yielder", &pVM->vmm.s.pYieldTimer);
+                                 "EMT Yielder", &pVM->vmm.s.hYieldTimer);
             AssertRCReturn(rc, rc);
 
-            rc = TMTimerSetMillies(pVM->vmm.s.pYieldTimer, pVM->vmm.s.cYieldEveryMillies);
+            rc = TMTimerSetMillies(pVM, pVM->vmm.s.hYieldTimer, pVM->vmm.s.cYieldEveryMillies);
             AssertRCReturn(rc, rc);
             break;
         }
@@ -997,13 +997,13 @@ VMMR3_INT_DECL(void) VMMR3YieldSuspend(PVM pVM)
     VMCPU_ASSERT_EMT(pVM->apCpusR3[0]);
     if (!pVM->vmm.s.cYieldResumeMillies)
     {
-        uint64_t u64Now = TMTimerGet(pVM->vmm.s.pYieldTimer);
-        uint64_t u64Expire = TMTimerGetExpire(pVM->vmm.s.pYieldTimer);
+        uint64_t u64Now = TMTimerGet(pVM, pVM->vmm.s.hYieldTimer);
+        uint64_t u64Expire = TMTimerGetExpire(pVM, pVM->vmm.s.hYieldTimer);
         if (u64Now >= u64Expire || u64Expire == ~(uint64_t)0)
             pVM->vmm.s.cYieldResumeMillies = pVM->vmm.s.cYieldEveryMillies;
         else
-            pVM->vmm.s.cYieldResumeMillies = TMTimerToMilli(pVM->vmm.s.pYieldTimer, u64Expire - u64Now);
-        TMTimerStop(pVM->vmm.s.pYieldTimer);
+            pVM->vmm.s.cYieldResumeMillies = TMTimerToMilli(pVM, pVM->vmm.s.hYieldTimer, u64Expire - u64Now);
+        TMTimerStop(pVM, pVM->vmm.s.hYieldTimer);
     }
     pVM->vmm.s.u64LastYield = RTTimeNanoTS();
 }
@@ -1017,7 +1017,7 @@ VMMR3_INT_DECL(void) VMMR3YieldSuspend(PVM pVM)
 VMMR3_INT_DECL(void) VMMR3YieldStop(PVM pVM)
 {
     if (!pVM->vmm.s.cYieldResumeMillies)
-        TMTimerStop(pVM->vmm.s.pYieldTimer);
+        TMTimerStop(pVM, pVM->vmm.s.hYieldTimer);
     pVM->vmm.s.cYieldResumeMillies = pVM->vmm.s.cYieldEveryMillies;
     pVM->vmm.s.u64LastYield = RTTimeNanoTS();
 }
@@ -1032,20 +1032,18 @@ VMMR3_INT_DECL(void) VMMR3YieldResume(PVM pVM)
 {
     if (pVM->vmm.s.cYieldResumeMillies)
     {
-        TMTimerSetMillies(pVM->vmm.s.pYieldTimer, pVM->vmm.s.cYieldResumeMillies);
+        TMTimerSetMillies(pVM, pVM->vmm.s.hYieldTimer, pVM->vmm.s.cYieldResumeMillies);
         pVM->vmm.s.cYieldResumeMillies = 0;
     }
 }
 
 
 /**
- * Internal timer callback function.
+ * @callback_method_impl{FNTMTIMERINT, EMT yielder}
  *
- * @param   pVM             The cross context VM structure.
- * @param   pTimer          The timer handle.
- * @param   pvUser          User argument specified upon timer creation.
+ * @todo This is a UNI core/thread thing, really...   Should be reconsidered.
  */
-static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser)
 {
     NOREF(pvUser);
 
@@ -1076,7 +1074,7 @@ static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
         Log(("vmmR3YieldEMT: %RI64 ns\n", u64Elapsed));
 #endif
     }
-    TMTimerSetMillies(pTimer, pVM->vmm.s.cYieldEveryMillies);
+    TMTimerSetMillies(pVM, hTimer, pVM->vmm.s.cYieldEveryMillies);
 }
 
 

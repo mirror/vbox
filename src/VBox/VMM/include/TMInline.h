@@ -55,5 +55,67 @@ DECL_FORCE_INLINE(void) tmTimerQueueUnlinkActive(PTMTIMERQUEUE pQueue, PTMTIMER 
     pTimer->offPrev = 0;
 }
 
+
+/** @def TMTIMER_HANDLE_TO_PTR_RETURN_EX
+ * Converts a timer handle to a timer pointer, returning @a a_rcRet if the
+ * handle is invalid.
+ *
+ * @param   a_pVM       The cross context VM structure.
+ * @param   a_hTimer    The timer handle to translate.
+ * @param   a_rcRet     What to return on failure.
+ * @param   a_pTimerVar The timer variable to assign the resulting pointer to.
+ */
+#ifdef IN_RING3
+# define TMTIMER_HANDLE_TO_PTR_RETURN_EX(a_pVM, a_hTimer, a_rcRet, a_pTimerVar) do { \
+        RT_NOREF(a_pVM); \
+        (a_pTimerVar) = (PTMTIMER)hTimer; \
+        AssertPtrReturn((a_pTimerVar), a_rcRet); \
+        AssertReturn((a_pTimerVar)->hSelf == a_hTimer, a_rcRet); \
+    } while (0)
+#else
+# define TMTIMER_HANDLE_TO_PTR_RETURN_EX(a_pVM, a_hTimer, a_rcRet, a_pTimerVar) do { \
+        (a_pTimerVar) = (PTMTIMER)MMHyperR3ToCC(pVM, (RTR3PTR)hTimer); \
+        AssertPtrReturn((a_pTimerVar), a_rcRet); \
+        AssertReturn((a_pTimerVar)->hSelf == a_hTimer, a_rcRet); \
+        Assert((a_pTimerVar)->fFlags & TMTIMER_FLAGS_RING0); \
+    } while (0)
+#endif
+
+/** @def TMTIMER_HANDLE_TO_PTR_RETURN
+ * Converts a timer handle to a timer pointer, returning VERR_INVALID_HANDLE if
+ * invalid.
+ *
+ * @param   a_pVM       The cross context VM structure.
+ * @param   a_hTimer    The timer handle to translate.
+ * @param   a_pTimerVar The timer variable to assign the resulting pointer to.
+ */
+#define TMTIMER_HANDLE_TO_PTR_RETURN(a_pVM, a_hTimer, a_pTimerVar) \
+        TMTIMER_HANDLE_TO_PTR_RETURN_EX(a_pVM, a_hTimer, VERR_INVALID_HANDLE, a_pTimerVar)
+
+/** @def TMTIMER_HANDLE_TO_PTR_RETURN_VOID
+ * Converts a timer handle to a timer pointer, returning VERR_INVALID_HANDLE if
+ * invalid.
+ *
+ * @param   a_pVM       The cross context VM structure.
+ * @param   a_hTimer    The timer handle to translate.
+ * @param   a_pTimerVar The timer variable to assign the resulting pointer to.
+ */
+#ifdef IN_RING3
+# define TMTIMER_HANDLE_TO_PTR_RETURN_VOID(a_pVM, a_hTimer, a_pTimerVar) do { \
+        RT_NOREF(a_pVM); \
+        (a_pTimerVar) = (PTMTIMER)hTimer; \
+        AssertPtrReturnVoid((a_pTimerVar)); \
+        AssertReturnVoid((a_pTimerVar)->hSelf == a_hTimer); \
+    } while (0)
+#else
+# define TMTIMER_HANDLE_TO_PTR_RETURN_VOID(a_pVM, a_hTimer, a_pTimerVar) do { \
+        (a_pTimerVar) = (PTMTIMER)MMHyperR3ToCC(pVM, (RTR3PTR)hTimer); \
+        AssertPtrReturnVoid((a_pTimerVar)); \
+        AssertReturnVoid((a_pTimerVar)->hSelf == a_hTimer); \
+        Assert((a_pTimerVar)->fFlags & TMTIMER_FLAGS_RING0); \
+    } while (0)
+#endif
+
+
 #endif /* !VMM_INCLUDED_SRC_include_TMInline_h */
 

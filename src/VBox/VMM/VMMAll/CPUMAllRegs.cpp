@@ -2334,7 +2334,7 @@ VMM_INT_DECL(int) CPUMStartGuestVmxPremptTimer(PVMCPUCC pVCpu, uint32_t uTimer, 
     Assert(pu64EntryTick);
     VMCPU_ASSERT_EMT(pVCpu);
     uint64_t const cTicksToNext = uTimer << cShift;
-    return TMTimerSetRelative(pVCpu->cpum.s.CTX_SUFF(pNestedVmxPreemptTimer), cTicksToNext, pu64EntryTick);
+    return TMTimerSetRelative(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.s.hNestedVmxPreemptTimer, cTicksToNext, pu64EntryTick);
 }
 
 
@@ -2352,20 +2352,24 @@ VMM_INT_DECL(int) CPUMStopGuestVmxPremptTimer(PVMCPUCC pVCpu)
 {
     /*
      * CPUM gets initialized before TM, so we defer creation of timers till CPUMR3InitCompleted().
-     * However, we still get called during CPUMR3Init() and hence we need to check if we  have
+     * However, we still get called during CPUMR3Init() and hence we need to check if we have
      * a valid timer object before trying to stop it.
      */
-    PTMTIMER pTimer = pVCpu->cpum.s.CTX_SUFF(pNestedVmxPreemptTimer);
-    if (!pTimer)
-        return VERR_NOT_FOUND;
-
-    int rc = TMTimerLock(pTimer, VERR_IGNORED);
-    if (rc == VINF_SUCCESS)
+    int rc;
+    TMTIMERHANDLE hTimer = pVCpu->cpum.s.hNestedVmxPreemptTimer;
+    if (hTimer != NIL_TMTIMERHANDLE)
     {
-        if (TMTimerIsActive(pTimer))
-            TMTimerStop(pTimer);
-        TMTimerUnlock(pTimer);
+        PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+        rc = TMTimerLock(pVM, hTimer, VERR_IGNORED);
+        if (rc == VINF_SUCCESS)
+        {
+            if (TMTimerIsActive(pVM, hTimer))
+                TMTimerStop(pVM, hTimer);
+            TMTimerUnlock(pVM, hTimer);
+        }
     }
+    else
+        rc = VERR_NOT_FOUND;
     return rc;
 }
 

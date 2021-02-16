@@ -173,6 +173,8 @@ typedef struct TMTIMER
     /** Timer relative offset to the previous timer in the chain. */
     int32_t                 offPrev;
 
+    /** It's own handle value. */
+    TMTIMERHANDLE           hSelf;
     /** Pointer to the VM the timer belongs to - R3 Ptr. */
     PVMR3                   pVMR3;
     /** Pointer to the VM the timer belongs to - R0 Ptr. */
@@ -199,7 +201,7 @@ typedef struct TMTIMER
 
     /** TMTIMER_FLAGS_XXX.   */
     uint32_t                fFlags;
-    uint32_t                u32Pading;
+    uint32_t                u32Padding;
 
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE             StatTimer;

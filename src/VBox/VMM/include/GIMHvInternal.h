@@ -1262,10 +1262,8 @@ AssertCompileMemberAlignment(GIMHV, hSpinlockR0, sizeof(uintptr_t));
  */
 typedef struct GIMHVSTIMER
 {
-    /** Synthetic timer object - R0 ptr. */
-    PTMTIMERR0                  pTimerR0;
-    /** Synthetic timer object - R3 ptr. */
-    PTMTIMERR3                  pTimerR3;
+    /** Synthetic timer handle. */
+    TMTIMERHANDLE               hTimer;
     /** Virtual CPU ID this timer belongs to (for reverse mapping). */
     VMCPUID                     idCpu;
     /** The index of this timer in the auStimers array (for reverse mapping). */

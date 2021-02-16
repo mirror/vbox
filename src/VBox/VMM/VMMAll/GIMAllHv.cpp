@@ -508,8 +508,9 @@ DECLINLINE(uint64_t) gimHvGetTimeRefCount(PVMCPUCC pVCpu)
  */
 VMM_INT_DECL(void) gimHvStartStimer(PVMCPUCC pVCpu, PCGIMHVSTIMER pHvStimer)
 {
-    PTMTIMER pTimer = pHvStimer->CTX_SUFF(pTimer);
-    Assert(TMTimerIsLockOwner(pTimer));
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    TMTIMERHANDLE hTimer = pHvStimer->hTimer;
+    Assert(TMTimerIsLockOwner(pVM, hTimer));
 
     uint64_t const uTimerCount = pHvStimer->uStimerCountMsr;
     if (uTimerCount)
@@ -519,7 +520,7 @@ VMM_INT_DECL(void) gimHvStartStimer(PVMCPUCC pVCpu, PCGIMHVSTIMER pHvStimer)
         /* For periodic timers, 'uTimerCountNS' represents the relative interval. */
         if (MSR_GIM_HV_STIMER_IS_PERIODIC(pHvStimer->uStimerConfigMsr))
         {
-            TMTimerSetNano(pTimer, uTimerCountNS);
+            TMTimerSetNano(pVM, hTimer, uTimerCountNS);
             LogFlow(("GIM%u: HyperV: Started relative periodic STIMER%u with uTimerCountNS=%RU64\n", pVCpu->idCpu,
                      pHvStimer->idxStimer, uTimerCountNS));
         }
@@ -531,7 +532,7 @@ VMM_INT_DECL(void) gimHvStartStimer(PVMCPUCC pVCpu, PCGIMHVSTIMER pHvStimer)
             if (uTimerCountNS > uCurRefTimeNS)
             {
                 uint64_t const uRelativeNS = uTimerCountNS - uCurRefTimeNS;
-                TMTimerSetNano(pTimer, uRelativeNS);
+                TMTimerSetNano(pVM, hTimer, uRelativeNS);
                 LogFlow(("GIM%u: HyperV: Started one-shot relative STIMER%u with uRelativeNS=%RU64\n", pVCpu->idCpu,
                          pHvStimer->idxStimer, uRelativeNS));
             }
@@ -553,14 +554,13 @@ VMM_INT_DECL(void) gimHvStartStimer(PVMCPUCC pVCpu, PCGIMHVSTIMER pHvStimer)
 static void gimHvStopStimer(PVMCPUCC pVCpu, PGIMHVSTIMER pHvStimer)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
-    RT_NOREF(pVCpu);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
-    PTMTIMER pTimer = pHvStimer->CTX_SUFF(pTimer);
-    Assert(TMTimerIsLockOwner(pTimer));
-    RT_NOREF(pTimer);
+    TMTIMERHANDLE hTimer = pHvStimer->hTimer;
+    Assert(TMTimerIsLockOwner(pVM, hTimer));
 
-    if (TMTimerIsActive(pHvStimer->CTX_SUFF(pTimer)))
-        TMTimerStop(pHvStimer->CTX_SUFF(pTimer));
+    if (TMTimerIsActive(pVM, hTimer))
+        TMTimerStop(pVM, hTimer);
 }
 
 
@@ -756,7 +756,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMS
 VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
 {
     NOREF(pRange);
-    PVM    pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC  pVM = pVCpu->CTX_SUFF(pVM);
     PGIMHV pHv = &pVM->gim.s.u.Hv;
 
     switch (idMsr)
@@ -1152,10 +1152,9 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
             {
                 Assert(idxStimer < RT_ELEMENTS(pHvCpu->aStimers));
                 PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
-                PTMTIMER     pTimer    = pHvStimer->CTX_SUFF(pTimer);
 
                 /* Lock to prevent concurrent access from the timer callback. */
-                int rc = TMTimerLock(pTimer, VERR_IGNORED);
+                int rc = TMTimerLock(pVM, pHvStimer->hTimer, VERR_IGNORED);
                 if (rc == VINF_SUCCESS)
                 {
                     /* Update the MSR value. */
@@ -1175,7 +1174,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
                         /* Auto-enable implies writing to the STIMERx_COUNT MSR is what starts the timer. */
                         if (!MSR_GIM_HV_STIMER_IS_AUTO_ENABLED(uRawValue))
                         {
-                            if (!TMTimerIsActive(pHvStimer->CTX_SUFF(pTimer)))
+                            if (!TMTimerIsActive(pVM, pHvStimer->hTimer))
                             {
                                 gimHvStartStimer(pVCpu, pHvStimer);
                                 Log(("GIM%u: HyperV: Started STIMER%u\n", pVCpu->idCpu, idxStimer));
@@ -1196,7 +1195,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
                         }
                     }
 
-                    TMTimerUnlock(pTimer);
+                    TMTimerUnlock(pVM, pHvStimer->hTimer);
                 }
                 return rc;
             }
@@ -1238,13 +1237,12 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
              */
             if (MSR_GIM_HV_STIMER_IS_AUTO_ENABLED(pHvStimer->uStimerConfigMsr))
             {
-                PTMTIMER pTimer = pHvStimer->CTX_SUFF(pTimer);
-                int rc = TMTimerLock(pTimer, rcBusy);
+                int rc = TMTimerLock(pVM, pHvStimer->hTimer, rcBusy);
                 if (rc == VINF_SUCCESS)
                 {
                     pHvStimer->uStimerCountMsr = uRawValue;
                     gimHvStartStimer(pVCpu, pHvStimer);
-                    TMTimerUnlock(pTimer);
+                    TMTimerUnlock(pVM, pHvStimer->hTimer);
                     Log(("GIM%u: HyperV: Set STIMER_COUNT%u=%RU64 %RU64 msec, auto-started timer\n", pVCpu->idCpu, idxStimer,
                          uRawValue, (uRawValue * 100) / RT_NS_1MS_64));
                 }

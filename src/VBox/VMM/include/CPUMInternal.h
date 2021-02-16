@@ -416,10 +416,8 @@ typedef struct CPUMCPU
      */
     CPUMCTXMSRS             GuestMsrs;
 
-    /** Nested VMX: VMX-preemption timer - R0 ptr. */
-    PTMTIMERR0              pNestedVmxPreemptTimerR0;
-    /** Nested VMX: VMX-preemption timer - R3 ptr. */
-    PTMTIMERR3              pNestedVmxPreemptTimerR3;
+    /** Nested VMX: VMX-preemption timer. */
+    TMTIMERHANDLE           hNestedVmxPreemptTimer;
 
     /** Use flags.
      * These flags indicates both what is to be used and what has been used.
@@ -458,7 +456,7 @@ typedef struct CPUMCPU
     bool                    fCpuIdApicFeatureVisible;
 
     /** Align the next member on a 64-byte boundary. */
-    uint8_t                 abPadding2[64 - (16 + 12 + 4 + 8 + 1 + 1)];
+    uint8_t                 abPadding2[64 - (8 + 12 + 4 + 8 + 1 + 1)];
 
     /** Saved host context.  Only valid while inside RC or HM contexts.
      * Must be aligned on a 64-byte boundary. */

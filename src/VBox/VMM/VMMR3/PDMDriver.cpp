@@ -1336,10 +1336,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_TimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enm
     else
         fFlags |= TMTIMER_FLAGS_NO_RING0;
 
-    PTMTIMERR3 pTimer = NULL;
-    int rc = TMR3TimerCreateDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, &pTimer);
-    if (RT_SUCCESS(rc))
-        *phTimer = (TMTIMERHANDLE)pTimer;
+    int rc = TMR3TimerCreateDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, phTimer);
 
     LogFlow(("pdmR3DrvHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc *phTimer=%p\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc, *phTimer));
     return rc;

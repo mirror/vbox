@@ -38,7 +38,7 @@
 *********************************************************************************************************************************/
 DECLINLINE(void)            pdmR3QueueFreeItem(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem);
 static bool                 pdmR3QueueFlush(PPDMQUEUE pQueue);
-static DECLCALLBACK(void)   pdmR3QueueTimer(PVM pVM, PTMTIMER pTimer, void *pvUser);
+static DECLCALLBACK(void)   pdmR3QueueTimer(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser);
 
 
 
@@ -88,7 +88,7 @@ static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cM
     pQueue->pVMRC = fRZEnabled ? pVM->pVMRC : NIL_RTRCPTR;
     pQueue->pszName = pszName;
     pQueue->cMilliesInterval = cMilliesInterval;
-    //pQueue->pTimer = NULL;
+    pQueue->hTimer = NIL_TMTIMERHANDLE;
     pQueue->cbItem = (uint32_t)cbItem;
     pQueue->cItems = cItems;
     //pQueue->pPendingR3 = NULL;
@@ -112,14 +112,14 @@ static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cM
      */
     if (cMilliesInterval)
     {
-        rc = TMR3TimerCreate(pVM, TMCLOCK_REAL, pdmR3QueueTimer, pQueue, TMTIMER_FLAGS_NO_RING0, "Queue timer", &pQueue->pTimer);
+        rc = TMR3TimerCreate(pVM, TMCLOCK_REAL, pdmR3QueueTimer, pQueue, TMTIMER_FLAGS_NO_RING0, "Queue timer", &pQueue->hTimer);
         if (RT_SUCCESS(rc))
         {
-            rc = TMTimerSetMillies(pQueue->pTimer, cMilliesInterval);
+            rc = TMTimerSetMillies(pVM, pQueue->hTimer, cMilliesInterval);
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("TMTimerSetMillies failed rc=%Rrc\n", rc));
-                int rc2 = TMR3TimerDestroy(pQueue->pTimer); AssertRC(rc2);
+                int rc2 = TMR3TimerDestroy(pVM, pQueue->hTimer); AssertRC(rc2);
             }
         }
         else
@@ -397,7 +397,7 @@ VMMR3_INT_DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
     /*
      * Unlink it.
      */
-    if (pQueue->pTimer)
+    if (pQueue->hTimer != NIL_TMTIMERHANDLE)
     {
         if (pUVM->pdm.s.pQueuesTimer != pQueue)
         {
@@ -447,10 +447,10 @@ VMMR3_INT_DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
     /*
      * Destroy the timer and free it.
      */
-    if (pQueue->pTimer)
+    if (pQueue->hTimer != NIL_TMTIMERHANDLE)
     {
-        TMR3TimerDestroy(pQueue->pTimer);
-        pQueue->pTimer = NULL;
+        TMR3TimerDestroy(pVM, pQueue->hTimer);
+        pQueue->hTimer = NIL_TMTIMERHANDLE;
     }
     if (pQueue->pVMRC)
     {
@@ -855,23 +855,18 @@ DECLINLINE(void) pdmR3QueueFreeItem(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 
 
 /**
- * Timer handler for PDM queues.
- * This is called by for a single queue.
- *
- * @param   pVM     The cross context VM structure.
- * @param   pTimer  Pointer to timer.
- * @param   pvUser  Pointer to the queue.
+ * @callback_method_impl{FNTMTIMERINT, Timer handler for one PDM queue.}
  */
-static DECLCALLBACK(void) pdmR3QueueTimer(PVM pVM, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) pdmR3QueueTimer(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PPDMQUEUE pQueue = (PPDMQUEUE)pvUser;
-    Assert(pTimer == pQueue->pTimer); NOREF(pTimer); NOREF(pVM);
+    Assert(hTimer == pQueue->hTimer);
 
     if (   pQueue->pPendingR3
         || pQueue->pPendingR0
         || pQueue->pPendingRC)
         pdmR3QueueFlush(pQueue);
-    int rc = TMTimerSetMillies(pQueue->pTimer, pQueue->cMilliesInterval);
+    int rc = TMTimerSetMillies(pVM, hTimer, pQueue->cMilliesInterval);
     AssertRC(rc);
 }
 

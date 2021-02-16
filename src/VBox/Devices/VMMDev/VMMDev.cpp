@@ -512,11 +512,11 @@ static int vmmDevReqHandler_GuestHeartbeat(PPDMDEVINS pDevIns, PVMMDEV pThis)
  */
 static DECLCALLBACK(void) vmmDevHeartbeatFlatlinedTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns);
+    RT_NOREF(pDevIns, pTimer);
     PVMMDEV pThis = (PVMMDEV)pvUser;
     if (pThis->fHeartbeatActive)
     {
-        uint64_t cNsElapsed = TMTimerGetNano(pTimer) - pThis->nsLastHeartbeatTS;
+        uint64_t cNsElapsed = PDMDevHlpTimerGetNano(pDevIns, pThis->hFlatlinedTimer) - pThis->nsLastHeartbeatTS;
         if (   !pThis->fFlatlined
             && cNsElapsed >= pThis->cNsHeartbeatInterval)
         {

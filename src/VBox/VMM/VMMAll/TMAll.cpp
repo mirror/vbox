@@ -1101,87 +1101,40 @@ VMM_INT_DECL(uint64_t) TMTimerPollGIP(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64D
 #endif /* VBOX_HIGH_RES_TIMERS_HACK */
 
 /**
- * Gets the host context ring-3 pointer of the timer.
- *
- * @returns HC R3 pointer.
- * @param   pTimer      Timer handle as returned by one of the create functions.
- */
-VMMDECL(PTMTIMERR3) TMTimerR3Ptr(PTMTIMER pTimer)
-{
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
-    return (PTMTIMERR3)MMHyperCCToR3(pTimer->CTX_SUFF(pVM), pTimer);
-}
-
-
-/**
- * Gets the host context ring-0 pointer of the timer.
- *
- * @returns HC R0 pointer.
- * @param   pTimer      Timer handle as returned by one of the create functions.
- */
-VMMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer)
-{
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
-    return (PTMTIMERR0)MMHyperCCToR0(pTimer->CTX_SUFF(pVM), pTimer);
-}
-
-
-/**
- * Gets the RC pointer of the timer.
- *
- * @returns RC pointer.
- * @param   pTimer      Timer handle as returned by one of the create functions.
- */
-VMMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
-{
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
-    return (PTMTIMERRC)MMHyperCCToRC(pTimer->CTX_SUFF(pVM), pTimer);
-}
-
-
-/**
  * Locks the timer clock.
  *
  * @returns VINF_SUCCESS on success, @a rcBusy if busy, and VERR_NOT_SUPPORTED
  *          if the clock does not have a lock.
- * @param   pTimer              The timer which clock lock we wish to take.
- * @param   rcBusy              What to return in ring-0 and raw-mode context
- *                              if the lock is busy.  Pass VINF_SUCCESS to
- *                              acquired the critical section thru a ring-3
-                                call if necessary.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
+ * @param   rcBusy      What to return in ring-0 and raw-mode context if the
+ *                      lock is busy.  Pass VINF_SUCCESS to acquired the
+ *                      critical section thru a ring-3 call if necessary.
  *
  * @remarks Currently only supported on timers using the virtual sync clock.
  */
-VMMDECL(int) TMTimerLock(PTMTIMER pTimer, int rcBusy)
+VMMDECL(int) TMTimerLock(PVMCC pVM, TMTIMERHANDLE hTimer, int rcBusy)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
     AssertPtr(pTimer);
     AssertReturn(pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC, VERR_NOT_SUPPORTED);
-    return PDMCritSectEnter(&pTimer->CTX_SUFF(pVM)->tm.s.VirtualSyncLock, rcBusy);
+    return PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, rcBusy);
 }
 
 
 /**
  * Unlocks a timer clock locked by TMTimerLock.
  *
- * @param   pTimer              The timer which clock to unlock.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
  */
-VMMDECL(void) TMTimerUnlock(PTMTIMER pTimer)
+VMMDECL(void) TMTimerUnlock(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
-    AssertPtr(pTimer);
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_VOID(pVM, hTimer, pTimer);
     AssertReturnVoid(pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC);
-    PDMCritSectLeave(&pTimer->CTX_SUFF(pVM)->tm.s.VirtualSyncLock);
+    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
 }
 
 
@@ -1189,16 +1142,16 @@ VMMDECL(void) TMTimerUnlock(PTMTIMER pTimer)
  * Checks if the current thread owns the timer clock lock.
  *
  * @returns @c true if its the owner, @c false if not.
- * @param   pTimer              The timer handle.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
  */
-VMMDECL(bool) TMTimerIsLockOwner(PTMTIMER pTimer)
+VMMDECL(bool) TMTimerIsLockOwner(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, false, pTimer);
     AssertPtr(pTimer);
     AssertReturn(pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC, false);
-    return PDMCritSectIsOwner(&pTimer->CTX_SUFF(pVM)->tm.s.VirtualSyncLock);
+    return PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock);
 }
 
 
@@ -1318,15 +1271,14 @@ static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
  * Arm a timer with a (new) expire time.
  *
  * @returns VBox status code.
- * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   u64Expire       New expire time.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
+ * @param   u64Expire   New expire time.
  */
-VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
+VMMDECL(int) TMTimerSet(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t u64Expire)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
-    PVMCC pVM = pTimer->CTX_SUFF(pVM);
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
     STAM_COUNTER_INC(&pTimer->StatSetAbsolute);
 
     /* Treat virtual sync timers specially. */
@@ -1626,17 +1578,14 @@ static int tmTimerVirtualSyncSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cT
  * Arm a timer with a expire time relative to the current time.
  *
  * @returns VBox status code.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM             The cross context VM structure.
+ * @param   hTimer          Timer handle as returned by one of the create functions.
  * @param   cTicksToNext    Clock ticks until the next time expiration.
  * @param   pu64Now         Where to return the current time stamp used.
  *                          Optional.
  */
-VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
-    PVMCC pVM = pTimer->CTX_SUFF(pVM);
     STAM_COUNTER_INC(&pTimer->StatSetRelative);
 
     /* Treat virtual sync timers specially. */
@@ -1848,31 +1797,47 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
 
 
 /**
+ * Arm a timer with a expire time relative to the current time.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   hTimer          Timer handle as returned by one of the create functions.
+ * @param   cTicksToNext    Clock ticks until the next time expiration.
+ * @param   pu64Now         Where to return the current time stamp used.
+ *                          Optional.
+ */
+VMMDECL(int) TMTimerSetRelative(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+{
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
+    return tmTimerSetRelative(pVM, pTimer, cTicksToNext, pu64Now);
+}
+
+
+/**
  * Drops a hint about the frequency of the timer.
  *
  * This is used by TM and the VMM to calculate how often guest execution needs
  * to be interrupted.  The hint is automatically cleared by TMTimerStop.
  *
  * @returns VBox status code.
- * @param   pTimer          Timer handle as returned by one of the create
- *                          functions.
- * @param   uHzHint         The frequency hint.  Pass 0 to clear the hint.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
+ * @param   uHzHint     The frequency hint.  Pass 0 to clear the hint.
  *
  * @remarks We're using an integer hertz value here since anything above 1 HZ
  *          is not going to be any trouble satisfying scheduling wise.  The
  *          range where it makes sense is >= 100 HZ.
  */
-VMMDECL(int) TMTimerSetFrequencyHint(PTMTIMER pTimer, uint32_t uHzHint)
+VMMDECL(int) TMTimerSetFrequencyHint(PVMCC pVM, TMTIMERHANDLE hTimer, uint32_t uHzHint)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
     TMTIMER_ASSERT_CRITSECT(pTimer);
 
     uint32_t const uHzOldHint = pTimer->uHzHint;
     pTimer->uHzHint = uHzHint;
 
-    PVM pVM = pTimer->CTX_SUFF(pVM);
     uint32_t const uMaxHzHint = pVM->tm.s.uMaxHzHint;
     if (   uHzHint    >  uMaxHzHint
         || uHzOldHint >= uMaxHzHint)
@@ -1958,14 +1923,13 @@ static int tmTimerVirtualSyncStop(PVMCC pVM, PTMTIMER pTimer)
  * Use TMR3TimerArm() to "un-stop" the timer.
  *
  * @returns VBox status code.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
  */
-VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
+VMMDECL(int) TMTimerStop(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
-    PVMCC pVM = pTimer->CTX_SUFF(pVM);
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
     STAM_COUNTER_INC(&pTimer->StatStop);
 
     /* Treat virtual sync timers specially. */
@@ -2069,14 +2033,13 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
  * Handy for calculating the new expire time.
  *
  * @returns Current clock time.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
  */
-VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGet(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
-    PVMCC pVM = pTimer->CTX_SUFF(pVM);
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, UINT64_MAX, pTimer);
     STAM_COUNTER_INC(&pTimer->StatGet);
 
     uint64_t u64;
@@ -2105,13 +2068,13 @@ VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
  * Get the frequency of the timer clock.
  *
  * @returns Clock frequency (as Hz of course).
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
  */
-VMMDECL(uint64_t) TMTimerGetFreq(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGetFreq(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2133,13 +2096,13 @@ VMMDECL(uint64_t) TMTimerGetFreq(PTMTIMER pTimer)
  * Only valid for active timers.
  *
  * @returns Expire time of the timer.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
  */
-VMMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGetExpire(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, UINT64_MAX, pTimer);
     TMTIMER_ASSERT_CRITSECT(pTimer);
     int cRetries = 1000;
     do
@@ -2154,7 +2117,7 @@ VMMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
             case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
                 Log2(("TMTimerGetExpire: returns ~0 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
                       pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
-                return ~(uint64_t)0;
+                return UINT64_MAX;
 
             case TMTIMERSTATE_ACTIVE:
             case TMTIMERSTATE_PENDING_RESCHEDULE:
@@ -2179,17 +2142,17 @@ VMMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
                 AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 Log2(("TMTimerGetExpire: returns ~0 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
                       pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
-                return ~(uint64_t)0;
+                return UINT64_MAX;
             default:
                 AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
-                return ~(uint64_t)0;
+                return UINT64_MAX;
         }
     } while (cRetries-- > 0);
 
     AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
     Log2(("TMTimerGetExpire: returns ~0 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
           pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
-    return ~(uint64_t)0;
+    return UINT64_MAX;
 }
 
 
@@ -2198,13 +2161,13 @@ VMMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
  *
  * @returns True if active.
  * @returns False if not active.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
  */
-VMMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
+VMMDECL(bool) TMTimerIsActive(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, false, pTimer);
     TMTIMERSTATE enmState = pTimer->enmState;
     switch (enmState)
     {
@@ -2249,24 +2212,27 @@ VMMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
  * Arm a timer with a (new) expire time relative to current time.
  *
  * @returns VBox status code.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM             The cross context VM structure.
+ * @param   hTimer          Timer handle as returned by one of the create functions.
  * @param   cMilliesToNext  Number of milliseconds to the next tick.
  */
-VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
+VMMDECL(int) TMTimerSetMillies(PVMCC pVM, TMTIMERHANDLE hTimer, uint32_t cMilliesToNext)
 {
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return TMTimerSetRelative(pTimer, cMilliesToNext * UINT64_C(1000000), NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMilliesToNext * UINT64_C(1000000), NULL);
 
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return TMTimerSetRelative(pTimer, cMilliesToNext * UINT64_C(1000000), NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMilliesToNext * UINT64_C(1000000), NULL);
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return TMTimerSetRelative(pTimer, cMilliesToNext, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMilliesToNext, NULL);
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -2279,24 +2245,27 @@ VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
  * Arm a timer with a (new) expire time relative to current time.
  *
  * @returns VBox status code.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM             The cross context VM structure.
+ * @param   hTimer          Timer handle as returned by one of the create functions.
  * @param   cMicrosToNext   Number of microseconds to the next tick.
  */
-VMMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
+VMMDECL(int) TMTimerSetMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cMicrosToNext)
 {
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return TMTimerSetRelative(pTimer, cMicrosToNext * 1000, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMicrosToNext * 1000, NULL);
 
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return TMTimerSetRelative(pTimer, cMicrosToNext * 1000, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMicrosToNext * 1000, NULL);
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return TMTimerSetRelative(pTimer, cMicrosToNext / 1000, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMicrosToNext / 1000, NULL);
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -2309,24 +2278,27 @@ VMMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
  * Arm a timer with a (new) expire time relative to current time.
  *
  * @returns VBox status code.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM             The cross context VM structure.
+ * @param   hTimer          Timer handle as returned by one of the create functions.
  * @param   cNanosToNext    Number of nanoseconds to the next tick.
  */
-VMMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
+VMMDECL(int) TMTimerSetNano(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cNanosToNext)
 {
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return TMTimerSetRelative(pTimer, cNanosToNext, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cNanosToNext, NULL);
 
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return TMTimerSetRelative(pTimer, cNanosToNext, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cNanosToNext, NULL);
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return TMTimerSetRelative(pTimer, cNanosToNext / 1000000, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cNanosToNext / 1000000, NULL);
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -2339,11 +2311,12 @@ VMMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
  * Get the current clock time as nanoseconds.
  *
  * @returns The timer clock as nanoseconds.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
  */
-VMMDECL(uint64_t) TMTimerGetNano(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGetNano(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-    return TMTimerToNano(pTimer, TMTimerGet(pTimer));
+    return TMTimerToNano(pVM, hTimer, TMTimerGet(pVM, hTimer));
 }
 
 
@@ -2351,11 +2324,12 @@ VMMDECL(uint64_t) TMTimerGetNano(PTMTIMER pTimer)
  * Get the current clock time as microseconds.
  *
  * @returns The timer clock as microseconds.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
  */
-VMMDECL(uint64_t) TMTimerGetMicro(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGetMicro(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-    return TMTimerToMicro(pTimer, TMTimerGet(pTimer));
+    return TMTimerToMicro(pVM, hTimer, TMTimerGet(pVM, hTimer));
 }
 
 
@@ -2363,11 +2337,12 @@ VMMDECL(uint64_t) TMTimerGetMicro(PTMTIMER pTimer)
  * Get the current clock time as milliseconds.
  *
  * @returns The timer clock as milliseconds.
- * @param   pTimer          Timer handle as returned by one of the create functions.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
  */
-VMMDECL(uint64_t) TMTimerGetMilli(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGetMilli(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-    return TMTimerToMilli(pTimer, TMTimerGet(pTimer));
+    return TMTimerToMilli(pVM, hTimer, TMTimerGet(pVM, hTimer));
 }
 
 
@@ -2375,26 +2350,26 @@ VMMDECL(uint64_t) TMTimerGetMilli(PTMTIMER pTimer)
  * Converts the specified timer clock time to nanoseconds.
  *
  * @returns nanoseconds.
- * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   u64Ticks        The clock ticks.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
+ * @param   cTicks      The clock ticks.
  * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
  */
-VMMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
+VMMDECL(uint64_t) TMTimerToNano(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicks)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return u64Ticks;
+            return cTicks;
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return u64Ticks * 1000000;
+            return cTicks * 1000000;
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -2407,26 +2382,26 @@ VMMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
  * Converts the specified timer clock time to microseconds.
  *
  * @returns microseconds.
- * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   u64Ticks        The clock ticks.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
+ * @param   cTicks      The clock ticks.
  * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
  */
-VMMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
+VMMDECL(uint64_t) TMTimerToMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicks)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return u64Ticks / 1000;
+            return cTicks / 1000;
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return u64Ticks * 1000;
+            return cTicks * 1000;
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -2439,26 +2414,26 @@ VMMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
  * Converts the specified timer clock time to milliseconds.
  *
  * @returns milliseconds.
- * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   u64Ticks        The clock ticks.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
+ * @param   cTicks      The clock ticks.
  * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
  */
-VMMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
+VMMDECL(uint64_t) TMTimerToMilli(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicks)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return u64Ticks / 1000000;
+            return cTicks / 1000000;
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return u64Ticks;
+            return cTicks;
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -2471,15 +2446,15 @@ VMMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
  * Converts the specified nanosecond timestamp to timer clock ticks.
  *
  * @returns timer clock ticks.
- * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   cNanoSecs       The nanosecond value ticks to convert.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
+ * @param   cNanoSecs   The nanosecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-VMMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t cNanoSecs)
+VMMDECL(uint64_t) TMTimerFromNano(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cNanoSecs)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2502,15 +2477,15 @@ VMMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t cNanoSecs)
  * Converts the specified microsecond timestamp to timer clock ticks.
  *
  * @returns timer clock ticks.
- * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   cMicroSecs      The microsecond value ticks to convert.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
+ * @param   cMicroSecs  The microsecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t cMicroSecs)
+VMMDECL(uint64_t) TMTimerFromMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cMicroSecs)
 {
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2533,18 +2508,15 @@ VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t cMicroSecs)
  * Converts the specified millisecond timestamp to timer clock ticks.
  *
  * @returns timer clock ticks.
- * @param   pVM             The cross context VM structure.
- * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   cMilliSecs      The millisecond value ticks to convert.
+ * @param   pVM         The cross context VM structure.
+ * @param   hTimer      Timer handle as returned by one of the create functions.
+ * @param   cMilliSecs  The millisecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-VMMDECL(uint64_t) TMTimerFromMilli(PVMCC pVM, PTMTIMER pTimer, uint64_t cMilliSecs)
+VMMDECL(uint64_t) TMTimerFromMilli(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cMilliSecs)
 {
-    RT_NOREF(pVM);
-    Assert(pVM == pTimer->CTX_SUFF(pVM));
-#ifdef IN_RING0
-    Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0);
-#endif
+    PTMTIMER pTimer;
+    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:

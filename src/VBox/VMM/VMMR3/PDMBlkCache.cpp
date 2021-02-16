@@ -735,7 +735,7 @@ static void pdmBlkCacheCommit(PPDMBLKCACHE pBlkCache)
     /* Reset the commit timer if we don't have any dirty bits. */
     if (   !(cbDirtyOld - cbCommitted)
         && pBlkCache->pCache->u32CommitTimeoutMs != 0)
-        TMTimerStop(pBlkCache->pCache->pTimerCommit);
+        TMTimerStop(pBlkCache->pCache->pVM, pBlkCache->pCache->hTimerCommit);
 }
 
 /**
@@ -807,7 +807,7 @@ static bool pdmBlkCacheAddDirtyEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY p
         else if (!cbDirty && pCache->u32CommitTimeoutMs > 0)
         {
             /* Arm the commit timer. */
-            TMTimerSetMillies(pCache->pTimerCommit, pCache->u32CommitTimeoutMs);
+            TMTimerSetMillies(pCache->pVM, pCache->hTimerCommit, pCache->u32CommitTimeoutMs);
         }
     }
 
@@ -832,12 +832,12 @@ static PPDMBLKCACHE pdmR3BlkCacheFindById(PPDMBLKCACHEGLOBAL pBlkCacheGlobal, co
 }
 
 /**
- * Commit timer callback.
+ * @callback_method_impl{FNTMTIMERINT, Commit timer callback.}
  */
-static DECLCALLBACK(void) pdmBlkCacheCommitTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) pdmBlkCacheCommitTimerCallback(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser)
 {
     PPDMBLKCACHEGLOBAL pCache = (PPDMBLKCACHEGLOBAL)pvUser;
-    NOREF(pVM); NOREF(pTimer);
+    RT_NOREF(pVM, hTimer);
 
     LogFlowFunc(("Commit interval expired, commiting dirty entries\n"));
 
@@ -1157,7 +1157,7 @@ int pdmR3BlkCacheInit(PVM pVM)
         /* Create the commit timer */
         if (pBlkCacheGlobal->u32CommitTimeoutMs > 0)
             rc = TMR3TimerCreate(pVM, TMCLOCK_REAL, pdmBlkCacheCommitTimerCallback, pBlkCacheGlobal,
-                                 TMTIMER_FLAGS_NO_RING0,  "BlkCache-Commit", &pBlkCacheGlobal->pTimerCommit);
+                                 TMTIMER_FLAGS_NO_RING0,  "BlkCache-Commit", &pBlkCacheGlobal->hTimerCommit);
 
         if (RT_SUCCESS(rc))
         {
@@ -2777,7 +2777,6 @@ VMMR3DECL(int) PDMR3BlkCacheResume(PPDMBLKCACHE pBlkCache)
 
 VMMR3DECL(int) PDMR3BlkCacheClear(PPDMBLKCACHE pBlkCache)
 {
-    int rc = VINF_SUCCESS;
     PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
 
     /*
@@ -2795,6 +2794,6 @@ VMMR3DECL(int) PDMR3BlkCacheClear(PPDMBLKCACHE pBlkCache)
     RTSemRWReleaseWrite(pBlkCache->SemRWEntries);
 
     pdmBlkCacheLockLeave(pCache);
-    return rc;
+    return VINF_SUCCESS;
 }
 

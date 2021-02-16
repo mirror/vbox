@@ -362,7 +362,7 @@ static DECLCALLBACK(void) pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *p
                 if (tsDelay < pEpClassFile->cMilliesNext)
                 {
                     ASMAtomicWriteU64(&pEpClassFile->cMilliesNext, tsDelay);
-                    TMTimerSetMillies(pEpClassFile->pTimer, tsDelay);
+                    TMTimerSetMillies(pVM, pEpClassFile->hTimer, tsDelay);
                 }
 
                 LogRel(("AIOMgr: Delaying request %#p for %u ms\n", pTaskFile, tsDelay));
@@ -732,8 +732,12 @@ static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(void) pdmacR3TimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
+/**
+ * @callback_method_impl{FNTMTIMERINT, }
+ */
+static DECLCALLBACK(void) pdmacR3TimerCallback(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser)
 {
+    Assert(hTimer == pEpClassFile->hTimer);
     uint64_t tsCur = RTTimeProgramMilliTS();
     uint64_t cMilliesNext = UINT64_MAX;
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pvUser;
@@ -783,7 +787,7 @@ static DECLCALLBACK(void) pdmacR3TimerCallback(PVM pVM, PTMTIMER pTimer, void *p
     if (cMilliesNext < pEpClassFile->cMilliesNext)
     {
         ASMAtomicWriteU64(&pEpClassFile->cMilliesNext, cMilliesNext);
-        TMTimerSetMillies(pEpClassFile->pTimer, cMilliesNext);
+        TMTimerSetMillies(pVM, hTimer, cMilliesNext);
     }
 }
 
@@ -867,7 +871,7 @@ static DECLCALLBACK(int) pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGl
 
 # ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
     rc = TMR3TimerCreate(pEpClassFile->Core.pVM, TMCLOCK_REAL, pdmacR3TimerCallback, pEpClassFile,
-                         TMTIMER_FLAGS_NO_RING0, "AC Delay", &pEpClassFile->pTimer);
+                         TMTIMER_FLAGS_NO_RING0, "AC Delay", &pEpClassFile->hTimer);
     AssertRC(rc);
     pEpClassFile->cMilliesNext = UINT64_MAX;
 # endif
