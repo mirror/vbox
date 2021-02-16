@@ -1138,15 +1138,6 @@ VMM_INT_DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVM->tm.s.VirtualGetRawDataRC.pfnRediscover  += offDelta;
         pVM->tm.s.pfnVirtualGetRawRC                 += offDelta;
     }
-
-    /*
-     * Iterate the timers updating the pVMRC pointers.
-     */
-    for (PTMTIMER pTimer = pVM->tm.s.pCreated; pTimer; pTimer = pTimer->pBigNext)
-    {
-        pTimer->pVMRC = pVM->pVMRC;
-        pTimer->pVMR0 = pVM->pVMR0ForCall; /** @todo fix properly */
-    }
 }
 
 
@@ -1542,17 +1533,15 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
     pTimer->u64Expire       = 0;
     pTimer->enmClock        = enmClock;
     pTimer->hSelf           = (TMTIMERHANDLE)pTimer;
-    pTimer->pVMR3           = pVM;
-    pTimer->pVMR0           = pVM->pVMR0ForCall; /** @todo fix properly */
-    pTimer->pVMRC           = pVM->pVMRC;
     pTimer->enmState        = TMTIMERSTATE_STOPPED;
     pTimer->offScheduleNext = 0;
     pTimer->offNext         = 0;
     pTimer->offPrev         = 0;
+    pTimer->fFlags          = fFlags;
+    pTimer->uHzHint         = 0;
     pTimer->pvUser          = NULL;
     pTimer->pCritSect       = NULL;
     pTimer->pszDesc         = pszDesc;
-    pTimer->fFlags          = fFlags;
 
     /* insert into the list of created timers. */
     TM_LOCK_TIMERS(pVM);
@@ -2795,7 +2784,7 @@ VMMR3DECL(int) TMR3TimerLoad(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
 
     /* Enter the critical sections to make TMTimerSet/Stop happy. */
     if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
-        PDMCritSectEnter(&pTimer->pVMR3->tm.s.VirtualSyncLock, VERR_IGNORED);
+        PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
     PPDMCRITSECT pCritSect = pTimer->pCritSect;
     if (pCritSect)
         PDMCritSectEnter(pCritSect, VERR_IGNORED);
@@ -2828,7 +2817,7 @@ VMMR3DECL(int) TMR3TimerLoad(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
     if (pCritSect)
         PDMCritSectLeave(pCritSect);
     if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
-        PDMCritSectLeave(&pTimer->pVMR3->tm.s.VirtualSyncLock);
+        PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
 
     /*
      * On failure set SSM status.
