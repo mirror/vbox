@@ -1330,7 +1330,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_TimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enm
     {
         AssertReturn(!(fFlags & TMTIMER_FLAGS_NO_RING0), VERR_INVALID_FLAGS);
         Assert(pDrvIns->Internal.s.pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_R0);
-        /** @todo if (!(pDrvIns->Internal.s.fIntFlags & PDMDRVINSINT_FLAGS_R0_ENABLED))   */
+        /* if (!(pDrvIns->Internal.s.fIntFlags & PDMDRVINSINT_FLAGS_R0_ENABLED)) */ /** @todo PDMDRVINSINT_FLAGS_R0_ENABLED? */
             fFlags = (fFlags & ~TMTIMER_FLAGS_RING0) | TMTIMER_FLAGS_NO_RING0;
     }
     else
