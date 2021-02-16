@@ -5053,7 +5053,7 @@ static DECLCALLBACK(void) pcnetR3Reset(PPDMDEVINS pDevIns)
     {
         pThis->cLinkDownReported = 0x10000;
         PDMDevHlpTimerStop(pDevIns, pThis->hTimerRestore);
-        pcnetR3TimerRestore(pDevIns, NULL /* pTimer - not used */, pThis);
+        pcnetR3TimerRestore(pDevIns, pThis->hTimerRestore, pThis);
     }
 
     /** @todo How to flush the queues? */
