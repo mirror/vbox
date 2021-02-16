@@ -1761,6 +1761,7 @@ VMMR3DECL(int) TMR3TimerCreate(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallb
  * Destroy a timer
  *
  * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
 static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
@@ -2906,7 +2907,8 @@ VMMR3DECL(int) TMR3TimerSkip(PSSMHANDLE pSSM, bool *pfActive)
  *          with the timer (asserted).
  * @retval  VERR_INVALID_STATE if the timer isn't stopped.
  *
- * @param   pTimer          The timer handle.
+ * @param   pVM             The cross context VM structure.
+ * @param   hTimer          The timer handle.
  * @param   pCritSect       The critical section. The caller must make sure this
  *                          is around for the life time of the timer.
  *

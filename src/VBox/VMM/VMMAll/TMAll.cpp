@@ -1579,7 +1579,7 @@ static int tmTimerVirtualSyncSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cT
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
- * @param   hTimer          Timer handle as returned by one of the create functions.
+ * @param   pTimer          The timer to arm.
  * @param   cTicksToNext    Clock ticks until the next time expiration.
  * @param   pu64Now         Where to return the current time stamp used.
  *                          Optional.
