@@ -43,12 +43,8 @@ RT_C_DECLS_BEGIN
  */
 typedef struct TRPM
 {
-#ifdef VBOX_WITH_STATISTICS
     /** Statistics for interrupt handlers. */
     STAMCOUNTER             aStatForwardedIRQ[256];
-#else
-    uint64_t                uWhatever;
-#endif
 } TRPM;
 
 /** Pointer to TRPM Data. */
