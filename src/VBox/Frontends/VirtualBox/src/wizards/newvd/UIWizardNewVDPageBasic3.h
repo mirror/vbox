@@ -35,6 +35,11 @@ class UIMediumSizeEditor;
 /* 3rd page of the New Virtual Hard Drive wizard (base part): */
 class SHARED_LIBRARY_STUFF UIWizardNewVDPage3 : public UIWizardPageBase
 {
+
+public:
+
+    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
+
 protected:
 
     /* Constructor: */
@@ -49,7 +54,6 @@ protected:
     static QString absoluteFilePath(const QString &strFileName, const QString &strPath);
     /* Returns the full image file path including the extension. */
     static QString absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension);
-    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
 
     /* Checks if the medium file is bigger than what is allowed in FAT file systems. */
     bool checkFATSizeLimitation() const;

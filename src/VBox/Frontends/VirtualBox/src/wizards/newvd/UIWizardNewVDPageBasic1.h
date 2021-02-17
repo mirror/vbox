@@ -54,6 +54,7 @@ protected:
     QButtonGroup *m_pFormatButtonGroup;
     QList<CMediumFormat> m_formats;
     QStringList m_formatNames;
+    QStringList m_formatExtensions;
 };
 
 

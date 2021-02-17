@@ -23,6 +23,7 @@
 /* GUI includes: */
 #include "UIConverter.h"
 #include "UIWizardNewVDPageBasic1.h"
+#include "UIWizardNewVDPageBasic3.h"
 #include "UIWizardNewVD.h"
 #include "UICommon.h"
 #include "QIRichTextLabel.h"
@@ -70,6 +71,7 @@ void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatL
         m_formats << medFormat;
         m_formatNames << medFormat.GetName();
         m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
+        m_formatExtensions << UIWizardNewVDPage3::defaultExtension(medFormat);
     }
 }
 
@@ -203,4 +205,3 @@ int UIWizardNewVDPageBasic1::nextId() const
     /* Skip otherwise: */
     return UIWizardNewVD::Page3;
 }
-
