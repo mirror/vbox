@@ -394,7 +394,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
             if (rcStrict != VINF_SUCCESS)
                 return VBOXSTRICTRC_TODO(rcStrict);
         }
-        STAM_COUNTER_INC(&pVM->trpm.s.aStatForwardedIRQ[u8Interrupt]);
+        STAM_REL_COUNTER_INC(&pVM->trpm.s.aStatForwardedIRQ[u8Interrupt]);
     }
     else
     {
