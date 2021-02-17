@@ -354,7 +354,7 @@ void UIWizardNewVMPage1::markWidgets() const
     if (m_pNameAndSystemEditor)
         m_pNameAndSystemEditor->markNameLineEdit(m_pNameAndSystemEditor->name().isEmpty());
     if (m_pISOFilePathSelector)
-        m_pISOFilePathSelector->mark(!checkISOFile());
+        m_pISOFilePathSelector->mark(!checkISOFile(), UIWizardNewVM::tr("Invalid file path or unreadable file"));
 }
 
 void UIWizardNewVMPage1::retranslateWidgets()
