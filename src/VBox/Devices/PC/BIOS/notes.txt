@@ -43,6 +43,11 @@
 - NetWare 6.x is the only known guest which uses the PCI BIOS service to read
   the IRQ routing table.
 
+- NetWare 6.5 boot CD is a rare user of INT 15h/86h, asking for 1,000,000
+  microsecond (1 second) delays. The initial NW 6.5 release boots to Caldera
+  DOS and does not exhibit this behavior. NetWare 6.5 SP2 and later boots
+  straight to NetWare and uses the 1-second sleep.
+
 - Any disk reads which use bus-master DMA (AHCI, IDE BM) must use VDS
   (Virtual DMA Services) when present. Otherwise any reads/writes when the
   real mode addresses don't map directly to physical addresses will fail

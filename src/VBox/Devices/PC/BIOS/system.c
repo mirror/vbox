@@ -284,27 +284,6 @@ void pm_unwind(uint16_t args);
     "retf"                  \
     parm [ax] modify nomemory aborts;
 
-/// @todo This method is silly. The RTC should be programmed to fire an interrupt
-// instead of hogging the CPU with inaccurate code.
-void timer_wait(uint32_t usec_wait)
-{
-    uint32_t    cycles;
-    uint8_t     old_val;
-    uint8_t     cur_val;
-
-    /* We wait in 15 usec increments. */
-    cycles = usec_wait / 15;
-
-    old_val = inp(0x61) & 0x10;
-    while (cycles--) {
-        /* Wait 15us. */
-        do {
-            cur_val = inp(0x61) & 0x10;
-        } while (cur_val != old_val);
-        old_val = cur_val;
-    }
-}
-
 bx_bool set_enable_a20(bx_bool val)
 {
     uint8_t     oldval;
@@ -426,15 +405,16 @@ void BIOSCALL int15_function(sys_regs_t r)
                 write_word( 0x40, 0x9C, DX ); // Low word, delay
                 write_word( 0x40, 0x9E, CX ); // High word, delay.
                 CLEAR_CF( );
+                // Unmask IRQ8 so INT70 will get through.
                 irqDisable = inb( 0xA1 );
                 outb( 0xA1, irqDisable & 0xFE );
-                bRegister = inb_cmos( 0xB );  // Unmask IRQ8 so INT70 will get through.
-                outb_cmos( 0xB, bRegister | 0x40 ); // Turn on the Periodic Interrupt timer
+                bRegister = inb_cmos( 0xB );
+                // Turn on the Periodic Interrupt timer
+                outb_cmos( 0xB, bRegister | 0x40 );
             } else {
                 // Interval already set.
                 BX_DEBUG_INT15("int15: Func 83h, failed, already waiting.\n" );
-                SET_CF();
-                SET_AH(UNSUPPORTED_FUNCTION);
+                SET_CF();   // AH is left unmodified
             }
         } else if( GET_AL() == 1 ) {
             // Clear Interval requested
@@ -453,10 +433,34 @@ void BIOSCALL int15_function(sys_regs_t r)
         }
 
     case 0x86:
-        // Wait for CX:DX microseconds. currently using the
-        // refresh request port 0x61 bit4, toggling every 15usec
-        int_enable();
-        timer_wait(((uint32_t)CX << 16) | DX);
+        // Set Interval requested.
+        if( ( read_byte( 0x40, 0xA0 ) & 1 ) == 0 ) {
+            // Interval not already set.
+            write_byte( 0x40, 0xA0, 1 );    // Set status byte.
+            write_word( 0x40, 0x98, 0x40 ); // Byte location, segment
+            write_word( 0x40, 0x9A, 0xA0 ); // Byte location, offset
+            write_word( 0x40, 0x9C, DX );   // Low word, delay
+            write_word( 0x40, 0x9E, CX );   // High word, delay.
+            // Unmask IRQ8 so INT70 will get through.
+            irqDisable = inb( 0xA1 );
+            outb( 0xA1, irqDisable & 0xFE );
+            bRegister = inb_cmos( 0xB );
+            // Turn on the Periodic Interrupt timer
+            outb_cmos( 0xB, bRegister | 0x40 );
+            // Now wait until timer interrupt says wait is done.
+            int_enable();
+            do {
+                halt();
+                bRegister = read_byte( 0x40, 0xA0 );
+            }
+            while( !(bRegister & 0x80) );
+            write_byte( 0x40, 0xA0, 0 );    // Deactivate wait.
+            CLEAR_CF( );
+        } else {
+            // Interval already set.
+            BX_DEBUG_INT15("int15: Func 86h, failed, already waiting.\n" );
+            SET_CF();   // AH is left unmodified
+        }
         break;
 
     case 0x88:
