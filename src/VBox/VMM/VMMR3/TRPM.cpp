@@ -161,13 +161,9 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     /*
      * Statistics.
      */
-#ifdef VBOX_WITH_STATISTICS
-    rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 256, sizeof(STAMCOUNTER), MM_TAG_TRPM, (void **)&pVM->trpm.s.paStatForwardedIRQR3);
-    AssertRCReturn(rc, rc);
     for (unsigned i = 0; i < 256; i++)
-        STAMR3RegisterF(pVM, &pVM->trpm.s.paStatForwardedIRQR3[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Forwarded interrupts.",
-                        i < 0x20 ? "/TRPM/ForwardRaw/TRAP/%02X" : "/TRPM/ForwardRaw/IRQ/%02X", i);
-#endif
+        STAMR3RegisterF(pVM, &pVM->trpm.s.aStatForwardedIRQ[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                        "Forwarded interrupts.", i < 0x20 ? "/TRPM/ForwardRaw/TRAP/%02X" : "/TRPM/ForwardRaw/IRQ/%02X", i);
 
     return 0;
 }
@@ -398,7 +394,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
             if (rcStrict != VINF_SUCCESS)
                 return VBOXSTRICTRC_TODO(rcStrict);
         }
-        STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
+        STAM_COUNTER_INC(&pVM->trpm.s.aStatForwardedIRQ[u8Interrupt]);
     }
     else
     {

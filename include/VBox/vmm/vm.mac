@@ -123,7 +123,7 @@ struc VM
     .vmm                    resb 1600
     .pgm                    resb 21120
     .hm                     resb 5504
-    .trpm                   resb 5248
+    .trpm                   resb 2048
     .selm                   resb 768
     .mm                     resb 192
     .pdm                    resb 8128
@@ -139,9 +139,7 @@ struc VM
     .cfgm                   resb 8
     .R0Stats                resb 64
 
-    .abAlignment2           resb 4568 - RTR0PTR_CB * VMM_MAX_CPU_COUNT
-
-    alignb RTR0PTR_CB * VMM_MAX_CPU_COUNT ; ASSUMES VMM_MAX_CPU_COUNT is a power of two.
+    times ((($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB + 4095) & ~4095) - ($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB)) resb 1
     .apCpusR3               RTR3PTR_RES VMM_MAX_CPU_COUNT
     alignb 4096
 

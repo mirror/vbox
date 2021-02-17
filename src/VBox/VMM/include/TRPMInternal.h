@@ -44,11 +44,11 @@ RT_C_DECLS_BEGIN
 typedef struct TRPM
 {
 #ifdef VBOX_WITH_STATISTICS
-    /** Statistics for interrupt handlers (allocated on the hypervisor heap) - R3
-     * pointer. */
-    R3PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR3;
+    /** Statistics for interrupt handlers. */
+    STAMCOUNTER             aStatForwardedIRQ[256];
+#else
+    uint64_t                uWhatever;
 #endif
-    uint64_t                u64Dummy;
 } TRPM;
 
 /** Pointer to TRPM Data. */
