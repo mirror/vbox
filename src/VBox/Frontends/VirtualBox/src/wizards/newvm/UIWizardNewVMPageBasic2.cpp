@@ -185,7 +185,11 @@ void UIWizardNewVMPage2::retranslateWidgets()
     if (m_pGAISOFilePathSelector)
         m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
     if (m_pGAInstallCheckBox)
+    {
         m_pGAInstallCheckBox->setText(UIWizardNewVM::tr("Install Guest Additions"));
+        m_pGAInstallCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked the guest additions will be installed "
+                                                           "after the OS install.</p>"));
+    }
     if (m_pProductKeyLabel)
         m_pProductKeyLabel->setText(UIWizardNewVM::tr("Product Key:"));
     if (m_pUserNameContainer)
@@ -197,8 +201,8 @@ void UIWizardNewVMPage2::retranslateWidgets()
     if (m_pStartHeadlessCheckBox)
     {
         m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("Start VM Headless"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked, the unattended install will start the virtual "
-                                                               "machine in headless mode after the guest OS install."));
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the unattended install will start the virtual "
+                                                               "machine in headless mode after the guest OS install.</p>"));
     }
 }
 
