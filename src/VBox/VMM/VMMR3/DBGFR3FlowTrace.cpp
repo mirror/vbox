@@ -692,7 +692,7 @@ static bool dbgfR3FlowTraceDoesRecordMatchFilter(PDBGFFLOWTRACERECORDINT pRecord
 /**
  * Collects all the data specified in the given probe.
  *
- * @returns nothing.
+ * @returns Flag whether to enter the debugger.
  * @param   pUVM                    The user mode VM handle.
  * @param   idCpu                   The virtual CPU ID.
  * @param   pTraceMod               The trace module instance.
@@ -701,12 +701,14 @@ static bool dbgfR3FlowTraceDoesRecordMatchFilter(PDBGFFLOWTRACERECORDINT pRecord
  * @param   pVal                    Pointer to the array of values to fill.
  * @param   pbBuf                   Poitner to the memory buffer holding additional data.
  */
-static void dbgfR3FlowTraceModProbeCollectData(PUVM pUVM, VMCPUID idCpu,
+static bool dbgfR3FlowTraceModProbeCollectData(PUVM pUVM, VMCPUID idCpu,
                                                PDBGFFLOWTRACEMODINT pTraceMod,
                                                PCDBGFADDRESS pAddrProbe,
                                                PDBGFFLOWTRACEPROBEINT pProbe,
                                                PDBGFFLOWTRACEPROBEVAL pVal, uint8_t *pbBuf)
 {
+    bool fDbgDefer = false;
+
     for (uint32_t i = 0; i < pProbe->cEntries; i++)
     {
         int rc;
@@ -752,12 +754,17 @@ static void dbgfR3FlowTraceModProbeCollectData(PUVM pUVM, VMCPUID idCpu,
                                                        pAddrProbe, pProbe, pEntry,
                                                        pEntry->Type.Callback.pvUser);
                 break;
+            case DBGFFLOWTRACEPROBEENTRYTYPE_DEBUGGER:
+                fDbgDefer = true;
+                break;
             default:
                 AssertFailed();
         }
 
         pVal++;
     }
+
+    return fDbgDefer;
 }
 
 
@@ -774,6 +781,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3FlowTraceModProbeFiredWorker(PVM pVM, VM
     PDBGFFLOWTRACEPROBEINT pProbe = pProbeLoc->pProbe;
     PDBGFFLOWTRACEMODINT pTraceMod = pProbeLoc->pTraceMod;
     bool fDisabledModule = false;
+    bool fDbgDefer = false;
 
     /* Check whether the trace module is still active and we are tracing the correct VCPU. */
     if (ASMAtomicReadU32((volatile uint32_t *)&pTraceMod->enmState) != DBGFFLOWTRACEMODSTATE_ENABLED
@@ -804,11 +812,11 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3FlowTraceModProbeFiredWorker(PVM pVM, VM
     PDBGFFLOWTRACERECORDINT pRecord = dbgfR3FlowTraceRecordCreate(pProbeLoc, idCpu, &pbBuf, &pbBufCmn);
     if (pRecord)
     {
-        dbgfR3FlowTraceModProbeCollectData(pTraceMod->pUVM, idCpu, pTraceMod, &pProbeLoc->AddrProbe, pProbe,
-                                           &pRecord->aVal[0], pbBuf);
+        fDbgDefer = dbgfR3FlowTraceModProbeCollectData(pTraceMod->pUVM, idCpu, pTraceMod, &pProbeLoc->AddrProbe, pProbe,
+                                                       &pRecord->aVal[0], pbBuf);
         if (pTraceMod->pProbeCmn)
-            dbgfR3FlowTraceModProbeCollectData(pTraceMod->pUVM, idCpu, pTraceMod, NULL, pTraceMod->pProbeCmn,
-                                               pRecord->paValCmn, pbBufCmn);
+            fDbgDefer = dbgfR3FlowTraceModProbeCollectData(pTraceMod->pUVM, idCpu, pTraceMod, NULL, pTraceMod->pProbeCmn,
+                                                           pRecord->paValCmn, pbBufCmn);
 
         RTSemFastMutexRequest(pTraceMod->hMtx);
         uint32_t cRecordsNew = ASMAtomicIncU32(&pTraceMod->cRecords);
@@ -831,7 +839,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3FlowTraceModProbeFiredWorker(PVM pVM, VM
         AssertRC(rc);
     }
 
-    return VINF_SUCCESS;
+    return fDbgDefer ? VINF_DBGF_BP_HALT : VINF_SUCCESS;
 }
 
 
@@ -855,6 +863,13 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3FlowTraceModEnableWorker(PVM pVM, PVMCPU
 
     RTListForEach(&pThis->LstProbes, pProbeLoc, DBGFFLOWTRACEMODPROBELOC, NdProbes)
     {
+        uint16_t fBpFlags = DBGF_BP_F_ENABLED;
+
+        if (pProbeLoc->fFlags & DBGF_FLOW_TRACE_PROBE_ADD_F_BEFORE_EXEC)
+            fBpFlags |= DBGF_BP_F_HIT_EXEC_BEFORE;
+        if (pProbeLoc->fFlags & DBGF_FLOW_TRACE_PROBE_ADD_F_AFTER_EXEC)
+            fBpFlags |= DBGF_BP_F_HIT_EXEC_AFTER;
+
         rc = DBGFR3BpSetInt3Ex(pThis->pUVM, pThis->hBpOwner, pProbeLoc,
                                0 /*idSrcCpu*/, &pProbeLoc->AddrProbe, DBGF_BP_F_DEFAULT,
                                0 /*iHitTrigger*/, ~0ULL /*iHitDisable*/, &pProbeLoc->hBp);
@@ -975,6 +990,8 @@ static void dbgfR3ProbeEntryCleanup(PDBGFFLOWTRACEPROBEINT pProbe, uint32_t idxS
             case DBGFFLOWTRACEPROBEENTRYTYPE_CALLBACK:
                 pEntry->Type.Callback.pfnCallback = NULL;
                 pEntry->Type.Callback.pvUser      = NULL;
+                break;
+            case DBGFFLOWTRACEPROBEENTRYTYPE_DEBUGGER:
                 break;
             default:
                 AssertFailed();
@@ -1102,6 +1119,8 @@ static int dbgfR3ProbeEntryDup(PUVM pUVM, PDBGFFLOWTRACEPROBEENTRY pDst, PCDBGFF
                 pDst->Type.Callback.pfnCallback = pSrc->Type.Callback.pfnCallback;
                 pDst->Type.Callback.pvUser      = pSrc->Type.Callback.pvUser;
                 break;
+            case DBGFFLOWTRACEPROBEENTRYTYPE_DEBUGGER:
+                break;
             default:
                 rc = VERR_INVALID_PARAMETER;
         }
@@ -1144,6 +1163,7 @@ static void dbgfR3ProbeRecalcSize(PDBGFFLOWTRACEPROBEINT pProbe)
                 break;
             case DBGFFLOWTRACEPROBEENTRYTYPE_CALLBACK:
             case DBGFFLOWTRACEPROBEENTRYTYPE_REG:
+            case DBGFFLOWTRACEPROBEENTRYTYPE_DEBUGGER:
                 break;
             default:
                 AssertFailed();
@@ -1259,12 +1279,11 @@ VMMR3DECL(int) DBGFR3FlowTraceModCreateFromFlowGraph(PUVM pUVM, VMCPUID idCpu, D
                         rc = DBGFR3FlowTraceModAddProbe(hFlowTraceMod, &AddrInstr, hFlowTraceProbeEntry,
                                                         DBGF_FLOW_TRACE_PROBE_ADD_F_BEFORE_EXEC);
                     }
-
-                    if (RT_SUCCESS(rc))
+                    else
                     {
                         DBGFFLOWBBENDTYPE enmType = DBGFR3FlowBbGetType(hFlowBb);
-                        uint32_t cInstr = DBGFR3FlowBbGetInstrCount(hFlowBb);
-                        rc = DBGFR3FlowBbQueryInstr(hFlowBb, cInstr - 1, &AddrInstr, NULL, NULL);
+                        uint32_t cInstr = enmType == DBGFFLOWBBENDTYPE_EXIT ? DBGFR3FlowBbGetInstrCount(hFlowBb) - 1 : 0;
+                        rc = DBGFR3FlowBbQueryInstr(hFlowBb, cInstr, &AddrInstr, NULL, NULL);
                         if (RT_SUCCESS(rc))
                         {
                             if (enmType == DBGFFLOWBBENDTYPE_EXIT)
