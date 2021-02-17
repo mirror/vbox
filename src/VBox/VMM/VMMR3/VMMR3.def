@@ -100,6 +100,20 @@ EXPORTS
 
     DBGCCreate
 
+    DBGFR3BpClear
+    DBGFR3BpDisable
+    DBGFR3BpEnable
+    DBGFR3BpOwnerCreate
+    DBGFR3BpOwnerDestroy
+    DBGFR3BpSetInt3
+    DBGFR3BpSetInt3Ex
+    DBGFR3BpSetMmio
+    DBGFR3BpSetMmioEx
+    DBGFR3BpSetPortIo
+    DBGFR3BpSetPortIoEx
+    DBGFR3BpSetReg
+    DBGFR3BpSetRegEx
+    DBGFR3BpSetREM
     DBGFR3CoreWrite
     DBGFR3Info
     DBGFR3InfoRegisterExternal
