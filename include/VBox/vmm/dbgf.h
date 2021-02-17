@@ -873,9 +873,10 @@ typedef struct DBGFBPPUB
     /** The breakpoint owner handle (a nil owner defers the breakpoint to the
      * debugger). */
     DBGFBPOWNER     hOwner;
-    /** Breakpoint type and flags, see DBGFBPTYPE for type and DBGF_BP_F_XXX for flags.
-     * Needs to be smashed together to be able to stay in the size limits. */
-    uint32_t        fFlagsAndType;
+    /** Breakpoint type stored as a 16bit integer to stay within size limits. */
+    uint16_t        u16Type;
+    /** Breakpoint flags. */
+    uint16_t        fFlags;
 
     /** Union of type specific data. */
     union
@@ -942,21 +943,30 @@ typedef DBGFBPPUB *PDBGFBPPUB;
 /** Pointer to a const visible breakpoint state. */
 typedef const DBGFBPPUB *PCDBGFBPPUB;
 
-/** Sets the DBGFPUB::fFlagsAndType member.
- * @todo r=bird: Rename to DBGF_BP_PUB_MAKE_FLAGS_AND_TYPE, as this macro
- *       isn't setting anything. */
-#define DBGF_BP_PUB_SET_FLAGS_AND_TYPE(a_enmType, a_fFlags) ((uint32_t)(a_enmType) | (a_fFlags))
-/** Returns the type of the DBGFPUB::fFlagsAndType member. */
-#define DBGF_BP_PUB_GET_TYPE(a_fFlagsAndType)               ((DBGFBPTYPE)((a_fFlagsAndType) & (UINT32_C(0x7fffffff))))
-/** Returns the enabled status of DBGFPUB::fFlagsAndType member. */
-#define DBGF_BP_PUB_IS_ENABLED(a_fFlagsAndType)             RT_BOOL((a_fFlagsAndType) & DBGF_BP_F_ENABLED)
+/** Sets the DBGFPUB::u16Type member. */
+#define DBGF_BP_PUB_MAKE_TYPE(a_enmType)          ((uint16_t)(a_enmType))
+/** Returns the type of the DBGFPUB::u16Type member. */
+#define DBGF_BP_PUB_GET_TYPE(a_pBp)               ((DBGFBPTYPE)((a_pBp)->u16Type))
+/** Returns the enabled status of DBGFPUB::fFlags member. */
+#define DBGF_BP_PUB_IS_ENABLED(a_pBp)             RT_BOOL((a_pBp)->fFlags & DBGF_BP_F_ENABLED)
+/** Returns whether DBGF_BP_F_HIT_EXEC_BEFORE is set for DBGFPUB::fFlags. */
+#define DBGF_BP_PUB_IS_EXEC_BEFORE(a_pBp)         RT_BOOL((a_pBp)->fFlags & DBGF_BP_F_HIT_EXEC_BEFORE)
+/** Returns whether DBGF_BP_F_HIT_EXEC_AFTER is set for DBGFPUB::fFlags. */
+#define DBGF_BP_PUB_IS_EXEC_AFTER(a_pBp)          RT_BOOL((a_pBp)->fFlags & DBGF_BP_F_HIT_EXEC_AFTER)
 
-/** @name Possible DBGFBPPUB::fFlagsAndType flags.
+
+/** @name Possible DBGFBPPUB::fFlags flags.
  * @{ */
-/** Default flags. */
-#define DBGF_BP_F_DEFAULT                   0
+/** Default flags, breakpoint is enabled and hits before the instruction is executed. */
+#define DBGF_BP_F_DEFAULT                   (DBGF_BP_F_ENABLED | DBGF_BP_F_HIT_EXEC_BEFORE)
 /** Flag whether the breakpoint is enabled currently. */
-#define DBGF_BP_F_ENABLED                   RT_BIT_32(31)
+#define DBGF_BP_F_ENABLED                   RT_BIT(0)
+/** Flag indicating whether the action assoicated with the breakpoint should be carried out
+ * before the instruction causing the breakpoint to hit was executed. */
+#define DBGF_BP_F_HIT_EXEC_BEFORE           RT_BIT(1)
+/** Flag indicating whether the action assoicated with the breakpoint should be carried out
+ * after the instruction causing the breakpoint to hit was executed. */
+#define DBGF_BP_F_HIT_EXEC_AFTER            RT_BIT(2)
 /** @} */
 
 
@@ -973,12 +983,14 @@ typedef const DBGFBPPUB *PCDBGFBPPUB;
  * @param   pvUserBp    User argument of the set breakpoint.
  * @param   hBp         The breakpoint handle.
  * @param   pBpPub      Pointer to the readonly public state of the breakpoint.
+ * @param   fFlags      Flags indicating when the handler was called (DBGF_BP_F_HIT_EXEC_BEFORE vs DBGF_BP_F_HIT_EXEC_AFTER).
  *
  * @remarks The handler is called on the EMT of vCPU triggering the breakpoint and no locks are held.
  * @remarks Any status code returned other than the ones mentioned will send the VM straight into a
  *          guru meditation.
  */
-typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNDBGFBPHIT,(PVM pVM, VMCPUID idCpu, void *pvUserBp, DBGFBP hBp, PCDBGFBPPUB pBpPub));
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNDBGFBPHIT,(PVM pVM, VMCPUID idCpu, void *pvUserBp, DBGFBP hBp, PCDBGFBPPUB pBpPub,
+                                                    uint16_t fFlags));
 /** Pointer to a FNDBGFBPHIT(). */
 typedef FNDBGFBPHIT *PFNDBGFBPHIT;
 
@@ -992,12 +1004,13 @@ VMMR3DECL(int) DBGFR3BpOwnerDestroy(PUVM pUVM, DBGFBPOWNER hBpOwner);
 VMMR3DECL(int) DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idSrcCpu, PCDBGFADDRESS pAddress,
                                uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
 VMMR3DECL(int) DBGFR3BpSetInt3Ex(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
-                                 VMCPUID idSrcCpu, PCDBGFADDRESS pAddress,
+                                 VMCPUID idSrcCpu, PCDBGFADDRESS pAddress, uint16_t fFlags,
                                  uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp);
 VMMR3DECL(int) DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger,
                               uint64_t iHitDisable, uint8_t fType, uint8_t cb, PDBGFBP phBp);
 VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
-                                PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
+                                PCDBGFADDRESS pAddress, uint16_t fFlags,
+                                uint64_t iHitTrigger, uint64_t iHitDisable,
                                 uint8_t fType, uint8_t cb, PDBGFBP phBp);
 VMMR3DECL(int) DBGFR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger,
                               uint64_t iHitDisable, PDBGFBP phBp);

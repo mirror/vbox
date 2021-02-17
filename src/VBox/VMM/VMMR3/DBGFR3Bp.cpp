@@ -567,6 +567,7 @@ DECLINLINE(int) dbgfR3BpChunkAlloc(PUVM pUVM, uint32_t idChunk)
  * @param   hOwner              The owner handle, NIL_DBGFBPOWNER if none assigned.
  * @param   pvUser              Opaque user data passed in the owner callback.
  * @param   enmType             Breakpoint type to allocate.
+ * @param   fFlags              Flags assoicated with the allocated breakpoint.
  * @param   iHitTrigger         The hit count at which the breakpoint start triggering.
  *                              Use 0 (or 1) if it's gonna trigger at once.
  * @param   iHitDisable         The hit count which disables the breakpoint.
@@ -577,7 +578,7 @@ DECLINLINE(int) dbgfR3BpChunkAlloc(PUVM pUVM, uint32_t idChunk)
  * @thread Any thread.
  */
 static int dbgfR3BpAlloc(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser, DBGFBPTYPE enmType,
-                         uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp,
+                         uint16_t fFlags, uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp,
                          PDBGFBPINT *ppBp)
 {
     int rc = dbgfR3BpOwnerRetain(pUVM, hOwner);
@@ -636,7 +637,8 @@ static int dbgfR3BpAlloc(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser, DBGFBPTYPE
                         pBp->Pub.iHitTrigger   = iHitTrigger;
                         pBp->Pub.iHitDisable   = iHitDisable;
                         pBp->Pub.hOwner        = hOwner;
-                        pBp->Pub.fFlagsAndType = DBGF_BP_PUB_SET_FLAGS_AND_TYPE(enmType, DBGF_BP_F_DEFAULT);
+                        pBp->Pub.u16Type       = DBGF_BP_PUB_MAKE_TYPE(enmType);
+                        pBp->Pub.fFlags        = fFlags & ~DBGF_BP_F_ENABLED; /* The enabled flag is handled in the respective APIs. */
                         pBp->pvUserR3          = pvUser;
 
                         /** @todo Owner handling (reference and call ring-0 if it has an ring-0 callback). */
@@ -880,11 +882,10 @@ static void dbgfR3BpL2TblEntryFree(PUVM pUVM, uint32_t idxL2Tbl, PDBGFBPL2ENTRY 
  */
 DECLINLINE(void) dbgfR3BpSetEnabled(PDBGFBPINT pBp, bool fEnabled)
 {
-    DBGFBPTYPE enmType = DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType);
     if (fEnabled)
-        pBp->Pub.fFlagsAndType = DBGF_BP_PUB_SET_FLAGS_AND_TYPE(enmType, DBGF_BP_F_ENABLED);
+        pBp->Pub.fFlags |= DBGF_BP_F_ENABLED;
     else
-        pBp->Pub.fFlagsAndType = DBGF_BP_PUB_SET_FLAGS_AND_TYPE(enmType, 0 /*fFlags*/);
+        pBp->Pub.fFlags &= ~DBGF_BP_F_ENABLED;
 }
 
 
@@ -912,7 +913,7 @@ static int dbgfR3BpRegAssign(PVM pVM, DBGFBP hBp, PDBGFBPINT pBp)
             pHwBp->GCPtr    = pBp->Pub.u.Reg.GCPtr;
             pHwBp->fType    = pBp->Pub.u.Reg.fType;
             pHwBp->cb       = pBp->Pub.u.Reg.cb;
-            pHwBp->fEnabled = DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType);
+            pHwBp->fEnabled = DBGF_BP_PUB_IS_ENABLED(&pBp->Pub);
 
             pBp->Pub.u.Reg.iReg = i;
             return VINF_SUCCESS;
@@ -1320,7 +1321,7 @@ static int dbgfR3BpInt3L2BstRemove(PUVM pUVM, uint32_t idxL1, uint32_t idxL2Root
  */
 static int dbgfR3BpInt3Add(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
-    AssertReturn(DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3, VERR_DBGF_BP_IPE_3);
+    AssertReturn(DBGF_BP_PUB_GET_TYPE(&pBp->Pub) == DBGFBPTYPE_INT3, VERR_DBGF_BP_IPE_3);
 
     int rc = VINF_SUCCESS;
     uint16_t idxL1 = DBGF_BP_INT3_L1_IDX_EXTRACT_FROM_ADDR(pBp->Pub.u.Int3.GCPtr);
@@ -1508,7 +1509,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpInt3RemoveEmtWorker(PVM pVM, PVMCPU pV
  */
 static int dbgfR3BpInt3Remove(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
-    AssertReturn(DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3, VERR_DBGF_BP_IPE_3);
+    AssertReturn(DBGF_BP_PUB_GET_TYPE(&pBp->Pub) == DBGFBPTYPE_INT3, VERR_DBGF_BP_IPE_3);
 
     /*
      * This has to be done by an EMT rendezvous in order to not have an EMT traversing
@@ -1562,8 +1563,8 @@ static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
     int rc;
     PVM pVM = pUVM->pVM;
 
-    Assert(!DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType));
-    switch (DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType))
+    Assert(!DBGF_BP_PUB_IS_ENABLED(&pBp->Pub));
+    switch (DBGF_BP_PUB_GET_TYPE(&pBp->Pub))
     {
         case DBGFBPTYPE_REG:
         {
@@ -1613,7 +1614,7 @@ static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
             rc = VERR_NOT_IMPLEMENTED;
             break;
         default:
-            AssertMsgFailedReturn(("Invalid breakpoint type %d\n", DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType)),
+            AssertMsgFailedReturn(("Invalid breakpoint type %d\n", DBGF_BP_PUB_GET_TYPE(&pBp->Pub)),
                                   VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 
@@ -1636,8 +1637,8 @@ static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
     int rc;
     PVM pVM = pUVM->pVM;
 
-    Assert(DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType));
-    switch (DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType))
+    Assert(DBGF_BP_PUB_IS_ENABLED(&pBp->Pub));
+    switch (DBGF_BP_PUB_GET_TYPE(&pBp->Pub))
     {
         case DBGFBPTYPE_REG:
         {
@@ -1681,7 +1682,7 @@ static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
             rc = VERR_NOT_IMPLEMENTED;
             break;
         default:
-            AssertMsgFailedReturn(("Invalid breakpoint type %d\n", DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType)),
+            AssertMsgFailedReturn(("Invalid breakpoint type %d\n", DBGF_BP_PUB_GET_TYPE(&pBp->Pub)),
                                   VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 
@@ -1804,7 +1805,7 @@ VMMR3DECL(int) DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idSrcCpu, PCDBGFADDRESS pAddre
                                uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
 {
     return DBGFR3BpSetInt3Ex(pUVM, NIL_DBGFBPOWNER, NULL /*pvUser*/, idSrcCpu, pAddress,
-                             iHitTrigger, iHitDisable, phBp);
+                             DBGF_BP_F_DEFAULT, iHitTrigger, iHitDisable, phBp);
 }
 
 
@@ -1818,6 +1819,7 @@ VMMR3DECL(int) DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idSrcCpu, PCDBGFADDRESS pAddre
  * @param   idSrcCpu        The ID of the virtual CPU used for the
  *                          breakpoint address resolution.
  * @param   pAddress        The address of the breakpoint.
+ * @param   fFlags          Combination of DBGF_BP_F_XXX.
  * @param   iHitTrigger     The hit count at which the breakpoint start triggering.
  *                          Use 0 (or 1) if it's gonna trigger at once.
  * @param   iHitDisable     The hit count which disables the breakpoint.
@@ -1827,7 +1829,7 @@ VMMR3DECL(int) DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idSrcCpu, PCDBGFADDRESS pAddre
  * @thread  Any thread.
  */
 VMMR3DECL(int) DBGFR3BpSetInt3Ex(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
-                                 VMCPUID idSrcCpu, PCDBGFADDRESS pAddress,
+                                 VMCPUID idSrcCpu, PCDBGFADDRESS pAddress, uint16_t fFlags,
                                  uint64_t iHitTrigger, uint64_t iHitDisable, PDBGFBP phBp)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
@@ -1858,7 +1860,7 @@ VMMR3DECL(int) DBGFR3BpSetInt3Ex(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
             &&  pBp->Pub.u.Int3.PhysAddr == GCPhysBpAddr)
         {
             rc = VINF_SUCCESS;
-            if (!DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
+            if (!DBGF_BP_PUB_IS_ENABLED(&pBp->Pub))
                 rc = dbgfR3BpArm(pUVM, hBp, pBp);
             if (RT_SUCCESS(rc))
             {
@@ -1869,7 +1871,7 @@ VMMR3DECL(int) DBGFR3BpSetInt3Ex(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
             return rc;
         }
 
-        rc = dbgfR3BpAlloc(pUVM, hOwner, pvUser, DBGFBPTYPE_INT3, iHitTrigger, iHitDisable, &hBp, &pBp);
+        rc = dbgfR3BpAlloc(pUVM, hOwner, pvUser, DBGFBPTYPE_INT3, fFlags, iHitTrigger, iHitDisable, &hBp, &pBp);
         if (RT_SUCCESS(rc))
         {
             pBp->Pub.u.Int3.PhysAddr = GCPhysBpAddr;
@@ -1879,8 +1881,9 @@ VMMR3DECL(int) DBGFR3BpSetInt3Ex(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
             rc = dbgfR3BpInt3Add(pUVM, hBp, pBp);
             if (RT_SUCCESS(rc))
             {
-                /* Enable the breakpoint. */
-                rc = dbgfR3BpArm(pUVM, hBp, pBp);
+                /* Enable the breakpoint if requested. */
+                if (fFlags & DBGF_BP_F_ENABLED)
+                    rc = dbgfR3BpArm(pUVM, hBp, pBp);
                 if (RT_SUCCESS(rc))
                 {
                     *phBp = hBp;
@@ -1919,7 +1922,7 @@ VMMR3DECL(int) DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
                               uint64_t iHitDisable, uint8_t fType, uint8_t cb, PDBGFBP phBp)
 {
     return DBGFR3BpSetRegEx(pUVM, NIL_DBGFBPOWNER, NULL /*pvUser*/, pAddress,
-                            iHitTrigger, iHitDisable, fType, cb, phBp);
+                            DBGF_BP_F_DEFAULT, iHitTrigger, iHitDisable, fType, cb, phBp);
 }
 
 
@@ -1931,6 +1934,7 @@ VMMR3DECL(int) DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
  * @param   hOwner          The owner handle, use NIL_DBGFBPOWNER if no special owner attached.
  * @param   pvUser          Opaque user data to pass in the owner callback.
  * @param   pAddress        The address of the breakpoint.
+ * @param   fFlags          Combination of DBGF_BP_F_XXX.
  * @param   iHitTrigger     The hit count at which the breakpoint start triggering.
  *                          Use 0 (or 1) if it's gonna trigger at once.
  * @param   iHitDisable     The hit count which disables the breakpoint.
@@ -1943,7 +1947,8 @@ VMMR3DECL(int) DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
  * @thread  Any thread.
  */
 VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
-                                PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
+                                PCDBGFADDRESS pAddress,  uint16_t fFlags,
+                                uint64_t iHitTrigger, uint64_t iHitDisable,
                                 uint8_t fType, uint8_t cb, PDBGFBP phBp)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
@@ -1976,7 +1981,7 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
         &&  pBp->Pub.u.Reg.fType == fType)
     {
         rc = VINF_SUCCESS;
-        if (!DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
+        if (!DBGF_BP_PUB_IS_ENABLED(&pBp->Pub))
             rc = dbgfR3BpArm(pUVM, hBp, pBp);
         if (RT_SUCCESS(rc))
         {
@@ -1988,7 +1993,8 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
     }
 
     /* Allocate new breakpoint. */
-    rc = dbgfR3BpAlloc(pUVM, hOwner, pvUser, DBGFBPTYPE_REG, iHitTrigger, iHitDisable, &hBp, &pBp);
+    rc = dbgfR3BpAlloc(pUVM, hOwner, pvUser, DBGFBPTYPE_REG, fFlags,
+                       iHitTrigger, iHitDisable, &hBp, &pBp);
     if (RT_SUCCESS(rc))
     {
         pBp->Pub.u.Reg.GCPtr = pAddress->FlatPtr;
@@ -2002,18 +2008,17 @@ VMMR3DECL(int) DBGFR3BpSetRegEx(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser,
         if (RT_SUCCESS(rc))
         {
             /* Arm the breakpoint. */
-            rc = dbgfR3BpArm(pUVM, hBp, pBp);
+            if (fFlags & DBGF_BP_F_ENABLED)
+                rc = dbgfR3BpArm(pUVM, hBp, pBp);
             if (RT_SUCCESS(rc))
             {
                 if (phBp)
                     *phBp = hBp;
                 return VINF_SUCCESS;
             }
-            else
-            {
-                int rc2 = dbgfR3BpRegRemove(pUVM->pVM, hBp, pBp);
-                AssertRC(rc2); RT_NOREF(rc2);
-            }
+
+            int rc2 = dbgfR3BpRegRemove(pUVM->pVM, hBp, pBp);
+            AssertRC(rc2); RT_NOREF(rc2);
         }
 
         dbgfR3BpFree(pUVM, hBp, pBp);
@@ -2182,13 +2187,13 @@ VMMR3DECL(int) DBGFR3BpClear(PUVM pUVM, DBGFBP hBp)
     AssertPtrReturn(pBp, VERR_DBGF_BP_NOT_FOUND);
 
     /* Disarm the breakpoint when it is enabled. */
-    if (DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
+    if (DBGF_BP_PUB_IS_ENABLED(&pBp->Pub))
     {
         int rc = dbgfR3BpDisarm(pUVM, hBp, pBp);
         AssertRC(rc);
     }
 
-    switch (DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType))
+    switch (DBGF_BP_PUB_GET_TYPE(&pBp->Pub))
     {
         case DBGFBPTYPE_REG:
         {
@@ -2226,7 +2231,7 @@ VMMR3DECL(int) DBGFR3BpEnable(PUVM pUVM, DBGFBP hBp)
     AssertPtrReturn(pBp, VERR_DBGF_BP_NOT_FOUND);
 
     int rc;
-    if (!DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
+    if (!DBGF_BP_PUB_IS_ENABLED(&pBp->Pub))
         rc = dbgfR3BpArm(pUVM, hBp, pBp);
     else
         rc = VINF_DBGF_BP_ALREADY_ENABLED;
@@ -2256,7 +2261,7 @@ VMMR3DECL(int) DBGFR3BpDisable(PUVM pUVM, DBGFBP hBp)
     AssertPtrReturn(pBp, VERR_DBGF_BP_NOT_FOUND);
 
     int rc;
-    if (DBGF_BP_PUB_IS_ENABLED(pBp->Pub.fFlagsAndType))
+    if (DBGF_BP_PUB_IS_ENABLED(&pBp->Pub))
         rc = dbgfR3BpDisarm(pUVM, hBp, pBp);
     else
         rc = VINF_DBGF_BP_ALREADY_DISABLED;
@@ -2303,7 +2308,8 @@ VMMR3DECL(int) DBGFR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void *pvUser)
                     BpPub.iHitTrigger   = ASMAtomicReadU64((volatile uint64_t *)&pBp->Pub.iHitTrigger);
                     BpPub.iHitDisable   = ASMAtomicReadU64((volatile uint64_t *)&pBp->Pub.iHitDisable);
                     BpPub.hOwner        = ASMAtomicReadU32((volatile uint32_t *)&pBp->Pub.hOwner);
-                    BpPub.fFlagsAndType = ASMAtomicReadU32((volatile uint32_t *)&pBp->Pub.fFlagsAndType);
+                    BpPub.u16Type       = ASMAtomicReadU16((volatile uint16_t *)&pBp->Pub.u16Type); /* Actually constant. */
+                    BpPub.fFlags        = ASMAtomicReadU16((volatile uint16_t *)&pBp->Pub.fFlags);
                     memcpy(&BpPub.u, &pBp->Pub.u, sizeof(pBp->Pub.u)); /* Is constant after allocation. */
 
                     /* Check if a removal raced us. */
@@ -2346,7 +2352,10 @@ VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu)
         PCDBGFBPOWNERINT pBpOwner = dbgfR3BpOwnerGetByHnd(pVM->pUVM, pBp->Pub.hOwner);
         if (pBpOwner)
         {
-            VBOXSTRICTRC rcStrict = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub);
+            VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+
+            if (DBGF_BP_PUB_IS_EXEC_BEFORE(&pBp->Pub))
+                rcStrict = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_BEFORE);
             if (rcStrict == VINF_SUCCESS)
             {
                 uint8_t abInstr[DBGF_BP_INSN_MAX];
@@ -2358,7 +2367,17 @@ VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu)
                     /* Replace the int3 with the original instruction byte. */
                     abInstr[0] = pBp->Pub.u.Int3.bOrg;
                     rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, &abInstr[0], sizeof(abInstr));
-                    return VBOXSTRICTRC_VAL(rcStrict);
+                    if (   rcStrict == VINF_SUCCESS
+                        && DBGF_BP_PUB_IS_EXEC_AFTER(&pBp->Pub))
+                    {
+                        VBOXSTRICTRC rcStrict2 = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_AFTER);
+                        if (rcStrict2 == VINF_SUCCESS)
+                            return VBOXSTRICTRC_VAL(rcStrict);
+                        else if (rcStrict2 != VINF_DBGF_BP_HALT)
+                            return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
+                    }
+                    else
+                        return VBOXSTRICTRC_VAL(rcStrict);
                 }
             }
             else if (rcStrict != VINF_DBGF_BP_HALT) /* Guru meditation. */

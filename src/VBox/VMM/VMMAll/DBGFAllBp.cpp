@@ -168,7 +168,10 @@ DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, DBG
                                                           : NIL_DBGFBPOWNER);
     if (pBpOwnerR0)
     {
-        VBOXSTRICTRC rcStrict = pBpOwnerR0->pfnBpHitR0(pVM, pVCpu->idCpu, pBpR0->pvUserR0, hBp, &pBp->Pub);
+        VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+
+        if (DBGF_BP_PUB_IS_EXEC_BEFORE(&pBp->Pub))
+            rcStrict = pBpOwnerR0->pfnBpHitR0(pVM, pVCpu->idCpu, pBpR0->pvUserR0, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_BEFORE);
         if (rcStrict == VINF_SUCCESS)
         {
             uint8_t abInstr[DBGF_BP_INSN_MAX];
@@ -180,7 +183,26 @@ DECLINLINE(int) dbgfBpHit(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, DBG
                 /* Replace the int3 with the original instruction byte. */
                 abInstr[0] = pBp->Pub.u.Int3.bOrg;
                 rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, &abInstr[0], sizeof(abInstr));
-                rc = VBOXSTRICTRC_VAL(rcStrict);
+                if (   rcStrict == VINF_SUCCESS
+                    && DBGF_BP_PUB_IS_EXEC_AFTER(&pBp->Pub))
+                {
+                    rcStrict = pBpOwnerR0->pfnBpHitR0(pVM, pVCpu->idCpu, pBpR0->pvUserR0, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_AFTER);
+                    if (rcStrict == VINF_SUCCESS)
+                        rc = VINF_SUCCESS;
+                    else if (   rcStrict == VINF_DBGF_BP_HALT
+                             || rcStrict == VINF_DBGF_R3_BP_OWNER_DEFER)
+                    {
+                        pVCpu->dbgf.s.hBpActive = hBp;
+                        if (rcStrict == VINF_DBGF_R3_BP_OWNER_DEFER)
+                            pVCpu->dbgf.s.fBpInvokeOwnerCallback = true;
+                        else
+                            pVCpu->dbgf.s.fBpInvokeOwnerCallback = false;
+                    }
+                    else /* Guru meditation. */
+                        rc = VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
+                }
+                else
+                    rc = VBOXSTRICTRC_VAL(rcStrict);
             }
         }
         else if (   rcStrict == VINF_DBGF_BP_HALT
@@ -248,7 +270,7 @@ static int dbgfBpL2Walk(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame,
             PDBGFBPINT   pBp = dbgfBpGetByHnd(pVM, hBp, &pBpR0);
 #endif
             if (   pBp
-                && DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3)
+                && DBGF_BP_PUB_GET_TYPE(&pBp->Pub) == DBGFBPTYPE_INT3)
 #ifdef IN_RING3
                 return dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp);
 #else
@@ -378,7 +400,7 @@ VMM_INT_DECL(int) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pReg
                 PDBGFBPINT   pBp = dbgfBpGetByHnd(pVM, hBp, &pBpR0);
 #endif
                 if (   pBp
-                    && DBGF_BP_PUB_GET_TYPE(pBp->Pub.fFlagsAndType) == DBGFBPTYPE_INT3)
+                    && DBGF_BP_PUB_GET_TYPE(&pBp->Pub) == DBGFBPTYPE_INT3)
                 {
                     if (pBp->Pub.u.Int3.GCPtr == (RTGCUINTPTR)GCPtrBp)
 #ifdef IN_RING3
