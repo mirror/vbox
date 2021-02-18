@@ -45,12 +45,40 @@
 #define IOMMU_SAVED_STATE_VERSION                   1
 /** The IOMMU device instance magic. */
 #define IOMMU_MAGIC                                 0x10acce55
+
 /** Enable the IOTLBE cache. */
 #define IOMMU_WITH_IOTLBE_CACHE
+/** Enable the interrupt cache. */
+#define IOMMU_WITH_IRTE_CACHE
+
+/* The DTE cache is mandatory for the IOTLB or interrupt cache to work. */
+#if defined(IOMMU_WITH_IOTLBE_CACHE) || defined(IOMMU_WITH_IRTE_CACHE)
+# define IOMMU_WITH_DTE_CACHE
+#endif
+
+#ifdef IOMMU_WITH_IRTE_CACHE
+/** The maximum number of interrupt cache entries configurable through CFGM. */
+# define IOMMU_IRTE_CACHE_MAX                       32
+/** The default number of interrupt cache entries. */
+# define IOMMU_IRTE_CACHE_DEFAULT                   16
+/** The minimum number of interrupt cache entries configurable through CFGM. */
+# define IOMMU_IRTE_CACHE_MIN                       8
+
+/** A NIL IRTE cache entry key. */
+# define IOMMU_IRTE_CACHE_KEY_NIL                   (~(uint32_t)0U)
+/** Gets the device ID from an IRTE cache entry key. */
+#define IOMMU_IRTE_CACHE_KEY_GET_DEVICE_ID(a_Key)   RT_HIWORD(a_Key)
+/** Gets the IOVA from the IOTLB entry key. */
+# define IOMMU_IRTE_CACHE_KEY_GET_OFF(a_Key)        RT_LOWORD(a_Key)
+/** Makes an IRTE cache entry key.
+ *
+ * Bits 31:16 is the device ID (Bus, Device, Function).
+ * Bits  15:0 is the the offset into the IRTE table.
+ */
+# define IOMMU_IRTE_CACHE_KEY_MAKE(a_DevId, a_off)  RT_MAKE_U32(a_off, a_DevId)
+#endif  /* IOMMU_WITH_IRTE_CACHE */
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
-/** The maximum number of DTE entries. */
-# define IOMMU_DTE_CACHE_MAX                        UINT16_MAX
 /** The maximum number of IOTLB entries. */
 # define IOMMU_IOTLBE_MAX                           96
 /** The mask of bits covering the domain ID in the IOTLBE key. */
@@ -59,7 +87,7 @@
 # define IOMMU_IOTLB_IOVA_MASK                     (~IOMMU_IOTLB_DOMAIN_ID_MASK)
 /** The number of bits to shift for the domain ID of the IOTLBE key. */
 # define IOMMU_IOTLB_DOMAIN_ID_SHIFT                40
-/** The mask of bits for the domain ID of the IOTLBE key. */
+/** A NIL IOTLB key. */
 # define IOMMU_IOTLB_KEY_NIL                        UINT64_C(0)
 /** Gets the domain ID from an IOTLB entry key. */
 # define IOMMU_IOTLB_KEY_GET_DOMAIN_ID(a_Key)       ((a_Key) >> IOMMU_IOTLB_DOMAIN_ID_SHIFT)
@@ -76,6 +104,73 @@
  */
 # define IOMMU_IOTLB_KEY_MAKE(a_DomainId, a_uIova)  (  ((uint64_t)(a_DomainId) << IOMMU_IOTLB_DOMAIN_ID_SHIFT) \
                                                      | (((a_uIova) >> X86_PAGE_4K_SHIFT) & IOMMU_IOTLB_IOVA_MASK))
+#endif  /* IOMMU_WITH_IOTLBE_CACHE */
+
+#ifdef IOMMU_WITH_DTE_CACHE
+/** The maximum number of DTE entries. */
+# define IOMMU_DTE_CACHE_MAX                        UINT16_MAX
+
+/** @name IOMMU_DTECACHE_F_XXX: DTE cache flags.
+ *
+ *  Some of these flags are "basic" i.e. they correspond directly to their bits in
+ *  the DTE. The rest of the flags are based on checks or operations on several DTE
+ *  bits.
+ *
+ *  The basic flags are:
+ *    - VALID                (DTE.V)
+ *    - IO_PERM_READ         (DTE.IR)
+ *    - IO_PERM_WRITE        (DTE.IW)
+ *    - IO_PERM_RSVD         (bit following DTW.IW reserved for future & to keep
+ *                            masking consistent)
+ *    - SUPPRESS_ALL_IOPF    (DTE.SA)
+ *    - SUPPRESS_IOPF        (DTE.SE)
+ *    - INTR_MAP_VALID       (DTE.IV)
+ *    - IGNORE_UNMAPPED_INTR (DTE.IG)
+ *
+ *  @see iommuAmdGetBasicDevFlags()
+ *  @{ */
+/** The DTE is present. */
+# define IOMMU_DTECACHE_F_PRESENT                       RT_BIT(0)
+/** The DTE is valid. */
+# define IOMMU_DTECACHE_F_VALID                         RT_BIT(1)
+/** The DTE permissions apply for address translations. */
+# define IOMMU_DTECACHE_F_IO_PERM                       RT_BIT(2)
+/** DTE permission - I/O read allowed. */
+# define IOMMU_DTECACHE_F_IO_PERM_READ                  RT_BIT(3)
+/** DTE permission - I/O write allowed. */
+# define IOMMU_DTECACHE_F_IO_PERM_WRITE                 RT_BIT(4)
+/** DTE permission - reserved. */
+# define IOMMU_DTECACHE_F_IO_PERM_RSVD                  RT_BIT(5)
+/** Address translation required. */
+# define IOMMU_DTECACHE_F_ADDR_TRANSLATE                RT_BIT(6)
+/** Suppress all I/O page faults. */
+# define IOMMU_DTECACHE_F_SUPPRESS_ALL_IOPF             RT_BIT(7)
+/** Suppress I/O page faults. */
+# define IOMMU_DTECACHE_F_SUPPRESS_IOPF                 RT_BIT(8)
+/** Interrupt map valid. */
+# define IOMMU_DTECACHE_F_INTR_MAP_VALID                RT_BIT(9)
+/** Ignore unmapped interrupts. */
+# define IOMMU_DTECACHE_F_IGNORE_UNMAPPED_INTR          RT_BIT(10)
+/** An I/O page fault has been raised for this device. */
+# define IOMMU_DTECACHE_F_IO_PAGE_FAULT_RAISED          RT_BIT(11)
+/** Fixed and arbitrary interrupt control: Target Abort. */
+# define IOMMU_DTECACHE_F_INTR_CTRL_TARGET_ABORT        RT_BIT(12)
+/** Fixed and arbitrary interrupt control: Forward unmapped. */
+# define IOMMU_DTECACHE_F_INTR_CTRL_FWD_UNMAPPED        RT_BIT(13)
+/** Fixed and arbitrary interrupt control: Remapped. */
+# define IOMMU_DTECACHE_F_INTR_CTRL_REMAPPED            RT_BIT(14)
+/** Fixed and arbitrary interrupt control: Reserved. */
+# define IOMMU_DTECACHE_F_INTR_CTRL_RSVD                RT_BIT(15)
+/** @} */
+
+/** The number of bits to shift I/O device flags for DTE permissions. */
+# define IOMMU_DTECACHE_F_IO_PERM_SHIFT                 3
+/** The mask of DTE permissions in I/O device flags. */
+# define IOMMU_DTECACHE_F_IO_PERM_MASK                  0x3
+/** The number of bits to shift I/O device flags for interrupt control bits. */
+# define IOMMU_DTECACHE_F_INTR_CTRL_SHIFT               12
+/** The mask of interrupt control bits in I/O device flags. */
+# define IOMMU_DTECACHE_F_INTR_CTRL_MASK                0x3
 
 /** Acquires the cache lock. */
 # define IOMMU_LOCK_CACHE(a_pDevIns, a_pThis) \
@@ -99,56 +194,7 @@
 
 /** Releases the cache lock.  */
 # define IOMMU_UNLOCK_CACHE(a_pDevIns, a_pThis)     PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSectCache)
-#endif
-
-/** @name IOMMU_DEV_F_XXX: I/O device flags.
- *
- *  Some of these flags are "basic" i.e. they correspond directly to their bits in
- *  the DTE. The rest of the flags are based on checks or operations on several DTE
- *  bits.
- *
- *  The basic flags are:
- *    - VALID                (DTE.V)
- *    - IO_PERM_READ         (DTE.IR)
- *    - IO_PERM_WRITE        (DTE.IW)
- *    - IO_PERM_RSVD         (bit following DTW.IW reserved for future & to keep
- *                            masking consistent)
- *    - SUPPRESS_ALL_IOPF    (DTE.SA)
- *    - SUPPRESS_IOPF        (DTE.SE)
- *    - INTR_MAP_VALID       (DTE.IV)
- *    - IGNORE_UNMAPPED_INTR (DTE.IG)
- *
- *  @sa iommuAmdGetBasicDevFlags()
- *  @{ */
-/** The DTE is present. */
-#define IOMMU_DEV_F_PRESENT                         RT_BIT(0)
-/** The DTE is valid. */
-#define IOMMU_DEV_F_VALID                           RT_BIT(1)
-/** DTE permissions apply for address translations. */
-#define IOMMU_DEV_F_IO_PERM                         RT_BIT(2)
-/** DTE permission - I/O read allowed. */
-#define IOMMU_DEV_F_IO_PERM_READ                    RT_BIT(3)
-/** DTE permission - I/O write allowed. */
-#define IOMMU_DEV_F_IO_PERM_WRITE                   RT_BIT(4)
-/** DTE permission - reserved. */
-#define IOMMU_DEV_F_IO_PERM_RSVD                    RT_BIT(5)
-/** Address translation required. */
-#define IOMMU_DEV_F_ADDR_TRANSLATE                  RT_BIT(6)
-/** Suppress all I/O page faults. */
-#define IOMMU_DEV_F_SUPPRESS_ALL_IOPF               RT_BIT(7)
-/** Suppress I/O page faults. */
-#define IOMMU_DEV_F_SUPPRESS_IOPF                   RT_BIT(8)
-/** Interrupt map valid. */
-#define IOMMU_DEV_F_INTR_MAP_VALID                  RT_BIT(9)
-/** Ignore unmapped interrupts. */
-#define IOMMU_DEV_F_IGNORE_UNMAPPED_INTR            RT_BIT(10)
-/** An I/O page fault has been raised for this device. */
-#define IOMMU_DEV_F_IO_PAGE_FAULT_RAISED            RT_BIT(11)
-/** @} */
-/** The number of bits to shift I/O device flags for DTE permissions. */
-#define IOMMU_DEV_F_IO_PERM_SHIFT                   3
-/** The mask of DTE permissions in I/O device flags. */
-#define IOMMU_DEV_F_IO_PERM_MASK                    0x3
+#endif  /* IOMMU_WITH_DTE_CACHE */
 
 /** Gets the page offset mask given the number of bits to shift. */
 #define IOMMU_GET_PAGE_OFF_MASK(a_cShift)           (~(UINT64_C(0xffffffffffffffff) << (a_cShift)))
@@ -230,26 +276,27 @@ typedef IOADDRRANGE *PIOADDRRANGE;
 /** Pointer to a const I/O address range. */
 typedef IOADDRRANGE const *PCIOADDRRANGE;
 
+#ifdef IOMMU_WITH_DTE_CACHE
 /**
- * IOMMU I/O Device.
- * Used for caching as well as passing flags to events.
+ * Device Table Entry Cache.
  */
-typedef struct IODEVICE
+typedef struct DTECACHE
 {
-    /** This device's flags, see IOMMU_DEV_F_XXX. */
-    uint16_t         fFlags;
+    /** This device's flags, see IOMMU_DTECACHE_F_XXX. */
+    uint16_t        fFlags;
     /** The domain ID assigned for this device by software. */
     uint16_t        uDomainId;
-} IODEVICE;
+} DTECACHE;
 /** Pointer to an I/O device struct. */
-typedef IODEVICE *PIODEVICE;
+typedef DTECACHE *PDTECACHE;
 /** Pointer to a const I/O device struct. */
-typedef IODEVICE *PCIODEVICE;
-AssertCompileSize(IODEVICE, 4);
+typedef DTECACHE *PCDTECACHE;
+AssertCompileSize(DTECACHE, 4);
+#endif  /* IOMMU_WITH_DTE_CACHE */
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
 /**
- * IOMMU I/O TLB Entry.
+ * I/O TLB Entry.
  * Keep this as small and aligned as possible.
  */
 typedef struct IOTLBE
@@ -270,6 +317,24 @@ typedef IOTLBE const *PCIOTLBE;
 AssertCompileSizeAlignment(IOTLBE, 8);
 AssertCompileMemberOffset(IOTLBE, Core, 0);
 #endif  /* IOMMU_WITH_IOTLBE_CACHE */
+
+#ifdef IOMMU_WITH_IRTE_CACHE
+/**
+ * Interrupt Remap Table Entry Cache.
+ */
+typedef struct IRTECACHE
+{
+    /** The IRTE. */
+    IRTE_T              Irte;
+    /** The key, see IOMMU_IRTE_CACHE_KEY_MAKE. */
+    uint32_t            uKey;
+} IRTECACHE;
+/** Pointer to an IRTE cache struct. */
+typedef IRTECACHE *PIRTECACHE;
+/** Pointer to a const IRTE cache struct. */
+typedef IRTECACHE const *PCIRTECACHE;
+AssertCompileSizeAlignment(IRTECACHE, 4);
+#endif /* IOMMU_WITH_IRTE_CACHE */
 
 /**
  * The shared IOMMU device state.
@@ -295,14 +360,16 @@ typedef struct IOMMU
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
 
-#ifdef IOMMU_WITH_IOTLBE_CACHE
+#ifdef IOMMU_WITH_DTE_CACHE
     /** The critsect that protects the cache from concurrent access. */
     PDMCRITSECT                 CritSectCache;
-    /** L1 Cache - Maps [DeviceId] to [DomainId]. */
-    PIODEVICE                   paDevices;
+    /** Maps [DeviceId] to [DomainId]. */
+    PDTECACHE                   paDteCache;
+#endif
+#ifdef IOMMU_WITH_IOTLBE_CACHE
     /** Pointer to array of pre-allocated IOTLBEs. */
     PIOTLBE                     paIotlbes;
-    /** L2 Cache - Maps [DomainId,Iova] to [IOTLBE]. */
+    /** Maps [DomainId,Iova] to [IOTLBE]. */
     AVLU64TREE                  TreeIotlbe;
     /** LRU list anchor for IOTLB entries. */
     RTLISTANCHOR                LstLruIotlbe;
@@ -310,6 +377,14 @@ typedef struct IOMMU
     uint32_t                    idxUnusedIotlbe;
     /** Number of cached IOTLB entries in the tree. */
     uint32_t                    cCachedIotlbes;
+#endif
+#ifdef IOMMU_WITH_IRTE_CACHE
+    /** Maps [DeviceId] to [IRTE]. */
+    PIRTECACHE                  paIrteCache;
+    /** Maximum number of entries in the IRTE cache. */
+    uint16_t                    cIrteCache;
+    /** Padding. */
+    uint16_t                    auPadding[3];
 #endif
 
     /** @name PCI: Base capability block registers.
@@ -464,8 +539,11 @@ typedef struct IOMMU
     STAMCOUNTER                 StatIotlbeCached;          /**< Number of IOTLB entries in the cache. */
     STAMCOUNTER                 StatIotlbeLazyEvictReuse;  /**< Number of IOTLB entries re-used after lazy eviction. */
 
-    STAMPROFILEADV              StatProfIotlbeLookup;      /**< Profiling of IOTLB entry lookup (from cache). */
     STAMPROFILEADV              StatProfDteLookup;         /**< Profiling of I/O page walk (from memory). */
+    STAMPROFILEADV              StatProfIotlbeLookup;      /**< Profiling of IOTLB entry lookup (from cache). */
+
+    STAMPROFILEADV              StatProfIrteLookup;        /**< Profiling of IRTE entry lookup (from memory). */
+    STAMPROFILEADV              StatProfIrteCacheLookup;   /**< Profiling of IRTE entry lookup (from cache). */
 
     STAMCOUNTER                 StatAccessCacheHit;        /**< Number of IOTLB cache hits. */
     STAMCOUNTER                 StatAccessCacheHitFull;    /**< Number of accesses that were fully looked up from the cache. */
@@ -474,6 +552,9 @@ typedef struct IOMMU
     STAMCOUNTER                 StatAccessCachePermDenied; /**< Number of cache accesses resulting in insufficient permissions. */
     STAMCOUNTER                 StatAccessDteNonContig;    /**< Number of DTE accesses resulting in non-contiguous access. */
     STAMCOUNTER                 StatAccessDtePermDenied;   /**< Number of DTE accesses resulting in insufficient permissions. */
+
+    STAMCOUNTER                 StatIntrCacheHit;          /**< Number of interrupt cache hits. */
+    STAMCOUNTER                 StatIntrCacheMiss;         /**< Number of interrupt cache misses. */
     /** @} */
 #endif
 } IOMMU;
@@ -485,11 +566,16 @@ AssertCompileMemberAlignment(IOMMU, fCmdThreadSleeping, 4);
 AssertCompileMemberAlignment(IOMMU, fCmdThreadSignaled, 4);
 AssertCompileMemberAlignment(IOMMU, hEvtCmdThread, 8);
 AssertCompileMemberAlignment(IOMMU, hMmio, 8);
+#ifdef IOMMU_WITH_DTE_CACHE
+AssertCompileMemberAlignment(IOMMU, paDteCache, 8);
+#endif
 #ifdef IOMMU_WITH_IOTLBE_CACHE
-AssertCompileMemberAlignment(IOMMU, paDevices, 8);
 AssertCompileMemberAlignment(IOMMU, paIotlbes, 8);
 AssertCompileMemberAlignment(IOMMU, TreeIotlbe, 8);
 AssertCompileMemberAlignment(IOMMU, LstLruIotlbe, 8);
+#endif
+#ifdef IOMMU_WITH_IRTE_CACHE
+AssertCompileMemberAlignment(IOMMU, paIrteCache, 8);
 #endif
 AssertCompileMemberAlignment(IOMMU, IommuBar, 8);
 AssertCompileMemberAlignment(IOMMU, aDevTabBaseAddrs, 8);
@@ -707,26 +793,6 @@ static const char *iommuAmdMemAccessGetPermName(uint8_t fPerm)
 }
 
 
-#if 0
-/**
- * Gets the number of (unconsumed) commands in the command buffer.
- *
- * @returns The number of commands in the command buffer.
- * @param   pThis     The IOMMU device state.
- */
-static uint32_t iommuAmdGetCmdBufEntryCount(PIOMMU pThis)
-{
-    uint32_t const idxTail = pThis->CmdBufTailPtr.n.off >> IOMMU_CMD_GENERIC_SHIFT;
-    uint32_t const idxHead = pThis->CmdBufHeadPtr.n.off >> IOMMU_CMD_GENERIC_SHIFT;
-    if (idxTail >= idxHead)
-        return idxTail - idxHead;
-
-    uint32_t const cMaxCmds = iommuAmdGetBufMaxEntries(pThis->CmdBufBaseAddr.n.u4Len);
-    return cMaxCmds - idxHead + idxTail;
-}
-#endif
-
-
 /**
  * Checks whether two consecutive I/O page lookup results translates to a physically
  * contiguous region.
@@ -766,26 +832,50 @@ static uint16_t iommuAmdGetBasicDevFlags(PCDTE_T pDte)
     uint16_t fFlags = 0;
     if (pDte->n.u1Valid)
     {
-        fFlags |= IOMMU_DEV_F_VALID;
+        fFlags |= IOMMU_DTECACHE_F_VALID;
 
         if (pDte->n.u1SuppressAllPfEvents)
-            fFlags |= IOMMU_DEV_F_SUPPRESS_ALL_IOPF;
+            fFlags |= IOMMU_DTECACHE_F_SUPPRESS_ALL_IOPF;
         if (pDte->n.u1SuppressPfEvents)
-            fFlags |= IOMMU_DEV_F_SUPPRESS_IOPF;
+            fFlags |= IOMMU_DTECACHE_F_SUPPRESS_IOPF;
 
         uint16_t const fDtePerm = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
-        AssertCompile(IOMMU_DEV_F_IO_PERM_MASK == IOMMU_IO_PERM_MASK);
-        fFlags |= fDtePerm << IOMMU_DEV_F_IO_PERM_SHIFT;
+        AssertCompile(IOMMU_DTECACHE_F_IO_PERM_MASK == IOMMU_IO_PERM_MASK);
+        fFlags |= fDtePerm << IOMMU_DTECACHE_F_IO_PERM_SHIFT;
     }
 
     /* Extract basic flags from bits 255:128 of the DTE. */
     if (pDte->n.u1IntrMapValid)
     {
-        fFlags |= IOMMU_DEV_F_INTR_MAP_VALID;
+        fFlags |= IOMMU_DTECACHE_F_INTR_MAP_VALID;
         if (pDte->n.u1IgnoreUnmappedIntrs)
-            fFlags |= IOMMU_DEV_F_IGNORE_UNMAPPED_INTR;
+            fFlags |= IOMMU_DTECACHE_F_IGNORE_UNMAPPED_INTR;
+
+        uint16_t const fIntrCtrl = IOMMU_GET_INTR_CTRL(pDte);
+        AssertCompile(IOMMU_DTECACHE_F_INTR_CTRL_MASK == IOMMU_DTE_INTR_CTRL_MASK);
+        fFlags |= fIntrCtrl << IOMMU_DTECACHE_F_INTR_CTRL_SHIFT;
     }
     return fFlags;
+}
+
+
+/**
+ * Remaps the source MSI to the destination MSI given the IRTE.
+ *
+ * @param   pMsiIn      The source MSI.
+ * @param   pMsiOut     Where to store the remapped MSI.
+ * @param   pIrte       The IRTE used for the remapping.
+ */
+static void iommuAmdIrteRemapMsi(PCMSIMSG pMsiIn, PMSIMSG pMsiOut, PCIRTE_T pIrte)
+{
+    /* Preserve all bits from the source MSI address and data that don't map 1:1 from the IRTE. */
+    *pMsiOut = *pMsiIn;
+
+    pMsiOut->Addr.n.u1DestMode = pIrte->n.u1DestMode;
+    pMsiOut->Addr.n.u8DestId   = pIrte->n.u8Dest;
+
+    pMsiOut->Data.n.u8Vector       = pIrte->n.u8Vector;
+    pMsiOut->Data.n.u3DeliveryMode = pIrte->n.u3IntrType;
 }
 
 
@@ -822,7 +912,7 @@ static void iommuAmdIotlbEntryMoveToMru(PIOMMU pThis, PIOTLBE pIotlbe)
 }
 
 
-#ifdef IN_RING3
+# ifdef IN_RING3
 /**
  * Dumps the IOTLB entry via the debug info helper.
  *
@@ -862,7 +952,7 @@ static DECLCALLBACK(int) iommuAmdR3IotlbEntryInfo(PAVLU64NODECORE pNode, void *p
 
     return VINF_SUCCESS;
 }
-#endif /* IN_RING3 */
+# endif /* IN_RING3 */
 
 
 /**
@@ -1157,7 +1247,7 @@ static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64
     cPages = RT_MIN(cPages, IOMMU_IOTLBE_MAX);
 
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
-    /** @todo Check level 1 cache? */
+    /** @todo Re-check DTE cache? */
     do
     {
         iommuAmdIotlbAdd(pThis, uDomainId, uIova, &PageLookup);
@@ -1167,8 +1257,211 @@ static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64
     } while (cPages > 0);
     IOMMU_UNLOCK_CACHE(pDevIns, pThis);
 }
+#endif  /* IOMMU_WITH_IOTLBE_CACHE */
 
 
+#ifdef IOMMU_WITH_IRTE_CACHE
+/**
+ * Looks up an IRTE cache entry.
+ *
+ * @returns Index of the found entry, or cache capacity if not found.
+ * @param   pThis       The IOMMU device state.
+ * @param   uDevId      The device ID (bus, device, function).
+ * @param   offIrte     The offset into the interrupt remap table.
+ */
+static uint16_t iommuAmdIrteCacheEntryLookup(PCIOMMU pThis, uint16_t uDevId, uint16_t offIrte)
+{
+    /** @todo Consider sorting and binary search when the cache capacity grows.
+     *  For the IRTE cache this should be okay since typically guests do not alter the
+     *  interrupt remapping once programmed, so hopefully sorting shouldn't happen
+     *  often. */
+    uint32_t const uKey = IOMMU_IRTE_CACHE_KEY_MAKE(uDevId, offIrte);
+    uint16_t const cIrteCache = pThis->cIrteCache;
+    for (uint16_t i = 0; i < cIrteCache; i++)
+    {
+        PCIRTECACHE pIrteCache = &pThis->paIrteCache[i];
+        if (pIrteCache->uKey == uKey)
+            return i;
+    }
+    return cIrteCache;
+}
+
+
+/**
+ * Gets an free/unused IRTE cache entry.
+ *
+ * @returns The index of an unused entry, or cache capacity if the cache is full.
+ * @param   pThis       The IOMMU device state.
+ */
+static uint16_t iommuAmdIrteCacheEntryGetUnused(PCIOMMU pThis)
+{
+    uint16_t const cIrteCache = pThis->cIrteCache;
+    for (uint16_t i = 0; i < cIrteCache; i++)
+    {
+        PCIRTECACHE pIrteCache = &pThis->paIrteCache[i];
+        if (pIrteCache->uKey == IOMMU_IRTE_CACHE_KEY_NIL)
+        {
+            Assert(!pIrteCache->Irte.u32);
+            return i;
+        }
+    }
+    return cIrteCache;
+}
+
+
+/**
+ * Looks up the IRTE cache for the given MSI.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU instance data.
+ * @param   uDevId      The device ID (bus, device, function).
+ * @param   enmOp       The IOMMU operation being performed.
+ * @param   pMsiIn      The source MSI.
+ * @param   pMsiOut     Where to store the remapped MSI.
+ */
+static int iommuAmdIrteCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+{
+    RT_NOREF(enmOp); /* May need it if we have to report errors (currently we fallback to the slower path to do that). */
+
+    int rc = VERR_NOT_FOUND;
+    /* Deal with such cases in the slower/fallback path. */
+    if ((pMsiIn->Addr.u64 & VBOX_MSI_ADDR_ADDR_MASK) == VBOX_MSI_ADDR_BASE)
+    { /* likely */ }
+    else
+        return rc;
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+
+    PCDTECACHE pDteCache = &pThis->paDteCache[uDevId];
+    if ((pDteCache->fFlags & (IOMMU_DTECACHE_F_PRESENT | IOMMU_DTECACHE_F_INTR_MAP_VALID))
+                          == (IOMMU_DTECACHE_F_PRESENT | IOMMU_DTECACHE_F_INTR_MAP_VALID))
+    {
+        Assert((pMsiIn->Addr.u64 & VBOX_MSI_ADDR_ADDR_MASK) == VBOX_MSI_ADDR_BASE);        /* Paranoia. */
+
+        /* Currently, we only cache remapping of fixed and arbitrated interrupts. */
+        uint8_t const u8DeliveryMode = pMsiIn->Data.n.u3DeliveryMode;
+        if (u8DeliveryMode <= VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO)
+        {
+            uint8_t const uIntrCtrl = (pDteCache->fFlags >> IOMMU_DTECACHE_F_INTR_CTRL_SHIFT)
+                                    & IOMMU_DTECACHE_F_INTR_CTRL_MASK;
+            if (uIntrCtrl == IOMMU_INTR_CTRL_REMAP)
+            {
+                /* Interrupt table length has been verified prior to adding entries to the cache. */
+                uint16_t const offIrte = IOMMU_GET_IRTE_OFF(pMsiIn->Data.u32);
+                uint16_t const idxIrteCache = iommuAmdIrteCacheEntryLookup(pThis, uDevId, offIrte);
+                if (idxIrteCache < pThis->cIrteCache)
+                {
+                    PCIRTE_T pIrte = &pThis->paIrteCache[idxIrteCache].Irte;
+                    iommuAmdIrteRemapMsi(pMsiIn, pMsiOut, pIrte);
+                    rc = VINF_SUCCESS;
+                }
+            }
+            else if (uIntrCtrl == IOMMU_INTR_CTRL_FWD_UNMAPPED)
+            {
+                *pMsiOut = *pMsiIn;
+                rc = VINF_SUCCESS;
+            }
+        }
+    }
+    else if (pDteCache->fFlags & IOMMU_DTECACHE_F_PRESENT)
+    {
+        *pMsiOut = *pMsiIn;
+        rc = VINF_SUCCESS;
+    }
+
+    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    return rc;
+}
+
+
+/**
+ * Adds or updates the IRTE cache for the given IRTE.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_OUT_OF_RESOURCES if the cache is full.
+ *
+ * @param   pDevIns     The IOMMU instance data.
+ * @param   uDevId      The device ID (bus, device, function).
+ * @param   offIrte     The offset into the interrupt remap table.
+ * @param   pIrte       The IRTE to cache.
+ */
+static int iommuAmdIrteCacheAdd(PPDMDEVINS pDevIns, uint16_t uDevId, uint16_t offIrte, PCIRTE_T pIrte)
+{
+    Assert(offIrte != 0xffff);  /* Shouldn't be a valid IRTE table offset since sizeof(IRTE) is a multiple of 4. */
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+
+    /* Find an existing entry or get an unused slot. */
+    uint16_t const cIrteCache = pThis->cIrteCache;
+    uint16_t idxIrteCache = iommuAmdIrteCacheEntryLookup(pThis, uDevId, offIrte);
+    if (idxIrteCache == pThis->cIrteCache)
+        idxIrteCache = iommuAmdIrteCacheEntryGetUnused(pThis);
+
+    /* Update the cache entry. */
+    int rc;
+    if (idxIrteCache < cIrteCache)
+    {
+        PIRTECACHE pIrteCache = &pThis->paIrteCache[idxIrteCache];
+        pIrteCache->uKey      = IOMMU_IRTE_CACHE_KEY_MAKE(uDevId, offIrte);
+        pIrteCache->Irte.u32  = pIrte->u32;
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_OUT_OF_RESOURCES;
+
+    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+    return rc;
+}
+
+
+/**
+ * Removes IRTE cache entries for the given device ID.
+ *
+ * @param   pDevIns     The IOMMU instance data.
+ * @param   uDevId      The device ID (bus, device, function).
+ */
+static void iommuAmdIrteCacheRemove(PPDMDEVINS pDevIns, uint16_t uDevId)
+{
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    uint16_t const cIrteCache = pThis->cIrteCache;
+    for (uint16_t i = 0; i < cIrteCache; i++)
+    {
+        PIRTECACHE pIrteCache = &pThis->paIrteCache[i];
+        if (uDevId == IOMMU_IRTE_CACHE_KEY_GET_DEVICE_ID(pIrteCache->uKey))
+        {
+            pIrteCache->uKey      = IOMMU_IRTE_CACHE_KEY_NIL;
+            pIrteCache->Irte.u32  = 0;
+        }
+    }
+    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+}
+
+
+/**
+ * Removes all IRTE cache entries.
+ *
+ * @param   pDevIns     The IOMMU instance data.
+ */
+static void iommuAmdIrteCacheRemoveAll(PPDMDEVINS pDevIns)
+{
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+    uint16_t const cIrteCache = pThis->cIrteCache;
+    for (uint16_t i = 0; i < cIrteCache; i++)
+    {
+        PIRTECACHE pIrteCache = &pThis->paIrteCache[i];
+        pIrteCache->uKey = IOMMU_IRTE_CACHE_KEY_NIL;
+        pIrteCache->Irte.u32 = 0;
+    }
+    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
+}
+#endif  /* IOMMU_WITH_IRTE_CACHE */
+
+
+#ifdef IOMMU_WITH_DTE_CACHE
 /**
  * Updates the I/O device flags for the given device ID.
  *
@@ -1177,7 +1470,7 @@ static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64
  * @param   pDte        The device table entry. Can be NULL only when @a fFlags is
  *                      0.
  * @param   fOrMask     The device flags (usually compound flags) to OR in with the
- *                      basic flags, see IOMMU_DEV_F_XXX. Pass 0 to flush the DTE
+ *                      basic flags, see IOMMU_DTECACHE_F_XXX. Pass 0 to flush the DTE
  *                      from the cache.
  */
 static void iommuAmdDteCacheUpdate(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, uint16_t fOrMask)
@@ -1185,16 +1478,16 @@ static void iommuAmdDteCacheUpdate(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
 
-    if (fOrMask & IOMMU_DEV_F_PRESENT)
+    if (fOrMask & IOMMU_DTECACHE_F_PRESENT)
     {
         Assert(pDte);
-        pThis->paDevices[uDevId].fFlags    = iommuAmdGetBasicDevFlags(pDte) | fOrMask;
-        pThis->paDevices[uDevId].uDomainId = pDte->n.u16DomainId;
+        pThis->paDteCache[uDevId].fFlags    = iommuAmdGetBasicDevFlags(pDte) | fOrMask;
+        pThis->paDteCache[uDevId].uDomainId = pDte->n.u16DomainId;
     }
     else
     {
-        pThis->paDevices[uDevId].fFlags    = 0;
-        pThis->paDevices[uDevId].uDomainId = 0;
+        pThis->paDteCache[uDevId].fFlags    = 0;
+        pThis->paDteCache[uDevId].uDomainId = 0;
     }
 
     IOMMU_UNLOCK_CACHE(pDevIns, pThis);
@@ -1213,8 +1506,8 @@ static void iommuAmdDteCacheSetFlags(PPDMDEVINS pDevIns, uint16_t uDevId, uint16
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
 
-    if (fDevIoFlags & IOMMU_DEV_F_PRESENT)
-        pThis->paDevices[uDevId].fFlags |= fDevIoFlags;
+    if (fDevIoFlags & IOMMU_DTECACHE_F_PRESENT)
+        pThis->paDteCache[uDevId].fFlags |= fDevIoFlags;
 
     IOMMU_UNLOCK_CACHE(pDevIns, pThis);
 }
@@ -1230,14 +1523,20 @@ static void iommuAmdDteCacheRemoveAll(PPDMDEVINS pDevIns)
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
 
-    size_t const cbDevices = sizeof(IODEVICE) * IOMMU_DTE_CACHE_MAX;
-    RT_BZERO(pThis->paDevices, cbDevices);
+    size_t const cbDteCache = sizeof(DTECACHE) * IOMMU_DTE_CACHE_MAX;
+    RT_BZERO(pThis->paDteCache, cbDteCache);
 
     IOMMU_UNLOCK_CACHE(pDevIns, pThis);
 }
-#endif  /* IOMMU_WITH_IOTLBE_CACHE */
+#endif  /* IOMMU_WITH_DTE_CACHE */
 
 
+/**
+ * Atomically reads the control register without locking the IOMMU device.
+ *
+ * @returns The control register.
+ * @param   pThis     The IOMMU device state.
+ */
 DECL_FORCE_INLINE(IOMMU_CTRL_T) iommuAmdGetCtrlUnlocked(PCIOMMU pThis)
 {
     IOMMU_CTRL_T Ctrl;
@@ -2887,7 +3186,7 @@ static void iommuAmdIoPageFaultEventInit(uint16_t uDevId, uint16_t uDomainId, ui
  * Raises an IO_PAGE_FAULT event.
  *
  * @param   pDevIns             The IOMMU instance data.
- * @param   fIoDevFlags         The I/O device flags, see IOMMU_DEV_F_XXX.
+ * @param   fIoDevFlags         The I/O device flags, see IOMMU_DTECACHE_F_XXX.
  * @param   pIrte               The interrupt remapping table entry, can be NULL.
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtIoPageFault     The I/O page fault event.
@@ -2903,7 +3202,7 @@ static void iommuAmdIoPageFaultEventRaise(PPDMDEVINS pDevIns, uint16_t fIoDevFla
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
 # define IOMMU_DTE_CACHE_SET_PF_RAISED(a_pDevIns, a_DevId)  iommuAmdDteCacheSetFlags((a_pDevIns), (a_DevId), \
-                                                                                     IOMMU_DEV_F_IO_PAGE_FAULT_RAISED)
+                                                                                     IOMMU_DTECACHE_F_IO_PAGE_FAULT_RAISED)
 #else
 # define IOMMU_DTE_CACHE_SET_PF_RAISED(a_pDevIns, a_DevId)  do { } while (0)
 #endif
@@ -2912,8 +3211,11 @@ static void iommuAmdIoPageFaultEventRaise(PPDMDEVINS pDevIns, uint16_t fIoDevFla
     if (   enmOp == IOMMUOP_MEM_READ
         || enmOp == IOMMUOP_MEM_WRITE)
     {
-        uint16_t const fSuppressIopf    = IOMMU_DEV_F_VALID | IOMMU_DEV_F_SUPPRESS_IOPF | IOMMU_DEV_F_IO_PAGE_FAULT_RAISED;
-        uint16_t const fSuppressAllIopf = IOMMU_DEV_F_VALID | IOMMU_DEV_F_SUPPRESS_ALL_IOPF;
+        uint16_t const fSuppressIopf    = IOMMU_DTECACHE_F_VALID
+                                        | IOMMU_DTECACHE_F_SUPPRESS_IOPF
+                                        | IOMMU_DTECACHE_F_IO_PAGE_FAULT_RAISED;
+        uint16_t const fSuppressAllIopf = IOMMU_DTECACHE_F_VALID
+                                        | IOMMU_DTECACHE_F_SUPPRESS_ALL_IOPF;
         if (   (fIoDevFlags & fSuppressAllIopf) == fSuppressAllIopf
             || (fIoDevFlags & fSuppressIopf) == fSuppressIopf)
         {
@@ -2922,7 +3224,9 @@ static void iommuAmdIoPageFaultEventRaise(PPDMDEVINS pDevIns, uint16_t fIoDevFla
     }
     else if (enmOp == IOMMUOP_INTR_REQ)
     {
-        uint16_t const fSuppressIopf = IOMMU_DEV_F_VALID | IOMMU_DEV_F_INTR_MAP_VALID | IOMMU_DEV_F_IGNORE_UNMAPPED_INTR;
+        uint16_t const fSuppressIopf = IOMMU_DTECACHE_F_VALID
+                                     | IOMMU_DTECACHE_F_INTR_MAP_VALID
+                                     | IOMMU_DTECACHE_F_IGNORE_UNMAPPED_INTR;
         if ((fIoDevFlags & fSuppressIopf) == fSuppressIopf)
             fSuppressEvtLogging = true;
         else if (pIrte)
@@ -3589,7 +3893,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                     if (RT_SUCCESS(rc))
                     {
                         /* Update that addresses requires translation (cumulative permissions of DTE and I/O page tables). */
-                        iommuAmdDteCacheUpdate(pDevIns, uDevId, &Dte, IOMMU_DEV_F_PRESENT | IOMMU_DEV_F_ADDR_TRANSLATE);
+                        iommuAmdDteCacheUpdate(pDevIns, uDevId, &Dte, IOMMU_DTECACHE_F_PRESENT | IOMMU_DTECACHE_F_ADDR_TRANSLATE);
                         /* Update IOTLB for the contiguous range of I/O virtual addresses. */
                         iommuAmdIotlbAddRange(pDevIns, Dte.n.u16DomainId, uIova & X86_PAGE_4K_BASE_MASK, cbPages,
                                               GCPhysSpa & X86_PAGE_4K_BASE_MASK, AddrOut.fPerm);
@@ -3608,7 +3912,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
 
 #if defined(IN_RING3) && defined(IOMMU_WITH_IOTLBE_CACHE)
                     /* Update that addresses permissions of DTE apply (but omit address translation). */
-                    iommuAmdDteCacheUpdate(pDevIns, uDevId, &Dte, IOMMU_DEV_F_PRESENT | IOMMU_DEV_F_IO_PERM);
+                    iommuAmdDteCacheUpdate(pDevIns, uDevId, &Dte, IOMMU_DTECACHE_F_PRESENT | IOMMU_DTECACHE_F_IO_PERM);
 #endif
                 }
                 else
@@ -3641,7 +3945,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
 
 #if defined(IN_RING3) && defined(IOMMU_WITH_IOTLBE_CACHE)
             /* Update that addresses don't require translation (nor permission checks) but a DTE is present. */
-            iommuAmdDteCacheUpdate(pDevIns, uDevId, &Dte, IOMMU_DEV_F_PRESENT);
+            iommuAmdDteCacheUpdate(pDevIns, uDevId, &Dte, IOMMU_DTECACHE_F_PRESENT);
 #endif
         }
     }
@@ -3731,17 +4035,17 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
     /*
-     * We hold the cache lock across both the device and the IOTLB lookups (if any) because
-     * we don't want the device cache to be invalidate while we perform IOTBL lookups.
+     * We hold the cache lock across both the DTE and the IOTLB lookups (if any) because
+     * we don't want the DTE cache to be invalidate while we perform IOTBL lookups.
      */
     IOMMU_LOCK_CACHE(pDevIns, pThis);
 
-    /* Lookup the device from the level 1 cache. */
-    PCIODEVICE pDevice = &pThis->paDevices[uDevId];
-    if ((pDevice->fFlags & (IOMMU_DEV_F_PRESENT | IOMMU_DEV_F_VALID | IOMMU_DEV_F_ADDR_TRANSLATE))
-                        == (IOMMU_DEV_F_PRESENT | IOMMU_DEV_F_VALID | IOMMU_DEV_F_ADDR_TRANSLATE))
+    /* Lookup the DTE cache entry. */
+    PCDTECACHE pDteCache = &pThis->paDteCache[uDevId];
+    if ((pDteCache->fFlags & (IOMMU_DTECACHE_F_PRESENT | IOMMU_DTECACHE_F_VALID | IOMMU_DTECACHE_F_ADDR_TRANSLATE))
+                          == (IOMMU_DTECACHE_F_PRESENT | IOMMU_DTECACHE_F_VALID | IOMMU_DTECACHE_F_ADDR_TRANSLATE))
     {
-        /* Lookup the IOTLB entries from the level 2 cache. */
+        /* Lookup IOTLB entries. */
         IOADDRRANGE AddrIn;
         AddrIn.uAddr = uIova;
         AddrIn.cb    = cbAccess;
@@ -3751,7 +4055,7 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
         Aux.enmOp     = enmOp;
         Aux.pDte      = NULL;
         Aux.uDeviceId = uDevId;
-        Aux.uDomainId = pDevice->uDomainId;
+        Aux.uDomainId = pDteCache->uDomainId;
 
         IOADDRRANGE AddrOut;
         rc = iommuAmdLookupIoAddrRange(pDevIns, iommuAmdCacheLookupPage, &AddrIn, &Aux, &AddrOut, NULL /* pcbPages */);
@@ -3759,12 +4063,12 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
         *pGCPhysSpa    = AddrOut.uAddr;
         *pcbContiguous = AddrOut.cb;
     }
-    else if ((pDevice->fFlags & (IOMMU_DEV_F_PRESENT | IOMMU_DEV_F_VALID | IOMMU_DEV_F_IO_PERM))
-                             == (IOMMU_DEV_F_PRESENT | IOMMU_DEV_F_VALID | IOMMU_DEV_F_IO_PERM))
+    else if ((pDteCache->fFlags & (IOMMU_DTECACHE_F_PRESENT | IOMMU_DTECACHE_F_VALID | IOMMU_DTECACHE_F_IO_PERM))
+                               == (IOMMU_DTECACHE_F_PRESENT | IOMMU_DTECACHE_F_VALID | IOMMU_DTECACHE_F_IO_PERM))
     {
         /* Address translation is disabled, but DTE permissions apply. */
-        Assert(!(pDevice->fFlags & IOMMU_DEV_F_ADDR_TRANSLATE));
-        uint8_t const fDtePerm = (pDevice->fFlags >> IOMMU_DEV_F_IO_PERM_SHIFT) & IOMMU_DEV_F_IO_PERM_MASK;
+        Assert(!(pDteCache->fFlags & IOMMU_DTECACHE_F_ADDR_TRANSLATE));
+        uint8_t const fDtePerm = (pDteCache->fFlags >> IOMMU_DTECACHE_F_IO_PERM_SHIFT) & IOMMU_DTECACHE_F_IO_PERM_MASK;
         if ((fDtePerm & fPerm) == fPerm)
         {
             *pGCPhysSpa    = uIova;
@@ -3778,7 +4082,7 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
             rc = VERR_IOMMU_ADDR_ACCESS_DENIED;
         }
     }
-    else if (pDevice->fFlags & IOMMU_DEV_F_PRESENT)
+    else if (pDteCache->fFlags & IOMMU_DTECACHE_F_PRESENT)
     {
         /* Forward addresses untranslated, without checking permissions. */
         *pGCPhysSpa    = uIova;
@@ -3798,15 +4102,15 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
     if (rc == VERR_IOMMU_ADDR_ACCESS_DENIED)
     {
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdIoPageFaultEventInit(uDevId, pDevice->uDomainId, uIova, true /* fPresent */,
+        iommuAmdIoPageFaultEventInit(uDevId, pDteCache->uDomainId, uIova, true /* fPresent */,
                                      false /* fRsvdNotZero */, true /* fPermDenied */, enmOp, &EvtIoPageFault);
-        iommuAmdIoPageFaultEventRaise(pDevIns, pDevice->fFlags, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+        iommuAmdIoPageFaultEventRaise(pDevIns, pDteCache->fFlags, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                       kIoPageFaultType_PermDenied);
     }
 
     return rc;
 }
-#endif /* IOMMU_WITH_IOTLBE_CACHE */
+#endif /* IN_RING3 && IOMMU_WITH_IOTLBE_CACHE */
 
 
 /**
@@ -4008,7 +4312,7 @@ static int iommuAmdIrteRead(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
 
     RTGCPHYS const GCPhysIntrTable = pDte->au64[2] & IOMMU_DTE_IRTE_ROOT_PTR_MASK;
     uint16_t const cbIntrTable     = IOMMU_GET_INTR_TAB_LEN(pDte);
-    uint16_t const offIrte         = (uDataIn & IOMMU_MSI_DATA_IRTE_OFFSET_MASK) * sizeof(IRTE_T);
+    uint16_t const offIrte         = IOMMU_GET_IRTE_OFF(uDataIn);
     RTGCPHYS const GCPhysIrte      = GCPhysIntrTable + offIrte;
 
     /* Ensure the IRTE falls completely within the interrupt table. */
@@ -4061,7 +4365,8 @@ static int iommuAmdIntrRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
     Assert(pDte->n.u2IntrCtrl == IOMMU_INTR_CTRL_REMAP);
 
     IRTE_T Irte;
-    int rc = iommuAmdIrteRead(pDevIns, uDevId, pDte, pMsiIn->Addr.u64, pMsiIn->Data.u32, enmOp, &Irte);
+    uint32_t const uMsiInData = pMsiIn->Data.u32;
+    int rc = iommuAmdIrteRead(pDevIns, uDevId, pDte, pMsiIn->Addr.u64, uMsiInData, enmOp, &Irte);
     if (RT_SUCCESS(rc))
     {
         if (Irte.n.u1RemapEnable)
@@ -4070,14 +4375,14 @@ static int iommuAmdIntrRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
             {
                 if (Irte.n.u3IntrType <= VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO)
                 {
-                    /* Preserve all bits from the source MSI address and data that don't map 1:1 from the IRTE. */
-                    *pMsiOut = *pMsiIn;
-
-                    pMsiOut->Addr.n.u1DestMode = Irte.n.u1DestMode;
-                    pMsiOut->Addr.n.u8DestId   = Irte.n.u8Dest;
-
-                    pMsiOut->Data.n.u8Vector       = Irte.n.u8Vector;
-                    pMsiOut->Data.n.u3DeliveryMode = Irte.n.u3IntrType;
+                    iommuAmdIrteRemapMsi(pMsiIn, pMsiOut, &Irte);
+#ifdef IOMMU_WITH_IRTE_CACHE
+                    /* Add/Update the interrupt cache with the remapped results. */
+                    uint16_t const offIrte = IOMMU_GET_IRTE_OFF(uMsiInData);
+                    int const rcUpdate = iommuAmdIrteCacheAdd(pDevIns, uDevId, offIrte, &Irte);
+                    if (RT_FAILURE(rcUpdate))
+                        LogRelMax(1, ("%s: Warning! Interrupt cache full. Consider increasing cache capacity.\n", IOMMU_LOG_PFX));
+#endif
                     return VINF_SUCCESS;
                 }
 
@@ -4151,6 +4456,11 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                 iommuAmdIllegalDteEventRaise(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
                 return VERR_IOMMU_INTR_REMAP_FAILED;
             }
+
+#ifdef IOMMU_WITH_IRTE_CACHE
+            /* Update the DTE cache -after- we've checked reserved bits (above) when the interrupt map is valid. */
+            iommuAmdDteCacheUpdate(pDevIns, uDevId, &Dte, IOMMU_DTECACHE_F_PRESENT);
+#endif
 
             /*
              * LINT0/LINT1 pins cannot be driven by PCI(e) devices. Perhaps for a Southbridge
@@ -4267,13 +4577,17 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
             }
             else
             {
+                /** @todo should be cause a PCI target abort here? */
                 LogFunc(("MSI address region invalid %#RX64\n", pMsiIn->Addr.u64));
                 return VERR_IOMMU_INTR_REMAP_FAILED;
             }
         }
         else
         {
-            /** @todo IOMMU: Add to interrupt remapping cache. */
+#ifdef IOMMU_WITH_IRTE_CACHE
+            /* Update the DTE cache that the interrupt map isn't valid. */
+            iommuAmdDteCacheUpdate(pDevIns, uDevId, &Dte, IOMMU_DTECACHE_F_PRESENT);
+#endif
             LogFlowFunc(("DTE interrupt map not valid\n"));
             *pMsiOut = *pMsiIn;
             return VINF_SUCCESS;
@@ -4308,9 +4622,24 @@ static DECLCALLBACK(int) iommuAmdMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, P
     if (Ctrl.n.u1IommuEn)
     {
         STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap));
-        /** @todo Cache? */
 
-        return iommuAmdIntrTableLookup(pDevIns, uDevId, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
+        int rc;
+#ifdef IOMMU_WITH_IRTE_CACHE
+        STAM_PROFILE_ADV_START(&pThis->StatProfIrteCacheLookup, a);
+        rc = iommuAmdIrteCacheLookup(pDevIns, uDevId, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
+        STAM_PROFILE_ADV_STOP(&pThis->StatProfIrteCacheLookup, a);
+        if (RT_SUCCESS(rc))
+        {
+            STAM_COUNTER_INC(&pThis->StatIntrCacheHit);
+            return VINF_SUCCESS;
+        }
+        STAM_COUNTER_INC(&pThis->StatIntrCacheMiss);
+#endif
+
+        STAM_PROFILE_ADV_START(&pThis->StatProfIrteLookup, a);
+        rc = iommuAmdIntrTableLookup(pDevIns, uDevId, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
+        STAM_PROFILE_ADV_STOP(&pThis->StatProfIrteLookup, a);
+        return rc;
     }
 
     *pMsiOut = *pMsiIn;
@@ -4526,10 +4855,22 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
 
         case IOMMU_CMD_INV_INTR_TABLE:
         {
-            /** @todo IOMMU: Implement this once we implement IOTLB. Pretend success until
-             *        then. */
             STAM_COUNTER_INC(&pThis->StatCmdInvIntrTable);
-            return VINF_SUCCESS;
+
+            PCCMD_INV_INTR_TABLE_T pCmdInvIntrTable = (PCCMD_INV_INTR_TABLE_T)pCmd;
+            AssertCompile(sizeof(*pCmdInvIntrTable) == sizeof(*pCmd));
+
+            /* Validate reserved bits in the command. */
+            if (   !(pCmdInvIntrTable->au64[0] & ~IOMMU_CMD_INV_INTR_TABLE_QWORD_0_VALID_MASK)
+                && !(pCmdInvIntrTable->au64[1] & ~IOMMU_CMD_INV_INTR_TABLE_QWORD_1_VALID_MASK))
+            {
+#ifdef IOMMU_WITH_IRTE_CACHE
+                iommuAmdIrteCacheRemove(pDevIns, pCmdInvIntrTable->u.u16DevId);
+#endif
+                return VINF_SUCCESS;
+            }
+            iommuAmdIllegalCmdEventInit(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            return VERR_IOMMU_CMD_INVALID_FORMAT;
         }
 
         case IOMMU_CMD_PREFETCH_IOMMU_PAGES:
@@ -4569,7 +4910,7 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                     return VINF_SUCCESS;
                 }
                 iommuAmdIllegalCmdEventInit(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
-                return VERR_IOMMU_CMD_NOT_SUPPORTED;
+                return VERR_IOMMU_CMD_INVALID_FORMAT;
 #else
                 return VINF_SUCCESS;
 #endif
@@ -5523,7 +5864,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDte(PPDMDEVINS pDevIns, PCDBGFINFOHLP
 }
 
 
-#if defined(IN_RING3) && defined(IOMMU_WITH_IOTLBE_CACHE)
+# ifdef IOMMU_WITH_IOTLBE_CACHE
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV}
  */
@@ -5551,6 +5892,66 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoIotlb(PPDMDEVINS pDevIns, PCDBGFINFOH
     }
     else
         pHlp->pfnPrintf(pHlp, "Missing domain ID.\n");
+}
+# endif
+
+
+#ifdef IOMMU_WITH_IRTE_CACHE
+/**
+ * Gets the interrupt type name for an interrupt type in the IRTE.
+ *
+ * @returns The interrupt type name.
+ * @param   uIntrType       The interrupt type (as specified in the IRTE).
+ */
+static const char *iommuAmdIrteGetIntrTypeName(uint8_t uIntrType)
+{
+    switch (uIntrType)
+    {
+        case VBOX_MSI_DELIVERY_MODE_FIXED:          return "Fixed";
+        case VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO:    return "Arbitrated";
+        default:                                    return "<Reserved>";
+    }
+}
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV}
+ */
+static DECLCALLBACK(void) iommuAmdR3DbgInfoIrtes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
+
+    uint16_t const cIrteCache = pThis->cIrteCache;
+    pHlp->pfnPrintf(pHlp, "IRTE Cache: Capacity=%u entries\n", cIrteCache);
+    for (uint16_t idxIrte = 0; idxIrte < cIrteCache; idxIrte++)
+    {
+        PCIRTECACHE pIrteCache = &pThis->paIrteCache[idxIrte];
+        uint32_t const uKey = pIrteCache->uKey;
+        if (uKey != IOMMU_IRTE_CACHE_KEY_NIL)
+        {
+            uint16_t const uDeviceId = IOMMU_IRTE_CACHE_KEY_GET_DEVICE_ID(uKey);
+            uint16_t const offIrte   = IOMMU_IRTE_CACHE_KEY_GET_OFF(uKey);
+            pHlp->pfnPrintf(pHlp, " Entry[%u]: Offset=%#x Device=%#x (BDF %02x:%02x.%d)\n",
+                            idxIrte, offIrte, uDeviceId,
+                            (uDeviceId >> VBOX_PCI_BUS_SHIFT) & VBOX_PCI_BUS_MASK,
+                            (uDeviceId >> VBOX_PCI_DEVFN_DEV_SHIFT) & VBOX_PCI_DEVFN_DEV_MASK,
+                            uDeviceId & VBOX_PCI_DEVFN_FUN_MASK);
+
+            PCIRTE_T pIrte = &pIrteCache->Irte;
+            pHlp->pfnPrintf(pHlp, "  Remap Enable     = %RTbool\n", pIrte->n.u1RemapEnable);
+            pHlp->pfnPrintf(pHlp, "  Suppress IOPF    = %RTbool\n", pIrte->n.u1SuppressIoPf);
+            pHlp->pfnPrintf(pHlp, "  Interrupt Type   = %#x (%s)\n", pIrte->n.u3IntrType,
+                            iommuAmdIrteGetIntrTypeName(pIrte->n.u3IntrType));
+            pHlp->pfnPrintf(pHlp, "  Request EOI      = %RTbool\n", pIrte->n.u1ReqEoi);
+            pHlp->pfnPrintf(pHlp, "  Destination mode = %s\n", pIrte->n.u1DestMode ? "Logical" : "Physical");
+            pHlp->pfnPrintf(pHlp, "  Destination Id   = %u\n", pIrte->n.u8Dest);
+            pHlp->pfnPrintf(pHlp, "  Vector           = %#x (%u)\n", pIrte->n.u8Vector, pIrte->n.u8Vector);
+            pHlp->pfnPrintf(pHlp, "\n");
+        }
+    }
+    IOMMU_UNLOCK_CACHE(pDevIns, pThis);
 }
 #endif
 
@@ -5746,9 +6147,14 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
 
     IOMMU_UNLOCK(pDevIns, pThisCC);
 
-#ifdef IOMMU_WITH_IOTLBE_CACHE
+#ifdef IOMMU_WITH_DTE_CACHE
     iommuAmdDteCacheRemoveAll(pDevIns);
+#endif
+#ifdef IOMMU_WITH_IOTLBE_CACHE
     iommuAmdIotlbRemoveAll(pDevIns);
+#endif
+#ifdef IOMMU_WITH_IRTE_CACHE
+    iommuAmdIrteCacheRemoveAll(pDevIns);
 #endif
 }
 
@@ -5772,19 +6178,31 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
         pThis->hEvtCmdThread = NIL_SUPSEMEVENT;
     }
 
-#ifdef IOMMU_WITH_IOTLBE_CACHE
-    /* Destroy level 1 cache. */
-    if (pThis->paDevices)
+#ifdef IOMMU_WITH_DTE_CACHE
+    /* Destroy the DTE cache. */
+    if (pThis->paDteCache)
     {
-        PDMDevHlpMMHeapFree(pDevIns, pThis->paDevices);
-        pThis->paDevices = NULL;
+        PDMDevHlpMMHeapFree(pDevIns, pThis->paDteCache);
+        pThis->paDteCache = NULL;
     }
+#endif
 
-    /* Destroy level 2 cache. */
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+    /* Destroy the IOTLB cache. */
     if (pThis->paIotlbes)
     {
         PDMDevHlpMMHeapFree(pDevIns, pThis->paIotlbes);
         pThis->paIotlbes = NULL;
+        pThis->idxUnusedIotlbe = 0;
+    }
+#endif
+
+#ifdef IOMMU_WITH_IRTE_CACHE
+    /* Destroy the interrupt cache. */
+    if (pThis->paIrteCache)
+    {
+        PDMDevHlpMMHeapFree(pDevIns, pThis->paIrteCache);
+        pThis->paIrteCache = NULL;
     }
 #endif
 
@@ -5971,6 +6389,9 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
     PDMDevHlpDBGFInfoRegister(pDevIns, "iommutlb", "Display IOTLBs for a domain. Arguments: DomainID.", iommuAmdR3DbgInfoIotlb);
 #endif
+#ifdef IOMMU_WITH_IRTE_CACHE
+    PDMDevHlpDBGFInfoRegister(pDevIns, "iommuirtes", "Display the IRTE cache.", iommuAmdR3DbgInfoIrtes);
+#endif
 
 # ifdef VBOX_WITH_STATISTICS
     /*
@@ -6014,6 +6435,9 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatProfDteLookup, STAMTYPE_PROFILE, "Profile/DteLookup", STAMUNIT_TICKS_PER_CALL, "Profiling DTE lookup.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatProfIotlbeLookup, STAMTYPE_PROFILE, "Profile/IotlbeLookup", STAMUNIT_TICKS_PER_CALL, "Profiling IOTLBE lookup.");
 
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatProfIrteLookup, STAMTYPE_PROFILE, "Profile/IrteLookup", STAMUNIT_TICKS_PER_CALL, "Profiling IRTE lookup.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatProfIrteCacheLookup, STAMTYPE_PROFILE, "Profile/IrteCacheLookup", STAMUNIT_TICKS_PER_CALL, "Profiling IRTE cache lookup.");
+
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatAccessCacheHit, STAMTYPE_COUNTER, "Access/CacheHit", STAMUNIT_OCCURENCES, "Number of cache hits.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatAccessCacheMiss, STAMTYPE_COUNTER, "Access/CacheMiss", STAMUNIT_OCCURENCES, "Number of cache misses.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatAccessCacheHitFull, STAMTYPE_COUNTER, "Access/CacheHitFull", STAMUNIT_OCCURENCES, "Number of accesses that was entirely in the cache.");
@@ -6021,6 +6445,9 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatAccessCachePermDenied, STAMTYPE_COUNTER, "Access/CacheAddrDenied", STAMUNIT_OCCURENCES, "Number of cache accesses that resulted in denied permissions.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatAccessDteNonContig, STAMTYPE_COUNTER, "Access/DteNonContig", STAMUNIT_OCCURENCES, "Number of DTE accesses that resulted in non-contiguous translated regions.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatAccessDtePermDenied, STAMTYPE_COUNTER, "Access/DtePermDenied", STAMUNIT_OCCURENCES, "Number of DTE accesses that resulted in denied permissions.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIntrCacheHit, STAMTYPE_COUNTER, "Intr/CacheHit", STAMUNIT_OCCURENCES, "Number of cache hits.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIntrCacheMiss, STAMTYPE_COUNTER, "Intr/CacheMiss", STAMUNIT_OCCURENCES, "Number of cache misses.");
 # endif
 
     /*
@@ -6036,7 +6463,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEvtCmdThread);
     AssertLogRelRCReturn(rc, rc);
 
-#ifdef IOMMU_WITH_IOTLBE_CACHE
+#ifdef IOMMU_WITH_DTE_CACHE
     /*
      * Initialize the critsect of the cache.
      */
@@ -6044,39 +6471,72 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     AssertLogRelRCReturn(rc, rc);
 
     /*
-     * Allocate the level 1 cache (device ID to domain ID mapping).
-     * PCI devices are hotpluggable, plus we don't have a way of querying the bus for all
+     * Allocate the device table entry cache.
+     * PCI devices are hotpluggable and we don't have a way of querying the bus for all
      * assigned PCI BDF slots. So while this wastes some memory, it should work regardless
-     * of how code, features and devices around the IOMMU changes.
+     * of how code, features and devices around the IOMMU change.
      */
-    size_t const cbDevices = sizeof(IODEVICE) * IOMMU_DTE_CACHE_MAX;
+    size_t cbCache = 0;
+    size_t const cbDteCache = sizeof(DTECACHE) * IOMMU_DTE_CACHE_MAX;
     AssertCompile(IOMMU_DTE_CACHE_MAX >= UINT16_MAX);
-    pThis->paDevices = (PIODEVICE)PDMDevHlpMMHeapAllocZ(pDevIns, cbDevices);
-    if (!pThis->paDevices)
-    {
+    pThis->paDteCache = (PDTECACHE)PDMDevHlpMMHeapAllocZ(pDevIns, cbDteCache);
+    if (!pThis->paDteCache)
         return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
-                                   N_("Failed to allocate %zu bytes from the hyperheap for the IOMMU level 1 cache."), cbDevices);
-    }
+                                   N_("Failed to allocate %zu bytes from the hyperheap for the DTE cache."), cbDteCache);
+    cbCache += cbDteCache;
+#endif
 
+#ifdef IOMMU_WITH_IOTLBE_CACHE
     /*
-     * Allocate the level 2 cache (IOTLB entries).
+     * Allocate IOTLB entries.
      * This is allocated upfront since we expect a relatively small number of entries,
      * is more cache-line efficient and easier to track least recently used entries for
-     * eviction when the cache is full. This also prevents unpredictable behavior during
-     * the lifetime of the VM if the hyperheap gets full as allocation would fail upfront
-     * or not at all.
+     * eviction when the cache is full. This also avoids unpredictable behavior during
+     * the lifetime of the VM if the hyperheap gets full.
      */
     size_t const cbIotlbes = sizeof(IOTLBE) * IOMMU_IOTLBE_MAX;
     pThis->paIotlbes = (PIOTLBE)PDMDevHlpMMHeapAllocZ(pDevIns, cbIotlbes);
     if (!pThis->paIotlbes)
-    {
         return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
-                                   N_("Failed to allocate %zu bytes from the hyperheap for the IOMMU level 2 cache."),
-                                   cbIotlbes);
-    }
+                                   N_("Failed to allocate %zu bytes from the hyperheap for the IOTLB cache."), cbIotlbes);
     RTListInit(&pThis->LstLruIotlbe);
+    cbCache += cbIotlbes;
+#endif
 
-    LogRel(("%s: Allocated %zu bytes from the hyperheap for the IOTLB cache\n", IOMMU_LOG_PFX, cbDevices + cbIotlbes));
+#ifdef IOMMU_WITH_IRTE_CACHE
+    /* Maximum number of elements in the IRTE cache. */
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "InterruptCacheCount", &pThis->cIrteCache, IOMMU_IRTE_CACHE_DEFAULT);
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("IOMMU: failed to read InterruptCacheCount as integer"));
+    AssertCompile(IOMMU_IRTE_CACHE_DEFAULT >= IOMMU_IRTE_CACHE_MIN);
+    AssertCompile(IOMMU_IRTE_CACHE_DEFAULT <= IOMMU_IRTE_CACHE_MAX);
+    if (   pThis->cIrteCache < IOMMU_IRTE_CACHE_MIN
+        || pThis->cIrteCache > IOMMU_IRTE_CACHE_MAX)
+        return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                   N_("IOMMU: InterruptCacheCount invalid (must be between %u and %u)."),
+                                   IOMMU_IRTE_CACHE_MIN, IOMMU_IRTE_CACHE_MAX);
+
+    /*
+     * Allocate the interrupt remapping cache.
+     * This is an array of devices and their corresponding interrupt remap table entries.
+     * Typically only a handful of PCI devices are used in VMs so this is kept rather small.
+     * If we ever need to support a vast number of interrupt-remapped devices, we can
+     * implement a more sophisticated cache solution then.
+     *
+     * NOTE: IRTE cache entry keys are initialized later in this function by calling
+     *       iommuAmdR3Reset() -> iommuAmdIrteCacheRemoveAll().
+     */
+    size_t const cbIrteCache = sizeof(IRTECACHE) * pThis->cIrteCache;
+    pThis->paIrteCache = (PIRTECACHE)PDMDevHlpMMHeapAllocZ(pDevIns, cbIrteCache);
+    if (!pThis->paIrteCache)
+        return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
+                                   N_("Failed to allocate %zu bytes from the hyperheap for the interrupt cache."), cbIrteCache);
+    cbCache += cbIrteCache;
+#endif
+
+#ifdef IOMMU_WITH_DTE_CACHE
+    LogRel(("%s: Allocated %zu bytes from the hyperheap for the IOMMU cache\n", IOMMU_LOG_PFX, cbCache));
 #endif
 
     /*
@@ -6140,6 +6600,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     /*
      * Initialize parts of the IOMMU state as it would during reset.
+     * Also initializes non-zero initial values like IRTE cache keys.
      * Must be called -after- initializing PCI config. space registers.
      */
     iommuAmdR3Reset(pDevIns);

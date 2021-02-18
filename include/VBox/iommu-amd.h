@@ -578,6 +578,10 @@ typedef DTE_T const *PCDTE_T;
 #define IOMMU_GET_INTR_TAB_ENTRIES(a_pDte)      (UINT64_C(1) << (a_pDte)->n.u4IntrTableLength)
 /** Gets the interrupt table length (in bytes) given the DTE pointer. */
 #define IOMMU_GET_INTR_TAB_LEN(a_pDte)          (IOMMU_GET_INTR_TAB_ENTRIES(a_pDte) * sizeof(IRTE_T))
+/** Mask of interrupt control bits. */
+#define IOMMU_DTE_INTR_CTRL_MASK                0x3
+/** Gets the interrupt control bits given the DTE pointer. */
+#define IOMMU_GET_INTR_CTRL(a_pDte)             (((a_pDte)->au64[2] >> 60) & IOMMU_DTE_INTR_CTRL_MASK)
 
 /**
  * I/O Page Translation Entry.
@@ -693,6 +697,8 @@ typedef IRTE_T const *PCIRTE_T;
 /** The IRTE offset corresponds directly to bits 10:0 of the originating MSI
  *  interrupt message. See AMD IOMMU spec. 2.2.5 "Interrupt Remapping Tables". */
 #define IOMMU_MSI_DATA_IRTE_OFFSET_MASK     UINT32_C(0x000007ff)
+/** Gets the IRTE offset from the originating MSI interrupt message. */
+#define IOMMU_GET_IRTE_OFF(a_u32MsiData)    (((a_u32MsiData) & IOMMU_MSI_DATA_IRTE_OFFSET_MASK) * sizeof(IRTE_T));
 
 /**
  * Interrupt Remapping Table Entry (IRTE) - Guest Virtual APIC Enabled.
@@ -881,6 +887,12 @@ typedef union
     uint64_t    au64[2];
 } CMD_INV_INTR_TABLE_T;
 AssertCompileSize(CMD_INV_INTR_TABLE_T, 16);
+/** Pointer to a invalidate interrupt table command. */
+typedef CMD_INV_INTR_TABLE_T *PCMD_INV_INTR_TABLE_T;
+/** Pointer to a const invalidate interrupt table command. */
+typedef CMD_INV_INTR_TABLE_T const *PCCMD_INV_INTR_TABLE_T;
+#define IOMMU_CMD_INV_INTR_TABLE_QWORD_0_VALID_MASK         UINT64_C(0xf00000000000ffff)
+#define IOMMU_CMD_INV_INTR_TABLE_QWORD_1_VALID_MASK         UINT64_C(0x0000000000000000)
 
 /**
  * Command: PREFETCH_IOMMU_PAGES.
