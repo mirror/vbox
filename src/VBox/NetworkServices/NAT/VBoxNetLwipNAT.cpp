@@ -190,13 +190,13 @@ public:
     virtual int run();
 
 private:
-    int comInit();
-    int homeInit();
-    int logInit();
-    int ipv4Init();
-    int ipv4LoopbackMapInit();
-    int ipv6Init();
-    int eventsInit();
+    int initCom();
+    int initHome();
+    int initLog();
+    int initIPv4();
+    int initIPv4LoopbackMap();
+    int initIPv6();
+    int initComEvents();
 
     int getExtraData(com::Utf8Str &strValueOut, const char *pcszKey);
 
@@ -209,8 +209,8 @@ private:
                                     const com::Utf8Str &strContext);
     static void reportErrorInfo(const com::ErrorInfo &info);
 
-    void createRawSock4();
-    void createRawSock6();
+    void initIPv4RawSock();
+    void initIPv6RawSock();
 
     static DECLCALLBACK(void) onLwipTcpIpInit(void *arg);
     static DECLCALLBACK(void) onLwipTcpIpFini(void *arg);
@@ -350,12 +350,12 @@ int VBoxNetLwipNAT::init()
     LogFlowFuncEnter();
 
     /* Get the COM API set up. */
-    rc = comInit();
+    rc = initCom();
     if (RT_FAILURE(rc))
         return rc;
 
     /* Get the home folder location.  It's ok if it fails. */
-    homeInit();
+    initHome();
 
     /*
      * We get the network name on the command line.  Get hold of its
@@ -374,7 +374,7 @@ int VBoxNetLwipNAT::init()
      * Now that we know the network name and have ensured that it
      * indeed exists we can create the release log file.
      */
-    logInit();
+    initLog();
 
     // resolver changes are reported on vbox but are retrieved from
     // host so stash a pointer for future lookups
@@ -383,15 +383,14 @@ int VBoxNetLwipNAT::init()
 
 
     /* Get the settings related to IPv4. */
-    rc = ipv4Init();
+    rc = initIPv4();
     if (RT_FAILURE(rc))
         return rc;
 
     /* Get the settings related to IPv6. */
-    rc = ipv6Init();
+    rc = initIPv6();
     if (RT_FAILURE(rc))
         return rc;
-
 
 
     fetchNatPortForwardRules(m_vecPortForwardRule4, /* :fIsIPv6 */ false);
@@ -411,7 +410,7 @@ int VBoxNetLwipNAT::init()
 
     m_ProxyOptions.nameservers = getHostNameservers();
 
-    eventsInit();
+    initComEvents();
     /* end of COM initialization */
 
     /* connect to the intnet */
@@ -440,7 +439,7 @@ int VBoxNetLwipNAT::init()
  * immediate gain.  It's easier to ignore the base class code and do
  * it ourselves and do the refactoring later.
  */
-int VBoxNetLwipNAT::comInit()
+int VBoxNetLwipNAT::initCom()
 {
     HRESULT hrc;
 
@@ -488,7 +487,7 @@ int VBoxNetLwipNAT::comInit()
  * It is used as the base directory for the default release log file
  * and for the TFTP root location.
  */
-int VBoxNetLwipNAT::homeInit()
+int VBoxNetLwipNAT::initHome()
 {
     HRESULT hrc;
     int rc;
@@ -523,7 +522,7 @@ int VBoxNetLwipNAT::homeInit()
  * settings will be picked up by the proxy on the lwIP thread.  See
  * onLwipTcpIpInit().
  */
-int VBoxNetLwipNAT::ipv4Init()
+int VBoxNetLwipNAT::initIPv4()
 {
     HRESULT hrc;
     int rc;
@@ -589,7 +588,7 @@ int VBoxNetLwipNAT::ipv4Init()
 
 
     /* Raw socket for ICMP. */
-    createRawSock4();
+    initIPv4RawSock();
 
 
     /* IPv4 source address (host), if configured. */
@@ -615,7 +614,7 @@ int VBoxNetLwipNAT::ipv4Init()
     }
 
     /* Make host's loopback(s) available from inside the natnet */
-    ipv4LoopbackMapInit();
+    initIPv4LoopbackMap();
 
     return VINF_SUCCESS;
 }
@@ -627,7 +626,7 @@ int VBoxNetLwipNAT::ipv4Init()
  * services on loopback addresses other than 127.0.0.1.  E.g. a
  * caching dns proxy on 127.0.1.1 or 127.0.0.53.
  */
-int VBoxNetLwipNAT::ipv4LoopbackMapInit()
+int VBoxNetLwipNAT::initIPv4LoopbackMap()
 {
     HRESULT hrc;
     int rc;
@@ -739,7 +738,7 @@ int VBoxNetLwipNAT::ipv4LoopbackMapInit()
  * settings will be picked up by the proxy on the lwIP thread.  See
  * onLwipTcpIpInit().
  */
-int VBoxNetLwipNAT::ipv6Init()
+int VBoxNetLwipNAT::initIPv6()
 {
     HRESULT hrc;
     int rc;
@@ -835,7 +834,7 @@ int VBoxNetLwipNAT::ipv6Init()
 
 
     /* Raw socket for ICMP. */
-    createRawSock6();
+    initIPv6RawSock();
 
 
     /* IPv6 source address, if configured. */
@@ -1005,7 +1004,7 @@ VBoxNetLwipNAT::Listener::unlisten()
 /**
  * Create and register API event listeners.
  */
-int VBoxNetLwipNAT::eventsInit()
+int VBoxNetLwipNAT::initComEvents()
 {
     /**
      * @todo r=uwe These events are reported on both IVirtualBox and
@@ -1044,7 +1043,7 @@ int VBoxNetLwipNAT::eventsInit()
 /**
  * Create raw IPv4 socket for sending and snooping ICMP.
  */
-void VBoxNetLwipNAT::createRawSock4()
+void VBoxNetLwipNAT::initIPv4RawSock()
 {
     SOCKET icmpsock4 = INVALID_SOCKET;
 
@@ -1091,7 +1090,7 @@ void VBoxNetLwipNAT::createRawSock4()
 /**
  * Create raw IPv6 socket for sending and snooping ICMP6.
  */
-void VBoxNetLwipNAT::createRawSock6()
+void VBoxNetLwipNAT::initIPv6RawSock()
 {
     SOCKET icmpsock6 = INVALID_SOCKET;
 
@@ -2006,7 +2005,7 @@ void VBoxNetLwipNAT::reportError(const char *a_pcszFormat, ...)
  * environment variables (also ..._DEST and ..._FLAGS).
  */
 /* static */
-int VBoxNetLwipNAT::logInit()
+int VBoxNetLwipNAT::initLog()
 {
     size_t cch;
     int rc;
