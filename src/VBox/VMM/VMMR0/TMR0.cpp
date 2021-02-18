@@ -177,4 +177,3 @@ VMMR0_INT_DECL(int) TMR0TimerQueueGrow(PGVM pGVM, uint32_t idxQueue, uint32_t cM
     return rc;
 }
 
-
