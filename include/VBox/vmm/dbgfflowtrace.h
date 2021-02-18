@@ -362,6 +362,7 @@ VMMR3DECL(int)      DBGFR3FlowTraceProbeEntriesAdd(DBGFFLOWTRACEPROBE hFlowTrace
 VMMR3DECL(uint32_t) DBGFR3FlowTraceReportRetain(DBGFFLOWTRACEREPORT hFlowTraceReport);
 VMMR3DECL(uint32_t) DBGFR3FlowTraceReportRelease(DBGFFLOWTRACEREPORT hFlowTraceReport);
 VMMR3DECL(uint32_t) DBGFR3FlowTraceReportGetRecordCount(DBGFFLOWTRACEREPORT hFlowTraceReport);
+VMMR3DECL(int)      DBGFR3FlowTraceReportQueryRecord(DBGFFLOWTRACEREPORT hFlowTraceReport, uint32_t idxRec, PDBGFFLOWTRACERECORD phFlowTraceRec);
 VMMR3DECL(int)      DBGFR3FlowTraceReportQueryFiltered(DBGFFLOWTRACEREPORT hFlowTraceReport, uint32_t fFlags,
                                                        PDBGFFLOWTRACEREPORTFILTER paFilters, uint32_t cFilters,
                                                        DBGFFLOWTRACEREPORTFILTEROP enmOp,

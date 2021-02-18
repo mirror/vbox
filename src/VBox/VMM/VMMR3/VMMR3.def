@@ -207,6 +207,7 @@ EXPORTS
     DBGFR3FlowTraceReportRetain
     DBGFR3FlowTraceReportRelease
     DBGFR3FlowTraceReportGetRecordCount
+    DBGFR3FlowTraceReportQueryRecord
     DBGFR3FlowTraceReportQueryFiltered
     DBGFR3FlowTraceReportEnumRecords
     DBGFR3FlowTraceRecordRetain

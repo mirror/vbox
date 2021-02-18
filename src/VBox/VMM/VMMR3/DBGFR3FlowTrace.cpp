@@ -1690,6 +1690,27 @@ VMMR3DECL(uint32_t) DBGFR3FlowTraceReportGetRecordCount(DBGFFLOWTRACEREPORT hFlo
 
 
 /**
+ * Queries the specified record contained in the given report.
+ *
+ * @returns VBox status code.
+ * @param   hFlowTraceReport        Flow trace report handle.
+ * @param   idxRec                  The record index to query.
+ * @param   phFlowTraceRec          Where to store the retained handle of the record on success.
+ */
+VMMR3DECL(int) DBGFR3FlowTraceReportQueryRecord(DBGFFLOWTRACEREPORT hFlowTraceReport, uint32_t idxRec, PDBGFFLOWTRACERECORD phFlowTraceRec)
+{
+    PDBGFFLOWTRACEREPORTINT pReport = hFlowTraceReport;
+    AssertPtrReturn(pReport, 0);
+    AssertPtrReturn(phFlowTraceRec, VERR_INVALID_POINTER);
+    AssertReturn(idxRec < pReport->cRecords, VERR_INVALID_PARAMETER);
+
+    DBGFR3FlowTraceRecordRetain(pReport->apRec[idxRec]);
+    *phFlowTraceRec = pReport->apRec[idxRec];
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Filters the given flow trace report by the given criterias and returns a filtered report.
  *
  * @returns VBox status code.
