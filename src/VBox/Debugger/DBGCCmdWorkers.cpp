@@ -227,3 +227,142 @@ int dbgcBpExec(PDBGC pDbgc, RTUINT iBp)
     return rc;
 }
 
+
+
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
+//
+//
+//      F l o w T r a c e   M a n a g e m e n t
+//
+//
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
+
+
+
+/**
+ * Returns the trace flow module matching the given id or NULL if not found.
+ *
+ * @returns Pointer to the trace flow module or NULL if not found.
+ * @param   pDbgc         The DBGC instance.
+ * @param   iTraceFlowMod The trace flow module identifier.
+ */
+DECLHIDDEN(PDBGCTFLOW) dbgcFlowTraceModGet(PDBGC pDbgc, uint32_t iTraceFlowMod)
+{
+    PDBGCTFLOW pIt;
+    RTListForEach(&pDbgc->LstTraceFlowMods, pIt, DBGCTFLOW, NdTraceFlow)
+    {
+        if (pIt->iTraceFlowMod == iTraceFlowMod)
+            return pIt;
+    }
+
+    return NULL;
+}
+
+
+/**
+ * Inserts the given trace flow module into the list.
+ *
+ * @returns nothing.
+ * @param   pDbgc         The DBGC instance.
+ * @param   pTraceFlow    The trace flow module.
+ */
+static void dbgcFlowTraceModInsert(PDBGC pDbgc, PDBGCTFLOW pTraceFlow)
+{
+    PDBGCTFLOW pIt = RTListGetLast(&pDbgc->LstTraceFlowMods, DBGCTFLOW, NdTraceFlow);
+
+    if (   !pIt
+        || pIt->iTraceFlowMod < pTraceFlow->iTraceFlowMod)
+        RTListAppend(&pDbgc->LstTraceFlowMods, &pTraceFlow->NdTraceFlow);
+    else
+    {
+        RTListForEach(&pDbgc->LstTraceFlowMods, pIt, DBGCTFLOW, NdTraceFlow)
+        {
+            if (pIt->iTraceFlowMod < pTraceFlow->iTraceFlowMod)
+            {
+                RTListNodeInsertBefore(&pIt->NdTraceFlow, &pTraceFlow->NdTraceFlow);
+                break;
+            }
+        }
+    }
+}
+
+
+/**
+ * Returns the smallest free flow trace mod identifier.
+ *
+ * @returns Free flow trace mod identifier.
+ * @param   pDbgc         The DBGC instance.
+ */
+static uint32_t dbgcFlowTraceModIdFindFree(PDBGC pDbgc)
+{
+    uint32_t iId = 0;
+
+    PDBGCTFLOW pIt;
+    RTListForEach(&pDbgc->LstTraceFlowMods, pIt, DBGCTFLOW, NdTraceFlow)
+    {
+        PDBGCTFLOW pNext = RTListGetNext(&pDbgc->LstTraceFlowMods, pIt, DBGCTFLOW, NdTraceFlow);
+        if (   (   pNext
+                && pIt->iTraceFlowMod + 1 != pNext->iTraceFlowMod)
+            || !pNext)
+        {
+            iId = pIt->iTraceFlowMod + 1;
+            break;
+        }
+    }
+
+    return iId;
+}
+
+
+/**
+ * Adds a flow trace module to the debugger console.
+ *
+ * @returns VBox status code.
+ * @param   pDbgc         The DBGC instance.
+ * @param   hFlowTraceMod The flow trace module to add.
+ * @param   hFlow         The control flow graph to add.
+ * @param   piId          Where to store the ID of the module on success.
+ */
+DECLHIDDEN(int) dbgcFlowTraceModAdd(PDBGC pDbgc, DBGFFLOWTRACEMOD hFlowTraceMod, DBGFFLOW hFlow, uint32_t *piId)
+{
+    /*
+     * Add the module.
+     */
+    PDBGCTFLOW pTraceFlow = (PDBGCTFLOW)RTMemAlloc(sizeof(DBGCTFLOW));
+    if (!pTraceFlow)
+        return VERR_NO_MEMORY;
+
+    pTraceFlow->hTraceFlowMod = hFlowTraceMod;
+    pTraceFlow->hFlow         = hFlow;
+    pTraceFlow->iTraceFlowMod = dbgcFlowTraceModIdFindFree(pDbgc);
+    dbgcFlowTraceModInsert(pDbgc, pTraceFlow);
+
+    *piId = pTraceFlow->iTraceFlowMod;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Deletes a breakpoint.
+ *
+ * @returns VBox status code.
+ * @param   pDbgc       The DBGC instance.
+ * @param   iTraceFlowMod The trace flow module identifier.
+ */
+DECLHIDDEN(int) dbgcFlowTraceModDelete(PDBGC pDbgc, uint32_t iFlowTraceMod)
+{
+    int rc = VINF_SUCCESS;
+    PDBGCTFLOW pTraceFlow = dbgcFlowTraceModGet(pDbgc, iFlowTraceMod);
+    if (pTraceFlow)
+    {
+        RTListNodeRemove(&pTraceFlow->NdTraceFlow);
+        RTMemFree(pTraceFlow);
+    }
+    else
+        rc = VERR_DBGC_BP_NOT_FOUND;
+
+    return rc;
+}
+

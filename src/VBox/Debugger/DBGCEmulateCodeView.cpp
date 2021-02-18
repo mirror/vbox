@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DBGC
 #include <VBox/dbg.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/dbgfflowtrace.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/dis.h>
@@ -85,6 +86,11 @@ static FNDBGCCMD dbgcCmdEventCtrlReset;
 static FNDBGCCMD dbgcCmdStack;
 static FNDBGCCMD dbgcCmdUnassemble;
 static FNDBGCCMD dbgcCmdUnassembleCfg;
+static FNDBGCCMD dbgcCmdTraceFlowClear;
+static FNDBGCCMD dbgcCmdTraceFlowDisable;
+static FNDBGCCMD dbgcCmdTraceFlowEnable;
+static FNDBGCCMD dbgcCmdTraceFlowPrint;
+static FNDBGCCMD dbgcCmdTraceFlowReset;
 
 
 /*********************************************************************************************************************************
@@ -370,6 +376,37 @@ static const DBGCVARDESC    g_aArgListSyms[] =
     {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "symbols",      "The symbols to list, format is Module!Symbol with wildcards being supoprted." }
 };
 
+/** 'tflowc' arguments. */
+static const DBGCVARDESC    g_aArgTraceFlowClear[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           ~0U,        DBGCVAR_CAT_NUMBER,     0,                              "#tf",          "Trace flow module number." },
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "all",          "All trace flow modules." },
+};
+
+/** 'tflowd' arguments. */
+static const DBGCVARDESC    g_aArgTraceFlowDisable[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           ~0U,        DBGCVAR_CAT_NUMBER,     0,                              "#tf",          "Trace flow module number." },
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "all",          "All trace flow modules." },
+};
+
+/** 'tflowe' arguments. */
+static const DBGCVARDESC    g_aArgTraceFlowEnable[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_POINTER,       0,                           "address",      "Address where to start tracing." },
+    {  0,           1,          DBGCVAR_CAT_OPTION_NUMBER, 0,                           "<Hits>",       "Maximum number of hits before the module is disabled." }
+};
+
+/** 'tflowp', 'tflowr' arguments. */
+static const DBGCVARDESC    g_aArgTraceFlowPrintReset[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           ~0U,        DBGCVAR_CAT_NUMBER,     0,                              "#tf",          "Trace flow module number." },
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "all",          "All trace flow modules." },
+};
 
 /** Command descriptors for the CodeView / WinDbg emulation.
  * The emulation isn't attempting to be identical, only somewhat similar.
@@ -470,6 +507,11 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "sxi",        1,       ~0U,       &g_aArgEventCtrl[0], RT_ELEMENTS(g_aArgEventCtrl),  0,       dbgcCmdEventCtrl,      "[-c <cmd>] <event> [..]", "Ignore: Ignore the specified exceptions, exits and other events ('all' = all of them).  Without the -c option, the guest runs like normal." },
     { "sxr",        0,        0,        &g_aArgEventCtrlOpt[0], RT_ELEMENTS(g_aArgEventCtrlOpt), 0,  dbgcCmdEventCtrlReset, "",                    "Reset the settings to default for exceptions, exits and other events. All if no filter is specified." },
     { "t",          0,        2,        &g_aArgStepTrace[0], RT_ELEMENTS(g_aArgStepTrace),  0,       dbgcCmdStepTrace,   "[count] [cmds]",       "Trace ." },
+    { "tflowc",     1,       ~0U,       &g_aArgTraceFlowClear[0],   RT_ELEMENTS(g_aArgTraceFlowClear),   0, dbgcCmdTraceFlowClear,   "all | <tf#> [tf# []]", "Clears trace execution flow for the given method." },
+    { "tflowd",     0,        1,        &g_aArgTraceFlowDisable[0], RT_ELEMENTS(g_aArgTraceFlowDisable), 0, dbgcCmdTraceFlowDisable, "all | <tf#> [tf# []]", "Disables trace execution flow for the given method." },
+    { "tflowe",     0,        2,        &g_aArgTraceFlowEnable[0],  RT_ELEMENTS(g_aArgTraceFlowEnable),  0, dbgcCmdTraceFlowEnable,  "<addr> <hits>",        "Enable trace execution flow of the given method." },
+    { "tflowp",     0,        1,        &g_aArgTraceFlowPrintReset[0],   RT_ELEMENTS(g_aArgTraceFlowPrintReset),   0, dbgcCmdTraceFlowPrint,   "all | <tf#> [tf# []]", "Prints the collected trace data of the given method." },
+    { "tflowr",     0,        1,        &g_aArgTraceFlowPrintReset[0],   RT_ELEMENTS(g_aArgTraceFlowPrintReset),   0, dbgcCmdTraceFlowReset,   "all | <tf#> [tf# []]", "Resets the collected trace data of the given trace flow module." },
     { "tr",         0,        0,        NULL,               0,                              0,       dbgcCmdStepTraceToggle, "",                 "Toggle displaying registers for tracing & stepping (no code executed)." },
     { "ta",         1,        1,        &g_aArgStepTraceTo[0], RT_ELEMENTS(g_aArgStepTraceTo), 0,    dbgcCmdStepTraceTo, "<addr> [count] [cmds]","Trace to the given address." },
     { "tc",         0,        0,        &g_aArgStepTrace[0], RT_ELEMENTS(g_aArgStepTrace),  0,       dbgcCmdStepTrace,   "[count] [cmds]",       "Trace to the next call instruction." },
@@ -6247,6 +6289,482 @@ static DECLCALLBACK(int) dbgcCmdListSymbols(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
     RT_NOREF(pCmd);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'tflowc' (clear trace flow) command.}
+ */
+static DECLCALLBACK(int) dbgcCmdTraceFlowClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+
+    /*
+     * Enumerate the arguments.
+     */
+    PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    int     rc    = VINF_SUCCESS;
+    for (unsigned iArg = 0; iArg < cArgs && RT_SUCCESS(rc); iArg++)
+    {
+        if (paArgs[iArg].enmType != DBGCVAR_TYPE_STRING)
+        {
+            /* one */
+            uint32_t iFlowTraceMod = (uint32_t)paArgs[iArg].u.u64Number;
+            if (iFlowTraceMod == paArgs[iArg].u.u64Number)
+            {
+                PDBGCTFLOW pFlowTrace = dbgcFlowTraceModGet(pDbgc, iFlowTraceMod);
+                if (pFlowTrace)
+                {
+                    rc = DBGFR3FlowTraceModRelease(pFlowTrace->hTraceFlowMod);
+                    if (RT_FAILURE(rc))
+                        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3FlowTraceModRelease failed for flow trace module %#x", iFlowTraceMod);
+                    rc = DBGFR3FlowRelease(pFlowTrace->hFlow);
+                    if (RT_FAILURE(rc))
+                        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3FlowRelease failed for flow trace module %#x", iFlowTraceMod);
+                    dbgcFlowTraceModDelete(pDbgc, iFlowTraceMod);
+                }
+                else
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_NOT_FOUND, "Flow trace module %#x doesn't exist", iFlowTraceMod);
+            }
+            else
+                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Flow trace mod id %RX64 is too large", paArgs[iArg].u.u64Number);
+        }
+        else if (!strcmp(paArgs[iArg].u.pszString, "all"))
+        {
+            /* all */
+            PDBGCTFLOW pIt, pItNext;
+            RTListForEachSafe(&pDbgc->LstTraceFlowMods, pIt, pItNext, DBGCTFLOW, NdTraceFlow)
+            {
+                int rc2 = DBGFR3FlowTraceModRelease(pIt->hTraceFlowMod);
+                if (RT_FAILURE(rc2))
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc2, "DBGFR3FlowTraceModDisable failed for flow trace module %#x", pIt->iTraceFlowMod);
+                dbgcFlowTraceModDelete(pDbgc, pIt->iTraceFlowMod);
+            }
+        }
+        else
+            rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid argument '%s'", paArgs[iArg].u.pszString);
+    }
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'tflowd' (disable trace flow) command.}
+ */
+static DECLCALLBACK(int) dbgcCmdTraceFlowDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    /*
+     * Enumerate the arguments.
+     */
+    RT_NOREF1(pUVM);
+    int rc = VINF_SUCCESS;
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    for (unsigned iArg = 0; iArg < cArgs && RT_SUCCESS(rc); iArg++)
+    {
+        if (paArgs[iArg].enmType != DBGCVAR_TYPE_STRING)
+        {
+            /* one */
+            uint32_t iFlowTraceMod = (uint32_t)paArgs[iArg].u.u64Number;
+            if (iFlowTraceMod == paArgs[iArg].u.u64Number)
+            {
+                PDBGCTFLOW pFlowTrace = dbgcFlowTraceModGet(pDbgc, iFlowTraceMod);
+                if (pFlowTrace)
+                {
+                    rc = DBGFR3FlowTraceModDisable(pFlowTrace->hTraceFlowMod);
+                    if (RT_FAILURE(rc))
+                        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3FlowTraceModDisable failed for flow trace module %#x", iFlowTraceMod);
+                }
+                else
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_NOT_FOUND, "Flow trace module %#x doesn't exist", iFlowTraceMod);
+            }
+            else
+                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Breakpoint id %RX64 is too large", paArgs[iArg].u.u64Number);
+        }
+        else if (!strcmp(paArgs[iArg].u.pszString, "all"))
+        {
+            /* all */
+            PDBGCTFLOW pIt;
+            RTListForEach(&pDbgc->LstTraceFlowMods, pIt, DBGCTFLOW, NdTraceFlow)
+            {
+                int rc2 = DBGFR3FlowTraceModDisable(pIt->hTraceFlowMod);
+                if (RT_FAILURE(rc2))
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc2, "DBGFR3FlowTraceModDisable failed for flow trace module %#x",
+                                          pIt->iTraceFlowMod);
+            }
+        }
+        else
+            rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid argument '%s'", paArgs[iArg].u.pszString);
+    }
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'tflowe' (enable trace flow) command.}
+ */
+static DECLCALLBACK(int) dbgcCmdTraceFlowEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+
+    /*
+     * Validate input.
+     */
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs <= 2);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 0 || DBGCVAR_ISPOINTER(paArgs[0].enmType));
+
+    if (!cArgs && !DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Don't know where to start disassembling");
+
+    /*
+     * Check the desired mode.
+     */
+    unsigned fFlags =  DBGF_DISAS_FLAGS_UNPATCHED_BYTES | DBGF_DISAS_FLAGS_ANNOTATE_PATCHED | DBGF_DISAS_FLAGS_DEFAULT_MODE;
+
+    /** @todo should use DBGFADDRESS for everything */
+
+    /*
+     * Find address.
+     */
+    if (!cArgs)
+    {
+        if (!DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
+        {
+            /** @todo Batch query CS, RIP, CPU mode and flags. */
+            PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
+            if (CPUMIsGuestIn64BitCode(pVCpu))
+            {
+                pDbgc->DisasmPos.enmType    = DBGCVAR_TYPE_GC_FLAT;
+                pDbgc->SourcePos.u.GCFlat   = CPUMGetGuestRIP(pVCpu);
+            }
+            else
+            {
+                pDbgc->DisasmPos.enmType     = DBGCVAR_TYPE_GC_FAR;
+                pDbgc->SourcePos.u.GCFar.off = CPUMGetGuestEIP(pVCpu);
+                pDbgc->SourcePos.u.GCFar.sel = CPUMGetGuestCS(pVCpu);
+                if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_DEFAULT_MODE
+                    && (CPUMGetGuestEFlags(pVCpu) & X86_EFL_VM))
+                {
+                    fFlags &= ~DBGF_DISAS_FLAGS_MODE_MASK;
+                    fFlags |= DBGF_DISAS_FLAGS_16BIT_REAL_MODE;
+                }
+            }
+
+            fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
+        }
+        else if ((fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_DEFAULT_MODE && pDbgc->fDisasm)
+        {
+            fFlags &= ~DBGF_DISAS_FLAGS_MODE_MASK;
+            fFlags |= pDbgc->fDisasm & DBGF_DISAS_FLAGS_MODE_MASK;
+        }
+        pDbgc->DisasmPos.enmRangeType = DBGCVAR_RANGE_NONE;
+    }
+    else
+        pDbgc->DisasmPos = paArgs[0];
+    pDbgc->pLastPos = &pDbgc->DisasmPos;
+
+    /*
+     * Convert physical and host addresses to guest addresses.
+     */
+    RTDBGAS hDbgAs = pDbgc->hDbgAs;
+    int rc;
+    switch (pDbgc->DisasmPos.enmType)
+    {
+        case DBGCVAR_TYPE_GC_FLAT:
+        case DBGCVAR_TYPE_GC_FAR:
+            break;
+        case DBGCVAR_TYPE_GC_PHYS:
+            hDbgAs = DBGF_AS_PHYS;
+            /* fall thru */
+        case DBGCVAR_TYPE_HC_FLAT:
+        case DBGCVAR_TYPE_HC_PHYS:
+        {
+            DBGCVAR VarTmp;
+            rc = DBGCCmdHlpEval(pCmdHlp, &VarTmp, "%%(%Dv)", &pDbgc->DisasmPos);
+            if (RT_FAILURE(rc))
+                return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "failed to evaluate '%%(%Dv)'", &pDbgc->DisasmPos);
+            pDbgc->DisasmPos = VarTmp;
+            break;
+        }
+        default: AssertFailed(); break;
+    }
+
+    DBGFADDRESS CurAddr;
+    if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_16BIT_REAL_MODE
+        && pDbgc->DisasmPos.enmType == DBGCVAR_TYPE_GC_FAR)
+        DBGFR3AddrFromFlat(pUVM, &CurAddr, ((uint32_t)pDbgc->DisasmPos.u.GCFar.sel << 4) + pDbgc->DisasmPos.u.GCFar.off);
+    else
+    {
+        rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &pDbgc->DisasmPos, &CurAddr);
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToDbgfAddr failed on '%Dv'", &pDbgc->DisasmPos);
+    }
+
+    DBGFFLOW hCfg;
+    rc = DBGFR3FlowCreate(pUVM, pDbgc->idCpu, &CurAddr, 0 /*cbDisasmMax*/,
+                          DBGF_FLOW_CREATE_F_TRY_RESOLVE_INDIRECT_BRANCHES, fFlags, &hCfg);
+    if (RT_SUCCESS(rc))
+    {
+        /* Create a probe. */
+        DBGFFLOWTRACEPROBE hFlowTraceProbe = NULL;
+        DBGFFLOWTRACEPROBE hFlowTraceProbeExit = NULL;
+        DBGFFLOWTRACEPROBEENTRY Entry;
+        DBGFFLOWTRACEMOD hFlowTraceMod = NULL;
+        uint32_t iTraceModId = 0;
+
+        RT_ZERO(Entry);
+        Entry.enmType = DBGFFLOWTRACEPROBEENTRYTYPE_DEBUGGER;
+
+        rc = DBGFR3FlowTraceProbeCreate(pUVM, NULL, &hFlowTraceProbe);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3FlowTraceProbeCreate(pUVM, NULL, &hFlowTraceProbeExit);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3FlowTraceProbeEntriesAdd(hFlowTraceProbeExit, &Entry, 1 /*cEntries*/);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3FlowTraceModCreateFromFlowGraph(pUVM, VMCPUID_ANY, hCfg, NULL,
+                                                       hFlowTraceProbe, hFlowTraceProbe,
+                                                       hFlowTraceProbeExit, &hFlowTraceMod);
+        if (RT_SUCCESS(rc))
+            rc = dbgcFlowTraceModAdd(pDbgc, hFlowTraceMod, hCfg, &iTraceModId);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3FlowTraceModEnable(hFlowTraceMod, 0, 0);
+        if (RT_SUCCESS(rc))
+            DBGCCmdHlpPrintf(pCmdHlp, "Enabled execution flow tracing %u at %RGv\n",
+                             iTraceModId, CurAddr.FlatPtr);
+
+        if (hFlowTraceProbe)
+            DBGFR3FlowTraceProbeRelease(hFlowTraceProbe);
+        if (hFlowTraceProbeExit)
+            DBGFR3FlowTraceProbeRelease(hFlowTraceProbeExit);
+    }
+    else
+        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3FlowCreate failed on '%Dv'", &pDbgc->DisasmPos);
+
+    NOREF(pCmd);
+    return rc;
+}
+
+
+/**
+ * Enumerates and prints all records contained in the given flow tarce module.
+ *
+ * @returns VBox status code.
+ * @param   pCmd          The command.
+ * @param   pCmdHlp       The command helpers.
+ * @param   hFlowTraceMod The flow trace module to print.
+ * @param   hFlow         The control flow graph assoicated with the given module.
+ * @param   iFlowTraceMod The flow trace module identifier.
+ */
+static int dbgcCmdTraceFlowPrintOne(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, DBGFFLOWTRACEMOD hFlowTraceMod,
+                                    DBGFFLOW hFlow, uint32_t iFlowTraceMod)
+{
+    RT_NOREF(hFlow);
+
+    DBGFFLOWTRACEREPORT hFlowTraceReport;
+    int rc = DBGFR3FlowTraceModQueryReport(hFlowTraceMod, &hFlowTraceReport);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cRecords = DBGFR3FlowTraceReportGetRecordCount(hFlowTraceReport);
+        DBGCCmdHlpPrintf(pCmdHlp, "Report for flow trace module %#x (%u records):\n",
+                         iFlowTraceMod, cRecords);
+
+        PDBGCFLOWBBDUMP paDumpBb = (PDBGCFLOWBBDUMP)RTMemTmpAllocZ(cRecords * sizeof(DBGCFLOWBBDUMP));
+        if (RT_LIKELY(paDumpBb))
+        {
+            /* Query the basic block referenced for each record and calculate the size. */
+            for (uint32_t i = 0; i < cRecords && RT_SUCCESS(rc); i++)
+            {
+                DBGFFLOWTRACERECORD hRec = NULL;
+                rc = DBGFR3FlowTraceReportQueryRecord(hFlowTraceReport, i, &hRec);
+                if (RT_SUCCESS(rc))
+                {
+                    DBGFADDRESS Addr;
+                    DBGFR3FlowTraceRecordGetAddr(hRec, &Addr);
+
+                    DBGFFLOWBB hFlowBb = NULL;
+                    rc = DBGFR3FlowQueryBbByAddress(hFlow, &Addr, &hFlowBb);
+                    if (RT_SUCCESS(rc))
+                        dbgcCmdUnassembleCfgDumpCalcBbSize(hFlowBb, &paDumpBb[i]);
+
+                    DBGFR3FlowTraceRecordRelease(hRec);
+                }
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Calculate the ASCII screen dimensions and create one. */
+                uint32_t cchWidth = 0;
+                uint32_t cchHeight = 0;
+                for (unsigned i = 0; i < cRecords; i++)
+                {
+                    PDBGCFLOWBBDUMP pDumpBb = &paDumpBb[i];
+                    cchWidth = RT_MAX(cchWidth, pDumpBb->cchWidth);
+                    cchHeight += pDumpBb->cchHeight;
+
+                    /* Incomplete blocks don't have a successor. */
+                    if (DBGFR3FlowBbGetFlags(pDumpBb->hFlowBb) & DBGF_FLOW_BB_F_INCOMPLETE_ERR)
+                        continue;
+
+                    cchHeight += 2; /* For the arrow down to the next basic block. */
+                }
+
+
+                DBGCSCREEN hScreen = NULL;
+                rc = dbgcScreenAsciiCreate(&hScreen, cchWidth, cchHeight);
+                if (RT_SUCCESS(rc))
+                {
+                    uint32_t uY = 0;
+
+                    /* Dump the basic blocks and connections to the immediate successor. */
+                    for (unsigned i = 0; i < cRecords; i++)
+                    {
+                        paDumpBb[i].uStartX = (cchWidth - paDumpBb[i].cchWidth) / 2;
+                        paDumpBb[i].uStartY = uY;
+                        dbgcCmdUnassembleCfgDumpBb(&paDumpBb[i], hScreen);
+                        uY += paDumpBb[i].cchHeight;
+
+                        /* Incomplete blocks don't have a successor. */
+                        if (DBGFR3FlowBbGetFlags(paDumpBb[i].hFlowBb) & DBGF_FLOW_BB_F_INCOMPLETE_ERR)
+                            continue;
+
+                        if (DBGFR3FlowBbGetType(paDumpBb[i].hFlowBb) != DBGFFLOWBBENDTYPE_EXIT)
+                        {
+                            /* Draw the arrow down to the next block. */
+                            dbgcScreenAsciiDrawCharacter(hScreen, cchWidth / 2, uY,
+                                                         '|', DBGCSCREENCOLOR_BLUE_BRIGHT);
+                            uY++;
+                            dbgcScreenAsciiDrawCharacter(hScreen, cchWidth / 2, uY,
+                                                         'V', DBGCSCREENCOLOR_BLUE_BRIGHT);
+                            uY++;
+                        }
+                    }
+
+                    rc = dbgcScreenAsciiBlit(hScreen, dbgcCmdUnassembleCfgBlit, pCmdHlp, false /*fUseColor*/);
+                    dbgcScreenAsciiDestroy(hScreen);
+                }
+                else
+                    rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Failed to create virtual screen for flow trace module %#x", iFlowTraceMod);
+            }
+            else
+                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Failed to query all records of flow trace module %#x", iFlowTraceMod);
+
+            for (unsigned i = 0; i < cRecords; i++)
+            {
+                if (paDumpBb[i].hFlowBb)
+                    DBGFR3FlowBbRelease(paDumpBb[i].hFlowBb);
+            }
+
+            RTMemTmpFree(paDumpBb);
+        }
+        else
+            rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Failed to allocate memory for %u records", cRecords);
+
+        DBGFR3FlowTraceReportRelease(hFlowTraceReport);
+    }
+    else
+        rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Failed to query report for flow trace module %#x", iFlowTraceMod);
+
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'tflowp' (print trace flow) command.}
+ */
+static DECLCALLBACK(int) dbgcCmdTraceFlowPrint(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+
+    /*
+     * Enumerate the arguments.
+     */
+    PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    int     rc    = VINF_SUCCESS;
+    for (unsigned iArg = 0; iArg < cArgs && RT_SUCCESS(rc); iArg++)
+    {
+        if (paArgs[iArg].enmType != DBGCVAR_TYPE_STRING)
+        {
+            /* one */
+            uint32_t iFlowTraceMod = (uint32_t)paArgs[iArg].u.u64Number;
+            if (iFlowTraceMod == paArgs[iArg].u.u64Number)
+            {
+                PDBGCTFLOW pFlowTrace = dbgcFlowTraceModGet(pDbgc, iFlowTraceMod);
+                if (pFlowTrace)
+                    rc = dbgcCmdTraceFlowPrintOne(pCmdHlp, pCmd, pFlowTrace->hTraceFlowMod,
+                                                  pFlowTrace->hFlow, pFlowTrace->iTraceFlowMod);
+                else
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_NOT_FOUND, "Flow trace module %#x doesn't exist", iFlowTraceMod);
+            }
+            else
+                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Flow trace mod id %RX64 is too large", paArgs[iArg].u.u64Number);
+        }
+        else if (!strcmp(paArgs[iArg].u.pszString, "all"))
+        {
+            /* all */
+            PDBGCTFLOW pIt;
+            RTListForEach(&pDbgc->LstTraceFlowMods, pIt, DBGCTFLOW, NdTraceFlow)
+            {
+                rc = dbgcCmdTraceFlowPrintOne(pCmdHlp, pCmd, pIt->hTraceFlowMod,
+                                              pIt->hFlow, pIt->iTraceFlowMod);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+        else
+            rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid argument '%s'", paArgs[iArg].u.pszString);
+    }
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'tflowr' (reset trace flow) command.}
+ */
+static DECLCALLBACK(int) dbgcCmdTraceFlowReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+
+    /*
+     * Enumerate the arguments.
+     */
+    PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    int     rc    = VINF_SUCCESS;
+    for (unsigned iArg = 0; iArg < cArgs && RT_SUCCESS(rc); iArg++)
+    {
+        if (paArgs[iArg].enmType != DBGCVAR_TYPE_STRING)
+        {
+            /* one */
+            uint32_t iFlowTraceMod = (uint32_t)paArgs[iArg].u.u64Number;
+            if (iFlowTraceMod == paArgs[iArg].u.u64Number)
+            {
+                PDBGCTFLOW pFlowTrace = dbgcFlowTraceModGet(pDbgc, iFlowTraceMod);
+                if (pFlowTrace)
+                {
+                    rc = DBGFR3FlowTraceModClear(pFlowTrace->hTraceFlowMod);
+                    if (RT_FAILURE(rc))
+                        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3FlowTraceModClear failed for flow trace module %#x", iFlowTraceMod);
+                }
+                else
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, VERR_NOT_FOUND, "Flow trace module %#x doesn't exist", iFlowTraceMod);
+            }
+            else
+                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Flow trace mod id %RX64 is too large", paArgs[iArg].u.u64Number);
+        }
+        else if (!strcmp(paArgs[iArg].u.pszString, "all"))
+        {
+            /* all */
+            PDBGCTFLOW pIt;
+            RTListForEach(&pDbgc->LstTraceFlowMods, pIt, DBGCTFLOW, NdTraceFlow)
+            {
+                rc = DBGFR3FlowTraceModClear(pIt->hTraceFlowMod);
+                if (RT_FAILURE(rc))
+                    rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3FlowTraceModClear failed for flow trace module %#x", pIt->iTraceFlowMod);
+            }
+        }
+        else
+            rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid argument '%s'", paArgs[iArg].u.pszString);
+    }
+    return rc;
 }
 
 

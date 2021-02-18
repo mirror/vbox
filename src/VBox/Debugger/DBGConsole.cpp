@@ -1164,6 +1164,7 @@ int dbgcCreate(PDBGC *ppDbgc, PCDBGCIO pIo, unsigned fFlags)
     //pDbgc->paVars           = NULL;
     //pDbgc->pPlugInHead      = NULL;
     //pDbgc->pFirstBp         = NULL;
+    RTListInit(&pDbgc->LstTraceFlowMods);
     //pDbgc->abSearch         = {0};
     //pDbgc->cbSearch         = 0;
     pDbgc->cbSearchUnit       = 1;

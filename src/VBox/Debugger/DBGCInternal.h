@@ -27,7 +27,10 @@
 *******************************************************************************/
 #include <VBox/dbg.h>
 #include <VBox/err.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/dbgfflowtrace.h>
 
+#include <iprt/list.h>
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -91,6 +94,24 @@ typedef struct DBGCNAMEDVAR
 } DBGCNAMEDVAR;
 /** Pointer to named variable. */
 typedef DBGCNAMEDVAR *PDBGCNAMEDVAR;
+
+
+/**
+ * Debugger console per trace flow data.
+ */
+typedef struct DBGCTFLOW
+{
+    /** Node for the trace flow module list. */
+    RTLISTNODE       NdTraceFlow;
+    /** Handle of the DGF trace flow module. */
+    DBGFFLOWTRACEMOD hTraceFlowMod;
+    /** The control flow graph for the module. */
+    DBGFFLOW         hFlow;
+    /** The trace flow module identifier. */
+    uint32_t         iTraceFlowMod;
+} DBGCTFLOW;
+/** Pointer to the per trace flow data. */
+typedef DBGCTFLOW *PDBGCTFLOW;
 
 
 /**
@@ -189,6 +210,8 @@ typedef struct DBGC
 
     /** The list of breakpoints. (singly linked) */
     PDBGCBP             pFirstBp;
+    /** The list of known trace flow modules. */
+    RTLISTANCHOR        LstTraceFlowMods;
 
     /** Software interrupt events. */
     PDBGCEVTCFG         apSoftInts[256];
@@ -503,6 +526,10 @@ int     dbgcBpUpdate(PDBGC pDbgc, RTUINT iBp, const char *pszCmd);
 int     dbgcBpDelete(PDBGC pDbgc, RTUINT iBp);
 PDBGCBP dbgcBpGet(PDBGC pDbgc, RTUINT iBp);
 int     dbgcBpExec(PDBGC pDbgc, RTUINT iBp);
+
+DECLHIDDEN(PDBGCTFLOW) dbgcFlowTraceModGet(PDBGC pDbgc, uint32_t iTraceFlowMod);
+DECLHIDDEN(int) dbgcFlowTraceModAdd(PDBGC pDbgc, DBGFFLOWTRACEMOD hFlowTraceMod, DBGFFLOW hFlow, uint32_t *piId);
+DECLHIDDEN(int) dbgcFlowTraceModDelete(PDBGC pDbgc, uint32_t iFlowTraceMod);
 
 void    dbgcEvalInit(void);
 int     dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, DBGCVARCAT enmCategory, PDBGCVAR pResult);
