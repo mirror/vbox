@@ -1128,10 +1128,12 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
         PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[s_aExtra[i].idxQueue];
         if (s_aExtra[i].cExtra > pQueue->cTimersFree)
         {
+            PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
             uint32_t cTimersAlloc = pQueue->cTimersAlloc + s_aExtra[i].cExtra - pQueue->cTimersFree;
             rc = VMMR3CallR0Emt(pVM, VMMGetCpu(pVM), VMMR0_DO_TM_GROW_TIMER_QUEUE,
                                 RT_MAKE_U64(cTimersAlloc, s_aExtra[i].idxQueue), NULL);
             AssertLogRelMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc cTimersAlloc=%u %s\n", rc, cTimersAlloc, pQueue->szName), rc);
+            PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
         }
     }
 
@@ -1566,7 +1568,7 @@ static void tmR3TimerDeregisterStats(PVM pVM, PTMTIMER pTimer)
  * Register statistics for all allocated timers in a queue.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pTimer      The timer to register statistics for.
+ * @param   pQueue      The queue to register statistics for.
  * @param   cTimers     Number of timers to consider (in growth scenario).
  */
 static void tmR3TimerQueueRegisterStats(PVM pVM, PTMTIMERQUEUE pQueue, uint32_t cTimers)
