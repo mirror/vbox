@@ -278,9 +278,9 @@ DECLINLINE(uint64_t) tmVirtualGet(PVMCC pVM, bool fCheckTimers)
             PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
             if (    !VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)
                 &&  !pVM->tm.s.fRunningQueues
-                &&  (   pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64
+                &&  (   pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].u64Expire <= u64
                      || (   pVM->tm.s.fVirtualSyncTicking
-                         && pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64 - pVM->tm.s.offVirtualSync
+                         && pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64 - pVM->tm.s.offVirtualSync
                         )
                     )
                 &&  !pVM->tm.s.fRunningQueues
@@ -415,7 +415,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVMCC pVM, uint64_t u64
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetAdjLast);
     }
 
-    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].u64Expire);
     if (pnsAbsDeadline)
         *pnsAbsDeadline = u64Expire; /* Always return the unadjusted absolute deadline, or HM will waste time going
                                         thru this code over an over again even if there aren't any timer changes. */
@@ -519,7 +519,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVMCC pVM, uint64_t u64, uint64_t *p
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetAdjLast);
     }
 
-    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].u64Expire);
     if (pnsAbsDeadline)
         *pnsAbsDeadline = u64Expire;
     if (u64 < u64Expire)
@@ -596,7 +596,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVMCC pVM, bool fCheckTimers, uint64_t *
     {
         PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
         if (    !VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)
-            &&  pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64)
+            &&  pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].u64Expire <= u64)
         {
             Log5(("TMAllVirtual(%u): FF: 0 -> 1\n", __LINE__));
             VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
@@ -634,7 +634,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVMCC pVM, bool fCheckTimers, uint64_t *
                           && off == ASMAtomicReadU64(&pVM->tm.s.offVirtualSync)))
             {
                 off = u64 - off;
-                uint64_t const u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+                uint64_t const u64Expire = ASMAtomicReadU64(&pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].u64Expire);
                 if (off < u64Expire)
                 {
                     if (pnsAbsDeadline)
@@ -766,7 +766,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVMCC pVM, bool fCheckTimers, uint64_t *
      */
     u64 -= off;
 /** @todo u64VirtualSyncLast */
-    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].u64Expire);
     if (pnsAbsDeadline)
         *pnsAbsDeadline = u64Expire;
     if (u64 >= u64Expire)
@@ -927,7 +927,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetNsToDeadline(PVMCC pVM, uint64_t *puDeadlineVe
 VMM_INT_DECL(bool) TMVirtualSyncIsCurrentDeadlineVersion(PVMCC pVM, uint64_t uDeadlineVersion)
 {
     /** @todo Try use ASMAtomicUoReadU64 instead. */
-    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].u64Expire);
     return u64Expire == uDeadlineVersion;
 }
 

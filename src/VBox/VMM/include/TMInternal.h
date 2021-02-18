@@ -28,6 +28,7 @@
 #include <iprt/assert.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/pdmcritsect.h>
+#include <VBox/vmm/pdmcritsectrw.h>
 
 RT_C_DECLS_BEGIN
 
@@ -49,8 +50,10 @@ RT_C_DECLS_BEGIN
  */
 typedef enum TMTIMERTYPE
 {
+    /** Invalid zero value. */
+    TMTIMERTYPE_INVALID = 0,
     /** Device timer. */
-    TMTIMERTYPE_DEV = 1,
+    TMTIMERTYPE_DEV,
     /** USB device timer. */
     TMTIMERTYPE_USB,
     /** Driver timer. */
@@ -64,8 +67,10 @@ typedef enum TMTIMERTYPE
  */
 typedef enum TMTIMERSTATE
 {
+    /** Invalid zero entry (used for table entry zero). */
+    TMTIMERSTATE_INVALID = 0,
     /** Timer is stopped. */
-    TMTIMERSTATE_STOPPED = 1,
+    TMTIMERSTATE_STOPPED,
     /** Timer is active. */
     TMTIMERSTATE_ACTIVE,
     /** Timer is expired, getting expire and unlinking. */
@@ -102,6 +107,15 @@ typedef enum TMTIMERSTATE
 #define TMTIMERSTATE_IS_PENDING_SCHEDULING(enmState) \
     (   (enmState) <= TMTIMERSTATE_PENDING_RESCHEDULE \
      && (enmState) >= TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE)
+
+/** @name Timer handle value elements
+ * @{ */
+#define TMTIMERHANDLE_RANDOM_MASK       UINT64_C(0xffffffffff000000)
+#define TMTIMERHANDLE_QUEUE_IDX_SHIFT   16
+#define TMTIMERHANDLE_QUEUE_IDX_MASK    UINT64_C(0x0000000000ff0000)
+#define TMTIMERHANDLE_QUEUE_IDX_SMASK   UINT64_C(0x00000000000000ff)
+#define TMTIMERHANDLE_TIMER_IDX_MASK    UINT64_C(0x000000000000ffff)
+/** @} */
 
 
 /**
@@ -165,13 +179,13 @@ typedef struct TMTIMER
 
     /** Timer state. */
     volatile TMTIMERSTATE   enmState;
-    /** Timer relative offset to the next timer in the schedule list. */
-    int32_t volatile        offScheduleNext;
+    /** The index of the next next timer in the schedule list. */
+    int32_t volatile        idxScheduleNext;
 
-    /** Timer relative offset to the next timer in the chain. */
-    int32_t                 offNext;
-    /** Timer relative offset to the previous timer in the chain. */
-    int32_t                 offPrev;
+    /** The index of the next timer in the chain. */
+    uint32_t                idxNext;
+    /** The index of the previous timer in the chain. */
+    uint32_t                idxPrev;
 
     /** It's own handle value. */
     TMTIMERHANDLE           hSelf;
@@ -185,10 +199,6 @@ typedef struct TMTIMER
     /** The critical section associated with the lock. */
     R3PTRTYPE(PPDMCRITSECT) pCritSect;
 
-    /** Pointer to the next timer in the list of created or free timers. (TM::pTimers or TM::pFree) */
-    PTMTIMERR3              pBigNext;
-    /** Pointer to the previous timer in the list of all created timers. (TM::pTimers) */
-    PTMTIMERR3              pBigPrev;
     /** The timer name. */
     char                    szName[32];
 
@@ -233,23 +243,15 @@ AssertCompileMemberSize(TMTIMER, enmState, sizeof(uint32_t));
     } while (0)
 #endif
 
-/** Get the previous timer. */
-#define TMTIMER_GET_PREV(pTimer) ((PTMTIMER)((pTimer)->offPrev ? (intptr_t)(pTimer) + (pTimer)->offPrev : 0))
-/** Get the next timer. */
-#define TMTIMER_GET_NEXT(pTimer) ((PTMTIMER)((pTimer)->offNext ? (intptr_t)(pTimer) + (pTimer)->offNext : 0))
-/** Set the previous timer link. */
-#define TMTIMER_SET_PREV(pTimer, pPrev) ((pTimer)->offPrev = (pPrev) ? (intptr_t)(pPrev) - (intptr_t)(pTimer) : 0)
-/** Set the next timer link. */
-#define TMTIMER_SET_NEXT(pTimer, pNext) ((pTimer)->offNext = (pNext) ? (intptr_t)(pNext) - (intptr_t)(pTimer) : 0)
-
 
 /**
- * A timer queue.
- *
- * This is allocated on the hyper heap.
+ * A timer queue, shared.
  */
 typedef struct TMTIMERQUEUE
 {
+    /** The ring-0 mapping of the timer table. */
+    R3PTRTYPE(PTMTIMER)     paTimers;
+
     /** The cached expire time for this queue.
      * Updated by EMT when scheduling the queue or modifying the head timer.
      * Assigned UINT64_MAX when there is no head timer. */
@@ -258,32 +260,68 @@ typedef struct TMTIMERQUEUE
      *
      * When no scheduling is pending, this list is will be ordered by expire time (ascending).
      * Access is serialized by only letting the emulation thread (EMT) do changes.
-     *
-     * The offset is relative to the queue structure.
      */
-    int32_t                 offActive;
+    uint32_t                idxActive;
     /** List of timers pending scheduling of some kind.
      *
      * Timer stats allowed in the list are TMTIMERSTATE_PENDING_STOPPING,
      * TMTIMERSTATE_PENDING_DESTRUCTION, TMTIMERSTATE_PENDING_STOPPING_DESTRUCTION,
      * TMTIMERSTATE_PENDING_RESCHEDULING and TMTIMERSTATE_PENDING_SCHEDULE.
-     *
-     * The offset is relative to the queue structure.
      */
-    int32_t volatile        offSchedule;
+    uint32_t volatile       idxSchedule;
     /** The clock for this queue. */
     TMCLOCK                 enmClock;
-    /** Pad the structure up to 32 bytes. */
-    uint32_t                au32Padding[3];
-} TMTIMERQUEUE;
 
+    /** The size of the paTimers allocation (in entries). */
+    uint32_t                cTimersAlloc;
+    /** Number of free timer entries. */
+    uint32_t                cTimersFree;
+    /** Where to start looking for free timers. */
+    uint32_t                idxFreeHint;
+    /** The queue name. */
+    char                    szName[16];
+    /** Set if we've disabled growing. */
+    bool                    fCannotGrow;
+    /** Align on 64-byte boundrary. */
+    bool                    afAlignment[7];
+    /** Lock serializing timer allocation and deallocation. */
+    PDMCRITSECTRW           AllocLock;
+} TMTIMERQUEUE;
+AssertCompileSizeAlignment(TMTIMERQUEUE, 64);
 /** Pointer to a timer queue. */
 typedef TMTIMERQUEUE *PTMTIMERQUEUE;
 
-/** Get the head of the active timer list. */
-#define TMTIMER_GET_HEAD(pQueue)        ((PTMTIMER)((pQueue)->offActive ? (intptr_t)(pQueue) + (pQueue)->offActive : 0))
-/** Set the head of the active timer list. */
-#define TMTIMER_SET_HEAD(pQueue, pHead) ((pQueue)->offActive = pHead ? (intptr_t)pHead - (intptr_t)(pQueue) : 0)
+/**
+ * A timer queue, ring-0 only bits.
+ */
+typedef struct TMTIMERQUEUER0
+{
+    /** The size of the paTimers allocation (in entries). */
+    uint32_t                cTimersAlloc;
+    uint32_t                uAlignment;
+    /** The ring-0 mapping of the timer table. */
+    R0PTRTYPE(PTMTIMER)     paTimers;
+    /** Handle to the timer table allocation. */
+    RTR0MEMOBJ              hMemObj;
+    /** Handle to the ring-3 mapping of the timer table. */
+    RTR0MEMOBJ              hMapObj;
+} TMTIMERQUEUER0;
+/** Pointer to the ring-0 timer queue data. */
+typedef TMTIMERQUEUER0 *PTMTIMERQUEUER0;
+
+/** Pointer to the current context data for a timer queue.
+ * @note In ring-3 this is the same as the shared data. */
+#ifdef IN_RING3
+typedef TMTIMERQUEUE   *PTMTIMERQUEUECC;
+#else
+typedef TMTIMERQUEUER0 *PTMTIMERQUEUECC;
+#endif
+/** Helper macro for getting the current context queue point. */
+#ifdef IN_RING3
+# define TM_GET_TIMER_QUEUE_CC(a_pVM, a_idxQueue, a_pQueueShared)  (a_pQueueShared)
+#else
+# define TM_GET_TIMER_QUEUE_CC(a_pVM, a_idxQueue, a_pQueueShared)  (&(a_pVM)->tmr0.s.aTimerQueues[a_idxQueue])
+#endif
 
 
 /**
@@ -347,30 +385,16 @@ AssertCompileSize(TMTSCMODE, sizeof(uint32_t));
 
 
 /**
- * Converts a TM pointer into a VM pointer.
- * @returns Pointer to the VM structure the TM is part of.
- * @param   pTM   Pointer to TM instance data.
- */
-#define TM2VM(pTM)  ( (PVM)((char*)pTM - pTM->offVM) )
-
-
-/**
  * TM VM Instance data.
  * Changes to this must checked against the padding of the cfgm union in VM!
  */
 typedef struct TM
 {
-    /** Offset to the VM structure.
-     * See TM2VM(). */
-    RTUINT                      offVM;
-
     /** The current TSC mode of the VM.
      *  Config variable: Mode (string). */
     TMTSCMODE                   enmTSCMode;
     /** The original TSC mode of the VM. */
     TMTSCMODE                   enmOriginalTSCMode;
-    /** Alignment padding. */
-    uint32_t                    u32Alignment0;
     /** Whether the TSC is tied to the execution of code.
      * Config variable: TSCTiedToExecution (bool) */
     bool                        fTSCTiedToExecution;
@@ -512,27 +536,13 @@ typedef struct TM
     /** Just to avoid dealing with 32-bit alignment trouble. */
     R3PTRTYPE(char *)           pszAlignment2b;
 
-    /** Timer queues for the different clock types - R3 Ptr */
-    R3PTRTYPE(PTMTIMERQUEUE)    paTimerQueuesR3;
-    /** Timer queues for the different clock types - R0 Ptr */
-    R0PTRTYPE(PTMTIMERQUEUE)    paTimerQueuesR0;
-    /** Timer queues for the different clock types - RC Ptr */
-    RCPTRTYPE(PTMTIMERQUEUE)    paTimerQueuesRC;
+    /** Timer queues for the different clock types. */
+    TMTIMERQUEUE                aTimerQueues[TMCLOCK_MAX];
 
     /** Pointer to our RC mapping of the GIP. */
     RCPTRTYPE(void *)           pvGIPRC;
     /** Pointer to our R3 mapping of the GIP. */
     R3PTRTYPE(void *)           pvGIPR3;
-
-    /** Pointer to a singly linked list of free timers.
-     * This chain is using the TMTIMER::pBigNext members.
-     * Only accessible from the emulation thread. */
-    PTMTIMERR3                  pFree;
-
-    /** Pointer to a doubly linked list of created timers.
-     * This chain is using the TMTIMER::pBigNext and TMTIMER::pBigPrev members.
-     * Only accessible from the emulation thread. */
-    PTMTIMERR3                  pCreated;
 
     /** The schedule timer timer handle (runtime timer).
      * This timer will do frequent check on pending queue schedules and
@@ -696,6 +706,7 @@ typedef struct TM
 /** Pointer to TM VM instance data. */
 typedef TM *PTM;
 
+
 /**
  * TM VMCPU Instance data.
  * Changes to this must checked against the padding of the tm union in VM!
@@ -795,10 +806,21 @@ AssertCompileMemberAlignment(TMCPU, CpuLoad, 64);
 /** Pointer to TM VMCPU instance data. */
 typedef TMCPU *PTMCPU;
 
+
+/**
+ * TM data kept in the ring-0 GVM.
+ */
+typedef struct TMR0PERVM
+{
+    /** Timer queues for the different clock types. */
+    TMTIMERQUEUER0              aTimerQueues[TMCLOCK_MAX];
+} TMR0PERVM;
+
+
 const char             *tmTimerState(TMTIMERSTATE enmState);
-void                    tmTimerQueueSchedule(PVMCC pVM, PTMTIMERQUEUE pQueue);
+void                    tmTimerQueueSchedule(PVMCC pVM, PTMTIMERQUEUECC pQueueCC, PTMTIMERQUEUE pQueue);
 #ifdef VBOX_STRICT
-void                    tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere);
+void                    tmTimerQueuesSanityChecks(PVMCC pVM, const char *pszWhere);
 #endif
 
 uint64_t                tmR3CpuTickGetRawVirtualNoCheck(PVM pVM);

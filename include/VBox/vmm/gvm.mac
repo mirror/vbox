@@ -81,6 +81,8 @@ struc GVM
         .apicr0             resb 64
         alignb 64
         .dbgfr0             resb 1024
+        alignb 64
+        .tmr0               resb 128
 
         times ((($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB + 4095) & ~4095) - ($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB)) resb 1
         .apCpusR0           RTR0PTR_RES VMM_MAX_CPU_COUNT

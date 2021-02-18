@@ -909,6 +909,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                         DBGFR0InitPerVMData(pGVM);
                         PDMR0InitPerVMData(pGVM);
                         IOMR0InitPerVMData(pGVM);
+                        TMR0InitPerVMData(pGVM);
                         if (RT_SUCCESS(rc) && RT_SUCCESS(rc2))
                         {
                             /*
@@ -1305,6 +1306,7 @@ static void gvmmR0CleanupVM(PGVM pGVM)
     IOMR0CleanupVM(pGVM);
     DBGFR0CleanupVM(pGVM);
     PGMR0CleanupVM(pGVM);
+    TMR0CleanupVM(pGVM);
 
     AssertCompile(NIL_RTTHREADCTXHOOK == (RTTHREADCTXHOOK)0); /* Depends on zero initialized memory working for NIL at the moment. */
     for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)

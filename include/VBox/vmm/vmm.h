@@ -423,11 +423,8 @@ typedef enum VMMR0OPERATION
     /** Synchronize statistics indices for I/O ports and MMIO regions. */
     VMMR0_DO_IOM_SYNC_STATS_INDICES,
 
-    /** Official call we use for testing Ring-0 APIs. */
-    VMMR0_DO_TESTS = 704,
-
     /** Call DBGFR0TraceCreateReqHandler. */
-    VMMR0_DO_DBGF_TRACER_CREATE = 710,
+    VMMR0_DO_DBGF_TRACER_CREATE = 704,
     /** Call DBGFR0TraceCallReqHandler. */
     VMMR0_DO_DBGF_TRACER_CALL_REQ_HANDLER,
     /** Call DBGFR0BpInitReqHandler(). */
@@ -438,6 +435,12 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC,
     /** Call DBGFR0BpOwnerInitReqHandler(). */
     VMMR0_DO_DBGF_BP_OWNER_INIT,
+
+    /** Grow a timer queue. */
+    VMMR0_DO_TM_GROW_TIMER_QUEUE = 768,
+
+    /** Official call we use for testing Ring-0 APIs. */
+    VMMR0_DO_TESTS = 2048,
 
     /** The usual 32-bit type blow up. */
     VMMR0_DO_32BIT_HACK = 0x7fffffff

@@ -503,6 +503,7 @@ VMMR0_SOURCES   = \
 	VMMR0/PGMR0.cpp \
 	VMMR0/PGMR0Pool.cpp \
 	VMMR0/PGMR0SharedPage.cpp \
+	VMMR0/TMR0.cpp \
 	VMMR0/VMMR0.cpp \
 	VMMRZ/CPUMRZ.cpp \
 	VMMRZ/CPUMRZA.asm \

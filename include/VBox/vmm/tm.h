@@ -261,7 +261,6 @@ VMM_INT_DECL(uint64_t)  TMTimerPollGIP(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64
 /** @} */
 
 
-#ifdef IN_RING3
 /** @defgroup grp_tm_r3     The TM Host Context Ring-3 API
  * @{
  */
@@ -295,7 +294,15 @@ VMMR3_INT_DECL(int)     TMR3CpuTickParavirtEnable(PVM pVM);
 VMMR3_INT_DECL(int)     TMR3CpuTickParavirtDisable(PVM pVM);
 VMMR3_INT_DECL(bool)    TMR3CpuTickIsFixedRateMonotonic(PVM pVM, bool fWithParavirtEnabled);
 /** @} */
-#endif /* IN_RING3 */
+
+
+/** @defgroup grp_tm_r0     The TM Host Context Ring-0 API
+ * @{
+ */
+VMMR0_INT_DECL(void)    TMR0InitPerVMData(PGVM pGVM);
+VMMR0_INT_DECL(void)    TMR0CleanupVM(PGVM pGVM);
+VMMR0_INT_DECL(int)     TMR0TimerQueueGrow(PGVM pGVM, uint32_t idxQueue, uint32_t cMinTimers);
+/** @} */
 
 
 /** @} */

@@ -130,7 +130,7 @@ struc VM
     .iom                    resb 1152
     .em                     resb 256
     .nem                    resb 128
-    .tm                     resb 7872
+    .tm                     resb 9152
     .dbgf                   resb 2432
     .ssm                    resb 128
     .gim                    resb 448

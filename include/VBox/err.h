@@ -1030,6 +1030,30 @@
 #define VERR_TM_TSC_ALREADY_PAUSED          (-2210)
 /** Invalid value for cVirtualTicking.  */
 #define VERR_TM_VIRTUAL_TICKING_IPE         (-2211)
+/** Max timer limit reached.  */
+#define VERR_TM_TOO_MANY_TIMERS             (-2212)
+/** Invalid timer queue number. */
+#define VERR_TM_INVALID_TIMER_QUEUE         (-2213)
+/** The timer queue is not longer allowed to grow. */
+#define VERR_TM_TIMER_QUEUE_CANNOT_GROW     (-2214)
+/** TM internal processing error \#1. */
+#define VERR_TM_IPE_1                       (-2291)
+/** TM internal processing error \#2. */
+#define VERR_TM_IPE_2                       (-2292)
+/** TM internal processing error \#3. */
+#define VERR_TM_IPE_3                       (-2293)
+/** TM internal processing error \#4. */
+#define VERR_TM_IPE_4                       (-2294)
+/** TM internal processing error \#5. */
+#define VERR_TM_IPE_5                       (-2295)
+/** TM internal processing error \#6. */
+#define VERR_TM_IPE_6                       (-2296)
+/** TM internal processing error \#7. */
+#define VERR_TM_IPE_7                       (-2297)
+/** TM internal processing error \#8. */
+#define VERR_TM_IPE_8                       (-2298)
+/** TM internal processing error \#9. */
+#define VERR_TM_IPE_9                       (-2299)
 /** @} */
 
 

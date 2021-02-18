@@ -2309,6 +2309,18 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
         }
 
         /*
+         * TM requests.
+         */
+        case VMMR0_DO_TM_GROW_TIMER_QUEUE:
+        {
+            if (pReqHdr || idCpu == NIL_VMCPUID)
+                return VERR_INVALID_PARAMETER;
+            rc = TMR0TimerQueueGrow(pGVM, RT_HI_U32(u64Arg), RT_LO_U32(u64Arg));
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
+        /*
          * For profiling.
          */
         case VMMR0_DO_NOP:
@@ -2389,7 +2401,7 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
      */
     if (   pVM  != NULL
         && pGVM != NULL
-        && pVM  == pGVM /** @todo drop pGVM */
+        && pVM  == pGVM /** @todo drop pVM or pGVM */
         && idCpu < pGVM->cCpus
         && pGVM->pSession == pSession
         && pGVM->pSelf    == pVM)
