@@ -621,6 +621,53 @@ int VBoxNetLwipNAT::initIPv4()
 
 
 /**
+ * Create raw IPv4 socket for sending and snooping ICMP.
+ */
+void VBoxNetLwipNAT::initIPv4RawSock()
+{
+    SOCKET icmpsock4 = INVALID_SOCKET;
+
+#ifndef RT_OS_DARWIN
+    const int icmpstype = SOCK_RAW;
+#else
+    /* on OS X it's not privileged */
+    const int icmpstype = SOCK_DGRAM;
+#endif
+
+    icmpsock4 = socket(AF_INET, icmpstype, IPPROTO_ICMP);
+    if (icmpsock4 == INVALID_SOCKET)
+    {
+        perror("IPPROTO_ICMP");
+#ifdef VBOX_RAWSOCK_DEBUG_HELPER
+        icmpsock4 = getrawsock(AF_INET);
+#endif
+    }
+
+    if (icmpsock4 != INVALID_SOCKET)
+    {
+#ifdef ICMP_FILTER              //  Linux specific
+        struct icmp_filter flt = {
+            ~(uint32_t)(
+                  (1U << ICMP_ECHOREPLY)
+                | (1U << ICMP_DEST_UNREACH)
+                | (1U << ICMP_TIME_EXCEEDED)
+            )
+        };
+
+        int status = setsockopt(icmpsock4, SOL_RAW, ICMP_FILTER,
+                                &flt, sizeof(flt));
+        if (status < 0)
+        {
+            perror("ICMP_FILTER");
+        }
+#endif
+    }
+
+    m_ProxyOptions.icmpsock4 = icmpsock4;
+}
+
+
+/**
  * Init mapping from the natnet's IPv4 addresses to host's IPv4
  * loopbacks.  Plural "loopbacks" because it's now quite common to run
  * services on loopback addresses other than 127.0.0.1.  E.g. a
@@ -864,6 +911,59 @@ int VBoxNetLwipNAT::initIPv6()
 }
 
 
+/**
+ * Create raw IPv6 socket for sending and snooping ICMP6.
+ */
+void VBoxNetLwipNAT::initIPv6RawSock()
+{
+    SOCKET icmpsock6 = INVALID_SOCKET;
+
+#ifndef RT_OS_DARWIN
+    const int icmpstype = SOCK_RAW;
+#else
+    /* on OS X it's not privileged */
+    const int icmpstype = SOCK_DGRAM;
+#endif
+
+    icmpsock6 = socket(AF_INET6, icmpstype, IPPROTO_ICMPV6);
+    if (icmpsock6 == INVALID_SOCKET)
+    {
+        perror("IPPROTO_ICMPV6");
+#ifdef VBOX_RAWSOCK_DEBUG_HELPER
+        icmpsock6 = getrawsock(AF_INET6);
+#endif
+    }
+
+    if (icmpsock6 != INVALID_SOCKET)
+    {
+#ifdef ICMP6_FILTER             // Windows doesn't support RFC 3542 API
+        /*
+         * XXX: We do this here for now, not in pxping.c, to avoid
+         * name clashes between lwIP and system headers.
+         */
+        struct icmp6_filter flt;
+        ICMP6_FILTER_SETBLOCKALL(&flt);
+
+        ICMP6_FILTER_SETPASS(ICMP6_ECHO_REPLY, &flt);
+
+        ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_PACKET_TOO_BIG, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_TIME_EXCEEDED, &flt);
+        ICMP6_FILTER_SETPASS(ICMP6_PARAM_PROB, &flt);
+
+        int status = setsockopt(icmpsock6, IPPROTO_ICMPV6, ICMP6_FILTER,
+                                &flt, sizeof(flt));
+        if (status < 0)
+        {
+            perror("ICMP6_FILTER");
+        }
+#endif
+    }
+
+    m_ProxyOptions.icmpsock6 = icmpsock6;
+}
+
+
 
 /**
  * Adapter for the ListenerImpl template.  It has to be a separate
@@ -1037,106 +1137,6 @@ int VBoxNetLwipNAT::initComEvents()
     m_ListenerVBoxClient.listen(virtualboxClient, s_aVBoxClientEvents);
 
     return VINF_SUCCESS;
-}
-
-
-/**
- * Create raw IPv4 socket for sending and snooping ICMP.
- */
-void VBoxNetLwipNAT::initIPv4RawSock()
-{
-    SOCKET icmpsock4 = INVALID_SOCKET;
-
-#ifndef RT_OS_DARWIN
-    const int icmpstype = SOCK_RAW;
-#else
-    /* on OS X it's not privileged */
-    const int icmpstype = SOCK_DGRAM;
-#endif
-
-    icmpsock4 = socket(AF_INET, icmpstype, IPPROTO_ICMP);
-    if (icmpsock4 == INVALID_SOCKET)
-    {
-        perror("IPPROTO_ICMP");
-#ifdef VBOX_RAWSOCK_DEBUG_HELPER
-        icmpsock4 = getrawsock(AF_INET);
-#endif
-    }
-
-    if (icmpsock4 != INVALID_SOCKET)
-    {
-#ifdef ICMP_FILTER              //  Linux specific
-        struct icmp_filter flt = {
-            ~(uint32_t)(
-                  (1U << ICMP_ECHOREPLY)
-                | (1U << ICMP_DEST_UNREACH)
-                | (1U << ICMP_TIME_EXCEEDED)
-            )
-        };
-
-        int status = setsockopt(icmpsock4, SOL_RAW, ICMP_FILTER,
-                                &flt, sizeof(flt));
-        if (status < 0)
-        {
-            perror("ICMP_FILTER");
-        }
-#endif
-    }
-
-    m_ProxyOptions.icmpsock4 = icmpsock4;
-}
-
-
-/**
- * Create raw IPv6 socket for sending and snooping ICMP6.
- */
-void VBoxNetLwipNAT::initIPv6RawSock()
-{
-    SOCKET icmpsock6 = INVALID_SOCKET;
-
-#ifndef RT_OS_DARWIN
-    const int icmpstype = SOCK_RAW;
-#else
-    /* on OS X it's not privileged */
-    const int icmpstype = SOCK_DGRAM;
-#endif
-
-    icmpsock6 = socket(AF_INET6, icmpstype, IPPROTO_ICMPV6);
-    if (icmpsock6 == INVALID_SOCKET)
-    {
-        perror("IPPROTO_ICMPV6");
-#ifdef VBOX_RAWSOCK_DEBUG_HELPER
-        icmpsock6 = getrawsock(AF_INET6);
-#endif
-    }
-
-    if (icmpsock6 != INVALID_SOCKET)
-    {
-#ifdef ICMP6_FILTER             // Windows doesn't support RFC 3542 API
-        /*
-         * XXX: We do this here for now, not in pxping.c, to avoid
-         * name clashes between lwIP and system headers.
-         */
-        struct icmp6_filter flt;
-        ICMP6_FILTER_SETBLOCKALL(&flt);
-
-        ICMP6_FILTER_SETPASS(ICMP6_ECHO_REPLY, &flt);
-
-        ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &flt);
-        ICMP6_FILTER_SETPASS(ICMP6_PACKET_TOO_BIG, &flt);
-        ICMP6_FILTER_SETPASS(ICMP6_TIME_EXCEEDED, &flt);
-        ICMP6_FILTER_SETPASS(ICMP6_PARAM_PROB, &flt);
-
-        int status = setsockopt(icmpsock6, IPPROTO_ICMPV6, ICMP6_FILTER,
-                                &flt, sizeof(flt));
-        if (status < 0)
-        {
-            perror("ICMP6_FILTER");
-        }
-#endif
-    }
-
-    m_ProxyOptions.icmpsock6 = icmpsock6;
 }
 
 
