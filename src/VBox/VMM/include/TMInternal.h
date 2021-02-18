@@ -180,7 +180,7 @@ typedef struct TMTIMER
     /** Timer state. */
     volatile TMTIMERSTATE   enmState;
     /** The index of the next next timer in the schedule list. */
-    int32_t volatile        idxScheduleNext;
+    uint32_t volatile       idxScheduleNext;
 
     /** The index of the next timer in the chain. */
     uint32_t                idxNext;
