@@ -973,7 +973,7 @@ endif
   	PC/DevPit-i8254.cpp \
   	PC/DevPIC.cpp \
   	PC/DevRTC.cpp \
- 	PC/DevDMA.cpp \
+  	PC/DevDMA.cpp \
   	PC/DevHPET.cpp \
   	Storage/DevATA.cpp \
   	Network/DevPCNet.cpp \
@@ -1211,7 +1211,8 @@ endif
  VBoxDDR0_SOURCES += \
  	Audio/DevHDA.cpp \
  	Audio/DevHDACommon.cpp \
-	Audio/DevIchAc97.cpp
+ 	Audio/DevIchAc97.cpp \
+ 	Audio/HDACodec.cpp
 
  ifdef VBOX_WITH_E1000
   VBoxDDR0_DEFS         += VBOX_WITH_E1000
