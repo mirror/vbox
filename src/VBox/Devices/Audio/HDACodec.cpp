@@ -2060,7 +2060,7 @@ static const CODECVERBR3 g_aCodecVerbsR3[] =
 
 #endif /* IN_RING0 */
 
-#if defined(IN_RING3) && defined(DEBUG)
+#ifdef IN_RING3
 
 /**
  * CODEC debug info item printing state.
@@ -2297,7 +2297,7 @@ static DECLCALLBACK(void) codecR3DbgSelector(PHDACODEC pThis, PHDACODECR3 pThisC
     RT_NOREF(pThis, pThisCC, pHlp, pszArgs);
 }
 
-#endif /* IN_RING3 && DEBUG */
+#endif /* IN_RING3 */
 
 static DECLCALLBACK(int) codecR3Lookup(PHDACODEC pThis, PHDACODECR3 pThisCC, uint32_t cmd, uint64_t *puResp)
 {
@@ -2591,10 +2591,9 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC
     memcpy(&pThisCC->aVerbs, &g_aCodecVerbsR3, sizeof(CODECVERBR3) * RT_ELEMENTS(g_aCodecVerbsR3));
     pThisCC->cVerbs = RT_ELEMENTS(g_aCodecVerbsR3);
 
-#ifdef DEBUG
     pThisCC->pfnDbgSelector  = codecR3DbgSelector;
     pThisCC->pfnDbgListNodes = codecR3DbgListNodes;
-#endif
+
     pThisCC->pfnLookup       = codecR3Lookup;
 
     /*
