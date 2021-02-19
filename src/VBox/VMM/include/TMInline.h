@@ -210,7 +210,6 @@ DECL_FORCE_INLINE(void) tmTimerQueueUnlinkActive(PVMCC pVM, PTMTIMERQUEUECC pQue
         Assert(VM_IS_EMT(pVM))
 #endif
 
-
 /** @def TMTIMER_HANDLE_TO_VARS_RETURN_EX
  * Converts a timer handle to a timer pointer, returning VERR_INVALID_HANDLE if
  * the handle is invalid.
@@ -229,93 +228,52 @@ DECL_FORCE_INLINE(void) tmTimerQueueUnlinkActive(PVMCC pVM, PTMTIMERQUEUECC pQue
  */
 #define TMTIMER_HANDLE_TO_VARS_RETURN(a_pVM, a_hTimer) TMTIMER_HANDLE_TO_VARS_RETURN_EX(a_pVM, a_hTimer, VERR_INVALID_HANDLE)
 
-
-/** @def TMTIMER_HANDLE_TO_PTR_RETURN_EX
- * Converts a timer handle to a timer pointer, returning @a a_rcRet if the
+/** @def TMTIMER_HANDLE_TO_VARS_RETURN_VOID
+ * Converts a timer handle to a timer pointer, returning void if the
  * handle is invalid.
  *
- * @param   a_pVM       The cross context VM structure.
- * @param   a_hTimer    The timer handle to translate.
- * @param   a_rcRet     What to return on failure.
- * @param   a_pTimerVar The timer variable to assign the resulting pointer to.
+ * This defines the following variables:
+ *      - idxQueue: The queue index.
+ *      - pQueueCC: Pointer to the context specific queue data.
+ *      - pTimer:   The timer pointer.
+ *      - idxTimer: The timer index.
+ *
+ * @param   a_pVM           The cross context VM structure.
+ * @param   a_hTimer        The timer handle to translate.
+ *
+ * @note    This macro has no scoping, so careful when using it around
+ *          conditional statements!
  */
 #ifdef IN_RING3
-# define TMTIMER_HANDLE_TO_PTR_RETURN_EX(a_pVM, a_hTimer, a_rcRet, a_pTimerVar) do { \
-        uintptr_t const idxQueue = (uintptr_t)((a_hTimer) >> TMTIMERHANDLE_QUEUE_IDX_SHIFT) \
-                                 & (uintptr_t)TMTIMERHANDLE_QUEUE_IDX_SMASK; \
-        AssertReturn(idxQueue < RT_ELEMENTS((a_pVM)->tm.s.aTimerQueues), a_rcRet); \
-        \
-        uintptr_t const idxTimer = (uintptr_t)((a_hTimer) & TMTIMERHANDLE_TIMER_IDX_MASK); \
-        AssertReturn(idxQueue < (a_pVM)->tm.s.aTimerQueues[idxQueue].cTimersAlloc, a_rcRet); \
-        \
-        (a_pTimerVar) = &(a_pVM)->tm.s.aTimerQueues[idxQueue].paTimers[idxTimer]; \
-        AssertReturn((a_pTimerVar)->hSelf == a_hTimer, a_rcRet); \
-    } while (0)
-#else
-# define TMTIMER_HANDLE_TO_PTR_RETURN_EX(a_pVM, a_hTimer, a_rcRet, a_pTimerVar) do { \
-        uintptr_t const idxQueue = (uintptr_t)((a_hTimer) >> TMTIMERHANDLE_QUEUE_IDX_SHIFT) \
-                                 & (uintptr_t)TMTIMERHANDLE_QUEUE_IDX_SMASK; \
-        AssertReturn(idxQueue < RT_ELEMENTS((a_pVM)->tm.s.aTimerQueues), a_rcRet); \
-        AssertCompile(RT_ELEMENTS((a_pVM)->tm.s.aTimerQueues) == RT_ELEMENTS((a_pVM)->tmr0.s.aTimerQueues)); \
-        \
-        uintptr_t const idxTimer = (uintptr_t)((a_hTimer) & TMTIMERHANDLE_TIMER_IDX_MASK); \
-        AssertReturn(idxQueue < (a_pVM)->tmr0.s.aTimerQueues[idxQueue].cTimersAlloc, a_rcRet); \
-        \
-        (a_pTimerVar) = &(a_pVM)->tmr0.s.aTimerQueues[idxQueue].paTimers[idxTimer]; \
-        AssertReturn((a_pTimerVar)->hSelf == a_hTimer, a_rcRet); \
-        Assert((a_pTimerVar)->fFlags & TMTIMER_FLAGS_RING0); \
-        Assert(VM_IS_EMT(pVM)); \
-    } while (0)
-#endif
-
-/** @def TMTIMER_HANDLE_TO_PTR_RETURN
- * Converts a timer handle to a timer pointer, returning VERR_INVALID_HANDLE if
- * invalid.
- *
- * @param   a_pVM       The cross context VM structure.
- * @param   a_hTimer    The timer handle to translate.
- * @param   a_pTimerVar The timer variable to assign the resulting pointer to.
- */
-#define TMTIMER_HANDLE_TO_PTR_RETURN(a_pVM, a_hTimer, a_pTimerVar) \
-        TMTIMER_HANDLE_TO_PTR_RETURN_EX(a_pVM, a_hTimer, VERR_INVALID_HANDLE, a_pTimerVar)
-
-/** @def TMTIMER_HANDLE_TO_PTR_RETURN_VOID
- * Converts a timer handle to a timer pointer, returning VERR_INVALID_HANDLE if
- * invalid.
- *
- * @param   a_pVM       The cross context VM structure.
- * @param   a_hTimer    The timer handle to translate.
- * @param   a_pTimerVar The timer variable to assign the resulting pointer to.
- */
-#ifdef IN_RING3
-# define TMTIMER_HANDLE_TO_PTR_RETURN_VOID(a_pVM, a_hTimer, a_pTimerVar) do { \
+# define TMTIMER_HANDLE_TO_VARS_RETURN_VOID(a_pVM, a_hTimer) \
         uintptr_t const idxQueue = (uintptr_t)((a_hTimer) >> TMTIMERHANDLE_QUEUE_IDX_SHIFT) \
                                  & (uintptr_t)TMTIMERHANDLE_QUEUE_IDX_SMASK; \
         AssertReturnVoid(idxQueue < RT_ELEMENTS((a_pVM)->tm.s.aTimerQueues)); \
+        PTMTIMERQUEUE const pQueue = &(a_pVM)->tm.s.aTimerQueues[idxQueue]; \
+        PTMTIMERQUEUE const pQueueCC = pQueue; RT_NOREF(pQueueCC); \
         \
         uintptr_t const idxTimer = (uintptr_t)((a_hTimer) & TMTIMERHANDLE_TIMER_IDX_MASK); \
-        AssertReturnVoid(idxQueue < (a_pVM)->tm.s.aTimerQueues[idxQueue].cTimersAlloc); \
+        AssertReturnVoid(idxQueue < pQueue->cTimersAlloc); \
         \
-        (a_pTimerVar) = &(a_pVM)->tm.s.aTimerQueues[idxQueue].paTimers[idxTimer]; \
-        AssertReturnVoid((a_pTimerVar)->hSelf == a_hTimer); \
-    } while (0)
+        PTMTIMER const pTimer = &pQueue->paTimers[idxTimer]; \
+        AssertReturnVoid(pTimer->hSelf == a_hTimer)
 #else
-# define TMTIMER_HANDLE_TO_PTR_RETURN_VOID(a_pVM, a_hTimer, a_pTimerVar) do { \
+# define TMTIMER_HANDLE_TO_VARS_RETURN_VOID(a_pVM, a_hTimer) \
         uintptr_t const idxQueue = (uintptr_t)((a_hTimer) >> TMTIMERHANDLE_QUEUE_IDX_SHIFT) \
                                  & (uintptr_t)TMTIMERHANDLE_QUEUE_IDX_SMASK; \
         AssertReturnVoid(idxQueue < RT_ELEMENTS((a_pVM)->tm.s.aTimerQueues)); \
         AssertCompile(RT_ELEMENTS((a_pVM)->tm.s.aTimerQueues) == RT_ELEMENTS((a_pVM)->tmr0.s.aTimerQueues)); \
+        PTMTIMERQUEUE const   pQueue   = &(a_pVM)->tm.s.aTimerQueues[idxQueue]; RT_NOREF(pQueue); \
+        PTMTIMERQUEUER0 const pQueueCC = &(a_pVM)->tmr0.s.aTimerQueues[idxQueue]; \
         \
         uintptr_t const idxTimer = (uintptr_t)((a_hTimer) & TMTIMERHANDLE_TIMER_IDX_MASK); \
-        AssertReturnVoid(idxQueue < (a_pVM)->tmr0.s.aTimerQueues[idxQueue].cTimersAlloc); \
+        AssertReturnVoid(idxQueue < pQueueCC->cTimersAlloc); \
         \
-        (a_pTimerVar) = &(a_pVM)->tmr0.s.aTimerQueues[idxQueue].paTimers[idxTimer]; \
-        AssertReturnVoid((a_pTimerVar)->hSelf == a_hTimer); \
-        Assert((a_pTimerVar)->fFlags & TMTIMER_FLAGS_RING0); \
-        Assert(VM_IS_EMT(pVM)); \
-    } while (0)
+        PTMTIMER const pTimer = &pQueueCC->paTimers[idxTimer]; \
+        AssertReturnVoid(pTimer->hSelf == a_hTimer); \
+        Assert(pTimer->fFlags & TMTIMER_FLAGS_RING0); \
+        Assert(VM_IS_EMT(pVM))
 #endif
-
 
 #endif /* !VMM_INCLUDED_SRC_include_TMInline_h */
 

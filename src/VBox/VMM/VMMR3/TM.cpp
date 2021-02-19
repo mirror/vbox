@@ -1882,15 +1882,13 @@ VMMR3DECL(int) TMR3TimerCreate(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallb
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
+ * @param   pQueue          The queue the timer is on.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
+static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 {
-    AssertReturn((unsigned)pTimer->enmClock < (unsigned)TMCLOCK_MAX, VERR_INTERNAL_ERROR_3);
-
-    PTMTIMERQUEUE   pQueue   = &pVM->tm.s.aTimerQueues[pTimer->enmClock];
-    bool            fActive  = false;
-    bool            fPending = false;
+    bool fActive  = false;
+    bool fPending = false;
 
     AssertMsg(   !pTimer->pCritSect
               || VMR3GetState(pVM) != VMSTATE_RUNNING
@@ -2058,9 +2056,8 @@ VMMR3DECL(int) TMR3TimerDestroy(PVM pVM, TMTIMERHANDLE hTimer)
     /* We ignore NILs here. */
     if (hTimer == NIL_TMTIMERHANDLE)
         return VINF_SUCCESS;
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
-    return tmR3TimerDestroy(pVM, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    return tmR3TimerDestroy(pVM, pQueue, pTimer);
 }
 
 
@@ -2091,7 +2088,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
             {
                 PDMCritSectRwLeaveShared(&pQueue->AllocLock);
 
-                int rc = tmR3TimerDestroy(pVM, pTimer);
+                int rc = tmR3TimerDestroy(pVM, pQueue, pTimer);
                 AssertRC(rc);
 
                 PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
@@ -2132,7 +2129,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
             {
                 PDMCritSectRwLeaveShared(&pQueue->AllocLock);
 
-                int rc = tmR3TimerDestroy(pVM, pTimer);
+                int rc = tmR3TimerDestroy(pVM, pQueue, pTimer);
                 AssertRC(rc);
 
                 PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
@@ -2173,7 +2170,7 @@ VMM_INT_DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
             {
                 PDMCritSectRwLeaveShared(&pQueue->AllocLock);
 
-                int rc = tmR3TimerDestroy(pVM, pTimer);
+                int rc = tmR3TimerDestroy(pVM, pQueue, pTimer);
                 AssertRC(rc);
 
                 PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
@@ -2882,8 +2879,7 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
 VMMR3DECL(int) TMR3TimerSave(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
 {
     VM_ASSERT_EMT(pVM);
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     LogFlow(("TMR3TimerSave: %p:{enmState=%s, .szName='%s'} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->szName, pSSM));
 
     switch (pTimer->enmState)
@@ -2930,8 +2926,7 @@ VMMR3DECL(int) TMR3TimerSave(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
 VMMR3DECL(int) TMR3TimerLoad(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
 {
     VM_ASSERT_EMT(pVM);
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     Assert(pSSM);
     LogFlow(("TMR3TimerLoad: %p:{enmState=%s, .szName='%s'} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->szName, pSSM));
 
@@ -2956,7 +2951,7 @@ VMMR3DECL(int) TMR3TimerLoad(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
     }
 
     /* Enter the critical sections to make TMTimerSet/Stop happy. */
-    if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
+    if (pQueue->enmClock == TMCLOCK_VIRTUAL_SYNC)
         PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
     PPDMCRITSECT pCritSect = pTimer->pCritSect;
     if (pCritSect)
@@ -2989,7 +2984,7 @@ VMMR3DECL(int) TMR3TimerLoad(PVM pVM, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
 
     if (pCritSect)
         PDMCritSectLeave(pCritSect);
-    if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
+    if (pQueue->enmClock == TMCLOCK_VIRTUAL_SYNC)
         PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
 
     /*
@@ -3079,8 +3074,7 @@ VMMR3DECL(int) TMR3TimerSkip(PSSMHANDLE pSSM, bool *pfActive)
  */
 VMMR3DECL(int) TMR3TimerSetCritSect(PVM pVM, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     AssertPtrReturn(pCritSect, VERR_INVALID_PARAMETER);
     const char *pszName = PDMR3CritSectName(pCritSect); /* exploited for validation */
     AssertReturn(pszName, VERR_INVALID_PARAMETER);

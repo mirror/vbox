@@ -1146,10 +1146,8 @@ VMM_INT_DECL(uint64_t) TMTimerPollGIP(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64D
  */
 VMMDECL(int) TMTimerLock(PVMCC pVM, TMTIMERHANDLE hTimer, int rcBusy)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
-    AssertPtr(pTimer);
-    AssertReturn(pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC, VERR_NOT_SUPPORTED);
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    AssertReturn(idxQueue == TMCLOCK_VIRTUAL_SYNC, VERR_NOT_SUPPORTED);
     return PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, rcBusy);
 }
 
@@ -1162,9 +1160,8 @@ VMMDECL(int) TMTimerLock(PVMCC pVM, TMTIMERHANDLE hTimer, int rcBusy)
  */
 VMMDECL(void) TMTimerUnlock(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_VOID(pVM, hTimer, pTimer);
-    AssertReturnVoid(pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC);
+    TMTIMER_HANDLE_TO_VARS_RETURN_VOID(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    AssertReturnVoid(idxQueue == TMCLOCK_VIRTUAL_SYNC);
     PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
 }
 
@@ -1178,10 +1175,8 @@ VMMDECL(void) TMTimerUnlock(PVMCC pVM, TMTIMERHANDLE hTimer)
  */
 VMMDECL(bool) TMTimerIsLockOwner(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, false, pTimer);
-    AssertPtr(pTimer);
-    AssertReturn(pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC, false);
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, false); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    AssertReturn(idxQueue == TMCLOCK_VIRTUAL_SYNC, false);
     return PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock);
 }
 
@@ -1195,9 +1190,9 @@ VMMDECL(bool) TMTimerIsLockOwner(PVMCC pVM, TMTIMERHANDLE hTimer)
  * @param   pTimer          The timer handle.
  * @param   u64Expire       The new expire time.
  * @param   pQueue          Pointer to the shared timer queue data.
- * @param   enmClock        The sanitized clock.
+ * @param   idxQueue        The queue index.
  */
-static int tmTimerSetOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire, PTMTIMERQUEUE pQueue, TMCLOCK enmClock)
+static int tmTimerSetOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire, PTMTIMERQUEUE pQueue, uint32_t idxQueue)
 {
     Assert(pTimer->idxPrev == UINT32_MAX);
     Assert(pTimer->idxNext == UINT32_MAX);
@@ -1206,7 +1201,7 @@ static int tmTimerSetOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expi
     /*
      * Calculate and set the expiration time.
      */
-    if (enmClock == TMCLOCK_VIRTUAL_SYNC)
+    if (idxQueue == TMCLOCK_VIRTUAL_SYNC)
     {
         uint64_t u64Last = ASMAtomicReadU64(&pVM->tm.s.u64VirtualSync);
         AssertMsgStmt(u64Expire >= u64Last,
@@ -1219,7 +1214,7 @@ static int tmTimerSetOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expi
     /*
      * Link the timer into the active list.
      */
-    tmTimerQueueLinkActive(pVM, TM_GET_TIMER_QUEUE_CC(pVM, enmClock, pQueue), pQueue, pTimer, u64Expire);
+    tmTimerQueueLinkActive(pVM, TM_GET_TIMER_QUEUE_CC(pVM, idxQueue, pQueue), pQueue, pTimer, u64Expire);
 
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetOpt);
     return VINF_SUCCESS;
@@ -1308,12 +1303,11 @@ static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
  */
 VMMDECL(int) TMTimerSet(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t u64Expire)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     STAM_COUNTER_INC(&pTimer->StatSetAbsolute);
 
     /* Treat virtual sync timers specially. */
-    if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
+    if (idxQueue == TMCLOCK_VIRTUAL_SYNC)
         return tmTimerVirtualSyncSet(pVM, pTimer, u64Expire);
 
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
@@ -1340,27 +1334,23 @@ VMMDECL(int) TMTimerSet(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t u64Expire)
     }
 #endif
 
+#if 1
     /*
      * The most common case is setting the timer again during the callback.
      * The second most common case is starting a timer at some other time.
      */
-#if 1
     TMTIMERSTATE enmState1 = pTimer->enmState;
     if (    enmState1 == TMTIMERSTATE_EXPIRED_DELIVER
         ||  (   enmState1 == TMTIMERSTATE_STOPPED
              && pTimer->pCritSect))
     {
         /* Try take the TM lock and check the state again. */
-        TMCLOCK const       enmClock = pTimer->enmClock;
-        AssertReturn((unsigned)enmClock < TMCLOCK_MAX, VERR_TM_IPE_2);
-        PTMTIMERQUEUE const pQueue   = &pVM->tm.s.aTimerQueues[enmClock];
-
         int rc = PDMCritSectTryEnter(&pQueue->TimerLock);
         if (RT_SUCCESS_NP(rc))
         {
             if (RT_LIKELY(tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, enmState1)))
             {
-                tmTimerSetOptimizedStart(pVM, pTimer, u64Expire, pQueue, enmClock);
+                tmTimerSetOptimizedStart(pVM, pTimer, u64Expire, pQueue, idxQueue);
                 STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
                 PDMCritSectLeave(&pQueue->TimerLock);
                 return VINF_SUCCESS;
@@ -1508,10 +1498,10 @@ DECL_FORCE_INLINE(uint64_t) tmTimerSetRelativeNowWorker(PVMCC pVM, TMCLOCK enmCl
  * @param   pu64Now         Where to return the current time stamp used.
  *                          Optional.
  * @param   pQueue          Pointer to the shared timer queue data.
- * @param   enmClock        The sanitized clock.
+ * @param   idxQueue        The queue index.
  */
 static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now,
-                                            PTMTIMERQUEUE pQueue, TMCLOCK enmClock)
+                                            PTMTIMERQUEUE pQueue, uint32_t idxQueue)
 {
     Assert(pTimer->idxPrev == UINT32_MAX);
     Assert(pTimer->idxNext == UINT32_MAX);
@@ -1520,7 +1510,7 @@ static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t
     /*
      * Calculate and set the expiration time.
      */
-    uint64_t const  u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
+    uint64_t const  u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, pQueue->enmClock, pu64Now);
     pTimer->u64Expire         = u64Expire;
     Log2(("tmTimerSetRelativeOptimizedStart: %p:{.pszDesc='%s', .u64Expire=%'RU64} cTicksToNext=%'RU64\n", pTimer, pTimer->szName, u64Expire, cTicksToNext));
 
@@ -1528,9 +1518,10 @@ static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t
      * Link the timer into the active list.
      */
     DBGFTRACE_U64_TAG2(pVM, u64Expire, "tmTimerSetRelativeOptimizedStart", pTimer->szName);
-    tmTimerQueueLinkActive(pVM, TM_GET_TIMER_QUEUE_CC(pVM, enmClock, pQueue), pQueue, pTimer, u64Expire);
+    tmTimerQueueLinkActive(pVM, TM_GET_TIMER_QUEUE_CC(pVM, idxQueue, pQueue), pQueue, pTimer, u64Expire);
 
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeOpt);
+    RT_NOREF(idxQueue);
     return VINF_SUCCESS;
 }
 
@@ -1623,15 +1614,14 @@ static int tmTimerVirtualSyncSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cT
  * @param   pu64Now         Where to return the current time stamp used.
  *                          Optional.
  */
-static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now,
+                              PTMTIMERQUEUE pQueue, uint32_t idxQueue)
 {
     STAM_COUNTER_INC(&pTimer->StatSetRelative);
 
     /* Treat virtual sync timers specially. */
-    TMCLOCK enmClock = pTimer->enmClock;
-    if (enmClock == TMCLOCK_VIRTUAL_SYNC)
+    if (idxQueue == TMCLOCK_VIRTUAL_SYNC)
         return tmTimerVirtualSyncSetRelative(pVM, pTimer, cTicksToNext, pu64Now);
-    AssertReturn((unsigned)enmClock < (unsigned)TMCLOCK_MAX, VERR_TM_IPE_2);
 
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
     TMTIMER_ASSERT_CRITSECT(pVM, pTimer);
@@ -1667,10 +1657,9 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
      * concurrent operations on the timer. (This latter isn't necessary any
      * longer as this isn't supported for any timers, critsect or not.)
      *
-     * Note! Lock ordering doesn't apply when we only tries to
+     * Note! Lock ordering doesn't apply when we only _try_ to
      *       get the innermost locks.
      */
-    PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[enmClock];
     bool fOwnTMLock = RT_SUCCESS_NP(PDMCritSectTryEnter(&pQueue->TimerLock));
 #if 1
     if (    fOwnTMLock
@@ -1681,7 +1670,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
                          || enmState == TMTIMERSTATE_STOPPED)
                       && tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, enmState)))
         {
-            tmTimerSetRelativeOptimizedStart(pVM, pTimer, cTicksToNext, pu64Now, pQueue, enmClock);
+            tmTimerSetRelativeOptimizedStart(pVM, pTimer, cTicksToNext, pu64Now, pQueue, idxQueue);
             STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
             PDMCritSectLeave(&pQueue->TimerLock);
             return VINF_SUCCESS;
@@ -1704,7 +1693,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
         switch (enmState)
         {
             case TMTIMERSTATE_STOPPED:
-                if (enmClock == TMCLOCK_VIRTUAL_SYNC)
+                if (pQueue->enmClock == TMCLOCK_VIRTUAL_SYNC)
                 {
                     /** @todo To fix assertion in tmR3TimerQueueRunVirtualSync:
                      *              Figure a safe way of activating this timer while the queue is
@@ -1718,7 +1707,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
                 {
                     Assert(pTimer->idxPrev == UINT32_MAX);
                     Assert(pTimer->idxNext == UINT32_MAX);
-                    pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
+                    pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, pQueue->enmClock, pu64Now);
                     Log2(("TMTimerSetRelative: %p:{.enmState=%s, .pszDesc='%s', .u64Expire=%'RU64} cRetries=%d [EXP/STOP]\n",
                           pTimer, tmTimerState(enmState), pTimer->szName, pTimer->u64Expire, cRetries));
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
@@ -1733,7 +1722,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
             case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
                 if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE, enmState))
                 {
-                    pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
+                    pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, pQueue->enmClock, pu64Now);
                     Log2(("TMTimerSetRelative: %p:{.enmState=%s, .pszDesc='%s', .u64Expire=%'RU64} cRetries=%d [PEND_SCHED]\n",
                           pTimer, tmTimerState(enmState), pTimer->szName, pTimer->u64Expire, cRetries));
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
@@ -1748,7 +1737,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
             case TMTIMERSTATE_ACTIVE:
                 if (tmTimerTryWithLink(pVM, pTimer, TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE, enmState))
                 {
-                    pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
+                    pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, pQueue->enmClock, pu64Now);
                     Log2(("TMTimerSetRelative: %p:{.enmState=%s, .pszDesc='%s', .u64Expire=%'RU64} cRetries=%d [ACTIVE]\n",
                           pTimer, tmTimerState(enmState), pTimer->szName, pTimer->u64Expire, cRetries));
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE);
@@ -1763,7 +1752,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
             case TMTIMERSTATE_PENDING_STOP:
                 if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE, enmState))
                 {
-                    pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
+                    pTimer->u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, pQueue->enmClock, pu64Now);
                     Log2(("TMTimerSetRelative: %p:{.enmState=%s, .pszDesc='%s', .u64Expire=%'RU64} cRetries=%d [PEND_RESCH/STOP]\n",
                           pTimer, tmTimerState(enmState), pTimer->szName, pTimer->u64Expire, cRetries));
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE);
@@ -1808,14 +1797,14 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
 
         if (rc != VERR_TRY_AGAIN)
         {
-            tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
+            tmTimerSetRelativeNowWorker(pVM, pQueue->enmClock, pu64Now);
             break;
         }
         if (cRetries <= 0)
         {
             AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName));
             rc = VERR_TM_TIMER_UNSTABLE_STATE;
-            tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
+            tmTimerSetRelativeNowWorker(pVM, pQueue->enmClock, pu64Now);
             break;
         }
 
@@ -1850,9 +1839,8 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
  */
 VMMDECL(int) TMTimerSetRelative(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
-    return tmTimerSetRelative(pVM, pTimer, cTicksToNext, pu64Now);
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    return tmTimerSetRelative(pVM, pTimer, cTicksToNext, pu64Now, pQueue, idxQueue);
 }
 
 
@@ -2082,12 +2070,11 @@ VMMDECL(int) TMTimerStop(PVMCC pVM, TMTIMERHANDLE hTimer)
  */
 VMMDECL(uint64_t) TMTimerGet(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, UINT64_MAX, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, 0); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     STAM_COUNTER_INC(&pTimer->StatGet);
 
     uint64_t u64;
-    switch (pTimer->enmClock)
+    switch (pQueue->enmClock)
     {
         case TMCLOCK_VIRTUAL:
             u64 = TMVirtualGet(pVM);
@@ -2099,7 +2086,7 @@ VMMDECL(uint64_t) TMTimerGet(PVMCC pVM, TMTIMERHANDLE hTimer)
             u64 = TMRealGet(pVM);
             break;
         default:
-            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            AssertMsgFailed(("Invalid enmClock=%d\n", pQueue->enmClock));
             return UINT64_MAX;
     }
     //Log2(("TMTimerGet: returns %'RU64 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
@@ -2117,9 +2104,8 @@ VMMDECL(uint64_t) TMTimerGet(PVMCC pVM, TMTIMERHANDLE hTimer)
  */
 VMMDECL(uint64_t) TMTimerGetFreq(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
-    switch (pTimer->enmClock)
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, 0); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    switch (pQueue->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
@@ -2129,7 +2115,7 @@ VMMDECL(uint64_t) TMTimerGetFreq(PVMCC pVM, TMTIMERHANDLE hTimer)
             return TMCLOCK_FREQ_REAL;
 
         default:
-            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            AssertMsgFailed(("Invalid enmClock=%d\n", pQueue->enmClock));
             return 0;
     }
 }
@@ -2145,13 +2131,12 @@ VMMDECL(uint64_t) TMTimerGetFreq(PVMCC pVM, TMTIMERHANDLE hTimer)
  */
 VMMDECL(uint64_t) TMTimerGetExpire(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, UINT64_MAX, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, UINT64_MAX); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     TMTIMER_ASSERT_CRITSECT(pVM, pTimer);
     int cRetries = 1000;
     do
     {
-        TMTIMERSTATE    enmState = pTimer->enmState;
+        TMTIMERSTATE enmState = pTimer->enmState;
         switch (enmState)
         {
             case TMTIMERSTATE_EXPIRED_GET_UNLINK:
@@ -2210,8 +2195,7 @@ VMMDECL(uint64_t) TMTimerGetExpire(PVMCC pVM, TMTIMERHANDLE hTimer)
  */
 VMMDECL(bool) TMTimerIsActive(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, false, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, false); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     TMTIMERSTATE enmState = pTimer->enmState;
     switch (enmState)
     {
@@ -2262,24 +2246,23 @@ VMMDECL(bool) TMTimerIsActive(PVMCC pVM, TMTIMERHANDLE hTimer)
  */
 VMMDECL(int) TMTimerSetMillies(PVMCC pVM, TMTIMERHANDLE hTimer, uint32_t cMilliesToNext)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
-    switch (pTimer->enmClock)
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    switch (pQueue->enmClock)
     {
         case TMCLOCK_VIRTUAL:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return tmTimerSetRelative(pVM, pTimer, cMilliesToNext * UINT64_C(1000000), NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMilliesToNext * UINT64_C(1000000), NULL, pQueue, idxQueue);
 
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return tmTimerSetRelative(pVM, pTimer, cMilliesToNext * UINT64_C(1000000), NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMilliesToNext * UINT64_C(1000000), NULL, pQueue, idxQueue);
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return tmTimerSetRelative(pVM, pTimer, cMilliesToNext, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMilliesToNext, NULL, pQueue, idxQueue);
 
         default:
-            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            AssertMsgFailed(("Invalid enmClock=%d\n", pQueue->enmClock));
             return VERR_TM_TIMER_BAD_CLOCK;
     }
 }
@@ -2295,24 +2278,23 @@ VMMDECL(int) TMTimerSetMillies(PVMCC pVM, TMTIMERHANDLE hTimer, uint32_t cMillie
  */
 VMMDECL(int) TMTimerSetMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cMicrosToNext)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
-    switch (pTimer->enmClock)
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    switch (pQueue->enmClock)
     {
         case TMCLOCK_VIRTUAL:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return tmTimerSetRelative(pVM, pTimer, cMicrosToNext * 1000, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMicrosToNext * 1000, NULL, pQueue, idxQueue);
 
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return tmTimerSetRelative(pVM, pTimer, cMicrosToNext * 1000, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMicrosToNext * 1000, NULL, pQueue, idxQueue);
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return tmTimerSetRelative(pVM, pTimer, cMicrosToNext / 1000, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cMicrosToNext / 1000, NULL, pQueue, idxQueue);
 
         default:
-            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            AssertMsgFailed(("Invalid enmClock=%d\n", pQueue->enmClock));
             return VERR_TM_TIMER_BAD_CLOCK;
     }
 }
@@ -2328,21 +2310,20 @@ VMMDECL(int) TMTimerSetMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cMicrosTo
  */
 VMMDECL(int) TMTimerSetNano(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cNanosToNext)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return tmTimerSetRelative(pVM, pTimer, cNanosToNext, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cNanosToNext, NULL, pQueue, idxQueue);
 
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return tmTimerSetRelative(pVM, pTimer, cNanosToNext, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cNanosToNext, NULL, pQueue, idxQueue);
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return tmTimerSetRelative(pVM, pTimer, cNanosToNext / 1000000, NULL);
+            return tmTimerSetRelative(pVM, pTimer, cNanosToNext / 1000000, NULL, pQueue, idxQueue);
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -2402,9 +2383,8 @@ VMMDECL(uint64_t) TMTimerGetMilli(PVMCC pVM, TMTIMERHANDLE hTimer)
  */
 VMMDECL(uint64_t) TMTimerToNano(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicks)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
-    switch (pTimer->enmClock)
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, 0); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    switch (pQueue->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
@@ -2416,7 +2396,7 @@ VMMDECL(uint64_t) TMTimerToNano(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicks
             return cTicks * 1000000;
 
         default:
-            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            AssertMsgFailed(("Invalid enmClock=%d\n", pQueue->enmClock));
             return 0;
     }
 }
@@ -2434,9 +2414,8 @@ VMMDECL(uint64_t) TMTimerToNano(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicks
  */
 VMMDECL(uint64_t) TMTimerToMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicks)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
-    switch (pTimer->enmClock)
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, 0); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    switch (pQueue->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
@@ -2448,7 +2427,7 @@ VMMDECL(uint64_t) TMTimerToMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTick
             return cTicks * 1000;
 
         default:
-            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            AssertMsgFailed(("Invalid enmClock=%d\n", pQueue->enmClock));
             return 0;
     }
 }
@@ -2466,9 +2445,8 @@ VMMDECL(uint64_t) TMTimerToMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTick
  */
 VMMDECL(uint64_t) TMTimerToMilli(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicks)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
-    switch (pTimer->enmClock)
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, 0); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    switch (pQueue->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
@@ -2480,7 +2458,7 @@ VMMDECL(uint64_t) TMTimerToMilli(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTick
             return cTicks;
 
         default:
-            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            AssertMsgFailed(("Invalid enmClock=%d\n", pQueue->enmClock));
             return 0;
     }
 }
@@ -2497,9 +2475,8 @@ VMMDECL(uint64_t) TMTimerToMilli(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTick
  */
 VMMDECL(uint64_t) TMTimerFromNano(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cNanoSecs)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
-    switch (pTimer->enmClock)
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, 0); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    switch (pQueue->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
@@ -2511,7 +2488,7 @@ VMMDECL(uint64_t) TMTimerFromNano(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cNan
             return cNanoSecs / 1000000;
 
         default:
-            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            AssertMsgFailed(("Invalid enmClock=%d\n", pQueue->enmClock));
             return 0;
     }
 }
@@ -2528,9 +2505,8 @@ VMMDECL(uint64_t) TMTimerFromNano(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cNan
  */
 VMMDECL(uint64_t) TMTimerFromMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cMicroSecs)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
-    switch (pTimer->enmClock)
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, 0); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    switch (pQueue->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
@@ -2542,7 +2518,7 @@ VMMDECL(uint64_t) TMTimerFromMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cMi
             return cMicroSecs / 1000;
 
         default:
-            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            AssertMsgFailed(("Invalid enmClock=%d\n", pQueue->enmClock));
             return 0;
     }
 }
@@ -2559,9 +2535,8 @@ VMMDECL(uint64_t) TMTimerFromMicro(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cMi
  */
 VMMDECL(uint64_t) TMTimerFromMilli(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cMilliSecs)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN_EX(pVM, hTimer, 0, pTimer);
-    switch (pTimer->enmClock)
+    TMTIMER_HANDLE_TO_VARS_RETURN_EX(pVM, hTimer, 0); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
+    switch (pQueue->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
@@ -2573,7 +2548,7 @@ VMMDECL(uint64_t) TMTimerFromMilli(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cMi
             return cMilliSecs;
 
         default:
-            AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
+            AssertMsgFailed(("Invalid enmClock=%d\n", pQueue->enmClock));
             return 0;
     }
 }
