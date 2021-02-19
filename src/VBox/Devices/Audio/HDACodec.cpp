@@ -2001,7 +2001,7 @@ static const CODECVERBR3 g_aCodecVerbsR3[] =
    { 0x00030000, CODEC_VERB_16BIT_CMD, vrbProcR3SetAmplifier         , "SetAmplifier          " }
 };
 
-#endif /* IN_RING3 */
+#else /* IN_RING0 */
 
 /**
  * HDA codec verb map for ring-0.
@@ -2059,6 +2059,8 @@ static const CODECVERBR0 g_aCodecVerbsR0[] =
     { 0x00070400, CODEC_VERB_8BIT_CMD , vrbProcSetSDISelect           , "SetSDISelect          " }
     /** @todo Implement 0x7e7: IDT Set GPIO (STAC922x only). */
 };
+
+#endif /* IN_RING3 */
 
 #if defined(IN_RING3) && defined(DEBUG)
 
@@ -2523,7 +2525,7 @@ int hdaR3CodecLoadState(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC
 /**
  * Powers off the codec (ring-3).
  *
- * @param   pThis           Codec to power off.
+ * @param   pThisCC             Context-specific codec data (ring-3) to power off.
  */
 void hdaR3CodecPowerOff(PHDACODECR3 pThisCC)
 {
