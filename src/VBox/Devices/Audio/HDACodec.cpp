@@ -943,6 +943,8 @@ static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, uint32_t cmd, uint64_t *p
 
 #endif /* unused */
 
+#ifdef IN_RING0
+
 /* B-- */
 static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
@@ -988,75 +990,6 @@ static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
 
     return VINF_SUCCESS;
 }
-
-#ifdef IN_RING3
-
-/* 3-- */
-static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECR3 pThisCC, uint32_t cmd, uint64_t *pResp)
-{
-    *pResp = 0;
-
-    PCODECNODE pNode      = &pThis->aNodes[CODEC_NID(cmd)];
-    AMPLIFIER *pAmplifier = NULL;
-    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-        pAmplifier = &pNode->dac.B_params;
-    else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
-        pAmplifier = &pNode->adcvol.B_params;
-    else if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(cmd)))
-        pAmplifier = &pNode->adcmux.B_params;
-    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(cmd)))
-        pAmplifier = &pNode->pcbeep.B_params;
-    else if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
-        pAmplifier = &pNode->port.B_params;
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-        pAmplifier = &pNode->adc.B_params;
-    else
-        LogRel2(("HDA: Warning: Unhandled set amplifier command: 0x%x (Payload=%RU16, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD16(cmd), CODEC_NID(cmd), CODEC_NID(cmd)));
-
-    if (!pAmplifier)
-        return VINF_SUCCESS;
-
-    bool fIsOut     = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd);
-    bool fIsIn      = CODEC_SET_AMP_IS_IN_DIRECTION(cmd);
-    bool fIsLeft    = CODEC_SET_AMP_IS_LEFT_SIDE(cmd);
-    bool fIsRight   = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd);
-    uint8_t u8Index = CODEC_SET_AMP_INDEX(cmd);
-
-    if (   (!fIsLeft && !fIsRight)
-        || (!fIsOut && !fIsIn))
-        return VINF_SUCCESS;
-
-    LogFunc(("[NID0x%02x] fIsOut=%RTbool, fIsIn=%RTbool, fIsLeft=%RTbool, fIsRight=%RTbool, Idx=%RU8\n",
-             CODEC_NID(cmd), fIsOut, fIsIn, fIsLeft, fIsRight, u8Index));
-
-    if (fIsIn)
-    {
-        if (fIsLeft)
-            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_LEFT, u8Index), cmd, 0);
-        if (fIsRight)
-            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), cmd, 0);
-
-    //    if (CODEC_NID(cmd) == pThis->u8AdcVolsLineIn)
-    //    {
-            hdaR3CodecToAudVolume(pThisCC, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
-    //    }
-    }
-    if (fIsOut)
-    {
-        if (fIsLeft)
-            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_LEFT, u8Index), cmd, 0);
-        if (fIsRight)
-            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd, 0);
-
-        if (CODEC_NID(cmd) == pThis->u8DacLineOut)
-            hdaR3CodecToAudVolume(pThisCC, pNode, pAmplifier, PDMAUDIOMIXERCTL_FRONT);
-    }
-
-    return VINF_SUCCESS;
-}
-
-#endif /* IN_RING3 */
 
 static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
@@ -1633,84 +1566,6 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     return VINF_SUCCESS;
 }
 
-#ifdef IN_RING3
-
-/* 706 */
-static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECR3 pThisCC, uint32_t cmd, uint64_t *pResp)
-{
-    *pResp = 0;
-
-    uint8_t uSD      = CODEC_F00_06_GET_STREAM_ID(cmd);
-    uint8_t uChannel = CODEC_F00_06_GET_CHANNEL_ID(cmd);
-
-    LogFlowFunc(("[NID0x%02x] Setting to stream ID=%RU8, channel=%RU8\n",
-                 CODEC_NID(cmd), uSD, uChannel));
-
-    ASSERT_GUEST_LOGREL_MSG_RETURN(uSD < HDA_MAX_STREAMS,
-                                   ("Setting stream ID #%RU8 is invalid\n", uSD), VERR_INVALID_PARAMETER);
-
-    PDMAUDIODIR enmDir;
-    uint32_t *pu32Addr = NULL;
-    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
-    {
-        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].dac.u32F06_param;
-        enmDir = PDMAUDIODIR_OUT;
-    }
-    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
-    {
-        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].adc.u32F06_param;
-        enmDir = PDMAUDIODIR_IN;
-    }
-    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
-    {
-        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
-        enmDir = PDMAUDIODIR_OUT;
-    }
-    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
-    {
-        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
-        enmDir = PDMAUDIODIR_IN;
-    }
-    else
-    {
-        enmDir = PDMAUDIODIR_UNKNOWN;
-        LogRel2(("HDA: Warning: Unhandled set stream ID command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
-    }
-
-    /* Do we (re-)assign our input/output SDn (SDI/SDO) IDs? */
-    if (enmDir != PDMAUDIODIR_UNKNOWN)
-    {
-        pThis->aNodes[CODEC_NID(cmd)].node.uSD      = uSD;
-        pThis->aNodes[CODEC_NID(cmd)].node.uChannel = uChannel;
-
-        if (enmDir == PDMAUDIODIR_OUT)
-        {
-            /** @todo Check if non-interleaved streams need a different channel / SDn? */
-
-            /* Propagate to the controller. */
-            pThisCC->pfnCbMixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-            pThisCC->pfnCbMixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
-            pThisCC->pfnCbMixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
-#endif
-        }
-        else if (enmDir == PDMAUDIODIR_IN)
-        {
-            pThisCC->pfnCbMixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-            pThisCC->pfnCbMixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
-#endif
-        }
-    }
-
-    if (pu32Addr)
-        hdaCodecSetRegisterU8(pu32Addr, cmd, 0);
-
-    return VINF_SUCCESS;
-}
-
-#endif /* IN_RING3 */
-
 /* A0 */
 static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
@@ -1987,21 +1842,150 @@ static DECLCALLBACK(int) vrbProcSetSDISelect(PHDACODEC pThis, uint32_t cmd, uint
     return VINF_SUCCESS;
 }
 
-#ifdef IN_RING3
+#else /* IN_RING3 */
 
-/**
- * HDA codec verb map for ring-3.
- */
-static const CODECVERBR3 g_aCodecVerbsR3[] =
+/* 3-- */
+static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODEC pThis, PHDACODECR3 pThisCC, uint32_t cmd, uint64_t *pResp)
 {
-   /* Verb        Verb mask            Callback                        Name
-    * ---------- --------------------- ----------------------------------------------------------
-    */
-   { 0x00070600, CODEC_VERB_8BIT_CMD , vrbProcR3SetStreamId          , "SetStreamId           " },
-   { 0x00030000, CODEC_VERB_16BIT_CMD, vrbProcR3SetAmplifier         , "SetAmplifier          " }
-};
+    *pResp = 0;
 
-#else /* IN_RING0 */
+    PCODECNODE pNode      = &pThis->aNodes[CODEC_NID(cmd)];
+    AMPLIFIER *pAmplifier = NULL;
+    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
+        pAmplifier = &pNode->dac.B_params;
+    else if (hdaCodecIsAdcVolNode(pThis, CODEC_NID(cmd)))
+        pAmplifier = &pNode->adcvol.B_params;
+    else if (hdaCodecIsAdcMuxNode(pThis, CODEC_NID(cmd)))
+        pAmplifier = &pNode->adcmux.B_params;
+    else if (hdaCodecIsPcbeepNode(pThis, CODEC_NID(cmd)))
+        pAmplifier = &pNode->pcbeep.B_params;
+    else if (hdaCodecIsPortNode(pThis, CODEC_NID(cmd)))
+        pAmplifier = &pNode->port.B_params;
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
+        pAmplifier = &pNode->adc.B_params;
+    else
+        LogRel2(("HDA: Warning: Unhandled set amplifier command: 0x%x (Payload=%RU16, NID=0x%x [%RU8])\n",
+                 cmd, CODEC_VERB_PAYLOAD16(cmd), CODEC_NID(cmd), CODEC_NID(cmd)));
+
+    if (!pAmplifier)
+        return VINF_SUCCESS;
+
+    bool fIsOut     = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd);
+    bool fIsIn      = CODEC_SET_AMP_IS_IN_DIRECTION(cmd);
+    bool fIsLeft    = CODEC_SET_AMP_IS_LEFT_SIDE(cmd);
+    bool fIsRight   = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd);
+    uint8_t u8Index = CODEC_SET_AMP_INDEX(cmd);
+
+    if (   (!fIsLeft && !fIsRight)
+        || (!fIsOut && !fIsIn))
+        return VINF_SUCCESS;
+
+    LogFunc(("[NID0x%02x] fIsOut=%RTbool, fIsIn=%RTbool, fIsLeft=%RTbool, fIsRight=%RTbool, Idx=%RU8\n",
+             CODEC_NID(cmd), fIsOut, fIsIn, fIsLeft, fIsRight, u8Index));
+
+    if (fIsIn)
+    {
+        if (fIsLeft)
+            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_LEFT, u8Index), cmd, 0);
+        if (fIsRight)
+            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), cmd, 0);
+
+    //    if (CODEC_NID(cmd) == pThis->u8AdcVolsLineIn)
+    //    {
+            hdaR3CodecToAudVolume(pThisCC, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
+    //    }
+    }
+    if (fIsOut)
+    {
+        if (fIsLeft)
+            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_LEFT, u8Index), cmd, 0);
+        if (fIsRight)
+            hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd, 0);
+
+        if (CODEC_NID(cmd) == pThis->u8DacLineOut)
+            hdaR3CodecToAudVolume(pThisCC, pNode, pAmplifier, PDMAUDIOMIXERCTL_FRONT);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/* 706 */
+static DECLCALLBACK(int) vrbProcR3SetStreamId(PHDACODEC pThis, PHDACODECR3 pThisCC, uint32_t cmd, uint64_t *pResp)
+{
+    *pResp = 0;
+
+    uint8_t uSD      = CODEC_F00_06_GET_STREAM_ID(cmd);
+    uint8_t uChannel = CODEC_F00_06_GET_CHANNEL_ID(cmd);
+
+    LogFlowFunc(("[NID0x%02x] Setting to stream ID=%RU8, channel=%RU8\n",
+                 CODEC_NID(cmd), uSD, uChannel));
+
+    ASSERT_GUEST_LOGREL_MSG_RETURN(uSD < HDA_MAX_STREAMS,
+                                   ("Setting stream ID #%RU8 is invalid\n", uSD), VERR_INVALID_PARAMETER);
+
+    PDMAUDIODIR enmDir;
+    uint32_t *pu32Addr = NULL;
+    if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
+    {
+        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].dac.u32F06_param;
+        enmDir = PDMAUDIODIR_OUT;
+    }
+    else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
+    {
+        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].adc.u32F06_param;
+        enmDir = PDMAUDIODIR_IN;
+    }
+    else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
+    {
+        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
+        enmDir = PDMAUDIODIR_OUT;
+    }
+    else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
+    {
+        pu32Addr = &pThis->aNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
+        enmDir = PDMAUDIODIR_IN;
+    }
+    else
+    {
+        enmDir = PDMAUDIODIR_UNKNOWN;
+        LogRel2(("HDA: Warning: Unhandled set stream ID command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+    }
+
+    /* Do we (re-)assign our input/output SDn (SDI/SDO) IDs? */
+    if (enmDir != PDMAUDIODIR_UNKNOWN)
+    {
+        pThis->aNodes[CODEC_NID(cmd)].node.uSD      = uSD;
+        pThis->aNodes[CODEC_NID(cmd)].node.uChannel = uChannel;
+
+        if (enmDir == PDMAUDIODIR_OUT)
+        {
+            /** @todo Check if non-interleaved streams need a different channel / SDn? */
+
+            /* Propagate to the controller. */
+            pThisCC->pfnCbMixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+            pThisCC->pfnCbMixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
+            pThisCC->pfnCbMixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
+#endif
+        }
+        else if (enmDir == PDMAUDIODIR_IN)
+        {
+            pThisCC->pfnCbMixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+            pThisCC->pfnCbMixerControl(pThisCC->pDevIns, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
+#endif
+        }
+    }
+
+    if (pu32Addr)
+        hdaCodecSetRegisterU8(pu32Addr, cmd, 0);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* IN_RING0 */
+
+#ifdef IN_RING0
 
 /**
  * HDA codec verb map for ring-0.
@@ -2060,7 +2044,21 @@ static const CODECVERBR0 g_aCodecVerbsR0[] =
     /** @todo Implement 0x7e7: IDT Set GPIO (STAC922x only). */
 };
 
-#endif /* IN_RING3 */
+#else /* IN_RING3 */
+
+/**
+ * HDA codec verb map for ring-3.
+ */
+static const CODECVERBR3 g_aCodecVerbsR3[] =
+{
+   /* Verb        Verb mask            Callback                        Name
+    * ---------- --------------------- ----------------------------------------------------------
+    */
+   { 0x00070600, CODEC_VERB_8BIT_CMD , vrbProcR3SetStreamId          , "SetStreamId           " },
+   { 0x00030000, CODEC_VERB_16BIT_CMD, vrbProcR3SetAmplifier         , "SetAmplifier          " }
+};
+
+#endif /* IN_RING0 */
 
 #if defined(IN_RING3) && defined(DEBUG)
 
