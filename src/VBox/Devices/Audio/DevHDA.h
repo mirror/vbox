@@ -146,6 +146,9 @@ typedef struct HDASTATE
     /** PCI Region \#0: 16KB of MMIO stuff. */
     IOMMMIOHANDLE           hMmio;
 
+    /** Shared R0/R3 HDA codec to use. */
+    HDACODEC                Codec;
+
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE             StatIn;
     STAMPROFILE             StatOut;
@@ -214,6 +217,16 @@ typedef HDASTATE *PHDASTATE;
 /** Value for HDASTATE:uAlignmentCheckMagic. */
 #define HDASTATE_ALIGNMENT_CHECK_MAGIC  UINT64_C(0x1298afb75893e059)
 
+/**
+ * Ring-0 ICH Intel HD audio controller state.
+ */
+typedef struct HDASTATER0
+{
+    /** Pointer to HDA codec to use. */
+    HDACODECR0              Codec;
+} HDASTATER0;
+/** Pointer to a ring-0 HDA device state.  */
+typedef HDASTATER0 *PHDASTATER0;
 
 /**
  * Ring-3 ICH Intel HD audio controller state.
@@ -232,7 +245,7 @@ typedef struct HDASTATER3
     /** The base interface for LUN\#0. */
     PDMIBASE                IBase;
     /** Pointer to HDA codec to use. */
-    R3PTRTYPE(PHDACODEC)    pCodec;
+    R3PTRTYPE(PHDACODECR3)  pCodec;
     /** List of associated LUN drivers (HDADRIVER). */
     RTLISTANCHORR3          lstDrv;
     /** The device' software mixer. */
