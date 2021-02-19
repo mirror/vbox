@@ -5826,7 +5826,7 @@ typedef PDMDEVINSRC                 PDMDEVINS;
     PDMDevHlpVMSetRuntimeError(pDevIns, fFlags, pszErrorId, "%s", pszError)
 
 /** @def PDMDEVINS_2_RCPTR
- * Converts a PDM Device instance pointer a RC PDM Device instance pointer.
+ * Converts a PDM Device instance pointer to a RC PDM Device instance pointer.
  */
 #ifdef IN_RC
 # define PDMDEVINS_2_RCPTR(pDevIns)  (pDevIns)
@@ -5835,7 +5835,7 @@ typedef PDMDEVINSRC                 PDMDEVINS;
 #endif
 
 /** @def PDMDEVINS_2_R3PTR
- * Converts a PDM Device instance pointer a R3 PDM Device instance pointer.
+ * Converts a PDM Device instance pointer to a R3 PDM Device instance pointer.
  */
 #ifdef IN_RING3
 # define PDMDEVINS_2_R3PTR(pDevIns)  (pDevIns)
@@ -5844,7 +5844,7 @@ typedef PDMDEVINSRC                 PDMDEVINS;
 #endif
 
 /** @def PDMDEVINS_2_R0PTR
- * Converts a PDM Device instance pointer a R0 PDM Device instance pointer.
+ * Converts a PDM Device instance pointer to a R0 PDM Device instance pointer.
  */
 #ifdef IN_RING0
 # define PDMDEVINS_2_R0PTR(pDevIns)  (pDevIns)

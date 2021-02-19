@@ -806,7 +806,7 @@
 #define RCPTRTYPE(a_RCType)     CTXTYPE(a_RCType, RTRCPTR, RTRCPTR)
 
 /** @def RGPTRTYPE
- * This will become RCPTRTYPE once we've convered all uses of RCPTRTYPE to this.
+ * This will become RCPTRTYPE once we've converted all uses of RCPTRTYPE to this.
  *
  * @param   a_RCType    The RC type.
  */
