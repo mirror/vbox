@@ -190,6 +190,11 @@ typedef struct HDASTREAM
      *  For a stereo stream, this is u8Channel + 1. */
     uint8_t                     u8Channel;
     uint8_t                     abPadding0[6];
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    /** The stream's shared r0/r3 critical section to serialize access between the async I/O
+     *  thread and (basically) the guest. */
+    PDMCRITSECT                 CritSect;
+#endif
     /** DMA base address (SDnBDPU - SDnBDPL).
      *  Will be updated in hdaR3StreamInit(). */
     uint64_t                    u64BDLBase;
@@ -237,11 +242,6 @@ typedef struct HDASTREAMR3
     R3PTRTYPE(PHDASTATER3)      pHDAStateR3;
     /** Pointer to HDA sink this stream is attached to. */
     R3PTRTYPE(PHDAMIXERSINK)    pMixSink;
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    /** The stream's critical section to serialize access between the async I/O
-     *  thread and (basically) the guest. */
-    RTCRITSECT                  CritSect;
-#endif
     /** Internal state of this stream. */
     struct
     {
@@ -280,8 +280,8 @@ int                 hdaR3StreamEnable(PHDASTREAM pStreamShared, PHDASTREAMR3 pSt
 void                hdaR3StreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t uToAdd);
 bool                hdaR3StreamTransferIsScheduled(PHDASTREAM pStreamShared, uint64_t tsNow);
 uint64_t            hdaR3StreamTransferGetNext(PHDASTREAM pStreamShared);
-void                hdaR3StreamLock(PHDASTREAMR3 pStreamR3);
-void                hdaR3StreamUnlock(PHDASTREAMR3 pStreamR3);
+void                hdaStreamLock(PHDASTREAM pStreamShared);
+void                hdaStreamUnlock(PHDASTREAM pStreamShared);
 void                hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                                       PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fInTimer);
 PHDASTREAM          hdaR3StreamR3ToShared(PHDASTREAMR3 pStreamCC);

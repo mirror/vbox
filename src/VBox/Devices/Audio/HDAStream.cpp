@@ -74,10 +74,13 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
     RTListInit(&pStreamR3->State.lstDMAHandlers);
 #endif
 
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    rc = RTCritSectInit(&pStreamR3->CritSect);
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    AssertPtr(pStreamR3->pHDAStateR3);
+    AssertPtr(pStreamR3->pHDAStateR3->pDevIns);
+    rc = PDMDevHlpCritSectInit(pStreamR3->pHDAStateR3->pDevIns, &pStreamShared->CritSect,
+                               RT_SRC_POS, "hda_sd#%RU8", pStreamShared->u8SD);
     AssertRCReturn(rc, rc);
-# endif
+#endif
 
     rc = hdaR3StreamPeriodCreate(&pStreamShared->State.Period);
     AssertRCReturn(rc, rc);
@@ -174,13 +177,13 @@ void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
     AssertRC(rc2);
 #endif
 
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    if (RTCritSectIsInitialized(&pStreamR3->CritSect))
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    if (PDMCritSectIsInitialized(&pStreamShared->CritSect))
     {
-        rc2 = RTCritSectDelete(&pStreamR3->CritSect);
+        rc2 = PDMR3CritSectDelete(&pStreamShared->CritSect);
         AssertRC(rc2);
     }
-# endif
+#endif
 
     if (pStreamR3->State.pCircBuf)
     {
@@ -1095,7 +1098,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     LogFlowFuncEnter();
 
     uint8_t const uSD = pStreamShared->u8SD;
-    hdaR3StreamLock(pStreamR3);
+    hdaStreamLock(pStreamShared);
 
     PHDASTREAMPERIOD pPeriod = &pStreamShared->State.Period;
 
@@ -1120,7 +1123,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 
     if (!fProceed)
     {
-        hdaR3StreamUnlock(pStreamR3);
+        hdaStreamUnlock(pStreamShared);
         return VINF_SUCCESS;
     }
 
@@ -1580,7 +1583,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 
     LogFlowFuncLeave();
 
-    hdaR3StreamUnlock(pStreamR3);
+    hdaStreamUnlock(pStreamShared);
 
     return VINF_SUCCESS;
 }
@@ -1787,30 +1790,28 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
  * Locks an HDA stream for serialized access.
  *
  * @returns IPRT status code.
- * @param   pStreamR3           HDA stream to lock (ring-3 bits).
+ * @param   pStreamShared       HDA stream to lock (shared bits).
  */
-void hdaR3StreamLock(PHDASTREAMR3 pStreamR3)
+void hdaStreamLock(PHDASTREAM pStreamShared)
 {
-    AssertPtrReturnVoid(pStreamR3);
+    AssertPtrReturnVoid(pStreamShared);
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    int rc2 = RTCritSectEnter(&pStreamR3->CritSect);
+    int rc2 = PDMCritSectEnter(&pStreamShared->CritSect, VINF_SUCCESS);
     AssertRC(rc2);
-# else
-    Assert(PDMDevHlpCritSectIsOwner(pStream->pHDAState->pDevInsR3, pStream->pHDAState->CritSect));
-# endif
+#endif
 }
 
 /**
  * Unlocks a formerly locked HDA stream.
  *
  * @returns IPRT status code.
- * @param   pStreamR3           HDA stream to unlock (ring-3 bits).
+ * @param   pStreamShared       HDA stream to unlock (shared bits).
  */
-void hdaR3StreamUnlock(PHDASTREAMR3 pStreamR3)
+void hdaStreamUnlock(PHDASTREAM pStreamShared)
 {
-    AssertPtrReturnVoid(pStreamR3);
+    AssertPtrReturnVoid(pStreamShared);
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    int rc2 = RTCritSectLeave(&pStreamR3->CritSect);
+    int rc2 = PDMCritSectLeave(&pStreamShared->CritSect);
     AssertRC(rc2);
 # endif
 }

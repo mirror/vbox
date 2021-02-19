@@ -1386,7 +1386,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
         LogFunc(("[SD%RU8] Reset enter\n", uSD));
 
-        hdaR3StreamLock(pStreamR3);
+        hdaStreamLock(pStreamShared);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         hdaR3StreamAsyncIOLock(pStreamR3);
@@ -1399,7 +1399,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         hdaR3StreamAsyncIOUnlock(pStreamR3);
 # endif
-        hdaR3StreamUnlock(pStreamR3);
+        hdaStreamUnlock(pStreamShared);
     }
     else
     {
@@ -1411,7 +1411,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             Assert(!fReset && !fInReset);
             LogFunc(("[SD%RU8] State changed (fRun=%RTbool)\n", uSD, fRun));
 
-            hdaR3StreamLock(pStreamR3);
+            hdaStreamLock(pStreamShared);
 
             int rc2 = VINF_SUCCESS;
 
@@ -1505,7 +1505,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             hdaR3StreamAsyncIOUnlock(pStreamR3);
 # endif
             /* Make sure to leave the lock before (eventually) starting the timer. */
-            hdaR3StreamUnlock(pStreamR3);
+            hdaStreamUnlock(pStreamShared);
         }
     }
 
@@ -1525,7 +1525,6 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     const uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, STS, iReg);
     AssertReturn(uSD < RT_ELEMENTS(pThis->aStreams), VERR_INTERNAL_ERROR_3); /* paranoia^2: Bad g_aHdaRegMap. */
     PHDASTATER3 const  pThisCC       = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
-    PHDASTREAMR3 const pStreamR3     = &pThisCC->aStreams[uSD];
     PHDASTREAM const   pStreamShared = &pThis->aStreams[uSD];
 
     /* We only need to take the virtual-sync lock if we want to call
@@ -1538,7 +1537,7 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, pStreamShared, VINF_IOM_R3_MMIO_WRITE);
     }
 
-    hdaR3StreamLock(pStreamR3);
+    hdaStreamLock(pStreamShared);
 
     uint32_t v = HDA_REG_IND(pThis, iReg);
 
@@ -1624,7 +1623,7 @@ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
     if (cTransferTicks)
         PDMDevHlpTimerUnlockClock(pDevIns, pStreamShared->hTimer); /* Caller will unlock pThis->CritSect. */
-    hdaR3StreamUnlock(pStreamR3);
+    hdaStreamUnlock(pStreamShared);
     return VINF_SUCCESS;
 #else  /* !IN_RING3 */
     RT_NOREF(pDevIns, pThis, iReg, u32Value);
@@ -2706,7 +2705,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
             LogFunc(("Sink '%s' was assigned to stream #%RU8 (channel %RU8) before\n",
                      pSink->pMixSink->pszName, pSink->pStreamShared->u8SD, pSink->pStreamShared->u8Channel));
 
-            hdaR3StreamLock(pSink->pStreamR3);
+            hdaStreamLock(pSink->pStreamShared);
 
             /* Only disable the stream if the stream descriptor # has changed. */
             if (pSink->pStreamShared->u8SD != uSD)
@@ -2714,7 +2713,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
 
             pSink->pStreamR3->pMixSink = NULL;
 
-            hdaR3StreamUnlock(pSink->pStreamR3);
+            hdaStreamUnlock(pSink->pStreamShared);
 
             pSink->pStreamShared = NULL;
             pSink->pStreamR3     = NULL;
@@ -2729,7 +2728,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
 
             PHDASTREAMR3 pStreamR3     = &pThisCC->aStreams[uSD];
             PHDASTREAM   pStreamShared = &pThis->aStreams[uSD];
-            hdaR3StreamLock(pStreamR3);
+            hdaStreamLock(pStreamShared);
 
             pSink->pStreamR3     = pStreamR3;
             pSink->pStreamShared = pStreamShared;
@@ -2737,7 +2736,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
             pStreamShared->u8Channel = uChannel;
             pStreamR3->pMixSink      = pSink;
 
-            hdaR3StreamUnlock(pStreamR3);
+            hdaStreamUnlock(pStreamShared);
             rc = VINF_SUCCESS;
         }
     }
