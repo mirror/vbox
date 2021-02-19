@@ -745,6 +745,8 @@ static DECLCALLBACK(void) stac9220Reset(PHDACODEC pThis)
     pThis->fInReset = false;
 }
 
+#ifdef IN_RING3
+
 static int stac9220Construct(PHDACODEC pThis)
 {
     pThis->u16VendorId  = 0x8384; /* SigmaTel */
@@ -804,6 +806,7 @@ static int stac9220Construct(PHDACODEC pThis)
     return VINF_SUCCESS;
 }
 
+#endif /* IN_RING3 */
 
 /*
  * Some generic predicate functions.
@@ -2297,8 +2300,6 @@ static DECLCALLBACK(void) codecR3DbgSelector(PHDACODEC pThis, PHDACODECR3 pThisC
     RT_NOREF(pThis, pThisCC, pHlp, pszArgs);
 }
 
-#endif /* IN_RING3 */
-
 static DECLCALLBACK(int) codecR3Lookup(PHDACODEC pThis, PHDACODECR3 pThisCC, uint32_t cmd, uint64_t *puResp)
 {
     AssertPtrReturn(pThisCC,  VERR_INVALID_POINTER);
@@ -2343,7 +2344,7 @@ static DECLCALLBACK(int) codecR3Lookup(PHDACODEC pThis, PHDACODECR3 pThisCC, uin
     return VERR_NOT_FOUND;
 }
 
-#ifdef IN_RING0
+#else /* IN_RING0 */
 
 static DECLCALLBACK(int) codecR0Lookup(PHDACODEC pThis, PHDACODECR0 pThisCC, uint32_t cmd, uint64_t *puResp)
 {
@@ -2621,7 +2622,7 @@ int hdaR3CodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PHDACODECR3 pThisCC
     return rc;
 }
 
-#else /* RING0 */
+#else /* IN_RING0 */
 
 /**
  * Constructs a codec (ring-0).
