@@ -44,7 +44,6 @@
 #include <iprt/path.h>
 #include <iprt/param.h>
 #include <iprt/pipe.h>
-#include <iprt/getopt.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
@@ -53,6 +52,10 @@
 #include <iprt/semaphore.h>
 #include <iprt/cpp/utils.h>
 #include <VBox/log.h>
+
+#include <iprt/buildconfig.h>
+#include <iprt/getopt.h>
+#include <iprt/process.h>
 
 #include <VBox/sup.h>
 #include <VBox/intnet.h>
@@ -181,15 +184,17 @@ public:
     VBoxNetLwipNAT();
     virtual ~VBoxNetLwipNAT();
 
-    virtual void usage() { /** @todo should be implemented */ };
-    virtual int parseOpt(int c, const RTGETOPTUNION &Value);
-
-    virtual bool isMainNeeded() const { return true; }
+    RTEXITCODE parseArgs(int argc, char *argv[]);
 
     virtual int init();
     virtual int run();
 
 private:
+    virtual int parseOpt(int c, const RTGETOPTUNION &Value);
+    virtual void usage();
+
+    virtual bool isMainNeeded() const { return true; }
+
     int initCom();
     int initHome();
     int initLog();
@@ -235,26 +240,10 @@ private:
 
 INTNETSEG VBoxNetLwipNAT::aXmitSeg[64];
 
-/**
- * Additional command line options.
- *
- * Our parseOpt() will be called by the base class if any of these are
- * supplied.
- */
-RTGETOPTDEF VBoxNetLwipNAT::s_aGetOptDef[] =
-{
-    /*
-     * Currently there are no extra options and since arrays can't be
-     * empty use a sentinel entry instead, so that the placeholder
-     * code to process the options can be supplied nonetheless.
-     */
-    {}                          /* sentinel */
-};
-
 
 
 VBoxNetLwipNAT::VBoxNetLwipNAT()
-  : VBoxNetBaseService("VBoxNetNAT", "nat-network")
+  : VBoxNetBaseService("VBoxNetNAT", "")
 {
     LogFlowFuncEnter();
 
@@ -291,10 +280,6 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
     mac.au8[5] = 0;
     setMacAddress(mac);
 
-    /* tell the base class about our command line options */
-    for (PCRTGETOPTDEF pcOpt = &s_aGetOptDef[0]; pcOpt->iShort != 0; ++pcOpt)
-        addCommandLineOption(pcOpt);
-
     m_loOptDescriptor.lomap = NULL;
     m_loOptDescriptor.num_lomap = 0;
 
@@ -324,10 +309,101 @@ VBoxNetLwipNAT::~VBoxNetLwipNAT()
 
 
 /**
- * Hook into the option processing.
+ * Command line options.
  *
- * Called by VBoxNetBaseService::parseArgs() for options that are not
- * recognized by the base class.  See s_aGetOptDef[].
+ * @note This class is currently in transition away from being
+ * inheritted from VBoxNetBaseService, so it no longer calls its
+ * getopt code and has its own parseArgs() instead.
+ */
+RTGETOPTDEF VBoxNetLwipNAT::s_aGetOptDef[] =
+{
+    { "--network",              'n',   RTGETOPT_REQ_STRING },
+    { "--verbose",              'v',   RTGETOPT_REQ_NOTHING },
+};
+
+
+/** Icky hack to tell the caller it should exit with RTEXITCODE_SUCCESS */
+#define RTEXITCODE_DONE RTEXITCODE_32BIT_HACK
+
+void
+VBoxNetLwipNAT::usage()
+{
+    RTPrintf("%s Version %sr%u\n"
+             "(C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
+             "All rights reserved.\n"
+             "\n"
+             "Usage: %s <options>\n"
+             "\n"
+             "Options:\n",
+             RTProcShortName(), RTBldCfgVersion(), RTBldCfgRevision(),
+             RTProcShortName());
+    for (size_t i = 0; i < RT_ELEMENTS(s_aGetOptDef); ++i)
+        RTPrintf("    -%c, %s\n", s_aGetOptDef[i].iShort, s_aGetOptDef[i].pszLong);
+}
+
+
+RTEXITCODE
+VBoxNetLwipNAT::parseArgs(int argc, char *argv[])
+{
+    unsigned int uVerbosity = 0;
+    int rc;
+
+    RTGETOPTSTATE State;
+    rc = RTGetOptInit(&State, argc, argv,
+                      s_aGetOptDef, RT_ELEMENTS(s_aGetOptDef),
+                      1, 0);
+
+    int ch;
+    RTGETOPTUNION Val;
+    while ((ch = RTGetOpt(&State, &Val)) != 0)
+    {
+        switch (ch)
+        {
+            case 'n':           /* --network */
+                if (!getNetworkName().empty())
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "multiple --network options");
+                setNetworkName(Val.psz);
+                break;
+
+            case 'v':           /* --verbose */
+                ++uVerbosity;
+                break;
+
+
+            /*
+             * Standard options recognized by RTGetOpt()
+             */
+
+            case 'V':           /* --version */
+                RTPrintf("%sr%u\n", RTBldCfgVersion(), RTBldCfgRevision());
+                return RTEXITCODE_DONE;
+
+            case 'h':           /* --help */
+                usage();
+                return RTEXITCODE_DONE;
+
+            case VINF_GETOPT_NOT_OPTION:
+                return RTMsgErrorExit(RTEXITCODE_SYNTAX, "unexpected non-option argument");
+
+            default:
+                return RTGetOptPrintError(ch, &Val);
+        }
+    }
+
+    if (getNetworkName().empty())
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "missing --network option");
+
+    /* tell the base class while we're still joined at the hip */
+    setVerbosityLevel((int32_t)uVerbosity);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * @note This class is currently in transition away from being
+ * inheritted from VBoxNetBaseService, so it no longer calls its
+ * getopt code and has its own parseArgs() instead.
  */
 int VBoxNetLwipNAT::parseOpt(int c, const RTGETOPTUNION &Value)
 {
@@ -2116,9 +2192,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     VBoxNetLwipNAT NAT;
 
-    int rcExit = NAT.parseArgs(argc - 1, argv + 1);
+    int rcExit = NAT.parseArgs(argc, argv);
     if (rcExit != RTEXITCODE_SUCCESS)
-        return rcExit;          /* messages are already printed */
+    {
+        /* messages are already printed */
+        return rcExit == RTEXITCODE_DONE ? RTEXITCODE_SUCCESS : rcExit;
+    }
 
     rc = NAT.init();
     if (RT_FAILURE(rc))
