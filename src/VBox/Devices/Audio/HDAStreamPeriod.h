@@ -98,8 +98,6 @@ int      hdaR3StreamPeriodBegin(PHDASTREAMPERIOD pPeriod, uint64_t u64WalClk);
 void     hdaR3StreamPeriodEnd(PHDASTREAMPERIOD pPeriod);
 void     hdaR3StreamPeriodPause(PHDASTREAMPERIOD pPeriod);
 void     hdaR3StreamPeriodResume(PHDASTREAMPERIOD pPeriod);
-int      hdaR3StreamPeriodLock(PHDASTREAMPERIOD pPeriod);
-void     hdaR3StreamPeriodUnlock(PHDASTREAMPERIOD pPeriod);
 uint64_t hdaR3StreamPeriodFramesToWalClk(PHDASTREAMPERIOD pPeriod, uint32_t uFrames);
 uint64_t hdaR3StreamPeriodGetAbsEndWalClk(PHDASTREAMPERIOD pPeriod);
 uint64_t hdaR3StreamPeriodGetAbsElapsedWalClk(PHDASTREAMPERIOD pPeriod);

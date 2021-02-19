@@ -225,39 +225,6 @@ void hdaR3StreamPeriodResume(PHDASTREAMPERIOD pPeriod)
 }
 
 /**
- * Locks a stream period for serializing access.
- *
- * @returns IPRT status code (safe to ignore, asserted).
- * @param   pPeriod             Stream period to lock.
- */
-int hdaR3StreamPeriodLock(PHDASTREAMPERIOD pPeriod)
-{
-# ifdef HDA_STREAM_PERIOD_WITH_LOCKING
-    int rc = RTCritSectEnter(&pPeriod->CritSect);
-    AssertRC(rc);
-    return rc;
-# else
-    RT_NOREF(pPeriod);
-    return VINF_SUCCESS;
-# endif
-}
-
-/**
- * Unlocks a formerly locked stream period.
- *
- * @param   pPeriod             Stream period to unlock.
- */
-void hdaR3StreamPeriodUnlock(PHDASTREAMPERIOD pPeriod)
-{
-# ifdef HDA_STREAM_PERIOD_WITH_LOCKING
-    int rc2 = RTCritSectLeave(&pPeriod->CritSect);
-    AssertRC(rc2);
-# else
-    RT_NOREF(pPeriod);
-# endif
-}
-
-/**
  * Returns the wall clock (WALCLK) value for a given amount of stream period audio frames.
  *
  * @return  Calculated wall clock value.
