@@ -1514,34 +1514,18 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
 }
 
 #ifdef VBOX_WITH_STATISTICS
-/** Names the clock of the timer.   */
-static const char *tmR3TimerClockName(PTMTIMERR3 pTimer)
-{
-    switch (pTimer->enmClock)
-    {
-        case TMCLOCK_VIRTUAL:       return "virtual";
-        case TMCLOCK_VIRTUAL_SYNC:  return "virtual-sync";
-        case TMCLOCK_REAL:          return "real";
-        case TMCLOCK_TSC:           return "tsc";
-        case TMCLOCK_MAX:           break;
-    }
-    return "corrupt clock value";
-}
-#endif
-
-
-#ifdef VBOX_WITH_STATISTICS
 
 /**
  * Register statistics for a timer.
  *
  * @param   pVM         The cross context VM structure.
+ * @param   pQueue      The queue the timer belongs to.
  * @param   pTimer      The timer to register statistics for.
  */
-static void tmR3TimerRegisterStats(PVM pVM, PTMTIMER pTimer)
+static void tmR3TimerRegisterStats(PVM pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 {
     STAMR3RegisterF(pVM, &pTimer->StatTimer,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
-                    tmR3TimerClockName(pTimer), "/TM/Timers/%s", pTimer->szName);
+                    pQueue->szName, "/TM/Timers/%s", pTimer->szName);
     STAMR3RegisterF(pVM, &pTimer->StatCritSectEnter,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
                     "",                         "/TM/Timers/%s/CritSectEnter", pTimer->szName);
     STAMR3RegisterF(pVM, &pTimer->StatGet,              STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
@@ -1583,7 +1567,7 @@ static void tmR3TimerQueueRegisterStats(PVM pVM, PTMTIMERQUEUE pQueue, uint32_t 
         PTMTIMER     pTimer   = &pQueue->paTimers[idxTimer];
         TMTIMERSTATE enmState = pTimer->enmState;
         if (enmState > TMTIMERSTATE_INVALID && enmState < TMTIMERSTATE_DESTROY)
-            tmR3TimerRegisterStats(pVM, pTimer);
+            tmR3TimerRegisterStats(pVM, pQueue, pTimer);
     }
 }
 
@@ -1683,7 +1667,6 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
     pTimer->hSelf          |= (RTRandU64() & TMTIMERHANDLE_RANDOM_MASK);
 
     pTimer->u64Expire       = 0;
-    pTimer->enmClock        = enmClock;
     pTimer->enmState        = TMTIMERSTATE_STOPPED;
     pTimer->idxScheduleNext = UINT32_MAX;
     pTimer->idxNext         = UINT32_MAX;
@@ -1706,7 +1689,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
      * Only register statistics if we're passed the no-realloc point.
      */
     if (pQueue->fCannotGrow)
-        tmR3TimerRegisterStats(pVM, pTimer);
+        tmR3TimerRegisterStats(pVM, pQueue, pTimer);
 #endif
 
     *ppTimer = pTimer;
@@ -2435,7 +2418,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
             STAM_PROFILE_STOP(&pTimer->StatCritSectEnter, Locking);
         }
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .szName='%s'}\n",
-              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->szName));
+              pTimer, tmTimerState(pTimer->enmState), pQueue->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->szName));
         bool fRc;
         TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_GET_UNLINK, TMTIMERSTATE_ACTIVE, fRc);
         if (fRc)
@@ -2628,7 +2611,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         }
 
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .szName='%s'}\n",
-              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->szName));
+              pTimer, tmTimerState(pTimer->enmState), pQueue->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->szName));
 
         /* Advance the clock - don't permit timers to be out of order or armed
            in the 'past'. */
@@ -3848,7 +3831,8 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                                                 "State");
     for (uint32_t idxQueue = 0; idxQueue < RT_ELEMENTS(pVM->tm.s.aTimerQueues); idxQueue++)
     {
-        PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[idxQueue];
+        PTMTIMERQUEUE const pQueue   = &pVM->tm.s.aTimerQueues[idxQueue];
+        const char * const  pszClock = tmR3Get5CharClockName(pQueue->enmClock);
         PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
         for (uint32_t idxTimer = 0; idxTimer < pQueue->cTimersAlloc; idxTimer++)
         {
@@ -3861,7 +3845,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                                 pTimer->idxNext,
                                 pTimer->idxPrev,
                                 pTimer->idxScheduleNext,
-                                tmR3Get5CharClockName(pTimer->enmClock),
+                                pszClock,
                                 TMTimerGet(pVM, pTimer->hSelf),
                                 pTimer->u64Expire,
                                 pTimer->uHzHint,
@@ -3897,7 +3881,8 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                                                 "State");
     for (uint32_t idxQueue = 0; idxQueue < RT_ELEMENTS(pVM->tm.s.aTimerQueues); idxQueue++)
     {
-        PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[idxQueue];
+        PTMTIMERQUEUE const pQueue   = &pVM->tm.s.aTimerQueues[idxQueue];
+        const char * const  pszClock = tmR3Get5CharClockName(pQueue->enmClock);
         PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
         PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
 
@@ -3911,7 +3896,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                             pTimer->idxNext,
                             pTimer->idxPrev,
                             pTimer->idxScheduleNext,
-                            tmR3Get5CharClockName(pTimer->enmClock),
+                            pszClock,
                             TMTimerGet(pVM, pTimer->hSelf),
                             pTimer->u64Expire,
                             pTimer->uHzHint,

@@ -135,10 +135,36 @@ typedef struct TMTIMER
 {
     /** Expire time. */
     volatile uint64_t       u64Expire;
-    /** Clock to apply to u64Expire. */
-    TMCLOCK                 enmClock;
+
+    /** Timer state. */
+    volatile TMTIMERSTATE   enmState;
+    /** The index of the next next timer in the schedule list. */
+    uint32_t volatile       idxScheduleNext;
+
+    /** The index of the next timer in the chain. */
+    uint32_t                idxNext;
+    /** The index of the previous timer in the chain. */
+    uint32_t                idxPrev;
+
+    /** The timer frequency hint.  This is 0 if not hint was given. */
+    uint32_t volatile       uHzHint;
     /** Timer callback type. */
     TMTIMERTYPE             enmType;
+
+    /** It's own handle value. */
+    TMTIMERHANDLE           hSelf;
+    /** TMTIMER_FLAGS_XXX.   */
+    uint32_t                fFlags;
+    /** Explicit alignment padding. */
+    uint32_t                u32Alignment;
+
+    /** User argument. */
+    RTR3PTR                 pvUser;
+    /** The critical section associated with the lock. */
+    R3PTRTYPE(PPDMCRITSECT) pCritSect;
+
+    /* new cache line (64-bit / 64 bytes) */
+
     /** Type specific data. */
     union
     {
@@ -177,41 +203,26 @@ typedef struct TMTIMER
         } Internal;
     } u;
 
-    /** Timer state. */
-    volatile TMTIMERSTATE   enmState;
-    /** The index of the next next timer in the schedule list. */
-    uint32_t volatile       idxScheduleNext;
-
-    /** The index of the next timer in the chain. */
-    uint32_t                idxNext;
-    /** The index of the previous timer in the chain. */
-    uint32_t                idxPrev;
-
-    /** It's own handle value. */
-    TMTIMERHANDLE           hSelf;
-    /** TMTIMER_FLAGS_XXX.   */
-    uint32_t                fFlags;
-    /** The timer frequency hint.  This is 0 if not hint was given. */
-    uint32_t volatile       uHzHint;
-
-    /** User argument. */
-    RTR3PTR                 pvUser;
-    /** The critical section associated with the lock. */
-    R3PTRTYPE(PPDMCRITSECT) pCritSect;
-
     /** The timer name. */
     char                    szName[32];
 
-#ifdef VBOX_WITH_STATISTICS
+    /** @todo think of two useful release statistics counters here to fill up the
+     *        cache line. */
+#ifndef VBOX_WITH_STATISTICS
+    uint64_t                auAlignment2[2];
+#else
     STAMPROFILE             StatTimer;
     STAMPROFILE             StatCritSectEnter;
     STAMCOUNTER             StatGet;
     STAMCOUNTER             StatSetAbsolute;
     STAMCOUNTER             StatSetRelative;
     STAMCOUNTER             StatStop;
+    uint64_t                auAlignment2[6];
 #endif
 } TMTIMER;
+AssertCompileMemberSize(TMTIMER, u64Expire, sizeof(uint64_t));
 AssertCompileMemberSize(TMTIMER, enmState, sizeof(uint32_t));
+AssertCompileSizeAlignment(TMTIMER, 64);
 
 
 /**

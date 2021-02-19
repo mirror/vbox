@@ -138,7 +138,6 @@ VMMR0_INT_DECL(int) TMR0TimerQueueGrow(PGVM pGVM, uint32_t idxQueue, uint32_t cM
             while (i-- > cOldEntries)
             {
                 paTimers[i].u64Expire       = UINT64_MAX;
-                paTimers[i].enmClock        = TMCLOCK_MAX;
                 paTimers[i].enmType         = TMTIMERTYPE_INVALID;
                 paTimers[i].enmState        = TMTIMERSTATE_FREE;
                 paTimers[i].idxScheduleNext = UINT32_MAX;
