@@ -2343,6 +2343,8 @@ static DECLCALLBACK(int) codecR3Lookup(PHDACODEC pThis, PHDACODECR3 pThisCC, uin
     return VERR_NOT_FOUND;
 }
 
+#ifdef IN_RING0
+
 static DECLCALLBACK(int) codecR0Lookup(PHDACODEC pThis, PHDACODECR0 pThisCC, uint32_t cmd, uint64_t *puResp)
 {
     AssertPtrReturn(pThis,  VERR_INVALID_POINTER);
@@ -2386,6 +2388,8 @@ static DECLCALLBACK(int) codecR0Lookup(PHDACODEC pThis, PHDACODECR0 pThisCC, uin
     LogFunc(("[NID0x%02x] Callback for %x not found\n", CODEC_NID(cmd), CODEC_VERBDATA(cmd)));
     return VERR_NOT_FOUND;
 }
+
+#endif /* IN_RING0 */
 
 /*
  * APIs exposed to DevHDA.

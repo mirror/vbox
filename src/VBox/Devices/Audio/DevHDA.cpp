@@ -889,7 +889,7 @@ static int hdaR3CORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     return rc;
 }
 
-#endif /* IN_RING3 */
+#else /* IN_RING0 */
 
 /**
  * Processes the next CORB buffer command in the queue (ring-0).
@@ -1011,6 +1011,8 @@ static int hdaR0CORBCmdProcess(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER0 
 
     return rc;
 }
+
+#endif /* IN_RING3 */
 
 /* Register access handlers. */
 
