@@ -163,7 +163,7 @@ typedef struct TMTIMER
     /** The critical section associated with the lock. */
     R3PTRTYPE(PPDMCRITSECT) pCritSect;
 
-    /* new cache line (64-bit / 64 bytes) */
+    /* --- new cache line (64-bit / 64 bytes) --- */
 
     /** Type specific data. */
     union
@@ -281,7 +281,7 @@ typedef struct TMTIMERQUEUE
      */
     uint32_t volatile       idxSchedule;
     /** The clock for this queue. */
-    TMCLOCK                 enmClock;
+    TMCLOCK                 enmClock;   /**< @todo consider duplicating this in TMTIMERQUEUER0 for better cache locality (paTimers). */
 
     /** The size of the paTimers allocation (in entries). */
     uint32_t                cTimersAlloc;
@@ -294,13 +294,15 @@ typedef struct TMTIMERQUEUE
     /** Set if we've disabled growing. */
     bool                    fCannotGrow;
     /** Align on 64-byte boundrary. */
-    bool                    afAlignment1[7];
+    bool                    afAlignment1[3];
+    /** The current max timer Hz hint. */
+    uint32_t volatile       uMaxHzHint;
+
+    /* --- new cache line (64-bit / 64 bytes) --- */
 
     /** Time spent doing scheduling and timer callbacks. */
     STAMPROFILE             StatDo;
-    /** The current max timer Hz hint. */
-    uint32_t volatile       uMaxHzHint;
-    uint32_t                u64Alignment2[7];
+    uint64_t                u64Alignment2[4];
 
     /** Lock serializing the active timer list and associated work. */
     PDMCRITSECT             TimerLock;
