@@ -96,6 +96,8 @@
 /** Number of total nodes emulated. */
 #define STAC9221_NUM_NODES                                 0x1C
 
+#ifdef IN_RING3
+
 /* STAC9220 - Referenced through STAC9220WIDGET in the constructor below. */
 static uint8_t const g_abStac9220Ports[]      = { STAC9220_NID_PIN_HEADPHONE0, STAC9220_NID_PIN_B, STAC9220_NID_PIN_C, STAC9220_NID_PIN_HEADPHONE1, STAC9220_NID_PIN_E, STAC9220_NID_PIN_F, 0 };
 static uint8_t const g_abStac9220Dacs[]       = { STAC9220_NID_DAC0, STAC9220_NID_DAC1, STAC9220_NID_DAC2, STAC9220_NID_DAC3, 0 };
@@ -112,8 +114,6 @@ static uint8_t const g_abStac9220VolKnobs[]   = { STAC9220_NID_VOL_KNOB, 0 };
 /* STAC 9221. */
 /** @todo Is STAC9220_NID_SPDIF_IN really correct for reserved nodes? */
 static uint8_t const g_abStac9220Reserveds[]  = { STAC9220_NID_SPDIF_IN, STAC9221_NID_ADAT_OUT, STAC9221_NID_I2S_OUT, STAC9221_NID_PIN_I2S_OUT, 0 };
-
-#ifdef IN_RING3
 
 /** SSM description of CODECCOMMONNODE. */
 static SSMFIELD const g_aCodecNodeFields[] =
