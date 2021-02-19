@@ -347,7 +347,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(PGMREGMMIO2RANGE, RamRange, 16);
 
     /* TM */
-    CHECK_MEMBER_ALIGNMENT(TM, TimerCritSect, sizeof(uintptr_t));
+    CHECK_MEMBER_ALIGNMENT(TM, aTimerQueues, 64);
     CHECK_MEMBER_ALIGNMENT(TM, VirtualSyncLock, sizeof(uintptr_t));
 
     /* misc */

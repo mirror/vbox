@@ -62,16 +62,26 @@ struc VMCPU
 
     alignb 64
     .hm                     resb 5888
+    alignb 64
     .nem                    resb 512
+    alignb 64
     .trpm                   resb 128
+    alignb 64
     .tm                     resb 5760
+    alignb 64
     .vmm                    resb 896
+    alignb 64
     .pdm                    resb 256
+    alignb 64
     .iom                    resb 512
+    alignb 64
     .dbgf                   resb 512
+    alignb 64
     .gim                    resb 512
+    alignb 64
     .apic                   resb 3840
 
+    alignb 64
     .fTraceGroups           resd 1
     .uAdHoc                 resd 1
     alignb 8
@@ -120,21 +130,37 @@ struc VM
 
     alignb 64
     .cpum                   resb 1536
+    alignb 64
     .vmm                    resb 1600
+    alignb 64
     .pgm                    resb 21120
+    alignb 64
     .hm                     resb 5504
+    alignb 64
     .trpm                   resb 2048
+    alignb 64
     .selm                   resb 768
+    alignb 64
     .mm                     resb 192
+    alignb 64
     .pdm                    resb 8128
+    alignb 64
     .iom                    resb 1152
+    alignb 64
     .em                     resb 256
+    alignb 64
     .nem                    resb 128
-    .tm                     resb 9152
+    alignb 64
+    .tm                     resb 9920
+    alignb 64
     .dbgf                   resb 2432
+    alignb 64
     .ssm                    resb 128
+    alignb 64
     .gim                    resb 448
+    alignb 64
     .apic                   resb 128
+    alignb 64
     .vm                     resb 32
     .cfgm                   resb 8
     .R0Stats                resb 64

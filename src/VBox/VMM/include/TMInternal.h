@@ -283,8 +283,17 @@ typedef struct TMTIMERQUEUE
     /** Set if we've disabled growing. */
     bool                    fCannotGrow;
     /** Align on 64-byte boundrary. */
-    bool                    afAlignment[7];
-    /** Lock serializing timer allocation and deallocation. */
+    bool                    afAlignment1[7];
+    /** Time spent doing scheduling and timer callbacks. */
+    STAMPROFILE             StatDo;
+    /** The current max timer Hz hint. */
+    uint32_t volatile       uMaxHzHint;
+    uint32_t                u64Alignment2[7];
+    /** Lock serializing the active timer list and associated work. */
+    PDMCRITSECT             TimerLock;
+    /** Lock serializing timer allocation and deallocation.
+     * @note This may be used in read-mode all over the place if we later
+     *       implement runtime array growing. */
     PDMCRITSECTRW           AllocLock;
 } TMTIMERQUEUE;
 AssertCompileSizeAlignment(TMTIMERQUEUE, 64);
@@ -390,6 +399,10 @@ AssertCompileSize(TMTSCMODE, sizeof(uint32_t));
  */
 typedef struct TM
 {
+    /** Timer queues for the different clock types.
+     * @note is first in the structure to ensure cache-line alignment.  */
+    TMTIMERQUEUE                aTimerQueues[TMCLOCK_MAX];
+
     /** The current TSC mode of the VM.
      *  Config variable: Mode (string). */
     TMTSCMODE                   enmTSCMode;
@@ -495,12 +508,18 @@ typedef struct TM
         uint32_t                u32Alignment;   /**< Structure alignment */
     }                           aVirtualSyncCatchUpPeriods[TM_MAX_CATCHUP_PERIODS];
 
-    /** The current max timer Hz hint. */
-    uint32_t volatile           uMaxHzHint;
-    /** Whether to recalulate the HzHint next time its queried. */
-    bool volatile               fHzHintNeedsUpdating;
-    /** Alignment */
-    bool                        afAlignment2[3];
+    union
+    {
+        /** Combined value for updating. */
+        uint64_t volatile       u64Combined;
+        struct
+        {
+            /** Bitmap indicating which timer queues needs their uMaxHzHint updated. */
+            uint32_t volatile   bmNeedsUpdating;
+            /** The current max timer Hz hint. */
+            uint32_t volatile   uMax;
+        } s;
+    } HzHint;
     /** @cfgm{/TM/HostHzMax, uint32_t, Hz, 0, UINT32_MAX, 20000}
      * The max host Hz frequency hint returned by TMCalcHostTimerFrequency.  */
     uint32_t                    cHostHzMax;
@@ -536,13 +555,11 @@ typedef struct TM
     /** Just to avoid dealing with 32-bit alignment trouble. */
     R3PTRTYPE(char *)           pszAlignment2b;
 
-    /** Timer queues for the different clock types. */
-    TMTIMERQUEUE                aTimerQueues[TMCLOCK_MAX];
-
     /** Pointer to our RC mapping of the GIP. */
     RCPTRTYPE(void *)           pvGIPRC;
     /** Pointer to our R3 mapping of the GIP. */
     R3PTRTYPE(void *)           pvGIPR3;
+
 
     /** The schedule timer timer handle (runtime timer).
      * This timer will do frequent check on pending queue schedules and
@@ -559,8 +576,6 @@ typedef struct TM
     /** Alignment */
     bool                        afAlignment3[2];
 
-    /** Lock serializing access to the timer lists. */
-    PDMCRITSECT                 TimerCritSect;
     /** Lock serializing access to the VirtualSync clock and the associated
      * timer queue. */
     PDMCRITSECT                 VirtualSyncLock;
@@ -571,7 +586,6 @@ typedef struct TM
     /** TMR3TimerQueuesDo
      * @{ */
     STAMPROFILE                 StatDoQueues;
-    STAMPROFILEADV              aStatDoQueues[TMCLOCK_MAX];
     /** @} */
     /** tmSchedule
      * @{ */
@@ -835,42 +849,9 @@ DECLCALLBACK(DECLEXPORT(void))      tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, 
                                                        uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
 DECLCALLBACK(DECLEXPORT(uint64_t))  tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra);
 DECLCALLBACK(DECLEXPORT(uint64_t))  tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra,
-                                                               uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu);
-
-/**
- * Try take the timer lock, wait in ring-3 return VERR_SEM_BUSY in R0/RC.
- *
- * @retval  VINF_SUCCESS on success (always in ring-3).
- * @retval  VERR_SEM_BUSY in RC and R0 if the semaphore is busy.
- *
- * @param   a_pVM       Pointer to the VM.
- *
- * @remarks The virtual sync timer queue requires the virtual sync lock.
- */
-#define TM_LOCK_TIMERS(a_pVM)       PDMCritSectEnter(&(a_pVM)->tm.s.TimerCritSect, VERR_SEM_BUSY)
-
-/**
- * Try take the timer lock, no waiting.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_SEM_BUSY if busy.
- *
- * @param   a_pVM       Pointer to the VM.
- *
- * @remarks The virtual sync timer queue requires the virtual sync lock.
- */
-#define TM_TRY_LOCK_TIMERS(a_pVM)   PDMCritSectTryEnter(&(a_pVM)->tm.s.TimerCritSect)
-
-/** Lock the timers (sans the virtual sync queue). */
-#define TM_UNLOCK_TIMERS(a_pVM)     do { PDMCritSectLeave(&(a_pVM)->tm.s.TimerCritSect); } while (0)
-
-/** Checks that the caller owns the timer lock.  */
-#define TM_ASSERT_TIMER_LOCK_OWNERSHIP(a_pVM) \
-    Assert(PDMCritSectIsOwner(&(a_pVM)->tm.s.TimerCritSect))
-
+                                                              uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu);
 /** @} */
 
 RT_C_DECLS_END
 
 #endif /* !VMM_INCLUDED_SRC_include_TMInternal_h */
-

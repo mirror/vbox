@@ -209,13 +209,15 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
      */
     AssertCompileMemberAlignment(VM, tm.s, 32);
     AssertCompile(sizeof(pVM->tm.s) <= sizeof(pVM->tm.padding));
-    AssertCompileMemberAlignment(TM, TimerCritSect, 8);
     AssertCompileMemberAlignment(TM, VirtualSyncLock, 8);
 
     /*
      * Init the structure.
      */
     pVM->tm.s.idTimerCpu = pVM->cCpus - 1; /* The last CPU. */
+
+    int rc = PDMR3CritSectInit(pVM, &pVM->tm.s.VirtualSyncLock, RT_SRC_POS, "TM VirtualSync Lock");
+    AssertLogRelRCReturn(rc, rc);
 
     strcpy(pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].szName,      "virtual");
     strcpy(pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].szName, "virtual_sync"); /* Underscore is for STAM ordering issue. */
@@ -230,8 +232,12 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.aTimerQueues[i].idxActive   = UINT32_MAX;
         pVM->tm.s.aTimerQueues[i].idxSchedule = UINT32_MAX;
         pVM->tm.s.aTimerQueues[i].idxFreeHint = 1;
-        int rc = PDMR3CritSectRwInit(pVM, &pVM->tm.s.aTimerQueues[i].AllocLock, RT_SRC_POS,
-                                     "TM queue %s", pVM->tm.s.aTimerQueues[i].szName);
+        rc = PDMR3CritSectInit(pVM, &pVM->tm.s.aTimerQueues[i].TimerLock, RT_SRC_POS,
+                               "TM %s queue timer lock", pVM->tm.s.aTimerQueues[i].szName);
+        AssertLogRelRCReturn(rc, rc);
+
+        rc = PDMR3CritSectRwInit(pVM, &pVM->tm.s.aTimerQueues[i].AllocLock, RT_SRC_POS,
+                                 "TM %s queue alloc lock", pVM->tm.s.aTimerQueues[i].szName);
         AssertLogRelRCReturn(rc, rc);
     }
 
@@ -248,7 +254,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
                     VERR_TM_GIP_VERSION);
 
     RTHCPHYS HCPhysGIP;
-    int rc = SUPR3GipGetPhys(&HCPhysGIP);
+    rc = SUPR3GipGetPhys(&HCPhysGIP);
     AssertMsgRCReturn(rc, ("Failed to get GIP physical address!\n"), rc);
 
 #ifndef PGM_WITHOUT_MAPPINGS
@@ -304,16 +310,6 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.VirtualGetRawDataR0.pu64Prev       = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     AssertRelease(pVM->tm.s.VirtualGetRawDataR0.pu64Prev);
     /* The rest is done in TMR3InitFinalize() since it's too early to call PDM. */
-
-    /*
-     * Init the locks.
-     */
-    rc = PDMR3CritSectInit(pVM, &pVM->tm.s.TimerCritSect, RT_SRC_POS, "TM Timer Lock");
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = PDMR3CritSectInit(pVM, &pVM->tm.s.VirtualSyncLock, RT_SRC_POS, "TM VirtualSync Lock");
-    if (RT_FAILURE(rc))
-        return rc;
 
     /*
      * Get our CFGM node, create it if necessary.
@@ -698,7 +694,13 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.cBadPrev, STAMTYPE_U32, "/TM/RC/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
     STAM_REL_REG(     pVM,(void*)&pVM->tm.s.offVirtualSync,               STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset",               STAMUNIT_NS, "The current offset. (subtract GivenUp to get the lag)");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.offVirtualSyncGivenUp,        STAMTYPE_U64, "/TM/VirtualSync/GivenUp",                     STAMUNIT_NS, "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attempted caught up with.");
-    STAM_REL_REG(     pVM,(void*)&pVM->tm.s.uMaxHzHint,                   STAMTYPE_U32, "/TM/MaxHzHint",                               STAMUNIT_HZ, "Max guest timer frequency hint.");
+    STAM_REL_REG(     pVM,(void*)&pVM->tm.s.HzHint.s.uMax,                STAMTYPE_U32, "/TM/MaxHzHint",                               STAMUNIT_HZ, "Max guest timer frequency hint.");
+    for (uint32_t i = 0; i < RT_ELEMENTS(pVM->tm.s.aTimerQueues); i++)
+    {
+        rc = STAMR3RegisterF(pVM, (void *)&pVM->tm.s.aTimerQueues[i].uMaxHzHint, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_HZ,
+                             "", "/TM/MaxHzHint/%s", pVM->tm.s.aTimerQueues[i].szName);
+        AssertRC(rc);
+    }
 
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR3.cExpired,    STAMTYPE_U32, "/TM/R3/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
@@ -708,9 +710,9 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cExpired,    STAMTYPE_U32, "/TM/RC/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cUpdateRaces,STAMTYPE_U32, "/TM/RC/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
     STAM_REG(pVM, &pVM->tm.s.StatDoQueues,                            STAMTYPE_PROFILE, "/TM/DoQueues",                    STAMUNIT_TICKS_PER_CALL, "Profiling timer TMR3TimerQueuesDo.");
-    STAM_REG(pVM, &pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL],      STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Virtual",            STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual clock queue.");
-    STAM_REG(pVM, &pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL_SYNC], STAMTYPE_PROFILE_ADV, "/TM/DoQueues/VirtualSync",        STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual sync clock queue.");
-    STAM_REG(pVM, &pVM->tm.s.aStatDoQueues[TMCLOCK_REAL],         STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Real",               STAMUNIT_TICKS_PER_CALL, "Time spent on the real clock queue.");
+    STAM_REG(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].StatDo,    STAMTYPE_PROFILE, "/TM/DoQueues/Virtual",            STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual clock queue.");
+    STAM_REG(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].StatDo,STAMTYPE_PROFILE,"/TM/DoQueues/VirtualSync",        STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual sync clock queue.");
+    STAM_REG(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_REAL].StatDo,       STAMTYPE_PROFILE, "/TM/DoQueues/Real",               STAMUNIT_TICKS_PER_CALL, "Time spent on the real clock queue.");
 
     STAM_REG(pVM, &pVM->tm.s.StatPoll,                                STAMTYPE_COUNTER, "/TM/Poll",                            STAMUNIT_OCCURENCES, "TMTimerPoll calls.");
     STAM_REG(pVM, &pVM->tm.s.StatPollAlreadySet,                      STAMTYPE_COUNTER, "/TM/Poll/AlreadySet",                 STAMUNIT_OCCURENCES, "TMTimerPoll calls where the FF was already set.");
@@ -1211,7 +1213,6 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
 {
     LogFlow(("TMR3Reset:\n"));
     VM_ASSERT_EMT(pVM);
-    TM_LOCK_TIMERS(pVM);
 
     /*
      * Abort any pending catch up.
@@ -1238,8 +1239,13 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
     /*
      * Process the queues.
      */
-    for (int i = 0; i < TMCLOCK_MAX; i++)
-        tmTimerQueueSchedule(pVM, &pVM->tm.s.aTimerQueues[i], &pVM->tm.s.aTimerQueues[i]);
+    for (uint32_t idxQueue = 0; idxQueue < RT_ELEMENTS(pVM->tm.s.aTimerQueues); idxQueue++)
+    {
+        PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[idxQueue];
+        PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+        tmTimerQueueSchedule(pVM, pQueue, pQueue);
+        PDMCritSectLeave(&pQueue->TimerLock);
+    }
 #ifdef VBOX_STRICT
     tmTimerQueuesSanityChecks(pVM, "TMR3Reset");
 #endif
@@ -1291,8 +1297,6 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
         pVCpu->tm.s.u64TSC         = 0;
         pVCpu->tm.s.u64TSCLastSeen = 0;
     }
-
-    TM_UNLOCK_TIMERS(pVM);
 }
 
 
@@ -1692,9 +1696,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
     pTimer->szName[cchName] = '\0';
 
 #ifdef VBOX_STRICT
-    TM_LOCK_TIMERS(pVM);
     tmTimerQueuesSanityChecks(pVM, "tmR3TimerCreate");
-    TM_UNLOCK_TIMERS(pVM);
 #endif
 
     PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
@@ -1899,7 +1901,8 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
      * like create does. All the work is done here.
      */
     PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
-    TM_LOCK_TIMERS(pVM);
+    PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+
     for (int cRetries = 1000;; cRetries--)
     {
         /*
@@ -1936,7 +1939,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
             case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
             case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
                 AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->szName));
-                TM_UNLOCK_TIMERS(pVM);
+                PDMCritSectLeave(&pQueue->TimerLock);
                 PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
 
                 AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName),
@@ -1945,7 +1948,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
                     RTThreadSleep(1);
 
                 PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
-                TM_LOCK_TIMERS(pVM);
+                PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
                 continue;
 
             /*
@@ -1953,13 +1956,13 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
              */
             case TMTIMERSTATE_FREE:
             case TMTIMERSTATE_DESTROY:
-                TM_UNLOCK_TIMERS(pVM);
+                PDMCritSectLeave(&pQueue->TimerLock);
                 PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
                 AssertLogRelMsgFailedReturn(("pTimer=%p %s\n", pTimer, tmTimerState(enmState)), VERR_TM_INVALID_STATE);
 
             default:
                 AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, pTimer->szName));
-                TM_UNLOCK_TIMERS(pVM);
+                PDMCritSectLeave(&pQueue->TimerLock);
                 PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
                 return VERR_TM_UNKNOWN_STATE;
         }
@@ -1973,14 +1976,14 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
         if (fRc)
             break;
         AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->szName));
-        TM_UNLOCK_TIMERS(pVM);
+        PDMCritSectLeave(&pQueue->TimerLock);
         PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
 
         AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->szName),
                         VERR_TM_UNSTABLE_STATE);
 
         PDMCritSectRwEnterExcl(&pQueue->AllocLock, VERR_IGNORED);
-        TM_LOCK_TIMERS(pVM);
+        PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
     }
 
     /*
@@ -2037,7 +2040,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMER pTimer)
 #ifdef VBOX_STRICT
     tmTimerQueuesSanityChecks(pVM, "TMR3TimerDestroy");
 #endif
-    TM_UNLOCK_TIMERS(pVM);
+    PDMCritSectLeave(&pQueue->TimerLock);
     PDMCritSectRwLeaveExcl(&pQueue->AllocLock);
     return VINF_SUCCESS;
 }
@@ -2323,56 +2326,69 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     Log2(("TMR3TimerQueuesDo:\n"));
     Assert(!pVM->tm.s.fRunningQueues);
     ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, true);
-    TM_LOCK_TIMERS(pVM);
 
     /*
      * Process the queues.
      */
     AssertCompile(TMCLOCK_MAX == 4);
 
-    /* TMCLOCK_VIRTUAL_SYNC (see also TMR3VirtualSyncFF) */
-    STAM_PROFILE_ADV_START(&pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL_SYNC], s1);
+    /*
+     * TMCLOCK_VIRTUAL_SYNC (see also TMR3VirtualSyncFF)
+     */
+    PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC];
+    STAM_PROFILE_START(&pQueue->StatDo, s1);
+    PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
     PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
     ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, true);
     VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER);   /* Clear the FF once we started working for real. */
 
-    Assert(pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].idxSchedule == UINT32_MAX);
+    Assert(pQueue->idxSchedule == UINT32_MAX);
     tmR3TimerQueueRunVirtualSync(pVM);
     if (pVM->tm.s.fVirtualSyncTicking) /** @todo move into tmR3TimerQueueRunVirtualSync - FIXME */
         VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
 
     ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, false);
     PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
-    STAM_PROFILE_ADV_STOP(&pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL_SYNC], s1);
+    PDMCritSectLeave(&pQueue->TimerLock);
+    STAM_PROFILE_STOP(&pQueue->StatDo, s1);
 
-    /* TMCLOCK_VIRTUAL */
-    STAM_PROFILE_ADV_START(&pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL], s2);
-    if (pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].idxSchedule != UINT32_MAX)
-        tmTimerQueueSchedule(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL], &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL]);
-    tmR3TimerQueueRun(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL]);
-    STAM_PROFILE_ADV_STOP(&pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL], s2);
+    /*
+     * TMCLOCK_VIRTUAL
+     */
+    pQueue = &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL];
+    STAM_PROFILE_START(&pQueue->StatDo, s2);
+    PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+    if (pQueue->idxSchedule != UINT32_MAX)
+        tmTimerQueueSchedule(pVM, pQueue, pQueue);
+    tmR3TimerQueueRun(pVM, pQueue);
+    PDMCritSectLeave(&pQueue->TimerLock);
+    STAM_PROFILE_STOP(&pQueue->StatDo, s2);
 
-    /* TMCLOCK_TSC */
+    /*
+     * TMCLOCK_TSC
+     */
     Assert(pVM->tm.s.aTimerQueues[TMCLOCK_TSC].idxActive == UINT32_MAX); /* not used */
 
-    /* TMCLOCK_REAL */
-    STAM_PROFILE_ADV_START(&pVM->tm.s.aStatDoQueues[TMCLOCK_REAL], s3);
-    if (pVM->tm.s.aTimerQueues[TMCLOCK_REAL].idxSchedule != UINT32_MAX)
-        tmTimerQueueSchedule(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_REAL], &pVM->tm.s.aTimerQueues[TMCLOCK_REAL]);
-    tmR3TimerQueueRun(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_REAL]);
-    STAM_PROFILE_ADV_STOP(&pVM->tm.s.aStatDoQueues[TMCLOCK_REAL], s3);
+    /*
+     * TMCLOCK_REAL
+     */
+    pQueue = &pVM->tm.s.aTimerQueues[TMCLOCK_REAL];
+    STAM_PROFILE_START(&pQueue->StatDo, s3);
+    PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+    if (pQueue->idxSchedule != UINT32_MAX)
+        tmTimerQueueSchedule(pVM, pQueue, pQueue);
+    tmR3TimerQueueRun(pVM, pQueue);
+    PDMCritSectLeave(&pQueue->TimerLock);
+    STAM_PROFILE_STOP(&pQueue->StatDo, s3);
 
 #ifdef VBOX_STRICT
     /* check that we didn't screw up. */
-    TM_LOCK_TIMERS(pVM);
     tmTimerQueuesSanityChecks(pVM, "TMR3TimerQueuesDo");
-    TM_UNLOCK_TIMERS(pVM);
 #endif
 
     /* done */
     Log2(("TMR3TimerQueuesDo: returns void\n"));
     ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, false);
-    TM_UNLOCK_TIMERS(pVM);
     STAM_PROFILE_STOP(&pVM->tm.s.StatDoQueues, a);
 }
 
@@ -2648,8 +2664,8 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_EXPIRED_DELIVER, fRc);
         if (fRc && pTimer->uHzHint)
         {
-            if (pTimer->uHzHint >= pVM->tm.s.uMaxHzHint)
-                ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, true);
+            if (pTimer->uHzHint >= pQueue->uMaxHzHint)
+                ASMAtomicOrU64(&pVM->tm.s.HzHint.u64Combined, RT_BIT_32(TMCLOCK_VIRTUAL_SYNC) | RT_BIT_32(TMCLOCK_VIRTUAL_SYNC + 16));
             pTimer->uHzHint = 0;
         }
         Log2(("tmR3TimerQueueRun: new state %s\n", tmTimerState(pTimer->enmState)));
@@ -2824,7 +2840,7 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
             PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
 
             /* try run it. */
-            TM_LOCK_TIMERS(pVM);
+            PDMCritSectEnter(&pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].TimerLock, VERR_IGNORED);
             PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
             if (pVM->tm.s.fVirtualSyncTicking)
                 Log2(("TMR3VirtualSyncFF: ticking (2)\n"));
@@ -2840,9 +2856,9 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
 
                 ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, false);
             }
-            STAM_PROFILE_STOP(&pVM->tm.s.StatVirtualSyncFF, a); /* before the unlock! */
             PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
-            TM_UNLOCK_TIMERS(pVM);
+            STAM_PROFILE_STOP(&pVM->tm.s.StatVirtualSyncFF, a); /* before the unlock! */
+            PDMCritSectLeave(&pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].TimerLock);
         }
     }
 }
@@ -3151,15 +3167,13 @@ VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
 VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
+    PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED); /* Paranoia: Exploiting the virtual sync lock here. */
 
     /*
      * The shared virtual clock (includes virtual sync which is tied to it).
      */
-    TM_LOCK_TIMERS(pVM);                        /* Paranoia: Exploiting the timer lock here. */
     int rc = tmVirtualPauseLocked(pVM);
-    TM_UNLOCK_TIMERS(pVM);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturnStmt(rc, PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock), rc);
 
     /*
      * Pause the TSC last since it is normally linked to the virtual
@@ -3167,11 +3181,8 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
      */
     if (!pVM->tm.s.fTSCTiedToExecution)
     {
-        TM_LOCK_TIMERS(pVM);    /* Exploit the timer lock for synchronization. */
         rc = tmCpuTickPauseLocked(pVM, pVCpu);
-        TM_UNLOCK_TIMERS(pVM);
-        if (RT_FAILURE(rc))
-            return rc;
+        AssertRCReturnStmt(rc, PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock), rc);
     }
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
@@ -3197,6 +3208,7 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
     ASMAtomicWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
 #endif
 
+    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
     return VINF_SUCCESS;
 }
 
@@ -3212,7 +3224,7 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
 VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    int rc;
+    PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED); /* Paranoia: Exploiting the virtual sync lock here. */
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     /*
@@ -3232,20 +3244,16 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
      */
     if (!pVM->tm.s.fTSCTiedToExecution)
     {
-        TM_LOCK_TIMERS(pVM);    /* Exploit the timer lock for synchronization. */
-        rc = tmCpuTickResumeLocked(pVM, pVCpu);
-        TM_UNLOCK_TIMERS(pVM);
-        if (RT_FAILURE(rc))
-            return rc;
+        int rc = tmCpuTickResumeLocked(pVM, pVCpu);
+        AssertRCReturnStmt(rc, PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock), rc);
     }
 
     /*
      * The shared virtual clock (includes virtual sync which is tied to it).
      */
-    TM_LOCK_TIMERS(pVM);                        /* Paranoia: Exploiting the timer lock here. */
-    rc = tmVirtualResumeLocked(pVM);
-    TM_UNLOCK_TIMERS(pVM);
+    int rc = tmVirtualResumeLocked(pVM);
 
+    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
     return rc;
 }
 
@@ -3287,11 +3295,12 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent)
 /** @todo This isn't a feature specific to virtual time, move the variables to
  * TM level and make it affect TMR3UTCNow as well! */
 
+    PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED); /* Paranoia: Exploiting the virtual sync lock here. */
+
     /*
      * If the time is running we'll have to pause it before we can change
      * the warp drive settings.
      */
-    TM_LOCK_TIMERS(pVM);                        /* Paranoia: Exploiting the timer lock here. */
     bool fPaused = !!pVM->tm.s.cVirtualTicking;
     if (fPaused) /** @todo this isn't really working, but wtf. */
         TMR3NotifySuspend(pVM, pVCpu);
@@ -3304,7 +3313,8 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent)
 
     if (fPaused)
         TMR3NotifyResume(pVM, pVCpu);
-    TM_UNLOCK_TIMERS(pVM);
+
+    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
     return VINF_SUCCESS;
 }
 
@@ -3895,7 +3905,8 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
     {
         PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[idxQueue];
         PDMCritSectRwEnterShared(&pQueue->AllocLock, VERR_IGNORED);
-        TM_LOCK_TIMERS(pVM);
+        PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+
         for (PTMTIMERR3 pTimer = tmTimerQueueGetHead(pQueue, pQueue);
              pTimer;
              pTimer = tmTimerGetNext(pQueue, pTimer))
@@ -3913,7 +3924,8 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                             tmTimerState(pTimer->enmState),
                             pTimer->szName);
         }
-        TM_UNLOCK_TIMERS(pVM);
+
+        PDMCritSectLeave(&pQueue->TimerLock);
         PDMCritSectRwLeaveShared(&pQueue->AllocLock);
     }
 }

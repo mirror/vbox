@@ -364,24 +364,26 @@ DECLINLINE(void) tmSchedule(PVMCC pVM, PTMTIMER pTimer)
     PTMTIMERQUEUE const     pQueue   = &pVM->tm.s.aTimerQueues[enmClock];
     PTMTIMERQUEUECC const   pQueueCC = TM_GET_TIMER_QUEUE_CC(pVM, enmClock, pQueue);
 
-    if (    VM_IS_EMT(pVM)
-        &&  RT_SUCCESS(TM_TRY_LOCK_TIMERS(pVM)))
+    if (VM_IS_EMT(pVM)) /** @todo drop EMT requirement here. */
     {
-        STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
-        Log3(("tmSchedule: tmTimerQueueSchedule\n"));
-        tmTimerQueueSchedule(pVM, pQueueCC, pQueue);
+        int rc = PDMCritSectTryEnter(&pQueue->TimerLock);
+        if (RT_SUCCESS_NP(rc))
+        {
+            STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
+            Log3(("tmSchedule: tmTimerQueueSchedule\n"));
+            tmTimerQueueSchedule(pVM, pQueueCC, pQueue);
 #ifdef VBOX_STRICT
-        tmTimerQueuesSanityChecks(pVM, "tmSchedule");
+            tmTimerQueuesSanityChecks(pVM, "tmSchedule");
 #endif
-        STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
-        TM_UNLOCK_TIMERS(pVM);
+            STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
+            PDMCritSectLeave(&pQueue->TimerLock);
+            return;
+        }
     }
-    else
-    {
-        TMTIMERSTATE enmState = pTimer->enmState;
-        if (TMTIMERSTATE_IS_PENDING_SCHEDULING(enmState))
-            tmScheduleNotify(pVM);
-    }
+
+    TMTIMERSTATE enmState = pTimer->enmState;
+    if (TMTIMERSTATE_IS_PENDING_SCHEDULING(enmState))
+        tmScheduleNotify(pVM);
 }
 
 
@@ -623,8 +625,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PVMCC pVM, PTMTIMERQUEUECC pQueueCC, PT
  */
 void tmTimerQueueSchedule(PVMCC pVM, PTMTIMERQUEUECC pQueueCC, PTMTIMERQUEUE pQueue)
 {
-    TM_ASSERT_TIMER_LOCK_OWNERSHIP(pVM);
-    NOREF(pVM);
+    Assert(PDMCritSectIsOwner(&pQueue->TimerLock));
 
     /*
      * Dequeue the scheduling list and iterate it.
@@ -660,20 +661,16 @@ void tmTimerQueueSchedule(PVMCC pVM, PTMTIMERQUEUECC pQueueCC, PTMTIMERQUEUE pQu
  *
  * @param   pVM         The cross context VM structure.
  * @param   pszWhere    Caller location clue.
- *
- * @remarks Called while owning the lock.
  */
 void tmTimerQueuesSanityChecks(PVMCC pVM, const char *pszWhere)
 {
-    TM_ASSERT_TIMER_LOCK_OWNERSHIP(pVM);
-
     for (uint32_t idxQueue = 0; idxQueue < RT_ELEMENTS(pVM->tm.s.aTimerQueues); idxQueue++)
     {
         PTMTIMERQUEUE const   pQueue   = &pVM->tm.s.aTimerQueues[idxQueue];
         PTMTIMERQUEUECC const pQueueCC = TM_GET_TIMER_QUEUE_CC(pVM, idxQueue, pQueue);
         Assert(pQueue->enmClock == (TMCLOCK)idxQueue);
 
-        int rc = PDMCritSectRwTryEnterShared(&pQueue->AllocLock);
+        int rc = PDMCritSectTryEnter(&pQueue->TimerLock);
         if (RT_SUCCESS(rc))
         {
             if (   pQueue->enmClock != TMCLOCK_VIRTUAL_SYNC
@@ -779,7 +776,7 @@ void tmTimerQueuesSanityChecks(PVMCC pVM, const char *pszWhere)
                 if (pQueue->enmClock == TMCLOCK_VIRTUAL_SYNC)
                     PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
             }
-            PDMCritSectRwLeaveShared(&pQueue->AllocLock);
+            PDMCritSectLeave(&pQueue->TimerLock);
         }
     }
 }
@@ -1197,15 +1194,14 @@ VMMDECL(bool) TMTimerIsLockOwner(PVMCC pVM, TMTIMERHANDLE hTimer)
  * @param   pVM             The cross context VM structure.
  * @param   pTimer          The timer handle.
  * @param   u64Expire       The new expire time.
+ * @param   pQueue          Pointer to the shared timer queue data.
+ * @param   enmClock        The sanitized clock.
  */
-static int tmTimerSetOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
+static int tmTimerSetOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire, PTMTIMERQUEUE pQueue, TMCLOCK enmClock)
 {
     Assert(pTimer->idxPrev == UINT32_MAX);
     Assert(pTimer->idxNext == UINT32_MAX);
     Assert(pTimer->enmState == TMTIMERSTATE_ACTIVE);
-
-    TMCLOCK const enmClock = pTimer->enmClock;
-    AssertReturn((unsigned)enmClock < TMCLOCK_MAX, VERR_TM_IPE_2);
 
     /*
      * Calculate and set the expiration time.
@@ -1223,11 +1219,9 @@ static int tmTimerSetOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expi
     /*
      * Link the timer into the active list.
      */
-    PTMTIMERQUEUE const pQueue = &pVM->tm.s.aTimerQueues[enmClock];
     tmTimerQueueLinkActive(pVM, TM_GET_TIMER_QUEUE_CC(pVM, enmClock, pQueue), pQueue, pTimer, u64Expire);
 
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetOpt);
-    TM_UNLOCK_TIMERS(pVM);
     return VINF_SUCCESS;
 }
 
@@ -1357,15 +1351,21 @@ VMMDECL(int) TMTimerSet(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t u64Expire)
              && pTimer->pCritSect))
     {
         /* Try take the TM lock and check the state again. */
-        if (RT_SUCCESS_NP(TM_TRY_LOCK_TIMERS(pVM)))
+        TMCLOCK const       enmClock = pTimer->enmClock;
+        AssertReturn((unsigned)enmClock < TMCLOCK_MAX, VERR_TM_IPE_2);
+        PTMTIMERQUEUE const pQueue   = &pVM->tm.s.aTimerQueues[enmClock];
+
+        int rc = PDMCritSectTryEnter(&pQueue->TimerLock);
+        if (RT_SUCCESS_NP(rc))
         {
             if (RT_LIKELY(tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, enmState1)))
             {
-                tmTimerSetOptimizedStart(pVM, pTimer, u64Expire);
+                tmTimerSetOptimizedStart(pVM, pTimer, u64Expire, pQueue, enmClock);
                 STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
+                PDMCritSectLeave(&pQueue->TimerLock);
                 return VINF_SUCCESS;
             }
-            TM_UNLOCK_TIMERS(pVM);
+            PDMCritSectLeave(&pQueue->TimerLock);
         }
     }
 #endif
@@ -1507,8 +1507,11 @@ DECL_FORCE_INLINE(uint64_t) tmTimerSetRelativeNowWorker(PVMCC pVM, TMCLOCK enmCl
  * @param   cTicksToNext    Clock ticks until the next time expiration.
  * @param   pu64Now         Where to return the current time stamp used.
  *                          Optional.
+ * @param   pQueue          Pointer to the shared timer queue data.
+ * @param   enmClock        The sanitized clock.
  */
-static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now,
+                                            PTMTIMERQUEUE pQueue, TMCLOCK enmClock)
 {
     Assert(pTimer->idxPrev == UINT32_MAX);
     Assert(pTimer->idxNext == UINT32_MAX);
@@ -1517,8 +1520,6 @@ static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t
     /*
      * Calculate and set the expiration time.
      */
-    TMCLOCK const   enmClock  = pTimer->enmClock;
-    AssertReturn((unsigned)enmClock < (unsigned)TMCLOCK_MAX, VERR_TM_IPE_2);
     uint64_t const  u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
     pTimer->u64Expire         = u64Expire;
     Log2(("tmTimerSetRelativeOptimizedStart: %p:{.pszDesc='%s', .u64Expire=%'RU64} cTicksToNext=%'RU64\n", pTimer, pTimer->szName, u64Expire, cTicksToNext));
@@ -1527,11 +1528,9 @@ static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t
      * Link the timer into the active list.
      */
     DBGFTRACE_U64_TAG2(pVM, u64Expire, "tmTimerSetRelativeOptimizedStart", pTimer->szName);
-    PTMTIMERQUEUE const pQueue = &pVM->tm.s.aTimerQueues[enmClock];
     tmTimerQueueLinkActive(pVM, TM_GET_TIMER_QUEUE_CC(pVM, enmClock, pQueue), pQueue, pTimer, u64Expire);
 
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeOpt);
-    TM_UNLOCK_TIMERS(pVM);
     return VINF_SUCCESS;
 }
 
@@ -1629,8 +1628,10 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
     STAM_COUNTER_INC(&pTimer->StatSetRelative);
 
     /* Treat virtual sync timers specially. */
-    if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
+    TMCLOCK enmClock = pTimer->enmClock;
+    if (enmClock == TMCLOCK_VIRTUAL_SYNC)
         return tmTimerVirtualSyncSetRelative(pVM, pTimer, cTicksToNext, pu64Now);
+    AssertReturn((unsigned)enmClock < (unsigned)TMCLOCK_MAX, VERR_TM_IPE_2);
 
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
     TMTIMER_ASSERT_CRITSECT(pVM, pTimer);
@@ -1669,7 +1670,8 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
      * Note! Lock ordering doesn't apply when we only tries to
      *       get the innermost locks.
      */
-    bool fOwnTMLock = RT_SUCCESS_NP(TM_TRY_LOCK_TIMERS(pVM));
+    PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[enmClock];
+    bool fOwnTMLock = RT_SUCCESS_NP(PDMCritSectTryEnter(&pQueue->TimerLock));
 #if 1
     if (    fOwnTMLock
         &&  pTimer->pCritSect)
@@ -1679,8 +1681,9 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
                          || enmState == TMTIMERSTATE_STOPPED)
                       && tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, enmState)))
         {
-            tmTimerSetRelativeOptimizedStart(pVM, pTimer, cTicksToNext, pu64Now);
+            tmTimerSetRelativeOptimizedStart(pVM, pTimer, cTicksToNext, pu64Now, pQueue, enmClock);
             STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
+            PDMCritSectLeave(&pQueue->TimerLock);
             return VINF_SUCCESS;
         }
 
@@ -1691,8 +1694,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
     /*
      * Unoptimized path.
      */
-    int             rc;
-    TMCLOCK const   enmClock = pTimer->enmClock;
+    int rc;
     for (int cRetries = 1000; ; cRetries--)
     {
         /*
@@ -1821,7 +1823,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
          * Retry to gain locks.
          */
         if (!fOwnTMLock)
-            fOwnTMLock = RT_SUCCESS_NP(TM_TRY_LOCK_TIMERS(pVM));
+            fOwnTMLock = RT_SUCCESS_NP(PDMCritSectTryEnter(&pQueue->TimerLock));
 
     } /* for (;;) */
 
@@ -1829,7 +1831,7 @@ static int tmTimerSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext,
      * Clean up and return.
      */
     if (fOwnTMLock)
-        TM_UNLOCK_TIMERS(pVM);
+        PDMCritSectLeave(&pQueue->TimerLock);
 
     STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
     return rc;
@@ -1871,17 +1873,16 @@ VMMDECL(int) TMTimerSetRelative(PVMCC pVM, TMTIMERHANDLE hTimer, uint64_t cTicks
  */
 VMMDECL(int) TMTimerSetFrequencyHint(PVMCC pVM, TMTIMERHANDLE hTimer, uint32_t uHzHint)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     TMTIMER_ASSERT_CRITSECT(pVM, pTimer);
 
     uint32_t const uHzOldHint = pTimer->uHzHint;
     pTimer->uHzHint = uHzHint;
 
-    uint32_t const uMaxHzHint = pVM->tm.s.uMaxHzHint;
+    uint32_t const uMaxHzHint = pQueue->uMaxHzHint;
     if (   uHzHint    >  uMaxHzHint
         || uHzOldHint >= uMaxHzHint)
-        ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, true);
+        ASMAtomicOrU64(&pVM->tm.s.HzHint.u64Combined, RT_BIT_32(idxQueue) | RT_BIT_32(idxQueue + 16));
 
     return VINF_SUCCESS;
 }
@@ -1906,15 +1907,16 @@ static int tmTimerVirtualSyncStop(PVMCC pVM, PTMTIMER pTimer)
     AssertRCReturn(rc, rc);
 
     /* Reset the HZ hint. */
-    if (pTimer->uHzHint)
+    uint32_t uOldHzHint = pTimer->uHzHint;
+    if (uOldHzHint)
     {
-        if (pTimer->uHzHint >= pVM->tm.s.uMaxHzHint)
-            ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, true);
+        if (uOldHzHint >= pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].uMaxHzHint)
+            ASMAtomicOrU64(&pVM->tm.s.HzHint.u64Combined, RT_BIT_32(TMCLOCK_VIRTUAL_SYNC) | RT_BIT_32(TMCLOCK_VIRTUAL_SYNC + 16));
         pTimer->uHzHint = 0;
     }
 
     /* Update the timer state. */
-    TMTIMERSTATE const      enmState = pTimer->enmState;
+    TMTIMERSTATE const enmState = pTimer->enmState;
     switch (enmState)
     {
         case TMTIMERSTATE_ACTIVE:
@@ -1970,12 +1972,11 @@ static int tmTimerVirtualSyncStop(PVMCC pVM, PTMTIMER pTimer)
  */
 VMMDECL(int) TMTimerStop(PVMCC pVM, TMTIMERHANDLE hTimer)
 {
-    PTMTIMER pTimer;
-    TMTIMER_HANDLE_TO_PTR_RETURN(pVM, hTimer, pTimer);
+    TMTIMER_HANDLE_TO_VARS_RETURN(pVM, hTimer); /* => pTimer, pQueueCC, pQueue, idxTimer, idxQueue */
     STAM_COUNTER_INC(&pTimer->StatStop);
 
     /* Treat virtual sync timers specially. */
-    if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
+    if (idxQueue == TMCLOCK_VIRTUAL_SYNC)
         return tmTimerVirtualSyncStop(pVM, pTimer);
 
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerStop), a);
@@ -1984,10 +1985,11 @@ VMMDECL(int) TMTimerStop(PVMCC pVM, TMTIMERHANDLE hTimer)
     /*
      * Reset the HZ hint.
      */
-    if (pTimer->uHzHint)
+    uint32_t const uOldHzHint = pTimer->uHzHint;
+    if (uOldHzHint)
     {
-        if (pTimer->uHzHint >= pVM->tm.s.uMaxHzHint)
-            ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, true);
+        if (uOldHzHint >= pQueue->uMaxHzHint)
+            ASMAtomicOrU64(&pVM->tm.s.HzHint.u64Combined, RT_BIT_32(idxQueue) | RT_BIT_32(idxQueue + 16));
         pTimer->uHzHint = 0;
     }
 
@@ -2613,40 +2615,51 @@ const char *tmTimerState(TMTIMERSTATE enmState)
 
 
 /**
- * Gets the highest frequency hint for all the important timers.
+ * The slow path of tmGetFrequencyHint() where we try to recalculate the value.
  *
  * @returns The highest frequency.  0 if no timers care.
- * @param   pVM         The cross context VM structure.
+ * @param   pVM             The cross context VM structure.
+ * @param   uOldMaxHzHint   The old global hint.
  */
-static uint32_t tmGetFrequencyHint(PVMCC pVM)
+DECL_NO_INLINE(static, uint32_t) tmGetFrequencyHintSlow(PVMCC pVM, uint32_t uOldMaxHzHint)
 {
-    /*
-     * Query the value, recalculate it if necessary.
-     *
-     * The "right" highest frequency value isn't so important that we'll block
-     * waiting on the timer semaphore.
-     */
-    uint32_t uMaxHzHint = ASMAtomicUoReadU32(&pVM->tm.s.uMaxHzHint);
-    if (RT_UNLIKELY(ASMAtomicReadBool(&pVM->tm.s.fHzHintNeedsUpdating)))
-    {
-        if (RT_SUCCESS(TM_TRY_LOCK_TIMERS(pVM)))
-        {
-            ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, false);
+    /* Set two bits, though not entirely sure it's needed (too exhaused to think clearly)
+       but it should force other callers thru the slow path while we're recalculating and
+       help us detect changes while we're recalculating. */
+    AssertCompile(RT_ELEMENTS(pVM->tm.s.aTimerQueues) <= 16);
 
-            /*
-             * Loop over the timers associated with each clock.
-             */
-            uMaxHzHint = 0;
-            for (uint32_t idxQueue = 0; idxQueue < RT_ELEMENTS(pVM->tm.s.aTimerQueues); idxQueue++)
+    /*
+     * The "right" highest frequency value isn't so important that we'll block
+     * waiting on the timer semaphores.
+     */
+    uint32_t uMaxHzHint = 0;
+    for (uint32_t idxQueue = 0; idxQueue < RT_ELEMENTS(pVM->tm.s.aTimerQueues); idxQueue++)
+    {
+        PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[idxQueue];
+
+        /* Get the max Hz hint for the queue. */
+        uint32_t uMaxHzHintQueue;
+        if (  !(ASMAtomicUoReadU64(&pVM->tm.s.HzHint.u64Combined) & (RT_BIT_32(idxQueue) | RT_BIT_32(idxQueue + 16)))
+            || RT_FAILURE_NP(PDMCritSectTryEnter(&pQueue->TimerLock)))
+            uMaxHzHintQueue = ASMAtomicReadU32(&pQueue->uMaxHzHint);
+        else
+        {
+            /* Is it still necessary to do updating? */
+            if (ASMAtomicUoReadU64(&pVM->tm.s.HzHint.u64Combined) & (RT_BIT_32(idxQueue) | RT_BIT_32(idxQueue + 16)))
             {
-                PTMTIMERQUEUE   pQueue   = &pVM->tm.s.aTimerQueues[idxQueue];
+                ASMAtomicAndU64(&pVM->tm.s.HzHint.u64Combined, ~RT_BIT_64(idxQueue + 16)); /* clear one flag up front */
+
                 PTMTIMERQUEUECC pQueueCC = TM_GET_TIMER_QUEUE_CC(pVM, idxQueue, pQueue);
-                for (PTMTIMER pCur = tmTimerQueueGetHead(pQueueCC, pQueue); pCur; pCur = tmTimerGetNext(pQueueCC, pCur))
+                uMaxHzHintQueue = 0;
+                for (PTMTIMER pCur = tmTimerQueueGetHead(pQueueCC, pQueue);
+                     pCur;
+                     pCur = tmTimerGetNext(pQueueCC, pCur))
                 {
                     uint32_t uHzHint = ASMAtomicUoReadU32(&pCur->uHzHint);
-                    if (uHzHint > uMaxHzHint)
+                    if (uHzHint > uMaxHzHintQueue)
                     {
-                        switch (pCur->enmState)
+                        TMTIMERSTATE enmState = pCur->enmState;
+                        switch (enmState)
                         {
                             case TMTIMERSTATE_ACTIVE:
                             case TMTIMERSTATE_EXPIRED_GET_UNLINK:
@@ -2655,7 +2668,7 @@ static uint32_t tmGetFrequencyHint(PVMCC pVM)
                             case TMTIMERSTATE_PENDING_SCHEDULE:
                             case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
                             case TMTIMERSTATE_PENDING_RESCHEDULE:
-                                uMaxHzHint = uHzHint;
+                                uMaxHzHintQueue = uHzHint;
                                 break;
 
                             case TMTIMERSTATE_STOPPED:
@@ -2669,13 +2682,60 @@ static uint32_t tmGetFrequencyHint(PVMCC pVM)
                         }
                     }
                 }
+
+                /* Write the new Hz hint for the quest and clear the other update flag. */
+                ASMAtomicUoWriteU32(&pQueue->uMaxHzHint, uMaxHzHintQueue);
+                ASMAtomicAndU64(&pVM->tm.s.HzHint.u64Combined, ~RT_BIT_64(idxQueue));
             }
-            ASMAtomicWriteU32(&pVM->tm.s.uMaxHzHint, uMaxHzHint);
-            Log(("tmGetFrequencyHint: New value %u Hz\n", uMaxHzHint));
-            TM_UNLOCK_TIMERS(pVM);
+            else
+                uMaxHzHintQueue = ASMAtomicUoReadU32(&pQueue->uMaxHzHint);
+
+            PDMCritSectLeave(&pQueue->TimerLock);
         }
+
+        /* Update the global max Hz hint. */
+        if (uMaxHzHint < uMaxHzHintQueue)
+            uMaxHzHint = uMaxHzHintQueue;
     }
+
+    /*
+     * Update the frequency hint if no pending frequency changes and we didn't race anyone thru here.
+     */
+    uint64_t u64Actual = RT_MAKE_U64(0 /*no pending updates*/, uOldMaxHzHint);
+    if (ASMAtomicCmpXchgExU64(&pVM->tm.s.HzHint.u64Combined, RT_MAKE_U64(0, uMaxHzHint), u64Actual, &u64Actual))
+        Log(("tmGetFrequencyHintSlow: New value %u Hz\n", uMaxHzHint));
+    else
+        for (uint32_t iTry = 1;; iTry++)
+        {
+            if (RT_LO_U32(u64Actual) != 0)
+                Log(("tmGetFrequencyHintSlow: Outdated value %u Hz (%#x, try %u)\n", uMaxHzHint, RT_LO_U32(u64Actual), iTry));
+            else if (iTry >= 4)
+                Log(("tmGetFrequencyHintSlow: Unable to set %u Hz (try %u)\n", uMaxHzHint, iTry));
+            else if (ASMAtomicCmpXchgExU64(&pVM->tm.s.HzHint.u64Combined, RT_MAKE_U64(0, uMaxHzHint), u64Actual, &u64Actual))
+                Log(("tmGetFrequencyHintSlow: New value %u Hz (try %u)\n", uMaxHzHint, iTry));
+            else
+                continue;
+            break;
+        }
     return uMaxHzHint;
+}
+
+
+/**
+ * Gets the highest frequency hint for all the important timers.
+ *
+ * @returns The highest frequency.  0 if no timers care.
+ * @param   pVM         The cross context VM structure.
+ */
+DECLINLINE(uint32_t) tmGetFrequencyHint(PVMCC pVM)
+{
+    /*
+     * Query the value, recalculate it if necessary.
+     */
+    uint64_t u64Combined = ASMAtomicReadU64(&pVM->tm.s.HzHint.u64Combined);
+    if (RT_HI_U32(u64Combined) == 0)
+        return RT_LO_U32(u64Combined); /* hopefully somewhat likely */
+    return tmGetFrequencyHintSlow(pVM, RT_LO_U32(u64Combined));
 }
 
 
