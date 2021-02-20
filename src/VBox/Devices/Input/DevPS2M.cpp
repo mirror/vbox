@@ -715,6 +715,8 @@ int PS2MByteFromAux(PPS2M pThis, uint8_t *pb)
 /** Is there any state change to send as events to the guest? */
 static uint32_t ps2mR3HaveEvents(PPS2M pThis)
 {
+/** @todo r=bird: Why is this returning uint32_t when you're calculating a
+ *        boolean value here?  Also, it's a predicate function... */
     return   pThis->iAccumX || pThis->iAccumY || pThis->iAccumZ || pThis->iAccumW
            || ((pThis->fCurrB | pThis->fAccumB) != pThis->fReportedB);
 }
@@ -728,10 +730,7 @@ static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE 
     PPS2M       pThis = (PS2M *)pvUser;
     uint32_t    uHaveEvents;
     Assert(hTimer == pThis->hThrottleTimer);
-
-    /* Grab the lock to avoid races with PutEvent(). */
-    int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->pCritSectRoR3));
 
     /* If more movement is accumulated, report it and restart the timer. */
     uHaveEvents = ps2mR3HaveEvents(pThis);
@@ -746,8 +745,6 @@ static DECLCALLBACK(void) ps2mR3ThrottleTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE 
     }
     else
         pThis->fThrottleActive = false;
-
-    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 }
 
 /**
