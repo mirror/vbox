@@ -204,6 +204,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     pVM->vmm.s.hEvtRendezvousRecursionPushCaller = NIL_RTSEMEVENT;
     pVM->vmm.s.hEvtRendezvousRecursionPopCaller = NIL_RTSEMEVENT;
 
+#if 0 /* pointless when timers doesn't run on EMT */
     /** @cfgm{/YieldEMTInterval, uint32_t, 1, UINT32_MAX, 23, ms}
      * The EMT yield interval.  The EMT yielding is a hack we employ to play a
      * bit nicer with the rest of the system (like for instance the GUI).
@@ -211,7 +212,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     int rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "YieldEMTInterval", &pVM->vmm.s.cYieldEveryMillies,
                                23 /* Value arrived at after experimenting with the grub boot prompt. */);
     AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"YieldEMTInterval\", rc=%Rrc\n", rc), rc);
-
+#endif
 
     /** @cfgm{/VMM/UsePeriodicPreemptionTimers, boolean, true}
      * Controls whether we employ per-cpu preemption timers to limit the time
@@ -221,7 +222,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
      * this one when possible.
      */
     PCFGMNODE pCfgVMM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "VMM");
-    rc = CFGMR3QueryBoolDef(pCfgVMM, "UsePeriodicPreemptionTimers", &pVM->vmm.s.fUsePeriodicPreemptionTimers, true);
+    int rc = CFGMR3QueryBoolDef(pCfgVMM, "UsePeriodicPreemptionTimers", &pVM->vmm.s.fUsePeriodicPreemptionTimers, true);
     AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"VMM/UsePeriodicPreemptionTimers\", rc=%Rrc\n", rc), rc);
 
     /*
@@ -656,6 +657,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
     {
         case VMINITCOMPLETED_RING3:
         {
+#if 0 /* pointless when timers doesn't run on EMT */
             /*
              * Create the EMT yield timer.
              */
@@ -665,6 +667,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 
             rc = TMTimerSetMillies(pVM, pVM->vmm.s.hYieldTimer, pVM->vmm.s.cYieldEveryMillies);
             AssertRCReturn(rc, rc);
+#endif
             break;
         }
 
@@ -994,6 +997,7 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
  */
 VMMR3_INT_DECL(void) VMMR3YieldSuspend(PVM pVM)
 {
+#if 0 /* pointless when timers doesn't run on EMT */
     VMCPU_ASSERT_EMT(pVM->apCpusR3[0]);
     if (!pVM->vmm.s.cYieldResumeMillies)
     {
@@ -1006,6 +1010,9 @@ VMMR3_INT_DECL(void) VMMR3YieldSuspend(PVM pVM)
         TMTimerStop(pVM, pVM->vmm.s.hYieldTimer);
     }
     pVM->vmm.s.u64LastYield = RTTimeNanoTS();
+#else
+    RT_NOREF(pVM);
+#endif
 }
 
 
@@ -1016,10 +1023,14 @@ VMMR3_INT_DECL(void) VMMR3YieldSuspend(PVM pVM)
  */
 VMMR3_INT_DECL(void) VMMR3YieldStop(PVM pVM)
 {
+#if 0 /* pointless when timers doesn't run on EMT */
     if (!pVM->vmm.s.cYieldResumeMillies)
         TMTimerStop(pVM, pVM->vmm.s.hYieldTimer);
     pVM->vmm.s.cYieldResumeMillies = pVM->vmm.s.cYieldEveryMillies;
     pVM->vmm.s.u64LastYield = RTTimeNanoTS();
+#else
+    RT_NOREF(pVM);
+#endif
 }
 
 
@@ -1030,14 +1041,19 @@ VMMR3_INT_DECL(void) VMMR3YieldStop(PVM pVM)
  */
 VMMR3_INT_DECL(void) VMMR3YieldResume(PVM pVM)
 {
+#if 0 /* pointless when timers doesn't run on EMT */
     if (pVM->vmm.s.cYieldResumeMillies)
     {
         TMTimerSetMillies(pVM, pVM->vmm.s.hYieldTimer, pVM->vmm.s.cYieldResumeMillies);
         pVM->vmm.s.cYieldResumeMillies = 0;
     }
+#else
+    RT_NOREF(pVM);
+#endif
 }
 
 
+#if 0 /* pointless when timers doesn't run on EMT */
 /**
  * @callback_method_impl{FNTMTIMERINT, EMT yielder}
  *
@@ -1076,6 +1092,7 @@ static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, TMTIMERHANDLE hTimer, void *pvU
     }
     TMTimerSetMillies(pVM, hTimer, pVM->vmm.s.cYieldEveryMillies);
 }
+#endif
 
 
 /**

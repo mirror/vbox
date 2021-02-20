@@ -254,7 +254,6 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.CallRing3JmpBufR0, 16);
     CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.CallRing3JmpBufR0.xmm6, 16);
 #endif
-    CHECK_MEMBER_ALIGNMENT(VM, vmm.s.u64LastYield, 8);
 
     /* the VMCPUs are page aligned TLB hit reasons. */
     CHECK_SIZE_ALIGNMENT(VMCPU, 4096);

@@ -191,6 +191,7 @@ typedef struct VMM
     /** Alignment padding. */
     bool                        afPadding0[7];
 
+#if 0 /* pointless when timers doesn't run on EMT */
     /** The EMT yield timer. */
     TMTIMERHANDLE               hYieldTimer;
     /** The period to the next timeout when suspended or stopped.
@@ -200,6 +201,7 @@ typedef struct VMM
     uint32_t                    cYieldEveryMillies;
     /** The timestamp of the previous yield. (nano) */
     uint64_t                    u64LastYield;
+#endif
 
     /** @name EMT Rendezvous
      * @{ */
