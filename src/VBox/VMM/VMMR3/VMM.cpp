@@ -168,7 +168,9 @@ static int                  vmmR3InitLoggers(PVM pVM);
 static void                 vmmR3InitRegisterStats(PVM pVM);
 static DECLCALLBACK(int)    vmmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+#if 0 /* pointless when timers doesn't run on EMT */
 static DECLCALLBACK(void)   vmmR3YieldEMT(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser);
+#endif
 static VBOXSTRICTRC         vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
                                                      uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser);
 static int                  vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu);
