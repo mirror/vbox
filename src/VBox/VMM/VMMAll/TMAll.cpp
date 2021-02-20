@@ -341,7 +341,10 @@ VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPUCC pVCpu)
  */
 DECLINLINE(void) tmScheduleNotify(PVMCC pVM)
 {
-    PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
+    VMCPUID idCpu = pVM->tm.s.idTimerCpu;
+    AssertReturnVoid(idCpu < pVM->cCpus);
+    PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, idCpu);
+
     if (!VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER))
     {
         Log5(("TMAll(%u): FF: 0 -> 1\n", __LINE__));
@@ -359,21 +362,18 @@ DECLINLINE(void) tmScheduleNotify(PVMCC pVM)
  */
 DECLINLINE(void) tmSchedule(PVMCC pVM, PTMTIMERQUEUECC pQueueCC, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 {
-    if (VM_IS_EMT(pVM)) /** @todo drop EMT requirement here. */
+    int rc = PDMCritSectTryEnter(&pQueue->TimerLock);
+    if (RT_SUCCESS_NP(rc))
     {
-        int rc = PDMCritSectTryEnter(&pQueue->TimerLock);
-        if (RT_SUCCESS_NP(rc))
-        {
-            STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
-            Log3(("tmSchedule: tmTimerQueueSchedule\n"));
-            tmTimerQueueSchedule(pVM, pQueueCC, pQueue);
+        STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
+        Log3(("tmSchedule: tmTimerQueueSchedule\n"));
+        tmTimerQueueSchedule(pVM, pQueueCC, pQueue);
 #ifdef VBOX_STRICT
-            tmTimerQueuesSanityChecks(pVM, "tmSchedule");
+        tmTimerQueuesSanityChecks(pVM, "tmSchedule");
 #endif
-            STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
-            PDMCritSectLeave(&pQueue->TimerLock);
-            return;
-        }
+        STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
+        PDMCritSectLeave(&pQueue->TimerLock);
+        return;
     }
 
     TMTIMERSTATE enmState = pTimer->enmState;
@@ -863,6 +863,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnHit(PVM pVM, PVMCPU pVCpu, PVMCPU p
     return 0;
 }
 
+
 /**
  * Common worker for TMTimerPollGIP and TMTimerPoll.
  *
@@ -881,8 +882,11 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnHit(PVM pVM, PVMCPU pVCpu, PVMCPU p
  */
 DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64Delta)
 {
-    PVMCPU                  pVCpuDst      = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
-    const uint64_t          u64Now        = TMVirtualGetNoCheck(pVM);
+    VMCPUID idCpu = pVM->tm.s.idTimerCpu;
+    AssertReturn(idCpu < pVM->cCpus, 0);
+    PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, idCpu);
+
+    const uint64_t u64Now = TMVirtualGetNoCheck(pVM);
     STAM_COUNTER_INC(&pVM->tm.s.StatPoll);
 
     /*
