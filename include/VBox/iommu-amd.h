@@ -544,44 +544,46 @@ typedef DTE_T const *PCDTE_T;
 
 /** Mask of valid  bits for EPHSUP (Enhanced Peripheral Page Request Handling
  *  Support) feature (bits 52:53). */
-#define IOMMU_DTE_QWORD_0_FEAT_EPHSUP_MASK      UINT64_C(0x0030000000000000)
+#define IOMMU_DTE_QWORD_0_FEAT_EPHSUP_MASK              UINT64_C(0x0030000000000000)
 
 /** Mask of valid bits for GTSup (Guest Translation Support) feature (bits 55:60,
  *  bits 80:95). */
-#define IOMMU_DTE_QWORD_0_FEAT_GTSUP_MASK       UINT64_C(0x1f80000000000000)
-#define IOMMU_DTE_QWORD_1_FEAT_GTSUP_MASK       UINT64_C(0x00000000ffff0000)
+#define IOMMU_DTE_QWORD_0_FEAT_GTSUP_MASK               UINT64_C(0x1f80000000000000)
+#define IOMMU_DTE_QWORD_1_FEAT_GTSUP_MASK               UINT64_C(0x00000000ffff0000)
 
 /** Mask of valid bits for GIoSup (Guest I/O Protection Support) feature (bit 54). */
-#define IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK      UINT64_C(0x0040000000000000)
+#define IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK              UINT64_C(0x0040000000000000)
 
 /** Mask of valid DTE feature bits. */
-#define IOMMU_DTE_QWORD_0_FEAT_MASK             (  IOMMU_DTE_QWORD_0_FEAT_EPHSUP_MASK \
-                                                 | IOMMU_DTE_QWORD_0_FEAT_GTSUP_MASK  \
-                                                 | IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK)
-#define IOMMU_DTE_QWORD_1_FEAT_MASK             (IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK)
+#define IOMMU_DTE_QWORD_0_FEAT_MASK                     (  IOMMU_DTE_QWORD_0_FEAT_EPHSUP_MASK \
+                                                         | IOMMU_DTE_QWORD_0_FEAT_GTSUP_MASK  \
+                                                         | IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK)
+#define IOMMU_DTE_QWORD_1_FEAT_MASK                     IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK
 
 /** Mask of all valid DTE bits (including all feature bits). */
-#define IOMMU_DTE_QWORD_0_VALID_MASK            UINT64_C(0x7fffffffffffff83)
-#define IOMMU_DTE_QWORD_1_VALID_MASK            UINT64_C(0xfffffbffffffffff)
-#define IOMMU_DTE_QWORD_2_VALID_MASK            UINT64_C(0xff0fffffffffffff)
-#define IOMMU_DTE_QWORD_3_VALID_MASK            UINT64_C(0xffc0000000000000)
+#define IOMMU_DTE_QWORD_0_VALID_MASK                    UINT64_C(0x7fffffffffffff83)
+#define IOMMU_DTE_QWORD_1_VALID_MASK                    UINT64_C(0xfffffbffffffffff)
+#define IOMMU_DTE_QWORD_2_VALID_MASK                    UINT64_C(0xff0fffffffffffff)
+#define IOMMU_DTE_QWORD_3_VALID_MASK                    UINT64_C(0xffc0000000000000)
 
 /** Mask of the interrupt table root pointer. */
-#define IOMMU_DTE_IRTE_ROOT_PTR_MASK            UINT64_C(0x000fffffffffffc0)
+#define IOMMU_DTE_IRTE_ROOT_PTR_MASK                    UINT64_C(0x000fffffffffffc0)
 /** Number of bits to shift to get the interrupt root table pointer at
    qword 2 (qword 0 being the first one) - 128-byte aligned. */
-#define IOMMU_DTE_IRTE_ROOT_PTR_SHIFT           6
+#define IOMMU_DTE_IRTE_ROOT_PTR_SHIFT                   6
 
 /** Maximum encoded IRTE length (exclusive). */
-#define IOMMU_DTE_INTR_TAB_LEN_MAX              12
+#define IOMMU_DTE_INTR_TAB_LEN_MAX                      12
 /** Gets the interrupt table entries (in bytes) given the DTE pointer. */
-#define IOMMU_GET_INTR_TAB_ENTRIES(a_pDte)      (UINT64_C(1) << (a_pDte)->n.u4IntrTableLength)
+#define IOMMU_DTE_GET_INTR_TAB_ENTRIES(a_pDte)          (UINT64_C(1) << (a_pDte)->n.u4IntrTableLength)
 /** Gets the interrupt table length (in bytes) given the DTE pointer. */
-#define IOMMU_GET_INTR_TAB_LEN(a_pDte)          (IOMMU_GET_INTR_TAB_ENTRIES(a_pDte) * sizeof(IRTE_T))
+#define IOMMU_DTE_GET_INTR_TAB_LEN(a_pDte)              (IOMMU_DTE_GET_INTR_TAB_ENTRIES(a_pDte) * sizeof(IRTE_T))
 /** Mask of interrupt control bits. */
-#define IOMMU_DTE_INTR_CTRL_MASK                0x3
-/** Gets the interrupt control bits given the DTE pointer. */
-#define IOMMU_GET_INTR_CTRL(a_pDte)             (((a_pDte)->au64[2] >> 60) & IOMMU_DTE_INTR_CTRL_MASK)
+#define IOMMU_DTE_INTR_CTRL_MASK                        0x3
+/** Gets the interrupt control bits from the DTE. */
+#define IOMMU_DTE_GET_INTR_CTRL(a_pDte)                 (((a_pDte)->au64[2] >> 60) & IOMMU_DTE_INTR_CTRL_MASK)
+/** Gets the ignore unmapped interrupt bit from DTE. */
+#define IOMMU_DTE_GET_IG(a_pDte)                        (((a_pDte)->au64[2] >> 5) & 0x1)
 
 /**
  * I/O Page Translation Entry.
@@ -698,7 +700,7 @@ typedef IRTE_T const *PCIRTE_T;
  *  interrupt message. See AMD IOMMU spec. 2.2.5 "Interrupt Remapping Tables". */
 #define IOMMU_MSI_DATA_IRTE_OFFSET_MASK     UINT32_C(0x000007ff)
 /** Gets the IRTE offset from the originating MSI interrupt message. */
-#define IOMMU_GET_IRTE_OFF(a_u32MsiData)    (((a_u32MsiData) & IOMMU_MSI_DATA_IRTE_OFFSET_MASK) * sizeof(IRTE_T));
+#define IOMMU_GET_IRTE_OFF(a_u32MsiData)    (((a_u32MsiData) & IOMMU_MSI_DATA_IRTE_OFFSET_MASK) * sizeof(IRTE_T))
 
 /**
  * Interrupt Remapping Table Entry (IRTE) - Guest Virtual APIC Enabled.
