@@ -274,6 +274,9 @@ static void vboxNetAdpNetDevInit(struct net_device *pNetDev)
     pNetDev->hard_start_xmit = vboxNetAdpLinuxXmit;
     pNetDev->get_stats = vboxNetAdpLinuxGetStats;
 #endif /* RTLNX_VER_MAX(2,6,29) */
+#if RTLNX_VER_MIN(4,10,0)
+    pNetDev->max_mtu = 16110;
+#endif /* RTLNX_VER_MIN(4,10,0) */
 
     pNetDev->ethtool_ops = &gEthToolOpsVBoxNetAdp;
 
