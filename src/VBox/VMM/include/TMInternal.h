@@ -291,10 +291,12 @@ typedef struct TMTIMERQUEUE
     uint32_t                idxFreeHint;
     /** The queue name. */
     char                    szName[16];
+    /** Set when a thread is doing scheduling and callback. */
+    bool volatile           fBeingProcessed;
     /** Set if we've disabled growing. */
     bool                    fCannotGrow;
     /** Align on 64-byte boundrary. */
-    bool                    afAlignment1[3];
+    bool                    afAlignment1[2];
     /** The current max timer Hz hint. */
     uint32_t volatile       uMaxHzHint;
 
@@ -302,7 +304,13 @@ typedef struct TMTIMERQUEUE
 
     /** Time spent doing scheduling and timer callbacks. */
     STAMPROFILE             StatDo;
-    uint64_t                u64Alignment2[4];
+    /** The thread servicing this queue, NIL if none. */
+    R3PTRTYPE(RTTHREAD)     hThread;
+    /** The handle to the event semaphore the worker thread sleeps on. */
+    SUPSEMEVENT             hWorkerEvt;
+    /** Absolute sleep deadline for the worker (enmClock time). */
+    uint64_t volatile       tsWorkerWakeup;
+    uint64_t                u64Alignment2;
 
     /** Lock serializing the active timer list and associated work. */
     PDMCRITSECT             TimerLock;
@@ -592,7 +600,9 @@ typedef struct TM
     bool                        afAlignment3[2];
 
     /** Lock serializing access to the VirtualSync clock and the associated
-     * timer queue. */
+     * timer queue.
+     * @todo Consider merging this with the TMTIMERQUEUE::TimerLock for the
+     *       virtual sync queue. */
     PDMCRITSECT                 VirtualSyncLock;
 
     /** CPU load state for all the virtual CPUs (tmR3CpuLoadTimer). */

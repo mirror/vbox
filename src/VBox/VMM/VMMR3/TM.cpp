@@ -179,8 +179,6 @@ static DECLCALLBACK(int)    tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion
 static void                 tmR3TimerQueueRegisterStats(PVM pVM, PTMTIMERQUEUE pQueue, uint32_t cTimers);
 #endif
 static DECLCALLBACK(void)   tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
-static void                 tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue);
-static void                 tmR3TimerQueueRunVirtualSync(PVM pVM);
 static DECLCALLBACK(int)    tmR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent);
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
 static DECLCALLBACK(void)   tmR3CpuLoadTimer(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser);
@@ -227,11 +225,16 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     for (uint32_t i = 0; i < RT_ELEMENTS(pVM->tm.s.aTimerQueues); i++)
     {
         Assert(pVM->tm.s.aTimerQueues[i].szName[0] != '\0');
-        pVM->tm.s.aTimerQueues[i].enmClock    = (TMCLOCK)i;
-        pVM->tm.s.aTimerQueues[i].u64Expire   = INT64_MAX;
-        pVM->tm.s.aTimerQueues[i].idxActive   = UINT32_MAX;
-        pVM->tm.s.aTimerQueues[i].idxSchedule = UINT32_MAX;
-        pVM->tm.s.aTimerQueues[i].idxFreeHint = 1;
+        pVM->tm.s.aTimerQueues[i].enmClock          = (TMCLOCK)i;
+        pVM->tm.s.aTimerQueues[i].u64Expire         = INT64_MAX;
+        pVM->tm.s.aTimerQueues[i].idxActive         = UINT32_MAX;
+        pVM->tm.s.aTimerQueues[i].idxSchedule       = UINT32_MAX;
+        pVM->tm.s.aTimerQueues[i].idxFreeHint       = 1;
+        pVM->tm.s.aTimerQueues[i].fBeingProcessed   = false;
+        pVM->tm.s.aTimerQueues[i].fCannotGrow       = false;
+        pVM->tm.s.aTimerQueues[i].hThread           = NIL_RTTHREAD;
+        pVM->tm.s.aTimerQueues[i].hWorkerEvt        = NIL_SUPSEMEVENT;
+
         rc = PDMR3CritSectInit(pVM, &pVM->tm.s.aTimerQueues[i].TimerLock, RT_SRC_POS,
                                "TM %s queue timer lock", pVM->tm.s.aTimerQueues[i].szName);
         AssertLogRelRCReturn(rc, rc);
@@ -2281,114 +2284,17 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
 
 
 /**
- * Schedules and runs any pending timers.
- *
- * This is normally called from a forced action handler in EMT.
- *
- * @param   pVM             The cross context VM structure.
- *
- * @thread  EMT (actually EMT0, but we fend off the others)
- */
-VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
-{
-    /*
-     * Only the dedicated timer EMT should do stuff here.
-     * (fRunningQueues is only used as an indicator.)
-     */
-    Assert(pVM->tm.s.idTimerCpu < pVM->cCpus);
-    PVMCPU pVCpuDst = pVM->apCpusR3[pVM->tm.s.idTimerCpu];
-    if (VMMGetCpu(pVM) != pVCpuDst)
-    {
-        Assert(pVM->cCpus > 1);
-        return;
-    }
-    STAM_PROFILE_START(&pVM->tm.s.StatDoQueues, a);
-    Log2(("TMR3TimerQueuesDo:\n"));
-    Assert(!pVM->tm.s.fRunningQueues);
-    ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, true);
-
-    /*
-     * Process the queues.
-     */
-    AssertCompile(TMCLOCK_MAX == 4);
-
-    /*
-     * TMCLOCK_VIRTUAL_SYNC (see also TMR3VirtualSyncFF)
-     */
-    PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC];
-    STAM_PROFILE_START(&pQueue->StatDo, s1);
-    PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
-    PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
-    ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, true);
-    VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER);   /* Clear the FF once we started working for real. */
-
-    Assert(pQueue->idxSchedule == UINT32_MAX);
-    tmR3TimerQueueRunVirtualSync(pVM);
-    if (pVM->tm.s.fVirtualSyncTicking) /** @todo move into tmR3TimerQueueRunVirtualSync - FIXME */
-        VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
-
-    ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, false);
-    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
-    PDMCritSectLeave(&pQueue->TimerLock);
-    STAM_PROFILE_STOP(&pQueue->StatDo, s1);
-
-    /*
-     * TMCLOCK_VIRTUAL
-     */
-    pQueue = &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL];
-    STAM_PROFILE_START(&pQueue->StatDo, s2);
-    PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
-    if (pQueue->idxSchedule != UINT32_MAX)
-        tmTimerQueueSchedule(pVM, pQueue, pQueue);
-    tmR3TimerQueueRun(pVM, pQueue);
-    PDMCritSectLeave(&pQueue->TimerLock);
-    STAM_PROFILE_STOP(&pQueue->StatDo, s2);
-
-    /*
-     * TMCLOCK_TSC
-     */
-    Assert(pVM->tm.s.aTimerQueues[TMCLOCK_TSC].idxActive == UINT32_MAX); /* not used */
-
-    /*
-     * TMCLOCK_REAL
-     */
-    pQueue = &pVM->tm.s.aTimerQueues[TMCLOCK_REAL];
-    STAM_PROFILE_START(&pQueue->StatDo, s3);
-    PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
-    if (pQueue->idxSchedule != UINT32_MAX)
-        tmTimerQueueSchedule(pVM, pQueue, pQueue);
-    tmR3TimerQueueRun(pVM, pQueue);
-    PDMCritSectLeave(&pQueue->TimerLock);
-    STAM_PROFILE_STOP(&pQueue->StatDo, s3);
-
-#ifdef VBOX_STRICT
-    /* check that we didn't screw up. */
-    tmTimerQueuesSanityChecks(pVM, "TMR3TimerQueuesDo");
-#endif
-
-    /* done */
-    Log2(("TMR3TimerQueuesDo: returns void\n"));
-    ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, false);
-    STAM_PROFILE_STOP(&pVM->tm.s.StatDoQueues, a);
-}
-
-//RT_C_DECLS_BEGIN
-//int     iomLock(PVM pVM);
-//void    iomUnlock(PVM pVM);
-//RT_C_DECLS_END
-
-
-/**
- * Schedules and runs any pending times in the specified queue.
- *
- * This is normally called from a forced action handler in EMT.
+ * Worker for tmR3TimerQueueDoOne that runs pending timers on the specified
+ * non-empty timer queue.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pQueue          The queue to run.
+ * @param   pNext           The head timer.  Caller already check that this is
+ *                          not NULL.
  */
-static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
+static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 {
-    VM_ASSERT_EMT(pVM);
+    VM_ASSERT_EMT(pVM); /** @todo relax this */
 
     /*
      * Run timers.
@@ -2398,18 +2304,16 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
      *
      * N.B. A generic unlink must be applied since other threads
      *      are allowed to mess with any active timer at any time.
+     *
      *      However, we only allow EMT to handle EXPIRED_PENDING
      *      timers, thus enabling the timer handler function to
      *      arm the timer again.
      */
-    PTMTIMER pNext = tmTimerQueueGetHead(pQueue, pQueue);
-    if (!pNext)
-        return;
+/** @todo the above 'however' is outdated.   */
     const uint64_t u64Now = tmClock(pVM, pQueue->enmClock);
-    while (pNext && pNext->u64Expire <= u64Now)
+    while (pTimer->u64Expire <= u64Now)
     {
-        PTMTIMER        pTimer    = pNext;
-        pNext = tmTimerGetNext(pQueue, pTimer);
+        PTMTIMER const  pNext = tmTimerGetNext(pQueue, pTimer);
         PPDMCRITSECT    pCritSect = pTimer->pCritSect;
         if (pCritSect)
         {
@@ -2460,7 +2364,44 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
         }
         if (pCritSect)
             PDMCritSectLeave(pCritSect);
+
+        /* Advance? */
+        pTimer = pNext;
+        if (!pTimer)
+            break;
     } /* run loop */
+}
+
+
+/**
+ * Service one regular timer queue.
+ *
+ * @param   pVM     The cross context VM structure.
+ * @param   pQueue  The queue.
+ */
+static void tmR3TimerQueueDoOne(PVM pVM, PTMTIMERQUEUE pQueue)
+{
+    Assert(pQueue->enmClock != TMCLOCK_VIRTUAL_SYNC);
+
+    /*
+     * Only one thread should be "doing" the queue.
+     */
+    if (ASMAtomicCmpXchgBool(&pQueue->fBeingProcessed, true, false))
+    {
+        STAM_PROFILE_START(&pQueue->StatDo, s);
+        PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+
+        if (pQueue->idxSchedule != UINT32_MAX)
+            tmTimerQueueSchedule(pVM, pQueue, pQueue);
+
+        PTMTIMER pHead = tmTimerQueueGetHead(pQueue, pQueue);
+        if (pHead)
+            tmR3TimerQueueRun(pVM, pQueue, pHead);
+
+        PDMCritSectLeave(&pQueue->TimerLock);
+        STAM_PROFILE_STOP(&pQueue->StatDo, s);
+        ASMAtomicWriteBool(&pQueue->fBeingProcessed, false);
+    }
 }
 
 
@@ -2610,7 +2551,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             STAM_PROFILE_STOP(&pTimer->StatCritSectEnter, Locking);
         }
 
-        Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .szName='%s'}\n",
+        Log2(("tmR3TimerQueueRunVirtualSync: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .szName='%s'}\n",
               pTimer, tmTimerState(pTimer->enmState), pQueue->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->szName));
 
         /* Advance the clock - don't permit timers to be out of order or armed
@@ -2648,7 +2589,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 ASMAtomicOrU64(&pVM->tm.s.HzHint.u64Combined, RT_BIT_32(TMCLOCK_VIRTUAL_SYNC) | RT_BIT_32(TMCLOCK_VIRTUAL_SYNC + 16));
             pTimer->uHzHint = 0;
         }
-        Log2(("tmR3TimerQueueRun: new state %s\n", tmTimerState(pTimer->enmState)));
+        Log2(("tmR3TimerQueueRunVirtualSync: new state %s\n", tmTimerState(pTimer->enmState)));
 
         /* Leave the associated lock. */
         if (pCritSect)
@@ -2807,6 +2748,7 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
      */
     else
     {
+/** @todo Optimize for SMP   */
         STAM_PROFILE_START(&pVM->tm.s.StatVirtualSyncFF, a);
         PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
         if (pVM->tm.s.fVirtualSyncTicking)
@@ -2842,6 +2784,102 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
         }
     }
 }
+
+
+/**
+ * Service the special virtual sync timer queue.
+ *
+ * @param   pVM     The cross context VM structure.
+ * @param   pQueue  The queue.
+ */
+static void tmR3TimerQueueDoVirtualSync(PVM pVM, PVMCPU pVCpuDst)
+{
+    PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC];
+    if (ASMAtomicCmpXchgBool(&pQueue->fBeingProcessed, true, false))
+    {
+        STAM_PROFILE_START(&pQueue->StatDo, s1);
+        PDMCritSectEnter(&pQueue->TimerLock, VERR_IGNORED);
+        PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
+        ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, true);
+        VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER);   /* Clear the FF once we started working for real. */
+
+        Assert(pQueue->idxSchedule == UINT32_MAX);
+        tmR3TimerQueueRunVirtualSync(pVM);
+        if (pVM->tm.s.fVirtualSyncTicking) /** @todo move into tmR3TimerQueueRunVirtualSync - FIXME */
+            VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
+
+        ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, false);
+        PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+        PDMCritSectLeave(&pQueue->TimerLock);
+        STAM_PROFILE_STOP(&pQueue->StatDo, s1);
+        ASMAtomicWriteBool(&pQueue->fBeingProcessed, false);
+    }
+}
+
+
+/**
+ * Schedules and runs any pending timers.
+ *
+ * This is normally called from a forced action handler in EMT.
+ *
+ * @param   pVM     The cross context VM structure.
+ *
+ * @thread  EMT (actually EMT0, but we fend off the others)
+ */
+VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
+{
+    /*
+     * Only the dedicated timer EMT should do stuff here.
+     * (fRunningQueues is only used as an indicator.)
+     */
+    Assert(pVM->tm.s.idTimerCpu < pVM->cCpus);
+    PVMCPU pVCpuDst = pVM->apCpusR3[pVM->tm.s.idTimerCpu];
+    if (VMMGetCpu(pVM) != pVCpuDst)
+    {
+        Assert(pVM->cCpus > 1);
+        return;
+    }
+    STAM_PROFILE_START(&pVM->tm.s.StatDoQueues, a);
+    Log2(("TMR3TimerQueuesDo:\n"));
+    Assert(!pVM->tm.s.fRunningQueues);
+    ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, true);
+
+    /*
+     * Process the queues.
+     */
+    AssertCompile(TMCLOCK_MAX == 4);
+
+    /*
+     * TMCLOCK_VIRTUAL_SYNC (see also TMR3VirtualSyncFF)
+     */
+    tmR3TimerQueueDoVirtualSync(pVM, pVCpuDst);
+
+    /*
+     * TMCLOCK_VIRTUAL
+     */
+    tmR3TimerQueueDoOne(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL]);
+
+    /*
+     * TMCLOCK_TSC
+     */
+    Assert(pVM->tm.s.aTimerQueues[TMCLOCK_TSC].idxActive == UINT32_MAX); /* not used */
+
+    /*
+     * TMCLOCK_REAL
+     */
+    tmR3TimerQueueDoOne(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_REAL]);
+
+#ifdef VBOX_STRICT
+    /* check that we didn't screw up. */
+    tmTimerQueuesSanityChecks(pVM, "TMR3TimerQueuesDo");
+#endif
+
+    /* done */
+    Log2(("TMR3TimerQueuesDo: returns void\n"));
+    ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, false);
+    STAM_PROFILE_STOP(&pVM->tm.s.StatDoQueues, a);
+}
+
 
 
 /** @name Saved state values
