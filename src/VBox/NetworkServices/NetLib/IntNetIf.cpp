@@ -470,7 +470,9 @@ IntNetIf::setInputGSOCallback(PFNINPUTGSO pfnInputGSO, void *pvUserGSO)
  * Process incoming packets forever.
  *
  * User call this method on its receive thread.  The packets are
- * passed to the user callback.
+ * passed to the user inpiut callbacks.  If the GSO input callback is
+ * not registered, a GSO input frame is carved into normal frames and
+ * those frames are passed to the normal input callback.
  */
 int
 IntNetIf::ifPump()
