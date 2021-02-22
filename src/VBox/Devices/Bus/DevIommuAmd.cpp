@@ -350,6 +350,10 @@ typedef struct IOMMU
     IOMMMIOHANDLE               hMmio;
     /** The event semaphore the command thread waits on. */
     SUPSEMEVENT                 hEvtCmdThread;
+    /** Whether the command thread has been signaled for wake up. */
+    bool volatile               fCmdThreadSignaled;
+    /** Padding. */
+    bool                        afPadding0[7];
 
 #ifdef IOMMU_WITH_DTE_CACHE
     /** The critsect that protects the cache from concurrent access. */
@@ -564,12 +568,6 @@ typedef struct IOMMUR3
     R3PTRTYPE(PCPDMIOMMUHLPR3)  pIommuHlpR3;
     /** The command thread handle. */
     R3PTRTYPE(PPDMTHREAD)       pCmdThread;
-    /** Whether the command thread is sleeping. */
-    bool volatile               fCmdThreadSleeping;
-    /** Whether the command thread has been signaled for wake up. */
-    bool volatile               fCmdThreadSignaled;
-    /** Alignment padding. */
-    uint8_t                     afPadding0[6];
 #ifdef IOMMU_WITH_IOTLBE_CACHE
     /** Pointer to array of pre-allocated IOTLBEs. */
     PIOTLBE                     paIotlbes;
@@ -1295,7 +1293,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, PIOMMUR3 pThisR3, uint16_t uDomainId,
 static void iommuAmdIotlbRemoveAll(PPDMDEVINS pDevIns)
 {
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUCC pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
+    PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
 
     if (pThisR3->cCachedIotlbes > 0)
@@ -1658,8 +1656,7 @@ static void iommuAmdSetPciTargetAbort(PPDMDEVINS pDevIns)
 
 
 /**
- * Wakes up the command thread if there are commands to be processed or if
- * processing is requested to be stopped by software.
+ * Wakes up the command thread if there are commands to be processed.
  *
  * @param   pDevIns     The IOMMU device instance.
  *
@@ -1669,8 +1666,10 @@ static void iommuAmdCmdThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
 {
     Log4Func(("\n"));
 
-    PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    if (pThis->Status.n.u1CmdBufRunning)
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    if (    pThis->Status.n.u1CmdBufRunning
+        &&  pThis->CmdBufTailPtr.n.off != pThis->CmdBufHeadPtr.n.off
+        && !ASMAtomicXchgBool(&pThis->fCmdThreadSignaled, true))
     {
         Log4Func(("Signaling command thread\n"));
         PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
@@ -2135,7 +2134,7 @@ static VBOXSTRICTRC iommuAmdCtrl_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t of
                 ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_CMD_BUF_RUNNING);
                 LogFunc(("Command buffer enabled\n"));
 
-                /* Wake up the command thread to start processing commands. */
+                /* Wake up the command thread to start processing commands if any. */
                 iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
             }
             else
@@ -4767,7 +4766,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
 static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPHYS GCPhysCmd, PEVT_GENERIC_T pEvtError)
 {
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
 
     STAM_COUNTER_INC(&pThis->StatCmd);
 
@@ -4802,10 +4801,10 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                 /* If the command requests an interrupt and completion wait interrupts are enabled, raise it. */
                 if (pCmdComWait->n.u1Interrupt)
                 {
-                    IOMMU_LOCK(pDevIns, pThisCC);
+                    IOMMU_LOCK(pDevIns, pThisR3);
                     ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_COMPLETION_WAIT_INTR);
                     bool const fRaiseInt = pThis->Ctrl.n.u1CompWaitIntrEn;
-                    IOMMU_UNLOCK(pDevIns, pThisCC);
+                    IOMMU_UNLOCK(pDevIns, pThisR3);
 
                     if (fRaiseInt)
                         iommuAmdMsiInterruptRaise(pDevIns);
@@ -4997,7 +4996,7 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
 static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUCC pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
@@ -5016,20 +5015,15 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
         /*
          * Sleep perpetually until we are woken up to process commands.
          */
+        bool const fSignaled = ASMAtomicXchgBool(&pThis->fCmdThreadSignaled, false);
+        if (!fSignaled)
         {
-            ASMAtomicWriteBool(&pThisR3->fCmdThreadSleeping, true);
-            bool fSignaled = ASMAtomicXchgBool(&pThisR3->fCmdThreadSignaled, false);
-            if (!fSignaled)
-            {
-                Assert(ASMAtomicReadBool(&pThisR3->fCmdThreadSleeping));
-                int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtCmdThread, RT_INDEFINITE_WAIT);
-                AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
-                if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
-                    break;
-                Log4Func(("Woken up with rc=%Rrc\n", rc));
-                ASMAtomicWriteBool(&pThisR3->fCmdThreadSignaled, false);
-            }
-            ASMAtomicWriteBool(&pThisR3->fCmdThreadSleeping, false);
+            int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtCmdThread, RT_INDEFINITE_WAIT);
+            AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
+            if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
+                break;
+            Log4Func(("Woken up with rc=%Rrc\n", rc));
+            ASMAtomicWriteBool(&pThis->fCmdThreadSignaled, false);
         }
 
         /*
@@ -5174,8 +5168,8 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
         }
     }
 
-    PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
-    IOMMU_LOCK(pDevIns, pThisCC);
+    PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
+    IOMMU_LOCK(pDevIns, pThisR3);
 
     VBOXSTRICTRC rcStrict = VERR_IOMMU_IPE_3;
     switch (uAddress)
@@ -5255,7 +5249,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
         }
     }
 
-    IOMMU_UNLOCK(pDevIns, pThisCC);
+    IOMMU_UNLOCK(pDevIns, pThisR3);
 
     Log3Func(("uAddress=%#x (cb=%u) with %#x. rc=%Rrc\n", uAddress, cb, u32Value, VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
@@ -5971,7 +5965,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoIotlb(PPDMDEVINS pDevIns, PCDBGFINFOH
         {
             pHlp->pfnPrintf(pHlp, "IOTLBEs for domain %u (%#x):\n", uDomainId, uDomainId);
             PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-            PIOMMUCC pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
+            PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
             IOTLBEINFOARG Args;
             Args.pIommuR3  = pThisR3;
             Args.pHlp      = pHlp;
@@ -6127,14 +6121,114 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDevTabs(PPDMDEVINS pDevIns, PCDBGFINF
 
 
 /**
+ * @callback_method_impl{FNSSMDEVLIVEEXEC}
+ */
+static DECLCALLBACK(int) iommuAmdR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    PCIOMMU       pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+    RT_NOREF(uPass);
+    LogFlowFunc(("\n"));
+
+    /* Save registers that cannot be modified by the guest. */
+    pHlp->pfnSSMPutU64(pSSM, pThis->ExtFeat.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->DevSpecificFeat.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->DevSpecificCtrl.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->DevSpecificStatus.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->MiscInfo.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->RsvdReg);
+
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+
+/**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
 static DECLCALLBACK(int) iommuAmdR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    /** @todo IOMMU: Save state. */
-    RT_NOREF2(pDevIns, pSSM);
+    PCIOMMU       pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
     LogFlowFunc(("\n"));
-    return VERR_NOT_IMPLEMENTED;
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->IommuBar.u64);
+
+    uint8_t const cDevTabBaseAddrs = RT_ELEMENTS(pThis->aDevTabBaseAddrs);
+    pHlp->pfnSSMPutU8(pSSM, cDevTabBaseAddrs);
+    for (uint8_t i = 0; i < cDevTabBaseAddrs; i++)
+        pHlp->pfnSSMPutU64(pSSM, pThis->aDevTabBaseAddrs[i].u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->CmdBufBaseAddr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->EvtLogBaseAddr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->Ctrl.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->ExclRangeBaseAddr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->ExclRangeLimit.u64);
+#if 0
+    pHlp->pfnSSMPutU64(pSSM, pThis->ExtFeat.u64);  /* read-only, done in liveExec */
+#endif
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->PprLogBaseAddr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->HwEvtHi.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->HwEvtLo);
+    pHlp->pfnSSMPutU64(pSSM, pThis->HwEvtStatus.u64);
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->GALogBaseAddr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->GALogTailAddr.u64);
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->PprLogBBaseAddr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->EvtLogBBaseAddr.u64);
+
+#if 0
+    pHlp->pfnSSMPutU64(pSSM, pThis->DevSpecificFeat.u64);       /* read-only, done in liveExec */
+    pHlp->pfnSSMPutU64(pSSM, pThis->DevSpecificCtrl.u64);       /* read-only, done in liveExec */
+    pHlp->pfnSSMPutU64(pSSM, pThis->DevSpecificStatus.u64);     /* read-only, done in liveExec */
+#endif
+
+#if 0
+    pHlp->pfnSSMPutU64(pSSM, pThis->MiscInfo.u64);              /* read-only, done in liveExec */
+#endif
+    pHlp->pfnSSMPutU32(pSSM, pThis->PerfOptCtrl.u32);
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->XtGenIntrCtrl.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->XtPprIntrCtrl.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->XtGALogIntrCtrl.u64);
+
+    size_t const cMarcApers = RT_ELEMENTS(pThis->aMarcApers);
+    pHlp->pfnSSMPutU8(pSSM, cMarcApers);
+    for (size_t i = 0; i < cMarcApers; i++)
+    {
+        pHlp->pfnSSMPutU64(pSSM, pThis->aMarcApers[i].Base.u64);
+        pHlp->pfnSSMPutU64(pSSM, pThis->aMarcApers[i].Reloc.u64);
+        pHlp->pfnSSMPutU64(pSSM, pThis->aMarcApers[i].Length.u64);
+    }
+
+#if 0
+    pHlp->pfnSSMPutU64(pSSM, pThis->RsvdReg);       /* read-only, done in liveExec */
+#endif
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->CmdBufHeadPtr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->CmdBufTailPtr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->EvtLogHeadPtr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->EvtLogTailPtr.u64);
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->Status.u64);
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->PprLogHeadPtr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->PprLogTailPtr.u64);
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->GALogHeadPtr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->GALogTailPtr.u64);
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->PprLogBHeadPtr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->PprLogBTailPtr.u64);
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->EvtLogBHeadPtr.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->EvtLogBTailPtr.u64);
+
+    pHlp->pfnSSMPutU64(pSSM, pThis->PprLogAutoResp.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->PprLogOverflowEarly.u64);
+    pHlp->pfnSSMPutU64(pSSM, pThis->PprLogBOverflowEarly.u64);
+
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX);
 }
 
 
@@ -6143,10 +6237,138 @@ static DECLCALLBACK(int) iommuAmdR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    /** @todo IOMMU: Load state. */
-    RT_NOREF4(pDevIns, pSSM, uVersion, uPass);
+    PIOMMU        pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
     LogFlowFunc(("\n"));
+
+    /* Validate. */
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
+    if (uVersion != IOMMU_SAVED_STATE_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    int const rcDataError = VERR_SSM_UNEXPECTED_DATA;
+
+    int rc = pHlp->pfnSSMGetU64(pSSM, &pThis->ExtFeat.u64);
+    AssertRCReturn(rc, rc);
+    AssertLogRelMsgReturn(pThis->ExtFeat.n.u2HostAddrTranslateSize < 0x3,
+                          ("ExtFeat invalid %#RX64\n", pThis->ExtFeat.u64), rcDataError);
+
+    pHlp->pfnSSMGetU64(pSSM, &pThis->DevSpecificFeat.u64);
+    pHlp->pfnSSMGetU64(pSSM, &pThis->DevSpecificCtrl.u64);
+    pHlp->pfnSSMGetU64(pSSM, &pThis->DevSpecificStatus.u64);
+    pHlp->pfnSSMGetU64(pSSM, &pThis->MiscInfo.u64);
+    pHlp->pfnSSMGetU64(pSSM, &pThis->RsvdReg);
+
+    /* Device table base address registers. */
+    uint8_t cDevTabBaseAddrs;
+    rc = pHlp->pfnSSMGetU8(pSSM, &cDevTabBaseAddrs);
+    AssertRCReturn(rc, rc);
+    AssertLogRelMsgReturn(cDevTabBaseAddrs <= RT_ELEMENTS(pThis->aDevTabBaseAddrs),
+                          ("Device table segment count invalid %#x\n", cDevTabBaseAddrs), rcDataError);
+    for (uint8_t i = 0; i < cDevTabBaseAddrs; i++)
+    {
+        rc = pHlp->pfnSSMGetU64(pSSM, &pThis->aDevTabBaseAddrs[i].u64);
+        AssertRCReturn(rc, rc);
+        pThis->aDevTabBaseAddrs[i].u64 &= IOMMU_DEV_TAB_BAR_VALID_MASK;
+        AssertLogRelMsgReturn(pThis->aDevTabBaseAddrs[i].n.u9Size <= g_auDevTabSegMaxSizes[0],
+                              ("Device table segment size invalid %#x\n", pThis->aDevTabBaseAddrs[i].n.u9Size), rcDataError);
+    }
+
+    /* Command buffer base address register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->CmdBufBaseAddr.u64);
+    AssertRCReturn(rc, rc);
+    pThis->CmdBufBaseAddr.u64 &= IOMMU_CMD_BUF_BAR_VALID_MASK;
+    AssertLogRelMsgReturn(pThis->CmdBufBaseAddr.n.u4Len >= 8,
+                          ("Command buffer base address invalid %#RX64\n", pThis->CmdBufBaseAddr.u64), rcDataError);
+
+    /* Event log base address register. */
+    pHlp->pfnSSMPutU64(pSSM, pThis->EvtLogBaseAddr.u64);
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->EvtLogBaseAddr.u64);
+    AssertRCReturn(rc, rc);
+    pThis->EvtLogBaseAddr.u64 &= IOMMU_EVT_LOG_BAR_VALID_MASK;
+    AssertLogRelMsgReturn(pThis->EvtLogBaseAddr.n.u4Len >= 8,
+                          ("Event log base address invalid %#RX64\n", pThis->EvtLogBaseAddr.u64), rcDataError);
+
+    /* Control register. */
+    rc = pHlp->pfnSSMPutU64(pSSM, pThis->Ctrl.u64);
+    AssertRCReturn(rc, rc);
+    pThis->Ctrl.u64 &= IOMMU_CTRL_VALID_MASK;
+    AssertLogRelMsgReturn(pThis->Ctrl.n.u3DevTabSegEn <= pThis->ExtFeat.n.u2DevTabSegSup,
+                          ("Control register invalid %#RX64\n", pThis->Ctrl.u64), rcDataError);
+
+    /** @todo The rest. */
     return VERR_NOT_IMPLEMENTED;
+#if 0
+    pThis->ExclRangeBaseAddr.u64
+    pThis->ExclRangeLimit.u64
+#if 0
+    pThis->ExtFeat.u64;  /* read-only, done in liveExec */
+#endif
+
+    pThis->PprLogBaseAddr.u64);
+    pThis->HwEvtHi.u64);
+    pThis->HwEvtLo);
+    pThis->HwEvtStatus.u64);
+
+    pThis->GALogBaseAddr.u64);
+    pThis->GALogTailAddr.u64);
+
+    pThis->PprLogBBaseAddr.u64);
+    pThis->EvtLogBBaseAddr.u64);
+
+#if 0
+    pThis->DevSpecificFeat.u64);       /* read-only, done in liveExec */
+    pThis->DevSpecificCtrl.u64);       /* read-only, done in liveExec */
+    pThis->DevSpecificStatus.u64);     /* read-only, done in liveExec */
+#endif
+
+#if 0
+    pThis->MiscInfo.u64);              /* read-only, done in liveExec */
+#endif
+    pThis->PerfOptCtrl.u32);
+
+    pThis->XtGenIntrCtrl.u64);
+    pThis->XtPprIntrCtrl.u64);
+    pThis->XtGALogIntrCtrl.u64);
+
+    size_t const cMarcApers = RT_ELEMENTS(pThis->aMarcApers);
+    pHlp->pfnSSMPutU8(pSSM, cMarcApers);
+    for (size_t i = 0; i < cMarcApers; i++)
+    {
+        pHlp->pfnSSMPutU64(pSSM, pThis->aMarcApers[i].Base.u64);
+        pHlp->pfnSSMPutU64(pSSM, pThis->aMarcApers[i].Reloc.u64);
+        pHlp->pfnSSMPutU64(pSSM, pThis->aMarcApers[i].Length.u64);
+    }
+
+#if 0
+    pHlp->pfnSSMPutU64(pSSM, pThis->RsvdReg);       /* read-only, done in liveExec */
+#endif
+
+    pThis->CmdBufHeadPtr.u64);
+    pThis->CmdBufTailPtr.u64);
+    pThis->EvtLogHeadPtr.u64);
+    pThis->EvtLogTailPtr.u64);
+
+    pThis->Status.u64);
+
+    pThis->PprLogHeadPtr.u64);
+    pThis->PprLogTailPtr.u64);
+
+    pThis->GALogHeadPtr.u64);
+    pThis->GALogTailPtr.u64);
+
+    pThis->PprLogBHeadPtr.u64);
+    pThis->PprLogBTailPtr.u64);
+
+    pThis->EvtLogBHeadPtr.u64);
+    pThis->EvtLogBTailPtr.u64);
+
+    pThis->PprLogAutoResp.u64);
+    pThis->PprLogOverflowEarly.u64);
+    pThis->PprLogBOverflowEarly.u64);
+
+    return VINF_SUCCESS;
+#endif
 }
 
 
@@ -6162,15 +6384,14 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
      * device construction and remain read-only through the lifetime of the VM.
      */
     PIOMMU     pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUCC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    PIOMMUR3   pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-
-    IOMMU_LOCK_NORET(pDevIns, pThisCC);
-
     LogFlowFunc(("\n"));
 
-    memset(&pThis->aDevTabBaseAddrs[0], 0, sizeof(pThis->aDevTabBaseAddrs));
+    IOMMU_LOCK_NORET(pDevIns, pThisR3);
+
+    RT_ZERO(pThis->aDevTabBaseAddrs);
 
     pThis->CmdBufBaseAddr.u64        = 0;
     pThis->CmdBufBaseAddr.n.u4Len    = 8;
@@ -6208,7 +6429,7 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->XtPprIntrCtrl.u64         = 0;
     pThis->XtGALogIntrCtrl.u64       = 0;
 
-    memset(&pThis->aMarcApers[0], 0, sizeof(pThis->aMarcApers));
+    RT_ZERO(pThis->aMarcApers);
 
     pThis->CmdBufHeadPtr.u64         = 0;
     pThis->CmdBufTailPtr.u64         = 0;
@@ -6239,7 +6460,7 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
 
     PDMPciDevSetCommand(pPciDev, VBOX_PCI_COMMAND_MASTER);
 
-    IOMMU_UNLOCK(pDevIns, pThisCC);
+    IOMMU_UNLOCK(pDevIns, pThisR3);
 
 #ifdef IOMMU_WITH_DTE_CACHE
     iommuAmdDteCacheRemoveAll(pDevIns);
@@ -6260,7 +6481,7 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUCC pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
     LogFlowFunc(("\n"));
 
     IOMMU_LOCK_NORET(pDevIns, pThisR3);
@@ -6296,9 +6517,9 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     RT_NOREF(pCfg);
 
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
     pThis->u32Magic = IOMMU_MAGIC;
-    pThisCC->pDevInsR3 = pDevIns;
+    pThisR3->pDevInsR3 = pDevIns;
 
     LogFlowFunc(("iInstance=%d\n", iInstance));
 
@@ -6312,17 +6533,17 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     IommuReg.pfnMemBulkAccess = iommuAmdMemBulkAccess;
     IommuReg.pfnMsiRemap      = iommuAmdMsiRemap;
     IommuReg.u32TheEnd        = PDM_IOMMUREGCC_VERSION;
-    int rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
+    int rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisR3->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to register ourselves as an IOMMU device"));
-    if (pThisCC->CTX_SUFF(pIommuHlp)->u32Version != PDM_IOMMUHLPR3_VERSION)
+    if (pThisR3->CTX_SUFF(pIommuHlp)->u32Version != PDM_IOMMUHLPR3_VERSION)
         return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
                                    N_("IOMMU helper version mismatch; got %#x expected %#x"),
-                                   pThisCC->CTX_SUFF(pIommuHlp)->u32Version, PDM_IOMMUHLPR3_VERSION);
-    if (pThisCC->CTX_SUFF(pIommuHlp)->u32TheEnd != PDM_IOMMUHLPR3_VERSION)
+                                   pThisR3->CTX_SUFF(pIommuHlp)->u32Version, PDM_IOMMUHLPR3_VERSION);
+    if (pThisR3->CTX_SUFF(pIommuHlp)->u32TheEnd != PDM_IOMMUHLPR3_VERSION)
         return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
                                    N_("IOMMU helper end-version mismatch; got %#x expected %#x"),
-                                   pThisCC->CTX_SUFF(pIommuHlp)->u32TheEnd, PDM_IOMMUHLPR3_VERSION);
+                                   pThisR3->CTX_SUFF(pIommuHlp)->u32TheEnd, PDM_IOMMUHLPR3_VERSION);
 
     /*
      * We will use PDM's critical section (via helpers) for the IOMMU device.
@@ -6450,10 +6671,8 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Register saved state.
      */
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, IOMMU_SAVED_STATE_VERSION, sizeof(IOMMU), NULL,
-                                NULL, NULL, NULL,
-                                NULL, iommuAmdR3SaveExec, NULL,
-                                NULL, iommuAmdR3LoadExec, NULL);
+    rc = PDMDevHlpSSMRegister3(pDevIns, IOMMU_SAVED_STATE_VERSION, sizeof(IOMMU), iommuAmdR3LiveExec, iommuAmdR3SaveExec,
+                               iommuAmdR3LoadExec);
     AssertLogRelRCReturn(rc, rc);
 
     /*
@@ -6535,7 +6754,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     char szDevIommu[64];
     RT_ZERO(szDevIommu);
     RTStrPrintf(szDevIommu, sizeof(szDevIommu), "IOMMU-%u", iInstance);
-    rc = PDMDevHlpThreadCreate(pDevIns, &pThisCC->pCmdThread, pThis, iommuAmdR3CmdThread, iommuAmdR3CmdThreadWakeUp,
+    rc = PDMDevHlpThreadCreate(pDevIns, &pThisR3->pCmdThread, pThis, iommuAmdR3CmdThread, iommuAmdR3CmdThreadWakeUp,
                                0 /* cbStack */, RTTHREADTYPE_IO, szDevIommu);
     AssertLogRelRCReturn(rc, rc);
 
@@ -6562,11 +6781,11 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * the lifetime of the VM if the hyperheap gets full.
      */
     size_t const cbIotlbes = sizeof(IOTLBE) * IOMMU_IOTLBE_MAX;
-    pThisCC->paIotlbes = (PIOTLBE)PDMDevHlpMMHeapAllocZ(pDevIns, cbIotlbes);
-    if (!pThisCC->paIotlbes)
+    pThisR3->paIotlbes = (PIOTLBE)PDMDevHlpMMHeapAllocZ(pDevIns, cbIotlbes);
+    if (!pThisR3->paIotlbes)
         return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
                                    N_("Failed to allocate %zu bytes from the hyperheap for the IOTLB cache."), cbIotlbes);
-    RTListInit(&pThisCC->LstLruIotlbe);
+    RTListInit(&pThisR3->LstLruIotlbe);
     LogRel(("%s: Allocated %zu bytes from the hyperheap for the IOTLB cache\n", IOMMU_LOG_PFX, cbIotlbes));
 #endif
 
@@ -6613,8 +6832,6 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     //pThis->ExtFeat.n.u1GstUpdateDisSup       = 0;
     //pThis->ExtFeat.n.u1ForcePhysDstSup       = 0;
 
-    pThis->RsvdReg = 0;
-
     pThis->DevSpecificFeat.u64   = 0;
     pThis->DevSpecificFeat.n.u4RevMajor = IOMMU_DEVSPEC_FEAT_MAJOR_VERSION;
     pThis->DevSpecificFeat.n.u4RevMinor = IOMMU_DEVSPEC_FEAT_MINOR_VERSION;
@@ -6628,6 +6845,8 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->DevSpecificStatus.n.u4RevMinor = IOMMU_DEVSPEC_STATUS_MINOR_VERSION;
 
     pThis->MiscInfo.u64 = RT_MAKE_U64(uMiscInfoReg0, uMiscInfoReg1);
+
+    pThis->RsvdReg = 0;
 
     /*
      * Initialize parts of the IOMMU state as it would during reset.
