@@ -346,19 +346,10 @@ typedef struct IOMMU
     /** IOMMU magic. */
     uint32_t                    u32Magic;
 
-    /** Whether the command thread is sleeping. */
-    bool volatile               fCmdThreadSleeping;
-    /** Alignment padding. */
-    uint8_t                     afPadding0[3];
-    /** Whether the command thread has been signaled for wake up. */
-    bool volatile               fCmdThreadSignaled;
-    /** Alignment padding. */
-    uint8_t                     afPadding1[3];
-
-    /** The event semaphore the command thread waits on. */
-    SUPSEMEVENT                 hEvtCmdThread;
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
+    /** The event semaphore the command thread waits on. */
+    SUPSEMEVENT                 hEvtCmdThread;
 
 #ifdef IOMMU_WITH_DTE_CACHE
     /** The critsect that protects the cache from concurrent access. */
@@ -545,14 +536,12 @@ typedef struct IOMMU
 #endif
 } IOMMU;
 /** Pointer to the IOMMU device state. */
-typedef struct IOMMU *PIOMMU;
+typedef IOMMU *PIOMMU;
 /** Pointer to the const IOMMU device state. */
-typedef const struct IOMMU *PCIOMMU;
-AssertCompileMemberAlignment(IOMMU, fCmdThreadSleeping, 4);
-AssertCompileMemberAlignment(IOMMU, fCmdThreadSignaled, 4);
-AssertCompileMemberAlignment(IOMMU, hEvtCmdThread, 8);
+typedef const IOMMU *PCIOMMU;
 AssertCompileMemberAlignment(IOMMU, hMmio, 8);
 #ifdef IOMMU_WITH_DTE_CACHE
+AssertCompileMemberAlignment(IOMMU, CritSectCache, 8);
 AssertCompileMemberAlignment(IOMMU, aDeviceIds, 8);
 AssertCompileMemberAlignment(IOMMU, aDteCache, 8);
 #endif
@@ -575,6 +564,12 @@ typedef struct IOMMUR3
     R3PTRTYPE(PCPDMIOMMUHLPR3)  pIommuHlpR3;
     /** The command thread handle. */
     R3PTRTYPE(PPDMTHREAD)       pCmdThread;
+    /** Whether the command thread is sleeping. */
+    bool volatile               fCmdThreadSleeping;
+    /** Whether the command thread has been signaled for wake up. */
+    bool volatile               fCmdThreadSignaled;
+    /** Alignment padding. */
+    uint8_t                     afPadding0[6];
 #ifdef IOMMU_WITH_IOTLBE_CACHE
     /** Pointer to array of pre-allocated IOTLBEs. */
     PIOTLBE                     paIotlbes;
@@ -590,6 +585,8 @@ typedef struct IOMMUR3
 } IOMMUR3;
 /** Pointer to the ring-3 IOMMU device state. */
 typedef IOMMUR3 *PIOMMUR3;
+/** Pointer to the const ring-3 IOMMU device state. */
+typedef const IOMMUR3 *PCIOMMUR3;
 #ifdef IOMMU_WITH_IOTLBE_CACHE
 AssertCompileMemberAlignment(IOMMUR3, paIotlbes, 8);
 AssertCompileMemberAlignment(IOMMUR3, TreeIotlbe, 8);
@@ -1672,7 +1669,7 @@ static void iommuAmdCmdThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
 {
     Log4Func(("\n"));
 
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     if (pThis->Status.n.u1CmdBufRunning)
     {
         Log4Func(("Signaling command thread\n"));
@@ -5000,7 +4997,7 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
 static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    PIOMMUCC pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
@@ -5020,19 +5017,19 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
          * Sleep perpetually until we are woken up to process commands.
          */
         {
-            ASMAtomicWriteBool(&pThis->fCmdThreadSleeping, true);
-            bool fSignaled = ASMAtomicXchgBool(&pThis->fCmdThreadSignaled, false);
+            ASMAtomicWriteBool(&pThisR3->fCmdThreadSleeping, true);
+            bool fSignaled = ASMAtomicXchgBool(&pThisR3->fCmdThreadSignaled, false);
             if (!fSignaled)
             {
-                Assert(ASMAtomicReadBool(&pThis->fCmdThreadSleeping));
+                Assert(ASMAtomicReadBool(&pThisR3->fCmdThreadSleeping));
                 int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtCmdThread, RT_INDEFINITE_WAIT);
                 AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
                 if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                     break;
                 Log4Func(("Woken up with rc=%Rrc\n", rc));
-                ASMAtomicWriteBool(&pThis->fCmdThreadSignaled, false);
+                ASMAtomicWriteBool(&pThisR3->fCmdThreadSignaled, false);
             }
-            ASMAtomicWriteBool(&pThis->fCmdThreadSleeping, false);
+            ASMAtomicWriteBool(&pThisR3->fCmdThreadSleeping, false);
         }
 
         /*
@@ -5042,7 +5039,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
          *        temporary host buffer before processing them as a batch. If we want to
          *        save on host memory a bit, we could (once PGM has the necessary APIs)
          *        lock the page mappings page mappings and access them directly. */
-        IOMMU_LOCK(pDevIns, pThisCC);
+        IOMMU_LOCK(pDevIns, pThisR3);
 
         if (pThis->Status.n.u1CmdBufRunning)
         {
@@ -5061,9 +5058,9 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                 /* Read the entire command buffer from memory (avoids multiple PGM calls). */
                 RTGCPHYS const GCPhysCmdBufBase = pThis->CmdBufBaseAddr.n.u40Base << X86_PAGE_4K_SHIFT;
 
-                IOMMU_UNLOCK(pDevIns, pThisCC);
+                IOMMU_UNLOCK(pDevIns, pThisR3);
                 int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysCmdBufBase, pvCmds, cbCmdBuf);
-                IOMMU_LOCK(pDevIns, pThisCC);
+                IOMMU_LOCK(pDevIns, pThisR3);
 
                 if (RT_SUCCESS(rc))
                 {
@@ -5071,7 +5068,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                     pThis->CmdBufHeadPtr.n.off = offTail;
 
                     /* Allow IOMMU to do other work while we process commands. */
-                    IOMMU_UNLOCK(pDevIns, pThisCC);
+                    IOMMU_UNLOCK(pDevIns, pThisR3);
 
                     /* Process the fetched commands. */
                     EVT_GENERIC_T EvtError;
@@ -5107,14 +5104,14 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                     iommuAmdCmdHwErrorEventInit(GCPhysCmdBufBase, &EvtCmdHwErr);
                     iommuAmdCmdHwErrorEventRaise(pDevIns, &EvtCmdHwErr);
 
-                    IOMMU_UNLOCK(pDevIns, pThisCC);
+                    IOMMU_UNLOCK(pDevIns, pThisR3);
                 }
             }
             else
-                IOMMU_UNLOCK(pDevIns, pThisCC);
+                IOMMU_UNLOCK(pDevIns, pThisR3);
         }
         else
-            IOMMU_UNLOCK(pDevIns, pThisCC);
+            IOMMU_UNLOCK(pDevIns, pThisR3);
     }
 
     RTMemFree(pvCmds);
@@ -5134,7 +5131,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREA
 {
     RT_NOREF(pThread);
     LogFlowFunc(("\n"));
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
 }
 
@@ -6262,11 +6259,11 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PIOMMU   pThis  = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
+    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMUCC pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
     LogFlowFunc(("\n"));
 
-    IOMMU_LOCK_NORET(pDevIns, pThisCC);
+    IOMMU_LOCK_NORET(pDevIns, pThisR3);
 
     /* Close the command thread semaphore. */
     if (pThis->hEvtCmdThread != NIL_SUPSEMEVENT)
@@ -6277,15 +6274,15 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
     /* Destroy the IOTLB cache. */
-    if (pThisCC->paIotlbes)
+    if (pThisR3->paIotlbes)
     {
-        PDMDevHlpMMHeapFree(pDevIns, pThisCC->paIotlbes);
-        pThisCC->paIotlbes = NULL;
-        pThisCC->idxUnusedIotlbe = 0;
+        PDMDevHlpMMHeapFree(pDevIns, pThisR3->paIotlbes);
+        pThisR3->paIotlbes = NULL;
+        pThisR3->idxUnusedIotlbe = 0;
     }
 #endif
 
-    IOMMU_UNLOCK(pDevIns, pThisCC);
+    IOMMU_UNLOCK(pDevIns, pThisR3);
     return VINF_SUCCESS;
 }
 
