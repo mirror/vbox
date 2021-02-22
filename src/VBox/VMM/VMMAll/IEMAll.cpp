@@ -13914,6 +13914,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXST
                       || rcStrict == VINF_PATM_CHECK_PATCH_PAGE
                       /* nested hw.virt codes: */
                       || rcStrict == VINF_VMX_VMEXIT
+                      || rcStrict == VINF_VMX_INTERCEPT_NOT_ACTIVE
                       || rcStrict == VINF_VMX_MODIFIES_BEHAVIOR
                       || rcStrict == VINF_SVM_VMEXIT
                       , ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
