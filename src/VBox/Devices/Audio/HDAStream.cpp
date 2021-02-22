@@ -1748,7 +1748,9 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 
                     if (!cbRead)
                     {
+#ifdef HDA_STRICT
                         AssertMsgFailed(("Nothing read from sink, even if %RU32 bytes were (still) announced\n", cbSinkReadable));
+#endif
                         break;
                     }
 

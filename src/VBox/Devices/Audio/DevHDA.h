@@ -35,7 +35,7 @@
 #ifdef DEBUG_andy
 /** Enables strict mode, which checks for stuff which isn't supposed to happen.
  *  Be prepared for assertions coming in! */
-# define HDA_STRICT
+//# define HDA_STRICT
 #endif
 
 /**
