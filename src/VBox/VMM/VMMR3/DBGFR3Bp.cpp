@@ -2201,6 +2201,12 @@ VMMR3DECL(int) DBGFR3BpClear(PUVM pUVM, DBGFBP hBp)
             AssertRC(rc);
             break;
         }
+        case DBGFBPTYPE_INT3:
+        {
+            int rc = dbgfR3BpInt3Remove(pUVM, hBp, pBp);
+            AssertRC(rc);
+            break;
+        }
         default:
             break;
     }
@@ -2349,40 +2355,43 @@ VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu)
         AssertReturn(pBp, VERR_DBGF_BP_IPE_9);
 
         /* Resolve owner (can be NIL_DBGFBPOWNER) and invoke callback if there is one. */
-        PCDBGFBPOWNERINT pBpOwner = dbgfR3BpOwnerGetByHnd(pVM->pUVM, pBp->Pub.hOwner);
-        if (pBpOwner)
+        if (pBp->Pub.hOwner != NIL_DBGFBPOWNER)
         {
-            VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-
-            if (DBGF_BP_PUB_IS_EXEC_BEFORE(&pBp->Pub))
-                rcStrict = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_BEFORE);
-            if (rcStrict == VINF_SUCCESS)
+            PCDBGFBPOWNERINT pBpOwner = dbgfR3BpOwnerGetByHnd(pVM->pUVM, pBp->Pub.hOwner);
+            if (pBpOwner)
             {
-                uint8_t abInstr[DBGF_BP_INSN_MAX];
-                RTGCPTR const GCPtrInstr = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
-                int rc = PGMPhysSimpleReadGCPtr(pVCpu, &abInstr[0], GCPtrInstr, sizeof(abInstr));
-                AssertRC(rc);
-                if (RT_SUCCESS(rc))
+                VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+
+                if (DBGF_BP_PUB_IS_EXEC_BEFORE(&pBp->Pub))
+                    rcStrict = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_BEFORE);
+                if (rcStrict == VINF_SUCCESS)
                 {
-                    /* Replace the int3 with the original instruction byte. */
-                    abInstr[0] = pBp->Pub.u.Int3.bOrg;
-                    rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, &abInstr[0], sizeof(abInstr));
-                    if (   rcStrict == VINF_SUCCESS
-                        && DBGF_BP_PUB_IS_EXEC_AFTER(&pBp->Pub))
+                    uint8_t abInstr[DBGF_BP_INSN_MAX];
+                    RTGCPTR const GCPtrInstr = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
+                    int rc = PGMPhysSimpleReadGCPtr(pVCpu, &abInstr[0], GCPtrInstr, sizeof(abInstr));
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
                     {
-                        VBOXSTRICTRC rcStrict2 = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_AFTER);
-                        if (rcStrict2 == VINF_SUCCESS)
+                        /* Replace the int3 with the original instruction byte. */
+                        abInstr[0] = pBp->Pub.u.Int3.bOrg;
+                        rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, &abInstr[0], sizeof(abInstr));
+                        if (   rcStrict == VINF_SUCCESS
+                            && DBGF_BP_PUB_IS_EXEC_AFTER(&pBp->Pub))
+                        {
+                            VBOXSTRICTRC rcStrict2 = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_AFTER);
+                            if (rcStrict2 == VINF_SUCCESS)
+                                return VBOXSTRICTRC_VAL(rcStrict);
+                            else if (rcStrict2 != VINF_DBGF_BP_HALT)
+                                return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
+                        }
+                        else
                             return VBOXSTRICTRC_VAL(rcStrict);
-                        else if (rcStrict2 != VINF_DBGF_BP_HALT)
-                            return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
                     }
-                    else
-                        return VBOXSTRICTRC_VAL(rcStrict);
                 }
+                else if (rcStrict != VINF_DBGF_BP_HALT) /* Guru meditation. */
+                    return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
+                /* else: Halt in the debugger. */
             }
-            else if (rcStrict != VINF_DBGF_BP_HALT) /* Guru meditation. */
-                return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
-            /* else: Halt in the debugger. */
         }
     }
 
