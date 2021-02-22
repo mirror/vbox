@@ -406,10 +406,10 @@ bool UIWizardNewVMPageExpert::isComplete() const
         fIsComplete = false;
     }
 
-    if (!m_pDiskSkip->isChecked() && !m_pDiskPresent->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
+    if (m_pDiskPresent->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
     {
         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
-                                UIIconPool::iconSet(":/status_error_16px.png"));
+                                     UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
         fIsComplete = false;
     }
     /* Check unattended install related stuff: */
