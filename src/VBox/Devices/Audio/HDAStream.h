@@ -266,7 +266,14 @@ typedef HDASTREAMR3 *PHDASTREAMR3;
 
 #ifdef IN_RING3
 
-/** @name Stream functions.
+/** @name Stream functions (shared).
+ * @{
+ */
+void                hdaStreamLock(PHDASTREAM pStreamShared);
+void                hdaStreamUnlock(PHDASTREAM pStreamShared);
+/** @} */
+
+/** @name Stream functions (ring-3).
  * @{
  */
 int                 hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDASTATE pThis,
@@ -280,8 +287,6 @@ int                 hdaR3StreamEnable(PHDASTREAM pStreamShared, PHDASTREAMR3 pSt
 void                hdaR3StreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t uToAdd);
 bool                hdaR3StreamTransferIsScheduled(PHDASTREAM pStreamShared, uint64_t tsNow);
 uint64_t            hdaR3StreamTransferGetNext(PHDASTREAM pStreamShared);
-void                hdaStreamLock(PHDASTREAM pStreamShared);
-void                hdaStreamUnlock(PHDASTREAM pStreamShared);
 void                hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                                       PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fInTimer);
 PHDASTREAM          hdaR3StreamR3ToShared(PHDASTREAMR3 pStreamCC);
@@ -291,7 +296,7 @@ void                hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream);
 # endif
 /** @} */
 
-/** @name Async I/O stream functions.
+/** @name Async I/O stream functions (ring-3).
  * @{
  */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
