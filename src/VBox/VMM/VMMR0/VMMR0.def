@@ -91,11 +91,6 @@ EXPORTS
     RTAssertMsg1Weak
     RTAssertMsg2Weak
     RTAssertShouldPanic
-    RTAvlU64Destroy
-    RTAvlU64DoWithAll
-    RTAvlU64Get
-    RTAvlU64Insert
-    RTAvlU64Remove
     RTCrc32
     RTOnceSlow
     RTTimeNanoTSLegacySyncInvarNoDelta

@@ -53,7 +53,6 @@
 
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
-#include <iprt/avl.h>
 #include <iprt/crc.h>
 #include <iprt/mp.h>
 #include <iprt/once.h>
@@ -150,11 +149,6 @@ RT_C_DECLS_END
  * The runtime lives here (in VMMR0.r0) and VBoxDD*R0.r0 links against us. */
 struct CLANG11WEIRDNOTHROW { PFNRT pfn; } g_VMMR0Deps[] =
 {
-    { (PFNRT)RTAvlU64Destroy },
-    { (PFNRT)RTAvlU64DoWithAll },
-    { (PFNRT)RTAvlU64Get },
-    { (PFNRT)RTAvlU64Insert },
-    { (PFNRT)RTAvlU64Remove },
     { (PFNRT)RTCrc32 },
     { (PFNRT)RTOnce },
 #if defined(RT_ARCH_X86) && (defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD))
