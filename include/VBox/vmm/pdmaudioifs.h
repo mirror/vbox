@@ -1200,6 +1200,11 @@ typedef struct PDMAUDIOSTREAMCTX
 /** Pointer to an audio stream context. */
 typedef struct PDMAUDIOSTREAM *PPDMAUDIOSTREAMCTX;
 
+/** No stream warning flags set. */
+#define PDMAUDIOSTREAM_WARN_FLAGS_NONE          0
+/** Warned about a disabled stream. */
+#define PDMAUDIOSTREAM_WARN_FLAGS_DISABLED      RT_BIT(0)
+
 /**
  * An input or output audio stream.
  */
@@ -1214,6 +1219,9 @@ typedef struct PDMAUDIOSTREAM
     uint32_t                cRefs;
     /** Number of (re-)tries while re-initializing the stream. */
     uint32_t                cTriesReInit;
+    /** Warnings shown already in the release log.
+     *  See PDMAUDIOSTREAM_WARN_FLAGS_XXX defines. */
+    uint32_t                fWarningsShown;
     /** Stream status flag. */
     PDMAUDIOSTREAMSTS       fStatus;
     /** Audio direction of this stream. */

@@ -895,7 +895,9 @@ static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
 
     LogFunc(("[%s]\n", pStream->szName));
 
-    pStream->fStatus = PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED;
+    pStream->fStatus        = PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED;
+    pStream->fWarningsShown = PDMAUDIOSTREAM_WARN_FLAGS_NONE;
+
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Reset statistics.
@@ -2799,6 +2801,12 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
                     LogRel(("Audio: Failed to %s %s stream '%s', rc=%Rrc\n",
                             fEnable ? "enable" : "disable", enmDir == PDMAUDIODIR_IN ? "input" : "output", pStream->szName, rc2));
             }
+            else
+            {
+                /* When (re-)enabling a stream, clear the disabled warning bit again. */
+                if (fEnable)
+                    pStream->fWarningsShown &= ~PDMAUDIOSTREAM_WARN_FLAGS_DISABLED;
+            }
 
             if (RT_SUCCESS(rc))
                 rc = rc2;
@@ -2952,7 +2960,11 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
             {
                 cbReadable = DrvAudioHlpNanoToBytes(RTTimeNanoTS() - pStream->tsLastReadWrittenNs,
                                                     &pStream->Host.Cfg.Props);
-                Log3Func(("[%s] Backend stream not ready or driver has disabled audio input, returning silence\n", pStream->szName));
+                if (!(pStream->fWarningsShown & PDMAUDIOSTREAM_WARN_FLAGS_DISABLED))
+                {
+                    LogRel(("Audio: Stream '%s' not ready or driver has disabled audio input, returning silence\n", pStream->szName));
+                    pStream->fWarningsShown |= PDMAUDIOSTREAM_WARN_FLAGS_DISABLED;
+                }
             }
         }
 
