@@ -174,13 +174,6 @@ static int debugCreateStreamIn(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStrea
     /* Chose a random frequency so that every time a recording is started (hopefully) another tone will be generated. */
     pStreamDbg->In.uFreqHz   = auFreqsHz[RTRandU32Ex(0, RT_ELEMENTS(auFreqsHz) - 1)];
 
-    pCfgAcq->Props.uHz         = 22050; /* 22,5 kHz. */
-    pCfgAcq->Props.cbSample    = 2;     /* 16-bit samples. */
-    pCfgAcq->Props.cChannels   = 1;     /* Mono. */
-    pCfgAcq->Props.fSigned     = true;
-    pCfgAcq->Props.fSwapEndian = false;
-    pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
-
     return debugCreateFile(pDrv, pStreamDbg, true /* fIn */, pCfgAcq);
 }
 
