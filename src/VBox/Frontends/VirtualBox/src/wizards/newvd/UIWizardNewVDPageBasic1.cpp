@@ -33,6 +33,7 @@
 
 
 UIWizardNewVDPage1::UIWizardNewVDPage1()
+    : m_pFormatButtonGroup(0)
 {
 }
 
@@ -75,9 +76,62 @@ void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatL
     }
 }
 
+QWidget *UIWizardNewVDPage1::createFormatButtonGroup(bool fExpertMode)
+{
+    QWidget *pContainerWidget = new QWidget;
+    QVBoxLayout *pContainerLayout = new QVBoxLayout(pContainerWidget);
+    pContainerLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_pFormatButtonGroup = new QButtonGroup;
+    if (m_pFormatButtonGroup)
+    {
+        /* Enumerate medium formats in special order: */
+        CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
+        const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
+        QMap<QString, CMediumFormat> vdi, preferred, others;
+        foreach (const CMediumFormat &format, formats)
+        {
+            /* VDI goes first: */
+            if (format.GetName() == "VDI")
+                vdi[format.GetId()] = format;
+            else
+            {
+                const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
+                /* Then goes preferred: */
+                if (capabilities.contains(KMediumFormatCapabilities_Preferred))
+                    preferred[format.GetId()] = format;
+                /* Then others: */
+                else
+                    others[format.GetId()] = format;
+            }
+        }
+
+        /* Create buttons for VDI, preferred and others: */
+        foreach (const QString &strId, vdi.keys())
+            addFormatButton(pContainerWidget, pContainerLayout, vdi.value(strId), fExpertMode);
+        foreach (const QString &strId, preferred.keys())
+            addFormatButton(pContainerWidget, pContainerLayout, preferred.value(strId), fExpertMode);
+        if (fExpertMode)
+        {
+            foreach (const QString &strId, others.keys())
+                addFormatButton(pContainerWidget, pContainerLayout, others.value(strId));
+        }
+
+        if (!m_pFormatButtonGroup->buttons().isEmpty())
+        {
+            m_pFormatButtonGroup->button(0)->click();
+            m_pFormatButtonGroup->button(0)->setFocus();
+        }
+    }
+
+
+
+    return pContainerWidget;
+}
+
 CMediumFormat UIWizardNewVDPage1::mediumFormat() const
 {
-    return m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
+    return m_pFormatButtonGroup && m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
 }
 
 void UIWizardNewVDPage1::setMediumFormat(const CMediumFormat &mediumFormat)
@@ -96,43 +150,9 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        QVBoxLayout *pFormatLayout = new QVBoxLayout;
-        {
-            m_pFormatButtonGroup = new QButtonGroup(this);
-            {
-                /* Enumerate medium formats in special order: */
-                CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
-                const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
-                QMap<QString, CMediumFormat> vdi, preferred;
-                foreach (const CMediumFormat &format, formats)
-                {
-                    /* VDI goes first: */
-                    if (format.GetName() == "VDI")
-                        vdi[format.GetId()] = format;
-                    else
-                    {
-                        const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
-                        /* Then preferred: */
-                        if (capabilities.contains(KMediumFormatCapabilities_Preferred))
-                            preferred[format.GetId()] = format;
-                    }
-                }
-
-                /* Create buttons for VDI and preferred: */
-                foreach (const QString &strId, vdi.keys())
-                    addFormatButton(this, pFormatLayout, vdi.value(strId));
-                foreach (const QString &strId, preferred.keys())
-                    addFormatButton(this, pFormatLayout, preferred.value(strId));
-
-                if (!m_pFormatButtonGroup->buttons().isEmpty())
-                {
-                    m_pFormatButtonGroup->button(0)->click();
-                    m_pFormatButtonGroup->button(0)->setFocus();
-                }
-            }
-        }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addLayout(pFormatLayout);
+        pMainLayout->addWidget(createFormatButtonGroup(false));
+
         pMainLayout->addStretch();
     }
 

@@ -153,14 +153,17 @@ QString UIWizardNewVDPage3::absoluteFilePath(const QString &strFileName, const Q
 /* static */
 QString UIWizardNewVDPage3::defaultExtension(const CMediumFormat &mediumFormatRef)
 {
-    /* Load extension / device list: */
-    QVector<QString> fileExtensions;
-    QVector<KDeviceType> deviceTypes;
-    CMediumFormat mediumFormat(mediumFormatRef);
-    mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-    for (int i = 0; i < fileExtensions.size(); ++i)
-        if (deviceTypes[i] == KDeviceType_HardDisk)
-            return fileExtensions[i].toLower();
+    if (!mediumFormatRef.isNull())
+    {
+        /* Load extension / device list: */
+        QVector<QString> fileExtensions;
+        QVector<KDeviceType> deviceTypes;
+        CMediumFormat mediumFormat(mediumFormatRef);
+        mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+        for (int i = 0; i < fileExtensions.size(); ++i)
+            if (deviceTypes[i] == KDeviceType_HardDisk)
+                return fileExtensions[i].toLower();
+    }
     AssertMsgFailed(("Extension can't be NULL!\n"));
     return QString();
 }

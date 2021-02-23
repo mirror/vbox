@@ -46,6 +46,8 @@ protected:
     /* Helping stuff: */
     void addFormatButton(QWidget *pParent, QVBoxLayout *pFormatsLayout, CMediumFormat medFormat, bool fPreferred = false);
 
+    QWidget *createFormatButtonGroup(bool fExperMode);
+
     /* Stuff for 'mediumFormat' field: */
     CMediumFormat mediumFormat() const;
     void setMediumFormat(const CMediumFormat &mediumFormat);

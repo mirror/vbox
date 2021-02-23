@@ -79,7 +79,7 @@ private:
     /* Widgets: */
     QGroupBox *m_pFormatGroupBox;
     QGroupBox *m_pVariantGroupBox;
-    QGroupBox *m_pLocationCnt;
+    QGroupBox *m_pLocationGroupBox;
     QGroupBox *m_pSizeGroupBox;
 };
 
