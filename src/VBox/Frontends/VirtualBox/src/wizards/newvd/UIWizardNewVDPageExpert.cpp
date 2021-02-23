@@ -66,23 +66,23 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
                 pLocationCntLayout->addWidget(m_pLocationOpenButton);
             }
         }
-        m_pSizeCnt = new QGroupBox(this);
+        m_pSizeGroupBox = new QGroupBox(this);
         {
-            m_pSizeCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QVBoxLayout *pSizeCntLayout = new QVBoxLayout(m_pSizeCnt);
+            m_pSizeGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QVBoxLayout *pSizeGroupBoxLayout = new QVBoxLayout(m_pSizeGroupBox);
             {
                 m_pEditorSize = new UIMediumSizeEditor;
                 {
-                    pSizeCntLayout->addWidget(m_pEditorSize);
+                    pSizeGroupBoxLayout->addWidget(m_pEditorSize);
                 }
             }
         }
-        m_pFormatCnt = new QGroupBox(this);
+        m_pFormatGroupBox = new QGroupBox(this);
         {
-            m_pFormatCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QVBoxLayout *pFormatCntLayout = new QVBoxLayout(m_pFormatCnt);
+            m_pFormatGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QVBoxLayout *pFormatGroupBoxLayout = new QVBoxLayout(m_pFormatGroupBox);
             {
-                m_pFormatButtonGroup = new QButtonGroup(m_pFormatCnt);
+                m_pFormatButtonGroup = new QButtonGroup(m_pFormatGroupBox);
                 {
                     /* Enumerate medium formats in special order: */
                     CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
@@ -107,11 +107,11 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
 
                     /* Create buttons for VDI, preferred and others: */
                     foreach (const QString &strId, vdi.keys())
-                        addFormatButton(this, pFormatCntLayout, vdi.value(strId), true);
+                        addFormatButton(this, pFormatGroupBoxLayout, vdi.value(strId), true);
                     foreach (const QString &strId, preferred.keys())
-                        addFormatButton(this, pFormatCntLayout, preferred.value(strId), true);
+                        addFormatButton(this, pFormatGroupBoxLayout, preferred.value(strId), true);
                     foreach (const QString &strId, others.keys())
-                        addFormatButton(this, pFormatCntLayout, others.value(strId));
+                        addFormatButton(this, pFormatGroupBoxLayout, others.value(strId));
 
                     if (!m_pFormatButtonGroup->buttons().isEmpty())
                     {
@@ -121,32 +121,32 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
                 }
             }
         }
-        m_pVariantCnt = new QGroupBox(this);
+        m_pVariantGroupBox = new QGroupBox(this);
         {
-            m_pVariantCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QVBoxLayout *pVariantCntLayout = new QVBoxLayout(m_pVariantCnt);
+            m_pVariantGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QVBoxLayout *pVariantGroupBoxLayout = new QVBoxLayout(m_pVariantGroupBox);
             {
-                m_pVariantButtonGroup = new QButtonGroup(m_pVariantCnt);
+                m_pVariantButtonGroup = new QButtonGroup(m_pVariantGroupBox);
                 {
-                    m_pDynamicalButton = new QRadioButton(m_pVariantCnt);
+                    m_pDynamicalButton = new QRadioButton(m_pVariantGroupBox);
                     {
                         m_pDynamicalButton->click();
                         m_pDynamicalButton->setFocus();
                     }
-                    m_pFixedButton = new QRadioButton(m_pVariantCnt);
+                    m_pFixedButton = new QRadioButton(m_pVariantGroupBox);
                     m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
                     m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
                 }
-                m_pSplitBox = new QCheckBox(m_pVariantCnt);
-                pVariantCntLayout->addWidget(m_pDynamicalButton);
-                pVariantCntLayout->addWidget(m_pFixedButton);
-                pVariantCntLayout->addWidget(m_pSplitBox);
+                m_pSplitBox = new QCheckBox(m_pVariantGroupBox);
+                pVariantGroupBoxLayout->addWidget(m_pDynamicalButton);
+                pVariantGroupBoxLayout->addWidget(m_pFixedButton);
+                pVariantGroupBoxLayout->addWidget(m_pSplitBox);
             }
         }
         pMainLayout->addWidget(m_pLocationCnt, 0, 0, 1, 2);
-        pMainLayout->addWidget(m_pSizeCnt, 1, 0, 1, 2);
-        pMainLayout->addWidget(m_pFormatCnt, 2, 0, Qt::AlignTop);
-        pMainLayout->addWidget(m_pVariantCnt, 2, 1, Qt::AlignTop);
+        pMainLayout->addWidget(m_pSizeGroupBox, 1, 0, 1, 2);
+        pMainLayout->addWidget(m_pFormatGroupBox, 2, 0, Qt::AlignTop);
+        pMainLayout->addWidget(m_pVariantGroupBox, 2, 1, Qt::AlignTop);
         setMediumSize(uDefaultSize);
         sltMediumFormatChanged();
     }
@@ -233,8 +233,8 @@ void UIWizardNewVDPageExpert::retranslateUi()
     /* Translate widgets: */
     m_pLocationCnt->setTitle(UIWizardNewVD::tr("File &location"));
     m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard disk file..."));
-    m_pSizeCnt->setTitle(UIWizardNewVD::tr("File &size"));
-    m_pFormatCnt->setTitle(UIWizardNewVD::tr("Hard disk file &type"));
+    m_pSizeGroupBox->setTitle(UIWizardNewVD::tr("File &size"));
+    m_pFormatGroupBox->setTitle(UIWizardNewVD::tr("Hard disk file &type"));
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
     for (int i = 0; i < buttons.size(); ++i)
     {
@@ -242,7 +242,7 @@ void UIWizardNewVDPageExpert::retranslateUi()
         UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
         pButton->setText(gpConverter->toString(enmFormat));
     }
-    m_pVariantCnt->setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
+    m_pVariantGroupBox->setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
     m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));
     m_pFixedButton->setText(UIWizardNewVD::tr("&Fixed size"));
     m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));

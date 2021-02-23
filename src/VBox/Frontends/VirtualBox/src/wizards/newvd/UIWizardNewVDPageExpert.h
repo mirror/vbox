@@ -77,10 +77,10 @@ private:
     QString stripFormatExtension(const QString &strFileName);
 
     /* Widgets: */
-    QGroupBox *m_pFormatCnt;
-    QGroupBox *m_pVariantCnt;
+    QGroupBox *m_pFormatGroupBox;
+    QGroupBox *m_pVariantGroupBox;
     QGroupBox *m_pLocationCnt;
-    QGroupBox *m_pSizeCnt;
+    QGroupBox *m_pSizeGroupBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageExpert_h */
