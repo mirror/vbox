@@ -2665,7 +2665,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         {
             if (pThis->In.Cfg.Dbg.fEnabled)
             {
-                int rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->In.Cfg.Dbg.szPathOut, "CaptureNonInterleaved",
+                int rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->In.Cfg.Dbg.szPathOut, "DrvAudioCapNonInt",
                                                  pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                 if (RT_SUCCESS(rc2))
                 {
@@ -2678,7 +2678,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
                 if (RT_SUCCESS(rc2))
                 {
-                    rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->In.Cfg.Dbg.szPathOut, "StreamRead",
+                    rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->In.Cfg.Dbg.szPathOut, "DrvAudioRead",
                                                  pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                     if (RT_SUCCESS(rc2))
                     {
@@ -2698,7 +2698,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         {
             if (pThis->Out.Cfg.Dbg.fEnabled)
             {
-                int rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->Out.Cfg.Dbg.szPathOut, "PlayNonInterleaved",
+                int rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->Out.Cfg.Dbg.szPathOut, "DrvAudioPlayNonInt",
                                                  pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                 if (RT_SUCCESS(rc2))
                 {
@@ -2711,7 +2711,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
                 if (RT_SUCCESS(rc2))
                 {
-                    rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->Out.Cfg.Dbg.szPathOut, "StreamWrite",
+                    rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->Out.Cfg.Dbg.szPathOut, "DrvAudioWrite",
                                                  pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                     if (RT_SUCCESS(rc2))
                     {
