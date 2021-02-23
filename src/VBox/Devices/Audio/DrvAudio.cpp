@@ -2954,22 +2954,26 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
              * situations, but the device emulation needs input data to keep the DMA transfers moving.
              * Reading the actual data from a stream then will return silence then.
              */
-            if (  !DrvAudioHlpStreamStatusCanRead(
-                      pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStream->pvBackend)
-                || fDisabled))
+            PDMAUDIOSTREAMSTS fStatus = PDMAUDIOSTREAMSTS_FLAGS_NONE;
+            if (pThis->pHostDrvAudio->pfnStreamGetStatus)
+                fStatus = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pStream->pvBackend);
+            if (   !DrvAudioHlpStreamStatusCanRead(fStatus)
+                || fDisabled)
             {
                 cbReadable = DrvAudioHlpNanoToBytes(RTTimeNanoTS() - pStream->tsLastReadWrittenNs,
                                                     &pStream->Host.Cfg.Props);
                 if (!(pStream->fWarningsShown & PDMAUDIOSTREAM_WARN_FLAGS_DISABLED))
                 {
-                    LogRel(("Audio: Stream '%s' not ready or driver has disabled audio input, returning silence\n", pStream->szName));
+                    LogRel(("Audio: Warning: Stream '%s' not ready or driver has disabled audio input (stream status is %#x, VM input status is %s), returning silence\n",
+                            pStream->szName, fStatus, fDisabled ? "disabled" : "enabled"));
                     pStream->fWarningsShown |= PDMAUDIOSTREAM_WARN_FLAGS_DISABLED;
                 }
             }
         }
 
         /* Make sure to align the readable size to the guest's frame size. */
-        cbReadable = DrvAudioHlpBytesAlign(cbReadable, &pStream->Guest.Cfg.Props);
+        if (cbReadable)
+            cbReadable = DrvAudioHlpBytesAlign(cbReadable, &pStream->Guest.Cfg.Props);
     }
 
     Log3Func(("[%s] cbReadable=%RU32 (%RU64ms)\n",
