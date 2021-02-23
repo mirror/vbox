@@ -567,6 +567,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_BOOL_VALUE_EX(a_pszMachine, a_pszHuman, a_fValue, a_szTrue, a_szFalse) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         if (details == VMINFO_MACHINEREADABLE) \
             outputMachineReadableString(a_pszMachine, a_fValue ? "on" : "off"); \
         else \
@@ -579,6 +580,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_ULONG_VALUE(a_pszMachine, a_pszHuman, a_uValue, a_pszUnit) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         if (details == VMINFO_MACHINEREADABLE) \
             RTPrintf("%s=%u\n", a_pszMachine, a_uValue); \
         else \
@@ -588,6 +590,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_LONG64_VALUE(a_pszMachine, a_pszHuman, a_llValue, a_pszUnit) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         if (details == VMINFO_MACHINEREADABLE) \
             RTPrintf("%s=%lld\n", a_pszMachine, a_llValue); \
         else \
@@ -600,6 +603,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_szTrue, a_szFalse) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         BOOL f; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&f), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
@@ -611,6 +615,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_BOOLEAN_METHOD(a_pObj, a_Invocation, a_pszMachine, a_pszHuman) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         BOOL f; \
         CHECK_ERROR2I_RET(a_pObj, a_Invocation, hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
@@ -622,6 +627,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_STRING_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         Bstr bstr; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
@@ -633,6 +639,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_STRING_PROP_NOT_EMPTY(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         Bstr bstr; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
         if (bstr.isNotEmpty()) \
@@ -649,6 +656,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_STRING_PROP_MAJ(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnless, a_uMajorVer) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         Bstr bstr; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
         if ((a_uMajorVer) <= VBOX_VERSION_MAJOR || !bstr.equals(a_pszUnless)) \
@@ -663,6 +671,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_STRINGARRAY_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         SafeArray<BSTR> array; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(ComSafeArrayAsOutParam(array)), hrcCheck); \
         Utf8Str str; \
@@ -685,6 +694,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_USHORT_PROP_EX2(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit, a_szFmtMachine, a_szFmtHuman) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         USHORT u16 = 0; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&u16), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
@@ -696,6 +706,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_ULONG_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         ULONG u32 = 0; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&u32), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
@@ -707,6 +718,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #define SHOW_LONG64_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit) \
     do \
     { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
         LONG64 i64 = 0; \
         CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&i64), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
@@ -787,14 +799,14 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_STRING_PROP(      machine, SnapshotFolder,             "SnapFldr",             "Snapshot folder:");
     SHOW_STRING_PROP(      machine, LogFolder,                  "LogFldr",              "Log folder:");
     SHOW_UUID_PROP(        machine, HardwareUUID,               "hardwareuuid",         "Hardware UUID:");
-    SHOW_ULONG_PROP(       machine, MemorySize,                 "memory",               "Memory size",      "MB");
+    SHOW_ULONG_PROP(       machine, MemorySize,                 "memory",               "Memory size:",     "MB");
     SHOW_BOOLEAN_PROP(     machine, PageFusionEnabled,          "pagefusion",           "Page Fusion:");
     ComPtr<IGraphicsAdapter> pGraphicsAdapter;
     machine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
-    SHOW_ULONG_PROP(pGraphicsAdapter, VRAMSize,                 "vram",                 "VRAM size:",        "MB");
-    SHOW_ULONG_PROP(       machine, CPUExecutionCap,            "cpuexecutioncap",      "CPU exec cap:",     "%");
+    SHOW_ULONG_PROP(pGraphicsAdapter, VRAMSize,                 "vram",                 "VRAM size:",       "MB");
+    SHOW_ULONG_PROP(       machine, CPUExecutionCap,            "cpuexecutioncap",      "CPU exec cap:",    "%");
     SHOW_BOOLEAN_PROP(     machine, HPETEnabled,                "hpet",                 "HPET:");
-    SHOW_STRING_PROP_MAJ(  machine, CPUProfile,                 "cpu-profile",          "CPUProfile:",       "host", 6);
+    SHOW_STRING_PROP_MAJ(  machine, CPUProfile,                 "cpu-profile",          "CPUProfile:",      "host", 6);
 
     ChipsetType_T chipsetType;
     CHECK_ERROR2I_RET(machine, COMGETTER(ChipsetType)(&chipsetType), hrcCheck);
