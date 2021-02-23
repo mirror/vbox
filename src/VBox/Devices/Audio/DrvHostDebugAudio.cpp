@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2016-2020 Oracle Corporation
+ * Copyright (C) 2016-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,7 +18,10 @@
  */
 
 #include <iprt/alloc.h>
+#include <iprt/rand.h>
 #include <iprt/uuid.h> /* For PDMIBASE_2_PDMDRV. */
+
+#include <math.h>
 
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
 #include <VBox/log.h>
@@ -41,6 +44,10 @@ typedef struct DEBUGAUDIOSTREAM
     {
         struct
         {
+            /** Frequency (in Hz) of the sine wave to generate. */
+            uint16_t   uFreqHz;
+            /** Current sample index for generate the sine wave. */
+            uint64_t   uSample;
             /** Timestamp of last captured samples. */
             uint64_t   tsLastCaptured;
         } In;
@@ -76,7 +83,7 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface
     pBackendCfg->cbStreamIn     = sizeof(DEBUGAUDIOSTREAM);
 
     pBackendCfg->cMaxStreamsOut = 1; /* Output; writing to a file. */
-    pBackendCfg->cMaxStreamsIn  = 0; /** @todo Right now we don't support any input (capturing, injecting from a file). */
+    pBackendCfg->cMaxStreamsIn  = 1; /* Input; generates a sine wave. */
 
     return VINF_SUCCESS;
 }
@@ -115,26 +122,23 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostDebugAudioHA_GetStatus(PPDMIHOSTA
 }
 
 
-static int debugCreateStreamIn(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStreamDbg,
-                               PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+/**
+ * Creates a debug output .WAV file on the host with the specified stream configuration.
+ *
+ * @returns VBox status code.
+ * @param   pDrv                Driver instance.
+ * @param   pStreamDbg          Debug audio stream to create file for.
+ * @param   fIn                 Whether this is an input or output stream to create file for.
+ * @param   pCfg                Stream configuration to create .wAV file with.
+ */
+static int debugCreateFile(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStreamDbg, bool fIn, PPDMAUDIOSTREAMCFG pCfg)
 {
-    RT_NOREF(pDrv, pStreamDbg, pCfgReq, pCfgAcq);
-
-    return VINF_SUCCESS;
-}
-
-
-static int debugCreateStreamOut(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStreamDbg,
-                                PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-{
-    RT_NOREF(pDrv, pCfgAcq);
-
     char szTemp[RTPATH_MAX];
     int rc = RTPathTemp(szTemp, sizeof(szTemp));
     if (RT_SUCCESS(rc))
     {
         char szFile[RTPATH_MAX];
-        rc = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), szTemp, "DebugAudioOut",
+        rc = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), szTemp, fIn ? "DebugAudioIn" : "DebugAudioOut",
                                     pDrv->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         if (RT_SUCCESS(rc))
         {
@@ -142,11 +146,11 @@ static int debugCreateStreamOut(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStre
             if (RT_SUCCESS(rc))
             {
                 rc = DrvAudioHlpFileOpen(pStreamDbg->pFile, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
-                                         &pCfgReq->Props);
+                                         &pCfg->Props);
             }
 
             if (RT_FAILURE(rc))
-                LogRel(("DebugAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
+                LogRel(("DebugAudio: Creating %sput file '%s' failed with %Rrc\n", fIn ? "in" : "out", szFile, rc));
         }
         else
             LogRel(("DebugAudio: Unable to build file name for temp dir '%s': %Rrc\n", szTemp, rc));
@@ -155,6 +159,38 @@ static int debugCreateStreamOut(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStre
         LogRel(("DebugAudio: Unable to retrieve temp dir: %Rrc\n", rc));
 
     return rc;
+}
+
+
+static int debugCreateStreamIn(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStreamDbg,
+                               PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
+    RT_NOREF(pDrv, pCfgReq);
+
+    pStreamDbg->In.uSample   = 0; /* Initialize sample index. */
+
+    const uint16_t auFreqsHz[] = { 400, 600, 750, 800, 1000, 1200, 1400, 1600 };
+
+    /* Chose a random frequency so that every time a recording is started (hopefully) another tone will be generated. */
+    pStreamDbg->In.uFreqHz   = auFreqsHz[RTRandU32Ex(0, RT_ELEMENTS(auFreqsHz) - 1)];
+
+    pCfgAcq->Props.uHz         = 22050; /* 22,5 kHz. */
+    pCfgAcq->Props.cbSample    = 2;     /* 16-bit samples. */
+    pCfgAcq->Props.cChannels   = 1;     /* Mono. */
+    pCfgAcq->Props.fSigned     = true;
+    pCfgAcq->Props.fSwapEndian = false;
+    pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
+
+    return debugCreateFile(pDrv, pStreamDbg, true /* fIn */, pCfgAcq);
+}
+
+
+static int debugCreateStreamOut(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStreamDbg,
+                                PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
+    RT_NOREF(pDrv, pCfgAcq);
+
+    return debugCreateFile(pDrv, pStreamDbg, false /* fIn */, pCfgReq);
 }
 
 
@@ -218,11 +254,39 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfac
 static DECLCALLBACK(int) drvHostDebugAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                            void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
 {
-    RT_NOREF(pInterface, pStream, pvBuf, uBufSize);
+    RT_NOREF(pInterface);
 
-    /* Never capture anything. */
+    PDEBUGAUDIOSTREAM  pStreamDbg = (PDEBUGAUDIOSTREAM)pStream;
+
+    PPDMAUDIOSTREAMCFG pCfg = pStreamDbg->pCfg;
+    AssertPtr(pCfg);
+
+    Assert(uBufSize % pCfg->Props.cbSample == 0);
+
+    uint16_t *paBuf = (uint16_t *)pvBuf;
+
+    /* Generate a simple mono sine wave. */
+    for (size_t i = 0; i < uBufSize / pCfg->Props.cbSample; i++)
+    {
+        paBuf[i] = 32760 * sin((2.f * float(3.1415) * pStreamDbg->In.uFreqHz) / pCfg->Props.uHz * pStreamDbg->In.uSample);
+        if (pStreamDbg->In.uSample == UINT64_MAX)
+        {
+            pStreamDbg->In.uSample = 0;
+            continue;
+        }
+
+        pStreamDbg->In.uSample++;
+    }
+
+    int rc = DrvAudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("DebugAudio: Writing input failed with %Rrc\n", rc));
+        return rc;
+    }
+
     if (puRead)
-        *puRead = 0;
+        *puRead = uBufSize;
 
     return VINF_SUCCESS;
 }
@@ -237,10 +301,7 @@ static int debugDestroyStreamIn(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStre
 
 static int debugDestroyStreamOut(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStreamDbg)
 {
-    RT_NOREF(pDrv);
-
-    DrvAudioHlpFileDestroy(pStreamDbg->pFile);
-
+    RT_NOREF(pDrv, pStreamDbg);
     return VINF_SUCCESS;
 }
 
@@ -266,6 +327,8 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInter
 
     if (RT_SUCCESS(rc))
     {
+        DrvAudioHlpFileDestroy(pStreamDbg->pFile);
+
         DrvAudioHlpStreamCfgFree(pStreamDbg->pCfg);
         pStreamDbg->pCfg = NULL;
     }
@@ -293,9 +356,13 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamControl(PPDMIHOSTAUDIO pInter
  */
 static DECLCALLBACK(uint32_t) drvHostDebugAudioHA_StreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
+    RT_NOREF(pInterface);
 
-    return 0; /* Never capture anything. */
+    PDEBUGAUDIOSTREAM pStreamDbg = (PDEBUGAUDIOSTREAM)pStream;
+
+    AssertPtr(pStreamDbg->pCfg);
+
+    return DrvAudioHlpMilliToBytes(10 /* ms */, &pStreamDbg->pCfg->Props);
 }
 
 
