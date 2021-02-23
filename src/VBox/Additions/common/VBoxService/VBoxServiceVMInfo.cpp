@@ -1326,7 +1326,7 @@ static int vgsvcVMInfoWriteNetwork(void)
             struct lifreq   IfReq;
             RT_ZERO(IfReq);
             AssertCompile(sizeof(IfReq.lifr_name) >= sizeof(pCur->ifr_name));
-            strncpy(IfReq.lifr_name, pCur->ifr_name, sizeof(pCur->ifr_name));
+            strncpy(IfReq.lifr_name, pCur->ifr_name, sizeof(IfReq.lifr_name));
             if (ioctl(sd, SIOCGLIFADDR, &IfReq) >= 0)
             {
                 struct arpreq ArpReq;
