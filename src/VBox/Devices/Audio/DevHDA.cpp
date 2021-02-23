@@ -4992,7 +4992,10 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Create the mixer.
      */
-    rc = AudioMixerCreate("HDA Mixer", 0 /* uFlags */, &pThisCC->pMixer);
+    uint32_t fMixer = AUDMIXER_FLAGS_NONE;
+    if (pThisCC->Dbg.fEnabled)
+        fMixer |= AUDMIXER_FLAGS_DEBUG;
+    rc = AudioMixerCreate("HDA Mixer", fMixer, &pThisCC->pMixer);
     AssertRCReturn(rc, rc);
 
     /*

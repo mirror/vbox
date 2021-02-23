@@ -218,14 +218,13 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR 
  *
  * @returns IPRT status code.
  * @param   pcszName            Name of the audio mixer.
- * @param   fFlags              Creation flags. Not used at the moment and must be 0.
+ * @param   fFlags              Creation flags.
  * @param   ppMixer             Pointer which returns the created mixer object.
  */
 int AudioMixerCreate(const char *pcszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
 {
-    RT_NOREF(fFlags);
     AssertPtrReturn(pcszName, VERR_INVALID_POINTER);
-    /** @todo Add fFlags validation. */
+    AssertReturn   (fFlags & AUDMIXER_FLAGS_VALID_MASK, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppMixer, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
@@ -244,6 +243,11 @@ int AudioMixerCreate(const char *pcszName, uint32_t fFlags, PAUDIOMIXER *ppMixer
         {
             pMixer->cSinks = 0;
             RTListInit(&pMixer->lstSinks);
+
+            pMixer->fFlags = fFlags;
+
+            if (pMixer->fFlags & AUDMIXER_FLAGS_DEBUG)
+                LogRel(("Audio Mixer: Debug mode enabled\n"));
 
             /* Set master volume to the max. */
             pMixer->VolMaster.fMuted = false;
@@ -912,10 +916,11 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink)
         audioMixerStreamDestroyInternal(pStreamToRemove);
     }
 
-#ifdef VBOX_AUDIO_MIXER_DEBUG
-    DrvAudioHlpFileDestroy(pSink->Dbg.pFile);
-    pSink->Dbg.pFile = NULL;
-#endif
+    if (pSink->pParent->fFlags & AUDMIXER_FLAGS_DEBUG)
+    {
+        DrvAudioHlpFileDestroy(pSink->Dbg.pFile);
+        pSink->Dbg.pFile = NULL;
+    }
 
     if (pSink->pszName)
     {
@@ -1265,10 +1270,11 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
             /* Update our last read time stamp. */
             pSink->tsLastReadWrittenNs = RTTimeNanoTS();
 
-#ifdef VBOX_AUDIO_MIXER_DEBUG
-            int rc2 = DrvAudioHlpFileWrite(pSink->Dbg.pFile, pvBuf, cbRead, 0 /* fFlags */);
-            AssertRC(rc2);
-#endif
+            if (pSink->pParent->fFlags & AUDMIXER_FLAGS_DEBUG)
+            {
+                int rc2 = DrvAudioHlpFileWrite(pSink->Dbg.pFile, pvBuf, cbRead, 0 /* fFlags */);
+                AssertRC(rc2);
+            }
         }
     }
 
@@ -1498,8 +1504,8 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
         }
     }
 
-#ifdef VBOX_AUDIO_MIXER_DEBUG
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        && (pSink->pParent->fFlags & AUDMIXER_FLAGS_DEBUG))
     {
         DrvAudioHlpFileClose(pSink->Dbg.pFile);
 
@@ -1524,7 +1530,6 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
             }
         }
     }
-#endif
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
