@@ -6524,9 +6524,8 @@ static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
                               rcDataError);
     }
 
-    /** @todo Kick the command thread, anything else to do on restore? */
-
-    return VERR_NOT_IMPLEMENTED;
+    iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
+    return VINF_SUCCESS;
 }
 
 
