@@ -59,7 +59,7 @@ RTDECL(int) RTFileQuerySectorSize(RTFILE hFile, uint32_t *pcbSector)
             {
                 AssertReturn(MediaInfo.dki_lbsize > 0, VERR_INVALID_FUNCTION);
                 *pcbSector = MediaInfo.dki_lbsize;
-                return rc;
+                return VINF_SUCCESS;
             }
             rc = RTErrConvertFromErrno(errno);
             AssertMsgFailed(("ioctl failed: errno=%d / %Rrc\n", errno, rc));
