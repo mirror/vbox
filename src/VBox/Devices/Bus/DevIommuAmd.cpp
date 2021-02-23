@@ -5282,7 +5282,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         {
             pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabBar.n.u9Size,
                             IOMMU_GET_DEV_TAB_LEN(&DevTabBar));
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabBar.n.u40Base << X86_PAGE_4K_SHIFT);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n",
+                            DevTabBar.n.u40Base << X86_PAGE_4K_SHIFT);
         }
     }
     /* Command Buffer Base Address Register. */
@@ -5294,7 +5295,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Command Buffer BAR                      = %#RX64\n", CmdBufBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", CmdBufBar.n.u40Base << X86_PAGE_4K_SHIFT);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n",
+                            CmdBufBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -5308,7 +5310,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Event Log BAR                           = %#RX64\n", EvtLogBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBar.n.u40Base << X86_PAGE_4K_SHIFT);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n",
+                            EvtLogBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -5433,7 +5436,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  PPR Log BAR                             = %#RX64\n",   PprLogBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBar.n.u40Base << X86_PAGE_4K_SHIFT);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n",
+                            PprLogBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -5469,7 +5473,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Guest Log BAR                           = %#RX64\n",    GALogBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", GALogBar.n.u40Base << X86_PAGE_4K_SHIFT);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n",
+                            GALogBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -5490,7 +5495,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  PPR Log B BAR                           = %#RX64\n",   PprLogBBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBBar.n.u40Base << X86_PAGE_4K_SHIFT);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n",
+                            PprLogBBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -5504,7 +5510,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Event Log B BAR                         = %#RX64\n",   EvtLogBBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBBar.n.u40Base << X86_PAGE_4K_SHIFT);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n",
+                            EvtLogBBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
