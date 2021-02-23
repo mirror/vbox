@@ -6402,35 +6402,122 @@ static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     pHlp->pfnSSMGetU64(pSSM, &pThis->RsvdReg);  /* read-only, done already (above). */
 #endif
 
-    /** @todo The rest. */
+    /* Command buffer head pointer register. */
+    {
+        rc = pHlp->pfnSSMGetU64(pSSM, &pThis->CmdBufHeadPtr.u64);
+        AssertRCReturn(rc, rc);
+
+        /*
+         * IOMMU behavior is undefined when software writes a value outside the buffer length.
+         * In our emulation, since we ignore the write entirely (see iommuAmdCmdBufHeadPtr_w)
+         * we shouldn't see such values in the saved state.
+         */
+        uint32_t const offBuf = pThis->CmdBufHeadPtr.u64 & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
+        uint32_t const cbBuf  = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
+        Assert(cbBuf <= _512K);
+        AssertLogRelMsgReturn(offBuf < cbBuf,
+                              ("Command buffer head pointer invalid %#x\n", pThis->CmdBufHeadPtr.u64), rcDataError);
+    }
+
+    /* Command buffer tail pointer register. */
+    {
+        rc = pHlp->pfnSSMGetU64(pSSM, &pThis->CmdBufTailPtr.u64);
+        AssertRCReturn(rc, rc);
+
+        uint32_t const offBuf = pThis->CmdBufTailPtr.u64 & IOMMU_CMD_BUF_TAIL_PTR_VALID_MASK;
+        uint32_t const cbBuf  = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
+        Assert(cbBuf <= _512K);
+        AssertLogRelMsgReturn(offBuf < cbBuf,
+                              ("Command buffer tail pointer invalid %#x\n", pThis->CmdBufTailPtr.u64), rcDataError);
+    }
+
+    /* Event log head pointer register. */
+    {
+        rc = pHlp->pfnSSMGetU64(pSSM, &pThis->EvtLogHeadPtr.u64);
+        AssertRCReturn(rc, rc);
+
+        uint32_t const offBuf = pThis->EvtLogHeadPtr.u64 & IOMMU_EVT_LOG_HEAD_PTR_VALID_MASK;
+        uint32_t const cbBuf  = iommuAmdGetTotalBufLength(pThis->EvtLogBaseAddr.n.u4Len);
+        Assert(cbBuf <= _512K);
+        AssertLogRelMsgReturn(offBuf < cbBuf,
+                              ("Event log head pointer invalid %#x\n", pThis->EvtLogHeadPtr.u64), rcDataError);
+    }
+
+    /* Event log tail pointer register. */
+    {
+        rc = pHlp->pfnSSMGetU64(pSSM, &pThis->EvtLogTailPtr.u64);
+        AssertRCReturn(rc, rc);
+
+        uint32_t const offBuf = pThis->EvtLogTailPtr.u64 & IOMMU_EVT_LOG_TAIL_PTR_VALID_MASK;
+        uint32_t const cbBuf  = iommuAmdGetTotalBufLength(pThis->EvtLogBaseAddr.n.u4Len);
+        Assert(cbBuf <= _512K);
+        AssertLogRelMsgReturn(offBuf < cbBuf,
+                              ("Event log tail pointer invalid %#x\n", pThis->EvtLogTailPtr.u64), rcDataError);
+    }
+
+    /* Status register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->Status.u64);
+    AssertRCReturn(rc, rc);
+    pThis->Status.u64 &= IOMMU_STATUS_VALID_MASK;
+
+    /* PPR log head pointer register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->PprLogHeadPtr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1PprSup);
+
+    /* PPR log tail pointer register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->PprLogTailPtr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1PprSup);
+
+    /* Guest Virtual-APIC log head pointer register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->GALogHeadPtr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
+
+    /* Guest Virtual-APIC log tail pointer register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->GALogTailPtr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
+
+    /* PPR log-B head pointer register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->PprLogBHeadPtr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1PprSup);
+
+    /* PPR log-B head pointer register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->PprLogBTailPtr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1PprSup);
+
+    /* Event log-B head pointer register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->EvtLogBHeadPtr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u2DualEvtLogSup);
+
+    /* Event log-B tail pointer register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->EvtLogBTailPtr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u2DualEvtLogSup);
+
+    /* PPR log auto response register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->PprLogAutoResp.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1PprAutoRespSup);
+
+    /* PPR log overflow early indicator register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->PprLogOverflowEarly.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1PprLogOverflowWarn);
+
+    /* PPR log-B overflow early indicator register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->PprLogBOverflowEarly.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1PprLogOverflowWarn);
+
+    /** @todo Kick the command thread, anything else to do on restore? */
+
     return VERR_NOT_IMPLEMENTED;
-#if 0
-
-    pThis->CmdBufHeadPtr.u64);
-    pThis->CmdBufTailPtr.u64);
-    pThis->EvtLogHeadPtr.u64);
-    pThis->EvtLogTailPtr.u64);
-
-    pThis->Status.u64);
-
-    pThis->PprLogHeadPtr.u64);
-    pThis->PprLogTailPtr.u64);
-
-    pThis->GALogHeadPtr.u64);
-    pThis->GALogTailPtr.u64);
-
-    pThis->PprLogBHeadPtr.u64);
-    pThis->PprLogBTailPtr.u64);
-
-    pThis->EvtLogBHeadPtr.u64);
-    pThis->EvtLogBTailPtr.u64);
-
-    pThis->PprLogAutoResp.u64);
-    pThis->PprLogOverflowEarly.u64);
-    pThis->PprLogBOverflowEarly.u64);
-
-    return VINF_SUCCESS;
-#endif
 }
 
 
