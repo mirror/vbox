@@ -6181,9 +6181,7 @@ static DECLCALLBACK(int) iommuAmdR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutU64(pSSM, pThis->DevSpecificFeat.u64);       /* read-only, done in liveExec */
     pHlp->pfnSSMPutU64(pSSM, pThis->DevSpecificCtrl.u64);       /* read-only, done in liveExec */
     pHlp->pfnSSMPutU64(pSSM, pThis->DevSpecificStatus.u64);     /* read-only, done in liveExec */
-#endif
 
-#if 0
     pHlp->pfnSSMPutU64(pSSM, pThis->MiscInfo.u64);              /* read-only, done in liveExec */
 #endif
     pHlp->pfnSSMPutU32(pSSM, pThis->PerfOptCtrl.u32);
@@ -6296,53 +6294,117 @@ static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     AssertLogRelMsgReturn(pThis->Ctrl.n.u3DevTabSegEn <= pThis->ExtFeat.n.u2DevTabSegSup,
                           ("Control register invalid %#RX64\n", pThis->Ctrl.u64), rcDataError);
 
-    /** @todo The rest. */
-    return VERR_NOT_IMPLEMENTED;
+    /* Exclusion range base address register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->ExclRangeBaseAddr.u64);
+    AssertRCReturn(rc, rc);
+    pThis->ExclRangeBaseAddr.u64 &= IOMMU_EXCL_RANGE_BAR_VALID_MASK;
+
+    /* Exclusion range limit register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->ExclRangeLimit.u64);
+    AssertRCReturn(rc, rc);
+    pThis->ExclRangeLimit.u64 &= IOMMU_EXCL_RANGE_LIMIT_VALID_MASK;
+    pThis->ExclRangeLimit.u64 |= UINT64_C(0xfff);
+
 #if 0
-    pThis->ExclRangeBaseAddr.u64
-    pThis->ExclRangeLimit.u64
-#if 0
-    pThis->ExtFeat.u64;  /* read-only, done in liveExec */
+    pHlp->pfnSSMGetU64(pSSM, &pThis->ExtFeat.u64);  /* read-only, done already (above). */
 #endif
 
-    pThis->PprLogBaseAddr.u64);
-    pThis->HwEvtHi.u64);
-    pThis->HwEvtLo);
-    pThis->HwEvtStatus.u64);
+    /* PPR log base address register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->PprLogBaseAddr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1PprSup);
 
-    pThis->GALogBaseAddr.u64);
-    pThis->GALogTailAddr.u64);
+    /* Hardware event (Hi) register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->HwEvtHi.u64);
+    AssertRCReturn(rc, rc);
 
-    pThis->PprLogBBaseAddr.u64);
-    pThis->EvtLogBBaseAddr.u64);
+    /* Hardware event (Lo) register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->HwEvtLo);
+    AssertRCReturn(rc, rc);
+
+    /* Hardware event status register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->HwEvtStatus.u64);
+    AssertRCReturn(rc, rc);
+    pThis->HwEvtStatus.u64 &= IOMMU_HW_EVT_STATUS_VALID_MASK;
+
+    /* Guest Virtual-APIC log base address register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->GALogBaseAddr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
+
+    /* Guest Virtual-APIC log tail address register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->GALogTailAddr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
+
+    /* PPR log-B base address register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->PprLogBBaseAddr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1PprSup);
+
+    /* Event log-B base address register. */
+    rc = pHlp->pfnSSMGetU64(pSSM, &pThis->EvtLogBBaseAddr.u64);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u2DualPprLogSup);
 
 #if 0
-    pThis->DevSpecificFeat.u64);       /* read-only, done in liveExec */
-    pThis->DevSpecificCtrl.u64);       /* read-only, done in liveExec */
-    pThis->DevSpecificStatus.u64);     /* read-only, done in liveExec */
+    pHlp->pfnSSMGetU64(pSSM, &pThis->DevSpecificFeat.u64);       /* read-only, done already (above). */
+    pHlp->pfnSSMGetU64(pSSM, &pThis->DevSpecificCtrl.u64);       /* read-only, done already (above). */
+    pHlp->pfnSSMGetU64(pSSM, &pThis->DevSpecificStatus.u64);     /* read-only, done already (above). */
+
+    pHlp->pfnSSMGetU64(pSSM, &pThis->MiscInfo.u64);              /* read-only, done already (above). */
 #endif
 
-#if 0
-    pThis->MiscInfo.u64);              /* read-only, done in liveExec */
-#endif
-    pThis->PerfOptCtrl.u32);
+    /* Performance optimization control register. */
+    rc = pHlp->pfnSSMGetU32(pSSM, &pThis->PerfOptCtrl.u32);
+    AssertRCReturn(rc, rc);
+    Assert(!pThis->ExtFeat.n.u1PerfOptSup);
 
-    pThis->XtGenIntrCtrl.u64);
-    pThis->XtPprIntrCtrl.u64);
-    pThis->XtGALogIntrCtrl.u64);
-
-    size_t const cMarcApers = RT_ELEMENTS(pThis->aMarcApers);
-    pHlp->pfnSSMPutU8(pSSM, cMarcApers);
-    for (size_t i = 0; i < cMarcApers; i++)
+    /* x2APIC registers. */
     {
-        pHlp->pfnSSMPutU64(pSSM, pThis->aMarcApers[i].Base.u64);
-        pHlp->pfnSSMPutU64(pSSM, pThis->aMarcApers[i].Reloc.u64);
-        pHlp->pfnSSMPutU64(pSSM, pThis->aMarcApers[i].Length.u64);
+        Assert(!pThis->ExtFeat.n.u1X2ApicSup);
+
+        /* x2APIC general interrupt control register. */
+        pHlp->pfnSSMGetU64(pSSM, &pThis->XtGenIntrCtrl.u64);
+        AssertRCReturn(rc, rc);
+
+        /* x2APIC PPR interrupt control register. */
+        rc = pHlp->pfnSSMGetU64(pSSM, &pThis->XtPprIntrCtrl.u64);
+        AssertRCReturn(rc, rc);
+
+        /* x2APIC GA log interrupt control register. */
+        rc = pHlp->pfnSSMGetU64(pSSM, &pThis->XtGALogIntrCtrl.u64);
+        AssertRCReturn(rc, rc);
+    }
+
+    /* MARC (Memory access and routing) registers. */
+    {
+        uint8_t cMarcApers;
+        rc = pHlp->pfnSSMGetU8(pSSM, &cMarcApers);
+        AssertRCReturn(rc, rc);
+        AssertLogRelMsgReturn(cMarcApers <= RT_ELEMENTS(pThis->aMarcApers),
+                              ("MARC register count invalid %#x\n", cMarcApers), rcDataError);
+        for (uint8_t i = 0; i < cMarcApers; i++)
+        {
+            rc = pHlp->pfnSSMGetU64(pSSM, &pThis->aMarcApers[i].Base.u64);
+            AssertRCReturn(rc, rc);
+
+            rc = pHlp->pfnSSMGetU64(pSSM, &pThis->aMarcApers[i].Reloc.u64);
+            AssertRCReturn(rc, rc);
+
+            rc = pHlp->pfnSSMGetU64(pSSM, &pThis->aMarcApers[i].Length.u64);
+            AssertRCReturn(rc, rc);
+        }
+        Assert(!pThis->ExtFeat.n.u2MarcSup);
     }
 
 #if 0
-    pHlp->pfnSSMPutU64(pSSM, pThis->RsvdReg);       /* read-only, done in liveExec */
+    pHlp->pfnSSMGetU64(pSSM, &pThis->RsvdReg);  /* read-only, done already (above). */
 #endif
+
+    /** @todo The rest. */
+    return VERR_NOT_IMPLEMENTED;
+#if 0
 
     pThis->CmdBufHeadPtr.u64);
     pThis->CmdBufTailPtr.u64);
