@@ -36,7 +36,20 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
 	export VBOX_LOG_DEST=nofile; $(tstAudioMixBuffer_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
+ ifeq ($(KBUILD_TARGET),win.amd64) # Note: Only runs on Windows 8 or newer.
+  tstAudioClient3_TEMPLATE = VBOXR3TSTEXE
+  tstAudioClient3_DEFS = TESTCASE
+  tstAudioClient3_DEFS.debug = VBOX_WITH_EF_WRAPS
+  tstAudioClient3_SOURCES = tstAudioClient3.cpp
+  tstAudioClient3_LIBS = $(LIB_RUNTIME)
+  tstAudioClient3_INCS = \
+	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/Include/10.0.17134.0/um \
+	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
+
+  # Requires manual execution / verification.
+  PROGRAMS += tstAudioClient3
+ endif
+
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
