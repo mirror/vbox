@@ -61,8 +61,8 @@ public:
     {
         Page1,
         Page2,
-        Page3,
-        Page4,
+        Page8,
+        //Page4,
         PageMax
     };
 
@@ -99,6 +99,7 @@ protected:
 
     /* Who will be able to create virtual-machine: */
     friend class UIWizardNewVMPageBasic4;
+    friend class UIWizardNewVMPageBasic8;
     friend class UIWizardNewVMPageExpert;
 
 private slots:

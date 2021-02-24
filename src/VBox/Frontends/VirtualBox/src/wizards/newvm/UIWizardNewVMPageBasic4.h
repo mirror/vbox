@@ -133,7 +133,7 @@ private:
 
     /** Validation stuff. */
     bool isComplete() const;
-    bool validatePage();
+    virtual bool validatePage() /* override */;
 
     /** Widgets. */
     QIRichTextLabel *m_pLabel;

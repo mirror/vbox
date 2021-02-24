@@ -661,7 +661,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/newvm/UIWizardNewVM.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic1.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic2.h \
-	src/wizards/newvm/UIWizardNewVMPageBasic3.h \
+	src/wizards/newvm/UIWizardNewVMPageBasic8.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic4.h \
 	src/wizards/newvm/UIWizardNewVMPageExpert.h \
 	src/wizards/clonevm/UIWizardCloneVM.h \
@@ -1152,7 +1152,7 @@ VirtualBox_SOURCES = \
 	src/wizards/newvm/UIWizardNewVM.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic1.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic2.cpp \
-	src/wizards/newvm/UIWizardNewVMPageBasic3.cpp \
+	src/wizards/newvm/UIWizardNewVMPageBasic8.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic4.cpp \
 	src/wizards/newvm/UIWizardNewVMPageExpert.cpp \
 	src/wizards/clonevm/UIWizardCloneVM.cpp \
