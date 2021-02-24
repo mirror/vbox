@@ -296,39 +296,40 @@ bool UIWizardNewVMPageBasic4::isComplete() const
         !uiCommon().medium(m_pDiskSelector->id()).isNull();
 }
 
-bool UIWizardNewVMPageBasic4::validatePage()
-{
-    /* Initial result: */
-    bool fResult = true;
 
-    /* Ensure unused virtual-disk is deleted: */
-    if (m_pDiskSkip->isChecked() || m_pDiskCreate->isChecked() || (!m_virtualDisk.isNull() && m_uVirtualDiskId != m_virtualDisk.GetId()))
-        ensureNewVirtualDiskDeleted();
+// bool UIWizardNewVMPageBasic4::validatePage()
+// {
+//     /* Initial result: */
+//     bool fResult = true;
 
-    if (m_pDiskSkip->isChecked())
-    {
-        /* Ask user about disk-less machine unless that's the recommendation: */
-        if (!m_fRecommendedNoDisk)
-            fResult = msgCenter().confirmHardDisklessMachine(thisImp());
-    }
-    else if (m_pDiskCreate->isChecked())
-    {
-        /* Show the New Virtual Hard Drive wizard: */
-        fResult = getWithNewVirtualDiskWizard();
-    }
+//     /* Ensure unused virtual-disk is deleted: */
+//     if (m_pDiskSkip->isChecked() || m_pDiskCreate->isChecked() || (!m_virtualDisk.isNull() && m_uVirtualDiskId != m_virtualDisk.GetId()))
+//         ensureNewVirtualDiskDeleted();
 
-    if (fResult)
-    {
-        /* Lock finish button: */
-        startProcessing();
+//     if (m_pDiskSkip->isChecked())
+//     {
+//         /* Ask user about disk-less machine unless that's the recommendation: */
+//         if (!m_fRecommendedNoDisk)
+//             fResult = msgCenter().confirmHardDisklessMachine(thisImp());
+//     }
+//     else if (m_pDiskCreate->isChecked())
+//     {
+//         /* Show the New Virtual Hard Drive wizard: */
+//         fResult = getWithNewVirtualDiskWizard();
+//     }
 
-        /* Try to create VM: */
-        fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
+//     if (fResult)
+//     {
+//         /* Lock finish button: */
+//         startProcessing();
 
-        /* Unlock finish button: */
-        endProcessing();
-    }
+//         /* Try to create VM: */
+//         fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
 
-    /* Return result: */
-    return fResult;
-}
+//         /* Unlock finish button: */
+//         endProcessing();
+//     }
+
+//     /* Return result: */
+//     return fResult;
+// }
