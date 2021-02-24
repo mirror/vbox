@@ -51,6 +51,7 @@ protected:
     /* Stuff for 'mediumFormat' field: */
     CMediumFormat mediumFormat() const;
     void setMediumFormat(const CMediumFormat &mediumFormat);
+    void retranslateWidgets();
 
     /* Variables: */
     QButtonGroup *m_pFormatButtonGroup;

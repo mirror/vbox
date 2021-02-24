@@ -51,6 +51,10 @@ UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QStr
     , m_strDefaultPath(strDefaultPath)
     , m_uMediumSizeMin(_4M)
     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
+    , m_pLocationEditor(0)
+    , m_pLocationOpenButton(0)
+    , m_pEditorSize(0)
+
 {
 }
 
@@ -101,9 +105,12 @@ void UIWizardNewVDPage3::onSelectLocationButtonClicked()
         /* If valid file extension is missed, append it: */
         if (QFileInfo(strChosenFilePath).suffix().isEmpty())
             strChosenFilePath += QString(".%1").arg(m_strDefaultExtension);
-        m_pLocationEditor->setText(QDir::toNativeSeparators(strChosenFilePath));
-        m_pLocationEditor->selectAll();
-        m_pLocationEditor->setFocus();
+        if (m_pLocationEditor)
+        {
+            m_pLocationEditor->setText(QDir::toNativeSeparators(strChosenFilePath));
+            m_pLocationEditor->selectAll();
+            m_pLocationEditor->setFocus();
+        }
     }
 }
 
@@ -199,17 +206,26 @@ bool UIWizardNewVDPage3::checkFATSizeLimitation() const
 
 QString UIWizardNewVDPage3::mediumPath() const
 {
+    if (!m_pLocationEditor)
+        return QString();
     return absoluteFilePath(toFileName(m_pLocationEditor->text(), m_strDefaultExtension), m_strDefaultPath);
 }
 
 qulonglong UIWizardNewVDPage3::mediumSize() const
 {
-    return m_pEditorSize->mediumSize();
+    return m_pEditorSize ? m_pEditorSize->mediumSize() : 0;
 }
 
 void UIWizardNewVDPage3::setMediumSize(qulonglong uMediumSize)
 {
-    m_pEditorSize->setMediumSize(uMediumSize);
+    if (m_pEditorSize)
+        m_pEditorSize->setMediumSize(uMediumSize);
+}
+
+void UIWizardNewVDPage3::retranslateWidgets()
+{
+    if (m_pLocationOpenButton)
+        m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard disk file..."));
 }
 
 UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
@@ -258,16 +274,17 @@ void UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked()
 
 void UIWizardNewVDPageBasic3::retranslateUi()
 {
+    retranslateWidgets();
     /* Translate page: */
     setTitle(UIWizardNewVD::tr("File location and size"));
 
     /* Translate widgets: */
     m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard disk file into the box below or "
                                                 "click on the folder icon to select a different folder to create the file in."));
-    m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard disk file..."));
-    m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard disk in megabytes. "
-                                            "This size is the limit on the amount of file data "
-                                            "that a virtual machine will be able to store on the hard disk."));
+    if (m_pSizeLabel)
+        m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard disk in megabytes. "
+                                                "This size is the limit on the amount of file data "
+                                                "that a virtual machine will be able to store on the hard disk."));
 }
 
 void UIWizardNewVDPageBasic3::initializePage()
@@ -278,11 +295,14 @@ void UIWizardNewVDPageBasic3::initializePage()
     /* Get default extension for new virtual-disk: */
     m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
     /* Set default name as text for location editor: */
-    m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
+    if (m_pLocationEditor)
+        m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
 }
 
 bool UIWizardNewVDPageBasic3::isComplete() const
 {
+    if (!m_pLocationEditor)
+        return false;
     /* Make sure current name is not empty and current size feats the bounds: */
     return !m_pLocationEditor->text().trimmed().isEmpty() &&
            mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;

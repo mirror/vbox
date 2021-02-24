@@ -196,11 +196,12 @@ void UIWizardNewVDPageExpert::sltSelectLocationButtonClicked()
 
 void UIWizardNewVDPageExpert::retranslateUi()
 {
+    UIWizardNewVDPage1::retranslateWidgets();
+    UIWizardNewVDPage2::retranslateWidgets();
+    UIWizardNewVDPage3::retranslateWidgets();
     /* Translate widgets: */
     if (m_pLocationGroupBox)
         m_pLocationGroupBox->setTitle(UIWizardNewVD::tr("File &location"));
-    if (m_pLocationOpenButton)
-        m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard disk file..."));
     if (m_pSizeGroupBox)
         m_pSizeGroupBox->setTitle(UIWizardNewVD::tr("File &size"));
     if (m_pFormatGroupBox)

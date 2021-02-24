@@ -144,6 +144,17 @@ void UIWizardNewVDPage1::setMediumFormat(const CMediumFormat &mediumFormat)
     }
 }
 
+void UIWizardNewVDPage1::retranslateWidgets()
+{
+    QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
+    for (int i = 0; i < buttons.size(); ++i)
+    {
+        QAbstractButton *pButton = buttons[i];
+        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
+        pButton->setText(gpConverter->toString(enmFormat));
+    }
+}
+
 UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
 {
     /* Create widgets: */
@@ -168,20 +179,14 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
 
 void UIWizardNewVDPageBasic1::retranslateUi()
 {
+    retranslateWidgets();
     /* Translate page: */
-    setTitle(UIWizardNewVD::tr("Hard disk file type"));
+    setTitle(UIWizardNewVD::tr("Virtual Hard disk file type"));
 
     /* Translate widgets: */
     m_pLabel->setText(UIWizardNewVD::tr("Please choose the type of file that you would like to use "
                                         "for the new virtual hard disk. If you do not need to use it "
                                         "with other virtualization software you can leave this setting unchanged."));
-    QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
-    for (int i = 0; i < buttons.size(); ++i)
-    {
-        QAbstractButton *pButton = buttons[i];
-        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
-        pButton->setText(gpConverter->toString(enmFormat));
-    }
 }
 
 void UIWizardNewVDPageBasic1::initializePage()

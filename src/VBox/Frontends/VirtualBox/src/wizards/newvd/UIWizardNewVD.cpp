@@ -17,7 +17,7 @@
 
 /* Qt includes: */
 #include <QVariant>
-
+#include <QPushButton>
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIWizardNewVD.h"
@@ -48,6 +48,9 @@ UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
     /* Assign background image: */
     assignBackground(":/wizard_new_harddisk_bg.png");
 #endif /* VBOX_WS_MAC */
+    QPushButton *pButton = new QPushButton("boooo");
+    setSideWidget(pButton);
+
 }
 
 bool UIWizardNewVD::createVirtualDisk()

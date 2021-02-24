@@ -42,6 +42,7 @@ protected:
     /* Stuff for 'variant' field: */
     qulonglong mediumVariant() const;
     void setMediumVariant(qulonglong uMediumVariant);
+    void retranslateWidgets();
 
     /* Widgets: */
     QButtonGroup *m_pVariantButtonGroup;

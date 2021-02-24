@@ -71,6 +71,13 @@ void UIWizardNewVDPage2::setMediumVariant(qulonglong uMediumVariant)
     m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
 }
 
+void UIWizardNewVDPage2::retranslateWidgets()
+{
+    m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));
+    m_pFixedButton->setText(UIWizardNewVD::tr("&Fixed size"));
+    m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));
+}
+
 UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
 {
     /* Create widgets: */
@@ -118,6 +125,7 @@ UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
 
 void UIWizardNewVDPageBasic2::retranslateUi()
 {
+    retranslateWidgets();
     /* Translate page: */
     setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
 
@@ -133,9 +141,6 @@ void UIWizardNewVDPageBasic2::retranslateUi()
                                              "of up to two gigabytes each. This is mainly useful if you wish to store the "
                                              "virtual machine on removable USB devices or old systems, some of which cannot "
                                              "handle very large files."));
-    m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));
-    m_pFixedButton->setText(UIWizardNewVD::tr("&Fixed size"));
-    m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));
 }
 
 void UIWizardNewVDPageBasic2::initializePage()
@@ -167,4 +172,3 @@ bool UIWizardNewVDPageBasic2::isComplete() const
     /* Make sure medium variant is correct: */
     return mediumVariant() != (qulonglong)KMediumVariant_Max;
 }
-

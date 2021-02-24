@@ -64,6 +64,7 @@ protected:
     /* Stuff for 'mediumSize' field: */
     qulonglong mediumSize() const;
     void setMediumSize(qulonglong uMediumSize);
+    void retranslateWidgets();
 
     /* Variables: */
     QString m_strDefaultName;
