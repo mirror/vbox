@@ -224,7 +224,7 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR 
 int AudioMixerCreate(const char *pcszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
 {
     AssertPtrReturn(pcszName, VERR_INVALID_POINTER);
-    AssertReturn   (fFlags & AUDMIXER_FLAGS_VALID_MASK, VERR_INVALID_PARAMETER);
+    AssertReturn   (!(fFlags & ~AUDMIXER_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppMixer, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
