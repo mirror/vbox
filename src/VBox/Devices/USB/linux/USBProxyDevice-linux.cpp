@@ -129,9 +129,9 @@ typedef struct USBPROXYDEVLNX
     RTLISTANCHOR        ListInFlight;
     /** Are we using sysfs to find the active configuration? */
     bool                fUsingSysfs;
-    /** Pipe handle for waiking up - writing end. */
+    /** Pipe handle for waking up - writing end. */
     RTPIPE              hPipeWakeupW;
-    /** Pipe handle for waiking up - reading end. */
+    /** Pipe handle for waking up - reading end. */
     RTPIPE              hPipeWakeupR;
     /** The device node/sysfs path of the device.
      * Used to figure out the configuration after a reset. */
