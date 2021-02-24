@@ -322,14 +322,13 @@ void AudioMixerDestroy(PAUDIOMIXER pMixer)
          * will not be valid anymore after calling audioMixerRemoveSinkInternal(). */
         PAUDMIXSINK pSinkToRemove = pSink;
 
-        audioMixerRemoveSinkInternal(pMixer, pSinkToRemove);
-
         audioMixerSinkDestroyInternal(pSinkToRemove);
+        audioMixerRemoveSinkInternal(pMixer, pSinkToRemove);
 
         RTMemFree(pSinkToRemove);
     }
 
-    pMixer->cSinks = 0;
+    Assert(pMixer->cSinks == 0);
 
     if (pMixer->pszName)
     {
@@ -916,7 +915,8 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink)
         audioMixerStreamDestroyInternal(pStreamToRemove);
     }
 
-    if (pSink->pParent->fFlags & AUDMIXER_FLAGS_DEBUG)
+    if (   pSink->pParent
+        && pSink->pParent->fFlags & AUDMIXER_FLAGS_DEBUG)
     {
         DrvAudioHlpFileDestroy(pSink->Dbg.pFile);
         pSink->Dbg.pFile = NULL;
