@@ -2966,8 +2966,14 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
                                                     &pStream->Host.Cfg.Props);
                 if (!(pStream->fWarningsShown & PDMAUDIOSTREAM_WARN_FLAGS_DISABLED))
                 {
-                    LogRel(("Audio: Warning: Stream '%s' not ready or driver has disabled audio input (stream status is %#x, VM input status is %s), returning silence\n",
-                            pStream->szName, fStatus, fDisabled ? "disabled" : "enabled"));
+                    if (fDisabled)
+                    {
+                        LogRel(("Audio: Input for driver '%s' has been disabled, returning silence\n", pThis->szName));
+                    }
+                    else
+                        LogRel(("Audio: Warning: Input for stream '%s' of driver '%s' not ready (current input status is %#x), returning silence\n",
+                                pStream->szName, pThis->szName, fStatus));
+
                     pStream->fWarningsShown |= PDMAUDIOSTREAM_WARN_FLAGS_DISABLED;
                 }
             }
