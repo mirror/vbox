@@ -693,7 +693,8 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     /*
      * Second, initialize the registers.
      */
-    HDA_STREAM_REG(pThis, STS,   uSD) = HDA_SDSTS_FIFORDY;
+    /* See 6.2.33: Clear on reset. */
+    HDA_STREAM_REG(pThis, STS,   uSD) = 0;
     /* According to the ICH6 datasheet, 0x40000 is the default value for stream descriptor register 23:20
      * bits are reserved for stream number 18.2.33, resets SDnCTL except SRST bit. */
     HDA_STREAM_REG(pThis, CTL,   uSD) = 0x40000 | (HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_SRST);
@@ -1189,6 +1190,9 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
      */
     bool fInterruptSent = false;
 
+    /* Set the FIFORDY bit on the stream while doing the transfer. */
+    HDA_STREAM_REG(pThis, STS, uSD) |= HDA_SDSTS_FIFORDY;
+
     while (cbLeft)
     {
         /* Limit the chunk to the stream's FIFO size and what's left to process. */
@@ -1464,7 +1468,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                     /* Assert the interrupt before actually fetching the next BDLE below. */
                     if (!fInterruptSent)
                     {
-                        pStreamShared->State.cTransferPendingInterrupts++;
+                        pStreamShared->State.cTransferPendingInterrupts = 1;
 
                         AssertMsg(pStreamShared->State.cTransferPendingInterrupts <= 32,
                                   ("Too many pending interrupts (%RU8) for stream #%RU8\n",
@@ -1513,6 +1517,9 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
             break;
     }
 
+    /* Remove the FIFORDY bit again. */
+    HDA_STREAM_REG(pThis, STS, uSD) &= ~HDA_SDSTS_FIFORDY;
+
     /* Sanity. */
     Assert(cbProcessed == cbToProcess);
     Assert(cbLeft      == 0);
@@ -1543,28 +1550,26 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
          *         sound output. Running VLC on the guest will tell!
          */
         const bool fWalClkSet = hdaR3WalClkSet(pThis, pThisCC,
-                                                 hdaWalClkGetCurrent(pThis)
-                                               + hdaR3StreamPeriodFramesToWalClk(pPeriod,
-                                                                                   cbProcessed
-                                                                                 / pStreamR3->State.Mapping.cbFrameSize),
+                                               RT_MIN(  hdaWalClkGetCurrent(pThis)
+                                                      + hdaR3StreamPeriodFramesToWalClk(pPeriod,
+                                                                                          cbProcessed
+                                                                                        / pStreamR3->State.Mapping.cbFrameSize),
+                                                      hdaR3WalClkGetMax(pThis, pThisCC)),
                                                false /* fForce */);
         RT_NOREF(fWalClkSet);
     }
 
-    /* Does the period have any interrupts outstanding? */
-    if (!pStreamShared->State.cTransferPendingInterrupts)
-    {
-        /* No, set relative timer ticks for the next transfer to happen.
-         * This must happen at a constant rate. */
-        tsTransferNext = tsNow + pStreamShared->State.cTransferTicks;
-    }
+    /* Set the next transfer timing slot.
+     * This must happen at a constant rate. */
+     tsTransferNext = tsNow + pStreamShared->State.cTransferTicks;
 
     /* If we need to do another transfer, (re-)arm the device timer.  */
     if (tsTransferNext) /* Can be 0 if no next transfer is needed. */
     {
-        Log3Func(("[SD%RU8] Scheduling timer @ %RU64\n", uSD, tsTransferNext));
+        Log3Func(("[SD%RU8] Scheduling timer @ %RU64 (in %RU64 ticks)\n", uSD, tsTransferNext, tsTransferNext - tsNow));
 
         /* Make sure to assign next transfer timestamp before setting the timer. */
+        Assert(tsTransferNext > tsNow);
         pStreamShared->State.tsTransferNext = tsTransferNext;
 
         Assert(!fInTimer || tsNow == PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer));
@@ -1572,6 +1577,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                       true /* fForce - skip tsTransferNext check */, fInTimer ? tsNow : 0);
     }
 
+    /* Always update this timestamp, no matter what pStreamShared->State.tsTransferNext is. */
     pStreamShared->State.tsTransferLast = tsNow;
 
     Log3Func(("[SD%RU8] %R[bdle] -- %RU32/%RU32\n",
@@ -1737,26 +1743,25 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 
             if (cbSinkReadable)
             {
-                uint8_t *pabFIFO = pStreamShared->abFIFO;
+                void    *pvFIFO = &pStreamShared->abFIFO[0];
+                uint32_t cbFIFO = (uint32_t)sizeof(pStreamShared->abFIFO);
 
                 while (cbSinkReadable)
                 {
                     uint32_t cbRead;
                     rc2 = AudioMixerSinkRead(pSink, AUDMIXOP_COPY,
-                                             pabFIFO, RT_MIN(cbSinkReadable, (uint32_t)sizeof(pStreamShared->abFIFO)), &cbRead);
+                                             pvFIFO, RT_MIN(cbSinkReadable, cbFIFO), &cbRead);
                     AssertRCBreak(rc2);
 
                     if (!cbRead)
                     {
-#ifdef HDA_STRICT
                         AssertMsgFailed(("Nothing read from sink, even if %RU32 bytes were (still) announced\n", cbSinkReadable));
-#endif
                         break;
                     }
 
                     /* Write (guest input) data to the stream which was read from stream's sink before. */
                     uint32_t cbWritten;
-                    rc2 = hdaR3StreamWrite(pStreamR3, pabFIFO, cbRead, &cbWritten);
+                    rc2 = hdaR3StreamWrite(pStreamR3, pvFIFO, cbRead, &cbWritten);
                     AssertRCBreak(rc2);
                     AssertBreak(cbWritten > 0); /* Should never happen, as we know how much we can write. */
 

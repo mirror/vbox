@@ -1151,51 +1151,6 @@ static VBOXSTRICTRC hdaRegReadLPIB(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
     return VINF_SUCCESS;
 }
 
-#ifdef IN_RING3
-/**
- * Returns the current maximum value the wall clock counter can be set to.
- *
- * This maximum value depends on all currently handled HDA streams and their own current timing.
- *
- * @return  Current maximum value the wall clock counter can be set to.
- * @param   pThis               The shared HDA device state.
- * @param   pThisCC             The ring-3 HDA device state.
- *
- * @remark  Does not actually set the wall clock counter.
- *
- * @todo r=bird: This function is in the wrong file.
- */
-static uint64_t hdaR3WalClkGetMax(PHDASTATE pThis, PHDASTATER3 pThisCC)
-{
-    const uint64_t u64WalClkCur       = ASMAtomicReadU64(&pThis->u64WalClk);
-    const uint64_t u64FrontAbsWalClk  = pThisCC->SinkFront.pStreamShared
-                                      ? hdaR3StreamPeriodGetAbsElapsedWalClk(&pThisCC->SinkFront.pStreamShared->State.Period)  : 0;
-# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-#  error "Implement me!"
-# endif
-    const uint64_t u64LineInAbsWalClk = pThisCC->SinkLineIn.pStreamShared
-                                      ? hdaR3StreamPeriodGetAbsElapsedWalClk(&pThisCC->SinkLineIn.pStreamShared->State.Period) : 0;
-# ifdef VBOX_WITH_HDA_MIC_IN
-    const uint64_t u64MicInAbsWalClk  = pThisCC->SinkMicIn.pStreamShared
-                                      ? hdaR3StreamPeriodGetAbsElapsedWalClk(&pThisCC->SinkMicIn.pStreamShared->State.Period)  : 0;
-# endif
-
-    uint64_t u64WalClkNew = RT_MAX(u64WalClkCur, u64FrontAbsWalClk);
-# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-#  error "Implement me!"
-# endif
-    u64WalClkNew          = RT_MAX(u64WalClkNew, u64LineInAbsWalClk);
-# ifdef VBOX_WITH_HDA_MIC_IN
-    u64WalClkNew          = RT_MAX(u64WalClkNew, u64MicInAbsWalClk);
-# endif
-
-    Log3Func(("%RU64 -> Front=%RU64, LineIn=%RU64 -> %RU64\n",
-              u64WalClkCur, u64FrontAbsWalClk, u64LineInAbsWalClk, u64WalClkNew));
-
-    return u64WalClkNew;
-}
-#endif /* IN_RING3 */
-
 static VBOXSTRICTRC hdaRegReadWALCLK(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF(pDevIns, iReg);
@@ -1521,116 +1476,14 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
 static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-#ifdef IN_RING3
-    const uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, STS, iReg);
-    AssertReturn(uSD < RT_ELEMENTS(pThis->aStreams), VERR_INTERNAL_ERROR_3); /* paranoia^2: Bad g_aHdaRegMap. */
-    PHDASTATER3 const  pThisCC       = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
-    PHDASTREAM const   pStreamShared = &pThis->aStreams[uSD];
-
-    /* We only need to take the virtual-sync lock if we want to call
-       PDMDevHlpTimerGet or hdaR3TimerSet later.  Only precondition for that
-       is that we've got a non-zero ticks-per-transfer value. */
-    uint64_t const cTransferTicks = pStreamShared->State.cTransferTicks;
-    if (cTransferTicks)
-    {
-        DEVHDA_UNLOCK(pDevIns, pThis);
-        DEVHDA_LOCK_BOTH_RETURN(pDevIns, pThis, pStreamShared, VINF_IOM_R3_MMIO_WRITE);
-    }
-
-    hdaStreamLock(pStreamShared);
-
     uint32_t v = HDA_REG_IND(pThis, iReg);
 
     /* Clear (zero) FIFOE, DESE and BCIS bits when writing 1 to it (6.2.33). */
     HDA_REG_IND(pThis, iReg) &= ~(u32Value & v);
 
-/** @todo r=bird: Check if we couldn't this stuff involving hdaR3StreamPeriodLock
- *  and IRQs after PDMDevHlpTimerUnlockClock. */
-
-    /*
-     * ...
-     */
-    /* Some guests tend to write SDnSTS even if the stream is not running.
-     * So make sure to check if the RUN bit is set first. */
-    const bool fRunning = pStreamShared->State.fRunning;
-
-    Log3Func(("[SD%RU8] fRunning=%RTbool %R[sdsts]\n", uSD, fRunning, v));
-
-    PHDASTREAMPERIOD pPeriod = &pStreamShared->State.Period;
-    if (hdaR3StreamPeriodNeedsInterrupt(pPeriod))
-        hdaR3StreamPeriodReleaseInterrupt(pPeriod);
-    if (hdaR3StreamPeriodIsComplete(pPeriod))
-    {
-        /* Make sure to try to update the WALCLK register if a period is complete.
-         * Use the maximum WALCLK value all (active) streams agree to. */
-        const uint64_t uWalClkMax = hdaR3WalClkGetMax(pThis, PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3));
-        if (uWalClkMax > hdaWalClkGetCurrent(pThis))
-            hdaR3WalClkSet(pThis, pThisCC, uWalClkMax, false /* fForce */);
-
-        hdaR3StreamPeriodEnd(pPeriod);
-
-        if (fRunning)
-            hdaR3StreamPeriodBegin(pPeriod, hdaWalClkGetCurrent(pThis) /* Use current wall clock time */);
-    }
-
     HDA_PROCESS_INTERRUPT(pDevIns, pThis);
 
-    /*
-     * ...
-     */
-    uint64_t cTicksToNext = pStreamShared->State.cTransferTicks;
-    if (cTicksToNext) /* Only do any calculations if the stream currently is set up for transfers. */
-    {
-        const uint64_t tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
-        if (!pStreamShared->State.tsTransferLast)
-            pStreamShared->State.tsTransferLast = tsNow;
-        Assert(tsNow >= pStreamShared->State.tsTransferLast);
-
-        const uint64_t cTicksElapsed = tsNow - pStreamShared->State.tsTransferLast;
-
-        Log3Func(("[SD%RU8] cTicksElapsed=%RU64, cTicksToNext=%RU64\n",
-                  uSD, cTicksElapsed, cTicksToNext));
-
-        if (cTicksElapsed <= cTicksToNext)
-            cTicksToNext = cTicksToNext - cTicksElapsed;
-        else /* Catch up. */
-        {
-            Log3Func(("[SD%RU8] Warning: Lagging behind (%RU64 ticks elapsed, maximum allowed is %RU64)\n",
-                     uSD, cTicksElapsed, cTicksToNext));
-
-            LogRelMax2(128, ("HDA: Stream #%RU8 interrupt lagging behind (expected %RU64us, got %RU64us, %RU8 pending interrupts), trying to catch up ...\n",
-                             uSD, cTicksToNext / 1000,  cTicksElapsed / 1000, pStreamShared->State.cTransferPendingInterrupts));
-
-            cTicksToNext = pStreamShared->State.cbTransferSize * pStreamShared->State.cTicksPerByte;
-        }
-
-        Log3Func(("[SD%RU8] -> cTicksToNext=%RU64\n", uSD, cTicksToNext));
-
-        /* Reset processed data counter. */
-        pStreamShared->State.tsTransferNext = tsNow + cTicksToNext;
-
-        /* Only re-arm the timer if there were pending transfer interrupts left
-         *  -- it could happen that we land in here if a guest writes to SDnSTS
-         * unconditionally. */
-        if (pStreamShared->State.cTransferPendingInterrupts)
-        {
-            pStreamShared->State.cTransferPendingInterrupts--;
-
-            /* Re-arm the timer. */
-            LogFunc(("[SD%RU8] Timer set\n", uSD));
-            hdaR3TimerSet(pDevIns, pStreamShared, tsNow + cTicksToNext,
-                          true /* fForce - we just set tsTransferNext*/, 0 /*tsNow*/);
-        }
-    }
-
-    if (cTransferTicks)
-        PDMDevHlpTimerUnlockClock(pDevIns, pStreamShared->hTimer); /* Caller will unlock pThis->CritSect. */
-    hdaStreamUnlock(pStreamShared);
     return VINF_SUCCESS;
-#else  /* !IN_RING3 */
-    RT_NOREF(pDevIns, pThis, iReg, u32Value);
-    return VINF_IOM_R3_MMIO_WRITE;
-#endif /* !IN_RING3 */
 }
 
 static VBOXSTRICTRC hdaRegWriteSDLVI(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -2811,42 +2664,21 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, v
         const uint64_t tsNow           = PDMDevHlpTimerGet(pDevIns, hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
         const bool     fTimerScheduled = hdaR3StreamTransferIsScheduled(pStreamShared, tsNow);
 
-        Log3Func(("[SD%RU8] fSinksActive=%RTbool, fTimerScheduled=%RTbool\n", uSD, fSinkActive, fTimerScheduled));
-
-        if (!fTimerScheduled)
+        uint64_t tsTransferNext  = 0;
+        if (fTimerScheduled)
         {
-            if (!pStreamShared->State.tsTransferLast) /* Never did a transfer before? Initialize with current time. */
-                pStreamShared->State.tsTransferLast = tsNow;
-
-            Assert(tsNow >= pStreamShared->State.tsTransferLast);
-
-            /* How many ticks have passed since the last transfer? */
-            const uint64_t cTicksElapsed = tsNow - pStreamShared->State.tsTransferLast;
-
-            uint64_t cTicksToNext;
-            if (cTicksElapsed == 0) /* We just ran in the same timing slot? */
-            {
-                /* Schedule a transfer at the next regular timing slot. */
-                cTicksToNext = pStreamShared->State.cTransferTicks;
-            }
-            else
-            {
-                /* Some time since the last transfer has passed already; take this into account. */
-                if (pStreamShared->State.cTransferTicks >= cTicksElapsed)
-                {
-                    cTicksToNext = pStreamShared->State.cTransferTicks - cTicksElapsed;
-                }
-                else /* Catch up as soon as possible. */
-                    cTicksToNext = 0;
-            }
-
-            Log3Func(("[SD%RU8] tsNow=%RU64, tsTransferLast=%RU64, cTicksElapsed=%RU64 -> cTicksToNext=%RU64\n",
-                      uSD, tsNow, pStreamShared->State.tsTransferLast, cTicksElapsed, cTicksToNext));
-
-            /* Note: cTicksToNext can be 0, which means we have to run *now*. */
-            hdaR3TimerSet(pDevIns, pStreamShared, tsNow + cTicksToNext,
-                          true /*fForce*/, 0 /* tsNow */);
+            Assert(pStreamShared->State.tsTransferNext); /* Make sure that a new transfer timestamp is set. */
+            tsTransferNext = pStreamShared->State.tsTransferNext;
         }
+        else /* Schedule at the precalculated rate. */
+            tsTransferNext = tsNow + pStreamShared->State.cTransferTicks;
+
+        Log3Func(("[SD%RU8] fSinksActive=%RTbool, fTimerScheduled=%RTbool, tsTransferNext=%RU64 (in %RU64)\n",
+                  uSD, fSinkActive, fTimerScheduled, tsTransferNext, tsTransferNext - tsNow));
+
+        /* Note: tsTransferNext can be 0, which means we have to run *now*. */
+        hdaR3TimerSet(pDevIns, pStreamShared, tsTransferNext,
+                      true /*fForce*/, tsNow);
     }
     else
         Log3Func(("[SD%RU8] fSinksActive=%RTbool\n", uSD, fSinkActive));
