@@ -270,7 +270,7 @@ typedef struct HDASTATER3
         /** Whether debugging is enabled or not. */
         bool                    fEnabled;
         /** Path where to dump the debug output to.
-         *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH. */
+         *  Can be NULL, in which the system's temporary directory will be used then. */
         R3PTRTYPE(char *)       pszOutPath;
     } Dbg;
 } HDASTATER3;

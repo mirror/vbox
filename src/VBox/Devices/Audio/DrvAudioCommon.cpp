@@ -1501,6 +1501,7 @@ int DrvAudioHlpFileNameSanitize(char *pszPath, size_t cbPath)
  * @param   pszFile             Where to store the constructed file name.
  * @param   cchFile             Size (in characters) of the file name buffer.
  * @param   pszPath             Base path to use.
+ *                              If NULL or empty, the system's temporary directory will be used.
  * @param   pszName             A name for better identifying the file.
  * @param   uInstance           Device / driver instance which is using this file.
  * @param   enmType             Audio file type to construct file name for.
@@ -1511,16 +1512,35 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
     AssertReturn(cchFile,    VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    /* pszPath can be NULL. */
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     /** @todo Validate fFlags. */
 
     int rc;
 
+    char *pszPathTmp = NULL;
+
     do
     {
+        if (   pszPath == NULL
+            || !strlen(pszPath))
+        {
+            char szTemp[RTPATH_MAX];
+            rc = RTPathTemp(szTemp, sizeof(szTemp));
+            if (RT_SUCCESS(rc))
+            {
+                pszPathTmp = RTStrDup(szTemp);
+            }
+            else
+                break;
+        }
+        else
+            pszPathTmp = RTStrDup(pszPath);
+
+        AssertPtrBreakStmt(pszPathTmp, rc = VERR_NO_MEMORY);
+
         char szFilePath[RTPATH_MAX];
-        rc = RTStrCopy(szFilePath, sizeof(szFilePath), pszPath);
+        rc = RTStrCopy(szFilePath, sizeof(szFilePath), pszPathTmp);
         AssertRCBreak(rc);
 
         /* Create it when necessary. */
@@ -1591,6 +1611,8 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
         rc = RTStrCopy(pszFile, cchFile, szFilePath);
 
     } while (0);
+
+    RTStrFree(pszPathTmp);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

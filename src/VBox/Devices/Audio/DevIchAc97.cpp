@@ -524,7 +524,7 @@ typedef struct AC97STATEDEBUG
     bool                    fEnabled;
     bool                    afAlignment[7];
     /** Path where to dump the debug output to.
-     *  Defaults to VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH. */
+     *  Can be NULL, in which the system's temporary directory will be used then. */
     R3PTRTYPE(char *)       pszOutPath;
 } AC97STATEDEBUG;
 
@@ -4176,7 +4176,7 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AC97 configuration error: failed to read debugging enabled flag as boolean"));
 
-    rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "DebugPathOut", &pThisCC->Dbg.pszOutPath, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH);
+    rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "DebugPathOut", &pThisCC->Dbg.pszOutPath, NULL);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AC97 configuration error: failed to read debugging output path flag as string"));

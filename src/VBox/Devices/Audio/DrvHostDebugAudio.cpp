@@ -133,30 +133,23 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostDebugAudioHA_GetStatus(PPDMIHOSTA
  */
 static int debugCreateFile(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStreamDbg, bool fIn, PPDMAUDIOSTREAMCFG pCfg)
 {
-    char szTemp[RTPATH_MAX];
-    int rc = RTPathTemp(szTemp, sizeof(szTemp));
+    char szFile[RTPATH_MAX];
+    int rc = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), NULL /* Use temporary directory */, fIn ? "DebugAudioIn" : "DebugAudioOut",
+                                    pDrv->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
     if (RT_SUCCESS(rc))
     {
-        char szFile[RTPATH_MAX];
-        rc = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), szTemp, fIn ? "DebugAudioIn" : "DebugAudioOut",
-                                    pDrv->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+        rc = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pStreamDbg->pFile);
         if (RT_SUCCESS(rc))
         {
-            rc = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pStreamDbg->pFile);
-            if (RT_SUCCESS(rc))
-            {
-                rc = DrvAudioHlpFileOpen(pStreamDbg->pFile, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
-                                         &pCfg->Props);
-            }
-
-            if (RT_FAILURE(rc))
-                LogRel(("DebugAudio: Creating %sput file '%s' failed with %Rrc\n", fIn ? "in" : "out", szFile, rc));
+            rc = DrvAudioHlpFileOpen(pStreamDbg->pFile, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
+                                     &pCfg->Props);
         }
-        else
-            LogRel(("DebugAudio: Unable to build file name for temp dir '%s': %Rrc\n", szTemp, rc));
+
+        if (RT_FAILURE(rc))
+            LogRel(("DebugAudio: Creating %sput file '%s' failed with %Rrc\n", fIn ? "in" : "out", szFile, rc));
     }
     else
-        LogRel(("DebugAudio: Unable to retrieve temp dir: %Rrc\n", rc));
+        LogRel(("DebugAudio: Unable to build file name: %Rrc\n", rc));
 
     return rc;
 }
