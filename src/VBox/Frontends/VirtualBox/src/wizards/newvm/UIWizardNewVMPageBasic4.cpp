@@ -233,7 +233,7 @@ void UIWizardNewVMPageBasic4::sltGetWithFileOpenDialog()
 
 void UIWizardNewVMPageBasic4::retranslateUi()
 {
-    setTitle(UIWizardNewVM::tr("Hard disk and Hardware"));
+    setTitle(UIWizardNewVM::tr("Virtual Hard disk"));
 
     QString strRecommendedHDD = field("type").value<CGuestOSType>().isNull() ? QString() :
                                 UICommon::formatSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
