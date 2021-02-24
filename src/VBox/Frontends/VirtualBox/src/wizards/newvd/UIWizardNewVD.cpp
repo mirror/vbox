@@ -48,9 +48,6 @@ UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
     /* Assign background image: */
     assignBackground(":/wizard_new_harddisk_bg.png");
 #endif /* VBOX_WS_MAC */
-    QPushButton *pButton = new QPushButton("boooo");
-    setSideWidget(pButton);
-
 }
 
 bool UIWizardNewVD::createVirtualDisk()
