@@ -31,18 +31,23 @@
 /* COM includes: */
 #include "CGuestOSType.h"
 
-UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5(const QString &strDefaultName,
-                                                 const QString &strDefaultPath,
-                                                 qulonglong uDefaultSize)
-    : UIWizardNewVDPage3(strDefaultName, strDefaultPath)
-    , m_pLabel(0)
+UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5()
+    : m_pLabel(0)
 {
-    Q_UNUSED(uDefaultSize);
     prepare();
     qRegisterMetaType<CMedium>();
-    // registerField("baseMemory", this, "baseMemory");
-    // registerField("VCPUCount", this, "VCPUCount");
-    // registerField("EFIEnabled", this, "EFIEnabled");
+    registerField("mediumFormat", this, "mediumFormat");
+    registerField("mediumVariant", this, "mediumVariant");
+    registerField("mediumPath", this, "mediumPath");
+    registerField("mediumSize", this, "mediumSize");
+
+    // fieldImp("machineBaseName").toString(),
+    //     fieldImp("machineFolder").toString(),
+    //     fieldImp("type").value<CGuestOSType>().GetRecommendedHDD(),
+    QString strDefaultName = fieldImp("machineBaseName").toString();
+    m_strDefaultName = strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName;
+    m_strDefaultPath = fieldImp("machineFolder").toString();
+
 }
 
 void UIWizardNewVMPageBasic5::prepare()

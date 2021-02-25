@@ -44,6 +44,7 @@ protected:
 
     /* Constructor: */
     UIWizardNewVDPage3(const QString &strDefaultName, const QString &strDefaultPath);
+    UIWizardNewVDPage3();
 
     /* Handlers: */
     void onSelectLocationButtonClicked();

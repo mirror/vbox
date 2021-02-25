@@ -47,14 +47,15 @@ class UIWizardNewVMPageBasic5 : public UIWizardPage,
 
 {
     Q_OBJECT;
-    // Q_PROPERTY(int baseMemory READ baseMemory);
-    // Q_PROPERTY(int VCPUCount READ VCPUCount);
-    // Q_PROPERTY(bool EFIEnabled READ EFIEnabled);
+    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
+    Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
+    Q_PROPERTY(QString mediumPath READ mediumPath);
+    Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
 
 public:
 
     /** Constructor. */
-    UIWizardNewVMPageBasic5(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
+    UIWizardNewVMPageBasic5();
 
 protected:
 
