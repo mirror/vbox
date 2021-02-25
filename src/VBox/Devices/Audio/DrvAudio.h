@@ -142,6 +142,10 @@ typedef struct DRVAUDIO
 #endif
     /** Audio configuration settings retrieved from the backend. */
     PDMAUDIOBACKENDCFG      BackendCfg;
+    /** Commonly used scratch buffer. */
+    void                   *pvScratchBuf;
+    /** Size (in bytes) of commonly used scratch buffer. */
+    size_t                  cbScratchBuf;
 #ifdef VBOX_WITH_STATISTICS
     /** Statistics for the statistics manager (STAM). */
     DRVAUDIOSTATS           Stats;
