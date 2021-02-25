@@ -1438,7 +1438,7 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
     uint32_t cfPlayedTotal = 0;
 
     PPDMAUDIOFRAME paFrames = (PPDMAUDIOFRAME)pThis->pvScratchBuf;
-    const uint32_t  cFrames  =                 pThis->cbScratchBuf / sizeof(PDMAUDIOFRAME);
+    const uint32_t  cFrames =      (uint32_t)(pThis->cbScratchBuf / sizeof(PDMAUDIOFRAME));
 
     uint32_t cfLeft = cfToPlay;
     while (cfLeft)
