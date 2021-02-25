@@ -62,6 +62,7 @@ public:
         Page1,
         Page2,
         Page4,
+        Page5,
         Page8,
         PageMax
     };
