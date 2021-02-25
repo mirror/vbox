@@ -64,7 +64,7 @@ MACOS_VERS=$(sw_vers -productVersion)
 
 echo "Updating kernel cache (should trigger loading of new modules)."
 # /System/Library/Extensions is readonly in Catalina and later,
-# so touch returns always false on these systems   
+# so touch returns always false on these systems
 if [[ ${MACOS_VERS} != 11.* ]] && [[ ${MACOS_VERS} != 10.15.* ]]; then
     touch "/System/Library/Extensions/"
 fi
