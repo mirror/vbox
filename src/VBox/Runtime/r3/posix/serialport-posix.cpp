@@ -299,7 +299,7 @@ static int rtSerialPortCfg2Termios(PRTSERIALPORTINTERNAL pThis, PCRTSERIALPORTCF
     if (enmSpeed != B0)
     {
         tcflag_t const fCFlagMask = (CS5 | CS6 | CS7 | CS8 | CSTOPB | PARENB | PARODD | CMSPAR);
-        tcflag_t fCFlagNew = 0;
+        tcflag_t fCFlagNew = CLOCAL;
 
         switch (pCfg->enmDataBitCount)
         {
