@@ -189,6 +189,13 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
     registerField("virtualDiskLocation", this, "virtualDiskLocation");
 }
 
+int UIWizardNewVMPageBasic4::nextId() const
+{
+    if (m_pDiskCreate->isChecked())
+        return UIWizardNewVM::Page5;
+    return UIWizardNewVM::Page8;
+}
+
 void UIWizardNewVMPageBasic4::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -295,7 +302,6 @@ bool UIWizardNewVMPageBasic4::isComplete() const
         !m_pDiskPresent->isChecked() ||
         !uiCommon().medium(m_pDiskSelector->id()).isNull();
 }
-
 
 // bool UIWizardNewVMPageBasic4::validatePage()
 // {

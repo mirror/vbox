@@ -105,6 +105,7 @@ public:
 
     /** Constructor. */
     UIWizardNewVMPageBasic4();
+    virtual int nextId() const /* override */;
 
 protected:
 
