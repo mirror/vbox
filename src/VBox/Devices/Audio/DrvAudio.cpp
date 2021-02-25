@@ -1354,7 +1354,7 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
     uint32_t cfLeft  = cfToPlay;
 
     uint8_t  *pvChunk = (uint8_t *)pThis->pvScratchBuf;
-    uint32_t  cbChunk = pThis->cbScratchBuf;
+    uint32_t  cbChunk = (uint32_t)pThis->cbScratchBuf;
 
     while (cfLeft)
     {
@@ -1438,7 +1438,7 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
     uint32_t cfPlayedTotal = 0;
 
     PPDMAUDIOFRAME paFrames = (PPDMAUDIOFRAME)pThis->pvScratchBuf;
-    const size_t    cFrames =                 pThis->cbScratchBuf / sizeof(PDMAUDIOFRAME);
+    const uint32_t  cFrames  =                 pThis->cbScratchBuf / sizeof(PDMAUDIOFRAME);
 
     uint32_t cfLeft = cfToPlay;
     while (cfLeft)
@@ -1739,7 +1739,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
     {
         uint32_t cbCaptured;
         rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pStream->pvBackend,
-                                                    pThis->pvScratchBuf, RT_MIN(cbReadable, pThis->cbScratchBuf), &cbCaptured);
+                                                    pThis->pvScratchBuf, RT_MIN(cbReadable, (uint32_t)pThis->cbScratchBuf), &cbCaptured);
         if (RT_FAILURE(rc))
         {
             int rc2 = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
@@ -1750,7 +1750,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
 
         Assert(cbCaptured <= pThis->cbScratchBuf);
         if (cbCaptured > pThis->cbScratchBuf) /* Paranoia. */
-            cbCaptured = pThis->cbScratchBuf;
+            cbCaptured = (uint32_t)pThis->cbScratchBuf;
 
         if (!cbCaptured) /* Nothing captured? Take a shortcut. */
             break;
