@@ -24,12 +24,14 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UIBaseMemoryEditor.h"
+#include "UICommon.h"
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic5.h"
 
 /* COM includes: */
 #include "CGuestOSType.h"
+#include "CSystemProperties.h"
 
 UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5()
     : m_pLabel(0)
@@ -41,13 +43,25 @@ UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5()
     registerField("mediumPath", this, "mediumPath");
     registerField("mediumSize", this, "mediumSize");
 
-    // fieldImp("machineBaseName").toString(),
-    //     fieldImp("machineFolder").toString(),
-    //     fieldImp("type").value<CGuestOSType>().GetRecommendedHDD(),
-    QString strDefaultName = fieldImp("machineBaseName").toString();
-    m_strDefaultName = strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName;
-    m_strDefaultPath = fieldImp("machineFolder").toString();
+    /* We do not have any UI elements for HDD format selection since we default to VDI in case of guided wizard mode: */
+    bool fFoundVDI = false;
+    CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
+    const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
+    foreach (const CMediumFormat &format, formats)
+    {
+        if (format.GetName() == "VDI")
+        {
+            m_mediumFormat = format;
+            fFoundVDI = true;
+        }
+    }
+    Assert(fFoundVDI);
+    m_strDefaultExtension =  defaultExtension(m_mediumFormat);
+}
 
+CMediumFormat UIWizardNewVMPageBasic5::mediumFormat() const
+{
+    return m_mediumFormat;
 }
 
 void UIWizardNewVMPageBasic5::prepare()
@@ -56,7 +70,6 @@ void UIWizardNewVMPageBasic5::prepare()
 
     m_pLabel = new QIRichTextLabel(this);
     pMainLayout->addWidget(m_pLabel);
-    //pMainLayout->addWidget(createHardwareWidgets());
 
     pMainLayout->addStretch();
     createConnections();
@@ -79,19 +92,12 @@ void UIWizardNewVMPageBasic5::retranslateUi()
 
 void UIWizardNewVMPageBasic5::initializePage()
 {
+    /* We set the medium name and path according to machine name/path and do let user change these in the guided mode: */
+    QString strDefaultName = fieldImp("machineBaseName").toString();
+    m_strDefaultName = strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName;
+    m_strDefaultPath = fieldImp("machineFolder").toString();
+    // fieldImp("type").value<CGuestOSType>().GetRecommendedHDD()
     retranslateUi();
-
-    // if (!field("type").canConvert<CGuestOSType>())
-    //     return;
-
-    // CGuestOSType type = field("type").value<CGuestOSType>();
-    // ULONG recommendedRam = type.GetRecommendedRAM();
-    // if (m_pBaseMemoryEditor)
-    //     m_pBaseMemoryEditor->setValue(recommendedRam);
-
-    // KFirmwareType fwType = type.GetRecommendedFirmware();
-    // if (m_pEFICheckBox)
-    //     m_pEFICheckBox->setChecked(fwType != KFirmwareType_BIOS);
 }
 
 void UIWizardNewVMPageBasic5::cleanupPage()

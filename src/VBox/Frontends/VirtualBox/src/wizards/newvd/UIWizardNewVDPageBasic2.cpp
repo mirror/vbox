@@ -30,6 +30,10 @@
 #include "CMediumFormat.h"
 
 UIWizardNewVDPage2::UIWizardNewVDPage2()
+    : m_pVariantButtonGroup(0)
+    , m_pDynamicalButton(0)
+    , m_pFixedButton(0)
+    , m_pSplitBox(0)
 {
 }
 
@@ -39,13 +43,13 @@ qulonglong UIWizardNewVDPage2::mediumVariant() const
     qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
 
     /* Exclusive options: */
-    if (m_pDynamicalButton->isChecked())
+    if (m_pDynamicalButton && m_pDynamicalButton->isChecked())
         uMediumVariant = (qulonglong)KMediumVariant_Standard;
-    else if (m_pFixedButton->isChecked())
+    else if (m_pFixedButton && m_pFixedButton->isChecked())
         uMediumVariant = (qulonglong)KMediumVariant_Fixed;
 
     /* Additional options: */
-    if (m_pSplitBox->isChecked())
+    if (m_pSplitBox && m_pSplitBox->isChecked())
         uMediumVariant |= (qulonglong)KMediumVariant_VmdkSplit2G;
 
     /* Return options: */

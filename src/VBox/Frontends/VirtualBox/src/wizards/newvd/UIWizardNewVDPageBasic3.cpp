@@ -183,18 +183,12 @@ QString UIWizardNewVDPage3::defaultExtension(const CMediumFormat &mediumFormatRe
     return QString();
 }
 
-bool UIWizardNewVDPage3::checkFATSizeLimitation() const
+/* static */
+bool UIWizardNewVDPage3::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
 {
-    /* Acquire medium variant: */
-    const qulonglong uVariant = fieldImp("mediumVariant").toULongLong();
-
     /* If the hard disk is split into 2GB parts then no need to make further checks: */
     if (uVariant & KMediumVariant_VmdkSplit2G)
         return true;
-
-    /* Acquire medium path and size: */
-    const QString strMediumPath = fieldImp("mediumPath").toString();
-    const qulonglong uSize = fieldImp("mediumSize").toULongLong();
 
     RTFSTYPE enmType;
     int rc = RTFsQueryType(QFileInfo(strMediumPath).absolutePath().toLatin1().constData(), &enmType);
@@ -331,7 +325,9 @@ bool UIWizardNewVDPageBasic3::validatePage()
     }
 
     /* Make sure we are passing FAT size limitation: */
-    fResult = checkFATSizeLimitation();
+    fResult = checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
+                                     fieldImp("mediumPath").toString(),
+                                     fieldImp("mediumSize").toULongLong());
     if (!fResult)
     {
         msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);

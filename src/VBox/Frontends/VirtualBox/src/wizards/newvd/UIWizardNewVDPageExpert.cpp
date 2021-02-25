@@ -257,7 +257,9 @@ bool UIWizardNewVDPageExpert::validatePage()
     }
 
     /* Make sure we are passing FAT size limitation: */
-    fResult = checkFATSizeLimitation();
+    fResult = UIWizardNewVDPage3::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
+                                                         fieldImp("mediumPath").toString(),
+                                                         fieldImp("mediumSize").toULongLong());
     if (!fResult)
     {
         msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);

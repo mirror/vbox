@@ -39,6 +39,8 @@ class SHARED_LIBRARY_STUFF UIWizardNewVDPage3 : public UIWizardPageBase
 public:
 
     static QString defaultExtension(const CMediumFormat &mediumFormatRef);
+    /* Checks if the medium file is bigger than what is allowed in FAT file systems. */
+    static bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
 
 protected:
 
@@ -55,9 +57,6 @@ protected:
     static QString absoluteFilePath(const QString &strFileName, const QString &strPath);
     /* Returns the full image file path including the extension. */
     static QString absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension);
-
-    /* Checks if the medium file is bigger than what is allowed in FAT file systems. */
-    bool checkFATSizeLimitation() const;
 
     /* Stuff for 'mediumPath' field: */
     QString mediumPath() const;

@@ -47,7 +47,7 @@ class UIWizardNewVMPageBasic5 : public UIWizardPage,
 
 {
     Q_OBJECT;
-    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
+    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat);
     Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
     Q_PROPERTY(QString mediumPath READ mediumPath);
     Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
@@ -56,6 +56,7 @@ public:
 
     /** Constructor. */
     UIWizardNewVMPageBasic5();
+    CMediumFormat mediumFormat() const;
 
 protected:
 
@@ -84,6 +85,8 @@ private:
 
     /** Widgets. */
     QIRichTextLabel *m_pLabel;
+    /** For guided new vm wizard VDI is the only format. Thus we have no UI item for it. */
+    CMediumFormat m_mediumFormat;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic5_h */
