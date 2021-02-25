@@ -1158,7 +1158,7 @@ static void iommuAmdIotlbEntryInsert(PIOMMU pThis, PIOMMUR3 pThisR3, PIOTLBE pIo
         Assert(fInserted); NOREF(fInserted);
         Assert(pThisR3->cCachedIotlbes < IOMMU_IOTLBE_MAX);
         ++pThisR3->cCachedIotlbes;
-        STAM_COUNTER_INC(&pThis->StatIotlbeCached);
+        STAM_COUNTER_INC(&pThis->StatIotlbeCached); NOREF(pThis);
     }
     else
     {
@@ -1166,7 +1166,7 @@ static void iommuAmdIotlbEntryInsert(PIOMMU pThis, PIOMMUR3 pThisR3, PIOTLBE pIo
         if (pFound->fEvictPending)
         {
             pFound->fEvictPending = false;
-            STAM_COUNTER_INC(&pThis->StatIotlbeLazyEvictReuse);
+            STAM_COUNTER_INC(&pThis->StatIotlbeLazyEvictReuse); NOREF(pThis);
         }
         Assert(pFound->PageLookup.cShift == pPageLookup->cShift);
         pFound->PageLookup.fPerm     = pPageLookup->fPerm;
@@ -1200,7 +1200,7 @@ static PIOTLBE iommuAmdIotlbEntryRemove(PIOMMU pThis, PIOMMUR3 pThisR3, AVLU64KE
 
         Assert(pThisR3->cCachedIotlbes > 0);
         --pThisR3->cCachedIotlbes;
-        STAM_COUNTER_DEC(&pThis->StatIotlbeCached);
+        STAM_COUNTER_DEC(&pThis->StatIotlbeCached); NOREF(pThis);
     }
     return pIotlbe;
 }
@@ -3799,7 +3799,7 @@ static DECLCALLBACK(int) iommuAmdDteLookupPage(PPDMDEVINS pDevIns, uint64_t uIov
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     STAM_PROFILE_ADV_START(&pThis->StatProfDteLookup, a);
     int rc = iommuAmdIoPageTableWalk(pDevIns, uIovaPage, fPerm, pAux->uDeviceId, pAux->pDte, pAux->enmOp, pPageLookup);
-    STAM_PROFILE_ADV_STOP(&pThis->StatProfDteLookup, a);
+    STAM_PROFILE_ADV_STOP(&pThis->StatProfDteLookup, a); NOREF(pThis);
     return rc;
 }
 
@@ -3961,7 +3961,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                     {
                         Assert(cbContiguous > 0 && cbContiguous < cbAccess);
                         rc = VINF_SUCCESS;
-                        STAM_COUNTER_INC(&pThis->StatAccessDteNonContig);
+                        STAM_COUNTER_INC(&pThis->StatAccessDteNonContig); NOREF(pThis);
                     }
 
                     if (rc == VERR_IOMMU_ADDR_ACCESS_DENIED)
@@ -4195,24 +4195,36 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
  * @param   fFlags      The PDM IOMMU flags, PDMIOMMU_MEM_F_XXX.
  * @param   penmOp      Where to store the IOMMU operation.
  * @param   pfPerm      Where to store the IOMMU I/O permission.
- * @param   pStatRead   The stat counter to increment for a read operation.
- * @param   pStatWrite  The stat counter to increment for a write operation.
+ * @param   fBulk       Whether this is a bulk read or write.
  */
-DECLINLINE(void) iommuAmdMemAccessGetPermAndOp(uint32_t fFlags, PIOMMUOP penmOp, uint8_t *pfPerm, PSTAMCOUNTER pStatRead,
-                                               PSTAMCOUNTER pStatWrite)
+DECLINLINE(void) iommuAmdMemAccessGetPermAndOp(uint32_t fFlags, PIOMMUOP penmOp, uint8_t *pfPerm, bool fBulk)
 {
     if (fFlags & PDMIOMMU_MEM_F_WRITE)
     {
         *penmOp = IOMMUOP_MEM_WRITE;
         *pfPerm = IOMMU_IO_PERM_WRITE;
-        STAM_COUNTER_INC(pStatWrite);
+#ifdef VBOX_WITH_STATISTICS
+        if (!fBulk)
+            STAM_COUNTER_INC(pThis->CTX_SUFF_Z(StatMemRead));
+        else
+            STAM_COUNTER_INC(pThis->CTX_SUFF_Z(StatMemBulkRead));
+#else
+        RT_NOREF(fBulk);
+#endif
     }
     else
     {
         Assert(fFlags & PDMIOMMU_MEM_F_READ);
         *penmOp = IOMMUOP_MEM_READ;
         *pfPerm = IOMMU_IO_PERM_READ;
-        STAM_COUNTER_INC(pStatRead);
+#ifdef VBOX_WITH_STATISTICS
+        if (!fBulk)
+            STAM_COUNTER_INC(pThis->CTX_SUFF_Z(StatMemWrite));
+        else
+            STAM_COUNTER_INC(pThis->CTX_SUFF_Z(StatMemBulkWrite));
+#else
+        RT_NOREF(fBulk);
+#endif
     }
 }
 
@@ -4247,8 +4259,9 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
     {
         IOMMUOP enmOp;
         uint8_t fPerm;
-        iommuAmdMemAccessGetPermAndOp(fFlags, &enmOp, &fPerm, &pThis->CTX_SUFF_Z(StatMemRead), &pThis->CTX_SUFF_Z(StatMemWrite));
+        iommuAmdMemAccessGetPermAndOp(fFlags, &enmOp, &fPerm, false /* fBulk */);
         LogFlowFunc(("%s: uDevId=%#x uIova=%#RX64 cb=%zu\n", iommuAmdMemAccessGetPermName(fPerm), uDevId, uIova, cbAccess));
+        NOREF(pThis);
 
         int rc;
 #ifdef IOMMU_WITH_IOTLBE_CACHE
@@ -4256,7 +4269,7 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
         rc = iommuAmdCacheLookup(pDevIns, uDevId, uIova, cbAccess, fPerm, enmOp, pGCPhysSpa, pcbContiguous);
         if (rc == VINF_SUCCESS)
         {
-            /* Entire access was cached and permissions were valid. */
+            /* All pages in the access were found in the cache with sufficient permissions. */
             Assert(*pcbContiguous == cbAccess);
             Assert(*pGCPhysSpa != NIL_RTGCPHYS);
             STAM_COUNTER_INC(&pThis->StatAccessCacheHitFull);
@@ -4266,7 +4279,7 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
         { /* likely */ }
         else
         {
-            /* Access stopped when translations resulted in non-contiguous memory, let caller resume access. */
+            /* Access stopped since translations resulted in non-contiguous memory, let caller resume access. */
             Assert(*pcbContiguous > 0 && *pcbContiguous < cbAccess);
             STAM_COUNTER_INC(&pThis->StatAccessCacheNonContig);
             return VINF_SUCCESS;
@@ -4280,7 +4293,7 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
         AssertMsg(*pcbContiguous < cbAccess, ("Invalid size: cbContiguous=%zu cbAccess=%zu\n", *pcbContiguous, cbAccess));
         uIova    += *pcbContiguous;
         cbAccess -= *pcbContiguous;
-        /* FYI: We currently would be also be including permission denied as cache misses too.*/
+        /* We currently are including any permission denied pages as cache misses too.*/
         STAM_COUNTER_INC(&pThis->StatAccessCacheMiss);
 #endif
 
@@ -4334,8 +4347,7 @@ static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDev
     {
         IOMMUOP enmOp;
         uint8_t fPerm;
-        iommuAmdMemAccessGetPermAndOp(fFlags, &enmOp, &fPerm, &pThis->CTX_SUFF_Z(StatMemBulkRead),
-                                      &pThis->CTX_SUFF_Z(StatMemBulkWrite));
+        iommuAmdMemAccessGetPermAndOp(fFlags, &enmOp, &fPerm, true /* fBulk */);
         LogFlowFunc(("%s: uDevId=%#x cIovas=%zu\n", iommuAmdMemAccessGetPermName(fPerm), uDevId, cIovas));
 
         /** @todo IOMMU: IOTLB cache lookup. */
