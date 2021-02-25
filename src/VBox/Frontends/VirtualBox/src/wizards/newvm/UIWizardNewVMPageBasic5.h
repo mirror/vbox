@@ -26,12 +26,12 @@
 
 /* GUI includes: */
 #include "UIWizardPage.h"
+#include "UIWizardNewVDPageBasic1.h"
 #include "UIWizardNewVDPageBasic2.h"
 #include "UIWizardNewVDPageBasic3.h"
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CMedium.h"
 
 /* Forward declarations: */
 class QRadioButton;
@@ -41,6 +41,7 @@ class UIBaseMemoryEditor;
 class UIVirtualCPUEditor;
 
 class UIWizardNewVMPageBasic5 : public UIWizardPage,
+                                public UIWizardNewVDPage1,
                                 public UIWizardNewVDPage2,
                                 public UIWizardNewVDPage3
 

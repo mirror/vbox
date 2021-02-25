@@ -27,6 +27,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMachine.h"
+#include "CMedium.h"
 
 /** Container for unattended install related data. */
 struct UIUnattendedInstallData
@@ -88,11 +89,10 @@ public:
 
 protected:
 
-    /* Creates a new VM: */
     bool createVM();
-    /* Configures the newly created VM: */
+    bool createVirtualDisk();
+
     void configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
-    /* Attaches default devices: */
     bool attachDefaultDevices(const CGuestOSType &comGuestType);
 
     QString getStringFieldValue(const QString &strFieldName) const;
@@ -128,6 +128,7 @@ private:
     int m_iFloppyCount;
     int m_iSASCount;
     int m_iUSBCount;
+    CMedium m_virtualDisk;
 
     mutable UIUnattendedInstallData m_unattendedInstallData;
 };
