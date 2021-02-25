@@ -24,6 +24,7 @@
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasic2.h"
+#include "UIWizardNewVMPageBasic5.h"
 #include "UIWizardNewVMPageBasic8.h"
 #include "UIWizardNewVMPageBasic4.h"
 #include "UIWizardNewVMPageExpert.h"
@@ -80,9 +81,13 @@ void UIWizardNewVM::prepare()
     {
         case WizardMode_Basic:
         {
+            QString strDefaultDiskName;
+            QString strDefaultDiskPath;
+            qulonglong uDefaultSize = 0;
             setPage(Page1, new UIWizardNewVMPageBasic1(m_strGroup));
             setPage(Page2, new UIWizardNewVMPageBasic2);
             setPage(Page4, new UIWizardNewVMPageBasic4);
+            setPage(Page5, new UIWizardNewVMPageBasic5(strDefaultDiskName, strDefaultDiskPath, uDefaultSize));
             setPage(Page8, new UIWizardNewVMPageBasic8);
 
             setStartId(Page1);

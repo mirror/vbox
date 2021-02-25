@@ -29,7 +29,6 @@
 /* COM includes: */
 #include "CMediumFormat.h"
 
-
 UIWizardNewVDPage2::UIWizardNewVDPage2()
 {
 }
