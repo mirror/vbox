@@ -5156,60 +5156,47 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigRead(PPDMDEVINS pDevIns, PP
 
 
 /**
- * Writes the upper 32-bits of the IOMMU base address register.
+ * Sets up the IOMMU MMIO region (usually in response to an IOMMU base address
+ * register write).
  *
- * @param   pThis           The shared IOMMU device state.
- * @param   uIommuBarHi     The upper 32-bits of the IOMMU BAR.
- */
-static void iommuAmdR3IommuBarHiWrite(PIOMMU pThis, uint32_t uIommuBarHi)
-{
-    AssertCompile((IOMMU_BAR_VALID_MASK >> 32) == 0xffffffff);
-    pThis->IommuBar.au32[1] = uIommuBarHi;
-}
-
-
-/**
- * Writes the lower 32-bits of the IOMMU base address register.
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU instance data.
  *
- * @param   pDevIns         The IOMMU instance data.
- * @param   pThis           The shared IOMMU device state.
- * @param   uIommuBarLo     The lower 32-bits of the IOMMU BAR.
+ * @remarks Call this function only when the IOMMU BAR is enabled.
  */
-static VBOXSTRICTRC iommuAmdR3IommuBarLoWrite(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t uIommuBarLo)
+static int iommuAmdR3MmioSetup(PPDMDEVINS pDevIns)
 {
-    pThis->IommuBar.au32[0] = uIommuBarLo & IOMMU_BAR_VALID_MASK;
-    if (pThis->IommuBar.n.u1Enable)
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    Assert(pThis->IommuBar.n.u1Enable);
+    Assert(pThis->hMmio != NIL_IOMMMIOHANDLE);     /* Paranoia. Ensure we have a valid IOM MMIO handle. */
+    Assert(!pThis->ExtFeat.n.u1PerfCounterSup);    /* Base is 16K aligned when performance counters aren't supported. */
+    RTGCPHYS const GCPhysMmioBase     = RT_MAKE_U64(pThis->IommuBar.au32[0] & 0xffffc000, pThis->IommuBar.au32[1]);
+    RTGCPHYS const GCPhysMmioBasePrev = PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmio);
+
+    /* If the MMIO region is already mapped at the specified address, we're done. */
+    Assert(GCPhysMmioBase != NIL_RTGCPHYS);
+    if (GCPhysMmioBasePrev == GCPhysMmioBase)
+        return VINF_SUCCESS;
+
+    /* Unmap the previous MMIO region (which is at a different address). */
+    if (GCPhysMmioBasePrev != NIL_RTGCPHYS)
     {
-        Assert(pThis->hMmio != NIL_IOMMMIOHANDLE);  /* Paranoia. Ensure we have a valid IOM MMIO handle. */
-        Assert(!pThis->ExtFeat.n.u1PerfCounterSup); /* Base is 16K aligned when performance counters aren't supported. */
-        RTGCPHYS const GCPhysMmioBase     = RT_MAKE_U64(pThis->IommuBar.au32[0] & 0xffffc000, pThis->IommuBar.au32[1]);
-        RTGCPHYS const GCPhysMmioBasePrev = PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmio);
-
-        /* If the MMIO region is already mapped at the specified address, we're done. */
-        Assert(GCPhysMmioBase != NIL_RTGCPHYS);
-        if (GCPhysMmioBasePrev == GCPhysMmioBase)
-            return VINF_SUCCESS;
-
-        /* Unmap the previous MMIO region (which is at a different address). */
-        if (GCPhysMmioBasePrev != NIL_RTGCPHYS)
+        LogFlowFunc(("Unmapping previous MMIO region at %#RGp\n", GCPhysMmioBasePrev));
+        int rc = PDMDevHlpMmioUnmap(pDevIns, pThis->hMmio);
+        if (RT_FAILURE(rc))
         {
-            LogFlowFunc(("Unmapping previous MMIO region at %#RGp\n", GCPhysMmioBasePrev));
-            VBOXSTRICTRC rcStrict = PDMDevHlpMmioUnmap(pDevIns, pThis->hMmio);
-            if (RT_FAILURE(rcStrict))
-            {
-                LogFunc(("Failed to unmap MMIO region at %#RGp. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-                return rcStrict;
-            }
+            LogFunc(("Failed to unmap MMIO region at %#RGp. rc=%Rrc\n", rc));
+            return rc;
         }
+    }
 
-        /* Map the newly specified MMIO region. */
-        LogFlowFunc(("Mapping MMIO region at %#RGp\n", GCPhysMmioBase));
-        VBOXSTRICTRC rcStrict = PDMDevHlpMmioMap(pDevIns, pThis->hMmio, GCPhysMmioBase);
-        if (RT_FAILURE(rcStrict))
-        {
-            LogFunc(("Failed to unmap MMIO region at %#RGp. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-            return rcStrict;
-        }
+    /* Map the newly specified MMIO region. */
+    LogFlowFunc(("Mapping MMIO region at %#RGp\n", GCPhysMmioBase));
+    int rc = PDMDevHlpMmioMap(pDevIns, pThis->hMmio, GCPhysMmioBase);
+    if (RT_FAILURE(rc))
+    {
+        LogFunc(("Failed to unmap MMIO region at %#RGp. rc=%Rrc\n", rc));
+        return rc;
     }
 
     return VINF_SUCCESS;
@@ -5250,7 +5237,13 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
         case IOMMU_PCI_OFF_BASE_ADDR_REG_LO:
         {
             if (!pThis->IommuBar.n.u1Enable)
-                rcStrict = iommuAmdR3IommuBarLoWrite(pDevIns, pThis, u32Value);
+            {
+                pThis->IommuBar.au32[0] = u32Value & IOMMU_BAR_VALID_MASK;
+                if (pThis->IommuBar.n.u1Enable)
+                    rcStrict = iommuAmdR3MmioSetup(pDevIns);
+                else
+                    rcStrict = VINF_SUCCESS;
+            }
             else
             {
                 LogFunc(("Writing Base Address (Lo) when it's already enabled -> Ignored\n"));
@@ -5262,7 +5255,10 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
         case IOMMU_PCI_OFF_BASE_ADDR_REG_HI:
         {
             if (!pThis->IommuBar.n.u1Enable)
-                iommuAmdR3IommuBarHiWrite(pThis, u32Value);
+            {
+                AssertCompile((IOMMU_BAR_VALID_MASK >> 32) == 0xffffffff);
+                pThis->IommuBar.au32[1] = u32Value;
+            }
             else
                 LogFunc(("Writing Base Address (Hi) when it's already enabled -> Ignored\n"));
             rcStrict = VINF_SUCCESS;
@@ -6574,9 +6570,9 @@ static DECLCALLBACK(int) iommuAmdR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     IOMMU_LOCK(pDevIns, pThisR3);
 
-    /* Write the IOMMU base registers and map MMIO regions as needed. */
-    iommuAmdR3IommuBarHiWrite(pThis, pThis->IommuBar.au32[1]);
-    iommuAmdR3IommuBarLoWrite(pDevIns, pThis, pThis->IommuBar.au32[0]);
+    /* Map MMIO regions if the IOMMU BAR is enabled. */
+    if (pThis->IommuBar.n.u1Enable)
+        iommuAmdR3MmioSetup(pDevIns);
 
     /* Wake up the command thread if commands need processing. */
     iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
