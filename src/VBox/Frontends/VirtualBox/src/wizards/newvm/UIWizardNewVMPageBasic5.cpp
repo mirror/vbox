@@ -55,7 +55,9 @@ UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5()
             fFoundVDI = true;
         }
     }
-    Assert(fFoundVDI);
+    if (!fFoundVDI)
+        AssertMsgFailed(("No medium format corresponding to VDI could be found!"));
+
     m_strDefaultExtension =  defaultExtension(m_mediumFormat);
 }
 
