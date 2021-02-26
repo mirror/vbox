@@ -4206,9 +4206,9 @@ DECLINLINE(void) iommuAmdMemAccessGetPermAndOp(PIOMMU pThis, uint32_t fFlags, PI
         *pfPerm = IOMMU_IO_PERM_WRITE;
 #ifdef VBOX_WITH_STATISTICS
         if (!fBulk)
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
         else
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkRead));
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkWrite));
 #else
         RT_NOREF2(pThis, fBulk);
 #endif
@@ -4220,9 +4220,9 @@ DECLINLINE(void) iommuAmdMemAccessGetPermAndOp(PIOMMU pThis, uint32_t fFlags, PI
         *pfPerm = IOMMU_IO_PERM_READ;
 #ifdef VBOX_WITH_STATISTICS
         if (!fBulk)
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemWrite));
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemRead));
         else
-            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkWrite));
+            STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMemBulkRead));
 #else
         RT_NOREF2(pThis, fBulk);
 #endif
@@ -6036,6 +6036,7 @@ static const char *iommuAmdIrteGetIntrTypeName(uint8_t uIntrType)
     }
 }
 
+
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV}
  */
@@ -6696,7 +6697,6 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 
     IOMMU_LOCK_NORET(pDevIns, pThisR3);
 
-    /* Close the command thread semaphore. */
     if (pThis->hEvtCmdThread != NIL_SUPSEMEVENT)
     {
         PDMDevHlpSUPSemEventClose(pDevIns, pThis->hEvtCmdThread);
@@ -6704,7 +6704,6 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
     }
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
-    /* Destroy the IOTLB cache. */
     if (pThisR3->paIotlbes)
     {
         PDMDevHlpMMHeapFree(pDevIns, pThisR3->paIotlbes);
@@ -6854,7 +6853,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     /*
      * Register MSI support for the PCI device.
-     * This must be done -after- register it as a PCI device!
+     * This must be done -after- registering it as a PCI device!
      */
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
     AssertRCReturn(rc, rc);
@@ -6879,7 +6878,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     AssertLogRelRCReturn(rc, rc);
 
     /*
-     * Register saved state.
+     * Register saved state handlers.
      */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, IOMMU_SAVED_STATE_VERSION, sizeof(IOMMU), NULL /* pszBefore */,
                                 NULL /* pfnLivePrep */,  NULL /* pfnLiveExec */,  NULL /* pfnLiveVote */,
