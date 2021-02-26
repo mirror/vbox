@@ -68,6 +68,10 @@ protected:
     /** Wrapper to access 'wizard-field' from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
+    /** We override mediumVariant access functions since for the guided new vm wizard it is set to KMediumVariant_Standard. */
+    virtual qulonglong mediumVariant() const /* override */;
+    virtual void setMediumVariant(qulonglong uMediumVariant) /* override */;
+
 private slots:
 
 
