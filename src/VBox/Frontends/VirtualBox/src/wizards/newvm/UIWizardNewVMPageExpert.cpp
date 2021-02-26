@@ -75,7 +75,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("machineBaseName", this, "machineBaseName");
     registerField("baseMemory", this, "baseMemory");
     registerField("virtualDisk", this, "virtualDisk");
-    registerField("virtualDiskId", this, "virtualDiskId");
     registerField("guestOSFamiyId", this, "guestOSFamiyId");
     registerField("ISOFilePath", this, "ISOFilePath");
     registerField("isUnattendedEnabled", this, "isUnattendedEnabled");

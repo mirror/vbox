@@ -57,11 +57,6 @@ protected:
     bool getWithNewVirtualDiskWizard();
 
 
-    /** @name Property getters/setters
-     * @{ */
-       QUuid virtualDiskId() const { return m_uVirtualDiskId; }
-       void setVirtualDiskId(const QUuid &uVirtualDiskId) { m_uVirtualDiskId = uVirtualDiskId; }
-    /** @} */
 
     QWidget *createDiskWidgets();
 
@@ -75,7 +70,6 @@ protected:
     /** @name Variables
      * @{ */
        CMedium m_virtualDisk;
-       QUuid   m_uVirtualDiskId;
     /** @} */
 
     /** @name Widgets
@@ -94,7 +88,6 @@ class UIWizardNewVMPageBasic4 : public UIWizardPage, public UIWizardNewVMPage4
 {
     Q_OBJECT;
     Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
-    Q_PROPERTY(QUuid virtualDiskId READ virtualDiskId WRITE setVirtualDiskId);
 
 public:
 

@@ -137,7 +137,7 @@ bool UIWizardNewVM::createVM()
          * Usually we are assigning extra-data values through UIExtraDataManager,
          * but in that special case VM was not registered yet, so UIExtraDataManager is unaware of it: */
         if (!isUnattendedEnabled() &&
-            (field("virtualDiskId").toString().isNull() || !field("virtualDisk").value<CMedium>().isNull()))
+            (!field("virtualDisk").value<CMedium>().isNull()))
             m_machine.SetExtraData(GUI_FirstRun, "yes");
     }
 
@@ -385,18 +385,14 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
     if (!session.isNull())
     {
         CMachine machine = session.GetMachine();
-
-        QUuid uId = field("virtualDiskId").toUuid();
-        /* Boot virtual hard drive: */
-        if (!uId.isNull())
+        CMedium vmedium = virtualDisk();
+        if (!vmedium.isNull())
         {
             KStorageBus enmHDDBus = comGuestType.GetRecommendedHDStorageBus();
             CStorageController comHDDController = m_machine.GetStorageControllerByInstance(enmHDDBus, 0);
             if (!comHDDController.isNull())
             {
-                UIMedium vmedium = uiCommon().medium(uId);
-                CMedium medium = vmedium.medium();              /// @todo r=dj can this be cached somewhere?
-                machine.AttachDevice(comHDDController.GetName(), 0, 0, KDeviceType_HardDisk, medium);
+                machine.AttachDevice(comHDDController.GetName(), 0, 0, KDeviceType_HardDisk, vmedium);
                 if (!machine.isOk())
                     msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_HardDisk, field("virtualDiskLocation").toString(),
                                                    StorageSlot(enmHDDBus, 0, 0), this);

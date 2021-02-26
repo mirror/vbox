@@ -53,14 +53,14 @@ void UIWizardNewVMPage4::updateVirtualDiskSource()
     m_pVMMButton->setEnabled(m_pDiskPresent->isChecked());
 
     /* Fetch filed values: */
-    if (m_pDiskSkip->isChecked())
-    {
-        m_uVirtualDiskId = QUuid();
-    }
-    else if (m_pDiskPresent->isChecked())
-    {
-        m_uVirtualDiskId = m_pDiskSelector->id();
-    }
+    // if (m_pDiskSkip->isChecked())
+    // {
+    //     m_uVirtualDiskId = QUuid();
+    // }
+    // else if (m_pDiskPresent->isChecked())
+    // {
+    //     m_uVirtualDiskId = m_pDiskSelector->id();
+    // }
 }
 
 void UIWizardNewVMPage4::getWithFileOpenDialog()
@@ -180,7 +180,6 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
     prepare();
     qRegisterMetaType<CMedium>();
     registerField("virtualDisk", this, "virtualDisk");
-    registerField("virtualDiskId", this, "virtualDiskId");
 }
 
 int UIWizardNewVMPageBasic4::nextId() const
