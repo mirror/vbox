@@ -1031,7 +1031,7 @@ DECLINLINE(PVMXVMCSINFO) hmGetVmxActiveVmcsInfo(PVMCPUCC pVCpu)
 
 
 /**
- * Returns whether the the VM-exit MSR-store area differs from the VM-exit MSR-load
+ * Returns whether the VM-exit MSR-store area differs from the VM-exit MSR-load
  * area.
  *
  * @returns @c true if it's different, @c false otherwise.
@@ -3764,7 +3764,7 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
      * executed without causing a VM-exit, reads will #GP fault anyway).
      *
      * The IA32_SPEC_CTRL MSR is read/write and has state. We allow the guest to
-     * read/write them. We swap the the guest/host MSR value using the
+     * read/write them. We swap the guest/host MSR value using the
      * auto-load/store MSR area.
      */
     if (pVM->cpum.ro.GuestFeatures.fIbpb)
@@ -5023,7 +5023,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
              * For nested-guests, the "IA-32e mode guest" control we initialize with what is
              * required to get the nested-guest working with hardware-assisted VMX execution.
              * It depends on the nested-guest's IA32_EFER.LMA bit. Remember, a nested hypervisor
-             * can skip intercepting changes to the EFER MSR. This is why it it needs to be done
+             * can skip intercepting changes to the EFER MSR. This is why it needs to be done
              * here rather than while merging the guest VMCS controls.
              */
             if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx))
