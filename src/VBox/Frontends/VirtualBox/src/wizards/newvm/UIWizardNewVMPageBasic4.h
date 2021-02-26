@@ -41,6 +41,11 @@ class UIMediaComboBox;
 class UIWizardNewVMPage4 : public UIWizardPageBase
 {
 
+public:
+
+    const CMedium &virtualDisk() const { return m_virtualDisk; }
+    void setVirtualDisk(const CMedium &virtualDisk) { m_virtualDisk = virtualDisk; }
+
 protected:
 
     /** Constructor. */
@@ -54,8 +59,6 @@ protected:
 
     /** @name Property getters/setters
      * @{ */
-       CMedium virtualDisk() const { return m_virtualDisk; }
-       void setVirtualDisk(const CMedium &virtualDisk) { m_virtualDisk = virtualDisk; }
        QUuid virtualDiskId() const { return m_uVirtualDiskId; }
        void setVirtualDiskId(const QUuid &uVirtualDiskId) { m_uVirtualDiskId = uVirtualDiskId; }
     /** @} */

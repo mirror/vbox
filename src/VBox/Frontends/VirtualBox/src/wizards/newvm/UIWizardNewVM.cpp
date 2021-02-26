@@ -221,11 +221,11 @@ bool UIWizardNewVM::createVirtualDisk()
         return false;
     }
 
-    /* Remember created virtual-disk: */
-    m_virtualDisk = virtualDisk;
-
     /* Inform UICommon about it: */
-    uiCommon().createMedium(UIMedium(m_virtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
+    uiCommon().createMedium(UIMedium(virtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
+
+    /* Remember created virtual-disk: */
+    setVirtualDisk(virtualDisk);
 
     return true;
 }
@@ -602,6 +602,20 @@ void UIWizardNewVM::setFieldsFromDefaultUnttendedInstallData()
     setField("hostname", m_unattendedInstallData.m_strHostname);
     setField("installGuestAdditions", m_unattendedInstallData.m_fInstallGuestAdditions);
     setField("guestAdditionsISOPath", m_unattendedInstallData.m_strGuestAdditionsISOPath);
+}
+
+CMedium UIWizardNewVM::virtualDisk() const
+{
+    UIWizardNewVMPageBasic4 *pPage = qobject_cast<UIWizardNewVMPageBasic4*>(page(Page4));
+    AssertPtrReturn(pPage, CMedium());
+    return pPage->virtualDisk();
+}
+
+void UIWizardNewVM::setVirtualDisk(const CMedium &medium)
+{
+    UIWizardNewVMPageBasic4 *pPage = qobject_cast<UIWizardNewVMPageBasic4*>(page(Page4));
+    AssertPtrReturnVoid(pPage);
+    pPage->setVirtualDisk(medium);
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
