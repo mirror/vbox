@@ -39,7 +39,7 @@ UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5()
     prepare();
     qRegisterMetaType<CMedium>();
     registerField("mediumFormat", this, "mediumFormat");
-    registerField("mediumVariant", this, "mediumVariant");
+    registerField("mediumVariant" /* KMediumVariant */, this, "mediumVariant");
     registerField("mediumPath", this, "mediumPath");
     registerField("mediumSize", this, "mediumSize");
 

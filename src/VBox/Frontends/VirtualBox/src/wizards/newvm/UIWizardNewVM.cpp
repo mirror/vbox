@@ -176,7 +176,8 @@ bool UIWizardNewVM::createVirtualDisk()
 {
     /* Gather attributes: */
     CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
-    qulonglong uVariant = field("mediumVariant").toULongLong();
+    /* uVariant is of type KMediumVariant*/
+    qulonglong uMediumVariant = field("mediumVariant").toULongLong();
     QString strMediumPath = field("mediumPath").toString();
     qulonglong uSize = field("mediumSize").toULongLong();
     /* Check attributes: */
@@ -198,7 +199,7 @@ bool UIWizardNewVM::createVirtualDisk()
     QVector<KMediumVariant> variants(sizeof(qulonglong)*8);
     for (int i = 0; i < variants.size(); ++i)
     {
-        qulonglong temp = uVariant;
+        qulonglong temp = uMediumVariant;
         temp &= UINT64_C(1)<<i;
         variants[i] = (KMediumVariant)temp;
     }
