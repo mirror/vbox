@@ -34,7 +34,6 @@
 #include "CSystemProperties.h"
 
 UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5()
-    : m_pLabel(0)
 {
     prepare();
     qRegisterMetaType<CMedium>();
@@ -59,6 +58,9 @@ UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5()
         AssertMsgFailed(("No medium format corresponding to VDI could be found!"));
 
     m_strDefaultExtension =  defaultExtension(m_mediumFormat);
+
+    /* Since the medium format is static we can decide widget visibility here: */
+    setWidgetVisibility(m_mediumFormat);
 }
 
 CMediumFormat UIWizardNewVMPageBasic5::mediumFormat() const
@@ -68,13 +70,25 @@ CMediumFormat UIWizardNewVMPageBasic5::mediumFormat() const
 
 void UIWizardNewVMPageBasic5::prepare()
 {
+
+
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-
-    m_pLabel = new QIRichTextLabel(this);
-    pMainLayout->addWidget(m_pLabel);
-
+    pMainLayout->addWidget(createMediumVariantWidgets(true));
     pMainLayout->addStretch();
-    createConnections();
+
+    // connect(m_pVariantButtonGroup,static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+    //         this, &UIWizardNewVDPageBasic2::completeChanged);
+    // connect(m_pSplitBox, &QCheckBox::stateChanged,
+    //         this, &UIWizardNewVDPageBasic2::completeChanged);
+
+    // QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+
+
+    // m_pLabel = new QIRichTextLabel(this);
+    // pMainLayout->addWidget(m_pLabel);
+
+    // pMainLayout->addStretch();
+    // createConnections();
 }
 
 void UIWizardNewVMPageBasic5::createConnections()
@@ -83,11 +97,9 @@ void UIWizardNewVMPageBasic5::createConnections()
 
 void UIWizardNewVMPageBasic5::retranslateUi()
 {
-    setTitle(UIWizardNewVM::tr("Hardware"));
+    setTitle(UIWizardNewVM::tr("Storage on physical hard disk"));
+    UIWizardNewVDPage2::retranslateWidgets();
 
-    if (m_pLabel)
-        m_pLabel->setText(UIWizardNewVM::tr("<p>You can modify virtual machine's hardware by changing amount of RAM and "
-                                            "virtual CPU count.</p>"));
 
     //retranslateWidgets();
 }
@@ -99,6 +111,7 @@ void UIWizardNewVMPageBasic5::initializePage()
     m_strDefaultName = strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName;
     m_strDefaultPath = fieldImp("machineFolder").toString();
     // fieldImp("type").value<CGuestOSType>().GetRecommendedHDD()
+
     retranslateUi();
 }
 

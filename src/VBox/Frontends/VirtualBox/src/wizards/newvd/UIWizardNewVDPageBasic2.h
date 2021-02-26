@@ -25,6 +25,7 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
+class CMediumFormat;
 class QButtonGroup;
 class QRadioButton;
 class QCheckBox;
@@ -36,19 +37,30 @@ class SHARED_LIBRARY_STUFF UIWizardNewVDPage2 : public UIWizardPageBase
 {
 protected:
 
-    /* Constructor: */
+    /** Constructor: */
     UIWizardNewVDPage2();
 
-    /* Stuff for 'variant' field: */
+    QWidget *createMediumVariantWidgets(bool fWithLabels);
     qulonglong mediumVariant() const;
     void setMediumVariant(qulonglong uMediumVariant);
     void retranslateWidgets();
+    /** Check Medium format capability and decide if certain widgets can be shown. */
+    void setWidgetVisibility(CMediumFormat &mediumFormat);
+    /** @name Widgets
+     * @{ */
+        QButtonGroup *m_pVariantButtonGroup;
+        QRadioButton *m_pDynamicalButton;
+        QRadioButton *m_pFixedButton;
+        QCheckBox *m_pSplitBox;
+    /** @} */
 
-    /* Widgets: */
-    QButtonGroup *m_pVariantButtonGroup;
-    QRadioButton *m_pDynamicalButton;
-    QRadioButton *m_pFixedButton;
-    QCheckBox *m_pSplitBox;
+    /** @name Rich text labels. Declared/defined here since the are shared in more than one child class
+     * @{ */
+        QIRichTextLabel *m_pDescriptionLabel;
+        QIRichTextLabel *m_pDynamicLabel;
+        QIRichTextLabel *m_pFixedLabel;
+        QIRichTextLabel *m_pSplitLabel;
+    /** @} */
 };
 
 
@@ -73,12 +85,6 @@ private:
 
     /* Validation stuff: */
     bool isComplete() const;
-
-    /* Widgets: */
-    QIRichTextLabel *m_pDescriptionLabel;
-    QIRichTextLabel *m_pDynamicLabel;
-    QIRichTextLabel *m_pFixedLabel;
-    QIRichTextLabel *m_pSplitLabel;
 };
 
 

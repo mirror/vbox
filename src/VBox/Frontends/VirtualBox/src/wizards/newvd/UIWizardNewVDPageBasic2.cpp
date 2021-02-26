@@ -34,7 +34,56 @@ UIWizardNewVDPage2::UIWizardNewVDPage2()
     , m_pDynamicalButton(0)
     , m_pFixedButton(0)
     , m_pSplitBox(0)
+    , m_pDescriptionLabel(0)
+    , m_pDynamicLabel(0)
+    , m_pFixedLabel(0)
+    , m_pSplitLabel(0)
 {
+}
+
+QWidget *UIWizardNewVDPage2::createMediumVariantWidgets(bool fWithLabels)
+{
+    QWidget *pContainerWidget = new QWidget;
+    QVBoxLayout *pMainLayout = new QVBoxLayout(pContainerWidget);
+    if (pMainLayout)
+    {
+        if (fWithLabels)
+        {
+            m_pDescriptionLabel = new QIRichTextLabel;
+            m_pDynamicLabel = new QIRichTextLabel;
+            m_pFixedLabel = new QIRichTextLabel;
+            m_pSplitLabel = new QIRichTextLabel;
+        }
+        QVBoxLayout *pVariantLayout = new QVBoxLayout;
+        if (pVariantLayout)
+        {
+            m_pVariantButtonGroup = new QButtonGroup;
+            {
+                m_pDynamicalButton = new QRadioButton;
+                {
+                    m_pDynamicalButton->click();
+                    m_pDynamicalButton->setFocus();
+                }
+                m_pFixedButton = new QRadioButton;
+                m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
+                m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
+            }
+            m_pSplitBox = new QCheckBox;
+            pVariantLayout->addWidget(m_pDynamicalButton);
+            pVariantLayout->addWidget(m_pFixedButton);
+            pVariantLayout->addWidget(m_pSplitBox);
+        }
+        if (fWithLabels)
+        {
+            pMainLayout->addWidget(m_pDescriptionLabel);
+            pMainLayout->addWidget(m_pDynamicLabel);
+            pMainLayout->addWidget(m_pFixedLabel);
+            pMainLayout->addWidget(m_pSplitLabel);
+        }
+        pMainLayout->addLayout(pVariantLayout);
+        pMainLayout->addStretch();
+    }
+    return pContainerWidget;
 }
 
 qulonglong UIWizardNewVDPage2::mediumVariant() const
@@ -76,45 +125,63 @@ void UIWizardNewVDPage2::setMediumVariant(qulonglong uMediumVariant)
 
 void UIWizardNewVDPage2::retranslateWidgets()
 {
-    m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));
-    m_pFixedButton->setText(UIWizardNewVD::tr("&Fixed size"));
-    m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));
+    if (m_pDynamicalButton)
+        m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));
+    if (m_pFixedButton)
+        m_pFixedButton->setText(UIWizardNewVD::tr("&Fixed size"));
+    if (m_pSplitBox)
+        m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));
+
+
+    /* Translate rich text labels: */
+    if (m_pDescriptionLabel)
+        m_pDescriptionLabel->setText(UIWizardNewVD::tr("Please choose whether the new virtual hard disk file should grow as it is used "
+                                                       "(dynamically allocated) or if it should be created at its maximum size (fixed size)."));
+    if (m_pDynamicLabel)
+        m_pDynamicLabel->setText(UIWizardNewVD::tr("<p>A <b>dynamically allocated</b> hard disk file will only use space "
+                                                   "on your physical hard disk as it fills up (up to a maximum <b>fixed size</b>), "
+                                                   "although it will not shrink again automatically when space on it is freed.</p>"));
+    if (m_pFixedLabel)
+        m_pFixedLabel->setText(UIWizardNewVD::tr("<p>A <b>fixed size</b> hard disk file may take longer to create on some "
+                                                 "systems but is often faster to use.</p>"));
+    if (m_pSplitLabel)
+        m_pSplitLabel->setText(UIWizardNewVD::tr("<p>You can also choose to <b>split</b> the hard disk file into several files "
+                                                 "of up to two gigabytes each. This is mainly useful if you wish to store the "
+                                                 "virtual machine on removable USB devices or old systems, some of which cannot "
+                                                 "handle very large files."));
+}
+
+void UIWizardNewVDPage2::setWidgetVisibility(CMediumFormat &mediumFormat)
+{
+    ULONG uCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = mediumFormat.GetCapabilities();
+    for (int i = 0; i < capabilities.size(); i++)
+        uCapabilities |= capabilities[i];
+
+    bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
+    bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
+    bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
+    if (m_pDynamicLabel)
+        m_pDynamicLabel->setHidden(!fIsCreateDynamicPossible);
+    if (m_pDynamicalButton)
+        m_pDynamicalButton->setHidden(!fIsCreateDynamicPossible);
+    if (m_pFixedLabel)
+        m_pFixedLabel->setHidden(!fIsCreateFixedPossible);
+    if (m_pFixedButton)
+        m_pFixedButton->setHidden(!fIsCreateFixedPossible);
+    if (m_pSplitLabel)
+        m_pSplitLabel->setHidden(!fIsCreateSplitPossible);
+    if (m_pSplitBox)
+        m_pSplitBox->setHidden(!fIsCreateSplitPossible);
 }
 
 UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    {
-        m_pDescriptionLabel = new QIRichTextLabel(this);
-        m_pDynamicLabel = new QIRichTextLabel(this);
-        m_pFixedLabel = new QIRichTextLabel(this);
-        m_pSplitLabel = new QIRichTextLabel(this);
-        QVBoxLayout *pVariantLayout = new QVBoxLayout;
-        {
-            m_pVariantButtonGroup = new QButtonGroup(this);
-            {
-                m_pDynamicalButton = new QRadioButton(this);
-                {
-                    m_pDynamicalButton->click();
-                    m_pDynamicalButton->setFocus();
-                }
-                m_pFixedButton = new QRadioButton(this);
-                m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
-                m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
-            }
-            m_pSplitBox = new QCheckBox(this);
-            pVariantLayout->addWidget(m_pDynamicalButton);
-            pVariantLayout->addWidget(m_pFixedButton);
-            pVariantLayout->addWidget(m_pSplitBox);
-        }
-        pMainLayout->addWidget(m_pDescriptionLabel);
-        pMainLayout->addWidget(m_pDynamicLabel);
-        pMainLayout->addWidget(m_pFixedLabel);
-        pMainLayout->addWidget(m_pSplitLabel);
-        pMainLayout->addLayout(pVariantLayout);
-        pMainLayout->addStretch();
-    }
+    pMainLayout->addWidget(createMediumVariantWidgets(true));
+    pMainLayout->addStretch();
 
     /* Setup connections: */
     connect(m_pVariantButtonGroup,static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
@@ -131,43 +198,14 @@ void UIWizardNewVDPageBasic2::retranslateUi()
     retranslateWidgets();
     /* Translate page: */
     setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
-
-    /* Translate widgets: */
-    m_pDescriptionLabel->setText(UIWizardNewVD::tr("Please choose whether the new virtual hard disk file should grow as it is used "
-                                                   "(dynamically allocated) or if it should be created at its maximum size (fixed size)."));
-    m_pDynamicLabel->setText(UIWizardNewVD::tr("<p>A <b>dynamically allocated</b> hard disk file will only use space "
-                                               "on your physical hard disk as it fills up (up to a maximum <b>fixed size</b>), "
-                                               "although it will not shrink again automatically when space on it is freed.</p>"));
-    m_pFixedLabel->setText(UIWizardNewVD::tr("<p>A <b>fixed size</b> hard disk file may take longer to create on some "
-                                             "systems but is often faster to use.</p>"));
-    m_pSplitLabel->setText(UIWizardNewVD::tr("<p>You can also choose to <b>split</b> the hard disk file into several files "
-                                             "of up to two gigabytes each. This is mainly useful if you wish to store the "
-                                             "virtual machine on removable USB devices or old systems, some of which cannot "
-                                             "handle very large files."));
 }
 
 void UIWizardNewVDPageBasic2::initializePage()
 {
     /* Translate page: */
     retranslateUi();
-
-    /* Setup visibility: */
     CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
-    ULONG uCapabilities = 0;
-    QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = mediumFormat.GetCapabilities();
-    for (int i = 0; i < capabilities.size(); i++)
-        uCapabilities |= capabilities[i];
-
-    bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
-    bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
-    bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
-    m_pDynamicLabel->setHidden(!fIsCreateDynamicPossible);
-    m_pDynamicalButton->setHidden(!fIsCreateDynamicPossible);
-    m_pFixedLabel->setHidden(!fIsCreateFixedPossible);
-    m_pFixedButton->setHidden(!fIsCreateFixedPossible);
-    m_pSplitLabel->setHidden(!fIsCreateSplitPossible);
-    m_pSplitBox->setHidden(!fIsCreateSplitPossible);
+    setWidgetVisibility(mediumFormat);
 }
 
 bool UIWizardNewVDPageBasic2::isComplete() const
