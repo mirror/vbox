@@ -46,6 +46,7 @@ class UIWizardNewVMPageBasic5 : public UIWizardPage,
                                 public UIWizardNewVDPage3
 
 {
+
     Q_OBJECT;
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat);
     Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);

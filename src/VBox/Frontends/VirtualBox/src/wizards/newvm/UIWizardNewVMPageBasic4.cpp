@@ -56,14 +56,10 @@ void UIWizardNewVMPage4::updateVirtualDiskSource()
     if (m_pDiskSkip->isChecked())
     {
         m_uVirtualDiskId = QUuid();
-        m_strVirtualDiskName = QString();
-        m_strVirtualDiskLocation = QString();
     }
     else if (m_pDiskPresent->isChecked())
     {
         m_uVirtualDiskId = m_pDiskSelector->id();
-        m_strVirtualDiskName = m_pDiskSelector->currentText();
-        m_strVirtualDiskLocation = m_pDiskSelector->location();
     }
 }
 
@@ -185,8 +181,6 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
     qRegisterMetaType<CMedium>();
     registerField("virtualDisk", this, "virtualDisk");
     registerField("virtualDiskId", this, "virtualDiskId");
-    registerField("virtualDiskName", this, "virtualDiskName");
-    registerField("virtualDiskLocation", this, "virtualDiskLocation");
 }
 
 int UIWizardNewVMPageBasic4::nextId() const
