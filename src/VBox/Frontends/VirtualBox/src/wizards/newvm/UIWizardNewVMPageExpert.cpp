@@ -16,7 +16,6 @@
  */
 
 /* Qt includes: */
-#include <QButtonGroup>
 #include <QCheckBox>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -60,7 +59,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
         pMainLayout->addWidget(m_pToolBox);
 
         pMainLayout->addStretch();
-        updateVirtualDiskSource();
+
     }
 
     createConnections();
@@ -144,9 +143,6 @@ void UIWizardNewVMPageExpert::sltOsTypeChanged()
 
 void UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged()
 {
-    /* Call to base-class: */
-    updateVirtualDiskSource();
-
     /* Broadcast complete-change: */
     emit completeChanged();
 }
@@ -238,32 +234,32 @@ void UIWizardNewVMPageExpert::createConnections()
                 this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
 
     /* Connections for disk and hardware stuff: */
-    if (m_pDiskSkip)
+    if (m_pDiskEmpty)
     {
-        connect(m_pDiskSkip, &QRadioButton::toggled,
+        connect(m_pDiskEmpty, &QRadioButton::toggled,
                 this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-        connect(m_pDiskSkip, &QRadioButton::toggled,
+        connect(m_pDiskEmpty, &QRadioButton::toggled,
                 this, &UIWizardNewVMPageExpert::sltValueModified);
     }
-    if (m_pDiskCreate)
+    if (m_pDiskNew)
     {
-        connect(m_pDiskCreate, &QRadioButton::toggled,
+        connect(m_pDiskNew, &QRadioButton::toggled,
                 this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-        connect(m_pDiskCreate, &QRadioButton::toggled,
+        connect(m_pDiskNew, &QRadioButton::toggled,
                 this, &UIWizardNewVMPageExpert::sltValueModified);
     }
-    if (m_pDiskPresent)
+    if (m_pDiskExisting)
     {
-        connect(m_pDiskPresent, &QRadioButton::toggled,
+        connect(m_pDiskExisting, &QRadioButton::toggled,
                 this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-        connect(m_pDiskPresent, &QRadioButton::toggled,
+        connect(m_pDiskExisting, &QRadioButton::toggled,
                 this, &UIWizardNewVMPageExpert::sltValueModified);
     }
     if (m_pDiskSelector)
         connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
                 this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-    if (m_pVMMButton)
-        connect(m_pVMMButton, &QIToolButton::clicked,
+    if (m_pDiskSelectionButton)
+        connect(m_pDiskSelectionButton, &QIToolButton::clicked,
                 this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
     if (m_pBaseMemoryEditor)
         connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
@@ -298,25 +294,25 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
     }
 
     /* Prepare initial disk choice: */
-    if (!m_userSetWidgets.contains(m_pDiskCreate) &&
-        !m_userSetWidgets.contains(m_pDiskSkip) &&
-        !m_userSetWidgets.contains(m_pDiskPresent))
+    if (!m_userSetWidgets.contains(m_pDiskNew) &&
+        !m_userSetWidgets.contains(m_pDiskEmpty) &&
+        !m_userSetWidgets.contains(m_pDiskExisting))
     {
         if (type.GetRecommendedHDD() != 0)
         {
-            if (m_pDiskCreate)
+            if (m_pDiskNew)
             {
-                m_pDiskCreate->setFocus();
-                m_pDiskCreate->setChecked(true);
+                m_pDiskNew->setFocus();
+                m_pDiskNew->setChecked(true);
             }
             m_fRecommendedNoDisk = false;
         }
         else
         {
-            if (m_pDiskSkip)
+            if (m_pDiskEmpty)
             {
-                m_pDiskSkip->setFocus();
-                m_pDiskSkip->setChecked(true);
+                m_pDiskEmpty->setFocus();
+                m_pDiskEmpty->setChecked(true);
             }
             m_fRecommendedNoDisk = true;
         }
@@ -404,7 +400,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
         fIsComplete = false;
     }
 
-    if (m_pDiskPresent->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
+    if (m_pDiskExisting->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
     {
         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
                                      UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
@@ -463,7 +459,7 @@ bool UIWizardNewVMPageExpert::validatePage()
         Assert(m_virtualDisk.isNull());
         if (fResult)
         {
-            if (m_pDiskCreate->isChecked())
+            if (m_pDiskNew->isChecked())
             {
                 /* Show the New Virtual Hard Drive wizard if necessary: */
                 fResult = getWithNewVirtualDiskWizard();

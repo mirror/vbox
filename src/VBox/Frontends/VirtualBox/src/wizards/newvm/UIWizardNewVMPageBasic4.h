@@ -32,12 +32,20 @@
 #include "CMedium.h"
 
 /* Forward declarations: */
+class QButtonGroup;
 class QRadioButton;
 class QIRichTextLabel;
 class QIToolButton;
 class UIMediaComboBox;
 
-/** 3rd page of the New Virtual Machine wizard (base part). */
+enum SelectedDiskSource
+{
+    SelectedDiskSource_Empty = 0,
+    SelectedDiskSource_New,
+    SelectedDiskSource_Existing,
+    SelectedDiskSource_Max
+};
+
 class UIWizardNewVMPage4 : public UIWizardPageBase
 {
 
@@ -48,23 +56,21 @@ public:
 
 protected:
 
-    /** Constructor. */
     UIWizardNewVMPage4();
 
-    /** Handlers. */
-    void updateVirtualDiskSource();
+    SelectedDiskSource selectedDiskSource() const;
+    void setSelectedDiskSource(SelectedDiskSource enmSelectedDiskSource);
+
     void getWithFileOpenDialog();
     bool getWithNewVirtualDiskWizard();
 
 
-
     QWidget *createDiskWidgets();
 
-    /** Helpers. */
     void ensureNewVirtualDiskDeleted();
     void retranslateWidgets();
 
-    /** Input. */
+    void setEnableDiskSelectionWidgets(bool fEnable);
     bool m_fRecommendedNoDisk;
 
     /** @name Variables
@@ -74,20 +80,21 @@ protected:
 
     /** @name Widgets
      * @{ */
-       QRadioButton *m_pDiskSkip;
-       QRadioButton *m_pDiskCreate;
-       QRadioButton *m_pDiskPresent;
+       QButtonGroup *m_pDiskSourceButtonGroup;
+       QRadioButton *m_pDiskEmpty;
+       QRadioButton *m_pDiskNew;
+       QRadioButton *m_pDiskExisting;
        UIMediaComboBox *m_pDiskSelector;
-       QIToolButton *m_pVMMButton;
+       QIToolButton *m_pDiskSelectionButton;
     /** @} */
-
+    SelectedDiskSource m_enmSelectedDiskSource;
 };
 
-/** 3rd page of the New Virtual Machine wizard (basic extension). */
 class UIWizardNewVMPageBasic4 : public UIWizardPage, public UIWizardNewVMPage4
 {
     Q_OBJECT;
     Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
+    Q_PROPERTY(SelectedDiskSource selectedDiskSource READ selectedDiskSource WRITE setSelectedDiskSource);
 
 public:
 
@@ -106,25 +113,21 @@ protected:
 
 private slots:
 
-    /** Handlers. */
-    void sltVirtualDiskSourceChanged();
+    void sltHandleSelectedDiskSourceChange();
+    void sltVirtualSelectedDiskSourceChanged();
     void sltGetWithFileOpenDialog();
 
 private:
 
 
-    /** Prepare stuff. */
     void prepare();
     void createConnections();
     void retranslateUi();
     void initializePage();
     void cleanupPage();
 
-    /** Validation stuff. */
     bool isComplete() const;
-    //virtual bool validatePage() /* override */;
 
-    /** Widgets. */
     QIRichTextLabel *m_pLabel;
 };
 

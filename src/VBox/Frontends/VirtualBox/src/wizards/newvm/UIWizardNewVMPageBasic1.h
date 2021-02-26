@@ -35,7 +35,6 @@ class QGridLayout;
 class QIRichTextLabel;
 class UIFilePathSelector;
 class UINameAndSystemEditor;
-class QButtonGroup;
 
 /** 1st page of the New Virtual Machine wizard (base part): */
 class UIWizardNewVMPage1 : public UIWizardPageBase

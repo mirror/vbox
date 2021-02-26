@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QButtonGroup>
 #include <QGridLayout>
 #include <QMetaType>
 #include <QRadioButton>
@@ -33,34 +34,27 @@
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic4.h"
 
+Q_DECLARE_METATYPE(SelectedDiskSource);
+
 UIWizardNewVMPage4::UIWizardNewVMPage4()
     : m_fRecommendedNoDisk(false)
-    , m_pDiskSkip(0)
-    , m_pDiskCreate(0)
-    , m_pDiskPresent(0)
+    , m_pDiskEmpty(0)
+    , m_pDiskNew(0)
+    , m_pDiskExisting(0)
     , m_pDiskSelector(0)
-    , m_pVMMButton(0)
+    , m_pDiskSelectionButton(0)
+    , m_enmSelectedDiskSource(SelectedDiskSource_New)
 {
 }
 
-void UIWizardNewVMPage4::updateVirtualDiskSource()
+SelectedDiskSource UIWizardNewVMPage4::selectedDiskSource() const
 {
-    if (!m_pDiskSelector || !m_pVMMButton)
-        return;
+    return m_enmSelectedDiskSource;
+}
 
-    /* Enable/disable controls: */
-    m_pDiskSelector->setEnabled(m_pDiskPresent->isChecked());
-    m_pVMMButton->setEnabled(m_pDiskPresent->isChecked());
-
-    /* Fetch filed values: */
-    // if (m_pDiskSkip->isChecked())
-    // {
-    //     m_uVirtualDiskId = QUuid();
-    // }
-    // else if (m_pDiskPresent->isChecked())
-    // {
-    //     m_uVirtualDiskId = m_pDiskSelector->id();
-    // }
+void UIWizardNewVMPage4::setSelectedDiskSource(SelectedDiskSource enmSelectedDiskSource)
+{
+    m_enmSelectedDiskSource = enmSelectedDiskSource;
 }
 
 void UIWizardNewVMPage4::getWithFileOpenDialog()
@@ -79,8 +73,6 @@ void UIWizardNewVMPage4::getWithFileOpenDialog()
     {
         /* Update medium-combo if necessary: */
         m_pDiskSelector->setCurrentItem(uMediumId);
-        /* Update hard disk source: */
-        updateVirtualDiskSource();
         /* Focus on hard disk combo: */
         m_pDiskSelector->setFocus();
     }
@@ -101,7 +93,7 @@ bool UIWizardNewVMPage4::getWithNewVirtualDiskWizard()
         fResult = true;
         m_virtualDisk = pWizard->virtualDisk();
         m_pDiskSelector->setCurrentItem(m_virtualDisk.GetId());
-        m_pDiskPresent->click();
+        m_pDiskExisting->click();
     }
     if (pWizard)
         delete pWizard;
@@ -134,43 +126,55 @@ void UIWizardNewVMPage4::ensureNewVirtualDiskDeleted()
 
 void UIWizardNewVMPage4::retranslateWidgets()
 {
-    if (m_pDiskSkip)
-        m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
-    if (m_pDiskCreate)
-        m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
-    if (m_pDiskPresent)
-        m_pDiskPresent->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
-    if (m_pVMMButton)
-        m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+    if (m_pDiskEmpty)
+        m_pDiskEmpty->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
+    if (m_pDiskNew)
+        m_pDiskNew->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
+    if (m_pDiskExisting)
+        m_pDiskExisting->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
+    if (m_pDiskSelectionButton)
+        m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+}
+
+void UIWizardNewVMPage4::setEnableDiskSelectionWidgets(bool fEnabled)
+{
+    if (!m_pDiskSelector || !m_pDiskSelectionButton)
+        return;
+
+    m_pDiskSelector->setEnabled(fEnabled);
+    m_pDiskSelectionButton->setEnabled(fEnabled);
 }
 
 QWidget *UIWizardNewVMPage4::createDiskWidgets()
 {
     QWidget *pDiskContainer = new QWidget;
     QGridLayout *pDiskLayout = new QGridLayout(pDiskContainer);
-
-    m_pDiskSkip = new QRadioButton;
-    m_pDiskCreate = new QRadioButton;
-    m_pDiskPresent = new QRadioButton;
+    m_pDiskSourceButtonGroup = new QButtonGroup;
+    m_pDiskEmpty = new QRadioButton;
+    m_pDiskNew = new QRadioButton;
+    m_pDiskExisting = new QRadioButton;
+    m_pDiskSourceButtonGroup->addButton(m_pDiskEmpty);
+    m_pDiskSourceButtonGroup->addButton(m_pDiskNew);
+    m_pDiskSourceButtonGroup->addButton(m_pDiskExisting);
     QStyleOptionButton options;
-    options.initFrom(m_pDiskPresent);
-    int iWidth = m_pDiskPresent->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskPresent);
+    options.initFrom(m_pDiskExisting);
+    int iWidth = m_pDiskExisting->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskExisting);
     pDiskLayout->setColumnMinimumWidth(0, iWidth);
     m_pDiskSelector = new UIMediaComboBox;
     {
         m_pDiskSelector->setType(UIMediumDeviceType_HardDisk);
         m_pDiskSelector->repopulate();
     }
-    m_pVMMButton = new QIToolButton;
+    m_pDiskSelectionButton = new QIToolButton;
     {
-        m_pVMMButton->setAutoRaise(true);
-        m_pVMMButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
+        m_pDiskSelectionButton->setAutoRaise(true);
+        m_pDiskSelectionButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
     }
-    pDiskLayout->addWidget(m_pDiskSkip, 0, 0, 1, 3);
-    pDiskLayout->addWidget(m_pDiskCreate, 1, 0, 1, 3);
-    pDiskLayout->addWidget(m_pDiskPresent, 2, 0, 1, 3);
+    pDiskLayout->addWidget(m_pDiskEmpty, 0, 0, 1, 3);
+    pDiskLayout->addWidget(m_pDiskNew, 1, 0, 1, 3);
+    pDiskLayout->addWidget(m_pDiskExisting, 2, 0, 1, 3);
     pDiskLayout->addWidget(m_pDiskSelector, 3, 1);
-    pDiskLayout->addWidget(m_pVMMButton, 3, 2);
+    pDiskLayout->addWidget(m_pDiskSelectionButton, 3, 2);
     return pDiskContainer;
 }
 
@@ -179,12 +183,14 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
 {
     prepare();
     qRegisterMetaType<CMedium>();
+    qRegisterMetaType<SelectedDiskSource>();
     registerField("virtualDisk", this, "virtualDisk");
+    registerField("diskSource", this, "diskSource");
 }
 
 int UIWizardNewVMPageBasic4::nextId() const
 {
-    if (m_pDiskCreate->isChecked())
+    if (m_pDiskNew->isChecked())
         return UIWizardNewVM::Page5;
     return UIWizardNewVM::Page8;
 }
@@ -198,30 +204,38 @@ void UIWizardNewVMPageBasic4::prepare()
     pMainLayout->addWidget(createDiskWidgets());
 
     pMainLayout->addStretch();
-    updateVirtualDiskSource();
+    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
     createConnections();
 }
 
 void UIWizardNewVMPageBasic4::createConnections()
 {
-    connect(m_pDiskSkip, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageBasic4::sltVirtualDiskSourceChanged);
-    connect(m_pDiskCreate, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageBasic4::sltVirtualDiskSourceChanged);
-    connect(m_pDiskPresent, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageBasic4::sltVirtualDiskSourceChanged);
+    connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardNewVMPageBasic4::sltHandleSelectedDiskSourceChange);
     connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-            this, &UIWizardNewVMPageBasic4::sltVirtualDiskSourceChanged);
-    connect(m_pVMMButton, &QIToolButton::clicked,
+            this, &UIWizardNewVMPageBasic4::sltVirtualSelectedDiskSourceChanged);
+    connect(m_pDiskSelectionButton, &QIToolButton::clicked,
             this, &UIWizardNewVMPageBasic4::sltGetWithFileOpenDialog);
 }
 
-void UIWizardNewVMPageBasic4::sltVirtualDiskSourceChanged()
+void UIWizardNewVMPageBasic4::sltHandleSelectedDiskSourceChange()
 {
-    /* Call to base-class: */
-    updateVirtualDiskSource();
+    if (!m_pDiskSourceButtonGroup)
+        return;
 
-    /* Broadcast complete-change: */
+    if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
+        setSelectedDiskSource(SelectedDiskSource_Empty);
+    else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
+        setSelectedDiskSource(SelectedDiskSource_Existing);
+    else
+        setSelectedDiskSource(SelectedDiskSource_New);
+
+    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
+    completeChanged();
+}
+
+void UIWizardNewVMPageBasic4::sltVirtualSelectedDiskSourceChanged()
+{
     emit completeChanged();
 }
 
@@ -260,22 +274,22 @@ void UIWizardNewVMPageBasic4::initializePage()
 
     if (type.GetRecommendedHDD() != 0)
     {
-        if (m_pDiskCreate)
+        if (m_pDiskNew)
         {
-            m_pDiskCreate->setFocus();
-            m_pDiskCreate->setChecked(true);
+            m_pDiskNew->setFocus();
+            m_pDiskNew->setChecked(true);
         }
         m_fRecommendedNoDisk = false;
     }
     else
     {
-        if (m_pDiskSkip)
+        if (m_pDiskEmpty)
         {
-            m_pDiskSkip->setFocus();
-            m_pDiskSkip->setChecked(true);
+            m_pDiskEmpty->setFocus();
+            m_pDiskEmpty->setChecked(true);
         }
         m_fRecommendedNoDisk = true;
-    }
+     }
     if (m_pDiskSelector)
         m_pDiskSelector->setCurrentIndex(0);
 }
@@ -289,10 +303,10 @@ void UIWizardNewVMPageBasic4::cleanupPage()
 
 bool UIWizardNewVMPageBasic4::isComplete() const
 {
-    if (!m_pDiskSkip)
+    if (!m_pDiskEmpty)
         return false;
-    return m_pDiskSkip->isChecked() ||
-        !m_pDiskPresent->isChecked() ||
+    return m_pDiskEmpty->isChecked() ||
+        !m_pDiskExisting->isChecked() ||
         !uiCommon().medium(m_pDiskSelector->id()).isNull();
 }
 
@@ -302,16 +316,16 @@ bool UIWizardNewVMPageBasic4::isComplete() const
 //     bool fResult = true;
 
 //     /* Ensure unused virtual-disk is deleted: */
-//     if (m_pDiskSkip->isChecked() || m_pDiskCreate->isChecked() || (!m_virtualDisk.isNull() && m_uVirtualDiskId != m_virtualDisk.GetId()))
+//     if (m_pDiskEmpty->isChecked() || m_pDiskNew->isChecked() || (!m_virtualDisk.isNull() && m_uVirtualDiskId != m_virtualDisk.GetId()))
 //         ensureNewVirtualDiskDeleted();
 
-//     if (m_pDiskSkip->isChecked())
+//     if (m_pDiskEmpty->isChecked())
 //     {
 //         /* Ask user about disk-less machine unless that's the recommendation: */
 //         if (!m_fRecommendedNoDisk)
 //             fResult = msgCenter().confirmHardDisklessMachine(thisImp());
 //     }
-//     else if (m_pDiskCreate->isChecked())
+//     else if (m_pDiskNew->isChecked())
 //     {
 //         /* Show the New Virtual Hard Drive wizard: */
 //         fResult = getWithNewVirtualDiskWizard();

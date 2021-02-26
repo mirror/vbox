@@ -16,7 +16,6 @@
  */
 
 /* Qt includes: */
-#include <QButtonGroup>
 #include <QCheckBox>
 #include <QDir>
 #include <QGridLayout>
