@@ -40,8 +40,8 @@ protected:
     UIWizardNewVDPage2();
 
     /* Stuff for 'variant' field: */
-    virtual qulonglong mediumVariant() const;
-    virtual void setMediumVariant(qulonglong uMediumVariant);
+    qulonglong mediumVariant() const;
+    void setMediumVariant(qulonglong uMediumVariant);
     void retranslateWidgets();
 
     /* Widgets: */
