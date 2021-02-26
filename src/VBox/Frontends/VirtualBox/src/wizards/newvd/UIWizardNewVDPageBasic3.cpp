@@ -53,7 +53,9 @@ UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QStr
     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_pLocationEditor(0)
     , m_pLocationOpenButton(0)
-    , m_pEditorSize(0)
+    , m_pSizeEditor(0)
+    , m_pLocationLabel(0)
+    , m_pSizeLabel(0)
 {
 }
 
@@ -62,7 +64,7 @@ UIWizardNewVDPage3::UIWizardNewVDPage3()
     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_pLocationEditor(0)
     , m_pLocationOpenButton(0)
-    , m_pEditorSize(0)
+    , m_pSizeEditor(0)
 {
 }
 
@@ -215,13 +217,13 @@ QString UIWizardNewVDPage3::mediumPath() const
 
 qulonglong UIWizardNewVDPage3::mediumSize() const
 {
-    return m_pEditorSize ? m_pEditorSize->mediumSize() : 0;
+    return m_pSizeEditor ? m_pSizeEditor->mediumSize() : 0;
 }
 
 void UIWizardNewVDPage3::setMediumSize(qulonglong uMediumSize)
 {
-    if (m_pEditorSize)
-        m_pEditorSize->setMediumSize(uMediumSize);
+    if (m_pSizeEditor)
+        m_pSizeEditor->setMediumSize(uMediumSize);
 }
 
 void UIWizardNewVDPage3::retranslateWidgets()
@@ -249,19 +251,19 @@ UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, 
             pLocationLayout->addWidget(m_pLocationOpenButton);
         }
         m_pSizeLabel = new QIRichTextLabel(this);
-        m_pEditorSize = new UIMediumSizeEditor;
+        m_pSizeEditor = new UIMediumSizeEditor;
         setMediumSize(uDefaultSize);
         pMainLayout->addWidget(m_pLocationLabel);
         pMainLayout->addLayout(pLocationLayout);
         pMainLayout->addWidget(m_pSizeLabel);
-        pMainLayout->addWidget(m_pEditorSize);
+        pMainLayout->addWidget(m_pSizeEditor);
         pMainLayout->addStretch();
     }
 
     /* Setup connections: */
     connect(m_pLocationEditor, &QLineEdit::textChanged,    this, &UIWizardNewVDPageBasic3::completeChanged);
     connect(m_pLocationOpenButton, &QIToolButton::clicked, this, &UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked);
-    connect(m_pEditorSize, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageBasic3::completeChanged);
+    connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageBasic3::completeChanged);
 
     /* Register fields: */
     registerField("mediumPath", this, "mediumPath");
@@ -305,7 +307,7 @@ bool UIWizardNewVDPageBasic3::isComplete() const
 {
     if (!m_pLocationEditor)
         return false;
-    /* Make sure current name is not empty and current size feats the bounds: */
+    /* Make sure current name is not empty and current size fits the bounds: */
     return !m_pLocationEditor->text().trimmed().isEmpty() &&
            mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
 }

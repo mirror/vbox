@@ -25,6 +25,7 @@
 #include "QIRichTextLabel.h"
 #include "UIBaseMemoryEditor.h"
 #include "UICommon.h"
+#include "UIMediumSizeEditor.h"
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic5.h"
@@ -34,6 +35,7 @@
 #include "CSystemProperties.h"
 
 UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5()
+    : m_fUserSetSize(false)
 {
     prepare();
     qRegisterMetaType<CMedium>();
@@ -61,6 +63,8 @@ UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5()
 
     /* Since the medium format is static we can decide widget visibility here: */
     setWidgetVisibility(m_mediumFormat);
+
+    retranslateUi();
 }
 
 CMediumFormat UIWizardNewVMPageBasic5::mediumFormat() const
@@ -74,25 +78,23 @@ void UIWizardNewVMPageBasic5::prepare()
 
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     pMainLayout->addWidget(createMediumVariantWidgets(true));
+
+    m_pSizeLabel = new QIRichTextLabel;
+    m_pSizeEditor = new UIMediumSizeEditor;
+
+    pMainLayout->addWidget(m_pSizeLabel);
+
+    pMainLayout->addWidget(m_pSizeEditor);
+
     pMainLayout->addStretch();
 
-    // connect(m_pVariantButtonGroup,static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-    //         this, &UIWizardNewVDPageBasic2::completeChanged);
-    // connect(m_pSplitBox, &QCheckBox::stateChanged,
-    //         this, &UIWizardNewVDPageBasic2::completeChanged);
-
-    // QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-
-
-    // m_pLabel = new QIRichTextLabel(this);
-    // pMainLayout->addWidget(m_pLabel);
-
-    // pMainLayout->addStretch();
-    // createConnections();
+    createConnections();
 }
 
 void UIWizardNewVMPageBasic5::createConnections()
 {
+    connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageBasic3::completeChanged);
+    connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVMPageBasic5::sltHandleSizeEditorChange);
 }
 
 void UIWizardNewVMPageBasic5::retranslateUi()
@@ -100,8 +102,10 @@ void UIWizardNewVMPageBasic5::retranslateUi()
     setTitle(UIWizardNewVM::tr("Storage on physical hard disk"));
     UIWizardNewVDPage2::retranslateWidgets();
 
-
-    //retranslateWidgets();
+    if (m_pSizeLabel)
+        m_pSizeLabel->setText(UIWizardNewVM::tr("Select the size of the virtual hard disk in megabytes. "
+                                                "This size is the limit on the amount of file data "
+                                                "that a virtual machine will be able to store on the hard disk."));
 }
 
 void UIWizardNewVMPageBasic5::initializePage()
@@ -110,17 +114,26 @@ void UIWizardNewVMPageBasic5::initializePage()
     QString strDefaultName = fieldImp("machineBaseName").toString();
     m_strDefaultName = strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName;
     m_strDefaultPath = fieldImp("machineFolder").toString();
-    // fieldImp("type").value<CGuestOSType>().GetRecommendedHDD()
-
-    retranslateUi();
+    if (m_pSizeEditor && !m_fUserSetSize)
+    {
+        m_pSizeEditor->blockSignals(true);
+        setMediumSize(fieldImp("type").value<CGuestOSType>().GetRecommendedHDD());
+        m_pSizeEditor->blockSignals(false);
+    }
 }
 
 void UIWizardNewVMPageBasic5::cleanupPage()
 {
-    UIWizardPage::cleanupPage();
+    /* do not reset fields: */
 }
 
 bool UIWizardNewVMPageBasic5::isComplete() const
 {
-    return true;
+    return mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
+}
+
+
+void UIWizardNewVMPageBasic5::sltHandleSizeEditorChange()
+{
+    m_fUserSetSize = true;
 }

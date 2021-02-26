@@ -70,6 +70,7 @@ protected:
 
 private slots:
 
+    void sltHandleSizeEditorChange();
 
 private:
 
@@ -82,7 +83,8 @@ private:
     void cleanupPage();
 
     bool isComplete() const;
-
+    /** this is set to true when user manually set the size. */
+    bool m_fUserSetSize;
 
     /** For guided new vm wizard VDI is the only format. Thus we have no UI item for it. */
     CMediumFormat m_mediumFormat;
