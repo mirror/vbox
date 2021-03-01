@@ -6295,13 +6295,16 @@ static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     AssertRCReturn(rc, rc);
     AssertLogRelMsgReturn(cDevTabBaseAddrs > 0 && cDevTabBaseAddrs <= RT_ELEMENTS(pThis->aDevTabBaseAddrs),
                           ("Device table segment count invalid %#x\n", cDevTabBaseAddrs), rcErr);
+    AssertCompile(RT_ELEMENTS(pThis->aDevTabBaseAddrs) == RT_ELEMENTS(g_auDevTabSegMaxSizes));
     for (uint8_t i = 0; i < cDevTabBaseAddrs; i++)
     {
         rc = pHlp->pfnSSMGetU64(pSSM, &pThis->aDevTabBaseAddrs[i].u64);
         AssertRCReturn(rc, rc);
         pThis->aDevTabBaseAddrs[i].u64 &= IOMMU_DEV_TAB_BAR_VALID_MASK;
-        AssertLogRelMsgReturn(pThis->aDevTabBaseAddrs[i].n.u9Size <= g_auDevTabSegMaxSizes[0],
-                              ("Device table segment size invalid %#x\n", pThis->aDevTabBaseAddrs[i].n.u9Size), rcErr);
+        uint16_t const uSegSize    = pThis->aDevTabBaseAddrs[i].n.u9Size;
+        uint16_t const uMaxSegSize = g_auDevTabSegMaxSizes[i];
+        AssertLogRelMsgReturn(uSegSize <= uMaxSegSize,
+                              ("Device table segment size invalid %u (max %u)\n", uSegSize, uMaxSegSize), rcErr);
     }
 
     /* Command buffer base address register. */
@@ -6408,7 +6411,7 @@ static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         AssertRCReturn(rc, rc);
     }
 
-    /* MARC (Memory access and routing) registers. */
+    /* MARC (Memory Access and Routing) registers. */
     {
         uint8_t cMarcApers;
         rc = pHlp->pfnSSMGetU8(pSSM, &cMarcApers);
