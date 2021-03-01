@@ -306,9 +306,9 @@ void QIComboBox::setSizeAdjustPolicy(QComboBox::SizeAdjustPolicy enmPolicy)
 void QIComboBox::mark(bool fError, const QString &strErrorMessage /* = QString() */)
 {
     AssertPtrReturnVoid(m_pComboBox);
-    QILineEdit *pLineEdit = qobject_cast<QILineEdit*>(m_pComboBox->lineEdit());
-    AssertPtrReturnVoid(pLineEdit);
-    pLineEdit->mark(fError, strErrorMessage);
+    QILineEdit *pLineEdit = isEditable() ? qobject_cast<QILineEdit*>(m_pComboBox->lineEdit()) : 0;
+    if (pLineEdit)
+        pLineEdit->mark(fError, strErrorMessage);
 }
 
 void QIComboBox::clear()
@@ -337,6 +337,10 @@ void QIComboBox::setEditable(bool fEditable) const
     /* Redirect to combo-box: */
     AssertPtrReturnVoid(m_pComboBox);
     m_pComboBox->setEditable(fEditable);
+
+    /* Replace the line-edit so that we can mark errors: */
+    if (isEditable())
+        m_pComboBox->setLineEdit(new QILineEdit);
 }
 
 void QIComboBox::setCurrentIndex(int iIndex) const
@@ -384,9 +388,6 @@ void QIComboBox::prepare()
         m_pComboBox = new QComboBox;
         AssertPtrReturnVoid(m_pComboBox);
         {
-            /* Replace the line edit of the combox box so that we can mark it for errors: */
-            QILineEdit *pLineEdit = new QILineEdit;
-            m_pComboBox->setLineEdit(pLineEdit);
             /* Configure combo-box: */
             setFocusProxy(m_pComboBox);
             connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
