@@ -164,8 +164,6 @@ bool UIWizardNewVMPageBasic8::validatePage()
         return fResult;
     }
 
-
-
     startProcessing();
 
     SelectedDiskSource enmDiskSource = field("selectedDiskSource").value<SelectedDiskSource>();
@@ -182,9 +180,7 @@ bool UIWizardNewVMPageBasic8::validatePage()
         }
     }
     fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
-
     endProcessing();
-
 
     return fResult;
 }

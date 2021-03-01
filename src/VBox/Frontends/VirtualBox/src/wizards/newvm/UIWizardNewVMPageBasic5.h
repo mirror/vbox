@@ -60,7 +60,9 @@ public:
     CMediumFormat mediumFormat() const;
 
 protected:
-
+    /** For the guide wizard mode medium path, name and extention is static and we have
+      * no UI element for this. thus override. */
+    virtual QString mediumPath() const /*override */;
     /** Wrapper to access 'wizard' from base part. */
     UIWizard *wizardImp() const { return wizard(); }
     /** Wrapper to access 'this' from base part. */

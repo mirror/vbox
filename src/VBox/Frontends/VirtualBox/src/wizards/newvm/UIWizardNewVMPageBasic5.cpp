@@ -72,6 +72,11 @@ CMediumFormat UIWizardNewVMPageBasic5::mediumFormat() const
     return m_mediumFormat;
 }
 
+QString UIWizardNewVMPageBasic5::mediumPath() const
+{
+    return absoluteFilePath(toFileName(m_strDefaultName, m_strDefaultExtension), m_strDefaultPath);
+}
+
 void UIWizardNewVMPageBasic5::prepare()
 {
 
@@ -83,9 +88,7 @@ void UIWizardNewVMPageBasic5::prepare()
     m_pSizeEditor = new UIMediumSizeEditor;
 
     pMainLayout->addWidget(m_pSizeLabel);
-
     pMainLayout->addWidget(m_pSizeEditor);
-
     pMainLayout->addStretch();
 
     createConnections();

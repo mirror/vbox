@@ -183,7 +183,7 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
     qRegisterMetaType<CMedium>();
     qRegisterMetaType<SelectedDiskSource>();
     registerField("virtualDisk", this, "virtualDisk");
-    registerField("diskSource", this, "diskSource");
+    registerField("selectedDiskSource", this, "selectedDiskSource");
 }
 
 int UIWizardNewVMPageBasic4::nextId() const

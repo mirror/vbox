@@ -55,7 +55,7 @@ protected:
     /** Returns the full image file path including the extension. */
     static QString absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension);
 
-    QString mediumPath() const;
+    virtual QString mediumPath() const;
 
     qulonglong mediumSize() const;
     void setMediumSize(qulonglong uMediumSize);
