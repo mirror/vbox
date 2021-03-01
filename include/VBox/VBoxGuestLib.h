@@ -929,8 +929,8 @@ VBGLR3DECL(int)     VbglR3SharedFolderGetMountDir(char **ppszDir);       /**< @t
  * either retrieving or sending a HGCM guest control
  * commands from or to the host.
  *
- * Note: Do not change parameter order without also
- *       adapting all structure initializers.
+ * @note Do not change parameter order without also adapting all structure
+ *       initializers.
  */
 typedef struct VBGLR3GUESTCTRLCMDCTX
 {
