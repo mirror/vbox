@@ -207,7 +207,7 @@ log_command_in_target apt-get -y install linux-headers-$(uname -r)
 #Package cloud-init is needed for possible automation the initial setup of virtual machine
 #
 log_command_in_target apt-get -y install cloud-init
-log_command_in_target systemctl enable cloud-init-local.service 
+log_command_in_target systemctl enable cloud-init-local.service
 log_command_in_target systemctl enable cloud-init.service
 log_command_in_target systemctl enable cloud-config.service
 log_command_in_target systemctl enable cloud-final.service
