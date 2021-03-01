@@ -4737,7 +4737,6 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     PVGASTATECC pThisCC = RT_FROM_MEMBER(pInterface, VGASTATECC, IPort);
     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
     PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    PDMDEV_ASSERT_EMT(pDevIns);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
@@ -4784,19 +4783,18 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 /**
  * Internal vgaR3PortUpdateDisplayAll worker called under pThis->CritSect.
  */
+/** @todo Why the 'vboxR3' prefix? */
 static int vboxR3UpdateDisplayAllInternal(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, bool fFailOnResize)
 {
 # ifdef VBOX_WITH_VMSVGA
-    if (    !pThis->svga.fEnabled
-        ||  pThis->svga.fTraces)
+    if (   !pThis->svga.fEnabled
+        || pThis->svga.fTraces)
+# endif
     {
-# endif
-    /* The dirty bits array has been just cleared, reset handlers as well. */
-    if (pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS)
-        PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
-# ifdef VBOX_WITH_VMSVGA
+        /* The dirty bits array has been just cleared, reset handlers as well. */
+        if (pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS)
+            PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
     }
-# endif
     if (pThis->fRemappedVGA)
     {
         IOMMmioResetRegion(PDMDevHlpGetVM(pDevIns), pDevIns, pThis->hMmioLegacy);
@@ -4818,7 +4816,6 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface, 
     PVGASTATECC pThisCC = RT_FROM_MEMBER(pInterface, VGASTATECC, IPort);
     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
     PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    PDMDEV_ASSERT_EMT(pDevIns);
 
     /* This is called both in VBVA mode and normal modes. */
 

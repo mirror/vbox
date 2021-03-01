@@ -520,7 +520,7 @@ typedef struct PDMIDISPLAYPORT
      * @returns VBox status code.
      * @param   pInterface          Pointer to this interface.
      * @param   fFailOnResize       Fail is a resize is pending.
-     * @thread  The emulation thread.
+     * @thread  The emulation thread - bird sees no need for EMT here!
      */
     DECLR3CALLBACKMEMBER(int, pfnUpdateDisplayAll,(PPDMIDISPLAYPORT pInterface, bool fFailOnResize));
 
@@ -645,7 +645,7 @@ typedef struct PDMIDISPLAYPORT
      * @param   cyDst               The height of the destination frame buffer.
      * @param   cbDstLine           The line length of the destination frame buffer.
      * @param   cDstBitsPerPixel    The pixel depth of the destination.
-     * @thread  The emulation thread.
+     * @thread  The emulation thread - bird sees no need for EMT here!
      */
     DECLR3CALLBACKMEMBER(int, pfnCopyRect,(PPDMIDISPLAYPORT pInterface, uint32_t cx, uint32_t cy,
         const uint8_t *pbSrc, int32_t xSrc, int32_t ySrc, uint32_t cxSrc, uint32_t cySrc, uint32_t cbSrcLine, uint32_t cSrcBitsPerPixel,
@@ -806,7 +806,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * the changed rectangles.
      *
      * @param   pInterface          Pointer to this interface.
-     * @thread  The emulation thread.
+     * @thread  The emulation thread or timer queue thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnRefresh,(PPDMIDISPLAYCONNECTOR pInterface));
 

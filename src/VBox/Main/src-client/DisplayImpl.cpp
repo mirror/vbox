@@ -975,11 +975,10 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
 
 #ifndef VBOX_WITH_HGSMI
     if (!mVideoAccelLegacy.fVideoAccelEnabled)
-    {
 #else
     if (!mVideoAccelLegacy.fVideoAccelEnabled && !maFramebuffers[uScreenId].fVBVAEnabled)
+#endif
     {
-#endif /* VBOX_WITH_HGSMI */
         /* When VBVA is enabled, the VRDP server is informed
          * either in VideoAccelFlush or displayVBVAUpdateProcess.
          * Inform the server here only if VBVA is disabled.
@@ -2305,6 +2304,9 @@ HRESULT Display::drawToScreen(ULONG aScreenId, BYTE *aAddress, ULONG aX, ULONG a
     return rc;
 }
 
+/** @todo r=bird: cannot quite see why this would be required to run on an
+ *        EMT any more.  It's not an issue in the COM methods, but for the
+ *        VGA device interface it is an issue, see querySourceBitmap. */
 /*static*/ DECLCALLBACK(int) Display::i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll)
 {
     LogRelFlowFunc(("uId=%d, fUpdateAll %d\n", uId, fUpdateAll));
@@ -2568,8 +2570,12 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
         }
 
         if (fInvalidate)
+#if 1 /* bird: Cannot see why this needs to run on an EMT. It deadlocks now with timer callback moving to non-EMT worker threads. */
+            Display::i_InvalidateAndUpdateEMT(this, aScreenId, false /*fUpdateAll*/);
+#else
             VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
                              3, this, aScreenId, false);
+#endif
     }
 
     LogRelFlowFunc(("%Rhrc\n", hr));
