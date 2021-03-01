@@ -149,6 +149,33 @@ IntNetIf::ifOpen(const RTCString &strNetwork,
 
 
 /**
+ * Set promiscuous mode on the interface.
+ */
+int
+IntNetIf::ifSetPromiscuous(bool fPromiscuous)
+{
+    AssertReturn(m_pSession != NIL_RTR0PTR, VERR_GENERAL_FAILURE);
+    AssertReturn(m_hIf != INTNET_HANDLE_INVALID, VERR_GENERAL_FAILURE);
+
+    INTNETIFSETPROMISCUOUSMODEREQ SetPromiscuousModeReq;
+    int rc;
+
+    SetPromiscuousModeReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    SetPromiscuousModeReq.Hdr.cbReq = sizeof(SetPromiscuousModeReq);
+    SetPromiscuousModeReq.pSession = m_pSession;
+    SetPromiscuousModeReq.hIf = m_hIf;
+
+    SetPromiscuousModeReq.fPromiscuous = fPromiscuous;
+
+    rc = CALL_VMMR0(VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, SetPromiscuousModeReq);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Obtain R3 send/receive ring buffers for the internal network.
  * Performs VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS.
  * @return iprt status code.

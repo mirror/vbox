@@ -98,6 +98,8 @@ public:
     int setInputCallback(PFNINPUT pfnInput, void *pvUser);
     int setInputGSOCallback(PFNINPUTGSO pfnInputGSO, void *pvUser);
 
+    int ifSetPromiscuous(bool fPromiscuous = true);
+
     int ifPump();
     int ifAbort();
 
