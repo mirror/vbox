@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 #include "UIWizardPage.h"
+#include "UIWizardNewVM.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -38,13 +39,6 @@ class QIRichTextLabel;
 class QIToolButton;
 class UIMediaComboBox;
 
-enum SelectedDiskSource
-{
-    SelectedDiskSource_Empty = 0,
-    SelectedDiskSource_New,
-    SelectedDiskSource_Existing,
-    SelectedDiskSource_Max
-};
 
 class UIWizardNewVMPage4 : public UIWizardPageBase
 {

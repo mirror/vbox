@@ -50,6 +50,16 @@ struct UIUnattendedInstallData
     QString m_strGuestAdditionsISOPath;
 };
 
+enum SelectedDiskSource
+{
+    SelectedDiskSource_Empty = 0,
+    SelectedDiskSource_New,
+    SelectedDiskSource_Existing,
+    SelectedDiskSource_Max
+};
+
+Q_DECLARE_METATYPE(SelectedDiskSource);
+
 /** New Virtual Machine wizard: */
 class UIWizardNewVM : public UIWizard
 {

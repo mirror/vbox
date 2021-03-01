@@ -164,19 +164,23 @@ bool UIWizardNewVMPageBasic8::validatePage()
         return fResult;
     }
 
-    fResult = UIWizardNewVDPage3::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
-                                                         fieldImp("mediumPath").toString(),
-                                                         fieldImp("mediumSize").toULongLong());
-    if (!fResult)
-    {
-        msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
-        return fResult;
-    }
 
 
     startProcessing();
 
-    fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVirtualDisk();
+    SelectedDiskSource enmDiskSource = field("selectedDiskSource").value<SelectedDiskSource>();
+    if (enmDiskSource == SelectedDiskSource_New)
+    {
+        fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVirtualDisk();
+        fResult = UIWizardNewVDPage3::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
+                                                             fieldImp("mediumPath").toString(),
+                                                             fieldImp("mediumSize").toULongLong());
+        if (!fResult)
+        {
+            msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+            return fResult;
+        }
+    }
     fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
 
     endProcessing();

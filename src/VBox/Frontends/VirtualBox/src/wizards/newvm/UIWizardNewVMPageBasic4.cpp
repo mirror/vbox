@@ -31,10 +31,7 @@
 #include "UIMediumSelector.h"
 #include "UIMessageCenter.h"
 #include "UIWizardNewVD.h"
-#include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic4.h"
-
-Q_DECLARE_METATYPE(SelectedDiskSource);
 
 UIWizardNewVMPage4::UIWizardNewVMPage4()
     : m_fRecommendedNoDisk(false)
@@ -75,6 +72,7 @@ void UIWizardNewVMPage4::getWithFileOpenDialog()
         m_pDiskSelector->setCurrentItem(uMediumId);
         /* Focus on hard disk combo: */
         m_pDiskSelector->setFocus();
+        m_virtualDisk = uiCommon().medium(uMediumId).medium();
     }
 }
 
