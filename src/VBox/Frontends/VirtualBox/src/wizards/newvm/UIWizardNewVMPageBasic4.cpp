@@ -308,39 +308,14 @@ bool UIWizardNewVMPageBasic4::isComplete() const
         !uiCommon().medium(m_pDiskSelector->id()).isNull();
 }
 
-// bool UIWizardNewVMPageBasic4::validatePage()
-// {
-//     /* Initial result: */
-//     bool fResult = true;
-
-//     /* Ensure unused virtual-disk is deleted: */
-//     if (m_pDiskEmpty->isChecked() || m_pDiskNew->isChecked() || (!m_virtualDisk.isNull() && m_uVirtualDiskId != m_virtualDisk.GetId()))
-//         ensureNewVirtualDiskDeleted();
-
-//     if (m_pDiskEmpty->isChecked())
-//     {
-//         /* Ask user about disk-less machine unless that's the recommendation: */
-//         if (!m_fRecommendedNoDisk)
-//             fResult = msgCenter().confirmHardDisklessMachine(thisImp());
-//     }
-//     else if (m_pDiskNew->isChecked())
-//     {
-//         /* Show the New Virtual Hard Drive wizard: */
-//         fResult = getWithNewVirtualDiskWizard();
-//     }
-
-//     if (fResult)
-//     {
-//         /* Lock finish button: */
-//         startProcessing();
-
-//         /* Try to create VM: */
-//         fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
-
-//         /* Unlock finish button: */
-//         endProcessing();
-//     }
-
-//     /* Return result: */
-//     return fResult;
-// }
+bool UIWizardNewVMPageBasic4::validatePage()
+{
+    bool fResult = true;
+    if (selectedDiskSource() == SelectedDiskSource_Empty)
+    {
+        /* Ask user about disk-less machine unless that's the recommendation: */
+        if (!m_fRecommendedNoDisk)
+            fResult = msgCenter().confirmHardDisklessMachine(thisImp());
+    }
+    return fResult;
+}

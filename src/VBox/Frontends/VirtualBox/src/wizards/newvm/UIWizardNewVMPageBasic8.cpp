@@ -165,7 +165,6 @@ bool UIWizardNewVMPageBasic8::validatePage()
     }
 
     startProcessing();
-
     SelectedDiskSource enmDiskSource = field("selectedDiskSource").value<SelectedDiskSource>();
     if (enmDiskSource == SelectedDiskSource_New)
     {

@@ -121,6 +121,7 @@ private:
     void cleanupPage();
 
     bool isComplete() const;
+    bool validatePage();
 
     QIRichTextLabel *m_pLabel;
 };
