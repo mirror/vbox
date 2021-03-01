@@ -174,10 +174,10 @@ fi
 #
 EPEL_REPOSITORY="https://dl.fedoraproject.org/pub/epel/epel-release-latest-${GUEST_MAJOR_VERSION}.noarch.rpm"
 log_command_in_target wget ${EPEL_REPOSITORY}
+log_command_in_target yum localinstall -y "epel-release-latest-${GUEST_MAJOR_VERSION}.noarch.rpm"
 log_command_in_target rpm -q "oraclelinux-release-el${GUEST_MAJOR_VERSION}"
 log_command_in_target yum install -y yum-utils
 log_command_in_target yum-config-manager --enable epel
-log_command_in_target yum localinstall -y "epel-release-latest-${GUEST_MAJOR_VERSION}.noarch.rpm"
 
 
 #
@@ -208,6 +208,17 @@ log_command_in_target yum -y install dkms
 log_command_in_target yum -y install make
 log_command_in_target yum -y install bzip2
 log_command_in_target yum -y install perl
+
+
+#
+#Package cloud-init is needed for possible automation the initial setup of virtual machine
+#
+log_command_in_target yum -y install cloud-init
+log_command_in_target systemctl enable cloud-init-local.service
+log_command_in_target systemctl enable cloud-init.service
+log_command_in_target systemctl enable cloud-config.service
+log_command_in_target systemctl enable cloud-final.service
+
 
 #
 # GAs
