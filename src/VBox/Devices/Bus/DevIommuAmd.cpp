@@ -6304,7 +6304,7 @@ static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         uint16_t const uSegSize    = pThis->aDevTabBaseAddrs[i].n.u9Size;
         uint16_t const uMaxSegSize = g_auDevTabSegMaxSizes[i];
         AssertLogRelMsgReturn(uSegSize <= uMaxSegSize,
-                              ("Device table segment size invalid %u (max %u)\n", uSegSize, uMaxSegSize), rcErr);
+                              ("Device table [%u] segment size invalid %u (max %u)\n", i, uSegSize, uMaxSegSize), rcErr);
     }
 
     /* Command buffer base address register. */
