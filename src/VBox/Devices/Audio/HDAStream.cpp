@@ -1091,10 +1091,9 @@ static int hdaR3StreamRead(PHDASTREAMR3 pStreamR3, uint32_t cbToRead, uint32_t *
  * @param   pStreamShared       HDA stream to update (shared).
  * @param   pStreamR3           HDA stream to update (ring-3).
  * @param   cbToProcessMax      How much data (in bytes) to process as maximum.
- * @param   fInTimer            Set if we're in the timer callout.
  */
 static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamShared,
-                               PHDASTREAMR3 pStreamR3, uint32_t cbToProcessMax, bool fInTimer)
+                               PHDASTREAMR3 pStreamR3, uint32_t cbToProcessMax)
 {
     LogFlowFuncEnter();
 
@@ -1533,8 +1532,6 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     }
 
     const bool fTransferComplete  = cbLeft == 0;
-    uint64_t   tsTransferNext     = 0;
-
     if (fTransferComplete)
     {
         /*
@@ -1561,21 +1558,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 
     /* Set the next transfer timing slot.
      * This must happen at a constant rate. */
-     tsTransferNext = tsNow + pStreamShared->State.cTransferTicks;
-
-    /* If we need to do another transfer, (re-)arm the device timer.  */
-    if (tsTransferNext) /* Can be 0 if no next transfer is needed. */
-    {
-        Log3Func(("[SD%RU8] Scheduling timer @ %RU64 (in %RU64 ticks)\n", uSD, tsTransferNext, tsTransferNext - tsNow));
-
-        /* Make sure to assign next transfer timestamp before setting the timer. */
-        Assert(tsTransferNext > tsNow);
-        pStreamShared->State.tsTransferNext = tsTransferNext;
-
-        Assert(!fInTimer || tsNow == PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer));
-        hdaR3TimerSet(pDevIns, pStreamShared, tsTransferNext,
-                      true /* fForce - skip tsTransferNext check */, fInTimer ? tsNow : 0);
-    }
+    pStreamShared->State.tsTransferNext = tsNow + pStreamShared->State.cTransferTicks;
 
     /* Always update this timestamp, no matter what pStreamShared->State.tsTransferNext is. */
     pStreamShared->State.tsTransferLast = tsNow;
@@ -1585,7 +1568,8 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     Log3Func(("[SD%RU8] fTransferComplete=%RTbool, cTransferPendingInterrupts=%RU8\n",
               uSD, fTransferComplete, pStreamShared->State.cTransferPendingInterrupts));
     Log3Func(("[SD%RU8] tsNow=%RU64, tsTransferNext=%RU64 (in %RU64 ticks)\n",
-              uSD, tsNow, tsTransferNext, tsTransferNext ? tsTransferNext - tsNow : 0));
+              uSD, tsNow, pStreamShared->State.tsTransferNext,
+              pStreamShared->State.tsTransferNext ? pStreamShared->State.tsTransferNext - tsNow : 0));
 
     LogFlowFuncLeave();
 
@@ -1658,7 +1642,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             }
 
             /* Do the DMA transfer. */
-            rc2 = hdaR3StreamTransfer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamFree, fInTimer);
+            rc2 = hdaR3StreamTransfer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamFree);
             AssertRC(rc2);
 
             /* Never read yet? Set initial timestamp. */
@@ -1786,7 +1770,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             const uint32_t cbStreamUsed = hdaR3StreamGetUsed(pStreamR3);
             if (cbStreamUsed)
             {
-                rc2 = hdaR3StreamTransfer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamUsed, fInTimer);
+                rc2 = hdaR3StreamTransfer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamUsed);
                 AssertRC(rc2);
             }
         }

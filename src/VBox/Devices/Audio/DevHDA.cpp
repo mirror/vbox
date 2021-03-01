@@ -2676,7 +2676,6 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, v
         Log3Func(("[SD%RU8] fSinksActive=%RTbool, fTimerScheduled=%RTbool, tsTransferNext=%RU64 (in %RU64)\n",
                   uSD, fSinkActive, fTimerScheduled, tsTransferNext, tsTransferNext - tsNow));
 
-        /* Note: tsTransferNext can be 0, which means we have to run *now*. */
         hdaR3TimerSet(pDevIns, pStreamShared, tsTransferNext,
                       true /*fForce*/, tsNow);
     }
