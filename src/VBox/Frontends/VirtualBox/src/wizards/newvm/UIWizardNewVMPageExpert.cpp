@@ -396,7 +396,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
         fIsComplete = false;
     }
 
-    if (m_pDiskExisting->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
+    if (m_pDiskExisting && m_pDiskExisting->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
     {
         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
                                      UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
