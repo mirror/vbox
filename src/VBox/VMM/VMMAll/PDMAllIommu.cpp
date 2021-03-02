@@ -67,17 +67,17 @@ DECL_FORCE_INLINE(uint16_t) pdmIommuGetPciDeviceId(PPDMDEVINS pDevIns, PPDMPCIDE
 
 
 /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
-int pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+int pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     PPDMIOMMU  pIommu       = PDMDEVINS_TO_IOMMU(pDevIns);
     PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
     {
-        int rc = pIommu->pfnMsiRemap(pDevInsIommu, uDeviceId, pMsiIn, pMsiOut);
+        int rc = pIommu->pfnMsiRemap(pDevInsIommu, idDevice, pMsiIn, pMsiOut);
         if (RT_FAILURE(rc))
         {
-            LogFunc(("MSI remap failed. uDeviceId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n", uDeviceId, pMsiIn->Addr.u64,
+            LogFunc(("MSI remap failed. idDevice=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n", idDevice, pMsiIn->Addr.u64,
                      pMsiIn->Data.u32, rc));
         }
         return rc;
@@ -109,13 +109,13 @@ int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhy
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
     {
-        uint16_t const uDeviceId = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
+        uint16_t const idDevice = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
         int rc = VINF_SUCCESS;
         while (cbRead > 0)
         {
             RTGCPHYS GCPhysOut;
             size_t   cbContig;
-            rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut, &cbContig);
+            rc = pIommu->pfnMemAccess(pDevInsIommu, idDevice, GCPhys, cbRead, PDMIOMMU_MEM_F_READ, &GCPhysOut, &cbContig);
             if (RT_SUCCESS(rc))
             {
                 /** @todo Handle strict return codes from PGMPhysRead. */
@@ -132,7 +132,7 @@ int pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhy
             }
             else
             {
-                LogFunc(("IOMMU memory read failed. uDeviceId=%#x GCPhys=%#RGp cb=%zu rc=%Rrc\n", uDeviceId, GCPhys, cbRead, rc));
+                LogFunc(("IOMMU memory read failed. idDevice=%#x GCPhys=%#RGp cb=%zu rc=%Rrc\n", idDevice, GCPhys, cbRead, rc));
 
                 /*
                  * We should initialize the read buffer on failure for devices that don't check
@@ -173,13 +173,13 @@ int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPh
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
     {
-        uint16_t const uDeviceId = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
+        uint16_t const idDevice = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
         int rc = VINF_SUCCESS;
         while (cbWrite > 0)
         {
             RTGCPHYS GCPhysOut;
             size_t   cbContig;
-            rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut, &cbContig);
+            rc = pIommu->pfnMemAccess(pDevInsIommu, idDevice, GCPhys, cbWrite, PDMIOMMU_MEM_F_WRITE, &GCPhysOut, &cbContig);
             if (RT_SUCCESS(rc))
             {
                 /** @todo Handle strict return codes from PGMPhysWrite. */
@@ -196,7 +196,7 @@ int pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPh
             }
             else
             {
-                LogFunc(("IOMMU memory write failed. uDeviceId=%#x GCPhys=%#RGp cb=%zu rc=%Rrc\n", uDeviceId, GCPhys, cbWrite,
+                LogFunc(("IOMMU memory write failed. idDevice=%#x GCPhys=%#RGp cb=%zu rc=%Rrc\n", idDevice, GCPhys, cbWrite,
                          rc));
                 break;
             }
@@ -234,10 +234,10 @@ int pdmR3IommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHY
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
     {
-        uint16_t const uDeviceId = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
+        uint16_t const idDevice = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
         size_t   cbContig  = 0;
         RTGCPHYS GCPhysOut = NIL_RTGCPHYS;
-        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys & X86_PAGE_BASE_MASK, X86_PAGE_SIZE, PDMIOMMU_MEM_F_READ,
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, idDevice, GCPhys & X86_PAGE_BASE_MASK, X86_PAGE_SIZE, PDMIOMMU_MEM_F_READ,
                                       &GCPhysOut, &cbContig);
         if (RT_SUCCESS(rc))
         {
@@ -246,7 +246,7 @@ int pdmR3IommuMemAccessReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHY
             return pDevIns->pHlpR3->pfnPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhysOut, fFlags, ppv, pLock);
         }
 
-        LogFunc(("IOMMU memory read for pointer access failed. uDeviceId=%#x GCPhys=%#RGp rc=%Rrc\n", uDeviceId, GCPhys, rc));
+        LogFunc(("IOMMU memory read for pointer access failed. idDevice=%#x GCPhys=%#RGp rc=%Rrc\n", idDevice, GCPhys, rc));
         return rc;
     }
     return VERR_IOMMU_NOT_PRESENT;
@@ -279,10 +279,10 @@ int pdmR3IommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPH
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
     {
-        uint16_t const uDeviceId = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
+        uint16_t const idDevice = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
         size_t   cbContig  = 0;
         RTGCPHYS GCPhysOut = NIL_RTGCPHYS;
-        int rc = pIommu->pfnMemAccess(pDevInsIommu, uDeviceId, GCPhys & X86_PAGE_BASE_MASK, X86_PAGE_SIZE, PDMIOMMU_MEM_F_WRITE,
+        int rc = pIommu->pfnMemAccess(pDevInsIommu, idDevice, GCPhys & X86_PAGE_BASE_MASK, X86_PAGE_SIZE, PDMIOMMU_MEM_F_WRITE,
                                       &GCPhysOut, &cbContig);
         if (RT_SUCCESS(rc))
         {
@@ -291,7 +291,7 @@ int pdmR3IommuMemAccessWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPH
             return pDevIns->pHlpR3->pfnPhysGCPhys2CCPtr(pDevIns, GCPhysOut, fFlags, ppv, pLock);
         }
 
-        LogFunc(("IOMMU memory write for pointer access failed. uDeviceId=%#x GCPhys=%#RGp rc=%Rrc\n", uDeviceId, GCPhys, rc));
+        LogFunc(("IOMMU memory write for pointer access failed. idDevice=%#x GCPhys=%#RGp rc=%Rrc\n", idDevice, GCPhys, rc));
         return rc;
     }
     return VERR_IOMMU_NOT_PRESENT;
@@ -340,9 +340,9 @@ int pdmR3IommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uin
         }
 
         /* Ask the IOMMU for corresponding translated physical addresses. */
-        uint16_t const uDeviceId = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
+        uint16_t const idDevice = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
         AssertCompile(sizeof(RTGCPHYS) == sizeof(uint64_t));
-        int rc = pIommu->pfnMemBulkAccess(pDevInsIommu, uDeviceId, cPages, (uint64_t const *)paGCPhysPages, PDMIOMMU_MEM_F_READ,
+        int rc = pIommu->pfnMemBulkAccess(pDevInsIommu, idDevice, cPages, (uint64_t const *)paGCPhysPages, PDMIOMMU_MEM_F_READ,
                                           paGCPhysOut);
         if (RT_SUCCESS(rc))
         {
@@ -352,7 +352,7 @@ int pdmR3IommuMemAccessBulkReadCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uin
                 LogFunc(("Bulk mapping for read access failed. cPages=%zu fFlags=%#x rc=%Rrc\n", rc, cPages, fFlags));
         }
         else
-            LogFunc(("Bulk translation for read access failed. uDeviceId=%#x cPages=%zu rc=%Rrc\n", uDeviceId, cPages, rc));
+            LogFunc(("Bulk translation for read access failed. idDevice=%#x cPages=%zu rc=%Rrc\n", idDevice, cPages, rc));
 
         RTMemFree(paGCPhysOut);
         return rc;
@@ -403,9 +403,9 @@ int pdmR3IommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
         }
 
         /* Ask the IOMMU for corresponding translated physical addresses. */
-        uint16_t const uDeviceId = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
+        uint16_t const idDevice = pdmIommuGetPciDeviceId(pDevIns, pPciDev);
         AssertCompile(sizeof(RTGCPHYS) == sizeof(uint64_t));
-        int rc = pIommu->pfnMemBulkAccess(pDevInsIommu, uDeviceId, cPages, (uint64_t const *)paGCPhysPages, PDMIOMMU_MEM_F_WRITE,
+        int rc = pIommu->pfnMemBulkAccess(pDevInsIommu, idDevice, cPages, (uint64_t const *)paGCPhysPages, PDMIOMMU_MEM_F_WRITE,
                                           paGCPhysOut);
         if (RT_SUCCESS(rc))
         {
@@ -415,7 +415,7 @@ int pdmR3IommuMemAccessBulkWriteCCPtr(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
                 LogFunc(("Bulk mapping of addresses failed. cPages=%zu fFlags=%#x rc=%Rrc\n", rc, cPages, fFlags));
         }
         else
-            LogFunc(("IOMMU bulk translation failed. uDeviceId=%#x cPages=%zu rc=%Rrc\n", uDeviceId, cPages, rc));
+            LogFunc(("IOMMU bulk translation failed. idDevice=%#x cPages=%zu rc=%Rrc\n", idDevice, cPages, rc));
 
         RTMemFree(paGCPhysOut);
         return rc;
