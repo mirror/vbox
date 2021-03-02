@@ -103,6 +103,29 @@ my_get_name()
 }
 
 ##
+# Gets the newest version of a library (like openssl).
+#
+# @param    $1      The library base path relative to root.
+my_get_newest_ver()
+{
+    cd "${MY_ABS_DIR}"
+    latest=
+    for ver in "$1"*;
+    do
+        if test -z "${latest}" || "${MY_EXPR}" "${ver}" ">" "${latest}"; then
+            latest="${ver}"
+        fi
+    done
+    if test -z "${latest}"; then
+        echo "error: could not find any version of: $1" >&2;
+        exit 1;
+    fi
+    echo "${latest}"
+    return 0;
+}
+
+
+##
 # Generate file entry for the specified file if it was found to be of interest.
 #
 # @param    $1      The output file name base.
@@ -1181,11 +1204,16 @@ my_generate_project "ExtPacks"      "src/VBox/ExtPacks"                     --be
 my_generate_project "bldprogs"      "src/bldprogs"                          --begin-incs "include"                                          --end-includes "src/bldprogs"
 
 # A few things from src/lib
-my_generate_project "zlib"          "src/libs/zlib-1.2.11"                  --begin-incs "include"                                          --end-includes "src/libs/zlib-1.2.11/*.c" "src/libs/zlib-1.2.11/*.h"
-my_generate_project "liblzf"        "src/libs/liblzf-3.4"                   --begin-incs "include"                                          --end-includes "src/libs/liblzf-3.4"
-my_generate_project "libpng"        "src/libs/libpng-1.6.36"                --begin-incs "include"                                          --end-includes "src/libs/libpng-1.6.36/*.c" "src/libs/libpng-1.6.36/*.h"
-my_generate_project "openssl"       "src/libs/openssl-1.1.1i"               --begin-incs "include" "src/libs/openssl-1.1.1i/crypto"         --end-includes "src/libs/openssl-1.1.1i"
-my_generate_project "curl"          "src/libs/curl-7.64.0"                  --begin-incs "include" "src/libs/curl-7.64.0/include"           --end-includes "src/libs/curl-7.64.0"
+lib=$(my_get_newest_ver src/libs/zlib)
+my_generate_project "zlib"          "${lib}"                                --begin-incs "include"                                          --end-includes "${lib}/*.c" "${lib}/*.h"
+lib=$(my_get_newest_ver src/libs/liblzf)
+my_generate_project "liblzf"        "${lib}"                                --begin-incs "include"                                          --end-includes "${lib}"
+lib=$(my_get_newest_ver src/libs/libpng)
+my_generate_project "libpng"        "${lib}"                                --begin-incs "include"                                          --end-includes "${lib}/*.c" "${lib}/*.h"
+lib=$(my_get_newest_ver src/libs/openssl)
+my_generate_project "openssl"       "${lib}"                                --begin-incs "include" "${lib}/crypto"                          --end-includes "${lib}"
+lib=$(my_get_newest_ver src/libs/curl)
+my_generate_project "curl"          "${lib}"                                --begin-incs "include" "${lib}/include"                         --end-includes "${lib}"
 
 # webtools
 my_generate_project "webtools"      "webtools"                              --begin-incs "include" "webtools/tinderbox/server/Tinderbox3"   --end-includes "webtools"
