@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic8 class implementation.
+ * VBox Qt GUI - UIWizardNewVMPageBasic3 class implementation.
  */
 
 /*
@@ -28,41 +28,41 @@
 #include "UIMessageCenter.h"
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVM.h"
-#include "UIWizardNewVMPageBasic8.h"
+#include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVDPageBasic3.h"
 
 /* COM includes: */
 #include "CGuestOSType.h"
 
-UIWizardNewVMPage8::UIWizardNewVMPage8()
+UIWizardNewVMPage3::UIWizardNewVMPage3()
     : m_pBaseMemoryEditor(0)
     , m_pVirtualCPUEditor(0)
     , m_pEFICheckBox(0)
 {
 }
 
-int UIWizardNewVMPage8::baseMemory() const
+int UIWizardNewVMPage3::baseMemory() const
 {
     if (!m_pBaseMemoryEditor)
         return 0;
     return m_pBaseMemoryEditor->value();
 }
 
-int UIWizardNewVMPage8::VCPUCount() const
+int UIWizardNewVMPage3::VCPUCount() const
 {
     if (!m_pVirtualCPUEditor)
         return 1;
     return m_pVirtualCPUEditor->value();
 }
 
-bool UIWizardNewVMPage8::EFIEnabled() const
+bool UIWizardNewVMPage3::EFIEnabled() const
 {
     if (!m_pEFICheckBox)
         return false;
     return m_pEFICheckBox->isChecked();
 }
 
-void UIWizardNewVMPage8::retranslateWidgets()
+void UIWizardNewVMPage3::retranslateWidgets()
 {
     if (m_pEFICheckBox)
     {
@@ -73,7 +73,7 @@ void UIWizardNewVMPage8::retranslateWidgets()
     }
 }
 
-QWidget *UIWizardNewVMPage8::createHardwareWidgets()
+QWidget *UIWizardNewVMPage3::createHardwareWidgets()
 {
     QWidget *pHardwareContainer = new QWidget;
     QGridLayout *pHardwareLayout = new QGridLayout(pHardwareContainer);
@@ -88,7 +88,7 @@ QWidget *UIWizardNewVMPage8::createHardwareWidgets()
     return pHardwareContainer;
 }
 
-UIWizardNewVMPageBasic8::UIWizardNewVMPageBasic8()
+UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
     : m_pLabel(0)
 {
     prepare();
@@ -98,7 +98,7 @@ UIWizardNewVMPageBasic8::UIWizardNewVMPageBasic8()
     registerField("EFIEnabled", this, "EFIEnabled");
 }
 
-void UIWizardNewVMPageBasic8::prepare()
+void UIWizardNewVMPageBasic3::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
@@ -110,11 +110,11 @@ void UIWizardNewVMPageBasic8::prepare()
     createConnections();
 }
 
-void UIWizardNewVMPageBasic8::createConnections()
+void UIWizardNewVMPageBasic3::createConnections()
 {
 }
 
-void UIWizardNewVMPageBasic8::retranslateUi()
+void UIWizardNewVMPageBasic3::retranslateUi()
 {
     setTitle(UIWizardNewVM::tr("Hardware"));
 
@@ -125,7 +125,7 @@ void UIWizardNewVMPageBasic8::retranslateUi()
     retranslateWidgets();
 }
 
-void UIWizardNewVMPageBasic8::initializePage()
+void UIWizardNewVMPageBasic3::initializePage()
 {
     retranslateUi();
 
@@ -142,12 +142,12 @@ void UIWizardNewVMPageBasic8::initializePage()
         m_pEFICheckBox->setChecked(fwType != KFirmwareType_BIOS);
 }
 
-void UIWizardNewVMPageBasic8::cleanupPage()
+void UIWizardNewVMPageBasic3::cleanupPage()
 {
     UIWizardPage::cleanupPage();
 }
 
-bool UIWizardNewVMPageBasic8::isComplete() const
+bool UIWizardNewVMPageBasic3::isComplete() const
 {
     return true;
 }

@@ -27,7 +27,7 @@
 /* Local includes: */
 #include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasic2.h"
-#include "UIWizardNewVMPageBasic8.h"
+#include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVMPageBasic4.h"
 
 /* Forward declarations: */
@@ -38,7 +38,7 @@ class UIToolBox;
 class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPage1,
                                 public UIWizardNewVMPage2,
-                                public UIWizardNewVMPage8,
+                                public UIWizardNewVMPage3,
                                 public UIWizardNewVMPage4
 {
 

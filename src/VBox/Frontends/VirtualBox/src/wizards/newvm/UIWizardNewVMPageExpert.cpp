@@ -180,7 +180,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
 {
     UIWizardNewVMPage1::retranslateWidgets();
     UIWizardNewVMPage2::retranslateWidgets();
-    UIWizardNewVMPage8::retranslateWidgets();
+    UIWizardNewVMPage3::retranslateWidgets();
     UIWizardNewVMPage4::retranslateWidgets();
 
     if (m_pInstallationISOContainer)
