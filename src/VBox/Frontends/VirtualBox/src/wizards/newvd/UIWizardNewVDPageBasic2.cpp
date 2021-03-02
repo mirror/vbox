@@ -82,6 +82,7 @@ QWidget *UIWizardNewVDPage2::createMediumVariantWidgets(bool fWithLabels)
         }
         pMainLayout->addLayout(pVariantLayout);
         pMainLayout->addStretch();
+        pMainLayout->setContentsMargins(0, 0, 0, 0);
     }
     return pContainerWidget;
 }

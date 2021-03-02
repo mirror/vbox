@@ -52,7 +52,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
         m_pToolBox = new UIToolBox;
         m_pToolBox->insertPage(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(/* fCreateLabels */ false), "");
         m_pToolBox->insertPage(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "", false);
-        m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
+        //m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
         m_pToolBox->insertPage(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
 
         m_pToolBox->setCurrentPage(ExpertToolboxItems_NameAndOSType);

@@ -37,6 +37,7 @@
 
 /* Forward declarations: */
 class QButtonGroup;
+class QGroupBox;
 class QRadioButton;
 class QIRichTextLabel;
 class QIToolButton;
@@ -63,6 +64,7 @@ protected:
 
 
     QWidget *createDiskWidgets();
+    virtual QWidget *createDiskVariantAndSizeWidgets();
 
     void ensureNewVirtualDiskDeleted();
     void retranslateWidgets();
@@ -83,6 +85,8 @@ protected:
        QRadioButton *m_pDiskExisting;
        UIMediaComboBox *m_pDiskSelector;
        QIToolButton *m_pDiskSelectionButton;
+       QGroupBox *m_pMediumVariantContainer;
+       QGroupBox *m_pSizeContainer;
     /** @} */
     SelectedDiskSource m_enmSelectedDiskSource;
 };
@@ -128,12 +132,13 @@ private slots:
 
 private:
 
-
     void prepare();
     void createConnections();
+    QWidget *createDiskVariantAndSizeWidgets();
     void retranslateUi();
     void initializePage();
     void cleanupPage();
+    void setEnableNewDiskWidgets(bool fEnable);
 
     bool isComplete() const;
     bool validatePage();

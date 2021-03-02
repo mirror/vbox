@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QButtonGroup>
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QMetaType>
 #include <QRadioButton>
 #include <QVBoxLayout>
@@ -45,6 +46,8 @@ UIWizardNewVMPage4::UIWizardNewVMPage4()
     , m_pDiskExisting(0)
     , m_pDiskSelector(0)
     , m_pDiskSelectionButton(0)
+    , m_pMediumVariantContainer(0)
+    , m_pSizeContainer(0)
     , m_enmSelectedDiskSource(SelectedDiskSource_New)
 {
 }
@@ -137,6 +140,10 @@ void UIWizardNewVMPage4::retranslateWidgets()
         m_pDiskExisting->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
     if (m_pDiskSelectionButton)
         m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+    if (m_pMediumVariantContainer)
+        m_pMediumVariantContainer->setTitle(UIWizardNewVM::tr("Storage on physical hard disk"));
+    if (m_pSizeContainer)
+        m_pSizeContainer->setTitle(UIWizardNewVM::tr("File size"));
 }
 
 void UIWizardNewVMPage4::setEnableDiskSelectionWidgets(bool fEnabled)
@@ -146,6 +153,11 @@ void UIWizardNewVMPage4::setEnableDiskSelectionWidgets(bool fEnabled)
 
     m_pDiskSelector->setEnabled(fEnabled);
     m_pDiskSelectionButton->setEnabled(fEnabled);
+}
+
+QWidget *UIWizardNewVMPage4::createDiskVariantAndSizeWidgets()
+{
+    return new QWidget();
 }
 
 QWidget *UIWizardNewVMPage4::createDiskWidgets()
@@ -173,11 +185,12 @@ QWidget *UIWizardNewVMPage4::createDiskWidgets()
         m_pDiskSelectionButton->setAutoRaise(true);
         m_pDiskSelectionButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
     }
-    pDiskLayout->addWidget(m_pDiskEmpty, 0, 0, 1, 3);
-    pDiskLayout->addWidget(m_pDiskNew, 1, 0, 1, 3);
-    pDiskLayout->addWidget(m_pDiskExisting, 2, 0, 1, 3);
-    pDiskLayout->addWidget(m_pDiskSelector, 3, 1);
-    pDiskLayout->addWidget(m_pDiskSelectionButton, 3, 2);
+    pDiskLayout->addWidget(m_pDiskEmpty, 0, 0, 1, 4);
+    pDiskLayout->addWidget(m_pDiskNew, 1, 0, 1, 4);
+    pDiskLayout->addWidget(createDiskVariantAndSizeWidgets(), 2, 1, 3, 3);
+    pDiskLayout->addWidget(m_pDiskExisting, 5, 0, 1, 4);
+    pDiskLayout->addWidget(m_pDiskSelector, 6, 1, 1, 2);
+    pDiskLayout->addWidget(m_pDiskSelectionButton, 6, 3, 1, 1);
     return pDiskContainer;
 }
 
@@ -245,17 +258,33 @@ void UIWizardNewVMPageBasic4::prepare()
 
     pMainLayout->addStretch();
     setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
-
-
-    pMainLayout->addWidget(createMediumVariantWidgets(true));
-
-    m_pSizeLabel = new QIRichTextLabel;
-    m_pSizeEditor = new UIMediumSizeEditor;
-
-    pMainLayout->addWidget(m_pSizeLabel);
-    pMainLayout->addWidget(m_pSizeEditor);
+    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
 
     createConnections();
+}
+
+QWidget *UIWizardNewVMPageBasic4::createDiskVariantAndSizeWidgets()
+{
+
+    QWidget *pWidget = new QWidget;
+    QHBoxLayout *pLayout = new QHBoxLayout(pWidget);
+    pLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_pMediumVariantContainer = new QGroupBox;
+    QVBoxLayout *pMediumVariantLayout = new QVBoxLayout(m_pMediumVariantContainer);
+    pMediumVariantLayout->addWidget(createMediumVariantWidgets(false /* no labels */));
+    pLayout->addWidget(m_pMediumVariantContainer);
+
+    m_pSizeContainer = new QGroupBox;
+    QVBoxLayout *pSizeLayout = new QVBoxLayout(m_pSizeContainer);
+    m_pSizeLabel = new QIRichTextLabel;
+    m_pSizeEditor = new UIMediumSizeEditor;
+    pSizeLayout->addWidget(m_pSizeLabel);
+    pSizeLayout->addWidget(m_pSizeEditor);
+    pSizeLayout->addStretch();
+    pLayout->addWidget(m_pSizeContainer);
+
+    return pWidget;
 }
 
 void UIWizardNewVMPageBasic4::createConnections()
@@ -285,6 +314,8 @@ void UIWizardNewVMPageBasic4::sltHandleSelectedDiskSourceChange()
         setSelectedDiskSource(SelectedDiskSource_New);
 
     setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
+    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
+
     completeChanged();
 }
 
@@ -372,11 +403,11 @@ void UIWizardNewVMPageBasic4::cleanupPage()
 
 bool UIWizardNewVMPageBasic4::isComplete() const
 {
-    if (!m_pDiskEmpty)
-        return false;
-    return m_pDiskEmpty->isChecked() ||
-        !m_pDiskExisting->isChecked() ||
-        !uiCommon().medium(m_pDiskSelector->id()).isNull();
+    if (selectedDiskSource() == SelectedDiskSource_New)
+        return mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
+    if (selectedDiskSource() == SelectedDiskSource_Existing)
+        return m_virtualDisk.isNull();
+    return true;
 }
 
 bool UIWizardNewVMPageBasic4::validatePage()
@@ -394,4 +425,13 @@ bool UIWizardNewVMPageBasic4::validatePage()
 void UIWizardNewVMPageBasic4::sltHandleSizeEditorChange()
 {
     m_fUserSetSize = true;
+}
+
+void UIWizardNewVMPageBasic4::setEnableNewDiskWidgets(bool fEnable)
+{
+    if (m_pMediumVariantContainer)
+        m_pMediumVariantContainer->setEnabled(fEnable);
+
+    if (m_pSizeContainer)
+        m_pSizeContainer->setEnabled(fEnable);
 }
