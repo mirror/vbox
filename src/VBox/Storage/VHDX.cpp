@@ -636,7 +636,7 @@ DECLINLINE(void) vhdxConvUuidEndianess(VHDXECONV enmConv, PRTUUID pUuidConv, PRT
     RT_NOREF1(enmConv);
 #if 1
     /** @todo r=andy Code looks temporary disabled to me, fixes strict release builds:
-     *        "accessing 16 bytes at offsets 0 and 0 overlaps 16 bytes at offset 0 [-Werror=restrict] */
+     *        "accessing 16 bytes at offsets 0 and 0 overlaps 16 bytes at offset 0 [-Werror=restrict]" */
     RTUUID uuidTmp;
     memcpy(&uuidTmp,  pUuid,    sizeof(RTUUID));
     memcpy(pUuidConv, &uuidTmp, sizeof(RTUUID));
