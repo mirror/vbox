@@ -58,18 +58,15 @@ protected:
 
     SelectedDiskSource selectedDiskSource() const;
     void setSelectedDiskSource(SelectedDiskSource enmSelectedDiskSource);
-
-    void getWithFileOpenDialog();
     bool getWithNewVirtualDiskWizard();
-
 
     QWidget *createDiskWidgets();
     virtual QWidget *createDiskVariantAndSizeWidgets();
-
-    void ensureNewVirtualDiskDeleted();
+    void getWithFileOpenDialog();
     void retranslateWidgets();
 
     void setEnableDiskSelectionWidgets(bool fEnable);
+    void setVirtualDiskFromDiskCombo();
     bool m_fRecommendedNoDisk;
 
     /** @name Variables

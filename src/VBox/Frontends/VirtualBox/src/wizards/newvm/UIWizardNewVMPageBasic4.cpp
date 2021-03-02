@@ -76,58 +76,9 @@ void UIWizardNewVMPage4::getWithFileOpenDialog()
 
     if (returnCode == static_cast<int>(UIMediumSelector::ReturnCode_Accepted) && !uMediumId.isNull())
     {
-        /* Update medium-combo if necessary: */
         m_pDiskSelector->setCurrentItem(uMediumId);
-        /* Focus on hard disk combo: */
         m_pDiskSelector->setFocus();
-        m_virtualDisk = uiCommon().medium(uMediumId).medium();
     }
-}
-
-bool UIWizardNewVMPage4::getWithNewVirtualDiskWizard()
-{
-    /* Create New Virtual Hard Drive wizard: */
-    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(thisImp(),
-                                                         fieldImp("machineBaseName").toString(),
-                                                         fieldImp("machineFolder").toString(),
-                                                         fieldImp("type").value<CGuestOSType>().GetRecommendedHDD(),
-                                                         wizardImp()->mode());
-    pWizard->prepare();
-    bool fResult = false;
-    if (pWizard->exec() == QDialog::Accepted)
-    {
-        fResult = true;
-        m_virtualDisk = pWizard->virtualDisk();
-        m_pDiskSelector->setCurrentItem(m_virtualDisk.GetId());
-        m_pDiskExisting->click();
-    }
-    if (pWizard)
-        delete pWizard;
-    return fResult;
-}
-
-void UIWizardNewVMPage4::ensureNewVirtualDiskDeleted()
-{
-    /* Make sure virtual-disk valid: */
-    if (m_virtualDisk.isNull())
-        return;
-
-    /* Remember virtual-disk attributes: */
-    QString strLocation = m_virtualDisk.GetLocation();
-    /* Prepare delete storage progress: */
-    CProgress progress = m_virtualDisk.DeleteStorage();
-    if (m_virtualDisk.isOk())
-    {
-        /* Show delete storage progress: */
-        msgCenter().showModalProgressDialog(progress, thisImp()->windowTitle(), ":/progress_media_delete_90px.png", thisImp());
-        if (!progress.isOk() || progress.GetResultCode() != 0)
-            msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, thisImp());
-    }
-    else
-        msgCenter().cannotDeleteHardDiskStorage(m_virtualDisk, strLocation, thisImp());
-
-    /* Detach virtual-disk anyway: */
-    m_virtualDisk.detach();
 }
 
 void UIWizardNewVMPage4::retranslateWidgets()
@@ -153,6 +104,23 @@ void UIWizardNewVMPage4::setEnableDiskSelectionWidgets(bool fEnabled)
 
     m_pDiskSelector->setEnabled(fEnabled);
     m_pDiskSelectionButton->setEnabled(fEnabled);
+}
+
+void UIWizardNewVMPage4::setVirtualDiskFromDiskCombo()
+{
+    QUuid currentId;
+    if (!m_virtualDisk.isNull())
+        currentId = m_virtualDisk.GetId();
+    QUuid id = m_pDiskSelector->id();
+    /* Do nothing else if m_virtualMedium is already set to what combobox has: */
+    if (id == currentId)
+        return;
+    if (m_pDiskSelector)
+    {
+        CMedium medium = uiCommon().medium(id).medium();
+        if (!medium.isNull())
+            setVirtualDisk(medium);
+    }
 }
 
 QWidget *UIWizardNewVMPage4::createDiskVariantAndSizeWidgets()
@@ -302,7 +270,10 @@ void UIWizardNewVMPageBasic4::sltHandleSelectedDiskSourceChange()
     if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
         setSelectedDiskSource(SelectedDiskSource_Empty);
     else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
+    {
         setSelectedDiskSource(SelectedDiskSource_Existing);
+        setVirtualDiskFromDiskCombo();
+    }
     else
         setSelectedDiskSource(SelectedDiskSource_New);
 
@@ -314,6 +285,8 @@ void UIWizardNewVMPageBasic4::sltHandleSelectedDiskSourceChange()
 
 void UIWizardNewVMPageBasic4::sltVirtualSelectedDiskSourceChanged()
 {
+    /* Make sure to set m_virtualDisk: */
+    setVirtualDiskFromDiskCombo();
     emit completeChanged();
 }
 
@@ -389,8 +362,6 @@ void UIWizardNewVMPageBasic4::initializePage()
 
 void UIWizardNewVMPageBasic4::cleanupPage()
 {
-    /* Call to base-class: */
-    ensureNewVirtualDiskDeleted();
     UIWizardPage::cleanupPage();
 }
 
@@ -398,8 +369,10 @@ bool UIWizardNewVMPageBasic4::isComplete() const
 {
     if (selectedDiskSource() == SelectedDiskSource_New)
         return mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
+
     if (selectedDiskSource() == SelectedDiskSource_Existing)
-        return m_virtualDisk.isNull();
+        return !m_virtualDisk.isNull();
+
     return true;
 }
 
