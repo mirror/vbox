@@ -496,7 +496,7 @@ int UIWizardNewVMPageBasic1::nextId() const
 {
     if (isUnattendedEnabled())
         return UIWizardNewVM::Page2;
-    return UIWizardNewVM::Page4;
+    return UIWizardNewVM::Page8;
 }
 
 void UIWizardNewVMPageBasic1::sltNameChanged(const QString &strNewName)

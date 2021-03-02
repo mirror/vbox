@@ -137,7 +137,7 @@ private:
     void setEnableNewDiskWidgets(bool fEnable);
 
     bool isComplete() const;
-    bool validatePage();
+    virtual bool validatePage() /* override */;
 
     QIRichTextLabel *m_pLabel;
 

@@ -151,35 +151,3 @@ bool UIWizardNewVMPageBasic8::isComplete() const
 {
     return true;
 }
-
-bool UIWizardNewVMPageBasic8::validatePage()
-{
-    bool fResult = true;
-
-    const QString strMediumPath(fieldImp("mediumPath").toString());
-    fResult = !QFileInfo(strMediumPath).exists();
-    if (!fResult)
-    {
-        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
-        return fResult;
-    }
-
-    startProcessing();
-    SelectedDiskSource enmDiskSource = field("selectedDiskSource").value<SelectedDiskSource>();
-    if (enmDiskSource == SelectedDiskSource_New)
-    {
-        fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVirtualDisk();
-        fResult = UIWizardNewVDPage3::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
-                                                             fieldImp("mediumPath").toString(),
-                                                             fieldImp("mediumSize").toULongLong());
-        if (!fResult)
-        {
-            msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
-            return fResult;
-        }
-    }
-    fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
-    endProcessing();
-
-    return fResult;
-}

@@ -84,8 +84,8 @@ void UIWizardNewVM::prepare()
         {
             setPage(Page1, new UIWizardNewVMPageBasic1(m_strGroup));
             setPage(Page2, new UIWizardNewVMPageBasic2);
-            setPage(Page4, new UIWizardNewVMPageBasic4);
             setPage(Page8, new UIWizardNewVMPageBasic8);
+            setPage(Page4, new UIWizardNewVMPageBasic4);
 
             setStartId(Page1);
             break;

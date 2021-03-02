@@ -105,7 +105,6 @@ private:
     void cleanupPage();
 
     bool isComplete() const;
-    virtual bool validatePage() /* override */;
 
     /** Widgets. */
     QIRichTextLabel *m_pLabel;
