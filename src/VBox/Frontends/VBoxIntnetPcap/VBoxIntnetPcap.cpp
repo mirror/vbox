@@ -43,7 +43,7 @@ size_t g_cbSnapLen;
 RTGETOPTDEF g_aGetOptDef[] =
 {
     { "--count",                'c',   RTGETOPT_REQ_UINT64 },
-    { "--network",              'n',   RTGETOPT_REQ_STRING },
+    { "--network",              'i',   RTGETOPT_REQ_STRING },
     { "--snaplen",              's',   RTGETOPT_REQ_UINT32 },
     { "--packet-buffered",      'U',   RTGETOPT_REQ_NOTHING },
     { "--write",                'w',   RTGETOPT_REQ_STRING },
@@ -83,7 +83,7 @@ main(int argc, char *argv[])
                 g_u64Count = Val.u64;
                 break;
 
-            case 'n':           /* --network */
+            case 'i':           /* --network */
                 if (strNetworkName.isNotEmpty())
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX,
                                           "multiple --network options");
