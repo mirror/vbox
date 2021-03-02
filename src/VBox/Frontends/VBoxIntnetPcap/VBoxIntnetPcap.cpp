@@ -35,6 +35,7 @@ void checkCaptureLimit();
 
 IntNetIf g_net;
 PRTSTREAM g_pStrmOut;
+bool g_fPacketBuffered;
 uint64_t g_u64Count;
 size_t g_cbSnapLen;
 
@@ -44,6 +45,7 @@ RTGETOPTDEF g_aGetOptDef[] =
     { "--count",                'c',   RTGETOPT_REQ_UINT64 },
     { "--network",              'n',   RTGETOPT_REQ_STRING },
     { "--snaplen",              's',   RTGETOPT_REQ_UINT32 },
+    { "--packet-buffered",      'U',   RTGETOPT_REQ_NOTHING },
     { "--write",                'w',   RTGETOPT_REQ_STRING },
 };
 
@@ -99,6 +101,10 @@ main(int argc, char *argv[])
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX,
                                           "--snaplen must be greater than zero");
                 g_cbSnapLen = Val.u32;
+                break;
+
+            case 'U':           /* --packet-buffered */
+                g_fPacketBuffered = true;
                 break;
 
             case 'w':           /* --write */
@@ -190,6 +196,8 @@ main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE,
                               "write: %Rrf", rc);
+    if (g_fPacketBuffered)
+        RTStrmFlush(g_pStrmOut);
 
     g_net.ifPump();
     RTStrmClose(g_pStrmOut);
@@ -222,6 +230,9 @@ captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame)
         RTMsgError("write: %Rrf", rc);
         g_net.ifAbort();
     }
+
+    if (g_fPacketBuffered)
+        RTStrmFlush(g_pStrmOut);
 
     checkCaptureLimit();
 }
