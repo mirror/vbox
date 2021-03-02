@@ -111,7 +111,6 @@ public:
     /** For the guide wizard mode medium path, name and extention is static and we have
       * no UI element for this. thus override. */
     virtual QString mediumPath() const /*override */;
-    virtual int nextId() const /* override */;
     CMediumFormat mediumFormat() const;
 
 protected:

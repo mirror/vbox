@@ -241,13 +241,6 @@ QString UIWizardNewVMPageBasic4::mediumPath() const
     return absoluteFilePath(toFileName(m_strDefaultName, m_strDefaultExtension), m_strDefaultPath);
 }
 
-int UIWizardNewVMPageBasic4::nextId() const
-{
-    if (m_pDiskNew->isChecked())
-        return UIWizardNewVM::Page5;
-    return UIWizardNewVM::Page8;
-}
-
 void UIWizardNewVMPageBasic4::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
