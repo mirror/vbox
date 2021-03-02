@@ -1283,9 +1283,9 @@ typedef struct PDMIOMMUREGR0
      *
      * @returns VBox status code.
      * @param   pDevIns         The IOMMU device instance.
-     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   idDevice        The device identifier (bus, device, function).
      * @param   uIova           The I/O virtual address being accessed.
-     * @param   cbAccess        The number of bytes being accessed.
+     * @param   cbIova          The size of the access.
      * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
      * @param   pGCPhysSpa      Where to store the translated system physical address.
      * @param   pcbContiguous   Where to store the number of contiguous bytes translated
@@ -1293,7 +1293,7 @@ typedef struct PDMIOMMUREGR0
      *
      * @thread  Any.
      */
-    DECLR0CALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
+    DECLR0CALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova,
                                             uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous));
 
     /**
@@ -1302,7 +1302,7 @@ typedef struct PDMIOMMUREGR0
      *
      * @returns VBox status code.
      * @param   pDevIns         The IOMMU device instance.
-     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   idDevice        The device identifier (bus, device, function).
      * @param   cIovas          The number of I/O virtual addresses being accessed.
      * @param   pauIovas        The I/O virtual addresses being accessed.
      * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
@@ -1311,7 +1311,7 @@ typedef struct PDMIOMMUREGR0
      *
      * @thread  Any.
      */
-    DECLR0CALLBACKMEMBER(int, pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+    DECLR0CALLBACKMEMBER(int, pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t idDevice, size_t cIovas, uint64_t const *pauIovas,
                                                 uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
 
     /**
@@ -1319,13 +1319,13 @@ typedef struct PDMIOMMUREGR0
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
-     * @param   uDeviceId   The device identifier (bus, device, function).
+     * @param   idDevice    The device identifier (bus, device, function).
      * @param   pMsiIn      The source MSI.
      * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @thread  Any.
      */
-    DECLR0CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
+    DECLR0CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
@@ -1353,9 +1353,9 @@ typedef struct PDMIOMMUREGRC
      *
      * @returns VBox status code.
      * @param   pDevIns         The IOMMU device instance.
-     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   idDevice        The device identifier (bus, device, function).
      * @param   uIova           The I/O virtual address being accessed.
-     * @param   cbAccess        The number of bytes being accessed.
+     * @param   cbIova          The size of the access.
      * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
      * @param   pGCPhysSpa      Where to store the translated system physical address.
      * @param   pcbContiguous   Where to store the number of contiguous bytes translated
@@ -1363,7 +1363,7 @@ typedef struct PDMIOMMUREGRC
      *
      * @thread  Any.
      */
-    DECLRCCALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
+    DECLRCCALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova,
                                             uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous));
 
     /**
@@ -1372,7 +1372,7 @@ typedef struct PDMIOMMUREGRC
      *
      * @returns VBox status code.
      * @param   pDevIns         The IOMMU device instance.
-     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   idDevice        The device identifier (bus, device, function).
      * @param   cIovas          The number of I/O virtual addresses being accessed.
      * @param   pauIovas        The I/O virtual addresses being accessed.
      * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
@@ -1381,7 +1381,7 @@ typedef struct PDMIOMMUREGRC
      *
      * @thread  Any.
      */
-    DECLRCCALLBACKMEMBER(int, pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+    DECLRCCALLBACKMEMBER(int, pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t idDevice, size_t cIovas, uint64_t const *pauIovas,
                                                 uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
 
     /**
@@ -1389,13 +1389,13 @@ typedef struct PDMIOMMUREGRC
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
-     * @param   uDeviceId   The device identifier (bus, device, function).
+     * @param   idDevice    The device identifier (bus, device, function).
      * @param   pMsiIn      The source MSI.
      * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @thread  Any.
      */
-    DECLRCCALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
+    DECLRCCALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
@@ -1423,9 +1423,9 @@ typedef struct PDMIOMMUREGR3
      *
      * @returns VBox status code.
      * @param   pDevIns         The IOMMU device instance.
-     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   idDevice        The device identifier (bus, device, function).
      * @param   uIova           The I/O virtual address being accessed.
-     * @param   cbAccess        The number of bytes being accessed.
+     * @param   cbIova          The size of the access.
      * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
      * @param   pGCPhysSpa      Where to store the translated system physical address.
      * @param   pcbContiguous   Where to store the number of contiguous bytes translated
@@ -1433,7 +1433,7 @@ typedef struct PDMIOMMUREGR3
      *
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess,
+    DECLR3CALLBACKMEMBER(int, pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova,
                                             uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous));
 
     /**
@@ -1442,7 +1442,7 @@ typedef struct PDMIOMMUREGR3
      *
      * @returns VBox status code.
      * @param   pDevIns         The IOMMU device instance.
-     * @param   uDevId          The device identifier (bus, device, function).
+     * @param   idDevice        The device identifier (bus, device, function).
      * @param   cIovas          The number of I/O virtual addresses being accessed.
      * @param   pauIovas        The I/O virtual addresses being accessed.
      * @param   fFlags          Access flags, see PDMIOMMU_MEM_F_XXX.
@@ -1451,7 +1451,7 @@ typedef struct PDMIOMMUREGR3
      *
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+    DECLR3CALLBACKMEMBER(int, pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t idDevice, size_t cIovas, uint64_t const *pauIovas,
                                                 uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
 
     /**
@@ -1459,13 +1459,13 @@ typedef struct PDMIOMMUREGR3
      *
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
-     * @param   uDeviceId   The device identifier (bus, device, function).
+     * @param   idDevice    The device identifier (bus, device, function).
      * @param   pMsiIn      The source MSI.
      * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
+    DECLR3CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
@@ -1887,13 +1887,13 @@ typedef struct PDMIOAPICHLP
      *
      * @returns status code.
      * @param   pDevIns     Device instance of the IOAPIC.
-     * @param   uDeviceId   The device identifier (bus, device, function).
+     * @param   idDevice    The device identifier (bus, device, function).
      * @param   pMsiIn      The source MSI.
      * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @sa      iommuAmdDeviceMsiRemap().
      */
-    DECLCALLBACKMEMBER(int, pfnIommuMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
+    DECLCALLBACKMEMBER(int, pfnIommuMsiRemap,(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;

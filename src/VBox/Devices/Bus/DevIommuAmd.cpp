@@ -285,7 +285,7 @@ typedef struct DTECACHE
     /** This device's flags, see IOMMU_DTE_CACHE_F_XXX. */
     uint16_t        fFlags;
     /** The domain ID assigned for this device by software. */
-    uint16_t        uDomainId;
+    uint16_t        idDomain;
 } DTECACHE;
 /** Pointer to an I/O device struct. */
 typedef DTECACHE *PDTECACHE;
@@ -645,7 +645,7 @@ typedef struct IOTLBEFLUSHARG
     /** The ring-3 IOMMU device state. */
     PIOMMUR3            pIommuR3;
     /** The domain ID to flush. */
-    uint16_t            uDomainId;
+    uint16_t            idDomain;
 } IOTLBEFLUSHARG;
 /** Pointer to an IOTLBE flush argument. */
 typedef IOTLBEFLUSHARG *PIOTLBEFLUSHARG;
@@ -662,7 +662,7 @@ typedef struct IOTLBEINFOARG
     /** The info helper. */
     PCDBGFINFOHLP       pHlp;
     /** The domain ID to dump IOTLB entry. */
-    uint16_t            uDomainId;
+    uint16_t            idDomain;
 } IOTLBEINFOARG;
 /** Pointer to an IOTLBE flush argument. */
 typedef IOTLBEINFOARG *PIOTLBEINFOARG;
@@ -679,10 +679,10 @@ typedef struct IOMMUOPAUX
     IOMMUOP         enmOp;
     /** The device table entry (can be NULL). */
     PCDTE_T         pDte;
-    /** The device ID. */
-    uint16_t        uDeviceId;
+    /** The device ID (bus, device, function). */
+    uint16_t        idDevice;
     /** The domain ID (when the DTE isn't provided). */
-    uint16_t        uDomainId;
+    uint16_t        idDomain;
 } IOMMUOPAUX;
 /** Pointer to an I/O address lookup struct. */
 typedef IOMMUOPAUX *PIOMMUOPAUX;
@@ -881,15 +881,15 @@ static void iommuAmdIrteRemapMsi(PCMSIMSG pMsiIn, PMSIMSG pMsiOut, PCIRTE_T pIrt
  * Looks up an entry in the DTE cache for the given device ID.
  *
  * @returns The index of the entry, or the cache capacity if no entry was found.
- * @param   pThis   The shared IOMMU device state.
- * @param   uDevId  The device ID (bus, device, function).
+ * @param   pThis       The shared IOMMU device state.
+ * @param   idDevice    The device ID (bus, device, function).
  */
-DECLINLINE(uint16_t) iommuAmdDteCacheEntryLookup(PIOMMU pThis, uint16_t uDevId)
+DECLINLINE(uint16_t) iommuAmdDteCacheEntryLookup(PIOMMU pThis, uint16_t idDevice)
 {
     uint16_t const cDeviceIds = RT_ELEMENTS(pThis->aDeviceIds);
     for (uint16_t i = 0; i < cDeviceIds; i++)
     {
-        if (pThis->aDeviceIds[i] == uDevId)
+        if (pThis->aDeviceIds[i] == idDevice)
             return i;
     }
     return cDeviceIds;
@@ -925,35 +925,35 @@ DECLINLINE(uint16_t) iommuAmdDteCacheEntryGetUnused(PCIOMMU pThis)
  * @retval  VERR_OUT_OF_RESOURCES if the cache is full.
  *
  * @param   pDevIns     The IOMMU instance data.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  * @param   pDte        The device table entry.
  * @param   fOrMask     The device flags (usually compound flags) to OR in with the
  *                      basic flags, see IOMMU_DTE_CACHE_F_XXX.
  */
-static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, uint16_t fOrMask)
+static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pDte, uint16_t fOrMask)
 {
     Assert(pDte);
-    Assert(uDevId);
+    Assert(idDevice);
 
     int rc = VINF_SUCCESS;
-    uint16_t const fFlags    = iommuAmdGetBasicDevFlags(pDte) | IOMMU_DTE_CACHE_F_PRESENT | fOrMask;
-    uint16_t const uDomainId = pDte->n.u16DomainId;
+    uint16_t const fFlags   = iommuAmdGetBasicDevFlags(pDte) | IOMMU_DTE_CACHE_F_PRESENT | fOrMask;
+    uint16_t const idDomain = pDte->n.u16DomainId;
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
 
     uint16_t const cDteCache = RT_ELEMENTS(pThis->aDteCache);
-    uint16_t idxDte = iommuAmdDteCacheEntryLookup(pThis, uDevId);
+    uint16_t idxDte = iommuAmdDteCacheEntryLookup(pThis, idDevice);
     if (idxDte < cDteCache)
     {
-        pThis->aDteCache[idxDte].fFlags    = fFlags;
-        pThis->aDteCache[idxDte].uDomainId = uDomainId;
+        pThis->aDteCache[idxDte].fFlags   = fFlags;
+        pThis->aDteCache[idxDte].idDomain = idDomain;
     }
     else if ((idxDte = iommuAmdDteCacheEntryGetUnused(pThis)) < cDteCache)
     {
-        pThis->aDeviceIds[idxDte] = uDevId;
-        pThis->aDteCache[idxDte].fFlags    = fFlags;
-        pThis->aDteCache[idxDte].uDomainId = uDomainId;
+        pThis->aDeviceIds[idxDte] = idDevice;
+        pThis->aDteCache[idxDte].fFlags   = fFlags;
+        pThis->aDteCache[idxDte].idDomain = idDomain;
     }
     else
         rc = VERR_OUT_OF_RESOURCES;
@@ -967,17 +967,17 @@ static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte
  * Adds one or more I/O device flags if the device is already present in the cache.
  *
  * @param   pDevIns     The IOMMU instance data.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  * @param   fFlags      Additional device flags to OR with existing flags, see
  *                      IOMMU_DTE_CACHE_F_XXX.
  */
-static void iommuAmdDteCacheAddFlags(PPDMDEVINS pDevIns, uint16_t uDevId, uint16_t fFlags)
+static void iommuAmdDteCacheAddFlags(PPDMDEVINS pDevIns, uint16_t idDevice, uint16_t fFlags)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
 
     uint16_t const cDteCache = RT_ELEMENTS(pThis->aDteCache);
-    uint16_t const idxDte = iommuAmdDteCacheEntryLookup(pThis, uDevId);
+    uint16_t const idxDte = iommuAmdDteCacheEntryLookup(pThis, idDevice);
     if (   idxDte < cDteCache
         && (pThis->aDteCache[idxDte].fFlags & IOMMU_DTE_CACHE_F_PRESENT))
         pThis->aDteCache[idxDte].fFlags |= fFlags;
@@ -990,19 +990,19 @@ static void iommuAmdDteCacheAddFlags(PPDMDEVINS pDevIns, uint16_t uDevId, uint16
  * Removes a DTE cache entry.
  *
  * @param   pDevIns     The IOMMU instance data.
- * @param   uDevId      The device ID to remove cache entries for.
+ * @param   idDevice    The device ID to remove cache entries for.
  */
-static void iommuAmdDteCacheRemove(PPDMDEVINS pDevIns, uint16_t uDevId)
+static void iommuAmdDteCacheRemove(PPDMDEVINS pDevIns, uint16_t idDevice)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
 
     uint16_t const cDteCache = RT_ELEMENTS(pThis->aDteCache);
-    uint16_t const idxDte    = iommuAmdDteCacheEntryLookup(pThis, uDevId);
+    uint16_t const idxDte    = iommuAmdDteCacheEntryLookup(pThis, idDevice);
     if (idxDte < cDteCache)
     {
-        pThis->aDteCache[idxDte].fFlags    = 0;
-        pThis->aDteCache[idxDte].uDomainId = 0;
+        pThis->aDteCache[idxDte].fFlags   = 0;
+        pThis->aDteCache[idxDte].idDomain = 0;
     }
 
     IOMMU_UNLOCK_CACHE(pDevIns, pThis);
@@ -1075,8 +1075,8 @@ static DECLCALLBACK(int) iommuAmdR3IotlbEntryInfo(PAVLU64NODECORE pNode, void *p
     AssertPtr(pArgs->pHlp);
     //Assert(pArgs->pIommuCC->u32Magic == IOMMU_MAGIC);
 
-    uint16_t const uDomainId = IOMMU_IOTLB_KEY_GET_DOMAIN_ID(pNode->Key);
-    if (uDomainId == pArgs->uDomainId)
+    uint16_t const idDomain = IOMMU_IOTLB_KEY_GET_DOMAIN_ID(pNode->Key);
+    if (idDomain == pArgs->idDomain)
     {
         PCIOTLBE pIotlbe = (PCIOTLBE)pNode;
         AVLU64KEY const  uKey          = pIotlbe->Core.Key;
@@ -1116,8 +1116,8 @@ static DECLCALLBACK(int) iommuAmdIotlbEntryRemoveDomainId(PAVLU64NODECORE pNode,
     AssertPtr(pArgs->pIommuR3);
     //Assert(pArgs->pIommuR3->u32Magic == IOMMU_MAGIC);
 
-    uint16_t const uDomainId = IOMMU_IOTLB_KEY_GET_DOMAIN_ID(pNode->Key);
-    if (uDomainId == pArgs->uDomainId)
+    uint16_t const idDomain = IOMMU_IOTLB_KEY_GET_DOMAIN_ID(pNode->Key);
+    if (idDomain == pArgs->idDomain)
     {
         /* Mark this entry is as invalidated and needs to be evicted later. */
         PIOTLBE pIotlbe = (PIOTLBE)pNode;
@@ -1134,15 +1134,15 @@ static DECLCALLBACK(int) iommuAmdIotlbEntryRemoveDomainId(PAVLU64NODECORE pNode,
  * @param   pThis           The shared IOMMU device state.
  * @param   pThisR3         The ring-3 IOMMU device state.
  * @param   pIotlbe         The IOTLB entry to initialize and insert.
- * @param   uDomainId       The domain ID.
+ * @param   idDomain        The domain ID.
  * @param   uIova           The I/O virtual address.
  * @param   pPageLookup     The I/O page lookup result of the access.
  */
-static void iommuAmdIotlbEntryInsert(PIOMMU pThis, PIOMMUR3 pThisR3, PIOTLBE pIotlbe, uint16_t uDomainId, uint64_t uIova,
+static void iommuAmdIotlbEntryInsert(PIOMMU pThis, PIOMMUR3 pThisR3, PIOTLBE pIotlbe, uint16_t idDomain, uint64_t uIova,
                                      PCIOPAGELOOKUP pPageLookup)
 {
     /* Initialize the IOTLB entry with results of the I/O page walk. */
-    pIotlbe->Core.Key   = IOMMU_IOTLB_KEY_MAKE(uDomainId, uIova);
+    pIotlbe->Core.Key   = IOMMU_IOTLB_KEY_MAKE(idDomain, uIova);
     pIotlbe->PageLookup = *pPageLookup;
 
     /* Validate. */
@@ -1212,14 +1212,14 @@ static PIOTLBE iommuAmdIotlbEntryRemove(PIOMMU pThis, PIOMMUR3 pThisR3, AVLU64KE
  * @returns Pointer to IOTLB entry if found, NULL otherwise.
  * @param   pThis       The shared IOMMU device state.
  * @param   pThisR3     The ring-3 IOMMU device state.
- * @param   uDomainId   The domain ID.
+ * @param   idDomain    The domain ID.
  * @param   uIova       The I/O virtual address.
  */
-static PIOTLBE iommuAmdIotlbLookup(PIOMMU pThis, PIOMMUR3 pThisR3, uint64_t uDomainId, uint64_t uIova)
+static PIOTLBE iommuAmdIotlbLookup(PIOMMU pThis, PIOMMUR3 pThisR3, uint64_t idDomain, uint64_t uIova)
 {
     RT_NOREF(pThis);
 
-    uint64_t const uKey = IOMMU_IOTLB_KEY_MAKE(uDomainId, uIova);
+    uint64_t const uKey = IOMMU_IOTLB_KEY_MAKE(idDomain, uIova);
     PIOTLBE pIotlbe = (PIOTLBE)RTAvlU64Get(&pThisR3->TreeIotlbe, uKey);
     if (    pIotlbe
         && !pIotlbe->fEvictPending)
@@ -1239,11 +1239,11 @@ static PIOTLBE iommuAmdIotlbLookup(PIOMMU pThis, PIOMMUR3 pThisR3, uint64_t uDom
  *
  * @param   pThis           The shared IOMMU device state.
  * @param   pThis           The ring-3 IOMMU device state.
- * @param   uDomainId       The domain ID.
+ * @param   idDomain        The domain ID.
  * @param   uIova           The I/O virtual address.
  * @param   pPageLookup     The I/O page lookup result of the access.
  */
-static void iommuAmdIotlbAdd(PIOMMU pThis, PIOMMUR3 pThisR3, uint16_t uDomainId, uint64_t uIova, PCIOPAGELOOKUP pPageLookup)
+static void iommuAmdIotlbAdd(PIOMMU pThis, PIOMMUR3 pThisR3, uint16_t idDomain, uint64_t uIova, PCIOPAGELOOKUP pPageLookup)
 {
     Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
     Assert(pPageLookup);
@@ -1265,7 +1265,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, PIOMMUR3 pThisR3, uint16_t uDomainId,
             iommuAmdIotlbEntryRemove(pThis, pThisR3, pIotlbe->Core.Key);
 
         /* Initialize and insert the IOTLB entry into the cache. */
-        iommuAmdIotlbEntryInsert(pThis, pThisR3, pIotlbe, uDomainId, uIova, pPageLookup);
+        iommuAmdIotlbEntryInsert(pThis, pThisR3, pIotlbe, idDomain, uIova, pPageLookup);
 
         /* Move the entry to the most recently used slot. */
         iommuAmdIotlbEntryMoveToMru(pThisR3, pIotlbe);
@@ -1277,7 +1277,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, PIOMMUR3 pThisR3, uint16_t uDomainId,
         ++pThisR3->idxUnusedIotlbe;
 
         /* Initialize and insert the IOTLB entry into the cache. */
-        iommuAmdIotlbEntryInsert(pThis, pThisR3, pIotlbe, uDomainId, uIova, pPageLookup);
+        iommuAmdIotlbEntryInsert(pThis, pThisR3, pIotlbe, idDomain, uIova, pPageLookup);
 
         /* Add the entry to the most recently used slot. */
         RTListAppend(&pThisR3->LstLruIotlbe, &pIotlbe->NdLru);
@@ -1315,11 +1315,11 @@ static void iommuAmdIotlbRemoveAll(PPDMDEVINS pDevIns)
  * domain ID from the cache.
  *
  * @param   pDevIns         The IOMMU instance data.
- * @param   uDomainId       The domain ID.
+ * @param   idDomain        The domain ID.
  * @param   uIova           The I/O virtual address to invalidate.
  * @param   cbInvalidate    The size of the invalidation (must be 4K aligned).
  */
-static void iommuAmdIotlbRemoveRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64_t uIova, size_t cbInvalidate)
+static void iommuAmdIotlbRemoveRange(PPDMDEVINS pDevIns, uint16_t idDomain, uint64_t uIova, size_t cbInvalidate)
 {
     /* Validate. */
     Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
@@ -1332,7 +1332,7 @@ static void iommuAmdIotlbRemoveRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uin
 
     do
     {
-        uint64_t const uKey = IOMMU_IOTLB_KEY_MAKE(uDomainId, uIova);
+        uint64_t const uKey = IOMMU_IOTLB_KEY_MAKE(idDomain, uIova);
         PIOTLBE pIotlbe = iommuAmdIotlbEntryRemove(pThis, pThisR3, uKey);
         if (pIotlbe)
             iommuAmdIotlbEntryMoveToLru(pThisR3, pIotlbe);
@@ -1348,9 +1348,9 @@ static void iommuAmdIotlbRemoveRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uin
  * Removes all IOTLB entries for the specified domain ID.
  *
  * @param   pDevIns     The IOMMU instance data.
- * @param   uDomainId   The domain ID.
+ * @param   idDomain    The domain ID.
  */
-static void iommuAmdIotlbRemoveDomainId(PPDMDEVINS pDevIns, uint16_t uDomainId)
+static void iommuAmdIotlbRemoveDomainId(PPDMDEVINS pDevIns, uint16_t idDomain)
 {
     /*
      * We need to iterate the tree and search based on the domain ID.
@@ -1363,8 +1363,8 @@ static void iommuAmdIotlbRemoveDomainId(PPDMDEVINS pDevIns, uint16_t uDomainId)
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
 
     IOTLBEFLUSHARG Args;
-    Args.pIommuR3  = pThisR3;
-    Args.uDomainId = uDomainId;
+    Args.pIommuR3 = pThisR3;
+    Args.idDomain = idDomain;
     RTAvlU64DoWithAll(&pThisR3->TreeIotlbe, true /* fFromLeft */, iommuAmdIotlbEntryRemoveDomainId, &Args);
 
     IOMMU_UNLOCK_CACHE(pDevIns, pThis);
@@ -1375,19 +1375,19 @@ static void iommuAmdIotlbRemoveDomainId(PPDMDEVINS pDevIns, uint16_t uDomainId)
  * Adds or updates IOTLB entries for the given range of I/O virtual addresses.
  *
  * @param   pDevIns     The IOMMU instance data.
- * @param   uDomainId   The domain ID.
+ * @param   idDomain    The domain ID.
  * @param   uIova       The I/O virtual address.
- * @param   cbAccess    The size of the access (must be 4K aligned).
+ * @param   cbIova      The size of the access (must be 4K aligned).
  * @param   GCPhysSpa   The translated system-physical address.
  * @param   fPerm       The I/O permissions for the access, see IOMMU_IO_PERM_XXX.
  */
-static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64_t uIova, size_t cbAccess, RTGCPHYS GCPhysSpa,
+static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t idDomain, uint64_t uIova, size_t cbIova, RTGCPHYS GCPhysSpa,
                                   uint8_t fPerm)
 {
     Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
     Assert(!(GCPhysSpa & X86_PAGE_4K_OFFSET_MASK));
-    Assert(!(cbAccess & X86_PAGE_4K_OFFSET_MASK));
-    Assert(cbAccess >= X86_PAGE_4K_SIZE);
+    Assert(!(cbIova & X86_PAGE_4K_OFFSET_MASK));
+    Assert(cbIova >= X86_PAGE_4K_SIZE);
 
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
@@ -1399,14 +1399,14 @@ static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64
     PageLookup.fPerm     = fPerm;
     PageLookup.GCPhysSpa = GCPhysSpa;
 
-    size_t cPages = cbAccess / X86_PAGE_4K_SIZE;
+    size_t cPages = cbIova / X86_PAGE_4K_SIZE;
     cPages = RT_MIN(cPages, IOMMU_IOTLBE_MAX);
 
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
     /** @todo Re-check DTE cache? */
     do
     {
-        iommuAmdIotlbAdd(pThis, pThisR3, uDomainId, uIova, &PageLookup);
+        iommuAmdIotlbAdd(pThis, pThisR3, idDomain, uIova, &PageLookup);
         uIova                += X86_PAGE_4K_SIZE;
         PageLookup.GCPhysSpa += X86_PAGE_4K_SIZE;
         --cPages;
@@ -1422,16 +1422,16 @@ static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t uDomainId, uint64
  *
  * @returns Index of the found entry, or cache capacity if not found.
  * @param   pThis       The shared IOMMU device state.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  * @param   offIrte     The offset into the interrupt remap table.
  */
-static uint16_t iommuAmdIrteCacheEntryLookup(PCIOMMU pThis, uint16_t uDevId, uint16_t offIrte)
+static uint16_t iommuAmdIrteCacheEntryLookup(PCIOMMU pThis, uint16_t idDevice, uint16_t offIrte)
 {
     /** @todo Consider sorting and binary search when the cache capacity grows.
      *  For the IRTE cache this should be okay since typically guests do not alter the
      *  interrupt remapping once programmed, so hopefully sorting shouldn't happen
      *  often. */
-    uint32_t const uKey = IOMMU_IRTE_CACHE_KEY_MAKE(uDevId, offIrte);
+    uint32_t const uKey = IOMMU_IRTE_CACHE_KEY_MAKE(idDevice, offIrte);
     uint16_t const cIrteCache = RT_ELEMENTS(pThis->aIrteCache);
     for (uint16_t i = 0; i < cIrteCache; i++)
         if (pThis->aIrteCache[i].uKey == uKey)
@@ -1464,12 +1464,12 @@ static uint16_t iommuAmdIrteCacheEntryGetUnused(PCIOMMU pThis)
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU instance data.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  * @param   enmOp       The IOMMU operation being performed.
  * @param   pMsiIn      The source MSI.
  * @param   pMsiOut     Where to store the remapped MSI.
  */
-static int iommuAmdIrteCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+static int iommuAmdIrteCacheLookup(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUOP enmOp, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     RT_NOREF(enmOp); /* May need it if we have to report errors (currently we fallback to the slower path to do that). */
 
@@ -1483,7 +1483,7 @@ static int iommuAmdIrteCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
 
-    uint16_t const idxDteCache = iommuAmdDteCacheEntryLookup(pThis, uDevId);
+    uint16_t const idxDteCache = iommuAmdDteCacheEntryLookup(pThis, idDevice);
     if (idxDteCache < RT_ELEMENTS(pThis->aDteCache))
     {
         PCDTECACHE pDteCache = &pThis->aDteCache[idxDteCache];
@@ -1502,7 +1502,7 @@ static int iommuAmdIrteCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                 {
                     /* Interrupt table length has been verified prior to adding entries to the cache. */
                     uint16_t const offIrte      = IOMMU_GET_IRTE_OFF(pMsiIn->Data.u32);
-                    uint16_t const idxIrteCache = iommuAmdIrteCacheEntryLookup(pThis, uDevId, offIrte);
+                    uint16_t const idxIrteCache = iommuAmdIrteCacheEntryLookup(pThis, idDevice, offIrte);
                     if (idxIrteCache < RT_ELEMENTS(pThis->aIrteCache))
                     {
                         PCIRTE_T pIrte = &pThis->aIrteCache[idxIrteCache].Irte;
@@ -1538,11 +1538,11 @@ static int iommuAmdIrteCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
  * @retval  VERR_OUT_OF_RESOURCES if the cache is full.
  *
  * @param   pDevIns     The IOMMU instance data.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  * @param   offIrte     The offset into the interrupt remap table.
  * @param   pIrte       The IRTE to cache.
  */
-static int iommuAmdIrteCacheAdd(PPDMDEVINS pDevIns, uint16_t uDevId, uint16_t offIrte, PCIRTE_T pIrte)
+static int iommuAmdIrteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, uint16_t offIrte, PCIRTE_T pIrte)
 {
     Assert(offIrte != 0xffff);  /* Shouldn't be a valid IRTE table offset since sizeof(IRTE) is a multiple of 4. */
 
@@ -1552,11 +1552,11 @@ static int iommuAmdIrteCacheAdd(PPDMDEVINS pDevIns, uint16_t uDevId, uint16_t of
 
     /* Find an existing entry or get an unused slot. */
     uint16_t const cIrteCache = RT_ELEMENTS(pThis->aIrteCache);
-    uint16_t idxIrteCache     = iommuAmdIrteCacheEntryLookup(pThis, uDevId, offIrte);
+    uint16_t idxIrteCache     = iommuAmdIrteCacheEntryLookup(pThis, idDevice, offIrte);
     if (   idxIrteCache < cIrteCache
         || (idxIrteCache = iommuAmdIrteCacheEntryGetUnused(pThis)) < cIrteCache)
     {
-        pThis->aIrteCache[idxIrteCache].uKey = IOMMU_IRTE_CACHE_KEY_MAKE(uDevId, offIrte);
+        pThis->aIrteCache[idxIrteCache].uKey = IOMMU_IRTE_CACHE_KEY_MAKE(idDevice, offIrte);
         pThis->aIrteCache[idxIrteCache].Irte = *pIrte;
     }
     else
@@ -1571,9 +1571,9 @@ static int iommuAmdIrteCacheAdd(PPDMDEVINS pDevIns, uint16_t uDevId, uint16_t of
  * Removes IRTE cache entries for the given device ID.
  *
  * @param   pDevIns     The IOMMU instance data.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  */
-static void iommuAmdIrteCacheRemove(PPDMDEVINS pDevIns, uint16_t uDevId)
+static void iommuAmdIrteCacheRemove(PPDMDEVINS pDevIns, uint16_t idDevice)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
@@ -1581,7 +1581,7 @@ static void iommuAmdIrteCacheRemove(PPDMDEVINS pDevIns, uint16_t uDevId)
     for (uint16_t i = 0; i < cIrteCache; i++)
     {
         PIRTECACHE pIrteCache = &pThis->aIrteCache[i];
-        if (uDevId == IOMMU_IRTE_CACHE_KEY_GET_DEVICE_ID(pIrteCache->uKey))
+        if (idDevice == IOMMU_IRTE_CACHE_KEY_GET_DEVICE_ID(pIrteCache->uKey))
         {
             pIrteCache->uKey     = IOMMU_IRTE_CACHE_KEY_NIL;
             pIrteCache->Irte.u32 = 0;
@@ -2671,7 +2671,7 @@ static PCIOMMUREGACC iommuAmdGetRegAccess(uint32_t off)
         pReg = &g_aRegAccess2[idxReg];
     }
     else
-        return NULL;
+        pReg = NULL;
     return pReg;
 }
 
@@ -2985,19 +2985,19 @@ static void iommuAmdHwErrorSet(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 /**
  * Initializes a PAGE_TAB_HARDWARE_ERROR event.
  *
- * @param   uDevId              The device ID (bus, device, function).
- * @param   uDomainId           The domain ID.
+ * @param   idDevice            The device ID (bus, device, function).
+ * @param   idDomain            The domain ID.
  * @param   GCPhysPtEntity      The system physical address of the page table
  *                              entity.
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtPageTabHwErr    Where to store the initialized event.
  */
-static void iommuAmdPageTabHwErrorEventInit(uint16_t uDevId, uint16_t uDomainId, RTGCPHYS GCPhysPtEntity, IOMMUOP enmOp,
+static void iommuAmdPageTabHwErrorEventInit(uint16_t idDevice, uint16_t idDomain, RTGCPHYS GCPhysPtEntity, IOMMUOP enmOp,
                                             PEVT_PAGE_TAB_HW_ERR_T pEvtPageTabHwErr)
 {
     memset(pEvtPageTabHwErr, 0, sizeof(*pEvtPageTabHwErr));
-    pEvtPageTabHwErr->n.u16DevId           = uDevId;
-    pEvtPageTabHwErr->n.u16DomainOrPasidLo = uDomainId;
+    pEvtPageTabHwErr->n.u16DevId           = idDevice;
+    pEvtPageTabHwErr->n.u16DomainOrPasidLo = idDomain;
     pEvtPageTabHwErr->n.u1GuestOrNested    = 0;
     pEvtPageTabHwErr->n.u1Interrupt        = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
     pEvtPageTabHwErr->n.u1ReadWrite        = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
@@ -3032,7 +3032,7 @@ static void iommuAmdPageTabHwErrorEventRaise(PPDMDEVINS pDevIns, IOMMUOP enmOp, 
 
     IOMMU_UNLOCK(pDevIns, pThisCC);
 
-    LogFunc(("Raised PAGE_TAB_HARDWARE_ERROR. uDevId=%#x uDomainId=%#x GCPhysPtEntity=%#RGp enmOp=%u u2Type=%u\n",
+    LogFunc(("Raised PAGE_TAB_HARDWARE_ERROR. idDevice=%#x idDomain=%#x GCPhysPtEntity=%#RGp enmOp=%u u2Type=%u\n",
          pEvtPageTabHwErr->n.u16DevId, pEvtPageTabHwErr->n.u16DomainOrPasidLo, pEvtPageTabHwErr->n.u64Addr, enmOp,
          pEvtPageTabHwErr->n.u2Type));
 }
@@ -3085,17 +3085,17 @@ static void iommuAmdCmdHwErrorEventRaise(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T 
 /**
  * Initializes a DEV_TAB_HARDWARE_ERROR event.
  *
- * @param   uDevId              The device ID (bus, device, function).
+ * @param   idDevice            The device ID (bus, device, function).
  * @param   GCPhysDte           The system physical address of the failed device table
  *                              access.
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtDevTabHwErr     Where to store the initialized event.
  */
-static void iommuAmdDevTabHwErrorEventInit(uint16_t uDevId, RTGCPHYS GCPhysDte, IOMMUOP enmOp,
+static void iommuAmdDevTabHwErrorEventInit(uint16_t idDevice, RTGCPHYS GCPhysDte, IOMMUOP enmOp,
                                            PEVT_DEV_TAB_HW_ERROR_T pEvtDevTabHwErr)
 {
     memset(pEvtDevTabHwErr, 0, sizeof(*pEvtDevTabHwErr));
-    pEvtDevTabHwErr->n.u16DevId      = uDevId;
+    pEvtDevTabHwErr->n.u16DevId      = idDevice;
     pEvtDevTabHwErr->n.u1Intr        = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
     /** @todo IOMMU: Any other transaction type that can set read/write bit? */
     pEvtDevTabHwErr->n.u1ReadWrite   = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
@@ -3130,7 +3130,7 @@ static void iommuAmdDevTabHwErrorEventRaise(PPDMDEVINS pDevIns, IOMMUOP enmOp, P
 
     IOMMU_UNLOCK(pDevIns, pThisCC);
 
-    LogFunc(("Raised DEV_TAB_HARDWARE_ERROR. uDevId=%#x GCPhysDte=%#RGp enmOp=%u u2Type=%u\n", pEvtDevTabHwErr->n.u16DevId,
+    LogFunc(("Raised DEV_TAB_HARDWARE_ERROR. idDevice=%#x GCPhysDte=%#RGp enmOp=%u u2Type=%u\n", pEvtDevTabHwErr->n.u16DevId,
              pEvtDevTabHwErr->n.u64Addr, enmOp, pEvtDevTabHwErr->n.u2Type));
 }
 
@@ -3175,7 +3175,7 @@ static void iommuAmdIllegalCmdEventRaise(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_E
 /**
  * Initializes an ILLEGAL_DEV_TABLE_ENTRY event.
  *
- * @param   uDevId          The device ID (bus, device, function).
+ * @param   idDevice        The device ID (bus, device, function).
  * @param   uIova           The I/O virtual address.
  * @param   fRsvdNotZero    Whether reserved bits are not zero. Pass @c false if the
  *                          event was caused by an invalid level encoding in the
@@ -3183,11 +3183,11 @@ static void iommuAmdIllegalCmdEventRaise(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_E
  * @param   enmOp           The IOMMU operation being performed.
  * @param   pEvtIllegalDte  Where to store the initialized event.
  */
-static void iommuAmdIllegalDteEventInit(uint16_t uDevId, uint64_t uIova, bool fRsvdNotZero, IOMMUOP enmOp,
+static void iommuAmdIllegalDteEventInit(uint16_t idDevice, uint64_t uIova, bool fRsvdNotZero, IOMMUOP enmOp,
                                         PEVT_ILLEGAL_DTE_T pEvtIllegalDte)
 {
     memset(pEvtIllegalDte, 0, sizeof(*pEvtIllegalDte));
-    pEvtIllegalDte->n.u16DevId      = uDevId;
+    pEvtIllegalDte->n.u16DevId      = idDevice;
     pEvtIllegalDte->n.u1Interrupt   = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
     pEvtIllegalDte->n.u1ReadWrite   = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
     pEvtIllegalDte->n.u1RsvdNotZero = fRsvdNotZero;
@@ -3220,7 +3220,7 @@ static void iommuAmdIllegalDteEventRaise(PPDMDEVINS pDevIns, IOMMUOP enmOp, PCEV
     if (enmOp != IOMMUOP_CMD)
         iommuAmdSetPciTargetAbort(pDevIns);
 
-    LogFunc(("Raised ILLEGAL_DTE_EVENT. uDevId=%#x uIova=%#RX64 enmOp=%u enmEvtType=%u\n", pEvtIllegalDte->n.u16DevId,
+    LogFunc(("Raised ILLEGAL_DTE_EVENT. idDevice=%#x uIova=%#RX64 enmOp=%u enmEvtType=%u\n", pEvtIllegalDte->n.u16DevId,
              pEvtIllegalDte->n.u64Addr, enmOp, enmEvtType));
     NOREF(enmEvtType);
 }
@@ -3229,8 +3229,8 @@ static void iommuAmdIllegalDteEventRaise(PPDMDEVINS pDevIns, IOMMUOP enmOp, PCEV
 /**
  * Initializes an IO_PAGE_FAULT event.
  *
- * @param   uDevId              The device ID (bus, device, function).
- * @param   uDomainId           The domain ID.
+ * @param   idDevice            The device ID (bus, device, function).
+ * @param   idDomain            The domain ID.
  * @param   uIova               The I/O virtual address being accessed.
  * @param   fPresent            Transaction to a page marked as present (including
  *                              DTE.V=1) or interrupt marked as remapped
@@ -3242,14 +3242,14 @@ static void iommuAmdIllegalDteEventRaise(PPDMDEVINS pDevIns, IOMMUOP enmOp, PCEV
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtIoPageFault     Where to store the initialized event.
  */
-static void iommuAmdIoPageFaultEventInit(uint16_t uDevId, uint16_t uDomainId, uint64_t uIova, bool fPresent, bool fRsvdNotZero,
+static void iommuAmdIoPageFaultEventInit(uint16_t idDevice, uint16_t idDomain, uint64_t uIova, bool fPresent, bool fRsvdNotZero,
                                          bool fPermDenied, IOMMUOP enmOp, PEVT_IO_PAGE_FAULT_T pEvtIoPageFault)
 {
     Assert(!fPermDenied || fPresent);
     memset(pEvtIoPageFault, 0, sizeof(*pEvtIoPageFault));
-    pEvtIoPageFault->n.u16DevId            = uDevId;
+    pEvtIoPageFault->n.u16DevId            = idDevice;
     //pEvtIoPageFault->n.u4PasidHi         = 0;
-    pEvtIoPageFault->n.u16DomainOrPasidLo  = uDomainId;
+    pEvtIoPageFault->n.u16DomainOrPasidLo  = idDomain;
     //pEvtIoPageFault->n.u1GuestOrNested   = 0;
     //pEvtIoPageFault->n.u1NoExecute       = 0;
     //pEvtIoPageFault->n.u1User            = 0;
@@ -3429,13 +3429,13 @@ static void iommuAmdIoPageFaultEventRaiseWithDte(PPDMDEVINS pDevIns, PCDTE_T pDt
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  * @param   enmOp       The IOMMU operation being performed.
  * @param   pDte        Where to store the device table entry.
  *
  * @thread  Any.
  */
-static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PDTE_T pDte)
+static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUOP enmOp, PDTE_T pDte)
 {
     PCIOMMU  pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
@@ -3446,12 +3446,12 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
     uint8_t const idxSegsEn = pThis->Ctrl.n.u3DevTabSegEn;
     Assert(idxSegsEn < RT_ELEMENTS(g_auDevTabSegShifts));
 
-    uint8_t const idxSeg = (uDevId & g_auDevTabSegMasks[idxSegsEn]) >> g_auDevTabSegShifts[idxSegsEn];
+    uint8_t const idxSeg = (idDevice & g_auDevTabSegMasks[idxSegsEn]) >> g_auDevTabSegShifts[idxSegsEn];
     Assert(idxSeg < RT_ELEMENTS(pThis->aDevTabBaseAddrs));
     AssertCompile(RT_ELEMENTS(g_auDevTabSegShifts) == RT_ELEMENTS(g_auDevTabSegMasks));
 
     RTGCPHYS const GCPhysDevTab = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base << X86_PAGE_4K_SHIFT;
-    uint32_t const offDte       = (uDevId & ~g_auDevTabSegMasks[idxSegsEn]) * sizeof(DTE_T);
+    uint32_t const offDte       = (idDevice & ~g_auDevTabSegMasks[idxSegsEn]) * sizeof(DTE_T);
     RTGCPHYS const GCPhysDte    = GCPhysDevTab + offDte;
 
     /* Ensure the DTE falls completely within the device table segment. */
@@ -3471,14 +3471,14 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
         LogFunc(("Failed to read device table entry at %#RGp. rc=%Rrc -> DevTabHwError\n", GCPhysDte, rc));
 
         EVT_DEV_TAB_HW_ERROR_T EvtDevTabHwErr;
-        iommuAmdDevTabHwErrorEventInit(uDevId, GCPhysDte, enmOp, &EvtDevTabHwErr);
+        iommuAmdDevTabHwErrorEventInit(idDevice, GCPhysDte, enmOp, &EvtDevTabHwErr);
         iommuAmdDevTabHwErrorEventRaise(pDevIns, enmOp, &EvtDevTabHwErr);
         return VERR_IOMMU_DTE_READ_FAILED;
     }
 
     /* Raise an I/O page fault for out-of-bounds acccess. */
     EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-    iommuAmdIoPageFaultEventInit(uDevId, 0 /* uDomainId */, 0 /* uIova */, false /* fPresent */, false /* fRsvdNotZero */,
+    iommuAmdIoPageFaultEventInit(idDevice, 0 /* idDomain */, 0 /* uIova */, false /* fPresent */, false /* fRsvdNotZero */,
                                  false /* fPermDenied */, enmOp, &EvtIoPageFault);
     iommuAmdIoPageFaultEventRaise(pDevIns, 0 /* fIoDevFlags */, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                   kIoPageFaultType_DevId_Invalid);
@@ -3500,7 +3500,7 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
  *
  * @param   pDevIns         The IOMMU device instance.
  * @param   uIova           The I/O virtual address to translate.
- * @param   uDevId          The device ID (bus, device, function).
+ * @param   idDevice        The device ID (bus, device, function).
  * @param   fPerm           The I/O permissions for this access, see
  *                          IOMMU_IO_PERM_XXX.
  * @param   pDte            The device table entry.
@@ -3508,7 +3508,7 @@ static int iommuAmdDteRead(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
  *
  * @thread  Any.
  */
-static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fPerm, PCDTE_T pDte,
+static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, uint8_t fPerm, PCDTE_T pDte,
                                       IOMMUOP enmOp)
 {
     /*
@@ -3525,7 +3525,7 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
          *        returning an invalid translation rather than skipping translation. */
         LogFunc(("Translation valid bit not set -> IOPF\n"));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
+        iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
         iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                              kIoPageFaultType_DteTranslationDisabled);
@@ -3543,7 +3543,7 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
     {
         LogFunc(("Permission denied by DTE (fPerm=%#x fDtePerm=%#x) -> IOPF\n", fPerm, fDtePerm));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+        iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      true /* fPermDenied */, enmOp, &EvtIoPageFault);
         iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                              kIoPageFaultType_PermDenied);
@@ -3574,9 +3574,9 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
         /** @todo r=ramshankar: I cannot make out from the AMD IOMMU spec. if I should be
          *        raising an ILLEGAL_DEV_TABLE_ENTRY event or an IO_PAGE_FAULT event here.
          *        I'm just going with I/O page fault. */
-        LogFunc(("Invalid root page table level %#x (uDevId=%#x) -> IOPF\n", uMaxLevel, uDevId));
+        LogFunc(("Invalid root page table level %#x (idDevice=%#x) -> IOPF\n", uMaxLevel, idDevice));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+        iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
         iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                              kIoPageFaultType_PteInvalidLvlEncoding);
@@ -3597,7 +3597,7 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
  * @param   uIova           The I/O virtual address to translate. Must be 4K aligned.
  * @param   fPerm           The I/O permissions for this access, see
  *                          IOMMU_IO_PERM_XXX.
- * @param   uDevId          The device ID (bus, device, function).
+ * @param   idDevice        The device ID (bus, device, function).
  * @param   pDte            The device table entry.
  * @param   enmOp           The IOMMU operation being performed.
  * @param   pPageLookup     Where to store the results of the I/O page lookup. This
@@ -3605,7 +3605,7 @@ static int iommuAmdPreTranslateChecks(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
  *
  * @thread  Any.
  */
-static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t fPerm, uint16_t uDevId, PCDTE_T pDte,
+static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t fPerm, uint16_t idDevice, PCDTE_T pDte,
                                    IOMMUOP enmOp, PIOPAGELOOKUP pPageLookup)
 {
     Assert(pDte->n.u1Valid);
@@ -3644,7 +3644,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
             {
                 LogFunc(("Failed to read page table entry at %#RGp. rc=%Rrc -> PageTabHwError\n", GCPhysPtEntity, rc));
                 EVT_PAGE_TAB_HW_ERR_T EvtPageTabHwErr;
-                iommuAmdPageTabHwErrorEventInit(uDevId, pDte->n.u16DomainId, GCPhysPtEntity, enmOp, &EvtPageTabHwErr);
+                iommuAmdPageTabHwErrorEventInit(idDevice, pDte->n.u16DomainId, GCPhysPtEntity, enmOp, &EvtPageTabHwErr);
                 iommuAmdPageTabHwErrorEventRaise(pDevIns, enmOp, &EvtPageTabHwErr);
                 return VERR_IOMMU_IPE_2;
             }
@@ -3655,9 +3655,9 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
         { /* likely */ }
         else
         {
-            LogFunc(("Page table entry not present (uDevId=%#x) -> IOPF\n", uDevId));
+            LogFunc(("Page table entry not present (idDevice=%#x) -> IOPF\n", idDevice));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
             iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                                  kIoPageFaultType_PermDenied);
@@ -3670,9 +3670,9 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
         { /* likely */ }
         else
         {
-            LogFunc(("Page table entry access denied (uDevId=%#x fPerm=%#x fPtePerm=%#x) -> IOPF\n", uDevId, fPerm, fPtePerm));
+            LogFunc(("Page table entry access denied (idDevice=%#x fPerm=%#x fPtePerm=%#x) -> IOPF\n", idDevice, fPerm, fPtePerm));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          true /* fPermDenied */, enmOp, &EvtIoPageFault);
             iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                                  kIoPageFaultType_PermDenied);
@@ -3710,7 +3710,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
 
             LogFunc(("Page size invalid cShift=%#x -> IOPF\n", cShift));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
             iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                                  kIoPageFaultType_PteInvalidPageSize);
@@ -3725,7 +3725,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
         {
             LogFunc(("Next level of PDE invalid uNextLevel=%#x -> IOPF\n", uNextLevel));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
             iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                                  kIoPageFaultType_PteInvalidLvlEncoding);
@@ -3742,7 +3742,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
         {
             LogFunc(("Next level (%#x) must be less than the current level (%#x) -> IOPF\n", uNextLevel, uLevel));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
             iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                                  kIoPageFaultType_PteInvalidLvlEncoding);
@@ -3760,7 +3760,7 @@ static int iommuAmdIoPageTableWalk(PPDMDEVINS pDevIns, uint64_t uIova, uint8_t f
         {
             LogFunc(("IOVA of skipped levels are not zero %#RX64 (SkipMask=%#RX64) -> IOPF\n", uIova, uIovaSkipMask));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+            iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
             iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                                  kIoPageFaultType_SkippedLevelIovaNotZero);
@@ -3798,7 +3798,7 @@ static DECLCALLBACK(int) iommuAmdDteLookupPage(PPDMDEVINS pDevIns, uint64_t uIov
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     STAM_PROFILE_ADV_START(&pThis->StatProfDteLookup, a);
-    int rc = iommuAmdIoPageTableWalk(pDevIns, uIovaPage, fPerm, pAux->uDeviceId, pAux->pDte, pAux->enmOp, pPageLookup);
+    int rc = iommuAmdIoPageTableWalk(pDevIns, uIovaPage, fPerm, pAux->idDevice, pAux->pDte, pAux->enmOp, pPageLookup);
     STAM_PROFILE_ADV_STOP(&pThis->StatProfDteLookup, a); NOREF(pThis);
     return rc;
 }
@@ -3825,11 +3825,11 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
     AssertPtr(pAddrOut);
 
     int            rc;
-    size_t const   cbAccess    = pAddrIn->cb;
+    size_t const   cbIova      = pAddrIn->cb;
     uint8_t const  fPerm       = pAddrIn->fPerm;
     uint64_t const uIova       = pAddrIn->uAddr;
     RTGCPHYS       GCPhysSpa   = NIL_RTGCPHYS;
-    size_t         cbRemaining = cbAccess;
+    size_t         cbRemaining = cbIova;
     uint64_t       uIovaPage   = pAddrIn->uAddr & X86_PAGE_4K_BASE_MASK;
     uint64_t       offIova     = pAddrIn->uAddr & X86_PAGE_4K_OFFSET_MASK;
     uint64_t       cbPages     = 0;
@@ -3845,7 +3845,7 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
             Assert(PageLookup.cShift >= X86_PAGE_4K_SHIFT);
 
             /* Store the translated address before continuing to access more pages. */
-            if (cbRemaining == cbAccess)
+            if (cbRemaining == cbIova)
             {
                 uint64_t const offMask = IOMMU_GET_PAGE_OFF_MASK(PageLookup.cShift);
                 uint64_t const offSpa  = uIova & offMask;
@@ -3884,7 +3884,7 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
     }
 
     pAddrOut->uAddr = GCPhysSpa;                /* Update the translated address. */
-    pAddrOut->cb    = cbAccess - cbRemaining;   /* Update the size of the contiguous memory region. */
+    pAddrOut->cb    = cbIova - cbRemaining;     /* Update the size of the contiguous memory region. */
     pAddrOut->fPerm = PageLookupPrev.fPerm;     /* Update the allowed permissions for this access. */
     if (pcbPages)
         *pcbPages = cbPages;                    /* Update the size of the pages accessed. */
@@ -3897,9 +3897,9 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
  *
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU instance data.
- * @param   uDevId          The device ID (bus, device, function).
+ * @param   idDevice        The device ID (bus, device, function).
  * @param   uIova           The I/O virtual address to lookup.
- * @param   cbAccess        The size of the access.
+ * @param   cbIova          The size of the access.
  * @param   fPerm           The I/O permissions for this access, see
  *                          IOMMU_IO_PERM_XXX.
  * @param   enmOp           The IOMMU operation being performed.
@@ -3909,7 +3909,7 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
  *
  * @thread  Any.
  */
-static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fPerm, IOMMUOP enmOp,
+static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova, uint8_t fPerm, IOMMUOP enmOp,
                              PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
@@ -3918,7 +3918,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
 
     /* Read the device table entry from memory. */
     DTE_T Dte;
-    int rc = iommuAmdDteRead(pDevIns, uDevId, enmOp, &Dte);
+    int rc = iommuAmdDteRead(pDevIns, idDevice, enmOp, &Dte);
     if (RT_SUCCESS(rc))
     {
         if (Dte.n.u1Valid)
@@ -3933,19 +3933,19 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                  * Note: Addresses cannot be subject to exclusion as we do -not- support remote IOTLBs,
                  *       so there's no need to check the address exclusion base/limit here.
                  */
-                rc = iommuAmdPreTranslateChecks(pDevIns, uDevId, uIova, fPerm, &Dte, enmOp);
+                rc = iommuAmdPreTranslateChecks(pDevIns, idDevice, uIova, fPerm, &Dte, enmOp);
                 if (rc == VINF_SUCCESS)
                 {
                     IOADDRRANGE AddrIn;
                     AddrIn.uAddr = uIova;
-                    AddrIn.cb    = cbAccess;
+                    AddrIn.cb    = cbIova;
                     AddrIn.fPerm = fPerm;
 
                     IOMMUOPAUX Aux;
-                    Aux.enmOp     = enmOp;
-                    Aux.pDte      = &Dte;
-                    Aux.uDeviceId = uDevId;
-                    Aux.uDomainId = Dte.n.u16DomainId;
+                    Aux.enmOp    = enmOp;
+                    Aux.pDte     = &Dte;
+                    Aux.idDevice = idDevice;
+                    Aux.idDomain = Dte.n.u16DomainId;
 
                     IOADDRRANGE AddrOut;
 
@@ -3959,7 +3959,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                        what we translated so far is still valid. */
                     if (rc == VERR_OUT_OF_RANGE)
                     {
-                        Assert(cbContiguous > 0 && cbContiguous < cbAccess);
+                        Assert(cbContiguous > 0 && cbContiguous < cbIova);
                         rc = VINF_SUCCESS;
                         STAM_COUNTER_INC(&pThis->StatAccessDteNonContig); NOREF(pThis);
                     }
@@ -3971,7 +3971,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                     if (RT_SUCCESS(rc))
                     {
                         /* Update that addresses requires translation (cumulative permissions of DTE and I/O page tables). */
-                        iommuAmdDteCacheAdd(pDevIns, uDevId, &Dte, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE);
+                        iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE);
                         /* Update IOTLB for the contiguous range of I/O virtual addresses. */
                         iommuAmdIotlbAddRange(pDevIns, Dte.n.u16DomainId, uIova & X86_PAGE_4K_BASE_MASK, cbPages,
                                               GCPhysSpa & X86_PAGE_4K_BASE_MASK, AddrOut.fPerm);
@@ -3984,13 +3984,13 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                      * Translation is disabled for this device (root paging mode is 0).
                      * GPA=SPA, but the permission bits are important and controls accesses.
                      */
-                    GCPhysSpa    =  uIova;
-                    cbContiguous = cbAccess;
+                    GCPhysSpa    = uIova;
+                    cbContiguous = cbIova;
                     rc = VINF_SUCCESS;
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
                     /* Update that addresses permissions of DTE apply (but omit address translation). */
-                    iommuAmdDteCacheAdd(pDevIns, uDevId, &Dte, IOMMU_DTE_CACHE_F_IO_PERM);
+                    iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte, IOMMU_DTE_CACHE_F_IO_PERM);
 #endif
                 }
                 else
@@ -4007,7 +4007,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
                 /* Invalid reserved  bits in the DTE, raise an error event. */
                 LogFunc(("Invalid DTE reserved bits (u64[0]=%#RX64 u64[1]=%#RX64) -> Illegal DTE\n", fRsvd0, fRsvd1));
                 EVT_ILLEGAL_DTE_T Event;
-                iommuAmdIllegalDteEventInit(uDevId, uIova, true /* fRsvdNotZero */, enmOp, &Event);
+                iommuAmdIllegalDteEventInit(idDevice, uIova, true /* fRsvdNotZero */, enmOp, &Event);
                 iommuAmdIllegalDteEventRaise(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
                 rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
             }
@@ -4019,17 +4019,17 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova
              * See AMD IOMMU spec. "Table 5: Feature Enablement for Address Translation".
              */
             GCPhysSpa    = uIova;
-            cbContiguous = cbAccess;
+            cbContiguous = cbIova;
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
             /* Update that addresses don't require translation (nor permission checks) but a DTE is present. */
-            iommuAmdDteCacheAdd(pDevIns, uDevId, &Dte, 0 /* fFlags */);
+            iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte, 0 /* fFlags */);
 #endif
         }
     }
     else
     {
-        LogFunc(("Failed to read device table entry. uDevId=%#x rc=%Rrc\n", uDevId, rc));
+        LogFunc(("Failed to read device table entry. idDevice=%#x rc=%Rrc\n", idDevice, rc));
         rc = VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
@@ -4069,7 +4069,7 @@ static DECLCALLBACK(int) iommuAmdCacheLookupPage(PPDMDEVINS pDevIns, uint64_t uI
     PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
 
     STAM_PROFILE_ADV_START(&pThis->StatProfIotlbeLookup, a);
-    PCIOTLBE pIotlbe = iommuAmdIotlbLookup(pThis, pThisR3, pAux->uDomainId, uIovaPage);
+    PCIOTLBE pIotlbe = iommuAmdIotlbLookup(pThis, pThisR3, pAux->idDomain, uIovaPage);
     STAM_PROFILE_ADV_STOP(&pThis->StatProfIotlbeLookup, a);
     if (pIotlbe)
     {
@@ -4097,9 +4097,9 @@ static DECLCALLBACK(int) iommuAmdCacheLookupPage(PPDMDEVINS pDevIns, uint64_t uI
  *          are insufficient.
  *
  * @param   pDevIns         The IOMMU instance data.
- * @param   uDevId          The device ID (bus, device, function).
+ * @param   idDevice        The device ID (bus, device, function).
  * @param   uIova           The I/O virtual address to lookup.
- * @param   cbAccess        The size of the access.
+ * @param   cbIova          The size of the access.
  * @param   fPerm           The I/O permissions for this access, see
  *                          IOMMU_IO_PERM_XXX.
  * @param   enmOp           The IOMMU operation being performed.
@@ -4107,17 +4107,17 @@ static DECLCALLBACK(int) iommuAmdCacheLookupPage(PPDMDEVINS pDevIns, uint64_t uI
  * @param   pcbContiguous   Where to store the number of contiguous bytes translated
  *                          and permission-checked.
  */
-static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fPerm, IOMMUOP enmOp,
+static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova, uint8_t fPerm, IOMMUOP enmOp,
                                PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
     int rc;
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
-#define IOMMU_IOTLB_LOOKUP_FAILED(a_rc)   \
-    do {                                  \
-        *pGCPhysSpa    = NIL_RTGCPHYS;    \
-        *pcbContiguous = 0;               \
-        rc = (a_rc);                      \
+#define IOMMU_IOTLB_LOOKUP_FAILED(a_rc) \
+    do {                                \
+        *pGCPhysSpa    = NIL_RTGCPHYS;  \
+        *pcbContiguous = 0;             \
+        rc = (a_rc);                    \
     } while (0)
 
     /*
@@ -4127,7 +4127,7 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
     IOMMU_LOCK_CACHE(pDevIns, pThis);
 
     /* Lookup the DTE cache entry. */
-    uint16_t const idxDteCache = iommuAmdDteCacheEntryLookup(pThis, uDevId);
+    uint16_t const idxDteCache = iommuAmdDteCacheEntryLookup(pThis, idDevice);
     if (idxDteCache < RT_ELEMENTS(pThis->aDteCache))
     {
         PCDTECACHE pDteCache = &pThis->aDteCache[idxDteCache];
@@ -4137,18 +4137,18 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
             /* Lookup IOTLB entries. */
             IOADDRRANGE AddrIn;
             AddrIn.uAddr = uIova;
-            AddrIn.cb    = cbAccess;
+            AddrIn.cb    = cbIova;
             AddrIn.fPerm = fPerm;
 
             IOMMUOPAUX Aux;
-            Aux.enmOp     = enmOp;
-            Aux.pDte      = NULL;
-            Aux.uDeviceId = uDevId;
-            Aux.uDomainId = pDteCache->uDomainId;
+            Aux.enmOp    = enmOp;
+            Aux.pDte     = NULL;
+            Aux.idDevice = idDevice;
+            Aux.idDomain = pDteCache->idDomain;
 
             IOADDRRANGE AddrOut;
             rc = iommuAmdLookupIoAddrRange(pDevIns, iommuAmdCacheLookupPage, &AddrIn, &Aux, &AddrOut, NULL /* pcbPages */);
-            Assert(AddrOut.cb <= cbAccess);
+            Assert(AddrOut.cb <= cbIova);
             *pGCPhysSpa    = AddrOut.uAddr;
             *pcbContiguous = AddrOut.cb;
         }
@@ -4161,7 +4161,7 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
             if ((fDtePerm & fPerm) == fPerm)
             {
                 *pGCPhysSpa    = uIova;
-                *pcbContiguous = cbAccess;
+                *pcbContiguous = cbIova;
                 rc = VINF_SUCCESS;
             }
             else
@@ -4171,7 +4171,7 @@ static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIo
         {
             /* Forward addresses untranslated, without checking permissions. */
             *pGCPhysSpa    = uIova;
-            *pcbContiguous = cbAccess;
+            *pcbContiguous = cbIova;
             rc = VINF_SUCCESS;
         }
         else
@@ -4235,9 +4235,9 @@ DECLINLINE(void) iommuAmdMemAccessGetPermAndOp(PIOMMU pThis, uint32_t fFlags, PI
  *
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
- * @param   uDevId          The device ID (bus, device, function).
+ * @param   idDevice        The device ID (bus, device, function).
  * @param   uIova           The I/O virtual address being accessed.
- * @param   cbAccess        The number of bytes being accessed.
+ * @param   cbIova          The size of the access.
  * @param   fFlags          The access flags, see PDMIOMMU_MEM_F_XXX.
  * @param   pGCPhysSpa      Where to store the translated system physical address.
  * @param   pcbContiguous   Where to store the number of contiguous bytes translated
@@ -4245,13 +4245,13 @@ DECLINLINE(void) iommuAmdMemAccessGetPermAndOp(PIOMMU pThis, uint32_t fFlags, PI
  *
  * @thread  Any.
  */
-static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint32_t fFlags,
-                                           PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
+static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova,
+                                           uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
     /* Validate. */
     AssertPtr(pDevIns);
     AssertPtr(pGCPhysSpa);
-    Assert(cbAccess > 0);
+    Assert(cbIova > 0);
     Assert(!(fFlags & ~PDMIOMMU_MEM_F_VALID_MASK));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
@@ -4261,16 +4261,16 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
         IOMMUOP enmOp;
         uint8_t fPerm;
         iommuAmdMemAccessGetPermAndOp(pThis, fFlags, &enmOp, &fPerm, false /* fBulk */);
-        LogFlowFunc(("%s: uDevId=%#x uIova=%#RX64 cb=%zu\n", iommuAmdMemAccessGetPermName(fPerm), uDevId, uIova, cbAccess));
+        LogFlowFunc(("%s: idDevice=%#x uIova=%#RX64 cb=%zu\n", iommuAmdMemAccessGetPermName(fPerm), idDevice, uIova, cbIova));
 
         int rc;
 #ifdef IOMMU_WITH_IOTLBE_CACHE
         /* Lookup the IOVA from the cache. */
-        rc = iommuAmdCacheLookup(pDevIns, uDevId, uIova, cbAccess, fPerm, enmOp, pGCPhysSpa, pcbContiguous);
+        rc = iommuAmdCacheLookup(pDevIns, idDevice, uIova, cbIova, fPerm, enmOp, pGCPhysSpa, pcbContiguous);
         if (rc == VINF_SUCCESS)
         {
             /* All pages in the access were found in the cache with sufficient permissions. */
-            Assert(*pcbContiguous == cbAccess);
+            Assert(*pcbContiguous == cbIova);
             Assert(*pGCPhysSpa != NIL_RTGCPHYS);
             STAM_COUNTER_INC(&pThis->StatAccessCacheHitFull);
             return rc;
@@ -4280,7 +4280,7 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
         else
         {
             /* Access stopped since translations resulted in non-contiguous memory, let caller resume access. */
-            Assert(*pcbContiguous > 0 && *pcbContiguous < cbAccess);
+            Assert(*pcbContiguous > 0 && *pcbContiguous < cbIova);
             STAM_COUNTER_INC(&pThis->StatAccessCacheNonContig);
             return VINF_SUCCESS;
         }
@@ -4290,22 +4290,22 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
          * Or permissions were denied for the access (which typically doesn't happen)
          * so go through the slower path and raise the required event.
          */
-        AssertMsg(*pcbContiguous < cbAccess, ("Invalid size: cbContiguous=%zu cbAccess=%zu\n", *pcbContiguous, cbAccess));
-        uIova    += *pcbContiguous;
-        cbAccess -= *pcbContiguous;
+        AssertMsg(*pcbContiguous < cbIova, ("Invalid size: cbContiguous=%zu cbIova=%zu\n", *pcbContiguous, cbIova));
+        uIova  += *pcbContiguous;
+        cbIova -= *pcbContiguous;
         /* We currently are including any permission denied pages as cache misses too.*/
         STAM_COUNTER_INC(&pThis->StatAccessCacheMiss);
 #endif
 
         /* Lookup the IOVA from the device table. */
-        rc = iommuAmdDteLookup(pDevIns, uDevId, uIova, cbAccess, fPerm, enmOp, pGCPhysSpa, pcbContiguous);
+        rc = iommuAmdDteLookup(pDevIns, idDevice, uIova, cbIova, fPerm, enmOp, pGCPhysSpa, pcbContiguous);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
         {
             Assert(rc != VERR_OUT_OF_RANGE);
-            LogFunc(("DTE lookup failed! uDevId=%#x uIova=%#RX64 fPerm=%u cbAccess=%zu rc=%#Rrc\n", uDevId, uIova, fPerm,
-                     cbAccess, rc));
+            LogFunc(("DTE lookup failed! idDevice=%#x uIova=%#RX64 fPerm=%u cbIova=%zu rc=%#Rrc\n", idDevice, uIova, fPerm,
+                     cbIova, rc));
         }
 
         return rc;
@@ -4313,7 +4313,7 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
 
     /* Addresses are forwarded without translation when the IOMMU is disabled. */
     *pGCPhysSpa    = uIova;
-    *pcbContiguous = cbAccess;
+    *pcbContiguous = cbIova;
     return VINF_SUCCESS;
 }
 
@@ -4323,7 +4323,7 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
  *
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
- * @param   uDevId          The device ID (bus, device, function).
+ * @param   idDevice        The device ID (bus, device, function).
  * @param   cIovas          The number of addresses being accessed.
  * @param   pauIovas        The I/O virtual addresses for each page being accessed.
  * @param   fFlags          The access flags, see PDMIOMMU_MEM_F_XXX.
@@ -4331,7 +4331,7 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t uDevId, 
  *
  * @thread  Any.
  */
-static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t idDevice, size_t cIovas, uint64_t const *pauIovas,
                                                uint32_t fFlags, PRTGCPHYS paGCPhysSpa)
 {
     /* Validate. */
@@ -4348,7 +4348,7 @@ static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDev
         IOMMUOP enmOp;
         uint8_t fPerm;
         iommuAmdMemAccessGetPermAndOp(pThis, fFlags, &enmOp, &fPerm, true /* fBulk */);
-        LogFlowFunc(("%s: uDevId=%#x cIovas=%zu\n", iommuAmdMemAccessGetPermName(fPerm), uDevId, cIovas));
+        LogFlowFunc(("%s: idDevice=%#x cIovas=%zu\n", iommuAmdMemAccessGetPermName(fPerm), idDevice, cIovas));
 
         /** @todo IOMMU: IOTLB cache lookup. */
 
@@ -4356,12 +4356,12 @@ static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDev
         for (size_t i = 0; i < cIovas; i++)
         {
             size_t cbContig;
-            int rc = iommuAmdDteLookup(pDevIns, uDevId, pauIovas[i], X86_PAGE_SIZE, fPerm, enmOp, &paGCPhysSpa[i], &cbContig);
+            int rc = iommuAmdDteLookup(pDevIns, idDevice, pauIovas[i], X86_PAGE_SIZE, fPerm, enmOp, &paGCPhysSpa[i], &cbContig);
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else
             {
-                LogFunc(("Failed! uDevId=%#x uIova=%#RX64 fPerm=%u rc=%Rrc\n", uDevId, pauIovas[i], fPerm, rc));
+                LogFunc(("Failed! idDevice=%#x uIova=%#RX64 fPerm=%u rc=%Rrc\n", idDevice, pauIovas[i], fPerm, rc));
                 return rc;
             }
             Assert(cbContig == X86_PAGE_SIZE);
@@ -4383,7 +4383,7 @@ static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDev
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  * @param   pDte        The device table entry.
  * @param   GCPhysIn    The source MSI address (used for reporting errors).
  * @param   uDataIn     The source MSI data.
@@ -4392,7 +4392,7 @@ static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t uDev
  *
  * @thread  Any.
  */
-static int iommuAmdIrteRead(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, RTGCPHYS GCPhysIn, uint32_t uDataIn,
+static int iommuAmdIrteRead(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pDte, RTGCPHYS GCPhysIn, uint32_t uDataIn,
                             IOMMUOP enmOp, PIRTE_T pIrte)
 {
     /* Ensure the IRTE length is valid. */
@@ -4412,7 +4412,7 @@ static int iommuAmdIrteRead(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
                  GCPhysIntrTable, cbIntrTable, offIrte, uDataIn));
 
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, GCPhysIn, false /* fPresent */, false /* fRsvdNotZero */,
+        iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, GCPhysIn, false /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
         iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                              kIoPageFaultType_IrteAddrInvalid);
@@ -4439,7 +4439,7 @@ static int iommuAmdIrteRead(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU instance data.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  * @param   pDte        The device table entry.
  * @param   enmOp       The IOMMU operation being performed.
  * @param   pMsiIn      The source MSI.
@@ -4447,14 +4447,14 @@ static int iommuAmdIrteRead(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
  *
  * @thread  Any.
  */
-static int iommuAmdIntrRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, IOMMUOP enmOp, PCMSIMSG pMsiIn,
+static int iommuAmdIntrRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pDte, IOMMUOP enmOp, PCMSIMSG pMsiIn,
                              PMSIMSG pMsiOut)
 {
     Assert(pDte->n.u2IntrCtrl == IOMMU_INTR_CTRL_REMAP);
 
     IRTE_T Irte;
     uint32_t const uMsiInData = pMsiIn->Data.u32;
-    int rc = iommuAmdIrteRead(pDevIns, uDevId, pDte, pMsiIn->Addr.u64, uMsiInData, enmOp, &Irte);
+    int rc = iommuAmdIrteRead(pDevIns, idDevice, pDte, pMsiIn->Addr.u64, uMsiInData, enmOp, &Irte);
     if (RT_SUCCESS(rc))
     {
         if (Irte.n.u1RemapEnable)
@@ -4465,14 +4465,14 @@ static int iommuAmdIntrRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
                 {
                     iommuAmdIrteRemapMsi(pMsiIn, pMsiOut, &Irte);
 #ifdef IOMMU_WITH_IRTE_CACHE
-                    iommuAmdIrteCacheAdd(pDevIns, uDevId, IOMMU_GET_IRTE_OFF(uMsiInData), &Irte);
+                    iommuAmdIrteCacheAdd(pDevIns, idDevice, IOMMU_GET_IRTE_OFF(uMsiInData), &Irte);
 #endif
                     return VINF_SUCCESS;
                 }
 
                 LogFunc(("Interrupt type (%#x) invalid -> IOPF\n", Irte.n.u3IntrType));
                 EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-                iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
+                iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
                                              true /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
                 iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault,
                                                      kIoPageFaultType_IrteRsvdIntType);
@@ -4481,7 +4481,7 @@ static int iommuAmdIntrRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
 
             LogFunc(("Guest mode not supported -> IOPF\n"));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
+            iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
                                          true /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
             iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRsvdNotZero);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
@@ -4489,7 +4489,7 @@ static int iommuAmdIntrRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
 
         LogFunc(("Remapping disabled -> IOPF\n"));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdIoPageFaultEventInit(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
+        iommuAmdIoPageFaultEventInit(idDevice, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
                                      false /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
         iommuAmdIoPageFaultEventRaiseWithDte(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRemapEn);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
@@ -4504,26 +4504,26 @@ static int iommuAmdIntrRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU instance data.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  * @param   enmOp       The IOMMU operation being performed.
  * @param   pMsiIn      The source MSI.
  * @param   pMsiOut     Where to store the remapped MSI.
  *
  * @thread  Any.
  */
-static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUOP enmOp, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
-    LogFlowFunc(("uDevId=%#x (%#x:%#x:%#x) enmOp=%u\n", uDevId,
-                 ((uDevId >> VBOX_PCI_BUS_SHIFT) & VBOX_PCI_BUS_MASK),
-                 ((uDevId >> VBOX_PCI_DEVFN_DEV_SHIFT) & VBOX_PCI_DEVFN_DEV_MASK), (uDevId & VBOX_PCI_DEVFN_FUN_MASK), enmOp));
+    LogFlowFunc(("idDevice=%#x (%#x:%#x:%#x) enmOp=%u\n", idDevice, ((idDevice >> VBOX_PCI_BUS_SHIFT) & VBOX_PCI_BUS_MASK),
+                 ((idDevice >> VBOX_PCI_DEVFN_DEV_SHIFT) & VBOX_PCI_DEVFN_DEV_MASK), (idDevice & VBOX_PCI_DEVFN_FUN_MASK),
+                 enmOp));
 
     /* Read the device table entry from memory. */
     DTE_T Dte;
-    int rc = iommuAmdDteRead(pDevIns, uDevId, enmOp, &Dte);
+    int rc = iommuAmdDteRead(pDevIns, idDevice, enmOp, &Dte);
     if (RT_SUCCESS(rc))
     {
 #ifdef IOMMU_WITH_IRTE_CACHE
-        iommuAmdDteCacheAdd(pDevIns, uDevId, &Dte, 0 /* fFlags */);
+        iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte, 0 /* fFlags */);
 #endif
         /* If the DTE is not valid, all interrupts are forwarded without remapping. */
         if (Dte.n.u1IntrMapValid)
@@ -4537,7 +4537,7 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
             {
                 LogFunc(("Invalid reserved bits in DTE (u64[2]=%#RX64 u64[3]=%#RX64) -> Illegal DTE\n", fRsvd0, fRsvd1));
                 EVT_ILLEGAL_DTE_T Event;
-                iommuAmdIllegalDteEventInit(uDevId, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
+                iommuAmdIllegalDteEventInit(idDevice, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
                 iommuAmdIllegalDteEventRaise(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
                 return VERR_IOMMU_INTR_REMAP_FAILED;
             }
@@ -4590,12 +4590,12 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                                 Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
                                 NOREF(pThis);
 
-                                return iommuAmdIntrRemap(pDevIns, uDevId, &Dte, enmOp, pMsiIn, pMsiOut);
+                                return iommuAmdIntrRemap(pDevIns, idDevice, &Dte, enmOp, pMsiIn, pMsiOut);
                             }
 
                             LogFunc(("Invalid interrupt table length %#x -> Illegal DTE\n", uIntrTabLen));
                             EVT_ILLEGAL_DTE_T Event;
-                            iommuAmdIllegalDteEventInit(uDevId, pMsiIn->Addr.u64, false /* fRsvdNotZero */, enmOp, &Event);
+                            iommuAmdIllegalDteEventInit(idDevice, pMsiIn->Addr.u64, false /* fRsvdNotZero */, enmOp, &Event);
                             iommuAmdIllegalDteEventRaise(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntTabLen);
                             return VERR_IOMMU_INTR_REMAP_FAILED;
                         }
@@ -4617,7 +4617,7 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                         Assert(uIntrCtrl == IOMMU_INTR_CTRL_RSVD); /* Paranoia. */
                         LogFunc(("IntCtl mode invalid %#x -> Illegal DTE\n", uIntrCtrl));
                         EVT_ILLEGAL_DTE_T Event;
-                        iommuAmdIllegalDteEventInit(uDevId, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
+                        iommuAmdIllegalDteEventInit(idDevice, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
                         iommuAmdIllegalDteEventRaise(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntCtl);
                         return VERR_IOMMU_INTR_REMAP_FAILED;
                     }
@@ -4670,7 +4670,7 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
         }
     }
 
-    LogFunc(("Failed to read device table entry. uDevId=%#x rc=%Rrc\n", uDevId, rc));
+    LogFunc(("Failed to read device table entry. idDevice=%#x rc=%Rrc\n", idDevice, rc));
     return VERR_IOMMU_INTR_REMAP_FAILED;
 }
 
@@ -4680,11 +4680,11 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   uDevId      The device ID (bus, device, function).
+ * @param   idDevice    The device ID (bus, device, function).
  * @param   pMsiIn      The source MSI.
  * @param   pMsiOut     Where to store the remapped MSI.
  */
-static DECLCALLBACK(int) iommuAmdMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+static DECLCALLBACK(int) iommuAmdMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     /* Validate. */
     Assert(pDevIns);
@@ -4702,7 +4702,7 @@ static DECLCALLBACK(int) iommuAmdMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, P
         int rc;
 #ifdef IOMMU_WITH_IRTE_CACHE
         STAM_PROFILE_ADV_START(&pThis->StatProfIrteCacheLookup, a);
-        rc = iommuAmdIrteCacheLookup(pDevIns, uDevId, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
+        rc = iommuAmdIrteCacheLookup(pDevIns, idDevice, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
         STAM_PROFILE_ADV_STOP(&pThis->StatProfIrteCacheLookup, a);
         if (RT_SUCCESS(rc))
         {
@@ -4713,7 +4713,7 @@ static DECLCALLBACK(int) iommuAmdMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, P
 #endif
 
         STAM_PROFILE_ADV_START(&pThis->StatProfIrteLookup, a);
-        rc = iommuAmdIntrTableLookup(pDevIns, uDevId, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
+        rc = iommuAmdIntrTableLookup(pDevIns, idDevice, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
         STAM_PROFILE_ADV_STOP(&pThis->StatProfIrteLookup, a);
         return rc;
     }
@@ -4858,7 +4858,7 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
             {
 #ifdef IOMMU_WITH_IOTLBE_CACHE
                 uint64_t const uIova = RT_MAKE_U64(pCmdInvPages->n.u20AddrLo << X86_PAGE_4K_SHIFT, pCmdInvPages->n.u32AddrHi);
-                uint16_t const uDomainId = pCmdInvPages->n.u16DomainId;
+                uint16_t const idDomain  = pCmdInvPages->n.u16DomainId;
                 bool const     fFlushPde = pCmdInvPages->n.u1PageDirEntries;
                 uint8_t cShift;
                 if (!pCmdInvPages->n.u1Size)
@@ -4892,8 +4892,8 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                     || cShift == 22 /* 4M  */ || cShift == 32 /* 4G  */)
                 {
                     /* Remove the range of I/O virtual addresses requesting to be invalidated. */
-                    size_t const cbAccess = RT_BIT_64(cShift);
-                    iommuAmdIotlbRemoveRange(pDevIns, uDomainId, uIova, cbAccess);
+                    size_t const cbIova = RT_BIT_64(cShift);
+                    iommuAmdIotlbRemoveRange(pDevIns, idDomain, uIova, cbIova);
                 }
                 else
                 {
@@ -4901,7 +4901,7 @@ static int iommuAmdR3CmdProcess(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                      * The guest provided size is invalid or exceeds the largest, meaningful page size.
                      * In such situations we must remove all ranges for the specified domain ID.
                      */
-                    iommuAmdIotlbRemoveDomainId(pDevIns, uDomainId);
+                    iommuAmdIotlbRemoveDomainId(pDevIns, idDomain);
                 }
 #endif
                 return VINF_SUCCESS;
@@ -5931,19 +5931,19 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDte(PPDMDEVINS pDevIns, PCDBGFINFOHLP
 {
     if (pszArgs)
     {
-        uint16_t uDevId = 0;
-        int rc = RTStrToUInt16Full(pszArgs, 0 /* uBase */, &uDevId);
+        uint16_t idDevice = 0;
+        int rc = RTStrToUInt16Full(pszArgs, 0 /* uBase */, &idDevice);
         if (RT_SUCCESS(rc))
         {
             DTE_T Dte;
-            rc = iommuAmdDteRead(pDevIns, uDevId, IOMMUOP_TRANSLATE_REQ,  &Dte);
+            rc = iommuAmdDteRead(pDevIns, idDevice, IOMMUOP_TRANSLATE_REQ,  &Dte);
             if (RT_SUCCESS(rc))
             {
-                pHlp->pfnPrintf(pHlp, "DTE for device %#x\n", uDevId);
+                pHlp->pfnPrintf(pHlp, "DTE for device %#x\n", idDevice);
                 iommuAmdR3DbgInfoDteWorker(pHlp, &Dte, " ");
                 return;
             }
-            pHlp->pfnPrintf(pHlp, "Failed to read DTE for device ID %u (%#x). rc=%Rrc\n", uDevId, uDevId, rc);
+            pHlp->pfnPrintf(pHlp, "Failed to read DTE for device ID %u (%#x). rc=%Rrc\n", idDevice, idDevice, rc);
         }
         else
             pHlp->pfnPrintf(pHlp, "Failed to parse a valid 16-bit device ID. rc=%Rrc\n", rc);
@@ -5967,17 +5967,17 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDteCache(PPDMDEVINS pDevIns, PCDBGFIN
     pHlp->pfnPrintf(pHlp, "DTE Cache: Capacity=%u entries\n", cDteCache);
     for (uint16_t i = 0; i < cDteCache; i++)
     {
-        uint16_t const uDeviceId = pThis->aDeviceIds[i];
-        if (uDeviceId)
+        uint16_t const idDevice = pThis->aDeviceIds[i];
+        if (idDevice)
         {
-            pHlp->pfnPrintf(pHlp, " Entry[%u]: Device=%#x (BDF %02x:%02x.%d)\n", i, uDeviceId,
-                            (uDeviceId >> VBOX_PCI_BUS_SHIFT) & VBOX_PCI_BUS_MASK,
-                            (uDeviceId >> VBOX_PCI_DEVFN_DEV_SHIFT) & VBOX_PCI_DEVFN_DEV_MASK,
-                            uDeviceId & VBOX_PCI_DEVFN_FUN_MASK);
+            pHlp->pfnPrintf(pHlp, " Entry[%u]: Device=%#x (BDF %02x:%02x.%d)\n", i, idDevice,
+                            (idDevice >> VBOX_PCI_BUS_SHIFT) & VBOX_PCI_BUS_MASK,
+                            (idDevice >> VBOX_PCI_DEVFN_DEV_SHIFT) & VBOX_PCI_DEVFN_DEV_MASK,
+                            idDevice & VBOX_PCI_DEVFN_FUN_MASK);
 
             PCDTECACHE pDteCache = &pThis->aDteCache[i];
             pHlp->pfnPrintf(pHlp, "  Flags            = %#x\n", pDteCache->fFlags);
-            pHlp->pfnPrintf(pHlp, "  Domain Id        = %u\n",  pDteCache->uDomainId);
+            pHlp->pfnPrintf(pHlp, "  Domain Id        = %u\n",  pDteCache->idDomain);
             pHlp->pfnPrintf(pHlp, "\n");
         }
     }
@@ -5994,17 +5994,17 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoIotlb(PPDMDEVINS pDevIns, PCDBGFINFOH
 {
     if (pszArgs)
     {
-        uint16_t uDomainId = 0;
-        int rc = RTStrToUInt16Full(pszArgs, 0 /* uBase */, &uDomainId);
+        uint16_t idDomain = 0;
+        int rc = RTStrToUInt16Full(pszArgs, 0 /* uBase */, &idDomain);
         if (RT_SUCCESS(rc))
         {
-            pHlp->pfnPrintf(pHlp, "IOTLBEs for domain %u (%#x):\n", uDomainId, uDomainId);
+            pHlp->pfnPrintf(pHlp, "IOTLBEs for domain %u (%#x):\n", idDomain, idDomain);
             PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
             PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
             IOTLBEINFOARG Args;
-            Args.pIommuR3  = pThisR3;
-            Args.pHlp      = pHlp;
-            Args.uDomainId = uDomainId;
+            Args.pIommuR3 = pThisR3;
+            Args.pHlp     = pHlp;
+            Args.idDomain = idDomain;
 
             IOMMU_LOCK_CACHE_NORET(pDevIns, pThis);
             RTAvlU64DoWithAll(&pThisR3->TreeIotlbe, true /* fFromLeft */, iommuAmdR3IotlbEntryInfo, &Args);
@@ -6055,13 +6055,13 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoIrteCache(PPDMDEVINS pDevIns, PCDBGFI
         uint32_t const uKey = pIrteCache->uKey;
         if (uKey != IOMMU_IRTE_CACHE_KEY_NIL)
         {
-            uint16_t const uDeviceId = IOMMU_IRTE_CACHE_KEY_GET_DEVICE_ID(uKey);
-            uint16_t const offIrte   = IOMMU_IRTE_CACHE_KEY_GET_OFF(uKey);
+            uint16_t const idDevice = IOMMU_IRTE_CACHE_KEY_GET_DEVICE_ID(uKey);
+            uint16_t const offIrte  = IOMMU_IRTE_CACHE_KEY_GET_OFF(uKey);
             pHlp->pfnPrintf(pHlp, " Entry[%u]: Offset=%#x Device=%#x (BDF %02x:%02x.%d)\n",
-                            idxIrte, offIrte, uDeviceId,
-                            (uDeviceId >> VBOX_PCI_BUS_SHIFT) & VBOX_PCI_BUS_MASK,
-                            (uDeviceId >> VBOX_PCI_DEVFN_DEV_SHIFT) & VBOX_PCI_DEVFN_DEV_MASK,
-                            uDeviceId & VBOX_PCI_DEVFN_FUN_MASK);
+                            idxIrte, offIrte, idDevice,
+                            (idDevice >> VBOX_PCI_BUS_SHIFT) & VBOX_PCI_BUS_MASK,
+                            (idDevice >> VBOX_PCI_DEVFN_DEV_SHIFT) & VBOX_PCI_DEVFN_DEV_MASK,
+                            idDevice & VBOX_PCI_DEVFN_FUN_MASK);
 
             PCIRTE_T pIrte = &pIrteCache->Irte;
             pHlp->pfnPrintf(pHlp, "  Remap Enable     = %RTbool\n", pIrte->n.u1RemapEnable);
