@@ -296,8 +296,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
          *
          * Note: This also involves dealing with surround setups the guest might has set up for us.
          */
-        LogRel2(("HDA: More than stereo (2) channels are not supported (%RU8 requested), "
-                 "falling back to stereo channels for stream #%RU8\n", Props.cChannels, uSD));
+        LogRel(("HDA: Warning: More than stereo (2) channels are not supported (%RU8 requested), "
+                "falling back to stereo channels for stream #%RU8\n", Props.cChannels, uSD));
         Props.cChannels = 2;
         Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Props.cbSample, Props.cChannels);
     }
