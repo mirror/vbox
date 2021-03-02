@@ -34,7 +34,7 @@ void captureGSO(void *pvUser, PCPDMNETWORKGSO pcGso, uint32_t cbFrame);
 void checkCaptureLimit();
 
 IntNetIf g_net;
-RTFILE g_hPcapFile = NIL_RTFILE;
+PRTSTREAM g_pStrmOut;
 uint64_t g_u64Count;
 size_t g_cbSnapLen;
 
@@ -152,14 +152,20 @@ main(int argc, char *argv[])
                               "missing --write option");
 
     if (g_cbSnapLen == 0)
-        g_cbSnapLen = 262144;   /* traditional limit is 256K */
+        g_cbSnapLen = 0xffff;
 
 
-    rc = RTFileOpen(&g_hPcapFile, strPcapFile.c_str(),
-                    RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                              "%s: %Rrf", strPcapFile.c_str(), rc);
+    if (strPcapFile == "-")
+    {
+        g_pStrmOut = g_pStdOut;
+    }
+    else
+    {
+        rc = RTStrmOpen(strPcapFile.c_str(), "wb", &g_pStrmOut);
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                  "%s: %Rrf", strPcapFile.c_str(), rc);
+    }
 
     g_net.setInputCallback(captureFrame, NULL);
     g_net.setInputGSOCallback(captureGSO, NULL);
@@ -180,13 +186,13 @@ main(int argc, char *argv[])
                               "%s: failed to set promiscuous mode: %Rrf",
                               strNetworkName.c_str(), rc);
 
-    rc = PcapFileHdr(g_hPcapFile, RTTimeNanoTS());
+    rc = PcapStreamHdr(g_pStrmOut, RTTimeNanoTS());
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE,
                               "write: %Rrf", rc);
 
     g_net.ifPump();
-    RTFileClose(g_hPcapFile);
+    RTStrmClose(g_pStrmOut);
 
     return RTEXITCODE_SUCCESS;
 }
@@ -210,8 +216,8 @@ captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame)
 
     RT_NOREF(pvUser);
 
-    rc = PcapFileFrame(g_hPcapFile, RTTimeNanoTS(),
-                       pvFrame, cbFrame, g_cbSnapLen);
+    rc = PcapStreamFrame(g_pStrmOut, RTTimeNanoTS(),
+                         pvFrame, cbFrame, g_cbSnapLen);
     if (RT_FAILURE(rc)) {
         RTMsgError("write: %Rrf", rc);
         g_net.ifAbort();
