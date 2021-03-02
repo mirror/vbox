@@ -351,10 +351,10 @@ DECLHIDDEN(int) dbgcFlowTraceModAdd(PDBGC pDbgc, DBGFFLOWTRACEMOD hFlowTraceMod,
  * @param   pDbgc       The DBGC instance.
  * @param   iTraceFlowMod The trace flow module identifier.
  */
-DECLHIDDEN(int) dbgcFlowTraceModDelete(PDBGC pDbgc, uint32_t iFlowTraceMod)
+DECLHIDDEN(int) dbgcFlowTraceModDelete(PDBGC pDbgc, uint32_t iTraceFlowMod)
 {
     int rc = VINF_SUCCESS;
-    PDBGCTFLOW pTraceFlow = dbgcFlowTraceModGet(pDbgc, iFlowTraceMod);
+    PDBGCTFLOW pTraceFlow = dbgcFlowTraceModGet(pDbgc, iTraceFlowMod);
     if (pTraceFlow)
     {
         RTListNodeRemove(&pTraceFlow->NdTraceFlow);
