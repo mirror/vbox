@@ -29,9 +29,14 @@
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
 #include "UIMediumSelector.h"
+#include "UIMediumSizeEditor.h"
 #include "UIMessageCenter.h"
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVMPageBasic4.h"
+
+/* COM includes: */
+#include "CGuestOSType.h"
+#include "CSystemProperties.h"
 
 UIWizardNewVMPage4::UIWizardNewVMPage4()
     : m_fRecommendedNoDisk(false)
@@ -178,12 +183,49 @@ QWidget *UIWizardNewVMPage4::createDiskWidgets()
 
 UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
     : m_pLabel(0)
+    , m_fUserSetSize(false)
+
 {
     prepare();
     qRegisterMetaType<CMedium>();
     qRegisterMetaType<SelectedDiskSource>();
     registerField("virtualDisk", this, "virtualDisk");
     registerField("selectedDiskSource", this, "selectedDiskSource");
+
+    registerField("mediumFormat", this, "mediumFormat");
+    registerField("mediumVariant" /* KMediumVariant */, this, "mediumVariant");
+    registerField("mediumPath", this, "mediumPath");
+    registerField("mediumSize", this, "mediumSize");
+
+    /* We do not have any UI elements for HDD format selection since we default to VDI in case of guided wizard mode: */
+    bool fFoundVDI = false;
+    CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
+    const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
+    foreach (const CMediumFormat &format, formats)
+    {
+        if (format.GetName() == "VDI")
+        {
+            m_mediumFormat = format;
+            fFoundVDI = true;
+        }
+    }
+    if (!fFoundVDI)
+        AssertMsgFailed(("No medium format corresponding to VDI could be found!"));
+
+    m_strDefaultExtension =  defaultExtension(m_mediumFormat);
+
+    /* Since the medium format is static we can decide widget visibility here: */
+    setWidgetVisibility(m_mediumFormat);
+}
+
+CMediumFormat UIWizardNewVMPageBasic4::mediumFormat() const
+{
+    return m_mediumFormat;
+}
+
+QString UIWizardNewVMPageBasic4::mediumPath() const
+{
+    return absoluteFilePath(toFileName(m_strDefaultName, m_strDefaultExtension), m_strDefaultPath);
 }
 
 int UIWizardNewVMPageBasic4::nextId() const
@@ -203,6 +245,16 @@ void UIWizardNewVMPageBasic4::prepare()
 
     pMainLayout->addStretch();
     setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
+
+
+    pMainLayout->addWidget(createMediumVariantWidgets(true));
+
+    m_pSizeLabel = new QIRichTextLabel;
+    m_pSizeEditor = new UIMediumSizeEditor;
+
+    pMainLayout->addWidget(m_pSizeLabel);
+    pMainLayout->addWidget(m_pSizeEditor);
+
     createConnections();
 }
 
@@ -214,6 +266,10 @@ void UIWizardNewVMPageBasic4::createConnections()
             this, &UIWizardNewVMPageBasic4::sltVirtualSelectedDiskSourceChanged);
     connect(m_pDiskSelectionButton, &QIToolButton::clicked,
             this, &UIWizardNewVMPageBasic4::sltGetWithFileOpenDialog);
+    connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+            this, &UIWizardNewVMPageBasic4::completeChanged);
+    connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+            this, &UIWizardNewVMPageBasic4::sltHandleSizeEditorChange);
 }
 
 void UIWizardNewVMPageBasic4::sltHandleSelectedDiskSourceChange()
@@ -258,7 +314,10 @@ void UIWizardNewVMPageBasic4::retranslateUi()
                                             "The recommended size of the hard disk is <b>%1</b>.</p>")
                           .arg(strRecommendedHDD));
 
-    retranslateWidgets();
+    UIWizardNewVMPage4::retranslateWidgets();
+    UIWizardNewVDPage1::retranslateWidgets();
+    UIWizardNewVDPage2::retranslateWidgets();
+    UIWizardNewVDPage3::retranslateWidgets();
 }
 
 void UIWizardNewVMPageBasic4::initializePage()
@@ -290,6 +349,18 @@ void UIWizardNewVMPageBasic4::initializePage()
      }
     if (m_pDiskSelector)
         m_pDiskSelector->setCurrentIndex(0);
+
+    /* We set the medium name and path according to machine name/path and do let user change these in the guided mode: */
+    QString strDefaultName = fieldImp("machineBaseName").toString();
+    m_strDefaultName = strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName;
+    m_strDefaultPath = fieldImp("machineFolder").toString();
+    if (m_pSizeEditor && !m_fUserSetSize)
+    {
+        m_pSizeEditor->blockSignals(true);
+        setMediumSize(fieldImp("type").value<CGuestOSType>().GetRecommendedHDD());
+        m_pSizeEditor->blockSignals(false);
+    }
+
 }
 
 void UIWizardNewVMPageBasic4::cleanupPage()
@@ -318,4 +389,9 @@ bool UIWizardNewVMPageBasic4::validatePage()
             fResult = msgCenter().confirmHardDisklessMachine(thisImp());
     }
     return fResult;
+}
+
+void UIWizardNewVMPageBasic4::sltHandleSizeEditorChange()
+{
+    m_fUserSetSize = true;
 }

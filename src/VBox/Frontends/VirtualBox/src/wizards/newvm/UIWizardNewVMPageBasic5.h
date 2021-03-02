@@ -44,7 +44,6 @@ class UIWizardNewVMPageBasic5 : public UIWizardPage,
                                 public UIWizardNewVDPage1,
                                 public UIWizardNewVDPage2,
                                 public UIWizardNewVDPage3
-
 {
 
     Q_OBJECT;

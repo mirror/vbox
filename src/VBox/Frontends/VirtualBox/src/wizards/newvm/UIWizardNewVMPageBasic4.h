@@ -26,6 +26,9 @@
 
 /* GUI includes: */
 #include "UIWizardPage.h"
+#include "UIWizardNewVDPageBasic1.h"
+#include "UIWizardNewVDPageBasic2.h"
+#include "UIWizardNewVDPageBasic3.h"
 #include "UIWizardNewVM.h"
 
 /* COM includes: */
@@ -84,17 +87,28 @@ protected:
     SelectedDiskSource m_enmSelectedDiskSource;
 };
 
-class UIWizardNewVMPageBasic4 : public UIWizardPage, public UIWizardNewVMPage4
+class UIWizardNewVMPageBasic4 : public UIWizardPage,
+                                public UIWizardNewVMPage4,
+                                public UIWizardNewVDPage1,
+                                public UIWizardNewVDPage2,
+                                public UIWizardNewVDPage3
 {
     Q_OBJECT;
     Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
     Q_PROPERTY(SelectedDiskSource selectedDiskSource READ selectedDiskSource WRITE setSelectedDiskSource);
+    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat);
+    Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
+    Q_PROPERTY(QString mediumPath READ mediumPath);
+    Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
 
 public:
 
-    /** Constructor. */
     UIWizardNewVMPageBasic4();
+    /** For the guide wizard mode medium path, name and extention is static and we have
+      * no UI element for this. thus override. */
+    virtual QString mediumPath() const /*override */;
     virtual int nextId() const /* override */;
+    CMediumFormat mediumFormat() const;
 
 protected:
 
@@ -110,6 +124,7 @@ private slots:
     void sltHandleSelectedDiskSourceChange();
     void sltVirtualSelectedDiskSourceChanged();
     void sltGetWithFileOpenDialog();
+    void sltHandleSizeEditorChange();
 
 private:
 
@@ -124,6 +139,11 @@ private:
     bool validatePage();
 
     QIRichTextLabel *m_pLabel;
+
+    /** This is set to true when user manually set the size. */
+    bool m_fUserSetSize;
+    /** For guided new vm wizard VDI is the only format. Thus we have no UI item for it. */
+    CMediumFormat m_mediumFormat;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic4_h */
