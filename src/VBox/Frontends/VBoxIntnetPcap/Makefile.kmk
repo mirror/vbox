@@ -1,0 +1,37 @@
+# $Id$
+## @file
+# Sub-makefile for the VBoxIntnetPcap
+
+#
+# Copyright (C) 2021 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+PROGRAMS += VBoxIntnetPcap
+
+VBoxIntnetPcap_TEMPLATE = VBOXR3EXE
+
+VBoxIntnetPcap_SOURCES = #
+VBoxIntnetPcap_SOURCES += VBoxIntnetPcap.cpp
+VBoxIntnetPcap_SOURCES += ../../NetworkServices/NetLib/IntNetIf.cpp
+VBoxIntnetPcap_SOURCES += ../../Devices/Network/Pcap.cpp
+
+VBoxIntnetPcap_INCS += ../../NetworkServices/NetLib
+VBoxIntnetPcap_INCS += ../../Devices/Network
+
+VBoxIntnetPcap_LDFLAGS.win = /SUBSYSTEM:windows
+
+VBoxIntnetPcap_LIBS += $(LIB_RUNTIME)
+# VBoxIntnetPcap_LIBS.solaris += socket nsl # XXX: when we add rpcapd support
+
+include $(FILE_KBUILD_SUB_FOOTER)
