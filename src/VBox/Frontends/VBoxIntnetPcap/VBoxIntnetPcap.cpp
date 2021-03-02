@@ -35,6 +35,7 @@ void checkCaptureLimit();
 
 IntNetIf g_net;
 PRTSTREAM g_pStrmOut;
+uint64_t g_StartNanoTS;
 bool g_fPacketBuffered;
 uint64_t g_u64Count;
 size_t g_cbSnapLen;
@@ -192,7 +193,8 @@ main(int argc, char *argv[])
                               "%s: failed to set promiscuous mode: %Rrf",
                               strNetworkName.c_str(), rc);
 
-    rc = PcapStreamHdr(g_pStrmOut, RTTimeNanoTS());
+    g_StartNanoTS = RTTimeNanoTS();
+    rc = PcapStreamHdr(g_pStrmOut, g_StartNanoTS);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE,
                               "write: %Rrf", rc);
@@ -224,7 +226,7 @@ captureFrame(void *pvUser, void *pvFrame, uint32_t cbFrame)
 
     RT_NOREF(pvUser);
 
-    rc = PcapStreamFrame(g_pStrmOut, RTTimeNanoTS(),
+    rc = PcapStreamFrame(g_pStrmOut, g_StartNanoTS,
                          pvFrame, cbFrame, g_cbSnapLen);
     if (RT_FAILURE(rc)) {
         RTMsgError("write: %Rrf", rc);
