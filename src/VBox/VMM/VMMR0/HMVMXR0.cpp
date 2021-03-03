@@ -10402,6 +10402,7 @@ static void hmR0VmxMergeMsrBitmapNested(PCVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfoN
         Assert(pu64MsrBitmapNstGst);
         Assert(pu64MsrBitmapGst);
 
+        /** @todo Detect and use EVEX.POR? */
         uint32_t const cFrags = cbMsrBitmap / sizeof(uint64_t);
         for (uint32_t i = 0; i < cFrags; i++)
             pu64MsrBitmap[i] = pu64MsrBitmapNstGst[i] | pu64MsrBitmapGst[i];

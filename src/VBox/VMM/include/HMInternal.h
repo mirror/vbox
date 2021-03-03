@@ -1484,6 +1484,8 @@ AssertCompileMemberAlignment(HMR0PERVCPU, vmx.RestoreHost,   8);
 
 
 /** @name HM_WSF_XXX - @bugref{9453}, @bugref{9087}
+ *  @note If you change these values don't forget to update the assembly
+ *       defines as well!
  * @{ */
 /** Touch IA32_PRED_CMD.IBPB on VM exit.   */
 #define HM_WSF_IBPB_EXIT            RT_BIT_32(0)
