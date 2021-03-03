@@ -89,7 +89,7 @@ DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PPDMAUDIOMIXBUF pMixBuf);
 
 
 /** Logarithmic/exponential volume conversion table. */
-static uint32_t s_aVolumeConv[256] = {
+static uint32_t const s_aVolumeConv[256] = {
         1,     1,     1,     1,     1,     1,     1,     1, /*   7 */
         1,     2,     2,     2,     2,     2,     2,     2, /*  15 */
         2,     2,     2,     2,     2,     3,     3,     3, /*  23 */
@@ -444,7 +444,7 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
  */
 #define AUDMIXBUF_CONVERT(_aName, _aType, _aMin, _aMax, _aSigned, _aShift) \
     /* Clips a specific output value to a single sample value. */ \
-    DECLCALLBACK(int64_t) audioMixBufClipFrom##_aName(_aType aVal) \
+    DECLINLINE(int64_t) audioMixBufClipFrom##_aName(_aType aVal) \
     { \
         /* left shifting of signed values is not defined, therefore the intermediate uint64_t cast */ \
         if (_aSigned) \
@@ -453,16 +453,16 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
     } \
     \
     /* Clips a single sample value to a specific output value. */ \
-    DECLCALLBACK(_aType) audioMixBufClipTo##_aName(int64_t iVal) \
+    DECLINLINE(_aType) audioMixBufClipTo##_aName(int64_t iVal) \
     { \
-        if (iVal >= 0x7fffffff) \
-            return _aMax; \
-        if (iVal < -INT64_C(0x80000000)) \
-            return _aMin; \
-        \
-        if (_aSigned) \
-            return (_aType) (iVal >> (32 - _aShift)); \
-        return ((_aType) ((iVal >> (32 - _aShift)) + ((_aMax >> 1) + 1))); \
+        /*if (iVal >= 0x7fffffff) return _aMax; if (iVal < -INT64_C(0x80000000)) return _aMin;*/ \
+        if (!(((uint64_t)iVal + UINT64_C(0x80000000)) & UINT64_C(0xffffffff00000000))) \
+        { \
+            if (_aSigned) \
+                return (_aType)  (iVal >> (32 - _aShift)); \
+            return     (_aType) ((iVal >> (32 - _aShift)) + ((_aMax >> 1) + 1)); \
+        } \
+        return iVal >= 0 ? _aMax : _aMin; \
     } \
     \
     DECLCALLBACK(uint32_t) audioMixBufConvFrom##_aName##Stereo(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, \
@@ -504,16 +504,14 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
     { \
         PCPDMAUDIOFRAME pSrc = paSrc; \
         _aType *pDst = (_aType *)pvDst; \
-        _aType l, r; \
         uint32_t cFrames = pOpts->cFrames; \
         while (cFrames--) \
         { \
             AUDMIXBUF_MACRO_LOG(("%p: l=%RI64, r=%RI64\n", pSrc, pSrc->i64LSample, pSrc->i64RSample)); \
-            l = audioMixBufClipTo##_aName(pSrc->i64LSample); \
-            r = audioMixBufClipTo##_aName(pSrc->i64RSample); \
-            AUDMIXBUF_MACRO_LOG(("\t-> l=%RI16, r=%RI16\n", l, r)); \
-            *pDst++ = l; \
-            *pDst++ = r; \
+            pDst[0] = audioMixBufClipTo##_aName(pSrc->i64LSample); \
+            pDst[1] = audioMixBufClipTo##_aName(pSrc->i64RSample); \
+            AUDMIXBUF_MACRO_LOG(("\t-> l=%RI16, r=%RI16\n", pDst[0], pDst[1])); \
+            pDst += 2; \
             pSrc++; \
         } \
     } \
