@@ -7164,8 +7164,8 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSI
 
         /* Make sure the returned values have sane upper and lower boundaries. */
         uint64_t const u64CpuHz = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
-        cTicksToDeadline   = RT_MIN(cTicksToDeadline, u64CpuHz / 64);      /* 1/64th of a second */ /** @todo r=bird: Once real+virtual timers move to separate thread, we can raise the upper limit (16ms isn't much). ASSUMES working poke cpu function. */
-        cTicksToDeadline   = RT_MAX(cTicksToDeadline, u64CpuHz / 2048);    /* 1/2048th of a second */
+        cTicksToDeadline   = RT_MIN(cTicksToDeadline, u64CpuHz / 64);      /* 1/64th of a second,  15.625ms. */ /** @todo r=bird: Once real+virtual timers move to separate thread, we can raise the upper limit (16ms isn't much). ASSUMES working poke cpu function. */
+        cTicksToDeadline   = RT_MAX(cTicksToDeadline, u64CpuHz / 32678);   /* 1/32768th of a second,  ~30us. */
         cTicksToDeadline >>= pVM->hm.s.vmx.cPreemptTimerShift;
 
         /** @todo r=ramshankar: We need to find a way to integrate nested-guest
