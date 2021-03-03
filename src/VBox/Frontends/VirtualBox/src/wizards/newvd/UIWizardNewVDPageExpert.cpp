@@ -219,8 +219,6 @@ void UIWizardNewVDPageExpert::retranslateUi()
     }
     if (m_pVariantGroupBox)
         m_pVariantGroupBox->setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
-    if (m_pFixedCheckBox)
-        m_pFixedCheckBox->setText(UIWizardNewVD::tr("&Fixed size"));
     if (m_pSplitBox)
         m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));
 }
