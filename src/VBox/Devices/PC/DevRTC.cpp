@@ -253,16 +253,19 @@ static void rtc_timer_update(PPDMDEVINS pDevIns, PRTCSTATE pThis, int64_t curren
         PDMDevHlpTimerSet(pDevIns, pThis->hPeriodicTimer, pThis->next_periodic_time);
 
 #ifdef IN_RING3
-        if (RT_UNLIKELY(period != pThis->CurLogPeriod))
-#else
-        if (RT_UNLIKELY(period != pThis->CurHintPeriod))
-#endif
+        if (RT_LIKELY(period == pThis->CurLogPeriod))
+        { /* likely */ }
+        else
         {
-#ifdef IN_RING3
             if (pThis->cRelLogEntries++ < 64)
                 LogRel(("RTC: period=%#x (%d) %u Hz\n", period, period, _32K / period));
-            pThis->CurLogPeriod  = period;
+            pThis->CurLogPeriod = period;
+        }
 #endif
+        if (RT_LIKELY(period == pThis->CurHintPeriod))
+        { /* likely */ }
+        else
+        {
             pThis->CurHintPeriod = period;
             PDMDevHlpTimerSetFrequencyHint(pDevIns, pThis->hPeriodicTimer, _32K / period);
         }
@@ -274,6 +277,8 @@ static void rtc_timer_update(PPDMDEVINS pDevIns, PRTCSTATE pThis, int64_t curren
             LogRel(("RTC: Stopped the periodic timer\n"));
 #endif
         PDMDevHlpTimerStop(pDevIns, pThis->hPeriodicTimer);
+        pThis->CurHintPeriod = 0;
+        pThis->CurLogPeriod = 0;
     }
     RT_NOREF(pDevIns);
 }
