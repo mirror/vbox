@@ -4262,6 +4262,8 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransi
         pbMsrBitmap = (uint8_t *)pVCpu->hmr0.s.svm.pvMsrBitmap;
     else
     {
+        /** @todo We could perhaps optimize this by monitoring if the guest modifies its
+         *        MSRPM and only perform this if it changed? */
         hmR0SvmMergeMsrpmNested(pHostCpu, pVCpu);
 
         /* Update the nested-guest VMCB with the newly merged MSRPM (clean bits updated below). */
