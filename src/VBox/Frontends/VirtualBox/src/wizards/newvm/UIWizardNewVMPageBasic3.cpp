@@ -66,7 +66,7 @@ void UIWizardNewVMPage3::retranslateWidgets()
 {
     if (m_pEFICheckBox)
     {
-        m_pEFICheckBox->setText(UIWizardNewVM::tr("Enable EFI (special OSes only)"));
+        m_pEFICheckBox->setText(UIWizardNewVM::tr("&Enable EFI (special OSes only)"));
         m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the guest will support the "
                                                        "Extended Firmware Interface (EFI), which is required to boot certain "
                                                        "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</p>"));
@@ -120,7 +120,7 @@ void UIWizardNewVMPageBasic3::retranslateUi()
 
     if (m_pLabel)
         m_pLabel->setText(UIWizardNewVM::tr("<p>You can modify virtual machine's hardware by changing amount of RAM and "
-                                            "virtual CPU count.</p>"));
+                                            "virtual CPU count. Enabling EFI is also possible.</p>"));
 
     retranslateWidgets();
 }

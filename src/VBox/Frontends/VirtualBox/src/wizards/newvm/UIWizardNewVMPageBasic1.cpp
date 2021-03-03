@@ -448,6 +448,7 @@ void UIWizardNewVMPageBasic1::prepare()
         m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
         m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_pISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
+        m_pISOPathSelectorLabel->setBuddy(m_pISOFilePathSelector);
         pISOSelectorLayout->addWidget(m_pISOFilePathSelector);
     }
 
@@ -533,7 +534,7 @@ void UIWizardNewVMPageBasic1::retranslateUi()
                                              "The name you choose will be used throughout VirtualBox "
                                              "to identify this machine."));
     if (m_pISOPathSelectorLabel)
-        m_pISOPathSelectorLabel->setText(UIWizardNewVM::tr("Installation ISO:"));
+        m_pISOPathSelectorLabel->setText(UIWizardNewVM::tr("&Installation ISO:"));
 
     if (m_pNameAndSystemEditor && m_pISOPathSelectorLabel)
         m_pNameAndSystemEditor->setMinimumLayoutIndent(m_pISOPathSelectorLabel->width());

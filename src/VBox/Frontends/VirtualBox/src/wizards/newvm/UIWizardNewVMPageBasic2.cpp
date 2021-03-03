@@ -150,6 +150,8 @@ QWidget *UIWizardNewVMPage2::createGAInstallWidgets()
         m_pGAISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
         m_pGAISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
         pGAInstallationISOContainer->addWidget(m_pGAISOFilePathSelector, 1, 2, 1, 6);
+        if (m_pGAISOPathLabel)
+            m_pGAISOPathLabel->setBuddy(m_pGAISOFilePathSelector);
     }
 
     return m_pGAInstallationISOContainer;
@@ -178,20 +180,20 @@ void UIWizardNewVMPage2::markWidgets() const
 void UIWizardNewVMPage2::retranslateWidgets()
 {
     if (m_pHostnameLabel)
-        m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
+        m_pHostnameLabel->setText(UIWizardNewVM::tr("&Hostname:"));
 
     if (m_pGAISOPathLabel)
-        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA Installation ISO:"));
+        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("&GA Installation ISO:"));
     if (m_pGAISOFilePathSelector)
         m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
     if (m_pGAInstallCheckBox)
     {
-        m_pGAInstallCheckBox->setText(UIWizardNewVM::tr("Install Guest Additions"));
+        m_pGAInstallCheckBox->setText(UIWizardNewVM::tr("&Install Guest Additions"));
         m_pGAInstallCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked the guest additions will be installed "
                                                            "after the OS install.</p>"));
     }
     if (m_pProductKeyLabel)
-        m_pProductKeyLabel->setText(UIWizardNewVM::tr("Product Key:"));
+        m_pProductKeyLabel->setText(UIWizardNewVM::tr("&Product Key:"));
     if (m_pUserNameContainer)
         m_pUserNameContainer->setTitle(UIWizardNewVM::tr("User name and password"));
     if (m_pAdditionalOptionsContainer)
@@ -200,9 +202,9 @@ void UIWizardNewVMPage2::retranslateWidgets()
         m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("Guest Additions"));
     if (m_pStartHeadlessCheckBox)
     {
-        m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("Start VM Headless"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the unattended install will start the virtual "
-                                                               "machine in headless mode after the guest OS install.</p>"));
+        m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("&Start VM Headless"));
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the newly created virtual machine will be started "
+                                                               "in headless mode (without a GUI) for the unattended guest OS install.</p>"));
     }
 }
 
@@ -268,6 +270,8 @@ QWidget *UIWizardNewVMPage2::createAdditionalOptionsWidgets()
     {
         m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
         pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLineEdit, 1, 1, 1, 3);
+        if (m_pProductKeyLabel)
+            m_pProductKeyLabel->setBuddy(m_pProductKeyLineEdit);
     }
 
     m_pHostnameLabel = new QLabel;
@@ -280,7 +284,11 @@ QWidget *UIWizardNewVMPage2::createAdditionalOptionsWidgets()
 
     m_pHostnameLineEdit = new QLineEdit;
     if (m_pHostnameLineEdit)
+    {
         pAdditionalOptionsContainerLayout->addWidget(m_pHostnameLineEdit, 2, 1, 1, 3);
+        if (m_pHostnameLabel)
+            m_pHostnameLabel->setBuddy(m_pHostnameLineEdit);
+    }
 
     return m_pAdditionalOptionsContainer;
 }
@@ -338,7 +346,7 @@ void UIWizardNewVMPageBasic2::retranslateUi()
 {
     setTitle(UIWizardNewVM::tr("Unattended Guest OS Install Setup"));
     if (m_pLabel)
-        m_pLabel->setText(UIWizardNewVM::tr("<p>Here you can configure the unattended install by modifying username, password, and "
+        m_pLabel->setText(UIWizardNewVM::tr("<p>You can configure the unattended guest OS install by modifying username, password, and "
                                             "hostname. Additionally you can enable guest additions install. "
                                             "For Microsoft Windows guests it is possible to provide a product key.</p>"));
     retranslateWidgets();
