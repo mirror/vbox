@@ -317,7 +317,6 @@ void UIWizardNewVMPageBasic2::prepare()
     registerField("guestAdditionsISOPath", this, "guestAdditionsISOPath");
     registerField("productKey", this, "productKey");
 
-    retranslateUi();
     createConnections();
 }
 
