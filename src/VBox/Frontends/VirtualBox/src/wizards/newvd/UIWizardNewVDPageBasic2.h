@@ -27,7 +27,6 @@
 /* Forward declarations: */
 class CMediumFormat;
 class QButtonGroup;
-class QRadioButton;
 class QCheckBox;
 class QIRichTextLabel;
 
@@ -48,9 +47,7 @@ protected:
     void setWidgetVisibility(CMediumFormat &mediumFormat);
     /** @name Widgets
      * @{ */
-        QButtonGroup *m_pVariantButtonGroup;
-        QRadioButton *m_pDynamicalButton;
-        QRadioButton *m_pFixedButton;
+        QCheckBox    *m_pFixedCheckBox;
         QCheckBox *m_pSplitBox;
     /** @} */
 

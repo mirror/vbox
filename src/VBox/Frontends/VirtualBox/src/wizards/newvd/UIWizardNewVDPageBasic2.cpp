@@ -30,9 +30,7 @@
 #include "CMediumFormat.h"
 
 UIWizardNewVDPage2::UIWizardNewVDPage2()
-    : m_pVariantButtonGroup(0)
-    , m_pDynamicalButton(0)
-    , m_pFixedButton(0)
+    : m_pFixedCheckBox(0)
     , m_pSplitBox(0)
     , m_pDescriptionLabel(0)
     , m_pDynamicLabel(0)
@@ -57,20 +55,9 @@ QWidget *UIWizardNewVDPage2::createMediumVariantWidgets(bool fWithLabels)
         QVBoxLayout *pVariantLayout = new QVBoxLayout;
         if (pVariantLayout)
         {
-            m_pVariantButtonGroup = new QButtonGroup;
-            {
-                m_pDynamicalButton = new QRadioButton;
-                {
-                    m_pDynamicalButton->click();
-                    m_pDynamicalButton->setFocus();
-                }
-                m_pFixedButton = new QRadioButton;
-                m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
-                m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
-            }
+            m_pFixedCheckBox = new QCheckBox;
             m_pSplitBox = new QCheckBox;
-            pVariantLayout->addWidget(m_pDynamicalButton);
-            pVariantLayout->addWidget(m_pFixedButton);
+            pVariantLayout->addWidget(m_pFixedCheckBox);
             pVariantLayout->addWidget(m_pSplitBox);
         }
         if (fWithLabels)
@@ -93,10 +80,10 @@ qulonglong UIWizardNewVDPage2::mediumVariant() const
     qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
 
     /* Exclusive options: */
-    if (m_pDynamicalButton && m_pDynamicalButton->isChecked())
-        uMediumVariant = (qulonglong)KMediumVariant_Standard;
-    else if (m_pFixedButton && m_pFixedButton->isChecked())
+    if (m_pFixedCheckBox && m_pFixedCheckBox->isChecked())
         uMediumVariant = (qulonglong)KMediumVariant_Fixed;
+    else
+        uMediumVariant = (qulonglong)KMediumVariant_Standard;
 
     /* Additional options: */
     if (m_pSplitBox && m_pSplitBox->isChecked())
@@ -111,13 +98,8 @@ void UIWizardNewVDPage2::setMediumVariant(qulonglong uMediumVariant)
     /* Exclusive options: */
     if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
     {
-        m_pFixedButton->click();
-        m_pFixedButton->setFocus();
-    }
-    else
-    {
-        m_pDynamicalButton->click();
-        m_pDynamicalButton->setFocus();
+        m_pFixedCheckBox->click();
+        m_pFixedCheckBox->setFocus();
     }
 
     /* Additional options: */
@@ -126,10 +108,8 @@ void UIWizardNewVDPage2::setMediumVariant(qulonglong uMediumVariant)
 
 void UIWizardNewVDPage2::retranslateWidgets()
 {
-    if (m_pDynamicalButton)
-        m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));
-    if (m_pFixedButton)
-        m_pFixedButton->setText(UIWizardNewVD::tr("&Fixed size"));
+    if (m_pFixedCheckBox)
+        m_pFixedCheckBox->setText(UIWizardNewVD::tr("&Fixed size"));
     if (m_pSplitBox)
         m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));
 
@@ -163,14 +143,25 @@ void UIWizardNewVDPage2::setWidgetVisibility(CMediumFormat &mediumFormat)
     bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
     bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
     bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
+    if (m_pFixedCheckBox)
+    {
+        if (!fIsCreateDynamicPossible)
+        {
+            m_pFixedCheckBox->setChecked(true);
+            m_pFixedCheckBox->setEnabled(false);
+        }
+        if (!fIsCreateFixedPossible)
+        {
+            m_pFixedCheckBox->setChecked(false);
+            m_pFixedCheckBox->setEnabled(false);
+        }
+    }
     if (m_pDynamicLabel)
         m_pDynamicLabel->setHidden(!fIsCreateDynamicPossible);
-    if (m_pDynamicalButton)
-        m_pDynamicalButton->setHidden(!fIsCreateDynamicPossible);
     if (m_pFixedLabel)
         m_pFixedLabel->setHidden(!fIsCreateFixedPossible);
-    if (m_pFixedButton)
-        m_pFixedButton->setHidden(!fIsCreateFixedPossible);
+    if (m_pFixedCheckBox)
+        m_pFixedCheckBox->setHidden(!fIsCreateFixedPossible);
     if (m_pSplitLabel)
         m_pSplitLabel->setHidden(!fIsCreateSplitPossible);
     if (m_pSplitBox)
@@ -185,7 +176,7 @@ UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
     pMainLayout->addStretch();
 
     /* Setup connections: */
-    connect(m_pVariantButtonGroup,static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+    connect(m_pFixedCheckBox, &QAbstractButton::toggled,
             this, &UIWizardNewVDPageBasic2::completeChanged);
     connect(m_pSplitBox, &QCheckBox::stateChanged,
             this, &UIWizardNewVDPageBasic2::completeChanged);

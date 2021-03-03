@@ -92,20 +92,9 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
             m_pVariantGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             QVBoxLayout *pVariantGroupBoxLayout = new QVBoxLayout(m_pVariantGroupBox);
             {
-                m_pVariantButtonGroup = new QButtonGroup(m_pVariantGroupBox);
-                {
-                    m_pDynamicalButton = new QRadioButton(m_pVariantGroupBox);
-                    {
-                        m_pDynamicalButton->click();
-                        m_pDynamicalButton->setFocus();
-                    }
-                    m_pFixedButton = new QRadioButton(m_pVariantGroupBox);
-                    m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
-                    m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
-                }
+                m_pFixedCheckBox = new QCheckBox;
                 m_pSplitBox = new QCheckBox(m_pVariantGroupBox);
-                pVariantGroupBoxLayout->addWidget(m_pDynamicalButton);
-                pVariantGroupBoxLayout->addWidget(m_pFixedButton);
+                pVariantGroupBoxLayout->addWidget(m_pFixedCheckBox);
                 pVariantGroupBoxLayout->addWidget(m_pSplitBox);
             }
         }
@@ -120,7 +109,7 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
     /* Setup connections: */
     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
             this, &UIWizardNewVDPageExpert::sltMediumFormatChanged);
-    connect(m_pVariantButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+    connect(m_pFixedCheckBox, &QAbstractButton::toggled,
             this, &UIWizardNewVDPageExpert::completeChanged);
     connect(m_pSplitBox, &QCheckBox::stateChanged,
             this, &UIWizardNewVDPageExpert::completeChanged);
@@ -166,8 +155,20 @@ void UIWizardNewVDPageExpert::sltMediumFormatChanged()
     bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
     bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
     bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
-    m_pDynamicalButton->setEnabled(fIsCreateDynamicPossible);
-    m_pFixedButton->setEnabled(fIsCreateFixedPossible);
+
+    if (m_pFixedCheckBox)
+    {
+        if (!fIsCreateDynamicPossible)
+        {
+            m_pFixedCheckBox->setEnabled(false);
+            m_pFixedCheckBox->setChecked(true);
+        }
+        if (!fIsCreateFixedPossible)
+        {
+            m_pFixedCheckBox->setEnabled(false);
+            m_pFixedCheckBox->setChecked(false);
+        }
+    }
     m_pSplitBox->setEnabled(fIsCreateSplitPossible);
 
     /* Compose virtual-disk extension: */
@@ -218,10 +219,8 @@ void UIWizardNewVDPageExpert::retranslateUi()
     }
     if (m_pVariantGroupBox)
         m_pVariantGroupBox->setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
-    if (m_pDynamicalButton)
-        m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));
-    if (m_pFixedButton)
-        m_pFixedButton->setText(UIWizardNewVD::tr("&Fixed size"));
+    if (m_pFixedCheckBox)
+        m_pFixedCheckBox->setText(UIWizardNewVD::tr("&Fixed size"));
     if (m_pSplitBox)
         m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));
 }
