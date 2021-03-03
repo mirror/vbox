@@ -24,7 +24,6 @@
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasic2.h"
-#include "UIWizardNewVMPageBasic5.h"
 #include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVMPageBasic4.h"
 #include "UIWizardNewVMPageExpert.h"
