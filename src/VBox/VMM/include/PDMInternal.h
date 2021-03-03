@@ -694,13 +694,13 @@ typedef struct PDMIOMMUR3
     /** Pointer to the IOMMU device instance - R3. */
     PPDMDEVINSR3                pDevInsR3;
     /** @copydoc PDMIOMMUREGR3::pfnMemAccess */
-    DECLR3CALLBACKMEMBER(int,   pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbAccess,
+    DECLR3CALLBACKMEMBER(int,   pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova,
                                               uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContig));
     /** @copydoc PDMIOMMUREGR3::pfnMemBulkAccess */
-    DECLR3CALLBACKMEMBER(int,   pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+    DECLR3CALLBACKMEMBER(int,   pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t idDevice, size_t cIovas, uint64_t const *pauIovas,
                                                   uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
     /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
-    DECLR3CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
+    DECLR3CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 } PDMIOMMUR3;
 /** Pointer to a PDM IOMMU instance. */
 typedef PDMIOMMUR3 *PPDMIOMMUR3;
@@ -720,13 +720,13 @@ typedef struct PDMIOMMUR0
     /** Pointer to IOMMU device instance. */
     PPDMDEVINSR0                pDevInsR0;
     /** @copydoc PDMIOMMUREGR3::pfnMemAccess */
-    DECLR0CALLBACKMEMBER(int,   pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbAccess,
+    DECLR0CALLBACKMEMBER(int,   pfnMemAccess,(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova,
                                               uint32_t fFlags, PRTGCPHYS pGCPhysSpa, size_t *pcbContig));
     /** @copydoc PDMIOMMUREGR3::pfnMemBulkAccess */
-    DECLR0CALLBACKMEMBER(int,   pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t uDevId, size_t cIovas, uint64_t const *pauIovas,
+    DECLR0CALLBACKMEMBER(int,   pfnMemBulkAccess,(PPDMDEVINS pDevIns, uint16_t idDevice, size_t cIovas, uint64_t const *pauIovas,
                                                   uint32_t fFlags, PRTGCPHYS paGCPhysSpa));
     /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
-    DECLR0CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
+    DECLR0CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 } PDMIOMMUR0;
 /** Pointer to a ring-0 IOMMU data. */
 typedef PDMIOMMUR0 *PPDMIOMMUR0;
@@ -1671,7 +1671,7 @@ int         pdmLockEx(PVMCC pVM, int rc);
 void        pdmUnlock(PVMCC pVM);
 
 #ifdef VBOX_WITH_IOMMU_AMD
-int         pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut);
+int         pdmIommuMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut);
 int         pdmIommuMemAccessRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
 int         pdmIommuMemAccessWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
 # ifdef IN_RING3
