@@ -2012,9 +2012,10 @@ void hdaR3StreamUnregisterDMAHandlers(PHDASTREAM pStream)
 
     Assert(RTListIsEmpty(&pStream->State.lstDMAHandlers));
 }
-# endif /* HDA_USE_DMA_ACCESS_HANDLER */
 
+# endif /* HDA_USE_DMA_ACCESS_HANDLER */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+
 /**
  * @callback_method_impl{FNRTTHREAD,
  * Asynchronous I/O thread for a HDA stream.
@@ -2034,31 +2035,30 @@ static DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pv
     Assert(pStreamShared->u8SD == pStreamR3->u8SD);
 
     /* Signal parent thread that we've started  */
-    ASMAtomicXchgBool(&pAIO->fStarted, true);
+    ASMAtomicWriteBool(&pAIO->fStarted, true);
     RTThreadUserSignal(hThreadSelf);
 
     LogFunc(("[SD%RU8] Started\n", pStreamShared->u8SD));
 
-    for (;;)
+    while (!ASMAtomicReadBool(&pAIO->fShutdown))
     {
         int rc2 = RTSemEventWait(pAIO->hEvent, RT_INDEFINITE_WAIT);
-        if (RT_FAILURE(rc2))
+        if (RT_SUCCESS(rc2))
+        { /* likely */ }
+        else
             break;
 
-        if (ASMAtomicReadBool(&pAIO->fShutdown))
+        if (!ASMAtomicReadBool(&pAIO->fShutdown))
+        { /* likely */ }
+        else
             break;
 
         rc2 = RTCritSectEnter(&pAIO->CritSect);
         AssertRC(rc2);
         if (RT_SUCCESS(rc2))
         {
-            if (!pAIO->fEnabled)
-            {
-                RTCritSectLeave(&pAIO->CritSect);
-                continue;
-            }
-
-            hdaR3StreamUpdate(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, false /* fInTimer */);
+            if (pAIO->fEnabled)
+                hdaR3StreamUpdate(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, false /* fInTimer */);
 
             int rc3 = RTCritSectLeave(&pAIO->CritSect);
             AssertRC(rc3);
@@ -2066,7 +2066,7 @@ static DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pv
     }
 
     LogFunc(("[SD%RU8] Ended\n", pStreamShared->u8SD));
-    ASMAtomicXchgBool(&pAIO->fStarted, false);
+    ASMAtomicWriteBool(&pAIO->fStarted, false);
 
     return VINF_SUCCESS;
 }
@@ -2206,6 +2206,6 @@ void hdaR3StreamAsyncIOEnable(PHDASTREAMR3 pStreamR3, bool fEnable)
     PHDASTREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
     ASMAtomicXchgBool(&pAIO->fEnabled, fEnable);
 }
-# endif /* VBOX_WITH_AUDIO_HDA_ASYNC_IO */
 
+# endif /* VBOX_WITH_AUDIO_HDA_ASYNC_IO */
 #endif /* IN_RING3 */
