@@ -347,21 +347,9 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
             break;
     }
 
-    /* Assign the global device rate to the stream. */
-    pStreamShared->State.uTimerIoHz = pThis->uTimerHz;
-
-    /* Set scheduling hint (if available). */
-    if (pStreamShared->State.uTimerIoHz)
-        pCfg->Device.cMsSchedulingHint = RT_MS_1SEC / pStreamShared->State.uTimerIoHz;
-
     LogRel2(("HDA: Stream #%RU8 DMA @ 0x%x (%RU32 bytes = %RU64ms total)\n",
              uSD, pStreamShared->u64BDLBase, pStreamShared->u32CBL,
-             DrvAudioHlpBytesToMilli(pStreamShared->u32CBL, &pStreamShared->State.Cfg.Props)));
-
-    /* Make sure that the chosen Hz rate dividable by the stream's rate. */
-    if (pStreamShared->State.Cfg.Props.uHz % pStreamShared->State.uTimerIoHz != 0)
-        LogRel(("HDA: Stream #%RU8 timer Hz rate (%RU32) does not fit to stream #%RU8 timing (%RU32)\n",
-                uSD, pStreamShared->State.uTimerIoHz, uSD, pStreamShared->State.Cfg.Props.uHz));
+             DrvAudioHlpBytesToMilli(pStreamShared->u32CBL, &pStreamR3->State.Mapping.PCMProps)));
 
     /* Figure out how many transfer fragments we're going to use for this stream. */
     uint8_t cTransferFragments = pStreamShared->u16LVI + 1;
@@ -446,10 +434,9 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
      * Set up data transfer stuff.
      */
 
-    /* Prevent division by zero. */
-    ASSERT_GUEST_LOGREL_MSG_STMT(pStreamShared->State.uTimerIoHz,
-                                 ("Timer Hz rate for stream #%RU8 is invalid\n", uSD),
-                                 pStreamShared->State.uTimerIoHz = HDA_TIMER_HZ_DEFAULT);
+    /* Assign the global device rate to the stream I/O timer as default. */
+    pStreamShared->State.uTimerIoHz = pThis->uTimerHz;
+
     /*
      * Determine the transfer Hz the guest OS expects data transfer at.
      *
@@ -457,14 +444,22 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
      * (virtual) rate which we expose to the guest.
      *
      * Data rate examples:
-     *   * Windows 10 @ 44,1kHz / 16-bit stereo
-     *      * Default mode: 448 audio frames -> ~10.15ms) = 1792 byte every ~10ms.
-     *      * Fast mode:    128 audio frames -> ~ 2.90ms) =  512 byte every ~3ms.
+     *   * Windows 10 @ 44,1kHz / 16-bit
+     *      2 channels (stereo):
+     *          * Default mode: 448 audio frames -> ~10.15ms = 1792 byte every ~10ms.
+     *          * Fast mode:    128 audio frames -> ~ 2.90ms =  512 byte every ~3ms.
+     *      6 channels (5.1 surround):
+     *          * Default mode: Same values as above!
      */
+
+    /* Audio data per second the stream needs. */
+    const uint32_t cbDataPerSec = DrvAudioHlpMilliToBytes(RT_MS_1SEC, &pStreamR3->State.Mapping.PCMProps);
 
     /* The transfer Hz depend on the heuristics above, that is,
        how often the guest expects to see a new data transfer. */
-    unsigned uTransferHz;
+    uint16_t uTransferHz = 0;
+
+    LogRel2(("HDA: Stream #%RU8 needs %RU32 bytes/s audio data\n", uSD, cbDataPerSec));
 
     if (pThis->fTransferHeuristicsEnabled) /* Are data transfer heuristics enabled? */
     {
@@ -481,6 +476,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         for (uint8_t i = 0; i < cTransferFragments; i++)
         {
             PDMDevHlpPhysRead(pDevIns, u64BDLBase + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
+
+            LogRel2(("HDA: Stream #%RU8 BDLE #%RU8: %R[bdle]\n", uSD, i, &bd));
 
             /* Position adjustment (still) needed / active? */
             if (cbTransferHeuristicsPosAdjust)
@@ -509,44 +506,81 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         /* !!! HACK ALERT BEGIN !!! */
 
         /* Windows 10's audio driver expects a transfer all ~10.1ms (~1764 bytes), although
-         * it sets up 1792 bytes per BDLE.
+         * it sets up multiples of 1792 bytes (896 bytes per channel) per BDLE:
+         *
+         *      * 2 (stereo) channels    = 1792
+         *      * 6 (surrounnd) channels = 1792 * 3 = 5376
+         *
+         * Same seems to apply to Windows 7 when using the default setup.
          *
          * I currently don't have any clue why it does this that way, so try to simply detect this
-         * and alter the value so that we get a somewhat proper audio output. */
-        if (cbTransferHeuristicsMin == 1792)
+         * and alter the value so that we get a somewhat proper audio output.
+         * Probably alignment?
+         */
+        if (cbTransferHeuristicsMin / (1792 / 2 /* Channels */) == pStreamR3->State.Mapping.PCMProps.cChannels)
         {
-            LogRel2(("HDA: Guest seems to be Windows 10 -- setting a fixed transfer minimum size\n"));
+            LogRel2(("HDA: Heuristics detected a Windows guest -- setting a fixed transfer minimum size\n"));
             cbTransferHeuristicsMin = 1764;
+
+            /* Anything above 5 channels (surround) will need higher timer rates -- otherwise it will be a lot worse. */
+            if (pStreamR3->State.Mapping.PCMProps.cChannels >= 5)
+            {
+                uTransferHz = 100 + ((pStreamR3->State.Mapping.PCMProps.cChannels - 4) * 50); /* Add 50Hz per additional channel. */
+            }
+            else /* Stick with 100Hz here. Anything lower will crackle. */
+                uTransferHz = 100;
+
+            pStreamShared->State.uTimerIoHz = 50;
         }
 
         /* !!! HACK ALERT END !!! */
 
-        uint32_t msTransferHeuristicsMin = DrvAudioHlpBytesToMilli(cbTransferHeuristicsMin, &pCfg->Props);
+        else
+        {
+            /* Calculate the transfer Hz rate by dividing the guessed transfer data rate by the data rate in ms. */
+            uTransferHz = cbTransferHeuristicsMin / (cbDataPerSec / RT_MS_1SEC);
 
-        /* Prevent division by zero. */
-        ASSERT_GUEST_LOGREL_MSG_STMT(msTransferHeuristicsMin,
-                                     ("Transfer heuristics for stream #%RU8 buggy\n", uSD),
-                                     msTransferHeuristicsMin = 10 /* ms, equals 100 Hz */);
+            /* Make sure that the timer I/O Hz rate is the same in this case, as we can't do any more guessing here. */
+            pStreamShared->State.uTimerIoHz = uTransferHz;
+        }
 
-        uTransferHz = RT_MS_1SEC / msTransferHeuristicsMin;
-
-        LogRel2(("HDA: Stream #%RU8 needs a data transfer at least every %RU64ms (%RU32 bytes) -- transfers run at %u Hz\n",
-                 uSD, msTransferHeuristicsMin, cbTransferHeuristicsMin, uTransferHz));
+        LogRel2(("HDA: Stream #%RU8 seems to need a transfer worth of %RU32 bytes audio data, so trying to run transfers at %uHz\n",
+                 uSD, cbTransferHeuristicsMin, uTransferHz));
     }
-    else
+    else /* Heuristics disabled. */
     {
-        /* Use I/O timing rate instead. */
-        uTransferHz = pStreamShared->State.uTimerIoHz;
+        /* Use global timing rate instead. */
+        uTransferHz = pThis->uTimerHz;
     }
 
     if (uTransferHz > 400) /* Anything above 400 Hz looks fishy -- tell the user. */
-        LogRel(("HDA: Calculated transfer Hz rate for stream #%RU8 looks incorrect (%u), please re-run with audio debug mode and report a bug\n",
+        LogRel(("HDA: Warning: Calculated transfer Hz rate for stream #%RU8 looks incorrect (%u), "
+                "please re-run with audio debug mode and report a bug\n",
                 uSD, uTransferHz));
 
+    LogRel2(("HDA: Stream #%RU8 transfer timer rate is %RU16Hz, I/O timer rate is %RU16Hz\n",
+             uSD, uTransferHz, pStreamShared->State.uTimerIoHz));
+
+    /* Make sure that the chosen transfer Hz rate dividable by the stream's overall data rate. */
+    ASSERT_GUEST_LOGREL_MSG_STMT(cbDataPerSec % uTransferHz == 0,
+                                 ("Transfer data rate (%RU32 bytes/s) for stream #%RU8 does not fit to stream timing (%RU32Hz)\n",
+                                  cbDataPerSec, uSD, uTransferHz),
+                                 uTransferHz = HDA_TIMER_HZ_DEFAULT);
+
+    /* Prevent division by zero. */
+    ASSERT_GUEST_LOGREL_MSG_STMT(pStreamShared->State.uTimerIoHz,
+                                 ("I/O timer Hz rate for stream #%RU8 is invalid\n", uSD),
+                                 pStreamShared->State.uTimerIoHz = HDA_TIMER_HZ_DEFAULT);
+
+    /* Set I/O scheduling hint for the backends. */
+    pCfg->Device.cMsSchedulingHint = RT_MS_1SEC / pStreamShared->State.uTimerIoHz;
+    LogRel2(("HDA: Stream #%RU8 set scheduling hint for the backends to %RU32ms\n", uSD, pCfg->Device.cMsSchedulingHint));
+
     pStreamShared->State.cbTransferSize =
-        (pStreamShared->State.Cfg.Props.uHz * pStreamR3->State.Mapping.cbFrameSize) / uTransferHz;
+        (pStreamR3->State.Mapping.PCMProps.uHz * pStreamR3->State.Mapping.cbFrameSize) / 100 /* Hz */;
     ASSERT_GUEST_LOGREL_MSG_STMT(pStreamShared->State.cbTransferSize,
                                  ("Transfer size for stream #%RU8 is invalid\n", uSD), rc = VERR_INVALID_PARAMETER);
+
     if (RT_SUCCESS(rc))
     {
         /*
@@ -567,13 +601,13 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
 
             const uint64_t uTimerFreq  = PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer);
 
-            const double cTicksPerHz   = uTimerFreq  / pStreamShared->State.uTimerIoHz;
+            const double cTicksPerHz   = uTimerFreq  / uTransferHz;
                   double cTicksPerByte = cTicksPerHz / (double)pStreamShared->State.cbTransferChunk;
 
-            if (pStreamShared->State.uTimerIoHz < uTransferHz)
-                cTicksPerByte /= uTransferHz / pStreamShared->State.uTimerIoHz;
+            if (uTransferHz < 100)
+                cTicksPerByte /= 100 / uTransferHz;
             else
-                cTicksPerByte *= pStreamShared->State.uTimerIoHz / uTransferHz;
+                cTicksPerByte *= uTransferHz / 100;
 
             Assert(cTicksPerByte);
 
@@ -593,10 +627,10 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
 
             LogRel2(("HDA: Stream #%RU8 is using %uHz I/O timer (%RU64 virtual ticks / Hz), stream Hz=%RU32, "
                      "cTicksPerByte=%RU64, cTransferTicks=%RU64 -> cbTransferChunk=%RU32 (%RU64ms), cbTransferSize=%RU32 (%RU64ms)\n",
-                     uSD, pStreamShared->State.uTimerIoHz, (uint64_t)cTicksPerHz, pStreamShared->State.Cfg.Props.uHz,
+                     uSD, pStreamShared->State.uTimerIoHz, (uint64_t)cTicksPerHz, pStreamR3->State.Mapping.PCMProps.uHz,
                      pStreamShared->State.cTicksPerByte, pStreamShared->State.cTransferTicks,
-                     pStreamShared->State.cbTransferChunk, DrvAudioHlpBytesToMilli(pStreamShared->State.cbTransferChunk, &pCfg->Props),
-                     pStreamShared->State.cbTransferSize,  DrvAudioHlpBytesToMilli(pStreamShared->State.cbTransferSize,  &pCfg->Props)));
+                     pStreamShared->State.cbTransferChunk, DrvAudioHlpBytesToMilli(pStreamShared->State.cbTransferChunk, &pStreamR3->State.Mapping.PCMProps),
+                     pStreamShared->State.cbTransferSize,  DrvAudioHlpBytesToMilli(pStreamShared->State.cbTransferSize,  &pStreamR3->State.Mapping.PCMProps)));
 
             /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
             hdaR3StreamSetPositionAbs(pStreamShared, pDevIns, pThis, HDA_STREAM_REG(pThis, LPIB, uSD));
@@ -629,6 +663,9 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
          */
         const unsigned uTransferHzMin = RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz);
 
+        /* Note: Use pCfg->Props as PCM properties here, as we only want to store the samples we actually need,
+         *       in other words, skipping the interleaved channels we don't support / need to save space. */
+
               uint32_t cbCircBuf;
         const uint32_t cbCircBufDefault = DrvAudioHlpMilliToBytes((RT_MS_1SEC / uTransferHzMin) * 3, &pCfg->Props);
 
@@ -639,11 +676,6 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                                                            ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs, &pCfg->Props);
         if (cbCircBufGlobal) /* Anything set via CFGM? */
         {
-
-            ASSERT_GUEST_LOGREL_MSG_STMT(DrvAudioHlpBytesIsAligned(cbCircBufGlobal, &pCfg->Props),
-                                         ("Ring buffer size for stream #%RU8 is misaligned (%zu), setting to default\n", uSD, cbCircBufGlobal),
-                                         cbCircBufGlobal = cbCircBufDefault);
-
             LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU64ms (%RU32 bytes)\n",
                      uSD, DrvAudioHlpBytesToMilli(cbCircBufGlobal, &pCfg->Props), cbCircBufGlobal));
 
@@ -651,6 +683,11 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         }
         else
             cbCircBuf = cbCircBufDefault;
+
+        ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf % (pCfg->Props.cbSample * pCfg->Props.cChannels) == 0,
+                                     ("Ring buffer size (%RU32) for stream #%RU8 not aligned to mapping's frame size (%RU8)\n",
+                                      cbCircBuf, uSD, pCfg->Props.cbSample * pCfg->Props.cChannels),
+                                     rc = VERR_INVALID_PARAMETER);
 
         ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf,
                                      ("Ring buffer size for stream #%RU8 is invalid\n", uSD),
@@ -1679,7 +1716,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             const uint32_t cbStreamReadable   = hdaR3StreamGetUsed(pStreamR3);
                   uint32_t cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
                            /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
-                           cbToReadFromStream = DrvAudioHlpBytesAlign(cbToReadFromStream, &pStreamShared->State.Cfg.Props);
+                           cbToReadFromStream = DrvAudioHlpBytesAlign(cbToReadFromStream, &pStreamR3->State.Mapping.PCMProps);
 
 #ifdef LOG_ENABLED
             Assert(tsNowNs >= pStreamShared->State.tsLastReadNs);

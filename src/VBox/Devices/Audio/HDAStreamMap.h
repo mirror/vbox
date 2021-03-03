@@ -26,8 +26,12 @@
  */
 typedef struct HDASTREAMMAP
 {
+    /** The PCM properties which have been used. */
+    PDMAUDIOPCMPROPS                PCMProps;
     /** The stream's layout. */
     PDMAUDIOSTREAMLAYOUT            enmLayout;
+    /** The mapping's overall audio frame size (in bytes).
+     *  This includes all mappings in \a paMappings. */
     uint8_t                         cbFrameSize;
     /** Number of mappings in paMappings. */
     uint8_t                         cMappings;
