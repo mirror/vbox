@@ -54,6 +54,7 @@ UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QStr
     , m_pLocationEditor(0)
     , m_pLocationOpenButton(0)
     , m_pSizeEditor(0)
+    , m_pSizeEditorLabel(0)
     , m_pLocationLabel(0)
     , m_pSizeLabel(0)
 {
@@ -65,6 +66,9 @@ UIWizardNewVDPage3::UIWizardNewVDPage3()
     , m_pLocationEditor(0)
     , m_pLocationOpenButton(0)
     , m_pSizeEditor(0)
+    , m_pSizeEditorLabel(0)
+    , m_pLocationLabel(0)
+    , m_pSizeLabel(0)
 {
 }
 
@@ -230,6 +234,16 @@ void UIWizardNewVDPage3::retranslateWidgets()
 {
     if (m_pLocationOpenButton)
         m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard disk file..."));
+
+    if (m_pLocationLabel)
+        m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard disk file into the box below or "
+                                                    "click on the folder icon to select a different folder to create the file in."));
+    if (m_pSizeLabel)
+        m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard disk in megabytes. "
+                                                "This size is the limit on the amount of file data "
+                                                "that a virtual machine will be able to store on the hard disk."));
+    if (m_pSizeEditorLabel)
+        m_pSizeEditorLabel->setText(UIWizardNewVD::tr("Disk size:"));
 }
 
 UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
@@ -281,14 +295,6 @@ void UIWizardNewVDPageBasic3::retranslateUi()
     retranslateWidgets();
     /* Translate page: */
     setTitle(UIWizardNewVD::tr("File location and size"));
-
-    /* Translate widgets: */
-    m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard disk file into the box below or "
-                                                "click on the folder icon to select a different folder to create the file in."));
-    if (m_pSizeLabel)
-        m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard disk in megabytes. "
-                                                "This size is the limit on the amount of file data "
-                                                "that a virtual machine will be able to store on the hard disk."));
 }
 
 void UIWizardNewVDPageBasic3::initializePage()

@@ -37,7 +37,6 @@
 
 /* Forward declarations: */
 class QButtonGroup;
-class QGroupBox;
 class QRadioButton;
 class QIRichTextLabel;
 class QIToolButton;
@@ -82,8 +81,6 @@ protected:
        QRadioButton *m_pDiskExisting;
        UIMediaComboBox *m_pDiskSelector;
        QIToolButton *m_pDiskSelectionButton;
-       QGroupBox *m_pMediumVariantContainer;
-       QGroupBox *m_pSizeContainer;
     /** @} */
     SelectedDiskSource m_enmSelectedDiskSource;
 };

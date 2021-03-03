@@ -19,6 +19,7 @@
 #include <QButtonGroup>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QLabel>
 #include <QMetaType>
 #include <QRadioButton>
 #include <QVBoxLayout>
@@ -46,8 +47,6 @@ UIWizardNewVMPage4::UIWizardNewVMPage4()
     , m_pDiskExisting(0)
     , m_pDiskSelector(0)
     , m_pDiskSelectionButton(0)
-    , m_pMediumVariantContainer(0)
-    , m_pSizeContainer(0)
     , m_enmSelectedDiskSource(SelectedDiskSource_New)
 {
 }
@@ -91,10 +90,6 @@ void UIWizardNewVMPage4::retranslateWidgets()
         m_pDiskExisting->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
     if (m_pDiskSelectionButton)
         m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
-    if (m_pMediumVariantContainer)
-        m_pMediumVariantContainer->setTitle(UIWizardNewVM::tr("Storage on physical hard disk"));
-    if (m_pSizeContainer)
-        m_pSizeContainer->setTitle(UIWizardNewVM::tr("File size"));
 }
 
 void UIWizardNewVMPage4::setEnableDiskSelectionWidgets(bool fEnabled)
@@ -153,12 +148,12 @@ QWidget *UIWizardNewVMPage4::createDiskWidgets()
         m_pDiskSelectionButton->setAutoRaise(true);
         m_pDiskSelectionButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
     }
-    pDiskLayout->addWidget(m_pDiskEmpty, 0, 0, 1, 4);
-    pDiskLayout->addWidget(m_pDiskNew, 1, 0, 1, 4);
-    pDiskLayout->addWidget(createDiskVariantAndSizeWidgets(), 2, 1, 3, 3);
-    pDiskLayout->addWidget(m_pDiskExisting, 5, 0, 1, 4);
-    pDiskLayout->addWidget(m_pDiskSelector, 6, 1, 1, 2);
-    pDiskLayout->addWidget(m_pDiskSelectionButton, 6, 3, 1, 1);
+    pDiskLayout->addWidget(m_pDiskEmpty, 0, 0, 1, 6);
+    pDiskLayout->addWidget(m_pDiskNew, 1, 0, 1, 6);
+    pDiskLayout->addWidget(createDiskVariantAndSizeWidgets(), 3, 2, 3, 4);
+    pDiskLayout->addWidget(m_pDiskExisting, 6, 0, 1, 6);
+    pDiskLayout->addWidget(m_pDiskSelector, 7, 2, 1, 3);
+    pDiskLayout->addWidget(m_pDiskSelectionButton, 7, 5, 1, 1);
     return pDiskContainer;
 }
 
@@ -226,24 +221,20 @@ void UIWizardNewVMPageBasic4::prepare()
 
 QWidget *UIWizardNewVMPageBasic4::createDiskVariantAndSizeWidgets()
 {
-
     QWidget *pWidget = new QWidget;
-    QHBoxLayout *pLayout = new QHBoxLayout(pWidget);
+    QVBoxLayout *pLayout = new QVBoxLayout(pWidget);
     pLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_pMediumVariantContainer = new QGroupBox;
-    QVBoxLayout *pMediumVariantLayout = new QVBoxLayout(m_pMediumVariantContainer);
-    pMediumVariantLayout->addWidget(createMediumVariantWidgets(false /* no labels */));
-    pLayout->addWidget(m_pMediumVariantContainer);
-
-    m_pSizeContainer = new QGroupBox;
-    QVBoxLayout *pSizeLayout = new QVBoxLayout(m_pSizeContainer);
-    m_pSizeLabel = new QIRichTextLabel;
+    QHBoxLayout *pSizeLayout = new QHBoxLayout;
+    pSizeLayout->setContentsMargins(0, 0, 0, 0);
     m_pSizeEditor = new UIMediumSizeEditor;
-    pSizeLayout->addWidget(m_pSizeLabel);
+    m_pSizeEditorLabel = new QLabel;
+
+    pSizeLayout->addWidget(m_pSizeEditorLabel);
     pSizeLayout->addWidget(m_pSizeEditor);
-    pSizeLayout->addStretch();
-    pLayout->addWidget(m_pSizeContainer);
+
+    pLayout->addLayout(pSizeLayout);
+    pLayout->addWidget(createMediumVariantWidgets(false /* bool fWithLabels */));
 
     return pWidget;
 }
@@ -305,11 +296,7 @@ void UIWizardNewVMPageBasic4::retranslateUi()
     if (m_pLabel)
         m_pLabel->setText(UIWizardNewVM::tr("<p>If you wish you can add a virtual hard disk to the new machine. "
                                             "You can either create a new hard disk file or select one from the list "
-                                            "or from another location using the folder icon. "
-                                            "If you need a more complex storage set-up you can skip this step "
-                                            "and make the changes to the machine settings once the machine is created. "
-                                            "The recommended size of the hard disk is <b>%1</b>.</p>")
-                          .arg(strRecommendedHDD));
+                                            "or from another location using the folder icon.</p>"));
 
     UIWizardNewVMPage4::retranslateWidgets();
     UIWizardNewVDPage1::retranslateWidgets();
@@ -431,11 +418,11 @@ void UIWizardNewVMPageBasic4::sltHandleSizeEditorChange()
     m_fUserSetSize = true;
 }
 
-void UIWizardNewVMPageBasic4::setEnableNewDiskWidgets(bool fEnable)
+void UIWizardNewVMPageBasic4::setEnableNewDiskWidgets(bool )
 {
-    if (m_pMediumVariantContainer)
-        m_pMediumVariantContainer->setEnabled(fEnable);
+    // if (m_pMediumVariantContainer)
+    //     m_pMediumVariantContainer->setEnabled(fEnable);
 
-    if (m_pSizeContainer)
-        m_pSizeContainer->setEnabled(fEnable);
+    // if (m_pSizeContainer)
+    //     m_pSizeContainer->setEnabled(fEnable);
 }

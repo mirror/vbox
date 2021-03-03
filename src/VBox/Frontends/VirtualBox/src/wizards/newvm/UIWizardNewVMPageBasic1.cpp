@@ -525,8 +525,7 @@ void UIWizardNewVMPageBasic1::retranslateUi()
 
     if (m_pUnattendedLabel)
         m_pUnattendedLabel->setText(UIWizardNewVM::tr("Please decide whether you want to start an unattended guest OS install "
-                                             "in which case you will have to select a valid installation medium. If not, "
-                                             "your virtual disk will have an empty virtual hard disk after vm creation."));
+                                                      "in which case you will have to select a valid installation medium."));
 
     if (m_pNameOSTypeLabel)
         m_pNameOSTypeLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine "

@@ -26,6 +26,7 @@
 
 /* Forward declarations: */
 class CMediumFormat;
+class QLabel;
 class QLineEdit;
 class QIToolButton;
 class QIRichTextLabel;
@@ -75,6 +76,7 @@ protected:
        QLineEdit *m_pLocationEditor;
        QIToolButton *m_pLocationOpenButton;
        UIMediumSizeEditor *m_pSizeEditor;
+       QLabel          *m_pSizeEditorLabel;
        QIRichTextLabel *m_pLocationLabel;
        QIRichTextLabel *m_pSizeLabel;
     /** @} */
