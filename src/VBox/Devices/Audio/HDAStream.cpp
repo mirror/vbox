@@ -1616,6 +1616,59 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 }
 
 /**
+ * The stream's main function when called by the timer.
+ *
+ * Note: This function also will be called without timer invocation
+ *       when starting (enabling) the stream to minimize startup latency.
+ *
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The shared HDA device state.
+ * @param   pThisCC         The ring-3 HDA device state.
+ * @param   pStreamShared   HDA stream to update (shared bits).
+ * @param   pStreamR3       HDA stream to update (ring-3 bits).
+ */
+void hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
+                          PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
+{
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
+    Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pStreamShared->hTimer));
+
+    hdaR3StreamUpdate(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, true /* fInTimer */);
+
+    /* Flag indicating whether to kick the timer again for a new data processing round. */
+    bool fSinkActive = false;
+    if (pStreamR3->pMixSink)
+        fSinkActive = AudioMixerSinkIsActive(pStreamR3->pMixSink->pMixSink);
+
+#ifdef LOG_ENABLED
+    const uint8_t uSD = pStreamShared->u8SD;
+#endif
+
+    if (fSinkActive)
+    {
+        const uint64_t tsNow           = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
+        const bool     fTimerScheduled = hdaR3StreamTransferIsScheduled(pStreamShared, tsNow);
+
+        uint64_t tsTransferNext  = 0;
+        if (fTimerScheduled)
+        {
+            Assert(pStreamShared->State.tsTransferNext); /* Make sure that a new transfer timestamp is set. */
+            tsTransferNext = pStreamShared->State.tsTransferNext;
+        }
+        else /* Schedule at the precalculated rate. */
+            tsTransferNext = tsNow + pStreamShared->State.cTransferTicks;
+
+        Log3Func(("[SD%RU8] fSinksActive=%RTbool, fTimerScheduled=%RTbool, tsTransferNext=%RU64 (in %RU64)\n",
+                  uSD, fSinkActive, fTimerScheduled, tsTransferNext, tsTransferNext - tsNow));
+
+        hdaR3TimerSet(pDevIns, pStreamShared, tsTransferNext,
+                      true /*fForce*/, tsNow);
+    }
+    else
+        Log3Func(("[SD%RU8] fSinksActive=%RTbool\n", uSD, fSinkActive));
+}
+
+/**
  * Updates a HDA stream by doing its required data transfers.
  *
  * The host sink(s) set the overall pace.

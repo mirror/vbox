@@ -1437,9 +1437,9 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                                                  hdaWalClkGetCurrent(pThis) /* Use current wall clock time */);
                     AssertRC(rc2);
 
-                    uint64_t const tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
-                    rc2 = hdaR3TimerSet(pDevIns, pStreamShared, tsNow + pStreamShared->State.cTransferTicks, true /* fForce */, tsNow);
-                    AssertRC(rc2);
+                    /* Avoid going through the timer here by calling the stream's timer function directly.
+                     * Should speed up starting the stream transfers. */
+                    hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
                 }
                 else
                 {
@@ -2648,39 +2648,7 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, v
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, hTimer));
 
-    hdaR3StreamUpdate(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, true /* fInTimer */);
-
-    /* Flag indicating whether to kick the timer again for a new data processing round. */
-    bool fSinkActive = false;
-    if (pStreamR3->pMixSink)
-        fSinkActive = AudioMixerSinkIsActive(pStreamR3->pMixSink->pMixSink);
-
-#ifdef LOG_ENABLED
-    const uint8_t uSD = pStreamShared->u8SD;
-#endif
-
-    if (fSinkActive)
-    {
-        const uint64_t tsNow           = PDMDevHlpTimerGet(pDevIns, hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
-        const bool     fTimerScheduled = hdaR3StreamTransferIsScheduled(pStreamShared, tsNow);
-
-        uint64_t tsTransferNext  = 0;
-        if (fTimerScheduled)
-        {
-            Assert(pStreamShared->State.tsTransferNext); /* Make sure that a new transfer timestamp is set. */
-            tsTransferNext = pStreamShared->State.tsTransferNext;
-        }
-        else /* Schedule at the precalculated rate. */
-            tsTransferNext = tsNow + pStreamShared->State.cTransferTicks;
-
-        Log3Func(("[SD%RU8] fSinksActive=%RTbool, fTimerScheduled=%RTbool, tsTransferNext=%RU64 (in %RU64)\n",
-                  uSD, fSinkActive, fTimerScheduled, tsTransferNext, tsTransferNext - tsNow));
-
-        hdaR3TimerSet(pDevIns, pStreamShared, tsTransferNext,
-                      true /*fForce*/, tsNow);
-    }
-    else
-        Log3Func(("[SD%RU8] fSinksActive=%RTbool\n", uSD, fSinkActive));
+    hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
 }
 
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
@@ -3531,7 +3499,11 @@ static int hdaR3LoadExecPost(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pT
             hdaR3StreamRegisterDMAHandlers(pThis, pStreamShared);
 #endif
             if (hdaR3StreamTransferIsScheduled(pStreamShared, PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer)))
-                hdaR3TimerSet(pDevIns, pStreamShared, hdaR3StreamTransferGetNext(pStreamShared), true /*fForce*/, 0 /*tsNow*/);
+            {
+                /* Avoid going through the timer here by calling the stream's timer function directly.
+                 * Should speed up starting the stream transfers. */
+                hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
+            }
 
             /* Also keep track of the currently active streams. */
             pThisCC->cStreamsActive++;
