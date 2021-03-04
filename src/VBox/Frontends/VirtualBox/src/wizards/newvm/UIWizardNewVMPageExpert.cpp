@@ -47,12 +47,9 @@
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     : UIWizardNewVMPage1(strGroup)
     , m_pToolBox(0)
-    , m_pInstallationISOContainer(0)
+    , m_pInstallationISOGroupBox(0)
     , m_pDiskFormatGroupBox(0)
     , m_pDiskVariantGroupBox(0)
-    , m_pDiskLocationGroupBox(0)
-    , m_pDiskSizeGroupBox(0)
-
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -170,8 +167,8 @@ void UIWizardNewVMPageExpert::retranslateUi()
     UIWizardNewVDPage2::retranslateWidgets();
     UIWizardNewVDPage3::retranslateWidgets();
 
-    if (m_pInstallationISOContainer)
-        m_pInstallationISOContainer->setTitle(UIWizardNewVM::tr("Installation medium (ISO)"));
+    if (m_pInstallationISOGroupBox)
+        m_pInstallationISOGroupBox->setTitle(UIWizardNewVM::tr("Installation medium (ISO)"));
     if (m_pToolBox)
     {
         m_pToolBox->setPageTitle(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and operating system")));
@@ -180,11 +177,6 @@ void UIWizardNewVMPageExpert::retranslateUi()
         m_pToolBox->setPageTitle(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("Hardware"));
     }
 
-
-    if (m_pDiskLocationGroupBox)
-        m_pDiskLocationGroupBox->setTitle(UIWizardNewVM::tr("Hard disk file &location"));
-    if (m_pDiskSizeGroupBox)
-        m_pDiskSizeGroupBox->setTitle(UIWizardNewVM::tr("Hard disk file &size"));
     if (m_pDiskFormatGroupBox)
         m_pDiskFormatGroupBox->setTitle(UIWizardNewVM::tr("Hard disk file &type"));
     if (m_pFormatButtonGroup)
@@ -358,8 +350,8 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
 
     /* Installation medium selector etc: */
     {
-        m_pInstallationISOContainer = new QGroupBox;
-        QHBoxLayout *pInstallationISOContainerLayout = new QHBoxLayout(m_pInstallationISOContainer);
+        m_pInstallationISOGroupBox = new QGroupBox;
+        QHBoxLayout *pInstallationISOContainerLayout = new QHBoxLayout(m_pInstallationISOGroupBox);
 
         m_pISOFilePathSelector = new UIFilePathSelector;
         if (m_pISOFilePathSelector)
@@ -370,7 +362,7 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
             m_pISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
             pInstallationISOContainerLayout->addWidget(m_pISOFilePathSelector);
         }
-        pLayout->addWidget(m_pInstallationISOContainer, iRow++, 0, 1, 4);
+        pLayout->addWidget(m_pInstallationISOGroupBox, iRow++, 0, 1, 4);
     }
 
     /* Username selector: */

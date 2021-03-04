@@ -129,13 +129,9 @@ private:
     virtual QWidget *createNewDiskWidgets() /* override */;
 
     UIToolBox  *m_pToolBox;
-    QGroupBox *m_pInstallationISOContainer;
-
+    QGroupBox *m_pInstallationISOGroupBox;
     QGroupBox *m_pDiskFormatGroupBox;
     QGroupBox *m_pDiskVariantGroupBox;
-    QGroupBox *m_pDiskLocationGroupBox;
-    QGroupBox *m_pDiskSizeGroupBox;
-
 
     /** Set of widgets which user explicitly modified their values. They are exempt from
       * adjusting when OS type changes. */
