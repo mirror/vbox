@@ -264,14 +264,14 @@ typedef struct HDASTREAMR3
 /** Pointer to an HDA stream (SDI / SDO).  */
 typedef HDASTREAMR3 *PHDASTREAMR3;
 
-#ifdef IN_RING3
-
 /** @name Stream functions (shared).
  * @{
  */
 void                hdaStreamLock(PHDASTREAM pStreamShared);
 void                hdaStreamUnlock(PHDASTREAM pStreamShared);
 /** @} */
+
+#ifdef IN_RING3
 
 /** @name Stream functions (ring-3).
  * @{
