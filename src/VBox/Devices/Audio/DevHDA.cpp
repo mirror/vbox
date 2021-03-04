@@ -28,6 +28,9 @@
 
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
+#ifdef HDA_DEBUG_GUEST_RIP
+# include <VBox/vmm/cpum.h>
+#endif
 #include <VBox/version.h>
 #include <VBox/AssertGuest.h>
 
@@ -2961,6 +2964,13 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
 #ifdef LOG_ENABLED
     unsigned const  cbLog     = cb;
     uint32_t        offRegLog = (uint32_t)off;
+# ifdef HDA_DEBUG_GUEST_RIP
+    if (LogIs6Enabled())
+    {
+        PVMCPU pVCpu = (PVMCPU)PDMDevHlpGetVMCPU(pDevIns);
+        Log6Func(("cs:rip=%04x:%016RX64 rflags=%08RX32\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu), CPUMGetGuestEFlags(pVCpu)));
+    }
+# endif
 #endif
 
     Log3Func(("off=%#x cb=%#x\n", offRegLog, cb));
@@ -3159,6 +3169,13 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
 
 #ifdef LOG_ENABLED
     uint32_t const u32LogOldValue = idxRegDsc >= 0 ? pThis->au32Regs[idxRegMem] : UINT32_MAX;
+# ifdef HDA_DEBUG_GUEST_RIP
+    if (LogIs6Enabled())
+    {
+        PVMCPU pVCpu = (PVMCPU)PDMDevHlpGetVMCPU(pDevIns);
+        Log6Func(("cs:rip=%04x:%016RX64 rflags=%08RX32\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu), CPUMGetGuestEFlags(pVCpu)));
+    }
+# endif
 #endif
 
     /*
