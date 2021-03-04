@@ -392,8 +392,9 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     QGridLayout *pDiskContainerLayout = new QGridLayout(pNewDiskContainerWidget);
 
     /* Disk location widgets: */
-    m_pDiskLocationGroupBox = new QGroupBox;
-    QHBoxLayout *pLocationLayout = new QHBoxLayout(m_pDiskLocationGroupBox);
+
+    QLabel *pLocationLabel = new QLabel("Disk Location:");
+    pLocationLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
     m_pLocationEditor = new QLineEdit;
     m_pLocationOpenButton = new QIToolButton;
     if (m_pLocationOpenButton)
@@ -401,14 +402,13 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
         m_pLocationOpenButton->setAutoRaise(true);
         m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
     }
-    pLocationLayout->addWidget(m_pLocationEditor);
-    pLocationLayout->addWidget(m_pLocationOpenButton);
+    pLocationLabel->setBuddy(m_pLocationEditor);
 
     /* Disk file size widgets: */
-    m_pDiskSizeGroupBox = new QGroupBox;
-    QHBoxLayout *pDiskSizeLayout = new QHBoxLayout(m_pDiskSizeGroupBox);
+    QLabel *pSizeEditorLabel = new QLabel("Disk Size:");
+    pSizeEditorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
     m_pSizeEditor = new UIMediumSizeEditor;
-    pDiskSizeLayout->addWidget(m_pSizeEditor);
+    pSizeEditorLabel->setBuddy(m_pSizeEditor);
 
     /* Disk file format widgets: */
     m_pDiskFormatGroupBox = new QGroupBox;
@@ -421,10 +421,15 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     QVBoxLayout *pDiskVariantLayout = new QVBoxLayout(m_pDiskVariantGroupBox);
     pDiskVariantLayout->addWidget(createMediumVariantWidgets(false /* fWithLabels */));
 
-    pDiskContainerLayout->addWidget(m_pDiskLocationGroupBox, 0, 0, 1, 2);
-    pDiskContainerLayout->addWidget(m_pDiskSizeGroupBox, 1, 0, 1, 2);
-    pDiskContainerLayout->addWidget(m_pDiskFormatGroupBox, 2, 0, 1, 1);
-    pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 2, 1, 1, 1);
+    pDiskContainerLayout->addWidget(pLocationLabel, 0, 0, 1, 1);
+    pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
+    pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
+
+    pDiskContainerLayout->addWidget(pSizeEditorLabel, 1, 0, 1, 1);
+    pDiskContainerLayout->addWidget(m_pSizeEditor, 1, 1, 1, 3);
+
+    pDiskContainerLayout->addWidget(m_pDiskFormatGroupBox, 2, 0, 1, 2);
+    pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 2, 2, 1, 2);
 
     return pNewDiskContainerWidget;
 }
