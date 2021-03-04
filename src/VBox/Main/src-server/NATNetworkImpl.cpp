@@ -148,6 +148,14 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox, com::Utf8Str aName)
 }
 
 
+HRESULT NATNetwork::setErrorBusy()
+{
+    return setError(E_FAIL,
+               "Unable to change settings"
+               " while NATNetwork instance is running");
+}
+
+
 HRESULT NATNetwork::i_loadSettings(const settings::NATNetwork &data)
 {
     AutoCaller autoCaller(this);
@@ -211,13 +219,22 @@ HRESULT NATNetwork::setNetworkName(const com::Utf8Str &aNetworkName)
     if (aNetworkName.isEmpty())
         return setError(E_INVALIDARG,
                         tr("Network name cannot be empty"));
+
     {
+        AutoReadLock alockNatNetList(m->pVirtualBox->i_getNatNetLock() COMMA_LOCKVAL_SRC_POS);
+        if (m->pVirtualBox->i_isNatNetStarted(m->s.strNetworkName))
+            return setErrorBusy();
+
+        /** @todo r=uwe who ensures there's no other network with that name? */
+
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         if (aNetworkName == m->s.strNetworkName)
             return S_OK;
 
         m->s.strNetworkName = aNetworkName;
     }
+
+
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = m->pVirtualBox->i_saveSettings();
     ComAssertComRCRetRC(rc);
@@ -295,6 +312,10 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
     com::Utf8StrFmt strCidr("%RTnaipv4/%d", Net.u, iPrefix);
 
     {
+        AutoReadLock alockNatNetList(m->pVirtualBox->i_getNatNetLock() COMMA_LOCKVAL_SRC_POS);
+        if (m->pVirtualBox->i_isNatNetStarted(m->s.strNetworkName))
+            return setErrorBusy();
+
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (m->s.strIPv4NetworkCidr == strCidr)
@@ -376,6 +397,10 @@ HRESULT NATNetwork::getIPv6Enabled(BOOL *aIPv6Enabled)
 HRESULT NATNetwork::setIPv6Enabled(const BOOL aIPv6Enabled)
 {
     {
+        AutoReadLock alockNatNetList(m->pVirtualBox->i_getNatNetLock() COMMA_LOCKVAL_SRC_POS);
+        if (m->pVirtualBox->i_isNatNetStarted(m->s.strNetworkName))
+            return setErrorBusy();
+
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (RT_BOOL(aIPv6Enabled) == m->s.fIPv6Enabled)
@@ -439,6 +464,10 @@ HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
     com::Utf8StrFmt strNormalizedIPv6Prefix("%RTnaipv6/64", &Net6);
 
     {
+        AutoReadLock alockNatNetList(m->pVirtualBox->i_getNatNetLock() COMMA_LOCKVAL_SRC_POS);
+        if (m->pVirtualBox->i_isNatNetStarted(m->s.strNetworkName))
+            return setErrorBusy();
+
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (strNormalizedIPv6Prefix == m->s.strIPv6Prefix)
@@ -474,6 +503,10 @@ HRESULT NATNetwork::getAdvertiseDefaultIPv6RouteEnabled(BOOL *aAdvertiseDefaultI
 HRESULT NATNetwork::setAdvertiseDefaultIPv6RouteEnabled(const BOOL aAdvertiseDefaultIPv6Route)
 {
     {
+        AutoReadLock alockNatNetList(m->pVirtualBox->i_getNatNetLock() COMMA_LOCKVAL_SRC_POS);
+        if (m->pVirtualBox->i_isNatNetStarted(m->s.strNetworkName))
+            return setErrorBusy();
+
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (RT_BOOL(aAdvertiseDefaultIPv6Route) == m->s.fAdvertiseDefaultIPv6Route)
@@ -611,6 +644,10 @@ HRESULT NATNetwork::getLoopbackIp6(LONG *aLoopbackIp6)
 HRESULT NATNetwork::setLoopbackIp6(LONG aLoopbackIp6)
 {
     {
+        AutoReadLock alockNatNetList(m->pVirtualBox->i_getNatNetLock() COMMA_LOCKVAL_SRC_POS);
+        if (m->pVirtualBox->i_isNatNetStarted(m->s.strNetworkName))
+            return setErrorBusy();
+
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (aLoopbackIp6 < 0)

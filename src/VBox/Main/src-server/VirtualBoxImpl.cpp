@@ -3464,6 +3464,27 @@ int VirtualBox::i_natNetworkRefDec(const Utf8Str &aNetworkName)
 }
 
 
+/*
+ * Export this to NATNetwork so that its setters can refuse to change
+ * essential network settings when an VBoxNatNet instance is running.
+ */
+RWLockHandle *VirtualBox::i_getNatNetLock() const
+{
+    return spMtxNatNetworkNameToRefCountLock;
+}
+
+
+/*
+ * Export this to NATNetwork so that its setters can refuse to change
+ * essential network settings when an VBoxNatNet instance is running.
+ * The caller is expected to hold a read lock on i_getNatNetLock().
+ */
+bool VirtualBox::i_isNatNetStarted(const Utf8Str &aNetworkName) const
+{
+    return sNatNetworkNameToRefCount[aNetworkName] > 0;
+}
+
+
 void VirtualBox::i_onCloudProviderListChanged(BOOL aRegistered)
 {
     ::FireCloudProviderListChangedEvent(m->pEventSource, aRegistered);

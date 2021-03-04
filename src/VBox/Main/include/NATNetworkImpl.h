@@ -114,6 +114,8 @@ private:
     HRESULT stop();
 
     // Internal methods
+    HRESULT setErrorBusy();
+
     int i_recalculateIpv4AddressAssignments();
     int i_findFirstAvailableOffset(ADDRESSLOOKUPTYPE, uint32_t *);
     int i_recalculateIPv6Prefix();

@@ -192,6 +192,9 @@ public:
     int i_natNetworkRefInc(const Utf8Str &aNetworkName);
     int i_natNetworkRefDec(const Utf8Str &aNetworkName);
 
+    RWLockHandle *i_getNatNetLock() const;
+    bool i_isNatNetStarted(const Utf8Str &aNetworkName) const;
+
     void i_onCloudProviderListChanged(BOOL aRegistered);
     void i_onCloudProviderRegistered(const Utf8Str &aProviderId, BOOL aRegistered);
     void i_onCloudProviderUninstall(const Utf8Str &aProviderId);
