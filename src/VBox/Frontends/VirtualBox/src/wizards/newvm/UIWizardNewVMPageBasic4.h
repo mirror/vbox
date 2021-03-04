@@ -59,7 +59,7 @@ protected:
     void setSelectedDiskSource(SelectedDiskSource enmSelectedDiskSource);
     bool getWithNewVirtualDiskWizard();
 
-    QWidget *createDiskWidgets();
+    virtual QWidget *createDiskWidgets();
     virtual QWidget *createDiskVariantAndSizeWidgets();
     void getWithFileOpenDialog();
     void retranslateWidgets();

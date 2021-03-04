@@ -34,6 +34,7 @@
 #include "UIIconPool.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
+#include "UIMediumSizeEditor.h"
 #include "UINameAndSystemEditor.h"
 #include "UIToolBox.h"
 #include "UIUserNamePasswordEditor.h"
@@ -52,14 +53,13 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
         m_pToolBox = new UIToolBox;
         m_pToolBox->insertPage(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(/* fCreateLabels */ false), "");
         m_pToolBox->insertPage(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "", false);
-        //m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
         m_pToolBox->insertPage(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
+        m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
 
         m_pToolBox->setCurrentPage(ExpertToolboxItems_NameAndOSType);
         pMainLayout->addWidget(m_pToolBox);
 
         pMainLayout->addStretch();
-
     }
 
     createConnections();
@@ -182,6 +182,8 @@ void UIWizardNewVMPageExpert::retranslateUi()
     UIWizardNewVMPage2::retranslateWidgets();
     UIWizardNewVMPage3::retranslateWidgets();
     UIWizardNewVMPage4::retranslateWidgets();
+    UIWizardNewVDPage1::retranslateWidgets();
+    UIWizardNewVDPage3::retranslateWidgets();
 
     if (m_pInstallationISOContainer)
         m_pInstallationISOContainer->setTitle(UIWizardNewVM::tr("Installation medium (ISO)"));
@@ -231,7 +233,6 @@ void UIWizardNewVMPageExpert::createConnections()
         connect(m_pGAInstallCheckBox, &QCheckBox::toggled,
                 this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
 
-    /* Connections for disk and hardware stuff: */
     if (m_pDiskEmpty)
     {
         connect(m_pDiskEmpty, &QRadioButton::toggled,
@@ -377,6 +378,42 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
     pLayout->addWidget(createGAInstallWidgets(), iRow, 0, 1, 4);
 
     return pContainerWidget;
+}
+
+QWidget *UIWizardNewVMPageExpert::createDiskWidgets()
+{
+    QWidget *pDiskContainerWidget = new QWidget;
+    QGridLayout *pDiskContainerLayout = new QGridLayout(pDiskContainerWidget);
+
+    /* Disk location widgets: */
+    QGroupBox *pLocationGroupBox = new QGroupBox;
+    QHBoxLayout *pLocationLayout = new QHBoxLayout(pLocationGroupBox);
+    m_pLocationEditor = new QLineEdit;
+    m_pLocationOpenButton = new QIToolButton;
+    if (m_pLocationOpenButton)
+    {
+        m_pLocationOpenButton->setAutoRaise(true);
+        m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
+    }
+    pLocationLayout->addWidget(m_pLocationEditor);
+    pLocationLayout->addWidget(m_pLocationOpenButton);
+
+    /* Disk file size widgets: */
+    QGroupBox *pDiskSizeGroupBox = new QGroupBox;
+    QHBoxLayout *pDiskSizeLayout = new QHBoxLayout(pDiskSizeGroupBox);
+    m_pSizeEditor = new UIMediumSizeEditor;
+    pDiskSizeLayout->addWidget(m_pSizeEditor);
+
+    /* Disk file format widgets: */
+    QGroupBox *pDiskFormatGroupBox = new QGroupBox;
+    QHBoxLayout *pDiskFormatLayout = new QHBoxLayout(pDiskFormatGroupBox);
+    m_pSizeEditor = new UIMediumSizeEditor;
+    pDiskFormatLayout->addWidget(createFormatButtonGroup(true));
+
+    pDiskContainerLayout->addWidget(pLocationGroupBox, 0, 0, 1, 4);
+    pDiskContainerLayout->addWidget(pDiskSizeGroupBox, 1, 0, 1, 4);
+    pDiskContainerLayout->addWidget(pDiskFormatGroupBox, 2, 0, 1, 2);
+    return pDiskContainerWidget;
 }
 
 bool UIWizardNewVMPageExpert::isComplete() const

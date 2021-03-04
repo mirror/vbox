@@ -29,6 +29,7 @@
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVMPageBasic4.h"
+#include "UIWizardNewVDPageBasic3.h"
 
 /* Forward declarations: */
 class QGroupBox;
@@ -39,7 +40,9 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPage1,
                                 public UIWizardNewVMPage2,
                                 public UIWizardNewVMPage3,
-                                public UIWizardNewVMPage4
+                                public UIWizardNewVMPage4,
+                                public UIWizardNewVDPage1,
+                                public UIWizardNewVDPage3
 {
 
     Q_OBJECT;
@@ -122,6 +125,7 @@ private:
     void disableEnableUnattendedRelatedWidgets(bool fEnabled);
     void markWidgets() const;
     QWidget *createUnattendedWidgets();
+    virtual QWidget *createDiskWidgets() /* override */;
 
     UIToolBox  *m_pToolBox;
     QGroupBox *m_pInstallationISOContainer;

@@ -202,9 +202,9 @@ void UIWizardNewVDPageExpert::retranslateUi()
     UIWizardNewVDPage3::retranslateWidgets();
     /* Translate widgets: */
     if (m_pLocationGroupBox)
-        m_pLocationGroupBox->setTitle(UIWizardNewVD::tr("File &location"));
+        m_pLocationGroupBox->setTitle(UIWizardNewVD::tr("Hard disk file &location"));
     if (m_pSizeGroupBox)
-        m_pSizeGroupBox->setTitle(UIWizardNewVD::tr("File &size"));
+        m_pSizeGroupBox->setTitle(UIWizardNewVD::tr("Hard disk file &size"));
     if (m_pFormatGroupBox)
         m_pFormatGroupBox->setTitle(UIWizardNewVD::tr("Hard disk file &type"));
     if (m_pFormatButtonGroup)
