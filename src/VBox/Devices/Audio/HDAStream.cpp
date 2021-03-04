@@ -529,14 +529,15 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         {
             pStreamShared->State.cbTransferSize  = cbTransferHeuristics;
             pStreamShared->State.cbTransferChunk = cbTransferHeuristics; /* no chunking */
-            ASSERT_GUEST_LOGREL_MSG(DrvAudioHlpBytesIsAligned(cbTransferHeuristics, &pCfg->Props),
+            ASSERT_GUEST_LOGREL_MSG(DrvAudioHlpBytesIsAligned(cbTransferHeuristics, &pStreamR3->State.Mapping.PCMProps),
                                     ("We arrived at a misaligned transfer size for stream #%RU8: %#x (%u)\n",
                                      uSD, cbTransferHeuristics, cbTransferHeuristics));
 
             /* Convert to timer ticks. */
             uint64_t const cTimerTicksPerSec = PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer);
-            uint64_t const cbTransferPerSec  = RT_MAX(pStreamShared->State.Cfg.Props.uHz * pStreamR3->State.Mapping.cbFrameSize,
+            uint64_t const cbTransferPerSec  = RT_MAX(pStreamR3->State.Mapping.PCMProps.uHz * pStreamR3->State.Mapping.cbFrameSize,
                                                       4096 /* zero div prevention: min is 6kHz, picked 4k in case I'm mistaken */);
+
             pStreamShared->State.cTicksPerByte = (cTimerTicksPerSec + cbTransferPerSec / 2) / cbTransferPerSec;
             AssertStmt(pStreamShared->State.cTicksPerByte, pStreamShared->State.cTicksPerByte = 4096);
 
