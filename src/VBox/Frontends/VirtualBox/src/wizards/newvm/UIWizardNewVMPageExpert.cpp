@@ -183,6 +183,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
     UIWizardNewVMPage3::retranslateWidgets();
     UIWizardNewVMPage4::retranslateWidgets();
     UIWizardNewVDPage1::retranslateWidgets();
+    UIWizardNewVDPage2::retranslateWidgets();
     UIWizardNewVDPage3::retranslateWidgets();
 
     if (m_pInstallationISOContainer)
@@ -410,9 +411,16 @@ QWidget *UIWizardNewVMPageExpert::createDiskWidgets()
     m_pSizeEditor = new UIMediumSizeEditor;
     pDiskFormatLayout->addWidget(createFormatButtonGroup(true));
 
-    pDiskContainerLayout->addWidget(pLocationGroupBox, 0, 0, 1, 4);
-    pDiskContainerLayout->addWidget(pDiskSizeGroupBox, 1, 0, 1, 4);
-    pDiskContainerLayout->addWidget(pDiskFormatGroupBox, 2, 0, 1, 2);
+    /* Disk variant and dik split widgets: */
+    QGroupBox *pDiskVariantGroupBox = new QGroupBox;
+    QVBoxLayout *pDiskVariantLayout = new QVBoxLayout(pDiskVariantGroupBox);
+    pDiskVariantLayout->addWidget(createMediumVariantWidgets(false /* fWithLabels */));
+
+    pDiskContainerLayout->addWidget(pLocationGroupBox, 0, 0, 1, 2);
+    pDiskContainerLayout->addWidget(pDiskSizeGroupBox, 1, 0, 1, 2);
+    pDiskContainerLayout->addWidget(pDiskFormatGroupBox, 2, 0, 1, 1);
+    pDiskContainerLayout->addWidget(pDiskVariantGroupBox, 2, 1, 1, 1);
+
     return pDiskContainerWidget;
 }
 

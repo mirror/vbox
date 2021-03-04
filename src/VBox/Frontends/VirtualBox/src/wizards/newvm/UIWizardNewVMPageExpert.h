@@ -42,6 +42,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPage3,
                                 public UIWizardNewVMPage4,
                                 public UIWizardNewVDPage1,
+                                public UIWizardNewVDPage2,
                                 public UIWizardNewVDPage3
 {
 
