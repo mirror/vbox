@@ -2648,6 +2648,8 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, v
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, hTimer));
 
+    RT_NOREF(hTimer);
+
     hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
 }
 
