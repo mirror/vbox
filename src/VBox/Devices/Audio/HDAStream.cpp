@@ -34,6 +34,10 @@
 #include "DevHDA.h"
 #include "HDAStream.h"
 
+#ifdef VBOX_WITH_DTRACE
+# include "dtrace/VBoxDD.h"
+#endif
+
 #ifdef IN_RING3 /* whole file */
 
 
@@ -503,6 +507,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                 cbTransferHeuristicsCur += bd.u32BufSize;
         }
 
+#if 0
         /* !!! HACK ALERT BEGIN !!! */
 
         /* Windows 10's audio driver expects a transfer all ~10.1ms (~1764 bytes), although
@@ -534,6 +539,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         }
 
         /* !!! HACK ALERT END !!! */
+#endif
 
         else
         {
@@ -653,6 +659,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
             RTCircBufDestroy(pStreamR3->State.pCircBuf);
             pStreamR3->State.pCircBuf = NULL;
         }
+        pStreamR3->State.offWrite = 0;
+        pStreamR3->State.offRead  = 0;
 
         /*
          * The default size of our internal ring buffer depends on the transfer timing
@@ -699,6 +707,10 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     if (RT_FAILURE(rc))
         LogRel(("HDA: Initializing stream #%RU8 failed with %Rrc\n", uSD, rc));
 
+#ifdef VBOX_WITH_DTRACE
+    VBOXDD_HDA_STREAM_SETUP((uint32_t)uSD, rc, /** @todo uHz - 44100 and such */ 0,
+                            pStreamShared->State.cTransferTicks, pStreamShared->State.cbTransferSize);
+#endif
     return rc;
 }
 
@@ -770,6 +782,8 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
 
     if (pStreamR3->State.pCircBuf)
         RTCircBufReset(pStreamR3->State.pCircBuf);
+    pStreamR3->State.offWrite = 0;
+    pStreamR3->State.offRead  = 0;
 
     /* Reset the stream's period. */
     hdaR3StreamPeriodReset(&pStreamShared->State.Period);
@@ -788,6 +802,9 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     /* Report that we're done resetting this stream. */
     HDA_STREAM_REG(pThis, CTL,   uSD) = 0;
 
+#ifdef VBOX_WITH_DTRACE
+    VBOXDD_HDA_STREAM_RESET((uint32_t)uSD);
+#endif
     LogFunc(("[SD%RU8] Reset\n", uSD));
 
     /* Exit reset mode. */
@@ -1025,6 +1042,10 @@ static int hdaR3StreamWrite(PHDASTREAMR3 pStreamR3, const void *pvBuf, uint32_t 
                  *        For now we ASSUME that silence equals NULLing the data. */
                 RT_BZERO(pvDst, cbDst);
             }
+#ifdef VBOX_WITH_DTRACE
+            VBOXDD_HDA_STREAM_AIO_IN((uint32_t)pStreamR3->u8SD, (uint32_t)cbDst, pStreamR3->State.offWrite);
+#endif
+            pStreamR3->State.offWrite += cbDst;
 
             if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
             { /* likely */ }
@@ -1039,7 +1060,7 @@ static int hdaR3StreamWrite(PHDASTREAMR3 pStreamR3, const void *pvBuf, uint32_t 
         cbWrittenTotal += (uint32_t)cbDst;
     }
 
-    Log3Func(("cbWrittenTotal=%RU32\n", cbWrittenTotal));
+    Log3Func(("cbWrittenTotal=%#RX32 @ %#RX64\n", cbWrittenTotal, pStreamR3->State.offWrite - cbWrittenTotal));
 
     if (pcbWritten)
         *pcbWritten = cbWrittenTotal;
@@ -1089,9 +1110,13 @@ static int hdaR3StreamRead(PHDASTREAMR3 pStreamR3, uint32_t cbToRead, uint32_t *
 
             rc = AudioMixerSinkWrite(pSink->pMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
             AssertRC(rc);
-
             Assert(cbSrc >= cbWritten);
-            Log2Func(("[SD%RU8] %RU32/%zu bytes read\n", pStreamR3->u8SD, cbWritten, cbSrc));
+
+            Log2Func(("[SD%RU8] %#RX32/%#zx bytes read @ %#RX64\n", pStreamR3->u8SD, cbWritten, cbSrc, pStreamR3->State.offRead));
+#ifdef VBOX_WITH_DTRACE
+            VBOXDD_HDA_STREAM_AIO_OUT(pStreamR3->u8SD, (uint32_t)cbSrc, pStreamR3->State.offRead);
+#endif
+            pStreamR3->State.offRead += cbSrc;
         }
 
         RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
@@ -1268,6 +1293,10 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                     break;
 
                 memcpy(pabFIFO + cbDMAWritten, pvBuf, cbBuf);
+#ifdef VBOX_WITH_DTRACE
+                VBOXDD_HDA_STREAM_DMA_IN((uint32_t)uSD, (uint32_t)cbBuf, pStreamR3->State.offRead);
+#endif
+                pStreamR3->State.offRead += cbBuf;
 
                 RTCircBufReleaseReadBlock(pCircBuf, cbBuf);
 
@@ -1323,6 +1352,10 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                             memcpy(pvBuf, pabFIFO + cbDMARead, cbBuf);
                             cbDMARead += (uint32_t)cbBuf;
                             cbDMALeft -= (uint32_t)cbBuf;
+#ifdef VBOX_WITH_DTRACE
+                            VBOXDD_HDA_STREAM_DMA_OUT((uint32_t)uSD, (uint32_t)cbBuf, pStreamR3->State.offWrite);
+#endif
+                            pStreamR3->State.offWrite += cbBuf;
                         }
 
                         RTCircBufReleaseWriteBlock(pCircBuf, cbBuf);
@@ -1394,7 +1427,11 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                                 if (cbSrcOff + cbFrame + pMap->offFirst<= cbDMA)
                                     cbSrcOff += cbFrame + pMap->offFirst;
 
+#ifdef VBOX_WITH_DTRACE
+                                VBOXDD_HDA_STREAM_DMA_OUT((uint32_t)uSD, (uint32_t)cbDstBuf, pStreamR3->State.offWrite);
+#endif
                                 Log3Func(("Mapping #%u: Frame #%02u:    -> cbSrcOff=%zu\n", m, i, cbSrcOff));
+                                pStreamR3->State.offWrite += cbDstBuf;
                             }
 
                             RTCircBufReleaseWriteBlock(pCircBuf, cbDstBuf);
@@ -1420,6 +1457,10 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                                 if (cbDstBuf)
                                 {
                                     memcpy(pvDstBuf, pbSrcBuf + cbSrcOff, cbDstBuf);
+#ifdef VBOX_WITH_DTRACE
+                                    VBOXDD_HDA_STREAM_DMA_OUT((uint32_t)uSD, (uint32_t)cbDstBuf, pStreamR3->State.offWrite);
+#endif
+                                    pStreamR3->State.offWrite += cbDstBuf;
                                 }
 
                                 RTCircBufReleaseWriteBlock(pCircBuf, cbDstBuf);
@@ -1600,8 +1641,8 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     /* Always update this timestamp, no matter what pStreamShared->State.tsTransferNext is. */
     pStreamShared->State.tsTransferLast = tsNow;
 
-    Log3Func(("[SD%RU8] %R[bdle] -- %RU32/%RU32\n",
-              uSD, pBDLE, cbProcessed, pStreamShared->State.cbTransferSize));
+    Log3Func(("[SD%RU8] %R[bdle] -- %#RX32/%#RX32 @ %#RX64\n", uSD, pBDLE, cbProcessed, pStreamShared->State.cbTransferSize,
+              (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT ? pStreamR3->State.offWrite : pStreamR3->State.offRead) - cbProcessed));
     Log3Func(("[SD%RU8] fTransferComplete=%RTbool, cTransferPendingInterrupts=%RU8\n",
               uSD, fTransferComplete, pStreamShared->State.cTransferPendingInterrupts));
     Log3Func(("[SD%RU8] tsNow=%RU64, tsTransferNext=%RU64 (in %RU64 ticks)\n",
@@ -1728,6 +1769,8 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                  * This is needed in order to keep the device emulation running at a constant rate,
                  * at the cost of losing valid (but too much) data. */
                 RTCircBufReset(pStreamR3->State.pCircBuf);
+                pStreamR3->State.offWrite = 0;
+                pStreamR3->State.offRead  = 0;
                 cbStreamFree = hdaR3StreamGetFree(pStreamR3);
             }
 

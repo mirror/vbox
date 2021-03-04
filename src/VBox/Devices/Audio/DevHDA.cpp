@@ -3946,6 +3946,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
                                       VERR_INTERNAL_ERROR_3);
                 rc = pHlp->pfnSSMGetMem(pSSM, pvBuf, cbBuf);
                 AssertRCReturn(rc, rc);
+                pStreamR3->State.offWrite = cbCircBufUsed;
 
                 RTCircBufReleaseWriteBlock(pStreamR3->State.pCircBuf, cbBuf);
 

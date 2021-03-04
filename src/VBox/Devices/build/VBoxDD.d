@@ -24,6 +24,13 @@ provider vboxdd
 
     probe ahci__req__submit(void *pvReq, int iTxDir, uint64_t offStart, uint64_t cbXfer);
     probe ahci__req__completed(void *pvReq, int rcReq, uint64_t offStart, uint64_t cbXfer);
+
+    probe hda__stream__setup(uint32_t idxStream, int32_t rc, uint32_t uHz, uint64_t cTicksPeriod, uint32_t cbPeriod);
+    probe hda__stream__reset(uint32_t idxStream);
+    probe hda__stream__dma__out(uint32_t idxStream, uint32_t cb, uint64_t off);
+    probe hda__stream__dma__in(uint32_t idxStream, uint32_t cb, uint64_t off);
+    probe hda__stream__aio__out(uint32_t idxStream, uint32_t cb, uint64_t off);
+    probe hda__stream__aio__in(uint32_t idxStream, uint32_t cb, uint64_t off);
 };
 
 #pragma D attributes Evolving/Evolving/Common provider vboxdd provider

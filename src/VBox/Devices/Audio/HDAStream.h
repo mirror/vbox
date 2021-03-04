@@ -249,6 +249,10 @@ typedef struct HDASTREAMR3
         HDASTREAMMAP            Mapping;
         /** Circular buffer (FIFO) for holding DMA'ed data. */
         R3PTRTYPE(PRTCIRCBUF)   pCircBuf;
+        /** Current circular buffer read offset (for tracing & logging). */
+        uint64_t                offRead;
+        /** Current circular buffer write offset (for tracing & logging). */
+        uint64_t                offWrite;
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
         /** List of DMA handlers. */
         RTLISTANCHORR3          lstDMAHandlers;
