@@ -1212,7 +1212,8 @@ endif
  	Audio/DevHDA.cpp \
  	Audio/DevHDACommon.cpp \
  	Audio/DevIchAc97.cpp \
- 	Audio/HDACodec.cpp
+ 	Audio/HDACodec.cpp \
+ 	Audio/HDAStream.cpp
 
  ifdef VBOX_WITH_E1000
   VBoxDDR0_DEFS         += VBOX_WITH_E1000
