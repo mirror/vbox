@@ -1196,6 +1196,11 @@ endif
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp
 
+ ifdef VBOX_WITH_DTRACE_R0
+  VBoxDDR0_USES         += dtrace
+  VBoxDDR0_SOURCES      += build/VBoxDD.d
+ endif
+
  VBoxDDR0_SOURCES.win += Parallel/DrvHostParallel.cpp
 
  VBoxDDR0_DEFS          += \
