@@ -150,10 +150,10 @@ QWidget *UIWizardNewVMPage4::createDiskWidgets()
     }
     pDiskLayout->addWidget(m_pDiskNew, 0, 0, 1, 6);
     pDiskLayout->addWidget(createDiskVariantAndSizeWidgets(), 1, 2, 3, 4);
-    pDiskLayout->addWidget(m_pDiskEmpty, 4, 0, 1, 6);
-    pDiskLayout->addWidget(m_pDiskExisting, 6, 0, 1, 6);
-    pDiskLayout->addWidget(m_pDiskSelector, 7, 2, 1, 3);
-    pDiskLayout->addWidget(m_pDiskSelectionButton, 7, 5, 1, 1);
+    pDiskLayout->addWidget(m_pDiskExisting, 4, 0, 1, 6);
+    pDiskLayout->addWidget(m_pDiskSelector, 5, 2, 1, 3);
+    pDiskLayout->addWidget(m_pDiskSelectionButton, 5, 5, 1, 1);
+    pDiskLayout->addWidget(m_pDiskEmpty, 6, 0, 1, 6);
     return pDiskContainer;
 }
 
