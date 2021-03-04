@@ -4046,22 +4046,24 @@ static DECLCALLBACK(size_t) hdaR3StrFmtSDSTS(PFNRTSTROUTPUT pfnOutput, void *pvA
 *   Debug Info Item Handlers                                                                                                     *
 *********************************************************************************************************************************/
 
+/** Worker for hdaR3DbgInfo. */
 static int hdaR3DbgLookupRegByName(const char *pszArgs)
 {
-    int iReg = 0;
-    for (; iReg < HDA_NUM_REGS; ++iReg)
-        if (!RTStrICmp(g_aHdaRegMap[iReg].abbrev, pszArgs))
-            return iReg;
+    if (pszArgs && *pszArgs != '\0')
+        for (int iReg = 0; iReg < HDA_NUM_REGS; ++iReg)
+            if (!RTStrICmp(g_aHdaRegMap[iReg].abbrev, pszArgs))
+                return iReg;
     return -1;
 }
 
-
+/** Worker for hdaR3DbgInfo.  */
 static void hdaR3DbgPrintRegister(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iHdaIndex)
 {
-    Assert(   pThis
-           && iHdaIndex >= 0
-           && iHdaIndex < HDA_NUM_REGS);
-    pHlp->pfnPrintf(pHlp, "%s: 0x%x\n", g_aHdaRegMap[iHdaIndex].abbrev, pThis->au32Regs[g_aHdaRegMap[iHdaIndex].mem_idx]);
+    /** @todo HDA_REG_IDX_NOMEM & GCAP both uses mem_idx zero, no flag or anything to tell them appart. */
+    if (g_aHdaRegMap[iHdaIndex].mem_idx != 0 || g_aHdaRegMap[iHdaIndex].pfnRead != hdaRegReadWALCLK)
+        pHlp->pfnPrintf(pHlp, "%s: 0x%x\n", g_aHdaRegMap[iHdaIndex].abbrev, pThis->au32Regs[g_aHdaRegMap[iHdaIndex].mem_idx]);
+    else
+        pHlp->pfnPrintf(pHlp, "%s: 0x%RX64\n", g_aHdaRegMap[iHdaIndex].abbrev, pThis->u64WalClk);
 }
 
 /**
@@ -4070,93 +4072,100 @@ static void hdaR3DbgPrintRegister(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iHdaI
 static DECLCALLBACK(void) hdaR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
-    int iHdaRegisterIndex = hdaR3DbgLookupRegByName(pszArgs);
-    if (iHdaRegisterIndex != -1)
-        hdaR3DbgPrintRegister(pThis, pHlp, iHdaRegisterIndex);
+    int idxReg = hdaR3DbgLookupRegByName(pszArgs);
+    if (idxReg != -1)
+        hdaR3DbgPrintRegister(pThis, pHlp, idxReg);
     else
-    {
-        for(iHdaRegisterIndex = 0; (unsigned int)iHdaRegisterIndex < HDA_NUM_REGS; ++iHdaRegisterIndex)
-            hdaR3DbgPrintRegister(pThis, pHlp, iHdaRegisterIndex);
-    }
+        for (idxReg = 0; idxReg < HDA_NUM_REGS; ++idxReg)
+            hdaR3DbgPrintRegister(pThis, pHlp, idxReg);
 }
 
-static void hdaR3DbgPrintStream(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iIdx)
+/** Worker for hdaR3DbgInfoStream.    */
+static void hdaR3DbgPrintStream(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStream)
 {
-    Assert(   pThis
-           && iIdx >= 0
-           && iIdx < HDA_MAX_STREAMS);
+    const PHDASTREAM pStream = &pThis->aStreams[idxStream];
 
-    const PHDASTREAM pStream = &pThis->aStreams[iIdx];
-
-    pHlp->pfnPrintf(pHlp, "Stream #%d:\n", iIdx);
-    pHlp->pfnPrintf(pHlp, "\tSD%dCTL  : %R[sdctl]\n",   iIdx, HDA_STREAM_REG(pThis, CTL,   iIdx));
-    pHlp->pfnPrintf(pHlp, "\tSD%dCTS  : %R[sdsts]\n",   iIdx, HDA_STREAM_REG(pThis, STS,   iIdx));
-    pHlp->pfnPrintf(pHlp, "\tSD%dFIFOS: %R[sdfifos]\n", iIdx, HDA_STREAM_REG(pThis, FIFOS, iIdx));
-    pHlp->pfnPrintf(pHlp, "\tSD%dFIFOW: %R[sdfifow]\n", iIdx, HDA_STREAM_REG(pThis, FIFOW, iIdx));
-    pHlp->pfnPrintf(pHlp, "\tBDLE     : %R[bdle]\n",    &pStream->State.BDLE);
+    pHlp->pfnPrintf(pHlp, "Stream #%d:\n", idxStream);
+    pHlp->pfnPrintf(pHlp, "  SD%dCTL  : %R[sdctl]\n",   idxStream, HDA_STREAM_REG(pThis, CTL,   idxStream));
+    pHlp->pfnPrintf(pHlp, "  SD%dCTS  : %R[sdsts]\n",   idxStream, HDA_STREAM_REG(pThis, STS,   idxStream));
+    pHlp->pfnPrintf(pHlp, "  SD%dFIFOS: %R[sdfifos]\n", idxStream, HDA_STREAM_REG(pThis, FIFOS, idxStream));
+    pHlp->pfnPrintf(pHlp, "  SD%dFIFOW: %R[sdfifow]\n", idxStream, HDA_STREAM_REG(pThis, FIFOW, idxStream));
+    pHlp->pfnPrintf(pHlp, "  BDLE     : %R[bdle]\n",    &pStream->State.BDLE);
 }
 
-static void hdaR3DbgPrintBDLE(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iIdx)
+/** Worker for hdaR3DbgInfoBDLE. */
+static void hdaR3DbgPrintBDLE(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStream)
 {
-    Assert(   pThis
-           && iIdx >= 0
-           && iIdx < HDA_MAX_STREAMS);
+    const PHDASTREAM pStream = &pThis->aStreams[idxStream];
 
-    const PHDASTREAM pStream = &pThis->aStreams[iIdx];
-    const PHDABDLE   pBDLE   = &pStream->State.BDLE;
+    pHlp->pfnPrintf(pHlp, "Stream #%d BDLE:\n",      idxStream);
 
-    pHlp->pfnPrintf(pHlp, "Stream #%d BDLE:\n",      iIdx);
+    uint64_t const u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, idxStream),
+                                            HDA_STREAM_REG(pThis, BDPU, idxStream));
+    uint16_t const u16LVI     = HDA_STREAM_REG(pThis, LVI, idxStream);
+    uint32_t const u32CBL     = HDA_STREAM_REG(pThis, CBL, idxStream);
 
-    uint64_t u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, iIdx),
-                                      HDA_STREAM_REG(pThis, BDPU, iIdx));
-    uint16_t u16LVI     = HDA_STREAM_REG(pThis, LVI, iIdx);
-    uint32_t u32CBL     = HDA_STREAM_REG(pThis, CBL, iIdx);
-
+    pHlp->pfnPrintf(pHlp, "  Current: %R[bdle]\n", &pStream->State.BDLE);
+    pHlp->pfnPrintf(pHlp, "  Memory - %#RX64 LB %#x (LVI=%u):\n", u64BaseDMA, u16LVI * sizeof(HDABDLEDESC), u16LVI);
     if (!u64BaseDMA)
         return;
 
-    pHlp->pfnPrintf(pHlp, "\tCurrent: %R[bdle]\n\n", pBDLE);
-
-    pHlp->pfnPrintf(pHlp, "\tMemory:\n");
-
-    uint32_t cbBDLE = 0;
+    uint32_t cbTotal = 0;
     for (uint16_t i = 0; i < u16LVI + 1; i++)
     {
-        HDABDLEDESC bd;
+        /** @todo shouldn't this be a PCI read?   */
+        HDABDLEDESC bd = {0, 0, 0};
         PDMDevHlpPhysRead(pDevIns, u64BaseDMA + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
 
-        pHlp->pfnPrintf(pHlp, "\t\t%s #%03d BDLE(adr:0x%llx, size:%RU32, ioc:%RTbool)\n",
-                        pBDLE->State.u32BDLIndex == i ? "*" : " ", i, bd.u64BufAddr, bd.u32BufSize, bd.fFlags & HDA_BDLE_F_IOC);
+        char szFlags[64];
+        szFlags[0] = '\0';
+        if (bd.fFlags & ~HDA_BDLE_F_IOC)
+            RTStrPrintf(szFlags, sizeof(szFlags), " !!fFlags=%#x!!\n", bd.fFlags);
+        pHlp->pfnPrintf(pHlp, "    %sBDLE%03u: %#RX64 LB %#x %s%s\n",
+                        pStream->State.BDLE.State.u32BDLIndex == i ? "=>" : "  ", i, bd.u64BufAddr, bd.u32BufSize,
+                        bd.fFlags & HDA_BDLE_F_IOC ? " IOC=1" : "", szFlags);
 
-        cbBDLE += bd.u32BufSize;
+        cbTotal += bd.u32BufSize;
     }
+    pHlp->pfnPrintf(pHlp, "  Total: %RU32 bytes\n", cbTotal);
+    if (cbTotal != u32CBL)
+        pHlp->pfnPrintf(pHlp, "  Warning: %RU32 bytes does not match CBL (%RU32)!\n", cbTotal, u32CBL);
 
-    pHlp->pfnPrintf(pHlp, "Total: %RU32 bytes\n", cbBDLE);
+    uint64_t const uDPBase = pThis->u64DPBase & DPBASE_ADDR_MASK;
+    pHlp->pfnPrintf(pHlp, "  DMA counters %#RX64 LB %#x, %s:\n", uDPBase, u16LVI * 2 * sizeof(uint32_t),
+                    pThis->fDMAPosition ? "enabled" : "disabled");
+    if (uDPBase)
+        for (uint16_t i = 0; i < u16LVI + 1; i++)
+        {
+            /** @todo shouldn't this be a PCI read? */
+            struct
+            {
+                uint32_t uPos;
+                uint32_t uReserved;
+            } Buf = { 0 , 0 };
+            PDMDevHlpPhysRead(pDevIns, uDPBase + i * sizeof(Buf), &Buf, sizeof(Buf));
 
-    if (cbBDLE != u32CBL)
-        pHlp->pfnPrintf(pHlp, "Warning: %RU32 bytes does not match CBL (%RU32)!\n", cbBDLE, u32CBL);
-
-    pHlp->pfnPrintf(pHlp, "DMA counters (base @ 0x%llx):\n", u64BaseDMA);
-    if (!u64BaseDMA) /* No DMA base given? Bail out. */
-    {
-        pHlp->pfnPrintf(pHlp, "\tNo counters found\n");
-        return;
-    }
-
-    for (int i = 0; i < u16LVI + 1; i++)
-    {
-        uint32_t uDMACnt;
-        PDMDevHlpPhysRead(pDevIns, (pThis->u64DPBase & DPBASE_ADDR_MASK) + (i * 2 * sizeof(uint32_t)),
-                          &uDMACnt, sizeof(uDMACnt));
-
-        pHlp->pfnPrintf(pHlp, "\t#%03d DMA @ 0x%x\n", i , uDMACnt);
-    }
+            char szReserved[64];
+            szReserved[0] = '\0';
+            if (Buf.uReserved != 0)
+                RTStrPrintf(szReserved, sizeof(szReserved), " reserved=%#x", Buf.uReserved);
+            pHlp->pfnPrintf(pHlp, "    #%03d DMA @ %#x%s\n", i, Buf.uPos, szReserved);
+        }
+    else
+        pHlp->pfnPrintf(pHlp, "    No counters.\n");
 }
 
-static int hdaR3DbgLookupStrmIdx(PHDASTATE pThis, const char *pszArgs)
+/** Used by hdaR3DbgInfoStream and hdaR3DbgInfoBDLE. */
+static int hdaR3DbgLookupStrmIdx(PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    RT_NOREF(pThis, pszArgs);
-    /** @todo Add args parsing. */
+    if (pszArgs && *pszArgs)
+    {
+        int32_t idxStream;
+        int rc = RTStrToInt32Full(pszArgs, 0, &idxStream);
+        if (RT_SUCCESS(rc) && idxStream >= -1 && idxStream < HDA_MAX_STREAMS)
+            return idxStream;
+        pHlp->pfnPrintf(pHlp, "Argument '%s' is not a valid stream number!\n", pszArgs);
+    }
     return -1;
 }
 
@@ -4165,13 +4174,13 @@ static int hdaR3DbgLookupStrmIdx(PHDASTATE pThis, const char *pszArgs)
  */
 static DECLCALLBACK(void) hdaR3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PHDASTATE   pThis         = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
-    int         iHdaStreamdex = hdaR3DbgLookupStrmIdx(pThis, pszArgs);
-    if (iHdaStreamdex != -1)
-        hdaR3DbgPrintStream(pThis, pHlp, iHdaStreamdex);
+    PHDASTATE   pThis     = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    int         idxStream = hdaR3DbgLookupStrmIdx(pHlp, pszArgs);
+    if (idxStream != -1)
+        hdaR3DbgPrintStream(pThis, pHlp, idxStream);
     else
-        for(iHdaStreamdex = 0; iHdaStreamdex < HDA_MAX_STREAMS; ++iHdaStreamdex)
-            hdaR3DbgPrintStream(pThis, pHlp, iHdaStreamdex);
+        for (idxStream = 0; idxStream < HDA_MAX_STREAMS; ++idxStream)
+            hdaR3DbgPrintStream(pThis, pHlp, idxStream);
 }
 
 /**
@@ -4179,13 +4188,13 @@ static DECLCALLBACK(void) hdaR3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP p
  */
 static DECLCALLBACK(void) hdaR3DbgInfoBDLE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PHDASTATE   pThis         = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
-    int         iHdaStreamdex = hdaR3DbgLookupStrmIdx(pThis, pszArgs);
-    if (iHdaStreamdex != -1)
-        hdaR3DbgPrintBDLE(pDevIns, pThis, pHlp, iHdaStreamdex);
+    PHDASTATE   pThis     = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    int         idxStream = hdaR3DbgLookupStrmIdx(pHlp, pszArgs);
+    if (idxStream != -1)
+        hdaR3DbgPrintBDLE(pDevIns, pThis, pHlp, idxStream);
     else
-        for (iHdaStreamdex = 0; iHdaStreamdex < HDA_MAX_STREAMS; ++iHdaStreamdex)
-            hdaR3DbgPrintBDLE(pDevIns, pThis, pHlp, iHdaStreamdex);
+        for (idxStream = 0; idxStream < HDA_MAX_STREAMS; ++idxStream)
+            hdaR3DbgPrintBDLE(pDevIns, pThis, pHlp, idxStream);
 }
 
 /**
@@ -5013,8 +5022,10 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * the info handles use (at least some of) the custom types and we cannot
      * accept screwing formatting.
      */
-    PDMDevHlpDBGFInfoRegister(pDevIns, "hda",         "HDA info. (hda [register case-insensitive])",     hdaR3DbgInfo);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "hdabdle",     "HDA stream BDLE info. (hdabdle [stream number])", hdaR3DbgInfoBDLE);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hda",         "HDA registers. (hda [register case-insensitive])", hdaR3DbgInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hdabdle",
+                              "HDA buffer descriptor list (BDLE) and DMA stream positions. (hdabdle [stream number])",
+                              hdaR3DbgInfoBDLE);
     PDMDevHlpDBGFInfoRegister(pDevIns, "hdastream",   "HDA stream info. (hdastream [stream number])",    hdaR3DbgInfoStream);
     PDMDevHlpDBGFInfoRegister(pDevIns, "hdcnodes",    "HDA codec nodes.",                                hdaR3DbgInfoCodecNodes);
     PDMDevHlpDBGFInfoRegister(pDevIns, "hdcselector", "HDA codec's selector states [node number].",      hdaR3DbgInfoCodecSelector);
