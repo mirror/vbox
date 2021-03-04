@@ -88,29 +88,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("VCPUCount", this, "VCPUCount");
     registerField("EFIEnabled", this, "EFIEnabled");
 
-    const QPalette pal = palette();
-    QColor tabBackgroundColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(110);
-    QColor textColor = pal.color(QPalette::Active, QPalette::Text).lighter();
-    QColor disabledTextColor = pal.color(QPalette::Disabled, QPalette::Text).lighter();
-
-    m_pToolBox->setStyleSheet(QString::fromUtf8("QToolBox::tab {\n"
-                                                "    background: %1; \n"
-                                                "    border-radius: 5px;\n"
-                                                "    color: %2;\n"
-                                                "}\n"
-                                                "\n"
-                                                "QToolBox::tab:selected {\n"
-                                                "    font: bold;\n"
-                                                "}\n"
-                                                "\n"
-                                                "QToolBox::tab:hover {\n"
-                                                "    font: bold;\n"
-                                                "}\n"
-                                                "QToolBox::tab:disabled {\n"
-                                                "    font: italic;\n"
-                                                "    color: %3;\n"
-                                                "}").arg(tabBackgroundColor.name()).arg(textColor.name()).arg(disabledTextColor.name()));
-
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
 }
 
