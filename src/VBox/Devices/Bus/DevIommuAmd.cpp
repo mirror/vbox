@@ -4086,7 +4086,7 @@ static DECLCALLBACK(int) iommuAmdCacheLookupPage(PPDMDEVINS pDevIns, uint64_t uI
 
 
 /**
- * Lookups a memory access from the IOMMU cache.
+ * Lookups a memory access from the IOTLB cache.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if the access was cached and permissions are verified.
@@ -4107,8 +4107,8 @@ static DECLCALLBACK(int) iommuAmdCacheLookupPage(PPDMDEVINS pDevIns, uint64_t uI
  * @param   pcbContiguous   Where to store the number of contiguous bytes translated
  *                          and permission-checked.
  */
-static int iommuAmdCacheLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova, uint8_t fPerm, IOMMUOP enmOp,
-                               PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
+static int iommuAmdIotlbCacheLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIova, size_t cbIova, uint8_t fPerm,
+                                    IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa, size_t *pcbContiguous)
 {
     int rc;
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
@@ -4266,14 +4266,14 @@ static DECLCALLBACK(int) iommuAmdMemAccess(PPDMDEVINS pDevIns, uint16_t idDevice
         int rc;
 #ifdef IOMMU_WITH_IOTLBE_CACHE
         /* Lookup the IOVA from the cache. */
-        rc = iommuAmdCacheLookup(pDevIns, idDevice, uIova, cbIova, fPerm, enmOp, pGCPhysSpa, pcbContiguous);
+        rc = iommuAmdIotlbCacheLookup(pDevIns, idDevice, uIova, cbIova, fPerm, enmOp, pGCPhysSpa, pcbContiguous);
         if (rc == VINF_SUCCESS)
         {
             /* All pages in the access were found in the cache with sufficient permissions. */
             Assert(*pcbContiguous == cbIova);
             Assert(*pGCPhysSpa != NIL_RTGCPHYS);
             STAM_COUNTER_INC(&pThis->StatAccessCacheHitFull);
-            return rc;
+            return VINF_SUCCESS;
         }
         if (rc != VERR_OUT_OF_RANGE)
         { /* likely */ }
@@ -4350,13 +4350,28 @@ static DECLCALLBACK(int) iommuAmdMemBulkAccess(PPDMDEVINS pDevIns, uint16_t idDe
         iommuAmdMemAccessGetPermAndOp(pThis, fFlags, &enmOp, &fPerm, true /* fBulk */);
         LogFlowFunc(("%s: idDevice=%#x cIovas=%zu\n", iommuAmdMemAccessGetPermName(fPerm), idDevice, cIovas));
 
-        /** @todo IOMMU: IOTLB cache lookup. */
-
-        /* Lookup each IOVA from the device table. */
         for (size_t i = 0; i < cIovas; i++)
         {
+            int    rc;
             size_t cbContig;
-            int rc = iommuAmdDteLookup(pDevIns, idDevice, pauIovas[i], X86_PAGE_SIZE, fPerm, enmOp, &paGCPhysSpa[i], &cbContig);
+
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+            /* Lookup the IOVA from the IOTLB cache. */
+            rc = iommuAmdIotlbCacheLookup(pDevIns, idDevice, pauIovas[i], X86_PAGE_SIZE, fPerm, enmOp, &paGCPhysSpa[i],
+                                          &cbContig);
+            if (rc == VINF_SUCCESS)
+            {
+                Assert(cbContig == X86_PAGE_SIZE);
+                Assert(paGCPhysSpa[i] != NIL_RTGCPHYS);
+                STAM_COUNTER_INC(&pThis->StatAccessCacheHitFull);
+                continue;
+            }
+            Assert(rc == VERR_NOT_FOUND || rc == VERR_IOMMU_ADDR_ACCESS_DENIED);
+            STAM_COUNTER_INC(&pThis->StatAccessCacheMiss);
+#endif
+
+            /* Lookup the IOVA from the device table. */
+            rc = iommuAmdDteLookup(pDevIns, idDevice, pauIovas[i], X86_PAGE_SIZE, fPerm, enmOp, &paGCPhysSpa[i], &cbContig);
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else
