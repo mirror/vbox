@@ -507,7 +507,6 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                 cbTransferHeuristicsCur += bd.u32BufSize;
         }
 
-#if 0
         /* !!! HACK ALERT BEGIN !!! */
 
         /* Windows 10's audio driver expects a transfer all ~10.1ms (~1764 bytes), although
@@ -539,7 +538,6 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         }
 
         /* !!! HACK ALERT END !!! */
-#endif
 
         else
         {
