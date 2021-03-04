@@ -155,7 +155,7 @@ int dbgfR3AsInit(PUVM pUVM)
      * Create the debugging config instance and set it up, defaulting to
      * deferred loading in order to keep things fast.
      */
-    rc = RTDbgCfgCreate(&pUVM->dbgf.s.hDbgCfg, NULL, true /*fNativePaths*/);
+    rc = RTDbgCfgCreate(&pUVM->dbgf.s.hDbgCfg, "VBOXDBG_", true /*fNativePaths*/);
     AssertRCReturn(rc, rc);
     rc = RTDbgCfgChangeUInt(pUVM->dbgf.s.hDbgCfg, RTDBGCFGPROP_FLAGS, RTDBGCFGOP_PREPEND,
                             RTDBGCFG_FLAGS_DEFERRED);
