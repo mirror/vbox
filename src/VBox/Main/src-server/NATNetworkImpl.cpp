@@ -208,7 +208,7 @@ HRESULT NATNetwork::getNetworkName(com::Utf8Str &aNetworkName)
 
 HRESULT NATNetwork::setNetworkName(const com::Utf8Str &aNetworkName)
 {
-    if (m->s.strNetworkName.isEmpty())
+    if (aNetworkName.isEmpty())
         return setError(E_INVALIDARG,
                         tr("Network name cannot be empty"));
     {
