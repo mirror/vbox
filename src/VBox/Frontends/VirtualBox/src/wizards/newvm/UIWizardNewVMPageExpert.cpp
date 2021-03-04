@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QButtonGroup>
 #include <QCheckBox>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -30,6 +31,7 @@
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UIBaseMemoryEditor.h"
+#include "UIConverter.h"
 #include "UIFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMediaComboBox.h"
@@ -46,6 +48,11 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     : UIWizardNewVMPage1(strGroup)
     , m_pToolBox(0)
     , m_pInstallationISOContainer(0)
+    , m_pDiskFormatGroupBox(0)
+    , m_pDiskVariantGroupBox(0)
+    , m_pDiskLocationGroupBox(0)
+    , m_pDiskSizeGroupBox(0)
+
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -172,6 +179,27 @@ void UIWizardNewVMPageExpert::retranslateUi()
         m_pToolBox->setPageTitle(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard disk"));
         m_pToolBox->setPageTitle(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("Hardware"));
     }
+
+
+    if (m_pDiskLocationGroupBox)
+        m_pDiskLocationGroupBox->setTitle(UIWizardNewVM::tr("Hard disk file &location"));
+    if (m_pDiskSizeGroupBox)
+        m_pDiskSizeGroupBox->setTitle(UIWizardNewVM::tr("Hard disk file &size"));
+    if (m_pDiskFormatGroupBox)
+        m_pDiskFormatGroupBox->setTitle(UIWizardNewVM::tr("Hard disk file &type"));
+    if (m_pFormatButtonGroup)
+    {
+        QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
+        for (int i = 0; i < buttons.size(); ++i)
+        {
+            QAbstractButton *pButton = buttons[i];
+            UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
+            pButton->setText(gpConverter->toString(enmFormat));
+        }
+    }
+    if (m_pDiskVariantGroupBox)
+        m_pDiskVariantGroupBox->setTitle(UIWizardNewVM::tr("Storage on physical hard disk"));
+
 }
 
 void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
@@ -358,14 +386,14 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
     return pContainerWidget;
 }
 
-QWidget *UIWizardNewVMPageExpert::createDiskWidgets()
+QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
 {
-    QWidget *pDiskContainerWidget = new QWidget;
-    QGridLayout *pDiskContainerLayout = new QGridLayout(pDiskContainerWidget);
+    QWidget *pNewDiskContainerWidget = new QWidget;
+    QGridLayout *pDiskContainerLayout = new QGridLayout(pNewDiskContainerWidget);
 
     /* Disk location widgets: */
-    QGroupBox *pLocationGroupBox = new QGroupBox;
-    QHBoxLayout *pLocationLayout = new QHBoxLayout(pLocationGroupBox);
+    m_pDiskLocationGroupBox = new QGroupBox;
+    QHBoxLayout *pLocationLayout = new QHBoxLayout(m_pDiskLocationGroupBox);
     m_pLocationEditor = new QLineEdit;
     m_pLocationOpenButton = new QIToolButton;
     if (m_pLocationOpenButton)
@@ -377,28 +405,28 @@ QWidget *UIWizardNewVMPageExpert::createDiskWidgets()
     pLocationLayout->addWidget(m_pLocationOpenButton);
 
     /* Disk file size widgets: */
-    QGroupBox *pDiskSizeGroupBox = new QGroupBox;
-    QHBoxLayout *pDiskSizeLayout = new QHBoxLayout(pDiskSizeGroupBox);
+    m_pDiskSizeGroupBox = new QGroupBox;
+    QHBoxLayout *pDiskSizeLayout = new QHBoxLayout(m_pDiskSizeGroupBox);
     m_pSizeEditor = new UIMediumSizeEditor;
     pDiskSizeLayout->addWidget(m_pSizeEditor);
 
     /* Disk file format widgets: */
-    QGroupBox *pDiskFormatGroupBox = new QGroupBox;
-    QHBoxLayout *pDiskFormatLayout = new QHBoxLayout(pDiskFormatGroupBox);
+    m_pDiskFormatGroupBox = new QGroupBox;
+    QHBoxLayout *pDiskFormatLayout = new QHBoxLayout(m_pDiskFormatGroupBox);
     m_pSizeEditor = new UIMediumSizeEditor;
     pDiskFormatLayout->addWidget(createFormatButtonGroup(true));
 
     /* Disk variant and dik split widgets: */
-    QGroupBox *pDiskVariantGroupBox = new QGroupBox;
-    QVBoxLayout *pDiskVariantLayout = new QVBoxLayout(pDiskVariantGroupBox);
+    m_pDiskVariantGroupBox  = new QGroupBox;
+    QVBoxLayout *pDiskVariantLayout = new QVBoxLayout(m_pDiskVariantGroupBox);
     pDiskVariantLayout->addWidget(createMediumVariantWidgets(false /* fWithLabels */));
 
-    pDiskContainerLayout->addWidget(pLocationGroupBox, 0, 0, 1, 2);
-    pDiskContainerLayout->addWidget(pDiskSizeGroupBox, 1, 0, 1, 2);
-    pDiskContainerLayout->addWidget(pDiskFormatGroupBox, 2, 0, 1, 1);
-    pDiskContainerLayout->addWidget(pDiskVariantGroupBox, 2, 1, 1, 1);
+    pDiskContainerLayout->addWidget(m_pDiskLocationGroupBox, 0, 0, 1, 2);
+    pDiskContainerLayout->addWidget(m_pDiskSizeGroupBox, 1, 0, 1, 2);
+    pDiskContainerLayout->addWidget(m_pDiskFormatGroupBox, 2, 0, 1, 1);
+    pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 2, 1, 1, 1);
 
-    return pDiskContainerWidget;
+    return pNewDiskContainerWidget;
 }
 
 bool UIWizardNewVMPageExpert::isComplete() const

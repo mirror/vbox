@@ -60,7 +60,7 @@ protected:
     bool getWithNewVirtualDiskWizard();
 
     virtual QWidget *createDiskWidgets();
-    virtual QWidget *createDiskVariantAndSizeWidgets();
+    virtual QWidget *createNewDiskWidgets();
     void getWithFileOpenDialog();
     void retranslateWidgets();
 
@@ -127,7 +127,7 @@ private:
 
     void prepare();
     void createConnections();
-    QWidget *createDiskVariantAndSizeWidgets();
+    QWidget *createNewDiskWidgets();
     void retranslateUi();
     void initializePage();
     void cleanupPage();
