@@ -1243,6 +1243,9 @@ static void ohciR3DoReset(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, uint
     Log(("ohci: %s reset%s\n", fNewMode == OHCI_USB_RESET ? "hardware" : "software",
          fResetOnLinux ? " (reset on linux)" : ""));
 
+    /* Clear list enable bits first, so that any processing currently in progress terminates quickly. */
+    pThis->ctl &= ~(OHCI_CTL_BLE | OHCI_CTL_CLE | OHCI_CTL_PLE);
+
     /* Stop the bus in any case, disabling walking the lists. */
     ohciR3BusStop(pThisCC);
 
@@ -3729,7 +3732,7 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
     pThis->bulk_cur = 0;
 
     uint32_t EdAddr = pThis->bulk_head;
-    while (EdAddr)
+    while (EdAddr && (pThis->ctl & OHCI_CTL_BLE))
     {
         OHCIED Ed;
 
@@ -3796,9 +3799,11 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
             }
         }
 
-        /* next end point */
+        /* Trivial loop detection. */
+        if (EdAddr == (Ed.NextED & ED_PTR_MASK))
+            break;
+        /* Proceed to the next endpoint. */
         EdAddr = Ed.NextED & ED_PTR_MASK;
-
     }
 
 # ifdef LOG_ENABLED
@@ -3846,7 +3851,11 @@ static void ohciR3UndoBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
                     pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
             }
         }
-        /* next endpoint */
+
+        /* Trivial loop detection. */
+        if (EdAddr == (Ed.NextED & ED_PTR_MASK))
+            break;
+        /* Proceed to the next endpoint. */
         EdAddr = Ed.NextED & ED_PTR_MASK;
     }
 }
@@ -3876,7 +3885,7 @@ static void ohciR3ServiceCtrlList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
     pThis->ctrl_cur = 0;
 
     uint32_t EdAddr = pThis->ctrl_head;
-    while (EdAddr)
+    while (EdAddr && (pThis->ctl & OHCI_CTL_CLE))
     {
         OHCIED Ed;
 
@@ -3912,7 +3921,10 @@ static void ohciR3ServiceCtrlList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
 # endif
         }
 
-        /* next end point */
+        /* Trivial loop detection. */
+        if (EdAddr == (Ed.NextED & ED_PTR_MASK))
+            break;
+        /* Proceed to the next endpoint. */
         EdAddr = Ed.NextED & ED_PTR_MASK;
     }
 
@@ -3952,7 +3964,7 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC p
     /*
      * Iterate the endpoint list.
      */
-    while (EdAddr)
+    while (EdAddr && (pThis->ctl & OHCI_CTL_PLE))
     {
         OHCIED Ed;
 
@@ -3999,7 +4011,10 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC p
                     pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
             }
         }
-        /* next end point */
+        /* Trivial loop detection. */
+        if (EdAddr == (Ed.NextED & ED_PTR_MASK))
+            break;
+        /* Proceed to the next endpoint. */
         EdAddr = Ed.NextED & ED_PTR_MASK;
     }
 
@@ -4158,6 +4173,10 @@ static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pT
                         break;
                 } while (TdAddr != (Ed.TailP & ED_PTR_MASK));
             }
+            /* Trivial loop detection. */
+            if (EdAddr == (Ed.NextED & ED_PTR_MASK))
+                break;
+            /* Proceed to the next endpoint. */
             EdAddr = Ed.NextED & ED_PTR_MASK;
         }
     }
