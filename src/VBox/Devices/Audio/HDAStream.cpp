@@ -521,24 +521,38 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         }
 
         /*
-         * IFF the guest is using buffer IRQ, configure the timer to
-         * the lowest common denominator of those IRQ periods.
-         *
-         * Otherwise, fall back on using default timer I/O Hz (set above).
+         * If the guest doesn't use buffer IRQs or only has one, just split the total
+         * buffer length in half and use that as timer heuristics.  That gives the
+         * guest half a buffer to fill while we're processing the other half.
          */
-        if (cBufferIrqs > 0 && cbTransferHeuristics > 1)
+        if (cBufferIrqs <= 1)
+            cbTransferHeuristics = pStreamShared->u32CBL / 2;
+
+        /* Paranoia (fall back on I/O timer Hz if this happens). */
+        if (cbTransferHeuristics >= 8)
         {
+            ASSERT_GUEST_LOGREL_MSG(DrvAudioHlpBytesIsAligned(cbTransferHeuristics, &pStreamR3->State.Mapping.PCMProps),
+                                    ("We arrived at a misaligned transfer size for stream #%RU8: %#x (%u)\n",
+                                     uSD, cbTransferHeuristics, cbTransferHeuristics));
+
+            uint64_t const cTimerTicksPerSec = PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer);
+            uint64_t const cbTransferPerSec  = RT_MAX(pStreamR3->State.Mapping.PCMProps.uHz * pStreamR3->State.Mapping.cbFrameSize,
+                                                      4096 /* zero div prevention: min is 6kHz, picked 4k in case I'm mistaken */);
+
+            /* Make sure the period is 250ms (random value) or less, in case the guest
+               want to play the whole "Der Ring des Nibelungen" cycle in one go.  Just
+               halve the buffer till we get there. */
+            while (cbTransferHeuristics > 1024 && cbTransferHeuristics > cbTransferPerSec / 4)
+                cbTransferHeuristics = DrvAudioHlpBytesAlign(cbTransferHeuristics / 2, &pStreamR3->State.Mapping.PCMProps);
+
+            /* Set the transfer size per timer callout. (No chunking, so same.) */
             pStreamShared->State.cbTransferSize  = cbTransferHeuristics;
-            pStreamShared->State.cbTransferChunk = cbTransferHeuristics; /* no chunking */
+            pStreamShared->State.cbTransferChunk = cbTransferHeuristics;
             ASSERT_GUEST_LOGREL_MSG(DrvAudioHlpBytesIsAligned(cbTransferHeuristics, &pStreamR3->State.Mapping.PCMProps),
                                     ("We arrived at a misaligned transfer size for stream #%RU8: %#x (%u)\n",
                                      uSD, cbTransferHeuristics, cbTransferHeuristics));
 
             /* Convert to timer ticks. */
-            uint64_t const cTimerTicksPerSec = PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer);
-            uint64_t const cbTransferPerSec  = RT_MAX(pStreamR3->State.Mapping.PCMProps.uHz * pStreamR3->State.Mapping.cbFrameSize,
-                                                      4096 /* zero div prevention: min is 6kHz, picked 4k in case I'm mistaken */);
-
             pStreamShared->State.cTicksPerByte = (cTimerTicksPerSec + cbTransferPerSec / 2) / cbTransferPerSec;
             AssertStmt(pStreamShared->State.cTicksPerByte, pStreamShared->State.cTicksPerByte = 4096);
 
