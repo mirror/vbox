@@ -671,37 +671,48 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         pStreamR3->State.offRead  = 0;
 
         /*
-         * The default size of our internal ring buffer depends on the transfer timing
-         * we have to reach in order to make the guest driver happy *and* on the I/O timing.
+         * The default internal ring buffer size must be:
          *
-         * We always use triple the minimum timing of both timings for safety (triple buffering),
-         * otherwise we risk running into buffer overflows.
+         *      - Large enough for at least three periodic DMA transfers.
          *
-         * Note: Use pCfg->Props as PCM properties here, as we only want to store the samples we actually need,
-         *       in other words, skipping the interleaved channels we don't support / need to save space.
+         *        It is critically important that we don't experience underruns
+         *        in the DMA OUT code, because it will cause the buffer processing
+         *        to get skewed and possibly overlap with what the guest is updating.
+         *        At the time of writing (2021-03-05) there is no code for getting
+         *        back into sync there.
+         *
+         *      - Large enough for at least three I/O scheduling hints.
+         *
+         *        We want to lag behind a DMA period or two, but there must be
+         *        sufficent space for the AIO thread to get schedule and shuffle
+         *        data thru the mixer and onto the host audio hardware.
+         *
+         *      - Both above with plenty to spare.
+         *
+         * So, just take the longest of the two periods and multipling it by 6.
+         * We aren't not talking about very large base buffers heres, so size isn't
+         * an issue.
+         *
+         * Note: Use pCfg->Props as PCM properties here, as we only want to store the
+         *       samples we actually need, in other words, skipping the interleaved
+         *       channels we don't support / need to save space.
          */
+        uint32_t cbCircBuf = DrvAudioHlpMilliToBytes(RT_MS_1SEC * 6 / RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz),
+                                                     &pCfg->Props);
+        LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
+                 uSD, cbCircBuf, DrvAudioHlpBytesToMilli(cbCircBuf, &pCfg->Props)));
 
-        const unsigned uTransferHzMin   = RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz);
-        const uint32_t cbCircBufDefault = DrvAudioHlpMilliToBytes((RT_MS_1SEC / uTransferHzMin) * 3, &pCfg->Props);
-
-        LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU64ms (%RU32 bytes)\n",
-                 uSD, DrvAudioHlpBytesToMilli(cbCircBufDefault, &pCfg->Props), cbCircBufDefault));
-
-        uint32_t cbCircBuf;
-        uint32_t cbCircBufGlobal = DrvAudioHlpMilliToBytes(  hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN
-                                                           ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs, &pCfg->Props);
-        if (cbCircBufGlobal) /* Anything set via CFGM? */
+        uint32_t msCircBufCfg = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs;
+        if (msCircBufCfg) /* Anything set via CFGM? */
         {
-            LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU64ms (%RU32 bytes)\n",
-                     uSD, DrvAudioHlpBytesToMilli(cbCircBufGlobal, &pCfg->Props), cbCircBufGlobal));
-
-            cbCircBuf = cbCircBufGlobal;
+            cbCircBuf = DrvAudioHlpMilliToBytes(msCircBufCfg, &pCfg->Props);
+            LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU32 bytes / %RU64 ms\n",
+                     uSD, cbCircBuf, DrvAudioHlpBytesToMilli(cbCircBuf, &pCfg->Props)));
         }
-        else
-            cbCircBuf = cbCircBufDefault;
 
+        /* Serious paranoia: */
         ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf % (pCfg->Props.cbSample * pCfg->Props.cChannels) == 0,
-                                     ("Ring buffer size (%RU32) for stream #%RU8 not aligned to mapping's frame size (%RU8)\n",
+                                     ("Ring buffer size (%RU32) for stream #%RU8 not aligned to the (host) frame size (%RU8)\n",
                                       cbCircBuf, uSD, pCfg->Props.cbSample * pCfg->Props.cChannels),
                                      rc = VERR_INVALID_PARAMETER);
         ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf, ("Ring buffer size for stream #%RU8 is invalid\n", uSD),
@@ -1173,9 +1184,9 @@ static int hdaR3StreamRead(PHDASTREAMR3 pStreamR3, uint32_t cbToRead, uint32_t *
 static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamShared,
                                PHDASTREAMR3 pStreamR3, uint32_t cbToProcessMax)
 {
-    LogFlowFuncEnter();
-
     uint8_t const uSD = pStreamShared->u8SD;
+    LogFlowFunc(("ENTER - #%u cbToProcessMax=%#x\n", uSD, cbToProcessMax));
+
     hdaStreamLock(pStreamShared);
 
     PHDASTREAMPERIOD pPeriod = &pStreamShared->State.Period;
@@ -1768,14 +1779,19 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 
     if (hdaGetDirFromSD(pStreamShared->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
     {
-        bool fDoRead = false; /* Whether to read from the HDA stream or not. */
+        bool fDoRead = fInTimer; /* Whether to read from the HDA stream or not. */
 
+        /*
+         * Do DMA work.
+         */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (fInTimer)
 # endif
         {
             uint32_t cbStreamFree = hdaR3StreamGetFree(pStreamR3);
-            if (!cbStreamFree)
+            if (cbStreamFree)
+            { /* likely */ }
+            else
             {
                 LogRel2(("HDA: Warning: Hit stream #%RU8 overflow, dropping audio data\n", pStreamShared->u8SD));
 # ifdef HDA_STRICT
@@ -1798,24 +1814,37 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             if (pStreamShared->State.tsLastReadNs == 0)
                 pStreamShared->State.tsLastReadNs = tsNowNs;
 
-            /* Only read from the HDA stream at the given scheduling rate. */
+            /*
+             * Push data to down thru the mixer to and to the host drivers?
+             *
+             * This is generally done at the rate given by cMsSchedulingHint,
+             * however we must also check available DMA buffer space.  There
+             * should be at least two periodic transfer units worth of space
+             * available now.
+             */
             Assert(tsNowNs >= pStreamShared->State.tsLastReadNs);
-            const uint64_t tsDeltaMs = (tsNowNs - pStreamShared->State.tsLastReadNs) / RT_NS_1MS;
-            if (tsDeltaMs >= pStreamShared->State.Cfg.Device.cMsSchedulingHint)
+            /** @todo convert cMsSchedulingHint to nano seconds and save a div.  */
+            const uint64_t msDelta = (tsNowNs - pStreamShared->State.tsLastReadNs) / RT_NS_1MS;
+            cbStreamFree = hdaR3StreamGetFree(pStreamR3);
+            if (   cbStreamFree < pStreamShared->State.cbTransferSize * 2
+                || msDelta >= pStreamShared->State.Cfg.Device.cMsSchedulingHint)
                 fDoRead = true;
 
-            Log3Func(("tsDeltaMs=%RU64, fDoRead=%RTbool\n", tsDeltaMs, fDoRead));
-        }
+            Log3Func(("msDelta=%RU64 (vs %u) cbStreamFree=%#x (vs %#x) => fDoRead=%RTbool\n", msDelta,
+                      pStreamShared->State.Cfg.Device.cMsSchedulingHint, cbStreamFree,
+                      pStreamShared->State.cbTransferSize * 2, fDoRead));
 
-        if (fDoRead)
-        {
+            if (fDoRead)
+            {
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-            /* Notify the async I/O worker thread that there's work to do. */
-            rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
-            AssertRC(rc2);
+                /* Notify the async I/O worker thread that there's work to do. */
+                Log5Func(("Notifying AIO thread\n"));
+                rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
+                AssertRC(rc2);
 # endif
-            /* Update last read timestamp so that we know when to run next. */
-            pStreamShared->State.tsLastReadNs = tsNowNs;
+                /* Update last read timestamp so that we know when to run next. */
+                pStreamShared->State.tsLastReadNs = tsNowNs;
+            }
         }
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -1907,6 +1936,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             if (tsNowNs - pStreamShared->State.tsLastReadNs >= pStreamShared->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
             {
+                Log5Func(("Notifying AIO thread\n"));
                 rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
                 AssertRC(rc2);
 
