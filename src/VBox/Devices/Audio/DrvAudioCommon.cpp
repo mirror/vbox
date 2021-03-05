@@ -1344,6 +1344,13 @@ uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, const PPDMAUDIOPCMPROPS pPro
     if (!pProps->uHz) /* Prevent division by zero. */
         return 0;
 
+    /* @todo r=bird: How to do this w/o any floating point:
+    * @code
+    *  ASMMultU32ByU32DivByU32(cFrames, RT_MS_1SEC, pProps->uHz);
+    * // or
+    *  (uint64_t)cFrames * RT_MS_1SEC / pProps->uHz
+    * @endcode
+    */
     return cFrames / ((double)pProps->uHz / (double)RT_MS_1SEC);
 }
 
