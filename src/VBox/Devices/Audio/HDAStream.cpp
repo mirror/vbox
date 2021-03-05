@@ -267,7 +267,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     int rc = hdaR3SDFMTToPCMProps(u16FMT, &Props);
     if (RT_FAILURE(rc))
     {
-        LogRel(("HDA: Warning: Format 0x%x for stream #%RU8 not supported\n", HDA_STREAM_REG(pThis, FMT, uSD), uSD));
+        LogRelMax(32, ("HDA: Warning: Format 0x%x for stream #%RU8 not supported\n", HDA_STREAM_REG(pThis, FMT, uSD), uSD));
         return rc;
     }
 
@@ -300,8 +300,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
          *
          * Note: This also involves dealing with surround setups the guest might has set up for us.
          */
-        LogRel(("HDA: Warning: More than stereo (2) channels are not supported (%RU8 requested), "
-                "falling back to stereo channels for stream #%RU8\n", Props.cChannels, uSD));
+        LogRelMax(32, ("HDA: Warning: More than stereo (2) channels are not supported (%RU8 requested), "
+                       "falling back to stereo channels for stream #%RU8\n", Props.cChannels, uSD));
         Props.cChannels = 2;
         Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Props.cbSample, Props.cChannels);
     }
@@ -556,8 +556,9 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     }
 
     if (uTransferHz > 400) /* Anything above 400 Hz looks fishy -- tell the user. */
-        LogRel(("HDA: Warning: Calculated transfer Hz rate for stream #%RU8 looks incorrect (%u), please re-run with audio debug mode and report a bug\n",
-                uSD, uTransferHz));
+        LogRelMax(32, ("HDA: Warning: Calculated transfer Hz rate for stream #%RU8 looks incorrect (%u), "
+                       "please re-run with audio debug mode and report a bug\n",
+                       uSD, uTransferHz));
 
     /* Set I/O scheduling hint for the backends. */
     pCfg->Device.cMsSchedulingHint = RT_MS_1SEC / pStreamShared->State.uTimerIoHz;
@@ -696,7 +697,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("HDA: Initializing stream #%RU8 failed with %Rrc\n", uSD, rc));
+        LogRelMax(32, ("HDA: Initializing stream #%RU8 failed with %Rrc\n", uSD, rc));
 
 #ifdef VBOX_WITH_DTRACE
     VBOXDD_HDA_STREAM_SETUP((uint32_t)uSD, rc, pStreamShared->State.Cfg.Props.uHz,
