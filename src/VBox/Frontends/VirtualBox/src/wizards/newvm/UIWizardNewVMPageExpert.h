@@ -50,7 +50,6 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
     Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
     Q_PROPERTY(QString machineFilePath READ machineFilePath WRITE setMachineFilePath);
-    Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
     Q_PROPERTY(int baseMemory READ baseMemory);
     Q_PROPERTY(QString guestOSFamiyId READ guestOSFamiyId);
     Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
@@ -67,10 +66,10 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(bool EFIEnabled READ EFIEnabled);
 
 
-    // Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
-    // Q_PROPERTY(SelectedDiskSource selectedDiskSource READ selectedDiskSource WRITE setSelectedDiskSource);
+    Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
+    Q_PROPERTY(SelectedDiskSource selectedDiskSource READ selectedDiskSource WRITE setSelectedDiskSource);
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat);
-    // Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
+    Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
     Q_PROPERTY(QString mediumPath READ mediumPath);
     Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
 
@@ -102,6 +101,8 @@ private slots:
     void sltValueModified();
     void sltMediumFormatChanged();
     void sltMediumSizeChanged();
+    void sltMediaComboBoxIndexChanged();
+    void sltSelectedDiskSourceChanged();
 
 private:
 
@@ -137,6 +138,7 @@ private:
     virtual QWidget *createNewDiskWidgets() /* override */;
     void updateVirtualDiskPathFromMachinePathName();
     void updateWidgetAterMediumFormatChange();
+    void setEnableNewDiskWidgets(bool fEnable);
 
     UIToolBox  *m_pToolBox;
     QGroupBox *m_pInstallationISOGroupBox;

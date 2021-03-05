@@ -118,8 +118,8 @@ protected:
 
 private slots:
 
-    void sltHandleSelectedDiskSourceChange();
-    void sltVirtualSelectedDiskSourceChanged();
+    void sltSelectedDiskSourceChanged();
+    void sltMediaComboBoxIndexChanged();
     void sltGetWithFileOpenDialog();
     void sltHandleSizeEditorChange();
 

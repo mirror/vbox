@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QButtonGroup>
+#include <QCheckBox>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
@@ -245,19 +246,25 @@ QWidget *UIWizardNewVMPageBasic4::createNewDiskWidgets()
 
 void UIWizardNewVMPageBasic4::createConnections()
 {
-    connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
-            this, &UIWizardNewVMPageBasic4::sltHandleSelectedDiskSourceChange);
-    connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-            this, &UIWizardNewVMPageBasic4::sltVirtualSelectedDiskSourceChanged);
-    connect(m_pDiskSelectionButton, &QIToolButton::clicked,
-            this, &UIWizardNewVMPageBasic4::sltGetWithFileOpenDialog);
-    connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-            this, &UIWizardNewVMPageBasic4::completeChanged);
-    connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-            this, &UIWizardNewVMPageBasic4::sltHandleSizeEditorChange);
+    if (m_pDiskSourceButtonGroup)
+        connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+                this, &UIWizardNewVMPageBasic4::sltSelectedDiskSourceChanged);
+    if (m_pDiskSelector)
+        connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
+                this, &UIWizardNewVMPageBasic4::sltMediaComboBoxIndexChanged);
+    if (m_pDiskSelectionButton)
+        connect(m_pDiskSelectionButton, &QIToolButton::clicked,
+                this, &UIWizardNewVMPageBasic4::sltGetWithFileOpenDialog);
+    if (m_pSizeEditor)
+    {
+        connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+                this, &UIWizardNewVMPageBasic4::completeChanged);
+        connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+                this, &UIWizardNewVMPageBasic4::sltHandleSizeEditorChange);
+    }
 }
 
-void UIWizardNewVMPageBasic4::sltHandleSelectedDiskSourceChange()
+void UIWizardNewVMPageBasic4::sltSelectedDiskSourceChanged()
 {
     if (!m_pDiskSourceButtonGroup)
         return;
@@ -278,7 +285,7 @@ void UIWizardNewVMPageBasic4::sltHandleSelectedDiskSourceChange()
     completeChanged();
 }
 
-void UIWizardNewVMPageBasic4::sltVirtualSelectedDiskSourceChanged()
+void UIWizardNewVMPageBasic4::sltMediaComboBoxIndexChanged()
 {
     /* Make sure to set m_virtualDisk: */
     setVirtualDiskFromDiskCombo();
@@ -422,11 +429,12 @@ void UIWizardNewVMPageBasic4::sltHandleSizeEditorChange()
     m_fUserSetSize = true;
 }
 
-void UIWizardNewVMPageBasic4::setEnableNewDiskWidgets(bool )
+void UIWizardNewVMPageBasic4::setEnableNewDiskWidgets(bool fEnable)
 {
-    // if (m_pMediumVariantContainer)
-    //     m_pMediumVariantContainer->setEnabled(fEnable);
-
-    // if (m_pSizeContainer)
-    //     m_pSizeContainer->setEnabled(fEnable);
+    if (m_pSizeEditor)
+        m_pSizeEditor->setEnabled(fEnable);
+    if (m_pSizeEditorLabel)
+        m_pSizeEditorLabel->setEnabled(fEnable);
+    if (m_pFixedCheckBox)
+        m_pFixedCheckBox->setEnabled(fEnable);
 }

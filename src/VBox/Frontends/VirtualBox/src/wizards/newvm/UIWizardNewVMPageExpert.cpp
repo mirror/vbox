@@ -72,6 +72,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
 
     /* Register classes: */
     qRegisterMetaType<CMedium>();
+    qRegisterMetaType<SelectedDiskSource>();
+
     /* Register fields: */
     registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
     registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
@@ -79,7 +81,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
     registerField("baseMemory", this, "baseMemory");
-    registerField("virtualDisk", this, "virtualDisk");
     registerField("guestOSFamiyId", this, "guestOSFamiyId");
     registerField("ISOFilePath", this, "ISOFilePath");
     registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
@@ -97,9 +98,13 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("mediumPath", this, "mediumPath");
     registerField("mediumFormat", this, "mediumFormat");
     registerField("mediumSize", this, "mediumSize");
-
+    registerField("selectedDiskSource", this, "selectedDiskSource");
+    registerField("virtualDisk", this, "virtualDisk");
+    registerField("mediumVariant", this, "mediumVariant");
 
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
+    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
+    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
 }
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
@@ -276,6 +281,14 @@ void UIWizardNewVMPageExpert::createConnections()
     if (m_pSizeEditor)
         connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
                 this, &UIWizardNewVMPageExpert::sltMediumSizeChanged);
+
+    if (m_pDiskSelector)
+        connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
+                this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
+
+    if (m_pDiskSourceButtonGroup)
+        connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+                this, &UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged);
 }
 
 void UIWizardNewVMPageExpert::setOSTypeDependedValues()
@@ -571,7 +584,6 @@ void UIWizardNewVMPageExpert::sltValueModified()
     QWidget *pSenderWidget = qobject_cast<QWidget*>(sender());
     if (!pSenderWidget)
         return;
-
     m_userSetWidgets << pSenderWidget;
 }
 
@@ -586,6 +598,34 @@ void UIWizardNewVMPageExpert::sltMediumSizeChanged()
     if (!m_pSizeEditor)
         return;
     m_userSetWidgets << m_pSizeEditor;
+    completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged()
+{
+    /* Make sure to set m_virtualDisk: */
+    setVirtualDiskFromDiskCombo();
+    emit completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged()
+{
+    if (!m_pDiskSourceButtonGroup)
+        return;
+
+    if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
+        setSelectedDiskSource(SelectedDiskSource_Empty);
+    else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
+    {
+        setSelectedDiskSource(SelectedDiskSource_Existing);
+        setVirtualDiskFromDiskCombo();
+    }
+    else
+        setSelectedDiskSource(SelectedDiskSource_New);
+
+    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
+    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
+
     completeChanged();
 }
 
@@ -615,4 +655,14 @@ void UIWizardNewVMPageExpert::updateWidgetAterMediumFormatChange()
     }
     updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
     updateLocationEditorAfterFormatChange(comMediumFormat, m_formatExtensions);
+}
+
+void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)
+{
+    if (m_pSizeEditor)
+        m_pSizeEditor->setEnabled(fEnable);
+    if (m_pSizeEditorLabel)
+        m_pSizeEditorLabel->setEnabled(fEnable);
+    if (m_pFixedCheckBox)
+        m_pFixedCheckBox->setEnabled(fEnable);
 }
