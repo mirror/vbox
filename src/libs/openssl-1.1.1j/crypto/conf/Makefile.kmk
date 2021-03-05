@@ -1,0 +1,30 @@
+# $Id$
+## @file
+# OpenSSL Sub-Makefile.
+#
+
+#
+# Copyright (C) 2019 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += crypto_conf
+crypto_conf_TEMPLATE = SUBLIBCRYPTO
+crypto_conf_DEFS = OPENSSL_NO_DEPRECATED
+crypto_conf_SOURCES = \
+	conf_api.c \
+	conf_def.c \
+	conf_err.c \
+	conf_lib.c \
+	conf_mall.c \
+	conf_mod.c \
+	conf_sap.c \
+	conf_ssl.c
+$(evalcall VBOX_OPENSSL_X86,crypto_conf)
+
+include $(FILE_KBUILD_SUB_FOOTER)
