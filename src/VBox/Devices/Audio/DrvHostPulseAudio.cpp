@@ -637,7 +637,7 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
 
         pa_threaded_mainloop_unlock(pThis->pMainLoop);
         LogFlowFuncLeaveRC(VINF_SUCCESS);
-        return rc;
+        return VINF_SUCCESS;
 
     } while (0);
 
