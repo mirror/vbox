@@ -131,17 +131,14 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
 
 void UIWizardNewVDPageExpert::sltMediumFormatChanged()
 {
-    /* Get medium format: */
-    CMediumFormat mf = mediumFormat();
-    if (mf.isNull())
+    CMediumFormat comMediumFormat = mediumFormat();
+    if (comMediumFormat.isNull())
     {
         AssertMsgFailed(("No medium format set!"));
         return;
     }
-
-    updateMediumVariantWidgetsAfterFormatChange(mf);
-
-    updateLocationEditorAfterFormatChange(mf, m_formatExtensions);
+    updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
+    updateLocationEditorAfterFormatChange(comMediumFormat, m_formatExtensions);
 
     /* Broadcast complete-change: */
     completeChanged();

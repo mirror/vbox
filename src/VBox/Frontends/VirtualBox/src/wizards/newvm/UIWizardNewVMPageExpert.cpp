@@ -271,6 +271,10 @@ void UIWizardNewVMPageExpert::createConnections()
     if (m_pEFICheckBox)
         connect(m_pEFICheckBox, &QCheckBox::toggled,
                 this, &UIWizardNewVMPageExpert::sltValueModified);
+
+    if (m_pFormatButtonGroup)
+        connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+                this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
 }
 
 void UIWizardNewVMPageExpert::setOSTypeDependedValues()
@@ -337,6 +341,7 @@ void UIWizardNewVMPageExpert::initializePage()
     setOSTypeDependedValues();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     updateVirtualDiskPathFromMachinePathName();
+    updateWidgetAterMediumFormatChange();
 }
 
 void UIWizardNewVMPageExpert::cleanupPage()
@@ -556,6 +561,12 @@ void UIWizardNewVMPageExpert::sltValueModified()
     m_userSetWidgets << pSenderWidget;
 }
 
+void UIWizardNewVMPageExpert::sltMediumFormatChanged()
+{
+    updateWidgetAterMediumFormatChange();
+    completeChanged();
+}
+
 void UIWizardNewVMPageExpert::updateVirtualDiskPathFromMachinePathName()
 {
     QString strDiskFileName = machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : machineBaseName();
@@ -570,4 +581,16 @@ void UIWizardNewVMPageExpert::updateVirtualDiskPathFromMachinePathName()
     QString strExtension = defaultExtension(mediumFormat());
     if (m_pLocationEditor)
         m_pLocationEditor->setText(absoluteFilePath(strDiskFileName, strDiskPath, strExtension));
+}
+
+void UIWizardNewVMPageExpert::updateWidgetAterMediumFormatChange()
+{
+    CMediumFormat comMediumFormat = mediumFormat();
+    if (comMediumFormat.isNull())
+    {
+        AssertMsgFailed(("No medium format set!"));
+        return;
+    }
+    updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
+    updateLocationEditorAfterFormatChange(comMediumFormat, m_formatExtensions);
 }

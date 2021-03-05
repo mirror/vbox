@@ -90,7 +90,6 @@ protected:
 
 private slots:
 
-    /** Handlers. */
     void sltNameChanged(const QString &strNewText);
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
@@ -100,8 +99,8 @@ private slots:
     void sltGAISOPathChanged(const QString &strPath);
     void sltOSFamilyTypeChanged();
     void sltInstallGACheckBoxToggle(bool fEnabled);
-
     void sltValueModified();
+    void sltMediumFormatChanged();
 
 private:
 
@@ -136,6 +135,7 @@ private:
     QWidget *createUnattendedWidgets();
     virtual QWidget *createNewDiskWidgets() /* override */;
     void updateVirtualDiskPathFromMachinePathName();
+    void updateWidgetAterMediumFormatChange();
 
     UIToolBox  *m_pToolBox;
     QGroupBox *m_pInstallationISOGroupBox;
