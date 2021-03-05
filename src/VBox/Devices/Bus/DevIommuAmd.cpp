@@ -4623,14 +4623,14 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUO
 
                         if (uIntrCtrl == IOMMU_INTR_CTRL_TARGET_ABORT)
                         {
-                            LogFunc(("IntCtl=0: Remapping disallowed for fixed/arbitrated interrupt (%#x) -> Target abort\n",
-                                     pMsiIn->Data.n.u8Vector));
+                            LogRelMax(10, ("%s: Remapping disallowed for fixed/arbitrated interrupt %#x -> Target abort\n",
+                                           IOMMU_LOG_PFX, pMsiIn->Data.n.u8Vector));
                             iommuAmdSetPciTargetAbort(pDevIns);
                             return VERR_IOMMU_INTR_REMAP_DENIED;
                         }
 
                         Assert(uIntrCtrl == IOMMU_INTR_CTRL_RSVD); /* Paranoia. */
-                        LogFunc(("IntCtl mode invalid %#x -> Illegal DTE\n", uIntrCtrl));
+                        LogRelMax(10, ("%s: IntCtl mode invalid %#x -> Illegal DTE\n", IOMMU_LOG_PFX, uIntrCtrl));
                         EVT_ILLEGAL_DTE_T Event;
                         iommuAmdIllegalDteEventInit(idDevice, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
                         iommuAmdIllegalDteEventRaise(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntCtl);
@@ -4644,7 +4644,8 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUO
                     case VBOX_MSI_DELIVERY_MODE_EXT_INT:    fPassThru = Dte.n.u1ExtIntPassthru; break;
                     default:
                     {
-                        LogFunc(("MSI data delivery mode invalid %#x -> Target abort\n", u8DeliveryMode));
+                        LogRelMax(10, ("%s: MSI data delivery mode invalid %#x -> Target abort\n", IOMMU_LOG_PFX,
+                                       u8DeliveryMode));
                         iommuAmdSetPciTargetAbort(pDevIns);
                         return VERR_IOMMU_INTR_REMAP_FAILED;
                     }
@@ -4662,10 +4663,12 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUO
                         *pMsiOut = *pMsiIn;
                         return VINF_SUCCESS;
                     }
-                    LogFunc(("Remapping/passthru disallowed for interrupt %#x -> Target abort\n", pMsiIn->Data.n.u8Vector));
+                    LogRelMax(10, ("%s: Remapping/passthru disallowed for interrupt %#x -> Target abort\n", IOMMU_LOG_PFX,
+                                   pMsiIn->Data.n.u8Vector));
                 }
                 else
-                    LogFunc(("Logical destination mode invalid for delivery mode %#x\n -> Target abort\n", u8DeliveryMode));
+                    LogRelMax(10, ("%s: Logical destination mode invalid for delivery mode %#x\n -> Target abort\n",
+                                   IOMMU_LOG_PFX, u8DeliveryMode));
 
                 iommuAmdSetPciTargetAbort(pDevIns);
                 return VERR_IOMMU_INTR_REMAP_DENIED;
@@ -4673,7 +4676,7 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUO
             else
             {
                 /** @todo should be cause a PCI target abort here? */
-                LogFunc(("MSI address region invalid %#RX64\n", pMsiIn->Addr.u64));
+                LogRelMax(10, ("%s: MSI address region invalid %#RX64\n", IOMMU_LOG_PFX, pMsiIn->Addr.u64));
                 return VERR_IOMMU_INTR_REMAP_FAILED;
             }
         }
@@ -6587,17 +6590,20 @@ static DECLCALLBACK(int) iommuAmdR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pThisR3, VERR_INVALID_POINTER);
 
+    int rc;
     IOMMU_LOCK(pDevIns, pThisR3);
 
     /* Map MMIO regions if the IOMMU BAR is enabled. */
     if (pThis->IommuBar.n.u1Enable)
-        iommuAmdR3MmioSetup(pDevIns);
+        rc = iommuAmdR3MmioSetup(pDevIns);
+    else
+        rc = VINF_SUCCESS;
 
     /* Wake up the command thread if commands need processing. */
     iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
 
     IOMMU_UNLOCK(pDevIns, pThisR3);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
