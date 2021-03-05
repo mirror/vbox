@@ -96,6 +96,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
 
     registerField("mediumPath", this, "mediumPath");
     registerField("mediumFormat", this, "mediumFormat");
+    registerField("mediumSize", this, "mediumSize");
+
 
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
 }
@@ -120,12 +122,8 @@ void UIWizardNewVMPageExpert::sltPathChanged(const QString &strNewPath)
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()
 {
-    /* Call to base-class: */
     onOsTypeChanged();
-
     setOSTypeDependedValues();
-
-    /* Broadcast complete-change: */
     emit completeChanged();
 }
 
@@ -275,6 +273,9 @@ void UIWizardNewVMPageExpert::createConnections()
     if (m_pFormatButtonGroup)
         connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
                 this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
+    if (m_pSizeEditor)
+        connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+                this, &UIWizardNewVMPageExpert::sltMediumSizeChanged);
 }
 
 void UIWizardNewVMPageExpert::setOSTypeDependedValues()
@@ -300,13 +301,13 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
         m_pEFICheckBox->setChecked(fwType != KFirmwareType_BIOS);
         m_pEFICheckBox->blockSignals(false);
     }
-
+    LONG64 recommendedDiskSize = type.GetRecommendedHDD();
     /* Prepare initial disk choice: */
     if (!m_userSetWidgets.contains(m_pDiskNew) &&
         !m_userSetWidgets.contains(m_pDiskEmpty) &&
         !m_userSetWidgets.contains(m_pDiskExisting))
     {
-        if (type.GetRecommendedHDD() != 0)
+        if (recommendedDiskSize != 0)
         {
             if (m_pDiskNew)
             {
@@ -326,6 +327,13 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
         }
         if (m_pDiskSelector)
             m_pDiskSelector->setCurrentIndex(0);
+    }
+
+    if (m_pSizeEditor  && !m_userSetWidgets.contains(m_pSizeEditor))
+    {
+        m_pSizeEditor->blockSignals(true);
+        setMediumSize(recommendedDiskSize);
+        m_pSizeEditor->blockSignals(false);
     }
 
     if (m_pProductKeyLabel)
@@ -493,6 +501,12 @@ bool UIWizardNewVMPageExpert::isComplete() const
             }
         }
     }
+
+     // return !mediumFormat().isNull() &&
+     //       mediumVariant() != (qulonglong)KMediumVariant_Max &&
+     //       !m_pLocationEditor->text().trimmed().isEmpty() &&
+     //       mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
+
     return fIsComplete;
 }
 
@@ -564,6 +578,14 @@ void UIWizardNewVMPageExpert::sltValueModified()
 void UIWizardNewVMPageExpert::sltMediumFormatChanged()
 {
     updateWidgetAterMediumFormatChange();
+    completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltMediumSizeChanged()
+{
+    if (!m_pSizeEditor)
+        return;
+    m_userSetWidgets << m_pSizeEditor;
     completeChanged();
 }
 

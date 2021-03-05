@@ -72,7 +72,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat);
     // Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
     Q_PROPERTY(QString mediumPath READ mediumPath);
-    // Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
+    Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
 
 public:
 
@@ -101,6 +101,7 @@ private slots:
     void sltInstallGACheckBoxToggle(bool fEnabled);
     void sltValueModified();
     void sltMediumFormatChanged();
+    void sltMediumSizeChanged();
 
 private:
 

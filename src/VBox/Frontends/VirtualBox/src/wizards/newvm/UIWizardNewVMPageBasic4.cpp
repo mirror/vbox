@@ -342,13 +342,13 @@ void UIWizardNewVMPageBasic4::initializePage()
     QString strDefaultName = fieldImp("machineBaseName").toString();
     m_strDefaultName = strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName;
     m_strDefaultPath = fieldImp("machineFolder").toString();
+    /* Set the recommended disk size if user has already not done so: */
     if (m_pSizeEditor && !m_fUserSetSize)
     {
         m_pSizeEditor->blockSignals(true);
         setMediumSize(fieldImp("type").value<CGuestOSType>().GetRecommendedHDD());
         m_pSizeEditor->blockSignals(false);
     }
-
 }
 
 void UIWizardNewVMPageBasic4::cleanupPage()
