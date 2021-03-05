@@ -52,6 +52,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     , m_pInstallationISOGroupBox(0)
     , m_pDiskFormatGroupBox(0)
     , m_pDiskVariantGroupBox(0)
+    , m_pLocationLabel(0)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -201,7 +202,8 @@ void UIWizardNewVMPageExpert::retranslateUi()
     }
     if (m_pDiskVariantGroupBox)
         m_pDiskVariantGroupBox->setTitle(UIWizardNewVM::tr("Storage on physical hard disk"));
-
+    if (m_pLocationLabel)
+        m_pLocationLabel->setText(UIWizardNewVM::tr("Disk Location:"));
 }
 
 void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
@@ -419,8 +421,8 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
 
     /* Disk location widgets: */
 
-    QLabel *pLocationLabel = new QLabel("Disk Location:");
-    pLocationLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+    m_pLocationLabel = new QLabel("Disk Location:");
+    m_pLocationLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
     m_pLocationEditor = new QLineEdit;
     m_pLocationOpenButton = new QIToolButton;
     if (m_pLocationOpenButton)
@@ -428,7 +430,7 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
         m_pLocationOpenButton->setAutoRaise(true);
         m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
     }
-    pLocationLabel->setBuddy(m_pLocationEditor);
+    m_pLocationLabel->setBuddy(m_pLocationEditor);
 
     /* Disk file size widgets: */
     m_pSizeEditorLabel = new QLabel;
@@ -447,7 +449,7 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     QVBoxLayout *pDiskVariantLayout = new QVBoxLayout(m_pDiskVariantGroupBox);
     pDiskVariantLayout->addWidget(createMediumVariantWidgets(false /* fWithLabels */));
 
-    pDiskContainerLayout->addWidget(pLocationLabel, 0, 0, 1, 1);
+    pDiskContainerLayout->addWidget(m_pLocationLabel, 0, 0, 1, 1);
     pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
     pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
 
@@ -663,6 +665,14 @@ void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)
         m_pSizeEditor->setEnabled(fEnable);
     if (m_pSizeEditorLabel)
         m_pSizeEditorLabel->setEnabled(fEnable);
-    if (m_pFixedCheckBox)
-        m_pFixedCheckBox->setEnabled(fEnable);
+    if (m_pDiskFormatGroupBox)
+        m_pDiskFormatGroupBox->setEnabled(fEnable);
+    if (m_pDiskVariantGroupBox)
+        m_pDiskVariantGroupBox->setEnabled(fEnable);
+    if (m_pLocationLabel)
+        m_pLocationLabel->setEnabled(fEnable);
+    if (m_pLocationEditor)
+        m_pLocationEditor->setEnabled(fEnable);
+    if (m_pLocationOpenButton)
+        m_pLocationOpenButton->setEnabled(fEnable);
 }
