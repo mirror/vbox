@@ -43,6 +43,8 @@
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageExpert.h"
 
+/* COM includes: */
+#include "CSystemProperties.h"
 
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     : UIWizardNewVMPage1(strGroup)
@@ -92,6 +94,9 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("VCPUCount", this, "VCPUCount");
     registerField("EFIEnabled", this, "EFIEnabled");
 
+    registerField("mediumPath", this, "mediumPath");
+    registerField("mediumFormat", this, "mediumFormat");
+
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
 }
 
@@ -101,6 +106,7 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
     onNameChanged(strNewText);
 
     composeMachineFilePath();
+    updateVirtualDiskPathFromMachinePathName();
     /* Broadcast complete-change: */
     emit completeChanged();
 }
@@ -109,6 +115,7 @@ void UIWizardNewVMPageExpert::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
     composeMachineFilePath();
+    updateVirtualDiskPathFromMachinePathName();
 }
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()
@@ -329,6 +336,7 @@ void UIWizardNewVMPageExpert::initializePage()
     retranslateUi();
     setOSTypeDependedValues();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
+    updateVirtualDiskPathFromMachinePathName();
 }
 
 void UIWizardNewVMPageExpert::cleanupPage()
@@ -397,10 +405,10 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     pLocationLabel->setBuddy(m_pLocationEditor);
 
     /* Disk file size widgets: */
-    QLabel *pSizeEditorLabel = new QLabel("Disk Size:");
-    pSizeEditorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+    m_pSizeEditorLabel = new QLabel;
+    m_pSizeEditorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
     m_pSizeEditor = new UIMediumSizeEditor;
-    pSizeEditorLabel->setBuddy(m_pSizeEditor);
+    m_pSizeEditorLabel->setBuddy(m_pSizeEditor);
 
     /* Disk file format widgets: */
     m_pDiskFormatGroupBox = new QGroupBox;
@@ -417,7 +425,7 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
     pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
 
-    pDiskContainerLayout->addWidget(pSizeEditorLabel, 1, 0, 1, 1);
+    pDiskContainerLayout->addWidget(m_pSizeEditorLabel, 1, 0, 1, 1);
     pDiskContainerLayout->addWidget(m_pSizeEditor, 1, 1, 1, 3);
 
     pDiskContainerLayout->addWidget(m_pDiskFormatGroupBox, 2, 0, 1, 2);
@@ -546,4 +554,20 @@ void UIWizardNewVMPageExpert::sltValueModified()
         return;
 
     m_userSetWidgets << pSenderWidget;
+}
+
+void UIWizardNewVMPageExpert::updateVirtualDiskPathFromMachinePathName()
+{
+    QString strDiskFileName = machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : machineBaseName();
+    QString strDiskPath = machineFolder();
+    if (strDiskPath.isEmpty())
+    {
+        if (m_pNameAndSystemEditor)
+            strDiskPath = m_pNameAndSystemEditor->path();
+        else
+            strDiskPath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+    }
+    QString strExtension = defaultExtension(mediumFormat());
+    if (m_pLocationEditor)
+        m_pLocationEditor->setText(absoluteFilePath(strDiskFileName, strDiskPath, strExtension));
 }

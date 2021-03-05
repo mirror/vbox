@@ -72,9 +72,6 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
     bool validatePage();
-    /** Strips the format extension from the @p strFileName. foo.dd.vdi becomes foo.dd. any extension which is not
-      * a format extension is left alone. */
-    QString stripFormatExtension(const QString &strFileName);
 
     /* Widgets: */
     QGroupBox *m_pFormatGroupBox;

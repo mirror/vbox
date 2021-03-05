@@ -127,12 +127,6 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
     registerField("mediumVariant", this, "mediumVariant");
     registerField("mediumPath", this, "mediumPath");
     registerField("mediumSize", this, "mediumSize");
-
-    /* Initialization of m_strDefaultExtension is done  here
-       since first m_formats should be populated and fields should be registered: */
-    m_strDefaultExtension = defaultExtension(mediumFormat());
-    if (m_pLocationEditor)
-        m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
 }
 
 void UIWizardNewVDPageExpert::sltMediumFormatChanged()
@@ -145,45 +139,9 @@ void UIWizardNewVDPageExpert::sltMediumFormatChanged()
         return;
     }
 
-    /* Enable/disable widgets: */
-    ULONG uCapabilities = 0;
-    QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = mf.GetCapabilities();
-    for (int i = 0; i < capabilities.size(); i++)
-        uCapabilities |= capabilities[i];
+    updateMediumVariantWidgetsAfterFormatChange(mf);
 
-    bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
-    bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
-    bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
-
-    if (m_pFixedCheckBox)
-    {
-        if (!fIsCreateDynamicPossible)
-        {
-            m_pFixedCheckBox->setEnabled(false);
-            m_pFixedCheckBox->setChecked(true);
-        }
-        if (!fIsCreateFixedPossible)
-        {
-            m_pFixedCheckBox->setEnabled(false);
-            m_pFixedCheckBox->setChecked(false);
-        }
-    }
-    m_pSplitBox->setEnabled(fIsCreateSplitPossible);
-
-    /* Compose virtual-disk extension: */
-    m_strDefaultExtension = defaultExtension(mf);
-    /* Update m_pLocationEditor's text if necessary: */
-    if (!m_pLocationEditor->text().isEmpty() && !m_strDefaultExtension.isEmpty())
-    {
-        QFileInfo fileInfo(m_pLocationEditor->text());
-        if (fileInfo.suffix() != m_strDefaultExtension)
-        {
-            QFileInfo newFileInfo(fileInfo.absolutePath(),
-                                  QString("%1.%2").arg(stripFormatExtension(fileInfo.fileName())).arg(m_strDefaultExtension));
-            m_pLocationEditor->setText(newFileInfo.absoluteFilePath());
-        }
-    }
+    updateLocationEditorAfterFormatChange(mf, m_formatExtensions);
 
     /* Broadcast complete-change: */
     completeChanged();
@@ -225,6 +183,13 @@ void UIWizardNewVDPageExpert::retranslateUi()
 
 void UIWizardNewVDPageExpert::initializePage()
 {
+    /* Get default extension for new virtual-disk: */
+    m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
+    /* Set default name as text for location editor: */
+    if (m_pLocationEditor)
+        m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
+
+
     /* Translate page: */
     retranslateUi();
 }
@@ -272,21 +237,4 @@ bool UIWizardNewVDPageExpert::validatePage()
 
     /* Return result: */
     return fResult;
-}
-
-QString UIWizardNewVDPageExpert::stripFormatExtension(const QString &strFileName)
-{
-    QString result(strFileName);
-    foreach (const QString &strExtension, m_formatExtensions)
-    {
-        if (strFileName.endsWith(strExtension, Qt::CaseInsensitive))
-        {
-            /* Add the dot to extenstion: */
-            QString strExtensionWithDot(strExtension);
-            strExtensionWithDot.prepend('.');
-            int iIndex = strFileName.lastIndexOf(strExtensionWithDot, -1, Qt::CaseInsensitive);
-            result.remove(iIndex, strExtensionWithDot.length());
-        }
-    }
-    return result;
 }

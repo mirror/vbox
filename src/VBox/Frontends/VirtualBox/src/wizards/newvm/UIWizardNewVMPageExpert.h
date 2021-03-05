@@ -66,6 +66,14 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(int VCPUCount READ VCPUCount);
     Q_PROPERTY(bool EFIEnabled READ EFIEnabled);
 
+
+    // Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
+    // Q_PROPERTY(SelectedDiskSource selectedDiskSource READ selectedDiskSource WRITE setSelectedDiskSource);
+    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat);
+    // Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
+    Q_PROPERTY(QString mediumPath READ mediumPath);
+    // Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
+
 public:
 
     /** Constructor. */
@@ -127,6 +135,7 @@ private:
     void markWidgets() const;
     QWidget *createUnattendedWidgets();
     virtual QWidget *createNewDiskWidgets() /* override */;
+    void updateVirtualDiskPathFromMachinePathName();
 
     UIToolBox  *m_pToolBox;
     QGroupBox *m_pInstallationISOGroupBox;

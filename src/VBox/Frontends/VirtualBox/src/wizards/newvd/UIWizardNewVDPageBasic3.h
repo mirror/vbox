@@ -57,6 +57,10 @@ protected:
     static QString absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension);
 
     virtual QString mediumPath() const;
+    /** A utility function thar strips the format extension from the @p strFileName.
+      * foo.dd.vdi becomes foo.dd. any extension which is not a format extension is left alone. */
+    static QString stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions);
+    void updateLocationEditorAfterFormatChange(const CMediumFormat &mediumFormat, const QStringList &formatExtensions);
 
     qulonglong mediumSize() const;
     void setMediumSize(qulonglong uMediumSize);

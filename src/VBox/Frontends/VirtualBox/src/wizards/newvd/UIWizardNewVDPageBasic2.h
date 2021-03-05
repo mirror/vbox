@@ -45,9 +45,10 @@ protected:
     void retranslateWidgets();
     /** Check Medium format capability and decide if certain widgets can be shown. */
     void setWidgetVisibility(CMediumFormat &mediumFormat);
+    void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat);
     /** @name Widgets
      * @{ */
-        QCheckBox    *m_pFixedCheckBox;
+        QCheckBox *m_pFixedCheckBox;
         QCheckBox *m_pSplitBox;
     /** @} */
 
