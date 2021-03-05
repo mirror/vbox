@@ -5172,6 +5172,8 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
                     log.printf("%s%cVBox.png.%u", logFolder.c_str(), RTPATH_DELIMITER, i);
                     RTFileDelete(log.c_str());
                 }
+                log.printf("%s%cVBoxUI.log", logFolder.c_str(), RTPATH_DELIMITER);
+                RTFileDelete(log.c_str());
 #if defined(RT_OS_WINDOWS)
                 log.printf("%s%cVBoxStartup.log", logFolder.c_str(), RTPATH_DELIMITER);
                 RTFileDelete(log.c_str());
