@@ -1811,18 +1811,15 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
         if (fDoRead)
 # endif
         {
-            const uint32_t cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
-            const uint32_t cbStreamReadable   = hdaR3StreamGetUsed(pStreamR3);
-                  uint32_t cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
-                           /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
-                           cbToReadFromStream = DrvAudioHlpBytesAlign(cbToReadFromStream, &pStreamR3->State.Mapping.PCMProps);
+            uint32_t const cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
+            uint32_t const cbStreamReadable   = hdaR3StreamGetUsed(pStreamR3);
+            uint32_t       cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
+            /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
+            cbToReadFromStream = DrvAudioHlpBytesAlign(cbToReadFromStream, &pStreamR3->State.Mapping.PCMProps);
 
-#ifdef LOG_ENABLED
             Assert(tsNowNs >= pStreamShared->State.tsLastReadNs);
-            const uint64_t deltaLastReadMs = (tsNowNs - pStreamShared->State.tsLastReadNs) / RT_NS_1MS;
-            Log3Func(("[SD%RU8] deltaLastReadMs=%RU64\n",
-                      pStreamShared->u8SD, deltaLastReadMs));
-#endif
+            Log3Func(("[SD%RU8] msDeltaLastRead=%RI64\n",
+                      pStreamShared->u8SD, (tsNowNs - pStreamShared->State.tsLastReadNs) / RT_NS_1MS));
             Log3Func(("[SD%RU8] cbSinkWritable=%RU32, cbStreamReadable=%RU32 -> cbToReadFromStream=%RU32\n",
                       pStreamShared->u8SD, cbSinkWritable, cbStreamReadable, cbToReadFromStream));
 
