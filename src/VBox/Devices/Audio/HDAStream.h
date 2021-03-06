@@ -261,6 +261,8 @@ typedef struct HDASTREAMR3
         /** Asynchronous I/O state members. */
         HDASTREAMSTATEAIO       AIO;
 #endif
+        /** Under/overflow statistics counter.   */
+        STAMCOUNTER             StatDmaFlowErrors;
     } State;
     /** Debug bits. */
     HDASTREAMDEBUG              Dbg;

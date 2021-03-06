@@ -29,6 +29,7 @@ provider vboxdd
     probe hda__stream__reset(uint32_t idxStream);
     probe hda__stream__dma__out(uint32_t idxStream, uint32_t cb, uint64_t off);
     probe hda__stream__dma__in(uint32_t idxStream, uint32_t cb, uint64_t off);
+    probe hda__stream__dma__flowerror(uint32_t idxStream, uint32_t cbFree, uint32_t cbPeriod, int32_t fOverflow);
     probe hda__stream__aio__out(uint32_t idxStream, uint32_t cb, uint64_t off);
     probe hda__stream__aio__in(uint32_t idxStream, uint32_t cb, uint64_t off);
 };
