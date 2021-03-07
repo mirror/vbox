@@ -1500,7 +1500,7 @@ static DECLCALLBACK(uint32_t) drvHostALSAStreamGetPending(PPDMIHOSTAUDIO pInterf
 
     Log2Func(("cFramesDelay=%RI32, enmState=%d, rc=%d\n", cFramesDelay, enmState, rc));
 
-    return DrvAudioHlpFramesToBytes(cFramesDelay, &pStreamALSA->pCfg->Props);
+    return DrvAudioHlpFramesToBytes(&pStreamALSA->pCfg->Props, cFramesDelay);
 }
 
 

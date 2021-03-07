@@ -665,7 +665,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
          * of copying own buffer data to our secondary's Direct Sound buffer.
          */
         bd.dwFlags       = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_LOCSOFTWARE;
-        bd.dwBufferBytes = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesBufferSize, &pCfgReq->Props);
+        bd.dwBufferBytes = DrvAudioHlpFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
 
         DSLOG(("DSound: Requested playback buffer is %RU64ms (%ld bytes)\n",
                DrvAudioHlpBytesToMilli(&pCfgReq->Props, bd.dwBufferBytes), bd.dwBufferBytes));
@@ -894,7 +894,7 @@ static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
     pStreamDS->Out.cbTransferred += cbTransferred;
 
     if (   pStreamDS->Out.fFirstTransfer
-        && pStreamDS->Out.cbTransferred >= DrvAudioHlpFramesToBytes(pStreamDS->Cfg.Backend.cFramesPreBuffering, &pStreamDS->Cfg.Props))
+        && pStreamDS->Out.cbTransferred >= DrvAudioHlpFramesToBytes(&pStreamDS->Cfg.Props, pStreamDS->Cfg.Backend.cFramesPreBuffering))
     {
         hr = directSoundPlayStart(pThis, pStreamDS);
         if (SUCCEEDED(hr))
@@ -1400,7 +1400,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
 
         bd.dwSize        = sizeof(bd);
         bd.lpwfxFormat   = &wfx;
-        bd.dwBufferBytes = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesBufferSize, &pCfgReq->Props);
+        bd.dwBufferBytes = DrvAudioHlpFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
 
         DSLOG(("DSound: Requested capture buffer is %RU64ms (%ld bytes)\n",
                DrvAudioHlpBytesToMilli(&pCfgReq->Props, bd.dwBufferBytes), bd.dwBufferBytes));

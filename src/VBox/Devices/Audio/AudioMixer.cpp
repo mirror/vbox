@@ -1714,7 +1714,7 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         if (RT_FAILURE(rc))
             break;
 
-        const uint32_t cbChunk = DrvAudioHlpFramesToBytes(cfChunk, &pSink->PCMProps);
+        const uint32_t cbChunk = DrvAudioHlpFramesToBytes(&pSink->PCMProps, cfChunk);
         Assert(cbChunk <= pSink->cbScratchBuf);
 
         /* Multiplex the current chunk in a synchronized fashion to all connected streams. */
@@ -2118,7 +2118,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
         if (RT_FAILURE(rc))
             break;
 
-        const uint32_t cbWrittenChunk = DrvAudioHlpFramesToBytes(cfWritten, &pSink->PCMProps);
+        const uint32_t cbWrittenChunk = DrvAudioHlpFramesToBytes(&pSink->PCMProps, cfWritten);
 
         Assert(cbToWrite >= cbWrittenChunk);
         cbToWrite -= cbWrittenChunk;

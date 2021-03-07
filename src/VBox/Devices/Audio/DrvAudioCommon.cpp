@@ -136,7 +136,7 @@ void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf
         return;
 
     Assert(pPCMProps->cbSample);
-    size_t cbToClear = DrvAudioHlpFramesToBytes(cFrames, pPCMProps);
+    size_t cbToClear = DrvAudioHlpFramesToBytes(pPCMProps, cFrames);
     Assert(cbBuf >= cbToClear);
 
     if (cbBuf < cbToClear)
@@ -1323,20 +1323,16 @@ uint64_t DrvAudioHlpBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 }
 
 /**
- * Returns the bytes for a given audio frames amount and PCM properties.
+ * Converts frames to bytes.
  *
- * @return Calculated bytes for given audio frames.
- * @param  cFrames              Amount of audio frames to calculate bytes for.
- * @param  pProps               PCM properties to calculate bytes for.
+ * @return Number of bytes.
+ * @param   pProps      The PCM properties to use.
+ * @param   cFrames     Number of audio frames to convert.
  */
-uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpFramesToBytes(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pProps, 0);
-
-    if (!cFrames)
-        return 0;
-
-    return cFrames * PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+    return PDMAUDIOPCMPROPS_F2B(pProps, cFrames);
 }
 
 /**

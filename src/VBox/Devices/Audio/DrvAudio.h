@@ -203,7 +203,7 @@ uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, PCPDMAUDIOPCMPROPS pProps);
 uint64_t DrvAudioHlpBytesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
 uint64_t DrvAudioHlpBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
 uint64_t DrvAudioHlpBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpFramesToBytes(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
 uint64_t DrvAudioHlpFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
 uint64_t DrvAudioHlpFramesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
 uint32_t DrvAudioHlpMilliToBytes(uint64_t uMs, PCPDMAUDIOPCMPROPS pProps);

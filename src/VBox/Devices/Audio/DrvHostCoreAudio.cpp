@@ -1304,7 +1304,7 @@ static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser
     if (err != noErr)
         return VERR_GENERAL_FAILURE; /** @todo Fudge! */
 
-    const size_t cbBufSize = DrvAudioHlpFramesToBytes(pCAStream->pCfg->Backend.cFramesPeriod, &pCAStream->pCfg->Props);
+    const size_t cbBufSize = DrvAudioHlpFramesToBytes(&pCAStream->pCfg->Props, pCAStream->pCfg->Backend.cFramesPeriod);
 
     /*
      * Allocate audio buffers.

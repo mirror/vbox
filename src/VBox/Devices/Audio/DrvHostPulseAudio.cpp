@@ -802,7 +802,7 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
     pStreamPA->BufAttr.tlength     = cbLatency;
     pStreamPA->BufAttr.maxlength   = -1; /* Let the PulseAudio server choose the biggest size it can handle. */
     pStreamPA->BufAttr.prebuf      = cbLatency;
-    pStreamPA->BufAttr.minreq      = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesPeriod, &pCfgReq->Props);
+    pStreamPA->BufAttr.minreq      = DrvAudioHlpFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
 
     LogFunc(("Requested: BufAttr tlength=%RU32, maxLength=%RU32, minReq=%RU32\n",
              pStreamPA->BufAttr.tlength, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
@@ -848,7 +848,7 @@ static int paCreateStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM  pStream
     pStreamPA->SampleSpec.rate     = pCfgReq->Props.uHz;
     pStreamPA->SampleSpec.channels = pCfgReq->Props.cChannels;
 
-    pStreamPA->BufAttr.fragsize    = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesPeriod, &pCfgReq->Props);
+    pStreamPA->BufAttr.fragsize    = DrvAudioHlpFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod);
     pStreamPA->BufAttr.maxlength   = -1; /* Let the PulseAudio server choose the biggest size it can handle. */
 
     Assert(pCfgReq->enmDir == PDMAUDIODIR_IN);

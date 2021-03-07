@@ -144,7 +144,7 @@ static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDI
     pStreamDbg->tsStarted = 0;
     pStreamDbg->uSamplesSinceStarted = 0;
     pStreamDbg->Out.tsLastPlayed  = 0;
-    pStreamDbg->Out.cbPlayBuffer  = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesBufferSize, &pCfgReq->Props);
+    pStreamDbg->Out.cbPlayBuffer  = DrvAudioHlpFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
     pStreamDbg->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
     AssertReturn(pStreamDbg->Out.pu8PlayBuffer, VERR_NO_MEMORY);
 
