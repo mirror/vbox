@@ -793,7 +793,7 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
     pStreamPA->SampleSpec.rate     = pCfgReq->Props.uHz;
     pStreamPA->SampleSpec.channels = pCfgReq->Props.cChannels;
 
-    pStreamPA->curLatencyUs        = DrvAudioHlpFramesToMilli(pCfgReq->Backend.cFramesBufferSize, &pCfgReq->Props) * RT_US_1MS;
+    pStreamPA->curLatencyUs        = DrvAudioHlpFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize) * RT_US_1MS;
 
     const uint32_t cbLatency = pa_usec_to_bytes(pStreamPA->curLatencyUs, &pStreamPA->SampleSpec);
 

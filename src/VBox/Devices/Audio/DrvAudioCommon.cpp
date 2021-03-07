@@ -1346,7 +1346,7 @@ uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps)
  * @param   pProps      The PCM properties to use.
  * @param   cFrames     Number of audio frames to convert.
  */
-uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps)
+uint64_t DrvAudioHlpFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pProps, 0);
 
