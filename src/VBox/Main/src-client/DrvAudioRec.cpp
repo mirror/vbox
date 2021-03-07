@@ -88,7 +88,7 @@
 #include "DrvAudioRec.h"
 #include "ConsoleImpl.h"
 
-#include "../../Devices/Audio/DrvAudio.h"
+#include "../../Devices/Audio/DrvAudio.h" /* Ugly! */
 #include "WebMWriter.h"
 
 #include <iprt/mem.h>
@@ -107,9 +107,8 @@
 /*********************************************************************************************************************************
 *   Defines                                                                                                                      *
 *********************************************************************************************************************************/
-
-#define AVREC_OPUS_HZ_MAX               48000           /** Maximum sample rate (in Hz) Opus can handle. */
-#define AVREC_OPUS_FRAME_MS_DEFAULT     20              /** Default Opus frame size (in ms). */
+#define AVREC_OPUS_HZ_MAX               48000   /**< Maximum sample rate (in Hz) Opus can handle. */
+#define AVREC_OPUS_FRAME_MS_DEFAULT     20      /**< Default Opus frame size (in ms). */
 
 
 /*********************************************************************************************************************************
@@ -437,7 +436,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
         if (!pCodec->Opus.msFrame)
             pCodec->Opus.msFrame = AVREC_OPUS_FRAME_MS_DEFAULT; /* 20ms by default; to prevent division by zero. */
         pCodec->Opus.csFrame = pSink->Codec.Parms.PCMProps.uHz / (1000 /* s in ms */ / pSink->Codec.Opus.msFrame);
-        pCodec->Opus.cbFrame = DrvAudioHlpFramesToBytes(pCodec->Opus.csFrame, &pSink->Codec.Parms.PCMProps);
+        pCodec->Opus.cbFrame = DrvAudioHlpFramesToBytes(&pSink->Codec.Parms.PCMProps, pCodec->Opus.csFrame);
 
 #ifdef VBOX_WITH_STATISTICS
         pSink->Codec.STAM.cEncFrames = 0;

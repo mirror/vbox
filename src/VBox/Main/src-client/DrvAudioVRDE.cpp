@@ -94,7 +94,7 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
     /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
     const uint32_t cFramesVrdpServer = DrvAudioHlpMilliToFrames(200  /* ms */, &pCfgAcq->Props);
 
-    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, DrvAudioHlpFramesToBytes(cFramesVrdpServer, &pCfgAcq->Props));
+    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, DrvAudioHlpFramesToBytes(&pCfgAcq->Props, cFramesVrdpServer));
     if (RT_SUCCESS(rc))
     {
         /*
