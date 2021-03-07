@@ -1340,11 +1340,11 @@ uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps)
 }
 
 /**
- * Returns the time (in ms) for given audio frames amount and PCM properties.
+ * Converts frames to milliseconds.
  *
- * @return  uint64_t            Calculated time (in ms).
- * @param   cFrames             Amount of audio frames to calculate time for.
- * @param   pProps              PCM properties to calculate time (in ms) for.
+ * @returns milliseconds.
+ * @param   pProps      The PCM properties to use.
+ * @param   cFrames     Number of audio frames to convert.
  */
 uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps)
 {
@@ -1367,13 +1367,13 @@ uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps)
 }
 
 /**
- * Returns the time (in ns) for given audio frames amount and PCM properties.
+ * Converts frames to nanoseconds.
  *
- * @return  uint64_t            Calculated time (in ns).
- * @param   cFrames             Amount of audio frames to calculate time for.
- * @param   pProps              PCM properties to calculate time (in ns) for.
+ * @returns Nanoseconds.
+ * @param   pProps      The PCM properties to use.
+ * @param   cFrames     Number of audio frames to convert.
  */
-uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps)
+uint64_t DrvAudioHlpFramesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pProps, 0);
 
