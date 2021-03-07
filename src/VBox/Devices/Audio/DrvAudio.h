@@ -194,42 +194,42 @@ uint8_t DrvAudioHlpAudFmtToBits(PDMAUDIOFMT enmFmt);
 
 /** @name Audio calculation helper methods.
  * @{ */
-void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cFrames);
+void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cFrames);
 uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
-uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps);
-bool     DrvAudioHlpBytesIsAligned(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps);
-uint64_t DrvAudioHlpBytesToMilli(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps);
-uint64_t DrvAudioHlpBytesToMicro(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps);
-uint64_t DrvAudioHlpBytesToNano(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps);
-uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps);
-uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpMilliToBytes(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpNanoToBytes(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpMilliToFrames(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpNanoToFrames(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpCalcBitrate(PCPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, PCPDMAUDIOPCMPROPS pProps);
+bool     DrvAudioHlpBytesIsAligned(uint32_t cbSize, PCPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, PCPDMAUDIOPCMPROPS pProps);
+uint64_t DrvAudioHlpBytesToMilli(uint32_t cbBytes, PCPDMAUDIOPCMPROPS pProps);
+uint64_t DrvAudioHlpBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
+uint64_t DrvAudioHlpBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
+uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps);
+uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps);
+uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpMilliToBytes(uint64_t uMs, PCPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpNanoToBytes(uint64_t uNs, PCPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpMilliToFrames(uint64_t uMs, PCPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpNanoToFrames(uint64_t uNs, PCPDMAUDIOPCMPROPS pProps);
 /** @}  */
 
 /** @name Audio PCM properties helper methods.
  * @{ */
-bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pPCMProps1, const PPDMAUDIOPCMPROPS pPCMProps2);
-bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pPCMProps, const PPDMAUDIOSTREAMCFG pCfg);
-bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpPCMPropsBytesPerFrame(const PPDMAUDIOPCMPROPS pProps);
-void DrvAudioHlpPCMPropsPrint(const PPDMAUDIOPCMPROPS pProps);
-int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
+bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps1, PCPDMAUDIOPCMPROPS pPCMProps2);
+bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps, PCPDMAUDIOSTREAMCFG pCfg);
+bool DrvAudioHlpPCMPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
+uint32_t DrvAudioHlpPCMPropsBytesPerFrame(PCPDMAUDIOPCMPROPS pProps);
+void DrvAudioHlpPCMPropsPrint(PCPDMAUDIOPCMPROPS pProps);
+int DrvAudioHlpPCMPropsToStreamCfg(PCPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
 /** @}  */
 
 /** @name Audio configuration helper methods.
  * @{ */
 void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg);
-bool DrvAudioHlpStreamCfgIsValid(const PPDMAUDIOSTREAMCFG pCfg);
-int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, const PPDMAUDIOSTREAMCFG pSrcCfg);
-PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg);
+bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg);
+int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg);
+PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(PCPDMAUDIOSTREAMCFG pCfg);
 void DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg);
-void DrvAudioHlpStreamCfgPrint(const PPDMAUDIOSTREAMCFG pCfg);
+void DrvAudioHlpStreamCfgPrint(PCPDMAUDIOSTREAMCFG pCfg);
 /** @}  */
 
 /** @name Audio stream command helper methods.
@@ -286,7 +286,7 @@ char *DrvAudioHlpAudDevFlagsToStrA(uint32_t fFlags);
  * @{ */
 int DrvAudioHlpFileCreate(PDMAUDIOFILETYPE enmType, const char *pszFile, uint32_t fFlags, PPDMAUDIOFILE *ppFile);
 void DrvAudioHlpFileDestroy(PPDMAUDIOFILE pFile);
-int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, const PPDMAUDIOPCMPROPS pProps);
+int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pProps);
 int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile);
 int DrvAudioHlpFileDelete(PPDMAUDIOFILE pFile);
 size_t DrvAudioHlpFileGetDataSize(PPDMAUDIOFILE pFile);

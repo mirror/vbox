@@ -32,13 +32,44 @@
 #include "../DrvAudio.h"
 
 
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
+static void tstBasics(RTTEST hTest)
+{
+    RTTestSubF(hTest, "Single buffer");
+
+    static const PDMAUDIOPCMPROPS s_Cfg441StereoS16 = PDMAUDIOPCMPROPS_INITIALIZOR(
+        /* a_cb: */             2,
+        /* a_fSigned: */        true,
+        /* a_cChannels: */      2,
+        /* a_uHz: */            44100,
+        /* a_cShift: */         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(2 /* cb */, 2 /* cChannels */),
+        /* a_fSwapEndian: */    false
+    );
+
+    RTTESTI_CHECK_MSG(PDMAUDIOPCMPROPS_F2B(&s_Cfg441StereoS16, 1) == 4,
+                      ("got %x, expected 4\n", PDMAUDIOPCMPROPS_F2B(&s_Cfg441StereoS16, 1)));
+
+    uint32_t u32;
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpFramesToBytes(44100, &s_Cfg441StereoS16)) == 44100 * 2 * 2,
+                      ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpFramesToBytes(2, &s_Cfg441StereoS16)) == 2 * 2 * 2,
+                      ("cb=%RU32\n", u32));
+
+    uint64_t u64;
+    RTTESTI_CHECK_MSG((u64 = DrvAudioHlpBytesToNano(&s_Cfg441StereoS16, 44100 * 2 * 2)) == RT_NS_1SEC,
+                      ("ns=%RU64\n", u64));
+    RTTESTI_CHECK_MSG((u64 = DrvAudioHlpBytesToMicro(&s_Cfg441StereoS16, 44100 * 2 * 2)) == RT_US_1SEC,
+                      ("us=%RU64\n", u64));
+    RTTESTI_CHECK_MSG((u64 = DrvAudioHlpBytesToMilli(44100 * 2 * 2, &s_Cfg441StereoS16)) == RT_MS_1SEC,
+                      ("ms=%RU64\n", u64));
+
+
+
+}
+
 
 static int tstSingle(RTTEST hTest)
 {
-    RTTestSubF(hTest, "Single buffer");
+    RTTestSub(hTest, "Single buffer");
 
     /* 44100Hz, 2 Channels, S16 */
     PDMAUDIOPCMPROPS config = PDMAUDIOPCMPROPS_INITIALIZOR(
@@ -231,7 +262,7 @@ static int tstParentChild(RTTEST hTest)
     /*
      * Using AudioMixBufWriteAt for writing to children.
      */
-    RTTestSubF(hTest, "2 Children -> Parent (AudioMixBufWriteAt)");
+    RTTestSub(hTest, "2 Children -> Parent (AudioMixBufWriteAt)");
 
     uint32_t cChildrenSamplesMixedTotal = 0;
 
@@ -307,7 +338,7 @@ static int tstConversion8(RTTEST hTest)
     unsigned         i;
     uint32_t         cBufSize = 256;
 
-    RTTestSubF(hTest, "Sample conversion (U8)");
+    RTTestSub(hTest, "Sample conversion (U8)");
 
     /* 44100Hz, 1 Channel, U8 */
     PDMAUDIOPCMPROPS cfg_p = PDMAUDIOPCMPROPS_INITIALIZOR(
@@ -412,7 +443,7 @@ static int tstConversion16(RTTEST hTest)
     unsigned         i;
     uint32_t         cBufSize = 256;
 
-    RTTestSubF(hTest, "Sample conversion (S16)");
+    RTTestSub(hTest, "Sample conversion (S16)");
 
     /* 44100Hz, 1 Channel, S16 */
     PDMAUDIOPCMPROPS cfg_p = PDMAUDIOPCMPROPS_INITIALIZOR(
@@ -508,7 +539,7 @@ static int tstVolume(RTTEST hTest)
     unsigned         i;
     uint32_t         cBufSize = 256;
 
-    RTTestSubF(hTest, "Volume control");
+    RTTestSub(hTest, "Volume control");
 
     /* Same for parent/child. */
     /* 44100Hz, 2 Channels, S16 */
@@ -634,15 +665,12 @@ int main(int argc, char **argv)
         return rc;
     RTTestBanner(hTest);
 
-    rc = tstSingle(hTest);
-    if (RT_SUCCESS(rc))
-        rc = tstParentChild(hTest);
-    if (RT_SUCCESS(rc))
-        rc = tstConversion8(hTest);
-    if (RT_SUCCESS(rc))
-        rc = tstConversion16(hTest);
-    if (RT_SUCCESS(rc))
-        rc = tstVolume(hTest);
+    tstBasics(hTest);
+    tstSingle(hTest);
+    tstParentChild(hTest);
+    tstConversion8(hTest);
+    tstConversion16(hTest);
+    tstVolume(hTest);
 
     /*
      * Summary

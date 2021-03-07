@@ -681,6 +681,8 @@ AssertCompileSize(PDMAUDIOPCMPROPS, 8);
 AssertCompileSizeAlignment(PDMAUDIOPCMPROPS, 8);
 /** Pointer to audio stream properties. */
 typedef PDMAUDIOPCMPROPS *PPDMAUDIOPCMPROPS;
+/** Pointer to const audio stream properties. */
+typedef PDMAUDIOPCMPROPS const *PCPDMAUDIOPCMPROPS;
 
 /** @name Macros for use with PDMAUDIOPCMPROPS
  * @{ */
@@ -758,6 +760,8 @@ typedef struct PDMAUDIOSTREAMCFG
 AssertCompileSizeAlignment(PDMAUDIOSTREAMCFG, 8);
 /** Pointer to audio stream configuration keeper. */
 typedef PDMAUDIOSTREAMCFG *PPDMAUDIOSTREAMCFG;
+/** Pointer to a const audio stream configuration keeper. */
+typedef PDMAUDIOSTREAMCFG const *PCPDMAUDIOSTREAMCFG;
 
 /** Converts (audio) frames to bytes. */
 #define PDMAUDIOSTREAMCFG_F2B(pCfg, frames) ((frames) << (pCfg->Props).cShift)

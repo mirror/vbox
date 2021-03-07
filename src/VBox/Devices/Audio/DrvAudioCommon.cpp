@@ -127,7 +127,7 @@ PDMAUDIOFMT DrvAudioAudFmtBitsToAudFmt(uint8_t cBits, bool fSigned)
  * @param   cbBuf                   Size (in bytes) of the buffer.
  * @param   cFrames                 Number of audio frames to clear in the buffer.
  */
-void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cFrames)
+void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cFrames)
 {
     AssertPtrReturnVoid(pPCMProps);
     AssertPtrReturnVoid(pvBuf);
@@ -821,7 +821,7 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
  * @param   pProps1             First properties to compare.
  * @param   pProps2             Second properties to compare.
  */
-bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps1, const PPDMAUDIOPCMPROPS pProps2)
+bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2)
 {
     AssertPtrReturn(pProps1, false);
     AssertPtrReturn(pProps2, false);
@@ -842,7 +842,7 @@ bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps1, const PPDMAUDI
  * Returns @c true if properties are valid, @c false if not.
  * @param   pProps              PCM properties to check.
  */
-bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps)
+bool DrvAudioHlpPCMPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, false);
 
@@ -891,7 +891,7 @@ bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps)
  * @param   pProps              PCM properties to compare.
  * @param   pCfg                Stream configuration to compare.
  */
-bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps, const PPDMAUDIOSTREAMCFG pCfg)
+bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pProps, PCPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pProps, false);
     AssertPtrReturn(pCfg,   false);
@@ -905,7 +905,7 @@ bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps, const PPDMAUDIO
  * @return Bytes per (audio) frame.
  * @param  pProps               PCM properties to retrieve bytes per frame for.
  */
-uint32_t DrvAudioHlpPCMPropsBytesPerFrame(const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpPCMPropsBytesPerFrame(PCPDMAUDIOPCMPROPS pProps)
 {
     return PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
 }
@@ -915,7 +915,7 @@ uint32_t DrvAudioHlpPCMPropsBytesPerFrame(const PPDMAUDIOPCMPROPS pProps)
  *
  * @param   pProps              Stream configuration to log.
  */
-void DrvAudioHlpPCMPropsPrint(const PPDMAUDIOPCMPROPS pProps)
+void DrvAudioHlpPCMPropsPrint(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturnVoid(pProps);
 
@@ -930,7 +930,7 @@ void DrvAudioHlpPCMPropsPrint(const PPDMAUDIOPCMPROPS pProps)
  * @param   pProps              PCM properties to convert.
  * @param   pCfg                Stream configuration to store result into.
  */
-int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
+int DrvAudioHlpPCMPropsToStreamCfg(PCPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
@@ -961,7 +961,7 @@ void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg)
  * Returns @c true if configuration is valid, @c false if not.
  * @param   pCfg                Stream configuration to check.
  */
-bool DrvAudioHlpStreamCfgIsValid(const PPDMAUDIOSTREAMCFG pCfg)
+bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pCfg, false);
 
@@ -998,7 +998,7 @@ void DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg)
  * @param   pDstCfg             Destination stream configuration to copy source to.
  * @param   pSrcCfg             Source stream configuration to copy to destination.
  */
-int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, const PPDMAUDIOSTREAMCFG pSrcCfg)
+int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg)
 {
     AssertPtrReturn(pDstCfg, VERR_INVALID_POINTER);
     AssertPtrReturn(pSrcCfg, VERR_INVALID_POINTER);
@@ -1023,7 +1023,7 @@ int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, const PPDMAUDIOSTREAMCF
  * @return  Duplicates audio stream configuration on success, or NULL on failure.
  * @param   pCfg                    Audio stream configuration to duplicate.
  */
-PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg)
+PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(PCPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pCfg, NULL);
 
@@ -1055,7 +1055,7 @@ PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg)
  *
  * @param   pCfg                Stream configuration to log.
  */
-void DrvAudioHlpStreamCfgPrint(const PPDMAUDIOSTREAMCFG pCfg)
+void DrvAudioHlpStreamCfgPrint(PCPDMAUDIOSTREAMCFG pCfg)
 {
     if (!pCfg)
         return;
@@ -1167,7 +1167,7 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
  *
  * @remark
  */
-uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpCalcBitrate(PCPDMAUDIOPCMPROPS pProps)
 {
     return DrvAudioHlpCalcBitrate(pProps->cbSample * 8, pProps->uHz, pProps->cChannels);
 }
@@ -1180,7 +1180,7 @@ uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps)
  * @param   cbSize              Size (in bytes) to align.
  * @param   pProps              PCM properties to align size to.
  */
-uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1197,7 +1197,7 @@ uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
  * @param   cbSize              Size (in bytes) to check alignment for.
  * @param   pProps              PCM properties to use for checking the alignment.
  */
-bool DrvAudioHlpBytesIsAligned(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
+bool DrvAudioHlpBytesIsAligned(uint32_t cbSize, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1213,7 +1213,7 @@ bool DrvAudioHlpBytesIsAligned(uint32_t cbSize, const PPDMAUDIOPCMPROPS pProps)
  * @returns Bytes per second.
  * @param   pProps              PCM properties to retrieve size for.
  */
-DECLINLINE(uint64_t) drvAudioHlpBytesPerSec(const PPDMAUDIOPCMPROPS pProps)
+DECLINLINE(uint64_t) drvAudioHlpBytesPerSec(PCPDMAUDIOPCMPROPS pProps)
 {
     return PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */) * pProps->uHz;
 }
@@ -1225,7 +1225,7 @@ DECLINLINE(uint64_t) drvAudioHlpBytesPerSec(const PPDMAUDIOPCMPROPS pProps)
  * @param  cbBytes              Bytes to convert to audio frames.
  * @param  pProps               PCM properties to calulate frames for.
  */
-uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1233,81 +1233,93 @@ uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pPro
 }
 
 /**
- * Returns the time (in ms) for given byte amount and PCM properties.
+ * Converts bytes to milliseconds.
  *
- * @return  uint64_t            Calculated time (in ms).
- * @param   cbBytes             Amount of bytes to calculate time for.
- * @param   pProps              PCM properties to calculate amount of bytes for.
+ * @return  Number milliseconds @a cb takes to play or record.
+ * @param   pProps      PCM properties to use.
+ * @param   cb          The number of bytes to convert.
  *
- * @note    Does rounding up the result.
+ * @note    Rounds up the result.
  */
-uint64_t DrvAudioHlpBytesToMilli(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
+uint64_t DrvAudioHlpBytesToMilli(uint32_t cb, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
-    if (!pProps->uHz) /* Prevent division by zero. */
-        return 0;
+    /* Check parameters to prevent division by chainsaw: */
+    uint32_t const uHz = pProps->uHz;
+    if (uHz)
+    {
+        const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+        if (cbFrame)
+        {
+            /* Round cb up to closest frame size: */
+            cb = (cb + cbFrame - 1) / cbFrame;
 
-    const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
-
-    if (!cbFrame) /* Prevent division by zero. */
-        return 0;
-
-    uint64_t uTimeMs = ((cbBytes + cbFrame - 1) / cbFrame) * RT_MS_1SEC;
-
-    return (uTimeMs + pProps->uHz - 1) / pProps->uHz;
+            /* Convert to milliseconds. */
+            return (cb * (uint64_t)RT_MS_1SEC + uHz - 1) / uHz;
+        }
+    }
+    return 0;
 }
 
 /**
- * Returns the time (in us) for given byte amount and PCM properties.
+ * Converts bytes to microseconds.
  *
- * @return  uint64_t            Calculated time (in us).
- * @param   cbBytes             Amount of bytes to calculate time for.
- * @param   pProps              PCM properties to calculate amount of bytes for.
+ * @return  Number microseconds @a cb takes to play or record.
+ * @param   pProps      PCM properties to use.
+ * @param   cb          The number of bytes to convert.
  *
- * @note    Does rounding up the result.
+ * @note    Rounds up the result.
  */
-uint64_t DrvAudioHlpBytesToMicro(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
+uint64_t DrvAudioHlpBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, 0);
 
-    if (!pProps->uHz) /* Prevent division by zero. */
-        return 0;
+    /* Check parameters to prevent division by chainsaw: */
+    uint32_t const uHz = pProps->uHz;
+    if (uHz)
+    {
+        const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+        if (cbFrame)
+        {
+            /* Round cb up to closest frame size: */
+            cb = (cb + cbFrame - 1) / cbFrame;
 
-    const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
-
-    if (!cbFrame) /* Prevent division by zero. */
-        return 0;
-
-    uint64_t uTimeUs = ((cbBytes + cbFrame - 1) / cbFrame) * RT_US_1SEC;
-
-    return (uTimeUs + pProps->uHz - 1) / pProps->uHz;
+            /* Convert to microseconds. */
+            return (cb * (uint64_t)RT_US_1SEC + uHz - 1) / uHz;
+        }
+    }
+    return 0;
 }
 
 /**
- * Returns the time (in ns) for given byte amount and PCM properties.
+ * Converts bytes to nanoseconds.
  *
- * @return  uint64_t            Calculated time (in ns).
- * @param   cbBytes             Amount of bytes to calculate time for.
- * @param   pProps              PCM properties to calculate amount of bytes for.
+ * @return  Number nanoseconds @a cb takes to play or record.
+ * @param   pProps      PCM properties to use.
+ * @param   cb          The number of bytes to convert.
  *
- * @note    Does rounding up the result.
+ * @note    Rounds up the result.
  */
-uint64_t DrvAudioHlpBytesToNano(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
+uint64_t DrvAudioHlpBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, 0);
 
-    if (!pProps->uHz) /* Prevent division by zero. */
-        return 0;
+    /* Check parameters to prevent division by chainsaw: */
+    uint32_t const uHz = pProps->uHz;
+    if (uHz)
+    {
+        const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+        if (cbFrame)
+        {
+            /* Round cb up to closest frame size: */
+            cb = (cb + cbFrame - 1) / cbFrame;
 
-    const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
-
-    if (!cbFrame) /* Prevent division by zero. */
-        return 0;
-
-    uint64_t uTimeNs = ((cbBytes + cbFrame - 1) / cbFrame) * RT_NS_1SEC;
-
-    return (uTimeNs + pProps->uHz - 1) / pProps->uHz;
+            /* Convert to nanoseconds. */
+            return (cb * (uint64_t)RT_NS_1SEC + uHz - 1) / uHz;
+        }
+    }
+    return 0;
 }
 
 /**
@@ -1317,7 +1329,7 @@ uint64_t DrvAudioHlpBytesToNano(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps
  * @param  cFrames              Amount of audio frames to calculate bytes for.
  * @param  pProps               PCM properties to calculate bytes for.
  */
-uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1334,7 +1346,7 @@ uint32_t DrvAudioHlpFramesToBytes(uint32_t cFrames, const PPDMAUDIOPCMPROPS pPro
  * @param   cFrames             Amount of audio frames to calculate time for.
  * @param   pProps              PCM properties to calculate time (in ms) for.
  */
-uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps)
+uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1361,7 +1373,7 @@ uint64_t DrvAudioHlpFramesToMilli(uint32_t cFrames, const PPDMAUDIOPCMPROPS pPro
  * @param   cFrames             Amount of audio frames to calculate time for.
  * @param   pProps              PCM properties to calculate time (in ns) for.
  */
-uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProps)
+uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1383,7 +1395,7 @@ uint64_t DrvAudioHlpFramesToNano(uint32_t cFrames, const PPDMAUDIOPCMPROPS pProp
  * @param   uMs                 Time (in ms) to calculate amount of bytes for.
  * @param   pProps              PCM properties to calculate amount of bytes for.
  */
-uint32_t DrvAudioHlpMilliToBytes(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpMilliToBytes(uint64_t uMs, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1410,7 +1422,7 @@ uint32_t DrvAudioHlpMilliToBytes(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps)
  * @param   uNs                 Time (in ns) to calculate amount of bytes for.
  * @param   pProps              PCM properties to calculate amount of bytes for.
  */
-uint32_t DrvAudioHlpNanoToBytes(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpNanoToBytes(uint64_t uNs, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1435,7 +1447,7 @@ uint32_t DrvAudioHlpNanoToBytes(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps)
  * @param   uMs                 Time (in ms) to calculate amount of frames for.
  * @param   pProps              PCM properties to calculate amount of frames for.
  */
-uint32_t DrvAudioHlpMilliToFrames(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpMilliToFrames(uint64_t uMs, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1453,7 +1465,7 @@ uint32_t DrvAudioHlpMilliToFrames(uint64_t uMs, const PPDMAUDIOPCMPROPS pProps)
  * @param   uNs                 Time (in ns) to calculate amount of frames for.
  * @param   pProps              PCM properties to calculate amount of frames for.
  */
-uint32_t DrvAudioHlpNanoToFrames(uint64_t uNs, const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpNanoToFrames(uint64_t uNs, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1703,7 +1715,7 @@ void DrvAudioHlpFileDestroy(PPDMAUDIOFILE pFile)
  *                              Use PDMAUDIOFILE_DEFAULT_OPEN_FLAGS for the default open flags.
  * @param   pProps              PCM properties to use.
  */
-int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, const PPDMAUDIOPCMPROPS pProps)
+int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pFile,   VERR_INVALID_POINTER);
     /** @todo Validate fOpen flags. */
