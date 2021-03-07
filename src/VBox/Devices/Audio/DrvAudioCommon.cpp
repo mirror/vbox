@@ -1241,7 +1241,7 @@ uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, PCPDMAUDIOPCMPROPS pProps)
  *
  * @note    Rounds up the result.
  */
-uint64_t DrvAudioHlpBytesToMilli(uint32_t cb, PCPDMAUDIOPCMPROPS pProps)
+uint64_t DrvAudioHlpBytesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, 0);
 

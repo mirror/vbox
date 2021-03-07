@@ -353,7 +353,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
 
     LogRel2(("HDA: Stream #%RU8 DMA @ 0x%x (%RU32 bytes = %RU64ms total)\n",
              uSD, pStreamShared->u64BDLBase, pStreamShared->u32CBL,
-             DrvAudioHlpBytesToMilli(pStreamShared->u32CBL, &pStreamR3->State.Mapping.PCMProps)));
+             DrvAudioHlpBytesToMilli(&pStreamR3->State.Mapping.PCMProps, pStreamShared->u32CBL)));
 
     /* Figure out how many transfer fragments we're going to use for this stream. */
     uint32_t cTransferFragments = pStreamShared->u16LVI + 1;
@@ -641,8 +641,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                 LogRel2(("HDA: Stream #%RU8 is using %uHz I/O timer (%RU64 virtual ticks / Hz), stream Hz=%RU32, cTicksPerByte=%RU64, cTransferTicks=%RU64 -> cbTransferChunk=%RU32 (%RU64ms), cbTransferSize=%RU32 (%RU64ms)\n",
                          uSD, pStreamShared->State.uTimerIoHz, (uint64_t)cTicksPerHz, pStreamR3->State.Mapping.PCMProps.uHz,
                          pStreamShared->State.cTicksPerByte, pStreamShared->State.cTransferTicks,
-                         pStreamShared->State.cbTransferChunk, DrvAudioHlpBytesToMilli(pStreamShared->State.cbTransferChunk, &pStreamR3->State.Mapping.PCMProps),
-                         pStreamShared->State.cbTransferSize,  DrvAudioHlpBytesToMilli(pStreamShared->State.cbTransferSize,  &pStreamR3->State.Mapping.PCMProps)));
+                         pStreamShared->State.cbTransferChunk, DrvAudioHlpBytesToMilli(&pStreamR3->State.Mapping.PCMProps, pStreamShared->State.cbTransferChunk),
+                         pStreamShared->State.cbTransferSize,  DrvAudioHlpBytesToMilli(&pStreamR3->State.Mapping.PCMProps, pStreamShared->State.cbTransferSize)));
             }
         }
     }
@@ -700,14 +700,14 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         uint32_t cbCircBuf = DrvAudioHlpMilliToBytes(RT_MS_1SEC * 6 / RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz),
                                                      &pCfg->Props);
         LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
-                 uSD, cbCircBuf, DrvAudioHlpBytesToMilli(cbCircBuf, &pCfg->Props)));
+                 uSD, cbCircBuf, DrvAudioHlpBytesToMilli(&pCfg->Props, cbCircBuf)));
 
         uint32_t msCircBufCfg = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs;
         if (msCircBufCfg) /* Anything set via CFGM? */
         {
             cbCircBuf = DrvAudioHlpMilliToBytes(msCircBufCfg, &pCfg->Props);
             LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU32 bytes / %RU64 ms\n",
-                     uSD, cbCircBuf, DrvAudioHlpBytesToMilli(cbCircBuf, &pCfg->Props)));
+                     uSD, cbCircBuf, DrvAudioHlpBytesToMilli(&pCfg->Props, cbCircBuf)));
         }
 
         /* Serious paranoia: */

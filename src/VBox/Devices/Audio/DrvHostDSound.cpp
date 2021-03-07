@@ -668,7 +668,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
         bd.dwBufferBytes = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesBufferSize, &pCfgReq->Props);
 
         DSLOG(("DSound: Requested playback buffer is %RU64ms (%ld bytes)\n",
-               DrvAudioHlpBytesToMilli(bd.dwBufferBytes, &pCfgReq->Props), bd.dwBufferBytes));
+               DrvAudioHlpBytesToMilli(&pCfgReq->Props, bd.dwBufferBytes), bd.dwBufferBytes));
 
         hr = IDirectSound8_CreateSoundBuffer(pThis->pDS, &bd, &pDSB, NULL);
         if (FAILED(hr))
@@ -710,7 +710,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
         }
 
         DSLOG(("DSound: Acquired playback buffer is %RU64ms (%ld bytes)\n",
-               DrvAudioHlpBytesToMilli(bc.dwBufferBytes, &pCfgReq->Props), bc.dwBufferBytes));
+               DrvAudioHlpBytesToMilli(&pCfgReq->Props, bc.dwBufferBytes), bc.dwBufferBytes));
 
         DSLOG(("DSound: Acquired playback format:\n"
                "  dwBufferBytes   = %RI32\n"
@@ -1403,7 +1403,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
         bd.dwBufferBytes = DrvAudioHlpFramesToBytes(pCfgReq->Backend.cFramesBufferSize, &pCfgReq->Props);
 
         DSLOG(("DSound: Requested capture buffer is %RU64ms (%ld bytes)\n",
-               DrvAudioHlpBytesToMilli(bd.dwBufferBytes, &pCfgReq->Props), bd.dwBufferBytes));
+               DrvAudioHlpBytesToMilli(&pCfgReq->Props, bd.dwBufferBytes), bd.dwBufferBytes));
 
         LPDIRECTSOUNDCAPTUREBUFFER pDSCB;
         hr = IDirectSoundCapture_CreateCaptureBuffer(pThis->pDSC, &bd, &pDSCB, NULL);
@@ -1456,7 +1456,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
         }
 
         DSLOG(("DSound: Acquired capture buffer is %RU64ms (%ld bytes)\n",
-               DrvAudioHlpBytesToMilli(bc.dwBufferBytes, &pCfgReq->Props), bc.dwBufferBytes));
+               DrvAudioHlpBytesToMilli(&pCfgReq->Props, bc.dwBufferBytes), bc.dwBufferBytes));
 
         DSLOG(("DSound: Capture format:\n"
                "  dwBufferBytes   = %RI32\n"
@@ -2499,7 +2499,7 @@ static DECLCALLBACK(uint32_t) drvHostDSoundHA_StreamGetPending(PPDMIHOSTAUDIO pI
         if (!cbPending)
         {
             const uint64_t diffLastTransferredMs  = RTTimeMilliTS() - pStreamDS->Out.tsLastTransferredMs;
-            const uint64_t uLastTranserredChunkMs = DrvAudioHlpBytesToMilli(pStreamDS->Out.cbLastTransferred, &pStreamDS->Cfg.Props);
+            const uint64_t uLastTranserredChunkMs = DrvAudioHlpBytesToMilli(&pStreamDS->Cfg.Props, pStreamDS->Out.cbLastTransferred);
             if (   uLastTranserredChunkMs
                 && diffLastTransferredMs < uLastTranserredChunkMs)
                 cbPending = 1;
