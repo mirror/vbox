@@ -1341,25 +1341,17 @@ uint32_t DrvAudioHlpFramesToBytes(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
  * @returns milliseconds.
  * @param   pProps      The PCM properties to use.
  * @param   cFrames     Number of audio frames to convert.
+ * @note    No rounding here, result is floored.
  */
 uint64_t DrvAudioHlpFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pProps, 0);
 
-    if (!cFrames)
-        return 0;
-
-    if (!pProps->uHz) /* Prevent division by zero. */
-        return 0;
-
-    /** @todo r=bird: How to do this w/o any floating point:
-    * @code
-    *  ASMMultU32ByU32DivByU32(cFrames, RT_MS_1SEC, pProps->uHz);
-    * // or
-    *  (uint64_t)cFrames * RT_MS_1SEC / pProps->uHz
-    * @endcode
-    */
-    return cFrames / ((double)pProps->uHz / (double)RT_MS_1SEC);
+    /* Check input to prevent division by chainsaw: */
+    uint32_t const uHz = pProps->uHz;
+    if (uHz)
+        return ASMMultU32ByU32DivByU32(cFrames, RT_MS_1SEC, uHz);
+    return 0;
 }
 
 /**
@@ -1368,18 +1360,17 @@ uint64_t DrvAudioHlpFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
  * @returns Nanoseconds.
  * @param   pProps      The PCM properties to use.
  * @param   cFrames     Number of audio frames to convert.
+ * @note    No rounding here, result is floored.
  */
 uint64_t DrvAudioHlpFramesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pProps, 0);
 
-    if (!cFrames)
-        return 0;
-
-    if (!pProps->uHz) /* Prevent division by zero. */
-        return 0;
-
-    return cFrames / ((double)pProps->uHz / (double)RT_NS_1SEC);
+    /* Check input to prevent division by chainsaw: */
+    uint32_t const uHz = pProps->uHz;
+    if (uHz)
+        return ASMMultU32ByU32DivByU32(cFrames, RT_NS_1SEC, uHz);
+    return 0;
 }
 
 /**
