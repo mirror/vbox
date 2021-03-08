@@ -28,6 +28,7 @@
 #include <VBox/AssertGuest.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
+#include <VBox/vmm/pdmaudioinline.h>
 
 #include <iprt/assert.h>
 #include <iprt/uuid.h>

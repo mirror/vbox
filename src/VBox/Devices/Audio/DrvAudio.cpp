@@ -18,12 +18,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_AUDIO
 #include <VBox/log.h>
 #include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/pdmaudioifs.h>
+#include <VBox/vmm/pdmaudioinline.h>
 
 #include <iprt/alloc.h>
 #include <iprt/asm-math.h>
@@ -40,6 +44,10 @@
 #include "DrvAudio.h"
 #include "AudioMixBuffer.h"
 
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 #ifdef VBOX_WITH_AUDIO_ENUM
 static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIODEVICEENUM pDevEnum);
 #endif
@@ -55,6 +63,7 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
 static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
 static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
+
 
 #ifndef VBOX_AUDIO_TESTCASE
 

@@ -184,14 +184,6 @@ typedef struct DRVAUDIO
 #define PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface) \
     ( (PDRVAUDIO)((uintptr_t)pInterface - RT_UOFFSETOF(DRVAUDIO, IAudioConnector)) )
 
-/** @name Audio format helper methods.
- * @{ */
-const char *PDMAudioDirGetName(PDMAUDIODIR enmDir);
-const char *PDMAudioFormatGetName(PDMAUDIOFMT enmFmt);
-bool        PDMAudioFormatIsSigned(PDMAUDIOFMT enmFmt);
-uint8_t     PDMAudioFormatGetBits(PDMAUDIOFMT enmFmt);
-/** @}  */
-
 /** @name Audio calculation helper methods.
  * @{ */
 uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
@@ -199,52 +191,12 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
 
 /** @name Audio PCM properties helper methods.
  * @{ */
-void     PDMAudioPropsClearBuffer(PCPDMAUDIOPCMPROPS pProps, void *pvBuf, size_t cbBuf, uint32_t cFrames);
-uint32_t PDMAudioPropsGetBitrate(PCPDMAUDIOPCMPROPS pProps);
-uint32_t PDMAudioPropsFloorBytesToFrame(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-bool     PDMAudioPropsIsSizeAligned(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint32_t PDMAudioPropsBytesPerFrame(PCPDMAUDIOPCMPROPS pProps);
-uint32_t PDMAudioPropsBytesToFrames(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint64_t PDMAudioPropsBytesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint64_t PDMAudioPropsBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint64_t PDMAudioPropsBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint32_t PDMAudioPropsFramesToBytes(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
-uint64_t PDMAudioPropsFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
-uint64_t PDMAudioPropsFramesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
-uint32_t PDMAudioPropsMilliToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs);
-uint32_t PDMAudioPropsNanoToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs);
-uint32_t PDMAudioPropsMilliToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs);
-uint32_t PDMAudioPropsNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs);
-
-bool     PDMAudioPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps1, PCPDMAUDIOPCMPROPS pPCMProps2);
-void     PDMAudioPropsLog(PCPDMAUDIOPCMPROPS pProps);
-
 bool     DrvAudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
 /** @}  */
 
 /** @name Audio configuration helper methods.
  * @{ */
-void    PDMAudioStrmCfgInit(PPDMAUDIOSTREAMCFG pCfg);
-int     PDMAudioStrmCfgInitWithProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps);
-bool    PDMAudioStrmCfgMatchesProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps);
-int     PDMAudioStrmCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg);
-PPDMAUDIOSTREAMCFG PDMAudioStrmCfgDup(PCPDMAUDIOSTREAMCFG pCfg);
-void    PDMAudioStrmCfgFree(PPDMAUDIOSTREAMCFG pCfg);
-void    PDMAudioStrmCfgLog(PCPDMAUDIOSTREAMCFG pCfg);
-
 bool    DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg);
-/** @}  */
-
-/** @name Audio stream command helper methods.
- * @{ */
-const char *PDMAudioStrmCmdGetName(PDMAUDIOSTREAMCMD enmCmd);
-/** @}  */
-
-/** @name Audio stream status helper methods.
- * @{ */
-bool PDMAudioStrmStatusCanRead(PDMAUDIOSTREAMSTS fStatus);
-bool PDMAudioStrmStatusCanWrite(PDMAUDIOSTREAMSTS fStatus);
-bool PDMAudioStrmStatusIsReady(PDMAUDIOSTREAMSTS fStatus);
 /** @}  */
 
 /** @name Audio file (name) helper methods.
@@ -278,9 +230,6 @@ void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, const PPDMAUDIODEVICEENUM p
 
 /** @name Audio string-ify methods.
  * @{ */
-const char *PDMAudioMixerCtlGetName(PDMAUDIOMIXERCTL enmMixerCtl);
-const char *PDMAudioPlaybackDstGetName(const PDMAUDIOPLAYBACKDST enmPlaybackDst);
-const char *PDMAudioRecSrcGetName(const PDMAUDIORECSRC enmRecSource);
 PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt);
 char *DrvAudioHlpAudDevFlagsToStrA(uint32_t fFlags);
 /** @}  */

@@ -28,6 +28,7 @@
 
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
+#include <VBox/vmm/pdmaudioinline.h>
 #ifdef HDA_DEBUG_GUEST_RIP
 # include <VBox/vmm/cpum.h>
 #endif

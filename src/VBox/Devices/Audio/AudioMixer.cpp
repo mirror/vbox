@@ -79,6 +79,7 @@
 #include <VBox/err.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/pdmaudioifs.h>
+#include <VBox/vmm/pdmaudioinline.h>
 
 #include <iprt/alloc.h>
 #include <iprt/asm-math.h>

@@ -55,6 +55,7 @@
 
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
+#include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/AssertGuest.h>
 
 #include "VBoxDD.h"

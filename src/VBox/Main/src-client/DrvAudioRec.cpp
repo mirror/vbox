@@ -88,15 +88,15 @@
 #include "DrvAudioRec.h"
 #include "ConsoleImpl.h"
 
-#include "../../Devices/Audio/DrvAudio.h" /* Ugly! */
 #include "WebMWriter.h"
 
 #include <iprt/mem.h>
 #include <iprt/cdefs.h>
 
-#include <VBox/vmm/pdmaudioifs.h>
-#include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmaudioifs.h>
+#include <VBox/vmm/pdmaudioinline.h>
 #include <VBox/err.h>
 
 #ifdef VBOX_WITH_LIBOPUS
@@ -1231,7 +1231,7 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pPCMProps->fSigned     = true;
     pPCMProps->fSwapEndian = false;
 
-    AssertMsgReturn(DrvAudioHlpPcmPropsAreValid(pPCMProps),
+    AssertMsgReturn(PDMAudioPropsAreValid(pPCMProps),
                     ("Configuration error: Audio configuration is invalid!\n"), VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES);
 
     pThis->pAudioVideoRec = (AudioVideoRec *)pvUser;

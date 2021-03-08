@@ -29,6 +29,8 @@
 #include <iprt/uuid.h>
 #include <iprt/utf16.h>
 
+#include <VBox/vmm/pdmaudioinline.h>
+
 #include "DrvAudio.h"
 #include "VBoxDD.h"
 #ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
