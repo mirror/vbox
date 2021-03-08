@@ -2811,7 +2811,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
         return VINF_SUCCESS;
 
 #ifdef VBOX_STRICT
-    const unsigned cbFrame = DrvAudioHlpPCMPropsBytesPerFrame(&pStreamCC->State.Cfg.Props);
+    const unsigned cbFrame = DrvAudioHlpBytesPerFrame(&pStreamCC->State.Cfg.Props);
 #endif
 
     /* Make sure to only process an integer number of audio frames. */

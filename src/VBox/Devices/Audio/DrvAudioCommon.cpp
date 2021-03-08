@@ -1115,9 +1115,10 @@ uint64_t DrvAudioHlpBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 /**
  * Converts frames to bytes.
  *
- * @return Number of bytes.
+ * @returns Number of bytes.
  * @param   pProps      The PCM properties to use.
  * @param   cFrames     Number of audio frames to convert.
+ * @sa      PDMAUDIOPCMPROPS_F2B
  */
 uint32_t DrvAudioHlpFramesToBytes(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
@@ -1394,14 +1395,15 @@ bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pProps, PCPDMAUDIOSTREAMCFG 
 }
 
 /**
- * Returns the bytes per frame for given PCM properties.
+ * Get number of bytes per frame.
  *
- * @return Bytes per (audio) frame.
- * @param  pProps               PCM properties to retrieve bytes per frame for.
+ * @returns Number of bytes per audio frame.
+ * @param   pProps  PCM properties to use.
+ * @sa      PDMAUDIOPCMPROPS_F2B
  */
-uint32_t DrvAudioHlpPCMPropsBytesPerFrame(PCPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpBytesPerFrame(PCPDMAUDIOPCMPROPS pProps)
 {
-    return PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+    return PDMAUDIOPCMPROPS_F2B(pProps, 1 /*cFrames*/);
 }
 
 /**

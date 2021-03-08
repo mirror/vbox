@@ -998,7 +998,7 @@ static int alsaCreateStreamOut(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG 
         pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
         pCfgAcq->Backend.cFramesPreBuffering     = obt.threshold;
 
-        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * DrvAudioHlpPCMPropsBytesPerFrame(&pCfgAcq->Props);
+        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * DrvAudioHlpBytesPerFrame(&pCfgAcq->Props);
         pStreamALSA->pvBuf = RTMemAllocZ(pStreamALSA->cbBuf);
         if (!pStreamALSA->pvBuf)
         {
@@ -1058,7 +1058,7 @@ static int alsaCreateStreamIn(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG p
         pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
         /* No pre-buffering. */
 
-        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * DrvAudioHlpPCMPropsBytesPerFrame(&pCfgAcq->Props);
+        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * DrvAudioHlpBytesPerFrame(&pCfgAcq->Props);
         pStreamALSA->pvBuf = RTMemAlloc(pStreamALSA->cbBuf);
         if (!pStreamALSA->pvBuf)
         {

@@ -203,6 +203,7 @@ void     DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t c
 uint32_t DrvAudioHlpGetBitrate(PCPDMAUDIOPCMPROPS pProps);
 uint32_t DrvAudioHlpFloorBytesToFrame(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
 bool     DrvAudioHlpIsBytesAligned(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
+uint32_t DrvAudioHlpBytesPerFrame(PCPDMAUDIOPCMPROPS pProps);
 uint32_t DrvAudioHlpBytesToFrames(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
 uint64_t DrvAudioHlpBytesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
 uint64_t DrvAudioHlpBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
@@ -218,7 +219,6 @@ uint32_t DrvAudioHlpNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs);
 bool     DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps1, PCPDMAUDIOPCMPROPS pPCMProps2);
 bool     DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps, PCPDMAUDIOSTREAMCFG pCfg);
 bool     DrvAudioHlpPCMPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpPCMPropsBytesPerFrame(PCPDMAUDIOPCMPROPS pProps);
 void     DrvAudioHlpPCMPropsPrint(PCPDMAUDIOPCMPROPS pProps);
 int      DrvAudioHlpPCMPropsToStreamCfg(PCPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
 /** @}  */
