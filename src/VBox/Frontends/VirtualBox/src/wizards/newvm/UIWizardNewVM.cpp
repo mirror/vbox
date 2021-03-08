@@ -229,6 +229,31 @@ bool UIWizardNewVM::createVirtualDisk()
     return true;
 }
 
+void UIWizardNewVM::deleteVirtualDisk()
+{
+    CMedium comDisk = virtualDisk();
+    /* Make sure virtual-disk valid: */
+    if (comDisk.isNull())
+        return;
+
+    /* Remember virtual-disk attributes: */
+    QString strLocation = comDisk.GetLocation();
+    /* Prepare delete storage progress: */
+    CProgress progress = comDisk.DeleteStorage();
+    if (comDisk.isOk())
+    {
+        /* Show delete storage progress: */
+        msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_delete_90px.png", this);
+        if (!progress.isOk() || progress.GetResultCode() != 0)
+            msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, this);
+    }
+    else
+        msgCenter().cannotDeleteHardDiskStorage(comDisk, strLocation, this);
+
+    /* Detach virtual-disk anyway: */
+    comDisk.detach();
+}
+
 void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
 {
     /* Get graphics adapter: */

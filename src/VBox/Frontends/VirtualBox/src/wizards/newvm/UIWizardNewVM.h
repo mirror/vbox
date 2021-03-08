@@ -100,6 +100,7 @@ protected:
 
     bool createVM();
     bool createVirtualDisk();
+    void deleteVirtualDisk();
 
     void configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
     bool attachDefaultDevices(const CGuestOSType &comGuestType);

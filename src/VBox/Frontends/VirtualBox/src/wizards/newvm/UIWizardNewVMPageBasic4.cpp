@@ -418,7 +418,12 @@ bool UIWizardNewVMPageBasic4::validatePage()
         if (!fResult)
             return fResult;
     }
+
     fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
+    /* Try to delete the hard disk: */
+    if (!fResult)
+        qobject_cast<UIWizardNewVM*>(wizard())->deleteVirtualDisk();
+
     endProcessing();
 
     return fResult;

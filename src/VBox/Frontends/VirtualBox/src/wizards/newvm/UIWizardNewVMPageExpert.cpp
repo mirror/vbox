@@ -37,6 +37,7 @@
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
 #include "UIMediumSizeEditor.h"
+#include "UIMessageCenter.h"
 #include "UINameAndSystemEditor.h"
 #include "UIToolBox.h"
 #include "UIUserNamePasswordEditor.h"
@@ -527,37 +528,46 @@ bool UIWizardNewVMPageExpert::isComplete() const
 
 bool UIWizardNewVMPageExpert::validatePage()
 {
-    /* Initial result: */
     bool fResult = true;
 
-    /* Lock finish button: */
-    startProcessing();
-
-    /* Try to create machine folder: */
-    if (fResult)
-        fResult = createMachineFolder();
-
-    /* Try to assign boot virtual-disk: */
-    if (fResult)
+    if (selectedDiskSource() == SelectedDiskSource_New)
     {
-        /* Ensure there is no virtual-disk created yet: */
-        Assert(m_virtualDisk.isNull());
-        if (fResult)
+        /* Check if the path we will be using for hard drive creation exists: */
+        const QString strMediumPath(fieldImp("mediumPath").toString());
+        fResult = !QFileInfo(strMediumPath).exists();
+        if (!fResult)
         {
-            if (m_pDiskNew->isChecked())
-            {
-            }
+            msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+            return fResult;
+        }
+        /* Check FAT size limitation of the host hard drive: */
+        fResult = UIWizardNewVDPage3::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
+                                                             fieldImp("mediumPath").toString(),
+                                                             fieldImp("mediumSize").toULongLong());
+        if (!fResult)
+        {
+            msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+            return fResult;
         }
     }
 
-    /* Try to create VM: */
-    if (fResult)
-        fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
+    startProcessing();
+    if (selectedDiskSource() == SelectedDiskSource_New)
+    {
+        /* Try to create the hard drive:*/
+        fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVirtualDisk();
+        /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
+        if (!fResult)
+            return fResult;
+    }
 
-    /* Unlock finish button: */
+    fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
+    /* Try to delete the hard disk: */
+    if (!fResult)
+        qobject_cast<UIWizardNewVM*>(wizard())->deleteVirtualDisk();
+
     endProcessing();
 
-    /* Return result: */
     return fResult;
 }
 
