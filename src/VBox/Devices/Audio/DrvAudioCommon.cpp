@@ -1030,17 +1030,6 @@ bool DrvAudioHlpIsBytesAligned(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 }
 
 /**
- * Returns the bytes per second for given PCM properties.
- *
- * @returns Bytes per second.
- * @param   pProps              PCM properties to retrieve size for.
- */
-DECLINLINE(uint64_t) drvAudioHlpBytesPerSec(PCPDMAUDIOPCMPROPS pProps)
-{
-    return PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */) * pProps->uHz;
-}
-
-/**
  * Converts bytes to frames (rounding down of course).
  *
  * @returns Number of frames.
