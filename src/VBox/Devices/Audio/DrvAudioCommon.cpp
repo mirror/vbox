@@ -1134,27 +1134,25 @@ bool DrvAudioHlpStreamStatusIsReady(PDMAUDIOSTREAMSTS fStatus)
  *
  * Divide the result by 8 to get the byte rate.
  *
- * @returns The calculated bit rate.
+ * @returns Bitrate.
  * @param   cBits               Number of bits per sample.
  * @param   uHz                 Hz (Hertz) rate.
  * @param   cChannels           Number of audio channels.
  */
 uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
 {
-    return (cBits * uHz * cChannels);
+    return cBits * uHz * cChannels;
 }
 
 /**
- * Calculates the audio bit rate out of a given audio stream configuration.
+ * Gets the bitrate.
  *
  * Divide the result by 8 to get the byte rate.
  *
- * @returns The calculated bit rate.
+ * @returns Bit rate.
  * @param   pProps              PCM properties to calculate bitrate for.
- *
- * @remark
  */
-uint32_t DrvAudioHlpCalcBitrate(PCPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpGetBitrate(PCPDMAUDIOPCMPROPS pProps)
 {
     return DrvAudioHlpCalcBitrate(pProps->cbSample * 8, pProps->uHz, pProps->cChannels);
 }
@@ -1715,7 +1713,7 @@ int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS 
             pData->Hdr.u16AudioFormat   = 1;  /* PCM, linear quantization. */
             pData->Hdr.u16NumChannels   = pProps->cChannels;
             pData->Hdr.u32SampleRate    = pProps->uHz;
-            pData->Hdr.u32ByteRate      = DrvAudioHlpCalcBitrate(pProps) / 8;
+            pData->Hdr.u32ByteRate      = DrvAudioHlpGetBitrate(pProps) / 8;
             pData->Hdr.u16BlockAlign    = pProps->cChannels * pProps->cbSample;
             pData->Hdr.u16BitsPerSample = pProps->cbSample * 8;
 
