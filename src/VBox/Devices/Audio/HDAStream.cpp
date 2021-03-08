@@ -531,7 +531,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         /* Paranoia (fall back on I/O timer Hz if this happens). */
         if (cbTransferHeuristics >= 8)
         {
-            ASSERT_GUEST_LOGREL_MSG(DrvAudioHlpIsBytesAligned(cbTransferHeuristics, &pStreamR3->State.Mapping.PCMProps),
+            ASSERT_GUEST_LOGREL_MSG(DrvAudioHlpIsBytesAligned(&pStreamR3->State.Mapping.PCMProps, cbTransferHeuristics),
                                     ("We arrived at a misaligned transfer size for stream #%RU8: %#x (%u)\n",
                                      uSD, cbTransferHeuristics, cbTransferHeuristics));
 
@@ -548,7 +548,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
             /* Set the transfer size per timer callout. (No chunking, so same.) */
             pStreamShared->State.cbTransferSize  = cbTransferHeuristics;
             pStreamShared->State.cbTransferChunk = cbTransferHeuristics;
-            ASSERT_GUEST_LOGREL_MSG(DrvAudioHlpIsBytesAligned(cbTransferHeuristics, &pStreamR3->State.Mapping.PCMProps),
+            ASSERT_GUEST_LOGREL_MSG(DrvAudioHlpIsBytesAligned(&pStreamR3->State.Mapping.PCMProps, cbTransferHeuristics),
                                     ("We arrived at a misaligned transfer size for stream #%RU8: %#x (%u)\n",
                                      uSD, cbTransferHeuristics, cbTransferHeuristics));
 

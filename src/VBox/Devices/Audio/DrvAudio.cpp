@@ -939,7 +939,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
               ("Stream '%s' is not an output stream and therefore cannot be written to (direction is '%s')\n",
                pStream->szName, DrvAudioHlpAudDirToStr(pStream->enmDir)));
 
-    AssertMsg(DrvAudioHlpIsBytesAligned(cbBuf, &pStream->Guest.Cfg.Props),
+    AssertMsg(DrvAudioHlpIsBytesAligned(&pStream->Guest.Cfg.Props, cbBuf),
               ("Stream '%s' got a non-frame-aligned write (%RU32 bytes)\n", pStream->szName, cbBuf));
 
     uint32_t cbWrittenTotal = 0;
