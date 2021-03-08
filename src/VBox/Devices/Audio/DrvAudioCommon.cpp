@@ -84,14 +84,15 @@ typedef struct AUDIOWAVFILEDATA
 
 
 /**
- * Retrieves the matching PDMAUDIOFMT for given bits + signing flag.
+ * Retrieves the matching PDMAUDIOFMT for the given bits + signing flag.
  *
- * @return  IPRT status code.
- * @return  PDMAUDIOFMT         Resulting audio format or PDMAUDIOFMT_INVALID if invalid.
- * @param   cBits               Bits to retrieve audio format for.
- * @param   fSigned             Signed flag for bits to retrieve audio format for.
+ * @return  Matching PDMAUDIOFMT value.
+ * @retval  PDMAUDIOFMT_INVALID if unsupported @a cBits value.
+ *
+ * @param   cBits       The number of bits in the audio format.
+ * @param   fSigned     Whether the audio format is signed @c true or not.
  */
-PDMAUDIOFMT DrvAudioAudFmtBitsToAudFmt(uint8_t cBits, bool fSigned)
+PDMAUDIOFMT DrvAudioAudFmtBitsToFormat(uint8_t cBits, bool fSigned)
 {
     if (fSigned)
     {
@@ -100,7 +101,7 @@ PDMAUDIOFMT DrvAudioAudFmtBitsToAudFmt(uint8_t cBits, bool fSigned)
             case 8:  return PDMAUDIOFMT_S8;
             case 16: return PDMAUDIOFMT_S16;
             case 32: return PDMAUDIOFMT_S32;
-            default: break;
+            default: AssertMsgFailedReturn(("Bogus audio bits %RU8\n", cBits), PDMAUDIOFMT_INVALID);
         }
     }
     else
@@ -110,12 +111,9 @@ PDMAUDIOFMT DrvAudioAudFmtBitsToAudFmt(uint8_t cBits, bool fSigned)
             case 8:  return PDMAUDIOFMT_U8;
             case 16: return PDMAUDIOFMT_U16;
             case 32: return PDMAUDIOFMT_U32;
-            default: break;
+            default: AssertMsgFailedReturn(("Bogus audio bits %RU8\n", cBits), PDMAUDIOFMT_INVALID);
         }
     }
-
-    AssertMsgFailed(("Bogus audio bits %RU8\n", cBits));
-    return PDMAUDIOFMT_INVALID;
 }
 
 /**
@@ -788,15 +786,15 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
 
     if (!RTStrICmp(pszFmt, "u8"))
         return PDMAUDIOFMT_U8;
-    else if (!RTStrICmp(pszFmt, "u16"))
+    if (!RTStrICmp(pszFmt, "u16"))
         return PDMAUDIOFMT_U16;
-    else if (!RTStrICmp(pszFmt, "u32"))
+    if (!RTStrICmp(pszFmt, "u32"))
         return PDMAUDIOFMT_U32;
-    else if (!RTStrICmp(pszFmt, "s8"))
+    if (!RTStrICmp(pszFmt, "s8"))
         return PDMAUDIOFMT_S8;
-    else if (!RTStrICmp(pszFmt, "s16"))
+    if (!RTStrICmp(pszFmt, "s16"))
         return PDMAUDIOFMT_S16;
-    else if (!RTStrICmp(pszFmt, "s32"))
+    if (!RTStrICmp(pszFmt, "s32"))
         return PDMAUDIOFMT_S32;
 
     AssertMsgFailed(("Invalid audio format '%s'\n", pszFmt));
