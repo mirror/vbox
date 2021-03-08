@@ -101,7 +101,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("mediumFormat", this, "mediumFormat");
     registerField("mediumSize", this, "mediumSize");
     registerField("selectedDiskSource", this, "selectedDiskSource");
-    registerField("virtualDisk", this, "virtualDisk");
     registerField("mediumVariant", this, "mediumVariant");
 
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
@@ -552,19 +551,21 @@ bool UIWizardNewVMPageExpert::validatePage()
     }
 
     startProcessing();
+    UIWizardNewVM *pWizard = wizardImp();
+    AssertReturn(pWizard, false);
     if (selectedDiskSource() == SelectedDiskSource_New)
     {
         /* Try to create the hard drive:*/
-        fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVirtualDisk();
+        fResult = pWizard->createVirtualDisk();
         /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
         if (!fResult)
             return fResult;
     }
 
-    fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
+    fResult = pWizard->createVM();
     /* Try to delete the hard disk: */
     if (!fResult)
-        qobject_cast<UIWizardNewVM*>(wizard())->deleteVirtualDisk();
+        pWizard->deleteVirtualDisk();
 
     endProcessing();
 
@@ -573,8 +574,9 @@ bool UIWizardNewVMPageExpert::validatePage()
 
 bool UIWizardNewVMPageExpert::isProductKeyWidgetEnabled() const
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-    if (!pWizard || !pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
+    UIWizardNewVM *pWizard = wizardImp();
+    AssertReturn(pWizard, false);
+    if (!pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
         return false;
     return true;
 }
@@ -685,4 +687,23 @@ void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)
         m_pLocationEditor->setEnabled(fEnable);
     if (m_pLocationOpenButton)
         m_pLocationOpenButton->setEnabled(fEnable);
+}
+
+void UIWizardNewVMPageExpert::setVirtualDiskFromDiskCombo()
+{
+    QUuid currentId;
+    UIWizardNewVM *pWizard = wizardImp();
+    AssertReturnVoid(pWizard);
+    if (!pWizard->virtualDisk().isNull())
+        currentId = pWizard->virtualDisk().GetId();
+    QUuid id = m_pDiskSelector->id();
+    /* Do nothing else if m_virtualMedium is already set to what combobox has: */
+    if (id == currentId)
+        return;
+    if (m_pDiskSelector)
+    {
+        CMedium medium = uiCommon().medium(id).medium();
+        if (!medium.isNull())
+            pWizard->setVirtualDisk(medium);
+    }
 }

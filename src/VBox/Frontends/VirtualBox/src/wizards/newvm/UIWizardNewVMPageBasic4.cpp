@@ -102,23 +102,6 @@ void UIWizardNewVMPage4::setEnableDiskSelectionWidgets(bool fEnabled)
     m_pDiskSelectionButton->setEnabled(fEnabled);
 }
 
-void UIWizardNewVMPage4::setVirtualDiskFromDiskCombo()
-{
-    QUuid currentId;
-    if (!m_virtualDisk.isNull())
-        currentId = m_virtualDisk.GetId();
-    QUuid id = m_pDiskSelector->id();
-    /* Do nothing else if m_virtualMedium is already set to what combobox has: */
-    if (id == currentId)
-        return;
-    if (m_pDiskSelector)
-    {
-        CMedium medium = uiCommon().medium(id).medium();
-        if (!medium.isNull())
-            setVirtualDisk(medium);
-    }
-}
-
 QWidget *UIWizardNewVMPage4::createNewDiskWidgets()
 {
     return new QWidget();
@@ -166,7 +149,6 @@ UIWizardNewVMPageBasic4::UIWizardNewVMPageBasic4()
     prepare();
     qRegisterMetaType<CMedium>();
     qRegisterMetaType<SelectedDiskSource>();
-    registerField("virtualDisk", this, "virtualDisk");
     registerField("selectedDiskSource", this, "selectedDiskSource");
 
     registerField("mediumFormat", this, "mediumFormat");
@@ -367,9 +349,10 @@ bool UIWizardNewVMPageBasic4::isComplete() const
 {
     if (selectedDiskSource() == SelectedDiskSource_New)
         return mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
-
+    UIWizardNewVM *pWizard = wizardImp();
+    AssertReturn(pWizard, false);
     if (selectedDiskSource() == SelectedDiskSource_Existing)
-        return !m_virtualDisk.isNull();
+        return !pWizard->virtualDisk().isNull();
 
     return true;
 }
@@ -410,20 +393,23 @@ bool UIWizardNewVMPageBasic4::validatePage()
     }
 
     startProcessing();
-    if (selectedDiskSource() == SelectedDiskSource_New)
+    UIWizardNewVM *pWizard = wizardImp();
+    if (pWizard)
     {
-        /* Try to create the hard drive:*/
-        fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVirtualDisk();
-        /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
+        if (selectedDiskSource() == SelectedDiskSource_New)
+        {
+            /* Try to create the hard drive:*/
+            fResult = pWizard->createVirtualDisk();
+            /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
+            if (!fResult)
+                return fResult;
+        }
+
+        fResult = pWizard->createVM();
+        /* Try to delete the hard disk: */
         if (!fResult)
-            return fResult;
+            pWizard->deleteVirtualDisk();
     }
-
-    fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
-    /* Try to delete the hard disk: */
-    if (!fResult)
-        qobject_cast<UIWizardNewVM*>(wizard())->deleteVirtualDisk();
-
     endProcessing();
 
     return fResult;
@@ -442,4 +428,23 @@ void UIWizardNewVMPageBasic4::setEnableNewDiskWidgets(bool fEnable)
         m_pSizeEditorLabel->setEnabled(fEnable);
     if (m_pFixedCheckBox)
         m_pFixedCheckBox->setEnabled(fEnable);
+}
+
+void UIWizardNewVMPageBasic4::setVirtualDiskFromDiskCombo()
+{
+    QUuid currentId;
+    UIWizardNewVM *pWizard = wizardImp();
+    AssertReturnVoid(pWizard);
+    if (!pWizard->virtualDisk().isNull())
+        currentId = pWizard->virtualDisk().GetId();
+    QUuid id = m_pDiskSelector->id();
+    /* Do nothing else if m_virtualMedium is already set to what combobox has: */
+    if (id == currentId)
+        return;
+    if (m_pDiskSelector)
+    {
+        CMedium medium = uiCommon().medium(id).medium();
+        if (!medium.isNull())
+            pWizard->setVirtualDisk(medium);
+    }
 }

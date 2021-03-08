@@ -95,6 +95,8 @@ public:
     const UIUnattendedInstallData &unattendedInstallData() const;
     bool isUnattendedEnabled() const;
     bool isGuestOSTypeWindows() const;
+    CMedium &virtualDisk();
+    void setVirtualDisk(const CMedium &medium);
 
 protected:
 
@@ -129,20 +131,19 @@ private:
     QString getNextControllerName(KStorageBus type);
     void setFieldsFromDefaultUnttendedInstallData();
 
-    CMedium virtualDisk() const;
-    void setVirtualDisk(const CMedium &medium);
-
-    /* Variables: */
-    CMachine m_machine;
-    QString m_strGroup;
-    int m_iIDECount;
-    int m_iSATACount;
-    int m_iSCSICount;
-    int m_iFloppyCount;
-    int m_iSASCount;
-    int m_iUSBCount;
-
-    mutable UIUnattendedInstallData m_unattendedInstallData;
+    /** @name Variables
+     * @{ */
+       CMedium m_virtualDisk;
+       CMachine m_machine;
+       QString m_strGroup;
+       int m_iIDECount;
+       int m_iSATACount;
+       int m_iSCSICount;
+       int m_iFloppyCount;
+       int m_iSASCount;
+       int m_iUSBCount;
+       mutable UIUnattendedInstallData m_unattendedInstallData;
+    /** @} */
 };
 
 typedef QPointer<UIWizardNewVM> UISafePointerWizardNewVM;

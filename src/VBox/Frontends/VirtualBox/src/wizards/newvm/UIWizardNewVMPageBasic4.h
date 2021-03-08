@@ -48,8 +48,6 @@ class UIWizardNewVMPage4 : public UIWizardPageBase
 
 public:
 
-    const CMedium &virtualDisk() const { return m_virtualDisk; }
-    void setVirtualDisk(const CMedium &virtualDisk) { m_virtualDisk = virtualDisk; }
 
 protected:
 
@@ -65,13 +63,7 @@ protected:
     void retranslateWidgets();
 
     void setEnableDiskSelectionWidgets(bool fEnable);
-    void setVirtualDiskFromDiskCombo();
     bool m_fRecommendedNoDisk;
-
-    /** @name Variables
-     * @{ */
-       CMedium m_virtualDisk;
-    /** @} */
 
     /** @name Widgets
      * @{ */
@@ -92,7 +84,6 @@ class UIWizardNewVMPageBasic4 : public UIWizardPage,
                                 public UIWizardNewVDPage3
 {
     Q_OBJECT;
-    Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
     Q_PROPERTY(SelectedDiskSource selectedDiskSource READ selectedDiskSource WRITE setSelectedDiskSource);
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat);
     Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
@@ -110,7 +101,7 @@ public:
 protected:
 
     /** Wrapper to access 'wizard' from base part. */
-    UIWizard *wizardImp() const { return wizard(); }
+    UIWizardNewVM *wizardImp() const { return qobject_cast<UIWizardNewVM*>(wizard()); }
     /** Wrapper to access 'this' from base part. */
     UIWizardPage* thisImp() { return this; }
     /** Wrapper to access 'wizard-field' from base part. */
@@ -132,6 +123,7 @@ private:
     void initializePage();
     void cleanupPage();
     void setEnableNewDiskWidgets(bool fEnable);
+    void setVirtualDiskFromDiskCombo();
 
     bool isComplete() const;
     virtual bool validatePage() /* override */;

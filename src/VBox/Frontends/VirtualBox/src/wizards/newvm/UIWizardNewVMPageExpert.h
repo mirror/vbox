@@ -65,8 +65,6 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(int VCPUCount READ VCPUCount);
     Q_PROPERTY(bool EFIEnabled READ EFIEnabled);
 
-
-    Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
     Q_PROPERTY(SelectedDiskSource selectedDiskSource READ selectedDiskSource WRITE setSelectedDiskSource);
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat);
     Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
@@ -81,7 +79,7 @@ public:
 protected:
 
     /** Wrapper to access 'wizard' from base part. */
-    UIWizard *wizardImp() const { return wizard(); }
+    UIWizardNewVM *wizardImp() const { return qobject_cast<UIWizardNewVM*>(wizard()); }
     /** Wrapper to access 'this' from base part. */
     UIWizardPage* thisImp() { return this; }
     /** Wrapper to access 'wizard-field' from base part. */
@@ -139,6 +137,7 @@ private:
     void updateVirtualDiskPathFromMachinePathName();
     void updateWidgetAterMediumFormatChange();
     void setEnableNewDiskWidgets(bool fEnable);
+    void setVirtualDiskFromDiskCombo();
 
     UIToolBox  *m_pToolBox;
     QGroupBox *m_pInstallationISOGroupBox;

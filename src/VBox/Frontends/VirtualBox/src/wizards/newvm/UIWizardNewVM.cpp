@@ -135,7 +135,7 @@ bool UIWizardNewVM::createVM()
          * Usually we are assigning extra-data values through UIExtraDataManager,
          * but in that special case VM was not registered yet, so UIExtraDataManager is unaware of it: */
         if (!isUnattendedEnabled() &&
-            (!field("virtualDisk").value<CMedium>().isNull()))
+            !m_virtualDisk.isNull())
             m_machine.SetExtraData(GUI_FirstRun, "yes");
     }
 
@@ -186,7 +186,7 @@ bool UIWizardNewVM::createVirtualDisk()
     CVirtualBox vbox = uiCommon().virtualBox();
 
     /* Create new virtual hard-disk: */
-    CMedium virtualDisk = vbox.CreateMedium(mediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
+    CMedium newVirtualDisk = vbox.CreateMedium(mediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
     if (!vbox.isOk())
     {
         msgCenter().cannotCreateHardDiskStorage(vbox, strMediumPath, this);
@@ -203,10 +203,10 @@ bool UIWizardNewVM::createVirtualDisk()
     }
 
     /* Create base storage for the new virtual-disk: */
-    CProgress progress = virtualDisk.CreateBaseStorage(uSize, variants);
-    if (!virtualDisk.isOk())
+    CProgress progress = newVirtualDisk.CreateBaseStorage(uSize, variants);
+    if (!newVirtualDisk.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(virtualDisk, strMediumPath, this);
+        msgCenter().cannotCreateHardDiskStorage(newVirtualDisk, strMediumPath, this);
         return false;
     }
 
@@ -221,26 +221,25 @@ bool UIWizardNewVM::createVirtualDisk()
     }
 
     /* Inform UICommon about it: */
-    uiCommon().createMedium(UIMedium(virtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
+    uiCommon().createMedium(UIMedium(newVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
 
     /* Remember created virtual-disk: */
-    setVirtualDisk(virtualDisk);
+    m_virtualDisk = newVirtualDisk;
 
     return true;
 }
 
 void UIWizardNewVM::deleteVirtualDisk()
 {
-    CMedium comDisk = virtualDisk();
     /* Make sure virtual-disk valid: */
-    if (comDisk.isNull())
+    if (m_virtualDisk.isNull())
         return;
 
     /* Remember virtual-disk attributes: */
-    QString strLocation = comDisk.GetLocation();
+    QString strLocation = m_virtualDisk.GetLocation();
     /* Prepare delete storage progress: */
-    CProgress progress = comDisk.DeleteStorage();
-    if (comDisk.isOk())
+    CProgress progress = m_virtualDisk.DeleteStorage();
+    if (m_virtualDisk.isOk())
     {
         /* Show delete storage progress: */
         msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_delete_90px.png", this);
@@ -248,10 +247,10 @@ void UIWizardNewVM::deleteVirtualDisk()
             msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, this);
     }
     else
-        msgCenter().cannotDeleteHardDiskStorage(comDisk, strLocation, this);
+        msgCenter().cannotDeleteHardDiskStorage(m_virtualDisk, strLocation, this);
 
     /* Detach virtual-disk anyway: */
-    comDisk.detach();
+    m_virtualDisk.detach();
 }
 
 void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
@@ -409,16 +408,15 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
     if (!session.isNull())
     {
         CMachine machine = session.GetMachine();
-        CMedium vmedium = virtualDisk();
-        if (!vmedium.isNull())
+        if (!m_virtualDisk.isNull())
         {
             KStorageBus enmHDDBus = comGuestType.GetRecommendedHDStorageBus();
             CStorageController comHDDController = m_machine.GetStorageControllerByInstance(enmHDDBus, 0);
             if (!comHDDController.isNull())
             {
-                machine.AttachDevice(comHDDController.GetName(), 0, 0, KDeviceType_HardDisk, vmedium);
+                machine.AttachDevice(comHDDController.GetName(), 0, 0, KDeviceType_HardDisk, m_virtualDisk);
                 if (!machine.isOk())
-                    msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_HardDisk, field("virtualDiskLocation").toString(),
+                    msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_HardDisk, field("mediumPath").toString(),
                                                    StorageSlot(enmHDDBus, 0, 0), this);
             }
         }
@@ -472,8 +470,8 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
     }
 
     /* Ensure we don't try to delete a newly created virtual hard drive on success: */
-    if (!field("virtualDisk").value<CMedium>().isNull())
-        field("virtualDisk").value<CMedium>().detach();
+    if (!m_virtualDisk.isNull())
+        m_virtualDisk.detach();
 
     return true;
 }
@@ -624,18 +622,14 @@ void UIWizardNewVM::setFieldsFromDefaultUnttendedInstallData()
     setField("guestAdditionsISOPath", m_unattendedInstallData.m_strGuestAdditionsISOPath);
 }
 
-CMedium UIWizardNewVM::virtualDisk() const
+CMedium &UIWizardNewVM::virtualDisk()
 {
-    UIWizardNewVMPageBasic4 *pPage = qobject_cast<UIWizardNewVMPageBasic4*>(page(Page4));
-    AssertPtrReturn(pPage, CMedium());
-    return pPage->virtualDisk();
+    return m_virtualDisk;
 }
 
 void UIWizardNewVM::setVirtualDisk(const CMedium &medium)
 {
-    UIWizardNewVMPageBasic4 *pPage = qobject_cast<UIWizardNewVMPageBasic4*>(page(Page4));
-    AssertPtrReturnVoid(pPage);
-    pPage->setVirtualDisk(medium);
+    m_virtualDisk == medium;
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
