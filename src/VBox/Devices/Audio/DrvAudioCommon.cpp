@@ -129,67 +129,56 @@ PDMAUDIOFMT DrvAudioAudFmtBitsToAudFmt(uint8_t cBits, bool fSigned)
  */
 void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cFrames)
 {
+    /*
+     * Validate input
+     */
     AssertPtrReturnVoid(pPCMProps);
-    AssertPtrReturnVoid(pvBuf);
-
+    Assert(pPCMProps->cbSample);
     if (!cbBuf || !cFrames)
         return;
+    AssertPtrReturnVoid(pvBuf);
 
-    Assert(pPCMProps->cbSample);
+    Assert(pPCMProps->fSwapEndian == false); /** @todo Swapping Endianness is not supported yet. */
+
+    /*
+     * Decide how much needs clearing.
+     */
     size_t cbToClear = DrvAudioHlpFramesToBytes(pPCMProps, cFrames);
-    Assert(cbBuf >= cbToClear);
-
-    if (cbBuf < cbToClear)
-        cbToClear = cbBuf;
+    AssertStmt(cbToClear <= cbBuf, cbToClear = cbBuf);
 
     Log2Func(("pPCMProps=%p, pvBuf=%p, cFrames=%RU32, fSigned=%RTbool, cBytes=%RU8\n",
               pPCMProps, pvBuf, cFrames, pPCMProps->fSigned, pPCMProps->cbSample));
 
-    Assert(pPCMProps->fSwapEndian == false); /** @todo Swapping Endianness is not supported yet. */
-
+    /*
+     * Do the job.
+     */
     if (pPCMProps->fSigned)
-    {
         RT_BZERO(pvBuf, cbToClear);
-    }
     else /* Unsigned formats. */
     {
         switch (pPCMProps->cbSample)
         {
             case 1: /* 8 bit */
-            {
                 memset(pvBuf, 0x80, cbToClear);
                 break;
-            }
 
             case 2: /* 16 bit */
             {
-                uint16_t *p = (uint16_t *)pvBuf;
-                uint16_t  s = 0x0080;
-
-                for (uint32_t i = 0; i < DrvAudioHlpBytesToFrames((uint32_t)cbToClear, pPCMProps); i++)
-                    p[i] = s;
-
+                uint16_t *pu16Dst = (uint16_t *)pvBuf;
+                size_t    cLeft   = cbToClear / sizeof(uint16_t);
+                while (cLeft-- > 0)
+                    *pu16Dst++ = 0x80;
                 break;
             }
 
             /** @todo Add 24 bit? */
 
             case 4: /* 32 bit */
-            {
-                uint32_t *p = (uint32_t *)pvBuf;
-                uint32_t  s = 0x00000080;
-
-                for (uint32_t i = 0; i < DrvAudioHlpBytesToFrames((uint32_t)cbToClear, pPCMProps); i++)
-                    p[i] = s;
-
+                ASMMemFill32(pvBuf, cbToClear & ~(size_t)3, 0x80);
                 break;
-            }
 
             default:
-            {
                 AssertMsgFailed(("Invalid bytes per sample: %RU8\n", pPCMProps->cbSample));
-                break;
-            }
         }
     }
 }
