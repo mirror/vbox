@@ -629,7 +629,7 @@ CMedium &UIWizardNewVM::virtualDisk()
 
 void UIWizardNewVM::setVirtualDisk(const CMedium &medium)
 {
-    m_virtualDisk == medium;
+    m_virtualDisk = medium;
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const

@@ -64,16 +64,13 @@ void UIWizardNewVMPage4::setSelectedDiskSource(SelectedDiskSource enmSelectedDis
 
 void UIWizardNewVMPage4::getWithFileOpenDialog()
 {
-    /* Get opened medium id: */
     QUuid uMediumId;
-
     int returnCode = uiCommon().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_HardDisk,
                                                            uMediumId,
                                                            fieldImp("machineFolder").toString(),
                                                            fieldImp("machineBaseName").toString(),
                                                            fieldImp("type").value<CGuestOSType>().GetId(),
                                                            false /* don't show/enable the create action: */);
-
     if (returnCode == static_cast<int>(UIMediumSelector::ReturnCode_Accepted) && !uMediumId.isNull())
     {
         m_pDiskSelector->setCurrentItem(uMediumId);
@@ -276,7 +273,6 @@ void UIWizardNewVMPageBasic4::sltMediaComboBoxIndexChanged()
 
 void UIWizardNewVMPageBasic4::sltGetWithFileOpenDialog()
 {
-    /* Call to base-class: */
     getWithFileOpenDialog();
 }
 

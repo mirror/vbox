@@ -102,10 +102,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("mediumSize", this, "mediumSize");
     registerField("selectedDiskSource", this, "selectedDiskSource");
     registerField("mediumVariant", this, "mediumVariant");
-
-    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
-    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
-    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
 }
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
@@ -133,14 +129,10 @@ void UIWizardNewVMPageExpert::sltOsTypeChanged()
     emit completeChanged();
 }
 
-void UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged()
-{
-    /* Broadcast complete-change: */
-    emit completeChanged();
-}
 
 void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
 {
+    getWithFileOpenDialog();
 }
 
 void UIWizardNewVMPageExpert::sltISOPathChanged(const QString &strPath)
@@ -243,33 +235,10 @@ void UIWizardNewVMPageExpert::createConnections()
         connect(m_pGAInstallCheckBox, &QCheckBox::toggled,
                 this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
 
-    if (m_pDiskEmpty)
-    {
-        connect(m_pDiskEmpty, &QRadioButton::toggled,
-                this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-        connect(m_pDiskEmpty, &QRadioButton::toggled,
-                this, &UIWizardNewVMPageExpert::sltValueModified);
-    }
-    if (m_pDiskNew)
-    {
-        connect(m_pDiskNew, &QRadioButton::toggled,
-                this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-        connect(m_pDiskNew, &QRadioButton::toggled,
-                this, &UIWizardNewVMPageExpert::sltValueModified);
-    }
-    if (m_pDiskExisting)
-    {
-        connect(m_pDiskExisting, &QRadioButton::toggled,
-                this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-        connect(m_pDiskExisting, &QRadioButton::toggled,
-                this, &UIWizardNewVMPageExpert::sltValueModified);
-    }
-    if (m_pDiskSelector)
-        connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-                this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
     if (m_pDiskSelectionButton)
         connect(m_pDiskSelectionButton, &QIToolButton::clicked,
                 this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
+
     if (m_pBaseMemoryEditor)
         connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
                 this, &UIWizardNewVMPageExpert::sltValueModified);
@@ -289,8 +258,12 @@ void UIWizardNewVMPageExpert::createConnections()
                 this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
 
     if (m_pDiskSourceButtonGroup)
+    {
         connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
                 this, &UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged);
+        connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+                this, &UIWizardNewVMPageExpert::sltValueModified);
+    }
 }
 
 void UIWizardNewVMPageExpert::setOSTypeDependedValues()
@@ -359,12 +332,14 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
 
 void UIWizardNewVMPageExpert::initializePage()
 {
-    /* Translate page: */
-    retranslateUi();
+    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
+    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
+    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
     setOSTypeDependedValues();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     updateVirtualDiskPathFromMachinePathName();
     updateWidgetAterMediumFormatChange();
+    retranslateUi();
 }
 
 void UIWizardNewVMPageExpert::cleanupPage()
