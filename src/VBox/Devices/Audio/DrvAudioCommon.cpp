@@ -736,10 +736,11 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
     return PDMAUDIOFMT_INVALID;
 }
 
+#if 0 /* unused */
 /**
- * Initializes a stream configuration with its default values.
+ * Initializes a stream configuration with default values.
  *
- * @param   pCfg                Stream configuration to initialize.
+ * @param   pCfg    The stream configuration structure to initialize.
  */
 void PDMAudioStrmCfgInit(PPDMAUDIOSTREAMCFG pCfg)
 {
@@ -749,27 +750,32 @@ void PDMAudioStrmCfgInit(PPDMAUDIOSTREAMCFG pCfg)
 
     pCfg->Backend.cFramesPreBuffering = UINT32_MAX; /* Explicitly set to "undefined". */
 }
+#endif
 
 /**
  * Initializes a stream configuration from PCM properties.
  *
  * @return  IPRT status code.
- * @param   pCfg        Stream configuration to initialize.
- * @param   pProps      PCM properties to use.
+ * @param   pCfg        The stream configuration to initialize.
+ * @param   pProps      The PCM properties to use.
  */
 int PDMAudioStrmCfgInitWithProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
 
-    PDMAudioStrmCfgInit(pCfg);
+    RT_ZERO(*pCfg);
+    pCfg->Backend.cFramesPreBuffering = UINT32_MAX; /* Explicitly set to "undefined". */
 
     memcpy(&pCfg->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
+
     return VINF_SUCCESS;
 }
 
 /**
  * Checks whether a given stream configuration is valid or not.
+ *
+ * @note    See notes on DrvAudioHlpPcmPropsAreValid().
  *
  * Returns @c true if configuration is valid, @c false if not.
  * @param   pCfg                Stream configuration to check.
@@ -794,8 +800,8 @@ bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
  * Checks whether stream configuration matches the given PCM properties.
  *
  * @returns @c true if equal, @c false if not.
- * @param   pCfg    Stream configuration.
- * @param   pProps  PCM properties to match with.
+ * @param   pCfg    The stream configuration.
+ * @param   pProps  The PCM properties to match with.
  */
 bool PDMAudioStrmCfgMatchesProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
 {
@@ -804,9 +810,9 @@ bool PDMAudioStrmCfgMatchesProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pP
 }
 
 /**
- * Frees an allocated audio stream configuration.
+ * Frees an audio stream allocated by PDMAudioStrmCfgDup().
  *
- * @param   pCfg                Audio stream configuration to free.
+ * @param   pCfg    The stream configuration to free.
  */
 void PDMAudioStrmCfgFree(PPDMAUDIOSTREAMCFG pCfg)
 {
@@ -818,11 +824,11 @@ void PDMAudioStrmCfgFree(PPDMAUDIOSTREAMCFG pCfg)
 }
 
 /**
- * Copies a source stream configuration to a destination stream configuration.
+ * Copies one stream configuration to another.
  *
  * @returns IPRT status code.
- * @param   pDstCfg             Destination stream configuration to copy source to.
- * @param   pSrcCfg             Source stream configuration to copy to destination.
+ * @param   pDstCfg     The destination stream configuration.
+ * @param   pSrcCfg     The source stream configuration.
  */
 int PDMAudioStrmCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg)
 {
@@ -830,6 +836,9 @@ int PDMAudioStrmCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg)
     AssertPtrReturn(pSrcCfg, VERR_INVALID_POINTER);
 
 #ifdef VBOX_STRICT
+/** @todo r=bird: This is _bad_ as it makes strict builds behave different from
+ *        release builds.  The whole 'valid' concept is a bit inconsistent
+ *        too, so it cannot carry over to PDM. */
     if (!DrvAudioHlpStreamCfgIsValid(pSrcCfg))
     {
         AssertMsgFailed(("Stream config '%s' (%p) is invalid\n", pSrcCfg->szName, pSrcCfg));
@@ -844,42 +853,32 @@ int PDMAudioStrmCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg)
 
 /**
  * Duplicates an audio stream configuration.
- * Must be free'd with PDMAudioStrmCfgFree().
  *
- * @return  Duplicates audio stream configuration on success, or NULL on failure.
- * @param   pCfg                    Audio stream configuration to duplicate.
+ * @returns Pointer to duplicate on success, NULL on failure.  Must be freed
+ *          using PDMAudioStrmCfgFree().
+ *
+ * @param   pCfg        The audio stream configuration to duplicate.
  */
 PPDMAUDIOSTREAMCFG PDMAudioStrmCfgDup(PCPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pCfg, NULL);
 
-#ifdef VBOX_STRICT
-    if (!DrvAudioHlpStreamCfgIsValid(pCfg))
-    {
-        AssertMsgFailed(("Stream config '%s' (%p) is invalid\n", pCfg->szName, pCfg));
-        return NULL;
-    }
-#endif
-
     PPDMAUDIOSTREAMCFG pDst = (PPDMAUDIOSTREAMCFG)RTMemAllocZ(sizeof(PDMAUDIOSTREAMCFG));
-    if (!pDst)
-        return NULL;
-
-    int rc2 = PDMAudioStrmCfgCopy(pDst, pCfg);
-    if (RT_FAILURE(rc2))
+    if (pDst)
     {
-        PDMAudioStrmCfgFree(pDst);
-        pDst = NULL;
-    }
+        int rc = PDMAudioStrmCfgCopy(pDst, pCfg);
+        if (RT_SUCCESS(rc))
+            return pDst;
 
-    AssertPtr(pDst);
-    return pDst;
+        PDMAudioStrmCfgFree(pDst);
+    }
+    return NULL;
 }
 
 /**
- * Prints an audio stream configuration to the debug log.
+ * Logs an audio stream configuration.
  *
- * @param   pCfg                Stream configuration to log.
+ * @param   pCfg        The stream configuration to log.
  */
 void PDMAudioStrmCfgLog(PCPDMAUDIOSTREAMCFG pCfg)
 {
