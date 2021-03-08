@@ -235,10 +235,6 @@ void UIWizardNewVMPageExpert::createConnections()
         connect(m_pGAInstallCheckBox, &QCheckBox::toggled,
                 this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
 
-    if (m_pDiskSelectionButton)
-        connect(m_pDiskSelectionButton, &QIToolButton::clicked,
-                this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
-
     if (m_pBaseMemoryEditor)
         connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValueChanged,
                 this, &UIWizardNewVMPageExpert::sltValueModified);
@@ -249,9 +245,14 @@ void UIWizardNewVMPageExpert::createConnections()
     if (m_pFormatButtonGroup)
         connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
                 this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
+
     if (m_pSizeEditor)
         connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
                 this, &UIWizardNewVMPageExpert::sltMediumSizeChanged);
+
+    if (m_pDiskSelectionButton)
+        connect(m_pDiskSelectionButton, &QIToolButton::clicked,
+                this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
 
     if (m_pDiskSelector)
         connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
@@ -666,19 +667,8 @@ void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)
 
 void UIWizardNewVMPageExpert::setVirtualDiskFromDiskCombo()
 {
-    QUuid currentId;
+    AssertReturnVoid(m_pDiskSelector);
     UIWizardNewVM *pWizard = wizardImp();
     AssertReturnVoid(pWizard);
-    if (!pWizard->virtualDisk().isNull())
-        currentId = pWizard->virtualDisk().GetId();
-    QUuid id = m_pDiskSelector->id();
-    /* Do nothing else if m_virtualMedium is already set to what combobox has: */
-    if (id == currentId)
-        return;
-    if (m_pDiskSelector)
-    {
-        CMedium medium = uiCommon().medium(id).medium();
-        if (!medium.isNull())
-            pWizard->setVirtualDisk(medium);
-    }
+    pWizard->setVirtualDisk(m_pDiskSelector->id());
 }

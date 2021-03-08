@@ -97,6 +97,7 @@ public:
     bool isGuestOSTypeWindows() const;
     CMedium &virtualDisk();
     void setVirtualDisk(const CMedium &medium);
+    void setVirtualDisk(const QUuid &mediumId);
 
 protected:
 

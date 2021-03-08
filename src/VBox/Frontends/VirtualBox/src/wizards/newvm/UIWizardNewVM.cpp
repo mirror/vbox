@@ -632,6 +632,15 @@ void UIWizardNewVM::setVirtualDisk(const CMedium &medium)
     m_virtualDisk = medium;
 }
 
+void UIWizardNewVM::setVirtualDisk(const QUuid &mediumId)
+{
+    if (m_virtualDisk.GetId() == mediumId)
+        return;
+    CMedium medium = uiCommon().medium(mediumId).medium();
+    if (!medium.isNull())
+        setVirtualDisk(medium);
+}
+
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
 {
     m_unattendedInstallData.m_strISOPath = getStringFieldValue("ISOFilePath");
