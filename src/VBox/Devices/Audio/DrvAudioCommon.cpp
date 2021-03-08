@@ -888,12 +888,13 @@ void PDMAudioStrmCfgLog(PCPDMAUDIOSTREAMCFG pCfg)
 }
 
 /**
- * Converts a stream command to a string.
+ * Converts a stream command enum value to a string.
  *
- * @returns Stringified stream command, or "Unknown", if not found.
- * @param   enmCmd              Stream command to convert.
+ * @returns Pointer to read-only stream command name on success,
+ *          "Unknown" if invalid command value.
+ * @param   enmCmd      The stream command to name.
  */
-const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd)
+const char *PDMAudioStrmCmdGetName(PDMAUDIOSTREAMCMD enmCmd)
 {
     switch (enmCmd)
     {
@@ -907,60 +908,75 @@ const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd)
         case PDMAUDIOSTREAMCMD_DROP:    return "Drop";
         case PDMAUDIOSTREAMCMD_32BIT_HACK:
             break;
+        /* no default! */
     }
-    AssertMsgFailed(("Invalid stream command %d\n", enmCmd));
-    return "Unknown";
+    AssertMsgFailedReturn(("Invalid stream command %d\n", enmCmd), "Unknown");
 }
 
 /**
- * Returns @c true if the given stream status indicates a can-be-read-from stream,
- * @c false if not.
+ * Checks if the stream status is one that can be read from.
  *
- * @returns @c true if ready to be read from, @c if not.
+ * @returns @c true if ready to be read from, @c false if not.
  * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAMSTS_FLAGS_XXX.
  */
-bool DrvAudioHlpStreamStatusCanRead(PDMAUDIOSTREAMSTS fStatus)
+bool PDMAudioStrmStatusCanRead(PDMAUDIOSTREAMSTS fStatus)
 {
     AssertReturn(fStatus & PDMAUDIOSTREAMSTS_VALID_MASK, false);
-
+    /*
     return      fStatus & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
            &&   fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED
            && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PAUSED)
-           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);
+           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);*/
+    return (fStatus & (  PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
+                       | PDMAUDIOSTREAMSTS_FLAGS_ENABLED
+                       | PDMAUDIOSTREAMSTS_FLAGS_PAUSED
+                       | PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT ))
+        == (  PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
+            | PDMAUDIOSTREAMSTS_FLAGS_ENABLED);
 }
 
 /**
- * Returns @c true if the given stream status indicates a can-be-written-to stream,
- * @c false if not.
+ * Checks if the stream status is one that can be written to.
  *
- * @returns @c true if ready to be written to, @c if not.
+ * @returns @c true if ready to be written to, @c false if not.
  * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAMSTS_FLAGS_XXX.
  */
-bool DrvAudioHlpStreamStatusCanWrite(PDMAUDIOSTREAMSTS fStatus)
+bool PDMAudioStrmStatusCanWrite(PDMAUDIOSTREAMSTS fStatus)
 {
     AssertReturn(fStatus & PDMAUDIOSTREAMSTS_VALID_MASK, false);
-
+    /*
     return      fStatus & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
            &&   fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED
            && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PAUSED)
            && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE)
-           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);
+           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);*/
+    return (fStatus & (  PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
+                       | PDMAUDIOSTREAMSTS_FLAGS_ENABLED
+                       | PDMAUDIOSTREAMSTS_FLAGS_PAUSED
+                       | PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE
+                       | PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT))
+        == (  PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
+            | PDMAUDIOSTREAMSTS_FLAGS_ENABLED);
 }
 
 /**
- * Returns @c true if the given stream status indicates a ready-to-operate stream,
- * @c false if not.
+ * Checks if the stream status is a read-to-operate one.
  *
- * @returns @c true if ready to operate, @c if not.
- * @param   fStatus Stream status to evaluate.
+ * @returns @c true if ready to operate, @c false if not.
+ * @param   fStatus     Stream status to evaluate, PDMAUDIOSTREAMSTS_FLAGS_XXX.
  */
-bool DrvAudioHlpStreamStatusIsReady(PDMAUDIOSTREAMSTS fStatus)
+bool PDMAudioStrmStatusIsReady(PDMAUDIOSTREAMSTS fStatus)
 {
     AssertReturn(fStatus & PDMAUDIOSTREAMSTS_VALID_MASK, false);
-
+    /*
     return      fStatus & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
            &&   fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED
-           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);
+           && !(fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT);*/
+    return (fStatus & (  PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
+                       | PDMAUDIOSTREAMSTS_FLAGS_ENABLED
+                       | PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT))
+        == (  PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED
+            | PDMAUDIOSTREAMSTS_FLAGS_ENABLED);
 }
 
 /**

@@ -1557,7 +1557,7 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos, uint32_
         RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
         {
             if (   pDrv->Out.pStream
-                && DrvAudioHlpStreamStatusCanWrite(pDrv->pConnector->pfnStreamGetStatus(pDrv->pConnector, pDrv->Out.pStream)))
+                && PDMAudioStrmStatusCanWrite(pDrv->pConnector->pfnStreamGetStatus(pDrv->pConnector, pDrv->Out.pStream)))
             {
                 uint32_t cbWrittenToStream = 0;
                 rc2 = pDrv->pConnector->pfnStreamWrite(pDrv->pConnector, pDrv->Out.pStream, abBuf, cbRead, &cbWrittenToStream);

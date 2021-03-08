@@ -237,14 +237,14 @@ bool    DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg);
 
 /** @name Audio stream command helper methods.
  * @{ */
-const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd);
+const char *PDMAudioStrmCmdGetName(PDMAUDIOSTREAMCMD enmCmd);
 /** @}  */
 
 /** @name Audio stream status helper methods.
  * @{ */
-bool DrvAudioHlpStreamStatusCanRead(PDMAUDIOSTREAMSTS fStatus);
-bool DrvAudioHlpStreamStatusCanWrite(PDMAUDIOSTREAMSTS fStatus);
-bool DrvAudioHlpStreamStatusIsReady(PDMAUDIOSTREAMSTS fStatus);
+bool PDMAudioStrmStatusCanRead(PDMAUDIOSTREAMSTS fStatus);
+bool PDMAudioStrmStatusCanWrite(PDMAUDIOSTREAMSTS fStatus);
+bool PDMAudioStrmStatusIsReady(PDMAUDIOSTREAMSTS fStatus);
 /** @}  */
 
 /** @name Audio file (name) helper methods.
@@ -261,7 +261,7 @@ void DrvAudioHlpDeviceFree(PPDMAUDIODEVICE pDev);
 PPDMAUDIODEVICE DrvAudioHlpDeviceDup(const PPDMAUDIODEVICE pDev, bool fCopyUserData);
 /** @}  */
 
-/** @name Audio device enumartion methods.
+/** @name Audio device enumeration methods.
  * @{ */
 int DrvAudioHlpDeviceEnumInit(PPDMAUDIODEVICEENUM pDevEnm);
 void DrvAudioHlpDeviceEnumFree(PPDMAUDIODEVICEENUM pDevEnm);
