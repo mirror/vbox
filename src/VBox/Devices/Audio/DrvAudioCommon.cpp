@@ -1176,20 +1176,18 @@ uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, PCPDMAUDIOPCMPROPS pProps)
 }
 
 /**
- * Returns if the the given size is properly aligned to the given PCM properties.
+ * Checks if the given size is aligned on a frame boundrary.
  *
- * @return  @c true if properly aligned, @c false if not.
- * @param   cbSize              Size (in bytes) to check alignment for.
- * @param   pProps              PCM properties to use for checking the alignment.
+ * @returns @c true if properly aligned, @c false if not.
+ * @param   pProps      PCM properties to use.
+ * @param   cb          The size (in bytes) to check.
  */
-bool DrvAudioHlpBytesIsAligned(uint32_t cbSize, PCPDMAUDIOPCMPROPS pProps)
+bool DrvAudioHlpIsBytesAligned(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
-    AssertPtrReturn(pProps, 0);
-
-    if (!cbSize)
-        return true;
-
-    return (cbSize % PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */) == 0);
+    AssertPtrReturn(pProps, false);
+    uint32_t const cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+    AssertReturn(cbFrame, false);
+    return cb % cbFrame == 0;
 }
 
 /**
