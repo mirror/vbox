@@ -868,4 +868,4 @@ DECLINLINE(void) PDMAudioPropsLog(PCPDMAUDIOPCMPROPS pProps)
          pProps->uHz, pProps->cChannels, pProps->cbSample * 8, pProps->fSigned ? "S" : "U"));
 }
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmaudioinline_h */
