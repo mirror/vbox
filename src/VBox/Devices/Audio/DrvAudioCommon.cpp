@@ -1429,7 +1429,7 @@ uint32_t DrvAudioHlpBytesPerFrame(PCPDMAUDIOPCMPROPS pProps)
  *
  * @param   pProps              Stream configuration to log.
  */
-void DrvAudioHlpPCMPropsPrint(PCPDMAUDIOPCMPROPS pProps)
+void DrvAudioHlpPcmPropsLog(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturnVoid(pProps);
 
