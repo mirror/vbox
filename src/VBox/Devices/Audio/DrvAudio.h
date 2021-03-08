@@ -216,21 +216,21 @@ uint32_t DrvAudioHlpNanoToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs);
 uint32_t DrvAudioHlpMilliToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs);
 uint32_t DrvAudioHlpNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs);
 
-bool     DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps1, PCPDMAUDIOPCMPROPS pPCMProps2);
-bool     DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps, PCPDMAUDIOSTREAMCFG pCfg);
+bool     DrvAudioHlpPcmPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps1, PCPDMAUDIOPCMPROPS pPCMProps2);
 bool     DrvAudioHlpPCMPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
 void     DrvAudioHlpPcmPropsLog(PCPDMAUDIOPCMPROPS pProps);
 /** @}  */
 
 /** @name Audio configuration helper methods.
  * @{ */
-void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg);
-int  DrvAudioHlpStreamCfgInitFromPcmProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps);
-bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg);
-int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg);
+void    DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg);
+int     DrvAudioHlpStreamCfgInitFromPcmProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps);
+bool    DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg);
+bool    DrvAudioHlpStreamCfgMatchesPcmProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps);
+int     DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg);
 PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(PCPDMAUDIOSTREAMCFG pCfg);
-void DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg);
-void DrvAudioHlpStreamCfgPrint(PCPDMAUDIOSTREAMCFG pCfg);
+void    DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg);
+void    DrvAudioHlpStreamCfgPrint(PCPDMAUDIOSTREAMCFG pCfg);
 /** @}  */
 
 /** @name Audio stream command helper methods.

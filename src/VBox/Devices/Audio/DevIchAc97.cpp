@@ -2192,7 +2192,7 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STRE
     {
         /* Only (re-)create the stream (and driver chain) if we really have to.
          * Otherwise avoid this and just reuse it, as this costs performance. */
-        if (   !DrvAudioHlpPCMPropsAreEqual(&Cfg.Props, &pStreamCC->State.Cfg.Props)
+        if (   !DrvAudioHlpStreamCfgMatchesPcmProps(&Cfg, &pStreamCC->State.Cfg.Props)
             || fForce)
         {
             LogRel2(("AC97: (Re-)Opening stream '%s' (%RU32Hz, %RU8 channels, %s%RU8)\n",

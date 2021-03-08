@@ -1838,7 +1838,7 @@ static int sb16CheckAndReOpenOut(PPDMDEVINS pDevIns, PSB16STATE pThis)
         Cfg.Props.fSigned   = RT_BOOL(pThis->fmt_signed);
         Cfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Cfg.Props.cbSample, Cfg.Props.cChannels);
 
-        if (!DrvAudioHlpPCMPropsAreEqual(&Cfg.Props, &pThis->Out.Cfg.Props))
+        if (!DrvAudioHlpStreamCfgMatchesPcmProps(&Cfg, &pThis->Out.Cfg.Props))
         {
             Cfg.enmDir      = PDMAUDIODIR_OUT;
             Cfg.u.enmDst    = PDMAUDIOPLAYBACKDST_FRONT;

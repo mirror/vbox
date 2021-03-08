@@ -791,6 +791,19 @@ bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
 }
 
 /**
+ * Checks whether stream configuration matches the given PCM properties.
+ *
+ * @returns @c true if equal, @c false if not.
+ * @param   pCfg    Stream configuration.
+ * @param   pProps  PCM properties to match with.
+ */
+bool DrvAudioHlpStreamCfgMatchesPcmProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pCfg, false);
+    return DrvAudioHlpPcmPropsAreEqual(pProps, &pCfg->Props);
+}
+
+/**
  * Frees an allocated audio stream configuration.
  *
  * @param   pCfg                Audio stream configuration to free.
@@ -1334,7 +1347,7 @@ void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf
  * @param   pProps1             First properties to compare.
  * @param   pProps2             Second properties to compare.
  */
-bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2)
+bool DrvAudioHlpPcmPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2)
 {
     AssertPtrReturn(pProps1, false);
     AssertPtrReturn(pProps2, false);
@@ -1394,22 +1407,6 @@ bool DrvAudioHlpPCMPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
     fValid &= pProps->fSwapEndian == false; /** @todo Handling Big Endian audio data is not supported yet. */
 
     return fValid;
-}
-
-/**
- * Checks whether the given PCM properties are equal with the given
- * stream configuration.
- *
- * @returns @c true if equal, @c false if not.
- * @param   pProps              PCM properties to compare.
- * @param   pCfg                Stream configuration to compare.
- */
-bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pProps, PCPDMAUDIOSTREAMCFG pCfg)
-{
-    AssertPtrReturn(pProps, false);
-    AssertPtrReturn(pCfg,   false);
-
-    return DrvAudioHlpPCMPropsAreEqual(pProps, &pCfg->Props);
 }
 
 /**

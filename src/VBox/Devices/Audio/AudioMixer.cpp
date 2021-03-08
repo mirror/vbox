@@ -1474,7 +1474,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
     if (RT_FAILURE(rc))
         return rc;
 
-    if (DrvAudioHlpPCMPropsAreEqual(&pSink->PCMProps, pPCMProps)) /* Bail out early if PCM properties are equal. */
+    if (DrvAudioHlpPcmPropsAreEqual(&pSink->PCMProps, pPCMProps)) /* Bail out early if PCM properties are equal. */
     {
         rc = RTCritSectLeave(&pSink->CritSect);
         AssertRC(rc);
