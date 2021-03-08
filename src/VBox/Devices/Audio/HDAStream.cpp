@@ -455,7 +455,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
      */
 
     /* Audio data per second the stream needs. */
-    const uint32_t cbDataPerSec = DrvAudioHlpMilliToBytes(RT_MS_1SEC, &pStreamR3->State.Mapping.PCMProps);
+    const uint32_t cbDataPerSec = DrvAudioHlpMilliToBytes(&pStreamR3->State.Mapping.PCMProps, RT_MS_1SEC);
 
     /* This is used to indicate whether we're done or should the uTimerIoHz as fallback. */
     rc = VINF_SUCCESS;
@@ -697,15 +697,15 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
          *       samples we actually need, in other words, skipping the interleaved
          *       channels we don't support / need to save space.
          */
-        uint32_t cbCircBuf = DrvAudioHlpMilliToBytes(RT_MS_1SEC * 6 / RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz),
-                                                     &pCfg->Props);
+        uint32_t cbCircBuf = DrvAudioHlpMilliToBytes(&pCfg->Props,
+                                                     RT_MS_1SEC * 6 / RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz));
         LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
                  uSD, cbCircBuf, DrvAudioHlpBytesToMilli(&pCfg->Props, cbCircBuf)));
 
         uint32_t msCircBufCfg = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs;
         if (msCircBufCfg) /* Anything set via CFGM? */
         {
-            cbCircBuf = DrvAudioHlpMilliToBytes(msCircBufCfg, &pCfg->Props);
+            cbCircBuf = DrvAudioHlpMilliToBytes(&pCfg->Props, msCircBufCfg);
             LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU32 bytes / %RU64 ms\n",
                      uSD, cbCircBuf, DrvAudioHlpBytesToMilli(&pCfg->Props, cbCircBuf)));
         }

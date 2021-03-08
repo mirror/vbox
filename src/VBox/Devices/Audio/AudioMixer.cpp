@@ -655,7 +655,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
 
     if (RT_SUCCESS(rc))
     {
-        rc = RTCircBufCreate(&pMixStream->pCircBuf, DrvAudioHlpMilliToBytes(100 /* ms */, &pSink->PCMProps)); /** @todo Make this configurable. */
+        rc = RTCircBufCreate(&pMixStream->pCircBuf, DrvAudioHlpMilliToBytes(&pSink->PCMProps, 100 /*ms*/)); /** @todo Make this configurable. */
         AssertRC(rc);
     }
 
@@ -1494,7 +1494,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
     /* Also update the sink's mixing buffer format. */
     AudioMixBufDestroy(&pSink->MixBuf);
     rc = AudioMixBufInit(&pSink->MixBuf, pSink->pszName, &pSink->PCMProps,
-                         DrvAudioHlpMilliToFrames(100 /* ms */, &pSink->PCMProps)); /** @todo Make this configurable? */
+                         DrvAudioHlpMilliToFrames(&pSink->PCMProps, 100 /*ms*/)); /** @todo Make this configurable? */
     if (RT_SUCCESS(rc))
     {
         PAUDMIXSTREAM pStream;

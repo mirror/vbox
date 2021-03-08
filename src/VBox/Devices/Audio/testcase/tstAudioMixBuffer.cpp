@@ -34,7 +34,7 @@
 
 static void tstBasics(RTTEST hTest)
 {
-    RTTestSub(hTest, "Single buffer");
+    RTTestSub(hTest, "Basics");
 
     static const PDMAUDIOPCMPROPS s_Cfg441StereoS16 = PDMAUDIOPCMPROPS_INITIALIZOR(
         /* a_cb: */             2,
@@ -103,6 +103,16 @@ static void tstBasics(RTTEST hTest)
     //                  ("us=%RU64\n", u64));
     RTTESTI_CHECK_MSG((u64 = DrvAudioHlpFramesToMilli(&s_Cfg441StereoS16, 44100)) == RT_MS_1SEC, ("ms=%RU64\n", u64));
     RTTESTI_CHECK_MSG((u64 = DrvAudioHlpFramesToMilli(&s_Cfg441StereoS16,   255)) == 5,          ("ms=%RU64\n", u64));
+
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpNanoToFrames(&s_Cfg441StereoS16,  RT_NS_1SEC)) == 44100, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpNanoToFrames(&s_Cfg441StereoS16,      215876)) == 10,    ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpMilliToFrames(&s_Cfg441StereoS16, RT_MS_1SEC)) == 44100, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpMilliToFrames(&s_Cfg441StereoU32,          6)) == 265,   ("cb=%RU32\n", u32));
+
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpNanoToBytes(&s_Cfg441StereoS16,  RT_NS_1SEC)) == 44100*2*2, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpNanoToBytes(&s_Cfg441StereoS16,      702947)) == 31*2*2,    ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpMilliToBytes(&s_Cfg441StereoS16, RT_MS_1SEC)) == 44100*2*2, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpMilliToBytes(&s_Cfg441StereoS16,          5)) == 884,       ("cb=%RU32\n", u32));
 
     /* DrvAudioHlpClearBuf: */
     uint8_t *pbPage;
