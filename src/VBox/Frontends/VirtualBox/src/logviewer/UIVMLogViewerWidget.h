@@ -123,6 +123,7 @@ private slots:
        of UIVMLogPage is changed. */
     void sltLogPageFilteredChanged(bool isFiltered);
     void sltHandleHidePanel(UIDialogPanel *pPanel);
+    void sltHandleShowPanel(UIDialogPanel *pPanel);
 
     /** @name Slots to handle signals from settings panel
      * @{ */

@@ -46,6 +46,7 @@ public:
 signals:
 
     void sigHidePanel(UIDialogPanel *pPanel);
+    void sigShowPanel(UIDialogPanel *pPanel);
 
 protected:
 
