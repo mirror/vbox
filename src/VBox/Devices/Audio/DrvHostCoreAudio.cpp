@@ -784,7 +784,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
 
                         if (pDevSrcInData->deviceID == pDevSrcOutData->deviceID)
                         {
-                            pDevDst->enmUsage           = PDMAUDIODIR_ANY;
+                            pDevDst->enmUsage           = PDMAUDIODIR_DUPLEX;
                             pDevDst->cMaxOutputChannels = pDevSrcOut->cMaxOutputChannels;
 
                             if (pDevSrcOut->fFlags & PDMAUDIODEV_FLAGS_DEFAULT)

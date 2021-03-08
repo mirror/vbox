@@ -579,7 +579,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     /** @todo Validate fFlags. */
     /* ppStream is optional. */
 
-    if (pConn->pfnGetStatus(pConn, PDMAUDIODIR_ANY) == PDMAUDIOBACKENDSTS_NOT_ATTACHED)
+    if (pConn->pfnGetStatus(pConn, PDMAUDIODIR_DUPLEX) == PDMAUDIOBACKENDSTS_NOT_ATTACHED)
         return VERR_AUDIO_BACKEND_NOT_ATTACHED;
 
     PAUDMIXSTREAM pMixStream = (PAUDMIXSTREAM)RTMemAllocZ(sizeof(AUDMIXSTREAM));

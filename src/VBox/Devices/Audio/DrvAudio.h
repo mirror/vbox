@@ -186,8 +186,8 @@ typedef struct DRVAUDIO
 
 /** @name Audio format helper methods.
  * @{ */
-const char *DrvAudioHlpAudDirToStr(PDMAUDIODIR enmDir);
-const char *DrvAudioHlpAudFmtToStr(PDMAUDIOFMT enmFmt);
+const char *PDMAudioDirGetName(PDMAUDIODIR enmDir);
+const char *PDMAudioFormatGetName(PDMAUDIOFMT enmFmt);
 bool        PDMAudioFormatIsSigned(PDMAUDIOFMT enmFmt);
 uint8_t     PDMAudioFormatGetBits(PDMAUDIOFMT enmFmt);
 /** @}  */

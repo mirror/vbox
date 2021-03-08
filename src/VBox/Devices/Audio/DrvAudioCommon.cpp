@@ -335,7 +335,7 @@ PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(const PPDMAUDIODEVICEENUM pDevEnm)
  * @returns IPRT status code.
  * @param   pDstDevEnm          Destination enumeration to store enumeration entries into.
  * @param   pSrcDevEnm          Source enumeration to use.
- * @param   enmUsage            Which entries to copy. Specify PDMAUDIODIR_ANY to copy all entries.
+ * @param   enmUsage            Which entries to copy. Specify PDMAUDIODIR_DUPLEX to copy all entries.
  * @param   fCopyUserData       Whether to also copy the user data portion or not.
  */
 int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIODEVICEENUM pSrcDevEnm,
@@ -349,7 +349,7 @@ int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIOD
     PPDMAUDIODEVICE pSrcDev;
     RTListForEach(&pSrcDevEnm->lstDevices, pSrcDev, PDMAUDIODEVICE, Node)
     {
-        if (   enmUsage != PDMAUDIODIR_ANY
+        if (   enmUsage != PDMAUDIODIR_DUPLEX
             && enmUsage != pSrcDev->enmUsage)
         {
             continue;
@@ -382,7 +382,7 @@ int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIOD
  */
 int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIODEVICEENUM pSrcDevEnm)
 {
-    return DrvAudioHlpDeviceEnumCopyEx(pDstDevEnm, pSrcDevEnm, PDMAUDIODIR_ANY, false /* fCopyUserData */);
+    return DrvAudioHlpDeviceEnumCopyEx(pDstDevEnm, pSrcDevEnm, PDMAUDIODIR_DUPLEX, false /* fCopyUserData */);
 }
 
 /**
@@ -400,7 +400,7 @@ PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(const PPDMAUDIODEVICEENUM 
     PPDMAUDIODEVICE pDev;
     RTListForEach(&pDevEnm->lstDevices, pDev, PDMAUDIODEVICE, Node)
     {
-        if (enmUsage != PDMAUDIODIR_ANY)
+        if (enmUsage != PDMAUDIODIR_DUPLEX)
         {
             if (enmUsage != pDev->enmUsage) /* Wrong usage? Skip. */
                 continue;
@@ -424,7 +424,7 @@ uint16_t DrvAudioHlpDeviceEnumGetDeviceCount(const PPDMAUDIODEVICEENUM pDevEnm, 
 {
     AssertPtrReturn(pDevEnm, 0);
 
-    if (enmUsage == PDMAUDIODIR_ANY)
+    if (enmUsage == PDMAUDIODIR_DUPLEX)
         return pDevEnm->cDevices;
 
     uint32_t cDevs = 0;
@@ -458,7 +458,7 @@ void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, const PPDMAUDIODEVICEENUM p
         char *pszFlags = DrvAudioHlpAudDevFlagsToStrA(pDev->fFlags);
 
         LogFunc(("Device '%s':\n", pDev->szName));
-        LogFunc(("\tUsage           = %s\n",             DrvAudioHlpAudDirToStr(pDev->enmUsage)));
+        LogFunc(("\tUsage           = %s\n",             PDMAudioDirGetName(pDev->enmUsage)));
         LogFunc(("\tFlags           = %s\n",             pszFlags ? pszFlags : "<NONE>"));
         LogFunc(("\tInput channels  = %RU8\n",           pDev->cMaxInputChannels));
         LogFunc(("\tOutput channels = %RU8\n",           pDev->cMaxOutputChannels));
@@ -470,24 +470,27 @@ void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, const PPDMAUDIODEVICEENUM p
 }
 
 /**
- * Converts an audio direction to a string.
+ * Gets the name of an audio direction enum value.
  *
- * @returns Stringified audio direction, or "Unknown", if not found.
- * @param   enmDir              Audio direction to convert.
+ * @returns Pointer to read-only name string on success, "Unknown" if
+ *          passed an invalid enum value.
+ * @param   enmDir  The audio direction value to name.
  */
-const char *DrvAudioHlpAudDirToStr(PDMAUDIODIR enmDir)
+const char *PDMAudioDirGetName(PDMAUDIODIR enmDir)
 {
     switch (enmDir)
     {
         case PDMAUDIODIR_UNKNOWN: return "Unknown";
         case PDMAUDIODIR_IN:      return "Input";
         case PDMAUDIODIR_OUT:     return "Output";
-        case PDMAUDIODIR_ANY:     return "Duplex";
-        default:                  break;
-    }
+        case PDMAUDIODIR_DUPLEX:  return "Duplex";
 
-    AssertMsgFailed(("Invalid audio direction %ld\n", enmDir));
-    return "Unknown";
+        /* no default */
+        case PDMAUDIODIR_INVALID:
+        case PDMAUDIODIR_32BIT_HACK:
+            break;
+    }
+    AssertMsgFailedReturn(("Invalid audio direction %d\n", enmDir), "Unknown");
 }
 
 /**
@@ -614,11 +617,10 @@ const char *DrvAudioHlpRecSrcToStr(const PDMAUDIORECSRC enmRecSrc)
 }
 
 /**
- * Returns wether the given audio format has signed bits or not.
+ * Checks whether the audio format is signed.
  *
- * @return  IPRT status code.
- * @return  bool                @c true for signed bits, @c false for unsigned.
- * @param   enmFmt              Audio format to retrieve value for.
+ * @returns @c true for signed format, @c false for unsigned.
+ * @param   enmFmt  The audio format.
  */
 bool PDMAudioFormatIsSigned(PDMAUDIOFMT enmFmt)
 {
@@ -634,20 +636,19 @@ bool PDMAudioFormatIsSigned(PDMAUDIOFMT enmFmt)
         case PDMAUDIOFMT_U32:
             return false;
 
-        default:
+        /* no default */
+        case PDMAUDIOFMT_INVALID:
+        case PDMAUDIOFMT_32BIT_HACK:
             break;
     }
-
-    AssertMsgFailed(("Bogus audio format %ld\n", enmFmt));
-    return false;
+    AssertMsgFailedReturn(("Bogus audio format %ld\n", enmFmt), false);
 }
 
 /**
- * Returns the bits of a given audio format.
+ * Gets the encoding width in bits of the give audio format.
  *
- * @return  IPRT status code.
- * @return  uint8_t             Bits of audio format.
- * @param   enmFmt              Audio format to retrieve value for.
+ * @returns Bit count. 0 if invalid input.
+ * @param   enmFmt      The audio format.
  */
 uint8_t PDMAudioFormatGetBits(PDMAUDIOFMT enmFmt)
 {
@@ -665,48 +666,37 @@ uint8_t PDMAudioFormatGetBits(PDMAUDIOFMT enmFmt)
         case PDMAUDIOFMT_S32:
             return 32;
 
-        default:
+        /* no default */
+        case PDMAUDIOFMT_INVALID:
+        case PDMAUDIOFMT_32BIT_HACK:
             break;
     }
-
-    AssertMsgFailed(("Bogus audio format %ld\n", enmFmt));
-    return 0;
+    AssertMsgFailedReturn(("Bogus audio format %ld\n", enmFmt), 0);
 }
 
 /**
- * Converts an audio format to a string.
+ * Gets the name of an audio format enum value.
  *
- * @returns Stringified audio format, or "Unknown", if not found.
- * @param   enmFmt              Audio format to convert.
+ * @returns Pointer to read-only name on success, returns "Unknown" on if
+ *          invalid enum value.
+ * @param   enmFmt      The audio format to name.
  */
-const char *DrvAudioHlpAudFmtToStr(PDMAUDIOFMT enmFmt)
+const char *PDMAudioFormatGetName(PDMAUDIOFMT enmFmt)
 {
     switch (enmFmt)
     {
-        case PDMAUDIOFMT_U8:
-            return "U8";
-
-        case PDMAUDIOFMT_U16:
-            return "U16";
-
-        case PDMAUDIOFMT_U32:
-            return "U32";
-
-        case PDMAUDIOFMT_S8:
-            return "S8";
-
-        case PDMAUDIOFMT_S16:
-            return "S16";
-
-        case PDMAUDIOFMT_S32:
-            return "S32";
-
-        default:
+        case PDMAUDIOFMT_U8:    return "U8";
+        case PDMAUDIOFMT_U16:   return "U16";
+        case PDMAUDIOFMT_U32:   return "U32";
+        case PDMAUDIOFMT_S8:    return "S8";
+        case PDMAUDIOFMT_S16:   return "S16";
+        case PDMAUDIOFMT_S32:   return "S32";
+        /* no default */
+        case PDMAUDIOFMT_INVALID:
+        case PDMAUDIOFMT_32BIT_HACK:
             break;
     }
-
-    AssertMsgFailed(("Bogus audio format %ld\n", enmFmt));
-    return "Unknown";
+    AssertMsgFailedReturn(("Bogus audio format %d\n", enmFmt), "Unknown");
 }
 
 /**

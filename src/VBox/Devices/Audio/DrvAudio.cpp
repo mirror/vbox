@@ -468,7 +468,7 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
                               && pThis->Out.fEnabled);
 
     LogRel2(("Audio: %s stream '%s' in backend (%s is %s)\n", PDMAudioStrmCmdGetName(enmStreamCmd), pStream->szName,
-                                                              DrvAudioHlpAudDirToStr(pStream->enmDir),
+                                                              PDMAudioDirGetName(pStream->enmDir),
                                                               fEnabled ? "enabled" : "disabled"));
     switch (enmStreamCmd)
     {
@@ -937,7 +937,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 
     AssertMsg(pStream->enmDir == PDMAUDIODIR_OUT,
               ("Stream '%s' is not an output stream and therefore cannot be written to (direction is '%s')\n",
-               pStream->szName, DrvAudioHlpAudDirToStr(pStream->enmDir)));
+               pStream->szName, PDMAudioDirGetName(pStream->enmDir)));
 
     AssertMsg(PDMAudioPropsIsSizeAligned(&pStream->Guest.Cfg.Props, cbBuf),
               ("Stream '%s' got a non-frame-aligned write (%RU32 bytes)\n", pStream->szName, cbBuf));
@@ -2168,7 +2168,7 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
                     char *pszFlags = DrvAudioHlpAudDevFlagsToStrA(pDev->fFlags);
 
                     LogRel(("Audio: Device '%s':\n", pDev->szName));
-                    LogRel(("Audio: \tUsage           = %s\n",   DrvAudioHlpAudDirToStr(pDev->enmUsage)));
+                    LogRel(("Audio: \tUsage           = %s\n",   PDMAudioDirGetName(pDev->enmUsage)));
                     LogRel(("Audio: \tFlags           = %s\n",   pszFlags ? pszFlags : "<NONE>"));
                     LogRel(("Audio: \tInput channels  = %RU8\n", pDev->cMaxInputChannels));
                     LogRel(("Audio: \tOutput channels = %RU8\n", pDev->cMaxOutputChannels));

@@ -298,7 +298,7 @@ typedef enum PDMAUDIODIR
     /** Output. */
     PDMAUDIODIR_OUT,
     /** Duplex handling. */
-    PDMAUDIODIR_ANY,
+    PDMAUDIODIR_DUPLEX,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIODIR_32BIT_HACK = 0x7fffffff
 } PDMAUDIODIR;
@@ -1436,7 +1436,7 @@ typedef struct PDMIAUDIOCONNECTOR
      *
      * @returns Status of the host audio backend.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   enmDir          Audio direction to check host audio backend for. Specify PDMAUDIODIR_ANY for the overall
+     * @param   enmDir          Audio direction to check host audio backend for. Specify PDMAUDIODIR_DUPLEX for the overall
      *                          backend status.
      */
     DECLR3CALLBACKMEMBER(PDMAUDIOBACKENDSTS, pfnGetStatus, (PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir));
@@ -1645,7 +1645,7 @@ typedef struct PDMIHOSTAUDIO
      *
      * @returns PDMAUDIOBACKENDSTS enum.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   enmDir              Audio direction to get status for. Pass PDMAUDIODIR_ANY for overall status.
+     * @param   enmDir              Audio direction to get status for. Pass PDMAUDIODIR_DUPLEX for overall status.
      */
     DECLR3CALLBACKMEMBER(PDMAUDIOBACKENDSTS, pfnGetStatus, (PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir));
 
