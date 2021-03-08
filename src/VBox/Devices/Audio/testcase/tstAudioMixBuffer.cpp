@@ -100,12 +100,9 @@ static void tstBasics(RTTEST hTest)
     RTTESTI_CHECK_MSG((u32 = DrvAudioHlpFramesToBytes(&s_Cfg441StereoU32, 1)) == 8,
                       ("cb=%RU32\n", u32));
 
-    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpBytesToFrames(4, &s_Cfg441StereoS16)) == 1,
-                      ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpBytesToFrames(4, &s_Cfg441StereoU16)) == 1,
-                      ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpBytesToFrames(8, &s_Cfg441StereoU32)) == 1,
-                      ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpBytesToFrames(&s_Cfg441StereoS16, 4)) == 1, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpBytesToFrames(&s_Cfg441StereoU16, 4)) == 1, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = DrvAudioHlpBytesToFrames(&s_Cfg441StereoU32, 8)) == 1, ("cb=%RU32\n", u32));
 
     uint64_t u64;
     RTTESTI_CHECK_MSG((u64 = DrvAudioHlpBytesToNano(&s_Cfg441StereoS16, 44100 * 2 * 2)) == RT_NS_1SEC,
