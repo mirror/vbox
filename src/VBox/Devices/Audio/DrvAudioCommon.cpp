@@ -499,7 +499,7 @@ const char *PDMAudioDirGetName(PDMAUDIODIR enmDir)
  * @returns Stringified audio mixer control or "Unknown", if not found.
  * @param   enmMixerCtl         Audio mixer control to convert.
  */
-const char *DrvAudioHlpAudMixerCtlToStr(PDMAUDIOMIXERCTL enmMixerCtl)
+const char *PDMAudioMixerCtlGetName(PDMAUDIOMIXERCTL enmMixerCtl)
 {
     switch (enmMixerCtl)
     {
@@ -575,7 +575,7 @@ char *DrvAudioHlpAudDevFlagsToStrA(uint32_t fFlags)
  * @returns Stringified playback destination, or "Unknown", if not found.
  * @param   enmPlaybackDst      Playback destination to convert.
  */
-const char *DrvAudioHlpPlaybackDstToStr(const PDMAUDIOPLAYBACKDST enmPlaybackDst)
+const char *PDMAudioPlaybackDstGetName(const PDMAUDIOPLAYBACKDST enmPlaybackDst)
 {
     switch (enmPlaybackDst)
     {
@@ -597,7 +597,7 @@ const char *DrvAudioHlpPlaybackDstToStr(const PDMAUDIOPLAYBACKDST enmPlaybackDst
  * @returns Stringified recording source, or "Unknown", if not found.
  * @param   enmRecSrc           Recording source to convert.
  */
-const char *DrvAudioHlpRecSrcToStr(const PDMAUDIORECSRC enmRecSrc)
+const char *PDMAudioRecSrcGetName(const PDMAUDIORECSRC enmRecSrc)
 {
     switch (enmRecSrc)
     {

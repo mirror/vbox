@@ -2426,7 +2426,7 @@ static DECLCALLBACK(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCT
         rc = hdaR3MixerAddDrvStreams(pThisCC, pSink->pMixSink, pCfg);
 
         AssertPtr(pSink->pMixSink);
-        LogFlowFunc(("Sink=%s, Mixer control=%s\n", pSink->pMixSink->pszName, DrvAudioHlpAudMixerCtlToStr(enmMixerCtl)));
+        LogFlowFunc(("Sink=%s, Mixer control=%s\n", pSink->pMixSink->pszName, PDMAudioMixerCtlGetName(enmMixerCtl)));
     }
     else
         rc = VERR_NOT_FOUND;
@@ -2502,7 +2502,7 @@ static DECLCALLBACK(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXE
     else
         rc = VERR_NOT_FOUND;
 
-    LogFunc(("Mixer control=%s, rc=%Rrc\n", DrvAudioHlpAudMixerCtlToStr(enmMixerCtl), rc));
+    LogFunc(("Mixer control=%s, rc=%Rrc\n", PDMAudioMixerCtlGetName(enmMixerCtl), rc));
     return rc;
 }
 
@@ -2515,11 +2515,11 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
 {
     PHDASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
-    LogFunc(("enmMixerCtl=%s, uSD=%RU8, uChannel=%RU8\n", DrvAudioHlpAudMixerCtlToStr(enmMixerCtl), uSD, uChannel));
+    LogFunc(("enmMixerCtl=%s, uSD=%RU8, uChannel=%RU8\n", PDMAudioMixerCtlGetName(enmMixerCtl), uSD, uChannel));
 
     if (uSD == 0) /* Stream number 0 is reserved. */
     {
-        Log2Func(("Invalid SDn (%RU8) number for mixer control '%s', ignoring\n", uSD, DrvAudioHlpAudMixerCtlToStr(enmMixerCtl)));
+        Log2Func(("Invalid SDn (%RU8) number for mixer control '%s', ignoring\n", uSD, PDMAudioMixerCtlGetName(enmMixerCtl)));
         return VINF_SUCCESS;
     }
     /* uChannel is optional. */
@@ -2582,7 +2582,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
         if (pSink->pStreamShared == NULL)
         {
             LogRel2(("HDA: Setting sink '%s' to stream #%RU8 (channel %RU8), mixer control=%s\n",
-                     pSink->pMixSink->pszName, uSD, uChannel, DrvAudioHlpAudMixerCtlToStr(enmMixerCtl)));
+                     pSink->pMixSink->pszName, uSD, uChannel, PDMAudioMixerCtlGetName(enmMixerCtl)));
 
             PHDASTREAMR3 pStreamR3     = &pThisCC->aStreams[uSD];
             PHDASTREAM   pStreamShared = &pThis->aStreams[uSD];
@@ -2603,7 +2603,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
 
     if (RT_FAILURE(rc))
         LogRel(("HDA: Converter control for stream #%RU8 (channel %RU8) / mixer control '%s' failed with %Rrc, skipping\n",
-                uSD, uChannel, DrvAudioHlpAudMixerCtlToStr(enmMixerCtl), rc));
+                uSD, uChannel, PDMAudioMixerCtlGetName(enmMixerCtl), rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;

@@ -897,7 +897,7 @@ static int hdaR3CodecToAudVolume(PHDACODECR3 pThisCC, PCODECNODE pNode, AMPLIFIE
              pNode->node.uID, lVol, rVol, RT_BOOL(iMute) ? "Muted" : "Unmuted"));
 
     LogRel2(("HDA: Setting volume for mixer control '%s' to %RU8/%RU8 (%s)\n",
-             DrvAudioHlpAudMixerCtlToStr(enmMixerCtl), lVol, rVol, RT_BOOL(iMute) ? "Muted" : "Unmuted"));
+             PDMAudioMixerCtlGetName(enmMixerCtl), lVol, rVol, RT_BOOL(iMute) ? "Muted" : "Unmuted"));
 
     return pThisCC->pfnCbMixerSetVolume(pThisCC->pDevIns, enmMixerCtl, &Vol);
 }

@@ -1162,7 +1162,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAMCF
             && pDev)
         {
             DSLOG(("DSound: Guest source '%s' is using host recording device '%s'\n",
-                   DrvAudioHlpRecSrcToStr(pCfg->u.enmSrc), pDev->szName));
+                   PDMAudioRecSrcGetName(pCfg->u.enmSrc), pDev->szName));
 
             PDSOUNDDEV pDSoundDev = (PDSOUNDDEV)pDev->pvData;
             AssertPtr(pDSoundDev);
@@ -1181,7 +1181,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAMCF
 
     /* This always has to be in the release log. */
     LogRel(("DSound: Guest source '%s' is using host recording device with GUID '%s'\n",
-            DrvAudioHlpRecSrcToStr(pCfg->u.enmSrc), pszGUID ? pszGUID: "{?}"));
+            PDMAudioRecSrcGetName(pCfg->u.enmSrc), pszGUID ? pszGUID: "{?}"));
 
     if (pszGUID)
     {
@@ -2085,7 +2085,7 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
                                 PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     LogFunc(("pStreamDS=%p, pCfgReq=%p, enmRecSource=%s\n",
-             pStreamDS, pCfgReq, DrvAudioHlpRecSrcToStr(pCfgReq->u.enmSrc)));
+             pStreamDS, pCfgReq, PDMAudioRecSrcGetName(pCfgReq->u.enmSrc)));
 
     int rc = VINF_SUCCESS;
 

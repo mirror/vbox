@@ -2617,7 +2617,7 @@ static void ichac97R3MixerRecordSelect(PAC97STATE pThis, uint32_t val)
     rs = ichac97R3RecSourceToIdx(ars);
     ls = ichac97R3RecSourceToIdx(als);
 
-    LogRel(("AC97: Record select to left=%s, right=%s\n", DrvAudioHlpRecSrcToStr(ars), DrvAudioHlpRecSrcToStr(als)));
+    LogRel(("AC97: Record select to left=%s, right=%s\n", PDMAudioRecSrcGetName(ars), PDMAudioRecSrcGetName(als)));
 
     ichac97MixerSet(pThis, AC97_Record_Select, rs | (ls << 8));
 }
