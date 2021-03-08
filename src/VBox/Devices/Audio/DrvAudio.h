@@ -225,7 +225,7 @@ void     DrvAudioHlpPCMPropsPrint(PCPDMAUDIOPCMPROPS pProps);
 /** @name Audio configuration helper methods.
  * @{ */
 void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg);
-int  DrvAudioHlpStreamCfgInitFromPcmProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pPCMProps);
+int  DrvAudioHlpStreamCfgInitFromPcmProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps);
 bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg);
 int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg);
 PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(PCPDMAUDIOSTREAMCFG pCfg);
