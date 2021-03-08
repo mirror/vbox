@@ -3205,7 +3205,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     pCfgReq->Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgReq->Props.cbSample, pCfgReq->Props.cChannels);
 
     /* Validate PCM properties. */
-    if (!DrvAudioHlpPCMPropsAreValid(&pCfgReq->Props))
+    if (!DrvAudioHlpPcmPropsAreValid(&pCfgReq->Props))
     {
         LogRel(("Audio: Invalid custom PCM properties set for stream '%s', cannot create stream\n", pStream->szName));
         return VERR_INVALID_PARAMETER;

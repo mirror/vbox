@@ -82,7 +82,7 @@ int hdaR3StreamPeriodInit(PHDASTREAMPERIOD pPeriod,
 {
     if (   !u16LVI
         || !u32CBL
-        || !DrvAudioHlpPCMPropsAreValid(&pStreamCfg->Props))
+        || !DrvAudioHlpPcmPropsAreValid(&pStreamCfg->Props))
     {
         return VERR_INVALID_PARAMETER;
     }

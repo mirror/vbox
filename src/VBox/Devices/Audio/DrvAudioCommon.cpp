@@ -785,7 +785,7 @@ bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
                || pCfg->enmLayout == PDMAUDIOSTREAMLAYOUT_RAW);
 
     if (fValid)
-        fValid = DrvAudioHlpPCMPropsAreValid(&pCfg->Props);
+        fValid = DrvAudioHlpPcmPropsAreValid(&pCfg->Props);
 
     return fValid;
 }
@@ -1341,11 +1341,11 @@ void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf
 }
 
 /**
- * Checks whether two given PCM properties are equal.
+ * Compares two sets of PCM properties.
  *
- * @returns @c true if equal, @c false if not.
- * @param   pProps1             First properties to compare.
- * @param   pProps2             Second properties to compare.
+ * @returns @c true if the same, @c false if not.
+ * @param   pProps1     The first set of properties to compare.
+ * @param   pProps2     The second set of properties to compare.
  */
 bool DrvAudioHlpPcmPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2)
 {
@@ -1355,22 +1355,32 @@ bool DrvAudioHlpPcmPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS 
     if (pProps1 == pProps2) /* If the pointers match, take a shortcut. */
         return true;
 
-    return    pProps1->uHz         == pProps2->uHz
-           && pProps1->cChannels   == pProps2->cChannels
-           && pProps1->cbSample    == pProps2->cbSample
-           && pProps1->fSigned     == pProps2->fSigned
-           && pProps1->fSwapEndian == pProps2->fSwapEndian;
+    return pProps1->uHz         == pProps2->uHz
+        && pProps1->cChannels   == pProps2->cChannels
+        && pProps1->cbSample    == pProps2->cbSample
+        && pProps1->fSigned     == pProps2->fSigned
+        && pProps1->fSwapEndian == pProps2->fSwapEndian;
 }
 
 /**
  * Checks whether given PCM properties are valid or not.
  *
- * Returns @c true if properties are valid, @c false if not.
- * @param   pProps              PCM properties to check.
+ * @note  This is more of a supported than valid check.  There is code for
+ *        unsigned samples elsewhere (like DrvAudioHlpClearBuf()), but this
+ *        function will flag such properties as not valid.
+ *
+ * @todo  r=bird: See note and explain properly.
+ *
+ * @returns @c true if the properties are valid, @c false if not.
+ * @param   pProps      The PCM properties to check.
  */
-bool DrvAudioHlpPCMPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
+bool DrvAudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, false);
+
+    /** @todo r=bird: This code is cannot make up its mind whether to return on
+     *        false, or whether to return at the end. (hint: just return
+     *        immediately, duh.) */
 
     /* Minimum 1 channel (mono), maximum 7.1 (= 8) channels. */
     bool fValid = (   pProps->cChannels >= 1

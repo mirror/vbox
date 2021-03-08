@@ -613,7 +613,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
      * Initialize the host-side configuration for the stream to be created.
      * Always use the sink's PCM audio format as the host side when creating a stream for it.
      */
-    AssertMsg(DrvAudioHlpPCMPropsAreValid(&pSink->PCMProps),
+    AssertMsg(DrvAudioHlpPcmPropsAreValid(&pSink->PCMProps),
               ("%s: Does not (yet) have a format set when it must\n", pSink->pszName));
 
     PDMAUDIOSTREAMCFG CfgHost;
@@ -1468,7 +1468,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
 {
     AssertPtrReturn(pSink,     VERR_INVALID_POINTER);
     AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
-    AssertReturn(DrvAudioHlpPCMPropsAreValid(pPCMProps), VERR_INVALID_PARAMETER);
+    AssertReturn(DrvAudioHlpPcmPropsAreValid(pPCMProps), VERR_INVALID_PARAMETER);
 
     int rc = RTCritSectEnter(&pSink->CritSect);
     if (RT_FAILURE(rc))

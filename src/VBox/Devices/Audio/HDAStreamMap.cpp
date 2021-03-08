@@ -48,7 +48,7 @@ int hdaR3StreamMapInit(PHDASTREAMMAP pMap, PPDMAUDIOPCMPROPS pProps)
     AssertPtrReturn(pMap, VERR_INVALID_POINTER);
     AssertPtrReturn(pProps,   VERR_INVALID_POINTER);
 
-    if (!DrvAudioHlpPCMPropsAreValid(pProps))
+    if (!DrvAudioHlpPcmPropsAreValid(pProps))
         return VERR_INVALID_PARAMETER;
 
     hdaR3StreamMapReset(pMap);

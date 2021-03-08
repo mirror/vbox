@@ -217,7 +217,7 @@ uint32_t DrvAudioHlpMilliToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs);
 uint32_t DrvAudioHlpNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs);
 
 bool     DrvAudioHlpPcmPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps1, PCPDMAUDIOPCMPROPS pPCMProps2);
-bool     DrvAudioHlpPCMPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
+bool     DrvAudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
 void     DrvAudioHlpPcmPropsLog(PCPDMAUDIOPCMPROPS pProps);
 /** @}  */
 
