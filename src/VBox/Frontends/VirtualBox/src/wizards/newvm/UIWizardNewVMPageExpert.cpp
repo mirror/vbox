@@ -106,12 +106,9 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
 {
-    /* Call to base-class: */
     onNameChanged(strNewText);
-
     composeMachineFilePath();
     updateVirtualDiskPathFromMachinePathName();
-    /* Broadcast complete-change: */
     emit completeChanged();
 }
 
@@ -299,19 +296,13 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
         if (recommendedDiskSize != 0)
         {
             if (m_pDiskNew)
-            {
-                m_pDiskNew->setFocus();
                 m_pDiskNew->setChecked(true);
-            }
             m_fRecommendedNoDisk = false;
         }
         else
         {
             if (m_pDiskEmpty)
-            {
-                m_pDiskEmpty->setFocus();
                 m_pDiskEmpty->setChecked(true);
-            }
             m_fRecommendedNoDisk = true;
         }
         if (m_pDiskSelector)
