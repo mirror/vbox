@@ -2267,7 +2267,7 @@ static int hdaR3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg,
 
     LogFunc(("szSink=%s, szStream=%s, cChannels=%RU8\n", pMixSink->pszName, pCfg->szName, pCfg->Props.cChannels));
 
-    PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
+    PPDMAUDIOSTREAMCFG pStreamCfg = PDMAudioStrmCfgDup(pCfg);
     if (!pStreamCfg)
         return VERR_NO_MEMORY;
 
@@ -2369,7 +2369,7 @@ static int hdaR3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg,
             pDrvStream->pMixStrm = pMixStrm;
     }
 
-    DrvAudioHlpStreamCfgFree(pStreamCfg);
+    PDMAudioStrmCfgFree(pStreamCfg);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

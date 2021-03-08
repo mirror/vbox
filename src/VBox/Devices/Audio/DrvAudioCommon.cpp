@@ -620,7 +620,7 @@ const char *DrvAudioHlpRecSrcToStr(const PDMAUDIORECSRC enmRecSrc)
  * @return  bool                @c true for signed bits, @c false for unsigned.
  * @param   enmFmt              Audio format to retrieve value for.
  */
-bool DrvAudioHlpAudFmtIsSigned(PDMAUDIOFMT enmFmt)
+bool PDMAudioFormatIsSigned(PDMAUDIOFMT enmFmt)
 {
     switch (enmFmt)
     {
@@ -649,7 +649,7 @@ bool DrvAudioHlpAudFmtIsSigned(PDMAUDIOFMT enmFmt)
  * @return  uint8_t             Bits of audio format.
  * @param   enmFmt              Audio format to retrieve value for.
  */
-uint8_t DrvAudioHlpAudFmtToBits(PDMAUDIOFMT enmFmt)
+uint8_t PDMAudioFormatGetBits(PDMAUDIOFMT enmFmt)
 {
     switch (enmFmt)
     {
@@ -741,7 +741,7 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
  *
  * @param   pCfg                Stream configuration to initialize.
  */
-void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg)
+void PDMAudioStrmCfgInit(PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturnVoid(pCfg);
 
@@ -757,12 +757,12 @@ void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg)
  * @param   pCfg        Stream configuration to initialize.
  * @param   pProps      PCM properties to use.
  */
-int DrvAudioHlpStreamCfgInitFromPcmProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
+int PDMAudioStrmCfgInitWithProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
 
-    DrvAudioHlpStreamCfgInit(pCfg);
+    PDMAudioStrmCfgInit(pCfg);
 
     memcpy(&pCfg->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
     return VINF_SUCCESS;
@@ -797,7 +797,7 @@ bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
  * @param   pCfg    Stream configuration.
  * @param   pProps  PCM properties to match with.
  */
-bool DrvAudioHlpStreamCfgMatchesPcmProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
+bool PDMAudioStrmCfgMatchesProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pCfg, false);
     return PDMAudioPropsAreEqual(pProps, &pCfg->Props);
@@ -808,7 +808,7 @@ bool DrvAudioHlpStreamCfgMatchesPcmProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCM
  *
  * @param   pCfg                Audio stream configuration to free.
  */
-void DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg)
+void PDMAudioStrmCfgFree(PPDMAUDIOSTREAMCFG pCfg)
 {
     if (pCfg)
     {
@@ -824,7 +824,7 @@ void DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg)
  * @param   pDstCfg             Destination stream configuration to copy source to.
  * @param   pSrcCfg             Source stream configuration to copy to destination.
  */
-int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg)
+int PDMAudioStrmCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg)
 {
     AssertPtrReturn(pDstCfg, VERR_INVALID_POINTER);
     AssertPtrReturn(pSrcCfg, VERR_INVALID_POINTER);
@@ -844,12 +844,12 @@ int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSr
 
 /**
  * Duplicates an audio stream configuration.
- * Must be free'd with DrvAudioHlpStreamCfgFree().
+ * Must be free'd with PDMAudioStrmCfgFree().
  *
  * @return  Duplicates audio stream configuration on success, or NULL on failure.
  * @param   pCfg                    Audio stream configuration to duplicate.
  */
-PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(PCPDMAUDIOSTREAMCFG pCfg)
+PPDMAUDIOSTREAMCFG PDMAudioStrmCfgDup(PCPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pCfg, NULL);
 
@@ -865,10 +865,10 @@ PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(PCPDMAUDIOSTREAMCFG pCfg)
     if (!pDst)
         return NULL;
 
-    int rc2 = DrvAudioHlpStreamCfgCopy(pDst, pCfg);
+    int rc2 = PDMAudioStrmCfgCopy(pDst, pCfg);
     if (RT_FAILURE(rc2))
     {
-        DrvAudioHlpStreamCfgFree(pDst);
+        PDMAudioStrmCfgFree(pDst);
         pDst = NULL;
     }
 
@@ -881,14 +881,11 @@ PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(PCPDMAUDIOSTREAMCFG pCfg)
  *
  * @param   pCfg                Stream configuration to log.
  */
-void DrvAudioHlpStreamCfgPrint(PCPDMAUDIOSTREAMCFG pCfg)
+void PDMAudioStrmCfgLog(PCPDMAUDIOSTREAMCFG pCfg)
 {
-    if (!pCfg)
-        return;
-
-    LogFunc(("szName=%s, enmDir=%RU32 (uHz=%RU32, cBits=%RU8%s, cChannels=%RU8)\n",
-             pCfg->szName, pCfg->enmDir,
-             pCfg->Props.uHz, pCfg->Props.cbSample * 8, pCfg->Props.fSigned ? "S" : "U", pCfg->Props.cChannels));
+    if (pCfg)
+        LogFunc(("szName=%s enmDir=%RU32 uHz=%RU32 cBits=%RU8%s cChannels=%RU8\n", pCfg->szName, pCfg->enmDir,
+                 pCfg->Props.uHz, pCfg->Props.cbSample * 8, pCfg->Props.fSigned ? "S" : "U", pCfg->Props.cChannels));
 }
 
 /**
@@ -998,7 +995,7 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
  */
 uint32_t PDMAudioPropsGetBitrate(PCPDMAUDIOPCMPROPS pProps)
 {
-    return DrvAudioHlpCalcBitrate(pProps->cbSample * 8, pProps->uHz, pProps->cChannels);
+    return pProps->cbSample * pProps->cChannels * pProps->uHz * 8;
 }
 
 /**

@@ -213,7 +213,7 @@ static DECLCALLBACK(int) drvHostNullAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
 
     if (RT_SUCCESS(rc))
     {
-        pStreamNull->pCfg = DrvAudioHlpStreamCfgDup(pCfgAcq);
+        pStreamNull->pCfg = PDMAudioStrmCfgDup(pCfgAcq);
         if (!pStreamNull->pCfg)
             rc = VERR_NO_MEMORY;
     }
@@ -257,7 +257,7 @@ static DECLCALLBACK(int) drvHostNullAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInterf
 
     if (RT_SUCCESS(rc))
     {
-        DrvAudioHlpStreamCfgFree(pStreamNull->pCfg);
+        PDMAudioStrmCfgFree(pStreamNull->pCfg);
         pStreamNull->pCfg = NULL;
     }
 

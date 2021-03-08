@@ -1592,7 +1592,7 @@ static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMC
 
     /* Create the recording device's out format based on our required audio settings. */
     Assert(pCAStream->pCfg == NULL);
-    pCAStream->pCfg = DrvAudioHlpStreamCfgDup(pCfgReq);
+    pCAStream->pCfg = PDMAudioStrmCfgDup(pCfgReq);
     if (!pCAStream->pCfg)
         rc = VERR_NO_MEMORY;
 
@@ -1655,7 +1655,7 @@ static int coreAudioStreamUninitQueue(PCOREAUDIOSTREAM pCAStream)
 
     if (pCAStream->pCfg)
     {
-        DrvAudioHlpStreamCfgFree(pCAStream->pCfg);
+        PDMAudioStrmCfgFree(pCAStream->pCfg);
         pCAStream->pCfg = NULL;
     }
 

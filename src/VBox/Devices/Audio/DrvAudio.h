@@ -188,8 +188,8 @@ typedef struct DRVAUDIO
  * @{ */
 const char *DrvAudioHlpAudDirToStr(PDMAUDIODIR enmDir);
 const char *DrvAudioHlpAudFmtToStr(PDMAUDIOFMT enmFmt);
-bool DrvAudioHlpAudFmtIsSigned(PDMAUDIOFMT enmFmt);
-uint8_t DrvAudioHlpAudFmtToBits(PDMAUDIOFMT enmFmt);
+bool        PDMAudioFormatIsSigned(PDMAUDIOFMT enmFmt);
+uint8_t     PDMAudioFormatGetBits(PDMAUDIOFMT enmFmt);
 /** @}  */
 
 /** @name Audio calculation helper methods.
@@ -224,14 +224,15 @@ bool     DrvAudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
 
 /** @name Audio configuration helper methods.
  * @{ */
-void    DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg);
-int     DrvAudioHlpStreamCfgInitFromPcmProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps);
+void    PDMAudioStrmCfgInit(PPDMAUDIOSTREAMCFG pCfg);
+int     PDMAudioStrmCfgInitWithProps(PPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps);
+bool    PDMAudioStrmCfgMatchesProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps);
+int     PDMAudioStrmCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg);
+PPDMAUDIOSTREAMCFG PDMAudioStrmCfgDup(PCPDMAUDIOSTREAMCFG pCfg);
+void    PDMAudioStrmCfgFree(PPDMAUDIOSTREAMCFG pCfg);
+void    PDMAudioStrmCfgLog(PCPDMAUDIOSTREAMCFG pCfg);
+
 bool    DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg);
-bool    DrvAudioHlpStreamCfgMatchesPcmProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps);
-int     DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, PCPDMAUDIOSTREAMCFG pSrcCfg);
-PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(PCPDMAUDIOSTREAMCFG pCfg);
-void    DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg);
-void    DrvAudioHlpStreamCfgPrint(PCPDMAUDIOSTREAMCFG pCfg);
 /** @}  */
 
 /** @name Audio stream command helper methods.

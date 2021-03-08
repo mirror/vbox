@@ -560,7 +560,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
 
 #ifdef LOG_ENABLED
     LogFunc(("[%s] Requested host format:\n", pStream->szName));
-    DrvAudioHlpStreamCfgPrint(pCfgHost);
+    PDMAudioStrmCfgLog(pCfgHost);
 #endif
 
     LogRel2(("Audio: Creating stream '%s'\n", pStream->szName));
@@ -580,7 +580,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
 
 #ifdef LOG_ENABLED
     LogFunc(("[%s] Acquired host format:\n",  pStream->szName));
-    DrvAudioHlpStreamCfgPrint(&CfgHostAcq);
+    PDMAudioStrmCfgLog(&CfgHostAcq);
 #endif
 
     LogRel2(("Audio: Acquired host %s format for '%s': %RU32Hz, %u%s, %RU8 %s\n",
@@ -657,7 +657,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     AssertRC(rc);
 
     /* Make a copy of the acquired host stream configuration. */
-    rc = DrvAudioHlpStreamCfgCopy(&pStream->Host.Cfg, &CfgHostAcq);
+    rc = PDMAudioStrmCfgCopy(&pStream->Host.Cfg, &CfgHostAcq);
     AssertRC(rc);
 
     /*
@@ -682,7 +682,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     AssertRC(rc);
 
     /* Make a copy of the guest stream configuration. */
-    rc = DrvAudioHlpStreamCfgCopy(&pStream->Guest.Cfg, pCfgGuest);
+    rc = PDMAudioStrmCfgCopy(&pStream->Guest.Cfg, pCfgGuest);
     AssertRC(rc);
 
     if (RT_FAILURE(rc))
@@ -839,7 +839,7 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
             {
 #ifdef LOG_ENABLED
                 LogFunc(("[%s] Acquired host format:\n",  pStream->szName));
-                DrvAudioHlpStreamCfgPrint(&CfgHostAcq);
+                PDMAudioStrmCfgLog(&CfgHostAcq);
 #endif
             }
         }
@@ -2556,8 +2556,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
     LogFlowFunc(("Host=%s, Guest=%s\n", pCfgHost->szName, pCfgGuest->szName));
 #ifdef DEBUG
-    DrvAudioHlpStreamCfgPrint(pCfgHost);
-    DrvAudioHlpStreamCfgPrint(pCfgGuest);
+    PDMAudioStrmCfgLog(pCfgHost);
+    PDMAudioStrmCfgLog(pCfgGuest);
 #endif
 
     PPDMAUDIOSTREAM pStream = NULL;
@@ -3296,7 +3296,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
 
     /* Make the acquired host configuration the requested host configuration initially,
      * in case the backend does not report back an acquired configuration. */
-    int rc = DrvAudioHlpStreamCfgCopy(pCfgAcq, pCfgReq);
+    int rc = PDMAudioStrmCfgCopy(pCfgAcq, pCfgReq);
     if (RT_FAILURE(rc))
     {
         LogRel(("Audio: Creating stream '%s' with an invalid backend configuration not possible, skipping\n",

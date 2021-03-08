@@ -1519,7 +1519,7 @@ static DECLCALLBACK(int) drvHostPulseAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterf
 
     if (RT_SUCCESS(rc))
     {
-        pStreamPA->pCfg = DrvAudioHlpStreamCfgDup(pCfgAcq);
+        pStreamPA->pCfg = PDMAudioStrmCfgDup(pCfgAcq);
         if (!pStreamPA->pCfg)
             rc = VERR_NO_MEMORY;
     }
@@ -1552,7 +1552,7 @@ static DECLCALLBACK(int) drvHostPulseAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInter
 
     if (RT_SUCCESS(rc))
     {
-        DrvAudioHlpStreamCfgFree(pStreamPA->pCfg);
+        PDMAudioStrmCfgFree(pStreamPA->pCfg);
         pStreamPA->pCfg = NULL;
     }
 

@@ -1914,7 +1914,7 @@ static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
     HRESULT hr = directSoundPlayOpen(pThis, pStreamDS, pCfgReq, pCfgAcq);
     if (SUCCEEDED(hr))
     {
-        rc = DrvAudioHlpStreamCfgCopy(&pStreamDS->Cfg, pCfgAcq);
+        rc = PDMAudioStrmCfgCopy(&pStreamDS->Cfg, pCfgAcq);
         if (RT_SUCCESS(rc))
             dsoundStreamReset(pThis, pStreamDS);
     }
@@ -2093,7 +2093,7 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
     HRESULT hr = directSoundCaptureOpen(pThis, pStreamDS, pCfgReq, pCfgAcq);
     if (SUCCEEDED(hr))
     {
-        rc = DrvAudioHlpStreamCfgCopy(&pStreamDS->Cfg, pCfgAcq);
+        rc = PDMAudioStrmCfgCopy(&pStreamDS->Cfg, pCfgAcq);
         if (RT_SUCCESS(rc))
             dsoundStreamReset(pThis, pStreamDS);
     }
@@ -2128,7 +2128,7 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, 
                     hr = directSoundCaptureOpen(pThis, pStreamDS, &pStreamDS->Cfg /* pCfgReq */, &CfgAcq);
                     if (SUCCEEDED(hr))
                     {
-                        rc = DrvAudioHlpStreamCfgCopy(&pStreamDS->Cfg, &CfgAcq);
+                        rc = PDMAudioStrmCfgCopy(&pStreamDS->Cfg, &CfgAcq);
                         if (RT_FAILURE(rc))
                             break;
 
@@ -2386,7 +2386,7 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        rc = DrvAudioHlpStreamCfgCopy(&pStreamDS->Cfg, pCfgAcq);
+        rc = PDMAudioStrmCfgCopy(&pStreamDS->Cfg, pCfgAcq);
         if (RT_SUCCESS(rc))
             rc = RTCritSectInit(&pStreamDS->CritSect);
     }

@@ -617,7 +617,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
               ("%s: Does not (yet) have a format set when it must\n", pSink->pszName));
 
     PDMAUDIOSTREAMCFG CfgHost;
-    rc = DrvAudioHlpStreamCfgInitFromPcmProps(&CfgHost, &pSink->PCMProps);
+    rc = PDMAudioStrmCfgInitWithProps(&CfgHost, &pSink->PCMProps);
     AssertRCReturn(rc, rc);
 
     /* Apply the sink's direction for the configuration to use to

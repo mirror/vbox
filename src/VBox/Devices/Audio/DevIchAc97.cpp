@@ -1845,13 +1845,13 @@ static int ichac97R3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG p
 {
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
 
-    PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
+    PPDMAUDIOSTREAMCFG pStreamCfg = PDMAudioStrmCfgDup(pCfg);
     if (!pStreamCfg)
         return VERR_NO_MEMORY;
 
     if (!RTStrPrintf(pStreamCfg->szName, sizeof(pStreamCfg->szName), "%s", pCfg->szName))
     {
-        DrvAudioHlpStreamCfgFree(pStreamCfg);
+        PDMAudioStrmCfgFree(pStreamCfg);
         return VERR_BUFFER_OVERFLOW;
     }
 
@@ -1920,7 +1920,7 @@ static int ichac97R3MixerAddDrvStream(PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG p
     else
         rc = VERR_INVALID_PARAMETER;
 
-    DrvAudioHlpStreamCfgFree(pStreamCfg);
+    PDMAudioStrmCfgFree(pStreamCfg);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2192,7 +2192,7 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STRE
     {
         /* Only (re-)create the stream (and driver chain) if we really have to.
          * Otherwise avoid this and just reuse it, as this costs performance. */
-        if (   !DrvAudioHlpStreamCfgMatchesPcmProps(&Cfg, &pStreamCC->State.Cfg.Props)
+        if (   !PDMAudioStrmCfgMatchesProps(&Cfg, &pStreamCC->State.Cfg.Props)
             || fForce)
         {
             LogRel2(("AC97: (Re-)Opening stream '%s' (%RU32Hz, %RU8 channels, %s%RU8)\n",
@@ -2234,7 +2234,7 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STRE
 
                     rc = ichac97R3MixerAddDrvStreams(pThisCC, pMixSink, &Cfg);
                     if (RT_SUCCESS(rc))
-                        rc = DrvAudioHlpStreamCfgCopy(&pStreamCC->State.Cfg, &Cfg);
+                        rc = PDMAudioStrmCfgCopy(&pStreamCC->State.Cfg, &Cfg);
                 }
             }
         }
