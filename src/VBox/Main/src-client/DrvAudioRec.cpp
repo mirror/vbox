@@ -1,6 +1,18 @@
 /* $Id$ */
 /** @file
  * Video recording audio backend for Main.
+ *
+ * This driver is part of Main and is responsible for providing audio
+ * data to Main's video capturing feature.
+ *
+ * The driver itself implements a PDM host audio backend, which in turn
+ * provides the driver with the required audio data and audio events.
+ *
+ * For now there is support for the following destinations (called "sinks"):
+ *
+ * - Direct writing of .webm files to the host.
+ * - Communicating with Main via the Console object to send the encoded audio data to.
+ *   The Console object in turn then will route the data to the Display / video capturing interface then.
  */
 
 /*
@@ -62,20 +74,6 @@
  * Broadcom Corporation:
  * https://datatracker.ietf.org/ipr/1526/
  *
- */
-
-/**
- * This driver is part of Main and is responsible for providing audio
- * data to Main's video capturing feature.
- *
- * The driver itself implements a PDM host audio backend, which in turn
- * provides the driver with the required audio data and audio events.
- *
- * For now there is support for the following destinations (called "sinks"):
- *
- * - Direct writing of .webm files to the host.
- * - Communicating with Main via the Console object to send the encoded audio data to.
- *   The Console object in turn then will route the data to the Display / video capturing interface then.
  */
 
 
