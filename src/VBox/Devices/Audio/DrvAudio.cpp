@@ -2983,7 +2983,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
 
         /* Make sure to align the readable size to the guest's frame size. */
         if (cbReadable)
-            cbReadable = DrvAudioHlpBytesAlign(cbReadable, &pStream->Guest.Cfg.Props);
+            cbReadable = DrvAudioHlpFloorBytesToFrame(&pStream->Guest.Cfg.Props, cbReadable);
     }
 
     Log3Func(("[%s] cbReadable=%RU32 (%RU64ms)\n",
@@ -3020,7 +3020,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
         cbWritable = AudioMixBufFreeBytes(&pStream->Host.MixBuf);
 
         /* Make sure to align the writable size to the host's frame size. */
-        cbWritable = DrvAudioHlpBytesAlign(cbWritable, &pStream->Host.Cfg.Props);
+        cbWritable = DrvAudioHlpFloorBytesToFrame(&pStream->Host.Cfg.Props, cbWritable);
     }
 
     Log3Func(("[%s] cbWritable=%RU32 (%RU64ms)\n",

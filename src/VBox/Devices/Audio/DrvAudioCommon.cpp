@@ -1158,21 +1158,16 @@ uint32_t DrvAudioHlpGetBitrate(PCPDMAUDIOPCMPROPS pProps)
 }
 
 /**
- * Aligns the given byte amount to the given PCM properties and returns the aligned
- * size.
+ * Rounds down the given byte amount to the nearest frame boundrary.
  *
- * @return  Aligned size (in bytes).
- * @param   cbSize              Size (in bytes) to align.
- * @param   pProps              PCM properties to align size to.
+ * @returns Rounded byte amount.
+ * @param   pProps      PCM properties to use.
+ * @param   cb          The size (in bytes) to round.
  */
-uint32_t DrvAudioHlpBytesAlign(uint32_t cbSize, PCPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpFloorBytesToFrame(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, 0);
-
-    if (!cbSize)
-        return 0;
-
-    return PDMAUDIOPCMPROPS_B2F(pProps, cbSize) * PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+    return PDMAUDIOPCMPROPS_F2B(pProps, PDMAUDIOPCMPROPS_B2F(pProps, cb));
 }
 
 /**
