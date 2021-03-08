@@ -348,7 +348,7 @@ static DECLCALLBACK(uint32_t) drvHostDebugAudioHA_StreamGetReadable(PPDMIHOSTAUD
 
     AssertPtr(pStreamDbg->pCfg);
 
-    return DrvAudioHlpMilliToBytes(&pStreamDbg->pCfg->Props, 10 /*ms*/);
+    return PDMAudioPropsMilliToBytes(&pStreamDbg->pCfg->Props, 10 /*ms*/);
 }
 
 

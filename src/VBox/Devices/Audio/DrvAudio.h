@@ -199,26 +199,27 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
 
 /** @name Audio PCM properties helper methods.
  * @{ */
-void     DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cFrames);
-uint32_t DrvAudioHlpGetBitrate(PCPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpFloorBytesToFrame(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-bool     DrvAudioHlpIsBytesAligned(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint32_t DrvAudioHlpBytesPerFrame(PCPDMAUDIOPCMPROPS pProps);
-uint32_t DrvAudioHlpBytesToFrames(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint64_t DrvAudioHlpBytesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint64_t DrvAudioHlpBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint64_t DrvAudioHlpBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
-uint32_t DrvAudioHlpFramesToBytes(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
-uint64_t DrvAudioHlpFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
-uint64_t DrvAudioHlpFramesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
-uint32_t DrvAudioHlpMilliToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs);
-uint32_t DrvAudioHlpNanoToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs);
-uint32_t DrvAudioHlpMilliToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs);
-uint32_t DrvAudioHlpNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs);
+void     PDMAudioPropsClearBuffer(PCPDMAUDIOPCMPROPS pProps, void *pvBuf, size_t cbBuf, uint32_t cFrames);
+uint32_t PDMAudioPropsGetBitrate(PCPDMAUDIOPCMPROPS pProps);
+uint32_t PDMAudioPropsFloorBytesToFrame(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
+bool     PDMAudioPropsIsSizeAligned(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
+uint32_t PDMAudioPropsBytesPerFrame(PCPDMAUDIOPCMPROPS pProps);
+uint32_t PDMAudioPropsBytesToFrames(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
+uint64_t PDMAudioPropsBytesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
+uint64_t PDMAudioPropsBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
+uint64_t PDMAudioPropsBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb);
+uint32_t PDMAudioPropsFramesToBytes(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
+uint64_t PDMAudioPropsFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
+uint64_t PDMAudioPropsFramesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
+uint32_t PDMAudioPropsMilliToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs);
+uint32_t PDMAudioPropsNanoToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs);
+uint32_t PDMAudioPropsMilliToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs);
+uint32_t PDMAudioPropsNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs);
 
-bool     DrvAudioHlpPcmPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps1, PCPDMAUDIOPCMPROPS pPCMProps2);
+bool     PDMAudioPropsAreEqual(PCPDMAUDIOPCMPROPS pPCMProps1, PCPDMAUDIOPCMPROPS pPCMProps2);
+void     PDMAudioPropsLog(PCPDMAUDIOPCMPROPS pProps);
+
 bool     DrvAudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
-void     DrvAudioHlpPcmPropsLog(PCPDMAUDIOPCMPROPS pProps);
 /** @}  */
 
 /** @name Audio configuration helper methods.

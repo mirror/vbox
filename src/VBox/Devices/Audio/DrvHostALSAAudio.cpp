@@ -998,7 +998,7 @@ static int alsaCreateStreamOut(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG 
         pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
         pCfgAcq->Backend.cFramesPreBuffering     = obt.threshold;
 
-        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * DrvAudioHlpBytesPerFrame(&pCfgAcq->Props);
+        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * PDMAudioPropsBytesPerFrame(&pCfgAcq->Props);
         pStreamALSA->pvBuf = RTMemAllocZ(pStreamALSA->cbBuf);
         if (!pStreamALSA->pvBuf)
         {
@@ -1038,7 +1038,7 @@ static int alsaCreateStreamIn(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG p
         req.fmt         = alsaAudioPropsToALSA(&pCfgReq->Props);
         req.freq        = pCfgReq->Props.uHz;
         req.nchannels   = pCfgReq->Props.cChannels;
-        req.period_size = DrvAudioHlpMilliToFrames(&pCfgReq->Props, 50 /*ms*/); /** @todo Make this configurable. */
+        req.period_size = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 50 /*ms*/); /** @todo Make this configurable. */
         req.buffer_size = req.period_size * 2; /** @todo Make this configurable. */
         req.threshold   = req.period_size;
 
@@ -1058,7 +1058,7 @@ static int alsaCreateStreamIn(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG p
         pCfgAcq->Backend.cFramesBufferSize = obt.buffer_size;
         /* No pre-buffering. */
 
-        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * DrvAudioHlpBytesPerFrame(&pCfgAcq->Props);
+        pStreamALSA->cbBuf = pCfgAcq->Backend.cFramesBufferSize * PDMAudioPropsBytesPerFrame(&pCfgAcq->Props);
         pStreamALSA->pvBuf = RTMemAlloc(pStreamALSA->cbBuf);
         if (!pStreamALSA->pvBuf)
         {
@@ -1500,7 +1500,7 @@ static DECLCALLBACK(uint32_t) drvHostALSAStreamGetPending(PPDMIHOSTAUDIO pInterf
 
     Log2Func(("cFramesDelay=%RI32, enmState=%d, rc=%d\n", cFramesDelay, enmState, rc));
 
-    return DrvAudioHlpFramesToBytes(&pStreamALSA->pCfg->Props, cFramesDelay);
+    return PDMAudioPropsFramesToBytes(&pStreamALSA->pCfg->Props, cFramesDelay);
 }
 
 

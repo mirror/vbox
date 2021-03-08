@@ -655,7 +655,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
 
     if (RT_SUCCESS(rc))
     {
-        rc = RTCircBufCreate(&pMixStream->pCircBuf, DrvAudioHlpMilliToBytes(&pSink->PCMProps, 100 /*ms*/)); /** @todo Make this configurable. */
+        rc = RTCircBufCreate(&pMixStream->pCircBuf, PDMAudioPropsMilliToBytes(&pSink->PCMProps, 100 /*ms*/)); /** @todo Make this configurable. */
         AssertRC(rc);
     }
 
@@ -1035,7 +1035,7 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
     }
 
     Log3Func(("[%s] cbWritable=%RU32 (%RU64ms)\n",
-              pSink->pszName, cbWritable, DrvAudioHlpBytesToMilli(&pSink->PCMProps, cbWritable)));
+              pSink->pszName, cbWritable, PDMAudioPropsBytesToMilli(&pSink->PCMProps, cbWritable)));
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -1474,7 +1474,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
     if (RT_FAILURE(rc))
         return rc;
 
-    if (DrvAudioHlpPcmPropsAreEqual(&pSink->PCMProps, pPCMProps)) /* Bail out early if PCM properties are equal. */
+    if (PDMAudioPropsAreEqual(&pSink->PCMProps, pPCMProps)) /* Bail out early if PCM properties are equal. */
     {
         rc = RTCritSectLeave(&pSink->CritSect);
         AssertRC(rc);
@@ -1494,7 +1494,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
     /* Also update the sink's mixing buffer format. */
     AudioMixBufDestroy(&pSink->MixBuf);
     rc = AudioMixBufInit(&pSink->MixBuf, pSink->pszName, &pSink->PCMProps,
-                         DrvAudioHlpMilliToFrames(&pSink->PCMProps, 100 /*ms*/)); /** @todo Make this configurable? */
+                         PDMAudioPropsMilliToFrames(&pSink->PCMProps, 100 /*ms*/)); /** @todo Make this configurable? */
     if (RT_SUCCESS(rc))
     {
         PAUDMIXSTREAM pStream;
@@ -1714,7 +1714,7 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         if (RT_FAILURE(rc))
             break;
 
-        const uint32_t cbChunk = DrvAudioHlpFramesToBytes(&pSink->PCMProps, cfChunk);
+        const uint32_t cbChunk = PDMAudioPropsFramesToBytes(&pSink->PCMProps, cfChunk);
         Assert(cbChunk <= pSink->cbScratchBuf);
 
         /* Multiplex the current chunk in a synchronized fashion to all connected streams. */
@@ -2118,7 +2118,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
         if (RT_FAILURE(rc))
             break;
 
-        const uint32_t cbWrittenChunk = DrvAudioHlpFramesToBytes(&pSink->PCMProps, cfWritten);
+        const uint32_t cbWrittenChunk = PDMAudioPropsFramesToBytes(&pSink->PCMProps, cfWritten);
 
         Assert(cbToWrite >= cbWrittenChunk);
         cbToWrite -= cbWrittenChunk;

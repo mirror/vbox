@@ -167,7 +167,7 @@ static DECLCALLBACK(int) drvHostNullAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterf
 
     /* Return silence. */
     Assert(pStreamNull->pCfg);
-    DrvAudioHlpClearBuf(&pStreamNull->pCfg->Props, pvBuf, uBufSize, PDMAUDIOPCMPROPS_B2F(&pStreamNull->pCfg->Props, uBufSize));
+    PDMAudioPropsClearBuffer(&pStreamNull->pCfg->Props, pvBuf, uBufSize, PDMAUDIOPCMPROPS_B2F(&pStreamNull->pCfg->Props, uBufSize));
 
     if (puRead)
         *puRead = uBufSize;

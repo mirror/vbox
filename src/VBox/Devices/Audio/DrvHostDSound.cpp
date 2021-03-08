@@ -665,10 +665,10 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
          * of copying own buffer data to our secondary's Direct Sound buffer.
          */
         bd.dwFlags       = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_LOCSOFTWARE;
-        bd.dwBufferBytes = DrvAudioHlpFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
+        bd.dwBufferBytes = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
 
         DSLOG(("DSound: Requested playback buffer is %RU64ms (%ld bytes)\n",
-               DrvAudioHlpBytesToMilli(&pCfgReq->Props, bd.dwBufferBytes), bd.dwBufferBytes));
+               PDMAudioPropsBytesToMilli(&pCfgReq->Props, bd.dwBufferBytes), bd.dwBufferBytes));
 
         hr = IDirectSound8_CreateSoundBuffer(pThis->pDS, &bd, &pDSB, NULL);
         if (FAILED(hr))
@@ -710,7 +710,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
         }
 
         DSLOG(("DSound: Acquired playback buffer is %RU64ms (%ld bytes)\n",
-               DrvAudioHlpBytesToMilli(&pCfgReq->Props, bc.dwBufferBytes), bc.dwBufferBytes));
+               PDMAudioPropsBytesToMilli(&pCfgReq->Props, bc.dwBufferBytes), bc.dwBufferBytes));
 
         DSLOG(("DSound: Acquired playback format:\n"
                "  dwBufferBytes   = %RI32\n"
@@ -778,7 +778,7 @@ static void dsoundPlayClearBuffer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
                              &pv1, NULL, 0, 0, DSBLOCK_ENTIREBUFFER);
     if (SUCCEEDED(hr))
     {
-        DrvAudioHlpClearBuf(pProps, pv1, pStreamDS->cbBufSize, PDMAUDIOPCMPROPS_B2F(pProps, pStreamDS->cbBufSize));
+        PDMAudioPropsClearBuffer(pProps, pv1, pStreamDS->cbBufSize, PDMAUDIOPCMPROPS_B2F(pProps, pStreamDS->cbBufSize));
 
         directSoundPlayUnlock(pThis, pStreamDS->Out.pDSB, pv1, NULL, 0, 0);
 
@@ -894,7 +894,7 @@ static int dsoundPlayTransfer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
     pStreamDS->Out.cbTransferred += cbTransferred;
 
     if (   pStreamDS->Out.fFirstTransfer
-        && pStreamDS->Out.cbTransferred >= DrvAudioHlpFramesToBytes(&pStreamDS->Cfg.Props, pStreamDS->Cfg.Backend.cFramesPreBuffering))
+        && pStreamDS->Out.cbTransferred >= PDMAudioPropsFramesToBytes(&pStreamDS->Cfg.Props, pStreamDS->Cfg.Backend.cFramesPreBuffering))
     {
         hr = directSoundPlayStart(pThis, pStreamDS);
         if (SUCCEEDED(hr))
@@ -1040,9 +1040,9 @@ static void dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
                                                 0 /* Flags */);
             if (SUCCEEDED(hr))
             {
-                DrvAudioHlpClearBuf(&pStreamDS->Cfg.Props, pv1, cb1, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb1));
+                PDMAudioPropsClearBuffer(&pStreamDS->Cfg.Props, pv1, cb1, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb1));
                 if (pv2 && cb2)
-                    DrvAudioHlpClearBuf(&pStreamDS->Cfg.Props, pv2, cb2, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb2));
+                    PDMAudioPropsClearBuffer(&pStreamDS->Cfg.Props, pv2, cb2, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb2));
                 directSoundCaptureUnlock(pStreamDS->In.pDSCB, pv1, pv2, cb1, cb2);
             }
         }
@@ -1075,9 +1075,9 @@ static void dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
                                          0 /* Flags */);
                 if (SUCCEEDED(hr))
                 {
-                    DrvAudioHlpClearBuf(&pStreamDS->Cfg.Props, pv1, cb1, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb1));
+                    PDMAudioPropsClearBuffer(&pStreamDS->Cfg.Props, pv1, cb1, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb1));
                     if (pv2 && cb2)
-                        DrvAudioHlpClearBuf(&pStreamDS->Cfg.Props, pv2, cb2, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb2));
+                        PDMAudioPropsClearBuffer(&pStreamDS->Cfg.Props, pv2, cb2, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb2));
                     directSoundPlayUnlock(pThis, pStreamDS->Out.pDSB, pv1, pv2, cb1, cb2);
                 }
             }
@@ -1400,10 +1400,10 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
 
         bd.dwSize        = sizeof(bd);
         bd.lpwfxFormat   = &wfx;
-        bd.dwBufferBytes = DrvAudioHlpFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
+        bd.dwBufferBytes = PDMAudioPropsFramesToBytes(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize);
 
         DSLOG(("DSound: Requested capture buffer is %RU64ms (%ld bytes)\n",
-               DrvAudioHlpBytesToMilli(&pCfgReq->Props, bd.dwBufferBytes), bd.dwBufferBytes));
+               PDMAudioPropsBytesToMilli(&pCfgReq->Props, bd.dwBufferBytes), bd.dwBufferBytes));
 
         LPDIRECTSOUNDCAPTUREBUFFER pDSCB;
         hr = IDirectSoundCapture_CreateCaptureBuffer(pThis->pDSC, &bd, &pDSCB, NULL);
@@ -1456,7 +1456,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
         }
 
         DSLOG(("DSound: Acquired capture buffer is %RU64ms (%ld bytes)\n",
-               DrvAudioHlpBytesToMilli(&pCfgReq->Props, bc.dwBufferBytes), bc.dwBufferBytes));
+               PDMAudioPropsBytesToMilli(&pCfgReq->Props, bc.dwBufferBytes), bc.dwBufferBytes));
 
         DSLOG(("DSound: Capture format:\n"
                "  dwBufferBytes   = %RI32\n"
@@ -2499,7 +2499,7 @@ static DECLCALLBACK(uint32_t) drvHostDSoundHA_StreamGetPending(PPDMIHOSTAUDIO pI
         if (!cbPending)
         {
             const uint64_t diffLastTransferredMs  = RTTimeMilliTS() - pStreamDS->Out.tsLastTransferredMs;
-            const uint64_t uLastTranserredChunkMs = DrvAudioHlpBytesToMilli(&pStreamDS->Cfg.Props, pStreamDS->Out.cbLastTransferred);
+            const uint64_t uLastTranserredChunkMs = PDMAudioPropsBytesToMilli(&pStreamDS->Cfg.Props, pStreamDS->Out.cbLastTransferred);
             if (   uLastTranserredChunkMs
                 && diffLastTransferredMs < uLastTranserredChunkMs)
                 cbPending = 1;

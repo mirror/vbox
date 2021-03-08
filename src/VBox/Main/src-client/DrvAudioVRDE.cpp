@@ -92,9 +92,9 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
     pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
 
     /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
-    const uint32_t cFramesVrdpServer = DrvAudioHlpMilliToFrames(&pCfgAcq->Props, 200 /*ms*/);
+    const uint32_t cFramesVrdpServer = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 200 /*ms*/);
 
-    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, DrvAudioHlpFramesToBytes(&pCfgAcq->Props, cFramesVrdpServer));
+    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, PDMAudioPropsFramesToBytes(&pCfgAcq->Props, cFramesVrdpServer));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -136,8 +136,8 @@ static int vrdeCreateStreamOut(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgR
         pCfgAcq->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
 
         /* According to the VRDP docs, the VRDP server stores audio in 200ms chunks. */
-        pCfgAcq->Backend.cFramesPeriod       = DrvAudioHlpMilliToFrames(&pCfgAcq->Props, 20  /*ms*/);
-        pCfgAcq->Backend.cFramesBufferSize   = DrvAudioHlpMilliToFrames(&pCfgAcq->Props, 100 /*ms*/);
+        pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 20  /*ms*/);
+        pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/);
         pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
     }
 
@@ -173,7 +173,7 @@ static int vrdeControlStreamIn(PDRVAUDIOVRDE pDrv, PVRDESTREAM pStreamVRDE, PDMA
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
             rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pStreamVRDE,
-                                                               DrvAudioHlpMilliToFrames(&pStreamVRDE->pCfg->Props, 200 /*ms*/),
+                                                               PDMAudioPropsMilliToFrames(&pStreamVRDE->pCfg->Props, 200 /*ms*/),
                                                                pStreamVRDE->pCfg->Props.uHz, pStreamVRDE->pCfg->Props.cChannels,
                                                                pStreamVRDE->pCfg->Props.cbSample * 8 /* Bit */);
             if (rc == VERR_NOT_SUPPORTED)

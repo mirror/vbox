@@ -800,7 +800,7 @@ bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
 bool DrvAudioHlpStreamCfgMatchesPcmProps(PCPDMAUDIOSTREAMCFG pCfg, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pCfg, false);
-    return DrvAudioHlpPcmPropsAreEqual(pProps, &pCfg->Props);
+    return PDMAudioPropsAreEqual(pProps, &pCfg->Props);
 }
 
 /**
@@ -996,7 +996,7 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
  * @returns Bit rate.
  * @param   pProps              PCM properties to calculate bitrate for.
  */
-uint32_t DrvAudioHlpGetBitrate(PCPDMAUDIOPCMPROPS pProps)
+uint32_t PDMAudioPropsGetBitrate(PCPDMAUDIOPCMPROPS pProps)
 {
     return DrvAudioHlpCalcBitrate(pProps->cbSample * 8, pProps->uHz, pProps->cChannels);
 }
@@ -1008,7 +1008,7 @@ uint32_t DrvAudioHlpGetBitrate(PCPDMAUDIOPCMPROPS pProps)
  * @param   pProps      PCM properties to use.
  * @param   cb          The size (in bytes) to round.
  */
-uint32_t DrvAudioHlpFloorBytesToFrame(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
+uint32_t PDMAudioPropsFloorBytesToFrame(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, 0);
     return PDMAUDIOPCMPROPS_F2B(pProps, PDMAUDIOPCMPROPS_B2F(pProps, cb));
@@ -1021,7 +1021,7 @@ uint32_t DrvAudioHlpFloorBytesToFrame(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
  * @param   pProps      PCM properties to use.
  * @param   cb          The size (in bytes) to check.
  */
-bool DrvAudioHlpIsBytesAligned(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
+bool PDMAudioPropsIsSizeAligned(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, false);
     uint32_t const cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
@@ -1036,7 +1036,7 @@ bool DrvAudioHlpIsBytesAligned(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
  * @param   pProps      PCM properties to use.
  * @param   cb          The number of bytes to convert.
  */
-uint32_t DrvAudioHlpBytesToFrames(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
+uint32_t PDMAudioPropsBytesToFrames(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, 0);
     return PDMAUDIOPCMPROPS_B2F(pProps, cb);
@@ -1051,7 +1051,7 @@ uint32_t DrvAudioHlpBytesToFrames(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
  *
  * @note    Rounds up the result.
  */
-uint64_t DrvAudioHlpBytesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
+uint64_t PDMAudioPropsBytesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1081,7 +1081,7 @@ uint64_t DrvAudioHlpBytesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
  *
  * @note    Rounds up the result.
  */
-uint64_t DrvAudioHlpBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
+uint64_t PDMAudioPropsBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1111,7 +1111,7 @@ uint64_t DrvAudioHlpBytesToMicro(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
  *
  * @note    Rounds up the result.
  */
-uint64_t DrvAudioHlpBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
+uint64_t PDMAudioPropsBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1140,7 +1140,7 @@ uint64_t DrvAudioHlpBytesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
  * @param   cFrames     Number of audio frames to convert.
  * @sa      PDMAUDIOPCMPROPS_F2B
  */
-uint32_t DrvAudioHlpFramesToBytes(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
+uint32_t PDMAudioPropsFramesToBytes(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pProps, 0);
     return PDMAUDIOPCMPROPS_F2B(pProps, cFrames);
@@ -1154,7 +1154,7 @@ uint32_t DrvAudioHlpFramesToBytes(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
  * @param   cFrames     Number of audio frames to convert.
  * @note    No rounding here, result is floored.
  */
-uint64_t DrvAudioHlpFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
+uint64_t PDMAudioPropsFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1173,7 +1173,7 @@ uint64_t DrvAudioHlpFramesToMilli(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
  * @param   cFrames     Number of audio frames to convert.
  * @note    No rounding here, result is floored.
  */
-uint64_t DrvAudioHlpFramesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
+uint64_t PDMAudioPropsFramesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1193,7 +1193,7 @@ uint64_t DrvAudioHlpFramesToNano(PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
  *
  * @note    The result is rounded rather than floored (hysterical raisins).
  */
-uint32_t DrvAudioHlpMilliToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs)
+uint32_t PDMAudioPropsMilliToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1219,9 +1219,9 @@ uint32_t DrvAudioHlpMilliToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs)
  *
  * @note    The result is rounded rather than floored (hysterical raisins).
  */
-uint32_t DrvAudioHlpMilliToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs)
+uint32_t PDMAudioPropsMilliToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs)
 {
-    return PDMAUDIOPCMPROPS_F2B(pProps, DrvAudioHlpMilliToFrames(pProps, cMs));
+    return PDMAUDIOPCMPROPS_F2B(pProps, PDMAudioPropsMilliToFrames(pProps, cMs));
 }
 
 /**
@@ -1233,7 +1233,7 @@ uint32_t DrvAudioHlpMilliToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cMs)
  *
  * @note    The result is rounded rather than floored (hysterical raisins).
  */
-uint32_t DrvAudioHlpNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs)
+uint32_t PDMAudioPropsNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs)
 {
     AssertPtrReturn(pProps, 0);
 
@@ -1259,50 +1259,53 @@ uint32_t DrvAudioHlpNanoToFrames(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs)
  *
  * @note    The result is rounded rather than floored (hysterical raisins).
  */
-uint32_t DrvAudioHlpNanoToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs)
+uint32_t PDMAudioPropsNanoToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs)
 {
-    return PDMAUDIOPCMPROPS_F2B(pProps, DrvAudioHlpNanoToFrames(pProps, cNs));
+    return PDMAUDIOPCMPROPS_F2B(pProps, PDMAudioPropsNanoToFrames(pProps, cNs));
 }
 
 /**
  * Clears a sample buffer by the given amount of audio frames with silence (according to the format
  * given by the PCM properties).
  *
- * @param   pPCMProps               PCM properties to use for the buffer to clear.
- * @param   pvBuf                   Buffer to clear.
- * @param   cbBuf                   Size (in bytes) of the buffer.
- * @param   cFrames                 Number of audio frames to clear in the buffer.
+ * @param   pProps      The PCM properties to apply.
+ * @param   pvBuf       The buffer to clear.
+ * @param   cbBuf       The buffer size in bytes.
+ * @param   cFrames     The number of audio frames to clear.  Capped at @a cbBuf
+ *                      if exceeding the buffer.  If the size is an unaligned
+ *                      number of frames, the extra bytes may be left
+ *                      uninitialized in some configurations.
  */
-void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cFrames)
+void PDMAudioPropsClearBuffer(PCPDMAUDIOPCMPROPS pProps, void *pvBuf, size_t cbBuf, uint32_t cFrames)
 {
     /*
      * Validate input
      */
-    AssertPtrReturnVoid(pPCMProps);
-    Assert(pPCMProps->cbSample);
+    AssertPtrReturnVoid(pProps);
+    Assert(pProps->cbSample);
     if (!cbBuf || !cFrames)
         return;
     AssertPtrReturnVoid(pvBuf);
 
-    Assert(pPCMProps->fSwapEndian == false); /** @todo Swapping Endianness is not supported yet. */
+    Assert(pProps->fSwapEndian == false); /** @todo Swapping Endianness is not supported yet. */
 
     /*
      * Decide how much needs clearing.
      */
-    size_t cbToClear = DrvAudioHlpFramesToBytes(pPCMProps, cFrames);
+    size_t cbToClear = PDMAudioPropsFramesToBytes(pProps, cFrames);
     AssertStmt(cbToClear <= cbBuf, cbToClear = cbBuf);
 
-    Log2Func(("pPCMProps=%p, pvBuf=%p, cFrames=%RU32, fSigned=%RTbool, cBytes=%RU8\n",
-              pPCMProps, pvBuf, cFrames, pPCMProps->fSigned, pPCMProps->cbSample));
+    Log2Func(("pProps=%p, pvBuf=%p, cFrames=%RU32, fSigned=%RTbool, cBytes=%RU8\n",
+              pProps, pvBuf, cFrames, pProps->fSigned, pProps->cbSample));
 
     /*
      * Do the job.
      */
-    if (pPCMProps->fSigned)
+    if (pProps->fSigned)
         RT_BZERO(pvBuf, cbToClear);
     else /* Unsigned formats. */
     {
-        switch (pPCMProps->cbSample)
+        switch (pProps->cbSample)
         {
             case 1: /* 8 bit */
                 memset(pvBuf, 0x80, cbToClear);
@@ -1324,7 +1327,7 @@ void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf
                 break;
 
             default:
-                AssertMsgFailed(("Invalid bytes per sample: %RU8\n", pPCMProps->cbSample));
+                AssertMsgFailed(("Invalid bytes per sample: %RU8\n", pProps->cbSample));
         }
     }
 }
@@ -1336,7 +1339,7 @@ void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf
  * @param   pProps1     The first set of properties to compare.
  * @param   pProps2     The second set of properties to compare.
  */
-bool DrvAudioHlpPcmPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2)
+bool PDMAudioPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2)
 {
     AssertPtrReturn(pProps1, false);
     AssertPtrReturn(pProps2, false);
@@ -1415,7 +1418,7 @@ bool DrvAudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
  * @param   pProps  PCM properties to use.
  * @sa      PDMAUDIOPCMPROPS_F2B
  */
-uint32_t DrvAudioHlpBytesPerFrame(PCPDMAUDIOPCMPROPS pProps)
+uint32_t PDMAudioPropsBytesPerFrame(PCPDMAUDIOPCMPROPS pProps)
 {
     return PDMAUDIOPCMPROPS_F2B(pProps, 1 /*cFrames*/);
 }
@@ -1425,7 +1428,7 @@ uint32_t DrvAudioHlpBytesPerFrame(PCPDMAUDIOPCMPROPS pProps)
  *
  * @param   pProps              Stream configuration to log.
  */
-void DrvAudioHlpPcmPropsLog(PCPDMAUDIOPCMPROPS pProps)
+void PDMAudioPropsLog(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturnVoid(pProps);
 
@@ -1713,7 +1716,7 @@ int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS 
             pData->Hdr.u16AudioFormat   = 1;  /* PCM, linear quantization. */
             pData->Hdr.u16NumChannels   = pProps->cChannels;
             pData->Hdr.u32SampleRate    = pProps->uHz;
-            pData->Hdr.u32ByteRate      = DrvAudioHlpGetBitrate(pProps) / 8;
+            pData->Hdr.u32ByteRate      = PDMAudioPropsGetBitrate(pProps) / 8;
             pData->Hdr.u16BlockAlign    = pProps->cChannels * pProps->cbSample;
             pData->Hdr.u16BitsPerSample = pProps->cbSample * 8;
 

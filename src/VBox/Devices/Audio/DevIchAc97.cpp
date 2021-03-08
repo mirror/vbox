@@ -1642,9 +1642,9 @@ static void ichac97R3StreamUpdate(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
             {
                 Log3Func(("[SD%RU8] PICB=%zu (%RU64ms), cbFree=%zu (%RU64ms), cbTransferChunk=%zu (%RU64ms)\n",
                           pStream->u8SD,
-                          (pStream->Regs.picb << 1), DrvAudioHlpBytesToMilli(&pStreamCC->State.Cfg.Props, pStream->Regs.picb << 1),
-                          cbStreamFree, DrvAudioHlpBytesToMilli(&pStreamCC->State.Cfg.Props, cbStreamFree),
-                          pStreamCC->State.cbTransferChunk, DrvAudioHlpBytesToMilli(&pStreamCC->State.Cfg.Props, pStreamCC->State.cbTransferChunk)));
+                          (pStream->Regs.picb << 1), PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, pStream->Regs.picb << 1),
+                          cbStreamFree, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, cbStreamFree),
+                          pStreamCC->State.cbTransferChunk, PDMAudioPropsBytesToMilli(&pStreamCC->State.Cfg.Props, pStreamCC->State.cbTransferChunk)));
 
                 /* Do the DMA transfer. */
                 rc2 = ichac97R3StreamTransfer(pDevIns, pThis, pStream, pStreamCC,
@@ -2087,7 +2087,7 @@ static uint64_t ichac97R3StreamTransferCalcNext(PPDMDEVINS pDevIns, PAC97STREAM 
     if (!cbBytes)
         return 0;
 
-    const uint64_t usBytes        = DrvAudioHlpBytesToMicro(&pStreamCC->State.Cfg.Props, cbBytes);
+    const uint64_t usBytes        = PDMAudioPropsBytesToMicro(&pStreamCC->State.Cfg.Props, cbBytes);
     const uint64_t cTransferTicks = PDMDevHlpTimerFromMicro(pDevIns, pStream->hTimer, usBytes);
 
     Log3Func(("[SD%RU8] Timer %uHz, cbBytes=%RU32 -> usBytes=%RU64, cTransferTicks=%RU64\n",
@@ -2227,7 +2227,7 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STRE
                     pStreamCC->State.pCircBuf = NULL;
                 }
 
-                rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, DrvAudioHlpMilliToBytes(&Cfg.Props, 100 /*ms*/)); /** @todo Make this configurable. */
+                rc = RTCircBufCreate(&pStreamCC->State.pCircBuf, PDMAudioPropsMilliToBytes(&Cfg.Props, 100 /*ms*/)); /** @todo Make this configurable. */
                 if (RT_SUCCESS(rc))
                 {
                     ichac97R3MixerRemoveDrvStreams(pThisCC, pMixSink, Cfg.enmDir, Cfg.u);
@@ -2811,7 +2811,7 @@ static int ichac97R3StreamTransfer(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97ST
         return VINF_SUCCESS;
 
 #ifdef VBOX_STRICT
-    const unsigned cbFrame = DrvAudioHlpBytesPerFrame(&pStreamCC->State.Cfg.Props);
+    const unsigned cbFrame = PDMAudioPropsBytesPerFrame(&pStreamCC->State.Cfg.Props);
 #endif
 
     /* Make sure to only process an integer number of audio frames. */

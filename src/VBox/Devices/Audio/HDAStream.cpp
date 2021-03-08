@@ -353,7 +353,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
 
     LogRel2(("HDA: Stream #%RU8 DMA @ 0x%x (%RU32 bytes = %RU64ms total)\n",
              uSD, pStreamShared->u64BDLBase, pStreamShared->u32CBL,
-             DrvAudioHlpBytesToMilli(&pStreamR3->State.Mapping.PCMProps, pStreamShared->u32CBL)));
+             PDMAudioPropsBytesToMilli(&pStreamR3->State.Mapping.PCMProps, pStreamShared->u32CBL)));
 
     /* Figure out how many transfer fragments we're going to use for this stream. */
     uint32_t cTransferFragments = pStreamShared->u16LVI + 1;
@@ -455,7 +455,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
      */
 
     /* Audio data per second the stream needs. */
-    const uint32_t cbDataPerSec = DrvAudioHlpMilliToBytes(&pStreamR3->State.Mapping.PCMProps, RT_MS_1SEC);
+    const uint32_t cbDataPerSec = PDMAudioPropsMilliToBytes(&pStreamR3->State.Mapping.PCMProps, RT_MS_1SEC);
 
     /* This is used to indicate whether we're done or should the uTimerIoHz as fallback. */
     rc = VINF_SUCCESS;
@@ -531,7 +531,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
         /* Paranoia (fall back on I/O timer Hz if this happens). */
         if (cbTransferHeuristics >= 8)
         {
-            ASSERT_GUEST_LOGREL_MSG(DrvAudioHlpIsBytesAligned(&pStreamR3->State.Mapping.PCMProps, cbTransferHeuristics),
+            ASSERT_GUEST_LOGREL_MSG(PDMAudioPropsIsSizeAligned(&pStreamR3->State.Mapping.PCMProps, cbTransferHeuristics),
                                     ("We arrived at a misaligned transfer size for stream #%RU8: %#x (%u)\n",
                                      uSD, cbTransferHeuristics, cbTransferHeuristics));
 
@@ -543,12 +543,12 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                want to play the whole "Der Ring des Nibelungen" cycle in one go.  Just
                halve the buffer till we get there. */
             while (cbTransferHeuristics > 1024 && cbTransferHeuristics > cbTransferPerSec / 4)
-                cbTransferHeuristics = DrvAudioHlpFloorBytesToFrame(&pStreamR3->State.Mapping.PCMProps, cbTransferHeuristics / 2);
+                cbTransferHeuristics = PDMAudioPropsFloorBytesToFrame(&pStreamR3->State.Mapping.PCMProps, cbTransferHeuristics / 2);
 
             /* Set the transfer size per timer callout. (No chunking, so same.) */
             pStreamShared->State.cbTransferSize  = cbTransferHeuristics;
             pStreamShared->State.cbTransferChunk = cbTransferHeuristics;
-            ASSERT_GUEST_LOGREL_MSG(DrvAudioHlpIsBytesAligned(&pStreamR3->State.Mapping.PCMProps, cbTransferHeuristics),
+            ASSERT_GUEST_LOGREL_MSG(PDMAudioPropsIsSizeAligned(&pStreamR3->State.Mapping.PCMProps, cbTransferHeuristics),
                                     ("We arrived at a misaligned transfer size for stream #%RU8: %#x (%u)\n",
                                      uSD, cbTransferHeuristics, cbTransferHeuristics));
 
@@ -641,8 +641,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
                 LogRel2(("HDA: Stream #%RU8 is using %uHz I/O timer (%RU64 virtual ticks / Hz), stream Hz=%RU32, cTicksPerByte=%RU64, cTransferTicks=%RU64 -> cbTransferChunk=%RU32 (%RU64ms), cbTransferSize=%RU32 (%RU64ms)\n",
                          uSD, pStreamShared->State.uTimerIoHz, (uint64_t)cTicksPerHz, pStreamR3->State.Mapping.PCMProps.uHz,
                          pStreamShared->State.cTicksPerByte, pStreamShared->State.cTransferTicks,
-                         pStreamShared->State.cbTransferChunk, DrvAudioHlpBytesToMilli(&pStreamR3->State.Mapping.PCMProps, pStreamShared->State.cbTransferChunk),
-                         pStreamShared->State.cbTransferSize,  DrvAudioHlpBytesToMilli(&pStreamR3->State.Mapping.PCMProps, pStreamShared->State.cbTransferSize)));
+                         pStreamShared->State.cbTransferChunk, PDMAudioPropsBytesToMilli(&pStreamR3->State.Mapping.PCMProps, pStreamShared->State.cbTransferChunk),
+                         pStreamShared->State.cbTransferSize,  PDMAudioPropsBytesToMilli(&pStreamR3->State.Mapping.PCMProps, pStreamShared->State.cbTransferSize)));
             }
         }
     }
@@ -697,17 +697,17 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
          *       samples we actually need, in other words, skipping the interleaved
          *       channels we don't support / need to save space.
          */
-        uint32_t cbCircBuf = DrvAudioHlpMilliToBytes(&pCfg->Props,
+        uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props,
                                                      RT_MS_1SEC * 6 / RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz));
         LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
-                 uSD, cbCircBuf, DrvAudioHlpBytesToMilli(&pCfg->Props, cbCircBuf)));
+                 uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf)));
 
         uint32_t msCircBufCfg = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs;
         if (msCircBufCfg) /* Anything set via CFGM? */
         {
-            cbCircBuf = DrvAudioHlpMilliToBytes(&pCfg->Props, msCircBufCfg);
+            cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, msCircBufCfg);
             LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU32 bytes / %RU64 ms\n",
-                     uSD, cbCircBuf, DrvAudioHlpBytesToMilli(&pCfg->Props, cbCircBuf)));
+                     uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf)));
         }
 
         /* Serious paranoia: */
@@ -1873,7 +1873,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             uint32_t const cbStreamReadable   = hdaR3StreamGetUsed(pStreamR3);
             uint32_t       cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
             /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
-            cbToReadFromStream = DrvAudioHlpFloorBytesToFrame(&pStreamR3->State.Mapping.PCMProps, cbToReadFromStream);
+            cbToReadFromStream = PDMAudioPropsFloorBytesToFrame(&pStreamR3->State.Mapping.PCMProps, cbToReadFromStream);
 
             Assert(tsNowNs >= pStreamShared->State.tsLastReadNs);
             Log3Func(("[SD%RU8] msDeltaLastRead=%RI64\n",

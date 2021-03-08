@@ -436,7 +436,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
         if (!pCodec->Opus.msFrame)
             pCodec->Opus.msFrame = AVREC_OPUS_FRAME_MS_DEFAULT; /* 20ms by default; to prevent division by zero. */
         pCodec->Opus.csFrame = pSink->Codec.Parms.PCMProps.uHz / (1000 /* s in ms */ / pSink->Codec.Opus.msFrame);
-        pCodec->Opus.cbFrame = DrvAudioHlpFramesToBytes(&pSink->Codec.Parms.PCMProps, pCodec->Opus.csFrame);
+        pCodec->Opus.cbFrame = PDMAudioPropsFramesToBytes(&pSink->Codec.Parms.PCMProps, pCodec->Opus.csFrame);
 
 #ifdef VBOX_WITH_STATISTICS
         pSink->Codec.STAM.cEncFrames = 0;
@@ -552,8 +552,8 @@ static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV
                     pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cbSample, pCfgAcq->Props.cChannels);
 
                     /* Every Opus frame marks a period for now. Optimize this later. */
-                    pCfgAcq->Backend.cFramesPeriod       = DrvAudioHlpMilliToFrames(&pCfgAcq->Props, pSink->Codec.Opus.msFrame);
-                    pCfgAcq->Backend.cFramesBufferSize   = DrvAudioHlpMilliToFrames(&pCfgAcq->Props, 100 /*ms*/); /** @todo Make this configurable. */
+                    pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, pSink->Codec.Opus.msFrame);
+                    pCfgAcq->Backend.cFramesBufferSize   = PDMAudioPropsMilliToFrames(&pCfgAcq->Props, 100 /*ms*/); /** @todo Make this configurable. */
                     pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod * 2;
                 }
             }

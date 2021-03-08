@@ -355,8 +355,8 @@ static int ossControlStreamOut(PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD
         case PDMAUDIOSTREAMCMD_ENABLE:
         case PDMAUDIOSTREAMCMD_RESUME:
         {
-            DrvAudioHlpClearBuf(&pStreamOSS->pCfg->Props, pStreamOSS->pvBuf, pStreamOSS->cbBuf,
-                                PDMAUDIOPCMPROPS_B2F(&pStreamOSS->pCfg->Props, pStreamOSS->cbBuf));
+            PDMAudioPropsClearBuffer(&pStreamOSS->pCfg->Props, pStreamOSS->pvBuf, pStreamOSS->cbBuf,
+                                     PDMAUDIOPCMPROPS_B2F(&pStreamOSS->pCfg->Props, pStreamOSS->cbBuf));
 
             int mask = PCM_ENABLE_OUTPUT;
             if (ioctl(pStreamOSS->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
