@@ -117,71 +117,6 @@ PDMAUDIOFMT DrvAudioAudFmtBitsToFormat(uint8_t cBits, bool fSigned)
 }
 
 /**
- * Clears a sample buffer by the given amount of audio frames with silence (according to the format
- * given by the PCM properties).
- *
- * @param   pPCMProps               PCM properties to use for the buffer to clear.
- * @param   pvBuf                   Buffer to clear.
- * @param   cbBuf                   Size (in bytes) of the buffer.
- * @param   cFrames                 Number of audio frames to clear in the buffer.
- */
-void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cFrames)
-{
-    /*
-     * Validate input
-     */
-    AssertPtrReturnVoid(pPCMProps);
-    Assert(pPCMProps->cbSample);
-    if (!cbBuf || !cFrames)
-        return;
-    AssertPtrReturnVoid(pvBuf);
-
-    Assert(pPCMProps->fSwapEndian == false); /** @todo Swapping Endianness is not supported yet. */
-
-    /*
-     * Decide how much needs clearing.
-     */
-    size_t cbToClear = DrvAudioHlpFramesToBytes(pPCMProps, cFrames);
-    AssertStmt(cbToClear <= cbBuf, cbToClear = cbBuf);
-
-    Log2Func(("pPCMProps=%p, pvBuf=%p, cFrames=%RU32, fSigned=%RTbool, cBytes=%RU8\n",
-              pPCMProps, pvBuf, cFrames, pPCMProps->fSigned, pPCMProps->cbSample));
-
-    /*
-     * Do the job.
-     */
-    if (pPCMProps->fSigned)
-        RT_BZERO(pvBuf, cbToClear);
-    else /* Unsigned formats. */
-    {
-        switch (pPCMProps->cbSample)
-        {
-            case 1: /* 8 bit */
-                memset(pvBuf, 0x80, cbToClear);
-                break;
-
-            case 2: /* 16 bit */
-            {
-                uint16_t *pu16Dst = (uint16_t *)pvBuf;
-                size_t    cLeft   = cbToClear / sizeof(uint16_t);
-                while (cLeft-- > 0)
-                    *pu16Dst++ = 0x80;
-                break;
-            }
-
-            /** @todo Add 24 bit? */
-
-            case 4: /* 32 bit */
-                ASMMemFill32(pvBuf, cbToClear & ~(size_t)3, 0x80);
-                break;
-
-            default:
-                AssertMsgFailed(("Invalid bytes per sample: %RU8\n", pPCMProps->cbSample));
-        }
-    }
-}
-
-/**
  * Returns an unique file name for this given audio connector instance.
  *
  * @return  Allocated file name. Must be free'd using RTStrFree().
@@ -802,133 +737,6 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
 }
 
 /**
- * Checks whether two given PCM properties are equal.
- *
- * @returns @c true if equal, @c false if not.
- * @param   pProps1             First properties to compare.
- * @param   pProps2             Second properties to compare.
- */
-bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2)
-{
-    AssertPtrReturn(pProps1, false);
-    AssertPtrReturn(pProps2, false);
-
-    if (pProps1 == pProps2) /* If the pointers match, take a shortcut. */
-        return true;
-
-    return    pProps1->uHz         == pProps2->uHz
-           && pProps1->cChannels   == pProps2->cChannels
-           && pProps1->cbSample    == pProps2->cbSample
-           && pProps1->fSigned     == pProps2->fSigned
-           && pProps1->fSwapEndian == pProps2->fSwapEndian;
-}
-
-/**
- * Checks whether given PCM properties are valid or not.
- *
- * Returns @c true if properties are valid, @c false if not.
- * @param   pProps              PCM properties to check.
- */
-bool DrvAudioHlpPCMPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
-{
-    AssertPtrReturn(pProps, false);
-
-    /* Minimum 1 channel (mono), maximum 7.1 (= 8) channels. */
-    bool fValid = (   pProps->cChannels >= 1
-                   && pProps->cChannels <= 8);
-
-    if (fValid)
-    {
-        switch (pProps->cbSample)
-        {
-            case 1: /* 8 bit */
-               if (pProps->fSigned)
-                   fValid = false;
-               break;
-            case 2: /* 16 bit */
-                if (!pProps->fSigned)
-                    fValid = false;
-                break;
-            /** @todo Do we need support for 24 bit samples? */
-            case 4: /* 32 bit */
-                if (!pProps->fSigned)
-                    fValid = false;
-                break;
-            default:
-                fValid = false;
-                break;
-        }
-    }
-
-    if (!fValid)
-        return false;
-
-    fValid &= pProps->uHz > 0;
-    fValid &= pProps->cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cbSample, pProps->cChannels);
-    fValid &= pProps->fSwapEndian == false; /** @todo Handling Big Endian audio data is not supported yet. */
-
-    return fValid;
-}
-
-/**
- * Checks whether the given PCM properties are equal with the given
- * stream configuration.
- *
- * @returns @c true if equal, @c false if not.
- * @param   pProps              PCM properties to compare.
- * @param   pCfg                Stream configuration to compare.
- */
-bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pProps, PCPDMAUDIOSTREAMCFG pCfg)
-{
-    AssertPtrReturn(pProps, false);
-    AssertPtrReturn(pCfg,   false);
-
-    return DrvAudioHlpPCMPropsAreEqual(pProps, &pCfg->Props);
-}
-
-/**
- * Returns the bytes per frame for given PCM properties.
- *
- * @return Bytes per (audio) frame.
- * @param  pProps               PCM properties to retrieve bytes per frame for.
- */
-uint32_t DrvAudioHlpPCMPropsBytesPerFrame(PCPDMAUDIOPCMPROPS pProps)
-{
-    return PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
-}
-
-/**
- * Prints PCM properties to the debug log.
- *
- * @param   pProps              Stream configuration to log.
- */
-void DrvAudioHlpPCMPropsPrint(PCPDMAUDIOPCMPROPS pProps)
-{
-    AssertPtrReturnVoid(pProps);
-
-    Log(("uHz=%RU32, cChannels=%RU8, cBits=%RU8%s",
-         pProps->uHz, pProps->cChannels, pProps->cbSample * 8, pProps->fSigned ? "S" : "U"));
-}
-
-/**
- * Converts PCM properties to a audio stream configuration.
- *
- * @return  IPRT status code.
- * @param   pProps              PCM properties to convert.
- * @param   pCfg                Stream configuration to store result into.
- */
-int DrvAudioHlpPCMPropsToStreamCfg(PCPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
-{
-    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
-
-    DrvAudioHlpStreamCfgInit(pCfg);
-
-    memcpy(&pCfg->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
-    return VINF_SUCCESS;
-}
-
-/**
  * Initializes a stream configuration with its default values.
  *
  * @param   pCfg                Stream configuration to initialize.
@@ -1143,6 +951,11 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
 {
     return cBits * uHz * cChannels;
 }
+
+
+/*********************************************************************************************************************************
+*   PCM Property Helpers                                                                                                         *
+*********************************************************************************************************************************/
 
 /**
  * Gets the bitrate.
@@ -1429,6 +1242,204 @@ uint32_t DrvAudioHlpNanoToBytes(PCPDMAUDIOPCMPROPS pProps, uint64_t cNs)
 {
     return PDMAUDIOPCMPROPS_F2B(pProps, DrvAudioHlpNanoToFrames(pProps, cNs));
 }
+
+/**
+ * Clears a sample buffer by the given amount of audio frames with silence (according to the format
+ * given by the PCM properties).
+ *
+ * @param   pPCMProps               PCM properties to use for the buffer to clear.
+ * @param   pvBuf                   Buffer to clear.
+ * @param   cbBuf                   Size (in bytes) of the buffer.
+ * @param   cFrames                 Number of audio frames to clear in the buffer.
+ */
+void DrvAudioHlpClearBuf(PCPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cFrames)
+{
+    /*
+     * Validate input
+     */
+    AssertPtrReturnVoid(pPCMProps);
+    Assert(pPCMProps->cbSample);
+    if (!cbBuf || !cFrames)
+        return;
+    AssertPtrReturnVoid(pvBuf);
+
+    Assert(pPCMProps->fSwapEndian == false); /** @todo Swapping Endianness is not supported yet. */
+
+    /*
+     * Decide how much needs clearing.
+     */
+    size_t cbToClear = DrvAudioHlpFramesToBytes(pPCMProps, cFrames);
+    AssertStmt(cbToClear <= cbBuf, cbToClear = cbBuf);
+
+    Log2Func(("pPCMProps=%p, pvBuf=%p, cFrames=%RU32, fSigned=%RTbool, cBytes=%RU8\n",
+              pPCMProps, pvBuf, cFrames, pPCMProps->fSigned, pPCMProps->cbSample));
+
+    /*
+     * Do the job.
+     */
+    if (pPCMProps->fSigned)
+        RT_BZERO(pvBuf, cbToClear);
+    else /* Unsigned formats. */
+    {
+        switch (pPCMProps->cbSample)
+        {
+            case 1: /* 8 bit */
+                memset(pvBuf, 0x80, cbToClear);
+                break;
+
+            case 2: /* 16 bit */
+            {
+                uint16_t *pu16Dst = (uint16_t *)pvBuf;
+                size_t    cLeft   = cbToClear / sizeof(uint16_t);
+                while (cLeft-- > 0)
+                    *pu16Dst++ = 0x80;
+                break;
+            }
+
+            /** @todo Add 24 bit? */
+
+            case 4: /* 32 bit */
+                ASMMemFill32(pvBuf, cbToClear & ~(size_t)3, 0x80);
+                break;
+
+            default:
+                AssertMsgFailed(("Invalid bytes per sample: %RU8\n", pPCMProps->cbSample));
+        }
+    }
+}
+
+/**
+ * Checks whether two given PCM properties are equal.
+ *
+ * @returns @c true if equal, @c false if not.
+ * @param   pProps1             First properties to compare.
+ * @param   pProps2             Second properties to compare.
+ */
+bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2)
+{
+    AssertPtrReturn(pProps1, false);
+    AssertPtrReturn(pProps2, false);
+
+    if (pProps1 == pProps2) /* If the pointers match, take a shortcut. */
+        return true;
+
+    return    pProps1->uHz         == pProps2->uHz
+           && pProps1->cChannels   == pProps2->cChannels
+           && pProps1->cbSample    == pProps2->cbSample
+           && pProps1->fSigned     == pProps2->fSigned
+           && pProps1->fSwapEndian == pProps2->fSwapEndian;
+}
+
+/**
+ * Checks whether given PCM properties are valid or not.
+ *
+ * Returns @c true if properties are valid, @c false if not.
+ * @param   pProps              PCM properties to check.
+ */
+bool DrvAudioHlpPCMPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, false);
+
+    /* Minimum 1 channel (mono), maximum 7.1 (= 8) channels. */
+    bool fValid = (   pProps->cChannels >= 1
+                   && pProps->cChannels <= 8);
+
+    if (fValid)
+    {
+        switch (pProps->cbSample)
+        {
+            case 1: /* 8 bit */
+               if (pProps->fSigned)
+                   fValid = false;
+               break;
+            case 2: /* 16 bit */
+                if (!pProps->fSigned)
+                    fValid = false;
+                break;
+            /** @todo Do we need support for 24 bit samples? */
+            case 4: /* 32 bit */
+                if (!pProps->fSigned)
+                    fValid = false;
+                break;
+            default:
+                fValid = false;
+                break;
+        }
+    }
+
+    if (!fValid)
+        return false;
+
+    fValid &= pProps->uHz > 0;
+    fValid &= pProps->cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cbSample, pProps->cChannels);
+    fValid &= pProps->fSwapEndian == false; /** @todo Handling Big Endian audio data is not supported yet. */
+
+    return fValid;
+}
+
+/**
+ * Checks whether the given PCM properties are equal with the given
+ * stream configuration.
+ *
+ * @returns @c true if equal, @c false if not.
+ * @param   pProps              PCM properties to compare.
+ * @param   pCfg                Stream configuration to compare.
+ */
+bool DrvAudioHlpPCMPropsAreEqual(PCPDMAUDIOPCMPROPS pProps, PCPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pProps, false);
+    AssertPtrReturn(pCfg,   false);
+
+    return DrvAudioHlpPCMPropsAreEqual(pProps, &pCfg->Props);
+}
+
+/**
+ * Returns the bytes per frame for given PCM properties.
+ *
+ * @return Bytes per (audio) frame.
+ * @param  pProps               PCM properties to retrieve bytes per frame for.
+ */
+uint32_t DrvAudioHlpPCMPropsBytesPerFrame(PCPDMAUDIOPCMPROPS pProps)
+{
+    return PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+}
+
+/**
+ * Prints PCM properties to the debug log.
+ *
+ * @param   pProps              Stream configuration to log.
+ */
+void DrvAudioHlpPCMPropsPrint(PCPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturnVoid(pProps);
+
+    Log(("uHz=%RU32, cChannels=%RU8, cBits=%RU8%s",
+         pProps->uHz, pProps->cChannels, pProps->cbSample * 8, pProps->fSigned ? "S" : "U"));
+}
+
+/**
+ * Converts PCM properties to a audio stream configuration.
+ *
+ * @return  IPRT status code.
+ * @param   pProps              PCM properties to convert.
+ * @param   pCfg                Stream configuration to store result into.
+ * @todo r=bird: Rename to DrvAudioHlpStreamCfgInitFromPCMProps.
+ */
+int DrvAudioHlpPCMPropsToStreamCfg(PCPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
+
+    DrvAudioHlpStreamCfgInit(pCfg);
+
+    memcpy(&pCfg->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
+    return VINF_SUCCESS;
+}
+
+
+/*********************************************************************************************************************************
+*   Audio File Helpers                                                                                                           *
+*********************************************************************************************************************************/
 
 /**
  * Sanitizes the file name component so that unsupported characters
