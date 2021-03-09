@@ -159,7 +159,7 @@ PPDMAUDIODEVICE PDMAudioDeviceAlloc(size_t cb)
     PPDMAUDIODEVICE pDev = (PPDMAUDIODEVICE)RTMemAllocZ(RT_ALIGN_Z(cb, 64));
     if (pDev)
     {
-        pDev->uMagic == PDMAUDIODEVICE_MAGIC;
+        pDev->uMagic = PDMAUDIODEVICE_MAGIC;
         pDev->cbData = (uint32_t)(cb - sizeof(PDMAUDIODEVICE));
         RTListInit(&pDev->Node);
 
