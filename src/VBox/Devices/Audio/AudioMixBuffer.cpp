@@ -332,6 +332,20 @@ void AudioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf)
     if (!pMixBuf)
         return;
 
+    /* Ignore calls for an uninitialized (zeroed) or already destroyed instance.  Happens a lot. */
+    if (   pMixBuf->uMagic == 0
+        || pMixBuf->uMagic == ~PDMAUDIOMIXBUF_MAGIC)
+    {
+        Assert(!pMixBuf->pszName);
+        Assert(!pMixBuf->pRate);
+        Assert(!pMixBuf->pFrames);
+        Assert(!pMixBuf->cFrames);
+        return;
+    }
+
+    Assert(pMixBuf->uMagic == PDMAUDIOMIXBUF_MAGIC);
+    pMixBuf->uMagic = ~PDMAUDIOMIXBUF_MAGIC;
+
     AudioMixBufUnlink(pMixBuf);
 
     if (pMixBuf->pszName)
@@ -815,6 +829,7 @@ int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMAUDIOPCMPR
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pProps,  VERR_INVALID_POINTER);
 
+    pMixBuf->uMagic  = PDMAUDIOMIXBUF_MAGIC;
     pMixBuf->pParent = NULL;
 
     RTListInit(&pMixBuf->lstChildren);

@@ -91,7 +91,7 @@ DECLINLINE(void) PDMAudioHostDevFree(PPDMAUDIOHOSTDEV pDev)
     {
         Assert(pDev->uMagic == PDMAUDIOHOSTDEV_MAGIC);
         Assert(pDev->cRefCount == 0);
-        pDev->uMagic = PDMAUDIOHOSTDEV_MAGIC_DEAD;
+        pDev->uMagic = ~PDMAUDIOHOSTDEV_MAGIC;
         pDev->cbSelf = 0;
 
         RTMemFree(pDev);

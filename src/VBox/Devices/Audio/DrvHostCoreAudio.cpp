@@ -100,7 +100,7 @@ typedef struct DRVHOSTCOREAUDIO
     /** Critical section to serialize access. */
     RTCRITSECT              CritSect;
     /** Current (last reported) device enumeration. */
-    PDMAUDIOHOSTENUM      Devices;
+    PDMAUDIOHOSTENUM        Devices;
     /** Pointer to the currently used input device in the device enumeration.
      *  Can be NULL if none assigned. */
     PCOREAUDIODEVICEDATA    pDefaultDevIn;

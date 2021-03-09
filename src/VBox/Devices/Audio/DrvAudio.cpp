@@ -552,8 +552,8 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
  * @param   pCfgHost            Stream configuration to use for the host side (backend).
  * @param   pCfgGuest           Stream configuration to use for the guest side.
  */
-static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
-                                      PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgHost, PPDMAUDIOSTREAMCFG pCfgGuest)
+static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
+                                      PPDMAUDIOSTREAMCFG pCfgHost, PPDMAUDIOSTREAMCFG pCfgGuest)
 {
     AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,   VERR_INVALID_POINTER);
@@ -766,14 +766,9 @@ static void drvAudioStreamFree(PPDMAUDIOSTREAM pStream)
     {
         LogFunc(("[%s]\n", pStream->szName));
         Assert(pStream->uMagic == PDMAUDIOSTREAM_MAGIC);
-        pStream->uMagic = ~PDMAUDIOSTREAM_MAGIC;
 
-        if (pStream->pvBackend)
-        {
-            Assert(pStream->cbBackend);
-            RTMemFree(pStream->pvBackend);
-            pStream->pvBackend = NULL;
-        }
+        pStream->uMagic    = ~PDMAUDIOSTREAM_MAGIC;
+        pStream->pvBackend = NULL;
 
         RTMemFree(pStream);
     }
@@ -2604,7 +2599,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, PP
         /*
          * Allocate and initialize common state.
          */
-        pStream = (PPDMAUDIOSTREAM)RTMemAllocZ(sizeof(PDMAUDIOSTREAM));
+        pStream = (PPDMAUDIOSTREAM)RTMemAllocZ(sizeof(PDMAUDIOSTREAM) + RT_ALIGN_Z(cbHstStrm, 64));
         AssertPtrBreakStmt(pStream, rc = VERR_NO_MEMORY);
 
         /* Retrieve host driver name for easier identification. */
@@ -2618,18 +2613,10 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, PP
                     pDrvAudioInst->pReg->szName[0] != '\0' ? pDrvAudioInst->pReg->szName : "Untitled",
                     pCfgHost->szName[0] != '\0' ? pCfgHost->szName : "<Untitled>");
 
-        pStream->enmDir = pCfgHost->enmDir;
-
-        /*
-         * Allocate and init backend-specific data.
-         */
-        if (cbHstStrm) /* High unlikely that backends do not have an own space for data, but better check. */
-        {
-            pStream->pvBackend = RTMemAllocZ(cbHstStrm);
-            AssertBreakStmt(pStream->pvBackend, rc = VERR_NO_MEMORY);
-
-            pStream->cbBackend = (uint32_t)cbHstStrm;
-        }
+        pStream->enmDir    = pCfgHost->enmDir;
+        pStream->cbBackend = (uint32_t)cbHstStrm;
+        if (cbHstStrm)
+            pStream->pvBackend = pStream + 1;
 
         /*
          * Try to init the rest.

@@ -235,6 +235,7 @@
 #include <iprt/path.h>
 
 #include <VBox/types.h>
+# include <VBox/vmm/pdmcommon.h>
 #ifdef VBOX_WITH_STATISTICS
 # include <VBox/vmm/stam.h>
 #endif
@@ -403,10 +404,8 @@ typedef PDMAUDIOHOSTDEV *PPDMAUDIOHOSTDEV;
 /** Pointer to a const audio device info (enumeration result). */
 typedef PDMAUDIOHOSTDEV const *PCPDMAUDIOHOSTDEV;
 
-/** Magic value for PDMAUDIOHOSTDEV. (Armando Anthony "Chick" Corea) */
-#define PDMAUDIOHOSTDEV_MAGIC           UINT32_C(0x19410612)
-/** Magic value for PDMAUDIOHOSTDEV after free. */
-#define PDMAUDIOHOSTDEV_MAGIC_DEAD      UINT32_C(0x20210209)
+/** Magic value for PDMAUDIOHOSTDEV.  */
+#define PDMAUDIOHOSTDEV_MAGIC       PDM_VERSION_MAKE(0xa0d0, 1, 0)
 
 
 /**
@@ -428,8 +427,8 @@ typedef PDMAUDIOHOSTENUM *PPDMAUDIOHOSTENUM;
 /** Pointer to a const audio device enumeration result. */
 typedef PDMAUDIOHOSTENUM const *PCPDMAUDIOHOSTENUM;
 
-/** Magic for the host audio device enumeration. (Herbert Jeffrey "Herbie" Hancock) */
-#define PDMAUDIOHOSTENUM_MAGIC      UINT32_C(0x19400412)
+/** Magic for the host audio device enumeration. */
+#define PDMAUDIOHOSTENUM_MAGIC      PDM_VERSION_MAKE(0xa0d1, 1, 0)
 
 
 /**
@@ -998,62 +997,65 @@ typedef struct PDMAUDIOMIXBUF *PPDMAUDIOMIXBUF;
  */
 typedef struct PDMAUDIOMIXBUF
 {
-    RTLISTNODE                Node;
+    /** Magic value (PDMAUDIOMIXBUF_MAGIC). */
+    uint32_t                    uMagic;
+    /** For quickly converting frames <-> bytes and vice versa. */
+    uint8_t                     cShift;
+    uint8_t                     abPadding[3];
+    /* ???Undocumented??? */
+    RTLISTNODE                  Node;
     /** Name of the buffer. */
-    char                     *pszName;
+    char                       *pszName;
     /** Frame buffer. */
-    PPDMAUDIOFRAME            pFrames;
+    PPDMAUDIOFRAME              pFrames;
     /** Size of the frame buffer (in audio frames). */
-    uint32_t                  cFrames;
+    uint32_t                    cFrames;
     /** The current read position (in frames). */
-    uint32_t                  offRead;
+    uint32_t                    offRead;
     /** The current write position (in frames). */
-    uint32_t                  offWrite;
-    /**
-     * Total frames already mixed down to the parent buffer (if any).
+    uint32_t                    offWrite;
+    /** Total frames already mixed down to the parent buffer (if any).
      *
      * Always starting at the parent's offRead position.
      * @note Count always is specified in parent frames, as the sample count can
-     *       differ between parent and child.
-     */
-    uint32_t                  cMixed;
+     *       differ between parent and child.  */
+    uint32_t                    cMixed;
     /** How much audio frames are currently being used
      *  in this buffer.
      *  Note: This also is known as the distance in ring buffer terms. */
-    uint32_t                  cUsed;
-    /** Pointer to parent buffer (if any). */
-    PPDMAUDIOMIXBUF           pParent;
-    /** List of children mix buffers to keep in sync with (if being a parent buffer). */
-    RTLISTANCHOR              lstChildren;
+    uint32_t                    cUsed;
     /** Number of children mix buffers kept in lstChildren. */
-    uint32_t                  cChildren;
+    uint32_t                    cChildren;
+    /** List of children mix buffers to keep in sync with (if being a parent buffer). */
+    RTLISTANCHOR                lstChildren;
+    /** Pointer to parent buffer (if any). */
+    PPDMAUDIOMIXBUF             pParent;
     /** Intermediate structure for buffer conversion tasks. */
-    PPDMAUDIOSTREAMRATE       pRate;
+    PPDMAUDIOSTREAMRATE         pRate;
     /** Internal representation of current volume used for mixing. */
-    PDMAUDMIXBUFVOL           Volume;
+    PDMAUDMIXBUFVOL             Volume;
     /** This buffer's audio format.
      * @todo r=bird: This seems to be a value created by AUDMIXBUF_AUDIO_FMT_MAKE(),
      *       which is not define here.  Does this structure really belong here at
      *       all?  */
-    PDMAUDIOMIXBUFFMT         uAudioFmt;
+    PDMAUDIOMIXBUFFMT           uAudioFmt;
     /** Standard conversion-to function for set uAudioFmt. */
-    PFNPDMAUDIOMIXBUFCONVTO   pfnConvTo;
+    PFNPDMAUDIOMIXBUFCONVTO     pfnConvTo;
     /** Standard conversion-from function for set uAudioFmt. */
-    PFNPDMAUDIOMIXBUFCONVFROM pfnConvFrom;
-    /**
-     * Ratio of the associated parent stream's frequency by this stream's
+    PFNPDMAUDIOMIXBUFCONVFROM   pfnConvFrom;
+    /** Ratio of the associated parent stream's frequency by this stream's
      * frequency (1<<32), represented as a signed 64 bit integer.
      *
      * For example, if the parent stream has a frequency of 44 khZ, and this
      * stream has a frequency of 11 kHz, the ration then would be
      * (44/11 * (1 << 32)).
      *
-     * Currently this does not get changed once assigned.
-     */
-    int64_t                   iFreqRatio;
-    /** For quickly converting frames <-> bytes and vice versa. */
-    uint8_t                   cShift;
+     * Currently this does not get changed once assigned. */
+    int64_t                     iFreqRatio;
 } PDMAUDIOMIXBUF;
+
+/** Magic value for PDMAUDIOMIXBUF. */
+#define PDMAUDIOMIXBUF_MAGIC                PDM_VERSION_MAKE(0xa0d2, 1, 0)
 
 /** @name PDMAUDIOFILE_FLAGS_XXX
  * @{ */
@@ -1181,7 +1183,6 @@ typedef struct PDMAUDIOSTREAMIN
         /** File for writing non-interleaved captures. */
         PPDMAUDIOFILE   pFileCaptureNonInterleaved;
     } Dbg;
-#ifdef VBOX_WITH_STATISTICS
     struct
     {
         STAMCOUNTER     TotalFramesCaptured;
@@ -1191,7 +1192,6 @@ typedef struct PDMAUDIOSTREAMIN
         STAMCOUNTER     AvgFramesRead;
         STAMCOUNTER     TotalTimesRead;
     } Stats;
-#endif
 } PDMAUDIOSTREAMIN;
 /** Pointer to the specifics for an audio input stream. */
 typedef PDMAUDIOSTREAMIN *PPDMAUDIOSTREAMIN;
@@ -1210,7 +1210,6 @@ typedef struct PDMAUDIOSTREAMOUT
         /** File for writing stream playback. */
         PPDMAUDIOFILE   pFilePlayNonInterleaved;
     } Dbg;
-#ifdef VBOX_WITH_STATISTICS
     struct
     {
         STAMCOUNTER     TotalFramesPlayed;
@@ -1220,7 +1219,6 @@ typedef struct PDMAUDIOSTREAMOUT
         STAMCOUNTER     AvgFramesWritten;
         STAMCOUNTER     TotalTimesWritten;
     } Stats;
-#endif
 } PDMAUDIOSTREAMOUT;
 /** Pointer to the specifics for an audio output stream. */
 typedef PDMAUDIOSTREAMOUT *PPDMAUDIOSTREAMOUT;
@@ -1311,8 +1309,8 @@ typedef struct PDMAUDIOSTREAM
     } RT_UNION_NM(u);
 } PDMAUDIOSTREAM;
 
-/** Magic value for PDMAUDIOSTREAM. (Ahmad Jamal)   */
-#define PDMAUDIOSTREAM_MAGIC    UINT32_C(0x19300702)
+/** Magic value for PDMAUDIOSTREAM. */
+#define PDMAUDIOSTREAM_MAGIC    PDM_VERSION_MAKE(0xa0d3, 1, 0)
 
 
 /**
@@ -1395,6 +1393,7 @@ typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
 
 /**
  * Host audio callback function.
+ *
  * This function will be called from a backend to communicate with the host audio interface.
  *
  * @returns IPRT status code.
