@@ -42,8 +42,6 @@
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
 
-#include <iprt/asm.h>
-#include <iprt/asm-math.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
