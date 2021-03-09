@@ -1157,6 +1157,13 @@ typedef enum PDMAUDIOBACKENDSTS
  */
 typedef struct PDMAUDIOSTREAMIN
 {
+    struct
+    {
+        /** File for writing stream reads. */
+        PPDMAUDIOFILE   pFileStreamRead;
+        /** File for writing non-interleaved captures. */
+        PPDMAUDIOFILE   pFileCaptureNonInterleaved;
+    } Dbg;
 #ifdef VBOX_WITH_STATISTICS
     struct
     {
@@ -1168,13 +1175,6 @@ typedef struct PDMAUDIOSTREAMIN
         STAMCOUNTER     TotalTimesRead;
     } Stats;
 #endif
-    struct
-    {
-        /** File for writing stream reads. */
-        PPDMAUDIOFILE   pFileStreamRead;
-        /** File for writing non-interleaved captures. */
-        PPDMAUDIOFILE   pFileCaptureNonInterleaved;
-    } Dbg;
 } PDMAUDIOSTREAMIN;
 /** Pointer to the specifics for an audio input stream. */
 typedef PDMAUDIOSTREAMIN *PPDMAUDIOSTREAMIN;
@@ -1186,6 +1186,13 @@ typedef PDMAUDIOSTREAMIN *PPDMAUDIOSTREAMIN;
  */
 typedef struct PDMAUDIOSTREAMOUT
 {
+    struct
+    {
+        /** File for writing stream writes. */
+        PPDMAUDIOFILE   pFileStreamWrite;
+        /** File for writing stream playback. */
+        PPDMAUDIOFILE   pFilePlayNonInterleaved;
+    } Dbg;
 #ifdef VBOX_WITH_STATISTICS
     struct
     {
@@ -1197,13 +1204,6 @@ typedef struct PDMAUDIOSTREAMOUT
         STAMCOUNTER     TotalTimesWritten;
     } Stats;
 #endif
-    struct
-    {
-        /** File for writing stream writes. */
-        PPDMAUDIOFILE   pFileStreamWrite;
-        /** File for writing stream playback. */
-        PPDMAUDIOFILE   pFilePlayNonInterleaved;
-    } Dbg;
 } PDMAUDIOSTREAMOUT;
 /** Pointer to the specifics for an audio output stream. */
 typedef PDMAUDIOSTREAMOUT *PPDMAUDIOSTREAMOUT;
@@ -1236,10 +1236,10 @@ typedef struct PDMAUDIOSTREAM *PPDMAUDIOSTREAMCTX;
  */
 typedef struct PDMAUDIOSTREAM
 {
-    /** List node. */
+    /** List node.
+     * @todo s/Node/ListEntry/ */
     RTLISTNODE              Node;
-    /** Name of this stream. */
-    char                    szName[64];
+    /** @todo add magic (some jazz pianist). */
     /** Number of references to this stream.
      *  Only can be destroyed when the reference count reaches 0. */
     uint32_t                cRefs;
@@ -1262,12 +1262,6 @@ typedef struct PDMAUDIOSTREAM
     PDMAUDIOSTREAMCTX       Guest;
     /** The host side of the stream. */
     PDMAUDIOSTREAMCTX       Host;
-    /** Union for input/output specifics depending on enmDir. */
-    union
-    {
-        PDMAUDIOSTREAMIN    In;
-        PDMAUDIOSTREAMOUT   Out;
-    } RT_UNION_NM(u);
     /** Timestamp (in ns) since last trying to re-initialize.
      *  Might be 0 if has not been tried yet. */
     uint64_t                tsLastReInitNs;
@@ -1285,6 +1279,16 @@ typedef struct PDMAUDIOSTREAM
     void                   *pvBackend;
     /** Size (in bytes) of the backend-specific stream data. */
     size_t                  cbBackend;
+
+    /** Name of this stream. */
+    char                    szName[64];
+
+    /** Union for input/output specifics depending on enmDir. */
+    union
+    {
+        PDMAUDIOSTREAMIN    In;
+        PDMAUDIOSTREAMOUT   Out;
+    } RT_UNION_NM(u);
 } PDMAUDIOSTREAM;
 
 
