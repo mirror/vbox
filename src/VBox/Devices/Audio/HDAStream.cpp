@@ -698,8 +698,10 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
          *       samples we actually need, in other words, skipping the interleaved
          *       channels we don't support / need to save space.
          */
-        uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props,
-                                                     RT_MS_1SEC * 6 / RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz));
+        uint32_t msCircBuf = RT_MS_1SEC * 6 / RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz);
+        msCircBuf = RT_MAX(msCircBuf, pThis->msInitialDelay + RT_MS_1SEC * 6 / uTransferHz);
+
+        uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, msCircBuf);
         LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
                  uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf)));
 
@@ -804,6 +806,8 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     /* Initialize timestamps. */
     pStreamShared->State.tsLastTransferNs = 0;
     pStreamShared->State.tsLastReadNs     = 0;
+    pStreamShared->State.tsAioDelayEnd    = UINT64_MAX;
+    pStreamShared->State.tsStart          = 0;
 
     RT_ZERO(pStreamShared->State.BDLE);
     pStreamShared->State.uCurBDLE = 0;
@@ -903,6 +907,31 @@ int hdaR3StreamEnable(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fEn
     LogFunc(("[SD%RU8] rc=%Rrc\n", pStreamShared->u8SD, rc));
     return rc;
 }
+
+/**
+ * Marks the stream as started.
+ *
+ * Used after the stream has been enabled and the DMA timer has been armed.
+ */
+void hdaR3StreamMarkStarted(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, uint64_t tsNow)
+{
+    pStreamShared->State.tsLastReadNs  = RTTimeNanoTS();
+    pStreamShared->State.tsStart       = tsNow;
+    pStreamShared->State.tsAioDelayEnd = tsNow + PDMDevHlpTimerFromMilli(pDevIns, pStreamShared->hTimer, pThis->msInitialDelay);
+    Log3Func(("#%u: tsStart=%RU64 tsAioDelayEnd=%RU64 tsLastReadNs=%RU64\n", pStreamShared->u8SD,
+              pStreamShared->State.tsStart, pStreamShared->State.tsAioDelayEnd, pStreamShared->State.tsLastReadNs));
+
+}
+
+/**
+ * Marks the stream as stopped.
+ */
+void hdaR3StreamMarkStopped(PHDASTREAM pStreamShared)
+{
+    Log3Func(("#%u\n", pStreamShared->u8SD));
+    pStreamShared->State.tsAioDelayEnd = UINT64_MAX;
+}
+
 
 #if 0 /* Not used atm. */
 static uint32_t hdaR3StreamGetPosition(PHDASTATE pThis, PHDASTREAM pStreamShared)
@@ -1012,6 +1041,7 @@ bool hdaR3StreamTransferIsScheduled(PHDASTREAM pStreamShared, uint64_t tsNow)
                 return true;
             }
 
+            /** @todo r=bird: how can this be right?   */
             if (pStreamShared->State.tsTransferNext > tsNow)
             {
                 Log3Func(("[SD%RU8] Scheduled in %RU64\n", pStreamShared->u8SD, pStreamShared->State.tsTransferNext - tsNow));
@@ -1703,17 +1733,18 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 /**
  * The stream's main function when called by the timer.
  *
- * Note: This function also will be called without timer invocation
- *       when starting (enabling) the stream to minimize startup latency.
+ * @note This function also will be called without timer invocation when
+ *       starting (enabling) the stream to minimize startup latency.
  *
+ * @returns Current timer time if the timer is enabled, otherwise zero.
  * @param   pDevIns         The device instance.
  * @param   pThis           The shared HDA device state.
  * @param   pThisCC         The ring-3 HDA device state.
  * @param   pStreamShared   HDA stream to update (shared bits).
  * @param   pStreamR3       HDA stream to update (ring-3 bits).
  */
-void hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
-                          PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
+uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
+                              PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
 {
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pStreamShared->hTimer));
@@ -1734,7 +1765,9 @@ void hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThis
         const uint64_t tsNow           = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
         const bool     fTimerScheduled = hdaR3StreamTransferIsScheduled(pStreamShared, tsNow);
 
-        uint64_t tsTransferNext  = 0;
+        /** @todo r=bird: This is a waste of time if the timer is called at a
+         *        constant rate.  We can just calculate it here.  */
+        uint64_t tsTransferNext;
         if (fTimerScheduled)
         {
             Assert(pStreamShared->State.tsTransferNext); /* Make sure that a new transfer timestamp is set. */
@@ -1748,9 +1781,11 @@ void hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThis
 
         hdaR3TimerSet(pDevIns, pStreamShared, tsTransferNext,
                       true /*fForce*/, tsNow);
+        return tsNow;
     }
-    else
-        Log3Func(("[SD%RU8] fSinksActive=%RTbool\n", uSD, fSinkActive));
+
+    Log3Func(("[SD%RU8] fSinksActive=%RTbool\n", uSD, fSinkActive));
+    return 0;
 }
 
 /**
@@ -1796,11 +1831,10 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 
     if (hdaGetDirFromSD(pStreamShared->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
     {
-        bool fDoRead = fInTimer; /* Whether to read from the HDA stream or not. */
-
         /*
          * Do DMA work.
          */
+        bool fDoRead = false; /* Whether to push data down the driver stack or not.  */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (fInTimer)
 # endif
@@ -1824,30 +1858,44 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             }
 
             /* Do the DMA transfer. */
+            uint64_t const offWriteBefore = pStreamR3->State.offWrite;
             rc2 = hdaR3StreamTransfer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamFree);
             AssertRC(rc2);
-
-            /* Never read yet? Set initial timestamp. */
-            if (pStreamShared->State.tsLastReadNs == 0)
-                pStreamShared->State.tsLastReadNs = tsNowNs;
 
             /*
              * Push data to down thru the mixer to and to the host drivers?
              *
-             * This is generally done at the rate given by cMsSchedulingHint,
-             * however we must also check available DMA buffer space.  There
-             * should be at least two periodic transfer units worth of space
-             * available now.
+             * We initially delay this by pThis->msInitialDelay, but after than we'll
+             * kick the AIO thread every time we've put more data in the buffer (which is
+             * every time) as the host audio device needs to get data in a timely manner.
+             *
+             * (We used to try only wake up the AIO thread according to pThis->uIoTimer
+             * and host wall clock, but that meant we would miss a wakup after the DMA
+             * timer was called a little late or if TM entered into catch-up mode.)
              */
-            Assert(tsNowNs >= pStreamShared->State.tsLastReadNs);
-            /** @todo convert cMsSchedulingHint to nano seconds and save a div.  */
-            const uint64_t msDelta = (tsNowNs - pStreamShared->State.tsLastReadNs) / RT_NS_1MS;
-            cbStreamFree = hdaR3StreamGetFree(pStreamR3);
-            if (   cbStreamFree < pStreamShared->State.cbTransferSize * 2
-                || msDelta >= pStreamShared->State.Cfg.Device.cMsSchedulingHint)
+            if (!pStreamShared->State.tsAioDelayEnd)
+                fDoRead = pStreamR3->State.offWrite > offWriteBefore
+                       || hdaR3StreamGetFree(pStreamR3) < pStreamShared->State.cbTransferSize * 2;
+            else if (PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer) >= pStreamShared->State.tsAioDelayEnd)
+            {
+                Log3Func(("Initial delay done: Passed tsAioDelayEnd.\n"));
+                pStreamShared->State.tsAioDelayEnd = 0;
                 fDoRead = true;
+            }
+            else if (hdaR3StreamGetFree(pStreamR3) < pStreamShared->State.cbTransferSize * 2)
+            {
+                Log3Func(("Initial delay done: Passed running short on buffer.\n"));
+                pStreamShared->State.tsAioDelayEnd = 0;
+                fDoRead = true;
+            }
+            else
+            {
+                Log3Func(("Initial delay pending...\n"));
+                fDoRead = false;
+            }
 
-            Log3Func(("msDelta=%RU64 (vs %u) cbStreamFree=%#x (vs %#x) => fDoRead=%RTbool\n", msDelta,
+            Log3Func(("msDelta=%RU64 (vs %u) cbStreamFree=%#x (vs %#x) => fDoRead=%RTbool\n",
+                      (tsNowNs - pStreamShared->State.tsLastReadNs) / RT_NS_1MS,
                       pStreamShared->State.Cfg.Device.cMsSchedulingHint, cbStreamFree,
                       pStreamShared->State.cbTransferSize * 2, fDoRead));
 
@@ -1859,11 +1907,14 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
                 AssertRC(rc2);
 # endif
-                /* Update last read timestamp so that we know when to run next. */
+                /* Update last read timestamp for logging/debugging. */
                 pStreamShared->State.tsLastReadNs = tsNowNs;
             }
         }
 
+        /*
+         * <Missing Description>
+         */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (!fInTimer) /* In async I/O thread */
 # else

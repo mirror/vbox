@@ -1443,7 +1443,9 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
                     /* Avoid going through the timer here by calling the stream's timer function directly.
                      * Should speed up starting the stream transfers. */
-                    hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
+                    uint64_t tsNow = hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
+
+                    hdaR3StreamMarkStarted(pDevIns, pThis, pStreamShared, tsNow);
                 }
                 else
                 {
@@ -1457,6 +1459,8 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
                     /* Reset the period. */
                     hdaR3StreamPeriodReset(&pStreamShared->State.Period);
+
+                    hdaR3StreamMarkStopped(pStreamShared);
                 }
             }
 
@@ -3518,11 +3522,19 @@ static int hdaR3LoadExecPost(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pT
             /* (Re-)install the DMA handler. */
             hdaR3StreamRegisterDMAHandlers(pThis, pStreamShared);
 #endif
-            if (hdaR3StreamTransferIsScheduled(pStreamShared, PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer)))
+            /** @todo r=bird: This can go wrong if the state saving happened exactly when
+             *        the timer expired.  See comparison in
+             *        hdaR3StreamTransferIsScheduled.   I've decided to just do this
+             *        unconditionally as that fixes the issue and simplifies the
+             *        hdaR3StreamMarkStarted.  Also, I don't really get why this check is
+             *        necessary at all. */
+            /*if (hdaR3StreamTransferIsScheduled(pStreamShared, PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer))) */
             {
                 /* Avoid going through the timer here by calling the stream's timer function directly.
                  * Should speed up starting the stream transfers. */
-                hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
+                uint64_t tsNow = hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
+
+                hdaR3StreamMarkStarted(pDevIns, pThis, pStreamShared, tsNow);
             }
 
             /* Also keep track of the currently active streams. */
@@ -4606,7 +4618,17 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate and read configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "BufSizeInMs|BufSizeOutMs|TimerHz|PosAdjustEnabled|PosAdjustFrames|TransferHeuristicsEnabled|DebugEnabled|DebugPathOut", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns,
+                                  "BufSizeInMs"
+                                  "|BufSizeOutMs"
+                                  "|InitialDelayMs"
+                                  "|TimerHz"
+                                  "|PosAdjustEnabled"
+                                  "|PosAdjustFrames"
+                                  "|TransferHeuristicsEnabled"
+                                  "|DebugEnabled"
+                                  "|DebugPathOut",
+                                  "");
 
     /* Note: Error checking of this value happens in hdaR3StreamSetUp(). */
     int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BufSizeInMs", &pThis->cbCircBufInMs, 0 /* Default value, if not set. */);
@@ -4627,6 +4649,18 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     if (pThis->uTimerHz != HDA_TIMER_HZ_DEFAULT)
         LogRel(("HDA: Using custom device timer rate (%RU16Hz)\n", pThis->uTimerHz));
+
+    /** @devcfgm{hda,InitialDelayMs,uint16_t,0,256,12,ms}
+     * How long to delay when a stream starts before engaging the asynchronous I/O
+     * thread from the DMA timer callback.  Because it's used from the DMA timer
+     * callback, it will implicitly be rounded up to the next timer period.
+     * This is for adding a little host scheduling leeway into the playback. */
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "InitialDelayMs", &pThis->msInitialDelay, 12);
+    if (RT_FAILURE(rc))
+         return PDMDEV_SET_ERROR(pDevIns, rc, N_("HDA configuration error: failed to read 'InitialDelayMs' as uint16_t"));
+    if (pThis->msInitialDelay > 256)
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("HDA configuration error: Out of range: 0 <= InitialDelayMs < 256: %u"), pThis->msInitialDelay);
 
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "PosAdjustEnabled", &pThis->fPosAdjustEnabled, true);
     if (RT_FAILURE(rc))

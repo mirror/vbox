@@ -165,6 +165,12 @@ typedef struct HDASTREAMSTATE
      *  When running in async I/O mode, this differs from \a tsLastTransferNs,
      *  because reading / processing will be done in a separate stream. */
     uint64_t                tsLastReadNs;
+
+    /** This is set to the timer clock time when the msInitialDelay period is over.
+     * Once reached, this is set to zero to avoid unnecessary time queries. */
+    uint64_t                tsAioDelayEnd;
+    /** The start time for the playback (on the timer clock). */
+    uint64_t                tsStart;
 } HDASTREAMSTATE;
 AssertCompileSizeAlignment(HDASTREAMSTATE, 8);
 
@@ -290,8 +296,11 @@ int                 hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDAST
 void                hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC,
                                      PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, uint8_t uSD);
 int                 hdaR3StreamEnable(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fEnable);
+void                hdaR3StreamMarkStarted(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, uint64_t tsNow);
+void                hdaR3StreamMarkStopped(PHDASTREAM pStreamShared);
+
 void                hdaR3StreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t uToAdd);
-void                hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
+uint64_t            hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                                          PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3);
 bool                hdaR3StreamTransferIsScheduled(PHDASTREAM pStreamShared, uint64_t tsNow);
 uint64_t            hdaR3StreamTransferGetNext(PHDASTREAM pStreamShared);
