@@ -48,7 +48,6 @@
 
 
 /** @defgroup grp_pdm_audio_host_enum_inline    The PDM Host Audio Enumeration Helper APIs
- *
  * @ingroup grp_pdm
  * @{
  */
