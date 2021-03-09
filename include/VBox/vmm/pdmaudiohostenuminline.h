@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PDM - Audio Helpers, Inlined Code. (DEV,++)
+ * PDM - Audio Helpers for host audio device enumeration, Inlined Code. (DEV,++)
  *
  * This is all inlined because it's too tedious to create a couple libraries to
  * contain it all (same bad excuse as for intnetinline.h & pdmnetinline.h).
