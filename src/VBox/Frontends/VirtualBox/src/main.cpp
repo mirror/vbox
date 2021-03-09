@@ -478,6 +478,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
          * load and slows down the load process that happens on the main GUI
          * thread to several seconds). */
         PlaySound(NULL, NULL, 0);
+
+# if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
+        // WORKAROUND:
+        // Unable to detect fusion if app
+        // built with SDK less than 10.14
+        a.setStyle("fusion");
+# endif
 #endif /* VBOX_WS_WIN */
 
 #ifdef VBOX_WS_MAC
