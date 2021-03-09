@@ -30,6 +30,7 @@
 #include <iprt/utf16.h>
 
 #include <VBox/vmm/pdmaudioinline.h>
+#include <VBox/vmm/pdmaudiohostenuminline.h>
 
 #include "DrvAudio.h"
 #include "VBoxDD.h"

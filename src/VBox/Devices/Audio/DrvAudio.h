@@ -206,29 +206,9 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
                            PDMAUDIOFILETYPE enmType, uint32_t fFlags);
 /** @}  */
 
-/** @name Audio device methods.
- * @{ */
-PPDMAUDIOHOSTDEV PDMAudioDeviceAlloc(size_t cb);
-void            PDMAudioDeviceFree(PPDMAUDIOHOSTDEV pDev);
-PPDMAUDIOHOSTDEV PDMAudioDeviceDup(const PPDMAUDIOHOSTDEV pDev, bool fOnlyCoreData);
-/** @}  */
-
-/** @name Audio device enumeration methods.
- * @{ */
-void            PDMAudioHostEnumInit(PPDMAUDIOHOSTENUM pDevEnm);
-void            PDMAudioHostEnumDelete(PPDMAUDIOHOSTENUM pDevEnm);
-void            PDMAudioHostEnumAppend(PPDMAUDIOHOSTENUM pDevEnm, PPDMAUDIOHOSTDEV pDev);
-int             PDMAudioHostEnumCopy(PPDMAUDIOHOSTENUM pDstDevEnm, PCPDMAUDIOHOSTENUM pSrcDevEnm,
-                                     PDMAUDIODIR enmUsage, bool fOnlyCoreData);
-PPDMAUDIOHOSTDEV PDMAudioHostEnumGetDefault(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR enmDir);
-uint32_t        PDMAudioHostEnumCountMatching(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR enmUsage);
-void            PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *pszDesc);
-/** @}  */
-
 /** @name Audio string-ify methods.
  * @{ */
 PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt);
-char *DrvAudioHlpAudDevFlagsToStrA(uint32_t fFlags);
 /** @}  */
 
 /** @name Audio file methods.

@@ -29,6 +29,7 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
+#include <VBox/vmm/pdmaudiohostenuminline.h>
 
 #include <iprt/alloc.h>
 #include <iprt/asm-math.h>
@@ -2175,16 +2176,12 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
             {
                 if (fLog)
                 {
-                    char *pszFlags = DrvAudioHlpAudDevFlagsToStrA(pDev->fFlags);
-
+                    char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
                     LogRel(("Audio: Device '%s':\n", pDev->szName));
-                    LogRel(("Audio: \tUsage           = %s\n",   PDMAudioDirGetName(pDev->enmUsage)));
-                    LogRel(("Audio: \tFlags           = %s\n",   pszFlags ? pszFlags : "<NONE>"));
-                    LogRel(("Audio: \tInput channels  = %RU8\n", pDev->cMaxInputChannels));
-                    LogRel(("Audio: \tOutput channels = %RU8\n", pDev->cMaxOutputChannels));
-
-                    if (pszFlags)
-                        RTStrFree(pszFlags);
+                    LogRel(("Audio:   Usage           = %s\n",   PDMAudioDirGetName(pDev->enmUsage)));
+                    LogRel(("Audio:   Flags           = %s\n",   PDMAudioDeviceFlagsToString(szFlags, pDev->fFlags)));
+                    LogRel(("Audio:   Input channels  = %RU8\n", pDev->cMaxInputChannels));
+                    LogRel(("Audio:   Output channels = %RU8\n", pDev->cMaxOutputChannels));
                 }
             }
 
