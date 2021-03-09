@@ -197,6 +197,7 @@ void PDMAudioDeviceFree(PPDMAUDIODEVICE pDev)
 PPDMAUDIODEVICE PDMAudioDeviceDup(PPDMAUDIODEVICE pDev, bool fCopyUserData)
 {
     AssertPtrReturn(pDev, NULL);
+    Assert(pDev->uMagic == PDMAUDIODEVICE_MAGIC);
 
     PPDMAUDIODEVICE pDevDup = PDMAudioDeviceAlloc(sizeof(*pDev) + (fCopyUserData ? pDev->cbData : 0));
     if (pDevDup)
