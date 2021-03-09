@@ -3094,7 +3094,7 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
     LogRel2(("Audio: Destroying stream '%s'\n", pStream->szName));
 
     LogFlowFunc(("[%s] cRefs=%RU32\n", pStream->szName, pStream->cRefs));
-    if (pStream->cRefs < 1)
+    if (pStream->cRefs <= 1)
     {
         rc = drvAudioStreamUninitInternal(pThis, pStream);
         if (RT_SUCCESS(rc))
