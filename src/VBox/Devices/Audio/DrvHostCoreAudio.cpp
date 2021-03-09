@@ -1679,7 +1679,7 @@ static int coreAudioDeviceRegisterCallbacks(PDRVHOSTCOREAUDIO pThis, PCOREAUDIOD
     RT_NOREF(pThis);
 
     AudioDeviceID deviceID = kAudioDeviceUnknown;
-    Assert(pDev && pDev->Core.cbSelf == sizeof(*pDev))
+    Assert(pDev && pDev->Core.cbSelf == sizeof(*pDev));
     if (pDev && pDev->Core.cbSelf == sizeof(*pDev)) /* paranoia or actually needed? */
         deviceID = pDev->deviceID;
 
@@ -1730,7 +1730,7 @@ static int coreAudioDeviceUnregisterCallbacks(PDRVHOSTCOREAUDIO pThis, PCOREAUDI
     RT_NOREF(pThis);
 
     AudioDeviceID deviceID = kAudioDeviceUnknown;
-    Assert(pDev && pDev->Core.cbSelf == sizeof(*pDev))
+    Assert(pDev && pDev->Core.cbSelf == sizeof(*pDev));
     if (pDev && pDev->Core.cbSelf == sizeof(*pDev)) /* paranoia or actually needed? */
         deviceID = pDev->deviceID;
 
@@ -2293,7 +2293,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
     if (pDev) /* (Default) device available? */
     {
         /* Sanity. */
-        Assert(pDev->Core.cbData == sizeof(*pDev));
+        Assert(pDev->Core.cbSelf == sizeof(*pDev));
 
         /* Init the Core Audio stream. */
         rc = coreAudioStreamInit(pCAStream, pThis, pDev);
