@@ -211,8 +211,6 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
 PPDMAUDIODEVICE PDMAudioDeviceAlloc(size_t cb);
 void            PDMAudioDeviceFree(PPDMAUDIODEVICE pDev);
 PPDMAUDIODEVICE PDMAudioDeviceDup(const PPDMAUDIODEVICE pDev, bool fCopyUserData);
-
-PPDMAUDIODEVICE DrvAudioHlpDeviceAlloc(size_t cbData);
 /** @}  */
 
 /** @name Audio device enumeration methods.

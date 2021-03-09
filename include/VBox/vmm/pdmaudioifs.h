@@ -355,11 +355,10 @@ typedef struct PDMAUDIODEVICE
 {
     /** List entry (like PDMAUDIODEVICEENUM::LstDevices). */
     RTLISTNODE          Node;
-    /** Additional data which might be relevant for the current context (follows
-     * immediately after the end of this structure). */
-    void               *pvData;
+    /** Magic value (PDMAUDIODEVICE_MAGIC). */
+    uint32_t            uMagic;
     /** Size of the additional data. */
-    size_t              cbData;
+    uint32_t            cbData;
     /** The device type. */
     PDMAUDIODEVICETYPE  enmType;
     /** Usage of the device. */
@@ -384,16 +383,22 @@ typedef struct PDMAUDIODEVICE
             /** Product ID. */
             uint16_t    idProduct;
         } USB;
-        uint64_t        uPadding[2];
+        uint64_t        uPadding[ARCH_BITS >= 64 ? 3 : 4];
     } Type;
     /** Friendly name of the device, if any. */
     char                szName[64];
 } PDMAUDIODEVICE;
-AssertCompileSizeAlignment(PDMAUDIODEVICE, ARCH_BITS >= 64 ? 32 : 16);
+AssertCompileSizeAlignment(PDMAUDIODEVICE, 32);
 /** Pointer to audio device info (enum result). */
 typedef PDMAUDIODEVICE *PPDMAUDIODEVICE;
 /** Pointer to a const audio device info (enum result). */
 typedef PDMAUDIODEVICE const *PCPDMAUDIODEVICE;
+
+/** Magic value for PDMAUDIODEVICE. (Armando Anthony "Chick" Corea) */
+#define PDMAUDIODEVICE_MAGIC        UINT32_C(0x19410612)
+/** Magic value for PDMAUDIODEVICE after free. */
+#define PDMAUDIODEVICE_MAGIC_DEAD   UINT32_C(0x20210209)
+
 
 /**
  * An audio device enumeration result.

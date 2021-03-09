@@ -159,28 +159,14 @@ PPDMAUDIODEVICE PDMAudioDeviceAlloc(size_t cb)
     PPDMAUDIODEVICE pDev = (PPDMAUDIODEVICE)RTMemAllocZ(RT_ALIGN_Z(cb, 64));
     if (pDev)
     {
-        pDev->pvData = pDev + 1;
-        pDev->cbData = cb - sizeof(PDMAUDIODEVICE);
+        pDev->uMagic == PDMAUDIODEVICE_MAGIC;
+        pDev->cbData = (uint32_t)(cb - sizeof(PDMAUDIODEVICE));
         RTListInit(&pDev->Node);
 
         //pDev->cMaxInputChannels  = 0;
         //pDev->cMaxOutputChannels = 0;
     }
     return pDev;
-}
-
-/**
- * Allocates an audio device.
- *
- * @returns Newly allocated audio device, or NULL on failure.
- * @param   cbData              How much additional data (in bytes) should be allocated to provide
- *                              a (backend) specific area to store additional data.
- *                              Optional, can be 0.
- */
-PPDMAUDIODEVICE DrvAudioHlpDeviceAlloc(size_t cbData)
-{
-    AssertReturn(cbData < _4M, NULL);
-    return PDMAudioDeviceAlloc(cbData + sizeof(PDMAUDIODEVICE));
 }
 
 /**
@@ -192,9 +178,9 @@ void PDMAudioDeviceFree(PPDMAUDIODEVICE pDev)
 {
     if (pDev)
     {
+        Assert(pDev->uMagic == PDMAUDIODEVICE_MAGIC);
         Assert(pDev->cRefCount == 0);
-
-        pDev->pvData = NULL;
+        pDev->uMagic = PDMAUDIODEVICE_MAGIC_DEAD;
         pDev->cbData = 0;
 
         RTMemFree(pDev);
@@ -463,11 +449,11 @@ void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, const PPDMAUDIODEVICEENUM p
         char *pszFlags = DrvAudioHlpAudDevFlagsToStrA(pDev->fFlags);
 
         LogFunc(("Device '%s':\n", pDev->szName));
-        LogFunc(("\tUsage           = %s\n",             PDMAudioDirGetName(pDev->enmUsage)));
-        LogFunc(("\tFlags           = %s\n",             pszFlags ? pszFlags : "<NONE>"));
-        LogFunc(("\tInput channels  = %RU8\n",           pDev->cMaxInputChannels));
-        LogFunc(("\tOutput channels = %RU8\n",           pDev->cMaxOutputChannels));
-        LogFunc(("\tData            = %p (%zu bytes)\n", pDev->pvData, pDev->cbData));
+        LogFunc(("  Usage           = %s\n",             PDMAudioDirGetName(pDev->enmUsage)));
+        LogFunc(("  Flags           = %s\n",             pszFlags ? pszFlags : "<NONE>"));
+        LogFunc(("  Input channels  = %RU8\n",           pDev->cMaxInputChannels));
+        LogFunc(("  Output channels = %RU8\n",           pDev->cMaxOutputChannels));
+        LogFunc(("  Data            = %RU32 bytes\n",    pDev->cbData));
 
         if (pszFlags)
             RTStrFree(pszFlags);
