@@ -349,4 +349,4 @@ DECLINLINE(void) PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *psz
     }
 }
 
-#endif /* VBOX_INCLUDED_vmm_pdmaudiohostenuminline_h */
+#endif /* !VBOX_INCLUDED_vmm_pdmaudiohostenuminline_h */
