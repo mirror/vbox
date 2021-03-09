@@ -208,19 +208,19 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
 
 /** @name Audio device methods.
  * @{ */
-PPDMAUDIODEVICE PDMAudioDeviceAlloc(size_t cb);
-void            PDMAudioDeviceFree(PPDMAUDIODEVICE pDev);
-PPDMAUDIODEVICE PDMAudioDeviceDup(const PPDMAUDIODEVICE pDev, bool fOnlyCoreData);
+PPDMAUDIOHOSTDEV PDMAudioDeviceAlloc(size_t cb);
+void            PDMAudioDeviceFree(PPDMAUDIOHOSTDEV pDev);
+PPDMAUDIOHOSTDEV PDMAudioDeviceDup(const PPDMAUDIOHOSTDEV pDev, bool fOnlyCoreData);
 /** @}  */
 
 /** @name Audio device enumeration methods.
  * @{ */
 void            PDMAudioHostEnumInit(PPDMAUDIOHOSTENUM pDevEnm);
 void            PDMAudioHostEnumDelete(PPDMAUDIOHOSTENUM pDevEnm);
-void            PDMAudioHostEnumAppend(PPDMAUDIOHOSTENUM pDevEnm, PPDMAUDIODEVICE pDev);
+void            PDMAudioHostEnumAppend(PPDMAUDIOHOSTENUM pDevEnm, PPDMAUDIOHOSTDEV pDev);
 int             PDMAudioHostEnumCopy(PPDMAUDIOHOSTENUM pDstDevEnm, PCPDMAUDIOHOSTENUM pSrcDevEnm,
                                      PDMAUDIODIR enmUsage, bool fOnlyCoreData);
-PPDMAUDIODEVICE PDMAudioHostEnumGetDefault(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR enmDir);
+PPDMAUDIOHOSTDEV PDMAudioHostEnumGetDefault(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR enmDir);
 uint32_t        PDMAudioHostEnumCountMatching(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR enmUsage);
 void            PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *pszDesc);
 /** @}  */

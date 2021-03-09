@@ -184,7 +184,7 @@ typedef struct DSOUNDSTREAM
  */
 typedef struct DSOUNDDEV
 {
-    PDMAUDIODEVICE  Core;
+    PDMAUDIOHOSTDEV  Core;
     /** The GUID if handy. */
     GUID            Guid;
 } DSOUNDDEV;
@@ -1591,7 +1591,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescr
         pDev->Core.enmType  = PDMAUDIODEVICETYPE_BUILTIN;
 
         if (pGUID == NULL)
-            pDev->Core.fFlags = PDMAUDIODEV_FLAGS_DEFAULT;
+            pDev->Core.fFlags = PDMAUDIOHOSTDEV_F_DEFAULT;
 
         char *pszName;
         rc = RTUtf16ToUtf8(pwszDescription, &pszName);

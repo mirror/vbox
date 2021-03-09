@@ -309,24 +309,24 @@ typedef uint32_t PDMAUDIODEVLATSPECMS;
 /** Device latency spec in seconds (s). */
 typedef uint32_t PDMAUDIODEVLATSPECSEC;
 
-/** @name PDMAUDIODEV_FLAGS_XXX
+/** @name PDMAUDIOHOSTDEV_F_XXX
  * @{  */
 /** No flags set. */
-#define PDMAUDIODEV_FLAGS_NONE              UINT32_C(0)
+#define PDMAUDIOHOSTDEV_F_NONE              UINT32_C(0)
 /** The device marks the default device within the host OS. */
-#define PDMAUDIODEV_FLAGS_DEFAULT           RT_BIT_32(0)
+#define PDMAUDIOHOSTDEV_F_DEFAULT           RT_BIT_32(0)
 /** The device can be removed at any time and we have to deal with it. */
-#define PDMAUDIODEV_FLAGS_HOTPLUG           RT_BIT_32(1)
+#define PDMAUDIOHOSTDEV_F_HOTPLUG           RT_BIT_32(1)
 /** The device is known to be buggy and needs special treatment. */
-#define PDMAUDIODEV_FLAGS_BUGGY             RT_BIT_32(2)
+#define PDMAUDIOHOSTDEV_F_BUGGY             RT_BIT_32(2)
 /** Ignore the device, no matter what. */
-#define PDMAUDIODEV_FLAGS_IGNORE            RT_BIT_32(3)
+#define PDMAUDIOHOSTDEV_F_IGNORE            RT_BIT_32(3)
 /** The device is present but marked as locked by some other application. */
-#define PDMAUDIODEV_FLAGS_LOCKED            RT_BIT_32(4)
+#define PDMAUDIOHOSTDEV_F_LOCKED            RT_BIT_32(4)
 /** The device is present but not in an alive state (dead). */
-#define PDMAUDIODEV_FLAGS_DEAD              RT_BIT_32(5)
+#define PDMAUDIOHOSTDEV_F_DEAD              RT_BIT_32(5)
 /** Set if the extra backend specific data cannot be duplicated. */
-#define PDMAUDIODEV_FLAGS_NO_DUP            RT_BIT_32(31)
+#define PDMAUDIOHOSTDEV_F_NO_DUP            RT_BIT_32(31)
 /** @} */
 
 /**
@@ -345,19 +345,22 @@ typedef enum PDMAUDIODEVICETYPE
     PDMAUDIODEVICETYPE_BUILTIN,
     /** The device is an (external) USB device. */
     PDMAUDIODEVICETYPE_USB,
+    /** End of valid values. */
+    PDMAUDIODEVICETYPE_END,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIODEVICETYPE_32BIT_HACK = 0x7fffffff
 } PDMAUDIODEVICETYPE;
 
 /**
- * Audio device info (enumeration result).
+ * Host audio device info, part of enumeration result.
+ *
  * @sa PDMAUDIOHOSTENUM, PDMIHOSTAUDIO::pfnGetDevices
  */
-typedef struct PDMAUDIODEVICE
+typedef struct PDMAUDIOHOSTDEV
 {
     /** List entry (like PDMAUDIOHOSTENUM::LstDevices). */
     RTLISTNODE          Node;
-    /** Magic value (PDMAUDIODEVICE_MAGIC). */
+    /** Magic value (PDMAUDIOHOSTDEV_MAGIC). */
     uint32_t            uMagic;
     /** Size of this structure and whatever backend specific data that follows it. */
     uint32_t            cbSelf;
@@ -365,7 +368,7 @@ typedef struct PDMAUDIODEVICE
     PDMAUDIODEVICETYPE  enmType;
     /** Usage of the device. */
     PDMAUDIODIR         enmUsage;
-    /** Device flags, PDMAUDIODEV_FLAGS_XXX. */
+    /** Device flags, PDMAUDIOHOSTDEV_F_XXX. */
     uint32_t            fFlags;
     /** Reference count indicating how many audio streams currently are relying on this device. */
     uint8_t             cRefCount;
@@ -387,19 +390,19 @@ typedef struct PDMAUDIODEVICE
         } USB;
         uint64_t        uPadding[ARCH_BITS >= 64 ? 3 : 4];
     } Type;
-    /** Friendly name of the device, if any. */
+    /** Friendly name of the device, if any. Could be truncated. */
     char                szName[64];
-} PDMAUDIODEVICE;
-AssertCompileSizeAlignment(PDMAUDIODEVICE, 32);
+} PDMAUDIOHOSTDEV;
+AssertCompileSizeAlignment(PDMAUDIOHOSTDEV, 16);
 /** Pointer to audio device info (enum result). */
-typedef PDMAUDIODEVICE *PPDMAUDIODEVICE;
+typedef PDMAUDIOHOSTDEV *PPDMAUDIOHOSTDEV;
 /** Pointer to a const audio device info (enum result). */
-typedef PDMAUDIODEVICE const *PCPDMAUDIODEVICE;
+typedef PDMAUDIOHOSTDEV const *PCPDMAUDIOHOSTDEV;
 
-/** Magic value for PDMAUDIODEVICE. (Armando Anthony "Chick" Corea) */
-#define PDMAUDIODEVICE_MAGIC        UINT32_C(0x19410612)
-/** Magic value for PDMAUDIODEVICE after free. */
-#define PDMAUDIODEVICE_MAGIC_DEAD   UINT32_C(0x20210209)
+/** Magic value for PDMAUDIOHOSTDEV. (Armando Anthony "Chick" Corea) */
+#define PDMAUDIOHOSTDEV_MAGIC           UINT32_C(0x19410612)
+/** Magic value for PDMAUDIOHOSTDEV after free. */
+#define PDMAUDIOHOSTDEV_MAGIC_DEAD      UINT32_C(0x20210209)
 
 
 /**
@@ -413,7 +416,7 @@ typedef struct PDMAUDIOHOSTENUM
     uint32_t        uMagic;
     /** Number of audio devices in the list. */
     uint32_t        cDevices;
-    /** List of audio devices (PDMAUDIODEVICE). */
+    /** List of audio devices (PDMAUDIOHOSTDEV). */
     RTLISTANCHOR    LstDevices;
 } PDMAUDIOHOSTENUM;
 /** Pointer to an audio device enumeration result. */

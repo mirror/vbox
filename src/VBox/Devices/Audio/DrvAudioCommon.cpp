@@ -147,19 +147,19 @@ char *DrvAudioDbgGetFileNameA(uint8_t uInstance, const char *pszPath, const char
  *
  * @returns Newly allocated audio device, or NULL on failure.
  * @param   cb      The total device structure size.   This must be at least the
- *                  size of PDMAUDIODEVICE.  The idea is that the caller extends
- *                  the PDMAUDIODEVICE structure and appends additional data
+ *                  size of PDMAUDIOHOSTDEV.  The idea is that the caller extends
+ *                  the PDMAUDIOHOSTDEV structure and appends additional data
  *                  after it in its private structure.
  */
-PPDMAUDIODEVICE PDMAudioDeviceAlloc(size_t cb)
+PPDMAUDIOHOSTDEV PDMAudioDeviceAlloc(size_t cb)
 {
-    AssertReturn(cb >= sizeof(PDMAUDIODEVICE), NULL);
+    AssertReturn(cb >= sizeof(PDMAUDIOHOSTDEV), NULL);
     AssertReturn(cb < _4M, NULL);
 
-    PPDMAUDIODEVICE pDev = (PPDMAUDIODEVICE)RTMemAllocZ(RT_ALIGN_Z(cb, 64));
+    PPDMAUDIOHOSTDEV pDev = (PPDMAUDIOHOSTDEV)RTMemAllocZ(RT_ALIGN_Z(cb, 64));
     if (pDev)
     {
-        pDev->uMagic = PDMAUDIODEVICE_MAGIC;
+        pDev->uMagic = PDMAUDIOHOSTDEV_MAGIC;
         pDev->cbSelf = (uint32_t)cb;
         RTListInit(&pDev->Node);
 
@@ -174,13 +174,13 @@ PPDMAUDIODEVICE PDMAudioDeviceAlloc(size_t cb)
  *
  * @param   pDev    The device to free.  NULL is ignored.
  */
-void PDMAudioDeviceFree(PPDMAUDIODEVICE pDev)
+void PDMAudioDeviceFree(PPDMAUDIOHOSTDEV pDev)
 {
     if (pDev)
     {
-        Assert(pDev->uMagic == PDMAUDIODEVICE_MAGIC);
+        Assert(pDev->uMagic == PDMAUDIOHOSTDEV_MAGIC);
         Assert(pDev->cRefCount == 0);
-        pDev->uMagic = PDMAUDIODEVICE_MAGIC_DEAD;
+        pDev->uMagic = PDMAUDIOHOSTDEV_MAGIC_DEAD;
         pDev->cbSelf = 0;
 
         RTMemFree(pDev);
@@ -194,16 +194,16 @@ void PDMAudioDeviceFree(PPDMAUDIODEVICE pDev)
  * @param   pDev            The audio device enum entry to duplicate.
  * @param   fOnlyCoreData
  */
-PPDMAUDIODEVICE PDMAudioDeviceDup(PPDMAUDIODEVICE pDev, bool fOnlyCoreData)
+PPDMAUDIOHOSTDEV PDMAudioDeviceDup(PPDMAUDIOHOSTDEV pDev, bool fOnlyCoreData)
 {
     AssertPtrReturn(pDev, NULL);
-    Assert(pDev->uMagic == PDMAUDIODEVICE_MAGIC);
-    Assert(fOnlyCoreData || !(pDev->fFlags & PDMAUDIODEV_FLAGS_NO_DUP));
+    Assert(pDev->uMagic == PDMAUDIOHOSTDEV_MAGIC);
+    Assert(fOnlyCoreData || !(pDev->fFlags & PDMAUDIOHOSTDEV_F_NO_DUP));
 
-    uint32_t cbToDup = fOnlyCoreData ? sizeof(PDMAUDIODEVICE) : pDev->cbSelf;
+    uint32_t cbToDup = fOnlyCoreData ? sizeof(PDMAUDIOHOSTDEV) : pDev->cbSelf;
     AssertReturn(cbToDup >= sizeof(*pDev), NULL);
 
-    PPDMAUDIODEVICE pDevDup = PDMAudioDeviceAlloc(cbToDup);
+    PPDMAUDIOHOSTDEV pDevDup = PDMAudioDeviceAlloc(cbToDup);
     if (pDevDup)
     {
         memcpy(pDevDup, pDev, cbToDup);
@@ -243,8 +243,8 @@ void PDMAudioHostEnumDelete(PPDMAUDIOHOSTENUM pDevEnm)
         AssertPtr(pDevEnm);
         AssertReturnVoid(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC);
 
-        PPDMAUDIODEVICE pDev, pDevNext;
-        RTListForEachSafe(&pDevEnm->LstDevices, pDev, pDevNext, PDMAUDIODEVICE, Node)
+        PPDMAUDIOHOSTDEV pDev, pDevNext;
+        RTListForEachSafe(&pDevEnm->LstDevices, pDev, pDevNext, PDMAUDIOHOSTDEV, Node)
         {
             RTListNodeRemove(&pDev->Node);
 
@@ -267,7 +267,7 @@ void PDMAudioHostEnumDelete(PPDMAUDIOHOSTENUM pDevEnm)
  * @param  pDevEnm              Device enumeration to add device to.
  * @param  pDev                 Device to add. The pointer will be owned by the device enumeration  then.
  */
-void PDMAudioHostEnumAppend(PPDMAUDIOHOSTENUM pDevEnm, PPDMAUDIODEVICE pDev)
+void PDMAudioHostEnumAppend(PPDMAUDIOHOSTENUM pDevEnm, PPDMAUDIOHOSTDEV pDev)
 {
     AssertPtr(pDevEnm);
     AssertPtr(pDev);
@@ -285,7 +285,7 @@ void PDMAudioHostEnumAppend(PPDMAUDIOHOSTENUM pDevEnm, PPDMAUDIODEVICE pDev)
  * @param   pSrcDevEnm      The source to copy matching devices from.
  * @param   enmUsage        The usage to match for copying.
  *                          Use PDMAUDIODIR_INVALID to match all entries.
- * @param   fOnlyCoreData   Set this to only copy the PDMAUDIODEVICE part.
+ * @param   fOnlyCoreData   Set this to only copy the PDMAUDIOHOSTDEV part.
  *                          Careful with passing @c false here as not all
  *                          backends have data that can be copied.
  */
@@ -298,13 +298,13 @@ int PDMAudioHostEnumCopy(PPDMAUDIOHOSTENUM pDstDevEnm, PCPDMAUDIOHOSTENUM pSrcDe
     AssertPtrReturn(pSrcDevEnm, VERR_INVALID_POINTER);
     AssertReturn(pSrcDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC, VERR_WRONG_ORDER);
 
-    PPDMAUDIODEVICE pSrcDev;
-    RTListForEach(&pSrcDevEnm->LstDevices, pSrcDev, PDMAUDIODEVICE, Node)
+    PPDMAUDIOHOSTDEV pSrcDev;
+    RTListForEach(&pSrcDevEnm->LstDevices, pSrcDev, PDMAUDIOHOSTDEV, Node)
     {
         if (   enmUsage == pSrcDev->enmUsage
             || enmUsage == PDMAUDIODIR_INVALID /*all*/)
         {
-            PPDMAUDIODEVICE pDstDev = PDMAudioDeviceDup(pSrcDev, fOnlyCoreData);
+            PPDMAUDIOHOSTDEV pDstDev = PDMAudioDeviceDup(pSrcDev, fOnlyCoreData);
             AssertReturn(pDstDev, VERR_NO_MEMORY);
 
             PDMAudioHostEnumAppend(pDstDevEnm, pDstDev);
@@ -324,17 +324,17 @@ int PDMAudioHostEnumCopy(PPDMAUDIOHOSTENUM pDstDevEnm, PCPDMAUDIOHOSTENUM pSrcDe
  * @param   pDevEnm     Device enumeration to get default device for.
  * @param   enmUsage    Usage to get default device for.
  *                      Pass PDMAUDIODIR_INVALID to get the first device with
- *                      PDMAUDIODEV_FLAGS_DEFAULT set.
+ *                      PDMAUDIOHOSTDEV_F_DEFAULT set.
  */
-PPDMAUDIODEVICE PDMAudioHostEnumGetDefault(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR enmUsage)
+PPDMAUDIOHOSTDEV PDMAudioHostEnumGetDefault(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR enmUsage)
 {
     AssertPtrReturn(pDevEnm, NULL);
     AssertReturn(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC, NULL);
 
-    PPDMAUDIODEVICE pDev;
-    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIODEVICE, Node)
+    PPDMAUDIOHOSTDEV pDev;
+    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, Node)
     {
-        if (pDev->fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
+        if (pDev->fFlags & PDMAUDIOHOSTDEV_F_DEFAULT)
         {
             if (   enmUsage == pDev->enmUsage
                 || enmUsage == PDMAUDIODIR_INVALID)
@@ -362,8 +362,8 @@ uint32_t PDMAudioHostEnumCountMatching(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR e
         return pDevEnm->cDevices;
 
     uint32_t        cDevs = 0;
-    PPDMAUDIODEVICE pDev;
-    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIODEVICE, Node)
+    PPDMAUDIOHOSTDEV pDev;
+    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, Node)
     {
         if (enmUsage == pDev->enmUsage)
             cDevs++;
@@ -386,8 +386,8 @@ void PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *pszDesc)
 
     LogFunc(("%s: %RU32 devices\n", pszDesc, pDevEnm->cDevices));
 
-    PPDMAUDIODEVICE pDev;
-    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIODEVICE, Node)
+    PPDMAUDIOHOSTDEV pDev;
+    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, Node)
     {
         char *pszFlags = DrvAudioHlpAudDevFlagsToStrA(pDev->fFlags);
 
@@ -396,7 +396,7 @@ void PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *pszDesc)
         LogFunc(("  Flags           = %s\n",             pszFlags ? pszFlags : "<NONE>"));
         LogFunc(("  Input channels  = %RU8\n",           pDev->cMaxInputChannels));
         LogFunc(("  Output channels = %RU8\n",           pDev->cMaxOutputChannels));
-        LogFunc(("  cbExtra         = %RU32 bytes\n",    pDev->cbSelf - sizeof(PDMAUDIODEVICE)));
+        LogFunc(("  cbExtra         = %RU32 bytes\n",    pDev->cbSelf - sizeof(PDMAUDIOHOSTDEV)));
 
         if (pszFlags)
             RTStrFree(pszFlags);
@@ -408,12 +408,12 @@ void PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *pszDesc)
  *
  * @returns Stringified audio flags. Must be free'd with RTStrFree().
  *          NULL if no flags set.
- * @param   fFlags      Audio flags (PDMAUDIODEV_FLAGS_XXX) to convert.
+ * @param   fFlags      Audio flags (PDMAUDIOHOSTDEV_F_XXX) to convert.
  */
 char *DrvAudioHlpAudDevFlagsToStrA(uint32_t fFlags)
 {
 #define APPEND_FLAG_TO_STR(_aFlag)              \
-    if (fFlags & PDMAUDIODEV_FLAGS_##_aFlag)    \
+    if (fFlags & PDMAUDIOHOSTDEV_F_##_aFlag)    \
     {                                           \
         if (pszFlags)                           \
         {                                       \

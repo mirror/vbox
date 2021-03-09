@@ -72,7 +72,7 @@ typedef struct DRVHOSTCOREAUDIO *PDRVHOSTCOREAUDIO;
 typedef struct COREAUDIODEVICEDATA
 {
     /** The core PDM structure. */
-    PDMAUDIODEVICE      Core;
+    PDMAUDIOHOSTDEV      Core;
 
     /** Pointer to driver instance this device is bound to. */
     PDRVHOSTCOREAUDIO   pDrv;
@@ -560,7 +560,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
 
             /* Is the device the default device? */
             if (curDevID == defaultDeviceID)
-                pDev->Core.fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
+                pDev->Core.fFlags |= PDMAUDIOHOSTDEV_F_DEFAULT;
 
             AudioObjectPropertyAddress propAddrCfg = { kAudioDevicePropertyStreamConfiguration,
                                                          enmUsage == PDMAUDIODIR_IN
@@ -642,7 +642,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
             if (   (err == noErr)
                 && !uAlive)
             {
-                pDev->Core.fFlags |= PDMAUDIODEV_FLAGS_DEAD;
+                pDev->Core.fFlags |= PDMAUDIOHOSTDEV_F_DEAD;
             }
 
             /* Check if the device is being hogged by someone else. */
@@ -656,7 +656,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
             if (   (err == noErr)
                 && (pid != -1))
             {
-                pDev->Core.fFlags |= PDMAUDIODEV_FLAGS_LOCKED;
+                pDev->Core.fFlags |= PDMAUDIOHOSTDEV_F_LOCKED;
             }
 
             /* Add the device to the enumeration. */
@@ -756,8 +756,8 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
                 pDevDst->Core.cMaxInputChannels = pDevSrcIn->Core.cMaxInputChannels;
 
                 /* Handle flags. */
-                if (pDevSrcIn->Core.fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
-                    pDevDst->Core.fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
+                if (pDevSrcIn->Core.fFlags & PDMAUDIOHOSTDEV_F_DEFAULT)
+                    pDevDst->Core.fFlags |= PDMAUDIOHOSTDEV_F_DEFAULT;
                 /** @todo Handle hot plugging? */
 
                 /*
@@ -774,8 +774,8 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
                         pDevDst->Core.enmUsage           = PDMAUDIODIR_DUPLEX;
                         pDevDst->Core.cMaxOutputChannels = pDevSrcOut->Core.cMaxOutputChannels;
 
-                        if (pDevSrcOut->Core.fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
-                            pDevDst->Core.fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
+                        if (pDevSrcOut->Core.fFlags & PDMAUDIOHOSTDEV_F_DEFAULT)
+                            pDevDst->Core.fFlags |= PDMAUDIOHOSTDEV_F_DEFAULT;
                         break;
                     }
                 }
@@ -818,8 +818,8 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
                     pDevDst->deviceID       = pDevSrcOut->deviceID;
 
                     /* Handle flags. */
-                    if (pDevSrcOut->Core.fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
-                        pDevDst->Core.fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
+                    if (pDevSrcOut->Core.fFlags & PDMAUDIOHOSTDEV_F_DEFAULT)
+                        pDevDst->Core.fFlags |= PDMAUDIOHOSTDEV_F_DEFAULT;
                     /** @todo Handle hot plugging? */
 
                     PDMAudioHostEnumAppend(pEnmDst, &pDevDst->Core);
@@ -2179,7 +2179,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_GetDevices(PPDMIHOSTAUDIO pInterface
         {
             if (pDeviceEnum)
             {
-                /* Return a copy with only PDMAUDIODEVICE, none of the extra bits in COREAUDIODEVICEDATA. */
+                /* Return a copy with only PDMAUDIOHOSTDEV, none of the extra bits in COREAUDIODEVICEDATA. */
                 PDMAudioHostEnumInit(pDeviceEnum);
                 rc = PDMAudioHostEnumCopy(pDeviceEnum, &pThis->Devices, PDMAUDIODIR_INVALID /*all*/, true /*fOnlyCoreData*/);
                 if (RT_FAILURE(rc))
