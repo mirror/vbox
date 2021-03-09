@@ -235,10 +235,8 @@
 #include <iprt/path.h>
 
 #include <VBox/types.h>
-# include <VBox/vmm/pdmcommon.h>
-#ifdef VBOX_WITH_STATISTICS
-# include <VBox/vmm/stam.h>
-#endif
+#include <VBox/vmm/pdmcommon.h>
+#include <VBox/vmm/stam.h>
 
 /** @defgroup grp_pdm_ifs_audio     PDM Audio Interfaces
  * @ingroup grp_pdm_interfaces
