@@ -1243,27 +1243,32 @@ typedef struct PDMAUDIOSTREAMCTX
 /** Pointer to an audio stream context. */
 typedef struct PDMAUDIOSTREAM *PPDMAUDIOSTREAMCTX;
 
+/** @name PDMAUDIOSTREAM_WARN_FLAGS_XXX
+ * @{ */
 /** No stream warning flags set. */
 #define PDMAUDIOSTREAM_WARN_FLAGS_NONE          0
 /** Warned about a disabled stream. */
 #define PDMAUDIOSTREAM_WARN_FLAGS_DISABLED      RT_BIT(0)
+/** @} */
 
 /**
  * An input or output audio stream.
  */
 typedef struct PDMAUDIOSTREAM
 {
-    /** List node.
-     * @todo s/Node/ListEntry/ */
-    RTLISTNODE              Node;
-    /** @todo add magic (some jazz pianist). */
+    /** Magic value (PDMAUDIOSTREAM_MAGIC). */
+    uint32_t                uMagic;
+    /** Size (in bytes) of the backend-specific stream data. */
+    uint32_t                cbBackend;
+    /** List entry (some DrvAudio internal list). */
+    RTLISTNODE              ListEntry;
     /** Number of references to this stream.
      *  Only can be destroyed when the reference count reaches 0. */
     uint32_t                cRefs;
     /** Number of (re-)tries while re-initializing the stream. */
     uint32_t                cTriesReInit;
     /** Warnings shown already in the release log.
-     *  See PDMAUDIOSTREAM_WARN_FLAGS_XXX defines. */
+     *  See PDMAUDIOSTREAM_WARN_FLAGS_XXX. */
     uint32_t                fWarningsShown;
     /** Stream status flag. */
     PDMAUDIOSTREAMSTS       fStatus;
@@ -1294,8 +1299,6 @@ typedef struct PDMAUDIOSTREAM
      *
      *  That way the backends do not have access to the audio connector's data. */
     void                   *pvBackend;
-    /** Size (in bytes) of the backend-specific stream data. */
-    size_t                  cbBackend;
 
     /** Name of this stream. */
     char                    szName[64];
@@ -1307,6 +1310,9 @@ typedef struct PDMAUDIOSTREAM
         PDMAUDIOSTREAMOUT   Out;
     } RT_UNION_NM(u);
 } PDMAUDIOSTREAM;
+
+/** Magic value for PDMAUDIOSTREAM. (Ahmad Jamal)   */
+#define PDMAUDIOSTREAM_MAGIC    UINT32_C(0x19300702)
 
 
 /**

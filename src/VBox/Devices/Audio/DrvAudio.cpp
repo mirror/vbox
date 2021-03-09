@@ -563,6 +563,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     /*
      * Init host stream.
      */
+    pStream->uMagic = PDMAUDIOSTREAM_MAGIC;
 
     /* Set the host's default audio data layout. */
     pCfgHost->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
@@ -761,20 +762,21 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
  */
 static void drvAudioStreamFree(PPDMAUDIOSTREAM pStream)
 {
-    if (!pStream)
-        return;
-
-    LogFunc(("[%s]\n", pStream->szName));
-
-    if (pStream->pvBackend)
+    if (pStream)
     {
-        Assert(pStream->cbBackend);
-        RTMemFree(pStream->pvBackend);
-        pStream->pvBackend = NULL;
-    }
+        LogFunc(("[%s]\n", pStream->szName));
+        Assert(pStream->uMagic == PDMAUDIOSTREAM_MAGIC);
+        pStream->uMagic = ~PDMAUDIOSTREAM_MAGIC;
 
-    RTMemFree(pStream);
-    pStream = NULL;
+        if (pStream->pvBackend)
+        {
+            Assert(pStream->cbBackend);
+            RTMemFree(pStream->pvBackend);
+            pStream->pvBackend = NULL;
+        }
+
+        RTMemFree(pStream);
+    }
 }
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
@@ -793,7 +795,7 @@ static int drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
 
     /* Mark all host streams to re-initialize. */
     PPDMAUDIOSTREAM pStream;
-    RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, Node)
+    RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, ListEntry)
     {
         pStream->fStatus |= PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT;
         pStream->cTriesReInit   = 0;
@@ -2294,7 +2296,7 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
     if (pThis->pHostDrvAudio)
     {
         PPDMAUDIOSTREAM pStream;
-        RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, Node)
+        RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, ListEntry)
             drvAudioStreamControlInternal(pThis, pStream, enmCmd);
     }
 
@@ -2536,9 +2538,8 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 /**
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamCreate}
  */
-static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
-                                              PPDMAUDIOSTREAMCFG pCfgHost, PPDMAUDIOSTREAMCFG pCfgGuest,
-                                              PPDMAUDIOSTREAM *ppStream)
+static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAMCFG pCfgHost,
+                                              PPDMAUDIOSTREAMCFG pCfgGuest, PPDMAUDIOSTREAM *ppStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgHost,   VERR_INVALID_POINTER);
@@ -2561,7 +2562,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
 #define RC_BREAK(x) { rc = x; break; }
 
-    do
+    do /* this is not a loop, just a construct to make the code more difficult to follow. */
     {
         if (   !DrvAudioHlpStreamCfgIsValid(pCfgHost)
             || !DrvAudioHlpStreamCfgIsValid(pCfgGuest))
@@ -2598,11 +2599,11 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
             cbHstStrm = pThis->BackendCfg.cbStreamOut;
         }
+        AssertBreakStmt(cbHstStrm < _16M, rc = VERR_OUT_OF_RANGE);
 
         /*
          * Allocate and initialize common state.
          */
-
         pStream = (PPDMAUDIOSTREAM)RTMemAllocZ(sizeof(PDMAUDIOSTREAM));
         AssertPtrBreakStmt(pStream, rc = VERR_NO_MEMORY);
 
@@ -2622,22 +2623,18 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         /*
          * Allocate and init backend-specific data.
          */
-
         if (cbHstStrm) /* High unlikely that backends do not have an own space for data, but better check. */
         {
             pStream->pvBackend = RTMemAllocZ(cbHstStrm);
-            AssertPtrBreakStmt(pStream->pvBackend, rc = VERR_NO_MEMORY);
+            AssertBreakStmt(pStream->pvBackend, rc = VERR_NO_MEMORY);
 
-            pStream->cbBackend = cbHstStrm;
+            pStream->cbBackend = (uint32_t)cbHstStrm;
         }
 
         /*
          * Try to init the rest.
          */
-
         rc = drvAudioStreamInitInternal(pThis, pStream, pCfgHost, pCfgGuest);
-        if (RT_FAILURE(rc))
-            break;
 
     } while (0);
 
@@ -2659,7 +2656,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
     else
     {
         /* Append the stream to our stream list. */
-        RTListAppend(&pThis->lstStreams, &pStream->Node);
+        RTListAppend(&pThis->lstStreams, &pStream->ListEntry);
 
         /* Set initial reference counts. */
         pStream->cRefs = 1;
@@ -2776,7 +2773,7 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
         *pfEnabled = fEnable;
 
         PPDMAUDIOSTREAM pStream;
-        RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, Node)
+        RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, ListEntry)
         {
             if (pStream->enmDir != enmDir) /* Skip unwanted streams. */
                 continue;
@@ -3084,42 +3081,39 @@ static DECLCALLBACK(int) drvAudioStreamSetVolume(PPDMIAUDIOCONNECTOR pInterface,
 static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
+    if (!pStream)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    Assert(pStream->uMagic == PDMAUDIOSTREAM_MAGIC);
+
     int rc = RTCritSectEnter(&pThis->CritSect);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
     LogRel2(("Audio: Destroying stream '%s'\n", pStream->szName));
 
     LogFlowFunc(("[%s] cRefs=%RU32\n", pStream->szName, pStream->cRefs));
-    if (pStream->cRefs > 1)
-        rc = VERR_WRONG_ORDER;
-
-    if (RT_SUCCESS(rc))
+    if (pStream->cRefs < 1)
     {
         rc = drvAudioStreamUninitInternal(pThis, pStream);
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+        {
+            if (pStream->enmDir == PDMAUDIODIR_IN)
+                pThis->In.cStreamsFree++;
+            else /* Out */
+                pThis->Out.cStreamsFree++;
+
+            RTListNodeRemove(&pStream->ListEntry);
+
+            drvAudioStreamFree(pStream);
+            pStream = NULL;
+        }
+        else
             LogRel(("Audio: Uninitializing stream '%s' failed with %Rrc\n", pStream->szName, rc));
     }
-
-    if (RT_SUCCESS(rc))
-    {
-        if (pStream->enmDir == PDMAUDIODIR_IN)
-        {
-            pThis->In.cStreamsFree++;
-        }
-        else /* Out */
-        {
-            pThis->Out.cStreamsFree++;
-        }
-
-        RTListNodeRemove(&pStream->Node);
-
-        drvAudioStreamFree(pStream);
-        pStream = NULL;
-    }
+    else
+        rc = VERR_WRONG_ORDER;
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -3559,7 +3553,7 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
      * The rest will either be destructed by the device emulation or
      * in drvAudioDestruct(). */
     PPDMAUDIOSTREAM pStream;
-    RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, Node)
+    RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, ListEntry)
     {
         drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
         drvAudioStreamDestroyInternalBackend(pThis, pStream);
@@ -3704,12 +3698,12 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     pThis->pHostDrvAudio = NULL;
 
     PPDMAUDIOSTREAM pStream, pStreamNext;
-    RTListForEachSafe(&pThis->lstStreams, pStream, pStreamNext, PDMAUDIOSTREAM, Node)
+    RTListForEachSafe(&pThis->lstStreams, pStream, pStreamNext, PDMAUDIOSTREAM, ListEntry)
     {
         rc2 = drvAudioStreamUninitInternal(pThis, pStream);
         if (RT_SUCCESS(rc2))
         {
-            RTListNodeRemove(&pStream->Node);
+            RTListNodeRemove(&pStream->ListEntry);
 
             drvAudioStreamFree(pStream);
             pStream = NULL;
