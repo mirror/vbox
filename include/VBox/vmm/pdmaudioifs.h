@@ -280,6 +280,8 @@ typedef enum PDMAUDIOFMT
     PDMAUDIOFMT_U32,
     /** 32-bit, signed. */
     PDMAUDIOFMT_S32,
+    /** End of valid values. */
+    PDMAUDIOFMT_END,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOFMT_32BIT_HACK = 0x7fffffff
 } PDMAUDIOFMT;
@@ -299,6 +301,8 @@ typedef enum PDMAUDIODIR
     PDMAUDIODIR_OUT,
     /** Duplex handling. */
     PDMAUDIODIR_DUPLEX,
+    /** End of valid values. */
+    PDMAUDIODIR_END,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIODIR_32BIT_HACK = 0x7fffffff
 } PDMAUDIODIR;
@@ -394,9 +398,9 @@ typedef struct PDMAUDIOHOSTDEV
     char                szName[64];
 } PDMAUDIOHOSTDEV;
 AssertCompileSizeAlignment(PDMAUDIOHOSTDEV, 16);
-/** Pointer to audio device info (enum result). */
+/** Pointer to audio device info (enumeration result). */
 typedef PDMAUDIOHOSTDEV *PPDMAUDIOHOSTDEV;
-/** Pointer to a const audio device info (enum result). */
+/** Pointer to a const audio device info (enumeration result). */
 typedef PDMAUDIOHOSTDEV const *PCPDMAUDIOHOSTDEV;
 
 /** Magic value for PDMAUDIOHOSTDEV. (Armando Anthony "Chick" Corea) */
@@ -512,6 +516,8 @@ typedef enum PDMAUDIOPLAYBACKDST
     PDMAUDIOPLAYBACKDST_CENTER_LFE,
     /** Rear channel. */
     PDMAUDIOPLAYBACKDST_REAR,
+    /** End of valid values. */
+    PDMAUDIOPLAYBACKDST_END,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOPLAYBACKDST_32BIT_HACK = 0x7fffffff
 } PDMAUDIOPLAYBACKDST;
@@ -538,6 +544,8 @@ typedef enum PDMAUDIORECSRC
     PDMAUDIORECSRC_LINE,
     /** Phone-In. */
     PDMAUDIORECSRC_PHONE,
+    /** End of valid values. */
+    PDMAUDIORECSRC_END,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIORECSRC_32BIT_HACK = 0x7fffffff
 } PDMAUDIORECSRC;
@@ -578,6 +586,8 @@ typedef enum PDMAUDIOSTREAMLAYOUT
      *  This means that this stream will operate on PDMAUDIOFRAME data
      *  directly. Don't use this if you don't have to. */
     PDMAUDIOSTREAMLAYOUT_RAW,
+    /** End of valid values. */
+    PDMAUDIOSTREAMLAYOUT_END,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOSTREAMLAYOUT_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMLAYOUT;
@@ -643,6 +653,8 @@ typedef enum PDMAUDIOSTREAMCHANNELID
     PDMAUDIOSTREAMCHANNELID_LEFT_HEIGHT,
     /** Right height channel. */
     PDMAUDIOSTREAMCHANNELID_RIGHT_HEIGHT,
+    /** End of valid values. */
+    PDMAUDIOSTREAMCHANNELID_END,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOSTREAMCHANNELID_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMCHANNELID;
@@ -811,6 +823,8 @@ typedef enum PDMAUDIOMIXERCTL
     PDMAUDIOMIXERCTL_LINE_IN,
     /** Microphone-In. */
     PDMAUDIOMIXERCTL_MIC_IN,
+    /** End of valid values. */
+    PDMAUDIOMIXERCTL_END,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOMIXERCTL_32BIT_HACK = 0x7fffffff
 } PDMAUDIOMIXERCTL;
@@ -845,6 +859,8 @@ typedef enum PDMAUDIOSTREAMCMD
     /** Tells the stream to drop all (buffered) audio data immediately.
      *  No supported by all backends. */
     PDMAUDIOSTREAMCMD_DROP,
+    /** End of valid values. */
+    PDMAUDIOSTREAMCMD_END,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOSTREAMCMD_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMCMD;
@@ -1055,6 +1071,7 @@ typedef struct PDMAUDIOMIXBUF
 
 /**
  * Audio file types.
+ * @todo r=bird: This does not really belong here.
  */
 typedef enum PDMAUDIOFILETYPE
 {

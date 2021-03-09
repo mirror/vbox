@@ -418,9 +418,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
         {
             rc = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DROP);
             if (RT_SUCCESS(rc))
-            {
                 drvAudioStreamDropInternal(pThis, pStream);
-            }
             break;
         }
 
@@ -1642,13 +1640,9 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
                     pThis->pHostDrvAudio->pfnStreamPlayBegin(pThis->pHostDrvAudio, pStream->pvBackend);
 
                 if (RT_LIKELY(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
-                {
                     rc = drvAudioStreamPlayNonInterleaved(pThis, pStream, cfToPlay, &cfPlayedTotal);
-                }
                 else if (pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW)
-                {
                     rc = drvAudioStreamPlayRaw(pThis, pStream, cfToPlay, &cfPlayedTotal);
-                }
                 else
                     AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
 
@@ -1936,13 +1930,9 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
             pThis->pHostDrvAudio->pfnStreamCaptureBegin(pThis->pHostDrvAudio, pStream->pvBackend);
 
         if (RT_LIKELY(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
-        {
             rc = drvAudioStreamCaptureNonInterleaved(pThis, pStream, &cfCaptured);
-        }
         else if (pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW)
-        {
             rc = drvAudioStreamCaptureRaw(pThis, pStream, &cfCaptured);
-        }
         else
             AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
 

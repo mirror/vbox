@@ -2570,7 +2570,10 @@ static uint8_t ichac97R3RecSourceToIdx(PDMAUDIORECSRC enmRecSrc)
         case PDMAUDIORECSRC_AUX:     return AC97_REC_AUX;
         case PDMAUDIORECSRC_LINE:    return AC97_REC_LINE_IN;
         case PDMAUDIORECSRC_PHONE:   return AC97_REC_PHONE;
-        default:
+        /* no default */
+        case PDMAUDIORECSRC_UNKNOWN:
+        case PDMAUDIORECSRC_END:
+        case PDMAUDIORECSRC_32BIT_HACK:
             break;
     }
 

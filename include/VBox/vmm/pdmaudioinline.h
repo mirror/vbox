@@ -76,6 +76,7 @@ DECLINLINE(const char *) PDMAudioDirGetName(PDMAUDIODIR enmDir)
         case PDMAUDIODIR_DUPLEX:  return "Duplex";
 
         /* no default */
+        case PDMAUDIODIR_END:
         case PDMAUDIODIR_INVALID:
         case PDMAUDIODIR_32BIT_HACK:
             break;
@@ -101,6 +102,7 @@ DECLINLINE(const char *) PDMAudioMixerCtlGetName(PDMAUDIOMIXERCTL enmMixerCtl)
         case PDMAUDIOMIXERCTL_LINE_IN:       return "Line-In";
         case PDMAUDIOMIXERCTL_MIC_IN:        return "Microphone-In";
         /* no default */
+        case PDMAUDIOMIXERCTL_END:
         case PDMAUDIOMIXERCTL_INVALID:
         case PDMAUDIOMIXERCTL_32BIT_HACK:
             break;
@@ -124,6 +126,7 @@ DECLINLINE(const char *) PDMAudioPlaybackDstGetName(PDMAUDIOPLAYBACKDST enmPlayb
         case PDMAUDIOPLAYBACKDST_REAR:       return "Rear";
         /* no default */
         case PDMAUDIOPLAYBACKDST_INVALID:
+        case PDMAUDIOPLAYBACKDST_END:
         case PDMAUDIOPLAYBACKDST_32BIT_HACK:
             break;
     }
@@ -148,6 +151,7 @@ DECLINLINE(const char *) PDMAudioRecSrcGetName(PDMAUDIORECSRC enmRecSrc)
         case PDMAUDIORECSRC_LINE:    return "Line In";
         case PDMAUDIORECSRC_PHONE:   return "Phone";
         /* no default */
+        case PDMAUDIORECSRC_END:
         case PDMAUDIORECSRC_32BIT_HACK:
             break;
     }
@@ -176,6 +180,7 @@ DECLINLINE(bool) PDMAudioFormatIsSigned(PDMAUDIOFMT enmFmt)
 
         /* no default */
         case PDMAUDIOFMT_INVALID:
+        case PDMAUDIOFMT_END:
         case PDMAUDIOFMT_32BIT_HACK:
             break;
     }
@@ -206,6 +211,7 @@ DECLINLINE(uint8_t) PDMAudioFormatGetBits(PDMAUDIOFMT enmFmt)
 
         /* no default */
         case PDMAUDIOFMT_INVALID:
+        case PDMAUDIOFMT_END:
         case PDMAUDIOFMT_32BIT_HACK:
             break;
     }
@@ -231,6 +237,7 @@ DECLINLINE(const char *) PDMAudioFormatGetName(PDMAUDIOFMT enmFmt)
         case PDMAUDIOFMT_S32:   return "S32";
         /* no default */
         case PDMAUDIOFMT_INVALID:
+        case PDMAUDIOFMT_END:
         case PDMAUDIOFMT_32BIT_HACK:
             break;
     }
@@ -295,9 +302,9 @@ DECLINLINE(void) PDMAudioStrmCfgFree(PPDMAUDIOSTREAMCFG pCfg)
 DECLINLINE(bool) PDMAudioStrmCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pCfg, false);
-    AssertMsgReturn(pCfg->enmDir    >= PDMAUDIODIR_UNKNOWN          && pCfg->enmDir    <= PDMAUDIODIR_DUPLEX,
+    AssertMsgReturn(pCfg->enmDir    >= PDMAUDIODIR_UNKNOWN          && pCfg->enmDir    < PDMAUDIODIR_END,
                     ("%d\n", pCfg->enmDir), false);
-    AssertMsgReturn(pCfg->enmLayout >= PDMAUDIOSTREAMLAYOUT_UNKNOWN && pCfg->enmLayout <= PDMAUDIOSTREAMLAYOUT_RAW,
+    AssertMsgReturn(pCfg->enmLayout >= PDMAUDIOSTREAMLAYOUT_UNKNOWN && pCfg->enmLayout < PDMAUDIOSTREAMLAYOUT_END,
                     ("%d\n", pCfg->enmLayout), false);
     return PDMAudioPropsAreValid(&pCfg->Props);
 }
@@ -379,6 +386,7 @@ DECLINLINE(const char *) PDMAudioStrmCmdGetName(PDMAUDIOSTREAMCMD enmCmd)
         case PDMAUDIOSTREAMCMD_RESUME:  return "Resume";
         case PDMAUDIOSTREAMCMD_DRAIN:   return "Drain";
         case PDMAUDIOSTREAMCMD_DROP:    return "Drop";
+        case PDMAUDIOSTREAMCMD_END:
         case PDMAUDIOSTREAMCMD_32BIT_HACK:
             break;
         /* no default! */
