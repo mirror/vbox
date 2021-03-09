@@ -83,6 +83,7 @@ typedef struct AUDIOWAVFILEDATA
 
 
 
+#if 0 /* unused, no header prototypes */
 
 /**
  * Retrieves the matching PDMAUDIOFMT for the given bits + signing flag.
@@ -139,87 +140,90 @@ char *DrvAudioDbgGetFileNameA(uint8_t uInstance, const char *pszPath, const char
     return RTStrDup(szFilePath);
 }
 
+#endif /* unused */
+
 /**
  * Allocates an audio device.
  *
- * @returns Newly allocated audio device, or NULL if failed.
+ * @returns Newly allocated audio device, or NULL on failure.
+ * @param   cb      The total device structure size.   This must be at least the
+ *                  size of PDMAUDIODEVICE.  The idea is that the caller extends
+ *                  the PDMAUDIODEVICE structure and appends additional data
+ *                  after it in its private structure.
+ */
+PPDMAUDIODEVICE PDMAudioDeviceAlloc(size_t cb)
+{
+    AssertReturn(cb >= sizeof(PDMAUDIODEVICE), NULL);
+    AssertReturn(cb < _4M, NULL);
+
+    PPDMAUDIODEVICE pDev = (PPDMAUDIODEVICE)RTMemAllocZ(RT_ALIGN_Z(cb, 64));
+    if (pDev)
+    {
+        pDev->pvData = pDev + 1;
+        pDev->cbData = cb - sizeof(PDMAUDIODEVICE);
+        RTListInit(&pDev->Node);
+
+        //pDev->cMaxInputChannels  = 0;
+        //pDev->cMaxOutputChannels = 0;
+    }
+    return pDev;
+}
+
+/**
+ * Allocates an audio device.
+ *
+ * @returns Newly allocated audio device, or NULL on failure.
  * @param   cbData              How much additional data (in bytes) should be allocated to provide
  *                              a (backend) specific area to store additional data.
  *                              Optional, can be 0.
  */
 PPDMAUDIODEVICE DrvAudioHlpDeviceAlloc(size_t cbData)
 {
-    PPDMAUDIODEVICE pDev = (PPDMAUDIODEVICE)RTMemAllocZ(sizeof(PDMAUDIODEVICE));
-    if (!pDev)
-        return NULL;
-
-    if (cbData)
-    {
-        pDev->pvData = RTMemAllocZ(cbData);
-        if (!pDev->pvData)
-        {
-            RTMemFree(pDev);
-            return NULL;
-        }
-    }
-
-    pDev->cbData = cbData;
-
-    pDev->cMaxInputChannels  = 0;
-    pDev->cMaxOutputChannels = 0;
-
-    return pDev;
+    AssertReturn(cbData < _4M, NULL);
+    return PDMAudioDeviceAlloc(cbData + sizeof(PDMAUDIODEVICE));
 }
 
 /**
- * Frees an audio device.
+ * Frees an audio device allocated by PDMAudioDeviceAlloc.
  *
- * @param pDev                  Device to free.
+ * @param   pDev    The device to free.  NULL is ignored.
  */
-void DrvAudioHlpDeviceFree(PPDMAUDIODEVICE pDev)
+void PDMAudioDeviceFree(PPDMAUDIODEVICE pDev)
 {
-    if (!pDev)
-        return;
-
-    Assert(pDev->cRefCount == 0);
-
-    if (pDev->pvData)
+    if (pDev)
     {
-        Assert(pDev->cbData);
+        Assert(pDev->cRefCount == 0);
 
-        RTMemFree(pDev->pvData);
         pDev->pvData = NULL;
-    }
+        pDev->cbData = 0;
 
-    RTMemFree(pDev);
-    pDev = NULL;
+        RTMemFree(pDev);
+    }
 }
 
 /**
  * Duplicates an audio device entry.
  *
  * @returns Duplicated audio device entry on success, or NULL on failure.
- * @param   pDev                Audio device entry to duplicate.
- * @param   fCopyUserData       Whether to also copy the user data portion or not.
+ * @param   pDev            The audio device enum entry to duplicate.
+ * @param   fCopyUserData   Whether to also copy the user data portion or not.
  */
-PPDMAUDIODEVICE DrvAudioHlpDeviceDup(const PPDMAUDIODEVICE pDev, bool fCopyUserData)
+PPDMAUDIODEVICE PDMAudioDeviceDup(PPDMAUDIODEVICE pDev, bool fCopyUserData)
 {
     AssertPtrReturn(pDev, NULL);
 
-    PPDMAUDIODEVICE pDevDup = DrvAudioHlpDeviceAlloc(fCopyUserData ? pDev->cbData : 0);
+    PPDMAUDIODEVICE pDevDup = PDMAudioDeviceAlloc(sizeof(*pDev) + (fCopyUserData ? pDev->cbData : 0));
     if (pDevDup)
     {
         memcpy(pDevDup, pDev, sizeof(PDMAUDIODEVICE));
+        RTListInit(&pDevDup->Node);
 
         if (   fCopyUserData
-            && pDevDup->cbData)
+            && pDev->cbData)
         {
-            memcpy(pDevDup->pvData, pDev->pvData, pDevDup->cbData);
-        }
-        else
-        {
-            pDevDup->cbData = 0;
-            pDevDup->pvData = NULL;
+            /** @todo r=bird: This ASSUMES that no special data is stored here, like
+             *        pointers or similar that cannot just be memcpy'ied. */
+            memcpy(pDevDup + 1, pDev + 1, pDev->cbData);
         }
     }
 
@@ -236,7 +240,7 @@ int DrvAudioHlpDeviceEnumInit(PPDMAUDIODEVICEENUM pDevEnm)
 {
     AssertPtrReturn(pDevEnm, VERR_INVALID_POINTER);
 
-    RTListInit(&pDevEnm->lstDevices);
+    RTListInit(&pDevEnm->LstDevices);
     pDevEnm->cDevices = 0;
 
     return VINF_SUCCESS;
@@ -253,17 +257,17 @@ void DrvAudioHlpDeviceEnumFree(PPDMAUDIODEVICEENUM pDevEnm)
         return;
 
     PPDMAUDIODEVICE pDev, pDevNext;
-    RTListForEachSafe(&pDevEnm->lstDevices, pDev, pDevNext, PDMAUDIODEVICE, Node)
+    RTListForEachSafe(&pDevEnm->LstDevices, pDev, pDevNext, PDMAUDIODEVICE, Node)
     {
         RTListNodeRemove(&pDev->Node);
 
-        DrvAudioHlpDeviceFree(pDev);
+        PDMAudioDeviceFree(pDev);
 
         pDevEnm->cDevices--;
     }
 
     /* Sanity. */
-    Assert(RTListIsEmpty(&pDevEnm->lstDevices));
+    Assert(RTListIsEmpty(&pDevEnm->LstDevices));
     Assert(pDevEnm->cDevices == 0);
 }
 
@@ -279,7 +283,7 @@ int DrvAudioHlpDeviceEnumAdd(PPDMAUDIODEVICEENUM pDevEnm, PPDMAUDIODEVICE pDev)
     AssertPtrReturn(pDevEnm, VERR_INVALID_POINTER);
     AssertPtrReturn(pDev,    VERR_INVALID_POINTER);
 
-    RTListAppend(&pDevEnm->lstDevices, &pDev->Node);
+    RTListAppend(&pDevEnm->LstDevices, &pDev->Node);
     pDevEnm->cDevices++;
 
     return VINF_SUCCESS;
@@ -304,9 +308,9 @@ PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(const PPDMAUDIODEVICEENUM pDevEnm)
     AssertRC(rc2);
 
     PPDMAUDIODEVICE pDev;
-    RTListForEach(&pDevEnm->lstDevices, pDev, PDMAUDIODEVICE, Node)
+    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIODEVICE, Node)
     {
-        PPDMAUDIODEVICE pDevDup = DrvAudioHlpDeviceDup(pDev, true /* fCopyUserData */);
+        PPDMAUDIODEVICE pDevDup = PDMAudioDeviceDup(pDev, true /* fCopyUserData */);
         if (!pDevDup)
         {
             rc2 = VERR_NO_MEMORY;
@@ -316,7 +320,7 @@ PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(const PPDMAUDIODEVICEENUM pDevEnm)
         rc2 = DrvAudioHlpDeviceEnumAdd(pDevEnmDup, pDevDup);
         if (RT_FAILURE(rc2))
         {
-            DrvAudioHlpDeviceFree(pDevDup);
+            PDMAudioDeviceFree(pDevDup);
             break;
         }
     }
@@ -348,7 +352,7 @@ int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIOD
     int rc = VINF_SUCCESS;
 
     PPDMAUDIODEVICE pSrcDev;
-    RTListForEach(&pSrcDevEnm->lstDevices, pSrcDev, PDMAUDIODEVICE, Node)
+    RTListForEach(&pSrcDevEnm->LstDevices, pSrcDev, PDMAUDIODEVICE, Node)
     {
         if (   enmUsage != PDMAUDIODIR_DUPLEX
             && enmUsage != pSrcDev->enmUsage)
@@ -356,7 +360,7 @@ int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIOD
             continue;
         }
 
-        PPDMAUDIODEVICE pDstDev = DrvAudioHlpDeviceDup(pSrcDev, fCopyUserData);
+        PPDMAUDIODEVICE pDstDev = PDMAudioDeviceDup(pSrcDev, fCopyUserData);
         if (!pDstDev)
         {
             rc = VERR_NO_MEMORY;
@@ -399,7 +403,7 @@ PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(const PPDMAUDIODEVICEENUM 
     AssertPtrReturn(pDevEnm, NULL);
 
     PPDMAUDIODEVICE pDev;
-    RTListForEach(&pDevEnm->lstDevices, pDev, PDMAUDIODEVICE, Node)
+    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIODEVICE, Node)
     {
         if (enmUsage != PDMAUDIODIR_DUPLEX)
         {
@@ -431,7 +435,7 @@ uint16_t DrvAudioHlpDeviceEnumGetDeviceCount(const PPDMAUDIODEVICEENUM pDevEnm, 
     uint32_t cDevs = 0;
 
     PPDMAUDIODEVICE pDev;
-    RTListForEach(&pDevEnm->lstDevices, pDev, PDMAUDIODEVICE, Node)
+    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIODEVICE, Node)
     {
         if (enmUsage == pDev->enmUsage)
             cDevs++;
@@ -454,7 +458,7 @@ void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, const PPDMAUDIODEVICEENUM p
     LogFunc(("%s: %RU16 devices\n", pszDesc, pDevEnm->cDevices));
 
     PPDMAUDIODEVICE pDev;
-    RTListForEach(&pDevEnm->lstDevices, pDev, PDMAUDIODEVICE, Node)
+    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIODEVICE, Node)
     {
         char *pszFlags = DrvAudioHlpAudDevFlagsToStrA(pDev->fFlags);
 

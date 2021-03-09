@@ -533,7 +533,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
         for (UInt16 i = 0; i < cDevices; i++)
         {
             if (pDev) /* Some (skipped) device to clean up first? */
-                DrvAudioHlpDeviceFree(pDev);
+                PDMAudioDeviceFree(pDev);
 
             pDev = DrvAudioHlpDeviceAlloc(sizeof(COREAUDIODEVICEDATA));
             if (!pDev)
@@ -668,7 +668,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
 
         if (RT_FAILURE(rc))
         {
-            DrvAudioHlpDeviceFree(pDev);
+            PDMAudioDeviceFree(pDev);
             pDev = NULL;
         }
 
@@ -702,7 +702,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
 bool coreAudioDevicesHasDevice(PPDMAUDIODEVICEENUM pEnmSrc, AudioDeviceID deviceID)
 {
     PPDMAUDIODEVICE pDevSrc;
-    RTListForEach(&pEnmSrc->lstDevices, pDevSrc, PDMAUDIODEVICE, Node)
+    RTListForEach(&pEnmSrc->LstDevices, pDevSrc, PDMAUDIODEVICE, Node)
     {
         PCOREAUDIODEVICEDATA pDevSrcData = (PCOREAUDIODEVICEDATA)pDevSrc->pvData;
         AssertPtr(pDevSrcData);
@@ -745,7 +745,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
             if (RT_SUCCESS(rc))
             {
                 PPDMAUDIODEVICE pDevSrcIn;
-                RTListForEach(&devEnmIn.lstDevices, pDevSrcIn, PDMAUDIODEVICE, Node)
+                RTListForEach(&devEnmIn.LstDevices, pDevSrcIn, PDMAUDIODEVICE, Node)
                 {
                     PCOREAUDIODEVICEDATA pDevSrcInData = (PCOREAUDIODEVICEDATA)pDevSrcIn->pvData;
                     AssertPtr(pDevSrcInData);
@@ -778,7 +778,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
                      * If found, this means we have to treat that device as a duplex device then.
                      */
                     PPDMAUDIODEVICE pDevSrcOut;
-                    RTListForEach(&devEnmOut.lstDevices, pDevSrcOut, PDMAUDIODEVICE, Node)
+                    RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, PDMAUDIODEVICE, Node)
                     {
                         PCOREAUDIODEVICEDATA pDevSrcOutData = (PCOREAUDIODEVICEDATA)pDevSrcOut->pvData;
                         AssertPtr(pDevSrcOutData);
@@ -800,7 +800,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
                     }
                     else
                     {
-                        DrvAudioHlpDeviceFree(pDevDst);
+                        PDMAudioDeviceFree(pDevDst);
                         pDevDst = NULL;
                     }
                 }
@@ -812,7 +812,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
                      * that is, all output devices which operate in simplex mode.
                      */
                     PPDMAUDIODEVICE pDevSrcOut;
-                    RTListForEach(&devEnmOut.lstDevices, pDevSrcOut, PDMAUDIODEVICE, Node)
+                    RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, PDMAUDIODEVICE, Node)
                     {
                         PCOREAUDIODEVICEDATA pDevSrcOutData = (PCOREAUDIODEVICEDATA)pDevSrcOut->pvData;
                         AssertPtr(pDevSrcOutData);
@@ -846,7 +846,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
                         rc = DrvAudioHlpDeviceEnumAdd(pEnmDst, pDevDst);
                         if (RT_FAILURE(rc))
                         {
-                            DrvAudioHlpDeviceFree(pDevDst);
+                            PDMAudioDeviceFree(pDevDst);
                             break;
                         }
                     }

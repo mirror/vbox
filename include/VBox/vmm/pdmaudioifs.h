@@ -353,11 +353,10 @@ typedef enum PDMAUDIODEVICETYPE
  */
 typedef struct PDMAUDIODEVICE
 {
-    /** List node. */
+    /** List entry (like PDMAUDIODEVICEENUM::LstDevices). */
     RTLISTNODE          Node;
-    /** Additional data which might be relevant for the current context.
-     * @todo r=bird: I would do this C++ style, having the host specific bits
-     *       appended after this structure and downcast. */
+    /** Additional data which might be relevant for the current context (follows
+     * immediately after the end of this structure). */
     void               *pvData;
     /** Size of the additional data. */
     size_t              cbData;
@@ -373,38 +372,45 @@ typedef struct PDMAUDIODEVICE
     uint8_t             cMaxInputChannels;
     /** Maximum number of output audio channels the device supports. */
     uint8_t             cMaxOutputChannels;
+    uint8_t             bAlignment[1];
     /** Device type union, based on enmType. */
     union
     {
         /** USB type specifics. */
         struct
         {
-            /** Vendor ID.
-             * @todo r=bird: Why signed?? VUSB uses uint16_t for idVendor and idProduct!  */
-            int16_t     VID;
+            /** Vendor ID. */
+            uint16_t    idVendor;
             /** Product ID. */
-            int16_t     PID;
+            uint16_t    idProduct;
         } USB;
+        uint64_t        uPadding[2];
     } Type;
     /** Friendly name of the device, if any. */
     char                szName[64];
 } PDMAUDIODEVICE;
+AssertCompileSizeAlignment(PDMAUDIODEVICE, 32);
 /** Pointer to audio device info (enum result). */
 typedef PDMAUDIODEVICE *PPDMAUDIODEVICE;
+/** Pointer to a const audio device info (enum result). */
+typedef PDMAUDIODEVICE const *PCPDMAUDIODEVICE;
 
 /**
  * An audio device enumeration result.
+ *
  * @sa PDMIHOSTAUDIO::pfnGetDevices
  */
 typedef struct PDMAUDIODEVICEENUM
 {
+    /** List of audio devices (PDMAUDIODEVICE). */
+    RTLISTANCHOR    LstDevices;
     /** Number of audio devices in the list. */
-    uint16_t        cDevices;
-    /** List of audio devices. */
-    RTLISTANCHOR    lstDevices;
+    uint32_t        cDevices;
 } PDMAUDIODEVICEENUM;
 /** Pointer to an audio device enumeration result. */
 typedef PDMAUDIODEVICEENUM *PPDMAUDIODEVICEENUM;
+/** Pointer to a const audio device enumeration result. */
+typedef PDMAUDIODEVICEENUM const *PCPDMAUDIODEVICEENUM;
 
 /**
  * Audio configuration (static) of an audio host backend.

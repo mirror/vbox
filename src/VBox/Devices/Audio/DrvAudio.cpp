@@ -2171,7 +2171,7 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
                 LogRel(("Audio: Found %RU16 devices for driver '%s'\n", DevEnum.cDevices, pThis->szName));
 
             PPDMAUDIODEVICE pDev;
-            RTListForEach(&DevEnum.lstDevices, pDev, PDMAUDIODEVICE, Node)
+            RTListForEach(&DevEnum.LstDevices, pDev, PDMAUDIODEVICE, Node)
             {
                 if (fLog)
                 {
