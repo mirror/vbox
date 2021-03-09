@@ -72,7 +72,7 @@ DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevAlloc(size_t cb)
     {
         pDev->uMagic = PDMAUDIOHOSTDEV_MAGIC;
         pDev->cbSelf = (uint32_t)cb;
-        RTListInit(&pDev->Node);
+        RTListInit(&pDev->ListEntry);
 
         //pDev->cMaxInputChannels  = 0;
         //pDev->cMaxOutputChannels = 0;
@@ -118,7 +118,7 @@ DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevDup(PPDMAUDIOHOSTDEV pDev, bool fOnl
     if (pDevDup)
     {
         memcpy(pDevDup, pDev, cbToDup);
-        RTListInit(&pDevDup->Node);
+        RTListInit(&pDevDup->ListEntry);
         pDev->cbSelf = cbToDup;
     }
 
@@ -155,9 +155,9 @@ DECLINLINE(void) PDMAudioHostEnumDelete(PPDMAUDIOHOSTENUM pDevEnm)
         AssertReturnVoid(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC);
 
         PPDMAUDIOHOSTDEV pDev, pDevNext;
-        RTListForEachSafe(&pDevEnm->LstDevices, pDev, pDevNext, PDMAUDIOHOSTDEV, Node)
+        RTListForEachSafe(&pDevEnm->LstDevices, pDev, pDevNext, PDMAUDIOHOSTDEV, ListEntry)
         {
-            RTListNodeRemove(&pDev->Node);
+            RTListNodeRemove(&pDev->ListEntry);
 
             PDMAudioHostDevFree(pDev);
 
@@ -184,7 +184,7 @@ DECLINLINE(void) PDMAudioHostEnumAppend(PPDMAUDIOHOSTENUM pDevEnm, PPDMAUDIOHOST
     AssertPtr(pDev);
     Assert(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC);
 
-    RTListAppend(&pDevEnm->LstDevices, &pDev->Node);
+    RTListAppend(&pDevEnm->LstDevices, &pDev->ListEntry);
     pDevEnm->cDevices++;
 }
 
@@ -210,7 +210,7 @@ DECLINLINE(int) PDMAudioHostEnumCopy(PPDMAUDIOHOSTENUM pDstDevEnm, PCPDMAUDIOHOS
     AssertReturn(pSrcDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC, VERR_WRONG_ORDER);
 
     PPDMAUDIOHOSTDEV pSrcDev;
-    RTListForEach(&pSrcDevEnm->LstDevices, pSrcDev, PDMAUDIOHOSTDEV, Node)
+    RTListForEach(&pSrcDevEnm->LstDevices, pSrcDev, PDMAUDIOHOSTDEV, ListEntry)
     {
         if (   enmUsage == pSrcDev->enmUsage
             || enmUsage == PDMAUDIODIR_INVALID /*all*/)
@@ -243,7 +243,7 @@ DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostEnumGetDefault(PCPDMAUDIOHOSTENUM pDevE
     AssertReturn(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC, NULL);
 
     PPDMAUDIOHOSTDEV pDev;
-    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, Node)
+    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
     {
         if (pDev->fFlags & PDMAUDIOHOSTDEV_F_DEFAULT)
         {
@@ -274,7 +274,7 @@ DECLINLINE(uint32_t) PDMAudioHostEnumCountMatching(PCPDMAUDIOHOSTENUM pDevEnm, P
 
     uint32_t        cDevs = 0;
     PPDMAUDIOHOSTDEV pDev;
-    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, Node)
+    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
     {
         if (enmUsage == pDev->enmUsage)
             cDevs++;
@@ -334,6 +334,7 @@ DECLINLINE(const char *) PDMAudioHostDevFlagsToString(char pszDst[PDMAUDIOHOSTDE
  */
 DECLINLINE(void) PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *pszDesc)
 {
+#ifdef LOG_ENABLED
     AssertPtrReturnVoid(pDevEnm);
     AssertPtrReturnVoid(pszDesc);
     AssertReturnVoid(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC);
@@ -343,7 +344,7 @@ DECLINLINE(void) PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *psz
         LogFunc(("%s: %RU32 devices\n", pszDesc, pDevEnm->cDevices));
 
         PPDMAUDIOHOSTDEV pDev;
-        RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, Node)
+        RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
         {
             char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
             LogFunc(("Device '%s':\n", pDev->szName));
@@ -354,6 +355,9 @@ DECLINLINE(void) PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *psz
             LogFunc(("  cbExtra         = %RU32 bytes\n",    pDev->cbSelf - sizeof(PDMAUDIOHOSTDEV)));
         }
     }
+#else
+    RT_NOREF(pDevEnm, pszDesc);
+#endif
 }
 
 /** @} */

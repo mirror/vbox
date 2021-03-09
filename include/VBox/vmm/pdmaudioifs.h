@@ -359,7 +359,7 @@ typedef enum PDMAUDIODEVICETYPE
 typedef struct PDMAUDIOHOSTDEV
 {
     /** List entry (like PDMAUDIOHOSTENUM::LstDevices). */
-    RTLISTNODE          Node;
+    RTLISTNODE          ListEntry;
     /** Magic value (PDMAUDIOHOSTDEV_MAGIC). */
     uint32_t            uMagic;
     /** Size of this structure and whatever backend specific data that follows it. */

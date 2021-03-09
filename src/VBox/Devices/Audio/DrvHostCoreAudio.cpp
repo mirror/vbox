@@ -703,7 +703,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
 bool coreAudioDevicesHasDevice(PPDMAUDIOHOSTENUM pEnmSrc, AudioDeviceID deviceID)
 {
     PCOREAUDIODEVICEDATA pDevSrc;
-    RTListForEach(&pEnmSrc->LstDevices, pDevSrc, COREAUDIODEVICEDATA, Core.Node)
+    RTListForEach(&pEnmSrc->LstDevices, pDevSrc, COREAUDIODEVICEDATA, Core.ListEntry)
     {
         if (pDevSrc->deviceID == deviceID)
             return true;
@@ -740,7 +740,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
              */
             PDMAudioHostEnumInit(pEnmDst);
             PCOREAUDIODEVICEDATA pDevSrcIn;
-            RTListForEach(&devEnmIn.LstDevices, pDevSrcIn, COREAUDIODEVICEDATA, Core.Node)
+            RTListForEach(&devEnmIn.LstDevices, pDevSrcIn, COREAUDIODEVICEDATA, Core.ListEntry)
             {
                 PCOREAUDIODEVICEDATA pDevDst = (PCOREAUDIODEVICEDATA)PDMAudioHostDevAlloc(sizeof(*pDevDst));
                 if (!pDevDst)
@@ -768,7 +768,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
                  * If found, this means we have to treat that device as a duplex device then.
                  */
                 PCOREAUDIODEVICEDATA pDevSrcOut;
-                RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, COREAUDIODEVICEDATA, Core.Node)
+                RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, COREAUDIODEVICEDATA, Core.ListEntry)
                 {
                     if (pDevSrcIn->deviceID == pDevSrcOut->deviceID)
                     {
@@ -797,7 +797,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
                  * that is, all output devices which operate in simplex mode.
                  */
                 PCOREAUDIODEVICEDATA pDevSrcOut;
-                RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, COREAUDIODEVICEDATA, Core.Node)
+                RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, COREAUDIODEVICEDATA, Core.ListEntry)
                 {
                     if (coreAudioDevicesHasDevice(pEnmDst, pDevSrcOut->deviceID))
                         continue; /* Already in our list, skip. */

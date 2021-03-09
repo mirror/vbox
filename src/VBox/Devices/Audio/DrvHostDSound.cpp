@@ -1834,7 +1834,7 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOHOSTENUM pDevEn
          * Query Information from all enumerated devices.
          */
         PDSOUNDDEV pDev;
-        RTListForEach(&pDevEnm->LstDevices, pDev, DSOUNDDEV, Core.Node)
+        RTListForEach(&pDevEnm->LstDevices, pDev, DSOUNDDEV, Core.ListEntry)
         {
             dsoundDeviceQueryInfo(pThis, pDev); /* ignore rc */
         }
