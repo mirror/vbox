@@ -48,6 +48,11 @@
 #include <iprt/string.h>
 
 
+/** @defgroup grp_pdm_audio_inline      The PDM Audio Helper APIs
+ * @ingroup grp_pdm
+ * @{
+ */
+
 /* Fix later: */
 DECLINLINE(bool) PDMAudioPropsAreValid(PCPDMAUDIOPCMPROPS pProps);
 DECLINLINE(bool) PDMAudioPropsAreEqual(PCPDMAUDIOPCMPROPS pProps1, PCPDMAUDIOPCMPROPS pProps2);
@@ -867,5 +872,7 @@ DECLINLINE(void) PDMAudioPropsLog(PCPDMAUDIOPCMPROPS pProps)
     Log(("uHz=%RU32, cChannels=%RU8, cBits=%RU8%s",
          pProps->uHz, pProps->cChannels, pProps->cbSample * 8, pProps->fSigned ? "S" : "U"));
 }
+
+/** @} */
 
 #endif /* !VBOX_INCLUDED_vmm_pdmaudioinline_h */

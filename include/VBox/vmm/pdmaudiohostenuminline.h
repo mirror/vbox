@@ -47,8 +47,15 @@
 #include <iprt/string.h>
 
 
+/** @defgroup grp_pdm_audio_host_enum_inline    The PDM Host Audio Enumeration Helper APIs
+ *
+ * @ingroup grp_pdm
+ * @{
+ */
+
+
 /**
- * Allocates an audio device.
+ * Allocates a host audio device for an enumeration result.
  *
  * @returns Newly allocated audio device, or NULL on failure.
  * @param   cb      The total device structure size.   This must be at least the
@@ -56,7 +63,7 @@
  *                  the PDMAUDIOHOSTDEV structure and appends additional data
  *                  after it in its private structure.
  */
-DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioDeviceAlloc(size_t cb)
+DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevAlloc(size_t cb)
 {
     AssertReturn(cb >= sizeof(PDMAUDIOHOSTDEV), NULL);
     AssertReturn(cb < _4M, NULL);
@@ -75,11 +82,11 @@ DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioDeviceAlloc(size_t cb)
 }
 
 /**
- * Frees an audio device allocated by PDMAudioDeviceAlloc.
+ * Frees a host audio device allocated by PDMAudioHostDevAlloc.
  *
  * @param   pDev    The device to free.  NULL is ignored.
  */
-DECLINLINE(void) PDMAudioDeviceFree(PPDMAUDIOHOSTDEV pDev)
+DECLINLINE(void) PDMAudioHostDevFree(PPDMAUDIOHOSTDEV pDev)
 {
     if (pDev)
     {
@@ -93,13 +100,13 @@ DECLINLINE(void) PDMAudioDeviceFree(PPDMAUDIOHOSTDEV pDev)
 }
 
 /**
- * Duplicates an audio device entry.
+ * Duplicates a host audio device enumeration entry.
  *
  * @returns Duplicated audio device entry on success, or NULL on failure.
  * @param   pDev            The audio device enum entry to duplicate.
  * @param   fOnlyCoreData
  */
-DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioDeviceDup(PPDMAUDIOHOSTDEV pDev, bool fOnlyCoreData)
+DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioHostDevDup(PPDMAUDIOHOSTDEV pDev, bool fOnlyCoreData)
 {
     AssertPtrReturn(pDev, NULL);
     Assert(pDev->uMagic == PDMAUDIOHOSTDEV_MAGIC);
@@ -108,7 +115,7 @@ DECLINLINE(PPDMAUDIOHOSTDEV) PDMAudioDeviceDup(PPDMAUDIOHOSTDEV pDev, bool fOnly
     uint32_t cbToDup = fOnlyCoreData ? sizeof(PDMAUDIOHOSTDEV) : pDev->cbSelf;
     AssertReturn(cbToDup >= sizeof(*pDev), NULL);
 
-    PPDMAUDIOHOSTDEV pDevDup = PDMAudioDeviceAlloc(cbToDup);
+    PPDMAUDIOHOSTDEV pDevDup = PDMAudioHostDevAlloc(cbToDup);
     if (pDevDup)
     {
         memcpy(pDevDup, pDev, cbToDup);
@@ -153,7 +160,7 @@ DECLINLINE(void) PDMAudioHostEnumDelete(PPDMAUDIOHOSTENUM pDevEnm)
         {
             RTListNodeRemove(&pDev->Node);
 
-            PDMAudioDeviceFree(pDev);
+            PDMAudioHostDevFree(pDev);
 
             pDevEnm->cDevices--;
         }
@@ -209,7 +216,7 @@ DECLINLINE(int) PDMAudioHostEnumCopy(PPDMAUDIOHOSTENUM pDstDevEnm, PCPDMAUDIOHOS
         if (   enmUsage == pSrcDev->enmUsage
             || enmUsage == PDMAUDIODIR_INVALID /*all*/)
         {
-            PPDMAUDIOHOSTDEV pDstDev = PDMAudioDeviceDup(pSrcDev, fOnlyCoreData);
+            PPDMAUDIOHOSTDEV pDstDev = PDMAudioHostDevDup(pSrcDev, fOnlyCoreData);
             AssertReturn(pDstDev, VERR_NO_MEMORY);
 
             PDMAudioHostEnumAppend(pDstDevEnm, pDstDev);
@@ -278,7 +285,7 @@ DECLINLINE(uint32_t) PDMAudioHostEnumCountMatching(PCPDMAUDIOHOSTENUM pDevEnm, P
 }
 
 /** The max string length for all PDMAUDIOHOSTDEV_F_XXX.
- * @sa PDMAudioDeviceFlagsToString */
+ * @sa PDMAudioHostDevFlagsToString */
 #define PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN    (7 * 8)
 
 /**
@@ -290,7 +297,7 @@ DECLINLINE(uint32_t) PDMAudioHostEnumCountMatching(PCPDMAUDIOHOSTENUM pDevEnm, P
  *                      the string terminator).
  * @param   fFlags      Audio flags (PDMAUDIOHOSTDEV_F_XXX) to convert.
  */
-DECLINLINE(const char *) PDMAudioDeviceFlagsToString(char pszDst[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN], uint32_t fFlags)
+DECLINLINE(const char *) PDMAudioHostDevFlagsToString(char pszDst[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN], uint32_t fFlags)
 {
     static const struct { const char *pszMnemonic; uint32_t cchMnemonic; uint32_t fFlag; } s_aFlags[] =
     {
@@ -342,12 +349,14 @@ DECLINLINE(void) PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *psz
             char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
             LogFunc(("Device '%s':\n", pDev->szName));
             LogFunc(("  Usage           = %s\n",             PDMAudioDirGetName(pDev->enmUsage)));
-            LogFunc(("  Flags           = %s\n",             PDMAudioDeviceFlagsToString(szFlags, pDev->fFlags)));
+            LogFunc(("  Flags           = %s\n",             PDMAudioHostDevFlagsToString(szFlags, pDev->fFlags)));
             LogFunc(("  Input channels  = %RU8\n",           pDev->cMaxInputChannels));
             LogFunc(("  Output channels = %RU8\n",           pDev->cMaxOutputChannels));
             LogFunc(("  cbExtra         = %RU32 bytes\n",    pDev->cbSelf - sizeof(PDMAUDIOHOSTDEV)));
         }
     }
 }
+
+/** @} */
 
 #endif /* !VBOX_INCLUDED_vmm_pdmaudiohostenuminline_h */
