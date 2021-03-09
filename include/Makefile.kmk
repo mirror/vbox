@@ -25,6 +25,8 @@ LIBRARIES += SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0
 VBOX_HDRS_CPP_FEATURES := \
 	VBox/vmm/hm.h \
 	VBox/vmm/hm_vmx.h \
+	VBox/vmm/pdmaudioinline.h \
+	VBox/vmm/pdmaudiohostenuminline.h \
 	VBox/HostServices/GuestControlSvc.h \
 	VBox/HostServices/DragAndDropSvc.h \
 	VBox/HostServices/Service.h \
