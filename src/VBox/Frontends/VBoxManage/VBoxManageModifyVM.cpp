@@ -1645,7 +1645,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
                 if (!RTStrICmp(ValueUnion.psz, "none"))
                 {
-                    if (!!fEnabled)
+                    if (RT_BOOL(fEnabled))
                         CHECK_ERROR(nic, COMSETTER(Enabled)(FALSE));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "null"))
