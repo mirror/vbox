@@ -99,7 +99,7 @@ typedef struct DRVHOSTCOREAUDIO
     /** Critical section to serialize access. */
     RTCRITSECT              CritSect;
     /** Current (last reported) device enumeration. */
-    PDMAUDIODEVICEENUM      Devices;
+    PDMAUDIOHOSTENUM      Devices;
     /** Pointer to the currently used input device in the device enumeration.
      *  Can be NULL if none assigned. */
     PCOREAUDIODEVICEDATA    pDefaultDevIn;
@@ -486,7 +486,7 @@ static void coreAudioUninitConvCbCtx(PCOREAUDIOCONVCBCTX pConvCbCtx)
  * @param   enmUsage            Which devices to enumerate.
  * @param   pDevEnm             Where to store the enumerated devices.
  */
-static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsage, PPDMAUDIODEVICEENUM pDevEnm)
+static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsage, PPDMAUDIOHOSTENUM pDevEnm)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pDevEnm, VERR_INVALID_POINTER);
@@ -532,9 +532,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
         if (err != kAudioHardwareNoError)
             break;
 
-        rc = DrvAudioHlpDeviceEnumInit(pDevEnm);
-        if (RT_FAILURE(rc))
-            break;
+        PDMAudioHostEnumInit(pDevEnm);
 
         UInt16 cDevices = uSize / sizeof(AudioDeviceID);
 
@@ -662,9 +660,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
             }
 
             /* Add the device to the enumeration. */
-            rc = DrvAudioHlpDeviceEnumAdd(pDevEnm, &pDev->Core);
-            if (RT_FAILURE(rc))
-                break;
+            PDMAudioHostEnumAppend(pDevEnm, &pDev->Core);
 
             /* NULL device pointer because it's now part of the device enumeration. */
             pDev = NULL;
@@ -682,11 +678,11 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
     {
 #ifdef LOG_ENABLED
         LogFunc(("Devices for pDevEnm=%p, enmUsage=%RU32:\n", pDevEnm, enmUsage));
-        DrvAudioHlpDeviceEnumLog(pDevEnm, "Core Audio");
+        PDMAudioHostEnumLog(pDevEnm, "Core Audio");
 #endif
     }
     else
-        DrvAudioHlpDeviceEnumFree(pDevEnm);
+        PDMAudioHostEnumDelete(pDevEnm);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -703,7 +699,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
  * @param   pEnmSrc               Device enumeration to search device ID in.
  * @param   deviceID              Device ID to search.
  */
-bool coreAudioDevicesHasDevice(PPDMAUDIODEVICEENUM pEnmSrc, AudioDeviceID deviceID)
+bool coreAudioDevicesHasDevice(PPDMAUDIOHOSTENUM pEnmSrc, AudioDeviceID deviceID)
 {
     PCOREAUDIODEVICEDATA pDevSrc;
     RTListForEach(&pEnmSrc->LstDevices, pDevSrc, COREAUDIODEVICEDATA, Core.Node)
@@ -724,13 +720,13 @@ bool coreAudioDevicesHasDevice(PPDMAUDIODEVICEENUM pEnmSrc, AudioDeviceID device
  * @param   pThis               Host audio driver instance.
  * @param   pEnmDst             Where to store the device enumeration list.
  */
-int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pEnmDst)
+int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnmDst)
 {
-    PDMAUDIODEVICEENUM devEnmIn;
+    PDMAUDIOHOSTENUM devEnmIn;
     int rc = coreAudioDevicesEnumerate(pThis, PDMAUDIODIR_IN, &devEnmIn);
     if (RT_SUCCESS(rc))
     {
-        PDMAUDIODEVICEENUM devEnmOut;
+        PDMAUDIOHOSTENUM devEnmOut;
         rc = coreAudioDevicesEnumerate(pThis, PDMAUDIODIR_OUT, &devEnmOut);
         if (RT_SUCCESS(rc))
         {
@@ -741,13 +737,70 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
              * Also make sure to handle duplex devices, that is, devices which act as input and output
              * at the same time.
              */
+            PDMAudioHostEnumInit(pEnmDst);
+            PCOREAUDIODEVICEDATA pDevSrcIn;
+            RTListForEach(&devEnmIn.LstDevices, pDevSrcIn, COREAUDIODEVICEDATA, Core.Node)
+            {
+                PCOREAUDIODEVICEDATA pDevDst = (PCOREAUDIODEVICEDATA)PDMAudioDeviceAlloc(sizeof(*pDevDst));
+                if (!pDevDst)
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
 
-            rc = DrvAudioHlpDeviceEnumInit(pEnmDst);
+                coreAudioDeviceDataInit(pDevDst, pDevSrcIn->deviceID, true /* fIsInput */, pThis);
+
+                RTStrCopy(pDevDst->Core.szName, sizeof(pDevDst->Core.szName), pDevSrcIn->Core.szName);
+
+                pDevDst->Core.enmUsage          = PDMAUDIODIR_IN; /* Input device by default (simplex). */
+                pDevDst->Core.cMaxInputChannels = pDevSrcIn->Core.cMaxInputChannels;
+
+                /* Handle flags. */
+                if (pDevSrcIn->Core.fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
+                    pDevDst->Core.fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
+                /** @todo Handle hot plugging? */
+
+                /*
+                 * Now search through the list of all found output devices and check if we found
+                 * an output device with the same device ID as the currently handled input device.
+                 *
+                 * If found, this means we have to treat that device as a duplex device then.
+                 */
+                PCOREAUDIODEVICEDATA pDevSrcOut;
+                RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, COREAUDIODEVICEDATA, Core.Node)
+                {
+                    if (pDevSrcIn->deviceID == pDevSrcOut->deviceID)
+                    {
+                        pDevDst->Core.enmUsage           = PDMAUDIODIR_DUPLEX;
+                        pDevDst->Core.cMaxOutputChannels = pDevSrcOut->Core.cMaxOutputChannels;
+
+                        if (pDevSrcOut->Core.fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
+                            pDevDst->Core.fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
+                        break;
+                    }
+                }
+
+                if (RT_SUCCESS(rc))
+                    PDMAudioHostEnumAppend(pEnmDst, &pDevDst->Core);
+                else
+                {
+                    PDMAudioDeviceFree(&pDevDst->Core);
+                    pDevDst = NULL;
+                }
+            }
+
             if (RT_SUCCESS(rc))
             {
-                PCOREAUDIODEVICEDATA pDevSrcIn;
-                RTListForEach(&devEnmIn.LstDevices, pDevSrcIn, COREAUDIODEVICEDATA, Core.Node)
+                /*
+                 * As a last step, add all remaining output devices which have not been handled in the loop above,
+                 * that is, all output devices which operate in simplex mode.
+                 */
+                PCOREAUDIODEVICEDATA pDevSrcOut;
+                RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, COREAUDIODEVICEDATA, Core.Node)
                 {
+                    if (coreAudioDevicesHasDevice(pEnmDst, pDevSrcOut->deviceID))
+                        continue; /* Already in our list, skip. */
+
                     PCOREAUDIODEVICEDATA pDevDst = (PCOREAUDIODEVICEDATA)PDMAudioDeviceAlloc(sizeof(*pDevDst));
                     if (!pDevDst)
                     {
@@ -755,102 +808,36 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
                         break;
                     }
 
-                    coreAudioDeviceDataInit(pDevDst, pDevSrcIn->deviceID, true /* fIsInput */, pThis);
+                    coreAudioDeviceDataInit(pDevDst, pDevSrcOut->deviceID, false /* fIsInput */, pThis);
 
-                    RTStrCopy(pDevDst->Core.szName, sizeof(pDevDst->Core.szName), pDevSrcIn->Core.szName);
+                    RTStrCopy(pDevDst->Core.szName, sizeof(pDevDst->Core.szName), pDevSrcOut->Core.szName);
 
-                    pDevDst->Core.enmUsage          = PDMAUDIODIR_IN; /* Input device by default (simplex). */
-                    pDevDst->Core.cMaxInputChannels = pDevSrcIn->Core.cMaxInputChannels;
+                    pDevDst->Core.enmUsage           = PDMAUDIODIR_OUT;
+                    pDevDst->Core.cMaxOutputChannels = pDevSrcOut->Core.cMaxOutputChannels;
+
+                    pDevDst->deviceID       = pDevSrcOut->deviceID;
 
                     /* Handle flags. */
-                    if (pDevSrcIn->Core.fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
+                    if (pDevSrcOut->Core.fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
                         pDevDst->Core.fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
                     /** @todo Handle hot plugging? */
 
-                    /*
-                     * Now search through the list of all found output devices and check if we found
-                     * an output device with the same device ID as the currently handled input device.
-                     *
-                     * If found, this means we have to treat that device as a duplex device then.
-                     */
-                    PCOREAUDIODEVICEDATA pDevSrcOut;
-                    RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, COREAUDIODEVICEDATA, Core.Node)
-                    {
-                        if (pDevSrcIn->deviceID == pDevSrcOut->deviceID)
-                        {
-                            pDevDst->Core.enmUsage           = PDMAUDIODIR_DUPLEX;
-                            pDevDst->Core.cMaxOutputChannels = pDevSrcOut->Core.cMaxOutputChannels;
-
-                            if (pDevSrcOut->Core.fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
-                                pDevDst->Core.fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
-                            break;
-                        }
-                    }
-
-                    if (RT_SUCCESS(rc))
-                        rc = DrvAudioHlpDeviceEnumAdd(pEnmDst, &pDevDst->Core);
-                    else
-                    {
-                        PDMAudioDeviceFree(&pDevDst->Core);
-                        pDevDst = NULL;
-                    }
+                    PDMAudioHostEnumAppend(pEnmDst, &pDevDst->Core);
                 }
-
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * As a last step, add all remaining output devices which have not been handled in the loop above,
-                     * that is, all output devices which operate in simplex mode.
-                     */
-                    PCOREAUDIODEVICEDATA pDevSrcOut;
-                    RTListForEach(&devEnmOut.LstDevices, pDevSrcOut, COREAUDIODEVICEDATA, Core.Node)
-                    {
-                        if (coreAudioDevicesHasDevice(pEnmDst, pDevSrcOut->deviceID))
-                            continue; /* Already in our list, skip. */
-
-                        PCOREAUDIODEVICEDATA pDevDst = (PCOREAUDIODEVICEDATA)PDMAudioDeviceAlloc(sizeof(*pDevDst));
-                        if (!pDevDst)
-                        {
-                            rc = VERR_NO_MEMORY;
-                            break;
-                        }
-
-                        coreAudioDeviceDataInit(pDevDst, pDevSrcOut->deviceID, false /* fIsInput */, pThis);
-
-                        RTStrCopy(pDevDst->Core.szName, sizeof(pDevDst->Core.szName), pDevSrcOut->Core.szName);
-
-                        pDevDst->Core.enmUsage           = PDMAUDIODIR_OUT;
-                        pDevDst->Core.cMaxOutputChannels = pDevSrcOut->Core.cMaxOutputChannels;
-
-                        pDevDst->deviceID       = pDevSrcOut->deviceID;
-
-                        /* Handle flags. */
-                        if (pDevSrcOut->Core.fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
-                            pDevDst->Core.fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
-                        /** @todo Handle hot plugging? */
-
-                        rc = DrvAudioHlpDeviceEnumAdd(pEnmDst, &pDevDst->Core);
-                        if (RT_FAILURE(rc))
-                        {
-                            PDMAudioDeviceFree(&pDevDst->Core);
-                            break;
-                        }
-                    }
-                }
-
-                if (RT_FAILURE(rc))
-                    DrvAudioHlpDeviceEnumFree(pEnmDst);
             }
 
-            DrvAudioHlpDeviceEnumFree(&devEnmOut);
+            if (RT_FAILURE(rc))
+                PDMAudioHostEnumDelete(pEnmDst);
+
+            PDMAudioHostEnumDelete(&devEnmOut);
         }
 
-        DrvAudioHlpDeviceEnumFree(&devEnmIn);
+        PDMAudioHostEnumDelete(&devEnmIn);
     }
 
 #ifdef LOG_ENABLED
     if (RT_SUCCESS(rc))
-        DrvAudioHlpDeviceEnumLog(pEnmDst, "Core Audio (Final)");
+        PDMAudioHostEnumLog(pEnmDst, "Core Audio (Final)");
 #endif
 
     LogFlowFuncLeaveRC(rc);
@@ -1840,7 +1827,7 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
     }
 
     /* Remove old / stale device entries. */
-    DrvAudioHlpDeviceEnumFree(&pThis->Devices);
+    PDMAudioHostEnumDelete(&pThis->Devices);
 
     /* Enumerate all devices internally. */
     int rc = coreAudioDevicesEnumerateAll(pThis, &pThis->Devices);
@@ -1849,7 +1836,7 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
         /*
          * Default input device.
          */
-        pThis->pDefaultDevIn = (PCOREAUDIODEVICEDATA)DrvAudioHlpDeviceEnumGetDefaultDevice(&pThis->Devices, PDMAUDIODIR_IN);
+        pThis->pDefaultDevIn = (PCOREAUDIODEVICEDATA)PDMAudioHostEnumGetDefault(&pThis->Devices, PDMAUDIODIR_IN);
         if (pThis->pDefaultDevIn)
         {
             LogRel2(("CoreAudio: Default capturing device is '%s'\n", pThis->pDefaultDevIn->Core.szName));
@@ -1862,7 +1849,7 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
         /*
          * Default output device.
          */
-        pThis->pDefaultDevOut = (PCOREAUDIODEVICEDATA)DrvAudioHlpDeviceEnumGetDefaultDevice(&pThis->Devices, PDMAUDIODIR_OUT);
+        pThis->pDefaultDevOut = (PCOREAUDIODEVICEDATA)PDMAudioHostEnumGetDefault(&pThis->Devices, PDMAUDIODIR_OUT);
         if (pThis->pDefaultDevOut)
         {
             LogRel2(("CoreAudio: Default playback device is '%s'\n", pThis->pDefaultDevOut->Core.szName));
@@ -2166,8 +2153,8 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface,
     pBackendCfg->cbStreamOut = sizeof(COREAUDIOSTREAM);
 
     /* For Core Audio we provide one stream per device for now. */
-    pBackendCfg->cMaxStreamsIn  = DrvAudioHlpDeviceEnumGetDeviceCount(&pThis->Devices, PDMAUDIODIR_IN);
-    pBackendCfg->cMaxStreamsOut = DrvAudioHlpDeviceEnumGetDeviceCount(&pThis->Devices, PDMAUDIODIR_OUT);
+    pBackendCfg->cMaxStreamsIn  = PDMAudioHostEnumCountMatching(&pThis->Devices, PDMAUDIODIR_IN);
+    pBackendCfg->cMaxStreamsOut = PDMAudioHostEnumCountMatching(&pThis->Devices, PDMAUDIODIR_OUT);
 
     LogFlowFunc(("Returning %Rrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
@@ -2177,7 +2164,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_GetConfig(PPDMIHOSTAUDIO pInterface,
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetDevices}
  */
-static DECLCALLBACK(int) drvHostCoreAudioHA_GetDevices(PPDMIHOSTAUDIO pInterface, PPDMAUDIODEVICEENUM pDeviceEnum)
+static DECLCALLBACK(int) drvHostCoreAudioHA_GetDevices(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHOSTENUM pDeviceEnum)
 {
     AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
     AssertPtrReturn(pDeviceEnum, VERR_INVALID_POINTER);
@@ -2193,12 +2180,10 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_GetDevices(PPDMIHOSTAUDIO pInterface
             if (pDeviceEnum)
             {
                 /* Return a copy with only PDMAUDIODEVICE, none of the extra bits in COREAUDIODEVICEDATA. */
-                rc = DrvAudioHlpDeviceEnumInit(pDeviceEnum);
-                if (RT_SUCCESS(rc))
-                    rc = DrvAudioHlpDeviceEnumCopy(pDeviceEnum, &pThis->Devices);
-
+                PDMAudioHostEnumInit(pDeviceEnum);
+                rc = PDMAudioHostEnumCopy(pDeviceEnum, &pThis->Devices, PDMAUDIODIR_INVALID /*all*/, true /*fOnlyCoreData*/);
                 if (RT_FAILURE(rc))
-                    DrvAudioHlpDeviceEnumFree(pDeviceEnum);
+                    PDMAudioHostEnumDelete(pDeviceEnum);
             }
         }
 
@@ -2496,13 +2481,9 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_Init(PPDMIHOSTAUDIO pInterface)
 {
     PDRVHOSTCOREAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
 
-    int rc = DrvAudioHlpDeviceEnumInit(&pThis->Devices);
-    if (RT_SUCCESS(rc))
-    {
-        /* Do the first (initial) internal device enumeration. */
-        rc = coreAudioEnumerateDevices(pThis);
-    }
-
+    PDMAudioHostEnumInit(&pThis->Devices);
+    /* Do the first (initial) internal device enumeration. */
+    int rc = coreAudioEnumerateDevices(pThis);
     if (RT_SUCCESS(rc))
     {
         /* Register system callbacks. */

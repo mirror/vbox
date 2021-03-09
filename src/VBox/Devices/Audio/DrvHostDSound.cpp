@@ -199,7 +199,7 @@ typedef struct DSOUNDENUMCBCTX
     /** Enumeration flags. */
     uint32_t            fFlags;
     /** Pointer to device list to populate. */
-    PPDMAUDIODEVICEENUM pDevEnm;
+    PPDMAUDIOHOSTENUM pDevEnm;
 } DSOUNDENUMCBCTX, *PDSOUNDENUMCBCTX;
 
 typedef struct DRVHOSTDSOUND
@@ -213,7 +213,7 @@ typedef struct DRVHOSTDSOUND
     /** DirectSound configuration options. */
     DSOUNDHOSTCFG               Cfg;
     /** List of devices of last enumeration. */
-    PDMAUDIODEVICEENUM          DeviceEnum;
+    PDMAUDIOHOSTENUM          DeviceEnum;
     /** Whether this backend supports any audio input. */
     bool                        fEnabledIn;
     /** Whether this backend supports any audio output. */
@@ -245,7 +245,7 @@ static HRESULT  directSoundPlayStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStream
 static HRESULT  directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, bool fFlush);
 static HRESULT  directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, bool fFlush);
 
-static int      dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PDMAUDIODEVICEENUM pDevEnm, uint32_t fEnum);
+static int      dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PDMAUDIOHOSTENUM pDevEnm, uint32_t fEnum);
 
 static int      dsoundStreamEnable(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, bool fEnable);
 static void     dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS);
@@ -1576,7 +1576,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescr
     PDSOUNDENUMCBCTX pEnumCtx = (PDSOUNDENUMCBCTX)lpContext;
     AssertPtrReturn(pEnumCtx , FALSE);
 
-    PPDMAUDIODEVICEENUM pDevEnm = pEnumCtx->pDevEnm;
+    PPDMAUDIOHOSTENUM pDevEnm = pEnumCtx->pDevEnm;
     AssertPtrReturn(pDevEnm, FALSE);
 
     AssertPtrNullReturn(pGUID, FALSE); /* pGUID can be NULL for default device(s). */
@@ -1603,14 +1603,12 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescr
             if (pGUID) /* pGUID == NULL means default device. */
                 memcpy(&pDev->Guid, pGUID, sizeof(pDev->Guid));
 
-            rc = DrvAudioHlpDeviceEnumAdd(pDevEnm, &pDev->Core);
-            if (RT_SUCCESS(rc))
-            {
-                /* Note: Querying the actual device information will be done at some
-                 *       later point in time outside this enumeration callback to prevent
-                 *       DSound hangs. */
-                return TRUE;
-            }
+            PDMAudioHostEnumAppend(pDevEnm, &pDev->Core);
+
+            /* Note: Querying the actual device information will be done at some
+             *       later point in time outside this enumeration callback to prevent
+             *       DSound hangs. */
+            return TRUE;
         }
         PDMAudioDeviceFree(&pDev->Core);
     }
@@ -1637,7 +1635,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescri
     PDSOUNDENUMCBCTX pEnumCtx = (PDSOUNDENUMCBCTX )lpContext;
     AssertPtrReturn(pEnumCtx , FALSE);
 
-    PPDMAUDIODEVICEENUM pDevEnm = pEnumCtx->pDevEnm;
+    PPDMAUDIOHOSTENUM pDevEnm = pEnumCtx->pDevEnm;
     AssertPtrReturn(pDevEnm, FALSE);
 
     AssertPtrNullReturn(pGUID, FALSE); /* pGUID can be NULL for default device(s). */
@@ -1661,14 +1659,12 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescri
             if (pGUID) /* pGUID == NULL means default capture device. */
                 memcpy(&pDev->Guid, pGUID, sizeof(pDev->Guid));
 
-            rc = DrvAudioHlpDeviceEnumAdd(pDevEnm, &pDev->Core);
-            if (RT_SUCCESS(rc))
-            {
-                /* Note: Querying the actual device information will be done at some
-                 *       later point in time outside this enumeration callback to prevent
-                 *       DSound hangs. */
-                return TRUE;
-            }
+            PDMAudioHostEnumAppend(pDevEnm, &pDev->Core);
+
+            /* Note: Querying the actual device information will be done at some
+             *       later point in time outside this enumeration callback to prevent
+             *       DSound hangs. */
+            return TRUE;
         }
         PDMAudioDeviceFree(&pDev->Core);
     }
@@ -1786,7 +1782,7 @@ static int dsoundDeviceQueryInfo(PDRVHOSTDSOUND pThis, PDSOUNDDEV pDev)
  * @param   pThis               Host audio driver instance.
  * @param   pDevEnm             Where to store the enumerated devices.
  */
-static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIODEVICEENUM pDevEnm)
+static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOHOSTENUM pDevEnm)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -1879,8 +1875,8 @@ static void dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis)
              *        let the connector know that something has changed within the host backend. */
         }
 #endif
-        pThis->fEnabledIn  = DrvAudioHlpDeviceEnumGetDeviceCount(&pThis->DeviceEnum, PDMAUDIODIR_IN)  != 0;
-        pThis->fEnabledOut = DrvAudioHlpDeviceEnumGetDeviceCount(&pThis->DeviceEnum, PDMAUDIODIR_OUT) != 0;
+        pThis->fEnabledIn  = PDMAudioHostEnumCountMatching(&pThis->DeviceEnum, PDMAUDIODIR_IN)  != 0;
+        pThis->fEnabledOut = PDMAudioHostEnumCountMatching(&pThis->DeviceEnum, PDMAUDIODIR_OUT) != 0;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -2233,7 +2229,7 @@ static DECLCALLBACK(int) drvHostDSoundHA_GetConfig(PPDMIHOSTAUDIO pInterface, PP
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetDevices}
  */
-static DECLCALLBACK(int) drvHostDSoundHA_GetDevices(PPDMIHOSTAUDIO pInterface, PPDMAUDIODEVICEENUM pDeviceEnum)
+static DECLCALLBACK(int) drvHostDSoundHA_GetDevices(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHOSTENUM pDeviceEnum)
 {
     AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
     AssertPtrReturn(pDeviceEnum, VERR_INVALID_POINTER);
@@ -2243,13 +2239,10 @@ static DECLCALLBACK(int) drvHostDSoundHA_GetDevices(PPDMIHOSTAUDIO pInterface, P
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        rc = DrvAudioHlpDeviceEnumInit(pDeviceEnum);
-        if (RT_SUCCESS(rc))
-        {
-            rc = dsoundDevicesEnumerate(pThis, pDeviceEnum);
-            if (RT_FAILURE(rc))
-                DrvAudioHlpDeviceEnumFree(pDeviceEnum);
-        }
+        PDMAudioHostEnumInit(pDeviceEnum);
+        rc = dsoundDevicesEnumerate(pThis, pDeviceEnum);
+        if (RT_FAILURE(rc))
+            PDMAudioHostEnumDelete(pDeviceEnum);
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
         AssertRC(rc2);
@@ -2629,7 +2622,7 @@ static DECLCALLBACK(void) drvHostDSoundDestruct(PPDMDRVINS pDrvIns)
     }
 #endif
 
-    DrvAudioHlpDeviceEnumFree(&pThis->DeviceEnum);
+    PDMAudioHostEnumDelete(&pThis->DeviceEnum);
 
     if (pThis->pDrvIns)
         CoUninitialize();
@@ -2696,7 +2689,7 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init the static parts.
      */
-    DrvAudioHlpDeviceEnumInit(&pThis->DeviceEnum);
+    PDMAudioHostEnumInit(&pThis->DeviceEnum);
 
     pThis->fEnabledIn  = false;
     pThis->fEnabledOut = false;

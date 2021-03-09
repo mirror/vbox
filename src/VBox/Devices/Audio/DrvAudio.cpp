@@ -50,7 +50,7 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_AUDIO_ENUM
-static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIODEVICEENUM pDevEnum);
+static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIOHOSTENUM pDevEnum);
 #endif
 
 static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream);
@@ -2152,7 +2152,7 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns, PDMAUDIOBAC
  * @param   fLog                Whether to print the enumerated device to the release log or not.
  * @param   pDevEnum            Where to store the device enumeration.
  */
-static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIODEVICEENUM pDevEnum)
+static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIOHOSTENUM pDevEnum)
 {
     AssertReturn(RTCritSectIsOwned(&pThis->CritSect) == false, VERR_WRONG_ORDER);
 
@@ -2163,7 +2163,7 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
      */
     if (pThis->pHostDrvAudio->pfnGetDevices)
     {
-        PDMAUDIODEVICEENUM DevEnum;
+        PDMAUDIOHOSTENUM DevEnum;
         rc = pThis->pHostDrvAudio->pfnGetDevices(pThis->pHostDrvAudio, &DevEnum);
         if (RT_SUCCESS(rc))
         {
@@ -2189,9 +2189,9 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
             }
 
             if (pDevEnum)
-                rc = DrvAudioHlpDeviceEnumCopy(pDevEnum, &DevEnum);
+                rc = PDMAudioHostEnumCopy(pDevEnum, &DevEnum, PDMAUDIODIR_INVALID /*all*/, true /*fOnlyCoreData*/);
 
-            DrvAudioHlpDeviceEnumFree(&DevEnum);
+            PDMAudioHostEnumDelete(&DevEnum);
         }
         else
         {

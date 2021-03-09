@@ -351,11 +351,11 @@ typedef enum PDMAUDIODEVICETYPE
 
 /**
  * Audio device info (enumeration result).
- * @sa PDMAUDIODEVICEENUM, PDMIHOSTAUDIO::pfnGetDevices
+ * @sa PDMAUDIOHOSTENUM, PDMIHOSTAUDIO::pfnGetDevices
  */
 typedef struct PDMAUDIODEVICE
 {
-    /** List entry (like PDMAUDIODEVICEENUM::LstDevices). */
+    /** List entry (like PDMAUDIOHOSTENUM::LstDevices). */
     RTLISTNODE          Node;
     /** Magic value (PDMAUDIODEVICE_MAGIC). */
     uint32_t            uMagic;
@@ -403,21 +403,27 @@ typedef PDMAUDIODEVICE const *PCPDMAUDIODEVICE;
 
 
 /**
- * An audio device enumeration result.
+ * A host audio device enumeration result.
  *
  * @sa PDMIHOSTAUDIO::pfnGetDevices
  */
-typedef struct PDMAUDIODEVICEENUM
+typedef struct PDMAUDIOHOSTENUM
 {
-    /** List of audio devices (PDMAUDIODEVICE). */
-    RTLISTANCHOR    LstDevices;
+    /** Magic value (PDMAUDIOHOSTENUM_MAGIC). */
+    uint32_t        uMagic;
     /** Number of audio devices in the list. */
     uint32_t        cDevices;
-} PDMAUDIODEVICEENUM;
+    /** List of audio devices (PDMAUDIODEVICE). */
+    RTLISTANCHOR    LstDevices;
+} PDMAUDIOHOSTENUM;
 /** Pointer to an audio device enumeration result. */
-typedef PDMAUDIODEVICEENUM *PPDMAUDIODEVICEENUM;
+typedef PDMAUDIOHOSTENUM *PPDMAUDIOHOSTENUM;
 /** Pointer to a const audio device enumeration result. */
-typedef PDMAUDIODEVICEENUM const *PCPDMAUDIODEVICEENUM;
+typedef PDMAUDIOHOSTENUM const *PCPDMAUDIOHOSTENUM;
+
+/** Magic for the host audio device enumeration. (Herbert Jeffrey "Herbie" Hancock) */
+#define PDMAUDIOHOSTENUM_MAGIC      UINT32_C(0x19400412)
+
 
 /**
  * Audio configuration (static) of an audio host backend.
@@ -1651,7 +1657,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pDeviceEnum         Where to return the enumerated audio devices.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetDevices, (PPDMIHOSTAUDIO pInterface, PPDMAUDIODEVICEENUM pDeviceEnum));
+    DECLR3CALLBACKMEMBER(int, pfnGetDevices, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOHOSTENUM pDeviceEnum));
 
     /**
      * Returns the current status from the audio backend.

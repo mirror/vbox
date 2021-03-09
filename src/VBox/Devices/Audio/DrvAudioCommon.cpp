@@ -192,15 +192,15 @@ void PDMAudioDeviceFree(PPDMAUDIODEVICE pDev)
  *
  * @returns Duplicated audio device entry on success, or NULL on failure.
  * @param   pDev            The audio device enum entry to duplicate.
- * @param   fCopyUserData   Whether to also copy the user data portion or not.
+ * @param   fOnlyCoreData
  */
-PPDMAUDIODEVICE PDMAudioDeviceDup(PPDMAUDIODEVICE pDev, bool fCopyUserData)
+PPDMAUDIODEVICE PDMAudioDeviceDup(PPDMAUDIODEVICE pDev, bool fOnlyCoreData)
 {
     AssertPtrReturn(pDev, NULL);
     Assert(pDev->uMagic == PDMAUDIODEVICE_MAGIC);
-    Assert(!fCopyUserData || !(pDev->fFlags & PDMAUDIODEV_FLAGS_NO_DUP));
+    Assert(fOnlyCoreData || !(pDev->fFlags & PDMAUDIODEV_FLAGS_NO_DUP));
 
-    uint32_t cbToDup = fCopyUserData ? pDev->cbSelf : sizeof(PDMAUDIODEVICE);
+    uint32_t cbToDup = fOnlyCoreData ? sizeof(PDMAUDIODEVICE) : pDev->cbSelf;
     AssertReturn(cbToDup >= sizeof(*pDev), NULL);
 
     PPDMAUDIODEVICE pDevDup = PDMAudioDeviceAlloc(cbToDup);
@@ -215,126 +215,88 @@ PPDMAUDIODEVICE PDMAudioDeviceDup(PPDMAUDIODEVICE pDev, bool fCopyUserData)
 }
 
 /**
- * Initializes an audio device enumeration structure.
+ * Initializes a host audio device enumeration.
  *
- * @returns IPRT status code.
- * @param   pDevEnm             Device enumeration to initialize.
+ * @param   pDevEnm     The enumeration to initialize.
  */
-int DrvAudioHlpDeviceEnumInit(PPDMAUDIODEVICEENUM pDevEnm)
+void PDMAudioHostEnumInit(PPDMAUDIOHOSTENUM pDevEnm)
 {
-    AssertPtrReturn(pDevEnm, VERR_INVALID_POINTER);
+    AssertPtr(pDevEnm);
 
-    RTListInit(&pDevEnm->LstDevices);
+    pDevEnm->uMagic   = PDMAUDIOHOSTENUM_MAGIC;
     pDevEnm->cDevices = 0;
-
-    return VINF_SUCCESS;
+    RTListInit(&pDevEnm->LstDevices);
 }
 
 /**
- * Frees audio device enumeration data.
+ * Deletes the host audio device enumeration and frees all device entries
+ * associated with it.
  *
- * @param pDevEnm               Device enumeration to destroy.
+ * The user must call PDMAudioHostEnumInit again to use it again.
+ *
+ * @param   pDevEnm     The host audio device enumeration to delete.
  */
-void DrvAudioHlpDeviceEnumFree(PPDMAUDIODEVICEENUM pDevEnm)
+void PDMAudioHostEnumDelete(PPDMAUDIOHOSTENUM pDevEnm)
 {
-    if (!pDevEnm)
-        return;
-
-    PPDMAUDIODEVICE pDev, pDevNext;
-    RTListForEachSafe(&pDevEnm->LstDevices, pDev, pDevNext, PDMAUDIODEVICE, Node)
+    if (pDevEnm)
     {
-        RTListNodeRemove(&pDev->Node);
+        AssertPtr(pDevEnm);
+        AssertReturnVoid(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC);
 
-        PDMAudioDeviceFree(pDev);
+        PPDMAUDIODEVICE pDev, pDevNext;
+        RTListForEachSafe(&pDevEnm->LstDevices, pDev, pDevNext, PDMAUDIODEVICE, Node)
+        {
+            RTListNodeRemove(&pDev->Node);
 
-        pDevEnm->cDevices--;
+            PDMAudioDeviceFree(pDev);
+
+            pDevEnm->cDevices--;
+        }
+
+        /* Sanity. */
+        Assert(RTListIsEmpty(&pDevEnm->LstDevices));
+        Assert(pDevEnm->cDevices == 0);
+
+        pDevEnm->uMagic = ~PDMAUDIOHOSTENUM_MAGIC;
     }
-
-    /* Sanity. */
-    Assert(RTListIsEmpty(&pDevEnm->LstDevices));
-    Assert(pDevEnm->cDevices == 0);
 }
 
 /**
  * Adds an audio device to a device enumeration.
  *
- * @return IPRT status code.
  * @param  pDevEnm              Device enumeration to add device to.
  * @param  pDev                 Device to add. The pointer will be owned by the device enumeration  then.
  */
-int DrvAudioHlpDeviceEnumAdd(PPDMAUDIODEVICEENUM pDevEnm, PPDMAUDIODEVICE pDev)
+void PDMAudioHostEnumAppend(PPDMAUDIOHOSTENUM pDevEnm, PPDMAUDIODEVICE pDev)
 {
-    AssertPtrReturn(pDevEnm, VERR_INVALID_POINTER);
-    AssertPtrReturn(pDev,    VERR_INVALID_POINTER);
+    AssertPtr(pDevEnm);
+    AssertPtr(pDev);
+    Assert(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC);
 
     RTListAppend(&pDevEnm->LstDevices, &pDev->Node);
     pDevEnm->cDevices++;
-
-    return VINF_SUCCESS;
 }
 
-#if 0 /* unused, duplicated by copy  */
 /**
- * Duplicates a device enumeration.
- *
- * @returns Duplicated device enumeration, or NULL on failure.
- *          Must be free'd with DrvAudioHlpDeviceEnumFree().
- * @param   pDevEnm             Device enumeration to duplicate.
- */
-PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(const PPDMAUDIODEVICEENUM pDevEnm)
-{
-    AssertPtrReturn(pDevEnm, NULL);
-
-    PPDMAUDIODEVICEENUM pDevEnmDup = (PPDMAUDIODEVICEENUM)RTMemAlloc(sizeof(PDMAUDIODEVICEENUM));
-    if (!pDevEnmDup)
-        return NULL;
-
-    int rc2 = DrvAudioHlpDeviceEnumInit(pDevEnmDup);
-    AssertRC(rc2);
-
-    PPDMAUDIODEVICE pDev;
-    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIODEVICE, Node)
-    {
-        PPDMAUDIODEVICE pDevDup = PDMAudioDeviceDup(pDev, true /* fCopyUserData */);
-        if (!pDevDup)
-        {
-            rc2 = VERR_NO_MEMORY;
-            break;
-        }
-
-        rc2 = DrvAudioHlpDeviceEnumAdd(pDevEnmDup, pDevDup);
-        if (RT_FAILURE(rc2))
-        {
-            PDMAudioDeviceFree(pDevDup);
-            break;
-        }
-    }
-
-    if (RT_FAILURE(rc2))
-    {
-        DrvAudioHlpDeviceEnumFree(pDevEnmDup);
-        pDevEnmDup = NULL;
-    }
-
-    return pDevEnmDup;
-}
-#endif /* unused */
-
-/**
- * Copies device enumeration entries from the source to the destination enumeration.
+ * Appends copies of matching host device entries from one to another enumeration.
  *
  * @returns IPRT status code.
- * @param   pDstDevEnm          Destination enumeration to store enumeration entries into.
- * @param   pSrcDevEnm          Source enumeration to use.
- * @param   enmUsage            The usage to match for copying.  Use
- *                              PDMAUDIODIR_INVALID to match all entries.
- * @param   fCopyUserData       Whether to also copy the user data portion or not.
+ * @param   pDstDevEnm      The target to append copies of matching device to.
+ * @param   pSrcDevEnm      The source to copy matching devices from.
+ * @param   enmUsage        The usage to match for copying.
+ *                          Use PDMAUDIODIR_INVALID to match all entries.
+ * @param   fOnlyCoreData   Set this to only copy the PDMAUDIODEVICE part.
+ *                          Careful with passing @c false here as not all
+ *                          backends have data that can be copied.
  */
-int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, PCPDMAUDIODEVICEENUM pSrcDevEnm,
-                                PDMAUDIODIR enmUsage, bool fCopyUserData)
+int PDMAudioHostEnumCopy(PPDMAUDIOHOSTENUM pDstDevEnm, PCPDMAUDIOHOSTENUM pSrcDevEnm,
+                         PDMAUDIODIR enmUsage, bool fOnlyCoreData)
 {
     AssertPtrReturn(pDstDevEnm, VERR_INVALID_POINTER);
+    AssertReturn(pDstDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC, VERR_WRONG_ORDER);
+
     AssertPtrReturn(pSrcDevEnm, VERR_INVALID_POINTER);
+    AssertReturn(pSrcDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC, VERR_WRONG_ORDER);
 
     PPDMAUDIODEVICE pSrcDev;
     RTListForEach(&pSrcDevEnm->LstDevices, pSrcDev, PDMAUDIODEVICE, Node)
@@ -342,30 +304,14 @@ int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, PCPDMAUDIODEVICE
         if (   enmUsage == pSrcDev->enmUsage
             || enmUsage == PDMAUDIODIR_INVALID /*all*/)
         {
-            PPDMAUDIODEVICE pDstDev = PDMAudioDeviceDup(pSrcDev, fCopyUserData);
+            PPDMAUDIODEVICE pDstDev = PDMAudioDeviceDup(pSrcDev, fOnlyCoreData);
             AssertReturn(pDstDev, VERR_NO_MEMORY);
 
-            int rc = DrvAudioHlpDeviceEnumAdd(pDstDevEnm, pDstDev);
-            AssertRCReturnStmt(rc, PDMAudioDeviceFree(pDstDev), VERR_NO_MEMORY);
+            PDMAudioHostEnumAppend(pDstDevEnm, pDstDev);
         }
     }
 
     return VINF_SUCCESS;
-}
-
-/**
- * Copies all device enumeration entries from the source to the destination enumeration.
- *
- * @note Does *not* copy the user-specific data assigned to a device enumeration
- *       entry. To do so, use DrvAudioHlpDeviceEnumCopyEx().
- *
- * @returns IPRT status code.
- * @param   pDstDevEnm          Destination enumeration to store enumeration entries into.
- * @param   pSrcDevEnm          Source enumeration to use.
- */
-int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, PCPDMAUDIODEVICEENUM pSrcDevEnm)
-{
-    return DrvAudioHlpDeviceEnumCopyEx(pDstDevEnm, pSrcDevEnm, PDMAUDIODIR_INVALID /*all*/, false /* fCopyUserData */);
 }
 
 /**
@@ -380,9 +326,10 @@ int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, PCPDMAUDIODEVICEEN
  *                      Pass PDMAUDIODIR_INVALID to get the first device with
  *                      PDMAUDIODEV_FLAGS_DEFAULT set.
  */
-PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(PCPDMAUDIODEVICEENUM pDevEnm, PDMAUDIODIR enmUsage)
+PPDMAUDIODEVICE PDMAudioHostEnumGetDefault(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR enmUsage)
 {
     AssertPtrReturn(pDevEnm, NULL);
+    AssertReturn(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC, NULL);
 
     PPDMAUDIODEVICE pDev;
     RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIODEVICE, Node)
@@ -390,7 +337,7 @@ PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(PCPDMAUDIODEVICEENUM pDevE
         if (pDev->fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
         {
             if (   enmUsage == pDev->enmUsage
-                || enmUsage  == PDMAUDIODIR_INVALID)
+                || enmUsage == PDMAUDIODIR_INVALID)
                 return pDev;
         }
     }
@@ -406,9 +353,10 @@ PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(PCPDMAUDIODEVICEENUM pDevE
  * @param   enmUsage    Usage to count devices for.
  *                      Pass PDMAUDIODIR_INVALID to get the total number of devices.
  */
-uint32_t DrvAudioHlpDeviceEnumGetDeviceCount(PCPDMAUDIODEVICEENUM pDevEnm, PDMAUDIODIR enmUsage)
+uint32_t PDMAudioHostEnumCountMatching(PCPDMAUDIOHOSTENUM pDevEnm, PDMAUDIODIR enmUsage)
 {
     AssertPtrReturn(pDevEnm, 0);
+    AssertReturn(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC, 0);
 
     if (enmUsage == PDMAUDIODIR_INVALID)
         return pDevEnm->cDevices;
@@ -430,10 +378,11 @@ uint32_t DrvAudioHlpDeviceEnumGetDeviceCount(PCPDMAUDIODEVICEENUM pDevEnm, PDMAU
  * @param  pDevEnm  Device enumeration to log.
  * @param  pszDesc  Logging description (prefix).
  */
-void DrvAudioHlpDeviceEnumLog(PCPDMAUDIODEVICEENUM pDevEnm, const char *pszDesc)
+void PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *pszDesc)
 {
-    AssertPtrReturnVoid(pszDesc);
     AssertPtrReturnVoid(pDevEnm);
+    AssertPtrReturnVoid(pszDesc);
+    AssertReturnVoid(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC);
 
     LogFunc(("%s: %RU32 devices\n", pszDesc, pDevEnm->cDevices));
 
