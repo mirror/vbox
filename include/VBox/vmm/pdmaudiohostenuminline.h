@@ -334,18 +334,21 @@ DECLINLINE(void) PDMAudioHostEnumLog(PCPDMAUDIOHOSTENUM pDevEnm, const char *psz
     AssertPtrReturnVoid(pszDesc);
     AssertReturnVoid(pDevEnm->uMagic == PDMAUDIOHOSTENUM_MAGIC);
 
-    LogFunc(("%s: %RU32 devices\n", pszDesc, pDevEnm->cDevices));
-
-    PPDMAUDIOHOSTDEV pDev;
-    RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, Node)
+    if (LogIsEnabled())
     {
-        char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
-        LogFunc(("Device '%s':\n", pDev->szName));
-        LogFunc(("  Usage           = %s\n",             PDMAudioDirGetName(pDev->enmUsage)));
-        LogFunc(("  Flags           = %s\n",             PDMAudioDeviceFlagsToString(szFlags, pDev->fFlags)));
-        LogFunc(("  Input channels  = %RU8\n",           pDev->cMaxInputChannels));
-        LogFunc(("  Output channels = %RU8\n",           pDev->cMaxOutputChannels));
-        LogFunc(("  cbExtra         = %RU32 bytes\n",    pDev->cbSelf - sizeof(PDMAUDIOHOSTDEV)));
+        LogFunc(("%s: %RU32 devices\n", pszDesc, pDevEnm->cDevices));
+
+        PPDMAUDIOHOSTDEV pDev;
+        RTListForEach(&pDevEnm->LstDevices, pDev, PDMAUDIOHOSTDEV, Node)
+        {
+            char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
+            LogFunc(("Device '%s':\n", pDev->szName));
+            LogFunc(("  Usage           = %s\n",             PDMAudioDirGetName(pDev->enmUsage)));
+            LogFunc(("  Flags           = %s\n",             PDMAudioDeviceFlagsToString(szFlags, pDev->fFlags)));
+            LogFunc(("  Input channels  = %RU8\n",           pDev->cMaxInputChannels));
+            LogFunc(("  Output channels = %RU8\n",           pDev->cMaxOutputChannels));
+            LogFunc(("  cbExtra         = %RU32 bytes\n",    pDev->cbSelf - sizeof(PDMAUDIOHOSTDEV)));
+        }
     }
 }
 
