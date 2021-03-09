@@ -398,7 +398,8 @@ typedef struct BUSLOGIC
     bool                            fStrictRoundRobinMode;
     /** Whether the extended LUN CCB format is enabled for 32 possible logical units. */
     bool                            fExtendedLunCCBFormat;
-    bool                            fAlignment2;
+    /** Last completed command, for debugging. */
+    uint8_t                         uPrevCmd;
 
     /** Current incoming mailbox position. */
     uint32_t                        uMailboxIncomingPositionCurrent;
@@ -1176,6 +1177,7 @@ static int buslogicR3HwReset(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICCC pT
     pThis->regStatus = BL_STAT_HARDY | BL_STAT_INREQ;
     pThis->regGeometry = BL_GEOM_XLATEN;
     pThis->uOperationCode = 0xff; /* No command executing. */
+    pThis->uPrevCmd = 0xff;
     pThis->iParameter = 0;
     pThis->cbCommandParametersLeft = 0;
     pThis->fIRQEnabled = true;
@@ -1184,6 +1186,9 @@ static int buslogicR3HwReset(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICCC pT
     pThis->uMailboxOutgoingPositionCurrent = 0;
     pThis->uMailboxIncomingPositionCurrent = 0;
     pThis->uAhaSigIdx = 0;
+    pThis->cMailbox = 0;
+    pThis->GCPhysAddrMailboxIncomingBase = 0;
+    pThis->GCPhysAddrMailboxOutgoingBase = 0;
 
     /* Clear any active/pending interrupts. */
     pThis->uPendingIntr = 0;
@@ -1227,6 +1232,7 @@ static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fS
         buslogicSetInterrupt(pDevIns, pThis, fSuppressIrq, BL_INTR_CMDC);
     }
 
+    pThis->uPrevCmd = pThis->uOperationCode;
     pThis->uOperationCode = 0xff;
     pThis->iParameter = 0;
 }
@@ -1906,7 +1912,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             pReply->LowByteTerminated = 1;
             pReply->JP1 = 1;    /* Closed; "Factory configured - do not alter" */
             pReply->InformationIsValid = 1;
-            pReply->IsaIOPort = pThis->uISABaseCode;
+            pReply->IsaIOPort = pThis->uISABaseCode < 6 ? pThis->uISABaseCode : 0xff;
             pReply->IRQ = PCIDevGetInterruptLine(pDevIns->apPciDevs[0]);
             pThis->cbReplyParametersLeft = sizeof(ReplyInquirePCIHostAdapterInformation);
             break;
@@ -1919,16 +1925,26 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
         }
         case BUSLOGICCOMMAND_MODIFY_IO_ADDRESS:
         {
+
             /* Modify the ISA-compatible I/O port base. Note that this technically
              * violates the PCI spec, as this address is not reported through PCI.
              * However, it is required for compatibility with old drivers.
              */
 #ifdef IN_RING3 /* We can do this from ring-0 now, but we'd like to see the LogRel, so we keep going back to ring-3 anyway. */
-            Log(("ISA I/O for PCI (code %x)\n", pThis->aCommandBuffer[0]));
-            buslogicR3RegisterISARange(pDevIns, pThis, pThis->aCommandBuffer[0]);
+            uint8_t baseCode = pThis->aCommandBuffer[0];
+
+            Log(("ISA I/O for PCI (code %x)\n", baseCode));
             pThis->cbReplyParametersLeft = 0;
-            fSuppressIrq = true;
-            fSuppressCMDC = true;
+            if (baseCode < 8) {
+                buslogicR3RegisterISARange(pDevIns, pThis, baseCode);
+                fSuppressIrq = true;
+                fSuppressCMDC = true;
+            }
+            else
+            {
+                Log(("ISA base %#x not valid for this adapter\n", baseCode));
+                pThis->regStatus |= BL_STAT_CMDINV;
+            }
             break;
 #else
             AssertMsgFailed(("Must never get here!\n"));
@@ -3871,6 +3887,10 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     /* Print the current command, if any. */
     if (pThis->uOperationCode != 0xff )
         pHlp->pfnPrintf(pHlp, "Current command: %02X\n", pThis->uOperationCode);
+
+    /* Print the previous command, if any. */
+    if (pThis->uPrevCmd != 0xff )
+        pHlp->pfnPrintf(pHlp, "Last completed command: %02X\n", pThis->uPrevCmd);
 
     if (fVerbose && (pThis->regStatus & BL_STAT_INREQ) == 0)
     {
