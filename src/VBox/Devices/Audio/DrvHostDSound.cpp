@@ -1879,8 +1879,8 @@ static void dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis)
              *        let the connector know that something has changed within the host backend. */
         }
 #endif
-        pThis->fEnabledIn  = RT_BOOL(DrvAudioHlpDeviceEnumGetDeviceCount(&pThis->DeviceEnum, PDMAUDIODIR_IN));
-        pThis->fEnabledOut = RT_BOOL(DrvAudioHlpDeviceEnumGetDeviceCount(&pThis->DeviceEnum, PDMAUDIODIR_OUT));
+        pThis->fEnabledIn  = DrvAudioHlpDeviceEnumGetDeviceCount(&pThis->DeviceEnum, PDMAUDIODIR_IN)  != 0;
+        pThis->fEnabledOut = DrvAudioHlpDeviceEnumGetDeviceCount(&pThis->DeviceEnum, PDMAUDIODIR_OUT) != 0;
     }
 
     LogFlowFuncLeaveRC(rc);

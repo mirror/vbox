@@ -312,19 +312,21 @@ typedef uint32_t PDMAUDIODEVLATSPECSEC;
 /** @name PDMAUDIODEV_FLAGS_XXX
  * @{  */
 /** No flags set. */
-#define PDMAUDIODEV_FLAGS_NONE            UINT32_C(0)
+#define PDMAUDIODEV_FLAGS_NONE              UINT32_C(0)
 /** The device marks the default device within the host OS. */
-#define PDMAUDIODEV_FLAGS_DEFAULT         RT_BIT_32(0)
+#define PDMAUDIODEV_FLAGS_DEFAULT           RT_BIT_32(0)
 /** The device can be removed at any time and we have to deal with it. */
-#define PDMAUDIODEV_FLAGS_HOTPLUG         RT_BIT_32(1)
+#define PDMAUDIODEV_FLAGS_HOTPLUG           RT_BIT_32(1)
 /** The device is known to be buggy and needs special treatment. */
-#define PDMAUDIODEV_FLAGS_BUGGY           RT_BIT_32(2)
+#define PDMAUDIODEV_FLAGS_BUGGY             RT_BIT_32(2)
 /** Ignore the device, no matter what. */
-#define PDMAUDIODEV_FLAGS_IGNORE          RT_BIT_32(3)
+#define PDMAUDIODEV_FLAGS_IGNORE            RT_BIT_32(3)
 /** The device is present but marked as locked by some other application. */
-#define PDMAUDIODEV_FLAGS_LOCKED          RT_BIT_32(4)
+#define PDMAUDIODEV_FLAGS_LOCKED            RT_BIT_32(4)
 /** The device is present but not in an alive state (dead). */
-#define PDMAUDIODEV_FLAGS_DEAD            RT_BIT_32(5)
+#define PDMAUDIODEV_FLAGS_DEAD              RT_BIT_32(5)
+/** Set if the extra backend specific data cannot be duplicated. */
+#define PDMAUDIODEV_FLAGS_NO_DUP            RT_BIT_32(31)
 /** @} */
 
 /**
@@ -357,8 +359,8 @@ typedef struct PDMAUDIODEVICE
     RTLISTNODE          Node;
     /** Magic value (PDMAUDIODEVICE_MAGIC). */
     uint32_t            uMagic;
-    /** Size of the additional data. */
-    uint32_t            cbData;
+    /** Size of this structure and whatever backend specific data that follows it. */
+    uint32_t            cbSelf;
     /** The device type. */
     PDMAUDIODEVICETYPE  enmType;
     /** Usage of the device. */

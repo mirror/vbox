@@ -680,9 +680,9 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
 
     if (RT_SUCCESS(rc))
     {
-#ifdef DEBUG
+#ifdef LOG_ENABLED
         LogFunc(("Devices for pDevEnm=%p, enmUsage=%RU32:\n", pDevEnm, enmUsage));
-        DrvAudioHlpDeviceEnumPrint("Core Audio", pDevEnm);
+        DrvAudioHlpDeviceEnumLog(pDevEnm, "Core Audio");
 #endif
     }
     else
@@ -848,9 +848,9 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
         DrvAudioHlpDeviceEnumFree(&devEnmIn);
     }
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     if (RT_SUCCESS(rc))
-        DrvAudioHlpDeviceEnumPrint("Core Audio (Final)", pEnmDst);
+        DrvAudioHlpDeviceEnumLog(pEnmDst, "Core Audio (Final)");
 #endif
 
     LogFlowFuncLeaveRC(rc);
@@ -1221,7 +1221,7 @@ static int coreAudioStreamInit(PCOREAUDIOSTREAM pCAStream, PDRVHOSTCOREAUDIO pTh
     AssertPtrReturn(pDev,      VERR_INVALID_POINTER);
 
     Assert(pCAStream->Unit.pDevice == NULL); /* Make sure no device is assigned yet. */
-    Assert(pDev->Core.cbData == sizeof(COREAUDIODEVICEDATA));
+    Assert(pDev->Core.cbSelf == sizeof(COREAUDIODEVICEDATA));
 
     LogFunc(("pCAStream=%p, pDev=%p ('%s', ID=%RU32)\n", pCAStream, pDev, pDev->Core.szName, pDev->deviceID));
 
@@ -1679,7 +1679,8 @@ static int coreAudioDeviceRegisterCallbacks(PDRVHOSTCOREAUDIO pThis, PCOREAUDIOD
     RT_NOREF(pThis);
 
     AudioDeviceID deviceID = kAudioDeviceUnknown;
-    if (pDev && pDev->Core.cbData) /* paranoia or actually needed? */
+    Assert(pDev && pDev->Core.cbSelf == sizeof(*pDev))
+    if (pDev && pDev->Core.cbSelf == sizeof(*pDev)) /* paranoia or actually needed? */
         deviceID = pDev->deviceID;
 
     if (deviceID != kAudioDeviceUnknown)
@@ -1729,7 +1730,8 @@ static int coreAudioDeviceUnregisterCallbacks(PDRVHOSTCOREAUDIO pThis, PCOREAUDI
     RT_NOREF(pThis);
 
     AudioDeviceID deviceID = kAudioDeviceUnknown;
-    if (pDev && pDev->Core.cbData) /* paranoia or actually needed? */
+    Assert(pDev && pDev->Core.cbSelf == sizeof(*pDev))
+    if (pDev && pDev->Core.cbSelf == sizeof(*pDev)) /* paranoia or actually needed? */
         deviceID = pDev->deviceID;
 
     if (deviceID != kAudioDeviceUnknown)
@@ -2291,7 +2293,7 @@ static DECLCALLBACK(int) drvHostCoreAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
     if (pDev) /* (Default) device available? */
     {
         /* Sanity. */
-        Assert(pDev->Core.cbData);
+        Assert(pDev->Core.cbData == sizeof(*pDev));
 
         /* Init the Core Audio stream. */
         rc = coreAudioStreamInit(pCAStream, pThis, pDev);
