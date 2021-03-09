@@ -1632,47 +1632,63 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
+                /*
+                 * Check if the NIC is already enabled.  Do not try to
+                 * enable it if it already is.  That makes a
+                 * difference for saved VMs for which you can change
+                 * the NIC attachment, but can't change the NIC
+                 * enabled status (yes, the setter also should not
+                 * freak out about a no-op request).
+                 */
+                BOOL fEnabled;;
+                CHECK_ERROR(nic, COMGETTER(Enabled)(&fEnabled));
+
                 if (!RTStrICmp(ValueUnion.psz, "none"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(Enabled)(FALSE));
+                    if (!!fEnabled)
+                        CHECK_ERROR(nic, COMSETTER(Enabled)(FALSE));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "null"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    if (!fEnabled)
+                        CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
                     CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_Null));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "nat"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    if (!fEnabled)
+                        CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
                     CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_NAT));
                 }
                 else if (  !RTStrICmp(ValueUnion.psz, "bridged")
                         || !RTStrICmp(ValueUnion.psz, "hostif")) /* backward compatibility */
                 {
-                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    if (!fEnabled)
+                        CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
                     CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_Bridged));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "intnet"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    if (!fEnabled)
+                        CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
                     CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_Internal));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "hostonly"))
                 {
-
-                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    if (!fEnabled)
+                        CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
                     CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnly));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "generic"))
                 {
-
-                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    if (!fEnabled)
+                        CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
                     CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "natnetwork"))
                 {
-
-                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    if (!fEnabled)
+                        CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
                     CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_NATNetwork));
                 }
                 else
