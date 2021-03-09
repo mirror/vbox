@@ -17,7 +17,6 @@
 
 /* Qt includes: */
 #include <QCheckBox>
-#include <QFileInfo>
 #include <QGridLayout>
 #include <QMetaType>
 #include <QVBoxLayout>

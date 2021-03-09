@@ -23,7 +23,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QSpacerItem>
-#include <QToolBox>
 #include <QVBoxLayout>
 
 /* GUI includes: */

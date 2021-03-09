@@ -111,9 +111,7 @@ protected:
     QString getStringFieldValue(const QString &strFieldName) const;
     bool getBoolFieldValue(const QString &strFieldName) const;
 
-    /* Who will be able to create virtual-machine: */
     friend class UIWizardNewVMPageBasic4;
-    friend class UIWizardNewVMPageBasic8;
     friend class UIWizardNewVMPageExpert;
 
 private slots:

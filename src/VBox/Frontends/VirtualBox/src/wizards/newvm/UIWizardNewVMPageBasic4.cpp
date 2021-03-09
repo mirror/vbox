@@ -208,14 +208,14 @@ QWidget *UIWizardNewVMPageBasic4::createNewDiskWidgets()
     QHBoxLayout *pSizeLayout = new QHBoxLayout;
     pSizeLayout->setContentsMargins(0, 0, 0, 0);
     /* Hard disk size relate widgets: */
-    m_pSizeEditor = new UIMediumSizeEditor;
-    m_pSizeEditorLabel = new QLabel;
-    if (m_pSizeEditorLabel)
+    m_pMediumSizeEditor = new UIMediumSizeEditor;
+    m_pMediumSizeEditorLabel = new QLabel;
+    if (m_pMediumSizeEditorLabel)
     {
-        pSizeLayout->addWidget(m_pSizeEditorLabel);
-        m_pSizeEditorLabel->setBuddy(m_pSizeEditor);
+        pSizeLayout->addWidget(m_pMediumSizeEditorLabel);
+        m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
     }
-    pSizeLayout->addWidget(m_pSizeEditor);
+    pSizeLayout->addWidget(m_pMediumSizeEditor);
     pLayout->addLayout(pSizeLayout);
     /* Hard disk variant (dynamic vs. fixed) widgets: */
     pLayout->addWidget(createMediumVariantWidgets(false /* bool fWithLabels */));
@@ -234,11 +234,11 @@ void UIWizardNewVMPageBasic4::createConnections()
     if (m_pDiskSelectionButton)
         connect(m_pDiskSelectionButton, &QIToolButton::clicked,
                 this, &UIWizardNewVMPageBasic4::sltGetWithFileOpenDialog);
-    if (m_pSizeEditor)
+    if (m_pMediumSizeEditor)
     {
-        connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+        connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
                 this, &UIWizardNewVMPageBasic4::completeChanged);
-        connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+        connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
                 this, &UIWizardNewVMPageBasic4::sltHandleSizeEditorChange);
     }
 }
@@ -328,11 +328,11 @@ void UIWizardNewVMPageBasic4::initializePage()
     m_strDefaultName = strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName;
     m_strDefaultPath = fieldImp("machineFolder").toString();
     /* Set the recommended disk size if user has already not done so: */
-    if (m_pSizeEditor && !m_fUserSetSize)
+    if (m_pMediumSizeEditor && !m_fUserSetSize)
     {
-        m_pSizeEditor->blockSignals(true);
+        m_pMediumSizeEditor->blockSignals(true);
         setMediumSize(fieldImp("type").value<CGuestOSType>().GetRecommendedHDD());
-        m_pSizeEditor->blockSignals(false);
+        m_pMediumSizeEditor->blockSignals(false);
     }
 }
 
@@ -418,10 +418,10 @@ void UIWizardNewVMPageBasic4::sltHandleSizeEditorChange()
 
 void UIWizardNewVMPageBasic4::setEnableNewDiskWidgets(bool fEnable)
 {
-    if (m_pSizeEditor)
-        m_pSizeEditor->setEnabled(fEnable);
-    if (m_pSizeEditorLabel)
-        m_pSizeEditorLabel->setEnabled(fEnable);
+    if (m_pMediumSizeEditor)
+        m_pMediumSizeEditor->setEnabled(fEnable);
+    if (m_pMediumSizeEditorLabel)
+        m_pMediumSizeEditorLabel->setEnabled(fEnable);
     if (m_pFixedCheckBox)
         m_pFixedCheckBox->setEnabled(fEnable);
 }

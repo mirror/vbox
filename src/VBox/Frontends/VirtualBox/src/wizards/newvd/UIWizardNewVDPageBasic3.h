@@ -79,8 +79,8 @@ protected:
      * @{ */
        QLineEdit *m_pLocationEditor;
        QIToolButton *m_pLocationOpenButton;
-       UIMediumSizeEditor *m_pSizeEditor;
-       QLabel          *m_pSizeEditorLabel;
+       UIMediumSizeEditor *m_pMediumSizeEditor;
+       QLabel          *m_pMediumSizeEditorLabel;
        QIRichTextLabel *m_pLocationLabel;
        QIRichTextLabel *m_pSizeLabel;
     /** @} */

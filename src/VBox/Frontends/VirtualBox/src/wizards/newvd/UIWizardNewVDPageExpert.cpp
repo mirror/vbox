@@ -75,9 +75,9 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
             m_pSizeGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             QVBoxLayout *pSizeGroupBoxLayout = new QVBoxLayout(m_pSizeGroupBox);
             {
-                m_pSizeEditor = new UIMediumSizeEditor;
+                m_pMediumSizeEditor = new UIMediumSizeEditor;
                 {
-                    pSizeGroupBoxLayout->addWidget(m_pSizeEditor);
+                    pSizeGroupBoxLayout->addWidget(m_pMediumSizeEditor);
                 }
             }
         }
@@ -117,7 +117,7 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
             this, &UIWizardNewVDPageExpert::completeChanged);
     connect(m_pLocationOpenButton, &QIToolButton::clicked,
             this, &UIWizardNewVDPageExpert::sltSelectLocationButtonClicked);
-    connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+    connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
             this, &UIWizardNewVDPageExpert::completeChanged);
 
     /* Register classes: */

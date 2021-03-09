@@ -24,7 +24,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QRadioButton>
-#include <QSpinBox>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -63,10 +62,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
         m_pToolBox->insertPage(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "", false);
         m_pToolBox->insertPage(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
         m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
-
         m_pToolBox->setCurrentPage(ExpertToolboxItems_NameAndOSType);
         pMainLayout->addWidget(m_pToolBox);
-
         pMainLayout->addStretch();
     }
 
@@ -96,7 +93,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("productKey", this, "productKey");
     registerField("VCPUCount", this, "VCPUCount");
     registerField("EFIEnabled", this, "EFIEnabled");
-
     registerField("mediumPath", this, "mediumPath");
     registerField("mediumFormat", this, "mediumFormat");
     registerField("mediumSize", this, "mediumSize");
@@ -126,7 +122,6 @@ void UIWizardNewVMPageExpert::sltOsTypeChanged()
     emit completeChanged();
 }
 
-
 void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
 {
     getWithFileOpenDialog();
@@ -142,7 +137,6 @@ void UIWizardNewVMPageExpert::sltISOPathChanged(const QString &strPath)
     QFileInfo fileInfo(strPath);
     if (fileInfo.exists() && fileInfo.isReadable())
         uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
-
     emit completeChanged();
 }
 
@@ -243,8 +237,9 @@ void UIWizardNewVMPageExpert::createConnections()
         connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
                 this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
 
-    if (m_pSizeEditor)
-        connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
+    /* Virtual disk related connections: */
+    if (m_pMediumSizeEditor)
+        connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
                 this, &UIWizardNewVMPageExpert::sltMediumSizeChanged);
 
     if (m_pDiskSelectionButton)
@@ -309,11 +304,11 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
             m_pDiskSelector->setCurrentIndex(0);
     }
 
-    if (m_pSizeEditor  && !m_userSetWidgets.contains(m_pSizeEditor))
+    if (m_pMediumSizeEditor  && !m_userSetWidgets.contains(m_pMediumSizeEditor))
     {
-        m_pSizeEditor->blockSignals(true);
+        m_pMediumSizeEditor->blockSignals(true);
         setMediumSize(recommendedDiskSize);
-        m_pSizeEditor->blockSignals(false);
+        m_pMediumSizeEditor->blockSignals(false);
     }
 
     if (m_pProductKeyLabel)
@@ -400,15 +395,15 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     m_pLocationLabel->setBuddy(m_pLocationEditor);
 
     /* Disk file size widgets: */
-    m_pSizeEditorLabel = new QLabel;
-    m_pSizeEditorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-    m_pSizeEditor = new UIMediumSizeEditor;
-    m_pSizeEditorLabel->setBuddy(m_pSizeEditor);
+    m_pMediumSizeEditorLabel = new QLabel;
+    m_pMediumSizeEditorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+    m_pMediumSizeEditor = new UIMediumSizeEditor;
+    m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
 
     /* Disk file format widgets: */
     m_pDiskFormatGroupBox = new QGroupBox;
     QHBoxLayout *pDiskFormatLayout = new QHBoxLayout(m_pDiskFormatGroupBox);
-    m_pSizeEditor = new UIMediumSizeEditor;
+    m_pMediumSizeEditor = new UIMediumSizeEditor;
     pDiskFormatLayout->addWidget(createFormatButtonGroup(true));
 
     /* Disk variant and dik split widgets: */
@@ -420,8 +415,8 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
     pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
 
-    pDiskContainerLayout->addWidget(m_pSizeEditorLabel, 1, 0, 1, 1);
-    pDiskContainerLayout->addWidget(m_pSizeEditor, 1, 1, 1, 3);
+    pDiskContainerLayout->addWidget(m_pMediumSizeEditorLabel, 1, 0, 1, 1);
+    pDiskContainerLayout->addWidget(m_pMediumSizeEditor, 1, 1, 1, 3);
 
     pDiskContainerLayout->addWidget(m_pDiskFormatGroupBox, 2, 0, 1, 2);
     pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 2, 2, 1, 2);
@@ -576,9 +571,9 @@ void UIWizardNewVMPageExpert::sltMediumFormatChanged()
 
 void UIWizardNewVMPageExpert::sltMediumSizeChanged()
 {
-    if (!m_pSizeEditor)
+    if (!m_pMediumSizeEditor)
         return;
-    m_userSetWidgets << m_pSizeEditor;
+    m_userSetWidgets << m_pMediumSizeEditor;
     completeChanged();
 }
 
@@ -640,10 +635,10 @@ void UIWizardNewVMPageExpert::updateWidgetAterMediumFormatChange()
 
 void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)
 {
-    if (m_pSizeEditor)
-        m_pSizeEditor->setEnabled(fEnable);
-    if (m_pSizeEditorLabel)
-        m_pSizeEditorLabel->setEnabled(fEnable);
+    if (m_pMediumSizeEditor)
+        m_pMediumSizeEditor->setEnabled(fEnable);
+    if (m_pMediumSizeEditorLabel)
+        m_pMediumSizeEditorLabel->setEnabled(fEnable);
     if (m_pDiskFormatGroupBox)
         m_pDiskFormatGroupBox->setEnabled(fEnable);
     if (m_pDiskVariantGroupBox)

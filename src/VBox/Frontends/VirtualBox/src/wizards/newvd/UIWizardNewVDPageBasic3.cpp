@@ -53,8 +53,8 @@ UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QStr
     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_pLocationEditor(0)
     , m_pLocationOpenButton(0)
-    , m_pSizeEditor(0)
-    , m_pSizeEditorLabel(0)
+    , m_pMediumSizeEditor(0)
+    , m_pMediumSizeEditorLabel(0)
     , m_pLocationLabel(0)
     , m_pSizeLabel(0)
 {
@@ -65,8 +65,8 @@ UIWizardNewVDPage3::UIWizardNewVDPage3()
     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_pLocationEditor(0)
     , m_pLocationOpenButton(0)
-    , m_pSizeEditor(0)
-    , m_pSizeEditorLabel(0)
+    , m_pMediumSizeEditor(0)
+    , m_pMediumSizeEditorLabel(0)
     , m_pLocationLabel(0)
     , m_pSizeLabel(0)
 {
@@ -221,13 +221,13 @@ QString UIWizardNewVDPage3::mediumPath() const
 
 qulonglong UIWizardNewVDPage3::mediumSize() const
 {
-    return m_pSizeEditor ? m_pSizeEditor->mediumSize() : 0;
+    return m_pMediumSizeEditor ? m_pMediumSizeEditor->mediumSize() : 0;
 }
 
 void UIWizardNewVDPage3::setMediumSize(qulonglong uMediumSize)
 {
-    if (m_pSizeEditor)
-        m_pSizeEditor->setMediumSize(uMediumSize);
+    if (m_pMediumSizeEditor)
+        m_pMediumSizeEditor->setMediumSize(uMediumSize);
 }
 
 /* static */
@@ -279,8 +279,8 @@ void UIWizardNewVDPage3::retranslateWidgets()
         m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard disk in megabytes. "
                                                 "This size is the limit on the amount of file data "
                                                 "that a virtual machine will be able to store on the hard disk."));
-    if (m_pSizeEditorLabel)
-        m_pSizeEditorLabel->setText(UIWizardNewVD::tr("D&isk size:"));
+    if (m_pMediumSizeEditorLabel)
+        m_pMediumSizeEditorLabel->setText(UIWizardNewVD::tr("D&isk size:"));
 }
 
 UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
@@ -302,19 +302,19 @@ UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, 
             pLocationLayout->addWidget(m_pLocationOpenButton);
         }
         m_pSizeLabel = new QIRichTextLabel(this);
-        m_pSizeEditor = new UIMediumSizeEditor;
+        m_pMediumSizeEditor = new UIMediumSizeEditor;
         setMediumSize(uDefaultSize);
         pMainLayout->addWidget(m_pLocationLabel);
         pMainLayout->addLayout(pLocationLayout);
         pMainLayout->addWidget(m_pSizeLabel);
-        pMainLayout->addWidget(m_pSizeEditor);
+        pMainLayout->addWidget(m_pMediumSizeEditor);
         pMainLayout->addStretch();
     }
 
     /* Setup connections: */
     connect(m_pLocationEditor, &QLineEdit::textChanged,    this, &UIWizardNewVDPageBasic3::completeChanged);
     connect(m_pLocationOpenButton, &QIToolButton::clicked, this, &UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked);
-    connect(m_pSizeEditor, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageBasic3::completeChanged);
+    connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageBasic3::completeChanged);
 
     /* Register fields: */
     registerField("mediumPath", this, "mediumPath");

@@ -138,14 +138,17 @@ private:
     void setEnableNewDiskWidgets(bool fEnable);
     void setVirtualDiskFromDiskCombo();
 
-    UIToolBox  *m_pToolBox;
-    QGroupBox *m_pInstallationISOGroupBox;
-    QGroupBox *m_pDiskFormatGroupBox;
-    QGroupBox *m_pDiskVariantGroupBox;
-    QLabel *m_pLocationLabel;
-    /** Set of widgets which user explicitly modified their values. They are exempt from
-      * adjusting when OS type changes. */
-    QSet<QWidget*> m_userSetWidgets;
+    /** @name Variables
+     * @{ */
+       UIToolBox  *m_pToolBox;
+       QGroupBox *m_pInstallationISOGroupBox;
+       QGroupBox *m_pDiskFormatGroupBox;
+       QGroupBox *m_pDiskVariantGroupBox;
+       QLabel *m_pLocationLabel;
+       /** Set of widgets which user explicitly modified their values. They are exempt from
+         * adjusting when OS type changes. */
+       QSet<QWidget*> m_userSetWidgets;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageExpert_h */
