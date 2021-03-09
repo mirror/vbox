@@ -372,7 +372,7 @@ typedef struct PDMAUDIODEVICE
     uint8_t             cMaxInputChannels;
     /** Maximum number of output audio channels the device supports. */
     uint8_t             cMaxOutputChannels;
-    uint8_t             bAlignment[1];
+    uint8_t             bAlignment;
     /** Device type union, based on enmType. */
     union
     {
@@ -389,7 +389,7 @@ typedef struct PDMAUDIODEVICE
     /** Friendly name of the device, if any. */
     char                szName[64];
 } PDMAUDIODEVICE;
-AssertCompileSizeAlignment(PDMAUDIODEVICE, 32);
+AssertCompileSizeAlignment(PDMAUDIODEVICE, ARCH_BITS >= 64 ? 32 : 16);
 /** Pointer to audio device info (enum result). */
 typedef PDMAUDIODEVICE *PPDMAUDIODEVICE;
 /** Pointer to a const audio device info (enum result). */
