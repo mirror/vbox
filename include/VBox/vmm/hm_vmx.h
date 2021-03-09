@@ -3584,7 +3584,7 @@ typedef const VMXVEXITEVENTINFO *PCVMXVEXITEVENTINFO;
  * it's easier, allows for teleporation in the future and does not affect guest
  * software.
  *
- * Note! Any fields that are added or modified here, make sure to update the
+ * @note Any fields that are added or modified here, make sure to update the
  *       corresponding fields in IEM (g_aoffVmcsMap), the corresponding saved
  *       state structure in CPUM (g_aVmxHwvirtVmcs) and bump the SSM version.
  *       Also consider updating CPUMIsGuestVmxVmcsFieldValid.
