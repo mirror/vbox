@@ -541,9 +541,9 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
         for (UInt16 i = 0; i < cDevices; i++)
         {
             if (pDev) /* Some (skipped) device to clean up first? */
-                PDMAudioDeviceFree(&pDev->Core);
+                PDMAudioHostDevFree(&pDev->Core);
 
-            pDev = (PCOREAUDIODEVICEDATA)PDMAudioDeviceAlloc(sizeof(*pDev));
+            pDev = (PCOREAUDIODEVICEDATA)PDMAudioHostDevAlloc(sizeof(*pDev));
             if (!pDev)
             {
                 rc = VERR_NO_MEMORY;
@@ -669,7 +669,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
 
         if (RT_FAILURE(rc))
         {
-            PDMAudioDeviceFree(&pDev->Core);
+            PDMAudioHostDevFree(&pDev->Core);
             pDev = NULL;
         }
 
@@ -742,7 +742,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
             PCOREAUDIODEVICEDATA pDevSrcIn;
             RTListForEach(&devEnmIn.LstDevices, pDevSrcIn, COREAUDIODEVICEDATA, Core.Node)
             {
-                PCOREAUDIODEVICEDATA pDevDst = (PCOREAUDIODEVICEDATA)PDMAudioDeviceAlloc(sizeof(*pDevDst));
+                PCOREAUDIODEVICEDATA pDevDst = (PCOREAUDIODEVICEDATA)PDMAudioHostDevAlloc(sizeof(*pDevDst));
                 if (!pDevDst)
                 {
                     rc = VERR_NO_MEMORY;
@@ -785,7 +785,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
                     PDMAudioHostEnumAppend(pEnmDst, &pDevDst->Core);
                 else
                 {
-                    PDMAudioDeviceFree(&pDevDst->Core);
+                    PDMAudioHostDevFree(&pDevDst->Core);
                     pDevDst = NULL;
                 }
             }
@@ -802,7 +802,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOHOSTENUM pEnm
                     if (coreAudioDevicesHasDevice(pEnmDst, pDevSrcOut->deviceID))
                         continue; /* Already in our list, skip. */
 
-                    PCOREAUDIODEVICEDATA pDevDst = (PCOREAUDIODEVICEDATA)PDMAudioDeviceAlloc(sizeof(*pDevDst));
+                    PCOREAUDIODEVICEDATA pDevDst = (PCOREAUDIODEVICEDATA)PDMAudioHostDevAlloc(sizeof(*pDevDst));
                     if (!pDevDst)
                     {
                         rc = VERR_NO_MEMORY;

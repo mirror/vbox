@@ -1585,7 +1585,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescr
     RT_NOREF(pwszModule); /* Do not care about pwszModule. */
 
     int rc;
-    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioDeviceAlloc(sizeof(DSOUNDDEV));
+    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioHostDevAlloc(sizeof(DSOUNDDEV));
     if (pDev)
     {
         pDev->Core.enmUsage = PDMAUDIODIR_OUT;
@@ -1611,7 +1611,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescr
              *       DSound hangs. */
             return TRUE;
         }
-        PDMAudioDeviceFree(&pDev->Core);
+        PDMAudioHostDevFree(&pDev->Core);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -1644,7 +1644,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescri
     RT_NOREF(pwszModule); /* Do not care about pwszModule. */
 
     int rc;
-    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioDeviceAlloc(sizeof(DSOUNDDEV));
+    PDSOUNDDEV pDev = (PDSOUNDDEV)PDMAudioHostDevAlloc(sizeof(DSOUNDDEV));
     if (pDev)
     {
         pDev->Core.enmUsage = PDMAUDIODIR_IN;
@@ -1667,7 +1667,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescri
              *       DSound hangs. */
             return TRUE;
         }
-        PDMAudioDeviceFree(&pDev->Core);
+        PDMAudioHostDevFree(&pDev->Core);
     }
     else
         rc = VERR_NO_MEMORY;
