@@ -3110,7 +3110,7 @@ void UIVirtualBoxManager::updateActionsVisibility()
     const bool fCloudMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Cloud;
     actionPool()->action(UIActionIndexMN_M_Cloud)->setVisible(fCloudMenuShown);
     /* Determine whether Resources menu should be visible: */
-    const bool fResourcesMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Resources;
+    const bool fResourcesMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_VMActivityOverview;
     actionPool()->action(UIActionIndexMN_M_VMResourceMonitor)->setVisible(fResourcesMenuShown);
 
     /* Determine whether Snapshots menu should be visible: */

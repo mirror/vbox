@@ -364,7 +364,7 @@ public:
     UIActionToggleManagerToolsGlobalShowVMResourceMonitor(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
-        setProperty("UIToolType", QVariant::fromValue(UIToolType_Resources));
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_VMActivityOverview));
         /// @todo use icons with check-boxes
         setIcon(UIIconPool::iconSetFull(":/resources_monitor_24px.png", ":/resources_monitor_16px.png",
                                         ":/resources_monitor_disabled_24px.png", ":/resources_monitor_disabled_16px.png"));
@@ -3472,10 +3472,10 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "To Performance"));
+        setName(QApplication::translate("UIActionPool", "VM Activity"));
         setShortcutScope(QApplication::translate("UIActionPool", "Resource Monitor"));
-        setStatusTip(QApplication::translate("UIActionPool", "Switch to selected machine's performance pane"));
-        setToolTip(  QApplication::translate("UIActionPool", "Switch to selected machine's performance pane")
+        setStatusTip(QApplication::translate("UIActionPool", "Switch to selected virtual machine's activity monitor pane"));
+        setToolTip(  QApplication::translate("UIActionPool", "Switch to selected virtual machine's activity monitor pane")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };

@@ -270,7 +270,7 @@ bool UIToolStuff::isTypeOfClass(UIToolType enmType, UIToolClass enmClass)
                 case UIToolType_Network:
                 case UIToolType_Cloud:
                 case UIToolType_CloudConsole:
-                case UIToolType_Resources:
+                case UIToolType_VMActivityOverview:
                     return true;
                 default:
                     break;

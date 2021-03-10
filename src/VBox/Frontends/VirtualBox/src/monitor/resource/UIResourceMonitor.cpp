@@ -469,8 +469,8 @@ void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorH
         m_pHostFSChart->setDataMaximum(m_hostStats.m_iFSTotal);
         if (m_hostStats.m_iFSTotal != 0)
         {
-            quint64 iUsedRamPer = 100 * (iUsedFS / (float) m_hostStats.m_iFSTotal);
-            QString strCenter = QString("%1%\n%2").arg(iUsedRamPer).arg(UIResourceMonitorWidget::tr("Used"));
+            quint64 iUsedFSPer = 100 * (iUsedFS / (float) m_hostStats.m_iFSTotal);
+            QString strCenter = QString("%1%\n%2").arg(iUsedFSPer).arg(UIResourceMonitorWidget::tr("Used"));
             m_pHostFSChart->setChartCenterString(strCenter);
         }
     }

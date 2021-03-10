@@ -2263,15 +2263,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'To Resources' action class. */
-class UIActionMenuSelectorPerformanceToResources : public UIActionSimple
+/** Simple action extension, used as 'To VM Activity Oveview' action class. */
+class UIActionMenuSelectorPerformanceToVMActivityOverview : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorPerformanceToResources(UIActionPool *pParent)
+    UIActionMenuSelectorPerformanceToVMActivityOverview(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/resources_monitor_24px.png", ":/resource_monitor_16px.png",
                          ":/resource_monitor_disabled_24px.png", ":/resource_monitor_disabled_16px.png")
@@ -2284,16 +2284,16 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ToResources");
+        return QString("ToVMActivityOverview");
     }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&To Resurces..."));
-        setShortcutScope(QApplication::translate("UIActionPool", "Performance Monitor"));
-        setStatusTip(QApplication::translate("UIActionPool", "Navigate to the resources widget"));
-        setToolTip(  QApplication::translate("UIActionPool", "Navigate to Resources Widget")
+        setName(QApplication::translate("UIActionPool", "&Activity Overview..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Activity Monitor"));
+        setStatusTip(QApplication::translate("UIActionPool", "Navigate to the vm activity overview widget"));
+        setToolTip(  QApplication::translate("UIActionPool", "Navigate to the VM Activity Overview Widget")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2543,7 +2543,7 @@ void UIActionPool::preparePool()
     /* Create 'Performance Monitor' actions: */
     m_pool[UIActionIndex_M_Performance] = new UIActionMenuSelectorPerformance(this);
     m_pool[UIActionIndex_M_Performance_S_Export] = new UIActionMenuSelectorPerformancePerformExport(this);
-    m_pool[UIActionIndex_M_Performance_S_ToResources] = new UIActionMenuSelectorPerformanceToResources(this);
+    m_pool[UIActionIndex_M_Performance_S_ToVMActivityOverview] = new UIActionMenuSelectorPerformanceToVMActivityOverview(this);
 
     /* Create 'File Manager' actions: */
     m_pool[UIActionIndex_M_FileManager] = new UIActionMenuFileManager(this);
@@ -2974,7 +2974,7 @@ void UIActionPool::updateMenuVMActivityMonitor()
 
     /* 'Export' action: */
     pMenu->addAction(action(UIActionIndex_M_Performance_S_Export));
-    pMenu->addAction(action(UIActionIndex_M_Performance_S_ToResources));
+    pMenu->addAction(action(UIActionIndex_M_Performance_S_ToVMActivityOverview));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndex_M_Performance);

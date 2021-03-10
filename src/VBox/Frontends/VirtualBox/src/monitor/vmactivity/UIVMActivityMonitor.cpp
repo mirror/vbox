@@ -1155,7 +1155,7 @@ void UIVMActivityMonitor::prepareActions()
         connect(pExportAction, &QAction::triggered, this, &UIVMActivityMonitor::sltExportMetricsToFile);
 
     QAction *pToResourcesAction =
-        m_pActionPool->action(UIActionIndex_M_Performance_S_ToResources);
+        m_pActionPool->action(UIActionIndex_M_Performance_S_ToVMActivityOverview);
     if (pToResourcesAction)
         connect(pToResourcesAction, &QAction::triggered, this, &UIVMActivityMonitor::sigSwitchToResourcesPane);
 }
