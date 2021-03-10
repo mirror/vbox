@@ -537,8 +537,7 @@ void UIWizardNewVMPageBasic1::retranslateUi()
                                                       "in which case you will have to select a valid installation medium."));
 
     if (m_pNameOSTypeLabel)
-        m_pNameOSTypeLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine "
-                                             "and select the type of operating system you intend to install on it. "
+        m_pNameOSTypeLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine. "
                                              "The name you choose will be used throughout VirtualBox "
                                              "to identify this machine."));
     if (m_pISOPathSelectorLabel)
