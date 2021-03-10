@@ -251,15 +251,16 @@ void UIToolBoxPage::setExpandCollapseIcon()
         return;
     }
     const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-    if (m_fExpanded)
+    QPixmap basePixmap = m_expandCollapseIcon.pixmap(windowHandle(), QSize(iMetric, iMetric));
+    if (!m_fExpanded)
+        m_pExpandCollapseIconLabel->setPixmap(basePixmap);
+    else
     {
         QTransform transform;
         transform.rotate(90);
-        m_pExpandCollapseIconLabel->setPixmap(m_expandCollapseIcon.pixmap(windowHandle(), QSize(iMetric, iMetric)).transformed(transform));
-    }
-    else
-    {
-        m_pExpandCollapseIconLabel->setPixmap(m_expandCollapseIcon.pixmap(windowHandle(), QSize(iMetric, iMetric)));
+        QPixmap transformedPixmap = basePixmap.transformed(transform);
+        transformedPixmap.setDevicePixelRatio(basePixmap.devicePixelRatio());
+        m_pExpandCollapseIconLabel->setPixmap(transformedPixmap);
     }
 }
 
