@@ -312,7 +312,7 @@ VBOX_GUI_INC_DIRS += \
 	./src/manager/tools \
 	./src/monitor \
 	./src/monitor/resource \
-	./src/monitor/performance
+	./src/monitor/vmactivity
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 VBOX_GUI_INC_DIRS += \
@@ -829,7 +829,7 @@ UICommon_QT_MOCHDRS = \
 	src/logviewer/UIVMLogViewerSearchPanel.h \
 	src/logviewer/UIVMLogViewerTextEdit.h \
 	src/logviewer/UIVMLogViewerWidget.h \
-	src/monitor/performance/UIVMActivityMonitor.h \
+	src/monitor/vmactivity/UIVMActivityMonitor.h \
 	src/medium/UIFDCreationDialog.h \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumItem.h \
@@ -1006,7 +1006,7 @@ UICommon_QT_MOCSRCS = \
 	src/globals/UIVirtualBoxClientEventHandler.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
-	src/monitor/performance/UIVMActivityMonitor.cpp \
+	src/monitor/vmactivity/UIVMActivityMonitor.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
@@ -1363,7 +1363,7 @@ UICommon_SOURCES = \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/monitor/UIMonitorCommon.cpp \
-	src/monitor/performance/UIVMActivityMonitor.cpp \
+	src/monitor/vmactivity/UIVMActivityMonitor.cpp \
 	src/medium/UIFDCreationDialog.cpp \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDefs.cpp \
