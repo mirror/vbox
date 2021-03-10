@@ -37,6 +37,7 @@
 #include <VBox/log.h>
 
 #include "VBoxManage.h"
+#include "VBoxManageUtils.h"
 
 #include <list>
 
@@ -1185,6 +1186,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(BridgedInterface)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
+                        verifyHostNetworkInterfaceName(a->virtualBox, a->argv[3], HostNetworkInterfaceType_Bridged);
                         CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Bridged), RTEXITCODE_FAILURE);
                     }
                     else if (!strcmp(a->argv[2], "intnet"))
@@ -1208,6 +1210,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(HostOnlyInterface)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
+                        verifyHostNetworkInterfaceName(a->virtualBox, a->argv[3], HostNetworkInterfaceType_HostOnly);
                         CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnly), RTEXITCODE_FAILURE);
                     }
 #endif

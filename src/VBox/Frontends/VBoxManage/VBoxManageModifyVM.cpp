@@ -37,6 +37,7 @@
 #include <iprt/getopt.h>
 #include <VBox/log.h>
 #include "VBoxManage.h"
+#include "VBoxManageUtils.h"
 
 #ifndef VBOX_ONLY_DOCS
 using namespace com;
@@ -1729,6 +1730,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     CHECK_ERROR(nic, COMSETTER(BridgedInterface)(Bstr(ValueUnion.psz).raw()));
+                    verifyHostNetworkInterfaceName(a->virtualBox, ValueUnion.psz,
+                                                   HostNetworkInterfaceType_Bridged);
                 }
                 break;
             }
@@ -1750,6 +1753,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else
                 {
                     CHECK_ERROR(nic, COMSETTER(HostOnlyInterface)(Bstr(ValueUnion.psz).raw()));
+                    verifyHostNetworkInterfaceName(a->virtualBox, ValueUnion.psz,
+                                                   HostNetworkInterfaceType_HostOnly);
                 }
                 break;
             }
