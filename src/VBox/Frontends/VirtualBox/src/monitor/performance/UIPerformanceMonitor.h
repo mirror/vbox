@@ -146,6 +146,7 @@ private slots:
     /** Stop updating the charts if/when the machine state changes something other than KMachineState_Running. */
     void sltMachineStateChange(const QUuid &uId);
     void sltExportMetricsToFile();
+    void sltCreateContextMenu(const QPoint &point);
 
 private:
 

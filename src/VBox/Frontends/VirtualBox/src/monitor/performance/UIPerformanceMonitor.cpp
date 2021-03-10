@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QApplication>
+#include <QDateTime>
 #include <QLabel>
 #include <QMenu>
 #include <QPainter>
@@ -30,6 +31,7 @@
 #include "QIFileDialog.h"
 #include "UIActionPool.h"
 #include "UICommon.h"
+#include "UIIconPool.h"
 #include "UIPerformanceMonitor.h"
 #include "QIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -60,6 +62,10 @@ class UIChart : public QIWithRetranslateUI<QWidget>
 {
 
     Q_OBJECT;
+
+signals:
+
+    void sigExportMetricsToFile();
 
 public:
 
@@ -570,6 +576,11 @@ void UIChart::drawDisabledChartRectangle(QPainter &painter)
 void UIChart::sltCreateContextMenu(const QPoint &point)
 {
     QMenu menu;
+    QAction *pExportAction =
+        menu.addAction(QApplication::translate("UIVMInformationDialog", "Export"));
+    pExportAction->setIcon(UIIconPool::iconSet(":/performance_monitor_export_16px.png"));
+    connect(pExportAction, &QAction::triggered, this, &UIChart::sigExportMetricsToFile);
+    menu.addSeparator();
     QAction *pResetAction = menu.addAction(m_strResetActionLabel);
     connect(pResetAction, &QAction::triggered, this, &UIChart::sltResetMetric);
     if (m_fIsPieChartAllowed)
@@ -766,6 +777,9 @@ UIPerformanceMonitor::UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParen
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIPerformanceMonitor::sltMachineStateChange);
     setMachine(machine);
     uiCommon().setHelpKeyword(this, "vm-session-information");
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, &UIPerformanceMonitor::customContextMenuRequested,
+            this, &UIPerformanceMonitor::sltCreateContextMenu);
 }
 
 UIPerformanceMonitor::~UIPerformanceMonitor()
@@ -914,6 +928,8 @@ void UIPerformanceMonitor::prepareWidgets()
         m_infoLabels.insert(strMetricName, pLabel);
 
         UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]));
+        connect(pChart, &UIChart::sigExportMetricsToFile,
+                this, &UIPerformanceMonitor::sltExportMetricsToFile);
         m_charts.insert(strMetricName, pChart);
         pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         pChartLayout->addWidget(pChart);
@@ -999,20 +1015,33 @@ void UIPerformanceMonitor::sltMachineStateChange(const QUuid &uId)
 
 void UIPerformanceMonitor::sltExportMetricsToFile()
 {
-    QString strFileName = QIFileDialog::getSaveFileName("","",this, "");
-
+    QString strStartFileName = QString("%1/%2_%3").
+        arg(QFileInfo(m_comMachine.GetSettingsFilePath()).absolutePath()).
+        arg(m_comMachine.GetName()).
+        arg(QDateTime::currentDateTime().toString("dd-MM-yyyy_hh-mm-ss"));
+    QString strFileName = QIFileDialog::getSaveFileName(strStartFileName,"",this,
+                                                        QString("%1\"%2\"").
+                                                        arg(QApplication::translate("UIVMInformationDialog", "Export activity data of the machine ")).
+                                                        arg(m_comMachine.GetName()));
     QFile dataFile(strFileName);
-    if (dataFile.open(QFile::WriteOnly | QFile::Truncate)) {
+    if (dataFile.open(QFile::WriteOnly | QFile::Truncate))
+    {
         QTextStream stream(&dataFile);
-        for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin();
-             iterator != m_metrics.end(); ++iterator)
-        {
+        for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin(); iterator != m_metrics.end(); ++iterator)
             iterator.value().toFile(stream);
-        }
         dataFile.close();
-  }
+    }
 }
 
+void UIPerformanceMonitor::sltCreateContextMenu(const QPoint &point)
+{
+    QMenu menu;
+    QAction *pExportAction =
+        menu.addAction(QApplication::translate("UIVMInformationDialog", "Export"));
+    pExportAction->setIcon(UIIconPool::iconSet(":/performance_monitor_export_16px.png"));
+    connect(pExportAction, &QAction::triggered, this, &UIPerformanceMonitor::sltExportMetricsToFile);
+    menu.exec(mapToGlobal(point));
+}
 
 void UIPerformanceMonitor::sltGuestAdditionsStateChange()
 {
