@@ -141,18 +141,18 @@ static DECLCALLBACK(void) pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 /** @interface_method_impl{PDMIOAPICHLP,pfnIommuMsiRemap} */
-static DECLCALLBACK(int) pdmR3IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDeviceId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+static DECLCALLBACK(int) pdmR3IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3IoApicHlp_IommuRemapMsi: caller='%s'/%d: pMsiIn=(%#RX64, %#RU32)\n", pDevIns->pReg->szName,
              pDevIns->iInstance, pMsiIn->Addr.u64, pMsiIn->Data.u32));
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    int rc = pdmIommuMsiRemap(pDevIns, uDeviceId, pMsiIn, pMsiOut);
+    int rc = pdmIommuMsiRemap(pDevIns, idDevice, pMsiIn, pMsiOut);
     if (RT_SUCCESS(rc) || rc != VERR_IOMMU_NOT_PRESENT)
         return rc;
 #else
-    RT_NOREF(pDevIns, uDeviceId);
+    RT_NOREF(pDevIns, idDevice);
 #endif
 
     *pMsiOut = *pMsiIn;
