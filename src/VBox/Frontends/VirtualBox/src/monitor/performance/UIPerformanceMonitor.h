@@ -71,6 +71,9 @@ public:
     void addData(int iDataSeriesIndex, quint64 fData);
     const QQueue<quint64> *data(int iDataSeriesIndex) const;
 
+    void setDataSeriesName(int iDataSeriesIndex, const QString &strName);
+    QString dataSeriesName(int iDataSeriesIndex) const;
+
     void setTotal(int iDataSeriesIndex, quint64 iTotal);
     quint64 total(int iDataSeriesIndex) const;
 
@@ -81,13 +84,13 @@ public:
     bool isInitialized() const;
 
     void reset();
-
     void toFile(QTextStream &stream) const;
 
 private:
 
     QString m_strName;
     QString m_strUnit;
+    QString m_strDataSeriesName[DATA_SERIES_SIZE];
     quint64 m_iMaximum;
     QQueue<quint64> m_data[DATA_SERIES_SIZE];
     /** The total data (the counter value we get from IMachineDebugger API). For the metrics
@@ -205,7 +208,7 @@ private:
     /** Stores the QLabel instances which we show next to each UIChart. The value is the name of the metric. */
     QMap<QString,QLabel*>   m_infoLabels;
 
-    /** @name These metric names are used for map keys to identify metrics.
+    /** @name These metric names are used for map keys to identify metrics. They are not translated.
       * @{ */
         QString m_strCPUMetricName;
         QString m_strRAMMetricName;

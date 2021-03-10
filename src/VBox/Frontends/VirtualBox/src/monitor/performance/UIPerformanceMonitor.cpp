@@ -688,6 +688,20 @@ const QQueue<quint64> *UIMetric::data(int iDataSeriesIndex) const
     return &m_data[iDataSeriesIndex];
 }
 
+void UIMetric::setDataSeriesName(int iDataSeriesIndex, const QString &strName)
+{
+    if (iDataSeriesIndex >= DATA_SERIES_SIZE)
+        return;
+    m_strDataSeriesName[iDataSeriesIndex] = strName;
+}
+
+QString UIMetric::dataSeriesName(int iDataSeriesIndex) const
+{
+    if (iDataSeriesIndex >= DATA_SERIES_SIZE)
+        return QString();
+    return m_strDataSeriesName[iDataSeriesIndex];
+}
+
 void UIMetric::setTotal(int iDataSeriesIndex, quint64 iTotal)
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
@@ -738,12 +752,17 @@ void UIMetric::toFile(QTextStream &stream) const
     stream << "Metric Name: " << m_strName << "\n";
     stream << "Unit: " << m_strUnit << "\n";
     stream << "Maximum: " << m_iMaximum << "\n";
-    foreach (const quint64& data, m_data[0])
-        stream << data << " ";
+    for (int i = 0; i < 2; ++i)
+    {
+        if (!m_data[i].isEmpty())
+        {
+            stream << "Data Series: " << m_strDataSeriesName[i] << "\n";
+            foreach (const quint64& data, m_data[i])
+                stream << data << " ";
+            stream << "\n";
+        }
+    }
     stream << "\n";
-    foreach (const quint64& data, m_data[1])
-        stream << data << " ";
-    stream << "\n\n";
 }
 
 /*********************************************************************************************************************************
@@ -1070,32 +1089,37 @@ void UIPerformanceMonitor::prepareMetrics()
             {
                 if (strName.contains("RAM", Qt::CaseInsensitive) && strName.contains("Free", Qt::CaseInsensitive))
                 {
-                    UIMetric newMetric(m_strRAMMetricName, metrics[i].GetUnit(), g_iMaximumQueueSize);
-                    newMetric.setRequiresGuestAdditions(true);
-                    m_metrics.insert(m_strRAMMetricName, newMetric);
+                    UIMetric ramMetric(m_strRAMMetricName, metrics[i].GetUnit(), g_iMaximumQueueSize);
+                    ramMetric.setDataSeriesName(0, "Free");
+                    ramMetric.setDataSeriesName(1, "Used");
+                    ramMetric.setRequiresGuestAdditions(true);
+                    m_metrics.insert(m_strRAMMetricName, ramMetric);
                 }
             }
         }
     }
 
-    m_metrics.insert(m_strCPUMetricName, UIMetric(m_strCPUMetricName, "%", g_iMaximumQueueSize));
-    {
-        /* Network metric: */
-        UIMetric networkMetric(m_strNetworkMetricName, "B", g_iMaximumQueueSize);
-        m_metrics.insert(m_strNetworkMetricName, networkMetric);
-    }
+    /* CPU Metric: */
+    UIMetric cpuMetric(m_strCPUMetricName, "%", g_iMaximumQueueSize);
+    cpuMetric.setDataSeriesName(0, "Guest Load");
+    cpuMetric.setDataSeriesName(1, "VMM Load");
+    m_metrics.insert(m_strCPUMetricName, cpuMetric);
+
+    /* Network metric: */
+    UIMetric networkMetric(m_strNetworkMetricName, "B", g_iMaximumQueueSize);
+    networkMetric.setDataSeriesName(0, "Receive Rate");
+    networkMetric.setDataSeriesName(1, "Transmit Rate");
+    m_metrics.insert(m_strNetworkMetricName, networkMetric);
 
     /* Disk IO metric */
-    {
-        UIMetric diskIOMetric(m_strDiskIOMetricName, "B", g_iMaximumQueueSize);
-        m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
-    }
+    UIMetric diskIOMetric(m_strDiskIOMetricName, "B", g_iMaximumQueueSize);
+    diskIOMetric.setDataSeriesName(0, "Write Rate");
+    diskIOMetric.setDataSeriesName(1, "Read Rate");
+    m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
 
     /* VM exits metric */
-    {
-        UIMetric VMExitsMetric(m_strVMExitMetricName, "times", g_iMaximumQueueSize);
-        m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
-    }
+    UIMetric VMExitsMetric(m_strVMExitMetricName, "times", g_iMaximumQueueSize);
+    m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
 }
 
 void UIPerformanceMonitor::prepareToolBar()
