@@ -179,9 +179,7 @@ static const osTypePattern gs_OSTypePattern[] =
 
 UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
     : m_pNameAndSystemEditor(0)
-    , m_pNameOSTypeLabel(0)
     , m_pISOFilePathSelector(0)
-    , m_pUnattendedLabel(0)
     , m_pISOPathSelectorLabel(0)
     , m_strGroup(strGroup)
 {
@@ -234,24 +232,14 @@ void UIWizardNewVMPage1::composeMachineFilePath()
     m_strMachineBaseName = fileInfo.completeBaseName();
 }
 
-QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets(bool fCreateLabels)
+QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets()
 {
-    QWidget *pContainer = new QWidget;
-    QGridLayout *pLayout = new QGridLayout(pContainer);
-
-    int iRow = 0;
-    if (fCreateLabels)
-    {
-        m_pNameOSTypeLabel = new QIRichTextLabel;
-        if (m_pNameOSTypeLabel)
-            pLayout->addWidget(m_pNameOSTypeLabel, iRow++, 0, 1, 6);
-    }
-
-    m_pNameAndSystemEditor = new UINameAndSystemEditor(0, true, true, true);
-    if (m_pNameAndSystemEditor)
-        pLayout->addWidget(m_pNameAndSystemEditor, iRow++, 0, 1, 6);
-
-    return pContainer;
+    /* Prepare Name and OS Type editor: */
+    m_pNameAndSystemEditor = new UINameAndSystemEditor(0,
+                                                       true /* fChooseName? */,
+                                                       true /* fChoosePath? */,
+                                                       true /* fChooseType? */);
+    return m_pNameAndSystemEditor;
 }
 
 bool UIWizardNewVMPage1::createMachineFolder()
@@ -419,44 +407,64 @@ void UIWizardNewVMPage1::setTypeByISODetectedOSType(const QString &strDetectedOS
         onNameChanged(strDetectedOSType);
 }
 
+
 UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     : UIWizardNewVMPage1(strGroup)
+    , m_pNameOSTypeLabel(0)
+    , m_pUnattendedLabel(0)
 {
     prepare();
 }
 
 void UIWizardNewVMPageBasic1::prepare()
 {
+    /* Prepare page layout: */
     QVBoxLayout *pPageLayout = new QVBoxLayout(this);
-    pPageLayout->addWidget(createNameOSTypeWidgets(/* fCreateLabels */ true));
-
-    m_pUnattendedLabel = new QIRichTextLabel;
-    if (m_pUnattendedLabel)
-        pPageLayout->addWidget(m_pUnattendedLabel);
-
-    QHBoxLayout *pISOSelectorLayout = new QHBoxLayout;
-
-    m_pISOPathSelectorLabel = new QLabel;
-    pISOSelectorLayout->addWidget(m_pISOPathSelectorLabel);
-    m_pISOPathSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-
-    m_pISOFilePathSelector = new UIFilePathSelector;
-    if (m_pISOFilePathSelector)
+    if (pPageLayout)
     {
-        m_pISOFilePathSelector->setResetEnabled(false);
-        m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-        m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-        m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        m_pISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
-        m_pISOPathSelectorLabel->setBuddy(m_pISOFilePathSelector);
-        pISOSelectorLayout->addWidget(m_pISOFilePathSelector);
+        /* Prepare Name and OS Type label: */
+        m_pNameOSTypeLabel = new QIRichTextLabel(this);
+        if (m_pNameOSTypeLabel)
+            pPageLayout->addWidget(m_pNameOSTypeLabel);
+
+        /* Prepare Name and OS Type editor: */
+        pPageLayout->addWidget(createNameOSTypeWidgets());
+
+        /* Prepare Unattended description label: */
+        m_pUnattendedLabel = new QIRichTextLabel(this);
+        if (m_pUnattendedLabel)
+            pPageLayout->addWidget(m_pUnattendedLabel);
+
+        /* Prepare ISO Selector layout: */
+        QHBoxLayout *pISOSelectorLayout = new QHBoxLayout;
+        if (pISOSelectorLayout)
+        {
+            /* Prepare ISO Selector label: */
+            m_pISOPathSelectorLabel = new QLabel(this);
+            if (m_pISOPathSelectorLabel)
+            {
+                m_pISOPathSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+                pISOSelectorLayout->addWidget(m_pISOPathSelectorLabel);
+            }
+            /* Prepare ISO Selector editor: */
+            m_pISOFilePathSelector = new UIFilePathSelector(this);
+            if (m_pISOFilePathSelector)
+            {
+                m_pISOFilePathSelector->setResetEnabled(false);
+                m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+                m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+                m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+                m_pISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
+                m_pISOPathSelectorLabel->setBuddy(m_pISOFilePathSelector);
+
+                pISOSelectorLayout->addWidget(m_pISOFilePathSelector);
+            }
+
+            pPageLayout->addLayout(pISOSelectorLayout);
+        }
+
+        pPageLayout->addStretch();
     }
-
-    pPageLayout->addLayout(pISOSelectorLayout);
-    pPageLayout->addStretch();
-
-
-
 
     createConnections();
     /* Register fields: */

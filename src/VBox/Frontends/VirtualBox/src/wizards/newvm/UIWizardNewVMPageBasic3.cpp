@@ -76,6 +76,7 @@ QWidget *UIWizardNewVMPage3::createHardwareWidgets()
 {
     QWidget *pHardwareContainer = new QWidget;
     QGridLayout *pHardwareLayout = new QGridLayout(pHardwareContainer);
+    pHardwareLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pBaseMemoryEditor = new UIBaseMemoryEditor(0, true);
     m_pVirtualCPUEditor = new UIVirtualCPUEditor(0, true);

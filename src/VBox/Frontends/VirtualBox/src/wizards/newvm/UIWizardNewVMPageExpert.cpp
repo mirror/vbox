@@ -58,7 +58,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pToolBox = new UIToolBox;
-        m_pToolBox->insertPage(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(/* fCreateLabels */ false), "");
+        m_pToolBox->insertPage(ExpertToolboxItems_NameAndOSType, createNameOSTypeWidgets(), "");
         m_pToolBox->insertPage(ExpertToolboxItems_Unattended, createUnattendedWidgets(), "", false);
         m_pToolBox->insertPage(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
         m_pToolBox->insertPage(ExpertToolboxItems_Disk, createDiskWidgets(), "");
@@ -344,6 +344,7 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
 {
     QWidget *pContainerWidget = new QWidget;
     QGridLayout *pLayout = new QGridLayout(pContainerWidget);
+    pLayout->setContentsMargins(0, 0, 0, 0);
     int iRow = 0;
 
     /* Installation medium selector etc: */
