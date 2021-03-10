@@ -35,7 +35,7 @@
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
 #include "UIMessageCenter.h"
-#include "UIPerformanceMonitor.h"
+#include "UIVMActivityMonitor.h"
 #include "UISession.h"
 #include "UIVMInformationDialog.h"
 #include "VBoxUtils.h"
@@ -113,7 +113,7 @@ void UIVMInformationDialog::retranslateUi()
     /* Translate tabs: */
     m_pTabWidget->setTabText(0, tr("Configuration &Details"));
     m_pTabWidget->setTabText(1, tr("&Runtime Information"));
-    m_pTabWidget->setTabText(2, tr("Performance &Monitor"));
+    m_pTabWidget->setTabText(2, tr("VM &Activity"));
     m_pTabWidget->setTabText(3, tr("&Guest Control"));
 
     /* Retranslate button box buttons: */
@@ -213,14 +213,14 @@ void UIVMInformationDialog::prepareTabWidget()
         }
 
         /* Create Performance Monitor tab: */
-        UIPerformanceMonitor *pPerformanceMonitorWidget =
-            new UIPerformanceMonitor(EmbedTo_Dialog, this, m_pMachineWindow->machine(),
+        UIVMActivityMonitor *pVMActivityMonitorWidget =
+            new UIVMActivityMonitor(EmbedTo_Dialog, this, m_pMachineWindow->machine(),
                                      m_pMachineWindow->uisession()->actionPool());
-        if (pPerformanceMonitorWidget)
+        if (pVMActivityMonitorWidget)
         {
             connect(m_pMachineWindow->uisession(), &UISession::sigAdditionsStateChange,
-                    pPerformanceMonitorWidget, &UIPerformanceMonitor::sltGuestAdditionsStateChange);
-            m_tabs.insert(2, pPerformanceMonitorWidget);
+                    pVMActivityMonitorWidget, &UIVMActivityMonitor::sltGuestAdditionsStateChange);
+            m_tabs.insert(2, pVMActivityMonitorWidget);
             m_pTabWidget->addTab(m_tabs.value(2), QString());
         }
 

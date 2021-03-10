@@ -510,7 +510,7 @@ void UIVirtualBoxManagerWidget::sltSwitchToMachinePerformancePane(const QUuid &u
     AssertPtrReturnVoid(m_pPaneChooser);
     AssertPtrReturnVoid(m_pPaneTools);
     m_pPaneChooser->setCurrentMachine(uMachineId);
-    m_pPaneTools->setToolsType(UIToolType_Performance);
+    m_pPaneTools->setToolsType(UIToolType_VMActivity);
 }
 
 void UIVirtualBoxManagerWidget::sltSwitchToResourcesPane()
@@ -919,7 +919,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
                     break;
                 }
-                case UIToolType_Performance:
+                case UIToolType_VMActivity:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Performance_S_Export));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Performance_S_ToResources));
@@ -1041,9 +1041,9 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
     /* Update machine tools restrictions: */
     QList<UIToolType> retrictedTypes;
     if (pItem && pItem->itemType() != UIVirtualMachineItemType_Local)
-        retrictedTypes << UIToolType_Snapshots << UIToolType_Logs << UIToolType_Performance;
+        retrictedTypes << UIToolType_Snapshots << UIToolType_Logs << UIToolType_VMActivity;
     else if (pItem && !pItem->isItemStarted())
-        retrictedTypes << UIToolType_Performance;
+        retrictedTypes << UIToolType_VMActivity;
     if (retrictedTypes.contains(m_pPaneTools->toolsType()))
         m_pPaneTools->setToolsType(UIToolType_Details);
     m_pPaneTools->setRestrictedToolTypes(retrictedTypes);

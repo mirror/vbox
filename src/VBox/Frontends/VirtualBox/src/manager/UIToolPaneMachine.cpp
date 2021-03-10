@@ -27,7 +27,7 @@
 #include "UIErrorPane.h"
 #include "UIDetails.h"
 #include "UIIconPool.h"
-#include "UIPerformanceMonitor.h"
+#include "UIVMActivityMonitor.h"
 #include "UISnapshotPane.h"
 #include "UIToolPaneMachine.h"
 #include "UIVirtualMachineItem.h"
@@ -46,7 +46,7 @@ UIToolPaneMachine::UIToolPaneMachine(UIActionPool *pActionPool, QWidget *pParent
     , m_pPaneDetails(0)
     , m_pPaneSnapshots(0)
     , m_pPaneLogViewer(0)
-    , m_pPanePerformanceMonitor(0)
+    , m_pPaneVMActivityMonitor(0)
     , m_fActive(false)
 {
     /* Prepare: */
@@ -190,24 +190,24 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
                 }
                 break;
             }
-            case UIToolType_Performance:
+            case UIToolType_VMActivity:
             {
-                m_pPanePerformanceMonitor = new UIPerformanceMonitor(EmbedTo_Stack, 0,
+                m_pPaneVMActivityMonitor = new UIVMActivityMonitor(EmbedTo_Stack, 0,
                                                                      m_comMachine, m_pActionPool, false /* Show toolbar */);
-                AssertPtrReturnVoid(m_pPanePerformanceMonitor);
+                AssertPtrReturnVoid(m_pPaneVMActivityMonitor);
 #ifndef VBOX_WS_MAC
                 const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
-                m_pPanePerformanceMonitor->setContentsMargins(iMargin, 0, iMargin, 0);
+                m_pPaneVMActivityMonitor->setContentsMargins(iMargin, 0, iMargin, 0);
 #endif
 
                 /* Configure pane: */
-                m_pPanePerformanceMonitor->setProperty("ToolType", QVariant::fromValue(UIToolType_Performance));
+                m_pPaneVMActivityMonitor->setProperty("ToolType", QVariant::fromValue(UIToolType_VMActivity));
 
                 /* Add into layout: */
-                m_pLayout->addWidget(m_pPanePerformanceMonitor);
-                m_pLayout->setCurrentWidget(m_pPanePerformanceMonitor);
+                m_pLayout->addWidget(m_pPaneVMActivityMonitor);
+                m_pLayout->setCurrentWidget(m_pPaneVMActivityMonitor);
 
-                connect(m_pPanePerformanceMonitor, &UIPerformanceMonitor::sigSwitchToResourcesPane,
+                connect(m_pPaneVMActivityMonitor, &UIVMActivityMonitor::sigSwitchToResourcesPane,
                         this, &UIToolPaneMachine::sigSwitchToResourcesPane);
                 break;
             }
@@ -238,7 +238,7 @@ void UIToolPaneMachine::closeTool(UIToolType enmType)
             case UIToolType_Details:     m_pPaneDetails = 0; break;
             case UIToolType_Snapshots:   m_pPaneSnapshots = 0; break;
             case UIToolType_Logs:        m_pPaneLogViewer = 0; break;
-            case UIToolType_Performance: m_pPanePerformanceMonitor = 0; break;
+            case UIToolType_VMActivity: m_pPaneVMActivityMonitor = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */
@@ -298,10 +298,10 @@ void UIToolPaneMachine::setMachine(const CMachine &comMachine)
         m_pPaneLogViewer->setMachine(m_comMachine);
     }
     /* Update performance monitor pane is it is open: */
-    if (isToolOpened(UIToolType_Performance))
+    if (isToolOpened(UIToolType_VMActivity))
     {
-        AssertPtrReturnVoid(m_pPanePerformanceMonitor);
-        m_pPanePerformanceMonitor->setMachine(m_comMachine);
+        AssertPtrReturnVoid(m_pPaneVMActivityMonitor);
+        m_pPaneVMActivityMonitor->setMachine(m_comMachine);
     }
 }
 
@@ -329,8 +329,8 @@ QString UIToolPaneMachine::currentHelpKeyword() const
         case UIToolType_Logs:
             pCurrentToolWidget = m_pPaneLogViewer;
             break;
-        case UIToolType_Performance:
-            pCurrentToolWidget = m_pPanePerformanceMonitor;
+        case UIToolType_VMActivity:
+            pCurrentToolWidget = m_pPaneVMActivityMonitor;
             break;
         default:
             break;

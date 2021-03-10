@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIPerformanceMonitor class implementation.
+ * VBox Qt GUI - UIVMActivityMonitor class implementation.
  */
 
 /*
@@ -32,7 +32,7 @@
 #include "UIActionPool.h"
 #include "UICommon.h"
 #include "UIIconPool.h"
-#include "UIPerformanceMonitor.h"
+#include "UIVMActivityMonitor.h"
 #include "QIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
 
@@ -766,10 +766,10 @@ void UIMetric::toFile(QTextStream &stream) const
 }
 
 /*********************************************************************************************************************************
-*   UIPerformanceMonitor implementation.                                                                              *
+*   UIVMActivityMonitor implementation.                                                                              *
 *********************************************************************************************************************************/
 
-UIPerformanceMonitor::UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParent,
+UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
                                            const CMachine &machine, UIActionPool *pActionPool, bool fShowToolbar /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fGuestAdditionsAvailable(false)
@@ -793,21 +793,21 @@ UIPerformanceMonitor::UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParen
         prepareToolBar();
     prepareActions();
     retranslateUi();
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIPerformanceMonitor::sltMachineStateChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIVMActivityMonitor::sltMachineStateChange);
     setMachine(machine);
     uiCommon().setHelpKeyword(this, "vm-session-information");
     setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this, &UIPerformanceMonitor::customContextMenuRequested,
-            this, &UIPerformanceMonitor::sltCreateContextMenu);
+    connect(this, &UIVMActivityMonitor::customContextMenuRequested,
+            this, &UIVMActivityMonitor::sltCreateContextMenu);
 }
 
-UIPerformanceMonitor::~UIPerformanceMonitor()
+UIVMActivityMonitor::~UIVMActivityMonitor()
 {
     if (!m_comSession.isNull())
         m_comSession.UnlockMachine();
 }
 
-void UIPerformanceMonitor::setMachine(const CMachine &comMachine)
+void UIVMActivityMonitor::setMachine(const CMachine &comMachine)
 {
     reset();
     if (comMachine.isNull())
@@ -826,7 +826,7 @@ void UIPerformanceMonitor::setMachine(const CMachine &comMachine)
     }
 }
 
-void UIPerformanceMonitor::openSession()
+void UIVMActivityMonitor::openSession()
 {
     m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
     AssertReturnVoid(!m_comSession.isNull());
@@ -838,7 +838,7 @@ void UIPerformanceMonitor::openSession()
     m_comMachineDebugger = comConsole.GetDebugger();
 }
 
-void UIPerformanceMonitor::retranslateUi()
+void UIVMActivityMonitor::retranslateUi()
 {
     foreach (UIChart *pChart, m_charts)
         pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Seconds"));
@@ -902,7 +902,7 @@ void UIPerformanceMonitor::retranslateUi()
     }
 }
 
-void UIPerformanceMonitor::prepareWidgets()
+void UIVMActivityMonitor::prepareWidgets()
 {
     m_pMainLayout = new QVBoxLayout(this);
     if (!m_pMainLayout)
@@ -917,7 +917,7 @@ void UIPerformanceMonitor::prepareWidgets()
 
     m_pTimer = new QTimer(this);
     if (m_pTimer)
-        connect(m_pTimer, &QTimer::timeout, this, &UIPerformanceMonitor::sltTimeout);
+        connect(m_pTimer, &QTimer::timeout, this, &UIVMActivityMonitor::sltTimeout);
 
     QScrollArea *pScrollArea = new QScrollArea(this);
     m_pMainLayout->addWidget(pScrollArea);
@@ -948,7 +948,7 @@ void UIPerformanceMonitor::prepareWidgets()
 
         UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]));
         connect(pChart, &UIChart::sigExportMetricsToFile,
-                this, &UIPerformanceMonitor::sltExportMetricsToFile);
+                this, &UIVMActivityMonitor::sltExportMetricsToFile);
         m_charts.insert(strMetricName, pChart);
         pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         pChartLayout->addWidget(pChart);
@@ -969,9 +969,9 @@ void UIPerformanceMonitor::prepareWidgets()
     pContainerLayout->addWidget(bottomSpacerWidget, iRow, 0, 1, 2);
 }
 
-void UIPerformanceMonitor::sltTimeout()
+void UIVMActivityMonitor::sltTimeout()
 {
-    if (m_performanceMonitor.isNull())
+    if (m_performanceCollector.isNull())
         return;
     ++m_iTimeStep;
 
@@ -979,7 +979,7 @@ void UIPerformanceMonitor::sltTimeout()
     {
         quint64 iTotalRAM = 0;
         quint64 iFreeRAM = 0;
-        UIMonitorCommon::getRAMLoad(m_performanceMonitor, m_nameList, m_objectList, iTotalRAM, iFreeRAM);
+        UIMonitorCommon::getRAMLoad(m_performanceCollector, m_nameList, m_objectList, iTotalRAM, iFreeRAM);
         updateRAMGraphsAndMetric(iTotalRAM, iFreeRAM);
     }
 
@@ -1017,7 +1017,7 @@ void UIPerformanceMonitor::sltTimeout()
     }
 }
 
-void UIPerformanceMonitor::sltMachineStateChange(const QUuid &uId)
+void UIVMActivityMonitor::sltMachineStateChange(const QUuid &uId)
 {
     if (m_comMachine.isNull())
         return;
@@ -1032,7 +1032,7 @@ void UIPerformanceMonitor::sltMachineStateChange(const QUuid &uId)
     }
 }
 
-void UIPerformanceMonitor::sltExportMetricsToFile()
+void UIVMActivityMonitor::sltExportMetricsToFile()
 {
     QString strStartFileName = QString("%1/%2_%3").
         arg(QFileInfo(m_comMachine.GetSettingsFilePath()).absolutePath()).
@@ -1052,17 +1052,17 @@ void UIPerformanceMonitor::sltExportMetricsToFile()
     }
 }
 
-void UIPerformanceMonitor::sltCreateContextMenu(const QPoint &point)
+void UIVMActivityMonitor::sltCreateContextMenu(const QPoint &point)
 {
     QMenu menu;
     QAction *pExportAction =
         menu.addAction(QApplication::translate("UIVMInformationDialog", "Export"));
     pExportAction->setIcon(UIIconPool::iconSet(":/performance_monitor_export_16px.png"));
-    connect(pExportAction, &QAction::triggered, this, &UIPerformanceMonitor::sltExportMetricsToFile);
+    connect(pExportAction, &QAction::triggered, this, &UIVMActivityMonitor::sltExportMetricsToFile);
     menu.exec(mapToGlobal(point));
 }
 
-void UIPerformanceMonitor::sltGuestAdditionsStateChange()
+void UIVMActivityMonitor::sltGuestAdditionsStateChange()
 {
     bool fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
     if (m_fGuestAdditionsAvailable == fGuestAdditionsAvailable)
@@ -1071,17 +1071,17 @@ void UIPerformanceMonitor::sltGuestAdditionsStateChange()
     enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
 }
 
-void UIPerformanceMonitor::prepareMetrics()
+void UIVMActivityMonitor::prepareMetrics()
 {
-    m_performanceMonitor = uiCommon().virtualBox().GetPerformanceCollector();
-    if (m_performanceMonitor.isNull())
+    m_performanceCollector = uiCommon().virtualBox().GetPerformanceCollector();
+    if (m_performanceCollector.isNull())
         return;
 
     m_nameList << "Guest/RAM/Usage*";
     m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
-    m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, g_iPeriod, g_iMetricSetupCount);
+    m_performanceCollector.SetupMetrics(m_nameList, m_objectList, g_iPeriod, g_iMetricSetupCount);
     {
-        QVector<CPerformanceMetric> metrics = m_performanceMonitor.GetMetrics(m_nameList, m_objectList);
+        QVector<CPerformanceMetric> metrics = m_performanceCollector.GetMetrics(m_nameList, m_objectList);
         for (int i = 0; i < metrics.size(); ++i)
         {
             QString strName(metrics[i].GetMetricName());
@@ -1122,7 +1122,7 @@ void UIPerformanceMonitor::prepareMetrics()
     m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
 }
 
-void UIPerformanceMonitor::prepareToolBar()
+void UIVMActivityMonitor::prepareToolBar()
 {
     /* Create toolbar: */
     m_pToolBar = new QIToolBar(parentWidget());
@@ -1147,20 +1147,20 @@ void UIPerformanceMonitor::prepareToolBar()
     }
 }
 
-void UIPerformanceMonitor::prepareActions()
+void UIVMActivityMonitor::prepareActions()
 {
     QAction *pExportAction =
         m_pActionPool->action(UIActionIndex_M_Performance_S_Export);
     if (pExportAction)
-        connect(pExportAction, &QAction::triggered, this, &UIPerformanceMonitor::sltExportMetricsToFile);
+        connect(pExportAction, &QAction::triggered, this, &UIVMActivityMonitor::sltExportMetricsToFile);
 
     QAction *pToResourcesAction =
         m_pActionPool->action(UIActionIndex_M_Performance_S_ToResources);
     if (pToResourcesAction)
-        connect(pToResourcesAction, &QAction::triggered, this, &UIPerformanceMonitor::sigSwitchToResourcesPane);
+        connect(pToResourcesAction, &QAction::triggered, this, &UIVMActivityMonitor::sigSwitchToResourcesPane);
 }
 
-bool UIPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)
+bool UIVMActivityMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)
 {
     if (m_comGuest.isNull())
         return false;
@@ -1179,7 +1179,7 @@ bool UIPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)
     return false;
 }
 
-void UIPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnable)
+void UIVMActivityMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnable)
 {
     for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin();
          iterator != m_metrics.end(); ++iterator)
@@ -1196,7 +1196,7 @@ void UIPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnabl
     }
 }
 
-void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
+void UIVMActivityMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
 {
     UIMetric &CPUMetric = m_metrics[m_strCPUMetricName];
     CPUMetric.addData(0, iExecutingPercentage);
@@ -1219,7 +1219,7 @@ void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, 
         m_charts[m_strCPUMetricName]->update();
 }
 
-void UIPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM)
+void UIVMActivityMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM)
 {
     UIMetric &RAMMetric = m_metrics[m_strRAMMetricName];
     RAMMetric.setMaximum(iTotalRAM);
@@ -1236,7 +1236,7 @@ void UIPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 i
         m_charts[m_strRAMMetricName]->update();
 }
 
-void UIPerformanceMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal)
+void UIVMActivityMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal)
 {
     UIMetric &NetMetric = m_metrics[m_strNetworkMetricName];
 
@@ -1272,7 +1272,7 @@ void UIPerformanceMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, q
         m_charts[m_strNetworkMetricName]->update();
 }
 
-void UIPerformanceMonitor::resetCPUInfoLabel()
+void UIVMActivityMonitor::resetCPUInfoLabel()
 {
     if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
     {
@@ -1284,7 +1284,7 @@ void UIPerformanceMonitor::resetCPUInfoLabel()
     }
 }
 
-void UIPerformanceMonitor::resetRAMInfoLabel()
+void UIVMActivityMonitor::resetRAMInfoLabel()
 {
     if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
     {
@@ -1296,7 +1296,7 @@ void UIPerformanceMonitor::resetRAMInfoLabel()
     }
 }
 
-void UIPerformanceMonitor::resetNetworkInfoLabel()
+void UIVMActivityMonitor::resetNetworkInfoLabel()
 {
     if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
     {
@@ -1310,7 +1310,7 @@ void UIPerformanceMonitor::resetNetworkInfoLabel()
     }
 }
 
-void UIPerformanceMonitor::resetVMExitInfoLabel()
+void UIVMActivityMonitor::resetVMExitInfoLabel()
 {
     if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
     {
@@ -1324,7 +1324,7 @@ void UIPerformanceMonitor::resetVMExitInfoLabel()
     }
 }
 
-void UIPerformanceMonitor::resetDiskIOInfoLabel()
+void UIVMActivityMonitor::resetDiskIOInfoLabel()
 {
     if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
     {
@@ -1338,7 +1338,7 @@ void UIPerformanceMonitor::resetDiskIOInfoLabel()
     }
 }
 
-void UIPerformanceMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
+void UIVMActivityMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
 {
     UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
 
@@ -1373,7 +1373,7 @@ void UIPerformanceMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritt
         m_charts[m_strDiskIOMetricName]->update();
 }
 
-void UIPerformanceMonitor::updateVMExitMetric(quint64 uTotalVMExits)
+void UIVMActivityMonitor::updateVMExitMetric(quint64 uTotalVMExits)
 {
     if (uTotalVMExits <= 0)
         return;
@@ -1403,7 +1403,7 @@ void UIPerformanceMonitor::updateVMExitMetric(quint64 uTotalVMExits)
         m_charts[m_strVMExitMetricName]->update();
 }
 
-QString UIPerformanceMonitor::dataColorString(const QString &strChartName, int iDataIndex)
+QString UIVMActivityMonitor::dataColorString(const QString &strChartName, int iDataIndex)
 {
     if (!m_charts.contains(strChartName))
         return QColor(Qt::black).name(QColor::HexRgb);
@@ -1413,7 +1413,7 @@ QString UIPerformanceMonitor::dataColorString(const QString &strChartName, int i
     return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
 }
 
-void UIPerformanceMonitor::reset()
+void UIVMActivityMonitor::reset()
 {
     m_fGuestAdditionsAvailable = false;
     setEnabled(false);
@@ -1437,7 +1437,7 @@ void UIPerformanceMonitor::reset()
     update();
 }
 
-void UIPerformanceMonitor::start()
+void UIVMActivityMonitor::start()
 {
     if (m_comMachine.isNull() || m_comMachine.GetState() != KMachineState_Running)
         return;
@@ -1449,4 +1449,4 @@ void UIPerformanceMonitor::start()
 }
 
 
-#include "UIPerformanceMonitor.moc"
+#include "UIVMActivityMonitor.moc"

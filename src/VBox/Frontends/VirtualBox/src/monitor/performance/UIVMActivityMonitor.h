@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIPerformanceMonitor class declaration.
+ * VBox Qt GUI - UIVMActivityMonitor class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_monitor_performance_UIPerformanceMonitor_h
-#define FEQT_INCLUDED_SRC_monitor_performance_UIPerformanceMonitor_h
+#ifndef FEQT_INCLUDED_SRC_monitor_performance_UIVMActivityMonitor_h
+#define FEQT_INCLUDED_SRC_monitor_performance_UIVMActivityMonitor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -105,12 +105,12 @@ private:
     bool m_fIsInitialized;
 };
 
-/** UIPerformanceMonitor class displays some high level performance metric of the guest system.
+/** UIVMActivityMonitor class displays some high level performance metric of the guest system.
   * The values are read in certain periods and cached in the GUI side. Currently we draw some line charts
   * and pie charts (where applicable) alongside with some text. IPerformanceCollector and IMachineDebugger are
   * two sources of the performance metrics. Unfortunately these two have very distinct APIs resulting a bit too much
   * special casing etc.*/
-class  SHARED_LIBRARY_STUFF UIPerformanceMonitor : public QIWithRetranslateUI<QWidget>
+class  SHARED_LIBRARY_STUFF UIVMActivityMonitor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -122,9 +122,9 @@ public:
 
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference. */
-    UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine,
+    UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine,
                          UIActionPool *pActionPool,bool fShowToolbar = false);
-    ~UIPerformanceMonitor();
+    ~UIVMActivityMonitor();
     void setMachine(const CMachine &machine);
 
 #ifdef VBOX_WS_MAC
@@ -190,7 +190,7 @@ private:
     CSession m_comSession;
     CGuest m_comGuest;
 
-    CPerformanceCollector m_performanceMonitor;
+    CPerformanceCollector m_performanceCollector;
     CMachineDebugger      m_comMachineDebugger;
     /** Holds the instance of layout we create. */
     QVBoxLayout *m_pMainLayout;
@@ -252,4 +252,4 @@ private:
     UIActionPool *m_pActionPool;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_monitor_performance_UIPerformanceMonitor_h */
+#endif /* !FEQT_INCLUDED_SRC_monitor_performance_UIVMActivityMonitor_h */

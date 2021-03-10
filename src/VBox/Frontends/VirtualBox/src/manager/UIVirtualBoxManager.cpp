@@ -710,8 +710,7 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
         case UIToolType_Logs:
             sltCloseLogViewerWindow();
             break;
-        case UIToolType_Performance:
-            sltClosePerformanceMonitorWindow();
+        case UIToolType_VMActivity:
             break;
         default:
             break;
@@ -2049,13 +2048,6 @@ void UIVirtualBoxManager::sltCloseLogViewerWindow()
     }
 }
 
-void UIVirtualBoxManager::sltOpenPerformanceMonitorWindow()
-{
-}
-
-void UIVirtualBoxManager::sltClosePerformanceMonitorWindow()
-{
-}
 
 void UIVirtualBoxManager::sltPerformRefreshMachine()
 {
@@ -3131,7 +3123,7 @@ void UIVirtualBoxManager::updateActionsVisibility()
     actionPool()->action(UIActionIndex_M_Log)->setVisible(fLogViewerMenuShown);
     /* Determine whether Performance menu should be visible: */
     const bool fPerformanceMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
-                                       m_pWidget->currentMachineTool() == UIToolType_Performance;
+                                       m_pWidget->currentMachineTool() == UIToolType_VMActivity;
     actionPool()->action(UIActionIndex_M_Performance)->setVisible(fPerformanceMenuShown);
 
     /* Hide action shortcuts: */
@@ -3304,7 +3296,7 @@ void UIVirtualBoxManager::updateActionsAppearance()
                 actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_Logs)->setChecked(true);
                 break;
             }
-            case UIToolType_Performance:
+            case UIToolType_VMActivity:
             {
                 actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_Performance)->setChecked(true);
                 actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_Performance)->setChecked(true);

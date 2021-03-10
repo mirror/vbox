@@ -37,7 +37,7 @@
 #include "UIExtraDataDefs.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
-#include "UIPerformanceMonitor.h"
+#include "UIVMActivityMonitor.h"
 #include "UIResourceMonitor.h"
 #include "UIMessageCenter.h"
 #include "QIToolBar.h"
@@ -326,7 +326,7 @@ private:
     QVector<QString> m_nameList;
     QVector<CUnknown> m_objectList;
     /** @} */
-    CPerformanceCollector m_performanceMonitor;
+    CPerformanceCollector m_performanceCollector;
     QMap<int, bool> m_columnVisible;
     /** If true the table data and corresponding view is updated. Possibly set by host widget to true only
      *  when the widget is visible in the main UI. */
@@ -1134,15 +1134,15 @@ void UIResourceMonitorModel::setupPerformanceCollector()
     /* Initialize and configure CPerformanceCollector: */
     const ULONG iPeriod = 1;
     const int iMetricSetupCount = 1;
-    if (m_performanceMonitor.isNull())
-        m_performanceMonitor = uiCommon().virtualBox().GetPerformanceCollector();
+    if (m_performanceCollector.isNull())
+        m_performanceCollector = uiCommon().virtualBox().GetPerformanceCollector();
     for (int i = 0; i < m_itemList.size(); ++i)
         m_nameList << "Guest/RAM/Usage*";
     /* This is for the host: */
     m_nameList << "CPU*";
     m_nameList << "FS*";
     m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
-    m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
+    m_performanceCollector.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
 }
 
 void UIResourceMonitorModel::queryPerformanceCollector()
@@ -1155,7 +1155,7 @@ void UIResourceMonitorModel::queryPerformanceCollector()
     QVector<ULONG>  aReturnDataIndices;
     QVector<ULONG>  aReturnDataLengths;
 
-    QVector<LONG> returnData = m_performanceMonitor.QueryMetricsData(m_nameList,
+    QVector<LONG> returnData = m_performanceCollector.QueryMetricsData(m_nameList,
                                                                      m_objectList,
                                                                      aReturnNames,
                                                                      aReturnObjects,
@@ -1272,7 +1272,7 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     , m_pModel(0)
     , m_pColumnVisibilityToggleMenu(0)
     , m_pHostStatsWidget(0)
-    , m_pShowPerformanceMonitorAction(0)
+    , m_pVMActivityMonitorAction(0)
     , m_fIsCurrentTool(true)
     , m_iSortIndicatorWidth(0)
 {
@@ -1333,8 +1333,8 @@ void UIResourceMonitorWidget::retranslateUi()
 
 void UIResourceMonitorWidget::showEvent(QShowEvent *pEvent)
 {
-    if (m_pShowPerformanceMonitorAction && m_pTableView)
-        m_pShowPerformanceMonitorAction->setEnabled(m_pTableView->hasSelection());
+    if (m_pVMActivityMonitorAction && m_pTableView)
+        m_pVMActivityMonitorAction->setEnabled(m_pTableView->hasSelection());
 
     QIWithRetranslateUI<QWidget>::showEvent(pEvent);
 }
@@ -1437,11 +1437,11 @@ void UIResourceMonitorWidget::updateColumnsMenu()
 void UIResourceMonitorWidget::prepareActions()
 {
     updateColumnsMenu();
-    m_pShowPerformanceMonitorAction =
+    m_pVMActivityMonitorAction =
         m_pActionPool->action(UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance);
 
-    if (m_pShowPerformanceMonitorAction)
-        connect(m_pShowPerformanceMonitorAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowPerformanceMonitor);
+    if (m_pVMActivityMonitorAction)
+        connect(m_pVMActivityMonitorAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowVMActivityMonitor);
 }
 
 void UIResourceMonitorWidget::prepareToolBar()
@@ -1528,8 +1528,8 @@ void UIResourceMonitorWidget::sltHandleTableContextMenuRequest(const QPoint &pos
         return;
 
     QMenu menu;
-    if (m_pShowPerformanceMonitorAction)
-        menu.addAction(m_pShowPerformanceMonitorAction);
+    if (m_pVMActivityMonitorAction)
+        menu.addAction(m_pVMActivityMonitorAction);
 
     menu.exec(m_pTableView->mapToGlobal(pos));
 }
@@ -1537,11 +1537,11 @@ void UIResourceMonitorWidget::sltHandleTableContextMenuRequest(const QPoint &pos
 void UIResourceMonitorWidget::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
-    if (m_pShowPerformanceMonitorAction)
-        m_pShowPerformanceMonitorAction->setEnabled(!selected.isEmpty());
+    if (m_pVMActivityMonitorAction)
+        m_pVMActivityMonitorAction->setEnabled(!selected.isEmpty());
 }
 
-void UIResourceMonitorWidget::sltHandleShowPerformanceMonitor()
+void UIResourceMonitorWidget::sltHandleShowVMActivityMonitor()
 {
     if (!m_pTableView || !m_pModel)
         return;

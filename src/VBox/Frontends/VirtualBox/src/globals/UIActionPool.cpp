@@ -2218,7 +2218,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("PerformanceMonitorMenu");
+        return QString("VMActivityMonitorMenu");
     }
 
     /** Handles translation event. */
@@ -2588,7 +2588,7 @@ void UIActionPool::preparePool()
     m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
     m_menuUpdateHandlers[UIActionIndex_M_LogWindow].ptf = &UIActionPool::updateMenuLogViewerWindow;
     m_menuUpdateHandlers[UIActionIndex_M_Log].ptf = &UIActionPool::updateMenuLogViewer;
-    m_menuUpdateHandlers[UIActionIndex_M_Performance].ptf = &UIActionPool::updateMenuPerformanceMonitor;
+    m_menuUpdateHandlers[UIActionIndex_M_Performance].ptf = &UIActionPool::updateMenuVMActivityMonitor;
     m_menuUpdateHandlers[UIActionIndex_M_FileManager].ptf = &UIActionPool::updateMenuFileManager;
 
     /* Invalidate all known menus: */
@@ -2964,7 +2964,7 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Refresh)) || fSeparator;
 }
 
-void UIActionPool::updateMenuPerformanceMonitor()
+void UIActionPool::updateMenuVMActivityMonitor()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndex_M_Performance)->menu();
