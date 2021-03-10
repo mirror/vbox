@@ -302,8 +302,6 @@ void                hdaR3StreamMarkStopped(PHDASTREAM pStreamShared);
 void                hdaR3StreamSetPositionAdd(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t uToAdd);
 uint64_t            hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                                          PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3);
-bool                hdaR3StreamTransferIsScheduled(PHDASTREAM pStreamShared, uint64_t tsNow);
-uint64_t            hdaR3StreamTransferGetNext(PHDASTREAM pStreamShared);
 void                hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                                       PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fInTimer);
 PHDASTREAM          hdaR3StreamR3ToShared(PHDASTREAMR3 pStreamCC);
