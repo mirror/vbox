@@ -1238,7 +1238,7 @@ static PIOTLBE iommuAmdIotlbLookup(PIOMMU pThis, PIOMMUR3 pThisR3, uint64_t idDo
  * Adds an IOTLB entry to the cache.
  *
  * @param   pThis           The shared IOMMU device state.
- * @param   pThisR3         The ring-3 IOMMU device state.
+ * @param   pThis           The ring-3 IOMMU device state.
  * @param   idDomain        The domain ID.
  * @param   uIova           The I/O virtual address.
  * @param   pPageLookup     The I/O page lookup result of the access.
