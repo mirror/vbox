@@ -2417,7 +2417,7 @@ static int hdaR3MixerAddDrvStreams(PHDASTATER3 pThisCC, PAUDMIXSINK pMixSink, PP
 }
 
 /**
- * @interface_method_impl{HDACODEC,pfnCbMixerAddStream}
+ * @interface_method_impl{HDACODECR3,pfnCbMixerAddStream}
  */
 static DECLCALLBACK(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg)
 {
@@ -2441,7 +2441,7 @@ static DECLCALLBACK(int) hdaR3MixerAddStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCT
 }
 
 /**
- * @interface_method_impl{HDACODEC,pfnCbMixerRemoveStream}
+ * @interface_method_impl{HDACODECR3,pfnCbMixerRemoveStream}
  */
 static DECLCALLBACK(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl)
 {
@@ -2512,7 +2512,7 @@ static DECLCALLBACK(int) hdaR3MixerRemoveStream(PPDMDEVINS pDevIns, PDMAUDIOMIXE
 }
 
 /**
- * @interface_method_impl{HDACODEC,pfnCbMixerControl}
+ * @interface_method_impl{HDACODECR3,pfnCbMixerControl}
  *
  * @note Is also called directly by the DevHDA code.
  */
@@ -2615,7 +2615,7 @@ static DECLCALLBACK(int) hdaR3MixerControl(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL 
 }
 
 /**
- * @interface_method_impl{HDACODEC,pfnCbMixerSetVolume}
+ * @interface_method_impl{HDACODECR3,pfnCbMixerSetVolume}
  */
 static DECLCALLBACK(int) hdaR3MixerSetVolume(PPDMDEVINS pDevIns, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol)
 {
