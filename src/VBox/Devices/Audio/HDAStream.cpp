@@ -2166,10 +2166,9 @@ static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStrea
     cbToReadFromStream = PDMAudioPropsFloorBytesToFrame(&pStreamR3->State.Mapping.PCMProps, cbToReadFromStream);
 
     Assert(nsNow >= pStreamShared->State.tsLastReadNs);
-    Log3Func(("[SD%RU8] msDeltaLastRead=%RI64\n",
-              pStreamShared->u8SD, (nsNow - pStreamShared->State.tsLastReadNs) / RT_NS_1MS));
-    Log3Func(("[SD%RU8] cbSinkWritable=%RU32, cbStreamReadable=%RU32 -> cbToReadFromStream=%RU32\n",
-              pStreamShared->u8SD, cbSinkWritable, cbStreamReadable, cbToReadFromStream));
+    Log3Func(("[SD%RU8] nsDeltaLastRead=%RI64 cbSinkWritable=%RU32 cbStreamReadable=%RU32 -> cbToReadFromStream=%RU32\n",
+              pStreamShared->u8SD, nsNow - pStreamShared->State.tsLastReadNs, cbSinkWritable, cbStreamReadable, cbToReadFromStream));
+    RT_NOREF(pStreamShared, nsNow);
 
     if (cbToReadFromStream)
     {
@@ -2178,8 +2177,6 @@ static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStrea
         AssertRC(rc2);
     }
 
-    /* When running synchronously, update the associated sink here.
-     * Otherwise this will be done in the async I/O thread. */
     int rc2 = AudioMixerSinkUpdate(pSink);
     AssertRC(rc2);
 }
