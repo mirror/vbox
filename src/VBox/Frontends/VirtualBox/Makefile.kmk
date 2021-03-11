@@ -626,7 +626,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/manager/tools/UIToolsItem.h \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumManager.h \
-	src/monitor/resource/UIResourceMonitor.h \
+	src/monitor/resource/UIVMActivityOverviewWidget.h \
 	src/networkmanager/UIDetailsWidgetHostNetwork.h \
 	src/networkmanager/UIDetailsWidgetNATNetwork.h \
 	src/networkmanager/UINetworkManager.h \
@@ -954,7 +954,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/manager/UIVirtualMachineItemCloud.cpp \
 	src/manager/UIWelcomePane.cpp \
 	src/manager/chooser/UIChooserAbstractModel.cpp \
-	src/monitor/resource/UIResourceMonitor.cpp \
+	src/monitor/resource/UIVMActivityOverviewWidget.cpp \
 	src/networkmanager/UINetworkManager.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \
@@ -1116,7 +1116,7 @@ VirtualBox_SOURCES = \
 	src/manager/tools/UIToolsItem.cpp \
 	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumManager.cpp \
-	src/monitor/resource/UIResourceMonitor.cpp \
+	src/monitor/resource/UIVMActivityOverviewWidget.cpp \
 	src/networkmanager/UIDetailsWidgetHostNetwork.cpp \
 	src/networkmanager/UIDetailsWidgetNATNetwork.cpp \
 	src/networkmanager/UINetworkManager.cpp \

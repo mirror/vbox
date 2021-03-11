@@ -30,7 +30,7 @@
 #include "UIMediumManager.h"
 #include "UINetworkManager.h"
 #include "UIToolPaneGlobal.h"
-#include "UIResourceMonitor.h"
+#include "UIVMActivityOverviewWidget.h"
 #include "UIWelcomePane.h"
 
 /* Other VBox includes: */
