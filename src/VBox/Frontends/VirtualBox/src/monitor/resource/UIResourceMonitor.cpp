@@ -66,7 +66,7 @@ struct ResourceColumn
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewDoughnutChart definition.                                                                           *
+*   Class UIVMActivityOverviewDoughnutChart definition.                                                                          *
 *********************************************************************************************************************************/
 
 class UIVMActivityOverviewDoughnutChart : public QWidget
@@ -102,7 +102,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewHostStats definition.                                                                               *
+*   Class UIVMActivityOverviewHostStats definition.                                                                              *
 *********************************************************************************************************************************/
 
 class UIVMActivityOverviewHostStats
@@ -124,7 +124,7 @@ public:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewHostStatsWidget definition.                                                                         *
+*   Class UIVMActivityOverviewHostStatsWidget definition.                                                                        *
 *********************************************************************************************************************************/
 
 class UIVMActivityOverviewHostStatsWidget : public QIWithRetranslateUI<QWidget>
@@ -171,7 +171,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewTableView definition.                                                                               *
+*   Class UIVMActivityOverviewTableView definition.                                                                              *
 *********************************************************************************************************************************/
 /** A QTableView extension so manage the column width a bit better than what Qt offers out of box. */
 class UIVMActivityOverviewTableView : public QTableView
@@ -262,7 +262,7 @@ Q_DECLARE_METATYPE(UIActivityOverviewItem);
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewProxyModel definition.                                                                              *
+*   Class UIVMActivityOverviewProxyModel definition.                                                                             *
 *********************************************************************************************************************************/
 class UIActivityOverviewProxyModel : public QSortFilterProxyModel
 {
@@ -277,7 +277,7 @@ public:
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverviewModel definition.                                                                                     *
+*   Class UIActivityOverviewModel definition.                                                                                    *
 *********************************************************************************************************************************/
 class UIActivityOverviewModel : public QAbstractTableModel
 {
@@ -338,7 +338,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   UIVMActivityOverviewDelegate definition.                                                                                      *
+*   UIVMActivityOverviewDelegate definition.                                                                                     *
 *********************************************************************************************************************************/
 /** A QItemDelegate child class to disable dashed lines drawn around selected cells in QTableViews */
 class UIVMActivityOverviewDelegate : public QItemDelegate
@@ -353,7 +353,7 @@ protected:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewDoughnutChart implementation.                                                                       *
+*   Class UIVMActivityOverviewDoughnutChart implementation.                                                                      *
 *********************************************************************************************************************************/
 UIVMActivityOverviewDoughnutChart::UIVMActivityOverviewDoughnutChart(QWidget *pParent /* = 0 */)
     :QWidget(pParent)
@@ -412,7 +412,7 @@ void UIVMActivityOverviewDoughnutChart::paintEvent(QPaintEvent *pEvent)
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewHostStatsWidget implementation.                                                                     *
+*   Class UIVMActivityOverviewHostStatsWidget implementation.                                                                    *
 *********************************************************************************************************************************/
 
 UIVMActivityOverviewHostStatsWidget::UIVMActivityOverviewHostStatsWidget(QWidget *pParent /* = 0 */)
@@ -644,7 +644,7 @@ void UIVMActivityOverviewHostStatsWidget::updateLabels()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewTableView implementation.                                                                           *
+*   Class UIVMActivityOverviewTableView implementation.                                                                          *
 *********************************************************************************************************************************/
 
 UIVMActivityOverviewTableView::UIVMActivityOverviewTableView(QWidget *pParent /* = 0 */)
@@ -744,8 +744,8 @@ void UIVMActivityOverviewTableView::resizeHeaders()
 
 
 /*********************************************************************************************************************************
- *   Class UIVMActivityOverviewItem implementation.                                                                           *
- *********************************************************************************************************************************/
+*   Class UIVMActivityOverviewItem implementation.                                                                               *
+*********************************************************************************************************************************/
 UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName)
     : m_VMuid(uid)
     , m_strVMName(strVMName)
@@ -840,7 +840,7 @@ bool UIActivityOverviewItem::isWithGuestAdditions()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewHostStats implementation.                                                                           *
+*   Class UIVMActivityOverviewHostStats implementation.                                                                          *
 *********************************************************************************************************************************/
 
 UIVMActivityOverviewHostStats::UIVMActivityOverviewHostStats()
@@ -856,7 +856,7 @@ UIVMActivityOverviewHostStats::UIVMActivityOverviewHostStats()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewProxyModel implementation.                                                                          *
+*   Class UIVMActivityOverviewProxyModel implementation.                                                                         *
 *********************************************************************************************************************************/
 UIActivityOverviewProxyModel::UIActivityOverviewProxyModel(QObject *parent /* = 0 */)
     :QSortFilterProxyModel(parent)
@@ -872,7 +872,7 @@ void UIActivityOverviewProxyModel::dataUpdate()
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverviewModel implementation.                                                                                 *
+*   Class UIActivityOverviewModel implementation.                                                                                *
 *********************************************************************************************************************************/
 UIActivityOverviewModel::UIActivityOverviewModel(QObject *parent /*= 0*/)
     :QAbstractTableModel(parent)
@@ -1257,7 +1257,7 @@ bool UIActivityOverviewModel::columnVisible(int iColumnId) const
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewWidget implementation.                                                                                *
+*   Class UIVMActivityOverviewWidget implementation.                                                                             *
 *********************************************************************************************************************************/
 
 UIVMActivityOverviewWidget::UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
@@ -1595,7 +1595,7 @@ bool UIVMActivityOverviewWidget::columnVisible(int iColumnId) const
 
 
 /*********************************************************************************************************************************
-*   Class UIVMActivityOverviewFactory implementation.                                                                               *
+*   Class UIVMActivityOverviewFactory implementation.                                                                            *
 *********************************************************************************************************************************/
 
 UIVMActivityOverviewFactory::UIVMActivityOverviewFactory(UIActionPool *pActionPool /* = 0 */)
@@ -1610,7 +1610,7 @@ void UIVMActivityOverviewFactory::create(QIManagerDialog *&pDialog, QWidget *pCe
 
 
 /*********************************************************************************************************************************
-*   Class UIActivityOverview implementation.                                                                                      *
+*   Class UIActivityOverview implementation.                                                                                     *
 *********************************************************************************************************************************/
 
 UIVMActivityOverviewDialog::UIVMActivityOverviewDialog(QWidget *pCenterWidget, UIActionPool *pActionPool)
