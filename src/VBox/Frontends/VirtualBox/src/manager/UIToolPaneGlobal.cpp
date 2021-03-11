@@ -204,7 +204,7 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
             }
             case UIToolType_VMActivityOverview:
             {
-                /* Create VM Resource Monitor: */
+                /* Create VM Activity Overview Widget: */
                 m_pPaneVMActivityOverview = new UIVMActivityOverviewWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
                 AssertPtrReturnVoid(m_pPaneVMActivityOverview);
                 {
