@@ -1978,7 +1978,7 @@ static int tmR3TimerDestroy(PVMCC pVM, PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
         const PTMTIMER pPrev = tmTimerGetPrev(pQueue, pTimer);
         const PTMTIMER pNext = tmTimerGetNext(pQueue, pTimer);
         if (pPrev)
-            tmTimerSetPrev(pQueue, pPrev, pNext);
+            tmTimerSetNext(pQueue, pPrev, pNext);
         else
         {
             tmTimerQueueSetHead(pQueue, pQueue, pNext);
