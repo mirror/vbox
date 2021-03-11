@@ -27,6 +27,9 @@
 #include <VBox/com/VirtualBox.h>
 #endif
 
+unsigned int getMaxNics(const ComPtr<IVirtualBox> &pVirtualBox,
+                        const ComPtr<IMachine> &pMachine);
+
 void verifyHostNetworkInterfaceName(const ComPtr<IVirtualBox> &pVirtualBox,
                                     const char *pszTargetName,
                                     HostNetworkInterfaceType_T enmTargetType);

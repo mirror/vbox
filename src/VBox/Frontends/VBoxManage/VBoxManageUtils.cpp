@@ -22,9 +22,31 @@
 #include <iprt/string.h>
 
 #include <VBox/com/array.h>
+#include <VBox/com/errorprint.h>
 #include <VBox/com/string.h>
 
 using namespace com;
+
+
+
+unsigned int getMaxNics(const ComPtr<IVirtualBox> &pVirtualBox,
+                        const ComPtr<IMachine> &pMachine)
+{
+    ComPtr<ISystemProperties> info;
+    ChipsetType_T aChipset;
+    ULONG NetworkAdapterCount = 0;
+    HRESULT rc;
+
+    do {
+        CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
+        CHECK_ERROR_BREAK(pMachine, COMGETTER(ChipsetType)(&aChipset));
+        CHECK_ERROR_BREAK(info, GetMaxNetworkAdapters(aChipset, &NetworkAdapterCount));
+
+        return (unsigned int)NetworkAdapterCount;
+    } while (0);
+
+    return 0;
+}
 
 
 /**

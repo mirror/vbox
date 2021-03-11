@@ -64,24 +64,6 @@ static unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name)
     return 0;
 }
 
-unsigned int getMaxNics(IVirtualBox* vbox, IMachine* mach)
-{
-    ComPtr<ISystemProperties> info;
-    ChipsetType_T aChipset;
-    ULONG NetworkAdapterCount = 0;
-    HRESULT rc;
-
-    do {
-        CHECK_ERROR_BREAK(vbox, COMGETTER(SystemProperties)(info.asOutParam()));
-        CHECK_ERROR_BREAK(mach, COMGETTER(ChipsetType)(&aChipset));
-        CHECK_ERROR_BREAK(info, GetMaxNetworkAdapters(aChipset, &NetworkAdapterCount));
-
-        return (unsigned int)NetworkAdapterCount;
-    } while (0);
-
-    return 0;
-}
-
 #define KBDCHARDEF_MOD_NONE  0x00
 #define KBDCHARDEF_MOD_SHIFT 0x01
 

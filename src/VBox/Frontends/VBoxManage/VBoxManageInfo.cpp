@@ -43,6 +43,8 @@
 #include <iprt/ctype.h>
 
 #include "VBoxManage.h"
+#include "VBoxManageUtils.h"
+
 using namespace com;
 
 

@@ -220,9 +220,6 @@ RTEXITCODE handleInternalCommands(HandlerArg *a);
 
 /* VBoxManageControlVM.cpp */
 RTEXITCODE handleControlVM(HandlerArg *a);
-#ifndef VBOX_ONLY_DOCS
-unsigned int getMaxNics(IVirtualBox* vbox, IMachine* mach);
-#endif
 
 /* VBoxManageModifyVM.cpp */
 #ifndef VBOX_ONLY_DOCS
