@@ -32,20 +32,20 @@ using namespace com;
 unsigned int getMaxNics(const ComPtr<IVirtualBox> &pVirtualBox,
                         const ComPtr<IMachine> &pMachine)
 {
-    ComPtr<ISystemProperties> info;
-    ChipsetType_T aChipset;
     ULONG NetworkAdapterCount = 0;
-    HRESULT rc;
-
     do {
-        CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
-        CHECK_ERROR_BREAK(pMachine, COMGETTER(ChipsetType)(&aChipset));
-        CHECK_ERROR_BREAK(info, GetMaxNetworkAdapters(aChipset, &NetworkAdapterCount));
+        HRESULT rc;
 
-        return (unsigned int)NetworkAdapterCount;
+        ComPtr<ISystemProperties> info;
+        CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
+
+        ChipsetType_T aChipset;
+        CHECK_ERROR_BREAK(pMachine, COMGETTER(ChipsetType)(&aChipset));
+
+        CHECK_ERROR_BREAK(info, GetMaxNetworkAdapters(aChipset, &NetworkAdapterCount));
     } while (0);
 
-    return 0;
+    return (unsigned int)NetworkAdapterCount;
 }
 
 
