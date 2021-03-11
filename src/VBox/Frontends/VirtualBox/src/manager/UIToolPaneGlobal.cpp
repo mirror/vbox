@@ -205,7 +205,7 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
             case UIToolType_VMActivityOverview:
             {
                 /* Create VM Resource Monitor: */
-                m_pPaneResourceMonitor = new UIResourceMonitorWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
+                m_pPaneResourceMonitor = new UIVMActivityOverviewWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
                 AssertPtrReturnVoid(m_pPaneResourceMonitor);
                 {
 #ifndef VBOX_WS_MAC
@@ -215,7 +215,7 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
 
                     /* Configure pane: */
                     m_pPaneResourceMonitor->setProperty("ToolType", QVariant::fromValue(UIToolType_VMActivityOverview));
-                    connect(m_pPaneResourceMonitor, &UIResourceMonitorWidget::sigSwitchToMachinePerformancePane,
+                    connect(m_pPaneResourceMonitor, &UIVMActivityOverviewWidget::sigSwitchToMachinePerformancePane,
                             this, &UIToolPaneGlobal::sigSwitchToMachinePerformancePane);
 
                     /* Add into layout: */

@@ -4643,12 +4643,12 @@ QStringList UIExtraDataManager::helpBrowserBookmarks()
     return extraDataStringList(GUI_HelpBrowserBookmarks);
 }
 
-void UIExtraDataManager::setVMResourceMonitorHiddenColumnList(const QStringList &hiddenColumnList)
+void UIExtraDataManager::setVMActivityOverviewHiddenColumnList(const QStringList &hiddenColumnList)
 {
     setExtraDataStringList(GUI_VMResourceManager_HiddenColumns, hiddenColumnList);
 }
 
-QStringList UIExtraDataManager::VMResourceMonitorHiddenColumnList()
+QStringList UIExtraDataManager::VMActivityOverviewHiddenColumnList()
 {
     return extraDataStringList(GUI_VMResourceManager_HiddenColumns);
 }

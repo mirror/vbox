@@ -44,7 +44,7 @@ enum UIActionIndexMN
     UIActionIndexMN_M_File_M_Tools_T_VirtualMediaManager,
     UIActionIndexMN_M_File_M_Tools_T_NetworkManager,
     UIActionIndexMN_M_File_M_Tools_T_CloudProfileManager,
-    UIActionIndexMN_M_File_M_Tools_T_VMResourceMonitor,
+    UIActionIndexMN_M_File_M_Tools_T_VMActivityOverview,
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     UIActionIndexMN_M_File_S_ShowExtraDataManager,
 #endif
@@ -190,9 +190,9 @@ enum UIActionIndexMN
     UIActionIndexMN_M_CloudConsole_T_Details,
 
     /* VM Resource Monitor actions: */
-    UIActionIndexMN_M_VMResourceMonitor,
-    UIActionIndexMN_M_VMResourceMonitor_M_Columns,
-    UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance,
+    UIActionIndexMN_M_VMActivityOverview,
+    UIActionIndexMN_M_VMActivityOverview_M_Columns,
+    UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachinePerformance,
 
     /* Maximum index: */
     UIActionIndexMN_Max
@@ -298,9 +298,9 @@ private:
     void updateMenuCloudConsoleWrapper(UIMenu *pMenu);
 
     /** Updates 'VM Resource Monitor' menu. */
-    void updateMenuVMResourceMonitor();
+    void updateMenuVMActivityOverview();
     /** Updates 'VM Resource Monitor' @a pMenu. */
-    void updateMenuVMResourceMonitorWrapper(UIMenu *pMenu);
+    void updateMenuVMActivityOverviewWrapper(UIMenu *pMenu);
 
     /** Updates 'Snapshot' menu. */
     void updateMenuSnapshot();

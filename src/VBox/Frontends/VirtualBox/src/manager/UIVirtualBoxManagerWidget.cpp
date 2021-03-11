@@ -842,10 +842,10 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 }
                 case UIToolType_VMActivityOverview:
                 {
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_VMResourceMonitor_M_Columns));
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_VMActivityOverview_M_Columns));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachinePerformance));
                     QToolButton *pButton =
-                        qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_VMResourceMonitor_M_Columns)));
+                        qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_VMActivityOverview_M_Columns)));
                     if (pButton)
                     {
                         pButton->setPopupMode(QToolButton::InstantPopup);

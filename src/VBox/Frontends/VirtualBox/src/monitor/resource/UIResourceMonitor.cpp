@@ -66,17 +66,17 @@ struct ResourceColumn
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorDoughnutChart definition.                                                                           *
+*   Class UIVMActivityOverviewDoughnutChart definition.                                                                           *
 *********************************************************************************************************************************/
 
-class UIVMResourceMonitorDoughnutChart : public QWidget
+class UIVMActivityOverviewDoughnutChart : public QWidget
 {
 
     Q_OBJECT;
 
 public:
 
-    UIVMResourceMonitorDoughnutChart(QWidget *pParent = 0);
+    UIVMActivityOverviewDoughnutChart(QWidget *pParent = 0);
     void updateData(quint64 iData0, quint64 iData1);
     void setChartColors(const QColor &color0, const QColor &color1);
     void setChartCenterString(const QString &strCenter);
@@ -102,15 +102,15 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorHostStats definition.                                                                               *
+*   Class UIVMActivityOverviewHostStats definition.                                                                               *
 *********************************************************************************************************************************/
 
-class UIVMResourceMonitorHostStats
+class UIVMActivityOverviewHostStats
 {
 
 public:
 
-    UIVMResourceMonitorHostStats();
+    UIVMActivityOverviewHostStats();
     quint64 m_iCPUUserLoad;
     quint64 m_iCPUKernelLoad;
     quint64 m_iCPUFreq;
@@ -124,18 +124,18 @@ public:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorHostStatsWidget definition.                                                                         *
+*   Class UIVMActivityOverviewHostStatsWidget definition.                                                                         *
 *********************************************************************************************************************************/
 
-class UIVMResourceMonitorHostStatsWidget : public QIWithRetranslateUI<QWidget>
+class UIVMActivityOverviewHostStatsWidget : public QIWithRetranslateUI<QWidget>
 {
 
     Q_OBJECT;
 
 public:
 
-    UIVMResourceMonitorHostStatsWidget(QWidget *pParent = 0);
-    void setHostStats(const UIVMResourceMonitorHostStats &hostStats);
+    UIVMActivityOverviewHostStatsWidget(QWidget *pParent = 0);
+    void setHostStats(const UIVMActivityOverviewHostStats &hostStats);
 
 protected:
 
@@ -147,9 +147,9 @@ private:
     void addVerticalLine(QHBoxLayout *pLayout);
     void updateLabels();
 
-    UIVMResourceMonitorDoughnutChart   *m_pHostCPUChart;
-    UIVMResourceMonitorDoughnutChart   *m_pHostRAMChart;
-    UIVMResourceMonitorDoughnutChart   *m_pHostFSChart;
+    UIVMActivityOverviewDoughnutChart   *m_pHostCPUChart;
+    UIVMActivityOverviewDoughnutChart   *m_pHostRAMChart;
+    UIVMActivityOverviewDoughnutChart   *m_pHostFSChart;
     QLabel                             *m_pCPUTitleLabel;
     QLabel                             *m_pCPUUserLabel;
     QLabel                             *m_pCPUKernelLabel;
@@ -166,15 +166,15 @@ private:
     QColor                              m_CPUKernelColor;
     QColor                              m_RAMFreeColor;
     QColor                              m_RAMUsedColor;
-    UIVMResourceMonitorHostStats        m_hostStats;
+    UIVMActivityOverviewHostStats        m_hostStats;
 };
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorTableView definition.                                                                               *
+*   Class UIVMActivityOverviewTableView definition.                                                                               *
 *********************************************************************************************************************************/
 /** A QTableView extension so manage the column width a bit better than what Qt offers out of box. */
-class UIVMResourceMonitorTableView : public QTableView
+class UIVMActivityOverviewTableView : public QTableView
 {
     Q_OBJECT;
 
@@ -184,7 +184,7 @@ signals:
 
 public:
 
-    UIVMResourceMonitorTableView(QWidget *pParent = 0);
+    UIVMActivityOverviewTableView(QWidget *pParent = 0);
     void setMinimumColumnWidths(const QMap<int, int>& widths);
     void updateColumVisibility();
     int selectedItemIndex() const;
@@ -208,19 +208,19 @@ private:
     QMap<int, int> m_minimumColumnWidths;
 };
 
-/** Each instance of UIVMResourceMonitorItem corresponds to a running vm whose stats are displayed.
+/** Each instance of UIVMActivityOverviewItem corresponds to a running vm whose stats are displayed.
   * they are owned my the model. */
 /*********************************************************************************************************************************
- *   Class UIVMResourceMonitorItem definition.                                                                           *
+ *   Class UIVMActivityOverviewItem definition.                                                                           *
  *********************************************************************************************************************************/
-class UIResourceMonitorItem
+class UIActivityOverviewItem
 {
 public:
-    UIResourceMonitorItem(const QUuid &uid, const QString &strVMName);
-    UIResourceMonitorItem(const QUuid &uid);
-    UIResourceMonitorItem();
-    ~UIResourceMonitorItem();
-    bool operator==(const UIResourceMonitorItem& other) const;
+    UIActivityOverviewItem(const QUuid &uid, const QString &strVMName);
+    UIActivityOverviewItem(const QUuid &uid);
+    UIActivityOverviewItem();
+    ~UIActivityOverviewItem();
+    bool operator==(const UIActivityOverviewItem& other) const;
     bool isWithGuestAdditions();
 
     QUuid    m_VMuid;
@@ -258,39 +258,39 @@ private:
     void setupPerformanceCollector();
 };
 
-Q_DECLARE_METATYPE(UIResourceMonitorItem);
+Q_DECLARE_METATYPE(UIActivityOverviewItem);
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorProxyModel definition.                                                                              *
+*   Class UIVMActivityOverviewProxyModel definition.                                                                              *
 *********************************************************************************************************************************/
-class UIResourceMonitorProxyModel : public QSortFilterProxyModel
+class UIActivityOverviewProxyModel : public QSortFilterProxyModel
 {
 
     Q_OBJECT;
 
 public:
 
-    UIResourceMonitorProxyModel(QObject *parent = 0);
+    UIActivityOverviewProxyModel(QObject *parent = 0);
     void dataUpdate();
 };
 
 
 /*********************************************************************************************************************************
-*   Class UIResourceMonitorModel definition.                                                                                     *
+*   Class UIActivityOverviewModel definition.                                                                                     *
 *********************************************************************************************************************************/
-class UIResourceMonitorModel : public QAbstractTableModel
+class UIActivityOverviewModel : public QAbstractTableModel
 {
     Q_OBJECT;
 
 signals:
 
     void sigDataUpdate();
-    void sigHostStatsUpdate(const UIVMResourceMonitorHostStats &stats);
+    void sigHostStatsUpdate(const UIVMActivityOverviewHostStats &stats);
 
 public:
 
-    UIResourceMonitorModel(QObject *parent = 0);
+    UIActivityOverviewModel(QObject *parent = 0);
     int      rowCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     int      columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     QVariant data(const QModelIndex &index, int role) const /* override */;
@@ -318,7 +318,7 @@ private:
     void removeItem(const QUuid& uMachineId);
     void getHostRAMStats();
 
-    QVector<UIResourceMonitorItem> m_itemList;
+    QVector<UIActivityOverviewItem> m_itemList;
     QMap<int, QString> m_columnTitles;
     QTimer *m_pTimer;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
@@ -331,17 +331,17 @@ private:
     /** If true the table data and corresponding view is updated. Possibly set by host widget to true only
      *  when the widget is visible in the main UI. */
     bool m_fShouldUpdate;
-    UIVMResourceMonitorHostStats m_hostStats;
-    /** Maximum length of string length of data displayed in column. Updated in UIResourceMonitorModel::data(..). */
+    UIVMActivityOverviewHostStats m_hostStats;
+    /** Maximum length of string length of data displayed in column. Updated in UIActivityOverviewModel::data(..). */
     mutable QMap<int, int> m_columnDataMaxLength;
 };
 
 
 /*********************************************************************************************************************************
-*   UIVMResourceMonitorDelegate definition.                                                                                      *
+*   UIVMActivityOverviewDelegate definition.                                                                                      *
 *********************************************************************************************************************************/
 /** A QItemDelegate child class to disable dashed lines drawn around selected cells in QTableViews */
-class UIVMResourceMonitorDelegate : public QItemDelegate
+class UIVMActivityOverviewDelegate : public QItemDelegate
 {
 
     Q_OBJECT;
@@ -353,9 +353,9 @@ protected:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorDoughnutChart implementation.                                                                       *
+*   Class UIVMActivityOverviewDoughnutChart implementation.                                                                       *
 *********************************************************************************************************************************/
-UIVMResourceMonitorDoughnutChart::UIVMResourceMonitorDoughnutChart(QWidget *pParent /* = 0 */)
+UIVMActivityOverviewDoughnutChart::UIVMActivityOverviewDoughnutChart(QWidget *pParent /* = 0 */)
     :QWidget(pParent)
     , m_iData0(0)
     , m_iData1(0)
@@ -364,30 +364,30 @@ UIVMResourceMonitorDoughnutChart::UIVMResourceMonitorDoughnutChart(QWidget *pPar
 {
 }
 
-void UIVMResourceMonitorDoughnutChart::updateData(quint64 iData0, quint64 iData1)
+void UIVMActivityOverviewDoughnutChart::updateData(quint64 iData0, quint64 iData1)
 {
     m_iData0 = iData0;
     m_iData1 = iData1;
     update();
 }
 
-void UIVMResourceMonitorDoughnutChart::setChartColors(const QColor &color0, const QColor &color1)
+void UIVMActivityOverviewDoughnutChart::setChartColors(const QColor &color0, const QColor &color1)
 {
     m_color0 = color0;
     m_color1 = color1;
 }
 
-void UIVMResourceMonitorDoughnutChart::setChartCenterString(const QString &strCenter)
+void UIVMActivityOverviewDoughnutChart::setChartCenterString(const QString &strCenter)
 {
     m_strCenter = strCenter;
 }
 
-void UIVMResourceMonitorDoughnutChart::setDataMaximum(quint64 iMax)
+void UIVMActivityOverviewDoughnutChart::setDataMaximum(quint64 iMax)
 {
     m_iDataMaximum = iMax;
 }
 
-void UIVMResourceMonitorDoughnutChart::paintEvent(QPaintEvent *pEvent)
+void UIVMActivityOverviewDoughnutChart::paintEvent(QPaintEvent *pEvent)
 {
     QWidget::paintEvent(pEvent);
 
@@ -412,10 +412,10 @@ void UIVMResourceMonitorDoughnutChart::paintEvent(QPaintEvent *pEvent)
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorHostStatsWidget implementation.                                                                     *
+*   Class UIVMActivityOverviewHostStatsWidget implementation.                                                                     *
 *********************************************************************************************************************************/
 
-UIVMResourceMonitorHostStatsWidget::UIVMResourceMonitorHostStatsWidget(QWidget *pParent /* = 0 */)
+UIVMActivityOverviewHostStatsWidget::UIVMActivityOverviewHostStatsWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pHostCPUChart(0)
     , m_pHostRAMChart(0)
@@ -441,7 +441,7 @@ UIVMResourceMonitorHostStatsWidget::UIVMResourceMonitorHostStatsWidget(QWidget *
     retranslateUi();
 }
 
-void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorHostStats &hostStats)
+void UIVMActivityOverviewHostStatsWidget::setHostStats(const UIVMActivityOverviewHostStats &hostStats)
 {
     m_hostStats = hostStats;
     if (m_pHostCPUChart)
@@ -458,7 +458,7 @@ void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorH
         if (m_hostStats.m_iRAMTotal != 0)
         {
             quint64 iUsedRamPer = 100 * (iUsedRAM / (float) m_hostStats.m_iRAMTotal);
-            QString strCenter = QString("%1%\n%2").arg(iUsedRamPer).arg(UIResourceMonitorWidget::tr("Used"));
+            QString strCenter = QString("%1%\n%2").arg(iUsedRamPer).arg(UIVMActivityOverviewWidget::tr("Used"));
             m_pHostRAMChart->setChartCenterString(strCenter);
         }
     }
@@ -470,7 +470,7 @@ void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorH
         if (m_hostStats.m_iFSTotal != 0)
         {
             quint64 iUsedFSPer = 100 * (iUsedFS / (float) m_hostStats.m_iFSTotal);
-            QString strCenter = QString("%1%\n%2").arg(iUsedFSPer).arg(UIResourceMonitorWidget::tr("Used"));
+            QString strCenter = QString("%1%\n%2").arg(iUsedFSPer).arg(UIVMActivityOverviewWidget::tr("Used"));
             m_pHostFSChart->setChartCenterString(strCenter);
         }
     }
@@ -478,12 +478,12 @@ void UIVMResourceMonitorHostStatsWidget::setHostStats(const UIVMResourceMonitorH
     updateLabels();
 }
 
-void UIVMResourceMonitorHostStatsWidget::retranslateUi()
+void UIVMActivityOverviewHostStatsWidget::retranslateUi()
 {
     updateLabels();
 }
 
-void UIVMResourceMonitorHostStatsWidget::addVerticalLine(QHBoxLayout *pLayout)
+void UIVMActivityOverviewHostStatsWidget::addVerticalLine(QHBoxLayout *pLayout)
 {
     QFrame *pLine = new QFrame;
     pLine->setFrameShape(QFrame::VLine);
@@ -491,7 +491,7 @@ void UIVMResourceMonitorHostStatsWidget::addVerticalLine(QHBoxLayout *pLayout)
     pLayout->addWidget(pLine);
 }
 
-void UIVMResourceMonitorHostStatsWidget::prepare()
+void UIVMActivityOverviewHostStatsWidget::prepare()
 {
     QHBoxLayout *pLayout = new QHBoxLayout;
     setLayout(pLayout);
@@ -517,7 +517,7 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
         pCPULabelsLayout->setAlignment(Qt::AlignTop);
         pCPULabelsLayout->setSpacing(0);
         /* Host CPU chart widget: */
-        m_pHostCPUChart = new UIVMResourceMonitorDoughnutChart;
+        m_pHostCPUChart = new UIVMActivityOverviewDoughnutChart;
         if (m_pHostCPUChart)
         {
             m_pHostCPUChart->setMinimumSize(iMinimumSize, iMinimumSize);
@@ -546,7 +546,7 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
         m_pRAMTotalLabel = new QLabel;
         pRAMLabelsLayout->addWidget(m_pRAMTotalLabel);
 
-        m_pHostRAMChart = new UIVMResourceMonitorDoughnutChart;
+        m_pHostRAMChart = new UIVMActivityOverviewDoughnutChart;
         if (m_pHostRAMChart)
         {
             m_pHostRAMChart->setMinimumSize(iMinimumSize, iMinimumSize);
@@ -573,7 +573,7 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
         m_pFSTotalLabel = new QLabel;
         pFSLabelsLayout->addWidget(m_pFSTotalLabel);
 
-        m_pHostFSChart = new UIVMResourceMonitorDoughnutChart;
+        m_pHostFSChart = new UIVMActivityOverviewDoughnutChart;
         if (m_pHostFSChart)
         {
             m_pHostFSChart->setMinimumSize(iMinimumSize, iMinimumSize);
@@ -585,90 +585,90 @@ void UIVMResourceMonitorHostStatsWidget::prepare()
     pLayout->addStretch(2);
 }
 
-void UIVMResourceMonitorHostStatsWidget::updateLabels()
+void UIVMActivityOverviewHostStatsWidget::updateLabels()
 {
     if (m_pCPUTitleLabel)
-        m_pCPUTitleLabel->setText(QString("<b>%1</b>").arg(UIResourceMonitorWidget::tr("Host CPU Load")));
+        m_pCPUTitleLabel->setText(QString("<b>%1</b>").arg(UIVMActivityOverviewWidget::tr("Host CPU Load")));
     if (m_pCPUUserLabel)
     {
         QString strColor = QColor(m_CPUUserColor).name(QColor::HexRgb);
-        m_pCPUUserLabel->setText(QString("<font color=\"%1\">%2: %3%</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("User")).arg(QString::number(m_hostStats.m_iCPUUserLoad)));
+        m_pCPUUserLabel->setText(QString("<font color=\"%1\">%2: %3%</font>").arg(strColor).arg(UIVMActivityOverviewWidget::tr("User")).arg(QString::number(m_hostStats.m_iCPUUserLoad)));
     }
     if (m_pCPUKernelLabel)
     {
         QString strColor = QColor(m_CPUKernelColor).name(QColor::HexRgb);
-        m_pCPUKernelLabel->setText(QString("<font color=\"%1\">%2: %3%</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("Kernel")).arg(QString::number(m_hostStats.m_iCPUKernelLoad)));
+        m_pCPUKernelLabel->setText(QString("<font color=\"%1\">%2: %3%</font>").arg(strColor).arg(UIVMActivityOverviewWidget::tr("Kernel")).arg(QString::number(m_hostStats.m_iCPUKernelLoad)));
     }
     if (m_pCPUTotalLabel)
-        m_pCPUTotalLabel->setText(QString("%1: %2%").arg(UIResourceMonitorWidget::tr("Total")).arg(m_hostStats.m_iCPUUserLoad + m_hostStats.m_iCPUKernelLoad));
+        m_pCPUTotalLabel->setText(QString("%1: %2%").arg(UIVMActivityOverviewWidget::tr("Total")).arg(m_hostStats.m_iCPUUserLoad + m_hostStats.m_iCPUKernelLoad));
     if (m_pRAMTitleLabel)
-        m_pRAMTitleLabel->setText(QString("<b>%1</b>").arg(UIResourceMonitorWidget::tr("Host RAM Usage")));
+        m_pRAMTitleLabel->setText(QString("<b>%1</b>").arg(UIVMActivityOverviewWidget::tr("Host RAM Usage")));
     if (m_pRAMFreeLabel)
     {
         QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMFree);
         QString strColor = QColor(m_RAMFreeColor).name(QColor::HexRgb);
-        m_pRAMFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("Free")).arg(strRAM));
+        m_pRAMFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIVMActivityOverviewWidget::tr("Free")).arg(strRAM));
     }
     if (m_pRAMUsedLabel)
     {
         QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMTotal - m_hostStats.m_iRAMFree);
         QString strColor = QColor(m_RAMUsedColor).name(QColor::HexRgb);
-        m_pRAMUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("Used")).arg(strRAM));
+        m_pRAMUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIVMActivityOverviewWidget::tr("Used")).arg(strRAM));
     }
     if (m_pRAMTotalLabel)
     {
         QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMTotal);
-        m_pRAMTotalLabel->setText(QString("%1: %2").arg(UIResourceMonitorWidget::tr("Total")).arg(strRAM));
+        m_pRAMTotalLabel->setText(QString("%1: %2").arg(UIVMActivityOverviewWidget::tr("Total")).arg(strRAM));
     }
     if (m_pFSTitleLabel)
-        m_pFSTitleLabel->setText(QString("<b>%1</b>").arg(UIResourceMonitorWidget::tr("Host File System")));
+        m_pFSTitleLabel->setText(QString("<b>%1</b>").arg(UIVMActivityOverviewWidget::tr("Host File System")));
     if (m_pFSFreeLabel)
     {
         QString strFS = uiCommon().formatSize(m_hostStats.m_iFSFree);
         QString strColor = QColor(m_RAMFreeColor).name(QColor::HexRgb);
-        m_pFSFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("Free")).arg(strFS));
+        m_pFSFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIVMActivityOverviewWidget::tr("Free")).arg(strFS));
     }
     if (m_pFSUsedLabel)
     {
         QString strFS = uiCommon().formatSize(m_hostStats.m_iFSTotal - m_hostStats.m_iFSFree);
         QString strColor = QColor(m_RAMUsedColor).name(QColor::HexRgb);
-        m_pFSUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIResourceMonitorWidget::tr("Used")).arg(strFS));
+        m_pFSUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIVMActivityOverviewWidget::tr("Used")).arg(strFS));
     }
     if (m_pFSTotalLabel)
     {
         QString strFS = uiCommon().formatSize(m_hostStats.m_iFSTotal);
-        m_pFSTotalLabel->setText(QString("%1: %2").arg(UIResourceMonitorWidget::tr("Total")).arg(strFS));
+        m_pFSTotalLabel->setText(QString("%1: %2").arg(UIVMActivityOverviewWidget::tr("Total")).arg(strFS));
     }
 }
 
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorTableView implementation.                                                                           *
+*   Class UIVMActivityOverviewTableView implementation.                                                                           *
 *********************************************************************************************************************************/
 
-UIVMResourceMonitorTableView::UIVMResourceMonitorTableView(QWidget *pParent /* = 0 */)
+UIVMActivityOverviewTableView::UIVMActivityOverviewTableView(QWidget *pParent /* = 0 */)
     :QTableView(pParent)
 {
 }
 
-void UIVMResourceMonitorTableView::setMinimumColumnWidths(const QMap<int, int>& widths)
+void UIVMActivityOverviewTableView::setMinimumColumnWidths(const QMap<int, int>& widths)
 {
     m_minimumColumnWidths = widths;
     resizeHeaders();
 }
 
-void UIVMResourceMonitorTableView::updateColumVisibility()
+void UIVMActivityOverviewTableView::updateColumVisibility()
 {
-    UIResourceMonitorProxyModel *pProxyModel = qobject_cast<UIResourceMonitorProxyModel *>(model());
+    UIActivityOverviewProxyModel *pProxyModel = qobject_cast<UIActivityOverviewProxyModel *>(model());
     if (!pProxyModel)
         return;
-    UIResourceMonitorModel *pModel = qobject_cast<UIResourceMonitorModel *>(pProxyModel->sourceModel());
+    UIActivityOverviewModel *pModel = qobject_cast<UIActivityOverviewModel *>(pProxyModel->sourceModel());
     QHeaderView *pHeader = horizontalHeader();
 
     if (!pModel || !pHeader)
         return;
-    for (int i = (int)VMResourceMonitorColumn_Name; i < (int)VMResourceMonitorColumn_Max; ++i)
+    for (int i = (int)VMActivityOverviewColumn_Name; i < (int)VMActivityOverviewColumn_Max; ++i)
     {
         if (!pModel->columnVisible(i))
             pHeader->hideSection(i);
@@ -678,9 +678,9 @@ void UIVMResourceMonitorTableView::updateColumVisibility()
     resizeHeaders();
 }
 
-int UIVMResourceMonitorTableView::selectedItemIndex() const
+int UIVMActivityOverviewTableView::selectedItemIndex() const
 {
-    UIResourceMonitorProxyModel *pModel = qobject_cast<UIResourceMonitorProxyModel*>(model());
+    UIActivityOverviewProxyModel *pModel = qobject_cast<UIActivityOverviewProxyModel*>(model());
     if (!pModel)
         return -1;
 
@@ -699,33 +699,33 @@ int UIVMResourceMonitorTableView::selectedItemIndex() const
     return modelIndex.row();
 }
 
-bool UIVMResourceMonitorTableView::hasSelection() const
+bool UIVMActivityOverviewTableView::hasSelection() const
 {
     if (!selectionModel())
         return false;
     return selectionModel()->hasSelection();
 }
 
-void UIVMResourceMonitorTableView::resizeEvent(QResizeEvent *pEvent)
+void UIVMActivityOverviewTableView::resizeEvent(QResizeEvent *pEvent)
 {
     resizeHeaders();
     QTableView::resizeEvent(pEvent);
 }
 
-void UIVMResourceMonitorTableView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+void UIVMActivityOverviewTableView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     emit sigSelectionChanged(selected, deselected);
     QTableView::selectionChanged(selected, deselected);
 }
 
-void UIVMResourceMonitorTableView::mousePressEvent(QMouseEvent *pEvent)
+void UIVMActivityOverviewTableView::mousePressEvent(QMouseEvent *pEvent)
 {
     if (!indexAt(pEvent->pos()).isValid())
         clearSelection();
     QTableView::mousePressEvent(pEvent);
 }
 
-void UIVMResourceMonitorTableView::resizeHeaders()
+void UIVMActivityOverviewTableView::resizeHeaders()
 {
     QHeaderView* pHeader = horizontalHeader();
     if (!pHeader)
@@ -737,16 +737,16 @@ void UIVMResourceMonitorTableView::resizeHeaders()
     {
         if (pHeader->isSectionHidden(i))
             continue;
-        int iMinWidth = m_minimumColumnWidths.value((VMResourceMonitorColumn)i, 0);
+        int iMinWidth = m_minimumColumnWidths.value((VMActivityOverviewColumn)i, 0);
         pHeader->resizeSection(i, iWidth < iMinWidth ? iMinWidth : iWidth);
     }
 }
 
 
 /*********************************************************************************************************************************
- *   Class UIVMResourceMonitorItem implementation.                                                                           *
+ *   Class UIVMActivityOverviewItem implementation.                                                                           *
  *********************************************************************************************************************************/
-UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &strVMName)
+UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName)
     : m_VMuid(uid)
     , m_strVMName(strVMName)
     , m_uCPUGuestLoad(0)
@@ -778,7 +778,7 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &st
     }
 }
 
-UIResourceMonitorItem::UIResourceMonitorItem()
+UIActivityOverviewItem::UIActivityOverviewItem()
     : m_VMuid(QUuid())
     , m_uCPUGuestLoad(0)
     , m_uCPUVMMLoad(0)
@@ -798,7 +798,7 @@ UIResourceMonitorItem::UIResourceMonitorItem()
 {
 }
 
-UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid)
+UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid)
     : m_VMuid(uid)
     , m_uCPUGuestLoad(0)
     , m_uCPUVMMLoad(0)
@@ -818,20 +818,20 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid)
 {
 }
 
-UIResourceMonitorItem::~UIResourceMonitorItem()
+UIActivityOverviewItem::~UIActivityOverviewItem()
 {
     if (!m_comSession.isNull())
         m_comSession.UnlockMachine();
 }
 
-bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
+bool UIActivityOverviewItem::operator==(const UIActivityOverviewItem& other) const
 {
     if (m_VMuid == other.m_VMuid)
         return true;
     return false;
 }
 
-bool UIResourceMonitorItem::isWithGuestAdditions()
+bool UIActivityOverviewItem::isWithGuestAdditions()
 {
     if (m_comGuest.isNull())
         return false;
@@ -840,10 +840,10 @@ bool UIResourceMonitorItem::isWithGuestAdditions()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorHostStats implementation.                                                                           *
+*   Class UIVMActivityOverviewHostStats implementation.                                                                           *
 *********************************************************************************************************************************/
 
-UIVMResourceMonitorHostStats::UIVMResourceMonitorHostStats()
+UIVMActivityOverviewHostStats::UIVMActivityOverviewHostStats()
     : m_iCPUUserLoad(0)
     , m_iCPUKernelLoad(0)
     , m_iCPUFreq(0)
@@ -856,14 +856,14 @@ UIVMResourceMonitorHostStats::UIVMResourceMonitorHostStats()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMResourceMonitorProxyModel implementation.                                                                          *
+*   Class UIVMActivityOverviewProxyModel implementation.                                                                          *
 *********************************************************************************************************************************/
-UIResourceMonitorProxyModel::UIResourceMonitorProxyModel(QObject *parent /* = 0 */)
+UIActivityOverviewProxyModel::UIActivityOverviewProxyModel(QObject *parent /* = 0 */)
     :QSortFilterProxyModel(parent)
 {
 }
 
-void UIResourceMonitorProxyModel::dataUpdate()
+void UIActivityOverviewProxyModel::dataUpdate()
 {
     if (sourceModel())
         emit dataChanged(index(0,0), index(sourceModel()->rowCount(), sourceModel()->columnCount()));
@@ -872,9 +872,9 @@ void UIResourceMonitorProxyModel::dataUpdate()
 
 
 /*********************************************************************************************************************************
-*   Class UIResourceMonitorModel implementation.                                                                                 *
+*   Class UIActivityOverviewModel implementation.                                                                                 *
 *********************************************************************************************************************************/
-UIResourceMonitorModel::UIResourceMonitorModel(QObject *parent /*= 0*/)
+UIActivityOverviewModel::UIActivityOverviewModel(QObject *parent /*= 0*/)
     :QAbstractTableModel(parent)
     , m_pTimer(new QTimer(this))
     , m_fShouldUpdate(true)
@@ -882,52 +882,52 @@ UIResourceMonitorModel::UIResourceMonitorModel(QObject *parent /*= 0*/)
     initialize();
 }
 
-void UIResourceMonitorModel::initialize()
+void UIActivityOverviewModel::initialize()
 {
-    for (int i = 0; i < (int)VMResourceMonitorColumn_Max; ++i)
+    for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)
         m_columnDataMaxLength[i] = 0;
 
     initializeItems();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
-            this, &UIResourceMonitorModel::sltMachineStateChanged);
+            this, &UIActivityOverviewModel::sltMachineStateChanged);
 
     if (m_pTimer)
     {
-        connect(m_pTimer, &QTimer::timeout, this, &UIResourceMonitorModel::sltTimeout);
+        connect(m_pTimer, &QTimer::timeout, this, &UIActivityOverviewModel::sltTimeout);
         m_pTimer->start(1000);
     }
 }
 
-int UIResourceMonitorModel::rowCount(const QModelIndex &parent /* = QModelIndex() */) const
+int UIActivityOverviewModel::rowCount(const QModelIndex &parent /* = QModelIndex() */) const
 {
     Q_UNUSED(parent);
     return m_itemList.size();
 }
 
-int UIResourceMonitorModel::columnCount(const QModelIndex &parent /* = QModelIndex() */) const
+int UIActivityOverviewModel::columnCount(const QModelIndex &parent /* = QModelIndex() */) const
 {
     Q_UNUSED(parent);
-    return VMResourceMonitorColumn_Max;
+    return VMActivityOverviewColumn_Max;
 }
 
-void UIResourceMonitorModel::setShouldUpdate(bool fShouldUpdate)
+void UIActivityOverviewModel::setShouldUpdate(bool fShouldUpdate)
 {
     m_fShouldUpdate = fShouldUpdate;
 }
 
-const QMap<int, int> UIResourceMonitorModel::dataLengths() const
+const QMap<int, int> UIActivityOverviewModel::dataLengths() const
 {
     return m_columnDataMaxLength;
 }
 
-QUuid UIResourceMonitorModel::itemUid(int iIndex)
+QUuid UIActivityOverviewModel::itemUid(int iIndex)
 {
     if (iIndex >= m_itemList.size())
         return QUuid();
     return m_itemList[iIndex].m_VMuid;
 }
 
-int UIResourceMonitorModel::itemIndex(const QUuid &uid)
+int UIActivityOverviewModel::itemIndex(const QUuid &uid)
 {
     for (int i = 0; i < m_itemList.size(); ++i)
     {
@@ -937,26 +937,26 @@ int UIResourceMonitorModel::itemIndex(const QUuid &uid)
     return -1;
 }
 
-QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
+QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
     return m_itemList[index.row()].m_columnData[index.column()];
 }
 
-QVariant UIResourceMonitorModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant UIActivityOverviewModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
-        return m_columnTitles.value((VMResourceMonitorColumn)section, QString());;
+        return m_columnTitles.value((VMActivityOverviewColumn)section, QString());;
     return QVariant();
 }
 
-void UIResourceMonitorModel::setColumnCaptions(const QMap<int, QString>& captions)
+void UIActivityOverviewModel::setColumnCaptions(const QMap<int, QString>& captions)
 {
     m_columnTitles = captions;
 }
 
-void UIResourceMonitorModel::initializeItems()
+void UIActivityOverviewModel::initializeItems()
 {
     foreach (const CMachine &comMachine, uiCommon().virtualBox().GetMachines())
     {
@@ -969,7 +969,7 @@ void UIResourceMonitorModel::initializeItems()
     setupPerformanceCollector();
 }
 
-void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
+void UIActivityOverviewModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
 {
     int iIndex = itemIndex(uId);
     /* Remove the machine in case machine is no longer working. */
@@ -994,14 +994,14 @@ void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMac
     }
 }
 
-void UIResourceMonitorModel::getHostRAMStats()
+void UIActivityOverviewModel::getHostRAMStats()
 {
     CHost comHost = uiCommon().host();
     m_hostStats.m_iRAMTotal = _1M * (quint64)comHost.GetMemorySize();
     m_hostStats.m_iRAMFree = _1M * (quint64)comHost.GetMemoryAvailable();
 }
 
-void UIResourceMonitorModel::sltTimeout()
+void UIActivityOverviewModel::sltTimeout()
 {
     if (!m_fShouldUpdate)
         return;
@@ -1009,16 +1009,16 @@ void UIResourceMonitorModel::sltTimeout()
     ULONG aPctHalted;
     ULONG aPctVMM;
 
-    bool fCPUColumns = columnVisible(VMResourceMonitorColumn_CPUVMMLoad) || columnVisible(VMResourceMonitorColumn_CPUGuestLoad);
-    bool fNetworkColumns = columnVisible(VMResourceMonitorColumn_NetworkUpRate)
-        || columnVisible(VMResourceMonitorColumn_NetworkDownRate)
-        || columnVisible(VMResourceMonitorColumn_NetworkUpTotal)
-        || columnVisible(VMResourceMonitorColumn_NetworkDownTotal);
-    bool fIOColumns = columnVisible(VMResourceMonitorColumn_DiskIOReadRate)
-        || columnVisible(VMResourceMonitorColumn_DiskIOWriteRate)
-        || columnVisible(VMResourceMonitorColumn_DiskIOReadTotal)
-        || columnVisible(VMResourceMonitorColumn_DiskIOWriteTotal);
-    bool fVMExitColumn = columnVisible(VMResourceMonitorColumn_VMExits);
+    bool fCPUColumns = columnVisible(VMActivityOverviewColumn_CPUVMMLoad) || columnVisible(VMActivityOverviewColumn_CPUGuestLoad);
+    bool fNetworkColumns = columnVisible(VMActivityOverviewColumn_NetworkUpRate)
+        || columnVisible(VMActivityOverviewColumn_NetworkDownRate)
+        || columnVisible(VMActivityOverviewColumn_NetworkUpTotal)
+        || columnVisible(VMActivityOverviewColumn_NetworkDownTotal);
+    bool fIOColumns = columnVisible(VMActivityOverviewColumn_DiskIOReadRate)
+        || columnVisible(VMActivityOverviewColumn_DiskIOWriteRate)
+        || columnVisible(VMActivityOverviewColumn_DiskIOReadTotal)
+        || columnVisible(VMActivityOverviewColumn_DiskIOWriteTotal);
+    bool fVMExitColumn = columnVisible(VMActivityOverviewColumn_VMExits);
 
     /* Host's RAM usage is obtained from IHost not from IPerformanceCollectior: */
     getHostRAMStats();
@@ -1069,55 +1069,55 @@ void UIResourceMonitorModel::sltTimeout()
     int iDecimalCount = 2;
     for (int i = 0; i < m_itemList.size(); ++i)
     {
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_Name] = m_itemList[i].m_strVMName;
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_CPUGuestLoad] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_Name] = m_itemList[i].m_strVMName;
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_CPUGuestLoad] =
             QString("%1%").arg(QString::number(m_itemList[i].m_uCPUGuestLoad));
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_CPUVMMLoad] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_CPUVMMLoad] =
             QString("%1%").arg(QString::number(m_itemList[i].m_uCPUVMMLoad));
 
         if (m_itemList[i].isWithGuestAdditions())
-            m_itemList[i].m_columnData[VMResourceMonitorColumn_RAMUsedAndTotal] =
+            m_itemList[i].m_columnData[VMActivityOverviewColumn_RAMUsedAndTotal] =
                 QString("%1/%2").arg(uiCommon().formatSize(_1K * m_itemList[i].m_uUsedRAM, iDecimalCount)).
                 arg(uiCommon().formatSize(_1K * m_itemList[i].m_uTotalRAM, iDecimalCount));
         else
-            m_itemList[i].m_columnData[VMResourceMonitorColumn_RAMUsedAndTotal] = UIResourceMonitorWidget::tr("N/A");
+            m_itemList[i].m_columnData[VMActivityOverviewColumn_RAMUsedAndTotal] = UIVMActivityOverviewWidget::tr("N/A");
 
         if (m_itemList[i].isWithGuestAdditions())
-            m_itemList[i].m_columnData[VMResourceMonitorColumn_RAMUsedPercentage] =
+            m_itemList[i].m_columnData[VMActivityOverviewColumn_RAMUsedPercentage] =
                 QString("%1%").arg(QString::number(m_itemList[i].m_fRAMUsagePercentage, 'f', 2));
         else
-            m_itemList[i].m_columnData[VMResourceMonitorColumn_RAMUsedPercentage] = UIResourceMonitorWidget::tr("N/A");
+            m_itemList[i].m_columnData[VMActivityOverviewColumn_RAMUsedPercentage] = UIVMActivityOverviewWidget::tr("N/A");
 
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_NetworkUpRate] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_NetworkUpRate] =
             QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uNetworkUpRate, iDecimalCount));
 
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_NetworkDownRate] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_NetworkDownRate] =
             QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uNetworkDownRate, iDecimalCount));
 
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_NetworkUpTotal] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_NetworkUpTotal] =
             QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uNetworkUpTotal, iDecimalCount));
 
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_NetworkDownTotal] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_NetworkDownTotal] =
             QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uNetworkDownTotal, iDecimalCount));
 
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_DiskIOReadRate] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_DiskIOReadRate] =
             QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uDiskReadRate, iDecimalCount));
 
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_DiskIOWriteRate] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_DiskIOWriteRate] =
             QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uDiskWriteRate, iDecimalCount));
 
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_DiskIOReadTotal] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_DiskIOReadTotal] =
             QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uDiskReadTotal, iDecimalCount));
 
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_DiskIOWriteTotal] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_DiskIOWriteTotal] =
             QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uDiskWriteTotal, iDecimalCount));
 
-        m_itemList[i].m_columnData[VMResourceMonitorColumn_VMExits] =
+        m_itemList[i].m_columnData[VMActivityOverviewColumn_VMExits] =
             QString("%1/%2").arg(UICommon::addMetricSuffixToNumber(m_itemList[i].m_uVMExitRate)).
             arg(UICommon::addMetricSuffixToNumber(m_itemList[i].m_uVMExitTotal));
     }
 
-    for (int i = 0; i < (int)VMResourceMonitorColumn_Max; ++i)
+    for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)
     {
         for (int j = 0; j < m_itemList.size(); ++j)
             if (m_columnDataMaxLength.value(i, 0) < m_itemList[j].m_columnData[i].length())
@@ -1127,7 +1127,7 @@ void UIResourceMonitorModel::sltTimeout()
     emit sigHostStatsUpdate(m_hostStats);
 }
 
-void UIResourceMonitorModel::setupPerformanceCollector()
+void UIActivityOverviewModel::setupPerformanceCollector()
 {
     m_nameList.clear();
     m_objectList.clear();
@@ -1145,7 +1145,7 @@ void UIResourceMonitorModel::setupPerformanceCollector()
     m_performanceCollector.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
 }
 
-void UIResourceMonitorModel::queryPerformanceCollector()
+void UIActivityOverviewModel::queryPerformanceCollector()
 {
     QVector<QString>  aReturnNames;
     QVector<CUnknown>  aReturnObjects;
@@ -1232,12 +1232,12 @@ void UIResourceMonitorModel::queryPerformanceCollector()
     }
 }
 
-void UIResourceMonitorModel::addItem(const QUuid& uMachineId, const QString& strMachineName)
+void UIActivityOverviewModel::addItem(const QUuid& uMachineId, const QString& strMachineName)
 {
-    m_itemList.append(UIResourceMonitorItem(uMachineId, strMachineName));
+    m_itemList.append(UIActivityOverviewItem(uMachineId, strMachineName));
 }
 
-void UIResourceMonitorModel::removeItem(const QUuid& uMachineId)
+void UIActivityOverviewModel::removeItem(const QUuid& uMachineId)
 {
     int iIndex = itemIndex(uMachineId);
     if (iIndex == -1)
@@ -1245,22 +1245,22 @@ void UIResourceMonitorModel::removeItem(const QUuid& uMachineId)
     m_itemList.remove(iIndex);
 }
 
-void UIResourceMonitorModel::setColumnVisible(const QMap<int, bool>& columnVisible)
+void UIActivityOverviewModel::setColumnVisible(const QMap<int, bool>& columnVisible)
 {
     m_columnVisible = columnVisible;
 }
 
-bool UIResourceMonitorModel::columnVisible(int iColumnId) const
+bool UIActivityOverviewModel::columnVisible(int iColumnId) const
 {
     return m_columnVisible.value(iColumnId, true);
 }
 
 
 /*********************************************************************************************************************************
-*   Class UIResourceMonitorWidget implementation.                                                                                *
+*   Class UIVMActivityOverviewWidget implementation.                                                                                *
 *********************************************************************************************************************************/
 
-UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+UIVMActivityOverviewWidget::UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                  bool fShowToolbar /* = true */, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
@@ -1279,49 +1279,49 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     prepare();
 }
 
-UIResourceMonitorWidget::~UIResourceMonitorWidget()
+UIVMActivityOverviewWidget::~UIVMActivityOverviewWidget()
 {
     saveSettings();
 }
 
-QMenu *UIResourceMonitorWidget::menu() const
+QMenu *UIVMActivityOverviewWidget::menu() const
 {
     return NULL;
 }
 
-QMenu *UIResourceMonitorWidget::columnVisiblityToggleMenu() const
+QMenu *UIVMActivityOverviewWidget::columnVisiblityToggleMenu() const
 {
     return m_pColumnVisibilityToggleMenu;
 }
 
-bool UIResourceMonitorWidget::isCurrentTool() const
+bool UIVMActivityOverviewWidget::isCurrentTool() const
 {
     return m_fIsCurrentTool;
 }
 
-void UIResourceMonitorWidget::setIsCurrentTool(bool fIsCurrentTool)
+void UIVMActivityOverviewWidget::setIsCurrentTool(bool fIsCurrentTool)
 {
     m_fIsCurrentTool = fIsCurrentTool;
     if (m_pModel)
         m_pModel->setShouldUpdate(fIsCurrentTool);
 }
 
-void UIResourceMonitorWidget::retranslateUi()
+void UIVMActivityOverviewWidget::retranslateUi()
 {
-    m_columnTitles[VMResourceMonitorColumn_Name] = UIResourceMonitorWidget::tr("VM Name");
-    m_columnTitles[VMResourceMonitorColumn_CPUGuestLoad] = UIResourceMonitorWidget::tr("CPU Guest");
-    m_columnTitles[VMResourceMonitorColumn_CPUVMMLoad] = UIResourceMonitorWidget::tr("CPU VMM");
-    m_columnTitles[VMResourceMonitorColumn_RAMUsedAndTotal] = UIResourceMonitorWidget::tr("RAM Used/Total");
-    m_columnTitles[VMResourceMonitorColumn_RAMUsedPercentage] = UIResourceMonitorWidget::tr("RAM %");
-    m_columnTitles[VMResourceMonitorColumn_NetworkUpRate] = UIResourceMonitorWidget::tr("Network Up Rate");
-    m_columnTitles[VMResourceMonitorColumn_NetworkDownRate] = UIResourceMonitorWidget::tr("Network Down Rate");
-    m_columnTitles[VMResourceMonitorColumn_NetworkUpTotal] = UIResourceMonitorWidget::tr("Network Up Total");
-    m_columnTitles[VMResourceMonitorColumn_NetworkDownTotal] = UIResourceMonitorWidget::tr("Network Down Total");
-    m_columnTitles[VMResourceMonitorColumn_DiskIOReadRate] = UIResourceMonitorWidget::tr("Disk Read Rate");
-    m_columnTitles[VMResourceMonitorColumn_DiskIOWriteRate] = UIResourceMonitorWidget::tr("Disk Write Rate");
-    m_columnTitles[VMResourceMonitorColumn_DiskIOReadTotal] = UIResourceMonitorWidget::tr("Disk Read Total");
-    m_columnTitles[VMResourceMonitorColumn_DiskIOWriteTotal] = UIResourceMonitorWidget::tr("Disk Write Total");
-    m_columnTitles[VMResourceMonitorColumn_VMExits] = UIResourceMonitorWidget::tr("VM Exits");
+    m_columnTitles[VMActivityOverviewColumn_Name] = UIVMActivityOverviewWidget::tr("VM Name");
+    m_columnTitles[VMActivityOverviewColumn_CPUGuestLoad] = UIVMActivityOverviewWidget::tr("CPU Guest");
+    m_columnTitles[VMActivityOverviewColumn_CPUVMMLoad] = UIVMActivityOverviewWidget::tr("CPU VMM");
+    m_columnTitles[VMActivityOverviewColumn_RAMUsedAndTotal] = UIVMActivityOverviewWidget::tr("RAM Used/Total");
+    m_columnTitles[VMActivityOverviewColumn_RAMUsedPercentage] = UIVMActivityOverviewWidget::tr("RAM %");
+    m_columnTitles[VMActivityOverviewColumn_NetworkUpRate] = UIVMActivityOverviewWidget::tr("Network Up Rate");
+    m_columnTitles[VMActivityOverviewColumn_NetworkDownRate] = UIVMActivityOverviewWidget::tr("Network Down Rate");
+    m_columnTitles[VMActivityOverviewColumn_NetworkUpTotal] = UIVMActivityOverviewWidget::tr("Network Up Total");
+    m_columnTitles[VMActivityOverviewColumn_NetworkDownTotal] = UIVMActivityOverviewWidget::tr("Network Down Total");
+    m_columnTitles[VMActivityOverviewColumn_DiskIOReadRate] = UIVMActivityOverviewWidget::tr("Disk Read Rate");
+    m_columnTitles[VMActivityOverviewColumn_DiskIOWriteRate] = UIVMActivityOverviewWidget::tr("Disk Write Rate");
+    m_columnTitles[VMActivityOverviewColumn_DiskIOReadTotal] = UIVMActivityOverviewWidget::tr("Disk Read Total");
+    m_columnTitles[VMActivityOverviewColumn_DiskIOWriteTotal] = UIVMActivityOverviewWidget::tr("Disk Write Total");
+    m_columnTitles[VMActivityOverviewColumn_VMExits] = UIVMActivityOverviewWidget::tr("VM Exits");
 
     updateColumnsMenu();
 
@@ -1331,7 +1331,7 @@ void UIResourceMonitorWidget::retranslateUi()
     computeMinimumColumnWidths();
 }
 
-void UIResourceMonitorWidget::showEvent(QShowEvent *pEvent)
+void UIVMActivityOverviewWidget::showEvent(QShowEvent *pEvent)
 {
     if (m_pVMActivityMonitorAction && m_pTableView)
         m_pVMActivityMonitorAction->setEnabled(m_pTableView->hasSelection());
@@ -1339,7 +1339,7 @@ void UIResourceMonitorWidget::showEvent(QShowEvent *pEvent)
     QIWithRetranslateUI<QWidget>::showEvent(pEvent);
 }
 
-void UIResourceMonitorWidget::prepare()
+void UIVMActivityOverviewWidget::prepare()
 {
     /* Try to guest the sort indicator's width: */
     int iIndicatorMargin = 3;
@@ -1360,7 +1360,7 @@ void UIResourceMonitorWidget::prepare()
     uiCommon().setHelpKeyword(this, "resource-monitor");
 }
 
-void UIResourceMonitorWidget::prepareWidgets()
+void UIVMActivityOverviewWidget::prepareWidgets()
 {
     /* Create main-layout: */
     new QVBoxLayout(this);
@@ -1377,20 +1377,20 @@ void UIResourceMonitorWidget::prepareWidgets()
     if (m_fShowToolbar)
         prepareToolBar();
 
-    m_pHostStatsWidget = new UIVMResourceMonitorHostStatsWidget;
+    m_pHostStatsWidget = new UIVMActivityOverviewHostStatsWidget;
     if (m_pHostStatsWidget)
         layout()->addWidget(m_pHostStatsWidget);
 
-    m_pModel = new UIResourceMonitorModel(this);
-    m_pProxyModel = new UIResourceMonitorProxyModel(this);
+    m_pModel = new UIActivityOverviewModel(this);
+    m_pProxyModel = new UIActivityOverviewProxyModel(this);
 
-    m_pTableView = new UIVMResourceMonitorTableView();
+    m_pTableView = new UIVMActivityOverviewTableView();
     if (m_pTableView && m_pModel && m_pProxyModel)
     {
         layout()->addWidget(m_pTableView);
         m_pProxyModel->setSourceModel(m_pModel);
         m_pTableView->setModel(m_pProxyModel);
-        m_pTableView->setItemDelegate(new UIVMResourceMonitorDelegate);
+        m_pTableView->setItemDelegate(new UIVMActivityOverviewDelegate);
         m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
         m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_pTableView->setShowGrid(false);
@@ -1404,47 +1404,47 @@ void UIResourceMonitorWidget::prepareWidgets()
         m_pTableView->setAlternatingRowColors(true);
         m_pTableView->setSortingEnabled(true);
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
-        connect(m_pModel, &UIResourceMonitorModel::sigDataUpdate,
-                this, &UIResourceMonitorWidget::sltHandleDataUpdate);
-        connect(m_pModel, &UIResourceMonitorModel::sigHostStatsUpdate,
-                this, &UIResourceMonitorWidget::sltHandleHostStatsUpdate);
-        connect(m_pTableView, &UIVMResourceMonitorTableView::customContextMenuRequested,
-                this, &UIResourceMonitorWidget::sltHandleTableContextMenuRequest);
-        connect(m_pTableView, &UIVMResourceMonitorTableView::sigSelectionChanged,
-                this, &UIResourceMonitorWidget::sltHandleTableSelectionChanged);
+        connect(m_pModel, &UIActivityOverviewModel::sigDataUpdate,
+                this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
+        connect(m_pModel, &UIActivityOverviewModel::sigHostStatsUpdate,
+                this, &UIVMActivityOverviewWidget::sltHandleHostStatsUpdate);
+        connect(m_pTableView, &UIVMActivityOverviewTableView::customContextMenuRequested,
+                this, &UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest);
+        connect(m_pTableView, &UIVMActivityOverviewTableView::sigSelectionChanged,
+                this, &UIVMActivityOverviewWidget::sltHandleTableSelectionChanged);
         updateModelColumVisibilityCache();
     }
 }
 
-void UIResourceMonitorWidget::updateColumnsMenu()
+void UIVMActivityOverviewWidget::updateColumnsMenu()
 {
-    UIMenu *pMenu = m_pActionPool->action(UIActionIndexMN_M_VMResourceMonitor_M_Columns)->menu();
+    UIMenu *pMenu = m_pActionPool->action(UIActionIndexMN_M_VMActivityOverview_M_Columns)->menu();
     if (!pMenu)
         return;
     pMenu->clear();
-    for (int i = 0; i < VMResourceMonitorColumn_Max; ++i)
+    for (int i = 0; i < VMActivityOverviewColumn_Max; ++i)
     {
         QAction *pAction = pMenu->addAction(m_columnTitles[i]);
         pAction->setCheckable(true);
-        if (i == (int)VMResourceMonitorColumn_Name)
+        if (i == (int)VMActivityOverviewColumn_Name)
             pAction->setEnabled(false);
         pAction->setData(i);
         pAction->setChecked(columnVisible(i));
-        connect(pAction, &QAction::toggled, this, &UIResourceMonitorWidget::sltHandleColumnAction);
+        connect(pAction, &QAction::toggled, this, &UIVMActivityOverviewWidget::sltHandleColumnAction);
     }
 }
 
-void UIResourceMonitorWidget::prepareActions()
+void UIVMActivityOverviewWidget::prepareActions()
 {
     updateColumnsMenu();
     m_pVMActivityMonitorAction =
-        m_pActionPool->action(UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance);
+        m_pActionPool->action(UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachinePerformance);
 
     if (m_pVMActivityMonitorAction)
-        connect(m_pVMActivityMonitorAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowVMActivityMonitor);
+        connect(m_pVMActivityMonitorAction, &QAction::triggered, this, &UIVMActivityOverviewWidget::sltHandleShowVMActivityMonitor);
 }
 
-void UIResourceMonitorWidget::prepareToolBar()
+void UIVMActivityOverviewWidget::prepareToolBar()
 {
     /* Create toolbar: */
     m_pToolBar = new QIToolBar(parentWidget());
@@ -1469,31 +1469,31 @@ void UIResourceMonitorWidget::prepareToolBar()
     }
 }
 
-void UIResourceMonitorWidget::loadSettings()
+void UIVMActivityOverviewWidget::loadSettings()
 {
 }
 
-void UIResourceMonitorWidget::loadHiddenColumnList()
+void UIVMActivityOverviewWidget::loadHiddenColumnList()
 {
-    QStringList hiddenColumnList = gEDataManager->VMResourceMonitorHiddenColumnList();
-    for (int i = (int)VMResourceMonitorColumn_Name; i < (int)VMResourceMonitorColumn_Max; ++i)
+    QStringList hiddenColumnList = gEDataManager->VMActivityOverviewHiddenColumnList();
+    for (int i = (int)VMActivityOverviewColumn_Name; i < (int)VMActivityOverviewColumn_Max; ++i)
         m_columnVisible[i] = true;
     foreach(const QString& strColumn, hiddenColumnList)
-        setColumnVisible((int)gpConverter->fromInternalString<VMResourceMonitorColumn>(strColumn), false);
+        setColumnVisible((int)gpConverter->fromInternalString<VMActivityOverviewColumn>(strColumn), false);
 }
 
-void UIResourceMonitorWidget::saveSettings()
+void UIVMActivityOverviewWidget::saveSettings()
 {
     QStringList hiddenColumnList;
     for (int i = 0; i < m_columnVisible.size(); ++i)
     {
         if (!columnVisible(i))
-            hiddenColumnList << gpConverter->toInternalString((VMResourceMonitorColumn) i);
+            hiddenColumnList << gpConverter->toInternalString((VMActivityOverviewColumn) i);
     }
-    gEDataManager->setVMResourceMonitorHiddenColumnList(hiddenColumnList);
+    gEDataManager->setVMActivityOverviewHiddenColumnList(hiddenColumnList);
 }
 
-void UIResourceMonitorWidget::sltToggleColumnSelectionMenu(bool fChecked)
+void UIVMActivityOverviewWidget::sltToggleColumnSelectionMenu(bool fChecked)
 {
     (void)fChecked;
     if (!m_pColumnVisibilityToggleMenu)
@@ -1501,7 +1501,7 @@ void UIResourceMonitorWidget::sltToggleColumnSelectionMenu(bool fChecked)
     m_pColumnVisibilityToggleMenu->exec(this->mapToGlobal(QPoint(0,0)));
 }
 
-void UIResourceMonitorWidget::sltHandleColumnAction(bool fChecked)
+void UIVMActivityOverviewWidget::sltHandleColumnAction(bool fChecked)
 {
     QAction* pSender = qobject_cast<QAction*>(sender());
     if (!pSender)
@@ -1509,20 +1509,20 @@ void UIResourceMonitorWidget::sltHandleColumnAction(bool fChecked)
     setColumnVisible(pSender->data().toInt(), fChecked);
 }
 
-void UIResourceMonitorWidget::sltHandleHostStatsUpdate(const UIVMResourceMonitorHostStats &stats)
+void UIVMActivityOverviewWidget::sltHandleHostStatsUpdate(const UIVMActivityOverviewHostStats &stats)
 {
     if (m_pHostStatsWidget)
         m_pHostStatsWidget->setHostStats(stats);
 }
 
-void UIResourceMonitorWidget::sltHandleDataUpdate()
+void UIVMActivityOverviewWidget::sltHandleDataUpdate()
 {
     computeMinimumColumnWidths();
     if (m_pProxyModel)
         m_pProxyModel->dataUpdate();
 }
 
-void UIResourceMonitorWidget::sltHandleTableContextMenuRequest(const QPoint &pos)
+void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &pos)
 {
     if (!m_pTableView || !m_pTableView->hasSelection())
         return;
@@ -1534,14 +1534,14 @@ void UIResourceMonitorWidget::sltHandleTableContextMenuRequest(const QPoint &pos
     menu.exec(m_pTableView->mapToGlobal(pos));
 }
 
-void UIResourceMonitorWidget::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+void UIVMActivityOverviewWidget::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
     if (m_pVMActivityMonitorAction)
         m_pVMActivityMonitorAction->setEnabled(!selected.isEmpty());
 }
 
-void UIResourceMonitorWidget::sltHandleShowVMActivityMonitor()
+void UIVMActivityOverviewWidget::sltHandleShowVMActivityMonitor()
 {
     if (!m_pTableView || !m_pModel)
         return;
@@ -1551,7 +1551,7 @@ void UIResourceMonitorWidget::sltHandleShowVMActivityMonitor()
     emit sigSwitchToMachinePerformancePane(uMachineId);
 }
 
-void UIResourceMonitorWidget::setColumnVisible(int iColumnId, bool fVisible)
+void UIVMActivityOverviewWidget::setColumnVisible(int iColumnId, bool fVisible)
 {
     if (m_columnVisible.contains(iColumnId) && m_columnVisible[iColumnId] == fVisible)
         return;
@@ -1559,7 +1559,7 @@ void UIResourceMonitorWidget::setColumnVisible(int iColumnId, bool fVisible)
     updateModelColumVisibilityCache();
 }
 
-void UIResourceMonitorWidget::updateModelColumVisibilityCache()
+void UIVMActivityOverviewWidget::updateModelColumVisibilityCache()
 {
     if (m_pModel)
         m_pModel->setColumnVisible(m_columnVisible);
@@ -1568,14 +1568,14 @@ void UIResourceMonitorWidget::updateModelColumVisibilityCache()
         m_pTableView->updateColumVisibility();
 }
 
-void UIResourceMonitorWidget::computeMinimumColumnWidths()
+void UIVMActivityOverviewWidget::computeMinimumColumnWidths()
 {
     if (!m_pTableView || !m_pModel)
         return;
     QFontMetrics fontMetrics(m_pTableView->font());
     const QMap<int, int> &columnDataStringLengths = m_pModel->dataLengths();
     QMap<int, int> columnWidthsInPixels;
-    for (int i = 0; i < (int)VMResourceMonitorColumn_Max; ++i)
+    for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)
     {
         int iColumnStringWidth = columnDataStringLengths.value(i, 0);
         int iColumnTitleWidth = m_columnTitles.value(i, QString()).length();
@@ -1588,7 +1588,7 @@ void UIResourceMonitorWidget::computeMinimumColumnWidths()
     m_pTableView->setMinimumColumnWidths(columnWidthsInPixels);
 }
 
-bool UIResourceMonitorWidget::columnVisible(int iColumnId) const
+bool UIVMActivityOverviewWidget::columnVisible(int iColumnId) const
 {
     return m_columnVisible.value(iColumnId, true);
 }
@@ -1610,7 +1610,7 @@ void UIVMActivityOverviewFactory::create(QIManagerDialog *&pDialog, QWidget *pCe
 
 
 /*********************************************************************************************************************************
-*   Class UIResourceMonitor implementation.                                                                                      *
+*   Class UIActivityOverview implementation.                                                                                      *
 *********************************************************************************************************************************/
 
 UIVMActivityOverviewDialog::UIVMActivityOverviewDialog(QWidget *pCenterWidget, UIActionPool *pActionPool)
@@ -1621,7 +1621,7 @@ UIVMActivityOverviewDialog::UIVMActivityOverviewDialog(QWidget *pCenterWidget, U
 
 void UIVMActivityOverviewDialog::retranslateUi()
 {
-    setWindowTitle(UIResourceMonitorWidget::tr("VM Resource Monitor"));
+    setWindowTitle(UIVMActivityOverviewWidget::tr("VM Resource Monitor"));
 }
 
 void UIVMActivityOverviewDialog::configure()
@@ -1632,7 +1632,7 @@ void UIVMActivityOverviewDialog::configure()
 
 void UIVMActivityOverviewDialog::configureCentralWidget()
 {
-    UIResourceMonitorWidget *pWidget = new UIResourceMonitorWidget(EmbedTo_Dialog, m_pActionPool, true, this);
+    UIVMActivityOverviewWidget *pWidget = new UIVMActivityOverviewWidget(EmbedTo_Dialog, m_pActionPool, true, this);
     AssertPtrReturnVoid(pWidget);
     {
         setWidget(pWidget);
@@ -1653,9 +1653,9 @@ void UIVMActivityOverviewDialog::finalize()
     retranslateUi();
 }
 
-UIResourceMonitorWidget *UIVMActivityOverviewDialog::widget()
+UIVMActivityOverviewWidget *UIVMActivityOverviewDialog::widget()
 {
-    return qobject_cast<UIResourceMonitorWidget*>(QIManagerDialog::widget());
+    return qobject_cast<UIVMActivityOverviewWidget*>(QIManagerDialog::widget());
 }
 
 

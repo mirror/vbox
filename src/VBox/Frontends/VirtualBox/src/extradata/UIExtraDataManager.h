@@ -797,8 +797,8 @@ public:
 
     /** @name Manager UI: VM Resource Monitor
       * @{ */
-        void setVMResourceMonitorHiddenColumnList(const QStringList &hiddenColumnList);
-        QStringList VMResourceMonitorHiddenColumnList();
+        void setVMActivityOverviewHiddenColumnList(const QStringList &hiddenColumnList);
+        QStringList VMActivityOverviewHiddenColumnList();
     /** @} */
 
 private slots:

@@ -78,7 +78,7 @@ template<> bool canConvert<InformationElementType>() { return true; }
 template<> bool canConvert<MaximumGuestScreenSizePolicy>() { return true; }
 template<> bool canConvert<UIMediumFormat>() { return true; }
 template<> bool canConvert<UISettingsDefs::RecordingMode>() { return true; }
-template<> bool canConvert<VMResourceMonitorColumn>(){ return true; };
+template<> bool canConvert<VMActivityOverviewColumn>(){ return true; };
 
 
 /* QString <= SizeSuffix: */
@@ -2604,53 +2604,53 @@ template<> UISettingsDefs::RecordingMode fromString<UISettingsDefs::RecordingMod
     return values.at(keys.indexOf(QRegExp(strRecordingMode, Qt::CaseInsensitive)));
 }
 
-template<> QString toInternalString(const VMResourceMonitorColumn &enmVMResourceMonitorColumn)
+template<> QString toInternalString(const VMActivityOverviewColumn &enmVMActivityOverviewColumn)
 {
     QString strResult;
-    switch (enmVMResourceMonitorColumn)
+    switch (enmVMActivityOverviewColumn)
     {
-        case VMResourceMonitorColumn_Name:              strResult = "VMName"; break;
-        case VMResourceMonitorColumn_CPUGuestLoad:      strResult = "CPUGuestLoad"; break;
-        case VMResourceMonitorColumn_CPUVMMLoad:        strResult = "CPUVMMLoad"; break;
-        case VMResourceMonitorColumn_RAMUsedAndTotal:   strResult = "RAMUsedAndTotal"; break;
-        case VMResourceMonitorColumn_RAMUsedPercentage: strResult = "RAMUsedPercentage"; break;
-        case VMResourceMonitorColumn_NetworkUpRate:     strResult = "NetworkUpRate"; break;
-        case VMResourceMonitorColumn_NetworkDownRate:   strResult = "NetworkDownRate"; break;
-        case VMResourceMonitorColumn_NetworkUpTotal:    strResult = "NetworkUpTotal"; break;
-        case VMResourceMonitorColumn_NetworkDownTotal:  strResult = "NetworkDownTotal"; break;
-        case VMResourceMonitorColumn_DiskIOReadRate:    strResult = "DiskIOReadRate"; break;
-        case VMResourceMonitorColumn_DiskIOWriteRate:   strResult = "DiskIOWriteRate"; break;
-        case VMResourceMonitorColumn_DiskIOReadTotal:   strResult = "DiskIOReadTotal"; break;
-        case VMResourceMonitorColumn_DiskIOWriteTotal:  strResult = "DiskIOWriteTotal"; break;
-        case VMResourceMonitorColumn_VMExits:           strResult = "VMExits"; break;
+        case VMActivityOverviewColumn_Name:              strResult = "VMName"; break;
+        case VMActivityOverviewColumn_CPUGuestLoad:      strResult = "CPUGuestLoad"; break;
+        case VMActivityOverviewColumn_CPUVMMLoad:        strResult = "CPUVMMLoad"; break;
+        case VMActivityOverviewColumn_RAMUsedAndTotal:   strResult = "RAMUsedAndTotal"; break;
+        case VMActivityOverviewColumn_RAMUsedPercentage: strResult = "RAMUsedPercentage"; break;
+        case VMActivityOverviewColumn_NetworkUpRate:     strResult = "NetworkUpRate"; break;
+        case VMActivityOverviewColumn_NetworkDownRate:   strResult = "NetworkDownRate"; break;
+        case VMActivityOverviewColumn_NetworkUpTotal:    strResult = "NetworkUpTotal"; break;
+        case VMActivityOverviewColumn_NetworkDownTotal:  strResult = "NetworkDownTotal"; break;
+        case VMActivityOverviewColumn_DiskIOReadRate:    strResult = "DiskIOReadRate"; break;
+        case VMActivityOverviewColumn_DiskIOWriteRate:   strResult = "DiskIOWriteRate"; break;
+        case VMActivityOverviewColumn_DiskIOReadTotal:   strResult = "DiskIOReadTotal"; break;
+        case VMActivityOverviewColumn_DiskIOWriteTotal:  strResult = "DiskIOWriteTotal"; break;
+        case VMActivityOverviewColumn_VMExits:           strResult = "VMExits"; break;
         default:
             {
-                AssertMsgFailed(("No text for VM Resource Monitor Column=%d", enmVMResourceMonitorColumn));
+                AssertMsgFailed(("No text for VM Resource Monitor Column=%d", enmVMActivityOverviewColumn));
                 break;
             }
     }
     return strResult;
 }
 
-template<> VMResourceMonitorColumn fromInternalString<VMResourceMonitorColumn>(const QString &strVMResourceMonitorColumn)
+template<> VMActivityOverviewColumn fromInternalString<VMActivityOverviewColumn>(const QString &strVMActivityOverviewColumn)
 {
-    QStringList keys;    QList<VMResourceMonitorColumn> values;
-    keys << "VMName";             values << VMResourceMonitorColumn_Name;
-    keys << "CPUGuestLoad";       values << VMResourceMonitorColumn_CPUGuestLoad;
-    keys << "CPUVMMLoad";         values << VMResourceMonitorColumn_CPUVMMLoad;
-    keys << "RAMUsedAndTotal";    values << VMResourceMonitorColumn_RAMUsedAndTotal;
-    keys << "RAMUsedPercentage";  values << VMResourceMonitorColumn_RAMUsedPercentage;
-    keys << "NetworkUpRate";      values << VMResourceMonitorColumn_NetworkUpRate;
-    keys << "NetworkDownRate";    values << VMResourceMonitorColumn_NetworkDownRate;
-    keys << "NetworkUpTotal";     values << VMResourceMonitorColumn_NetworkUpTotal;
-    keys << "NetworkDownTotal";   values << VMResourceMonitorColumn_NetworkDownTotal;
-    keys << "DiskIOReadRate";     values << VMResourceMonitorColumn_DiskIOReadRate;
-    keys << "DiskIOWriteRate";    values << VMResourceMonitorColumn_DiskIOWriteRate;
-    keys << "DiskIOReadTotal";    values << VMResourceMonitorColumn_DiskIOReadTotal;
-    keys << "DiskIOWriteTotal";   values << VMResourceMonitorColumn_DiskIOWriteTotal;
-    keys << "VMExits";            values << VMResourceMonitorColumn_VMExits;
-    if (!keys.contains(strVMResourceMonitorColumn, Qt::CaseInsensitive))
-        return VMResourceMonitorColumn_Max;
+    QStringList keys;    QList<VMActivityOverviewColumn> values;
+    keys << "VMName";             values << VMActivityOverviewColumn_Name;
+    keys << "CPUGuestLoad";       values << VMActivityOverviewColumn_CPUGuestLoad;
+    keys << "CPUVMMLoad";         values << VMActivityOverviewColumn_CPUVMMLoad;
+    keys << "RAMUsedAndTotal";    values << VMActivityOverviewColumn_RAMUsedAndTotal;
+    keys << "RAMUsedPercentage";  values << VMActivityOverviewColumn_RAMUsedPercentage;
+    keys << "NetworkUpRate";      values << VMActivityOverviewColumn_NetworkUpRate;
+    keys << "NetworkDownRate";    values << VMActivityOverviewColumn_NetworkDownRate;
+    keys << "NetworkUpTotal";     values << VMActivityOverviewColumn_NetworkUpTotal;
+    keys << "NetworkDownTotal";   values << VMActivityOverviewColumn_NetworkDownTotal;
+    keys << "DiskIOReadRate";     values << VMActivityOverviewColumn_DiskIOReadRate;
+    keys << "DiskIOWriteRate";    values << VMActivityOverviewColumn_DiskIOWriteRate;
+    keys << "DiskIOReadTotal";    values << VMActivityOverviewColumn_DiskIOReadTotal;
+    keys << "DiskIOWriteTotal";   values << VMActivityOverviewColumn_DiskIOWriteTotal;
+    keys << "VMExits";            values << VMActivityOverviewColumn_VMExits;
+    if (!keys.contains(strVMActivityOverviewColumn, Qt::CaseInsensitive))
+        return VMActivityOverviewColumn_Max;
     /* Corresponding format for known words: */
-    return values.at(keys.indexOf(QRegExp(strVMResourceMonitorColumn, Qt::CaseInsensitive)));
+    return values.at(keys.indexOf(QRegExp(strVMActivityOverviewColumn, Qt::CaseInsensitive)));
 }

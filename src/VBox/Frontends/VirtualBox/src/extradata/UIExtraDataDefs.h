@@ -1073,25 +1073,25 @@ enum MaximumGuestScreenSizePolicy
 Q_DECLARE_METATYPE(MaximumGuestScreenSizePolicy);
 
 
-/** Manager UI: VM resource Monitor Column types.
+/** Manager UI: VM Activity Overview Column types.
   * @note The first element must be 0 and the rest must be consecutive */
-enum VMResourceMonitorColumn
+enum VMActivityOverviewColumn
 {
-    VMResourceMonitorColumn_Name = 0,
-    VMResourceMonitorColumn_CPUGuestLoad,
-    VMResourceMonitorColumn_CPUVMMLoad,
-    VMResourceMonitorColumn_RAMUsedAndTotal,
-    VMResourceMonitorColumn_RAMUsedPercentage,
-    VMResourceMonitorColumn_NetworkUpRate,
-    VMResourceMonitorColumn_NetworkDownRate,
-    VMResourceMonitorColumn_NetworkUpTotal,
-    VMResourceMonitorColumn_NetworkDownTotal,
-    VMResourceMonitorColumn_DiskIOReadRate,
-    VMResourceMonitorColumn_DiskIOWriteRate,
-    VMResourceMonitorColumn_DiskIOReadTotal,
-    VMResourceMonitorColumn_DiskIOWriteTotal,
-    VMResourceMonitorColumn_VMExits,
-    VMResourceMonitorColumn_Max
+    VMActivityOverviewColumn_Name = 0,
+    VMActivityOverviewColumn_CPUGuestLoad,
+    VMActivityOverviewColumn_CPUVMMLoad,
+    VMActivityOverviewColumn_RAMUsedAndTotal,
+    VMActivityOverviewColumn_RAMUsedPercentage,
+    VMActivityOverviewColumn_NetworkUpRate,
+    VMActivityOverviewColumn_NetworkDownRate,
+    VMActivityOverviewColumn_NetworkUpTotal,
+    VMActivityOverviewColumn_NetworkDownTotal,
+    VMActivityOverviewColumn_DiskIOReadRate,
+    VMActivityOverviewColumn_DiskIOWriteRate,
+    VMActivityOverviewColumn_DiskIOReadTotal,
+    VMActivityOverviewColumn_DiskIOWriteTotal,
+    VMActivityOverviewColumn_VMExits,
+    VMActivityOverviewColumn_Max
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extradata_UIExtraDataDefs_h */

@@ -124,7 +124,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<InformationElementType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<MaximumGuestScreenSizePolicy>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIMediumFormat>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UISettingsDefs::RecordingMode>();
-template<> SHARED_LIBRARY_STUFF bool canConvert<VMResourceMonitorColumn>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<VMActivityOverviewColumn>();
 
 /* Declare COM canConvert specializations: */
 template<> SHARED_LIBRARY_STUFF bool canConvert<KCloudMachineState>();
@@ -269,8 +269,8 @@ template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIMediumFormat &e
 template<> SHARED_LIBRARY_STUFF UIMediumFormat fromInternalString<UIMediumFormat>(const QString &strUIMediumFormat);
 template<> SHARED_LIBRARY_STUFF QString toString(const UISettingsDefs::RecordingMode &enmRecordingMode);
 template<> SHARED_LIBRARY_STUFF UISettingsDefs::RecordingMode fromString<UISettingsDefs::RecordingMode>(const QString &enmRecordingMode);
-template<> SHARED_LIBRARY_STUFF QString toInternalString(const VMResourceMonitorColumn &enmVMResourceMonitorColumn);
-template<> SHARED_LIBRARY_STUFF VMResourceMonitorColumn fromInternalString<VMResourceMonitorColumn>(const QString &strVMResourceMonitorColumn);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const VMActivityOverviewColumn &enmVMActivityOverviewColumn);
+template<> SHARED_LIBRARY_STUFF VMActivityOverviewColumn fromInternalString<VMActivityOverviewColumn>(const QString &strVMActivityOverviewColumn);
 
 /* Declare COM conversion specializations: */
 template<> SHARED_LIBRARY_STUFF QIcon toIcon(const KCloudMachineState &state);

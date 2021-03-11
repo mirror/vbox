@@ -36,7 +36,7 @@ class UICloudProfileManagerWidget;
 class UIExtensionPackManagerWidget;
 class UIMediumManagerWidget;
 class UINetworkManagerWidget;
-class UIResourceMonitorWidget;
+class UIVMActivityOverviewWidget;
 class UIVirtualMachineItem;
 class UIWelcomePane;
 class CMachine;
@@ -103,7 +103,7 @@ private:
     /** Holds the Cloud Profile Manager instance. */
     UICloudProfileManagerWidget  *m_pPaneCloud;
     /** Holds the VM Resource Monitor instance. */
-    UIResourceMonitorWidget      *m_pPaneResourceMonitor;
+    UIVMActivityOverviewWidget   *m_pPaneResourceMonitor;
 
     /** Holds whether this pane is active. */
     bool  m_fActive;

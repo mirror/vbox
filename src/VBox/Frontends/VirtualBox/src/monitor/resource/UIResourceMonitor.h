@@ -38,14 +38,14 @@ class QTreeWidgetItem;
 class QIDialogButtonBox;
 class UIActionPool;
 class QIToolBar;
-class UIResourceMonitorProxyModel;
-class UIResourceMonitorModel;
-class UIVMResourceMonitorHostStats;
-class UIVMResourceMonitorHostStatsWidget;
-class UIVMResourceMonitorTableView;
+class UIActivityOverviewProxyModel;
+class UIActivityOverviewModel;
+class UIVMActivityOverviewHostStats;
+class UIVMActivityOverviewHostStatsWidget;
+class UIVMActivityOverviewTableView;
 
 /** QWidget extension to display a Linux top like utility that sort running vm wrt. resource allocations. */
-class UIResourceMonitorWidget : public QIWithRetranslateUI<QWidget>
+class UIVMActivityOverviewWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -55,9 +55,9 @@ signals:
 
 public:
 
-    UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+    UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                bool fShowToolbar = true, QWidget *pParent = 0);
-    ~UIResourceMonitorWidget();
+    ~UIVMActivityOverviewWidget();
     QMenu *columnVisiblityToggleMenu() const;
     QMenu *menu() const;
 
@@ -81,7 +81,7 @@ private slots:
     void sltHandleDataUpdate();
     void sltToggleColumnSelectionMenu(bool fChecked);
     void sltHandleColumnAction(bool fChecked);
-    void sltHandleHostStatsUpdate(const UIVMResourceMonitorHostStats &stats);
+    void sltHandleHostStatsUpdate(const UIVMActivityOverviewHostStats &stats);
     void sltHandleTableContextMenuRequest(const QPoint &pos);
     void sltHandleShowVMActivityMonitor();
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
@@ -116,15 +116,15 @@ private:
     /** @name Misc members.
       * @{ */
         QIToolBar *m_pToolBar;
-        UIVMResourceMonitorTableView       *m_pTableView;
-        UIResourceMonitorProxyModel        *m_pProxyModel;
-        UIResourceMonitorModel             *m_pModel;
+        UIVMActivityOverviewTableView       *m_pTableView;
+        UIActivityOverviewProxyModel        *m_pProxyModel;
+        UIActivityOverviewModel             *m_pModel;
         QMenu                              *m_pColumnVisibilityToggleMenu;
-        /* The key is the column id (VMResourceMonitorColumn) and value is column title. */
+        /* The key is the column id (VMActivityOverviewColumn) and value is column title. */
         QMap<int, QString>                  m_columnTitles;
-        /* The key is the column id (VMResourceMonitorColumn) and value is true if the column is visible. */
+        /* The key is the column id (VMActivityOverviewColumn) and value is true if the column is visible. */
         QMap<int, bool>                     m_columnVisible;
-        UIVMResourceMonitorHostStatsWidget *m_pHostStatsWidget;
+        UIVMActivityOverviewHostStatsWidget *m_pHostStatsWidget;
         QAction                            *m_pVMActivityMonitorAction;
     /** @} */
     /** Indicates if this widget's host tool is current tool. */
@@ -164,7 +164,7 @@ private:
 
     /** @name Widget stuff.
       * @{ */
-        virtual UIResourceMonitorWidget *widget() /* override */;
+        virtual UIVMActivityOverviewWidget *widget() /* override */;
     /** @} */
 
     /** @name Action related variables.
