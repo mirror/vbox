@@ -132,11 +132,11 @@ private:
     int     m_iSortIndicatorWidth;
 };
 
-class UIResourceMonitorFactory : public QIManagerDialogFactory
+class UIVMActivityOverviewFactory : public QIManagerDialogFactory
 {
 public:
 
-    UIResourceMonitorFactory(UIActionPool *pActionPool = 0);
+    UIVMActivityOverviewFactory(UIActionPool *pActionPool = 0);
 
 protected:
 
@@ -144,13 +144,13 @@ protected:
     UIActionPool *m_pActionPool;
 };
 
-class UIResourceMonitor : public QIWithRetranslateUI<QIManagerDialog>
+class UIVMActivityOverviewDialog : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
 private:
 
-    UIResourceMonitor(QWidget *pCenterWidget, UIActionPool *pActionPool);
+    UIVMActivityOverviewDialog(QWidget *pCenterWidget, UIActionPool *pActionPool);
 
     virtual void retranslateUi() /* override */;
 
@@ -172,7 +172,7 @@ private:
         UIActionPool *m_pActionPool;
     /** @} */
 
-    friend class UIResourceMonitorFactory;
+    friend class UIVMActivityOverviewFactory;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_monitor_resource_UIResourceMonitor_h */

@@ -1595,17 +1595,17 @@ bool UIResourceMonitorWidget::columnVisible(int iColumnId) const
 
 
 /*********************************************************************************************************************************
-*   Class UIResourceMonitorFactory implementation.                                                                               *
+*   Class UIVMActivityOverviewFactory implementation.                                                                               *
 *********************************************************************************************************************************/
 
-UIResourceMonitorFactory::UIResourceMonitorFactory(UIActionPool *pActionPool /* = 0 */)
+UIVMActivityOverviewFactory::UIVMActivityOverviewFactory(UIActionPool *pActionPool /* = 0 */)
     : m_pActionPool(pActionPool)
 {
 }
 
-void UIResourceMonitorFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
+void UIVMActivityOverviewFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIResourceMonitor(pCenterWidget, m_pActionPool);
+    pDialog = new UIVMActivityOverviewDialog(pCenterWidget, m_pActionPool);
 }
 
 
@@ -1613,24 +1613,24 @@ void UIResourceMonitorFactory::create(QIManagerDialog *&pDialog, QWidget *pCente
 *   Class UIResourceMonitor implementation.                                                                                      *
 *********************************************************************************************************************************/
 
-UIResourceMonitor::UIResourceMonitor(QWidget *pCenterWidget, UIActionPool *pActionPool)
+UIVMActivityOverviewDialog::UIVMActivityOverviewDialog(QWidget *pCenterWidget, UIActionPool *pActionPool)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_pActionPool(pActionPool)
 {
 }
 
-void UIResourceMonitor::retranslateUi()
+void UIVMActivityOverviewDialog::retranslateUi()
 {
     setWindowTitle(UIResourceMonitorWidget::tr("VM Resource Monitor"));
 }
 
-void UIResourceMonitor::configure()
+void UIVMActivityOverviewDialog::configure()
 {
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/host_iface_manager_32px.png", ":/host_iface_manager_16px.png"));
 }
 
-void UIResourceMonitor::configureCentralWidget()
+void UIVMActivityOverviewDialog::configureCentralWidget()
 {
     UIResourceMonitorWidget *pWidget = new UIResourceMonitorWidget(EmbedTo_Dialog, m_pActionPool, true, this);
     AssertPtrReturnVoid(pWidget);
@@ -1644,16 +1644,16 @@ void UIResourceMonitor::configureCentralWidget()
     }
 }
 
-void UIResourceMonitor::configureButtonBox()
+void UIVMActivityOverviewDialog::configureButtonBox()
 {
 }
 
-void UIResourceMonitor::finalize()
+void UIVMActivityOverviewDialog::finalize()
 {
     retranslateUi();
 }
 
-UIResourceMonitorWidget *UIResourceMonitor::widget()
+UIResourceMonitorWidget *UIVMActivityOverviewDialog::widget()
 {
     return qobject_cast<UIResourceMonitorWidget*>(QIManagerDialog::widget());
 }
