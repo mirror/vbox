@@ -1357,7 +1357,7 @@ void UIVMActivityOverviewWidget::prepare()
     prepareActions();
     retranslateUi();
     updateModelColumVisibilityCache();
-    uiCommon().setHelpKeyword(this, "resource-monitor");
+    uiCommon().setHelpKeyword(this, "vm-activity-overview-widget");
 }
 
 void UIVMActivityOverviewWidget::prepareWidgets()
@@ -1621,7 +1621,7 @@ UIVMActivityOverviewDialog::UIVMActivityOverviewDialog(QWidget *pCenterWidget, U
 
 void UIVMActivityOverviewDialog::retranslateUi()
 {
-    setWindowTitle(UIVMActivityOverviewWidget::tr("VM Resource Monitor"));
+    setWindowTitle(UIVMActivityOverviewWidget::tr("VM Activity Overview"));
 }
 
 void UIVMActivityOverviewDialog::configure()

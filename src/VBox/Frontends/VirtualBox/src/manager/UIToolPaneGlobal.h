@@ -102,8 +102,8 @@ private:
     UINetworkManagerWidget       *m_pPaneNetwork;
     /** Holds the Cloud Profile Manager instance. */
     UICloudProfileManagerWidget  *m_pPaneCloud;
-    /** Holds the VM Resource Monitor instance. */
-    UIVMActivityOverviewWidget   *m_pPaneResourceMonitor;
+    /** Holds the VM Activity Overview Widget instance. */
+    UIVMActivityOverviewWidget   *m_pPaneVMActivityOverview;
 
     /** Holds whether this pane is active. */
     bool  m_fActive;

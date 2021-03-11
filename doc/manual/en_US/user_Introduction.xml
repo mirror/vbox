@@ -4813,7 +4813,7 @@
         settings of the guest system can be viewed and modified.
       </para>
     </sect2>
-    <sect2 id="resource-monitor">
+    <sect2 id="vm-activity-overview-widget">
 
       <title>Resource Monitor</title>
 
@@ -4830,7 +4830,7 @@
         To Performance action which is located in the tool bar and
         in the context menu.
       </para>
-      <figure id="fig-resource-monitor">
+      <figure id="fig-vm-activity-overview-widget">
         <title>Resource Monitor</title>
         <mediaobject>
           <imageobject>

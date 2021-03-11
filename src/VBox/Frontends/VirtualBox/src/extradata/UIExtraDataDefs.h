@@ -442,7 +442,7 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowserBookmarks;
     /** @} */
 
-    /** @name Manager UI: VM Resource Monitor Related stuff
+    /** @name Manager UI: VM Activity Overview Related stuff
       * @{ */
         SHARED_LIBRARY_STUFF extern const char *GUI_VMResourceManager_HiddenColumns;
     /** @} */

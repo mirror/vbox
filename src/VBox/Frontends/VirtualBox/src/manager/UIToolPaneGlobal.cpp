@@ -46,7 +46,7 @@ UIToolPaneGlobal::UIToolPaneGlobal(UIActionPool *pActionPool, QWidget *pParent /
     , m_pPaneMedia(0)
     , m_pPaneNetwork(0)
     , m_pPaneCloud(0)
-    , m_pPaneResourceMonitor(0)
+    , m_pPaneVMActivityOverview(0)
     , m_fActive(false)
 {
     /* Prepare: */
@@ -205,22 +205,22 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
             case UIToolType_VMActivityOverview:
             {
                 /* Create VM Resource Monitor: */
-                m_pPaneResourceMonitor = new UIVMActivityOverviewWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
-                AssertPtrReturnVoid(m_pPaneResourceMonitor);
+                m_pPaneVMActivityOverview = new UIVMActivityOverviewWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
+                AssertPtrReturnVoid(m_pPaneVMActivityOverview);
                 {
 #ifndef VBOX_WS_MAC
                     const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
-                    m_pPaneResourceMonitor->setContentsMargins(iMargin, 0, iMargin, 0);
+                    m_pPaneVMActivityOverview->setContentsMargins(iMargin, 0, iMargin, 0);
 #endif
 
                     /* Configure pane: */
-                    m_pPaneResourceMonitor->setProperty("ToolType", QVariant::fromValue(UIToolType_VMActivityOverview));
-                    connect(m_pPaneResourceMonitor, &UIVMActivityOverviewWidget::sigSwitchToMachinePerformancePane,
+                    m_pPaneVMActivityOverview->setProperty("ToolType", QVariant::fromValue(UIToolType_VMActivityOverview));
+                    connect(m_pPaneVMActivityOverview, &UIVMActivityOverviewWidget::sigSwitchToMachinePerformancePane,
                             this, &UIToolPaneGlobal::sigSwitchToMachinePerformancePane);
 
                     /* Add into layout: */
-                    m_pLayout->addWidget(m_pPaneResourceMonitor);
-                    m_pLayout->setCurrentWidget(m_pPaneResourceMonitor);
+                    m_pLayout->addWidget(m_pPaneVMActivityOverview);
+                    m_pLayout->setCurrentWidget(m_pPaneVMActivityOverview);
                 }
 
                 break;
@@ -287,7 +287,7 @@ QString UIToolPaneGlobal::currentHelpKeyword() const
             pCurrentToolWidget = m_pPaneCloud;
             break;
         case UIToolType_VMActivityOverview:
-            pCurrentToolWidget = m_pPaneResourceMonitor;
+            pCurrentToolWidget = m_pPaneVMActivityOverview;
             break;
         default:
             break;
@@ -318,6 +318,6 @@ void UIToolPaneGlobal::cleanup()
 void UIToolPaneGlobal::handleTokenChange()
 {
     /* Determine whether resource monitor is currently active tool: */
-    if (m_pPaneResourceMonitor)
-        m_pPaneResourceMonitor->setIsCurrentTool(m_fActive && currentTool() == UIToolType_VMActivityOverview);
+    if (m_pPaneVMActivityOverview)
+        m_pPaneVMActivityOverview->setIsCurrentTool(m_fActive && currentTool() == UIToolType_VMActivityOverview);
 }
