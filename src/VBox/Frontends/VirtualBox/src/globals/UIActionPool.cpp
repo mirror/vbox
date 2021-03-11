@@ -2256,7 +2256,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Export..."));
-        setShortcutScope(QApplication::translate("UIActionPool", "Performance Monitor"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VM Activity Monitor"));
         setStatusTip(QApplication::translate("UIActionPool", "Export the chart data into a text file"));
         setToolTip(  QApplication::translate("UIActionPool", "Export Data to File")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
