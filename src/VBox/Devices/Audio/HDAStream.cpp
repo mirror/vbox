@@ -1177,6 +1177,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     { /*likely*/ }
     else
     {
+        Assert(hdaGetDirFromSD(uSD) != PDMAUDIODIR_OUT /* Handled by caller */);
         /** @todo account for this or something so we can try get back in sync
          *        later... */
         LogFlowFunc(("Internal DMA/AIO buffer %s (%#x, wanted at least %#x)\n",
@@ -1686,6 +1687,41 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 }
 
 /**
+ * Output streams: Pushes data from to the mixer and host device.
+ *
+ * @param   pStreamShared   HDA stream to update (shared bits).
+ * @param   pStreamR3       HDA stream to update (ring-3 bits).
+ * @param   pSink           The mixer sink to push to.
+ * @param   nsNow           The current RTTimeNanoTS() value.
+ */
+static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PAUDMIXSINK pSink, uint64_t nsNow)
+{
+    uint32_t const cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
+    uint32_t const cbStreamReadable   = hdaR3StreamGetUsed(pStreamR3);
+    uint32_t       cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
+    /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
+    cbToReadFromStream = PDMAudioPropsFloorBytesToFrame(&pStreamR3->State.Mapping.PCMProps, cbToReadFromStream);
+
+    Assert(nsNow >= pStreamShared->State.tsLastReadNs);
+    Log3Func(("[SD%RU8] msDeltaLastRead=%RI64\n",
+              pStreamShared->u8SD, (nsNow - pStreamShared->State.tsLastReadNs) / RT_NS_1MS));
+    Log3Func(("[SD%RU8] cbSinkWritable=%RU32, cbStreamReadable=%RU32 -> cbToReadFromStream=%RU32\n",
+              pStreamShared->u8SD, cbSinkWritable, cbStreamReadable, cbToReadFromStream));
+
+    if (cbToReadFromStream)
+    {
+        /* Read (guest output) data and write it to the stream's sink. */
+        int rc2 = hdaR3StreamRead(pStreamR3, cbToReadFromStream, NULL /* pcbRead */);
+        AssertRC(rc2);
+    }
+
+    /* When running synchronously, update the associated sink here.
+     * Otherwise this will be done in the async I/O thread. */
+    int rc2 = AudioMixerSinkUpdate(pSink);
+    AssertRC(rc2);
+}
+
+/**
  * The stream's main function when called by the timer.
  *
  * @note This function also will be called without timer invocation when
@@ -1769,39 +1805,65 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 
     if (hdaGetDirFromSD(pStreamShared->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
     {
-        /*
-         * Do DMA work.
-         */
-        bool fDoRead = false; /* Whether to push data down the driver stack or not.  */
+        bool fDoRead; /* Whether to push data down the driver stack or not.  */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (fInTimer)
 # endif
         {
+            /*
+             * Check how much room we have in our DMA buffer.  There should be at
+             * least one period worth of space there or we're in an overflow situation.
+             */
             uint32_t cbStreamFree = hdaR3StreamGetFree(pStreamR3);
-            if (cbStreamFree)
+            if (cbStreamFree >= pStreamShared->State.cbTransferSize)
             { /* likely */ }
             else
             {
-                LogRel2(("HDA: Warning: Hit stream #%RU8 overflow, dropping audio data\n", pStreamShared->u8SD));
-# ifdef HDA_STRICT
-                AssertMsgFailed(("Hit stream #%RU8 overflow -- timing bug?\n", pStreamShared->u8SD));
-# endif
-                /* When hitting an overflow, drop all remaining data to make space for current data.
-                 * This is needed in order to keep the device emulation running at a constant rate,
-                 * at the cost of losing valid (but too much) data. */
-                RTCircBufReset(pStreamR3->State.pCircBuf);
-                pStreamR3->State.offWrite = 0;
-                pStreamR3->State.offRead  = 0;
+                STAM_REL_COUNTER_INC(&pStreamR3->State.StatDmaFlowProblems);
+                Log(("hdaR3StreamUpdate: Warning! Stream #%u has insufficient space free: %u bytes, need %u.  Will try move data out of the buffer...\n",
+                     pStreamShared->u8SD, cbStreamFree, pStreamShared->State.cbTransferSize));
+# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+                int rc = RTCritSectTryEnter(&pStreamR3->State.AIO.CritSect);
+                if (RT_SUCCESS(rc))
+                {
+                    hdaR3StreamPushToMixer(pStreamShared, pStreamR3, pSink, tsNowNs);
+                    RTCritSectLeave(&pStreamR3->State.AIO.CritSect);
+                }
+                else
+                    RTThreadYield();
+#else
+                hdaR3StreamPushToMixer(pStreamShared, pStreamR3, pSink, tsNowNs);
+#endif
+                Log(("hdaR3StreamUpdate: Gained %u bytes.\n", hdaR3StreamGetFree(pStreamR3) - cbStreamFree));
+
                 cbStreamFree = hdaR3StreamGetFree(pStreamR3);
+                if (cbStreamFree < pStreamShared->State.cbTransferSize)
+                {
+                    /* Unable to make sufficient space.  Drop the whole buffer content.
+                     * This is needed in order to keep the device emulation running at a constant rate,
+                     * at the cost of losing valid (but too much) data. */
+                    STAM_REL_COUNTER_INC(&pStreamR3->State.StatDmaFlowErrors);
+                    LogRel2(("HDA: Warning: Hit stream #%RU8 overflow, dropping %u bytes of audio data\n",
+                             pStreamShared->u8SD, hdaR3StreamGetUsed(pStreamR3)));
+# ifdef HDA_STRICT
+                    AssertMsgFailed(("Hit stream #%RU8 overflow -- timing bug?\n", pStreamShared->u8SD));
+# endif
+                    RTCircBufReset(pStreamR3->State.pCircBuf);
+                    pStreamR3->State.offWrite = 0;
+                    pStreamR3->State.offRead  = 0;
+                    cbStreamFree = hdaR3StreamGetFree(pStreamR3);
+                }
             }
 
-            /* Do the DMA transfer. */
+            /*
+             * Do the DMA transfer.
+             */
             uint64_t const offWriteBefore = pStreamR3->State.offWrite;
             rc2 = hdaR3StreamTransfer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamFree);
             AssertRC(rc2);
 
             /*
-             * Push data to down thru the mixer to and to the host drivers?
+             * Should we push data to down thru the mixer to and to the host drivers?
              *
              * We initially delay this by pThis->msInitialDelay, but after than we'll
              * kick the AIO thread every time we've put more data in the buffer (which is
@@ -1851,38 +1913,15 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
         }
 
         /*
-         * <Missing Description>
+         * Move data out of the pStreamR3->State.pCircBuf buffer and to
+         * the mixer and in direction of the host audio devices.
          */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-        if (!fInTimer) /* In async I/O thread */
+        else
 # else
         if (fDoRead)
 # endif
-        {
-            uint32_t const cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
-            uint32_t const cbStreamReadable   = hdaR3StreamGetUsed(pStreamR3);
-            uint32_t       cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
-            /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
-            cbToReadFromStream = PDMAudioPropsFloorBytesToFrame(&pStreamR3->State.Mapping.PCMProps, cbToReadFromStream);
-
-            Assert(tsNowNs >= pStreamShared->State.tsLastReadNs);
-            Log3Func(("[SD%RU8] msDeltaLastRead=%RI64\n",
-                      pStreamShared->u8SD, (tsNowNs - pStreamShared->State.tsLastReadNs) / RT_NS_1MS));
-            Log3Func(("[SD%RU8] cbSinkWritable=%RU32, cbStreamReadable=%RU32 -> cbToReadFromStream=%RU32\n",
-                      pStreamShared->u8SD, cbSinkWritable, cbStreamReadable, cbToReadFromStream));
-
-            if (cbToReadFromStream)
-            {
-                /* Read (guest output) data and write it to the stream's sink. */
-                rc2 = hdaR3StreamRead(pStreamR3, cbToReadFromStream, NULL /* pcbRead */);
-                AssertRC(rc2);
-            }
-
-            /* When running synchronously, update the associated sink here.
-             * Otherwise this will be done in the async I/O thread. */
-            rc2 = AudioMixerSinkUpdate(pSink);
-            AssertRC(rc2);
-        }
+            hdaR3StreamPushToMixer(pStreamShared, pStreamR3, pSink, tsNowNs);
     }
     else /* Input (SDI). */
     {

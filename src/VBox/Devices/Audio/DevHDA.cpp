@@ -5179,12 +5179,30 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 # endif
 
     for (uint8_t idxStream = 0; idxStream < RT_ELEMENTS(pThisCC->aStreams); idxStream++)
+    {
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowProblems, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "Number of internal DMA buffer problems.",   "Stream%u/DMABufferProblems", idxStream);
         if (hdaGetDirFromSD(idxStream) == PDMAUDIODIR_OUT)
             PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrors, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                   "Number of DMA overflows.",  "Stream%u/DMAOverflows", idxStream);
+                                   "Number of internal DMA buffer overflows.",  "Stream%u/DMABufferOverflows", idxStream);
         else
             PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrors, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                   "Number of DMA underflows.", "Stream%u/DMAUnderflows", idxStream);
+                                   "Number of internal DMA buffer underuns.", "Stream%u/DMABufferUnderruns", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offRead, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Virtual internal buffer read position.",    "Stream%u/offRead", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offWrite, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Virtual internal buffer write position.",   "Stream%u/offWrite", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.cbTransferSize, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "Bytes transfered per DMA timer callout.",   "Stream%u/cbTransferSize", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, (void*)&pThis->aStreams[idxStream].State.fRunning, STAMTYPE_BOOL, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "True if the stream is in RUN mode.",        "Stream%u/fRunning", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.uHz, STAMTYPE_U32, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "The stream frequency.",                     "Stream%u/Cfg/Hz", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cChannels, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "The number of channels.",                   "Stream%u/Cfg/Channels", idxStream);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStreams[idxStream].State.Cfg.Props.cbSample, STAMTYPE_U8, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                               "The size of a sample (per channel).",       "Stream%u/Cfg/cbSample", idxStream);
+    }
 
     return VINF_SUCCESS;
 }
