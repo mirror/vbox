@@ -3565,13 +3565,24 @@ DECLINLINE(void) tmR3CpuLoadTimerMakeUpdate(PTMCPULOADSTATE pState, uint64_t cNs
 {
     /* Calc & update deltas */
     uint64_t cNsTotalDelta      = cNsTotal     - pState->cNsPrevTotal;
-    pState->cNsPrevTotal        = cNsTotal;
-
     uint64_t cNsExecutingDelta  = cNsExecuting - pState->cNsPrevExecuting;
-    pState->cNsPrevExecuting    = cNsExecuting;
-
     uint64_t cNsHaltedDelta     = cNsHalted    - pState->cNsPrevHalted;
+
+    if (cNsExecutingDelta + cNsHaltedDelta <= cNsTotalDelta)
+    { /* likely */ }
+    else
+    {
+        /* Just adjust the executing and halted values down to match the total delta. */
+        uint64_t const cNsExecAndHalted = cNsExecutingDelta + cNsHaltedDelta;
+        uint64_t const cNsAdjust        = cNsExecAndHalted - cNsTotalDelta + cNsTotalDelta / 64;
+        cNsExecutingDelta -= (cNsAdjust * cNsExecutingDelta + cNsExecAndHalted - 1) / cNsExecAndHalted;
+        cNsHaltedDelta    -= (cNsAdjust * cNsHaltedDelta    + cNsExecAndHalted - 1) / cNsExecAndHalted;
+        Assert(cNsExecutingDelta + cNsHaltedDelta <= cNsTotalDelta);
+    }
+
+    pState->cNsPrevExecuting    = cNsExecuting;
     pState->cNsPrevHalted       = cNsHalted;
+    pState->cNsPrevTotal        = cNsTotal;
 
     /* Calc pcts. */
     uint8_t cPctExecuting, cPctHalted, cPctOther;
