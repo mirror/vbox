@@ -220,18 +220,18 @@ void hdaR3StreamPeriodResume(PHDASTREAMPERIOD pPeriod)
  * Returns the wall clock (WALCLK) value for a given amount of stream period audio frames.
  *
  * @return  Calculated wall clock value.
- * @param   pPeriod             Stream period to calculate wall clock value for.
- * @param   uFrames             Number of audio frames to calculate wall clock value for.
+ * @param   pPeriod     Stream period to calculate wall clock value for.
+ * @param   cFrames     Number of audio frames to calculate wall clock value for.
  *
  * @remark  Calculation depends on the given stream period and assumes a 24 MHz wall clock counter (WALCLK).
  */
-uint64_t hdaR3StreamPeriodFramesToWalClk(PHDASTREAMPERIOD pPeriod, uint32_t uFrames)
+uint64_t hdaR3StreamPeriodFramesToWalClk(PHDASTREAMPERIOD pPeriod, uint32_t cFrames)
 {
     /* Prevent division by zero. */
     const uint32_t uHz = pPeriod->u32Hz ? pPeriod->u32Hz : 1;
 
     /* 24 MHz wall clock (WALCLK): 42ns resolution. */
-    return ASMMultU64ByU32DivByU32(uFrames, 24000000, uHz);
+    return ASMMultU32ByU32DivByU32(cFrames, 24000000, uHz);
 }
 
 /**
