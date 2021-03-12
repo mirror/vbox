@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,8 +20,8 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QLocale>
-#include <QThread>
 #include <QProcess>
+#include <QThread>
 #ifdef VBOX_WS_MAC
 # include <QPushButton>
 #endif
@@ -30,22 +30,23 @@
 #include "QIMessageBox.h"
 #include "UICommon.h"
 #include "UIConverter.h"
-#include "UIHelpBrowserDialog.h"
-#include "UIMessageCenter.h"
-#include "UIProgressDialog.h"
 #include "UIErrorString.h"
+#include "UIExtraDataManager.h"
+#include "UIHelpBrowserDialog.h"
+#include "UIHostComboEditor.h"
+#include "UIIconPool.h"
+#include "UIMedium.h"
+#include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
+#include "UIProgressDialog.h"
+#include "VBoxAboutDlg.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UINetworkRequestManager.h"
 # include "UINetworkRequestManagerWindow.h"
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#include "UIModalWindowManager.h"
-#include "UIExtraDataManager.h"
-#include "UIMedium.h"
+#endif
 #ifdef VBOX_OSE
 # include "UIDownloaderUserManual.h"
-#endif /* VBOX_OSE */
-#include "VBoxAboutDlg.h"
-#include "UIHostComboEditor.h"
+#endif
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -54,6 +55,7 @@
 #endif
 
 /* COM includes: */
+#include "CAppliance.h"
 #include "CAudioAdapter.h"
 #include "CBooleanFormValue.h"
 #include "CChoiceFormValue.h"
@@ -62,9 +64,17 @@
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
 #include "CCloudProviderManager.h"
+#include "CConsole.h"
 #include "CDHCPServer.h"
+#include "CExtPack.h"
+#include "CExtPackFile.h"
+#include "CExtPackManager.h"
 #include "CForm.h"
 #include "CGraphicsAdapter.h"
+#include "CHostNetworkInterface.h"
+#include "CMachine.h"
+#include "CMediumAttachment.h"
+#include "CMediumFormat.h"
 #include "CNATEngine.h"
 #include "CNATNetwork.h"
 #include "CNetworkAdapter.h"
@@ -74,32 +84,22 @@
 #include "CSnapshot.h"
 #include "CStorageController.h"
 #include "CStringFormValue.h"
-#include "CConsole.h"
-#include "CMachine.h"
 #include "CSystemProperties.h"
-#include "CVirtualBoxErrorInfo.h"
-#include "CMediumAttachment.h"
-#include "CMediumFormat.h"
-#include "CAppliance.h"
-#include "CExtPack.h"
-#include "CExtPackManager.h"
-#include "CExtPackFile.h"
-#include "CHostNetworkInterface.h"
 #include "CUnattended.h"
 #include "CVFSExplorer.h"
+#include "CVirtualBoxErrorInfo.h"
 #include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP
-# include "CGuest.h"
 # include "CDnDSource.h"
 # include "CDnDTarget.h"
-#endif /* VBOX_WITH_DRAG_AND_DROP */
+# include "CGuest.h"
+#endif
 
 /* Other VBox includes: */
+#include <iprt/errcore.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
-
-#include <iprt/errcore.h>
 
 
 /* static */
@@ -364,35 +364,38 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
                                               QWidget *pParent /* = 0*/,
                                               int cMinDuration /* = 2000 */)
 {
+    /* Prepare result: */
+    bool fRc = false;
+
+    /* Gather suitable dialog parent: */
+    QWidget *pDlgParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
+    AssertPtrReturn(pDlgParent, fRc);
+
     /* Prepare pixmap: */
-    QPixmap *pPixmap = NULL;
+    QPixmap pixmap;
     if (!strImage.isEmpty())
-        pPixmap = new QPixmap(strImage);
+        pixmap = UIIconPool::iconSet(strImage).pixmap(pDlgParent->windowHandle(), QSize(90, 90));
 
     /* Create progress-dialog: */
-    QWidget *pDlgParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
-    QPointer<UIProgressDialog> pProgressDlg = new UIProgressDialog(progress, strTitle, pPixmap, cMinDuration, pDlgParent);
-    windowManager().registerNewParent(pProgressDlg, pDlgParent);
-
-    /* Run the dialog with the 350 ms refresh interval. */
-    pProgressDlg->run(350);
-
-    /* Make sure progress-dialog still valid: */
-    bool fRc;
+    QPointer<UIProgressDialog> pProgressDlg = new UIProgressDialog(progress, strTitle, &pixmap, cMinDuration, pDlgParent);
     if (pProgressDlg)
     {
-        /* Delete progress-dialog: */
-        delete pProgressDlg;
+        /* Register it as new parent: */
+        windowManager().registerNewParent(pProgressDlg, pDlgParent);
 
-        fRc = true;
+        /* Run the dialog with the 350 ms refresh interval. */
+        pProgressDlg->run(350);
+
+        /* Make sure progress-dialog still valid: */
+        if (pProgressDlg)
+        {
+            /* Delete progress-dialog: */
+            delete pProgressDlg;
+            fRc = true;
+        }
     }
-    else
-        fRc = false;
 
-    /* Cleanup pixmap: */
-    if (pPixmap)
-        delete pPixmap;
-
+    /* Return result: */
     return fRc;
 }
 
