@@ -114,7 +114,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                     break;
                 }
                 /* Show machine move progress: */
-                msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_clone_90px.png");
+                msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_dnd_hg_90px.png");
                 if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                 {
                     msgCenter().cannotMoveMachine(comProgress, comMachine.GetName());
