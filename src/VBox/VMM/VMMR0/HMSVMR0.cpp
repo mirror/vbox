@@ -2049,9 +2049,9 @@ static void hmR0SvmExportGuestHwvirtState(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
             PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
             PCVMCC    pVM  = pVCpu->CTX_SUFF(pVM);
 
-            HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);                                /* Nested VGIF is not supported yet. */
+            HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);                       /* Nested VGIF is not supported yet. */
             Assert(g_fHmSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_VGIF);    /* Physical hardware supports VGIF. */
-            Assert(HMIsSvmVGifActive(pVM));                                        /* Outer VM has enabled VGIF. */
+            Assert(HMIsSvmVGifActive(pVM));                               /* Outer VM has enabled VGIF. */
             NOREF(pVM);
 
             pVmcb->ctrl.IntCtrl.n.u1VGif = CPUMGetGuestGif(pCtx);
@@ -2230,13 +2230,13 @@ static void hmR0SvmMergeVmcbCtrlsNested(PVMCPUCC pVCpu)
      * Merge the guest's exception intercepts into the nested-guest VMCB.
      *
      * - #UD: Exclude these as the outer guest's GIM hypercalls are not applicable
-     * while executing the nested-guest.
+     *   while executing the nested-guest.
      *
      * - #BP: Exclude breakpoints set by the VM debugger for the outer guest. This can
-     * be tweaked later depending on how we wish to implement breakpoints.
+     *   be tweaked later depending on how we wish to implement breakpoints.
      *
      * - #GP: Exclude these as it's the inner VMMs problem to get vmsvga 3d drivers
-     *        loaded into their guests, not ours.
+     *   loaded into their guests, not ours.
      *
      * Warning!! This ASSUMES we only intercept \#UD for hypercall purposes and \#BP
      * for VM debugger breakpoints, see hmR0SvmExportGuestXcptIntercepts().
@@ -4559,8 +4559,8 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeStep(PVMCPUCC pVCpu, uint32_t *pcLoops)
     SvmTransient.pVmcb = pVCpu->hmr0.s.svm.pVmcb;
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    uint16_t uCsStart  = pCtx->cs.Sel;
-    uint64_t uRipStart = pCtx->rip;
+    uint16_t const uCsStart  = pCtx->cs.Sel;
+    uint64_t const uRipStart = pCtx->rip;
 
     VBOXSTRICTRC rc = VERR_INTERNAL_ERROR_5;
     for (;;)
