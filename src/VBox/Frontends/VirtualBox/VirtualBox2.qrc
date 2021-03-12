@@ -157,6 +157,7 @@
         <file alias="profile_16px.png">images/profile_16px.png</file>
         <file alias="progress_clone_90px.png">images/progress_clone_90px.png</file>
         <file alias="progress_delete_90px.png">images/progress_delete_90px.png</file>
+        <file alias="progress_delete_cloud_vm_90px.png">images/progress_delete_cloud_vm_90px.png</file>
         <file alias="progress_dnd_gh_90px.png">images/progress_dnd_gh_90px.png</file>
         <file alias="progress_dnd_hg_90px.png">images/progress_dnd_hg_90px.png</file>
         <file alias="progress_export_90px.png">images/progress_export_90px.png</file>

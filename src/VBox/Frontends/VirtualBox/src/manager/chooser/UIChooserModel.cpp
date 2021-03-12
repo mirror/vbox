@@ -1946,7 +1946,7 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
             continue;
         }
         /* And show unregister progress finally: */
-        msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_delete_90px.png", 0, 0);
+        msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_delete_cloud_vm_90px.png", 0, 0);
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
         {
             msgCenter().cannotRemoveCloudMachine(comMachine, comProgress);

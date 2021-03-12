@@ -1234,7 +1234,7 @@ void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForGroup()
                                     else
                                     {
                                         /* Show "create console connection" progress: */
-                                        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+                                        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_new_cloud_vm_90px.png", 0, 0);
                                         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                                             msgCenter().cannotCreateConsoleConnection(comProgress, strName);
                                     }
@@ -1287,7 +1287,7 @@ void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForMachine()
                             else
                             {
                                 /* Show "create console connection" progress: */
-                                msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+                                msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_new_cloud_vm_90px.png", 0, 0);
                                 if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                                     msgCenter().cannotCreateConsoleConnection(comProgress, strName);
                             }
@@ -1337,7 +1337,7 @@ void UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForGroup()
                             else
                             {
                                 /* Show "delete console connection" progress: */
-                                msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+                                msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_delete_cloud_vm_90px.png", 0, 0);
                                 if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                                     msgCenter().cannotDeleteConsoleConnection(comProgress, strName);
                             }
@@ -1381,7 +1381,7 @@ void UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForMachine()
                     else
                     {
                         /* Show "delete console connection" progress: */
-                        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+                        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_delete_cloud_vm_90px.png", 0, 0);
                         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                             msgCenter().cannotDeleteConsoleConnection(comProgress, strName);
                     }
@@ -1796,7 +1796,7 @@ void UIVirtualBoxManager::sltPerformTerminateMachine()
         }
 
         /* Show terminate cloud instance progress: */
-        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_delete_cloud_vm_90px.png", 0, 0);
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             msgCenter().cannotTerminateCloudInstance(comProgress, strName);
     }
