@@ -49,7 +49,6 @@
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     : UIWizardNewVMPage1(strGroup)
     , m_pToolBox(0)
-    , m_pInstallationISOGroupBox(0)
     , m_pDiskFormatGroupBox(0)
     , m_pDiskVariantGroupBox(0)
     , m_pLocationLabel(0)
@@ -161,8 +160,6 @@ void UIWizardNewVMPageExpert::retranslateUi()
     UIWizardNewVDPage2::retranslateWidgets();
     UIWizardNewVDPage3::retranslateWidgets();
 
-    if (m_pInstallationISOGroupBox)
-        m_pInstallationISOGroupBox->setTitle(UIWizardNewVM::tr("Installation medium (ISO)"));
     if (m_pToolBox)
     {
         m_pToolBox->setPageTitle(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and operating system")));
@@ -344,12 +341,6 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
     QGridLayout *pLayout = new QGridLayout(pContainerWidget);
     pLayout->setContentsMargins(0, 0, 0, 0);
     int iRow = 0;
-
-    /* Installation medium selector etc: */
-    {
-        m_pInstallationISOGroupBox = new QGroupBox;
-        pLayout->addWidget(m_pInstallationISOGroupBox, iRow++, 0, 1, 4);
-    }
 
     /* Username selector: */
     pLayout->addWidget(createUserNameWidgets(), iRow, 0, 1, 2);

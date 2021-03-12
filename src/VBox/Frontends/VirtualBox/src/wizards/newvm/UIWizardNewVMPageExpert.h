@@ -141,7 +141,6 @@ private:
     /** @name Variables
      * @{ */
        UIToolBox  *m_pToolBox;
-       QGroupBox *m_pInstallationISOGroupBox;
        QGroupBox *m_pDiskFormatGroupBox;
        QGroupBox *m_pDiskVariantGroupBox;
        QLabel *m_pLocationLabel;

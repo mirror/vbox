@@ -412,7 +412,6 @@ void UIWizardNewVMPage1::setTypeByISODetectedOSType(const QString &strDetectedOS
 UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     : UIWizardNewVMPage1(strGroup)
     , m_pNameOSTypeLabel(0)
-    , m_pUnattendedLabel(0)
 {
     prepare();
 }
@@ -430,12 +429,6 @@ void UIWizardNewVMPageBasic1::prepare()
 
         /* Prepare Name and OS Type editor: */
         pPageLayout->addWidget(createNameOSTypeWidgets());
-
-        /* Prepare Unattended description label: */
-        m_pUnattendedLabel = new QIRichTextLabel(this);
-        if (m_pUnattendedLabel)
-            pPageLayout->addWidget(m_pUnattendedLabel);
-
         pPageLayout->addStretch();
     }
 
@@ -502,10 +495,6 @@ void UIWizardNewVMPageBasic1::retranslateUi()
     retranslateWidgets();
     /* Translate page: */
     setTitle(UIWizardNewVM::tr("Virtual machine name and operating system"));
-
-    if (m_pUnattendedLabel)
-        m_pUnattendedLabel->setText(UIWizardNewVM::tr("Please decide whether you want to start an unattended guest OS install "
-                                                      "in which case you will have to select a valid installation medium."));
 
     if (m_pNameOSTypeLabel)
         m_pNameOSTypeLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine. "

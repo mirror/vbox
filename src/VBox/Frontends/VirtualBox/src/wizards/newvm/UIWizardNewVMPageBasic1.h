@@ -163,7 +163,6 @@ private:
     /** @name Widgets
      * @{ */
         QIRichTextLabel *m_pNameOSTypeLabel;
-        QIRichTextLabel *m_pUnattendedLabel;
     /** @} */
 };
 
