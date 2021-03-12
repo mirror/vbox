@@ -1884,10 +1884,10 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
                 STAM_COUNTER_ADD(&pThis->StatBytesRead, cbBufDst);
 
                 /* advance */
-                cbChunk                -= cbBufDst;
-                GCPhys                 += cbBufDst;
-                cbLeft                 -= cbBufDst;
-                pBDLE->State.u32BufOff += cbBufDst;
+                cbChunk                -= (uint32_t)cbBufDst;
+                GCPhys                 +=           cbBufDst;
+                cbLeft                 -= (uint32_t)cbBufDst;
+                pBDLE->State.u32BufOff += (uint32_t)cbBufDst;
                 Assert(pBDLE->State.u32BufOff <= pBDLE->Desc.u32BufSize);
             }
         }
@@ -1939,7 +1939,7 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
                     RTCircBufAcquireWriteBlock(pCircBuf, PDMAudioPropsFramesToBytes(&pStreamShared->State.Cfg.Props, cFrames),
                                                &pvBufDst, &cbBufDst);
 
-                    uint32_t const cFramesToConvert = PDMAudioPropsBytesToFrames(&pStreamShared->State.Cfg.Props, cbBufDst);
+                    uint32_t const cFramesToConvert = PDMAudioPropsBytesToFrames(&pStreamShared->State.Cfg.Props, (uint32_t)cbBufDst);
                     Assert(PDMAudioPropsFramesToBytes(&pStreamShared->State.Cfg.Props, cFramesToConvert) == cbBufDst);
                     Assert(cFramesToConvert > 0);
                     Assert(cFramesToConvert <= cFrames);
@@ -1962,7 +1962,7 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
                     STAM_COUNTER_ADD(&pThis->StatBytesRead, cbBufDst);
 
                     /* advance */
-                    cbLeft    -= cbBufDst;
+                    cbLeft    -= (uint32_t)cbBufDst;
                     cFrames   -= cFramesToConvert;
                     offBounce += PDMAudioPropsFramesToBytes(&pStreamR3->State.Mapping.GuestProps, cFramesToConvert);
                 }
