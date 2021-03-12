@@ -26,16 +26,18 @@
  */
 typedef struct HDASTREAMMAP
 {
-    /** The PCM properties which have been used. */
-    PDMAUDIOPCMPROPS                PCMProps;
+    /** The guest stream properties that is being mapped from/to.
+     * The host properties are found in HDASTREAMSTATE::Cfg::Props.  */
+    PDMAUDIOPCMPROPS                GuestProps;
     /** The stream's layout. */
     PDMAUDIOSTREAMLAYOUT            enmLayout;
-    /** The mapping's overall audio frame size (in bytes).
-     *  This includes all mappings in \a paMappings. */
-    uint8_t                         cbFrameSize;
+    /** The guest side frame size in bytes. */
+    uint8_t                         cbGuestFrame;
+    /** Set if mapping is needed. */
+    bool                            fMappingNeeded;
     /** Number of mappings in paMappings. */
     uint8_t                         cMappings;
-    uint8_t                         aPadding[2];
+    uint8_t                         aPadding[1];
     /** Array of stream mappings.
      *  Note: The mappings *must* be layed out in an increasing order, e.g.
      *        how the data appears in the given data block. */
@@ -47,6 +49,26 @@ typedef struct HDASTREAMMAP
     /** Circular buffer holding for holding audio data for this mapping. */
     R3PTRTYPE(PRTCIRCBUF)           pCircBuf;
 #endif
+    /**
+     * Converts guest data to host data.
+     *
+     * @param   pvDst       The destination (host) buffer.
+     * @param   pvSrc       The source (guest) data.  Does not overlap @a pvDst.
+     * @param   cFrames     Number of frames to convert.
+     * @param   pMapping    Pointer to this structure.
+     */
+    DECLCALLBACKMEMBER(void, pfnGuestToHost,(void *pvDst, void const *pvSrc, uint32_t cFrames,
+                                             struct HDASTREAMMAP const *pMapping));
+    /**
+     * Converts host data to guest data.
+     *
+     * @param   pvDst       The destination (guest) buffer.
+     * @param   pvSrc       The source (host) data.  Does not overlap @a pvDst.
+     * @param   cFrames     Number of frames to convert.
+     * @param   pMapping    Pointer to this structure.
+     */
+    DECLCALLBACKMEMBER(void, pfnHostToGuest,(void *pvDst, void const *pvSrc, uint32_t cFrames,
+                                             struct HDASTREAMMAP const *pMapping));
 } HDASTREAMMAP;
 AssertCompileSizeAlignment(HDASTREAMMAP, 8);
 /** Pointer to an audio stream data mapping. */
@@ -56,7 +78,7 @@ typedef HDASTREAMMAP *PHDASTREAMMAP;
  * @{
  */
 #ifdef IN_RING3
-int  hdaR3StreamMapInit(PHDASTREAMMAP pMapping, PPDMAUDIOPCMPROPS pProps);
+int  hdaR3StreamMapInit(PHDASTREAMMAP pMapping, uint8_t cHostChannels, PPDMAUDIOPCMPROPS pProps);
 void hdaR3StreamMapDestroy(PHDASTREAMMAP pMapping);
 void hdaR3StreamMapReset(PHDASTREAMMAP pMapping);
 #endif

@@ -37,7 +37,7 @@ static void tstBasics(RTTEST hTest)
 {
     RTTestSub(hTest, "Basics");
 
-    static const PDMAUDIOPCMPROPS s_Cfg441StereoS16 = PDMAUDIOPCMPROPS_INITIALIZOR(
+    const PDMAUDIOPCMPROPS Cfg441StereoS16 = PDMAUDIOPCMPROPS_INITIALIZOR(
         /* a_cb: */             2,
         /* a_fSigned: */        true,
         /* a_cChannels: */      2,
@@ -45,7 +45,7 @@ static void tstBasics(RTTEST hTest)
         /* a_cShift: */         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(2 /* cb */, 2 /* cChannels */),
         /* a_fSwapEndian: */    false
     );
-    static const PDMAUDIOPCMPROPS s_Cfg441StereoU16 = PDMAUDIOPCMPROPS_INITIALIZOR(
+    const PDMAUDIOPCMPROPS Cfg441StereoU16 = PDMAUDIOPCMPROPS_INITIALIZOR(
         /* a_cb: */             2,
         /* a_fSigned: */        false,
         /* a_cChannels: */      2,
@@ -53,7 +53,7 @@ static void tstBasics(RTTEST hTest)
         /* a_cShift: */         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(2 /* cb */, 2 /* cChannels */),
         /* a_fSwapEndian: */    false
     );
-    static const PDMAUDIOPCMPROPS s_Cfg441StereoU32 = PDMAUDIOPCMPROPS_INITIALIZOR(
+    const PDMAUDIOPCMPROPS Cfg441StereoU32 = PDMAUDIOPCMPROPS_INITIALIZOR(
         /* a_cb: */             4,
         /* a_fSigned: */        false,
         /* a_cChannels: */      2,
@@ -62,88 +62,88 @@ static void tstBasics(RTTEST hTest)
         /* a_fSwapEndian: */    false
     );
 
-    RTTESTI_CHECK(PDMAudioPropsGetBitrate(&s_Cfg441StereoS16) == 44100*4*8);
-    RTTESTI_CHECK(PDMAudioPropsGetBitrate(&s_Cfg441StereoU16) == 44100*4*8);
-    RTTESTI_CHECK(PDMAudioPropsGetBitrate(&s_Cfg441StereoU32) == 44100*8*8);
+    RTTESTI_CHECK(PDMAudioPropsGetBitrate(&Cfg441StereoS16) == 44100*4*8);
+    RTTESTI_CHECK(PDMAudioPropsGetBitrate(&Cfg441StereoU16) == 44100*4*8);
+    RTTESTI_CHECK(PDMAudioPropsGetBitrate(&Cfg441StereoU32) == 44100*8*8);
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&s_Cfg441StereoS16));
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&s_Cfg441StereoU16) == false); /* go figure */
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&s_Cfg441StereoU32) == false); /* go figure */
+    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&Cfg441StereoS16));
+    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&Cfg441StereoU16) == false); /* go figure */
+    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&Cfg441StereoU32) == false); /* go figure */
 
 
-    RTTESTI_CHECK_MSG(PDMAUDIOPCMPROPS_F2B(&s_Cfg441StereoS16, 1) == 4,
-                      ("got %x, expected 4\n", PDMAUDIOPCMPROPS_F2B(&s_Cfg441StereoS16, 1)));
-    RTTESTI_CHECK_MSG(PDMAUDIOPCMPROPS_F2B(&s_Cfg441StereoU16, 1) == 4,
-                      ("got %x, expected 4\n", PDMAUDIOPCMPROPS_F2B(&s_Cfg441StereoU16, 1)));
-    RTTESTI_CHECK_MSG(PDMAUDIOPCMPROPS_F2B(&s_Cfg441StereoU32, 1) == 8,
-                      ("got %x, expected 4\n", PDMAUDIOPCMPROPS_F2B(&s_Cfg441StereoU32, 1)));
+    RTTESTI_CHECK_MSG(PDMAUDIOPCMPROPS_F2B(&Cfg441StereoS16, 1) == 4,
+                      ("got %x, expected 4\n", PDMAUDIOPCMPROPS_F2B(&Cfg441StereoS16, 1)));
+    RTTESTI_CHECK_MSG(PDMAUDIOPCMPROPS_F2B(&Cfg441StereoU16, 1) == 4,
+                      ("got %x, expected 4\n", PDMAUDIOPCMPROPS_F2B(&Cfg441StereoU16, 1)));
+    RTTESTI_CHECK_MSG(PDMAUDIOPCMPROPS_F2B(&Cfg441StereoU32, 1) == 8,
+                      ("got %x, expected 4\n", PDMAUDIOPCMPROPS_F2B(&Cfg441StereoU32, 1)));
 
-    RTTESTI_CHECK_MSG(PDMAudioPropsBytesPerFrame(&s_Cfg441StereoS16) == 4,
-                      ("got %x, expected 4\n", PDMAudioPropsBytesPerFrame(&s_Cfg441StereoS16)));
-    RTTESTI_CHECK_MSG(PDMAudioPropsBytesPerFrame(&s_Cfg441StereoU16) == 4,
-                      ("got %x, expected 4\n", PDMAudioPropsBytesPerFrame(&s_Cfg441StereoU16)));
-    RTTESTI_CHECK_MSG(PDMAudioPropsBytesPerFrame(&s_Cfg441StereoU32) == 8,
-                      ("got %x, expected 4\n", PDMAudioPropsBytesPerFrame(&s_Cfg441StereoU32)));
+    RTTESTI_CHECK_MSG(PDMAudioPropsBytesPerFrame(&Cfg441StereoS16) == 4,
+                      ("got %x, expected 4\n", PDMAudioPropsBytesPerFrame(&Cfg441StereoS16)));
+    RTTESTI_CHECK_MSG(PDMAudioPropsBytesPerFrame(&Cfg441StereoU16) == 4,
+                      ("got %x, expected 4\n", PDMAudioPropsBytesPerFrame(&Cfg441StereoU16)));
+    RTTESTI_CHECK_MSG(PDMAudioPropsBytesPerFrame(&Cfg441StereoU32) == 8,
+                      ("got %x, expected 4\n", PDMAudioPropsBytesPerFrame(&Cfg441StereoU32)));
 
     uint32_t u32;
     for (uint32_t i = 0; i < 256; i += 8)
     {
-        RTTESTI_CHECK(PDMAudioPropsIsSizeAligned(&s_Cfg441StereoU32, i) == true);
+        RTTESTI_CHECK(PDMAudioPropsIsSizeAligned(&Cfg441StereoU32, i) == true);
         for (uint32_t j = 1; j < 8; j++)
-            RTTESTI_CHECK(PDMAudioPropsIsSizeAligned(&s_Cfg441StereoU32, i + j) == false);
+            RTTESTI_CHECK(PDMAudioPropsIsSizeAligned(&Cfg441StereoU32, i + j) == false);
         for (uint32_t j = 0; j < 8; j++)
-            RTTESTI_CHECK(PDMAudioPropsFloorBytesToFrame(&s_Cfg441StereoU32, i + j) == i);
+            RTTESTI_CHECK(PDMAudioPropsFloorBytesToFrame(&Cfg441StereoU32, i + j) == i);
     }
     for (uint32_t i = 0; i < 4096; i += 4)
     {
-        RTTESTI_CHECK(PDMAudioPropsIsSizeAligned(&s_Cfg441StereoS16, i) == true);
+        RTTESTI_CHECK(PDMAudioPropsIsSizeAligned(&Cfg441StereoS16, i) == true);
         for (uint32_t j = 1; j < 4; j++)
-            RTTESTI_CHECK(PDMAudioPropsIsSizeAligned(&s_Cfg441StereoS16, i + j) == false);
+            RTTESTI_CHECK(PDMAudioPropsIsSizeAligned(&Cfg441StereoS16, i + j) == false);
         for (uint32_t j = 0; j < 4; j++)
-            RTTESTI_CHECK(PDMAudioPropsFloorBytesToFrame(&s_Cfg441StereoS16, i + j) == i);
+            RTTESTI_CHECK(PDMAudioPropsFloorBytesToFrame(&Cfg441StereoS16, i + j) == i);
     }
 
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsFramesToBytes(&s_Cfg441StereoS16, 44100)) == 44100 * 2 * 2,
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsFramesToBytes(&Cfg441StereoS16, 44100)) == 44100 * 2 * 2,
                       ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsFramesToBytes(&s_Cfg441StereoS16, 2)) == 2 * 2 * 2,
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsFramesToBytes(&Cfg441StereoS16, 2)) == 2 * 2 * 2,
                       ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsFramesToBytes(&s_Cfg441StereoS16, 1)) == 4,
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsFramesToBytes(&Cfg441StereoS16, 1)) == 4,
                       ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsFramesToBytes(&s_Cfg441StereoU16, 1)) == 4,
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsFramesToBytes(&Cfg441StereoU16, 1)) == 4,
                       ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsFramesToBytes(&s_Cfg441StereoU32, 1)) == 8,
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsFramesToBytes(&Cfg441StereoU32, 1)) == 8,
                       ("cb=%RU32\n", u32));
 
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsBytesToFrames(&s_Cfg441StereoS16, 4)) == 1, ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsBytesToFrames(&s_Cfg441StereoU16, 4)) == 1, ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsBytesToFrames(&s_Cfg441StereoU32, 8)) == 1, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsBytesToFrames(&Cfg441StereoS16, 4)) == 1, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsBytesToFrames(&Cfg441StereoU16, 4)) == 1, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsBytesToFrames(&Cfg441StereoU32, 8)) == 1, ("cb=%RU32\n", u32));
 
     uint64_t u64;
-    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsBytesToNano(&s_Cfg441StereoS16, 44100 * 2 * 2)) == RT_NS_1SEC,
+    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsBytesToNano(&Cfg441StereoS16, 44100 * 2 * 2)) == RT_NS_1SEC,
                       ("ns=%RU64\n", u64));
-    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsBytesToMicro(&s_Cfg441StereoS16, 44100 * 2 * 2)) == RT_US_1SEC,
+    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsBytesToMicro(&Cfg441StereoS16, 44100 * 2 * 2)) == RT_US_1SEC,
                       ("us=%RU64\n", u64));
-    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsBytesToMilli(&s_Cfg441StereoS16, 44100 * 2 * 2)) == RT_MS_1SEC,
+    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsBytesToMilli(&Cfg441StereoS16, 44100 * 2 * 2)) == RT_MS_1SEC,
                       ("ms=%RU64\n", u64));
 
-    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToNano(&s_Cfg441StereoS16, 44100)) == RT_NS_1SEC, ("ns=%RU64\n", u64));
-    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToNano(&s_Cfg441StereoS16,     1)) == 22675,      ("ns=%RU64\n", u64));
-    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToNano(&s_Cfg441StereoS16,    31)) == 702947,     ("ns=%RU64\n", u64));
-    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToNano(&s_Cfg441StereoS16,   255)) == 5782312,    ("ns=%RU64\n", u64));
-    //RTTESTI_CHECK_MSG((u64 = DrvAudioHlpFramesToMicro(&s_Cfg441StereoS16, 44100)) == RT_US_1SEC,
+    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToNano(&Cfg441StereoS16, 44100)) == RT_NS_1SEC, ("ns=%RU64\n", u64));
+    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToNano(&Cfg441StereoS16,     1)) == 22675,      ("ns=%RU64\n", u64));
+    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToNano(&Cfg441StereoS16,    31)) == 702947,     ("ns=%RU64\n", u64));
+    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToNano(&Cfg441StereoS16,   255)) == 5782312,    ("ns=%RU64\n", u64));
+    //RTTESTI_CHECK_MSG((u64 = DrvAudioHlpFramesToMicro(&Cfg441StereoS16, 44100)) == RT_US_1SEC,
     //                  ("us=%RU64\n", u64));
-    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToMilli(&s_Cfg441StereoS16, 44100)) == RT_MS_1SEC, ("ms=%RU64\n", u64));
-    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToMilli(&s_Cfg441StereoS16,   255)) == 5,          ("ms=%RU64\n", u64));
+    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToMilli(&Cfg441StereoS16, 44100)) == RT_MS_1SEC, ("ms=%RU64\n", u64));
+    RTTESTI_CHECK_MSG((u64 = PDMAudioPropsFramesToMilli(&Cfg441StereoS16,   255)) == 5,          ("ms=%RU64\n", u64));
 
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsNanoToFrames(&s_Cfg441StereoS16,  RT_NS_1SEC)) == 44100, ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsNanoToFrames(&s_Cfg441StereoS16,      215876)) == 10,    ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsMilliToFrames(&s_Cfg441StereoS16, RT_MS_1SEC)) == 44100, ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsMilliToFrames(&s_Cfg441StereoU32,          6)) == 265,   ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsNanoToFrames(&Cfg441StereoS16,  RT_NS_1SEC)) == 44100, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsNanoToFrames(&Cfg441StereoS16,      215876)) == 10,    ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsMilliToFrames(&Cfg441StereoS16, RT_MS_1SEC)) == 44100, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsMilliToFrames(&Cfg441StereoU32,          6)) == 265,   ("cb=%RU32\n", u32));
 
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsNanoToBytes(&s_Cfg441StereoS16,  RT_NS_1SEC)) == 44100*2*2, ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsNanoToBytes(&s_Cfg441StereoS16,      702947)) == 31*2*2,    ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsMilliToBytes(&s_Cfg441StereoS16, RT_MS_1SEC)) == 44100*2*2, ("cb=%RU32\n", u32));
-    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsMilliToBytes(&s_Cfg441StereoS16,          5)) == 884,       ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsNanoToBytes(&Cfg441StereoS16,  RT_NS_1SEC)) == 44100*2*2, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsNanoToBytes(&Cfg441StereoS16,      702947)) == 31*2*2,    ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsMilliToBytes(&Cfg441StereoS16, RT_MS_1SEC)) == 44100*2*2, ("cb=%RU32\n", u32));
+    RTTESTI_CHECK_MSG((u32 = PDMAudioPropsMilliToBytes(&Cfg441StereoS16,          5)) == 884,       ("cb=%RU32\n", u32));
 
     /* DrvAudioHlpClearBuf: */
     uint8_t *pbPage;
@@ -151,32 +151,32 @@ static void tstBasics(RTTEST hTest)
     RTTESTI_CHECK_RC_OK_RETV(rc);
 
     memset(pbPage, 0x42, PAGE_SIZE);
-    PDMAudioPropsClearBuffer(&s_Cfg441StereoS16, pbPage, PAGE_SIZE, PAGE_SIZE / 4);
+    PDMAudioPropsClearBuffer(&Cfg441StereoS16, pbPage, PAGE_SIZE, PAGE_SIZE / 4);
     RTTESTI_CHECK(ASMMemIsZero(pbPage, PAGE_SIZE));
 
     memset(pbPage, 0x42, PAGE_SIZE);
-    PDMAudioPropsClearBuffer(&s_Cfg441StereoU16, pbPage, PAGE_SIZE, PAGE_SIZE / 4);
+    PDMAudioPropsClearBuffer(&Cfg441StereoU16, pbPage, PAGE_SIZE, PAGE_SIZE / 4);
     for (uint32_t off = 0; off < PAGE_SIZE; off += 2)
         RTTESTI_CHECK_MSG(pbPage[off] == 0x80 && pbPage[off + 1] == 0, ("off=%#x: %#x %x\n", off, pbPage[off], pbPage[off + 1]));
 
     memset(pbPage, 0x42, PAGE_SIZE);
-    PDMAudioPropsClearBuffer(&s_Cfg441StereoU32, pbPage, PAGE_SIZE, PAGE_SIZE / 8);
+    PDMAudioPropsClearBuffer(&Cfg441StereoU32, pbPage, PAGE_SIZE, PAGE_SIZE / 8);
     for (uint32_t off = 0; off < PAGE_SIZE; off += 4)
         RTTESTI_CHECK(pbPage[off] == 0x80 && pbPage[off + 1] == 0 && pbPage[off + 2] == 0 && pbPage[off + 3] == 0);
 
 
     RTTestDisableAssertions(hTest);
     memset(pbPage, 0x42, PAGE_SIZE);
-    PDMAudioPropsClearBuffer(&s_Cfg441StereoS16, pbPage, PAGE_SIZE, PAGE_SIZE); /* should adjust down the frame count. */
+    PDMAudioPropsClearBuffer(&Cfg441StereoS16, pbPage, PAGE_SIZE, PAGE_SIZE); /* should adjust down the frame count. */
     RTTESTI_CHECK(ASMMemIsZero(pbPage, PAGE_SIZE));
 
     memset(pbPage, 0x42, PAGE_SIZE);
-    PDMAudioPropsClearBuffer(&s_Cfg441StereoU16, pbPage, PAGE_SIZE, PAGE_SIZE); /* should adjust down the frame count. */
+    PDMAudioPropsClearBuffer(&Cfg441StereoU16, pbPage, PAGE_SIZE, PAGE_SIZE); /* should adjust down the frame count. */
     for (uint32_t off = 0; off < PAGE_SIZE; off += 2)
         RTTESTI_CHECK_MSG(pbPage[off] == 0x80 && pbPage[off + 1] == 0, ("off=%#x: %#x %x\n", off, pbPage[off], pbPage[off + 1]));
 
     memset(pbPage, 0x42, PAGE_SIZE);
-    PDMAudioPropsClearBuffer(&s_Cfg441StereoU32, pbPage, PAGE_SIZE, PAGE_SIZE); /* should adjust down the frame count. */
+    PDMAudioPropsClearBuffer(&Cfg441StereoU32, pbPage, PAGE_SIZE, PAGE_SIZE); /* should adjust down the frame count. */
     for (uint32_t off = 0; off < PAGE_SIZE; off += 4)
         RTTESTI_CHECK(pbPage[off] == 0x80 && pbPage[off + 1] == 0 && pbPage[off + 2] == 0 && pbPage[off + 3] == 0);
     RTTestRestoreAssertions(hTest);

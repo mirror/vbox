@@ -688,6 +688,7 @@ typedef PDMAUDIOSTREAMMAP *PPDMAUDIOSTREAMMAP;
  */
 typedef struct PDMAUDIOPCMPROPS
 {
+/** @todo squeeze cbSample and cChannels into one uint8_t; Add cbFrame. */
     /** Sample width (in bytes). */
     uint8_t     cbSample;
     /** Number of audio channels. */
@@ -717,20 +718,29 @@ typedef PDMAUDIOPCMPROPS const *PCPDMAUDIOPCMPROPS;
 
 /** @name Macros for use with PDMAUDIOPCMPROPS
  * @{ */
-/** Initializor for PDMAUDIOPCMPROPS. */
+/** Initializer for PDMAUDIOPCMPROPS.
+ * @todo /PDMAUDIOPCMPROPS_INITIALIZOR/PDMAUDIOPCMPROPS_INITIALIZER/ */
 #define PDMAUDIOPCMPROPS_INITIALIZOR(a_cBytes, a_fSigned, a_cCannels, a_uHz, a_cShift, a_fSwapEndian) \
     { a_cBytes, a_cCannels, a_cShift, a_fSigned, a_fSwapEndian, a_uHz }
 /** Calculates the cShift value of given sample bits and audio channels.
- * @note Does only support mono/stereo channels for now. */
-#define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cBytes, cChannels)    ((cChannels == 2) + (cBytes / 2))
+ * @note This only works when the frame size is a
+ * Does only support mono/stereo channels for now, for non-stereo/mono we
+ *       returns a special value which the two conversion functions detect
+ *       and make them fall back on cbSample * cChannels. */
+#define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cbSample, cChannels) \
+    ( RT_IS_POWER_OF_TWO((unsigned)((cChannels) * (cbSample))) \
+      ? (uint8_t)(ASMBitFirstSetU32((unsigned)((cChannels) * (cbSample))) - 1) : (uint8_t)UINT8_MAX )
 /** Calculates the cShift value of a PDMAUDIOPCMPROPS structure. */
-#define PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps)     PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS((pProps)->cbSample, (pProps)->cChannels)
+#define PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps) \
+    PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS((pProps)->cbSample, (pProps)->cChannels)
 /** Converts (audio) frames to bytes.
  *  Needs the cShift value set correctly, using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
-#define PDMAUDIOPCMPROPS_F2B(pProps, frames)    ((frames) << (pProps)->cShift)
+#define PDMAUDIOPCMPROPS_F2B(pProps, cFrames) \
+    ( (pProps)->cShift != UINT8_MAX ? (cFrames) << (pProps)->cShift : (cFrames) * ((pProps)->cbSample * (pProps)->cChannels) )
 /** Converts bytes to (audio) frames.
  *  Needs the cShift value set correctly, using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
-#define PDMAUDIOPCMPROPS_B2F(pProps, cb)        ((cb) >> (pProps)->cShift)
+#define PDMAUDIOPCMPROPS_B2F(pProps, cb) \
+    ( (pProps)->cShift != UINT8_MAX ?      (cb) >> (pProps)->cShift : (cb)      / ((pProps)->cbSample * (pProps)->cChannels) )
 /** @}   */
 
 /**

@@ -131,9 +131,10 @@ typedef struct HDASTREAMSTATE
      *  Next for determining the next scheduling window.
      *  Can be 0 if no next transfer is scheduled. */
     uint64_t                tsTransferNext;
-    /** Total transfer size (in bytes) of a transfer period. */
+    /** Total transfer size (in bytes) of a transfer period.
+     * @note This is in host side frames, in case we're doing any mapping. */
     uint32_t                cbTransferSize;
-    /** Transfer chunk size (in bytes) of a transfer period. */
+    /** Unused, same as cbTransferSize. */
     uint32_t                cbTransferChunk;
     /** How many interrupts are pending due to
      *  BDLE interrupt-on-completion (IOC) bits set. */
@@ -156,8 +157,10 @@ typedef struct HDASTREAMSTATE
     uint64_t                cTransferTicks;
     /** The stream's period. Need for timing. */
     HDASTREAMPERIOD         Period;
-    /** The stream's current configuration.
-     *  Should match SDFMT. */
+    /** The stream's current host side configuration.
+     * This should match the SDnFMT in all respects but maybe the channel count as
+     * we may need to expand mono or into/from into stereo.  The unmodified SDnFMT
+     * properties can be found in HDASTREAMR3::Mapping::PCMProps. */
     PDMAUDIOSTREAMCFG       Cfg;
     /** Timestamp (real time, in ns) of last DMA transfer. */
     uint64_t                tsLastTransferNs;
