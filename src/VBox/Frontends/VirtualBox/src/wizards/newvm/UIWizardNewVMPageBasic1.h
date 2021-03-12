@@ -87,7 +87,6 @@ protected:
     /** @name Widgets
      * @{ */
         UINameAndSystemEditor *m_pNameAndSystemEditor;
-        UIFilePathSelector    *m_pISOFilePathSelector;
         QLabel                *m_pISOPathSelectorLabel;
     /** @} */
 

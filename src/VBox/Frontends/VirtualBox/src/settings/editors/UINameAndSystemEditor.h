@@ -65,6 +65,7 @@ signals:
     void sigOsTypeChanged();
     /** Notifies listeners about VM OS family change. */
     void sigOSFamilyChanged();
+    void sigISOPathChanged(const QString &strISOPath);
 
 public:
 
@@ -108,6 +109,8 @@ public:
     /** Returns the VM OS family ID. */
     QString familyId() const;
 
+    QString ISOFilePath() const;
+
     /** Defines the VM OS @a enmType. */
     void setType(const CGuestOSType &enmType);
     /** Returns the VM OS type. */
@@ -118,6 +121,8 @@ public:
 
     /** Passes the @p fError to QILineEdit::mark(bool) effectively changing the background color. */
     void markNameLineEdit(bool fError);
+
+    void markISOFileSelector(bool fError, const QString &strErrorMessage);
 
 protected:
 

@@ -208,11 +208,9 @@ void UIWizardNewVMPageExpert::createConnections()
                 this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
                 this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
-    }
-
-    if (m_pISOFilePathSelector)
-        connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged,
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigISOPathChanged,
                 this, &UIWizardNewVMPageExpert::sltISOPathChanged);
+    }
 
     /* Connections for username, password, and hostname: */
     if (m_pUserNamePasswordEditor)
@@ -350,17 +348,6 @@ QWidget *UIWizardNewVMPageExpert::createUnattendedWidgets()
     /* Installation medium selector etc: */
     {
         m_pInstallationISOGroupBox = new QGroupBox;
-        QHBoxLayout *pInstallationISOContainerLayout = new QHBoxLayout(m_pInstallationISOGroupBox);
-
-        m_pISOFilePathSelector = new UIFilePathSelector;
-        if (m_pISOFilePathSelector)
-        {
-            m_pISOFilePathSelector->setResetEnabled(false);
-            m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-            m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-            m_pISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
-            pInstallationISOContainerLayout->addWidget(m_pISOFilePathSelector);
-        }
         pLayout->addWidget(m_pInstallationISOGroupBox, iRow++, 0, 1, 4);
     }
 

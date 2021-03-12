@@ -179,7 +179,6 @@ static const osTypePattern gs_OSTypePattern[] =
 
 UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
     : m_pNameAndSystemEditor(0)
-    , m_pISOFilePathSelector(0)
     , m_pISOPathSelectorLabel(0)
     , m_strGroup(strGroup)
 {
@@ -340,9 +339,10 @@ QString UIWizardNewVMPage1::guestOSFamiyId() const
 void UIWizardNewVMPage1::markWidgets() const
 {
     if (m_pNameAndSystemEditor)
+    {
         m_pNameAndSystemEditor->markNameLineEdit(m_pNameAndSystemEditor->name().isEmpty());
-    if (m_pISOFilePathSelector)
-        m_pISOFilePathSelector->mark(!checkISOFile(), UIWizardNewVM::tr("Invalid file path or unreadable file"));
+        m_pNameAndSystemEditor->markISOFileSelector(!checkISOFile(), UIWizardNewVM::tr("Invalid file path or unreadable file"));
+    }
 }
 
 void UIWizardNewVMPage1::retranslateWidgets()
@@ -351,16 +351,16 @@ void UIWizardNewVMPage1::retranslateWidgets()
 
 QString UIWizardNewVMPage1::ISOFilePath() const
 {
-    if (!m_pISOFilePathSelector)
+    if (!m_pNameAndSystemEditor)
         return QString();
-    return m_pISOFilePathSelector->path();
+    return m_pNameAndSystemEditor->ISOFilePath();
 }
 
 bool UIWizardNewVMPage1::isUnattendedEnabled() const
 {
-    if (!m_pISOFilePathSelector)
+    if (!m_pNameAndSystemEditor)
         return false;
-    const QString &strPath = m_pISOFilePathSelector->path();
+    const QString &strPath = m_pNameAndSystemEditor->ISOFilePath();
     if (strPath.isNull() || strPath.isEmpty())
         return false;
     return true;
@@ -390,9 +390,9 @@ bool UIWizardNewVMPage1::determineOSType(const QString &strISOPath)
 
 bool UIWizardNewVMPage1::checkISOFile() const
 {
-    if (!m_pISOFilePathSelector)
+    if (!m_pNameAndSystemEditor)
         return true;
-    const QString &strPath = m_pISOFilePathSelector->path();
+    const QString &strPath = m_pNameAndSystemEditor->ISOFilePath();
     if (strPath.isNull() || strPath.isEmpty())
         return true;
     QFileInfo fileInfo(strPath);
@@ -436,34 +436,6 @@ void UIWizardNewVMPageBasic1::prepare()
         if (m_pUnattendedLabel)
             pPageLayout->addWidget(m_pUnattendedLabel);
 
-        /* Prepare ISO Selector layout: */
-        QHBoxLayout *pISOSelectorLayout = new QHBoxLayout;
-        if (pISOSelectorLayout)
-        {
-            /* Prepare ISO Selector label: */
-            m_pISOPathSelectorLabel = new QLabel(this);
-            if (m_pISOPathSelectorLabel)
-            {
-                m_pISOPathSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-                pISOSelectorLayout->addWidget(m_pISOPathSelectorLabel);
-            }
-            /* Prepare ISO Selector editor: */
-            m_pISOFilePathSelector = new UIFilePathSelector(this);
-            if (m_pISOFilePathSelector)
-            {
-                m_pISOFilePathSelector->setResetEnabled(false);
-                m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-                m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-                m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-                m_pISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
-                m_pISOPathSelectorLabel->setBuddy(m_pISOFilePathSelector);
-
-                pISOSelectorLayout->addWidget(m_pISOFilePathSelector);
-            }
-
-            pPageLayout->addLayout(pISOSelectorLayout);
-        }
-
         pPageLayout->addStretch();
     }
 
@@ -488,10 +460,8 @@ void UIWizardNewVMPageBasic1::createConnections()
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasic1::sltNameChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasic1::sltPathChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasic1::sltOsTypeChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigISOPathChanged, this, &UIWizardNewVMPageBasic1::sltISOPathChanged);
     }
-    if (m_pISOFilePathSelector)
-        connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasic1::sltISOPathChanged);
-
 }
 
 bool UIWizardNewVMPageBasic1::isComplete() const

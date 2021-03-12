@@ -238,6 +238,13 @@ QString UINameAndSystemEditor::familyId() const
     return m_strFamilyId;
 }
 
+QString UINameAndSystemEditor::ISOFilePath() const
+{
+    if (!m_pISOFileSelector)
+        return QString();
+    return m_pISOFileSelector->path();
+}
+
 void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
 {
     // WORKAROUND:
@@ -267,6 +274,12 @@ void UINameAndSystemEditor::markNameLineEdit(bool fError)
 {
     if (m_pNameLineEdit)
         m_pNameLineEdit->mark(fError, tr("Invalid name"));
+}
+
+void UINameAndSystemEditor::markISOFileSelector(bool fError, const QString &strErrorMessage)
+{
+    if (m_pISOFileSelector)
+        m_pISOFileSelector->mark(fError, strErrorMessage);
 }
 
 void UINameAndSystemEditor::retranslateUi()
@@ -609,4 +622,7 @@ void UINameAndSystemEditor::prepareConnections()
     if (m_pComboType)
         connect(m_pComboType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                 this, &UINameAndSystemEditor::sltTypeChanged);
+    if (m_pISOFileSelector)
+        connect(m_pISOFileSelector, &UIFilePathSelector::pathChanged,
+                this, &UINameAndSystemEditor::sigISOPathChanged);
 }
