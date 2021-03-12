@@ -264,11 +264,11 @@ typedef enum
     /* context created by VBoxTray to handle resize operations */
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_RESIZE,
     /* context created by VBoxTray to handle seamless operations */
-    VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_SEAMLESS
-#ifdef VBOX_WITH_MESA3D
+    VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_SEAMLESS,
     /* Gallium driver context. */
-    , VBOXWDDM_CONTEXT_TYPE_GA_3D
-#endif
+    VBOXWDDM_CONTEXT_TYPE_GA_3D,
+    /* context to handle SVGA_3D_CMD_DX_* commands */
+    VBOXWDDM_CONTEXT_TYPE_VMSVGA_DX,
 } VBOXWDDM_CONTEXT_TYPE;
 
 typedef struct VBOXWDDM_CREATECONTEXT_INFO
