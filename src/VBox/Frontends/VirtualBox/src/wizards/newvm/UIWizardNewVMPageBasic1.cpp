@@ -180,6 +180,7 @@ static const osTypePattern gs_OSTypePattern[] =
 UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
     : m_pNameAndSystemEditor(0)
     , m_pISOPathSelectorLabel(0)
+    , m_pSkipUnattendedCheckBox(0)
     , m_strGroup(strGroup)
 {
     CHost host = uiCommon().host();
@@ -347,6 +348,13 @@ void UIWizardNewVMPage1::markWidgets() const
 
 void UIWizardNewVMPage1::retranslateWidgets()
 {
+    if (m_pSkipUnattendedCheckBox)
+    {
+        m_pSkipUnattendedCheckBox->setText(UIWizardNewVM::tr("Skip unattended installation"));
+        m_pSkipUnattendedCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked selected ISO file will be mounted to the CD drive "
+                                                                "of the virtual machine but the unattended installation will "
+                                                                "not start</p>"));
+    }
 }
 
 QString UIWizardNewVMPage1::ISOFilePath() const
@@ -429,6 +437,10 @@ void UIWizardNewVMPageBasic1::prepare()
 
         /* Prepare Name and OS Type editor: */
         pPageLayout->addWidget(createNameOSTypeWidgets());
+
+        m_pSkipUnattendedCheckBox = new QCheckBox;
+        pPageLayout->addWidget(m_pSkipUnattendedCheckBox);
+
         pPageLayout->addStretch();
     }
 

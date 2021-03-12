@@ -88,6 +88,7 @@ protected:
      * @{ */
         UINameAndSystemEditor *m_pNameAndSystemEditor;
         QLabel                *m_pISOPathSelectorLabel;
+        QCheckBox             *m_pSkipUnattendedCheckBox;
     /** @} */
 
     QString m_strDetectedOSTypeId;
