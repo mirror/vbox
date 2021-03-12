@@ -80,11 +80,9 @@ protected:
     void retranslateWidgets();
     QString ISOFilePath() const;
     bool determineOSType(const QString &strISOPath);
-    bool isISOFileSelectorComplete() const;
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     /** Return false if ISO path is not empty but points to an missing or unreadable file. */
     bool checkISOFile() const;
-
 
     /** @name Widgets
      * @{ */

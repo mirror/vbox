@@ -41,21 +41,25 @@ enum
 UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
                                              bool fChooseName /* = true */,
                                              bool fChoosePath /* = false */,
-                                             bool fChooseType /* = true */)
+                                             bool fChooseType /* = true */,
+                                             bool fChooseISOFile /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fChooseName(fChooseName)
     , m_fChoosePath(fChoosePath)
+    , m_fChooseISOFile(fChooseISOFile)
     , m_fChooseType(fChooseType)
     , m_fSupportsHWVirtEx(false)
     , m_fSupportsLongMode(false)
     , m_pMainLayout(0)
     , m_pNameLabel(0)
     , m_pPathLabel(0)
+    , m_pISOFileSelectorLabel(0)
     , m_pLabelFamily(0)
     , m_pLabelType(0)
     , m_pIconType(0)
     , m_pNameLineEdit(0)
     , m_pPathSelector(0)
+    , m_pISOFileSelector(0)
     , m_pComboFamily(0)
     , m_pComboType(0)
 {
@@ -96,6 +100,12 @@ void UINameAndSystemEditor::setOSTypeStuffEnabled(bool fEnabled)
         m_pComboFamily->setEnabled(fEnabled);
     if (m_pComboType)
         m_pComboType->setEnabled(fEnabled);
+}
+
+void UINameAndSystemEditor::setFileSelectorDialogFilters(const QString &strFilters)
+{
+    if (m_pISOFileSelector)
+        m_pISOFileSelector->setFileDialogFilters(strFilters);
 }
 
 void UINameAndSystemEditor::setName(const QString &strName)
@@ -265,6 +275,8 @@ void UINameAndSystemEditor::retranslateUi()
         m_pNameLabel->setText(tr("Name:"));
     if (m_pPathLabel)
         m_pPathLabel->setText(tr("Folder:"));
+    if (m_pISOFileSelectorLabel)
+        m_pISOFileSelectorLabel->setText(tr("Installation ISO:"));
     if (m_pLabelFamily)
         m_pLabelFamily->setText(tr("&Type:"));
     if (m_pLabelType)
@@ -451,6 +463,25 @@ void UINameAndSystemEditor::prepareWidgets()
             ++iRow;
         }
 
+        if (m_fChooseISOFile)
+        {
+            m_pISOFileSelectorLabel = new QLabel(this);
+            m_pMainLayout->addWidget(m_pISOFileSelectorLabel, iRow, 0);
+
+            m_pISOFileSelector = new UIFilePathSelector(this);
+            if (m_pISOFileSelector)
+            {
+                m_pISOFileSelector->setResetEnabled(false);
+                m_pISOFileSelector->setMode(UIFilePathSelector::Mode_File_Open);
+                m_pISOFileSelector->setFileDialogFilters("*.iso *.ISO");
+                m_pISOFileSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+                m_pISOFileSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
+                m_pISOFileSelectorLabel->setBuddy(m_pISOFileSelector);
+                m_pMainLayout->addWidget(m_pISOFileSelector, iRow, 1, 1, 2);
+            }
+            ++iRow;
+        }
+
         if (m_fChooseType)
         {
             /* Create VM OS family label: */
@@ -459,7 +490,6 @@ void UINameAndSystemEditor::prepareWidgets()
             {
                 m_pLabelFamily->setAlignment(Qt::AlignRight);
                 m_pLabelFamily->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
                 /* Add into layout: */
                 m_pMainLayout->addWidget(m_pLabelFamily, iRow, 0);
             }
