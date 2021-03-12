@@ -82,6 +82,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("guestOSFamiyId", this, "guestOSFamiyId");
     registerField("ISOFilePath", this, "ISOFilePath");
     registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
+    registerField("skipUnattendedInstall", this, "skipUnattendedInstall");
     registerField("startHeadless", this, "startHeadless");
     registerField("detectedOSTypeId", this, "detectedOSTypeId");
     registerField("userName", this, "userName");

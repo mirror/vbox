@@ -234,13 +234,20 @@ void UIWizardNewVMPage1::composeMachineFilePath()
 
 QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets()
 {
+    QWidget *pContainerWidget = new QWidget;
+    QVBoxLayout *pLayout = new QVBoxLayout(pContainerWidget);
+    pLayout->setContentsMargins(0, 0, 0, 0);
+
     /* Prepare Name and OS Type editor: */
     m_pNameAndSystemEditor = new UINameAndSystemEditor(0,
                                                        true /* fChooseName? */,
                                                        true /* fChoosePath? */,
                                                        true /* fChooseType? */,
                                                        true /* fChooseISOFile? */);
-    return m_pNameAndSystemEditor;
+    pLayout->addWidget(m_pNameAndSystemEditor);
+    m_pSkipUnattendedCheckBox = new QCheckBox;
+    pLayout->addWidget(m_pSkipUnattendedCheckBox);
+    return pContainerWidget;
 }
 
 bool UIWizardNewVMPage1::createMachineFolder()
@@ -396,6 +403,11 @@ bool UIWizardNewVMPage1::determineOSType(const QString &strISOPath)
     return true;
 }
 
+bool UIWizardNewVMPage1::skipUnattendedInstall() const
+{
+    return m_pSkipUnattendedCheckBox && m_pSkipUnattendedCheckBox->isChecked();
+}
+
 bool UIWizardNewVMPage1::checkISOFile() const
 {
     if (!m_pNameAndSystemEditor)
@@ -438,9 +450,6 @@ void UIWizardNewVMPageBasic1::prepare()
         /* Prepare Name and OS Type editor: */
         pPageLayout->addWidget(createNameOSTypeWidgets());
 
-        m_pSkipUnattendedCheckBox = new QCheckBox;
-        pPageLayout->addWidget(m_pSkipUnattendedCheckBox);
-
         pPageLayout->addStretch();
     }
 
@@ -455,6 +464,7 @@ void UIWizardNewVMPageBasic1::prepare()
     registerField("startHeadless", this, "startHeadless");
     registerField("ISOFilePath", this, "ISOFilePath");
     registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
+    registerField("skipUnattendedInstall", this, "skipUnattendedInstall");
     registerField("detectedOSTypeId", this, "detectedOSTypeId");
 }
 

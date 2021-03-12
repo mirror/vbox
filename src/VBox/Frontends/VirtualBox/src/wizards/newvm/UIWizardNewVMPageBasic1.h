@@ -69,6 +69,8 @@ protected:
 
         bool isUnattendedEnabled() const;
         const QString &detectedOSTypeId() const;
+
+        bool skipUnattendedInstall() const;
     /** @} */
 
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
@@ -123,8 +125,8 @@ class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
     Q_PROPERTY(QString guestOSFamiyId READ guestOSFamiyId);
     Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
     Q_PROPERTY(bool isUnattendedEnabled READ isUnattendedEnabled);
+    Q_PROPERTY(bool skipUnattendedInstall READ skipUnattendedInstall);
     Q_PROPERTY(QString detectedOSTypeId READ detectedOSTypeId);
-
 
 public:
 
