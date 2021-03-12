@@ -23,7 +23,6 @@
 #include <VBox/msi.h>
 #include <VBox/iommu-amd.h>
 #include <VBox/vmm/pdmdev.h>
-#include <VBox/AssertGuest.h>
 
 #include <iprt/x86.h>
 #include <iprt/string.h>
