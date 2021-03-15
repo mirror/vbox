@@ -401,7 +401,7 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     pDiskContainerLayout->addWidget(m_pMediumSizeEditor, 1, 1, 2, 3);
 
     pDiskContainerLayout->addWidget(m_pDiskFormatGroupBox, 3, 0, 6, 2);
-    pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 3, 2, 3, 2);
+    pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 3, 2, 6, 2);
 
     return pNewDiskContainerWidget;
 }
