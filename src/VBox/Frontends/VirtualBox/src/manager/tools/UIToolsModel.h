@@ -116,9 +116,9 @@ public:
         UIToolType lastSelectedToolMachine() const;
 
         /** Defines whether certain @a enmClass of tools is @a fEnabled.*/
-        void setToolsEnabled(UIToolClass enmClass, bool fEnabled);
+        void setToolClassEnabled(UIToolClass enmClass, bool fEnabled);
         /** Returns whether certain class of tools is enabled.*/
-        bool areToolsEnabled(UIToolClass enmClass) const;
+        bool toolClassEnabled(UIToolClass enmClass) const;
 
         /** Defines restructed tool @a types. */
         void setRestrictedToolTypes(const QList<UIToolType> &types);
@@ -264,7 +264,7 @@ private:
         UIToolClass  m_enmCurrentClass;
 
         /** Holds whether tools of particular class are enabled. */
-        QMap<UIToolClass, bool>  m_statesToolsEnabled;
+        QMap<UIToolClass, bool>  m_enabledToolClasses;
 
         /** Holds a list of restricted tool types. */
         QList<UIToolType>  m_restrictedToolTypes;

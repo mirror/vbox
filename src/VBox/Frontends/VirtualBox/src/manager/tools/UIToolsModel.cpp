@@ -162,18 +162,21 @@ UIToolType UIToolsModel::lastSelectedToolMachine() const
     return m_pLastItemMachine->itemType();
 }
 
-void UIToolsModel::setToolsEnabled(UIToolClass enmClass, bool fEnabled)
+void UIToolsModel::setToolClassEnabled(UIToolClass enmClass, bool fEnabled)
 {
     /* Update linked values: */
-    m_statesToolsEnabled[enmClass] = fEnabled;
-    foreach (UIToolsItem *pItem, items())
-        if (pItem->itemClass() == enmClass)
-            pItem->setEnabled(m_statesToolsEnabled.value(enmClass));
+    if (m_enabledToolClasses.value(enmClass) != fEnabled)
+    {
+        m_enabledToolClasses[enmClass] = fEnabled;
+        foreach (UIToolsItem *pItem, items())
+            pItem->setEnabled(   m_enabledToolClasses.value(enmClass)
+                              && !m_restrictedToolTypes.contains(pItem->itemType()));
+    }
 }
 
-bool UIToolsModel::areToolsEnabled(UIToolClass enmClass) const
+bool UIToolsModel::toolClassEnabled(UIToolClass enmClass) const
 {
-    return m_statesToolsEnabled.value(enmClass);
+    return m_enabledToolClasses.value(enmClass);
 }
 
 void UIToolsModel::setRestrictedToolTypes(const QList<UIToolType> &types)
@@ -182,10 +185,9 @@ void UIToolsModel::setRestrictedToolTypes(const QList<UIToolType> &types)
     if (m_restrictedToolTypes != types)
     {
         m_restrictedToolTypes = types;
-        updateLayout();
-        updateNavigation();
-        sltItemMinimumWidthHintChanged();
-        sltItemMinimumHeightHintChanged();
+        foreach (UIToolsItem *pItem, items())
+            pItem->setEnabled(   m_enabledToolClasses.value(pItem->itemClass())
+                              && !m_restrictedToolTypes.contains(pItem->itemType()));
     }
 }
 
@@ -353,8 +355,7 @@ void UIToolsModel::updateLayout()
     foreach (UIToolsItem *pItem, items())
     {
         /* Hide/skip unrelated items: */
-        if (   pItem->itemClass() != m_enmCurrentClass
-            || m_restrictedToolTypes.contains(pItem->itemType()))
+        if (pItem->itemClass() != m_enmCurrentClass)
         {
             pItem->hide();
             continue;
@@ -495,8 +496,8 @@ void UIToolsModel::prepareScene()
 void UIToolsModel::prepareItems()
 {
     /* Enable both classes of tools initially: */
-    m_statesToolsEnabled[UIToolClass_Global] = true;
-    m_statesToolsEnabled[UIToolClass_Machine] = true;
+    m_enabledToolClasses[UIToolClass_Global] = true;
+    m_enabledToolClasses[UIToolClass_Machine] = true;
 
     /* Welcome: */
     m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_Welcome, QString(),
