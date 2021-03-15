@@ -2310,7 +2310,10 @@ ifneq ($(KBUILD_TARGET),win)
  ifneq ($(KBUILD_TARGET),os2)
   # libIDL-config (for xpcom18a4)
   ifeq ($(origin VBOX_LIBIDL_CONFIG),undefined)
-   export VBOX_LIBIDL_CONFIG := $(firstword $(which libIDL-config-2 libIDL-config) libIDL-config-2-not-found)
+   ifeq ($(KBUILD_HOST),solaris)
+    VBOX_LIBIDL_CONFIG_FALLBACK = $(lastword $(wildcard $(KBUILD_DEVTOOLS)/solaris.amd64/libIDL/*/bin/libIDL-config-2))
+   endif
+   export VBOX_LIBIDL_CONFIG := $(firstword $(which libIDL-config-2 libIDL-config $(VBOX_LIBIDL_CONFIG_FALLBACK)) libIDL-config-2-not-found)
   endif
  endif
 endif
@@ -2938,10 +2941,10 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 		$(AUTOCFG) \
 		$(VBOX_GCC_PATH_CC) \
 		$(VBOX_GCC_PATH_CXX) \
-               $(VBOX_GCC_LIBGCC) \
+		$(VBOX_GCC_LIBGCC) \
 		$(VBOX_GCC32_PATH_CC) \
 		$(VBOX_GCC32_PATH_CXX) \
-               $(VBOX_GCC32_LIBGCC) \
+		$(VBOX_GCC32_LIBGCC) \
 		$(if-expr "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "solaris.amd64" && $(KBUILD_HOST_VERSION_MINOR) >= 11 \
 			, /platform/i86pc/kernel/$(KBUILD_HOST_ARCH)/unix,) \
         	| $(PATH_OUT)/DynamicConfig.c $(PATH_OUT)/DynamicConfig.cpp
