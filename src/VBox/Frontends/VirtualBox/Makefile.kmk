@@ -310,9 +310,9 @@ VBOX_GUI_INC_DIRS += \
 	./src/manager/chooser \
 	./src/manager/details \
 	./src/manager/tools \
-	./src/monitor \
-	./src/monitor/overview \
-	./src/monitor/vmactivity
+	./src/activity \
+	./src/activity/overview \
+	./src/activity/vmactivity
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 VBOX_GUI_INC_DIRS += \
@@ -626,7 +626,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/manager/tools/UIToolsItem.h \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumManager.h \
-	src/monitor/overview/UIVMActivityOverviewWidget.h \
+	src/activity/overview/UIVMActivityOverviewWidget.h \
 	src/networkmanager/UIDetailsWidgetHostNetwork.h \
 	src/networkmanager/UIDetailsWidgetNATNetwork.h \
 	src/networkmanager/UINetworkManager.h \
@@ -829,7 +829,7 @@ UICommon_QT_MOCHDRS = \
 	src/logviewer/UIVMLogViewerSearchPanel.h \
 	src/logviewer/UIVMLogViewerTextEdit.h \
 	src/logviewer/UIVMLogViewerWidget.h \
-	src/monitor/vmactivity/UIVMActivityMonitor.h \
+	src/activity/vmactivity/UIVMActivityMonitor.h \
 	src/medium/UIFDCreationDialog.h \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumItem.h \
@@ -954,7 +954,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/manager/UIVirtualMachineItemCloud.cpp \
 	src/manager/UIWelcomePane.cpp \
 	src/manager/chooser/UIChooserAbstractModel.cpp \
-	src/monitor/overview/UIVMActivityOverviewWidget.cpp \
+	src/activity/overview/UIVMActivityOverviewWidget.cpp \
 	src/networkmanager/UINetworkManager.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \
@@ -1006,7 +1006,7 @@ UICommon_QT_MOCSRCS = \
 	src/globals/UIVirtualBoxClientEventHandler.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
-	src/monitor/vmactivity/UIVMActivityMonitor.cpp \
+	src/activity/vmactivity/UIVMActivityMonitor.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
@@ -1116,7 +1116,7 @@ VirtualBox_SOURCES = \
 	src/manager/tools/UIToolsItem.cpp \
 	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumManager.cpp \
-	src/monitor/overview/UIVMActivityOverviewWidget.cpp \
+	src/activity/overview/UIVMActivityOverviewWidget.cpp \
 	src/networkmanager/UIDetailsWidgetHostNetwork.cpp \
 	src/networkmanager/UIDetailsWidgetNATNetwork.cpp \
 	src/networkmanager/UINetworkManager.cpp \
@@ -1362,8 +1362,8 @@ UICommon_SOURCES = \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
-	src/monitor/UIMonitorCommon.cpp \
-	src/monitor/vmactivity/UIVMActivityMonitor.cpp \
+	src/activity/UIMonitorCommon.cpp \
+	src/activity/vmactivity/UIVMActivityMonitor.cpp \
 	src/medium/UIFDCreationDialog.cpp \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDefs.cpp \
