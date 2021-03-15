@@ -1485,6 +1485,7 @@ EXPORTS
     RTPathSetTimes
     RTPathSetTimesEx
     RTPathSharedLibs
+    RTPathSkipRootSpec
     RTPathStartsWith
     RTPathStartsWithRoot
     RTPathStripFilename
