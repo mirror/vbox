@@ -278,6 +278,8 @@ EXPORTS
     _ZN20RTCRestClientApiBase18reinitHttpInstanceEv
     _ZN20RTCRestClientApiBase18setServerAuthorityEPKc
     _ZN20RTCRestClientApiBase6doCallERK24RTCRestClientRequestBase12RTHTTPMETHODP25RTCRestClientResponseBasePKcj
+    _ZN20RTCRestClientApiBase9setCAFileEPKc
+    _ZN20RTCRestClientApiBase9setCAFileERK9RTCString
     _ZN20RTCRestClientApiBase9xmitReadyEP14RTHTTPINTERNALRK9RTCString12RTHTTPMETHODS4_j
     _ZN20RTCRestClientApiBaseC2Ev
     _ZN20RTCRestClientApiBaseD0Ev
