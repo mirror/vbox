@@ -538,6 +538,7 @@ EXPORTS
     ?setAttributePath@ElementNode@xml@@QEAAPEAVAttributeNode@2@PEBDAEBVRTCString@@@Z  ; (public: class xml::AttributeNode * __cdecl xml::ElementNode::setAttributePath(char const *,class RTCString const &))
     ?setByString@RTCRestStringEnumBase@@QEAAHAEBVRTCString@@@Z                  ; (public: int __cdecl RTCRestStringEnumBase::setByString(class RTCString const &))
     ?setByString@RTCRestStringEnumBase@@QEAAHPEBD_K@Z                           ; (public: int __cdecl RTCRestStringEnumBase::setByString(char const *,unsigned __int64))
+    ?setCAFile@RTCRestClientApiBase@@QEAAHAEBVRTCString@@@Z                     ; (public: int __cdecl RTCRestClientApiBase::setCAFile(class RTCString const &))
     ?setConsumerCallback@RTCRestBinaryResponse@@QEAAXP6AHPEAV1@PEBX_KI22@ZPEAX@Z  ; (public: void __cdecl RTCRestBinaryResponse::setConsumerCallback(int (__cdecl*)(class RTCRestBinaryResponse *,void const *,unsigned __int64,unsigned int,unsigned __int64,unsigned __int64),void *))
     ?setContent@ElementNode@xml@@QEAAPEAVContentNode@2@AEBVRTCString@@@Z        ; (public: class xml::ContentNode * __cdecl xml::ElementNode::setContent(class RTCString const &))
     ?setContentType@RTCRestBinaryParameter@@QEAAHPEBD@Z                         ; (public: int __cdecl RTCRestBinaryParameter::setContentType(char const *))
