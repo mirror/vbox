@@ -60,7 +60,9 @@
    * ffs = find first set bit.
    */
 # define ffs ffs_string_h
+# define fls fls_string_h
 # include <string.h>
+# undef fls
 # undef ffs
 # undef strpbrk
 

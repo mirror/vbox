@@ -210,3 +210,6 @@
 
 /* Define if you have <sys/type32.h> */
 #undef HAVE_SYS_TYPES32_H
+#ifdef RT_OS_SOLARIS
+# define HAVE_SYS_TYPES32_H
+#endif
