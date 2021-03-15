@@ -906,6 +906,7 @@ bool UIActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex, 
     return QSortFilterProxyModel::lessThan(sourceLeftIndex, sourceRightIndex);
 }
 
+
 /*********************************************************************************************************************************
 *   Class UIActivityOverviewModel implementation.                                                                                *
 *********************************************************************************************************************************/
