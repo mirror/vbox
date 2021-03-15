@@ -54,7 +54,6 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(QString guestOSFamiyId READ guestOSFamiyId);
     Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
     Q_PROPERTY(bool isUnattendedEnabled READ isUnattendedEnabled);
-    //Q_PROPERTY(bool skipUnattendedInstall READ skipUnattendedInstall);
     Q_PROPERTY(bool startHeadless READ startHeadless);
     Q_PROPERTY(QString detectedOSTypeId READ detectedOSTypeId);
     Q_PROPERTY(QString userName READ userName WRITE setUserName);
@@ -98,6 +97,7 @@ private slots:
     void sltOSFamilyTypeChanged();
     void sltInstallGACheckBoxToggle(bool fEnabled);
     void sltValueModified();
+    void sltSkipUnattendedCheckBoxChecked();
     void sltMediumFormatChanged();
     void sltMediumSizeChanged();
     void sltSelectedDiskSourceChanged();

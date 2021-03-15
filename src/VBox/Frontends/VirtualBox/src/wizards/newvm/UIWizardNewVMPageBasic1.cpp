@@ -477,7 +477,6 @@ void UIWizardNewVMPageBasic1::prepare()
     registerField("startHeadless", this, "startHeadless");
     registerField("ISOFilePath", this, "ISOFilePath");
     registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
-    //registerField("skipUnattendedInstall", this, "skipUnattendedInstall");
     registerField("detectedOSTypeId", this, "detectedOSTypeId");
 }
 

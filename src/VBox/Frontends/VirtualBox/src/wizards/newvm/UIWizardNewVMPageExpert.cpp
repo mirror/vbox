@@ -82,7 +82,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("guestOSFamiyId", this, "guestOSFamiyId");
     registerField("ISOFilePath", this, "ISOFilePath");
     registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
-    //registerField("skipUnattendedInstall", this, "skipUnattendedInstall");
     registerField("startHeadless", this, "startHeadless");
     registerField("detectedOSTypeId", this, "detectedOSTypeId");
     registerField("userName", this, "userName");
@@ -137,6 +136,7 @@ void UIWizardNewVMPageExpert::sltISOPathChanged(const QString &strPath)
     QFileInfo fileInfo(strPath);
     if (fileInfo.exists() && fileInfo.isReadable())
         uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
+    setSkipCheckBoxEnable();
     emit completeChanged();
 }
 
@@ -253,6 +253,7 @@ void UIWizardNewVMPageExpert::createConnections()
         connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
                 this, &UIWizardNewVMPageExpert::sltValueModified);
     }
+    connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked);
 }
 
 void UIWizardNewVMPageExpert::setOSTypeDependedValues()
@@ -322,6 +323,7 @@ void UIWizardNewVMPageExpert::initializePage()
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     updateVirtualDiskPathFromMachinePathName();
     updateWidgetAterMediumFormatChange();
+    setSkipCheckBoxEnable();
     retranslateUi();
 }
 
@@ -433,7 +435,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
         /* Check the installation medium: */
         if (!checkISOFile())
         {
-            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
+            m_pToolBox->setPageTitleIcon(ExpertToolboxItems_NameAndOSType,
                                          UIIconPool::iconSet(":/status_error_16px.png"),
                                          UIWizardNewVM::tr("Invalid path or unreadable ISO file"));
             fIsComplete = false;
@@ -541,6 +543,11 @@ void UIWizardNewVMPageExpert::sltValueModified()
     if (!pSenderWidget)
         return;
     m_userSetWidgets << pSenderWidget;
+}
+
+void UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked()
+{
+    disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
 }
 
 void UIWizardNewVMPageExpert::sltMediumFormatChanged()
