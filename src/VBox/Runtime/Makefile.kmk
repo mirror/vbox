@@ -3890,7 +3890,7 @@ $(IPRT_OUT_DIR)/errmsgwindata.h: \
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
 
-$(IPRT_OUT_DIR)/errmsgvboxdata.h.ts +| $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
+$(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts +| $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/VBox/errmsgvboxcom.xsl \
 		$(VBOX_XIDL_FILE_SRC) \
 		| $$(dir $$@)
