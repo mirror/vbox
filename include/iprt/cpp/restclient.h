@@ -718,6 +718,13 @@ public:
     virtual const char *getDefaultServerBasePath() const RT_NOEXCEPT = 0;
     /** @} */
 
+    /**
+     * Sets the CA file to use for HTTPS.
+     */
+    int setCAFile(const char *pcszCAFile) RT_NOEXCEPT;
+    /** @overload */
+    int setCAFile(const RTCString &strCAFile) RT_NOEXCEPT;
+
     /** Flags to doCall. */
     enum
     {
@@ -730,6 +737,8 @@ protected:
     RTHTTP  m_hHttp;
     /** The server URL to use.  If empty use the default. */
     RTCString m_strServerUrl;
+    /** The CA file to use.  If empty use the default. */
+    RTCString m_strCAFile;
 
     /* Make non-copyable (RTCNonCopyable causes warnings): */
     RTCRestClientApiBase(RTCRestClientApiBase const &);
