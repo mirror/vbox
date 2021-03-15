@@ -85,7 +85,7 @@ protected:
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     /** Return false if ISO path is not empty but points to an missing or unreadable file. */
     bool checkISOFile() const;
-
+    void setSkipCheckBoxEnable(bool fEnable);
     /** @name Widgets
      * @{ */
         UINameAndSystemEditor *m_pNameAndSystemEditor;
