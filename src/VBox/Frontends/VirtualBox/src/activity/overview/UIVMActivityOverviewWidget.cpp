@@ -216,15 +216,17 @@ private:
 class UIActivityOverviewItem
 {
 public:
-    UIActivityOverviewItem(const QUuid &uid, const QString &strVMName);
-    UIActivityOverviewItem(const QUuid &uid);
+    UIActivityOverviewItem(const QUuid &uid, const QString &strVMName, KMachineState enmState);
+    //yUIActivityOverviewItem(const QUuid &uid);
     UIActivityOverviewItem();
     ~UIActivityOverviewItem();
     bool operator==(const UIActivityOverviewItem& other) const;
     bool isWithGuestAdditions();
 
-    QUuid    m_VMuid;
-    QString  m_strVMName;
+    QUuid         m_VMuid;
+    QString       m_strVMName;
+    KMachineState m_enmMachineState;
+
     quint64  m_uCPUGuestLoad;
     quint64  m_uCPUVMMLoad;
 
@@ -273,6 +275,11 @@ public:
 
     UIActivityOverviewProxyModel(QObject *parent = 0);
     void dataUpdate();
+
+protected:
+
+    virtual bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const /* override*/;
+
 };
 
 
@@ -302,6 +309,8 @@ public:
     const QMap<int, int> dataLengths() const;
     QUuid itemUid(int iIndex);
     int itemIndex(const QUuid &uid);
+    /* Return the state of the machine represented by the item at @rowIndex. */
+    KMachineState machineState(int rowIndex) const;
 
 private slots:
 
@@ -314,7 +323,7 @@ private:
     void initializeItems();
     void setupPerformanceCollector();
     void queryPerformanceCollector();
-    void addItem(const QUuid& uMachineId, const QString& strMachineName);
+    void addItem(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState);
     void removeItem(const QUuid& uMachineId);
     void getHostRAMStats();
 
@@ -746,9 +755,10 @@ void UIVMActivityOverviewTableView::resizeHeaders()
 /*********************************************************************************************************************************
 *   Class UIVMActivityOverviewItem implementation.                                                                               *
 *********************************************************************************************************************************/
-UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName)
+UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &strVMName, KMachineState enmState)
     : m_VMuid(uid)
     , m_strVMName(strVMName)
+    , m_enmMachineState(enmState)
     , m_uCPUGuestLoad(0)
     , m_uCPUVMMLoad(0)
     , m_uTotalRAM(0)
@@ -798,25 +808,25 @@ UIActivityOverviewItem::UIActivityOverviewItem()
 {
 }
 
-UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid)
-    : m_VMuid(uid)
-    , m_uCPUGuestLoad(0)
-    , m_uCPUVMMLoad(0)
-    , m_uTotalRAM(0)
-    , m_uUsedRAM(0)
-    , m_fRAMUsagePercentage(0)
-    , m_uNetworkDownRate(0)
-    , m_uNetworkUpRate(0)
-    , m_uNetworkDownTotal(0)
-    , m_uNetworkUpTotal(0)
-    , m_uDiskWriteRate(0)
-    , m_uDiskReadRate(0)
-    , m_uDiskWriteTotal(0)
-    , m_uDiskReadTotal(0)
-    , m_uVMExitRate(0)
-    , m_uVMExitTotal(0)
-{
-}
+// UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid)
+//     : m_VMuid(uid)
+//     , m_uCPUGuestLoad(0)
+//     , m_uCPUVMMLoad(0)
+//     , m_uTotalRAM(0)
+//     , m_uUsedRAM(0)
+//     , m_fRAMUsagePercentage(0)
+//     , m_uNetworkDownRate(0)
+//     , m_uNetworkUpRate(0)
+//     , m_uNetworkDownTotal(0)
+//     , m_uNetworkUpTotal(0)
+//     , m_uDiskWriteRate(0)
+//     , m_uDiskReadRate(0)
+//     , m_uDiskWriteTotal(0)
+//     , m_uDiskReadTotal(0)
+//     , m_uVMExitRate(0)
+//     , m_uVMExitTotal(0)
+// {
+// }
 
 UIActivityOverviewItem::~UIActivityOverviewItem()
 {
@@ -870,6 +880,31 @@ void UIActivityOverviewProxyModel::dataUpdate()
     invalidate();
 }
 
+bool UIActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex, const QModelIndex &sourceRightIndex) const
+{
+    UIActivityOverviewModel *pModel = qobject_cast<UIActivityOverviewModel*>(sourceModel());
+    if (pModel)
+    {
+        KMachineState enmLeftState = pModel->machineState(sourceLeftIndex.row());
+        KMachineState enmRightState = pModel->machineState(sourceRightIndex.row());
+        if ((enmLeftState == KMachineState_Running) && (enmRightState != KMachineState_Running))
+        {
+            if (sortOrder() == Qt::AscendingOrder)
+                return true;
+            else
+                return false;
+        }
+        if ((enmLeftState != KMachineState_Running) && (enmRightState == KMachineState_Running))
+        {
+            if (sortOrder() == Qt::AscendingOrder)
+                return false;
+            else
+                return true;
+        }
+
+    }
+    return QSortFilterProxyModel::lessThan(sourceLeftIndex, sourceRightIndex);
+}
 
 /*********************************************************************************************************************************
 *   Class UIActivityOverviewModel implementation.                                                                                *
@@ -937,10 +972,28 @@ int UIActivityOverviewModel::itemIndex(const QUuid &uid)
     return -1;
 }
 
+KMachineState UIActivityOverviewModel::machineState(int rowIndex) const
+{
+    if (rowIndex >= m_itemList.size() || rowIndex < 0)
+        return KMachineState_Null;
+    return m_itemList[rowIndex].m_enmMachineState;
+}
+
 QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
 {
+    if (role == Qt::FontRole && machineState(index.row()) != KMachineState_Running)
+    {
+        QFont font;
+        font.setItalic(true);
+        return font;
+
+    }
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
+    if (index.column() == VMActivityOverviewColumn_Name)
+        return m_itemList[index.row()].m_columnData[index.column()];
+    if (m_itemList[index.row()].m_enmMachineState != KMachineState_Running)
+        return gpConverter->toString(m_itemList[index.row()].m_enmMachineState);
     return m_itemList[index.row()].m_columnData[index.column()];
 }
 
@@ -961,10 +1014,7 @@ void UIActivityOverviewModel::initializeItems()
     foreach (const CMachine &comMachine, uiCommon().virtualBox().GetMachines())
     {
         if (!comMachine.isNull())
-        {
-            if (comMachine.GetState() == KMachineState_Running)
-                addItem(comMachine.GetId(), comMachine.GetName());
-        }
+            addItem(comMachine.GetId(), comMachine.GetName(), comMachine.GetState());
     }
     setupPerformanceCollector();
 }
@@ -972,26 +1022,29 @@ void UIActivityOverviewModel::initializeItems()
 void UIActivityOverviewModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
 {
     int iIndex = itemIndex(uId);
-    /* Remove the machine in case machine is no longer working. */
-    if (iIndex != -1 && state != KMachineState_Running)
-    {
-        emit layoutAboutToBeChanged();
-        removeItem(uId);
-        emit layoutChanged();
-        setupPerformanceCollector();
-        return;
-    }
-    /* Insert the machine if it is working. */
-    if (iIndex == -1 && state == KMachineState_Running)
-    {
-        emit layoutAboutToBeChanged();
-        CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
-        if (!comMachine.isNull())
-            addItem(uId, comMachine.GetName());
-        emit layoutChanged();
-        setupPerformanceCollector();
-        return;
-    }
+    if (iIndex != -1 && iIndex < m_itemList.size())
+        m_itemList[iIndex].m_enmMachineState = state;
+    //
+    // /* Remove the machine in case machine is no longer working. */
+    // if (iIndex != -1 && state != KMachineState_Running)
+    // {
+    //     emit layoutAboutToBeChanged();
+    //     removeItem(uId);
+    //     emit layoutChanged();
+    //     setupPerformanceCollector();
+    //     return;
+    // }
+    // /* Insert the machine if it is working. */
+    // if (iIndex == -1 && state == KMachineState_Running)
+    // {
+    //     emit layoutAboutToBeChanged();
+    //     CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
+    //     if (!comMachine.isNull())
+    //         addItem(uId, comMachine.GetName());
+    //     emit layoutChanged();
+    //     setupPerformanceCollector();
+    //     return;
+    // }
 }
 
 void UIActivityOverviewModel::getHostRAMStats()
@@ -1232,9 +1285,9 @@ void UIActivityOverviewModel::queryPerformanceCollector()
     }
 }
 
-void UIActivityOverviewModel::addItem(const QUuid& uMachineId, const QString& strMachineName)
+void UIActivityOverviewModel::addItem(const QUuid& uMachineId, const QString& strMachineName, KMachineState enmState)
 {
-    m_itemList.append(UIActivityOverviewItem(uMachineId, strMachineName));
+    m_itemList.append(UIActivityOverviewItem(uMachineId, strMachineName, enmState));
 }
 
 void UIActivityOverviewModel::removeItem(const QUuid& uMachineId)
