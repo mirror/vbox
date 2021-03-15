@@ -360,7 +360,7 @@ void UIWizardNewVMPage1::retranslateWidgets()
         m_pSkipUnattendedCheckBox->setText(UIWizardNewVM::tr("Skip unattended installation"));
         m_pSkipUnattendedCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked selected ISO file will be mounted to the CD drive "
                                                                 "of the virtual machine but the unattended installation will "
-                                                                "not start</p>"));
+                                                                "not start.</p>"));
     }
 }
 
@@ -377,6 +377,8 @@ bool UIWizardNewVMPage1::isUnattendedEnabled() const
         return false;
     const QString &strPath = m_pNameAndSystemEditor->ISOFilePath();
     if (strPath.isNull() || strPath.isEmpty())
+        return false;
+    if (m_pSkipUnattendedCheckBox && m_pSkipUnattendedCheckBox->isChecked())
         return false;
     return true;
 }
@@ -421,10 +423,15 @@ bool UIWizardNewVMPage1::checkISOFile() const
     return true;
 }
 
-void UIWizardNewVMPage1::setSkipCheckBoxEnable(bool fEnable)
+void UIWizardNewVMPage1::setSkipCheckBoxEnable()
 {
-    if (m_pSkipUnattendedCheckBox)
-        m_pSkipUnattendedCheckBox->setEnabled(fEnable);
+    if (!m_pSkipUnattendedCheckBox)
+        return;
+    if (m_pNameAndSystemEditor)
+    {
+        const QString &strPath = m_pNameAndSystemEditor->ISOFilePath();
+        m_pSkipUnattendedCheckBox->setEnabled(!strPath.isNull() && !strPath.isEmpty());
+    }
 }
 
 void UIWizardNewVMPage1::setTypeByISODetectedOSType(const QString &strDetectedOSType)
@@ -470,7 +477,7 @@ void UIWizardNewVMPageBasic1::prepare()
     registerField("startHeadless", this, "startHeadless");
     registerField("ISOFilePath", this, "ISOFilePath");
     registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
-    registerField("skipUnattendedInstall", this, "skipUnattendedInstall");
+    //registerField("skipUnattendedInstall", this, "skipUnattendedInstall");
     registerField("detectedOSTypeId", this, "detectedOSTypeId");
 }
 
@@ -541,7 +548,7 @@ void UIWizardNewVMPageBasic1::initializePage()
     retranslateUi();
     if (m_pNameAndSystemEditor)
         m_pNameAndSystemEditor->setFocus();
-    setSkipCheckBoxEnable(isUnattendedEnabled());
+    setSkipCheckBoxEnable();
 }
 
 void UIWizardNewVMPageBasic1::cleanupPage()
@@ -566,6 +573,6 @@ void UIWizardNewVMPageBasic1::sltISOPathChanged(const QString &strPath)
     QFileInfo fileInfo(strPath);
     if (fileInfo.exists() && fileInfo.isReadable())
         uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
-    setSkipCheckBoxEnable(isUnattendedEnabled());
+    setSkipCheckBoxEnable();
     emit completeChanged();
 }

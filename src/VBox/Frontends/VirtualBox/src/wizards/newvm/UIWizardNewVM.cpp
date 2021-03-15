@@ -421,16 +421,29 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
             }
         }
 
-        /* Attach empty optical drive: */
+        /* Attach optical drive: */
         KStorageBus enmDVDBus = comGuestType.GetRecommendedDVDStorageBus();
         CStorageController comDVDController = m_machine.GetStorageControllerByInstance(enmDVDBus, 0);
         if (!comDVDController.isNull())
         {
-            machine.AttachDevice(comDVDController.GetName(), 1, 0, KDeviceType_DVD, CMedium());
+            CMedium opticalDisk;
+            QString strISOFilePath = getStringFieldValue("ISOFilePath");
+            if (!strISOFilePath.isEmpty() && !getBoolFieldValue("isUnattendedEnabled"))
+            {
+                QFileInfo isoFileInfo(strISOFilePath);
+                if (isoFileInfo.exists() && isoFileInfo.isReadable())
+                {
+                    CVirtualBox vbox = uiCommon().virtualBox();
+                    opticalDisk =
+                        vbox.OpenMedium(strISOFilePath, KDeviceType_DVD,  KAccessMode_ReadWrite, false);
+                    if (!vbox.isOk())
+                        msgCenter().cannotOpenMedium(vbox, strISOFilePath, this);
+                }
+            }
+            machine.AttachDevice(comDVDController.GetName(), 1, 0, KDeviceType_DVD, opticalDisk);
             if (!machine.isOk())
                 msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_DVD, QString(),
                                                StorageSlot(enmDVDBus, 1, 0), this);
-
         }
 
         /* Attach an empty floppy drive if recommended */
