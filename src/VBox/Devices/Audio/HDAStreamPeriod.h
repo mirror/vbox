@@ -77,6 +77,8 @@ typedef struct HDASTREAMPERIOD
 #ifdef LOG_ENABLED
     /** Debugging state. */
     HDASTREAMPERIODDEBUG    Dbg;
+#else
+    uint64_t                uPlaceholder;
 #endif
 } HDASTREAMPERIOD;
 AssertCompileSizeAlignment(HDASTREAMPERIOD, 8);
