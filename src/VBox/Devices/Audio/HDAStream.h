@@ -113,18 +113,18 @@ typedef HDASTREAMDEBUG *PHDASTREAMDEBUG;
  */
 typedef struct HDASTREAMSTATE
 {
-    /** Current BDLE to use. Wraps around to 0 if
-     *  maximum (cBDLE) is reached. */
-    uint16_t                uCurBDLE;
     /** Flag indicating whether this stream currently is
      *  in reset mode and therefore not acccessible by the guest. */
     volatile bool           fInReset;
     /** Flag indicating if the stream is in running state or not. */
     volatile bool           fRunning;
+    /** The stream's I/O timer Hz rate. */
+    uint16_t                uTimerIoHz;
+    /** How many interrupts are pending due to
+     *  BDLE interrupt-on-completion (IOC) bits set. */
+    uint8_t                 cTransferPendingInterrupts;
     /** Unused, padding. */
-    uint8_t                 abPadding0[4];
-    /** Current BDLE (Buffer Descriptor List Entry). */
-    HDABDLE                 BDLE;
+    uint8_t                 abPadding1[3];
     /** Timestamp (absolute, in timer ticks) of the last DMA data transfer. */
     uint64_t                tsTransferLast;
     /** Timestamp (absolute, in timer ticks) of the next DMA data transfer.
@@ -134,27 +134,8 @@ typedef struct HDASTREAMSTATE
     /** Total transfer size (in bytes) of a transfer period.
      * @note This is in host side frames, in case we're doing any mapping. */
     uint32_t                cbTransferSize;
-    /** Unused, same as cbTransferSize. */
-    uint32_t                cbTransferChunk;
-    /** How many interrupts are pending due to
-     *  BDLE interrupt-on-completion (IOC) bits set. */
-    uint8_t                 cTransferPendingInterrupts;
-    uint8_t                 abPadding2[7];
-    /** The stream's I/O timer Hz rate. */
-    uint16_t                uTimerIoHz;
-    /** Number of audio data frames for the position adjustment.
-     *  0 if no position adjustment is needed. */
-    uint16_t                cfPosAdjustDefault;
-    /** How many audio data frames are left to be processed
-     *  for the position adjustment handling.
-     *
-     *  0 if position adjustment handling is done or inactive. */
-    uint16_t                cfPosAdjustLeft;
-    uint16_t                u16Padding3;
-    /** (Virtual) clock ticks per byte. */
-    uint64_t                cTicksPerByte;
-    /** (Virtual) clock ticks per transfer. */
-    uint64_t                cTransferTicks;
+    /** The size of an average transfer. */
+    uint32_t                cbAvgTransfer;
     /** The stream's period. Need for timing. */
     HDASTREAMPERIOD         Period;
     /** The stream's current host side configuration.
@@ -174,8 +155,59 @@ typedef struct HDASTREAMSTATE
     uint64_t                tsAioDelayEnd;
     /** The start time for the playback (on the timer clock). */
     uint64_t                tsStart;
+
+    /** @name DMA engine
+     * @{ */
+    /** The offset into the current BDLE. */
+    uint32_t                offCurBdle;
+    /** LVI + 1 */
+    uint16_t                cBdles;
+    /** The index of the current BDLE.
+     * This is the entry which period is currently "running" on the DMA timer.  */
+    uint8_t                 idxCurBdle;
+    /** The number of prologue scheduling steps.
+     * This is used when the tail BDLEs doesn't have IOC set.  */
+    uint8_t                 cSchedulePrologue;
+    /** Number of scheduling steps. */
+    uint16_t                cSchedule;
+    /** Current scheduling step. */
+    uint16_t                idxSchedule;
+    /** Current loop number within the current scheduling step.  */
+    uint32_t                idxScheduleLoop;
+
+    /** Buffer descriptors and additional timer scheduling state.
+     * (Same as HDABDLEDESC, with more sensible naming.)  */
+    struct
+    {
+        /** The buffer address. */
+        uint64_t            GCPhys;
+        /** The buffer size (guest bytes). */
+        uint32_t            cb;
+        /** The flags (only bit 0 is defined).    */
+        uint32_t            fFlags;
+    }                       aBdl[256];
+    /** Scheduling steps. */
+    struct
+    {
+        /** Number of timer ticks per period.
+         * ASSUMES that we don't need a full second and that the timer resolution
+         * isn't much higher than nanoseconds. */
+        uint32_t            cPeriodTicks;
+        /** The period length in host bytes. */
+        uint32_t            cbPeriod;
+        /** Number of times to repeat the period. */
+        uint32_t            cLoops;
+        /** The BDL index of the first entry.   */
+        uint8_t             idxFirst;
+        /** The number of BDL entries. */
+        uint8_t             cEntries;
+        uint8_t             abPadding[2];
+    }                       aSchedule[512+8];
+    /** @} */
 } HDASTREAMSTATE;
 AssertCompileSizeAlignment(HDASTREAMSTATE, 8);
+AssertCompileMemberAlignment(HDASTREAMSTATE, aBdl, 16);
+AssertCompileMemberAlignment(HDASTREAMSTATE, aSchedule, 16);
 
 /**
  * An HDA stream (SDI / SDO) - shared.

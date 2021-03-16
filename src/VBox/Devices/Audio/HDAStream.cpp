@@ -221,6 +221,235 @@ void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
     LogFlowFuncLeave();
 }
 
+
+/**
+ * Appends a item to the scheduler.
+ *
+ * @returns VBox status code.
+ * @param   pStreamShared   The stream which scheduler should be modified.
+ * @param   cbCur           The period length in guest bytes.
+ * @param   cbMaxPeriod     The max period in guest bytes.
+ * @param   idxLastBdle     The last BDLE in the period.
+ * @param   pHostProps      The host PCM properties.
+ * @param   pGuestProps     The guest PCM properties.
+ * @param   pcbBorrow       Where to account for bytes borrowed across buffers
+ *                          to align scheduling items on frame boundraries.
+ */
+static int hdaR3StreamAddScheduleItem(PHDASTREAM pStreamShared, uint32_t cbCur, uint32_t cbMaxPeriod, uint32_t idxLastBdle,
+                                      PCPDMAUDIOPCMPROPS pHostProps, PCPDMAUDIOPCMPROPS pGuestProps, uint32_t *pcbBorrow)
+{
+    /* Check that we've got room (shouldn't ever be a problem). */
+    size_t idx = pStreamShared->State.cSchedule;
+    AssertLogRelReturn(idx + 1 < RT_ELEMENTS(pStreamShared->State.aSchedule), VERR_INTERNAL_ERROR_5);
+
+    /* Figure out the BDLE range for this period. */
+    uint32_t const idxFirstBdle = idx == 0 ? 0
+                                :   pStreamShared->State.aSchedule[idx - 1].idxFirst
+                                  + pStreamShared->State.aSchedule[idx - 1].cEntries;
+
+    pStreamShared->State.aSchedule[idx].idxFirst = (uint8_t)idxFirstBdle;
+    pStreamShared->State.aSchedule[idx].cEntries = idxLastBdle >= idxFirstBdle
+                                                 ? idxLastBdle - idxFirstBdle + 1
+                                                 : pStreamShared->State.cBdles - idxFirstBdle + idxLastBdle + 1;
+
+    /* Deal with borrowing due to unaligned IOC buffers. */
+    uint32_t const cbBorrowed = *pcbBorrow;
+    if (cbBorrowed < cbCur)
+        cbCur -= cbBorrowed;
+    else
+    {
+        /* Note. We can probably gloss over this, but it's not a situation a sane guest would put us, so don't bother for now. */
+        ASSERT_GUEST_MSG_FAILED(("#%u: cbBorrow=%#x cbCur=%#x BDLE[%u..%u]\n",
+                                 pStreamShared->u8SD, cbBorrowed, cbCur, idxFirstBdle, idxLastBdle));
+        LogRelMax(32, ("HDA: Stream #%u has a scheduling error: cbBorrow=%#x cbCur=%#x BDLE[%u..%u]\n",
+                       pStreamShared->u8SD, cbBorrowed, cbCur, idxFirstBdle, idxLastBdle));
+        return VERR_OUT_OF_RANGE;
+    }
+
+    uint32_t cbCurAligned = PDMAudioPropsRoundUpBytesToFrame(pGuestProps, cbCur);
+    *pcbBorrow = cbCurAligned - cbCur;
+
+    /* Do we need to split up the period? */
+    if (cbCurAligned <= cbMaxPeriod)
+    {
+        uint32_t cbHost = PDMAudioPropsFramesToBytes(pHostProps, PDMAudioPropsBytesToFrames(pGuestProps, cbCurAligned));
+        pStreamShared->State.aSchedule[idx].cbPeriod = cbHost;
+        pStreamShared->State.aSchedule[idx].cLoops   = 1;
+    }
+    else
+    {
+        /* Reduce till we've below the threshold. */
+        uint32_t cbLoop = cbCurAligned;
+        do
+            cbLoop = cbCurAligned / 2;
+        while (cbLoop > cbMaxPeriod);
+        cbLoop = PDMAudioPropsRoundUpBytesToFrame(pGuestProps, cbLoop);
+
+        /* Complete the scheduling item. */
+        uint32_t cbHost = PDMAudioPropsFramesToBytes(pHostProps, PDMAudioPropsBytesToFrames(pGuestProps, cbLoop));
+        pStreamShared->State.aSchedule[idx].cbPeriod = cbHost;
+        pStreamShared->State.aSchedule[idx].cLoops   = cbCurAligned / cbLoop;
+
+        /* If there is a remainder, add it as a separate entry (this is
+           why the schedule must be more than twice the size of the BDL).*/
+        cbCurAligned %= cbLoop;
+        if (cbCurAligned)
+        {
+            pStreamShared->State.aSchedule[idx + 1] = pStreamShared->State.aSchedule[idx];
+            idx++;
+            cbHost = PDMAudioPropsFramesToBytes(pHostProps, PDMAudioPropsBytesToFrames(pGuestProps, cbCurAligned));
+            pStreamShared->State.aSchedule[idx].cbPeriod = cbHost;
+            pStreamShared->State.aSchedule[idx].cLoops   = 1;
+        }
+    }
+
+    /* Done. */
+    pStreamShared->State.cSchedule = (uint16_t)(idx + 1);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Creates the DMA timer schedule for the stream
+ *
+ * This is called from the stream setup code.
+ *
+ * @returns VBox status code.
+ * @param   pStreamShared       The stream to create a schedule for.  The BDL
+ *                              must be loaded.
+ * @param   cSegments           Number of BDL segments.
+ * @param   cBufferIrqs         Number of the BDLEs with IOC=1.
+ * @param   cbTotal             The total BDL length in guest bytes.
+ * @param   cbMaxPeriod         Max period in guest bytes.   This is in case the
+ *                              guest want to play the whole "Der Ring des
+ *                              Nibelungen" cycle in one go.
+ * @param   cTimerTicksPerSec   The DMA timer frequency.
+ * @param   pHostProps          The host PCM properties.
+ * @param   pGuestProps         The guest PCM properties.
+ */
+static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegments, uint32_t cBufferIrqs, uint32_t cbTotal,
+                                     uint32_t cbMaxPeriod, uint64_t cTimerTicksPerSec,
+                                     PCPDMAUDIOPCMPROPS pHostProps, PCPDMAUDIOPCMPROPS pGuestProps)
+{
+    int rc;
+
+    /*
+     * Reset scheduling state.
+     */
+    RT_ZERO(pStreamShared->State.aSchedule);
+    pStreamShared->State.cSchedule         = 0;
+    pStreamShared->State.cSchedulePrologue = 0;
+    pStreamShared->State.idxSchedule       = 0;
+    pStreamShared->State.idxScheduleLoop   = 0;
+
+    /*
+     * Do the basic schedule compilation.
+     */
+    uint32_t cPotentialPrologue = 0;
+    uint32_t cbBorrow           = 0;
+    uint32_t cbCur              = 0;
+    pStreamShared->State.aSchedule[0].idxFirst = 0;
+    for (uint32_t i = 0; i < cSegments; i++)
+    {
+        cbCur += pStreamShared->State.aBdl[i].cb;
+        if (pStreamShared->State.aBdl[i].fFlags & HDA_BDLE_F_IOC)
+        {
+            rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur, cbMaxPeriod, i, pHostProps, pGuestProps, &cbBorrow);
+            ASSERT_GUEST_RC_RETURN(rc, rc);
+
+            if (cPotentialPrologue == 0)
+                cPotentialPrologue = pStreamShared->State.cSchedule;
+            cbCur = 0;
+        }
+    }
+    AssertLogRelMsgReturn(cbBorrow == 0, ("HDA: Internal scheduling error on stream #%u: cbBorrow=%#x cbTotal=%#x cbCur=%#x\n",
+                                          pStreamShared->u8SD, cbBorrow, cbTotal, cbCur),
+                          VERR_INTERNAL_ERROR_3);
+
+    /*
+     * Deal with any loose ends.
+     */
+    if (cbCur && cBufferIrqs == 0)
+    {
+        /* No IOC. Split the period in two. */
+        Assert(cbCur == cbTotal);
+        cbCur = PDMAudioPropsFloorBytesToFrame(pGuestProps, cbCur / 2);
+        rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur, cbMaxPeriod, cSegments, pHostProps, pGuestProps, &cbBorrow);
+        ASSERT_GUEST_RC_RETURN(rc, rc);
+
+        rc = hdaR3StreamAddScheduleItem(pStreamShared, cbTotal - cbCur, cbMaxPeriod, cSegments,
+                                        pHostProps, pGuestProps, &cbBorrow);
+        ASSERT_GUEST_RC_RETURN(rc, rc);
+        Assert(cbBorrow == 0);
+    }
+    else if (cbCur)
+    {
+        /* The last BDLE didn't have IOC set, so we must continue processing
+           from the start till we hit one that has.  */
+        uint32_t i;
+        for (i = 0; i < cSegments; i++)
+        {
+            cbCur += pStreamShared->State.aBdl[i].cb;
+            if (pStreamShared->State.aBdl[i].fFlags & HDA_BDLE_F_IOC)
+                break;
+        }
+        rc = hdaR3StreamAddScheduleItem(pStreamShared, cbCur, cbMaxPeriod, i, pHostProps, pGuestProps, &cbBorrow);
+        ASSERT_GUEST_RC_RETURN(rc, rc);
+
+        /* The initial scheduling items covering the wrap around area are
+           considered a prologue and must not repeated later. */
+        Assert(cPotentialPrologue);
+        pStreamShared->State.cSchedulePrologue = (uint8_t)cPotentialPrologue;
+    }
+
+    /*
+     * If there is just one BDLE with IOC set, we have to make sure
+     * we've got at least two periods scheduled, otherwise there is
+     * a very good chance the guest will overwrite the start of the
+     * buffer before we ever get around to reading it.
+     */
+    if (cBufferIrqs == 1)
+    {
+        uint32_t i = pStreamShared->State.cSchedulePrologue;
+        Assert(i < pStreamShared->State.cSchedule);
+        if (   i + 1 == pStreamShared->State.cSchedule
+            && pStreamShared->State.aSchedule[i].cLoops == 1)
+        {
+            uint32_t const cbFirstHalf = PDMAudioPropsFloorBytesToFrame(pHostProps, pStreamShared->State.aSchedule[i].cbPeriod / 2);
+            uint32_t const cbOtherHalf = pStreamShared->State.aSchedule[i].cbPeriod - cbFirstHalf;
+            pStreamShared->State.aSchedule[i].cbPeriod = cbFirstHalf;
+            if (cbFirstHalf == cbOtherHalf)
+                pStreamShared->State.aSchedule[i].cLoops = 2;
+            else
+            {
+                pStreamShared->State.aSchedule[i + 1] = pStreamShared->State.aSchedule[i];
+                pStreamShared->State.aSchedule[i].cbPeriod = cbOtherHalf;
+                pStreamShared->State.cSchedule++;
+            }
+        }
+    }
+
+    /*
+     * Go over the schduling entries and calculate the timer ticks for each period.
+     */
+    LogRel2(("HDA: Stream #%u schedule: %u items, %u prologue\n",
+             pStreamShared->u8SD, pStreamShared->State.cSchedule, pStreamShared->State.cSchedulePrologue));
+    uint64_t const cbHostPerSec = PDMAudioPropsFramesToBytes(pHostProps, pHostProps->uHz);
+    for (uint32_t i = 0; i < pStreamShared->State.cSchedule; i++)
+    {
+        uint64_t const cTicks = ASMMultU64ByU32DivByU32(cTimerTicksPerSec, pStreamShared->State.aSchedule[i].cbPeriod,
+                                                        cbHostPerSec);
+        AssertLogRelMsgReturn((uint32_t)cTicks == cTicks, ("cTicks=%RU64 (%#RX64)\n", cTicks, cTicks), VERR_INTERNAL_ERROR_4);
+        pStreamShared->State.aSchedule[i].cPeriodTicks = RT_MAX((uint32_t)cTicks, 16);
+        LogRel2(("HDA:  #%u: %u ticks / %u bytes, %u loops, BDLE%u L %u\n", i, pStreamShared->State.aSchedule[i].cPeriodTicks,
+                 pStreamShared->State.aSchedule[i].cbPeriod, pStreamShared->State.aSchedule[i].cLoops,
+                 pStreamShared->State.aSchedule[i].idxFirst, pStreamShared->State.aSchedule[i].cEntries));
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Sets up ((re-)iniitalizes) an HDA stream.
  *
@@ -345,82 +574,85 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
              uSD, pStreamShared->u64BDLBase, pStreamShared->u32CBL,
              PDMAudioPropsBytesToMilli(&pStreamR3->State.Mapping.GuestProps, pStreamShared->u32CBL)));
 
-    /* Figure out how many transfer fragments we're going to use for this stream. */
-    uint32_t cTransferFragments = pStreamShared->u16LVI + 1;
-    if (cTransferFragments <= 1)
-        LogRel(("HDA: Warning: Stream #%RU8 transfer fragments (%RU16) invalid -- buggy guest audio driver!\n",
-                uSD, pStreamShared->u16LVI));
 
     /*
-     * Handle the stream's position adjustment.
+     * Load the buffer descriptor list.
+     *
+     * Section 3.6.2 states that "the BDL should not be modified unless the RUN
+     * bit is 0", so it should be within the specs to read it once here and not
+     * re-read any BDLEs later.
      */
-    uint32_t cfPosAdjust = 0;
+    /* Reset BDL state. */
+    RT_ZERO(pStreamShared->State.aBdl);
+    pStreamShared->State.offCurBdle = 0;
+    pStreamShared->State.idxCurBdle = 0;
 
-    LogFunc(("[SD%RU8] fPosAdjustEnabled=%RTbool, cPosAdjustFrames=%RU16\n",
-             uSD, pThis->fPosAdjustEnabled, pThis->cPosAdjustFrames));
+    uint32_t /*const*/ cTransferFragments = (pStreamShared->u16LVI & 0xff) + 1;
+    if (cTransferFragments <= 1)
+        LogRel(("HDA: Warning: Stream #%RU8 transfer buffer count invalid: (%RU16)! Buggy guest audio driver!\n", uSD, pStreamShared->u16LVI));
+    AssertLogRelReturn(cTransferFragments <= RT_ELEMENTS(pStreamShared->State.aBdl), VERR_INTERNAL_ERROR_5);
+    pStreamShared->State.cBdles = cTransferFragments;
 
-    if (pThis->fPosAdjustEnabled) /* Is the position adjustment enabled at all? */
+    /* Load them. */
+    rc = PDMDevHlpPCIPhysRead(pDevIns, u64BDLBase, pStreamShared->State.aBdl,
+                              sizeof(pStreamShared->State.aBdl[0]) * cTransferFragments);
+    AssertRC(rc);
+
+    /* Check what we just loaded.  Refuse overly large buffer lists. */
+    uint64_t cbTotal     = 0;
+    uint32_t cBufferIrqs = 0;
+    for (uint32_t i = 0; i < cTransferFragments; i++)
     {
-        HDABDLE BDLE;
-        RT_ZERO(BDLE);
-
-        int rc2 = hdaR3BDLEFetch(pDevIns, &BDLE, pStreamShared->u64BDLBase, 0 /* Entry */);
-        AssertRC(rc2);
-
-        /* Note: Do *not* check if this BDLE aligns to the stream's frame size.
-         *       It can happen that this isn't the case on some guests, e.g.
-         *       on Windows with a 5.1 speaker setup.
-         *
-         *       The only thing which counts is that the stream's CBL value
-         *       properly aligns to the stream's frame size.
-         */
-
-        /* If no custom set position adjustment is set, apply some
-         * simple heuristics to detect the appropriate position adjustment. */
-        if (   !pThis->cPosAdjustFrames
-        /* Position adjustmenet buffer *must* have the IOC bit set! */
-            && hdaR3BDLENeedsInterrupt(&BDLE))
-        {
-            /** @todo Implement / use a (dynamic) table once this gets more complicated. */
-#ifdef VBOX_WITH_INTEL_HDA
-            /* Intel ICH / PCH: 1 frame. */
-            if (BDLE.Desc.u32BufSize == (uint32_t)(1 * pStreamR3->State.Mapping.cbGuestFrame))
-            {
-                cfPosAdjust = 1;
-            }
-            /* Intel Baytrail / Braswell: 32 frames. */
-            else if (BDLE.Desc.u32BufSize == (uint32_t)(32 * pStreamR3->State.Mapping.cbGuestFrame))
-            {
-                cfPosAdjust = 32;
-            }
-#endif
-        }
-        else /* Go with the set default. */
-            cfPosAdjust = pThis->cPosAdjustFrames;
-
-        if (cfPosAdjust)
-        {
-            /* Also adjust the number of fragments, as the position adjustment buffer
-             * does not count as an own fragment as such.
-             *
-             * This e.g. can happen on (newer) Ubuntu guests which use
-             * 4 (IOC) + 4408 (IOC) + 4408 (IOC) + 4408 (IOC) + 4404 (= 17632) bytes,
-             * where the first buffer (4) is used as position adjustment.
-             *
-             * Only skip a fragment if the whole buffer fragment is used for
-             * position adjustment.
-             */
-            if ((cfPosAdjust * pStreamR3->State.Mapping.cbGuestFrame) == BDLE.Desc.u32BufSize)
-                cTransferFragments--;
-
-            /* Initialize position adjustment counter. */
-            pStreamShared->State.cfPosAdjustDefault = cfPosAdjust;
-            pStreamShared->State.cfPosAdjustLeft    = cfPosAdjust;
-            LogRel2(("HDA: Position adjustment for stream #%RU8 active (%RU32 frames)\n", uSD, cfPosAdjust));
-        }
+        if (pStreamShared->State.aBdl[i].fFlags & HDA_BDLE_F_IOC)
+            cBufferIrqs++;
+        cbTotal += pStreamShared->State.aBdl[i].cb;
     }
+    ASSERT_GUEST_STMT_RETURN(cbTotal < _2G,
+                             LogRelMax(32, ("HDA: Error: Stream #%u is configured with an insane amount of buffer space - refusing do work with it: %RU64 (%#RX64) bytes.\n",
+                                            uSD, cbTotal, cbTotal)),
+                             VERR_NOT_SUPPORTED);
+    ASSERT_GUEST_STMT_RETURN(cbTotal == u32CBL,
+                             LogRelMax(32, ("HDA: Warning: Stream #%u has a mismatch between CBL and configured buffer space: %RU32 (%#RX32) vs %RU64 (%#RX64)\n",
+                                            uSD, u32CBL, u32CBL, cbTotal, cbTotal)),
+                             VERR_NOT_SUPPORTED);
 
-    Log3Func(("[SD%RU8] cfPosAdjust=%RU32, cFragments=%RU32\n", uSD, cfPosAdjust, cTransferFragments));
+    /*
+     * Create a DMA timer schedule.
+     */
+     rc = hdaR3StreamCreateSchedule(pStreamShared, cTransferFragments, cBufferIrqs, (uint32_t)cbTotal,
+                                   PDMAudioPropsMilliToBytes(&pStreamR3->State.Mapping.GuestProps, 100 /** @todo make configurable */),
+                                   PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer),
+                                   &HostProps, &pStreamR3->State.Mapping.GuestProps);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pStreamShared->State.cbTransferSize = pStreamShared->State.aSchedule[0].cbPeriod;
+
+    /*
+     * Calculate the transfer Hz for use in the circular buffer calculation.
+     */
+    uint32_t cbMaxPeriod = 0;
+    uint32_t cbMinPeriod = UINT32_MAX;
+    uint32_t cPeriods    = 0;
+    for (uint32_t i = 0; i < pStreamShared->State.cSchedule; i++)
+    {
+        uint32_t cbPeriod = pStreamShared->State.aSchedule[i].cbPeriod;
+        cbMaxPeriod = RT_MAX(cbMaxPeriod, cbPeriod);
+        cbMinPeriod = RT_MIN(cbMinPeriod, cbPeriod);
+        cPeriods   += pStreamShared->State.aSchedule[i].cLoops;
+    }
+    uint64_t const cbTransferPerSec  = RT_MAX(PDMAudioPropsFramesToBytes(&pCfg->Props, pCfg->Props.uHz),
+                                              4096 /* zero div prevention: min is 6kHz, picked 4k in case I'm mistaken */);
+    unsigned uTransferHz = cbTransferPerSec * 1000 / cbMaxPeriod;
+    LogRel2(("HDA: Stream #%RU8 needs a %u.%03u Hz timer rate (period: %u..%u host bytes)\n",
+             uSD, uTransferHz / 1000, uTransferHz % 1000, cbMinPeriod, cbMaxPeriod));
+    uTransferHz /= 1000;
+
+    if (uTransferHz > 400) /* Anything above 400 Hz looks fishy -- tell the user. */
+        LogRelMax(32, ("HDA: Warning: Calculated transfer Hz rate for stream #%RU8 looks incorrect (%u), please re-run with audio debug mode and report a bug\n",
+                       uSD, uTransferHz));
+
+    pStreamShared->State.cbAvgTransfer = (uint32_t)(cbTotal + cPeriods - 1) / cPeriods;
 
     /*
      * Set up data transfer stuff.
@@ -428,303 +660,98 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
 
     /* Assign the global device rate to the stream I/O timer as default. */
     pStreamShared->State.uTimerIoHz = pThis->uTimerHz;
-
-    /*
-     * Determine the transfer Hz the guest OS expects data transfer at.
-     *
-     * Guests also expect a very extact DMA timing for reading / writing audio data, so we run on a constant
-     * (virtual) rate which we expose to the guest.
-     *
-     * Data rate examples:
-     *   * Windows 10 @ 44,1kHz / 16-bit
-     *      2 channels (stereo):
-     *          * Default mode: 448 audio frames -> ~10.15ms = 1792 byte every ~10ms.
-     *          * Fast mode:    128 audio frames -> ~ 2.90ms =  512 byte every ~3ms.
-     *      6 channels (5.1 surround):
-     *          * Default mode: Same values as above!
-     */
-
-    /* Audio data per second the stream needs. */
-    const uint32_t cbDataPerSec = PDMAudioPropsMilliToBytes(&pStreamR3->State.Mapping.GuestProps, RT_MS_1SEC);
-
-    /* This is used to indicate whether we're done or should the uTimerIoHz as fallback. */
-    rc = VINF_SUCCESS;
-
-    /* The transfer Hz depend on the heuristics above, that is,
-       how often the guest expects to see a new data transfer. */
     ASSERT_GUEST_LOGREL_MSG_STMT(pStreamShared->State.uTimerIoHz,
                                  ("I/O timer Hz rate for stream #%RU8 is invalid\n", uSD),
                                  pStreamShared->State.uTimerIoHz = HDA_TIMER_HZ_DEFAULT);
-    unsigned uTransferHz = pStreamShared->State.uTimerIoHz;
-
-    LogRel2(("HDA: Stream #%RU8 needs %RU32 bytes/s audio data (from the guest).\n", uSD, cbDataPerSec));
-
-    if (pThis->fTransferHeuristicsEnabled) /* Are data transfer heuristics enabled? */
-    {
-        /* Don't take frames (as bytes) into account which are part of the position adjustment. */
-        uint32_t cbTransferHeuristicsPosAdjust = pStreamShared->State.cfPosAdjustDefault * pStreamR3->State.Mapping.cbGuestFrame;
-        uint32_t cbTransferHeuristics          = 0;
-        uint32_t cbTransferHeuristicsCur       = 0;
-        uint32_t cBufferIrqs                   = 0;
-        for (uint32_t i = 0; i < cTransferFragments; i++)
-        {
-            /** @todo wrong read type!   */
-            HDABDLEDESC bd = { 0, 0, 0 };
-            PDMDevHlpPhysRead(pDevIns, u64BDLBase + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
-
-            LogRel2(("HDA: Stream #%RU8 BDLE%03u: %#RX64 LB %#x %s (%#x)\n", uSD, i,
-                     bd.u64BufAddr, bd.u32BufSize, bd.fFlags & HDA_BDLE_F_IOC ? " IOC=1" : "", bd.fFlags));
-
-            /* Position adjustment (still) needed / active? */
-            if (cbTransferHeuristicsPosAdjust)
-            {
-                const uint32_t cbTransferHeuristicsPosAdjustMin = RT_MIN(cbTransferHeuristicsPosAdjust, bd.u32BufSize);
-
-                bd.u32BufSize                 -= cbTransferHeuristicsPosAdjustMin;
-                cbTransferHeuristicsPosAdjust -= cbTransferHeuristicsPosAdjustMin;
-            }
-
-            /* Anything left to process for the current BDLE after doing the position adjustment? */
-            if (bd.u32BufSize == 0)
-                continue;
-
-            /* Is an interrupt expected for the current BDLE? */
-            if (bd.fFlags & HDA_BDLE_F_IOC)
-            {
-                cbTransferHeuristicsCur += bd.u32BufSize;
-                if (   cbTransferHeuristicsCur == cbTransferHeuristics
-                    || !cbTransferHeuristics)
-                    cbTransferHeuristics = cbTransferHeuristicsCur;
-                else
-                {
-                    /** @todo r=bird: you need to find the smallest common denominator here, not
-                     *        just the minimum.  Ignoring this for now as windows has two equal
-                     *        sized buffers both with IOC set. */
-                    LogRelMax(32, ("HDA: Uneven IRQ buffer config; i=%u cbCur=%#x cbMin=%#x.\n", i, cbTransferHeuristicsCur, cbTransferHeuristics));
-                    cbTransferHeuristics = RT_MIN(cbTransferHeuristicsCur, cbTransferHeuristics);
-                }
-                cbTransferHeuristicsCur = 0;
-                cBufferIrqs++;
-            }
-            else /* No interrupt expected -> add it to the former BDLE size. */
-                cbTransferHeuristicsCur += bd.u32BufSize;
-        }
-
-        /*
-         * If the guest doesn't use buffer IRQs or only has one, just split the total
-         * buffer length in half and use that as timer heuristics.  That gives the
-         * guest half a buffer to fill while we're processing the other half.
-         */
-        if (cBufferIrqs <= 1)
-            cbTransferHeuristics = pStreamShared->u32CBL / 2;
-
-        /* Paranoia (fall back on I/O timer Hz if this happens). */
-        if (cbTransferHeuristics >= 8)
-        {
-            ASSERT_GUEST_LOGREL_MSG(PDMAudioPropsIsSizeAligned(&pStreamR3->State.Mapping.GuestProps, cbTransferHeuristics),
-                                    ("We arrived at a misaligned transfer size for stream #%RU8: %#x (%u)\n",
-                                     uSD, cbTransferHeuristics, cbTransferHeuristics));
-
-            uint64_t const cTimerTicksPerSec = PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer);
-
-            /* Convert the heuristics value to host side bytes and that's what we're calculating. */
-            cbTransferHeuristics = PDMAudioPropsBytesToFrames(&pStreamR3->State.Mapping.GuestProps, cbTransferHeuristics);
-            cbTransferHeuristics = PDMAudioPropsFramesToBytes(&pCfg->Props, cbTransferHeuristics);
-
-            uint64_t const cbTransferPerSec  = RT_MAX(PDMAudioPropsFramesToBytes(&pCfg->Props, pCfg->Props.uHz),
-                                                      4096 /* zero div prevention: min is 6kHz, picked 4k in case I'm mistaken */);
-
-            /* Make sure the period is 250ms (random value) or less, in case the guest
-               want to play the whole "Der Ring des Nibelungen" cycle in one go.  Just
-               halve the buffer till we get there. */
-            while (cbTransferHeuristics > 1024 && cbTransferHeuristics > cbTransferPerSec / 4)
-                cbTransferHeuristics = PDMAudioPropsFloorBytesToFrame(&pCfg->Props, cbTransferHeuristics / 2);
-
-            /* Set the transfer size per timer callout. (No chunking, so same.) */
-            pStreamShared->State.cbTransferSize  = cbTransferHeuristics;
-            pStreamShared->State.cbTransferChunk = cbTransferHeuristics;
-            ASSERT_GUEST_LOGREL_MSG(PDMAudioPropsIsSizeAligned(&pCfg->Props, cbTransferHeuristics),
-                                    ("We arrived at a misaligned transfer size for stream #%RU8: %#x (%u)\n",
-                                     uSD, cbTransferHeuristics, cbTransferHeuristics));
-
-            /* Convert to timer ticks. */
-            pStreamShared->State.cTicksPerByte = (cTimerTicksPerSec + cbTransferPerSec / 2) / cbTransferPerSec;
-            AssertStmt(pStreamShared->State.cTicksPerByte, pStreamShared->State.cTicksPerByte = 4096);
-
-            pStreamShared->State.cTransferTicks = (cTimerTicksPerSec * cbTransferHeuristics + cbTransferPerSec / 2)
-                                                / cbTransferPerSec;
-
-            /* Estimate timer HZ for the circular buffer setup. */
-            uTransferHz = cbTransferPerSec * 1000 / cbTransferHeuristics;
-            LogRel2(("HDA: Stream #%RU8 needs a data transfer at least every %RU64 ticks / %RU32 bytes / approx %u.%03u Hz\n",
-                     uSD, pStreamShared->State.cTransferTicks, cbTransferHeuristics, uTransferHz / 1000, uTransferHz % 1000));
-            uTransferHz /= 1000;
-
-            /* Indicate that we're done with period calculation. */
-            rc = VINF_ALREADY_INITIALIZED;
-        }
-    }
-
-    if (uTransferHz > 400) /* Anything above 400 Hz looks fishy -- tell the user. */
-        LogRelMax(32, ("HDA: Warning: Calculated transfer Hz rate for stream #%RU8 looks incorrect (%u), please re-run with audio debug mode and report a bug\n",
-                       uSD, uTransferHz));
 
     /* Set I/O scheduling hint for the backends. */
+    /** @todo r=bird: This is in the 'Device' portion, yet it's used by the
+     *        audio driver.  You would think stuff in the 'Device' part is
+     *        private to the device. */
     pCfg->Device.cMsSchedulingHint = RT_MS_1SEC / pStreamShared->State.uTimerIoHz;
     LogRel2(("HDA: Stream #%RU8 set scheduling hint for the backends to %RU32ms\n", uSD, pCfg->Device.cMsSchedulingHint));
 
-    if (rc != VINF_ALREADY_INITIALIZED && RT_SUCCESS(rc))
+
+    /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
+    hdaR3StreamSetPositionAbs(pStreamShared, pDevIns, pThis, HDA_STREAM_REG(pThis, LPIB, uSD));
+
+#ifdef LOG_ENABLED
+    hdaR3BDLEDumpAll(pDevIns, pThis, pStreamShared->u64BDLBase, pStreamShared->u16LVI + 1);
+#endif
+
+    /*
+     * Set up internal ring buffer.
+     */
+
+    /* (Re-)Allocate the stream's internal DMA buffer,
+     * based on the timing *and* PCM properties we just got above. */
+    if (pStreamR3->State.pCircBuf)
     {
-        /*
-         * Transfer heuristics disabled or failed.
-         */
-        Assert(uTransferHz == pStreamShared->State.uTimerIoHz);
-        LogRel2(("HDA: Stream #%RU8 transfer timer and I/O timer rate is %u Hz.\n", uSD, uTransferHz));
+        RTCircBufDestroy(pStreamR3->State.pCircBuf);
+        pStreamR3->State.pCircBuf = NULL;
+    }
+    pStreamR3->State.offWrite = 0;
+    pStreamR3->State.offRead  = 0;
 
-        /* Make sure that the chosen transfer Hz rate dividable by the stream's overall data rate. */
-        ASSERT_GUEST_LOGREL_MSG_STMT(cbDataPerSec % uTransferHz == 0,
-                                     ("Transfer data rate (%RU32 bytes/s) for stream #%RU8 does not fit to stream timing (%u Hz)\n",
-                                      cbDataPerSec, uSD, uTransferHz),
-                                     uTransferHz = HDA_TIMER_HZ_DEFAULT);
+    /*
+     * The default internal ring buffer size must be:
+     *
+     *      - Large enough for at least three periodic DMA transfers.
+     *
+     *        It is critically important that we don't experience underruns
+     *        in the DMA OUT code, because it will cause the buffer processing
+     *        to get skewed and possibly overlap with what the guest is updating.
+     *        At the time of writing (2021-03-05) there is no code for getting
+     *        back into sync there.
+     *
+     *      - Large enough for at least three I/O scheduling hints.
+     *
+     *        We want to lag behind a DMA period or two, but there must be
+     *        sufficent space for the AIO thread to get schedule and shuffle
+     *        data thru the mixer and onto the host audio hardware.
+     *
+     *      - Both above with plenty to spare.
+     *
+     * So, just take the longest of the two periods and multipling it by 6.
+     * We aren't not talking about very large base buffers heres, so size isn't
+     * an issue.
+     *
+     * Note: Use pCfg->Props as PCM properties here, as we only want to store the
+     *       samples we actually need, in other words, skipping the interleaved
+     *       channels we don't support / need to save space.
+     */
+    uint32_t msCircBuf = RT_MS_1SEC * 6 / RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz);
+    msCircBuf = RT_MAX(msCircBuf, pThis->msInitialDelay + RT_MS_1SEC * 6 / uTransferHz);
 
-        pStreamShared->State.cbTransferSize = (pStreamR3->State.Mapping.GuestProps.uHz * pStreamR3->State.Mapping.cbGuestFrame)
-                                            / uTransferHz;
-        ASSERT_GUEST_LOGREL_MSG_STMT(pStreamShared->State.cbTransferSize,
-                                     ("Transfer size for stream #%RU8 is invalid\n", uSD), rc = VERR_INVALID_PARAMETER);
+    uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, msCircBuf);
+    LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
+             uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf)));
+
+    uint32_t msCircBufCfg = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs;
+    if (msCircBufCfg) /* Anything set via CFGM? */
+    {
+        cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, msCircBufCfg);
+        LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU32 bytes / %RU64 ms\n",
+                 uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf)));
+    }
+
+    /* Serious paranoia: */
+    ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf % (pCfg->Props.cbSample * pCfg->Props.cChannels) == 0,
+                                 ("Ring buffer size (%RU32) for stream #%RU8 not aligned to the (host) frame size (%RU8)\n",
+                                  cbCircBuf, uSD, pCfg->Props.cbSample * pCfg->Props.cChannels),
+                                 rc = VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf, ("Ring buffer size for stream #%RU8 is invalid\n", uSD),
+                                 rc = VERR_INVALID_PARAMETER);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTCircBufCreate(&pStreamR3->State.pCircBuf, cbCircBuf);
         if (RT_SUCCESS(rc))
         {
             /*
-             * Calculate the bytes we need to transfer to / from the stream's DMA per iteration.
-             * This is bound to the device's Hz rate and thus to the (virtual) timing the device expects.
-             *
-             * As we don't do chunked transfers the moment, the chunk size equals the overall transfer size.
+             * Forward the timer frequency hint to TM as well for better accuracy on
+             * systems w/o preemption timers (also good for 'info timers').
              */
-            pStreamShared->State.cbTransferChunk = pStreamShared->State.cbTransferSize;
-            ASSERT_GUEST_LOGREL_MSG_STMT(pStreamShared->State.cbTransferChunk,
-                                         ("Transfer chunk for stream #%RU8 is invalid\n", uSD),
-                                         rc = VERR_INVALID_PARAMETER);
-            if (RT_SUCCESS(rc))
-            {
-                /* Make sure that the transfer chunk does not exceed the overall transfer size. */
-                AssertStmt(pStreamShared->State.cbTransferChunk <= pStreamShared->State.cbTransferSize,
-                           pStreamShared->State.cbTransferChunk = pStreamShared->State.cbTransferSize);
-
-                const uint64_t uTimerFreq  = PDMDevHlpTimerGetFreq(pDevIns, pStreamShared->hTimer);
-
-                const double cTicksPerHz   = uTimerFreq  / uTransferHz;
-
-                double       cTicksPerByte = cTicksPerHz / (double)pStreamShared->State.cbTransferChunk;
-                if (uTransferHz < 100)
-                    cTicksPerByte /= 100 / uTransferHz;
-                else
-                    cTicksPerByte *= uTransferHz / 100;
-                Assert(cTicksPerByte);
-
-#define HDA_ROUND_NEAREST(a_X) ((a_X) >= 0 ? (uint32_t)((a_X) + 0.5) : (uint32_t)((a_X) - 0.5))
-
-                /* Calculate the timer ticks per byte for this stream. */
-                pStreamShared->State.cTicksPerByte = HDA_ROUND_NEAREST(cTicksPerByte);
-                Assert(pStreamShared->State.cTicksPerByte);
-
-                const double cTransferTicks = pStreamShared->State.cbTransferChunk * cTicksPerByte;
-
-                /* Calculate timer ticks per transfer. */
-                pStreamShared->State.cTransferTicks = HDA_ROUND_NEAREST(cTransferTicks);
-                Assert(pStreamShared->State.cTransferTicks);
-#undef HDA_ROUND_NEAREST
-
-                LogRel2(("HDA: Stream #%RU8 is using %uHz I/O timer (%RU64 virtual ticks / Hz), stream Hz=%RU32, cTicksPerByte=%RU64, cTransferTicks=%RU64 -> cbTransferChunk=%RU32 (%RU64ms), cbTransferSize=%RU32 (%RU64ms)\n",
-                         uSD, pStreamShared->State.uTimerIoHz, (uint64_t)cTicksPerHz, pStreamR3->State.Mapping.GuestProps.uHz,
-                         pStreamShared->State.cTicksPerByte, pStreamShared->State.cTransferTicks,
-                         pStreamShared->State.cbTransferChunk, PDMAudioPropsBytesToMilli(&pStreamR3->State.Mapping.GuestProps, pStreamShared->State.cbTransferChunk),
-                         pStreamShared->State.cbTransferSize,  PDMAudioPropsBytesToMilli(&pStreamR3->State.Mapping.GuestProps, pStreamShared->State.cbTransferSize)));
-            }
-        }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
-        hdaR3StreamSetPositionAbs(pStreamShared, pDevIns, pThis, HDA_STREAM_REG(pThis, LPIB, uSD));
-
-#ifdef LOG_ENABLED
-        hdaR3BDLEDumpAll(pDevIns, pThis, pStreamShared->u64BDLBase, pStreamShared->u16LVI + 1);
-#endif
-
-        /*
-         * Set up internal ring buffer.
-         */
-
-        /* (Re-)Allocate the stream's internal DMA buffer,
-         * based on the timing *and* PCM properties we just got above. */
-        if (pStreamR3->State.pCircBuf)
-        {
-            RTCircBufDestroy(pStreamR3->State.pCircBuf);
-            pStreamR3->State.pCircBuf = NULL;
-        }
-        pStreamR3->State.offWrite = 0;
-        pStreamR3->State.offRead  = 0;
-
-        /*
-         * The default internal ring buffer size must be:
-         *
-         *      - Large enough for at least three periodic DMA transfers.
-         *
-         *        It is critically important that we don't experience underruns
-         *        in the DMA OUT code, because it will cause the buffer processing
-         *        to get skewed and possibly overlap with what the guest is updating.
-         *        At the time of writing (2021-03-05) there is no code for getting
-         *        back into sync there.
-         *
-         *      - Large enough for at least three I/O scheduling hints.
-         *
-         *        We want to lag behind a DMA period or two, but there must be
-         *        sufficent space for the AIO thread to get schedule and shuffle
-         *        data thru the mixer and onto the host audio hardware.
-         *
-         *      - Both above with plenty to spare.
-         *
-         * So, just take the longest of the two periods and multipling it by 6.
-         * We aren't not talking about very large base buffers heres, so size isn't
-         * an issue.
-         *
-         * Note: Use pCfg->Props as PCM properties here, as we only want to store the
-         *       samples we actually need, in other words, skipping the interleaved
-         *       channels we don't support / need to save space.
-         */
-        uint32_t msCircBuf = RT_MS_1SEC * 6 / RT_MIN(uTransferHz, pStreamShared->State.uTimerIoHz);
-        msCircBuf = RT_MAX(msCircBuf, pThis->msInitialDelay + RT_MS_1SEC * 6 / uTransferHz);
-
-        uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, msCircBuf);
-        LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
-                 uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf)));
-
-        uint32_t msCircBufCfg = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN ? pThis->cbCircBufInMs : pThis->cbCircBufOutMs;
-        if (msCircBufCfg) /* Anything set via CFGM? */
-        {
-            cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, msCircBufCfg);
-            LogRel2(("HDA: Stream #%RU8 is using a custom ring buffer size of %RU32 bytes / %RU64 ms\n",
-                     uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf)));
-        }
-
-        /* Serious paranoia: */
-        ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf % (pCfg->Props.cbSample * pCfg->Props.cChannels) == 0,
-                                     ("Ring buffer size (%RU32) for stream #%RU8 not aligned to the (host) frame size (%RU8)\n",
-                                      cbCircBuf, uSD, pCfg->Props.cbSample * pCfg->Props.cChannels),
-                                     rc = VERR_INVALID_PARAMETER);
-        ASSERT_GUEST_LOGREL_MSG_STMT(cbCircBuf, ("Ring buffer size for stream #%RU8 is invalid\n", uSD),
-                                     rc = VERR_INVALID_PARAMETER);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTCircBufCreate(&pStreamR3->State.pCircBuf, cbCircBuf);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Forward the timer frequency hint to TM as well for better accuracy on
-                 * systems w/o preemption timers (also good for 'info timers').
-                 */
-                PDMDevHlpTimerSetFrequencyHint(pDevIns, pStreamShared->hTimer, uTransferHz);
-            }
+            PDMDevHlpTimerSetFrequencyHint(pDevIns, pStreamShared->hTimer, uTransferHz);
         }
     }
 
@@ -733,7 +760,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
 
 #ifdef VBOX_WITH_DTRACE
     VBOXDD_HDA_STREAM_SETUP((uint32_t)uSD, rc, pStreamShared->State.Cfg.Props.uHz,
-                            pStreamShared->State.cTransferTicks, pStreamShared->State.cbTransferSize);
+                            pStreamShared->State.aSchedule[pStreamShared->State.cSchedule - 1].cPeriodTicks,
+                            pStreamShared->State.aSchedule[pStreamShared->State.cSchedule - 1].cbPeriod);
 #endif
     return rc;
 }
@@ -789,9 +817,6 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     /* Assign the default mixer sink to the stream. */
     pStreamR3->pMixSink = hdaR3GetDefaultSink(pThisCC, uSD);
 
-    /* Reset position adjustment counter. */
-    pStreamShared->State.cfPosAdjustLeft = pStreamShared->State.cfPosAdjustDefault;
-
     /* Reset transfer stuff. */
     pStreamShared->State.cTransferPendingInterrupts = 0;
     pStreamShared->State.tsTransferLast = 0;
@@ -803,8 +828,15 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     pStreamShared->State.tsAioDelayEnd    = UINT64_MAX;
     pStreamShared->State.tsStart          = 0;
 
-    RT_ZERO(pStreamShared->State.BDLE);
-    pStreamShared->State.uCurBDLE = 0;
+    RT_ZERO(pStreamShared->State.aBdl);
+    RT_ZERO(pStreamShared->State.aSchedule);
+    pStreamShared->State.offCurBdle        = 0;
+    pStreamShared->State.cBdles            = 0;
+    pStreamShared->State.idxCurBdle        = 0;
+    pStreamShared->State.cSchedulePrologue = 0;
+    pStreamShared->State.cSchedule         = 0;
+    pStreamShared->State.idxSchedule       = 0;
+    pStreamShared->State.idxScheduleLoop   = 0;
 
     if (pStreamR3->State.pCircBuf)
         RTCircBufReset(pStreamR3->State.pCircBuf);
@@ -1147,13 +1179,93 @@ static int hdaR3StreamRead(PHDASTREAMR3 pStreamR3, uint32_t cbToRead, uint32_t *
 }
 
 /**
- * Transfers data of an HDA stream according to its usage (input / output).
+ * Get the current address and number of bytes left in the current BDLE.
  *
- * For an SDO (output) stream this means reading DMA data from the device to
- * the HDA stream's internal FIFO buffer.
+ * @returns The current physical address.
+ * @param   pStreamShared   The stream to check.
+ * @param   pcbLeft         The number of bytes left at the returned address.
+ */
+DECLINLINE(RTGCPHYS) hdaR3StreamDmaBufGet(PHDASTREAM pStreamShared, uint32_t *pcbLeft)
+{
+    uint8_t        idxBdle    = pStreamShared->State.idxCurBdle;
+    AssertStmt(idxBdle < pStreamShared->State.cBdles, idxBdle = 0);
+
+    uint32_t const cbCurBdl   = pStreamShared->State.aBdl[idxBdle].cb;
+    uint32_t       offCurBdle = pStreamShared->State.offCurBdle;
+    AssertStmt(pStreamShared->State.offCurBdle <= cbCurBdl, offCurBdle = cbCurBdl);
+
+    *pcbLeft = cbCurBdl - offCurBdle;
+    return pStreamShared->State.aBdl[idxBdle].GCPhys + offCurBdle;
+}
+
+/**
+ * Get the size of the current BDLE.
  *
- * For an SDI (input) stream this is reading audio data from the HDA stream's
- * internal FIFO buffer and writing it as DMA data to the device.
+ * @returns The size (in bytes).
+ * @param   pStreamShared   The stream to check.
+ */
+DECLINLINE(RTGCPHYS) hdaR3StreamDmaBufGetSize(PHDASTREAM pStreamShared)
+{
+    uint8_t idxBdle = pStreamShared->State.idxCurBdle;
+    AssertStmt(idxBdle < pStreamShared->State.cBdles, idxBdle = 0);
+    return pStreamShared->State.aBdl[idxBdle].cb;
+}
+
+/**
+ * Checks if the current BDLE is completed.
+ *
+ * @retval  true if complete
+ * @retval  false if not.
+ * @param   pStreamShared   The stream to check.
+ */
+DECLINLINE(bool) hdaR3StreamDmaBufIsComplete(PHDASTREAM pStreamShared)
+{
+    uint8_t const  idxBdle    = pStreamShared->State.idxCurBdle;
+    AssertReturn(idxBdle < pStreamShared->State.cBdles, true);
+
+    uint32_t const cbCurBdl   = pStreamShared->State.aBdl[idxBdle].cb;
+    uint32_t const offCurBdle = pStreamShared->State.offCurBdle;
+    Assert(offCurBdle <= cbCurBdl);
+    return offCurBdle >= cbCurBdl;
+}
+
+/**
+ * Checks if the current BDLE needs a completion IRQ.
+ *
+ * @retval  true if IRQ is needed.
+ * @retval  false if not.
+ * @param   pStreamShared   The stream to check.
+ */
+DECLINLINE(bool) hdaR3StreamDmaBufNeedsIrq(PHDASTREAM pStreamShared)
+{
+    uint8_t const idxBdle = pStreamShared->State.idxCurBdle;
+    AssertReturn(idxBdle < pStreamShared->State.cBdles, false);
+    return (pStreamShared->State.aBdl[idxBdle].fFlags & HDA_BDLE_F_IOC) != 0;
+}
+
+/**
+ * Advances the DMA engine to the next BDLE.
+ *
+ * @param   pStreamShared   The stream which DMA engine is to be updated.
+ */
+DECLINLINE(void) hdaR3StreamDmaBufAdvanceToNext(PHDASTREAM pStreamShared)
+{
+    uint8_t idxBdle = pStreamShared->State.idxCurBdle;
+    Assert(pStreamShared->State.offCurBdle == pStreamShared->State.aBdl[idxBdle].cb);
+
+    if (idxBdle < pStreamShared->State.cBdles - 1)
+        idxBdle++;
+    else
+        idxBdle = 0;
+    pStreamShared->State.idxCurBdle = idxBdle;
+    pStreamShared->State.offCurBdle = 0;
+}
+
+/**
+ * Does DMA transfer for an HDA input stream.
+ *
+ * Reads audio data from the HDA stream's internal DMA buffer and writing to
+ * guest memory.
  *
  * @returns IPRT status code.
  * @param   pDevIns             The device instance.
@@ -1163,17 +1275,17 @@ static int hdaR3StreamRead(PHDASTREAMR3 pStreamR3, uint32_t cbToRead, uint32_t *
  * @param   pStreamR3           HDA stream to update (ring-3).
  * @param   cbToProcessMax      How much data (in bytes) to process as maximum.
  */
-static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamShared,
-                               PHDASTREAMR3 pStreamR3, uint32_t cbToProcessMax)
+static int hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamShared,
+                                 PHDASTREAMR3 pStreamR3, uint32_t cbToProcessMax)
 {
     uint8_t const uSD = pStreamShared->u8SD;
     LogFlowFunc(("ENTER - #%u cbToProcessMax=%#x\n", uSD, cbToProcessMax));
+    Assert(hdaGetDirFromSD(uSD) != PDMAUDIODIR_OUT);
 
     if (RT_LIKELY(cbToProcessMax >= pStreamShared->State.cbTransferSize))
     { /*likely*/ }
     else
     {
-        Assert(hdaGetDirFromSD(uSD) != PDMAUDIODIR_OUT /* Handled by caller */);
         /** @todo account for this or something so we can try get back in sync
          *        later... */
         LogFlowFunc(("Internal DMA/AIO buffer %s (%#x, wanted at least %#x)\n",
@@ -1242,19 +1354,10 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
 
     /* Transfer sanity checks. */
     Assert(pStreamShared->State.cbTransferSize);
-    Assert(pStreamShared->State.cbTransferChunk <= pStreamShared->State.cbTransferSize);
 
     int rc = VINF_SUCCESS;
 
-    /* Fetch first / next BDL entry. */
-    PHDABDLE pBDLE = &pStreamShared->State.BDLE;
-    if (hdaR3BDLEIsComplete(pBDLE))
-    {
-        rc = hdaR3BDLEFetch(pDevIns, pBDLE, pStreamShared->u64BDLBase, pStreamShared->State.uCurBDLE);
-        AssertRC(rc);
-    }
-
-    uint32_t cbToProcess = RT_MIN(pStreamShared->State.cbTransferSize, pStreamShared->State.cbTransferChunk);
+    uint32_t cbToProcess = pStreamShared->State.cbTransferSize;
 
     Assert(cbToProcess);                                                     /* Nothing to process when there should be data. Accounting bug? */
 
@@ -1286,261 +1389,92 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
         uint32_t cbChunk = RT_MIN(cbLeft, pStreamShared->u8FIFOS);
 
         /* Limit the chunk to the remaining data of the current BDLE. */
-        cbChunk = RT_MIN(cbChunk, pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);
-
-        /* If there are position adjustment frames left to be processed,
-         * make sure that we process them first as a whole. */
-        if (pStreamShared->State.cfPosAdjustLeft)
-            cbChunk = RT_MIN(cbChunk, (uint32_t)pStreamShared->State.cfPosAdjustLeft * pStreamR3->State.Mapping.cbGuestFrame);
+        uint32_t cbDmaBuf = 0;
+        RTGCPHYS GCPhys = hdaR3StreamDmaBufGet(pStreamShared, &cbDmaBuf);
+        cbChunk = RT_MIN(cbChunk, cbDmaBuf);
 
         if (!cbChunk)
             break;
 
-        uint32_t   cbDMA    = 0;
+        STAM_PROFILE_START(&pThis->StatIn, a);
+
+        /*
+         * Copy out of the internal DMA buffer.
+         * @todo eliminate extra copy.
+         */
         PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
         uint8_t   *pabFIFO  = pStreamShared->abFIFO;
+        uint32_t   cbDMAWritten = 0;
+        uint32_t   cbDMAToWrite = cbChunk;
 
-        if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN) /* Input (SDI). */
+        /** @todo Do we need interleaving streams support here as well?
+         *        Never saw anything else besides mono/stereo mics (yet). */
+        while (cbDMAToWrite)
         {
-            STAM_PROFILE_START(&pThis->StatIn, a);
+            void *pvBuf; size_t cbBuf;
+            RTCircBufAcquireReadBlock(pCircBuf, cbDMAToWrite, &pvBuf, &cbBuf);
 
-            uint32_t cbDMAWritten = 0;
-            uint32_t cbDMAToWrite = cbChunk;
+            if (   !cbBuf
+                && !RTCircBufUsed(pCircBuf))
+                break;
 
-            /** @todo Do we need interleaving streams support here as well?
-             *        Never saw anything else besides mono/stereo mics (yet). */
-            while (cbDMAToWrite)
-            {
-                void *pvBuf; size_t cbBuf;
-                RTCircBufAcquireReadBlock(pCircBuf, cbDMAToWrite, &pvBuf, &cbBuf);
-
-                if (   !cbBuf
-                    && !RTCircBufUsed(pCircBuf))
-                    break;
-
-                memcpy(pabFIFO + cbDMAWritten, pvBuf, cbBuf);
+            memcpy(pabFIFO + cbDMAWritten, pvBuf, cbBuf);
 #ifdef VBOX_WITH_DTRACE
-                VBOXDD_HDA_STREAM_DMA_IN((uint32_t)uSD, (uint32_t)cbBuf, pStreamR3->State.offRead);
+            VBOXDD_HDA_STREAM_DMA_IN((uint32_t)uSD, (uint32_t)cbBuf, pStreamR3->State.offRead);
 #endif
-                pStreamR3->State.offRead += cbBuf;
+            pStreamR3->State.offRead += cbBuf;
 
-                RTCircBufReleaseReadBlock(pCircBuf, cbBuf);
+            RTCircBufReleaseReadBlock(pCircBuf, cbBuf);
 
-                Assert(cbDMAToWrite >= cbBuf);
-                cbDMAToWrite -= (uint32_t)cbBuf;
-                cbDMAWritten += (uint32_t)cbBuf;
-                Assert(cbDMAWritten <= cbChunk);
-            }
-
-            if (cbDMAToWrite)
-            {
-                LogRel2(("HDA: FIFO underflow for stream #%RU8 (%RU32 bytes outstanding)\n", uSD, cbDMAToWrite));
-
-                Assert(cbChunk == cbDMAWritten + cbDMAToWrite);
-                memset((uint8_t *)pabFIFO + cbDMAWritten, 0, cbDMAToWrite);
-                cbDMAWritten = cbChunk;
-            }
-
-            rc = hdaR3DMAWrite(pDevIns, pThis, pStreamShared, pStreamR3, pabFIFO, cbDMAWritten, &cbDMA /* pcbWritten */);
-            if (RT_FAILURE(rc))
-                LogRel(("HDA: Writing to stream #%RU8 DMA failed with %Rrc\n", uSD, rc));
-
-            STAM_PROFILE_STOP(&pThis->StatIn, a);
-        }
-        else if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT) /* Output (SDO). */
-        {
-            STAM_PROFILE_START(&pThis->StatOut, a);
-
-            rc = hdaR3DMARead(pDevIns, pThis, pStreamShared, pStreamR3, pabFIFO, cbChunk, &cbDMA /* pcbRead */);
-            if (RT_SUCCESS(rc))
-            {
-                const uint32_t cbFree = (uint32_t)RTCircBufFree(pCircBuf);
-
-                /*
-                 * Most guests don't use different stream frame sizes than
-                 * the default one, so save a bit of CPU time and don't go into
-                 * the frame extraction code below.
-                 *
-                 * Only macOS guests need the frame extraction branch below at the moment AFAIK.
-                 */
-                if (pStreamR3->State.Mapping.cbGuestFrame == HDA_FRAME_SIZE_DEFAULT)
-                {
-                    uint32_t cbDMARead = 0;
-                    uint32_t cbDMALeft = RT_MIN(cbDMA, cbFree);
-
-                    while (cbDMALeft)
-                    {
-                        void *pvBuf; size_t cbBuf;
-                        RTCircBufAcquireWriteBlock(pCircBuf, cbDMALeft, &pvBuf, &cbBuf);
-
-                        if (cbBuf)
-                        {
-                            memcpy(pvBuf, pabFIFO + cbDMARead, cbBuf);
-                            cbDMARead += (uint32_t)cbBuf;
-                            cbDMALeft -= (uint32_t)cbBuf;
-#ifdef VBOX_WITH_DTRACE
-                            VBOXDD_HDA_STREAM_DMA_OUT((uint32_t)uSD, (uint32_t)cbBuf, pStreamR3->State.offWrite);
-#endif
-                            pStreamR3->State.offWrite += cbBuf;
-                        }
-
-                        RTCircBufReleaseWriteBlock(pCircBuf, cbBuf);
-                    }
-                }
-                else
-                {
-                    /*
-                     * The following code extracts the required audio stream (channel) data
-                     * of non-interleaved *and* interleaved audio streams.
-                     *
-                     * We by default only support 2 channels with 16-bit samples (HDA_FRAME_SIZE),
-                     * but an HDA audio stream can have interleaved audio data of multiple audio
-                     * channels in such a single stream ("AA,AA,AA vs. AA,BB,AA,BB").
-                     *
-                     * So take this into account by just handling the first channel in such a stream ("A")
-                     * and just discard the other channel's data.
-                     *
-                     * I know, the following code is horribly slow, but seems to work for now.
-                     */
-                    /** @todo Optimize channel data extraction! Use some SSE(3) / intrinsics? */
-                    for (unsigned m = 0; m < pStreamR3->State.Mapping.cMappings; m++)
-                    {
-                        const uint32_t cbFrame  = pStreamR3->State.Mapping.cbGuestFrame;
-
-                        Assert(cbFree >= cbDMA);
-
-                        PPDMAUDIOSTREAMMAP pMap = &pStreamR3->State.Mapping.paMappings[m];
-                        AssertPtr(pMap);
-
-                        Log3Func(("Mapping #%u: Start (cbDMA=%RU32, cbFrame=%RU32, offNext=%RU32)\n",
-                                  m, cbDMA, cbFrame, pMap->offNext));
-
-
-                        /* Skip the current DMA chunk if the chunk is smaller than what the current stream mapping needs to read
-                         * the next associated frame (pointed to at pMap->cbOff).
-                         *
-                         * This can happen if the guest did not come up with enough data within a certain time period, especially
-                         * when using multi-channel speaker (> 2 channels [stereo]) setups. */
-                        if (pMap->offNext > cbChunk)
-                        {
-                            Log2Func(("Mapping #%u: Skipped (cbChunk=%RU32, cbMapOff=%RU32)\n", m, cbChunk, pMap->offNext));
-                            continue;
-                        }
-
-                        uint8_t *pbSrcBuf = pabFIFO;
-                        size_t cbSrcOff   = pMap->offNext;
-
-                        for (unsigned i = 0; i < cbDMA / cbFrame; i++)
-                        {
-                            void *pvDstBuf; size_t cbDstBuf;
-                            RTCircBufAcquireWriteBlock(pCircBuf, pMap->cbStep, &pvDstBuf, &cbDstBuf);
-
-                            Assert(cbDstBuf >= pMap->cbStep);
-
-                            if (cbDstBuf)
-                            {
-                                Log3Func(("Mapping #%u: Frame #%02u:    cbStep=%u, offFirst=%u, offNext=%u, cbDstBuf=%u, cbSrcOff=%u\n",
-                                          m, i, pMap->cbStep, pMap->offFirst, pMap->offNext, cbDstBuf, cbSrcOff));
-
-                                memcpy(pvDstBuf, pbSrcBuf + cbSrcOff, cbDstBuf);
-
-#if 0 /* Too slow, even for release builds, so disabled it. */
-                                if (pStreamR3->Dbg.Runtime.fEnabled)
-                                    DrvAudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMAMapped, pvDstBuf, cbDstBuf,
-                                                         0 /* fFlags */);
-#endif
-                                Assert(cbSrcOff <= cbDMA);
-                                if (cbSrcOff + cbFrame + pMap->offFirst<= cbDMA)
-                                    cbSrcOff += cbFrame + pMap->offFirst;
-
-#ifdef VBOX_WITH_DTRACE
-                                VBOXDD_HDA_STREAM_DMA_OUT((uint32_t)uSD, (uint32_t)cbDstBuf, pStreamR3->State.offWrite);
-#endif
-                                Log3Func(("Mapping #%u: Frame #%02u:    -> cbSrcOff=%zu\n", m, i, cbSrcOff));
-                                pStreamR3->State.offWrite += cbDstBuf;
-                            }
-
-                            RTCircBufReleaseWriteBlock(pCircBuf, cbDstBuf);
-                        }
-
-                        Log3Func(("Mapping #%u: End cbSize=%u, cbDMA=%RU32, cbSrcOff=%zu\n",
-                                  m, pMap->cbStep, cbDMA, cbSrcOff));
-
-                        Assert(cbSrcOff <= cbDMA);
-
-                        const uint32_t cbSrcLeft = cbDMA - (uint32_t)cbSrcOff;
-                        if (cbSrcLeft)
-                        {
-                            Log3Func(("Mapping #%u: cbSrcLeft=%RU32\n", m, cbSrcLeft));
-
-                            if (cbSrcLeft >= pMap->cbStep)
-                            {
-                                void *pvDstBuf; size_t cbDstBuf;
-                                RTCircBufAcquireWriteBlock(pCircBuf, pMap->cbStep, &pvDstBuf, &cbDstBuf);
-
-                                Assert(cbDstBuf >= pMap->cbStep);
-
-                                if (cbDstBuf)
-                                {
-                                    memcpy(pvDstBuf, pbSrcBuf + cbSrcOff, cbDstBuf);
-#ifdef VBOX_WITH_DTRACE
-                                    VBOXDD_HDA_STREAM_DMA_OUT((uint32_t)uSD, (uint32_t)cbDstBuf, pStreamR3->State.offWrite);
-#endif
-                                    pStreamR3->State.offWrite += cbDstBuf;
-                                }
-
-                                RTCircBufReleaseWriteBlock(pCircBuf, cbDstBuf);
-                            }
-
-                            Assert(pMap->cbFrame >= cbSrcLeft);
-                            pMap->offNext = pMap->cbFrame - cbSrcLeft;
-                        }
-                        else
-                            pMap->offNext = 0;
-
-                        Log3Func(("Mapping #%u finish (cbSrcOff=%zu, offNext=%zu)\n", m, cbSrcOff, pMap->offNext));
-                    }
-                }
-            }
-            else
-                LogRel(("HDA: Reading from stream #%RU8 DMA failed with %Rrc\n", uSD, rc));
-
-            STAM_PROFILE_STOP(&pThis->StatOut, a);
+            Assert(cbDMAToWrite >= cbBuf);
+            cbDMAToWrite -= (uint32_t)cbBuf;
+            cbDMAWritten += (uint32_t)cbBuf;
+            Assert(cbDMAWritten <= cbChunk);
         }
 
-        else /** @todo Handle duplex streams? */
-            AssertFailed();
-
-        if (cbDMA)
+        if (cbDMAToWrite)
         {
-            /* We always increment the position of DMA buffer counter because we're always reading
-             * into an intermediate DMA buffer. */
-            pBDLE->State.u32BufOff += (uint32_t)cbDMA;
-            Assert(pBDLE->State.u32BufOff <= pBDLE->Desc.u32BufSize);
+            LogRel2(("HDA: FIFO underflow for stream #%RU8 (%RU32 bytes outstanding)\n", uSD, cbDMAToWrite));
 
-            /* Are we done doing the position adjustment?
-             * Only then do the transfer accounting .*/
-            if (pStreamShared->State.cfPosAdjustLeft == 0)
-            {
-                Assert(cbLeft >= cbDMA);
-                cbLeft        -= cbDMA;
-
-                cbProcessed   += cbDMA;
-            }
-
-            Log3Func(("[SD%RU8] cbDMA=%RU32 -> %R[bdle]\n", uSD, cbDMA, pBDLE));
+            Assert(cbChunk == cbDMAWritten + cbDMAToWrite);
+            memset((uint8_t *)pabFIFO + cbDMAWritten, 0, cbDMAToWrite);
+            cbDMAWritten = cbChunk;
         }
 
-        if (hdaR3BDLEIsComplete(pBDLE))
+        /*
+         * Write to the guest.
+         */
+        if (RT_LIKELY(!pStreamR3->Dbg.Runtime.fEnabled))
+        { /* likely */ }
+        else
+            DrvAudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileDMARaw, pabFIFO, cbDMAWritten, 0 /* fFlags */);
+
+        rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pabFIFO, cbDMAWritten);
+        AssertLogRelMsgRC(rc, ("HDA: Write at %RGp LB %#x -> %Rrc\n", GCPhys, cbDMAWritten, rc));
+
+        STAM_COUNTER_ADD(&pThis->StatBytesWritten, cbChunk);
+
+        STAM_PROFILE_STOP(&pThis->StatIn, a);
+
+        /* Advance. */
+        pStreamShared->State.offCurBdle += cbDMAWritten;
+        Assert(cbLeft >= cbDMAWritten);
+        cbLeft        -= cbDMAWritten;
+        cbProcessed   += cbDMAWritten;
+
+        if (hdaR3StreamDmaBufIsComplete(pStreamShared))
         {
-            Log3Func(("[SD%RU8] Completed %R[bdle]\n", uSD, pBDLE));
+            Log3Func(("[SD%RU8] Completed BDLE%u %#RX64 LB %#RX32 fFlags=%#x (wrote %#x)\n",
+                      uSD, pStreamShared->State.idxCurBdle, pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].GCPhys,
+                      pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].cb,
+                      pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].fFlags, cbDMAWritten));
 
             /* Make sure to also update the wall clock when a BDLE is complete.
              * Needed for Windows 10 guests. */
             hdaR3WalClkSet(pThis, pThisCC,
                              hdaWalClkGetCurrent(pThis)
                            + hdaR3StreamPeriodFramesToWalClk(pPeriod,
-                                                               pBDLE->Desc.u32BufSize
+                                                               hdaR3StreamDmaBufGetSize(pStreamShared)
                                                              / pStreamR3->State.Mapping.cbGuestFrame),
                            false /* fForce */);
 
@@ -1552,16 +1486,10 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
              * Note for Windows 10: The OS' driver is *very* picky about *when* the (DMA) positions get updated!
              *                      Not doing this at the right time will result in ugly sound crackles!
              */
-            hdaR3StreamSetPositionAdd(pStreamShared, pDevIns, pThis, pBDLE->Desc.u32BufSize);
+            hdaR3StreamSetPositionAdd(pStreamShared, pDevIns, pThis, hdaR3StreamDmaBufGetSize(pStreamShared));
 
-                /* Does the current BDLE require an interrupt to be sent? */
-            if (   hdaR3BDLENeedsInterrupt(pBDLE)
-                /* Are we done doing the position adjustment?
-                 * It can happen that a BDLE which is handled while doing the
-                 * position adjustment requires an interrupt on completion (IOC) being set.
-                 *
-                 * In such a case we need to skip such an interrupt and just move on. */
-                && pStreamShared->State.cfPosAdjustLeft == 0)
+            /* Does the current BDLE require an interrupt to be sent? */
+            if (hdaR3StreamDmaBufNeedsIrq(pStreamShared))
             {
                 /* If the IOCE ("Interrupt On Completion Enable") bit of the SDCTL register is set
                  * we need to generate an interrupt.
@@ -1572,12 +1500,7 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                     if (!fInterruptSent)
                     {
                         pStreamShared->State.cTransferPendingInterrupts = 1;
-
-                        AssertMsg(pStreamShared->State.cTransferPendingInterrupts <= 32,
-                                  ("Too many pending interrupts (%RU8) for stream #%RU8\n",
-                                   pStreamShared->State.cTransferPendingInterrupts, uSD));
-
-                        Log3Func(("[SD%RU8] Scheduling interrupt (now %RU8 total)\n", uSD, pStreamShared->State.cTransferPendingInterrupts));
+                        Log3Func(("[SD%RU8] Scheduling interrupt\n", uSD));
 
                         /*
                          * Set the stream's BCIS bit.
@@ -1601,23 +1524,13 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                 }
             }
 
-            if (pStreamShared->State.uCurBDLE == pStreamShared->u16LVI)
-            {
-                pStreamShared->State.uCurBDLE = 0;
-            }
-            else
-                pStreamShared->State.uCurBDLE++;
-
-            /* Fetch the next BDLE entry. */
-            hdaR3BDLEFetch(pDevIns, pBDLE, pStreamShared->u64BDLBase, pStreamShared->State.uCurBDLE);
+            hdaR3StreamDmaBufAdvanceToNext(pStreamShared);
         }
-
-        /* Do the position adjustment accounting. */
-        pStreamShared->State.cfPosAdjustLeft -=
-            RT_MIN(pStreamShared->State.cfPosAdjustLeft, cbDMA / pStreamR3->State.Mapping.cbGuestFrame);
-
-        if (RT_FAILURE(rc))
-            break;
+        else
+            Log3Func(("[SD%RU8] Not completed BDLE%u %#RX64 LB %#RX32 fFlags=%#x: off=%#RX32, wrote %#x\n",
+                      uSD, pStreamShared->State.idxCurBdle, pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].GCPhys,
+                      pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].cb,
+                      pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].fFlags, pStreamShared->State.offCurBdle, cbDMAWritten));
     }
 
     /* Remove the FIFORDY bit again. */
@@ -1627,13 +1540,8 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
     Assert(cbProcessed == cbToProcess);
     Assert(cbLeft      == 0);
 
-    /* Only do the data accounting if we don't have to do any position
-     * adjustment anymore. */
-    if (pStreamShared->State.cfPosAdjustLeft == 0)
-    {
-        hdaR3StreamPeriodInc(pPeriod, RT_MIN(cbProcessed / pStreamR3->State.Mapping.cbGuestFrame,
-                                             hdaR3StreamPeriodGetRemainingFrames(pPeriod)));
-    }
+    hdaR3StreamPeriodInc(pPeriod, RT_MIN(cbProcessed / pStreamR3->State.Mapping.cbGuestFrame,
+                                         hdaR3StreamPeriodGetRemainingFrames(pPeriod)));
 
     const bool fTransferComplete  = cbLeft == 0;
     if (fTransferComplete)
@@ -1660,20 +1568,13 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
         RT_NOREF(fWalClkSet);
     }
 
-    /* Set the next transfer timing slot.
-     * This must happen at a constant rate. */
-    pStreamShared->State.tsTransferNext = tsNow + pStreamShared->State.cTransferTicks;
-
     /* Always update this timestamp, no matter what pStreamShared->State.tsTransferNext is. */
     pStreamShared->State.tsTransferLast = tsNow;
 
-    Log3Func(("[SD%RU8] %R[bdle] -- %#RX32/%#RX32 @ %#RX64\n", uSD, pBDLE, cbProcessed, pStreamShared->State.cbTransferSize,
+    Log3Func(("[SD%RU8] %#RX32/%#RX32 @ %#RX64\n", uSD, cbProcessed, pStreamShared->State.cbTransferSize,
               (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT ? pStreamR3->State.offWrite : pStreamR3->State.offRead) - cbProcessed));
     Log3Func(("[SD%RU8] fTransferComplete=%RTbool, cTransferPendingInterrupts=%RU8\n",
               uSD, fTransferComplete, pStreamShared->State.cTransferPendingInterrupts));
-    Log3Func(("[SD%RU8] tsNow=%RU64, tsTransferNext=%RU64 (in %RU64 ticks)\n",
-              uSD, tsNow, pStreamShared->State.tsTransferNext,
-              pStreamShared->State.tsTransferNext ? pStreamShared->State.tsTransferNext - tsNow : 0));
 
     LogFlowFuncLeave();
 
@@ -1696,10 +1597,9 @@ static int hdaR3StreamTransfer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
  * @param   pStreamShared       HDA stream to update (shared).
  * @param   pStreamR3           HDA stream to update (ring-3).
  * @param   cbToProduce         The max amount of data to produce (i.e. put into
- *                              the circular buffer).  (Caller should already
- *                              have made sure this is at least the size of one
- *                              DMA timer period, so this function doesn't need
- *                              to do any extra underflow handling.)
+ *                              the circular buffer).  Unless something is going
+ *                              seriously wrong, this will always be transfer
+ *                              size for the current period.
  * @param   tsNowNs             The current RTTimeNano() value.
  *
  * @remarks Caller owns the stream lock.
@@ -1750,10 +1650,6 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
     Assert(ASMAtomicReadBool(&pStreamShared->State.fInReset) == false);
     Assert(ASMAtomicReadBool(&pStreamShared->State.fRunning));
 
-    /* Transfer sanity checks. */
-    Assert(pStreamShared->State.cbTransferSize);
-    Assert(pStreamShared->State.cbTransferChunk <= pStreamShared->State.cbTransferSize);
-
     /*
      * Some timestamp stuff for logging/debugging.
      */
@@ -1763,65 +1659,8 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
     pStreamShared->State.tsTransferLast   = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
 
     /*
-     * Fetch the next BDL entry.
+     * Set the FIFORDY bit on the stream while doing the transfer.
      */
-    int      rc    = VINF_SUCCESS;
-    PHDABDLE pBDLE = &pStreamShared->State.BDLE;
-    if (hdaR3BDLEIsComplete(pBDLE))
-    {
-        rc = hdaR3BDLEFetch(pDevIns, pBDLE, pStreamShared->u64BDLBase, pStreamShared->State.uCurBDLE);
-        AssertRCReturn(rc, rc);
-    }
-
-    /*
-     * The caller should have made sure we've got at least cbTransferSize
-     * of buffer available.   We will not transfer more than that.
-     */
-    uint8_t cSuppressIocs = 0;
-    Assert(pStreamShared->State.cbTransferChunk == pStreamShared->State.cbTransferSize);
-    if (!pStreamShared->State.cfPosAdjustLeft)
-    {
-        Assert(cbToProduce >= pStreamShared->State.cbTransferSize);
-        if (cbToProduce > pStreamShared->State.cbTransferSize)
-            cbToProduce = pStreamShared->State.cbTransferSize;
-    }
-    else
-    {
-        /* We currently process the position adjustment BLDE0 and the whole BLDE1
-           in one DMA timer callout, ignoring BLDE0.IOC. */
-        /** @todo Process the tiny BLDE0 seperatly. */
-        uint32_t const cbPosAdjust = PDMAudioPropsFramesToBytes(&pStreamShared->State.Cfg.Props,
-                                                                pStreamShared->State.cfPosAdjustLeft);
-        Assert(cbToProduce >= pStreamShared->State.cbTransferSize + cbPosAdjust);
-        if (cbToProduce >= pStreamShared->State.cbTransferSize + cbPosAdjust)
-        {
-            cbToProduce = pStreamShared->State.cbTransferSize + cbPosAdjust;
-            pStreamShared->State.cfPosAdjustLeft = 0;
-            cSuppressIocs = pBDLE->Desc.fFlags & HDA_BDLE_F_IOC ? 1 : 0;
-        }
-        else
-            pStreamShared->State.cfPosAdjustLeft -= PDMAudioPropsBytesToFrames(&pStreamShared->State.Cfg.Props, cbToProduce);
-    }
-    uint32_t cbLeft = cbToProduce;
-    Assert(PDMAudioPropsIsSizeAligned(&pStreamShared->State.Cfg.Props, cbLeft));
-
-    /*
-     * Whether an interrupt has been sent (asserted) for this transfer period already or not.
-     *
-     * Note: Windows 10 relies on this, e.g. sending more than one interrupt per transfer period
-     *       confuses the Windows' audio driver and will screw up the audio data. So only send
-     *       one interrupt per transfer period.
-     *
-     * Note! This only applies if the transfer heuristics isn't active.
-     */
-    /** @todo r=bird: Of course the guest gets confused if you bundle interrupts.
-     *        Unless the buffers are really small, this is stuff that won't happen
-     *        on real hardware.  */
-    /** @todo Disallow non-heuristics approach!  It only complicates the code
-     *        and messes with the guest if we cover more than one IOC! */
-    bool fInterruptSent = false;
-
-    /* Set the FIFORDY bit on the stream while doing the transfer. */
     /** @todo r=bird: I don't get the HDA_SDSTS_FIFORDY logic.  Unless we're
      *        assuming SMP guest and that it can get stream registers while we're
      *        here.  Only it cannot do the later because we're sitting on the big
@@ -1837,6 +1676,10 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
     uint8_t    abBounce[4096 + 128];    /* Most guest does at most 4KB BDLE. So, 4KB + space for a partial frame to reduce loops. */
     uint32_t   cbBounce = 0;            /* in case of incomplete frames between buffer segments */
     PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
+    uint32_t   cbLeft   = cbToProduce;
+    Assert(cbLeft == pStreamShared->State.cbTransferSize);
+    Assert(PDMAudioPropsIsSizeAligned(&pStreamShared->State.Cfg.Props, cbLeft));
+
     while (cbLeft > 0)
     {
         STAM_PROFILE_START(&pThis->StatOut, a);
@@ -1844,8 +1687,8 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
         /*
          * Figure out how much we can read & write in this iteration.
          */
-        uint32_t cbChunk = pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff;
-        AssertStmt(cbChunk <= pBDLE->Desc.u32BufSize, cbChunk = 0);
+        uint32_t cbChunk = 0;
+        RTGCPHYS GCPhys  = hdaR3StreamDmaBufGet(pStreamShared, &cbChunk);
 
         /* Need to diverge if the frame format differs.  */
         if (   !pStreamR3->State.Mapping.fMappingNeeded
@@ -1859,7 +1702,6 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
             /*
              * Read the guest data directly into the internal DMA buffer.
              */
-            RTGCPHYS GCPhys = pBDLE->Desc.u64BufAddr + pBDLE->State.u32BufOff;
             while (cbChunk > 0)
             {
                 /* Grab internal DMA buffer space and read into it. */
@@ -1884,11 +1726,10 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
                 STAM_COUNTER_ADD(&pThis->StatBytesRead, cbBufDst);
 
                 /* advance */
-                cbChunk                -= (uint32_t)cbBufDst;
-                GCPhys                 +=           cbBufDst;
-                cbLeft                 -= (uint32_t)cbBufDst;
-                pBDLE->State.u32BufOff += (uint32_t)cbBufDst;
-                Assert(pBDLE->State.u32BufOff <= pBDLE->Desc.u32BufSize);
+                cbChunk                         -= (uint32_t)cbBufDst;
+                GCPhys                          +=           cbBufDst;
+                cbLeft                          -= (uint32_t)cbBufDst;
+                pStreamShared->State.offCurBdle += (uint32_t)cbBufDst;
             }
         }
         /*
@@ -1913,7 +1754,6 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
             /*
              * Loop till we've covered the chunk.
              */
-            RTGCPHYS GCPhys = pBDLE->Desc.u64BufAddr + pBDLE->State.u32BufOff;
             Log5Func(("loop0:  GCPhys=%RGp cbChunk=%#x + cbBounce=%#x\n", GCPhys, cbChunk, cbBounce));
             while (cbChunk > 0)
             {
@@ -1968,10 +1808,9 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
                 }
 
                 /* advance */
-                cbChunk                -= cbToRead;
-                GCPhys                 += cbToRead;
-                pBDLE->State.u32BufOff += cbToRead;
-                Assert(pBDLE->State.u32BufOff <= pBDLE->Desc.u32BufSize);
+                cbChunk                         -= cbToRead;
+                GCPhys                          += cbToRead;
+                pStreamShared->State.offCurBdle += cbToRead;
                 if (cbRemainder)
                     memmove(&abBounce[0], &abBounce[cbBounce - cbRemainder], cbRemainder);
                 cbBounce = cbRemainder;
@@ -1984,9 +1823,12 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
         /*
          * Is the buffer descriptor complete.
          */
-        if (hdaR3BDLEIsComplete(pBDLE))
+        if (hdaR3StreamDmaBufIsComplete(pStreamShared))
         {
-            Log3Func(("[SD%RU8] Completed %R[bdle]\n", uSD, pBDLE));
+            Log3Func(("[SD%RU8] Completed BDLE%u %#RX64 LB %#RX32 fFlags=%#x\n", uSD, pStreamShared->State.idxCurBdle,
+                      pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].GCPhys,
+                      pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].cb,
+                      pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].fFlags));
 
             /* Make sure to also update the wall clock when a BDLE is complete.
              * Needed for Windows 10 guests. */
@@ -1994,7 +1836,7 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
             hdaR3WalClkSet(pThis, pThisCC,
                              hdaWalClkGetCurrent(pThis)
                            + hdaR3StreamPeriodFramesToWalClk(pPeriod,
-                                                               pBDLE->Desc.u32BufSize
+                                                               hdaR3StreamDmaBufGetSize(pStreamShared)
                                                              / pStreamR3->State.Mapping.cbGuestFrame),
                            false /* fForce */);
 
@@ -2007,47 +1849,37 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
              * Note for Windows 10: The OS' driver is *very* picky about *when* the (DMA) positions get updated!
              *                      Not doing this at the right time will result in ugly sound crackles!
              */
-            hdaR3StreamSetPositionAdd(pStreamShared, pDevIns, pThis, pBDLE->Desc.u32BufSize);
+            hdaR3StreamSetPositionAdd(pStreamShared, pDevIns, pThis, hdaR3StreamDmaBufGetSize(pStreamShared));
 
             /* Does the current BDLE require an interrupt to be sent? */
-            if (hdaR3BDLENeedsInterrupt(pBDLE))
+            if (hdaR3StreamDmaBufNeedsIrq(pStreamShared))
             {
-                if (cSuppressIocs == 0)
+                /* If the IOCE ("Interrupt On Completion Enable") bit of the SDCTL
+                   register is set we need to generate an interrupt. */
+                if (HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_IOCE)
                 {
-                    /* If the IOCE ("Interrupt On Completion Enable") bit of the SDCTL
-                       register is set we need to generate an interrupt. */
-                    if (HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_IOCE)
-                    {
-                        /* Assert the interrupt before actually fetching the next BDLE below. */
-                        if (!fInterruptSent)
-                        {
-                            pStreamShared->State.cTransferPendingInterrupts = 1;
-                            Log3Func(("[SD%RU8] Scheduling interrupt\n", uSD));
+                    /* Assert the interrupt before actually fetching the next BDLE below. */
+                    pStreamShared->State.cTransferPendingInterrupts = 1;
+                    Log3Func(("[SD%RU8] Scheduling interrupt\n", uSD));
 
-                            /* Trigger an interrupt first and let hdaRegWriteSDSTS() deal with
-                             * ending / beginning of a period. */
-                            /** @todo r=bird: What does the above comment mean? */
-                            HDA_STREAM_REG(pThis, STS, uSD) |= HDA_SDSTS_BCIS;
-                            HDA_PROCESS_INTERRUPT(pDevIns, pThis);
-                            fInterruptSent = true;
-                        }
-                    }
+                    /* Trigger an interrupt first and let hdaRegWriteSDSTS() deal with
+                     * ending / beginning of a period. */
+                    /** @todo r=bird: What does the above comment mean? */
+                    HDA_STREAM_REG(pThis, STS, uSD) |= HDA_SDSTS_BCIS;
+                    HDA_PROCESS_INTERRUPT(pDevIns, pThis);
                 }
-                else
-                    cSuppressIocs--;
             }
 
             /*
              * Advance to the next BDLE.
              */
-            if (pStreamShared->State.uCurBDLE >= pStreamShared->u16LVI)
-                pStreamShared->State.uCurBDLE = 0;
-            else
-                pStreamShared->State.uCurBDLE++;
-            hdaR3BDLEFetch(pDevIns, pBDLE, pStreamShared->u64BDLBase, pStreamShared->State.uCurBDLE);
+            hdaR3StreamDmaBufAdvanceToNext(pStreamShared);
         }
         else
-            Log3Func(("[SD%RU8] Not complete %R[bdle]\n", uSD, pBDLE));
+            Log3Func(("[SD%RU8] Not completed BDLE%u %#RX64 LB %#RX32 fFlags=%#x: off=%#RX32\n",
+                      uSD, pStreamShared->State.idxCurBdle, pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].GCPhys,
+                      pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].cb,
+                      pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].fFlags, pStreamShared->State.offCurBdle));
     }
 
     Assert(cbLeft == 0); /* There shall be no break statements in the above loop, so cbLeft is always zero here! */
@@ -2084,8 +1916,8 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
     /*
      * Log and leave.
      */
-    Log3Func(("[SD%RU8] %R[bdle] -- %#RX32/%#RX32 @ %#RX64 - cTransferPendingInterrupts=%RU8\n",
-              uSD, pBDLE, cbToProduce, pStreamShared->State.cbTransferSize, pStreamR3->State.offWrite - cbToProduce,
+    Log3Func(("[SD%RU8] %#RX32/%#RX32 @ %#RX64 - cTransferPendingInterrupts=%RU8\n",
+              uSD, cbToProduce, pStreamShared->State.cbTransferSize, pStreamR3->State.offWrite - cbToProduce,
               pStreamShared->State.cTransferPendingInterrupts));
 
     LogFlowFuncLeave();
@@ -2152,13 +1984,34 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
         && pStreamR3->pMixSink
         && AudioMixerSinkIsActive(pStreamR3->pMixSink->pMixSink))
     {
-        uint64_t const tsNow          = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
-        uint64_t const tsTransferNext = tsNow + pStreamShared->State.cTransferTicks;
+        /* Advance the schduling: */
+        uint32_t idxSched = pStreamShared->State.idxSchedule;
+        AssertStmt(idxSched < RT_ELEMENTS(pStreamShared->State.aSchedule), idxSched = 0);
+        uint32_t idxLoop  = pStreamShared->State.idxScheduleLoop + 1;
+        if (idxLoop >= pStreamShared->State.aSchedule[idxSched].cLoops)
+        {
+            idxSched += 1;
+            if (   idxSched > pStreamShared->State.cSchedule
+                || idxSched >= RT_ELEMENTS(pStreamShared->State.aSchedule) /*paranoia^2*/)
+            {
+                idxSched = pStreamShared->State.cSchedulePrologue;
+                AssertStmt(idxSched < RT_ELEMENTS(pStreamShared->State.aSchedule), idxSched = 0);
+            }
+            idxLoop = 0;
+        }
+        pStreamShared->State.idxScheduleLoop = (uint16_t)idxLoop;
+
+        /* Do the arcual timer arming. */
+        uint64_t const tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
+        uint64_t const tsTransferNext = tsNow + pStreamShared->State.aSchedule[idxSched].cPeriodTicks;
         Log3Func(("[SD%RU8] fSinkActive=true, tsTransferNext=%RU64 (in %RU64)\n",
                   pStreamShared->u8SD, tsTransferNext, tsTransferNext - tsNow));
-        pStreamShared->State.tsTransferNext = tsTransferNext; /* legacy */
         int rc = PDMDevHlpTimerSet(pDevIns, pStreamShared->hTimer, tsTransferNext);
         AssertRC(rc);
+
+        /* Some legacy stuff: */
+        pStreamShared->State.tsTransferNext = tsTransferNext;
+        pStreamShared->State.cbTransferSize = pStreamShared->State.aSchedule[idxSched].cbPeriod;
 
         return tsNow;
     }
@@ -2194,21 +2047,36 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
 void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                        PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fInTimer)
 {
-    if (!pStreamShared)
+    int rc2;
+
+    /*
+     * Make sure we're running and got an active mixer sink.
+     */
+    if (RT_LIKELY(pStreamShared->State.fRunning))
+    { /* likely */ }
+    else
         return;
 
     PAUDMIXSINK pSink = NULL;
     if (pStreamR3->pMixSink)
         pSink = pStreamR3->pMixSink->pMixSink;
-
-    if (!AudioMixerSinkIsActive(pSink)) /* No sink available? Bail out. */
+    if (RT_LIKELY(AudioMixerSinkIsActive(pSink)))
+    { /* likely */ }
+    else
         return;
 
-    const uint64_t tsNowNs = RTTimeNanoTS();
+    /*
+     * Get scheduling info common to both input and output streams.
+     */
+    const uint64_t tsNowNs  = RTTimeNanoTS();
+    uint32_t       idxSched = pStreamShared->State.idxSchedule;
+    AssertStmt(idxSched < RT_MIN(RT_ELEMENTS(pStreamShared->State.aSchedule), pStreamShared->State.cSchedule), idxSched = 0);
+    uint32_t const cbPeriod = pStreamShared->State.aSchedule[idxSched].cbPeriod;
 
-    int rc2;
-
-    if (hdaGetDirFromSD(pStreamShared->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
+    /*
+     * Output streams (SDO).
+     */
+    if (hdaGetDirFromSD(pStreamShared->u8SD) == PDMAUDIODIR_OUT)
     {
         bool fDoRead; /* Whether to push data down the driver stack or not.  */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -2220,13 +2088,13 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
              * least one period worth of space there or we're in an overflow situation.
              */
             uint32_t cbStreamFree = hdaR3StreamGetFree(pStreamR3);
-            if (cbStreamFree >= pStreamShared->State.cbTransferSize)
+            if (cbStreamFree >= cbPeriod)
             { /* likely */ }
             else
             {
                 STAM_REL_COUNTER_INC(&pStreamR3->State.StatDmaFlowProblems);
                 Log(("hdaR3StreamUpdate: Warning! Stream #%u has insufficient space free: %u bytes, need %u.  Will try move data out of the buffer...\n",
-                     pStreamShared->u8SD, cbStreamFree, pStreamShared->State.cbTransferSize));
+                     pStreamShared->u8SD, cbStreamFree, cbPeriod));
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
                 int rc = RTCritSectTryEnter(&pStreamR3->State.AIO.CritSect);
                 if (RT_SUCCESS(rc))
@@ -2242,7 +2110,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 Log(("hdaR3StreamUpdate: Gained %u bytes.\n", hdaR3StreamGetFree(pStreamR3) - cbStreamFree));
 
                 cbStreamFree = hdaR3StreamGetFree(pStreamR3);
-                if (cbStreamFree < pStreamShared->State.cbTransferSize)
+                if (cbStreamFree < cbPeriod)
                 {
                     /* Unable to make sufficient space.  Drop the whole buffer content.
                      * This is needed in order to keep the device emulation running at a constant rate,
@@ -2269,7 +2137,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 # endif
 
             uint64_t const offWriteBefore = pStreamR3->State.offWrite;
-            rc2 = hdaR3StreamDoDmaOutput(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamFree, tsNowNs);
+            rc2 = hdaR3StreamDoDmaOutput(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, RT_MIN(cbStreamFree, cbPeriod), tsNowNs);
             AssertRC(rc2);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -2290,14 +2158,14 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
              */
             if (!pStreamShared->State.tsAioDelayEnd)
                 fDoRead = pStreamR3->State.offWrite > offWriteBefore
-                       || hdaR3StreamGetFree(pStreamR3) < pStreamShared->State.cbTransferSize * 2;
+                       || hdaR3StreamGetFree(pStreamR3) < pStreamShared->State.cbAvgTransfer * 2;
             else if (PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer) >= pStreamShared->State.tsAioDelayEnd)
             {
                 Log3Func(("Initial delay done: Passed tsAioDelayEnd.\n"));
                 pStreamShared->State.tsAioDelayEnd = 0;
                 fDoRead = true;
             }
-            else if (hdaR3StreamGetFree(pStreamR3) < pStreamShared->State.cbTransferSize * 2)
+            else if (hdaR3StreamGetFree(pStreamR3) < pStreamShared->State.cbAvgTransfer * 2)
             {
                 Log3Func(("Initial delay done: Passed running short on buffer.\n"));
                 pStreamShared->State.tsAioDelayEnd = 0;
@@ -2312,7 +2180,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             Log3Func(("msDelta=%RU64 (vs %u) cbStreamFree=%#x (vs %#x) => fDoRead=%RTbool\n",
                       (tsNowNs - pStreamShared->State.tsLastReadNs) / RT_NS_1MS,
                       pStreamShared->State.Cfg.Device.cMsSchedulingHint, cbStreamFree,
-                      pStreamShared->State.cbTransferSize * 2, fDoRead));
+                      pStreamShared->State.cbAvgTransfer * 2, fDoRead));
 
             if (fDoRead)
             {
@@ -2338,8 +2206,13 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 # endif
             hdaR3StreamPushToMixer(pStreamShared, pStreamR3, pSink, tsNowNs);
     }
-    else /* Input (SDI). */
+    /*
+     * Input stream (SDI).
+     */
+    else
     {
+        /** @todo Re-org this. Like in the output case, the timer thread should try do
+         *        AIO work if we have an underrun. */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         if (!fInTimer)
 # endif
@@ -2394,7 +2267,8 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 # endif
         {
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-            if (tsNowNs - pStreamShared->State.tsLastReadNs >= pStreamShared->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS)
+            if (   tsNowNs - pStreamShared->State.tsLastReadNs >= pStreamShared->State.Cfg.Device.cMsSchedulingHint * RT_NS_1MS
+                || hdaR3StreamGetUsed(pStreamR3) < RT_MAX(cbPeriod, pStreamShared->State.cbAvgTransfer))
             {
                 Log5Func(("Notifying AIO thread\n"));
                 rc2 = hdaR3StreamAsyncIONotify(pStreamR3);
@@ -2406,7 +2280,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             const uint32_t cbStreamUsed = hdaR3StreamGetUsed(pStreamR3);
             if (cbStreamUsed)
             {
-                rc2 = hdaR3StreamTransfer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, cbStreamUsed);
+                rc2 = hdaR3StreamDoDmaInput(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, RT_MIN(cbStreamUsed, cbPeriod));
                 AssertRC(rc2);
             }
         }

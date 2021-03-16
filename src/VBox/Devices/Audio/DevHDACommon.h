@@ -546,23 +546,6 @@ typedef struct HDAMIXERSINK *PHDAMIXERSINK;
 
 
 /**
- * Internal state of a Buffer Descriptor List Entry (BDLE),
- * needed to keep track of the data needed for the actual device
- * emulation.
- */
-typedef struct HDABDLESTATE
-{
-    /** Own index within the BDL (Buffer Descriptor List). */
-    uint32_t     u32BDLIndex;
-    /** Number of bytes below the stream's FIFO watermark (SDFIFOW).
-     *  Used to check if we need fill up the FIFO again. */
-    uint32_t     cbBelowFIFOW;
-    /** Current offset in DMA buffer (in bytes).*/
-    uint32_t     u32BufOff;
-    uint32_t     Padding;
-} HDABDLESTATE, *PHDABDLESTATE;
-
-/**
  * BDL description structure.
  * Do not touch this, as this must match to the HDA specs.
  */
@@ -581,20 +564,6 @@ typedef struct HDABDLEDESC
 } HDABDLEDESC, *PHDABDLEDESC;
 AssertCompileSize(HDABDLEDESC, 16); /* Always 16 byte. Also must be aligned on 128-byte boundary. */
 
-/**
- * Buffer Descriptor List Entry (BDLE) (3.6.3).
- */
-typedef struct HDABDLE
-{
-    /** The actual BDL description. */
-    HDABDLEDESC  Desc;
-    /** Internal state of this BDLE.
-     *  Not part of the actual BDLE registers. */
-    HDABDLESTATE State;
-} HDABDLE;
-AssertCompileSizeAlignment(HDABDLE, 8);
-/** Pointer to a buffer descriptor list entry (BDLE). */
-typedef HDABDLE *PHDABDLE;
 
 /** @name Object lookup functions.
  * @{
@@ -637,17 +606,6 @@ bool          hdaR3WalClkSet(PHDASTATE pThis, PHDASTATER3 pThisCC, uint64_t u64W
 #endif
 /** @} */
 
-/** @name DMA utility functions.
- * @{
- */
-#ifdef IN_RING3
-int           hdaR3DMARead(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3,
-                           void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
-int           hdaR3DMAWrite(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3,
-                            const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
-#endif
-/** @} */
-
 /** @name Register functions.
  * @{
  */
@@ -664,9 +622,6 @@ int           hdaR3SDFMTToPCMProps(uint16_t u16SDFMT, PPDMAUDIOPCMPROPS pProps);
 # ifdef LOG_ENABLED
 void          hdaR3BDLEDumpAll(PPDMDEVINS pDevIns, PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
 # endif
-int           hdaR3BDLEFetch(PPDMDEVINS pDevIns, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t u16Entry);
-bool          hdaR3BDLEIsComplete(PHDABDLE pBDLE);
-bool          hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE);
 #endif /* IN_RING3 */
 /** @} */
 

@@ -251,6 +251,34 @@ typedef struct HDADRIVER
 } HDADRIVER;
 
 
+/** Internal state of this BDLE.
+ *  Not part of the actual BDLE registers.
+ * @note Only for saved state.  */
+typedef struct HDABDLESTATELEGACY
+{
+    /** Own index within the BDL (Buffer Descriptor List). */
+    uint32_t     u32BDLIndex;
+    /** Number of bytes below the stream's FIFO watermark (SDFIFOW).
+     *  Used to check if we need fill up the FIFO again. */
+    uint32_t     cbBelowFIFOW;
+    /** Current offset in DMA buffer (in bytes).*/
+    uint32_t     u32BufOff;
+    uint32_t     Padding;
+} HDABDLESTATELEGACY;
+
+/**
+ * BDLE and state.
+ * @note Only for saved state.
+ */
+typedef struct HDABDLELEGACY
+{
+    /** The actual BDL description. */
+    HDABDLEDESC         Desc;
+    HDABDLESTATELEGACY  State;
+} HDABDLELEGACY;
+AssertCompileSize(HDABDLELEGACY, 32);
+
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
@@ -468,19 +496,19 @@ static SSMFIELD const g_aSSMBDLEDescFields6[] =
 /** HDABDLESTATE field descriptors for the v6+ saved state. */
 static SSMFIELD const g_aSSMBDLEStateFields6[] =
 {
-    SSMFIELD_ENTRY(HDABDLESTATE, u32BDLIndex),
-    SSMFIELD_ENTRY(HDABDLESTATE, cbBelowFIFOW),
-    SSMFIELD_ENTRY_OLD(FIFO,     HDA_FIFO_MAX), /* Deprecated; now is handled in the stream's circular buffer. */
-    SSMFIELD_ENTRY(HDABDLESTATE, u32BufOff),
+    SSMFIELD_ENTRY(HDABDLESTATELEGACY, u32BDLIndex),
+    SSMFIELD_ENTRY(HDABDLESTATELEGACY, cbBelowFIFOW),
+    SSMFIELD_ENTRY_OLD(FIFO,           HDA_FIFO_MAX), /* Deprecated; now is handled in the stream's circular buffer. */
+    SSMFIELD_ENTRY(HDABDLESTATELEGACY, u32BufOff),
     SSMFIELD_ENTRY_TERM()
 };
 
 /** HDABDLESTATE field descriptors for the v7 saved state. */
 static SSMFIELD const g_aSSMBDLEStateFields7[] =
 {
-    SSMFIELD_ENTRY(HDABDLESTATE, u32BDLIndex),
-    SSMFIELD_ENTRY(HDABDLESTATE, cbBelowFIFOW),
-    SSMFIELD_ENTRY(HDABDLESTATE, u32BufOff),
+    SSMFIELD_ENTRY(HDABDLESTATELEGACY, u32BDLIndex),
+    SSMFIELD_ENTRY(HDABDLESTATELEGACY, cbBelowFIFOW),
+    SSMFIELD_ENTRY(HDABDLESTATELEGACY, u32BufOff),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -488,7 +516,7 @@ static SSMFIELD const g_aSSMBDLEStateFields7[] =
 static SSMFIELD const g_aSSMStreamStateFields6[] =
 {
     SSMFIELD_ENTRY_OLD(cBDLE,      sizeof(uint16_t)), /* Deprecated. */
-    SSMFIELD_ENTRY(HDASTREAMSTATE, uCurBDLE),
+    SSMFIELD_ENTRY_OLD(uCurBDLE,   sizeof(uint16_t)), /* We figure it out from LPID */
     SSMFIELD_ENTRY_OLD(fStop,      1),                /* Deprecated; see SSMR3PutBool(). */
     SSMFIELD_ENTRY_OLD(fRunning,   1),                /* Deprecated; using the HDA_SDCTL_RUN bit is sufficient. */
     SSMFIELD_ENTRY(HDASTREAMSTATE, fInReset),
@@ -498,7 +526,8 @@ static SSMFIELD const g_aSSMStreamStateFields6[] =
 /** HDASTREAMSTATE field descriptors for the v7 saved state. */
 static SSMFIELD const g_aSSMStreamStateFields7[] =
 {
-    SSMFIELD_ENTRY(HDASTREAMSTATE, uCurBDLE),
+    SSMFIELD_ENTRY(HDASTREAMSTATE, idxCurBdle),         /* For backward compatibility we save this. We use LPIB on restore. */
+    SSMFIELD_ENTRY_OLD(uCurBDLEHi, sizeof(uint8_t)),    /* uCurBDLE was 16-bit for some reason, so store/ignore the zero top byte. */
     SSMFIELD_ENTRY(HDASTREAMSTATE, fInReset),
     SSMFIELD_ENTRY(HDASTREAMSTATE, tsTransferNext),
     SSMFIELD_ENTRY_TERM()
@@ -517,14 +546,14 @@ static SSMFIELD const g_aSSMStreamPeriodFields7[] =
 /** HDABDLE field descriptors for the v1 thru v4 saved states. */
 static SSMFIELD const g_aSSMStreamBdleFields1234[] =
 {
-    SSMFIELD_ENTRY(HDABDLE,             Desc.u64BufAddr),       /* u64BdleCviAddr */
-    SSMFIELD_ENTRY_OLD(u32BdleMaxCvi,   sizeof(uint32_t)),      /* u32BdleMaxCvi */
-    SSMFIELD_ENTRY(HDABDLE,             State.u32BDLIndex),     /* u32BdleCvi */
-    SSMFIELD_ENTRY(HDABDLE,             Desc.u32BufSize),       /* u32BdleCviLen */
-    SSMFIELD_ENTRY(HDABDLE,             State.u32BufOff),       /* u32BdleCviPos */
-    SSMFIELD_ENTRY_CALLBACK(HDABDLE,    Desc.fFlags, hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4), /* fBdleCviIoc */
-    SSMFIELD_ENTRY(HDABDLE,             State.cbBelowFIFOW),    /* cbUnderFifoW */
-    SSMFIELD_ENTRY_OLD(au8FIFO,         256),                   /* au8FIFO */
+    SSMFIELD_ENTRY(HDABDLELEGACY,           Desc.u64BufAddr),       /* u64BdleCviAddr */
+    SSMFIELD_ENTRY_OLD(u32BdleMaxCvi,       sizeof(uint32_t)),      /* u32BdleMaxCvi */
+    SSMFIELD_ENTRY(HDABDLELEGACY,           State.u32BDLIndex),     /* u32BdleCvi */
+    SSMFIELD_ENTRY(HDABDLELEGACY,           Desc.u32BufSize),       /* u32BdleCviLen */
+    SSMFIELD_ENTRY(HDABDLELEGACY,           State.u32BufOff),       /* u32BdleCviPos */
+    SSMFIELD_ENTRY_CALLBACK(HDABDLELEGACY,  Desc.fFlags, hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4), /* fBdleCviIoc */
+    SSMFIELD_ENTRY(HDABDLELEGACY,           State.cbBelowFIFOW),    /* cbUnderFifoW */
+    SSMFIELD_ENTRY_OLD(au8FIFO,             256),                   /* au8FIFO */
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -3353,7 +3382,7 @@ hdaR3GetPutTrans_HDABDLE_Desc_fFlags_1thru4(PSSMHANDLE pSSM, const struct SSMFIE
     int rc = pDevIns->pHlpR3->pfnSSMGetBool(pSSM, &fIoc);
     if (RT_SUCCESS(rc))
     {
-        PHDABDLE pState = (PHDABDLE)pvStruct;
+        HDABDLELEGACY *pState = (HDABDLELEGACY *)pvStruct;
         pState->Desc.fFlags = fIoc ? HDA_BDLE_F_IOC : 0;
     }
     return rc;
@@ -3378,12 +3407,13 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
                                  0 /*fFlags*/, g_aSSMStreamStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    rc = pHlp->pfnSSMPutStructEx(pSSM, &pStreamShared->State.BDLE.Desc, sizeof(pStreamShared->State.BDLE.Desc),
-                                 0 /*fFlags*/, g_aSSMBDLEDescFields7, NULL);
+    HDABDLEDESC TmpDesc = *(HDABDLEDESC *)&pStreamShared->State.aBdl[RT_MIN(pStreamShared->State.idxCurBdle,
+                                                                            RT_ELEMENTS(pStreamShared->State.aBdl))];
+    rc = pHlp->pfnSSMPutStructEx(pSSM, &TmpDesc, sizeof(TmpDesc), 0 /*fFlags*/, g_aSSMBDLEDescFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    rc = pHlp->pfnSSMPutStructEx(pSSM, &pStreamShared->State.BDLE.State, sizeof(pStreamShared->State.BDLE.State),
-                                 0 /*fFlags*/,  g_aSSMBDLEStateFields7, NULL);
+    HDABDLESTATELEGACY TmpState = { pStreamShared->State.idxCurBdle, 0, pStreamShared->State.offCurBdle, 0 };
+    rc = pHlp->pfnSSMPutStructEx(pSSM, &TmpState, sizeof(TmpState), 0 /*fFlags*/,  g_aSSMBDLEStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
     rc = pHlp->pfnSSMPutStructEx(pSSM, &pStreamShared->State.Period, sizeof(pStreamShared->State.Period),
@@ -3476,13 +3506,16 @@ static DECLCALLBACK(int) hdaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 /**
- * Does required post processing when loading a saved state.
+ * Does tail processing after having loaded our saved state.
  *
- * @param   pDevIns             The device instance.
- * @param   pThis               Pointer to the shared HDA state.
- * @param   pThisCC             Pointer to the ring-3 HDA state.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       Pointer to the shared HDA state.
+ * @param   pThisCC     Pointer to the ring-3 HDA state.
+ * @param   pSSM        The saved state handle.
+ *
+ * @todo    r=bird: Replace by a post load callback.
  */
-static int hdaR3LoadExecPost(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC)
+static int hdaR3LoadExecTail(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PSSMHANDLE pSSM)
 {
     int rc = VINF_SUCCESS; /** @todo r=bird: Really, what's the point of this? */
 
@@ -3522,20 +3555,70 @@ static int hdaR3LoadExecPost(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pT
             /* (Re-)install the DMA handler. */
             hdaR3StreamRegisterDMAHandlers(pThis, pStreamShared);
 #endif
-            /** @todo r=bird: This can go wrong if the state saving happened exactly when
-             *        the timer expired.  See comparison in
-             *        hdaR3StreamTransferIsScheduled.   I've decided to just do this
-             *        unconditionally as that fixes the issue and simplifies the
-             *        hdaR3StreamMarkStarted.  Also, I don't really get why this check is
-             *        necessary at all. */
-            /*if (hdaR3StreamTransferIsScheduled(pStreamShared, PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer))) */
-            {
-                /* Avoid going through the timer here by calling the stream's timer function directly.
-                 * Should speed up starting the stream transfers. */
-                uint64_t tsNow = hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
 
-                hdaR3StreamMarkStarted(pDevIns, pThis, pStreamShared, tsNow);
+            /* Use the LPIB to find the current scheduling position.  If this isn't
+               exactly on a scheduling item adjust LPIB down to the start of the
+               current.  This isn't entirely ideal, but it avoid the IRQ counting
+               issue if we round it upwards. (it is also a lot simpler) */
+            uint32_t uLpib = HDA_STREAM_REG(pThis, LPIB, i);
+            AssertLogRelMsgStmt(uLpib < pStreamShared->u32CBL, ("LPIB=%#RX32 CBL=%#RX32\n", uLpib, pStreamShared->u32CBL),
+                                HDA_STREAM_REG(pThis, LPIB, i) = uLpib = 0);
+
+            uint32_t off = 0;
+            for (uint32_t j = 0; j < pStreamShared->State.cSchedule; j++)
+            {
+                AssertReturn(pStreamShared->State.aSchedule[j].cbPeriod >= 1 && pStreamShared->State.aSchedule[j].cLoops >= 1,
+                             pDevIns->pHlpR3->pfnSSMSetLoadError(pSSM, VERR_INTERNAL_ERROR_2, RT_SRC_POS,
+                                                                 "Stream #%u, sched #%u: cbPeriod=%u cLoops=%u\n",
+                                                                 pStreamShared->u8SD, j,
+                                                                 pStreamShared->State.aSchedule[j].cbPeriod,
+                                                                 pStreamShared->State.aSchedule[j].cLoops));
+                uint32_t cbCur = pStreamShared->State.aSchedule[j].cbPeriod
+                               * pStreamShared->State.aSchedule[j].cLoops;
+                if (uLpib >= off + cbCur)
+                    off += cbCur;
+                else
+                {
+                    uint32_t const offDelta = uLpib - off;
+                    uint32_t idxLoop = offDelta / pStreamShared->State.aSchedule[j].cbPeriod;
+                    uint32_t offLoop = offDelta % pStreamShared->State.aSchedule[j].cbPeriod;
+                    if (offLoop)
+                    {
+                        /** @todo somehow bake this into the DMA timer logic.   */
+                        LogFunc(("stream #%u: LPIB=%#RX32; adjusting due to scheduling clash: -%#x (j=%u idxLoop=%u cbPeriod=%#x)\n",
+                                 pStreamShared->u8SD, uLpib, offLoop, j, idxLoop, pStreamShared->State.aSchedule[j].cbPeriod));
+                        uLpib -= offLoop;
+                        HDA_STREAM_REG(pThis, LPIB, i) = uLpib;
+                    }
+                    pStreamShared->State.idxSchedule     = (uint16_t)j;
+                    pStreamShared->State.idxScheduleLoop = (uint16_t)idxLoop;
+                    off = UINT32_MAX;
+                    break;
+                }
             }
+            Assert(off == UINT32_MAX);
+
+            /* Now figure out the current BDLE and the offset within it. */
+            off = 0;
+            for (uint32_t j = 0; j < pStreamShared->State.cBdles; j++)
+                if (uLpib >= off + pStreamShared->State.aBdl[j].cb)
+                    off += pStreamShared->State.aBdl[j].cb;
+                else
+                {
+                    pStreamShared->State.idxCurBdle = j;
+                    pStreamShared->State.offCurBdle = uLpib - off;
+                    off = UINT32_MAX;
+                    break;
+                }
+            AssertReturn(off == UINT32_MAX, pDevIns->pHlpR3->pfnSSMSetLoadError(pSSM, VERR_INTERNAL_ERROR_3, RT_SRC_POS,
+                                                                                "Stream #%u: LPIB=%#RX32 not found in loaded BDL\n",
+                                                                                pStreamShared->u8SD, uLpib));
+
+            /* Avoid going through the timer here by calling the stream's timer function directly.
+             * Should speed up starting the stream transfers. */
+            uint64_t tsNow = hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
+
+            hdaR3StreamMarkStarted(pDevIns, pThis, pStreamShared, tsNow);
 
             /* Also keep track of the currently active streams. */
             pThisCC->cStreamsActive++;
@@ -3553,7 +3636,7 @@ static int hdaR3LoadExecPost(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pT
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared HDA state.
  * @param   pThisCC     Pointer to the ring-3 HDA state.
- * @param   pSSM        Pointer to SSM handle.
+ * @param   pSSM        The saved state handle.
  * @param   uVersion    Saved state version to load.
  */
 static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PSSMHANDLE pSSM, uint32_t uVersion)
@@ -3644,32 +3727,32 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
             /* Note 1: Only the *current* BDLE for a stream was saved! */
             /* Note 2: The stream's saving order is/was fixed, so don't touch! */
 
+            HDABDLELEGACY BDLE;
+
             /* Output */
             PHDASTREAM pStreamShared = &pThis->aStreams[4];
             rc = hdaR3StreamSetUp(pDevIns, pThis, pStreamShared, &pThisCC->aStreams[4], 4 /* Stream descriptor, hardcoded */);
             AssertRCReturn(rc, rc);
-            rc = pHlp->pfnSSMGetStructEx(pSSM, &pStreamShared->State.BDLE, sizeof(pStreamShared->State.BDLE),
-                                         0 /* fFlags */, g_aSSMStreamBdleFields1234, pDevIns);
+            RT_ZERO(BDLE);
+            rc = pHlp->pfnSSMGetStructEx(pSSM, &BDLE, sizeof(BDLE), 0 /* fFlags */, g_aSSMStreamBdleFields1234, pDevIns);
             AssertRCReturn(rc, rc);
-            pStreamShared->State.uCurBDLE = pStreamShared->State.BDLE.State.u32BDLIndex;
+            pStreamShared->State.idxCurBdle = (uint8_t)BDLE.State.u32BDLIndex; /* not necessary */
 
             /* Microphone-In */
             pStreamShared = &pThis->aStreams[2];
             rc = hdaR3StreamSetUp(pDevIns, pThis, pStreamShared, &pThisCC->aStreams[2], 2 /* Stream descriptor, hardcoded */);
             AssertRCReturn(rc, rc);
-            rc = pHlp->pfnSSMGetStructEx(pSSM, &pStreamShared->State.BDLE, sizeof(pStreamShared->State.BDLE),
-                                         0 /* fFlags */, g_aSSMStreamBdleFields1234, pDevIns);
+            rc = pHlp->pfnSSMGetStructEx(pSSM, &BDLE, sizeof(BDLE), 0 /* fFlags */, g_aSSMStreamBdleFields1234, pDevIns);
             AssertRCReturn(rc, rc);
-            pStreamShared->State.uCurBDLE = pStreamShared->State.BDLE.State.u32BDLIndex;
+            pStreamShared->State.idxCurBdle = (uint8_t)BDLE.State.u32BDLIndex; /* not necessary */
 
             /* Line-In */
             pStreamShared = &pThis->aStreams[0];
             rc = hdaR3StreamSetUp(pDevIns, pThis, pStreamShared, &pThisCC->aStreams[0], 0 /* Stream descriptor, hardcoded */);
             AssertRCReturn(rc, rc);
-            rc = pHlp->pfnSSMGetStructEx(pSSM, &pStreamShared->State.BDLE, sizeof(pStreamShared->State.BDLE),
-                                         0 /* fFlags */, g_aSSMStreamBdleFields1234, pDevIns);
+            rc = pHlp->pfnSSMGetStructEx(pSSM, &BDLE, sizeof(BDLE), 0 /* fFlags */, g_aSSMStreamBdleFields1234, pDevIns);
             AssertRCReturn(rc, rc);
-            pStreamShared->State.uCurBDLE = pStreamShared->State.BDLE.State.u32BDLIndex;
+            pStreamShared->State.idxCurBdle = (uint8_t)BDLE.State.u32BDLIndex; /* not necessary */
             break;
         }
 
@@ -3730,7 +3813,7 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                     };
                     rc = pHlp->pfnSSMGetStructEx(pSSM, &Tmp, sizeof(Tmp), 0 /* fFlags */, g_aV5State1Fields, NULL);
                     AssertRCReturn(rc, rc);
-                    pStreamShared->State.uCurBDLE = Tmp.uCurBDLE;
+                    pStreamShared->State.idxCurBdle = (uint8_t)Tmp.uCurBDLE; /* not necessary */
 
                     for (uint16_t a = 0; a < Tmp.cBLDEs; a++)
                     {
@@ -3743,11 +3826,6 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                         };
                         rc = pHlp->pfnSSMGetStructEx(pSSM, &Tmp, sizeof(Tmp), 0 /* fFlags */, g_aV5State2Fields, NULL);
                         AssertRCReturn(rc, rc);
-                        if (Tmp.u32BDLEIndex == pStreamShared->State.uCurBDLE)
-                        {
-                            pStreamShared->State.BDLE.State.cbBelowFIFOW = Tmp.cbBelowFIFOW;
-                            pStreamShared->State.BDLE.State.u32BufOff    = Tmp.u32BufOff;
-                        }
                     }
                 }
                 else
@@ -3756,12 +3834,12 @@ static int hdaR3LoadExecLegacy(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 
                                                  0 /* fFlags */, g_aSSMStreamStateFields6, NULL);
                     AssertRCReturn(rc, rc);
 
-                    rc = pHlp->pfnSSMGetStructEx(pSSM, &pStreamShared->State.BDLE.Desc, sizeof(pStreamShared->State.BDLE.Desc),
-                                                 0 /* fFlags */, g_aSSMBDLEDescFields6, pDevIns);
+                    HDABDLEDESC IgnDesc;
+                    rc = pHlp->pfnSSMGetStructEx(pSSM, &IgnDesc, sizeof(IgnDesc), 0 /* fFlags */, g_aSSMBDLEDescFields6, pDevIns);
                     AssertRCReturn(rc, rc);
 
-                    rc = pHlp->pfnSSMGetStructEx(pSSM, &pStreamShared->State.BDLE.State, sizeof(HDABDLESTATE),
-                                                 0 /* fFlags */, g_aSSMBDLEStateFields6, NULL);
+                    HDABDLESTATELEGACY IgnState;
+                    rc = pHlp->pfnSSMGetStructEx(pSSM, &IgnState, sizeof(IgnState), 0 /* fFlags */, g_aSSMBDLEStateFields6, NULL);
                     AssertRCReturn(rc, rc);
 
                     Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n", idStream, HDA_STREAM_REG(pThis, LPIB, idStream),
@@ -3806,7 +3884,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     {
         rc = hdaR3LoadExecLegacy(pDevIns, pThis, pThisCC, pSSM, uVersion);
         if (RT_SUCCESS(rc))
-            rc = hdaR3LoadExecPost(pDevIns, pThis, pThisCC);
+            rc = hdaR3LoadExecTail(pDevIns, pThis, pThisCC, pSSM);
         return rc;
     }
 
@@ -3896,16 +3974,17 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
         /*
          * Load BDLEs (Buffer Descriptor List Entries) and DMA counters.
+         * Obsolete. Derived from LPID now.
          */
-        rc = pHlp->pfnSSMGetStructEx(pSSM, &pStreamShared->State.BDLE.Desc, sizeof(HDABDLEDESC),
-                                     0 /* fFlags */, g_aSSMBDLEDescFields7, NULL);
+        HDABDLEDESC IgnDesc;
+        rc = pHlp->pfnSSMGetStructEx(pSSM, &IgnDesc, sizeof(IgnDesc), 0 /* fFlags */, g_aSSMBDLEDescFields7, NULL);
         AssertRCReturn(rc, rc);
 
-        rc = pHlp->pfnSSMGetStructEx(pSSM, &pStreamShared->State.BDLE.State, sizeof(HDABDLESTATE),
-                                     0 /* fFlags */, g_aSSMBDLEStateFields7, NULL);
+        HDABDLESTATELEGACY IgnState;
+        rc = pHlp->pfnSSMGetStructEx(pSSM, &IgnState, sizeof(IgnState), 0 /* fFlags */, g_aSSMBDLEStateFields7, NULL);
         AssertRCReturn(rc, rc);
 
-        Log2Func(("[SD%RU8] %R[bdle]\n", pStreamShared->u8SD, &pStreamShared->State.BDLE));
+        Log2Func(("[SD%RU8]\n", pStreamShared->u8SD));
 
         /*
          * Load period state.
@@ -3976,7 +4055,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
     } /* for cStreams */
 
-    rc = hdaR3LoadExecPost(pDevIns, pThis, pThisCC);
+    rc = hdaR3LoadExecTail(pDevIns, pThis, pThisCC, pSSM);
     AssertRC(rc);
 
     LogFlowFuncLeaveRC(rc);
@@ -3987,22 +4066,6 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 /*********************************************************************************************************************************
 *   IPRT format type handlers                                                                                                    *
 *********************************************************************************************************************************/
-
-/**
- * @callback_method_impl{FNRTSTRFORMATTYPE}
- */
-static DECLCALLBACK(size_t) hdaR3StrFmtBDLE(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                                            const char *pszType, void const *pvValue,
-                                            int cchWidth, int cchPrecision, unsigned fFlags,
-                                            void *pvUser)
-{
-    RT_NOREF(pszType, cchWidth,  cchPrecision, fFlags, pvUser);
-    PHDABDLE pBDLE = (PHDABDLE)pvValue;
-    return RTStrFormat(pfnOutput,  pvArgOutput, NULL, 0,
-                       "BDLE(idx:%RU32, off:%RU32, fifow:%RU32, IOC:%RTbool, DMA[%RU32 bytes @ 0x%x])",
-                       pBDLE->State.u32BDLIndex, pBDLE->State.u32BufOff, pBDLE->State.cbBelowFIFOW,
-                       pBDLE->Desc.fFlags & HDA_BDLE_F_IOC, pBDLE->Desc.u32BufSize, pBDLE->Desc.u64BufAddr);
-}
 
 /**
  * @callback_method_impl{FNRTSTRFORMATTYPE}
@@ -4114,67 +4177,100 @@ static DECLCALLBACK(void) hdaR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 /** Worker for hdaR3DbgInfoStream.    */
 static void hdaR3DbgPrintStream(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStream)
 {
-    const PHDASTREAM pStream = &pThis->aStreams[idxStream];
 
     pHlp->pfnPrintf(pHlp, "Stream #%d:\n", idxStream);
     pHlp->pfnPrintf(pHlp, "  SD%dCTL  : %R[sdctl]\n",   idxStream, HDA_STREAM_REG(pThis, CTL,   idxStream));
     pHlp->pfnPrintf(pHlp, "  SD%dCTS  : %R[sdsts]\n",   idxStream, HDA_STREAM_REG(pThis, STS,   idxStream));
     pHlp->pfnPrintf(pHlp, "  SD%dFIFOS: %R[sdfifos]\n", idxStream, HDA_STREAM_REG(pThis, FIFOS, idxStream));
     pHlp->pfnPrintf(pHlp, "  SD%dFIFOW: %R[sdfifow]\n", idxStream, HDA_STREAM_REG(pThis, FIFOW, idxStream));
-    pHlp->pfnPrintf(pHlp, "  BDLE     : %R[bdle]\n",    &pStream->State.BDLE);
+
+    PHDASTREAM const pStream = &pThis->aStreams[idxStream];
+    pHlp->pfnPrintf(pHlp, "  Current BDLE%02u: %s%#RX64 LB %#x%s - off=%#x\n", pStream->State.idxCurBdle, "%%" /*vboxdbg phys prefix*/,
+                    pStream->State.aBdl[pStream->State.idxCurBdle].GCPhys, pStream->State.aBdl[pStream->State.idxCurBdle].cb,
+                    pStream->State.aBdl[pStream->State.idxCurBdle].fFlags ? " IOC" : "", pStream->State.offCurBdle);
 }
 
-/** Worker for hdaR3DbgInfoBDLE. */
-static void hdaR3DbgPrintBDLE(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStream)
+/** Worker for hdaR3DbgInfoBDL. */
+static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStream)
 {
     const PHDASTREAM pStream = &pThis->aStreams[idxStream];
-
-    pHlp->pfnPrintf(pHlp, "Stream #%d BDLE:\n",      idxStream);
 
     uint64_t const u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, idxStream),
                                             HDA_STREAM_REG(pThis, BDPU, idxStream));
     uint16_t const u16LVI     = HDA_STREAM_REG(pThis, LVI, idxStream);
     uint32_t const u32CBL     = HDA_STREAM_REG(pThis, CBL, idxStream);
-
-    pHlp->pfnPrintf(pHlp, "  Current: %R[bdle]\n", &pStream->State.BDLE);
-    pHlp->pfnPrintf(pHlp, "  Memory - %#RX64 LB %#x (LVI=%u):\n", u64BaseDMA, u16LVI * sizeof(HDABDLEDESC), u16LVI);
+    uint8_t const  idxCurBdle = pStream->State.idxCurBdle;
+    pHlp->pfnPrintf(pHlp, "Stream #%d BDL: %s%#011RX64 LB %#x (LVI=%u)\n", idxStream, "%%" /*vboxdbg phys prefix*/,
+                    u64BaseDMA, u16LVI * sizeof(HDABDLEDESC), u16LVI);
+    if (u64BaseDMA || idxCurBdle != 0 || pStream->State.aBdl[idxCurBdle].GCPhys != 0 || pStream->State.aBdl[idxCurBdle].cb != 0)
+        pHlp->pfnPrintf(pHlp, "  Current:     BDLE%03u: %s%#011RX64 LB %#x%s - off=%#x  LPIB=%#RX32\n",
+                        pStream->State.idxCurBdle, "%%" /*vboxdbg phys prefix*/,
+                        pStream->State.aBdl[idxCurBdle].GCPhys, pStream->State.aBdl[idxCurBdle].cb,
+                        pStream->State.aBdl[idxCurBdle].fFlags ? " IOC" : "", pStream->State.offCurBdle,
+                        HDA_STREAM_REG(pThis, LPIB, idxStream));
     if (!u64BaseDMA)
         return;
 
-    uint32_t cbTotal = 0;
+    /*
+     * The BDL:
+     */
+    uint64_t cbTotal = 0;
     for (uint16_t i = 0; i < u16LVI + 1; i++)
     {
-        /** @todo shouldn't this be a PCI read?   */
         HDABDLEDESC bd = {0, 0, 0};
-        PDMDevHlpPhysRead(pDevIns, u64BaseDMA + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
+        PDMDevHlpPCIPhysRead(pDevIns, u64BaseDMA + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
 
         char szFlags[64];
         szFlags[0] = '\0';
         if (bd.fFlags & ~HDA_BDLE_F_IOC)
             RTStrPrintf(szFlags, sizeof(szFlags), " !!fFlags=%#x!!\n", bd.fFlags);
-        pHlp->pfnPrintf(pHlp, "    %sBDLE%03u: %#RX64 LB %#x %s%s\n",
-                        pStream->State.BDLE.State.u32BDLIndex == i ? "=>" : "  ", i, bd.u64BufAddr, bd.u32BufSize,
-                        bd.fFlags & HDA_BDLE_F_IOC ? " IOC=1" : "", szFlags);
+        pHlp->pfnPrintf(pHlp, "    %sBDLE%03u: %s%#011RX64 LB %#06x %s%s\n", idxCurBdle == i ? "=>" : "  ", i, "%%", bd.u64BufAddr,
+                        bd.u32BufSize, bd.fFlags & HDA_BDLE_F_IOC ? " IOC=1" : "", szFlags);
+
+        if (memcmp(&bd, &pStream->State.aBdl[i], sizeof(bd)) != 0)
+        {
+            szFlags[0] = '\0';
+            if (bd.fFlags & ~HDA_BDLE_F_IOC)
+                RTStrPrintf(szFlags, sizeof(szFlags), " !!fFlags=%#x!!\n", bd.fFlags);
+            pHlp->pfnPrintf(pHlp, "    !!!loaded: %s%#011RX64 LB %#06x %s%s\n", "%%", pStream->State.aBdl[i].GCPhys,
+                            pStream->State.aBdl[i].cb, pStream->State.aBdl[i].fFlags & HDA_BDLE_F_IOC ? " IOC=1" : "", szFlags);
+        }
 
         cbTotal += bd.u32BufSize;
     }
-    pHlp->pfnPrintf(pHlp, "  Total: %RU32 bytes\n", cbTotal);
+    pHlp->pfnPrintf(pHlp, "  Total: %#RX64 bytes (%RU64)\n", cbTotal, cbTotal);
     if (cbTotal != u32CBL)
-        pHlp->pfnPrintf(pHlp, "  Warning: %RU32 bytes does not match CBL (%RU32)!\n", cbTotal, u32CBL);
+        pHlp->pfnPrintf(pHlp, "  Warning: %#RX64 bytes does not match CBL (%#RX64)!\n", cbTotal, u32CBL);
 
+    /*
+     * The scheduling plan.
+     */
+    uint16_t const idxSchedule = pStream->State.idxSchedule;
+    pHlp->pfnPrintf(pHlp, "  Scheduling: %u items, %u prologue.  Current: %u, loop %u.\n",  pStream->State.cSchedule,
+                    pStream->State.cSchedulePrologue, idxSchedule, pStream->State.idxScheduleLoop);
+    for (uint16_t i = 0; i < pStream->State.cSchedule; i++)
+        pHlp->pfnPrintf(pHlp, "    %s#%02u: %#x bytes, %u loop%s, %RU32 ticks. BDLE%u thru BDLE%u\n",
+                        i == idxSchedule ? "=>" : "  ", i,
+                        pStream->State.aSchedule[i].cbPeriod, pStream->State.aSchedule[i].cLoops,
+                        pStream->State.aSchedule[i].cLoops == 1 ? "" : "s",
+                        pStream->State.aSchedule[i].cPeriodTicks, pStream->State.aSchedule[i].idxFirst,
+                        pStream->State.aSchedule[i].idxFirst + pStream->State.aSchedule[i].cEntries - 1);
+
+    /*
+     * DMA counters:
+     */
     uint64_t const uDPBase = pThis->u64DPBase & DPBASE_ADDR_MASK;
-    pHlp->pfnPrintf(pHlp, "  DMA counters %#RX64 LB %#x, %s:\n", uDPBase, u16LVI * 2 * sizeof(uint32_t),
+    pHlp->pfnPrintf(pHlp, "  DMA counters %#011RX64 LB %#x, %s:\n", uDPBase, u16LVI * 2 * sizeof(uint32_t),
                     pThis->fDMAPosition ? "enabled" : "disabled");
     if (uDPBase)
         for (uint16_t i = 0; i < u16LVI + 1; i++)
         {
-            /** @todo shouldn't this be a PCI read? */
             struct
             {
                 uint32_t uPos;
                 uint32_t uReserved;
             } Buf = { 0 , 0 };
-            PDMDevHlpPhysRead(pDevIns, uDPBase + i * sizeof(Buf), &Buf, sizeof(Buf));
+            PDMDevHlpPCIPhysRead(pDevIns, uDPBase + i * sizeof(Buf), &Buf, sizeof(Buf));
 
             char szReserved[64];
             szReserved[0] = '\0';
@@ -4186,7 +4282,7 @@ static void hdaR3DbgPrintBDLE(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP
         pHlp->pfnPrintf(pHlp, "    No counters.\n");
 }
 
-/** Used by hdaR3DbgInfoStream and hdaR3DbgInfoBDLE. */
+/** Used by hdaR3DbgInfoStream and hdaR3DbgInfoBDL. */
 static int hdaR3DbgLookupStrmIdx(PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     if (pszArgs && *pszArgs)
@@ -4217,15 +4313,15 @@ static DECLCALLBACK(void) hdaR3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP p
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV, hdabdle}
  */
-static DECLCALLBACK(void) hdaR3DbgInfoBDLE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) hdaR3DbgInfoBDL(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATE   pThis     = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     int         idxStream = hdaR3DbgLookupStrmIdx(pHlp, pszArgs);
     if (idxStream != -1)
-        hdaR3DbgPrintBDLE(pDevIns, pThis, pHlp, idxStream);
+        hdaR3DbgPrintBDL(pDevIns, pThis, pHlp, idxStream);
     else
         for (idxStream = 0; idxStream < HDA_MAX_STREAMS; ++idxStream)
-            hdaR3DbgPrintBDLE(pDevIns, pThis, pHlp, idxStream);
+            hdaR3DbgPrintBDL(pDevIns, pThis, pHlp, idxStream);
 }
 
 /**
@@ -5076,20 +5172,19 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * accept screwing formatting.
      */
     PDMDevHlpDBGFInfoRegister(pDevIns, "hda",         "HDA registers. (hda [register case-insensitive])", hdaR3DbgInfo);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "hdabdle",
-                              "HDA buffer descriptor list (BDLE) and DMA stream positions. (hdabdle [stream number])",
-                              hdaR3DbgInfoBDLE);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hdabdl",
+                              "HDA buffer descriptor list (BDL) and DMA stream positions. (hdabdl [stream number])",
+                              hdaR3DbgInfoBDL);
     PDMDevHlpDBGFInfoRegister(pDevIns, "hdastream",   "HDA stream info. (hdastream [stream number])",    hdaR3DbgInfoStream);
     PDMDevHlpDBGFInfoRegister(pDevIns, "hdcnodes",    "HDA codec nodes.",                                hdaR3DbgInfoCodecNodes);
     PDMDevHlpDBGFInfoRegister(pDevIns, "hdcselector", "HDA codec's selector states [node number].",      hdaR3DbgInfoCodecSelector);
     PDMDevHlpDBGFInfoRegister(pDevIns, "hdamixer",    "HDA mixer state.",                                hdaR3DbgInfoMixer);
 
-    rc = RTStrFormatTypeRegister("bdle",    hdaR3StrFmtBDLE,    NULL);
-    AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS, ("%Rrc\n", rc), rc);
     rc = RTStrFormatTypeRegister("sdctl",   hdaR3StrFmtSDCTL,   NULL);
     AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS, ("%Rrc\n", rc), rc);
     rc = RTStrFormatTypeRegister("sdsts",   hdaR3StrFmtSDSTS,   NULL);
     AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS, ("%Rrc\n", rc), rc);
+    /** @todo the next two are rather pointless.   */
     rc = RTStrFormatTypeRegister("sdfifos", hdaR3StrFmtSDFIFOS, NULL);
     AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS, ("%Rrc\n", rc), rc);
     rc = RTStrFormatTypeRegister("sdfifow", hdaR3StrFmtSDFIFOW, NULL);
