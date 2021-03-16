@@ -539,7 +539,7 @@ static SSMFIELD const g_aSSMStreamPeriodFields7[] =
     SSMFIELD_ENTRY(HDASTREAMPERIOD, u64StartWalClk),
     SSMFIELD_ENTRY(HDASTREAMPERIOD, u64ElapsedWalClk),
     SSMFIELD_ENTRY(HDASTREAMPERIOD, cFramesTransferred),
-    SSMFIELD_ENTRY(HDASTREAMPERIOD, cIntPending),
+    SSMFIELD_ENTRY_OLD(cIntPending, sizeof(uint8_t)),   /** @todo Not sure what we should for non-zero values on restore... ignoring it for now.  */
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -567,37 +567,6 @@ static uint32_t const g_afMasks[5] =
     UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0x00ffffff), UINT32_C(0xffffffff)
 };
 
-
-#ifdef IN_RING3
-/**
- * Reschedules pending interrupts for all audio streams which have complete
- * audio periods but did not have the chance to issue their (pending) interrupts yet.
- *
- * @param   pDevIns             The device instance.
- * @param   pThis               The shared HDA device state.
- * @param   pThisCC             The ring-3 HDA device state.
- */
-static void hdaR3ReschedulePendingInterrupts(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC)
-{
-    bool fInterrupt = false;
-
-    for (uint8_t i = 0; i < HDA_MAX_STREAMS; ++i)
-    {
-        PHDASTREAM pStream = &pThis->aStreams[i];
-        if (   hdaR3StreamPeriodIsComplete(    &pStream->State.Period)
-            && hdaR3StreamPeriodNeedsInterrupt(&pStream->State.Period)
-            && hdaR3WalClkSet(pThis, pThisCC, hdaR3StreamPeriodGetAbsElapsedWalClk(&pStream->State.Period), false /* fForce */))
-        {
-            fInterrupt = true;
-            break;
-        }
-    }
-
-    LogFunc(("fInterrupt=%RTbool\n", fInterrupt));
-
-    HDA_PROCESS_INTERRUPT(pDevIns, pThis);
-}
-#endif /* IN_RING3 */
 
 /**
  * Looks up a register at the exact offset given by @a offReg.
@@ -1482,9 +1451,6 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                     Assert(pThisCC->cStreamsActive);
                     if (pThisCC->cStreamsActive)
                         pThisCC->cStreamsActive--;
-
-                    /* Make sure to (re-)schedule outstanding (delayed) interrupts. */
-                    hdaR3ReschedulePendingInterrupts(pDevIns, pThis, pThisCC);
 
                     /* Reset the period. */
                     hdaR3StreamPeriodReset(&pStreamShared->State.Period);

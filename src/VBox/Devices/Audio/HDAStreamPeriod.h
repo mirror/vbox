@@ -57,9 +57,7 @@ typedef struct HDASTREAMPERIOD
     uint8_t                 u8SD;
     /** The period's status flags. */
     uint8_t                 fStatus;
-    /** Number of pending interrupts required for this period. */
-    uint8_t                 cIntPending;
-    uint8_t                 bPadding0;
+    uint8_t                 abPadding[2];
     /** Hertz (Hz) rate this period runs with. */
     uint32_t                u32Hz;
     /** Period start time (in wall clock counts). */
@@ -91,8 +89,6 @@ void     hdaR3StreamPeriodDestroy(PHDASTREAMPERIOD pPeriod);
 int      hdaR3StreamPeriodInit(PHDASTREAMPERIOD pPeriod, uint8_t u8SD, uint16_t u16LVI, uint32_t u32CBL, PPDMAUDIOSTREAMCFG pStreamCfg);
 void     hdaR3StreamPeriodReset(PHDASTREAMPERIOD pPeriod);
 int      hdaR3StreamPeriodBegin(PHDASTREAMPERIOD pPeriod, uint64_t u64WalClk);
-void     hdaR3StreamPeriodEnd(PHDASTREAMPERIOD pPeriod);
-void     hdaR3StreamPeriodPause(PHDASTREAMPERIOD pPeriod);
 void     hdaR3StreamPeriodResume(PHDASTREAMPERIOD pPeriod);
 uint64_t hdaR3StreamPeriodFramesToWalClk(PHDASTREAMPERIOD pPeriod, uint32_t uFrames);
 uint64_t hdaR3StreamPeriodGetAbsEndWalClk(PHDASTREAMPERIOD pPeriod);
@@ -100,11 +96,7 @@ uint64_t hdaR3StreamPeriodGetAbsElapsedWalClk(PHDASTREAMPERIOD pPeriod);
 uint32_t hdaR3StreamPeriodGetRemainingFrames(PHDASTREAMPERIOD pPeriod);
 bool     hdaR3StreamPeriodHasElapsed(PHDASTREAMPERIOD pPeriod);
 bool     hdaR3StreamPeriodHasPassedAbsWalClk(PHDASTREAMPERIOD pPeriod, uint64_t u64WalClk);
-bool     hdaR3StreamPeriodNeedsInterrupt(PHDASTREAMPERIOD pPeriod);
-void     hdaR3StreamPeriodAcquireInterrupt(PHDASTREAMPERIOD pPeriod);
-void     hdaR3StreamPeriodReleaseInterrupt(PHDASTREAMPERIOD pPeriod);
 void     hdaR3StreamPeriodInc(PHDASTREAMPERIOD pPeriod, uint32_t framesInc);
-bool     hdaR3StreamPeriodIsComplete(PHDASTREAMPERIOD pPeriod);
 #endif /* IN_RING3 */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_HDAStreamPeriod_h */

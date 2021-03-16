@@ -111,7 +111,6 @@ int hdaR3StreamPeriodInit(PHDASTREAMPERIOD pPeriod,
     pPeriod->i64DelayWalClk     = 0;
     pPeriod->cFramesToTransfer  = cFramesToTransfer;
     pPeriod->cFramesTransferred = 0;
-    pPeriod->cIntPending        = 0;
 
     Log3Func(("[SD%RU8] %RU64 long, Hz=%RU32, CBL=%RU32, LVI=%RU16 -> %u periods, %RU32 frames each\n",
               pPeriod->u8SD, pPeriod->u64DurationWalClk, pPeriod->u32Hz, u32CBL, u16LVI,
@@ -129,15 +128,10 @@ void hdaR3StreamPeriodReset(PHDASTREAMPERIOD pPeriod)
 {
     Log3Func(("[SD%RU8]\n", pPeriod->u8SD));
 
-    if (pPeriod->cIntPending)
-        LogRelMax(50, ("HDA: Warning: %RU8 interrupts for stream #%RU8 still pending -- so a period reset might trigger audio hangs\n",
-                 pPeriod->cIntPending, pPeriod->u8SD));
-
     pPeriod->fStatus          &= ~HDASTREAMPERIOD_F_ACTIVE;
     pPeriod->u64StartWalClk    = 0;
     pPeriod->u64ElapsedWalClk  = 0;
     pPeriod->cFramesTransferred = 0;
-    pPeriod->cIntPending       = 0;
 # ifdef LOG_ENABLED
     pPeriod->Dbg.tsStartNs     = 0;
 # endif
@@ -158,48 +152,12 @@ int hdaR3StreamPeriodBegin(PHDASTREAMPERIOD pPeriod, uint64_t u64WalClk)
     pPeriod->u64StartWalClk    = u64WalClk;
     pPeriod->u64ElapsedWalClk  = 0;
     pPeriod->cFramesTransferred = 0;
-    pPeriod->cIntPending       = 0;
 # ifdef LOG_ENABLED
     pPeriod->Dbg.tsStartNs     = RTTimeNanoTS();
 # endif
 
     Log3Func(("[SD%RU8] Starting @ %RU64 (%RU64 long)\n", pPeriod->u8SD, pPeriod->u64StartWalClk, pPeriod->u64DurationWalClk));
     return VINF_SUCCESS;
-}
-
-/**
- * Ends a formerly begun period life span.
- *
- * @param   pPeriod             Stream period to end life span for.
- */
-void hdaR3StreamPeriodEnd(PHDASTREAMPERIOD pPeriod)
-{
-    Log3Func(("[SD%RU8] Took %zuus\n", pPeriod->u8SD, (RTTimeNanoTS() - pPeriod->Dbg.tsStartNs) / 1000));
-
-    if (!(pPeriod->fStatus & HDASTREAMPERIOD_F_ACTIVE))
-        return;
-
-    /* Sanity. */
-    AssertMsg(pPeriod->cIntPending == 0,
-              ("%RU8 interrupts for stream #%RU8 still pending -- so ending a period might trigger audio hangs\n",
-               pPeriod->cIntPending, pPeriod->u8SD));
-    Assert(hdaR3StreamPeriodIsComplete(pPeriod));
-
-    pPeriod->fStatus &= ~HDASTREAMPERIOD_F_ACTIVE;
-}
-
-/**
- * Pauses a period. All values remain intact.
- *
- * @param   pPeriod             Stream period to pause.
- */
-void hdaR3StreamPeriodPause(PHDASTREAMPERIOD pPeriod)
-{
-    AssertMsg((pPeriod->fStatus & HDASTREAMPERIOD_F_ACTIVE), ("Period %p already in inactive state\n", pPeriod));
-
-    pPeriod->fStatus &= ~HDASTREAMPERIOD_F_ACTIVE;
-
-    Log3Func(("[SD%RU8]\n", pPeriod->u8SD));
 }
 
 /**
@@ -304,52 +262,6 @@ bool hdaR3StreamPeriodHasPassedAbsWalClk(PHDASTREAMPERIOD pPeriod, uint64_t u64W
 }
 
 /**
- * Tells whether a given stream period has some required interrupts pending or not.
- *
- * @return  true if period has interrupts pending, false if not.
- * @param   pPeriod             Stream period to get status for.
- */
-bool hdaR3StreamPeriodNeedsInterrupt(PHDASTREAMPERIOD pPeriod)
-{
-    return pPeriod->cIntPending > 0;
-}
-
-/**
- * Acquires (references) an (pending) interrupt for a given stream period.
- *
- * @param   pPeriod             Stream period to acquire interrupt for.
- *
- * @remark  This routine does not do any actual interrupt processing; it only
- *          keeps track of the required (pending) interrupts for a stream period.
- */
-void hdaR3StreamPeriodAcquireInterrupt(PHDASTREAMPERIOD pPeriod)
-{
-    uint32_t cIntPending = pPeriod->cIntPending;
-    if (cIntPending)
-    {
-        Log3Func(("[SD%RU8] Already pending\n", pPeriod->u8SD));
-        return;
-    }
-
-    pPeriod->cIntPending++;
-
-    Log3Func(("[SD%RU8] %RU32\n", pPeriod->u8SD, pPeriod->cIntPending));
-}
-
-/**
- * Releases (dereferences) a pending interrupt.
- *
- * @param   pPeriod             Stream period to release pending interrupt for.
- */
-void hdaR3StreamPeriodReleaseInterrupt(PHDASTREAMPERIOD pPeriod)
-{
-    Assert(pPeriod->cIntPending);
-    pPeriod->cIntPending--;
-
-    Log3Func(("[SD%RU8] %RU32\n", pPeriod->u8SD, pPeriod->cIntPending));
-}
-
-/**
  * Adds an amount of (processed) audio frames to a given stream period.
  *
  * @return  IPRT status code.
@@ -366,39 +278,6 @@ void hdaR3StreamPeriodInc(PHDASTREAMPERIOD pPeriod, uint32_t framesInc)
 
     Log3Func(("[SD%RU8] cbTransferred=%RU32, u64ElapsedWalClk=%RU64\n",
               pPeriod->u8SD, pPeriod->cFramesTransferred, pPeriod->u64ElapsedWalClk));
-}
-
-/**
- * Tells whether a given stream period is considered as complete or not.
- *
- * @return  true if stream period is complete, false if not.
- * @param   pPeriod             Stream period to report status for.
- *
- * @remark  A stream period is considered complete if it has 1) passed (elapsed) its calculated period time
- *          and 2) processed all required audio frames.
- */
-bool hdaR3StreamPeriodIsComplete(PHDASTREAMPERIOD pPeriod)
-{
-    const bool fIsComplete = /* Has the period elapsed time-wise? */
-                                hdaR3StreamPeriodHasElapsed(pPeriod)
-                             /* All frames transferred? */
-                             && pPeriod->cFramesTransferred >= pPeriod->cFramesToTransfer;
-# ifdef VBOX_STRICT
-    if (fIsComplete)
-    {
-        Assert(pPeriod->cFramesTransferred == pPeriod->cFramesToTransfer);
-        Assert(pPeriod->u64ElapsedWalClk  == pPeriod->u64DurationWalClk);
-    }
-# endif
-
-    Log3Func(("[SD%RU8] Period %s - runtime %RU64 / %RU64 (abs @ %RU64, starts @ %RU64, ends @ %RU64), %RU8 IRQs pending\n",
-              pPeriod->u8SD,
-              fIsComplete ? "COMPLETE" : "NOT COMPLETE YET",
-              pPeriod->u64ElapsedWalClk, pPeriod->u64DurationWalClk,
-              hdaR3StreamPeriodGetAbsElapsedWalClk(pPeriod), pPeriod->u64StartWalClk,
-              hdaR3StreamPeriodGetAbsEndWalClk(pPeriod), pPeriod->cIntPending));
-
-    return fIsComplete;
 }
 
 #endif /* IN_RING3 */
