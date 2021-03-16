@@ -3577,7 +3577,7 @@ DECLINLINE(void) tmR3CpuLoadTimerMakeUpdate(PTMCPULOADSTATE pState, uint64_t cNs
         uint64_t const cNsAdjust        = cNsExecAndHalted - cNsTotalDelta + cNsTotalDelta / 64;
         cNsExecutingDelta -= (cNsAdjust * cNsExecutingDelta + cNsExecAndHalted - 1) / cNsExecAndHalted;
         cNsHaltedDelta    -= (cNsAdjust * cNsHaltedDelta    + cNsExecAndHalted - 1) / cNsExecAndHalted;
-        Assert(cNsExecutingDelta + cNsHaltedDelta <= cNsTotalDelta);
+        /*Assert(cNsExecutingDelta + cNsHaltedDelta <= cNsTotalDelta); - annoying when debugging */
     }
 
     pState->cNsPrevExecuting    = cNsExecuting;
