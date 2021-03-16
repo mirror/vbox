@@ -222,6 +222,7 @@ public:
     ~UIActivityOverviewItem();
     bool operator==(const UIActivityOverviewItem& other) const;
     bool isWithGuestAdditions();
+    void resetDebugger();
 
     QUuid         m_VMuid;
     QString       m_strVMName;
@@ -311,6 +312,8 @@ public:
     int itemIndex(const QUuid &uid);
     /* Return the state of the machine represented by the item at @rowIndex. */
     KMachineState machineState(int rowIndex) const;
+    void setDefaultViewFont(const QFont &font);
+    void setDefaultViewFontColor(const QColor &color);
 
 private slots:
 
@@ -341,6 +344,8 @@ private:
      *  when the widget is visible in the main UI. */
     bool m_fShouldUpdate;
     UIVMActivityOverviewHostStats m_hostStats;
+    QFont m_defaultViewFont;
+    QColor m_defaultViewFontColor;
     /** Maximum length of string length of data displayed in column. Updated in UIActivityOverviewModel::data(..). */
     mutable QMap<int, int> m_columnDataMaxLength;
 };
@@ -776,16 +781,7 @@ UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &
     , m_uVMExitRate(0)
     , m_uVMExitTotal(0)
 {
-    m_comSession = uiCommon().openSession(uid, KLockType_Shared);
-    if (!m_comSession.isNull())
-    {
-        CConsole comConsole = m_comSession.GetConsole();
-        if (!comConsole.isNull())
-        {
-            m_comGuest = comConsole.GetGuest();
-            m_comDebugger = comConsole.GetDebugger();
-        }
-    }
+    resetDebugger();
 }
 
 UIActivityOverviewItem::UIActivityOverviewItem()
@@ -808,25 +804,19 @@ UIActivityOverviewItem::UIActivityOverviewItem()
 {
 }
 
-// UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid)
-//     : m_VMuid(uid)
-//     , m_uCPUGuestLoad(0)
-//     , m_uCPUVMMLoad(0)
-//     , m_uTotalRAM(0)
-//     , m_uUsedRAM(0)
-//     , m_fRAMUsagePercentage(0)
-//     , m_uNetworkDownRate(0)
-//     , m_uNetworkUpRate(0)
-//     , m_uNetworkDownTotal(0)
-//     , m_uNetworkUpTotal(0)
-//     , m_uDiskWriteRate(0)
-//     , m_uDiskReadRate(0)
-//     , m_uDiskWriteTotal(0)
-//     , m_uDiskReadTotal(0)
-//     , m_uVMExitRate(0)
-//     , m_uVMExitTotal(0)
-// {
-// }
+void UIActivityOverviewItem::resetDebugger()
+{
+    m_comSession = uiCommon().openSession(m_VMuid, KLockType_Shared);
+    if (!m_comSession.isNull())
+    {
+        CConsole comConsole = m_comSession.GetConsole();
+        if (!comConsole.isNull())
+        {
+            m_comGuest = comConsole.GetGuest();
+            m_comDebugger = comConsole.GetDebugger();
+        }
+    }
+}
 
 UIActivityOverviewItem::~UIActivityOverviewItem()
 {
@@ -980,14 +970,28 @@ KMachineState UIActivityOverviewModel::machineState(int rowIndex) const
     return m_itemList[rowIndex].m_enmMachineState;
 }
 
+void UIActivityOverviewModel::setDefaultViewFont(const QFont &font)
+{
+    m_defaultViewFont = font;
+}
+
+void UIActivityOverviewModel::setDefaultViewFontColor(const QColor &color)
+{
+    m_defaultViewFontColor = color;
+}
+
 QVariant UIActivityOverviewModel::data(const QModelIndex &index, int role) const
 {
-    if (role == Qt::FontRole && machineState(index.row()) != KMachineState_Running)
+    if (machineState(index.row()) != KMachineState_Running)
     {
-        QFont font;
-        font.setItalic(true);
-        return font;
-
+        if (role == Qt::FontRole)
+        {
+            QFont font(m_defaultViewFont);
+            font.setItalic(true);
+            return font;
+        }
+        if (role == Qt::ForegroundRole || role == Qt::TextColorRole)
+            return m_defaultViewFontColor.lighter(250);
     }
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
         return QVariant();
@@ -1024,7 +1028,11 @@ void UIActivityOverviewModel::sltMachineStateChanged(const QUuid &uId, const KMa
 {
     int iIndex = itemIndex(uId);
     if (iIndex != -1 && iIndex < m_itemList.size())
+    {
         m_itemList[iIndex].m_enmMachineState = state;
+        if (state == KMachineState_Running)
+            m_itemList[iIndex].resetDebugger();
+    }
     //
     // /* Remove the machine in case machine is no longer working. */
     // if (iIndex != -1 && state != KMachineState_Running)
@@ -1458,6 +1466,10 @@ void UIVMActivityOverviewWidget::prepareWidgets()
         m_pTableView->setAlternatingRowColors(true);
         m_pTableView->setSortingEnabled(true);
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
+        /* Store the default font and its color of the table on the view. They are used in ::data(..): */
+        m_pModel->setDefaultViewFont(m_pTableView->font());
+        m_pModel->setDefaultViewFontColor(m_pTableView->palette().color(QPalette::WindowText));
+
         connect(m_pModel, &UIActivityOverviewModel::sigDataUpdate,
                 this, &UIVMActivityOverviewWidget::sltHandleDataUpdate);
         connect(m_pModel, &UIActivityOverviewModel::sigHostStatsUpdate,
@@ -1578,7 +1590,7 @@ void UIVMActivityOverviewWidget::sltHandleDataUpdate()
 
 void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &pos)
 {
-    if (!m_pTableView || !m_pTableView->hasSelection())
+    if (!m_pTableView)
         return;
 
     QMenu menu;
@@ -1591,8 +1603,21 @@ void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &
 void UIVMActivityOverviewWidget::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
-    if (m_pVMActivityMonitorAction)
-        m_pVMActivityMonitorAction->setEnabled(!selected.isEmpty());
+    if (!m_pVMActivityMonitorAction || !m_pModel || !m_pProxyModel)
+        return;
+
+    if (selected.indexes().empty())
+    {
+        m_pVMActivityMonitorAction->setEnabled(false);
+        return;
+    }
+    int iMachineIndex = m_pProxyModel->mapToSource(selected.indexes()[0]).row();
+    if (m_pModel->machineState(iMachineIndex) != KMachineState_Running)
+    {
+        m_pVMActivityMonitorAction->setEnabled(false);
+        return;
+    }
+    m_pVMActivityMonitorAction->setEnabled(true);
 }
 
 void UIVMActivityOverviewWidget::sltHandleShowVMActivityMonitor()
