@@ -1583,7 +1583,7 @@ typedef struct PDMIAUDIOCONNECTOR
     /**
      * Returns the number of readable data (in bytes) of a specific audio input stream.
      *
-     * @returns Number of readable data (in bytes).
+     * @returns Number of bytes of readable data.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream.
      */
@@ -1592,7 +1592,7 @@ typedef struct PDMIAUDIOCONNECTOR
     /**
      * Returns the number of writable data (in bytes) of a specific audio output stream.
      *
-     * @returns Number of writable data (in bytes).
+     * @returns Number of bytes writable data.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream.
      */
@@ -1618,7 +1618,9 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamSetVolume, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOVOLUME pVol));
 
     /**
-     * Plays (transfers) available audio frames to the host backend. Only works with output streams.
+     * Plays (transfers) available audio frames to the host backend.
+     *
+     * Only works with output streams.
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
@@ -1628,7 +1630,9 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcFramesPlayed));
 
     /**
-     * Captures (transfers) available audio frames from the host backend. Only works with input streams.
+     * Captures (transfers) available audio frames from the host backend.
+     *
+     * Only works with input streams.
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
