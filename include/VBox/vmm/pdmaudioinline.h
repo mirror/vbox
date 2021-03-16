@@ -492,6 +492,21 @@ DECLINLINE(uint32_t) PDMAudioPropsFloorBytesToFrame(PCPDMAUDIOPCMPROPS pProps, u
 }
 
 /**
+ * Rounds up the given byte amount to the nearest frame boundrary.
+ *
+ * @returns Rounded byte amount.
+ * @param   pProps      PCM properties to use.
+ * @param   cb          The size (in bytes) to round.
+ */
+DECLINLINE(uint32_t) PDMAudioPropsRoundUpBytesToFrame(PCPDMAUDIOPCMPROPS pProps, uint32_t cb)
+{
+    AssertPtrReturn(pProps, 0);
+    uint32_t const cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+    AssertReturn(cbFrame, 0);
+    return PDMAUDIOPCMPROPS_F2B(pProps, PDMAUDIOPCMPROPS_B2F(pProps, cb + cbFrame - 1));
+}
+
+/**
  * Checks if the given size is aligned on a frame boundrary.
  *
  * @returns @c true if properly aligned, @c false if not.
