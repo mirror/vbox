@@ -3373,8 +3373,8 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
                                  0 /*fFlags*/, g_aSSMStreamStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    HDABDLEDESC TmpDesc = *(HDABDLEDESC *)&pStreamShared->State.aBdl[RT_MIN(pStreamShared->State.idxCurBdle,
-                                                                            RT_ELEMENTS(pStreamShared->State.aBdl))];
+    AssertCompile(sizeof(pStreamShared->State.idxCurBdle) == sizeof(uint8_t) && RT_ELEMENTS(pStreamShared->State.aBdl) == 256);
+    HDABDLEDESC TmpDesc = *(HDABDLEDESC *)&pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle];
     rc = pHlp->pfnSSMPutStructEx(pSSM, &TmpDesc, sizeof(TmpDesc), 0 /*fFlags*/, g_aSSMBDLEDescFields7, NULL);
     AssertRCReturn(rc, rc);
 
