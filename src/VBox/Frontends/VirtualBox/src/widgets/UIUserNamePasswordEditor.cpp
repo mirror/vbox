@@ -350,7 +350,7 @@ void UIUserNamePasswordEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLine
     if (!pLabel)
         return;
     pLabel->setAlignment(Qt::AlignRight);
-    pLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+    pLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
     pLayout->addWidget(pLabel, iRow, 0, 1, 1);
 
@@ -370,6 +370,8 @@ void UIUserNamePasswordEditor::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout;
     pMainLayout->setContentsMargins(0, 0, 0, 0);
+    pMainLayout->setColumnStretch(0, 0);
+    pMainLayout->setColumnStretch(1, 1);
     if (!pMainLayout)
         return;
     setLayout(pMainLayout);

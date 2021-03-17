@@ -132,23 +132,39 @@ QWidget *UIWizardNewVMPage2::createGAInstallWidgets()
     if (m_pGAInstallationISOContainer)
         return m_pGAInstallationISOContainer;
 
+    /* Prepare GA Installation ISO container: */
     m_pGAInstallationISOContainer = new QGroupBox;
-    m_pGAInstallationISOContainer->setCheckable(true);
-    QGridLayout *pGAInstallationISOContainer = new QGridLayout(m_pGAInstallationISOContainer);
-    m_pGAISOPathLabel = new QLabel;
-    if (m_pGAISOPathLabel)
-        pGAInstallationISOContainer->addWidget(m_pGAISOPathLabel, 0, 1, 1, 1);
-
-    m_pGAISOFilePathSelector = new UIFilePathSelector;
+    if (m_pGAInstallationISOContainer)
     {
-        m_pGAISOFilePathSelector->setResetEnabled(false);
-        m_pGAISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-        m_pGAISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-        m_pGAISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-        m_pGAISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
-        pGAInstallationISOContainer->addWidget(m_pGAISOFilePathSelector, 0, 2, 1, 6);
-        if (m_pGAISOPathLabel)
-            m_pGAISOPathLabel->setBuddy(m_pGAISOFilePathSelector);
+        m_pGAInstallationISOContainer->setCheckable(true);
+
+        /* Prepare GA Installation ISO layout: */
+        QHBoxLayout *pGAInstallationISOLayout = new QHBoxLayout(m_pGAInstallationISOContainer);
+        if (pGAInstallationISOLayout)
+        {
+            /* Prepare GA ISO path label: */
+            m_pGAISOPathLabel = new QLabel;
+            if (m_pGAISOPathLabel)
+            {
+                m_pGAISOPathLabel->setAlignment(Qt::AlignRight);
+                m_pGAISOPathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+
+                pGAInstallationISOLayout->addWidget(m_pGAISOPathLabel);
+            }
+            /* Prepare GA ISO path editor: */
+            m_pGAISOFilePathSelector = new UIFilePathSelector;
+            {
+                m_pGAISOFilePathSelector->setResetEnabled(false);
+                m_pGAISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+                m_pGAISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+                m_pGAISOFilePathSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+                m_pGAISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
+                if (m_pGAISOPathLabel)
+                    m_pGAISOPathLabel->setBuddy(m_pGAISOFilePathSelector);
+
+                pGAInstallationISOLayout->addWidget(m_pGAISOFilePathSelector);
+            }
+        }
     }
 
     return m_pGAInstallationISOContainer;
@@ -185,7 +201,7 @@ void UIWizardNewVMPage2::retranslateWidgets()
         m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
     if (m_pGAInstallationISOContainer)
     {
-        m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("&Guest Additions"));
+        m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("&Guest additions"));
         m_pGAInstallationISOContainer->setToolTip(UIWizardNewVM::tr("<p>When checked the guest additions will be installed "
                                                            "after the OS install.</p>"));
     }
@@ -249,41 +265,43 @@ QWidget *UIWizardNewVMPage2::createAdditionalOptionsWidgets()
 
     m_pAdditionalOptionsContainer = new QGroupBox;
     QGridLayout *pAdditionalOptionsContainerLayout = new QGridLayout(m_pAdditionalOptionsContainer);
-    m_pStartHeadlessCheckBox = new QCheckBox;
-    if (m_pStartHeadlessCheckBox)
-        pAdditionalOptionsContainerLayout->addWidget(m_pStartHeadlessCheckBox, 0, 0, 1, 4);
+    pAdditionalOptionsContainerLayout->setColumnStretch(0, 0);
+    pAdditionalOptionsContainerLayout->setColumnStretch(1, 1);
 
     m_pProductKeyLabel = new QLabel;
     if (m_pProductKeyLabel)
     {
         m_pProductKeyLabel->setAlignment(Qt::AlignRight);
-        m_pProductKeyLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLabel, 1, 0, 1, 1);
+        m_pProductKeyLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLabel, 0, 0);
     }
     m_pProductKeyLineEdit = new QLineEdit;
     if (m_pProductKeyLineEdit)
     {
         m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
-        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLineEdit, 1, 1, 1, 3);
         if (m_pProductKeyLabel)
             m_pProductKeyLabel->setBuddy(m_pProductKeyLineEdit);
+        pAdditionalOptionsContainerLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 2);
     }
 
     m_pHostnameLabel = new QLabel;
     if (m_pHostnameLabel)
     {
         m_pHostnameLabel->setAlignment(Qt::AlignRight);
-        m_pHostnameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameLabel, 2, 0, 1, 1);
+        m_pHostnameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameLabel, 1, 0);
     }
-
     m_pHostnameLineEdit = new QLineEdit;
     if (m_pHostnameLineEdit)
     {
-        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameLineEdit, 2, 1, 1, 3);
         if (m_pHostnameLabel)
             m_pHostnameLabel->setBuddy(m_pHostnameLineEdit);
+        pAdditionalOptionsContainerLayout->addWidget(m_pHostnameLineEdit, 1, 1, 1, 2);
     }
+
+    m_pStartHeadlessCheckBox = new QCheckBox;
+    if (m_pStartHeadlessCheckBox)
+        pAdditionalOptionsContainerLayout->addWidget(m_pStartHeadlessCheckBox, 2, 1);
 
     return m_pAdditionalOptionsContainer;
 }
