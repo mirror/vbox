@@ -635,7 +635,6 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
     }
 
     uint64_t msBufferSize = PDMAudioPropsFramesToMilli(&CfgHostAcq.Props, CfgHostAcq.Backend.cFramesBufferSize);
-
     LogRel2(("Audio: Buffer size of stream '%s' is %RU64ms (%RU32 frames)\n",
              pStream->szName, msBufferSize, CfgHostAcq.Backend.cFramesBufferSize));
 
@@ -1529,7 +1528,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
     RTStrFree(pszStreamSts);
 #endif /* LOG_ENABLED */
 
-    do
+    do /* No, this isn't a loop either. sigh. */
     {
         if (!pThis->pHostDrvAudio)
         {
@@ -3142,8 +3141,6 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     /* Fill in the tweakable parameters into the requested host configuration.
      * All parameters in principle can be changed and returned by the backend via the acquired configuration. */
 
-    char szWhat[64]; /* Log where a value came from. */
-
     /*
      * PCM
      */
@@ -3192,48 +3189,51 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     /*
      * Period size
      */
+    const char *pszWhat = "";
     if (pDrvCfg->uPeriodSizeMs)
     {
         pCfgReq->Backend.cFramesPeriod = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uPeriodSizeMs);
-        RTStrPrintf(szWhat, sizeof(szWhat), "custom");
+        pszWhat = "custom";
     }
 
     if (!pCfgReq->Backend.cFramesPeriod) /* Set default period size if nothing explicitly is set. */
     {
         pCfgReq->Backend.cFramesPeriod = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 150 /*ms*/);
-        RTStrPrintf(szWhat, sizeof(szWhat), "default");
+        pszWhat = "default";
     }
 
     LogRel2(("Audio: Using %s period size %RU64 ms / %RU32 frames for stream '%s'\n",
-             szWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod),
+             pszWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPeriod),
              pCfgReq->Backend.cFramesPeriod, pStream->szName));
 
     /*
      * Buffer size
      */
+    pszWhat = "";
     if (pDrvCfg->uBufferSizeMs)
     {
         pCfgReq->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uBufferSizeMs);
-        RTStrPrintf(szWhat, sizeof(szWhat), "custom");
+        pszWhat = "custom";
     }
 
     if (!pCfgReq->Backend.cFramesBufferSize) /* Set default buffer size if nothing explicitly is set. */
     {
         pCfgReq->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfgReq->Props, 300 /*ms*/);
-        RTStrPrintf(szWhat, sizeof(szWhat), "default");
+        pszWhat = "default";
     }
 
     LogRel2(("Audio: Using %s buffer size %RU64 ms / %RU32 frames for stream '%s'\n",
-             szWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize),
+             pszWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesBufferSize),
              pCfgReq->Backend.cFramesBufferSize, pStream->szName));
 
     /*
      * Pre-buffering size
      */
+    pszWhat = "";
     if (pDrvCfg->uPreBufSizeMs != UINT32_MAX) /* Anything set via global / per-VM extra-data? */
     {
         pCfgReq->Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uPreBufSizeMs);
-        RTStrPrintf(szWhat, sizeof(szWhat), "custom");
+        pszWhat = "custom";
     }
     else /* No, then either use the default or device-specific settings (if any). */
     {
@@ -3241,12 +3241,12 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         {
             /* For pre-buffering to finish the buffer at least must be full one time. */
             pCfgReq->Backend.cFramesPreBuffering = pCfgReq->Backend.cFramesBufferSize;
-            RTStrPrintf(szWhat, sizeof(szWhat), "default");
+            pszWhat = "default";
         }
     }
 
     LogRel2(("Audio: Using %s pre-buffering size %RU64 ms / %RU32 frames for stream '%s'\n",
-             szWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPreBuffering),
+             pszWhat, PDMAudioPropsFramesToMilli(&pCfgReq->Props, pCfgReq->Backend.cFramesPreBuffering),
              pCfgReq->Backend.cFramesPreBuffering, pStream->szName));
 
     /*
