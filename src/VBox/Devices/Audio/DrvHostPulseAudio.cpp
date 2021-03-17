@@ -438,8 +438,8 @@ static void paStreamCbStateChanged(pa_stream *pStream, void *pvUser)
     }
 }
 
-
 #ifdef DEBUG
+
 static void paStreamCbReqWrite(pa_stream *pStream, size_t cbLen, void *pvContext)
 {
     RT_NOREF(cbLen, pvContext);
@@ -505,8 +505,8 @@ static void paStreamCbOverflow(pa_stream *pStream, void *pvContext)
 
     Log2Func(("Warning: Hit overflow\n"));
 }
-#endif /* DEBUG */
 
+#endif /* DEBUG */
 
 static void paStreamCbSuccess(pa_stream *pStream, int fSuccess, void *pvUser)
 {
@@ -875,9 +875,9 @@ static int paCreateStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM  pStream
     pCfgAcq->Props.uHz         = pStreamPA->SampleSpec.rate;
     pCfgAcq->Props.cChannels   = pStreamPA->SampleSpec.channels;
 
-    pCfgAcq->Backend.cFramesPeriod     = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamPA->BufAttr.fragsize);
-    pCfgAcq->Backend.cFramesBufferSize = pCfgAcq->Backend.cFramesBufferSize;
-    pCfgAcq->Backend.cFramesPreBuffering     = pCfgAcq->Backend.cFramesPeriod;
+    pCfgAcq->Backend.cFramesPeriod       = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamPA->BufAttr.fragsize);
+    pCfgAcq->Backend.cFramesBufferSize   = pCfgAcq->Backend.cFramesPeriod;
+    pCfgAcq->Backend.cFramesPreBuffering = pCfgAcq->Backend.cFramesPeriod;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -890,11 +890,10 @@ static int paCreateStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM  pStream
 static DECLCALLBACK(int) drvHostPulseAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                            void *pvBuf, uint32_t uBufSize, uint32_t *puRead)
 {
-    RT_NOREF(pvBuf, uBufSize);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
+    AssertReturn(uBufSize,      VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
     PDRVHOSTPULSEAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
