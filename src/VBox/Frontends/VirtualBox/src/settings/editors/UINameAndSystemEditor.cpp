@@ -502,7 +502,6 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pImageSelector->setResetEnabled(false);
                 m_pImageSelector->setMode(UIFilePathSelector::Mode_File_Open);
                 m_pImageSelector->setFileDialogFilters("*.iso *.ISO");
-                m_pImageSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
                 m_pImageSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
                 m_pImageLabel->setBuddy(m_pImageSelector);
 
@@ -527,9 +526,7 @@ void UINameAndSystemEditor::prepareWidgets()
             m_pComboFamily = new QComboBox(this);
             if (m_pComboFamily)
             {
-                m_pComboFamily->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
                 m_pLabelFamily->setBuddy(m_pComboFamily);
-
                 m_pMainLayout->addWidget(m_pComboFamily, iRow, 1);
             }
 
@@ -549,9 +546,7 @@ void UINameAndSystemEditor::prepareWidgets()
             m_pComboType = new QComboBox(this);
             if (m_pComboType)
             {
-                m_pComboType->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
                 m_pLabelType->setBuddy(m_pComboType);
-
                 m_pMainLayout->addWidget(m_pComboType, iRow, 1);
             }
 
