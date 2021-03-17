@@ -206,7 +206,7 @@ void UIWizardNewVMPageExpert::createConnections()
                 this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
                 this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigISOPathChanged,
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged,
                 this, &UIWizardNewVMPageExpert::sltISOPathChanged);
     }
 

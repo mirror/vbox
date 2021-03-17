@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2020 Oracle Corporation
+ * Copyright (C) 2008-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -59,26 +59,30 @@ signals:
 
     /** Notifies listeners about VM name change. */
     void sigNameChanged(const QString &strNewName);
-    void sigPathChanged(const QString &strName);
+
+    /** Notifies listeners about VM path change. */
+    void sigPathChanged(const QString &strPath);
+
+    /** Notifies listeners about VM image change. */
+    void sigImageChanged(const QString &strImage);
 
     /** Notifies listeners about VM OS type change. */
     void sigOsTypeChanged();
     /** Notifies listeners about VM OS family change. */
     void sigOSFamilyChanged();
-    void sigISOPathChanged(const QString &strISOPath);
 
 public:
 
     /** Constructs VM parameters editor passing @a pParent to the base-class.
-     * @param  fChooseName    Controls whether we should propose to choose name.
-     * @param  fChoosePath    Controls whether we should propose to choose path.
-     * @param  fChooseType    Controls whether we should propose to choose type.
-     * @param  fChooseISOFile Controls whether we should have a ISO file selector. */
+     * @param  fChooseName   Controls whether we should propose to choose name.
+     * @param  fChoosePath   Controls whether we should propose to choose path.
+     * @param  fChooseImage  Controls whether we should propose to choose image.
+     * @param  fChooseType   Controls whether we should propose to choose type. */
     UINameAndSystemEditor(QWidget *pParent,
                           bool fChooseName = true,
                           bool fChoosePath = false,
-                          bool fChooseType = true,
-                          bool fChooseISOFile = false);
+                          bool fChooseImage = false,
+                          bool fChooseType = true);
 
     /** Defines minimum layout @a iIndent. */
     void setMinimumLayoutIndent(int iIndent);
@@ -90,8 +94,6 @@ public:
     /** Defines whether VM OS type stuff is @a fEnabled. */
     void setOSTypeStuffEnabled(bool fEnabled);
 
-    void setFileSelectorDialogFilters(const QString &strFilters);
-
     /** Defines the VM @a strName. */
     void setName(const QString &strName);
     /** Returns the VM name. */
@@ -102,14 +104,15 @@ public:
     /** Returns path string selected by the user. */
     QString path() const;
 
+    /** Returns image string selected by the user. */
+    QString image() const;
+
     /** Defines the VM OS @a strTypeId and @a strFamilyId if passed. */
     void setTypeId(QString strTypeId, QString strFamilyId = QString());
     /** Returns the VM OS type ID. */
     QString typeId() const;
     /** Returns the VM OS family ID. */
     QString familyId() const;
-
-    QString ISOFilePath() const;
 
     /** Defines the VM OS @a enmType. */
     void setType(const CGuestOSType &enmType);
@@ -120,9 +123,10 @@ public:
     void setNameFieldValidator(const QString &strValidator);
 
     /** Passes the @p fError to QILineEdit::mark(bool) effectively changing the background color. */
-    void markNameLineEdit(bool fError);
-
-    void markISOFileSelector(bool fError, const QString &strErrorMessage);
+    void markNameEditor(bool fError);
+    /** Passes the @p fError and @a strErrorMessage to UIFilePathSelector::mark(bool)
+      *  effectively changing the background color and error-text. */
+    void markImageEditor(bool fError, const QString &strErrorMessage);
 
 protected:
 
@@ -170,8 +174,8 @@ private:
     bool  m_fChooseName;
     /** Holds whether we should propose to choose a path. */
     bool  m_fChoosePath;
-    /** Holds whether we should propose a file selector. */
-    bool  m_fChooseISOFile;
+    /** Holds whether we should propose to choose an image. */
+    bool  m_fChooseImage;
     /** Holds whether we should propose to choose a type. */
     bool  m_fChooseType;
     /** Holds whether host supports hardware virtualization. */
@@ -186,7 +190,8 @@ private:
     QLabel *m_pNameLabel;
     /** Holds the VM path label instance. */
     QLabel *m_pPathLabel;
-    QLabel *m_pISOFileSelectorLabel;
+    /** Holds the VM image label instance. */
+    QLabel *m_pImageLabel;
     /** Holds the VM OS family label instance. */
     QLabel *m_pLabelFamily;
     /** Holds the VM OS type label instance. */
@@ -198,8 +203,8 @@ private:
     QILineEdit         *m_pNameLineEdit;
     /** Holds the VM path editor instance. */
     UIFilePathSelector *m_pPathSelector;
-    /** Holds the ISO file selector instance. */
-    UIFilePathSelector    *m_pISOFileSelector;
+    /** Holds the VM image editor instance. */
+    UIFilePathSelector *m_pImageSelector;
     /** Holds the VM OS family combo instance. */
     QComboBox          *m_pComboFamily;
     /** Holds the VM OS type combo instance. */

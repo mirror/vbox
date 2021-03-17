@@ -248,8 +248,8 @@ QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets()
             m_pNameAndSystemEditor = new UINameAndSystemEditor(0,
                                                                true /* fChooseName? */,
                                                                true /* fChoosePath? */,
-                                                               true /* fChooseType? */,
-                                                               true /* fChooseISOFile? */);
+                                                               true /* fChooseImage? */,
+                                                               true /* fChooseType? */);
             if (m_pNameAndSystemEditor)
                 pLayout->addWidget(m_pNameAndSystemEditor);
 
@@ -362,8 +362,8 @@ void UIWizardNewVMPage1::markWidgets() const
 {
     if (m_pNameAndSystemEditor)
     {
-        m_pNameAndSystemEditor->markNameLineEdit(m_pNameAndSystemEditor->name().isEmpty());
-        m_pNameAndSystemEditor->markISOFileSelector(!checkISOFile(), UIWizardNewVM::tr("Invalid file path or unreadable file"));
+        m_pNameAndSystemEditor->markNameEditor(m_pNameAndSystemEditor->name().isEmpty());
+        m_pNameAndSystemEditor->markImageEditor(!checkISOFile(), UIWizardNewVM::tr("Invalid file path or unreadable file"));
     }
 }
 
@@ -382,14 +382,14 @@ QString UIWizardNewVMPage1::ISOFilePath() const
 {
     if (!m_pNameAndSystemEditor)
         return QString();
-    return m_pNameAndSystemEditor->ISOFilePath();
+    return m_pNameAndSystemEditor->image();
 }
 
 bool UIWizardNewVMPage1::isUnattendedEnabled() const
 {
     if (!m_pNameAndSystemEditor)
         return false;
-    const QString &strPath = m_pNameAndSystemEditor->ISOFilePath();
+    const QString &strPath = m_pNameAndSystemEditor->image();
     if (strPath.isNull() || strPath.isEmpty())
         return false;
     if (m_pSkipUnattendedCheckBox && m_pSkipUnattendedCheckBox->isChecked())
@@ -428,7 +428,7 @@ bool UIWizardNewVMPage1::checkISOFile() const
 {
     if (!m_pNameAndSystemEditor)
         return true;
-    const QString &strPath = m_pNameAndSystemEditor->ISOFilePath();
+    const QString &strPath = m_pNameAndSystemEditor->image();
     if (strPath.isNull() || strPath.isEmpty())
         return true;
     QFileInfo fileInfo(strPath);
@@ -443,7 +443,7 @@ void UIWizardNewVMPage1::setSkipCheckBoxEnable()
         return;
     if (m_pNameAndSystemEditor)
     {
-        const QString &strPath = m_pNameAndSystemEditor->ISOFilePath();
+        const QString &strPath = m_pNameAndSystemEditor->image();
         m_pSkipUnattendedCheckBox->setEnabled(!strPath.isNull() && !strPath.isEmpty());
     }
 }
@@ -501,7 +501,7 @@ void UIWizardNewVMPageBasic1::createConnections()
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasic1::sltNameChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasic1::sltPathChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasic1::sltOsTypeChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigISOPathChanged, this, &UIWizardNewVMPageBasic1::sltISOPathChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged, this, &UIWizardNewVMPageBasic1::sltISOPathChanged);
     }
 }
 

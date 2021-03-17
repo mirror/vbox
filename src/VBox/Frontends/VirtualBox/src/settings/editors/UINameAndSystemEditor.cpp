@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2020 Oracle Corporation
+ * Copyright (C) 2008-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,25 +41,25 @@ enum
 UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
                                              bool fChooseName /* = true */,
                                              bool fChoosePath /* = false */,
-                                             bool fChooseType /* = true */,
-                                             bool fChooseISOFile /* = false */)
+                                             bool fChooseImage /* = false */,
+                                             bool fChooseType /* = true */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fChooseName(fChooseName)
     , m_fChoosePath(fChoosePath)
-    , m_fChooseISOFile(fChooseISOFile)
+    , m_fChooseImage(fChooseImage)
     , m_fChooseType(fChooseType)
     , m_fSupportsHWVirtEx(false)
     , m_fSupportsLongMode(false)
     , m_pMainLayout(0)
     , m_pNameLabel(0)
     , m_pPathLabel(0)
-    , m_pISOFileSelectorLabel(0)
+    , m_pImageLabel(0)
     , m_pLabelFamily(0)
     , m_pLabelType(0)
     , m_pIconType(0)
     , m_pNameLineEdit(0)
     , m_pPathSelector(0)
-    , m_pISOFileSelector(0)
+    , m_pImageSelector(0)
     , m_pComboFamily(0)
     , m_pComboType(0)
 {
@@ -102,12 +102,6 @@ void UINameAndSystemEditor::setOSTypeStuffEnabled(bool fEnabled)
         m_pComboType->setEnabled(fEnabled);
 }
 
-void UINameAndSystemEditor::setFileSelectorDialogFilters(const QString &strFilters)
-{
-    if (m_pISOFileSelector)
-        m_pISOFileSelector->setFileDialogFilters(strFilters);
-}
-
 void UINameAndSystemEditor::setName(const QString &strName)
 {
     if (!m_pNameLineEdit)
@@ -134,6 +128,13 @@ QString UINameAndSystemEditor::path() const
     if (!m_pPathSelector)
         return uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     return m_pPathSelector->path();
+}
+
+QString UINameAndSystemEditor::image() const
+{
+    if (!m_pImageSelector)
+        return QString();
+    return m_pImageSelector->path();
 }
 
 void UINameAndSystemEditor::setTypeId(QString strTypeId, QString strFamilyId /* = QString() */)
@@ -238,13 +239,6 @@ QString UINameAndSystemEditor::familyId() const
     return m_strFamilyId;
 }
 
-QString UINameAndSystemEditor::ISOFilePath() const
-{
-    if (!m_pISOFileSelector)
-        return QString();
-    return m_pISOFileSelector->path();
-}
-
 void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
 {
     // WORKAROUND:
@@ -270,16 +264,16 @@ void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidator)
     m_pNameLineEdit->setValidator(new QRegExpValidator(QRegExp(strValidator), this));
 }
 
-void UINameAndSystemEditor::markNameLineEdit(bool fError)
+void UINameAndSystemEditor::markNameEditor(bool fError)
 {
     if (m_pNameLineEdit)
         m_pNameLineEdit->mark(fError, tr("Invalid name"));
 }
 
-void UINameAndSystemEditor::markISOFileSelector(bool fError, const QString &strErrorMessage)
+void UINameAndSystemEditor::markImageEditor(bool fError, const QString &strErrorMessage)
 {
-    if (m_pISOFileSelector)
-        m_pISOFileSelector->mark(fError, strErrorMessage);
+    if (m_pImageSelector)
+        m_pImageSelector->mark(fError, strErrorMessage);
 }
 
 void UINameAndSystemEditor::retranslateUi()
@@ -288,8 +282,8 @@ void UINameAndSystemEditor::retranslateUi()
         m_pNameLabel->setText(tr("&Name:"));
     if (m_pPathLabel)
         m_pPathLabel->setText(tr("&Folder:"));
-    if (m_pISOFileSelectorLabel)
-        m_pISOFileSelectorLabel->setText(tr("&Image:"));
+    if (m_pImageLabel)
+        m_pImageLabel->setText(tr("&Image:"));
     if (m_pLabelFamily)
         m_pLabelFamily->setText(tr("&Type:"));
     if (m_pLabelType)
@@ -474,29 +468,29 @@ void UINameAndSystemEditor::prepareWidgets()
             ++iRow;
         }
 
-        if (m_fChooseISOFile)
+        if (m_fChooseImage)
         {
-            /* Prepare ISO label: */
-            m_pISOFileSelectorLabel = new QLabel(this);
-            if (m_pISOFileSelectorLabel)
+            /* Prepare image label: */
+            m_pImageLabel = new QLabel(this);
+            if (m_pImageLabel)
             {
-                m_pISOFileSelectorLabel->setAlignment(Qt::AlignRight);
-                m_pISOFileSelectorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                m_pImageLabel->setAlignment(Qt::AlignRight);
+                m_pImageLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
-                m_pMainLayout->addWidget(m_pISOFileSelectorLabel, iRow, 0);
+                m_pMainLayout->addWidget(m_pImageLabel, iRow, 0);
             }
-            /* Prepare ISO selector: */
-            m_pISOFileSelector = new UIFilePathSelector(this);
-            if (m_pISOFileSelector)
+            /* Prepare image selector: */
+            m_pImageSelector = new UIFilePathSelector(this);
+            if (m_pImageSelector)
             {
-                m_pISOFileSelector->setResetEnabled(false);
-                m_pISOFileSelector->setMode(UIFilePathSelector::Mode_File_Open);
-                m_pISOFileSelector->setFileDialogFilters("*.iso *.ISO");
-                m_pISOFileSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-                m_pISOFileSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
-                m_pISOFileSelectorLabel->setBuddy(m_pISOFileSelector);
+                m_pImageSelector->setResetEnabled(false);
+                m_pImageSelector->setMode(UIFilePathSelector::Mode_File_Open);
+                m_pImageSelector->setFileDialogFilters("*.iso *.ISO");
+                m_pImageSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+                m_pImageSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
+                m_pImageLabel->setBuddy(m_pImageSelector);
 
-                m_pMainLayout->addWidget(m_pISOFileSelector, iRow, 1, 1, 2);
+                m_pMainLayout->addWidget(m_pImageSelector, iRow, 1, 1, 2);
             }
 
             ++iRow;
@@ -622,7 +616,7 @@ void UINameAndSystemEditor::prepareConnections()
     if (m_pComboType)
         connect(m_pComboType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                 this, &UINameAndSystemEditor::sltTypeChanged);
-    if (m_pISOFileSelector)
-        connect(m_pISOFileSelector, &UIFilePathSelector::pathChanged,
-                this, &UINameAndSystemEditor::sigISOPathChanged);
+    if (m_pImageSelector)
+        connect(m_pImageSelector, &UIFilePathSelector::pathChanged,
+                this, &UINameAndSystemEditor::sigImageChanged);
 }
