@@ -1159,8 +1159,6 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
                 case SUPLDRLOADEP_VMMR0:
                 {
                     if (RT_SUCCESS(rc))
-                        rc = supdrvSolLdrResolvEp(pImage, "VMMR0EntryInt",  (void **)&pReq->u.In.EP.VMMR0.pvVMMR0EntryInt);
-                    if (RT_SUCCESS(rc))
                         rc = supdrvSolLdrResolvEp(pImage, "VMMR0EntryFast", (void **)&pReq->u.In.EP.VMMR0.pvVMMR0EntryFast);
                     if (RT_SUCCESS(rc))
                         rc = supdrvSolLdrResolvEp(pImage, "VMMR0EntryEx",   (void **)&pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
