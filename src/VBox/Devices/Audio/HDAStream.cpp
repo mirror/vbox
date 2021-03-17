@@ -1056,74 +1056,6 @@ static uint32_t hdaR3StreamGetFree(PHDASTREAMR3 pStreamR3)
 }
 
 /**
- * Reads audio data from an HDA stream's DMA buffer and writes into a specified mixer sink.
- *
- * @returns IPRT status code.
- * @param   pStreamR3           HDA stream to read audio data from (ring-3).
- * @param   cbToRead            Number of bytes to read.
- * @param   pcbRead             Number of bytes read. Optional.
- */
-static int hdaR3StreamRead(PHDASTREAMR3 pStreamR3, uint32_t cbToRead, uint32_t *pcbRead)
-{
-    Assert(cbToRead);
-
-    PHDAMIXERSINK pSink = pStreamR3->pMixSink;
-    AssertMsgReturnStmt(pSink, ("[SD%RU8] Can't read from a stream with no sink attached\n", pStreamR3->u8SD),
-                        if (pcbRead) *pcbRead = 0,
-                        VINF_SUCCESS);
-
-    PRTCIRCBUF pCircBuf = pStreamR3->State.pCircBuf;
-    AssertPtr(pCircBuf);
-
-    int rc = VINF_SUCCESS;
-
-    uint32_t cbReadTotal = 0;
-    uint32_t cbLeft      = RT_MIN(cbToRead, (uint32_t)RTCircBufUsed(pCircBuf));
-
-    while (cbLeft)
-    {
-        void *pvSrc;
-        size_t cbSrc;
-
-        uint32_t cbWritten = 0;
-
-        RTCircBufAcquireReadBlock(pCircBuf, cbLeft, &pvSrc, &cbSrc);
-
-        if (cbSrc)
-        {
-            if (pStreamR3->Dbg.Runtime.fEnabled)
-                DrvAudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileStream, pvSrc, cbSrc, 0 /* fFlags */);
-
-            rc = AudioMixerSinkWrite(pSink->pMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
-            AssertRC(rc);
-            Assert(cbSrc >= cbWritten);
-
-            Log2Func(("[SD%RU8] %#RX32/%#zx bytes read @ %#RX64\n", pStreamR3->u8SD, cbWritten, cbSrc, pStreamR3->State.offRead));
-#ifdef VBOX_WITH_DTRACE
-            VBOXDD_HDA_STREAM_AIO_OUT(pStreamR3->u8SD, (uint32_t)cbSrc, pStreamR3->State.offRead);
-#endif
-            pStreamR3->State.offRead += cbSrc;
-        }
-
-        RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
-
-        if (   !cbWritten /* Nothing written? */
-            || RT_FAILURE(rc))
-            break;
-
-        Assert(cbLeft  >= cbWritten);
-        cbLeft         -= cbWritten;
-
-        cbReadTotal    += cbWritten;
-    }
-
-    if (pcbRead)
-        *pcbRead = cbReadTotal;
-
-    return rc;
-}
-
-/**
  * Get the current address and number of bytes left in the current BDLE.
  *
  * @returns The current physical address.
@@ -1989,6 +1921,9 @@ static int hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
  */
 static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PAUDMIXSINK pSink, uint64_t nsNow)
 {
+    /*
+     * Figure how much that we can push down.
+     */
     uint32_t const cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
     uint32_t const cbStreamReadable   = hdaR3StreamGetUsed(pStreamR3);
     uint32_t       cbToReadFromStream = RT_MIN(cbStreamReadable, cbSinkWritable);
@@ -2000,11 +1935,36 @@ static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStrea
               pStreamShared->u8SD, nsNow - pStreamShared->State.tsLastReadNs, cbSinkWritable, cbStreamReadable, cbToReadFromStream));
     RT_NOREF(pStreamShared, nsNow);
 
-    if (cbToReadFromStream)
+    /*
+     * Do the pushing.
+     */
+    Assert(pStreamR3->State.pCircBuf);
+    while (cbToReadFromStream > 0)
     {
-        /* Read (guest output) data and write it to the stream's sink. */
-        int rc2 = hdaR3StreamRead(pStreamR3, cbToReadFromStream, NULL /* pcbRead */);
-        AssertRC(rc2);
+        void /*const*/ *pvSrcBuf;
+        size_t          cbSrcBuf;
+        RTCircBufAcquireReadBlock(pStreamR3->State.pCircBuf, cbToReadFromStream, &pvSrcBuf, &cbSrcBuf);
+
+        if (!pStreamR3->Dbg.Runtime.fEnabled)
+        { /* likely */ }
+        else
+            DrvAudioHlpFileWrite(pStreamR3->Dbg.Runtime.pFileStream, pvSrcBuf, cbSrcBuf, 0 /* fFlags */);
+
+        uint32_t cbWritten = 0;
+        int rc = AudioMixerSinkWrite(pSink, AUDMIXOP_COPY, pvSrcBuf, (uint32_t)cbSrcBuf, &cbWritten);
+        AssertRC(rc);
+        Assert(cbWritten <= cbSrcBuf);
+
+        Log2Func(("[SD%RU8] %#RX32/%#zx bytes read @ %#RX64\n", pStreamR3->u8SD, cbWritten, cbSrcBuf, pStreamR3->State.offRead));
+#ifdef VBOX_WITH_DTRACE
+        VBOXDD_HDA_STREAM_AIO_OUT(pStreamR3->u8SD, cbWritten, pStreamR3->State.offRead);
+#endif
+        pStreamR3->State.offRead += cbWritten;
+
+        RTCircBufReleaseReadBlock(pStreamR3->State.pCircBuf, cbWritten);
+
+        /* advance */
+        cbToReadFromStream -= cbWritten;
     }
 
     int rc2 = AudioMixerSinkUpdate(pSink);
