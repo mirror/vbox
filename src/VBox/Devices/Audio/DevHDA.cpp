@@ -4176,9 +4176,11 @@ static void hdaR3DbgPrintStream(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStre
 }
 
 /** Worker for hdaR3DbgInfoBDL. */
-static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP pHlp, int idxStream)
+static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PCDBGFINFOHLP pHlp, int idxStream)
 {
-    const PHDASTREAM pStream = &pThis->aStreams[idxStream];
+    const PHDASTREAM   pStream     = &pThis->aStreams[idxStream];
+    const PHDASTREAMR3 pStreamR3   = &pThisCC->aStreams[idxStream];
+    PCPDMAUDIOPCMPROPS pGuestProps = &pStreamR3->State.Mapping.GuestProps;
 
     uint64_t const u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, idxStream),
                                             HDA_STREAM_REG(pThis, BDPU, idxStream));
@@ -4209,8 +4211,9 @@ static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP 
         szFlags[0] = '\0';
         if (bd.fFlags & ~HDA_BDLE_F_IOC)
             RTStrPrintf(szFlags, sizeof(szFlags), " !!fFlags=%#x!!\n", bd.fFlags);
-        pHlp->pfnPrintf(pHlp, "    %sBDLE%03u: %s%#011RX64 LB %#06x %s%s\n", idxCurBdle == i ? "=>" : "  ", i, "%%", bd.u64BufAddr,
-                        bd.u32BufSize, bd.fFlags & HDA_BDLE_F_IOC ? " IOC=1" : "", szFlags);
+        pHlp->pfnPrintf(pHlp, "    %sBDLE%03u: %s%#011RX64 LB %#06x (%RU64 us) %s%s\n", idxCurBdle == i ? "=>" : "  ", i, "%%",
+                        bd.u64BufAddr, bd.u32BufSize, PDMAudioPropsBytesToMicro(pGuestProps, bd.u32BufSize),
+                        bd.fFlags & HDA_BDLE_F_IOC ? " IOC=1" : "", szFlags);
 
         if (memcmp(&bd, &pStream->State.aBdl[i], sizeof(bd)) != 0)
         {
@@ -4223,7 +4226,8 @@ static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP 
 
         cbTotal += bd.u32BufSize;
     }
-    pHlp->pfnPrintf(pHlp, "  Total: %#RX64 bytes (%RU64)\n", cbTotal, cbTotal);
+    pHlp->pfnPrintf(pHlp, "  Total: %#RX64 bytes (%RU64), %u ms\n", cbTotal, cbTotal,
+                    PDMAudioPropsBytesToMilli(&pStreamR3->State.Mapping.GuestProps, (uint32_t)cbTotal));
     if (cbTotal != u32CBL)
         pHlp->pfnPrintf(pHlp, "  Warning: %#RX64 bytes does not match CBL (%#RX64)!\n", cbTotal, u32CBL);
 
@@ -4240,31 +4244,6 @@ static void hdaR3DbgPrintBDL(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP 
                         pStream->State.aSchedule[i].cLoops == 1 ? "" : "s",
                         pStream->State.aSchedule[i].cPeriodTicks, pStream->State.aSchedule[i].idxFirst,
                         pStream->State.aSchedule[i].idxFirst + pStream->State.aSchedule[i].cEntries - 1);
-
-    /*
-     * DMA counters:
-     */
-    uint64_t const uDPBase = pThis->u64DPBase & DPBASE_ADDR_MASK;
-    pHlp->pfnPrintf(pHlp, "  DMA counters %#011RX64 LB %#x, %s:\n", uDPBase, u16LVI * 2 * sizeof(uint32_t),
-                    pThis->fDMAPosition ? "enabled" : "disabled");
-    if (uDPBase)
-        for (uint16_t i = 0; i < u16LVI + 1; i++)
-        {
-            struct
-            {
-                uint32_t uPos;
-                uint32_t uReserved;
-            } Buf = { 0 , 0 };
-            PDMDevHlpPCIPhysRead(pDevIns, uDPBase + i * sizeof(Buf), &Buf, sizeof(Buf));
-
-            char szReserved[64];
-            szReserved[0] = '\0';
-            if (Buf.uReserved != 0)
-                RTStrPrintf(szReserved, sizeof(szReserved), " reserved=%#x", Buf.uReserved);
-            pHlp->pfnPrintf(pHlp, "    #%03d DMA @ %#x%s\n", i, Buf.uPos, szReserved);
-        }
-    else
-        pHlp->pfnPrintf(pHlp, "    No counters.\n");
 }
 
 /** Used by hdaR3DbgInfoStream and hdaR3DbgInfoBDL. */
@@ -4301,12 +4280,42 @@ static DECLCALLBACK(void) hdaR3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP p
 static DECLCALLBACK(void) hdaR3DbgInfoBDL(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATE   pThis     = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATER3 pThisCC   = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
     int         idxStream = hdaR3DbgLookupStrmIdx(pHlp, pszArgs);
     if (idxStream != -1)
-        hdaR3DbgPrintBDL(pDevIns, pThis, pHlp, idxStream);
+        hdaR3DbgPrintBDL(pDevIns, pThis, pThisCC, pHlp, idxStream);
     else
+    {
         for (idxStream = 0; idxStream < HDA_MAX_STREAMS; ++idxStream)
-            hdaR3DbgPrintBDL(pDevIns, pThis, pHlp, idxStream);
+            hdaR3DbgPrintBDL(pDevIns, pThis, pThisCC, pHlp, idxStream);
+        idxStream = -1;
+    }
+
+    /*
+     * DMA stream positions:
+     */
+    uint64_t const uDPBase = pThis->u64DPBase & DPBASE_ADDR_MASK;
+    pHlp->pfnPrintf(pHlp, "DMA counters %#011RX64 LB %#x, %s:\n", uDPBase, HDA_MAX_STREAMS * 2 * sizeof(uint32_t),
+                    pThis->fDMAPosition ? "enabled" : "disabled");
+    if (uDPBase)
+    {
+        struct
+        {
+            uint32_t off, uReserved;
+        } aPositions[HDA_MAX_STREAMS];
+        RT_ZERO(aPositions);
+        PDMDevHlpPCIPhysRead(pDevIns, uDPBase , &aPositions[0], sizeof(aPositions));
+
+        for (unsigned i = 0; i < RT_ELEMENTS(aPositions); i++)
+            if (idxStream == -1 || i == (unsigned)idxStream) /* lazy bird */
+            {
+                char szReserved[64];
+                szReserved[0] = '\0';
+                if (aPositions[i].uReserved != 0)
+                    RTStrPrintf(szReserved, sizeof(szReserved), " reserved=%#x", aPositions[i].uReserved);
+                pHlp->pfnPrintf(pHlp, "  Stream #%u DMA @ %#x%s\n", i, aPositions[i].off, szReserved);
+            }
+    }
 }
 
 /**
