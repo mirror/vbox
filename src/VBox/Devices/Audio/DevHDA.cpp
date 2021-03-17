@@ -1439,10 +1439,29 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                                                  hdaWalClkGetCurrent(pThis) /* Use current wall clock time */);
                     AssertRC(rc2);
 
-                    /* Avoid going through the timer here by calling the stream's timer function directly.
-                     * Should speed up starting the stream transfers. */
-                    uint64_t tsNow = hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
+                    /** @todo move this into a HDAStream.cpp function. */
+                    uint64_t tsNow;
+                    if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
+                    {
+                        /* Output streams: Avoid going through the timer here by calling the stream's timer
+                           function directly.  Should speed up starting the stream transfers. */
+                        tsNow = hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
+                    }
+                    else
+                    {
+                        /* Input streams: Arm the timer and kick the AIO thread. */
+                        tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
+                        uint64_t tsTransferNext = tsNow + pStreamShared->State.aSchedule[0].cPeriodTicks;
+                        pStreamShared->State.tsTransferNext = tsTransferNext; /* legacy */
+                        pStreamShared->State.cbTransferSize = pStreamShared->State.aSchedule[0].cbPeriod;
+                        Log3Func(("[SD%RU8] tsTransferNext=%RU64 (in %RU64)\n",
+                                  pStreamShared->u8SD, tsTransferNext, tsTransferNext - tsNow));
+                        int rc = PDMDevHlpTimerSet(pDevIns, pStreamShared->hTimer, tsTransferNext);
+                        AssertRC(rc);
 
+                        /** @todo we should have a delayed AIO thread kick off, really... */
+                        hdaR3StreamAsyncIONotify(pStreamR3);
+                    }
                     hdaR3StreamMarkStarted(pDevIns, pThis, pStreamShared, tsNow);
                 }
                 else
@@ -5247,8 +5266,12 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrors, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                                    "Number of internal DMA buffer overflows.",  "Stream%u/DMABufferOverflows", idxStream);
         else
+        {
             PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrors, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                                    "Number of internal DMA buffer underuns.", "Stream%u/DMABufferUnderruns", idxStream);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.StatDmaFlowErrorBytes, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                                   "Number of bytes of silence added to cope with underruns.", "Stream%u/DMABufferSilence", idxStream);
+        }
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offRead, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
                                "Virtual internal buffer read position.",    "Stream%u/offRead", idxStream);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->aStreams[idxStream].State.offWrite, STAMTYPE_U64, STAMVISIBILITY_USED, STAMUNIT_BYTES,
