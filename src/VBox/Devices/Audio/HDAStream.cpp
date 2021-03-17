@@ -1572,6 +1572,7 @@ static int hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
  */
 static void hdaR3StreamPullFromMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PAUDMIXSINK pSink)
 {
+    RT_NOREF(pStreamShared);
     int rc = AudioMixerSinkUpdate(pSink);
     AssertRC(rc);
 
@@ -2285,9 +2286,11 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
             uint32_t cbStreamUsed  = hdaR3StreamGetUsed(pStreamR3);
             if (pStreamShared->State.fInputPreBuffered && cbStreamUsed >= cbPeriod)
             { /*likely*/ }
-            /* Because it may take a while for the input stream to get going (at
-               least with pulseaudio), we feed the guest silence till we've
-               pre-buffer a reasonable amount of audio. */
+            /*
+             * Because it may take a while for the input stream to get going (at
+             * least with pulseaudio), we feed the guest silence till we've
+             * pre-buffer a reasonable amount of audio.
+             */
             else if (!pStreamShared->State.fInputPreBuffered)
             {
                 if (cbStreamUsed < pStreamShared->State.cbInputPreBuffer)
@@ -2311,6 +2314,11 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
              */
             else
             {
+                /** @todo We're ending up here to frequently with pulse audio at least (just
+                 *        watch the stream stats in the statistcs viewer, and way to often we
+                 *        have to inject silence bytes.  I suspect part of the problem is
+                 *        that the HDA device require a much better latency than what the
+                 *        pulse audio is configured for by default (10 ms vs 150ms). */
                 STAM_REL_COUNTER_INC(&pStreamR3->State.StatDmaFlowProblems);
                 Log(("hdaR3StreamUpdate: Warning! Stream #%u has insufficient data available: %u bytes, need %u.  Will try move pull more data into the buffer...\n",
                      pStreamShared->u8SD, cbStreamUsed, cbPeriod));
