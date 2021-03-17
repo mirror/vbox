@@ -218,8 +218,8 @@ void UIWizardNewVMPageExpert::createConnections()
         connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
                 this, &UIWizardNewVMPageExpert::sltGAISOPathChanged);
 
-    if (m_pGAInstallCheckBox)
-        connect(m_pGAInstallCheckBox, &QCheckBox::toggled,
+    if (m_pGAInstallationISOContainer)
+        connect(m_pGAInstallationISOContainer, &QGroupBox::toggled,
                 this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
 
     if (m_pBaseMemoryEditor)
@@ -441,7 +441,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
             fIsComplete = false;
         }
         /* Check the GA installation medium: */
-        if (m_pGAInstallCheckBox->isChecked() && !checkGAISOFile())
+        if (m_pGAInstallationISOContainer && m_pGAInstallationISOContainer->isChecked() && !checkGAISOFile())
         {
             m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Unattended,
                                          UIIconPool::iconSet(":/status_error_16px.png"),
