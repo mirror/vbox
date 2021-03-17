@@ -476,7 +476,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
     const uint16_t u16LVI     = HDA_STREAM_REG(pThis, LVI, uSD);
     const uint32_t u32CBL     = HDA_STREAM_REG(pThis, CBL, uSD);
     const uint8_t  u8FIFOS    = HDA_STREAM_REG(pThis, FIFOS, uSD) + 1;
-          uint8_t  u8FIFOW    = hdaSDFIFOWToBytes(HDA_STREAM_REG(pThis, FIFOW, uSD));
+    uint8_t        u8FIFOW    = hdaSDFIFOWToBytes(HDA_STREAM_REG(pThis, FIFOW, uSD));
     const uint16_t u16FMT     = HDA_STREAM_REG(pThis, FMT, uSD);
 
     /* Is the bare minimum set of registers configured for the stream?

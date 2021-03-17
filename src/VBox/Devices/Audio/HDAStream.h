@@ -233,46 +233,52 @@ AssertCompileMemberAlignment(HDASTREAMSTATE, aSchedule, 16);
  */
 typedef struct HDASTREAM
 {
+    /** Internal state of this stream. */
+    HDASTREAMSTATE              State;
+
     /** Stream descriptor number (SDn). */
     uint8_t                     u8SD;
     /** Current channel index.
      *  For a stereo stream, this is u8Channel + 1. */
     uint8_t                     u8Channel;
-    uint8_t                     abPadding0[6];
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    /** The stream's shared r0/r3 critical section to serialize access between the async I/O
-     *  thread and (basically) the guest. */
-    PDMCRITSECT                 CritSect;
-#endif
-    /** DMA base address (SDnBDPU - SDnBDPL).
-     *  Will be updated in hdaR3StreamInit(). */
-    uint64_t                    u64BDLBase;
-    /** Cyclic Buffer Length (SDnCBL).
-     *  Represents the size of the ring buffer.
-     *  Will be updated in hdaR3StreamInit(). */
-    uint32_t                    u32CBL;
-    /** Format (SDnFMT).
-     *  Will be updated in hdaR3StreamInit(). */
-    uint16_t                    u16FMT;
-    /** FIFO Size (checked + translated in bytes, FIFOS).
-     *  Maximum number of bytes that may have been DMA'd into
-     *  memory but not yet transmitted on the link.
-     *
-     *  Will be updated in hdaR3StreamInit(). */
-    uint8_t                     u8FIFOS;
-    /** FIFO Watermark (checked + translated in bytes, FIFOW). */
+    /** FIFO Watermark (checked + translated in bytes, FIFOW).
+     * This will be update from hdaRegWriteSDFIFOW() and also copied
+     * hdaR3StreamInit() for some reason. */
     uint8_t                     u8FIFOW;
-    uint8_t                     abPadding1[2];
-    /** FIFO scratch buffer, to avoid intermediate (re-)allocations. */
-    uint8_t                     abFIFO[HDA_FIFO_MAX + 1];
-    /** Last Valid Index (SDnLVI).
-     *  Will be updated in hdaR3StreamInit(). */
+
+    /** @name Register values at stream setup.
+     * These will all be copied in hdaR3StreamInit().
+     * @{ */
+    /** FIFO Size (checked + translated in bytes, FIFOS).
+     * This is supposedly the max number of bytes we'll be DMA'ing in one chunk
+     * and correspondingly the LPIB & wall clock update jumps.  However, we're
+     * not at all being honest with the guest about this. */
+    uint8_t                     u8FIFOS;
+    /** Cyclic Buffer Length (SDnCBL) - Represents the size of the ring buffer. */
+    uint32_t                    u32CBL;
+    /** Last Valid Index (SDnLVI). */
     uint16_t                    u16LVI;
+    /** Format (SDnFMT). */
+    uint16_t                    u16FMT;
+    uint8_t                     abPadding[4];
+    /** DMA base address (SDnBDPU - SDnBDPL). */
+    uint64_t                    u64BDLBase;
+    /** @} */
+
     /** The timer for pumping data thru the attached LUN drivers. */
     TMTIMERHANDLE               hTimer;
-    /** Internal state of this stream. */
-    HDASTREAMSTATE              State;
+
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    /** Pad the structure size to a 64 byte alignment. */
+    uint64_t                    au64Padding1[2];
+    /** Critical section for serialize access to the stream state between the async
+     * I/O thread and (basically) the guest. */
+    PDMCRITSECT                 CritSect;
+#endif
 } HDASTREAM;
+AssertCompileMemberAlignment(HDASTREAM, State.aBdl, 16);
+AssertCompileMemberAlignment(HDASTREAM, State.aSchedule, 16);
+AssertCompileSizeAlignment(HDASTREAM, 64);
 /** Pointer to an HDA stream (SDI / SDO).  */
 typedef HDASTREAM *PHDASTREAM;
 
@@ -319,7 +325,9 @@ typedef struct HDASTREAMR3
     } State;
     /** Debug bits. */
     HDASTREAMDEBUG              Dbg;
+    uint64_t                    au64Alignment[2];
 } HDASTREAMR3;
+AssertCompileSizeAlignment(HDASTREAMR3, 64);
 /** Pointer to an HDA stream (SDI / SDO).  */
 typedef HDASTREAMR3 *PHDASTREAMR3;
 

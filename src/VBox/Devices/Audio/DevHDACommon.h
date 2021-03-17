@@ -102,8 +102,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
  * Formula: size - 1
  * Other values not listed are not supported.
  */
-/** Maximum FIFO size (in bytes). */
-#define HDA_FIFO_MAX                256
 
 /** Default timer frequency (in Hz).
  *

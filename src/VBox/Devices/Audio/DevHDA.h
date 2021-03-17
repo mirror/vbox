@@ -81,10 +81,10 @@ typedef struct HDASTATE
 {
     /** Critical section protecting the HDA state. */
     PDMCRITSECT             CritSect;
+    /** Internal stream states (aligned on 64 byte boundrary). */
+    HDASTREAM               aStreams[HDA_MAX_STREAMS];
     /** The HDA's register set. */
     uint32_t                au32Regs[HDA_NUM_REGS];
-    /** Internal stream states. */
-    HDASTREAM               aStreams[HDA_MAX_STREAMS];
     /** CORB buffer base address. */
     uint64_t                u64CORBBase;
     /** RIRB buffer base address. */
@@ -214,6 +214,7 @@ typedef struct HDASTATE
      *  This is set to HDASTATE_ALIGNMENT_CHECK_MAGIC. */
     uint64_t                uAlignmentCheckMagic;
 } HDASTATE;
+AssertCompileMemberAlignment(HDASTATE, aStreams, 64);
 /** Pointer to a shared HDA device state.  */
 typedef HDASTATE *PHDASTATE;
 
