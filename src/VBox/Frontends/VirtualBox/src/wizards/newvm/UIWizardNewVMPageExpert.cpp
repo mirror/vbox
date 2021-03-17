@@ -185,6 +185,9 @@ void UIWizardNewVMPageExpert::retranslateUi()
         m_pDiskVariantGroupBox->setTitle(UIWizardNewVM::tr("Storage on physical hard disk"));
     if (m_pLocationLabel)
         m_pLocationLabel->setText(UIWizardNewVM::tr("Disk Location:"));
+
+    if (m_pNameAndSystemLayout && m_pNameAndSystemEditor)
+        m_pNameAndSystemLayout->setColumnMinimumWidth(0, m_pNameAndSystemEditor->firstColumnWidth());
 }
 
 void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
