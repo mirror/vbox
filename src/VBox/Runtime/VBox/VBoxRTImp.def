@@ -2057,6 +2057,7 @@ EXPORTS
     RTTlsGetEx
     RTTlsSet
     RTUniFree
+    RTUriParse
     RTUtf16CalcLatin1Len
     RTUtf16CalcLatin1LenEx
     RTUtf16CalcUtf8Len
