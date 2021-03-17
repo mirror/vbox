@@ -75,6 +75,8 @@ typedef struct HDASTREAMDEBUGRT
  */
 typedef struct HDASTREAMDEBUG
 {
+    /** Runtime debug info. */
+    HDASTREAMDEBUGRT        Runtime;
 #ifdef DEBUG
     /** Critical section to serialize access if needed. */
     RTCRITSECT              CritSect;
@@ -102,9 +104,9 @@ typedef struct HDASTREAMDEBUG
     /** How many bytes to skip in an audio stream before detecting silence.
      *  (useful for intros and silence at the beginning of a song). */
     uint64_t                cbSilenceReadMin;
+#else
+    uint64_t                au64Alignment[2];
 #endif
-    /** Runtime debug info. */
-    HDASTREAMDEBUGRT        Runtime;
 } HDASTREAMDEBUG;
 typedef HDASTREAMDEBUG *PHDASTREAMDEBUG;
 
