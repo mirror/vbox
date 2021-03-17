@@ -203,23 +203,42 @@ void UIWizardNewVMPageBasic4::prepare()
 QWidget *UIWizardNewVMPageBasic4::createNewDiskWidgets()
 {
     QWidget *pWidget = new QWidget;
-    QVBoxLayout *pLayout = new QVBoxLayout(pWidget);
-    pLayout->setContentsMargins(0, 0, 0, 0);
-
-    QHBoxLayout *pSizeLayout = new QHBoxLayout;
-    pSizeLayout->setContentsMargins(0, 0, 0, 0);
-    /* Hard disk size relate widgets: */
-    m_pMediumSizeEditor = new UIMediumSizeEditor;
-    m_pMediumSizeEditorLabel = new QLabel;
-    if (m_pMediumSizeEditorLabel)
+    if (pWidget)
     {
-        pSizeLayout->addWidget(m_pMediumSizeEditorLabel);
-        m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
+        QVBoxLayout *pLayout = new QVBoxLayout(pWidget);
+        if (pLayout)
+        {
+            pLayout->setContentsMargins(0, 0, 0, 0);
+
+            /* Prepare size layout: */
+            QGridLayout *pSizeLayout = new QGridLayout;
+            if (pSizeLayout)
+            {
+                pSizeLayout->setContentsMargins(0, 0, 0, 0);
+
+                /* Prepare Hard disk size label: */
+                m_pMediumSizeEditorLabel = new QLabel(pWidget);
+                if (m_pMediumSizeEditorLabel)
+                {
+                    m_pMediumSizeEditorLabel->setAlignment(Qt::AlignRight);
+                    m_pMediumSizeEditorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                    pSizeLayout->addWidget(m_pMediumSizeEditorLabel, 0, 0, Qt::AlignBottom);
+                }
+                /* Prepare Hard disk size editor: */
+                m_pMediumSizeEditor = new UIMediumSizeEditor(pWidget);
+                if (m_pMediumSizeEditor)
+                {
+                    m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
+                    pSizeLayout->addWidget(m_pMediumSizeEditor, 0, 1, 2, 1);
+                }
+
+                pLayout->addLayout(pSizeLayout);
+            }
+
+            /* Hard disk variant (dynamic vs. fixed) widgets: */
+            pLayout->addWidget(createMediumVariantWidgets(false /* bool fWithLabels */));
+        }
     }
-    pSizeLayout->addWidget(m_pMediumSizeEditor);
-    pLayout->addLayout(pSizeLayout);
-    /* Hard disk variant (dynamic vs. fixed) widgets: */
-    pLayout->addWidget(createMediumVariantWidgets(false /* bool fWithLabels */));
 
     return pWidget;
 }

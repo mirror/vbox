@@ -381,7 +381,8 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
 
     /* Disk file size widgets: */
     m_pMediumSizeEditorLabel = new QLabel;
-    m_pMediumSizeEditorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+    m_pMediumSizeEditorLabel->setAlignment(Qt::AlignRight);
+    m_pMediumSizeEditorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     m_pMediumSizeEditor = new UIMediumSizeEditor;
     m_pMediumSizeEditorLabel->setBuddy(m_pMediumSizeEditor);
 
@@ -400,7 +401,7 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     pDiskContainerLayout->addWidget(m_pLocationEditor, 0, 1, 1, 2);
     pDiskContainerLayout->addWidget(m_pLocationOpenButton, 0, 3, 1, 1);
 
-    pDiskContainerLayout->addWidget(m_pMediumSizeEditorLabel, 1, 0, 1, 1);
+    pDiskContainerLayout->addWidget(m_pMediumSizeEditorLabel, 1, 0, 1, 1, Qt::AlignBottom);
     pDiskContainerLayout->addWidget(m_pMediumSizeEditor, 1, 1, 2, 3);
 
     pDiskContainerLayout->addWidget(m_pDiskFormatGroupBox, 3, 0, 6, 2);
