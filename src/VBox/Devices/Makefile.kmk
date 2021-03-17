@@ -154,7 +154,8 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
  	VBOX_WITH_DMI_CHASSIS \
  	VBOX_WITH_DMI_OEMSTRINGS \
- 	$(if $(VBOX_WITH_IOMMU_AMD),VBOX_WITH_IOMMU_AMD,)
+ 	$(if $(VBOX_WITH_IOMMU_AMD),VBOX_WITH_IOMMU_AMD,) \
+ 	$(if $(VBOX_WITH_IOMMU_INTEL),VBOX_WITH_IOMMU_INTEL,)
  VBoxDD_DEFS.win         = _WIN32_WINNT=0x0510
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBoxDD_DEFS.darwin     = VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -172,6 +173,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
  	$(if $(VBOX_WITH_IOMMU_AMD),Bus/DevIommuAmd.cpp,) \
+ 	$(if $(VBOX_WITH_IOMMU_INTEL),Bus/DevIommuIntel.cpp,) \
 	EFI/DevSmc.cpp \
 	EFI/DevFlash.cpp \
 	EFI/FlashCore.cpp \
@@ -955,7 +957,10 @@ endif
   ifeq ($(KBUILD_TARGET_ARCH),x86)
    VBoxDDRC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
   endif
-  VBoxDDRC_DEFS           = $(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) $(if $(VBOX_WITH_IOMMU_AMD),VBOX_WITH_IOMMU_AMD,)
+  VBoxDDRC_DEFS           = \
+  	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) \
+  	$(if $(VBOX_WITH_IOMMU_AMD),VBOX_WITH_IOMMU_AMD,) \
+  	$(if $(VBOX_WITH_IOMMU_INTEL),VBOX_WITH_IOMMU_INTEL,)
   VBoxDDRC_INCS           = build $(VBOX_GRAPHICS_INCS)
   VBoxDDRC_SOURCES        = \
   	Bus/DevPCI.cpp \
@@ -963,6 +968,7 @@ endif
   	Bus/MsiCommon.cpp \
   	Bus/MsixCommon.cpp \
   	$(if $(VBOX_WITH_IOMMU_AMD),Bus/DevIommuAmd.cpp,) \
+  	$(if $(VBOX_WITH_IOMMU_INTEL),Bus/DevIommuIntel.cpp,) \
   	EFI/DevSmc.cpp \
   	Graphics/DevVGA.cpp \
   	Input/DevPS2.cpp \
@@ -1158,6 +1164,7 @@ endif
  VBoxDDR0_DEFS           = \
  	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) \
  	$(if $(VBOX_WITH_IOMMU_AMD),VBOX_WITH_IOMMU_AMD,) \
+ 	$(if $(VBOX_WITH_IOMMU_INTEL),VBOX_WITH_IOMMU_INTEL,) \
  	IN_RT_R0  # - WTF is IN_RT_R0 doing here?
  VBoxDDR0_DEFS.win      += VBOX_WITH_WIN_PARPORT_SUP
  VBoxDDR0_INCS           = build $(VBOX_GRAPHICS_INCS)
@@ -1170,6 +1177,7 @@ endif
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
  	$(if $(VBOX_WITH_IOMMU_AMD),Bus/DevIommuAmd.cpp,) \
+ 	$(if $(VBOX_WITH_IOMMU_INTEL),Bus/DevIommuIntel.cpp,) \
  	EFI/DevSmc.cpp \
  	EFI/DevFlash.cpp \
 	EFI/FlashCore.cpp \

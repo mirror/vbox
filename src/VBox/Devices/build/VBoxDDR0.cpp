@@ -110,6 +110,9 @@ static PCPDMDEVREGR0 g_apVBoxDDR0DevRegs[] =
 #ifdef VBOX_WITH_IOMMU_AMD
     &g_DeviceIommuAmd,
 #endif
+#ifdef VBOX_WITH_IOMMU_INTEL
+    &g_DeviceIommuIntel,
+#endif
 };
 
 /**

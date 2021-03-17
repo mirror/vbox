@@ -223,6 +223,11 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 #endif
+#ifdef VBOX_WITH_IOMMU_INTEL
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceIommuIntel);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceQemuFwCfg);
     if (RT_FAILURE(rc))
         return rc;

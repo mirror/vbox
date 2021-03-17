@@ -195,6 +195,9 @@ extern const PDMDRVREG g_DrvIfTrace;
 #ifdef VBOX_WITH_IOMMU_AMD
 extern const PDMDEVREG g_DeviceIommuAmd;
 #endif
+#ifdef VBOX_WITH_IOMMU_INTEL
+extern const PDMDEVREG g_DeviceIommuIntel;
+#endif
 
 /* VBoxAcpi.cpp */
 int acpiPrepareDsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbDsdt);

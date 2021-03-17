@@ -1890,8 +1890,6 @@ typedef struct PDMIOAPICHLP
      * @param   idDevice    The device identifier (bus, device, function).
      * @param   pMsiIn      The source MSI.
      * @param   pMsiOut     Where to store the remapped MSI.
-     *
-     * @sa      iommuAmdDeviceMsiRemap().
      */
     DECLCALLBACKMEMBER(int, pfnIommuMsiRemap,(PPDMDEVINS pDevIns, uint16_t idDevice, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 

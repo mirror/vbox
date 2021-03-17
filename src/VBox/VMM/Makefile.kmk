@@ -68,6 +68,9 @@ endif
 ifdef VBOX_WITH_IOMMU_AMD
 VBoxVMM_DEFS    += VBOX_WITH_IOMMU_AMD
 endif
+ifdef VBOX_WITH_IOMMU_INTEL
+VBoxVMM_DEFS    += VBOX_WITH_IOMMU_INTEL
+endif
 ifdef VBOX_WITH_DBGF_TRACING
 VBoxVMM_DEFS    += VBOX_WITH_DBGF_TRACING
 endif
@@ -189,7 +192,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/PDMAllCritSect.cpp \
 	VMMAll/PDMAllCritSectRw.cpp \
 	VMMAll/PDMAllCritSectBoth.cpp \
-	$(if-expr defined(VBOX_WITH_IOMMU_AMD), VMMAll/PDMAllIommu.cpp,) \
+	$(if-expr defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL), VMMAll/PDMAllIommu.cpp,) \
 	VMMAll/PDMAllQueue.cpp \
 	VMMAll/PDMAllTask.cpp \
 	VMMAll/PGMAll.cpp \
@@ -533,7 +536,7 @@ VMMR0_SOURCES   = \
 	VMMAll/PDMAllCritSect.cpp \
 	VMMAll/PDMAllCritSectRw.cpp \
 	VMMAll/PDMAllCritSectBoth.cpp \
-	$(if-expr defined(VBOX_WITH_IOMMU_AMD), VMMAll/PDMAllIommu.cpp,) \
+	$(if-expr defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL), VMMAll/PDMAllIommu.cpp,) \
 	VMMAll/PDMAllQueue.cpp \
 	VMMAll/PDMAllTask.cpp \
 	VMMAll/PGMAll.cpp \
