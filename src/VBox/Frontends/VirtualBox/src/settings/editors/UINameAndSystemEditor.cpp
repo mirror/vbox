@@ -285,11 +285,11 @@ void UINameAndSystemEditor::markISOFileSelector(bool fError, const QString &strE
 void UINameAndSystemEditor::retranslateUi()
 {
     if (m_pNameLabel)
-        m_pNameLabel->setText(tr("Name:"));
+        m_pNameLabel->setText(tr("&Name:"));
     if (m_pPathLabel)
-        m_pPathLabel->setText(tr("Folder:"));
+        m_pPathLabel->setText(tr("&Folder:"));
     if (m_pISOFileSelectorLabel)
-        m_pISOFileSelectorLabel->setText(tr("Installation ISO:"));
+        m_pISOFileSelectorLabel->setText(tr("&Image:"));
     if (m_pLabelFamily)
         m_pLabelFamily->setText(tr("&Type:"));
     if (m_pLabelType)
@@ -416,7 +416,7 @@ void UINameAndSystemEditor::prepareThis()
 
 void UINameAndSystemEditor::prepareWidgets()
 {
-    /* Create main-layout: */
+    /* Prepare main-layout: */
     m_pMainLayout = new QGridLayout(this);
     if (m_pMainLayout)
     {
@@ -428,21 +428,20 @@ void UINameAndSystemEditor::prepareWidgets()
 
         if (m_fChooseName)
         {
-            /* Create name label: */
-            m_pNameLabel = new QLabel;
+            /* Prepare name label: */
+            m_pNameLabel = new QLabel(this);
             if (m_pNameLabel)
             {
                 m_pNameLabel->setAlignment(Qt::AlignRight);
                 m_pNameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
-                /* Add into layout: */
-                m_pMainLayout->addWidget(m_pNameLabel, iRow, 0, 1, 1);
+                m_pMainLayout->addWidget(m_pNameLabel, iRow, 0);
             }
-            /* Create name editor: */
-            m_pNameLineEdit = new QILineEdit;
+            /* Prepare name editor: */
+            m_pNameLineEdit = new QILineEdit(this);
             if (m_pNameLineEdit)
             {
-                /* Add into layout: */
+                m_pNameLabel->setBuddy(m_pNameLineEdit);
                 m_pMainLayout->addWidget(m_pNameLineEdit, iRow, 1, 1, 2);
             }
 
@@ -451,25 +450,24 @@ void UINameAndSystemEditor::prepareWidgets()
 
         if (m_fChoosePath)
         {
-            /* Create path label: */
-            m_pPathLabel = new QLabel;
+            /* Prepare path label: */
+            m_pPathLabel = new QLabel(this);
             if (m_pPathLabel)
             {
                 m_pPathLabel->setAlignment(Qt::AlignRight);
                 m_pPathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
-                /* Add into layout: */
-                m_pMainLayout->addWidget(m_pPathLabel, iRow, 0, 1, 1);
+                m_pMainLayout->addWidget(m_pPathLabel, iRow, 0);
             }
-            /* Create path selector: */
-            m_pPathSelector = new UIFilePathSelector;
+            /* Prepare path selector: */
+            m_pPathSelector = new UIFilePathSelector(this);
             if (m_pPathSelector)
             {
+                m_pPathLabel->setBuddy(m_pPathSelector);
                 QString strDefaultMachineFolder = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
                 m_pPathSelector->setPath(strDefaultMachineFolder);
                 m_pPathSelector->setDefaultPath(strDefaultMachineFolder);
 
-                /* Add into layout: */
                 m_pMainLayout->addWidget(m_pPathSelector, iRow, 1, 1, 2);
             }
 
@@ -478,84 +476,86 @@ void UINameAndSystemEditor::prepareWidgets()
 
         if (m_fChooseISOFile)
         {
+            /* Prepare ISO label: */
             m_pISOFileSelectorLabel = new QLabel(this);
-            m_pMainLayout->addWidget(m_pISOFileSelectorLabel, iRow, 0);
+            if (m_pISOFileSelectorLabel)
+            {
+                m_pISOFileSelectorLabel->setAlignment(Qt::AlignRight);
+                m_pISOFileSelectorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
+                m_pMainLayout->addWidget(m_pISOFileSelectorLabel, iRow, 0);
+            }
+            /* Prepare ISO selector: */
             m_pISOFileSelector = new UIFilePathSelector(this);
             if (m_pISOFileSelector)
             {
                 m_pISOFileSelector->setResetEnabled(false);
                 m_pISOFileSelector->setMode(UIFilePathSelector::Mode_File_Open);
                 m_pISOFileSelector->setFileDialogFilters("*.iso *.ISO");
-                m_pISOFileSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+                m_pISOFileSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
                 m_pISOFileSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
                 m_pISOFileSelectorLabel->setBuddy(m_pISOFileSelector);
+
                 m_pMainLayout->addWidget(m_pISOFileSelector, iRow, 1, 1, 2);
             }
+
             ++iRow;
         }
 
         if (m_fChooseType)
         {
-            /* Create VM OS family label: */
-            m_pLabelFamily = new QLabel;
+            /* Prepare VM OS family label: */
+            m_pLabelFamily = new QLabel(this);
             if (m_pLabelFamily)
             {
                 m_pLabelFamily->setAlignment(Qt::AlignRight);
                 m_pLabelFamily->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-                /* Add into layout: */
+
                 m_pMainLayout->addWidget(m_pLabelFamily, iRow, 0);
             }
-
-            int iIconRow = iRow;
-
-            /* Create VM OS family combo: */
-            m_pComboFamily = new QComboBox;
+            /* Prepare VM OS family combo: */
+            m_pComboFamily = new QComboBox(this);
             if (m_pComboFamily)
             {
                 m_pComboFamily->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
                 m_pLabelFamily->setBuddy(m_pComboFamily);
 
-                /* Add into layout: */
                 m_pMainLayout->addWidget(m_pComboFamily, iRow, 1);
             }
 
+            const int iIconRow = iRow;
             ++iRow;
 
-            /* Create VM OS type label: */
-            m_pLabelType = new QLabel;
+            /* Prepare VM OS type label: */
+            m_pLabelType = new QLabel(this);
             if (m_pLabelType)
             {
                 m_pLabelType->setAlignment(Qt::AlignRight);
                 m_pLabelType->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
-                /* Add into layout: */
                 m_pMainLayout->addWidget(m_pLabelType, iRow, 0);
             }
-            /* Create VM OS type combo: */
-            m_pComboType = new QComboBox;
+            /* Prepare VM OS type combo: */
+            m_pComboType = new QComboBox(this);
             if (m_pComboType)
             {
                 m_pComboType->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
                 m_pLabelType->setBuddy(m_pComboType);
 
-                /* Add into layout: */
                 m_pMainLayout->addWidget(m_pComboType, iRow, 1);
             }
 
             ++iRow;
 
-            /* Create sub-layout: */
+            /* Prepare sub-layout: */
             QVBoxLayout *pLayoutIcon = new QVBoxLayout;
             if (pLayoutIcon)
             {
-                /* Create VM OS type icon: */
-                m_pIconType = new QLabel;
+                /* Prepare VM OS type icon: */
+                m_pIconType = new QLabel(this);
                 if (m_pIconType)
                 {
                     m_pIconType->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-                    /* Add into layout: */
                     pLayoutIcon->addWidget(m_pIconType);
                 }
 

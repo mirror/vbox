@@ -234,19 +234,33 @@ void UIWizardNewVMPage1::composeMachineFilePath()
 
 QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets()
 {
+    /* Prepare container widget: */
     QWidget *pContainerWidget = new QWidget;
-    QVBoxLayout *pLayout = new QVBoxLayout(pContainerWidget);
-    pLayout->setContentsMargins(0, 0, 0, 0);
+    if (pContainerWidget)
+    {
+        /* Prepare layout: */
+        QVBoxLayout *pLayout = new QVBoxLayout(pContainerWidget);
+        if (pLayout)
+        {
+            pLayout->setContentsMargins(0, 0, 0, 0);
 
-    /* Prepare Name and OS Type editor: */
-    m_pNameAndSystemEditor = new UINameAndSystemEditor(0,
-                                                       true /* fChooseName? */,
-                                                       true /* fChoosePath? */,
-                                                       true /* fChooseType? */,
-                                                       true /* fChooseISOFile? */);
-    pLayout->addWidget(m_pNameAndSystemEditor);
-    m_pSkipUnattendedCheckBox = new QCheckBox;
-    pLayout->addWidget(m_pSkipUnattendedCheckBox);
+            /* Prepare Name and OS Type editor: */
+            m_pNameAndSystemEditor = new UINameAndSystemEditor(0,
+                                                               true /* fChooseName? */,
+                                                               true /* fChoosePath? */,
+                                                               true /* fChooseType? */,
+                                                               true /* fChooseISOFile? */);
+            if (m_pNameAndSystemEditor)
+                pLayout->addWidget(m_pNameAndSystemEditor);
+
+            /* Prepare Skip Unattended checkbox: */
+            m_pSkipUnattendedCheckBox = new QCheckBox;
+            if (m_pSkipUnattendedCheckBox)
+                pLayout->addWidget(m_pSkipUnattendedCheckBox);
+        }
+    }
+
+    /* Return container widget: */
     return pContainerWidget;
 }
 
