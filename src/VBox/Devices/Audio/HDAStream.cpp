@@ -1933,17 +1933,18 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
         if (idxLoop >= pStreamShared->State.aSchedule[idxSched].cLoops)
         {
             idxSched += 1;
-            if (   idxSched > pStreamShared->State.cSchedule
+            if (   idxSched >= pStreamShared->State.cSchedule
                 || idxSched >= RT_ELEMENTS(pStreamShared->State.aSchedule) /*paranoia^2*/)
             {
                 idxSched = pStreamShared->State.cSchedulePrologue;
                 AssertStmt(idxSched < RT_ELEMENTS(pStreamShared->State.aSchedule), idxSched = 0);
             }
+            pStreamShared->State.idxSchedule = idxSched;
             idxLoop = 0;
         }
         pStreamShared->State.idxScheduleLoop = (uint16_t)idxLoop;
 
-        /* Do the arcual timer arming. */
+        /* Do the actual timer re-arming. */
         uint64_t const tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
         uint64_t const tsTransferNext = tsNow + pStreamShared->State.aSchedule[idxSched].cPeriodTicks;
         Log3Func(("[SD%RU8] fSinkActive=true, tsTransferNext=%RU64 (in %RU64)\n",
