@@ -128,6 +128,9 @@ public:
       *  effectively changing the background color and error-text. */
     void markImageEditor(bool fError, const QString &strErrorMessage);
 
+    /** Returns 1st column width. */
+    int firstColumnWidth() const;
+
 protected:
 
     /** Handles translation event. */

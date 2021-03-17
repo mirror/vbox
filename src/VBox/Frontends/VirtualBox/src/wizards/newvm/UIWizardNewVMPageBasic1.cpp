@@ -179,7 +179,6 @@ static const osTypePattern gs_OSTypePattern[] =
 
 UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
     : m_pNameAndSystemEditor(0)
-    , m_pISOPathSelectorLabel(0)
     , m_pSkipUnattendedCheckBox(0)
     , m_strGroup(strGroup)
 {
@@ -239,10 +238,10 @@ QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets()
     if (pContainerWidget)
     {
         /* Prepare layout: */
-        QVBoxLayout *pLayout = new QVBoxLayout(pContainerWidget);
-        if (pLayout)
+        m_pNameAndSystemLayout = new QGridLayout(pContainerWidget);
+        if (m_pNameAndSystemLayout)
         {
-            pLayout->setContentsMargins(0, 0, 0, 0);
+            m_pNameAndSystemLayout->setContentsMargins(0, 0, 0, 0);
 
             /* Prepare Name and OS Type editor: */
             m_pNameAndSystemEditor = new UINameAndSystemEditor(0,
@@ -251,12 +250,12 @@ QWidget *UIWizardNewVMPage1::createNameOSTypeWidgets()
                                                                true /* fChooseImage? */,
                                                                true /* fChooseType? */);
             if (m_pNameAndSystemEditor)
-                pLayout->addWidget(m_pNameAndSystemEditor);
+                m_pNameAndSystemLayout->addWidget(m_pNameAndSystemEditor, 0, 0, 1, 2);
 
             /* Prepare Skip Unattended checkbox: */
             m_pSkipUnattendedCheckBox = new QCheckBox;
             if (m_pSkipUnattendedCheckBox)
-                pLayout->addWidget(m_pSkipUnattendedCheckBox);
+                m_pNameAndSystemLayout->addWidget(m_pSkipUnattendedCheckBox, 1, 1);
         }
     }
 
@@ -372,9 +371,9 @@ void UIWizardNewVMPage1::retranslateWidgets()
     if (m_pSkipUnattendedCheckBox)
     {
         m_pSkipUnattendedCheckBox->setText(UIWizardNewVM::tr("Skip unattended installation"));
-        m_pSkipUnattendedCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked selected ISO file will be mounted to the CD drive "
-                                                                "of the virtual machine but the unattended installation will "
-                                                                "not start.</p>"));
+        m_pSkipUnattendedCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked selected ISO file will be mounted to the CD "
+                                                                "drive of the virtual machine but the unattended installation "
+                                                                "will not start.</p>"));
     }
 }
 
@@ -545,14 +544,12 @@ void UIWizardNewVMPageBasic1::retranslateUi()
     setTitle(UIWizardNewVM::tr("Virtual machine name and operating system"));
 
     if (m_pNameOSTypeLabel)
-        m_pNameOSTypeLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine. "
-                                             "The name you choose will be used throughout VirtualBox "
-                                             "to identify this machine."));
-    if (m_pISOPathSelectorLabel)
-        m_pISOPathSelectorLabel->setText(UIWizardNewVM::tr("&Installation ISO:"));
+        m_pNameOSTypeLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new "
+                                                      "virtual machine. The name you choose will be used throughout VirtualBox "
+                                                      "to identify this machine."));
 
-    if (m_pNameAndSystemEditor && m_pISOPathSelectorLabel)
-        m_pNameAndSystemEditor->setMinimumLayoutIndent(m_pISOPathSelectorLabel->width());
+    if (m_pNameAndSystemLayout && m_pNameAndSystemEditor)
+        m_pNameAndSystemLayout->setColumnMinimumWidth(0, m_pNameAndSystemEditor->firstColumnWidth());
 }
 
 void UIWizardNewVMPageBasic1::initializePage()

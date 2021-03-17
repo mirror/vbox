@@ -88,8 +88,8 @@ protected:
     void setSkipCheckBoxEnable();
     /** @name Widgets
      * @{ */
+        QGridLayout           *m_pNameAndSystemLayout;
         UINameAndSystemEditor *m_pNameAndSystemEditor;
-        QLabel                *m_pISOPathSelectorLabel;
         QCheckBox             *m_pSkipUnattendedCheckBox;
     /** @} */
 

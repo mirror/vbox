@@ -276,6 +276,22 @@ void UINameAndSystemEditor::markImageEditor(bool fError, const QString &strError
         m_pImageSelector->mark(fError, strErrorMessage);
 }
 
+int UINameAndSystemEditor::firstColumnWidth() const
+{
+    int iWidth = 0;
+    if (m_pNameLabel)
+        iWidth = qMax(iWidth, m_pNameLabel->width());
+    if (m_pPathLabel)
+        iWidth = qMax(iWidth, m_pPathLabel->width());
+    if (m_pImageLabel)
+        iWidth = qMax(iWidth, m_pImageLabel->width());
+    if (m_pLabelFamily)
+        iWidth = qMax(iWidth, m_pLabelFamily->width());
+    if (m_pLabelType)
+        iWidth = qMax(iWidth, m_pLabelType->width());
+    return iWidth;
+}
+
 void UINameAndSystemEditor::retranslateUi()
 {
     if (m_pNameLabel)
