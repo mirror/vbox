@@ -921,6 +921,7 @@ bool UIActivityOverviewProxyModel::filterAcceptsRow(int iSourceRow, const QModel
     return true;
 }
 
+
 /*********************************************************************************************************************************
 *   Class UIActivityOverviewModel implementation.                                                                                *
 *********************************************************************************************************************************/
