@@ -85,6 +85,7 @@ private slots:
     void sltHandleTableContextMenuRequest(const QPoint &pos);
     void sltHandleShowVMActivityMonitor();
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+    void sltNonRunningVMVisibility(bool fShow);
 
 private:
 
@@ -125,11 +126,12 @@ private:
         /* The key is the column id (VMActivityOverviewColumn) and value is true if the column is visible. */
         QMap<int, bool>                     m_columnVisible;
         UIVMActivityOverviewHostStatsWidget *m_pHostStatsWidget;
-        QAction                            *m_pVMActivityMonitorAction;
+        QAction                             *m_pVMActivityMonitorAction;
     /** @} */
     /** Indicates if this widget's host tool is current tool. */
     bool    m_fIsCurrentTool;
     int     m_iSortIndicatorWidth;
+    bool    m_fShowNonRunningVMs;
 };
 
 class UIVMActivityOverviewFactory : public QIManagerDialogFactory
@@ -171,7 +173,6 @@ private:
       * @{ */
         UIActionPool *m_pActionPool;
     /** @} */
-
     friend class UIVMActivityOverviewFactory;
 };
 

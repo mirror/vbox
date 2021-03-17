@@ -147,9 +147,9 @@ private:
     void addVerticalLine(QHBoxLayout *pLayout);
     void updateLabels();
 
-    UIVMActivityOverviewDoughnutChart   *m_pHostCPUChart;
-    UIVMActivityOverviewDoughnutChart   *m_pHostRAMChart;
-    UIVMActivityOverviewDoughnutChart   *m_pHostFSChart;
+    UIVMActivityOverviewDoughnutChart  *m_pHostCPUChart;
+    UIVMActivityOverviewDoughnutChart  *m_pHostRAMChart;
+    UIVMActivityOverviewDoughnutChart  *m_pHostFSChart;
     QLabel                             *m_pCPUTitleLabel;
     QLabel                             *m_pCPUUserLabel;
     QLabel                             *m_pCPUKernelLabel;
@@ -166,7 +166,7 @@ private:
     QColor                              m_CPUKernelColor;
     QColor                              m_RAMFreeColor;
     QColor                              m_RAMUsedColor;
-    UIVMActivityOverviewHostStats        m_hostStats;
+    UIVMActivityOverviewHostStats       m_hostStats;
 };
 
 
@@ -276,11 +276,16 @@ public:
 
     UIActivityOverviewProxyModel(QObject *parent = 0);
     void dataUpdate();
+    void setNonRunningVMVisibility(bool fShow);
 
 protected:
 
     virtual bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const /* override*/;
+    bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const /* override*/;
 
+private:
+
+    bool m_fShowNonRunningVMs;
 };
 
 
@@ -870,6 +875,13 @@ void UIActivityOverviewProxyModel::dataUpdate()
     invalidate();
 }
 
+void UIActivityOverviewProxyModel::setNonRunningVMVisibility(bool fShow)
+{
+    m_fShowNonRunningVMs = fShow;
+    invalidateFilter();
+}
+
+
 bool UIActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex, const QModelIndex &sourceRightIndex) const
 {
     UIActivityOverviewModel *pModel = qobject_cast<UIActivityOverviewModel*>(sourceModel());
@@ -896,6 +908,18 @@ bool UIActivityOverviewProxyModel::lessThan(const QModelIndex &sourceLeftIndex, 
     return QSortFilterProxyModel::lessThan(sourceLeftIndex, sourceRightIndex);
 }
 
+bool UIActivityOverviewProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const
+{
+    Q_UNUSED(sourceParent);
+    if (m_fShowNonRunningVMs)
+        return true;
+    UIActivityOverviewModel *pModel = qobject_cast<UIActivityOverviewModel*>(sourceModel());
+    if (!pModel)
+        return true;
+    if (pModel->machineState(iSourceRow) != KMachineState_Running)
+        return false;
+    return true;
+}
 
 /*********************************************************************************************************************************
 *   Class UIActivityOverviewModel implementation.                                                                                *
@@ -1334,9 +1358,9 @@ UIVMActivityOverviewWidget::UIVMActivityOverviewWidget(EmbedTo enmEmbedding, UIA
     , m_pModel(0)
     , m_pColumnVisibilityToggleMenu(0)
     , m_pHostStatsWidget(0)
-    , m_pVMActivityMonitorAction(0)
     , m_fIsCurrentTool(true)
     , m_iSortIndicatorWidth(0)
+    , m_fShowNonRunningVMs(false)
 {
     prepare();
 }
@@ -1445,12 +1469,12 @@ void UIVMActivityOverviewWidget::prepareWidgets()
 
     m_pModel = new UIActivityOverviewModel(this);
     m_pProxyModel = new UIActivityOverviewProxyModel(this);
-
     m_pTableView = new UIVMActivityOverviewTableView();
     if (m_pTableView && m_pModel && m_pProxyModel)
     {
         layout()->addWidget(m_pTableView);
         m_pProxyModel->setSourceModel(m_pModel);
+        m_pProxyModel->setNonRunningVMVisibility(m_fShowNonRunningVMs);
         m_pTableView->setModel(m_pProxyModel);
         m_pTableView->setItemDelegate(new UIVMActivityOverviewDelegate);
         m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -1596,7 +1620,12 @@ void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &
     QMenu menu;
     if (m_pVMActivityMonitorAction)
         menu.addAction(m_pVMActivityMonitorAction);
-
+    QAction *pHideNotRunningAction =
+        menu.addAction(UIVMActivityOverviewWidget::tr("List non-running virtual machines"));
+    pHideNotRunningAction->setCheckable(true);
+    pHideNotRunningAction->setChecked(m_fShowNonRunningVMs);
+    connect(pHideNotRunningAction, &QAction::triggered,
+            this, &UIVMActivityOverviewWidget::sltNonRunningVMVisibility);
     menu.exec(m_pTableView->mapToGlobal(pos));
 }
 
@@ -1628,6 +1657,13 @@ void UIVMActivityOverviewWidget::sltHandleShowVMActivityMonitor()
     if (uMachineId.isNull())
         return;
     emit sigSwitchToMachinePerformancePane(uMachineId);
+}
+
+void UIVMActivityOverviewWidget::sltNonRunningVMVisibility(bool fShow)
+{
+    m_fShowNonRunningVMs = fShow;
+    if (m_pProxyModel)
+        m_pProxyModel->setNonRunningVMVisibility(m_fShowNonRunningVMs);
 }
 
 void UIVMActivityOverviewWidget::setColumnVisible(int iColumnId, bool fVisible)
