@@ -517,19 +517,20 @@ VBOX_DI_VBAPP_MISC_FILES += \
 	MacOS/VBoxEFI32.fd \
 	MacOS/VBoxEFI64.fd
 endif
- VBOX_DI_VBAPP_DYLIBS += \
-	plugins/platforms/libqcocoa$(SUFF_DLL) \
-	plugins/platforms/libqminimal$(SUFF_DLL) \
-	plugins/platforms/libqoffscreen$(SUFF_DLL) \
-	plugins/styles/libqmacstyle$(SUFF_DLL)
-VBOX_DI_VBAPP_MISC_FILES += \
-	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/Info.plist)
-
 VBOX_DI_VBAPP_SYMLINKS = \
-	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
-	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
-	,Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_VERSION_MAJOR) )
-
+	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/
+ifdef VBOX_WITH_QTGUI
+ VBOX_DI_VBAPP_DYLIBS += \
+ 	plugins/platforms/libqcocoa$(SUFF_DLL) \
+ 	plugins/platforms/libqminimal$(SUFF_DLL) \
+ 	plugins/platforms/libqoffscreen$(SUFF_DLL) \
+ 	plugins/styles/libqmacstyle$(SUFF_DLL)
+ VBOX_DI_VBAPP_MISC_FILES += \
+ 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/Info.plist)
+ VBOX_DI_VBAPP_SYMLINKS += \
+ 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
+ 	,Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_VERSION_MAJOR) )
+endif
 ifdef VBOX_WITH_PYTHON
  # Python XPCOM glue
  VBOX_DI_VBAPP_PYTHON_FILES = \
