@@ -38,87 +38,97 @@
  * In accordance with the AMD spec.
  * @{
  */
-#define VTD_MMIO_OFF_VERSION                                    0x000  /**< Version. */
-#define VTD_MMIO_OFF_CAP                                        0x008  /**< Capability. */
-#define VTD_MMIO_OFF_EXT_CAP                                    0x010  /**< Extended Capability. */
-#define VTD_MMIO_OFF_GLOBAL_CMD                                 0x018  /**< Global Command. */
-#define VTD_MMIO_OFF_GLOBAL_STATUS                              0x01c  /**< Global Status. */
-#define VTD_MMIO_OFF_ROOT_TBL_ADDR                              0x020  /**< Root Table Address. */
-#define VTD_MMIO_OFF_CTX_CMD                                    0x028  /**< Context Command. */
+#define VTD_MMIO_GROUP_0_OFF_FIRST                              0x000
+#define VTD_MMIO_OFF_VER_REG                                    0x000  /**< Version. */
+#define VTD_MMIO_OFF_CAP_REG                                    0x008  /**< Capability. */
+#define VTD_MMIO_OFF_ECAP_REG                                   0x010  /**< Extended Capability. */
+#define VTD_MMIO_OFF_GCMD_REG                                   0x018  /**< Global Command. */
+#define VTD_MMIO_OFF_GSTS_REG                                   0x01c  /**< Global Status. */
+#define VTD_MMIO_OFF_RTADDR_REG                                 0x020  /**< Root Table Address. */
+#define VTD_MMIO_OFF_CCMD_REG                                   0x028  /**< Context Command. */
 
-#define VTD_MMIO_OFF_FAULT_STATUS                               0x034  /**< Fault Status.*/
-#define VTD_MMIO_OFF_FAULT_EVT_CTRL                             0x038  /**< Fault Event Control.*/
-#define VTD_MMIO_OFF_FAULT_EVT_DATA                             0x03c  /**< Fault Event Data. */
-#define VTD_MMIO_OFF_FAULT_EVT_ADDR                             0x040  /**< Fault Event Address. */
-#define VTD_MMIO_OFF_FAULT_EVT_UP_ADDR                          0x044  /**< Fault Event Upper Address. */
+#define VTD_MMIO_OFF_FSTS_REG                                   0x034  /**< Fault Status.*/
+#define VTD_MMIO_OFF_FECTL_REG                                  0x038  /**< Fault Event Control.*/
+#define VTD_MMIO_OFF_FEDATA_REG                                 0x03c  /**< Fault Event Data. */
+#define VTD_MMIO_OFF_FEADDR_REG                                 0x040  /**< Fault Event Address. */
+#define VTD_MMIO_OFF_FEUADDR_REG                                0x044  /**< Fault Event Upper Address. */
 
-#define VTD_MMIO_OFF_ADV_FAULT_LOG                              0x058  /**< Advance Fault Log. */
+#define VTD_MMIO_OFF_AFLOG_REG                                  0x058  /**< Advance Fault Log. */
 
-#define VTD_MMIO_OFF_PROT_MEM_EN                                0x064  /**< Protected Memory Enable (PMEN). */
-#define VTD_MMIO_OFF_PROT_LO_MEM_BASE                           0x064  /**< Protected Low Memory Base. */
-#define VTD_MMIO_OFF_PROT_LO_MEM_LIMIT                          0x068  /**< Protected Low Memory Limit. */
-#define VTD_MMIO_OFF_PROT_HI_MEM_BASE                           0x070  /**< Protected High Memory Base. */
-#define VTD_MMIO_OFF_PROT_HI_MEM_LIMIT                          0x078  /**< Protected High Memory Limit. */
+#define VTD_MMIO_OFF_PMEN_REG                                   0x064  /**< Protected Memory Enable (PMEN). */
+#define VTD_MMIO_OFF_PLMBASE_REG                                0x068  /**< Protected Low Memory Base. */
+#define VTD_MMIO_OFF_PLMLIMIT_REG                               0x06c  /**< Protected Low Memory Limit. */
+#define VTD_MMIO_OFF_PHMBASE_REG                                0x070  /**< Protected High Memory Base. */
+#define VTD_MMIO_OFF_PHMLIMIT_REG                               0x078  /**< Protected High Memory Limit. */
 
-#define VTD_MMIO_OFF_INV_QUEUE_HEAD                             0x080  /**< Invalidation Queue Head. */
-#define VTD_MMIO_OFF_INV_QUEUE_TAIL                             0x088  /**< Invalidation Queue Tail. */
-#define VTD_MMIO_OFF_INV_QUEUE_ADDR                             0x090  /**< Invalidation Queue Address. */
-#define VTD_MMIO_OFF_INV_COMP_STATUS                            0x09c  /**< Invalidation Completion Status. */
-#define VTD_MMIO_OFF_INV_COMP_EVT_CTRL                          0x0a0  /**< Invalidation Completion Event Control. */
-#define VTD_MMIO_OFF_INV_COMP_EVT_DATA                          0x0a4  /**< Invalidation Completion Event Data. */
-#define VTD_MMIO_OFF_INV_COMP_EVT_ADDR                          0x0a8  /**< Invalidation Completion Event Address. */
-#define VTD_MMIO_OFF_INV_COMP_EVT_UP_ADDR                       0x0ac  /**< Invalidation Completion Event Upper Address. */
-#define VTD_MMIO_OFF_INV_QUEUE_ERR_RECORD                       0x0b0  /**< Invalidation Completion Queue Error Record. */
+#define VTD_MMIO_OFF_IQH_REG                                    0x080  /**< Invalidation Queue Head. */
+#define VTD_MMIO_OFF_IQT_REG                                    0x088  /**< Invalidation Queue Tail. */
+#define VTD_MMIO_OFF_IQA_REG                                    0x090  /**< Invalidation Queue Address. */
+#define VTD_MMIO_OFF_ICS_REG                                    0x09c  /**< Invalidation Completion Status. */
+#define VTD_MMIO_OFF_IECTL_REG                                  0x0a0  /**< Invalidation Completion Event Control. */
+#define VTD_MMIO_OFF_IEDATA_REG                                 0x0a4  /**< Invalidation Completion Event Data. */
+#define VTD_MMIO_OFF_IEADDR_REG                                 0x0a8  /**< Invalidation Completion Event Address. */
+#define VTD_MMIO_OFF_IEUADDR_REG                                0x0ac  /**< Invalidation Completion Event Upper Address. */
+#define VTD_MMIO_OFF_IQERCD_REG                                 0x0b0  /**< Invalidation Queue Error Record. */
 
-#define VTD_MMIO_OFF_IRT_ADDR                                   0x0b8  /**< Interrupt Remapping Table Address. */
+#define VTD_MMIO_OFF_IRTA_REG                                   0x0b8  /**< Interrupt Remapping Table Address. */
 
-#define VTD_MMIO_OFF_PAGE_REQ_QUEUE_HEAD                        0x0c0  /**< Page Request Queue Head. */
-#define VTD_MMIO_OFF_PAGE_REQ_QUEUE_TAIL                        0x0c8  /**< Page Request Queue Tail. */
-#define VTD_MMIO_OFF_PAGE_REQ_STATUS                            0x0dc  /**< Page Request Status. */
-#define VTD_MMIO_OFF_PAGE_REQ_EVT_CTRL                          0x0e0  /**< Page Request Event Control. */
-#define VTD_MMIO_OFF_PAGE_REQ_EVT_DATA                          0x0e4  /**< Page Request Event Data. */
-#define VTD_MMIO_OFF_PAGE_REQ_EVT_ADDR                          0x0e8  /**< Page Request Event Address. */
-#define VTD_MMIO_OFF_PAGE_REQ_EVT_UP_ADDR                       0x0ec  /**< Page Request Event Upper Address. */
+#define VTD_MMIO_OFF_PQH_REG                                    0x0c0  /**< Page Request Queue Head. */
+#define VTD_MMIO_OFF_PQT_REG                                    0x0c8  /**< Page Request Queue Tail. */
+#define VTD_MMIO_OFF_PQA_REG                                    0x0d0  /**< Page Request Queue Address. */
+#define VTD_MMIO_OFF_PRS_REG                                    0x0dc  /**< Page Request Status. */
+#define VTD_MMIO_OFF_PECTL_REG                                  0x0e0  /**< Page Request Event Control. */
+#define VTD_MMIO_OFF_PEDATA_REG                                 0x0e4  /**< Page Request Event Data. */
+#define VTD_MMIO_OFF_PEADDR_REG                                 0x0e8  /**< Page Request Event Address. */
+#define VTD_MMIO_OFF_PEUADDR_REG                                0x0ec  /**< Page Request Event Upper Address. */
 
-#define VTD_MMIO_OFF_MTRR_CAP                                   0x100  /**< MTRR Capabliity. */
-#define VTD_MMIO_OFF_MTRR_DEF_TYPE                              0x108  /**< MTRR Default Type. */
+#define VTD_MMIO_OFF_MTRRCAP_REG                                0x100  /**< MTRR Capabliity. */
+#define VTD_MMIO_OFF_MTRRDEF_REG                                0x108  /**< MTRR Default Type. */
 
-#define VTD_MMIO_OFF_MTRR_FIXED_00000                           0x120  /**< Fixed-range MTRR Register for 64K at 00000. */
-#define VTD_MMIO_OFF_MTRR_FIXED_80000                           0x128  /**< Fixed-range MTRR Register for 16K at 80000. */
-#define VTD_MMIO_OFF_MTRR_FIXED_A0000                           0x130  /**< Fixed-range MTRR Register for 16K at a0000. */
-#define VTD_MMIO_OFF_MTRR_FIXED_C0000                           0x138  /**< Fixed-range MTRR Register for  4K at c0000. */
-#define VTD_MMIO_OFF_MTRR_FIXED_C8000                           0x140  /**< Fixed-range MTRR Register for  4K at c8000. */
-#define VTD_MMIO_OFF_MTRR_FIXED_D0000                           0x148  /**< Fixed-range MTRR Register for  4K at d0000. */
-#define VTD_MMIO_OFF_MTRR_FIXED_D8000                           0x150  /**< Fixed-range MTRR Register for  4K at d8000. */
-#define VTD_MMIO_OFF_MTRR_FIXED_E0000                           0x158  /**< Fixed-range MTRR Register for  4K at e0000. */
-#define VTD_MMIO_OFF_MTRR_FIXED_E8000                           0x160  /**< Fixed-range MTRR Register for  4K at e8000. */
-#define VTD_MMIO_OFF_MTRR_FIXED_F0000                           0x168  /**< Fixed-range MTRR Register for  4K at f0000. */
-#define VTD_MMIO_OFF_MTRR_FIXED_F8000                           0x170  /**< Fixed-range MTRR Register for  4K at f8000. */
+#define VTD_MMIO_OFF_MTRR_FIX64_00000_REG                       0x120  /**< Fixed-range MTRR Register for 64K at 00000. */
+#define VTD_MMIO_OFF_MTRR_FIX16K_80000_REG                      0x128  /**< Fixed-range MTRR Register for 16K at 80000. */
+#define VTD_MMIO_OFF_MTRR_FIX16K_A0000_REG                      0x130  /**< Fixed-range MTRR Register for 16K at a0000. */
+#define VTD_MMIO_OFF_MTRR_FIX4K_C0000_REG                       0x138  /**< Fixed-range MTRR Register for  4K at c0000. */
+#define VTD_MMIO_OFF_MTRR_FIX4K_C8000_REG                       0x140  /**< Fixed-range MTRR Register for  4K at c8000. */
+#define VTD_MMIO_OFF_MTRR_FIX4K_D0000_REG                       0x148  /**< Fixed-range MTRR Register for  4K at d0000. */
+#define VTD_MMIO_OFF_MTRR_FIX4K_D8000_REG                       0x150  /**< Fixed-range MTRR Register for  4K at d8000. */
+#define VTD_MMIO_OFF_MTRR_FIX4K_E0000_REG                       0x158  /**< Fixed-range MTRR Register for  4K at e0000. */
+#define VTD_MMIO_OFF_MTRR_FIX4K_E8000_REG                       0x160  /**< Fixed-range MTRR Register for  4K at e8000. */
+#define VTD_MMIO_OFF_MTRR_FIX4K_F0000_REG                       0x168  /**< Fixed-range MTRR Register for  4K at f0000. */
+#define VTD_MMIO_OFF_MTRR_FIX4K_F8000_REG                       0x170  /**< Fixed-range MTRR Register for  4K at f8000. */
 
-#define VTD_MMIO_OFF_MTRR_VAR_BASE_0                            0x180  /**< Variable-range MTRR Base 0. */
-#define VTD_MMIO_OFF_MTRR_VAR_MASK_0                            0x188  /**< Variable-range MTRR Mask 0. */
-#define VTD_MMIO_OFF_MTRR_VAR_BASE_1                            0x190  /**< Variable-range MTRR Base 1. */
-#define VTD_MMIO_OFF_MTRR_VAR_MASK_1                            0x198  /**< Variable-range MTRR Mask 1. */
-#define VTD_MMIO_OFF_MTRR_VAR_BASE_2                            0x1a0  /**< Variable-range MTRR Base 2. */
-#define VTD_MMIO_OFF_MTRR_VAR_MASK_2                            0x1a8  /**< Variable-range MTRR Mask 2. */
-#define VTD_MMIO_OFF_MTRR_VAR_BASE_3                            0x1b0  /**< Variable-range MTRR Base 3. */
-#define VTD_MMIO_OFF_MTRR_VAR_MASK_3                            0x1b8  /**< Variable-range MTRR Mask 3. */
-#define VTD_MMIO_OFF_MTRR_VAR_BASE_4                            0x1c0  /**< Variable-range MTRR Base 4. */
-#define VTD_MMIO_OFF_MTRR_VAR_MASK_4                            0x1c8  /**< Variable-range MTRR Mask 4. */
-#define VTD_MMIO_OFF_MTRR_VAR_BASE_5                            0x1d0  /**< Variable-range MTRR Base 5. */
-#define VTD_MMIO_OFF_MTRR_VAR_MASK_5                            0x1d8  /**< Variable-range MTRR Mask 5. */
-#define VTD_MMIO_OFF_MTRR_VAR_BASE_6                            0x1e0  /**< Variable-range MTRR Base 6. */
-#define VTD_MMIO_OFF_MTRR_VAR_MASK_6                            0x1e8  /**< Variable-range MTRR Mask 6. */
-#define VTD_MMIO_OFF_MTRR_VAR_BASE_7                            0x1f0  /**< Variable-range MTRR Base 7. */
-#define VTD_MMIO_OFF_MTRR_VAR_MASK_7                            0x1f8  /**< Variable-range MTRR Mask 7. */
-#define VTD_MMIO_OFF_MTRR_VAR_BASE_8                            0x200  /**< Variable-range MTRR Base 8. */
-#define VTD_MMIO_OFF_MTRR_VAR_MASK_8                            0x208  /**< Variable-range MTRR Mask 8. */
-#define VTD_MMIO_OFF_MTRR_VAR_BASE_9                            0x210  /**< Variable-range MTRR Base 9. */
-#define VTD_MMIO_OFF_MTRR_VAR_MASK_9                            0x218  /**< Variable-range MTRR Mask 9. */
+#define VTD_MMIO_OFF_MTRR_PHYSBASE0_REG                         0x180  /**< Variable-range MTRR Base 0. */
+#define VTD_MMIO_OFF_MTRR_PHYSMASK0_REG                         0x188  /**< Variable-range MTRR Mask 0. */
+#define VTD_MMIO_OFF_MTRR_PHYSBASE1_REG                         0x190  /**< Variable-range MTRR Base 1. */
+#define VTD_MMIO_OFF_MTRR_PHYSMASK1_REG                         0x198  /**< Variable-range MTRR Mask 1. */
+#define VTD_MMIO_OFF_MTRR_PHYSBASE2_REG                         0x1a0  /**< Variable-range MTRR Base 2. */
+#define VTD_MMIO_OFF_MTRR_PHYSMASK2_REG                         0x1a8  /**< Variable-range MTRR Mask 2. */
+#define VTD_MMIO_OFF_MTRR_PHYSBASE3_REG                         0x1b0  /**< Variable-range MTRR Base 3. */
+#define VTD_MMIO_OFF_MTRR_PHYSMASK3_REG                         0x1b8  /**< Variable-range MTRR Mask 3. */
+#define VTD_MMIO_OFF_MTRR_PHYSBASE4_REG                         0x1c0  /**< Variable-range MTRR Base 4. */
+#define VTD_MMIO_OFF_MTRR_PHYSMASK4_REG                         0x1c8  /**< Variable-range MTRR Mask 4. */
+#define VTD_MMIO_OFF_MTRR_PHYSBASE5_REG                         0x1d0  /**< Variable-range MTRR Base 5. */
+#define VTD_MMIO_OFF_MTRR_PHYSMASK5_REG                         0x1d8  /**< Variable-range MTRR Mask 5. */
+#define VTD_MMIO_OFF_MTRR_PHYSBASE6_REG                         0x1e0  /**< Variable-range MTRR Base 6. */
+#define VTD_MMIO_OFF_MTRR_PHYSMASK6_REG                         0x1e8  /**< Variable-range MTRR Mask 6. */
+#define VTD_MMIO_OFF_MTRR_PHYSBASE7_REG                         0x1f0  /**< Variable-range MTRR Base 7. */
+#define VTD_MMIO_OFF_MTRR_PHYSMASK7_REG                         0x1f8  /**< Variable-range MTRR Mask 7. */
+#define VTD_MMIO_OFF_MTRR_PHYSBASE8_REG                         0x200  /**< Variable-range MTRR Base 8. */
+#define VTD_MMIO_OFF_MTRR_PHYSMASK8_REG                         0x208  /**< Variable-range MTRR Mask 8. */
+#define VTD_MMIO_OFF_MTRR_PHYSBASE9_REG                         0x210  /**< Variable-range MTRR Base 9. */
+#define VTD_MMIO_OFF_MTRR_PHYSMASK9_REG                         0x218  /**< Variable-range MTRR Mask 9. */
+#define VTD_MMIO_GROUP_0_OFF_LAST                               VTD_MMIO_OFF_MTRR_PHYSMASK9_REG
+#define VTD_MMIO_GROUP_0_OFF_END                                (VTD_MMIO_GROUP_0_OFF_LAST + 8 /* sizeof MTRR_PHYSMASK9_REG */)
 
-#define VTD_MMIO_OFF_VIRT_CMD_CAP                               0xe00  /**< Virtual Command Capability. */
-#define VTD_MMIO_OFF_VIRT_CMD                                   0xe10  /**< Virtual Command. */
-#define VTD_MMIO_OFF_VIRT_CMD_RESP                              0xe20  /**< Virtual Command Response. */
+#define VTD_MMIO_GROUP_1_OFF_FIRST                              0x000
+#define VTD_MMIO_OFF_VCCAP_REG                                  0xe00  /**< Virtual Command Capability. */
+#define VTD_MMIO_OFF_VCMD_REG                                   0xe10  /**< Virtual Command. */
+#define VTD_MMIO_OFF_VCRSP_REG                                  0xe20  /**< Virtual Command Response. */
+#define VTD_MMIO_GROUP_1_OFF_LAST                               VTD_MMIO_OFF_VCRSP_REG
+#define VTD_MMIO_GROUP_1_OFF_END                                (VTD_MMIO_GROUP_1_OFF_LAST + 8 /* sizeof VCRSP_REG */)
+
+#define VTD_MMIO_GROUP_0_SIZE                                   (VTD_MMIO_GROUP_0_OFF_END - VTD_MMIO_GROUP_0_OFF_FIRST) /*bytes*/
+#define VTD_MMIO_GROUP_1_SIZE                                   (VTD_MMIO_GROUP_1_OFF_END - VTD_MMIO_GROUP_1_OFF_FIRST) /*bytes*/
 /** @} */
 
 

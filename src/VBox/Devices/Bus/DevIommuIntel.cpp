@@ -35,8 +35,6 @@
 #define IOMMU_LOG_PFX                               "Intel-IOMMU"
 /** The current saved state version. */
 #define IOMMU_SAVED_STATE_VERSION                   1
-/** The IOMMU device instance magic. */
-#define IOMMU_MAGIC                                 0x10acce55
 
 
 /**
@@ -51,6 +49,11 @@ typedef struct IOMMU
 
     /** The MMIO handle. */
     IOMMMIOHANDLE               hMmio;
+
+    /** IOMMU registers (group 0). */
+    uint8_t                     abRegs0[VTD_MMIO_GROUP_0_SIZE];
+    /** IOMMU registers (group 1). */
+    uint8_t                     abRegs1[VTD_MMIO_GROUP_1_SIZE];
 } IOMMU;
 /** Pointer to the IOMMU device state. */
 typedef IOMMU *PIOMMU;
@@ -106,6 +109,27 @@ typedef const IOMMURC *CPIOMMURC;
 typedef CTX_SUFF(IOMMU)  IOMMUCC;
 /** Pointer to the IOMMU device state for the current context. */
 typedef CTX_SUFF(PIOMMU) PIOMMUCC;
+
+/**
+ * IOMMU register attributes.
+ */
+typedef struct IOMMUREGATTR
+{
+    /** Name of the register. */
+    const char   *pszName;
+    /** RW: Read/write mask. */
+    uint64_t      fRwMask;
+    /** RO: Read-only mask. */
+    uint64_t      fRoMask;
+    /** WO: Write-only mask. */
+    uint64_t      fWoMask;
+    /** RW1C: Read-only Status, Write-1-to-clear mask. */
+    uint64_t      fRw1cMask;
+} IOMMUREGATTR;
+/** Pointer to an IOMMU register attributes struct. */
+typedef IOMMUREGATTR *PIOMMUREGATTR;
+/** Pointer to a const IOMMU register attributes struct. */
+typedef IOMMUREGATTR const *PCIOMMUREGATTR;
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -215,7 +239,51 @@ static DECLCALLBACK(int) iommuIntelR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF3(pDevIns, iInstance, pCfg);
+    RT_NOREF(pCfg);
+
+    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
+    pThisR3->pDevInsR3 = pDevIns;
+
+    LogFlowFunc(("iInstance=%d\n", iInstance));
+    NOREF(iInstance);
+
+    /*
+     * Register the IOMMU with PDM.
+     */
+    PDMIOMMUREGR3 IommuReg;
+    RT_ZERO(IommuReg);
+    IommuReg.u32Version       = PDM_IOMMUREGCC_VERSION;
+    IommuReg.pfnMemAccess     = iommuIntelMemAccess;
+    IommuReg.pfnMemBulkAccess = iommuIntelMemBulkAccess;
+    IommuReg.pfnMsiRemap      = iommuIntelMsiRemap;
+    IommuReg.u32TheEnd        = PDM_IOMMUREGCC_VERSION;
+    int rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisR3->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to register ourselves as an IOMMU device"));
+    if (pThisR3->CTX_SUFF(pIommuHlp)->u32Version != PDM_IOMMUHLPR3_VERSION)
+        return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
+                                   N_("IOMMU helper version mismatch; got %#x expected %#x"),
+                                   pThisR3->CTX_SUFF(pIommuHlp)->u32Version, PDM_IOMMUHLPR3_VERSION);
+    if (pThisR3->CTX_SUFF(pIommuHlp)->u32TheEnd != PDM_IOMMUHLPR3_VERSION)
+        return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
+                                   N_("IOMMU helper end-version mismatch; got %#x expected %#x"),
+                                   pThisR3->CTX_SUFF(pIommuHlp)->u32TheEnd, PDM_IOMMUHLPR3_VERSION);
+    /*
+     * Use PDM's critical section (via helpers) for the IOMMU device.
+     */
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Initialize read-only PCI configuration space.
+     */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    /** @todo Figure out the PCI vendor/product and other stuff. Can't seem to find
+     *        this yet. Maybe dump info from real hw. */
+
     return VERR_NOT_IMPLEMENTED;
 }
 
