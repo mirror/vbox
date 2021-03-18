@@ -363,11 +363,14 @@ VBOX_INSTALL_LANG_LPROJ := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
 #
 
 VBOX_DI_VBAPP_PROGS_HARDENED = \
-	Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM \
 	MacOS/VBoxHeadless \
 	MacOS/VBoxNetDHCP \
 	MacOS/VBoxNetNAT \
 	MacOS/VBoxVMMPreload
+ifdef VBOX_WITH_QTGUI
+ VBOX_DI_VBAPP_PROGS_HARDENED += \
+ 	Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM
+endif
 
 VBOX_DI_VBAPP_PROGS = \
 	MacOS/VBoxManage \
@@ -379,8 +382,11 @@ VBOX_DI_VBAPP_PROGS = \
 	MacOS/VBoxBalloonCtrl \
 	MacOS/VBoxAutostart \
 	$(if $(VBOX_WITH_WEBSERVICES),MacOS/vboxwebsrv) \
-	MacOS/VirtualBox \
 	$(if $(VBOX_WITH_DTRACE),MacOS/VBoxDTrace,)
+ifdef VBOX_WITH_QTGUI
+ VBOX_DI_VBAPP_PROGS += \
+ 	MacOS/VirtualBox
+endif
 
 VBOX_DI_VBAPP_DYLIBS = \
 	MacOS/VBoxDD.dylib \
@@ -400,11 +406,14 @@ VBOX_DI_VBAPP_DYLIBS = \
 	MacOS/components/VBoxXPCOMIPCC.dylib \
 	MacOS/VBoxAuth.dylib \
 	MacOS/VBoxAuthSimple.dylib \
-	$(if $(VBOX_WITH_GUEST_CONTROL),MacOS/VBoxGuestControlSvc.dylib,) \
-	MacOS/UICommon.dylib
-ifneq ($(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/accessible/libqtaccessiblewidgets.dylib),)
+	$(if $(VBOX_WITH_GUEST_CONTROL),MacOS/VBoxGuestControlSvc.dylib,)
+ifdef VBOX_WITH_QTGUI
  VBOX_DI_VBAPP_DYLIBS += \
-	MacOS/accessible/libqtaccessiblewidgets.dylib
+ 	MacOS/UICommon.dylib
+ ifneq ($(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/accessible/libqtaccessiblewidgets.dylib),)
+  VBOX_DI_VBAPP_DYLIBS += \
+  	MacOS/accessible/libqtaccessiblewidgets.dylib
+ endif
 endif
 if defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL)
  VBOX_DI_VBAPP_DYLIBS += \
@@ -490,17 +499,20 @@ VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES = \
 	Resources/virtualbox-hdd.icns
 
 VBOX_DI_VBAPP_MISC_FILES = \
-	Info.plist \
-	PkgInfo \
        $(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES) \
 	MacOS/components/VBoxXPCOMBase.xpt \
 	MacOS/components/VirtualBox_XPCOM.xpt \
-	Resources/VirtualBoxVM.app/Contents/Info.plist \
-	Resources/VirtualBoxVM.app/Contents/PkgInfo \
-       $(addprefix Resources/VirtualBoxVM.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES)) \
 	Resources/vmstarter.app/Contents/Info.plist \
 	Resources/vmstarter.app/Contents/PkgInfo \
        $(addprefix Resources/vmstarter.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES))
+ifdef VBOX_WITH_QTGUI # Yeah, the output w/o the qt gui is a bit useless. But we just want it building now.
+ VBOX_DI_VBAPP_MISC_FILES += \
+ 	Info.plist \
+ 	PkgInfo \
+ 	Resources/VirtualBoxVM.app/Contents/Info.plist \
+ 	Resources/VirtualBoxVM.app/Contents/PkgInfo \
+ 	$(addprefix Resources/VirtualBoxVM.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES))
+endif
 ifdef VBOX_WITH_DOCS_PACKING
 VBOX_DI_VBAPP_MISC_FILES += \
 	MacOS/UserManual.pdf
