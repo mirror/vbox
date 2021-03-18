@@ -383,7 +383,6 @@ VBOX_DI_VBAPP_PROGS = \
 	$(if $(VBOX_WITH_DTRACE),MacOS/VBoxDTrace,)
 
 VBOX_DI_VBAPP_DYLIBS = \
-	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod)) \
 	MacOS/VBoxDD.dylib \
 	MacOS/VBoxDD2.dylib \
 	MacOS/VBoxDDU.dylib \
@@ -521,6 +520,7 @@ VBOX_DI_VBAPP_SYMLINKS = \
 	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/
 ifdef VBOX_WITH_QTGUI
  VBOX_DI_VBAPP_DYLIBS += \
+	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod)) \
  	plugins/platforms/libqcocoa$(SUFF_DLL) \
  	plugins/platforms/libqminimal$(SUFF_DLL) \
  	plugins/platforms/libqoffscreen$(SUFF_DLL) \
@@ -707,10 +707,12 @@ ifdef VBOX_WITH_DTRACE
 endif
 	@# Sign the binaries and the application bundle.
 ifdef VBOX_SIGNING_MODE
+ ifdef VBOX_WITH_QTGUI
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod),org.virtualbox.app.frameworks.$(qtmod)) )
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 		,$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR),org.virtualbox.app.frameworks.$(qtmod)) )
+ endif
 	$(foreach dylib, \
 		$(VBOX_DI_VBAPP_DYLIBS) \
 		$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
