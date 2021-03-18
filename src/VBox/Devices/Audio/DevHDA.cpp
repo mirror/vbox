@@ -58,7 +58,6 @@
 #include "HDACodec.h"
 #include "HDAStream.h"
 #include "HDAStreamMap.h"
-#include "HDAStreamPeriod.h"
 
 #include "DrvAudio.h"
 
@@ -530,16 +529,6 @@ static SSMFIELD const g_aSSMStreamStateFields7[] =
     SSMFIELD_ENTRY_OLD(uCurBDLEHi, sizeof(uint8_t)),    /* uCurBDLE was 16-bit for some reason, so store/ignore the zero top byte. */
     SSMFIELD_ENTRY(HDASTREAMSTATE, fInReset),
     SSMFIELD_ENTRY(HDASTREAMSTATE, tsTransferNext),
-    SSMFIELD_ENTRY_TERM()
-};
-
-/** HDASTREAMPERIOD field descriptors for the v7 saved state. */
-static SSMFIELD const g_aSSMStreamPeriodFields7[] =
-{
-    SSMFIELD_ENTRY(HDASTREAMPERIOD, u64StartWalClk),
-    SSMFIELD_ENTRY(HDASTREAMPERIOD, u64ElapsedWalClk),
-    SSMFIELD_ENTRY(HDASTREAMPERIOD, cFramesTransferred),
-    SSMFIELD_ENTRY_OLD(cIntPending, sizeof(uint8_t)),   /** @todo Not sure what we should for non-zero values on restore... ignoring it for now.  */
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -1153,13 +1142,71 @@ static VBOXSTRICTRC hdaRegReadLPIB(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
     return VINF_SUCCESS;
 }
 
+/**
+ * Gets the wall clock.
+ *
+ * Used by hdaRegReadWALCLK() and 'info hda'.
+ *
+ * @returns The full wall clock value
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The shared HDA device state.
+ */
+static uint64_t hdaGetWallClock(PPDMDEVINS pDevIns, PHDASTATE pThis)
+{
+    /*
+     * The wall clock is calculated from the virtual sync clock.  Since
+     * the clock is supposed to reset to zero on controller reset, a
+     * start offset is subtracted.
+     *
+     * In addition, we hold the clock back when there are active DMA engines
+     * so that the guest won't conclude we've gotten further in the buffer
+     * processing than what we really have. (We generally read a whole buffer
+     * at once when the IOC is due, so we're a lot later than what real
+     * hardware would be in reading/writing the buffers.)
+     *
+     * Here are some old notes from the DMA engine that might be useful even
+     * if a little dated:
+     *
+     * Note 1) Only certain guests (like Linux' snd_hda_intel) rely on the WALCLK register
+     *         in order to determine the correct timing of the sound device. Other guests
+     *         like Windows 7 + 10 (or even more exotic ones like Haiku) will completely
+     *         ignore this.
+     *
+     * Note 2) When updating the WALCLK register too often / early (or even in a non-monotonic
+     *         fashion) this *will* upset guest device drivers and will completely fuck up the
+     *         sound output. Running VLC on the guest will tell!
+     */
+    uint64_t const uFreq    = PDMDevHlpTimerGetFreq(pDevIns, pThis->aStreams[0].hTimer);
+    Assert(uFreq <= UINT32_MAX);
+    uint64_t const tsStart  = 0; /** @todo pThis->tsWallClkStart (as it is reset on controller reset) */
+    uint64_t const tsNow    = PDMDevHlpTimerGet(pDevIns, pThis->aStreams[0].hTimer);
+
+    /* Find the oldest DMA transfer timestamp from the active streams. */
+    int            iDmaNow  = -1;
+    uint64_t       tsDmaNow = tsNow;
+    for (size_t i = 0; i < RT_ELEMENTS(pThis->aStreams); i++)
+        if (   pThis->aStreams[i].State.fRunning
+            && pThis->aStreams[i].State.tsTransferLast < tsDmaNow
+            && pThis->aStreams[i].State.tsTransferLast > tsStart)
+        {
+            tsDmaNow = pThis->aStreams[i].State.tsTransferLast;
+            iDmaNow  = (int)i;
+        }
+
+    /* Convert it to wall clock ticks. */
+    uint64_t const uWallClkNow = ASMMultU64ByU32DivByU32(tsDmaNow - tsStart,
+                                                         24000000 /*Wall clock frequency */,
+                                                         uFreq);
+    Log3Func(("Returning %#RX64 - tsNow=%#RX64 tsDmaNow=%#RX64 (%d) -> %#RX64\n",
+              uWallClkNow, tsNow, tsDmaNow, iDmaNow, tsNow - tsDmaNow));
+    RT_NOREF(iDmaNow);
+    return uWallClkNow;
+}
+
 static VBOXSTRICTRC hdaRegReadWALCLK(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF(pDevIns, iReg);
-
-    const uint64_t u64WalClkCur = ASMAtomicReadU64(&pThis->u64WalClk);
-    *pu32Value = RT_LO_U32(u64WalClkCur);
-
+    *pu32Value = (uint32_t)hdaGetWallClock(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
@@ -1430,15 +1477,6 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                     /* Keep track of running streams. */
                     pThisCC->cStreamsActive++;
 
-                    /* (Re-)init the stream's period. */
-                    hdaR3StreamPeriodInit(&pStreamShared->State.Period, uSD, pStreamShared->u16LVI,
-                                          pStreamShared->u32CBL, &pStreamShared->State.Cfg);
-
-                    /* Begin a new period for this stream. */
-                    rc2 = hdaR3StreamPeriodBegin(&pStreamShared->State.Period,
-                                                 hdaWalClkGetCurrent(pThis) /* Use current wall clock time */);
-                    AssertRC(rc2);
-
                     /** @todo move this into a HDAStream.cpp function. */
                     uint64_t tsNow;
                     if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
@@ -1451,11 +1489,14 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                     {
                         /* Input streams: Arm the timer and kick the AIO thread. */
                         tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
+                        pStreamShared->State.tsTransferLast = tsNow; /* for WALCLK */
+
                         uint64_t tsTransferNext = tsNow + pStreamShared->State.aSchedule[0].cPeriodTicks;
                         pStreamShared->State.tsTransferNext = tsTransferNext; /* legacy */
                         pStreamShared->State.cbTransferSize = pStreamShared->State.aSchedule[0].cbPeriod;
                         Log3Func(("[SD%RU8] tsTransferNext=%RU64 (in %RU64)\n",
                                   pStreamShared->u8SD, tsTransferNext, tsTransferNext - tsNow));
+
                         int rc = PDMDevHlpTimerSet(pDevIns, pStreamShared->hTimer, tsTransferNext);
                         AssertRC(rc);
 
@@ -1470,9 +1511,6 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                     Assert(pThisCC->cStreamsActive);
                     if (pThisCC->cStreamsActive)
                         pThisCC->cStreamsActive--;
-
-                    /* Reset the period. */
-                    hdaR3StreamPeriodReset(&pStreamShared->State.Period);
 
                     hdaR3StreamMarkStopped(pStreamShared);
                 }
@@ -2917,6 +2955,9 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
     /* Emulation of codec "wake up" (HDA spec 5.5.1 and 6.5). */
     HDA_REG(pThis, STATESTS) = 0x1;
 
+    /* Reset the wall clock. */
+    pThis->tsWalClkStart = PDMDevHlpTimerGet(pDevIns, pThis->aStreams[0].hTimer);
+
     LogFlowFuncLeave();
     LogRel(("HDA: Reset\n"));
 }
@@ -3401,10 +3442,6 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
     rc = pHlp->pfnSSMPutStructEx(pSSM, &TmpState, sizeof(TmpState), 0 /*fFlags*/,  g_aSSMBDLEStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
-    rc = pHlp->pfnSSMPutStructEx(pSSM, &pStreamShared->State.Period, sizeof(pStreamShared->State.Period),
-                                 0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
-    AssertRCReturn(rc, rc);
-
     uint32_t cbCircBufSize = 0;
     uint32_t cbCircBufUsed = 0;
 
@@ -3474,7 +3511,7 @@ static DECLCALLBACK(int) hdaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
 
     /* Save controller-specifc internals. */
-    pHlp->pfnSSMPutU64(pSSM, pThis->u64WalClk);
+    pHlp->pfnSSMPutU64(pSSM, pThis->tsWalClkStart);
     pHlp->pfnSSMPutU8(pSSM, pThis->u8IRQL);
 
     /* Save number of streams. */
@@ -3525,9 +3562,6 @@ static int hdaR3LoadExecTail(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pT
             /* ... and enabling it. */
             hdaR3StreamAsyncIOEnable(pStreamR3, true /* fEnable */);
 #endif
-            /* Resume the stream's period. */
-            hdaR3StreamPeriodResume(&pStreamShared->State.Period);
-
             /* (Re-)enable the stream. */
             rc2 = hdaR3StreamEnable(pStreamShared, pStreamR3, true /* fEnable */);
             AssertRC(rc2);
@@ -3909,9 +3943,20 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     if (   pHlp->pfnSSMHandleRevision(pSSM) >= 116273
         || pHlp->pfnSSMHandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 2, 0))
     {
-        pHlp->pfnSSMGetU64(pSSM, &pThis->u64WalClk);
+        pHlp->pfnSSMGetU64(pSSM, &pThis->tsWalClkStart); /* Was current wall clock */
         rc = pHlp->pfnSSMGetU8(pSSM, &pThis->u8IRQL);
         AssertRCReturn(rc, rc);
+
+        /* Convert the saved wall clock timestamp to a start timestamp. */
+        if (uVersion < HDA_SAVED_STATE_WITHOUT_PERIOD && pThis->tsWalClkStart != 0)
+        {
+            uint64_t const cTimerTicksPerSec = PDMDevHlpTimerGetFreq(pDevIns, pThis->aStreams[0].hTimer);
+            AssertLogRel(cTimerTicksPerSec <= UINT32_MAX);
+            pThis->tsWalClkStart = ASMMultU64ByU32DivByU32(pThis->tsWalClkStart,
+                                                           cTimerTicksPerSec,
+                                                           24000000 /* wall clock freq */);
+            pThis->tsWalClkStart = PDMDevHlpTimerGet(pDevIns, pThis->aStreams[0].hTimer) - pThis->tsWalClkStart;
+        }
     }
 
     /*
@@ -3974,12 +4019,20 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         /*
          * Load period state.
          */
-        hdaR3StreamPeriodInit(&pStreamShared->State.Period, pStreamShared->u8SD, pStreamShared->u16LVI,
-                              pStreamShared->u32CBL, &pStreamShared->State.Cfg);
-
-        rc = pHlp->pfnSSMGetStructEx(pSSM, &pStreamShared->State.Period, sizeof(pStreamShared->State.Period),
-                                     0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
-        AssertRCReturn(rc, rc);
+        if (uVersion <= HDA_SAVED_STATE_WITHOUT_PERIOD)
+        {
+            static SSMFIELD const s_aSSMStreamPeriodFields7[] = /* For the removed HDASTREAMPERIOD structure. */
+            {
+                SSMFIELD_ENTRY_OLD(u64StartWalClk,     sizeof(uint64_t)),
+                SSMFIELD_ENTRY_OLD(u64ElapsedWalClk,   sizeof(uint64_t)),
+                SSMFIELD_ENTRY_OLD(cFramesTransferred, sizeof(uint32_t)),
+                SSMFIELD_ENTRY_OLD(cIntPending, sizeof(uint8_t)),   /** @todo Not sure what we should for non-zero values on restore... ignoring it for now.  */
+                SSMFIELD_ENTRY_TERM()
+            };
+            uint8_t bWhatever = 0;
+            rc = pHlp->pfnSSMGetStructEx(pSSM, &bWhatever, sizeof(bWhatever), 0 /* fFlags */, s_aSSMStreamPeriodFields7, NULL);
+            AssertRCReturn(rc, rc);
+        }
 
         /*
          * Load internal (FIFO) buffer.
@@ -4136,13 +4189,13 @@ static int hdaR3DbgLookupRegByName(const char *pszArgs)
 }
 
 /** Worker for hdaR3DbgInfo.  */
-static void hdaR3DbgPrintRegister(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iHdaIndex)
+static void hdaR3DbgPrintRegister(PPDMDEVINS pDevIns, PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iHdaIndex)
 {
     /** @todo HDA_REG_IDX_NOMEM & GCAP both uses mem_idx zero, no flag or anything to tell them appart. */
     if (g_aHdaRegMap[iHdaIndex].mem_idx != 0 || g_aHdaRegMap[iHdaIndex].pfnRead != hdaRegReadWALCLK)
         pHlp->pfnPrintf(pHlp, "%s: 0x%x\n", g_aHdaRegMap[iHdaIndex].abbrev, pThis->au32Regs[g_aHdaRegMap[iHdaIndex].mem_idx]);
     else
-        pHlp->pfnPrintf(pHlp, "%s: 0x%RX64\n", g_aHdaRegMap[iHdaIndex].abbrev, pThis->u64WalClk);
+        pHlp->pfnPrintf(pHlp, "%s: 0x%RX64\n", g_aHdaRegMap[iHdaIndex].abbrev, hdaGetWallClock(pDevIns, pThis));
 }
 
 /**
@@ -4153,10 +4206,10 @@ static DECLCALLBACK(void) hdaR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     int idxReg = hdaR3DbgLookupRegByName(pszArgs);
     if (idxReg != -1)
-        hdaR3DbgPrintRegister(pThis, pHlp, idxReg);
+        hdaR3DbgPrintRegister(pDevIns, pThis, pHlp, idxReg);
     else
         for (idxReg = 0; idxReg < HDA_NUM_REGS; ++idxReg)
-            hdaR3DbgPrintRegister(pThis, pHlp, idxReg);
+            hdaR3DbgPrintRegister(pDevIns, pThis, pHlp, idxReg);
 }
 
 /** Worker for hdaR3DbgInfoStream.    */
@@ -5030,8 +5083,9 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertCompile(RT_ELEMENTS(s_apszNames) == HDA_MAX_STREAMS);
     for (size_t i = 0; i < HDA_MAX_STREAMS; i++)
     {
+        /* We need the first timer in ring-0 to calculate the wall clock (WALCLK) time. */
         rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaR3Timer, (void *)(uintptr_t)i,
-                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
+                                  TMTIMER_FLAGS_NO_CRIT_SECT | (i == 0 ? TMTIMER_FLAGS_RING0 : TMTIMER_FLAGS_NO_RING0),
                                   s_apszNames[i], &pThis->aStreams[i].hTimer);
         AssertRCReturn(rc, rc);
 

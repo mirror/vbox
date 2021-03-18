@@ -86,9 +86,6 @@ int hdaR3StreamConstruct(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PHDAS
     AssertRCReturn(rc, rc);
 #endif
 
-    rc = hdaR3StreamPeriodCreate(&pStreamShared->State.Period);
-    AssertRCReturn(rc, rc);
-
 #ifdef DEBUG
     rc = RTCritSectInit(&pStreamR3->Dbg.CritSect);
     AssertRCReturn(rc, rc);
@@ -194,8 +191,6 @@ void hdaR3StreamDestroy(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
         RTCircBufDestroy(pStreamR3->State.pCircBuf);
         pStreamR3->State.pCircBuf = NULL;
     }
-
-    hdaR3StreamPeriodDestroy(&pStreamShared->State.Period);
 
 #ifdef DEBUG
     if (RTCritSectIsInitialized(&pStreamR3->Dbg.CritSect))
@@ -851,9 +846,6 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     pStreamR3->State.offWrite = 0;
     pStreamR3->State.offRead  = 0;
 
-    /* Reset the stream's period. */
-    hdaR3StreamPeriodReset(&pStreamShared->State.Period);
-
 #ifdef DEBUG
     pStreamR3->Dbg.cReadsTotal      = 0;
     pStreamR3->Dbg.cbReadTotal      = 0;
@@ -935,6 +927,8 @@ int hdaR3StreamEnable(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fEn
 
     if (RT_SUCCESS(rc))
     {
+        if (fEnable)
+            pStreamShared->State.tsTransferLast = 0; /* Make sure it's not stale and messes up WALCLK calculations. */
         pStreamShared->State.fRunning = fEnable;
     }
 
@@ -1056,6 +1050,19 @@ static uint32_t hdaR3StreamGetFree(PHDASTREAMR3 pStreamR3)
 }
 
 /**
+ * Converts frame count to wall clock ticks (WALCLK).
+ *
+ * @returns Wall clock ticks.
+ * @param   pStream     The stream to do the conversion for.
+ * @param   cFrames     Number of audio frames.
+ */
+DECLINLINE(uint64_t) hdaR3StreamFramesToWalClk(PHDASTREAM pStreamShared, uint32_t cFrames)
+{
+    const uint32_t uHz = RT_MAX(pStreamShared->State.Cfg.Props.uHz, 1 /* prevent div/0 */);
+    return ASMMultU32ByU32DivByU32(cFrames, 24000000 /* 24 MHz wall clock (WALCLK). */ , uHz);
+}
+
+/**
  * Get the current address and number of bytes left in the current BDLE.
  *
  * @returns The current physical address.
@@ -1150,7 +1157,7 @@ DECLINLINE(void) hdaR3StreamDmaBufAdvanceToNext(PHDASTREAM pStreamShared)
  * @param   tsNowNs         The current RTTimeNano() value.
  * @param   pszFunction     The function name (for logging).
  */
-DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, uint8_t uSD,
+DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PHDASTATE pThis, PHDASTREAM pStreamShared, uint8_t uSD,
                                           uint64_t tsNowNs, const char *pszFunction)
 {
     RT_NOREF(uSD, pszFunction);
@@ -1198,7 +1205,6 @@ DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PPDMDEVINS pDevIns, PHDASTATE pThis, P
     /*const uint64_t tsNowNs = RTTimeNanoTS();*/
     Log3(("%s: [SD%RU8] tsDeltaNs=%'RU64 ns\n", pszFunction, uSD, tsNowNs - pStreamShared->State.tsLastTransferNs));
     pStreamShared->State.tsLastTransferNs = tsNowNs;
-    pStreamShared->State.tsTransferLast   = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
 
     /*
      * Set the FIFORDY bit on the stream while doing the transfer.
@@ -1216,12 +1222,11 @@ DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PPDMDEVINS pDevIns, PHDASTATE pThis, P
 /**
  * Common do-DMA epilogue.
  *
+ * @param   pDevIns         The device instance.
  * @param   pThis           The shared HDA device state.
- * @param   pThisCC         The ring-3 HDA device state.
  * @param   pStreamShared   HDA stream to update (shared).
- * @param   cbProcessed     The number of bytes processed.
  */
-DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamShared, uint32_t cbProcessed)
+DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared)
 {
     /*
      * Clear the (pointless) FIFORDY bit again.
@@ -1229,27 +1234,12 @@ DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PHDASTATE pThis, PHDASTATER3 pThisCC, 
     HDA_STREAM_REG(pThis, STS, pStreamShared->u8SD) &= ~HDA_SDSTS_FIFORDY;
 
     /*
-     * Try updating the wall clock.
-     *
-     * Note 1) Only certain guests (like Linux' snd_hda_intel) rely on the WALCLK register
-     *         in order to determine the correct timing of the sound device. Other guests
-     *         like Windows 7 + 10 (or even more exotic ones like Haiku) will completely
-     *         ignore this.
-     *
-     * Note 2) When updating the WALCLK register too often / early (or even in a non-monotonic
-     *         fashion) this *will* upset guest device drivers and will completely fuck up the
-     *         sound output. Running VLC on the guest will tell!
+     * We must update this in the epilogue rather than in the prologue
+     * as it is used for WALCLK calculation and we must make sure the
+     * guest doesn't think we've processed the current period till we
+     * actually have.
      */
-    uint32_t const cFramesProcessed = PDMAudioPropsBytesToFrames(&pStreamShared->State.Cfg.Props, cbProcessed);
-    /** @todo this needs to go, but we need it for hdaR3WalClkGetMax below. */
-    hdaR3StreamPeriodInc(&pStreamShared->State.Period,
-                         RT_MIN(cFramesProcessed, hdaR3StreamPeriodGetRemainingFrames(&pStreamShared->State.Period)));
-
-    uint64_t const cWallTicks = hdaR3StreamPeriodFramesToWalClk(&pStreamShared->State.Period, cFramesProcessed);
-    uint64_t const uWallNew   = hdaWalClkGetCurrent(pThis) + cWallTicks;
-    uint64_t const uWallMax   = hdaR3WalClkGetMax(pThis, pThisCC);
-    bool const     fWalClkSet = hdaR3WalClkSet(pThis, pThisCC, RT_MIN(uWallNew, uWallMax), false /* fForce */);
-    RT_NOREF(fWalClkSet);
+    pStreamShared->State.tsTransferLast = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer);
 }
 
 /**
@@ -1257,13 +1247,11 @@ DECLINLINE(void) hdaR3StreamDoDmaEpilogue(PHDASTATE pThis, PHDASTATER3 pThisCC, 
  *
  * @param   pDevIns         The device instance.
  * @param   pThis           The shared HDA device state.
- * @param   pThisCC         The ring-3 HDA device state.
  * @param   pStreamShared   HDA stream to update (shared).
- * @param   pStreamR3       HDA stream to update (ring-3).
  * @param   pszFunction     The function name (for logging).
  */
-DECLINLINE(void) hdaR3StreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
-                                                     PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, const char *pszFunction)
+DECLINLINE(void) hdaR3StreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTATE pThis,
+                                                     PHDASTREAM pStreamShared, const char *pszFunction)
 {
     RT_NOREF(pszFunction);
 
@@ -1276,16 +1264,6 @@ DECLINLINE(void) hdaR3StreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTA
               pStreamShared->State.idxCurBdle, pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].GCPhys,
               pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].cb,
               pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].fFlags));
-
-        /* Make sure to also update the wall clock when a BDLE is complete.
-         * Needed for Windows 10 guests. */
-        /** @todo there is a rounding error here.   */
-        hdaR3WalClkSet(pThis, pThisCC,
-                         hdaWalClkGetCurrent(pThis)
-                       + hdaR3StreamPeriodFramesToWalClk(&pStreamShared->State.Period,
-                                                           hdaR3StreamDmaBufGetSize(pStreamShared)
-                                                         / pStreamR3->State.Mapping.cbGuestFrame),
-                       false /* fForce */);
 
         /*
          * Update the stream's current position.
@@ -1337,7 +1315,6 @@ DECLINLINE(void) hdaR3StreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTA
  *
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared HDA device state.
- * @param   pThisCC             The ring-3 HDA device state.
  * @param   pStreamShared       HDA stream to update (shared).
  * @param   pStreamR3           HDA stream to update (ring-3).
  * @param   cbToConsume         The max amount of data to consume from the
@@ -1353,7 +1330,7 @@ DECLINLINE(void) hdaR3StreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTA
  *
  * @remarks Caller owns the stream lock.
  */
-static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamShared,
+static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared,
                                   PHDASTREAMR3 pStreamR3, uint32_t cbToConsume, bool fWriteSilence, uint64_t tsNowNs)
 {
     uint8_t const uSD = pStreamShared->u8SD;
@@ -1362,7 +1339,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
     /*
      * Common prologue.
      */
-    if (hdaR3StreamDoDmaPrologue(pDevIns, pThis, pStreamShared, uSD, tsNowNs, "hdaR3StreamDoDmaInput"))
+    if (hdaR3StreamDoDmaPrologue(pThis, pStreamShared, uSD, tsNowNs, "hdaR3StreamDoDmaInput"))
     { /* likely */ }
     else
         return;
@@ -1535,7 +1512,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
         /*
          * Complete the buffer if necessary (common with the output DMA code).
          */
-        hdaR3StreamDoDmaMaybeCompleteBuffer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, "hdaR3StreamDoDmaInput");
+        hdaR3StreamDoDmaMaybeCompleteBuffer(pDevIns, pThis, pStreamShared, "hdaR3StreamDoDmaInput");
     }
 
     Assert(cbLeft == 0); /* There shall be no break statements in the above loop, so cbLeft is always zero here! */
@@ -1544,7 +1521,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATE
     /*
      * Common epilogue.
      */
-    hdaR3StreamDoDmaEpilogue(pThis, pThisCC, pStreamShared, cbToConsume);
+    hdaR3StreamDoDmaEpilogue(pDevIns, pThis, pStreamShared);
 
     /*
      * Log and leave.
@@ -1637,7 +1614,6 @@ static void hdaR3StreamPullFromMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStr
  *
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared HDA device state.
- * @param   pThisCC             The ring-3 HDA device state.
  * @param   pStreamShared       HDA stream to update (shared).
  * @param   pStreamR3           HDA stream to update (ring-3).
  * @param   cbToProduce         The max amount of data to produce (i.e. put into
@@ -1648,7 +1624,7 @@ static void hdaR3StreamPullFromMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStr
  *
  * @remarks Caller owns the stream lock.
  */
-static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamShared,
+static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared,
                                    PHDASTREAMR3 pStreamR3, uint32_t cbToProduce, uint64_t tsNowNs)
 {
     uint8_t const uSD = pStreamShared->u8SD;
@@ -1657,7 +1633,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTAT
     /*
      * Common prologue.
      */
-    if (hdaR3StreamDoDmaPrologue(pDevIns, pThis, pStreamShared, uSD, tsNowNs, "hdaR3StreamDoDmaOutput"))
+    if (hdaR3StreamDoDmaPrologue(pThis, pStreamShared, uSD, tsNowNs, "hdaR3StreamDoDmaOutput"))
     { /* likely */ }
     else
         return;
@@ -1820,7 +1796,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTAT
         /*
          * Complete the buffer if necessary (common with the output DMA code).
          */
-        hdaR3StreamDoDmaMaybeCompleteBuffer(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, "hdaR3StreamDoDmaOutput");
+        hdaR3StreamDoDmaMaybeCompleteBuffer(pDevIns, pThis, pStreamShared, "hdaR3StreamDoDmaOutput");
     }
 
     Assert(cbLeft == 0); /* There shall be no break statements in the above loop, so cbLeft is always zero here! */
@@ -1829,7 +1805,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTAT
     /*
      * Common epilogue.
      */
-    hdaR3StreamDoDmaEpilogue(pThis, pThisCC, pStreamShared, cbToProduce);
+    hdaR3StreamDoDmaEpilogue(pDevIns, pThis, pStreamShared);
 
     /*
      * Log and leave.
@@ -1990,6 +1966,7 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
 void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                        PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, bool fInTimer)
 {
+    RT_NOREF(pThisCC);
     int rc2;
 
     /*
@@ -2080,7 +2057,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
 # endif
 
             uint64_t const offWriteBefore = pStreamR3->State.offWrite;
-            hdaR3StreamDoDmaOutput(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3, RT_MIN(cbStreamFree, cbPeriod), tsNowNs);
+            hdaR3StreamDoDmaOutput(pDevIns, pThis, pStreamShared, pStreamR3, RT_MIN(cbStreamFree, cbPeriod), tsNowNs);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             rc2 = PDMDevHlpCritSectLeave(pDevIns, &pStreamShared->CritSect);
@@ -2278,7 +2255,7 @@ void hdaR3StreamUpdate(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
                 AssertRC(rc2);
 # endif
 
-                hdaR3StreamDoDmaInput(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3,
+                hdaR3StreamDoDmaInput(pDevIns, pThis, pStreamShared, pStreamR3,
                                       RT_MIN(cbStreamUsed, cbPeriod), fWriteSilence, tsNowNs);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO

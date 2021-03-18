@@ -594,16 +594,6 @@ void          hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis);
 uint8_t       hdaSDFIFOWToBytes(uint16_t u16RegFIFOW);
 /** @} */
 
-/** @name Wall clock (WALCLK) functions.
- * @{
- */
-uint64_t      hdaWalClkGetCurrent(PHDASTATE pThis);
-#ifdef IN_RING3
-uint64_t      hdaR3WalClkGetMax(PHDASTATE pThis, PHDASTATER3 pThisCC);
-bool          hdaR3WalClkSet(PHDASTATE pThis, PHDASTATER3 pThisCC, uint64_t u64WalClk, bool fForce);
-#endif
-/** @} */
-
 /** @name Register functions.
  * @{
  */

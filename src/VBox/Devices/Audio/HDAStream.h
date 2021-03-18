@@ -23,7 +23,6 @@
 
 #include "DevHDACommon.h"
 #include "HDAStreamMap.h"
-#include "HDAStreamPeriod.h"
 
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -133,8 +132,9 @@ typedef struct HDASTREAMSTATE
     /** Input streams only: The number of bytes we need to prebuffer. */
     uint32_t                cbInputPreBuffer;
     uint32_t                u32Padding2;
-    /** Timestamp (absolute, in timer ticks) of the last DMA data transfer. */
-    uint64_t                tsTransferLast;
+    /** Timestamp (absolute, in timer ticks) of the last DMA data transfer.
+     * @note This is used for wall clock (WALCLK) calculations.  */
+    uint64_t volatile       tsTransferLast;
     /** Timestamp (absolute, in timer ticks) of the next DMA data transfer.
      *  Next for determining the next scheduling window.
      *  Can be 0 if no next transfer is scheduled. */
@@ -144,8 +144,6 @@ typedef struct HDASTREAMSTATE
     uint32_t                cbTransferSize;
     /** The size of an average transfer. */
     uint32_t                cbAvgTransfer;
-    /** The stream's period. Need for timing. */
-    HDASTREAMPERIOD         Period;
     /** The stream's current host side configuration.
      * This should match the SDnFMT in all respects but maybe the channel count as
      * we may need to expand mono or into/from into stereo.  The unmodified SDnFMT
@@ -163,8 +161,6 @@ typedef struct HDASTREAMSTATE
     uint64_t                tsAioDelayEnd;
     /** The start time for the playback (on the timer clock). */
     uint64_t                tsStart;
-
-    uint64_t                au64Padding[3];
 
     /** @name DMA engine
      * @{ */
@@ -216,6 +212,7 @@ typedef struct HDASTREAMSTATE
     /** @} */
 } HDASTREAMSTATE;
 AssertCompileSizeAlignment(HDASTREAMSTATE, 8);
+AssertCompileMemberAlignment(HDASTREAMSTATE, aBdl, 8);
 AssertCompileMemberAlignment(HDASTREAMSTATE, aBdl, 16);
 AssertCompileMemberAlignment(HDASTREAMSTATE, aSchedule, 16);
 
@@ -272,7 +269,7 @@ typedef struct HDASTREAM
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     /** Pad the structure size to a 64 byte alignment. */
-    uint64_t                    au64Padding1[2];
+    uint64_t                    au64Padding1[4];
     /** Critical section for serialize access to the stream state between the async
      * I/O thread and (basically) the guest. */
     PDMCRITSECT                 CritSect;

@@ -984,6 +984,11 @@ void hdaCodecReset(PHDACODEC pThis);
 
 /** @name DevHDA saved state versions
  * @{ */
+/** The current staved state version. */
+#define HDA_SAVED_STATE_VERSION  HDA_SAVED_STATE_WITHOUT_PERIOD
+
+/** Removed period and redefined wall clock. */
+#define HDA_SAVED_STATE_WITHOUT_PERIOD 8
 /** Added (Controller):              Current wall clock value (this independent from WALCLK register value).
   * Added (Controller):              Current IRQ level.
   * Added (Per stream):              Ring buffer. This is optional and can be skipped if (not) needed.
@@ -991,7 +996,7 @@ void hdaCodecReset(PHDACODEC pThis);
   * Added (Per stream):              Struct g_aSSMStreamPeriodFields7.
   * Added (Current BDLE per stream): Struct g_aSSMBDLEDescFields7.
   * Added (Current BDLE per stream): Struct g_aSSMBDLEStateFields7. */
-#define HDA_SAVED_STATE_VERSION   7
+#define HDA_SAVED_STATE_VERSION_7 7
 /** Saves the current BDLE state.
  * @since 5.0.14 (r104839) */
 #define HDA_SAVED_STATE_VERSION_6 6

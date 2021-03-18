@@ -637,7 +637,6 @@ endif
 	Audio/HDAStream.cpp \
 	Audio/HDAStreamChannel.cpp \
 	Audio/HDAStreamMap.cpp \
-	Audio/HDAStreamPeriod.cpp \
 	Audio/AudioMixBuffer.cpp \
 	Audio/AudioMixer.cpp \
 	Audio/DrvAudio.cpp \

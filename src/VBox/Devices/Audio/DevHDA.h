@@ -30,7 +30,6 @@
 #include "HDACodec.h"
 #include "HDAStream.h"
 #include "HDAStreamMap.h"
-#include "HDAStreamPeriod.h"
 
 #ifdef DEBUG_andy
 /** Enables strict mode, which checks for stuff which isn't supposed to happen.
@@ -118,15 +117,6 @@ typedef struct HDASTATE
     bool                    fDMAPosition;
     /** Current IRQ level. */
     uint8_t                 u8IRQL;
-#ifdef VBOX_STRICT
-    /** Wall clock (WALCLK) stale count.
-     *  This indicates the number of set wall clock values which did not actually
-     *  move the counter forward (stale). */
-    uint8_t                 u8WalClkStaleCnt;
-#else
-    uint8_t                 bPadding1;
-#endif
-    uint8_t                 bPadding2;
     /** The device timer Hz rate. Defaults to HDA_TIMER_HZ_DEFAULT. */
     uint16_t                uTimerHz;
     /** Number of milliseconds to delay kicking off the AIO when a stream starts.
@@ -138,9 +128,8 @@ typedef struct HDASTATE
     /** Buffer size (in ms) of the internal output FIFO buffer.
      *  The actual buffer size in bytes will depend on the actual stream configuration. */
     uint16_t                cbCircBufOutMs;
-    uint16_t                au16Padding3[3];
-    /** Last updated wall clock (WALCLK) counter. */
-    uint64_t                u64WalClk;
+    /** The start time of the wall clock (WALCLK), measured on the virtual sync clock. */
+    uint64_t                tsWalClkStart;
     /** The CORB buffer. */
     uint32_t                au32CorbBuf[HDA_CORB_SIZE];
     /** Pointer to RIRB buffer. */
