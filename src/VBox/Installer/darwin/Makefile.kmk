@@ -419,10 +419,13 @@ if defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL)
  VBOX_DI_VBAPP_DYLIBS += \
 	MacOS/VBoxVRDP.dylib
 endif
-ifdef VBOX_WITH_DEBUGGER_GUI
+ifdef VBOX_WITH_DEBUGGER
  VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/VBoxDbg.dylib \
  	MacOS/DbgPlugInDiggers.dylib
+ if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
+  VBOX_DI_VBAPP_DYLIBS += \
+  	MacOS/VBoxDbg.dylib
+ endif
 endif
 ifdef VBOX_WITH_HARDENING
  VBOX_DI_VBAPP_DYLIBS += $(addprefix MacOS/,$(addsuffix .dylib,$(notdir $(VBOX_DI_VBAPP_PROGS_HARDENED))))
