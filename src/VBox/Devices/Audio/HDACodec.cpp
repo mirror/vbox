@@ -199,11 +199,13 @@ static void stac9220NodeReset(PHDACODEC pThis, uint8_t uNID, PCODECNODE pNode)
             pNode->afg.node.au32F00_param[0x08] = CODEC_MAKE_F00_08(1, 0xd, 0xd);
             /* We set the AFG's PCM capabitilies fixed to 16kHz, 22.5kHz + 44.1kHz, 16-bit signed. */
             pNode->afg.node.au32F00_param[0x0A] = CODEC_F00_0A_44_1KHZ          /* 44.1 kHz */
-                                                | CODEC_F00_0A_44_1KHZ_1_2X     /* Messed up way of saying 22.5 kHz */
+                                                | CODEC_F00_0A_44_1KHZ_1_2X     /* Messed up way of saying 22.05 kHz */
                                                 | CODEC_F00_0A_48KHZ_1_3X       /* Messed up way of saying 16 kHz. */
                                                 | CODEC_F00_0A_16_BIT;          /* 16-bit signed */
-            if (true)
-                pNode->afg.node.au32F00_param[0x0A] |= CODEC_F00_0A_48KHZ;
+            /* Note! We do not set CODEC_F00_0A_48KHZ here because we end up with
+                     S/PDIF output showing up in windows and it trying to configure
+                     streams other than 0 and 4 and stuff going sideways in the
+                     stream setup/removal area. */
             pNode->afg.node.au32F00_param[0x0B] = CODEC_F00_0B_PCM;
             pNode->afg.node.au32F00_param[0x0C] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_BALANCED_IO
