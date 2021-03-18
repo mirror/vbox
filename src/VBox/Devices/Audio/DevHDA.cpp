@@ -462,6 +462,7 @@ const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS] =
 
 const HDAREGALIAS g_aHdaRegAliases[] =
 {
+    { 0x2030, HDA_REG_WALCLK  },
     { 0x2084, HDA_REG_SD0LPIB },
     { 0x20a4, HDA_REG_SD1LPIB },
     { 0x20c4, HDA_REG_SD2LPIB },
@@ -3134,7 +3135,10 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
 {
     DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
 
-    if (!(HDA_REG(pThis, GCTL) & HDA_GCTL_CRST) && idxRegDsc != HDA_REG_GCTL)
+    if (   (HDA_REG(pThis, GCTL) & HDA_GCTL_CRST)
+        || idxRegDsc == HDA_REG_GCTL)
+    { /* likely */ }
+    else
     {
         Log(("hdaWriteReg: Warning: Access to %s is blocked while controller is in reset mode\n", g_aHdaRegMap[idxRegDsc].abbrev));
         LogRel2(("HDA: Warning: Access to register %s is blocked while controller is in reset mode\n",
@@ -3152,17 +3156,15 @@ DECLINLINE(VBOXSTRICTRC) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int id
     /* For SDI / SDO: Check if writes to those registers are allowed while SDCTL's RUN bit is set. */
     if (idxRegDsc >= HDA_NUM_GENERAL_REGS)
     {
-        const uint32_t uSDCTL = HDA_STREAM_REG(pThis, CTL, HDA_SD_NUM_FROM_REG(pThis, CTL, idxRegDsc));
-
         /*
          * Some OSes (like Win 10 AU) violate the spec by writing stuff to registers which are not supposed to be be touched
          * while SDCTL's RUN bit is set. So just ignore those values.
          */
-
-        /* Is the RUN bit currently set? */
-        if (   RT_BOOL(uSDCTL & HDA_SDCTL_RUN)
-            /* Are writes to the register denied if RUN bit is set? */
-            && !(g_aHdaRegMap[idxRegDsc].fFlags & HDA_RD_F_SD_WRITE_RUN))
+        const uint32_t uSDCTL = HDA_STREAM_REG(pThis, CTL, HDA_SD_NUM_FROM_REG(pThis, CTL, idxRegDsc));
+        if (   !(uSDCTL & HDA_SDCTL_RUN)
+            || (g_aHdaRegMap[idxRegDsc].fFlags & HDA_RD_F_SD_WRITE_RUN))
+        { /* likely */ }
+        else
         {
             Log(("hdaWriteReg: Warning: Access to %s is blocked! %R[sdctl]\n", g_aHdaRegMap[idxRegDsc].abbrev, uSDCTL));
             LogRel2(("HDA: Warning: Access to register %s is blocked while the stream's RUN bit is set\n",
