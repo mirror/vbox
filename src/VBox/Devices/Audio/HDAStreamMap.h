@@ -57,8 +57,8 @@ typedef struct HDASTREAMMAP
      * @param   cFrames     Number of frames to convert.
      * @param   pMapping    Pointer to this structure.
      */
-    DECLCALLBACKMEMBER(void, pfnGuestToHost,(void *pvDst, void const *pvSrc, uint32_t cFrames,
-                                             struct HDASTREAMMAP const *pMapping));
+    DECLR3CALLBACKMEMBER(void, pfnGuestToHost,(void *pvDst, void const *pvSrc, uint32_t cFrames,
+                                               struct HDASTREAMMAP const *pMapping));
     /**
      * Converts host data to guest data.
      *
@@ -67,8 +67,8 @@ typedef struct HDASTREAMMAP
      * @param   cFrames     Number of frames to convert.
      * @param   pMapping    Pointer to this structure.
      */
-    DECLCALLBACKMEMBER(void, pfnHostToGuest,(void *pvDst, void const *pvSrc, uint32_t cFrames,
-                                             struct HDASTREAMMAP const *pMapping));
+    DECLR3CALLBACKMEMBER(void, pfnHostToGuest,(void *pvDst, void const *pvSrc, uint32_t cFrames,
+                                               struct HDASTREAMMAP const *pMapping));
 } HDASTREAMMAP;
 AssertCompileSizeAlignment(HDASTREAMMAP, 8);
 /** Pointer to an audio stream data mapping. */
