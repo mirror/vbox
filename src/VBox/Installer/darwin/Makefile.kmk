@@ -635,10 +635,11 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/nls \
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/accessible \
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources \
-		$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app \
-		$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents \
-		$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app \
-		$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app/Contents \
+               $(if-expr defined(VBOX_WITH_QTGUI), \
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app \
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents \
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app \
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app/Contents,) \
 		$(if-expr defined(VBOX_WITH_PYTHON), \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/sdk/installer \
@@ -726,6 +727,27 @@ ifdef VBOX_WITH_DTRACE
        		$(addprefix scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
 		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/$(file) \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/dtrace/$(file)$(NLTAB))
+endif
+ifndef VBOX_WITH_QTGUI
+# Hack alert! Just something to make pkgbuild happy.
+	$(APPEND) -tn "$(VBOX_PATH_VBOX_APP_TMP)/Contents/PkgInfo" "APPLVBOX"
+	$(APPEND) -tn "$(VBOX_PATH_VBOX_APP_TMP)/Contents/Info.plist" \
+		'<?xml version="1.0" encoding="UTF-8"?>' \
+		'<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
+		'<plist version="1.0">' \
+		'<dict>' \
+    		'  <key>CFBundlePackageType</key>              <string>APPL</string>' \
+    		'  <key>CFBundleSignature</key>                <string>VBOX</string>' \
+    		'  <key>CFBundleDevelopmentRegion</key>        <string>English</string>' \
+    		'  <key>CFBundleIdentifier</key>               <string>org.virtualbox.app.VBoxManage</string>' \
+    		'  <key>CFBundleName</key>                     <string>VirtualBox</string>' \
+    		'  <key>CFBundleExecutable</key>               <string>VBoxManage</string>' \
+    		'  <key>CFBundleVersion</key>                  <string>$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)</string>' \
+    		'  <key>CFBundleShortVersionString</key>       <string>$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)</string>' \
+    		'  <key>CFBundleGetInfoString</key>            <string>$(VBOX_PRODUCT) Manager $(VBOX_VERSION_STRING), © 2007-$(VBOX_C_YEAR) $(VBOX_VENDOR)</string>' \
+    		'  <key>CFBundleInfoDictionaryVersion</key>    <string>6.0</string>' \
+    		'  </dict>' \
+    		'  </plist>'
 endif
 	@# Sign the binaries and the application bundle.
 ifdef VBOX_SIGNING_MODE
