@@ -779,13 +779,18 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
  */
 void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, uint8_t uSD)
 {
+    LogFunc(("[SD%RU8] Reset\n", uSD));
+
+    /*
+     * Assert some sanity.
+     */
     AssertPtr(pThis);
     AssertPtr(pStreamShared);
     AssertPtr(pStreamR3);
     Assert(uSD < HDA_MAX_STREAMS);
+    Assert(pStreamShared->u8SD == uSD);
+    Assert(pStreamR3->u8SD == uSD);
     AssertMsg(!pStreamShared->State.fRunning, ("[SD%RU8] Cannot reset stream while in running state\n", uSD));
-
-    LogFunc(("[SD%RU8] Reset\n", uSD));
 
     /*
      * Set reset state.
@@ -800,7 +805,7 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTATER3 pThisCC, PHDASTREAM pStreamSh
     HDA_STREAM_REG(pThis, STS,   uSD) = 0;
     /* According to the ICH6 datasheet, 0x40000 is the default value for stream descriptor register 23:20
      * bits are reserved for stream number 18.2.33, resets SDnCTL except SRST bit. */
-    HDA_STREAM_REG(pThis, CTL,   uSD) = 0x40000 | (HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_SRST);
+    HDA_STREAM_REG(pThis, CTL,   uSD) = HDA_SDCTL_TP | (HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_SRST);
     /* ICH6 defines default values (120 bytes for input and 192 bytes for output descriptors) of FIFO size. 18.2.39. */
     HDA_STREAM_REG(pThis, FIFOS, uSD) = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN ? HDA_SDIFIFO_120B : HDA_SDOFIFO_192B;
     /* See 18.2.38: Always defaults to 0x4 (32 bytes). */

@@ -1404,8 +1404,6 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
             pStreamShared->State.fRunning = false;
         }
 
-        /* Make sure to remove the run bit before doing the actual stream reset. */
-        HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_SDCTL_RUN; /** @todo r=bird: Isn't this utterly pointless? */
         hdaR3StreamReset(pThis, pThisCC, pStreamShared, pStreamR3, uSD);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -2876,8 +2874,6 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
                         ("Disabling stream #%u failed: %Rrc, fRunning=%d\n", idxStream, rc, pStreamShared->State.fRunning));
         pStreamShared->State.fRunning = false;
 
-        /* Remove the RUN bit from SDnCTL in case the stream was in a running state before. */
-        HDA_STREAM_REG(pThis, CTL, idxStream) &= ~HDA_SDCTL_RUN; /** @todo r=bird: Isn't this utterly pointless? */
         hdaR3StreamReset(pThis, pThisCC, pStreamShared, &pThisCC->aStreams[idxStream], (uint8_t)idxStream);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
