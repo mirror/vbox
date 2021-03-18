@@ -244,8 +244,13 @@ typedef struct _PamContext
     char *pszPassword;
 } PamContext;
 
+#if defined(RT_OS_SOLARIS)
+static int conv (int num_msg, struct pam_message **msg,
+                 struct pam_response **resp, void *appdata_ptr)
+#else
 static int conv (int num_msg, const struct pam_message **msg,
                  struct pam_response **resp, void *appdata_ptr)
+#endif
 {
     int i;
     struct pam_response *r;
