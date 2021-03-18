@@ -1137,7 +1137,6 @@ DECLINLINE(void) hdaR3StreamDmaBufAdvanceToNext(PHDASTREAM pStreamShared)
  *
  * @retval  true if DMA processing can take place
  * @retval  false if caller should return immediately.
- * @param   pDevIns         The device instance.
  * @param   pThis           The shared HDA device state.
  * @param   pStreamShared   HDA stream to update (shared).
  * @param   uSD             The stream ID (for asserting).
