@@ -126,9 +126,6 @@ static drm_driver_t	g_VBoxVideoSolarisDRMDriver = { 0 };
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/** Device handle (we support only one instance). */
-static dev_info_t *g_pDip;
-
 /** Soft state. */
 static void *g_pVBoxVideoSolarisState;
 

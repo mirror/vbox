@@ -1502,7 +1502,7 @@ static int ElfWriteNoteSection(PRTSOLCORE pSolCore, RTSOLCORETYPE enmType)
 
 #ifdef RT_OS_SOLARIS
     typedef int (*PFNELFWRITENOTEHDR)(PRTSOLCORE pSolCore, uint_t, const void *pcv, size_t cb);
-    typedef struct ELFWRITENOTE
+    typedef struct
     {
         const char        *pszType;
         uint_t             Type;

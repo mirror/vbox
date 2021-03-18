@@ -240,6 +240,7 @@ sf_pn_get(char *rawpath, struct mounta *uap, char **outpath)
 	return (0);
 }
 
+#ifdef DEBUG_ramshankar
 static void
 sffs_print(sffs_data_t *sffs)
 {
@@ -256,6 +257,7 @@ sffs_print(sffs_data_t *sffs)
 	cmn_err(CE_NOTE, "    char *sf_mntpath = %s\n", sffs->sf_mntpath);
 	cmn_err(CE_NOTE, "    sfp_mount_t *sf_handle = 0x%p\n", sffs->sf_handle);
 }
+#endif
 
 static int
 sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
