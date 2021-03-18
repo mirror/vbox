@@ -1373,8 +1373,8 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                uSD, fRun, fInRun, fReset, fInReset, u32Value));*/
     if (fInReset)
     {
-        Assert(!fReset);
-        Assert(!fInRun && !fRun);
+        ASSERT_GUEST(!fReset);
+        ASSERT_GUEST(!fInRun && !fRun);
 
         /* Exit reset state. */
         ASMAtomicXchgBool(&pStreamShared->State.fInReset, false);
@@ -1387,7 +1387,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
     else if (fReset)
     {
         /* ICH6 datasheet 18.2.33 says that RUN bit should be cleared before initiation of reset. */
-        Assert(!fInRun && !fRun);
+        ASSERT_GUEST(!fInRun && !fRun);
 
         LogFunc(("[SD%RU8] Reset enter\n", uSD));
 
@@ -1396,9 +1396,17 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
         hdaR3StreamAsyncIOLock(pStreamR3);
 # endif
+        /* Deal with reset while running. */
+        if (pStreamShared->State.fRunning)
+        {
+            hdaR3StreamEnable(pStreamShared, pStreamR3, false /* fEnable */);
+            ASMAtomicWriteBool(&pStreamShared->State.fRunning, false);
+            if (pThisCC->cStreamsActive > 0)
+                pThisCC->cStreamsActive++;
+        }
+
         /* Make sure to remove the run bit before doing the actual stream reset. */
         HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_SDCTL_RUN;
-
         hdaR3StreamReset(pThis, pThisCC, pStreamShared, pStreamR3, uSD);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -1413,7 +1421,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
          */
         if (fInRun != fRun)
         {
-            Assert(!fReset && !fInReset);
+            Assert(!fReset && !fInReset); /* (code change paranoia, currently impossible ) */
             LogFunc(("[SD%RU8] State changed (fRun=%RTbool)\n", uSD, fRun));
 
             hdaStreamLock(pStreamShared);
@@ -1455,6 +1463,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                 if (   RT_SUCCESS(rc2)
                     /* Any vital stream change occurred so that we need to (re-)add the stream to our setup?
                      * Otherwise just skip this, as this costs a lot of performance. */
+                    /** @todo r=bird: hdaR3StreamSetUp does not return VINF_NO_CHANGE since r142810. */
                     && rc2 != VINF_NO_CHANGE)
                 {
                     /* Remove the old stream from the device setup. */
@@ -2941,6 +2950,8 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
 
     for (size_t idxStream = 0; idxStream < RT_ELEMENTS(pThis->aStreams); idxStream++)
     {
+/** @todo r=bird: insufficient locking here, I think... May race stream timer
+ *        and AIO threads. We should probably do this a lot earlier too. */
         int rc2 = hdaR3StreamEnable(&pThis->aStreams[idxStream], &pThisCC->aStreams[idxStream], false /* fEnable */);
         if (RT_SUCCESS(rc2))
         {
