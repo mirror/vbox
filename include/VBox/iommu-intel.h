@@ -1512,7 +1512,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCCAP_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_VCMD_REG_CMD_MASK                                UINT64_C(0x00000000000000ff)
 /** OP: Operand. */
 #define VTD_BF_VCMD_REG_OP_SHIFT                                8
-#define VTD_BF_VCMD_REG_OP_MASK                                 UINT32_C(0xffffffffffffff00)
+#define VTD_BF_VCMD_REG_OP_MASK                                 UINT64_C(0xffffffffffffff00)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCMD_REG_, UINT64_C(0), UINT64_MAX,
                             (CMD, OP));
 /** @} */
