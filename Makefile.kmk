@@ -185,7 +185,9 @@ endif
 #
 ifeq ($(KBUILD_TARGET),darwin)
  include $(KBUILD_PATH)/units/qt5.kmk
- INSTALLS += qt5-bin
+ ifdef VBOX_WITH_QTGUI
+  INSTALLS += qt5-bin
+ endif
  qt5-bin_INST = $(INST_VIRTUALBOX)Contents/
  qt5-bin_EXEC_SOURCES = $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
  	$(PATH_SDK_QT5_LIB)/$(qtmod).framework/Versions/5/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/5/$(qtmod))
@@ -235,7 +237,9 @@ else # win x11
  if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
   include $(KBUILD_PATH)/units/qt5.kmk
   ifeq ($(KBUILD_TARGET),win)
-   INSTALLS += qt5-bin
+   ifdef VBOX_WITH_QTGUI
+    INSTALLS += qt5-bin
+   endif
    qt5-bin_MODE = 755
    qt5-bin_INST = $(INST_BIN)
    qt5-bin_SOURCES = \
@@ -250,7 +254,9 @@ else # win x11
      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(PATH_SDK_QT5)/qt*/$(VBOX_PATH_QT_LIB)/$(qtmod).pdb))
    endif # VBOX_WITH_QT_PDBS
   else # x11
-   INSTALLS += qt5-bin
+   ifdef VBOX_WITH_QTGUI
+    INSTALLS += qt5-bin
+   endif
    qt5-bin_MODE = 755
    qt5-bin_INST = $(INST_BIN)
    ifdef VBOX_WITH_HARDENING
