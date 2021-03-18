@@ -473,9 +473,12 @@ if1of ($(VBOX_DI_VBAPP_DYLIBS.amd64) $(VBOX_DI_VBAPP_DYLIBS.x86),$(VBOX_DI_VBAPP
 endif
 
 VBOX_DI_VBAPP_UNIVERSAL_PROGS = \
-	MacOS/vmstarter \
 	$(if $(VBOX_WITH_VBOX_IMG)$(VBOX_WITH_TESTCASES),MacOS/vbox-img,) \
 	$(if $(VBOX_WITH_VBOXIMGMOUNT),MacOS/vboximg-mount,)
+ifdef VBOX_WITH_QTGUI
+ VBOX_DI_VBAPP_UNIVERSAL_PROGS += \
+ 	MacOS/vmstarter
+endif
 
 VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS = \
 	MacOS/VMMR0.r0 \
@@ -504,17 +507,17 @@ VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES = \
 VBOX_DI_VBAPP_MISC_FILES = \
        $(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES) \
 	MacOS/components/VBoxXPCOMBase.xpt \
-	MacOS/components/VirtualBox_XPCOM.xpt \
-	Resources/vmstarter.app/Contents/Info.plist \
-	Resources/vmstarter.app/Contents/PkgInfo \
-       $(addprefix Resources/vmstarter.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES))
+	MacOS/components/VirtualBox_XPCOM.xpt
 ifdef VBOX_WITH_QTGUI # Yeah, the output w/o the qt gui is a bit useless. But we just want it building now.
  VBOX_DI_VBAPP_MISC_FILES += \
  	Info.plist \
  	PkgInfo \
  	Resources/VirtualBoxVM.app/Contents/Info.plist \
  	Resources/VirtualBoxVM.app/Contents/PkgInfo \
- 	$(addprefix Resources/VirtualBoxVM.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES))
+ 	$(addprefix Resources/VirtualBoxVM.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES)) \
+ 	Resources/vmstarter.app/Contents/Info.plist \
+ 	Resources/vmstarter.app/Contents/PkgInfo \
+ 	$(addprefix Resources/vmstarter.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES))
 endif
 ifdef VBOX_WITH_DOCS_PACKING
 VBOX_DI_VBAPP_MISC_FILES += \
@@ -531,8 +534,7 @@ VBOX_DI_VBAPP_MISC_FILES += \
 	MacOS/VBoxEFI32.fd \
 	MacOS/VBoxEFI64.fd
 endif
-VBOX_DI_VBAPP_SYMLINKS = \
-	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/
+VBOX_DI_VBAPP_SYMLINKS =
 ifdef VBOX_WITH_QTGUI
  VBOX_DI_VBAPP_DYLIBS += \
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod)) \
@@ -543,6 +545,7 @@ ifdef VBOX_WITH_QTGUI
  VBOX_DI_VBAPP_MISC_FILES += \
  	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/Info.plist)
  VBOX_DI_VBAPP_SYMLINKS += \
+ 	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/
  	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
  	,Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_VERSION_MAJOR) )
 endif
@@ -755,7 +758,9 @@ ifdef VBOX_SIGNING_MODE
 
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,,$(if-expr defined(VBOX_WITH_MACOS_HARDENED_RUNTIME)\
 		,--entitlements="$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist",))
+ ifdef VBOX_WITH_QTGUI
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app,,)
+ endif
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP),,--deep)
  ifdef VBOX_WITH_MACOS_HARDENED_RUNTIME # HACK ALERT! --deep fries the entitlements, so redo w/o --deep now.
 	$(foreach bin, $(filter-out MacOS/VirtualBoxVM MacOS/VBoxHeadless,$(VBOX_DI_VBAPP_PROGS_HARDENED)) \
