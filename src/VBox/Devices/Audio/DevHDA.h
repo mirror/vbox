@@ -230,10 +230,6 @@ typedef struct HDASTATER3
     HDASTREAMR3             aStreams[HDA_MAX_STREAMS];
     /** Mapping table between stream tags and stream states. */
     HDATAG                  aTags[HDA_MAX_TAGS];
-    /** Number of active (running) SDn streams.
-     * @todo pointless, not used for anything at all.  */
-    uint8_t                 cStreamsActive;
-    uint8_t                 abPadding0[7];
     /** R3 Pointer to the device instance. */
     PPDMDEVINSR3            pDevIns;
     /** The base interface for LUN\#0. */

@@ -1401,8 +1401,6 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         {
             hdaR3StreamEnable(pStreamShared, pStreamR3, false /* fEnable */);
             ASMAtomicWriteBool(&pStreamShared->State.fRunning, false);
-            if (pThisCC->cStreamsActive > 0)
-                pThisCC->cStreamsActive++;
         }
 
         /* Make sure to remove the run bit before doing the actual stream reset. */
@@ -1484,9 +1482,6 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
 
                 if (fRun)
                 {
-                    /* Keep track of running streams. */
-                    pThisCC->cStreamsActive++;
-
                     /** @todo move this into a HDAStream.cpp function. */
                     uint64_t tsNow;
                     if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
@@ -1516,14 +1511,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
                     hdaR3StreamMarkStarted(pDevIns, pThis, pStreamShared, tsNow);
                 }
                 else
-                {
-                    /* Keep track of running streams. */
-                    Assert(pThisCC->cStreamsActive);
-                    if (pThisCC->cStreamsActive)
-                        pThisCC->cStreamsActive--;
-
                     hdaR3StreamMarkStopped(pStreamShared);
-                }
             }
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -2869,8 +2857,6 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
 {
     LogFlowFuncEnter();
 
-    pThisCC->cStreamsActive = 0;
-
     HDA_REG(pThis, GCAP)     = HDA_MAKE_GCAP(HDA_MAX_SDO, HDA_MAX_SDI, 0, 0, 1); /* see 6.2.1 */
     HDA_REG(pThis, VMIN)     = 0x00;                                             /* see 6.2.2 */
     HDA_REG(pThis, VMAJ)     = 0x01;                                             /* see 6.2.3 */
@@ -3651,9 +3637,6 @@ static int hdaR3LoadExecTail(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pT
             uint64_t tsNow = hdaR3StreamTimerMain(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
 
             hdaR3StreamMarkStarted(pDevIns, pThis, pStreamShared, tsNow);
-
-            /* Also keep track of the currently active streams. */
-            pThisCC->cStreamsActive++;
         }
     }
 
