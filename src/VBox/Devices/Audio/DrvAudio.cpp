@@ -3189,7 +3189,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     /*
      * Period size
      */
-    const char *pszWhat = "";
+    const char *pszWhat = "device-specific";
     if (pDrvCfg->uPeriodSizeMs)
     {
         pCfgReq->Backend.cFramesPeriod = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uPeriodSizeMs);
@@ -3209,7 +3209,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     /*
      * Buffer size
      */
-    pszWhat = "";
+    pszWhat = "device-specific";
     if (pDrvCfg->uBufferSizeMs)
     {
         pCfgReq->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uBufferSizeMs);
@@ -3229,7 +3229,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     /*
      * Pre-buffering size
      */
-    pszWhat = "";
+    pszWhat = "device-specific";
     if (pDrvCfg->uPreBufSizeMs != UINT32_MAX) /* Anything set via global / per-VM extra-data? */
     {
         pCfgReq->Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(&pCfgReq->Props, pDrvCfg->uPreBufSizeMs);
