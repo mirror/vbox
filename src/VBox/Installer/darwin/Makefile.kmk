@@ -505,13 +505,13 @@ VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES = \
 	Resources/virtualbox-hdd.icns
 
 VBOX_DI_VBAPP_MISC_FILES = \
-       $(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES) \
 	MacOS/components/VBoxXPCOMBase.xpt \
 	MacOS/components/VirtualBox_XPCOM.xpt
 ifdef VBOX_WITH_QTGUI # Yeah, the output w/o the qt gui is a bit useless. But we just want it building now.
  VBOX_DI_VBAPP_MISC_FILES += \
  	Info.plist \
  	PkgInfo \
+       $(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES) \
  	Resources/VirtualBoxVM.app/Contents/Info.plist \
  	Resources/VirtualBoxVM.app/Contents/PkgInfo \
  	$(addprefix Resources/VirtualBoxVM.app/Contents/,$(VBOX_DI_VBAPP_DUPLICATED_RESOURCE_FILES)) \
