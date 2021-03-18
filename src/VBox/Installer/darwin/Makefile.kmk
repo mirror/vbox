@@ -354,8 +354,12 @@ endif
 # .qm and .lproj lists for these.
 #
 include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.kmk
-VBOX_INSTALL_LANG_FILES := $(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES), VirtualBox_$(f).qm qt_$(f).qm)
-VBOX_INSTALL_LANG_LPROJ := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
+ifdef VBOX_WITH_QTGUI
+ VBOX_INSTALL_LANG_FILES := $(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES), VirtualBox_$(f).qm qt_$(f).qm)
+else
+ VBOX_INSTALL_LANG_FILES :=
+endif
+VBOX_INSTALL_LANG_LPROJ  := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
 
 
 #
