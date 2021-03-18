@@ -1399,12 +1399,13 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
         /* Deal with reset while running. */
         if (pStreamShared->State.fRunning)
         {
-            hdaR3StreamEnable(pStreamShared, pStreamR3, false /* fEnable */);
-            ASMAtomicWriteBool(&pStreamShared->State.fRunning, false);
+            int rc2 = hdaR3StreamEnable(pStreamShared, pStreamR3, false /* fEnable */);
+            AssertRC(rc2); Assert(!pStreamShared->State.fRunning);
+            pStreamShared->State.fRunning = false;
         }
 
         /* Make sure to remove the run bit before doing the actual stream reset. */
-        HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_SDCTL_RUN;
+        HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_SDCTL_RUN; /** @todo r=bird: Isn't this utterly pointless? */
         hdaR3StreamReset(pThis, pThisCC, pStreamShared, pStreamR3, uSD);
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -2857,6 +2858,37 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
 {
     LogFlowFuncEnter();
 
+    /*
+     * Make sure all streams have stopped as these have both timers and
+     * asynchronous worker threads that would race us if we delay this work.
+     */
+    for (size_t idxStream = 0; idxStream < RT_ELEMENTS(pThis->aStreams); idxStream++)
+    {
+        PHDASTREAM const pStreamShared = &pThis->aStreams[idxStream];
+        hdaStreamLock(pStreamShared);
+# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        hdaR3StreamAsyncIOLock(&pThisCC->aStreams[idxStream]);
+# endif
+
+        /* We're doing this unconditionally, hope that's not problematic in any way... */
+        int rc = hdaR3StreamEnable(pStreamShared, &pThisCC->aStreams[idxStream], false /* fEnable */);
+        AssertLogRelMsg(RT_SUCCESS(rc) && !pStreamShared->State.fRunning,
+                        ("Disabling stream #%u failed: %Rrc, fRunning=%d\n", idxStream, rc, pStreamShared->State.fRunning));
+        pStreamShared->State.fRunning = false;
+
+        /* Remove the RUN bit from SDnCTL in case the stream was in a running state before. */
+        HDA_STREAM_REG(pThis, CTL, idxStream) &= ~HDA_SDCTL_RUN; /** @todo r=bird: Isn't this utterly pointless? */
+        hdaR3StreamReset(pThis, pThisCC, pStreamShared, &pThisCC->aStreams[idxStream], (uint8_t)idxStream);
+
+# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        hdaR3StreamAsyncIOUnlock(&pThisCC->aStreams[idxStream]);
+# endif
+        hdaStreamUnlock(pStreamShared);
+    }
+
+    /*
+     * Reset registers.
+     */
     HDA_REG(pThis, GCAP)     = HDA_MAKE_GCAP(HDA_MAX_SDO, HDA_MAX_SDI, 0, 0, 1); /* see 6.2.1 */
     HDA_REG(pThis, VMIN)     = 0x00;                                             /* see 6.2.2 */
     HDA_REG(pThis, VMAJ)     = 0x01;                                             /* see 6.2.3 */
@@ -2933,19 +2965,6 @@ static void hdaR3GCTLReset(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThi
 
     /* Clear our internal response interrupt counter. */
     pThis->u16RespIntCnt = 0;
-
-    for (size_t idxStream = 0; idxStream < RT_ELEMENTS(pThis->aStreams); idxStream++)
-    {
-/** @todo r=bird: insufficient locking here, I think... May race stream timer
- *        and AIO threads. We should probably do this a lot earlier too. */
-        int rc2 = hdaR3StreamEnable(&pThis->aStreams[idxStream], &pThisCC->aStreams[idxStream], false /* fEnable */);
-        if (RT_SUCCESS(rc2))
-        {
-            /* Remove the RUN bit from SDnCTL in case the stream was in a running state before. */
-            HDA_STREAM_REG(pThis, CTL, idxStream) &= ~HDA_SDCTL_RUN;
-            hdaR3StreamReset(pThis, pThisCC, &pThis->aStreams[idxStream], &pThisCC->aStreams[idxStream], (uint8_t)idxStream);
-        }
-    }
 
     /* Clear stream tags <-> objects mapping table. */
     RT_ZERO(pThisCC->aTags);
