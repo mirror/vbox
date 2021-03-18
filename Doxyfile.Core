@@ -589,6 +589,10 @@ PREDEFINED += \
     "DECLCALLBACKPTR_EX(type,cconv,name,args)=type (* name) args" \
     "DECLCALLBACKMEMBER(type,name,args)=type (* name) args" \
     "DECLCALLBACKMEMBER_EX(type,cconv,name,args)=type (* name) args" \
+    "DECLRCCALLBACKMEMBER(type,name,args)=type (* name) args" \
+    "DECLR3CALLBACKMEMBER(type,name,args)=type (* name) args" \
+    "DECLR0CALLBACKMEMBER(type,name,args)=type (* name) args" \
+    "DECLRGCALLBACKMEMBER(type,name,args)=type (* name) args" \
     DECLEXPORT(type)=type \
     DECL_EXPORT_NOTHROW(type)=type \
     DECLIMPORT(type)=type \
@@ -780,34 +784,14 @@ PREDEFINED          += \
     VBOX_WITH_HGCM
 
 EXPAND_AS_DEFINED      = \
-    RCPTRTYPE \
-    R3PTRTYPE \
-    R0PTRTYPE \
-    HCPTRTYPE \
-    R3R0PTRTYPE \
-    \
     ARCH_BITS \
     R3_ARCH_BITS \
     R0_ARCH_BITS \
     GC_ARCH_BITS \
     HC_ARCH_BITS \
     \
-    DECLEXPORT \
-    DECLIMPORT \
-    DECLASM \
     DECLASMTYPE \
-    DECLCALLBACK \
-    DECLCALLBACKMEMBER \
-    DECLCALLBACKPTR \
-    DECLHCCALLBACKMEMBER \
-    DECLRCCALLBACKMEMBER \
-    DECLR3CALLBACKMEMBER \
-    DECLR0CALLBACKMEMBER \
-    DECLRGCALLBACKMEMBER \
-    DECLINLINE \
     DECL_INLINE_NOTHROW \
-    DECL_FORCE_INLINE \
-    DECLHIDDEN \
     CTXSUFF \
     OTHERCTXSUFF \
     CTXMID \

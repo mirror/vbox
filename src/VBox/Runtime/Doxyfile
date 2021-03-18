@@ -2109,6 +2109,10 @@ PREDEFINED += \
     "DECLCALLBACKPTR_EX(type,cconv,name,args)=type (* name) args" \
     "DECLCALLBACKMEMBER(type,name,args)=type (* name) args" \
     "DECLCALLBACKMEMBER_EX(type,cconv,name,args)=type (* name) args" \
+    "DECLRCCALLBACKMEMBER(type,name,args)=type (* name) args" \
+    "DECLR3CALLBACKMEMBER(type,name,args)=type (* name) args" \
+    "DECLR0CALLBACKMEMBER(type,name,args)=type (* name) args" \
+    "DECLRGCALLBACKMEMBER(type,name,args)=type (* name) args" \
     DECLEXPORT(type)=type \
     DECL_EXPORT_NOTHROW(type)=type \
     DECLIMPORT(type)=type \
@@ -2144,19 +2148,7 @@ EXPAND_AS_DEFINED      = ARCH_BITS \
                          R0PTRTYPE \
                          R3PTRTYPE \
                          R3R0PTRTYPE \
-                         DECLEXPORT \
-                         DECL_EXPORT_NOTHROW \
-                         DECLIMPORT \
-                         DECL_IMPORT_NOTHROW \
-                         DECLHIDDEN \
-                         DECL_HIDDEN_NOTHROW \
-                         DECLASM \
                          DECLASMTYPE \
-                         DECLCALLBACKMEMBER \
-                         DECLHCCALLBACKMEMBER \
-                         DECLRCCALLBACKMEMBER \
-                         DECLR3CALLBACKMEMBER \
-                         DECLR0CALLBACKMEMBER \
                          RTR3DECL \
                          RTR0DECL \
                          RTRCDECL \
