@@ -2292,8 +2292,8 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Activity Overview..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Activity Monitor"));
-        setStatusTip(QApplication::translate("UIActionPool", "Navigate to the vm activity overview widget"));
-        setToolTip(  QApplication::translate("UIActionPool", "Navigate to the VM Activity Overview Widget")
+        setStatusTip(QApplication::translate("UIActionPool", "Navigate to the vm activity overview"));
+        setToolTip(  QApplication::translate("UIActionPool", "Navigate to the VM Activity Overview")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };

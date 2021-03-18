@@ -795,7 +795,7 @@ public:
         QStringList helpBrowserBookmarks();
     /** @} */
 
-    /** @name Manager UI: VM Activity Overview Widget
+    /** @name Manager UI: VM Activity Overview
       * @{ */
         void setVMActivityOverviewHiddenColumnList(const QStringList &hiddenColumnList);
         QStringList VMActivityOverviewHiddenColumnList();

@@ -189,7 +189,7 @@ enum UIActionIndexMN
     UIActionIndexMN_M_CloudConsole_S_ProfileRemove,
     UIActionIndexMN_M_CloudConsole_T_Details,
 
-    /* VM VM Activity Overview Widget actions: */
+    /* VM VM Activity Overview actions: */
     UIActionIndexMN_M_VMActivityOverview,
     UIActionIndexMN_M_VMActivityOverview_M_Columns,
     UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachinePerformance,

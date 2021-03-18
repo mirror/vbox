@@ -353,7 +353,7 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show VM Activity Overview Widget' action class. */
+/** Simple action extension, used as 'Show VM Activity Overview' action class. */
 class UIActionToggleManagerToolsGlobalShowVMActivityOverview : public UIActionToggle
 {
     Q_OBJECT;
@@ -381,8 +381,8 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&VM Activity Overview Widget"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the VM Activity Overview Widget"));
+        setName(QApplication::translate("UIActionPool", "&VM Activity Overview"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the VM Activity Overview"));
     }
 };
 
@@ -3438,7 +3438,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Columns"));
-        setShortcutScope(QApplication::translate("UIActionPool", "VM Activity Overview Widget"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VM Activity Overview"));
         setStatusTip(QApplication::translate("UIActionPool", "Show/Hide Columns"));
         setToolTip(  QApplication::translate("UIActionPool", "Show/Hide Columns")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
@@ -3473,7 +3473,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "VM Activity"));
-        setShortcutScope(QApplication::translate("UIActionPool", "VM Activity Overview Widget"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VM Activity Overview"));
         setStatusTip(QApplication::translate("UIActionPool", "Switch to selected virtual machine's activity monitor pane"));
         setToolTip(  QApplication::translate("UIActionPool", "Switch to selected virtual machine's activity monitor pane")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
@@ -3648,7 +3648,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_CloudConsole_S_ProfileRemove] = new UIActionMenuManagerCloudConsolePerformProfileRemove(this);
     m_pool[UIActionIndexMN_M_CloudConsole_T_Details] = new UIActionMenuManagerCloudConsoleToggleProperties(this);
 
-    /* VM Activity Overview Widget actions: */
+    /* VM Activity Overview actions: */
     m_pool[UIActionIndexMN_M_VMActivityOverview] = new UIActionMenuVMActivityOverview(this);
     m_pool[UIActionIndexMN_M_VMActivityOverview_M_Columns] = new UIActionMenuManagerVMActivityOverviewColumns(this);
     m_pool[UIActionIndexMN_M_VMActivityOverview_S_SwitchToMachinePerformance] = new UIActionMenuManagerVMActivityOverviewSwitchToMachinePerformance(this);
@@ -3786,7 +3786,7 @@ void UIActionPoolManager::updateMenus()
     addMenu(m_mainMenus, action(UIActionIndexMN_M_Cloud));
     updateMenuCloudWindow();
     updateMenuCloud();
-    /* 'VM Activity Overview Widget' menu: */
+    /* 'VM Activity Overview' menu: */
     addMenu(m_mainMenus, action(UIActionIndexMN_M_VMActivityOverview));
     updateMenuVMActivityOverview();
 

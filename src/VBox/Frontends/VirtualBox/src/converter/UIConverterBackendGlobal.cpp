@@ -2625,7 +2625,7 @@ template<> QString toInternalString(const VMActivityOverviewColumn &enmVMActivit
         case VMActivityOverviewColumn_VMExits:           strResult = "VMExits"; break;
         default:
             {
-                AssertMsgFailed(("No text for VM Activity Overview Widget Column=%d", enmVMActivityOverviewColumn));
+                AssertMsgFailed(("No text for VM Activity Overview Column=%d", enmVMActivityOverviewColumn));
                 break;
             }
     }
