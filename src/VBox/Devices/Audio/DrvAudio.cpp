@@ -3463,8 +3463,98 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
     return rc;
 }
 
+
+/*********************************************************************************************************************************
+*   PDMIBASE interface implementation.                                                                                           *
+*********************************************************************************************************************************/
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    LogFlowFunc(("pInterface=%p, pszIID=%s\n", pInterface, pszIID));
+
+    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVAUDIO  pThis   = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIOCONNECTOR, &pThis->IAudioConnector);
+
+    return NULL;
+}
+
+
+/*********************************************************************************************************************************
+*   PDMDRVREG interface implementation.                                                                                          *
+*********************************************************************************************************************************/
+
+/**
+ * Power Off notification.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
+{
+    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+
+    LogFlowFuncEnter();
+
+    if (!pThis->pHostDrvAudio) /* If not lower driver is configured, bail out. */
+        return;
+
+    /* Just destroy the host stream on the backend side.
+     * The rest will either be destructed by the device emulation or
+     * in drvAudioDestruct(). */
+    PPDMAUDIOSTREAM pStream;
+    RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, ListEntry)
+    {
+        drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
+        drvAudioStreamDestroyInternalBackend(pThis, pStream);
+    }
+
+    /*
+     * Last call for the driver below us.
+     * Let it know that we reached end of life.
+     */
+    if (pThis->pHostDrvAudio->pfnShutdown)
+        pThis->pHostDrvAudio->pfnShutdown(pThis->pHostDrvAudio);
+
+    pThis->pHostDrvAudio = NULL;
+
+    LogFlowFuncLeave();
+}
+
+
+/**
+ * Detach notification.
+ *
+ * @param   pDrvIns     The driver instance data.
+ * @param   fFlags      Detach flags.
+ */
+static DECLCALLBACK(void) drvAudioDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    RT_NOREF(fFlags);
+
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+
+    int rc2 = RTCritSectEnter(&pThis->CritSect);
+    AssertRC(rc2);
+
+    pThis->pHostDrvAudio = NULL;
+
+    LogFunc(("%s\n", pThis->szName));
+
+    rc2 = RTCritSectLeave(&pThis->CritSect);
+    AssertRC(rc2);
+}
+
+
 /**
  * Does the actual backend driver attaching and queries the backend's interface.
+ *
+ * This is a worker for both drvAudioAttach and drvAudioConstruct.
  *
  * @return VBox status code.
  * @param  pThis                Pointer to driver instance.
@@ -3504,154 +3594,55 @@ static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
 }
 
 
-/********************************************************************/
-
 /**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ * Attach notification.
+ *
+ * @param   pDrvIns     The driver instance data.
+ * @param   fFlags      Attach flags.
  */
-static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+static DECLCALLBACK(int) drvAudioAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
-    LogFlowFunc(("pInterface=%p, pszIID=%s\n", pInterface, pszIID));
+    RT_NOREF(fFlags);
 
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVAUDIO  pThis   = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
 
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIOCONNECTOR, &pThis->IAudioConnector);
+    int rc2 = RTCritSectEnter(&pThis->CritSect);
+    AssertRC(rc2);
 
-    return NULL;
+    LogFunc(("%s\n", pThis->szName));
+
+    int rc = drvAudioDoAttachInternal(pThis, fFlags);
+
+    rc2 = RTCritSectLeave(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    return rc;
 }
 
+
 /**
- * Power Off notification.
+ * Resume notification.
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvAudioResume(PPDMDRVINS pDrvIns)
 {
-    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-
-    LogFlowFuncEnter();
-
-    if (!pThis->pHostDrvAudio) /* If not lower driver is configured, bail out. */
-        return;
-
-    /* Just destroy the host stream on the backend side.
-     * The rest will either be destructed by the device emulation or
-     * in drvAudioDestruct(). */
-    PPDMAUDIOSTREAM pStream;
-    RTListForEach(&pThis->lstStreams, pStream, PDMAUDIOSTREAM, ListEntry)
-    {
-        drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
-        drvAudioStreamDestroyInternalBackend(pThis, pStream);
-    }
-
-    /*
-     * Last call for the driver below us.
-     * Let it know that we reached end of life.
-     */
-    if (pThis->pHostDrvAudio->pfnShutdown)
-        pThis->pHostDrvAudio->pfnShutdown(pThis->pHostDrvAudio);
-
-    pThis->pHostDrvAudio = NULL;
-
-    LogFlowFuncLeave();
+    drvAudioStateHandler(pDrvIns, PDMAUDIOSTREAMCMD_RESUME);
 }
+
 
 /**
- * Constructs an audio driver instance.
+ * Suspend notification.
  *
- * @copydoc FNPDMDRVCONSTRUCT
+ * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
+static DECLCALLBACK(void) drvAudioSuspend(PPDMDRVINS pDrvIns)
 {
-    LogFlowFunc(("pDrvIns=%#p, pCfgHandle=%#p, fFlags=%x\n", pDrvIns, pCfg, fFlags));
-
-    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-
-    RTListInit(&pThis->lstStreams);
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    RTListInit(&pThis->In.lstCB);
-    RTListInit(&pThis->Out.lstCB);
-#endif
-
-    /*
-     * Init the static parts.
-     */
-    pThis->pDrvIns                              = pDrvIns;
-    /* IBase. */
-    pDrvIns->IBase.pfnQueryInterface            = drvAudioQueryInterface;
-    /* IAudioConnector. */
-    pThis->IAudioConnector.pfnEnable            = drvAudioEnable;
-    pThis->IAudioConnector.pfnIsEnabled         = drvAudioIsEnabled;
-    pThis->IAudioConnector.pfnGetConfig         = drvAudioGetConfig;
-    pThis->IAudioConnector.pfnGetStatus         = drvAudioGetStatus;
-    pThis->IAudioConnector.pfnStreamCreate      = drvAudioStreamCreate;
-    pThis->IAudioConnector.pfnStreamDestroy     = drvAudioStreamDestroy;
-    pThis->IAudioConnector.pfnStreamRetain      = drvAudioStreamRetain;
-    pThis->IAudioConnector.pfnStreamRelease     = drvAudioStreamRelease;
-    pThis->IAudioConnector.pfnStreamControl     = drvAudioStreamControl;
-    pThis->IAudioConnector.pfnStreamRead        = drvAudioStreamRead;
-    pThis->IAudioConnector.pfnStreamWrite       = drvAudioStreamWrite;
-    pThis->IAudioConnector.pfnStreamIterate     = drvAudioStreamIterate;
-    pThis->IAudioConnector.pfnStreamGetReadable = drvAudioStreamGetReadable;
-    pThis->IAudioConnector.pfnStreamGetWritable = drvAudioStreamGetWritable;
-    pThis->IAudioConnector.pfnStreamGetStatus   = drvAudioStreamGetStatus;
-    pThis->IAudioConnector.pfnStreamSetVolume   = drvAudioStreamSetVolume;
-    pThis->IAudioConnector.pfnStreamPlay        = drvAudioStreamPlay;
-    pThis->IAudioConnector.pfnStreamCapture     = drvAudioStreamCapture;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
-    pThis->IAudioConnector.pfnRegisterCallbacks = drvAudioRegisterCallbacks;
-#endif
-
-    int rc = drvAudioInit(pDrvIns, pCfg);
-    if (RT_SUCCESS(rc))
-    {
-#ifdef VBOX_WITH_STATISTICS
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsActive,   "TotalStreamsActive",
-                                  STAMUNIT_COUNT, "Total active audio streams.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsCreated,  "TotalStreamsCreated",
-                                  STAMUNIT_COUNT, "Total created audio streams.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesRead,      "TotalFramesRead",
-                                  STAMUNIT_COUNT, "Total frames read by device emulation.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesWritten,   "TotalFramesWritten",
-                                  STAMUNIT_COUNT, "Total frames written by device emulation ");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesMixedIn,   "TotalFramesMixedIn",
-                                  STAMUNIT_COUNT, "Total input frames mixed.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesMixedOut,  "TotalFramesMixedOut",
-                                  STAMUNIT_COUNT, "Total output frames mixed.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesLostIn,    "TotalFramesLostIn",
-                                  STAMUNIT_COUNT, "Total input frames lost.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesLostOut,   "TotalFramesLostOut",
-                                  STAMUNIT_COUNT, "Total output frames lost.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesOut,       "TotalFramesOut",
-                                  STAMUNIT_COUNT, "Total frames played by backend.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesIn,        "TotalFramesIn",
-                                  STAMUNIT_COUNT, "Total frames captured by backend.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesRead,       "TotalBytesRead",
-                                  STAMUNIT_BYTES, "Total bytes read.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesWritten,    "TotalBytesWritten",
-                                  STAMUNIT_BYTES, "Total bytes written.");
-
-        PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayIn,           "DelayIn",
-                                     STAMUNIT_NS_PER_CALL, "Profiling of input data processing.");
-        PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut,          "DelayOut",
-                                     STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
-#endif
-    }
-
-    rc = drvAudioDoAttachInternal(pThis, fFlags);
-    if (RT_FAILURE(rc))
-    {
-        /* No lower attached driver (yet)? Not a failure, might get attached later at runtime, just skip. */
-        if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-            rc = VINF_SUCCESS;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    drvAudioStateHandler(pDrvIns, PDMAUDIOSTREAMCMD_PAUSE);
 }
+
 
 /**
  * Destructs an audio driver instance.
@@ -3749,75 +3740,101 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     LogFlowFuncLeave();
 }
 
-/**
- * Suspend notification.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvAudioSuspend(PPDMDRVINS pDrvIns)
-{
-    drvAudioStateHandler(pDrvIns, PDMAUDIOSTREAMCMD_PAUSE);
-}
 
 /**
- * Resume notification.
+ * Constructs an audio driver instance.
  *
- * @param   pDrvIns     The driver instance data.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(void) drvAudioResume(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    drvAudioStateHandler(pDrvIns, PDMAUDIOSTREAMCMD_RESUME);
-}
-
-/**
- * Attach notification.
- *
- * @param   pDrvIns     The driver instance data.
- * @param   fFlags      Attach flags.
- */
-static DECLCALLBACK(int) drvAudioAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
-{
-    RT_NOREF(fFlags);
-
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    LogFlowFunc(("pDrvIns=%#p, pCfgHandle=%#p, fFlags=%x\n", pDrvIns, pCfg, fFlags));
 
-    int rc2 = RTCritSectEnter(&pThis->CritSect);
-    AssertRC(rc2);
+    /*
+     * Basic instance init.
+     */
+    RTListInit(&pThis->lstStreams);
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    RTListInit(&pThis->In.lstCB);
+    RTListInit(&pThis->Out.lstCB);
+#endif
 
-    LogFunc(("%s\n", pThis->szName));
+    pThis->pDrvIns                              = pDrvIns;
+    /* IBase. */
+    pDrvIns->IBase.pfnQueryInterface            = drvAudioQueryInterface;
+    /* IAudioConnector. */
+    pThis->IAudioConnector.pfnEnable            = drvAudioEnable;
+    pThis->IAudioConnector.pfnIsEnabled         = drvAudioIsEnabled;
+    pThis->IAudioConnector.pfnGetConfig         = drvAudioGetConfig;
+    pThis->IAudioConnector.pfnGetStatus         = drvAudioGetStatus;
+    pThis->IAudioConnector.pfnStreamCreate      = drvAudioStreamCreate;
+    pThis->IAudioConnector.pfnStreamDestroy     = drvAudioStreamDestroy;
+    pThis->IAudioConnector.pfnStreamRetain      = drvAudioStreamRetain;
+    pThis->IAudioConnector.pfnStreamRelease     = drvAudioStreamRelease;
+    pThis->IAudioConnector.pfnStreamControl     = drvAudioStreamControl;
+    pThis->IAudioConnector.pfnStreamRead        = drvAudioStreamRead;
+    pThis->IAudioConnector.pfnStreamWrite       = drvAudioStreamWrite;
+    pThis->IAudioConnector.pfnStreamIterate     = drvAudioStreamIterate;
+    pThis->IAudioConnector.pfnStreamGetReadable = drvAudioStreamGetReadable;
+    pThis->IAudioConnector.pfnStreamGetWritable = drvAudioStreamGetWritable;
+    pThis->IAudioConnector.pfnStreamGetStatus   = drvAudioStreamGetStatus;
+    pThis->IAudioConnector.pfnStreamSetVolume   = drvAudioStreamSetVolume;
+    pThis->IAudioConnector.pfnStreamPlay        = drvAudioStreamPlay;
+    pThis->IAudioConnector.pfnStreamCapture     = drvAudioStreamCapture;
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
+    pThis->IAudioConnector.pfnRegisterCallbacks = drvAudioRegisterCallbacks;
+#endif
 
-    int rc = drvAudioDoAttachInternal(pThis, fFlags);
-
-    rc2 = RTCritSectLeave(&pThis->CritSect);
+    int rc = drvAudioInit(pDrvIns, pCfg);
     if (RT_SUCCESS(rc))
-        rc = rc2;
+    {
+#ifdef VBOX_WITH_STATISTICS
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsActive,   "TotalStreamsActive",
+                                  STAMUNIT_COUNT, "Total active audio streams.");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsCreated,  "TotalStreamsCreated",
+                                  STAMUNIT_COUNT, "Total created audio streams.");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesRead,      "TotalFramesRead",
+                                  STAMUNIT_COUNT, "Total frames read by device emulation.");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesWritten,   "TotalFramesWritten",
+                                  STAMUNIT_COUNT, "Total frames written by device emulation ");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesMixedIn,   "TotalFramesMixedIn",
+                                  STAMUNIT_COUNT, "Total input frames mixed.");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesMixedOut,  "TotalFramesMixedOut",
+                                  STAMUNIT_COUNT, "Total output frames mixed.");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesLostIn,    "TotalFramesLostIn",
+                                  STAMUNIT_COUNT, "Total input frames lost.");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesLostOut,   "TotalFramesLostOut",
+                                  STAMUNIT_COUNT, "Total output frames lost.");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesOut,       "TotalFramesOut",
+                                  STAMUNIT_COUNT, "Total frames played by backend.");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesIn,        "TotalFramesIn",
+                                  STAMUNIT_COUNT, "Total frames captured by backend.");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesRead,       "TotalBytesRead",
+                                  STAMUNIT_BYTES, "Total bytes read.");
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesWritten,    "TotalBytesWritten",
+                                  STAMUNIT_BYTES, "Total bytes written.");
 
+        PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayIn,           "DelayIn",
+                                     STAMUNIT_NS_PER_CALL, "Profiling of input data processing.");
+        PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut,          "DelayOut",
+                                     STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
+#endif
+    }
+
+    /** @todo r=bird: you're overwriting rc here. sigh.  Just return immediately on
+     *        failure, don't try make it to the end of the function! GRRR! */
+    rc = drvAudioDoAttachInternal(pThis, fFlags);
+    if (RT_FAILURE(rc))
+    {
+        /* No lower attached driver (yet)? Not a failure, might get attached later at runtime, just skip. */
+        if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+            rc = VINF_SUCCESS;
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
-}
-
-/**
- * Detach notification.
- *
- * @param   pDrvIns     The driver instance data.
- * @param   fFlags      Detach flags.
- */
-static DECLCALLBACK(void) drvAudioDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
-{
-    RT_NOREF(fFlags);
-
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-
-    int rc2 = RTCritSectEnter(&pThis->CritSect);
-    AssertRC(rc2);
-
-    pThis->pHostDrvAudio = NULL;
-
-    LogFunc(("%s\n", pThis->szName));
-
-    rc2 = RTCritSectLeave(&pThis->CritSect);
-    AssertRC(rc2);
 }
 
 /**
