@@ -102,12 +102,16 @@ static int alsaStreamRecover(snd_pcm_t *phPCM);
 typedef struct DRVHOSTALSAAUDIO
 {
     /** Pointer to the driver instance structure. */
-    PPDMDRVINS         pDrvIns;
+    PPDMDRVINS          pDrvIns;
     /** Pointer to host audio interface. */
-    PDMIHOSTAUDIO      IHostAudio;
+    PDMIHOSTAUDIO       IHostAudio;
     /** Error count for not flooding the release log.
      *  UINT32_MAX for unlimited logging. */
-    uint32_t           cLogErrors;
+    uint32_t            cLogErrors;
+    /** Default input device name.   */
+    char                szDefaultIn[256];
+    /** Default output device name. */
+    char                szDefaultOut[256];
 } DRVHOSTALSAAUDIO, *PDRVHOSTALSAAUDIO;
 
 /** Maximum number of tries to recover a broken pipe. */
@@ -361,12 +365,14 @@ static int alsaStreamClose(snd_pcm_t **pphPCM)
  * Opens (creates) an ALSA stream.
  *
  * @returns VBox status code.
- * @param   fIn                 Whether this is an input stream to create or not.
- * @param   pCfgReq             Requested configuration to create stream with.
- * @param   pCfgObt             Obtained configuration the stream got created on success.
- * @param   pphPCM              Where to store the ALSA stream handle on success.
+ * @param   pszDev  The name of the device to open.
+ * @param   fIn     Whether this is an input stream to create or not.
+ * @param   pCfgReq Requested configuration to create stream with.
+ * @param   pCfgObt Obtained configuration the stream got created on success.
+ * @param   pphPCM  Where to store the ALSA stream handle on success.
  */
-static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt, snd_pcm_t **pphPCM)
+static int alsaStreamOpen(const char *pszDev, bool fIn, PALSAAUDIOSTREAMCFG pCfgReq,
+                          PALSAAUDIOSTREAMCFG pCfgObt,  snd_pcm_t **pphPCM)
 {
     snd_pcm_t *phPCM = NULL;
 
@@ -378,13 +384,9 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
 
     do
     {
-        const char *pszDev = "default"; /** @todo Make this configurable through PALSAAUDIOSTREAMCFG. */
-        if (!pszDev)
-        {
-            LogRel(("ALSA: Invalid or no %s device name set\n", fIn ? "input" : "output"));
-            rc = VERR_INVALID_PARAMETER;
-            break;
-        }
+        AssertLogRelMsgReturn(pszDev && *pszDev,
+                              ("ALSA: Invalid or no %s device name set\n", fIn ? "input" : "output"),
+                              VERR_INVALID_NAME);
 
         LogRel(("ALSA: Using %s device \"%s\"\n", fIn ? "input" : "output", pszDev));
 
@@ -963,11 +965,14 @@ static int alsaDestroyStreamOut(PALSAAUDIOSTREAM pStreamALSA)
  * Creates an ALSA output stream.
  *
  * @returns VBox status code.
- * @param   pStreamALSA         ALSA output stream to create.
- * @param   pCfgReq             Requested configuration to create stream with.
- * @param   pCfgAcq             Obtained configuration the stream got created with on success.
+ * @param   pThis       The ALSA driver instance data.
+ * @param   pStreamALSA ALSA output stream to create.
+ * @param   pCfgReq     Requested configuration to create stream with.
+ * @param   pCfgAcq     Obtained configuration the stream got created
+ *                      with on success.
  */
-static int alsaCreateStreamOut(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+static int alsaCreateStreamOut(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamALSA,
+                               PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     snd_pcm_t *phPCM = NULL;
 
@@ -984,7 +989,7 @@ static int alsaCreateStreamOut(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG 
         req.threshold   = pCfgReq->Backend.cFramesPreBuffering;
 
         ALSAAUDIOSTREAMCFG obt;
-        rc = alsaStreamOpen(false /* fIn */, &req, &obt, &phPCM);
+        rc = alsaStreamOpen(pThis->szDefaultOut, false /* fIn */, &req, &obt, &phPCM);
         if (RT_FAILURE(rc))
             break;
 
@@ -1023,11 +1028,14 @@ static int alsaCreateStreamOut(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG 
  * Creates an ALSA input stream.
  *
  * @returns VBox status code.
- * @param   pStreamALSA         ALSA input stream to create.
- * @param   pCfgReq             Requested configuration to create stream with.
- * @param   pCfgAcq             Obtained configuration the stream got created with on success.
+ * @param   pThis       The ALSA driver instance data.
+ * @param   pStreamALSA ALSA input stream to create.
+ * @param   pCfgReq     Requested configuration to create stream with.
+ * @param   pCfgAcq     Obtained configuration the stream got created
+ *                      with on success.
  */
-static int alsaCreateStreamIn(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+static int alsaCreateStreamIn(PDRVHOSTALSAAUDIO pThis, PALSAAUDIOSTREAM pStreamALSA,
+                              PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     int rc;
 
@@ -1044,7 +1052,7 @@ static int alsaCreateStreamIn(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG p
         req.threshold   = req.period_size;
 
         ALSAAUDIOSTREAMCFG obt;
-        rc = alsaStreamOpen(true /* fIn */, &req, &obt, &phPCM);
+        rc = alsaStreamOpen(pThis->szDefaultIn, true /* fIn */, &req, &obt, &phPCM);
         if (RT_FAILURE(rc))
             break;
 
@@ -1350,6 +1358,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostAlsaAudioHA_GetStatus(PPDMIHOSTAU
 static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                          PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
+    PDRVHOSTALSAAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTALSAAUDIO, IHostAudio);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
@@ -1359,9 +1368,9 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterfa
 
     int rc;
     if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        rc = alsaCreateStreamIn( pStreamALSA, pCfgReq, pCfgAcq);
+        rc = alsaCreateStreamIn( pThis, pStreamALSA, pCfgReq, pCfgAcq);
     else
-        rc = alsaCreateStreamOut(pStreamALSA, pCfgReq, pCfgAcq);
+        rc = alsaCreateStreamOut(pThis, pStreamALSA, pCfgReq, pCfgAcq);
 
     if (RT_SUCCESS(rc))
     {
@@ -1585,6 +1594,13 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     pThis->IHostAudio.pfnStreamCaptureBegin = NULL;
     pThis->IHostAudio.pfnStreamCaptureEnd   = NULL;
 
+    /*
+     * Read configuration.
+     */
+    int rc = CFGMR3QueryStringDef(pCfg, "DefaultInput", pThis->szDefaultIn, sizeof(pThis->szDefaultIn), "default");
+    AssertRCReturn(rc, rc);
+    rc = CFGMR3QueryStringDef(pCfg, "DefaultOutput", pThis->szDefaultOut, sizeof(pThis->szDefaultOut), "default");
+    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
