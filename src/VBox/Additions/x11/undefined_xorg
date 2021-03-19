@@ -181,3 +181,4 @@ xf86SetSingleMode
 xf86UpdateDesktopDimensions
 XNFcallocarray
 __xstat64
+__assert_c99

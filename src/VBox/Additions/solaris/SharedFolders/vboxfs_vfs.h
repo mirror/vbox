@@ -48,6 +48,29 @@ typedef struct sffs_data {
 	uint64_t	sf_ino;		/* per FS ino generator */
 } sffs_data_t;
 
+/*
+ * Workaround for older Solaris versions which called map_addr()/choose_addr()/
+ * map_addr_proc() with an 'alignment' argument that was removed in Solaris
+ * 11.4.
+ */
+typedef struct VBoxVFS_SolAddrMap
+{
+    union
+    {
+        void *(*pfnSol_map_addr)          (caddr_t *, size_t, offset_t, uint_t);
+        void *(*pfnSol_map_addr_old)      (caddr_t *, size_t, offset_t, int, uint_t);
+    } MapAddr;
+
+    union
+    {
+        int (*pfnSol_choose_addr)       (struct as *, caddr_t *, size_t, offset_t, uint_t);
+        int (*pfnSol_choose_addr_old)   (struct as *, caddr_t *, size_t, offset_t, int, uint_t);
+    } ChooseAddr;
+} VBoxVFS_SolAddrMap;
+typedef VBoxVFS_SolAddrMap *pVBoxVFS_SolAddrMap;
+
+extern bool                     g_fVBoxVFS_SolOldAddrMap;
+extern VBoxVFS_SolAddrMap       g_VBoxVFS_SolAddrMap;
 
 #ifdef	__cplusplus
 }

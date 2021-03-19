@@ -57,7 +57,9 @@
 #include <sys/time.h>
 #include "drm_atomic.h"
 #include "drm.h"
-#include "queue.h"
+#if !defined(VBOX_WITH_SYSTEM_QUEUE_H)
+# include "queue.h"
+#endif
 #include "drm_linux_list.h"
 
 #ifndef __inline__

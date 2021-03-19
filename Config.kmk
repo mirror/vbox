@@ -3134,15 +3134,20 @@ else
 endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_XMLLINT ?= $(which xmllint)'
 if "$(KBUILD_HOST)" == "solaris" && $(KBUILD_HOST_VERSION_MAJOR) == 5 && $(KBUILD_HOST_VERSION_MINOR) == 11
-# uname -v can report "snv_XYZ" or "11.X"
-	$(QUIET)$(APPEND) '$@' 'VBOX_SOLARIS_11_VERSION ?= $(shell uname -v | sed "s/snv_//" | cut -f1 -d".")'
-# FULLVERSION format e.g. "5.11-0.175.1.0.0.16.0", we're interested in 175 (VERSION), 1 (UPDATE), 16 (BUILD).
-	$(QUIET)$(APPEND) '$@' "VBOX_SOLARIS_11_FULLVERSION := $(shell pkg contents -H -t set -o pkg.fmri system/kernel | $(SED_EXT) -e '1!d' -e 's/^.*\@//;s/\:.*//;s/.*,//')"
-	$(QUIET)$(APPEND) '$@' 'ifeq ($$(VBOX_SOLARIS_11_VERSION),11)'
-	$(QUIET)$(APPEND) '$@' '   VBOX_SOLARIS_11_VERSION        := $$(word 2, $$(subst ., ,$$(word 2,$$(subst -, ,$$(VBOX_SOLARIS_11_FULLVERSION)))))'
+# BRANCH_VERSION format on S11 - S11.3:
+#   <trunk_id>.<update>.<sru>.<reserved>.<buildid>.<nightly_id>
+#   e.g.:  0.175.3.32.0.4.0:20180427T232405Z - N.B. trunk_id = 0.175
+# BRANCH_VERSION format on S11.4:
+#   <minor>.<update>.<sru>.<reserved>.<reserved>.<buildid>.<nightly_id>
+#   e.g.: 11.4.0.0.1.10.0:20180702T173343Z
+# We're interested in <update> and <buildid>.
+	$(QUIET)$(APPEND) '$@' "VBOX_SOLARIS_11_BRANCH_VERSION := $(shell pkg contents -H -t set -o pkg.fmri system/kernel | $(SED_EXT) -e '1!d' -e 's/^.*\-//;s/\:.*//;s/.*,//')"
+	$(QUIET)$(APPEND) '$@' 'ifeq ($$(word 2, $$(subst ., ,$$(VBOX_SOLARIS_11_BRANCH_VERSION))),175)'
+	$(QUIET)$(APPEND) '$@' '   VBOX_SOLARIS_11_UPDATE_VERSION := $$(word 3, $$(subst ., ,$$(VBOX_SOLARIS_11_BRANCH_VERSION)))'
+	$(QUIET)$(APPEND) '$@' 'else'
+	$(QUIET)$(APPEND) '$@' '   VBOX_SOLARIS_11_UPDATE_VERSION := $$(word 2, $$(subst ., ,$$(VBOX_SOLARIS_11_BRANCH_VERSION)))'
 	$(QUIET)$(APPEND) '$@' 'endif'
-	$(QUIET)$(APPEND) '$@' 'VBOX_SOLARIS_11_UPDATE_VERSION := $$(word 3, $$(subst ., ,$$(word 2,$$(subst -, ,$$(VBOX_SOLARIS_11_FULLVERSION)))))'
-	$(QUIET)$(APPEND) '$@' 'VBOX_SOLARIS_11_BUILD_VERSION  := $$(word 6, $$(subst ., ,$$(word 2,$$(subst -, ,$$(VBOX_SOLARIS_11_FULLVERSION)))))'
+	$(QUIET)$(APPEND) '$@' 'VBOX_SOLARIS_11_BUILD_VERSION  := $$(word 6, $$(subst ., ,$$(VBOX_SOLARIS_11_BRANCH_VERSION)))'
 endif
 if1of ($(KBUILD_HOST), darwin freebsd solaris)
 	$(QUIET)$(APPEND) '$@' 'VBOX_HOST_DTRACE_VERSION := $(shell dtrace -V)'
@@ -4450,7 +4455,7 @@ ifeq ($(KBUILD_TARGET),solaris)
   VBOX_WITH_ADDITIONS =
  else ifeq ($(VBOX_SOLARIS_VERSION),511)
   # OSS audio support for Solaris
-  VBOX_WITH_AUDIO_OSS := $(if-expr $(VBOX_SOLARIS_11_VERSION) >= 115,1,)
+  VBOX_WITH_AUDIO_OSS := 1
  endif
 
  # XPCOM namespace cleanup issue with Solaris GCC 4.5.2 and newer, see @bugref{5838}.

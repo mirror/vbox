@@ -1766,14 +1766,20 @@ sffs_map(
 #if defined(VBOX_VFS_SOLARIS_10U6)
 	if ((flags & MAP_FIXED) == 0)
 	{
-		map_addr(addrp, len, off, 1, flags);
+        if (g_fVBoxVFS_SolOldAddrMap)
+            g_VBoxVFS_SolAddrMap.MapAddr.pfnSol_map_addr_old(addrp, len, off, 1, flags);
+        else
+            g_VBoxVFS_SolAddrMap.MapAddr.pfnSol_map_addr(addrp, len, off, flags);
 		if (*addrp == NULL)
 			error = ENOMEM;
 	}
 	else
 		as_unmap(asp, *addrp, len);	/* User specified address, remove any previous mappings */
 #else
-	error = choose_addr(asp, addrp, len, off, ADDR_VACALIGN, flags);
+    if (g_fVBoxVFS_SolOldAddrMap)
+	    error = g_VBoxVFS_SolAddrMap.ChooseAddr.pfnSol_choose_addr_old(asp, addrp, len, off, 1, flags);
+    else
+	    error = g_VBoxVFS_SolAddrMap.ChooseAddr.pfnSol_choose_addr(asp, addrp, len, off, flags);
 #endif
 
 	if (error)

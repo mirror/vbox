@@ -577,7 +577,10 @@ static int rtR0MemObjSolUserMap(caddr_t *pVirtAddr, unsigned fPageAccess, uint64
     Args.cbPageSize  = cbPageSize;
 
     as_rangelock(pAddrSpace);
-    map_addr(pVirtAddr, cb, 0 /* offset */, 0 /* vacalign */, MAP_SHARED);
+    if (g_frtSolOldMapAddr)
+        g_rtSolMapAddr.u.pfnSol_map_addr_old(pVirtAddr, cb, 0 /* offset */, 0 /* vacalign */, MAP_SHARED);
+    else
+        g_rtSolMapAddr.u.pfnSol_map_addr(pVirtAddr, cb, 0 /* offset */, MAP_SHARED);
     if (*pVirtAddr != NULL)
         rc = as_map(pAddrSpace, *pVirtAddr, cb, rtR0SegVBoxSolCreate, &Args);
     else
@@ -1052,7 +1055,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJI
             /* Translate individual page_t to physical addresses. */
             page_t **papPages = pMemToMapSolaris->pvHandle;
             AssertPtr(papPages);
-            papPages += offSub >> PAGE_SIZE;
+            papPages += offSub >> PAGE_SHIFT;
             for (size_t iPage = 0; iPage < cPages; iPage++)
                 paPhysAddrs[iPage] = rtR0MemObjSolPagePhys(papPages[iPage]);
         }

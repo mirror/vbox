@@ -80,7 +80,7 @@
 # define SUP_CTL_CODE_SIZE(Function, Size)      _IOWRN('V', (Function) | SUP_IOCTL_FLAG, sizeof(SUPREQHDR))
 # define SUP_CTL_CODE_BIG(Function)             _IOWRN('V', (Function) | SUP_IOCTL_FLAG, sizeof(SUPREQHDR))
 # define SUP_CTL_CODE_FAST(Function)            _IO(   'V', (Function) | SUP_IOCTL_FLAG)
-# define SUP_CTL_CODE_NO_SIZE(uIOCtl)           (uIOCtl)
+# define SUP_CTL_CODE_NO_SIZE(uIOCtl)           ((uintptr_t)(uIOCtl))
 
 #elif defined(RT_OS_OS2)
   /* No automatic buffering, size not encoded. */

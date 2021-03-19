@@ -257,7 +257,11 @@ static int rtR0SegVBoxSolAdvise(seg_t *pSeg, caddr_t virtAddr, size_t cb, uint_t
 }
 
 
+#if defined(VBOX_NEW_CRASH_DUMP_FORMAT)
+static void rtR0SegVBoxSolDump(seg_t *pSeg, dump_addpage_f Func)
+#else
 static void rtR0SegVBoxSolDump(seg_t *pSeg)
+#endif
 {
     /* Nothing to do. */
 }
@@ -278,12 +282,6 @@ static int rtR0SegVBoxSolSetPageSize(seg_t *pSeg, caddr_t virtAddr, size_t cb, u
 static int rtR0SegVBoxSolGetMemId(seg_t *pSeg, caddr_t virtAddr, memid_t *pMemId)
 {
     return ENODEV;
-}
-
-
-static lgrp_mem_policy_info_t *rtR0SegVBoxSolGetPolicy(seg_t *pSeg, caddr_t virtAddr)
-{
-    return NULL;
 }
 
 
@@ -316,7 +314,7 @@ static struct seg_ops s_SegVBoxOps =
     rtR0SegVBoxSolPageLock,
     rtR0SegVBoxSolSetPageSize,
     rtR0SegVBoxSolGetMemId,
-    rtR0SegVBoxSolGetPolicy,
+    NULL,                       /* getpolicy() */
     rtR0SegVBoxSolCapable
 };
 

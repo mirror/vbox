@@ -26,6 +26,7 @@
 
 #include <VBox/log.h>
 #include <VBox/version.h>
+#include <iprt/dbg.h>
 
 #include <sys/types.h>
 #include <sys/mntent.h>
@@ -43,6 +44,7 @@
 #endif
 #include <sys/pathname.h>
 #include <sys/cmn_err.h>
+#include <sys/vmsystm.h>
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
 #include "vboxfs_prov.h"
@@ -103,6 +105,11 @@ static int sffs_major;	/* major number for device */
 kmutex_t sffs_minor_lock;
 int sffs_minor;		/* minor number for device */
 
+/** Whether to use the old-style map_addr()/choose_addr() routines. */
+bool                     g_fVBoxVFS_SolOldAddrMap;
+/** The map_addr()/choose_addr() hooks callout table structure. */
+VBoxVFS_SolAddrMap       g_VBoxVFS_SolAddrMap;
+
 /*
  * Module linkage information
  */
@@ -121,6 +128,37 @@ static sfp_connection_t *sfprov = NULL;
 int
 _init()
 {
+    RTDBGKRNLINFO hKrnlDbgInfo;
+    int rc = RTR0DbgKrnlInfoOpen(&hKrnlDbgInfo, 0 /* fFlags */);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlDbgInfo, NULL /* pszModule */, "plat_map_align_amount",  NULL /* ppvSymbol */);
+        if (RT_SUCCESS(rc))
+        {
+#if defined(VBOX_VFS_SOLARIS_10U6)
+            g_VBoxVFS_SolAddrMap.MapAddr.pfnSol_map_addr    = (void *)map_addr;
+#else
+            g_VBoxVFS_SolAddrMap.ChooseAddr.pfnSol_choose_addr = (void *)choose_addr;
+#endif
+        }
+        else
+        {
+            g_fVBoxVFS_SolOldAddrMap = true;
+#if defined(VBOX_VFS_SOLARIS_10U6)
+            g_VBoxVFS_SolAddrMap.MapAddr.pfnSol_map_addr_old    = (void *)map_addr;
+#else
+            g_VBoxVFS_SolAddrMap.ChooseAddr.pfnSol_choose_addr_old = (void *)choose_addr;
+#endif
+        }
+
+        RTR0DbgKrnlInfoRelease(hKrnlDbgInfo);
+    }
+    else
+    {
+        cmn_err(CE_NOTE, "RTR0DbgKrnlInfoOpen failed. rc=%d\n", rc);
+        return rc;
+    }
+
 	return (mod_install(&modlinkage));
 }
 
