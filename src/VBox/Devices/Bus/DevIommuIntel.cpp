@@ -23,6 +23,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/iommu-intel.h>
 
+#include <iprt/assertcompile.h>
 #include <iprt/string.h>
 
 #include "VBoxDD.h"
@@ -31,12 +32,30 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** @def VTD_LO_U32
+ * Gets the low uint32_t of a uint64_t or something equivalent.
+ *
+ * This is suitable for casting constants outside code (since RT_LO_U32 can't be
+ * used as it asserts for correctness when compiling on certain compilers). */
+#define VTD_LO_U32(a)       (uint32_t)(UINT32_MAX & (a))
+
+/** @def VTD_HI_U32
+ * Gets the high uint32_t of a uint64_t or something equivalent.
+ *
+ * This is suitable for casting constants outside code (since RT_HI_U32 can't be
+ * used as it asserts for correctness when compiling on certain compilers). */
+#define VTD_HI_U32(a)       (uint32_t)((a) >> 32)
+
 /** Release log prefix string. */
 #define IOMMU_LOG_PFX                               "Intel-IOMMU"
+
 /** The current saved state version. */
 #define IOMMU_SAVED_STATE_VERSION                   1
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * The shared IOMMU device state.
  */
@@ -110,26 +129,113 @@ typedef CTX_SUFF(IOMMU)  IOMMUCC;
 /** Pointer to the IOMMU device state for the current context. */
 typedef CTX_SUFF(PIOMMU) PIOMMUCC;
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /**
- * IOMMU register attributes.
+ * Read-write masks for IOMMU registers (group 0).
  */
-typedef struct IOMMUREGATTR
+static const uint32_t g_aRwMasks0[] =
 {
-    /** Name of the register. */
-    const char   *pszName;
-    /** RW: Read/write mask. */
-    uint64_t      fRwMask;
-    /** RO: Read-only mask. */
-    uint64_t      fRoMask;
-    /** WO: Write-only mask. */
-    uint64_t      fWoMask;
-    /** RW1C: Read-only Status, Write-1-to-clear mask. */
-    uint64_t      fRw1cMask;
-} IOMMUREGATTR;
-/** Pointer to an IOMMU register attributes struct. */
-typedef IOMMUREGATTR *PIOMMUREGATTR;
-/** Pointer to a const IOMMU register attributes struct. */
-typedef IOMMUREGATTR const *PCIOMMUREGATTR;
+    /* Offset  Register                  Low                                        High */
+    /* 0x000   VER_REG               */  VTD_VER_REG_RW_MASK,
+    /* 0x004   Reserved              */  0,
+    /* 0x008   CAP_REG               */  VTD_LO_U32(VTD_CAP_REG_RW_MASK),           VTD_HI_U32(VTD_CAP_REG_RW_MASK),
+    /* 0x010   ECAP_REG              */  VTD_LO_U32(VTD_ECAP_REG_RW_MASK),          VTD_HI_U32(VTD_ECAP_REG_RW_MASK),
+    /* 0x018   GCMD_REG              */  VTD_GCMD_REG_RW_MASK,
+    /* 0x01c   GSTS_REG              */  VTD_GSTS_REG_RW_MASK,
+    /* 0x020   RTADDR_REG            */  VTD_LO_U32(VTD_RTADDR_REG_RW_MASK),        VTD_HI_U32(VTD_RTADDR_REG_RW_MASK),
+    /* 0x028   CCMD_REG              */  VTD_LO_U32(VTD_CCMD_REG_RW_MASK),          VTD_HI_U32(VTD_CCMD_REG_RW_MASK),
+    /* 0x030   Reserved              */  0,
+    /* 0x034   FSTS_REG              */  VTD_FSTS_REG_RW_MASK,
+    /* 0x038   FECTL_REG             */  VTD_FECTL_REG_RW_MASK,
+    /* 0x03c   FEDATA_REG            */  VTD_FEDATA_REG_RW_MASK,
+    /* 0x040   FEADDR_REG            */  VTD_FEADDR_REG_RW_MASK,
+    /* 0x044   FEUADDR_REG           */  VTD_FEUADDR_REG_RW_MASK,
+    /* 0x048   Reserved              */  0,                                         0,
+    /* 0x050   Reserved              */  0,                                         0,
+    /* 0x058   AFLOG_REG             */  VTD_LO_U32(VTD_AFLOG_REG_RW_MASK),         VTD_HI_U32(VTD_AFLOG_REG_RW_MASK),
+    /* 0x060   Reserved              */  0,
+    /* 0x064   PMEN_REG              */  0, /* RO as we don't support PLMR and PHMR. */
+    /* 0x068   PLMBASE_REG           */  0, /* RO as we don't support PLMR. */
+    /* 0x06c   PLMLIMIT_REG          */  0, /* RO as we don't support PLMR. */
+    /* 0x070   PHMBASE_REG           */  0,                                         0, /* RO as we don't support PHMR. */
+    /* 0x078   PHMLIMIT_REG          */  0,                                         0, /* RO as we don't support PHMR. */
+    /* 0x080   IQH_REG               */  VTD_LO_U32(VTD_IQH_REG_RW_MASK),           VTD_HI_U32(VTD_IQH_REG_RW_MASK),
+    /* 0x088   IQT_REG               */  VTD_LO_U32(VTD_IQT_REG_RW_MASK),           VTD_HI_U32(VTD_IQT_REG_RW_MASK),
+    /* 0x090   IQA_REG               */  VTD_LO_U32(VTD_IQA_REG_RW_MASK),           VTD_HI_U32(VTD_IQA_REG_RW_MASK),
+    /* 0x098   Reserved              */  0,
+    /* 0x09c   ICS_REG               */  VTD_ICS_REG_RW_MASK,
+    /* 0x0a0   IECTL_REG             */  VTD_IECTL_REG_RW_MASK,
+    /* 0x0a4   IEDATA_REG            */  VTD_IEDATA_REG_RW_MASK,
+    /* 0x0a8   IEADDR_REG            */  VTD_IEADDR_REG_RW_MASK,
+    /* 0x0ac   IEUADDR_REG           */  VTD_IEUADDR_REG_RW_MASK,
+    /* 0x0b0   IQERCD_REG            */  VTD_LO_U32(VTD_IQERCD_REG_RW_MASK),        VTD_HI_U32(VTD_IQERCD_REG_RW_MASK),
+    /* 0x0b8   IRTA_REG              */  VTD_LO_U32(VTD_IRTA_REG_RW_MASK),          VTD_HI_U32(VTD_IRTA_REG_RW_MASK),
+    /* 0x0c0   PQH_REG               */  VTD_LO_U32(VTD_PQH_REG_RW_MASK),           VTD_HI_U32(VTD_PQH_REG_RW_MASK),
+    /* 0x0c8   PQT_REG               */  VTD_LO_U32(VTD_PQT_REG_RW_MASK),           VTD_HI_U32(VTD_PQT_REG_RW_MASK),
+    /* 0x0d0   PQA_REG               */  VTD_LO_U32(VTD_PQA_REG_RW_MASK),           VTD_HI_U32(VTD_PQA_REG_RW_MASK),
+    /* 0x0d8   Reserved              */  0,
+    /* 0x0dc   PRS_REG               */  VTD_PRS_REG_RW_MASK,
+    /* 0x0e0   PECTL_REG             */  VTD_PECTL_REG_RW_MASK,
+    /* 0x0e4   PEDATA_REG            */  VTD_PEDATA_REG_RW_MASK,
+    /* 0x0e8   PEADDR_REG            */  VTD_PEADDR_REG_RW_MASK,
+    /* 0x0ec   PEUADDR_REG           */  VTD_PEUADDR_REG_RW_MASK,
+    /* 0x0f0   Reserved              */  0,                                         0,
+    /* 0x0f8   Reserved              */  0,                                         0,
+    /* 0x100   MTRRCAP_REG           */  VTD_LO_U32(VTD_MTRRCAP_REG_RW_MASK),       VTD_HI_U32(VTD_MTRRCAP_REG_RW_MASK),
+    /* 0x108   MTRRDEF_REG           */  0,                                         0, /* RO as we don't support MTS. */
+    /* 0x110   Reserved              */  0,                                         0,
+    /* 0x118   Reserved              */  0,                                         0,
+    /* 0x120   MTRR_FIX64_00000_REG  */  0,                                         0, /* RO as we don't support MTS. */
+    /* 0x128   MTRR_FIX16K_80000_REG */  0,                                         0,
+    /* 0x130   MTRR_FIX16K_A0000_REG */  0,                                         0,
+    /* 0x138   MTRR_FIX4K_C0000_REG  */  0,                                         0,
+    /* 0x140   MTRR_FIX4K_C8000_REG  */  0,                                         0,
+    /* 0x148   MTRR_FIX4K_D0000_REG  */  0,                                         0,
+    /* 0x150   MTRR_FIX4K_D8000_REG  */  0,                                         0,
+    /* 0x158   MTRR_FIX4K_E0000_REG  */  0,                                         0,
+    /* 0x160   MTRR_FIX4K_E8000_REG  */  0,                                         0,
+    /* 0x168   MTRR_FIX4K_F0000_REG  */  0,                                         0,
+    /* 0x170   MTRR_FIX4K_F8000_REG  */  0,                                         0,
+    /* 0x178   Reserved              */  0,                                         0,
+    /* 0x180   MTRR_PHYSBASE0_REG    */  0,                                         0, /* RO as we don't support MTS. */
+    /* 0x188   MTRR_PHYSMASK0_REG    */  0,                                         0,
+    /* 0x190   MTRR_PHYSBASE1_REG    */  0,                                         0,
+    /* 0x198   MTRR_PHYSMASK1_REG    */  0,                                         0,
+    /* 0x1a0   MTRR_PHYSBASE2_REG    */  0,                                         0,
+    /* 0x1a8   MTRR_PHYSMASK2_REG    */  0,                                         0,
+    /* 0x1b0   MTRR_PHYSBASE3_REG    */  0,                                         0,
+    /* 0x1b8   MTRR_PHYSMASK3_REG    */  0,                                         0,
+    /* 0x1c0   MTRR_PHYSBASE4_REG    */  0,                                         0,
+    /* 0x1c8   MTRR_PHYSMASK4_REG    */  0,                                         0,
+    /* 0x1d0   MTRR_PHYSBASE5_REG    */  0,                                         0,
+    /* 0x1d8   MTRR_PHYSMASK5_REG    */  0,                                         0,
+    /* 0x1e0   MTRR_PHYSBASE6_REG    */  0,                                         0,
+    /* 0x1e8   MTRR_PHYSMASK6_REG    */  0,                                         0,
+    /* 0x1f0   MTRR_PHYSBASE7_REG    */  0,                                         0,
+    /* 0x1f8   MTRR_PHYSMASK7_REG    */  0,                                         0,
+    /* 0x200   MTRR_PHYSBASE8_REG    */  0,                                         0,
+    /* 0x208   MTRR_PHYSMASK8_REG    */  0,                                         0,
+    /* 0x210   MTRR_PHYSBASE9_REG    */  0,                                         0,
+    /* 0x218   MTRR_PHYSMASK9_REG    */  0,                                         0,
+};
+AssertCompile(sizeof(g_aRwMasks0) == VTD_MMIO_GROUP_0_SIZE);
+
+/**
+ * Read-write masks for IOMMU registers (group 1).
+ */
+static const uint32_t g_aRwMasks1[] =
+{
+    /* Offset  Register                  Low                                        High */
+    /* 0xe00   VCCAP_REG             */  VTD_LO_U32(VTD_VCCAP_REG_RW_MASK),         VTD_HI_U32(VTD_VCCAP_REG_RW_MASK),
+    /* 0xe08   Reserved              */  0,                                         0,
+    /* 0xe10   VCMD_REG              */  0,                                         0, /* RO as we don't support VCS. */
+    /* 0xe18   Reserved              */  0,                                         0,
+    /* 0xe20   VCRSP_REG             */  0,                                         0, /* RO as we don't support VCS. */
+};
+AssertCompile(sizeof(g_aRwMasks1) == VTD_MMIO_GROUP_1_SIZE);
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -275,14 +381,6 @@ static DECLCALLBACK(int) iommuIntelR3Construct(PPDMDEVINS pDevIns, int iInstance
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
-    /*
-     * Initialize read-only PCI configuration space.
-     */
-    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
-    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-
-    /** @todo Figure out the PCI vendor/product and other stuff. Can't seem to find
-     *        this yet. Maybe dump info from real hw. */
 
     return VERR_NOT_IMPLEMENTED;
 }

@@ -30,7 +30,6 @@
 #endif
 
 #include <iprt/types.h>
-#include <iprt/assertcompile.h>
 
 
 /**
@@ -39,7 +38,7 @@
  * @{
  */
 #define VTD_MMIO_GROUP_0_OFF_FIRST                              0x000
-#define VTD_MMIO_OFF_VER_REG                                    0x000  /**< Version. */
+#define VTD_MMIO_OFF_VER_REG                                    VTD_MMIO_GROUP_0_OFF_FIRST  /**< Version. */
 #define VTD_MMIO_OFF_CAP_REG                                    0x008  /**< Capability. */
 #define VTD_MMIO_OFF_ECAP_REG                                   0x010  /**< Extended Capability. */
 #define VTD_MMIO_OFF_GCMD_REG                                   0x018  /**< Global Command. */
@@ -120,8 +119,8 @@
 #define VTD_MMIO_GROUP_0_OFF_LAST                               VTD_MMIO_OFF_MTRR_PHYSMASK9_REG
 #define VTD_MMIO_GROUP_0_OFF_END                                (VTD_MMIO_GROUP_0_OFF_LAST + 8 /* sizeof MTRR_PHYSMASK9_REG */)
 
-#define VTD_MMIO_GROUP_1_OFF_FIRST                              0x000
-#define VTD_MMIO_OFF_VCCAP_REG                                  0xe00  /**< Virtual Command Capability. */
+#define VTD_MMIO_GROUP_1_OFF_FIRST                              0xe00
+#define VTD_MMIO_OFF_VCCAP_REG                                  VTD_MMIO_GROUP_1_OFF_FIRST  /**< Virtual Command Capability. */
 #define VTD_MMIO_OFF_VCMD_REG                                   0xe10  /**< Virtual Command. */
 #define VTD_MMIO_OFF_VCRSP_REG                                  0xe20  /**< Virtual Command Response. */
 #define VTD_MMIO_GROUP_1_OFF_LAST                               VTD_MMIO_OFF_VCRSP_REG
@@ -703,6 +702,8 @@ typedef VTD_IRTE_T const *PCVTD_IRTE_T;
 #define VTX_BF_VER_REG_RSVD_31_8_MASK                           UINT32_C(0xffffff00)
 RT_BF_ASSERT_COMPILE_CHECKS(VTX_BF_VER_REG_, UINT32_C(0), UINT32_MAX,
                             (MIN, MAX, RSVD_31_8));
+/** RW: Read/write mask. */
+#define VTD_VER_REG_RW_MASK                                     UINT32_C(0)
 /** @} */
 
 
@@ -783,6 +784,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTX_BF_VER_REG_, UINT32_C(0), UINT32_MAX,
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_CAP_REG_, UINT64_C(0), UINT64_MAX,
                             (ND, AFL, RWBF, PLMR, PHMR, CM, SAGAW, RSVD_15_13, MGAW, ZLR, RSVD_23, FRO, SLLPS, RSVD_38, PSI, NFR,
                              MAMV, DWD, DRD, FL1GP, RSVD_58_57, PI, FL5LP, RSVD_63_61));
+
+/** RW: Read/write mask. */
+#define VTD_CAP_REG_RW_MASK                                     UINT64_C(0x0000000000000000)
 /** @} */
 
 
@@ -894,6 +898,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_ECAP_REG_, UINT64_C(0), UINT64_MAX,
                             (C, QI, DT, IR, EIM, RSVD_5, PT, SC, IRO, RSVD_19_18, MHMV, RSVD_24, MTS, NEST, RSVD_27, RSVD_28,
                              PRS, ERS, SRS, RSVD_32, NWFS, EAFS, PSS, PASID, DIT, PDS, SMTS, VCS, SLADS, SLTS, FLTS, SMPWCS, RPS,
                              RSVD_63_50));
+
+/** RW: Read/write mask. */
+#define VTD_ECAP_REG_RW_MASK                                    UINT64_C(0x0000000000000000)
 /** @} */
 
 
@@ -931,6 +938,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_ECAP_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_GCMD_REG_TE_MASK                                 UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_GCMD_REG_, UINT32_C(0), UINT32_MAX,
                             (RSVD_22_0, CFI, SIRTP, IRE, QIE, WBF, EAFL, SFL, SRTP, TE));
+
+/** RW: Read/write mask. */
+#define VTD_GCMD_REG_RW_MASK                                    UINT32_C(0xff800000)
 /** @} */
 
 
@@ -968,6 +978,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_GCMD_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_GSTS_REG_TES_MASK                                UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_GSTS_REG_, UINT32_C(0), UINT32_MAX,
                             (RSVD_22_0, CFIS, IRTPS, IRES, QIES, WBFS, AFLS, FLS, RTPS, TES));
+
+/** RW: Read/write mask. */
+#define VTD_GSTS_REG_RW_MASK                                    UINT32_C(0)
 /** @} */
 
 
@@ -984,6 +997,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_GSTS_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_RTADDR_REG_RTA_MASK                              UINT64_C(0xfffffffffffff000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_RTADDR_REG_, UINT64_C(0), UINT64_MAX,
                             (RSVD_9_0, TTM, RTA));
+
+/** RW: Read/write mask. */
+#define VTD_RTADDR_REG_RW_MASK                                  UINT64_C(0xfffffffffffffc00)
 /** @} */
 
 
@@ -1012,6 +1028,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_RTADDR_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_CCMD_REG_ICC_MASK                                UINT64_C(0x8000000000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_CCMD_REG_, UINT64_C(0), UINT64_MAX,
                             (DID, SID, FM, RSVD_58_34, CAIG, CIRG, ICC));
+
+/** RW: Read/write mask. */
+#define VTD_CCMD_REG_RW_MASK                                    (  VTD_BF_CCMD_REG_DID_MASK | VTD_BF_CCMD_REG_SID_MASK  \
+                                                                 | VTD_BF_CCMD_REG_FM_MASK  | VTD_BF_CCMD_REG_CIRG_MASK \
+                                                                 | VTD_BF_CCMD_REG_ICC_MASK)
 /** @} */
 
 
@@ -1105,6 +1126,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IVA_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_FSTS_REG_RSVD_31_16_MASK                         UINT32_C(0xffff0000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FSTS_REG_, UINT32_C(0), UINT32_MAX,
                             (PFO, PPF, AFO, APF, IQE, ICE, ITE, RSVD_7, FRI, RSVD_31_16));
+
+/** RW: Read/write mask. */
+#define VTD_FSTS_REG_RW_MASK                                    (  VTD_BF_FSTS_REG_PFO_MASK | VTD_BF_FSTS_REG_AFO_MASK \
+                                                                 | VTD_BF_FSTS_REG_APF_MASK | VTD_BF_FSTS_REG_IQE_MASK \
+                                                                 | VTD_BF_FSTS_REG_ICE_MASK | VTD_BF_FSTS_REG_ITE_MASK)
 /** @} */
 
 
@@ -1121,6 +1147,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FSTS_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_FECTL_REG_IM_MASK                                UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FECTL_REG_, UINT32_C(0), UINT32_MAX,
                             (RSVD_29_0, IP, IM));
+
+/** RW: Read/write mask. */
+#define VTD_FECTL_REG_RW_MASK                                   VTD_BF_FECTL_REG_IM_MASK
 /** @} */
 
 
@@ -1134,6 +1163,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FECTL_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_FEDATA_REG_EIMD_MASK                             UINT32_C(0xffff0000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FEDATA_REG_, UINT32_C(0), UINT32_MAX,
                             (IMD, EIMD));
+
+/** RW: Read/write mask. */
+#define VTD_FEDATA_REG_RW_MASK                                  (VTD_BF_FEDATA_REG_IMD_MASK | VTD_BF_FEDATA_REG_EIMD_MASK)
 /** @} */
 
 
@@ -1147,6 +1179,20 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FEDATA_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_FEADDR_REG_MA_MASK                               UINT32_C(0xfffffffc)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FEADDR_REG_, UINT32_C(0), UINT32_MAX,
                             (RSVD_1_0, MA));
+
+/** RW: Read/write mask. */
+#define VTD_FEADDR_REG_RW_MASK                                  VTD_BF_FEADDR_REG_MA_MASK
+/** @} */
+
+
+/** @name Fault Event Upper Address Register (FEUADDR_REG).
+ * @{ */
+/** MUA: Message Upper Address. */
+#define VTD_BF_FEUADDR_REG_MA_SHIFT                             0
+#define VTD_BF_FEUADDR_REG_MA_MASK                              UINT32_C(0xffffffff)
+
+/** RW: Read/write mask. */
+#define VTD_FEUADDR_REG_RW_MASK                                 VTD_BF_FEUADDR_REG_MA_MASK
 /** @} */
 
 
@@ -1212,6 +1258,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_FRCD_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_0_AFLOG_REG_FLA_MASK                             UINT64_C(0xfffffffffffff000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_AFLOG_REG_, UINT64_C(0), UINT64_MAX,
                             (RSVD_8_0, FLS, FLA));
+
+/** RW: Read/write mask. */
+#define VTD_AFLOG_REG_RW_MASK                                   (VTD_BF_0_AFLOG_REG_FLS_MASK | VTD_BF_0_AFLOG_REG_FLA_MASK)
 /** @} */
 
 
@@ -1228,6 +1277,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_AFLOG_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_PMEN_REG_EPM_MASK                                UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PMEN_REG_, UINT32_C(0), UINT32_MAX,
                             (PRS, RSVD_30_1, EPM));
+
+/** RW: Read/write mask. */
+#define VTD_PMEN_REG_RW_MASK                                    VTD_BF_PMEN_REG_EPM_MASK
 /** @} */
 
 
@@ -1244,6 +1296,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PMEN_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_IQH_REG_RSVD_63_19_MASK                          UINT64_C(0xfffffffffff80000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQH_REG_, UINT64_C(0), UINT64_MAX,
                             (RSVD_3_0, QH, RSVD_63_19));
+
+/** RW: Read/write mask. */
+#define VTD_IQH_REG_RW_MASK                                     UINT64_C(0x0)
 /** @} */
 
 
@@ -1260,7 +1315,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQH_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_IQT_REG_RSVD_63_19_MASK                          UINT64_C(0xfffffffffff80000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQT_REG_, UINT64_C(0), UINT64_MAX,
                             (RSVD_3_0, QT, RSVD_63_19));
+
+/** RW: Read/write mask. */
+#define VTD_IQT_REG_RW_MASK                                     VTD_BF_IQT_REG_QT_MASK
 /** @} */
+
 
 /** @name Invalidation Queue Address Register (IQA_REG).
  * @{ */
@@ -1278,6 +1337,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQT_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_IQA_REG_IQA_MASK                                 UINT64_C(0xfffffffffffff000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQA_REG_, UINT64_C(0), UINT64_MAX,
                             (QS, RSVD_10_3, DW, IQA));
+
+/** RW: Read/write mask. */
+#define VTD_IQA_REG_RW_MASK                                     (  VTD_BF_IQA_REG_QS_MASK | VTD_BF_IQA_REG_DW_MASK \
+                                                                 | VTD_BF_IQA_REG_IQA_MASK)
 /** @} */
 
 
@@ -1291,6 +1354,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQA_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_ICS_REG_RSVD_31_1_MASK                           UINT32_C(0xfffffffe)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_ICS_REG_, UINT32_C(0), UINT32_MAX,
                             (IWC, RSVD_31_1));
+
+/** RW: Read/write mask. */
+#define VTD_ICS_REG_RW_MASK                                     VTD_BF_ICS_REG_IWC_MASK
 /** @} */
 
 
@@ -1307,6 +1373,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_ICS_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_IECTL_REG_IM_MASK                                UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IECTL_REG_, UINT32_C(0), UINT32_MAX,
                             (RSVD_29_0, IP, IM));
+
+/** RW: Read/write mask. */
+#define VTD_IECTL_REG_RW_MASK                                   VTD_BF_IECTL_REG_IM_MASK
 /** @} */
 
 
@@ -1320,6 +1389,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IECTL_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_IEDATA_REG_EIMD_MASK                             UINT32_C(0xffff0000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IEDATA_REG_, UINT32_C(0), UINT32_MAX,
                             (IMD, EIMD));
+
+/** RW: Read/write mask. */
+#define VTD_IEDATA_REG_RW_MASK                                  (VTD_BF_IEDATA_REG_IMD_MASK | VTD_BF_IEDATA_REG_EIMD_MASK)
 /** @} */
 
 
@@ -1333,6 +1405,20 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IEDATA_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_IEADDR_REG_MA_MASK                               UINT32_C(0xfffffffc)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IEADDR_REG_, UINT32_C(0), UINT32_MAX,
                             (RSVD_1_0, MA));
+
+/** RW: Read/write mask. */
+#define VTD_IEADDR_REG_RW_MASK                                  VTD_BF_IEADDR_REG_MA_MASK
+/** @} */
+
+
+/** @name Invalidation Event Upper Address Register (IEUADDR_REG).
+ * @{ */
+/** MUA: Message Upper Address. */
+#define VTD_BF_IEUADDR_REG_MUA_SHIFT                            0
+#define VTD_BF_IEUADDR_REG_MUA_MASK                             UINT32_C(0xffffffff)
+
+/** RW: Read/write mask. */
+#define VTD_IEUADDR_REG_RW_MASK                                 VTD_BF_IEUADDR_REG_MUA_MASK
 /** @} */
 
 
@@ -1352,6 +1438,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IEADDR_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_IQERCD_REG_ICESID_MASK                           UINT64_C(0xffff000000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQERCD_REG_, UINT64_C(0), UINT64_MAX,
                             (IQEI, RSVD_31_4, ITESID, ICESID));
+
+/** RW: Read/write mask. */
+#define VTD_IQERCD_REG_RW_MASK                                  UINT64_C(0)
 /** @} */
 
 
@@ -1371,6 +1460,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQERCD_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_IRTA_REG_IRTA_MASK                               UINT64_C(0xfffffffffffff000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IRTA_REG_, UINT64_C(0), UINT64_MAX,
                             (S, RSVD_10_4, EIME, IRTA));
+
+/** RW: Read/write mask. */
+#define VTD_IRTA_REG_RW_MASK                                    (  VTD_BF_IRTA_REG_S_MASK | VTD_BF_IRTA_REG_EIME_MASK \
+                                                                 | VTD_BF_IRTA_REG_IRTA_MASK)
 /** @} */
 
 
@@ -1387,6 +1480,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IRTA_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_PQH_REG_RSVD_63_19_MASK                          UINT64_C(0xfffffffffff80000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PQH_REG_, UINT64_C(0), UINT64_MAX,
                             (RSVD_4_0, PQH, RSVD_63_19));
+
+/** RW: Read/write mask. */
+#define VTD_PQH_REG_RW_MASK                                     VTD_BF_PQH_REG_PQH_MASK
 /** @} */
 
 
@@ -1403,6 +1499,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PQH_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_PQT_REG_RSVD_63_19_MASK                          UINT64_C(0xfffffffffff80000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PQT_REG_, UINT64_C(0), UINT64_MAX,
                             (RSVD_4_0, PQT, RSVD_63_19));
+
+/** RW: Read/write mask. */
+#define VTD_PQT_REG_RW_MASK                                     VTD_BF_PQT_REG_PQT_MASK
 /** @} */
 
 
@@ -1419,6 +1518,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PQT_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_PQA_REG_PQA_MASK                                 UINT64_C(0xfffffffffffff000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PQA_REG_, UINT64_C(0), UINT64_MAX,
                             (PQS, RSVD_11_3, PQA));
+
+/** RW: Read/write mask. */
+#define VTD_PQA_REG_RW_MASK                                     (VTD_BF_PQA_REG_PQS_MASK | VTD_BF_PQA_REG_PQA_MASK)
 /** @} */
 
 
@@ -1435,6 +1537,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PQA_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_PRS_REG_RSVD_31_2_MASK                           UINT64_C(0xfffffffc)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PRS_REG_, UINT32_C(0), UINT32_MAX,
                             (PPR, PRO, RSVD_31_2));
+
+/** RW: Read/write mask. */
+#define VTD_PRS_REG_RW_MASK                                     (VTD_BF_PRS_REG_PPR_MASK | VTD_BF_PRS_REG_PRO_MASK)
 /** @} */
 
 
@@ -1451,6 +1556,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PRS_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_PECTL_REG_IM_MASK                                UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PECTL_REG_, UINT32_C(0), UINT32_MAX,
                             (RSVD_29_0, IP, IM));
+
+/** RW: Read/write mask. */
+#define VTD_PECTL_REG_RW_MASK                                   VTD_BF_PECTL_REG_IM_MASK
 /** @} */
 
 
@@ -1464,6 +1572,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PECTL_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_PEDATA_REG_EIMD_MASK                             UINT32_C(0xffff0000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PEDATA_REG_, UINT32_C(0), UINT32_MAX,
                             (IMD, EIMD));
+
+/** RW: Read/write mask. */
+#define VTD_PEDATA_REG_RW_MASK                                  (VTD_BF_PEDATA_REG_IMD_MASK | VTD_BF_PEDATA_REG_EIMD_MASK)
 /** @} */
 
 
@@ -1477,6 +1588,46 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PEDATA_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_PEADDR_REG_MA_MASK                               UINT32_C(0xfffffffc)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PEADDR_REG_, UINT32_C(0), UINT32_MAX,
                             (RSVD_1_0, MA));
+
+/** RW: Read/write mask. */
+#define VTD_PEADDR_REG_RW_MASK                                  VTD_BF_PEADDR_REG_MA_MASK
+/** @} */
+
+
+
+/** @name Page Request Event Upper Address Register (PEUADDR_REG).
+ * @{ */
+/** MA: Message Address. */
+#define VTD_BF_PEUADDR_REG_MUA_SHIFT                            0
+#define VTD_BF_PEUADDR_REG_MUA_MASK                             UINT32_C(0xffffffff)
+
+/** RW: Read/write mask. */
+#define VTD_PEUADDR_REG_RW_MASK                                 VTD_BF_PEUADDR_REG_MUA_MASK
+/** @} */
+
+
+/** @name MTRR Capability Register (MTRRCAP_REG).
+ * @{ */
+/** VCNT: Variable MTRR Count. */
+#define VTD_BF_MTRRCAP_REG_VCNT_SHIFT                           0
+#define VTD_BF_MTRRCAP_REG_VCNT_MASK                            UINT64_C(0x00000000000000ff)
+/** FIX: Fixed range MTRRs Supported. */
+#define VTD_BF_MTRRCAP_REG_FIX_SHIFT                            8
+#define VTD_BF_MTRRCAP_REG_FIX_MASK                             UINT64_C(0x0000000000000100)
+/** R: Reserved (bit 9). */
+#define VTD_BF_MTRRCAP_REG_RSVD_9_SHIFT                         9
+#define VTD_BF_MTRRCAP_REG_RSVD_9_MASK                          UINT64_C(0x0000000000000200)
+/** WC: Write Combining. */
+#define VTD_BF_MTRRCAP_REG_WC_SHIFT                             10
+#define VTD_BF_MTRRCAP_REG_WC_MASK                              UINT64_C(0x0000000000000400)
+/** R: Reserved (bits 63:11). */
+#define VTD_BF_MTRRCAP_REG_RSVD_63_11_SHIFT                     11
+#define VTD_BF_MTRRCAP_REG_RSVD_63_11_MASK                      UINT64_C(0xfffffffffffff800)
+RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_MTRRCAP_REG_, UINT64_C(0), UINT64_MAX,
+                            (VCNT, FIX, RSVD_9, WC, RSVD_63_11));
+
+/** RW: Read/write mask. */
+#define VTD_MTRRCAP_REG_RW_MASK                                 UINT64_C(0)
 /** @} */
 
 
@@ -1499,6 +1650,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PEADDR_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_BF_MTRRDEF_REG_RSVD_63_12_MASK                      UINT64_C(0xfffffffffffff000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_MTRRDEF_REG_, UINT64_C(0), UINT64_MAX,
                             (TYPE, RSVD_9_8, FE, E, RSVD_63_12));
+
+/** RW: Read/write mask. */
+#define VTD_MTRRDEF_REG_RW_MASK                                 (  VTD_BF_MTRRDEF_REG_TYPE_MASK | VTD_BF_MTRRDEF_REG_FE_MASK \
+                                                                 | VTD_BF_MTRRDEF_REG_E_MASK)
 /** @} */
 
 
@@ -1512,6 +1667,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_MTRRDEF_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_VCCAP_REG_RSVD_63_1_MASK                         UINT64_C(0xfffffffffffffffe)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCCAP_REG_, UINT64_C(0), UINT64_MAX,
                             (PAS, RSVD_63_1));
+
+/** RW: Read/write mask. */
+#define VTD_VCCAP_REG_RW_MASK                                   UINT64_C(0)
 /** @} */
 
 
@@ -1525,10 +1683,13 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCCAP_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_VCMD_REG_OP_MASK                                 UINT64_C(0xffffffffffffff00)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCMD_REG_, UINT64_C(0), UINT64_MAX,
                             (CMD, OP));
+
+/** RW: Read/write mask. */
+#define VTD_VCMD_REG_RW_MASK                                    (VTD_BF_VCMD_REG_CMD_MASK | VTD_BF_VCMD_REG_OP_MASK)
 /** @} */
 
 
-/** @name Virtual Command Register (VCMD_REG).
+/** @name Virtual Command Response Register (VCRSP_REG).
  * @{ */
 /** IP: In Progress. */
 #define VTD_BF_VCRSP_REG_IP_SHIFT                               0
@@ -1544,6 +1705,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCMD_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_VCRSP_REG_RSLT_MASK                              UINT64_C(0xffffffffffffff00)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCRSP_REG_, UINT64_C(0), UINT64_MAX,
                             (IP, SC, RSVD_7_3, RSLT));
+
+/** RW: Read/write mask. */
+#define VTD_VCRSP_REG_RW_MASK                                   UINT64_C(0)
 /** @} */
 
 
