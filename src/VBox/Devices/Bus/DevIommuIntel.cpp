@@ -223,18 +223,122 @@ static const uint32_t g_aRwMasks0[] =
 AssertCompile(sizeof(g_aRwMasks0) == VTD_MMIO_GROUP_0_SIZE);
 
 /**
+ * Read-only Status, Write-1-to-clear masks for IOMMU registers (group 0).
+ */
+static const uint32_t g_aRw1cMasks0[] =
+{
+    /* Offset  Register                  Low                      High */
+    /* 0x000   VER_REG               */  0,
+    /* 0x004   Reserved              */  0,
+    /* 0x008   CAP_REG               */  0,                       0,
+    /* 0x010   ECAP_REG              */  0,                       0,
+    /* 0x018   GCMD_REG              */  0,
+    /* 0x01c   GSTS_REG              */  0,
+    /* 0x020   RTADDR_REG            */  0,                       0,
+    /* 0x028   CCMD_REG              */  0,                       0,
+    /* 0x030   Reserved              */  0,
+    /* 0x034   FSTS_REG              */  VTD_FSTS_REG_RW1C_MASK,
+    /* 0x038   FECTL_REG             */  0,
+    /* 0x03c   FEDATA_REG            */  0,
+    /* 0x040   FEADDR_REG            */  0,
+    /* 0x044   FEUADDR_REG           */  0,
+    /* 0x048   Reserved              */  0,                       0,
+    /* 0x050   Reserved              */  0,                       0,
+    /* 0x058   AFLOG_REG             */  0,                       0,
+    /* 0x060   Reserved              */  0,
+    /* 0x064   PMEN_REG              */  0,
+    /* 0x068   PLMBASE_REG           */  0,
+    /* 0x06c   PLMLIMIT_REG          */  0,
+    /* 0x070   PHMBASE_REG           */  0,                       0,
+    /* 0x078   PHMLIMIT_REG          */  0,                       0,
+    /* 0x080   IQH_REG               */  0,                       0,
+    /* 0x088   IQT_REG               */  0,                       0,
+    /* 0x090   IQA_REG               */  0,                       0,
+    /* 0x098   Reserved              */  0,
+    /* 0x09c   ICS_REG               */  VTD_ICS_REG_RW1C_MASK,
+    /* 0x0a0   IECTL_REG             */  0,
+    /* 0x0a4   IEDATA_REG            */  0,
+    /* 0x0a8   IEADDR_REG            */  0,
+    /* 0x0ac   IEUADDR_REG           */  0,
+    /* 0x0b0   IQERCD_REG            */  0,                       0,
+    /* 0x0b8   IRTA_REG              */  0,                       0,
+    /* 0x0c0   PQH_REG               */  0,                       0,
+    /* 0x0c8   PQT_REG               */  0,                       0,
+    /* 0x0d0   PQA_REG               */  0,                       0,
+    /* 0x0d8   Reserved              */  0,
+    /* 0x0dc   PRS_REG               */  0,
+    /* 0x0e0   PECTL_REG             */  0,
+    /* 0x0e4   PEDATA_REG            */  0,
+    /* 0x0e8   PEADDR_REG            */  0,
+    /* 0x0ec   PEUADDR_REG           */  0,
+    /* 0x0f0   Reserved              */  0,                       0,
+    /* 0x0f8   Reserved              */  0,                       0,
+    /* 0x100   MTRRCAP_REG           */  0,                       0,
+    /* 0x108   MTRRDEF_REG           */  0,                       0,
+    /* 0x110   Reserved              */  0,                       0,
+    /* 0x118   Reserved              */  0,                       0,
+    /* 0x120   MTRR_FIX64_00000_REG  */  0,                       0,
+    /* 0x128   MTRR_FIX16K_80000_REG */  0,                       0,
+    /* 0x130   MTRR_FIX16K_A0000_REG */  0,                       0,
+    /* 0x138   MTRR_FIX4K_C0000_REG  */  0,                       0,
+    /* 0x140   MTRR_FIX4K_C8000_REG  */  0,                       0,
+    /* 0x148   MTRR_FIX4K_D0000_REG  */  0,                       0,
+    /* 0x150   MTRR_FIX4K_D8000_REG  */  0,                       0,
+    /* 0x158   MTRR_FIX4K_E0000_REG  */  0,                       0,
+    /* 0x160   MTRR_FIX4K_E8000_REG  */  0,                       0,
+    /* 0x168   MTRR_FIX4K_F0000_REG  */  0,                       0,
+    /* 0x170   MTRR_FIX4K_F8000_REG  */  0,                       0,
+    /* 0x178   Reserved              */  0,                       0,
+    /* 0x180   MTRR_PHYSBASE0_REG    */  0,                       0,
+    /* 0x188   MTRR_PHYSMASK0_REG    */  0,                       0,
+    /* 0x190   MTRR_PHYSBASE1_REG    */  0,                       0,
+    /* 0x198   MTRR_PHYSMASK1_REG    */  0,                       0,
+    /* 0x1a0   MTRR_PHYSBASE2_REG    */  0,                       0,
+    /* 0x1a8   MTRR_PHYSMASK2_REG    */  0,                       0,
+    /* 0x1b0   MTRR_PHYSBASE3_REG    */  0,                       0,
+    /* 0x1b8   MTRR_PHYSMASK3_REG    */  0,                       0,
+    /* 0x1c0   MTRR_PHYSBASE4_REG    */  0,                       0,
+    /* 0x1c8   MTRR_PHYSMASK4_REG    */  0,                       0,
+    /* 0x1d0   MTRR_PHYSBASE5_REG    */  0,                       0,
+    /* 0x1d8   MTRR_PHYSMASK5_REG    */  0,                       0,
+    /* 0x1e0   MTRR_PHYSBASE6_REG    */  0,                       0,
+    /* 0x1e8   MTRR_PHYSMASK6_REG    */  0,                       0,
+    /* 0x1f0   MTRR_PHYSBASE7_REG    */  0,                       0,
+    /* 0x1f8   MTRR_PHYSMASK7_REG    */  0,                       0,
+    /* 0x200   MTRR_PHYSBASE8_REG    */  0,                       0,
+    /* 0x208   MTRR_PHYSMASK8_REG    */  0,                       0,
+    /* 0x210   MTRR_PHYSBASE9_REG    */  0,                       0,
+    /* 0x218   MTRR_PHYSMASK9_REG    */  0,                       0,
+};
+AssertCompile(sizeof(g_aRw1cMasks0) == VTD_MMIO_GROUP_0_SIZE);
+
+/**
  * Read-write masks for IOMMU registers (group 1).
  */
 static const uint32_t g_aRwMasks1[] =
 {
-    /* Offset  Register                  Low                                        High */
-    /* 0xe00   VCCAP_REG             */  VTD_LO_U32(VTD_VCCAP_REG_RW_MASK),         VTD_HI_U32(VTD_VCCAP_REG_RW_MASK),
-    /* 0xe08   Reserved              */  0,                                         0,
-    /* 0xe10   VCMD_REG              */  0,                                         0, /* RO as we don't support VCS. */
-    /* 0xe18   Reserved              */  0,                                         0,
-    /* 0xe20   VCRSP_REG             */  0,                                         0, /* RO as we don't support VCS. */
+    /* Offset  Register                  Low                                 High */
+    /* 0xe00   VCCAP_REG             */  VTD_LO_U32(VTD_VCCAP_REG_RW_MASK),  VTD_HI_U32(VTD_VCCAP_REG_RW_MASK),
+    /* 0xe08   Reserved              */  0,                                  0,
+    /* 0xe10   VCMD_REG              */  0,                                  0, /* RO as we don't support VCS. */
+    /* 0xe18   Reserved              */  0,                                  0,
+    /* 0xe20   VCRSP_REG             */  0,                                  0, /* RO as we don't support VCS. */
 };
 AssertCompile(sizeof(g_aRwMasks1) == VTD_MMIO_GROUP_1_SIZE);
+
+/**
+ * Read-only Status, Write-1-to-clear masks for IOMMU registers (group 1).
+ */
+static const uint32_t g_aRw1cMasks1[] =
+{
+    /* Offset  Register                  Low  High */
+    /* 0xe00   VCCAP_REG             */  0,   0,
+    /* 0xe08   Reserved              */  0,   0,
+    /* 0xe10   VCMD_REG              */  0,   0,
+    /* 0xe18   Reserved              */  0,   0,
+    /* 0xe20   VCRSP_REG             */  0,   0,
+};
+AssertCompile(sizeof(g_aRw1cMasks1) == VTD_MMIO_GROUP_1_SIZE);
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE

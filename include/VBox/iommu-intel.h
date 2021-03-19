@@ -1132,6 +1132,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FSTS_REG_, UINT32_C(0), UINT32_MAX,
 #define VTD_FSTS_REG_RW_MASK                                    (  VTD_BF_FSTS_REG_PFO_MASK | VTD_BF_FSTS_REG_AFO_MASK \
                                                                  | VTD_BF_FSTS_REG_APF_MASK | VTD_BF_FSTS_REG_IQE_MASK \
                                                                  | VTD_BF_FSTS_REG_ICE_MASK | VTD_BF_FSTS_REG_ITE_MASK)
+/** RW1C: Read-only-status, Write-1-to-clear status mask. */
+#define VTD_FSTS_REG_RW1C_MASK                                  (  VTD_BF_FSTS_REG_PFO_MASK | VTD_BF_FSTS_REG_AFO_MASK \
+                                                                 | VTD_BF_FSTS_REG_APF_MASK | VTD_BF_FSTS_REG_IQE_MASK \
+                                                                 | VTD_BF_FSTS_REG_ICE_MASK | VTD_BF_FSTS_REG_ITE_MASK)
 /** @} */
 
 
@@ -1358,6 +1362,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_ICS_REG_, UINT32_C(0), UINT32_MAX,
 
 /** RW: Read/write mask. */
 #define VTD_ICS_REG_RW_MASK                                     VTD_BF_ICS_REG_IWC_MASK
+/** RW1C: Read-only-status, Write-1-to-clear status mask. */
+#define VTD_ICS_REG_RW1C_MASK                                   VTD_BF_ICS_REG_IWC_MASK
 /** @} */
 
 
@@ -1541,6 +1547,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PRS_REG_, UINT32_C(0), UINT32_MAX,
 
 /** RW: Read/write mask. */
 #define VTD_PRS_REG_RW_MASK                                     (VTD_BF_PRS_REG_PPR_MASK | VTD_BF_PRS_REG_PRO_MASK)
+/** RW1C: Read-only-status, Write-1-to-clear status mask. */
+#define VTD_PRS_REG_RW1C_MASK                                   (VTD_BF_PRS_REG_PPR_MASK | VTD_BF_PRS_REG_PRO_MASK)
 /** @} */
 
 
