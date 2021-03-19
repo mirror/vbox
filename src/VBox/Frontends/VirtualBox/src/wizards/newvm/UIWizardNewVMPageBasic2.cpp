@@ -208,7 +208,7 @@ void UIWizardNewVMPage2::retranslateWidgets()
     if (m_pProductKeyLabel)
         m_pProductKeyLabel->setText(UIWizardNewVM::tr("&Product Key:"));
     if (m_pUserNameContainer)
-        m_pUserNameContainer->setTitle(UIWizardNewVM::tr("User name and password"));
+        m_pUserNameContainer->setTitle(UIWizardNewVM::tr("Username and password"));
     if (m_pAdditionalOptionsContainer)
         m_pAdditionalOptionsContainer->setTitle(UIWizardNewVM::tr("Additional options"));
     if (m_pStartHeadlessCheckBox)
