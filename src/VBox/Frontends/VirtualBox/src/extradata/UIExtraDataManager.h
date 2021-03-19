@@ -799,8 +799,8 @@ public:
       * @{ */
         void setVMActivityOverviewHiddenColumnList(const QStringList &hiddenColumnList);
         QStringList VMActivityOverviewHiddenColumnList();
-        bool activityOverviewShowAllMachines();
-        void setActivityOverviewShowAllMachines(bool fShow);
+        bool VMActivityOverviewShowAllMachines();
+        void setVMActivityOverviewShowAllMachines(bool fShow);
     /** @} */
 
 private slots:

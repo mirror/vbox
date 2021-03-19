@@ -1568,7 +1568,7 @@ void UIVMActivityOverviewWidget::loadSettings()
     foreach(const QString& strColumn, hiddenColumnList)
         setColumnVisible((int)gpConverter->fromInternalString<VMActivityOverviewColumn>(strColumn), false);
     /* Load other options: */
-    sltNotRunningVMVisibility(gEDataManager->activityOverviewShowAllMachines());
+    sltNotRunningVMVisibility(gEDataManager->VMActivityOverviewShowAllMachines());
 }
 
 void UIVMActivityOverviewWidget::saveSettings()
@@ -1581,7 +1581,7 @@ void UIVMActivityOverviewWidget::saveSettings()
             hiddenColumnList << gpConverter->toInternalString((VMActivityOverviewColumn) i);
     }
     gEDataManager->setVMActivityOverviewHiddenColumnList(hiddenColumnList);
-    gEDataManager->setActivityOverviewShowAllMachines(m_fShowNotRunningVMs);
+    gEDataManager->setVMActivityOverviewShowAllMachines(m_fShowNotRunningVMs);
 }
 
 void UIVMActivityOverviewWidget::sltToggleColumnSelectionMenu(bool fChecked)
