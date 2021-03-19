@@ -3519,6 +3519,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     catch (ConfigError &x)
     {
         // InsertConfig threw something:
+        VMR3SetError(pUVM, x.m_vrc, RT_SRC_POS, "Caught ConfigError: %Rrc - %s", x.m_vrc, x.what());
         return x.m_vrc;
     }
     catch (HRESULT hrcXcpt)
