@@ -1561,7 +1561,7 @@ static DECLCALLBACK(void *) drvHostAlsaAudioQueryInterface(PPDMIBASE pInterface,
  */
 static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    RT_NOREF(pCfg, fFlags);
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVHOSTALSAAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTALSAAUDIO);
     LogRel(("Audio: Initializing ALSA driver\n"));
@@ -1597,6 +1597,8 @@ static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE
     /*
      * Read configuration.
      */
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "StreamName|DefaultOutput|DefaultInput", "");
+
     int rc = CFGMR3QueryStringDef(pCfg, "DefaultInput", pThis->szDefaultIn, sizeof(pThis->szDefaultIn), "default");
     AssertRCReturn(rc, rc);
     rc = CFGMR3QueryStringDef(pCfg, "DefaultOutput", pThis->szDefaultOut, sizeof(pThis->szDefaultOut), "default");
