@@ -29,6 +29,7 @@
 # pragma once
 #endif
 
+#include <iprt/assertcompile.h>
 #include <iprt/types.h>
 
 

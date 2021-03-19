@@ -23,7 +23,6 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/iommu-intel.h>
 
-#include <iprt/assertcompile.h>
 #include <iprt/string.h>
 
 #include "VBoxDD.h"
