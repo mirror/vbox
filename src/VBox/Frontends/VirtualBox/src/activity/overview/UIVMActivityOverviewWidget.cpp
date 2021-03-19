@@ -1438,7 +1438,6 @@ void UIVMActivityOverviewWidget::prepare()
         m_iSortIndicatorWidth = 20;
     m_iSortIndicatorWidth += 2 * iIndicatorMargin;
 
-    loadHiddenColumnList();
     prepareWidgets();
     loadSettings();
     prepareActions();
@@ -1562,19 +1561,19 @@ void UIVMActivityOverviewWidget::prepareToolBar()
 
 void UIVMActivityOverviewWidget::loadSettings()
 {
-}
-
-void UIVMActivityOverviewWidget::loadHiddenColumnList()
-{
+    /* Load the list of hidden columns: */
     QStringList hiddenColumnList = gEDataManager->VMActivityOverviewHiddenColumnList();
     for (int i = (int)VMActivityOverviewColumn_Name; i < (int)VMActivityOverviewColumn_Max; ++i)
         m_columnVisible[i] = true;
     foreach(const QString& strColumn, hiddenColumnList)
         setColumnVisible((int)gpConverter->fromInternalString<VMActivityOverviewColumn>(strColumn), false);
+    /* Load other options: */
+    sltNotRunningVMVisibility(gEDataManager->activityOverviewShowAllMachines());
 }
 
 void UIVMActivityOverviewWidget::saveSettings()
 {
+    /* Save the list of hidden columns: */
     QStringList hiddenColumnList;
     for (int i = 0; i < m_columnVisible.size(); ++i)
     {
@@ -1582,6 +1581,7 @@ void UIVMActivityOverviewWidget::saveSettings()
             hiddenColumnList << gpConverter->toInternalString((VMActivityOverviewColumn) i);
     }
     gEDataManager->setVMActivityOverviewHiddenColumnList(hiddenColumnList);
+    gEDataManager->setActivityOverviewShowAllMachines(m_fShowNotRunningVMs);
 }
 
 void UIVMActivityOverviewWidget::sltToggleColumnSelectionMenu(bool fChecked)
@@ -1621,6 +1621,7 @@ void UIVMActivityOverviewWidget::sltHandleTableContextMenuRequest(const QPoint &
     QMenu menu;
     if (m_pVMActivityMonitorAction)
         menu.addAction(m_pVMActivityMonitorAction);
+    menu.addSeparator();
     QAction *pHideNotRunningAction =
         menu.addAction(UIVMActivityOverviewWidget::tr("List all virtual machines"));
     pHideNotRunningAction->setCheckable(true);

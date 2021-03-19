@@ -244,6 +244,7 @@ const char *UIExtraDataDefs::GUI_HelpBrowserBookmarks = "GUI/HelpBrowserBookmark
 
 /* VM Activity Overview: */
 const char *UIExtraDataDefs::GUI_VMResourceManager_HiddenColumns = "GUI/VMResourceManagerHiddenColumns";
+const char *UIExtraDataDefs::GUI_VMResourceManager_ShowAllMachines = "GUI/VMResourceManagerShowAllMachines";
 
 /* Obsolete keys: */
 QMap<QString, QString> UIExtraDataDefs::prepareObsoleteKeysMap()

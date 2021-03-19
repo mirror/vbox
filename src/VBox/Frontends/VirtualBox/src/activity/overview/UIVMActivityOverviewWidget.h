@@ -103,7 +103,6 @@ private:
         void prepareActions();
         void updateColumnsMenu();
         void loadSettings();
-        void loadHiddenColumnList();
         void saveSettings();
     /** @} */
 

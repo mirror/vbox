@@ -445,6 +445,7 @@ namespace UIExtraDataDefs
     /** @name Manager UI: VM Activity Overview Related stuff
       * @{ */
         SHARED_LIBRARY_STUFF extern const char *GUI_VMResourceManager_HiddenColumns;
+        SHARED_LIBRARY_STUFF extern const char *GUI_VMResourceManager_ShowAllMachines;
     /** @} */
 
     /** @name Old key support stuff.

@@ -4653,6 +4653,16 @@ QStringList UIExtraDataManager::VMActivityOverviewHiddenColumnList()
     return extraDataStringList(GUI_VMResourceManager_HiddenColumns);
 }
 
+bool UIExtraDataManager::activityOverviewShowAllMachines()
+{
+    return isFeatureAllowed(GUI_VMResourceManager_ShowAllMachines);
+}
+
+void UIExtraDataManager::setActivityOverviewShowAllMachines(bool fShow)
+{
+    setExtraDataString(GUI_VMResourceManager_ShowAllMachines, toFeatureAllowed(fShow));
+}
+
 void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QString &strKey, const QString &strValue)
 {
     /* Re-cache value only if uMachineID known already: */
