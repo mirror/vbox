@@ -3714,6 +3714,7 @@ int Console::i_configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMac
      * extra data to support global settings with local overrides.
      */
     int rc = VINF_SUCCESS;
+    bool fFirst = true;
     try
     {
         /** @todo add support for removing nodes and byte blobs. */
@@ -3767,6 +3768,13 @@ int Console::i_configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMac
             if (FAILED(hrc))
                 LogRel(("Warning: Cannot get extra data key %s, rc = %Rhrc\n", strKey.c_str(), hrc));
 
+            if (fFirst)
+            {
+                fFirst = false;
+                LogRel(("Extradata overrides:\n"));
+            }
+            LogRel(("  %s=\"%ls\"%s\n", strKey.c_str(), bstrExtraDataValue.raw(), i2 < cGlobalValues ? " (global)" : ""));
+
             /*
              * The key will be in the format "Node1/Node2/Value" or simply "Value".
              * Split the two and get the node, delete the value and create the node
@@ -3778,7 +3786,7 @@ int Console::i_configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMac
             {
                 /* terminate the node and advance to the value (Utf8Str might not
                 offically like this but wtf) */
-                *(char*)pszCFGMValueName = '\0';
+                *(char *)pszCFGMValueName = '\0';
                 ++pszCFGMValueName;
 
                 /* does the node already exist? */
