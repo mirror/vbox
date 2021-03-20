@@ -132,8 +132,6 @@ typedef struct DRVAUDIO
     PPDMDRVINS              pDrvIns;
     /** Pointer to audio driver below us. */
     PPDMIHOSTAUDIO          pHostDrvAudio;
-    /** Pointer to CFGM configuration node of this driver. */
-    PCFGMNODE               pCFGMNode;
     /** List of audio streams. */
     RTLISTANCHOR            lstStreams;
 #ifdef VBOX_WITH_AUDIO_ENUM

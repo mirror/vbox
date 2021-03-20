@@ -2207,12 +2207,9 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
  *
  * @return  IPRT status code.
  * @param   pThis               Driver instance to be called.
- * @param   pCfgHandle          CFGM configuration handle to use for this driver.
  */
-static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
+static int drvAudioHostInit(PDRVAUDIO pThis)
 {
-    /* pCfgHandle is optional. */
-    NOREF(pCfgHandle);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
@@ -2258,6 +2255,8 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
     /*
      * If the backend supports it, offer a callback to this connector.
      */
+/** @todo r=bird: Total misdesign.  If the backend wants to talk to us, it
+ *                should use PDMIBASE_QUERY_INTERFACE to get an interface from us. */
     if (pThis->pHostDrvAudio->pfnSetCallback)
     {
         rc2 = pThis->pHostDrvAudio->pfnSetCallback(pThis->pHostDrvAudio, drvAudioBackendCallback);
@@ -2296,119 +2295,6 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
-}
-
-/**
- * Retrieves an audio configuration from the specified CFGM node.
- *
- * @return VBox status code.
- * @param  pThis                Driver instance to be called.
- * @param  pNode                Where to get the audio configuration from.
- * @param  enmDir               Type of audio configuration to retrieve (input / output).
- * @param  pCfg                 Where to store the retrieved audio configuration to.
- */
-static int drvAudioGetCfgFromCFGM(PDRVAUDIO pThis, PCFGMNODE pNode, PDMAUDIODIR enmDir, PDRVAUDIOCFG pCfg)
-{
-    RT_NOREF(pThis, enmDir);
-
-    /* Debug stuff. */
-    CFGMR3QueryBoolDef(pNode, "DebugEnabled",      &pCfg->Dbg.fEnabled,  false);
-    int rc2 = CFGMR3QueryString(pNode, "DebugPathOut", pCfg->Dbg.szPathOut, sizeof(pCfg->Dbg.szPathOut));
-    if (   RT_FAILURE(rc2)
-        || !strlen(pCfg->Dbg.szPathOut))
-    {
-        rc2 = RTPathTemp(pCfg->Dbg.szPathOut, sizeof(pCfg->Dbg.szPathOut));
-        if (RT_FAILURE(rc2))
-            LogRel(("Audio: Error retrieving temporary directory, rc=%Rrc\n", rc2));
-    }
-
-    if (pCfg->Dbg.fEnabled)
-        LogRel(("Audio: Debugging for driver '%s' enabled (audio data written to '%s')\n", pThis->szName, pCfg->Dbg.szPathOut));
-
-    /* Queries an audio input / output stream's configuration from the CFGM tree. */
-#define QUERY_CONFIG(a_InOut) \
-    /* PCM stuff. */ \
-    CFGMR3QueryU8Def (pNode, "PCMSampleBit"         #a_InOut, &pCfg->Props.cbSample,  0); \
-    CFGMR3QueryU32Def(pNode, "PCMSampleHz"          #a_InOut, &pCfg->Props.uHz,       0); \
-    CFGMR3QueryU8Def (pNode, "PCMSampleSigned"      #a_InOut, &pCfg->uSigned,         UINT8_MAX /* No custom value set */); \
-    CFGMR3QueryU8Def (pNode, "PCMSampleSwapEndian"  #a_InOut, &pCfg->uSwapEndian,     UINT8_MAX /* No custom value set */); \
-    CFGMR3QueryU8Def (pNode, "PCMSampleChannels"    #a_InOut, &pCfg->Props.cChannels, 0); \
-    \
-    /* Buffering stuff. */ \
-    CFGMR3QueryU32Def(pNode, "PeriodSizeMs"         #a_InOut, &pCfg->uPeriodSizeMs, 0); \
-    CFGMR3QueryU32Def(pNode, "BufferSizeMs"         #a_InOut, &pCfg->uBufferSizeMs, 0); \
-    CFGMR3QueryU32Def(pNode, "PreBufferSizeMs"      #a_InOut, &pCfg->uPreBufSizeMs, UINT32_MAX /* No custom value set */);
-
-    if (enmDir == PDMAUDIODIR_IN)
-    {
-        QUERY_CONFIG(In);
-    }
-    else
-    {
-        QUERY_CONFIG(Out);
-    }
-
-#undef QUERY_CONFIG
-
-    pCfg->Props.cbSample /= 8; /* Convert bit to bytes. */
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Intializes an audio driver instance.
- *
- * @returns IPRT status code.
- * @param   pDrvIns             Pointer to driver instance.
- * @param   pCfgHandle          CFGM handle to use for configuration.
- */
-static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
-{
-    AssertPtrReturn(pCfgHandle, VERR_INVALID_POINTER);
-    AssertPtrReturn(pDrvIns,    VERR_INVALID_POINTER);
-
-    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-
-    int rc = RTCritSectInit(&pThis->CritSect);
-    AssertRCReturn(rc, rc);
-
-    const size_t cbScratchBuf = _4K; /** @todo Make this configurable? */
-    pThis->pvScratchBuf = RTMemAlloc(cbScratchBuf);
-    AssertPtrReturn(pThis->pvScratchBuf, VERR_NO_MEMORY);
-    pThis->cbScratchBuf = cbScratchBuf;
-
-    /*
-     * Configure driver from CFGM.
-     */
-#ifdef DEBUG
-    CFGMR3Dump(pCfgHandle);
-#endif
-
-    pThis->fTerminate = false;
-    pThis->pCFGMNode  = pCfgHandle;
-
-    int rc2 = CFGMR3QueryString(pThis->pCFGMNode, "DriverName", pThis->szName, sizeof(pThis->szName));
-    if (RT_FAILURE(rc2))
-        RTStrPrintf(pThis->szName, sizeof(pThis->szName), "Untitled");
-
-    /* By default we don't enable anything if wrongly / not set-up. */
-    CFGMR3QueryBoolDef(pThis->pCFGMNode, "InputEnabled",  &pThis->In.fEnabled,   false);
-    CFGMR3QueryBoolDef(pThis->pCFGMNode, "OutputEnabled", &pThis->Out.fEnabled,  false);
-
-    LogRel2(("Audio: Verbose logging for driver '%s' enabled\n", pThis->szName));
-
-    LogRel2(("Audio: Initial status for driver '%s' is: input is %s, output is %s\n",
-             pThis->szName, pThis->In.fEnabled ? "enabled" : "disabled", pThis->Out.fEnabled ? "enabled" : "disabled"));
-
-    /*
-     * Load configurations.
-     */
-    rc = drvAudioGetCfgFromCFGM(pThis, pThis->pCFGMNode, PDMAUDIODIR_IN, &pThis->In.Cfg);
-    if (RT_SUCCESS(rc))
-        rc = drvAudioGetCfgFromCFGM(pThis, pThis->pCFGMNode, PDMAUDIODIR_OUT, &pThis->Out.Cfg);
-
-    LogFunc(("[%s] rc=%Rrc\n", pThis->szName, rc));
-    return rc;
 }
 
 /**
@@ -3556,9 +3442,9 @@ static DECLCALLBACK(void) drvAudioDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
  *
  * This is a worker for both drvAudioAttach and drvAudioConstruct.
  *
- * @return VBox status code.
- * @param  pThis                Pointer to driver instance.
- * @param  fFlags               Attach flags; see PDMDrvHlpAttach().
+ * @returns VBox status code.
+ * @param   pThis       Pointer to driver instance.
+ * @param   fFlags      Attach flags; see PDMDrvHlpAttach().
  */
 static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
 {
@@ -3572,21 +3458,19 @@ static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
     if (RT_SUCCESS(rc))
     {
         pThis->pHostDrvAudio = PDMIBASE_QUERY_INTERFACE(pDownBase, PDMIHOSTAUDIO);
-        if (!pThis->pHostDrvAudio)
+        if (pThis->pHostDrvAudio)
+        {
+            /*
+             * If everything went well, initialize the lower driver.
+             */
+            rc = drvAudioHostInit(pThis);
+        }
+        else
         {
             LogRel(("Audio: Failed to query interface for underlying host driver '%s'\n", pThis->szName));
             rc = PDMDRV_SET_ERROR(pThis->pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
                                   N_("Host audio backend missing or invalid"));
         }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * If everything went well, initialize the lower driver.
-         */
-        AssertPtr(pThis->pCFGMNode);
-        rc = drvAudioHostInit(pThis, pThis->pCFGMNode);
     }
 
     LogFunc(("[%s] rc=%Rrc\n", pThis->szName, rc));
@@ -3602,22 +3486,16 @@ static int drvAudioDoAttachInternal(PDRVAUDIO pThis, uint32_t fFlags)
  */
 static DECLCALLBACK(int) drvAudioAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
-
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-
-    int rc2 = RTCritSectEnter(&pThis->CritSect);
-    AssertRC(rc2);
-
     LogFunc(("%s\n", pThis->szName));
 
-    int rc = drvAudioDoAttachInternal(pThis, fFlags);
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, rc);
 
-    rc2 = RTCritSectLeave(&pThis->CritSect);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    rc = drvAudioDoAttachInternal(pThis, fFlags);
 
+    RTCritSectLeave(&pThis->CritSect);
     return rc;
 }
 
@@ -3721,20 +3599,20 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     }
 
 #ifdef VBOX_WITH_STATISTICS
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalStreamsActive);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalStreamsCreated);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalFramesRead);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalFramesWritten);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalFramesMixedIn);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalFramesMixedOut);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalFramesLostIn);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalFramesLostOut);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalFramesOut);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalFramesIn);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalBytesRead);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalBytesWritten);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.DelayIn);
-    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.DelayOut);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalStreamsActive);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalStreamsCreated);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesRead);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesWritten);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesMixedIn);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesMixedOut);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesLostIn);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesLostOut);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesOut);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalFramesIn);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalBytesRead);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.TotalBytesWritten);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.DelayIn);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->Stats.DelayOut);
 #endif
 
     LogFlowFuncLeave();
@@ -3761,6 +3639,163 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     RTListInit(&pThis->Out.lstCB);
 #endif
 
+    /*
+     * Read configuration.
+     */
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns,
+                                  "DriverName|"
+                                  "InputEnabled|"
+                                  "OutputEnabled|"
+                                  "DebugEnabled|"
+                                  "DebugPathOut|"
+                                  /* Deprecated: */
+                                  "PCMSampleBitIn|"
+                                  "PCMSampleBitOut|"
+                                  "PCMSampleHzIn|"
+                                  "PCMSampleHzOut|"
+                                  "PCMSampleSignedIn|"
+                                  "PCMSampleSignedOut|"
+                                  "PCMSampleSwapEndianIn|"
+                                  "PCMSampleSwapEndianOut|"
+                                  "PCMSampleChannelsIn|"
+                                  "PCMSampleChannelsOut|"
+                                  "PeriodSizeMsIn|"
+                                  "PeriodSizeMsOut|"
+                                  "BufferSizeMsIn|"
+                                  "BufferSizeMsOut|"
+                                  "PreBufferSizeMsIn|"
+                                  "PreBufferSizeMsOut",
+                                  "In|Out");
+
+    int rc = CFGMR3QueryStringDef(pCfg, "DriverName", pThis->szName, sizeof(pThis->szName), "Untitled");
+    AssertLogRelRCReturn(rc, rc);
+
+    /* Neither input nor output by default for security reasons. */
+    rc = CFGMR3QueryBoolDef(pCfg, "InputEnabled",  &pThis->In.fEnabled, false);
+    AssertLogRelRCReturn(rc, rc);
+
+    rc = CFGMR3QueryBoolDef(pCfg, "OutputEnabled", &pThis->Out.fEnabled, false);
+    AssertLogRelRCReturn(rc, rc);
+
+    /* Debug stuff (same for both directions). */
+    rc = CFGMR3QueryBoolDef(pCfg, "DebugEnabled", &pThis->In.Cfg.Dbg.fEnabled, false);
+    AssertLogRelRCReturn(rc, rc);
+
+    rc = CFGMR3QueryStringDef(pCfg, "DebugPathOut", pThis->In.Cfg.Dbg.szPathOut, sizeof(pThis->In.Cfg.Dbg.szPathOut), "");
+    AssertLogRelRCReturn(rc, rc);
+    if (pThis->In.Cfg.Dbg.szPathOut[0] == '\0')
+    {
+        rc = RTPathTemp(pThis->In.Cfg.Dbg.szPathOut, sizeof(pThis->In.Cfg.Dbg.szPathOut));
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("Audio: Warning! Failed to retrieve temporary directory: %Rrc - disabling debugging.\n", rc));
+            pThis->In.Cfg.Dbg.szPathOut[0] = '\0';
+            pThis->In.Cfg.Dbg.fEnabled = false;
+        }
+    }
+    if (pThis->In.Cfg.Dbg.fEnabled)
+        LogRel(("Audio: Debugging for driver '%s' enabled (audio data written to '%s')\n", pThis->szName, pThis->In.Cfg.Dbg.szPathOut));
+
+    /* Copy debug setup to the output direction. */
+    pThis->Out.Cfg.Dbg = pThis->In.Cfg.Dbg;
+
+    LogRel2(("Audio: Verbose logging for driver '%s' is probably enabled too.\n", pThis->szName));
+    /* This ^^^^^^^ is the *WRONG* place for that kind of statement. Verbose logging might only be enabled for DrvAudio. */
+    LogRel2(("Audio: Initial status for driver '%s' is: input is %s, output is %s\n",
+             pThis->szName, pThis->In.fEnabled ? "enabled" : "disabled", pThis->Out.fEnabled ? "enabled" : "disabled"));
+
+    /*
+     * Per direction configuration.  A bit complicated as
+     * these wasn't originally in sub-nodes.
+     */
+    for (unsigned iDir = 0; iDir < 2; iDir++)
+    {
+        char         szNm[48];
+        PDRVAUDIOCFG pAudioCfg = iDir == 0 ? &pThis->In.Cfg : &pThis->Out.Cfg;
+        const char  *pszDir    = iDir == 0 ? "In"           : "Out";
+
+#define QUERY_VAL_RET(a_Width, a_szName, a_pValue, a_uDefault, a_ExprValid, a_szValidRange) \
+            do { \
+                rc = RT_CONCAT(CFGMR3QueryU,a_Width)(pDirNode, strcpy(szNm, a_szName), a_pValue); \
+                if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT) \
+                { \
+                    rc = RT_CONCAT(CFGMR3QueryU,a_Width)(pCfg, strcat(szNm, pszDir), a_pValue); \
+                    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT) \
+                    { \
+                        *(a_pValue) = a_uDefault; \
+                        rc = VINF_SUCCESS; \
+                    } \
+                    else \
+                        LogRel(("DrvAudio: Warning! Please use '%s/" a_szName "' instead of '%s' for your VBoxInternal hacks\n", pszDir, szNm)); \
+                } \
+                AssertRCReturn(rc, PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, \
+                                                       N_("Configuration error: Failed to read %s config value '%s'"), pszDir, szNm)); \
+                if (!(a_ExprValid)) \
+                    return PDMDrvHlpVMSetError(pDrvIns, VERR_OUT_OF_RANGE, RT_SRC_POS, \
+                                               N_("Configuration error: Unsupported %s value %u. " a_szValidRange), szNm, *(a_pValue)); \
+            } while (0)
+
+        PCFGMNODE const pDirNode = CFGMR3GetChild(pCfg, pszDir);
+        rc = CFGMR3ValidateConfig(pDirNode, iDir == 0 ? "In/" : "Out/",
+                                  "PCMSampleBit|"
+                                  "PCMSampleHz|"
+                                  "PCMSampleSigned|"
+                                  "PCMSampleSwapEndian|"
+                                  "PCMSampleChannels|"
+                                  "PeriodSizeMs|"
+                                  "BufferSizeMs|"
+                                  "PreBufferSizeMs",
+                                  "", pDrvIns->pReg->szName, pDrvIns->iInstance);
+        AssertRCReturn(rc, rc);
+
+        QUERY_VAL_RET(8,  "PCMSampleBit",        &pAudioCfg->Props.cbSample,    0,
+                         pAudioCfg->Props.cbSample == 0
+                      || pAudioCfg->Props.cbSample == 8
+                      || pAudioCfg->Props.cbSample == 16
+                      || pAudioCfg->Props.cbSample == 32
+                      || pAudioCfg->Props.cbSample == 64,
+                      "Must be either 0, 8, 16, 32 or 64");
+        pAudioCfg->Props.cbSample /= 8;
+
+        QUERY_VAL_RET(8,  "PCMSampleChannels",   &pAudioCfg->Props.cChannels,   0,
+                      pAudioCfg->Props.cChannels <= 16, "Max 16");
+
+        QUERY_VAL_RET(32, "PCMSampleHz",         &pAudioCfg->Props.uHz,         0,
+                      pAudioCfg->Props.uHz == 0 || (pAudioCfg->Props.uHz >= 6000 && pAudioCfg->Props.uHz <= 768000),
+                      "In the range 6000 thru 768000, or 0");
+
+        QUERY_VAL_RET(8,  "PCMSampleSigned",     &pAudioCfg->uSigned,           UINT8_MAX,
+                      pAudioCfg->uSigned == 0 || pAudioCfg->uSigned == 1 || pAudioCfg->uSigned == UINT8_MAX,
+                      "Must be either 0, 1, or 255");
+
+        QUERY_VAL_RET(8,  "PCMSampleSwapEndian", &pAudioCfg->uSwapEndian,       UINT8_MAX,
+                      pAudioCfg->uSwapEndian == 0 || pAudioCfg->uSwapEndian == 1 || pAudioCfg->uSwapEndian == UINT8_MAX,
+                      "Must be either 0, 1, or 255");
+
+        QUERY_VAL_RET(32, "PeriodSizeMs",        &pAudioCfg->uPeriodSizeMs,     0,
+                      pAudioCfg->uPeriodSizeMs <= RT_MS_1SEC, "Max 1000");
+
+        QUERY_VAL_RET(32, "BufferSizeMs",        &pAudioCfg->uBufferSizeMs,     0,
+                      pAudioCfg->uBufferSizeMs <= RT_MS_5SEC, "Max 5000");
+
+        QUERY_VAL_RET(32, "PreBufferSizeMs",     &pAudioCfg->uPreBufSizeMs,     UINT32_MAX,
+                      pAudioCfg->uPreBufSizeMs <= RT_MS_1SEC || pAudioCfg->uPreBufSizeMs == UINT32_MAX,
+                      "Max 1000, or 0xffffffff");
+#undef QUERY_VAL_RET
+    }
+
+    /*
+     * Init the rest of the driver instance data.
+     */
+    rc = RTCritSectInit(&pThis->CritSect);
+    AssertRCReturn(rc, rc);
+
+    const size_t cbScratchBuf = _4K; /** @todo Make this configurable? */
+    pThis->pvScratchBuf = RTMemAlloc(cbScratchBuf);
+    AssertPtrReturn(pThis->pvScratchBuf, VERR_NO_MEMORY);
+    pThis->cbScratchBuf = cbScratchBuf;
+
+    pThis->fTerminate                           = false;
     pThis->pDrvIns                              = pDrvIns;
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface            = drvAudioQueryInterface;
@@ -3787,51 +3822,47 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IAudioConnector.pfnRegisterCallbacks = drvAudioRegisterCallbacks;
 #endif
 
-    int rc = drvAudioInit(pDrvIns, pCfg);
-    if (RT_SUCCESS(rc))
-    {
+    /*
+     * Statistics.
+     */
 #ifdef VBOX_WITH_STATISTICS
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsActive,   "TotalStreamsActive",
-                                  STAMUNIT_COUNT, "Total active audio streams.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsCreated,  "TotalStreamsCreated",
-                                  STAMUNIT_COUNT, "Total created audio streams.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesRead,      "TotalFramesRead",
-                                  STAMUNIT_COUNT, "Total frames read by device emulation.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesWritten,   "TotalFramesWritten",
-                                  STAMUNIT_COUNT, "Total frames written by device emulation ");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesMixedIn,   "TotalFramesMixedIn",
-                                  STAMUNIT_COUNT, "Total input frames mixed.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesMixedOut,  "TotalFramesMixedOut",
-                                  STAMUNIT_COUNT, "Total output frames mixed.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesLostIn,    "TotalFramesLostIn",
-                                  STAMUNIT_COUNT, "Total input frames lost.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesLostOut,   "TotalFramesLostOut",
-                                  STAMUNIT_COUNT, "Total output frames lost.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesOut,       "TotalFramesOut",
-                                  STAMUNIT_COUNT, "Total frames played by backend.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesIn,        "TotalFramesIn",
-                                  STAMUNIT_COUNT, "Total frames captured by backend.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesRead,       "TotalBytesRead",
-                                  STAMUNIT_BYTES, "Total bytes read.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesWritten,    "TotalBytesWritten",
-                                  STAMUNIT_BYTES, "Total bytes written.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsActive,   "TotalStreamsActive",
+                              STAMUNIT_COUNT, "Total active audio streams.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsCreated,  "TotalStreamsCreated",
+                              STAMUNIT_COUNT, "Total created audio streams.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesRead,      "TotalFramesRead",
+                              STAMUNIT_COUNT, "Total frames read by device emulation.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesWritten,   "TotalFramesWritten",
+                              STAMUNIT_COUNT, "Total frames written by device emulation ");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesMixedIn,   "TotalFramesMixedIn",
+                              STAMUNIT_COUNT, "Total input frames mixed.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesMixedOut,  "TotalFramesMixedOut",
+                              STAMUNIT_COUNT, "Total output frames mixed.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesLostIn,    "TotalFramesLostIn",
+                              STAMUNIT_COUNT, "Total input frames lost.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesLostOut,   "TotalFramesLostOut",
+                              STAMUNIT_COUNT, "Total output frames lost.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesOut,       "TotalFramesOut",
+                              STAMUNIT_COUNT, "Total frames played by backend.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalFramesIn,        "TotalFramesIn",
+                              STAMUNIT_COUNT, "Total frames captured by backend.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesRead,       "TotalBytesRead",
+                              STAMUNIT_BYTES, "Total bytes read.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesWritten,    "TotalBytesWritten",
+                              STAMUNIT_BYTES, "Total bytes written.");
 
-        PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayIn,           "DelayIn",
-                                     STAMUNIT_NS_PER_CALL, "Profiling of input data processing.");
-        PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut,          "DelayOut",
-                                     STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
+    PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayIn,           "DelayIn",
+                                 STAMUNIT_NS_PER_CALL, "Profiling of input data processing.");
+    PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut,          "DelayOut",
+                                 STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
 #endif
-    }
 
-    /** @todo r=bird: you're overwriting rc here. sigh.  Just return immediately on
-     *        failure, don't try make it to the end of the function! GRRR! */
+    /*
+     * Attach the host driver, if present.
+     */
     rc = drvAudioDoAttachInternal(pThis, fFlags);
-    if (RT_FAILURE(rc))
-    {
-        /* No lower attached driver (yet)? Not a failure, might get attached later at runtime, just skip. */
-        if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-            rc = VINF_SUCCESS;
-    }
+    if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        rc = VINF_SUCCESS;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

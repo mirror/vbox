@@ -3598,10 +3598,6 @@ void Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVi
 
     HRESULT hrc;
 
-    Utf8Str strTmp;
-    GetExtraDataBoth(pVirtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
-    const uint64_t fDebugEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
-
     BOOL fAudioEnabledIn = FALSE;
     hrc = pAudioAdapter->COMGETTER(EnabledIn)(&fAudioEnabledIn);                            H();
     BOOL fAudioEnabledOut = FALSE;
@@ -3615,6 +3611,9 @@ void Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVi
     InsertConfigInteger(pCfg, "InputEnabled",  fAudioEnabledIn);
     InsertConfigInteger(pCfg, "OutputEnabled", fAudioEnabledOut);
 
+    Utf8Str strTmp;
+    GetExtraDataBoth(pVirtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
+    const uint64_t fDebugEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
     if (fDebugEnabled)
     {
         InsertConfigInteger(pCfg, "DebugEnabled",  fDebugEnabled);
@@ -3629,47 +3628,51 @@ void Console::i_configAudioDriver(IAudioAdapter *pAudioAdapter, IVirtualBox *pVi
      * We have host driver specific ones as: VBoxInternal2/Audio/<DrvName>/<Value>
      * And global ones for all host drivers: VBoxInternal2/Audio/<Value>
      */
-    static const struct
+    for (unsigned iDir = 0; iDir < 2; iDir++)
     {
-        const char *pszExtraName;
-        const char *pszCfgmName;
-        uint32_t    uDefault;
-    } s_aToCopy[]
-    {
-#define AUDIO_DRV_TO_COPY_ENTRIES(a_szDir) \
-            /* PCM  parameters: */ \
-            { "PCMSampleBit"        a_szDir, "PCMSampleBit"        a_szDir, 0          }, \
-            { "PCMSampleHz"         a_szDir, "PCMSampleHz"         a_szDir, 0          }, \
-            { "PCMSampleSigned"     a_szDir, "PCMSampleSigned"     a_szDir, UINT8_MAX  }, \
-            { "PCMSampleSwapEndian" a_szDir, "PCMSampleSwapEndian" a_szDir, UINT8_MAX  }, \
-            { "PCMSampleChannels"   a_szDir, "PCMSampleChannels"   a_szDir, 0          }, \
-            /* Buffering stuff: */ \
-            { "PeriodSizeMs"        a_szDir, "PeriodSizeMs"        a_szDir, 0          }, \
-            { "BufferSizeMs"        a_szDir, "BufferSizeMs"        a_szDir, 0          }, \
-            { "PreBufferSizeMs"     a_szDir, "PreBufferSizeMs"     a_szDir, UINT32_MAX }
-        AUDIO_DRV_TO_COPY_ENTRIES("In"),
-        AUDIO_DRV_TO_COPY_ENTRIES("Out")
-#undef AUDIO_DRV_TO_COPY_ENTRIES
-    };
-    for (size_t i = 0; i < RT_ELEMENTS(s_aToCopy); i++)
-    {
-        char szExtra[128];
-        RTStrPrintf(szExtra, sizeof(szExtra), "VBoxInternal2/Audio/%s/%s", pszDrvName, s_aToCopy[i].pszExtraName);
-        GetExtraDataBoth(pVirtualBox, pMachine, szExtra, &strTmp); /* throws hrc */
-        if (strTmp.isEmpty())
+        static const struct
         {
-            RTStrPrintf(szExtra, sizeof(szExtra), "VBoxInternal2/Audio/%s", s_aToCopy[i].pszExtraName);
-            GetExtraDataBoth(pVirtualBox, pMachine, szExtra, &strTmp);
-            if (strTmp.isEmpty())
-                continue;
-        }
+            const char *pszExtraName;
+            const char *pszCfgmName;
+        } s_aToCopy[] =
+        {   /* PCM  parameters: */
+            { "PCMSampleBit",        "PCMSampleBit"        },
+            { "PCMSampleHz",         "PCMSampleHz"         },
+            { "PCMSampleSigned",     "PCMSampleSigned"     },
+            { "PCMSampleSwapEndian", "PCMSampleSwapEndian" },
+            { "PCMSampleChannels",   "PCMSampleChannels"   },
+            /* Buffering stuff: */
+            { "PeriodSizeMs",        "PeriodSizeMs"        },
+            { "BufferSizeMs",        "BufferSizeMs"        },
+            { "PreBufferSizeMs",     "PreBufferSizeMs"     },
+        };
 
-        uint32_t uValue;
-        int vrc = RTStrToUInt32Full(strTmp.c_str(), 0, &uValue);
-        if (RT_SUCCESS(vrc))
-            InsertConfigInteger(pCfg, s_aToCopy[i].pszCfgmName, uValue);
-        else
-            LogRel(("Ignoring malformed 32-bit unsigned integer config value '%s' = '%s': %Rrc\n", szExtra, strTmp.c_str(), vrc));
+        PCFGMNODE   pDirNode = NULL;
+        const char *pszDir   = iDir == 0 ? "In" : "Out";
+        for (size_t i = 0; i < RT_ELEMENTS(s_aToCopy); i++)
+        {
+            char szExtra[128];
+            RTStrPrintf(szExtra, sizeof(szExtra), "VBoxInternal2/Audio/%s/%s%s", pszDrvName, s_aToCopy[i].pszExtraName, pszDir);
+            GetExtraDataBoth(pVirtualBox, pMachine, szExtra, &strTmp); /* throws hrc */
+            if (strTmp.isEmpty())
+            {
+                RTStrPrintf(szExtra, sizeof(szExtra), "VBoxInternal2/Audio/%s%s", s_aToCopy[i].pszExtraName, pszDir);
+                GetExtraDataBoth(pVirtualBox, pMachine, szExtra, &strTmp);
+                if (strTmp.isEmpty())
+                    continue;
+            }
+
+            uint32_t uValue;
+            int vrc = RTStrToUInt32Full(strTmp.c_str(), 0, &uValue);
+            if (RT_SUCCESS(vrc))
+            {
+                if (!pDirNode)
+                    InsertConfigNode(pCfg, pszDir, &pDirNode);
+                InsertConfigInteger(pDirNode, s_aToCopy[i].pszCfgmName, uValue);
+            }
+            else
+                LogRel(("Ignoring malformed 32-bit unsigned integer config value '%s' = '%s': %Rrc\n", szExtra, strTmp.c_str(), vrc));
+        }
     }
 
     PCFGMNODE pLunL1;
