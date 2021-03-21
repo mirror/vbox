@@ -1608,7 +1608,8 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
         if (fDoPlay)
         {
             uint32_t cfWritable = PDMAUDIOPCMPROPS_B2F(&pStream->Host.Cfg.Props,
-                                                       pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend));
+                                                       pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio,
+                                                                                                  pStream->pvBackend));
 
             uint32_t cfToPlay = 0;
             if (fJustStarted)
@@ -1618,18 +1619,17 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
             {
                 /* Did we reach/pass (in real time) the device scheduling slot?
                  * Play as much as we can write to the backend then. */
-                if (cfPassedReal >= PDMAudioPropsMilliToFrames(&pStream->Host.Cfg.Props, pStream->Guest.Cfg.Device.cMsSchedulingHint))
+                if (cfPassedReal >= PDMAudioPropsMilliToFrames(&pStream->Host.Cfg.Props,
+                                                               pStream->Guest.Cfg.Device.cMsSchedulingHint))
                     cfToPlay = cfWritable;
             }
 
             if (cfToPlay > cFramesLive) /* Don't try to play more than available. */
                 cfToPlay = cFramesLive;
-#ifdef DEBUG
             Log3Func(("[%s] Playing %RU32 frames (%RU64ms), now filled with %RU64ms -- %RU8%%\n",
                       pStream->szName, cfToPlay, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cfToPlay),
                       PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, AudioMixBufUsed(&pStream->Host.MixBuf)),
                       AudioMixBufUsed(&pStream->Host.MixBuf) * 100 / AudioMixBufSize(&pStream->Host.MixBuf)));
-#endif
             if (cfToPlay)
             {
                 if (pThis->pHostDrvAudio->pfnStreamPlayBegin)
