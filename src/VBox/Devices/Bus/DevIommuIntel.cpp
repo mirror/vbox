@@ -135,7 +135,7 @@ typedef CTX_SUFF(PIOMMU) PIOMMUCC;
 /**
  * Read-write masks for IOMMU registers (group 0).
  */
-static const uint32_t g_aRwMasks0[] =
+static const uint32_t g_au32RwMasks0[] =
 {
     /* Offset  Register                  Low                                        High */
     /* 0x000   VER_REG               */  VTD_VER_REG_RW_MASK,
@@ -220,12 +220,12 @@ static const uint32_t g_aRwMasks0[] =
     /* 0x210   MTRR_PHYSBASE9_REG    */  0,                                         0,
     /* 0x218   MTRR_PHYSMASK9_REG    */  0,                                         0,
 };
-AssertCompile(sizeof(g_aRwMasks0) == VTD_MMIO_GROUP_0_SIZE);
+AssertCompile(sizeof(g_au32RwMasks0) == VTD_MMIO_GROUP_0_SIZE);
 
 /**
  * Read-only Status, Write-1-to-clear masks for IOMMU registers (group 0).
  */
-static const uint32_t g_aRw1cMasks0[] =
+static const uint32_t g_au32Rw1cMasks0[] =
 {
     /* Offset  Register                  Low                      High */
     /* 0x000   VER_REG               */  0,
@@ -310,12 +310,12 @@ static const uint32_t g_aRw1cMasks0[] =
     /* 0x210   MTRR_PHYSBASE9_REG    */  0,                       0,
     /* 0x218   MTRR_PHYSMASK9_REG    */  0,                       0,
 };
-AssertCompile(sizeof(g_aRw1cMasks0) == VTD_MMIO_GROUP_0_SIZE);
+AssertCompile(sizeof(g_au32Rw1cMasks0) == VTD_MMIO_GROUP_0_SIZE);
 
 /**
  * Read-write masks for IOMMU registers (group 1).
  */
-static const uint32_t g_aRwMasks1[] =
+static const uint32_t g_au32RwMasks1[] =
 {
     /* Offset  Register                  Low                                 High */
     /* 0xe00   VCCAP_REG             */  VTD_LO_U32(VTD_VCCAP_REG_RW_MASK),  VTD_HI_U32(VTD_VCCAP_REG_RW_MASK),
@@ -324,12 +324,12 @@ static const uint32_t g_aRwMasks1[] =
     /* 0xe18   Reserved              */  0,                                  0,
     /* 0xe20   VCRSP_REG             */  0,                                  0, /* RO as we don't support VCS. */
 };
-AssertCompile(sizeof(g_aRwMasks1) == VTD_MMIO_GROUP_1_SIZE);
+AssertCompile(sizeof(g_au32RwMasks1) == VTD_MMIO_GROUP_1_SIZE);
 
 /**
  * Read-only Status, Write-1-to-clear masks for IOMMU registers (group 1).
  */
-static const uint32_t g_aRw1cMasks1[] =
+static const uint32_t g_au32Rw1cMasks1[] =
 {
     /* Offset  Register                  Low  High */
     /* 0xe00   VCCAP_REG             */  0,   0,
@@ -338,10 +338,129 @@ static const uint32_t g_aRw1cMasks1[] =
     /* 0xe18   Reserved              */  0,   0,
     /* 0xe20   VCRSP_REG             */  0,   0,
 };
-AssertCompile(sizeof(g_aRw1cMasks1) == VTD_MMIO_GROUP_1_SIZE);
+AssertCompile(sizeof(g_au32Rw1cMasks1) == VTD_MMIO_GROUP_1_SIZE);
+
+/** Array of RW masks for all register groups. */
+static const uint8_t *g_pabRwMasks[]   = { (uint8_t *)&g_au32RwMasks0[0], (uint8_t *)&g_au32RwMasks1[0] };
+
+/** Array of RW1C masks for all register groups. */
+static const uint8_t *g_pabRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uint8_t *)&g_au32Rw1cMasks1[0] };
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
+
+static uint8_t * iommuIntelRegGetGroup(PIOMMU pThis, uint16_t offReg, uint8_t cbReg, uint8_t *pIdxGroup)
+{
+    AssertCompile(VTD_MMIO_GROUP_0_OFF_FIRST == 0);
+    AssertMsg(   offReg + cbReg <= VTD_MMIO_GROUP_0_OFF_END
+              || (offReg >= VTD_MMIO_GROUP_1_OFF_FIRST && offReg + cbReg <= VTD_MMIO_GROUP_1_OFF_END), ("%#x\n", offReg));
+    NOREF(cbReg);
+
+    uint8_t *apbRegs[] = { &pThis->abRegs0[0], &pThis->abRegs1[0] };
+    *pIdxGroup = !(offReg < VTD_MMIO_GROUP_0_OFF_END);
+    return apbRegs[*pIdxGroup];
+}
+
+
+DECLINLINE(void) iommuIntelRegWriteRaw64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
+{
+    uint8_t idxGroup;
+    uint8_t *pabRegs = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
+    NOREF(idxGroup);
+    *(uint64_t *)(pabRegs + offReg) = uReg;
+}
+
+
+DECLINLINE(void) iommuIntelRegWriteRaw32(PIOMMU pThis, uint16_t offReg, uint32_t uReg)
+{
+    uint8_t idxGroup;
+    uint8_t *pabRegs = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
+    NOREF(idxGroup);
+    *(uint32_t *)(pabRegs + offReg) = uReg;
+}
+
+
+DECLINLINE(void) iommuIntelRegReadRaw64(PIOMMU pThis, uint16_t offReg, uint64_t *puReg, uint64_t *pfRwMask, uint64_t *pfRw1cMask)
+{
+    uint8_t idxGroup;
+    uint8_t const *pabRegs      = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
+    uint8_t const *pabRwMasks   = g_pabRwMasks[idxGroup];
+    uint8_t const *pabRw1cMasks = g_pabRw1cMasks[idxGroup];
+    *puReg      = *(uint64_t *)(pabRegs      + offReg);
+    *pfRwMask   = *(uint64_t *)(pabRwMasks   + offReg);
+    *pfRw1cMask = *(uint64_t *)(pabRw1cMasks + offReg);
+}
+
+
+DECLINLINE(void) iommuIntelRegReadRaw32(PIOMMU pThis, uint16_t offReg, uint32_t *puReg, uint32_t *pfRwMask, uint32_t *pfRw1cMask)
+{
+    uint8_t idxGroup;
+    uint8_t const *pabRegs      = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
+    uint8_t const *pabRwMasks   = g_pabRwMasks[idxGroup];
+    uint8_t const *pabRw1cMasks = g_pabRw1cMasks[idxGroup];
+    *puReg      = *(uint32_t *)(pabRegs      + offReg);
+    *pfRwMask   = *(uint32_t *)(pabRwMasks   + offReg);
+    *pfRw1cMask = *(uint32_t *)(pabRw1cMasks + offReg);
+}
+
+
+static void iommuIntelRegWrite64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
+{
+    /* Read current value from the 64-bit register. */
+    uint64_t uCurReg;
+    uint64_t fRwMask;
+    uint64_t fRw1cMask;
+    iommuIntelRegReadRaw64(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+
+    uint64_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
+    uint64_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
+    uint64_t const fRw1cBits = ~(fRw1cMask & uReg);     /* Clear newly written RW1C bits. */
+    uint64_t const uNewReg   = (fRoBits | fRwBits) & fRw1cBits;
+
+    /* Write new value to the 64-bit register. */
+    iommuIntelRegWriteRaw64(pThis, offReg, uNewReg);
+}
+
+
+static void iommuIntelRegWrite32(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
+{
+    /* Read current value from the 32-bit register. */
+    uint32_t uCurReg;
+    uint32_t fRwMask;
+    uint32_t fRw1cMask;
+    iommuIntelRegReadRaw32(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+
+    uint32_t const fRoBits   = uCurReg & ~fRwMask;      /* Preserve current read-only and reserved bits. */
+    uint32_t const fRwBits   = uReg & fRwMask;          /* Merge newly written read/write bits. */
+    uint32_t const fRw1cBits = ~(fRw1cMask & uReg);     /* Clear newly written RW1C bits. */
+    uint32_t const uNewReg   = (fRoBits | fRwBits) & fRw1cBits;
+
+    /* Write new value to the 32-bit register. */
+    iommuIntelRegWriteRaw32(pThis, offReg, uNewReg);
+}
+
+
+static uint64_t iommuIntelRegRead64(PIOMMU pThis, uint16_t offReg)
+{
+    uint64_t uCurReg;
+    uint64_t fRwMask;
+    uint64_t fRw1cMask;
+    iommuIntelRegReadRaw64(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+    NOREF(fRwMask); NOREF(fRw1cMask);
+    return uCurReg;
+}
+
+
+static uint64_t iommuIntelRegRead32(PIOMMU pThis, uint16_t offReg)
+{
+    uint32_t uCurReg;
+    uint32_t fRwMask;
+    uint32_t fRw1cMask;
+    iommuIntelRegReadRaw32(pThis, offReg, &uCurReg, &fRwMask, &fRw1cMask);
+    NOREF(fRwMask); NOREF(fRw1cMask);
+    return uCurReg;
+}
+
 
 /**
  * Memory access bulk (one or more 4K pages) request from a device.
@@ -418,8 +537,25 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuIntelMmioWrite(PPDMDEVINS pDevIns, void *
  */
 static DECLCALLBACK(VBOXSTRICTRC) iommuIntelMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    RT_NOREF5(pDevIns, pvUser, off, pv, cb);
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF1(pvUser);
+
+    AssertReturn(!(off & 3), VINF_IOM_MMIO_UNUSED_FF);
+    AssertReturn(cb == 4 || cb == 8, VINF_IOM_MMIO_UNUSED_FF);
+
+    PIOMMU         pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    uint16_t const offReg  = off;
+    uint16_t const offLast = offReg + cb;
+    if (   offLast <= VTD_MMIO_GROUP_0_OFF_END
+        || offLast <= VTD_MMIO_GROUP_1_OFF_END)
+    {
+        if (cb == 8)
+            *(uint64_t *)pv = iommuIntelRegRead64(pThis, offReg);
+        else
+            *(uint32_t *)pv = iommuIntelRegRead32(pThis, offReg);
+        return VINF_SUCCESS;
+    }
+
+    return VINF_IOM_MMIO_UNUSED_FF;
 }
 
 
