@@ -72,6 +72,7 @@ PROXY_STUB(snd_pcm_readi, snd_pcm_sframes_t,
            (pcm, buffer, size))
 PROXY_STUB(snd_pcm_resume, int, (snd_pcm_t *pcm), (pcm))
 PROXY_STUB(snd_pcm_state, snd_pcm_state_t, (snd_pcm_t *pcm), (pcm))
+PROXY_STUB(snd_pcm_state_name, const char *, (snd_pcm_state_t state), (state))
 PROXY_STUB(snd_pcm_writei, snd_pcm_sframes_t,
            (snd_pcm_t *pcm, const void *buffer, snd_pcm_uframes_t size),
            (pcm, buffer, size))
@@ -172,6 +173,7 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(snd_pcm_prepare),
     ELEMENT(snd_pcm_resume),
     ELEMENT(snd_pcm_state),
+    ELEMENT(snd_pcm_state_name),
 
     ELEMENT(snd_pcm_readi),
     ELEMENT(snd_pcm_start),

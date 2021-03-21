@@ -262,77 +262,6 @@ static int alsaALSAToAudioProps(snd_pcm_format_t fmt, PPDMAUDIOPCMPROPS pProps)
 
 
 /**
- * Sets the software parameters of an ALSA stream.
- *
- * @returns VBox status code.
- * @param   phPCM               ALSA stream to set software parameters for.
- * @param   fIn                 Whether this is an input stream or not.
- * @param   pCfgReq             Requested configuration to set.
- * @param   pCfgObt             Obtained configuration on success. Might differ from requested configuration.
- */
-static int alsaStreamSetSWParams(snd_pcm_t *phPCM, bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt)
-{
-    if (fIn) /* For input streams there's nothing to do in here right now. */
-        return VINF_SUCCESS;
-
-    snd_pcm_sw_params_t *pSWParms = NULL;
-    snd_pcm_sw_params_alloca(&pSWParms);
-    if (!pSWParms)
-        return VERR_NO_MEMORY;
-
-    int rc;
-    do
-    {
-        int err = snd_pcm_sw_params_current(phPCM, pSWParms);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to get current software parameters: %s\n", snd_strerror(err)));
-            rc = VERR_ACCESS_DENIED;
-            break;
-        }
-
-        err = snd_pcm_sw_params_set_start_threshold(phPCM, pSWParms, pCfgReq->threshold);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to set software threshold to %ld: %s\n", pCfgReq->threshold, snd_strerror(err)));
-            rc = VERR_ACCESS_DENIED;
-            break;
-        }
-
-        err = snd_pcm_sw_params_set_avail_min(phPCM, pSWParms, pCfgReq->period_size);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to set available minimum to %ld: %s\n", pCfgReq->threshold, snd_strerror(err)));
-            rc = VERR_ACCESS_DENIED;
-            break;
-        }
-
-        err = snd_pcm_sw_params(phPCM, pSWParms);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to set new software parameters: %s\n", snd_strerror(err)));
-            rc = VERR_ACCESS_DENIED;
-            break;
-        }
-
-        err = snd_pcm_sw_params_get_start_threshold(pSWParms, &pCfgObt->threshold);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to get start threshold\n"));
-            rc = VERR_ACCESS_DENIED;
-            break;
-        }
-
-        LogFunc(("Setting threshold to %RU32 frames\n", pCfgObt->threshold));
-        rc = VINF_SUCCESS;
-    }
-    while (0);
-
-    return rc;
-}
-
-
-/**
  * Closes an ALSA stream
  *
  * @returns VBox status code.
@@ -362,6 +291,154 @@ static int alsaStreamClose(snd_pcm_t **pphPCM)
 
 
 /**
+ * Sets the software parameters of an ALSA stream.
+ *
+ * @returns 0 on success, negative errno on failure.
+ * @param   phPCM               ALSA stream to set software parameters for.
+ * @param   fIn                 Whether this is an input stream or not.
+ * @param   pCfgReq             Requested configuration to set.
+ * @param   pCfgObt             Obtained configuration on success. Might differ from requested configuration.
+ */
+static int alsaStreamSetSWParams(snd_pcm_t *phPCM, bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt)
+{
+    if (fIn) /* For input streams there's nothing to do in here right now. */
+        return VINF_SUCCESS;
+
+    snd_pcm_sw_params_t *pSWParms = NULL;
+    snd_pcm_sw_params_alloca(&pSWParms);
+    AssertReturn(pSWParms, -ENOMEM);
+
+    int err = snd_pcm_sw_params_current(phPCM, pSWParms);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to get current software parameters: %s\n", snd_strerror(err)), err);
+
+    /* Must make sure we don't require ALSA to prebuffer more than
+       it has buffer space for, because that means output will
+       never start. */
+    unsigned long cFramesPreBuffer = pCfgReq->threshold;
+    if (cFramesPreBuffer >= pCfgObt->buffer_size - pCfgObt->buffer_size / 16)
+    {
+        cFramesPreBuffer = pCfgObt->buffer_size - pCfgObt->buffer_size / 16;
+        LogRel2(("ALSA: Reducing threshold from %lu to %lu due to buffer size of %lu.\n",
+                 pCfgReq->threshold, cFramesPreBuffer, pCfgObt->buffer_size));
+    }
+    err = snd_pcm_sw_params_set_start_threshold(phPCM, pSWParms, cFramesPreBuffer);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set software threshold to %lu: %s\n", cFramesPreBuffer, snd_strerror(err)), err);
+
+    err = snd_pcm_sw_params_set_avail_min(phPCM, pSWParms, pCfgReq->period_size);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set available minimum to %lu: %s\n", pCfgReq->period_size, snd_strerror(err)), err);
+
+    /* Commit the software parameters: */
+    err = snd_pcm_sw_params(phPCM, pSWParms);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set new software parameters: %s\n", snd_strerror(err)), err);
+
+    /* Get the actual parameters: */
+    err = snd_pcm_sw_params_get_start_threshold(pSWParms, &pCfgObt->threshold);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to get start threshold: %s\n", snd_strerror(err)), err);
+
+    LogRel2(("ALSA: SW params: %ul frames threshold, %ul frame avail minimum\n",
+             pCfgObt->threshold, pCfgReq->period_size));
+    return 0;
+}
+
+
+/**
+ * Sets the hardware parameters of an ALSA stream.
+ *
+ * @returns 0 on success, negative errno on failure.
+ * @param   phPCM   ALSA stream to set software parameters for.
+ * @param   pCfgReq Requested configuration to set.
+ * @param   pCfgObt Obtained configuration on success. Might differ from
+ *                       requested configuration.
+ */
+static int alsaStreamSetHwParams(snd_pcm_t *phPCM, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt)
+{
+    /*
+     * Get the current hardware parameters.
+     */
+    snd_pcm_hw_params_t *pHWParms = NULL;
+    snd_pcm_hw_params_alloca(&pHWParms);
+    AssertReturn(pHWParms, -ENOMEM);
+
+    int err = snd_pcm_hw_params_any(phPCM, pHWParms);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to initialize hardware parameters: %s\n", snd_strerror(err)), err);
+
+    /*
+     * Modify them according to pCfgReq.
+     * We update pCfgObt as we go for parameters set by "near" methods.
+     */
+    /* We'll use snd_pcm_writei/snd_pcm_readi: */
+    err = snd_pcm_hw_params_set_access(phPCM, pHWParms, SND_PCM_ACCESS_RW_INTERLEAVED);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set access type: %s\n", snd_strerror(err)), err);
+
+    /* Set the format, frequency and channel count. */
+    err = snd_pcm_hw_params_set_format(phPCM, pHWParms, pCfgReq->fmt);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set audio format to %d: %s\n", pCfgReq->fmt, snd_strerror(err)), err);
+
+    unsigned int uFreq = pCfgReq->freq;
+    err = snd_pcm_hw_params_set_rate_near(phPCM, pHWParms, &uFreq, NULL /*dir*/);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set frequency to %uHz: %s\n", pCfgReq->freq, snd_strerror(err)), err);
+    pCfgObt->freq      = uFreq;
+
+    unsigned int cChannels = pCfgReq->nchannels;
+    err = snd_pcm_hw_params_set_channels_near(phPCM, pHWParms, &cChannels);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set number of channels to %d\n", pCfgReq->nchannels), err);
+    AssertLogRelMsgReturn(cChannels == 1 || cChannels == 2, ("ALSA: Number of audio channels (%u) not supported\n", cChannels), -1);
+    pCfgObt->nchannels = cChannels;
+
+    /* The period size (reportedly frame count per hw interrupt): */
+    int               dir    = 0;
+    snd_pcm_uframes_t minval = pCfgReq->period_size;
+    err = snd_pcm_hw_params_get_period_size_min(pHWParms, &minval, &dir);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Could not determine minimal period size: %s\n", snd_strerror(err)), err);
+
+    snd_pcm_uframes_t period_size_f = pCfgReq->period_size;
+    if (period_size_f < minval)
+        period_size_f = minval;
+    err = snd_pcm_hw_params_set_period_size_near(phPCM, pHWParms, &period_size_f, 0);
+    LogRel2(("ALSA: Period size is: %lu frames (min %lu, requested %lu)\n", period_size_f, minval, pCfgReq->period_size));
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set period size %d (%s)\n", period_size_f, snd_strerror(err)), err);
+
+    /* The buffer size: */
+    minval = pCfgReq->buffer_size;
+    err = snd_pcm_hw_params_get_buffer_size_min(pHWParms, &minval);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Could not retrieve minimal buffer size: %s\n", snd_strerror(err)), err);
+
+    snd_pcm_uframes_t buffer_size_f = pCfgReq->buffer_size;
+    if (buffer_size_f < minval)
+        buffer_size_f = minval;
+    err = snd_pcm_hw_params_set_buffer_size_near(phPCM, pHWParms, &buffer_size_f);
+    LogRel2(("ALSA: Buffer size is: %lu frames (min %lu, requested %lu)\n", buffer_size_f, minval, pCfgReq->buffer_size));
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to set near buffer size %RU32: %s\n", buffer_size_f, snd_strerror(err)), err);
+
+    /*
+     * Set the hardware parameters.
+     */
+    err = snd_pcm_hw_params(phPCM, pHWParms);
+    AssertLogRelMsgReturn(err >= 0, ("ALSA: Failed to apply audio parameters: %s\n", snd_strerror(err)), err);
+
+    /*
+     * Get relevant parameters and put them in the pCfgObt structure.
+     */
+    snd_pcm_uframes_t obt_buffer_size = buffer_size_f;
+    err = snd_pcm_hw_params_get_buffer_size(pHWParms, &obt_buffer_size);
+    AssertLogRelMsgStmt(err >= 0, ("ALSA: Failed to get buffer size: %s\n", snd_strerror(err)), obt_buffer_size = buffer_size_f);
+    pCfgObt->buffer_size = obt_buffer_size;
+
+    snd_pcm_uframes_t obt_period_size = period_size_f;
+    err = snd_pcm_hw_params_get_period_size(pHWParms, &obt_period_size, &dir);
+    AssertLogRelMsgStmt(err >= 0, ("ALSA: Failed to get period size: %s\n", snd_strerror(err)), obt_period_size = period_size_f);
+    pCfgObt->period_size = obt_period_size;
+
+    pCfgObt->access  = pCfgReq->access;
+    pCfgObt->fmt     = pCfgReq->fmt;
+
+    LogRel2(("ALSA: HW params: %u Hz, %ul frames period, %ul frames buffer, %u channel(s), fmt=%d, access=%d\n",
+             pCfgObt->freq, pCfgObt->period_size, pCfgObt->buffer_size, pCfgObt->nchannels, pCfgObt->fmt, pCfgObt->access));
+    return 0;
+}
+
+
+/**
  * Opens (creates) an ALSA stream.
  *
  * @returns VBox status code.
@@ -374,181 +451,57 @@ static int alsaStreamClose(snd_pcm_t **pphPCM)
 static int alsaStreamOpen(const char *pszDev, bool fIn, PALSAAUDIOSTREAMCFG pCfgReq,
                           PALSAAUDIOSTREAMCFG pCfgObt,  snd_pcm_t **pphPCM)
 {
-    snd_pcm_t *phPCM = NULL;
+    AssertLogRelMsgReturn(pszDev && *pszDev,
+                          ("ALSA: Invalid or no %s device name set\n", fIn ? "input" : "output"),
+                          VERR_INVALID_NAME);
 
+    /*
+     * Open the stream.
+     */
     int rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
-
-    unsigned int cChannels = pCfgReq->nchannels;
-    unsigned int uFreq = pCfgReq->freq;
-    snd_pcm_uframes_t obt_buffer_size;
-
-    do
+    snd_pcm_t *phPCM = NULL;
+    LogRel(("ALSA: Using %s device \"%s\"\n", fIn ? "input" : "output", pszDev));
+    int err = snd_pcm_open(&phPCM, pszDev,
+                           fIn ? SND_PCM_STREAM_CAPTURE : SND_PCM_STREAM_PLAYBACK,
+                           SND_PCM_NONBLOCK);
+    if (err >= 0)
     {
-        AssertLogRelMsgReturn(pszDev && *pszDev,
-                              ("ALSA: Invalid or no %s device name set\n", fIn ? "input" : "output"),
-                              VERR_INVALID_NAME);
-
-        LogRel(("ALSA: Using %s device \"%s\"\n", fIn ? "input" : "output", pszDev));
-
-        int err = snd_pcm_open(&phPCM, pszDev,
-                               fIn ? SND_PCM_STREAM_CAPTURE : SND_PCM_STREAM_PLAYBACK,
-                               SND_PCM_NONBLOCK);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to open \"%s\" as %s device: %s\n", pszDev, fIn ? "input" : "output", snd_strerror(err)));
-            break;
-        }
-
         err = snd_pcm_nonblock(phPCM, 1);
-        if (err < 0)
+        if (err >= 0)
         {
+            /*
+             * Configure hardware stream parameters.
+             */
+            err = alsaStreamSetHwParams(phPCM, pCfgReq, pCfgObt);
+            if (err >= 0)
+            {
+                /*
+                 * Prepare it.
+                 */
+                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+                err = snd_pcm_prepare(phPCM);
+                if (err >= 0)
+                {
+                    /*
+                     * Configure software stream parameters and we're done.
+                     */
+                    rc = alsaStreamSetSWParams(phPCM, fIn, pCfgReq, pCfgObt);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *pphPCM = phPCM;
+                        return VINF_SUCCESS;
+                    }
+                }
+                else
+                    LogRel(("ALSA: snd_pcm_prepare failed: %s\n", snd_strerror(err)));
+            }
+        }
+        else
             LogRel(("ALSA: Error setting output non-blocking mode: %s\n", snd_strerror(err)));
-            break;
-        }
-
-        snd_pcm_hw_params_t *pHWParms;
-        snd_pcm_hw_params_alloca(&pHWParms); /** @todo Check for successful allocation? */
-        err = snd_pcm_hw_params_any(phPCM, pHWParms);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to initialize hardware parameters: %s\n", snd_strerror(err)));
-            break;
-        }
-
-        err = snd_pcm_hw_params_set_access(phPCM, pHWParms, SND_PCM_ACCESS_RW_INTERLEAVED);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to set access type: %s\n", snd_strerror(err)));
-            break;
-        }
-
-        err = snd_pcm_hw_params_set_format(phPCM, pHWParms, pCfgReq->fmt);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to set audio format to %d: %s\n", pCfgReq->fmt, snd_strerror(err)));
-            break;
-        }
-
-        err = snd_pcm_hw_params_set_rate_near(phPCM, pHWParms, &uFreq, 0);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to set frequency to %uHz: %s\n", pCfgReq->freq, snd_strerror(err)));
-            break;
-        }
-
-        err = snd_pcm_hw_params_set_channels_near(phPCM, pHWParms, &cChannels);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to set number of channels to %d\n", pCfgReq->nchannels));
-            break;
-        }
-
-        if (   cChannels != 1
-            && cChannels != 2)
-        {
-            LogRel(("ALSA: Number of audio channels (%u) not supported\n", cChannels));
-            break;
-        }
-
-        snd_pcm_uframes_t period_size_f = pCfgReq->period_size;
-        snd_pcm_uframes_t buffer_size_f = pCfgReq->buffer_size;
-
-        snd_pcm_uframes_t minval = period_size_f;
-
-        int dir = 0;
-        err = snd_pcm_hw_params_get_period_size_min(pHWParms, &minval, &dir);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Could not determine minimal period size\n"));
-            break;
-        }
-        else
-        {
-            LogFunc(("Minimal period size is: %ld\n", minval));
-            if (period_size_f < minval)
-                period_size_f = minval;
-        }
-
-        err = snd_pcm_hw_params_set_period_size_near(phPCM, pHWParms, &period_size_f, 0);
-        LogFunc(("Period size is: %RU32\n", period_size_f));
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to set period size %d (%s)\n", period_size_f, snd_strerror(err)));
-            break;
-        }
-
-        minval = buffer_size_f;
-        err = snd_pcm_hw_params_get_buffer_size_min(pHWParms, &minval);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Could not retrieve minimal buffer size\n"));
-            break;
-        }
-        else
-            LogFunc(("Minimal buffer size is: %RU32\n", minval));
-
-        err = snd_pcm_hw_params_set_buffer_size_near(phPCM, pHWParms, &buffer_size_f);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to set near buffer size %RU32: %s\n", buffer_size_f, snd_strerror(err)));
-            break;
-        }
-
-        err = snd_pcm_hw_params(phPCM, pHWParms);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to apply audio parameters\n"));
-            break;
-        }
-
-        err = snd_pcm_hw_params_get_buffer_size(pHWParms, &obt_buffer_size);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to get buffer size\n"));
-            break;
-        }
-
-        snd_pcm_uframes_t obt_period_size;
-        err = snd_pcm_hw_params_get_period_size(pHWParms, &obt_period_size, &dir);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Failed to get period size\n"));
-            break;
-        }
-
-        LogRel2(("ALSA: Frequency is %dHz, period size is %RU32 frames, buffer size is %RU32 frames\n",
-                 pCfgReq->freq, obt_period_size, obt_buffer_size));
-
-        err = snd_pcm_prepare(phPCM);
-        if (err < 0)
-        {
-            LogRel(("ALSA: Could not prepare hPCM %p\n", (void *)phPCM));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-            break;
-        }
-
-        rc = alsaStreamSetSWParams(phPCM, fIn, pCfgReq, pCfgObt);
-        if (RT_FAILURE(rc))
-            break;
-
-        pCfgObt->fmt         = pCfgReq->fmt;
-        pCfgObt->nchannels   = cChannels;
-        pCfgObt->freq        = uFreq;
-        pCfgObt->period_size = obt_period_size;
-        pCfgObt->buffer_size = obt_buffer_size;
-
-        rc = VINF_SUCCESS;
-    }
-    while (0);
-
-    if (RT_SUCCESS(rc))
-    {
-        *pphPCM = phPCM;
+        alsaStreamClose(&phPCM);
     }
     else
-        alsaStreamClose(&phPCM);
-
-    LogFlowFuncLeaveRC(rc);
+        LogRel(("ALSA: Failed to open \"%s\" as %s device: %s\n", pszDev, fIn ? "input" : "output", snd_strerror(err)));
     return rc;
 }
 
@@ -812,13 +765,14 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterf
 static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                        const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
 {
+    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
     AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
     /* puWritten is optional. */
-
-    PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
+    Log4Func(("pvBuf=%p uBufSize=%#x (%u) state=%s - %s\n", pvBuf, uBufSize, uBufSize,
+              snd_pcm_state_name(snd_pcm_state(pStreamALSA->phPCM)), pStreamALSA->pCfg->szName));
 
     PPDMAUDIOSTREAMCFG pCfg = pStreamALSA->pCfg;
     AssertPtr(pCfg);
@@ -858,6 +812,7 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
         {
             csWritten = snd_pcm_writei(pStreamALSA->phPCM, pStreamALSA->pvBuf,
                                        PDMAUDIOSTREAMCFG_B2F(pCfg, cbToWrite));
+            Log4Func(("snd_pcm_writei w/ cbToWrite=%u -> %ld (frames) [csAvail=%ld]\n", cbToWrite, csWritten, csAvail));
             if (csWritten <= 0)
             {
                 switch (csWritten)
