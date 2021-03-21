@@ -629,16 +629,16 @@ RTDECL(int)         RTErrInfoLogAndAddV(PRTERRINFO pErrInfo, int rc, uint32_t iL
 #  define RTERRINFO_LOG_ADD_F(a_pErrInfo, a_rc, ...)                RTErrInfoLogAndAddF(a_pErrInfo, a_rc, LOG_GROUP, 0, __VA_ARGS__)
 #  define RTERRINFO_LOG_SET_F(a_pErrInfo, a_rc, ...)                RTErrInfoLogAndSetF(a_pErrInfo, a_rc, LOG_GROUP, 0, __VA_ARGS__)
 # else
-#  define RTERRINFO_LOG_ADD_F                                       RTErrInfoSetF
-#  define RTERRINFO_LOG_SET_F                                       RTErrInfoAddF
+#  define RTERRINFO_LOG_ADD_F                                       RTErrInfoAddF
+#  define RTERRINFO_LOG_SET_F                                       RTErrInfoSetF
 # endif
 #else
 # define RTERRINFO_LOG_SET(  a_pErrInfo, a_rc, a_pszMsg)            RTErrInfoSet( a_pErrInfo, a_rc, a_pszMsg)
 # define RTERRINFO_LOG_SET_V(a_pErrInfo, a_rc, a_pszMsg, a_va)      RTErrInfoSetV(a_pErrInfo, a_rc, a_pszMsg, a_va)
 # define RTERRINFO_LOG_ADD(  a_pErrInfo, a_rc, a_pszMsg)            RTErrInfoAdd( a_pErrInfo, a_rc, a_pszMsg)
 # define RTERRINFO_LOG_ADD_V(a_pErrInfo, a_rc, a_pszMsg, a_va)      RTErrInfoAddV(a_pErrInfo, a_rc, a_pszMsg, a_va)
-# define RTERRINFO_LOG_ADD_F                                        RTErrInfoSetF
-# define RTERRINFO_LOG_SET_F                                        RTErrInfoAddF
+# define RTERRINFO_LOG_ADD_F                                        RTErrInfoAddF
+# define RTERRINFO_LOG_SET_F                                        RTErrInfoSetF
 #endif
 
 #define RTERRINFO_LOG_REL_SET(  a_pErrInfo, a_rc, a_pszMsg)         RTErrInfoLogAndSet( a_pErrInfo, a_rc, LOG_GROUP, RTERRINFO_LOG_F_RELEASE, a_pszMsg)
@@ -649,8 +649,8 @@ RTDECL(int)         RTErrInfoLogAndAddV(PRTERRINFO pErrInfo, int rc, uint32_t iL
 # define RTERRINFO_LOG_REL_ADD_F(a_pErrInfo, a_rc, ...)             RTErrInfoLogAndAddF(a_pErrInfo, a_rc, LOG_GROUP, RTERRINFO_LOG_F_RELEASE, __VA_ARGS__)
 # define RTERRINFO_LOG_REL_SET_F(a_pErrInfo, a_rc, ...)             RTErrInfoLogAndSetF(a_pErrInfo, a_rc, LOG_GROUP, RTERRINFO_LOG_F_RELEASE, __VA_ARGS__)
 #else
-# define RTERRINFO_LOG_REL_ADD_F                                    RTErrInfoSetF
-# define RTERRINFO_LOG_REL_SET_F                                    RTErrInfoAddF
+# define RTERRINFO_LOG_REL_ADD_F                                    RTErrInfoAddF
+# define RTERRINFO_LOG_REL_SET_F                                    RTErrInfoSetF
 #endif
 /** @} */
 
