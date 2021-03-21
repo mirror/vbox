@@ -887,9 +887,9 @@ typedef struct HDACODECR0
 
     /** @name Public codec functions.
      *  @{  */
-    DECLCALLBACKMEMBER(void, pfnReset, (PHDACODEC pThis, PHDACODECR0 pThisCC));
-    DECLCALLBACKMEMBER(int,  pfnNodeReset, (PHDACODEC pThis, uint8_t nID, PCODECNODE pNode));
-    DECLCALLBACKMEMBER(int,  pfnLookup, (PHDACODEC pThis, PHDACODECR0 pThisCC, uint32_t uVerb, uint64_t *puResp));
+    DECLR0CALLBACKMEMBER(void, pfnReset, (PHDACODEC pThis, PHDACODECR0 pThisCC));
+    DECLR0CALLBACKMEMBER(int,  pfnNodeReset, (PHDACODEC pThis, uint8_t nID, PCODECNODE pNode));
+    DECLR0CALLBACKMEMBER(int,  pfnLookup, (PHDACODEC pThis, PHDACODECR0 pThisCC, uint32_t uVerb, uint64_t *puResp));
     /** @} */
 
 #ifdef VBOX_WITH_STATISTICS
@@ -910,9 +910,9 @@ typedef struct HDACODECR3
 
     /** @name Public codec functions.
      *  @{  */
-    DECLCALLBACKMEMBER(int,  pfnLookup, (PHDACODEC pThis, PHDACODECR3 pThisCC, uint32_t uVerb, uint64_t *puResp));
-    DECLCALLBACKMEMBER(void, pfnDbgListNodes, (PHDACODEC pThis, PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs));
-    DECLCALLBACKMEMBER(void, pfnDbgSelector, (PHDACODEC pThis, PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs));
+    DECLR3CALLBACKMEMBER(int,  pfnLookup, (PHDACODEC pThis, PHDACODECR3 pThisCC, uint32_t uVerb, uint64_t *puResp));
+    DECLR3CALLBACKMEMBER(void, pfnDbgListNodes, (PHDACODEC pThis, PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs));
+    DECLR3CALLBACKMEMBER(void, pfnDbgSelector, (PHDACODEC pThis, PHDACODECR3 pThisCC, PCDBGFINFOHLP pHlp, const char *pszArgs));
     /** @} */
 
     /** The parent device instance. */
