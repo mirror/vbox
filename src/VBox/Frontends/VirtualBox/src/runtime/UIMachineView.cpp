@@ -362,6 +362,112 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     }
 }
 
+void UIMachineView::sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEnabled)
+{
+    /* Skip unrelated guest-screen index: */
+    if (iScreen != (int)screenId())
+        return;
+
+    /* Acquire current resolution: */
+    ULONG uWidth, uHeight, uBitsPerPixel;
+    LONG uOriginX, uOriginY;
+    KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
+    display().GetScreenResolution(screenId(), uWidth, uHeight, uBitsPerPixel, uOriginX, uOriginY, monitorStatus);
+    if (!display().isOk())
+    {
+        msgCenter().cannotAcquireDispayParameter(display());
+        return;
+    }
+
+    /* Update desirable screen status: */
+    uisession()->setScreenVisibleHostDesires(screenId(), fEnabled);
+
+    /* Send enabling size-hint: */
+    if (fEnabled)
+    {
+        /* Defaults: */
+        if (!uWidth)
+            uWidth = 800;
+        if (!uHeight)
+            uHeight = 600;
+
+        /* Update current window size limitations: */
+        setMaxGuestSize(QSize(uWidth, uHeight));
+
+        /* Record the hint to extra data, needed for guests using VMSVGA:
+         * This should be done before the actual hint is sent in case the guest overrides it.
+         * Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
+        if (   !isFullscreenOrSeamless()
+            && uisession()->isGuestSupportsGraphics()
+            && (   (int)m_pFrameBuffer->width() != uWidth
+                || (int)m_pFrameBuffer->height() != uHeight
+                || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
+            storeGuestSizeHint(QSize(uWidth, uHeight));
+
+        /* Send enabling size-hint to the guest: */
+        LogRel(("GUI: UIMachineView::sltHandleActionTriggerViewScreenToggle: Enabling guest-screen %d\n", (int)screenId()));
+        display().SetVideoModeHint(screenId(),
+                                   true /* enabled? */,
+                                   false /* change origin? */,
+                                   0 /* origin x */,
+                                   0 /* origin y */,
+                                   uWidth,
+                                   uHeight,
+                                   0 /* bits per pixel */,
+                                   true /* notify? */);
+    }
+    else
+    {
+        /* Send disabling size-hint to the guest: */
+        LogRel(("GUI: UIMachineView::sltHandleActionTriggerViewScreenToggle: Disabling guest-screen %d\n", (int)screenId()));
+        display().SetVideoModeHint(screenId(),
+                                   false /* enabled? */,
+                                   false /* change origin? */,
+                                   0 /* origin x */,
+                                   0 /* origin y */,
+                                   0 /* width */,
+                                   0 /* height */,
+                                   0 /* bits per pixel */,
+                                   true /* notify? */);
+    }
+}
+
+void UIMachineView::sltHandleActionTriggerViewScreenResize(int iScreen, const QSize &size)
+{
+    /* Skip unrelated guest-screen index: */
+    if (iScreen != (int)m_uScreenId)
+        return;
+
+    /* Make sure we have valid size to work with: */
+    AssertMsgReturnVoid(size.isValid() && size.width() > 0 && size.height() > 0,
+                        ("Size should be valid (%dx%d)!\n", size.width(), size.height()));
+
+    /* Update current window size limitations: */
+    setMaxGuestSize(size);
+
+    /* Record the hint to extra data, needed for guests using VMSVGA:
+     * This should be done before the actual hint is sent in case the guest overrides it.
+     * Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
+    if (   !isFullscreenOrSeamless()
+        && uisession()->isGuestSupportsGraphics()
+        && (   (int)m_pFrameBuffer->width() != size.width()
+            || (int)m_pFrameBuffer->height() != size.height()
+            || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
+        storeGuestSizeHint(size);
+
+    /* Send enabling size-hint to the guest: */
+    LogRel(("GUI: UIMachineView::sltHandleActionTriggerViewScreenResize: Resizing guest-screen %d\n", (int)screenId()));
+    display().SetVideoModeHint(screenId(),
+                               true /* enabled? */,
+                               false /* change origin? */,
+                               0 /* origin x */,
+                               0 /* origin y */,
+                               size.width(),
+                               size.height(),
+                               0 /* bits per pixel */,
+                               true /* notify? */);
+}
+
 void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 {
     LogRel2(("GUI: UIMachineView::sltHandleNotifyChange: Screen=%d, Size=%dx%d\n",
@@ -879,6 +985,15 @@ void UIMachineView::prepareConnections()
     /* Scaling-optimization change: */
     connect(gEDataManager, &UIExtraDataManager::sigScalingOptimizationTypeChange,
             this, &UIMachineView::sltHandleScalingOptimizationChange);
+    /* Action-pool connections: */
+    UIActionPoolRuntime *pActionPoolRuntime = qobject_cast<UIActionPoolRuntime*>(actionPool());
+    if (pActionPoolRuntime)
+    {
+        connect(pActionPoolRuntime, &UIActionPoolRuntime::sigNotifyAboutTriggeringViewScreenToggle,
+                this, &UIMachineView::sltHandleActionTriggerViewScreenToggle);
+        connect(pActionPoolRuntime, &UIActionPoolRuntime::sigNotifyAboutTriggeringViewScreenResize,
+                this, &UIMachineView::sltHandleActionTriggerViewScreenResize);
+    }
 }
 
 void UIMachineView::prepareConsoleConnections()

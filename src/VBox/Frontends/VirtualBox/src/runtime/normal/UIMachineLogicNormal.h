@@ -66,11 +66,6 @@ private slots:
     /** Toggles status-bar presence.*/
     void sltToggleStatusBar();
 
-    /** Handles guest-screen toggle requests. */
-    void sltHandleActionTriggerViewScreenToggle(int iIndex, bool fEnabled);
-    /** Handles guest-screen resize requests. */
-    void sltHandleActionTriggerViewScreenResize(int iIndex, const QSize &size);
-
     /** Handles host-screen available-area change. */
     virtual void sltHostScreenAvailableAreaChange() /* override */;
 

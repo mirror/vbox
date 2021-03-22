@@ -501,6 +501,7 @@ public:
     bool cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const;
     void cannotSwitchScreenInSeamless(quint64 uMinVRAM) const;
     void cannotAddDiskEncryptionPassword(const CConsole &console);
+    void cannotAcquireDispayParameter(const CDisplay &comDisplay);
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* API: Network management warnings: */

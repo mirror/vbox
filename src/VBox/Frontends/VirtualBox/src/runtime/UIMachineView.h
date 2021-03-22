@@ -116,6 +116,15 @@ protected slots:
      *         guest coordinate system (absolute one) before passing to guest. */
     void sltPerformGuestResize(const QSize &toSize = QSize());
 
+    /** Handles guest-screen toggle request.
+      * @param  iScreen   Brings the number of screen being referred.
+      * @param  fEnabled  Brings whether this screen should be enabled. */
+    void sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEnabled);
+    /** Handles guest-screen resize request.
+      * @param  iScreen  Brings the number of screen being referred.
+      * @param  size     Brings the size of screen to be applied. */
+    void sltHandleActionTriggerViewScreenResize(int iScreen, const QSize &size);
+
     /* Handler: Frame-buffer NotifyChange stuff: */
     virtual void sltHandleNotifyChange(int iWidth, int iHeight);
 
