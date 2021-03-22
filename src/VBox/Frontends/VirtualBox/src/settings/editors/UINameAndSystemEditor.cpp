@@ -299,7 +299,7 @@ void UINameAndSystemEditor::retranslateUi()
     if (m_pPathLabel)
         m_pPathLabel->setText(tr("&Folder:"));
     if (m_pImageLabel)
-        m_pImageLabel->setText(tr("&Image:"));
+        m_pImageLabel->setText(tr("&ISO Image:"));
     if (m_pLabelFamily)
         m_pLabelFamily->setText(tr("&Type:"));
     if (m_pLabelType)
@@ -501,7 +501,7 @@ void UINameAndSystemEditor::prepareWidgets()
             {
                 m_pImageSelector->setResetEnabled(false);
                 m_pImageSelector->setMode(UIFilePathSelector::Mode_File_Open);
-                m_pImageSelector->setFileDialogFilters("*.iso *.ISO");
+                m_pImageSelector->setFileDialogFilters("ISO Images(*.iso *.ISO)");
                 m_pImageSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
                 m_pImageLabel->setBuddy(m_pImageSelector);
 
