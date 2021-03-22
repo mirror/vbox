@@ -663,7 +663,7 @@ endif
 
  ifeq ($(KBUILD_TARGET),win)
   VBoxDD_SOURCES += \
-	Audio/DrvHostDSound.cpp
+	Audio/DrvHostAudioDSound.cpp
   ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
    VBoxDD_SOURCES += \
 	Audio/VBoxMMNotificationClient.cpp
