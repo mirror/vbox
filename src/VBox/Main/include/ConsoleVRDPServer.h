@@ -135,7 +135,7 @@ public:
     void SendResize (void);
     void SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const;
 
-    void SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDEAUDIOFORMAT format) const;
+    void SendAudioSamples (void const *pvSamples, uint32_t cSamples, VRDEAUDIOFORMAT format) const;
     void SendAudioVolume (uint16_t left, uint16_t right) const;
     void SendUSBRequest (uint32_t u32ClientId, void *pvParms, uint32_t cbParms) const;
 

@@ -1445,86 +1445,75 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 }
 
 /**
- * Plays an audio host output stream which has been configured for non-interleaved (layout) data.
+ * Worker for drvAudioStreamPlay that plays non-interleaved data.
  *
  * @returns VBox status code.
- * @param   pThis               Pointer to driver instance.
- * @param   pStream             Stream to play.
- * @param   cfToPlay            Number of audio frames to play.
- * @param   pcfPlayed           Returns number of audio frames played. Optional.
+ * @param   pThis           The audio driver instance data.
+ * @param   pStream         The stream to play.
+ * @param   cFramesToPlay   Number of audio frames to play.
+ * @param   pcFramesPlayed  Where to return the number of audio frames played.
  */
-static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
-                                            PPDMAUDIOSTREAM pStream, uint32_t cfToPlay, uint32_t *pcfPlayed)
+static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
+                                            uint32_t cFramesToPlay, uint32_t *pcFramesPlayed)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pcfPlayed, VERR_INVALID_POINTER);
     Assert(pStream->enmDir == PDMAUDIODIR_OUT);
     Assert(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED);
 
     /*
-     * ...
+     * Push data to the host device.
      */
-    if (!cfToPlay)
+    int      rc          = VINF_SUCCESS;
+    uint32_t cFramesLeft = cFramesToPlay;
+    while (cFramesLeft > 0)
     {
-        if (pcfPlayed)
-            *pcfPlayed = 0;
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * ...
-     */
-    int      rc            = VINF_SUCCESS;
-    uint32_t cfPlayedTotal = 0;
-    uint32_t cfLeft        = cfToPlay;
-    while (cfLeft)
-    {
+        /*
+         * Grab a chunk of audio data in the backend format.
+         */
         uint8_t  abChunk[_4K];
-        uint32_t cfRead = 0;
-        rc = AudioMixBufAcquireReadBlock(&pStream->Host.MixBuf,
-                                         abChunk, RT_MIN(sizeof(abChunk), AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cfLeft)),
-                                         &cfRead);
-        if (RT_FAILURE(rc))
-            break;
+        uint32_t cFramesRead = 0;
+        rc = AudioMixBufAcquireReadBlock(&pStream->Host.MixBuf, abChunk,
+                                         RT_MIN(sizeof(abChunk), AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cFramesLeft)),
+                                         &cFramesRead);
+        AssertRCBreak(rc);
 
-        uint32_t cbRead = AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cfRead);
+        uint32_t cbRead = AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cFramesRead);
         Assert(cbRead <= sizeof(abChunk));
 
-        uint32_t cfPlayed = 0;
-        uint32_t cbPlayed = 0;
+        /*
+         * Feed it to the backend.
+         */
+        uint32_t cFramesPlayed = 0;
+        uint32_t cbPlayed      = 0;
         rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend, abChunk, cbRead, &cbPlayed);
-        if (   RT_SUCCESS(rc)
-            && cbPlayed)
+        if (RT_SUCCESS(rc))
         {
-            if (pThis->Out.Cfg.Dbg.fEnabled)
-                AudioHlpFileWrite(pStream->Out.Dbg.pFilePlayNonInterleaved, abChunk, cbPlayed, 0 /* fFlags */);
+            if (cbPlayed)
+            {
+                if (pThis->Out.Cfg.Dbg.fEnabled)
+                    AudioHlpFileWrite(pStream->Out.Dbg.pFilePlayNonInterleaved, abChunk, cbPlayed, 0 /* fFlags */);
 
-            if (cbRead != cbPlayed)
-                LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32)\n",
-                         pStream->szName, cbRead, cbPlayed));
+                if (cbRead != cbPlayed)
+                    LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32)\n",
+                             pStream->szName, cbRead, cbPlayed));
 
-            cfPlayed       = AUDIOMIXBUF_B2F(&pStream->Host.MixBuf, cbPlayed);
-            cfPlayedTotal += cfPlayed;
-
-            Assert(cfLeft >= cfPlayed);
-            cfLeft        -= cfPlayed;
+                cFramesPlayed  = AUDIOMIXBUF_B2F(&pStream->Host.MixBuf, cbPlayed);
+                AssertStmt(cFramesLeft >= cFramesPlayed, cFramesPlayed = cFramesLeft);
+                cFramesLeft   -= cFramesPlayed;
+            }
+            else
+            {
+                /** @todo r=bird: If the backend is doing non-blocking writes, we'll probably
+                 *        be spinning like crazy here...  The ALSA backend is non-blocking.   */
+            }
         }
 
-        AudioMixBufReleaseReadBlock(&pStream->Host.MixBuf, cfPlayed);
+        AudioMixBufReleaseReadBlock(&pStream->Host.MixBuf, cFramesPlayed);
 
-        if (RT_FAILURE(rc))
-            break;
+        AssertRCBreak(rc); /* (this is here for Acquire/Release symmetry - which isn't at all necessary) */
     }
 
-    Log3Func(("[%s] Played %RU32/%RU32 frames, rc=%Rrc\n", pStream->szName, cfPlayedTotal, cfToPlay, rc));
-
-    if (RT_SUCCESS(rc))
-    {
-        if (pcfPlayed)
-            *pcfPlayed = cfPlayedTotal;
-    }
-
+    Log3Func(("[%s] Played %RU32/%RU32 frames, rc=%Rrc\n", pStream->szName, cFramesToPlay - cFramesLeft, cFramesToPlay, rc));
+    *pcFramesPlayed = cFramesToPlay - cFramesLeft;
     return rc;
 }
 
@@ -1534,56 +1523,44 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
  * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to play.
- * @param   cfToPlay            Number of audio frames to play.
- * @param   pcfPlayed           Returns number of audio frames played. Optional.
+ * @param   cFramesToPlay       Number of audio frames to play.
+ * @param   pcFramesPlayed      Where to return number of audio frames played.
  */
-static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
-                                 PPDMAUDIOSTREAM pStream, uint32_t cfToPlay, uint32_t *pcfPlayed)
+static int drvAudioStreamPlayRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, uint32_t cFramesToPlay, uint32_t *pcFramesPlayed)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pcfPlayed, VERR_INVALID_POINTER);
     Assert(pStream->enmDir == PDMAUDIODIR_OUT);
     Assert(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW);
 
     /*
      * ...
      */
-    if (!cfToPlay)
-    {
-        if (pcfPlayed)
-            *pcfPlayed = 0;
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * ...
-     */
-    int         rc              = VINF_SUCCESS;
-    uint32_t    cfPlayedTotal   = 0;
-    uint32_t    cfLeft          = cfToPlay;
-    while (cfLeft)
+    int      rc          = VINF_SUCCESS;
+    uint32_t cFramesLeft = cFramesToPlay;
+    while (cFramesLeft > 0)
     {
         PDMAUDIOFRAME   aFrames[_2K];
-        uint32_t        cfRead = 0;
-        rc = AudioMixBufPeek(&pStream->Host.MixBuf, cfLeft, aFrames, RT_MIN(cfLeft, RT_ELEMENTS(aFrames)), &cfRead);
+        uint32_t        cFramesRead = 0;
+        /** @todo r=bird: Peek functions do _not_ generally drop stuff from what they're
+         *        peeking into.  We normally name such functions Read.  (Oh man, am I
+         *        getting tired of this kind of crap.) */
+        rc = AudioMixBufPeek(&pStream->Host.MixBuf, cFramesLeft, aFrames,
+                             RT_MIN(cFramesLeft, RT_ELEMENTS(aFrames)), &cFramesRead);
         if (RT_SUCCESS(rc))
         {
-            if (cfRead)
+            Assert(cFramesRead <= RT_ELEMENTS(aFrames));
+            if (cFramesRead)
             {
-                /* Note: As the stream layout is RPDMAUDIOSTREAMLAYOUT_RAW, operate on audio frames rather on bytes. */
-                Assert(cfRead <= RT_ELEMENTS(aFrames));
-                uint32_t cfPlayed = 0;
-                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend, aFrames, cfRead, &cfPlayed);
-                if (   RT_FAILURE(rc)
-                    || !cfPlayed)
-                    break;
+                uint32_t cbPlayed = 0;
+                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend,
+                                                         aFrames, cFramesRead * sizeof(aFrames[0]), &cbPlayed);
+                AssertRCBreak(rc);
+                /** @todo r=bird: This is a natural follow up to the non-peeking peek crap
+                 *        above.  It works because VRDE is the only consumer and it always
+                 *        processes all that it gets. */
+                AssertBreakStmt(cbPlayed == cFramesRead * sizeof(aFrames[0]), rc = VERR_INTERNAL_ERROR_2);
 
-                cfPlayedTotal += cfPlayed;
-                Assert(cfPlayedTotal <= cfToPlay);
-
-                Assert(cfLeft >= cfRead);
-                cfLeft        -= cfRead;
+                Assert(cFramesRead <= cFramesLeft);
+                cFramesLeft -= cFramesRead;
             }
             else
             {
@@ -1598,9 +1575,8 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
             break;
     }
 
-    if (RT_SUCCESS(rc) && pcfPlayed)
-        *pcfPlayed = cfPlayedTotal;
-    Log3Func(("[%s] Played %RU32/%RU32 frames, rc=%Rrc\n", pStream->szName, cfPlayedTotal, cfToPlay, rc));
+    *pcFramesPlayed = cFramesToPlay - cFramesLeft;
+    Log3Func(("[%s] Played %RU32/%RU32 frames, rc=%Rrc\n", pStream->szName, cFramesToPlay - cFramesLeft, cFramesToPlay, rc));
     return rc;
 }
 
@@ -1613,13 +1589,11 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
     AssertPtr(pThis);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pcFramesPlayed, VERR_INVALID_POINTER);
-
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    AssertRCReturn(rc, rc);
-
     AssertMsg(pStream->enmDir == PDMAUDIODIR_OUT,
               ("Stream '%s' is not an output stream and therefore cannot be played back (direction is 0x%x)\n",
                pStream->szName, pStream->enmDir));
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, rc);
 
     uint32_t cfPlayedTotal = 0;
 
@@ -1736,6 +1710,29 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
                 if (pThis->pHostDrvAudio->pfnStreamPlayBegin)
                     pThis->pHostDrvAudio->pfnStreamPlayBegin(pThis->pHostDrvAudio, pStream->pvBackend);
 
+                /** @todo r=bird: I don't honestly see any difference in interleaved,
+                 *        non-interrleaved, raw, complicate, or whatever frame format we're
+                 *        dealing with here.  We'll be formatting a chunk of audio data and feed
+                 *        it to the backend, the formatting is taken care of by the mixer and
+                 *        we don't really care about the format anywhere here.
+                 *
+                 *        Raw audio is just stereo S64, btw.  Since drvAudioStreamPlayRaw
+                 *        actually copies the mixer data instead of accessing the internal mixer
+                 *        buffer directly, there is no advantage to having separate code paths
+                 *        here.  It only leads to more incomplete crappy code (I find the code
+                 *        quality quite appaling, given the amount of time spent on it).
+                 *
+                 *        What's more, I think the non-interleaved designation here is wrong
+                 *        anyway.  Non-interleaved means a stereo chunk of 8 frames is
+                 *        formatted:
+                 *              - LLLLLLLLRRRRRRRR
+                 *        whereas I'm pretty darn sure we do:
+                 *              - LRLRLRLRLRLRLRLR
+                 *        given that the mixer doesn't know how to output the former.  See the
+                 *        audioMixBufConvTo##a_Name##Stereo() code, it clearly output LR pairs.
+                 *
+                 *        https://stackoverflow.com/questions/17879933/whats-the-interleaved-audio
+                 */
                 if (RT_LIKELY(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
                     rc = drvAudioStreamPlayNonInterleaved(pThis, pStream, cfToPlay, &cfPlayedTotal);
                 else if (pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW)

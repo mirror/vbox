@@ -3729,7 +3729,7 @@ void ConsoleVRDPServer::SendUpdateBitmap(unsigned uScreenId, uint32_t x, uint32_
     }
 }
 
-void ConsoleVRDPServer::SendAudioSamples(void *pvSamples, uint32_t cSamples, VRDEAUDIOFORMAT format) const
+void ConsoleVRDPServer::SendAudioSamples(void const *pvSamples, uint32_t cSamples, VRDEAUDIOFORMAT format) const
 {
     if (mpEntryPoints && mhServer)
     {

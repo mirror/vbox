@@ -1823,13 +1823,11 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface  Pointer to the interface structure containing the called function pointer.
      * @param   pStream     Pointer to audio stream.
      * @param   pvBuf       Pointer to audio data buffer to play.
-     * @param   uBufSize    The audio data buffer size (see note below for unit).
-     * @param   puWritten   Number of unit written.
-     * @note    The @a uBufSize and @a puWritten values are in bytes for non-raw
-     *          layout streams and in frames for raw layout ones.
+     * @param   cbBuf       The number of bytes of audio data to play.
+     * @param   pcbWritten  Where to return the actual number of bytes played.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                              const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten));
+                                              const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten));
 
     /**
      * Signals the backend that the host finished playing for this iteration. Optional.
@@ -1873,7 +1871,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "007847a0-0075-4964-007d-343f0010f081"
+#define PDMIHOSTAUDIO_IID                           "be34182b-d579-41e8-96e0-abb94900460f"
 
 /** @} */
 

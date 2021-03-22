@@ -105,8 +105,10 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
          */
         pCfgAcq->enmLayout                      = PDMAUDIOSTREAMLAYOUT_RAW;
         pCfgAcq->Backend.cFramesPeriod          = cFramesVrdpServer;
-        pCfgAcq->Backend.cFramesBufferSize      = pCfgAcq->Backend.cFramesPeriod * 2; /* Use "double buffering". */
-        pCfgAcq->Backend.cFramesPreBuffering    = pCfgAcq->Backend.cFramesPeriod;
+/** @todo r=bird: This is inconsistent with the above buffer allocation and I
+ * think also ALSA and Pulse backends way of setting cFramesBufferSize. */
+        pCfgAcq->Backend.cFramesBufferSize      = cFramesVrdpServer * 2; /* Use "double buffering". */
+        pCfgAcq->Backend.cFramesPreBuffering    = cFramesVrdpServer;
     }
 
     return rc;
@@ -269,77 +271,57 @@ static DECLCALLBACK(int) drvAudioVrdeHA_StreamCapture(PPDMIHOSTAUDIO pInterface,
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvAudioVrdeHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                   const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
+                                                   const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
-    /* puWritten is optional. */
-
-    PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
-    PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
+    AssertPtr(pDrv);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    PVRDESTREAM pStreamVRDE = (PVRDESTREAM)pStream;
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
 
     if (!pDrv->pConsoleVRDPServer)
         return VERR_NOT_AVAILABLE;
 
-    /* Note: We get the number of *frames* in uBufSize
-     *       (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout) on stream creation. */
-    uint32_t cFramesLive = uBufSize;
-
+    /* Prepate the format. */
     PPDMAUDIOPCMPROPS pProps = &pStreamVRDE->pCfg->Props;
+    VRDEAUDIOFORMAT const VrdpFormat = VRDE_AUDIO_FMT_MAKE(pProps->uHz,
+                                                           pProps->cChannels,
+                                                           pProps->cbSample * 8 /* Bit */,
+                                                           pProps->fSigned);
 
-    VRDEAUDIOFORMAT format = VRDE_AUDIO_FMT_MAKE(pProps->uHz,
-                                                 pProps->cChannels,
-                                                 pProps->cbSample * 8 /* Bit */,
-                                                 pProps->fSigned);
+    /* We specified PDMAUDIOSTREAMLAYOUT_RAW (== S64), so
+       convert the buffer pointe and size accordingly:  */
+    PCPDMAUDIOFRAME paSampleBuf    = (PCPDMAUDIOFRAME)pvBuf;
+    uint32_t const  cFramesToWrite = cbBuf / sizeof(paSampleBuf[0]);
+    Assert(cFramesToWrite * sizeof(paSampleBuf[0]) == cbBuf);
 
-    /* Use the internal counter to track if we (still) can write to the VRDP server
-     * or if we need to wait another round (time slot). */
-    uint32_t cFramesToWrite = cFramesLive;
-
-    Log3Func(("cFramesLive=%RU32, cFramesToWrite=%RU32\n", cFramesLive, cFramesToWrite));
-
-    /* Don't play more than available. */
-    if (cFramesToWrite > cFramesLive)
-        cFramesToWrite = cFramesLive;
-
-    int rc = VINF_SUCCESS;
-
-    PPDMAUDIOFRAME paSampleBuf = (PPDMAUDIOFRAME)pvBuf;
-    AssertPtr(paSampleBuf);
+    /** @todo r=bird: there was some incoherent mumbling about "using the
+     *        internal counter to track if we (still) can write to the VRDP
+     *        server or if need to wait anothe round (time slot)".  However it
+     *        wasn't accessing any internal counter nor doing anything else
+     *        sensible, so I've removed it. */
 
     /*
      * Call the VRDP server with the data.
      */
-    uint32_t cfWritten = 0;
-    while (cFramesToWrite)
+    uint32_t cFramesWritten = 0;
+    while (cFramesWritten < cFramesToWrite)
     {
-        uint32_t cfChunk = cFramesToWrite; /** @todo For now write all at once. */
+        uint32_t const cFramesChunk = cFramesToWrite - cFramesWritten; /** @todo For now write all at once. */
 
-        if (!cfChunk) /* Nothing to send. Bail out. */
-            break;
+        /* Note: The VRDP server expects int64_t samples per channel, regardless
+                 of the actual  sample bits (e.g 8 or 16 bits). */
+        pDrv->pConsoleVRDPServer->SendAudioSamples(&paSampleBuf[cFramesWritten], cFramesChunk /* Frames */, VrdpFormat);
 
-        /* Note: The VRDP server expects int64_t samples per channel, regardless of the actual
-         *       sample bits (e.g 8 or 16 bits). */
-        pDrv->pConsoleVRDPServer->SendAudioSamples(paSampleBuf + cfWritten, cfChunk /* Frames */, format);
-
-        cfWritten += cfChunk;
-        Assert(cfWritten <= cFramesLive);
-
-        Assert(cFramesToWrite >= cfChunk);
-        cFramesToWrite -= cfChunk;
+        cFramesWritten += cFramesChunk;
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        /* Return frames instead of bytes here
-         * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
-        if (puWritten)
-            *puWritten = cfWritten;
-    }
-
-    return rc;
+    Log3Func(("cFramesWritten=%RU32\n", cFramesWritten));
+    if (pcbWritten)
+        *pcbWritten = cFramesWritten * sizeof(PDMAUDIOFRAME);
+    return VINF_SUCCESS;
 }
 
 
