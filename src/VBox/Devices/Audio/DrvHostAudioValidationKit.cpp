@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * ValidationKit audio driver - host backend for dumping and injecting audio data
- *                              from/to the device emulation.
+ * Host audio driver - ValidationKit - For dumping and injecting audio data from/to the device emulation.
  */
 
 /*

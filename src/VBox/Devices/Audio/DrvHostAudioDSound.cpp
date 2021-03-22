@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Windows host backend driver using DirectSound.
+ * Host audio driver - DirectSound (Windows).
  */
 
 /*

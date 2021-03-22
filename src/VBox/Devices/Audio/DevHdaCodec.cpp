@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HDACodec - VBox HD Audio Codec.
+ * Intel HD Audio Controller Emulation - Codec, Sigmatel/IDT STAC9220.
  *
  * Implemented based on the Intel HD Audio specification and the
  * Sigmatel/IDT STAC9220 datasheet.

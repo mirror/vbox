@@ -1,9 +1,6 @@
 /* $Id$ */
 /** @file
- * Intermediate audio driver header.
- *
- * @remarks Intermediate audio driver for connecting the audio device emulation
- *          with the host backend.
+ * Intermediate audio driver - Connects the audio device emulation with the host backend.
  */
 
 /*

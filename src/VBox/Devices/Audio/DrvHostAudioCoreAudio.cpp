@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox audio devices - Mac OS X CoreAudio audio driver.
+ * Host audio driver - Mac OS X CoreAudio.
  */
 
 /*

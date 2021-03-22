@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * ALSA audio driver.
+ * Host audio driver - Advanced Linux Sound Architecture (ALSA).
  */
 
 /*

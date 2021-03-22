@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HDAStream.cpp - Stream functions for HD Audio.
+ * Intel HD Audio Controller Emulation - Streams.
  */
 
 /*

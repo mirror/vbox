@@ -1,6 +1,9 @@
 /* $Id$ */
 /** @file
- * DevHDACommon.h - Shared HDA device defines / functions.
+ * Intel HD Audio Controller Emulation - Common stuff.
+ *
+ * @todo r=bird: Wtf is this?   Do we have some other HDA implementations
+ *               that I'm not aware of that shares this code?
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevHDA.cpp - VBox Intel HD Audio Controller.
+ * Intel HD Audio Controller Emulation.
  *
  * Implemented against the specifications found in "High Definition Audio
  * Specification", Revision 1.0a June 17, 2010, and  "Intel I/O Controller

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox audio devices: Pulse Audio audio driver.
+ * Host audio driver - Pulse Audio.
  */
 
 /*

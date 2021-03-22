@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevHDACommon.cpp - Shared HDA device functions.
+ * Intel HD Audio Controller Emulation - Common stuff.
  *
  * @todo r=bird: Shared with whom exactly?
  */

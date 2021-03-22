@@ -1,9 +1,8 @@
 /* $Id$ */
 /** @file
- * Intermedia audio driver, common routines.
+ * Audio helper routines.
  *
- * These are also used in the drivers which are bound to Main, e.g. the VRDE
- * or the video audio recording drivers.
+ * These are used with both drivers and devices.
  */
 
 /*

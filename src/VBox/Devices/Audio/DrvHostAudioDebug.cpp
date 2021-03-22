@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- * Debug audio driver.
- *
- * Host backend for dumping and injecting audio data from/to the device emulation.
+ * Host audio driver - Debug - For dumping and injecting audio data from/to the device emulation.
  */
 
 /*

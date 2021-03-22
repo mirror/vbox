@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HDAStreamChannel.h - Stream channel functions for HD Audio.
+ * Intel HD Audio Controller Emulation - Stream channel.
  */
 
 /*

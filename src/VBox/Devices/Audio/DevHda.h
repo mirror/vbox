@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevHDA.h - VBox Intel HD Audio Controller.
+ * Intel HD Audio Controller Emulation - Structures.
  */
 
 /*

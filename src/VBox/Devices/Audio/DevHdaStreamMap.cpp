@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HDAStreamMap.cpp - Stream mapping functions for HD Audio.
+ * Intel HD Audio Controller Emulation - Stream mapping (e.g. 5.1 -> stereo).
  */
 
 /*

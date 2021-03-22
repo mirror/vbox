@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * NULL audio driver.
+ * Host audio driver - NULL.
  *
  * This also acts as a fallback if no other backend is available.
  */

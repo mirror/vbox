@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * DrvHostAudioDSoundMMNotifClient.h - Implementation of the IMMNotificationClient interface
- *                              to detect audio endpoint changes.
+ * Host audio driver - DSound - Implementation of the IMMNotificationClient interface to detect audio endpoint changes.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * OSS (Open Sound System) host audio backend.
+ * Host audio driver - OSS (Open Sound System).
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Intermediate audio driver header.
+ * Audio helper routines.
  */
 
 /*
