@@ -106,8 +106,15 @@ public:
 
 protected slots:
 
-    /* Slot to perform guest resize: */
-    void sltPerformGuestResize(const QSize &aSize = QSize());
+    /* Performs guest-screen resize to a size specified.
+     * @param  toSize  Brings the size guest-screen needs to be resized to.
+     * @note   If toSize isn't valid or sane one, it will be replaced with actual
+     *         size of centralWidget() containing this machine-view currently.
+     * @note   Also, take into acount that since this method is also called to
+     *         resize to centralWidget() size, the size passed is expected to be
+     *         tranformed to internal coordinate system and thus to be restored to
+     *         guest coordinate system (absolute one) before passing to guest. */
+    void sltPerformGuestResize(const QSize &toSize = QSize());
 
     /* Handler: Frame-buffer NotifyChange stuff: */
     virtual void sltHandleNotifyChange(int iWidth, int iHeight);

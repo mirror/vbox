@@ -252,26 +252,32 @@ void UIMachineView::updateViewport()
 
 void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 {
-    /* If this slot is invoked directly then use the passed size otherwise get
-     * the available size for the guest display. We assume here that centralWidget()
-     * contains this view only and gives it all available space: */
-    QSize size(toSize.isValid() ? toSize : machineWindow()->centralWidget()->size());
-    AssertMsg(size.isValid(), ("Size should be valid!\n"));
+    /* There is a couple of things to keep in mind:
+     *
+     * First of all, passed size can be invalid (or even not sane one, where one of values equal to zero).  Usually that happens
+     * if this function being invoked with default argument for example by some slot.  In such case we get the available size for
+     * the guest-screen we have.  We assume here that centralWidget() contains this view only and gives it all available space.
+     * In all other cases we have a valid non-zero size which should be handled as usual.
+     *
+     * Besides that, passed size or size taken from centralWidget() is _not_ absolute one, it's in widget's coordinate system
+     * which can and will be be transformed by scale-factor when appropriate, so before passing this size to a guest it has to
+     * be scaled backward.  This is the key aspect in which internal resize differs from resize initiated from the outside. */
+
+    /* Make sure we have valid size to work with: */
+    QSize size(  toSize.isValid() && toSize.width() > 0 && toSize.height() > 0
+               ? toSize : machineWindow()->centralWidget()->size());
+    AssertMsgReturnVoid(size.isValid() && size.width() > 0 && size.height() > 0,
+                        ("Size should be valid (%dx%d)!\n", size.width(), size.height()));
 
     /* Take the scale-factor(s) into account: */
     size = scaledBackward(size);
 
-    /* Expand current limitations: */
+    /* Update current window size limitations: */
     setMaxGuestSize(size);
 
-    /* Send new size-hint to the guest: */
-    LogRel(("GUI: UIMachineView::sltPerformGuestResize: "
-            "Sending guest size-hint to screen %d as %dx%d if necessary\n",
-            (int)screenId(), size.width(), size.height()));
-
-    /* Record the hint to extra data, needed for guests using VMSVGA: */
-    /* This should be done before the actual hint is sent in case the guest overrides it. */
-    /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
+    /* Record the hint to extra data, needed for guests using VMSVGA:
+     * This should be done before the actual hint is sent in case the guest overrides it.
+     * Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
     if (   !isFullscreenOrSeamless()
         && uisession()->isGuestSupportsGraphics()
         && (   (int)m_pFrameBuffer->width() != size.width()
@@ -282,21 +288,57 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     /* If auto-mount of guest-screens (auto-pilot) enabled: */
     if (gEDataManager->autoMountGuestScreensEnabled(uiCommon().managedVMUuid()))
     {
-        /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes: */
-        if (   (int)m_pFrameBuffer->width() != size.width() || (int)m_pFrameBuffer->height() != size.height()
-            || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId()))
+        /* If host and guest have same opinion about guest-screen visibility: */
+        if (uisession()->isScreenVisible(screenId()) == uisession()->isScreenVisibleHostDesires(screenId()))
         {
-            /* If host and guest have same opinion about guest-screen visibility: */
-            if (uisession()->isScreenVisible(screenId()) == uisession()->isScreenVisibleHostDesires(screenId()))
+            /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes: */
+            if ((int)m_pFrameBuffer->width() != size.width() || (int)m_pFrameBuffer->height() != size.height())
+            {
+                LogRel(("GUI: UIMachineView::sltPerformGuestResize: Auto-pilot resizing screen %d as %dx%d\n",
+                        (int)screenId(), size.width(), size.height()));
                 display().SetVideoModeHint(screenId(),
                                            uisession()->isScreenVisible(screenId()),
-                                           false, 0, 0, size.width(), size.height(), 0, true);
-            /* If host desires to have guest-screen disabled and guest-screen is enabled, retrying: */
-            else if (!uisession()->isScreenVisibleHostDesires(screenId()))
-                display().SetVideoModeHint(screenId(), false, false, 0, 0, 0, 0, 0, true);
+                                           false /* change origin? */,
+                                           0 /* origin x */,
+                                           0 /* origin y */,
+                                           size.width(),
+                                           size.height(),
+                                           0 /* bits per pixel */,
+                                           true /* notify? */);
+            }
+        }
+        else
+        {
             /* If host desires to have guest-screen enabled and guest-screen is disabled, retrying: */
-            else if (uisession()->isScreenVisibleHostDesires(screenId()))
-                display().SetVideoModeHint(screenId(), true, false, 0, 0, size.width(), size.height(), 0, true);
+            if (uisession()->isScreenVisibleHostDesires(screenId()))
+            {
+                /* Send enabling size-hint to the guest: */
+                LogRel(("GUI: UIMachineView::sltPerformGuestResize: Auto-pilot enabling guest-screen %d\n", (int)screenId()));
+                display().SetVideoModeHint(screenId(),
+                                           true /* enabled? */,
+                                           false /* change origin? */,
+                                           0 /* origin x */,
+                                           0 /* origin y */,
+                                           size.width(),
+                                           size.height(),
+                                           0 /* bits per pixel */,
+                                           true /* notify? */);
+            }
+            /* If host desires to have guest-screen disabled and guest-screen is enabled, retrying: */
+            else
+            {
+                /* Send disabling size-hint to the guest: */
+                LogRel(("GUI: UIMachineView::sltPerformGuestResize: Auto-pilot disabling guest-screen %d\n", (int)screenId()));
+                display().SetVideoModeHint(screenId(),
+                                           false /* enabled? */,
+                                           false /* change origin? */,
+                                           0 /* origin x */,
+                                           0 /* origin y */,
+                                           0 /* width */,
+                                           0 /* height */,
+                                           0 /* bits per pixel */,
+                                           true /* notify? */);
+            }
         }
     }
     /* If auto-mount of guest-screens (auto-pilot) disabled: */
@@ -304,9 +346,19 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     {
         /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes: */
         if ((int)m_pFrameBuffer->width() != size.width() || (int)m_pFrameBuffer->height() != size.height())
+        {
+            LogRel(("GUI: UIMachineView::sltPerformGuestResize: Sending guest size-hint to screen %d as %dx%d\n",
+                    (int)screenId(), size.width(), size.height()));
             display().SetVideoModeHint(screenId(),
                                        uisession()->isScreenVisible(screenId()),
-                                       false, 0, 0, size.width(), size.height(), 0, true);
+                                       false /* change origin? */,
+                                       0 /* origin x */,
+                                       0 /* origin y */,
+                                       size.width(),
+                                       size.height(),
+                                       0 /* bits per pixel */,
+                                       true /* notify? */);
+        }
     }
 }
 
