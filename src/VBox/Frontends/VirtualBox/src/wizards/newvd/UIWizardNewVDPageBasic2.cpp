@@ -110,13 +110,13 @@ void UIWizardNewVDPage2::retranslateWidgets()
 {
     if (m_pFixedCheckBox)
     {
-        m_pFixedCheckBox->setText(UIWizardNewVD::tr("Pre-&allocate full size"));
+        m_pFixedCheckBox->setText(UIWizardNewVD::tr("Pre-&allocate Full Size"));
         m_pFixedCheckBox->setToolTip(UIWizardNewVD::tr("<p>When checked, the virtual disk image will be fully allocated at "
                                                        "VM creation time, rather than being allocated dynamically at VM run-time.</p>"));
     }
 
     if (m_pSplitBox)
-        m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));
+        m_pSplitBox->setText(UIWizardNewVD::tr("&Split Into Files of Less Than 2GB"));
 
 
     /* Translate rich text labels: */

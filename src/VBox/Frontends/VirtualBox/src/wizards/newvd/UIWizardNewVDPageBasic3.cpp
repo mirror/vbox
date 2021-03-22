@@ -280,7 +280,7 @@ void UIWizardNewVDPage3::retranslateWidgets()
                                                 "This size is the limit on the amount of file data "
                                                 "that a virtual machine will be able to store on the hard disk."));
     if (m_pMediumSizeEditorLabel)
-        m_pMediumSizeEditorLabel->setText(UIWizardNewVD::tr("D&isk size:"));
+        m_pMediumSizeEditorLabel->setText(UIWizardNewVD::tr("D&isk Size:"));
 }
 
 UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)

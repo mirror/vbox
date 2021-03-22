@@ -81,13 +81,13 @@ void UIWizardNewVMPage4::getWithFileOpenDialog()
 void UIWizardNewVMPage4::retranslateWidgets()
 {
     if (m_pDiskEmpty)
-        m_pDiskEmpty->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
+        m_pDiskEmpty->setText(UIWizardNewVM::tr("&Do Not Add a Virtual Hard Disk"));
     if (m_pDiskNew)
-        m_pDiskNew->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
+        m_pDiskNew->setText(UIWizardNewVM::tr("&Create a Virtual Hard Disk Now"));
     if (m_pDiskExisting)
-        m_pDiskExisting->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
+        m_pDiskExisting->setText(UIWizardNewVM::tr("&Use an Existing Virtual Hard Disk File"));
     if (m_pDiskSelectionButton)
-        m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+        m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Choose a Virtual Hard Fisk File..."));
 }
 
 void UIWizardNewVMPage4::setEnableDiskSelectionWidgets(bool fEnabled)

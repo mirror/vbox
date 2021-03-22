@@ -163,14 +163,14 @@ void UIWizardNewVMPageExpert::retranslateUi()
 
     if (m_pToolBox)
     {
-        m_pToolBox->setPageTitle(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and operating system")));
+        m_pToolBox->setPageTitle(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and Operating System")));
         m_pToolBox->setPageTitle(ExpertToolboxItems_Unattended, UIWizardNewVM::tr("Unattended Install"));
-        m_pToolBox->setPageTitle(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard disk"));
+        m_pToolBox->setPageTitle(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard Disk"));
         m_pToolBox->setPageTitle(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("Hardware"));
     }
 
     if (m_pDiskFormatGroupBox)
-        m_pDiskFormatGroupBox->setTitle(UIWizardNewVM::tr("Hard disk file &type"));
+        m_pDiskFormatGroupBox->setTitle(UIWizardNewVM::tr("Hard Disk File &Type"));
     if (m_pFormatButtonGroup)
     {
         QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
@@ -182,7 +182,7 @@ void UIWizardNewVMPageExpert::retranslateUi()
         }
     }
     if (m_pDiskVariantGroupBox)
-        m_pDiskVariantGroupBox->setTitle(UIWizardNewVM::tr("Storage on physical hard disk"));
+        m_pDiskVariantGroupBox->setTitle(UIWizardNewVM::tr("Storage on Physical Hard Disk"));
     if (m_pLocationLabel)
         m_pLocationLabel->setText(UIWizardNewVM::tr("Disk Location:"));
 
