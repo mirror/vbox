@@ -62,7 +62,7 @@ bool UIToolsHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) con
                 /* Which item we just clicked? */
                 UIToolsItem *pClickedItem = qgraphicsitem_cast<UIToolsItem*>(pItemUnderMouse);
                 /* Make clicked item the current one: */
-                if (pClickedItem)
+                if (pClickedItem && pClickedItem->isEnabled())
                 {
                     model()->setCurrentItem(pClickedItem);
                     model()->closeParent();
