@@ -156,7 +156,7 @@ QWidget *UIWizardNewVMPage2::createGAInstallWidgets()
             {
                 m_pGAISOFilePathSelector->setResetEnabled(false);
                 m_pGAISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-                m_pGAISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+                m_pGAISOFilePathSelector->setFileDialogFilters("ISO Images(*.iso *.ISO)");
                 m_pGAISOFilePathSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
                 m_pGAISOFilePathSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
                 if (m_pGAISOPathLabel)
@@ -201,7 +201,7 @@ void UIWizardNewVMPage2::retranslateWidgets()
         m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
     if (m_pGAInstallationISOContainer)
     {
-        m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("&Guest additions"));
+        m_pGAInstallationISOContainer->setTitle(UIWizardNewVM::tr("Gu&est additions"));
         m_pGAInstallationISOContainer->setToolTip(UIWizardNewVM::tr("<p>When checked the guest additions will be installed "
                                                            "after the OS install.</p>"));
     }
