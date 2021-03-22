@@ -31,10 +31,9 @@
 
 #include "DrvAudio.h"
 
-#include "DevHDA.h"
-#include "DevHDACommon.h"
-
-#include "HDAStream.h"
+#include "DevHda.h"
+#include "DevHdaCommon.h"
+#include "DevHdaStream.h"
 
 
 /**

@@ -32,8 +32,8 @@
 
 #include "DrvAudio.h"
 
-#include "DevHDA.h"
-#include "HDAStream.h"
+#include "DevHda.h"
+#include "DevHdaStream.h"
 
 #ifdef VBOX_WITH_DTRACE
 # include "dtrace/VBoxDD.h"

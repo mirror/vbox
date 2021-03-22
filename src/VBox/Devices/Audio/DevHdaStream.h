@@ -15,14 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_SRC_Audio_HDAStream_h
-#define VBOX_INCLUDED_SRC_Audio_HDAStream_h
+#ifndef VBOX_INCLUDED_SRC_Audio_DevHdaStream_h
+#define VBOX_INCLUDED_SRC_Audio_DevHdaStream_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-#include "DevHDACommon.h"
-#include "HDAStreamMap.h"
+#include "DevHdaCommon.h"
+#include "DevHdaStreamMap.h"
 
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -378,5 +378,5 @@ int                 hdaR3StreamAsyncIONotify(PHDASTREAMR3 pStreamR3);
 /** @} */
 
 #endif /* IN_RING3 */
-#endif /* !VBOX_INCLUDED_SRC_Audio_HDAStream_h */
+#endif /* !VBOX_INCLUDED_SRC_Audio_DevHdaStream_h */
 

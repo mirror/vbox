@@ -52,12 +52,11 @@
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
 
-#include "DevHDA.h"
-#include "DevHDACommon.h"
-
-#include "HDACodec.h"
-#include "HDAStream.h"
-#include "HDAStreamMap.h"
+#include "DevHda.h"
+#include "DevHdaCommon.h"
+#include "DevHdaCodec.h"
+#include "DevHdaStream.h"
+#include "DevHdaStreamMap.h"
 
 #include "DrvAudio.h"
 

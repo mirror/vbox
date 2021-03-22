@@ -632,11 +632,11 @@ endif
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \
 	Audio/DevHDA.cpp \
-	Audio/DevHDACommon.cpp \
-	Audio/HDACodec.cpp \
-	Audio/HDAStream.cpp \
-	Audio/HDAStreamChannel.cpp \
-	Audio/HDAStreamMap.cpp \
+	Audio/DevHdaCommon.cpp \
+	Audio/DevHdaCodec.cpp \
+	Audio/DevHdaStream.cpp \
+	Audio/DevHdaStreamChannel.cpp \
+	Audio/DevHdaStreamMap.cpp \
 	Audio/AudioMixBuffer.cpp \
 	Audio/AudioMixer.cpp \
 	Audio/DrvAudio.cpp \
@@ -992,7 +992,7 @@ endif
   VBoxDDRC_DEFS         += $(VBOX_AUDIO_DEFS)
   VBoxDDRC_SOURCES      += \
  	Audio/DevHDA.cpp \
- 	Audio/DevHDACommon.cpp \
+ 	Audio/DevHdaCommon.cpp \
 	Audio/DevIchAc97.cpp
 
   VBoxDDRC_DEFS         += \
@@ -1222,10 +1222,10 @@ endif
  VBoxDDR0_DEFS += $(VBOX_AUDIO_DEFS)
  VBoxDDR0_SOURCES += \
  	Audio/DevHDA.cpp \
- 	Audio/DevHDACommon.cpp \
- 	Audio/DevIchAc97.cpp \
- 	Audio/HDACodec.cpp \
- 	Audio/HDAStream.cpp
+ 	Audio/DevHdaCommon.cpp \
+ 	Audio/DevHdaCodec.cpp \
+ 	Audio/DevHdaStream.cpp \
+ 	Audio/DevIchAc97.cpp
 
  ifdef VBOX_WITH_E1000
   VBoxDDR0_DEFS         += VBOX_WITH_E1000

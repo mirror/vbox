@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_SRC_Audio_DevHDA_h
-#define VBOX_INCLUDED_SRC_Audio_DevHDA_h
+#ifndef VBOX_INCLUDED_SRC_Audio_DevHda_h
+#define VBOX_INCLUDED_SRC_Audio_DevHda_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -27,9 +27,9 @@
 
 #include "AudioMixer.h"
 
-#include "HDACodec.h"
-#include "HDAStream.h"
-#include "HDAStreamMap.h"
+#include "DevHdaCodec.h"
+#include "DevHdaStream.h"
+#include "DevHdaStreamMap.h"
 
 #ifdef DEBUG_andy
 /** Enables strict mode, which checks for stuff which isn't supposed to happen.
@@ -268,5 +268,5 @@ typedef struct HDASTATER3
 typedef HDASTATER3 *PHDASTATER3;
 
 
-#endif /* !VBOX_INCLUDED_SRC_Audio_DevHDA_h */
+#endif /* !VBOX_INCLUDED_SRC_Audio_DevHda_h */
 

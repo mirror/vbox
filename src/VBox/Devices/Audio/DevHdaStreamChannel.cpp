@@ -25,7 +25,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
-#include "HDAStreamChannel.h"
+#include "DevHdaStreamChannel.h"
 
 /**
  * Initializes a stream channel data structure.

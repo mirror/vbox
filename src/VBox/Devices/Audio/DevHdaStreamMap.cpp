@@ -31,8 +31,8 @@
 
 #include "DrvAudio.h"
 
-#include "HDAStreamChannel.h"
-#include "HDAStreamMap.h"
+#include "DevHdaStreamChannel.h"
+#include "DevHdaStreamMap.h"
 
 
 
