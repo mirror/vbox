@@ -300,57 +300,57 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
 # endif /* unused */
 
 #ifdef LOG_ENABLED
+
+/** Buffer size for dbgAudioStreamStatusToStr.  */
+# define DRVAUDIO_STATUS_STR_MAX sizeof("INITIALIZED ENABLED PAUSED PENDING_DISABLED PENDING_REINIT 0x12345678")
+
 /**
  * Converts an audio stream status to a string.
  *
- * @returns Stringified stream status flags. Must be free'd with RTStrFree().
- *          "NONE" if no flags set.
- * @param   fStatus             Stream status flags to convert.
+ * @returns pszDst
+ * @param   pszDst      Buffer to convert into, at least minimum size is
+ *                      DRVAUDIO_STATUS_STR_MAX.
+ * @param   fStatus     Stream status flags to convert.
  */
-static char *dbgAudioStreamStatusToStr(PDMAUDIOSTREAMSTS fStatus)
+static const char *dbgAudioStreamStatusToStr(char pszDst[DRVAUDIO_STATUS_STR_MAX], PDMAUDIOSTREAMSTS fStatus)
 {
-#define APPEND_FLAG_TO_STR(_aFlag)                 \
-    if (fStatus & PDMAUDIOSTREAMSTS_FLAGS_##_aFlag) \
-    {                                              \
-        if (pszFlags)                              \
-        {                                          \
-            rc2 = RTStrAAppend(&pszFlags, " ");    \
-            if (RT_FAILURE(rc2))                   \
-                break;                             \
-        }                                          \
-                                                   \
-        rc2 = RTStrAAppend(&pszFlags, #_aFlag);    \
-        if (RT_FAILURE(rc2))                       \
-            break;                                 \
-    }                                              \
-
-    char *pszFlags = NULL;
-    int rc2 = VINF_SUCCESS;
-
-    do
+    static const struct
     {
-        APPEND_FLAG_TO_STR(INITIALIZED    );
-        APPEND_FLAG_TO_STR(ENABLED        );
-        APPEND_FLAG_TO_STR(PAUSED         );
-        APPEND_FLAG_TO_STR(PENDING_DISABLE);
-        APPEND_FLAG_TO_STR(PENDING_REINIT );
-    } while (0);
-
-    if (!pszFlags)
-        rc2 = RTStrAAppend(&pszFlags, "NONE");
-
-    if (   RT_FAILURE(rc2)
-        && pszFlags)
+        const char         *pszMnemonic;
+        uint32_t            cchMnemnonic;
+        PDMAUDIOSTREAMSTS   fFlag;
+    } s_aFlags[] =
     {
-        RTStrFree(pszFlags);
-        pszFlags = NULL;
+        { RT_STR_TUPLE("INITIALIZED "),     PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED     },
+        { RT_STR_TUPLE("ENABLED "),         PDMAUDIOSTREAMSTS_FLAGS_ENABLED         },
+        { RT_STR_TUPLE("PAUSED "),          PDMAUDIOSTREAMSTS_FLAGS_PAUSED          },
+        { RT_STR_TUPLE("PENDING_DISABLE "), PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE },
+        { RT_STR_TUPLE("PENDING_REINIT "),  PDMAUDIOSTREAMSTS_FLAGS_PENDING_REINIT  },
+    };
+    if (!fStatus)
+        strcpy(pszDst, "NONE");
+    else
+    {
+        char *psz = pszDst;
+        for (size_t i = 0; i < RT_ELEMENTS(s_aFlags); i++)
+            if (fStatus & s_aFlags[i].fFlag)
+            {
+                memcpy(psz, s_aFlags[i].pszMnemonic, s_aFlags[i].cchMnemnonic);
+                psz += s_aFlags[i].cchMnemnonic;
+                fStatus &= ~s_aFlags[i].fFlag;
+                if (!fStatus)
+                    break;
+            }
+        if (fStatus == 0)
+            psz[-1] = '\0';
+        else
+            psz += RTStrPrintf(psz, DRVAUDIO_STATUS_STR_MAX - (psz - pszDst), "%#x", fStatus);
+        Assert((uintptr_t)(psz - pszDst) <= DRVAUDIO_STATUS_STR_MAX);
     }
-
-#undef APPEND_FLAG_TO_STR
-
-    return pszFlags;
+    return pszDst;
 }
-#endif /* defined(VBOX_STRICT) || defined(LOG_ENABLED) */
+
+#endif /* defined(LOG_ENABLED) */
 
 # if 0 /* unused */
 static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, audio_option *paOpts, size_t cOpts)
@@ -488,13 +488,11 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    LogFunc(("[%s] enmStreamCmd=%s\n", pStream->szName, PDMAudioStrmCmdGetName(enmStreamCmd)));
-
 #ifdef LOG_ENABLED
-    char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
-    LogFlowFunc(("fStatus=%s\n", pszStreamSts));
-    RTStrFree(pszStreamSts);
-#endif /* LOG_ENABLED */
+    char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
+#endif
+    LogFunc(("[%s] enmStreamCmd=%s fStatus=%s\n", pStream->szName, PDMAudioStrmCmdGetName(enmStreamCmd),
+             dbgAudioStreamStatusToStr(szStreamSts, pStream->fStatus)));
 
     int rc = VINF_SUCCESS;
 
@@ -599,10 +597,10 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
 #ifdef LOG_ENABLED
-    char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
-    LogFlowFunc(("[%s] enmStreamCmd=%s, fStatus=%s\n", pStream->szName, PDMAudioStrmCmdGetName(enmStreamCmd), pszStreamSts));
-    RTStrFree(pszStreamSts);
-#endif /* LOG_ENABLED */
+    char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
+#endif
+    LogFlowFunc(("[%s] enmStreamCmd=%s, fStatus=%s\n", pStream->szName, PDMAudioStrmCmdGetName(enmStreamCmd),
+                 dbgAudioStreamStatusToStr(szStreamSts, pStream->fStatus)));
 
     if (!pThis->pHostDrvAudio) /* If not lower driver is configured, bail out. */
         return VINF_SUCCESS;
@@ -1108,11 +1106,6 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
     STAM_PROFILE_ADV_START(&pThis->Stats.DelayOut, out);
 #endif
 
-#ifdef LOG_ENABLED
-    char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
-    AssertPtr(pszStreamSts);
-#endif
-
     /* Whether to discard the incoming data or not. */
     bool fToBitBucket = false;
 
@@ -1219,10 +1212,6 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
                   AudioMixBufLive(&pStream->Host.MixBuf), cfGstWritten, cfGstMixed, cbWrittenTotal, rc));
 
     } while (0);
-
-#ifdef LOG_ENABLED
-    RTStrFree(pszStreamSts);
-#endif
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -1365,11 +1354,9 @@ static void drvAudioStreamMaybeReInit(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
         }
 
 #ifdef LOG_ENABLED
-        char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
-        Log3Func(("[%s] fStatus=%s\n", pStream->szName, pszStreamSts));
-        RTStrFree(pszStreamSts);
-#endif /* LOG_ENABLED */
-
+        char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
+#endif
+        Log3Func(("[%s] fStatus=%s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, pStream->fStatus)));
     }
 }
 
@@ -1396,10 +1383,9 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     drvAudioStreamMaybeReInit(pThis, pStream);
 
 #ifdef LOG_ENABLED
-    char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
-    Log3Func(("[%s] fStatus=%s\n", pStream->szName, pszStreamSts));
-    RTStrFree(pszStreamSts);
-#endif /* LOG_ENABLED */
+    char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
+#endif
+    Log3Func(("[%s] fStatus=%s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, pStream->fStatus)));
 
     /* Not enabled or paused? Skip iteration. */
     if (   !(pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_ENABLED)
@@ -1674,10 +1660,9 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
     PDMAUDIOSTREAMSTS fStrmStatus = pStream->fStatus;
 #ifdef LOG_ENABLED
-    char *pszStreamSts = dbgAudioStreamStatusToStr(fStrmStatus);
-    Log3Func(("[%s] Start fStatus=%s\n", pStream->szName, pszStreamSts));
-    RTStrFree(pszStreamSts);
-#endif /* LOG_ENABLED */
+    char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
+#endif
+    Log3Func(("[%s] Start fStatus=%s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, fStrmStatus)));
 
     do /* No, this isn't a loop either. sigh. */
     {
@@ -1828,13 +1813,8 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
     } while (0);
 
-#ifdef LOG_ENABLED
-    uint32_t cFramesLive = AudioMixBufLive(&pStream->Host.MixBuf);
-    pszStreamSts  = dbgAudioStreamStatusToStr(fStrmStatus);
-    Log3Func(("[%s] End fStatus=%s, cFramesLive=%RU32, cfPlayedTotal=%RU32, rc=%Rrc\n",
-              pStream->szName, pszStreamSts, cFramesLive, cfPlayedTotal, rc));
-    RTStrFree(pszStreamSts);
-#endif /* LOG_ENABLED */
+    Log3Func(("[%s] End fStatus=%s, cFramesLive=%RU32, cfPlayedTotal=%RU32, rc=%Rrc\n", pStream->szName,
+              dbgAudioStreamStatusToStr(szStreamSts, fStrmStatus), AudioMixBufLive(&pStream->Host.MixBuf), cfPlayedTotal, rc));
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -2049,10 +2029,9 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
     uint32_t cfCaptured = 0;
 
 #ifdef LOG_ENABLED
-    char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
-    Log3Func(("[%s] fStatus=%s\n", pStream->szName, pszStreamSts));
-    RTStrFree(pszStreamSts);
-#endif /* LOG_ENABLED */
+    char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
+#endif
+    Log3Func(("[%s] fStatus=%s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, pStream->fStatus)));
 
     do
     {
@@ -3070,10 +3049,9 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECT
     PDMAUDIOSTREAMSTS fStrmStatus = pStream->fStatus;
 
 #ifdef LOG_ENABLED
-    char *pszStreamSts = dbgAudioStreamStatusToStr(fStrmStatus);
-    Log3Func(("[%s] %s\n", pStream->szName, pszStreamSts));
-    RTStrFree(pszStreamSts);
+    char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
 #endif
+    Log3Func(("[%s] %s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, fStrmStatus)));
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
@@ -3396,9 +3374,9 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     int rc = VINF_SUCCESS;
 
 #ifdef LOG_ENABLED
-    char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
-    LogFunc(("[%s] fStatus=%s\n", pStream->szName, pszStreamSts));
+    char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
 #endif
+    LogFunc(("[%s] fStatus=%s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, pStream->fStatus)));
 
     if (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED)
     {
@@ -3411,10 +3389,6 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
         pStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAGS_INITIALIZED;
     }
-
-#ifdef LOG_ENABLED
-    RTStrFree(pszStreamSts);
-#endif
 
     LogFlowFunc(("[%s] Returning %Rrc\n", pStream->szName, rc));
     return rc;
@@ -3451,9 +3425,9 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
 #ifdef LOG_ENABLED
         if (pStream->fStatus != PDMAUDIOSTREAMSTS_FLAGS_NONE)
         {
-            char *pszStreamSts = dbgAudioStreamStatusToStr(pStream->fStatus);
-            LogFunc(("[%s] Warning: Still has %s set when uninitializing\n", pStream->szName, pszStreamSts));
-            RTStrFree(pszStreamSts);
+            char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
+            LogFunc(("[%s] Warning: Still has %s set when uninitializing\n",
+                     pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, pStream->fStatus)));
         }
 #endif
         pStream->fStatus = PDMAUDIOSTREAMSTS_FLAGS_NONE;
