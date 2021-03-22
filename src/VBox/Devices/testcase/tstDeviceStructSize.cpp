@@ -135,7 +135,7 @@
 #undef LOG_GROUP
 #include "../Audio/DevIchAc97.cpp"
 #undef LOG_GROUP
-#include "../Audio/DevHDA.cpp"
+#include "../Audio/DevHda.h"
 
 
 /* Check that important preprocessor macros didn't get redefined: */

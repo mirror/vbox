@@ -631,7 +631,7 @@ endif
  VBoxDD_SOURCES         += \
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \
-	Audio/DevHDA.cpp \
+	Audio/DevHda.cpp \
 	Audio/DevHdaCommon.cpp \
 	Audio/DevHdaCodec.cpp \
 	Audio/DevHdaStream.cpp \
@@ -991,7 +991,7 @@ endif
 
   VBoxDDRC_DEFS         += $(VBOX_AUDIO_DEFS)
   VBoxDDRC_SOURCES      += \
- 	Audio/DevHDA.cpp \
+ 	Audio/DevHda.cpp \
  	Audio/DevHdaCommon.cpp \
 	Audio/DevIchAc97.cpp
 
@@ -1221,7 +1221,7 @@ endif
 
  VBoxDDR0_DEFS += $(VBOX_AUDIO_DEFS)
  VBoxDDR0_SOURCES += \
- 	Audio/DevHDA.cpp \
+ 	Audio/DevHda.cpp \
  	Audio/DevHdaCommon.cpp \
  	Audio/DevHdaCodec.cpp \
  	Audio/DevHdaStream.cpp \
