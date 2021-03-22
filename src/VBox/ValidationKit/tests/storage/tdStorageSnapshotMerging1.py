@@ -48,6 +48,10 @@ from testdriver import vbox;
 from testdriver import vboxcon;
 from testdriver import vboxwrappers;
 
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
+
 
 def crc32_of_file(filepath):
     fileobj = open(filepath,'rb');
@@ -283,11 +287,11 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         #currently only VDI can be resizable. Medium variant is not checked, because testcase creates disks itself
         fFmtDynamic = oDskFmt.id == 'VDI';
         sOrigWithDiffHd = '5.3/storage/mergeMedium/t-fixed.vdi'
-        uOrigCrc = 0x7a417cbb;
+        uOrigCrc = long(0x7a417cbb);
 
         if fFmtDynamic:
             sOrigWithDiffHd = '5.3/storage/mergeMedium/t-resized.vdi';
-            uOrigCrc = 0xa8f5daa3;
+            uOrigCrc = long(0xa8f5daa3);
 
         oOrigWithDiffHd = self.openMedium(sOrigWithDiffHd);
         if oOrigWithDiffHd is None:
@@ -342,9 +346,9 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
                     fRc = oResHd is not None;
                     fRc = fRc and self.cloneMedium(oHd, oResHd);
 
-                    uResCrc32 = 0;
+                    uResCrc32 = long(0);
                     if fRc:
-                        uResCrc32 = crc32_of_file(sResFilePathRaw);
+                        uResCrc32 = long(crc32_of_file(sResFilePathRaw));
                         if uResCrc32 == uOrigCrc:
                             reporter.log('Snapshot merged successfully. Crc32 is correct');
                             fRc = True;
