@@ -349,6 +349,16 @@ static const uint8_t *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uin
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
+/**
+ * Gets the group the register belongs to given its MMIO offset.
+ *
+ * @returns Pointer to the first element of the register group.
+ * @param   pThis       The shared IOMMU device state.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   cbReg       The size of the access being made (for bounds check).
+ * @param   pIdxGroup   Where to store the index of the register group the register
+ *                      belongs to.
+ */
 DECLINLINE(uint8_t *) iommuIntelRegGetGroup(PIOMMU pThis, uint16_t offReg, uint8_t cbReg, uint8_t *pIdxGroup)
 {
     AssertCompile(VTD_MMIO_GROUP_0_OFF_FIRST == 0);
@@ -362,6 +372,13 @@ DECLINLINE(uint8_t *) iommuIntelRegGetGroup(PIOMMU pThis, uint16_t offReg, uint8
 }
 
 
+/**
+ * Writes a 64-bit register with the exactly the supplied value.
+ *
+ * @param   pThis       The shared IOMMU device state.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   uReg        The 64-bit value to write.
+ */
 DECLINLINE(void) iommuIntelRegWriteRaw64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
 {
     uint8_t idxGroup;
@@ -371,6 +388,13 @@ DECLINLINE(void) iommuIntelRegWriteRaw64(PIOMMU pThis, uint16_t offReg, uint64_t
 }
 
 
+/**
+ * Writes a 32-bit register with the exactly the supplied value.
+ *
+ * @param   pThis       The shared IOMMU device state.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   uReg        The 32-bit value to write.
+ */
 DECLINLINE(void) iommuIntelRegWriteRaw32(PIOMMU pThis, uint16_t offReg, uint32_t uReg)
 {
     uint8_t idxGroup;
@@ -380,6 +404,15 @@ DECLINLINE(void) iommuIntelRegWriteRaw32(PIOMMU pThis, uint16_t offReg, uint32_t
 }
 
 
+/**
+ * Reads a 64-bit register with exactly the value it contains.
+ *
+ * @param   pThis       The shared IOMMU device state.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   puReg       Where to store the raw 64-bit register value.
+ * @param   pfRwMask    Where to store the RW mask corresponding to this register.
+ * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
+ */
 DECLINLINE(void) iommuIntelRegReadRaw64(PIOMMU pThis, uint16_t offReg, uint64_t *puReg, uint64_t *pfRwMask, uint64_t *pfRw1cMask)
 {
     uint8_t idxGroup;
@@ -392,6 +425,15 @@ DECLINLINE(void) iommuIntelRegReadRaw64(PIOMMU pThis, uint16_t offReg, uint64_t 
 }
 
 
+/**
+ * Reads a 32-bit register with exactly the value it contains.
+ *
+ * @param   pThis       The shared IOMMU device state.
+ * @param   offReg      The MMIO offset of the register.
+ * @param   puReg       Where to store the raw 32-bit register value.
+ * @param   pfRwMask    Where to store the RW mask corresponding to this register.
+ * @param   pfRw1cMask  Where to store the RW1C mask corresponding to this register.
+ */
 DECLINLINE(void) iommuIntelRegReadRaw32(PIOMMU pThis, uint16_t offReg, uint32_t *puReg, uint32_t *pfRwMask, uint32_t *pfRw1cMask)
 {
     uint8_t idxGroup;
@@ -404,6 +446,14 @@ DECLINLINE(void) iommuIntelRegReadRaw32(PIOMMU pThis, uint16_t offReg, uint32_t 
 }
 
 
+/**
+ * Writes a 64-bit register as it would be when written by software.
+ * This will preserve read-only bits, mask off reserved bits and clear RW1C bits.
+ *
+ * @param   pThis   The shared IOMMU device state.
+ * @param   offReg  The MMIO offset of the register.
+ * @param   uReg    The 64-bit value to write.
+ */
 static void iommuIntelRegWrite64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
 {
     /* Read current value from the 64-bit register. */
@@ -422,6 +472,14 @@ static void iommuIntelRegWrite64(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
 }
 
 
+/**
+ * Writes a 32-bit register as it would be when written by software.
+ * This will preserve read-only bits, mask off reserved bits and clear RW1C bits.
+ *
+ * @param   pThis   The shared IOMMU device state.
+ * @param   offReg  The MMIO offset of the register.
+ * @param   uReg    The 32-bit value to write.
+ */
 static void iommuIntelRegWrite32(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
 {
     /* Read current value from the 32-bit register. */
@@ -440,6 +498,13 @@ static void iommuIntelRegWrite32(PIOMMU pThis, uint16_t offReg, uint64_t uReg)
 }
 
 
+/**
+ * Reads a 64-bit register as it would be when read by software.
+ *
+ * @returns The 64-bit register value.
+ * @param   pThis   The shared IOMMU device state.
+ * @param   offReg  The MMIO offset of the register.
+ */
 static uint64_t iommuIntelRegRead64(PIOMMU pThis, uint16_t offReg)
 {
     uint64_t uCurReg;
@@ -451,6 +516,13 @@ static uint64_t iommuIntelRegRead64(PIOMMU pThis, uint16_t offReg)
 }
 
 
+/**
+ * Reads a 32-bit register as it would be when read by software.
+ *
+ * @returns The 32-bit register value.
+ * @param   pThis   The shared IOMMU device state.
+ * @param   offReg  The MMIO offset of the register.
+ */
 static uint32_t iommuIntelRegRead32(PIOMMU pThis, uint16_t offReg)
 {
     uint32_t uCurReg;
