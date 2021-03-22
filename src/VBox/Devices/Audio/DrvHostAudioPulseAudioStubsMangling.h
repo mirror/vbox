@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_SRC_Audio_pulse_mangling_h
-#define VBOX_INCLUDED_SRC_Audio_pulse_mangling_h
+#ifndef VBOX_INCLUDED_SRC_Audio_DrvHostAudioPulseAudioStubsMangling_h
+#define VBOX_INCLUDED_SRC_Audio_DrvHostAudioPulseAudioStubsMangling_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -89,5 +89,5 @@
 
 #define pa_usec_to_bytes                        PULSE_MANGLER(pa_usec_to_bytes)
 
-#endif /* !VBOX_INCLUDED_SRC_Audio_pulse_mangling_h */
+#endif /* !VBOX_INCLUDED_SRC_Audio_DrvHostAudioPulseAudioStubsMangling_h */
 

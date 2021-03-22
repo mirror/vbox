@@ -15,11 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_SRC_Audio_alsa_stubs_h
-#define VBOX_INCLUDED_SRC_Audio_alsa_stubs_h
+#ifndef VBOX_INCLUDED_SRC_Audio_DrvHostAudioAlsaStubs_h
+#define VBOX_INCLUDED_SRC_Audio_DrvHostAudioAlsaStubs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
+
+#include <iprt/cdefs.h>
+
+RT_C_DECLS_BEGIN
 extern int audioLoadAlsaLib(void);
-#endif /* !VBOX_INCLUDED_SRC_Audio_alsa_stubs_h */
+RT_C_DECLS_END
+
+#endif /* !VBOX_INCLUDED_SRC_Audio_DrvHostAudioAlsaStubs_h */
 

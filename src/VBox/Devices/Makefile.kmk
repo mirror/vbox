@@ -641,24 +641,24 @@ endif
 	Audio/AudioMixer.cpp \
 	Audio/DrvAudio.cpp \
 	Audio/DrvAudioCommon.cpp \
-	Audio/DrvHostNullAudio.cpp
+	Audio/DrvHostAudioNull.cpp
 
  ifdef VBOX_WITH_AUDIO_DEBUG
   VBoxDD_DEFS    += VBOX_WITH_AUDIO_DEBUG
   VBoxDD_SOURCES += \
-	Audio/DrvHostDebugAudio.cpp
+	Audio/DrvHostAudioDebug.cpp
  endif
 
  ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
   VBoxDD_DEFS    += VBOX_WITH_AUDIO_VALIDATIONKIT
   VBoxDD_SOURCES += \
-	Audio/DrvHostValidationKit.cpp
+	Audio/DrvHostAudioValidationKit.cpp
  endif
 
  ifeq ($(KBUILD_TARGET),darwin)
   VBoxDD_SOURCES += \
-	Audio/DrvHostCoreAudio.cpp \
-	Audio/DrvHostCoreAudio-auth.mm
+	Audio/DrvHostAudioCoreAudio.cpp \
+	Audio/DrvHostAudioCoreAudioAuth.mm
  endif
 
  ifeq ($(KBUILD_TARGET),win)
@@ -674,21 +674,21 @@ endif
  ifdef VBOX_WITH_AUDIO_OSS
   VBoxDD_DEFS    += VBOX_WITH_AUDIO_OSS
   VBoxDD_SOURCES += \
-	Audio/DrvHostOSSAudio.cpp
+	Audio/DrvHostAudioOss.cpp
  endif
 
  ifdef VBOX_WITH_AUDIO_ALSA
   VBoxDD_DEFS    += VBOX_WITH_AUDIO_ALSA
   VBoxDD_SOURCES += \
-	Audio/DrvHostALSAAudio.cpp \
-	Audio/alsa_stubs.c
+	Audio/DrvHostAudioAlsa.cpp \
+	Audio/DrvHostAudioAlsaStubs.cpp
  endif
 
  ifdef VBOX_WITH_AUDIO_PULSE
   VBoxDD_DEFS    += VBOX_WITH_AUDIO_PULSE
   VBoxDD_SOURCES += \
-	Audio/DrvHostPulseAudio.cpp \
-	Audio/pulse_stubs.c
+	Audio/DrvHostAudioPulseAudio.cpp \
+	Audio/DrvHostAudioPulseAudioStubs.cpp
  endif
 
  # --- WARNING! SLIRP MESS AHEAD! ;-) ---

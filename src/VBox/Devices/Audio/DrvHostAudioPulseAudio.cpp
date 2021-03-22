@@ -31,10 +31,8 @@
 #include <iprt/uuid.h>
 #include <iprt/semaphore.h>
 
-RT_C_DECLS_BEGIN
-# include "pulse_mangling.h"
-# include "pulse_stubs.h"
-RT_C_DECLS_END
+#include "DrvHostAudioPulseAudioStubsMangling.h"
+#include "DrvHostAudioPulseAudioStubs.h"
 
 #include <pulse/pulseaudio.h>
 

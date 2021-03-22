@@ -52,8 +52,8 @@
 #include <VBox/vmm/pdmaudioinline.h>
 
 RT_C_DECLS_BEGIN
-# include "alsa_stubs.h"
-# include "alsa_mangling.h"
+#include "DrvHostAudioAlsaStubs.h"
+#include "DrvHostAudioAlsaStubsMangling.h"
 RT_C_DECLS_END
 
 #include <alsa/asoundlib.h>
