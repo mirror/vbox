@@ -36,7 +36,6 @@
 
 #include <Mmdeviceapi.h>
 
-#include "DrvAudio.h"
 
 class VBoxMMNotificationClient : IMMNotificationClient
 {

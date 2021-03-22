@@ -42,7 +42,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "DrvAudio.h"
+#include "DrvAudioCommon.h"
 #include "AudioMixBuffer.h"
 
 

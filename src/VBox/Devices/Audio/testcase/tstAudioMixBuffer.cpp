@@ -30,7 +30,7 @@
 #include <VBox/vmm/pdmaudioinline.h>
 
 #include "../AudioMixBuffer.h"
-#include "../DrvAudio.h"
+#include "../DrvAudioCommon.h"
 
 
 static void tstBasics(RTTEST hTest)

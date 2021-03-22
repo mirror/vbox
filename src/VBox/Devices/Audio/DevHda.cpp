@@ -58,7 +58,7 @@
 #include "DevHdaStream.h"
 #include "DevHdaStreamMap.h"
 
-#include "DrvAudio.h"
+#include "DrvAudioCommon.h"
 
 
 /*********************************************************************************************************************************

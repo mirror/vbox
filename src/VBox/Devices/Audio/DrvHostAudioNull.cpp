@@ -54,7 +54,6 @@
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
 
-#include "DrvAudio.h"
 #include "VBoxDD.h"
 
 

@@ -59,7 +59,6 @@ RT_C_DECLS_END
 #include <alsa/asoundlib.h>
 #include <alsa/control.h> /* For device enumeration. */
 
-#include "DrvAudio.h"
 #include "VBoxDD.h"
 
 

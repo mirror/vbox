@@ -40,7 +40,7 @@
 
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
-#include "DrvAudio.h"
+#include "DrvAudioCommon.h"
 
 
 /*********************************************************************************************************************************

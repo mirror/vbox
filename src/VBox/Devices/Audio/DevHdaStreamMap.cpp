@@ -29,7 +29,7 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
-#include "DrvAudio.h"
+#include "DrvAudioCommon.h"
 
 #include "DevHdaStreamChannel.h"
 #include "DevHdaStreamMap.h"

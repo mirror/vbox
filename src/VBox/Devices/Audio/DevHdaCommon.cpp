@@ -23,13 +23,12 @@
 *********************************************************************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
+#include <iprt/time.h>
 
 #include <VBox/AssertGuest.h>
 
 #define LOG_GROUP LOG_GROUP_DEV_HDA
 #include <VBox/log.h>
-
-#include "DrvAudio.h"
 
 #include "DevHda.h"
 #include "DevHdaCommon.h"

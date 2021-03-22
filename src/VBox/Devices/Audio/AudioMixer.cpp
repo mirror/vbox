@@ -73,7 +73,7 @@
 #include <VBox/log.h>
 #include "AudioMixer.h"
 #include "AudioMixBuffer.h"
-#include "DrvAudio.h"
+#include "DrvAudioCommon.h"
 
 #include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
