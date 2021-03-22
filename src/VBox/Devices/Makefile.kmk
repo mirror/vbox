@@ -665,9 +665,9 @@ endif
   VBoxDD_SOURCES += \
 	Audio/DrvHostAudioDSound.cpp
   ifdef VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
-   VBoxDD_SOURCES += \
-	Audio/VBoxMMNotificationClient.cpp
    VBoxDD_DEFS    += VBOX_WITH_AUDIO_MMNOTIFICATION_CLIENT
+   VBoxDD_SOURCES += \
+	Audio/DrvHostAudioDSoundMMNotifClient.cpp
   endif
  endif
 

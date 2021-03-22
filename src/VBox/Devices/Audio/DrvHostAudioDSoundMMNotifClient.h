@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxMMNotificationClient.h - Implementation of the IMMNotificationClient interface
+ * DrvHostAudioDSoundMMNotifClient.h - Implementation of the IMMNotificationClient interface
  *                              to detect audio endpoint changes.
  */
 
@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_SRC_Audio_VBoxMMNotificationClient_h
-#define VBOX_INCLUDED_SRC_Audio_VBoxMMNotificationClient_h
+#ifndef VBOX_INCLUDED_SRC_Audio_DrvHostAudioDSoundMMNotifClient_h
+#define VBOX_INCLUDED_SRC_Audio_DrvHostAudioDSoundMMNotifClient_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -39,12 +39,12 @@
 #include <VBox/vmm/pdmaudioifs.h>
 
 
-class VBoxMMNotificationClient : IMMNotificationClient
+class DrvHostAudioDSoundMMNotifClient : IMMNotificationClient
 {
 public:
 
-    VBoxMMNotificationClient();
-    virtual ~VBoxMMNotificationClient();
+    DrvHostAudioDSoundMMNotifClient();
+    virtual ~DrvHostAudioDSoundMMNotifClient();
 
     HRESULT Initialize();
 
@@ -93,5 +93,5 @@ private:
     IFACEMETHODIMP_(ULONG) AddRef();
     /** @} */
 };
-#endif /* !VBOX_INCLUDED_SRC_Audio_VBoxMMNotificationClient_h */
+#endif /* !VBOX_INCLUDED_SRC_Audio_DrvHostAudioDSoundMMNotifClient_h */
 

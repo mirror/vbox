@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxMMNotificationClient.cpp - Implementation of the IMMNotificationClient interface
+ * DrvHostAudioDSoundMMNotifClient.cpp - Implementation of the IMMNotificationClient interface
  *                                to detect audio endpoint changes.
  */
 
@@ -16,7 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VBoxMMNotificationClient.h"
+#include "DrvHostAudioDSoundMMNotifClient.h"
 
 #include <iprt/win/windows.h>
 #include <mmdeviceapi.h>
@@ -29,20 +29,21 @@
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
 #include <VBox/log.h>
 
-VBoxMMNotificationClient::VBoxMMNotificationClient(void)
+
+DrvHostAudioDSoundMMNotifClient::DrvHostAudioDSoundMMNotifClient(void)
     : m_fRegisteredClient(false)
     , m_cRef(1)
 {
 }
 
-VBoxMMNotificationClient::~VBoxMMNotificationClient(void)
+DrvHostAudioDSoundMMNotifClient::~DrvHostAudioDSoundMMNotifClient(void)
 {
 }
 
 /**
  * Registers the mulitmedia notification client implementation.
  */
-HRESULT VBoxMMNotificationClient::Register(void)
+HRESULT DrvHostAudioDSoundMMNotifClient::Register(void)
 {
     HRESULT hr = m_pEnum->RegisterEndpointNotificationCallback(this);
     if (SUCCEEDED(hr))
@@ -58,7 +59,7 @@ HRESULT VBoxMMNotificationClient::Register(void)
 /**
  * Unregisters the mulitmedia notification client implementation.
  */
-void VBoxMMNotificationClient::Unregister(void)
+void DrvHostAudioDSoundMMNotifClient::Unregister(void)
 {
     DetachFromEndpoint();
 
@@ -75,7 +76,7 @@ void VBoxMMNotificationClient::Unregister(void)
  *
  * @return  HRESULT
  */
-HRESULT VBoxMMNotificationClient::Initialize(void)
+HRESULT DrvHostAudioDSoundMMNotifClient::Initialize(void)
 {
     HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), 0, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator),
                                   (void **)&m_pEnum);
@@ -91,7 +92,7 @@ HRESULT VBoxMMNotificationClient::Initialize(void)
  * @param   pDrvIns             Driver instance to register the notification client to.
  * @param   pfnCallback         Audio callback to call by the notification client in case of new events.
  */
-int VBoxMMNotificationClient::RegisterCallback(PPDMDRVINS pDrvIns, PFNPDMHOSTAUDIOCALLBACK pfnCallback)
+int DrvHostAudioDSoundMMNotifClient::RegisterCallback(PPDMDRVINS pDrvIns, PFNPDMHOSTAUDIOCALLBACK pfnCallback)
 {
     this->m_pDrvIns     = pDrvIns;
     this->m_pfnCallback = pfnCallback;
@@ -103,7 +104,7 @@ int VBoxMMNotificationClient::RegisterCallback(PPDMDRVINS pDrvIns, PFNPDMHOSTAUD
  * Unregistration callback implementation for cleaning up our mess when we're done handling
  * with notifications.
  */
-void VBoxMMNotificationClient::UnregisterCallback(void)
+void DrvHostAudioDSoundMMNotifClient::UnregisterCallback(void)
 {
     this->m_pDrvIns     = NULL;
     this->m_pfnCallback = NULL;
@@ -113,7 +114,7 @@ void VBoxMMNotificationClient::UnregisterCallback(void)
  * Stub being called when attaching to the default audio endpoint.
  * Does nothing at the moment.
  */
-HRESULT VBoxMMNotificationClient::AttachToDefaultEndpoint(void)
+HRESULT DrvHostAudioDSoundMMNotifClient::AttachToDefaultEndpoint(void)
 {
     return S_OK;
 }
@@ -122,7 +123,7 @@ HRESULT VBoxMMNotificationClient::AttachToDefaultEndpoint(void)
  * Stub being called when detaching from the default audio endpoint.
  * Does nothing at the moment.
  */
-void VBoxMMNotificationClient::DetachFromEndpoint(void)
+void DrvHostAudioDSoundMMNotifClient::DetachFromEndpoint(void)
 {
 
 }
@@ -130,7 +131,7 @@ void VBoxMMNotificationClient::DetachFromEndpoint(void)
 /**
  * Helper function for invoking the audio connector callback (if any).
  */
-void VBoxMMNotificationClient::doCallback(void)
+void DrvHostAudioDSoundMMNotifClient::doCallback(void)
 {
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
     AssertPtr(this->m_pDrvIns);
@@ -149,7 +150,7 @@ void VBoxMMNotificationClient::doCallback(void)
  * @param   pwstrDeviceId       Device ID the state is announced for.
  * @param   dwNewState          New state the device is now in.
  */
-STDMETHODIMP VBoxMMNotificationClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState)
+STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState)
 {
     char *pszState = "unknown";
 
@@ -184,7 +185,7 @@ STDMETHODIMP VBoxMMNotificationClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceI
  * @return  HRESULT
  * @param   pwstrDeviceId       Device ID which has been added.
  */
-STDMETHODIMP VBoxMMNotificationClient::OnDeviceAdded(LPCWSTR pwstrDeviceId)
+STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDeviceAdded(LPCWSTR pwstrDeviceId)
 {
     LogRel(("Audio: Device '%ls' has been added\n", pwstrDeviceId));
 
@@ -197,7 +198,7 @@ STDMETHODIMP VBoxMMNotificationClient::OnDeviceAdded(LPCWSTR pwstrDeviceId)
  * @return  HRESULT
  * @param   pwstrDeviceId       Device ID which has been removed.
  */
-STDMETHODIMP VBoxMMNotificationClient::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
+STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
 {
     LogRel(("Audio: Device '%ls' has been removed\n", pwstrDeviceId));
 
@@ -213,7 +214,7 @@ STDMETHODIMP VBoxMMNotificationClient::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
  * @param   eRole                     Role of the new default device.
  * @param   pwstrDefaultDeviceId      ID of the new default device.
  */
-STDMETHODIMP VBoxMMNotificationClient::OnDefaultDeviceChanged(EDataFlow eFlow, ERole eRole, LPCWSTR pwstrDefaultDeviceId)
+STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDefaultDeviceChanged(EDataFlow eFlow, ERole eRole, LPCWSTR pwstrDefaultDeviceId)
 {
     RT_NOREF(eRole);
 
@@ -231,7 +232,7 @@ STDMETHODIMP VBoxMMNotificationClient::OnDefaultDeviceChanged(EDataFlow eFlow, E
     return S_OK;
 }
 
-STDMETHODIMP VBoxMMNotificationClient::QueryInterface(REFIID interfaceID, void **ppvInterface)
+STDMETHODIMP DrvHostAudioDSoundMMNotifClient::QueryInterface(REFIID interfaceID, void **ppvInterface)
 {
     const IID MY_IID_IMMNotificationClient = __uuidof(IMMNotificationClient);
 
@@ -247,12 +248,12 @@ STDMETHODIMP VBoxMMNotificationClient::QueryInterface(REFIID interfaceID, void *
     return E_NOINTERFACE;
 }
 
-STDMETHODIMP_(ULONG) VBoxMMNotificationClient::AddRef(void)
+STDMETHODIMP_(ULONG) DrvHostAudioDSoundMMNotifClient::AddRef(void)
 {
     return InterlockedIncrement(&m_cRef);
 }
 
-STDMETHODIMP_(ULONG) VBoxMMNotificationClient::Release(void)
+STDMETHODIMP_(ULONG) DrvHostAudioDSoundMMNotifClient::Release(void)
 {
     long lRef = InterlockedDecrement(&m_cRef);
     if (lRef == 0)
