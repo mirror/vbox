@@ -169,7 +169,7 @@ void UIToolsModel::setToolClassEnabled(UIToolClass enmClass, bool fEnabled)
     {
         m_enabledToolClasses[enmClass] = fEnabled;
         foreach (UIToolsItem *pItem, items())
-            pItem->setEnabled(   m_enabledToolClasses.value(enmClass)
+            pItem->setEnabled(   m_enabledToolClasses.value(pItem->itemClass())
                               && !m_restrictedToolTypes.contains(pItem->itemType()));
     }
 }
