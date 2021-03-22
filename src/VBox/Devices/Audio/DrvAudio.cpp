@@ -141,6 +141,10 @@ typedef struct DRVAUDIO
     RTCRITSECT              CritSect;
     /** Shutdown indicator. */
     bool                    fTerminate;
+#ifdef VBOX_WITH_AUDIO_ENUM
+    /** Flag indicating to perform an (re-)enumeration of the host audio devices. */
+    bool                    fEnumerateDevices;
+#endif
     /** Our audio connector interface. */
     PDMIAUDIOCONNECTOR      IAudioConnector;
     /** Pointer to the driver instance. */
@@ -149,20 +153,8 @@ typedef struct DRVAUDIO
     PPDMIHOSTAUDIO          pHostDrvAudio;
     /** List of audio streams. */
     RTLISTANCHOR            lstStreams;
-#ifdef VBOX_WITH_AUDIO_ENUM
-    /** Flag indicating to perform an (re-)enumeration of the host audio devices. */
-    bool                    fEnumerateDevices;
-#endif
     /** Audio configuration settings retrieved from the backend. */
     PDMAUDIOBACKENDCFG      BackendCfg;
-    /** Commonly used scratch buffer. */
-    void                   *pvScratchBuf;
-    /** Size (in bytes) of commonly used scratch buffer. */
-    size_t                  cbScratchBuf;
-#ifdef VBOX_WITH_STATISTICS
-    /** Statistics for the statistics manager (STAM). */
-    DRVAUDIOSTATS           Stats;
-#endif
     struct
     {
         /** Whether this driver's input streams are enabled or not.
@@ -191,7 +183,13 @@ typedef struct DRVAUDIO
         /** The driver's output confguration (tweakable via CFGM). */
         DRVAUDIOCFG         Cfg;
     } Out;
-} DRVAUDIO, *PDRVAUDIO;
+#ifdef VBOX_WITH_STATISTICS
+    /** Statistics for the statistics manager (STAM). */
+    DRVAUDIOSTATS           Stats;
+#endif
+} DRVAUDIO;
+/** Pointer to the instance data of an audio driver. */
+typedef DRVAUDIO *PDRVAUDIO;
 
 
 /*********************************************************************************************************************************
@@ -1449,7 +1447,7 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 /**
  * Plays an audio host output stream which has been configured for non-interleaved (layout) data.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to play.
  * @param   cfToPlay            Number of audio frames to play.
@@ -1458,10 +1456,15 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
                                             PPDMAUDIOSTREAM pStream, uint32_t cfToPlay, uint32_t *pcfPlayed)
 {
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    /* pcfPlayed is optional. */
+    AssertPtrNullReturn(pcfPlayed, VERR_INVALID_POINTER);
+    Assert(pStream->enmDir == PDMAUDIODIR_OUT);
+    Assert(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED);
 
+    /*
+     * ...
+     */
     if (!cfToPlay)
     {
         if (pcfPlayed)
@@ -1469,40 +1472,33 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
         return VINF_SUCCESS;
     }
 
-    /* Sanity. */
-    Assert(pStream->enmDir == PDMAUDIODIR_OUT);
-    Assert(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED);
-
-    int rc = VINF_SUCCESS;
-
+    /*
+     * ...
+     */
+    int      rc            = VINF_SUCCESS;
     uint32_t cfPlayedTotal = 0;
-
-    uint32_t cfLeft  = cfToPlay;
-
-    uint8_t  *pvChunk = (uint8_t *)pThis->pvScratchBuf;
-    uint32_t  cbChunk = (uint32_t)pThis->cbScratchBuf;
-
+    uint32_t cfLeft        = cfToPlay;
     while (cfLeft)
     {
+        uint8_t  abChunk[_4K];
         uint32_t cfRead = 0;
         rc = AudioMixBufAcquireReadBlock(&pStream->Host.MixBuf,
-                                         pvChunk, RT_MIN(cbChunk, AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cfLeft)),
+                                         abChunk, RT_MIN(sizeof(abChunk), AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cfLeft)),
                                          &cfRead);
         if (RT_FAILURE(rc))
             break;
 
         uint32_t cbRead = AUDIOMIXBUF_F2B(&pStream->Host.MixBuf, cfRead);
-        Assert(cbRead <= cbChunk);
+        Assert(cbRead <= sizeof(abChunk));
 
         uint32_t cfPlayed = 0;
         uint32_t cbPlayed = 0;
-        rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend,
-                                                 pvChunk, cbRead, &cbPlayed);
+        rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend, abChunk, cbRead, &cbPlayed);
         if (   RT_SUCCESS(rc)
             && cbPlayed)
         {
             if (pThis->Out.Cfg.Dbg.fEnabled)
-                AudioHlpFileWrite(pStream->Out.Dbg.pFilePlayNonInterleaved, pvChunk, cbPlayed, 0 /* fFlags */);
+                AudioHlpFileWrite(pStream->Out.Dbg.pFilePlayNonInterleaved, abChunk, cbPlayed, 0 /* fFlags */);
 
             if (cbRead != cbPlayed)
                 LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32)\n",
@@ -1535,7 +1531,7 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
 /**
  * Plays an audio host output stream which has been configured for raw audio (layout) data.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  * @param   pThis               Pointer to driver instance.
  * @param   pStream             Stream to play.
  * @param   cfToPlay            Number of audio frames to play.
@@ -1544,14 +1540,15 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
 static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
                                  PPDMAUDIOSTREAM pStream, uint32_t cfToPlay, uint32_t *pcfPlayed)
 {
-    AssertPtrReturn(pThis,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    /* pcfPlayed is optional. */
-
-    /* Sanity. */
+    AssertPtrNullReturn(pcfPlayed, VERR_INVALID_POINTER);
     Assert(pStream->enmDir == PDMAUDIODIR_OUT);
     Assert(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW);
 
+    /*
+     * ...
+     */
     if (!cfToPlay)
     {
         if (pcfPlayed)
@@ -1559,36 +1556,28 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
         return VINF_SUCCESS;
     }
 
-    int rc = VINF_SUCCESS;
-
-    uint32_t cfPlayedTotal = 0;
-
-    PPDMAUDIOFRAME paFrames = (PPDMAUDIOFRAME)pThis->pvScratchBuf;
-    const uint32_t  cFrames =      (uint32_t)(pThis->cbScratchBuf / sizeof(PDMAUDIOFRAME));
-
-    uint32_t cfLeft = cfToPlay;
+    /*
+     * ...
+     */
+    int         rc              = VINF_SUCCESS;
+    uint32_t    cfPlayedTotal   = 0;
+    uint32_t    cfLeft          = cfToPlay;
     while (cfLeft)
     {
-        uint32_t cfRead = 0;
-        rc = AudioMixBufPeek(&pStream->Host.MixBuf, cfLeft, paFrames,
-                             RT_MIN(cfLeft, cFrames), &cfRead);
-
+        PDMAUDIOFRAME   aFrames[_2K];
+        uint32_t        cfRead = 0;
+        rc = AudioMixBufPeek(&pStream->Host.MixBuf, cfLeft, aFrames, RT_MIN(cfLeft, RT_ELEMENTS(aFrames)), &cfRead);
         if (RT_SUCCESS(rc))
         {
             if (cfRead)
             {
-                uint32_t cfPlayed;
-
-                /* Note: As the stream layout is RPDMAUDIOSTREAMLAYOUT_RAW, operate on audio frames
-                 *       rather on bytes. */
-                Assert(cfRead <= cFrames);
-                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend,
-                                                         paFrames, cfRead, &cfPlayed);
+                /* Note: As the stream layout is RPDMAUDIOSTREAMLAYOUT_RAW, operate on audio frames rather on bytes. */
+                Assert(cfRead <= RT_ELEMENTS(aFrames));
+                uint32_t cfPlayed = 0;
+                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStream->pvBackend, aFrames, cfRead, &cfPlayed);
                 if (   RT_FAILURE(rc)
                     || !cfPlayed)
-                {
                     break;
-                }
 
                 cfPlayedTotal += cfPlayed;
                 Assert(cfPlayedTotal <= cfToPlay);
@@ -1598,39 +1587,32 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
             }
             else
             {
+/** @todo r=bird: This looks totally loopy.  Why should another call return data
+ *        when the first one didn't? */
                 if (rc == VINF_AUDIO_MORE_DATA_AVAILABLE) /* Do another peeking round if there is more data available. */
                     continue;
-
                 break;
             }
         }
-        else if (RT_FAILURE(rc))
+        else
             break;
     }
 
+    if (RT_SUCCESS(rc) && pcfPlayed)
+        *pcfPlayed = cfPlayedTotal;
     Log3Func(("[%s] Played %RU32/%RU32 frames, rc=%Rrc\n", pStream->szName, cfPlayedTotal, cfToPlay, rc));
-
-    if (RT_SUCCESS(rc))
-    {
-        if (pcfPlayed)
-            *pcfPlayed = cfPlayedTotal;
-
-    }
-
     return rc;
 }
 
 /**
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamPlay}
  */
-static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
-                                            PPDMAUDIOSTREAM pStream, uint32_t *pcFramesPlayed)
+static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcFramesPlayed)
 {
     PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
     AssertPtr(pThis);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pcFramesPlayed, VERR_INVALID_POINTER);
-
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
@@ -1801,11 +1783,8 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
     RTCritSectLeave(&pThis->CritSect);
 
-    if (RT_SUCCESS(rc))
-    {
-        if (pcFramesPlayed)
-            *pcFramesPlayed = cfPlayedTotal;
-    }
+    if (RT_SUCCESS(rc) && pcFramesPlayed)
+        *pcFramesPlayed = cfPlayedTotal;
 
     if (RT_FAILURE(rc))
         LogFlowFunc(("[%s] Failed with %Rrc\n", pStream->szName, rc));
@@ -1822,20 +1801,16 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
  */
 static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, uint32_t *pcfCaptured)
 {
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    /* pcfCaptured is optional. */
-
-    /* Sanity. */
+    AssertPtrNullReturn(pcfCaptured, VERR_INVALID_POINTER);
     Assert(pStream->enmDir == PDMAUDIODIR_IN);
     Assert(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED);
 
-    int rc = VINF_SUCCESS;
-
-    uint32_t cfCapturedTotal = 0;
-
+    /*
+     * ...
+     */
     AssertPtr(pThis->pHostDrvAudio->pfnStreamGetReadable);
-
     uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStream->pvBackend);
     if (!cbReadable)
         Log2Func(("[%s] No readable data available\n", pStream->szName));
@@ -1847,22 +1822,27 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
     if (cbReadable > cbFree) /* More data readable than we can store at the moment? Limit. */
         cbReadable = cbFree;
 
+    /*
+     * ...
+     */
+    int      rc = VINF_SUCCESS;
+    uint32_t cfCapturedTotal = 0;
     while (cbReadable)
     {
+        uint8_t  abChunk[_4K];
         uint32_t cbCaptured;
         rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pStream->pvBackend,
-                                                    pThis->pvScratchBuf, RT_MIN(cbReadable, (uint32_t)pThis->cbScratchBuf), &cbCaptured);
+                                                    abChunk, RT_MIN(cbReadable, (uint32_t)sizeof(abChunk)), &cbCaptured);
         if (RT_FAILURE(rc))
         {
             int rc2 = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
             AssertRC(rc2);
-
             break;
         }
 
-        Assert(cbCaptured <= pThis->cbScratchBuf);
-        if (cbCaptured > pThis->cbScratchBuf) /* Paranoia. */
-            cbCaptured = (uint32_t)pThis->cbScratchBuf;
+        Assert(cbCaptured <= sizeof(abChunk));
+        if (cbCaptured > sizeof(abChunk)) /* Paranoia. */
+            cbCaptured = (uint32_t)sizeof(abChunk);
 
         if (!cbCaptured) /* Nothing captured? Take a shortcut. */
             break;
@@ -1870,7 +1850,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
         /* We use the host side mixing buffer as an intermediate buffer to do some
          * (first) processing (if needed), so always write the incoming data at offset 0. */
         uint32_t cfHstWritten = 0;
-        rc = AudioMixBufWriteAt(&pStream->Host.MixBuf, 0 /* offFrames */, pThis->pvScratchBuf, cbCaptured, &cfHstWritten);
+        rc = AudioMixBufWriteAt(&pStream->Host.MixBuf, 0 /* offFrames */, abChunk, cbCaptured, &cfHstWritten);
         if (   RT_FAILURE(rc)
             || !cfHstWritten)
         {
@@ -1880,7 +1860,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
         }
 
         if (pThis->In.Cfg.Dbg.fEnabled)
-            AudioHlpFileWrite(pStream->In.Dbg.pFileCaptureNonInterleaved, pThis->pvScratchBuf, cbCaptured, 0 /* fFlags */);
+            AudioHlpFileWrite(pStream->In.Dbg.pFileCaptureNonInterleaved, abChunk, cbCaptured, 0 /* fFlags */);
 
         uint32_t cfHstMixed = 0;
         if (cfHstWritten)
@@ -1932,10 +1912,9 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
     Assert(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW);
     AssertPtr(pThis->pHostDrvAudio->pfnStreamGetReadable);
 
-    int rc = VINF_SUCCESS;
-
-    uint32_t cfCapturedTotal = 0;
-
+    /*
+     * ...
+     */
     /* Note: Raw means *audio frames*, not bytes! */
     uint32_t cfReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStream->pvBackend);
     if (!cfReadable)
@@ -1948,6 +1927,11 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
     if (cfReadable > cfFree) /* More data readable than we can store at the moment? Limit. */
         cfReadable = cfFree;
 
+    /*
+     * ...
+     */
+    int      rc              = VINF_SUCCESS;
+    uint32_t cfCapturedTotal = 0;
     while (cfReadable)
     {
         PPDMAUDIOFRAME paFrames;
@@ -1955,9 +1939,7 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
         rc = AudioMixBufPeekMutable(&pStream->Host.MixBuf, cfReadable, &paFrames, &cfWritable);
         if (   RT_FAILURE(rc)
             || !cfWritable)
-        {
             break;
-        }
 
         uint32_t cfCaptured;
         rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pStream->pvBackend,
@@ -1966,7 +1948,6 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
         {
             int rc2 = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
             AssertRC(rc2);
-
             break;
         }
 
@@ -1979,11 +1960,9 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
         cfCapturedTotal += cfCaptured;
     }
 
-    Log2Func(("[%s] %RU32 frames captured, rc=%Rrc\n", pStream->szName, cfCapturedTotal, rc));
-
     if (pcfCaptured)
         *pcfCaptured = cfCapturedTotal;
-
+    Log2Func(("[%s] %RU32 frames captured, rc=%Rrc\n", pStream->szName, cfCapturedTotal, rc));
     return rc;
 }
 
@@ -2009,7 +1988,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
     Log3Func(("[%s] fStatus=%s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, pStream->fStatus)));
 
     /*
-     *
+     * ...
      */
     uint32_t cfCaptured = 0;
     do
@@ -2030,7 +2009,6 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
         /*
          * Do the actual capturing.
          */
-
         if (pThis->pHostDrvAudio->pfnStreamCaptureBegin)
             pThis->pHostDrvAudio->pfnStreamCaptureBegin(pThis->pHostDrvAudio, pStream->pvBackend);
 
@@ -2055,10 +2033,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
 #endif
         }
         else if (RT_UNLIKELY(RT_FAILURE(rc)))
-        {
             LogRel(("Audio: Capturing stream '%s' failed with %Rrc\n", pStream->szName, rc));
-        }
-
     } while (0);
 
     RTCritSectLeave(&pThis->CritSect);
@@ -3622,14 +3597,6 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
         drvAudioCallbackDestroy(pCB);
 #endif
 
-    if (pThis->pvScratchBuf)
-    {
-        Assert(pThis->cbScratchBuf);
-
-        RTMemFree(pThis->pvScratchBuf);
-        pThis->pvScratchBuf = NULL;
-    }
-
     if (RTCritSectIsInitialized(&pThis->CritSect))
     {
         int rc = RTCritSectLeave(&pThis->CritSect);
@@ -3830,11 +3797,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
      */
     rc = RTCritSectInit(&pThis->CritSect);
     AssertRCReturn(rc, rc);
-
-    const size_t cbScratchBuf = _4K; /** @todo Make this configurable? */
-    pThis->pvScratchBuf = RTMemAlloc(cbScratchBuf);
-    AssertPtrReturn(pThis->pvScratchBuf, VERR_NO_MEMORY);
-    pThis->cbScratchBuf = cbScratchBuf;
 
     pThis->fTerminate                           = false;
     pThis->pDrvIns                              = pDrvIns;
