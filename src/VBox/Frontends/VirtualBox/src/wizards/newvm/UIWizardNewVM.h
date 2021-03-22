@@ -129,6 +129,8 @@ private:
     /* Helping stuff: */
     QString getNextControllerName(KStorageBus type);
     void setFieldsFromDefaultUnttendedInstallData();
+    /* Returns ISO file path if a readable ISO file is selected. Returns an empty string otherwise. */
+    QString ISOFilePath() const;
 
     /** @name Variables
      * @{ */

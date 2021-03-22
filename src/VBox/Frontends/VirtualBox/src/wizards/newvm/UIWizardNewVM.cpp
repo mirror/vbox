@@ -132,9 +132,11 @@ bool UIWizardNewVM::createVM()
          * 1. if we don't attach any virtual hard-drive
          * 2. or attach a new (empty) one.
          * 3. and if the unattended install is not enabled
+         * 4. User did not select an ISO image file
          * Usually we are assigning extra-data values through UIExtraDataManager,
          * but in that special case VM was not registered yet, so UIExtraDataManager is unaware of it: */
-        if (!isUnattendedEnabled() &&
+        if (ISOFilePath().isEmpty() &&
+            !isUnattendedEnabled() &&
             !m_virtualDisk.isNull())
             m_machine.SetExtraData(GUI_FirstRun, "yes");
     }
@@ -427,18 +429,14 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
         if (!comDVDController.isNull())
         {
             CMedium opticalDisk;
-            QString strISOFilePath = getStringFieldValue("ISOFilePath");
+            QString strISOFilePath = ISOFilePath();
             if (!strISOFilePath.isEmpty() && !getBoolFieldValue("isUnattendedEnabled"))
             {
-                QFileInfo isoFileInfo(strISOFilePath);
-                if (isoFileInfo.exists() && isoFileInfo.isReadable())
-                {
-                    CVirtualBox vbox = uiCommon().virtualBox();
-                    opticalDisk =
-                        vbox.OpenMedium(strISOFilePath, KDeviceType_DVD,  KAccessMode_ReadWrite, false);
-                    if (!vbox.isOk())
-                        msgCenter().cannotOpenMedium(vbox, strISOFilePath, this);
-                }
+                CVirtualBox vbox = uiCommon().virtualBox();
+                opticalDisk =
+                    vbox.OpenMedium(strISOFilePath, KDeviceType_DVD,  KAccessMode_ReadWrite, false);
+                if (!vbox.isOk())
+                    msgCenter().cannotOpenMedium(vbox, strISOFilePath, this);
             }
             machine.AttachDevice(comDVDController.GetName(), 1, 0, KDeviceType_DVD, opticalDisk);
             if (!machine.isOk())
@@ -633,6 +631,17 @@ void UIWizardNewVM::setFieldsFromDefaultUnttendedInstallData()
     setField("hostname", m_unattendedInstallData.m_strHostname);
     setField("installGuestAdditions", m_unattendedInstallData.m_fInstallGuestAdditions);
     setField("guestAdditionsISOPath", m_unattendedInstallData.m_strGuestAdditionsISOPath);
+}
+
+QString UIWizardNewVM::ISOFilePath() const
+{
+    QString strPath = getStringFieldValue("ISOFilePath");
+    if (strPath.isNull() || strPath.isEmpty())
+        return QString();
+    QFileInfo isoFileInfo(strPath);
+    if (isoFileInfo.exists() && isoFileInfo.isReadable())
+        return strPath;
+    return QString();
 }
 
 CMedium &UIWizardNewVM::virtualDisk()
