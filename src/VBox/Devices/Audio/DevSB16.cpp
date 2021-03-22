@@ -62,7 +62,7 @@
 
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
-#include "DrvAudioCommon.h"
+#include "AudioHlp.h"
 
 
 /*********************************************************************************************************************************
@@ -1766,7 +1766,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, 
 static int sb16CreateDrvStream(PPDMAUDIOSTREAMCFG pCfg, PSB16DRIVER pDrv)
 {
     AssertReturn(pCfg->enmDir == PDMAUDIODIR_OUT, VERR_INVALID_PARAMETER);
-    Assert(DrvAudioHlpStreamCfgIsValid(pCfg));
+    Assert(AudioHlpStreamCfgIsValid(pCfg));
 
     PPDMAUDIOSTREAMCFG pCfgHost = PDMAudioStrmCfgDup(pCfg);
     if (!pCfgHost)
@@ -1866,7 +1866,7 @@ static int sb16OpenOut(PPDMDEVINS pDevIns, PSB16STATE pThis, PPDMAUDIOSTREAMCFG 
     AssertPtr(pThis);
     AssertPtr(pCfg);
 
-    if (!DrvAudioHlpStreamCfgIsValid(pCfg))
+    if (!AudioHlpStreamCfgIsValid(pCfg))
         return VERR_INVALID_PARAMETER;
 
     int rc = PDMAudioStrmCfgCopy(&pThis->Out.Cfg, pCfg);

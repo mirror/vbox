@@ -24,7 +24,7 @@
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
 
-#include "DrvAudioCommon.h"
+#include "AudioHlp.h"
 #include "VBoxDD.h"
 
 
@@ -156,13 +156,13 @@ static int drvHostValKitAudioCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDI
     if (RT_SUCCESS(rc))
     {
         char szFile[RTPATH_MAX];
-        rc = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), szTemp, "VaKit",
-                                    0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+        rc = AudioHlpFileNameGet(szFile, sizeof(szFile), szTemp, "VaKit",
+                                 0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         if (RT_SUCCESS(rc))
         {
-            rc = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pStreamDbg->pFile);
+            rc = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pStreamDbg->pFile);
             if (RT_SUCCESS(rc))
-                rc = DrvAudioHlpFileOpen(pStreamDbg->pFile, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS, &pCfgReq->Props);
+                rc = AudioHlpFileOpen(pStreamDbg->pFile, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS, &pCfgReq->Props);
         }
 
         if (RT_FAILURE(rc))
@@ -251,7 +251,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     /* Remember when samples were consumed. */
    // pStreamDbg->Out.tsLastPlayed = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);;
 
-    int rc2 = DrvAudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
+    int rc2 = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
     if (RT_FAILURE(rc2))
         LogRel(("VaKitAudio: Writing output failed with %Rrc\n", rc2));
 
@@ -296,11 +296,11 @@ static int vakitDestroyStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStr
 
     if (pStreamDbg->pFile)
     {
-        size_t cbDataSize = DrvAudioHlpFileGetDataSize(pStreamDbg->pFile);
+        size_t cbDataSize = AudioHlpFileGetDataSize(pStreamDbg->pFile);
         if (cbDataSize)
             LogRel(("VaKitAudio: Created output file '%s' (%zu bytes)\n", pStreamDbg->pFile->szName, cbDataSize));
 
-        DrvAudioHlpFileDestroy(pStreamDbg->pFile);
+        AudioHlpFileDestroy(pStreamDbg->pFile);
         pStreamDbg->pFile = NULL;
     }
 

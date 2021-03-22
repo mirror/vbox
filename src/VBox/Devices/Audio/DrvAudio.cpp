@@ -43,7 +43,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "DrvAudioCommon.h"
+#include "AudioHlp.h"
 #include "AudioMixBuffer.h"
 
 
@@ -243,7 +243,7 @@ static PDMAUDIOFMT drvAudioGetConfFormat(PCFGMNODE pCfgHandle, const char *pszKe
         return enmDefault;
     }
 
-    PDMAUDIOFMT fmt = DrvAudioHlpStrToAudFmt(pszValue);
+    PDMAUDIOFMT fmt = AudioHlpStrToAudFmt(pszValue);
     if (fmt == PDMAUDIOFMT_INVALID)
     {
          *pfDefault = true;
@@ -1170,7 +1170,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         }
 
         if (pThis->Out.Cfg.Dbg.fEnabled)
-            DrvAudioHlpFileWrite(pStream->Out.Dbg.pFileStreamWrite, pvBuf, cbToWrite, 0 /* fFlags */);
+            AudioHlpFileWrite(pStream->Out.Dbg.pFileStreamWrite, pvBuf, cbToWrite, 0 /* fFlags */);
 
         uint32_t cfGstMixed = 0;
         if (cfGstWritten)
@@ -1535,7 +1535,7 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
             && cbPlayed)
         {
             if (pThis->Out.Cfg.Dbg.fEnabled)
-                DrvAudioHlpFileWrite(pStream->Out.Dbg.pFilePlayNonInterleaved, pvChunk, cbPlayed, 0 /* fFlags */);
+                AudioHlpFileWrite(pStream->Out.Dbg.pFilePlayNonInterleaved, pvChunk, cbPlayed, 0 /* fFlags */);
 
             if (cbRead != cbPlayed)
                 LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32)\n",
@@ -1923,7 +1923,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
         }
 
         if (pThis->In.Cfg.Dbg.fEnabled)
-            DrvAudioHlpFileWrite(pStream->In.Dbg.pFileCaptureNonInterleaved, pThis->pvScratchBuf, cbCaptured, 0 /* fFlags */);
+            AudioHlpFileWrite(pStream->In.Dbg.pFileCaptureNonInterleaved, pThis->pvScratchBuf, cbCaptured, 0 /* fFlags */);
 
         uint32_t cfHstMixed = 0;
         if (cfHstWritten)
@@ -2522,7 +2522,7 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
             if (cfReadTotal)
             {
                 if (pThis->In.Cfg.Dbg.fEnabled)
-                    DrvAudioHlpFileWrite(pStream->In.Dbg.pFileStreamRead,
+                    AudioHlpFileWrite(pStream->In.Dbg.pFileStreamRead,
                                          pvBuf, AUDIOMIXBUF_F2B(&pStream->Guest.MixBuf, cfReadTotal), 0 /* fFlags */);
 
                 AudioMixBufFinish(&pStream->Guest.MixBuf, cfReadTotal);
@@ -2598,8 +2598,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, PP
 
     do /* this is not a loop, just a construct to make the code more difficult to follow. */
     {
-        if (   !DrvAudioHlpStreamCfgIsValid(pCfgHost)
-            || !DrvAudioHlpStreamCfgIsValid(pCfgGuest))
+        if (   !AudioHlpStreamCfgIsValid(pCfgHost)
+            || !AudioHlpStreamCfgIsValid(pCfgGuest))
         {
             RC_BREAK(VERR_INVALID_PARAMETER);
         }
@@ -2692,28 +2692,28 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, PP
         {
             if (pThis->In.Cfg.Dbg.fEnabled)
             {
-                int rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->In.Cfg.Dbg.szPathOut, "DrvAudioCapNonInt",
-                                                 pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+                int rc2 = AudioHlpFileNameGet(szFile, sizeof(szFile), pThis->In.Cfg.Dbg.szPathOut, "DrvAudioCapNonInt",
+                                              pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                 if (RT_SUCCESS(rc2))
                 {
-                    rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE,
-                                                &pStream->In.Dbg.pFileCaptureNonInterleaved);
+                    rc2 = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE,
+                                             &pStream->In.Dbg.pFileCaptureNonInterleaved);
                     if (RT_SUCCESS(rc2))
-                        rc2 = DrvAudioHlpFileOpen(pStream->In.Dbg.pFileCaptureNonInterleaved, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
-                                                  &pStream->Host.Cfg.Props);
+                        rc2 = AudioHlpFileOpen(pStream->In.Dbg.pFileCaptureNonInterleaved, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                               &pStream->Host.Cfg.Props);
                 }
 
                 if (RT_SUCCESS(rc2))
                 {
-                    rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->In.Cfg.Dbg.szPathOut, "DrvAudioRead",
-                                                 pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+                    rc2 = AudioHlpFileNameGet(szFile, sizeof(szFile), pThis->In.Cfg.Dbg.szPathOut, "DrvAudioRead",
+                                              pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                     if (RT_SUCCESS(rc2))
                     {
-                        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE,
-                                                    &pStream->In.Dbg.pFileStreamRead);
+                        rc2 = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE,
+                                                 &pStream->In.Dbg.pFileStreamRead);
                         if (RT_SUCCESS(rc2))
-                            rc2 = DrvAudioHlpFileOpen(pStream->In.Dbg.pFileStreamRead, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
-                                                      &pStream->Host.Cfg.Props);
+                            rc2 = AudioHlpFileOpen(pStream->In.Dbg.pFileStreamRead, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                                   &pStream->Host.Cfg.Props);
                     }
                 }
             }
@@ -2725,28 +2725,28 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, PP
         {
             if (pThis->Out.Cfg.Dbg.fEnabled)
             {
-                int rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->Out.Cfg.Dbg.szPathOut, "DrvAudioPlayNonInt",
-                                                 pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+                int rc2 = AudioHlpFileNameGet(szFile, sizeof(szFile), pThis->Out.Cfg.Dbg.szPathOut, "DrvAudioPlayNonInt",
+                                              pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                 if (RT_SUCCESS(rc2))
                 {
-                    rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE,
-                                                &pStream->Out.Dbg.pFilePlayNonInterleaved);
+                    rc2 = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE,
+                                             &pStream->Out.Dbg.pFilePlayNonInterleaved);
                     if (RT_SUCCESS(rc2))
-                        rc = DrvAudioHlpFileOpen(pStream->Out.Dbg.pFilePlayNonInterleaved, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
-                                                 &pStream->Host.Cfg.Props);
+                        rc = AudioHlpFileOpen(pStream->Out.Dbg.pFilePlayNonInterleaved, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                              &pStream->Host.Cfg.Props);
                 }
 
                 if (RT_SUCCESS(rc2))
                 {
-                    rc2 = DrvAudioHlpFileNameGet(szFile, sizeof(szFile), pThis->Out.Cfg.Dbg.szPathOut, "DrvAudioWrite",
-                                                 pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+                    rc2 = AudioHlpFileNameGet(szFile, sizeof(szFile), pThis->Out.Cfg.Dbg.szPathOut, "DrvAudioWrite",
+                                              pThis->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
                     if (RT_SUCCESS(rc2))
                     {
-                        rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE,
-                                                    &pStream->Out.Dbg.pFileStreamWrite);
+                        rc2 = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE,
+                                                 &pStream->Out.Dbg.pFileStreamWrite);
                         if (RT_SUCCESS(rc2))
-                            rc2 = DrvAudioHlpFileOpen(pStream->Out.Dbg.pFileStreamWrite, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
-                                                      &pStream->Host.Cfg.Props);
+                            rc2 = AudioHlpFileOpen(pStream->Out.Dbg.pFileStreamWrite, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                                   &pStream->Host.Cfg.Props);
                     }
                 }
             }
@@ -3220,7 +3220,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     pCfgReq->Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgReq->Props.cbSample, pCfgReq->Props.cChannels);
 
     /* Validate PCM properties. */
-    if (!DrvAudioHlpPcmPropsAreValid(&pCfgReq->Props))
+    if (!AudioHlpPcmPropsAreValid(&pCfgReq->Props))
     {
         LogRel(("Audio: Invalid custom PCM properties set for stream '%s', cannot create stream\n", pStream->szName));
         return VERR_INVALID_PARAMETER;
@@ -3336,7 +3336,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     }
 
     /* Validate acquired configuration. */
-    if (!DrvAudioHlpStreamCfgIsValid(pCfgAcq))
+    if (!AudioHlpStreamCfgIsValid(pCfgAcq))
     {
         LogRel(("Audio: Creating stream '%s' returned an invalid backend configuration, skipping\n", pStream->szName));
         return VERR_INVALID_PARAMETER;
@@ -3472,10 +3472,10 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
 #endif
         if (pThis->In.Cfg.Dbg.fEnabled)
         {
-            DrvAudioHlpFileDestroy(pStream->In.Dbg.pFileCaptureNonInterleaved);
+            AudioHlpFileDestroy(pStream->In.Dbg.pFileCaptureNonInterleaved);
             pStream->In.Dbg.pFileCaptureNonInterleaved = NULL;
 
-            DrvAudioHlpFileDestroy(pStream->In.Dbg.pFileStreamRead);
+            AudioHlpFileDestroy(pStream->In.Dbg.pFileStreamRead);
             pStream->In.Dbg.pFileStreamRead = NULL;
         }
     }
@@ -3489,10 +3489,10 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
 #endif
         if (pThis->Out.Cfg.Dbg.fEnabled)
         {
-            DrvAudioHlpFileDestroy(pStream->Out.Dbg.pFilePlayNonInterleaved);
+            AudioHlpFileDestroy(pStream->Out.Dbg.pFilePlayNonInterleaved);
             pStream->Out.Dbg.pFilePlayNonInterleaved = NULL;
 
-            DrvAudioHlpFileDestroy(pStream->Out.Dbg.pFileStreamWrite);
+            AudioHlpFileDestroy(pStream->Out.Dbg.pFileStreamWrite);
             pStream->Out.Dbg.pFileStreamWrite = NULL;
         }
     }

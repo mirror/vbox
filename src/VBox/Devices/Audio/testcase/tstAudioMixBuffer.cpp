@@ -30,7 +30,7 @@
 #include <VBox/vmm/pdmaudioinline.h>
 
 #include "../AudioMixBuffer.h"
-#include "../DrvAudioCommon.h"
+#include "../AudioHlp.h"
 
 
 static void tstBasics(RTTEST hTest)
@@ -66,9 +66,9 @@ static void tstBasics(RTTEST hTest)
     RTTESTI_CHECK(PDMAudioPropsGetBitrate(&Cfg441StereoU16) == 44100*4*8);
     RTTESTI_CHECK(PDMAudioPropsGetBitrate(&Cfg441StereoU32) == 44100*8*8);
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&Cfg441StereoS16));
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&Cfg441StereoU16) == false); /* go figure */
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&Cfg441StereoU32) == false); /* go figure */
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&Cfg441StereoS16));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&Cfg441StereoU16) == false); /* go figure */
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&Cfg441StereoU32) == false); /* go figure */
 
 
     RTTESTI_CHECK_MSG(PDMAUDIOPCMPROPS_F2B(&Cfg441StereoS16, 1) == 4,
@@ -199,7 +199,7 @@ static int tstSingle(RTTEST hTest)
         false                                                               /* Swap Endian */
     );
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&config));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&config));
 
     uint32_t cBufSize = _1K;
 
@@ -320,7 +320,7 @@ static int tstParentChild(RTTEST hTest)
         false                                                               /* Swap Endian */
     );
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&cfg_p));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_p));
 
     PDMAUDIOMIXBUF parent;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cParentBufSize));
@@ -335,7 +335,7 @@ static int tstParentChild(RTTEST hTest)
         false                                                               /* Swap Endian */
     );
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&cfg_c1));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_c1));
 
     uint32_t cFrames      = 16;
     uint32_t cChildBufSize = RTRandU32Ex(cFrames /* Min */, 64 /* Max */);
@@ -354,7 +354,7 @@ static int tstParentChild(RTTEST hTest)
         false                                                               /* Swap Endian */
     );
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&cfg_c2));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_c2));
 
     PDMAUDIOMIXBUF child2;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child2, "Child2", &cfg_c2, cChildBufSize));
@@ -468,7 +468,7 @@ static int tstConversion8(RTTEST hTest)
         false                                                               /* Swap Endian */
     );
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&cfg_p));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_p));
 
     PDMAUDIOMIXBUF parent;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cBufSize));
@@ -491,7 +491,7 @@ static int tstConversion8(RTTEST hTest)
         false                                                               /* Swap Endian */
     );
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&cfg_c));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_c));
 
     PDMAUDIOMIXBUF child;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg_c, cBufSize));
@@ -573,7 +573,7 @@ static int tstConversion16(RTTEST hTest)
         false                                                               /* Swap Endian */
     );
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&cfg_p));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_p));
 
     PDMAUDIOMIXBUF parent;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cBufSize));
@@ -588,7 +588,7 @@ static int tstConversion16(RTTEST hTest)
         false                                                               /* Swap Endian */
     );
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&cfg_c));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg_c));
 
     PDMAUDIOMIXBUF child;
     RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg_c, cBufSize));
@@ -670,7 +670,7 @@ static int tstVolume(RTTEST hTest)
         false                                                               /* Swap Endian */
     );
 
-    RTTESTI_CHECK(DrvAudioHlpPcmPropsAreValid(&cfg));
+    RTTESTI_CHECK(AudioHlpPcmPropsAreValid(&cfg));
 
     PDMAUDIOVOLUME vol = { false, 0, 0 };   /* Not muted. */
     PDMAUDIOMIXBUF parent;

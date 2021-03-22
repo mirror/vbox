@@ -28,7 +28,7 @@
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
 
-#include "DrvAudioCommon.h"
+#include "AudioHlp.h"
 #include "VBoxDD.h"
 
 
@@ -135,17 +135,13 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostDebugAudioHA_GetStatus(PPDMIHOSTA
 static int debugCreateFile(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStreamDbg, bool fIn, PPDMAUDIOSTREAMCFG pCfg)
 {
     char szFile[RTPATH_MAX];
-    int rc = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), NULL /* Use temporary directory */, fIn ? "DebugAudioIn" : "DebugAudioOut",
-                                    pDrv->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+    int rc = AudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), NULL /* Use temporary directory */, fIn ? "DebugAudioIn" : "DebugAudioOut",
+                                 pDrv->pDrvIns->iInstance, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
     if (RT_SUCCESS(rc))
     {
-        rc = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pStreamDbg->pFile);
+        rc = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pStreamDbg->pFile);
         if (RT_SUCCESS(rc))
-        {
-            rc = DrvAudioHlpFileOpen(pStreamDbg->pFile, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
-                                     &pCfg->Props);
-        }
-
+            rc = AudioHlpFileOpen(pStreamDbg->pFile, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE, &pCfg->Props);
         if (RT_FAILURE(rc))
             LogRel(("DebugAudio: Creating %sput file '%s' failed with %Rrc\n", fIn ? "in" : "out", szFile, rc));
     }
@@ -221,7 +217,7 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfac
     RT_NOREF(pInterface);
     PDEBUGAUDIOSTREAM  pStreamDbg = (PDEBUGAUDIOSTREAM)pStream;
 
-    int rc = DrvAudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
+    int rc = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
     if (RT_FAILURE(rc))
     {
         LogRel(("DebugAudio: Writing output failed with %Rrc\n", rc));
@@ -265,7 +261,7 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamCapture(PPDMIHOSTAUDIO pInter
         pStreamDbg->In.uSample++;
     }
 
-    int rc = DrvAudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
+    int rc = AudioHlpFileWrite(pStreamDbg->pFile, pvBuf, uBufSize, 0 /* fFlags */);
     if (RT_FAILURE(rc))
     {
         LogRel(("DebugAudio: Writing input failed with %Rrc\n", rc));
@@ -314,7 +310,7 @@ static DECLCALLBACK(int) drvHostDebugAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInter
 
     if (RT_SUCCESS(rc))
     {
-        DrvAudioHlpFileDestroy(pStreamDbg->pFile);
+        AudioHlpFileDestroy(pStreamDbg->pFile);
 
         PDMAudioStrmCfgFree(pStreamDbg->pCfg);
         pStreamDbg->pCfg = NULL;

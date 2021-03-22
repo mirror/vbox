@@ -42,7 +42,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "DrvAudioCommon.h"
+#include "AudioHlp.h"
 #include "AudioMixBuffer.h"
 
 
@@ -148,7 +148,7 @@ char *DrvAudioDbgGetFileNameA(uint8_t uInstance, const char *pszPath, const char
  * @returns Audio format for the given string, or PDMAUDIOFMT_INVALID if not found.
  * @param   pszFmt              String to convert to an audio format.
  */
-PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
+PDMAUDIOFMT AudioHlpStrToAudFmt(const char *pszFmt)
 {
     AssertPtrReturn(pszFmt, PDMAUDIOFMT_INVALID);
 
@@ -172,12 +172,12 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
 /**
  * Checks whether a given stream configuration is valid or not.
  *
- * @note    See notes on DrvAudioHlpPcmPropsAreValid().
+ * @note    See notes on AudioHlpPcmPropsAreValid().
  *
  * Returns @c true if configuration is valid, @c false if not.
  * @param   pCfg                Stream configuration to check.
  */
-bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
+bool AudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pCfg, false);
 
@@ -190,7 +190,7 @@ bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
                || pCfg->enmLayout == PDMAUDIOSTREAMLAYOUT_RAW);
 
     if (fValid)
-        fValid = DrvAudioHlpPcmPropsAreValid(&pCfg->Props);
+        fValid = AudioHlpPcmPropsAreValid(&pCfg->Props);
 
     return fValid;
 }
@@ -206,7 +206,7 @@ bool DrvAudioHlpStreamCfgIsValid(PCPDMAUDIOSTREAMCFG pCfg)
  * @param   uHz                 Hz (Hertz) rate.
  * @param   cChannels           Number of audio channels.
  */
-uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
+uint32_t AudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
 {
     return cBits * uHz * cChannels;
 }
@@ -224,7 +224,7 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
  * @returns @c true if the properties are valid, @c false if not.
  * @param   pProps      The PCM properties to check.
  */
-bool DrvAudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
+bool AudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, false);
 
@@ -284,7 +284,7 @@ bool DrvAudioHlpPcmPropsAreValid(PCPDMAUDIOPCMPROPS pProps)
  * @param   pszPath             Path to sanitize.
  * @param   cbPath              Size (in bytes) of path to sanitize.
  */
-int DrvAudioHlpFileNameSanitize(char *pszPath, size_t cbPath)
+int AudioHlpFileNameSanitize(char *pszPath, size_t cbPath)
 {
     RT_NOREF(cbPath);
     int rc = VINF_SUCCESS;
@@ -326,8 +326,8 @@ int DrvAudioHlpFileNameSanitize(char *pszPath, size_t cbPath)
  * @param   enmType             Audio file type to construct file name for.
  * @param   fFlags              File naming flags, PDMAUDIOFILENAME_FLAGS_XXX.
  */
-int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName,
-                           uint32_t uInstance, PDMAUDIOFILETYPE enmType, uint32_t fFlags)
+int AudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName,
+                        uint32_t uInstance, PDMAUDIOFILETYPE enmType, uint32_t fFlags)
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
     AssertReturn(cchFile,    VERR_INVALID_PARAMETER);
@@ -382,7 +382,7 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
                 break;
             }
 
-            rc = DrvAudioHlpFileNameSanitize(szFileName, sizeof(szFileName));
+            rc = AudioHlpFileNameSanitize(szFileName, sizeof(szFileName));
             if (RT_FAILURE(rc))
                 break;
 
@@ -445,9 +445,9 @@ int DrvAudioHlpFileNameGet(char *pszFile, size_t cchFile, const char *pszPath, c
  * @param   pszFile             File path of file to open or create.
  * @param   fFlags              Audio file flags, PDMAUDIOFILE_FLAGS_XXX.
  * @param   ppFile              Where to store the created audio file handle.
- *                              Needs to be destroyed with DrvAudioHlpFileDestroy().
+ *                              Needs to be destroyed with AudioHlpFileDestroy().
  */
-int DrvAudioHlpFileCreate(PDMAUDIOFILETYPE enmType, const char *pszFile, uint32_t fFlags, PPDMAUDIOFILE *ppFile)
+int AudioHlpFileCreate(PDMAUDIOFILETYPE enmType, const char *pszFile, uint32_t fFlags, PPDMAUDIOFILE *ppFile)
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
     /** @todo Validate fFlags. */
@@ -495,12 +495,12 @@ int DrvAudioHlpFileCreate(PDMAUDIOFILETYPE enmType, const char *pszFile, uint32_
  *
  * @param   pFile               Audio file (object) to destroy.
  */
-void DrvAudioHlpFileDestroy(PPDMAUDIOFILE pFile)
+void AudioHlpFileDestroy(PPDMAUDIOFILE pFile)
 {
     if (!pFile)
         return;
 
-    DrvAudioHlpFileClose(pFile);
+    AudioHlpFileClose(pFile);
 
     RTMemFree(pFile);
     pFile = NULL;
@@ -515,7 +515,7 @@ void DrvAudioHlpFileDestroy(PPDMAUDIOFILE pFile)
  *                              Use PDMAUDIOFILE_DEFAULT_OPEN_FLAGS for the default open flags.
  * @param   pProps              PCM properties to use.
  */
-int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pProps)
+int AudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pFile,   VERR_INVALID_POINTER);
     /** @todo Validate fOpen flags. */
@@ -599,12 +599,12 @@ int DrvAudioHlpFileOpen(PPDMAUDIOFILE pFile, uint32_t fOpen, PCPDMAUDIOPCMPROPS 
  * @returns IPRT status code.
  * @param   pFile               Audio file handle to close.
  */
-int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile)
+int AudioHlpFileClose(PPDMAUDIOFILE pFile)
 {
     if (!pFile)
         return VINF_SUCCESS;
 
-    size_t cbSize = DrvAudioHlpFileGetDataSize(pFile);
+    size_t cbSize = AudioHlpFileGetDataSize(pFile);
 
     int rc = VINF_SUCCESS;
 
@@ -640,7 +640,7 @@ int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile)
         && !cbSize
         && !(pFile->fFlags & PDMAUDIOFILE_FLAGS_KEEP_IF_EMPTY))
     {
-        rc = DrvAudioHlpFileDelete(pFile);
+        rc = AudioHlpFileDelete(pFile);
     }
 
     pFile->cbData = 0;
@@ -662,7 +662,7 @@ int DrvAudioHlpFileClose(PPDMAUDIOFILE pFile)
  * @returns IPRT status code.
  * @param   pFile               Audio file handle to delete.
  */
-int DrvAudioHlpFileDelete(PPDMAUDIOFILE pFile)
+int AudioHlpFileDelete(PPDMAUDIOFILE pFile)
 {
     AssertPtrReturn(pFile, VERR_INVALID_POINTER);
 
@@ -689,7 +689,7 @@ int DrvAudioHlpFileDelete(PPDMAUDIOFILE pFile)
  * @returns Size (in bytes) of the raw PCM audio data.
  * @param   pFile               Audio file handle to retrieve the audio data size for.
  */
-size_t DrvAudioHlpFileGetDataSize(PPDMAUDIOFILE pFile)
+size_t AudioHlpFileGetDataSize(PPDMAUDIOFILE pFile)
 {
     AssertPtrReturn(pFile, 0);
 
@@ -715,7 +715,7 @@ size_t DrvAudioHlpFileGetDataSize(PPDMAUDIOFILE pFile)
  * @return  bool                True if open, false if not.
  * @param   pFile               Audio file handle to check open status for.
  */
-bool DrvAudioHlpFileIsOpen(PPDMAUDIOFILE pFile)
+bool AudioHlpFileIsOpen(PPDMAUDIOFILE pFile)
 {
     if (!pFile)
         return false;
@@ -732,7 +732,7 @@ bool DrvAudioHlpFileIsOpen(PPDMAUDIOFILE pFile)
  * @param   cbBuf               Size (in bytes) of audio data to write.
  * @param   fFlags              Additional write flags. Not being used at the moment and must be 0.
  */
-int DrvAudioHlpFileWrite(PPDMAUDIOFILE pFile, const void *pvBuf, size_t cbBuf, uint32_t fFlags)
+int AudioHlpFileWrite(PPDMAUDIOFILE pFile, const void *pvBuf, size_t cbBuf, uint32_t fFlags)
 {
     AssertPtrReturn(pFile, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);

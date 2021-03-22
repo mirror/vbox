@@ -29,7 +29,7 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
-#include "DrvAudioCommon.h"
+#include "AudioHlp.h"
 
 #include "DevHdaStreamChannel.h"
 #include "DevHdaStreamMap.h"
@@ -328,7 +328,7 @@ int hdaR3StreamMapInit(PHDASTREAMMAP pMap, uint8_t cHostChannels, PPDMAUDIOPCMPR
     AssertPtrReturn(pMap, VERR_INVALID_POINTER);
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
 
-    if (!DrvAudioHlpPcmPropsAreValid(pProps))
+    if (!AudioHlpPcmPropsAreValid(pProps))
         return VERR_INVALID_PARAMETER;
 
     hdaR3StreamMapReset(pMap);

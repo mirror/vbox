@@ -58,7 +58,7 @@
 #include "DevHdaStream.h"
 #include "DevHdaStreamMap.h"
 
-#include "DrvAudioCommon.h"
+#include "AudioHlp.h"
 
 
 /*********************************************************************************************************************************
@@ -2196,7 +2196,7 @@ static int hdaR3MixerAddDrv(PHDASTATER3 pThisCC, PHDADRIVER pDrv)
 
     PHDASTREAM pStream = hdaR3GetSharedStreamFromSink(&pThisCC->SinkLineIn);
     if (   pStream
-        && DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
+        && AudioHlpStreamCfgIsValid(&pStream->State.Cfg))
     {
         int rc2 = hdaR3MixerAddDrvStream(pThisCC->SinkLineIn.pMixSink, &pStream->State.Cfg, pDrv);
         if (RT_SUCCESS(rc))
@@ -2206,7 +2206,7 @@ static int hdaR3MixerAddDrv(PHDASTATER3 pThisCC, PHDADRIVER pDrv)
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     pStream = hdaR3GetSharedStreamFromSink(&pThisCC->SinkMicIn);
     if (   pStream
-        && DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
+        && AudioHlpStreamCfgIsValid(&pStream->State.Cfg))
     {
         int rc2 = hdaR3MixerAddDrvStream(pThisCC->SinkMicIn.pMixSink, &pStream->State.Cfg, pDrv);
         if (RT_SUCCESS(rc))
@@ -2216,7 +2216,7 @@ static int hdaR3MixerAddDrv(PHDASTATER3 pThisCC, PHDADRIVER pDrv)
 
     pStream = hdaR3GetSharedStreamFromSink(&pThisCC->SinkFront);
     if (   pStream
-        && DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
+        && AudioHlpStreamCfgIsValid(&pStream->State.Cfg))
     {
         int rc2 = hdaR3MixerAddDrvStream(pThisCC->SinkFront.pMixSink, &pStream->State.Cfg, pDrv);
         if (RT_SUCCESS(rc))
@@ -2226,7 +2226,7 @@ static int hdaR3MixerAddDrv(PHDASTATER3 pThisCC, PHDADRIVER pDrv)
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     pStream = hdaR3GetSharedStreamFromSink(&pThisCC->SinkCenterLFE);
     if (   pStream
-        && DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
+        && AudioHlpStreamCfgIsValid(&pStream->State.Cfg))
     {
         int rc2 = hdaR3MixerAddDrvStream(pThisCC->SinkCenterLFE.pMixSink, &pStream->State.Cfg, pDrv);
         if (RT_SUCCESS(rc))
@@ -2235,7 +2235,7 @@ static int hdaR3MixerAddDrv(PHDASTATER3 pThisCC, PHDADRIVER pDrv)
 
     pStream = hdaR3GetSharedStreamFromSink(&pThisCC->SinkRear);
     if (   pStream
-        && DrvAudioHlpStreamCfgIsValid(&pStream->State.Cfg))
+        && AudioHlpStreamCfgIsValid(&pStream->State.Cfg))
     {
         int rc2 = hdaR3MixerAddDrvStream(pThisCC->SinkRear.pMixSink, &pStream->State.Cfg, pDrv);
         if (RT_SUCCESS(rc))
@@ -2443,7 +2443,7 @@ static int hdaR3MixerAddDrvStreams(PHDASTATER3 pThisCC, PAUDMIXSINK pMixSink, PP
 
     LogFunc(("Sink=%s, Stream=%s\n", pMixSink->pszName, pCfg->szName));
 
-    if (!DrvAudioHlpStreamCfgIsValid(pCfg))
+    if (!AudioHlpStreamCfgIsValid(pCfg))
         return VERR_INVALID_PARAMETER;
 
     int rc = AudioMixerSinkSetFormat(pMixSink, &pCfg->Props);

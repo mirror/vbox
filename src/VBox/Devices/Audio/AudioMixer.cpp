@@ -73,7 +73,7 @@
 #include <VBox/log.h>
 #include "AudioMixer.h"
 #include "AudioMixBuffer.h"
-#include "DrvAudioCommon.h"
+#include "AudioHlp.h"
 
 #include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
@@ -614,7 +614,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
      * Initialize the host-side configuration for the stream to be created.
      * Always use the sink's PCM audio format as the host side when creating a stream for it.
      */
-    AssertMsg(DrvAudioHlpPcmPropsAreValid(&pSink->PCMProps),
+    AssertMsg(AudioHlpPcmPropsAreValid(&pSink->PCMProps),
               ("%s: Does not (yet) have a format set when it must\n", pSink->pszName));
 
     PDMAUDIOSTREAMCFG CfgHost;
@@ -919,7 +919,7 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink)
     if (   pSink->pParent
         && pSink->pParent->fFlags & AUDMIXER_FLAGS_DEBUG)
     {
-        DrvAudioHlpFileDestroy(pSink->Dbg.pFile);
+        AudioHlpFileDestroy(pSink->Dbg.pFile);
         pSink->Dbg.pFile = NULL;
     }
 
@@ -1273,7 +1273,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
 
             if (pSink->pParent->fFlags & AUDMIXER_FLAGS_DEBUG)
             {
-                int rc2 = DrvAudioHlpFileWrite(pSink->Dbg.pFile, pvBuf, cbRead, 0 /* fFlags */);
+                int rc2 = AudioHlpFileWrite(pSink->Dbg.pFile, pvBuf, cbRead, 0 /* fFlags */);
                 AssertRC(rc2);
             }
         }
@@ -1469,7 +1469,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
 {
     AssertPtrReturn(pSink,     VERR_INVALID_POINTER);
     AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
-    AssertReturn(DrvAudioHlpPcmPropsAreValid(pPCMProps), VERR_INVALID_PARAMETER);
+    AssertReturn(AudioHlpPcmPropsAreValid(pPCMProps), VERR_INVALID_PARAMETER);
 
     int rc = RTCritSectEnter(&pSink->CritSect);
     if (RT_FAILURE(rc))
@@ -1508,20 +1508,19 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
     if (   RT_SUCCESS(rc)
         && (pSink->pParent->fFlags & AUDMIXER_FLAGS_DEBUG))
     {
-        DrvAudioHlpFileClose(pSink->Dbg.pFile);
+        AudioHlpFileClose(pSink->Dbg.pFile);
 
         char szName[64];
         RTStrPrintf(szName, sizeof(szName), "MixerSink-%s", pSink->pszName);
 
         char szFile[RTPATH_MAX];
-        int rc2 = DrvAudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), NULL /* Use temporary directory */, szName,
-                                         0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
+        int rc2 = AudioHlpFileNameGet(szFile, RT_ELEMENTS(szFile), NULL /* Use temporary directory */, szName,
+                                      0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAGS_NONE);
         if (RT_SUCCESS(rc2))
         {
-            rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE,
-                                        &pSink->Dbg.pFile);
+            rc2 = AudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAGS_NONE, &pSink->Dbg.pFile);
             if (RT_SUCCESS(rc2))
-                rc2 = DrvAudioHlpFileOpen(pSink->Dbg.pFile, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS, &pSink->PCMProps);
+                rc2 = AudioHlpFileOpen(pSink->Dbg.pFile, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS, &pSink->PCMProps);
         }
     }
 
