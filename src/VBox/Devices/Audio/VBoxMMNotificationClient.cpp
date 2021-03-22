@@ -21,6 +21,7 @@
 #include <iprt/win/windows.h>
 #include <mmdeviceapi.h>
 #include <iprt/win/endpointvolume.h>
+#include <iprt/errcore.h>
 
 #ifdef LOG_GROUP  /** @todo r=bird: wtf? Put it before all other includes like you're supposed to. */
 # undef LOG_GROUP
