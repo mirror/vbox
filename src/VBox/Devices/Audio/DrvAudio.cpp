@@ -193,10 +193,6 @@ typedef struct DRVAUDIO
     } Out;
 } DRVAUDIO, *PDRVAUDIO;
 
-/** Makes a PDRVAUDIO out of a PPDMIAUDIOCONNECTOR. */
-#define PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface) \
-    ( (PDRVAUDIO)((uintptr_t)pInterface - RT_UOFFSETOF(DRVAUDIO, IAudioConnector)) )
-
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -453,8 +449,8 @@ static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, a
 static DECLCALLBACK(int) drvAudioStreamControl(PPDMIAUDIOCONNECTOR pInterface,
                                                PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
 
     /** @todo r=bird: why?  It's not documented to ignore NULL streams.   */
     if (!pStream)
@@ -1077,13 +1073,13 @@ static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
 static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream,
                                              const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
     AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
-    /* pcbWritten is optional. */
-
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
+    AssertPtrNullReturn(pcbWritten, VERR_INVALID_PARAMETER);
 
     AssertMsg(pStream->enmDir == PDMAUDIODIR_OUT,
               ("Stream '%s' is not an output stream and therefore cannot be written to (direction is '%s')\n",
@@ -1259,10 +1255,9 @@ static DECLCALLBACK(uint32_t) drvAudioStreamRelease(PPDMIAUDIOCONNECTOR pInterfa
  */
 static DECLCALLBACK(int) drvAudioStreamIterate(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
@@ -1273,7 +1268,6 @@ static DECLCALLBACK(int) drvAudioStreamIterate(PPDMIAUDIOCONNECTOR pInterface, P
 
     if (RT_FAILURE(rc))
         LogFlowFuncLeaveRC(rc);
-
     return rc;
 }
 
@@ -1632,11 +1626,11 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
 static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
                                             PPDMAUDIOSTREAM pStream, uint32_t *pcFramesPlayed)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    /* pcFramesPlayed is optional. */
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pcFramesPlayed, VERR_INVALID_POINTER);
 
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
@@ -1815,7 +1809,6 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
     if (RT_FAILURE(rc))
         LogFlowFunc(("[%s] Failed with %Rrc\n", pStream->szName, rc));
-
     return rc;
 }
 
@@ -1932,19 +1925,16 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
  */
 static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, uint32_t *pcfCaptured)
 {
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    /* pcfCaptured is optional. */
-
-    /* Sanity. */
+    AssertPtrNullReturn(pcfCaptured, VERR_INVALID_POINTER);
     Assert(pStream->enmDir == PDMAUDIODIR_IN);
     Assert(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW);
+    AssertPtr(pThis->pHostDrvAudio->pfnStreamGetReadable);
 
     int rc = VINF_SUCCESS;
 
     uint32_t cfCapturedTotal = 0;
-
-    AssertPtr(pThis->pHostDrvAudio->pfnStreamGetReadable);
 
     /* Note: Raw means *audio frames*, not bytes! */
     uint32_t cfReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStream->pvBackend);
@@ -2003,22 +1993,25 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
 static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
                                                PPDMAUDIOSTREAM pStream, uint32_t *pcFramesCaptured)
 {
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    AssertRCReturn(rc, rc);
-
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
+    AssertPtr(pStream);
+    AssertPtrNull(pcFramesCaptured);
     AssertMsg(pStream->enmDir == PDMAUDIODIR_IN,
               ("Stream '%s' is not an input stream and therefore cannot be captured (direction is 0x%x)\n",
                pStream->szName, pStream->enmDir));
-
-    uint32_t cfCaptured = 0;
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, rc);
 
 #ifdef LOG_ENABLED
     char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
 #endif
     Log3Func(("[%s] fStatus=%s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, pStream->fStatus)));
 
+    /*
+     *
+     */
+    uint32_t cfCaptured = 0;
     do
     {
         if (!pThis->pHostDrvAudio)
@@ -2068,18 +2061,18 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
 
     } while (0);
 
+    RTCritSectLeave(&pThis->CritSect);
+
     if (pcFramesCaptured)
         *pcFramesCaptured = cfCaptured;
 
-    RTCritSectLeave(&pThis->CritSect);
-
     if (RT_FAILURE(rc))
         LogFlowFuncLeaveRC(rc);
-
     return rc;
 }
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
+
 /**
  * Duplicates an audio callback.
  *
@@ -2134,15 +2127,16 @@ static void drvAudioCallbackDestroy(PPDMAUDIOCBRECORD pCB)
 static DECLCALLBACK(int) drvAudioRegisterCallbacks(PPDMIAUDIOCONNECTOR pInterface,
                                                    PPDMAUDIOCBRECORD paCallbacks, size_t cCallbacks)
 {
-    AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
     AssertPtrReturn(paCallbacks, VERR_INVALID_POINTER);
     AssertReturn(cCallbacks,     VERR_INVALID_PARAMETER);
-
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
 
+    /*
+     *
+     */
     for (size_t i = 0; i < cCallbacks; i++)
     {
         PPDMAUDIOCBRECORD pCB = drvAudioCallbackDuplicate(&paCallbacks[i]);
@@ -2183,12 +2177,9 @@ static DECLCALLBACK(int) drvAudioRegisterCallbacks(PPDMIAUDIOCONNECTOR pInterfac
     /** @todo Undo allocations on error. */
 
     RTCritSectLeave(&pThis->CritSect);
-
     return rc;
 }
-#endif /* VBOX_WITH_AUDIO_CALLBACKS */
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
 /**
  * @callback_method_impl{FNPDMHOSTAUDIOCALLBACK, Backend callback implementation.}
  *
@@ -2204,11 +2195,14 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns, PDMAUDIOBAC
     RT_NOREF(pvUser, cbUser);
     /* pvUser and cbUser are optional. */
 
+/** @todo r=bird: WTF *is* this?  Seriously?!? */
+
     /* Get the upper driver (PDMIAUDIOCONNECTOR). */
     AssertPtr(pDrvIns->pUpBase);
     PPDMIAUDIOCONNECTOR pInterface = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIOCONNECTOR);
     AssertPtr(pInterface);
-    PDRVAUDIO           pThis      = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
@@ -2232,6 +2226,7 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns, PDMAUDIOBAC
     LogFlowFunc(("Returning %Rrc\n", rc));
     return rc;
 }
+
 #endif /* VBOX_WITH_AUDIO_CALLBACKS */
 
 #ifdef VBOX_WITH_AUDIO_ENUM
@@ -2319,9 +2314,8 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
  */
 static int drvAudioHostInit(PDRVAUDIO pThis)
 {
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-
     LogFlowFuncEnter();
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     AssertPtr(pThis->pHostDrvAudio);
     int rc = pThis->pHostDrvAudio->pfnInit(pThis->pHostDrvAudio);
@@ -2389,7 +2383,6 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-
     LogFlowFunc(("enmCmd=%s\n", PDMAudioStrmCmdGetName(enmCmd)));
 
     int rc2 = RTCritSectEnter(&pThis->CritSect);
@@ -2412,22 +2405,22 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
 static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream,
                                             void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,   VERR_INVALID_POINTER);
     AssertReturn(cbBuf,      VERR_INVALID_PARAMETER);
-    /* pcbRead is optional. */
-
+    AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
     AssertMsg(pStream->enmDir == PDMAUDIODIR_IN,
               ("Stream '%s' is not an input stream and therefore cannot be read from (direction is 0x%x)\n",
                pStream->szName, pStream->enmDir));
-
-    uint32_t cbReadTotal = 0;
-
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
+
+    /*
+     * ...
+     */
+    uint32_t cbReadTotal = 0;
 
     do
     {
@@ -2509,15 +2502,10 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 
     } while (0);
 
-
     RTCritSectLeave(&pThis->CritSect);
 
-    if (RT_SUCCESS(rc))
-    {
-        if (pcbRead)
-            *pcbRead = cbReadTotal;
-    }
-
+    if (RT_SUCCESS(rc) && pcbRead)
+        *pcbRead = cbReadTotal;
     return rc;
 }
 
@@ -2527,21 +2515,20 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAMCFG pCfgHost,
                                               PPDMAUDIOSTREAMCFG pCfgGuest, PPDMAUDIOSTREAM *ppStream)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
     AssertPtrReturn(pCfgHost,   VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgGuest,  VERR_INVALID_POINTER);
     AssertPtrReturn(ppStream,   VERR_INVALID_POINTER);
 
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    AssertRCReturn(rc, rc);
-
     LogFlowFunc(("Host=%s, Guest=%s\n", pCfgHost->szName, pCfgGuest->szName));
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     PDMAudioStrmCfgLog(pCfgHost);
     PDMAudioStrmCfgLog(pCfgGuest);
 #endif
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, rc);
 
     PPDMAUDIOSTREAM pStream = NULL;
 
@@ -2713,7 +2700,6 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, PP
     }
 
     RTCritSectLeave(&pThis->CritSect);
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -2723,12 +2709,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, PP
  */
 static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir, bool fEnable)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    AssertRCReturn(rc, rc);
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
 
     bool *pfEnabled;
     if (enmDir == PDMAUDIODIR_IN)
@@ -2737,6 +2719,9 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
         pfEnabled = &pThis->Out.fEnabled;
     else
         AssertFailedReturn(VERR_INVALID_PARAMETER);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, rc);
 
     if (fEnable != *pfEnabled)
     {
@@ -2789,7 +2774,6 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
     }
 
     RTCritSectLeave(&pThis->CritSect);
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -2799,10 +2783,8 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
  */
 static DECLCALLBACK(bool) drvAudioIsEnabled(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir)
 {
-    AssertPtrReturn(pInterface, false);
-
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, false);
 
@@ -2815,7 +2797,6 @@ static DECLCALLBACK(bool) drvAudioIsEnabled(PPDMIAUDIOCONNECTOR pInterface, PDMA
         AssertFailedStmt(fEnabled = false);
 
     RTCritSectLeave(&pThis->CritSect);
-
     return fEnabled;
 }
 
@@ -2824,11 +2805,9 @@ static DECLCALLBACK(bool) drvAudioIsEnabled(PPDMIAUDIOCONNECTOR pInterface, PDMA
  */
 static DECLCALLBACK(int) drvAudioGetConfig(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOBACKENDCFG pCfg)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,       VERR_INVALID_POINTER);
-
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
+    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
 
@@ -2843,7 +2822,6 @@ static DECLCALLBACK(int) drvAudioGetConfig(PPDMIAUDIOCONNECTOR pInterface, PPDMA
         rc = VERR_PDM_NO_ATTACHED_DRIVER;
 
     RTCritSectLeave(&pThis->CritSect);
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -2853,10 +2831,8 @@ static DECLCALLBACK(int) drvAudioGetConfig(PPDMIAUDIOCONNECTOR pInterface, PPDMA
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioGetStatus(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir)
 {
-    AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
-
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, PDMAUDIOBACKENDSTS_UNKNOWN);
 
@@ -2872,7 +2848,6 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioGetStatus(PPDMIAUDIOCONNECTOR pI
         fBackendStatus = PDMAUDIOBACKENDSTS_NOT_ATTACHED;
 
     RTCritSectLeave(&pThis->CritSect);
-
     LogFlowFunc(("LEAVE - %#x\n", fBackendStatus));
     return fBackendStatus;
 }
@@ -2882,16 +2857,16 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioGetStatus(PPDMIAUDIOCONNECTOR pI
  */
 static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
-    AssertPtrReturn(pInterface, 0);
-    AssertPtrReturn(pStream,    0);
-
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
+    AssertPtrReturn(pStream, 0);
+    AssertMsg(pStream->enmDir == PDMAUDIODIR_IN, ("Can't read from a non-input stream\n"));
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, 0);
 
-    AssertMsg(pStream->enmDir == PDMAUDIODIR_IN, ("Can't read from a non-input stream\n"));
-
+    /*
+     * ...
+     */
     uint32_t cbReadable = 0;
 
     /* All input streams for this driver disabled? See @bugref{9882}. */
@@ -2941,12 +2916,9 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
             cbReadable = PDMAudioPropsFloorBytesToFrame(&pStream->Guest.Cfg.Props, cbReadable);
     }
 
+    RTCritSectLeave(&pThis->CritSect);
     Log3Func(("[%s] cbReadable=%RU32 (%RU64ms)\n",
               pStream->szName, cbReadable, PDMAudioPropsBytesToMilli(&pStream->Host.Cfg.Props, cbReadable)));
-
-    RTCritSectLeave(&pThis->CritSect);
-
-    /* Return bytes instead of audio frames. */
     return cbReadable;
 }
 
@@ -2955,16 +2927,16 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
  */
 static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
-    AssertPtrReturn(pInterface, 0);
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
     AssertPtrReturn(pStream,    0);
-
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
+    AssertMsg(pStream->enmDir == PDMAUDIODIR_OUT, ("Can't write to a non-output stream\n"));
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, 0);
 
-    AssertMsg(pStream->enmDir == PDMAUDIODIR_OUT, ("Can't write to a non-output stream\n"));
-
+    /*
+     * ...
+     */
     uint32_t cbWritable = 0;
 
     /* Note: We don't propage the backend stream's status to the outside -- it's the job of this
@@ -2977,11 +2949,9 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
         cbWritable = PDMAudioPropsFloorBytesToFrame(&pStream->Host.Cfg.Props, cbWritable);
     }
 
+    RTCritSectLeave(&pThis->CritSect);
     Log3Func(("[%s] cbWritable=%RU32 (%RU64ms)\n",
               pStream->szName, cbWritable, PDMAudioPropsBytesToMilli(&pStream->Host.Cfg.Props, cbWritable)));
-
-    RTCritSectLeave(&pThis->CritSect);
-
     return cbWritable;
 }
 
@@ -2990,12 +2960,11 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
  */
 static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
-    AssertPtrReturn(pInterface, false);
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
 
     if (!pStream)
         return PDMAUDIOSTREAMSTS_FLAGS_NONE;
-
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, PDMAUDIOSTREAMSTS_FLAGS_NONE);
@@ -3005,13 +2974,11 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECT
 
     PDMAUDIOSTREAMSTS fStrmStatus = pStream->fStatus;
 
+    RTCritSectLeave(&pThis->CritSect);
 #ifdef LOG_ENABLED
     char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
 #endif
     Log3Func(("[%s] %s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, fStrmStatus)));
-
-    RTCritSectLeave(&pThis->CritSect);
-
     return fStrmStatus;
 }
 
@@ -3037,8 +3004,8 @@ static DECLCALLBACK(int) drvAudioStreamSetVolume(PPDMIAUDIOCONNECTOR pInterface,
  */
 static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
+    PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+    AssertPtr(pThis);
 
     if (!pStream)
         return VINF_SUCCESS;
@@ -3092,8 +3059,8 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
  *          - requested configuration (by pCfgReq)
  *          - default value
  */
-static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
-                                               PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream,
+                                               PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -3358,13 +3325,14 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("[%s] cRefs=%RU32\n", pStream->szName, pStream->cRefs));
-
     AssertMsgReturn(pStream->cRefs <= 1,
                     ("Stream '%s' still has %RU32 references held when uninitializing\n", pStream->szName, pStream->cRefs),
                     VERR_WRONG_ORDER);
+    LogFlowFunc(("[%s] cRefs=%RU32\n", pStream->szName, pStream->cRefs));
 
+    /*
+     * ...
+     */
     int rc = drvAudioStreamControlInternal(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
     if (RT_SUCCESS(rc))
         rc = drvAudioStreamDestroyInternalBackend(pThis, pStream);
@@ -3498,17 +3466,15 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvAudioDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
-
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    RT_NOREF(fFlags);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRC(rc);
 
+    LogFunc(("%s (detached %p)\n", pThis->szName, pThis->pHostDrvAudio));
     pThis->pHostDrvAudio = NULL;
-
-    LogFunc(("%s\n", pThis->szName));
 
     RTCritSectLeave(&pThis->CritSect);
 }
