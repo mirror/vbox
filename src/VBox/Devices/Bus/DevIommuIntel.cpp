@@ -341,15 +341,15 @@ static const uint32_t g_au32Rw1cMasks1[] =
 AssertCompile(sizeof(g_au32Rw1cMasks1) == VTD_MMIO_GROUP_1_SIZE);
 
 /** Array of RW masks for all register groups. */
-static const uint8_t *g_pabRwMasks[]   = { (uint8_t *)&g_au32RwMasks0[0], (uint8_t *)&g_au32RwMasks1[0] };
+static const uint8_t *g_apbRwMasks[]   = { (uint8_t *)&g_au32RwMasks0[0], (uint8_t *)&g_au32RwMasks1[0] };
 
 /** Array of RW1C masks for all register groups. */
-static const uint8_t *g_pabRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uint8_t *)&g_au32Rw1cMasks1[0] };
+static const uint8_t *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uint8_t *)&g_au32Rw1cMasks1[0] };
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-static uint8_t * iommuIntelRegGetGroup(PIOMMU pThis, uint16_t offReg, uint8_t cbReg, uint8_t *pIdxGroup)
+DECLINLINE(uint8_t *) iommuIntelRegGetGroup(PIOMMU pThis, uint16_t offReg, uint8_t cbReg, uint8_t *pIdxGroup)
 {
     AssertCompile(VTD_MMIO_GROUP_0_OFF_FIRST == 0);
     AssertMsg(   offReg + cbReg <= VTD_MMIO_GROUP_0_OFF_END
@@ -384,8 +384,8 @@ DECLINLINE(void) iommuIntelRegReadRaw64(PIOMMU pThis, uint16_t offReg, uint64_t 
 {
     uint8_t idxGroup;
     uint8_t const *pabRegs      = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint64_t), &idxGroup);
-    uint8_t const *pabRwMasks   = g_pabRwMasks[idxGroup];
-    uint8_t const *pabRw1cMasks = g_pabRw1cMasks[idxGroup];
+    uint8_t const *pabRwMasks   = g_apbRwMasks[idxGroup];
+    uint8_t const *pabRw1cMasks = g_apbRw1cMasks[idxGroup];
     *puReg      = *(uint64_t *)(pabRegs      + offReg);
     *pfRwMask   = *(uint64_t *)(pabRwMasks   + offReg);
     *pfRw1cMask = *(uint64_t *)(pabRw1cMasks + offReg);
@@ -396,8 +396,8 @@ DECLINLINE(void) iommuIntelRegReadRaw32(PIOMMU pThis, uint16_t offReg, uint32_t 
 {
     uint8_t idxGroup;
     uint8_t const *pabRegs      = iommuIntelRegGetGroup(pThis, offReg, sizeof(uint32_t), &idxGroup);
-    uint8_t const *pabRwMasks   = g_pabRwMasks[idxGroup];
-    uint8_t const *pabRw1cMasks = g_pabRw1cMasks[idxGroup];
+    uint8_t const *pabRwMasks   = g_apbRwMasks[idxGroup];
+    uint8_t const *pabRw1cMasks = g_apbRw1cMasks[idxGroup];
     *puReg      = *(uint32_t *)(pabRegs      + offReg);
     *pfRwMask   = *(uint32_t *)(pabRwMasks   + offReg);
     *pfRw1cMask = *(uint32_t *)(pabRw1cMasks + offReg);
@@ -451,7 +451,7 @@ static uint64_t iommuIntelRegRead64(PIOMMU pThis, uint16_t offReg)
 }
 
 
-static uint64_t iommuIntelRegRead32(PIOMMU pThis, uint16_t offReg)
+static uint32_t iommuIntelRegRead32(PIOMMU pThis, uint16_t offReg)
 {
     uint32_t uCurReg;
     uint32_t fRwMask;
