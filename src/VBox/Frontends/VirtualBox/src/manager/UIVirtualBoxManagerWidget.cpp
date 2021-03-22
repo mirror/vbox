@@ -921,8 +921,8 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 }
                 case UIToolType_VMActivity:
                 {
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Performance_S_Export));
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Performance_S_ToVMActivityOverview));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Activity_S_Export));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Activity_S_ToVMActivityOverview));
                     m_pToolBar->addSeparator();
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));

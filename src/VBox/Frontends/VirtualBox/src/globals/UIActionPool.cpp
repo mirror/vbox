@@ -2201,15 +2201,15 @@ protected:
     }
 };
 
-/** Menu action extension, used as 'Performance' menu class. */
-class UIActionMenuSelectorPerformance : public UIActionMenu
+/** Menu action extension, used as 'Activity' menu class. */
+class UIActionMenuSelectorActivity : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorPerformance(UIActionPool *pParent)
+    UIActionMenuSelectorActivity(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -2224,19 +2224,19 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Performance"));
+        setName(QApplication::translate("UIActionPool", "&Activity"));
     }
 };
 
 /** Simple action extension, used as 'Perform Export' action class. */
-class UIActionMenuSelectorPerformancePerformExport : public UIActionSimple
+class UIActionMenuSelectorActivityPerformExport : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorPerformancePerformExport(UIActionPool *pParent)
+    UIActionMenuSelectorActivityPerformExport(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/performance_monitor_export_32px.png", ":/performance_monitor_export_16px.png",
                          ":/performance_monitor_export_disabled_32px.png", ":/performance_monitor_export_disabled_16px.png")
@@ -2264,14 +2264,14 @@ protected:
 };
 
 /** Simple action extension, used as 'To VM Activity Oveview' action class. */
-class UIActionMenuSelectorPerformanceToVMActivityOverview : public UIActionSimple
+class UIActionMenuSelectorActivityToVMActivityOverview : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorPerformanceToVMActivityOverview(UIActionPool *pParent)
+    UIActionMenuSelectorActivityToVMActivityOverview(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/resources_monitor_24px.png", ":/resource_monitor_16px.png",
                          ":/resource_monitor_disabled_24px.png", ":/resource_monitor_disabled_16px.png")
@@ -2541,9 +2541,9 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_Log_S_Save] = new UIActionMenuSelectorLogPerformSave(this);
 
     /* Create 'Performance Monitor' actions: */
-    m_pool[UIActionIndex_M_Performance] = new UIActionMenuSelectorPerformance(this);
-    m_pool[UIActionIndex_M_Performance_S_Export] = new UIActionMenuSelectorPerformancePerformExport(this);
-    m_pool[UIActionIndex_M_Performance_S_ToVMActivityOverview] = new UIActionMenuSelectorPerformanceToVMActivityOverview(this);
+    m_pool[UIActionIndex_M_Activity] = new UIActionMenuSelectorActivity(this);
+    m_pool[UIActionIndex_M_Activity_S_Export] = new UIActionMenuSelectorActivityPerformExport(this);
+    m_pool[UIActionIndex_M_Activity_S_ToVMActivityOverview] = new UIActionMenuSelectorActivityToVMActivityOverview(this);
 
     /* Create 'File Manager' actions: */
     m_pool[UIActionIndex_M_FileManager] = new UIActionMenuFileManager(this);
@@ -2588,7 +2588,7 @@ void UIActionPool::preparePool()
     m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
     m_menuUpdateHandlers[UIActionIndex_M_LogWindow].ptf = &UIActionPool::updateMenuLogViewerWindow;
     m_menuUpdateHandlers[UIActionIndex_M_Log].ptf = &UIActionPool::updateMenuLogViewer;
-    m_menuUpdateHandlers[UIActionIndex_M_Performance].ptf = &UIActionPool::updateMenuVMActivityMonitor;
+    m_menuUpdateHandlers[UIActionIndex_M_Activity].ptf = &UIActionPool::updateMenuVMActivityMonitor;
     m_menuUpdateHandlers[UIActionIndex_M_FileManager].ptf = &UIActionPool::updateMenuFileManager;
 
     /* Invalidate all known menus: */
@@ -2967,17 +2967,17 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
 void UIActionPool::updateMenuVMActivityMonitor()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndex_M_Performance)->menu();
+    UIMenu *pMenu = action(UIActionIndex_M_Activity)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Export' action: */
-    pMenu->addAction(action(UIActionIndex_M_Performance_S_Export));
-    pMenu->addAction(action(UIActionIndex_M_Performance_S_ToVMActivityOverview));
+    pMenu->addAction(action(UIActionIndex_M_Activity_S_Export));
+    pMenu->addAction(action(UIActionIndex_M_Activity_S_ToVMActivityOverview));
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndex_M_Performance);
+    m_invalidations.remove(UIActionIndex_M_Activity);
 }
 
 void UIActionPool::updateMenuFileManager()

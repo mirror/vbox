@@ -3124,7 +3124,7 @@ void UIVirtualBoxManager::updateActionsVisibility()
     /* Determine whether Performance menu should be visible: */
     const bool fPerformanceMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
                                        m_pWidget->currentMachineTool() == UIToolType_VMActivity;
-    actionPool()->action(UIActionIndex_M_Performance)->setVisible(fPerformanceMenuShown);
+    actionPool()->action(UIActionIndex_M_Activity)->setVisible(fPerformanceMenuShown);
 
     /* Hide action shortcuts: */
     if (!fGlobalMenuShown)
@@ -3298,8 +3298,8 @@ void UIVirtualBoxManager::updateActionsAppearance()
             }
             case UIToolType_VMActivity:
             {
-                actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_Performance)->setChecked(true);
-                actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_Performance)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_Activity)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_Activity)->setChecked(true);
                 break;
             }
             default:

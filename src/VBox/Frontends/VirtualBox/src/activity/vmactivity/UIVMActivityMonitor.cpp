@@ -1150,12 +1150,12 @@ void UIVMActivityMonitor::prepareToolBar()
 void UIVMActivityMonitor::prepareActions()
 {
     QAction *pExportAction =
-        m_pActionPool->action(UIActionIndex_M_Performance_S_Export);
+        m_pActionPool->action(UIActionIndex_M_Activity_S_Export);
     if (pExportAction)
         connect(pExportAction, &QAction::triggered, this, &UIVMActivityMonitor::sltExportMetricsToFile);
 
     QAction *pToResourcesAction =
-        m_pActionPool->action(UIActionIndex_M_Performance_S_ToVMActivityOverview);
+        m_pActionPool->action(UIActionIndex_M_Activity_S_ToVMActivityOverview);
     if (pToResourcesAction)
         connect(pToResourcesAction, &QAction::triggered, this, &UIVMActivityMonitor::sigSwitchToResourcesPane);
 }

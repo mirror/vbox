@@ -98,9 +98,9 @@ enum UIActionIndex
     UIActionIndex_M_Log_S_Save,
 
     /* 'Performance' menu actions: */
-    UIActionIndex_M_Performance,
-    UIActionIndex_M_Performance_S_Export,
-    UIActionIndex_M_Performance_S_ToVMActivityOverview,
+    UIActionIndex_M_Activity,
+    UIActionIndex_M_Activity_S_Export,
+    UIActionIndex_M_Activity_S_ToVMActivityOverview,
 
     /* File Manager actions: */
     UIActionIndex_M_FileManager,
