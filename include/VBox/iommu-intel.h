@@ -38,8 +38,7 @@
  * In accordance with the AMD spec.
  * @{
  */
-#define VTD_MMIO_GROUP_0_OFF_FIRST                              0x000
-#define VTD_MMIO_OFF_VER_REG                                    VTD_MMIO_GROUP_0_OFF_FIRST  /**< Version. */
+#define VTD_MMIO_OFF_VER_REG                                    0x000  /**< Version. */
 #define VTD_MMIO_OFF_CAP_REG                                    0x008  /**< Capability. */
 #define VTD_MMIO_OFF_ECAP_REG                                   0x010  /**< Extended Capability. */
 #define VTD_MMIO_OFF_GCMD_REG                                   0x018  /**< Global Command. */
@@ -117,18 +116,12 @@
 #define VTD_MMIO_OFF_MTRR_PHYSMASK8_REG                         0x208  /**< Variable-range MTRR Mask 8. */
 #define VTD_MMIO_OFF_MTRR_PHYSBASE9_REG                         0x210  /**< Variable-range MTRR Base 9. */
 #define VTD_MMIO_OFF_MTRR_PHYSMASK9_REG                         0x218  /**< Variable-range MTRR Mask 9. */
-#define VTD_MMIO_GROUP_0_OFF_LAST                               VTD_MMIO_OFF_MTRR_PHYSMASK9_REG
-#define VTD_MMIO_GROUP_0_OFF_END                                (VTD_MMIO_GROUP_0_OFF_LAST + 8 /* sizeof MTRR_PHYSMASK9_REG */)
 
-#define VTD_MMIO_GROUP_1_OFF_FIRST                              0xe00
-#define VTD_MMIO_OFF_VCCAP_REG                                  VTD_MMIO_GROUP_1_OFF_FIRST  /**< Virtual Command Capability. */
+#define VTD_MMIO_OFF_VCCAP_REG                                  0xe00  /**< Virtual Command Capability. */
 #define VTD_MMIO_OFF_VCMD_REG                                   0xe10  /**< Virtual Command. */
+#define VTD_MMIO_OFF_VCMDRSVD_REG                               0xe18  /**< Reserved for future for Virtual Command. */
 #define VTD_MMIO_OFF_VCRSP_REG                                  0xe20  /**< Virtual Command Response. */
-#define VTD_MMIO_GROUP_1_OFF_LAST                               VTD_MMIO_OFF_VCRSP_REG
-#define VTD_MMIO_GROUP_1_OFF_END                                (VTD_MMIO_GROUP_1_OFF_LAST + 8 /* sizeof VCRSP_REG */)
-
-#define VTD_MMIO_GROUP_0_SIZE                                   (VTD_MMIO_GROUP_0_OFF_END - VTD_MMIO_GROUP_0_OFF_FIRST) /*bytes*/
-#define VTD_MMIO_GROUP_1_SIZE                                   (VTD_MMIO_GROUP_1_OFF_END - VTD_MMIO_GROUP_1_OFF_FIRST) /*bytes*/
+#define VTD_MMIO_OFF_VCRSPRSVD_REG                              0xe28  /**< Reserved for future for Virtual Command Response. */
 /** @} */
 
 
@@ -787,7 +780,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_CAP_REG_, UINT64_C(0), UINT64_MAX,
                              MAMV, DWD, DRD, FL1GP, RSVD_58_57, PI, FL5LP, RSVD_63_61));
 
 /** RW: Read/write mask. */
-#define VTD_CAP_REG_RW_MASK                                     UINT64_C(0x0000000000000000)
+#define VTD_CAP_REG_RW_MASK                                     UINT64_C(0)
 /** @} */
 
 
@@ -901,7 +894,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_ECAP_REG_, UINT64_C(0), UINT64_MAX,
                              RSVD_63_50));
 
 /** RW: Read/write mask. */
-#define VTD_ECAP_REG_RW_MASK                                    UINT64_C(0x0000000000000000)
+#define VTD_ECAP_REG_RW_MASK                                    UINT64_C(0)
 /** @} */
 
 
@@ -1071,6 +1064,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_CCMD_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_IOTLB_REG_IVT_MASK                               UINT64_C(0x8000000000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IOTLB_REG_, UINT64_C(0), UINT64_MAX,
                             (RSVD_31_0, DID, DW, DR, RSVD_56_50, IAIG, RSVD_59, IIRG, RSVD_62, IVT));
+
+/** RW: Read/write mask. */
+#define VTD_IOTLB_REG_RW_MASK                                   (  VTD_BF_IOTLB_REG_DID_MASK | VTD_BF_IOTLB_REG_DW_MASK \
+                                                                 | VTD_BF_IOTLB_REG_DR_MASK | VTD_BF_IOTLB_REG_IIRG_MASK \
+                                                                 | VTD_BF_IOTLB_REG_IVT_MASK)
 /** @} */
 
 
@@ -1090,6 +1088,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IOTLB_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_IVA_REG_ADDR_MASK                                UINT64_C(0xfffffffffffff000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IVA_REG_, UINT64_C(0), UINT64_MAX,
                             (AM, IH, RSVD_11_7, ADDR));
+
+/** RW: Read/write mask. */
+#define VTD_IVA_REG_RW_MASK                                     (  VTD_BF_IVA_REG_AM_MASK | VTD_BF_IVA_REG_IH_MASK \
+                                                                 | VTD_BF_IVA_REG_ADDR_MASK)
 /** @} */
 
 
@@ -1247,6 +1249,13 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_FRCD_REG_, UINT64_C(0), UINT64_MAX,
 #define VTD_BF_1_FRCD_REG_F_MASK                                UINT64_C(0x8000000000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_FRCD_REG_, UINT64_C(0), UINT64_MAX,
                             (SID, RSVD_27_16, T2, PRIV, EXE, PP, FR, PV, AT, T1, F));
+
+/** RW: Read/write mask. */
+#define VTD_FRCD_REG_LO_RW_MASK                                 UINT64_C(0)
+#define VTD_FRCD_REG_HI_RW_MASK                                 VTD_BF_1_FRCD_REG_F_MASK
+/** RW1C: Read-only-status, Write-1-to-clear status mask. */
+#define VTD_FRCD_REG_LO_RW1C_MASK                               UINT64_C(0)
+#define VTD_FRCD_REG_HI_RW1C_MASK                               VTD_BF_1_FRCD_REG_F_MASK
 /** @} */
 
 

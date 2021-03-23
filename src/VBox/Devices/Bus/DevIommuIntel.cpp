@@ -45,6 +45,51 @@
  * used as it asserts for correctness when compiling on certain compilers). */
 #define VTD_HI_U32(a)       (uint32_t)((a) >> 32)
 
+/** @def VTD_ASSERT_MMIO_ACCESS
+ * Asserts MMIO access' offset and size are valid or returns appropriate error
+ * code suitable for returning from MMIO access handlers. */
+#define VTD_ASSERT_MMIO_ACCESS_RET(a_off, a_cb) \
+    do { \
+         AssertReturn(!(off & 3), VINF_IOM_MMIO_UNUSED_FF); \
+         AssertReturn(cb == 4 || cb == 8, VINF_IOM_MMIO_UNUSED_FF); \
+    } while (0);
+
+/** @def VTD_IS_MMIO_OFF_VALID
+ * Returns @c true if the MMIO offset is valid, or @c false otherwise. */
+#define VTD_IS_MMIO_OFF_VALID(a_off)                (   (a_off) < VTD_MMIO_GROUP_0_OFF_END \
+                                                     || (a_off) - VTD_MMIO_GROUP_1_OFF_FIRST < VTD_MMIO_GROUP_1_SIZE)
+
+/** The number of fault recording registers our implementation supports.
+ *  Normal guest operation shouldn't trigger faults anyway, so we only support the
+ *  minimum number of registers (which is 1).
+ *
+ *  See Intel VT-d spec. 10.4.2 "Capability Register" (CAP_REG::NFR). */
+#define VTD_FRCD_REG_COUNT                          UINT32_C(1)
+
+/** Offset of first register in group 0. */
+#define VTD_MMIO_GROUP_0_OFF_FIRST                  VTD_MMIO_OFF_VER_REG
+/** Offset of last register in group 0 (inclusive). */
+#define VTD_MMIO_GROUP_0_OFF_LAST                   VTD_MMIO_OFF_MTRR_PHYSMASK9_REG
+/** Last valid offset in group 0 (exclusive). */
+#define VTD_MMIO_GROUP_0_OFF_END                    (VTD_MMIO_GROUP_0_OFF_LAST + 8 /* sizeof MTRR_PHYSMASK9_REG */)
+/** Size of the group 0 (in bytes). */
+#define VTD_MMIO_GROUP_0_SIZE                       (VTD_MMIO_GROUP_0_OFF_END - VTD_MMIO_GROUP_0_OFF_FIRST)
+
+#define VTD_MMIO_OFF_IVA_REG                        0xe40   /**< Implementation-specific MMIO offset of IVA_REG. */
+#define VTD_MMIO_OFF_IOTLB_REG                      0xe48   /**< Implementation-specific MMIO offset of IOTLB_REG. */
+#define VTD_MMIO_OFF_FRCD_LO_REG                    0xe60   /**< Implementation-specific MMIO offset of FRCD_LO_REG. */
+#define VTD_MMIO_OFF_FRCD_HI_REG                    0xe68   /**< Implementation-specific MMIO offset of FRCD_HI_REG. */
+AssertCompile(!(VTD_MMIO_OFF_FRCD_LO_REG & 0xf));
+
+/** Offset of first register in group 1. */
+#define VTD_MMIO_GROUP_1_OFF_FIRST                  VTD_MMIO_OFF_VCCAP_REG
+/** Offset of last register in group 1 (inclusive). */
+#define VTD_MMIO_GROUP_1_OFF_LAST                   VTD_MMIO_OFF_FRCD_LO_REG + 8 * VTD_FRCD_REG_COUNT
+/** Last valid offset in group 1 (exclusive). */
+#define VTD_MMIO_GROUP_1_OFF_END                    (VTD_MMIO_GROUP_1_OFF_LAST + 8 /* sizeof FRCD_HI_REG */)
+/** Size of the group 1 (in bytes). */
+#define VTD_MMIO_GROUP_1_SIZE                       (VTD_MMIO_GROUP_1_OFF_END - VTD_MMIO_GROUP_1_OFF_FIRST)
+
 /** Release log prefix string. */
 #define IOMMU_LOG_PFX                               "Intel-IOMMU"
 
@@ -317,26 +362,45 @@ AssertCompile(sizeof(g_au32Rw1cMasks0) == VTD_MMIO_GROUP_0_SIZE);
  */
 static const uint32_t g_au32RwMasks1[] =
 {
-    /* Offset  Register                  Low                                 High */
-    /* 0xe00   VCCAP_REG             */  VTD_LO_U32(VTD_VCCAP_REG_RW_MASK),  VTD_HI_U32(VTD_VCCAP_REG_RW_MASK),
-    /* 0xe08   Reserved              */  0,                                  0,
-    /* 0xe10   VCMD_REG              */  0,                                  0, /* RO as we don't support VCS. */
-    /* 0xe18   Reserved              */  0,                                  0,
-    /* 0xe20   VCRSP_REG             */  0,                                  0, /* RO as we don't support VCS. */
+    /* Offset  Register                  Low                                    High */
+    /* 0xe00   VCCAP_REG             */  VTD_LO_U32(VTD_VCCAP_REG_RW_MASK),     VTD_HI_U32(VTD_VCCAP_REG_RW_MASK),
+    /* 0xe08   Reserved              */  0,                                     0,
+    /* 0xe10   VCMD_REG              */  0,                                     0, /* RO as we don't support VCS. */
+    /* 0xe18   VCMDRSVD_REG          */  0,                                     0,
+    /* 0xe20   VCRSP_REG             */  0,                                     0, /* RO as we don't support VCS. */
+    /* 0xe28   VCRSPRSVD_REG         */  0,                                     0,
+    /* 0xe30   Reserved              */  0,                                     0,
+    /* 0xe38   Reserved              */  0,                                     0,
+    /* 0xe40   IVA_REG               */  VTD_LO_U32(VTD_IVA_REG_RW_MASK),       VTD_HI_U32(VTD_IVA_REG_RW_MASK),
+    /* 0xe48   IOTLB_REG             */  VTD_LO_U32(VTD_IOTLB_REG_RW_MASK),     VTD_HI_U32(VTD_IOTLB_REG_RW_MASK),
+    /* 0xe50   Reserved              */  0,                                     0,
+    /* 0xe58   Reserved              */  0,                                     0,
+    /* 0xe60   FRCD_REG_LO           */  VTD_LO_U32(VTD_FRCD_REG_LO_RW_MASK),   VTD_HI_U32(VTD_FRCD_REG_LO_RW_MASK),
+    /* 0xe68   FRCD_REG_HI           */  VTD_LO_U32(VTD_FRCD_REG_HI_RW_MASK),   VTD_HI_U32(VTD_FRCD_REG_HI_RW_MASK),
 };
 AssertCompile(sizeof(g_au32RwMasks1) == VTD_MMIO_GROUP_1_SIZE);
+AssertCompile((VTD_MMIO_OFF_FRCD_LO_REG - VTD_MMIO_GROUP_1_OFF_FIRST) + VTD_FRCD_REG_COUNT * 2 * sizeof(uint64_t) );
 
 /**
  * Read-only Status, Write-1-to-clear masks for IOMMU registers (group 1).
  */
 static const uint32_t g_au32Rw1cMasks1[] =
 {
-    /* Offset  Register                  Low  High */
-    /* 0xe00   VCCAP_REG             */  0,   0,
-    /* 0xe08   Reserved              */  0,   0,
-    /* 0xe10   VCMD_REG              */  0,   0,
-    /* 0xe18   Reserved              */  0,   0,
-    /* 0xe20   VCRSP_REG             */  0,   0,
+    /* Offset  Register                  Low                                    High */
+    /* 0xe00   VCCAP_REG             */  0,                                     0,
+    /* 0xe08   Reserved              */  0,                                     0,
+    /* 0xe10   VCMD_REG              */  0,                                     0,
+    /* 0xe18   VCMDRSVD_REG          */  0,                                     0,
+    /* 0xe20   VCRSP_REG             */  0,                                     0,
+    /* 0xe28   VCRSPRSVD_REG         */  0,                                     0,
+    /* 0xe30   Reserved              */  0,                                     0,
+    /* 0xe38   Reserved              */  0,                                     0,
+    /* 0xe40   IVA_REG               */  0,                                     0,
+    /* 0xe48   IOTLB_REG             */  0,                                     0,
+    /* 0xe50   Reserved              */  0,                                     0,
+    /* 0xe58   Reserved              */  0,                                     0,
+    /* 0xe60   FRCD_REG_LO           */  VTD_LO_U32(VTD_FRCD_REG_LO_RW1C_MASK), VTD_HI_U32(VTD_FRCD_REG_LO_RW1C_MASK),
+    /* 0xe68   FRCD_REG_HI           */  VTD_LO_U32(VTD_FRCD_REG_HI_RW1C_MASK), VTD_HI_U32(VTD_FRCD_REG_HI_RW1C_MASK),
 };
 AssertCompile(sizeof(g_au32Rw1cMasks1) == VTD_MMIO_GROUP_1_SIZE);
 
@@ -355,19 +419,21 @@ static const uint8_t *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uin
  * @returns Pointer to the first element of the register group.
  * @param   pThis       The shared IOMMU device state.
  * @param   offReg      The MMIO offset of the register.
- * @param   cbReg       The size of the access being made (for bounds check).
+ * @param   cbReg       The size of the access being made.
  * @param   pIdxGroup   Where to store the index of the register group the register
  *                      belongs to.
  */
 DECLINLINE(uint8_t *) iommuIntelRegGetGroup(PIOMMU pThis, uint16_t offReg, uint8_t cbReg, uint8_t *pIdxGroup)
 {
+    uint16_t const offLast = offReg + cbReg - 1;
+
     AssertCompile(VTD_MMIO_GROUP_0_OFF_FIRST == 0);
-    AssertMsg(   offReg + cbReg <= VTD_MMIO_GROUP_0_OFF_END
-              || (offReg >= VTD_MMIO_GROUP_1_OFF_FIRST && offReg + cbReg <= VTD_MMIO_GROUP_1_OFF_END), ("%#x\n", offReg));
+    AssertMsg(   offLast < VTD_MMIO_GROUP_0_OFF_END
+              || offLast - VTD_MMIO_GROUP_1_OFF_FIRST < VTD_MMIO_GROUP_1_SIZE, ("off=%#x cb=%u\n", offReg, cbReg));
     NOREF(cbReg);
 
     uint8_t *apbRegs[] = { &pThis->abRegs0[0], &pThis->abRegs1[0] };
-    *pIdxGroup = !(offReg < VTD_MMIO_GROUP_0_OFF_END);
+    *pIdxGroup = !(offLast < VTD_MMIO_GROUP_0_OFF_END);
     return apbRegs[*pIdxGroup];
 }
 
@@ -599,8 +665,28 @@ static DECLCALLBACK(int) iommuIntelMsiRemap(PPDMDEVINS pDevIns, uint16_t idDevic
  */
 static DECLCALLBACK(VBOXSTRICTRC) iommuIntelMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    RT_NOREF5(pDevIns, pvUser, off, pv, cb);
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF1(pvUser);
+    VTD_ASSERT_MMIO_ACCESS_RET(off, cb);
+
+    PIOMMU         pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    uint16_t const offReg  = off;
+    uint16_t const offLast = offReg + cb - 1;
+    if (VTD_IS_MMIO_OFF_VALID(offLast))
+    {
+        switch (off)
+        {
+            default:
+            {
+                if (cb == 8)
+                    iommuIntelRegWrite64(pThis, offReg, *(uint64_t *)pv);
+                else
+                    iommuIntelRegWrite32(pThis, offReg, *(uint32_t *)pv);
+                break;
+            }
+        }
+        return VINF_SUCCESS;
+    }
+    return VINF_IOM_MMIO_UNUSED_FF;
 }
 
 
@@ -610,15 +696,12 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuIntelMmioWrite(PPDMDEVINS pDevIns, void *
 static DECLCALLBACK(VBOXSTRICTRC) iommuIntelMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     RT_NOREF1(pvUser);
-
-    AssertReturn(!(off & 3), VINF_IOM_MMIO_UNUSED_FF);
-    AssertReturn(cb == 4 || cb == 8, VINF_IOM_MMIO_UNUSED_FF);
+    VTD_ASSERT_MMIO_ACCESS_RET(off, cb);
 
     PIOMMU         pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     uint16_t const offReg  = off;
     uint16_t const offLast = offReg + cb - 1;
-    if (   offLast < VTD_MMIO_GROUP_0_OFF_END
-        || offLast - VTD_MMIO_GROUP_1_OFF_FIRST < VTD_MMIO_GROUP_1_SIZE)
+    if (VTD_IS_MMIO_OFF_VALID(offLast))
     {
         if (cb == 8)
             *(uint64_t *)pv = iommuIntelRegRead64(pThis, offReg);
