@@ -404,10 +404,10 @@ static const uint32_t g_au32Rw1cMasks1[] =
 };
 AssertCompile(sizeof(g_au32Rw1cMasks1) == VTD_MMIO_GROUP_1_SIZE);
 
-/** Array of RW masks for all register groups. */
+/** Array of RW masks for each register group. */
 static const uint8_t *g_apbRwMasks[]   = { (uint8_t *)&g_au32RwMasks0[0], (uint8_t *)&g_au32RwMasks1[0] };
 
-/** Array of RW1C masks for all register groups. */
+/** Array of RW1C masks for each register group. */
 static const uint8_t *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uint8_t *)&g_au32Rw1cMasks1[0] };
 
 
@@ -828,12 +828,12 @@ const PDMDEVREG g_DeviceIommuIntel =
     /* .szName = */                 "iommu-intel",
     /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_PCI_BUILTIN,
-    /* .cMaxInstances = */          ~0U,
+    /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(IOMMU),
     /* .cbInstanceCC = */           sizeof(IOMMUCC),
     /* .cbInstanceRC = */           sizeof(IOMMURC),
-    /* .cMaxPciDevices = */         1,
+    /* .cMaxPciDevices = */         1,          /** @todo Make this 0 if this isn't a PCI device. */
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "IOMMU (Intel)",
 #if defined(IN_RING3)
