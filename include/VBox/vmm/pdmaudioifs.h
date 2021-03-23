@@ -1227,6 +1227,11 @@ typedef struct PDMAUDIOSTREAMOUT
         STAMCOUNTER     AvgFramesWritten;
         STAMCOUNTER     TotalTimesWritten;
     } Stats;
+    /** Hack alert: Max writable amount reported by the backend.
+     * This is used to aid buffer underrun detection in DrvAudio while playing.
+     * Ideally, the backend should have a method for querying number of buffered
+     * bytes instead.  However this will do for now. */
+    uint32_t            cbBackendMaxWritable;
 } PDMAUDIOSTREAMOUT;
 /** Pointer to the specifics for an audio output stream. */
 typedef PDMAUDIOSTREAMOUT *PPDMAUDIOSTREAMOUT;
@@ -1318,7 +1323,7 @@ typedef struct PDMAUDIOSTREAM
 } PDMAUDIOSTREAM;
 
 /** Magic value for PDMAUDIOSTREAM. */
-#define PDMAUDIOSTREAM_MAGIC    PDM_VERSION_MAKE(0xa0d3, 1, 0)
+#define PDMAUDIOSTREAM_MAGIC    PDM_VERSION_MAKE(0xa0d3, 1, 1)
 
 
 /**

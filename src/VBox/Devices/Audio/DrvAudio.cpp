@@ -182,6 +182,8 @@ typedef struct DRVAUDIO
 #endif
         /** The driver's output confguration (tweakable via CFGM). */
         DRVAUDIOCFG         Cfg;
+        /** Number of times underruns triggered re-(pre-)buffering. */
+        STAMCOUNTER         StatsReBuffering;
     } Out;
 #ifdef VBOX_WITH_STATISTICS
     /** Statistics for the statistics manager (STAM). */
@@ -1610,16 +1612,12 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
     else
         return VERR_AUDIO_STREAM_NOT_READY;
 
-
     /*
-     *
+     * Get number of frames in the mix buffer and do some logging.
      */
-    const uint32_t cFramesLive             = AudioMixBufLive(&pStream->Host.MixBuf);
-    const uint64_t tsDeltaPlayedCapturedNs = RTTimeNanoTS() - pStream->tsLastPlayedCapturedNs;
-    const uint32_t cFramesPassedReal       = PDMAudioPropsNanoToFrames(&pStream->Host.Cfg.Props, tsDeltaPlayedCapturedNs);
-
-    Log3Func(("[%s] Last played %'RU64 ns ago; filled with %u frm / %RU64 ms / %RU8%% total%s\n",
-              pStream->szName, tsDeltaPlayedCapturedNs, cFramesLive,
+    uint32_t const cFramesLive = AudioMixBufLive(&pStream->Host.MixBuf);
+    Log3Func(("[%s] Last played %'RI64 ns ago; filled with %u frm / %RU64 ms / %RU8%% total%s\n",
+              pStream->szName, pStream->fThresholdReached ? RTTimeNanoTS() - pStream->tsLastPlayedCapturedNs : -1, cFramesLive,
               PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesLive),
               (100 * cFramesLive) / AudioMixBufSize(&pStream->Host.MixBuf), pStream->fThresholdReached ? "" : ", pre-buffering"));
 
@@ -1631,13 +1629,28 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
     { /* likely */ }
     else
     {
-        LogRel2(("Audio: Buffer underrun for stream '%s' occurred (%RU64ms passed)\n",
-                 pStream->szName, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesPassedReal)));
-
-        if (pStream->Host.Cfg.Backend.cFramesPreBuffering) /* Any pre-buffering configured? */
+        /* It's not an underrun if the host audio driver still has an reasonable amount
+           buffered.  We don't have a direct way of querying that, so instead we'll use
+           some heuristics based on number of writable bytes now compared to when
+           prebuffering ended the first time around. */
+        uint32_t cbBuffered = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend);
+        if (cbBuffered < pStream->Out.cbBackendMaxWritable)
+            cbBuffered = pStream->Out.cbBackendMaxWritable - cbBuffered;
+        else
+            cbBuffered = 0;
+        uint32_t cbMinBuf = PDMAudioPropsMilliToBytes(&pStream->Host.Cfg.Props, pStream->Guest.Cfg.Device.cMsSchedulingHint * 2);
+        Log3Func(("Potential underrun: cbBuffered=%#x vs cbMinBuf=%#x\n", cbBuffered, cbMinBuf));
+        if (cbBuffered < cbMinBuf)
         {
-            /* Enter pre-buffering stage again. */
-            pStream->fThresholdReached = false;
+            LogRel2(("Audio: Buffer underrun for stream '%s' (%RI64 ms since last call, %u buffered)\n",
+                     pStream->szName, RTTimeNanoTS() - pStream->tsLastPlayedCapturedNs, cbBuffered));
+
+            /* Re-enter the pre-buffering stage again if enabled. */
+            if (pStream->Host.Cfg.Backend.cFramesPreBuffering > 0)
+            {
+                pStream->fThresholdReached = false;
+                STAM_REL_COUNTER_INC(&pThis->Out.StatsReBuffering);
+            }
         }
     }
 
@@ -1646,9 +1659,13 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
      *
      * This is straight forward, the backend
      */
+    uint32_t cbWritable;
     bool fJustStarted = false;
     if (pStream->fThresholdReached)
-    { /* not-prebuffering, likely after a while at least */ }
+    {
+        /* not-prebuffering, likely after a while at least */
+        cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend);
+    }
     else
     {
         /*
@@ -1658,7 +1675,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
         if (cFramesLive >= pStream->Host.Cfg.Backend.cFramesPreBuffering)
         {
             LogRel2(("Audio: Stream '%s' buffering complete\n", pStream->szName));
-            Log3Func(("[%s] Dbg: Buffering complete\n", pStream->szName));
+            Log3Func(("[%s] Dbg: Buffering complete!\n", pStream->szName));
             pStream->fThresholdReached = fJustStarted = true;
         }
         /*
@@ -1673,7 +1690,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
                  && (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE))
         {
             LogRel2(("Audio: Stream '%s' buffering complete (short sound)\n", pStream->szName));
-            Log3Func(("[%s] Dbg: Buffering complete (short)\n", pStream->szName));
+            Log3Func(("[%s] Dbg: Buffering complete (short)!\n", pStream->szName));
             pStream->fThresholdReached = fJustStarted = true;
         }
         /*
@@ -1685,13 +1702,17 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
                      pStream->szName, (100 * cFramesLive) / pStream->Host.Cfg.Backend.cFramesPreBuffering));
             return VINF_SUCCESS;
         }
+
+        /* Hack alert! This is for the underrun detection.  */
+        cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend);
+        if (cbWritable > pStream->Out.cbBackendMaxWritable)
+            pStream->Out.cbBackendMaxWritable = cbWritable;
     }
 
     /*
      * Figure out how much to play now.
      * Easy, as much as the host audio backend will allow us to.
      */
-    uint32_t cbWritable      = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend);
     uint32_t cFramesWritable = PDMAUDIOPCMPROPS_B2F(&pStream->Host.Cfg.Props, cbWritable);
     uint32_t cFramesToPlay   = cFramesWritable;
     if (cFramesToPlay > cFramesLive) /* Don't try to play more than available, we don't want to block. */
@@ -1747,9 +1768,8 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
         pStream->tsLastPlayedCapturedNs = RTTimeNanoTS();
     }
 
-    Log3Func(("[%s] Passed=%RU64 ms (%RU32 fr) Live=%RU32 fr (%RU64 ms) Period=%RU32 fr (%RU64 ms) Writable=%RU32 fr (%RU64 ms) -> ToPlay=%RU32 fr (%RU64 ms) Played=%RU32 fr (%RU64 ms)%s\n",
+    Log3Func(("[%s] Live=%RU32 fr (%RU64 ms) Period=%RU32 fr (%RU64 ms) Writable=%RU32 fr (%RU64 ms) -> ToPlay=%RU32 fr (%RU64 ms) Played=%RU32 fr (%RU64 ms)%s\n",
               pStream->szName,
-              PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesPassedReal), cFramesPassedReal,
               cFramesLive, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesLive),
               pStream->Host.Cfg.Backend.cFramesPeriod,
               PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, pStream->Host.Cfg.Backend.cFramesPeriod),
@@ -3838,6 +3858,9 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     /*
      * Statistics.
      */
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Out.StatsReBuffering, "OutputReBuffering",
+                              STAMUNIT_COUNT, "Number of times the output stream was re-buffered after starting.");
+
 #ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalStreamsActive,   "TotalStreamsActive",
                               STAMUNIT_COUNT, "Total active audio streams.");
