@@ -1689,29 +1689,12 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
 
     /*
      * Figure out how much to play now.
-     *
-     * The algorithm here is a litte dubious.  The first time we get here after
-     * pre-buffering is complete, we write one host DMA period wort of data to
-     * the host audio driver.  Then we refuse to write any more till one guest
-     * device DMA period has elapsed, but when then we try to write as much
-     * as we can to the host device driver.
+     * Easy, as much as the host audio backend will allow us to.
      */
-    uint32_t cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend);
+    uint32_t cbWritable      = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend);
     uint32_t cFramesWritable = PDMAUDIOPCMPROPS_B2F(&pStream->Host.Cfg.Props, cbWritable);
-    uint32_t cFramesToPlay;
-    if (!fJustStarted)
-        cFramesToPlay = 0;
-    else
-        cFramesToPlay = RT_MIN(cFramesWritable, pStream->Host.Cfg.Backend.cFramesPeriod);
-    if (!cFramesToPlay)
-    {
-        /* Did we reach/pass (in real time) the device scheduling slot?
-         * Play as much as we can write to the backend then. */
-        if (cFramesPassedReal >= PDMAudioPropsMilliToFrames(&pStream->Host.Cfg.Props, pStream->Guest.Cfg.Device.cMsSchedulingHint))
-            cFramesToPlay = cFramesWritable;
-    }
-
-    if (cFramesToPlay > cFramesLive) /* Don't try to play more than available. */
+    uint32_t cFramesToPlay   = cFramesWritable;
+    if (cFramesToPlay > cFramesLive) /* Don't try to play more than available, we don't want to block. */
         cFramesToPlay = cFramesLive;
 
     Log3Func(("[%s] Playing %RU32 frames (%RU64 ms), now filled with %RU64 ms -- %RU8%%\n",
@@ -1764,9 +1747,8 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
         pStream->tsLastPlayedCapturedNs = RTTimeNanoTS();
     }
 
-    Log3Func(("[%s] SchedHint=%RU32 ms (%RU32 fr) Passed=%RU64 ms (%RU32 fr) Live=%RU32 fr (%RU64 ms) Period=%RU32 fr (%RU64 ms) Writable=%RU32 fr (%RU64 ms) -> ToPlay=%RU32 fr (%RU64 ms) Played=%RU32 fr (%RU64 ms)%s\n",
-              pStream->szName, pStream->Guest.Cfg.Device.cMsSchedulingHint,
-              PDMAudioPropsMilliToFrames(&pStream->Host.Cfg.Props, pStream->Guest.Cfg.Device.cMsSchedulingHint),
+    Log3Func(("[%s] Passed=%RU64 ms (%RU32 fr) Live=%RU32 fr (%RU64 ms) Period=%RU32 fr (%RU64 ms) Writable=%RU32 fr (%RU64 ms) -> ToPlay=%RU32 fr (%RU64 ms) Played=%RU32 fr (%RU64 ms)%s\n",
+              pStream->szName,
               PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesPassedReal), cFramesPassedReal,
               cFramesLive, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesLive),
               pStream->Host.Cfg.Backend.cFramesPeriod,
@@ -1775,6 +1757,7 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
               cFramesToPlay, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesToPlay),
               *pcFramesPlayed, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, *pcFramesPlayed),
               fJustStarted ? "just-started" : ""));
+    RT_NOREF(fJustStarted);
 
     if (RT_SUCCESS(rc))
     {
@@ -1785,9 +1768,6 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
         STAM_COUNTER_ADD(&pStream->Out.Stats.TotalFramesPlayed, *pcFramesPlayed);
         STAM_COUNTER_INC(&pStream->Out.Stats.TotalTimesPlayed);
     }
-
-    Log3Func(("[%s] End fStatus=%s, cFramesLive=%RU32, cfPlayedTotal=%RU32, rc=%Rrc\n", pStream->szName,
-              dbgAudioStreamStatusToStr(szStreamSts, fStrmStatus), AudioMixBufLive(&pStream->Host.MixBuf), *pcFramesPlayed, rc));
     return rc;
 }
 
