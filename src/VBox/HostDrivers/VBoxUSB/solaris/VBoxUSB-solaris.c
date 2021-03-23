@@ -482,6 +482,8 @@ LOCAL int vboxUsbSolarisQuerySymbols(void)
 
         RTR0DbgKrnlInfoRelease(hKrnlDbgInfo);
     }
+
+    return rc;
 }
 
 
