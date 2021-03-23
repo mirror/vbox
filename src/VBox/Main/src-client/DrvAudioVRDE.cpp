@@ -506,18 +506,12 @@ static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetReadable(PPDMIHOSTAUDIO pI
  */
 static DECLCALLBACK(uint32_t) drvAudioVrdeHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
-    PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
+    RT_NOREF(pStream);
 
-    PPDMAUDIOPCMPROPS pProps  = &pStreamVRDE->pCfg->Props;
-
-    RT_NOREF(pDrv,  pProps);
-
-    /* Return frames instead of bytes here
-     * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
+    /** @todo Find some sane value here. We probably need a VRDE API VRDE to specify this. */
     if (pDrv->cClients)
-        return _16K; /** @todo Find some sane value here. We probably need a VRDE API VRDE to specify this. */
-
+        return _16K * sizeof(PDMAUDIOFRAME);
     return 0;
 }
 

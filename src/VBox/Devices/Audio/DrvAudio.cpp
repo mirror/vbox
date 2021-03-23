@@ -1581,6 +1581,218 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, uint3
 }
 
 /**
+ * Worker for drvAudioStreamPlay.
+ */
+static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, uint32_t *pcFramesPlayed)
+{
+    /*
+     * Zero the frame count so we can return at will.
+     */
+    *pcFramesPlayed = 0;
+
+    PDMAUDIOSTREAMSTS fStrmStatus = pStream->fStatus;
+#ifdef LOG_ENABLED
+    char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
+#endif
+    Log3Func(("[%s] Start fStatus=%s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, fStrmStatus)));
+
+    /*
+     * Operational?
+     */
+    if (pThis->pHostDrvAudio)
+    { /* likely? */ }
+    else
+        return VERR_PDM_NO_ATTACHED_DRIVER;
+
+    if (   pThis->Out.fEnabled
+        && PDMAudioStrmStatusIsReady(fStrmStatus))
+    { /* likely? */ }
+    else
+        return VERR_AUDIO_STREAM_NOT_READY;
+
+
+    /*
+     *
+     */
+    const uint32_t cFramesLive             = AudioMixBufLive(&pStream->Host.MixBuf);
+    const uint64_t tsDeltaPlayedCapturedNs = RTTimeNanoTS() - pStream->tsLastPlayedCapturedNs;
+    const uint32_t cFramesPassedReal       = PDMAudioPropsNanoToFrames(&pStream->Host.Cfg.Props, tsDeltaPlayedCapturedNs);
+
+    Log3Func(("[%s] Last played %'RU64 ns ago; filled with %u frm / %RU64 ms / %RU8%% total%s\n",
+              pStream->szName, tsDeltaPlayedCapturedNs, cFramesLive,
+              PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesLive),
+              (100 * cFramesLive) / AudioMixBufSize(&pStream->Host.MixBuf), pStream->fThresholdReached ? "" : ", pre-buffering"));
+
+    /*
+     * Restart pre-buffering if we're having a buffer-underrun.
+     */
+    if (   cFramesLive != 0                     /* no underrun */
+        || !pStream->fThresholdReached          /* or still pre-buffering. */)
+    { /* likely */ }
+    else
+    {
+        LogRel2(("Audio: Buffer underrun for stream '%s' occurred (%RU64ms passed)\n",
+                 pStream->szName, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesPassedReal)));
+
+        if (pStream->Host.Cfg.Backend.cFramesPreBuffering) /* Any pre-buffering configured? */
+        {
+            /* Enter pre-buffering stage again. */
+            pStream->fThresholdReached = false;
+        }
+    }
+
+    /*
+     * Work the pre-buffering.
+     *
+     * This is straight forward, the backend
+     */
+    bool fJustStarted = false;
+    if (pStream->fThresholdReached)
+    { /* not-prebuffering, likely after a while at least */ }
+    else
+    {
+        /*
+         * Did we reach the backend's playback (pre-buffering) threshold?
+         * Can be 0 if no pre-buffering desired.
+         */
+        if (cFramesLive >= pStream->Host.Cfg.Backend.cFramesPreBuffering)
+        {
+            LogRel2(("Audio: Stream '%s' buffering complete\n", pStream->szName));
+            Log3Func(("[%s] Dbg: Buffering complete\n", pStream->szName));
+            pStream->fThresholdReached = fJustStarted = true;
+        }
+        /*
+         * Some audio files are shorter than the pre-buffering level (e.g. the
+         * "click" Explorer sounds on some Windows guests), so make sure that we
+         * also play those by checking if the stream already is pending disable
+         * mode, even if we didn't hit the pre-buffering watermark yet.
+         *
+         * Try play "Windows Navigation Start.wav" on Windows 7 (2824 samples).
+         */
+        else if (   cFramesLive > 0
+                 && (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE))
+        {
+            LogRel2(("Audio: Stream '%s' buffering complete (short sound)\n", pStream->szName));
+            Log3Func(("[%s] Dbg: Buffering complete (short)\n", pStream->szName));
+            pStream->fThresholdReached = fJustStarted = true;
+        }
+        /*
+         * Not yet, so still buffering audio data.
+         */
+        else
+        {
+            LogRel2(("Audio: Stream '%s' is buffering (%RU8%% complete)...\n",
+                     pStream->szName, (100 * cFramesLive) / pStream->Host.Cfg.Backend.cFramesPreBuffering));
+            return VINF_SUCCESS;
+        }
+    }
+
+    /*
+     * Figure out how much to play now.
+     *
+     * The algorithm here is a litte dubious.  The first time we get here after
+     * pre-buffering is complete, we write one host DMA period wort of data to
+     * the host audio driver.  Then we refuse to write any more till one guest
+     * device DMA period has elapsed, but when then we try to write as much
+     * as we can to the host device driver.
+     */
+    uint32_t cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStream->pvBackend);
+    uint32_t cFramesWritable = PDMAUDIOPCMPROPS_B2F(&pStream->Host.Cfg.Props, cbWritable);
+    uint32_t cFramesToPlay;
+    if (!fJustStarted)
+        cFramesToPlay = 0;
+    else
+        cFramesToPlay = RT_MIN(cFramesWritable, pStream->Host.Cfg.Backend.cFramesPeriod);
+    if (!cFramesToPlay)
+    {
+        /* Did we reach/pass (in real time) the device scheduling slot?
+         * Play as much as we can write to the backend then. */
+        if (cFramesPassedReal >= PDMAudioPropsMilliToFrames(&pStream->Host.Cfg.Props, pStream->Guest.Cfg.Device.cMsSchedulingHint))
+            cFramesToPlay = cFramesWritable;
+    }
+
+    if (cFramesToPlay > cFramesLive) /* Don't try to play more than available. */
+        cFramesToPlay = cFramesLive;
+
+    Log3Func(("[%s] Playing %RU32 frames (%RU64 ms), now filled with %RU64 ms -- %RU8%%\n",
+              pStream->szName, cFramesToPlay, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesToPlay),
+              PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, AudioMixBufUsed(&pStream->Host.MixBuf)),
+              AudioMixBufUsed(&pStream->Host.MixBuf) * 100 / AudioMixBufSize(&pStream->Host.MixBuf)));
+
+    /*
+     * Do the playing if we decided to play something.
+     */
+    int rc = VINF_SUCCESS;
+    if (cFramesToPlay)
+    {
+        if (pThis->pHostDrvAudio->pfnStreamPlayBegin)
+            pThis->pHostDrvAudio->pfnStreamPlayBegin(pThis->pHostDrvAudio, pStream->pvBackend);
+
+        /** @todo r=bird: I don't honestly see any difference in interleaved,
+         *        non-interrleaved, raw, complicate, or whatever frame format we're
+         *        dealing with here.  We'll be formatting a chunk of audio data and feed
+         *        it to the backend, the formatting is taken care of by the mixer and
+         *        we don't really care about the format anywhere here.
+         *
+         *        Raw audio is just stereo S64, btw.  Since drvAudioStreamPlayRaw
+         *        actually copies the mixer data instead of accessing the internal mixer
+         *        buffer directly, there is no advantage to having separate code paths
+         *        here.  It only leads to more incomplete crappy code (I find the code
+         *        quality quite appaling, given the amount of time spent on it).
+         *
+         *        What's more, I think the non-interleaved designation here is wrong
+         *        anyway.  Non-interleaved means a stereo chunk of 8 frames is
+         *        formatted:
+         *              - LLLLLLLLRRRRRRRR
+         *        whereas I'm pretty darn sure we do:
+         *              - LRLRLRLRLRLRLRLR
+         *        given that the mixer doesn't know how to output the former.  See the
+         *        audioMixBufConvTo##a_Name##Stereo() code, it clearly output LR pairs.
+         *
+         *        https://stackoverflow.com/questions/17879933/whats-the-interleaved-audio
+         */
+        if (RT_LIKELY(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
+            rc = drvAudioStreamPlayNonInterleaved(pThis, pStream, cFramesToPlay, pcFramesPlayed);
+        else if (pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW)
+            rc = drvAudioStreamPlayRaw(pThis, pStream, cFramesToPlay, pcFramesPlayed);
+        else
+            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+
+        if (pThis->pHostDrvAudio->pfnStreamPlayEnd)
+            pThis->pHostDrvAudio->pfnStreamPlayEnd(pThis->pHostDrvAudio, pStream->pvBackend);
+
+        pStream->tsLastPlayedCapturedNs = RTTimeNanoTS();
+    }
+
+    Log3Func(("[%s] SchedHint=%RU32 ms (%RU32 fr) Passed=%RU64 ms (%RU32 fr) Live=%RU32 fr (%RU64 ms) Period=%RU32 fr (%RU64 ms) Writable=%RU32 fr (%RU64 ms) -> ToPlay=%RU32 fr (%RU64 ms) Played=%RU32 fr (%RU64 ms)%s\n",
+              pStream->szName, pStream->Guest.Cfg.Device.cMsSchedulingHint,
+              PDMAudioPropsMilliToFrames(&pStream->Host.Cfg.Props, pStream->Guest.Cfg.Device.cMsSchedulingHint),
+              PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesPassedReal), cFramesPassedReal,
+              cFramesLive, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesLive),
+              pStream->Host.Cfg.Backend.cFramesPeriod,
+              PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, pStream->Host.Cfg.Backend.cFramesPeriod),
+              cFramesWritable, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesWritable),
+              cFramesToPlay, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesToPlay),
+              *pcFramesPlayed, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, *pcFramesPlayed),
+              fJustStarted ? "just-started" : ""));
+
+    if (RT_SUCCESS(rc))
+    {
+        AudioMixBufFinish(&pStream->Host.MixBuf, *pcFramesPlayed);
+
+        STAM_PROFILE_ADV_STOP(&pThis->Stats.DelayOut, out);
+        STAM_COUNTER_ADD(&pThis->Stats.TotalFramesOut, *pcFramesPlayed);
+        STAM_COUNTER_ADD(&pStream->Out.Stats.TotalFramesPlayed, *pcFramesPlayed);
+        STAM_COUNTER_INC(&pStream->Out.Stats.TotalTimesPlayed);
+    }
+
+    Log3Func(("[%s] End fStatus=%s, cFramesLive=%RU32, cfPlayedTotal=%RU32, rc=%Rrc\n", pStream->szName,
+              dbgAudioStreamStatusToStr(szStreamSts, fStrmStatus), AudioMixBufLive(&pStream->Host.MixBuf), *pcFramesPlayed, rc));
+    return rc;
+}
+
+
+/**
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcFramesPlayed)
@@ -1592,196 +1804,17 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
     AssertMsg(pStream->enmDir == PDMAUDIODIR_OUT,
               ("Stream '%s' is not an output stream and therefore cannot be played back (direction is 0x%x)\n",
                pStream->szName, pStream->enmDir));
+
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, rc);
 
-    uint32_t cfPlayedTotal = 0;
-
-    PDMAUDIOSTREAMSTS fStrmStatus = pStream->fStatus;
-#ifdef LOG_ENABLED
-    char szStreamSts[DRVAUDIO_STATUS_STR_MAX];
-#endif
-    Log3Func(("[%s] Start fStatus=%s\n", pStream->szName, dbgAudioStreamStatusToStr(szStreamSts, fStrmStatus)));
-
-    do /* No, this isn't a loop either. sigh. */
-    {
-        if (!pThis->pHostDrvAudio)
-        {
-            rc = VERR_PDM_NO_ATTACHED_DRIVER;
-            break;
-        }
-
-        if (   !pThis->Out.fEnabled
-            || !PDMAudioStrmStatusIsReady(fStrmStatus))
-        {
-            rc = VERR_AUDIO_STREAM_NOT_READY;
-            break;
-        }
-
-        const uint32_t cFramesLive       = AudioMixBufLive(&pStream->Host.MixBuf);
-#ifdef LOG_ENABLED
-        const uint8_t  uLivePercent = (100 * cFramesLive) / AudioMixBufSize(&pStream->Host.MixBuf);
-#endif
-        const uint64_t tsDeltaPlayedCapturedNs = RTTimeNanoTS() - pStream->tsLastPlayedCapturedNs;
-        const uint32_t cfPassedReal            = PDMAudioPropsNanoToFrames(&pStream->Host.Cfg.Props, tsDeltaPlayedCapturedNs);
-
-        const uint32_t cFramesPeriod     = pStream->Host.Cfg.Backend.cFramesPeriod;
-
-        Log3Func(("[%s] Last played %RU64ns (%RU64ms), filled with %RU64ms (%RU8%%) total (fThresholdReached=%RTbool)\n",
-                  pStream->szName, tsDeltaPlayedCapturedNs, tsDeltaPlayedCapturedNs / RT_NS_1MS_64,
-                  PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesLive), uLivePercent, pStream->fThresholdReached));
-
-        if (   pStream->fThresholdReached         /* Has the treshold been reached (e.g. are we in playing stage) ... */
-            && cFramesLive == 0)                       /* ... and we now have no live samples to process? */
-        {
-            LogRel2(("Audio: Buffer underrun for stream '%s' occurred (%RU64ms passed)\n",
-                     pStream->szName, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cfPassedReal)));
-
-            if (pStream->Host.Cfg.Backend.cFramesPreBuffering) /* Any pre-buffering configured? */
-            {
-                /* Enter pre-buffering stage again. */
-                pStream->fThresholdReached = false;
-            }
-        }
-
-        bool fDoPlay      = pStream->fThresholdReached;
-        bool fJustStarted = false;
-        if (!fDoPlay)
-        {
-            /* Did we reach the backend's playback (pre-buffering) threshold? Can be 0 if no threshold set. */
-            if (cFramesLive >= pStream->Host.Cfg.Backend.cFramesPreBuffering)
-            {
-                LogRel2(("Audio: Stream '%s' buffering complete\n", pStream->szName));
-                Log3Func(("[%s] Dbg: Buffering complete\n", pStream->szName));
-                fDoPlay = true;
-            }
-            /* Some audio files are shorter than the pre-buffering level (e.g. the "click" Explorer sounds on some Windows guests),
-             * so make sure that we also play those by checking if the stream already is pending disable mode, even if we didn't
-             * hit the pre-buffering watermark yet.
-             *
-             * To reproduce, use "Windows Navigation Start.wav" on Windows 7 (2824 samples). */
-            else if (   cFramesLive
-                     && pStream->fStatus & PDMAUDIOSTREAMSTS_FLAGS_PENDING_DISABLE)
-            {
-                LogRel2(("Audio: Stream '%s' buffering complete (short sound)\n", pStream->szName));
-                Log3Func(("[%s] Dbg: Buffering complete (short)\n", pStream->szName));
-                fDoPlay = true;
-            }
-
-            if (fDoPlay)
-            {
-                pStream->fThresholdReached = true;
-                fJustStarted = true;
-                LogRel2(("Audio: Stream '%s' started playing\n", pStream->szName));
-                Log3Func(("[%s] Dbg: started playing\n", pStream->szName));
-            }
-            else /* Not yet, so still buffering audio data. */
-                LogRel2(("Audio: Stream '%s' is buffering (%RU8%% complete)\n",
-                         pStream->szName, (100 * cFramesLive) / pStream->Host.Cfg.Backend.cFramesPreBuffering));
-        }
-
-        if (fDoPlay)
-        {
-            uint32_t cfWritable = PDMAUDIOPCMPROPS_B2F(&pStream->Host.Cfg.Props,
-                                                       pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio,
-                                                                                                  pStream->pvBackend));
-
-            uint32_t cfToPlay = 0;
-            if (fJustStarted)
-                cfToPlay = RT_MIN(cfWritable, cFramesPeriod);
-
-            if (!cfToPlay)
-            {
-                /* Did we reach/pass (in real time) the device scheduling slot?
-                 * Play as much as we can write to the backend then. */
-                if (cfPassedReal >= PDMAudioPropsMilliToFrames(&pStream->Host.Cfg.Props,
-                                                               pStream->Guest.Cfg.Device.cMsSchedulingHint))
-                    cfToPlay = cfWritable;
-            }
-
-            if (cfToPlay > cFramesLive) /* Don't try to play more than available. */
-                cfToPlay = cFramesLive;
-            Log3Func(("[%s] Playing %RU32 frames (%RU64ms), now filled with %RU64ms -- %RU8%%\n",
-                      pStream->szName, cfToPlay, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cfToPlay),
-                      PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, AudioMixBufUsed(&pStream->Host.MixBuf)),
-                      AudioMixBufUsed(&pStream->Host.MixBuf) * 100 / AudioMixBufSize(&pStream->Host.MixBuf)));
-            if (cfToPlay)
-            {
-                if (pThis->pHostDrvAudio->pfnStreamPlayBegin)
-                    pThis->pHostDrvAudio->pfnStreamPlayBegin(pThis->pHostDrvAudio, pStream->pvBackend);
-
-                /** @todo r=bird: I don't honestly see any difference in interleaved,
-                 *        non-interrleaved, raw, complicate, or whatever frame format we're
-                 *        dealing with here.  We'll be formatting a chunk of audio data and feed
-                 *        it to the backend, the formatting is taken care of by the mixer and
-                 *        we don't really care about the format anywhere here.
-                 *
-                 *        Raw audio is just stereo S64, btw.  Since drvAudioStreamPlayRaw
-                 *        actually copies the mixer data instead of accessing the internal mixer
-                 *        buffer directly, there is no advantage to having separate code paths
-                 *        here.  It only leads to more incomplete crappy code (I find the code
-                 *        quality quite appaling, given the amount of time spent on it).
-                 *
-                 *        What's more, I think the non-interleaved designation here is wrong
-                 *        anyway.  Non-interleaved means a stereo chunk of 8 frames is
-                 *        formatted:
-                 *              - LLLLLLLLRRRRRRRR
-                 *        whereas I'm pretty darn sure we do:
-                 *              - LRLRLRLRLRLRLRLR
-                 *        given that the mixer doesn't know how to output the former.  See the
-                 *        audioMixBufConvTo##a_Name##Stereo() code, it clearly output LR pairs.
-                 *
-                 *        https://stackoverflow.com/questions/17879933/whats-the-interleaved-audio
-                 */
-                if (RT_LIKELY(pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
-                    rc = drvAudioStreamPlayNonInterleaved(pThis, pStream, cfToPlay, &cfPlayedTotal);
-                else if (pStream->Host.Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW)
-                    rc = drvAudioStreamPlayRaw(pThis, pStream, cfToPlay, &cfPlayedTotal);
-                else
-                    AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
-
-                if (pThis->pHostDrvAudio->pfnStreamPlayEnd)
-                    pThis->pHostDrvAudio->pfnStreamPlayEnd(pThis->pHostDrvAudio, pStream->pvBackend);
-
-                pStream->tsLastPlayedCapturedNs = RTTimeNanoTS();
-            }
-
-            Log3Func(("[%s] Dbg: fJustStarted=%RTbool, cfSched=%RU32 (%RU64ms), cfPassedReal=%RU32 (%RU64ms), "
-                      "cFramesLive=%RU32 (%RU64ms), cFramesPeriod=%RU32 (%RU64ms), cfWritable=%RU32 (%RU64ms), "
-                      "-> cfToPlay=%RU32 (%RU64ms), cfPlayed=%RU32 (%RU64ms)\n",
-                      pStream->szName, fJustStarted,
-                      PDMAudioPropsMilliToFrames(&pStream->Host.Cfg.Props, pStream->Guest.Cfg.Device.cMsSchedulingHint),
-                      pStream->Guest.Cfg.Device.cMsSchedulingHint,
-                      cfPassedReal, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cfPassedReal),
-                      cFramesLive, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesLive),
-                      cFramesPeriod, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cFramesPeriod),
-                      cfWritable, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cfWritable),
-                      cfToPlay, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cfToPlay),
-                      cfPlayedTotal, PDMAudioPropsFramesToMilli(&pStream->Host.Cfg.Props, cfPlayedTotal)));
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            AudioMixBufFinish(&pStream->Host.MixBuf, cfPlayedTotal);
-
-#ifdef VBOX_WITH_STATISTICS
-            STAM_COUNTER_ADD     (&pThis->Stats.TotalFramesOut, cfPlayedTotal);
-            STAM_PROFILE_ADV_STOP(&pThis->Stats.DelayOut, out);
-
-            STAM_COUNTER_ADD     (&pStream->Out.Stats.TotalFramesPlayed, cfPlayedTotal);
-            STAM_COUNTER_INC     (&pStream->Out.Stats.TotalTimesPlayed);
-#endif
-        }
-
-    } while (0);
-
-    Log3Func(("[%s] End fStatus=%s, cFramesLive=%RU32, cfPlayedTotal=%RU32, rc=%Rrc\n", pStream->szName,
-              dbgAudioStreamStatusToStr(szStreamSts, fStrmStatus), AudioMixBufLive(&pStream->Host.MixBuf), cfPlayedTotal, rc));
+    uint32_t cFramesPlayed = 0;
+    rc = drvAudioStreamPlayLocked(pThis, pStream, &cFramesPlayed);
 
     RTCritSectLeave(&pThis->CritSect);
 
     if (RT_SUCCESS(rc) && pcFramesPlayed)
-        *pcFramesPlayed = cfPlayedTotal;
+        *pcFramesPlayed = cFramesPlayed;
 
     if (RT_FAILURE(rc))
         LogFlowFunc(("[%s] Failed with %Rrc\n", pStream->szName, rc));

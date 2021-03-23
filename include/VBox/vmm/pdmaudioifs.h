@@ -1769,8 +1769,7 @@ typedef struct PDMIHOSTAUDIO
     /**
      * Returns the amount which is writable to the audio (output) stream.
      *
-     * @returns For non-raw layout streams: Number of writable bytes.
-     *          for raw layout streams    : Number of writable audio frames.
+     * @returns Number of writable bytes.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
