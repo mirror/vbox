@@ -426,11 +426,8 @@ static const uint8_t *g_apbRw1cMasks[] = { (uint8_t *)&g_au32Rw1cMasks0[0], (uin
 DECLINLINE(uint8_t *) iommuIntelRegGetGroup(PIOMMU pThis, uint16_t offReg, uint8_t cbReg, uint8_t *pIdxGroup)
 {
     uint16_t const offLast = offReg + cbReg - 1;
-
     AssertCompile(VTD_MMIO_GROUP_0_OFF_FIRST == 0);
-    AssertMsg(   offLast < VTD_MMIO_GROUP_0_OFF_END
-              || offLast - VTD_MMIO_GROUP_1_OFF_FIRST < VTD_MMIO_GROUP_1_SIZE, ("off=%#x cb=%u\n", offReg, cbReg));
-    NOREF(cbReg);
+    AssertMsg(VTD_IS_MMIO_OFF_VALID(offLast), ("off=%#x cb=%u\n", offReg, cbReg));
 
     uint8_t *apbRegs[] = { &pThis->abRegs0[0], &pThis->abRegs1[0] };
     *pIdxGroup = !(offLast < VTD_MMIO_GROUP_0_OFF_END);
