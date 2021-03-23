@@ -18,11 +18,8 @@
 /* Qt includes: */
 #include <QCheckBox>
 #include <QLabel>
-#include <QPainter>
 #include <QStyle>
 #include <QVBoxLayout>
-#include <QStyle>
-#include <QStyleOptionToolBox>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
@@ -31,49 +28,6 @@
 #include "UIIconPool.h"
 #include "UIToolBox.h"
 #include "UIWizardNewVM.h"
-
-class UIToolBoxPageButton : public QAbstractButton
-{
-        Q_OBJECT;
-public:
-    UIToolBoxPageButton(QWidget *pParent = 0);
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
-    QSize sizeHint() const /* override */;
-
-};
-
-UIToolBoxPageButton::UIToolBoxPageButton(QWidget *pParent /* = 0 */)
-    : QAbstractButton(pParent)
-{
-    setBackgroundRole(QPalette::Window);
-    //setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-    setFocusPolicy(Qt::NoFocus);
-
-}
-
-void UIToolBoxPageButton::paintEvent(QPaintEvent *pEvent)
-{
-
-    Q_UNUSED(pEvent);
-    QPainter painter(this);
-
-    // QFontMetrics metrics = fontMetrics();
-    // painter.drawText(QRect(0, 0, metrics.averageCharWidth() * text().length(), metrics.height()),
-    //                  Qt::TextShowMnemonic,
-    //                  text());
-
-    QStyleOptionToolBox opt;
-    opt.initFrom(this);
-    opt.text = text();
-    opt.state |= QStyle::State_Selected;
-    style()->drawControl(QStyle::CE_ToolBoxTabLabel, &opt, &painter, parentWidget());
-}
-
-QSize UIToolBoxPageButton::sizeHint() const
-{
-    QFontMetrics metrics = fontMetrics();
-    return QSize(metrics.averageCharWidth() * text().length(), metrics.height());
-}
 
 /*********************************************************************************************************************************
 *   UIToolBoxPage definition.                                                                                    *
@@ -110,7 +64,7 @@ protected:
 private slots:
 
     void sltHandleEnableToggle(int iState);
-    void sltTitleButtonClicked();
+
 private:
 
     void prepare(bool fEnableCheckBoxEnabled);
@@ -119,6 +73,7 @@ private:
     bool         m_fExpanded;
     QVBoxLayout *m_pLayout;
     QWidget     *m_pTitleContainerWidget;
+    QLabel      *m_pTitleLabel;
     QLabel      *m_pIconLabel;
     QLabel      *m_pExpandCollapseIconLabel;
     QCheckBox   *m_pEnableCheckBox;
@@ -127,7 +82,6 @@ private:
     int          m_iIndex;
     bool         m_fExpandCollapseIconVisible;
     QIcon        m_expandCollapseIcon;
-    UIToolBoxPageButton *m_pTitleButton;
 };
 
 /*********************************************************************************************************************************
@@ -139,21 +93,22 @@ UIToolBoxPage::UIToolBoxPage(bool fEnableCheckBoxEnabled /* = false */, QWidget 
     , m_fExpanded(false)
     , m_pLayout(0)
     , m_pTitleContainerWidget(0)
+    , m_pTitleLabel(0)
     , m_pIconLabel(0)
     , m_pExpandCollapseIconLabel(0)
     , m_pEnableCheckBox(0)
     , m_pWidget(0)
     , m_iIndex(0)
     , m_fExpandCollapseIconVisible(true)
-    , m_pTitleButton(0)
 {
     prepare(fEnableCheckBoxEnabled);
 }
 
 void UIToolBoxPage::setTitle(const QString &strTitle)
 {
-    if (m_pTitleButton)
-        m_pTitleButton->setText(strTitle);
+    if (!m_pTitleLabel)
+        return;
+    m_pTitleLabel->setText(strTitle);
 }
 
 void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
@@ -182,10 +137,10 @@ void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
         connect(m_pEnableCheckBox, &QCheckBox::stateChanged, this, &UIToolBoxPage::sltHandleEnableToggle);
     }
 
-    m_pTitleButton = new UIToolBoxPageButton;
-    pTitleLayout->addWidget(m_pTitleButton);
-    connect(m_pTitleButton, &UIToolBoxPageButton::clicked,
-            this, &UIToolBoxPage::sltTitleButtonClicked);
+    m_pTitleLabel = new QLabel;
+    m_pTitleLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+    pTitleLayout->addWidget(m_pTitleLabel);
     m_pIconLabel = new QLabel;
     pTitleLayout->addWidget(m_pIconLabel, Qt::AlignLeft);
     pTitleLayout->addStretch();
@@ -210,6 +165,8 @@ void UIToolBoxPage::setWidget(QWidget *pWidget)
 
 void UIToolBoxPage::setTitleBackgroundColor(const QColor &color)
 {
+    if (!m_pTitleLabel)
+        return;
     QPalette palette = m_pTitleContainerWidget->palette();
     palette.setColor(QPalette::Window, color);
     m_pTitleContainerWidget->setPalette(palette);
@@ -282,11 +239,6 @@ void UIToolBoxPage::sltHandleEnableToggle(int iState)
 {
     if (m_pWidget)
         m_pWidget->setEnabled(iState == Qt::Checked);
-}
-
-void UIToolBoxPage::sltTitleButtonClicked()
-{
-    emit sigShowPageWidget();
 }
 
 void UIToolBoxPage::setExpandCollapseIcon()
