@@ -856,7 +856,11 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
 	vbox->cursor_data_size = data_size;
 	dst = vbox->cursor_data;
 
+#if RTLNX_VER_MIN(5,12,0)
+	ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.mem.num_pages, &uobj_map);
+#else
 	ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &uobj_map);
+#endif
 	if (ret) {
 		vbox->cursor_data_size = 0;
 		goto out_unreserve_bo;

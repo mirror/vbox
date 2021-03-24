@@ -301,7 +301,12 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 		return ret;
 	}
 
+#if RTLNX_VER_MIN(5,12,0)
+	ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.mem.num_pages, &bo->kmap);
+#else
 	ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &bo->kmap);
+#endif
+
 	vbox_bo_unreserve(bo);
 	if (ret) {
 		DRM_ERROR("failed to kmap fbcon\n");

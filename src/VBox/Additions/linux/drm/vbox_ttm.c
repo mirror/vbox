@@ -211,7 +211,9 @@ static int vbox_ttm_io_mem_reserve(struct ttm_bo_device *bdev,
 	struct vbox_private *vbox = vbox_bdev(bdev);
 	mem->bus.addr = NULL;
 	mem->bus.offset = 0;
+# if RTLNX_VER_MAX(5,12,0)
 	mem->size = mem->num_pages << PAGE_SHIFT;
+# endif
 	mem->start = 0;
 	mem->bus.is_iomem = false;
 	switch (mem->mem_type) {

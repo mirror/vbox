@@ -317,11 +317,11 @@ static struct drm_driver driver = {
 # endif
 	    DRIVER_PRIME,
 #else  /* >= 5.4.0 && RHEL >= 8.3 */
-        .driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ,
+		.driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ,
 #endif /* <  5.4.0 */
 
 #if RTLNX_VER_MAX(4,19,0) && !RTLNX_RHEL_MAJ_PREREQ(8,3)
-    /* Legacy hooks, but still supported. */
+	/* Legacy hooks, but still supported. */
 	.load = vbox_driver_load,
 	.unload = vbox_driver_unload,
 #endif
@@ -350,7 +350,7 @@ static struct drm_driver driver = {
 	.dumb_map_offset = vbox_dumb_mmap_offset,
 #if RTLNX_VER_MAX(3,12,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
 	.dumb_destroy = vbox_dumb_destroy,
-#else
+#elif RTLNX_VER_MAX(5,12,0)
 	.dumb_destroy = drm_gem_dumb_destroy,
 #endif
 	.prime_handle_to_fd = drm_gem_prime_handle_to_fd,
