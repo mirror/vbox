@@ -193,7 +193,7 @@ void UIWizardNewVMPage2::markWidgets() const
 void UIWizardNewVMPage2::retranslateWidgets()
 {
     if (m_pHostnameLabel)
-        m_pHostnameLabel->setText(UIWizardNewVM::tr("&Hostname:"));
+        m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostna&me:"));
 
     if (m_pGAISOPathLabel)
         m_pGAISOPathLabel->setText(UIWizardNewVM::tr("&GA Installation ISO:"));

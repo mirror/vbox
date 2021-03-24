@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QCheckBox>
 #include <QLabel>
+#include <QPainter>
 #include <QStyle>
 #include <QVBoxLayout>
 
@@ -28,6 +29,47 @@
 #include "UIIconPool.h"
 #include "UIToolBox.h"
 #include "UIWizardNewVM.h"
+
+class UIToolPageButton : public QAbstractButton
+{
+    Q_OBJECT;
+public:
+    UIToolPageButton(QWidget *pParent = 0);
+    void setPixmap(const QPixmap &pixmap);
+protected:
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+    virtual QSize sizeHint() const /* override */;
+private:
+    QPixmap m_pixmap;
+};
+
+UIToolPageButton::UIToolPageButton(QWidget *pParent /* = 0 */)
+    :QAbstractButton(pParent)
+{
+}
+
+void UIToolPageButton::paintEvent(QPaintEvent *pEvent)
+{
+    Q_UNUSED(pEvent);
+    if (!m_pixmap.isNull())
+    {
+        QPainter painter(this);
+        painter.drawPixmap(0, 0, m_pixmap.width(), m_pixmap.height(), m_pixmap);
+    }
+}
+
+void UIToolPageButton::setPixmap(const QPixmap &pixmap)
+{
+    m_pixmap = pixmap;
+    update();
+}
+
+QSize UIToolPageButton::sizeHint() const
+{
+    if (m_pixmap.isNull())
+        return QSize (0,0);
+    return m_pixmap.size();
+}
 
 /*********************************************************************************************************************************
 *   UIToolBoxPage definition.                                                                                    *
@@ -75,13 +117,13 @@ private:
     QWidget     *m_pTitleContainerWidget;
     QLabel      *m_pTitleLabel;
     QLabel      *m_pIconLabel;
-    QLabel      *m_pExpandCollapseIconLabel;
     QCheckBox   *m_pEnableCheckBox;
 
     QWidget     *m_pWidget;
     int          m_iIndex;
     bool         m_fExpandCollapseIconVisible;
     QIcon        m_expandCollapseIcon;
+    UIToolPageButton *m_pTitleButton;
 };
 
 /*********************************************************************************************************************************
@@ -95,11 +137,11 @@ UIToolBoxPage::UIToolBoxPage(bool fEnableCheckBoxEnabled /* = false */, QWidget 
     , m_pTitleContainerWidget(0)
     , m_pTitleLabel(0)
     , m_pIconLabel(0)
-    , m_pExpandCollapseIconLabel(0)
     , m_pEnableCheckBox(0)
     , m_pWidget(0)
     , m_iIndex(0)
     , m_fExpandCollapseIconVisible(true)
+    , m_pTitleButton(0)
 {
     prepare(fEnableCheckBoxEnabled);
 }
@@ -126,9 +168,10 @@ void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
                                      qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin),
                                      .4f * qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin));
 
-    m_pExpandCollapseIconLabel = new QLabel;
-    if (m_pExpandCollapseIconLabel)
-        pTitleLayout->addWidget(m_pExpandCollapseIconLabel);
+    m_pTitleButton = new UIToolPageButton;
+    pTitleLayout->addWidget(m_pTitleButton);
+    connect(m_pTitleButton, &QAbstractButton::clicked, this, &UIToolBoxPage::sigShowPageWidget);
+
 
     if (fEnableCheckBoxEnabled)
     {
@@ -139,6 +182,7 @@ void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
 
     m_pTitleLabel = new QLabel;
     m_pTitleLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_pTitleLabel->setBuddy(m_pTitleButton);
 
     pTitleLayout->addWidget(m_pTitleLabel);
     m_pIconLabel = new QLabel;
@@ -243,24 +287,22 @@ void UIToolBoxPage::sltHandleEnableToggle(int iState)
 
 void UIToolBoxPage::setExpandCollapseIcon()
 {
-    if (!m_pExpandCollapseIconLabel)
-        return;
     if (!m_fExpandCollapseIconVisible)
     {
-        m_pExpandCollapseIconLabel->setVisible(false);
+        m_pTitleButton->setVisible(false);
         return;
     }
     const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
     QPixmap basePixmap = m_expandCollapseIcon.pixmap(windowHandle(), QSize(iMetric, iMetric));
     if (!m_fExpanded)
-        m_pExpandCollapseIconLabel->setPixmap(basePixmap);
+        m_pTitleButton->setPixmap(basePixmap);
     else
     {
         QTransform transform;
         transform.rotate(90);
         QPixmap transformedPixmap = basePixmap.transformed(transform);
         transformedPixmap.setDevicePixelRatio(basePixmap.devicePixelRatio());
-        m_pExpandCollapseIconLabel->setPixmap(transformedPixmap);
+        m_pTitleButton->setPixmap(transformedPixmap);
     }
 }
 
