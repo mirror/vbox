@@ -39,6 +39,9 @@
 #ifdef VBOX_WITH_IOMMU_AMD
 # include <VBox/iommu-amd.h>
 #endif
+#ifdef VBOX_WITH_IOMMU_INTEL
+# include <VBox/iommu-intel.h>
+#endif
 
 #include "VBoxDD.h"
 #ifdef VBOX_WITH_IOMMU_AMD
@@ -371,8 +374,12 @@ typedef struct ACPISTATE
     bool                fUseMcfg;
     /** if the 64-bit prefetchable memory window is shown to the guest */
     bool                fPciPref64Enabled;
-    /** If the IOMMU device should be enabled */
-    bool                fUseIommu;
+    /** If the IOMMU (AMD) device should be enabled */
+    bool                fUseIommuAmd;
+    /** If the IOMMU (Intel) device should be enabled */
+    bool                fUseIommuIntel;
+    /** Padding. */
+    bool                afPadding0[3];
     /** Primary NIC PCI address. */
     uint32_t            u32NicPciAddress;
     /** HD Audio PCI address. */
@@ -828,7 +835,35 @@ AssertCompileMemberAlignment(ACPITBLIOMMU, IvhdType10Start, 4);
 AssertCompileMemberAlignment(ACPITBLIOMMU, IvhdType10End, 4);
 AssertCompileMemberAlignment(ACPITBLIOMMU, IvhdType11Start, 4);
 AssertCompileMemberAlignment(ACPITBLIOMMU, IvhdType11End, 4);
-#endif
+#endif  /* VBOX_WITH_IOMMU_AMD */
+
+#ifdef VBOX_WITH_IOMMU_INTEL
+/** Intel IOMMU: DMAR (DMA Remapping) Reporting Structure.
+ *  In accordance with the AMD spec. */
+typedef struct ACPIDMAR
+{
+    ACPITBLHEADER       Hdr;
+    /** Host-address Width (N+1 physical bits addressable). */
+    uint8_t             uHostAddrWidth;
+    /** Flags, see ACPI_DMAR_F_XXX. */
+    uint8_t             fFlags;
+    /** Reserved. */
+    uint8_t             abRsvd[10];
+    /* Remapping Structures[] follows. */
+} ACPIDMAR;
+AssertCompileSize(ACPIDMAR, 48);
+AssertCompileMemberOffset(ACPIDMAR, uHostAddrWidth, 36);
+AssertCompileMemberOffset(ACPIDMAR, fFlags, 37);
+
+/**
+ * Intel VT-d: The ACPI table.
+ */
+typedef struct ACPITBLVTD
+{
+    ACPIDMAR            Dmar;
+    ACPIDRHD            Drhd;
+} ACPITBLDMAR;
+#endif  /* VBOX_WITH_IOMMU_INTEL */
 
 /** MCFG Descriptor Structure */
 typedef struct ACPITBLMCFG
@@ -3315,11 +3350,34 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
     Ivrs.IvhdType11IoApic = Ivrs.IvhdType10IoApic;
     Ivrs.IvhdType11Hpet   = Ivrs.IvhdType10Hpet;
 
-    /* Finally, Compute checksum. */
+    /* Finally, compute checksum. */
     Ivrs.Hdr.header.u8Checksum = acpiR3Checksum(&Ivrs, sizeof(Ivrs));
 
     /* Plant the ACPI table. */
     acpiR3PhysCopy(pDevIns, addr, (const uint8_t *)&Ivrs, sizeof(Ivrs));
+}
+#endif
+
+
+#ifdef VBOX_WITH_IOMMU_INTEL
+/**
+ * Plant the Intel IOMMU (VT-d) descriptor.
+ */
+static void acpiR3SetupIommuIntel(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32 addr)
+{
+    ACPITBLVTD VtdTable;
+    RT_ZERO(VtdTable);
+
+    /* VT-d/DMAR header. */
+    acpiR3PrepareHeader(pThis, &VtdTable.Dmar.Hdr, "DMAR", sizeof(ACPITBLVTD), ACPI_DMAR_REVISION);
+
+    /** @todo Populate rest of DMAR table. */
+
+    /* Finally, compute checksum. */
+    VtdTable.Dmar.Hdr.u8Checksum = acpiR3Checksum(&VtdTable, sizeof(VtdTable));
+
+    /* Plant the ACPI table. */
+    acpiR3PhysCopy(pDevIns, addr, (const uint8_t *)&VtdTable, sizeof(VtdTable));
 }
 #endif
 
@@ -3423,15 +3481,15 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
     int        rc;
     RTGCPHYS32 GCPhysCur, GCPhysRsdt, GCPhysXsdt, GCPhysFadtAcpi1, GCPhysFadtAcpi2, GCPhysFacs, GCPhysDsdt;
     RTGCPHYS32 GCPhysHpet = 0;
-#ifdef VBOX_WITH_IOMMU_AMD
-    RTGCPHYS32 GCPhysIommuAmd = 0;
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
+    RTGCPHYS32 GCPhysIommu = 0;
 #endif
     RTGCPHYS32 GCPhysApic = 0;
     RTGCPHYS32 GCPhysSsdt = 0;
     RTGCPHYS32 GCPhysMcfg = 0;
     RTGCPHYS32 aGCPhysCust[MAX_CUST_TABLES] = {0};
     uint32_t   addend = 0;
-#ifdef VBOX_WITH_IOMMU_AMD
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     RTGCPHYS32 aGCPhysRsdt[8 + MAX_CUST_TABLES];
     RTGCPHYS32 aGCPhysXsdt[8 + MAX_CUST_TABLES];
 #else
@@ -3441,8 +3499,8 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
     uint32_t   cAddr;
     uint32_t   iMadt  = 0;
     uint32_t   iHpet  = 0;
-#ifdef VBOX_WITH_IOMMU_AMD
-    uint32_t   iIommuAmd = 0;
+#if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
+    uint32_t   iIommu = 0;
 #endif
     uint32_t   iSsdt  = 0;
     uint32_t   iMcfg  = 0;
@@ -3458,8 +3516,13 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
         iHpet = cAddr++;        /* HPET */
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    if (pThis->fUseIommu)
-        iIommuAmd = cAddr++;    /* IOMMU (AMD) */
+    if (pThis->fUseIommuAmd)
+        iIommu = cAddr++;      /* IOMMU (AMD) */
+#endif
+
+#ifdef VBOX_WITH_IOMMU_INTEL
+    if (pThis->fUseIommuIntel)
+        iIommu = cAddr++;      /* IOMMU (AMD) */
 #endif
 
     if (pThis->fUseMcfg)
@@ -3537,12 +3600,20 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
         GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLHPET), 16);
     }
 #ifdef VBOX_WITH_IOMMU_AMD
-    if (pThis->fUseIommu)
+    if (pThis->fUseIommuAmd)
     {
-        GCPhysIommuAmd = GCPhysCur;
+        GCPhysIommu = GCPhysCur;
         GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLIOMMU), 16);
     }
 #endif
+#ifdef VBOX_WITH_IOMMU_INTEL
+    if (pThis->fUseIommuIntel)
+    {
+        GCPhysIommu = GCPhysCur;
+        GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLVTD), 16);
+    }
+#endif
+
     if (pThis->fUseMcfg)
     {
         GCPhysMcfg = GCPhysCur;
@@ -3616,11 +3687,19 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
         aGCPhysXsdt[iHpet] = GCPhysHpet + addend;
     }
 #ifdef VBOX_WITH_IOMMU_AMD
-    if (pThis->fUseIommu)
+    if (pThis->fUseIommuAmd)
     {
-        acpiR3SetupIommuAmd(pDevIns, pThis, GCPhysIommuAmd + addend);
-        aGCPhysRsdt[iIommuAmd] = GCPhysIommuAmd + addend;
-        aGCPhysXsdt[iIommuAmd] = GCPhysIommuAmd + addend;
+        acpiR3SetupIommuAmd(pDevIns, pThis, GCPhysIommu + addend);
+        aGCPhysRsdt[iIommu] = GCPhysIommu + addend;
+        aGCPhysXsdt[iIommu] = GCPhysIommu + addend;
+    }
+#endif
+#ifdef VBOX_WITH_IOMMU_INTEL
+    if (pThis->fUseIommuIntel)
+    {
+        acpiR3SetupIommuIntel(pDevIns, pThis, GCPhysIommu + addend);
+        aGCPhysRsdt[iIommu] = GCPhysIommu + addend;
+        aGCPhysXsdt[iIommu] = GCPhysIommu + addend;
     }
 #endif
     if (pThis->fUseMcfg)
@@ -4139,12 +4218,12 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"Parallel1IoPortBase\""));
 
 #ifdef VBOX_WITH_IOMMU_AMD
-    /* Query whether an IOMMU AMD is enabled. */
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IommuAmdEnabled", &pThis->fUseIommu, false);
+    /* Query whether an IOMMU (AMD) is enabled. */
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IommuAmdEnabled", &pThis->fUseIommuAmd, false);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuEnabled\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuAmdEnabled\""));
 
-    if (pThis->fUseIommu)
+    if (pThis->fUseIommuAmd)
     {
         /* Query IOMMU AMD address (IOMA). */
         rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IommuAmdPciAddress", &pThis->u32IommuAmdPciAddress, 0);
@@ -4171,6 +4250,18 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         }
     }
 #endif
+
+#ifdef VBOX_WITH_IOMMU_INTEL
+    /* Query whether an IOMMU (Intel) is enabled. */
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IommuIntelEnabled", &pThis->fUseIommuIntel, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IommuIntelEnabled\""));
+#endif
+
+    /* Don't even think about enabling an Intel and an AMD IOMMU at the same time! */
+    if (   pThis->fUseIommuAmd
+        && pThis->fUseIommuIntel)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Cannot enable Intel and AMD IOMMU simultaneously!"));
 
     /* Try to attach the other CPUs */
     for (unsigned i = 1; i < pThis->cCpus; i++)
