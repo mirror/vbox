@@ -30,46 +30,35 @@
 #include "UIToolBox.h"
 #include "UIWizardNewVM.h"
 
+/*********************************************************************************************************************************
+*   UIToolPageButton definition.                                                                                    *
+*********************************************************************************************************************************/
+/** A QAbstractButton extension used to show collapse/expand icons. More importantly
+  * it is buddy to the title label which may include some mnemonics. This makes it possible
+  * to expand pages via keyboard. */
 class UIToolPageButton : public QAbstractButton
 {
+
     Q_OBJECT;
+
 public:
+
     UIToolPageButton(QWidget *pParent = 0);
     void setPixmap(const QPixmap &pixmap);
+
 protected:
+
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     virtual QSize sizeHint() const /* override */;
+
 private:
+
+    /** Holds the pixmap of the expand/collapser icon. We keep
+      * QPixmap instead of QIcon since it is rotated when the
+      * the page is expanded and end product of rotation is a pixmap.
+      * and we use QPainter to draw pixmap.*/
     QPixmap m_pixmap;
 };
-
-UIToolPageButton::UIToolPageButton(QWidget *pParent /* = 0 */)
-    :QAbstractButton(pParent)
-{
-}
-
-void UIToolPageButton::paintEvent(QPaintEvent *pEvent)
-{
-    Q_UNUSED(pEvent);
-    if (!m_pixmap.isNull())
-    {
-        QPainter painter(this);
-        painter.drawPixmap(0, 0, m_pixmap.width(), m_pixmap.height(), m_pixmap);
-    }
-}
-
-void UIToolPageButton::setPixmap(const QPixmap &pixmap)
-{
-    m_pixmap = pixmap;
-    update();
-}
-
-QSize UIToolPageButton::sizeHint() const
-{
-    if (m_pixmap.isNull())
-        return QSize (0,0);
-    return m_pixmap.size();
-}
 
 /*********************************************************************************************************************************
 *   UIToolBoxPage definition.                                                                                    *
@@ -125,6 +114,38 @@ private:
     QIcon        m_expandCollapseIcon;
     UIToolPageButton *m_pTitleButton;
 };
+
+/*********************************************************************************************************************************
+*   UIToolPageButton implementation.                                                                                    *
+*********************************************************************************************************************************/
+
+UIToolPageButton::UIToolPageButton(QWidget *pParent /* = 0 */)
+    :QAbstractButton(pParent)
+{
+}
+
+void UIToolPageButton::paintEvent(QPaintEvent *pEvent)
+{
+    Q_UNUSED(pEvent);
+    if (!m_pixmap.isNull())
+    {
+        QPainter painter(this);
+        painter.drawPixmap(0, 0, m_pixmap.width(), m_pixmap.height(), m_pixmap);
+    }
+}
+
+void UIToolPageButton::setPixmap(const QPixmap &pixmap)
+{
+    m_pixmap = pixmap;
+    update();
+}
+
+QSize UIToolPageButton::sizeHint() const
+{
+    if (m_pixmap.isNull())
+        return QSize (0,0);
+    return m_pixmap.size();
+}
 
 /*********************************************************************************************************************************
 *   UIToolBoxPage implementation.                                                                                    *
