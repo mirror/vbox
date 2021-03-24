@@ -797,24 +797,22 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
                 {
                     if (cFramesWritten == -EPIPE)
                     {
-                        /* underrun occurred */
+                        /* Underrun occurred. */
                         rc = alsaStreamRecover(pStreamALSA->phPCM);
-                        if (RT_SUCCESS(rc))
-                            LogFlowFunc(("Recovered from playback (iTry=%u)\n", iTry));
-                        else
+                        if (RT_FAILURE(rc))
                             break;
+                        LogFlowFunc(("Recovered from playback (iTry=%u)\n", iTry));
                     }
                     else
                     {
-                        /* an suspended event occurred, needs resuming. */
+                        /* An suspended event occurred, needs resuming. */
                         rc = alsaStreamResume(pStreamALSA->phPCM);
-                        if (RT_SUCCESS(rc))
-                            LogFlowFunc(("Resumed suspended output stream (iTry=%u)\n", iTry));
-                        else
+                        if (RT_FAILURE(rc))
                         {
                             LogRel(("ALSA: Failed to resume output stream (iTry=%u, rc=%Rrc)\n", iTry, rc));
                             break;
                         }
+                        LogFlowFunc(("Resumed suspended output stream (iTry=%u)\n", iTry));
                     }
 
                     cFramesWritten = snd_pcm_writei(pStreamALSA->phPCM, pStreamALSA->pvBuf, cFramesToWrite);
@@ -826,9 +824,9 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface
                         return VINF_SUCCESS;
                     }
                     LogFunc(("snd_pcm_writei w/ cbToWrite=%u -> %ld [cFramesAvail=%ld, iTry=%d]\n", cbToWrite, cFramesWritten, cFramesAvail, iTry));
-                } /* For number of tries. */
+                }
 
-                /* Make sure we return with an error. */
+                /* Make sure we return with an error status. */
                 if (RT_SUCCESS_NP(rc))
                 {
                     if (cFramesWritten == 0)
