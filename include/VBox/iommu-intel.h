@@ -35,7 +35,7 @@
 
 /**
  * @name MMIO register offsets.
- * In accordance with the AMD spec.
+ * In accordance with the Intel spec.
  * @{
  */
 #define VTD_MMIO_OFF_VER_REG                                    0x000  /**< Version. */
@@ -684,6 +684,7 @@ typedef VTD_IRTE_T const *PCVTD_IRTE_T;
 
 
 /** @name Version Register (VER_REG).
+ * In accordance with the Intel spec.
  *  @{ */
 /** Min: Minor Version Number. */
 #define VTX_BF_VER_REG_MIN_SHIFT                                0
@@ -702,6 +703,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTX_BF_VER_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Capability Register (CAP_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** ND: Number of domains supported. */
 #define VTD_BF_CAP_REG_ND_SHIFT                                 0
@@ -785,6 +787,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_CAP_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Extended Capability Register (ECAP_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** C: Page-walk Coherence. */
 #define VTD_BF_ECAP_REG_C_SHIFT                                 0
@@ -899,6 +902,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_ECAP_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Global Command Register (GCMD_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 22:0). */
 #define VTD_BF_GCMD_REG_RSVD_22_0_SHIFT                         0
@@ -939,6 +943,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_GCMD_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Global Status Register (GSTS_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 22:0). */
 #define VTD_BF_GSTS_REG_RSVD_22_0_SHIFT                         0
@@ -979,6 +984,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_GSTS_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Root Table Address Register (RTADDR_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 9:0). */
 #define VTD_BF_RTADDR_REG_RSVD_9_0_SHIFT                        0
@@ -998,6 +1004,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_RTADDR_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Context Command Register (CCMD_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** DID: Domain-ID. */
 #define VTD_BF_CCMD_REG_DID_SHIFT                               0
@@ -1031,6 +1038,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_CCMD_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name IOTLB Invalidation Register (IOTLB_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 31:0). */
 #define VTD_BF_IOTLB_REG_RSVD_31_0_SHIFT                        0
@@ -1073,6 +1081,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IOTLB_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Invalidate Address Register (IVA_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** AM: Address Mask. */
 #define VTD_BF_IVA_REG_AM_SHIFT                                 0
@@ -1096,6 +1105,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IVA_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Fault Status Register (FSTS_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** PFO: Primary Fault Overflow. */
 #define VTD_BF_FSTS_REG_PFO_SHIFT                               0
@@ -1142,6 +1152,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FSTS_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Fault Event Control Register (FECTL_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 29:0). */
 #define VTD_BF_FECTL_REG_RSVD_29_0_SHIFT                        0
@@ -1161,6 +1172,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FECTL_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Fault Event Data Register (FEDATA_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** IMD: Interrupt Message Data. */
 #define VTD_BF_FEDATA_REG_IMD_SHIFT                             0
@@ -1177,6 +1189,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FEDATA_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Fault Event Address Register (FEADDR_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 1:0). */
 #define VTD_BF_FEADDR_REG_RSVD_1_0_SHIFT                        0
@@ -1193,6 +1206,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FEADDR_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Fault Event Upper Address Register (FEUADDR_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** MUA: Message Upper Address. */
 #define VTD_BF_FEUADDR_REG_MA_SHIFT                             0
@@ -1204,6 +1218,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_FEADDR_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Fault Recording Register (FRCD_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 11:0). */
 #define VTD_BF_0_FRCD_REG_RSVD_11_0_SHIFT                       0
@@ -1260,6 +1275,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_1_FRCD_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Advanced Fault Log Register (AFLOG_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 8:0). */
 #define VTD_BF_0_AFLOG_REG_RSVD_8_0_SHIFT                       0
@@ -1279,6 +1295,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_0_AFLOG_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Protected Memory Enable Register (PMEN_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** PRS: Protected Region Status. */
 #define VTD_BF_PMEN_REG_PRS_SHIFT                               0
@@ -1298,6 +1315,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PMEN_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Invalidation Queue Head Register (IQH_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 3:0). */
 #define VTD_BF_IQH_REG_RSVD_3_0_SHIFT                           0
@@ -1317,6 +1335,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQH_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Invalidation Queue Tail Register (IQT_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 3:0). */
 #define VTD_BF_IQT_REG_RSVD_3_0_SHIFT                           0
@@ -1336,6 +1355,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQT_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Invalidation Queue Address Register (IQA_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** QS: Queue Size. */
 #define VTD_BF_IQA_REG_QS_SHIFT                                 0
@@ -1359,6 +1379,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQA_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Invalidation Completion Status Register (ICS_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** IWC: Invalidation Wait Descriptor Complete. */
 #define VTD_BF_ICS_REG_IWC_SHIFT                                0
@@ -1377,6 +1398,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_ICS_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Invalidation Event Control Register (IECTL_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 29:0). */
 #define VTD_BF_IECTL_REG_RSVD_29_0_SHIFT                        0
@@ -1396,6 +1418,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IECTL_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Invalidation Event Data Register (IEDATA_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** IMD: Interrupt Message Data. */
 #define VTD_BF_IEDATA_REG_IMD_SHIFT                             0
@@ -1412,6 +1435,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IEDATA_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Invalidation Event Address Register (IEADDR_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 1:0). */
 #define VTD_BF_IEADDR_REG_RSVD_1_0_SHIFT                        0
@@ -1439,6 +1463,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IEADDR_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Invalidation Queue Error Record Register (IQERCD_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** IQEI: Invalidation Queue Error Info. */
 #define VTD_BF_IQERCD_REG_IQEI_SHIFT                            0
@@ -1461,6 +1486,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IQERCD_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Interrupt Remapping Table Address Register (IRTA_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** S: Size. */
 #define VTD_BF_IRTA_REG_S_SHIFT                                 0
@@ -1484,6 +1510,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_IRTA_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Page Request Queue Head Register (PQH_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 4:0). */
 #define VTD_BF_PQH_REG_RSVD_4_0_SHIFT                           0
@@ -1503,6 +1530,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PQH_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Page Request Queue Tail Register (PQT_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 4:0). */
 #define VTD_BF_PQT_REG_RSVD_4_0_SHIFT                           0
@@ -1522,6 +1550,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PQT_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Page Request Queue Address Register (PQA_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** PQS: Page Queue Size. */
 #define VTD_BF_PQA_REG_PQS_SHIFT                                0
@@ -1541,6 +1570,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PQA_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Page Request Status Register (PRS_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** PPR: Pending Page Request. */
 #define VTD_BF_PRS_REG_PPR_SHIFT                                0
@@ -1562,6 +1592,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PRS_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Page Request Event Control Register (PECTL_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 29:0). */
 #define VTD_BF_PECTL_REG_RSVD_29_0_SHIFT                        0
@@ -1581,6 +1612,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PECTL_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Page Request Event Data Register (PEDATA_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** IMD: Interrupt Message Data. */
 #define VTD_BF_PEDATA_REG_IMD_SHIFT                             0
@@ -1597,6 +1629,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PEDATA_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Page Request Event Address Register (PEADDR_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** R: Reserved (bits 1:0). */
 #define VTD_BF_PEADDR_REG_RSVD_1_0_SHIFT                        0
@@ -1614,6 +1647,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PEADDR_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name Page Request Event Upper Address Register (PEUADDR_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** MA: Message Address. */
 #define VTD_BF_PEUADDR_REG_MUA_SHIFT                            0
@@ -1625,6 +1659,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_PEADDR_REG_, UINT32_C(0), UINT32_MAX,
 
 
 /** @name MTRR Capability Register (MTRRCAP_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** VCNT: Variable MTRR Count. */
 #define VTD_BF_MTRRCAP_REG_VCNT_SHIFT                           0
@@ -1650,6 +1685,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_MTRRCAP_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name MTRR Default Type Register (MTRRDEF_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** TYPE: Default Memory Type. */
 #define VTD_BF_MTRRDEF_REG_TYPE_SHIFT                           0
@@ -1676,6 +1712,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_MTRRDEF_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Virtual Command Capability Register (VCCAP_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** PAS: PASID Support. */
 #define VTD_BF_VCCAP_REG_PAS_SHIFT                              0
@@ -1692,6 +1729,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCCAP_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Virtual Command Register (VCMD_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** CMD: Command. */
 #define VTD_BF_VCMD_REG_CMD_SHIFT                               0
@@ -1708,6 +1746,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCMD_REG_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Virtual Command Response Register (VCRSP_REG).
+ * In accordance with the Intel spec.
  * @{ */
 /** IP: In Progress. */
 #define VTD_BF_VCRSP_REG_IP_SHIFT                               0
@@ -1727,6 +1766,94 @@ RT_BF_ASSERT_COMPILE_CHECKS(VTD_BF_VCRSP_REG_, UINT64_C(0), UINT64_MAX,
 /** RW: Read/write mask. */
 #define VTD_VCRSP_REG_RW_MASK                                   UINT64_C(0)
 /** @} */
+
+
+/** @name ACPI_DMAR_F_XXX: DMA Remapping Reporting Structure Flags.
+ * In accordance with the Intel spec.
+ * @{ */
+/** INTR_REMAP: Interrupt remapping supported. */
+#define ACPI_DMAR_F_INTR_REMAP                                  RT_BIT(0)
+/** X2APIC_OPT_OUT: Request system software to opt-out of enabling x2APIC. */
+#define ACPI_DMAR_F_X2APIC_OPT_OUT                              RT_BIT(0)
+/** DMA_CTRL_PLATFORM_OPT_IN_FLAG: Firmware initiated DMA restricted to reserved
+ *  memory regions (RMRR). */
+#define ACPI_DMAR_F_DMA_CTRL_PLATFORM_OPT_IN                    RT_BIT(2)
+/** @} */
+
+
+/** @name ACPI_DRHD_F_XXX: DMA-Remapping Hardware Unit Definition Flags.
+ * In accordance with the Intel spec.
+ * @{ */
+/** INCLUDE_PCI_ALL: All PCI devices under scope. */
+#define ACPI_DRHD_F_INCLUDE_PCI_ALL                             RT_BIT(0)
+/** @} */
+
+
+/**
+ * DRHD: DMA-Remapping Hardware Unit Definition.
+ * In accordance with the Intel spec.
+ */
+#pragma pack(1)
+typedef struct ACPIDRHD
+{
+    /** Type (must be 0=DRHD). */
+    uint16_t        uType;
+    /** Length (must be 16 + size of device scope structure). */
+    uint16_t        cbLength;
+    /** Flags, see ACPI_DMAR_F_XXX. */
+    uint8_t         fFlags;
+    /** Reserved (MBZ). */
+    uint8_t         bRsvd;
+    /** PCI segment number. */
+    uint16_t        uPciSegment;
+    /** Register Base Address (MMIO). */
+    uint64_t        uRegBaseAddr;
+    /* Device Scope[] Structures follow. */
+} ACPIDRHD;
+#pragma pack()
+AssertCompileSize(ACPIDRHD, 16);
+AssertCompileMemberOffset(ACPIDRHD, cbLength,     2);
+AssertCompileMemberOffset(ACPIDRHD, fFlags,       4);
+AssertCompileMemberOffset(ACPIDRHD, uPciSegment,  6);
+AssertCompileMemberOffset(ACPIDRHD, uRegBaseAddr, 8);
+
+
+/** @name ACPIDMARDEVSCOPE_TYPE_XXX: Device Type.
+ * In accordance with the Intel spec.
+ * @{ */
+#define ACPIDMARDEVSCOPE_TYPE_PCI_ENDPOINT                      1
+#define ACPIDMARDEVSCOPE_TYPE_PCI_SUB_HIERARCHY                 2
+#define ACPIDMARDEVSCOPE_TYPE_IOAPIC                            3
+#define ACPIDMARDEVSCOPE_TYPE_MSI_CAP_HPET                      4
+#define ACPIDMARDEVSCOPE_TYPE_ACPI_NAMESPACE_DEV                5
+/** @} */
+
+
+/**
+ * Device Scope Structure.
+ * In accordance with the Intel spec.
+ */
+#pragma pack(1)
+typedef struct ACPIDMARDEVSCOPE
+{
+    /** Type, see ACPIDMARDEVSCOPE_TYPE_XXX. */
+    uint8_t         uType;
+    /** Length (must be 6 + size of auPath field).  */
+    uint8_t         cbLength;
+    /** Reserved (MBZ). */
+    uint8_t         abRsvd[2];
+    /** Enumeration ID (for I/O APIC, HPET and ACPI namespace devices). */
+    uint8_t         idEnum;
+    /** First bus number for this device. */
+    uint8_t         uStartBusNum;
+    /** Hierarchical path from the Host Bridge to the device. */
+    uint16_t        auPath[1];
+} ACPIDMARDEVSCOPE;
+#pragma pack()
+AssertCompileMemberOffset(ACPIDMARDEVSCOPE, cbLength,     1);
+AssertCompileMemberOffset(ACPIDMARDEVSCOPE, idEnum,       4);
+AssertCompileMemberOffset(ACPIDMARDEVSCOPE, uStartBusNum, 5);
+AssertCompileMemberOffset(ACPIDMARDEVSCOPE, auPath,       6);
 
 
 #endif /* !VBOX_INCLUDED_iommu_intel_h */
