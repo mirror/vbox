@@ -700,7 +700,10 @@ int vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFil
    [generic_fillattr] */
 #if RTLNX_VER_MIN(2,5,18)
 
-# if RTLNX_VER_MIN(4,11,0)
+#if RTLNX_VER_MIN(5,12,0)
+int vbsf_inode_getattr(struct user_namespace *ns, const struct path *path,
+    struct kstat *kstat, u32 request_mask, unsigned int flags)
+# elif RTLNX_VER_MIN(4,11,0)
 int vbsf_inode_getattr(const struct path *path, struct kstat *kstat, u32 request_mask, unsigned int flags)
 # else
 int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
@@ -740,7 +743,11 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
 # endif
     if (rc == 0) {
         /* Do generic filling in of info. */
+# if RTLNX_VER_MIN(5,12,0)
+        generic_fillattr(ns, dentry->d_inode, kstat);
+# else
         generic_fillattr(dentry->d_inode, kstat);
+# endif
 
         /* Add birth time. */
 # if RTLNX_VER_MIN(4,11,0)
@@ -786,7 +793,11 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
 /**
  * Modify inode attributes.
  */
+#if RTLNX_VER_MIN(5,12,0)
+int vbsf_inode_setattr(struct user_namespace *ns, struct dentry *dentry, struct iattr *iattr)
+#else
 int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
+#endif
 {
     struct inode           *pInode     = dentry->d_inode;
     struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(pInode->i_sb);
@@ -806,7 +817,11 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
      */
     iattr->ia_valid |= ATTR_FORCE;
 #if (RTLNX_VER_RANGE(3,16,39,  3,17,0)) || RTLNX_VER_MIN(4,9,0) || (RTLNX_VER_RANGE(4,1,37,  4,2,0))
+# if RTLNX_VER_MIN(5,12,0)
+    rc = setattr_prepare(ns, dentry, iattr);
+# else
     rc = setattr_prepare(dentry, iattr);
+# endif
 #else
     rc = inode_change_ok(pInode, iattr);
 #endif
