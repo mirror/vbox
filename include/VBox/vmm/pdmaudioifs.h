@@ -693,15 +693,17 @@ typedef struct PDMAUDIOPCMPROPS
 {
     /** The frame size. */
     uint8_t     cbFrame;
-    /** Sample width (in bytes). */
-    uint8_t     cbSampleX : 4;
-    /** Number of audio channels. */
-    uint8_t     cChannelsX : 4;
     /** Shift count used with PDMAUDIOPCMPROPS_F2B and PDMAUDIOPCMPROPS_B2F.
      * Depends on number of stream channels and the stream format being used, calc
      * value using PDMAUDIOPCMPROPS_MAKE_SHIFT.
      * @sa   PDMAUDIOSTREAMCFG_B2F, PDMAUDIOSTREAMCFG_F2B */
     uint8_t     cShiftX;
+    /** Sample width (in bytes). */
+    RT_GCC_EXTENSION
+    uint8_t     cbSampleX : 4;
+    /** Number of audio channels. */
+    RT_GCC_EXTENSION
+    uint8_t     cChannelsX : 4;
     /** Signed or unsigned sample. */
     bool        fSigned : 1;
     /** Whether the endianness is swapped or not. */
@@ -722,7 +724,7 @@ typedef PDMAUDIOPCMPROPS const *PCPDMAUDIOPCMPROPS;
  * @{ */
 /** Initializer for PDMAUDIOPCMPROPS. */
 #define PDMAUDIOPCMPROPS_INITIALIZER(a_cbSample, a_fSigned, a_cChannels, a_uHz, a_fSwapEndian) \
-    { (a_cbSample) * (a_cChannels), a_cbSample, a_cChannels, PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(a_cbSample, a_cChannels), \
+    { (a_cbSample) * (a_cChannels), PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(a_cbSample, a_cChannels), a_cbSample, a_cChannels, \
       a_fSigned, a_fSwapEndian, false /*fRaw*/, a_uHz }
 /** Calculates the cShift value of given sample bits and audio channels.
  * @note Does only support mono/stereo channels for now, for non-stereo/mono we

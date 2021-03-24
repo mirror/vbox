@@ -1646,35 +1646,12 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
     /*
      * Do the playing if we decided to play something.
      */
-    int rc = VINF_SUCCESS;
+    int rc;
     if (cFramesToPlay)
     {
         if (pThis->pHostDrvAudio->pfnStreamPlayBegin)
             pThis->pHostDrvAudio->pfnStreamPlayBegin(pThis->pHostDrvAudio, pStream->pvBackend);
 
-        /** @todo r=bird: I don't honestly see any difference in interleaved,
-         *        non-interrleaved, raw, complicate, or whatever frame format we're
-         *        dealing with here.  We'll be formatting a chunk of audio data and feed
-         *        it to the backend, the formatting is taken care of by the mixer and
-         *        we don't really care about the format anywhere here.
-         *
-         *        Raw audio is just stereo S64, btw.  Since drvAudioStreamPlayRaw
-         *        actually copies the mixer data instead of accessing the internal mixer
-         *        buffer directly, there is no advantage to having separate code paths
-         *        here.  It only leads to more incomplete crappy code (I find the code
-         *        quality quite appaling, given the amount of time spent on it).
-         *
-         *        What's more, I think the non-interleaved designation here is wrong
-         *        anyway.  Non-interleaved means a stereo chunk of 8 frames is
-         *        formatted:
-         *              - LLLLLLLLRRRRRRRR
-         *        whereas I'm pretty darn sure we do:
-         *              - LRLRLRLRLRLRLRLR
-         *        given that the mixer doesn't know how to output the former.  See the
-         *        audioMixBufConvTo##a_Name##Stereo() code, it clearly output LR pairs.
-         *
-         *        https://stackoverflow.com/questions/17879933/whats-the-interleaved-audio
-         */
         rc = drvAudioStreamPlayDoIt(pThis, pStream, cFramesToPlay, pcFramesPlayed);
 
         if (pThis->pHostDrvAudio->pfnStreamPlayEnd)
@@ -1682,6 +1659,8 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
 
         pStream->tsLastPlayedCapturedNs = RTTimeNanoTS();
     }
+    else
+        rc = VINF_SUCCESS;
 
     Log3Func(("[%s] Live=%RU32 fr (%RU64 ms) Period=%RU32 fr (%RU64 ms) Writable=%RU32 fr (%RU64 ms) -> ToPlay=%RU32 fr (%RU64 ms) Played=%RU32 fr (%RU64 ms)%s\n",
               pStream->szName,
