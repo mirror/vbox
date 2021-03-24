@@ -1855,5 +1855,9 @@ AssertCompileMemberOffset(ACPIDMARDEVSCOPE, idEnum,       4);
 AssertCompileMemberOffset(ACPIDMARDEVSCOPE, uStartBusNum, 5);
 AssertCompileMemberOffset(ACPIDMARDEVSCOPE, auPath,       6);
 
+/** ACPI DMAR revision (not the OEM revision field).
+ *  In accordance with the Intel spec. */
+#define ACPI_DMAR_REVISION                                      1
+
 
 #endif /* !VBOX_INCLUDED_iommu_intel_h */
