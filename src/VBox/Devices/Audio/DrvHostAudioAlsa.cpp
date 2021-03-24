@@ -84,7 +84,9 @@ typedef struct ALSAAUDIOSTREAM
     PPDMAUDIOSTREAMCFG pCfg;
     /** Pointer to allocated ALSA PCM configuration to use. */
     snd_pcm_t          *phPCM;
-    /** Scratch buffer. */
+    /** Scratch buffer.
+     * @todo r=bird: WHY THE *BEEEEP* DO WE NEED THIS? Do I have to go search svn
+     *       history for this (probably just an 'updates' commit)? */
     void               *pvBuf;
     /** Size (in bytes) of allocated scratch buffer. */
     size_t              cbBuf;
@@ -734,118 +736,115 @@ static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamCapture(PPDMIHOSTAUDIO pInterf
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostAlsaAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
+                                                       const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
-    /* puWritten is optional. */
-    Log4Func(("pvBuf=%p uBufSize=%#x (%u) state=%s - %s\n", pvBuf, uBufSize, uBufSize,
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
+    Log4Func(("pvBuf=%p uBufSize=%#x (%u) state=%s - %s\n", pvBuf, cbBuf, cbBuf,
               snd_pcm_state_name(snd_pcm_state(pStreamALSA->phPCM)), pStreamALSA->pCfg->szName));
 
-    PPDMAUDIOSTREAMCFG pCfg = pStreamALSA->pCfg;
-    AssertPtr(pCfg);
-
-    int rc;
-
-    uint32_t cbWrittenTotal = 0;
-
-    do
-    {
-        snd_pcm_sframes_t csAvail;
-        rc = alsaStreamGetAvail(pStreamALSA->phPCM, &csAvail);
-        if (RT_FAILURE(rc))
-        {
-            LogFunc(("Error getting number of playback frames, rc=%Rrc\n", rc));
-            break;
-        }
-
-        if (!csAvail)
-            break;
-
-        size_t cbToWrite = RT_MIN((unsigned)PDMAUDIOSTREAMCFG_F2B(pCfg, csAvail), pStreamALSA->cbBuf);
-        if (!cbToWrite)
-            break;
-
-        /* Do not write more than available. */
-        if (cbToWrite > uBufSize)
-            cbToWrite = uBufSize;
-
-        memcpy(pStreamALSA->pvBuf, pvBuf, cbToWrite);
-
-        snd_pcm_sframes_t csWritten = 0;
-
-        /* Don't try infinitely on recoverable errors. */
-        unsigned iTry;
-        for (iTry = 0; iTry < ALSA_RECOVERY_TRIES_MAX; iTry++)
-        {
-            csWritten = snd_pcm_writei(pStreamALSA->phPCM, pStreamALSA->pvBuf,
-                                       PDMAUDIOSTREAMCFG_B2F(pCfg, cbToWrite));
-            Log4Func(("snd_pcm_writei w/ cbToWrite=%u -> %ld (frames) [csAvail=%ld]\n", cbToWrite, csWritten, csAvail));
-            if (csWritten <= 0)
-            {
-                switch (csWritten)
-                {
-                    case 0:
-                    {
-                        LogFunc(("Failed to write %zu bytes\n", cbToWrite));
-                        rc = VERR_ACCESS_DENIED;
-                        break;
-                    }
-
-                    case -EPIPE:
-                    {
-                        rc = alsaStreamRecover(pStreamALSA->phPCM);
-                        if (RT_FAILURE(rc))
-                            break;
-
-                        LogFlowFunc(("Recovered from playback\n"));
-                        continue;
-                    }
-
-                    case -ESTRPIPE:
-                    {
-                        /* Stream was suspended and waiting for a recovery. */
-                        rc = alsaStreamResume(pStreamALSA->phPCM);
-                        if (RT_FAILURE(rc))
-                        {
-                            LogRel(("ALSA: Failed to resume output stream\n"));
-                            break;
-                        }
-
-                        LogFlowFunc(("Resumed suspended output stream\n"));
-                        continue;
-                    }
-
-                    default:
-                        LogFlowFunc(("Failed to write %RU32 bytes, error unknown\n", cbToWrite));
-                        rc = VERR_GENERAL_FAILURE; /** @todo */
-                        break;
-                }
-            }
-            else
-                break;
-        } /* For number of tries. */
-
-        if (   iTry == ALSA_RECOVERY_TRIES_MAX
-            && csWritten <= 0)
-            rc = VERR_BROKEN_PIPE;
-
-        if (RT_FAILURE(rc))
-            break;
-
-        cbWrittenTotal = PDMAUDIOSTREAMCFG_F2B(pCfg, csWritten);
-
-    } while (0);
-
+    /*
+     * Determine how much we can write (caller actually did this
+     * already, but we repeat it just to be sure or something).
+     */
+    snd_pcm_sframes_t cFramesAvail;
+    int rc = alsaStreamGetAvail(pStreamALSA->phPCM, &cFramesAvail);
     if (RT_SUCCESS(rc))
     {
-        if (puWritten)
-            *puWritten = cbWrittenTotal;
-    }
+        Assert(cFramesAvail);
+        if (cFramesAvail)
+        {
+            PCPDMAUDIOPCMPROPS pProps    = &pStreamALSA->pCfg->Props;
+            uint32_t           cbToWrite = PDMAudioPropsFramesToBytes(pProps, (uint32_t)cFramesAvail);
+            cbToWrite = RT_MIN(cbToWrite, (uint32_t)pStreamALSA->cbBuf);
+            if (cbToWrite)
+            {
+                if (cbToWrite > cbBuf)
+                    cbToWrite = cbBuf;
 
+                /*
+                 * Now we copy the stuff into our scratch buffer for some
+                 * totally unexplained reason.
+                 */
+                memcpy(pStreamALSA->pvBuf, pvBuf, cbToWrite);
+
+                /*
+                 * Try write the data.
+                 */
+                uint32_t cFramesToWrite = PDMAudioPropsBytesToFrames(pProps, cbToWrite);
+                snd_pcm_sframes_t cFramesWritten = snd_pcm_writei(pStreamALSA->phPCM, pStreamALSA->pvBuf, cFramesToWrite);
+                if (cFramesWritten > 0)
+                {
+                    Log4Func(("snd_pcm_writei w/ cbToWrite=%u -> %ld (frames) [cFramesAvail=%ld]\n",
+                              cbToWrite, cFramesWritten, cFramesAvail));
+                    *pcbWritten = PDMAudioPropsFramesToBytes(pProps, cFramesWritten);
+                    return VINF_SUCCESS;
+                }
+                LogFunc(("snd_pcm_writei w/ cbToWrite=%u -> %ld [cFramesAvail=%ld]\n", cbToWrite, cFramesWritten, cFramesAvail));
+
+
+                /*
+                 * There are a couple of error we can recover from, try to do so.
+                 * Only don't try too many times.
+                 */
+                for (unsigned iTry = 0;
+                     (cFramesWritten == -EPIPE || cFramesWritten == -ESTRPIPE) && iTry < ALSA_RECOVERY_TRIES_MAX;
+                     iTry++)
+                {
+                    if (cFramesWritten == -EPIPE)
+                    {
+                        /* underrun occurred */
+                        rc = alsaStreamRecover(pStreamALSA->phPCM);
+                        if (RT_SUCCESS(rc))
+                            LogFlowFunc(("Recovered from playback (iTry=%u)\n", iTry));
+                        else
+                            break;
+                    }
+                    else
+                    {
+                        /* an suspended event occurred, needs resuming. */
+                        rc = alsaStreamResume(pStreamALSA->phPCM);
+                        if (RT_SUCCESS(rc))
+                            LogFlowFunc(("Resumed suspended output stream (iTry=%u)\n", iTry));
+                        else
+                        {
+                            LogRel(("ALSA: Failed to resume output stream (iTry=%u, rc=%Rrc)\n", iTry, rc));
+                            break;
+                        }
+                    }
+
+                    cFramesWritten = snd_pcm_writei(pStreamALSA->phPCM, pStreamALSA->pvBuf, cFramesToWrite);
+                    if (cFramesWritten > 0)
+                    {
+                        Log4Func(("snd_pcm_writei w/ cbToWrite=%u -> %ld (frames) [cFramesAvail=%ld]\n",
+                                  cbToWrite, cFramesWritten, cFramesAvail));
+                        *pcbWritten = PDMAudioPropsFramesToBytes(pProps, cFramesWritten);
+                        return VINF_SUCCESS;
+                    }
+                    LogFunc(("snd_pcm_writei w/ cbToWrite=%u -> %ld [cFramesAvail=%ld, iTry=%d]\n", cbToWrite, cFramesWritten, cFramesAvail, iTry));
+                } /* For number of tries. */
+
+                /* Make sure we return with an error. */
+                if (RT_SUCCESS_NP(rc))
+                {
+                    if (cFramesWritten == 0)
+                        rc = VERR_ACCESS_DENIED;
+                    else
+                    {
+                        rc = RTErrConvertFromErrno(-cFramesWritten);
+                        LogFunc(("Failed to write %RU32 bytes: %ld (%Rrc)\n", cbToWrite, cFramesWritten, rc));
+                    }
+                }
+            }
+        }
+    }
+    else
+        LogFunc(("Error getting number of playback frames, rc=%Rrc\n", rc));
+    *pcbWritten = 0;
     return rc;
 }
 

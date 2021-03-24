@@ -990,70 +990,43 @@ static DECLCALLBACK(int) drvHostPulseAudioHA_StreamCapture(PPDMIHOSTAUDIO pInter
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostPulseAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                        const void *pvBuf, uint32_t uBufSize, uint32_t *puWritten)
+                                                        const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(uBufSize,         VERR_INVALID_PARAMETER);
-    /* puWritten is optional. */
-
-    PDRVHOSTPULSEAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
-    PPULSEAUDIOSTREAM  pPAStream = (PPULSEAUDIOSTREAM)pStream;
-
-    int rc = VINF_SUCCESS;
-
-    uint32_t cbWrittenTotal = 0;
+    PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
+    AssertPtr(pThis);
+    PPULSEAUDIOSTREAM pPAStream = (PPULSEAUDIOSTREAM)pStream;
+    AssertPtrReturn(pPAStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
 
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
 #ifdef LOG_ENABLED
     const pa_usec_t tsNowUs         = pa_rtclock_now();
     const pa_usec_t tsDeltaPlayedUs = tsNowUs - pPAStream->tsLastReadWrittenUs;
-
-    Log3Func(("tsDeltaPlayedMs=%RU64\n", tsDeltaPlayedUs / 1000 /* ms */));
-
     pPAStream->tsLastReadWrittenUs  = tsNowUs;
+    Log3Func(("tsDeltaPlayedMs=%RU64\n", tsDeltaPlayedUs / RT_US_1MS));
 #endif
 
-    do
+    int          rc;
+    size_t const cbWriteable = pa_stream_writable_size(pPAStream->pStream);
+    if (cbWriteable != (size_t)-1)
     {
-        size_t cbWriteable = pa_stream_writable_size(pPAStream->pStream);
-        if (cbWriteable == (size_t)-1)
+        size_t cbLeft = RT_MIN(cbWriteable, cbBuf);
+        Assert(cbLeft > 0 /* At this point we better have *something* to write (DrvAudio checked before calling). */);
+        if (pa_stream_write(pPAStream->pStream, pvBuf, cbLeft, NULL /*pfnFree*/, 0 /*offset*/, PA_SEEK_RELATIVE) >= 0)
         {
-            rc = paError(pPAStream->pDrv, "Failed to determine output data size");
-            break;
+            *pcbWritten = (uint32_t)cbLeft;
+            rc = VINF_SUCCESS;
         }
-
-        size_t cbLeft = RT_MIN(cbWriteable, uBufSize);
-        Assert(cbLeft); /* At this point we better have *something* to write. */
-
-        while (cbLeft)
-        {
-            uint32_t cbChunk = cbLeft; /* Write all at once for now. */
-
-            if (pa_stream_write(pPAStream->pStream, (uint8_t *)pvBuf + cbWrittenTotal, cbChunk, NULL /* Cleanup callback */,
-                                0, PA_SEEK_RELATIVE) < 0)
-            {
-                rc = paError(pPAStream->pDrv, "Failed to write to output stream");
-                break;
-            }
-
-            Assert(cbLeft  >= cbChunk);
-            cbLeft         -= cbChunk;
-            cbWrittenTotal += cbChunk;
-        }
-
-    } while (0);
+        else
+            rc = paError(pPAStream->pDrv, "Failed to write to output stream");
+    }
+    else
+        rc = paError(pPAStream->pDrv, "Failed to determine output data size");
 
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
-
-    if (RT_SUCCESS(rc))
-    {
-        if (puWritten)
-            *puWritten = cbWrittenTotal;
-    }
-
     return rc;
 }
 
