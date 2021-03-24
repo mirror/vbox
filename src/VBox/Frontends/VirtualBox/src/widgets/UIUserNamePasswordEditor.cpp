@@ -299,9 +299,9 @@ void UIUserNamePasswordEditor::setLabelsVisible(bool fVisible)
 
 void UIUserNamePasswordEditor::retranslateUi()
 {
-    QString strPassword = UIUserNamePasswordEditor::tr("Password");
-    QString strRepeatPassword = UIUserNamePasswordEditor::tr("Repeat Password");
-    QString strUsername = UIUserNamePasswordEditor::tr("Username");
+    QString strPassword = UIUserNamePasswordEditor::tr("Pass&word");
+    QString strRepeatPassword = UIUserNamePasswordEditor::tr("&Repeat Password");
+    QString strUsername = UIUserNamePasswordEditor::tr("U&sername");
     if (m_pUserNameLabel)
     {
         m_pUserNameLabel->setText(QString("%1%2").arg(strUsername).arg(":"));

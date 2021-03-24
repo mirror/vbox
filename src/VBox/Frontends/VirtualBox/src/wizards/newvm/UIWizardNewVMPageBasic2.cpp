@@ -196,7 +196,7 @@ void UIWizardNewVMPage2::retranslateWidgets()
         m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostna&me:"));
 
     if (m_pGAISOPathLabel)
-        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("&GA Installation ISO:"));
+        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA I&nstallation ISO:"));
     if (m_pGAISOFilePathSelector)
         m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
     if (m_pGAInstallationISOContainer)
