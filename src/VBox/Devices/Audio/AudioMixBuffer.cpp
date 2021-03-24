@@ -45,7 +45,7 @@
 # define LOG_ENABLED
 # include <iprt/stream.h>
 #endif
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/vmm/pdmaudioinline.h>
 
 #include "AudioMixBuffer.h"
